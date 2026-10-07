@@ -1,4 +1,4 @@
-// vi.mock → imports 순서 (MISTAKES.md Tests §17)
+// vi.mock → imports 순서 (TESTING.md#TE-1)
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
     cookies: vi.fn(() => Promise.resolve({ get: vi.fn(() => undefined) })),

@@ -1,4 +1,4 @@
-// vi.mock 호이스팅: import 이전에 선언 (MISTAKES.md Tests §17)
+// vi.mock 호이스팅: import 이전에 선언 (TESTING.md#TE-1)
 const { mockGetOrSetCache } = vi.hoisted(() => {
     const mockGetOrSetCache = vi.fn();
     return { mockGetOrSetCache };

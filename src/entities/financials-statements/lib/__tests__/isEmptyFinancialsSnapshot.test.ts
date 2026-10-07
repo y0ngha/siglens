@@ -23,7 +23,7 @@ const make = (o: Partial<FinancialsSnapshot> = {}): FinancialsSnapshot => ({
 });
 
 // 빈 객체를 섹션 행 타입으로 캐스팅 — isEmptyFinancialsSnapshot은 array length만
-// 보므로 내용은 무관하다. as never(bottom type) 대신 섹션별 타입을 명시한다(MISTAKES §7).
+// 보므로 내용은 무관하다. as never(bottom type) 대신 섹션별 타입을 명시한다(CONVENTIONS.md#TS-1).
 const rowOf = <
     K extends keyof FinancialsSnapshot,
 >(): FinancialsSnapshot[K][number] =>

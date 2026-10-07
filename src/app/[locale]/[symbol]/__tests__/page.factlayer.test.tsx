@@ -15,7 +15,7 @@
  * degrade paths still resolve.
  */
 
-// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+// spy → vi.mock → imports order (TESTING.md#TE-1).
 const {
     mockGetSeoSnapshotsStatic,
     mockGetQuantizedBarsStatic,

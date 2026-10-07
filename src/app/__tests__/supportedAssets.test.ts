@@ -41,7 +41,7 @@ const ABOUT_FAQ_KO = koMessages.views.about.faq.whatA;
  * FAQ·OG alt·키워드를 놓치는 것. 그러면 그 표면들은 "그 자산군은 지원하지
  * 않는다"는 신호를 검색엔진에 계속 보내는데, 렌더도 빌드도 아무 것도 실패하지
  * 않아 다음 감사까지 드러나지 않는다 — 실제로 세 라운드 연속 발생했다
- * (MISTAKES.md §6.6).
+ * (CONVENTIONS.md#CS-4).
  *
  * `SUPPORTED_ASSET_TERMS`에 자산군을 추가하면 별칭을 언급하지 않은 표면 전부가
  * 여기서 동시에 깨진다. 문장은 사람이 쓰되, 커버리지는 기계가 강제한다.

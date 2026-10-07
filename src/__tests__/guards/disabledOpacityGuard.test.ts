@@ -28,7 +28,7 @@ import { blankComments } from './support/sourceScan';
  *  - 색을 띤 경계는 `disabled:border-border-control`로 함께 중화 → 3.57 / 3.81
  *
  * 이 가드가 필요한 이유는 규칙이 이미 **두 번 드리프트했기** 때문이다
- * (MISTAKES.md #18의 "Recurring": W6b 타임프레임 버튼, W6c 스위치). 인스턴스만
+ * (DESIGN.md#DS-3의 "Recurring": W6b 타임프레임 버튼, W6c 스위치). 인스턴스만
  * 고치면 다음 컴포넌트가 같은 자리에 다시 쓴다 — 실제로 그 두 번을 고친 뒤에도
  * 트리에 12곳이 남아 있었다.
  */

@@ -588,7 +588,7 @@ describe('PositionBuilding', () => {
             // The floating tooltip is a pointer-only visual enhancement portaled
             // outside the svg's role="img" subtree — it has no accessible role
             // (aria-hidden, no aria-describedby trigger) so it never double-announces
-            // alongside the svg's own aria-label (MISTAKES a11y #3).
+            // alongside the svg's own aria-label (REACT.md#AX-2).
             const tooltip = screen.getByTestId('floor-tooltip');
             expect(tooltip.hasAttribute('role')).toBe(false);
             expect(tooltip.getAttribute('aria-hidden')).toBe('true');

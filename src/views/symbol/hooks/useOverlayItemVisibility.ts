@@ -26,7 +26,7 @@ interface UseOverlayItemVisibilityReturn {
  * 동작에 기대면 전환 중 이전 결과를 유지하도록 바꾸는 순간 꺼진 항목이 새
  * 타임프레임으로 샌다.
  *
- * 초기화는 effect가 아니라 렌더 중 이전 값 비교로 한다(MISTAKES.md #10) — effect로
+ * 초기화는 effect가 아니라 렌더 중 이전 값 비교로 한다(REACT.md#EF-1) — effect로
  * 하면 새 분석의 첫 페인트가 이전 분석의 꺼진 key를 한 번 들고 그려진다.
  */
 export function useOverlayItemVisibility(

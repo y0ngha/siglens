@@ -13,7 +13,7 @@ import type { TickerSearchResult } from '@/shared/lib/types';
  * > `buildDisplayName`·`SymbolLayoutHeader`와 **같은 조건**이어야 한다 — 여기만
  * > 빠지면 yahoo가 이름을 채운 종목(`Samsung Electronics Co., Ltd.`)이 자동완성에서만
  * > 영문명을 달고 나와, 클릭해 들어간 페이지의 타이틀·헤더와 표기가 어긋난다
- * > (MISTAKES.md "서버/클라이언트 도메인 조건 불일치")
+ * > (CONVENTIONS.md#CS-5)
  *
  * 그래서 새 오버레이를 만들면서 복사하지 않고 여기로 **추출**했다. 표시 규칙을
  * 바꿀 일이 생기면 이 파일 하나만 고치면 양쪽이 함께 따라온다.

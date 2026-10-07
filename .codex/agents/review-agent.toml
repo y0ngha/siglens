@@ -27,7 +27,8 @@ All internal evaluation must remain silent. The only permitted output is the exi
 
 ### 0. Load Memory
 
-Read `.Codex/agent-memory/review-agent/MEMORY.md` and load all files listed in the index.
+Read `.Codex/agent-memory/review-agent/MEMORY.md` and load the feedback/project notes listed in the index.
+**Skip any `rules-*.md` summary of FF/CONVENTIONS listed there** — they are stale condensed copies; Step 2 reads the live documents instead.
 
 ### 1. Determine Round and Identify Files to Read
 
@@ -77,20 +78,27 @@ Files and directories listed in `.gitignore` are also excluded.
 
 ### 2. Load Required Documents
 
-FF principles and coding conventions are already loaded from memory (Step 0) as condensed summaries.
-Do not re-read the full `docs/conventions/FF.md` or `docs/conventions/CONVENTIONS.md`.
-The memory versions contain all rules; only verbose code examples are omitted.
+The rule documents are the single source of truth. Always read the **live files** — never rely on
+remembered or condensed summaries of them (summaries go stale as rules are added).
 
 Always read:
 ```
-docs/conventions/MISTAKES.md
+docs/conventions/CONVENTIONS.md
+docs/conventions/FF.md
 docs/architecture/ARCHITECTURE.md
 ```
+
 
 Additionally, based on changed file locations:
 
 | Condition | Also read |
 |---|---|
+| Diff touches client code (`.tsx`, `hooks/`, `use*.ts`, React Query, URL state) | `docs/conventions/REACT.md` |
+| Diff touches server code (`'use server'` actions, `route.ts`, `api.ts`, caches, DB, background work) | `docs/conventions/SERVER.md` |
+| Diff touches test files (`__tests__/`, `*.test.*`, `e2e/`) | `docs/conventions/TESTING.md` |
+| Diff touches files under `src/<layer>/` (app, views, widgets, features, entities, shared) | `src/<layer>/CLAUDE.md` for each touched layer that has one |
+| Diff touches `skills/**` | `skills/CLAUDE.md` |
+| Diff touches `scripts/**`, `infra/**`, config files, or bumps dependencies | `docs/conventions/TOOLCHAIN.md` |
 | Diff touches indicator calculations, signal logic, candle patterns, or prompt builders | `docs/product/DOMAIN.md` |
 | Diff touches `.tsx` files (UI components) | `docs/conventions/DESIGN.md` |
 | Diff touches AI provider calls or market data fetches | `docs/reference/API.md` |
@@ -146,11 +154,14 @@ Using the 4 principles from docs/conventions/FF.md, look for **code that will be
 
 ---
 
-### Step 3. Repeated Mistake Pattern Check
+### Step 3. Rule-Home Check
 
 Evaluate silently. Do not output reasoning — violations go into findings only.
 
-Check docs/conventions/MISTAKES.md against the changed code for known repeated patterns.
+Check the changed code against the live rule documents loaded in Step 2: the relevant CONVENTIONS.md sections
+(Comments & Documentation, Change Synchronization and the section matching the code are always relevant),
+REACT.md for client code, SERVER.md for server code, TESTING.md for tests, FF.md, DESIGN.md for UI, and the CLAUDE.md of each touched layer.
+Cite each violated rule in the finding's `reason` as `FILE#ID` (e.g. `CONVENTIONS.md#CS-5`, `TESTING.md#TE-1`).
 
 ---
 

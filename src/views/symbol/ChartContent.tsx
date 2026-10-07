@@ -371,7 +371,7 @@ export function ChartContent({
     // 포함하지 않는다(SCOPE.md §0). low52w/high52w/current는 TechnicalFactsSummary와
     // 동일하게 buildTechnicalFacts(bars, indicators)에서 얻어 캐시-프리(순수 함수,
     // 서버 재조회 없음) 상태를 유지한다. 훅(useMemo)이므로 파생 변수(isFreeUser 등)보다
-    // 먼저 선언한다(Custom Hook Declaration Order, MISTAKES #17).
+    // 먼저 선언한다(Custom Hook Declaration Order, REACT.md#HK-1).
     const positionStatus = useMemo(() => {
         const isHoldingResolved =
             isHoldingHydrated && !isHoldingLoading && !isHoldingError;

@@ -81,10 +81,12 @@ export function HeaderMobileMenu({
     // popstate navigation). Nav link clicks already call close() directly, but
     // history navigation bypasses that handler — leaving the drawer open with
     // body-scroll locked until the user manually dismisses it.
-    // useEffectEvent escapes the lint rule: setState inside a useEffectEvent is not
-    // tracked as an effect dependency, so react-hooks/set-state-in-effect does not fire.
-    // startTransition separately marks the close as a non-urgent transition — it is NOT
-    // the lint fix (MISTAKES.md §10).
+    // useEffectEvent lets the effect read the latest `isOpen` without listing it as a
+    // dependency, so the effect still fires only when the pathname changes. It does NOT
+    // exempt the call from react/set-state-in-effect (oxlint traces setState through
+    // useEffectEvent bodies too); what satisfies the lint is the startTransition
+    // wrapper, whose callback is not treated as a synchronous setState in the effect
+    // (REACT.md#EF-1).
     const closeOnNav = useEffectEvent(() => {
         if (!isOpen) return; // already closed: nothing to do (avoids spurious focus() on mount)
         startTransition(() => {

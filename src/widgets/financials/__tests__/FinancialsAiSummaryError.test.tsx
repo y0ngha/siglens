@@ -1,4 +1,4 @@
-// vi.mock → imports 순서 (MISTAKES.md Tests §17)
+// vi.mock → imports 순서 (TESTING.md#TE-1)
 const { mockGetFmpMsg } = vi.hoisted(() => ({ mockGetFmpMsg: vi.fn() }));
 
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({

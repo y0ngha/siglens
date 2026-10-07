@@ -83,7 +83,7 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
 }));
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     // isFreeUser는 광고 게이팅 prop이다. Pro tier에서 false가 실제로 전달되는지
-    // 검증할 수 있도록 data 속성으로 노출한다(회귀 방지 — fix-log PR #690).
+    // 검증할 수 있도록 data 속성으로 노출한다(회귀 방지 — PR #690).
     AnalysisPanel: ({ isFreeUser }: { isFreeUser?: boolean }) => (
         <div data-testid="analysis-panel" data-free-user={String(isFreeUser)} />
     ),
@@ -428,7 +428,7 @@ describe('ChartContent', () => {
     });
 
     // isFreeUser는 광고 게이팅 prop이다. 기본값 true에 의존하면 Pro 사용자에게
-    // 광고가 새는 회귀가 발생했었다(fix-log PR #690). ChartContent가 tier로
+    // 광고가 새는 회귀가 발생했었다(PR #690). ChartContent가 tier로
     // 계산한 값이 AnalysisProgress·AnalysisPanel 양쪽에 정확히 전달되는지 검증한다.
     describe('광고 게이팅(isFreeUser) 전달', () => {
         it('free tier면 AnalysisProgress에 isFreeUser=true를 전달한다', () => {

@@ -13,7 +13,7 @@
  * `computeFearGreedIndex`를 쓴다(모킹하면 두 술어가 갈리는 구간을 못 본다).
  */
 
-// MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
+// TESTING.md#TE-1: all vi.mock + vi.hoisted declarations must come before imports.
 const { mockGetAssetInfoResilient, mockGetSeedBarsStatic } = vi.hoisted(() => ({
     mockGetAssetInfoResilient: vi.fn(),
     mockGetSeedBarsStatic: vi.fn(),

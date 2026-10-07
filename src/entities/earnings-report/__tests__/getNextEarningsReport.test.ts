@@ -43,7 +43,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
 const fakeDb = {} as SiglensDatabase;
 
 // getNextEarningsReport 내부 Date.now()를 고정해 staleness 경계를 결정적으로 만든다
-// (MISTAKES §Tests #14). fake timer 대신 Date.now만 스파이해 async/mockResolvedValue와의
+// (TESTING.md#TE-7). fake timer 대신 Date.now만 스파이해 async/mockResolvedValue와의
 // 상호작용(타이머 기반 hang)을 피한다.
 const NOW = new Date('2026-05-25T12:00:00Z').getTime();
 

@@ -131,7 +131,7 @@ export function SymbolPageClient({
         setMobileSheetContent,
     } = useMobileSheet();
     // isFreeTier는 useTimeframeChange의 인자로 필요해 훅 선언 순서 예외
-    // (MISTAKES.md #17)로 그 호출 직전에 둔다. 그 외 훅은 모두 이 파생 변수보다
+    // (REACT.md#HK-1)로 그 호출 직전에 둔다. 그 외 훅은 모두 이 파생 변수보다
     // 앞선다.
     const isFreeTier = isTierHydrated && tier === 'free';
     const {

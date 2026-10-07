@@ -60,12 +60,11 @@ export function OptionsPageClient({
     slots,
     hasSnapshotProse = false,
 }: OptionsPageClientProps) {
-    // 훅 선언 순서(CONVENTIONS.md / MISTAKES.md §17):
+    // 훅 선언 순서(REACT.md#HK-1):
     //   useState/useRef → 사용자 정의 훅 → useMemo/useCallback → derived → handlers → useEffect.
-    // useEffectEvent 는 effect 본문의 setState 를 lint-rule(react-hooks/
-    // set-state-in-effect)을 만족시키기 위한 stable handler 이므로 "handlers"
-    // 구간(useEffect 직전)에 둔다 — `AnalysisPanel.tsx` 의 canonical 위치와
-    // 동일.
+    // useEffectEvent 는 effect 가 deps 없이 최신 값을 읽는 stable handler 이므로
+    // "handlers" 구간(useEffect 직전)에 둔다 — `AnalysisPanel.tsx` 의 canonical
+    // 위치와 동일.
     const [expirationDate, setExpirationDate] =
         useState<OptionsExpirationSelector>(
             () => slots.find(isSlotMapping)?.expirationDate ?? 'all'
@@ -90,8 +89,10 @@ export function OptionsPageClient({
     const oiStale = afterHours && isOpenInterestSnapshotStale(snapshot);
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
     // handlers — useEffectEvent 는 stable reference 이므로 deps 에 넣지 않는다
-    // (MISTAKES.md Predictability §3). 본문은 startTransition 으로 격리해
-    // react-hooks/set-state-in-effect lint rule 을 만족시킨다 (§10).
+    // (REACT.md#EF-2). 다만 useEffectEvent 자체는 react/set-state-in-effect
+    // lint 를 피하게 해주지 않는다(oxlint 가 그 본문의 setState 도 추적한다). lint
+    // 를 만족시키는 것은 startTransition 래핑이다 — 그 콜백 안의 setState 는 effect
+    // 본문의 동기 호출로 취급되지 않는다.
     const captureNow = useEffectEvent((): void => {
         startTransition(() => {
             setNow(new Date());

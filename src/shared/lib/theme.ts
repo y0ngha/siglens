@@ -68,7 +68,7 @@ var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorSchem
  * 저장값과 시스템 선호도를 접어 **실제 적용할 테마**를 고른다.
  *
  * `let` + 재할당 대신 이른 반환으로 쓴다 — 분기가 셋(저장값 / 시스템 / 폴백)이라
- * 재할당식은 "마지막에 무엇이 남는가"를 읽는 사람이 추적해야 한다(MISTAKES #14).
+ * 재할당식은 "마지막에 무엇이 남는가"를 읽는 사람이 추적해야 한다(CONVENTIONS.md#CP-4).
  */
 function readEffectiveTheme(): ResolvedTheme {
     try {

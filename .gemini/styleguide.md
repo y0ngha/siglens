@@ -8,11 +8,14 @@ All review comments must be written in **Korean**.
 
 Before reviewing, read the following project documents in order:
 
-1. `docs/conventions/CONVENTIONS.md` — coding paradigm, TypeScript rules, component rules, layer dependency rules, React Query rules
-2. `docs/conventions/MISTAKES.md` — common mistakes to flag (highest priority)
-3. `docs/conventions/FF.md` — FF 4 principles: Readability, Predictability, Cohesion, Coupling
-4. `docs/product/DOMAIN.md` — indicator specs, domain rules, IndicatorResult structure
-5. `docs/conventions/DESIGN.md` — chart color constants, Tailwind token rules
+1. `docs/conventions/CONVENTIONS.md` — coding paradigm, TypeScript rules, comments, change synchronization, i18n, layer dependency rules
+   - `docs/conventions/REACT.md` — hooks, components, effects, charts, Tailwind, React Query (when client code is touched)
+   - `docs/conventions/SERVER.md` — Server Actions, I/O, concurrency, data cache, DB (when server code is touched)
+2. `docs/conventions/TESTING.md` — test structure, mocking, fixtures, e2e (when tests are touched)
+3. `src/<layer>/CLAUDE.md` for each touched layer (and `skills/CLAUDE.md`, `docs/conventions/TOOLCHAIN.md` when relevant)
+4. `docs/conventions/FF.md` — FF 4 principles: Readability, Predictability, Cohesion, Coupling
+5. `docs/product/DOMAIN.md` — indicator specs, domain rules, IndicatorResult structure
+6. `docs/conventions/DESIGN.md` — chart color constants, Tailwind token rules
 
 Apply all rules defined in these documents as your review criteria.
 Do not rely on general knowledge — always derive criteria from the documents above.

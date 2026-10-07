@@ -68,9 +68,9 @@ vi.mock('@/entities/market-news/api/ingestMarketNewsCategory', () => ({
     ingestMarketNewsCategory: mocks.ingestMarketNewsCategory,
 }));
 // 부분 목이다 — 전체 목이면 이 모듈에 export가 하나 생길 때마다 깨진다
-// (`isEnrichedRow`가 실제로 그랬다). MISTAKES.md §18.5.
+// (`isEnrichedRow`가 실제로 그랬다). TESTING.md#TE-3.
 // 부분 목이다 — 전체 목이면 이 배럴에 export가 하나 생길 때마다 깨진다
-// (`isEnrichedRow`가 실제로 그랬다). MISTAKES.md §18.5.
+// (`isEnrichedRow`가 실제로 그랬다). TESTING.md#TE-3.
 vi.mock(
     '@/entities/news-article/lib/newsAnalysisSelection',
     async importOriginal => ({
@@ -480,7 +480,7 @@ describe('runHubPrewarm', () => {
     /**
      * 이 크론은 하룻밤 126번 돈다. core 캐시가 살아 있으면 `run*`은 즉시 캐시값을
      * 돌려주므로, 그때도 태그를 털면 데이터가 하나도 안 변했는데 무효화만 9 × 126회
-     * 나간다 — 이 레포가 이미 겪은 ISR 과금 패턴이다(MISTAKES.md "ISR & Caching #1").
+     * 나간다 — 이 레포가 이미 겪은 ISR 과금 패턴이다(src/app/CLAUDE.md#AP-2).
      */
     it('이미 캐시에 있으면 생성도 무효화도 하지 않는다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });

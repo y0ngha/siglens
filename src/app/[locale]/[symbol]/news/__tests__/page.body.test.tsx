@@ -8,7 +8,7 @@
  * element tree with findElementByType, mirroring page.factlayer.test.tsx.
  */
 
-// MISTAKES §17: all vi.mock + vi.hoisted above imports.
+// TESTING.md#TE-1: all vi.mock + vi.hoisted above imports.
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
@@ -139,7 +139,7 @@ const mockGetNewsList = vi.mocked(getNewsList);
  * import those local functions, we check the function names via `.type.name`.
  *
  * 서버 섹션은 더는 Suspense로 감싸지 않는다(2026-10-05) — 그래서 "Suspense 자식"이 아니라
- * 트리 어디에든 직접 있는지 본다. 재귀는 모듈 레벨 함수로 둔다(MISTAKES §20).
+ * 트리 어디에든 직접 있는지 본다. 재귀는 모듈 레벨 함수로 둔다(CONVENTIONS.md#CP-7).
  */
 function findElementByName(node: ReactNode, fnName: string): boolean {
     if (Array.isArray(node)) {

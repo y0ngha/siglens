@@ -1,4 +1,4 @@
-// isE2E 결과를 테스트별로 제어하기 위해 vi.hoisted로 플래그 선언 (MISTAKES.md Tests §17)
+// isE2E 결과를 테스트별로 제어하기 위해 vi.hoisted로 플래그 선언 (TESTING.md#TE-1)
 const { e2eFlag } = vi.hoisted(() => {
     const e2eFlag = { value: false };
     return { e2eFlag };

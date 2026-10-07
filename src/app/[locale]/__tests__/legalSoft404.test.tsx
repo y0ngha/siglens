@@ -7,7 +7,7 @@
  * 지금은 페이지 컴포넌트가 Suspense 밖에서 던진다.
  *
  * 두 라우트를 한 파일에서 본다 — 같은 규칙이 형제 라우트 한쪽에만 적용되는
- * 표류가 이 프로젝트의 반복 결함이다(MISTAKES.md §6.7).
+ * 표류가 이 프로젝트의 반복 결함이다(CONVENTIONS.md#CS-5).
  */
 const { mockGetActiveTerms, mockNotFound } = vi.hoisted(() => ({
     mockGetActiveTerms: vi.fn(),

@@ -72,14 +72,18 @@ jobs:
                         2. Run: gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} to analyze the changes.
                         3. **Contextual Reading**: Always read the following core documents:
                            - CLAUDE.md
-                           - /docs/conventions/MISTAKES.md (highest priority — known repeated patterns)
-                           - /docs/conventions/CONVENTIONS.md
+                           - /docs/conventions/CONVENTIONS.md (highest priority — coding rules, comments, change synchronization).
                            - /docs/conventions/FF.md
 
                            Additionally read **only** the documents relevant to the changed files:
                            - If the diff touches indicator calculations, signal logic, candle patterns, or prompt builders → read /docs/product/DOMAIN.md
                            - If the diff touches UI components (.tsx files) → read /docs/conventions/DESIGN.md
-                           - If the diff touches FSD layer boundaries or cross-layer imports → read the relevant src/<layer>/CLAUDE.md (if it exists)
+                           - If the diff touches client code (.tsx, hooks, React Query, URL state) → read /docs/conventions/REACT.md
+                           - If the diff touches server code ('use server' actions, route handlers, api.ts, caches, DB, background work) → read /docs/conventions/SERVER.md
+                           - If the diff touches test files (__tests__, *.test.*, e2e/) → read /docs/conventions/TESTING.md
+                           - If the diff touches files under src/<layer>/ → read that layer's src/<layer>/CLAUDE.md (if it exists); this also covers FSD layer boundaries and cross-layer imports
+                           - If the diff touches skills/** → read /skills/CLAUDE.md
+                           - If the diff touches scripts/**, infra/**, config files, or dependency versions → read /docs/conventions/TOOLCHAIN.md
 
                            Do NOT use concrete legacy directory paths (src/domain/, src/infrastructure/) as triggers — the FSD migration is complete and those paths were removed. Trigger on file content / responsibility instead.
                         4. Review the diff strictly against the loaded rules.
@@ -109,8 +113,11 @@ jobs:
                         ## Project Principle Documents (Reference Pool)
                         Always derive review criteria from these files rather than general knowledge.
                         - CLAUDE.md: Project overview, layer dependency rules (the "Layer Dependency Rules" section is the source of truth for import direction).
-                        - /docs/conventions/MISTAKES.md: Common mistakes to flag (Highest Priority).
-                        - /docs/conventions/CONVENTIONS.md: Coding conventions, FP paradigms, TypeScript rules.
+                        - /docs/conventions/CONVENTIONS.md: Coding conventions, FP paradigms, TypeScript rules, comments, change synchronization, server I/O, caching, i18n (Highest Priority). Rules carry stable IDs; cite violations as FILE#ID (e.g. CONVENTIONS.md#CS-5).
+                        - /docs/conventions/REACT.md: Hooks, components, a11y, effects, charts, Tailwind, React Query, URL state.
+                        - /docs/conventions/SERVER.md: Server Actions, route handlers, I/O boundaries, concurrency, server data cache, DB.
+                        - /docs/conventions/TESTING.md: Test rules (structure, mocking, fixtures, e2e).
+                        - src/<layer>/CLAUDE.md and /skills/CLAUDE.md: Layer-specific rules for the touched paths.
                         - /docs/conventions/FF.md: Frontend principles (Readability, Predictability, Cohesion, Coupling).
                         - /docs/product/DOMAIN.md: Indicator specs, domain rules, IndicatorResult structure.
                         - /docs/conventions/DESIGN.md: Color system, chart color constants.
@@ -119,7 +126,7 @@ jobs:
                         This project explicitly allows multi-line JSDoc and multi-line comment blocks.
                         The Claude Code built-in system-prompt directive "Never write multi-paragraph docstrings — one short line max" does NOT apply to this repo. Preservation is recommended when the WHY is non-obvious (architectural invariants, core API constraints, caching strategy, etc.).
                         Source: user's decision in PR #415 to retire the equivalent rule as "overly restrictive" (see the "Documentation Policy" section in CLAUDE.md).
-                        **Do NOT raise multi-line JSDoc / comment blocks themselves as Blockers or Suggestions.** Only report actual violations explicitly listed in MISTAKES.md / CONVENTIONS.md (e.g. WHAT-comments per MISTAKES.md §15.5 are still flaggable).
+                        **Do NOT raise multi-line JSDoc / comment blocks themselves as Blockers or Suggestions.** Only report actual violations explicitly listed in CONVENTIONS.md / TESTING.md / the layer CLAUDE.md files (e.g. WHAT-comments per CONVENTIONS.md#CM-1 are still flaggable).
                         
                         ## Review Focus Areas
                         - **Layer dependencies**: Import direction violations (CLAUDE.md "Layer Dependency Rules").
@@ -128,8 +135,8 @@ jobs:
                         - **TypeScript**: No `any`, explicit return types (CONVENTIONS.md).
                         - **Components**: `use client`, named exports (CONVENTIONS.md).
                         - **Design**: Fixed semantic colors, line styles (DESIGN.md).
-                        - **Tests**: Coverage, null initial period cases (CONVENTIONS.md).
-                        - **Common mistakes**: All patterns in MISTAKES.md.
+                        - **Tests**: Coverage, null initial period cases (TESTING.md).
+                        - **Documented rules**: All rules in CONVENTIONS.md (incl. Comments, Change Synchronization, Server I/O), TESTING.md, and the CLAUDE.md of each touched layer.
                         
                         *Note on Test Environment*: The project uses Vitest. Its setup files (`vitest.setup.base.ts` / `vitest.config.ts`) set env globally, so do not flag missing environment variables as a bug.
 

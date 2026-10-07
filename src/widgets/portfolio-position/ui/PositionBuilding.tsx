@@ -322,8 +322,8 @@ export function PositionBuilding({
 
     // 전체 밴드의 툴팁 콘텐츠를 한 번만 계산해 활성 층 파생(아래)과 렌더 루프
     // (층별 hover 콘텐츠 조회) 둘 다 재사용한다 — 같은 band index를 두 곳에서
-    // 따로 계산하지 않는다(MISTAKES #2, buildFloorTooltips 주석 참고). 매 렌더
-    // 재계산을 막기 위해 useMemo로 감싼다(MISTAKES #10 — props/state 파생
+    // 따로 계산하지 않는다(CONVENTIONS.md#CP-2, buildFloorTooltips 주석 참고). 매 렌더
+    // 재계산을 막기 위해 useMemo로 감싼다(REACT.md#CR-1 — props/state 파생
     // 배열/객체는 useMemo). model.bands.length는 이미 model에 포함돼 있으므로
     // deps는 model만으로 충분하다(별도 bandCount 파생값을 deps에 얹지 않는다).
     const floorTooltips = buildFloorTooltips(
@@ -339,7 +339,7 @@ export function PositionBuilding({
     // model.bands.length는 volumeByBand 인덱싱(아래)과 describeFloor 둘 다에
     // 필요해 파생 변수 구간에서 한 번만 계산한다(단일 source, 중복 선언 금지).
     // 모든 hook 호출(useState/useRef/useOnClickOutside/useEscapeKey/useMemo) 뒤에
-    // 둔다(Custom Hook Declaration Order — CONVENTIONS.md).
+    // 둔다(Custom Hook Declaration Order — REACT.md#HK-1).
     const bandCount = model.bands.length;
 
     const hasAvg = avg !== null;
@@ -778,7 +778,7 @@ export function PositionBuilding({
                 role="tooltip"이 아니라 aria-hidden="true"다 — 이 노드는 document.body
                 최상위로 포털되어 svg role="img" 서브트리 **밖**에 산다. role="tooltip"을
                 쓰려면 반드시 트리거 요소의 aria-describedby로 연결돼야 하는데(WAI-ARIA,
-                MISTAKES a11y #3), 층 <g>는 위 렌더 루프 주석대로 의도적으로 인터랙티브/
+                REACT.md#AX-2), 층 <g>는 위 렌더 루프 주석대로 의도적으로 인터랙티브/
                 포커스 가능한 요소가 아니므로 그런 트리거가 없다. role="tooltip"만
                 남기면 트리거 없이 announce되는 고아 노드가 돼(이전 라운드 결함) 스크린
                 리더가 svg aria-label과 무관하게 이 텍스트를 뜬금없이 읽는다. 그래서

@@ -1,5 +1,7 @@
 # Git Conventions
 
+**Rule IDs.** 반복 위반 규칙에는 바뀌지 않는 ID(`GC-N`)가 붙는다. `GIT_CONVENTIONS.md#GC-1`처럼 인용한다.
+
 ## 브랜치 네이밍
 
 ```
@@ -65,3 +67,10 @@ base 브랜치: master
 ```
 
 **본문 템플릿**: `.github/PULL_REQUEST_TEMPLATE.md` 자동 적용됨.
+
+<a id="GC-1"></a>
+
+#### GC-1 — PR은 하나의 관심사만 담는다
+
+무관한 변경은 별도 PR로 분리하거나 되돌린다. 관련 있어서 같이 넣어야 한다면 PR 본문이나 커밋 메시지에 이유를 적는다.
+관심사가 섞인 PR은 리뷰가 흐려지고 한쪽만 되돌리기 어렵다.

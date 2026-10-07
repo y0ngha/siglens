@@ -13,7 +13,7 @@ import { SEARCH_TRIGGER_LABEL_KEY } from '@/features/ticker-search/lib/searchLab
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 문구를 테스트에 복제하지 않는다 — 카탈로그를 읽으면 키 오타나 문구 변경이
-// 곧바로 여기서 드러난다(MISTAKES #13.5).
+// 곧바로 여기서 드러난다(TESTING.md#TE-10).
 const SEARCH_TRIGGER_LABEL = catalogTranslator(
     'features.ticker-search',
     'ko'

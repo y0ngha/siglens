@@ -8,7 +8,7 @@ import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
 /**
  * 결정적 fixture 검증 — FakeEconomyProvider의 SEED와 동일 값으로 하드코딩한다.
  * 프로덕션 로직(`shiftDate`)을 재구현하면 같은 버그가 양쪽에 있어도 통과되는
- * 동어반복 위험(MISTAKES §13.5)이라, latest/previous를 명시 expected로 박는다.
+ * 동어반복 위험(TESTING.md#TE-10)이라, latest/previous를 명시 expected로 박는다.
  */
 const EXPECTED_FIXTURES: Record<
     string,

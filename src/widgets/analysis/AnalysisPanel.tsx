@@ -1168,10 +1168,10 @@ export function AnalysisPanel({
         isAnalysisStale(analysis.analyzedAt, timeframe, now);
 
     // SSR/hydration mismatch 회피 — 서버에서는 `now`가 null, 클라이언트
-    // mount 직후에만 현재 시각을 캡쳐한다. setState를 useEffect 본문에서 직접
-    // 호출하는 대신 useEffectEvent로 감싸 React 19 canonical 패턴을 따르고,
-    // 본문은 startTransition으로 격리해 lint rule을 만족시킨다
-    // (MISTAKES.md §10).
+    // mount 직후에만 현재 시각을 캡쳐한다. useEffectEvent는 deps 없이 최신 값을
+    // 읽게 할 뿐 set-state-in-effect 린트를 피하게 하지 않는다(oxlint가 그 본문의
+    // setState도 추적). 린트를 통과시키는 것은 startTransition 래핑이다 — 그
+    // 콜백 안의 setState는 동기 호출로 취급되지 않는다.
     const captureNow = useEffectEvent((): void => {
         startTransition(() => {
             setNow(new Date());

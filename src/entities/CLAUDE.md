@@ -20,7 +20,27 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 
 이 예외들은 ESLint `boundaries/element-types`에서 `entities → entities` 허용으로 관리됨.
 
+## `lib/` 순수성
+
+<a id="EN-1"></a>
+
+### EN-1 — `entities/{slice}/lib/`는 순수 함수만 둔다
+
+- `lib/`에는 부수효과(외부 I/O, `localStorage`, `Date.now()`)가 없는 순수 도메인 로직만 둔다.
+  부수효과는 `api.ts`·`actions/`(entity) 또는 `shared/db`·`shared/api`(횡단)로 간다. 위젯 전용 부수효과(예: 팝업
+  dismiss 저장)는 그 위젯의 `utils/`에 둔다.
+- 도메인과 무관한 범용 유틸(React·도메인 의존 없음, 예: URL 프로토콜 검증)은 `widgets/*/utils`나 entity `lib/`가
+  아니라 `shared/lib/`로 간다.
+- 표시 전용 요소(한국어 라벨, CSS 클래스명, UI 설정 enum)는 entity `lib/`에 두지 않는다 — `shared/lib/`나 해당
+  위젯 모듈로 간다. 도메인 규칙과 화면 어휘를 섞으면 entity가 UI 변경마다 흔들린다.
+- ❌ `entities/notice/lib/noticeStorage.ts`(`localStorage.getItem`) ✅ `widgets/notice-popup/utils/noticeStorage.ts`
+- **허용된 예외:** 저장소를 인자로 주입받아 부수효과를 호출자가 통제하는 파이프라인 단계(예:
+  `lib/analyzeNewsCards.ts`, `lib/ingestNewsForSymbol.ts`)는 `lib/`에 둘 수 있다. 이 경우 파일 JSDoc에 왜 예외인지
+  (인접 파이프라인 단계, 주입된 저장소, 호출자 공유)를 적는다. 새 예외를 만들지 말고 기존 지역 예외 패턴에 맞춘다.
+
 ## `'use server'` 규칙
+
+Server Action이 던지지 않고 결과를 반환하는 계약 등 오류 처리 규칙은 `SERVER.md#SA-1`을 따른다.
 
 ### action은 개별 파일에서 직접 import
 

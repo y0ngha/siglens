@@ -4,7 +4,7 @@
  * OverallContent에 전달된 initialAnalysis prop을 검증한다.
  */
 
-// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+// spy → vi.mock → imports order (TESTING.md#TE-1).
 const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));
@@ -110,7 +110,7 @@ const mockPeekOverall = peekOverallAnalysisCache as MockedFunction<
 
 describe('Overall page ISR route config', () => {
     it('exports revalidate = 43200 (literal — required for Next.js static analysis)', () => {
-        // MISTAKES §15: route segment config must be a literal, not an imported constant
+        // src/app/CLAUDE.md#AP-1: route segment config must be a literal, not an imported constant
         expect(revalidate).toBe(43200);
     });
 });
@@ -310,7 +310,7 @@ describe('Overall page (narrative seed)', () => {
         );
     });
 
-    // hasEnrichedNews 분기 (MISTAKES.md §Tests 18): true/false 두 경로 모두 검증.
+    // hasEnrichedNews 분기 (TESTING.md#TE-4): true/false 두 경로 모두 검증.
     // /news와 동일 게이트로 client(useWaitForNewsCards)가 SSR snapshot의 enrichment
     // 여부를 보고 즉시 ready 결정하거나 폴링을 시작해야 한다.
     it('hasEnrichedNews=false: getNewsList가 빈 배열이면 false 전달 (게이트 폴링 시작)', async () => {

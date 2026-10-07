@@ -21,7 +21,7 @@ export interface StrikeVolume {
  * bucket. Mutates the accumulator in place by design — the wrapper
  * `reduce` owns the only Map instance and threads it through, so this
  * helper encapsulates the lone `map.set` call site behind a functional
- * reduce signature (no `for` + outer-scope mutation; MISTAKES.md §21).
+ * reduce signature (no `for` + outer-scope mutation; CONVENTIONS.md#CP-6).
  */
 function bumpStrikeVolume(
     acc: Map<number, StrikeVolume>,

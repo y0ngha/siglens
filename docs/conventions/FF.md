@@ -3,6 +3,11 @@
 Code quality principles from the Toss Frontend chapter.
 Good frontend code is **code that is easy to modify**.
 
+**Rule IDs.** Principles below are positional (`1-E`, `2-C` …) and may be renumbered as the document grows.
+Rules added from review findings carry a stable, never-renumbered ID (`FF-N`) with an anchor, and are cited as
+`FF.md#FF-N`. Other docs use their own prefixes: `CONVENTIONS.md` (CP/TS/NC/CM/CS/I18), `REACT.md` (HK/CR/AX/EF/LW/TW/RQ), `SERVER.md` (SA/CC/DC/DB),
+`TESTING.md` (TE), `DESIGN.md` (DS), `TOOLCHAIN.md` (TC), `GIT_CONVENTIONS.md` (GC).
+
 ---
 
 ## 4 Principles Overview
@@ -204,6 +209,29 @@ export function useCardIdQueryParam() {
 }
 ```
 
+### 1-I. Put multi-branch decisions in a named pure function
+
+<a id="FF-1"></a>
+
+#### FF-1 — Multi-branch decisions live in a named pure function with per-branch tests
+
+When a decision has three or more branches (a label picked by kind, outcome, highlight state, fallback …), do not
+write it inline inside a hook callback or a JSX handler. Extract a pure function with a name that states the decision and
+cover each branch with its own test. Inline branches cannot be tested without mounting the component, so the untested
+branches are exactly the ones that regress.
+
+```typescript
+// ❌ Four-way label decision buried in a hook callback
+const levelLabelFor = useCallback((label, overlay) => {
+    if (isBreakout(label)) return outcomeLabel(label, crowded, highlighted);
+    if (isFib(label)) return fibLabel(label);
+    return label.raw;
+}, [crowded, highlighted]);
+
+// ✅ Named pure function in utils/, one test per branch
+export function levelTitleFor(label: Label, overlay: Overlay, ctx: LevelContext): string { ... }
+```
+
 ---
 
 ## 2. Predictability
@@ -264,6 +292,30 @@ const indicators = calculateIndicators(bars);
 sendAnalyticsEvent('indicator_calculated');
 ```
 
+<a id="FF-2"></a>
+
+#### FF-2 — Selection and filtering rules are explicit, not implicit
+
+A function that silently selects or filters its input (for example, "use only the EMAs that apply to this timeframe") hides a
+rule the caller cannot predict. Expose the rule as a named table, parameter or helper so the selection is readable and testable
+at the call site.
+
+### 2-D. Names track the current concept
+
+<a id="FF-3"></a>
+
+#### FF-3 — Names, parameters and options say what the code does now
+
+- **Stale names.** When an implementation changes shape (an HTTP call becomes a Server Action, a module is moved, a vendor is replaced), rename
+  the function, type, key and file to match. ❌ `fetchBars` (no longer a fetch) → ✅ `getBarsAction`. ❌ a service key named after a
+  vendor that no longer applies → ✅ a key naming the concept (`DATABASE`).
+- **Shared mechanisms.** When a module starts serving a second cause, rename it to the shared concept and keep cause-specific helpers
+  named per cause. ❌ `buildFmpDegradedRevalidate` once a database outage shares it → ✅ `buildDegradedRevalidate`.
+- **Parameter names across a call chain.** The same logical value keeps the same name in the public interface and in the implementation.
+  A mapping hidden between two names invites off-by-one-style misreadings.
+- **Option names state the consequence.** A parameter that aborts or throws must name the consequence, not the check.
+  ❌ `maxDelayMs` (looks like a cap, actually aborts) → ✅ `abortIfCumulativeDelayReachesMs`.
+
 ---
 
 ## 3. Cohesion
@@ -291,6 +343,14 @@ src/
         └── __tests__/            ← colocated tests
 ```
 
+<a id="FF-4"></a>
+
+#### FF-4 — Siblings of the same category live together (env and feature gates)
+
+Before adding an environment gate or feature-flag helper, search for existing helpers of the same category and colocate with them
+(`src/shared/api/e2eEnv.ts` and `src/shared/api/offlineBuild.ts` sit side by side). Splitting same-category helpers across directories hides
+their relationship, and their semantics drift apart.
+
 ### 3-B. Centralize magic numbers as constants
 
 ```typescript
@@ -308,6 +368,32 @@ export const RSI_DEFAULT_PERIOD = 14;
 // rsi.ts
 const result = new Array(RSI_DEFAULT_PERIOD).fill(null);
 ```
+
+<a id="FF-5"></a>
+
+#### FF-5 — Values that must change together live in one place
+
+This covers more than magic numbers: a panel width class and the axis offset that depends on it, a threshold and the copy that
+describes it. Define them as named constants next to each other with a comment stating the coupling (see `CONVENTIONS.md#CS-2`
+for the enforcement side).
+
+```typescript
+// ❌ Coupled only implicitly
+<aside className="w-60" /> ... <div className="lg:right-60" />
+
+// ✅ One definition, coupling stated
+// The axis offset must equal the panel width.
+const PANEL_WIDTH_CLASS = 'w-60';
+const PANEL_AXIS_OFFSET_CLASS = 'lg:right-60';
+```
+
+<a id="FF-6"></a>
+
+#### FF-6 — Data that changes together lives in one constant; unrelated data lives apart
+
+- Related data keyed by the same dimension belongs in one structure. ❌ `CONFIG = { level: [...], icon: [...] }` plus
+  `TOOLTIP = { level: [...], text: [...] }` → ✅ `BADGE_DATA = { level: [{ icon, tooltip }, ...] }`. Adding a level then touches one constant.
+- Constants with different purposes or owners go into separate modules. ❌ SEO metadata and legal disclaimers in one file → ✅ one module each.
 
 ### 3-C. Match form cohesion to the unit of change
 
@@ -420,6 +506,24 @@ function AnalysisPanel({ children }) {
     );
 }
 ```
+
+<a id="FF-7"></a>
+
+#### FF-7 — No unused, pass-through or loosely coupled props
+
+- Remove props that are declared but never consumed (including ones destructured and immediately discarded with a `_` prefix).
+- An intermediate component does not forward a prop it does not use. If the leaf needs it, pass it from the owner directly or use context.
+- Props that only make sense together are grouped into one type. ❌ `{ marketReading?, marketLabel? }` (allows an empty-label sentence) and
+  `{ visible, onToggle }` as two loose props → ✅ one `IndicatorToggleGroup { visible, onToggle }` or one required object.
+
+### 4-E. Logic layers don't know UI layout
+
+<a id="FF-8"></a>
+
+#### FF-8 — Hooks and domain code describe the problem, not the position in the UI
+
+Hooks (logic layer) must not reference where things sit in the component tree. A message that points at a location breaks when the layout changes.
+❌ `server_busy = "위의 모델 선택기에서 다른 모델을 선택하세요"` (names a dropdown) → ✅ `"Change the model and retry"` (describes the action).
 
 ---
 

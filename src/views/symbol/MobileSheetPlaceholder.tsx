@@ -61,7 +61,7 @@ export function MobileSheetPlaceholder({ label }: MobileSheetPlaceholderProps) {
             // 높이만 다르다 — 실제 시트는 h-[97svh]를 translateY로 밀어 PEEK 띠만
             // 보이지만, 껍데기는 그 띠 높이를 그대로 갖는다.
             className="fixed inset-x-0 bottom-0 z-40 flex h-(--peek-band) flex-col overflow-hidden rounded-t-lg border-t border-secondary-700 bg-secondary-900 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
-            // 높이는 상수에서 계산되므로 정적 Tailwind 클래스가 될 수 없다. MISTAKES.md #19에
+            // 높이는 상수에서 계산되므로 정적 Tailwind 클래스가 될 수 없다. REACT.md#TW-1에
             // 따라 raw `style` 대신 CSS 커스텀 프로퍼티 + arbitrary value로 넘긴다.
             style={
                 {

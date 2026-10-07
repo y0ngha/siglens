@@ -1,5 +1,5 @@
 /**
- * 미니 추세 차트에 쓰는 시계열 포인트 수 — 매직넘버 상수화(MISTAKES §15).
+ * 미니 추세 차트에 쓰는 시계열 포인트 수 — 매직넘버 상수화(CONVENTIONS.md#NC-1).
  *
  * core `normalizeEconomicIndicatorSeries(name, raw, trendLength)`의 N 값으로 직접 전달된다.
  */

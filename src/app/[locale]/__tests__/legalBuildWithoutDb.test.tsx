@@ -7,7 +7,7 @@
  * 경로(`getActiveTerms` 호출, revalidate 그대로)를 그대로 타야 한다.
  *
  * 두 라우트를 한 파일에서 본다 — 형제 라우트 한쪽에만 규칙이 적용되는 표류가 이
- * 프로젝트의 반복 결함이다(MISTAKES.md §6.7).
+ * 프로젝트의 반복 결함이다(CONVENTIONS.md#CS-5).
  */
 const { mockGetActiveTerms, mockNotFound, mockShortenRevalidate } = vi.hoisted(
     () => ({

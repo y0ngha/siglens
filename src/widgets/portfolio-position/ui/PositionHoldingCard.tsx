@@ -38,7 +38,7 @@ function useInViewOnce<T extends Element>(): [
     const [node, setNode] = useState<T | null>(null);
     // 구형 브라우저(IntersectionObserver 미지원) 방어를 lazy initializer로 결정해,
     // 이후 effect 본문에서 setState를 동기 호출하지 않게 한다
-    // (react-hooks/set-state-in-effect — MISTAKES.md #10과 동일 원칙).
+    // (react-hooks/set-state-in-effect — REACT.md#EF-1과 동일 원칙).
     const [isVisible, setIsVisible] = useState(
         () => typeof IntersectionObserver === 'undefined'
     );

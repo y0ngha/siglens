@@ -2,7 +2,7 @@
  * Playback engine shared by the two `/about` replays: a module-level state
  * machine (`runPlayback` → `playScenario` → `waitPlaying`) that takes an
  * explicit `PlaybackContext` instead of closing over component state, so it
- * can run outside React and be unit-tested with fake timers (MISTAKES.md #14.5).
+ * can run outside React and be unit-tested with fake timers (REACT.md#HK-2).
  *
  * The phases are generic — type an input, light up steps one by one, stream
  * the body — so `ChatReplay` (ai.siglens.io, a question and tool lookups) and

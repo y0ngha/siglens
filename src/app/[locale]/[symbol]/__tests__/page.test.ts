@@ -1,4 +1,4 @@
-// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+// spy → vi.mock → imports order (TESTING.md#TE-1).
 const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));
@@ -204,7 +204,7 @@ interface ClientSeedProps {
 describe('Symbol page', () => {
     describe('ISR route config', () => {
         it('exports revalidate = 21600 (literal — required for Next.js static analysis)', () => {
-            // MISTAKES §15: route segment config must be a literal, not an imported constant
+            // src/app/CLAUDE.md#AP-1: route segment config must be a literal, not an imported constant
             expect(revalidate).toBe(21600);
         });
     });

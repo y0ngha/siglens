@@ -354,7 +354,7 @@ type SymbolSeoBuilder = (
  *
  * `resolveSymbol*SeoContent`와 `noindexSymbolMetadata`가 **이 테이블 하나로** 자산군을
  * 고른다. 예전에는 차단 메타 경로만 equity 빌더를 고정으로 써서, 크립토의 차단된 탭이
- * `시세` 대신 `주가`/`Stock` 카피를 냈다(MISTAKES §6.7 — 같은 규칙을 형제 경로 하나에만 적용).
+ * `시세` 대신 `주가`/`Stock` 카피를 냈다(CONVENTIONS.md#CS-5 — 같은 규칙을 형제 경로 하나에만 적용).
  */
 const SYMBOL_SEO_TAB_BUILDERS: Record<
     SymbolSeoTab,
@@ -2209,7 +2209,7 @@ function buildSymbolFearGreedKeywords(
 /**
  * `/[symbol]/position` 탭의 SEO 콘텐츠 — `generateMetadata`(정상·차단 분기 모두)와 본문
  * JSON-LD의 **단일 소스**다. 둘로 갈라 두면 `<title>`과 `WebPage.name`이 조용히
- * 어긋난다(MISTAKES §2).
+ * 어긋난다(CONVENTIONS.md#CP-2).
  *
  * 다른 탭과 달리 `composeSymbolTitle`을 쓰지 않는다 — 후킹 키워드(아파트/옥상/지하)가
  * displayName **앞**에 와야 한다. displayName은 종목마다 길이가 크게 달라(70자+도 있다)

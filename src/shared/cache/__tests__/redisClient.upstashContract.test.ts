@@ -7,7 +7,7 @@ import {
 
 /**
  * `redisClient`가 거는 timeout·재시도가 **실제** `@upstash/redis` 클라이언트에서 그대로
- * 동작하는지 고정한다(MISTAKES Third-Party Library Contracts #2 — 목 클라이언트로는
+ * 동작하는지 고정한다(TESTING.md#TE-8 — 목 클라이언트로는
  * 옵션 전달만 보일 뿐 패키지가 그 옵션을 어떻게 쓰는지는 검증되지 않는다).
  *
  * fetch만 스텁하고 클라이언트는 진짜를 쓴다. `AbortSignal.timeout`은 테스트가 직접 abort할

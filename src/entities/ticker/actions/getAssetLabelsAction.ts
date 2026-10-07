@@ -32,13 +32,13 @@ export interface AssetLabelsResult {
  * 묶으면 심볼 하나의 일시적 장애가 멀쩡히 resolve된 나머지 여섯 개까지 통째로
  * 버린다 — 호출부가 "요청함"을 미리 표시하므로 그 세션 내내 이름이 안 채워진다.
  *
- * ## MISTAKES §0.8 검토
+ * ## SERVER.md#CC-1 검토
  *
- * 이 레포에는 `FETCH_CONCURRENCY` 상수가 없고, 가장 가까운 동시성 정책은 peer
+ * 호출 수가 작고 상한이 고정이라 별도 동시성 상수를 두지 않는다. 동시성 정책은 peer
  * 호출부의 `Promise.all` 패턴이다(`marketFearGreedCache` 6, `economySnapshotCache` 11).
  * 여기는 최대 {@link MAX_RECENT_SEARCHES}(7)개이고, 그것도 **라벨이 아직 심볼인 항목만**
  * 대상이라 사실상 사용자당 1회성 백필이다(호출부가 심볼당 로드당 한 번으로 제한한다).
- * 게다가 대부분은 캐시·DB에서 끝나 외부 호출까지 가지도 않는다. `fetchInChunks`
+ * 게다가 대부분은 캐시·DB에서 끝나 외부 호출까지 가지도 않는다. 청크
  * 분할 이득이 없다.
  */
 export async function getAssetLabelsAction(

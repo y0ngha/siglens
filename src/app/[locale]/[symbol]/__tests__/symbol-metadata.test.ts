@@ -520,7 +520,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         /**
          * 인프라 실패로 getAssetInfoResilient가 degraded:true를 반환할 때,
          * 각 라우트의 generateMetadata가 noindex로 응답하는지 검증한다.
-         * (MISTAKES.md §18: 신규 조건 분기는 true/false 두 경로 모두 커버)
+         * (TESTING.md#TE-4: 신규 조건 분기는 true/false 두 경로 모두 커버)
          */
         const degradedCases = [
             {

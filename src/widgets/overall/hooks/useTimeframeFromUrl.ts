@@ -14,7 +14,7 @@ import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
  * `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽는다 — 전자는 종합 탭 위젯 전체를
  * CSR bailout시켜 서버 HTML에 Suspense fallback만 남겼다. 서버·하이드레이션 렌더는
  * `DEFAULT_TIMEFRAME`, 그 직후 URL 값으로 다시 렌더된다. 뒤로/앞으로 가기도 따라간다.
- * 호출부가 timeframe을 파생 변수가 아니라 훅 반환값으로 받게 해 MISTAKES.md §17(훅
+ * 호출부가 timeframe을 파생 변수가 아니라 훅 반환값으로 받게 해 REACT.md#HK-1(훅
  * 선언이 파생 변수보다 앞) 준수를 돕는다.
  */
 export function useTimeframeFromUrl(

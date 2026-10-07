@@ -495,7 +495,7 @@ describe('YahooOptionsAdapter.hasOptionsMarket', () => {
 
     it('returns false on any library error and logs the failure for diagnostics', async () => {
         // Errors must surface to console.warn so production failures don't
-        // hide silently behind the boolean false return (MISTAKES.md §0.5).
+        // hide silently behind the boolean false return (SERVER.md#SA-4).
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockOptionsMethod.mockRejectedValue(new Error('unknown symbol'));
         const adapter = makeAdapter();

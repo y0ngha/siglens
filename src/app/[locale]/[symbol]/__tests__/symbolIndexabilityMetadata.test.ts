@@ -1,4 +1,4 @@
-// spy → vi.mock → imports order (MISTAKES.md Tests §17: hoist spies referenced by
+// spy → vi.mock → imports order (TESTING.md#TE-1: hoist spies referenced by
 // vi.mock factories via vi.hoisted so they aren't TDZ'd when the factory runs).
 const { mockEvaluateSymbolIndexability, mockGetSeoSnapshotsStatic } =
     vi.hoisted(() => ({

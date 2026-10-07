@@ -10,7 +10,7 @@
  * so we locate the Suspense element then inspect its fallback.
  */
 
-// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+// spy → vi.mock → imports order (TESTING.md#TE-1).
 const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));

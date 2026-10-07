@@ -154,7 +154,7 @@ export function OpenInterestChart({
 
         // derived와 같은 메모 경계에서 라벨 인덱스 Set도 한 번에 계산해
         // hover state가 바뀌어도 Set이 재생성되지 않도록 한다
-        // (MISTAKES.md §10).
+        // (REACT.md#CR-1).
         const labelIndices = pickLabelIndices(
             oiByStrike.length,
             [maxPainIdx, currentPriceIdx],

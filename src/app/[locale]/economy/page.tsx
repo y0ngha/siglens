@@ -55,7 +55,7 @@ function EconomyHeroH1({ title }: { title: string }) {
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고 신선도는 클라 refetch가 책임진다.
 // `FmpEconomyProvider`의 `ECONOMY_REVALIDATE_SECONDS`(= `SECONDS_PER_DAY` = 86400)와
 // 동일 값으로 양 계층 TTL 일치시킨다. 출처 상수를 import하면 Next의 정적 분석이
-// 깨져 config가 무시되므로(MISTAKES §16.5 단일 출처 + src/app/CLAUDE.md ISR 규약)
+// 깨져 config가 무시되므로(CONVENTIONS.md#CS-3 단일 출처 + src/app/CLAUDE.md#AP-1 ISR 규약)
 // 리터럴 강제하고, 변경 시 두 곳을 함께 갱신한다.
 export const revalidate = 86400;
 
@@ -180,7 +180,7 @@ async function EconomyContent() {
 
     // UTC 날짜 버킷 키(core 거시 브리핑 캐시 키와 같은 경계)로 macro briefing peek seed 조회.
     // miss는 null → 클라가 submit.
-    // 외부 I/O 오류는 graceful 처리하되 silent하게 삼키지 않는다(MISTAKES §Infra §4).
+    // 외부 I/O 오류는 graceful 처리하되 silent하게 삼키지 않는다(SERVER.md#SA-2).
     const peekSeed = await peekMacroBriefingStatic(
         snapshot,
         macroBriefingDayKey(now)

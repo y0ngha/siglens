@@ -6,7 +6,7 @@
  * self-canonical 유지)다 — `congress/page.tsx`와 같은 모양.
  */
 
-// MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
+// TESTING.md#TE-1: all vi.mock + vi.hoisted declarations must come before imports.
 const { mockGetAssetInfoResilient, mockGetNewsList } = vi.hoisted(() => ({
     mockGetAssetInfoResilient: vi.fn(),
     mockGetNewsList: vi.fn(),

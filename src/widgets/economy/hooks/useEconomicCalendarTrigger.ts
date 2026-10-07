@@ -23,7 +23,7 @@ export function useEconomicCalendarTrigger(country: CalendarCountry): void {
      * deps에 넣으면 "마운트 1회"라는 계약이 "country가 바뀔 때마다"로 조용히
      * 바뀐다 — 지금은 라우트당 상수라 결과가 같지만, 나중에 지역 전환을 클라
      * 상태로 만들면 전환할 때마다 FMP 인제스션이 돈다. `useEffectEvent`는 항상
-     * 최신 값을 읽으면서 effect를 재실행시키지 않는 정확한 도구다(MISTAKES §10).
+     * 최신 값을 읽으면서 effect를 재실행시키지 않는 정확한 도구다(REACT.md#EF-2).
      */
     const trigger = useEffectEvent(() => {
         void ensureEconomicCalendarAction(country).catch((e: unknown) => {

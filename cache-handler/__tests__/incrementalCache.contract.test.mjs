@@ -3,7 +3,7 @@
 // 핸들러의 stale 표현(nextInternals.mjs `staleLastModified`)과 cacheControl 재시드는 Next
 // 내부 계산과 정확히 맞물려야만 의미가 있다. 핸들러만 단위 테스트하면 "핸들러가 의도한 값을
 // 돌려준다"까지만 보이고, Next가 그 값을 실제로 stale로 읽는지는 보이지 않는다
-// (MISTAKES.md "Third-Party Library Contracts" §2 — mock이 아니라 실물로 계약을 확인).
+// (TESTING.md#TE-8 — mock이 아니라 실물로 계약을 확인).
 // Next를 올렸을 때 이 파일이 깨지면 nextInternals.mjs의 인용부터 다시 확인할 것.
 
 import { vi } from 'vitest';

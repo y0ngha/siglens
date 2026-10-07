@@ -266,7 +266,7 @@ export class DrizzleNewsRepository {
  * 필요해지면 별도 함수로 분리해야 한다. cross-request 캐싱은 손실 — 이슈 #439 참조.
  *
  * 사이드 이펙트(DB I/O)가 있으므로 entities/news-article/api.ts에 배치
- * (entities/{slice}/lib/은 순수 함수 전용 — MISTAKES.md Architecture §0.7).
+ * (entities/{slice}/lib/은 순수 함수 전용 — src/entities/CLAUDE.md#EN-1).
  */
 export const getNewsList = cache(
     async (symbol: string, locale: Locale): Promise<NewsDisplayItem[]> => {
@@ -344,7 +344,7 @@ function toNewsRow(row: NewsDbRow): NewsRow {
  *
  * DB I/O(DrizzleNewsRepository)·cross-entity 조합(earnings-report)·외부 core
  * submit 호출을 하는 orchestration seam이라 entities/{slice}/lib/(순수 함수
- * 전용)이 아니라 api.ts에 위치한다 — MISTAKES.md Architecture §0.7.
+ * 전용)이 아니라 api.ts에 위치한다 — src/entities/CLAUDE.md#EN-1.
  *
  * ⚠️ 요청 헤더 읽기·세션 사용자 조회·봇 판별·쿠키 접근 금지 — cron의
  * after() 컨텍스트에서 실행되며 React 요청 스코프가 없다.

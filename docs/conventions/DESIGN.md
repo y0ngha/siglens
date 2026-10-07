@@ -1,5 +1,22 @@
 # Design System
 
+**Rule IDs.** 반복해서 어겨진 규칙에는 바뀌지 않는 ID(`DS-N`)와 앵커가 붙어 있다. 코드 주석·리뷰에서는
+`DESIGN.md#DS-3`처럼 인용한다. ID는 재사용·재번호하지 않는다. 새 규칙은 가장 큰 번호 + 1을 쓴다.
+
+| ID | 주제 |
+|---|---|
+| DS-1 | 색은 토큰으로 |
+| DS-2 | 상승/하락 색 고정 |
+| DS-3 | 비활성 상태 표현 |
+| DS-4 | 제목 위계 |
+| DS-5 ~ DS-8 | 레이아웃 안정성·오버레이 |
+| DS-9 | 차트 토큰은 UI 컴포넌트에 쓰지 않는다 |
+| DS-10 | 차트 색 상수 추가 시 문서 갱신 |
+| DS-11 ~ DS-13 | 재는 법(표면·틴트, 불투명도, 레이아웃 주장) |
+| DS-14 | 라이트 테마 짝 정의·양 테마 측정 |
+| DS-15 | 방향 색에 좋고 나쁨을 싣지 않는다 |
+| DS-16 | 표면 토큰을 경계로 쓰지 않는다 |
+
 ## 컬러 철학
 
 주식 분석 플랫폼으로서 두 가지 감정을 전달한다.
@@ -161,9 +178,29 @@ AI 분석 bearish    text-ui-danger-text
 AI 분석 neutral    text-secondary-300
 ```
 
+<a id="DS-9"></a>
+
+#### DS-9 — 차트 전용 토큰(`chart-*`)은 UI 컴포넌트에 쓰지 않는다
+
+`chart-rsi`·`chart-period10` 같은 토큰은 인디케이터 라인을 위한 의미색이다. UI 컴포넌트(카테고리 배지 등)는
+`primary-*`·`secondary-*`·`ui-success`·`ui-warning`·`ui-danger`를 쓴다. 차트 색을 UI에 빌려 쓰면 차트 팔레트를
+조정할 때 무관한 화면의 색이 함께 바뀐다.
+
+```
+❌ CATEGORY_STYLES = { fintech: 'chart-period10', healthcare: 'chart-rsi' }
+✅ CATEGORY_STYLES = { fintech: 'primary-500', healthcare: 'secondary-400' }
+```
+
 ---
 
 ## 인디케이터 라인 컬러
+
+<a id="DS-10"></a>
+
+#### DS-10 — 새 차트 색 상수는 이 문서에 행을 추가한다
+
+`src/shared/lib/chartColors.ts`에 색 상수를 추가하면 같은 변경에서 이 문서에 다크/라이트 값을 적은 행(또는 절)을
+추가한다. 문서에 없는 팔레트는 다음 사람이 대비·구분 검증의 기준을 알 수 없다.
 
 인디케이터별로 구분 가능한 고대비 색상을 사용한다.
 
@@ -402,6 +439,23 @@ Tailwind v4를 사용하므로 별도의 `tailwind.config.ts`(JS 설정) 파일�
 
 ## 사용 규칙
 
+<a id="DS-1"></a>
+
+#### DS-1 — 색은 의미 토큰으로만 쓴다
+
+- 모든 색은 `src/app/globals.css`의 `@theme`(다크)과 `:root[data-theme='light']`(라이트) 토큰에서 온다.
+  JSX `className`에 기본 Tailwind 색(`blue-*`·`slate-*`·`rose-*`·`amber-*`)을 직접 쓰지 않는다.
+- 외부 브랜드색·고정 표면색처럼 특수한 색은 쓰기 전에 `@theme`에 토큰으로 등록한다.
+  임의 hex(`bg-[#FEE500]`)는 금지한다.
+
+```
+❌ className="bg-blue-600 hover:bg-blue-700"      // 기본 Tailwind 색
+❌ className="bg-[#FEE500]"                       // 임의 hex
+✅ className="bg-primary-600 hover:bg-primary-700"
+✅ className="text-ui-danger"
+✅ className="text-on-fixed-light"                // globals.css @theme에 등록된 고정 표면 토큰
+```
+
 ```
 ✅ 컬러 토큰 사용
 <div className="bg-secondary-900 text-primary-400">
@@ -420,33 +474,83 @@ className="text-[#1a2b3c]"
 
 ## 자주 하는 실수
 
+- **차트 컬러를 Tailwind 클래스로 사용** — Lightweight Charts는 CSS 클래스를 지원하지 않는다.
+   반드시 hex 값을 직접 전달한다(`CHART_COLORS` 상수 사용).
+
+<a id="DS-2"></a>
+
+#### DS-2 — 상승/하락 색은 teal / red로 고정한다
+
+상승/하락을 green/red로 쓰지 않는다. Siglens는 teal(`#26a69a`) / red(`#ef5350`)로 고정이고 임의로 바꾸지 않는다
+(라이트 테마는 같은 색을 진하게 조정한 짝을 쓴다).
+
+방향 색은 **움직임**만 전한다. 오르는 것이 나쁜 지표(물가·실업률 등)에 상승=초록, 하락=빨강처럼 좋고 나쁨을
+얹지 않는다 — 같은 화면의 다른 카드와 해석이 갈린다. 좋고 나쁨이 필요하면 색이 아니라 문구로 말한다
+([DS-15](#DS-15)).
+
+<a id="DS-3"></a>
+
+#### DS-3 — 비활성 상태를 `opacity-*`로 표현하지 않는다
+
+`opacity-*`는 글자와 밑판·경계를 **함께** 페이지 배경 쪽으로 끌어 둘 사이 대비를 무너뜨린다(WCAG 1.4.11은 조작 요소 경계에 3:1을
+요구한다). 라이트에서 특히 나쁘다 — 밑판과 글자가 같은 흰 배경으로 수렴해 버튼이 종잇장이 된다(실측 최저 1.51:1).
+`disabledOpacityGuard`(`disabled:`·`aria-disabled:`·`group-disabled:` 및 겹친 variant까지)가 정적으로 막는다.
+
+- 채운 컨트롤: `disabled:bg-secondary-700 disabled:text-secondary-500` → 4.89(다크) / 5.49(라이트)
+- 고스트·경계 컨트롤: `disabled:text-secondary-500` → 6.84 / 6.34. 색을 띤 경계는 `disabled:border-border-control`로 함께 중화 → 3.57 / 3.81
+- **양 테마를 다 잰다.** 다크가 통과해도 라이트는 실패할 수 있다.
+
 ```
-1. 차트 컬러를 Tailwind 클래스로 사용
-   → Lightweight Charts는 CSS 클래스 미지원
-   → 반드시 hex 값 직접 전달 (CHART_COLORS 상수 사용)
-
-2. 상승/하락 색상을 green/red로 사용
-   → Siglens는 teal(#26a69a) / red(#ef5350) 고정
-   → 임의로 변경 금지 (라이트 테마는 같은 색상을 진하게 조정한 짝을 쓴다)
-
-3. 라이트 테마를 잊고 다크 값만 확인
-   → 두 테마 모두 1급 지원 대상 (2026-08~)
-   → `[data-theme='light']` 블록에 짝을 정의하지 않으면 라이트에서 대비가 무너진다
-   → 특히 `ui-*-text` 3종은 다크 전용으로 튜닝돼 흰 배경에서 1.4~1.9:1로 전멸한다
-
-4. 비활성 상태를 `opacity-*`로 표현
-   → 글자와 밑판을 **함께** 페이지 배경 쪽으로 끌어 둘 사이 대비가 무너진다
-   → 라이트에서 특히 나쁘다(실측 최저 1.51:1). `disabledOpacityGuard`가 막는다
-   → 채움: `disabled:bg-secondary-700 disabled:text-secondary-500` / 고스트: 뒤엣것만
-
-5. 표면 토큰을 경계로 사용
-   → `border-secondary-800`은 카드 위에서 **1.00:1** — 경계를 선언하고 아무것도 안 그린다
-   → 장식 경계는 `secondary-700`, 컨트롤 경계는 `border-control`. `surfaceAsBorderGuard`가 막는다
-
-6. 같은 위계의 제목을 파일마다 리터럴로 복제
-   → `HEADING_SECTION` / `HEADING_SUBSECTION`을 쓴다
-   → 리터럴끼리 "톤을 맞춘" 일치는 토큰과의 불일치다 — 실제로 홈 h2 둘이 그렇게 어긋나 있었다
+❌ <button disabled className="opacity-40">         // 2.26:1
+❌ <div className="opacity-50 border border-primary-500">   // 경계가 ~1.65:1로 떨어진다
+✅ <button disabled className="disabled:text-secondary-500">
+✅ <div className="border border-border-control">
 ```
+
+
+<a id="DS-14"></a>
+
+#### DS-14 — 라이트 테마 짝을 항상 함께 정의하고 두 테마를 모두 잰다
+
+두 테마 모두 1급 지원 대상이다. `[data-theme='light']` 블록에 짝을 정의하지 않으면 라이트에서 대비가 무너진다.
+특히 `ui-*-text` 3종은 다크 전용으로 튜닝돼 흰 배경에서 1.4~1.9:1로 떨어진다. 다크에서 통과해도 라이트는 따로 잰다.
+
+<a id="DS-15"></a>
+
+#### DS-15 — 방향 색(teal/red)에 좋고 나쁨을 싣지 않는다
+
+상승/하락 색은 값이 움직인 방향만 나타낸다. 오르는 것이 나쁜 지표에 초록/빨강을 쓰거나 시장별로 "상승=적색"처럼
+반대 규칙을 섞으면 같은 화면 안에서 해석이 갈린다. 평가는 문구(예: "악화")로 전한다.
+
+<a id="DS-16"></a>
+
+#### DS-16 — 표면 토큰을 경계로 쓰지 않는다
+
+`border-secondary-800`은 카드 위에서 **1.00:1**이다 — 경계를 선언하고 아무것도 그리지 않는다. 장식 경계는
+`secondary-700`, 컨트롤 경계는 `border-control`을 쓴다. `surfaceAsBorderGuard`가 정적으로 막는다.
+
+<a id="DS-4"></a>
+
+#### DS-4 — 제목(h1~h6)은 위계 단계마다 공유 토큰을 쓰고, 부모 제목과 달라야 한다
+
+- **색 클래스가 없는 제목을 두지 않는다.** `globals.css`의 `body { color }`가 가장 밝은 단계(`secondary-50`)라, 색 없는 제목은
+  그 단계를 상속해 자신을 다스리는 h2/h1과 같거나 더 밝아진다. **대비 스윕으로는 못 잡는다** — 가장 밝은 색은 항상 대비를 통과하므로
+  225개 요소 스윕이 0건을 보고하는 동안에도 결함은 살아 있었다. 위계 결함이지 대비 결함이 아니다(`headingColourTokenGuard`가 정적으로 막는다).
+- **색이 있어도 충분하지 않다.** 부모와 색·굵기가 같고 크기만 다른 제목도 같은 결함이다. 임계값이 아니라 **자기 부모 제목과 비교**한다.
+- **같은 위계는 하나의 토큰.** 모든 h2는 `HEADING_SECTION`, 모든 h3는 `HEADING_SUBSECTION`(`src/shared/lib/typographyStyles.ts`).
+  파일마다 같은 클래스 문자열을 상수로 복제하면 grep에서 숨고, 한쪽만 고쳐지면서 같은 위계의 크기·굵기가 갈라진다.
+  리터럴끼리 "톤을 맞춘" 일치는 토큰과의 불일치다.
+- **한 단계를 고치면 바로 아래 단계를 다시 잰다.** h3를 `font-medium`으로 내렸는데 카드 h4가 `font-semibold`로 남으면 h4가 헤드라인보다
+  굵어진다. 크기·색·굵기 세 축 모두 단조롭게 내려가야 한다. 굵기는 대비가 아니므로 대비 수치는 그대로다.
+- **강조와 밝기는 같은 방향을 가리킨다.** 강조한 카드(`border-primary-500` + ring)의 제목이 형제보다 더 어두우면 어긋난다.
+
+```
+❌ <h3 className="mb-2 text-sm font-semibold">           // 색 없음: h2보다 밝게 상속
+❌ <h3 className="mb-2 text-sm font-semibold text-secondary-100">   // h2와 색·굵기가 같다
+✅ <h3 className={cn('mb-2', HEADING_SUBSECTION)}>      // HEADING_SECTION보다 한 단계 아래
+```
+
+탐지기를 쓸 때는 `className={SOME_CONSTANT}` 형태를 정규식이 못 본다는 점을 기억하고, 파일별 제목 상수는 따로 grep한다.
 
 ## 새 화면을 만들 때
 
@@ -503,8 +607,9 @@ className="text-[#1a2b3c]"
    (`chart-*` · `ui-*` · `border-control`). SVG `<text>`의 `fill`도 **글자색**이다 —
    `fill-`이 붙었다고 그래픽이 되는 게 아니라 무엇을 칠하느냐가 기준을 정한다.
 5. **비활성·포커스·경계는 명시 토큰으로.** `opacity-*`로 비활성을 만들지 않고,
-   포커스는 `focus-visible:ring-2 ring-primary-500`을 붙이고, 컨트롤 경계는
-   `border-control`을 쓴다.
+   포커스는 `focus-visible:ring-2 ring-primary-500`을 붙이고(`focusIndicatorGuard`가 기준),
+   버튼 배경색이 링 색과 같으면 `ring-offset-2 ring-offset-<배경>`을 더해 3:1(WCAG 1.4.11)을 확보한다.
+   컨트롤 경계는 `border-control`을 쓴다.
 6. **테스트를 같이 쓴다.** 새 순수 함수에는 colocated 유닛 테스트, 새 화면에는 렌더
    테스트. 훅을 테스트했다고 **배선을 테스트한 것이 아니다** — 호출부에서 그 효과가
    나타나는지 한 줄이라도 단언한다(이 루프에서 여덟 번 반복된 결함이다).
@@ -531,6 +636,36 @@ className="text-[#1a2b3c]"
 | `chartPaletteContrastGuard` · `chartThemeRemountGuard` | 캔버스 팔레트 대비, 테마 전환 시 remount |
 | `sourceScanParity` | 스캐너 자신이 주석을 잘못 보는 것 |
 
+### 레이아웃 안정성·오버레이
+
+<a id="DS-5"></a>
+
+#### DS-5 — Suspense fallback은 실제 레이아웃을 모든 브레이크포인트에서 구조적으로 미러링한다
+
+fallback이 실제 헤더의 행 구조와 다르면(한 줄 대 두 줄) 교체 순간 콘텐츠가 밀려 CLS가 생긴다. 실제 쪽의
+`flex-col -> sm:flex-row` 전환과 컨트롤 크기를 그대로 따라가고, 320/375/414/640/768/1280/1920에서 세로 점프가 0px인지 잰다.
+
+<a id="DS-6"></a>
+
+#### DS-6 — 포털 툴팁은 위치가 계산되기 전에는 숨기고, 뷰포트 경계를 확인한다
+
+- 포털 툴팁이 계산 전 초기 위치 (0,0)에 그려지면 깜빡인다. 위치가 계산될 때까지 `visibility: hidden`으로 두고 준비된 뒤에 드러낸다.
+- 트리거가 뷰포트 가장자리에 있으면 툴팁이 화면 밖으로 나간다. 패딩 상수로 경계를 검사하고(`aboveTop < TOOLTIP_VIEWPORT_PADDING`이면 아래로) 배치한다.
+
+<a id="DS-7"></a>
+
+#### DS-7 — 절대 위치 팝오버를 옮기면 새 앵커 기준으로 320px 박스를 다시 계산한다
+
+이전 앵커에서 안전했던 `left-0`/`right-0` 선택이 새 앵커(예: 헤더 안의 작은 버튼, 왼쪽에서 ~130px)에서는 320px 뷰포트를 넘칠 수 있다.
+`relative` 앵커를 팝오버의 직접 컨테이너로 두고 가장 좁은 지원 뷰포트에서 확인한다.
+
+<a id="DS-8"></a>
+
+#### DS-8 — 좁은 브레이크포인트에서 텍스트 폭에 묶인 오프셋을 쓰지 않는다
+
+로케일에 따라 폭이 달라지는 문구에 맞춰 짐작한 오프셋(`sm:right-48`)은 다른 로케일에서 깨진다. 폭이 서로 의존하면 명명된 상수 하나로
+묶고(FF.md#FF-5), 문구 폭이 아니라 컨테이너 기준으로 배치한다.
+
 ### 재는 법 — 측정기를 먼저 의심하라
 
 실패가 수십 건 나오면 제품이 아니라 **측정기**를 의심한다. 이 리디자인에서 가짜 실패를
@@ -551,6 +686,33 @@ className="text-[#1a2b3c]"
   1.0이 나온다** — 색 구분은 CIE76 ΔE로 따로 잰다(현재 라이트 최소 18.62 / 다크 12.79).
 - **측정 중에 소스를 고치지 않는다.** Next dev는 라우트별로 컴파일하므로, 재는 도중
   컴포넌트를 고치면 라우트마다 다른 버전이 서빙된다. 하이드레이션 에러가 안 나서 신호도 없다.
+
+<a id="DS-11"></a>
+
+#### DS-11 — 대비 주장은 잰 표면·틴트를 함께 적는다
+
+한 표면이나 한 알파 단계에서 통과한 토큰이 다른 곳에서도 통과하는 것은 아니다. "토큰 X가 3:1을 통과한다"가 아니라
+"X는 표면 A에서 3.3:1, 표면 B에서 2.9:1"처럼 적는다. 재지 않은 표면·틴트에 쓰게 되면 다시 재고 문서를 고친다.
+가장 빡빡한 표면은 기준 카드가 아니라 가장 어두운 쪽일 수 있다.
+
+```
+❌ "ui-success-text는 success/10에서 ≥6.9:1" — /40 틴트에서 쓰이자 4.35:1로 AA 미달
+✅ "border-control(라이트): secondary-950 인셋 3.34:1 · secondary-900 본문 3.58:1 · 카드(#fff) 3.81:1"
+```
+
+<a id="DS-12"></a>
+
+#### DS-12 — 요소 불투명도를 대비 계산에 곱한다
+
+요소에 `opacity`가 걸려 있으면 최종 알파는 `baseAlpha * elementOpacity`다. 불투명도를 무시하고 재면 `disabled:opacity-40` 버튼이
+8.82:1로 읽히는데 실제 렌더는 2.26:1이다.
+
+<a id="DS-13"></a>
+
+#### DS-13 — 레이아웃 지적은 결함을 입증할 측정을 함께 적는다
+
+"리플로우가 보인다"는 메커니즘 설명만으로는 부족하다. 어떤 뷰포트에서 어느 값이 몇 px 움직이는지 측정을 적는다.
+메커니즘의 추론은 맞아도 영향은 거짓일 수 있다(우측 정렬 클러스터에서는 실제 아이콘이 이미 placeholder 위에 놓여 이동이 0이었다).
 
 ### 문구 규약
 

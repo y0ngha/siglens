@@ -114,7 +114,7 @@ export function StrikeVolumeChart({
         // Max Pain은 OI 개념이므로 volume 차트에는 적합하지 않다. anchors는
         // 현재가만 강제 포함. derived와 같은 메모 경계에서 한 번에 계산해
         // hover state가 바뀌어도 라벨 Set이 재생성되지 않도록 한다
-        // (MISTAKES.md §10).
+        // (REACT.md#CR-1).
         const labelIndices = pickLabelIndices(
             volumeByStrike.length,
             [currentPriceIdx],

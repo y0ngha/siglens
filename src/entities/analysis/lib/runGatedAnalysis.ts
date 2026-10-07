@@ -62,7 +62,7 @@ interface RunGatedAnalysisParams<R> {
  * congress): E2E fixture → current user → tier + BYOK gate → core submit.
  *
  * Every throw — including an E2E stub load failure — is caught and mapped to a
- * localized `AnalysisGateBlockedResult` (MISTAKES §0.7: Server Actions never
+ * localized `AnalysisGateBlockedResult` (SERVER.md#SA-1: Server Actions never
  * propagate raw exceptions). Keeping that catch-all here is what keeps the
  * hooks' `isGateBlockedResult` check a reliable discriminant across all three.
  *

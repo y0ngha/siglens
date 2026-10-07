@@ -194,7 +194,7 @@ export const SHARE_KIND_PANEL_REGISTRY = {
      * `symbol`(스냅샷에서 이미 threaded되어 `chart` 엔트리도 쓰는 canonical
      * ticker)로 프로필을 구할 수 있다. `isKrEquitySymbol`을 여기서 직접 부르면
      * "옵션 탭이 있는가"의 **세 번째 독립 파생**이 되어, 프로필의 `tabs`가 바뀌는
-     * 순간 조용히 갈라진다(MISTAKES.md §6.6).
+     * 순간 조용히 갈라진다(CONVENTIONS.md#CS-4).
      *
      * **심볼이 없으면 `false`다.** 모르는 상태를 `true`로 열면 존재하지 않는
      * 옵션 섹션이 뜨는데, 그게 이 감사가 두 라운드 연속 잡아낸 실패 방향이다.
