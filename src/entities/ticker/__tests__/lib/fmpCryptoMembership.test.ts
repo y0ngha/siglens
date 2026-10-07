@@ -11,7 +11,8 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/shared/cache/getOrSetCache', () => ({
     getOrSetCache: getOrSetCacheMock,
 }));
-vi.mock('@/shared/config/time', () => ({
+vi.mock('@/shared/config/time', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/config/time')>()),
     SECONDS_PER_DAY: 86400,
     SECONDS_PER_HOUR: 3600,
     SECONDS_PER_YEAR: 31536000,

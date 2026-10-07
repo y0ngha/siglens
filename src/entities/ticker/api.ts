@@ -68,6 +68,12 @@ const DB_SORT_OTHER = 2;
  */
 export const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
 
+/**
+ * 국내 종목 심볼 접미사. `isKrEquitySymbol`(`KR_SYMBOL_RE`)과 같은 집합이어야 한다 —
+ * 일치는 `api.test.ts`가 고정한다.
+ */
+export const KR_SYMBOL_LIKE_PATTERNS = ['%.KS', '%.KQ'] as const;
+
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
     name: koreanTickers.name,
@@ -194,8 +200,9 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             .from(koreanTickers)
             .where(
                 or(
-                    like(koreanTickers.symbol, '%.KS'),
-                    like(koreanTickers.symbol, '%.KQ')
+                    ...KR_SYMBOL_LIKE_PATTERNS.map(pattern =>
+                        like(koreanTickers.symbol, pattern)
+                    )
                 )
             );
     }
@@ -210,8 +217,9 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             .from(koreanTickers)
             .where(
                 and(
-                    notLike(koreanTickers.symbol, '%.KS'),
-                    notLike(koreanTickers.symbol, '%.KQ')
+                    ...KR_SYMBOL_LIKE_PATTERNS.map(pattern =>
+                        notLike(koreanTickers.symbol, pattern)
+                    )
                 )
             );
     }

@@ -71,16 +71,32 @@ export function __resetKoreanSearchSnapshotForTests(): void {
     clearSnapshot();
 }
 
+/**
+ * DB에서 스냅샷을 새로 읽는다.
+ *
+ * **갱신 실패 시 마지막 정상 스냅샷을 돌려준다**(SERVER.md#DC-7). 만료된 스냅샷은 지우지
+ * 않으므로(`loadedAt`도 그대로) 실패·빈 결과면 옛 목록을 서빙하고 다음 호출이 곧바로
+ * 다시 시도한다. 빈 배열을 돌려주면 일시 장애가 "검색 결과 없음"이라는 틀린 답이 된다.
+ *
+ * DB 장애 흡수(SERVER.md#DC-8): 예전 Redis 사본은 DB가 죽어도 검색을 살려 주는 층이기도
+ * 했다. 이제 그 역할은 이 인스턴스 스냅샷이 맡는다 — 한 번이라도 로드된 인스턴스는 DB가
+ * 죽어도 옛 목록으로 계속 답한다. 콜드 스타트 직후(스냅샷 없음)의 장애만 빈 배열이며,
+ * 그 결과는 저장하지 않아 요청마다 재시도한다(`findAll` 폭주는 single-flight가 막는다).
+ * 심볼 조회(`findBySymbols`)는 PK 조회라 따로 쓰기 폴백을 두지 않는다 — 호출부가 영문명으로
+ * degrade한다.
+ */
 async function loadSnapshotFromDatabase(): Promise<KoreanTickerEntry[]> {
     const repository = tryGetRepository();
-    if (!repository) return [];
+    if (!repository) return snapshot?.entries ?? [];
 
     const generation = snapshotGeneration;
     // 정본은 **로드 지점**에서 입힌다 — 매칭 술어와 반환값 모두 자동으로 정본을 본다
     // (`withCanonical` JSDoc).
     const entries = (await readAllFromDatabase(repository)).map(withCanonical);
-    // 빈 결과(DB 장애·클라이언트 없음)는 넣지 않는다 — 다음 요청이 다시 시도한다.
-    if (entries.length > 0 && generation === snapshotGeneration) {
+    // 빈 결과(DB 장애)는 새 스냅샷으로 삼지 않는다. 무효화가 로드 중에 끼었으면 `snapshot`이
+    // 이미 비어 있어 `[]`로 떨어진다(낡은 목록을 되살리지 않는다).
+    if (entries.length === 0) return snapshot?.entries ?? [];
+    if (generation === snapshotGeneration) {
         snapshot = { entries, loadedAt: Date.now() };
     }
     return entries;

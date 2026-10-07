@@ -14,6 +14,12 @@ export const RENAME_GUARD_MAX = 300;
 /**
  * 정상일 때도 하루에 처리하는 최대 개수. 나머지는 다음 날 이어서 처리된다 — 처리된
  * 심볼은 저장 이름이 FMP와 같아져 후보에서 빠지므로 재대조가 멱등이다.
+ *
+ * 시간 예산(SERVER.md#CC-7, 각 단계 최악의 합): 이 상한이 한 회차의 번역 호출 크기를 정한다 —
+ * 번역은 **최대 이 개수를 담은 Gemini 호출 1회**이고, DB 쓰기는 심볼당 최대 2 upsert를
+ * 순차로 한다. 같은 회차에서 앞단 KR 동기화(data.go.kr 페이지네이션)와 stock-list 수신
+ * (`fmpGet` 시도당 10초 × 최대 4회 + 백오프 예산 60초 ≈ 최악 100초)가 먼저 돈다.
+ * 202 + `after()`라 요청 타임아웃에 걸리지 않지만 SIGTERM drain이 이 합만큼 기다릴 수 있다.
  */
 export const RENAME_BATCH_MAX = 60;
 
@@ -67,6 +73,11 @@ export interface TickerNameReconcilePlan {
     guardSample: readonly RenameCandidate[];
 }
 
+/** 로케일에 흔들리지 않는 심볼순 — 이월 순서가 실행 환경과 무관하게 같아야 한다. */
+function compareBySymbol(a: RenameCandidate, b: RenameCandidate): number {
+    return a.symbol.localeCompare(b.symbol, 'en');
+}
+
 /** 가드 로그에 담을 샘플 수. */
 export const GUARD_SAMPLE_SIZE = 10;
 
@@ -83,37 +94,42 @@ export const GUARD_SAMPLE_SIZE = 10;
 export function planTickerNameReconcile(
     input: TickerNameReconcileInput
 ): TickerNameReconcilePlan {
-    const listedByFmpSymbol = new Map<string, string>();
-    for (const entry of input.listed) {
-        listedByFmpSymbol.set(entry.symbol, entry.companyName);
-    }
+    const listedByFmpSymbol = new Map(
+        input.listed.map(entry => [entry.symbol, entry.companyName])
+    );
 
-    const compared = new Set<string>();
-    const changed = new Map<string, RenameCandidate>();
-
-    const rows = [...input.koreanTickerRows, ...input.assetTranslationRows];
-    for (const row of rows) {
-        if (input.isKrEquitySymbol(row.symbol)) continue;
+    // stock-list에 있는 국내 외 행만 비교 대상이다.
+    const looked = [
+        ...input.koreanTickerRows,
+        ...input.assetTranslationRows,
+    ].flatMap(row => {
+        if (input.isKrEquitySymbol(row.symbol)) return [];
         const newName = listedByFmpSymbol.get(
             row.fmpKey ?? toFmpSearchSymbol(row.symbol)
         );
-        if (newName === undefined) continue;
+        return newName === undefined ? [] : [{ row, newName }];
+    });
+    const compared = new Set(looked.map(({ row }) => row.symbol));
 
-        compared.add(row.symbol);
-        if (changed.has(row.symbol)) continue;
-        if (normalizeCompanyName(row.name) === normalizeCompanyName(newName)) {
-            continue;
-        }
-        changed.set(row.symbol, {
-            symbol: row.symbol,
-            oldName: row.name,
-            newName,
-        });
-    }
+    // 같은 심볼이 두 테이블에 있으면 먼저 어긋난 쪽(`korean_tickers` 우선)만 남긴다.
+    const changedBySymbol = looked
+        .filter(
+            ({ row, newName }) =>
+                normalizeCompanyName(row.name) !== normalizeCompanyName(newName)
+        )
+        .reduce(
+            (acc, { row, newName }) =>
+                acc.has(row.symbol)
+                    ? acc
+                    : acc.set(row.symbol, {
+                          symbol: row.symbol,
+                          oldName: row.name,
+                          newName,
+                      }),
+            new Map<string, RenameCandidate>()
+        );
 
-    const all = [...changed.values()].sort((a, b) =>
-        a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0
-    );
+    const all = [...changedBySymbol.values()].sort(compareBySymbol);
 
     if (all.length > RENAME_GUARD_MAX) {
         return {

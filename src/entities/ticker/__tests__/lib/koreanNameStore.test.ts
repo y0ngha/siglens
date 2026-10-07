@@ -204,6 +204,51 @@ describe('searchByKoreanName', () => {
         await expect(searchByKoreanName('애')).resolves.toHaveLength(1);
     });
 
+    describe('만료 뒤 갱신 실패 — 마지막 정상 스냅샷 서빙(stale-on-error)', () => {
+        async function loadThenExpire(): Promise<void> {
+            vi.useFakeTimers();
+            mockRepository.findAll.mockResolvedValueOnce([apple]);
+            await searchByKoreanName('애');
+            vi.advanceTimersByTime(KOREAN_SEARCH_SNAPSHOT_TTL_MS);
+        }
+
+        it('갱신 중 DB가 던지면 이전 항목을 돌려준다', async () => {
+            await loadThenExpire();
+            mockRepository.findAll.mockRejectedValueOnce(new Error('db down'));
+
+            const result = await searchByKoreanName('애');
+
+            expect(result.map(r => r.symbol)).toEqual(['AAPL']);
+        });
+
+        it('갱신 결과가 비어 있어도 이전 항목을 돌려준다', async () => {
+            await loadThenExpire();
+            mockRepository.findAll.mockResolvedValueOnce([]);
+
+            const result = await searchByKoreanName('애');
+
+            expect(result.map(r => r.symbol)).toEqual(['AAPL']);
+        });
+
+        it('실패한 갱신은 만료를 연장하지 않아 다음 호출이 DB를 다시 읽는다', async () => {
+            await loadThenExpire();
+            mockRepository.findAll.mockRejectedValueOnce(new Error('db down'));
+            await searchByKoreanName('애');
+            expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
+
+            mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
+            const recovered = await searchByKoreanName('마이크로');
+
+            expect(mockRepository.findAll).toHaveBeenCalledTimes(3);
+            expect(recovered.map(r => r.symbol)).toEqual(['MSFT']);
+        });
+
+        it('스냅샷이 한 번도 없었다면 빈 배열이다', async () => {
+            mockRepository.findAll.mockRejectedValueOnce(new Error('db down'));
+            await expect(searchByKoreanName('애')).resolves.toEqual([]);
+        });
+    });
+
     it('DB 클라이언트가 없으면 빈 배열', async () => {
         tryGetDatabaseClientMock.mockReturnValue(null);
         await expect(searchByKoreanName('애')).resolves.toEqual([]);

@@ -28,8 +28,10 @@ import {
     // 경계 테스트(500/501)는 구현이 실제로 쓰는 상수여야 의미가 있다 — 값을 여기
     // 다시 적으면 상수가 바뀌는 순간 조용히 경계를 벗어난다(TESTING.md#TE-6).
     KOREAN_TICKER_UPSERT_BATCH_SIZE,
+    KR_SYMBOL_LIKE_PATTERNS,
 } from '@/entities/ticker/api';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
 
 import type {
@@ -238,6 +240,18 @@ describe('DrizzleKoreanTickerRepository', () => {
         expect(collectSqlStrings(condition)).toEqual(
             expect.arrayContaining(['%.KS', '%.KQ'])
         );
+    });
+
+    it('국내 심볼 LIKE 패턴은 isKrEquitySymbol의 판정과 같은 집합이다', () => {
+        // `%.KS` → 샘플 심볼로 바꿔 `isKrEquitySymbol`이 전부 true여야 하고, 패턴에 없는
+        // 접미사(`.KX`)는 false여야 한다 — 한쪽만 바뀌면 두 조회가 조용히 어긋난다.
+        const samples = KR_SYMBOL_LIKE_PATTERNS.map(pattern =>
+            pattern.replace('%', '005930')
+        );
+        expect(samples.every(isKrEquitySymbol)).toBe(true);
+        expect(isKrEquitySymbol('005930.KX')).toBe(false);
+        // 패턴 개수도 고정 — 접미사가 늘면 이 테스트가 `KR_SYMBOL_RE`와 대조하도록 갱신을 강제한다.
+        expect(KR_SYMBOL_LIKE_PATTERNS).toHaveLength(2);
     });
 
     it('findAllNonKr 은 국내(.KS/.KQ)가 아닌 행만 읽는다', async () => {

@@ -47,6 +47,18 @@ function matchingTailLength(tokens: readonly string[]): number {
 }
 
 /**
+ * 꼬리 법인격 토큰열을 더 이상 맞는 게 없을 때까지 재귀로 떼어낸다. 매 단계가 토큰을 1개
+ * 이상 줄이므로 반드시 끝나고, 전부 떼어 비게 되는 경우(`tail >= length`)는 떼지 않고
+ * 멈춘다.
+ */
+function stripTrailingTokens(tokens: readonly string[]): readonly string[] {
+    const tail = matchingTailLength(tokens);
+    return tail === 0 || tail >= tokens.length
+        ? tokens
+        : stripTrailingTokens(tokens.slice(0, tokens.length - tail));
+}
+
+/**
  * 회사명을 비교용으로 정규화한다 — 표기 흔들림(`IonQ, Inc.` ↔ `IonQ Inc`,
  * `SEALSQ Corp` ↔ `SEALSQ Corp.`)은 같은 이름으로, 실제 다른 회사는 다른 이름으로
  * 남기는 것이 목적이다. 순수 함수이며 **저장하지 않는다** — 오직 "이름이 바뀌었나"
@@ -65,11 +77,5 @@ export function normalizeCompanyName(name: string): string {
         .split(/\s+/)
         .filter(token => token.length > 0);
 
-    let end = tokens.length;
-    for (;;) {
-        const tail = matchingTailLength(tokens.slice(0, end));
-        if (tail === 0 || tail >= end) break;
-        end -= tail;
-    }
-    return tokens.slice(0, end).join(' ');
+    return stripTrailingTokens(tokens).join(' ');
 }

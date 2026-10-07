@@ -14,6 +14,7 @@ import { translateCompanyNames } from './koreanTranslator';
 import { invalidateKoreanTickerCache } from './koreanNameStore';
 import {
     planTickerNameReconcile,
+    type RenameCandidate,
     type StockListEntry,
 } from './tickerNameReconcile';
 
@@ -70,6 +71,12 @@ async function fetchStockList(): Promise<StockListEntry[]> {
  * 검토용 로그만 남긴다. 가드·상한은 `tickerNameReconcile.ts`.
  *
  * FMP·DB 실패는 던진다 — 호출부(cron)가 독립된 try로 로그를 남긴다.
+ *
+ * **EN-1 예외(`syncKrListedTickers`와 같은 지역 패턴):** 이 파일은 `lib/`에 있지만 I/O(FMP·DB)를
+ * 직접 한다. 같은 cron이 앞서 부르는 `syncKrListedTickers`가 repository를 내부에서 만들고
+ * 호출자(cron route) 하나만 쓰는 구조라, 이 파이프라인 단계도 같은 모양을 따른다 — 새로운
+ * 주입 방식을 이 슬라이스에 하나 더 두지 않는다. 순수 판정(정규화·후보 계산·가드)은
+ * `normalizeCompanyName.ts`·`tickerNameReconcile.ts`에 분리돼 있어 I/O 없이 테스트된다.
  */
 export async function reconcileUsTickerNames(): Promise<TickerNameReconcileCounts> {
     const client = tryGetDatabaseClient();
@@ -159,9 +166,7 @@ export async function reconcileUsTickerNames(): Promise<TickerNameReconcileCount
     // 심볼별로 격리한다 — 한 심볼의 쓰기 실패가 나머지를 막지 않는다. 실패한 심볼은 이름이
     // 아직 안 바뀌었거나 일부만 바뀌어 다음 날 다시 후보가 된다. 태그 무효화는 그 심볼의
     // 쓰기가 모두 성공한 뒤에만 한다(옛 데이터를 새 이름으로 굳히지 않도록).
-    let renamed = 0;
-    let failed = 0;
-    for (const c of translatable) {
+    const renameOne = async (c: RenameCandidate): Promise<boolean> => {
         const koreanName = translated[c.symbol];
         try {
             const existing = koreanTickerBySymbol.get(c.symbol);
@@ -186,12 +191,21 @@ export async function reconcileUsTickerNames(): Promise<TickerNameReconcileCount
             console.log(
                 `[ticker-names] renamed ${c.symbol}: "${c.oldName}" → "${c.newName}" (한글: ${oldKorean} → ${koreanName})`
             );
-            renamed += 1;
+            return true;
         } catch (error) {
-            failed += 1;
             console.error(`[ticker-names] rename failed ${c.symbol}:`, error);
+            return false;
         }
-    }
+    };
+
+    // 순차로 처리한다(DB 연결 하나를 60개 upsert가 한꺼번에 두드리지 않게). 결과는 심볼별
+    // 성공 여부 배열로 모아 개수만 센다.
+    const outcomes = await translatable.reduce<Promise<readonly boolean[]>>(
+        async (previous, c) => [...(await previous), await renameOne(c)],
+        Promise.resolve([])
+    );
+    const renamed = outcomes.filter(Boolean).length;
+    const failed = outcomes.length - renamed;
 
     // `setKoreanTickers`를 거치지 않고 repository에 직접 썼으므로 이 인스턴스의 한글 검색
     // 스냅샷을 직접 비운다.

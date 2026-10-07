@@ -1,4 +1,8 @@
-import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    MS_PER_MINUTE,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 
 /** 티커 검색 결과: 하루 캐시 */
 export const TICKER_SEARCH_CACHE_TTL = SECONDS_PER_DAY;
@@ -13,12 +17,8 @@ export const ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN =
  * 한글명 부분 일치 검색용 인스턴스 메모리 스냅샷의 수명. 다른 인스턴스에서 일어난
  * 변경(번역 추가·상폐 표시)은 최대 이만큼 늦게 검색에 반영된다 — 데이터 정본은 DB라
  * 노출 지연일 뿐이다.
- *
- * `MS_PER_MINUTE`로 계산하지 않는 이유: 이 파일은 `@/shared/config/time`을 부분 목으로
- * 바꾼 테스트(`fmpCryptoMembership.test.ts`)도 import하므로, 최상위에서 목에 없는 상수를
- * 읽으면 그 스위트가 로드 시점에 깨진다.
  */
-export const KOREAN_SEARCH_SNAPSHOT_TTL_MS = 600_000; // 10분
+export const KOREAN_SEARCH_SNAPSHOT_TTL_MS = 10 * MS_PER_MINUTE;
 
 /**
  * 예전 한글 티커 Redis 캐시 키(`findAll()` 전체를 JSON 배열 하나로, TTL 1년). 지금은
