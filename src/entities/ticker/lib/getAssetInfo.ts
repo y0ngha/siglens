@@ -23,7 +23,13 @@ import {
     searchBySymbol,
 } from './fmpTickerApi';
 import { translateCompanyNames } from './koreanTranslator';
-import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
+import {
+    getKoreanNames,
+    getTickerDisplayNames,
+    setKoreanTickers,
+    type TickerDisplayName,
+} from './koreanNameStore';
+import { normalizeCompanyName } from './normalizeCompanyName';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import { fireAndForget } from '@/shared/lib/backgroundTask';
 import {
@@ -300,6 +306,32 @@ async function resolveKrEquityAssetInfo(
     return info;
 }
 
+/**
+ * `korean_tickers`에 저장된 한글명을 FMP 경로에서 재사용해도 되는지 판정한다.
+ *
+ * 티커 재할당·사명 변경으로 심볼이 다른 회사로 넘어가면 저장된 영문명과 FMP가 지금 돌려준
+ * 영문명이 달라진다. 그대로 재사용하면 옛 회사의 한글명이 굳으므로, 정규화한 두 이름이
+ * 다르면 재사용하지 않고 호출부가 `translateAndPersist`로 보내게 한다. 이미 FMP 이름을
+ * 손에 쥔 경로라 추가 호출이 없다.
+ *
+ * 정본 심볼은 사람이 고른 이름이 이기므로 항상 재사용한다(`getTickerDisplayNames`가 이미
+ * 정본을 입혀 돌려준다). 저장된 영문명이 없으면(행 없이 정본만 나온 경우) 비교 대상이
+ * 없어 그대로 쓴다.
+ */
+function reusableKoreanName(
+    symbol: string,
+    fmpName: string,
+    stored: TickerDisplayName | undefined
+): string | undefined {
+    if (!stored?.koreanName) return undefined;
+    if (CANONICAL_KOREAN_NAMES.has(symbol) || stored.name === null) {
+        return stored.koreanName;
+    }
+    return normalizeCompanyName(stored.name) === normalizeCompanyName(fmpName)
+        ? stored.koreanName
+        : undefined;
+}
+
 /** Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
     __resetSingleFlightForTests(translationSingleFlight);
@@ -427,8 +459,11 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
 
     const { symbol: fmpSymbol, name, exchange, exchangeFullName } = match;
 
-    const koreanNames = await getKoreanNames([upper]);
-    const koreanName = koreanNames[upper];
+    const koreanName = reusableKoreanName(
+        upper,
+        name,
+        (await getTickerDisplayNames([upper]))[upper]
+    );
 
     const info: AssetInfo = {
         symbol: upper,

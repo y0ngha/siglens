@@ -1,8 +1,11 @@
-const { mockAfter, mockSync, mockFireAndForget } = vi.hoisted(() => ({
-    mockAfter: vi.fn(),
-    mockSync: vi.fn(),
-    mockFireAndForget: vi.fn(),
-}));
+const { mockAfter, mockSync, mockReconcile, mockFireAndForget } = vi.hoisted(
+    () => ({
+        mockAfter: vi.fn(),
+        mockSync: vi.fn(),
+        mockReconcile: vi.fn(),
+        mockFireAndForget: vi.fn(),
+    })
+);
 
 vi.mock('next/server', () => ({ after: mockAfter }));
 vi.mock('@/shared/lib/backgroundTask', () => ({
@@ -10,6 +13,9 @@ vi.mock('@/shared/lib/backgroundTask', () => ({
 }));
 vi.mock('@/entities/ticker/lib/syncKrListedTickers', () => ({
     syncKrListedTickers: mockSync,
+}));
+vi.mock('@/entities/ticker/lib/reconcileUsTickerNames', () => ({
+    reconcileUsTickerNames: mockReconcile,
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -71,6 +77,13 @@ describe('PATCH /api/cron/kr-tickers', () => {
             relisted: 0,
             guardTrip: null,
         });
+        mockReconcile.mockResolvedValue({
+            listed: 40_000,
+            compared: 30_000,
+            renamed: 2,
+            deferred: 0,
+            guardTrip: null,
+        });
     });
 
     it('CRON_SECRET이 없으면 401이고 동기화를 예약하지 않는다', async () => {
@@ -126,6 +139,56 @@ describe('PATCH /api/cron/kr-tickers', () => {
         await expect(runAfterCallback()).resolves.toBeUndefined();
         // 동기화가 실패해도 drain은 풀려야 한다 — `finally`가 아니라 try 블록에만
         // resolveSync()를 둔 회귀를 여기서 잡는다.
+        await expect(settlesPromptly(drainPromise)).resolves.toBe('settled');
+    });
+    it('KR 동기화가 끝난 뒤 이름 재대조를 실행한다', async () => {
+        await PATCH(makeRequest('Bearer test-secret'));
+        await runAfterCallback();
+
+        expect(mockSync).toHaveBeenCalledOnce();
+        expect(mockReconcile).toHaveBeenCalledOnce();
+        expect(mockSync.mock.invocationCallOrder[0]).toBeLessThan(
+            mockReconcile.mock.invocationCallOrder[0]
+        );
+    });
+
+    it('KR 동기화가 실패해도 이름 재대조는 실행된다', async () => {
+        mockSync.mockRejectedValue(new Error('data.go.kr 503'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        await PATCH(makeRequest('Bearer test-secret'));
+
+        await runAfterCallback();
+
+        expect(mockReconcile).toHaveBeenCalledOnce();
+        const logged = errorSpy.mock.calls.map(call => String(call[0]));
+        errorSpy.mockRestore();
+        expect(
+            logged.some(line => line.includes('[kr-tickers] sync failed'))
+        ).toBe(true);
+    });
+
+    it('이름 재대조가 실패해도 KR 동기화는 이미 끝났고 예외도 밖으로 안 나간다', async () => {
+        mockReconcile.mockRejectedValue(new Error('FMP 503'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        await PATCH(makeRequest('Bearer test-secret'));
+        const drainPromise = mockFireAndForget.mock.calls[0]?.[0] as
+            | Promise<void>
+            | undefined;
+
+        await expect(runAfterCallback()).resolves.toBeUndefined();
+
+        expect(mockSync).toHaveBeenCalledOnce();
+        const logged = errorSpy.mock.calls.map(call => String(call[0]));
+        errorSpy.mockRestore();
+        expect(
+            logged.some(line =>
+                line.includes('[ticker-names] reconcile failed')
+            )
+        ).toBe(true);
         await expect(settlesPromptly(drainPromise)).resolves.toBe('settled');
     });
 });

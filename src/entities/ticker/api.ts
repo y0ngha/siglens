@@ -13,6 +13,7 @@ import {
     inArray,
     isNull,
     like,
+    notLike,
     or,
     sql,
 } from 'drizzle-orm';
@@ -199,6 +200,22 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             );
     }
 
+    /**
+     * 국내 종목이 아닌 행 전부. `findAllListingStatuses`의 접미사 조건을 뒤집은 것이라
+     * 두 조회가 서로 겹치지 않는다 — 국내 이름은 KRX cron이, 그 밖은 이름 재대조가 맡는다.
+     */
+    async findAllNonKr(): Promise<KoreanTickerEntry[]> {
+        return this.db
+            .select(koreanTickerColumns)
+            .from(koreanTickers)
+            .where(
+                and(
+                    notLike(koreanTickers.symbol, '%.KS'),
+                    notLike(koreanTickers.symbol, '%.KQ')
+                )
+            );
+    }
+
     async markDelisted(symbols: readonly string[]): Promise<void> {
         // 현재 유일한 호출부(`syncKrListedTickers`)는 대량 상폐 가드가 25개로 묶어
         // 두므로 지금은 청크가 한 번에 끝난다. 그래도 `markRelisted`와 같은 크기로
@@ -284,6 +301,10 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
         return row ?? null;
     }
 
+    async findAll(): Promise<AssetTranslationRecord[]> {
+        return this.db.select(assetTranslationColumns).from(assetTranslations);
+    }
+
     async upsert(record: AssetTranslationRecord): Promise<void> {
         await withRetry(
             () =>
@@ -348,6 +369,29 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
                     }),
             DB_TRANSIENT_RETRY
         );
+    }
+
+    async deleteBySymbols(symbols: readonly string[]): Promise<void> {
+        // 이름 재대조는 하루 최대 `RENAME_BATCH_MAX`개만 지우지만, 다른 호출부가 생겨도
+        // 같은 쿼리 페이로드 한도에 걸리지 않도록 `korean_tickers`와 같은 크기로 쪼갠다.
+        for (
+            let i = 0;
+            i < symbols.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            const chunk = symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE);
+            await withRetry(
+                () =>
+                    this.db
+                        .delete(profileDescriptionTranslations)
+                        .where(
+                            inArray(profileDescriptionTranslations.symbol, [
+                                ...chunk,
+                            ])
+                        ),
+                DB_TRANSIENT_RETRY
+            );
+        }
     }
 }
 

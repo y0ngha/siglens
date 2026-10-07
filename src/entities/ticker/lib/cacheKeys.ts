@@ -1,8 +1,4 @@
-import {
-    SECONDS_PER_DAY,
-    SECONDS_PER_HOUR,
-    SECONDS_PER_YEAR,
-} from '@/shared/config/time';
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /** 티커 검색 결과: 하루 캐시 */
 export const TICKER_SEARCH_CACHE_TTL = SECONDS_PER_DAY;
@@ -13,11 +9,25 @@ export const ASSET_INFO_HOURS_WITHOUT_KOREAN = 12;
 export const ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN =
     ASSET_INFO_HOURS_WITHOUT_KOREAN * SECONDS_PER_HOUR;
 
-/** 한국어 이름 매핑: 장기 보존 (sync 스크립트로 주기 갱신) */
-export const KOREAN_NAMES_CACHE_TTL = SECONDS_PER_YEAR;
+/**
+ * 한글명 부분 일치 검색용 인스턴스 메모리 스냅샷의 수명. 다른 인스턴스에서 일어난
+ * 변경(번역 추가·상폐 표시)은 최대 이만큼 늦게 검색에 반영된다 — 데이터 정본은 DB라
+ * 노출 지연일 뿐이다.
+ *
+ * `MS_PER_MINUTE`로 계산하지 않는 이유: 이 파일은 `@/shared/config/time`을 부분 목으로
+ * 바꾼 테스트(`fmpCryptoMembership.test.ts`)도 import하므로, 최상위에서 목에 없는 상수를
+ * 읽으면 그 스위트가 로드 시점에 깨진다.
+ */
+export const KOREAN_SEARCH_SNAPSHOT_TTL_MS = 600_000; // 10분
 
-/** 한국어 티커 캐시 키 (전체 매핑 한 번에 보관). */
-export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
+/**
+ * 예전 한글 티커 Redis 캐시 키(`findAll()` 전체를 JSON 배열 하나로, TTL 1년). 지금은
+ * 아무도 읽거나 쓰지 않으며 운영 Redis에 남은 사본을 `invalidateKoreanTickerCache`가
+ * 지우기 위해서만 참조한다.
+ *
+ * TODO: 배포 후 KR cron이 한 번 지운 것을 확인하면 이 상수와 DEL 호출을 다음 정리 PR에서 제거한다.
+ */
+export const LEGACY_KOREAN_TICKERS_REDIS_KEY = 'korean:tickers';
 
 /** FMP cryptocurrency-list membership cache key. */
 export const CRYPTO_FMP_LIST_CACHE_KEY = 'crypto:fmp-list';

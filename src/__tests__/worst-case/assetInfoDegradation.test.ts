@@ -46,6 +46,7 @@ vi.mock('@/entities/ticker/lib/fmpTickerApi', async () => ({
 vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
     getKoreanNames: vi.fn().mockResolvedValue({}),
     setKoreanTickers: vi.fn().mockResolvedValue(undefined),
+    getTickerDisplayNames: vi.fn().mockResolvedValue({}),
 }));
 
 vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
@@ -55,6 +56,7 @@ vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
 vi.mock('@/entities/ticker/lib/cacheKeys', () => ({
     buildAssetInfoProvisionalCacheKey: vi.fn((s: string) => `asset:${s}`),
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN: 43200,
+    CRYPTO_FMP_LIST_CACHE_KEY: 'crypto:fmp-list',
 }));
 
 import {

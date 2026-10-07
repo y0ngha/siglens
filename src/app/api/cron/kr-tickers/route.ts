@@ -3,11 +3,14 @@ import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronReque
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { syncKrListedTickers } from '@/entities/ticker/lib/syncKrListedTickers';
+import { reconcileUsTickerNames } from '@/entities/ticker/lib/reconcileUsTickerNames';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
 
 /**
- * 한국 종목 마스터 일 1회 동기화 cron 엔드포인트.
+ * 한국 종목 마스터 일 1회 동기화 cron 엔드포인트. KR 동기화 뒤에 미국 종목 이름
+ * 재대조(`reconcileUsTickerNames`)를 이어서 돌린다 — 새 EventBridge 규칙 없이 이 일 1회
+ * 호출에 얹었다(둘은 서로 독립된 try라 한쪽 실패가 다른 쪽을 막지 않는다).
  *
  * `seo-prewarm`의 202 + `after()` 패턴만 가져오고 나머지는 걷어냈다. 그쪽은 5분 간격
  * 10분짜리 LLM 배치라 Redis 루트 락·wall-clock 데드라인·알람 8종이 필요했지만, 여기는
@@ -33,6 +36,17 @@ export async function PATCH(request: Request): Promise<Response> {
                 console.log('[kr-tickers] sync done:', JSON.stringify(counts));
             } catch (error) {
                 console.error('[kr-tickers] sync failed:', error);
+            }
+            // 독립된 try — 두 작업은 서로의 입력이 아니다. KR 동기화(data.go.kr)가
+            // 죽어도 미국 종목 이름 재대조(FMP)는 돌아야 하고, 그 반대도 같다.
+            try {
+                const counts = await reconcileUsTickerNames();
+                console.log(
+                    '[ticker-names] reconcile done:',
+                    JSON.stringify(counts)
+                );
+            } catch (error) {
+                console.error('[ticker-names] reconcile failed:', error);
             }
         })
     );

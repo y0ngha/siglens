@@ -11,7 +11,7 @@ import {
     formatCandidates,
     planKrTickerReconcile,
 } from '../src/entities/ticker/lib/krTickerReconcile';
-import { KOREAN_TICKERS_CACHE_KEY } from '../src/entities/ticker/lib/cacheKeys';
+import { LEGACY_KOREAN_TICKERS_REDIS_KEY } from '../src/entities/ticker/lib/cacheKeys';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import {
     guardRemoteWrite,
@@ -32,9 +32,9 @@ import {
  * **판단 로직은 중복되지 않는다** — 무엇을 상폐로 볼지는 `planKrTickerReconcile`,
  * 응답을 행으로 바꾸는 매핑은 `toKoreanTickerRows`가 갖고 있고 크론 라우트
  * (`syncKrListedTickers`)도 같은 두 모듈을 쓴다. 여기 남는 중복은 테이블 선언, SQL
- * 실행, 그리고 이 파일 하단의 `invalidateKoreanTickerCache`뿐이다 — 그 함수도 같은
- * 이유(아래 `invalidateKoreanTickerCache` 주석 참조)로 `koreanNameStore.ts`의 동명
- * 함수를 재사용하지 못해 여기서 다시 구현한다.
+ * 실행, 그리고 이 파일 하단의 `deleteLegacyKoreanTickersRedisKey`뿐이다 — 그 함수도 같은
+ * 이유(아래 주석 참조)로 `koreanNameStore.ts`의 `invalidateKoreanTickerCache`를
+ * 재사용하지 못해 여기서 다시 구현한다.
  */
 const koreanTickers = pgTable('korean_tickers', {
     // 길이는 schema.ts의 SYMBOL_MAX_LENGTH / EXCHANGE_MAX_LENGTH(각 32)와 일치해야 한다.
@@ -220,11 +220,11 @@ async function main() {
             );
         }
 
-        // 검색은 `korean:tickers` 캐시에 담긴 전체 목록에 substring 필터를 돌린다.
-        // TTL이 1년이라 사실상 영구다 — 비우지 않으면 방금 표시한 상폐 종목이 계속
-        // 자동완성에 뜬다. 크론(`syncKrListedTickers`)이 같은 일을 하므로, 이 스크립트만
-        // 빠지면 "복구용 경로가 복구를 완성하지 못하는" 상태가 된다.
-        await invalidateKoreanTickerCache();
+        // 한글 검색 목록은 이제 Redis가 아니라 각 인스턴스의 메모리 스냅샷(TTL 10분)이라
+        // 이 스크립트가 지울 수 있는 것이 없고, DB를 고쳤으니 최대 10분 뒤 자연히 반영된다.
+        // 남은 일은 예전 `korean:tickers` Redis 사본(수 MB, TTL 1년)을 지우는 것뿐이다 —
+        // 크론(`invalidateKoreanTickerCache`)이 같은 정리를 하며, 다음 정리 PR에서 함께 사라진다.
+        await deleteLegacyKoreanTickersRedisKey();
 
         console.log('korean_tickers KR seed complete');
     } finally {
@@ -233,19 +233,19 @@ async function main() {
 }
 
 /**
- * `koreanNameStore`를 그대로 쓰지 못하는 이유는 이 파일 상단 주석과 같다 — 그 모듈은
- * `api.ts`를 거쳐 `schema.ts`의 `server-only`에 닿는다. `cacheKeys`와 core의
- * `createCacheProvider`는 그 체인 밖이라 여기서 직접 쓸 수 있다.
+ * `koreanNameStore`의 `invalidateKoreanTickerCache`를 그대로 쓰지 못하는 이유는 이 파일
+ * 상단 주석과 같다 — 그 모듈은 `api.ts`를 거쳐 `schema.ts`의 `server-only`에 닿는다.
+ * `cacheKeys`와 core의 `createCacheProvider`는 그 체인 밖이라 여기서 직접 쓸 수 있다.
  */
-async function invalidateKoreanTickerCache(): Promise<void> {
+async function deleteLegacyKoreanTickersRedisKey(): Promise<void> {
     try {
         const cache = createCacheProvider();
         if (!cache) return;
-        await cache.delete(KOREAN_TICKERS_CACHE_KEY);
-        console.log('korean:tickers cache invalidated');
+        await cache.delete(LEGACY_KOREAN_TICKERS_REDIS_KEY);
+        console.log('legacy korean:tickers redis key deleted');
     } catch (e) {
-        // 캐시가 없거나 못 지워도 DB 상태는 이미 옳다. 다음 크론이 다시 비운다.
-        console.warn('korean:tickers cache invalidation failed', e);
+        // 못 지워도 DB 상태는 이미 옳다. 다음 크론이 다시 지운다.
+        console.warn('legacy korean:tickers redis key deletion failed', e);
     }
 }
 
