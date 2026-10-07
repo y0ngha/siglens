@@ -1088,7 +1088,7 @@ describe('생성 조율 (single-flight · 락 · 음성 캐시 · 호출 상한)
     it('호출마다 출력 상한·timeout·재시도 0을 넘긴다', async () => {
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
         expect(callAiProviderRouter.mock.calls[0][0].limits).toEqual({
-            maxOutputTokens: 1_500,
+            maxOutputTokens: 4_000,
             timeoutMs: 20_000,
             maxRetries: 0,
         });
