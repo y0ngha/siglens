@@ -16,15 +16,15 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [broadening_formation]
-token_cost: 444
-digest_hash: "9fb325a4"
+token_cost: 514
+digest_hash: "a7fe67a4"
 ---
 
 ## Detection Criteria
 
 - Higher peaks and lower valleys — a megaphone shape. The top trendline slopes up, the bottom trendline slopes down, so the range widens over time.
-- Engine rule: least-squares trendlines through the highs and the lows of the last 8 swing pivots (≥2 highs and ≥2 lows); the high line is rising (more than 0.05 ATR per bar) and the low line is falling (more than 0.05 ATR per bar). The engine does not distinguish a broadening top from a broadening bottom — read the prior trend yourself: up into the pattern = broadening top, down into it = broadening bottom.
-- Bulkowski (bt.html, broadb.html): "At least five touches total, three peaks or three valleys should touch the associated trend line with two or more touches of the other trendline." The engine's minimum (2 + 2 pivots) is looser — fewer touches means a weaker candidate.
+- Engine rule: boundary lines through confirmed swing pivots (the last 5–8 of them), each containing every bar of the pattern within 0.25 ATR (not a regression fit); the high line must rise and the low line must fall, each by at least 1.5 ATR over the pattern span, and the end width must be at least 1.3× the start width. The engine does not distinguish a broadening top from a broadening bottom — read the prior trend yourself: up into the pattern = broadening top, down into it = broadening bottom.
+- Bulkowski (bt.html, broadb.html): "At least five touches total, three peaks or three valleys should touch the associated trend line with two or more touches of the other trendline." The engine enforces this minimum: a candidate needs at least 5 touches in total, at least 3 on one line.
 - Bulkowski: "Price should cross the pattern from side to side, filling the area with price movement."
 - Breakout: a close outside either trendline; Bulkowski: it "Can occur in any direction (upward 60%)" — the same 60% for tops and bottoms.
 
@@ -38,7 +38,7 @@ Factors that increase confidence:
 - Volume trending upward within the pattern (Bulkowski, broadb.html: "Does best when volume trends upward")
 
 Factors that decrease confidence:
-- Only the engine minimum of 2 highs + 2 lows
+- Only the engine minimum of 5 touches (3 on one line, 2 on the other)
 - A single late spike creating the "broadening" — Bulkowski: this is the identification problem where price is really a channel "with an upward spike at pattern's end"
 - Throwbacks/pullbacks after the break (Bulkowski: both hurt post-breakout performance)
 
@@ -57,7 +57,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `direction` = the break side ('up' for a close above the upper trendline, 'down' for a close below the lower one); before any break the engine biases toward the side price currently sits closer to. `breakoutLevel` = that side's trendline value at the last bar; `extremeLevel` = the opposite trendline's value at the last bar (the megaphone is widest at its latest point, so the height is read there); `invalidationLevel` = the opposite trendline's value at the last bar (same as extremeLevel). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `direction` = the prior-trend direction ('up' after a rise of at least 2 ATR in the close over the 20 bars before the pattern start, 'down' after a fall) — the computed geometry assumes continuation. `breakoutLevel` = that side's trendline value at the last bar (upper line for 'up', lower for 'down'); `extremeLevel` = the breakout level minus (up) or plus (down) the height, which is the width between the lines at the last touch (the megaphone is widest at its latest touch); `invalidationLevel` = the last confirmed touch of the opposite boundary (a fixed pivot price). If the candidate is printed as 'Direction: undetermined (no prior trend)', it lists both boundaries and the height only — set `geometry` to null and state no target. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Target reliability**: Bulkowski: full-height targets are met 65–66% of the time on upward breakouts but only 41–42% on downward ones.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -76,9 +76,9 @@ When this pattern is detected, include the following in the analysis response:
 확장형 패턴 (Broadening Formation / megaphone) — neutral, confidence_weight 0.6. Bulkowski: tops (bt.html) failure up/down 18%/27%, bottoms (broadb.html) 16%/26%; both break UP 60%; "The broadening top is a poor performer."
 
 ### Detection
-- Higher peaks + lower valleys: upper trendline rising, lower trendline falling (last 8 swing pivots, each slope >0.05 ATR/bar).
+- Higher peaks + lower valleys: upper line rising, lower line falling (each ≥1.5 ATR over the span; end width ≥1.3× the start; lines through confirmed swing pivots containing all bars within 0.25 ATR).
 - Prior trend up = broadening top; down = bottom.
-- Bulkowski: ≥5 touches (3 on one line, 2+ on the other), price filling the area. Engine minimum 2+2 is looser.
+- Bulkowski: ≥5 touches (3 on one line, 2+ on the other), price filling the area. The engine requires the same minimum (5 touches in total, ≥3 on one line).
 - Breakout = CLOSE outside either line; any direction.
 
 ### Grading
@@ -88,7 +88,7 @@ When this pattern is detected, include the following in the analysis response:
 - Up-breaks outperform; weight a downside break less.
 
 ### Geometry (do not calculate targets)
-`geometry` = { direction: break side (pre-break: side price sits closer to), breakoutLevel: that side's trendline at the last bar, extremeLevel: opposite trendline at the last bar (widest point), invalidationLevel: opposite trendline at the last bar }. Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { direction: the prior-trend direction (≥2 ATR close change over the 20 bars before the pattern), breakoutLevel: that side's trendline at the last bar, extremeLevel: breakout ∓ height (width at the last touch, the widest point), invalidationLevel: the last confirmed touch of the opposite boundary }. If the candidate says 'Direction: undetermined (no prior trend)', set geometry to null (no target). Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: upper & lower trendline at last bar.

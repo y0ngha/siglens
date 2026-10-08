@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [double_bottom]
-token_cost: 578
-digest_hash: "4d53083d"
+token_cost: 590
+digest_hash: "e6b391b4"
 ---
 
 ## Detection Criteria
@@ -61,7 +61,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price; `extremeLevel` = the average of the two trough prices; `direction` = 'up'; `invalidationLevel` = the lower of the two troughs (a close below it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price (the highest confirmed peak between the troughs; both troughs must be confirmed swing lows, so a second trough still in progress is not a listed candidate); `extremeLevel` = the average of the two trough prices; `direction` = 'up'; `invalidationLevel` = the lower of the two troughs (a close below it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The lower of the two troughs serves as the invalidation level. A close below this level negates the bullish pattern.
 - **Time symmetry**: Patterns where the two troughs are roughly equidistant in time from the neckline tend to be more reliable.
 
@@ -100,7 +100,7 @@ False positives / invalidation:
 - Intraday wick above neckline without close = not confirmed.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the neckline price, extremeLevel: the average of the two trough prices, direction: 'up', invalidationLevel: the lower of the two troughs (a close below it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the neckline price (the highest confirmed peak between the extremes), extremeLevel: the average of the two trough prices, direction: 'up', invalidationLevel: the lower of the two troughs (a close below it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: both trough prices, neckline price.

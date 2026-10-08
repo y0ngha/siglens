@@ -16,15 +16,15 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_top]
-token_cost: 444
-digest_hash: "db3681c5"
+token_cost: 479
+digest_hash: "9a7e99ad"
 ---
 
 ## Detection Criteria
 
 - Price forms a gentle, rounded dome (inverted bowl / half-moon) — a slow rise, a flat-ish crest, and a slow decline. Not a sharp spike (a V-top) and not a flat range.
-- The engine fits a concave curve through the recent swing-high pivots (at least 4). The curve's vertex (the crest) must sit in the middle half of the pattern span — a crest at either edge is a partial curve, not a dome.
-- The dome must be meaningful: the spread between the highest and lowest matched high pivots is at least 2× ATR. Shallower curves are noise.
+- The engine fits a quadratic curve to the closes between two confirmed swing-low rims (rims at least 30 bars apart, within 5% of each other in price, no bar breaking below the lower rim by more than 0.25 ATR). The curve must open downward, its vertex (the crest) must sit in the middle half of the span — a crest at either edge is a partial curve, not a dome — and it must explain at least 60% of the closes' variance (R² ≥ 0.6); at least 40% of the closes must lie in the top third of the dome's height (a dome, not a V). The right rim must be recent: no more than max(20 bars, half the span) before the last bar.
+- The dome must be meaningful: its depth (from the right rim up to the dome top) is at least 2.5× ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). Shallower curves are noise.
 - Prior trend: upward leading into the pattern (Bulkowski roundingtop.html: "Upward leading to the chart pattern").
 - The two rims (the lows at the start and end of the dome) sit near the same price; Bulkowski: "58% of the time the end is slightly higher than the start."
 - Confirmation (bearish): a CLOSE below the rim — the lowest low in the pattern. Bulkowski: "Downward breakouts are a close below the lower of the two rims (the lowest low in the pattern)." Until then the dome is only a candidate.
@@ -54,12 +54,12 @@ Factors that decrease confidence:
 - **V-top / spike**: A sharp rise and fall is not a rounding top.
 - **Unconfirmed dome**: Price still above the rim — the pattern is a candidate only; the bearish thesis is not active.
 - **Right rim higher than left**: under-performs per Bulkowski.
-- **Shallow dome**: pivot spread under 2× ATR is noise, not a formation.
+- **Shallow dome**: a depth under 2.5× ATR (or under the price-share minimum) is noise, not a formation.
 - **Pullback into the rim**: a quick return to the broken rim weakens the breakdown.
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the rim — the lowest bar low from the first matched swing high to the pattern end; `extremeLevel` = the dome top (the highest matched swing high); `direction` = 'down'; `invalidationLevel` = the dome top (a close above it is an upward breakout, negating the bearish read). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lip — the lower of the two rim lows; `extremeLevel` = the dome top (the highest high between the rims); `direction` = 'down'; `invalidationLevel` = the most recent confirmed swing high after the dome top, or the dome top itself when none (a close above it is an upward breakout, negating the bearish read). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Support**: Bulkowski: "The two rims are support areas."
 - **Target reliability**: Bulkowski: 14% of downward breakouts meet the price target — the conservative (50%) level is the more realistic reference.
 
@@ -80,7 +80,7 @@ When this pattern is detected, include the following in the analysis response:
 
 ### Detection
 - Gentle rounded dome (inverted bowl) — slow rise, crest, slow decline. NOT a V-top spike, NOT a flat range.
-- Engine: concave fit through ≥4 swing highs, crest in the middle half of the span, pivot spread ≥2× ATR.
+- Engine: quadratic fit on the closes between two confirmed swing-low rims (≥30 bars apart, within 5%), crest in the middle half of the span, R² ≥ 0.6, depth ≥2.5× ATR and the price-share minimum.
 - Prior trend up into the pattern. Rims near the same price.
 - Confirmed ONLY by a CLOSE below the rim (lowest low in the pattern). Before that: candidate.
 
@@ -90,7 +90,7 @@ When this pattern is detected, include the following in the analysis response:
 - A close above the highest peak = upward breakout — dome was a pause, bearish read negated.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the rim (lowest low from the first matched swing high to pattern end), extremeLevel: the dome top (highest swing high), direction: 'down', invalidationLevel: the dome top }. Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Only 14% of down breakouts reach the full target.
+`geometry` = { breakoutLevel: the lip (the lower of the two rim lows), extremeLevel: the dome top (highest high between the rims), direction: 'down', invalidationLevel: the most recent confirmed swing high after the dome top (the dome top when none) }. Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Only 14% of down breakouts reach the full target.
 
 ### Output
 - keyPrices: rim, dome top.

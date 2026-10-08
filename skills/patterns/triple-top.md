@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_top]
-token_cost: 730
-digest_hash: "94264196"
+token_cost: 743
+digest_hash: "1c64ad6f"
 ---
 
 ## Detection Criteria
@@ -66,7 +66,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price; `extremeLevel` = the average of the three peak prices; `direction` = 'down'; `invalidationLevel` = the highest of the three peaks (a close above it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price (the lowest confirmed trough between the peaks; all three peaks must be confirmed swing highs); `extremeLevel` = the average of the three peak prices; `direction` = 'down'; `invalidationLevel` = the highest of the three peaks (a close above it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The highest of the three peaks serves as the invalidation level. A close above this level negates the bearish pattern.
 - **Time factor**: Triple Tops that take longer to form (> 40 bars) tend to produce larger projected moves due to greater distribution.
 
@@ -109,7 +109,7 @@ When this pattern is detected, include the following in the analysis response:
 - Middle peak significantly HIGHER than the other two → Head & Shoulders, not Triple Top.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the neckline price, extremeLevel: the average of the three peak prices, direction: 'down', invalidationLevel: the highest of the three peaks (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the neckline price (the lowest confirmed trough between the extremes), extremeLevel: the average of the three peak prices, direction: 'down', invalidationLevel: the highest of the three peaks (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: all three peak prices, neckline price.
