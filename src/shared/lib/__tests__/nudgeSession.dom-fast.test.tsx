@@ -2,10 +2,6 @@ import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
-import {
-    publishSymbolAnalyzed,
-    subscribeSymbolAnalyzed,
-} from '@/shared/lib/symbolAnalyzedSignal';
 
 describe('nudgeSession', () => {
     beforeEach(() => {
@@ -29,19 +25,5 @@ describe('nudgeSession', () => {
         } finally {
             spy.mockRestore();
         }
-    });
-});
-
-describe('symbolAnalyzedSignal', () => {
-    it('구독자에게 심볼을 전달하고, 구독 해제 뒤에는 전달하지 않는다', () => {
-        const listener = vi.fn();
-        const unsubscribe = subscribeSymbolAnalyzed(listener);
-
-        publishSymbolAnalyzed('AAPL');
-        unsubscribe();
-        publishSymbolAnalyzed('TSLA');
-
-        expect(listener).toHaveBeenCalledTimes(1);
-        expect(listener).toHaveBeenCalledWith('AAPL');
     });
 });

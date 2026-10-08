@@ -40,8 +40,9 @@ export interface UseAnonAnalysisNudgeResult {
 }
 
 /**
- * Anonymous signup nudge (member-reasoning-toggle spec Part B; threshold now
- * `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the first analysis). Tracks distinct symbols an anonymous visitor has analyzed today via
+ * Anonymous signup nudge (member-reasoning-toggle spec Part B; the threshold
+ * is `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the first analysis). Tracks
+ * distinct symbols an anonymous visitor has analyzed today via
  * `recordAnonSymbolAnalysis`, and opens a soft nudge modal the first time the
  * count crosses the threshold — once per day (`hasNudgeShownToday`/
  * `markNudgeShownToday`). Members are always a no-op: the counter and modal

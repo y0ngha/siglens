@@ -1,4 +1,5 @@
 import { test as base, expect } from '@playwright/test';
+import { SESSION_STORAGE_NUDGE_SHOWN_KEY } from '@/shared/lib/storageKeys';
 
 // ai.localhost:4300 is the SiglensAI subtree host (`ai` project, agent-chat.spec.ts) —
 // same app/server, just routed by `src/proxy.ts` on Host, so it belongs in the allowlist
@@ -18,6 +19,18 @@ const ALLOWED_PROTOCOLS = new Set(['data:', 'blob:', 'chrome-extension:']);
  */
 export const test = base.extend({
     page: async ({ page }, use) => {
+        // 넛지 모달(비회원 가입 넛지·회원 메일 리포트 넛지)을 모든 스펙에서 끈다. 비회원
+        // 가입 넛지는 그날 첫 분석이 렌더되면 뜨는 화면 전체 오버레이라, 끄지 않으면 종목
+        // 페이지를 연 뒤의 클릭이 전부 모달에 가로막힌다. 넛지들은 "이 탭 세션에 이미 띄움"
+        // 플래그를 보면 뜨지 않으므로(`shared/lib/nudgeSession`) 그 플래그를 미리 심는다.
+        // 넛지 동작 자체는 단위 테스트(`useAnonAnalysisNudge`·`useEmailReportNudge`)가 맡는다.
+        await page.addInitScript(key => {
+            try {
+                sessionStorage.setItem(key, '1');
+            } catch {
+                // 저장소가 막힌 브라우저 — 넛지가 떠도 이 스펙만의 문제로 드러난다.
+            }
+        }, SESSION_STORAGE_NUDGE_SHOWN_KEY);
         const violations: string[] = [];
         await page.route('**/*', route => {
             const url = new URL(route.request().url());

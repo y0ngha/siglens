@@ -50,9 +50,14 @@ function isExcludedPath(pathname: string): boolean {
     );
 }
 
-const noopSubscribe = () => () => {};
+/** 저장소 변경을 구독하지 않는다 — 플래그는 이 훅이 직접 쓰고, 다른 탭의 변경은 따라가지 않는다. */
+const noopSubscribe = (): (() => void) => () => {};
 
-/** 설정 넛지 처리 결과 — `deferred`는 이번 세션에 다른 넛지가 이미 떠서 미룬 경우다. */
+/**
+ * 설정 넛지 처리 결과. `deferred`는 이번 탭 세션에 다른 넛지가 이미 떠서 미룬 경우다 —
+ * 세션 플래그는 탭을 닫기 전에는 풀리지 않으므로, 같은 탭의 SPA 이동에서는 다시 판정하지
+ * 않고 다음 세션(새 탭·재방문)에 권한다.
+ */
 type SetupOutcome = 'shown' | 'alreadyEnabled' | 'deferred';
 
 /**
@@ -82,17 +87,19 @@ interface OpenNudge {
  * 한 탭 세션에는 어떤 넛지든 하나만 띄운다(`nudgeSession`, 비회원 가입 넛지와 공유).
  * 기록은 localStorage에 회원 id별로 둔다 — 기기를 바꾸면 한 번 더 뜰 수 있는 소프트 넛지다.
  */
-export function useEmailReportNudge(): {
+export interface UseEmailReportNudgeResult {
+    /** 지금 띄울 넛지(현재 회원의 것만). 없으면 `null`. */
     nudge: EmailReportNudge | null;
     close: () => void;
-} {
+}
+
+export function useEmailReportNudge(): UseEmailReportNudgeResult {
     const [openNudge, setOpenNudge] = useState<OpenNudge | null>(null);
     const [setupDecision, setSetupDecision] = useState<SetupDecision | null>(
         null
     );
     const pathname = useAppPathname();
     const { data: user } = useCurrentUser();
-    const { holdings, isLoading: isHoldingsLoading } = usePortfolioHoldings();
 
     const userId = user?.id ?? null;
     const nudge =
@@ -108,17 +115,29 @@ export function useEmailReportNudge(): {
         () => true
     );
 
+    const isVerifiedMember = user != null && user.emailVerified;
+    const isExcluded = isExcludedPath(pathname);
+    // 보유종목은 설정 권유를 아직 판정해야 할 때만 직접 조회한다 — 이 호스트는 모든 라우트에
+    // 마운트되므로, 그렇지 않으면 회원이 페이지를 열 때마다 Server Action이 하나씩 더 나가
+    // 다른 액션을 그만큼 늦춘다. 종목 넛지는 종목 페이지가 이미 받아 둔 같은 키의 캐시를 읽는다.
+    const { holdings, hasData: hasHoldings } = usePortfolioHoldings({
+        enabled: isVerifiedMember && !storedSetupShown && !isExcluded,
+    });
+
     const isSetupCandidate =
-        user != null &&
-        user.emailVerified &&
-        !isHoldingsLoading &&
+        isVerifiedMember &&
+        hasHoldings &&
         holdings.length > 0 &&
-        !isExcludedPath(pathname) &&
+        !isExcluded &&
         !storedSetupShown &&
         setupDecision?.userId !== user.id;
     const { settings } = useEmailReportSettings({ enabled: isSetupCandidate });
 
-    // 렌더 중 조정(EF-1) — 수신 설정이 도착한 이번 렌더에 한 번만 판정한다.
+    // 렌더 중 조정(EF-1) — 수신 설정이 도착한 이번 렌더에 한 번만 판정한다. 여기서
+    // localStorage·sessionStorage를 읽어도 안전한 이유: 이 분기는 회원 정보와 수신 설정이
+    // 모두 도착한 뒤(= 하이드레이션 이후 클라이언트)에만 들어오고, 판정 결과를 상태에 고정해
+    // `setupDecision`이 생기면 다시 들어오지 않는다. 재렌더·StrictMode 이중 렌더에서 다시
+    // 읽어도 같은 값이 나오고, 쓰기는 아래 effect에서만 한다.
     if (isSetupCandidate && settings != null && user != null) {
         const show = shouldShowSetupNudge(readMemberNudgeRecord(user.id), {
             emailVerified: user.emailVerified,
@@ -152,9 +171,9 @@ export function useEmailReportNudge(): {
     }, [setupDecision]);
 
     // 구독 콜백이 최신 값을 읽도록 렌더마다 갱신한다(구독은 한 번만 건다).
-    const latestRef = useRef({ user, holdings, isHoldingsLoading });
+    const latestRef = useRef({ user, holdings, hasHoldings });
     useEffect(() => {
-        latestRef.current = { user, holdings, isHoldingsLoading };
+        latestRef.current = { user, holdings, hasHoldings };
     });
 
     useEffect(
@@ -163,7 +182,7 @@ export function useEmailReportNudge(): {
                 const latest = latestRef.current;
                 if (latest.user == null || !latest.user.emailVerified) return;
                 // 보유 종목을 모르면 포트폴리오 밖인지 판정할 수 없어 세지 않는다.
-                if (latest.isHoldingsLoading) return;
+                if (!latest.hasHoldings) return;
                 const upper = symbol.toUpperCase();
                 const inPortfolio = latest.holdings.some(
                     h => h.symbol.toUpperCase() === upper

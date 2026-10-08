@@ -34,6 +34,30 @@ export function AnalysisSignupNudgeModal({
     const t = useTranslations('features.analysis-nudge');
     const tA11y = useTranslations('features.reasoning-toggle.a11y');
 
+    // 문구 종류별 아이콘·제목·본문. `Record`라 종류가 늘면 여기서 컴파일 오류로 드러난다 —
+    // 이분 분기였다면 새 종류가 조용히 한쪽 문구로 떨어진다.
+    const content: Record<
+        SignupNudgeVariant,
+        { Icon: typeof MailIcon; title: string; body: string }
+    > = {
+        emailReport: {
+            Icon: MailIcon,
+            title: t('AnalysisSignupNudgeModal.7e84b8'),
+            body: t('AnalysisSignupNudgeModal.ac43bc'),
+        },
+        reasoning: {
+            Icon: LayersIcon,
+            title: t('AnalysisSignupNudgeModal.84ff73'),
+            // The object-particle `을` assumes REASONING_FEATURE_LABEL_KEY ends in a
+            // consonant (batchim) — true for '상세 분석' (분석 ends in 석). Revisit the
+            // particle (을/를) if the label ever changes to a vowel-final word.
+            body: t('AnalysisSignupNudgeModal.486011', {
+                v0: tA11y(REASONING_FEATURE_LABEL_KEY),
+            }),
+        },
+    };
+    const { Icon, title, body } = content[variant];
+
     return (
         <ModalShell
             titleId={TITLE_ID}
@@ -42,39 +66,13 @@ export function AnalysisSignupNudgeModal({
             className="max-w-sm bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-700"
         >
             <div className="mb-4 flex flex-col items-center gap-3 text-center">
-                {variant === 'emailReport' ? (
-                    <>
-                        <MailIcon className="size-8 text-primary-400" />
-                        <h2
-                            id={TITLE_ID}
-                            className="font-semibold text-secondary-50"
-                        >
-                            {t('AnalysisSignupNudgeModal.7e84b8')}
-                        </h2>
-                        <p className="text-sm leading-relaxed text-secondary-300">
-                            {t('AnalysisSignupNudgeModal.ac43bc')}
-                        </p>
-                    </>
-                ) : (
-                    <>
-                        <LayersIcon className="size-8 text-primary-400" />
-                        <h2
-                            id={TITLE_ID}
-                            className="font-semibold text-secondary-50"
-                        >
-                            {t('AnalysisSignupNudgeModal.84ff73')}
-                        </h2>
-                        <p className="text-sm leading-relaxed text-secondary-300">
-                            {/* The object-particle `을` assumes REASONING_FEATURE_LABEL_KEY
-                                ends in a consonant (batchim) — true for '상세 분석'
-                                (분석 ends in 석). Revisit the particle (을/를) if the
-                                label ever changes to a vowel-final word. */}
-                            {t('AnalysisSignupNudgeModal.486011', {
-                                v0: tA11y(REASONING_FEATURE_LABEL_KEY),
-                            })}
-                        </p>
-                    </>
-                )}
+                <Icon className="size-8 text-primary-400" />
+                <h2 id={TITLE_ID} className="font-semibold text-secondary-50">
+                    {title}
+                </h2>
+                <p className="text-sm leading-relaxed text-secondary-300">
+                    {body}
+                </p>
             </div>
 
             <div className="flex flex-col gap-2">

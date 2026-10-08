@@ -99,6 +99,34 @@ describe('usePortfolioHoldings', () => {
         });
     });
 
+    it('hasData는 받아 오기 전 false, 받은 뒤(빈 목록이어도) true다', async () => {
+        mockGetPortfolioHoldingsAction.mockResolvedValue([]);
+
+        const { result } = renderHook(() => usePortfolioHoldings(), {
+            wrapper: makeWrapper(),
+        });
+
+        expect(result.current.hasData).toBe(false);
+        await waitFor(() => {
+            expect(result.current.hasData).toBe(true);
+        });
+        expect(result.current.holdings).toEqual([]);
+    });
+
+    it('enabled: false면 요청하지 않고 hasData도 false다', async () => {
+        mockGetPortfolioHoldingsAction.mockResolvedValue([HOLDING]);
+
+        const { result } = renderHook(
+            () => usePortfolioHoldings({ enabled: false }),
+            { wrapper: makeWrapper() }
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 20));
+        expect(mockGetPortfolioHoldingsAction).not.toHaveBeenCalled();
+        expect(result.current.hasData).toBe(false);
+        expect(result.current.isLoading).toBe(false);
+    });
+
     it('save.mutateAsync calls savePortfolioHoldingAction and invalidates the list on success', async () => {
         mockSavePortfolioHoldingAction.mockResolvedValue({
             status: 'ok',

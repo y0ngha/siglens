@@ -27,10 +27,39 @@ export function EmailReportNudgeModal({
     onClose,
 }: EmailReportNudgeModalProps) {
     const t = useTranslations('features.email-report-nudge');
-    const isSetup = nudge.kind === 'setup';
-    const href = isSetup
-        ? SETTINGS_HREF
-        : `/portfolio?symbol=${encodeURIComponent(nudge.symbol)}`;
+    // 넛지 종류별 아이콘·문구·이동 경로를 한 번에 정한다. `kind`가 늘면 switch가 컴파일
+    // 오류(빠진 분기)로 드러난다.
+    const content = ((): {
+        Icon: typeof MailIcon;
+        title: string;
+        body: string;
+        cta: string;
+        href: string;
+    } => {
+        switch (nudge.kind) {
+            case 'setup':
+                return {
+                    Icon: MailIcon,
+                    title: t('EmailReportNudgeModal.7e84b8'),
+                    body: t('EmailReportNudgeModal.daa53b', {
+                        v0: nudge.holdingsCount,
+                    }),
+                    cta: t('EmailReportNudgeModal.8be329'),
+                    href: SETTINGS_HREF,
+                };
+            case 'symbol':
+                return {
+                    Icon: PortfolioIcon,
+                    title: t('EmailReportNudgeModal.5da22e'),
+                    body: t('EmailReportNudgeModal.15049a', {
+                        v0: nudge.symbol,
+                    }),
+                    cta: t('EmailReportNudgeModal.4a3bb0'),
+                    href: `/portfolio?symbol=${encodeURIComponent(nudge.symbol)}`,
+                };
+        }
+    })();
+    const { Icon } = content;
 
     return (
         <ModalShell
@@ -40,36 +69,22 @@ export function EmailReportNudgeModal({
             className="max-w-sm bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-700"
         >
             <div className="mb-4 flex flex-col items-center gap-3 text-center">
-                {isSetup ? (
-                    <MailIcon className="size-8 text-primary-400" />
-                ) : (
-                    <PortfolioIcon className="size-8 text-primary-400" />
-                )}
+                <Icon className="size-8 text-primary-400" />
                 <h2 id={TITLE_ID} className="font-semibold text-secondary-50">
-                    {isSetup
-                        ? t('EmailReportNudgeModal.7e84b8')
-                        : t('EmailReportNudgeModal.5da22e')}
+                    {content.title}
                 </h2>
                 <p className="text-sm leading-relaxed text-secondary-300">
-                    {isSetup
-                        ? t('EmailReportNudgeModal.daa53b', {
-                              v0: nudge.holdingsCount,
-                          })
-                        : t('EmailReportNudgeModal.15049a', {
-                              v0: nudge.symbol,
-                          })}
+                    {content.body}
                 </p>
             </div>
 
             <div className="flex flex-col gap-2">
                 <Link
-                    href={href}
+                    href={content.href}
                     onClick={onClose}
                     className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                 >
-                    {isSetup
-                        ? t('EmailReportNudgeModal.8be329')
-                        : t('EmailReportNudgeModal.4a3bb0')}
+                    {content.cta}
                 </Link>
                 <button
                     type="button"

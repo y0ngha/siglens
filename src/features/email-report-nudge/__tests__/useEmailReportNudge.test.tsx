@@ -5,16 +5,20 @@ const state = vi.hoisted(() => ({
     settings: undefined as unknown,
     pathname: '/AAPL',
     settingsEnabledArgs: [] as boolean[],
+    holdingsEnabledArgs: [] as boolean[],
 }));
 
 vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: () => ({ data: state.user }),
 }));
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings', () => ({
-    usePortfolioHoldings: () => ({
-        holdings: state.holdings,
-        isLoading: state.holdingsLoading,
-    }),
+    usePortfolioHoldings: ({ enabled }: { enabled: boolean }) => {
+        state.holdingsEnabledArgs.push(enabled);
+        return {
+            holdings: state.holdingsLoading ? [] : state.holdings,
+            hasData: !state.holdingsLoading,
+        };
+    },
 }));
 vi.mock('@/entities/email-report/hooks/useEmailReportSettings', () => ({
     useEmailReportSettings: ({ enabled }: { enabled: boolean }) => {
@@ -61,6 +65,7 @@ describe('useEmailReportNudge', () => {
         state.settings = OFF;
         state.pathname = '/AAPL';
         state.settingsEnabledArgs = [];
+        state.holdingsEnabledArgs = [];
     });
 
     describe('설정 권유', () => {
@@ -75,7 +80,7 @@ describe('useEmailReportNudge', () => {
             expect(hasNudgeShownThisSession()).toBe(true);
         });
 
-        it('이미 띄운 회원은 수신 설정을 조회하지도 않는다', () => {
+        it('이미 띄운 회원은 수신 설정도 보유종목도 직접 조회하지 않는다', () => {
             writeMemberNudgeRecord('u-1', {
                 ...EMPTY_MEMBER_NUDGE_RECORD,
                 setupShown: true,
@@ -85,6 +90,13 @@ describe('useEmailReportNudge', () => {
 
             expect(result.current.nudge).toBeNull();
             expect(state.settingsEnabledArgs.every(e => !e)).toBe(true);
+            expect(state.holdingsEnabledArgs.every(e => !e)).toBe(true);
+        });
+
+        it('판정 전인 인증 회원은 보유종목을 조회한다', () => {
+            renderHook(() => useEmailReportNudge());
+
+            expect(state.holdingsEnabledArgs[0]).toBe(true);
         });
 
         it('이미 수신 중이면 띄우지 않고, 다시 조회하지 않도록 기록한다', () => {
@@ -209,6 +221,16 @@ describe('useEmailReportNudge', () => {
             expect(readMemberNudgeRecord('u-1').symbolCounts.TSLA).toBe(
                 SYMBOL_NUDGE_MIN_ANALYSES
             );
+        });
+
+        it('보유종목을 아직 모르면 포트폴리오 밖인지 판정할 수 없어 세지 않는다', () => {
+            state.holdingsLoading = true;
+            const { result } = renderHook(() => useEmailReportNudge());
+
+            act(() => publishSymbolAnalyzed('TSLA'));
+
+            expect(result.current.nudge).toBeNull();
+            expect(readMemberNudgeRecord('u-1').symbolCounts).toEqual({});
         });
 
         it('비회원 분석 신호는 무시한다', () => {

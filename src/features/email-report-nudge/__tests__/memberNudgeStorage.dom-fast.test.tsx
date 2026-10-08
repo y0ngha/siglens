@@ -40,6 +40,30 @@ describe('memberNudgeStorage', () => {
         expect(readMemberNudgeRecord('u-1')).toEqual(EMPTY_MEMBER_NUDGE_RECORD);
     });
 
+    it.each([
+        ['문자열 카운트', { ...RECORD, symbolCounts: { TSLA: '2' } }],
+        ['배열 카운트', { ...RECORD, symbolCounts: [2] }],
+        ['문자열이 아닌 넛지 심볼', { ...RECORD, symbolsNudged: [1] }],
+        ['숫자가 아닌 시각', { ...RECORD, lastSymbolNudgeAt: '123' }],
+    ])('중첩 값이 깨진 기록(%s)은 빈 기록으로 본다', (_, broken) => {
+        localStorage.setItem(
+            LOCAL_STORAGE_MEMBER_EMAIL_REPORT_NUDGE_KEY,
+            JSON.stringify({ 'u-1': broken })
+        );
+        expect(readMemberNudgeRecord('u-1')).toEqual(EMPTY_MEMBER_NUDGE_RECORD);
+    });
+
+    it('최상위가 배열이면 빈 저장소로 보고, 쓰기가 덮어쓴다', () => {
+        localStorage.setItem(
+            LOCAL_STORAGE_MEMBER_EMAIL_REPORT_NUDGE_KEY,
+            '[1]'
+        );
+        expect(readMemberNudgeRecord('u-1')).toEqual(EMPTY_MEMBER_NUDGE_RECORD);
+
+        writeMemberNudgeRecord('u-1', RECORD);
+        expect(readMemberNudgeRecord('u-1')).toEqual(RECORD);
+    });
+
     it('깨진 JSON은 빈 기록으로 읽고, 다음 쓰기가 덮어써 복구된다', () => {
         localStorage.setItem(LOCAL_STORAGE_MEMBER_EMAIL_REPORT_NUDGE_KEY, '{{');
         expect(readMemberNudgeRecord('u-1')).toEqual(EMPTY_MEMBER_NUDGE_RECORD);
