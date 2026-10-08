@@ -24,25 +24,6 @@ export interface PlainGenerationKey {
 }
 
 /**
- * 한 번의 LLM 호출 상한(ms). 어댑터가 **스트림 본문 읽기까지 포함한 호출 전체**의 마감으로
- * 건다(`createCallDeadline`) — SDK의 `timeout`은 응답 헤더가 도착할 때까지만 재므로, 어댑터가
- * 본문을 따로 묶지 않으면 이 값은 느린 스트림을 끊지 못한다.
- *
- * 사이징 가정: 출력 상한 `PLAIN_MAX_OUTPUT_TOKENS`(4,000토큰)을 DeepSeek flash가 실측
- * 처리량으로 끝까지 쓰는 최악의 경우를 덮는다. `plainModel.ts`의 실측은 371~467토큰을
- * 4~6초에 냈다 = 약 75~100토큰/초. 4,000토큰 ÷ 75 ≈ 53초(빠르면 40초)다. 실측 하한에 딱 맞춘
- * 60초는 혼잡 시간대처럼 처리량이 조금만 떨어져도 정상 글을 끊으므로, 처리량이 실측 하한의
- * 약 60%(≈45토큰/초)까지 떨어져도 상한까지 쓴 글이 끝나도록 90초로 둔다. 정상 응답(수 초)에는
- * 영향이 없고, 늘어난 만큼은 락 TTL(보유자가 죽었을 때 다른 인스턴스가 기다리는 시간)로만 쓰인다.
- * 사용자 경로의 마감(15초)·프리웜의 마감(30초)은 **레이스일 뿐 요청을 끊지 못하므로**, 마감을
- * 넘긴 호출을 실제로 끊는 것은 이 값이다.
- *
- * 이 값이 곧 락 TTL(아래)의 기준이다 — TTL이 보유자가 죽었을 때 다른 인스턴스가 평이화를
- * 못 받는 시간이다.
- */
-export const PLAIN_CALL_TIMEOUT_MS = 90_000;
-
-/**
  * 평이화 한 번의 출력 토큰 상한.
  *
  * 예전에는 상한을 넘기지 않아 어댑터가 스펙 최대치(DeepSeek 393,216)를 그대로 보냈고,
@@ -64,6 +45,36 @@ export const PLAIN_MEASURED_MIN_TOKENS_PER_SECOND = 75;
 export const PLAIN_THROUGHPUT_SAFETY_FACTOR = 0.6;
 
 /**
+ * 한 번의 LLM 호출 상한(ms). 어댑터가 **스트림 본문 읽기까지 포함한 호출 전체**의 마감으로
+ * 건다(`createCallDeadline`) — SDK의 `timeout`은 응답 헤더가 도착할 때까지만 재므로, 어댑터가
+ * 본문을 따로 묶지 않으면 이 값은 느린 스트림을 끊지 못한다.
+ *
+ * 사이징 가정: 출력 상한 `PLAIN_MAX_OUTPUT_TOKENS`(4,000토큰)을 DeepSeek flash가 실측
+ * 처리량으로 끝까지 쓰는 최악의 경우를 덮는다. `plainModel.ts`의 실측은 371~467토큰을
+ * 4~6초에 냈다 = 약 75~100토큰/초. 4,000토큰 ÷ 75 ≈ 53초(빠르면 40초)다. 실측 하한에 딱 맞춘
+ * 60초는 혼잡 시간대처럼 처리량이 조금만 떨어져도 정상 글을 끊으므로, 처리량이 실측 하한의
+ * 약 60%(≈45토큰/초)까지 떨어져도 상한까지 쓴 글이 끝나도록 아래 산식으로 잡는다(= 90초).
+ * 재측정은 `[Usage]` 로그의 `analysis-plain` 출력 토큰 ÷ 지연으로 처리량을 구해 위 두 상수를 갱신한다. 정상 응답(수 초)에는
+ * 영향이 없고, 늘어난 만큼은 락 TTL(보유자가 죽었을 때 다른 인스턴스가 기다리는 시간)로만 쓰인다.
+ * 사용자 경로의 마감(15초)·프리웜의 마감(30초)은 **레이스일 뿐 요청을 끊지 못하므로**, 마감을
+ * 넘긴 호출을 실제로 끊는 것은 이 값이다.
+ *
+ * 이 값이 곧 락 TTL(아래)의 기준이다 — TTL이 보유자가 죽었을 때 다른 인스턴스가 평이화를
+ * 못 받는 시간이다.
+ */
+/** 호출 상한을 올려 잡는 단위(ms) — 산식 결과(≈88.9초)를 운영 로그에서 읽기 쉬운 값으로 맞춘다. */
+const PLAIN_CALL_TIMEOUT_ROUNDING_MS = 10_000;
+
+export const PLAIN_CALL_TIMEOUT_MS =
+    Math.ceil(
+        ((PLAIN_MAX_OUTPUT_TOKENS /
+            (PLAIN_MEASURED_MIN_TOKENS_PER_SECOND *
+                PLAIN_THROUGHPUT_SAFETY_FACTOR)) *
+            MS_PER_SECOND) /
+            PLAIN_CALL_TIMEOUT_ROUNDING_MS
+    ) * PLAIN_CALL_TIMEOUT_ROUNDING_MS;
+
+/**
  * 한 생성(첫 시도 + 재시도 한 번)이 LLM을 부르는 최대 횟수. 락 TTL 계산에 쓴다.
  */
 export const PLAIN_MAX_CALLS_PER_GENERATION = 2;
@@ -80,8 +91,9 @@ export const PLAIN_LOCK_MARGIN_SECONDS = 10;
  * 첫 호출이 마감으로 던지면 재시도하지 않으므로(`api.ts`의 `generate`) 그 경로의 최악은 1회지만,
  * 느린 호출이 가드 거부로 끝나 재시도까지 느린 경우는 여전히 2회다.
  *
- * 정상 경로는 생성이 끝나는 즉시 락을 푼다 — 이 값은 프로세스가 죽어 락을 못 푼
- * 경우에만 의미가 있고, 그동안 같은 좌표의 다른 인스턴스는 평이화를 받지 못한다(원본 노출).
+ * 정상 경로는 생성이 끝나는 즉시 락을 푼다. SIGTERM 종료 때도 `api.ts`의 `runOwnedGeneration`이
+ * 정리 체인(생성 → 락 해제)을 `fireAndForget`으로 SIGTERM 드레인에 등록해 두므로 락이 풀린 뒤에
+ * 프로세스가 내려간다. 이 값은 SIGKILL·크래시처럼 드레인이 못 지킨 경우에만 의미가 있고, 그동안 같은 좌표의 다른 인스턴스는 평이화를 받지 못한다(원본 노출).
  */
 export const PLAIN_LOCK_TTL_SECONDS =
     (PLAIN_CALL_TIMEOUT_MS / MS_PER_SECOND) * PLAIN_MAX_CALLS_PER_GENERATION +

@@ -6,8 +6,8 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 1764
-digest_hash: "f872364c"
+token_cost: 1768
+digest_hash: "08c65fd4"
 ---
 
 ## Pattern Index (compressed)
@@ -19,7 +19,7 @@ chart, even when that pattern's detailed skill was not injected this run.
 
 The **detailed** judging criteria for a pattern — geometry tolerances,
 confirmation nuance, wider invalidation context — arrive in a separate skill
-only when the engine measures that specific pattern (or a resemblance to it)
+only when the engine measures that specific pattern (or something close to it)
 on the current chart. This index is the cheap always-present
 fallback so no visible pattern goes unnamed just because its full guide
 wasn't gated in. Each entry below carries a compact `geom:` definition
@@ -75,7 +75,7 @@ derives 측정 목표가/보수 목표가(50%) from `geometry`.
 
 - Bulkowski: many chart patterns perform worse than in the 1990s — descending triangles almost in half (thepatternsite.com/dt.html; decade table: thepatternsite.com/TimePerformance.html) — never call a trade on a pattern alone.
 - Patterns **not** in the current prompt's detailed set may still be reported if clearly visible — name them and describe the structure. The **reduced confidence** attaches ONLY to the pattern-identification claim itself (its detailed skill's tolerances/nuance were not supplied this run) — it does **not** reduce the confidence of the overall analysis. Everything else — key levels, indicators, strategies, and the action plan — must stay fully committed and quantified.
-- A pattern listed with a Candidate id in the computed chart-pattern section: confirm or reject it by the actual shape; when confirmed, copy its printed geometry (the `geom:` line above defines each field) and set its candidateId. A pattern you can clearly see that the section does not list may still be named and described, with candidateId empty and `geometry` null — only listed patterns carry levels and targets. A listed Candidate prints a status — `forming`, `broken` (the last close is already beyond the breakout level) or, for boundary patterns and flags, `failed breakout` (a close went beyond the breakout line after its last touch and the last close is back inside: the structure is intact but the break failed and is unconfirmed) — report it as printed. A pattern named only as an unconfirmed resemblance is reported as detected: false with no levels. A boundary pattern (symmetrical triangle, rectangle, channel, broadening formation) with no prior trend (direction undetermined) has `geometry` null: it has no breakout side and no target. Never compute a measured target, conservative target, or risk/reward yourself — the app derives 측정 목표가/보수 목표가(50%) from `geometry`.
+- A pattern listed with a Candidate id in the computed chart-pattern section: confirm or reject it by the actual shape; when confirmed, copy its printed geometry (the `geom:` line above defines each field) and set its candidateId. A pattern you can clearly see that the section does not list may still be named and described, with candidateId empty and `geometry` null — only listed patterns carry levels and targets. A listed Candidate prints a status — `forming`, `broken` (the last close is already beyond the breakout level) or, for boundary patterns and flags, `failed breakout` (a close went beyond the breakout line after its last touch and the last close is back inside: the structure is intact but the break failed and is unconfirmed) — describe what that status means in the answer language and never print the English code itself. A boundary pattern (symmetrical triangle, rectangle, channel, broadening formation) with no prior trend (direction undetermined) has `geometry` null: it has no breakout side and no target. Never compute a measured target, conservative target, or risk/reward yourself — the app derives 측정 목표가/보수 목표가(50%) from `geometry`.
 - **Beyond this catalog:** the 22 patterns above are not an exhaustive list of what you may report — you may also name any other well-established chart pattern you clearly see (e.g. diamond, island reversal), using its standard English name. There is no `geom:` line and no Candidate id for these, so set candidateId empty and `geometry` null: only a listed Candidate carries levels and targets. Never compute a measured target, conservative target, or risk/reward yourself.
 
 <!-- PROMPT_DIGEST:START -->
@@ -105,7 +105,7 @@ Neutral/bilateral:
 - ascending_channel: parallel rising lines; up-trend until a close outside (below lower = up-trend broken). geom: B=line on dir side@last bar, E=B∓channel height, dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
 - descending_channel: parallel falling lines; down-trend until a close outside (above upper = down-trend broken). geom: B=line on dir side@last bar, E=B∓channel height, dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
 - broadening_formation: higher highs + lower lows (megaphone); neutral until a close outside (Bulkowski: up 60%). geom: B=line on dir side@last bar, E=B∓height (width at last touch), dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
-Directive: patterns NOT in this prompt's detailed set may still be reported if clearly visible — name and describe them, but the REDUCED confidence attaches ONLY to the pattern-identification claim (detailed nuance not supplied this run), NOT to the overall analysis. Key levels, indicators, strategies, and action plan stay fully committed and quantified. Listed (Candidate id) patterns: copy their printed geometry (null when `dir` is undetermined). Report a listed Candidate's printed status as is (`forming` / `broken` / `failed breakout` = a close beyond the breakout line after its last touch, last close back inside: structure intact, break failed and unconfirmed). An unlisted pattern you clearly see may be named with candidateId empty and `geometry` null; an unconfirmed resemblance is detected: false. Never compute targets — the app derives 측정 목표가/보수 목표가(50%) from `geometry`.
+Directive: patterns NOT in this prompt's detailed set may still be reported if clearly visible — name and describe them, but the REDUCED confidence attaches ONLY to the pattern-identification claim (detailed nuance not supplied this run), NOT to the overall analysis. Key levels, indicators, strategies, and action plan stay fully committed and quantified. Listed (Candidate id) patterns: copy their printed geometry (null when `dir` is undetermined). A listed Candidate's status (`forming` / `broken` / `failed breakout` = a close beyond the breakout line after its last touch, last close back inside: structure intact, break failed and unconfirmed) is an internal code: say what it means in the answer language, never print the code. An unlisted pattern you clearly see may be named with candidateId empty and `geometry` null. Never compute targets — the app derives 측정 목표가/보수 목표가(50%) from `geometry`.
 Evidence: Bulkowski — many patterns perform worse than in the 1990s (descending triangles almost half, thepatternsite.com/dt.html); never call a trade on a pattern alone.
 Beyond this catalog: the 22 above are not exhaustive — also name any other well-established chart pattern you clearly see (e.g. diamond, island reversal) by its standard English name. No `geom:` line or Candidate id exists for these: candidateId empty, `geometry` null. Never compute a target or R:R yourself.
 <!-- PROMPT_DIGEST:END -->

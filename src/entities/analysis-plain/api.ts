@@ -5,6 +5,7 @@ import { stripMarkdownCodeBlock } from '@/entities/llm-provider/lib/parseJsonRes
 import type { ProviderCallLimits } from '@/entities/llm-provider/model';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { sleep } from '@/shared/lib/sleep';
+import { fireAndForget } from '@/shared/lib/backgroundTask';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import type { PlainTextRepository } from '@/shared/db/types';
@@ -345,7 +346,7 @@ function runOwnedGeneration(
     generate: () => PlainFlight
 ): PlainFlight {
     const flight = generate();
-    void flight.result
+    const cleanup = flight.result
         .then(async text => {
             try {
                 if (text === null) await markPlainGenerationFailed(key);
@@ -357,6 +358,13 @@ function runOwnedGeneration(
         .catch((error: unknown) => {
             console.error('[analysisPlain] lock cleanup failed', error);
         });
+    // SIGTERM 드레인(`drainBackgroundTasks`)에 등록한다. 등록 대상이 생성 + 락 해제까지의
+    // 정리 체인이라, 종료 시 드레인이 락이 풀릴 때까지 기다린다. 등록하지 않으면 프로세스가
+    // 락을 쥔 채 죽어 `PLAIN_LOCK_TTL_SECONDS`(190초) 동안 다른 요청이 사용자 마감까지 기다리다
+    // 원본으로 물러난다. 호출 상한(`PLAIN_CALL_TIMEOUT_MS` 90초)이 드레인 예산(180초)보다
+    // 짧아 대기가 예산을 넘기지 않는다. 락을 SIGTERM에서 따로 푸는 방식은 쓰지 않는다 —
+    // 생성 중인 호출이 살아 있는데 락만 풀면 다른 인스턴스가 중복 생성·중복 과금한다.
+    fireAndForget(cleanup);
     return flight;
 }
 

@@ -22,6 +22,7 @@ vi.mock('@google/genai', () => ({
     },
 }));
 
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 
 const BASE_OPTIONS = {
@@ -34,6 +35,68 @@ describe('callGeminiChat', () => {
     beforeEach(() => {
         mockGenerateContent.mockClear();
         MockGoogleGenAI.mockClear();
+    });
+
+    describe('호출 전체 마감', () => {
+        const signalOf = (): AbortSignal =>
+            mockGenerateContent.mock.calls[0][0].config.abortSignal;
+
+        it('마감을 넘기면 연결을 끊고 timeout 오류를 던진다', async () => {
+            vi.useFakeTimers();
+            try {
+                mockGenerateContent.mockReturnValue(new Promise(() => {}));
+
+                const pending = callGeminiChat({
+                    ...BASE_OPTIONS,
+                    limits: { timeoutMs: 30_000, maxRetries: 0 },
+                });
+                const assertion = expect(pending).rejects.toBeInstanceOf(
+                    ProviderCallTimeoutError
+                );
+                await vi.advanceTimersByTimeAsync(30_000);
+                await assertion;
+
+                expect(signalOf().aborted).toBe(true);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('성공하면 타이머를 정리해 마감 뒤에 abort되지 않는다', async () => {
+            vi.useFakeTimers();
+            try {
+                mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+                await callGeminiChat({
+                    ...BASE_OPTIONS,
+                    limits: { timeoutMs: 30_000 },
+                });
+                await vi.advanceTimersByTimeAsync(60_000);
+
+                expect(signalOf().aborted).toBe(false);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('실패해도 타이머를 정리해 마감 뒤에 abort되지 않는다', async () => {
+            vi.useFakeTimers();
+            try {
+                mockGenerateContent.mockRejectedValue(new Error('down'));
+
+                await expect(
+                    callGeminiChat({
+                        ...BASE_OPTIONS,
+                        limits: { timeoutMs: 30_000 },
+                    })
+                ).rejects.toThrow('down');
+                await vi.advanceTimersByTimeAsync(60_000);
+
+                expect(signalOf().aborted).toBe(false);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
     });
 
     describe('API 키 라우팅', () => {
@@ -204,6 +267,7 @@ describe('callGeminiChat', () => {
                     // 첫 시도를 포함한 횟수라 재시도 0 → 1이다.
                     retryOptions: { attempts: 1 },
                 },
+                abortSignal: expect.any(AbortSignal),
             });
         });
 

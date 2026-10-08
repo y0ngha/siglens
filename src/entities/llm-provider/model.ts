@@ -45,7 +45,11 @@ export interface ProviderCallOptions extends Omit<
 export interface ProviderCallLimits {
     /** Output-token ceiling. Clamped to the spec's own maximum, never raised above it. */
     readonly maxOutputTokens?: number;
-    /** Per-request transport timeout (ms). */
+    /**
+     * Whole-call deadline (ms) including the response body. Every adapter enforces it
+     * via `createCallDeadline`: on expiry the request is aborted and the call rejects
+     * with `ProviderCallTimeoutError`. The SDK's own `timeout` only covers response headers.
+     */
     readonly timeoutMs?: number;
     /** SDK-level retries after the first attempt. `0` disables them. */
     readonly maxRetries?: number;

@@ -8,8 +8,8 @@ confidence_weight: 0.4
 overlay_kind: elliott
 gating:
   tier: always_on
-token_cost: 597
-digest_hash: "1855b808"
+token_cost: 617
+digest_hash: "ed07b8df"
 ---
 
 ## Evidence and Reliability
@@ -65,7 +65,7 @@ Use the **last 120 bars maximum**. Count only the **most recent** identifiable s
 
 **Wave-ratio targets (mandatory rule)**: a numeric target or retracement is valid only when the matching ratio appears as a `Fib N%` / `Fib ext N%` / `Fib ABC ext N%` row, or in that horizon's `Fib table:` / `Fib ABC table:` line, in `## Market Reference` for the relevant swing — cite that price — or is the `thrust target`, `wave 5 cap` or C target of the computed `### Elliott waves` candidate you cite, copied verbatim. Never compute a price from a ratio, and never re-derive a candidate's value. Every standard ratio (23.6/38.2/50/61.8/78.6/100/127.2/161.8/200/261.8%) is always available one of those two ways; only a non-standard ratio (76.4%, 85.4%) may be absent — then describe the zone qualitatively without a number.
 
-**Computed counts (use first)**: `### Elliott waves` under `## Chart Overlay Candidates (computed)` lists counts the app has already checked against the rules — impulses, diagonals and contracting triangles — each with its pivots, state, `invalidation`, wave ratios and, where defined, `thrust target` (triangle), `wave 5 cap` (diagonal) or C targets (A-B-C). When one fits the latest structure, make it your primary count: put its id first in `candidateIds` (optionally a second candidate id for your alternate count), use its structure as **파동 유형**, and quote its invalidation, ratios and targets verbatim instead of deriving them. A triangle candidate fits only where a triangle may occur — wave 4, wave B, or the last leg of a combination; otherwise do not adopt it. Count on your own only when no listed candidate fits, and say so.
+**Computed counts (use first)**: `### Elliott waves` under `## Chart Overlay Candidates (computed)` lists counts the app has already checked against the rules — impulses, diagonals and contracting triangles — each with its pivots, state, `invalidation`, wave ratios and, where defined, `thrust target` (triangle), `wave 5 cap` (diagonal) or C targets (A-B-C). When one fits the latest structure, make it your primary count: put its id first in `candidateIds` (optionally a second candidate id for your alternate count), use its structure as **파동 유형**, and quote its invalidation, ratios and targets verbatim instead of deriving them. A triangle candidate fits only where a triangle may occur — wave 4, wave B, or the last leg of a combination; otherwise do not adopt it. Count on your own only when no listed candidate fits, and present that count simply as your reading of the waves (never mention candidates, rule checks or a computed list).
 
 **Invalidation price**: name the price that breaks the primary count under the rules above (e.g. W1 start for a W2 count, W1 extreme for a W4 count). Prefer the candidate's `invalidation`; otherwise use only a price present in `## Market Reference` or in the bar data — never a computed one.
 
@@ -96,7 +96,7 @@ Corrections: zigzag 5-3-5 (B stays within A's start, C usually beyond A's end); 
 Truncation: W5 (or C) fails to pass W3 (or A) end, usually after a strong W3; still subdivides into five (impulse or ending diagonal). Confirmed only when price breaks the W4 (or B) end.
 Ratios are reference only: a numeric target/retracement must be a Market Reference `Fib N%`/`Fib ext N%`/`Fib ABC ext N%` row or that horizon's `Fib table:`/`Fib ABC table:` line, or a cited Elliott candidate's thrust target / wave 5 cap / C target copied verbatim — never compute or re-derive. Standard ratios always exist; a missing non-standard one (76.4/85.4%) → qualitative only.
 
-Computed counts first: `### Elliott waves` candidates (impulse/diagonal/triangle) are rule-checked. If one fits the latest structure, it is your primary count — its id first in candidateIds (optional second id = alternate count), use its structure as 파동 유형 (a triangle only in W4, B or a combination's last leg), quote its invalidation, ratios and thrust target / wave 5 cap / C targets verbatim (never derive them). Count yourself only if none fits, and say so.
+Computed counts first: `### Elliott waves` candidates (impulse/diagonal/triangle) are rule-checked. If one fits the latest structure, it is your primary count — its id first in candidateIds (optional second id = alternate count), use its structure as 파동 유형 (a triangle only in W4, B or a combination's last leg), quote its invalidation, ratios and thrust target / wave 5 cap / C targets verbatim (never derive them). Count yourself only if none fits, presented simply as your reading (never mention candidates, rule checks or a computed list).
 Count only the latest structure in the last 120 bars. Output (one **label**: value per line):
 **현재 파동 위치**: [예: 5파 진행 중]
 **파동 진행**: [스윙 가격 포함, 예: 1파($120→$180)→2파($180→$145)→…; 완료 시 "완료"]

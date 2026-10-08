@@ -106,20 +106,35 @@ export function createCallDeadline(
         };
     }
     const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    // 마감은 abort 신호 하나로 표현한다 — 타이머가 abort를 걸고, 그 신호가 SDK 요청과 경주 둘 다를 끝낸다.
     const expiry = new Promise<never>((_, reject) => {
-        timer = setTimeout(() => {
-            controller.abort();
-            reject(new ProviderCallTimeoutError(timeoutMs));
-        }, timeoutMs);
+        controller.signal.addEventListener(
+            'abort',
+            () => reject(new ProviderCallTimeoutError(timeoutMs)),
+            { once: true }
+        );
     });
     // 아무도 경주시키지 않은 채 만료돼도 unhandled rejection이 되지 않게 한다.
     expiry.catch(() => {});
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     return {
         signal: controller.signal,
         guard: work => Promise.race([work, expiry]),
-        dispose: () => {
-            if (timer !== undefined) clearTimeout(timer);
-        },
+        dispose: () => clearTimeout(timer),
     };
+}
+
+/**
+ * `start`가 만든 호출을 마감과 경주시키고, 성공·실패·동기 throw 어느 경우에도 타이머를 푼다.
+ * `start` 호출 자체를 try 안에서 하므로 요청 생성이 던져도 타이머가 남지 않는다.
+ */
+export async function runWithCallDeadline<T>(
+    deadline: CallDeadline,
+    start: () => Promise<T>
+): Promise<T> {
+    try {
+        return await deadline.guard(start());
+    } finally {
+        deadline.dispose();
+    }
 }
