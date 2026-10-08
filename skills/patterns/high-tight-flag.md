@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [high_tight_flag]
-token_cost: 441
-digest_hash: "63a71cfe"
+token_cost: 452
+digest_hash: "242fe6a0"
 ---
 
 ## Detection Criteria
@@ -58,7 +58,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the pole top (highest high of the pole — the flag's upper edge); `extremeLevel` = the pole base (lowest low within the pole lookback); `direction` = 'up'; `invalidationLevel` = the flag low (lowest low after the pole top). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the pole top (a confirmed swing high — the flag's upper edge); `extremeLevel` = the pole base (lowest low within the pole lookback); `direction` = 'up'; `invalidationLevel` = the flag low (the lowest confirmed swing low after the pole top). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Target reliability**: Bulkowski's 82% figure uses a half-height target, not the full pole height — the conservative (50%) level is the realistic reference.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -88,7 +88,7 @@ When this pattern is detected, include the following in the analysis response:
 - Throwback toward the pole top after breakout is common (67%), not failure by itself.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the pole top, extremeLevel: the pole base, direction: 'up', invalidationLevel: the flag low (lowest low after the pole top) }. Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Bulkowski's 82% is for a half-height target.
+`geometry` = { breakoutLevel: the pole top (a confirmed swing high), extremeLevel: the pole base, direction: 'up', invalidationLevel: the flag low (the lowest confirmed swing low after the pole top) }. Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Bulkowski's 82% is for a half-height target.
 
 ### Output
 - keyPrices: pole base, pole top, flag low.

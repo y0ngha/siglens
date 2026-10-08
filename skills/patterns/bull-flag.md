@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bull_flag]
-token_cost: 657
-digest_hash: "976abcfb"
+token_cost: 736
+digest_hash: "dbb18cf3"
 ---
 
 ## Detection Criteria
@@ -28,6 +28,7 @@ digest_hash: "976abcfb"
 - Volume should noticeably decline during the flag formation, indicating consolidation rather than distribution.
 - The flag should slope downward against the prior uptrend, or move sideways. An upward-sloping flag is less reliable.
 - The pattern is confirmed when price closes above the upper boundary of the flag channel with increased volume.
+- Engine rule: the pole is two consecutive confirmed swing pivots (base → top) at least 3 ATR apart within 20 bars; the flag is the 5–20 bars after the pole top, pulling back no more than 50% of the pole, and is drawn as a channel through its own swing highs and lows (at least 2 touches per side, each side with touches the other lacks). The channel's end width must be 0.7–1.15× its start and neither edge may rise with the pole by more than min(0.75 ATR, 1% of price) — otherwise it is not a flag (a converging channel is a pennant).
 
 ## Confidence Weight Rationale
 
@@ -65,8 +66,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the upper flag channel boundary at the breakout point; `extremeLevel` = the flagpole's start price (its base); `direction` = 'up'; `invalidationLevel` = the lower flag channel boundary, or the most recent swing low within the flag. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
-- **Stop-loss reference level**: The lower boundary of the flag channel or the most recent swing low within the flag serves as the invalidation level.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the upper flag channel line's value at the last bar; `extremeLevel` = the breakout level minus the flagpole height (pole base to pole top — so it is the pole's start price only when the flag line sits at the pole top); `direction` = 'up'; `invalidationLevel` = the flag's lowest low since the pole top (a fixed price). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Stop-loss reference level**: The flag's lowest low since the pole top serves as the invalidation level.
 - **Speed of completion**: Bull Flags that resolve quickly (within 1-2 weeks) tend to produce the strongest continuation moves.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -90,6 +91,7 @@ Geometry:
 - Duration: short vs flagpole — typically 1–4 weeks (5–20 daily bars). Retrace ≤50% of flagpole.
 - Volume declines noticeably during flag.
 - Confirmed: close ABOVE upper flag channel with increased volume.
+- Engine: the pole is two consecutive confirmed swing pivots (base → top) at least 3 ATR apart within 20 bars; flag = 5–20 bars after the pole top, pullback ≤50% of the pole, channel through the flag's swing highs/lows (≥2 touches per side), end width 0.7–1.15× start, neither edge rising with the pole by more than min(0.75 ATR, 1% price).
 
 Confidence (weight 0.5) — Bulkowski flags.html: failure 44% (up breakouts), 46% meet target, avg rise 9%; not ranked (short swing).
 - Increase: flagpole gain ≥10% with above-avg volume, flag retrace < 38.2%, volume drops 50%+ vs flagpole, flag duration 1–2 weeks, breakout volume returns to flagpole levels.
@@ -105,7 +107,7 @@ False positives / invalidation:
 - No clear flagpole = just a downward channel.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the upper flag channel boundary at the breakout point, extremeLevel: the flagpole's start price (its base), direction: 'up', invalidationLevel: the lower flag channel boundary, or the most recent swing low within the flag }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the upper flag channel line at the last bar, extremeLevel: breakout minus the flagpole height (pole base to pole top), direction: 'up', invalidationLevel: the flag's lowest low since the pole top }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: flagpole base, flagpole top, flag upper channel, flag lower channel.

@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [pennant]
-token_cost: 859
-digest_hash: "67470581"
+token_cost: 925
+digest_hash: "1afb3094"
 ---
 
 ## Detection Criteria
@@ -29,6 +29,7 @@ digest_hash: "67470581"
 - Both the upper (descending) and lower (ascending) trendlines of the pennant must have at least 2 touch points each.
 - The pennant should retrace no more than roughly 38.2% of the flagpole at its widest point. This is a guideline, not a hard limit — some reliable pennants retrace up to 50%, but retracements beyond 50% materially weaken the continuation bias.
 - The pattern is confirmed when price closes outside the pennant in the direction of the flagpole, with volume returning to above-average levels.
+- Engine rule: the pole is two consecutive confirmed swing pivots (base → top) at least 3 ATR apart within 20 bars; the pennant is the 5–20 bars after the pole top, pulling back no more than 50% of the pole, with two converging trendlines through its swing highs and lows (at least 2 touches per side, end width at most 0.7× the start; the upper line not rising and the lower line not falling by 1.5 ATR or more).
 
 ## Distinguishing Pennant from Symmetrical Triangle
 
@@ -85,8 +86,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the pennant trendline value at the breakout/breakdown point (the upper trendline for a bull pennant, the lower for a bear pennant); `extremeLevel` = the flagpole's start price; `direction` = 'up' for a bull pennant, 'down' for a bear pennant; `invalidationLevel` = the opposite pennant trendline, or the most recent swing high/low within the pennant. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
-- **Stop-loss reference level**: The opposite trendline of the pennant from the breakout direction, or the most recent swing high/low within the pennant, serves as the invalidation level.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the pennant trendline's value at the last bar (the upper trendline for a bull pennant, the lower for a bear pennant); `extremeLevel` = the breakout level minus (bull) or plus (bear) the flagpole height (pole base to pole top); `direction` = 'up' for a bull pennant, 'down' for a bear pennant (the flagpole direction); `invalidationLevel` = the pennant's lowest low (bull) or highest high (bear) since the pole top (a fixed price). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Stop-loss reference level**: The pennant's lowest low (bull) or highest high (bear) since the pole top serves as the invalidation level.
 - **Speed**: Pennants that resolve quickly (within 1-2 weeks) with strong volume tend to produce the best continuation moves.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -112,6 +113,7 @@ When this pattern is detected, include the following in the analysis response:
 - Both upper (descending) and lower (ascending) trendlines need ≥2 touches each.
 - Retracement ≤~38.2% of flagpole at widest point (guideline; up to 50% can still be reliable; >50% materially weakens bias).
 - Confirmed when price CLOSES outside pennant in flagpole direction with volume returning above-average.
+- Engine: the pole is two consecutive confirmed swing pivots (base → top) at least 3 ATR apart within 20 bars; pennant = 5–20 bars after the pole top, pullback ≤50% of the pole, converging lines (end width ≤0.7× start) through its swing highs/lows, ≥2 touches per side.
 
 ### Pennant vs Symmetrical Triangle
 - Pennant: always preceded by sharp flagpole; short (1–3 wk); continuation bias from flagpole momentum.
@@ -132,7 +134,7 @@ When this pattern is detected, include the following in the analysis response:
 - Clearly asymmetric trendlines (one much steeper) → may be flag or wedge.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the pennant trendline value at the breakout/breakdown point (the upper trendline for a bull pennant, the lower for a bear pennant), extremeLevel: the flagpole's start price, direction: 'up' for a bull pennant, 'down' for a bear pennant, invalidationLevel: the opposite pennant trendline, or the most recent swing high/low within the pennant }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the pennant trendline at the last bar (the upper trendline for a bull pennant, the lower for a bear pennant), extremeLevel: breakout ∓ the flagpole height (pole base to pole top), direction: 'up' for a bull pennant, 'down' for a bear pennant, invalidationLevel: the pennant's lowest low (bull) / highest high (bear) since the pole top }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: flagpole base, flagpole end, pennant upper trendline, pennant lower trendline.

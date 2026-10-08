@@ -16,14 +16,14 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_channel]
-token_cost: 440
-digest_hash: "031b53e9"
+token_cost: 498
+digest_hash: "fa39445c"
 ---
 
 ## Detection Criteria
 
 - Price trends upward between two parallel (or nearly parallel) rising trendlines — a pipe tilted up. A horizontal pipe is a rectangle, not a channel.
-- Engine rule: least-squares trendlines through the highs and the lows of the last 8 swing pivots (≥2 highs and ≥2 lows). Both slopes must be rising (more than 0.05 ATR per bar), and the two slopes must differ by no more than 0.02 ATR per bar — parallel. If the low line is steeper than that, the lines converge and it is an ascending wedge instead.
+- Engine rule: boundary lines through confirmed swing pivots (the last 5–8 of them), each through at least 2 touches and containing every bar of the pattern within 0.25 ATR — not a regression fit. Both lines must rise by at least 1.5 ATR over the pattern span, and the end width must stay within 0.85–1.15× the start width — parallel. If the lines converge (end width ≤0.7× the start) with at least 3 touches per side it is an ascending wedge instead; a pair in between is not drawn. Minimum 15 bars, and a height of at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars).
 - Bulkowski (channels.html): "Price should touch each trendline at least twice as distinct peaks or valleys" and "should cross the pattern from trendline to trendline, nearly filling the available space."
 - Breakout: a CLOSE outside either trendline; Bulkowski: it "can be in any direction."
 
@@ -56,7 +56,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `direction` = the break side ('up' for a close above the upper trendline, 'down' for a close below the lower one); before any break the engine biases toward the side price currently sits closer to. `breakoutLevel` = that side's trendline value at the last bar; `extremeLevel` = the breakout level minus (up) or plus (down) the channel height — i.e. the opposite trendline; `invalidationLevel` = the opposite trendline's value at the last bar. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `direction` = the prior-trend direction ('up' after a rise of at least 2 ATR in the close over the 20 bars before the pattern start, 'down' after a fall) — the computed geometry assumes continuation; for a pattern you identify yourself, use the side of the close outside a trendline, or the prior-trend side before any. `breakoutLevel` = that side's trendline value at the last bar (the upper line for 'up', the lower for 'down'); `extremeLevel` = the breakout level minus (up) or plus (down) the channel height; `invalidationLevel` = the last confirmed touch of the opposite boundary (a fixed pivot price, not the line's current value). If the candidate is printed as 'Direction: undetermined (no prior trend)', it lists both boundaries and the height only — set `geometry` to null and state no target. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stops**: Bulkowski: "If price closes outside the channel in the adverse direction, then close out the trade."
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -74,7 +74,7 @@ When this pattern is detected, include the following in the analysis response:
 상승 채널 (Ascending Channel) — neutral trend pipe, confidence_weight 0.5. No published rate: Bulkowski channels.html "I haven't studied channels for performance (statistics)."
 
 ### Detection
-- Two parallel rising trendlines (fit on the last 8 swing pivots): both slopes rising (>0.05 ATR/bar), slopes differ ≤0.02 ATR/bar. Low line clearly steeper = ascending wedge; flat = rectangle.
+- Two parallel rising boundary lines through confirmed swing pivots (each ≥2 touches, containing all bars within 0.25 ATR): both rise ≥1.5 ATR over the span, end width 0.85–1.15× the start. Converging (≤0.7×) with ≥3 touches per side = ascending wedge; flat = rectangle.
 - ≥2 distinct touches per line; price crosses the full width.
 - Breakout = CLOSE outside either line; any direction.
 
@@ -86,7 +86,7 @@ When this pattern is detected, include the following in the analysis response:
 - Warnings: channel flatter than the prior move (momentum loss); near-miss touches; thin channel.
 
 ### Geometry (do not calculate targets)
-`geometry` = { direction: break side (pre-break: side price sits closer to), breakoutLevel: that side's trendline at the last bar, extremeLevel: the opposite trendline (breakout ∓ channel height), invalidationLevel: opposite trendline at the last bar }. Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { direction: the prior-trend direction (≥2 ATR close change over the 20 bars before the pattern), breakoutLevel: that side's trendline at the last bar (upper for up, lower for down), extremeLevel: breakout ∓ channel height, invalidationLevel: the last confirmed touch of the opposite boundary }. If the candidate says 'Direction: undetermined (no prior trend)', set geometry to null (no target). Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: upper & lower trendline at last bar.

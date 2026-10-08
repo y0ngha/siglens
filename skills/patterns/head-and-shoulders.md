@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [head_and_shoulders]
-token_cost: 721
-digest_hash: "ee2bb47c"
+token_cost: 824
+digest_hash: "da331eae"
 ---
 
 ## Detection Criteria
@@ -29,6 +29,7 @@ digest_hash: "ee2bb47c"
 - A neckline slope closer to horizontal increases pattern reliability.
 - The pattern requires a minimum of 20 bars from left shoulder to right shoulder for structural validity.
 - The distance from head to neckline must be at least 3% of the neckline price to qualify as a meaningful pattern.
+- Engine rule: five consecutive confirmed swing pivots (shoulder high, trough, head high, trough, shoulder high) with the head clearing both shoulders by at least 1 ATR; the neckline is the line through the two troughs (containing the bars between them within 0.25 ATR) and may slope; the pattern height is measured from the neckline at the head's bar and must be at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). The right shoulder may be up to 2 confirmed pivots old, so the pattern stays listed while price works through the neckline.
 
 ## Confidence Weight Rationale
 
@@ -63,7 +64,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price at the break point; `extremeLevel` = the head price; `direction` = 'down'; `invalidationLevel` = the right shoulder high (a close above it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the sloped neckline's value at the break bar (the first close below it; the last bar while it has not broken) — the neckline is a line through the two troughs, not necessarily a horizontal level; `extremeLevel` = the breakout level plus the pattern height (the head's distance from the neckline measured at the head's own bar — equal to the head price only for a flat neckline); `direction` = 'down'; `invalidationLevel` = the right shoulder high (a close above it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The right shoulder high serves as the invalidation level. A close above this level negates the bearish pattern.
 - **Time factor**: Patterns that take longer to form (> 40 bars) tend to produce larger projected moves.
 
@@ -89,6 +90,7 @@ When this pattern is detected, include the following in the analysis response:
 - Near-horizontal neckline → higher reliability.
 - Minimum 20 bars from left to right shoulder.
 - Head-to-neckline distance must be ≥3% of neckline price (else too shallow, reject).
+- Engine: five confirmed swing pivots (shoulder, trough, head, trough, shoulder), head clears both shoulders by ≥1 ATR; sloped neckline through the two troughs; height measured from the neckline at the head, ≥2.5 ATR and the price-share minimum; right shoulder may be up to 2 confirmed pivots old.
 
 ### Grading
 - Increase: near-horizontal neckline (slope <2%); symmetric shoulders (price diff <3%); volume confirmation on neckline break; duration >30 bars.
@@ -109,7 +111,7 @@ When this pattern is detected, include the following in the analysis response:
 - Entire pattern on declining volume with no break-volume surge.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the neckline price at the break point, extremeLevel: the head price, direction: 'down', invalidationLevel: the right shoulder high (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the sloped neckline's value at the break bar (the last bar while unbroken), extremeLevel: breakout plus the pattern height (the head's distance from the neckline at the head's bar), direction: 'down', invalidationLevel: the right shoulder high (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: neckline, head, left shoulder, right shoulder prices.

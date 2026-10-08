@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_triangle]
-token_cost: 668
-digest_hash: "b55c3c44"
+token_cost: 716
+digest_hash: "1b776d1e"
 ---
 
 ## Detection Criteria
@@ -29,6 +29,7 @@ digest_hash: "b55c3c44"
 - The horizontal resistance must be clearly flat (slope < 1%), distinguishing this from a symmetrical triangle.
 - The ascending trendline must show a clear upward slope with each successive low being meaningfully higher than the previous one.
 - The pattern is confirmed when price closes above the horizontal resistance with increased volume.
+- Engine rule: boundary lines through confirmed swing pivots (each ≥2 touches, containing every bar of the pattern within 0.25 ATR); the upper line is flat and the lower line rising (a flat line moves no more than min(0.75 ATR, 1% of price) over the span, a rising/falling line at least 1.5 ATR, and a move in between is not drawn), and the end width is at most 0.7× the start width. Minimum 15 bars.
 
 ## Confidence Weight Rationale
 
@@ -67,8 +68,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the horizontal resistance level; `extremeLevel` = the ascending support trendline's value at the pattern's start (its widest point); `direction` = 'up'; `invalidationLevel` = the ascending support trendline's current (last-bar) value — the most recent higher low. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
-- **Stop-loss reference level**: The most recent higher low on the ascending trendline or the trendline itself serves as the invalidation level. A close below this negates the bullish pattern.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the flat resistance trendline's value at the last bar; `extremeLevel` = the breakout level minus the triangle height (the width between the two trendlines at the first touch — their widest point); `direction` = 'up'; `invalidationLevel` = the last confirmed touch of the ascending support line — the most recent higher low, a fixed swing-low price (not the trendline's current value). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Stop-loss reference level**: The most recent confirmed higher low (the last touch of the ascending trendline) serves as the invalidation level — a fixed price. A close below this negates the bullish pattern.
 - **Breakdown scenario**: If price closes below the ascending trendline instead, treat the pattern as having failed/reversed to bearish — this alternate scenario is not in `## Chart Pattern Candidates (computed)`, so do not compute a target for it yourself; describe the reversal qualitatively.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -90,6 +91,7 @@ Geometry:
 - Horizontal resistance line: ≥2 touches at ~same price (within 1%); slope must be < 1% (else it's a rising channel/symmetrical triangle).
 - Ascending support trendline: ≥2 progressively higher lows, clear upward slope.
 - Price converges (range narrows) toward apex. Minimum 15 bars.
+- Engine: flat upper line + lower line rising ≥1.5 ATR over the span (flat = ≤min(0.75 ATR, 1% price); in between = not drawn), ≥2 touches each, end width ≤0.7× start.
 
 Confirmation: close ABOVE horizontal resistance with increased volume (surge 50%+ above average). Intraday wick above resistance without a close = not confirmed. Volume should decline as triangle narrows. Post-breakout: a pullback to the former resistance that holds as support confirms the pattern. Accelerating higher lows on the ascending support trendline = intensifying buying pressure.
 
@@ -103,7 +105,7 @@ False positives / invalidation:
 - Breakout without volume surge may be false.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the horizontal resistance level, extremeLevel: the ascending support trendline's value at the pattern's start (its widest point), direction: 'up', invalidationLevel: the ascending support trendline's current (last-bar) value — the most recent higher low }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the flat resistance trendline at the last bar, extremeLevel: breakout minus the triangle height (width at the first touch, the widest point), direction: 'up', invalidationLevel: the last confirmed touch of the ascending support line — the most recent higher low, a fixed price }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: horizontal resistance, current ascending trendline value, projected apex price.

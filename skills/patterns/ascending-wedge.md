@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_wedge]
-token_cost: 627
-digest_hash: "aa8e7966"
+token_cost: 658
+digest_hash: "4b34bc5f"
 ---
 
 ## Detection Criteria
@@ -29,6 +29,7 @@ digest_hash: "aa8e7966"
 - The convergence ratio (narrowing of the range from start to end) should be at least 30% for the pattern to be meaningful.
 - The pattern requires a minimum of 15 bars for structural validity.
 - A break below the lower trendline confirms the bearish reversal signal.
+- Engine rule: boundary lines through confirmed swing pivots (at least 3 touches per side, containing every bar of the pattern within 0.25 ATR); both lines rising by at least 1.5 ATR over the span and the end width is at most 0.7× the start width. A pair with a width ratio between 0.7 and 0.85, or with a line moving less than 1.5 ATR, is not drawn; a near-parallel pair (0.85–1.15×) is a channel instead. Minimum 15 bars.
 
 ## Confidence Weight Rationale
 
@@ -63,8 +64,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lower (support) trendline's value at the breakdown bar; `extremeLevel` = the upper (resistance) trendline's value at the pattern's start (its widest point); `direction` = 'down'; `invalidationLevel` = the upper trendline's current (last-bar) value — the most recent swing high within the wedge. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
-- **Stop-loss reference level**: The most recent swing high within the wedge or the upper trendline serves as the invalidation level. A close above this level negates the bearish pattern.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lower (support) trendline's value at the last bar; `extremeLevel` = the breakout level plus the wedge height (the width between the trendlines at the first touch — their widest point); `direction` = 'down'; `invalidationLevel` = the last confirmed touch of the upper trendline — the most recent swing high, a fixed price (not the line's current value). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Stop-loss reference level**: The last confirmed swing high on the upper trendline serves as the invalidation level — a fixed price. A close above this level negates the bearish pattern.
 - **Breakout timing**: Breaks that occur in the first half to two-thirds of the wedge (before reaching the apex) tend to produce stronger moves.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -87,6 +88,7 @@ Geometry:
 - Upper trendline (highs) and lower trendline (lows) converge (range narrows). Lower trendline must be STEEPER than upper for valid convergence.
 - ≥3 touches on each trendline (3 highs, 3 lows). Convergence ratio ≥30% (narrowing from start to end). Minimum 15 bars.
 - Confirmed by break BELOW lower trendline.
+- Engine: both lines rising ≥1.5 ATR over the span, ≥3 touches per side, end width ≤0.7× start (near-parallel = channel; in between = not drawn).
 
 Confidence (weight 0.5) — Bulkowski risewedge.html: breaks down 60%, but down-breakout failure 51%, 32% meet target, rank 36/36 (last).
 - Increase: clear convergence with 4+ touches per line, consistent volume decline as wedge narrows, decisive break below lower trendline with volume surge, duration > 25 bars.
@@ -102,7 +104,7 @@ False positives / invalidation:
 - Break in last 10% of wedge (near apex) = minimal target.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the lower (support) trendline's value at the breakdown bar, extremeLevel: the upper (resistance) trendline's value at the pattern's start (its widest point), direction: 'down', invalidationLevel: the upper trendline's current (last-bar) value — the most recent swing high within the wedge }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the lower (support) trendline at the last bar, extremeLevel: breakout plus the wedge height (width at the first touch, the widest point), direction: 'down', invalidationLevel: the last confirmed touch of the upper trendline — the most recent swing high, a fixed price }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: current upper & lower trendline values, projected apex price & bar.

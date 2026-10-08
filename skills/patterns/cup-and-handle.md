@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cup_and_handle]
-token_cost: 692
-digest_hash: "3e3fc477"
+token_cost: 720
+digest_hash: "c3f01293"
 ---
 
 ## Detection Criteria
@@ -69,7 +69,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the handle resistance (the breakout level); `extremeLevel` = the cup bottom price; `direction` = 'up'; `invalidationLevel` = the handle low (a close below it negates the pattern; the cup midpoint is a wider alternative stop). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the right rim's price (a confirmed swing high — the handle's resistance, the breakout level); `extremeLevel` = the cup bottom price (the lowest low between the rims); `direction` = 'up'; `invalidationLevel` = the handle low (the lowest confirmed swing low after the right rim, never deeper than the cup's midpoint; a close below it negates the pattern; the cup midpoint is a wider alternative stop). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The bottom of the handle serves as the primary invalidation level. A close below this negates the bullish pattern. For a wider stop, the cup's midpoint can be used.
 - **Target reliability**: Bulkowski (cup.html): 61% reach the measure-rule target, and in his 1990–2024 sample of 300 cups 47% dropped substantially within two months of the breakout — do not treat the target as a minimum expectation.
 
@@ -111,7 +111,7 @@ False positives / invalidation:
 - Right rim > 5% below left rim = weakening momentum.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the handle resistance (the breakout level), extremeLevel: the cup bottom price, direction: 'up', invalidationLevel: the handle low (a close below it negates the pattern; the cup midpoint is a wider alternative stop) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the right rim's price (a confirmed swing high, the handle's resistance), extremeLevel: the cup bottom price (lowest low between the rims), direction: 'up', invalidationLevel: the handle low (the lowest confirmed swing low after the right rim, never deeper than the cup's midpoint; the cup midpoint is a wider alternative stop) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: left rim, right rim, cup bottom, handle resistance, handle bottom.
