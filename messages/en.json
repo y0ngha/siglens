@@ -606,8 +606,10 @@
             "AnalysisSignupNudgeModal": {
                 "486011": "Sign up to enable ''{v0}'' and receive more detailed analysis reports.",
                 "2b8afd": "Go to Sign Up",
+                "7e84b8": "Get a report on your holdings by email",
                 "84ff73": "Want deeper analysis?",
-                "94b7db": "Close"
+                "94b7db": "Close",
+                "ac43bc": "Sign up and add your portfolio, and we'll email daily charts, the Simple analysis, news and options activity on the days and time you choose."
             }
         },
         "api-key-management": {
@@ -712,6 +714,17 @@
             },
             "ContactTextareaField": {
                 "fbccd7": "Max {v0} characters"
+            }
+        },
+        "email-report-nudge": {
+            "EmailReportNudgeModal": {
+                "0fcd14": "Later",
+                "15049a": "Add {v0} to your portfolio and we'll include it in your scheduled email report.",
+                "4a3bb0": "Add to portfolio",
+                "5da22e": "Get this stock in your email report too?",
+                "7e84b8": "Get a report on your holdings by email",
+                "8be329": "Set up email reports",
+                "daa53b": "We'll email daily charts, the Simple analysis, news and options activity for the {v0} stocks in your portfolio on the days and time you choose."
             }
         },
         "email-report-settings": {

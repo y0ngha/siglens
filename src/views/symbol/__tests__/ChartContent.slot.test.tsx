@@ -63,7 +63,7 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
-        openSignupNudge: vi.fn(),
+        openSignupNudgeAs: vi.fn(),
     }),
 }));
 vi.mock('@/features/analysis-nudge/hooks/useAnonAnalysisNudge', () => ({

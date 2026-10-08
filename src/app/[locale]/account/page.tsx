@@ -94,8 +94,9 @@ async function AccountContent({ locale }: { locale: Locale }) {
             </section>
 
             <section
+                id="email-report"
                 aria-label={t('page.411c76')}
-                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+                className={cn(SURFACE_CARD, 'scroll-mt-20 space-y-4 p-6')}
             >
                 <EmailReportSettingsSection />
             </section>

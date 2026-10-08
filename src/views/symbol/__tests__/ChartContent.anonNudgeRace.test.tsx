@@ -92,7 +92,7 @@ vi.mock('@/views/symbol/hooks/useAnalysisDisplay', () => ({
 }));
 
 // Stable shared opener — in production this is the provider's memoized
-// `openSignupNudge`. It must keep a stable identity across renders so the real
+// `openSignupNudgeAs`. It must keep a stable identity across renders so the real
 // hook's `onSymbolAnalyzed` only changes identity when login resolution flips
 // (the exact seam this race test exercises via notifiedSymbolRef).
 const { mockOpenSignupNudge } = vi.hoisted(() => ({
@@ -105,7 +105,7 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
-        openSignupNudge: mockOpenSignupNudge,
+        openSignupNudgeAs: mockOpenSignupNudge,
     })),
 }));
 
@@ -155,6 +155,7 @@ vi.mock('@/shared/lib/anonAnalysisCount', () => ({
     recordAnonSymbolAnalysis: vi.fn(),
     hasNudgeShownToday: vi.fn(),
     markNudgeShownToday: vi.fn(),
+    nextAnonNudgeVariant: vi.fn(() => 'emailReport'),
 }));
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
@@ -184,6 +185,8 @@ describe('ChartContent × useAnonAnalysisNudge integration (real hook, race betw
         mockMarkShown.mockReset();
         mockOpenSignupNudge.mockReset();
         mockHasShown.mockReturnValue(false);
+        // 한 탭 세션 넛지 상한(`nudgeSession`)은 실제 sessionStorage를 쓴다 — 테스트끼리 새지 않게 비운다.
+        sessionStorage.clear();
     });
 
     afterEach(() => {
@@ -277,6 +280,7 @@ describe('ChartContent × useAnonAnalysisNudge integration (real hook, race betw
         await waitFor(() => {
             expect(mockOpenSignupNudge).toHaveBeenCalledTimes(1);
         });
+        expect(mockOpenSignupNudge).toHaveBeenCalledWith('emailReport');
         expect(mockMarkShown).toHaveBeenCalledTimes(1);
     });
 });

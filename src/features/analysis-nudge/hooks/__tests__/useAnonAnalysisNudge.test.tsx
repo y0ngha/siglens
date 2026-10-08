@@ -8,7 +8,13 @@ import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
+    nextAnonNudgeVariant,
+    type SignupNudgeVariant,
 } from '@/shared/lib/anonAnalysisCount';
+import {
+    hasNudgeShownThisSession,
+    markNudgeShownThisSession,
+} from '@/shared/lib/nudgeSession';
 
 vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),
@@ -18,12 +24,21 @@ vi.mock('@/shared/lib/anonAnalysisCount', () => ({
     recordAnonSymbolAnalysis: vi.fn(),
     hasNudgeShownToday: vi.fn(),
     markNudgeShownToday: vi.fn(),
+    nextAnonNudgeVariant: vi.fn(),
+}));
+
+vi.mock('@/shared/lib/nudgeSession', () => ({
+    hasNudgeShownThisSession: vi.fn(),
+    markNudgeShownThisSession: vi.fn(),
 }));
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockRecord = vi.mocked(recordAnonSymbolAnalysis);
 const mockHasShown = vi.mocked(hasNudgeShownToday);
 const mockMarkShown = vi.mocked(markNudgeShownToday);
+const mockNextVariant = vi.mocked(nextAnonNudgeVariant);
+const mockSessionShown = vi.mocked(hasNudgeShownThisSession);
+const mockMarkSession = vi.mocked(markNudgeShownThisSession);
 
 const MEMBER: AuthUserRecord = {
     id: 'u1',
@@ -45,14 +60,19 @@ describe('useAnonAnalysisNudge', () => {
     // invoke THIS instead of any local state — the hook no longer owns the
     // modal's open-state, so both the header nudge and the auto-nudge open the
     // single provider-rendered instance.
-    let openNudge: Mock<() => void>;
+    let openNudge: Mock<(variant: SignupNudgeVariant) => void>;
 
     beforeEach(() => {
-        openNudge = vi.fn<() => void>();
+        openNudge = vi.fn<(variant: SignupNudgeVariant) => void>();
         mockRecord.mockReset();
         mockHasShown.mockReset();
         mockMarkShown.mockReset();
+        mockNextVariant.mockReset();
+        mockSessionShown.mockReset();
+        mockMarkSession.mockReset();
         mockHasShown.mockReturnValue(false);
+        mockSessionShown.mockReturnValue(false);
+        mockNextVariant.mockReturnValue('emailReport');
         mockRecord.mockReturnValue({
             distinctCount: 1,
             crossedThreshold: false,
@@ -99,13 +119,14 @@ describe('useAnonAnalysisNudge', () => {
         expect(mockRecord).toHaveBeenCalledWith('AAPL');
     });
 
-    it('opens the shared modal when the 3rd distinct symbol crosses the threshold and not shown today', () => {
+    it('opens the shared modal with the next copy variant when the threshold is crossed and not shown today', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
-            distinctCount: 3,
+            distinctCount: 1,
             crossedThreshold: true,
         });
         mockHasShown.mockReturnValue(false);
+        mockNextVariant.mockReturnValue('reasoning');
 
         const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
 
@@ -114,7 +135,28 @@ describe('useAnonAnalysisNudge', () => {
         });
 
         expect(openNudge).toHaveBeenCalledTimes(1);
+        expect(openNudge).toHaveBeenCalledWith('reasoning');
         expect(mockMarkShown).toHaveBeenCalledTimes(1);
+        expect(mockMarkSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not open the modal when another nudge was already shown this tab session', () => {
+        mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
+        mockRecord.mockReturnValue({
+            distinctCount: 1,
+            crossedThreshold: true,
+        });
+        mockSessionShown.mockReturnValue(true);
+
+        const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
+
+        act(() => {
+            result.current.onSymbolAnalyzed('NVDA');
+        });
+
+        expect(openNudge).not.toHaveBeenCalled();
+        expect(mockMarkShown).not.toHaveBeenCalled();
+        expect(mockNextVariant).not.toHaveBeenCalled();
     });
 
     it('does not open the modal if crossedThreshold but already shown today (nag-prevention)', () => {

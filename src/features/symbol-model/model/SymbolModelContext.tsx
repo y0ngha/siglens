@@ -22,6 +22,7 @@ import { useUserTier } from '../hooks/useUserTier';
 import { useReasoningToggle } from '@/features/reasoning-toggle/hooks/useReasoningToggle';
 import { isReasoningToggleable } from '@y0ngha/siglens-core';
 import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
+import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 
 interface SymbolModelContextValue {
     modelId: ModelId;
@@ -70,7 +71,7 @@ interface SymbolModelContextValue {
      *
      * The modal itself is rendered EXACTLY ONCE by `SymbolModelProvider`
      * (which wraps both the layout header and the chart page tree), so the
-     * locked-toggle nudge (`SymbolLayoutHeader`) and the anonymous 3-symbol
+     * locked-toggle nudge (`SymbolLayoutHeader`) and the anonymous first-analysis
      * auto-nudge (`ChartContent` → `useAnonAnalysisNudge`) share a single
      * instance instead of each mounting their own `fixed inset-0 z-50` dialog
      * — two stacked modals would clash over focus-trap/Escape handling. The
@@ -79,6 +80,13 @@ interface SymbolModelContextValue {
      * and thus never re-renders unrelated `useSymbolModel()` consumers.
      */
     openSignupNudge: () => void;
+    /**
+     * Open the same shared modal with a specific copy variant. The anonymous
+     * auto-nudge uses this to alternate between the reasoning ("상세 분석") and
+     * email-report pitches; `openSignupNudge` stays argument-free because it is
+     * passed straight to click handlers, which would hand it the click event.
+     */
+    openSignupNudgeAs: (variant: SignupNudgeVariant) => void;
     /** Dismiss the shared signup-nudge modal. */
     closeSignupNudge: () => void;
 }
@@ -91,7 +99,7 @@ interface SymbolModelProviderProps {
 
 export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // Single shared open-state for the signup-nudge modal. Both entry points
-    // (locked-toggle click in the header, 3-symbol auto-nudge in ChartContent)
+    // (locked-toggle click in the header, first-analysis auto-nudge in ChartContent)
     // flip this same flag, and the modal is rendered once below — see the
     // `openSignupNudge` doc for why a single instance is required. This state
     // is provider-LOCAL and intentionally NOT part of the context value: only
@@ -99,7 +107,8 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // memoized value means open/close never churns `useSymbolModel()` consumers.
     // (Declared first per the useState → custom-hooks → derived → handlers
     // hook-ordering convention — REACT.md "Custom Hook Declaration Order".)
-    const [isSignupNudgeOpen, setIsSignupNudgeOpen] = useState(false);
+    const [signupNudgeVariant, setSignupNudgeVariant] =
+        useState<SignupNudgeVariant | null>(null);
 
     const { tier, isLoading: isTierLoading } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
@@ -124,8 +133,15 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     const reasoning =
         canUseReasoning && isReasoningSupported && storedReasoning;
 
-    const openSignupNudge = useCallback(() => setIsSignupNudgeOpen(true), []);
-    const closeSignupNudge = useCallback(() => setIsSignupNudgeOpen(false), []);
+    const openSignupNudge = useCallback(
+        () => setSignupNudgeVariant('reasoning'),
+        []
+    );
+    const openSignupNudgeAs = useCallback(
+        (variant: SignupNudgeVariant) => setSignupNudgeVariant(variant),
+        []
+    );
+    const closeSignupNudge = useCallback(() => setSignupNudgeVariant(null), []);
 
     const value = useMemo(
         () => ({
@@ -143,6 +159,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             isReasoningSupported,
             isReasoningHydrated,
             openSignupNudge,
+            openSignupNudgeAs,
             closeSignupNudge,
         }),
         [
@@ -160,6 +177,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             isReasoningSupported,
             isReasoningHydrated,
             openSignupNudge,
+            openSignupNudgeAs,
             closeSignupNudge,
         ]
     );
@@ -168,9 +186,12 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
         <SymbolModelContext.Provider value={value}>
             {children}
             {/* Single signup-nudge modal instance shared by the header's
-                locked-toggle nudge and ChartContent's 3-symbol auto-nudge. */}
-            {isSignupNudgeOpen && (
-                <AnalysisSignupNudgeModal onClose={closeSignupNudge} />
+                locked-toggle nudge and ChartContent's first-analysis auto-nudge. */}
+            {signupNudgeVariant !== null && (
+                <AnalysisSignupNudgeModal
+                    variant={signupNudgeVariant}
+                    onClose={closeSignupNudge}
+                />
             )}
         </SymbolModelContext.Provider>
     );

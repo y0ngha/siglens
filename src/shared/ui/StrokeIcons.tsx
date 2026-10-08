@@ -161,6 +161,12 @@ export const BuildingIcon = (p: IconProps) => (
         <path d="M8 7h1M11 7h1M8 10.5h1M11 10.5h1M8 14h1M11 14h1M15 10v10.5h5V13a1.5 1.5 0 00-1.5-1.5H15" />
     </Icon>
 );
+export const MailIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" />
+        <path d="M4 7l8 6 8-6" />
+    </Icon>
+);
 export const LayersIcon = (p: IconProps) => (
     <Icon {...p}>
         <path d="M12 3.5L4 8l8 4.5L20 8z" />

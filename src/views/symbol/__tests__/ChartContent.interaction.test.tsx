@@ -152,7 +152,7 @@ function setTier(tier: 'free' | 'pro'): void {
         isReasoningHydrated: true,
         tier,
         isTierHydrated: true,
-        openSignupNudge: vi.fn(),
+        openSignupNudgeAs: vi.fn(),
     });
 }
 
@@ -196,7 +196,7 @@ describe('ChartContent', () => {
             isReasoningHydrated: true,
             tier: 'free',
             isTierHydrated: true,
-            openSignupNudge: vi.fn(),
+            openSignupNudgeAs: vi.fn(),
         });
         // 기본값: 홀딩 없음 — 대부분의 테스트는 "내 포지션" 요약과 무관하다.
         symbolHoldingMock.mockReturnValue({
