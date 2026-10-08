@@ -9,6 +9,7 @@
                 "1b6c6d": "正在加载AI模型API密钥",
                 "3a0c2b": "注销账户",
                 "3c3776": "电子邮件",
+                "411c76": "邮件报告",
                 "54ac38": "所有与账户相关的信息将立即永久销毁。",
                 "622fae": "账户设置",
                 "64f90b": "AI模型API密钥",
@@ -89,6 +90,15 @@
                 "03f79d": "无韩国经济数据",
                 "99ee99": "正在准备韩国经济指标。请稍后再次查看。",
                 "ae2ce9": "常见问题"
+            }
+        },
+        "email-report": {
+            "unsubscribe": {
+                "page": {
+                    "title": "退订邮件报告",
+                    "subtitle": "点击下方按钮后，将不再向您发送定期邮件报告。",
+                    "description": "退订 SIGLENS 定期邮件报告。"
+                }
             }
         },
         "fear-greed": {
@@ -459,6 +469,43 @@
                 "US": "美国"
             }
         },
+        "email-report": {
+            "action": {
+                "invalidDays": "请至少选择一天。",
+                "invalidHour": "请选择有效的时间。",
+                "invalidInput": "输入无效。",
+                "invalidTimezone": "无法识别该时区。",
+                "invalidUnsubscribeLink": "退订链接无效。请重新点击邮件中的链接。",
+                "saveFailed": "保存失败。请稍后重试。",
+                "unauthenticated": "需要登录。",
+                "unsubscribeFailed": "退订失败。请稍后重试。"
+            },
+            "email": {
+                "chartAlt": "{v0} 日线图",
+                "disclaimer": "本邮件仅供参考，不构成投资建议。投资决策及其后果由您本人承担。AI 分析可能与事实不符。",
+                "heading": "持仓报告",
+                "intro": "以下是截至 {v0} 的持仓动态。",
+                "manage": "更改设置",
+                "noAnalysis": "该股票的 AI 分析尚未就绪。您可以立即在网站上进行分析。",
+                "optionsIv": "平值隐含波动率",
+                "optionsMove": "至到期日（{v0}）的预期波动幅度",
+                "optionsPutCall": "看跌/看涨比率（未平仓合约）",
+                "reason": "您收到此邮件是因为您在 {v0} 账户设置中开启了邮件报告。",
+                "sectionNews": "重要新闻",
+                "sectionOptions": "期权动向",
+                "sectionPatterns": "图表形态",
+                "sectionPlain": "简明解读",
+                "sectionTechnical": "图表分析",
+                "sentiment": {
+                    "bullish": "利好",
+                    "neutral": "中性",
+                    "bearish": "利空"
+                },
+                "subject": "[{v0}] 持仓报告 · {v1}",
+                "unsubscribe": "退订",
+                "viewOnSite": "在 {v0} 查看详情"
+            }
+        },
         "email-token": {
             "email": {
                 "resetButton": "设置新密码",
@@ -665,6 +712,36 @@
             },
             "ContactTextareaField": {
                 "fbccd7": "最多 {v0} 字"
+            }
+        },
+        "email-report-settings": {
+            "EmailReportSettingsSection": {
+                "313286": "为您发送最多 {v0} 只持仓股票的日线图、简明分析、新闻和期权动向。",
+                "633367": "通过邮件接收报告",
+                "0c767c": "重试",
+                "1f1712": "保存",
+                "411c76": "邮件报告",
+                "4ba4b5": "无法加载邮件报告设置。",
+                "9f6785": "保存中…",
+                "9f8a60": "已保存。",
+                "a4c309": "以 {v0} 时间为准。若在美股收盘前收到，报告将基于前一交易日收盘价。",
+                "b081bb": "接收日",
+                "c1399c": "在您选择的日期和时间，通过邮件接收持仓股票报告。",
+                "dcc8a2": "保存失败。请稍后重试。",
+                "e61b39": "正在加载邮件报告设置",
+                "f0cf28": "接收时间",
+                "f1ce16": "请至少选择一天。"
+            }
+        },
+        "email-report-unsubscribe": {
+            "UnsubscribeConfirm": {
+                "0fcf72": "退订",
+                "11ef2b": "前往账户设置",
+                "24cd06": "处理中…",
+                "24d0de": "退订失败。请稍后重试。",
+                "5b4a51": "退订链接无效。请重新点击邮件中的链接。",
+                "c13cc8": "我们将不再向您发送邮件报告。",
+                "fca698": "您可以随时在账户设置中重新开启。"
             }
         },
         "portfolio-holding": {

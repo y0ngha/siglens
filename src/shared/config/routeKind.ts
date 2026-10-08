@@ -39,6 +39,8 @@ const KIND_BY_FIRST_SEGMENT: Readonly<Record<string, RouteKind>> = {
     signup: 'auth',
     'forgot-password': 'auth',
     'reset-password': 'auth',
+    // 메일 수신거부 확인 — 인증 페이지와 같은 카드 셸(`AuthCardShell`)이다.
+    'email-report': 'auth',
     account: 'account',
     portfolio: 'portfolio',
     share: 'share',

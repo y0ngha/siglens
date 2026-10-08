@@ -50,6 +50,9 @@ export class ResendEmailDispatcher implements EmailDispatcher {
                     subject: message.subject,
                     html: message.html,
                     text: message.text,
+                    // 헤더가 없는 메일(인증 메일)은 키 자체를 싣지 않는다 — 빈 객체를
+                    // 보내면 SDK 버전에 따라 빈 헤더 블록이 생길 수 있다.
+                    ...(message.headers ? { headers: message.headers } : {}),
                 }),
                 timeoutPromise,
             ]);

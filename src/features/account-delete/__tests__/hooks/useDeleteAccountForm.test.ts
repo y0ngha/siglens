@@ -66,6 +66,9 @@ describe('useDeleteAccountForm', () => {
         expect(mockRemoveQueries).toHaveBeenCalledWith({
             queryKey: QUERY_KEYS.portfolioHoldings(),
         });
+        expect(mockRemoveQueries).toHaveBeenCalledWith({
+            queryKey: QUERY_KEYS.emailReportSettings(),
+        });
         expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
 

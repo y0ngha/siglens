@@ -9,6 +9,7 @@
                 "1b6c6d": "Loading AI Model API Key",
                 "3a0c2b": "Account Withdrawal",
                 "3c3776": "Email",
+                "411c76": "Email report",
                 "54ac38": "All information related to your account will be immediately and permanently deleted.",
                 "622fae": "Account Settings",
                 "64f90b": "AI Model API Key",
@@ -89,6 +90,15 @@
                 "03f79d": "No Korean Economic Data",
                 "99ee99": "Korean economic indicators are being prepared. Please check again shortly.",
                 "ae2ce9": "Frequently Asked Questions"
+            }
+        },
+        "email-report": {
+            "unsubscribe": {
+                "page": {
+                    "title": "Unsubscribe from email reports",
+                    "subtitle": "Press the button below to stop receiving scheduled email reports.",
+                    "description": "Stop receiving SIGLENS scheduled email reports."
+                }
             }
         },
         "fear-greed": {
@@ -459,6 +469,43 @@
                 "US": "United States"
             }
         },
+        "email-report": {
+            "action": {
+                "invalidDays": "Choose at least one day.",
+                "invalidHour": "Choose a valid time.",
+                "invalidInput": "That input is not valid.",
+                "invalidTimezone": "That time zone isn't recognized.",
+                "invalidUnsubscribeLink": "This unsubscribe link isn't valid. Please open the link in the email again.",
+                "saveFailed": "Saving failed. Please try again in a moment.",
+                "unauthenticated": "You need to sign in.",
+                "unsubscribeFailed": "Unsubscribing failed. Please try again in a moment."
+            },
+            "email": {
+                "chartAlt": "{v0} daily chart",
+                "disclaimer": "This email is for information only and is not investment advice. You are responsible for your investment decisions and their outcomes. AI analysis may be inaccurate.",
+                "heading": "Your holdings report",
+                "intro": "Here's the latest on your holdings as of {v0}.",
+                "manage": "Change settings",
+                "noAnalysis": "The AI analysis for this stock isn't ready yet. You can run it on the site right away.",
+                "optionsIv": "ATM implied volatility",
+                "optionsMove": "Implied move to expiry ({v0})",
+                "optionsPutCall": "Put/call ratio (open interest)",
+                "reason": "You're receiving this because you turned on email reports in your {v0} account settings.",
+                "sectionNews": "Top news",
+                "sectionOptions": "Options activity",
+                "sectionPatterns": "Chart patterns",
+                "sectionPlain": "In plain words",
+                "sectionTechnical": "Chart analysis",
+                "sentiment": {
+                    "bullish": "Positive",
+                    "neutral": "Neutral",
+                    "bearish": "Negative"
+                },
+                "subject": "[{v0}] Your holdings report · {v1}",
+                "unsubscribe": "Unsubscribe",
+                "viewOnSite": "See details on {v0}"
+            }
+        },
         "email-token": {
             "email": {
                 "resetButton": "Set a new password",
@@ -665,6 +712,36 @@
             },
             "ContactTextareaField": {
                 "fbccd7": "Max {v0} characters"
+            }
+        },
+        "email-report-settings": {
+            "EmailReportSettingsSection": {
+                "313286": "We'll send daily charts, the Simple analysis, news and options activity for up to {v0} portfolio holdings.",
+                "633367": "Get reports by email",
+                "0c767c": "Try again",
+                "1f1712": "Save",
+                "411c76": "Email report",
+                "4ba4b5": "Couldn't load your email report settings.",
+                "9f6785": "Saving…",
+                "9f8a60": "Saved.",
+                "a4c309": "Times are in {v0}. Reports sent before the US market close use the previous close.",
+                "b081bb": "Days",
+                "c1399c": "Get a report on your holdings by email on the days and time you choose.",
+                "dcc8a2": "Saving failed. Please try again in a moment.",
+                "e61b39": "Loading email report settings",
+                "f0cf28": "Time",
+                "f1ce16": "Choose at least one day."
+            }
+        },
+        "email-report-unsubscribe": {
+            "UnsubscribeConfirm": {
+                "0fcf72": "Unsubscribe",
+                "11ef2b": "Go to account settings",
+                "24cd06": "Processing…",
+                "24d0de": "Unsubscribing failed. Please try again in a moment.",
+                "5b4a51": "This unsubscribe link isn't valid. Please open the link in the email again.",
+                "c13cc8": "You won't receive email reports anymore.",
+                "fca698": "You can turn them back on anytime in account settings."
             }
         },
         "portfolio-holding": {

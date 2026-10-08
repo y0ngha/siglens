@@ -97,6 +97,7 @@ export const QUERY_KEYS = {
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
     portfolioHoldings: () => ['portfolio-holdings'] as const,
+    emailReportSettings: () => ['email-report-settings'] as const,
     // exact same key they always have — only a member's explicit `true` value
     // produces a distinct key (member-reasoning-toggle spec Part A: "changing
     // the toggle re-submits analysis" relies on this key change).

@@ -8,6 +8,12 @@ export interface EmailMessage {
     html: string;
     /** Plain-text body of the email. */
     text: string;
+    /**
+     * Extra MIME headers (e.g. `List-Unsubscribe`). Transactional auth mail
+     * omits it; bulk-style mail such as the scheduled report needs it for
+     * one-click unsubscribe (RFC 8058) and inbox-provider requirements.
+     */
+    headers?: Record<string, string>;
 }
 
 /** 트랜잭셔널 이메일 발송 추상 (Resend/SendGrid/SMTP 등을 use-case에 주입). */

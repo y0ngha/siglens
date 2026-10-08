@@ -269,6 +269,76 @@ export const portfolioHoldings = pgTable(
 );
 
 /**
+ * 회원 정기 메일 리포트 수신 설정 — 회원당 한 행.
+ *
+ * 행이 없으면 "한 번도 설정하지 않음"(= 수신 안 함)이다. 발송 시각은 회원의 `timezone`
+ * 기준 로컬 시(`send_hour`)라서, cron은 매시 각 행의 로컬 요일·시를 계산해 매칭한다 —
+ * UTC로 미리 환산해 저장하지 않는 이유는 DST가 있는 타임존에서 환산 결과가 철마다 바뀌기 때문이다.
+ */
+export const emailReportSubscriptions = pgTable('email_report_subscriptions', {
+    userId: uuid('user_id')
+        .primaryKey()
+        .references(() => users.id, { onDelete: 'cascade' }),
+    enabled: boolean('enabled').notNull().default(false),
+    /** 요일 비트마스크 — bit n = `Date#getDay()`의 n(0=일요일 … 6=토요일). */
+    daysOfWeek: integer('days_of_week').notNull(),
+    /** 회원 로컬 시각의 시(0–23). */
+    sendHour: integer('send_hour').notNull(),
+    /** IANA 타임존 이름(예: `Asia/Seoul`). */
+    timezone: text('timezone').notNull(),
+    /** 메일 본문 로케일 — 설정을 저장한 화면의 로케일. */
+    locale: contentLocaleEnum('locale').notNull().default('ko'),
+    /** 마지막으로 수신을 켠 시각(수신 동의 기록). 한 번도 켜지 않았으면 null. */
+    consentedAt: timestamp('consented_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow()
+        .$onUpdateFn(nowFn),
+});
+
+/**
+ * 메일 리포트 발송 기록 — 회원의 로컬 날짜당 한 행.
+ *
+ * `(user_id, local_date)` 유니크가 멱등 키다. cron은 보내기 **전에** 행을 선점(insert)하고
+ * 충돌하면 건너뛴다 — 같은 시각 슬롯에 cron이 두 번 돌거나(재시도·중첩) 회원이 그날 시각을
+ * 바꿔도 하루 두 통이 나가지 않는다. 발송이 끝나면 `status`를 결과로 바꾼다.
+ */
+export const emailReportDeliveries = pgTable(
+    'email_report_deliveries',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        /** 회원 타임존 기준 발송 날짜(`YYYY-MM-DD`). */
+        localDate: date('local_date').notNull(),
+        /** `pending`(선점) → `sent` | `failed` | `skipped`(보낼 종목 없음). */
+        status: text('status').notNull(),
+        symbols: text('symbols')
+            .array()
+            .notNull()
+            .default(sql`ARRAY[]::text[]`),
+        error: text('error'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        uniqueIndex('email_report_deliveries_user_date_uidx').on(
+            table.userId,
+            table.localDate
+        ),
+    ]
+);
+
+/**
  * Korean stock ticker metadata — keyed by ticker symbol.
  *
  * `delisted_at` is the listing-status column: `NULL` means currently listed.
