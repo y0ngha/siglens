@@ -265,7 +265,10 @@ function SettingsSkeleton() {
     );
 }
 
-/** 계정 페이지의 정기 메일 리포트 수신 설정. */
+/**
+ * 정기 메일 리포트 수신 설정 폼. `/email-report` 페이지가 쓴다 — 제목과 안내는 페이지
+ * 헤더가 맡는다.
+ */
 export function EmailReportSettingsSection() {
     const t = useTranslations('features.email-report-settings');
     const { settings, isPending, isError, refetch, save } =
@@ -273,14 +276,6 @@ export function EmailReportSettingsSection() {
 
     return (
         <div className="space-y-4">
-            <div>
-                <h2 className="text-lg font-semibold text-secondary-100">
-                    {t('EmailReportSettingsSection.411c76')}
-                </h2>
-                <p className="mt-1 text-sm text-secondary-400">
-                    {t('EmailReportSettingsSection.c1399c')}
-                </p>
-            </div>
             {isPending ? (
                 <SettingsSkeleton />
             ) : isError || !settings ? (

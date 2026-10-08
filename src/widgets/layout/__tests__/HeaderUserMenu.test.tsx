@@ -72,7 +72,7 @@ describe('HeaderUserMenu', () => {
         expect(trigger).toHaveTextContent('Y');
     });
 
-    it('메뉴를 열면 포트폴리오·계정 설정 항목이 차례로 보인다', () => {
+    it('메뉴를 열면 포트폴리오·메일 리포트·계정 설정 항목이 차례로 보인다', () => {
         render(
             <HeaderUserMenu
                 currentUser={{
@@ -87,7 +87,9 @@ describe('HeaderUserMenu', () => {
         const items = screen.getAllByRole('menuitem');
         expect(items[0]).toHaveTextContent('포트폴리오');
         expect(items[0]).toHaveAttribute('href', '/portfolio');
-        expect(items[1]).toHaveAttribute('href', '/account');
+        expect(items[1]).toHaveTextContent('메일 리포트');
+        expect(items[1]).toHaveAttribute('href', '/email-report');
+        expect(items[2]).toHaveAttribute('href', '/account');
     });
 
     it('avatarUrl이 있으면 이미지를 렌더한다', () => {

@@ -1049,4 +1049,21 @@ per market so reverting to a hardcoded string fails a test.
 
 A deliberately untranslated literal gets a comment saying why (see CM-6).
 
+<a id="I18-10"></a>
+
+#### I18-10 — Check for duplicate translator declarations after `i18n:extract --apply`
+
+`scripts/i18n/extract.mjs --apply` inserts `const t = useTranslations('<ns>')` without checking whether the component
+already declares a translator for that namespace. After every `--apply` run, grep each touched file for repeated
+`useTranslations(` declarations of the same namespace and remove the extra one before running tests.
+
+```typescript
+// ❌ extractor output in a component that already had a translator
+const t = useTranslations('emailReport');
+const t = useTranslations('emailReport');
+
+// ✅
+const t = useTranslations('emailReport');
+```
+
 ---

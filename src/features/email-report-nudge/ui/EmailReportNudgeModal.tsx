@@ -15,8 +15,8 @@ interface EmailReportNudgeModalProps {
 
 const TITLE_ID = 'email-report-nudge-title';
 const ACTION_SIZE = 'h-10 px-4 text-sm';
-/** 계정 페이지의 메일 리포트 섹션 앵커(`app/[locale]/account/page.tsx`). */
-const SETTINGS_HREF = '/account#email-report';
+/** 메일 리포트 설정 페이지(`app/[locale]/email-report/page.tsx`). */
+const SETTINGS_HREF = '/email-report';
 
 /**
  * 회원 메일 리포트 넛지 모달. 정보 제공 톤만 쓴다 — 수익이나 매매 판단을 암시하지 않는다.

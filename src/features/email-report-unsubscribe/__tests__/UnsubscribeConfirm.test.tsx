@@ -65,7 +65,7 @@ describe('UnsubscribeConfirm', () => {
             screen.getByText('메일 리포트를 더 이상 보내지 않아요.')
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: '계정 설정으로 가기' })
+            screen.getByRole('link', { name: '메일 리포트 설정으로 가기' })
         ).toBeInTheDocument();
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });

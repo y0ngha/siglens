@@ -120,6 +120,8 @@ describe('runEmailReportBatch', () => {
             sent[0]!.html.indexOf('AAPL')
         );
         expect(sent[0]!.html).toContain('d=2026-10-05');
+        // 하단 "수신 설정 변경"은 메일 리포트 설정 페이지로 간다.
+        expect(sent[0]!.text).toContain('https://siglens.io/email-report');
         expect(deps.deliveries.finish).toHaveBeenCalledWith(
             'claim-1',
             'sent',

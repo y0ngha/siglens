@@ -39,7 +39,7 @@ describe('EmailReportNudgeModal', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByRole('link', { name: '메일 리포트 설정하기' })
-        ).toHaveAttribute('href', '/account#email-report');
+        ).toHaveAttribute('href', '/email-report');
     });
 
     it('종목 권유는 그 종목을 미리 채운 포트폴리오 추가로 보낸다', () => {
