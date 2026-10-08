@@ -35,6 +35,7 @@ const EXPECTED_PII_TABLES = [
     'oauth_accounts',
     'user_api_keys',
     'portfolio_holdings',
+    'email_report_subscriptions',
     'agreements',
     'inquiries',
     'visitor_days',

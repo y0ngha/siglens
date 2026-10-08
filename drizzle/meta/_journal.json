@@ -288,6 +288,13 @@
       "when": 1791246478439,
       "tag": "0040_fix_terms_particle_typos",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791448691967,
+      "tag": "0041_email_report_subscriptions",
+      "breakpoints": true
     }
   ]
 }

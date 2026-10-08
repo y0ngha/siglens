@@ -31,6 +31,7 @@
         "entities.api-key.action",
         "entities.auth.error",
         "entities.economy.calendarCountry",
+        "entities.email-report.action",
         "entities.email-token.email",
         "entities.market-news.category",
         "entities.portfolio.action",

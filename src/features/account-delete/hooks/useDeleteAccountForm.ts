@@ -29,6 +29,9 @@ export function useDeleteAccountForm(): UseDeleteAccountFormReturn {
             queryClient.removeQueries({
                 queryKey: QUERY_KEYS.portfolioHoldings(),
             });
+            queryClient.removeQueries({
+                queryKey: QUERY_KEYS.emailReportSettings(),
+            });
             const next = await deleteAccountAction(prev, formData);
             if (next.error) {
                 void queryClient.invalidateQueries({

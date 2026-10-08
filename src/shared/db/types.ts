@@ -7,6 +7,7 @@ import type { OAuthProvider } from '@/shared/lib/types';
 import type { LlmProvider } from '../config/llmProviders';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import type { Locale } from '@/shared/i18n/locales';
 import type * as schema from './schema';
 
 /** Connection configuration required to instantiate a database client. */
@@ -235,6 +236,40 @@ export interface PortfolioHoldingRepository {
     ): Promise<PortfolioHoldingRecord | null>;
     upsert(input: UpsertPortfolioHoldingInput): Promise<PortfolioHoldingRecord>;
     deleteByUserAndSymbol(userId: string, symbol: string): Promise<boolean>;
+}
+
+/** A persisted email-report subscription row — one row per user. */
+export interface EmailReportSubscriptionRecord {
+    userId: string;
+    enabled: boolean;
+    /** Weekday bitmask — bit n is `Date#getDay()` n (0 = Sunday). */
+    daysOfWeek: number;
+    /** Local hour (0–23) in `timezone`. */
+    sendHour: number;
+    /** IANA time zone name. */
+    timezone: string;
+    locale: Locale;
+    consentedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** Input for inserting or replacing a user's email-report subscription. */
+export interface UpsertEmailReportSubscriptionInput {
+    userId: string;
+    enabled: boolean;
+    daysOfWeek: number;
+    sendHour: number;
+    timezone: string;
+    locale: Locale;
+}
+
+/** Persistence operations for email-report subscriptions. */
+export interface EmailReportSubscriptionRepository {
+    findByUser(userId: string): Promise<EmailReportSubscriptionRecord | null>;
+    upsert(
+        input: UpsertEmailReportSubscriptionInput
+    ): Promise<EmailReportSubscriptionRecord>;
 }
 
 /** `korean_tickers`의 상장 상태만 담은 최소 행. 상폐 판정 로직(`planKrTickerReconcile`,

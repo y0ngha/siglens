@@ -35,6 +35,7 @@ readonly DOCKER_HOST_NAME="host.docker.internal"
 # 개인정보·계정에 묶인 테이블 — **스키마(src/shared/db/schema.ts)만 복원하고 행은 가져오지 않는다.**
 #   users, sessions, oauth_accounts, user_api_keys  계정·세션·OAuth 토큰·암호화된 사용자 API 키
 #   portfolio_holdings                              보유종목
+#   email_report_subscriptions                      메일 리포트 수신 설정(동의 시각·타임존)
 #   agreements                                      사용자별 약관 동의
 #   inquiries                                       문의(이메일·본문)
 #   chat_conversations, chat_messages               SiglensAI 대화 (messages는 conversations 소속)
@@ -52,6 +53,7 @@ EXCLUDED_TABLES=(
     oauth_accounts
     user_api_keys
     portfolio_holdings
+    email_report_subscriptions
     agreements
     inquiries
     chat_conversations

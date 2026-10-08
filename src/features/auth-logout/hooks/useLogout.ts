@@ -16,12 +16,15 @@ export function useLogout(): UseLogoutResult {
     const logout = () =>
         startTransition(async () => {
             queryClient.setQueryData(QUERY_KEYS.currentUser(), null);
-            // Drop the previous member's holdings from the cache — a stale
-            // React Query entry would otherwise let a subsequent user on the
-            // same browser briefly see the prior member's holdings before
-            // the next authenticated fetch resolves.
+            // Drop the previous member's holdings and email-report settings
+            // from the cache — a stale React Query entry would otherwise let a
+            // subsequent user on the same browser briefly see the prior
+            // member's data before the next authenticated fetch resolves.
             queryClient.removeQueries({
                 queryKey: QUERY_KEYS.portfolioHoldings(),
+            });
+            queryClient.removeQueries({
+                queryKey: QUERY_KEYS.emailReportSettings(),
             });
             await logoutAction();
         });
