@@ -1,7 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useId, useMemo, useState } from 'react';
 import { useEmailReportSettings } from '@/entities/email-report/hooks/useEmailReportSettings';
 import {
@@ -69,6 +68,7 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
     const toggleId = useId();
     const hourId = useId();
     const statusId = useId();
+    const daysHintId = useId();
 
     const [enabled, setEnabled] = useState(initial.enabled);
     const [days, setDays] = useState<Weekday[]>(initial.daysOfWeek);
@@ -85,18 +85,21 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
         text: string;
     } | null>(null);
 
+    // 마지막 남은 요일은 해제할 수 없다. 서버는 꺼진 설정에도 요일을 요구하는데, 요일을 다
+    // 비운 채 스위치를 끄면 요일 칸이 비활성화돼 다시 고를 수도, 끈 상태로 저장할 수도 없었다.
     const toggleDay = (day: Weekday) => {
         setMessage(null);
         setDays(prev =>
-            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+            prev.includes(day)
+                ? prev.length > 1
+                    ? prev.filter(d => d !== day)
+                    : prev
+                : [...prev, day]
         );
     };
 
-    const noDaySelected = days.length === 0;
-
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (noDaySelected) return;
         setMessage(null);
         try {
             const result = await save.mutateAsync({
@@ -152,13 +155,14 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
             </div>
 
             <div className={cn('space-y-5', !enabled && 'opacity-60')}>
-                <fieldset disabled={!enabled}>
+                <fieldset disabled={!enabled} aria-describedby={daysHintId}>
                     <legend className={FIELD_LABEL}>
                         {t('EmailReportSettingsSection.b081bb')}
                     </legend>
                     <div className="flex flex-wrap gap-2">
                         {WEEKDAYS_MONDAY_FIRST.map(day => {
                             const checked = days.includes(day);
+                            const isOnlyDay = checked && days.length === 1;
                             return (
                                 <label
                                     key={day}
@@ -173,6 +177,7 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                                         type="checkbox"
                                         className="sr-only"
                                         checked={checked}
+                                        disabled={isOnlyDay}
                                         onChange={() => toggleDay(day)}
                                     />
                                     {labels.weekday(day)}
@@ -180,11 +185,12 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                             );
                         })}
                     </div>
-                    {noDaySelected ? (
-                        <p className="mt-2 text-xs text-ui-danger-text">
-                            {t('EmailReportSettingsSection.f1ce16')}
-                        </p>
-                    ) : null}
+                    <p
+                        id={daysHintId}
+                        className="mt-2 text-xs text-secondary-400"
+                    >
+                        {t('EmailReportSettingsSection.f1ce16')}
+                    </p>
                 </fieldset>
 
                 <div>
@@ -219,7 +225,7 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                 <button
                     type="submit"
                     className={SAVE_BUTTON}
-                    disabled={save.isPending || noDaySelected}
+                    disabled={save.isPending}
                     aria-describedby={statusId}
                 >
                     {save.isPending

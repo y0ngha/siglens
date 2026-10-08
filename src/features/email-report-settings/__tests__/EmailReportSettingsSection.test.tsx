@@ -106,22 +106,29 @@ describe('EmailReportSettingsSection', () => {
         ).toBeInTheDocument();
     });
 
-    it('켜진 상태에서 요일을 모두 끄면 안내를 보이고 저장을 막는다', async () => {
+    it('마지막 남은 요일은 해제할 수 없고, 다른 요일은 자유롭게 고른다', async () => {
         const { mutateAsync } = setup({
             settings: { ...SAVED, daysOfWeek: [1] },
         });
+        mutateAsync.mockResolvedValue({ status: 'ok', settings: SAVED });
         render(<EmailReportSettingsSection />);
 
-        const [checkedDay] = screen
-            .getAllByRole('checkbox')
-            .filter(box => (box as HTMLInputElement).checked);
-        await userEvent.click(checkedDay!);
-
+        const boxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
+        const onlyDay = boxes.find(box => box.checked)!;
+        expect(onlyDay).toBeDisabled();
         expect(
             screen.getByText('요일을 하나 이상 골라 주세요.')
         ).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
-        expect(mutateAsync).not.toHaveBeenCalled();
+
+        // 다른 요일을 고르면 마지막 요일 잠금이 풀린다.
+        await userEvent.click(boxes.find(box => !box.checked)!);
+        expect(onlyDay).toBeEnabled();
+        await userEvent.click(onlyDay);
+        await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(mutateAsync).toHaveBeenCalledWith(
+            expect.objectContaining({ daysOfWeek: [2] })
+        );
     });
 
     it('수신을 끄면 요일·시각 입력이 비활성화된다', async () => {
@@ -158,22 +165,18 @@ describe('EmailReportSettingsSection', () => {
         }
     });
 
-    it('요일을 모두 끈 채 수신을 꺼도 저장을 막는다 — 서버는 꺼진 설정의 요일도 검증한다', async () => {
+    it('수신을 끈 채로도 저장할 수 있다 — 요일이 비는 상태가 없다', async () => {
         const { mutateAsync } = setup({
             settings: { ...SAVED, daysOfWeek: [1] },
         });
+        mutateAsync.mockResolvedValue({ status: 'ok', settings: SAVED });
         render(<EmailReportSettingsSection />);
 
-        const [checkedDay] = screen
-            .getAllByRole('checkbox')
-            .filter(box => (box as HTMLInputElement).checked);
-        await userEvent.click(checkedDay!);
         await userEvent.click(screen.getByRole('switch'));
+        await userEvent.click(screen.getByRole('button', { name: '저장' }));
 
-        expect(
-            screen.getByText('요일을 하나 이상 골라 주세요.')
-        ).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
-        expect(mutateAsync).not.toHaveBeenCalled();
+        expect(mutateAsync).toHaveBeenCalledWith(
+            expect.objectContaining({ enabled: false, daysOfWeek: [1] })
+        );
     });
 });
