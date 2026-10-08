@@ -44,12 +44,12 @@ export function UnsubscribeConfirm() {
             <SuccessNotice
                 show={done}
                 title={t('UnsubscribeConfirm.c13cc8')}
-                messages={[t('UnsubscribeConfirm.fca698')]}
+                messages={[t('UnsubscribeConfirm.036dda')]}
             />
             {done ? (
                 <p className="text-sm">
-                    <Link href="/account" className={LINK}>
-                        {t('UnsubscribeConfirm.11ef2b')}
+                    <Link href="/email-report" className={LINK}>
+                        {t('UnsubscribeConfirm.83a2ba')}
                     </Link>
                 </p>
             ) : (

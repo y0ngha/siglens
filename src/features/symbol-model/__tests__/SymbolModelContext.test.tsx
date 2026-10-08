@@ -11,8 +11,18 @@ import {
 // testid dialog so these tests can assert single-instance open/close behavior
 // without pulling in the real modal's focus-trap/next-link dependencies.
 vi.mock('@/features/analysis-nudge/ui/AnalysisSignupNudgeModal', () => ({
-    AnalysisSignupNudgeModal: ({ onClose }: { onClose: () => void }) => (
-        <div role="dialog" data-testid="signup-nudge-modal">
+    AnalysisSignupNudgeModal: ({
+        variant,
+        onClose,
+    }: {
+        variant: string;
+        onClose: () => void;
+    }) => (
+        <div
+            role="dialog"
+            data-testid="signup-nudge-modal"
+            data-variant={variant}
+        >
             <button type="button" onClick={onClose}>
                 close
             </button>
@@ -215,9 +225,17 @@ describe('SymbolModelContext', () => {
         // tests assert on the RENDERED modal instance rather than reading an
         // open flag off the context.
         function NudgeConsumer() {
-            const { openSignupNudge, closeSignupNudge } = useSymbolModel();
+            const { openSignupNudge, openSignupNudgeAs, closeSignupNudge } =
+                useSymbolModel();
             return (
                 <div>
+                    <button
+                        type="button"
+                        data-testid="open-nudge-email"
+                        onClick={() => openSignupNudgeAs('emailReport')}
+                    >
+                        open email
+                    </button>
                     <button
                         type="button"
                         data-testid="open-nudge"
@@ -248,6 +266,28 @@ describe('SymbolModelContext', () => {
 
             // Exactly one modal, regardless of how many triggers ask to open it.
             expect(screen.getAllByTestId('signup-nudge-modal')).toHaveLength(1);
+        });
+
+        it('openSignupNudge(잠금 토글 클릭)는 상세 분석 문구로 연다', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+
+            fireEvent.click(screen.getByTestId('open-nudge'));
+
+            expect(screen.getByTestId('signup-nudge-modal')).toHaveAttribute(
+                'data-variant',
+                'reasoning'
+            );
+        });
+
+        it('openSignupNudgeAs는 요청한 문구로 같은 단일 인스턴스를 연다', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+
+            fireEvent.click(screen.getByTestId('open-nudge'));
+            fireEvent.click(screen.getByTestId('open-nudge-email'));
+
+            const modals = screen.getAllByTestId('signup-nudge-modal');
+            expect(modals).toHaveLength(1);
+            expect(modals[0]).toHaveAttribute('data-variant', 'emailReport');
         });
 
         it('a second open request does not stack a second modal (idempotent open)', () => {

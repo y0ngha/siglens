@@ -193,7 +193,7 @@ export async function runEmailReportBatch(
                     deps.secret,
                     recipient.userId
                 ),
-                settingsUrl: `${deps.siteUrl}${localePath(locale, '/account')}`,
+                settingsUrl: `${deps.siteUrl}${localePath(locale, '/email-report')}`,
                 t,
             });
             const accepted = await deps.dispatcher.sendEmail(email);

@@ -25,6 +25,12 @@ import type {
 
 interface UsePortfolioHoldingsReturn {
     holdings: PortfolioHoldingView[];
+    /**
+     * 보유종목을 실제로 받아 왔는지. `enabled: false`로 조회를 끄면 `isLoading`이 false인데
+     * `holdings`가 빈 목록이라 "보유 없음"과 "모름"이 구분되지 않는다 — 그 차이가 필요한
+     * 소비자(메일 리포트 넛지)가 이 값을 본다.
+     */
+    hasData: boolean;
     isHydrated: boolean;
     isLoading: boolean;
     isError: boolean;
@@ -48,7 +54,16 @@ interface UsePortfolioHoldingsReturn {
  *     없이 분석을 먼저 시작하지 않게 한다. 게스트로 확정되거나 조회가 실패하면 요청 없이
  *     빈 목록으로 끝난다.
  */
-export function usePortfolioHoldings(): UsePortfolioHoldingsReturn {
+export function usePortfolioHoldings({
+    enabled = true,
+}: {
+    /**
+     * 조회를 할지. 끄더라도 같은 키의 캐시(종목 페이지 등 다른 소비자가 받아 둔 값)는 그대로
+     * 읽는다 — 루트 레이아웃처럼 모든 라우트에 마운트되는 소비자가, 필요할 때만 요청을 보내게
+     * 하려고 둔다.
+     */
+    enabled?: boolean;
+} = {}): UsePortfolioHoldingsReturn {
     const isHydrated = useHydrated();
     const hasAuthHint = useAuthHint();
     const { data: currentUser, isPending: isUserPending } = useCurrentUser();
@@ -68,7 +83,7 @@ export function usePortfolioHoldings(): UsePortfolioHoldingsReturn {
     } = useQuery({
         queryKey: QUERY_KEYS.portfolioHoldings(),
         queryFn: () => getPortfolioHoldingsAction(),
-        enabled: isHydrated && isMemberLikely,
+        enabled: enabled && isHydrated && isMemberLikely,
         staleTime: PORTFOLIO_HOLDINGS_STALE_TIME_MS,
     });
     const isLoading = isQueryLoading || (isHydrated && isIdentityPending);
@@ -102,6 +117,7 @@ export function usePortfolioHoldings(): UsePortfolioHoldingsReturn {
 
     return {
         holdings,
+        hasData: isMemberLikely && data !== undefined,
         isHydrated,
         isLoading,
         isError,

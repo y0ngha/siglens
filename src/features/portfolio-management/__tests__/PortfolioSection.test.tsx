@@ -50,6 +50,7 @@ function setHoldings(
 ) {
     const base: Holdings = {
         holdings: [],
+        hasData: true,
         isHydrated: true,
         isLoading: false,
         isError: false,

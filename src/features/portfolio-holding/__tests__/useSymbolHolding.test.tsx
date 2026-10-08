@@ -21,6 +21,7 @@ type Holdings = ReturnType<typeof usePortfolioHoldings>;
 function setHoldings(overrides: Partial<Holdings>) {
     const base: Holdings = {
         holdings: [],
+        hasData: true,
         isHydrated: true,
         isLoading: false,
         isError: false,

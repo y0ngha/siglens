@@ -52,6 +52,7 @@ import {
 } from './hooks/usePanelResize';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
+import { publishSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
 import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
@@ -197,7 +198,7 @@ export function ChartContent({
         isReasoningHydrated,
         tier,
         isTierHydrated,
-        openSignupNudge,
+        openSignupNudgeAs,
     } = useSymbolModel();
     // 큐레이션 밖 종목은 SSR 시드가 비었을 때의 자동 재시도를 첫 신뢰 입력 뒤로 미룬다.
     const { allowed: autoRunAllowed, grant: grantAutoRun } =
@@ -288,13 +289,13 @@ export function ChartContent({
         [analysis.patternSummaries]
     );
 
-    // 비회원 3-심볼 회원가입 유도 (member-reasoning-toggle spec Part B).
+    // 비회원 첫 분석 회원가입 유도 (member-reasoning-toggle spec Part B, 문턱 1).
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
     // 모달 자체는 SymbolModelProvider가 단 하나만 렌더하며, 임계값 통과 시
-    // 공유 opener(openSignupNudge)로 그 단일 인스턴스를 연다 — 헤더의 잠금 토글
+    // 공유 opener(openSignupNudgeAs)로 그 단일 인스턴스를 연다 — 헤더의 잠금 토글
     // 넛지와 동일 인스턴스를 공유해 두 모달이 겹쳐 뜨는 것을 막는다.
     const { isLoginResolved: isNudgeLoginResolved, onSymbolAnalyzed } =
-        useAnonAnalysisNudge(openSignupNudge);
+        useAnonAnalysisNudge(openSignupNudgeAs);
 
     // 데스크톱·모바일 두 인스턴스 공유 — 모바일 시트 unmount/remount 시에도 상태 유지.
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
@@ -581,7 +582,7 @@ export function ChartContent({
         notifyMobileContent(mobileContent);
     }, [mobileContent]);
 
-    // 비회원 3-심볼 회원가입 유도(Part B) — 실제 서사가 렌더된 시점("완료/렌더")에
+    // 비회원 첫 분석 회원가입 유도(Part B) — 실제 서사가 렌더된 시점("완료/렌더")에
     // 카운트한다. 캐시 HIT으로 즉시 나타나든 새로 생성됐든 동일하게 "봤으면" 카운트한다
     // (spec §1). notifiedSymbolRef는 같은 심볼에 대해 중복 카운트(불필요한 localStorage
     // read/write)를 막는다 — 다운스트림 recordAnonSymbolAnalysis도 심볼 기준 dedup하므로
@@ -601,6 +602,10 @@ export function ChartContent({
         if (notifiedSymbolRef.current === symbol) return;
         notifiedSymbolRef.current = symbol;
         onSymbolAnalyzed(symbol);
+        // 루트 레이아웃의 회원 메일 리포트 넛지(`EmailReportNudgeHost`)에 알린다 — 그
+        // 호스트는 이 트리 밖이라 신호로 전달한다. 비회원 처리는 위 훅이, 회원 처리는
+        // 호스트가 각자 걸러 낸다.
+        publishSymbolAnalyzed(symbol);
     }, [
         symbol,
         analysis,
@@ -765,8 +770,8 @@ export function ChartContent({
             {isDragging && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
             )}
-            {/* 비회원 3-심볼 회원가입 유도 모달(Part B)은 SymbolModelProvider가
-                단일 인스턴스로 렌더한다 — 여기서는 openSignupNudge로 열기만 한다. */}
+            {/* 비회원 첫 분석 회원가입 유도 모달(Part B)은 SymbolModelProvider가
+                단일 인스턴스로 렌더한다 — 여기서는 openSignupNudgeAs로 열기만 한다. */}
         </div>
     );
 }

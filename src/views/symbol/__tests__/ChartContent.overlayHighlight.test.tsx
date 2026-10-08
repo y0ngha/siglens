@@ -71,7 +71,7 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         isReasoningHydrated: true,
         tier: 'free',
         isTierHydrated: true,
-        openSignupNudge: vi.fn(),
+        openSignupNudgeAs: vi.fn(),
     }),
 }));
 vi.mock('@/features/analysis-nudge/hooks/useAnonAnalysisNudge', () => ({

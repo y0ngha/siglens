@@ -117,7 +117,7 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
-        openSignupNudge: mockOpenSignupNudge,
+        openSignupNudgeAs: mockOpenSignupNudge,
     })),
 }));
 
@@ -450,6 +450,32 @@ describe('ChartContent', () => {
             await waitFor(() => {
                 expect(onSymbolAnalyzed).toHaveBeenCalledWith('AAPL');
             });
+        });
+
+        it('분석이 렌더되면 회원 넛지 호스트에도 종목 분석 신호를 보낸다', async () => {
+            const { subscribeSymbolAnalyzed } =
+                await import('@/shared/lib/symbolAnalyzedSignal');
+            const listener = vi.fn();
+            const unsubscribe = subscribeSymbolAnalyzed(listener);
+            mockUseAnonAnalysisNudge.mockReturnValueOnce({
+                isLoginResolved: true,
+                onSymbolAnalyzed: vi.fn(),
+            });
+            try {
+                render(<ChartContent {...defaultProps} />);
+                await waitFor(() => {
+                    expect(listener).toHaveBeenCalledWith('AAPL');
+                });
+            } finally {
+                unsubscribe();
+            }
+        });
+
+        it('비회원 넛지 훅에 문구 종류를 받는 공유 opener를 넘긴다', () => {
+            render(<ChartContent {...defaultProps} />);
+            expect(mockUseAnonAnalysisNudge).toHaveBeenCalledWith(
+                mockOpenSignupNudge
+            );
         });
 
         it('does not notify onSymbolAnalyzed while the analysis is still the FALLBACK_ANALYSIS shell', async () => {

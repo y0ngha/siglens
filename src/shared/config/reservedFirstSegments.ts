@@ -42,8 +42,8 @@ export const RESERVED_FIRST_SEGMENTS: ReadonlySet<string> = new Set([
     // 분석 방법 페이지. `isAdmissibleSymbolShape('methodology')`가 참이라 여기 없으면
     // `/METHODOLOGY`로 301되어 푸터·산문 고지가 거는 링크 전부가 깨진다.
     'methodology',
-    // 메일 리포트 수신거부 확인 페이지(`/email-report/unsubscribe`). 메일 링크로만 들어오지만
-    // 여기 없으면 `/EMAIL-REPORT/unsubscribe`로 301되어 메일 속 링크가 전부 깨진다.
+    // 메일 리포트 설정(`/email-report`)과 수신거부 확인(`/email-report/unsubscribe`). 여기
+    // 없으면 `/EMAIL-REPORT`로 301되어 메뉴와 메일 속 링크가 전부 깨진다.
     'email-report',
     // 광고 랜딩(`src/app/lp/`, `[locale]` 밖의 별도 루트라 스캐너 테스트가 못 본다).
     // 여기 없으면 `/ko/lp/stock-analysis`가 `/LP/stock-analysis`로 301된다.

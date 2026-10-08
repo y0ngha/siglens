@@ -1,6 +1,7 @@
 import {
     LOCAL_STORAGE_ANON_ANALYZED_SYMBOLS_KEY,
     LOCAL_STORAGE_ANON_NUDGE_SHOWN_KEY,
+    LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY,
 } from '@/shared/lib/storageKeys';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
@@ -11,8 +12,35 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
  * one (§4 "소프트 넙지라 localStorage 조작 우회 허용").
  */
 
-/** Threshold of distinct symbols analyzed in a day that triggers the signup nudge. */
-export const ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD = 3;
+/**
+ * Threshold of distinct symbols analyzed in a day that triggers the signup nudge.
+ *
+ * 1이다 — 그날 첫 분석이 화면에 그려지면 띄운다(하루 1회 상한은 `hasNudgeShownToday`).
+ * 예전엔 3이었는데, 메일 리포트를 알리면서 문턱을 낮췄다. 페이지에 들어오자마자가
+ * 아니라 분석이 렌더된 뒤에 세므로, 첫 방문자가 내용을 보기 전에 모달이 막지 않는다.
+ */
+export const ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD = 1;
+
+/** 가입 넛지 모달 문구 종류 — 같은 모달이 두 기능을 번갈아 알린다. */
+export type SignupNudgeVariant = 'reasoning' | 'emailReport';
+
+/**
+ * 이번 자동 넛지에 보여 줄 문구를 고르고 기록한다. 직전과 다른 문구를 고른다 — 매번 같은
+ * 모달을 보면 사용자가 읽지 않고 닫는다. 기록이 없으면(첫 넛지) 메일 리포트부터 보여 준다.
+ * 저장소가 막혀 있으면 메일 리포트로 고정된다.
+ */
+export function nextAnonNudgeVariant(): SignupNudgeVariant {
+    if (typeof window === 'undefined') return 'emailReport';
+    try {
+        const last = localStorage.getItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY);
+        const next: SignupNudgeVariant =
+            last === 'emailReport' ? 'reasoning' : 'emailReport';
+        localStorage.setItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY, next);
+        return next;
+    } catch {
+        return 'emailReport';
+    }
+}
 
 interface AnonAnalyzedSymbolsRecord {
     dateUtc: string;

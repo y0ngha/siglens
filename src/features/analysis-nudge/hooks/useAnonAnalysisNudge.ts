@@ -6,7 +6,13 @@ import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
+    nextAnonNudgeVariant,
+    type SignupNudgeVariant,
 } from '@/shared/lib/anonAnalysisCount';
+import {
+    hasNudgeShownThisSession,
+    markNudgeShownThisSession,
+} from '@/shared/lib/nudgeSession';
 
 export interface UseAnonAnalysisNudgeResult {
     /**
@@ -34,8 +40,9 @@ export interface UseAnonAnalysisNudgeResult {
 }
 
 /**
- * Anonymous 3-distinct-symbol signup nudge (member-reasoning-toggle spec Part
- * B). Tracks distinct symbols an anonymous visitor has analyzed today via
+ * Anonymous signup nudge (member-reasoning-toggle spec Part B; the threshold
+ * is `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the first analysis). Tracks
+ * distinct symbols an anonymous visitor has analyzed today via
  * `recordAnonSymbolAnalysis`, and opens a soft nudge modal the first time the
  * count crosses the threshold — once per day (`hasNudgeShownToday`/
  * `markNudgeShownToday`). Members are always a no-op: the counter and modal
@@ -49,13 +56,17 @@ export interface UseAnonAnalysisNudgeResult {
  * The caller passes `openNudge` (the provider's shared opener); crossing the
  * threshold invokes it instead of a local `setState`.
  *
- * @param openNudge Shared opener from `useSymbolModel().openSignupNudge`. Must
+ * Each auto-nudge alternates its copy (`nextAnonNudgeVariant`) between the
+ * reasoning and email-report pitches, and is also capped to one nudge modal
+ * per tab session (`nudgeSession`) so it never stacks with another nudge.
+ *
+ * @param openNudge Shared opener from `useSymbolModel().openSignupNudgeAs`. Must
  *   be a stable reference (the provider memoizes it with `useCallback`) so
  *   `onSymbolAnalyzed`'s identity only changes with login resolution — callers
  *   dedup on that identity.
  */
 export function useAnonAnalysisNudge(
-    openNudge: () => void
+    openNudge: (variant: SignupNudgeVariant) => void
 ): UseAnonAnalysisNudgeResult {
     const currentUserQuery = useCurrentUser();
     // undefined until the query settles — before that we don't know whether
@@ -70,9 +81,11 @@ export function useAnonAnalysisNudge(
             const { crossedThreshold } = recordAnonSymbolAnalysis(symbol);
             if (!crossedThreshold) return;
             if (hasNudgeShownToday()) return;
+            if (hasNudgeShownThisSession()) return;
 
             markNudgeShownToday();
-            openNudge();
+            markNudgeShownThisSession();
+            openNudge(nextAnonNudgeVariant());
         },
         [isAnonymous, openNudge]
     );

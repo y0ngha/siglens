@@ -39,8 +39,10 @@ const KIND_BY_FIRST_SEGMENT: Readonly<Record<string, RouteKind>> = {
     signup: 'auth',
     'forgot-password': 'auth',
     'reset-password': 'auth',
-    // 메일 수신거부 확인 — 인증 페이지와 같은 카드 셸(`AuthCardShell`)이다.
-    'email-report': 'auth',
+    // 메일 리포트 설정(`/email-report`)은 계정 설정과 같은 모양이다. 수신거부 확인
+    // (`/email-report/unsubscribe`)은 카드 셸이지만 메일 링크로 들어오는 페이지라 클릭
+    // 이동 골격을 볼 일이 거의 없어, 첫 세그먼트 하나로 묶는다.
+    'email-report': 'account',
     account: 'account',
     portfolio: 'portfolio',
     share: 'share',

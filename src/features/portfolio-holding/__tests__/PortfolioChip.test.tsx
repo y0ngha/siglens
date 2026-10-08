@@ -55,6 +55,7 @@ function setCurrentUser(data: AuthUserRecord | null | undefined) {
 function setHoldings(overrides: Partial<Holdings>) {
     const base: Holdings = {
         holdings: [],
+        hasData: true,
         isHydrated: true,
         isLoading: false,
         isError: false,

@@ -9,7 +9,6 @@
                 "1b6c6d": "Loading AI Model API Key",
                 "3a0c2b": "Account Withdrawal",
                 "3c3776": "Email",
-                "411c76": "Email report",
                 "54ac38": "All information related to your account will be immediately and permanently deleted.",
                 "622fae": "Account Settings",
                 "64f90b": "AI Model API Key",
@@ -93,6 +92,14 @@
             }
         },
         "email-report": {
+            "page": {
+                "190fd1": "Stocks in your report",
+                "411c76": "Email report",
+                "513e32": "Manage stocks in your portfolio",
+                "97c221": "Up to {v0} stocks from your portfolio are included — overseas stocks first, then by largest cost basis.",
+                "b7b3c8": "Delivery settings",
+                "c1399c": "Get a report on your holdings by email on the days and time you choose."
+            },
             "unsubscribe": {
                 "page": {
                     "title": "Unsubscribe from email reports",
@@ -490,7 +497,7 @@
                 "optionsIv": "ATM implied volatility",
                 "optionsMove": "Implied move to expiry ({v0})",
                 "optionsPutCall": "Put/call ratio (open interest)",
-                "reason": "You're receiving this because you turned on email reports in your {v0} account settings.",
+                "reason": "You're receiving this because you turned on email reports in your {v0} email report settings.",
                 "sectionNews": "Top news",
                 "sectionOptions": "Options activity",
                 "sectionPatterns": "Chart patterns",
@@ -606,8 +613,10 @@
             "AnalysisSignupNudgeModal": {
                 "486011": "Sign up to enable ''{v0}'' and receive more detailed analysis reports.",
                 "2b8afd": "Go to Sign Up",
+                "7e84b8": "Get a report on your holdings by email",
                 "84ff73": "Want deeper analysis?",
-                "94b7db": "Close"
+                "94b7db": "Close",
+                "ac43bc": "Sign up and add your portfolio, and we'll email daily charts, the Simple analysis, news and options activity on the days and time you choose."
             }
         },
         "api-key-management": {
@@ -714,19 +723,28 @@
                 "fbccd7": "Max {v0} characters"
             }
         },
+        "email-report-nudge": {
+            "EmailReportNudgeModal": {
+                "0fcd14": "Later",
+                "15049a": "Add {v0} to your portfolio and we'll include it in your scheduled email report.",
+                "4a3bb0": "Add to portfolio",
+                "5da22e": "Get this stock in your email report too?",
+                "7e84b8": "Get a report on your holdings by email",
+                "8be329": "Set up email reports",
+                "daa53b": "We'll email daily charts, the Simple analysis, news and options activity for the {v0} stocks in your portfolio on the days and time you choose."
+            }
+        },
         "email-report-settings": {
             "EmailReportSettingsSection": {
                 "313286": "We'll send daily charts, the Simple analysis, news and options activity for up to {v0} portfolio holdings.",
                 "633367": "Get reports by email",
                 "0c767c": "Try again",
                 "1f1712": "Save",
-                "411c76": "Email report",
                 "4ba4b5": "Couldn't load your email report settings.",
                 "9f6785": "Saving…",
                 "9f8a60": "Saved.",
                 "a4c309": "Times are in {v0}. Reports sent before the US market close use the previous close.",
                 "b081bb": "Days",
-                "c1399c": "Get a report on your holdings by email on the days and time you choose.",
                 "dcc8a2": "Saving failed. Please try again in a moment.",
                 "e61b39": "Loading email report settings",
                 "f0cf28": "Time",
@@ -735,13 +753,13 @@
         },
         "email-report-unsubscribe": {
             "UnsubscribeConfirm": {
+                "036dda": "You can turn them back on anytime in email report settings.",
                 "0fcf72": "Unsubscribe",
-                "11ef2b": "Go to account settings",
                 "24cd06": "Processing…",
                 "24d0de": "Unsubscribing failed. Please try again in a moment.",
                 "5b4a51": "This unsubscribe link isn't valid. Please open the link in the email again.",
-                "c13cc8": "You won't receive email reports anymore.",
-                "fca698": "You can turn them back on anytime in account settings."
+                "83a2ba": "Go to email report settings",
+                "c13cc8": "You won't receive email reports anymore."
             }
         },
         "portfolio-holding": {
@@ -1524,6 +1542,10 @@
                     "faq3q": "Where does this data come from?",
                     "title": "US Economy — Indicators & Calendar at a Glance"
                 }
+            },
+            "emailReport": {
+                "description": "Settings for receiving daily charts, analysis, news and options activity for your portfolio stocks by email on the days and time you choose",
+                "title": "Email report"
             },
             "faq": {
                 "newsArticleHeadlineCrypto": "AI summary of recent {v0} crypto news",
@@ -3719,6 +3741,7 @@
             },
             "HeaderUserMenu": {
                 "3a7424": "Avatar Image",
+                "411c76": "Email report",
                 "622fae": "Account Settings",
                 "b9a45e": "User Menu",
                 "ce5200": "Loading",

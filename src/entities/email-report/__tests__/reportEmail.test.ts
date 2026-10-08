@@ -57,7 +57,7 @@ const INPUT: BuildReportEmailInput = {
     ],
     unsubscribePageUrl: 'https://siglens.io/email-report/unsubscribe?u=1',
     unsubscribeApiUrl: 'https://siglens.io/api/email-report/unsubscribe?u=1',
-    settingsUrl: 'https://siglens.io/account',
+    settingsUrl: 'https://siglens.io/email-report',
     t,
 };
 
@@ -170,7 +170,7 @@ describe('buildReportEmail', () => {
         expect(html).toContain(
             'href="https://siglens.io/email-report/unsubscribe?u=1"'
         );
-        expect(html).toContain('href="https://siglens.io/account"');
+        expect(html).toContain('href="https://siglens.io/email-report"');
         expect(text).toContain('disclaimer');
         expect(text).toContain(
             'unsubscribe: https://siglens.io/email-report/unsubscribe?u=1'
