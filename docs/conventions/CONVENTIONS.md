@@ -584,6 +584,8 @@ conversions) must match reality, and a false WHY is worse than none. Re-verify t
 file or the rule it describes changes:
 
 - "Only X uses this" claims go stale when a second caller appears; name callers explicitly or drop the claim.
+- When a function's processing order or workload changes (a step appended, steps reordered), re-read its JSDoc and the
+  route or caller doc that describes it, for example a "short, no lock needed" claim.
 - When a function's input, data source or location changes, or a file or function is deleted, grep for comments,
   JSDoc and test names that mention it and update them in the same change (see CS-8).
 - After reversing a layout contract, grep the whole repo (`src/`, `e2e/`, `docs/`) for the old wording, including

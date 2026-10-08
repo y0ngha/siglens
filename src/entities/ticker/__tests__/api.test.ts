@@ -28,8 +28,10 @@ import {
     // 경계 테스트(500/501)는 구현이 실제로 쓰는 상수여야 의미가 있다 — 값을 여기
     // 다시 적으면 상수가 바뀌는 순간 조용히 경계를 벗어난다(TESTING.md#TE-6).
     KOREAN_TICKER_UPSERT_BATCH_SIZE,
+    KR_SYMBOL_LIKE_PATTERNS,
 } from '@/entities/ticker/api';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
 
 import type {
@@ -238,6 +240,34 @@ describe('DrizzleKoreanTickerRepository', () => {
         expect(collectSqlStrings(condition)).toEqual(
             expect.arrayContaining(['%.KS', '%.KQ'])
         );
+    });
+
+    it('국내 심볼 LIKE 패턴은 isKrEquitySymbol의 판정과 같은 집합이다', () => {
+        // `%.KS` → 샘플 심볼로 바꿔 `isKrEquitySymbol`이 전부 true여야 하고, 패턴에 없는
+        // 접미사(`.KX`)는 false여야 한다 — 한쪽만 바뀌면 두 조회가 조용히 어긋난다.
+        const samples = KR_SYMBOL_LIKE_PATTERNS.map(pattern =>
+            pattern.replace('%', '005930')
+        );
+        expect(samples.every(isKrEquitySymbol)).toBe(true);
+        expect(isKrEquitySymbol('005930.KX')).toBe(false);
+        // 패턴 개수도 고정 — 접미사가 늘면 이 테스트가 `KR_SYMBOL_RE`와 대조하도록 갱신을 강제한다.
+        expect(KR_SYMBOL_LIKE_PATTERNS).toHaveLength(2);
+    });
+
+    it('findAllNonKr 은 국내(.KS/.KQ)가 아닌 행만 읽는다', async () => {
+        // 이름 재대조의 입력이다. 국내 행이 섞이면 KRX cron이 정본인 이름을 FMP stock-list와
+        // 대조하게 된다 — 조건식을 열어 접미사와 부정 연산을 둘 다 확인한다.
+        const { db, where } = makeSelectFromDb([apple, microsoft]);
+        const repo = new DrizzleKoreanTickerRepository(db);
+
+        await expect(repo.findAllNonKr()).resolves.toEqual([apple, microsoft]);
+
+        expect(where).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toContain('symbol');
+        const strings = collectSqlStrings(condition);
+        expect(strings).toEqual(expect.arrayContaining(['%.KS', '%.KQ']));
+        expect(strings.some(value => /not like/i.test(value))).toBe(true);
     });
 
     it('findBySymbols 는 빈 입력에서 select 를 호출하지 않는다', async () => {
@@ -552,6 +582,13 @@ describe('DrizzleAssetTranslationRepository', () => {
         await expect(repo.findBySymbol('AAPL')).resolves.toBeNull();
     });
 
+    it('findAll 은 전 행을 반환한다', async () => {
+        const { db, select } = makeSelectFromDb([record]);
+        const repo = new DrizzleAssetTranslationRepository(db);
+        await expect(repo.findAll()).resolves.toEqual([record]);
+        expect(select).toHaveBeenCalledTimes(1);
+    });
+
     it('upsert 는 insert + onConflictDoUpdate 를 호출한다', async () => {
         const { db, insert, values, onConflictDoUpdate } = makeUpsertDb();
         const repo = new DrizzleAssetTranslationRepository(db);
@@ -598,6 +635,53 @@ describe('DrizzleProfileDescriptionTranslationRepository', () => {
         symbol: 'AAPL',
         descriptionKo: '애플은 소비자 가전 제품을 설계합니다.',
     };
+
+    function makeDeleteDb(): { db: SiglensDatabase; del: Mock; where: Mock } {
+        const where = vi.fn().mockResolvedValue(undefined);
+        const del = vi.fn(() => ({ where }));
+        return {
+            db: { delete: del } as unknown as SiglensDatabase,
+            del,
+            where,
+        };
+    }
+
+    it('deleteBySymbols 는 요청한 심볼 조건으로 삭제한다', async () => {
+        const { db, del, where } = makeDeleteDb();
+        const repo = new DrizzleProfileDescriptionTranslationRepository(db);
+
+        await repo.deleteBySymbols(['LAZR', 'AAPL']);
+
+        expect(del).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toContain('symbol');
+        expect(collectSqlStrings(condition)).toEqual(
+            expect.arrayContaining(['LAZR', 'AAPL'])
+        );
+    });
+
+    it('deleteBySymbols 는 빈 입력에서 delete 를 호출하지 않는다', async () => {
+        const { db, del } = makeDeleteDb();
+        const repo = new DrizzleProfileDescriptionTranslationRepository(db);
+        await repo.deleteBySymbols([]);
+        expect(del).not.toHaveBeenCalled();
+    });
+
+    it('deleteBySymbols 는 대량 입력을 배치로 쪼갠다', async () => {
+        const { db, del, where } = makeDeleteDb();
+        const repo = new DrizzleProfileDescriptionTranslationRepository(db);
+        const many = Array.from(
+            { length: KOREAN_TICKER_UPSERT_BATCH_SIZE + 1 },
+            (_, i) => `SYM${i}`
+        );
+
+        await repo.deleteBySymbols(many);
+
+        expect(del).toHaveBeenCalledTimes(2);
+        const sent = collectBatchedInArraySymbols(where, many);
+        expect(sent).toHaveLength(many.length);
+        expect(new Set(sent)).toEqual(new Set(many));
+    });
 
     it('findBySymbol 은 row 를 반환한다', async () => {
         const { db } = makeFindBySymbolDb([record]);

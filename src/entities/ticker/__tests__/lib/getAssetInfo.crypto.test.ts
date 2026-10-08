@@ -57,6 +57,8 @@ vi.mock('../../lib/fmpTickerApi', async () => {
 });
 vi.mock('../../lib/koreanNameStore', () => ({
     getKoreanNames: vi.fn().mockResolvedValue({}),
+    getTickerDisplayNames: vi.fn().mockResolvedValue({}),
+    lookupTickerDisplayNames: vi.fn().mockResolvedValue({}),
     setKoreanTickers: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../../lib/koreanTranslator', () => ({

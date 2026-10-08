@@ -1,6 +1,9 @@
 import { tryGetDatabaseClient } from '@/shared/db/client';
-import { KOREAN_NAMES_CACHE_TTL, KOREAN_TICKERS_CACHE_KEY } from './cacheKeys';
-import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
+import {
+    KOREAN_SEARCH_SNAPSHOT_TTL_MS,
+    LEGACY_KOREAN_TICKERS_REDIS_KEY,
+} from './cacheKeys';
+import { createCacheProvider } from '@y0ngha/siglens-core';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
@@ -31,112 +34,115 @@ function tryGetRepository(): KoreanTickerRepository | null {
     return new DrizzleKoreanTickerRepository(client.db);
 }
 
-async function readFromCache(
-    cache: CacheProvider
-): Promise<KoreanTickerEntry[] | null> {
-    try {
-        return await cache.get<KoreanTickerEntry[]>(KOREAN_TICKERS_CACHE_KEY);
-    } catch {
-        return null;
-    }
+/**
+ * 한글명 검색용 인스턴스 메모리 스냅샷. `findAll()` 전체(약 3.3만 행)를 들고 있다가
+ * `KOREAN_SEARCH_SNAPSHOT_TTL_MS` 뒤에 다시 읽는다.
+ *
+ * DB `ILIKE`로 바꾸지 않은 이유: `rankByRelevance`가 후보 **전체**를 보고 순위를 매긴다.
+ * "삼" 같은 짧은 질의는 수천 행이 걸려 `LIMIT`을 걸면 순위가 깨지고, 걸지 않으면 키 입력마다
+ * 수천 행이 DB에서 전송된다. 메모리 스냅샷은 동작(전체 대상 부분 일치 → 순위)을 그대로
+ * 두면서 예전 Redis 왕복과 수 MB 파싱을 없앤다.
+ */
+interface KoreanSearchSnapshot {
+    entries: KoreanTickerEntry[];
+    loadedAt: number;
 }
 
-async function writeToCache(
-    cache: CacheProvider,
-    entries: KoreanTickerEntry[]
-): Promise<void> {
-    try {
-        await cache.set(
-            KOREAN_TICKERS_CACHE_KEY,
-            entries,
-            KOREAN_NAMES_CACHE_TTL
-        );
-    } catch {
-        // Graceful degradation: cache write failure should not propagate.
-    }
+let snapshot: KoreanSearchSnapshot | null = null;
+let snapshotLoad: Promise<KoreanTickerEntry[]> | null = null;
+/**
+ * 로드 도중 무효화가 일어났는지 가리는 세대 번호. 무효화가 로드 중에 끼면 그 로드가
+ * 가져온 (이미 낡은) 결과를 스냅샷에 넣지 않는다.
+ */
+let snapshotGeneration = 0;
+
+/**
+ * 스냅샷과 진행 중 로드를 함께 버린다. `snapshotLoad`를 비우지 않으면 무효화 뒤에 온
+ * 요청이 무효화 이전에 시작된 낡은 로드에 합류해 옛 데이터를 받는다.
+ */
+function clearSnapshot(): void {
+    snapshot = null;
+    snapshotLoad = null;
+    snapshotGeneration += 1;
 }
 
-async function loadEntriesFromCache(
-    cache: CacheProvider | null
-): Promise<KoreanTickerEntry[] | null> {
-    if (!cache) return null;
-
-    return readFromCache(cache);
-}
-
-async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
-    const cache = createCacheProvider();
-    const cached = await loadEntriesFromCache(cache);
-    // 정본은 **반환 지점**에서 입힌다 — 캐시에는 원본을 그대로 둬야 정본 맵을
-    // 고쳤을 때 캐시 무효화 없이 반영된다(`withCanonical` JSDoc).
-    if (cached !== null) return cached.map(withCanonical);
-
-    const repository = tryGetRepository();
-    if (!repository) return [];
-
-    const entries = await readAllFromDatabase(repository);
-    if (cache && entries.length > 0) {
-        await writeToCache(cache, entries);
-    }
-    return entries.map(withCanonical);
+/** Test helper — 스냅샷과 진행 중 로드를 비운다. */
+export function __resetKoreanSearchSnapshotForTests(): void {
+    clearSnapshot();
 }
 
 /**
- * `loadAllEntries`와 같은 캐시 키(`KOREAN_TICKERS_CACHE_KEY`)를 읽지만 미스 처리
- * 방식이 다르다 — 단순화하면 이 저장소의 상폐 종목 보장이 캐시가 warm해진 순간
- * 조용히 깨진다.
+ * DB에서 스냅샷을 새로 읽는다.
  *
- * 캐시는 `findAll()`(상장 종목만) 결과로 채워진다. 캐시 hit에서 그 배열을
- * `filter`만 하면, DB에는 있지만 캐시엔 없는 상폐 심볼이 영원히 걸러진다 —
- * `findBySymbols`가 상폐 행까지 돌려주도록 만든 목적 자체가 무력화된다
- * (`KoreanTickerRepository.findBySymbols` JSDoc 참조). 그래서 캐시 hit이어도
- * 요청 심볼 중 캐시가 못 채운 것을 따로 추려 DB로 보충한다.
+ * **갱신 실패 시 마지막 정상 스냅샷을 돌려준다**(SERVER.md#DC-7). 만료된 스냅샷은 지우지
+ * 않으므로(`loadedAt`도 그대로) 실패·빈 결과면 옛 목록을 서빙하고 다음 호출이 곧바로
+ * 다시 시도한다. 빈 배열을 돌려주면 일시 장애가 "검색 결과 없음"이라는 틀린 답이 된다.
  *
- * 보충은 **국내 심볼로만** 한정한다. 상폐는 KR 티커에만 있는 개념이고, 오탈자·
- * 미상장 등으로 캐시에 없는 US/crypto 심볼까지 매번 DB를 때리면 흔한 캐시
- * 미스마다 쿼리가 하나씩 붙는다 — 이 함수가 핫 패스(`getKoreanNames`)에서
- * 호출되므로 그 비용은 무시할 수 없다.
+ * DB 장애 흡수(SERVER.md#DC-8): 예전 Redis 사본은 DB가 죽어도 검색을 살려 주는 층이기도
+ * 했다. 이제 그 역할은 이 인스턴스 스냅샷이 맡는다 — 한 번이라도 로드된 인스턴스는 DB가
+ * 죽어도 옛 목록으로 계속 답한다. 콜드 스타트 직후(스냅샷 없음)의 장애만 빈 배열이며,
+ * 그 결과는 저장하지 않아 요청마다 재시도한다(`findAll` 폭주는 single-flight가 막는다).
+ * 심볼 조회(`findBySymbols`)는 PK 조회라 따로 쓰기 폴백을 두지 않는다 — 호출부가 영문명으로
+ * degrade한다.
+ */
+async function loadSnapshotFromDatabase(): Promise<KoreanTickerEntry[]> {
+    const repository = tryGetRepository();
+    if (!repository) return snapshot?.entries ?? [];
+
+    const generation = snapshotGeneration;
+    // 정본은 **로드 지점**에서 입힌다 — 매칭 술어와 반환값 모두 자동으로 정본을 본다
+    // (`withCanonical` JSDoc).
+    const entries = (await readAllFromDatabase(repository)).map(withCanonical);
+    // 빈 결과(DB 장애)는 새 스냅샷으로 삼지 않고 직전 스냅샷으로 답한다. 무효화가 로드 중에
+    // 끼었으면 `snapshot`이 이미 비어 있어 `[]`로 떨어진다(낡은 목록을 되살리지 않는다).
+    // 결과가 비지 않았는데 세대가 어긋난 경우(아래)는 저장하지 않을 뿐, 이 로드에 합류했던
+    // 호출자에게는 그 결과를 그대로 돌려준다 — 무효화 직전에 시작한 읽기라 잠깐 낡을 수
+    // 있지만, 무효화 뒤에 들어온 호출자는 새 로드를 탄다(`clearSnapshot`).
+    if (entries.length === 0) return snapshot?.entries ?? [];
+    if (generation === snapshotGeneration) {
+        snapshot = { entries, loadedAt: Date.now() };
+    }
+    return entries;
+}
+
+async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
+    if (
+        snapshot !== null &&
+        Date.now() - snapshot.loadedAt < KOREAN_SEARCH_SNAPSHOT_TTL_MS
+    ) {
+        return snapshot.entries;
+    }
+
+    // single-flight — 만료 순간 몰린 요청이 `findAll()`을 N번 치지 않게 한다.
+    if (snapshotLoad === null) {
+        const load: Promise<KoreanTickerEntry[]> =
+            loadSnapshotFromDatabase().finally(() => {
+                // 무효화로 더 새로운 로드가 들어섰을 수 있다 — 내 것일 때만 비운다.
+                if (snapshotLoad === load) snapshotLoad = null;
+            });
+        snapshotLoad = load;
+    }
+    return snapshotLoad;
+}
+
+/**
+ * 심볼로 이름을 찾는다 — DB `findBySymbols`(PK `IN`)를 직접 읽는다. `findBySymbols`는
+ * 상폐 행까지 돌려주므로(`KoreanTickerRepository.findBySymbols` JSDoc) 상폐 종목의 한글명도
+ * 별도 보충 없이 나온다.
+ *
+ * **조회 실패(`null`)와 "행 없음"(`[]`)을 구분한다**(SERVER.md#DC-8). 예전 Redis 사본은 DB
+ * 장애를 흡수하는 층이기도 했다 — 장애를 `[]`로 뭉개면 호출부가 이미 번역된 심볼을 "번역이
+ * 없다"고 읽어 장애 동안 심볼마다 Gemini 번역을 돌린다. DB 클라이언트가 아예 없는 구성은
+ * 장애가 아니라 "저장소 없음"이라 `[]`다.
  */
 async function loadEntriesBySymbols(
     symbols: readonly string[]
-): Promise<KoreanTickerEntry[]> {
-    const cache = createCacheProvider();
-    const cached = await loadEntriesFromCache(cache);
-    if (cached !== null) {
-        return (await resolveFromCacheWithFallback(cached, symbols)).map(
-            withCanonical
-        );
-    }
-
+): Promise<KoreanTickerEntry[] | null> {
     const repository = tryGetRepository();
     if (!repository) return [];
 
-    return (await readBySymbolsFromDatabase(repository, symbols)).map(
-        withCanonical
-    );
-}
-
-async function resolveFromCacheWithFallback(
-    cached: KoreanTickerEntry[],
-    symbols: readonly string[]
-): Promise<KoreanTickerEntry[]> {
-    const requested = new Set(symbols);
-    const hits = cached.filter(entry => requested.has(entry.symbol));
-
-    const hitSymbols = new Set(hits.map(entry => entry.symbol));
-    const missingKrSymbols = [...requested].filter(
-        symbol => !hitSymbols.has(symbol) && isKrEquitySymbol(symbol)
-    );
-    if (missingKrSymbols.length === 0) return hits;
-
-    const repository = tryGetRepository();
-    if (!repository) return hits;
-
-    const fallback = await readBySymbolsFromDatabase(
-        repository,
-        missingKrSymbols
-    );
-    return [...hits, ...fallback];
+    const entries = await readBySymbolsFromDatabase(repository, symbols);
+    return entries === null ? null : entries.map(withCanonical);
 }
 
 async function readAllFromDatabase(
@@ -153,12 +159,12 @@ async function readAllFromDatabase(
 async function readBySymbolsFromDatabase(
     repository: KoreanTickerRepository,
     symbols: readonly string[]
-): Promise<KoreanTickerEntry[]> {
+): Promise<KoreanTickerEntry[] | null> {
     try {
         return await repository.findBySymbols(symbols);
     } catch (e) {
         console.warn('[koreanNameStore] DB read failed', e);
-        return [];
+        return null;
     }
 }
 
@@ -169,13 +175,14 @@ async function readBySymbolsFromDatabase(
  * 오버라이드가 닿지 않는다. 검색 자동완성·뉴스가 여기서 이름을 받으므로, 덮지
  * 않으면 종목 페이지엔 `실스큐`인데 검색엔 `씰스큐`가 뜬다.
  *
- * **로더(`loadAllEntries`/`loadEntriesBySymbols`)의 반환 지점에만 적용한다.**
+ * **로더(`loadSnapshotFromDatabase`/`loadEntriesBySymbols`)의 반환 지점에만 적용한다.**
  * 호출부마다 흩뿌리면 새 리더가 생길 때 조용히 빠진다 — 실제로 `searchByKoreanName`이
  * 그렇게 빠져 있었고, 그 함수는 반환값뿐 아니라 **매칭 술어**도 원본을 보고 있어서
  * 사용자가 올바른 이름을 치면 0건이 나왔다(리뷰 round 2). 로더에서 입히면 술어가
  * 자동으로 정본을 본다.
  *
- * 캐시에는 원본을 쓴다 — 파생값을 저장하면 정본 맵 수정이 캐시 TTL에 묶인다.
+ * 검색 스냅샷에는 정본을 입힌 값이 담긴다 — 정본 맵을 고치면 스냅샷 TTL(10분)·재시작 뒤
+ * 반영된다(DB의 원본 행은 그대로라 맵에서 빼면 저장된 값이 다시 드러난다).
  *
  * ⚠️ **`getKoreanNames`는 자체 오버라이드를 하나 더 갖는다 — 지우지 말 것.**
  * 이 함수는 *존재하는 행*만 고칠 수 있어서, 저장된 행이 아예 없는 심볼에는
@@ -203,7 +210,7 @@ function withCanonical(entry: KoreanTickerEntry): KoreanTickerEntry {
 }
 
 /**
- * Korean-name substring lookup over the cached/persisted ticker store.
+ * Korean-name substring lookup over the in-memory snapshot of the persisted ticker store.
  *
  * ⚠️ **매칭 술어와 반환값 둘 다** 정본을 봐야 한다. 반환값만 덮으면 표시만 고쳐지고
  * 검색은 여전히 저장된(틀린) 이름으로만 걸린다 — 사용자가 올바른 이름(`실스큐`)을
@@ -233,7 +240,7 @@ export interface TickerDisplayName {
  * 심볼 목록의 **표기용 이름**을 한 번에 읽는다(`/symbols` 디렉터리).
  *
  * `getKoreanNames`는 한글명만 돌려주므로 비-ko 화면에서 쓸 이름이 없다. 여기서는
- * 같은 로더(`loadEntriesBySymbols` — 캐시 → DB, 정본 오버라이드 포함)를 그대로
+ * 같은 로더(`loadEntriesBySymbols` — DB 직접, 정본 오버라이드 포함)를 그대로
  * 쓰되 두 이름을 함께 내보낸다. 로더를 재사용하는 것이 핵심이다: 새 리더를 따로
  * 만들면 정본 한글명 오버라이드가 이 표면에만 빠져 화면마다 이름이 갈린다(이
  * 파일 상단 주석의 사고가 정확히 그 형태였다).
@@ -244,9 +251,23 @@ export interface TickerDisplayName {
 export async function getTickerDisplayNames(
     symbols: readonly string[]
 ): Promise<Record<string, TickerDisplayName>> {
+    return (await lookupTickerDisplayNames(symbols)) ?? {};
+}
+
+/**
+ * {@link getTickerDisplayNames}와 같은 조회지만 **DB 조회 실패를 `null`로 알린다.**
+ *
+ * 대부분의 호출부(뉴스·검색 보강·디렉터리)는 실패를 "이름 없음"으로 읽어 영문명으로
+ * degrade해도 되므로 `getTickerDisplayNames`를 쓴다. 실패와 "행 없음"을 구분해야 하는
+ * 호출부 — 행이 없으면 번역을 시작하는 `getAssetInfo`의 FMP 경로 — 만 이 함수를 쓴다.
+ */
+export async function lookupTickerDisplayNames(
+    symbols: readonly string[]
+): Promise<Record<string, TickerDisplayName> | null> {
     if (symbols.length === 0) return {};
 
     const entries = await loadEntriesBySymbols(symbols);
+    if (entries === null) return null;
     const bySymbol = new Map(entries.map(e => [e.symbol, e]));
 
     return Object.fromEntries(
@@ -274,7 +295,7 @@ export async function getKoreanNames(
 ): Promise<Record<string, string>> {
     if (symbols.length === 0) return {};
 
-    const entries = await loadEntriesBySymbols(symbols);
+    const entries = (await loadEntriesBySymbols(symbols)) ?? [];
     const symbolMap = new Map(entries.map(e => [e.symbol, e.koreanName]));
 
     const pairs = symbols.flatMap<readonly [string, string]>(symbol => {
@@ -294,24 +315,29 @@ export async function getKoreanNames(
 }
 
 /**
- * 한글 종목 캐시를 비운다. 검색은 이 캐시를 통째로 읽어 substring 필터를 돌리므로,
- * 상장 상태가 바뀐 뒤 비우지 않으면 상폐 종목이 TTL 동안 검색에 계속 뜬다.
+ * 이 인스턴스의 한글명 검색 스냅샷을 비운다. 다른 인스턴스는 최대
+ * `KOREAN_SEARCH_SNAPSHOT_TTL_MS` 늦게 반영된다(데이터 정본은 DB).
+ *
+ * 부수로 예전 Redis 사본(`LEGACY_KOREAN_TICKERS_REDIS_KEY`)을 best-effort로 지운다 —
+ * 배포 뒤 KR cron이 한 번 지우면 남은 수 MB 키가 정리된다. `DEL`은 멱등이고 일 1회라
+ * 비용이 없다. 다음 정리 PR에서 이 부분을 제거한다.
  */
 export async function invalidateKoreanTickerCache(): Promise<void> {
-    const cache = createCacheProvider();
-    if (!cache) return;
-    await invalidateCache(cache);
+    clearSnapshot();
+    await deleteLegacyRedisKey();
 }
 
-async function invalidateCache(cache: CacheProvider): Promise<void> {
+async function deleteLegacyRedisKey(): Promise<void> {
     try {
-        await cache.delete(KOREAN_TICKERS_CACHE_KEY);
+        const cache = createCacheProvider();
+        if (!cache) return;
+        await cache.delete(LEGACY_KOREAN_TICKERS_REDIS_KEY);
     } catch {
-        // Graceful degradation: cache invalidation failure should not propagate.
+        // Graceful degradation: 정리용 DEL의 실패는 전파하지 않는다.
     }
 }
 
-/** Upsert ticker entries to the DB and invalidate the Redis cache. */
+/** Upsert ticker entries to the DB and drop this instance's search snapshot. */
 export async function setKoreanTickers(
     newEntries: readonly KoreanTickerEntry[]
 ): Promise<void> {
@@ -327,8 +353,5 @@ export async function setKoreanTickers(
         return;
     }
 
-    const cache = createCacheProvider();
-    if (!cache) return;
-
-    await invalidateCache(cache);
+    clearSnapshot();
 }

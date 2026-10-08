@@ -13,6 +13,7 @@ import {
     inArray,
     isNull,
     like,
+    notLike,
     or,
     sql,
 } from 'drizzle-orm';
@@ -66,6 +67,12 @@ const DB_SORT_OTHER = 2;
  * 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
  */
 export const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
+
+/**
+ * 국내 종목 심볼 접미사. `isKrEquitySymbol`(`KR_SYMBOL_RE`)과 같은 집합이어야 한다 —
+ * 일치는 `api.test.ts`가 고정한다.
+ */
+export const KR_SYMBOL_LIKE_PATTERNS = ['%.KS', '%.KQ'] as const;
 
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
@@ -193,8 +200,26 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             .from(koreanTickers)
             .where(
                 or(
-                    like(koreanTickers.symbol, '%.KS'),
-                    like(koreanTickers.symbol, '%.KQ')
+                    ...KR_SYMBOL_LIKE_PATTERNS.map(pattern =>
+                        like(koreanTickers.symbol, pattern)
+                    )
+                )
+            );
+    }
+
+    /**
+     * 국내 종목이 아닌 행 전부. `findAllListingStatuses`의 접미사 조건을 뒤집은 것이라
+     * 두 조회가 서로 겹치지 않는다 — 국내 이름은 KRX cron이, 그 밖은 이름 재대조가 맡는다.
+     */
+    async findAllNonKr(): Promise<KoreanTickerEntry[]> {
+        return this.db
+            .select(koreanTickerColumns)
+            .from(koreanTickers)
+            .where(
+                and(
+                    ...KR_SYMBOL_LIKE_PATTERNS.map(pattern =>
+                        notLike(koreanTickers.symbol, pattern)
+                    )
                 )
             );
     }
@@ -284,6 +309,10 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
         return row ?? null;
     }
 
+    async findAll(): Promise<AssetTranslationRecord[]> {
+        return this.db.select(assetTranslationColumns).from(assetTranslations);
+    }
+
     async upsert(record: AssetTranslationRecord): Promise<void> {
         await withRetry(
             () =>
@@ -348,6 +377,29 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
                     }),
             DB_TRANSIENT_RETRY
         );
+    }
+
+    async deleteBySymbols(symbols: readonly string[]): Promise<void> {
+        // 이름 재대조는 하루 최대 `RENAME_BATCH_MAX`개만 지우지만, 다른 호출부가 생겨도
+        // 같은 쿼리 페이로드 한도에 걸리지 않도록 `korean_tickers`와 같은 크기로 쪼갠다.
+        for (
+            let i = 0;
+            i < symbols.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            const chunk = symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE);
+            await withRetry(
+                () =>
+                    this.db
+                        .delete(profileDescriptionTranslations)
+                        .where(
+                            inArray(profileDescriptionTranslations.symbol, [
+                                ...chunk,
+                            ])
+                        ),
+                DB_TRANSIENT_RETRY
+            );
+        }
     }
 }
 

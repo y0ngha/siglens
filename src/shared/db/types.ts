@@ -292,6 +292,11 @@ export interface KoreanTickerRepository {
     ): Promise<void>;
     /** Every row's symbol and listing status — the reconcile planner's input. */
     findAllListingStatuses(): Promise<KrTickerListingRow[]>;
+    /**
+     * 국내(`.KS`/`.KQ`) 외 모든 행 — 이름 재대조(`reconcileUsTickerNames`)의 입력.
+     * 국내 이름은 KRX cron이 정본이라 여기서 제외한다.
+     */
+    findAllNonKr(): Promise<KoreanTickerEntry[]>;
     /** Stamp `delisted_at = now()` on rows that are still marked as listed. */
     markDelisted(symbols: readonly string[]): Promise<void>;
     /** Clear `delisted_at` on symbols observed as listed again. */
@@ -316,6 +321,8 @@ export interface AssetTranslationRecord {
 /** Persistence operations backing {@link AssetTranslationRecord}. */
 export interface AssetTranslationRepository {
     findBySymbol(symbol: string): Promise<AssetTranslationRecord | null>;
+    /** 전 행 — 이름 재대조(`reconcileUsTickerNames`)의 입력. */
+    findAll(): Promise<AssetTranslationRecord[]>;
     upsert(record: AssetTranslationRecord): Promise<void>;
 }
 
@@ -333,6 +340,8 @@ export interface ProfileDescriptionTranslationRepository {
         symbol: string
     ): Promise<ProfileDescriptionTranslationRecord | null>;
     upsert(record: ProfileDescriptionTranslationRecord): Promise<void>;
+    /** 심볼의 회사 설명 번역을 지운다 — 회사가 바뀐 심볼은 다음 조회가 다시 번역한다. */
+    deleteBySymbols(symbols: readonly string[]): Promise<void>;
 }
 
 /** 'dict' | 'ai' — indicator 번역 출처. */

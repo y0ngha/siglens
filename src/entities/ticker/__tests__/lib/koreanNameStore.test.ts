@@ -46,12 +46,18 @@ vi.mock('../../api', () => ({
 }));
 
 import {
+    __resetKoreanSearchSnapshotForTests,
     getKoreanNames,
     getTickerDisplayNames,
     invalidateKoreanTickerCache,
+    lookupTickerDisplayNames,
     searchByKoreanName,
     setKoreanTickers,
 } from '../../lib/koreanNameStore';
+import {
+    KOREAN_SEARCH_SNAPSHOT_TTL_MS,
+    LEGACY_KOREAN_TICKERS_REDIS_KEY,
+} from '../../lib/cacheKeys';
 
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',
@@ -72,6 +78,9 @@ const microsoft: KoreanTickerEntry = {
 const fakeDbClient: FakeDbClient = { db: {} };
 
 function resetMocks(): void {
+    __resetKoreanSearchSnapshotForTests();
+    mockRepository.findAll.mockReset();
+    mockRepository.findAll.mockResolvedValue([]);
     mockCache.get.mockReset();
     mockCache.set.mockReset();
     mockCache.set.mockResolvedValue(undefined);
@@ -93,18 +102,35 @@ function resetMocks(): void {
     );
 }
 
+const laes: KoreanTickerEntry = {
+    symbol: 'LAES',
+    name: 'SEALSQ Corp',
+    koreanName: '씰스큐', // 저장된(틀린) 값
+    exchange: 'NASDAQ',
+    exchangeFullName: 'NASDAQ Global Select',
+};
+
+const samsung: KoreanTickerEntry = {
+    symbol: '005930.KS',
+    name: 'Samsung Electronics',
+    koreanName: '삼성전자',
+    exchange: 'KSC',
+    exchangeFullName: 'KOSPI',
+};
+
 describe('searchByKoreanName', () => {
     beforeEach(resetMocks);
-    afterEach(() => vi.clearAllMocks());
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.clearAllMocks();
+    });
 
-    it('cache hit 시 cache 결과로 검색한다', async () => {
-        mockCache.get.mockResolvedValue([apple, microsoft]);
+    it('DB 스냅샷으로 부분 일치 검색하고 전 필드를 매핑한다', async () => {
+        mockRepository.findAll.mockResolvedValue([apple, microsoft]);
         const result = await searchByKoreanName('애');
         expect(result).toHaveLength(1);
         // 전 필드를 고정한다 — `symbol`만 단언하면 name↔koreanName,
-        // exchange↔exchangeFullName을 맞바꿔도 통과한다(감사 라운드 12).
-        // 이 매퍼가 한글 질의 분기의 유일한 생산자라 그 값이 자동완성 드롭다운에
-        // 그대로 렌더된다.
+        // exchange↔exchangeFullName을 맞바꿔도 통과한다.
         expect(result[0]).toEqual({
             symbol: 'AAPL',
             name: 'Apple Inc.',
@@ -112,48 +138,198 @@ describe('searchByKoreanName', () => {
             exchange: 'NASDAQ',
             exchangeFullName: 'NASDAQ Global Select',
         });
+    });
+
+    it('스냅샷을 재사용한다 — TTL 안에서는 findAll을 한 번만 호출한다', async () => {
+        mockRepository.findAll.mockResolvedValue([apple, microsoft]);
+
+        await searchByKoreanName('애');
+        await searchByKoreanName('마이크로');
+        await searchByKoreanName('애');
+
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(1);
+    });
+
+    it('TTL이 지나면 다시 로드해 새 행을 반영한다', async () => {
+        vi.useFakeTimers();
+        mockRepository.findAll.mockResolvedValueOnce([apple]);
+        expect(await searchByKoreanName('마이크로')).toEqual([]);
+
+        mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
+        vi.advanceTimersByTime(KOREAN_SEARCH_SNAPSHOT_TTL_MS - 1);
+        expect(await searchByKoreanName('마이크로')).toEqual([]);
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(1);
+
+        vi.advanceTimersByTime(1);
+        const result = await searchByKoreanName('마이크로');
+        expect(result.map(r => r.symbol)).toEqual(['MSFT']);
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
+    });
+
+    it('동시에 몰린 첫 요청은 single-flight로 findAll을 한 번만 호출한다', async () => {
+        let release: (rows: KoreanTickerEntry[]) => void = () => {};
+        mockRepository.findAll.mockReturnValue(
+            new Promise<KoreanTickerEntry[]>(resolve => {
+                release = resolve;
+            })
+        );
+
+        const pending = Promise.all([
+            searchByKoreanName('애'),
+            searchByKoreanName('애'),
+            searchByKoreanName('애'),
+        ]);
+        release([apple]);
+        const results = await pending;
+
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(1);
+        expect(results.every(r => r.length === 1)).toBe(true);
+    });
+
+    it('빈 결과는 스냅샷에 넣지 않아 다음 요청이 다시 시도한다', async () => {
+        mockRepository.findAll.mockResolvedValueOnce([]);
+        await expect(searchByKoreanName('애')).resolves.toEqual([]);
+
+        mockRepository.findAll.mockResolvedValueOnce([apple]);
+        const result = await searchByKoreanName('애');
+
+        expect(result.map(r => r.symbol)).toEqual(['AAPL']);
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
+    });
+
+    it('DB 조회 실패는 빈 배열로 degrade하고 캐시하지 않는다', async () => {
+        mockRepository.findAll.mockRejectedValueOnce(new Error('db down'));
+        await expect(searchByKoreanName('애')).resolves.toEqual([]);
+
+        mockRepository.findAll.mockResolvedValueOnce([apple]);
+        await expect(searchByKoreanName('애')).resolves.toHaveLength(1);
+    });
+
+    describe('만료 뒤 갱신 실패 — 마지막 정상 스냅샷 서빙(stale-on-error)', () => {
+        async function loadThenExpire(): Promise<void> {
+            vi.useFakeTimers();
+            mockRepository.findAll.mockResolvedValueOnce([apple]);
+            await searchByKoreanName('애');
+            vi.advanceTimersByTime(KOREAN_SEARCH_SNAPSHOT_TTL_MS);
+        }
+
+        it('갱신 중 DB가 던지면 이전 항목을 돌려준다', async () => {
+            await loadThenExpire();
+            mockRepository.findAll.mockRejectedValueOnce(new Error('db down'));
+
+            const result = await searchByKoreanName('애');
+
+            expect(result.map(r => r.symbol)).toEqual(['AAPL']);
+        });
+
+        it('갱신 결과가 비어 있어도 이전 항목을 돌려준다', async () => {
+            await loadThenExpire();
+            mockRepository.findAll.mockResolvedValueOnce([]);
+
+            const result = await searchByKoreanName('애');
+
+            expect(result.map(r => r.symbol)).toEqual(['AAPL']);
+        });
+
+        it('실패한 갱신은 만료를 연장하지 않아 다음 호출이 DB를 다시 읽는다', async () => {
+            await loadThenExpire();
+            mockRepository.findAll.mockRejectedValueOnce(new Error('db down'));
+            await searchByKoreanName('애');
+            expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
+
+            mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
+            const recovered = await searchByKoreanName('마이크로');
+
+            expect(mockRepository.findAll).toHaveBeenCalledTimes(3);
+            expect(recovered.map(r => r.symbol)).toEqual(['MSFT']);
+        });
+
+        it('스냅샷이 한 번도 없었다면 빈 배열이다', async () => {
+            mockRepository.findAll.mockRejectedValueOnce(new Error('db down'));
+            await expect(searchByKoreanName('애')).resolves.toEqual([]);
+        });
+    });
+
+    it('DB 클라이언트가 없으면 빈 배열', async () => {
+        tryGetDatabaseClientMock.mockReturnValue(null);
+        await expect(searchByKoreanName('애')).resolves.toEqual([]);
         expect(mockRepository.findAll).not.toHaveBeenCalled();
+    });
+
+    it('setKoreanTickers 뒤에는 스냅샷이 무효화돼 새 행이 검색된다', async () => {
+        mockRepository.findAll.mockResolvedValueOnce([apple]);
+        expect(await searchByKoreanName('마이크로')).toEqual([]);
+
+        await setKoreanTickers([microsoft]);
+        mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
+
+        const result = await searchByKoreanName('마이크로');
+        expect(result.map(r => r.symbol)).toEqual(['MSFT']);
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
+    });
+
+    it('invalidateKoreanTickerCache 뒤에도 스냅샷이 무효화된다', async () => {
+        mockRepository.findAll.mockResolvedValueOnce([apple]);
+        await searchByKoreanName('애');
+
+        await invalidateKoreanTickerCache();
+        mockRepository.findAll.mockResolvedValueOnce([]);
+        mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
+
+        await searchByKoreanName('애');
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
+    });
+
+    it('로드 도중 무효화가 끼면 그 낡은 결과를 스냅샷에 넣지 않는다', async () => {
+        let release: (rows: KoreanTickerEntry[]) => void = () => {};
+        mockRepository.findAll.mockReturnValueOnce(
+            new Promise<KoreanTickerEntry[]>(resolve => {
+                release = resolve;
+            })
+        );
+        const inFlight = searchByKoreanName('애');
+        await invalidateKoreanTickerCache();
+        release([apple]);
+        await inFlight;
+
+        mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
+        const result = await searchByKoreanName('마이크로');
+
+        expect(result.map(r => r.symbol)).toEqual(['MSFT']);
+    });
+
+    it('무효화 뒤에 온 요청은 낡은 진행 중 로드에 합류하지 않고 새로 읽는다', async () => {
+        let releaseStale: (rows: KoreanTickerEntry[]) => void = () => {};
+        mockRepository.findAll.mockReturnValueOnce(
+            new Promise<KoreanTickerEntry[]>(resolve => {
+                releaseStale = resolve;
+            })
+        );
+        const stale = searchByKoreanName('애');
+        await invalidateKoreanTickerCache();
+
+        mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
+        const fresh = await searchByKoreanName('마이크로');
+
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
+        expect(fresh.map(r => r.symbol)).toEqual(['MSFT']);
+
+        // 낡은 로드가 뒤늦게 끝나도 새 스냅샷·새 로드 슬롯을 건드리지 않는다.
+        releaseStale([apple]);
+        await stale;
+        const again = await searchByKoreanName('마이크로');
+        expect(again.map(r => r.symbol)).toEqual(['MSFT']);
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(2);
     });
 
     /**
      * **매칭 술어와 반환값 둘 다** 정본을 봐야 한다. 반환값만 덮으면 표시만
      * 고쳐지고 검색은 저장된(틀린) 이름으로만 걸린다 — 사용자가 올바른 이름을
-     * 치면 0건, 틀린 이름을 쳐야 나오는 상태가 된다(리뷰 round 2가 잡은 결함).
-     * 로더에서 정본을 입히므로 술어가 자동으로 정본을 본다.
+     * 치면 0건, 틀린 이름을 쳐야 나오는 상태가 된다. 스냅샷 로드 지점에서 정본을
+     * 입히므로 술어가 자동으로 정본을 본다.
      */
-    it('올바른 정본 이름으로 검색하면 걸린다', async () => {
-        mockCache.get.mockResolvedValue([
-            {
-                symbol: 'LAES',
-                name: 'SEALSQ Corp',
-                koreanName: '씰스큐', // 저장된(틀린) 값
-                exchange: 'NASDAQ',
-                exchangeFullName: 'NASDAQ Global Select',
-            },
-        ]);
-
-        const result = await searchByKoreanName('실스큐');
-
-        expect(result).toHaveLength(1);
-        expect(result[0].koreanName).toBe('실스큐');
-    });
-
-    /**
-     * 캐시 미스(=DB fetch) 분기도 정본을 입혀야 한다. 캐시 히트 분기만 테스트하면
-     * DB 분기의 `.map(withCanonical)`을 지워도 전부 초록이다 — 리뷰 round 3가
-     * 변이로 확인한 구멍이고, 캐시가 콜드한 순간마다 프로덕션에서 도달한다.
-     */
-    it('cache miss → DB 경로에서도 정본을 입힌다', async () => {
-        mockCache.get.mockResolvedValue(null);
-        mockRepository.findAll.mockResolvedValue([
-            {
-                symbol: 'LAES',
-                name: 'SEALSQ Corp',
-                koreanName: '씰스큐',
-                exchange: 'NASDAQ',
-                exchangeFullName: 'NASDAQ Global Select',
-            },
-        ]);
+    it('올바른 정본 이름으로 검색하면 걸리고 반환값도 정본이다', async () => {
+        mockRepository.findAll.mockResolvedValue([laes]);
 
         const result = await searchByKoreanName('실스큐');
 
@@ -162,32 +338,14 @@ describe('searchByKoreanName', () => {
     });
 
     it('틀린 저장 이름으로는 더 이상 걸리지 않는다', async () => {
-        mockCache.get.mockResolvedValue([
-            {
-                symbol: 'LAES',
-                name: 'SEALSQ Corp',
-                koreanName: '씰스큐',
-                exchange: 'NASDAQ',
-                exchangeFullName: 'NASDAQ Global Select',
-            },
-        ]);
-
+        mockRepository.findAll.mockResolvedValue([laes]);
         await expect(searchByKoreanName('씰스큐')).resolves.toEqual([]);
     });
 
     it('한국 종목에는 marketProfile을 붙인다 — 미국 종목에는 안 붙인다', async () => {
         // 행에 프로필 컬럼이 없어 심볼 형상으로 판정한다. 빠지면 한글 검색으로
         // 찾은 한국 종목이 us-equity로 표시된다.
-        mockCache.get.mockResolvedValue([
-            apple,
-            {
-                symbol: '005930.KS',
-                name: 'Samsung Electronics',
-                koreanName: '삼성전자',
-                exchange: 'KSC',
-                exchangeFullName: 'KOSPI',
-            },
-        ]);
+        mockRepository.findAll.mockResolvedValue([apple, samsung]);
 
         const [kr] = await searchByKoreanName('삼성');
         expect(kr).toEqual({
@@ -203,59 +361,13 @@ describe('searchByKoreanName', () => {
         expect(us).not.toHaveProperty('marketProfile');
     });
 
-    it('cache miss(null) 시 DB 조회 후 cache 갱신', async () => {
-        mockCache.get.mockResolvedValue(null);
+    it('Redis를 읽지도 쓰지도 않는다', async () => {
         mockRepository.findAll.mockResolvedValue([apple]);
-        const result = await searchByKoreanName('애');
-        expect(result[0].symbol).toBe('AAPL');
-        expect(createCacheProviderMock).toHaveBeenCalledTimes(1);
-        expect(mockCache.set).toHaveBeenCalledWith(
-            'korean:tickers',
-            [apple],
-            expect.any(Number)
-        );
-    });
 
-    it('cache get 실패 시 DB 로 폴백한다', async () => {
-        mockCache.get.mockRejectedValue(new Error('cache down'));
-        mockRepository.findAll.mockResolvedValue([apple]);
-        const result = await searchByKoreanName('애');
-        expect(result[0].symbol).toBe('AAPL');
-    });
+        await searchByKoreanName('애');
 
-    it('cache 와 DB 모두 비어있으면 빈 배열', async () => {
-        mockCache.get.mockResolvedValue(null);
-        mockRepository.findAll.mockResolvedValue([]);
-        await expect(searchByKoreanName('애')).resolves.toEqual([]);
+        expect(mockCache.get).not.toHaveBeenCalled();
         expect(mockCache.set).not.toHaveBeenCalled();
-    });
-
-    it('cache miss 후 DB 조회 실패 시 빈 배열로 degrade 한다', async () => {
-        mockCache.get.mockResolvedValue(null);
-        mockRepository.findAll.mockRejectedValue(new Error('db down'));
-        await expect(searchByKoreanName('애')).resolves.toEqual([]);
-        expect(mockCache.set).not.toHaveBeenCalled();
-    });
-
-    it('DB 클라이언트 없고 cache 도 없으면 빈 배열', async () => {
-        createCacheProviderMock.mockReturnValue(null);
-        tryGetDatabaseClientMock.mockReturnValue(null);
-        await expect(searchByKoreanName('애')).resolves.toEqual([]);
-    });
-
-    it('DB 클라이언트 없고 cache 미스면 빈 배열', async () => {
-        mockCache.get.mockResolvedValue(null);
-        tryGetDatabaseClientMock.mockReturnValue(null);
-        await expect(searchByKoreanName('애')).resolves.toEqual([]);
-        expect(mockCache.set).not.toHaveBeenCalled();
-    });
-
-    it('cache write 실패는 DB 결과 반환을 막지 않는다', async () => {
-        mockCache.get.mockResolvedValue(null);
-        mockRepository.findAll.mockResolvedValue([apple]);
-        mockCache.set.mockRejectedValue(new Error('cache write down'));
-        const result = await searchByKoreanName('애');
-        expect(result[0].symbol).toBe('AAPL');
     });
 });
 
@@ -263,13 +375,13 @@ describe('getTickerDisplayNames', () => {
     beforeEach(resetMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('빈 입력은 캐시·DB를 건드리지 않는다', async () => {
+    it('빈 입력은 DB를 건드리지 않는다', async () => {
         await expect(getTickerDisplayNames([])).resolves.toEqual({});
-        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
     });
 
-    it('저장된 행의 한글명과 영문명을 함께 돌려준다', async () => {
-        mockCache.get.mockResolvedValue([apple, microsoft]);
+    it('DB findBySymbols를 직접 읽어 한글명과 영문명을 함께 돌려준다', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([apple, microsoft]);
 
         await expect(getTickerDisplayNames(['AAPL', 'MSFT'])).resolves.toEqual({
             AAPL: { koreanName: '애플', name: 'Apple Inc.' },
@@ -278,10 +390,15 @@ describe('getTickerDisplayNames', () => {
                 name: 'Microsoft Corporation',
             },
         });
+        expect(mockRepository.findBySymbols).toHaveBeenCalledWith([
+            'AAPL',
+            'MSFT',
+        ]);
+        expect(mockRepository.findAll).not.toHaveBeenCalled();
     });
 
     it('행이 없는 심볼은 결과에서 빠진다 — 없는 이름을 지어내지 않는다', async () => {
-        mockCache.get.mockResolvedValue([apple]);
+        mockRepository.findBySymbols.mockResolvedValue([apple]);
 
         const result = await getTickerDisplayNames(['AAPL', 'TSLA']);
 
@@ -289,15 +406,13 @@ describe('getTickerDisplayNames', () => {
     });
 
     /**
-     * 정본 한글명은 **행이 없어도** 나와야 한다. 이 함수가 `loadEntriesBySymbols`를
-     * 재사용하는 이유가 그것인데, 재사용만으로는 "행이 아예 없는 심볼"을 못 덮어서
-     * `getKoreanNames`와 같은 폴백을 하나 더 갖는다(그 함수 주석 참고).
+     * 정본 한글명은 **행이 없어도** 나와야 한다. `loadEntriesBySymbols`는 존재하는
+     * 행만 고칠 수 있어서 이 함수가 `getKoreanNames`와 같은 폴백을 하나 더 갖는다.
      */
     it('저장된 행이 없어도 정본 한글명은 내보낸다', async () => {
         const [canonicalSymbol, canonicalName] = [
             ...CANONICAL_KOREAN_NAMES.entries(),
         ][0];
-        mockCache.get.mockResolvedValue([]);
 
         const result = await getTickerDisplayNames([canonicalSymbol]);
 
@@ -311,7 +426,7 @@ describe('getTickerDisplayNames', () => {
         const [canonicalSymbol, canonicalName] = [
             ...CANONICAL_KOREAN_NAMES.entries(),
         ][0];
-        mockCache.get.mockResolvedValue([
+        mockRepository.findBySymbols.mockResolvedValue([
             {
                 symbol: canonicalSymbol,
                 name: 'Stored English',
@@ -328,10 +443,35 @@ describe('getTickerDisplayNames', () => {
     });
 
     it('DB가 죽어도 던지지 않고 빈 객체로 떨어진다', async () => {
-        mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
 
         await expect(getTickerDisplayNames(['MSFT'])).resolves.toEqual({});
+    });
+});
+
+describe('lookupTickerDisplayNames — 조회 실패와 행 없음의 구분', () => {
+    beforeEach(resetMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    it('DB 조회가 던지면 null이다 (행 없음의 {}와 다르다)', async () => {
+        mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
+        await expect(lookupTickerDisplayNames(['AAPL'])).resolves.toBeNull();
+    });
+
+    it('조회가 성공했지만 행이 없으면 빈 객체다', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([]);
+        await expect(lookupTickerDisplayNames(['TSLA'])).resolves.toEqual({});
+    });
+
+    it('DB 클라이언트가 없으면 장애가 아니라 빈 객체다', async () => {
+        tryGetDatabaseClientMock.mockReturnValue(null);
+        await expect(lookupTickerDisplayNames(['AAPL'])).resolves.toEqual({});
+    });
+
+    it('다른 호출부는 같은 실패를 던지지 않고 빈 값으로 degrade한다', async () => {
+        mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
+        await expect(getTickerDisplayNames(['AAPL'])).resolves.toEqual({});
+        await expect(getKoreanNames(['AAPL'])).resolves.toEqual({});
     });
 });
 
@@ -339,34 +479,28 @@ describe('getKoreanNames', () => {
     beforeEach(resetMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('빈 symbols 입력은 cache 호출 없이 빈 객체 반환', async () => {
+    it('빈 symbols 입력은 DB 호출 없이 빈 객체 반환', async () => {
         await expect(getKoreanNames([])).resolves.toEqual({});
-        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
     });
 
-    it('cache 결과에서 매핑된 symbol 만 반환', async () => {
-        mockCache.get.mockResolvedValue([apple, microsoft]);
+    it('DB 결과에서 매핑된 symbol만 반환한다', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([apple]);
         const result = await getKoreanNames(['AAPL', 'TSLA']);
         expect(result).toEqual({ AAPL: '애플' });
-    });
-
-    it('cache miss 시 DB 결과를 매핑한다', async () => {
-        mockCache.get.mockResolvedValue(null);
-        mockRepository.findBySymbols.mockResolvedValue([microsoft]);
-        const result = await getKoreanNames(['MSFT']);
-        expect(result).toEqual({ MSFT: '마이크로소프트' });
-        expect(mockRepository.findBySymbols).toHaveBeenCalledWith(['MSFT']);
+        expect(mockRepository.findBySymbols).toHaveBeenCalledWith([
+            'AAPL',
+            'TSLA',
+        ]);
         expect(mockRepository.findAll).not.toHaveBeenCalled();
     });
 
-    it('cache miss 후 DB symbol 조회 실패 시 빈 객체로 degrade 한다', async () => {
-        mockCache.get.mockResolvedValue(null);
+    it('DB symbol 조회 실패 시 빈 객체로 degrade 한다', async () => {
         mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
         await expect(getKoreanNames(['MSFT'])).resolves.toEqual({});
     });
 
-    it('cache miss + DB 클라이언트 없으면 빈 객체 반환', async () => {
-        mockCache.get.mockResolvedValue(null);
+    it('DB 클라이언트 없으면 빈 객체 반환', async () => {
         tryGetDatabaseClientMock.mockReturnValue(null);
         await expect(getKoreanNames(['AAPL'])).resolves.toEqual({});
         expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
@@ -376,98 +510,42 @@ describe('getKoreanNames', () => {
      * `korean_tickers`는 `asset_translations`와 **다른 테이블**이라,
      * `getAssetInfo` 출구의 정본 오버라이드가 이 경로에는 닿지 않는다. 검색
      * 자동완성과 뉴스가 여기서 이름을 받으므로, 덮지 않으면 종목 페이지엔
-     * `실스큐`인데 검색 드롭다운엔 `씰스큐`가 뜬다 — 이 PR이 고치려던 결함이
-     * 그대로 재현되는 우회 경로다(리뷰 round 1 지적).
+     * `실스큐`, 검색 드롭다운엔 `씰스큐`가 뜬다.
      */
     it('정본 한글명이 저장된 값을 덮는다 (검색 우회 경로 차단)', async () => {
-        mockCache.get.mockResolvedValue([
-            { symbol: 'LAES', koreanName: '씰스큐' },
-        ]);
+        mockRepository.findBySymbols.mockResolvedValue([laes]);
         await expect(getKoreanNames(['LAES'])).resolves.toEqual({
             LAES: '실스큐',
         });
     });
 
     it('저장된 행이 없어도 정본은 내보낸다', async () => {
-        mockCache.get.mockResolvedValue([]);
         await expect(getKoreanNames(['QBTS'])).resolves.toEqual({
             QBTS: '디웨이브 퀀텀',
         });
     });
 
-    it('정본 목록에 없는 심볼은 저장된 값을 그대로 쓴다', async () => {
-        mockCache.get.mockResolvedValue([apple]);
-        await expect(getKoreanNames(['AAPL'])).resolves.toEqual({
-            AAPL: '애플',
-        });
-    });
-});
-
-/**
- * `loadEntriesBySymbols`가 캐시 hit에서도 상폐 심볼을 놓치지 않는지 검증한다.
- * 캐시는 `findAll()`(상장 종목만)로 채워지므로, 캐시 hit에서 단순 filter만 하면
- * 상폐 종목의 한글명이 영원히 사라진다 — `KoreanTickerRepository.findBySymbols`가
- * 상폐 행까지 돌려주도록 만든 목적을 캐시가 조용히 무력화하는 회귀를 이 블록이 잡는다.
- */
-describe('getKoreanNames — 캐시 hit + 상폐 종목 DB 폴백', () => {
-    beforeEach(resetMocks);
-    afterEach(() => vi.clearAllMocks());
-
-    const samsung: KoreanTickerEntry = {
-        symbol: '005930.KS',
-        name: 'Samsung Electronics',
-        koreanName: '삼성전자',
-        exchange: 'KSC',
-        exchangeFullName: 'KOSPI',
-    };
-
-    const delistedKr: KoreanTickerEntry = {
-        symbol: '000000.KQ',
-        name: 'Delisted Co',
-        koreanName: '상폐기업',
-        exchange: 'KOQ',
-        exchangeFullName: 'KOSDAQ',
-    };
-
-    it('캐시가 요청 심볼을 전부 커버하면 findBySymbols 를 호출하지 않는다', async () => {
-        mockCache.get.mockResolvedValue([apple, samsung]);
-        const result = await getKoreanNames(['AAPL', '005930.KS']);
-        expect(result).toEqual({ AAPL: '애플', '005930.KS': '삼성전자' });
-        expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
-    });
-
-    it('캐시에 없는 KR 심볼은 findBySymbols 로 보충하고 병합한다', async () => {
-        mockCache.get.mockResolvedValue([apple]);
-        mockRepository.findBySymbols.mockResolvedValue([delistedKr]);
+    it('상폐 KR 심볼도 findBySymbols 한 번으로 이름을 얻는다 (별도 보충 없음)', async () => {
+        const delistedKr: KoreanTickerEntry = {
+            symbol: '000000.KQ',
+            name: 'Delisted Co',
+            koreanName: '상폐기업',
+            exchange: 'KOQ',
+            exchangeFullName: 'KOSDAQ',
+        };
+        mockRepository.findBySymbols.mockResolvedValue([apple, delistedKr]);
 
         const result = await getKoreanNames(['AAPL', '000000.KQ']);
 
-        expect(mockRepository.findBySymbols).toHaveBeenCalledWith([
-            '000000.KQ',
-        ]);
         expect(result).toEqual({ AAPL: '애플', '000000.KQ': '상폐기업' });
-    });
-
-    it('캐시에 없는 US/crypto 심볼은 findBySymbols 를 호출하지 않는다', async () => {
-        mockCache.get.mockResolvedValue([apple]);
-
-        const result = await getKoreanNames(['AAPL', 'TSLA']);
-
-        expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
-        expect(result).toEqual({ AAPL: '애플' });
-    });
-
-    it('입력에 중복 심볼이 있어도 KR 폴백 조회는 한 번만 한다', async () => {
-        mockCache.get.mockResolvedValue([apple]);
-        mockRepository.findBySymbols.mockResolvedValue([delistedKr]);
-
-        const result = await getKoreanNames(['000000.KQ', 'AAPL', '000000.KQ']);
-
         expect(mockRepository.findBySymbols).toHaveBeenCalledTimes(1);
-        expect(mockRepository.findBySymbols).toHaveBeenCalledWith([
-            '000000.KQ',
-        ]);
-        expect(result).toEqual({ AAPL: '애플', '000000.KQ': '상폐기업' });
+    });
+
+    it('Redis를 읽지도 쓰지도 않는다', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([apple]);
+        await getKoreanNames(['AAPL']);
+        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
     });
 });
 
@@ -475,43 +553,33 @@ describe('setKoreanTickers', () => {
     beforeEach(resetMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('빈 배열은 DB / cache 호출 없이 종료한다', async () => {
+    it('빈 배열은 DB 호출 없이 종료한다', async () => {
         await setKoreanTickers([]);
         expect(mockRepository.upsertMany).not.toHaveBeenCalled();
-        expect(mockCache.set).not.toHaveBeenCalled();
     });
 
-    it('DB upsert 후 전체 cache 를 무효화한다', async () => {
+    it('DB에 upsert하고 Redis는 건드리지 않는다', async () => {
         await setKoreanTickers([apple]);
         expect(mockRepository.upsertMany).toHaveBeenCalledWith([apple]);
-        expect(mockCache.delete).toHaveBeenCalledWith('korean:tickers');
+        expect(mockCache.delete).not.toHaveBeenCalled();
         expect(mockCache.set).not.toHaveBeenCalled();
     });
 
-    it('DB upsert 후 cache 삭제 실패는 흡수한다', async () => {
-        mockCache.delete.mockRejectedValue(new Error('cache down'));
-        await expect(setKoreanTickers([apple])).resolves.toBeUndefined();
-        expect(mockRepository.upsertMany).toHaveBeenCalledWith([apple]);
-    });
-
-    it('DB 클라이언트 없으면 DB / cache 호출 없이 종료', async () => {
+    it('DB 클라이언트 없으면 DB 호출 없이 종료', async () => {
         tryGetDatabaseClientMock.mockReturnValue(null);
         await setKoreanTickers([apple]);
         expect(mockRepository.upsertMany).not.toHaveBeenCalled();
-        expect(mockCache.delete).not.toHaveBeenCalled();
     });
 
-    it('DB upsert 실패 시 cache 도 건드리지 않고 종료', async () => {
+    it('DB upsert 실패 시 스냅샷을 비우지 않는다', async () => {
+        mockRepository.findAll.mockResolvedValueOnce([apple]);
+        await searchByKoreanName('애');
         mockRepository.upsertMany.mockRejectedValue(new Error('db down'));
-        await setKoreanTickers([apple]);
-        expect(mockCache.delete).not.toHaveBeenCalled();
-    });
 
-    it('cache provider 가 null 이면 DB 만 갱신', async () => {
-        createCacheProviderMock.mockReturnValue(null);
-        await setKoreanTickers([apple]);
-        expect(mockRepository.upsertMany).toHaveBeenCalledTimes(1);
-        expect(mockCache.delete).not.toHaveBeenCalled();
+        await setKoreanTickers([microsoft]);
+        await searchByKoreanName('애');
+
+        expect(mockRepository.findAll).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -519,19 +587,27 @@ describe('invalidateKoreanTickerCache', () => {
     beforeEach(resetMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('cache provider 가 없으면 아무것도 하지 않는다', async () => {
+    it('예전 Redis 키만 best-effort로 지운다', async () => {
+        await invalidateKoreanTickerCache();
+        expect(mockCache.delete).toHaveBeenCalledWith(
+            LEGACY_KOREAN_TICKERS_REDIS_KEY
+        );
+        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('cache provider 가 없으면 아무것도 지우지 않고 끝난다', async () => {
         createCacheProviderMock.mockReturnValue(null);
         await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
         expect(mockCache.delete).not.toHaveBeenCalled();
     });
 
-    it('cache 가 있으면 korean:tickers 키를 지운다', async () => {
-        await invalidateKoreanTickerCache();
-        expect(mockCache.delete).toHaveBeenCalledWith('korean:tickers');
-    });
-
     it('cache delete 실패는 흡수한다', async () => {
         mockCache.delete.mockRejectedValue(new Error('cache down'));
         await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
+    });
+
+    it('예전 키 이름은 운영에 남은 사본과 같은 문자열이다', () => {
+        expect(LEGACY_KOREAN_TICKERS_REDIS_KEY).toBe('korean:tickers');
     });
 });

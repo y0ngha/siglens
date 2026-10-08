@@ -14,6 +14,7 @@ const {
     repositoryFactoryMock,
     searchBySymbolMock,
     getKoreanNamesMock,
+    getTickerDisplayNamesMock,
     setKoreanTickersMock,
     translateCompanyNamesMock,
     fetchKrEquityQuoteNameMock,
@@ -32,6 +33,7 @@ const {
     repositoryFactoryMock: vi.fn(),
     searchBySymbolMock: vi.fn(),
     getKoreanNamesMock: vi.fn(),
+    getTickerDisplayNamesMock: vi.fn(),
     setKoreanTickersMock: vi.fn(),
     translateCompanyNamesMock: vi.fn(),
     fetchKrEquityQuoteNameMock: vi.fn(),
@@ -68,6 +70,8 @@ vi.mock('../../lib/fmpTickerApi', async () => {
 });
 vi.mock('../../lib/koreanNameStore', () => ({
     getKoreanNames: (symbols: string[]) => getKoreanNamesMock(symbols),
+    lookupTickerDisplayNames: (symbols: string[]) =>
+        getTickerDisplayNamesMock(symbols),
     setKoreanTickers: (entries: unknown[]) => setKoreanTickersMock(entries),
 }));
 vi.mock('../../lib/koreanTranslator', () => ({
@@ -138,6 +142,8 @@ describe('getAssetInfo', () => {
         searchBySymbolMock.mockReset();
         getKoreanNamesMock.mockReset();
         getKoreanNamesMock.mockResolvedValue({});
+        getTickerDisplayNamesMock.mockReset();
+        getTickerDisplayNamesMock.mockResolvedValue({});
         setKoreanTickersMock.mockReset();
         setKoreanTickersMock.mockResolvedValue(undefined);
         translateCompanyNamesMock.mockReset();
@@ -203,6 +209,7 @@ describe('getAssetInfo', () => {
         ).toBeLessThan(mockCache.get.mock.invocationCallOrder[0]);
         expect(searchBySymbolMock).not.toHaveBeenCalled();
         expect(getKoreanNamesMock).not.toHaveBeenCalled();
+        expect(getTickerDisplayNamesMock).not.toHaveBeenCalled();
         expect(translateCompanyNamesMock).not.toHaveBeenCalled();
         expect(mockCache.set).not.toHaveBeenCalled();
     });
@@ -337,7 +344,7 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({});
+        getTickerDisplayNamesMock.mockResolvedValue({});
         translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
 
         const result = await getAssetInfo('AAPL');
@@ -355,7 +362,9 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+        });
 
         const result = await getAssetInfo('AAPL');
         expect(result).toEqual({
@@ -374,9 +383,91 @@ describe('getAssetInfo', () => {
         expect(mockCache.set).not.toHaveBeenCalled();
     });
 
+    it('저장된 영문명이 FMP 영문명과 표기만 다르면(법인격·구두점) 한글명을 재사용한다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'APPLE, INC' },
+        });
+
+        const result = await getAssetInfo('AAPL');
+
+        expect(result?.koreanName).toBe('애플');
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+    });
+
+    it('저장된 영문명이 FMP 영문명과 다르면(티커 재할당) 옛 한글명을 버리고 재번역 경로로 간다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '옛회사', name: 'Old Company Holdings' },
+        });
+        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        const result = await getAssetInfo('AAPL');
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        // 옛 한글명이 응답에 실리지 않고, 번역이 새 FMP 이름으로 돌며, 그 결과가 저장된다.
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+        expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+        expect(setKoreanTickersMock).toHaveBeenCalledWith([
+            expect.objectContaining({ symbol: 'AAPL', koreanName: '애플' }),
+        ]);
+        expect(mockRepository.upsert).toHaveBeenCalledWith(
+            expect.objectContaining({ koreanName: '애플', name: 'Apple Inc.' })
+        );
+    });
+
+    it('korean_tickers 조회가 실패하면 번역·저장 없이 영문명 정보만 돌려준다 (DB 장애 중 Gemini 폭주 방지)', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        // null = 조회 실패. `{}`(행 없음)와 구분되어야 한다.
+        getTickerDisplayNamesMock.mockResolvedValue(null);
+
+        const result = await getAssetInfo('AAPL');
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(setKoreanTickersMock).not.toHaveBeenCalled();
+        expect(mockRepository.upsert).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('조회가 성공했지만 행이 없으면(`{}`) 번역 경로로 간다 — 실패와 구분된다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getTickerDisplayNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        await getAssetInfo('AAPL');
+
+        expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('정본 심볼은 저장된 영문명이 달라도 한글명을 재사용한다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([{ ...apple, symbol: 'LAES' }]);
+        getTickerDisplayNamesMock.mockResolvedValue({
+            LAES: { koreanName: '실스큐', name: 'Something Else' },
+        });
+
+        const result = await getAssetInfo('LAES');
+
+        expect(result?.koreanName).toBe('실스큐');
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+    });
+
     it('번역 완료 후 persistTranslation은 DB upsert만 하고 Redis에 쓰지 않는다', async () => {
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({});
+        getTickerDisplayNamesMock.mockResolvedValue({});
         translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
 
         await getAssetInfo('AAPL');
@@ -446,7 +537,7 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({});
+        getTickerDisplayNamesMock.mockResolvedValue({});
         translateCompanyNamesMock.mockResolvedValue({});
 
         await getAssetInfo('AAPL');
@@ -459,7 +550,9 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+        });
         mockRepository.upsert.mockRejectedValue(new Error('db down'));
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -484,7 +577,9 @@ describe('getAssetInfo', () => {
         tryGetDatabaseClientMock.mockReturnValue(null);
         mockCache.get.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+        });
 
         const result = await getAssetInfo('AAPL');
         expect(result?.koreanName).toBe('애플');
@@ -501,7 +596,9 @@ describe('getAssetInfo', () => {
     it('DB 저하 중 쓴 한글명 임시 항목은 다음 호출에서 FMP 없이 한글명으로 응답한다', async () => {
         tryGetDatabaseClientMock.mockReturnValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+        });
 
         await getAssetInfo('AAPL');
         await new Promise(resolve => setImmediate(resolve));
@@ -523,7 +620,7 @@ describe('getAssetInfo', () => {
 
     it('번역 완료 후 DB upsert가 실패하면 번역된 한글명 임시 항목이 최초 응답과 같은 형태로 남는다', async () => {
         searchBySymbolMock.mockResolvedValue([{ ...apple, symbol: 'AAPL.MX' }]);
-        getKoreanNamesMock.mockResolvedValue({});
+        getTickerDisplayNamesMock.mockResolvedValue({});
         translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
         mockRepository.upsert.mockRejectedValue(new Error('db down'));
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -581,7 +678,9 @@ describe('getAssetInfo', () => {
     it('한국명 보유 + DB 정상 + cache provider 없어도 DB upsert는 수행된다', async () => {
         createCacheProviderMock.mockReturnValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+        });
 
         const result = await getAssetInfo('AAPL');
         expect(result?.koreanName).toBe('애플');
@@ -606,7 +705,7 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({});
+        getTickerDisplayNamesMock.mockResolvedValue({});
 
         // Hold the translator promise open until all concurrent callers have
         // attached to the same in-flight Promise.
@@ -634,7 +733,9 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([{ ...apple, symbol: 'AAPL.MX' }]);
-        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+        });
 
         const result = await getAssetInfo('AAPL');
         expect(result).toEqual({
@@ -772,7 +873,9 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        getTickerDisplayNamesMock.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+        });
         // 첫 호출은 readFromDatabase(DB miss 확인)용 — 정상 반환한다.
         // 두 번째 호출(persistTranslation)에서만 생성이 실패하게 한다.
         repositoryFactoryMock.mockReturnValueOnce(
@@ -808,7 +911,7 @@ describe('getAssetInfo', () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
-        getKoreanNamesMock.mockResolvedValue({});
+        getTickerDisplayNamesMock.mockResolvedValue({});
         translateCompanyNamesMock.mockRejectedValue(new Error('gemini down'));
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
