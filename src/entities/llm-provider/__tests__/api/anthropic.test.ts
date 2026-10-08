@@ -27,6 +27,7 @@ import {
     callAnthropicChat,
     withHistoryCacheBreakpoint,
 } from '@/entities/llm-provider/api/anthropic';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
 import type Anthropic from '@anthropic-ai/sdk';
 
 const BASE_OPTIONS = {
@@ -106,6 +107,55 @@ describe('callAnthropicChat', () => {
                 maxRetries: 0,
             });
             expect(mockStream.mock.calls[0][0].max_tokens).toBe(1500);
+        });
+
+        it('stream() 생성이 던져도 타이머를 정리해 마감 뒤에 abort되지 않는다', async () => {
+            vi.useFakeTimers();
+            try {
+                let signal: AbortSignal | undefined;
+                mockStream.mockImplementationOnce(
+                    (_body: unknown, options?: { signal?: AbortSignal }) => {
+                        signal = options?.signal;
+                        throw new Error('connect failed');
+                    }
+                );
+
+                await expect(
+                    callAnthropicChat({
+                        ...BASE_OPTIONS,
+                        limits: { timeoutMs: 30_000 },
+                    })
+                ).rejects.toThrow('connect failed');
+                await vi.advanceTimersByTimeAsync(60_000);
+
+                expect(signal?.aborted).toBe(false);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('스트림이 마감을 넘기면 연결을 끊고 timeout 오류를 던진다', async () => {
+            vi.useFakeTimers();
+            try {
+                mockFinalMessage.mockReturnValue(new Promise(() => {}));
+
+                const pending = callAnthropicChat({
+                    ...BASE_OPTIONS,
+                    limits: { timeoutMs: 30_000, maxRetries: 0 },
+                });
+                const assertion = expect(pending).rejects.toBeInstanceOf(
+                    ProviderCallTimeoutError
+                );
+                await vi.advanceTimersByTimeAsync(30_000);
+                await assertion;
+
+                const requestOptions = mockStream.mock.calls[0][1] as {
+                    signal: AbortSignal;
+                };
+                expect(requestOptions.signal.aborted).toBe(true);
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('응답 usage로 [Usage] 라인을 남긴다', async () => {

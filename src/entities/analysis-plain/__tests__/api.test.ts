@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
 
 const callAiProviderRouter = vi.fn();
 const repoFind = vi.fn();
@@ -52,7 +53,8 @@ vi.mock('../plainTextRepository', () => ({
     },
 }));
 vi.mock('../plainGenerationCoordination', () => ({
-    PLAIN_CALL_TIMEOUT_MS: 20_000,
+    PLAIN_CALL_TIMEOUT_MS: 90_000,
+    PLAIN_MAX_OUTPUT_TOKENS: 4_000,
     hasPlainGenerationFailedRecently: (...args: unknown[]) =>
         hasFailedRecently(...args),
     markPlainGenerationFailed: (...args: unknown[]) => markFailed(...args),
@@ -420,6 +422,18 @@ describe('rewriteToPlainLanguage', () => {
     it('LLM이 던져도 예외를 전파하지 않는다 — 분석 전체가 실패하면 안 된다', async () => {
         callAiProviderRouter.mockRejectedValue(new Error('provider down'));
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+    });
+
+    it('첫 호출이 마감(timeout)으로 던지면 재시도하지 않고 null로 끝낸다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        callAiProviderRouter.mockRejectedValue(
+            new ProviderCallTimeoutError(90_000)
+        );
+
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        errSpy.mockRestore();
     });
 
     it('DB 클라이언트 생성이 던져도 저장소 없이 생성한다', async () => {
@@ -1089,7 +1103,7 @@ describe('생성 조율 (single-flight · 락 · 음성 캐시 · 호출 상한)
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
         expect(callAiProviderRouter.mock.calls[0][0].limits).toEqual({
             maxOutputTokens: 4_000,
-            timeoutMs: 20_000,
+            timeoutMs: 90_000,
             maxRetries: 0,
         });
     });

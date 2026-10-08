@@ -25,6 +25,13 @@ const {
     markPlainGenerationFailed,
     releasePlainGenerationLock,
     tryAcquirePlainGenerationLock,
+    PLAIN_CALL_TIMEOUT_MS,
+    PLAIN_MAX_OUTPUT_TOKENS,
+    PLAIN_MEASURED_MIN_TOKENS_PER_SECOND,
+    PLAIN_THROUGHPUT_SAFETY_FACTOR,
+    PLAIN_LOCK_MARGIN_SECONDS,
+    PLAIN_LOCK_TTL_SECONDS,
+    PLAIN_MAX_CALLS_PER_GENERATION,
 } = await import('../plainGenerationCoordination');
 
 const KEY = {
@@ -51,10 +58,26 @@ describe('plainGenerationCoordination', () => {
         expect(failedKey).toBe('analysis-plain:failed:v9:ko:abc');
     });
 
-    it('락 TTL은 호출 두 번의 timeout(20초 × 2)을 덮고, 실패 표시 TTL은 5분이다', () => {
-        expect(slotArgs[0][1]).toBeGreaterThanOrEqual(40);
-        expect(slotArgs[0][1]).toBeLessThanOrEqual(60);
+    it('락 TTL은 호출 두 번이 모두 호출 마감까지 가는 경우 + 여유분을 덮고, 실패 표시 TTL은 5분이다', () => {
+        const worstCaseSeconds =
+            (PLAIN_CALL_TIMEOUT_MS / 1000) * PLAIN_MAX_CALLS_PER_GENERATION;
+        expect(PLAIN_MAX_CALLS_PER_GENERATION).toBe(2);
+        expect(PLAIN_LOCK_TTL_SECONDS).toBe(
+            worstCaseSeconds + PLAIN_LOCK_MARGIN_SECONDS
+        );
+        expect(slotArgs[0][1]).toBe(PLAIN_LOCK_TTL_SECONDS);
         expect(flagArgs[0][1]).toBe(300);
+    });
+
+    it('호출 마감은 출력 상한을 실측 하한의 60% 처리량으로 흘리는 시간보다 길다', () => {
+        const slowestAssumedTokensPerSecond =
+            PLAIN_MEASURED_MIN_TOKENS_PER_SECOND *
+            PLAIN_THROUGHPUT_SAFETY_FACTOR;
+        const fullCapSeconds =
+            PLAIN_MAX_OUTPUT_TOKENS / slowestAssumedTokensPerSecond;
+
+        expect(PLAIN_CALL_TIMEOUT_MS).toBe(90_000);
+        expect(PLAIN_CALL_TIMEOUT_MS / 1000).toBeGreaterThan(fullCapSeconds);
     });
 
     it('Redis 결과를 그대로 전달하고, 풀기는 획득한 락 자신의 release로 한다', async () => {

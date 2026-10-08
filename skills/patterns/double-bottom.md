@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [double_bottom]
-token_cost: 590
-digest_hash: "e6b391b4"
+token_cost: 785
+digest_hash: "092b5466"
 ---
 
 ## Detection Criteria
@@ -27,6 +27,7 @@ digest_hash: "e6b391b4"
 - The two troughs must be separated by a minimum of 10 bars to distinguish the pattern from short-term noise.
 - The closer the two trough prices are to each other, the higher the pattern reliability.
 - The pattern is confirmed when price closes above the neckline (the peak between the two troughs).
+- Engine rule: Pivots are confirmed swings: a swing counts once price reverses 1.5 ATR from it, measured with the ATR of the bar that confirms it, so a confirmed pivot never moves when bars are added, and no bar is both a swing high and a swing low. The troughs are the last two confirmed swing lows (a trough still in progress is not one); their prices differ by no more than min(1 ATR, 3% of their average price), they are at least 10 bars apart, and no bar between the first and the last goes beyond the matched troughs by more than 0.25 ATR. The neckline is the highest confirmed peak between them, and it must sit in the middle half of the span (at least 25% of the first-to-last distance from either trough) — a peak right after the first trough followed by a slow climb to the second is a leg, not two bottoms. The pattern height (average trough to neckline) must be at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). If the peaks between the run of equal lows clearly fall toward them (the line through the first and last of them moves down 1.5 ATR or more) it is a descending triangle, not a double bottom. The last trough must be no more than max(20 bars, half the first-to-last span) before the last bar — an older pattern is not listed.
 
 ## Confidence Weight Rationale
 
@@ -61,7 +62,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price (the highest confirmed peak between the troughs; both troughs must be confirmed swing lows, so a second trough still in progress is not a listed candidate); `extremeLevel` = the average of the two trough prices; `direction` = 'up'; `invalidationLevel` = the lower of the two troughs (a close below it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price (the highest confirmed peak between the troughs; both troughs must be confirmed swing lows, so a second trough still in progress is not a listed candidate); `extremeLevel` = the average of the two trough prices; `direction` = 'up'; `invalidationLevel` = the lower of the two troughs (a close below it negates the pattern). Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The lower of the two troughs serves as the invalidation level. A close below this level negates the bullish pattern.
 - **Time symmetry**: Patterns where the two troughs are roughly equidistant in time from the neckline tend to be more reliable.
 
@@ -75,7 +76,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Describe the pattern status (first trough formed / second trough in progress / completed / neckline broken), the price difference percentage between the two troughs, and spacing between them.
 - **Volume context**: State whether volume behavior confirms the pattern (increasing volume on second trough, volume increase on neckline break).
 - **Completion status**: Clearly indicate whether the pattern is still forming (second trough in progress) or fully confirmed by a neckline break.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Double Bottom (bullish reversal)
@@ -85,6 +86,7 @@ Geometry:
 - Clear peak (neckline) between troughs, height ≥3% from trough average.
 - Troughs separated by minimum 10 bars.
 - Confirmed: close ABOVE neckline (the peak between troughs).
+- Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); last two confirmed swing lows; price difference ≤ min(1 ATR, 3% of average price); troughs ≥10 bars apart; no bar between them beyond the matched troughs by >0.25 ATR; neckline = highest confirmed peak between them, in the middle half of the span (≥25% of the distance from either trough); height ≥2.5 ATR and the price-share minimum; rejected if the peaks under the equal lows clearly fall (≥1.5 ATR, = triangle); last trough ≤ max(20 bars, half the span) before the last bar.
 
 Confidence (weight 0.7) — Bulkowski Adam/Eve double-bottom pages: failure 12–16% (median 12%), ranks 5–26 of 39, 65–73% meet target.
 - Increase: trough prices within 1%, volume increase on second trough, neckline break with volume surge, spacing > 15 bars.
@@ -100,13 +102,13 @@ False positives / invalidation:
 - Intraday wick above neckline without close = not confirmed.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the neckline price (the highest confirmed peak between the extremes), extremeLevel: the average of the two trough prices, direction: 'up', invalidationLevel: the lower of the two troughs (a close below it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the neckline price (the highest confirmed peak between the extremes), extremeLevel: the average of the two trough prices, direction: 'up', invalidationLevel: the lower of the two troughs (a close below it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: both trough prices, neckline price.
 - patternSummaries: status (first trough formed / second trough in progress / completed / neckline broken), price difference % between troughs, spacing.
 - Volume context: increasing on second trough, increase on neckline break.
 - Completion status: forming (second trough in progress) vs confirmed (neckline break).
-- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->
