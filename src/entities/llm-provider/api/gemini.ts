@@ -20,7 +20,11 @@ const THINKING_LEVEL_TO_SDK: Record<GeminiThinkingLevel, ThinkingLevel> = {
 };
 import type { AiContents, ConversationTurn } from '@y0ngha/siglens-core';
 import type { ProviderCallLimits, ProviderCallOptions } from '../model';
-import { findSpecByApiModelId, resolveMaxOutputTokens } from '../lib/utils';
+import {
+    createCallDeadline,
+    findSpecByApiModelId,
+    resolveMaxOutputTokens,
+} from '../lib/utils';
 import { CHAT_JOB_ID, extractGeminiUsage, logUsage } from '../lib/usage';
 
 interface GeminiChatOptions extends ProviderCallOptions {
@@ -70,7 +74,8 @@ function buildGeminiConfig(
     model: string,
     systemInstruction: string | undefined,
     thinkingLevel: GeminiThinkingLevel | undefined,
-    limits: ProviderCallLimits | undefined
+    limits: ProviderCallLimits | undefined,
+    abortSignal: AbortSignal | undefined
 ): GenerateContentConfig | undefined {
     // 스펙을 모르는 모델이면 호출자 값을 그대로 쓴다(`min(x, x) = x`).
     const maxOutputTokens =
@@ -100,6 +105,7 @@ function buildGeminiConfig(
             : {}),
         ...(maxOutputTokens !== undefined ? { maxOutputTokens } : {}),
         ...(Object.keys(httpOptions).length > 0 ? { httpOptions } : {}),
+        ...(abortSignal !== undefined ? { abortSignal } : {}),
     };
     return Object.keys(config).length > 0 ? config : undefined;
 }
@@ -116,18 +122,29 @@ export async function callGeminiChat({
     const startedAt = Date.now();
     const genai = new GoogleGenAI({ apiKey });
 
-    const config = buildGeminiConfig(
-        model,
-        systemInstruction,
-        thinkingLevel,
-        limits
-    );
-
-    const response = await genai.models.generateContent({
-        model,
-        contents: toGeminiContents(contents),
-        ...(config !== undefined ? { config } : {}),
-    });
+    // 응답 본문까지 `limits.timeoutMs`로 묶는다 — SDK의 `httpOptions.timeout`은 요청 단위
+    // 헤더 타임아웃이라 호출 전체를 보장하지 못한다. 만료 시 `abortSignal`로 연결을 끊는다.
+    const deadline = createCallDeadline(limits?.timeoutMs);
+    let response: Awaited<ReturnType<typeof genai.models.generateContent>>;
+    // 요청 생성이 던져도 타이머가 남지 않도록 생성부터 try 안에 둔다.
+    try {
+        const config = buildGeminiConfig(
+            model,
+            systemInstruction,
+            thinkingLevel,
+            limits,
+            deadline.signal
+        );
+        response = await deadline.guard(
+            genai.models.generateContent({
+                model,
+                contents: toGeminiContents(contents),
+                ...(config !== undefined ? { config } : {}),
+            })
+        );
+    } finally {
+        deadline.dispose();
+    }
     logUsage({
         jobId,
         model,

@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_bottom]
-token_cost: 829
-digest_hash: "741b70f1"
+token_cost: 959
+digest_hash: "77352afa"
 ---
 
 ## Detection Criteria
@@ -29,7 +29,7 @@ digest_hash: "741b70f1"
 - The pattern typically forms over several months to years on daily charts. On weekly charts, the formation period is shorter but still measured in months.
 - The pattern requires a minimum of 30 bars for structural validity, but reliable formations typically span 50+ bars.
 - The pattern is confirmed when price closes above the left rim (neckline/resistance level) with increased volume.
-- Engine rule: a quadratic curve fitted to the closes between two confirmed swing-high rims (rims at least 30 bars apart, within 5% of each other in price, no bar above the higher rim by more than 0.25 ATR). The curve must open upward with its vertex in the middle half of the span, explain at least 60% of the closes' variance (R² ≥ 0.6), and have at least 40% of the closes in the bottom third of the saucer's depth (a U, not a V). Depth (from the right rim down to the saucer bottom) is at least 2.5× ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars); the right rim must be no more than max(20 bars, half the span) before the last bar.
+- Engine rule: Pivots are confirmed swings: a swing counts once price reverses 1.5 ATR from it, measured with the ATR of the bar that confirms it, so a confirmed pivot never moves when bars are added, and no bar is both a swing high and a swing low. A quadratic curve fitted to the closes between two confirmed swing-high rims (rims at least 30 bars apart, within 5% of each other in price AND at most 25% of the depth apart, depth measured from the lower rim). No bar between the rims may go above the lower rim by more than 0.25 ATR once price has left the rims (the other rim's own leg is not counted). The curve must open upward with its vertex in the middle half of the span (25%–75%), explain at least 60% of the closes' variance (R² ≥ 0.6), and have at least 40% of the closes in the bottom third of the saucer's depth (a U, not a V). Depth (from the lower rim to the saucer bottom) is at least 2.5× ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars); the right rim must be no more than max(20 bars, half the span) before the last bar. Unlike a cup, the rim match stays at 5% (a looser match turned W-shaped bases into rounding bottoms) and no prior advance is required.
 
 ## Confidence Weight Rationale
 
@@ -66,7 +66,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lip — the higher of the two rim highs (the breakout level); `extremeLevel` = the saucer bottom (the lowest low between the rims); `direction` = 'up'; `invalidationLevel` = the most recent confirmed swing low after the saucer bottom, or the bottom itself when none (the saucer bottom is a wider alternative stop). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lip — the higher of the two rim highs (the breakout level); `extremeLevel` = the saucer bottom (the lowest low between the rims); `direction` = 'up'; `invalidationLevel` = the most recent confirmed swing low after the saucer bottom, or the bottom itself when none (the saucer bottom is a wider alternative stop). Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The most recent trough within the right side of the saucer, or the bottom of the saucer for a wider stop, serves as the invalidation level.
 - **Target reliability**: Bulkowski (roundb.html): 65% reach the measure-rule target — do not treat it as a minimum expectation.
 - **Patience**: The pattern's long formation period means confirmation can take months. Early positioning before rim breakout carries higher risk.
@@ -81,7 +81,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Describe the pattern status (left side forming / bottom stabilizing / right side developing / rim reached / breakout confirmed), the saucer depth as a percentage of the rim price, the formation duration, the symmetry between left and right sides, and the shape assessment (smooth U vs irregular).
 - **Volume context**: State whether volume follows the expected U-shape — declining on the left side, minimum at the bottom, and increasing on the right side. Note the volume level at the breakout relative to the average.
 - **Completion status**: Clearly indicate which phase the pattern is in and how far along the right side has developed. Note whether the right rim has reached the left rim level.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 원형바닥 (Rounding Bottom / Saucer) — long-term bullish reversal, confidence_weight 0.8 (Bulkowski roundb.html: rank 7/39, failure 4%, 65% meet target). Often coincides with sector/market rotation into the stock.
@@ -93,7 +93,7 @@ When this pattern is detected, include the following in the analysis response:
 - Volume follows U-shape: declining left, minimum at bottom, gradually increasing right.
 - Typically months–years on daily; minimum 30 bars for validity, reliable formations 50+ bars.
 - Confirmed when price CLOSES above left rim (neckline/resistance) with increased volume.
-- Engine: quadratic fit on the closes between two confirmed swing-high rims (≥30 bars apart, within 5%), vertex in the middle half of the span, R² ≥ 0.6, U not V, depth ≥2.5× ATR and the price-share minimum.
+- Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); quadratic fit on the closes between two confirmed swing-high rims (≥30 bars apart, within 5% AND ≤25% of the depth apart), no bar between above the lower rim by >0.25 ATR (the other rim's own leg excluded), vertex in the middle half of the span, R² ≥ 0.6, ≥40% of closes in the bottom third (U not V), depth from the lower rim ≥2.5× ATR and the price-share minimum, right rim ≤ max(20 bars, half the span) before the last bar.
 
 ### Grading
 - Increase: formation >3 months (60+ daily bars); clear volume U-shape; smooth curves without sharp moves; rim breakout with significant volume.
@@ -111,13 +111,13 @@ When this pattern is detected, include the following in the analysis response:
 - Premature identification before right side develops → frequent false signals.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the lip (the higher of the two rim highs), extremeLevel: the saucer bottom (lowest low between the rims), direction: 'up', invalidationLevel: the most recent confirmed swing low after the bottom (the bottom itself when none) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the lip (the higher of the two rim highs), extremeLevel: the saucer bottom (lowest low between the rims), direction: 'up', invalidationLevel: the most recent confirmed swing low after the bottom (the bottom itself when none) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: left rim, right rim (current/projected), bottom.
 - patternSummaries: status (left side forming / bottom stabilizing / right side developing / rim reached / breakout confirmed); saucer depth as % of rim; formation duration; left/right symmetry; shape (smooth U vs irregular).
 - Volume context: whether volume follows U-shape (decline left, min bottom, increase right); breakout volume vs average.
 - Completion status: which phase; how far right side developed; whether right rim reached left-rim level.
-- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - trend: bullish when confirmed.
 <!-- PROMPT_DIGEST:END -->

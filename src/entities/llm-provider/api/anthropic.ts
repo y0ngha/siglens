@@ -4,6 +4,8 @@ import {
     findSpecByApiModelId,
     resolveMaxOutputTokens,
     toSdkTransportOptions,
+    createCallDeadline,
+    runWithCallDeadline,
 } from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import type { AiContents } from '@y0ngha/siglens-core';
@@ -97,34 +99,47 @@ export async function callAnthropicChat({
     // prefix up to the previous turn are cached, so each new turn only bills the
     // latest user message as fresh input tokens.
     const messages = withHistoryCacheBreakpoint(toAnthropicMessages(contents));
-    const stream = client.messages.stream({
-        model,
-        max_tokens: maxTokens,
-        messages,
-        ...(systemInstruction !== undefined
-            ? {
-                  system: [
-                      {
-                          type: 'text',
-                          text: systemInstruction,
-                          cache_control: EPHEMERAL_CACHE_CONTROL,
-                      },
-                  ],
-              }
-            : {}),
-        ...(adaptiveConfig !== undefined
-            ? adaptiveConfig.mode === 'disabled'
-                ? { thinking: { type: 'disabled' as const } }
-                : {
-                      thinking: {
-                          type: 'adaptive' as const,
-                          display: 'omitted' as const,
-                      },
-                      output_config: { effort: adaptiveConfig.effort },
-                  }
-            : { temperature: spec.temperature }),
-    });
-    const response = await stream.finalMessage();
+    // 스트림 본문 읽기까지 `limits.timeoutMs`로 묶는다 — SDK timeout은 헤더 도착까지만 잰다.
+    const deadline = createCallDeadline(limits?.timeoutMs);
+    // `stream()` 생성이 던져도 타이머가 남지 않도록 생성까지 `runWithCallDeadline` 안에서 한다.
+    const response = await runWithCallDeadline(deadline, () =>
+        client.messages
+            .stream(
+                {
+                    model,
+                    max_tokens: maxTokens,
+                    messages,
+                    ...(systemInstruction !== undefined
+                        ? {
+                              system: [
+                                  {
+                                      type: 'text',
+                                      text: systemInstruction,
+                                      cache_control: EPHEMERAL_CACHE_CONTROL,
+                                  },
+                              ],
+                          }
+                        : {}),
+                    ...(adaptiveConfig !== undefined
+                        ? adaptiveConfig.mode === 'disabled'
+                            ? { thinking: { type: 'disabled' as const } }
+                            : {
+                                  thinking: {
+                                      type: 'adaptive' as const,
+                                      display: 'omitted' as const,
+                                  },
+                                  output_config: {
+                                      effort: adaptiveConfig.effort,
+                                  },
+                              }
+                        : { temperature: spec.temperature }),
+                },
+                deadline.signal !== undefined
+                    ? { signal: deadline.signal }
+                    : undefined
+            )
+            .finalMessage()
+    );
 
     logUsage({
         jobId,

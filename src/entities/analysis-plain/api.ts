@@ -5,6 +5,7 @@ import { stripMarkdownCodeBlock } from '@/entities/llm-provider/lib/parseJsonRes
 import type { ProviderCallLimits } from '@/entities/llm-provider/model';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { sleep } from '@/shared/lib/sleep';
+import { fireAndForget } from '@/shared/lib/backgroundTask';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import type { PlainTextRepository } from '@/shared/db/types';
@@ -14,6 +15,7 @@ import {
     hasPlainGenerationFailedRecently,
     markPlainGenerationFailed,
     PLAIN_CALL_TIMEOUT_MS,
+    PLAIN_MAX_OUTPUT_TOKENS,
     releasePlainGenerationLock,
     tryAcquirePlainGenerationLock,
     type PlainGenerationKey,
@@ -39,9 +41,9 @@ import {
  * `STREAM_DEADLINE_MS`의 보호를 받지 못한다. 예전에는 어댑터가 timeout도 maxRetries도
  * 지정하지 않아 OpenAI SDK 기본값(10분 × 3회)을 썼다 — 프로바이더가 매달리면 스트림
  * 하나가 `canAcceptAnalysisStream` 동시성 슬롯을 30분 붙들고,
- * `instrumentation.node.ts`가 전제하는 180초 SIGTERM 드레인을 넘겨 배포마다 끊겼다.
- * 지금은 호출마다 `PLAIN_CALL_LIMITS`(20초 timeout, SDK 재시도 0)를 넘기지만, 그 값은
- * 백그라운드 지출의 상한이고 사용자가 기다리는 시간은 여전히 이 마감이 정한다.
+ * `instrumentation.node.ts`의 SIGTERM 드레인(`SHUTDOWN_DRAIN_DEADLINE_MS`)을 넘겨 배포마다 끊겼다.
+ * 지금은 호출마다 `PLAIN_CALL_LIMITS`(스트림 본문까지 묶는 `PLAIN_CALL_TIMEOUT_MS` 호출 마감, SDK 재시도 0)를
+ * 넘기지만, 그 값은 백그라운드 지출의 상한이고 사용자가 기다리는 시간은 여전히 이 마감이 정한다.
  *
  * ## 왜 45초가 아니라 15초인가
  *
@@ -210,25 +212,25 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
 }
 
 /**
- * 평이화 한 번의 출력 토큰 상한.
- *
- * 예전에는 상한을 넘기지 않아 어댑터가 스펙 최대치(DeepSeek 393,216)를 그대로 보냈고,
- * 모델이 반복에 빠지면 그만큼 청구될 수 있었다. 그래서 상한을 두되, **잘리지 않는 것이
- * 우선**이다 — chat 어댑터는 `finish_reason: length`를 오류로 세우지 않아 잘린 글이
- * 가드를 통과해 그대로 저장·노출된다(2026-10-07 OPEN 분석이 "…회복되기 전"에서 끊긴 채
- * 표시됐다).
- *
- * 1,500은 "문단 하나, 실측 371~467토큰"을 전제로 잡은 값이었는데, 원본 분석이 긴 종목은
- * 쉽게보기도 여러 문단으로 길어져 그 전제가 깨졌다. 상한은 청구액이 아니라 폭주 방지선이라
- * (생성된 만큼만 청구된다) 넉넉히 둔다.
- */
-const PLAIN_MAX_OUTPUT_TOKENS = 4_000;
-
-/**
  * 평이화 호출 상한. 재시도는 SDK가 아니라 이 모듈이 정한다 — `attempt()`가 가드 실패에
  * 한 번 다시 부르는데, SDK 재시도(기본 2회)까지 겹치면 매달린 호출 하나가 백그라운드에서
  * 최대 세 번 청구된다. 마감(`withDeadline`)은 레이스일 뿐 요청을 끊지 못하므로 실제로
  * 끊는 것은 이 `timeoutMs`다.
+ *
+ * `timeoutMs`는 SDK 옵션이 아니라 **어댑터가 스트림 본문 읽기까지 묶는 호출 전체 마감**으로
+ * 쓴다(`createCallDeadline`). OpenAI SDK의 `timeout`은 응답 헤더가 오면 타이머를 지우므로
+ * SSE 본문은 그것만으로는 무제한이다 — 4,000토큰을 75~100토큰/초로 흘리는 긴 재작성이
+ * 40~55초를 가는데, 이 값이 본문을 끊지 않으면 `plainGenerationCoordination.ts`의 락 TTL을
+ * 넘겨 다른 인스턴스가 같은 좌표를 중복 생성한다.
+ *
+ * 재시도(`attempt(retryHint)`)는 첫 호출이 **돌아온 뒤 가드가 거부했을 때만** 일어난다.
+ * 첫 호출이 마감(`ProviderCallTimeoutError`)으로 던지면 `generate()`의 파이프라인이 그
+ * 거절을 잡아 `null`로 끝내므로 두 번째 호출은 없다 — 마감까지 멈춘 프로바이더에 마감을 한 번
+ * 더 쓰지 않는다. 그래서 한 생성의 최악은 "느린 호출 + 가드 거부 + 느린 재시도"의 2회이고,
+ * 이 2회를 락 TTL이 덮는다(`plainGenerationCoordination.ts`). SIGTERM 드레인
+ * (`SHUTDOWN_DRAIN_DEADLINE_MS`)과의 관계: 호출 하나는 마감으로 끊기지만, 2회 최악
+ * (`PLAIN_CALL_TIMEOUT_MS` × 2)은 드레인 예산과 같거나 겹칠 수 있다 — 드레인에서
+ * 끊겨도 락은 TTL로 풀리고 저장 행이 없으니 다음 요청이 다시 생성한다.
  */
 const PLAIN_CALL_LIMITS: ProviderCallLimits = {
     maxOutputTokens: PLAIN_MAX_OUTPUT_TOKENS,
@@ -242,8 +244,12 @@ const PLAIN_WAIT_POLL_INTERVAL_MS = 1_000;
 /**
  * 다른 인스턴스의 생성을 기다리는 최대 시간(ms). 정상 생성(재시도 포함)을 담을 만큼만
  * 기다린다. 넘기면 락을 한 번 더 잡아 보고, 잡히면(보유자가 죽었거나 끝났는데 결과가 안
- * 들어왔다) 직접 생성한다. 다만 이 생성을 기다리는 호출자 **전원의 마감**이 먼저 지나면
- * 그 자리에서 물러난다 — 받을 사람이 없는 폴링·생성은 하지 않는다.
+ * 들어왔다) 직접 생성한다.
+ *
+ * 보유자의 생성이 이보다 오래 걸려 락이 아직 살아 있으면(`held`) 중복 생성하지 않고
+ * 물러난다 — 락 TTL이 호출 마감 두 번을 덮기 때문이다. 이 생성을 기다리는 호출자
+ * **전원의 마감**이 먼저 지나면 그 자리에서 물러난다 — 받을 사람이 없는 폴링·생성은
+ * 하지 않는다.
  */
 const PLAIN_WAIT_MAX_MS = 25_000;
 
@@ -341,7 +347,7 @@ function runOwnedGeneration(
     generate: () => PlainFlight
 ): PlainFlight {
     const flight = generate();
-    void flight.result
+    const cleanup = flight.result
         .then(async text => {
             try {
                 if (text === null) await markPlainGenerationFailed(key);
@@ -353,6 +359,13 @@ function runOwnedGeneration(
         .catch((error: unknown) => {
             console.error('[analysisPlain] lock cleanup failed', error);
         });
+    // SIGTERM 드레인(`drainBackgroundTasks`)에 등록한다. 등록 대상이 생성 + 락 해제까지의
+    // 정리 체인이라, 종료 시 드레인이 락이 풀릴 때까지 기다린다. 등록하지 않으면 프로세스가
+    // 락을 쥔 채 죽어 `PLAIN_LOCK_TTL_SECONDS` 동안 다른 요청이 사용자 마감까지 기다리다
+    // 원본으로 물러난다. 호출 상한(`PLAIN_CALL_TIMEOUT_MS`)이 드레인 예산
+    // (`SHUTDOWN_DRAIN_DEADLINE_MS`)보다 짧아 호출 하나의 대기는 예산을 넘기지 않는다. 락을 SIGTERM에서 따로 푸는 방식은 쓰지 않는다 —
+    // 생성 중인 호출이 살아 있는데 락만 풀면 다른 인스턴스가 중복 생성·중복 과금한다.
+    fireAndForget(cleanup);
     return flight;
 }
 

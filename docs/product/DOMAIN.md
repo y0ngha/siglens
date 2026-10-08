@@ -1141,7 +1141,11 @@ interface OverlayPoint { time: number; price: number }        // time: bar Unix 
 interface OverlaySegment {
     from: OverlayPoint;
     to: OverlayPoint;
-    role: string;                   // 'pattern' | 'neckline' | 'boundary_upper' | 'pole' | 'support' | 'wave_3' | 'rsi' …
+    role: string;                   // 닫힌 union이 아니라 core가 정하는 문자열. 알려진 값:
+                                    //   패턴: 'pattern' | 'neckline' | 'boundary_upper' | 'boundary_lower' | 'pole' | 'channel_upper' | 'channel_lower'
+                                    //   추세선: 'support' | 'resistance' · 피보나치: 'anchor' · 다이버전스: 'price' | 'rsi'
+                                    //   엘리엇: 'wave_1'~'wave_5' | 'wave_A'~'wave_E' | 'wave_W' | 'wave_X' | 'wave_Y' | 'wave_X2' | 'wave_Z'
+                                    //         + 경계선 'boundary_13' | 'boundary_24' (쐐기형 대각선) · 'boundary_ac' | 'boundary_bd' (삼각형)
     style: 'solid' | 'dashed';
     pane: 'price' | 'rsi';          // 다이버전스의 RSI 쪽 선만 'rsi'
 }

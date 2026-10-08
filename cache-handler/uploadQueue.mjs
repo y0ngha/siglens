@@ -5,7 +5,7 @@
 // 캐시 miss의 응답은 S3 PUT을 기다리고 있었다. ResponseCache는 재생성 결과를
 // `await incrementalCache.set(...)` 한 뒤에야 엔트리를 돌려주고
 // (next/dist/server/response-cache/index.js:294-300), IncrementalCache.set은 핸들러 set을
-// await한다(next/dist/server/lib/incremental-cache/index.js:540). 즉 miss 응답 하나가
+// await한다(next/dist/server/lib/incremental-cache/index.js:559). 즉 miss 응답 하나가
 // gzip + v8.serialize + PutObject(수백 KB, 수십~수백 ms) 뒤에 줄을 섰다.
 //
 // ## 보장

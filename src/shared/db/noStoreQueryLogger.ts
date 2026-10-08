@@ -20,7 +20,7 @@ import type { Logger } from 'drizzle-orm/logger';
  * 조용히 사라지고, 위 안전망 없이 라우트가 정적으로 바뀔 수 있다(= 렌더 모드 변화).
  * 그래서 쿼리 직전에 같은 신호를 직접 보낸다.
  *
- * ## 왜 `unstable_noStore`로 대체되는가 (next@16.3.6 소스로 확인)
+ * ## 왜 `unstable_noStore`로 대체되는가 (next@16.3.8 소스로 확인)
  *
  * `unstable_noStore` → `markCurrentScopeAsDynamic`:
  *   - `cache` / `unstable-cache` 스코프: 아무 일도 하지 않고 반환 (= 신호 2).

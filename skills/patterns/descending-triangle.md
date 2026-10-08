@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [descending_triangle]
-token_cost: 693
-digest_hash: "4fa3ee5c"
+token_cost: 880
+digest_hash: "3f710352"
 ---
 
 ## Detection Criteria
@@ -29,7 +29,7 @@ digest_hash: "4fa3ee5c"
 - The horizontal support must be clearly flat (slope < 1%), distinguishing this from a symmetrical triangle.
 - The descending trendline must show a clear downward slope with each successive high being meaningfully lower than the previous one.
 - The pattern is confirmed when price closes below the horizontal support with increased volume.
-- Engine rule: boundary lines through confirmed swing pivots (each ≥2 touches, containing every bar of the pattern within 0.25 ATR); the upper line is falling and the lower line flat (a flat line moves no more than min(0.75 ATR, 1% of price) over the span, a rising/falling line at least 1.5 ATR, and a move in between is not drawn), and the end width is at most 0.7× the start width. Minimum 15 bars.
+- Engine rule: boundary lines through confirmed swing pivots — the best window of the last 8 down to 5 pivots (the one whose pivots touch their lines most often), grown back to at most 16 pivots while it stays the same pattern and keeps every touch — each line containing every bar of the pattern within 0.25 ATR (a pivot within 0.35 ATR of a line touches it), never a regression fit, and the two lines must interleave (each keeps at least 2 touches from the other line's first touch on). The upper line falls at least 1.5 ATR and the lower line is flat (moves no more than min(0.75 ATR, 1% of price) over the span) (a move in between is not drawn), each with at least 2 touches, and the end width is at most 0.7× the start width. Direction is fixed: down. Minimum 15 bars, and a height (width at the first touch) of at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). The chart draws each line solid from its first to its last confirmed touch and continues it dashed to the bar where the printed value is read (the last bar for the breakout-side line). Status `failed breakout`: after the breakout line's last touch a close went beyond it by more than 0.25 ATR and the last close is back inside — the pattern stays listed and drawn (its structure is intact) but price already broke the line once and came back, so report the breakout as failed and unconfirmed, not as a plain untested `forming` and not as a confirmed break (`broken` means the last close is outside).
 
 ## Confidence Weight Rationale
 
@@ -67,7 +67,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the flat support trendline's value at the last bar; `extremeLevel` = the breakout level plus the triangle height (the width between the two trendlines at the first touch — their widest point); `direction` = 'down'; `invalidationLevel` = the last confirmed touch of the descending resistance line — the most recent lower high, a fixed swing-high price (not the trendline's current value). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the flat support trendline's value at the last bar; `extremeLevel` = the breakout level plus the triangle height (the width between the two trendlines at the first touch — their widest point); `direction` = 'down'; `invalidationLevel` = the last confirmed touch of the descending resistance line — the most recent lower high, a fixed swing-high price (not the trendline's current value). Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The most recent confirmed lower high (the last touch of the descending trendline) serves as the invalidation level — a fixed price. A close above this negates the bearish pattern.
 - **Breakout scenario**: If price closes above the descending trendline instead, treat the pattern as having failed/reversed to bullish (a bear trap) — this alternate scenario is not in `## Chart Pattern Candidates (computed)`, so do not compute a target for it yourself; describe the reversal qualitatively.
 
@@ -81,7 +81,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Describe the pattern status (forming / approaching apex / support broken / trendline broken upward), the number of touches on support and resistance, the breakdown position relative to the apex (early, mid, late), and the prior trend direction.
 - **Volume context**: State whether volume is contracting as expected during formation and whether a volume surge accompanied any breakdown or breakout.
 - **Completion status**: Clearly indicate whether the triangle is still forming or confirmed by a decisive close below the horizontal support.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Descending Triangle (near direction-neutral; bearish only after a close below support)
@@ -90,7 +90,7 @@ Geometry:
 - Horizontal support line: ≥2 touches at ~same price (within 1%); slope must be < 1% (else symmetrical triangle).
 - Descending resistance trendline: ≥2 progressively lower highs, clear downward slope.
 - Price converges (range narrows) toward apex. Minimum 15 bars.
-- Engine: upper line falling ≥1.5 ATR over the span + flat lower line (flat = ≤min(0.75 ATR, 1% price); in between = not drawn), ≥2 touches each, end width ≤0.7× start.
+- Engine: lines through confirmed pivots (window 8→5 pivots, grown back to ≤16 while all touches kept), bars contained within 0.25 ATR, touch = within 0.35 ATR, lines interleave (≥2 touches each from the other's first touch); upper falling ≥1.5 ATR + flat lower (≤min(0.75 ATR, 1% price) move) (in between = not drawn), ≥2 touches each, end width ≤0.7× start; direction fixed down; ≥15 bars; height ≥2.5 ATR and the price-share minimum. Lines drawn solid first→last touch, dashed to the bar the printed value is read. Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
 Confirmation: close BELOW horizontal support with increased volume. Intraday wick below support without a close = not confirmed. Volume should decline as triangle narrows.
 
@@ -105,13 +105,13 @@ False positives / invalidation:
 - Support at major historical level tested first time → higher bounce odds.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the flat support trendline at the last bar, extremeLevel: breakout plus the triangle height (width at the first touch, the widest point), direction: 'down', invalidationLevel: the last confirmed touch of the descending resistance line — the most recent lower high, a fixed price }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the flat support trendline at the last bar, extremeLevel: breakout plus the triangle height (width at the first touch, the widest point), direction: 'down', invalidationLevel: the last confirmed touch of the descending resistance line — the most recent lower high, a fixed price }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: horizontal support, current descending trendline value, projected apex price.
 - patternSummaries: status (forming / approaching apex / support broken / trendline broken upward), touch counts on support & resistance, breakdown position vs apex (early/mid/late), prior trend direction.
 - Volume context: contraction during formation; volume surge on breakdown/breakout.
 - Completion status: forming vs confirmed (decisive close below support).
-- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->

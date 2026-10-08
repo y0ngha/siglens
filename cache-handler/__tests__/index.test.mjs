@@ -80,14 +80,12 @@ import {
     __resetForTests as resetUploads,
 } from '../uploadQueue.mjs';
 
-// 핸들러(nextInternals.mjs)가 쓰는 것과 같은 Next 모듈 인스턴스 — 정적 Map이라 테스트마다 비운다.
+// 핸들러(nextInternals.mjs)가 쓰는 것과 같은 Next 정적 Map — 테스트마다 비운다.
+// 16.3.8부터 인스턴스 `get`은 owner(소스 라우트)를 요구하므로 핸들러처럼 Map을 직접 본다.
 const { SharedCacheControls } = createRequire(import.meta.url)(
     'next/dist/server/lib/incremental-cache/shared-cache-controls.external.js'
 );
-const sharedControls = new SharedCacheControls({
-    routes: {},
-    dynamicRoutes: {},
-});
+const sharedControls = SharedCacheControls.cacheControls;
 
 // 'max' 프로필이 Next에서 핸들러로 넘어오는 모양(revalidation-utils.js:119-123).
 const MAX_DURATIONS = { expire: 31536000 };
@@ -800,16 +798,18 @@ describe('라우트 cacheControl 영속·재시드', () => {
         expect(memSetEntry.mock.calls[0][1].cacheControl).toBeUndefined();
     });
 
-    it('get은 Next 공유 맵에 라우트가 없으면 영속 값으로 채운다(toRoute 정규화)', async () => {
+    it('get은 Next 공유 맵에 키가 없으면 받은 키 그대로 영속 값을 채운다', async () => {
         getEntry.mockResolvedValueOnce({
             value: { kind: 'APP_PAGE', html: 'x' },
             lastModified: NOW,
             tags: [],
             cacheControl: PAGE_CACHE_CONTROL,
         });
-        await new CacheHandler({}).get('/index', { kind: 'APP_PAGE' });
-        // IncrementalCache는 cacheControls.get(toRoute('/index')) = '/'를 본다.
-        expect(sharedControls.get('/')).toEqual(PAGE_CACHE_CONTROL);
+        // 16.3.8의 루트 페이지 키 모양. IncrementalCache는 핸들러에 넘긴 키 그대로 맵을 읽는다
+        // (정규화하지 않는다 — nextInternals.mjs 상단 "라우트 cacheControl 맵의 키").
+        const key = `/route-cache/APP_PAGE/${'a'.repeat(64)}/$/index`;
+        await new CacheHandler({}).get(key, { kind: 'APP_PAGE' });
+        expect(sharedControls.get(key)).toEqual(PAGE_CACHE_CONTROL);
     });
 
     it('이미 값이 있으면 덮어쓰지 않는다(이 프로세스가 더 최근에 쓴 값 우선)', async () => {
