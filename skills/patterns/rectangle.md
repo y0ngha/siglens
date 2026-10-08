@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rectangle]
-token_cost: 922
-digest_hash: "9a1788f5"
+token_cost: 1121
+digest_hash: "cc5e2194"
 ---
 
 ## Detection Criteria
@@ -30,7 +30,7 @@ digest_hash: "9a1788f5"
 - The pattern requires a minimum of 15 bars for structural validity.
 - A prior trend must exist before the rectangle forms, establishing it as either a continuation (Rectangle Top in uptrend, Rectangle Bottom in downtrend) or potential reversal.
 - The pattern is confirmed when price decisively closes outside either boundary with increased volume.
-- Engine rule: boundary lines through at least 3 confirmed-pivot touches per side (two per side would also fit a triple top/bottom), each containing every bar of the pattern within 0.25 ATR; a line is flat when it moves no more than min(0.75 ATR, 1.5% of price) over the span. Minimum 15 bars, and a height of at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars).
+- Engine rule: boundary lines through confirmed swing pivots — the best window of the last 8 down to 5 pivots (the one whose pivots touch their lines most often), grown back to at most 16 pivots while it stays the same pattern and keeps every touch — each line containing every bar of the pattern within 0.25 ATR (a pivot within 0.35 ATR of a line touches it), never a regression fit, and the two lines must interleave (each keeps at least 2 touches from the other line's first touch on). Both lines are flat (each moves no more than min(0.75 ATR, 1.5% of price) over the span — looser than the 1% used elsewhere) with at least 3 touches per side (two per side would also fit a triple top/bottom); no width-ratio rule applies. Direction = the prior trend (a ≥2 ATR close change over the 20 bars before the pattern; none → undetermined, no target). Minimum 15 bars, and a height (width at the first touch) of at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). The chart draws each line solid from its first to its last confirmed touch and continues it dashed to the bar where the printed value is read (the last bar for the breakout-side line). Status `failed breakout`: after the breakout line's last touch a close went beyond it by more than 0.25 ATR and the last close is back inside — the pattern stays listed and drawn (its structure is intact) but price already broke the line once and came back, so report the breakout as failed and unconfirmed, not as a plain untested `forming` and not as a confirmed break (`broken` means the last close is outside).
 
 ## Rectangle Top vs Rectangle Bottom
 
@@ -73,7 +73,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `direction` = the prior-trend direction ('up' after a rise of at least 2 ATR in the close over the 20 bars before the pattern start, 'down' after a fall) — the computed geometry assumes continuation. `breakoutLevel` = the boundary on that side at the last bar (resistance for 'up', support for 'down'); `extremeLevel` = the breakout level minus (up) or plus (down) the rectangle height — the opposite boundary; `invalidationLevel` = the last confirmed touch of the opposite boundary (a fixed pivot price); a close back across it negates the breakout. If the candidate is printed as 'Direction: undetermined (no prior trend)', it lists both boundaries and the height only — set `geometry` to null and state no target. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `direction` = the prior-trend direction ('up' after a rise of at least 2 ATR in the close over the 20 bars before the pattern start, 'down' after a fall) — the computed geometry assumes continuation. `breakoutLevel` = the boundary on that side at the last bar (resistance for 'up', support for 'down'); `extremeLevel` = the breakout level minus (up) or plus (down) the rectangle height — the opposite boundary; `invalidationLevel` = the last confirmed touch of the opposite boundary (a fixed pivot price); a close back across it negates the breakout. If the candidate is printed as 'Direction: undetermined (no prior trend)', it lists both boundaries and the height only — set `geometry` to null and state no target. Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The opposite boundary's last confirmed touch (a fixed pivot price) serves as the invalidation level. For an upward breakout, support is the stop reference. For a downward breakdown, resistance is the stop reference.
 - **Target reliability**: Bulkowski (recttops.html): 78% of upward breakouts from Rectangle Tops reach the full measure-rule target, but only 54% of downward breakouts — do not treat the target as a minimum expectation.
 
@@ -87,7 +87,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Describe the rectangle type (Top or Bottom based on prior trend), the pattern status (forming / support broken / resistance broken), the number of touches on each boundary, the rectangle height as a percentage of price, and the pattern duration. Note the prior trend direction and its implication for breakout bias.
 - **Volume context**: State whether volume is declining during formation, whether volume favors one direction (accumulation or distribution), and whether a volume surge confirmed the breakout. Note any false breakout attempts.
 - **Completion status**: Clearly indicate whether the rectangle is still forming or confirmed by a decisive close outside a boundary with volume confirmation.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 직사각형 (Rectangle) — continuation-or-reversal, confidence_weight 0.7. Horizontal support/resistance range; Bulkowski recttops/rectbots.html: breaks up 59–63%, up-breakout failure 15% (down 24–34%).
@@ -100,7 +100,7 @@ When this pattern is detected, include the following in the analysis response:
 - Price oscillates with clear bounces (not gradual drift). Minimum 15 bars.
 - Prior trend must exist → Rectangle Top (uptrend) or Rectangle Bottom (downtrend).
 - Confirmed by decisive CLOSE outside either boundary with increased volume.
-- Engine: ≥3 confirmed-pivot touches per side, bars contained within 0.25 ATR; flat = moves ≤min(0.75 ATR, 1.5% price) over the span; height ≥2.5 ATR and the price-share minimum.
+- Engine: lines through confirmed pivots (window 8→5 pivots, grown back to ≤16 while all touches kept), bars contained within 0.25 ATR, touch = within 0.35 ATR, lines interleave (≥2 touches each from the other's first touch); both lines flat (≤min(0.75 ATR, 1.5% price) move), ≥3 touches per side, no width-ratio rule; direction = the prior trend (a ≥2 ATR close change over the 20 bars before the pattern; none → undetermined, no target); ≥15 bars; height ≥2.5 ATR and the price-share minimum. Lines drawn solid first→last touch, dashed to the bar the printed value is read. Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
 ### Top vs Bottom
 - Rectangle Top: after uptrend; break UP through resistance = continuation, break DOWN through support = reversal.
@@ -121,13 +121,13 @@ When this pattern is detected, include the following in the analysis response:
 - No prior trend → range-bound, reduced predictive value.
 
 ### Geometry (do not calculate targets)
-`geometry` = { direction: the prior-trend direction (≥2 ATR close change over the 20 bars before the pattern), breakoutLevel: the boundary on that side at the last bar (resistance for up, support for down), extremeLevel: the opposite boundary (breakout ∓ height), invalidationLevel: the last confirmed touch of the opposite boundary; a close back across it negates the breakout }. If the candidate says 'Direction: undetermined (no prior trend)', set geometry to null (no target). Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { direction: the prior-trend direction (≥2 ATR close change over the 20 bars before the pattern), breakoutLevel: the boundary on that side at the last bar (resistance for up, support for down), extremeLevel: the opposite boundary (breakout ∓ height), invalidationLevel: the last confirmed touch of the opposite boundary; a close back across it negates the breakout }. If the candidate says 'Direction: undetermined (no prior trend)', set geometry to null (no target). Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: support, resistance.
 - patternSummaries: type (Top/Bottom by prior trend); status (forming / support broken / resistance broken); touches per boundary; height as % of price; duration; prior trend + breakout bias.
 - Volume context: declining during formation? favors accumulation/distribution? break surge? note false-breakout attempts.
 - Completion status: forming vs confirmed by decisive close outside a boundary with volume.
-- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - trend: set by realized breakout direction (bullish up-break, bearish down-break); neutral while forming.
 <!-- PROMPT_DIGEST:END -->

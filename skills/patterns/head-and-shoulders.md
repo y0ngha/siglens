@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [head_and_shoulders]
-token_cost: 824
-digest_hash: "da331eae"
+token_cost: 1044
+digest_hash: "57cb3fab"
 ---
 
 ## Detection Criteria
@@ -27,9 +27,9 @@ digest_hash: "da331eae"
 - Left and right shoulder highs must be within 5% of each other in price.
 - The neckline is drawn by connecting the two troughs between the three peaks.
 - A neckline slope closer to horizontal increases pattern reliability.
-- The pattern requires a minimum of 20 bars from left shoulder to right shoulder for structural validity.
+- The textbook figure spans at least 20 bars from left shoulder to right shoulder for structural validity; the engine lists a candidate from 15 bars (looser than the textbook figure so a compact figure is not missed), so grade a 15-19 bar figure lower.
 - The distance from head to neckline must be at least 3% of the neckline price to qualify as a meaningful pattern.
-- Engine rule: five consecutive confirmed swing pivots (shoulder high, trough, head high, trough, shoulder high) with the head clearing both shoulders by at least 1 ATR; the neckline is the line through the two troughs (containing the bars between them within 0.25 ATR) and may slope; the pattern height is measured from the neckline at the head's bar and must be at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). The right shoulder may be up to 2 confirmed pivots old, so the pattern stays listed while price works through the neckline.
+- Engine rule: Pivots are confirmed swings: a swing counts once price reverses 1.5 ATR from it, measured with the ATR of the bar that confirms it, so a confirmed pivot never moves when bars are added, and no bar is both a swing high and a swing low. Five consecutive confirmed swing pivots (shoulder high, trough, head high, trough, shoulder high), each on its own bar, spanning at least 15 bars from left to right shoulder, with the head clearing both shoulders by at least 1 ATR and the two shoulders within 5% of the higher shoulder's price. The neckline is the line through the two troughs (containing the bars between them within 0.25 ATR) and may slope, but it may not move 1.5 ATR or more with the prior trend (a neckline rising that far is just the trend's own rising lows, not an H&S). Both shoulders must stand at least 1 ATR on the pattern's side of the neckline, and from the second trough to the right shoulder no close may go through the neckline by more than 0.25 ATR (that would be a rebound after the break, not a shoulder). The head must top its move: a prior uptrend (a ≥2 ATR close change over the 20 bars before the left shoulder) leads into the left shoulder, and no bar from 20 bars before the left shoulder to the right shoulder goes beyond the head by more than 0.25 ATR. The pattern height is measured from the neckline at the head's bar and must be at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). The right shoulder may be up to 2 confirmed pivots old, so the pattern stays listed while price works through the neckline. The chart draws the neckline solid between the two troughs and dashed on to the break bar (the first close beyond it, else the last bar), where the printed breakout level is read.
 
 ## Confidence Weight Rationale
 
@@ -64,7 +64,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the sloped neckline's value at the break bar (the first close below it; the last bar while it has not broken) — the neckline is a line through the two troughs, not necessarily a horizontal level; `extremeLevel` = the breakout level plus the pattern height (the head's distance from the neckline measured at the head's own bar — equal to the head price only for a flat neckline); `direction` = 'down'; `invalidationLevel` = the right shoulder high (a close above it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the sloped neckline's value at the break bar (the first close below it; the last bar while it has not broken) — the neckline is a line through the two troughs, not necessarily a horizontal level; `extremeLevel` = the breakout level plus the pattern height (the head's distance from the neckline measured at the head's own bar — equal to the head price only for a flat neckline); `direction` = 'down'; `invalidationLevel` = the right shoulder high (a close above it negates the pattern). Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The right shoulder high serves as the invalidation level. A close above this level negates the bearish pattern.
 - **Time factor**: Patterns that take longer to form (> 40 bars) tend to produce larger projected moves.
 
@@ -78,7 +78,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Describe the pattern status (forming / right shoulder in progress / completed / neckline broken), the neckline slope direction, and shoulder symmetry assessment.
 - **Volume context**: State whether volume behavior confirms or contradicts the pattern (declining volume on right shoulder, volume surge on break).
 - **Completion status**: Clearly indicate whether the pattern is still forming or fully confirmed by a neckline break with a closing price below.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 헤드앤숄더 (Head & Shoulders) — bearish reversal, confidence_weight 0.75 (Bulkowski hst.html: rank 9/36, failure 19%, 51% meet target; +0.05 Savin et al. 2007). Three peaks: left shoulder, head (center), right shoulder.
@@ -88,9 +88,9 @@ When this pattern is detected, include the following in the analysis response:
 - Left & right shoulder highs within 5% of each other in price.
 - Neckline = line connecting the two troughs between the three peaks.
 - Near-horizontal neckline → higher reliability.
-- Minimum 20 bars from left to right shoulder.
+- Textbook: ≥20 bars from left to right shoulder; the engine lists from 15 bars (looser), so grade a 15-19 bar figure lower.
 - Head-to-neckline distance must be ≥3% of neckline price (else too shallow, reject).
-- Engine: five confirmed swing pivots (shoulder, trough, head, trough, shoulder), head clears both shoulders by ≥1 ATR; sloped neckline through the two troughs; height measured from the neckline at the head, ≥2.5 ATR and the price-share minimum; right shoulder may be up to 2 confirmed pivots old.
+- Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); five consecutive confirmed pivots (shoulder, trough, head, trough, shoulder) each on its own bar, ≥15 bars left to right shoulder, head clears both shoulders by ≥1 ATR, shoulders within 5% of the higher shoulder's price; neckline through the two troughs (bars within 0.25 ATR), may slope but not ≥1.5 ATR with the prior trend; both shoulders ≥1 ATR on the pattern side of the neckline and no close through the neckline (>0.25 ATR) from the second trough to the right shoulder; prior uptrend (≥2 ATR over 20 bars) into the left shoulder and no bar from 20 bars before it to the right shoulder beyond the head (>0.25 ATR); height measured from the neckline at the head, ≥2.5 ATR and the price-share minimum; right shoulder may be up to 2 confirmed pivots old; neckline drawn dashed on to the break bar.
 
 ### Grading
 - Increase: near-horizontal neckline (slope <2%); symmetric shoulders (price diff <3%); volume confirmation on neckline break; duration >30 bars.
@@ -111,13 +111,13 @@ When this pattern is detected, include the following in the analysis response:
 - Entire pattern on declining volume with no break-volume surge.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the sloped neckline's value at the break bar (the last bar while unbroken), extremeLevel: breakout plus the pattern height (the head's distance from the neckline at the head's bar), direction: 'down', invalidationLevel: the right shoulder high (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the sloped neckline's value at the break bar (the last bar while unbroken), extremeLevel: breakout plus the pattern height (the head's distance from the neckline at the head's bar), direction: 'down', invalidationLevel: the right shoulder high (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: neckline, head, left shoulder, right shoulder prices.
 - patternSummaries: status (forming / right shoulder in progress / completed / neckline broken), neckline slope direction, shoulder symmetry.
 - Volume context: whether volume confirms (declining right-shoulder volume, break surge) or contradicts.
 - Completion status: forming vs confirmed by close below neckline.
-- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - trend: bearish when pattern confirmed.
 <!-- PROMPT_DIGEST:END -->

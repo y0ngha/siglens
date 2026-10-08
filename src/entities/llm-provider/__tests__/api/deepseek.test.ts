@@ -11,6 +11,7 @@ vi.mock('openai', () => ({
 }));
 
 import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
 
 const FLASH_OPTIONS = {
     apiKey: 'server-key',
@@ -429,6 +430,83 @@ describe('callDeepseekChat', () => {
             const result = await callDeepseekChat(FLASH_OPTIONS);
 
             expect(result).toBe('part-1 part-2');
+        });
+    });
+
+    describe('호출 전체 마감(limits.timeoutMs)', () => {
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        /** 청크 하나를 내고 다음 청크를 영원히 기다리는 스트림 — 느리게 흐르는 SSE 본문. */
+        function stallingStream() {
+            return {
+                async *[Symbol.asyncIterator]() {
+                    yield { choices: [{ delta: { content: 'partial' } }] };
+                    await new Promise<never>(() => {});
+                },
+            };
+        }
+
+        it('헤더 이후 본문이 마감을 넘기면 연결을 끊고 timeout 오류를 던진다', async () => {
+            vi.useFakeTimers();
+            mockCreate.mockResolvedValue(stallingStream());
+
+            const pending = callDeepseekChat({
+                ...FLASH_OPTIONS,
+                limits: { timeoutMs: 30_000, maxRetries: 0 },
+            });
+            const assertion = expect(pending).rejects.toBeInstanceOf(
+                ProviderCallTimeoutError
+            );
+            await vi.advanceTimersByTimeAsync(30_000);
+            await assertion;
+
+            const requestOptions = mockCreate.mock.calls[0][1] as {
+                signal: AbortSignal;
+            };
+            expect(requestOptions.signal.aborted).toBe(true);
+        });
+
+        it('마감 안에 끝나는 스트림은 abort 신호를 건드리지 않고 정상 반환한다', async () => {
+            mockCreate.mockResolvedValue(okResponse('done'));
+
+            const result = await callDeepseekChat({
+                ...FLASH_OPTIONS,
+                limits: { timeoutMs: 30_000 },
+            });
+
+            expect(result).toBe('done');
+            const requestOptions = mockCreate.mock.calls[0][1] as {
+                signal: AbortSignal;
+            };
+            expect(requestOptions.signal.aborted).toBe(false);
+        });
+
+        it('create()가 거절돼도 타이머를 정리해 마감 뒤에 abort되지 않는다', async () => {
+            vi.useFakeTimers();
+            mockCreate.mockRejectedValue(new Error('connect failed'));
+
+            await expect(
+                callDeepseekChat({
+                    ...FLASH_OPTIONS,
+                    limits: { timeoutMs: 30_000 },
+                })
+            ).rejects.toThrow('connect failed');
+            await vi.advanceTimersByTimeAsync(60_000);
+
+            const requestOptions = mockCreate.mock.calls[0][1] as {
+                signal: AbortSignal;
+            };
+            expect(requestOptions.signal.aborted).toBe(false);
+        });
+
+        it('timeoutMs가 없으면 signal을 넘기지 않는다', async () => {
+            mockCreate.mockResolvedValue(okResponse('ok'));
+
+            await callDeepseekChat(FLASH_OPTIONS);
+
+            expect(mockCreate.mock.calls[0][1]).toBeUndefined();
         });
     });
 });
