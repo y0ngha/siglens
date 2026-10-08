@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.103.0](https://github.com/y0ngha/siglens/compare/v0.102.1...v0.103.0) (2026-10-08)
+
+### Bug Fixes
+
+* 긴 분석의 쉽게보기 글이 출력 상한에서 잘리지 않게 한다 ([#994](https://github.com/y0ngha/siglens/issues/994)) ([f4b9c8e](https://github.com/y0ngha/siglens/commit/f4b9c8e371cabe5a5a9ca677b2d99533c07b9072))
+* 엘리엇 카드가 목표가 공백을 처리 과정이 아니라 다음으로 볼 가격으로 채우게 한다 ([#1003](https://github.com/y0ngha/siglens/issues/1003)) ([8b4adf8](https://github.com/y0ngha/siglens/commit/8b4adf8a62721e71a5757aee1287463c71170d83))
+
+### Features
+
+* 메일 리포트를 알리는 비회원·회원 넛지와 메일 리포트 설정 페이지를 추가한다 ([#1002](https://github.com/y0ngha/siglens/issues/1002)) ([172193a](https://github.com/y0ngha/siglens/commit/172193a4bed767eb4b394eb8ce223df5c0d56956)), closes [#999](https://github.com/y0ngha/siglens/issues/999) [y0ngha/siglens#999](https://github.com/y0ngha/siglens/issues/999) [account#email-report](https://github.com/account/issues/email-report)
+* 티커 재할당 시 한글명을 다시 번역하고 korean:tickers Redis 사본을 없앤다 ([#995](https://github.com/y0ngha/siglens/issues/995)) ([95a8875](https://github.com/y0ngha/siglens/commit/95a8875004113970e6870ff7e4b52188b66def14))
+* 회원 정기 메일 리포트(일봉 차트·쉽게보기·뉴스·옵션)와 수신 설정·수신거부를 추가한다 ([#1000](https://github.com/y0ngha/siglens/issues/1000)) ([471e42a](https://github.com/y0ngha/siglens/commit/471e42a2ffa78e6a7d9e58cd00fa12cd18e613c4)), closes [#999](https://github.com/y0ngha/siglens/issues/999) [y0ngha/siglens#999](https://github.com/y0ngha/siglens/issues/999)
+* siglens-core 2.14.1로 올리고 패턴 스킬 문서를 새 작도 자격 규칙에 맞춘다 ([#997](https://github.com/y0ngha/siglens/issues/997)) ([b1895a1](https://github.com/y0ngha/siglens/commit/b1895a1dfd55b44e3d99c7b689fd758b2fe2bbf0))
+* siglens-core 2.15.0로 올리고 패턴 스킬·쉽게보기 호출 마감을 후속 정리한다 ([#1001](https://github.com/y0ngha/siglens/issues/1001)) ([1b2b723](https://github.com/y0ngha/siglens/commit/1b2b723e309783b98588818c1dcc38055d000246))
+
 ## [0.102.1](https://github.com/y0ngha/siglens/compare/v0.102.0...v0.102.1) (2026-10-07)
 
 ### Bug Fixes
