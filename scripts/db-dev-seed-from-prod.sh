@@ -36,6 +36,7 @@ readonly DOCKER_HOST_NAME="host.docker.internal"
 #   users, sessions, oauth_accounts, user_api_keys  계정·세션·OAuth 토큰·암호화된 사용자 API 키
 #   portfolio_holdings                              보유종목
 #   email_report_subscriptions                      메일 리포트 수신 설정(동의 시각·타임존)
+#   email_report_deliveries                         메일 리포트 발송 기록(회원별 날짜·종목)
 #   agreements                                      사용자별 약관 동의
 #   inquiries                                       문의(이메일·본문)
 #   chat_conversations, chat_messages               SiglensAI 대화 (messages는 conversations 소속)
@@ -54,6 +55,7 @@ EXCLUDED_TABLES=(
     user_api_keys
     portfolio_holdings
     email_report_subscriptions
+    email_report_deliveries
     agreements
     inquiries
     chat_conversations

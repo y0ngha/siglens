@@ -264,12 +264,43 @@ export interface UpsertEmailReportSubscriptionInput {
     locale: Locale;
 }
 
+/** An enabled subscription joined with the recipient's address — the cron's work list. */
+export interface EmailReportRecipient {
+    userId: string;
+    email: string;
+    daysOfWeek: number;
+    sendHour: number;
+    timezone: string;
+    locale: Locale;
+}
+
 /** Persistence operations for email-report subscriptions. */
 export interface EmailReportSubscriptionRepository {
     findByUser(userId: string): Promise<EmailReportSubscriptionRecord | null>;
     upsert(
         input: UpsertEmailReportSubscriptionInput
     ): Promise<EmailReportSubscriptionRecord>;
+    /** Enabled subscriptions of verified member-or-above users. */
+    findEnabledRecipients(): Promise<EmailReportRecipient[]>;
+    /** Turns delivery off; `false` when the user has no subscription row. */
+    disable(userId: string): Promise<boolean>;
+}
+
+/** Final state of a claimed delivery. */
+export type EmailReportDeliveryOutcome = 'sent' | 'failed' | 'skipped';
+
+/** Idempotency log for email-report deliveries (one row per user per local date). */
+export interface EmailReportDeliveryRepository {
+    /** Claims the (user, localDate) slot; returns the row id, or `null` when already claimed. */
+    claim(userId: string, localDate: string): Promise<string | null>;
+    finish(
+        id: string,
+        outcome: EmailReportDeliveryOutcome,
+        symbols: readonly string[],
+        error: string | null
+    ): Promise<void>;
+    /** Deletes rows created before `cutoff`; returns the count. */
+    pruneOlderThan(cutoff: Date): Promise<number>;
 }
 
 /** `korean_tickers`의 상장 상태만 담은 최소 행. 상폐 판정 로직(`planKrTickerReconcile`,

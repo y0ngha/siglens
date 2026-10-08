@@ -45,3 +45,17 @@ export type ValidateEmailReportSettingsResult =
 export type SaveEmailReportSettingsResult =
     | { status: 'ok'; settings: EmailReportSettingsView }
     | { status: 'error'; code: EmailReportActionErrorCode; message: string };
+
+/** 수신거부 확인 페이지가 보내는 입력 — 메일 링크의 쿼리 그대로. */
+export interface UnsubscribeEmailReportInput {
+    userId: string;
+    signature: string;
+}
+
+export type UnsubscribeEmailReportResult =
+    | { status: 'ok' }
+    | {
+          status: 'error';
+          code: 'invalid_link' | 'storage_unavailable';
+          message: string;
+      };

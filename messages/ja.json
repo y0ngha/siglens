@@ -92,6 +92,15 @@
                 "ae2ce9": "よくある質問"
             }
         },
+        "email-report": {
+            "unsubscribe": {
+                "page": {
+                    "title": "メールレポートの配信停止",
+                    "subtitle": "下のボタンを押すと、定期メールレポートの配信を停止します。",
+                    "description": "SIGLENSの定期メールレポートの配信を停止します。"
+                }
+            }
+        },
         "fear-greed": {
             "FearGreedRouteBody": {
                 "350c3b": "恐怖・強欲指数の読み方",
@@ -466,8 +475,35 @@
                 "invalidHour": "正しい時刻を選んでください。",
                 "invalidInput": "無効な入力です。",
                 "invalidTimezone": "不明なタイムゾーンです。",
+                "invalidUnsubscribeLink": "配信停止リンクが正しくありません。メールのリンクをもう一度開いてください。",
                 "saveFailed": "保存に失敗しました。しばらくしてからもう一度お試しください。",
-                "unauthenticated": "ログインが必要です。"
+                "unauthenticated": "ログインが必要です。",
+                "unsubscribeFailed": "配信停止に失敗しました。しばらくしてからもう一度お試しください。"
+            },
+            "email": {
+                "chartAlt": "{v0} 日足チャート",
+                "disclaimer": "このメールは情報提供を目的としたものであり、投資勧誘ではありません。投資判断とその結果の責任はご本人にあります。AI分析は事実と異なる場合があります。",
+                "heading": "保有銘柄レポート",
+                "intro": "{v0}時点の保有銘柄の最新情報です。",
+                "manage": "配信設定を変更",
+                "noAnalysis": "この銘柄のAI分析はまだ準備できていません。サイトですぐに分析できます。",
+                "optionsIv": "ATMインプライド・ボラティリティ",
+                "optionsMove": "満期（{v0}）までの想定変動幅",
+                "optionsPutCall": "プット・コール・レシオ（建玉）",
+                "reason": "{v0}のアカウント設定でメールレポートをオンにしているため、このメールをお送りしています。",
+                "sectionNews": "主なニュース",
+                "sectionOptions": "オプション動向",
+                "sectionPatterns": "チャートパターン",
+                "sectionPlain": "かんたん解説",
+                "sectionTechnical": "チャート分析",
+                "sentiment": {
+                    "bullish": "好材料",
+                    "neutral": "中立",
+                    "bearish": "悪材料"
+                },
+                "subject": "[{v0}] 保有銘柄レポート · {v1}",
+                "unsubscribe": "配信停止",
+                "viewOnSite": "{v0}で詳しく見る"
             }
         },
         "email-token": {
@@ -695,6 +731,17 @@
                 "e61b39": "メールレポートの設定を読み込み中",
                 "f0cf28": "受け取る時刻",
                 "f1ce16": "曜日を1つ以上選んでください。"
+            }
+        },
+        "email-report-unsubscribe": {
+            "UnsubscribeConfirm": {
+                "0fcf72": "配信を停止する",
+                "11ef2b": "アカウント設定へ",
+                "24cd06": "処理中…",
+                "24d0de": "配信停止に失敗しました。しばらくしてからもう一度お試しください。",
+                "5b4a51": "配信停止リンクが正しくありません。メールのリンクをもう一度開いてください。",
+                "c13cc8": "メールレポートの配信を停止しました。",
+                "fca698": "アカウント設定からいつでも再開できます。"
             }
         },
         "portfolio-holding": {

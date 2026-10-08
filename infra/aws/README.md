@@ -125,7 +125,7 @@ Single-AZ 2a라 넘어가도 DB에 닿지 못한다. HA가 필요해지면 RDS M
 
 ## EventBridge cron Connection (공유)
 
-`13-seo-prewarm.sh`와 `14-kr-tickers-cron.sh`의 API Destination은 Connection
+`13-seo-prewarm.sh`·`14-kr-tickers-cron.sh`·`17-email-report-cron.sh`의 API Destination은 Connection
 `siglens-cron` 하나를 공유한다(`lib-cron.sh`). 둘 다 `Authorization: Bearer <CRON_SECRET>`
 같은 헤더라 나눌 이유가 없고, Connection마다 Secrets Manager 시크릿($0.40/월)이 하나씩 생긴다.
 두 스크립트를 다시 돌리면 API Destination이 공유 Connection으로 옮겨지고 옛 전용

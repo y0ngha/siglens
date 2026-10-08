@@ -47,6 +47,28 @@ describe('ResendEmailDispatcher', () => {
         });
     });
 
+    it('headers가 있으면 Resend에 그대로 넘긴다', async () => {
+        sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+
+        await dispatcher.sendEmail({
+            to: 'user@example.com',
+            subject: 's',
+            html: '<p>h</p>',
+            text: 't',
+            headers: { 'List-Unsubscribe': '<https://siglens.io/u>' },
+        });
+
+        expect(sendMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                headers: { 'List-Unsubscribe': '<https://siglens.io/u>' },
+            })
+        );
+    });
+
     it('Resend가 error를 반환하면 false를 반환한다', async () => {
         sendMock.mockResolvedValue({ data: null, error: { message: 'fail' } });
         const dispatcher = new ResendEmailDispatcher({

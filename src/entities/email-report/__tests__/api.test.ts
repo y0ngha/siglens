@@ -5,8 +5,14 @@ vi.mock('@/shared/lib/sleep', () => ({
 
 import { is, SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { emailReportSubscriptions } from '@/shared/db/schema';
-import { DrizzleEmailReportSubscriptionRepository } from '@/entities/email-report/api';
+import {
+    emailReportDeliveries,
+    emailReportSubscriptions,
+} from '@/shared/db/schema';
+import {
+    DrizzleEmailReportDeliveryRepository,
+    DrizzleEmailReportSubscriptionRepository,
+} from '@/entities/email-report/api';
 import type {
     SiglensDatabase,
     UpsertEmailReportSubscriptionInput,
@@ -186,5 +192,124 @@ describe('DrizzleEmailReportSubscriptionRepository.upsert', () => {
             )
         ).resolves.toEqual(subscriptionRow);
         expect(returning).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('DrizzleEmailReportSubscriptionRepository.findEnabledRecipients', () => {
+    it('구독과 회원을 조인해 켜진·인증된·회원 등급 행만 조회한다', async () => {
+        const rows = [{ userId: 'user-1', email: 'a@x.com' }];
+        const where = vi.fn().mockResolvedValue(rows);
+        const innerJoin = vi.fn(() => ({ where }));
+        const from = vi.fn(() => ({ innerJoin }));
+        const select = vi.fn(() => ({ from }));
+        const db = { select } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzleEmailReportSubscriptionRepository(
+                db
+            ).findEnabledRecipients()
+        ).resolves.toEqual(rows);
+
+        expect(from).toHaveBeenCalledWith(emailReportSubscriptions);
+        const sqlText = dialect.sqlToQuery(
+            (where.mock.calls[0] as unknown as [SQL])[0]
+        );
+        expect(sqlText.sql).toContain(
+            '"email_report_subscriptions"."enabled" = $1'
+        );
+        expect(sqlText.sql).toContain('"users"."email_verified" = $2');
+        expect(sqlText.sql).toContain('"users"."tier" in ($3, $4)');
+        expect(sqlText.params).toEqual([true, true, 'member', 'pro']);
+    });
+});
+
+describe('DrizzleEmailReportSubscriptionRepository.disable', () => {
+    function makeUpdateDb(rows: unknown[]) {
+        const returning = vi.fn().mockResolvedValue(rows);
+        const where = vi.fn(() => ({ returning }));
+        const set = vi.fn(() => ({ where }));
+        const update = vi.fn(() => ({ set }));
+        return { db: { update } as unknown as SiglensDatabase, set };
+    }
+
+    it('행이 있으면 enabled를 끄고 true', async () => {
+        const { db, set } = makeUpdateDb([{ userId: 'user-1' }]);
+
+        await expect(
+            new DrizzleEmailReportSubscriptionRepository(db).disable('user-1')
+        ).resolves.toBe(true);
+        expect(set).toHaveBeenCalledWith(
+            expect.objectContaining({ enabled: false })
+        );
+    });
+
+    it('행이 없으면 false', async () => {
+        const { db } = makeUpdateDb([]);
+
+        await expect(
+            new DrizzleEmailReportSubscriptionRepository(db).disable('user-1')
+        ).resolves.toBe(false);
+    });
+});
+
+describe('DrizzleEmailReportDeliveryRepository', () => {
+    it('claim: 새 행이면 id를, 충돌이면 null을 돌려준다', async () => {
+        const returning = vi
+            .fn()
+            .mockResolvedValueOnce([{ id: 'd-1' }])
+            .mockResolvedValueOnce([]);
+        const onConflictDoNothing = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoNothing }));
+        const insert = vi.fn(() => ({ values }));
+        const repo = new DrizzleEmailReportDeliveryRepository({
+            insert,
+        } as unknown as SiglensDatabase);
+
+        await expect(repo.claim('user-1', '2026-10-08')).resolves.toBe('d-1');
+        await expect(repo.claim('user-1', '2026-10-08')).resolves.toBeNull();
+        expect(values).toHaveBeenCalledWith({
+            userId: 'user-1',
+            localDate: '2026-10-08',
+            status: 'pending',
+        });
+        expect(onConflictDoNothing).toHaveBeenCalledWith({
+            target: [
+                emailReportDeliveries.userId,
+                emailReportDeliveries.localDate,
+            ],
+        });
+    });
+
+    it('finish: 결과·종목·오류를 기록한다', async () => {
+        const where = vi.fn().mockResolvedValue(undefined);
+        const set = vi.fn(() => ({ where }));
+        const update = vi.fn(() => ({ set }));
+        const repo = new DrizzleEmailReportDeliveryRepository({
+            update,
+        } as unknown as SiglensDatabase);
+
+        await repo.finish('d-1', 'failed', ['AAPL'], 'boom');
+
+        expect(set).toHaveBeenCalledWith(
+            expect.objectContaining({
+                status: 'failed',
+                symbols: ['AAPL'],
+                error: 'boom',
+            })
+        );
+    });
+
+    it('pruneOlderThan: 지운 행 수를 돌려준다', async () => {
+        const returning = vi.fn().mockResolvedValue([{ id: 'a' }, { id: 'b' }]);
+        const where = vi.fn(() => ({ returning }));
+        const del = vi.fn(() => ({ where }));
+        const repo = new DrizzleEmailReportDeliveryRepository({
+            delete: del,
+        } as unknown as SiglensDatabase);
+
+        await expect(
+            repo.pruneOlderThan(new Date('2026-07-01T00:00:00Z'))
+        ).resolves.toBe(2);
+        expect(del).toHaveBeenCalledWith(emailReportDeliveries);
     });
 });

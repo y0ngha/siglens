@@ -300,6 +300,45 @@ export const emailReportSubscriptions = pgTable('email_report_subscriptions', {
 });
 
 /**
+ * 메일 리포트 발송 기록 — 회원의 로컬 날짜당 한 행.
+ *
+ * `(user_id, local_date)` 유니크가 멱등 키다. cron은 보내기 **전에** 행을 선점(insert)하고
+ * 충돌하면 건너뛴다 — 같은 시각 슬롯에 cron이 두 번 돌거나(재시도·중첩) 회원이 그날 시각을
+ * 바꿔도 하루 두 통이 나가지 않는다. 발송이 끝나면 `status`를 결과로 바꾼다.
+ */
+export const emailReportDeliveries = pgTable(
+    'email_report_deliveries',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        /** 회원 타임존 기준 발송 날짜(`YYYY-MM-DD`). */
+        localDate: date('local_date').notNull(),
+        /** `pending`(선점) → `sent` | `failed` | `skipped`(보낼 종목 없음). */
+        status: text('status').notNull(),
+        symbols: text('symbols')
+            .array()
+            .notNull()
+            .default(sql`ARRAY[]::text[]`),
+        error: text('error'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        uniqueIndex('email_report_deliveries_user_date_uidx').on(
+            table.userId,
+            table.localDate
+        ),
+    ]
+);
+
+/**
  * Korean stock ticker metadata — keyed by ticker symbol.
  *
  * `delisted_at` is the listing-status column: `NULL` means currently listed.

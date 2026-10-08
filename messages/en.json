@@ -92,6 +92,15 @@
                 "ae2ce9": "Frequently Asked Questions"
             }
         },
+        "email-report": {
+            "unsubscribe": {
+                "page": {
+                    "title": "Unsubscribe from email reports",
+                    "subtitle": "Press the button below to stop receiving scheduled email reports.",
+                    "description": "Stop receiving SIGLENS scheduled email reports."
+                }
+            }
+        },
         "fear-greed": {
             "FearGreedRouteBody": {
                 "350c3b": "How to Read the Fear & Greed Index",
@@ -466,8 +475,35 @@
                 "invalidHour": "Choose a valid time.",
                 "invalidInput": "That input is not valid.",
                 "invalidTimezone": "That time zone isn't recognized.",
+                "invalidUnsubscribeLink": "This unsubscribe link isn't valid. Please open the link in the email again.",
                 "saveFailed": "Saving failed. Please try again in a moment.",
-                "unauthenticated": "You need to sign in."
+                "unauthenticated": "You need to sign in.",
+                "unsubscribeFailed": "Unsubscribing failed. Please try again in a moment."
+            },
+            "email": {
+                "chartAlt": "{v0} daily chart",
+                "disclaimer": "This email is for information only and is not investment advice. You are responsible for your investment decisions and their outcomes. AI analysis may be inaccurate.",
+                "heading": "Your holdings report",
+                "intro": "Here's the latest on your holdings as of {v0}.",
+                "manage": "Change settings",
+                "noAnalysis": "The AI analysis for this stock isn't ready yet. You can run it on the site right away.",
+                "optionsIv": "ATM implied volatility",
+                "optionsMove": "Implied move to expiry ({v0})",
+                "optionsPutCall": "Put/call ratio (open interest)",
+                "reason": "You're receiving this because you turned on email reports in your {v0} account settings.",
+                "sectionNews": "Top news",
+                "sectionOptions": "Options activity",
+                "sectionPatterns": "Chart patterns",
+                "sectionPlain": "In plain words",
+                "sectionTechnical": "Chart analysis",
+                "sentiment": {
+                    "bullish": "Positive",
+                    "neutral": "Neutral",
+                    "bearish": "Negative"
+                },
+                "subject": "[{v0}] Your holdings report · {v1}",
+                "unsubscribe": "Unsubscribe",
+                "viewOnSite": "See details on {v0}"
             }
         },
         "email-token": {
@@ -695,6 +731,17 @@
                 "e61b39": "Loading email report settings",
                 "f0cf28": "Time",
                 "f1ce16": "Choose at least one day."
+            }
+        },
+        "email-report-unsubscribe": {
+            "UnsubscribeConfirm": {
+                "0fcf72": "Unsubscribe",
+                "11ef2b": "Go to account settings",
+                "24cd06": "Processing…",
+                "24d0de": "Unsubscribing failed. Please try again in a moment.",
+                "5b4a51": "This unsubscribe link isn't valid. Please open the link in the email again.",
+                "c13cc8": "You won't receive email reports anymore.",
+                "fca698": "You can turn them back on anytime in account settings."
             }
         },
         "portfolio-holding": {
