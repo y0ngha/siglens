@@ -52,7 +52,7 @@ export const INCOMPLETE_SESSION_REVALIDATE_SECONDS = SECONDS_PER_HOUR;
  * 렌더 중 호출된 `unstable_cache`는 자기 `revalidate`가 더 짧으면 렌더 스토어의
  * revalidate를 그 값으로 낮춘다(next/dist/server/web/spec-extension/unstable-cache.js,
  * `prerender-legacy` 등 prerender 스토어 분기 — "store.revalidate = min", Next 16.3.6에서
- * 소스 확인 + 로컬 프로덕션 빌드로 실측). 공개 계약이 아닌 내부 동작이라
+ * 소스 확인 + 로컬 프로덕션 빌드로 실측, 16.3.8에서 같은 소스임을 확인). 공개 계약이 아닌 내부 동작이라
  * `src/__tests__/guards/unstableCacheRevalidateLowering.test.ts`가 분기 존재를 고정한다. 라우트의
  * `export const revalidate` 리터럴은 정적 분석 대상이라 조건부로 바꿀 수 없으므로,
  * 이 공개 API로 "이번 렌더만" 짧게 만든다. 반환값은 쓰지 않는다.

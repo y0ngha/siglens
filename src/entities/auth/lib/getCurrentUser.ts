@@ -19,7 +19,7 @@ import { getDatabaseClient } from '@/shared/db/client';
  * `resolveRequest()`가 현재 Flight 요청을 돌려줄 때만 그 요청의 캐시를 쓰고 없으면 호출마다
  * 새 `Map`을 만든다(`next/dist/compiled/react-server-dom-turbopack/cjs/
  * react-server-dom-turbopack-server.node.production.js`의 `getCacheForType`·`resolveRequest`,
- * Next 16.3.6 기준). Route Handler와 Server Action 본문은 Flight 요청 밖에서 실행되므로
+ * Next 16.3.8 기준). Route Handler와 Server Action 본문은 Flight 요청 밖에서 실행되므로
  * 지금처럼 매번 조회하고, 액션 뒤의 재렌더는 새 Flight 요청이라 캐시가 따로다. 그래서
  * 세션을 만들거나 지운 직후에 다시 읽는 코드(`logoutAction` 등)는 영향받지 않는다 —
  * 로그아웃·탈퇴 뒤 화면 상태는 E2E(`account-logout`·`account-delete`)가 본다.
