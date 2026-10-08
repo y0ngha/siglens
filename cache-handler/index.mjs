@@ -237,7 +237,7 @@ export default class CacheHandler {
             fetchS3Writes += 1;
         } else {
             // 라우트 revalidate/expire를 엔트리와 함께 영속한다 — Next는 이 값을 메모리에만
-            // 두므로(incremental-cache/index.js:537-539) 재시작 후 get()이 되살린다.
+            // 두므로(incremental-cache/index.js:557) 재시작 후 get()이 되살린다.
             const cacheControl = ctx?.cacheControl;
             if (cacheControl && typeof cacheControl === 'object') {
                 entry.cacheControl = {

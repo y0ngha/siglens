@@ -1,4 +1,4 @@
-// Next 16.3.6 IncrementalCache의 판정 규칙에 핸들러가 맞춰야 하는 지점을 한곳에 모은다.
+// Next 16.3.8 IncrementalCache의 판정 규칙에 핸들러가 맞춰야 하는 지점을 한곳에 모은다.
 //
 // 단수 `cacheHandler`의 get()은 `{ lastModified, value }`만 돌려줄 수 있고, "stale인가"는
 // Next의 IncrementalCache.get이 lastModified와 라우트의 cacheControl로 **스스로** 계산한다
@@ -16,32 +16,43 @@ const require = createRequire(import.meta.url);
 // 1초는 그 간격(동기 코드 몇 줄)보다 넉넉하다.
 const STALE_MARGIN_MS = 1_000;
 
-/**
- * next/dist/server/lib/to-route.js:33-35 그대로. IncrementalCache는 핸들러에 넘긴 것과
- * 같은 키로 `cacheControls.get(toRoute(cacheKey))`(incremental-cache/index.js:432)와
- * `cacheControls.set(toRoute(pathname), …)`(index.js:537-539)를 부른다.
- */
-export function toRoute(pathname) {
-    return pathname.replace(/(?:\/index)?\/?$/, '') || '/';
-}
+// ## 라우트 cacheControl 맵의 키 (Next 16.3.8~)
+//
+// 16.3.8의 SSG/ISR 캐시 오염 수정(GHSA-4jqv-mc3x-m676, GHSA-mcj8-r9mp-w47p)으로 페이지 계열
+// 엔트리의 키가 "그 응답을 만든 소스 라우트"로 스코프된다. IncrementalCache는 핸들러에
+// pathname이 아니라 `getRouteCacheKey(pathname, ctx.route)` =
+// `/route-cache/<kind>/<sha256(sourceRoute)>/$<normalizePagePath(pathname)>`
+// (next/dist/server/lib/route-cache-key.js:61-75)를 넘기고, 공유 맵도 **같은 키**로 쓴다:
+//   - set: `this.cacheControls.set(storageKey, ctx.cacheControl)` 직후
+//     `cacheHandler.set(storageKey, …)`(incremental-cache/index.js:557-559)
+//   - get: `cacheHandler.get(storageKey, …)`(index.js:366) 다음
+//     `this.cacheControls.get(cacheKey, ctx.route)`가 정적 Map을
+//     `getRouteCacheKey(cacheKey, owner)` = 같은 storageKey로 조회한다
+//     (index.js:439 → shared-cache-controls.external.js:39).
+// 그래서 핸들러는 받은 키를 **그대로** 맵 키로 쓴다. 16.3.6까지 있던 `toRoute` 정규화는
+// 이제 Next 쪽에서도 쓰지 않는다 — 정규화하면 `/index` 계열 키가 Next가 읽는 키와 어긋난다.
+//
+// `SharedCacheControls#get(route, owner)`는 owner(소스 라우트)가 없으면 InvariantError를
+// 던진다(route-cache-key.js:62-64). 핸들러는 owner를 받지 못하므로(IncrementalCache가
+// handlerContext에서 `route`를 떼어 낸다 — index.js:362-364) 인스턴스 메서드가 아니라
+// 정적 Map을 직접 본다. 매니페스트 폴백은 Next 쪽 인스턴스가 한다.
 
 let sharedCacheControls;
 
 /**
- * Next의 라우트별 cacheControl 공유 맵(`SharedCacheControls`)에 접근한다. 실패하면 null.
+ * Next의 라우트별 cacheControl 공유 맵(`SharedCacheControls.cacheControls`)을 돌려준다. 실패하면 null.
  *
  * 같은 모듈 인스턴스여야 의미가 있다. 근거:
  *   - `SharedCacheControls.cacheControls`는 **static** Map이다
- *     (next/dist/server/lib/incremental-cache/shared-cache-controls.external.js:12-15).
+ *     (next/dist/server/lib/incremental-cache/shared-cache-controls.external.js:15-18).
  *   - `.external.js` 접미사 파일은 Next가 번들에서 일부러 빼 두는 파일이다
- *     (next/dist/build/handle-externals.js:41, 276). 컴파일된 런타임
+ *     (next/dist/build/handle-externals.js:41-43). 컴파일된 런타임
  *     (`next/dist/compiled/next-server/app-page{,-turbo}.runtime.prod.js` 등)은 이 파일을
  *     `require("next/dist/server/lib/incremental-cache/shared-cache-controls.external.js")`
  *     bare specifier로 불러 프로세스 안에서 하나의 인스턴스를 공유한다.
  *   - 이 핸들러는 standalone 이미지에서 `/app/cache-handler/`에 있고(Dockerfile COPY)
  *     같은 bare specifier가 `/app/node_modules/next/...`로 풀린다 — Node require 캐시가
  *     실경로 키라 같은 모듈 객체를 받는다.
- * 매니페스트 없이 생성해 `get`이 정적 맵만 보게 한다(매니페스트 폴백은 Next 쪽 인스턴스가 한다).
  */
 function getSharedCacheControls() {
     if (sharedCacheControls !== undefined) return sharedCacheControls;
@@ -49,10 +60,11 @@ function getSharedCacheControls() {
         const {
             SharedCacheControls,
         } = require('next/dist/server/lib/incremental-cache/shared-cache-controls.external.js');
-        sharedCacheControls = new SharedCacheControls({
-            routes: {},
-            dynamicRoutes: {},
-        });
+        const map = SharedCacheControls.cacheControls;
+        if (!(map instanceof Map)) {
+            throw new Error('SharedCacheControls.cacheControls is not a Map');
+        }
+        sharedCacheControls = map;
     } catch (error) {
         // 프로덕션에서는 일어나면 안 된다 — standalone 이미지에 next가 항상 있다. 일어났다면
         // 재시작 직후 STALE + Cache-Control 누락(감사 F5)이 돌아오므로 error로 한 번 크게 남긴다.
@@ -80,13 +92,14 @@ function isCacheControl(value) {
  * 재시작 후 Next 메모리에서 사라진 라우트 cacheControl을 S3에 영속한 값으로 되살린다.
  *
  * Next는 라우트별 revalidate/expire를 **메모리에만** 둔다 — set 때
- * `this.cacheControls.set(toRoute(pathname), ctx.cacheControl)`(index.js:537-539).
+ * `this.cacheControls.set(storageKey, ctx.cacheControl)`(index.js:557).
+ * 이 키가 핸들러가 받는 `cacheKey`다(파일 상단 "라우트 cacheControl 맵의 키").
  * 프리렌더 매니페스트에 없는 on-demand ISR 라우트(`/[symbol]` 계열)는 재시작 직후 이 값이
  * 없어서, IncrementalCache.get이 cacheControl `undefined` + 기본 revalidate 1초로 판정한다
- * (index.js:157-160): 첫 히트가 STALE이 되고 응답에 Cache-Control이 빠진다(app-page
+ * (index.js:153-159): 첫 히트가 STALE이 되고 응답에 Cache-Control이 빠진다(app-page
  * 템플릿이 `cacheEntry.cacheControl`로 헤더를 만든다 — build/templates/app-page-runtime.js
- * :1091-1106). 핸들러 get()은 IncrementalCache가 cacheControls를 읽기 **전에** 불리므로
- * (index.js:359 → 432) 여기서 채우면 같은 요청부터 올바른 판정·헤더가 나간다.
+ * :1091-1110). 핸들러 get()은 IncrementalCache가 cacheControls를 읽기 **전에** 불리므로
+ * (index.js:366 → 439) 여기서 채우면 같은 요청부터 올바른 판정·헤더가 나간다.
  *
  * 이미 값이 있으면 건드리지 않는다 — 이 프로세스가 더 최근에 쓴 값이 우선이다.
  * 같은 빌드(S3 prefix가 GIT_SHA)에서 같은 라우트가 쓴 값이라 매니페스트 값을 덮어도
@@ -96,15 +109,14 @@ export function seedCacheControl(cacheKey, cacheControl) {
     if (!isCacheControl(cacheControl)) return;
     const shared = getSharedCacheControls();
     if (!shared) return;
-    const route = toRoute(cacheKey);
-    if (shared.get(route) === undefined) shared.set(route, cacheControl);
+    if (!shared.has(cacheKey)) shared.set(cacheKey, cacheControl);
 }
 
 /**
  * 태그 stale(SWR) 무효화된 엔트리를 Next가 **stale이지만 아직 만료 전**으로 판정하게 할
  * lastModified. 표현할 수 없으면 null(호출부가 miss로 돌려 블로킹 재생성 — 예전 동작).
  *
- * FETCH (incremental-cache/index.js:406-408):
+ * FETCH (incremental-cache/index.js:413-415):
  *     revalidate = ctx.revalidate || cacheData.value.revalidate
  *     isStale = (now - lastModified) / 1000 > revalidate
  *   unstable_cache는 revalidate:false를 1년으로 저장하고(unstable-cache.js:28), fetch는
@@ -113,7 +125,7 @@ export function seedCacheControl(cacheKey, cacheControl) {
  *   unstable-cache.js:183-214), ISR 재생성(isStaticGeneration) 중에는 포그라운드로
  *   새로 받아 재생성된 페이지에 반영한다.
  *
- * APP_PAGE / APP_ROUTE / PAGES (index.js:432-468):
+ * APP_PAGE / APP_ROUTE / PAGES (index.js:439-472):
  *     revalidateAfter = cacheControl.revalidate * 1000 + lastModified   (없으면 1초)
  *     expireAfter     = cacheControl.expire * 1000 + lastModified
  *     expireAfter < now → isStale = -1 (블로킹), revalidateAfter < now → isStale = true (SWR)
@@ -136,7 +148,7 @@ export function staleLastModified({ cacheKey, kind, entry, ctx, now }) {
     }
 
     const cacheControl =
-        getSharedCacheControls()?.get(toRoute(cacheKey)) ?? entry.cacheControl;
+        getSharedCacheControls()?.get(cacheKey) ?? entry.cacheControl;
     if (!isCacheControl(cacheControl)) return null;
     const { revalidate, expire } = cacheControl;
     if (typeof revalidate !== 'number') return null;

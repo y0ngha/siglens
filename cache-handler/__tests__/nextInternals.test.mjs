@@ -1,33 +1,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { toRoute } from '../nextInternals.mjs';
 
 afterEach(() => {
     vi.doUnmock('node:module');
     vi.resetModules();
     vi.restoreAllMocks();
-});
-
-describe('toRoute — next/dist/server/lib/to-route.js와 같은 정규화', () => {
-    it.each([
-        ['/example/index/', '/example'],
-        ['/example/', '/example'],
-        ['/index/', '/'],
-        ['/index', '/'],
-        ['/', '/'],
-        ['/en/AAPL', '/en/AAPL'],
-    ])('%s → %s', (input, expected) => {
-        expect(toRoute(input)).toBe(expected);
-    });
-
-    it('Next의 실제 구현과 일치한다', async () => {
-        const { createRequire } = await import('node:module');
-        const { toRoute: nextToRoute } = createRequire(import.meta.url)(
-            'next/dist/server/lib/to-route.js'
-        );
-        ['/a/index', '/a/', '/index', '/', '/ko/005930/news'].forEach(p =>
-            expect(toRoute(p)).toBe(nextToRoute(p))
-        );
-    });
 });
 
 describe('Next 모듈을 못 읽는 환경', () => {
@@ -49,6 +25,23 @@ describe('Next 모듈을 못 읽는 환경', () => {
         ).not.toThrow();
         internals.seedCacheControl('/MSFT', { revalidate: 60 });
         expect(console.error).toHaveBeenCalledTimes(1);
+        expect(console.error.mock.calls[0][0]).toMatch(
+            /^\[isr-cache\] SharedCacheControls unavailable/
+        );
+    });
+
+    it('정적 Map 모양이 바뀐 Next도 시드를 끄고 error로 알린다', async () => {
+        vi.resetModules();
+        vi.doMock('node:module', () => ({
+            createRequire: () => () => ({
+                SharedCacheControls: { cacheControls: undefined },
+            }),
+        }));
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        const internals = await import('../nextInternals.mjs');
+        expect(() =>
+            internals.seedCacheControl('/AAPL', { revalidate: 60 })
+        ).not.toThrow();
         expect(console.error.mock.calls[0][0]).toMatch(
             /^\[isr-cache\] SharedCacheControls unavailable/
         );
