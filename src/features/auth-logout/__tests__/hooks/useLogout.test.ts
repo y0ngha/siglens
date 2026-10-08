@@ -54,6 +54,9 @@ describe('useLogout', () => {
         expect(mockRemoveQueries).toHaveBeenCalledWith({
             queryKey: QUERY_KEYS.portfolioHoldings(),
         });
+        expect(mockRemoveQueries).toHaveBeenCalledWith({
+            queryKey: QUERY_KEYS.emailReportSettings(),
+        });
     });
 
     it('logout function is always callable after re-render', () => {

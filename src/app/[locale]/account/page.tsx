@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
+import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
 import { localePath, type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
@@ -90,6 +91,13 @@ async function AccountContent({ locale }: { locale: Locale }) {
                         {TIER_LABEL[user.tier]}
                     </dd>
                 </dl>
+            </section>
+
+            <section
+                aria-label={t('page.411c76')}
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+            >
+                <EmailReportSettingsSection />
             </section>
 
             <section

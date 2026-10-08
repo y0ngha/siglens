@@ -27,6 +27,7 @@ describe('routeKindOf', () => {
         ['/signup/oauth/consent', 'auth'],
         ['/forgot-password', 'auth'],
         ['/reset-password', 'auth'],
+        ['/email-report/unsubscribe?u=1&sig=x', 'auth'],
         ['/account', 'account'],
         ['/account/delete', 'account'],
         ['/portfolio', 'portfolio'],
