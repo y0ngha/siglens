@@ -5,6 +5,7 @@ import {
     findSpecByApiModelId,
     resolveMaxOutputTokens,
     toSdkTransportOptions,
+    createCallDeadline,
 } from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
 import type { OpenAiCompatibleUsageLike } from '../lib/usage';
@@ -95,31 +96,45 @@ export async function callDeepseekChat({
         stream_options: { include_usage: true },
     };
 
-    const stream = await client.chat.completions.create(params);
-
-    // Aggregate the streamed deltas into the full conversational text.
-    //
-    // `stream_options.include_usage` makes DeepSeek append a final chunk that
-    // carries `usage` and an empty `choices` array, so usage is only readable
-    // by watching every chunk — there is no aggregated response object here.
-    // The SDK's `CompletionUsage` type has no `prompt_cache_hit_tokens`, which
-    // DeepSeek adds on top of the OpenAI-compatible shape; the cast narrows to
-    // the superset our extractor understands.
+    // 스트림 본문 읽기까지 `limits.timeoutMs`로 묶는다 — SDK timeout은 헤더 도착까지만 잰다.
+    const deadline = createCallDeadline(limits?.timeoutMs);
     let text = '';
     let usage: OpenAiCompatibleUsageLike | undefined;
     let finishReason: string | null | undefined;
-    for await (const chunk of stream) {
-        const choice = chunk.choices[0];
-        const delta = choice?.delta?.content;
-        if (delta) {
-            text += delta;
+    const consume = async (): Promise<void> => {
+        const stream = await client.chat.completions.create(
+            params,
+            deadline.signal !== undefined
+                ? { signal: deadline.signal }
+                : undefined
+        );
+
+        // Aggregate the streamed deltas into the full conversational text.
+        //
+        // `stream_options.include_usage` makes DeepSeek append a final chunk that
+        // carries `usage` and an empty `choices` array, so usage is only readable
+        // by watching every chunk — there is no aggregated response object here.
+        // The SDK's `CompletionUsage` type has no `prompt_cache_hit_tokens`, which
+        // DeepSeek adds on top of the OpenAI-compatible shape; the cast narrows to
+        // the superset our extractor understands.
+        for await (const chunk of stream) {
+            const choice = chunk.choices[0];
+            const delta = choice?.delta?.content;
+            if (delta) {
+                text += delta;
+            }
+            if (choice?.finish_reason) {
+                finishReason = choice.finish_reason;
+            }
+            if (chunk.usage) {
+                usage = chunk.usage as OpenAiCompatibleUsageLike;
+            }
         }
-        if (choice?.finish_reason) {
-            finishReason = choice.finish_reason;
-        }
-        if (chunk.usage) {
-            usage = chunk.usage as OpenAiCompatibleUsageLike;
-        }
+    };
+    try {
+        await deadline.guard(consume());
+    } finally {
+        deadline.dispose();
     }
 
     logUsage({

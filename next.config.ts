@@ -192,6 +192,7 @@ const nextConfig: NextConfig = {
     // CDN 캐시 규칙(docs/architecture/CDN_CACHING.md §3 R1/R2)이 기대는 계약 — "RSC 요청은 항상
     // `RSC` 헤더와 `_rsc` 쿼리를 함께 달고, `_rsc` URL은 `text/x-component`만 받는다" — 을 16.3.6
     // 프로덕션 빌드에서 실제 클라이언트 내비게이션으로 확인했다(2026-09-24, 위반 0, 307 0).
+    // 16.3.8은 `next/dist/client`가 버전 문자열 외에 16.3.6과 같아 실측을 다시 하지 않았다.
     // `validateRSCRequestHeaders`는 `_rsc`가 헤더 해시와 다르면 올바른 URL로 307을 보내므로
     // URL만 키로 쓰는 CF 캐시에 다른 변종이 섞이는 것을 오히려 막는다. 전역 링크는
     // `prefetch={false}`라 `prefetchInlining` 경로는 실측상 발생하지 않았다(7개 페이지 0건).

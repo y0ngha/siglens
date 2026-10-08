@@ -303,7 +303,7 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
  *  - 액션 ID는 경로가 아니라 서버 액션 매니페스트로 찾는다. 회원 액션 대부분
  *    (보유종목 조회·저장·삭제 등)은 가드 밖 페이지(`/[symbol]/*`) 워커에도 등록돼
  *    있고, Next는 현재 라우트 워커에 액션이 없으면 등록된 워커로 포워딩한다.
- *    (2026-10-06, Next 16.3.6 기준 확인. 다시 확인하는 법: 포워딩은
+ *    (2026-10-06 Next 16.3.6에서 확인, 2026-10-08 16.3.8에서 재확인. 다시 확인하는 법: 포워딩은
  *    `node_modules/next/dist/server/app-render/action-handler.js`에서
  *    `selectWorkerForForwarding`를 grep(정의는 같은 폴더 `manifests-singleton.js`).
  *    워커 등록은 `yarn build` 뒤 `.next/server/server-reference-manifest.json`의

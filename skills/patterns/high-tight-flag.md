@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [high_tight_flag]
-token_cost: 452
-digest_hash: "242fe6a0"
+token_cost: 552
+digest_hash: "4e4bf76f"
 ---
 
 ## Detection Criteria
@@ -27,6 +27,7 @@ digest_hash: "242fe6a0"
 - **Flag**: at least 3 bars after the pole top, giving back no more than 25% of the pole top. Bulkowski: it "usually doesn't look like a flag or pennant, just a pause in the price rise."
 - **Confirmation**: a CLOSE above the highest peak in the pattern — usually the pole top. Bulkowski: "Only buy when price closes above the highest peak in the chart pattern (including the flagpole)" — his newer research found that a flag-trendline break "fail[s] too often."
 - When this pattern matches, the engine reports it instead of bull_flag / pennant for the same pause.
+- Engine rule: the pole and flag rules above (including the 31-bar window and the 3-bar minimum) are evaluated on the bars up to the last confirmed swing pivot rather than the last bar, so a breakout leg above the pole top does not replace the top. In addition the pole top must be a confirmed swing high and the flag low is a confirmed swing low after it; without one the pattern is not listed.
 
 ## Confidence Weight Rationale
 
@@ -58,7 +59,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the pole top (a confirmed swing high — the flag's upper edge); `extremeLevel` = the pole base (lowest low within the pole lookback); `direction` = 'up'; `invalidationLevel` = the flag low (the lowest confirmed swing low after the pole top). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the pole top (a confirmed swing high — the flag's upper edge); `extremeLevel` = the pole base (lowest low within the pole lookback); `direction` = 'up'; `invalidationLevel` = the flag low (the lowest confirmed swing low after the pole top). Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Target reliability**: Bulkowski's 82% figure uses a half-height target, not the full pole height — the conservative (50%) level is the realistic reference.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -71,7 +72,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Pole gain (%) and length (bars), flag depth as % of the pole top, flag length, tight vs loose, status (flag forming / pole top broken — confirmed).
 - **Volume context**: Whether volume receded during the flag and expanded on the breakout.
 - **Completion status**: Candidate until a close above the pole top.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 하이 타이트 플래그 (High Tight Flag) — bullish continuation, confidence_weight 0.7 (Bulkowski htf.html: failure 15%, rank 30/39, 82% meet a HALF-height target, throwback 67%).
@@ -79,6 +80,7 @@ When this pattern is detected, include the following in the analysis response:
 ### Detection
 - Pole: ≥+90% from pole base (lowest low) to pole top (highest high) within 40 bars (Bulkowski: ≥90% in ≤2 months). Realistic on daily bars only.
 - Flag: ≥3 bars after the pole top, give-back ≤25% of the pole top; usually just a pause, not a neat flag.
+- Engine: the pole/flag rules are evaluated on bars up to the last confirmed pivot (not the last bar); pole top must be a confirmed swing high, flag low = a confirmed swing low after it (none yet → not listed).
 - Replaces bull_flag / pennant for the same pause.
 - Confirmed ONLY by a CLOSE above the highest peak (usually the pole top) — Bulkowski: flag-trendline breaks fail too often.
 
@@ -88,12 +90,12 @@ When this pattern is detected, include the following in the analysis response:
 - Throwback toward the pole top after breakout is common (67%), not failure by itself.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the pole top (a confirmed swing high), extremeLevel: the pole base, direction: 'up', invalidationLevel: the flag low (the lowest confirmed swing low after the pole top) }. Copy from `## Chart Pattern Candidates (computed)` when listed; else identify from the bars. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Bulkowski's 82% is for a half-height target.
+`geometry` = { breakoutLevel: the pole top (a confirmed swing high), extremeLevel: the pole base, direction: 'up', invalidationLevel: the flag low (the lowest confirmed swing low after the pole top) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Bulkowski's 82% is for a half-height target.
 
 ### Output
 - keyPrices: pole base, pole top, flag low.
 - patternSummaries: pole gain % & bars; flag depth % & bars; tight vs loose; status (forming / confirmed).
 - Volume: receding in flag, expanding on breakout.
-- geometry per above — never a computed target or R:R.
+- geometry per above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - trend: bullish; candidate until close above the pole top.
 <!-- PROMPT_DIGEST:END -->

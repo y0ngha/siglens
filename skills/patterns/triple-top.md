@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_top]
-token_cost: 743
-digest_hash: "1c64ad6f"
+token_cost: 919
+digest_hash: "e17d7205"
 ---
 
 ## Detection Criteria
@@ -28,6 +28,7 @@ digest_hash: "1c64ad6f"
 - The three peaks must span a minimum of 20 bars to ensure structural validity — Triple Top requires more time to form than Double Top.
 - The closer the three peak prices are to each other, the higher the pattern reliability.
 - The pattern is confirmed when price closes below the neckline (the line connecting the two troughs between peaks).
+- Engine rule: Pivots are confirmed swings: a swing counts once price reverses 1.5 ATR from it, measured with the ATR of the bar that confirms it, so a confirmed pivot never moves when bars are added, and no bar is both a swing high and a swing low. The peaks are the last three confirmed swing highs (a peak still in progress is not one); the spread between the highest and lowest of the three is at most min(1 ATR, 3% of their average price), each consecutive pair is at least 10 bars apart, and no bar between the first and the last goes beyond the matched peaks by more than 0.25 ATR. The neckline is the lowest confirmed trough between them. The pattern height (average peak to neckline) must be at least 2.5 ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars). If the troughs between the run of equal highs clearly rise toward them (the line through the first and last of them moves up 1.5 ATR or more) it is an ascending triangle, not a triple top. The last peak must be no more than max(20 bars, half the first-to-last span) before the last bar — an older pattern is not listed.
 
 ## Confidence Weight Rationale
 
@@ -66,7 +67,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price (the lowest confirmed trough between the peaks; all three peaks must be confirmed swing highs); `extremeLevel` = the average of the three peak prices; `direction` = 'down'; `invalidationLevel` = the highest of the three peaks (a close above it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price (the lowest confirmed trough between the peaks; all three peaks must be confirmed swing highs); `extremeLevel` = the average of the three peak prices; `direction` = 'down'; `invalidationLevel` = the highest of the three peaks (a close above it negates the pattern). Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The highest of the three peaks serves as the invalidation level. A close above this level negates the bearish pattern.
 - **Time factor**: Triple Tops that take longer to form (> 40 bars) tend to produce larger projected moves due to greater distribution.
 
@@ -80,7 +81,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Describe the pattern status (first/second/third peak formed / completed / neckline broken), the price difference percentage among the three peaks, the spacing between them, and how it differs from Double Top or Head and Shoulders.
 - **Volume context**: State whether volume behavior confirms the pattern (progressive decline across peaks, volume surge on neckline break). Note volume comparison between each successive peak.
 - **Completion status**: Clearly indicate whether the pattern is still forming (which peak is in progress) or fully confirmed by a neckline break.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 삼중천장 (Triple Top) — bearish reversal, confidence_weight 0.6 (Bulkowski tt.html: rank 24/36, failure 25%, 49% meet target). Three peaks at ~equal resistance; neckline = line connecting the two troughs between peaks.
@@ -92,6 +93,7 @@ When this pattern is detected, include the following in the analysis response:
 - Three peaks span minimum 20 bars (needs more time than Double Top).
 - Closer peak prices → higher reliability.
 - Confirmed when price CLOSES below neckline.
+- Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); last three confirmed swing highs; spread ≤ min(1 ATR, 3% of average price); consecutive peaks ≥10 bars apart; no bar between them beyond the matched peaks by >0.25 ATR; neckline = lowest confirmed trough between them; height ≥2.5 ATR and the price-share minimum; rejected if the troughs under the equal highs clearly rise (≥1.5 ATR, = triangle); last peak ≤ max(20 bars, half the span) before the last bar.
 
 ### Grading
 - Increase: all three peaks within 1.5% of each other; progressive volume decline on each successive peak; neckline break with volume surge; duration >30 bars; clear volume decline on third peak vs first.
@@ -109,13 +111,13 @@ When this pattern is detected, include the following in the analysis response:
 - Middle peak significantly HIGHER than the other two → Head & Shoulders, not Triple Top.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the neckline price (the lowest confirmed trough between the extremes), extremeLevel: the average of the three peak prices, direction: 'down', invalidationLevel: the highest of the three peaks (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the neckline price (the lowest confirmed trough between the extremes), extremeLevel: the average of the three peak prices, direction: 'down', invalidationLevel: the highest of the three peaks (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
 - keyPrices: all three peak prices, neckline price.
 - patternSummaries: status (first/second/third peak formed / completed / neckline broken); price-diff % among peaks; spacing; how it differs from Double Top or Head & Shoulders.
 - Volume context: progressive decline across peaks; surge on break; compare successive peaks.
 - Completion status: forming (which peak) vs confirmed by neckline break.
-- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - trend: bearish when confirmed.
 <!-- PROMPT_DIGEST:END -->

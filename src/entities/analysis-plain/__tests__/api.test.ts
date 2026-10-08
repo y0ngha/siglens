@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
 
 const callAiProviderRouter = vi.fn();
 const repoFind = vi.fn();
@@ -52,7 +53,8 @@ vi.mock('../plainTextRepository', () => ({
     },
 }));
 vi.mock('../plainGenerationCoordination', () => ({
-    PLAIN_CALL_TIMEOUT_MS: 20_000,
+    PLAIN_CALL_TIMEOUT_MS: 90_000,
+    PLAIN_MAX_OUTPUT_TOKENS: 4_000,
     hasPlainGenerationFailedRecently: (...args: unknown[]) =>
         hasFailedRecently(...args),
     markPlainGenerationFailed: (...args: unknown[]) => markFailed(...args),
@@ -70,6 +72,11 @@ const {
     __resetPlainFlightsForTests,
 } = await import('../api');
 const { PLAIN_PROMPT_VERSION } = await import('../lib/buildPlainPrompt');
+const {
+    __pendingBackgroundTaskCount,
+    __resetBackgroundTasksForTests,
+    drainBackgroundTasks,
+} = await import('@/shared/lib/backgroundTask');
 
 /**
  * 산문 두 조각. 재작성에 길이 하한은 없다 — 쉽게보기는 항상 원본보기 토글과
@@ -107,6 +114,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     // 마감 테스트는 끝나지 않은 생성을 남긴다 — 다음 테스트가 같은 키로 그 생성에 붙지 않게 비운다.
     __resetPlainFlightsForTests();
+    __resetBackgroundTasksForTests();
     hasFailedRecently.mockResolvedValue(false);
     markFailed.mockResolvedValue(undefined);
     tryAcquireLock.mockResolvedValue(ACQUIRED);
@@ -420,6 +428,18 @@ describe('rewriteToPlainLanguage', () => {
     it('LLM이 던져도 예외를 전파하지 않는다 — 분석 전체가 실패하면 안 된다', async () => {
         callAiProviderRouter.mockRejectedValue(new Error('provider down'));
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+    });
+
+    it('첫 호출이 마감(timeout)으로 던지면 재시도하지 않고 null로 끝낸다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        callAiProviderRouter.mockRejectedValue(
+            new ProviderCallTimeoutError(90_000)
+        );
+
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        errSpy.mockRestore();
     });
 
     it('DB 클라이언트 생성이 던져도 저장소 없이 생성한다', async () => {
@@ -1089,7 +1109,7 @@ describe('생성 조율 (single-flight · 락 · 음성 캐시 · 호출 상한)
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
         expect(callAiProviderRouter.mock.calls[0][0].limits).toEqual({
             maxOutputTokens: 4_000,
-            timeoutMs: 20_000,
+            timeoutMs: 90_000,
             maxRetries: 0,
         });
     });
@@ -1140,6 +1160,25 @@ describe('생성 조율 (single-flight · 락 · 음성 캐시 · 호출 상한)
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
         await vi.waitFor(() => expect(releaseLock).toHaveBeenCalledOnce());
         expect(markFailed).not.toHaveBeenCalled();
+    });
+
+    it('소유한 생성은 SIGTERM 드레인에 등록되고, 드레인은 락이 풀릴 때까지 기다린다', async () => {
+        let finish: (text: string) => void = () => {};
+        callAiProviderRouter.mockReturnValue(
+            new Promise<string>(resolve => {
+                finish = resolve;
+            })
+        );
+        const pending = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+        await vi.waitFor(() => expect(__pendingBackgroundTaskCount()).toBe(1));
+        expect(releaseLock).not.toHaveBeenCalled();
+
+        const drained = drainBackgroundTasks(60_000);
+        finish(GOOD);
+        await drained;
+        expect(releaseLock).toHaveBeenCalledWith(ACQUIRED);
+        await pending;
+        expect(__pendingBackgroundTaskCount()).toBe(0);
     });
 
     it('저장소가 없으면 락을 잡지 않고 바로 생성한다 (기다려도 읽을 곳이 없다)', async () => {

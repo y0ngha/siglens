@@ -5,6 +5,7 @@ import {
     findSpecByApiModelId,
     resolveMaxOutputTokens,
     toSdkTransportOptions,
+    createCallDeadline,
 } from '../lib/utils';
 import type { AiContents } from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';
@@ -47,17 +48,35 @@ export async function callOpenaiChat({
     const startedAt = Date.now();
     const client = new OpenAI({ apiKey, ...toSdkTransportOptions(limits) });
 
-    const response = await client.responses.create({
-        model,
-        input: toResponsesInput(contents),
-        ...(systemInstruction !== undefined
-            ? { instructions: systemInstruction }
-            : {}),
-        max_output_tokens: resolveMaxOutputTokens(spec.maxOutputTokens, limits),
-        // GPT 스펙은 전부 reasoning 기반이라 temperature 분기가 없다. 챗은 토글이
-        // 없으므로 스펙 기본 상태를 그대로 쓴다 — Free·Member는 `effort: 'none'`.
-        reasoning: { effort: resolvedEffort },
-    });
+    // 응답 본문까지 `limits.timeoutMs`로 묶는다 — SDK timeout은 헤더 도착까지만 잰다.
+    const deadline = createCallDeadline(limits?.timeoutMs);
+    let response: OpenAI.Responses.Response;
+    // 요청 생성이 던져도 타이머가 남지 않도록 생성부터 try 안에 둔다.
+    try {
+        response = await deadline.guard(
+            client.responses.create(
+                {
+                    model,
+                    input: toResponsesInput(contents),
+                    ...(systemInstruction !== undefined
+                        ? { instructions: systemInstruction }
+                        : {}),
+                    max_output_tokens: resolveMaxOutputTokens(
+                        spec.maxOutputTokens,
+                        limits
+                    ),
+                    // GPT 스펙은 전부 reasoning 기반이라 temperature 분기가 없다. 챗은 토글이
+                    // 없으므로 스펙 기본 상태를 그대로 쓴다 — Free·Member는 `effort: 'none'`.
+                    reasoning: { effort: resolvedEffort },
+                },
+                deadline.signal !== undefined
+                    ? { signal: deadline.signal }
+                    : undefined
+            )
+        );
+    } finally {
+        deadline.dispose();
+    }
 
     logUsage({
         jobId,

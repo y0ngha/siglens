@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bear_flag]
-token_cost: 752
-digest_hash: "48a6784f"
+token_cost: 966
+digest_hash: "addd96ab"
 ---
 
 ## Detection Criteria
@@ -28,7 +28,7 @@ digest_hash: "48a6784f"
 - Volume should noticeably decline during the flag formation, indicating temporary relief rather than accumulation.
 - The flag should slope upward against the prior downtrend, or move sideways. A downward-sloping flag is less reliable as a Bear Flag.
 - The pattern is confirmed when price closes below the lower boundary of the flag channel with increased volume.
-- Engine rule: the pole is two consecutive confirmed swing pivots (base → top) at least 3 ATR apart within 20 bars; the flag is the 5–20 bars after the pole top, pulling back no more than 50% of the pole, and is drawn as a channel through its own swing highs and lows (at least 2 touches per side, each side with touches the other lacks). The channel's end width must be 0.7–1.15× its start and neither edge may fall with the pole by more than min(0.75 ATR, 1% of price) — otherwise it is not a flag (a converging channel is a pennant).
+- Engine rule: Pivots are confirmed swings: a swing counts once price reverses 1.5 ATR from it, measured with the ATR of the bar that confirms it, so a confirmed pivot never moves when bars are added, and no bar is both a swing high and a swing low. The pole is two consecutive confirmed swing pivots (base → top) at least 3 ATR apart (and past the height floor) within 20 bars; the flag is the 5–20 bars after the pole top, pulling back no more than 50% of the pole, with no flag bar running past the pole's end by more than 0.5 ATR, and the channel starts at most 50% of the pole tall. The flag channel is fitted on the flag's own swing highs and lows (at least 2 touches per line that the other line lacks, counted bars at least 2 apart; the two lines must overlap in time). It is a flag when the width ratio (end over start, first to last touch) is above 0.7× and at most 1.15× and neither edge falls with the pole by more than min(0.75 ATR, 1% of price); a narrower (≤0.7×) channel is a pennant, anything else is not a flag; the flag-or-pennant label is fixed by the shortest flag that first qualified, so it does not flip as bars are added. If the newest bars have already left the channel the fit is retried on a shorter flag (down to 5 bars) so the breakout reads as a break; if the flag ends before the last bar, the next bar must be outside the channel (otherwise it is a box, not a flag). The flag's age is counted to its fitted end: it stays listed after its breakout while the last bar is at most max(20 bars, half of the pole-base-to-flag-end span) past that end and the pattern is not spent. The chart continues the breakout-side channel line dashed to the last bar and the opposite line to the flag's end. Status `failed breakout`: after the breakout line's last touch a close went beyond it by more than 0.25 ATR and the last close is back inside — the pattern stays listed and drawn (its structure is intact) but price already broke the line once and came back, so report the breakout as failed and unconfirmed, not as a plain untested `forming` and not as a confirmed break (`broken` means the last close is outside).
 
 ## Confidence Weight Rationale
 
@@ -67,7 +67,7 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lower flag channel line's value at the last bar; `extremeLevel` = the breakout level plus the flagpole height (pole top to pole bottom — so it is the pole's start price only when the flag line sits at the pole bottom); `direction` = 'down'; `invalidationLevel` = the flag's highest high since the pole bottom (a fixed price). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lower flag channel line's value at the last bar; `extremeLevel` = the breakout level plus the flagpole height (pole top to pole bottom — so it is the pole's start price only when the flag line sits at the pole bottom); `direction` = 'down'; `invalidationLevel` = the flag's highest high since the pole bottom (a fixed price). Copy these values from `## Chart Pattern Candidates (computed)` only when this pattern instance is listed there (set its Candidate id as candidateId); when it is not listed, you may still name and describe the pattern, but `geometry` is null and candidateId is empty — only listed patterns carry levels and targets. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The flag's highest high since the pole bottom serves as the invalidation level.
 - **Speed of completion**: Bear Flags that resolve quickly (within 1-2 weeks) tend to produce the strongest continuation moves, especially in fear-driven markets.
 
@@ -81,7 +81,7 @@ When this pattern is detected, include the following in the analysis response:
 - **patternSummaries**: Describe the pattern status (flagpole formed / flag forming / breakdown confirmed), the flagpole decline percentage and duration, the flag retracement depth relative to the flagpole, the flag slope direction, and the flag duration.
 - **Volume context**: State whether volume confirms the pattern — high volume on flagpole, declining volume during the flag, and volume surge on breakdown. Quantify the volume decline during the flag relative to the flagpole.
 - **Completion status**: Clearly indicate whether the flag is still forming or confirmed by a close below the lower channel with volume.
-- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
+- **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Bear Flag (bearish continuation)
@@ -92,7 +92,7 @@ Geometry:
 - Duration: short vs flagpole — typically 1–4 weeks (5–20 daily bars). Retrace ≤50% of flagpole.
 - Volume declines noticeably during flag.
 - Confirmed: close BELOW lower flag channel with increased volume.
-- Engine: the pole is two consecutive confirmed swing pivots (base → top) at least 3 ATR apart within 20 bars; flag = 5–20 bars after the pole top, pullback ≤50% of the pole, channel through the flag's swing highs/lows (≥2 touches per side), end width 0.7–1.15× start, neither edge falling with the pole by more than min(0.75 ATR, 1% price).
+- Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); pole = two consecutive confirmed pivots ≥3 ATR apart within 20 bars; flag = 5–20 bars after the pole top, pullback ≤50% of the pole, no bar >0.5 ATR past the pole end, channel start width ≤50% of the pole, channel through the flag's own swing highs/lows (≥2 touches per line that the other lacks, touches ≥2 bars apart); flag = width ratio >0.7× and ≤1.15×, neither edge falls with the pole by more than min(0.75 ATR, 1% price) (≤0.7× = pennant); label fixed by the shortest first-qualifying flag; if the flag ends before the last bar the next bar must be outside the channel (else box); age counted to the fitted end (≤max(20, half the span) bars, not spent). Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
 Confidence (weight 0.5) — Bulkowski flags.html: failure 45% (down breakouts), 46% meet target, avg decline 8%; not ranked (short swing).
 - Increase: flagpole decline ≥10% with above-avg volume, flag retrace < 38.2%, volume drops 50%+ vs flagpole, flag duration 1–2 weeks, breakdown volume returns to flagpole levels.
@@ -109,13 +109,13 @@ False positives / invalidation:
 - Flagpole ending at major historical support may become reversal base.
 
 ### Geometry (do not calculate targets)
-`geometry` = { breakoutLevel: the lower flag channel line at the last bar, extremeLevel: breakout plus the flagpole height (pole top to pole bottom), direction: 'down', invalidationLevel: the flag's highest high since the pole bottom }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
+`geometry` = { breakoutLevel: the lower flag channel line at the last bar, extremeLevel: breakout plus the flagpole height (pole top to pole bottom), direction: 'down', invalidationLevel: the flag's highest high since the pole bottom }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
 - keyPrices: flagpole top, flagpole bottom, flag upper channel, flag lower channel.
 - patternSummaries: status (flagpole formed / flag forming / breakdown confirmed), flagpole decline % & duration, flag retrace depth vs flagpole, flag slope direction, flag duration.
 - Volume context: high on flagpole, declining in flag (quantify decline vs flagpole), surge on breakdown.
 - Completion status: forming vs confirmed (close below lower channel with volume).
-- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->
