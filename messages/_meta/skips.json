@@ -972,6 +972,12 @@
         "text": "[symbols] 이름 조회 실패 — 티커만 표시한다"
     },
     {
+        "file": "src/entities/ticker/lib/reconcileUsTickerNames.ts",
+        "line": 214,
+        "reason": "developer-diagnostic",
+        "text": "`[ticker-names] renamed ${c.symbol}: \"${c.oldName}\" → \"${c.newName}\" (한글: ${oldK"
+    },
+    {
         "file": "src/entities/ticker/lib/searchTickerQuery.ts",
         "line": 22,
         "reason": "e2e-stub",
