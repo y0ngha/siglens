@@ -246,6 +246,7 @@ and its `PROMPT_DIGEST`, and also in intro, "beyond this catalog" and notation p
 leaves the index restating the old rule is the usual miss.
 
 - ❌ Changing "geometry only from a listed Candidate id" in one passage while the intro and digest header still say the old rule.
+- ✅ Grep `geometry` / `Candidate id` across the index body and `PROMPT_DIGEST` and rewrite every passage that restates the rule in the same change.
 (General version: `CONVENTIONS.md#CS-8`.)
 
 ## How to add a new skill / strategy

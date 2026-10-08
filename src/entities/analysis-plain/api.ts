@@ -41,8 +41,8 @@ import {
  * `STREAM_DEADLINE_MS`의 보호를 받지 못한다. 예전에는 어댑터가 timeout도 maxRetries도
  * 지정하지 않아 OpenAI SDK 기본값(10분 × 3회)을 썼다 — 프로바이더가 매달리면 스트림
  * 하나가 `canAcceptAnalysisStream` 동시성 슬롯을 30분 붙들고,
- * `instrumentation.node.ts`가 전제하는 180초 SIGTERM 드레인을 넘겨 배포마다 끊겼다.
- * 지금은 호출마다 `PLAIN_CALL_LIMITS`(스트림 본문까지 묶는 90초 호출 마감, SDK 재시도 0)를
+ * `instrumentation.node.ts`의 SIGTERM 드레인(`SHUTDOWN_DRAIN_DEADLINE_MS`)을 넘겨 배포마다 끊겼다.
+ * 지금은 호출마다 `PLAIN_CALL_LIMITS`(스트림 본문까지 묶는 `PLAIN_CALL_TIMEOUT_MS` 호출 마감, SDK 재시도 0)를
  * 넘기지만, 그 값은 백그라운드 지출의 상한이고 사용자가 기다리는 시간은 여전히 이 마감이 정한다.
  *
  * ## 왜 45초가 아니라 15초인가
@@ -225,10 +225,11 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
  *
  * 재시도(`attempt(retryHint)`)는 첫 호출이 **돌아온 뒤 가드가 거부했을 때만** 일어난다.
  * 첫 호출이 마감(`ProviderCallTimeoutError`)으로 던지면 `generate()`의 파이프라인이 그
- * 거절을 잡아 `null`로 끝내므로 두 번째 호출은 없다 — 90초 멈춘 프로바이더에 90초를 또
- * 쓰지 않는다. 그래서 한 생성의 최악은 "느린 호출 + 가드 거부 + 느린 재시도"의 2회이고,
- * 이 2회를 락 TTL이 덮는다(`plainGenerationCoordination.ts`). SIGTERM 드레인(180초)과의
- * 관계: 호출 하나는 마감으로 끊기지만, 2회 최악(180초)은 드레인과 겹칠 수 있다 — 드레인에서
+ * 거절을 잡아 `null`로 끝내므로 두 번째 호출은 없다 — 마감까지 멈춘 프로바이더에 마감을 한 번
+ * 더 쓰지 않는다. 그래서 한 생성의 최악은 "느린 호출 + 가드 거부 + 느린 재시도"의 2회이고,
+ * 이 2회를 락 TTL이 덮는다(`plainGenerationCoordination.ts`). SIGTERM 드레인
+ * (`SHUTDOWN_DRAIN_DEADLINE_MS`)과의 관계: 호출 하나는 마감으로 끊기지만, 2회 최악
+ * (`PLAIN_CALL_TIMEOUT_MS` × 2)은 드레인 예산과 같거나 겹칠 수 있다 — 드레인에서
  * 끊겨도 락은 TTL로 풀리고 저장 행이 없으니 다음 요청이 다시 생성한다.
  */
 const PLAIN_CALL_LIMITS: ProviderCallLimits = {
@@ -360,9 +361,9 @@ function runOwnedGeneration(
         });
     // SIGTERM 드레인(`drainBackgroundTasks`)에 등록한다. 등록 대상이 생성 + 락 해제까지의
     // 정리 체인이라, 종료 시 드레인이 락이 풀릴 때까지 기다린다. 등록하지 않으면 프로세스가
-    // 락을 쥔 채 죽어 `PLAIN_LOCK_TTL_SECONDS`(190초) 동안 다른 요청이 사용자 마감까지 기다리다
-    // 원본으로 물러난다. 호출 상한(`PLAIN_CALL_TIMEOUT_MS` 90초)이 드레인 예산(180초)보다
-    // 짧아 대기가 예산을 넘기지 않는다. 락을 SIGTERM에서 따로 푸는 방식은 쓰지 않는다 —
+    // 락을 쥔 채 죽어 `PLAIN_LOCK_TTL_SECONDS` 동안 다른 요청이 사용자 마감까지 기다리다
+    // 원본으로 물러난다. 호출 상한(`PLAIN_CALL_TIMEOUT_MS`)이 드레인 예산
+    // (`SHUTDOWN_DRAIN_DEADLINE_MS`)보다 짧아 호출 하나의 대기는 예산을 넘기지 않는다. 락을 SIGTERM에서 따로 푸는 방식은 쓰지 않는다 —
     // 생성 중인 호출이 살아 있는데 락만 풀면 다른 인스턴스가 중복 생성·중복 과금한다.
     fireAndForget(cleanup);
     return flight;
