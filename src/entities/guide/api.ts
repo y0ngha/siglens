@@ -15,7 +15,7 @@ import { mapGuideRows } from './lib/mapGuideRows';
 import type { GuideCatalog } from './types';
 
 /** 가이드 데이터 캐시 태그·키 접두사. */
-export const GUIDE_CACHE_TAG = 'guide';
+const GUIDE_CACHE_TAG = 'guide';
 
 async function fetchGuideCatalog(locale: Locale): Promise<GuideCatalog> {
     const { db } = getDatabaseClient();

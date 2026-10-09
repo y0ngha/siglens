@@ -7,7 +7,6 @@ import {
     groupGuideByCategory,
     guideNeighbors,
     parseGuideBrowseState,
-    parseGuideCategory,
     resolveRelated,
     toGuideSearchString,
     toGuideSummary,
@@ -58,14 +57,6 @@ const MACD = entry({
     summary: '이동평균의 차이.',
 });
 const ALL = [DOJI, HAMMER, RSI, MACD];
-
-describe('parseGuideCategory', () => {
-    it('알려진 분류만 통과시킨다', () => {
-        expect(parseGuideCategory('indicators')).toBe('indicators');
-        expect(parseGuideCategory('nope')).toBeNull();
-        expect(parseGuideCategory(null)).toBeNull();
-    });
-});
 
 describe('parseGuideBrowseState', () => {
     it('빈 URL은 질의 없음·전체다', () => {

@@ -45,7 +45,7 @@ import GuideEntryRoute, {
     revalidate as entryRevalidate,
 } from '@/app/[locale]/guide/[category]/[slug]/page';
 import ko from '../../../../../messages/ko.json';
-import { CATALOG, guideEntry, RSI } from './guideFixtures';
+import { CATALOG, guideEntry, RSI } from '@/__tests__/fixtures/guideFixtures';
 
 const mockLoad = vi.mocked(loadGuideCatalog);
 

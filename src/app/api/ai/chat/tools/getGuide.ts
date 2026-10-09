@@ -26,13 +26,11 @@ export function cutAtParagraph(
 
     const paragraphs = body.split(/\n{2,}/);
     // 문단 i까지 이어 붙인 길이(구분자 `\n\n` 2자 포함)의 누적. 단조 증가라 첫 초과 지점이 경계다.
-    const joinedLengths = paragraphs.reduce<number[]>(
-        (acc, paragraph, index) => [
-            ...acc,
-            (acc[index - 1] ?? 0) + (index === 0 ? 0 : 2) + paragraph.length,
-        ],
-        []
-    );
+    let runningLength = 0;
+    const joinedLengths = paragraphs.map((paragraph, index) => {
+        runningLength += (index === 0 ? 0 : 2) + paragraph.length;
+        return runningLength;
+    });
     const overIndex = joinedLengths.findIndex(length => length > maxChars);
     const kept = paragraphs.slice(
         0,

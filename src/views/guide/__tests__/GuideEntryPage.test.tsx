@@ -29,7 +29,7 @@ import type { GuideEntry } from '@/entities/guide/types';
 import ko from '../../../../messages/ko.json';
 import en from '../../../../messages/en.json';
 import { GuideEntryPage } from '../GuideEntryPage';
-import { guideEntry } from './guideFixtures';
+import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
 
 const g = ko.views.guide;
 
@@ -125,6 +125,16 @@ describe('GuideEntryPage', () => {
         expect(time.tagName).toBe('TIME');
         expect(time).toHaveAttribute('datetime', RSI.updatedAt);
         expect(time).toHaveTextContent('2026년 10월 10일');
+    });
+
+    it('업데이트 날짜는 로케일 형식이고 KST 기준 같은 날이다', async () => {
+        // 2026-10-09T15:00Z는 KST로 10월 10일이다 — UTC 날짜(9일)가 새면 실패한다.
+        await renderEntry(RSI, 'en');
+
+        const time = screen.getByText(/Last updated/i);
+        expect(time).toHaveAttribute('datetime', RSI.updatedAt);
+        expect(time).toHaveTextContent('October 10, 2026');
+        expect(time).not.toHaveTextContent('2026년');
     });
 
     it('다른 이름이 없으면 그 줄을 그리지 않는다', async () => {

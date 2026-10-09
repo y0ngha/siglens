@@ -8,7 +8,7 @@ import ja from '../../../../messages/ja.json';
 import { GuideCategoryPage } from '../GuideCategoryPage';
 import { GuideHubPage } from '../GuideHubPage';
 import { GuideUnavailablePage } from '../GuideUnavailablePage';
-import { guideEntry } from './guideFixtures';
+import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
 
 const g = ko.views.guide;
 

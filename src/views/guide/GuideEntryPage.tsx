@@ -101,6 +101,8 @@ export async function GuideEntryPage({
     const toc = extractToc(entry.bodyMd);
     const related = resolveRelated(catalog, entry);
     const { previous, next } = guideNeighbors(catalog, entry);
+    // 이름과 달리 로케일을 따른다(`INTL_LOCALE[locale]`). 타임존만 KST로 고정해 `updatedAt`의
+    // 같은 순간이 어느 서버 타임존에서도 같은 날짜로 찍힌다(발행 기준일은 한국 날짜).
     const updatedAt = formatKoreanDate(new Date(entry.updatedAt), locale);
 
     return (

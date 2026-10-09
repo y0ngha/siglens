@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
-    GUIDE_CATEGORIES,
+    isGuideCategory,
     type GuideCatalog,
     type GuideCategory,
     type GuideEntry,
@@ -19,16 +19,10 @@ import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
 
 export type GuideRouteParams = Promise<{ locale: string }>;
 
-/** URL 세그먼트가 알려진 분류면 그 분류, 아니면 `null`. */
-export function parseCategorySegment(segment: string): GuideCategory | null {
-    return GUIDE_CATEGORIES.find(category => category === segment) ?? null;
-}
-
 /** 분류 세그먼트를 검증한다. 모르는 분류는 404 — 카탈로그를 읽기 전에 거른다. */
 export function requireCategory(segment: string): GuideCategory {
-    const category = parseCategorySegment(segment);
-    if (category === null) notFound();
-    return category;
+    if (!isGuideCategory(segment)) notFound();
+    return segment;
 }
 
 /** 카탈로그에서 항목을 찾는다. slug가 없거나 분류가 어긋나면 404다. */

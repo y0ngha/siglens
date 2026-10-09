@@ -1,5 +1,6 @@
 import {
     GUIDE_CATEGORIES,
+    isGuideCategory,
     type GuideCategory,
     type GuideEntry,
     type GuideEntrySummary,
@@ -22,12 +23,6 @@ export const GUIDE_CATEGORY_PARAM = 'c';
 /** 검색창에 넣을 수 있는 최대 길이. URL에 그대로 실리므로 상한을 둔다. */
 export const GUIDE_QUERY_MAX_LENGTH = 60;
 
-export function parseGuideCategory(
-    value: string | null | undefined
-): GuideCategory | null {
-    return GUIDE_CATEGORIES.find(category => category === value) ?? null;
-}
-
 /** URL 값 → 필터 상태. 알 수 없는 분류는 "전체"로, 질의는 상한에서 자른다. */
 export function parseGuideBrowseState(
     query: string | null,
@@ -35,7 +30,7 @@ export function parseGuideBrowseState(
 ): GuideBrowseState {
     return {
         query: (query ?? '').slice(0, GUIDE_QUERY_MAX_LENGTH),
-        category: parseGuideCategory(category) ?? GUIDE_FILTER_ALL,
+        category: isGuideCategory(category) ? category : GUIDE_FILTER_ALL,
     };
 }
 
@@ -102,13 +97,12 @@ export function groupGuideByCategory<T extends GuideEntrySummary>(
 export function countByCategory(
     entries: readonly GuideEntrySummary[]
 ): Record<GuideCategory, number> {
-    return {
-        candlesticks: entries.filter(e => e.category === 'candlesticks').length,
-        'chart-patterns': entries.filter(e => e.category === 'chart-patterns')
-            .length,
-        indicators: entries.filter(e => e.category === 'indicators').length,
-        strategies: entries.filter(e => e.category === 'strategies').length,
-    };
+    return Object.fromEntries(
+        GUIDE_CATEGORIES.map(category => [
+            category,
+            entries.filter(entry => entry.category === category).length,
+        ])
+    ) as Record<GuideCategory, number>;
 }
 
 export interface GuideNeighbors {

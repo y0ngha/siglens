@@ -7,6 +7,7 @@ import {
 import type { GuideCategory } from '@/entities/guide/types';
 import {
     GUIDE_CATEGORY_PARAM,
+    GUIDE_FILTER_ALL,
     GUIDE_QUERY_MAX_LENGTH,
     GUIDE_QUERY_PARAM,
     parseGuideBrowseState,
@@ -52,7 +53,7 @@ export function useGuideBrowserState(
         const search = toGuideSearchString(
             fixedCategory === undefined
                 ? next
-                : { query: next.query, category: 'all' }
+                : { query: next.query, category: GUIDE_FILTER_ALL }
         );
         window.history.replaceState(
             null,
@@ -65,7 +66,7 @@ export function useGuideBrowserState(
         commit({ ...state, query: query.slice(0, GUIDE_QUERY_MAX_LENGTH) });
     const setCategory = (category: GuideFilterCategory): void =>
         commit({ ...state, category });
-    const reset = (): void => commit({ query: '', category: 'all' });
+    const reset = (): void => commit({ query: '', category: GUIDE_FILTER_ALL });
 
     return { state, setQuery, setCategory, reset };
 }
