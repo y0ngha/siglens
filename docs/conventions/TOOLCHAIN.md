@@ -244,6 +244,35 @@ fake·stub·테스트 더블을 모두 찾아 변경 노트와 대조한다(예:
 외부 패키지가 `process.env.<SERVICE>_*`에서 직접 클라이언트를 만들면 앱 수준 게이트를 우회한다. 게이트를 구현할 때 의존성 전체에서
 해당 서비스의 env 직접 읽기를 grep하고, env 비우기·override가 그 경로까지 닿는지 확인한다(프레임워크의 env 로더가 미리 비워 둔 값을 덮어쓰지 않는지도).
 
+## 지원 브라우저와 내장 API
+
+<a id="TC-36"></a>
+
+#### TC-36 — 지원 하한은 Chrome·Edge 109, iOS Safari 15다. 그보다 새 내장 API는 폴리필에 넣은 것만 쓴다
+
+Next(SWC)는 문법만 내리고 `Array.prototype.toSorted` 같은 내장 메서드는 채우지 않는다. 지원 하한 브라우저에 없는
+내장 API를 클라이언트에 닿는 코드에서 그대로 쓰면 그 브라우저에서 `… is not a function`으로 깨진다(Chrome 109는
+Windows 7/8.1에서 올릴 수 있는 마지막 Chrome이라 실제 사용자가 있다).
+
+- **지원한다:** Chrome·Edge 109+, iOS Safari 15+(15.0~15.3 포함), 그 밖 브라우저는 최신 2개 버전. Chrome·Edge 109는
+  `browserslist`(`package.json`)에 들어 있지 않은 **정책상 하한**이다 — 문법 변환 대상은 browserslist가 정하고, 내장
+  API는 이 규칙과 폴리필이 맡는다.
+- **지원하지 않는다:** Chrome·Edge 109 미만, iOS 15 미만, IE. 이 환경의 오류는 고치지 않는다. 폴리필 덕에 일부가 우연히
+  동작해도 보장하지 않는다.
+- 하한에 없는 메서드는 `src/shared/lib/legacyBrowserPolyfills.ts`가 `instrumentation-client.ts`에서 앱 코드보다 먼저
+  채운다. 지금 채우는 것: `toSorted`, `toReversed`, `findLast`, `findLastIndex`, Array·String `at`, `Object.hasOwn`,
+  `AbortSignal.timeout`.
+- 그 밖에 하한보다 새 API(`Object.groupBy`·`Map.groupBy`, Set 연산 메서드, `Promise.withResolvers`, `Array.prototype.with`·
+  `toSpliced`, `structuredClone` 등)는 서버 전용 코드에서만 쓴다. 클라이언트에서 필요하면 같은 파일에 명세대로
+  폴리필을 추가하고, `e2e/specs/legacy-browser.spec.ts`의 삭제 목록에도 넣는다.
+- `@y0ngha/siglens-core`의 브라우저 진입점은 core 쪽에서 ES2022로 막혀 있다(core `tsconfig.client.json`).
+
+```ts
+// ❌ 클라이언트 컴포넌트에서 폴리필에 없는 API
+const bySector = Object.groupBy(stocks, s => s.sector);
+// ✅ 서버 전용 코드로 옮기거나, 폴리필에 추가하고 e2e 삭제 목록에도 넣은 뒤 쓴다
+```
+
 ## 저장소 설정 파일
 
 <a id="TC-14"></a>

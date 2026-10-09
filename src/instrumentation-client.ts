@@ -2,10 +2,15 @@
  * 클라이언트 계측 진입점. Next 16이 **React 하이드레이션 전에** 실행하므로,
  * 마운트된 컴포넌트가 놓치는 하이드레이션 단계의 throw까지 잡힌다.
  *
- * 여기 두는 건 전역 훅뿐이다. React 렌더 중의 throw는 각 `error.tsx` 경계가
+ * 여기 두는 건 전역 훅과 구형 브라우저 폴리필뿐이다. React 렌더 중의 throw는 각 `error.tsx` 경계가
  * 직접 `reportClientError`를 부른다(이 훅에는 도달하지 않는다).
  */
+import { installLegacyBrowserPolyfills } from '@/shared/lib/legacyBrowserPolyfills';
 import { reportClientError } from '@/shared/lib/reportClientError';
+
+// 라우트 청크의 모듈 평가·하이드레이션보다 먼저 돈다 — 지원 대상 구형 브라우저(Chrome 109,
+// iOS 15.0~15.3)에 없는 배열·문자열 메서드를 채운다(`legacyBrowserPolyfills.ts`).
+installLegacyBrowserPolyfills();
 
 window.addEventListener('error', event => {
     // 리소스 로드 실패(img/script)는 `error`가 없는 이벤트로 온다 — 노이즈라 버린다.
