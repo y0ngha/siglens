@@ -318,14 +318,15 @@ const [capturedValue] = useState(initialValue);
 
 #### CR-3 — Markdown renderers for Korean content disable single-tilde strikethrough
 
-`remark-gfm` treats `~text~` as strikethrough by default, but Korean prose writes ranges as `5~30분봉`, `266,500~270,666원`. Every `ReactMarkdown` that renders Korean text passes `[remarkGfm, { singleTilde: false }]` (hoisted to a module constant); `~~text~~` still works.
+`remark-gfm` treats `~text~` as strikethrough by default, but Korean prose writes ranges as `5~30분봉`, `266,500~270,666원`. Every `ReactMarkdown` that renders Korean text passes the shared `KOREAN_SAFE_REMARK_PLUGINS` (`src/shared/ui/markdownPlugins.ts`, i.e. `[remarkGfm, { singleTilde: false }]`); `~~text~~` still works.
 
 ```typescript
 // ❌ "5~30분봉 … 1~4시간봉" renders the middle as <del>
 remarkPlugins={[remarkGfm]}
 
 // ✅
-const REMARK_PLUGINS = [[remarkGfm, { singleTilde: false }]];
+import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
+remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
 #### Other props and state rules

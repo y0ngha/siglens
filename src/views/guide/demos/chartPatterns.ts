@@ -1,4 +1,4 @@
-import { pathToBars, type Waypoint } from '@/views/guide/demos/generators';
+import { pathToBars } from '@/views/guide/demos/generators';
 import type {
     DemoBar,
     DemoLineRole,
@@ -94,10 +94,14 @@ function curve(
     step: number,
     priceAt: (i: number) => number
 ): Point[] {
-    const points: Point[] = [];
-    for (let i = fromI; i < toI; i += step) points.push(pt(i, priceAt(i)));
-    points.push(pt(toI, priceAt(toI)));
-    return points;
+    const count = Math.ceil((toI - fromI) / step);
+    return [
+        ...Array.from({ length: Math.max(count, 0) }, (_, k) => {
+            const i = fromI + k * step;
+            return pt(i, priceAt(i));
+        }),
+        pt(toI, priceAt(toI)),
+    ];
 }
 
 function build(
@@ -106,7 +110,7 @@ function build(
     overlays: (bars: readonly DemoBar[]) => DemoOverlay[],
     rangePct?: number
 ): GuideDemo {
-    const bars = pathToBars(waypoints as Waypoint[], {
+    const bars = pathToBars(waypoints, {
         seed,
         rangePct: rangePct ?? 0.016,
         noisePct: 0.005,

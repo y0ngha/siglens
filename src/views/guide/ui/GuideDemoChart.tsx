@@ -182,15 +182,16 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
     const ticks = niceTicks(min, max, 5);
     const step = tickStep(ticks);
 
-    const paneFrames: { top: number; height: number }[] = [];
-    let cursor = priceBottom + PANE_GAP;
-    for (const pane of panes) {
-        const height = pane.height ?? PANE_HEIGHT;
-        paneFrames.push({ top: cursor, height });
-        cursor += height + PANE_GAP;
-    }
+    const paneHeights = panes.map(pane => pane.height ?? PANE_HEIGHT);
+    const paneStack = (heights: readonly number[]): number =>
+        heights.reduce((sum, height) => sum + height + PANE_GAP, 0);
+    const paneFrames = paneHeights.map((height, index) => ({
+        top: priceBottom + PANE_GAP + paneStack(paneHeights.slice(0, index)),
+        height,
+    }));
+    const paneEnd = priceBottom + PANE_GAP + paneStack(paneHeights);
     const totalHeight =
-        (panes.length > 0 ? cursor - PANE_GAP : priceBottom) + MARGIN_BOTTOM;
+        (panes.length > 0 ? paneEnd - PANE_GAP : priceBottom) + MARGIN_BOTTOM;
 
     const bodyWidth = Math.min(
         MAX_BODY,
@@ -222,6 +223,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
     };
 
     const overlays = demo.overlays ?? [];
+    // 라벨 충돌 회피(`placeLabel`)가 `placed`에 앞선 라벨을 쌓으며 순서에 의존하므로, 오버레이를
+    // 그리는 순서대로 지역 배열에 쌓는다 — 오버레이 수만큼(O(N))만 도는 렌더 지역 누적이다.
     const drawn: { key: string; node: React.ReactNode }[] = [];
     const labels: React.ReactNode[] = [];
 
@@ -269,14 +272,20 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
             }
             case 'band': {
                 const tone: DemoSeriesTone = overlay.tone ?? 'a';
-                const top: { x: number; y: number }[] = [];
-                const bottom: { x: number; y: number }[] = [];
-                overlay.upper.forEach((upper, i) => {
+                const edges = overlay.upper.flatMap((upper, i) => {
                     const lower = overlay.lower[i];
-                    if (!isNum(upper) || !isNum(lower)) return;
-                    top.push({ x: xOf(i), y: yOf(upper) });
-                    bottom.push({ x: xOf(i), y: yOf(lower) });
+                    return isNum(upper) && isNum(lower)
+                        ? [{ i, upper, lower }]
+                        : [];
                 });
+                const top = edges.map(({ i, upper }) => ({
+                    x: xOf(i),
+                    y: yOf(upper),
+                }));
+                const bottom = edges.map(({ i, lower }) => ({
+                    x: xOf(i),
+                    y: yOf(lower),
+                }));
                 if (top.length < 2) break;
                 drawn.push({
                     key,
@@ -285,7 +294,10 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                             <polygon
                                 className={SERIES_FILL[tone]}
                                 fillOpacity={0.13}
-                                points={toPoints([...top, ...bottom.reverse()])}
+                                points={toPoints([
+                                    ...top,
+                                    ...bottom.toReversed(),
+                                ])}
                             />
                             {[overlay.upper, overlay.lower].map(
                                 (edge, edgeIndex) =>
@@ -342,10 +354,13 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                 );
                 const prices = overlay.rows
                     .map(row => row.price)
-                    .sort((a, b) => a - b);
-                let gap = Infinity;
-                for (let i = 1; i < prices.length; i++)
-                    gap = Math.min(gap, prices[i] - prices[i - 1]);
+                    .toSorted((a, b) => a - b);
+                const gap = prices
+                    .slice(1)
+                    .reduce(
+                        (min, price, i) => Math.min(min, price - prices[i]),
+                        Infinity
+                    );
                 const rowHeight = Number.isFinite(gap)
                     ? Math.max(2, Math.abs(yOf(0) - yOf(gap)) - 1)
                     : 4;

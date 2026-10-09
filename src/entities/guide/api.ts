@@ -5,6 +5,7 @@ import { unstable_cache } from 'next/cache';
 import { eq, inArray } from 'drizzle-orm';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import { getDatabaseClient } from '@/shared/db/client';
+import { RELEASE_ID } from '@/shared/config/release';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { guideEntries, guideEntryContents } from '@/shared/db/schema';
@@ -15,13 +16,6 @@ import type { GuideCatalog } from './types';
 
 /** 가이드 데이터 캐시 태그·키 접두사. */
 export const GUIDE_CACHE_TAG = 'guide';
-
-/**
- * 캐시 키에 넣는 릴리스 식별자(컨테이너 env `GIT_SHA`, 값은 릴리스 버전). 데이터 캐시는
- * 배포를 넘어 공유되므로, 시드로 본문을 고친 뒤 배포하면 새 릴리스에서 바로 다시 읽게 한다
- * (`entities/terms/api.ts`의 `TERMS_RELEASE_ID`와 같은 이유). 로컬·E2E에선 빈 문자열.
- */
-const GUIDE_RELEASE_ID: string = process.env.GIT_SHA ?? '';
 
 async function fetchGuideCatalog(locale: Locale): Promise<GuideCatalog> {
     const { db } = getDatabaseClient();
@@ -82,7 +76,7 @@ export const loadGuideCatalog = cache(
         try {
             const catalog = await unstable_cache(
                 () => fetchGuideCatalog(locale),
-                [GUIDE_CACHE_TAG, 'catalog', locale, GUIDE_RELEASE_ID],
+                [GUIDE_CACHE_TAG, 'catalog', locale, RELEASE_ID],
                 { revalidate: SECONDS_PER_DAY, tags: [GUIDE_CACHE_TAG] }
             )();
             return catalog.entries.length === 0 ? null : catalog;

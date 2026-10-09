@@ -29,13 +29,15 @@ type AskAiFabProps = AskAiFabSource & {
  * `z-70`(오버레이가 이 FAB 위에 뜨게 하는 값)과 `NoticePopup`의 형제 주석이
  * 이 자리를 전제로 하므로 임의로 바꾸면 안 된다.
  */
-export async function AskAiFab({
-    name,
-    question,
-    localePrefix,
-}: AskAiFabProps) {
+export async function AskAiFab(props: AskAiFabProps) {
+    const { localePrefix } = props;
     const t = await getTranslations('widgets.ask-ai-fab');
-    const prefill = question ?? t('question', { name: name ?? '' });
+    // 구조 분해하면 두 변형의 상관이 끊겨 `name`이 `string | undefined`로 넓어진다.
+    // `props` 째로 `question` 유무를 갈라 TS가 else 가지의 `name: string`을 알게 한다.
+    const prefill =
+        props.question !== undefined
+            ? props.question
+            : t('question', { name: props.name });
     const href = aiAskUrl(localePrefix, prefill);
 
     return (

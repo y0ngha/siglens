@@ -1,8 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import ReactMarkdown, { type Components, type Options } from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeSlug from 'rehype-slug';
-import remarkGfm from 'remark-gfm';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
@@ -10,14 +9,7 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
-
-/**
- * GFM 플러그인 설정. 본문은 범위를 `5~30분봉`처럼 물결표 하나로 적는데, 기본값은 물결표
- * 하나도 취소선으로 읽어 두 범위 사이 글자를 지운다. 취소선은 `~~`만 인정한다.
- */
-const REMARK_PLUGINS: NonNullable<Options['remarkPlugins']> = [
-    [remarkGfm, { singleTilde: false }],
-];
+import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 
 interface GuideMarkdownProps {
     readonly markdown: string;
@@ -153,7 +145,7 @@ export function GuideMarkdown({ markdown }: GuideMarkdownProps) {
     return (
         <div className="[&>:first-child]:mt-0">
             <ReactMarkdown
-                remarkPlugins={REMARK_PLUGINS}
+                remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
                 rehypePlugins={[rehypeSlug]}
                 components={components}
             >

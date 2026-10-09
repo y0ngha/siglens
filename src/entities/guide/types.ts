@@ -7,6 +7,13 @@ export const GUIDE_CATEGORIES = [
 
 export type GuideCategory = (typeof GUIDE_CATEGORIES)[number];
 
+export function isGuideCategory(value: unknown): value is GuideCategory {
+    return (
+        typeof value === 'string' &&
+        (GUIDE_CATEGORIES as readonly string[]).includes(value)
+    );
+}
+
 export interface GuideFaqItem {
     readonly q: string;
     readonly a: string;

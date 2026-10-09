@@ -1,3 +1,4 @@
+import type { Bar } from '@y0ngha/siglens-core';
 import type { DemoBar } from '@/views/guide/demos/types';
 
 /** 데모 봉의 첫 시각(2024-01-02 00:00 UTC)과 간격(1일). 의미는 없고 단조 증가만 필요하다. */
@@ -19,7 +20,11 @@ export interface PathBarsOptions {
     volume?: number;
 }
 
-/** 시드 고정 의사난수 (mulberry32). 같은 시드는 항상 같은 수열을 낸다. */
+/**
+ * 시드 고정 의사난수 (mulberry32). 같은 시드는 항상 같은 수열을 낸다.
+ * `state`는 호출마다 전진하는 PRNG 상태라 클로저 안 가변 변수가 이 알고리즘의 정의다
+ * (reduce로 풀면 호출 순서를 호출부가 떠안는다).
+ */
 export function mulberry32(seed: number): () => number {
     let state = seed >>> 0;
     return () => {
@@ -29,6 +34,14 @@ export function mulberry32(seed: number): () => number {
         t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
         return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
     };
+}
+
+/**
+ * 데모 봉을 core `Bar`로 좁힌다. `volume`만 선택값이라 형이 어긋날 뿐 값은 그대로 넘긴다
+ * (`tone`은 core가 읽지 않는다). 호출부마다 단언을 흩뿌리지 않으려고 한 곳에 둔다.
+ */
+export function toCoreBars(bars: readonly DemoBar[]): Bar[] {
+    return bars as Bar[];
 }
 
 export function barTime(index: number): number {

@@ -1,8 +1,9 @@
-import { calculateIndicators, type Bar } from '@y0ngha/siglens-core';
+import { calculateIndicators } from '@y0ngha/siglens-core';
 import {
     candle,
     concatBars,
     pathToBars,
+    toCoreBars,
     type Waypoint,
 } from '@/views/guide/demos/generators';
 import {
@@ -69,7 +70,7 @@ const week52HighMomentum = (): GuideDemo => {
         ]),
         { seed: 71, rangePct: 0.016, noisePct: 0.012 }
     );
-    const result = calculateIndicators(bars as Bar[]);
+    const result = calculateIndicators(toCoreBars(bars));
     const breakIdx = firstIndex(bars, 60, bar => bar.close > 120);
     return {
         bars,

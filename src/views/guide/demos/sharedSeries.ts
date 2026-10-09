@@ -1,11 +1,11 @@
 import {
     calculateIndicators,
-    type Bar,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
 import {
     mulberry32,
     pathToBars,
+    toCoreBars,
     type Waypoint,
 } from '@/views/guide/demos/generators';
 import type { DemoBar } from '@/views/guide/demos/types';
@@ -47,10 +47,7 @@ export interface SharedSeries {
     result: IndicatorResult;
 }
 
-let cached: SharedSeries | null = null;
-
-export function getSharedSeries(): SharedSeries {
-    if (cached !== null) return cached;
+function buildSharedSeries(): SharedSeries {
     const raw = pathToBars(PATH, { seed: 7, rangePct: 0.02, noisePct: 0.022 });
     const rand = mulberry32(99);
     const bars: DemoBar[] = raw.map((bar, index) => {
@@ -61,9 +58,14 @@ export function getSharedSeries(): SharedSeries {
         );
         return { ...bar, volume };
     });
-    const result = calculateIndicators(bars as Bar[]);
-    cached = { bars, result };
-    return cached;
+    return { bars, result: calculateIndicators(toCoreBars(bars)) };
+}
+
+// 시드 고정이라 결정적이고 260봉 계산이 싸다 — 모듈 로드 때 한 번 만들어 둔다.
+const SHARED_SERIES = buildSharedSeries();
+
+export function getSharedSeries(): SharedSeries {
+    return SHARED_SERIES;
 }
 
 /**
@@ -85,8 +87,6 @@ const DIVERGENCE_PATH: Waypoint[] = [
     [104, 119],
 ].map(([i, price]) => ({ i, price }));
 
-let cachedDivergence: SharedSeries | null = null;
-
 function divergenceVolumeFactor(index: number): number {
     if (index < DIVERGENCE_LOW_1) return 1.9;
     if (index < 44) return 2.4;
@@ -94,8 +94,7 @@ function divergenceVolumeFactor(index: number): number {
     return 2.2;
 }
 
-export function getDivergenceSeries(): SharedSeries {
-    if (cachedDivergence !== null) return cachedDivergence;
+function buildDivergenceSeries(): SharedSeries {
     const raw = pathToBars(DIVERGENCE_PATH, {
         seed: 21,
         rangePct: 0.016,
@@ -108,9 +107,13 @@ export function getDivergenceSeries(): SharedSeries {
             BASE_VOLUME * divergenceVolumeFactor(index) * (0.85 + rand() * 0.3)
         ),
     }));
-    const result = calculateIndicators(bars as Bar[]);
-    cachedDivergence = { bars, result };
-    return cachedDivergence;
+    return { bars, result: calculateIndicators(toCoreBars(bars)) };
+}
+
+const DIVERGENCE_SERIES = buildDivergenceSeries();
+
+export function getDivergenceSeries(): SharedSeries {
+    return DIVERGENCE_SERIES;
 }
 
 /**
@@ -134,10 +137,7 @@ const TREND_PATH: Waypoint[] = [
     [259, 182],
 ].map(([i, price]) => ({ i, price }));
 
-let cachedTrend: SharedSeries | null = null;
-
-export function getTrendSeries(): SharedSeries {
-    if (cachedTrend !== null) return cachedTrend;
+function buildTrendSeries(): SharedSeries {
     const raw = pathToBars(TREND_PATH, {
         seed: 33,
         rangePct: 0.016,
@@ -148,7 +148,11 @@ export function getTrendSeries(): SharedSeries {
         ...bar,
         volume: Math.round(BASE_VOLUME * (0.8 + rand() * 0.4)),
     }));
-    const result = calculateIndicators(bars as Bar[]);
-    cachedTrend = { bars, result };
-    return cachedTrend;
+    return { bars, result: calculateIndicators(toCoreBars(bars)) };
+}
+
+const TREND_SERIES = buildTrendSeries();
+
+export function getTrendSeries(): SharedSeries {
+    return TREND_SERIES;
 }

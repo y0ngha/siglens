@@ -2,7 +2,7 @@ import 'server-only';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import type { GuideEntry } from '@/entities/guide/types';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import { localePath } from '@/shared/i18n/locales';
+import { localePath, type Locale } from '@/shared/i18n/locales';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
 import { searchGuide } from '@/shared/lib/guideSearch';
 import { SITE_URL } from '@/shared/lib/seo';
@@ -24,20 +24,30 @@ export function cutAtParagraph(
 ): { text: string; truncated: boolean } {
     if (body.length <= maxChars) return { text: body, truncated: false };
 
-    const kept: string[] = [];
-    let length = 0;
-    for (const paragraph of body.split(/\n{2,}/)) {
-        const added = (kept.length === 0 ? 0 : 2) + paragraph.length;
-        if (length + added > maxChars) break;
-        kept.push(paragraph);
-        length += added;
-    }
+    const paragraphs = body.split(/\n{2,}/);
+    // 문단 i까지 이어 붙인 길이(구분자 `\n\n` 2자 포함)의 누적. 단조 증가라 첫 초과 지점이 경계다.
+    const joinedLengths = paragraphs.reduce<number[]>(
+        (acc, paragraph, index) => [
+            ...acc,
+            (acc[index - 1] ?? 0) + (index === 0 ? 0 : 2) + paragraph.length,
+        ],
+        []
+    );
+    const overIndex = joinedLengths.findIndex(length => length > maxChars);
+    const kept = paragraphs.slice(
+        0,
+        overIndex === -1 ? paragraphs.length : overIndex
+    );
     if (kept.length > 0) return { text: kept.join('\n\n'), truncated: true };
 
     const cut = body.slice(0, maxChars);
     const lastCode = cut.charCodeAt(cut.length - 1);
     const midPair = lastCode >= 0xd800 && lastCode <= 0xdbff;
     return { text: midPair ? cut.slice(0, -1) : cut, truncated: true };
+}
+
+function guideUrl(entry: GuideEntry, locale: Locale): string {
+    return `${SITE_URL}${localePath(locale, guideEntryPath(entry.category, entry.slug))}`;
 }
 
 /**
@@ -56,8 +66,6 @@ export const getGuideTool: ToolExecutor = async (args, ctx) => {
     if (catalog === null) return { found: false, reason: 'guide_unavailable' };
 
     const matches = searchGuide(catalog.entries, query, GUIDE_MATCH_LIMIT);
-    const urlOf = (entry: GuideEntry): string =>
-        `${SITE_URL}${localePath(ctx.locale, guideEntryPath(entry.category, entry.slug))}`;
     const [best, ...others] = matches;
     const asOf = new Date().toISOString();
 
@@ -76,13 +84,13 @@ export const getGuideTool: ToolExecutor = async (args, ctx) => {
             summary: best.summary,
             body: body.text,
             bodyTruncated: body.truncated,
-            url: urlOf(best),
+            url: guideUrl(best, ctx.locale),
         },
         others: others.map(entry => ({
             title: entry.title,
             category: entry.category,
             summary: entry.summary,
-            url: urlOf(entry),
+            url: guideUrl(entry, ctx.locale),
         })),
     };
 };

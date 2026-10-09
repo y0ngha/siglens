@@ -14,7 +14,11 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { glob } from 'glob';
 import matter from 'gray-matter';
-import { GUIDE_CATEGORIES, type GuideCategory } from '@/entities/guide/types';
+import {
+    GUIDE_CATEGORIES,
+    isGuideCategory,
+    type GuideCategory,
+} from '@/entities/guide/types';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -202,7 +206,13 @@ export async function loadSkillMetas(
     });
     return files.toSorted().map(file => {
         const data = matter(readFileSync(file, 'utf-8')).data;
-        const gating = (data.gating ?? {}) as { triggers?: unknown };
+        const gating: unknown = data.gating;
+        const triggers: unknown =
+            typeof gating === 'object' &&
+            gating !== null &&
+            'triggers' in gating
+                ? gating.triggers
+                : undefined;
         const pattern = typeof data.pattern === 'string' ? [data.pattern] : [];
         if (typeof data.name !== 'string') {
             throw new Error(`${file}: name이 없다`);
@@ -211,7 +221,7 @@ export async function loadSkillMetas(
             basename: basename(file, '.md'),
             dir: basename(dirname(file)),
             name: data.name,
-            triggerIds: [...pattern, ...asStringArray(gating.triggers)],
+            triggerIds: [...pattern, ...asStringArray(triggers)],
         };
     });
 }
@@ -223,8 +233,8 @@ export async function loadGuideMetas(
     return files.toSorted().map(file => {
         const data = matter(readFileSync(file, 'utf-8')).data;
         const slug = basename(dirname(file));
-        const category = data.category as GuideCategory;
-        if (!GUIDE_CATEGORIES.includes(category)) {
+        const category: unknown = data.category;
+        if (!isGuideCategory(category)) {
             throw new Error(
                 `${file}: category(${String(data.category)})가 올바르지 않다`
             );

@@ -133,19 +133,24 @@ export function buildGuideBreadcrumbJsonLd({
     entryTitle,
     entrySlug,
 }: BreadcrumbInput): Record<string, unknown> {
-    const trail = [{ name: hubTitle, url: GUIDE_PATH }];
-    if (category !== undefined) {
-        trail.push({
-            name: category.label,
-            url: guideCategoryPath(category.id),
-        });
-        if (entryTitle !== undefined && entrySlug !== undefined) {
-            trail.push({
-                name: entryTitle,
-                url: guideEntryPath(category.id, entrySlug),
-            });
-        }
-    }
+    const categoryTrail =
+        category === undefined
+            ? []
+            : [
+                  {
+                      name: category.label,
+                      url: guideCategoryPath(category.id),
+                  },
+                  ...(entryTitle !== undefined && entrySlug !== undefined
+                      ? [
+                            {
+                                name: entryTitle,
+                                url: guideEntryPath(category.id, entrySlug),
+                            },
+                        ]
+                      : []),
+              ];
+    const trail = [{ name: hubTitle, url: GUIDE_PATH }, ...categoryTrail];
     return buildBreadcrumbJsonLd(trail, locale);
 }
 

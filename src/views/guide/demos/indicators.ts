@@ -1,8 +1,8 @@
 import {
     calculateIndicators,
-    type Bar,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
+import { toCoreBars } from '@/views/guide/demos/generators';
 import {
     DIVERGENCE_LOW_1,
     DIVERGENCE_LOW_2,
@@ -675,8 +675,8 @@ const smcDemo = windowed(
                 );
             });
         const lastEnd = c.start + c.bars.length - 1;
-        const block = [...smc.orderBlocks]
-            .reverse()
+        const block = smc.orderBlocks
+            .toReversed()
             .find(o => o.type === 'bullish' && o.startIndex >= c.start);
         if (block !== undefined) {
             overlays.push({
@@ -688,8 +688,8 @@ const smcDemo = windowed(
                 label: 'Order block',
             });
         }
-        const gap = [...smc.fairValueGaps]
-            .reverse()
+        const gap = smc.fairValueGaps
+            .toReversed()
             .find(f => f.type === 'bullish' && f.index >= c.start);
         if (gap !== undefined) {
             overlays.push({
@@ -845,7 +845,7 @@ const varianceRatioDemo = windowed(
 );
 
 const volumeProfileDemo = windowed(100, c => {
-    const profile = calculateIndicators(c.bars as Bar[]).volumeProfile;
+    const profile = calculateIndicators(toCoreBars(c.bars)).volumeProfile;
     if (profile === null) return {};
     return {
         overlays: [
@@ -875,7 +875,7 @@ const volumeProfileDemo = windowed(100, c => {
 const vwapDemo = windowed(
     30,
     c => {
-        const vwap = calculateIndicators(c.bars as Bar[]).vwap;
+        const vwap = calculateIndicators(toCoreBars(c.bars)).vwap;
         const idx = c.bars.findIndex(
             (bar, i) =>
                 i > 5 &&

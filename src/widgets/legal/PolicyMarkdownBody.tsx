@@ -1,6 +1,6 @@
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import ReactMarkdown, { type Components } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 import rehypeSlug from 'rehype-slug';
 
 interface PolicyMarkdownBodyProps {
@@ -73,7 +73,7 @@ export function PolicyMarkdownBody({ markdown }: PolicyMarkdownBodyProps) {
     return (
         <div className="space-y-8">
             <ReactMarkdown
-                remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
+                remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
                 rehypePlugins={[rehypeSlug]}
                 components={components}
             >

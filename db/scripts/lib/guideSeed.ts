@@ -14,8 +14,8 @@ import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
 /**
  * `db/seeds/guide/{category}/{slug}/{locale}.md`를 읽어 검증하는 **순수 파서/검증기**.
  *
- * DB에는 닿지 않는다(적재는 `seedGuide.ts`). 규칙은 설계 §3.2·§11 기준이다:
- * ko 원문은 필수이고, 번역이 없으면 에러가 아니라 경고다(읽기 경로가 ko로 폴백).
+ * DB에는 닿지 않는다(적재는 `seedGuide.ts`). 규칙: ko 원문은 필수이고, 번역이 없으면
+ * 에러가 아니라 경고다(읽기 경로가 요청 로케일 행이 없을 때 ko로 폴백한다).
  */
 
 const LocalizedFrontmatterSchema = z.object({
@@ -87,11 +87,11 @@ function stableStringify(value: unknown): string {
         return `[${value.map(stableStringify).join(',')}]`;
     }
     if (value !== null && typeof value === 'object') {
-        const record = value as Record<string, unknown>;
-        return `{${Object.keys(record)
-            .toSorted()
+        return `{${Object.entries(value)
+            .toSorted(([a], [b]) => (a < b ? -1 : Number(a > b)))
             .map(
-                key => `${JSON.stringify(key)}:${stableStringify(record[key])}`
+                ([key, child]) =>
+                    `${JSON.stringify(key)}:${stableStringify(child)}`
             )
             .join(',')}}`;
     }
@@ -157,6 +157,118 @@ function formatIssues(error: z.ZodError): string {
         .join(', ');
 }
 
+interface EntryBuild {
+    readonly entry: GuideSeedEntry | null;
+    readonly errors: readonly string[];
+    readonly warnings: readonly string[];
+}
+
+type ContentBuild =
+    | { readonly content: GuideSeedContent }
+    | { readonly error: string };
+
+function failedEntry(...errors: string[]): EntryBuild {
+    return { entry: null, errors, warnings: [] };
+}
+
+function buildContent(
+    slug: string,
+    file: ParsedGuideFile,
+    result: ReturnType<typeof LocalizedFrontmatterSchema.safeParse>
+): ContentBuild {
+    if (!result.success) {
+        return {
+            error: `${file.sourceFile}: ${formatIssues(result.error)}`,
+        };
+    }
+    const fields = {
+        title: result.data.title,
+        aliases: result.data.aliases,
+        summary: result.data.summary,
+        seoTitle: result.data.seoTitle,
+        seoDescription: result.data.seoDescription,
+        demoCaption: result.data.demoCaption ?? null,
+        bodyMd: file.body,
+        faq: result.data.faq,
+    };
+    return {
+        content: {
+            slug,
+            locale: file.locale,
+            ...fields,
+            contentHash: computeContentHash(fields),
+        },
+    };
+}
+
+/** slug 하나(= 로케일 파일 묶음)를 항목으로 조립한다. 에러가 있으면 항목은 `null`이다. */
+function buildEntry(
+    slug: string,
+    group: readonly ParsedGuideFile[]
+): EntryBuild {
+    const ko = group.find(file => file.locale === DEFAULT_LOCALE);
+    if (ko === undefined) return failedEntry(`${slug}: ko 원문이 없다`);
+
+    const koResult = KoFrontmatterSchema.safeParse(ko.data);
+    if (!koResult.success) {
+        return failedEntry(`${ko.sourceFile}: ${formatIssues(koResult.error)}`);
+    }
+    const meta = koResult.data;
+    if (meta.category !== ko.dirCategory) {
+        return failedEntry(
+            `${ko.sourceFile}: category(${meta.category})가 디렉터리(${ko.dirCategory})와 다르다`
+        );
+    }
+
+    const builds = group.map(file =>
+        buildContent(
+            slug,
+            file,
+            file === ko
+                ? koResult
+                : LocalizedFrontmatterSchema.safeParse(file.data)
+        )
+    );
+    const duplicateKoErrors =
+        group.filter(file => file.locale === DEFAULT_LOCALE).length > 1
+            ? [`${slug}: ko 원문이 둘 이상이다`]
+            : [];
+
+    return {
+        entry: {
+            slug,
+            category: meta.category,
+            order: meta.order,
+            related: meta.related,
+            skills: meta.skills ?? [slug],
+            contents: builds.flatMap(build =>
+                'content' in build ? [build.content] : []
+            ),
+        },
+        errors: [
+            ...duplicateKoErrors,
+            ...builds.flatMap(build => ('error' in build ? [build.error] : [])),
+        ],
+        warnings: LOCALES.filter(
+            locale => !group.some(file => file.locale === locale)
+        ).map(locale => `${slug}: ${locale} 번역이 없다 (ko로 폴백)`),
+    };
+}
+
+function relatedErrors(entries: readonly GuideSeedEntry[]): string[] {
+    const knownSlugs = new Set(entries.map(entry => entry.slug));
+    return entries.flatMap(entry =>
+        entry.related.flatMap(related => {
+            if (related === entry.slug) {
+                return [`${entry.slug}: related에 자기 자신이 들어 있다`];
+            }
+            return knownSlugs.has(related)
+                ? []
+                : [`${entry.slug}: related(${related})가 존재하지 않는 slug다`];
+        })
+    );
+}
+
 /**
  * 파싱된 파일 묶음을 항목 단위로 검증·조립한다. 에러는 모아서 한 번에 던진다.
  *
@@ -164,95 +276,16 @@ function formatIssues(error: z.ZodError): string {
  * 경고: 번역 누락(읽기 경로가 ko로 폴백한다).
  */
 export function buildGuideSeed(files: readonly ParsedGuideFile[]): GuideSeed {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    const bySlug = new Map<string, ParsedGuideFile[]>();
-    for (const file of files) {
-        bySlug.set(file.slug, [...(bySlug.get(file.slug) ?? []), file]);
-    }
-
-    const entries: GuideSeedEntry[] = [];
-    for (const [slug, group] of bySlug) {
-        const ko = group.find(file => file.locale === DEFAULT_LOCALE);
-        if (ko === undefined) {
-            errors.push(`${slug}: ko 원문이 없다`);
-            continue;
-        }
-        const koResult = KoFrontmatterSchema.safeParse(ko.data);
-        if (!koResult.success) {
-            errors.push(`${ko.sourceFile}: ${formatIssues(koResult.error)}`);
-            continue;
-        }
-        const meta = koResult.data;
-        if (meta.category !== ko.dirCategory) {
-            errors.push(
-                `${ko.sourceFile}: category(${meta.category})가 디렉터리(${ko.dirCategory})와 다르다`
-            );
-            continue;
-        }
-        if (group.filter(file => file.locale === DEFAULT_LOCALE).length > 1) {
-            errors.push(`${slug}: ko 원문이 둘 이상이다`);
-        }
-
-        const contents: GuideSeedContent[] = [];
-        for (const file of group) {
-            const result =
-                file === ko
-                    ? koResult
-                    : LocalizedFrontmatterSchema.safeParse(file.data);
-            if (!result.success) {
-                errors.push(
-                    `${file.sourceFile}: ${formatIssues(result.error)}`
-                );
-                continue;
-            }
-            const fields = {
-                title: result.data.title,
-                aliases: result.data.aliases,
-                summary: result.data.summary,
-                seoTitle: result.data.seoTitle,
-                seoDescription: result.data.seoDescription,
-                demoCaption: result.data.demoCaption ?? null,
-                bodyMd: file.body,
-                faq: result.data.faq,
-            };
-            contents.push({
-                slug,
-                locale: file.locale,
-                ...fields,
-                contentHash: computeContentHash(fields),
-            });
-        }
-
-        for (const locale of LOCALES) {
-            if (!group.some(file => file.locale === locale)) {
-                warnings.push(`${slug}: ${locale} 번역이 없다 (ko로 폴백)`);
-            }
-        }
-
-        entries.push({
-            slug,
-            category: meta.category,
-            order: meta.order,
-            related: meta.related,
-            skills: meta.skills ?? [slug],
-            contents,
-        });
-    }
-
-    const knownSlugs = new Set(entries.map(entry => entry.slug));
-    for (const entry of entries) {
-        for (const related of entry.related) {
-            if (related === entry.slug) {
-                errors.push(`${entry.slug}: related에 자기 자신이 들어 있다`);
-            } else if (!knownSlugs.has(related)) {
-                errors.push(
-                    `${entry.slug}: related(${related})가 존재하지 않는 slug다`
-                );
-            }
-        }
-    }
+    const builds = [...Map.groupBy(files, file => file.slug)].map(
+        ([slug, group]) => buildEntry(slug, group)
+    );
+    const entries = builds.flatMap(build =>
+        build.entry === null ? [] : [build.entry]
+    );
+    const errors = [
+        ...builds.flatMap(build => build.errors),
+        ...relatedErrors(entries),
+    ];
 
     if (errors.length > 0) {
         throw new Error(
@@ -260,7 +293,7 @@ export function buildGuideSeed(files: readonly ParsedGuideFile[]): GuideSeed {
         );
     }
 
-    return { entries, warnings };
+    return { entries, warnings: builds.flatMap(build => build.warnings) };
 }
 
 /** 시드 디렉터리 전체를 읽어 검증한다. */
