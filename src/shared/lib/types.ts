@@ -8,6 +8,7 @@ import type {
     RunMacroBriefingResult,
 } from '@y0ngha/siglens-core';
 import type { DashboardScopeId } from '@/shared/config/dashboardScope';
+import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 
 /**
  * `FearGreedSnapshot.confidence`의 narrowed 형태(`'normal' | 'limited'`).
@@ -168,10 +169,8 @@ export interface AnalysisGateError {
  * 실려 클라이언트로 간다. 필드가 없으면 미터가 적용되지 않은 응답(회원·정책 없음·
  * 크롤러·시행 전·저장소 장애)이다.
  */
-export type AnalysisMeterState = 'revealed' | 'exhausted';
-
 export interface AnalysisMeter {
-    readonly state: AnalysisMeterState;
+    readonly state: MeterState;
 }
 
 /** Gate denial result — mirrors core's `{ status: 'error' }` discriminator. */

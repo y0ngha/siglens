@@ -58,7 +58,7 @@ export interface FunnelEventRepository {
         toExclusive: Date
     ): Promise<SignupCohortRow[]>;
     /**
-     * `meter_shown` 상태별 방문자 수와, 그중 노출 뒤 7일 안에 같은 `visitor_hash`로
+     * `meter_shown` 상태별 방문자 수와, 그중 노출 뒤 {@link METER_CONVERSION_WINDOW_DAYS}일 안에 같은 `visitor_hash`로
      * `signup_completed`가 기록된 방문자 수. 하루 무료 공개를 본 사람과 소진 잠금을 본
      * 사람의 가입 전환을 같은 기간 안에서 비교하는 용도다.
      */
@@ -66,7 +66,7 @@ export interface FunnelEventRepository {
 }
 
 /** 노출 뒤 가입을 같은 방문자의 전환으로 치는 기간(일). */
-const METER_CONVERSION_WINDOW_DAYS = 7;
+export const METER_CONVERSION_WINDOW_DAYS = 7;
 
 export class DrizzleFunnelEventRepository implements FunnelEventRepository {
     constructor(private readonly db: SiglensDatabase) {}

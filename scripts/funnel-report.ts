@@ -3,14 +3,17 @@
  *  1. 게이트·넛지별 게이트 클릭·노출·CTA 클릭·클릭률·그 게이트를 lastGate로 가진 가입 수
  *  2. 가입 방식 × lastGate 분포
  *  3. 가입 주별 D7·D30 재방문율(가입일 +7·+30 이후 7일 창)
- *  4. 하루 무료 공개 미터 — 노출 상태별 방문자와 이후 7일 안 가입 전환
+ *  4. 하루 무료 공개 미터 — 노출 상태별 방문자와 이후 전환 창(`METER_CONVERSION_WINDOW_DAYS`) 안 가입 전환
  *
  * 실행: `yarn funnel:report --from 2026-10-01 --to 2026-10-31` (KST, 양끝 포함)
  * 운영 DB는 `yarn db:tunnel`로 터널을 연 뒤 **읽기 전용 URL**로 — `scripts/metrics.ts`와
  * 같은 관례. 읽기만 하므로 원격 쓰기 가드(`guardRemoteWrite`)는 부르지 않는다.
  * 대시보드 UI는 범위 밖이다.
  */
-import { DrizzleFunnelEventRepository } from '@/entities/funnel/api';
+import {
+    DrizzleFunnelEventRepository,
+    METER_CONVERSION_WINDOW_DAYS,
+} from '@/entities/funnel/api';
 import { endDatabaseClient, getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import {
@@ -100,7 +103,9 @@ async function main(): Promise<void> {
     );
 
     console.log('');
-    console.log('4. 하루 무료 공개 미터 (노출 뒤 7일 안 가입)');
+    console.log(
+        `4. 하루 무료 공개 미터 (노출 뒤 ${METER_CONVERSION_WINDOW_DAYS}일 안 가입)`
+    );
     console.log(
         renderTable(
             ['노출 상태', '방문자', '가입', '전환율'],
@@ -113,7 +118,7 @@ async function main(): Promise<void> {
         )
     );
     console.log(
-        '(같은 기간 안에서 revealed와 exhausted를 비교한다. 최근 7일 안의 노출은 아직 전환 창이 닫히지 않았다)'
+        `(같은 기간 안에서 revealed와 exhausted를 비교한다. 최근 ${METER_CONVERSION_WINDOW_DAYS}일 안의 노출은 아직 전환 창이 닫히지 않았다)`
     );
 }
 

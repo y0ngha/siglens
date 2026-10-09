@@ -1,3 +1,5 @@
+import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
+
 /** `countByKeyAndEvent` 한 행 — key는 context의 gate·kind·lastGate 중 있는 것. */
 export interface FunnelKeyEventCount {
     readonly key: string | null;
@@ -21,11 +23,11 @@ export interface SignupCohortRow {
 }
 
 /**
- * `meter_shown`을 본 방문자와, 그중 이후 7일 안에 `signup_completed`를 남긴 방문자 —
+ * `meter_shown`을 본 방문자와, 그중 이후 `METER_CONVERSION_WINDOW_DAYS`일 안에 `signup_completed`를 남긴 방문자 —
  * 공개(`revealed`)·소진(`exhausted`) 상태별. 방문자 단위는 `visitor_hash`다.
  */
 export interface MeterCohortRow {
-    readonly state: string;
+    readonly state: MeterState;
     readonly visitors: number;
     readonly signups: number;
 }

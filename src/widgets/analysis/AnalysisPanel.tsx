@@ -40,7 +40,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { useFunnelMeterShown } from '@/shared/hooks/useFunnelMeterShown';
-import type { AnalysisMeterState } from '@/shared/lib/types';
+import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { LABEL_GROUP, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import {
@@ -66,6 +66,7 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { formatFixed } from '@/shared/lib/formatNum';
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
+import { selectLockedCardCopy } from '@/widgets/analysis/utils/lockedCardCopy';
 
 /** 패널이 가격을 내는 소수 자릿수. */
 const PRICE_FRACTION_DIGITS = 2;
@@ -1024,7 +1025,7 @@ interface AnalysisPanelProps {
      * 종목이라 진입·손절·목표가 위에 안내 띠를 보이고, `exhausted`면 잠금 카드 문구를
      * 소진 안내로 바꾼다. `null`/미전달이면 미터와 무관한 기존 화면이다.
      */
-    meter?: AnalysisMeterState | null;
+    meter?: MeterState | null;
     /**
      * `chartOverlays[].sourceRef` 집합 — 패턴/전략 카드 중 이 집합에 속한
      * `id`만 '차트에서 보기' 토글을 렌더한다('원본' 보기 전용 — 쉽게보기 산문에는
@@ -1082,17 +1083,23 @@ export function AnalysisPanel({
         getMeteredRevealPolicy('free')?.dailySymbols ??
         FALLBACK_METER_DAILY_SYMBOLS;
     const isMeterExhausted = meter === 'exhausted';
-    const lockedCardTitle = isMeterExhausted
-        ? tPanel('meter.exhaustedTitle')
-        : t('AnalysisPanel.120a0a');
-    const lockedCardBody = resolveLockedCardBody();
-    function resolveLockedCardBody(): string {
-        if (isMeterExhausted)
-            return tPanel('meter.exhaustedBody', { count: meterDailySymbols });
-        if (skillCount > 0)
-            return tPanel('signupSkillUpsell', { v0: skillCount });
-        return t('AnalysisPanel.f0256c');
-    }
+    const lockedCardCopy = selectLockedCardCopy({
+        isMeterExhausted,
+        skillCount,
+        meterDailySymbols,
+    });
+    const lockedCardTitle =
+        lockedCardCopy.title === 'meterExhausted'
+            ? tPanel('meter.exhaustedTitle')
+            : t('AnalysisPanel.120a0a');
+    const lockedCardBody =
+        lockedCardCopy.body.kind === 'meterExhausted'
+            ? tPanel('meter.exhaustedBody', {
+                  count: lockedCardCopy.body.count,
+              })
+            : lockedCardCopy.body.kind === 'skillUpsell'
+              ? tPanel('signupSkillUpsell', { v0: lockedCardCopy.body.count })
+              : t('AnalysisPanel.f0256c');
     const overlayControls = toOverlayCardControls(
         hiddenOverlayKeys,
         onToggleOverlay,

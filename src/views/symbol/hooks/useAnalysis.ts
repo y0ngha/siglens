@@ -21,10 +21,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
+import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import type {
     AnalysisGateBlockedResult,
     AnalysisMeter,
-    AnalysisMeterState,
 } from '@/shared/lib/types';
 
 /**
@@ -188,7 +188,7 @@ export interface UseAnalysisResult {
      * 서버가 이번 응답에 실은 하루 무료 공개 미터 판정. 미터가 적용되지 않았거나 아직
      * 응답이 없으면 `null`이다.
      */
-    meter: AnalysisMeterState | null;
+    meter: MeterState | null;
     /**
      * 캐시에 분석이 없고 AI 자동 실행 게이트가 닫혀 생성을 미뤄 둔 상태.
      * 호출부는 "AI 분석 시작" 대기 화면을 보여 준다(`AiAnalysisAwaitingSection`).
@@ -256,7 +256,7 @@ export function useAnalysis({
     // SSE 분석 라우트의 `personalized` 플래그를 그대로 미러링 — 배지의
     // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
     const [isPersonalized, setIsPersonalized] = useState(false);
-    const [meter, setMeter] = useState<AnalysisMeterState | null>(null);
+    const [meter, setMeter] = useState<MeterState | null>(null);
     const [isAwaitingInteraction, setIsAwaitingInteraction] = useState(false);
     /**
      * onMutate가 화면을 비우기 직전의 상태 스냅샷.
