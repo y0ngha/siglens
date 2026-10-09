@@ -8,3 +8,5 @@ export const WATCHLIST_MAX_MEMBER = 50;
 export const WATCHLIST_MAX_LOCAL = 20;
 /** 홈 온보딩 블록이 한 줄 요약으로 접히는 담은 개수 하한(§6.2 접힘 규칙). */
 export const WATCHLIST_ONBOARDING_COLLAPSE_COUNT = 3;
+/** 클라이언트가 넘긴 표시명(`company_name`)의 최대 글자 수. 서버가 해석한 이름에는 적용하지 않는다. */
+export const WATCHLIST_LABEL_MAX_LENGTH = 100;
