@@ -134,6 +134,8 @@ next-env.d.ts
 # MAU/DAU 조회 스크립트 — `yarn metrics`가 이 파일을 실행한다. 추적하지 않으면
 # fresh checkout에서 스크립트가 사라진다.
 !/scripts/metrics.ts
+# 가입 퍼널 리포트 — `yarn funnel:report`가 이 파일을 실행한다. 순수 helper는 scripts/lib에 있다.
+!/scripts/funnel-report.ts
 # IndexNow 1회성 백필(색인에서 빠진 URL 재크롤 요청) — 순수 helper는 scripts/lib에 있다.
 !/scripts/indexnow-backfill.ts
 

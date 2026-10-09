@@ -1,9 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import type { GateMode } from '@/shared/lib/types';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
 import { LockIcon } from '@/shared/ui/StrokeIcons';
@@ -26,6 +28,21 @@ export function PremiumModelGateModal({
     const tMisc = useTranslations('shared.ui.misc');
 
     const isAuth = mode === 'auth';
+
+    // byok 모드는 로그인한 회원에게 API 키 등록을 안내하는 모달이다 — 가입 유도가 아니라
+    // 비회원 퍼널에 넣지 않는다(노출·클릭 모두).
+    useFunnelNudgeShown({ kind: 'model_gate' }, isAuth);
+
+    // auth는 가입 페이지로, byok는 계정 설정(API 키 등록)으로 보낸다.
+    const handleCtaClick = (): void => {
+        if (isAuth) {
+            trackFunnelEvent('nudge_clicked', {
+                kind: 'model_gate',
+                cta: 'signup',
+            });
+        }
+        onClose();
+    };
     const iconColorClass = isAuth
         ? 'text-ui-warning-text'
         : 'text-ui-success-text';
@@ -57,7 +74,7 @@ export function PremiumModelGateModal({
                 {isAuth ? (
                     <Link
                         href="/signup"
-                        onClick={onClose}
+                        onClick={handleCtaClick}
                         className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                     >
                         {t('PremiumModelGateModal.2b8afd')}
@@ -65,7 +82,7 @@ export function PremiumModelGateModal({
                 ) : (
                     <Link
                         href="/account"
-                        onClick={onClose}
+                        onClick={handleCtaClick}
                         className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                     >
                         {t('PremiumModelGateModal.e91c23')}

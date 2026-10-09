@@ -10,8 +10,9 @@ const BOT_UA =
 const recordVisit = vi.fn().mockResolvedValue(undefined);
 const pruneOlderThan = vi.fn().mockResolvedValue(undefined);
 let requestHeaders = new Headers();
-const { afterTasks } = vi.hoisted(() => ({
+const { afterTasks, auth } = vi.hoisted(() => ({
     afterTasks: [] as Promise<unknown>[],
+    auth: { user: null as { id: string } | null, fail: false },
 }));
 
 /** 응답 뒤로 미룬 작업(`after()`)을 모두 끝낸다. */
@@ -58,6 +59,13 @@ vi.mock('@/entities/visitor/lib/visitorHash', () => ({
         `hash(${pepper}|${ip}|${ua})`,
 }));
 
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+    getCurrentUser: () =>
+        auth.fail
+            ? Promise.reject(new Error('session store down'))
+            : Promise.resolve(auth.user),
+}));
+
 /**
  * 라우트가 모듈 스코프에 마지막 prune 날짜를 들고 있다. 테스트마다
  * 새로 import해야 그 상태가 격리된다.
@@ -71,6 +79,8 @@ describe('POST /api/presence', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         afterTasks.length = 0;
+        auth.user = null;
+        auth.fail = false;
         // `Date.now()`를 고정한다 — 정리 기준일 케이스가 오늘로부터 400일 전을
         // 단언하므로 실제 시각으로 돌면 날짜가 매일 어긋난다.
         vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -105,7 +115,34 @@ describe('POST /api/presence', () => {
             country: 'KR',
             // 쿼리스트링은 버린다.
             landingPath: '/ko/AAPL',
+            userId: null,
         });
+    });
+
+    it('로그인 회원이면 user_id를 함께 남긴다', async () => {
+        auth.user = { id: 'user-42' };
+        const { POST } = await importRoute();
+        await POST();
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: 'user-42' })
+        );
+    });
+
+    it('회원 확정이 실패해도 비회원 방문으로 기록하고 204를 준다', async () => {
+        auth.fail = true;
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const { POST } = await importRoute();
+        expect((await POST()).status).toBe(HTTP_STATUS_NO_CONTENT);
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: null })
+        );
+        expect(spy).toHaveBeenCalledWith(
+            '[visitor-metrics] getCurrentUser failed:',
+            expect.any(Error)
+        );
+        spy.mockRestore();
     });
 
     it('헤더가 없으면 진단 컬럼을 null로 남긴다', async () => {

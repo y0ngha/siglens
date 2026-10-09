@@ -523,6 +523,15 @@ describe('registerAction', () => {
                     httpOnly: false,
                 })
             );
+            // 퍼널 가입 완료 이벤트용 쿠키 — Ads 플래그와 별개다(소비자가 다르다).
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_funnel_signup',
+                    value: 'email',
+                    domain: 'siglens.io',
+                    httpOnly: false,
+                })
+            );
         });
 
         it('redirect 제어 신호는 에러 로그로 기록하지 않는다', async () => {

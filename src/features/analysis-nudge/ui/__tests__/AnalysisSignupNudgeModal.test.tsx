@@ -33,10 +33,19 @@ vi.mock('@/shared/hooks/useFocusTrap', () => ({
     useFocusTrap: vi.fn(),
 }));
 
+const track = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: track,
+}));
+
 describe('AnalysisSignupNudgeModal', () => {
     it('renders the nudge title and body copy', () => {
         render(
-            <AnalysisSignupNudgeModal variant="reasoning" onClose={vi.fn()} />
+            <AnalysisSignupNudgeModal
+                kind="reasoning_toggle"
+                variant="reasoning"
+                onClose={vi.fn()}
+            />
         );
         expect(
             screen.getByText('더 깊은 분석을 원하세요?')
@@ -52,7 +61,11 @@ describe('AnalysisSignupNudgeModal', () => {
 
     it('emailReport 문구는 메일 리포트를 알리고 상세 분석 문구는 싣지 않는다', () => {
         render(
-            <AnalysisSignupNudgeModal variant="emailReport" onClose={vi.fn()} />
+            <AnalysisSignupNudgeModal
+                kind="anon_auto"
+                variant="emailReport"
+                onClose={vi.fn()}
+            />
         );
         expect(
             screen.getByRole('heading', {
@@ -72,7 +85,11 @@ describe('AnalysisSignupNudgeModal', () => {
 
     it('renders the signup CTA linking to /signup', () => {
         render(
-            <AnalysisSignupNudgeModal variant="reasoning" onClose={vi.fn()} />
+            <AnalysisSignupNudgeModal
+                kind="reasoning_toggle"
+                variant="reasoning"
+                onClose={vi.fn()}
+            />
         );
         expect(
             screen.getByRole('link', { name: '회원가입 하러 가기' })
@@ -81,7 +98,11 @@ describe('AnalysisSignupNudgeModal', () => {
 
     it('has dialog a11y attributes', () => {
         render(
-            <AnalysisSignupNudgeModal variant="reasoning" onClose={vi.fn()} />
+            <AnalysisSignupNudgeModal
+                kind="reasoning_toggle"
+                variant="reasoning"
+                onClose={vi.fn()}
+            />
         );
         const dialog = screen.getByRole('dialog');
         expect(dialog).toHaveAttribute(
@@ -93,7 +114,11 @@ describe('AnalysisSignupNudgeModal', () => {
     it('calls onClose when the close button is clicked', async () => {
         const onClose = vi.fn();
         render(
-            <AnalysisSignupNudgeModal variant="reasoning" onClose={onClose} />
+            <AnalysisSignupNudgeModal
+                kind="reasoning_toggle"
+                variant="reasoning"
+                onClose={onClose}
+            />
         );
         const user = userEvent.setup();
         await user.click(screen.getByText('닫기'));
@@ -103,7 +128,11 @@ describe('AnalysisSignupNudgeModal', () => {
     it('calls onClose when the signup CTA is clicked (dismisses the modal on navigation)', async () => {
         const onClose = vi.fn();
         render(
-            <AnalysisSignupNudgeModal variant="reasoning" onClose={onClose} />
+            <AnalysisSignupNudgeModal
+                kind="reasoning_toggle"
+                variant="reasoning"
+                onClose={onClose}
+            />
         );
         const user = userEvent.setup();
         await user.click(
@@ -115,10 +144,82 @@ describe('AnalysisSignupNudgeModal', () => {
     it('calls onClose when the backdrop is clicked', async () => {
         const onClose = vi.fn();
         render(
-            <AnalysisSignupNudgeModal variant="reasoning" onClose={onClose} />
+            <AnalysisSignupNudgeModal
+                kind="reasoning_toggle"
+                variant="reasoning"
+                onClose={onClose}
+            />
         );
         const user = userEvent.setup();
         await user.click(screen.getByTestId('modal-backdrop'));
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    describe('퍼널 이벤트', () => {
+        beforeEach(() => {
+            track.mockReset();
+        });
+
+        it('자동 넛지로 열리면 nudge_shown{anon_auto, variant}를 한 번 보낸다', () => {
+            render(
+                <AnalysisSignupNudgeModal
+                    kind="anon_auto"
+                    variant="emailReport"
+                    onClose={vi.fn()}
+                />
+            );
+            expect(
+                track.mock.calls.filter(([event]) => event === 'nudge_shown')
+            ).toEqual([
+                ['nudge_shown', { kind: 'anon_auto', variant: 'emailReport' }],
+            ]);
+        });
+
+        it('잠긴 토글 클릭으로 열리면 variant 없이 nudge_shown{reasoning_toggle}', () => {
+            render(
+                <AnalysisSignupNudgeModal
+                    kind="reasoning_toggle"
+                    variant="reasoning"
+                    onClose={vi.fn()}
+                />
+            );
+            expect(track).toHaveBeenCalledWith('nudge_shown', {
+                kind: 'reasoning_toggle',
+            });
+        });
+
+        it('가입 CTA 클릭은 nudge_clicked{cta: signup}을 보낸다', async () => {
+            render(
+                <AnalysisSignupNudgeModal
+                    kind="anon_auto"
+                    variant="reasoning"
+                    onClose={vi.fn()}
+                />
+            );
+            await userEvent
+                .setup()
+                .click(
+                    screen.getByRole('link', { name: '회원가입 하러 가기' })
+                );
+            expect(track).toHaveBeenCalledWith('nudge_clicked', {
+                kind: 'anon_auto',
+                variant: 'reasoning',
+                cta: 'signup',
+            });
+        });
+
+        it('닫기는 nudge_clicked를 보내지 않는다', async () => {
+            render(
+                <AnalysisSignupNudgeModal
+                    kind="reasoning_toggle"
+                    variant="reasoning"
+                    onClose={vi.fn()}
+                />
+            );
+            await userEvent.setup().click(screen.getByText('닫기'));
+            expect(
+                track.mock.calls.some(([event]) => event === 'nudge_clicked')
+            ).toBe(false);
+        });
     });
 });

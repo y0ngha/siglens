@@ -16,6 +16,7 @@ import {
     REGISTERED_PROVIDERS_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { resolveGateAccess } from '@/shared/lib/modelAccess';
 
 export interface ModelGateState {
@@ -81,6 +82,9 @@ export function useModelGate({
         if (access !== 'free') {
             const requiredProvider = getProviderForModel(model);
             if (!currentUser) {
+                // 잠긴 모델 선택 = 비회원이 게이트를 여는 클릭. 모달 노출은 모달이 따로 센다.
+                // 아래 byok 분기는 회원 전용 API 키 안내라 기록하지 않는다.
+                trackFunnelEvent('gate_clicked', { gate: 'model' });
                 setGateModal({ mode: 'auth', provider: requiredProvider });
                 return;
             }

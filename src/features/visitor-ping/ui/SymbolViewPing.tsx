@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { postBeacon, sendOnHumanInteraction } from '../lib/beacon';
+import { postBeacon, sendOnHumanInteraction } from '@/shared/lib/beacon';
 
 /** 오늘(KST) 이미 보낸 심볼 목록. 날짜가 바뀌면 버린다. */
 const STORAGE_KEY = 'siglens:symbol-views';

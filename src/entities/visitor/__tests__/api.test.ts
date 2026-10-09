@@ -1,19 +1,21 @@
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi } from 'vitest';
 import { DrizzleVisitorRepository } from '@/entities/visitor/api';
+import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 function makeInsertDb(): {
     db: SiglensDatabase;
     values: ReturnType<typeof vi.fn>;
-    onConflictDoNothing: ReturnType<typeof vi.fn>;
+    onConflictDoUpdate: ReturnType<typeof vi.fn>;
 } {
-    const onConflictDoNothing = vi.fn().mockResolvedValue(undefined);
-    const values = vi.fn(() => ({ onConflictDoNothing }));
+    const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+    const values = vi.fn(() => ({ onConflictDoUpdate }));
     const insert = vi.fn(() => ({ values }));
     return {
         db: { insert } as unknown as SiglensDatabase,
         values,
-        onConflictDoNothing,
+        onConflictDoUpdate,
     };
 }
 
@@ -57,20 +59,51 @@ function makeSelectDb(rows: unknown[]): SiglensDatabase {
 }
 
 describe('DrizzleVisitorRepository', () => {
-    it('recordVisit은 진단 컬럼까지 담아 중복을 무시하고 삽입한다', async () => {
-        const { db, values, onConflictDoNothing } = makeInsertDb();
+    it('recordVisit은 진단 컬럼과 user_id까지 담아 삽입한다', async () => {
+        const { db, values } = makeInsertDb();
         const visit = {
             visitorHash: 'hash-1',
             date: '2026-09-02',
             userAgent: 'Mozilla/5.0 (Macintosh) Chrome/140.0.0.0',
             country: 'KR',
             landingPath: '/ko/AAPL',
+            userId: 'user-1',
         };
         await new DrizzleVisitorRepository(db).recordVisit(visit);
-
         expect(values).toHaveBeenCalledWith(visit);
-        // 같은 방문자가 하루에 여러 번 와도 행은 하나여야 한다.
-        expect(onConflictDoNothing).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * 같은 날 익명으로 먼저 왔다가 로그인하면 행이 이미 있다. 그 행의 user_id만 채우고,
+     * 한 번 채워진 값은 바꾸지 않는다(COALESCE) — 두 번째 테스트가 그 SQL을 고정한다.
+     */
+    it('recordVisit은 (date, visitor_hash) 충돌 시 user_id만 COALESCE로 채운다', async () => {
+        const { db, onConflictDoUpdate } = makeInsertDb();
+        await new DrizzleVisitorRepository(db).recordVisit({
+            visitorHash: 'hash-1',
+            date: '2026-09-02',
+            userAgent: null,
+            country: null,
+            landingPath: null,
+            userId: null,
+        });
+        expect(onConflictDoUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                target: [visitorDays.date, visitorDays.visitorHash],
+            })
+        );
+        const [{ set, setWhere }] = onConflictDoUpdate.mock.calls.find(
+            ([arg]) => arg !== undefined
+        ) as [{ set: { userId: unknown }; setWhere: never }];
+        expect(Object.keys(set)).toEqual(['userId']);
+        const rendered = new PgDialect().sqlToQuery(set.userId as never);
+        expect(rendered.sql).toBe(
+            'coalesce("visitor_days"."user_id", excluded.user_id)'
+        );
+        // 채울 때만 쓴다: 기존 user_id가 비어 있고 들어온 값이 있을 때.
+        expect(new PgDialect().sqlToQuery(setWhere).sql).toBe(
+            '("visitor_days"."user_id" is null and excluded.user_id is not null)'
+        );
     });
 
     it('pruneOlderThan은 삭제를 한 번 건다', async () => {

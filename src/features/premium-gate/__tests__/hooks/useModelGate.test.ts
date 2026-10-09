@@ -29,6 +29,11 @@ vi.mock('@tanstack/react-query', () => ({
     },
 }));
 
+const track = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: track,
+}));
+
 vi.mock('@/entities/auth/hooks/useAuthHint', () => ({
     useAuthHint: () => mockHasAuthHint,
 }));
@@ -252,6 +257,62 @@ describe('useModelGate', () => {
         expect(result.current.gateModal).toEqual({
             mode: 'byok',
             provider: 'anthropic',
+        });
+    });
+
+    describe('퍼널 gate_clicked{model}', () => {
+        beforeEach(() => {
+            track.mockReset();
+        });
+
+        it('게스트가 잠긴 모델을 고르면 게이트가 열리며 기록한다', () => {
+            mockCurrentUser = null;
+            const { result } = renderHook(() =>
+                useModelGate({ onAllow: vi.fn() })
+            );
+            act(() =>
+                result.current.handleModelChange('premium-model' as ModelId)
+            );
+            expect(result.current.gateModal?.mode).toBe('auth');
+            expect(track).toHaveBeenCalledWith('gate_clicked', {
+                gate: 'model',
+            });
+        });
+
+        it('회원이 키 없는 byok 모델을 고르면 byok 게이트가 열리지만 기록하지 않는다', () => {
+            mockCurrentUser = { tier: 'member' };
+            mockRegisteredProviders = [];
+            const { result } = renderHook(() =>
+                useModelGate({ onAllow: vi.fn() })
+            );
+            act(() =>
+                result.current.handleModelChange('premium-model' as ModelId)
+            );
+            expect(result.current.gateModal?.mode).toBe('byok');
+            expect(track).not.toHaveBeenCalled();
+        });
+
+        it('free 모델 통과는 기록하지 않는다', () => {
+            const onAllow = vi.fn();
+            const { result } = renderHook(() => useModelGate({ onAllow }));
+            act(() =>
+                result.current.handleModelChange('free-model' as ModelId)
+            );
+            expect(onAllow).toHaveBeenCalledWith('free-model');
+            expect(track).not.toHaveBeenCalled();
+        });
+
+        it('showGate 프로그램 호출은 클릭이 아니라 기록하지 않는다', () => {
+            const { result } = renderHook(() =>
+                useModelGate({ onAllow: vi.fn() })
+            );
+            act(() =>
+                result.current.showGate({
+                    mode: 'byok',
+                    provider: 'anthropic' as LlmProvider,
+                })
+            );
+            expect(track).not.toHaveBeenCalled();
         });
     });
 });

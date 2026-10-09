@@ -8,21 +8,20 @@
  * 경로가 `analytics`·`track`·`collect`가 아닌 이유: EasyList 계열 차단 목록이
  * 그 단어가 든 경로를 막는다.
  */
-import { constants } from 'node:http2';
 import { headers } from 'next/headers';
-import { buildVisitorHash } from '@/entities/visitor/lib/visitorHash';
 import {
     DrizzleVisitorRepository,
     type VisitorDayRecord,
 } from '@/entities/visitor/api';
-import { getClientIp } from '@/shared/api/getClientIp';
-import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { createDailyPruner, noContent } from './_shared/dailyPruner';
-
-const { HTTP_STATUS_INTERNAL_SERVER_ERROR } = constants;
+import { resolveUserId } from './_shared/resolveUserId';
+import {
+    rejectUncountedRequest,
+    resolveVisitorIdentity,
+} from './_shared/visitorIdentity';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,36 +52,26 @@ export async function POST(): Promise<Response> {
 
     // 봇 필터 2층. 1층은 이 라우트에 도달하지도 않는다 — 비콘이 JS 실행을
     // 요구하므로 JS를 돌리지 않는 크롤러는 애초에 요청을 만들지 않는다.
-    if (isBot(headerList)) return noContent();
-    if (process.env.NODE_ENV !== 'production') return noContent();
+    const rejected = rejectUncountedRequest(headerList);
+    if (rejected !== null) return rejected;
 
-    const pepper = process.env.VISITOR_HASH_PEPPER ?? '';
-    if (pepper === '') {
-        // 조용히 0이 찍히는 것이 최악이다. 프로덕션 로그에 남긴다.
-        console.error(
-            '[visitor-metrics] VISITOR_HASH_PEPPER is not set — visits are not being recorded'
-        );
-        return new Response(null, {
-            status: HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        });
-    }
+    const identity = await resolveVisitorIdentity(
+        headerList,
+        '[visitor-metrics]',
+        'visits'
+    );
+    if (!identity.ok) return identity.response;
 
     const today = kstDateKey(new Date());
-    // 헤더가 없었던 경우와 빈 문자열이 온 경우를 구분해 저장한다. 해시 입력은
-    // 종전과 같이 빈 문자열로 정규화해야 기존 방문자의 해시가 유지된다.
-    const userAgentHeader = headerList.get('user-agent');
-    const visitorHash = buildVisitorHash(
-        pepper,
-        await getClientIp(),
-        userAgentHeader ?? ''
-    );
 
     const visit: VisitorDayRecord = {
-        visitorHash,
+        visitorHash: identity.visitorHash,
         date: today,
-        userAgent: userAgentHeader,
+        userAgent: identity.userAgent,
         country: headerList.get('cf-ipcountry'),
         landingPath: landingPathOf(headerList.get('referer')),
+        // 회원 D7/D30 재방문의 축. 세션 쿠키가 없으면 DB 왕복 없이 null이다.
+        userId: await resolveUserId('[visitor-metrics]'),
     };
     // 헤더는 위에서 다 읽었다 — 기록은 응답 뒤로 미룬다(`recordVisitAndPrune`).
     afterWithDrain(() => recordVisitAndPrune(visit));

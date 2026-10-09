@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { postBeacon, sendOnHumanInteraction } from '../lib/beacon';
+import { postBeacon, sendOnHumanInteraction } from '@/shared/lib/beacon';
 
 /** 마지막으로 비콘을 보낸 KST 날짜를 담는다. */
 const STORAGE_KEY = 'siglens:visit';

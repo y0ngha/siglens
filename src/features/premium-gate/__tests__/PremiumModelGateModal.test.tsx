@@ -18,6 +18,11 @@ vi.mock('next/link', () => ({
     }) => <a {...props}>{children}</a>,
 }));
 
+const track = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: track,
+}));
+
 describe('PremiumModelGateModal', () => {
     const onClose = vi.fn();
 
@@ -114,5 +119,36 @@ describe('PremiumModelGateModal', () => {
         render(<PremiumModelGateModal mode="auth" onClose={onClose} />);
         await user.click(screen.getByTestId('modal-backdrop'));
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    describe('퍼널 이벤트', () => {
+        it('열리면 nudge_shown{model_gate}를 한 번 보낸다', () => {
+            render(<PremiumModelGateModal mode="auth" onClose={onClose} />);
+            expect(
+                track.mock.calls.filter(([event]) => event === 'nudge_shown')
+            ).toEqual([['nudge_shown', { kind: 'model_gate' }]]);
+        });
+
+        it('auth 모드의 가입 CTA는 cta=signup', async () => {
+            const user = userEvent.setup();
+            render(<PremiumModelGateModal mode="auth" onClose={onClose} />);
+            await user.click(
+                screen.getByRole('link', { name: '회원가입 하러 가기' })
+            );
+            expect(track).toHaveBeenCalledWith('nudge_clicked', {
+                kind: 'model_gate',
+                cta: 'signup',
+            });
+            expect(onClose).toHaveBeenCalledTimes(1);
+        });
+
+        it('byok 모드는 회원 전용 안내라 노출도 클릭도 기록하지 않는다', async () => {
+            const user = userEvent.setup();
+            render(<PremiumModelGateModal mode="byok" onClose={onClose} />);
+            await user.click(
+                screen.getByRole('link', { name: '등록하러 가기' })
+            );
+            expect(track).not.toHaveBeenCalled();
+        });
     });
 });

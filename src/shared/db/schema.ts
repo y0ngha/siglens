@@ -19,6 +19,7 @@ import {
     uuid,
     varchar,
 } from 'drizzle-orm/pg-core';
+import type { FunnelEventContext } from '@/shared/lib/funnel/funnelEvents';
 import { LOCALES } from '@/shared/i18n/locales';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import {
@@ -155,8 +156,52 @@ export const visitorDays = pgTable(
          * 들어오는지를 보는 용도.
          */
         landingPath: text('landing_path'),
+        /**
+         * 비콘을 보낸 시점에 로그인한 회원이면 그 id. 회원 D7/D30 재방문율의 축이다
+         * (`scripts/funnel-report.ts`). 탈퇴하면 SET NULL — 방문 행(익명 집계)은 남고 회원
+         * 연결만 끊긴다. 같은 날 익명으로 먼저 왔다가 로그인하면 행이 이미 있으므로
+         * `recordVisit`이 `COALESCE(user_id, excluded.user_id)`로 **한 번만** 채운다.
+         */
+        userId: uuid('user_id').references(() => users.id, {
+            onDelete: 'set null',
+        }),
     },
-    table => [primaryKey({ columns: [table.date, table.visitorHash] })]
+    table => [
+        primaryKey({ columns: [table.date, table.visitorHash] }),
+        index('visitor_days_user_id_idx').on(table.userId, table.date),
+    ]
+);
+
+/**
+ * 가입 퍼널 이벤트 — 넛지 노출·클릭, 잠긴 요소 클릭, 가입 완료, 관심종목·리포트 설정.
+ * 카탈로그와 context 형태는 `shared/lib/funnel/funnelEvents.ts`가 닫힌 유니언으로 정한다.
+ * 검색어·URL·자유 문장은 넣지 않는다. 보존 400일(`visitor_days`와 같은 근거) —
+ * `src/app/api/presence/funnel/route.ts`의 `RETENTION_DAYS`와 방침 §4가 같이 움직인다.
+ */
+export const funnelEvents = pgTable(
+    'funnel_events',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        occurredAt: timestamp('occurred_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        /** `visitor_days`와 같은 해시(`buildVisitorHash`). */
+        visitorHash: text('visitor_hash').notNull(),
+        /** 로그인 회원이면 채운다. 탈퇴 시 cascade 삭제. */
+        userId: uuid('user_id').references(() => users.id, {
+            onDelete: 'cascade',
+        }),
+        event: text('event').notNull(),
+        /** 이벤트별 소량 컨텍스트. 자유 텍스트 금지. */
+        context: jsonb('context')
+            .$type<FunnelEventContext>()
+            .notNull()
+            .default(sql`'{}'::jsonb`),
+    },
+    table => [
+        index('funnel_events_event_time_idx').on(table.event, table.occurredAt),
+        index('funnel_events_user_time_idx').on(table.userId, table.occurredAt),
+    ]
 );
 
 /**

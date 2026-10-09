@@ -8,6 +8,7 @@ import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClie
 import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
+import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_VIEWPORT } from '@/shared/config/viewport';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
@@ -101,6 +102,9 @@ export default async function AiRootLayout({
                         <ReactQueryProvider>
                             <SearchOverlayProvider>
                                 <VisitorPing />
+                                {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
+                                렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
+                                <FunnelSignupPing />
                                 <AuthSessionHeaderClient authReturn="ai" />
                                 {disabled ? (
                                     <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">

@@ -9,6 +9,7 @@ import {
     toSameOriginPath,
 } from '@/shared/lib/auth/redirect';
 import { createSignupConversionCookie } from '@/shared/lib/googleAds';
+import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import {
@@ -148,6 +149,8 @@ export async function finalizeOAuthSignupAction(
         // 신규 계정 생성이 확정된 뒤에만 도달한다 — 다음 페이지의 GoogleAdsTag가
         // 이 플래그를 읽어 가입 전환을 한 번 기록하고 지운다.
         cookieStore.set(createSignupConversionCookie({ secure }));
+        // 다음 페이지의 `FunnelSignupPing`이 읽어 `signup_completed`를 보내고 지운다.
+        cookieStore.set(createFunnelSignupCookie({ method: 'oauth', secure }));
 
         // 리다이렉트 싱크 바로 앞에서 URL 파서로 같은-오리진 경로만 남긴다.
         // 문자열 검사(sanitizeNextPath)가 놓칠 수 있는 절대/프로토콜-상대 URL을

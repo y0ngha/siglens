@@ -9,6 +9,7 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { GearIcon } from '@/shared/ui/GearIcon';
 import { PopoverSurface } from '@/shared/ui/PopoverSurface';
@@ -72,6 +73,13 @@ export function AnalysisSettingsMenu({
     // (`DEEPSEEK_V4_1_FLASH_MODEL`) rather than hardcoding a model id here.
     const isActive = reasoning || modelId !== DEEPSEEK_V4_1_FLASH_MODEL;
 
+    // 잠긴 토글 클릭 = 가입 넛지를 여는 게이트. 모달 노출(`nudge_shown`)은 모달이 따로 센다 —
+    // 둘 다 기록되는 것이 의도다(전자는 "눌렀다", 후자는 "모달을 봤다").
+    const handleLockedReasoningClick = (): void => {
+        trackFunnelEvent('gate_clicked', { gate: 'reasoning_toggle' });
+        openSignupNudge();
+    };
+
     // Same source ModelSelector reads its own trigger label from — the gear's
     // accessible name/title surface the active model without widening the
     // header row back out (declutter is intentional; see module doc).
@@ -133,7 +141,7 @@ export function AnalysisSettingsMenu({
                         checked={reasoning}
                         onChange={setReasoning}
                         canUse={canUseReasoning}
-                        onLockedClick={openSignupNudge}
+                        onLockedClick={handleLockedReasoningClick}
                         // `disabled`가 `canUse`보다 우선한다 — 비회원이 haiku를
                         // 고른 상태에서 가입 유도를 띄우면 "가입하면 열린다"는
                         // 거짓 약속이 된다. haiku는 가입해도 열리지 않는다.

@@ -1,6 +1,15 @@
 import 'server-only';
 
-import { count, countDistinct, desc, gte, lt } from 'drizzle-orm';
+import {
+    and,
+    count,
+    countDistinct,
+    desc,
+    gte,
+    isNull,
+    lt,
+    sql,
+} from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -24,11 +33,13 @@ export interface VisitorDayRecord {
     country: string | null;
     /** 쿼리스트링을 뺀 경로. */
     landingPath: string | null;
+    /** 비콘 시점의 로그인 회원 id. 비회원이면 null. 회원 D7/D30 재방문의 축. */
+    userId: string | null;
 }
 
 /** 방문자 일자 행의 적재·정리·집계. 날짜는 전부 KST `YYYY-MM-DD`. */
 interface VisitorRepository {
-    /** 방문자당 하루 1행. 이미 있으면 아무 일도 하지 않는다. */
+    /** 방문자당 하루 1행. 이미 있으면 user_id만 비어 있을 때 채운다. */
     recordVisit(visit: VisitorDayRecord): Promise<void>;
     /** `cutoffDate` **이전** 행을 지운다. 개인정보처리방침 §4의 보존 기간 집행. */
     pruneOlderThan(cutoffDate: string): Promise<void>;
@@ -54,7 +65,24 @@ export class DrizzleVisitorRepository implements VisitorRepository {
     async recordVisit(visit: VisitorDayRecord): Promise<void> {
         await withRetry(
             () =>
-                this.db.insert(visitorDays).values(visit).onConflictDoNothing(),
+                this.db
+                    .insert(visitorDays)
+                    .values(visit)
+                    .onConflictDoUpdate({
+                        target: [visitorDays.date, visitorDays.visitorHash],
+                        // 같은 날 익명으로 먼저 온 행에만 회원 id를 채운다. 한 번 채워진
+                        // 값은 바꾸지 않는다 — 공용 기기에서 다른 회원이 로그인해도 첫
+                        // 회원에게 남는다(해시가 IP+UA라 어차피 한 사람으로 센다).
+                        // `setWhere`는 채울 때만 행을 다시 쓰게 한다 — 없으면 방문마다 충돌한
+                        // 행을 매번 UPDATE해 죽은 튜플이 쌓인다.
+                        setWhere: and(
+                            isNull(visitorDays.userId),
+                            sql`excluded.user_id is not null`
+                        ),
+                        set: {
+                            userId: sql`coalesce(${visitorDays.userId}, excluded.user_id)`,
+                        },
+                    }),
             DB_TRANSIENT_RETRY
         );
     }

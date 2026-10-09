@@ -12,15 +12,18 @@ import {
 // without pulling in the real modal's focus-trap/next-link dependencies.
 vi.mock('@/features/analysis-nudge/ui/AnalysisSignupNudgeModal', () => ({
     AnalysisSignupNudgeModal: ({
+        kind,
         variant,
         onClose,
     }: {
+        kind: string;
         variant: string;
         onClose: () => void;
     }) => (
         <div
             role="dialog"
             data-testid="signup-nudge-modal"
+            data-kind={kind}
             data-variant={variant}
         >
             <button type="button" onClick={onClose}>
@@ -288,6 +291,24 @@ describe('SymbolModelContext', () => {
             const modals = screen.getAllByTestId('signup-nudge-modal');
             expect(modals).toHaveLength(1);
             expect(modals[0]).toHaveAttribute('data-variant', 'emailReport');
+        });
+
+        it('openSignupNudge(잠금 토글 클릭)는 kind=reasoning_toggle로 연다', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+            fireEvent.click(screen.getByTestId('open-nudge'));
+            expect(screen.getByTestId('signup-nudge-modal')).toHaveAttribute(
+                'data-kind',
+                'reasoning_toggle'
+            );
+        });
+
+        it('openSignupNudgeAs(자동 넛지)는 kind=anon_auto로 연다', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+            fireEvent.click(screen.getByTestId('open-nudge-email'));
+            expect(screen.getByTestId('signup-nudge-modal')).toHaveAttribute(
+                'data-kind',
+                'anon_auto'
+            );
         });
 
         it('a second open request does not stack a second modal (idempotent open)', () => {

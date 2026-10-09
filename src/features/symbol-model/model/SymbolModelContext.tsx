@@ -21,7 +21,10 @@ import {
 import { useUserTier } from '../hooks/useUserTier';
 import { useReasoningToggle } from '@/features/reasoning-toggle/hooks/useReasoningToggle';
 import { isReasoningToggleable } from '@y0ngha/siglens-core';
-import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
+import {
+    AnalysisSignupNudgeModal,
+    type SignupNudgeKind,
+} from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 
 interface SymbolModelContextValue {
@@ -91,6 +94,12 @@ interface SymbolModelContextValue {
     closeSignupNudge: () => void;
 }
 
+/** 공유 가입 넛지 모달의 열림 상태 — 어떤 문구를, 어떤 계기로. 닫혀 있으면 null. */
+interface SignupNudgeState {
+    kind: SignupNudgeKind;
+    variant: SignupNudgeVariant;
+}
+
 const SymbolModelContext = createContext<SymbolModelContextValue | null>(null);
 
 interface SymbolModelProviderProps {
@@ -107,8 +116,9 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // memoized value means open/close never churns `useSymbolModel()` consumers.
     // (Declared first per the useState → custom-hooks → derived → handlers
     // hook-ordering convention — REACT.md "Custom Hook Declaration Order".)
-    const [signupNudgeVariant, setSignupNudgeVariant] =
-        useState<SignupNudgeVariant | null>(null);
+    const [signupNudge, setSignupNudge] = useState<SignupNudgeState | null>(
+        null
+    );
 
     const { tier, isLoading: isTierLoading } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
@@ -133,15 +143,19 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     const reasoning =
         canUseReasoning && isReasoningSupported && storedReasoning;
 
+    // 잠긴 추론 토글 클릭. 문구는 늘 상세 분석이고, 퍼널에는 `reasoning_toggle`로 남는다.
     const openSignupNudge = useCallback(
-        () => setSignupNudgeVariant('reasoning'),
+        () =>
+            setSignupNudge({ kind: 'reasoning_toggle', variant: 'reasoning' }),
         []
     );
+    // 익명 첫 분석 자동 넛지. 문구를 번갈아 쓰고, 퍼널에는 `anon_auto`+variant로 남는다.
     const openSignupNudgeAs = useCallback(
-        (variant: SignupNudgeVariant) => setSignupNudgeVariant(variant),
+        (variant: SignupNudgeVariant) =>
+            setSignupNudge({ kind: 'anon_auto', variant }),
         []
     );
-    const closeSignupNudge = useCallback(() => setSignupNudgeVariant(null), []);
+    const closeSignupNudge = useCallback(() => setSignupNudge(null), []);
 
     const value = useMemo(
         () => ({
@@ -187,9 +201,10 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             {children}
             {/* Single signup-nudge modal instance shared by the header's
                 locked-toggle nudge and ChartContent's first-analysis auto-nudge. */}
-            {signupNudgeVariant !== null && (
+            {signupNudge !== null && (
                 <AnalysisSignupNudgeModal
-                    variant={signupNudgeVariant}
+                    kind={signupNudge.kind}
+                    variant={signupNudge.variant}
                     onClose={closeSignupNudge}
                 />
             )}

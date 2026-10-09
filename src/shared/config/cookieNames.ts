@@ -23,6 +23,15 @@ export const GUEST_ID_COOKIE_NAME = 'siglens_guest';
 export const SIGNUP_CONVERSION_COOKIE_NAME = 'siglens_signup_conversion';
 
 /**
+ * Client-readable one-shot flag the sign-up actions set so the next page can
+ * record a `signup_completed` funnel event (`shared/lib/funnel/signupCookie.ts`).
+ * Value is the sign-up method (`email` | `oauth`). Kept separate from
+ * `SIGNUP_CONVERSION_COOKIE_NAME` on purpose: that flag is consumed (deleted)
+ * by `GoogleAdsTag`, so two readers of one cookie would race.
+ */
+export const FUNNEL_SIGNUP_COOKIE_NAME = 'siglens_funnel_signup';
+
+/**
  * ai.siglens.io-only marker set when a visit arrives with `?sso=none` — the SSO
  * handoff already ran and found no main-site session. The page-level bounce
  * (`handoffRedirect.ts`) skips while it is present, so following any link away

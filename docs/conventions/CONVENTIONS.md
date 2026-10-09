@@ -656,6 +656,19 @@ in an allowlist) is enforced by a guard test that fails when a new file breaks i
 Do not put `@internal` on a symbol that is not exported (it is internal by definition), and remove it from exported
 functions that tests or other modules legitimately import.
 
+<a id="CM-9"></a>
+
+#### CM-9 — Public code and docs never cite local-only files
+
+Comments, JSDoc, tests and tracked docs must not point at gitignored or local-only material (design specs, plans,
+scratch logs, runbooks, production logs): a reader of the repository cannot open it, and the pointer cannot be checked
+for staleness. State the fact or the reason inline, and cite only tracked files or rule IDs.
+
+```typescript
+// ❌ see docs/superpowers/specs/funnel.md §4 for why member prompts are excluded
+// ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
+```
+
 ---
 
 ## Change Synchronization
@@ -783,7 +796,9 @@ before deleting it.
 
 Privacy policies, terms and in-product notices state exactly what the code does: list the storage items, the data
 actually used and every item sent to a third party (including identifiers embedded in links). Compare each sentence
-with the code path; on a mismatch change the code or the text, never leave both.
+with the code path; on a mismatch change the code or the text, never leave both. When a new code path starts writing
+user data, update the text in the same change. Keep non-advertising storage items out of the advertising-cookie
+paragraph.
 
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.

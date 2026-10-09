@@ -18,6 +18,7 @@ import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { AnalysisRateLimitModalHost } from '@/features/analysis-rate-limit/ui/AnalysisRateLimitModalHost';
 import { EmailReportNudgeHost } from '@/features/email-report-nudge/ui/EmailReportNudgeHost';
 import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
+import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
 import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
@@ -243,6 +244,9 @@ export default async function RootLayout({
                                     위치에 두어도 무방하지만, 다른 UI보다 먼저 보내 이탈이 빠른
                                     방문자도 잡는다. */}
                                     <VisitorPing />
+                                    {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
+                                    렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
+                                    <FunnelSignupPing />
                                     <PwaBanner />
                                     <NoticePopupLoader />
                                     {/* 분석 스트림이 비회원 생성 한도에 걸리면 가입 유도

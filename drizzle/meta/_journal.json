@@ -295,6 +295,13 @@
       "when": 1791450515330,
       "tag": "0041_email_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791536096250,
+      "tag": "0042_funnel_events",
+      "breakpoints": true
     }
   ]
 }
