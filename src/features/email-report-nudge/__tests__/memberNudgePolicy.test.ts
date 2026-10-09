@@ -11,10 +11,25 @@ import {
 const NOW = Date.parse('2026-10-08T00:00:00Z');
 
 describe('shouldShowSetupNudge', () => {
-    const ctx = { emailVerified: true, holdingsCount: 2, reportEnabled: false };
+    const ctx = {
+        emailVerified: true,
+        holdingsCount: 2,
+        watchlistCount: 0,
+        reportEnabled: false,
+    };
 
-    it('포트폴리오가 있고 인증됐고 수신이 꺼진 회원에게 처음 한 번 띄운다', () => {
+    it('보유 종목이 있고 인증됐고 수신이 꺼진 회원에게 처음 한 번 띄운다', () => {
         expect(shouldShowSetupNudge(EMPTY_MEMBER_NUDGE_RECORD, ctx)).toBe(true);
+    });
+
+    it('보유 종목이 없어도 관심종목이 있으면 띄운다', () => {
+        expect(
+            shouldShowSetupNudge(EMPTY_MEMBER_NUDGE_RECORD, {
+                ...ctx,
+                holdingsCount: 0,
+                watchlistCount: 1,
+            })
+        ).toBe(true);
     });
 
     it('이미 띄웠으면 다시 띄우지 않는다', () => {
@@ -28,7 +43,10 @@ describe('shouldShowSetupNudge', () => {
 
     it.each([
         ['이메일 미인증', { ...ctx, emailVerified: false }],
-        ['보유 종목 없음', { ...ctx, holdingsCount: 0 }],
+        [
+            '보유도 관심종목도 없음',
+            { ...ctx, holdingsCount: 0, watchlistCount: 0 },
+        ],
         ['이미 수신 중', { ...ctx, reportEnabled: true }],
         ['수신 여부 모름', { ...ctx, reportEnabled: null }],
     ])('%s이면 띄우지 않는다', (_, context) => {
@@ -70,7 +88,7 @@ describe('recordSymbolAnalysis', () => {
         });
     });
 
-    it('포트폴리오 안 종목은 세지도 띄우지도 않는다', () => {
+    it('리포트 대상(보유 또는 관심) 종목은 세지도 띄우지도 않는다', () => {
         const result = recordSymbolAnalysis(
             EMPTY_MEMBER_NUDGE_RECORD,
             'AAPL',

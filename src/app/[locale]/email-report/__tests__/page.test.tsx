@@ -11,6 +11,9 @@ vi.mock(
         ),
     })
 );
+vi.mock('@/app/[locale]/email-report/_lib/loadReportPreview', () => ({
+    loadReportPreview: vi.fn(),
+}));
 vi.mock('@/shared/lib/seo', () => ({
     SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
@@ -39,8 +42,10 @@ vi.mock('next/link', () => ({
 import { redirect } from 'next/navigation';
 import EmailReportPage, {
     EmailReportGuard,
+    ReportPreviewLoader,
     generateMetadata,
 } from '@/app/[locale]/email-report/page';
+import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 
 const params = (locale: string) => Promise.resolve({ locale });
@@ -76,26 +81,55 @@ describe('EmailReportPage', () => {
         );
     });
 
-    it('로그인 회원에게는 수신 설정 폼을 보인다', async () => {
+    it('로그인 회원의 가드는 수신 설정 폼만 그리고 종목은 읽지 않는다', async () => {
         vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u-1' } as never);
 
         render(await EmailReportGuard({ locale: 'ko' }));
 
         expect(screen.getByTestId('settings-section')).toBeInTheDocument();
+        expect(loadReportPreview).not.toHaveBeenCalled();
         expect(redirect).not.toHaveBeenCalled();
     });
 
-    it('제목·안내와 리포트에 담기는 종목 설명, 포트폴리오 링크를 그린다', async () => {
+    it('미리보기 로더는 현재 회원의 대상 종목을 상세 그룹에 이름 칩으로 그린다', async () => {
+        vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u-1' } as never);
+        vi.mocked(loadReportPreview).mockResolvedValue({
+            full: [
+                { symbol: 'AAPL', name: 'Apple' },
+                { symbol: 'TSLA', name: 'Tesla' },
+            ],
+            brief: [],
+        });
+
+        render(await ReportPreviewLoader());
+
+        expect(loadReportPreview).toHaveBeenCalledWith('u-1');
+        const group = screen.getByRole('group', { name: '상세' });
+        expect(group).toHaveTextContent('Apple');
+        expect(group).toHaveTextContent('Tesla');
+    });
+
+    it('종목 조회가 실패하면(null) 미리보기만 안내로 대체한다', async () => {
+        vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u-1' } as never);
+        vi.mocked(loadReportPreview).mockResolvedValue(null);
+
+        render(await ReportPreviewLoader());
+
+        expect(
+            screen.getByText('리포트 대상 종목을 지금은 불러오지 못했어요.')
+        ).toBeInTheDocument();
+    });
+
+    it('제목·안내를 그린다', async () => {
         render(await EmailReportPage({ params: params('ko') }));
 
         expect(
             screen.getByRole('heading', { level: 1, name: '메일 리포트' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/포트폴리오에 담은 종목 중 최대 5개/)
+            screen.getByText(
+                '고른 요일과 시각에 보유·관심종목 리포트를 메일로 받아 보세요.'
+            )
         ).toBeInTheDocument();
-        expect(
-            screen.getByRole('link', { name: '포트폴리오에서 종목 관리하기' })
-        ).toHaveAttribute('href', '/portfolio');
     });
 });

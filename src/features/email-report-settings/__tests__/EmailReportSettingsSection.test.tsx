@@ -3,8 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
 import { useEmailReportSettings } from '@/entities/email-report/hooks/useEmailReportSettings';
 import type { EmailReportSettingsView } from '@/entities/email-report/model';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 
 vi.mock('@/entities/email-report/hooks/useEmailReportSettings');
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: vi.fn(),
+}));
 
 const mockUseSettings = vi.mocked(useEmailReportSettings);
 type HookReturn = ReturnType<typeof useEmailReportSettings>;
@@ -37,6 +41,7 @@ function setup(overrides: Partial<HookReturn> = {}) {
 describe('EmailReportSettingsSection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        window.history.replaceState({}, '', '/email-report');
     });
 
     it('조회 중이면 로딩 상태를 알린다', () => {
@@ -178,5 +183,97 @@ describe('EmailReportSettingsSection', () => {
         expect(mutateAsync).toHaveBeenCalledWith(
             expect.objectContaining({ enabled: false, daysOfWeek: [1] })
         );
+    });
+
+    it('안내 문구가 상세·요약 종목 수를 보인다', () => {
+        setup();
+        render(<EmailReportSettingsSection />);
+
+        expect(
+            screen.getByText(/최대 5개는 일봉 차트.*그다음 최대 15개는/)
+        ).toBeInTheDocument();
+    });
+
+    describe('report_enabled 퍼널 이벤트', () => {
+        const OFF: EmailReportSettingsView = { ...SAVED, enabled: false };
+
+        async function turnOnAndSave() {
+            await userEvent.click(screen.getByRole('switch'));
+            await userEvent.click(screen.getByRole('button', { name: '저장' }));
+        }
+
+        it('꺼짐 → 켜짐으로 저장되면 settings 출처로 보낸다', async () => {
+            const { mutateAsync } = setup({ settings: OFF });
+            mutateAsync.mockResolvedValue({
+                status: 'ok',
+                settings: { ...OFF, enabled: true },
+            });
+            render(<EmailReportSettingsSection />);
+
+            await turnOnAndSave();
+
+            expect(await screen.findByText('저장했어요.')).toBeInTheDocument();
+            expect(trackFunnelEvent).toHaveBeenCalledWith('report_enabled', {
+                source: 'settings',
+            });
+        });
+
+        it('?from=nudge로 열었으면 nudge 출처로 보낸다', async () => {
+            window.history.replaceState({}, '', '/email-report?from=nudge');
+            const { mutateAsync } = setup({ settings: OFF });
+            mutateAsync.mockResolvedValue({
+                status: 'ok',
+                settings: { ...OFF, enabled: true },
+            });
+            render(<EmailReportSettingsSection />);
+
+            await turnOnAndSave();
+
+            expect(await screen.findByText('저장했어요.')).toBeInTheDocument();
+            expect(trackFunnelEvent).toHaveBeenCalledWith('report_enabled', {
+                source: 'nudge',
+            });
+        });
+
+        it('켜진 채 다시 저장하면 보내지 않는다', async () => {
+            const { mutateAsync } = setup();
+            mutateAsync.mockResolvedValue({ status: 'ok', settings: SAVED });
+            render(<EmailReportSettingsSection />);
+
+            await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+            expect(await screen.findByText('저장했어요.')).toBeInTheDocument();
+            expect(trackFunnelEvent).not.toHaveBeenCalled();
+        });
+
+        it('켜짐 저장 뒤 같은 세션에서 다시 저장해도 한 번만 보낸다', async () => {
+            const { mutateAsync } = setup({ settings: OFF });
+            mutateAsync.mockResolvedValue({
+                status: 'ok',
+                settings: { ...OFF, enabled: true },
+            });
+            render(<EmailReportSettingsSection />);
+
+            await turnOnAndSave();
+            await screen.findByText('저장했어요.');
+            await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+            expect(trackFunnelEvent).toHaveBeenCalledTimes(1);
+        });
+
+        it('저장이 실패하면 보내지 않는다', async () => {
+            const { mutateAsync } = setup({ settings: OFF });
+            mutateAsync.mockResolvedValue({
+                status: 'error',
+                code: 'storage_unavailable',
+                message: '실패',
+            });
+            render(<EmailReportSettingsSection />);
+
+            await turnOnAndSave();
+
+            expect(await screen.findByText('실패')).toBeInTheDocument();
+            expect(trackFunnelEvent).not.toHaveBeenCalled();
+        });
     });
 });

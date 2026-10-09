@@ -4,8 +4,13 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { EMAIL_REPORT_MAX_SYMBOLS } from '@/entities/email-report/lib/emailReportConstants';
+import {
+    EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
+    EMAIL_REPORT_MAX_SYMBOLS,
+} from '@/entities/email-report/lib/emailReportConstants';
+import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
 import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
+import { ReportSymbolsPreview } from '@/features/email-report-settings/ui/ReportSymbolsPreview';
 import { localePath, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import { enterLocale } from '@/shared/lib/enterLocale';
@@ -41,6 +46,7 @@ export async function generateMetadata({
  * 비로그인이면 로그인으로 보낸다. 이 경로는 프록시의 `AUTH_REQUIRED_PATHS`에 넣지 않는다 —
  * 그 목록은 앞부분 일치라 로그인 없이 열려야 하는 `/email-report/unsubscribe`까지 막는다.
  * cookies를 읽으므로 Suspense 안에 둔다(계정 페이지 `AccountContent`와 같은 이유).
+ * 카드 껍데기는 정적 셸에 두고, 여기서는 폼만 그린다 — 미리보기 조회가 폼을 붙잡지 않게.
  */
 export async function EmailReportGuard({ locale }: { locale: Locale }) {
     const user = await getCurrentUser();
@@ -52,6 +58,19 @@ export async function EmailReportGuard({ locale }: { locale: Locale }) {
         );
     }
     return <EmailReportSettingsSection />;
+}
+
+/**
+ * 수신 대상 미리보기. 폼과 별개의 Suspense 안에서 읽어, DB가 느려도 폼이 먼저 뜬다.
+ * 세션은 `getCurrentUser`(React `cache`)가 요청당 한 번만 읽는다.
+ */
+export async function ReportPreviewLoader() {
+    const user = await getCurrentUser();
+    return (
+        <ReportSymbolsPreview
+            preview={user ? await loadReportPreview(user.id) : null}
+        />
+    );
 }
 
 function SettingsSkeleton() {
@@ -66,12 +85,21 @@ function SettingsSkeleton() {
     );
 }
 
+function PreviewSkeleton() {
+    return (
+        <div aria-hidden="true" className="animate-pulse space-y-4">
+            <div className={cn('h-5 w-3/4 rounded', PLACEHOLDER_ON_INSET)} />
+            <div className={cn('h-8 rounded-full', PLACEHOLDER_ON_INSET)} />
+        </div>
+    );
+}
+
 function IncludedSymbolsNote() {
     const t = useTranslations('app.email-report');
     return (
         <section
             aria-labelledby="email-report-symbols-heading"
-            className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
+            className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <h2
                 id="email-report-symbols-heading"
@@ -80,11 +108,17 @@ function IncludedSymbolsNote() {
                 {t('page.190fd1')}
             </h2>
             <p className="text-sm leading-relaxed text-secondary-400">
-                {t('page.97c221', { v0: EMAIL_REPORT_MAX_SYMBOLS })}
+                {t('page.a613ae', {
+                    v0: EMAIL_REPORT_MAX_SYMBOLS,
+                    v1: EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
+                })}
             </p>
+            <Suspense fallback={<PreviewSkeleton />}>
+                <ReportPreviewLoader />
+            </Suspense>
             <p className="text-sm">
                 <Link href="/portfolio" className={LINK}>
-                    {t('page.513e32')}
+                    {t('page.861f8f')}
                 </Link>
             </p>
         </section>
@@ -107,7 +141,7 @@ export default async function EmailReportPage({
                         {t('page.411c76')}
                     </h1>
                     <p className="mt-1 text-sm text-secondary-400">
-                        {t('page.c1399c')}
+                        {t('page.b38abd')}
                     </p>
                 </header>
                 <section

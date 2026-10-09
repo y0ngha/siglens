@@ -481,3 +481,12 @@ An e2e stub returns only the statuses production sends for that mode. An invente
 #### TE-52 — Audit test doubles that parse vendor formats
 
 Fake LLMs and similar doubles that parse a vendor or core message format break silently when the format changes. After a dependency upgrade, re-check each double against the new format.
+
+<a id="TE-53"></a>
+
+#### TE-53 — A test must fail when the behaviour it names is removed
+
+Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Tests that pass anyway are vacuous: a mocked query builder whose condition argument is never inspected, a SQL assertion built from short `toContain` fragments, a new tracking call with no click-and-assert test, or a "renders independently" test that mounts only the inner component. Render the real condition (for SQL, its text and params), assert the full clause, drive the instrumented element, and assert on the composed tree.
+
+- ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
+- ✅ Render the condition to SQL plus params and assert both.

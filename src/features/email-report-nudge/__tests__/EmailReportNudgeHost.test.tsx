@@ -38,7 +38,7 @@ describe('EmailReportNudgeHost', () => {
     });
 
     it('넛지가 있으면 그 종류로 모달을 그리고 닫기를 훅에 연결한다', () => {
-        hook.nudge = { kind: 'setup', holdingsCount: 2 };
+        hook.nudge = { kind: 'setup', symbolCount: 2 };
         render(<EmailReportNudgeHost />);
 
         expect(screen.getByRole('dialog')).toHaveAttribute(

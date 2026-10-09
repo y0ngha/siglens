@@ -1,9 +1,10 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { useEmailReportSettings } from '@/entities/email-report/hooks/useEmailReportSettings';
 import {
+    EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
     EMAIL_REPORT_MAX_SYMBOLS,
     WEEKDAYS_MONDAY_FIRST,
 } from '@/entities/email-report/lib/emailReportConstants';
@@ -11,9 +12,11 @@ import type {
     EmailReportSettingsView,
     Weekday,
 } from '@/entities/email-report/model';
+import { useUrlSearchParam } from '@/shared/hooks/useUrlSearchParam';
 import { INTL_LOCALE, resolveLocale } from '@/shared/i18n/locales';
 import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 
 const SAVE_BUTTON = cn(BUTTON_PRIMARY, 'h-10 px-4 text-sm');
 const RETRY_BUTTON = cn(BUTTON_OUTLINE, 'h-9 px-3 text-sm');
@@ -80,6 +83,13 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
             ? initial.timezone
             : (detectBrowserTimeZone() ?? initial.timezone)
     );
+    // 넛지에서 왔는지는 URL 쿼리로 안다. `useSearchParams`가 아니라 `useUrlSearchParam`을 쓰는 이유:
+    // 전자는 가장 가까운 Suspense까지 CSR bailout시킨다(src/app/CLAUDE.md 축 2).
+    const from = useUrlSearchParam('from');
+    const funnelSource = from === 'nudge' ? 'nudge' : 'settings';
+    // 꺼짐 → 켜짐 전환만 센다. 마운트 값이 아니라 마지막 저장 성공 값을 기준으로 두어, 한 세션에서
+    // 두 번 저장해도 이벤트는 한 번이다.
+    const wasEnabledRef = useRef(initial.enabled);
     const [message, setMessage] = useState<{
         tone: 'ok' | 'error';
         text: string;
@@ -108,6 +118,14 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                 sendHour,
                 timezone,
             });
+            if (result.status === 'ok') {
+                if (result.settings.enabled && !wasEnabledRef.current) {
+                    trackFunnelEvent('report_enabled', {
+                        source: funnelSource,
+                    });
+                }
+                wasEnabledRef.current = result.settings.enabled;
+            }
             setMessage(
                 result.status === 'ok'
                     ? {
@@ -135,8 +153,9 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                         {t('EmailReportSettingsSection.633367')}
                     </label>
                     <p className="mt-1 text-sm text-secondary-400">
-                        {t('EmailReportSettingsSection.313286', {
+                        {t('EmailReportSettingsSection.8d4110', {
                             v0: EMAIL_REPORT_MAX_SYMBOLS,
+                            v1: EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
                         })}
                     </p>
                 </div>

@@ -95,10 +95,10 @@
             "page": {
                 "190fd1": "Stocks in your report",
                 "411c76": "Email report",
-                "513e32": "Manage stocks in your portfolio",
-                "97c221": "Up to {v0} stocks from your portfolio are included — overseas stocks first, then by largest cost basis.",
                 "b7b3c8": "Delivery settings",
-                "c1399c": "Get a report on your holdings by email on the days and time you choose."
+                "a613ae": "Holdings (overseas first, by cost) and watchlist symbols (most recently added first) are combined: the first {v0} get a full card and the next {v1} a summary row.",
+                "b38abd": "Get your holdings and watchlist report by email on the days and time you choose.",
+                "861f8f": "Manage in My Symbols"
             },
             "unsubscribe": {
                 "page": {
@@ -489,7 +489,13 @@
                 "unsubscribeFailed": "Unsubscribing failed. Please try again in a moment."
             },
             "email": {
+                "briefColPrice": "Close · change",
+                "briefColSignals": "Signal summary",
+                "briefColSymbol": "Symbol",
+                "briefColTrend": "Trend",
+                "briefNoData": "No data",
                 "chartAlt": "{v0} daily chart",
+                "confluenceNote": "Confluence is the degree (0–100) to which indicators point the same way; it is not investment advice.",
                 "disclaimer": "This email is for information only and is not investment advice. You are responsible for your investment decisions and their outcomes. AI analysis may be inaccurate.",
                 "heading": "Your holdings report",
                 "intro": "Here's the latest on your holdings as of {v0}.",
@@ -498,18 +504,36 @@
                 "optionsIv": "ATM implied volatility",
                 "optionsMove": "Implied move to expiry ({v0})",
                 "optionsPutCall": "Put/call ratio (open interest)",
+                "pullback": {
+                    "nearWashoutInUptrend": "Near oversold within an uptrend",
+                    "washoutBelowMa200": "Oversold in a long-term decline (for reference)",
+                    "washoutInUptrend": "Short-term oversold within an uptrend"
+                },
                 "reason": "You're receiving this because you turned on email reports in your {v0} email report settings.",
+                "sectionBrief": "Other watchlist symbols",
                 "sectionNews": "Top news",
                 "sectionOptions": "Options activity",
                 "sectionPatterns": "Chart patterns",
                 "sectionPlain": "In plain words",
                 "sectionTechnical": "Chart analysis",
                 "sentiment": {
+                    "bearish": "Negative",
                     "bullish": "Positive",
-                    "neutral": "Neutral",
-                    "bearish": "Negative"
+                    "neutral": "Neutral"
                 },
+                "signalAbstain": "Confluence —",
+                "signalBearish": "Bearish {v0}",
+                "signalBullish": "Bullish {v0}",
+                "signalFresh": "Newly lit: {v0}",
+                "signalMore": "+{v0}",
+                "signalPullback": "Pullback: {v0}",
+                "signalScore": "Confluence {v0}",
                 "subject": "[{v0}] Your holdings report · {v1}",
+                "trendState": {
+                    "downtrend": "Downtrend",
+                    "sideways": "Sideways",
+                    "uptrend": "Uptrend"
+                },
                 "unsubscribe": "Unsubscribe",
                 "viewOnSite": "See details on {v0}"
             }
@@ -739,17 +763,17 @@
         "email-report-nudge": {
             "EmailReportNudgeModal": {
                 "0fcd14": "Later",
-                "15049a": "Add {v0} to your portfolio and we'll include it in your scheduled email report.",
-                "4a3bb0": "Add to portfolio",
+                "20cd3b": "Added — it will be in your next report",
+                "3dc0b0": "Get your holdings & watchlist report by email",
                 "5da22e": "Get this stock in your email report too?",
-                "7e84b8": "Get a report on your holdings by email",
+                "8495de": "We'll email the daily chart, plain-language analysis, news and signal summary for your {v0} holdings and watchlist symbols on the days and time you choose.",
                 "8be329": "Set up email reports",
-                "daa53b": "We'll email daily charts, the Simple analysis, news and options activity for the {v0} stocks in your portfolio on the days and time you choose."
+                "ad01f2": "Add to watchlist & get it by email",
+                "ef5a22": "Add {v0} to your watchlist and it will be included in your scheduled email report."
             }
         },
         "email-report-settings": {
             "EmailReportSettingsSection": {
-                "313286": "We'll send daily charts, the Simple analysis, news and options activity for up to {v0} portfolio holdings.",
                 "633367": "Get reports by email",
                 "0c767c": "Try again",
                 "1f1712": "Save",
@@ -761,7 +785,15 @@
                 "dcc8a2": "Saving failed. Please try again in a moment.",
                 "e61b39": "Loading email report settings",
                 "f0cf28": "Time",
-                "f1ce16": "Choose at least one day."
+                "f1ce16": "Choose at least one day.",
+                "8d4110": "Up to {v0} holdings and watchlist symbols get the daily chart, plain-language analysis, news and options; the next {v1} get a close, trend and signal summary."
+            },
+            "ReportSymbolsPreview": {
+                "715443": "Of {v0} symbols, {v1} get the full card and the other {v2} a summary row.",
+                "bb4464": "Full",
+                "3ea27a": "Summary",
+                "d406d7": "You have no holdings or watchlist symbols yet. Add some and they'll be in your next report.",
+                "2f3e5b": "We couldn't load your report symbols right now."
             }
         },
         "email-report-unsubscribe": {

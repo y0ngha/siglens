@@ -81,6 +81,52 @@ describe('useWatchlist', () => {
             });
         });
 
+        it('add는 이미 담긴 종목을 빼지 않고 이벤트도 보내지 않는다', async () => {
+            const { wrapper } = createQueryClientWrapper();
+            const { result } = renderHook(() => useWatchlist(), { wrapper });
+            await waitFor(() => expect(result.current.isHydrated).toBe(true));
+            await act(async () => {
+                await result.current.add(
+                    { symbol: 'AAPL', label: '애플' },
+                    'nudge'
+                );
+            });
+            mockTrack.mockClear();
+
+            let outcome: string | undefined;
+            await act(async () => {
+                outcome = await result.current.add(
+                    { symbol: 'aapl', label: '애플' },
+                    'nudge'
+                );
+            });
+
+            expect(outcome).toBe('added');
+            expect(result.current.has('AAPL')).toBe(true);
+            expect(mockTrack).not.toHaveBeenCalled();
+        });
+
+        it('add는 없으면 담고 watchlist_added를 한 번 보낸다', async () => {
+            const { wrapper } = createQueryClientWrapper();
+            const { result } = renderHook(() => useWatchlist(), { wrapper });
+            await waitFor(() => expect(result.current.isHydrated).toBe(true));
+
+            let outcome: string | undefined;
+            await act(async () => {
+                outcome = await result.current.add(
+                    { symbol: 'AAPL', label: '애플' },
+                    'nudge'
+                );
+            });
+
+            expect(outcome).toBe('added');
+            expect(result.current.has('AAPL')).toBe(true);
+            expect(mockTrack).toHaveBeenCalledTimes(1);
+            expect(mockTrack).toHaveBeenCalledWith('watchlist_added', {
+                source: 'nudge',
+            });
+        });
+
         it('저장소가 막혀 있으면 failed, 이벤트·성공 토스트 없음', async () => {
             const { wrapper } = createQueryClientWrapper();
             const { result } = renderHook(() => useWatchlist(), { wrapper });

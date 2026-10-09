@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EmailReportNudgeModal } from '@/features/email-report-nudge/ui/EmailReportNudgeModal';
 
@@ -25,29 +25,57 @@ vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
     trackFunnelEvent: track,
 }));
 
+const watchlist = vi.hoisted(() => ({
+    items: [] as Array<{ symbol: string }>,
+    hydrated: true,
+    identityPending: false,
+    add: vi.fn(),
+}));
+vi.mock('@/features/watchlist/hooks/useWatchlist', () => ({
+    useWatchlist: () => ({
+        items: watchlist.items,
+        has: (symbol: string) =>
+            watchlist.items.some(i => i.symbol === symbol.toUpperCase()),
+        add: watchlist.add,
+        isHydrated: watchlist.hydrated,
+        isIdentityPending: watchlist.identityPending,
+        isAtLimit: false,
+        limit: 50,
+    }),
+}));
+
+const ADD_CTA = '관심종목에 담아 메일로 받기';
+
 describe('EmailReportNudgeModal', () => {
-    it('설정 권유는 보유 종목 수를 알리고 계정 페이지의 메일 리포트 섹션으로 보낸다', () => {
+    beforeEach(() => {
+        track.mockReset();
+        watchlist.items = [];
+        watchlist.hydrated = true;
+        watchlist.identityPending = false;
+        watchlist.add.mockReset();
+        watchlist.add.mockResolvedValue('added');
+    });
+
+    it('설정 권유는 보유·관심 종목 수를 알리고 넛지 출처를 달아 설정 페이지로 보낸다', () => {
         render(
             <EmailReportNudgeModal
-                nudge={{ kind: 'setup', holdingsCount: 4 }}
+                nudge={{ kind: 'setup', symbolCount: 4 }}
                 onClose={vi.fn()}
             />
         );
 
         expect(
             screen.getByRole('heading', {
-                name: '보유 종목 리포트를 메일로 받아보세요',
+                name: '보유·관심종목 리포트를 메일로 받아보세요',
             })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(/포트폴리오에 담은 4개 종목/)
-        ).toBeInTheDocument();
+        expect(screen.getByText(/보유·관심종목 4개의/)).toBeInTheDocument();
         expect(
             screen.getByRole('link', { name: '메일 리포트 설정하기' })
-        ).toHaveAttribute('href', '/email-report');
+        ).toHaveAttribute('href', '/email-report?from=nudge');
     });
 
-    it('종목 권유는 그 종목을 미리 채운 포트폴리오 추가로 보낸다', () => {
+    it('종목 권유 CTA는 페이지 이동 없이 관심종목 담기를 nudge 출처로 실행한다', async () => {
         render(
             <EmailReportNudgeModal
                 nudge={{ kind: 'symbol', symbol: '005930.KS' }}
@@ -56,18 +84,138 @@ describe('EmailReportNudgeModal', () => {
         );
 
         expect(
-            screen.getByText(/005930\.KS을\(를\) 포트폴리오에 추가하면/)
+            screen.getByText(/005930\.KS 종목을 관심종목에 담으면/)
         ).toBeInTheDocument();
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        await userEvent
+            .setup()
+            .click(screen.getByRole('button', { name: ADD_CTA }));
+
+        expect(watchlist.add).toHaveBeenCalledWith(
+            { symbol: '005930.KS', label: '005930.KS' },
+            'nudge'
+        );
+    });
+
+    it('담긴 뒤에는 CTA 대신 "담았어요" 상태를 보이고 다시 토글하지 않는다', () => {
+        watchlist.items = [{ symbol: 'TSLA' }];
+        render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('status')).toHaveTextContent(
+            '담았어요 — 다음 리포트부터 포함돼요'
+        );
         expect(
-            screen.getByRole('link', { name: '포트폴리오에 추가하기' })
-        ).toHaveAttribute('href', '/portfolio?symbol=005930.KS');
+            screen.queryByRole('button', { name: ADD_CTA })
+        ).not.toBeInTheDocument();
+    });
+
+    it('이미 담긴 상태에서는 담기 경로(add)를 부르지 않는다 — 제거로 이어질 길이 없다', () => {
+        watchlist.items = [{ symbol: 'TSLA' }];
+        render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(watchlist.add).not.toHaveBeenCalled();
+    });
+
+    it.each(['at_limit', 'failed'] as const)(
+        '담기가 %s로 끝나면 "담았어요"를 보이지 않고 CTA를 그대로 둔다',
+        async outcome => {
+            watchlist.add.mockResolvedValue(outcome);
+            render(
+                <EmailReportNudgeModal
+                    nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                    onClose={vi.fn()}
+                />
+            );
+
+            await userEvent
+                .setup()
+                .click(screen.getByRole('button', { name: ADD_CTA }));
+
+            await waitFor(() =>
+                expect(
+                    screen.getByRole('button', { name: ADD_CTA })
+                ).toBeEnabled()
+            );
+            expect(screen.getByRole('status')).toBeEmptyDOMElement();
+        }
+    );
+
+    it.each([
+        ['하이드레이션 전', () => (watchlist.hydrated = false)],
+        ['회원 여부 미확정', () => (watchlist.identityPending = true)],
+    ])('관심종목이 %s이면 CTA를 누를 수 없다', (_, arrange) => {
+        arrange();
+        render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('button', { name: ADD_CTA })).toHaveAttribute(
+            'aria-disabled',
+            'true'
+        );
+    });
+
+    it('담기 진행 중에는 CTA가 aria-disabled이고 포커스를 유지하며 다시 눌러도 토글하지 않는다', async () => {
+        watchlist.add.mockReturnValue(new Promise(() => {}));
+        render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+        const user = userEvent.setup();
+        const cta = screen.getByRole('button', { name: ADD_CTA });
+
+        await user.click(cta);
+        await user.click(cta);
+
+        expect(cta).toHaveAttribute('aria-disabled', 'true');
+        expect(cta).toHaveFocus();
+        expect(watchlist.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('담김 상태로 바뀌면 포커스가 모달 안(상태 문구)에 남는다', async () => {
+        const { rerender } = render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+        await userEvent
+            .setup()
+            .click(screen.getByRole('button', { name: ADD_CTA }));
+        watchlist.items = [{ symbol: 'TSLA' }];
+        rerender(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('status')).toHaveFocus();
+        expect(screen.getByRole('dialog')).toContainElement(
+            document.activeElement as HTMLElement
+        );
     });
 
     it('나중에·이동 버튼 모두 모달을 닫는다', async () => {
         const onClose = vi.fn();
         render(
             <EmailReportNudgeModal
-                nudge={{ kind: 'setup', holdingsCount: 1 }}
+                nudge={{ kind: 'setup', symbolCount: 1 }}
                 onClose={onClose}
             />
         );
@@ -82,14 +230,10 @@ describe('EmailReportNudgeModal', () => {
     });
 
     describe('퍼널 이벤트', () => {
-        beforeEach(() => {
-            track.mockReset();
-        });
-
         it('설정 권유는 nudge_shown{member_setup}, CTA는 cta=settings', async () => {
             render(
                 <EmailReportNudgeModal
-                    nudge={{ kind: 'setup', holdingsCount: 2 }}
+                    nudge={{ kind: 'setup', symbolCount: 2 }}
                     onClose={vi.fn()}
                 />
             );
@@ -107,7 +251,7 @@ describe('EmailReportNudgeModal', () => {
             });
         });
 
-        it('종목 권유는 nudge_shown{member_symbol}, CTA는 cta=add', async () => {
+        it('종목 권유는 nudge_shown{member_symbol}, CTA는 nudge_clicked 한 번(cta=add)', async () => {
             render(
                 <EmailReportNudgeModal
                     nudge={{ kind: 'symbol', symbol: 'NVDA' }}
@@ -119,19 +263,18 @@ describe('EmailReportNudgeModal', () => {
             });
             await userEvent
                 .setup()
-                .click(
-                    screen.getByRole('link', { name: '포트폴리오에 추가하기' })
-                );
-            expect(track).toHaveBeenCalledWith('nudge_clicked', {
-                kind: 'member_symbol',
-                cta: 'add',
-            });
+                .click(screen.getByRole('button', { name: ADD_CTA }));
+            expect(
+                track.mock.calls.filter(([event]) => event === 'nudge_clicked')
+            ).toEqual([
+                ['nudge_clicked', { kind: 'member_symbol', cta: 'add' }],
+            ]);
         });
 
         it('나중에 버튼은 nudge_clicked를 보내지 않는다', async () => {
             render(
                 <EmailReportNudgeModal
-                    nudge={{ kind: 'setup', holdingsCount: 1 }}
+                    nudge={{ kind: 'setup', symbolCount: 1 }}
                     onClose={vi.fn()}
                 />
             );

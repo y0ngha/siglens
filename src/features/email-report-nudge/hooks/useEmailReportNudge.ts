@@ -10,6 +10,7 @@ import {
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useEmailReportSettings } from '@/entities/email-report/hooks/useEmailReportSettings';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
+import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
     hasNudgeShownThisSession,
@@ -26,9 +27,9 @@ import {
     writeMemberNudgeRecord,
 } from '../lib/memberNudgeStorage';
 
-/** 띄울 넛지. `setup`은 메일 리포트 설정 권유, `symbol`은 포트폴리오 밖 종목 담기 권유. */
+/** 띄울 넛지. `setup`은 메일 리포트 설정 권유(보유∪관심 종목 수), `symbol`은 리포트 대상 밖 종목 담기 권유. */
 export type EmailReportNudge =
-    | { kind: 'setup'; holdingsCount: number }
+    | { kind: 'setup'; symbolCount: number }
     | { kind: 'symbol'; symbol: string };
 
 /**
@@ -69,6 +70,16 @@ interface SetupDecision {
     userId: string;
     outcome: SetupOutcome;
 }
+/**
+ * 종목 넛지 후보. 담기 권유는 메일이 실제로 나갈 때만 약속이 되므로, 후보가 생긴 뒤에야
+ * 수신 설정을 조회해 켜져 있을 때만 띄운다(`awaiting` → `shown`/`skipped`).
+ */
+interface SymbolPending {
+    userId: string;
+    symbol: string;
+    at: number;
+    status: 'awaiting' | 'shown' | 'skipped';
+}
 interface OpenNudge {
     userId: string;
     nudge: EmailReportNudge;
@@ -77,10 +88,10 @@ interface OpenNudge {
 /**
  * 회원 메일 리포트 넛지 두 가지를 판정한다. 루트 레이아웃의 호스트가 한 번 마운트한다.
  *
- * 1. **설정 권유(회원당 1회, 어느 페이지에서든)** — 포트폴리오가 있고, 이메일이 인증됐고,
+ * 1. **설정 권유(회원당 1회, 어느 페이지에서든)** — 보유 또는 관심종목이 있고, 이메일이 인증됐고,
  *    메일 리포트가 꺼진 회원. 수신 설정은 후보일 때만 조회한다(모든 페이지에서 회원마다
  *    Server Action을 보내지 않도록). 이미 켠 회원은 기록해 두고 다시 조회하지 않는다.
- * 2. **종목 담기 권유** — 포트폴리오 밖 종목을 누적 3회 이상 분석하면. 같은 종목엔 한 번,
+ * 2. **종목 담기 권유** — 리포트 대상(보유∪관심) 밖 종목을 누적 3회 이상 분석하면. 같은 종목엔 한 번,
  *    종목 넛지끼리 7일 간격(`memberNudgePolicy`). 이메일 인증 회원만 센다 — 인증 전에는 담아도
  *    메일이 나가지 않으므로 권하지 않고, 인증 전 분석 횟수도 쌓지 않는다.
  *
@@ -98,6 +109,12 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
     const [setupDecision, setSetupDecision] = useState<SetupDecision | null>(
         null
     );
+    const [symbolPending, setSymbolPending] = useState<SymbolPending | null>(
+        null
+    );
+    // 이 탭에서 수신 설정이 꺼진 것으로 확인된 회원. 알려진 동안은 종목 넛지 후보를 만들지 않아
+    // 분석할 때마다 수신 설정을 다시 조회하지 않는다(쿼리 staleTime 1분 뒤에는 재조회된다).
+    const [reportOffUserId, setReportOffUserId] = useState<string | null>(null);
     const pathname = useAppPathname();
     const { data: user } = useCurrentUser();
 
@@ -124,14 +141,74 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         enabled: isVerifiedMember && !storedSetupShown && !isExcluded,
     });
 
+    // 관심종목은 헤더 메뉴 뱃지가 같은 React Query 키로 이미 받아 두므로 추가 요청이 없다.
+    // 목록이 도착하기 전(하이드레이션 전·회원 여부 미확정)의 빈 목록은 "관심종목 없음"이 아니므로,
+    // 알 때까지 세지도 판정하지도 않는다 — 그렇지 않으면 관심종목만 있는 회원에게 거짓 판정이 난다.
+    const watchlist = useWatchlist();
+    const isWatchlistKnown =
+        watchlist.isHydrated && !watchlist.isIdentityPending;
+    const symbolCount = new Set([
+        ...holdings.map(h => h.symbol.toUpperCase()),
+        ...watchlist.items.map(i => i.symbol.toUpperCase()),
+    ]).size;
+
     const isSetupCandidate =
         isVerifiedMember &&
         hasHoldings &&
-        holdings.length > 0 &&
+        isWatchlistKnown &&
+        symbolCount > 0 &&
         !isExcluded &&
         !storedSetupShown &&
         setupDecision?.userId !== user.id;
-    const { settings } = useEmailReportSettings({ enabled: isSetupCandidate });
+    const awaitingSymbol =
+        symbolPending !== null &&
+        symbolPending.status === 'awaiting' &&
+        symbolPending.userId === userId
+            ? symbolPending
+            : null;
+    const { settings } = useEmailReportSettings({
+        enabled: isSetupCandidate || awaitingSymbol !== null,
+    });
+
+    // 렌더 중 조정(EF-1) — 설정을 바꿀 수 있는 화면(설정·계정)에 들어오면 "꺼져 있음" 기억을 버려
+    // 켜고 돌아온 회원이 다시 후보가 되게 한다.
+    if (isExcluded && reportOffUserId !== null) {
+        setReportOffUserId(null);
+    }
+
+    // 렌더 중 조정(EF-1) — 종목 넛지 후보는 수신 설정이 도착한 이번 렌더에 한 번만 판정한다.
+    // 꺼져 있거나(설정 권유가 맡는다) 이번 세션에 다른 넛지가 떴으면 띄우지 않는다.
+    // 알 수 없는 동안(`undefined`)은 판정하지 않는다. 저장소 쓰기는 아래 effect에서만 한다.
+    if (awaitingSymbol !== null && settings !== undefined) {
+        if (
+            settings !== null &&
+            settings.enabled &&
+            !hasNudgeShownThisSession() &&
+            nudge === null
+        ) {
+            setSymbolPending({ ...awaitingSymbol, status: 'shown' });
+            setOpenNudge({
+                userId: awaitingSymbol.userId,
+                nudge: { kind: 'symbol', symbol: awaitingSymbol.symbol },
+            });
+        } else {
+            setSymbolPending({ ...awaitingSymbol, status: 'skipped' });
+            if (settings === null || !settings.enabled) {
+                setReportOffUserId(awaitingSymbol.userId);
+            }
+        }
+    }
+
+    // 꺼진 회원은 기록하지 않는다 — 나중에 켜면 다시 후보가 된다.
+    useEffect(() => {
+        if (symbolPending === null || symbolPending.status !== 'shown') return;
+        const { userId: decidedFor, symbol, at } = symbolPending;
+        writeMemberNudgeRecord(
+            decidedFor,
+            markSymbolNudged(readMemberNudgeRecord(decidedFor), symbol, at)
+        );
+        markNudgeShownThisSession();
+    }, [symbolPending]);
 
     // 렌더 중 조정(EF-1) — 수신 설정이 도착한 이번 렌더에 한 번만 판정한다. 여기서
     // localStorage·sessionStorage를 읽어도 안전한 이유: 이 분기는 회원 정보와 수신 설정이
@@ -142,6 +219,7 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         const show = shouldShowSetupNudge(readMemberNudgeRecord(user.id), {
             emailVerified: user.emailVerified,
             holdingsCount: holdings.length,
+            watchlistCount: watchlist.items.length,
             reportEnabled: settings.enabled,
         });
         if (!show) {
@@ -152,13 +230,12 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
             setSetupDecision({ userId: user.id, outcome: 'shown' });
             setOpenNudge({
                 userId: user.id,
-                nudge: { kind: 'setup', holdingsCount: holdings.length },
+                nudge: { kind: 'setup', symbolCount },
             });
         }
     }
 
-    // 판정 결과를 저장소에 남긴다. 미룬 경우는 남기지 않는다 — 다음 세션에 다시 권한다.
-    // 판정한 회원의 id로 쓴다 — 지금 로그인한 회원이 아니라.
+    // 미룬 경우는 남기지 않는다 — 다음 세션에 다시 권한다. 판정한 회원의 id로 쓴다.
     useEffect(() => {
         if (setupDecision === null) return;
         const { userId: decidedFor, outcome } = setupDecision;
@@ -170,10 +247,23 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         if (outcome === 'shown') markNudgeShownThisSession();
     }, [setupDecision]);
 
-    // 구독 콜백이 최신 값을 읽도록 렌더마다 갱신한다(구독은 한 번만 건다).
-    const latestRef = useRef({ user, holdings, hasHoldings });
+    const latestRef = useRef({
+        user,
+        holdings,
+        hasHoldings,
+        isWatchlistKnown,
+        watchlistHas: watchlist.has,
+        reportOffUserId,
+    });
     useEffect(() => {
-        latestRef.current = { user, holdings, hasHoldings };
+        latestRef.current = {
+            user,
+            holdings,
+            hasHoldings,
+            isWatchlistKnown,
+            watchlistHas: watchlist.has,
+            reportOffUserId,
+        };
     });
 
     useEffect(
@@ -181,32 +271,34 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
             subscribeSymbolAnalyzed(symbol => {
                 const latest = latestRef.current;
                 if (latest.user == null || !latest.user.emailVerified) return;
-                // 보유 종목을 모르면 포트폴리오 밖인지 판정할 수 없어 세지 않는다.
-                if (!latest.hasHoldings) return;
+                // 보유·관심종목을 모르면 리포트 대상 밖인지 판정할 수 없어 세지 않는다.
+                if (!latest.hasHoldings || !latest.isWatchlistKnown) return;
                 const upper = symbol.toUpperCase();
-                const inPortfolio = latest.holdings.some(
-                    h => h.symbol.toUpperCase() === upper
-                );
+                const inReportSet =
+                    latest.holdings.some(
+                        h => h.symbol.toUpperCase() === upper
+                    ) || latest.watchlistHas(upper);
                 const now = Date.now();
                 const { record, shouldNudge } = recordSymbolAnalysis(
                     readMemberNudgeRecord(latest.user.id),
                     upper,
-                    inPortfolio,
+                    inReportSet,
                     now
                 );
-                if (shouldNudge && !hasNudgeShownThisSession()) {
-                    writeMemberNudgeRecord(
-                        latest.user.id,
-                        markSymbolNudged(record, upper, now)
-                    );
-                    markNudgeShownThisSession();
-                    setOpenNudge({
-                        userId: latest.user.id,
-                        nudge: { kind: 'symbol', symbol: upper },
-                    });
-                    return;
-                }
                 writeMemberNudgeRecord(latest.user.id, record);
+                // 횟수는 계속 쌓되, 꺼져 있음이 확인된 회원은 후보(= 수신 설정 조회)를 만들지 않는다.
+                if (
+                    shouldNudge &&
+                    !hasNudgeShownThisSession() &&
+                    latest.reportOffUserId !== latest.user.id
+                ) {
+                    setSymbolPending({
+                        userId: latest.user.id,
+                        symbol: upper,
+                        at: now,
+                        status: 'awaiting',
+                    });
+                }
             }),
         []
     );

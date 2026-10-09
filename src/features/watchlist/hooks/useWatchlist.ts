@@ -26,6 +26,8 @@ export type WatchlistToggleOutcome =
     | 'at_limit'
     | 'failed';
 
+export type WatchlistAddOutcome = Exclude<WatchlistToggleOutcome, 'removed'>;
+
 export interface UseWatchlistResult {
     /** 회원: 서버, 비회원: 로컬. 최근 담은 순. */
     items: WatchlistItemView[];
@@ -35,6 +37,14 @@ export interface UseWatchlistResult {
         entry: RawWatchlistInput,
         source: WatchlistSource
     ) => Promise<WatchlistToggleOutcome>;
+    /**
+     * 담기 전용. 이미 담겨 있으면(다른 탭에서 먼저 담은 경우 포함) 아무것도 하지 않고 `added`를
+     * 돌려준다 — `toggle`과 달리 절대 빼지 않는다. 이벤트는 실제로 담았을 때만 보낸다.
+     */
+    add: (
+        entry: RawWatchlistInput,
+        source: WatchlistSource
+    ) => Promise<WatchlistAddOutcome>;
     /** 명시적 삭제(내 종목 섹션·보유로 전환). 이벤트 없음. */
     remove: (symbol: string) => Promise<boolean>;
     /** 하이드레이션 전(회원은 첫 목록 도착 전)엔 false — 토글 비활성, 목록 비어 있음. */
@@ -130,16 +140,14 @@ export function useWatchlist(): UseWatchlistResult {
         [removeLocal, removeServer]
     );
 
-    const toggle = useCallback(
+    const add = useCallback(
         async (
             entry: RawWatchlistInput,
             source: WatchlistSource
-        ): Promise<WatchlistToggleOutcome> => {
+        ): Promise<WatchlistAddOutcome> => {
             const { has, isAtLimit, isMemberLikely, limit, showToast, t } =
                 latestRef.current;
-            if (has(entry.symbol)) {
-                return (await remove(entry.symbol)) ? 'removed' : 'failed';
-            }
+            if (has(entry.symbol)) return 'added';
             if (isAtLimit) {
                 showToast({ message: t('toast.limit', { v0: limit }) });
                 return 'at_limit';
@@ -165,13 +173,27 @@ export function useWatchlist(): UseWatchlistResult {
                 return 'failed';
             }
         },
-        [addLocal, addServer, remove]
+        [addLocal, addServer]
+    );
+
+    const toggle = useCallback(
+        async (
+            entry: RawWatchlistInput,
+            source: WatchlistSource
+        ): Promise<WatchlistToggleOutcome> => {
+            if (latestRef.current.has(entry.symbol)) {
+                return (await remove(entry.symbol)) ? 'removed' : 'failed';
+            }
+            return add(entry, source);
+        },
+        [add, remove]
     );
 
     return {
         items,
         has,
         toggle,
+        add,
         remove,
         isHydrated,
         isAtLimit,
