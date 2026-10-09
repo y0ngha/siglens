@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
+import { GUIDE_PATH } from '@/shared/lib/guidePaths';
 import {
     startTransition,
     useEffect,
@@ -274,6 +275,21 @@ export function HeaderMobileMenu({
                                     </div>
                                 ))}
                             </nav>
+
+                            <div className="border-t border-secondary-700 py-2">
+                                <MobileNavLink
+                                    href={GUIDE_PATH}
+                                    label={t('HeaderMobileMenu.guideLink')}
+                                    active={
+                                        pathname === GUIDE_PATH ||
+                                        pathname?.startsWith(
+                                            `${GUIDE_PATH}/`
+                                        ) === true
+                                    }
+                                    focusable={isOpen}
+                                    onNavigate={close}
+                                />
+                            </div>
 
                             <div className="border-t border-secondary-700 p-3">
                                 <AiNavLink

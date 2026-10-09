@@ -1,7 +1,7 @@
 import { memo } from 'react';
-import type { Components, Options } from 'react-markdown';
+import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 import { splitMarkdownBlocks } from './utils/markdownBlocks';
 
 /**
@@ -128,15 +128,6 @@ const AGENT_COMPONENTS: Components = {
     ),
 };
 
-/**
- * `singleTilde: false`: answers write price ranges as `266,500~270,666원`, and
- * GFM's default reads two single tildes on one line as ~strikethrough~
- * (2026-09-13 사용자 제보). Only `~~double~~` strikes now.
- */
-const REMARK_PLUGINS: Options['remarkPlugins'] = [
-    [remarkGfm, { singleTilde: false }],
-];
-
 interface MarkdownBlockProps {
     readonly source: string;
 }
@@ -152,7 +143,7 @@ const MarkdownBlock = memo(function MarkdownBlock({
 }: MarkdownBlockProps) {
     return (
         <ReactMarkdown
-            remarkPlugins={REMARK_PLUGINS}
+            remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
             components={AGENT_COMPONENTS}
         >
             {source}

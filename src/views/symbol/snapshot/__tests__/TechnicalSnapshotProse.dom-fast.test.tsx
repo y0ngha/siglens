@@ -450,4 +450,43 @@ describe('TechnicalSnapshotProse — 기준일 표기 + 라이브 분석 상호�
         ).toBeInTheDocument();
         expect(screen.queryByText('지난 AI 분석')).not.toBeInTheDocument();
     });
+
+    it('가이드가 있는 패턴·전략 이름은 가이드 페이지로 가는 링크가 되고, 없는 이름은 텍스트로 남는다', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    patternSummaries: [
+                        {
+                            id: 'p1',
+                            patternName: 'doji',
+                            skillName: 'Doji Pattern Guide',
+                            detected: true,
+                            trend: 'neutral',
+                            summary: '도지가 나타났습니다.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                    strategyResults: [
+                        {
+                            id: 's1',
+                            strategyName: '가이드 없는 전략',
+                            trend: 'neutral',
+                            summary: '전략 요약입니다.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />
+        );
+
+        const links = screen
+            .getAllByRole('link')
+            .filter(link => link.getAttribute('href')?.startsWith('/guide/'));
+        expect(links).toHaveLength(1);
+        expect(links[0]).toHaveAttribute('href', '/guide/candlesticks/doji');
+        expect(screen.getByText(/가이드 없는 전략/)).toBeInTheDocument();
+    });
 });

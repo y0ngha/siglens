@@ -139,7 +139,8 @@ describe('HeaderMobileMenu', () => {
             ...(v.overview ? [v.overview.href] : []),
             ...v.regions.flatMap(r => [r.href, ...r.children.map(c => c.href)]),
         ]);
-        // SiglensAI 진입점은 내비 목록 바로 다음, showAuthCta보다 앞이다.
+        // 차트 가이드 → SiglensAI 진입점 순서로 내비 목록 바로 다음, showAuthCta보다 앞이다.
+        expected.push('/guide');
         expected.push(`${AI_SITE_URL}${localePath('ko', '/')}`);
         expect(hrefs).toEqual(expected);
     });

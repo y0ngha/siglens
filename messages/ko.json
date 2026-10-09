@@ -2503,6 +2503,56 @@
                 "web": "웹 검색"
             }
         },
+        "guide": {
+            "aliasesLabel": "다른 이름",
+            "backToCategory": "{name} 목록으로",
+            "categoryCandlesticks": "캔들 패턴",
+            "categoryChartPatterns": "차트 패턴",
+            "categoryHubLink": "차트 가이드로 돌아가기",
+            "categoryIndicators": "보조지표",
+            "categoryIntroCandlesticks": "봉 하나부터 서너 개가 만드는 모양까지, 캔들 패턴이 무엇을 보여 주는지 설명해요. 시가·고가·저가·종가를 읽는 법부터 도지, 망치형, 장악형, 샛별형 같은 반전·지속 패턴까지 담았어요.",
+            "categoryIntroChartPatterns": "여러 봉이 만드는 큰 모양을 다뤄요. 이중바닥, 헤드앤숄더, 삼각형, 쐐기, 깃발처럼 추세가 이어지거나 바뀔 때 자주 나타나는 패턴이 어떻게 생겼고, Siglens가 어떤 기준으로 찾는지 설명해요.",
+            "categoryIntroIndicators": "이동평균, RSI, MACD, 볼린저 밴드처럼 가격과 거래량에서 계산하는 보조지표를 모았어요. 계산 방법과 읽는 법, 그리고 값이 자주 틀리는 상황까지 함께 적었어요.",
+            "categoryIntroStrategies": "엘리엇 파동, 피보나치 되돌림, 다이버전스, 돌파, 갭처럼 여러 신호를 엮어 보는 분석 관점을 설명해요. 지표 하나로는 알기 어려운 흐름을 읽을 때 쓰는 이론이에요.",
+            "categorySeoDescription": "{name} {count}개를 예시 차트와 함께 설명해요. 읽는 법과 Siglens의 판정 기준, 주의할 점을 담았어요.",
+            "categorySeoTitleCandlesticks": "캔들 패턴 종류와 뜻 총정리",
+            "categorySeoTitleChartPatterns": "차트 패턴 종류와 보는 법 총정리",
+            "categorySeoTitleIndicators": "보조지표 종류와 보는 법 총정리",
+            "categorySeoTitleStrategies": "엘리엇 파동·피보나치·다이버전스 전략 정리",
+            "categoryStrategies": "전략·이론",
+            "ctaBody": "관심 있는 종목을 검색하면 차트와 분석을 함께 볼 수 있어요.",
+            "ctaButton": "종목 검색하러 가기",
+            "ctaHeading": "실제 종목에서 확인해 보기",
+            "emptyAiQuestion": "가이드에 없는 용어: {query} — 차트 예시와 함께 쉽게 설명해 줘",
+            "emptyAskAi": "AI에게 물어보기",
+            "emptyBody": "다른 이름으로 다시 검색하거나, AI에게 바로 물어보세요.",
+            "emptyReset": "필터 지우기",
+            "emptyTitle": "찾는 항목이 없어요",
+            "entryCount": "{count}개 항목",
+            "faqHeading": "자주 묻는 질문",
+            "filterAll": "전체",
+            "filterLabel": "분류로 거르기",
+            "hubIntro": "Siglens가 차트에서 찾아내는 캔들 패턴, 차트 패턴, 보조지표, 전략을 하나씩 설명해요. 각 항목에는 예시 차트와 Siglens가 실제로 쓰는 판정 기준을 함께 실었어요.",
+            "hubSeoDescription": "캔들 패턴, 차트 패턴, 보조지표, 전략·이론 {count}개를 예시 차트와 함께 설명해요. Siglens가 실제로 쓰는 판정 기준도 실었어요.",
+            "hubSeoKeywords": "차트 가이드,캔들 패턴,차트 패턴,보조지표,기술적 분석 용어",
+            "hubSeoTitle": "차트 가이드: 캔들·차트 패턴·보조지표 뜻 정리",
+            "hubTitle": "차트 가이드",
+            "nextLabel": "다음 항목",
+            "otherCategories": "다른 분류 보기",
+            "paginationLabel": "이전·다음 항목",
+            "previousLabel": "이전 항목",
+            "relatedHeading": "같이 보면 좋은 항목",
+            "resultsHeading": "검색 결과",
+            "searchLabel": "가이드 검색",
+            "searchPlaceholder": "이름으로 찾기 (예: 이중바닥, RSI)",
+            "tableLabel": "스크롤할 수 있는 표",
+            "tocLabel": "이 글의 차례",
+            "unavailableBody": "지금은 내용을 불러오지 못했어요. 잠시 뒤에 다시 열어 주세요.",
+            "unavailableHome": "홈으로 가기",
+            "unavailableTitle": "가이드를 준비하고 있어요",
+            "updatedAt": "마지막 업데이트 {date}",
+            "viewAllInCategory": "{name} 전체 보기"
+        },
         "methodology": {
             "ai": {
                 "check": "쉽게 보기 글은 화면에 나가기 전에 검사를 거쳐요. 원본 분석과 계산된 값에 없는 가격이나 큰 수가 들어 있으면 한 번 다시 쓰게 하고, 그래도 남으면 그 문장을 빼요. 문장을 빼도 정리되지 않으면 쉽게 보기 없이 원본 보기만 보여줘요.",
@@ -2598,6 +2648,7 @@
                 "bollingerBody": "20개 봉 평균을 가운데 두고 표준편차의 2배만큼 위아래로 띠를 그려요. 가격이 띠를 벗어나면 움직임이 평소보다 크다는 뜻으로 봐요.",
                 "counts": "분석 기준으로 쓰는 보조지표는 {indicators}종, 캔들 패턴은 {candles}종, 차트 패턴은 {patterns}종, 전략은 {strategies}종이에요.",
                 "examplesTitle": "계산하는 것의 예",
+                "guide": "지표별 설명은 차트 가이드에서 볼 수 있어요",
                 "ma": "이동평균",
                 "maBody": "최근 5·20·60·120·200개 봉의 종가 평균이에요. 가격이 평균 위에 있는지 아래에 있는지로 흐름을 가늠해요.",
                 "macd": "MACD",
@@ -2994,6 +3045,7 @@
                 "toolEconomy": "경제 지표",
                 "toolFreshAnalysis": "새 분석 생성",
                 "toolFundamentals": "기업 개요·재무",
+                "toolGuide": "차트 가이드",
                 "toolMarketOverview": "시장 동향",
                 "toolNews": "뉴스",
                 "toolOptions": "옵션",
@@ -3056,6 +3108,10 @@
             "AnalysisToast": {
                 "93531d": "재분석은 5분에 한 번만 가능해요.",
                 "b87ea9": "약 {v0} 뒤에 다시 시도해 주세요."
+            },
+            "GuideHintLink": {
+                "aria": "{name} 뜻 보기",
+                "label": "뜻 보기"
             },
             "ModelSelector": {
                 "1db1df": "AI 분석 모델 선택",
@@ -3183,6 +3239,7 @@
         },
         "ask-ai-fab": {
             "ariaLabel": "시그렌즈 AI에게 물어보기 (새 탭)",
+            "guideQuestion": "가이드: {title} — 차트 예시와 함께 쉽게 설명해 줘",
             "label": "시그렌즈 AI에게 물어보기",
             "question": "{name} 지금 어떤 상황인지 종합적으로 알려줘",
             "shortLabel": "AI에게 묻기"
@@ -3867,11 +3924,14 @@
                 "158954": "AI 분석 스킬",
                 "0d2c24": "접기",
                 "7e6540": "신뢰도 점수 설명",
+                "allGuides": "전체 가이드 보기",
                 "c266ba": "{v0}%는 보통, {v1}% 이상은 높음이에요.",
                 "c78b79": "스킬 카테고리 탭",
                 "e0f5c5": "낮은 점수도 분석에 보조적으로 반영돼요.",
                 "e20b1b": "{v0}% 미만은 낮음, {v1}",
-                "ebff92": "분석 기법의 신뢰도 점수예요."
+                "ebff92": "분석 기법의 신뢰도 점수예요.",
+                "guideLink": "가이드 보기",
+                "guideLinkAria": "{name} 가이드 보기"
             },
             "StatsBar": {
                 "deac8e": "시그렌즈 분석 규모"
@@ -3951,6 +4011,7 @@
                 "531f6a": "문의하기",
                 "5f5d12": "사이트 정보",
                 "693b62": "투자 면책 고지",
+                "guideLink": "차트 가이드",
                 "symbolsLink": "많이 찾는 종목"
             },
             "Header": {
@@ -3962,10 +4023,12 @@
                 "076925": "메뉴",
                 "195da6": "메뉴 열기",
                 "923b26": "메뉴 닫기",
-                "d28d27": "메뉴 패널 닫기"
+                "d28d27": "메뉴 패널 닫기",
+                "guideLink": "차트 가이드"
             },
             "HeaderNav": {
-                "5281d7": "주요 네비게이션"
+                "5281d7": "주요 네비게이션",
+                "guideLink": "가이드"
             },
             "HeaderNavMenu": {
                 "shortcutLabel": "{v0} 바로가기"

@@ -104,6 +104,7 @@
         "widgets.analysis.settingsMenu",
         "widgets.analysis.signalStrength",
         "widgets.analysis.staleBanner",
+        "widgets.ask-ai-fab.guideQuestion",
         "widgets.backtesting.hero",
         "widgets.chart.actionOverlay",
         "widgets.chart.ChartOverlayMenu",

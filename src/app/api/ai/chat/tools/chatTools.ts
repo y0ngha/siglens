@@ -9,6 +9,7 @@ import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     AGGREGATE_RESULT_MAX_CHARS,
+    GUIDE_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -28,6 +29,7 @@ import { getFundamentalsTool } from './getFundamentals';
 import { getMarketOverviewTool } from './getMarketOverview';
 import { getEconomyTool } from './getEconomy';
 import { getCongressTradesTool } from './getCongressTrades';
+import { getGuideTool } from './getGuide';
 import { safeErrorFields } from './logToolDegrade';
 import { isGuestSubject } from '../guestSubject';
 import { ensureSymbolNewsFresh } from '@/entities/news-article/lib/ensureSymbolNewsFresh';
@@ -88,6 +90,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_market_overview: getMarketOverviewTool,
     get_economy: getEconomyTool,
     get_congress_trades: getCongressTradesTool,
+    get_guide: getGuideTool,
 };
 
 /**
@@ -183,6 +186,7 @@ export function createToolExecutor(runtime: ToolRuntimeInput): ExecuteTool {
         if (name === 'get_bars_indicators') return BARS_RESULT_MAX_CHARS;
         if (name === 'get_market_overview' || name === 'get_economy')
             return AGGREGATE_RESULT_MAX_CHARS;
+        if (name === 'get_guide') return GUIDE_RESULT_MAX_CHARS;
         if (!isAnalysis(name)) return TOOL_RESULT_MAX_CHARS;
         return Math.max(
             TOOL_RESULT_MAX_CHARS,

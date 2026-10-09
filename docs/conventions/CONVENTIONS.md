@@ -1004,7 +1004,8 @@ widgets/        Do not define lazy pipelines directly
 Run `yarn i18n:extract --write` after editing source that has skipped i18n literals (line shifts move the skip
 markers in `messages/_meta/skips.json`) or after changing a route's import graph (its client key manifest,
 `messages/_meta/clientKeys.json`). Plain `yarn i18n:extract` only scans; commit the regenerated artifacts in the
-same change.
+same change. Make it the last step before committing: any later source edit shifts the line numbers again and
+CI's "i18n extract drift" check fails.
 
 <a id="I18-2"></a>
 

@@ -186,6 +186,12 @@ export const GavelIcon = (p: IconProps) => (
     </Icon>
 );
 
+export const BookIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5v-15z" />
+        <path d="M4 20.5A2.5 2.5 0 006.5 18H20v3H6.5A2.5 2.5 0 014 20.5z" />
+    </Icon>
+);
 export const GaugeIcon = (p: IconProps) => (
     <Icon {...p}>
         <path d="M4 16a8 8 0 0 1 16 0" />

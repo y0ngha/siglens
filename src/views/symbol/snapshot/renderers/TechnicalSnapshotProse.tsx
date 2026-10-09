@@ -5,6 +5,8 @@ import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
 import { readSnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
 import { cn } from '@/shared/lib/cn';
+import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
+import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import {
     TREND_LABEL_KEY,
@@ -37,6 +39,33 @@ interface TechnicalSnapshotProseProps {
     plain?: string | null;
     /** 차트 탭에는 라이브 `AnalysisPanel`이 함께 있다 — 셸 JSDoc 참고. */
     duplicatesLiveWidget?: boolean;
+}
+
+const GUIDE_NAME_LINK =
+    'underline decoration-secondary-600 underline-offset-2 transition-colors hover:text-primary-300 hover:decoration-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none';
+
+interface SkillNameProps {
+    /** 표시 이름(번역된 스킬 라벨). */
+    label: string;
+    /** 가이드 경로. 없으면 링크 없이 이름만 그린다. */
+    guidePath: string | null;
+}
+
+/**
+ * 패턴·전략 이름 — 차트 가이드에 항목이 있으면 그 페이지로 거는 링크. 서버 렌더라 HTML에
+ * 앵커가 그대로 실려 크롤러도 본다(UA 분기 없음).
+ */
+function SkillName({ label, guidePath }: SkillNameProps) {
+    if (guidePath === null) return <>{label}</>;
+    return (
+        <LocaleLink
+            href={guidePath}
+            prefetch={false}
+            className={GUIDE_NAME_LINK}
+        >
+            {label}
+        </LocaleLink>
+    );
 }
 
 /**
@@ -121,7 +150,14 @@ export function TechnicalSnapshotProse({
                             {narrowed.patternSummaries.map(p => (
                                 <li key={`${p.name}-${p.summary.slice(0, 32)}`}>
                                     <span className="font-medium text-secondary-200">
-                                        {skillLabel(p.name)}
+                                        <SkillName
+                                            label={skillLabel(p.name)}
+                                            // 스냅샷의 패턴 이름은 스킬명이 아니라 탐지 id(`patternName`)다.
+                                            guidePath={guidePathForSkill(
+                                                p.name,
+                                                p.name
+                                            )}
+                                        />
                                         {p.trend !== null &&
                                             ` (${tLabel(TREND_LABEL_KEY[p.trend])})`}
                                     </span>
@@ -150,7 +186,12 @@ export function TechnicalSnapshotProse({
                             {narrowed.strategyResults.map(s => (
                                 <li key={`${s.name}-${s.summary.slice(0, 32)}`}>
                                     <span className="font-medium text-secondary-200">
-                                        {skillLabel(s.name)}
+                                        <SkillName
+                                            label={skillLabel(s.name)}
+                                            guidePath={guidePathForSkill(
+                                                s.name
+                                            )}
+                                        />
                                         {s.trend !== null &&
                                             ` (${tLabel(TREND_LABEL_KEY[s.trend])})`}
                                     </span>

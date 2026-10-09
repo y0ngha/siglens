@@ -620,6 +620,62 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('주요 가격대')).toBeInTheDocument();
     });
 
+    it('가이드가 있는 패턴·전략은 펼친 본문에 "뜻 보기" 링크를 보인다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ skillName: 'Doji Pattern Guide' }),
+                    ],
+                    strategyResults: [
+                        makeStrategy({ strategyName: '피봇 포인트' }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />
+        );
+
+        expect(
+            screen.queryByRole('link', { name: /뜻 보기/ })
+        ).not.toBeInTheDocument();
+        for (const toggle of screen
+            .getAllByRole('button', { expanded: false })
+            .filter(button =>
+                /도지|피봇|Doji|Pivot/.test(button.textContent)
+            )) {
+            fireEvent.click(toggle);
+        }
+
+        const hrefs = screen
+            .getAllByRole('link', { name: /뜻 보기/ })
+            .map(link => link.getAttribute('href'));
+        expect(hrefs).toEqual([
+            '/guide/candlesticks/doji',
+            '/guide/strategies/pivot-points',
+        ]);
+    });
+
+    it('가이드가 없는 패턴에는 "뜻 보기" 링크가 없다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [makePattern()],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />
+        );
+
+        fireEvent.click(screen.getByText('상승 삼각형'));
+        expect(screen.getByText('패턴 설명')).toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: /뜻 보기/ })
+        ).not.toBeInTheDocument();
+    });
+
     it('renders strategy accordion items for detected strategies', () => {
         render(
             <AnalysisPanel

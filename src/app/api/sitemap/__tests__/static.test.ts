@@ -3,6 +3,9 @@ vi.mock('next/server', async () => {
         await vi.importActual<typeof import('next/server')>('next/server');
     return { ...actual };
 });
+vi.mock('@/entities/guide/api', () => ({
+    loadGuideCatalog: vi.fn().mockResolvedValue(null),
+}));
 const BACKTESTING_DATA_AT = new Date('2026-03-31T00:00:00.000Z');
 vi.mock('@/entities/sitemap-entry/lib/buildStaticEntries', () => ({
     buildStaticEntries: vi.fn().mockReturnValue([]),

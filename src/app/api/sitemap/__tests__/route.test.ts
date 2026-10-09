@@ -18,6 +18,9 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 // 자식 라우트가 실제로 쓰는 입력을 고정한다 — 산문 게이트는 "산문 있는 탭 없음"(빈 Set)으로
 // 두어 `/news`(최신 lastmod) 엔트리가 자식에서 빠지게 한다. 인덱스가 게이트 없이 빌드하면
 // 이 입력에서 인덱스 lastmod가 자식 파일의 최댓값보다 늦어진다(회귀 조건).
+vi.mock('@/entities/guide/api', () => ({
+    loadGuideCatalog: vi.fn().mockResolvedValue(null),
+}));
 vi.mock('@/entities/sitemap-entry/server', () => ({
     loadStaticSitemapInputs: vi.fn(async () => ({})),
     loadPopularSitemapInputs: vi.fn(async () => ({

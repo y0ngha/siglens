@@ -26,6 +26,8 @@
         "db:tunnel": "scripts/db-tunnel.sh",
         "db:migrate": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/migrate.ts",
         "db:seed:terms": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
+        "db:seed:guide": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedGuide.ts",
+        "guide:links": "tsx scripts/generate-guide-links.ts",
         "db:seed:crypto": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-assets.ts",
         "db:seed:crypto-korean": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-korean-names.ts",
         "db:seed:kr-names": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-kr-listed-names.ts",

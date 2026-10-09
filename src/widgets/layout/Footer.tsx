@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { AiNavLink } from './AiNavLink';
+import { GUIDE_PATH } from '@/shared/lib/guidePaths';
 import { ContactDialog } from './ContactDialog';
 import { CurrentYear } from './CurrentYear';
 import {
@@ -227,6 +228,14 @@ export function Footer() {
                                 className={LINK_CLASSES}
                             >
                                 {methodologyTitle(tSeo)}
+                            </Link>
+                            {/* 차트 가이드 — 방법론 바로 뒤. 용어 설명 90개 항목의 전역 진입 앵커. */}
+                            <Link
+                                href={GUIDE_PATH}
+                                prefetch={false}
+                                className={LINK_CLASSES}
+                            >
+                                {t('Footer.guideLink')}
                             </Link>
                             {/*
                              * 종목 디렉터리 — 이 링크가 있는 이유는 크롤 구조다.

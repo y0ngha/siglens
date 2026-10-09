@@ -44,11 +44,8 @@ vi.mock('next/cache', () => ({
         },
 }));
 
-import {
-    DrizzleTermsRepository,
-    getActiveTerms,
-    TERMS_RELEASE_ID,
-} from '@/entities/terms/api';
+import { DrizzleTermsRepository, getActiveTerms } from '@/entities/terms/api';
+import { RELEASE_ID } from '@/shared/config/release';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { TermsKind } from '@/shared/db/constants';
@@ -413,7 +410,7 @@ describe('getActiveTerms', () => {
 
         expect(unstableCacheCalls).toEqual([
             {
-                keyParts: ['terms:active', 'tos', 'ja', TERMS_RELEASE_ID],
+                keyParts: ['terms:active', 'tos', 'ja', RELEASE_ID],
                 options: {
                     revalidate: SECONDS_PER_DAY,
                     tags: ['terms:active'],
@@ -426,8 +423,8 @@ describe('getActiveTerms', () => {
         vi.stubEnv('GIT_SHA', 'v9.9.9');
         vi.resetModules();
         try {
-            const fresh = await import('@/entities/terms/api');
-            expect(fresh.TERMS_RELEASE_ID).toBe('v9.9.9');
+            const fresh = await import('@/shared/config/release');
+            expect(fresh.RELEASE_ID).toBe('v9.9.9');
         } finally {
             vi.unstubAllEnvs();
         }

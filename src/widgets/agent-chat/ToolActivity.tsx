@@ -6,6 +6,7 @@ import type { ToolActivityItem } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import {
     BankIcon,
+    BookIcon,
     BuildingIcon,
     CandlesIcon,
     CheckIcon,
@@ -39,6 +40,7 @@ const ICON: Record<string, IconComponent> = {
     get_market_overview: LayersIcon,
     get_economy: BankIcon,
     get_congress_trades: GavelIcon,
+    get_guide: BookIcon,
 };
 
 /** What the call was about — the symbol(s) or the search query, never raw JSON. */
@@ -90,6 +92,7 @@ export function ToolActivity({
         get_market_overview: t('ToolActivity.toolMarketOverview'),
         get_economy: t('ToolActivity.toolEconomy'),
         get_congress_trades: t('ToolActivity.toolCongressTrades'),
+        get_guide: t('ToolActivity.toolGuide'),
     };
     const labelOf = (name: string): string =>
         labels[name] ?? t('ToolActivity.toolOther');

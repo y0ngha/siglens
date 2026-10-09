@@ -10,6 +10,7 @@ import {
     TRANSLATABLE_ENTITY,
     TRANSLATION_SOURCE,
 } from '@/shared/db/contentTranslationFields';
+import { RELEASE_ID } from '@/shared/config/release';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
@@ -215,19 +216,6 @@ export class DrizzleTermsRepository implements TermsRepository {
 const TERMS_ACTIVE_CACHE_KEY = 'terms:active';
 
 /**
- * 활성 약관 캐시 키에 넣는 릴리스 식별자. 컨테이너 env `GIT_SHA`이고 값은 커밋 SHA가
- * 아니라 릴리스 버전(IMAGE_TAG)이다(`.github/workflows/deploy.yml` 빌드 단계, `Dockerfile`
- * runner 스테이지). 로컬·E2E처럼 없으면 빈 문자열이다.
- *
- * ISR 데이터 캐시(`fetch/`)는 배포를 넘어 공유된다(`cache-handler/config.mjs`
- * `DATA_CACHE_VERSION`). 그대로 두면 "발효 직후 배포로 즉시 재생성" 절차
- * (DEPLOY_RUNBOOK §3.5)에서 페이지는 새로 렌더돼도 본문은 발효 전에 캐시된 옛 약관을
- * 다시 읽는다. 키에 릴리스를 넣어 이 엔트리만 빌드 스코프로 되돌린다 — 비용은 배포마다
- * kind×locale당 DB 조회 한 번이다.
- */
-export const TERMS_RELEASE_ID: string = process.env.GIT_SHA ?? '';
-
-/**
  * 활성 약관 한 건 — `generateMetadata`와 페이지 본문이 **같은 행**을 보게 하는
  * 요청 스코프 메모.
  *
@@ -248,7 +236,7 @@ export const TERMS_RELEASE_ID: string = process.env.GIT_SHA ?? '';
  * 같게 둔다 — Next는 렌더 중 읽은 `unstable_cache` 중 가장 짧은 revalidate로 페이지
  * s-maxage를 줄이므로, 더 짧으면 그 주기로 legal 페이지 전체가 재생성된다
  * (`staticSymbolCache`와 같은 이유). 키에 릴리스 식별자를 넣는 이유는
- * `TERMS_RELEASE_ID` 참고.
+ * `RELEASE_ID`(`shared/config/release.ts`) 참고.
  */
 export const getActiveTerms = cache(
     async (kind: TermsKind, locale: Locale): Promise<TermsRecord | null> => {
@@ -258,7 +246,7 @@ export const getActiveTerms = cache(
                 const { db } = getDatabaseClient();
                 return new DrizzleTermsRepository(db).findActive(kind, locale);
             },
-            [TERMS_ACTIVE_CACHE_KEY, kind, locale, TERMS_RELEASE_ID],
+            [TERMS_ACTIVE_CACHE_KEY, kind, locale, RELEASE_ID],
             { revalidate: SECONDS_PER_DAY, tags: [TERMS_ACTIVE_CACHE_KEY] }
         )();
         // 데이터 캐시는 JSON으로 저장돼 Date가 문자열로 돌아온다.

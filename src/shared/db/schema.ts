@@ -1154,3 +1154,62 @@ export const chatMessages = pgTable(
         ),
     ]
 );
+
+/**
+ * 차트 가이드(`/guide`) 항목의 로케일 무관 메타 — slug당 한 행.
+ *
+ * 정본은 `db/seeds/guide/{category}/{slug}/ko.md`의 frontmatter이고 이 테이블은 배포 사본이다.
+ * 공개 콘텐츠라 개인정보가 없다. `skills`는 이 항목이 설명하는 스킬 파일 basename이다
+ * (`guideLinks.generated.ts`의 매핑 정본은 시드 파일이며, 여기 값은 에이전트·운영 조회용 사본).
+ */
+export const guideEntries = pgTable('guide_entries', {
+    slug: text('slug').primaryKey(),
+    category: text('category').notNull(),
+    sortOrder: integer('sort_order').notNull(),
+    related: text('related')
+        .array()
+        .notNull()
+        .default(sql`ARRAY[]::text[]`),
+    skills: text('skills')
+        .array()
+        .notNull()
+        .default(sql`ARRAY[]::text[]`),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});
+
+/**
+ * 가이드 항목의 로케일별 본문 — (slug, locale)당 한 행.
+ *
+ * `content_hash`(frontmatter+본문 sha256)는 시드가 바뀐 행만 upsert하려는 비교용이다.
+ * 번역 행이 없으면 읽기 경로가 ko 행으로 폴백한다.
+ */
+export const guideEntryContents = pgTable(
+    'guide_entry_contents',
+    {
+        slug: text('slug')
+            .notNull()
+            .references(() => guideEntries.slug, { onDelete: 'cascade' }),
+        locale: text('locale').notNull(),
+        title: text('title').notNull(),
+        aliases: text('aliases')
+            .array()
+            .notNull()
+            .default(sql`ARRAY[]::text[]`),
+        summary: text('summary').notNull(),
+        seoTitle: text('seo_title').notNull(),
+        seoDescription: text('seo_description').notNull(),
+        demoCaption: text('demo_caption'),
+        bodyMd: text('body_md').notNull(),
+        /** `[{ q, a }]` */
+        faq: jsonb('faq')
+            .notNull()
+            .default(sql`'[]'::jsonb`),
+        contentHash: text('content_hash').notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [primaryKey({ columns: [table.slug, table.locale] })]
+);

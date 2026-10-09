@@ -1,12 +1,20 @@
 import { getTranslations } from 'next-intl/server';
 import { aiAskUrl } from '@/shared/config/aiHost';
 
-interface AskAiFabProps {
-    /** 종목 표시명 — 프리필 질문 문구에 그대로 삽입된다. */
-    name: string;
+/**
+ * 프리필 질문의 출처 — 둘 중 하나만 준다.
+ *  - `name`: 종목 표시명. 종목 페이지의 "지금 어떤 상황인지" 질문에 끼워 넣는다.
+ *  - `question`: 완성된 질문 문장. 호출부가 이미 로케일에 맞게 만든 것을 그대로 쓴다
+ *    (차트 가이드 항목: "가이드: {제목} — …").
+ */
+type AskAiFabSource =
+    | { name: string; question?: never }
+    | { question: string; name?: never };
+
+type AskAiFabProps = AskAiFabSource & {
     /** `aiAskUrl`에 넘길 로케일 접두 경로(`localePath(locale, '/')`). */
     localePrefix: string;
-}
+};
 
 /**
  * `/[symbol]/*` 오른쪽 아래에 상주하던 자체 챗봇 플로팅 버튼의 후임.
@@ -21,10 +29,16 @@ interface AskAiFabProps {
  * `z-70`(오버레이가 이 FAB 위에 뜨게 하는 값)과 `NoticePopup`의 형제 주석이
  * 이 자리를 전제로 하므로 임의로 바꾸면 안 된다.
  */
-export async function AskAiFab({ name, localePrefix }: AskAiFabProps) {
+export async function AskAiFab(props: AskAiFabProps) {
+    const { localePrefix } = props;
     const t = await getTranslations('widgets.ask-ai-fab');
-    const question = t('question', { name });
-    const href = aiAskUrl(localePrefix, question);
+    // 구조 분해하면 두 변형의 상관이 끊겨 `name`이 `string | undefined`로 넓어진다.
+    // `props` 째로 `question` 유무를 갈라 TS가 else 가지의 `name: string`을 알게 한다.
+    const prefill =
+        props.question !== undefined
+            ? props.question
+            : t('question', { name: props.name });
+    const href = aiAskUrl(localePrefix, prefill);
 
     return (
         <a

@@ -42,6 +42,7 @@ const CASES: readonly Case[] = [
         operation: 'seed:calendar-analysis',
     },
     { file: 'db/scripts/seedTerms.ts', operation: 'seed:terms' },
+    { file: 'db/scripts/seedGuide.ts', operation: 'seed:guide' },
 ];
 
 describe('쓰기 스크립트는 원격 대상이면 외부 접근 전에 거부한다', () => {

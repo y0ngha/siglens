@@ -62,6 +62,8 @@ import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { PlanCheckBlock } from './PlanCheckBlock';
+import { GuideHintLink } from './GuideHintLink';
+import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { formatFixed } from '@/shared/lib/formatNum';
@@ -315,9 +317,11 @@ const SIGNAL_TYPE_LABEL: Record<AnalysisSignalType, string> = {
 interface SignalItemProps {
     signal: AnalysisSignal;
     typeLabel?: string;
+    /** 이 신호를 낸 지표 스킬의 가이드 경로. 없으면 링크를 그리지 않는다. */
+    guidePath?: string | null;
 }
 
-function SignalItem({ signal, typeLabel }: SignalItemProps) {
+function SignalItem({ signal, typeLabel, guidePath }: SignalItemProps) {
     const tSection = useTranslations('widgets.analysis.sectionLabel');
     const tStrength = useTranslations('widgets.analysis.signalStrength');
     const strengthDisplay = resolveStrengthDisplay(signal.strength);
@@ -345,6 +349,12 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
             <MarkdownText className="text-xs text-secondary-400">
                 {signal.description}
             </MarkdownText>
+            {guidePath != null && (
+                <GuideHintLink
+                    href={guidePath}
+                    name={typeLabel ?? tSection(SIGNAL_TYPE_LABEL[signal.type])}
+                />
+            )}
         </div>
     );
 }
@@ -664,6 +674,7 @@ function PatternAccordionItem({
     const primaryLabel =
         pattern.renderConfig?.label ?? t('AnalysisPanel.fb0cf0');
     const keyPrices = pattern.keyPrices ?? [];
+    const guidePath = guidePathForSkill(pattern.skillName, pattern.patternName);
 
     return (
         <div
@@ -728,6 +739,12 @@ function PatternAccordionItem({
                             </div>
                         </div>
                     )}
+                    {guidePath !== null && (
+                        <GuideHintLink
+                            href={guidePath}
+                            name={skillLabel(pattern.skillName)}
+                        />
+                    )}
                 </div>
             ) : null}
         </div>
@@ -774,6 +791,7 @@ function StrategyAccordionItem({
     };
 
     const sections = parseStructuredSummary(strategy.summary);
+    const guidePath = guidePathForSkill(strategy.strategyName);
 
     return (
         <div
@@ -810,13 +828,19 @@ function StrategyAccordionItem({
             </div>
 
             {isOpen ? (
-                <div className="border-t border-secondary-700 bg-secondary-800/60 px-3 py-2.5">
+                <div className="flex flex-col gap-2.5 border-t border-secondary-700 bg-secondary-800/60 px-3 py-2.5">
                     {sections !== null ? (
                         <StructuredSkillSummary sections={sections} />
                     ) : (
                         <MarkdownText className="text-xs text-secondary-400">
                             {strategy.summary}
                         </MarkdownText>
+                    )}
+                    {guidePath !== null && (
+                        <GuideHintLink
+                            href={guidePath}
+                            name={skillLabel(strategy.strategyName)}
+                        />
                     )}
                 </div>
             ) : null}
@@ -1580,6 +1604,9 @@ export function AnalysisPanel({
                                                             key={`${indicatorResult.indicatorName}-${signal.type}-${index}`}
                                                             signal={signal}
                                                             typeLabel={skillLabel(
+                                                                indicatorResult.indicatorName
+                                                            )}
+                                                            guidePath={guidePathForSkill(
                                                                 indicatorResult.indicatorName
                                                             )}
                                                         />
