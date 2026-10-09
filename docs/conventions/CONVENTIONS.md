@@ -783,7 +783,9 @@ before deleting it.
 
 Privacy policies, terms and in-product notices state exactly what the code does: list the storage items, the data
 actually used and every item sent to a third party (including identifiers embedded in links). Compare each sentence
-with the code path; on a mismatch change the code or the text, never leave both.
+with the code path; on a mismatch change the code or the text, never leave both. When a new code path starts writing
+user data, update the text in the same change. Keep non-advertising storage items out of the advertising-cookie
+paragraph.
 
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.
