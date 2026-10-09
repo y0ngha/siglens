@@ -164,6 +164,21 @@ const trigger = useCallback(() => {
 }, [deps]);
 ```
 
+<a id="HK-3"></a>
+
+#### HK-3 — Identity-scoped state is keyed by identity and reset when identity changes
+
+State that belongs to one user (a pending decision, an open modal, a "tried once" or "already merged" flag) and
+lives in a long-lived host (root layout, shared hook, module scope) carries the user id and is cleared when the id
+changes or on logout. Otherwise a member switch or logout without a reload applies member A's state to member B.
+Derive "is a member" in one exported place, not separately per consumer.
+
+```tsx
+// ❌ const [decision, setDecision] = useState<Decision | null>(null); // survives a member switch
+// ✅ const [decision, setDecision] = useState<{ userId: string; value: Decision } | null>(null);
+//    const active = decision?.userId === userId ? decision.value : null;
+```
+
 ---
 
 ## Component Rules
@@ -361,6 +376,23 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 // ✅
 <div role="tooltip" id="tooltip-1">…</div>
 <button aria-describedby="tooltip-1">…</button>
+```
+
+<a id="AX-3"></a>
+
+#### AX-3 — Toggles and pending controls keep a stable name and keep focus
+
+- A toggle button keeps one accessible name and expresses state only through `aria-pressed`; swapping `aria-label`
+  between "add" and "remove" while also setting `aria-pressed` announces the state twice, inverted.
+- A control that becomes pending while it holds focus uses `aria-disabled`, not `disabled`, so focus does not fall to
+  `body` (Tab then escapes a modal). On success move focus to a persistent live region or the next target.
+- An auto-dismissing toast that carries an action pauses its timer on hover and `focus-within`.
+
+```tsx
+// ❌
+<button aria-label={on ? 'Remove' : 'Add'} aria-pressed={on} />
+// ✅
+<button aria-label="Watchlist" aria-pressed={on} />
 ```
 
 ---

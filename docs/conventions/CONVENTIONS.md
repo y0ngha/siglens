@@ -656,6 +656,19 @@ in an allowlist) is enforced by a guard test that fails when a new file breaks i
 Do not put `@internal` on a symbol that is not exported (it is internal by definition), and remove it from exported
 functions that tests or other modules legitimately import.
 
+<a id="CM-9"></a>
+
+#### CM-9 — Public code and docs never cite local-only files
+
+Comments, JSDoc, tests and tracked docs must not point at gitignored or local-only material (design specs, plans,
+scratch logs, runbooks, production logs): a reader of the repository cannot open it, and the pointer cannot be checked
+for staleness. State the fact or the reason inline, and cite only tracked files or rule IDs.
+
+```typescript
+// ❌ see docs/superpowers/specs/funnel.md §4 for why member prompts are excluded
+// ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
+```
+
 ---
 
 ## Change Synchronization
