@@ -28,4 +28,10 @@ describe('SymbolHeaderShellFallback', () => {
 
         expect(screen.getByTestId('tabs-skeleton')).toBeInTheDocument();
     });
+
+    it('컨트롤 자리를 3개 둔다 — ☆·공유·설정, 실제 헤더와 같은 size-11', () => {
+        const { container } = render(<SymbolHeaderShellFallback />);
+        const slots = container.querySelectorAll('span.size-11');
+        expect(slots).toHaveLength(3);
+    });
 });
