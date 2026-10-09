@@ -139,14 +139,15 @@ function SymbolNudgeModal({
             cta: 'add',
         });
         setIsPending(true);
-        try {
-            // 이 경로는 제거로 이어지지 않는다: 담기면 버튼이 사라지고, 진행 중 재클릭은 위에서 막는다.
-            // 라벨은 심볼로 넘긴다: 회원 경로의 `addWatchlistItemAction`이 회사명을 채운다.
-            await watchlist.toggle({ symbol, label: symbol }, 'nudge');
-        } finally {
-            pendingRef.current = false;
-            setIsPending(false);
-        }
+        // 이 경로는 제거로 이어지지 않는다: 담기면 버튼이 사라지고, 진행 중 재클릭은 위에서 막는다.
+        // 라벨은 심볼로 넘긴다: 회원 경로의 `addWatchlistItemAction`이 회사명을 채운다.
+        // `try … finally`는 React Compiler가 내리지 못해(react-hooks-js/todo) `.catch`로 대신한다 —
+        // toggle은 실패를 결과값('failed')으로 돌려주지만, 혹시 던져도 진행 상태는 반드시 푼다.
+        await watchlist
+            .toggle({ symbol, label: symbol }, 'nudge')
+            .catch(() => 'failed' as const);
+        pendingRef.current = false;
+        setIsPending(false);
     };
 
     return (
