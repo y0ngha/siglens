@@ -1,9 +1,8 @@
 import 'server-only';
-import { EMAIL_REPORT_MAX_SYMBOLS } from '@/entities/email-report/lib/emailReportConstants';
 import {
     selectReportSymbols,
     type ReportHolding,
-} from '@/entities/email-report/lib/buildSymbolReport';
+} from '@/entities/email-report/lib/selectReportSymbols';
 import { isDueAt, toLocalSlot } from '@/entities/email-report/lib/localSlot';
 import {
     buildChartImageUrl,
@@ -150,10 +149,11 @@ export async function runEmailReportBatch(
         }
         let symbols: string[] = [];
         try {
-            symbols = selectReportSymbols(
-                await deps.findHoldings(recipient.userId),
-                EMAIL_REPORT_MAX_SYMBOLS
-            );
+            // Task 6에서 관심종목을 함께 넘긴다.
+            symbols = selectReportSymbols({
+                holdings: await deps.findHoldings(recipient.userId),
+                watchlist: [],
+            }).full;
             if (symbols.length === 0) {
                 await deps.deliveries.finish(claimId, 'skipped', [], null);
                 counts.skipped += 1;

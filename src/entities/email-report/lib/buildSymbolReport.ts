@@ -1,5 +1,4 @@
 import type { OptionsExpirationMetrics, Trend } from '@y0ngha/siglens-core';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     REPORT_MAX_NEWS,
@@ -96,39 +95,4 @@ export function buildSymbolReport(input: BuildSymbolReportInput): SymbolReport {
                 ? null
                 : input.analyzedAt.toISOString(),
     };
-}
-
-/** 보유 종목 한 줄 — 포트폴리오 행에서 필요한 것만. */
-export interface ReportHolding {
-    symbol: string;
-    quantity: string;
-    averagePrice: string;
-}
-
-/**
- * 메일에 실을 종목을 고른다. 매입 원가(수량 × 평단)가 큰 순 — 회원에게 가장 무거운
- * 종목부터 보여 준다. 동률이면 심볼 순으로 결정적이게 한다.
- *
- * 국내 주식은 평단이 원화라 달러 종목과 원가를 그대로 비교하면 늘 앞선다. 그래서 통화
- * 그룹을 먼저 가르고(해외 → 국내) 그룹 안에서만 원가를 비교한다. 해외를 앞에 두는 이유는
- * 리포트의 옵션 섹션이 미국 종목에만 있기 때문이다.
- */
-export function selectReportSymbols(
-    holdings: readonly ReportHolding[],
-    max: number
-): string[] {
-    const costBasis = (h: ReportHolding) => {
-        const value = Number(h.quantity) * Number(h.averagePrice);
-        return Number.isFinite(value) ? value : 0;
-    };
-    const group = (h: ReportHolding) => Number(isKrEquitySymbol(h.symbol));
-    return holdings
-        .toSorted(
-            (a, b) =>
-                group(a) - group(b) ||
-                costBasis(b) - costBasis(a) ||
-                a.symbol.localeCompare(b.symbol)
-        )
-        .slice(0, max)
-        .map(h => h.symbol);
 }

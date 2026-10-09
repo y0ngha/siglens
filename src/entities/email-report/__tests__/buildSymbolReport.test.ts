@@ -2,7 +2,6 @@ import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
 import {
     buildSymbolReport,
     pickReportNews,
-    selectReportSymbols,
     type BuildSymbolReportInput,
 } from '@/entities/email-report/lib/buildSymbolReport';
 import {
@@ -164,45 +163,5 @@ describe('pickReportNews', () => {
         const [item] = pickReportNews([news()]);
 
         expect(item?.title).toBe('English title');
-    });
-});
-
-describe('selectReportSymbols', () => {
-    it('해외 종목을 먼저, 그룹 안에서는 매입 원가가 큰 순으로 상한까지 고른다', () => {
-        const picked = selectReportSymbols(
-            [
-                { symbol: '005930.KS', quantity: '100', averagePrice: '70000' },
-                { symbol: 'AAPL', quantity: '10', averagePrice: '150' },
-                { symbol: 'NVDA', quantity: '20', averagePrice: '100' },
-                { symbol: 'MSFT', quantity: '1', averagePrice: '400' },
-            ],
-            3
-        );
-
-        expect(picked).toEqual(['NVDA', 'AAPL', 'MSFT']);
-    });
-
-    it('원가가 같으면 심볼 순이다', () => {
-        expect(
-            selectReportSymbols(
-                [
-                    { symbol: 'TSLA', quantity: '1', averagePrice: '10' },
-                    { symbol: 'AMD', quantity: '1', averagePrice: '10' },
-                ],
-                5
-            )
-        ).toEqual(['AMD', 'TSLA']);
-    });
-
-    it('숫자로 읽을 수 없는 원가는 0으로 친다', () => {
-        expect(
-            selectReportSymbols(
-                [
-                    { symbol: 'BAD', quantity: 'x', averagePrice: '10' },
-                    { symbol: 'OK', quantity: '1', averagePrice: '1' },
-                ],
-                5
-            )
-        ).toEqual(['OK', 'BAD']);
     });
 });
