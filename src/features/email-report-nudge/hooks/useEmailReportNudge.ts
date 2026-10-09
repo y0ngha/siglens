@@ -10,6 +10,7 @@ import {
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useEmailReportSettings } from '@/entities/email-report/hooks/useEmailReportSettings';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
+import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
     hasNudgeShownThisSession,
@@ -26,9 +27,9 @@ import {
     writeMemberNudgeRecord,
 } from '../lib/memberNudgeStorage';
 
-/** 띄울 넛지. `setup`은 메일 리포트 설정 권유, `symbol`은 포트폴리오 밖 종목 담기 권유. */
+/** 띄울 넛지. `setup`은 메일 리포트 설정 권유(보유∪관심 종목 수), `symbol`은 리포트 대상 밖 종목 담기 권유. */
 export type EmailReportNudge =
-    | { kind: 'setup'; holdingsCount: number }
+    | { kind: 'setup'; symbolCount: number }
     | { kind: 'symbol'; symbol: string };
 
 /**
@@ -77,10 +78,10 @@ interface OpenNudge {
 /**
  * 회원 메일 리포트 넛지 두 가지를 판정한다. 루트 레이아웃의 호스트가 한 번 마운트한다.
  *
- * 1. **설정 권유(회원당 1회, 어느 페이지에서든)** — 포트폴리오가 있고, 이메일이 인증됐고,
+ * 1. **설정 권유(회원당 1회, 어느 페이지에서든)** — 보유 또는 관심종목이 있고, 이메일이 인증됐고,
  *    메일 리포트가 꺼진 회원. 수신 설정은 후보일 때만 조회한다(모든 페이지에서 회원마다
  *    Server Action을 보내지 않도록). 이미 켠 회원은 기록해 두고 다시 조회하지 않는다.
- * 2. **종목 담기 권유** — 포트폴리오 밖 종목을 누적 3회 이상 분석하면. 같은 종목엔 한 번,
+ * 2. **종목 담기 권유** — 리포트 대상(보유∪관심) 밖 종목을 누적 3회 이상 분석하면. 같은 종목엔 한 번,
  *    종목 넛지끼리 7일 간격(`memberNudgePolicy`). 이메일 인증 회원만 센다 — 인증 전에는 담아도
  *    메일이 나가지 않으므로 권하지 않고, 인증 전 분석 횟수도 쌓지 않는다.
  *
@@ -124,10 +125,22 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         enabled: isVerifiedMember && !storedSetupShown && !isExcluded,
     });
 
+    // 관심종목은 헤더 메뉴 뱃지가 같은 React Query 키로 이미 받아 두므로 추가 요청이 없다.
+    // 목록이 도착하기 전(하이드레이션 전·회원 여부 미확정)의 빈 목록은 "관심종목 없음"이 아니므로,
+    // 알 때까지 세지도 판정하지도 않는다 — 그렇지 않으면 관심종목만 있는 회원에게 거짓 판정이 난다.
+    const watchlist = useWatchlist();
+    const isWatchlistKnown =
+        watchlist.isHydrated && !watchlist.isIdentityPending;
+    const symbolCount = new Set([
+        ...holdings.map(h => h.symbol.toUpperCase()),
+        ...watchlist.items.map(i => i.symbol.toUpperCase()),
+    ]).size;
+
     const isSetupCandidate =
         isVerifiedMember &&
         hasHoldings &&
-        holdings.length > 0 &&
+        isWatchlistKnown &&
+        symbolCount > 0 &&
         !isExcluded &&
         !storedSetupShown &&
         setupDecision?.userId !== user.id;
@@ -142,6 +155,7 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         const show = shouldShowSetupNudge(readMemberNudgeRecord(user.id), {
             emailVerified: user.emailVerified,
             holdingsCount: holdings.length,
+            watchlistCount: watchlist.items.length,
             reportEnabled: settings.enabled,
         });
         if (!show) {
@@ -152,7 +166,7 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
             setSetupDecision({ userId: user.id, outcome: 'shown' });
             setOpenNudge({
                 userId: user.id,
-                nudge: { kind: 'setup', holdingsCount: holdings.length },
+                nudge: { kind: 'setup', symbolCount },
             });
         }
     }
@@ -171,9 +185,21 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
     }, [setupDecision]);
 
     // 구독 콜백이 최신 값을 읽도록 렌더마다 갱신한다(구독은 한 번만 건다).
-    const latestRef = useRef({ user, holdings, hasHoldings });
+    const latestRef = useRef({
+        user,
+        holdings,
+        hasHoldings,
+        isWatchlistKnown,
+        watchlistHas: watchlist.has,
+    });
     useEffect(() => {
-        latestRef.current = { user, holdings, hasHoldings };
+        latestRef.current = {
+            user,
+            holdings,
+            hasHoldings,
+            isWatchlistKnown,
+            watchlistHas: watchlist.has,
+        };
     });
 
     useEffect(
@@ -181,17 +207,18 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
             subscribeSymbolAnalyzed(symbol => {
                 const latest = latestRef.current;
                 if (latest.user == null || !latest.user.emailVerified) return;
-                // 보유 종목을 모르면 포트폴리오 밖인지 판정할 수 없어 세지 않는다.
-                if (!latest.hasHoldings) return;
+                // 보유·관심종목을 모르면 리포트 대상 밖인지 판정할 수 없어 세지 않는다.
+                if (!latest.hasHoldings || !latest.isWatchlistKnown) return;
                 const upper = symbol.toUpperCase();
-                const inPortfolio = latest.holdings.some(
-                    h => h.symbol.toUpperCase() === upper
-                );
+                const inReportSet =
+                    latest.holdings.some(
+                        h => h.symbol.toUpperCase() === upper
+                    ) || latest.watchlistHas(upper);
                 const now = Date.now();
                 const { record, shouldNudge } = recordSymbolAnalysis(
                     readMemberNudgeRecord(latest.user.id),
                     upper,
-                    inPortfolio,
+                    inReportSet,
                     now
                 );
                 if (shouldNudge && !hasNudgeShownThisSession()) {

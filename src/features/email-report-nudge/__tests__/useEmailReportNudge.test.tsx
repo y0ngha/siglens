@@ -2,6 +2,9 @@ const state = vi.hoisted(() => ({
     user: undefined as unknown,
     holdings: [] as Array<{ symbol: string }>,
     holdingsLoading: false,
+    watchlist: [] as Array<{ symbol: string }>,
+    watchlistHydrated: true,
+    watchlistIdentityPending: false,
     settings: undefined as unknown,
     pathname: '/AAPL',
     settingsEnabledArgs: [] as boolean[],
@@ -19,6 +22,18 @@ vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings', () => ({
             hasData: !state.holdingsLoading,
         };
     },
+}));
+vi.mock('@/features/watchlist/hooks/useWatchlist', () => ({
+    useWatchlist: () => ({
+        items: state.watchlist,
+        has: (symbol: string) =>
+            state.watchlist.some(i => i.symbol === symbol.toUpperCase()),
+        toggle: vi.fn(),
+        isHydrated: state.watchlistHydrated,
+        isIdentityPending: state.watchlistIdentityPending,
+        isAtLimit: false,
+        limit: 50,
+    }),
 }));
 vi.mock('@/entities/email-report/hooks/useEmailReportSettings', () => ({
     useEmailReportSettings: ({ enabled }: { enabled: boolean }) => {
@@ -62,6 +77,9 @@ describe('useEmailReportNudge', () => {
         state.user = MEMBER;
         state.holdings = [{ symbol: 'AAPL' }, { symbol: 'MSFT' }];
         state.holdingsLoading = false;
+        state.watchlist = [];
+        state.watchlistHydrated = true;
+        state.watchlistIdentityPending = false;
         state.settings = OFF;
         state.pathname = '/AAPL';
         state.settingsEnabledArgs = [];
@@ -69,12 +87,12 @@ describe('useEmailReportNudge', () => {
     });
 
     describe('설정 권유', () => {
-        it('포트폴리오가 있고 수신이 꺼진 인증 회원에게 보유 종목 수와 함께 한 번 띄우고 기록한다', () => {
+        it('포트폴리오가 있고 수신이 꺼진 인증 회원에게 종목 수와 함께 한 번 띄우고 기록한다', () => {
             const { result } = renderHook(() => useEmailReportNudge());
 
             expect(result.current.nudge).toEqual({
                 kind: 'setup',
-                holdingsCount: 2,
+                symbolCount: 2,
             });
             expect(readMemberNudgeRecord('u-1').setupShown).toBe(true);
             expect(hasNudgeShownThisSession()).toBe(true);
@@ -98,6 +116,45 @@ describe('useEmailReportNudge', () => {
 
             expect(state.holdingsEnabledArgs[0]).toBe(true);
         });
+
+        it('보유 종목이 없어도 관심종목이 있으면 띄우고, 종목 수는 보유∪관심의 개수다', () => {
+            state.holdings = [];
+            state.watchlist = [{ symbol: 'TSLA' }, { symbol: 'NVDA' }];
+
+            const { result } = renderHook(() => useEmailReportNudge());
+
+            expect(result.current.nudge).toEqual({
+                kind: 'setup',
+                symbolCount: 2,
+            });
+        });
+
+        it('보유와 관심에 모두 있는 종목은 한 번만 센다', () => {
+            state.watchlist = [{ symbol: 'AAPL' }, { symbol: 'TSLA' }];
+
+            const { result } = renderHook(() => useEmailReportNudge());
+
+            expect(result.current.nudge).toEqual({
+                kind: 'setup',
+                symbolCount: 3,
+            });
+        });
+
+        it.each([
+            ['하이드레이션 전', () => (state.watchlistHydrated = false)],
+            ['회원 여부 미확정', () => (state.watchlistIdentityPending = true)],
+        ])(
+            '관심종목이 %s이면 판정을 미룬다(수신 설정도 조회하지 않는다)',
+            (_, arrange) => {
+                state.holdings = [];
+                arrange();
+
+                const { result } = renderHook(() => useEmailReportNudge());
+
+                expect(result.current.nudge).toBeNull();
+                expect(state.settingsEnabledArgs.every(e => !e)).toBe(true);
+            }
+        );
 
         it('이미 수신 중이면 띄우지 않고, 다시 조회하지 않도록 기록한다', () => {
             state.settings = { ...OFF, enabled: true };
@@ -123,7 +180,13 @@ describe('useEmailReportNudge', () => {
                 '이메일 미인증',
                 () => (state.user = { ...MEMBER, emailVerified: false }),
             ],
-            ['보유 종목 없음', () => (state.holdings = [])],
+            [
+                '보유도 관심종목도 없음',
+                () => {
+                    state.holdings = [];
+                    state.watchlist = [];
+                },
+            ],
             ['보유 종목 로딩 중', () => (state.holdingsLoading = true)],
             ['계정 페이지', () => (state.pathname = '/account')],
             [
@@ -145,7 +208,7 @@ describe('useEmailReportNudge', () => {
             );
             expect(result.current.nudge).toEqual({
                 kind: 'setup',
-                holdingsCount: 2,
+                symbolCount: 2,
             });
 
             state.user = { id: 'u-2', emailVerified: true };
@@ -202,6 +265,30 @@ describe('useEmailReportNudge', () => {
                     publishSymbolAnalyzed('AAPL');
                 }
             });
+
+            expect(result.current.nudge).toBeNull();
+            expect(readMemberNudgeRecord('u-1').symbolCounts).toEqual({});
+        });
+
+        it('관심종목에 이미 있는 종목은 세지도 띄우지도 않는다', () => {
+            state.watchlist = [{ symbol: 'TSLA' }];
+            const { result } = renderHook(() => useEmailReportNudge());
+
+            act(() => {
+                for (let i = 0; i < SYMBOL_NUDGE_MIN_ANALYSES + 1; i += 1) {
+                    publishSymbolAnalyzed('tsla');
+                }
+            });
+
+            expect(result.current.nudge).toBeNull();
+            expect(readMemberNudgeRecord('u-1').symbolCounts).toEqual({});
+        });
+
+        it('관심종목을 아직 모르면 세지 않는다', () => {
+            state.watchlistHydrated = false;
+            const { result } = renderHook(() => useEmailReportNudge());
+
+            act(() => publishSymbolAnalyzed('TSLA'));
 
             expect(result.current.nudge).toBeNull();
             expect(readMemberNudgeRecord('u-1').symbolCounts).toEqual({});
