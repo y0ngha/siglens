@@ -5,7 +5,14 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
     SkillsShowcase: () => null,
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
-    StatsBar: () => null,
+    StatsBar: function StatsBar() {
+        return null;
+    },
+}));
+vi.mock('@/features/watchlist/ui/WatchlistOnboarding', () => ({
+    WatchlistOnboarding: function WatchlistOnboarding() {
+        return null;
+    },
 }));
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
@@ -144,4 +151,25 @@ describe('홈 generateMetadata', () => {
             expect(twitter?.['images']).toBeDefined();
         }
     );
+});
+
+describe('홈 관심종목 온보딩 배치', () => {
+    it('WatchlistOnboarding이 히어로 섹션 안, StatsBar 앞에 한 번 렌더된다', async () => {
+        const { default: Home } = await import('../(home)/page');
+        const { WatchlistOnboarding } =
+            await import('@/features/watchlist/ui/WatchlistOnboarding');
+        const { findAllElementsByType } =
+            await import('@/__tests__/utils/findElementByType');
+        const tree = await Home({ params: Promise.resolve({ locale: 'ko' }) });
+        expect(findAllElementsByType(tree, WatchlistOnboarding)).toHaveLength(
+            1
+        );
+        // 문서 순서: 온보딩 블록이 StatsBar보다 먼저 나온다.
+        const flat = JSON.stringify(tree, (_key, value) =>
+            typeof value === 'function' ? value.name : value
+        );
+        expect(flat.indexOf('WatchlistOnboarding')).toBeLessThan(
+            flat.indexOf('StatsBar')
+        );
+    });
 });

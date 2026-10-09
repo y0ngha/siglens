@@ -28,6 +28,7 @@ import { symbolLabel } from '@/shared/lib/symbolLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useWatchlist } from '../hooks/useWatchlist';
 import { useWatchlistQuote } from '../hooks/useWatchlistQuote';
+import { WATCHLIST_ONBOARDING_ID } from './WatchlistOnboarding';
 
 const ROW_CHROME =
     'ring-secondary-700 bg-secondary-900/60 rounded-lg p-4 ring-1';
@@ -222,7 +223,7 @@ export function WatchlistSection({ onHoldingsChange }: WatchlistSectionProps) {
             <div className="rounded-lg border border-dashed border-secondary-700 px-4 py-6 text-center text-sm text-secondary-400">
                 <p>{t('section.empty')}</p>
                 <Link
-                    href="/#watchlist-onboarding"
+                    href={`/#${WATCHLIST_ONBOARDING_ID}`}
                     prefetch={false}
                     className="mt-2 inline-block font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
