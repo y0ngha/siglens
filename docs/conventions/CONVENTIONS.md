@@ -794,7 +794,7 @@ before deleting it.
 
 #### CS-14 — Policy and notice text matches code behavior line by line
 
-Privacy policies, terms and in-product notices state exactly what the code does: list the storage items, the data
+Privacy policies, terms and in-product copy (prompts, toasts, banners) state exactly what the code does. Copy never promises a delivery or effect the code skips for some users; gate the prompt on the real state or word it conditionally. Policies list the storage items, the data
 actually used and every item sent to a third party (including identifiers embedded in links). Compare each sentence
 with the code path; on a mismatch change the code or the text, never leave both. When a new code path starts writing
 user data, update the text in the same change. Keep non-advertising storage items out of the advertising-cookie
