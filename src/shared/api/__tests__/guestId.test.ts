@@ -95,13 +95,15 @@ describe('mintGuestIdOnResponse', () => {
             store as unknown as Awaited<ReturnType<typeof cookies>>
         );
 
-        await mintGuestIdOnResponse();
+        const minted = await mintGuestIdOnResponse();
 
         expect(store.set).toHaveBeenCalledOnce();
         const [name, value, options] = store.set.mock.calls[0];
         expect(name).toBe(GUEST_ID_COOKIE_NAME);
         // 우리가 서명한 값이어야 다음 요청의 readGuestId가 받아들인다.
         expect(await verifyGuestCookie(value)).toMatch(/^[0-9a-f-]{36}$/);
+        // 반환값은 쿠키에 심은 바로 그 id다(미터가 이번 요청에 쓴다).
+        expect(minted).toBe(await verifyGuestCookie(value));
         expect(options).toEqual({
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -121,7 +123,7 @@ describe('mintGuestIdOnResponse', () => {
             store as unknown as Awaited<ReturnType<typeof cookies>>
         );
 
-        await expect(mintGuestIdOnResponse()).resolves.toBeUndefined();
+        await expect(mintGuestIdOnResponse()).resolves.toBeNull();
         expect(store.set).not.toHaveBeenCalled();
     });
 
@@ -129,7 +131,7 @@ describe('mintGuestIdOnResponse', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
         mockCookies.mockRejectedValue(new Error('outside request scope'));
 
-        await expect(mintGuestIdOnResponse()).resolves.toBeUndefined();
+        await expect(mintGuestIdOnResponse()).resolves.toBeNull();
     });
 
     it('logs a repeating failure at most once per minute', async () => {

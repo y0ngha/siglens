@@ -21,7 +21,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
-import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
+import type {
+    AnalysisGateBlockedResult,
+    AnalysisMeter,
+} from '@/shared/lib/types';
 
 /**
  * Final return type for the technical analysis SSE stream — core's gated
@@ -42,6 +46,11 @@ type RunAnalysisActionResult =
            * 둘 다 "원본만 보여준다"로 같게 처리한다.
            */
           plain?: string | null;
+          /**
+           * 비회원 하루 무료 전체 공개 미터 판정. 필드가 없으면 미터가 적용되지 않은
+           * 응답이다(회원·정책 없음·크롤러·저장소 장애, 롤링 배포 중 구버전 인스턴스).
+           */
+          meter?: AnalysisMeter;
       })
     | AnalysisGateBlockedResult
     /**
@@ -176,6 +185,11 @@ export interface UseAnalysisResult {
      */
     isPersonalized: boolean;
     /**
+     * 서버가 이번 응답에 실은 하루 무료 공개 미터 판정. 미터가 적용되지 않았거나 아직
+     * 응답이 없으면 `null`이다.
+     */
+    meter: MeterState | null;
+    /**
      * 캐시에 분석이 없고 AI 자동 실행 게이트가 닫혀 생성을 미뤄 둔 상태.
      * 호출부는 "AI 분석 시작" 대기 화면을 보여 준다(`AiAnalysisAwaitingSection`).
      */
@@ -242,6 +256,7 @@ export function useAnalysis({
     // SSE 분석 라우트의 `personalized` 플래그를 그대로 미러링 — 배지의
     // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
     const [isPersonalized, setIsPersonalized] = useState(false);
+    const [meter, setMeter] = useState<MeterState | null>(null);
     const [isAwaitingInteraction, setIsAwaitingInteraction] = useState(false);
     /**
      * onMutate가 화면을 비우기 직전의 상태 스냅샷.
@@ -438,6 +453,7 @@ export function useAnalysis({
             // 새 제출이 시작됨 — 이전 결과의 personalized 여부는 더 이상 유효하지
             // 않다. 새 서버 응답이 올 때까지 false로 되돌린다.
             setIsPersonalized(false);
+            setMeter(null);
         },
         onSuccess: (data, variables) => {
             if (data.status === 'miss_no_trigger') {
@@ -450,8 +466,13 @@ export function useAnalysis({
                     mountRetryPhaseRef.current = 'done';
                 }
                 setIsPersonalized(data.personalized ?? false);
+                setMeter(data.meter?.state ?? null);
+                // 이 가드는 하이드레이션 레이스(회원→비회원 전환) 대비다. 서버가 오늘의
+                // 무료 공개 종목으로 판정했다면(`meter.state === 'revealed'`) 잠금 목록이
+                // 비어 있는 것이 정상이므로 서버 값을 그대로 쓴다.
                 if (
                     latestTierRef.current === 'free' &&
+                    data.meter?.state !== 'revealed' &&
                     (data.lockedInfoDepth?.length ?? 0) === 0
                 ) {
                     setAnalysisResult(null);
@@ -896,6 +917,7 @@ export function useAnalysis({
         reanalyzeCooldownMs,
         cooldownNotice,
         isPersonalized,
+        meter,
         plain,
         isAwaitingInteraction,
         isInstantResponse,

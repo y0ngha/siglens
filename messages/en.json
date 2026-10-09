@@ -155,7 +155,7 @@
                         "question": "What is {v0}?"
                     },
                     "q10": {
-                        "answer": "It is free today and needs no sign-up. Advanced features will move to a paid plan later; the core analysis stays free.",
+                        "answer": "Basic analysis is free with no sign-up. Members can use stronger AI models and reasoning options, and see entry, stop loss and target price levels on every symbol.",
                         "question": "Is there a fee to use the service?"
                     },
                     "q11": {
@@ -2986,6 +2986,13 @@
                 "confidenceMedium": "Medium confidence",
                 "confidenceMediumTip1": "This is a medium-confidence pattern.",
                 "confidenceMediumTip2": "Read it alongside other indicators rather than on its own.",
+                "meter": {
+                    "exhaustedBody": "Without an account, you can see entry, stop loss and target prices for {count, plural, one {# symbol} other {# symbols}} a day. It resets at midnight Korea time (KST), or sign up to see every symbol right now.",
+                    "exhaustedTitle": "Today's free full analysis is used up",
+                    "revealedBody": "Without an account, you can see entry, stop loss and target prices for {count, plural, one {# symbol} other {# symbols}} a day.",
+                    "revealedCta": "Sign up to see every symbol",
+                    "revealedTitle": "Today's free full analysis"
+                },
                 "reanalyze": "Re-analyze",
                 "reanalyzeCooldown": "{v0} until you can re-analyze",
                 "signupSkillUpsell": "Sign up to get a detailed analysis with all {v0} skills applied."

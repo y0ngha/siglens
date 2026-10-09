@@ -616,6 +616,97 @@ describe('useAnalysis', () => {
             });
         });
 
+        it('keeps the server-sent empty lock list for a revealed meter (free tier guard bypass)', async () => {
+            // 오늘의 무료 공개 종목은 서버가 member 깊이로 마스킹해 보낸다 — 잠금 목록이
+            // 비어 있는 것이 정상이므로 강제 잠금 가드가 덮어쓰면 안 된다.
+            mockSubmit.mockResolvedValue({
+                status: 'done',
+                result: {
+                    summary: '오늘의 공개 종목',
+                    trend: 'bullish',
+                    riskLevel: 'medium',
+                } as unknown as AnalysisResponse,
+                lockedInfoDepth: [],
+                meter: { state: 'revealed' },
+            });
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                            tier: 'free',
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.meter).toBe('revealed');
+                expect(result.current.lockedInfoDepth).toEqual([]);
+                expect(result.current.analysisResult?.summary).toBe(
+                    '오늘의 공개 종목'
+                );
+            });
+        });
+
+        it('still force-locks an empty lock list when the meter is exhausted', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'done',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                meter: { state: 'exhausted' },
+            });
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                            tier: 'free',
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.lockedInfoDepth).toContain('full_detail');
+                expect(result.current.analysisResult).toBeNull();
+                expect(result.current.meter).toBe('exhausted');
+            });
+        });
+
+        it('exposes meter=null when the response carries no meter field', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: {
+                    summary: 's',
+                    trend: 'bullish',
+                    riskLevel: 'medium',
+                } as unknown as AnalysisResponse,
+                lockedInfoDepth: ['partial_detail'],
+            });
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                            tier: 'free',
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).not.toBeNull();
+            });
+            expect(result.current.meter).toBeNull();
+        });
+
         it('clears a member result before a free-tier refresh can complete', async () => {
             let resolveSecondSubmit: (() => void) | undefined;
             mockSubmit

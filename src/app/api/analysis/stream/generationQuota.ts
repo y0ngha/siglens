@@ -26,6 +26,8 @@ import {
  *   - DNS로 검증된 검색 크롤러다(`isVerifiedCrawler`). 크롤러는 쿠키가 없어 IP 시간 축에
  *     몰리고, 그 축이 차면 렌더된 DOM에 "잠시 후 다시" 배너가 남아 색인된다. 동시성 상한
  *     (`canAcceptAnalysisStream`) 등 나머지 제한은 그대로 받는다.
+ *     라우트가 하루 무료 공개 미터를 건너뛸지 따로 물을 수 있도록 이 판정은
+ *     {@link GuestResolver.isCrawler}로도 노출한다(요청당 한 번만 계산).
  */
 export type GenerationGate =
     | {
@@ -43,24 +45,68 @@ export type GenerationGate =
 const EXEMPT: GenerationGate = { kind: 'exempt' };
 
 /**
- * 한도 주체를 정한다. 회원은 userId, 비회원은 이 요청이 들고 온 서명된 게스트
- * 쿠키 + IP. IP는 `cf-connecting-ip`(Cloudflare가 매 요청 덮어씀)를 먼저 본다 —
- * 오리진은 CF 터널로만 들어오므로 신뢰할 수 있다(`getClientIp` JSDoc).
- *
- * 쿠키가 없으면 이 응답에 새로 발급하고(`mintGuestIdOnResponse`), **이번 요청은**
- * 쿠키 없는 신원(`guestId: null` → IP 축만)으로 센다. 발급한 id를 바로 쓰면 쿠키를
- * 버리는 스크립트가 요청마다 새 개인 한도를 얻는다.
+ * 비회원 요청 하나의 신원 조각. 생성 한도(`quotaGuestId`)와 하루 무료 공개 미터
+ * (`meterGuestId`)가 **같은 해석 결과**를 공유한다 — 쿠키 발급(`Set-Cookie`)이
+ * 요청당 한 번만 일어나야 하기 때문이다.
  */
-async function resolveQuotaIdentity(
-    userId: string | null
-): Promise<AnalysisQuotaIdentity> {
-    if (userId !== null) return { kind: 'member', userId };
-    const [guestId, clientIp] = await Promise.all([
+export interface GuestRequestContext {
+    /** 이 요청이 들고 온 검증된 쿠키 id. 없으면 null — 생성 한도는 이 값으로 센다. */
+    readonly quotaGuestId: string | null;
+    /**
+     * 미터가 쓰는 id: 쿠키 id, 없으면 이번 응답에 새로 발급한 id. 발급도 실패했으면
+     * null(미터는 잠금으로 닫힌다). 생성 한도는 새 id를 바로 쓰지 않는다 — 쿠키를
+     * 버리는 스크립트가 요청마다 새 개인 한도를 얻기 때문이다. 미터는 하루 한 종목
+     * 공개 자체가 목적이라 새 id를 바로 써도 IP 상한이 뒤를 받친다.
+     */
+    readonly meterGuestId: string | null;
+    readonly clientIp: string;
+}
+
+async function readGuestContext(): Promise<GuestRequestContext> {
+    const [cookieGuestId, clientIp] = await Promise.all([
         readGuestId(),
         getClientIp(),
     ]);
-    if (guestId === null) await mintGuestIdOnResponse();
-    return { kind: 'guest', guestId, clientIp };
+    const meterGuestId = cookieGuestId ?? (await mintGuestIdOnResponse());
+    return { quotaGuestId: cookieGuestId, meterGuestId, clientIp };
+}
+
+/**
+ * 요청 하나의 비회원 신원·크롤러 판정을 **한 번만** 계산해 나눠 쓰는 해석기.
+ * 라우트가 요청마다 하나 만들어 생성 한도(`reserveGenerationGate`)와 하루 무료 공개
+ * 미터에 같이 넘긴다 — 쿠키 발급(`Set-Cookie`)과 크롤러 DNS 조회가 요청당 한 번만
+ * 일어나게 하려는 것이다.
+ */
+export interface GuestResolver {
+    /**
+     * 비회원 신원. 쿠키가 없으면 이 응답에 새로 발급한다(`mintGuestIdOnResponse`).
+     * 던질 수 있다 — 호출자가 장애로 다룬다.
+     */
+    readonly context: () => Promise<GuestRequestContext>;
+    /** DNS로 검증된 검색 크롤러인가({@link isVerifiedCrawlerRequest}). */
+    readonly isCrawler: () => Promise<boolean>;
+}
+
+export function createGuestResolver(requestHeaders: Headers): GuestResolver {
+    /** 첫 호출이 만든 Promise를 이후 호출이 그대로 받는 칸(요청 수명). */
+    const memo: {
+        context?: Promise<GuestRequestContext>;
+        crawler?: Promise<boolean>;
+    } = {};
+    return {
+        context: () => (memo.context ??= readGuestContext()),
+        isCrawler: () =>
+            (memo.crawler ??= isVerifiedCrawlerRequest(requestHeaders)),
+    };
+}
+
+async function resolveQuotaIdentity(
+    userId: string | null,
+    guest: GuestResolver
+): Promise<AnalysisQuotaIdentity> {
+    if (userId !== null) return { kind: 'member', userId };
+    const { quotaGuestId, clientIp } = await guest.context();
+    return { kind: 'guest', guestId: quotaGuestId, clientIp };
 }
 
 /** Cloudflare가 매 요청 덮어쓰는 클라이언트 IP 헤더(`getClientIp` JSDoc). */
@@ -106,15 +152,13 @@ async function isVerifiedCrawlerRequest(
 export async function reserveGenerationGate(
     userId: string | null,
     clientCacheOnly: boolean,
-    requestHeaders: Headers
+    requestHeaders: Headers,
+    guest: GuestResolver = createGuestResolver(requestHeaders)
 ): Promise<GenerationGate> {
     if (clientCacheOnly) return EXEMPT;
     try {
-        const identity = await resolveQuotaIdentity(userId);
-        if (
-            identity.kind === 'guest' &&
-            (await isVerifiedCrawlerRequest(requestHeaders))
-        ) {
+        const identity = await resolveQuotaIdentity(userId, guest);
+        if (identity.kind === 'guest' && (await guest.isCrawler())) {
             return EXEMPT;
         }
         const reservation = await reserveAnalysisGeneration(identity);
@@ -231,7 +275,8 @@ export interface GenerationGateSlot {
     readonly reserve: (
         userId: string | null,
         clientCacheOnly: boolean,
-        requestHeaders: Headers
+        requestHeaders: Headers,
+        guest?: GuestResolver
     ) => Promise<GenerationGate>;
     readonly release: () => Promise<void>;
 }
@@ -240,11 +285,12 @@ export function createGenerationGateSlot(): GenerationGateSlot {
     /** 예약(try 안)과 해제(바깥 catch)가 다른 스코프라 결과를 클로저 칸으로 넘긴다. */
     const slot: { gate: GenerationGate } = { gate: EXEMPT };
     return {
-        reserve: async (userId, clientCacheOnly, requestHeaders) => {
+        reserve: async (userId, clientCacheOnly, requestHeaders, guest) => {
             slot.gate = await reserveGenerationGate(
                 userId,
                 clientCacheOnly,
-                requestHeaders
+                requestHeaders,
+                guest
             );
             return slot.gate;
         },

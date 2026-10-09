@@ -36,6 +36,7 @@ vi.mock(
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     createGenerationGateSlot,
+    createGuestResolver,
     createPromptAssemblyTracker,
     DONE_STATUS_PROBE,
     reserveGenerationGate,
@@ -157,6 +158,79 @@ describe('reserveGenerationGate — guest identity on siglens.io', () => {
         });
         expect(mockReserve).not.toHaveBeenCalled();
         expect(mockCookieStore.set).not.toHaveBeenCalled();
+    });
+});
+
+describe('createGuestResolver — 요청당 한 번만 해석한다', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockCookieStore.jar.clear();
+        vi.stubEnv('OAUTH_STATE_HMAC_SECRET', 'test-secret');
+        mockGetClientIp.mockResolvedValue('203.0.113.9');
+        mockIsVerifiedCrawler.mockResolvedValue(false);
+        mockReserve.mockResolvedValue({
+            ok: true,
+            audience: 'guest',
+            refund: vi.fn(),
+        });
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('쿠키가 없으면 발급한 id를 meterGuestId로 주되 생성 한도용 id는 null로 둔다', async () => {
+        const context = await createGuestResolver(BROWSER_HEADERS).context();
+
+        const minted = mockCookieStore.set.mock.calls[0][1] as string;
+        expect(context).toEqual({
+            quotaGuestId: null,
+            meterGuestId: minted.split('.')[0],
+            clientIp: '203.0.113.9',
+        });
+    });
+
+    it('쿠키가 있으면 같은 id를 양쪽에 쓰고 새로 발급하지 않는다', async () => {
+        const resolver = createGuestResolver(BROWSER_HEADERS);
+        await resolver.context();
+        const minted = mockCookieStore.set.mock.calls[0][1] as string;
+        mockCookieStore.jar.set(GUEST_ID_COOKIE_NAME, minted);
+        mockCookieStore.set.mockClear();
+
+        const context = await createGuestResolver(BROWSER_HEADERS).context();
+
+        expect(mockCookieStore.set).not.toHaveBeenCalled();
+        expect(context.quotaGuestId).toBe(minted.split('.')[0]);
+        expect(context.meterGuestId).toBe(minted.split('.')[0]);
+    });
+
+    it('같은 해석기를 한도 예약과 미터가 함께 써도 쿠키는 한 번만 발급된다', async () => {
+        const resolver = createGuestResolver(BROWSER_HEADERS);
+
+        await reserveGenerationGate(null, false, BROWSER_HEADERS, resolver);
+        await resolver.context();
+
+        expect(mockCookieStore.set).toHaveBeenCalledOnce();
+    });
+
+    it('cacheOnly 요청도 해석기로 신원을 얻을 수 있다(한도 예약은 건너뛴다)', async () => {
+        const resolver = createGuestResolver(BROWSER_HEADERS);
+
+        await reserveGenerationGate(null, true, BROWSER_HEADERS, resolver);
+        const context = await resolver.context();
+
+        expect(mockReserve).not.toHaveBeenCalled();
+        expect(context.meterGuestId).not.toBeNull();
+    });
+
+    it('크롤러 판정은 한 번만 DNS를 조회한다', async () => {
+        mockIsVerifiedCrawler.mockResolvedValue(true);
+        const resolver = createGuestResolver(CRAWLER_HEADERS);
+
+        expect(await resolver.isCrawler()).toBe(true);
+        expect(await resolver.isCrawler()).toBe(true);
+
+        expect(mockIsVerifiedCrawler).toHaveBeenCalledOnce();
     });
 });
 

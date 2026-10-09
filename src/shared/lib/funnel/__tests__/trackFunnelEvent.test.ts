@@ -63,6 +63,18 @@ describe('trackFunnelEvent', () => {
         expect(readLastGate()).toBe('locked_detail');
     });
 
+    it('meter_clicked는 공개 띠 클릭으로 lastGate를 기록한다', () => {
+        rememberLastGate('timeframe');
+        trackFunnelEvent('meter_clicked', { state: 'revealed' });
+        expect(readLastGate()).toBe('meter_revealed');
+    });
+
+    it('meter_shown은 lastGate를 바꾸지 않는다', () => {
+        rememberLastGate('timeframe');
+        trackFunnelEvent('meter_shown', { state: 'exhausted' });
+        expect(readLastGate()).toBe('timeframe');
+    });
+
     it('nudge_clicked·signup_completed는 lastGate를 바꾸지 않는다', () => {
         rememberLastGate('timeframe');
         trackFunnelEvent('nudge_clicked', {

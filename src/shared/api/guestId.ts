@@ -4,7 +4,7 @@ import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 import {
     guestIdCookieOptions,
-    mintGuestCookieValue,
+    signGuestId,
     verifyGuestCookie,
 } from '@/shared/config/guestCookie';
 
@@ -36,21 +36,29 @@ let lastMintErrorAt = 0;
  * 분석 요청 응답에서 발급한다. 발급만으로 한도가 느슨해지지는 않는다 — 쿠키 없는
  * 요청은 IP 축으로만 세고, 쿠키는 다음 요청부터 개인 축에 쓰인다.
  *
+ * 발급한 uuid를 돌려준다 — 하루 무료 공개 미터는 쿠키가 아직 안 돌아온 이번
+ * 요청부터 이 id를 쓴다(생성 한도는 위 이유로 계속 쿠키 없는 신원으로 센다).
+ * 발급에 실패하면 `null`이다(미터는 fail-closed로 잠금).
+ *
  * 호스트 전용 쿠키다(`Domain` 없음). ai.siglens.io의 같은 이름 쿠키와 형식·서명이
  * 같지만 서로 섞이지 않는다(`GUEST_ID_COOKIE_NAME` JSDoc: 호스트별로 따로 발급).
  */
-export async function mintGuestIdOnResponse(): Promise<void> {
+export async function mintGuestIdOnResponse(): Promise<string | null> {
     try {
         const store = await cookies();
+        const guestId = crypto.randomUUID();
         store.set(
             GUEST_ID_COOKIE_NAME,
-            await mintGuestCookieValue(),
+            await signGuestId(guestId),
             guestIdCookieOptions()
         );
+        return guestId;
     } catch (error) {
         const now = Date.now();
-        if (now - lastMintErrorAt < MINT_ERROR_LOG_INTERVAL_MS) return;
-        lastMintErrorAt = now;
-        console.error('[guestId] mint on response failed', error);
+        if (now - lastMintErrorAt >= MINT_ERROR_LOG_INTERVAL_MS) {
+            lastMintErrorAt = now;
+            console.error('[guestId] mint on response failed', error);
+        }
+        return null;
     }
 }

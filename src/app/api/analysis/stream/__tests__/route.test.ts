@@ -31,7 +31,19 @@ vi.mock('@/entities/analysis/server/analysisGenerationQuota', () => ({
 }));
 vi.mock('@/shared/api/guestId', () => ({
     readGuestId: vi.fn().mockResolvedValue(null),
-    mintGuestIdOnResponse: vi.fn().mockResolvedValue(undefined),
+    mintGuestIdOnResponse: vi
+        .fn()
+        .mockResolvedValue('11111111-1111-4111-8111-111111111111'),
+}));
+// 하루 무료 공개 미터 — 판정 저장소만 막고 시행일 상수는 실물을 쓴다.
+const { mockDecideMeteredReveal } = vi.hoisted(() => ({
+    mockDecideMeteredReveal: vi.fn(),
+}));
+vi.mock('@/entities/analysis/server/meteredReveal', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/analysis/server/meteredReveal')
+    >()),
+    decideMeteredReveal: mockDecideMeteredReveal,
 }));
 vi.mock('@/shared/api/getClientIp', () => ({
     getClientIp: vi.fn().mockResolvedValue('203.0.113.1'),
@@ -294,6 +306,7 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { isBot } from '@/shared/api/isBot';
 import { isVerifiedCrawler } from '@/shared/api/verifiedCrawler';
+import { readGuestId } from '@/shared/api/guestId';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     e2eCachedTechnical,
@@ -3489,6 +3502,45 @@ describe('POST /api/analysis/stream', () => {
             );
         });
 
+        it('SSE 본문에는 unfilteredResult가 없고 이력 저장은 여전히 필터 전 결과를 받는다', async () => {
+            // 필터 전 결과가 응답 JSON에 실리면 free 비회원이 진입·손절·목표가를
+            // 화면 잠금과 무관하게 읽는다(운영 누출). 저장 구독자는 원본 work를 읽는다.
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: {
+                    headlineKo: 'h',
+                    entryPrices: null,
+                    stopLoss: null,
+                    takeProfitPrices: null,
+                },
+                unfilteredResult: {
+                    headlineKo: 'h',
+                    riskLevel: 'medium',
+                    entryPrices: [{ price: 111.11 }],
+                    stopLoss: { price: 99.99 },
+                    takeProfitPrices: [{ price: 222.22 }],
+                },
+            } as never);
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+            const body = events.join('');
+
+            expect(body).not.toContain('unfilteredResult');
+            expect(body).not.toContain('111.11');
+            expect(body).not.toContain('99.99');
+            expect(body).not.toContain('222.22');
+
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    result: expect.objectContaining({
+                        stopLoss: { price: 99.99 },
+                    }),
+                })
+            );
+        });
+
         it('after() 자체가 동기 throw해도 분석 응답은 정상이다', async () => {
             // `after()`는 요청 스코프 밖에서 호출되면 **콜백이 아니라 자기 자신이**
             // 동기 throw한다. overall 호출부는 이 헬퍼를 인라인으로 부르므로,
@@ -4254,6 +4306,242 @@ describe('POST /api/analysis/stream', () => {
             expect(events.some(e => e.includes('event: rate_limited'))).toBe(
                 true
             );
+        });
+    });
+    describe('비회원 하루 무료 전체 공개 미터', () => {
+        const AFTER_START = new Date('2026-10-20T03:00:00+09:00');
+        const BEFORE_START = new Date('2026-10-17T23:59:59+09:00');
+        const MINTED_ID = '11111111-1111-4111-8111-111111111111';
+        const mockRelease = vi.fn().mockResolvedValue(undefined);
+
+        function revealed(isNew = true) {
+            return { state: 'revealed', isNew, release: mockRelease };
+        }
+
+        /** done 이벤트의 `result` 페이로드. */
+        function resultOf(events: string[]): Record<string, unknown> {
+            const doneEvent = events
+                .join('')
+                .split('\n\n')
+                .find(chunk => chunk.includes('event: done'));
+            const data = doneEvent
+                ?.split('\n')
+                .find(line => line.startsWith('data: '));
+            return (
+                JSON.parse(data!.slice('data: '.length)) as {
+                    result: Record<string, unknown>;
+                }
+            ).result;
+        }
+
+        function lastOptions(): Record<string, unknown> {
+            const calls = vi.mocked(runAnalysis).mock.calls;
+            return calls[calls.length - 1][5] as Record<string, unknown>;
+        }
+
+        beforeEach(() => {
+            vi.setSystemTime(AFTER_START);
+            mockDecideMeteredReveal.mockReset();
+            mockRelease.mockClear();
+            vi.mocked(readGuestId).mockResolvedValue(null);
+            vi.mocked(isVerifiedCrawler).mockResolvedValue(false);
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done',
+                result: { headlineKo: 'h' },
+                lockedInfoDepth: [],
+                unfilteredResult: { headlineKo: 'h' },
+            } as never);
+        });
+
+        afterEach(() => {
+            vi.mocked(readGuestId).mockResolvedValue(null);
+        });
+
+        it('revealed면 runAnalysis에 member 깊이의 tierConfig를 넘기고 done에 meter를 싣는다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue(revealed());
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+
+            const tierConfig = lastOptions().tierConfig as {
+                infoDepth: Record<string, unknown>;
+            };
+            expect(tierConfig.infoDepth.free).toEqual(
+                tierConfig.infoDepth.member
+            );
+            expect(resultOf(events).meter).toEqual({ state: 'revealed' });
+            expect(mockDecideMeteredReveal).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    guestId: MINTED_ID,
+                    clientIp: '203.0.113.1',
+                    symbol: 'AAPL',
+                })
+            );
+            expect(mockRelease).not.toHaveBeenCalled();
+        });
+
+        it('쿠키가 있으면 쿠키 id로 판정한다', async () => {
+            vi.mocked(readGuestId).mockResolvedValue('cookie-guest');
+            mockDecideMeteredReveal.mockResolvedValue(revealed(false));
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockDecideMeteredReveal).toHaveBeenCalledWith(
+                expect.objectContaining({ guestId: 'cookie-guest' })
+            );
+        });
+
+        it('exhausted면 tierConfig를 넘기지 않고 meter만 싣는다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue({ state: 'exhausted' });
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+
+            expect(lastOptions()).not.toHaveProperty('tierConfig');
+            expect(resultOf(events).meter).toEqual({ state: 'exhausted' });
+        });
+
+        it('저장소 장애(unavailable)면 현행 잠금이고 meter 필드가 없다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue({
+                state: 'unavailable',
+            });
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+
+            expect(lastOptions()).not.toHaveProperty('tierConfig');
+            expect(resultOf(events)).not.toHaveProperty('meter');
+        });
+
+        it('cached 결과에도 meter를 싣는다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue(revealed(false));
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { headlineKo: 'h' },
+                lockedInfoDepth: [],
+            } as never);
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+
+            expect(resultOf(events).meter).toEqual({ state: 'revealed' });
+        });
+
+        it('cacheOnly 요청도 미터를 탄다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue(revealed());
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    cacheOnly: true,
+                },
+            });
+
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(mockDecideMeteredReveal).toHaveBeenCalledOnce();
+            expect(lastOptions()).toHaveProperty('tierConfig');
+        });
+
+        it('회원이면 미터를 부르지 않는다', async () => {
+            vi.mocked(getCurrentUser).mockResolvedValue({
+                id: 'user-1',
+            } as never);
+            vi.mocked(resolveTierOnly).mockResolvedValue('member' as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockDecideMeteredReveal).not.toHaveBeenCalled();
+        });
+
+        it('검증된 크롤러면 미터를 부르지 않는다', async () => {
+            vi.mocked(isVerifiedCrawler).mockResolvedValue(true);
+            const request = new Request(
+                'http://localhost/api/analysis/stream',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'User-Agent':
+                            'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+                        'cf-connecting-ip': '66.249.66.1',
+                    },
+                    body: TECHNICAL_BODY,
+                }
+            );
+
+            const events = await collectSseEvents(await POST(request));
+
+            expect(mockDecideMeteredReveal).not.toHaveBeenCalled();
+            expect(lastOptions()).not.toHaveProperty('tierConfig');
+            expect(resultOf(events)).not.toHaveProperty('meter');
+        });
+
+        it('시행일(KST 2026-10-18) 전에는 미터를 부르지 않는다', async () => {
+            vi.setSystemTime(BEFORE_START);
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockDecideMeteredReveal).not.toHaveBeenCalled();
+            expect(resultOf(events)).not.toHaveProperty('meter');
+        });
+
+        it('시행일 정각부터 미터를 부른다', async () => {
+            vi.setSystemTime(new Date('2026-10-18T00:00:00+09:00'));
+            mockDecideMeteredReveal.mockResolvedValue({ state: 'exhausted' });
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockDecideMeteredReveal).toHaveBeenCalledOnce();
+        });
+
+        it('분석이 에러로 끝나면 신규 기록을 되돌린다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue(revealed());
+            vi.mocked(runAnalysis).mockRejectedValue(new Error('llm down'));
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockRelease).toHaveBeenCalled();
+        });
+
+        it('miss_no_trigger로 끝나면 신규 기록을 되돌린다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue(revealed());
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockRelease).toHaveBeenCalled();
+        });
+
+        it('한도 초과 강등 요청이 캐시도 없어 rate_limited로 끝나면 되돌린다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue(revealed());
+            mockReserveAnalysisGeneration.mockResolvedValueOnce({
+                ok: false,
+                audience: 'guest',
+                reason: 'quota',
+                retryAt: 1,
+            });
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+
+            expect(events.some(e => e.includes('rate_limited'))).toBe(true);
+            expect(mockRelease).toHaveBeenCalled();
+        });
+
+        it('동시성 상한 503이면 신규 기록을 되돌린다', async () => {
+            mockDecideMeteredReveal.mockResolvedValue(revealed());
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+
+            const response = await POST(makeRequest());
+
+            expect(response.status).toBe(503);
+            expect(mockRelease).toHaveBeenCalled();
         });
     });
 });

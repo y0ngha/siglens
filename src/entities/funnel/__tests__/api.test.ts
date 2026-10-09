@@ -157,4 +157,30 @@ describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
             false
         );
     });
+
+    it('meterCohort는 meter_shown 상태별 방문자와 노출 뒤 7일 안의 가입 방문자를 센다', async () => {
+        const rows = [
+            { state: 'exhausted', visitors: 20, signups: 3 },
+            { state: 'revealed', visitors: 30, signups: 5 },
+        ];
+        const { db, execute } = makeExecuteDb(rows);
+        await expect(
+            new DrizzleFunnelEventRepository(db).meterCohort(FROM, TO_EXCLUSIVE)
+        ).resolves.toEqual(rows);
+        const [query] = onlyCall(execute);
+        const rendered = new PgDialect().sqlToQuery(query as never);
+        const sqlText = rendered.sql.replace(/\s+/g, ' ');
+        expect(sqlText).toContain(`where s.event = 'meter_shown'`);
+        expect(sqlText).toContain(
+            `c.event = 'signup_completed' and c.visitor_hash = s.visitor_hash and c.occurred_at >= s.occurred_at and c.occurred_at < s.occurred_at + make_interval(days => $1::int)`
+        );
+        expect(rendered.params).toEqual([
+            7,
+            FROM.toISOString(),
+            TO_EXCLUSIVE.toISOString(),
+        ]);
+        expect(rendered.params.some(param => param instanceof Date)).toBe(
+            false
+        );
+    });
 });

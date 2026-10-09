@@ -8,6 +8,7 @@ import {
     FUNNEL_NUDGE_KINDS,
     FUNNEL_NUDGE_VARIANTS,
     isFunnelEventPayload,
+    METER_STATES,
     REPORT_ENABLED_SOURCES,
     SIGNUP_METHODS,
     WATCHLIST_MERGE_MAX,
@@ -15,9 +16,11 @@ import {
 } from '@/shared/lib/funnel/funnelEvents';
 
 describe('카탈로그 상수', () => {
-    it('카탈로그의 이벤트 7종을 전부 가진다', () => {
+    it('카탈로그의 이벤트 9종을 전부 가진다', () => {
         expect([...FUNNEL_EVENTS].toSorted()).toEqual([
             'gate_clicked',
+            'meter_clicked',
+            'meter_shown',
             'nudge_clicked',
             'nudge_shown',
             'report_enabled',
@@ -27,10 +30,11 @@ describe('카탈로그 상수', () => {
         ]);
     });
 
-    it('lastGate 후보는 게이트와 넛지 종류의 합집합이다', () => {
+    it('lastGate 후보는 게이트·넛지 종류·공개 띠 클릭의 합집합이다', () => {
         expect(FUNNEL_LAST_GATES).toEqual([
             ...FUNNEL_GATES,
             ...FUNNEL_NUDGE_KINDS,
+            'meter_revealed',
         ]);
     });
 
@@ -70,6 +74,30 @@ describe('isFunnelEventPayload — 양성', () => {
     it.each(FUNNEL_GATES)('gate_clicked gate=%s', gate => {
         expect(
             isFunnelEventPayload({ event: 'gate_clicked', context: { gate } })
+        ).toBe(true);
+    });
+
+    it('gate_clicked는 소진 카드 표식 meter=exhausted를 허용한다', () => {
+        expect(
+            isFunnelEventPayload({
+                event: 'gate_clicked',
+                context: { gate: 'locked_detail', meter: 'exhausted' },
+            })
+        ).toBe(true);
+    });
+
+    it.each(METER_STATES)('meter_shown state=%s', state => {
+        expect(
+            isFunnelEventPayload({ event: 'meter_shown', context: { state } })
+        ).toBe(true);
+    });
+
+    it('meter_clicked state=revealed', () => {
+        expect(
+            isFunnelEventPayload({
+                event: 'meter_clicked',
+                context: { state: 'revealed' },
+            })
         ).toBe(true);
     });
 
@@ -150,6 +178,28 @@ describe('isFunnelEventPayload — 음성', () => {
                 context: { gate: 'timeframe', query: 'nvda' },
             })
         ).toBe(false);
+    });
+
+    it('meter 이벤트의 잘못된 state·여분 키를 거부한다', () => {
+        for (const payload of [
+            { event: 'meter_shown', context: { state: 'locked' } },
+            { event: 'meter_shown', context: {} },
+            {
+                event: 'meter_shown',
+                context: { state: 'revealed', symbol: 'A' },
+            },
+            { event: 'meter_clicked', context: { state: 'exhausted' } },
+            {
+                event: 'gate_clicked',
+                context: { gate: 'locked_detail', meter: 'revealed' },
+            },
+            {
+                event: 'gate_clicked',
+                context: { gate: 'locked_detail', meter: null },
+            },
+        ]) {
+            expect(isFunnelEventPayload(payload)).toBe(false);
+        }
     });
 
     it('context가 배열이면 거부한다', () => {
