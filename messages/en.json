@@ -280,8 +280,6 @@
                 "ac9263": "You haven't registered any holdings yet.",
                 "d103d5": "If you register your holdings, you can see where your average price is within the recent price range for each stock, visualized as a building.",
                 "06c7de": "Manage holdings",
-                "6aaec6": "Manage your holdings and see where your average cost sits within each stock's recent price range.",
-                "d9477a": "Portfolio",
                 "title": "My Symbols",
                 "subtitle": "Your watchlist and holdings in one place. For holdings, see where your average cost sits within the recent price range.",
                 "watchlistHeading": "Watchlist"
@@ -974,8 +972,7 @@
                 "tiles": "{v0} symbols",
                 "count": "{v0} symbols saved",
                 "viewMine": "View My Symbols",
-                "collapsed": "{v0} symbols on your watchlist",
-                "expand": "Expand onboarding block"
+                "collapsed": "{v0} symbols on your watchlist"
             },
             "section": {
                 "loading": "Loading your watchlist",
@@ -986,7 +983,6 @@
                 "quoteUnavailable": "No quote",
                 "convert": "Move to holdings",
                 "convertFor": "Move {v0} to holdings",
-                "cancel": "Cancel",
                 "remove": "Remove",
                 "removeFor": "Remove {v0} from watchlist",
                 "list": "Watchlist"
@@ -3817,7 +3813,6 @@
                 "e225a6": "Log In",
                 "ecb4cc": "Sign Up",
                 "menuLabel": "User menu ({v0})",
-                "d9477a": "Portfolio",
                 "mySymbols": "My Symbols"
             },
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
