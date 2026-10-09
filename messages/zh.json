@@ -489,7 +489,13 @@
                 "unsubscribeFailed": "退订失败。请稍后重试。"
             },
             "email": {
+                "briefColPrice": "收盘 · 涨跌幅",
+                "briefColSignals": "信号摘要",
+                "briefColSymbol": "股票",
+                "briefColTrend": "趋势",
+                "briefNoData": "暂无数据",
                 "chartAlt": "{v0} 日线图",
+                "confluenceNote": "共振度表示各技术指标指向同一方向的程度（0～100），不构成投资建议。",
                 "disclaimer": "本邮件仅供参考，不构成投资建议。投资决策及其后果由您本人承担。AI 分析可能与事实不符。",
                 "heading": "持仓报告",
                 "intro": "以下是截至 {v0} 的持仓动态。",
@@ -498,18 +504,36 @@
                 "optionsIv": "平值隐含波动率",
                 "optionsMove": "至到期日（{v0}）的预期波动幅度",
                 "optionsPutCall": "看跌/看涨比率（未平仓合约）",
+                "pullback": {
+                    "nearWashoutInUptrend": "上升趋势中接近超卖",
+                    "washoutBelowMa200": "长期下跌中的超卖（仅供参考）",
+                    "washoutInUptrend": "上升趋势中的短期超卖"
+                },
                 "reason": "您收到此邮件是因为您在 {v0} 邮件报告设置中开启了接收。",
+                "sectionBrief": "其他自选股",
                 "sectionNews": "重要新闻",
                 "sectionOptions": "期权动向",
                 "sectionPatterns": "图表形态",
                 "sectionPlain": "简明解读",
                 "sectionTechnical": "图表分析",
                 "sentiment": {
+                    "bearish": "利空",
                     "bullish": "利好",
-                    "neutral": "中性",
-                    "bearish": "利空"
+                    "neutral": "中性"
                 },
+                "signalAbstain": "共振度 —",
+                "signalBearish": "看跌 {v0}",
+                "signalBullish": "看涨 {v0}",
+                "signalFresh": "新出现: {v0}",
+                "signalMore": "+{v0}",
+                "signalPullback": "回调: {v0}",
+                "signalScore": "共振度 {v0}",
                 "subject": "[{v0}] 持仓报告 · {v1}",
+                "trendState": {
+                    "downtrend": "下降趋势",
+                    "sideways": "横盘",
+                    "uptrend": "上升趋势"
+                },
                 "unsubscribe": "退订",
                 "viewOnSite": "在 {v0} 查看详情"
             }

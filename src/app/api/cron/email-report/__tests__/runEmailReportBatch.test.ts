@@ -1,12 +1,16 @@
 import {
     BATCH_DEADLINE_MS,
+    BRIEF_CONCURRENCY,
     DELIVERY_RETENTION_MS,
     runEmailReportBatch,
     selectDueRecipients,
     type EmailReportBatchDeps,
 } from '@/app/api/cron/email-report/runEmailReportBatch';
 import { weekdaysToMask } from '@/entities/email-report/lib/weekdayMask';
-import type { SymbolReport } from '@/entities/email-report/reportModel';
+import type {
+    SymbolBrief,
+    SymbolReport,
+} from '@/entities/email-report/reportModel';
 import type { EmailReportRecipient } from '@/shared/db/types';
 import type { EmailMessage } from '@/shared/email/types';
 
@@ -39,6 +43,22 @@ function report(symbol: string): SymbolReport {
     };
 }
 
+function brief(symbol: string): SymbolBrief {
+    return {
+        symbol,
+        close: 100,
+        changePercent: 1.5,
+        trend: 'uptrend',
+        signals: {
+            score: 60,
+            bullish: ['golden_cross'],
+            bearish: [],
+            fresh: [],
+            pullback: null,
+        },
+    };
+}
+
 function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
     let claimSeq = 0;
     const sent: EmailMessage[] = [];
@@ -55,8 +75,13 @@ function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
             { symbol: 'AAPL', quantity: '1', averagePrice: '100' },
             { symbol: 'MSFT', quantity: '1', averagePrice: '300' },
         ]),
+        findWatchlist: vi.fn().mockResolvedValue([]),
         loadReport: vi.fn(async (symbol: string) => report(symbol)),
+        loadBrief: vi.fn(async (symbol: string) => brief(symbol)),
         getTranslator: vi.fn().mockResolvedValue((key: string) => key),
+        getSignalLabel: vi
+            .fn()
+            .mockResolvedValue((type: string): string | null => type),
         dispatcher: {
             sendEmail: vi.fn(async (message: EmailMessage) => {
                 sent.push(message);
@@ -128,6 +153,9 @@ describe('runEmailReportBatch', () => {
             ['MSFT', 'AAPL'],
             null
         );
+        expect(deps.loadBrief).toHaveBeenCalledWith('MSFT');
+        expect(deps.loadBrief).toHaveBeenCalledWith('AAPL');
+        expect(sent[0]!.html).toContain('golden_cross');
         expect(counts).toMatchObject({ due: 1, sent: 1, failed: 0, pruned: 3 });
     });
 
@@ -139,12 +167,14 @@ describe('runEmailReportBatch', () => {
 
         expect(sent).toHaveLength(0);
         expect(deps.findHoldings).not.toHaveBeenCalled();
+        expect(deps.findWatchlist).not.toHaveBeenCalled();
         expect(counts.alreadyClaimed).toBe(1);
     });
 
-    it('보유 종목이 없으면 보내지 않고 skipped로 기록한다', async () => {
+    it('보유도 관심종목도 없으면 보내지 않고 skipped로 기록한다', async () => {
         const { deps, sent } = makeDeps({
             findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([]),
         });
 
         const counts = await runEmailReportBatch(deps, NOW);
@@ -187,6 +217,142 @@ describe('runEmailReportBatch', () => {
             ])
         );
         expect(deps.getTranslator).toHaveBeenCalledTimes(2);
+    });
+
+    it('관심종목만 있는 회원에게도 보낸다', async () => {
+        const { deps, sent } = makeDeps({
+            findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([
+                {
+                    symbol: 'TSLA',
+                    companyName: 'Tesla',
+                    createdAt: new Date('2026-10-01T00:00:00Z'),
+                },
+            ]),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(1);
+        expect(deps.loadReport).toHaveBeenCalledWith('TSLA', 'ko');
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'sent',
+            ['TSLA'],
+            null
+        );
+        expect(counts).toMatchObject({ sent: 1, skipped: 0 });
+    });
+
+    it('6번째부터는 요약 표로 싣고, 발송 기록에는 전체·요약 종목을 모두 남긴다', async () => {
+        const watchlist = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'].map(
+            (symbol, i) => ({
+                symbol,
+                companyName: symbol,
+                createdAt: new Date(`2026-10-0${i + 1}T00:00:00Z`),
+            })
+        );
+        const { deps, sent } = makeDeps({
+            findWatchlist: vi.fn().mockResolvedValue(watchlist),
+        });
+
+        await runEmailReportBatch(deps, NOW);
+
+        // 보유 MSFT·AAPL + 최근 담은 순 W6·W5·W4 = 전체 5, 나머지 W3·W2·W1 = 요약
+        const reportCalls = vi
+            .mocked(deps.loadReport)
+            .mock.calls.map(([s]) => s);
+        expect(reportCalls).toHaveLength(5);
+        expect(reportCalls).toEqual(
+            expect.arrayContaining(['MSFT', 'AAPL', 'W6', 'W5', 'W4'])
+        );
+        expect(vi.mocked(deps.loadBrief).mock.calls.map(([s]) => s)).toEqual(
+            expect.arrayContaining([
+                'MSFT',
+                'AAPL',
+                'W6',
+                'W5',
+                'W4',
+                'W3',
+                'W2',
+                'W1',
+            ])
+        );
+        expect(sent[0]!.html).toContain('sectionBrief');
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'sent',
+            ['MSFT', 'AAPL', 'W6', 'W5', 'W4', 'W3', 'W2', 'W1'],
+            null
+        );
+    });
+
+    it('요약 데이터는 로케일과 무관하게 종목마다 한 번만 모은다', async () => {
+        const { deps } = makeDeps({
+            subscriptions: {
+                findEnabledRecipients: vi.fn().mockResolvedValue([
+                    recipient({ userId: 'a', email: 'a@x.com' }),
+                    recipient({
+                        userId: 'b',
+                        email: 'b@x.com',
+                        locale: 'en',
+                    }),
+                ]),
+            },
+        });
+
+        await runEmailReportBatch(deps, NOW);
+
+        const briefCalls = vi.mocked(deps.loadBrief).mock.calls.map(([s]) => s);
+        expect([...briefCalls].sort()).toEqual(['AAPL', 'MSFT']);
+        expect(deps.getSignalLabel).toHaveBeenCalledTimes(2);
+        expect(deps.getSignalLabel).toHaveBeenCalledWith('ko');
+        expect(deps.getSignalLabel).toHaveBeenCalledWith('en');
+    });
+
+    it('한 회원의 요약 조회는 BRIEF_CONCURRENCY를 넘겨 동시에 뜨지 않는다', async () => {
+        const watchlist = Array.from({ length: 18 }, (_, i) => ({
+            symbol: `W${i}`,
+            companyName: `W${i}`,
+            createdAt: new Date(Date.UTC(2026, 9, 1, 0, i)),
+        }));
+        let inFlight = 0;
+        let maxInFlight = 0;
+        const { deps } = makeDeps({
+            findWatchlist: vi.fn().mockResolvedValue(watchlist),
+            loadBrief: vi.fn(async (symbol: string) => {
+                inFlight += 1;
+                maxInFlight = Math.max(maxInFlight, inFlight);
+                await new Promise(resolve => setTimeout(resolve, 1));
+                inFlight -= 1;
+                return brief(symbol);
+            }),
+        });
+
+        await runEmailReportBatch(deps, NOW);
+
+        // 보유 2 + 관심 18 = 전체 5 + 요약 15
+        expect(deps.loadBrief).toHaveBeenCalledTimes(20);
+        expect(maxInFlight).toBeGreaterThan(1);
+        expect(maxInFlight).toBeLessThanOrEqual(BRIEF_CONCURRENCY);
+    });
+
+    it('관심종목 조회가 실패하면 그 회원은 failed로 기록한다', async () => {
+        const { deps } = makeDeps({
+            findWatchlist: vi
+                .fn()
+                .mockRejectedValue(new Error('watchlist down')),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(counts.failed).toBe(1);
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'failed',
+            [],
+            'watchlist down'
+        );
     });
 
     it('발송이 거부되면 failed로 기록하고 다른 회원은 계속 보낸다', async () => {

@@ -489,7 +489,13 @@
                 "unsubscribeFailed": "수신거부에 실패했어요. 잠시 후 다시 시도해 주세요."
             },
             "email": {
+                "briefColPrice": "종가 · 등락률",
+                "briefColSignals": "신호 요약",
+                "briefColSymbol": "종목",
+                "briefColTrend": "추세",
+                "briefNoData": "데이터 없음",
                 "chartAlt": "{v0} 일봉 차트",
+                "confluenceNote": "컨플루언스는 보조지표가 같은 방향을 가리키는 정도(0~100)이며, 투자 권유가 아닙니다.",
                 "disclaimer": "이 메일은 투자 권유가 아닌 정보 제공을 목적으로 하며, 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다. AI 분석은 사실과 다를 수 있습니다.",
                 "heading": "보유 종목 리포트",
                 "intro": "{v0} 기준으로 정리한 보유 종목 소식이에요.",
@@ -498,7 +504,13 @@
                 "optionsIv": "ATM 내재변동성",
                 "optionsMove": "만기({v0})까지 예상 변동폭",
                 "optionsPutCall": "풋/콜 비율(미결제약정)",
+                "pullback": {
+                    "nearWashoutInUptrend": "상승추세 내 과매도 근접",
+                    "washoutBelowMa200": "장기 하락 속 과매도(참고용)",
+                    "washoutInUptrend": "상승추세 내 단기 과매도"
+                },
                 "reason": "{v0} 메일 리포트 설정에서 수신을 켜 두셔서 보내 드리는 메일이에요.",
+                "sectionBrief": "그 외 관심종목",
                 "sectionNews": "주요 뉴스",
                 "sectionOptions": "옵션 동향",
                 "sectionPatterns": "차트 패턴",
@@ -509,7 +521,19 @@
                     "bullish": "호재",
                     "neutral": "중립"
                 },
+                "signalAbstain": "컨플루언스 —",
+                "signalBearish": "하락 {v0}",
+                "signalBullish": "상승 {v0}",
+                "signalFresh": "새로 켜짐: {v0}",
+                "signalMore": "+{v0}",
+                "signalPullback": "눌림목: {v0}",
+                "signalScore": "컨플루언스 {v0}",
                 "subject": "[{v0}] 보유 종목 리포트 · {v1}",
+                "trendState": {
+                    "downtrend": "하락 추세",
+                    "sideways": "횡보",
+                    "uptrend": "상승 추세"
+                },
                 "unsubscribe": "수신 거부",
                 "viewOnSite": "{v0}에서 자세히 보기"
             }

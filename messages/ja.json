@@ -489,7 +489,13 @@
                 "unsubscribeFailed": "配信停止に失敗しました。しばらくしてからもう一度お試しください。"
             },
             "email": {
+                "briefColPrice": "終値・騰落率",
+                "briefColSignals": "シグナル要約",
+                "briefColSymbol": "銘柄",
+                "briefColTrend": "トレンド",
+                "briefNoData": "データなし",
                 "chartAlt": "{v0} 日足チャート",
+                "confluenceNote": "コンフルエンスは補助指標が同じ方向を示す度合い（0〜100）であり、投資勧誘ではありません。",
                 "disclaimer": "このメールは情報提供を目的としたものであり、投資勧誘ではありません。投資判断とその結果の責任はご本人にあります。AI分析は事実と異なる場合があります。",
                 "heading": "保有銘柄レポート",
                 "intro": "{v0}時点の保有銘柄の最新情報です。",
@@ -498,18 +504,36 @@
                 "optionsIv": "ATMインプライド・ボラティリティ",
                 "optionsMove": "満期（{v0}）までの想定変動幅",
                 "optionsPutCall": "プット・コール・レシオ（建玉）",
+                "pullback": {
+                    "nearWashoutInUptrend": "上昇トレンド内で売られすぎに接近",
+                    "washoutBelowMa200": "長期下落中の売られすぎ（参考）",
+                    "washoutInUptrend": "上昇トレンド内の短期売られすぎ"
+                },
                 "reason": "{v0}のメールレポート設定で配信をオンにしているため、このメールをお送りしています。",
+                "sectionBrief": "その他のウォッチリスト銘柄",
                 "sectionNews": "主なニュース",
                 "sectionOptions": "オプション動向",
                 "sectionPatterns": "チャートパターン",
                 "sectionPlain": "かんたん解説",
                 "sectionTechnical": "チャート分析",
                 "sentiment": {
+                    "bearish": "悪材料",
                     "bullish": "好材料",
-                    "neutral": "中立",
-                    "bearish": "悪材料"
+                    "neutral": "中立"
                 },
+                "signalAbstain": "コンフルエンス —",
+                "signalBearish": "下降 {v0}",
+                "signalBullish": "上昇 {v0}",
+                "signalFresh": "新たに点灯: {v0}",
+                "signalMore": "+{v0}",
+                "signalPullback": "押し目: {v0}",
+                "signalScore": "コンフルエンス {v0}",
                 "subject": "[{v0}] 保有銘柄レポート · {v1}",
+                "trendState": {
+                    "downtrend": "下降トレンド",
+                    "sideways": "横ばい",
+                    "uptrend": "上昇トレンド"
+                },
                 "unsubscribe": "配信停止",
                 "viewOnSite": "{v0}で詳しく見る"
             }

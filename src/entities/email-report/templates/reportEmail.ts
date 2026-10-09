@@ -2,10 +2,13 @@ import type { EmailMessage } from '@/shared/email/types';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
 import { SITE_NAME } from '@/shared/lib/seo';
-import type {
-    SymbolReport,
-    SymbolReportNews,
-    SymbolReportOptions,
+import {
+    SIGNAL_BRIEF_MAX_LABELS,
+    type SignalBrief,
+    type SymbolBrief,
+    type SymbolReport,
+    type SymbolReportNews,
+    type SymbolReportOptions,
 } from '../reportModel';
 
 /**
@@ -28,7 +31,15 @@ export type SignalLabelResolver = (type: string) => string | null;
 /** 메일에 싣는 종목 한 칸 — 데이터와 그 칸의 링크. */
 export interface ReportEmailSection {
     report: SymbolReport;
+    /** 경량 경로가 준 신호 요약. 조회 실패면 `signals: null`이고 카드의 신호 줄은 생략된다. */
+    brief: SymbolBrief;
     chartUrl: string;
+    pageUrl: string;
+}
+
+/** "그 외 관심종목" 표 한 행. */
+export interface SymbolBriefRow {
+    brief: SymbolBrief;
     pageUrl: string;
 }
 
@@ -38,11 +49,20 @@ export interface BuildReportEmailInput {
     /** 회원 로컬 발송일(`YYYY-MM-DD`). */
     localDate: string;
     sections: readonly ReportEmailSection[];
+    /** 전체 카드 뒤의 요약 표. 비면 섹션을 생략한다. */
+    briefRows: readonly SymbolBriefRow[];
     unsubscribePageUrl: string;
     unsubscribeApiUrl: string;
     settingsUrl: string;
     t: ReportEmailTranslator;
+    signalLabel: SignalLabelResolver;
 }
+
+/**
+ * HTML 본문 크기 상한(바이트). Resend 권고 ~100KB — Gmail은 102KB를 넘는 메일을 잘라
+ * "메시지 전체 보기"로 숨긴다. 5 카드 + 15 행 픽스처가 이 안에 드는지 테스트가 고정한다.
+ */
+export const REPORT_EMAIL_MAX_HTML_BYTES = 100_000;
 
 const COLORS = {
     page: '#0f172a',
@@ -71,6 +91,76 @@ function formatDate(localDate: string, locale: Locale): string {
 
 function formatPercent(value: number, digits: number): string {
     return `${value.toFixed(digits)}%`;
+}
+
+function formatSignedPercent(value: number): string {
+    const sign = value > 0 ? '+' : '';
+    return `${sign}${formatPercent(value, 2)}`;
+}
+
+function formatClose(value: number, locale: Locale): string {
+    return new Intl.NumberFormat(INTL_LOCALE[locale], {
+        maximumFractionDigits: 2,
+    }).format(value);
+}
+
+/**
+ * 신호 요약 한 줄(평문). 점수(보류면 "—") · 상승 N (라벨 최대 {@link SIGNAL_BRIEF_MAX_LABELS}개, +N)
+ * · 하락 N (…) · 새로 켜짐: … · 눌림목: …. 라벨 사전에 없는 타입은 개수에서도 뺀다.
+ * 행동 권고로 읽히는 어휘는 번역 키에도 없다.
+ */
+function signalBriefText(
+    signals: SignalBrief,
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
+): string {
+    const labelsOf = (types: readonly string[]) =>
+        types.map(signalLabel).filter((l): l is string => l !== null);
+    const cappedList = (labels: readonly string[]) => {
+        const shown = labels.slice(0, SIGNAL_BRIEF_MAX_LABELS);
+        const more = labels.length - shown.length;
+        return (
+            more > 0 ? [...shown, t('signalMore', { v0: String(more) })] : shown
+        ).join(', ');
+    };
+    const parts = [
+        signals.score === null
+            ? t('signalAbstain')
+            : t('signalScore', { v0: String(signals.score) }),
+    ];
+    for (const [key, types] of [
+        ['signalBullish', signals.bullish],
+        ['signalBearish', signals.bearish],
+    ] as const) {
+        const labels = labelsOf(types);
+        if (labels.length === 0) continue;
+        parts.push(
+            `${t(key, { v0: String(labels.length) })} (${cappedList(labels)})`
+        );
+    }
+    const fresh = labelsOf(signals.fresh);
+    if (fresh.length > 0) {
+        parts.push(t('signalFresh', { v0: cappedList(fresh) }));
+    }
+    if (signals.pullback !== null) {
+        parts.push(
+            t('signalPullback', { v0: t(`pullback.${signals.pullback}`) })
+        );
+    }
+    return parts.join(' · ');
+}
+
+function signalLineHtml(
+    brief: SymbolBrief,
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
+): string {
+    if (brief.signals === null) return '';
+    const trend =
+        brief.trend === null
+            ? ''
+            : `<span style="color:${COLORS.heading};font-weight:600;">${escapeHtml(t(`trendState.${brief.trend}`))}</span> · `;
+    return `<p style="font-size:13px;line-height:1.6;color:${COLORS.muted};margin:0 0 12px;">${trend}${escapeHtml(signalBriefText(brief.signals, t, signalLabel))}</p>`;
 }
 
 /** 줄바꿈이 있는 산문을 문단으로 나눈다(빈 줄은 버림). */
@@ -179,7 +269,8 @@ function optionsHtml(
 
 function sectionHtml(
     section: ReportEmailSection,
-    t: ReportEmailTranslator
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
 ): string {
     const { report } = section;
     const symbol = escapeHtml(report.symbol);
@@ -200,6 +291,7 @@ function sectionHtml(
               ].join('');
     return `<div style="background:${COLORS.card};border-radius:12px;padding:24px 32px;margin:0 0 16px;">
   <h2 style="font-size:20px;margin:0 0 12px;color:${COLORS.heading};">${symbol}</h2>
+  ${signalLineHtml(section.brief, t, signalLabel)}
   <a href="${escapeHtml(section.pageUrl)}"><img src="${escapeHtml(section.chartUrl)}" width="${CHART_DISPLAY_WIDTH}" height="${CHART_DISPLAY_HEIGHT}" alt="${escapeHtml(t('chartAlt', { v0: report.symbol }))}" style="display:block;width:100%;max-width:${CHART_DISPLAY_WIDTH}px;height:auto;border:0;border-radius:8px;" /></a>
   ${analysis}
   ${newsHtml(report.news, t)}
@@ -210,10 +302,16 @@ function sectionHtml(
 
 function sectionText(
     section: ReportEmailSection,
-    t: ReportEmailTranslator
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
 ): string {
-    const { report } = section;
+    const { report, brief } = section;
     const lines = [`■ ${report.symbol}`];
+    if (brief.signals !== null) {
+        const trend =
+            brief.trend === null ? '' : `${t(`trendState.${brief.trend}`)} · `;
+        lines.push(`${trend}${signalBriefText(brief.signals, t, signalLabel)}`);
+    }
     if (report.technical === null) {
         lines.push(t('noAnalysis'));
     } else {
@@ -253,6 +351,99 @@ function sectionText(
     return lines.join('\n');
 }
 
+function briefRowCells(
+    row: SymbolBriefRow,
+    locale: Locale,
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
+): {
+    close: string;
+    change: string;
+    changeColor: string;
+    trend: string;
+    signals: string;
+} {
+    const { brief } = row;
+    if (brief.signals === null) {
+        return {
+            close: '—',
+            change: '',
+            changeColor: COLORS.muted,
+            trend: '—',
+            signals: t('briefNoData'),
+        };
+    }
+    const pct = brief.changePercent;
+    return {
+        close: brief.close === null ? '—' : formatClose(brief.close, locale),
+        change: pct === null ? '' : formatSignedPercent(pct),
+        changeColor:
+            pct === null || pct === 0
+                ? COLORS.muted
+                : pct > 0
+                  ? COLORS.bullish
+                  : COLORS.bearish,
+        trend: brief.trend === null ? '—' : t(`trendState.${brief.trend}`),
+        signals: signalBriefText(brief.signals, t, signalLabel),
+    };
+}
+
+const CELL = `padding:8px 6px;font-size:13px;line-height:1.5;color:${COLORS.body};border-bottom:1px solid ${COLORS.rule};vertical-align:top;word-break:keep-all;`;
+const HEAD_CELL = `padding:0 6px 8px;font-size:12px;color:${COLORS.faint};text-align:left;border-bottom:1px solid ${COLORS.rule};`;
+
+/**
+ * "그 외 관심종목" 표. 행이 없으면 빈 문자열. 메일 클라이언트는 미디어 쿼리를 대부분
+ * 무시하므로 모바일 접힘 대신 테이블을 유지하고 셀 안에서 줄바꿈한다.
+ */
+function briefTableHtml(
+    rows: readonly SymbolBriefRow[],
+    locale: Locale,
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
+): string {
+    if (rows.length === 0) return '';
+    const body = rows
+        .map(row => {
+            const cells = briefRowCells(row, locale, t, signalLabel);
+            return `<tr>
+  <td style="${CELL}"><a href="${escapeHtml(row.pageUrl)}" style="color:${COLORS.link};font-weight:600;text-decoration:none;">${escapeHtml(row.brief.symbol)}</a></td>
+  <td style="${CELL}white-space:nowrap;">${escapeHtml(cells.close)}${cells.change ? ` <span style="color:${cells.changeColor};">${escapeHtml(cells.change)}</span>` : ''}</td>
+  <td style="${CELL}">${escapeHtml(cells.trend)}</td>
+  <td style="${CELL}">${escapeHtml(cells.signals)}</td>
+</tr>`;
+        })
+        .join('');
+    return `<div style="background:${COLORS.card};border-radius:12px;padding:24px 32px;margin:0 0 16px;">
+  <h2 style="font-size:16px;margin:0 0 12px;color:${COLORS.heading};">${escapeHtml(t('sectionBrief'))}</h2>
+  <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+    <thead><tr>
+      <th scope="col" style="${HEAD_CELL}">${escapeHtml(t('briefColSymbol'))}</th>
+      <th scope="col" style="${HEAD_CELL}">${escapeHtml(t('briefColPrice'))}</th>
+      <th scope="col" style="${HEAD_CELL}">${escapeHtml(t('briefColTrend'))}</th>
+      <th scope="col" style="${HEAD_CELL}">${escapeHtml(t('briefColSignals'))}</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>
+</div>`;
+}
+
+function briefTableText(
+    rows: readonly SymbolBriefRow[],
+    locale: Locale,
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
+): string[] {
+    if (rows.length === 0) return [];
+    return [
+        `■ ${t('sectionBrief')}`,
+        ...rows.map(row => {
+            const cells = briefRowCells(row, locale, t, signalLabel);
+            return `- ${row.brief.symbol} · ${[cells.close, cells.change].filter(Boolean).join(' ')} · ${cells.trend} · ${cells.signals}\n  ${row.pageUrl}`;
+        }),
+        '',
+    ];
+}
+
 /**
  * 정기 메일 리포트 한 통.
  *
@@ -266,6 +457,10 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     const heading = t('heading');
     const intro = t('intro', { v0: date });
     const disclaimer = t('disclaimer');
+    // 컨플루언스 줄(점수 또는 "—")이 한 군데도 없으면 각주가 가리킬 대상이 없다.
+    const showConfluenceNote =
+        input.sections.some(s => s.brief.signals !== null) ||
+        input.briefRows.some(r => r.brief.signals !== null);
     const reason = t('reason', { v0: SITE_NAME });
 
     const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head><body style="font-family:${FONT};background:${COLORS.page};color:${COLORS.body};padding:24px 12px;margin:0;">
@@ -275,9 +470,11 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     <h1 style="font-size:22px;margin:0 0 8px;color:${COLORS.heading};">${escapeHtml(heading)}</h1>
     <p style="font-size:14px;color:${COLORS.body};margin:0;">${escapeHtml(intro)}</p>
   </div>
-  ${input.sections.map(s => sectionHtml(s, t)).join('\n')}
+  ${input.sections.map(s => sectionHtml(s, t, input.signalLabel)).join('\n')}
+  ${briefTableHtml(input.briefRows, locale, t, input.signalLabel)}
   <div style="padding:16px 8px;border-top:1px solid ${COLORS.rule};">
     <p style="font-size:12px;line-height:1.6;color:${COLORS.muted};margin:0 0 8px;">${escapeHtml(disclaimer)}</p>
+    ${showConfluenceNote ? `<p style="font-size:12px;line-height:1.6;color:${COLORS.muted};margin:0 0 8px;">${escapeHtml(t('confluenceNote'))}</p>` : ''}
     <p style="font-size:12px;line-height:1.6;color:${COLORS.faint};margin:0;">${escapeHtml(reason)} <a href="${escapeHtml(input.settingsUrl)}" style="color:${COLORS.link};">${escapeHtml(t('manage'))}</a> · <a href="${escapeHtml(input.unsubscribePageUrl)}" style="color:${COLORS.link};">${escapeHtml(t('unsubscribe'))}</a></p>
   </div>
 </div></body></html>`;
@@ -286,9 +483,14 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
         heading,
         intro,
         '',
-        ...input.sections.flatMap(s => [sectionText(s, t), '']),
+        ...input.sections.flatMap(s => [
+            sectionText(s, t, input.signalLabel),
+            '',
+        ]),
+        ...briefTableText(input.briefRows, locale, t, input.signalLabel),
         '---',
         disclaimer,
+        ...(showConfluenceNote ? [t('confluenceNote')] : []),
         reason,
         `${t('manage')}: ${input.settingsUrl}`,
         `${t('unsubscribe')}: ${input.unsubscribePageUrl}`,

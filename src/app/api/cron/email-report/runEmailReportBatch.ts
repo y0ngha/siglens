@@ -2,6 +2,7 @@ import 'server-only';
 import {
     selectReportSymbols,
     type ReportHolding,
+    type ReportWatchlistItem,
 } from '@/entities/email-report/lib/selectReportSymbols';
 import { isDueAt, toLocalSlot } from '@/entities/email-report/lib/localSlot';
 import {
@@ -10,10 +11,14 @@ import {
     buildUnsubscribeApiUrl,
     buildUnsubscribePageUrl,
 } from '@/entities/email-report/lib/reportLinks';
-import type { SymbolReport } from '@/entities/email-report/reportModel';
+import type {
+    SymbolBrief,
+    SymbolReport,
+} from '@/entities/email-report/reportModel';
 import {
     buildReportEmail,
     type ReportEmailTranslator,
+    type SignalLabelResolver,
 } from '@/entities/email-report/templates/reportEmail';
 import type {
     EmailReportDeliveryRepository,
@@ -32,6 +37,11 @@ export const RECIPIENT_CONCURRENCY = 4;
  * 마감 뒤에 남은 회원은 선점하지 않으므로 기록도 없이 그날을 건너뛴다(로그로 남긴다).
  */
 export const BATCH_DEADLINE_MS = 45 * 60 * 1000;
+/**
+ * 한 회원의 요약 데이터(일봉)를 동시에 받는 종목 수. 최대 20종목/통을 한 번에 던지지 않는다(CC-1).
+ * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 배치 전체 최악은 그 곱(20)이다.
+ */
+export const BRIEF_CONCURRENCY = 5;
 const ERROR_MAX_LENGTH = 500;
 
 export interface EmailReportBatchDeps {
@@ -41,8 +51,12 @@ export interface EmailReportBatchDeps {
     >;
     deliveries: EmailReportDeliveryRepository;
     findHoldings: (userId: string) => Promise<ReportHolding[]>;
+    findWatchlist: (userId: string) => Promise<ReportWatchlistItem[]>;
     loadReport: (symbol: string, locale: Locale) => Promise<SymbolReport>;
+    /** 로케일 무관 경량 경로 — `(symbol)`마다 배치 안에서 한 번. */
+    loadBrief: (symbol: string) => Promise<SymbolBrief>;
     getTranslator: (locale: Locale) => Promise<ReportEmailTranslator>;
+    getSignalLabel: (locale: Locale) => Promise<SignalLabelResolver>;
     dispatcher: EmailDispatcher;
     secret: string;
     siteUrl: string;
@@ -72,6 +86,19 @@ function errorText(error: unknown): string {
     return text.slice(0, ERROR_MAX_LENGTH);
 }
 
+/** `items`를 `size`개씩 순서대로 처리한다 — 결과 순서는 입력 순서. */
+async function mapChunked<T, R>(
+    items: readonly T[],
+    size: number,
+    work: (item: T) => Promise<R>
+): Promise<R[]> {
+    const out: R[] = [];
+    for (let i = 0; i < items.length; i += size) {
+        out.push(...(await Promise.all(items.slice(i, i + size).map(work))));
+    }
+    return out;
+}
+
 /** 이 시각 슬롯에 보낼 회원. 타임존이 깨진 행은 건너뛴다(루프를 멈추지 않는다). */
 export function selectDueRecipients(
     recipients: readonly EmailReportRecipient[],
@@ -94,6 +121,7 @@ export function selectDueRecipients(
  *   메일을 다음 시각에 몰아 보내는 것보다 하루 건너뛰는 편이 회원 기대에 맞다.
  * - 종목 데이터는 `(symbol, locale)`마다 한 번만 모은다. 같은 종목을 가진 회원 100명이
  *   있어도 조회는 한 번이다.
+ *   요약 데이터(일봉·신호)는 `(symbol)`마다 한 번만 모은다(로케일 무관).
  * - 새 AI 분석은 돌리지 않는다(`loadSymbolReport` JSDoc).
  */
 export async function runEmailReportBatch(
@@ -138,6 +166,26 @@ export async function runEmailReportBatch(
         return pending;
     };
 
+    // 요약 표용 캐시는 로케일과 무관해 `reportFor`와 **따로** 둔다. 둘 다 배치 한 번 안에서만 산다.
+    const briefCache = new Map<string, Promise<SymbolBrief>>();
+    const briefFor = (symbol: string) => {
+        let pending = briefCache.get(symbol);
+        if (pending === undefined) {
+            pending = deps.loadBrief(symbol);
+            briefCache.set(symbol, pending);
+        }
+        return pending;
+    };
+    const signalLabelCache = new Map<Locale, Promise<SignalLabelResolver>>();
+    const signalLabelFor = (locale: Locale) => {
+        let pending = signalLabelCache.get(locale);
+        if (pending === undefined) {
+            pending = deps.getSignalLabel(locale);
+            signalLabelCache.set(locale, pending);
+        }
+        return pending;
+    };
+
     async function processOne({ recipient, localDate }: DueRecipient) {
         const claimId = await deps.deliveries.claim(
             recipient.userId,
@@ -149,27 +197,36 @@ export async function runEmailReportBatch(
         }
         let symbols: string[] = [];
         try {
-            // Task 6에서 관심종목을 함께 넘긴다.
-            symbols = selectReportSymbols({
-                holdings: await deps.findHoldings(recipient.userId),
-                watchlist: [],
-            }).full;
+            const [holdings, watchlist] = await Promise.all([
+                deps.findHoldings(recipient.userId),
+                deps.findWatchlist(recipient.userId),
+            ]);
+            const selection = selectReportSymbols({ holdings, watchlist });
+            symbols = [...selection.full, ...selection.brief];
             if (symbols.length === 0) {
                 await deps.deliveries.finish(claimId, 'skipped', [], null);
                 counts.skipped += 1;
                 return;
             }
             const { locale } = recipient;
-            const [reports, t] = await Promise.all([
-                Promise.all(symbols.map(s => reportFor(s, locale))),
+            // 요약 조회는 전체 카드·요약 행을 한 줄로 묶어 청크로 돌린다 — 회원 한 명당 동시에
+            // 떠 있는 일봉 조회가 BRIEF_CONCURRENCY를 넘지 않는다. 최악(회원 4명 동시, 서로 다른
+            // 종목 20개)에도 동시 조회는 RECIPIENT_CONCURRENCY × BRIEF_CONCURRENCY = 20.
+            const [reports, briefs, t, signalLabel] = await Promise.all([
+                Promise.all(selection.full.map(s => reportFor(s, locale))),
+                mapChunked(symbols, BRIEF_CONCURRENCY, briefFor),
                 translatorFor(locale),
+                signalLabelFor(locale),
             ]);
+            const fullBriefs = briefs.slice(0, selection.full.length);
+            const rowBriefs = briefs.slice(selection.full.length);
             const email = buildReportEmail({
                 to: recipient.email,
                 locale,
                 localDate,
-                sections: reports.map(report => ({
+                sections: reports.map((report, i) => ({
                     report,
+                    brief: fullBriefs[i]!,
                     chartUrl: buildChartImageUrl(
                         deps.siteUrl,
                         deps.secret,
@@ -180,6 +237,14 @@ export async function runEmailReportBatch(
                         deps.siteUrl,
                         locale,
                         report.symbol
+                    ),
+                })),
+                briefRows: rowBriefs.map(brief => ({
+                    brief,
+                    pageUrl: buildSymbolPageUrl(
+                        deps.siteUrl,
+                        locale,
+                        brief.symbol
                     ),
                 })),
                 unsubscribePageUrl: buildUnsubscribePageUrl(
@@ -195,6 +260,7 @@ export async function runEmailReportBatch(
                 ),
                 settingsUrl: `${deps.siteUrl}${localePath(locale, '/email-report')}`,
                 t,
+                signalLabel,
             });
             const accepted = await deps.dispatcher.sendEmail(email);
             await deps.deliveries.finish(

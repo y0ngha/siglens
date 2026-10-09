@@ -489,7 +489,13 @@
                 "unsubscribeFailed": "Unsubscribing failed. Please try again in a moment."
             },
             "email": {
+                "briefColPrice": "Close · change",
+                "briefColSignals": "Signal summary",
+                "briefColSymbol": "Symbol",
+                "briefColTrend": "Trend",
+                "briefNoData": "No data",
                 "chartAlt": "{v0} daily chart",
+                "confluenceNote": "Confluence is the degree (0–100) to which indicators point the same way; it is not investment advice.",
                 "disclaimer": "This email is for information only and is not investment advice. You are responsible for your investment decisions and their outcomes. AI analysis may be inaccurate.",
                 "heading": "Your holdings report",
                 "intro": "Here's the latest on your holdings as of {v0}.",
@@ -498,18 +504,36 @@
                 "optionsIv": "ATM implied volatility",
                 "optionsMove": "Implied move to expiry ({v0})",
                 "optionsPutCall": "Put/call ratio (open interest)",
+                "pullback": {
+                    "nearWashoutInUptrend": "Near oversold within an uptrend",
+                    "washoutBelowMa200": "Oversold in a long-term decline (for reference)",
+                    "washoutInUptrend": "Short-term oversold within an uptrend"
+                },
                 "reason": "You're receiving this because you turned on email reports in your {v0} email report settings.",
+                "sectionBrief": "Other watchlist symbols",
                 "sectionNews": "Top news",
                 "sectionOptions": "Options activity",
                 "sectionPatterns": "Chart patterns",
                 "sectionPlain": "In plain words",
                 "sectionTechnical": "Chart analysis",
                 "sentiment": {
+                    "bearish": "Negative",
                     "bullish": "Positive",
-                    "neutral": "Neutral",
-                    "bearish": "Negative"
+                    "neutral": "Neutral"
                 },
+                "signalAbstain": "Confluence —",
+                "signalBearish": "Bearish {v0}",
+                "signalBullish": "Bullish {v0}",
+                "signalFresh": "Newly lit: {v0}",
+                "signalMore": "+{v0}",
+                "signalPullback": "Pullback: {v0}",
+                "signalScore": "Confluence {v0}",
                 "subject": "[{v0}] Your holdings report · {v1}",
+                "trendState": {
+                    "downtrend": "Downtrend",
+                    "sideways": "Sideways",
+                    "uptrend": "Uptrend"
+                },
                 "unsubscribe": "Unsubscribe",
                 "viewOnSite": "See details on {v0}"
             }
