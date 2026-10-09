@@ -2,14 +2,28 @@
 
 import { useTranslations } from 'next-intl';
 import { REASONING_FEATURE_LABEL_KEY } from '@/features/reasoning-toggle/model/reasoningFeature';
+import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
+import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import type {
+    ContextOf,
+    FunnelNudgeKind,
+} from '@/shared/lib/funnel/funnelEvents';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
-import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 import { LayersIcon, MailIcon } from '@/shared/ui/StrokeIcons';
 
+/** 이 모달을 여는 두 계기. 퍼널 이벤트의 `kind`로 그대로 기록된다. */
+export type SignupNudgeKind = Extract<
+    FunnelNudgeKind,
+    'anon_auto' | 'reasoning_toggle'
+>;
+
 interface AnalysisSignupNudgeModalProps {
+    /** 무엇이 열었나 — 자동 넛지(`anon_auto`)인지 잠긴 추론 토글 클릭(`reasoning_toggle`)인지. */
+    kind: SignupNudgeKind;
     /**
      * 어떤 기능을 알릴지. `reasoning`은 상세 분석(추론 토글), `emailReport`는 보유 종목
      * 메일 리포트다. 잠금 토글 클릭은 늘 `reasoning`, 자동 넛지는 둘을 번갈아 쓴다.
@@ -28,11 +42,23 @@ const ACTION_SIZE = 'h-10 px-4 text-sm';
  * purely informational (soft nudge), never blocking analysis.
  */
 export function AnalysisSignupNudgeModal({
+    kind,
     variant,
     onClose,
 }: AnalysisSignupNudgeModalProps) {
     const t = useTranslations('features.analysis-nudge');
     const tA11y = useTranslations('features.reasoning-toggle.a11y');
+    // `variant`는 자동 넛지에만 의미가 있다 — 문구를 번갈아 보여 주는 쪽. 잠금 토글
+    // 클릭은 늘 `reasoning` 문구라 기록해도 정보가 늘지 않고, 카탈로그(스펙 §3.3)도
+    // `anon_auto`에만 허용한다.
+    const funnelContext: ContextOf<'nudge_shown'> =
+        kind === 'anon_auto' ? { kind, variant } : { kind };
+    useFunnelNudgeShown(funnelContext);
+
+    const handleSignupClick = (): void => {
+        trackFunnelEvent('nudge_clicked', { ...funnelContext, cta: 'signup' });
+        onClose();
+    };
 
     // 문구 종류별 아이콘·제목·본문. `Record`라 종류가 늘면 여기서 컴파일 오류로 드러난다 —
     // 이분 분기였다면 새 종류가 조용히 한쪽 문구로 떨어진다.
@@ -78,7 +104,7 @@ export function AnalysisSignupNudgeModal({
             <div className="flex flex-col gap-2">
                 <Link
                     href="/signup"
-                    onClick={onClose}
+                    onClick={handleSignupClick}
                     className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                 >
                     {t('AnalysisSignupNudgeModal.2b8afd')}

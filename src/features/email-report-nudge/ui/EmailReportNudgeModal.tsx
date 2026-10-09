@@ -2,7 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import { cn } from '@/shared/lib/cn';
+import type { ContextOf } from '@/shared/lib/funnel/funnelEvents';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
 import { MailIcon, PortfolioIcon } from '@/shared/ui/StrokeIcons';
@@ -35,6 +38,7 @@ export function EmailReportNudgeModal({
         body: string;
         cta: string;
         href: string;
+        funnel: ContextOf<'nudge_clicked'>;
     } => {
         switch (nudge.kind) {
             case 'setup':
@@ -46,6 +50,7 @@ export function EmailReportNudgeModal({
                     }),
                     cta: t('EmailReportNudgeModal.8be329'),
                     href: SETTINGS_HREF,
+                    funnel: { kind: 'member_setup', cta: 'settings' },
                 };
             case 'symbol':
                 return {
@@ -56,10 +61,18 @@ export function EmailReportNudgeModal({
                     }),
                     cta: t('EmailReportNudgeModal.4a3bb0'),
                     href: `/portfolio?symbol=${encodeURIComponent(nudge.symbol)}`,
+                    funnel: { kind: 'member_symbol', cta: 'add' },
                 };
         }
     })();
     const { Icon } = content;
+
+    useFunnelNudgeShown({ kind: content.funnel.kind });
+
+    const handleCtaClick = (): void => {
+        trackFunnelEvent('nudge_clicked', content.funnel);
+        onClose();
+    };
 
     return (
         <ModalShell
@@ -81,7 +94,7 @@ export function EmailReportNudgeModal({
             <div className="flex flex-col gap-2">
                 <Link
                     href={content.href}
-                    onClick={onClose}
+                    onClick={handleCtaClick}
                     className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                 >
                     {content.cta}

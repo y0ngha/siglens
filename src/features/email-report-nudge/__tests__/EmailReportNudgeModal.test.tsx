@@ -20,6 +20,11 @@ vi.mock('next/link', () => ({
 vi.mock('@/shared/hooks/useEscapeKey', () => ({ useEscapeKey: vi.fn() }));
 vi.mock('@/shared/hooks/useFocusTrap', () => ({ useFocusTrap: vi.fn() }));
 
+const track = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: track,
+}));
+
 describe('EmailReportNudgeModal', () => {
     it('설정 권유는 보유 종목 수를 알리고 계정 페이지의 메일 리포트 섹션으로 보낸다', () => {
         render(
@@ -74,5 +79,68 @@ describe('EmailReportNudgeModal', () => {
         );
 
         expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
+    describe('퍼널 이벤트', () => {
+        beforeEach(() => {
+            track.mockReset();
+        });
+
+        it('설정 권유는 nudge_shown{member_setup}, CTA는 cta=settings', async () => {
+            render(
+                <EmailReportNudgeModal
+                    nudge={{ kind: 'setup', holdingsCount: 2 }}
+                    onClose={vi.fn()}
+                />
+            );
+            expect(
+                track.mock.calls.filter(([event]) => event === 'nudge_shown')
+            ).toEqual([['nudge_shown', { kind: 'member_setup' }]]);
+            await userEvent
+                .setup()
+                .click(
+                    screen.getByRole('link', { name: '메일 리포트 설정하기' })
+                );
+            expect(track).toHaveBeenCalledWith('nudge_clicked', {
+                kind: 'member_setup',
+                cta: 'settings',
+            });
+        });
+
+        it('종목 권유는 nudge_shown{member_symbol}, CTA는 cta=add', async () => {
+            render(
+                <EmailReportNudgeModal
+                    nudge={{ kind: 'symbol', symbol: 'NVDA' }}
+                    onClose={vi.fn()}
+                />
+            );
+            expect(track).toHaveBeenCalledWith('nudge_shown', {
+                kind: 'member_symbol',
+            });
+            await userEvent
+                .setup()
+                .click(
+                    screen.getByRole('link', { name: '포트폴리오에 추가하기' })
+                );
+            expect(track).toHaveBeenCalledWith('nudge_clicked', {
+                kind: 'member_symbol',
+                cta: 'add',
+            });
+        });
+
+        it('나중에 버튼은 nudge_clicked를 보내지 않는다', async () => {
+            render(
+                <EmailReportNudgeModal
+                    nudge={{ kind: 'setup', holdingsCount: 1 }}
+                    onClose={vi.fn()}
+                />
+            );
+            await userEvent
+                .setup()
+                .click(screen.getByRole('button', { name: '나중에' }));
+            expect(
+                track.mock.calls.some(([event]) => event === 'nudge_clicked')
+            ).toBe(false);
+        });
     });
 });

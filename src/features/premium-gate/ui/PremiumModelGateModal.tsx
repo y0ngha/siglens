@@ -1,9 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import type { GateMode } from '@/shared/lib/types';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
 import { LockIcon } from '@/shared/ui/StrokeIcons';
@@ -26,6 +28,17 @@ export function PremiumModelGateModal({
     const tMisc = useTranslations('shared.ui.misc');
 
     const isAuth = mode === 'auth';
+
+    useFunnelNudgeShown({ kind: 'model_gate' });
+
+    // auth는 가입 페이지로, byok는 계정 설정(API 키 등록)으로 보낸다.
+    const handleCtaClick = (): void => {
+        trackFunnelEvent('nudge_clicked', {
+            kind: 'model_gate',
+            cta: isAuth ? 'signup' : 'settings',
+        });
+        onClose();
+    };
     const iconColorClass = isAuth
         ? 'text-ui-warning-text'
         : 'text-ui-success-text';
@@ -57,7 +70,7 @@ export function PremiumModelGateModal({
                 {isAuth ? (
                     <Link
                         href="/signup"
-                        onClick={onClose}
+                        onClick={handleCtaClick}
                         className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                     >
                         {t('PremiumModelGateModal.2b8afd')}
@@ -65,7 +78,7 @@ export function PremiumModelGateModal({
                 ) : (
                     <Link
                         href="/account"
-                        onClick={onClose}
+                        onClick={handleCtaClick}
                         className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                     >
                         {t('PremiumModelGateModal.e91c23')}

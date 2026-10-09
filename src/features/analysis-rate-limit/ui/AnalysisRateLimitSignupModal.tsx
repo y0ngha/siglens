@@ -3,6 +3,9 @@
 import { useTranslations } from 'next-intl';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
+import type { FunnelNudgeCta } from '@/shared/lib/funnel/funnelEvents';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
 import { LockIcon } from '@/shared/ui/StrokeIcons';
@@ -31,6 +34,13 @@ export function AnalysisRateLimitSignupModal({
 }: AnalysisRateLimitSignupModalProps) {
     const t = useTranslations('features.analysis-rate-limit');
 
+    useFunnelNudgeShown({ kind: 'rate_limit' });
+
+    const closeAfterCta = (cta: FunnelNudgeCta) => (): void => {
+        trackFunnelEvent('nudge_clicked', { kind: 'rate_limit', cta });
+        onClose();
+    };
+
     return (
         <ModalShell
             titleId={TITLE_ID}
@@ -55,14 +65,14 @@ export function AnalysisRateLimitSignupModal({
             <div className="flex flex-col gap-2">
                 <Link
                     href="/signup"
-                    onClick={onClose}
+                    onClick={closeAfterCta('signup')}
                     className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                 >
                     {t('signup')}
                 </Link>
                 <Link
                     href="/login"
-                    onClick={onClose}
+                    onClick={closeAfterCta('login')}
                     className={cn(BUTTON_GHOST, ACTION_SIZE)}
                 >
                     {t('login')}

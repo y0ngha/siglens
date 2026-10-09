@@ -20,6 +20,11 @@ vi.mock('next/link', () => ({
     ),
 }));
 
+const track = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: track,
+}));
+
 const TITLE = koMessage('features.analysis-rate-limit.title');
 const RETRY_AT = Date.parse('2026-10-07T00:00:00.000Z');
 
@@ -106,5 +111,51 @@ describe('AnalysisRateLimitModalHost', () => {
             })
         );
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    describe('퍼널 이벤트', () => {
+        beforeEach(() => {
+            track.mockReset();
+        });
+
+        it('게스트 알림으로 열리면 nudge_shown{rate_limit}을 한 번 보낸다', () => {
+            render(<AnalysisRateLimitModalHost />);
+            publish('guest', RETRY_AT + 100);
+            expect(
+                track.mock.calls.filter(([event]) => event === 'nudge_shown')
+            ).toEqual([['nudge_shown', { kind: 'rate_limit' }]]);
+        });
+
+        it('가입·로그인 CTA는 각자의 cta로 nudge_clicked를 보낸다', async () => {
+            render(<AnalysisRateLimitModalHost />);
+            publish('guest', RETRY_AT + 101);
+            const user = userEvent.setup();
+            await user.click(
+                screen.getByRole('link', {
+                    name: koMessage('features.analysis-rate-limit.signup'),
+                })
+            );
+            expect(track).toHaveBeenCalledWith('nudge_clicked', {
+                kind: 'rate_limit',
+                cta: 'signup',
+            });
+
+            publish('guest', RETRY_AT + 102);
+            await user.click(
+                screen.getByRole('link', {
+                    name: koMessage('features.analysis-rate-limit.login'),
+                })
+            );
+            expect(track).toHaveBeenCalledWith('nudge_clicked', {
+                kind: 'rate_limit',
+                cta: 'login',
+            });
+        });
+
+        it('회원 알림은 모달이 없으니 아무것도 보내지 않는다', () => {
+            render(<AnalysisRateLimitModalHost />);
+            publish('member', RETRY_AT + 103);
+            expect(track).not.toHaveBeenCalled();
+        });
     });
 });
