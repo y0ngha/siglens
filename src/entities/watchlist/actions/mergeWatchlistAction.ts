@@ -10,18 +10,10 @@ import {
 import { getDatabaseClient } from '@/shared/db/client';
 import type { MergeWatchlistCandidate } from '@/shared/db/types';
 import { logActionError } from '@/shared/lib/logActionError';
+import { isRawWatchlistInput } from '../lib/isRawWatchlistInput';
 import { normalizeWatchlistLabel } from '../lib/normalizeWatchlistLabel';
 import { validateWatchlistSymbol } from '../lib/validateWatchlistSymbol';
 import type { MergeWatchlistResult, RawWatchlistInput } from '../model';
-
-function isRawWatchlistInputShape(input: unknown): input is RawWatchlistInput {
-    if (typeof input !== 'object' || input === null) return false;
-    const candidate = input as Record<string, unknown>;
-    return (
-        typeof candidate.symbol === 'string' &&
-        typeof candidate.label === 'string'
-    );
-}
 
 function toCandidate(entry: RawWatchlistInput): MergeWatchlistCandidate[] {
     const validated = validateWatchlistSymbol(entry.symbol);
@@ -56,7 +48,7 @@ export async function mergeWatchlistAction(
         };
     }
     const candidates = entries
-        .filter(isRawWatchlistInputShape)
+        .filter(isRawWatchlistInput)
         .flatMap(toCandidate)
         .slice(0, WATCHLIST_MAX_LOCAL);
 

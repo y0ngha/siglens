@@ -48,14 +48,18 @@ function getDefaultStorage(): StorageLike | null {
 
 function toEntry(item: unknown): LocalWatchlistEntry[] {
     if (item === null || typeof item !== 'object') return [];
-    const raw = item as Record<string, unknown>;
-    if (typeof raw.symbol !== 'string') return [];
-    const symbol = raw.symbol.trim().toUpperCase();
+    if (!('symbol' in item) || typeof item.symbol !== 'string') return [];
+    const symbol = item.symbol.trim().toUpperCase();
     if (symbol.length === 0) return [];
-    const label = typeof raw.label === 'string' ? raw.label.trim() : '';
+    const label =
+        'label' in item && typeof item.label === 'string'
+            ? item.label.trim()
+            : '';
     const addedAt =
-        typeof raw.addedAt === 'number' && Math.abs(raw.addedAt) <= MAX_DATE_MS
-            ? raw.addedAt
+        'addedAt' in item &&
+        typeof item.addedAt === 'number' &&
+        Math.abs(item.addedAt) <= MAX_DATE_MS
+            ? item.addedAt
             : 0;
     return [{ symbol, label: label.length > 0 ? label : symbol, addedAt }];
 }
@@ -75,9 +79,10 @@ export function parseLocalWatchlist(raw: string | null): LocalWatchlistEntry[] {
     try {
         const parsed: unknown = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
+        // `toSorted`는 `legacyBrowserPolyfills`가 채운다(Chrome 109·iOS 15).
         const sorted = parsed
             .flatMap(toEntry)
-            .sort((a, b) => b.addedAt - a.addedAt);
+            .toSorted((a, b) => b.addedAt - a.addedAt);
         return dedupeNewest(sorted).slice(0, WATCHLIST_MAX_LOCAL);
     } catch {
         return [];

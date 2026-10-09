@@ -13,6 +13,7 @@ import {
 import { addWatchlistItemAction } from '@/entities/watchlist/actions/addWatchlistItemAction';
 import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
 import { removeWatchlistItemAction } from '@/entities/watchlist/actions/removeWatchlistItemAction';
+import { normalizeWatchlistLabel } from '../lib/normalizeWatchlistLabel';
 import type {
     AddWatchlistResult,
     RawWatchlistInput,
@@ -98,9 +99,9 @@ export function useWatchlistQuery({
         item: WatchlistItemView,
         index: number
     ): WatchlistItemView[] => {
-        const next = [...list];
-        next.splice(Math.min(index, next.length), 0, item);
-        return next;
+        // `toSpliced`는 클라이언트 폴리필 목록(`legacyBrowserPolyfills`)에 없다 — 복사 후 splice 대신 slice로 잇는다.
+        const at = Math.min(index, list.length);
+        return [...list.slice(0, at), item, ...list.slice(at)];
     };
     /** 담기 실패: 그 심볼만 변이 전 상태(없었으면 없음)로 돌린다. */
     const rollbackAdd = (context: MutationContext | undefined): void => {
@@ -148,11 +149,7 @@ export function useWatchlistQuery({
             const context = await capture(symbol);
             const optimistic: WatchlistItemView = {
                 symbol,
-                companyName:
-                    input.label.trim() &&
-                    input.label.trim().toUpperCase() !== symbol
-                        ? input.label.trim()
-                        : null,
+                companyName: normalizeWatchlistLabel(input.label, symbol),
                 // 서버가 확정하기 전의 자리표시 시각. 목록은 addedAt 내림차순이라 맨 앞에 선다.
                 addedAt: new Date().toISOString(),
             };

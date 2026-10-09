@@ -105,6 +105,34 @@ describe('useWatchlistQuery', () => {
         );
     });
 
+    it('낙관적 행의 표시명도 서버와 같은 규칙(공백 제거·100자 절단·심볼과 같으면 null)을 쓴다', async () => {
+        const { wrapper } = createQueryClientWrapper();
+        const { result } = renderHook(
+            () => useWatchlistQuery({ enabled: true }),
+            { wrapper }
+        );
+        await waitFor(() => expect(result.current.items).toHaveLength(1));
+        mockAdd.mockReturnValue(new Promise(() => {}));
+
+        act(() => {
+            void result.current.add.mutateAsync({
+                symbol: 'msft',
+                label: `  ${'x'.repeat(150)} `,
+            });
+        });
+        await waitFor(() => expect(result.current.items).toHaveLength(2));
+        expect(result.current.items[0]?.companyName).toBe('x'.repeat(100));
+
+        act(() => {
+            void result.current.add.mutateAsync({
+                symbol: 'NVDA',
+                label: 'nvda',
+            });
+        });
+        await waitFor(() => expect(result.current.items).toHaveLength(3));
+        expect(result.current.items[0]?.companyName).toBeNull();
+    });
+
     it('add가 던지면 이전 목록으로 되돌린다', async () => {
         const { wrapper } = createQueryClientWrapper();
         const { result } = renderHook(

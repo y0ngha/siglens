@@ -254,6 +254,11 @@ export interface AddWatchlistItemInput {
     companyName: string | null;
 }
 
+/** `limit_reached`: the symbol is new and the member is already at the limit. */
+export type AddWatchlistResultRecord =
+    | { status: 'added'; item: WatchlistItemRecord }
+    | { status: 'limit_reached' };
+
 /** One local (anonymous) entry offered to `mergeSymbols`, most recently added first. */
 export interface MergeWatchlistCandidate {
     symbol: string; // canonical UPPERCASE
@@ -270,8 +275,14 @@ export interface MergeWatchlistOutcome {
 export interface WatchlistItemRepository {
     findByUser(userId: string): Promise<WatchlistItemRecord[]>;
     countByUser(userId: string): Promise<number>;
-    /** Upsert — re-adding an existing symbol keeps the row and backfills `companyName` only when it was null. */
-    add(input: AddWatchlistItemInput): Promise<WatchlistItemRecord>;
+    /**
+     * Upsert under a per-member lock so concurrent adds cannot exceed `limit`. Re-adding an existing
+     * symbol is idempotent (limit not applied): the row is kept and `companyName` backfilled only when null.
+     */
+    addWithinLimit(
+        input: AddWatchlistItemInput,
+        limit: number
+    ): Promise<AddWatchlistResultRecord>;
     remove(userId: string, symbol: string): Promise<boolean>;
     /** Union with the account list; candidates beyond `limit` (in the given order) are skipped. */
     mergeSymbols(

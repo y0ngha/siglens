@@ -276,6 +276,36 @@ describe('useWatchlistMerge', () => {
         ]);
     });
 
+    it('첫 응답 전(pending)에서 비회원(null)으로 확정돼도 세션 플래그를 지우지 않는다', async () => {
+        sessionStorage.setItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY, '1');
+        const { wrapper } = createQueryClientWrapper();
+        const { rerender } = renderHook(() => useWatchlistMerge(), { wrapper });
+        identity.currentUser = null;
+        rerender();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(
+            sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+        ).toBe('1');
+    });
+
+    it('회원에서 null로 바뀌는 전이(로그아웃)는 세션 플래그를 지운다', async () => {
+        sessionStorage.setItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY, '1');
+        localStorage.clear();
+        identity.currentUser = { id: 'user-1' };
+        const { wrapper } = createQueryClientWrapper();
+        const { rerender } = renderHook(() => useWatchlistMerge(), { wrapper });
+        expect(
+            sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+        ).toBe('1');
+        identity.currentUser = null;
+        rerender();
+        await waitFor(() =>
+            expect(
+                sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+            ).toBeNull()
+        );
+    });
+
     it('이미 이 세션에 병합했으면 부르지 않는다', async () => {
         sessionStorage.setItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY, '1');
         identity.currentUser = { id: 'user-1' };

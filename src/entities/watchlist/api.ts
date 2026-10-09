@@ -1,8 +1,9 @@
 import { and, count, eq, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
-import { watchlistItems } from '@/shared/db/schema';
+import { users, watchlistItems } from '@/shared/db/schema';
 import type {
     AddWatchlistItemInput,
+    AddWatchlistResultRecord,
     MergeWatchlistCandidate,
     MergeWatchlistOutcome,
     SiglensDatabase,
@@ -62,31 +63,61 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
         return Number(row?.value ?? 0);
     }
 
-    async add(input: AddWatchlistItemInput): Promise<WatchlistItemRecord> {
-        const [row] = await withRetry(
+    /**
+     * 상한 안에서만 담는다. 이미 담긴 심볼은 상한과 무관하게 멱등 성공이다(행 유지, 이름이
+     * 비어 있을 때만 채움 — `created_at`이 그대로라 "최근 담은 순"이 흔들리지 않는다).
+     *
+     * 회원 행을 `FOR NO KEY UPDATE`로 잠가 같은 회원의 동시 담기를 직렬화한다. "개수 조회 →
+     * 삽입"을 따로 하면 두 탭이 같은 개수를 보고 둘 다 통과해 상한을 넘긴다. 잠금 모드를
+     * `NO KEY UPDATE`로 한 이유: 다른 테이블이 `users`를 참조해 삽입할 때 거는 `KEY SHARE`와
+     * 충돌하지 않아 이 잠금이 FK 검사를 막지 않는다.
+     */
+    async addWithinLimit(
+        input: AddWatchlistItemInput,
+        limit: number
+    ): Promise<AddWatchlistResultRecord> {
+        return withRetry(
             () =>
-                this.db
-                    .insert(watchlistItems)
-                    .values({
-                        userId: input.userId,
-                        symbol: input.symbol,
-                        companyName: input.companyName,
-                    })
-                    .onConflictDoUpdate({
-                        target: [watchlistItems.userId, watchlistItems.symbol],
-                        // 다시 담기는 멱등이다 — 행을 유지하고 이름만 비어 있을 때 채운다.
-                        // (`created_at`은 그대로라 "최근 담은 순"이 흔들리지 않는다.)
-                        set: {
-                            companyName: sql`coalesce(${watchlistItems.companyName}, ${input.companyName})`,
-                        },
-                    })
-                    .returning(columns),
+                this.db.transaction(async tx => {
+                    await tx
+                        .select({ id: users.id })
+                        .from(users)
+                        .where(eq(users.id, input.userId))
+                        .for('no key update');
+                    const owned = await tx
+                        .select({ symbol: watchlistItems.symbol })
+                        .from(watchlistItems)
+                        .where(eq(watchlistItems.userId, input.userId));
+                    const alreadySaved = owned.some(
+                        row => row.symbol === input.symbol
+                    );
+                    if (!alreadySaved && owned.length >= limit) {
+                        return { status: 'limit_reached' } as const;
+                    }
+                    const [row] = await tx
+                        .insert(watchlistItems)
+                        .values({
+                            userId: input.userId,
+                            symbol: input.symbol,
+                            companyName: input.companyName,
+                        })
+                        .onConflictDoUpdate({
+                            target: [
+                                watchlistItems.userId,
+                                watchlistItems.symbol,
+                            ],
+                            set: {
+                                companyName: sql`coalesce(${watchlistItems.companyName}, ${input.companyName})`,
+                            },
+                        })
+                        .returning(columns);
+                    if (row === undefined) {
+                        throw new Error('Failed to upsert watchlist item');
+                    }
+                    return { status: 'added', item: row } as const;
+                }),
             DB_TRANSIENT_RETRY
         );
-        if (row === undefined) {
-            throw new Error('Failed to upsert watchlist item');
-        }
-        return row;
     }
 
     async remove(userId: string, symbol: string): Promise<boolean> {

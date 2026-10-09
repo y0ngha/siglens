@@ -1,13 +1,11 @@
 import type { MockedFunction } from 'vitest';
 
-const { mockFindByUser, mockCountByUser, mockAdd, mockRemove, mockMerge } =
-    vi.hoisted(() => ({
-        mockFindByUser: vi.fn(),
-        mockCountByUser: vi.fn(),
-        mockAdd: vi.fn(),
-        mockRemove: vi.fn(),
-        mockMerge: vi.fn(),
-    }));
+const { mockFindByUser, mockAdd, mockRemove, mockMerge } = vi.hoisted(() => ({
+    mockFindByUser: vi.fn(),
+    mockAdd: vi.fn(),
+    mockRemove: vi.fn(),
+    mockMerge: vi.fn(),
+}));
 
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
@@ -19,8 +17,7 @@ vi.mock('@/entities/watchlist/api', () => ({
     DrizzleWatchlistRepository: vi.fn().mockImplementation(function () {
         return {
             findByUser: mockFindByUser,
-            countByUser: mockCountByUser,
-            add: mockAdd,
+            addWithinLimit: mockAdd,
             remove: mockRemove,
             mergeSymbols: mockMerge,
         };
@@ -85,7 +82,6 @@ describe('getWatchlistAction', () => {
 describe('addWatchlistItemAction', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockCountByUser.mockResolvedValue(0);
     });
 
     it('비로그인 → unauthenticated 결과(던지지 않음)', async () => {
@@ -113,9 +109,13 @@ describe('addWatchlistItemAction', () => {
         });
     });
 
-    it('상한이면 limit_reached, 저장소를 부르지 않는다', async () => {
+    it('저장소가 limit_reached를 돌려주면 limit_reached 오류(상한을 함께 안내)', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
-        mockCountByUser.mockResolvedValue(WATCHLIST_MAX_MEMBER);
+        mockGetAssetInfo.mockResolvedValue({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+        } as never);
+        mockAdd.mockResolvedValue({ status: 'limit_reached' });
         const result = await addWatchlistItemAction({
             symbol: 'AAPL',
             label: '애플',
@@ -127,7 +127,34 @@ describe('addWatchlistItemAction', () => {
         expect((result as { message: string }).message).toContain(
             String(WATCHLIST_MAX_MEMBER)
         );
-        expect(mockAdd).not.toHaveBeenCalled();
+        expect(mockAdd).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: 'user-1', symbol: 'AAPL' }),
+            WATCHLIST_MAX_MEMBER
+        );
+    });
+
+    it('저장소가 기존 행을 돌려주면(이미 담긴 심볼의 멱등 재담기) 오류 없이 그 행으로 성공한다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+        mockGetAssetInfo.mockResolvedValue({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+        } as never);
+        mockAdd.mockResolvedValue({
+            status: 'added',
+            item: record('AAPL', '2026-10-01T00:00:00.000Z'),
+        });
+        const result = await addWatchlistItemAction({
+            symbol: 'AAPL',
+            label: '애플',
+        });
+        expect(result).toEqual({
+            status: 'ok',
+            item: {
+                symbol: 'AAPL',
+                companyName: null,
+                addedAt: '2026-10-01T00:00:00.000Z',
+            },
+        });
     });
 
     it('getAssetInfo가 null이면 symbol_not_found', async () => {
@@ -152,18 +179,24 @@ describe('addWatchlistItemAction', () => {
             koreanName: '애플',
         } as never);
         mockAdd.mockResolvedValue({
-            ...record('AAPL', '2026-10-09T00:00:00.000Z'),
-            companyName: 'Apple Inc.',
+            status: 'added',
+            item: {
+                ...record('AAPL', '2026-10-09T00:00:00.000Z'),
+                companyName: 'Apple Inc.',
+            },
         });
         const result = await addWatchlistItemAction({
             symbol: ' aapl ',
             label: '애플',
         });
-        expect(mockAdd).toHaveBeenCalledWith({
-            userId: 'user-1',
-            symbol: 'AAPL',
-            companyName: 'Apple Inc.',
-        });
+        expect(mockAdd).toHaveBeenCalledWith(
+            {
+                userId: 'user-1',
+                symbol: 'AAPL',
+                companyName: 'Apple Inc.',
+            },
+            WATCHLIST_MAX_MEMBER
+        );
         expect(result).toEqual({
             status: 'ok',
             item: {
@@ -178,43 +211,59 @@ describe('addWatchlistItemAction', () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockGetAssetInfo.mockRejectedValue(new Error('fmp down'));
         mockAdd.mockResolvedValue({
-            ...record('TSLA', '2026-10-09T00:00:00.000Z'),
-            companyName: '테슬라',
+            status: 'added',
+            item: {
+                ...record('TSLA', '2026-10-09T00:00:00.000Z'),
+                companyName: '테슬라',
+            },
         });
         const result = await addWatchlistItemAction({
             symbol: 'TSLA',
             label: '테슬라',
         });
-        expect(mockAdd).toHaveBeenCalledWith({
-            userId: 'user-1',
-            symbol: 'TSLA',
-            companyName: '테슬라',
-        });
+        expect(mockAdd).toHaveBeenCalledWith(
+            {
+                userId: 'user-1',
+                symbol: 'TSLA',
+                companyName: '테슬라',
+            },
+            WATCHLIST_MAX_MEMBER
+        );
         expect(result.status).toBe('ok');
     });
 
     it('클라이언트 라벨이 150자면 100자로 잘라 저장한다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockGetAssetInfo.mockRejectedValue(new Error('fmp down'));
-        mockAdd.mockResolvedValue(record('TSLA', '2026-10-09T00:00:00.000Z'));
+        mockAdd.mockResolvedValue({
+            status: 'added',
+            item: record('TSLA', '2026-10-09T00:00:00.000Z'),
+        });
         await addWatchlistItemAction({
             symbol: 'TSLA',
             label: 'x'.repeat(150),
         });
-        expect(mockAdd).toHaveBeenCalledWith({
-            userId: 'user-1',
-            symbol: 'TSLA',
-            companyName: 'x'.repeat(WATCHLIST_LABEL_MAX_LENGTH),
-        });
+        expect(mockAdd).toHaveBeenCalledWith(
+            {
+                userId: 'user-1',
+                symbol: 'TSLA',
+                companyName: 'x'.repeat(WATCHLIST_LABEL_MAX_LENGTH),
+            },
+            WATCHLIST_MAX_MEMBER
+        );
     });
 
     it('라벨이 심볼과 같으면 companyName은 null', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockGetAssetInfo.mockRejectedValue(new Error('fmp down'));
-        mockAdd.mockResolvedValue(record('TSLA', '2026-10-09T00:00:00.000Z'));
+        mockAdd.mockResolvedValue({
+            status: 'added',
+            item: record('TSLA', '2026-10-09T00:00:00.000Z'),
+        });
         await addWatchlistItemAction({ symbol: 'TSLA', label: 'tsla' });
         expect(mockAdd).toHaveBeenCalledWith(
-            expect.objectContaining({ companyName: null })
+            expect.objectContaining({ companyName: null }),
+            WATCHLIST_MAX_MEMBER
         );
     });
 

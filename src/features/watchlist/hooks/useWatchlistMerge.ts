@@ -30,6 +30,9 @@ import { useLocalWatchlist } from './useLocalWatchlist';
 export function useWatchlistMerge(): void {
     const inFlightRef = useRef(false);
     const attemptedUserIdRef = useRef<string | null>(null);
+    // 직전 렌더의 userId. `null`은 "로그아웃"과 "첫 응답 전(pending)"을 모두 뜻하므로, 세션
+    // 플래그는 회원이었다가 `null`이 된 전이에서만 지운다.
+    const previousUserIdRef = useRef<string | null>(null);
     const { data: user } = useCurrentUser();
     const { entries, clear } = useLocalWatchlist();
     const qc = useQueryClient();
@@ -89,9 +92,11 @@ export function useWatchlistMerge(): void {
     });
 
     useEffect(() => {
+        const previousUserId = previousUserIdRef.current;
+        previousUserIdRef.current = userId;
         if (userId === null) {
             attemptedUserIdRef.current = null;
-            clearWatchlistMergedThisSession();
+            if (previousUserId !== null) clearWatchlistMergedThisSession();
             return;
         }
         if (localCount === 0) return;

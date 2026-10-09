@@ -3,6 +3,7 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
+import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import type { SiglensDatabase, WatchlistItemRecord } from '@/shared/db/types';
 
 const createdAt = new Date('2026-10-09T00:00:00.000Z');
@@ -123,6 +124,103 @@ describe('DrizzleWatchlistRepository', () => {
             );
 
             expect(outcome).toEqual({ added: 1, skipped: 0 });
+        });
+    });
+
+    describe('addWithinLimit', () => {
+        const input = {
+            userId: 'user-1',
+            symbol: 'AAPL',
+            companyName: 'Apple Inc.',
+        };
+
+        /** 트랜잭션 콜백에 실제 Drizzle SQL 캡처 DB를 넘기고, 쿼리 순서대로 결과를 준다. */
+        function txDb(results: unknown[][]) {
+            const { db: tx, captured } = createSqlCaptureDb(
+                (_query, index) => results[index] ?? []
+            );
+            const db = {
+                transaction: (cb: (t: SiglensDatabase) => Promise<unknown>) =>
+                    cb(tx),
+            } as unknown as SiglensDatabase;
+            return { db, captured };
+        }
+
+        it('회원 행을 FOR NO KEY UPDATE로 잠근 뒤 보유 심볼을 읽고 삽입한다(쿼리 순서 고정)', async () => {
+            const { db, captured } = txDb([
+                [{ id: 'user-1' }],
+                [{ symbol: 'MSFT' }],
+                [record('AAPL')],
+            ]);
+
+            const outcome = await new DrizzleWatchlistRepository(
+                db
+            ).addWithinLimit(input, 50);
+
+            expect(outcome).toEqual({ status: 'added', item: record('AAPL') });
+            expect(captured).toHaveLength(3);
+            expect(captured[0]).toEqual({
+                sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
+                params: ['user-1'],
+            });
+            expect(captured[1]).toEqual({
+                sql: 'select "symbol" from "watchlist_items" where "watchlist_items"."user_id" = $1',
+                params: ['user-1'],
+            });
+            expect(captured[2].sql).toMatch(
+                /^insert into "watchlist_items" \("id", "user_id", "symbol", "company_name", "created_at"\) values \(default, \$1, \$2, \$3, default\) on conflict \("user_id","symbol"\) do update set "company_name" = coalesce\("watchlist_items"\."company_name", \$4\) returning /
+            );
+            expect(captured[2].params).toEqual([
+                'user-1',
+                'AAPL',
+                'Apple Inc.',
+                'Apple Inc.',
+            ]);
+        });
+
+        it('새 심볼이고 이미 상한이면 삽입하지 않고 limit_reached', async () => {
+            const { db, captured } = txDb([
+                [{ id: 'user-1' }],
+                [{ symbol: 'MSFT' }, { symbol: 'NVDA' }],
+            ]);
+
+            const outcome = await new DrizzleWatchlistRepository(
+                db
+            ).addWithinLimit(input, 2);
+
+            expect(outcome).toEqual({ status: 'limit_reached' });
+            expect(captured).toHaveLength(2);
+            expect(captured.some(q => q.sql.startsWith('insert'))).toBe(false);
+        });
+
+        it('이미 담긴 심볼은 상한이어도 상한을 적용하지 않고 upsert로 성공한다', async () => {
+            const { db, captured } = txDb([
+                [{ id: 'user-1' }],
+                [{ symbol: 'MSFT' }, { symbol: 'AAPL' }],
+                [record('AAPL')],
+            ]);
+
+            const outcome = await new DrizzleWatchlistRepository(
+                db
+            ).addWithinLimit(input, 2);
+
+            expect(outcome).toEqual({ status: 'added', item: record('AAPL') });
+            expect(captured).toHaveLength(3);
+            expect(captured[2].sql).toContain(
+                'on conflict ("user_id","symbol") do update'
+            );
+        });
+
+        it('상한보다 하나 적으면(limit-1) 넣는다 — 경계', async () => {
+            const { db } = txDb([
+                [{ id: 'user-1' }],
+                [{ symbol: 'MSFT' }],
+                [record('AAPL')],
+            ]);
+
+            await expect(
+                new DrizzleWatchlistRepository(db).addWithinLimit(input, 2)
+            ).resolves.toMatchObject({ status: 'added' });
         });
     });
 
