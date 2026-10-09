@@ -313,8 +313,15 @@ describe('finalizeOAuthSignupAction', () => {
         expect(createAuthSession as Mock).toHaveBeenCalledWith(
             expect.objectContaining({ userId: 'new-user-id' })
         );
-        // 세션 · 인증 힌트 · 가입 전환 플래그
-        expect(mockCookieSet).toHaveBeenCalledTimes(3);
+        // 세션 · 인증 힌트 · 가입 전환 플래그 · 퍼널 가입 쿠키
+        expect(mockCookieSet).toHaveBeenCalledTimes(4);
+        expect(mockCookieSet).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'siglens_funnel_signup',
+                value: 'oauth',
+                domain: 'siglens.io',
+            })
+        );
         expect(mockCookieSet).toHaveBeenCalledWith(
             expect.objectContaining({
                 name: 'siglens_signup_conversion',
