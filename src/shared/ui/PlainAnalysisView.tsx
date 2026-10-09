@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink } from './LocaleLink';
 
 interface PlainAnalysisViewProps {
@@ -73,6 +74,12 @@ export function PlainAnalysisView({
                      */}
                     <LocaleLink
                         href="/signup"
+                        // 가입 페이지로 가는 잠긴 요소 클릭 — 가입 퍼널의 게이트다.
+                        onClick={() =>
+                            trackFunnelEvent('gate_clicked', {
+                                gate: 'locked_detail',
+                            })
+                        }
                         className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary-600 px-3 text-xs font-semibold whitespace-nowrap text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none sm:w-auto"
                     >
                         {t('lockedCta')}

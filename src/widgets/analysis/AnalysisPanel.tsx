@@ -35,6 +35,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LABEL_GROUP, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import {
@@ -1598,6 +1599,12 @@ export function AnalysisPanel({
                                     </div>
                                     <Link
                                         href="/signup"
+                                        // 가입 페이지로 가는 잠긴 요소 클릭 — 가입 퍼널의 게이트다.
+                                        onClick={() =>
+                                            trackFunnelEvent('gate_clicked', {
+                                                gate: 'locked_detail',
+                                            })
+                                        }
                                         className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
                                         {t('AnalysisPanel.ecb4cc')}
