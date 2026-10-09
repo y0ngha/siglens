@@ -17,6 +17,14 @@ export type ReportEmailTranslator = (
     values?: Record<string, string>
 ) => string;
 
+/**
+ * 신호 타입 → 사람이 읽는 라벨. 대시보드 `SignalBadge`가 쓰는 `shared.enumLabel.signalType`
+ * 사전을 메일 번역자에게도 노출한 것. core가 새 `SignalType`을 추가해 사전에 없으면 `null` —
+ * 템플릿은 그 타입을 **표시에서 생략**한다(심볼 키를 그대로 내보내지 않는다). 로그는
+ * 리졸버를 만든 app 레이어가 남긴다(템플릿은 순수).
+ */
+export type SignalLabelResolver = (type: string) => string | null;
+
 /** 메일에 싣는 종목 한 칸 — 데이터와 그 칸의 링크. */
 export interface ReportEmailSection {
     report: SymbolReport;
