@@ -118,6 +118,7 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
    fetch 미사용)라 같은 신호를 drizzle 로거가 보낸다 — `noStoreQueryLogger`(`src/shared/db/`)가
    쿼리마다 `unstable_noStore()`를 불러 `unstable_cache` 밖 정적 생성 중 DB 읽기를 똑같이 던지게
    한다(캐시 안에서는 no-op). 원시 `client.sql` 템플릿은 이 로거를 우회하므로 정적 경로에서 쓰지 말 것.
+   DB-backed 페이지의 엔티티 읽기는 "이중 지연"을 피하려는 이유로도 `unstable_cache` 밖에 두지 않는다. 오류·빈 결과 처리는 캐시 함수 밖에서 해서 실패가 TTL 동안 캐시되지 않게 한다.
    `unstable_cache`(= `staticSymbolCache`, revalidate 1h + `symbol:` tag)로 감싸야 ISR이
    데이터를 HTML에 박고 정적 캐시한다. (단 축 0이 선결돼야 효과가 있다.) 신선도가 민감한
    라우트(news)는 `news:${symbol}` 그룹 태그를 추가로 달고, 데이터 변경(뉴스 ingestion) 직후

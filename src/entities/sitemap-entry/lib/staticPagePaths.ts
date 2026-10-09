@@ -4,6 +4,8 @@ import {
     PRIVACY_PATH,
     TERMS_PATH,
 } from '@/shared/lib/legal';
+import { GUIDE_CATEGORIES } from '@/entities/guide/types';
+import { GUIDE_PATH, guideCategoryPath } from '@/shared/lib/guidePaths';
 import { BACKTESTING_PATH } from '@/shared/lib/seo';
 
 /**
@@ -20,4 +22,7 @@ export const STATIC_PAGE_PATHS = [
     PRIVACY_PATH,
     TERMS_PATH,
     BACKTESTING_PATH,
+    // 차트 가이드 허브·카테고리. 항목(90개)은 DB에서 오므로 여기 담지 않는다 — sitemap으로 충분하다.
+    GUIDE_PATH,
+    ...GUIDE_CATEGORIES.map(guideCategoryPath),
 ] as const;

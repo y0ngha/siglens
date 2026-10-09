@@ -539,4 +539,39 @@ describe('SkillCard expand interaction', () => {
 
         expect(onToggle).toHaveBeenCalledWith('RSI');
     });
+
+    it('가이드가 있는 스킬 카드는 가이드 링크를 카드의 버튼 영역 밖에 둔다', () => {
+        stubClamp(true);
+        render(
+            <SkillCard
+                skill={makeSkill('Doji Pattern Guide', 'candlestick')}
+                isExpanded={false}
+                onToggleExpand={vi.fn()}
+            />
+        );
+
+        const link = screen.getByRole('link', { name: /가이드 보기/ });
+        expect(link).toHaveAttribute('href', '/guide/candlesticks/doji');
+        expect(link.closest('[role="button"]')).toBeNull();
+    });
+
+    it('가이드가 없는 스킬 카드는 링크를 그리지 않는다', () => {
+        render(
+            <SkillCard
+                skill={makeSkill('가이드 없는 스킬')}
+                isExpanded={false}
+                onToggleExpand={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    });
+
+    it('섹션 끝에 전체 가이드 링크가 있다', () => {
+        render(<SkillsShowcase skills={[]} />);
+
+        expect(
+            screen.getByRole('link', { name: '전체 가이드 보기' })
+        ).toHaveAttribute('href', '/guide');
+    });
 });

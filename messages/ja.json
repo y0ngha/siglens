@@ -2256,6 +2256,7 @@
                 "bollingerBody": "20本のローソク足移動平均線を中央に置き、標準偏差の2倍の幅で上下にバンドを描画します。価格がバンドを逸脱すると、通常の動きよりも大きいと見なされます。",
                 "counts": "分析基準として使用する補助指標は{indicators}種類、ローソク足パターンは{candles}種類、チャートパターンは{patterns}種類、戦略は{strategies}種類です。",
                 "examplesTitle": "計算の例",
+                "guide": "各指標の説明はチャートガイドで読めます",
                 "ma": "移動平均線",
                 "maBody": "直近5・20・60・120・200本の終値平均です。価格が平均線の上にあるか下にあるかでトレンドを判断します。",
                 "macd": "MACD",
@@ -2703,6 +2704,56 @@
                 "web": "ウェブ検索"
             }
         },
+        "guide": {
+            "aliasesLabel": "別名",
+            "backToCategory": "{name}の一覧へ",
+            "categoryCandlesticks": "ローソク足パターン",
+            "categoryChartPatterns": "チャートパターン",
+            "categoryHubLink": "チャートガイドに戻る",
+            "categoryIndicators": "テクニカル指標",
+            "categoryIntroCandlesticks": "ローソク1本から数本が作る形まで、ローソク足パターンが何を示すかを解説します。始値・高値・安値・終値の読み方から、十字線、ハンマー、包み足、明けの明星のような反転・継続パターンまで扱います。",
+            "categoryIntroChartPatterns": "複数のローソクが作る大きな形を扱います。ダブルボトム、ヘッドアンドショルダー、三角持ち合い、ウェッジ、フラッグなど、トレンドが続くときや変わるときによく現れるパターンの形と、Siglensが探す基準を説明します。",
+            "categoryIntroIndicators": "移動平均線、RSI、MACD、ボリンジャーバンドなど、価格と出来高から計算するテクニカル指標をまとめました。計算方法と読み方に加えて、値が当てにならない場面も載せています。",
+            "categoryIntroStrategies": "エリオット波動、フィボナッチ・リトレースメント、ダイバージェンス、ブレイクアウト、ギャップなど、複数のシグナルを組み合わせて見る分析の考え方を解説します。指標1つでは分かりにくい流れを読むための理論です。",
+            "categorySeoDescription": "{name}{count}項目を例のチャートつきで解説。読み方とSiglensの判定基準、注意点を載せています。",
+            "categorySeoTitleCandlesticks": "ローソク足パターンの種類と意味まとめ",
+            "categorySeoTitleChartPatterns": "チャートパターンの種類と見方まとめ",
+            "categorySeoTitleIndicators": "テクニカル指標の種類と見方まとめ",
+            "categorySeoTitleStrategies": "エリオット波動・フィボナッチ・ダイバージェンス戦略まとめ",
+            "categoryStrategies": "戦略・理論",
+            "ctaBody": "気になる銘柄を検索すると、チャートと分析をあわせて見られます。",
+            "ctaButton": "銘柄を検索する",
+            "ctaHeading": "実際の銘柄で確認する",
+            "emptyAiQuestion": "ガイドにない用語：{query}。チャートの例を交えて分かりやすく説明して",
+            "emptyAskAi": "AIに質問する",
+            "emptyBody": "別の名前で検索するか、AIに直接質問してみてください。",
+            "emptyReset": "絞り込みを解除",
+            "emptyTitle": "該当する項目がありません",
+            "entryCount": "{count}項目",
+            "faqHeading": "よくある質問",
+            "filterAll": "すべて",
+            "filterLabel": "分類で絞り込む",
+            "hubIntro": "Siglensがチャートから見つけるローソク足パターン、チャートパターン、テクニカル指標、戦略を一つずつ解説します。各項目に、例のチャートとSiglensが実際に使っている判定基準を載せています。",
+            "hubSeoDescription": "ローソク足パターン、チャートパターン、テクニカル指標、戦略・理論の{count}項目を、例のチャートつきで解説。Siglensが実際に使う判定基準も載せています。",
+            "hubSeoKeywords": "チャートガイド,ローソク足パターン,チャートパターン,テクニカル指標,テクニカル分析用語",
+            "hubSeoTitle": "チャートガイド：パターン・ローソク足・指標の意味",
+            "hubTitle": "チャートガイド",
+            "nextLabel": "次の項目",
+            "otherCategories": "ほかの分類",
+            "paginationLabel": "前後の項目",
+            "previousLabel": "前の項目",
+            "relatedHeading": "あわせて読みたい項目",
+            "resultsHeading": "検索結果",
+            "searchLabel": "ガイドを検索",
+            "searchPlaceholder": "名前で探す（例：ダブルボトム、RSI）",
+            "tableLabel": "スクロールできる表",
+            "tocLabel": "このページの目次",
+            "unavailableBody": "いまは内容を読み込めませんでした。少し時間をおいて、もう一度開いてください。",
+            "unavailableHome": "ホームへ",
+            "unavailableTitle": "ガイドを準備しています",
+            "updatedAt": "最終更新 {date}",
+            "viewAllInCategory": "{name}をすべて見る"
+        },
         "about": {
             "hero": {
                 "eyebrow": "SIGLENSについて",
@@ -3052,6 +3103,10 @@
                 "plain": "かんたん",
                 "raw": "原文",
                 "rawDisclosure": "専門家による分析の原文を開く"
+            },
+            "GuideHintLink": {
+                "aria": "{name}の意味を見る",
+                "label": "意味を見る"
             }
         },
         "backtesting": {
@@ -3190,7 +3245,8 @@
             "label": "SIGLENS AIに質問する",
             "ariaLabel": "SIGLENS AIに質問する（新しいタブ）",
             "question": "{name}の今の状況を総合的に教えて",
-            "shortLabel": "AIに質問"
+            "shortLabel": "AIに質問",
+            "guideQuestion": "ガイド：{title}。チャートの例を交えて分かりやすく説明して"
         },
         "congress": {
             "CongressTradesEmpty": {
@@ -3744,7 +3800,10 @@
                 "c78b79": "スキルカテゴリタブ",
                 "e0f5c5": "低いスコアも分析に補助的に反映されます。",
                 "e20b1b": "{v0}%未満は低め、{v1}",
-                "ebff92": "分析手法の信頼度スコアです。"
+                "ebff92": "分析手法の信頼度スコアです。",
+                "guideLink": "ガイドを見る",
+                "guideLinkAria": "{name}のガイドを見る",
+                "allGuides": "ガイドをすべて見る"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS分析規模"
@@ -3824,6 +3883,7 @@
                 "531f6a": "お問い合わせ",
                 "5f5d12": "サイト情報",
                 "693b62": "投資免責事項",
+                "guideLink": "チャートガイド",
                 "symbolsLink": "よく見られる銘柄"
             },
             "Header": {
@@ -3835,10 +3895,12 @@
                 "076925": "メニュー",
                 "195da6": "メニューを開く",
                 "923b26": "メニューを閉じる",
-                "d28d27": "メニューパネルを閉じる"
+                "d28d27": "メニューパネルを閉じる",
+                "guideLink": "チャートガイド"
             },
             "HeaderNav": {
-                "5281d7": "主要ナビゲーション"
+                "5281d7": "主要ナビゲーション",
+                "guideLink": "ガイド"
             },
             "HeaderNavMenu": {
                 "shortcutLabel": "{v0} へのショートカット"
@@ -4434,7 +4496,8 @@
                 "toolPortfolio": "マイポートフォリオ",
                 "toolQuote": "株価",
                 "toolSearchTicker": "銘柄検索",
-                "toolWebSearch": "ウェブ検索"
+                "toolWebSearch": "ウェブ検索",
+                "toolGuide": "チャートガイド"
             }
         }
     }

@@ -33,6 +33,7 @@ const KIND_BY_FIRST_SEGMENT: Readonly<Record<string, RouteKind>> = {
     backtesting: 'backtesting',
     about: 'article',
     methodology: 'article',
+    guide: 'article',
     privacy: 'legal',
     terms: 'legal',
     login: 'auth',

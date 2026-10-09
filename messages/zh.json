@@ -2256,6 +2256,7 @@
                 "bollingerBody": "以20根K线平均线为中轴，上下绘制标准差2倍的带状区域。价格突破带状区域，则视为波动幅度大于平时。",
                 "counts": "作为分析标准的辅助指标有{indicators}种，K线形态有{candles}种，图表形态有{patterns}种，策略有{strategies}种。",
                 "examplesTitle": "计算示例",
+                "guide": "各项指标的说明可在图表指南中查看",
                 "ma": "移动平均线",
                 "maBody": "是最近5、20、60、120、200根K线收盘价的平均值。通过价格在平均线上方还是下方来判断趋势。",
                 "macd": "MACD",
@@ -2703,6 +2704,56 @@
                 "web": "网页搜索"
             }
         },
+        "guide": {
+            "aliasesLabel": "别名",
+            "backToCategory": "返回{name}列表",
+            "categoryCandlesticks": "K线形态",
+            "categoryChartPatterns": "图表形态",
+            "categoryHubLink": "返回图表指南",
+            "categoryIndicators": "技术指标",
+            "categoryIntroCandlesticks": "从单根 K线到几根 K线组成的形态，讲解 K线形态能说明什么。从开盘价、最高价、最低价、收盘价怎么读，到十字星、锤子线、吞没形态、启明星等反转与持续形态，都有涉及。",
+            "categoryIntroChartPatterns": "讲解由许多根 K线组成的大形态。双底、头肩形、三角形、楔形、旗形等在趋势延续或转向时常见的形态，长什么样，以及 Siglens 按什么标准识别，这里都有说明。",
+            "categoryIntroIndicators": "汇集了移动平均线、RSI、MACD、布林带等由价格和成交量计算出来的技术指标。除了计算方法和读法，也写明了指标容易失灵的情况。",
+            "categoryIntroStrategies": "讲解艾略特波浪、斐波那契回撤、背离、突破、跳空等把多个信号结合起来看的分析思路。这些理论适合在单个指标看不清走势时使用。",
+            "categorySeoDescription": "用示例图表讲解 {count} 个{name}条目，包含读法、Siglens 的判定标准和注意事项。",
+            "categorySeoTitleCandlesticks": "K线形态种类与含义汇总",
+            "categorySeoTitleChartPatterns": "图表形态种类与看法汇总",
+            "categorySeoTitleIndicators": "技术指标种类与看法汇总",
+            "categorySeoTitleStrategies": "艾略特波浪、斐波那契、背离等策略汇总",
+            "categoryStrategies": "策略与理论",
+            "ctaBody": "搜索感兴趣的股票，就能把图表和分析放在一起看。",
+            "ctaButton": "去搜索股票",
+            "ctaHeading": "在真实股票上查看",
+            "emptyAiQuestion": "指南里没有的术语：{query}，请结合图表示例通俗讲解",
+            "emptyAskAi": "问问 AI",
+            "emptyBody": "换个名称再搜一次，或者直接问 AI。",
+            "emptyReset": "清除筛选",
+            "emptyTitle": "没有找到相关条目",
+            "entryCount": "{count} 个条目",
+            "faqHeading": "常见问题",
+            "filterAll": "全部",
+            "filterLabel": "按分类筛选",
+            "hubIntro": "逐一讲解 Siglens 在图表上识别的 K线形态、图表形态、技术指标和策略。每个条目都附有示例图表和 Siglens 实际使用的判定标准。",
+            "hubSeoDescription": "涵盖 K线形态、图表形态、技术指标和策略理论共 {count} 个条目，配有示例图表，并写明 Siglens 实际使用的判定标准。",
+            "hubSeoKeywords": "图表指南,K线形态,图表形态,技术指标,技术分析术语",
+            "hubSeoTitle": "图表指南：K线形态、图表形态与指标含义",
+            "hubTitle": "图表指南",
+            "nextLabel": "下一条",
+            "otherCategories": "其他分类",
+            "paginationLabel": "上一条与下一条",
+            "previousLabel": "上一条",
+            "relatedHeading": "相关条目",
+            "resultsHeading": "搜索结果",
+            "searchLabel": "搜索指南",
+            "searchPlaceholder": "按名称查找（例如：双底、RSI）",
+            "tableLabel": "可滚动的表格",
+            "tocLabel": "本文目录",
+            "unavailableBody": "暂时无法加载内容，请稍后再打开。",
+            "unavailableHome": "回到首页",
+            "unavailableTitle": "指南正在准备中",
+            "updatedAt": "最后更新 {date}",
+            "viewAllInCategory": "查看全部{name}"
+        },
         "about": {
             "hero": {
                 "eyebrow": "关于SIGLENS",
@@ -3052,6 +3103,10 @@
                 "plain": "简明",
                 "raw": "原文",
                 "rawDisclosure": "展开专家分析原文"
+            },
+            "GuideHintLink": {
+                "aria": "{name} 查看含义",
+                "label": "查看含义"
             }
         },
         "backtesting": {
@@ -3190,7 +3245,8 @@
             "label": "向 SIGLENS AI 提问",
             "ariaLabel": "向 SIGLENS AI 提问（新标签页）",
             "question": "综合说说{name}现在的情况",
-            "shortLabel": "问 AI"
+            "shortLabel": "问 AI",
+            "guideQuestion": "指南：{title}，请结合图表示例通俗讲解"
         },
         "congress": {
             "CongressTradesEmpty": {
@@ -3744,7 +3800,10 @@
                 "c78b79": "技能类别标签页",
                 "e0f5c5": "低分也会作为辅助参考纳入分析。",
                 "e20b1b": "{v0}% 以下为低, {v1}",
-                "ebff92": "分析方法的置信度分数。"
+                "ebff92": "分析方法的置信度分数。",
+                "guideLink": "查看指南",
+                "guideLinkAria": "{name} 查看指南",
+                "allGuides": "查看全部指南"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS 分析规模"
@@ -3824,6 +3883,7 @@
                 "531f6a": "联系我们",
                 "5f5d12": "网站信息",
                 "693b62": "投资免责声明",
+                "guideLink": "图表指南",
                 "symbolsLink": "热门标的"
             },
             "Header": {
@@ -3835,10 +3895,12 @@
                 "076925": "菜单",
                 "195da6": "打开菜单",
                 "923b26": "关闭菜单",
-                "d28d27": "关闭菜单面板"
+                "d28d27": "关闭菜单面板",
+                "guideLink": "图表指南"
             },
             "HeaderNav": {
-                "5281d7": "主导航"
+                "5281d7": "主导航",
+                "guideLink": "指南"
             },
             "HeaderNavMenu": {
                 "shortcutLabel": "{v0} 快捷入口"
@@ -4434,7 +4496,8 @@
                 "toolPortfolio": "我的持仓",
                 "toolQuote": "行情",
                 "toolSearchTicker": "股票搜索",
-                "toolWebSearch": "网络搜索"
+                "toolWebSearch": "网络搜索",
+                "toolGuide": "图表指南"
             }
         }
     }

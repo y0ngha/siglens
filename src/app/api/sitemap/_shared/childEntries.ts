@@ -2,6 +2,8 @@ import 'server-only';
 import { backtestingDataDate } from '@/entities/sitemap-entry/lib/backtestingDataDate';
 import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
 import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
+import { loadGuideCatalog } from '@/entities/guide/api';
+import { buildGuideSitemapEntries } from '@/entities/sitemap-entry/lib/buildGuideSitemapEntries';
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import type { SitemapEntry } from '@/entities/sitemap-entry/model';
 import {
@@ -10,6 +12,7 @@ import {
 } from '@/entities/sitemap-entry/server';
 import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
 import backtestData from '@/entities/backtest-case/data/data.json';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
  * 자식 sitemap(static/popular/crypto)의 엔트리 목록을 만드는 **유일한** 경로.
@@ -23,8 +26,11 @@ import backtestData from '@/entities/backtest-case/data/data.json';
 export async function loadStaticChildEntries(
     now: Date
 ): Promise<SitemapEntry[]> {
-    const inputs = await loadStaticSitemapInputs();
-    return buildStaticEntries(now, {
+    const [inputs, guideCatalog] = await Promise.all([
+        loadStaticSitemapInputs(),
+        loadGuideCatalog(DEFAULT_LOCALE),
+    ]);
+    const staticEntries = buildStaticEntries(now, {
         ...inputs,
         // 화면이 쓰는 것과 같은 파생값 — `/backtesting` 본문은 이 정적 데이터가
         // 전부라 마지막 케이스 진입일이 곧 콘텐츠 갱신 시각이다.
@@ -32,6 +38,12 @@ export async function loadStaticChildEntries(
             validateBacktestData(backtestData).cases
         ),
     });
+    // 차트 가이드는 항목이 DB에서 와서 `buildStaticEntries`(순수·상수)에 못 담는다.
+    // 카탈로그가 없으면(오프라인 빌드·시드 전) 가이드 페이지가 noindex로 degrade하므로 싣지 않는다.
+    return [
+        ...staticEntries,
+        ...buildGuideSitemapEntries(guideCatalog?.entries ?? [], now),
+    ];
 }
 
 export async function loadPopularChildEntries(

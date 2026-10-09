@@ -42,6 +42,10 @@ vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
 vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
     webSearchTool: vi.fn(),
 }));
+const getGuide = vi.hoisted(() => vi.fn());
+vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({
+    getGuideTool: getGuide,
+}));
 const e2eState = vi.hoisted(() => ({ on: false }));
 const naverState = vi.hoisted(() => ({ creds: false }));
 vi.mock('@/shared/api/naver/naverSearch', () => ({
@@ -64,6 +68,7 @@ import {
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
+    GUIDE_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
 } from '@/app/api/ai/chat/tools/truncate';
 
@@ -88,13 +93,14 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 12종(web_search는 키 있을 때만)', () => {
+    it('가용 툴 13종(web_search는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_bars_indicators',
             'get_cached_analysis',
             'get_congress_trades',
             'get_economy',
             'get_fundamentals',
+            'get_guide',
             'get_market_overview',
             'get_my_portfolio',
             'get_news',
@@ -440,6 +446,38 @@ describe('tool registry', () => {
             BARS_RESULT_MAX_CHARS
         );
     });
+
+    it('get_guide는 GUIDE_RESULT_MAX_CHARS 한도 — 4,000자 초과·6,000자 이내는 온전히, 초과는 절단된다', async () => {
+        const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const call = () => exec('get_guide', { query: 'RSI' }, makeCtx());
+        const midSize = Math.floor(
+            (TOOL_RESULT_MAX_CHARS + GUIDE_RESULT_MAX_CHARS) / 2
+        );
+        getGuide.mockResolvedValueOnce(sized(midSize));
+        const mid = await call();
+        expect(mid).not.toHaveProperty('truncated');
+        expect(JSON.stringify(mid).length).toBe(midSize);
+
+        getGuide.mockResolvedValueOnce(sized(GUIDE_RESULT_MAX_CHARS + 500));
+        expect(await call()).toMatchObject({ truncated: true });
+    });
+
+    it('get_guide는 게스트에게도 열려 있다', async () => {
+        getGuide.mockResolvedValueOnce({ found: false });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const result = await exec(
+            'get_guide',
+            { query: 'RSI' },
+            { ...makeCtx(), userId: guestSubject('1.2.3.4') }
+        );
+        expect(result).toEqual({ found: false });
+    });
+
     describe('심볼 데이터 수급(ensureSymbolData)은', () => {
         /**
          * 게이트는 실행부가 일괄로 걸지 않고 **툴이 직접 부른다**. 실행부의

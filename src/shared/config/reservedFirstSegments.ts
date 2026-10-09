@@ -42,6 +42,9 @@ export const RESERVED_FIRST_SEGMENTS: ReadonlySet<string> = new Set([
     // 분석 방법 페이지. `isAdmissibleSymbolShape('methodology')`가 참이라 여기 없으면
     // `/METHODOLOGY`로 301되어 푸터·산문 고지가 거는 링크 전부가 깨진다.
     'methodology',
+    // 차트 가이드(`/guide`, `/guide/[category]`, `/guide/[category]/[slug]`). 여기 없으면
+    // `/GUIDE`로 301되어 헤더·푸터·본문이 거는 가이드 링크가 전부 깨진다.
+    'guide',
     // 메일 리포트 설정(`/email-report`)과 수신거부 확인(`/email-report/unsubscribe`). 여기
     // 없으면 `/EMAIL-REPORT`로 301되어 메뉴와 메일 속 링크가 전부 깨진다.
     'email-report',

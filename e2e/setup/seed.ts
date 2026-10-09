@@ -3,6 +3,7 @@ import { bcryptPasswordHasher } from '@/entities/auth/lib/bcrypt';
 import { economicCalendarId } from '@/entities/economy/lib/economicCalendarId';
 import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 import { getDatabaseClient } from '@/shared/db/client';
+import { seedGuide } from '../../db/scripts/seedGuide';
 import {
     assetTranslations,
     cryptoAssets,
@@ -435,6 +436,14 @@ async function seed(): Promise<void> {
         .onConflictDoNothing();
 
     console.log('e2e seed: shared_analyses ok');
+
+    // 차트 가이드(`/guide`) — 레포의 시드 파일을 그대로 적재한다. 운영과 같은 함수라
+    // 파일이 깨지면 E2E 시드 단계에서 먼저 실패하고, 항목이 비어 "준비 중"으로
+    // degrade된 화면을 정상으로 오인하지 않는다. 해시 비교라 재실행에 안전하다.
+    const guide = await seedGuide(db);
+    console.log(
+        `e2e seed: guide ok (entries ${guide.entriesUpserted}, contents ${guide.contentsUpserted})`
+    );
     console.log('e2e seed: ok');
 }
 

@@ -864,6 +864,12 @@
         "text": "`${quarter[1]}분기`"
     },
     {
+        "file": "src/entities/guide/api.ts",
+        "line": 62,
+        "reason": "developer-diagnostic",
+        "text": "[guide] 카탈로그 조회 실패"
+    },
+    {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
         "line": 76,
         "reason": "catalog-backed-data",

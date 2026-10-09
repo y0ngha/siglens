@@ -72,13 +72,18 @@ describe('STATIC_PAGE_PATHS — 감시 대상 정적 페이지', () => {
         }
     );
 
-    it('다섯 페이지다(소개·방법론·방침·약관·백테스팅)', () => {
+    it('소개·방법론·방침·약관·백테스팅과 가이드 허브·카테고리 4개다', () => {
         expect([...STATIC_PAGE_PATHS]).toEqual([
             '/about',
             '/methodology',
             '/privacy',
             '/terms',
             '/backtesting',
+            '/guide',
+            '/guide/candlesticks',
+            '/guide/chart-patterns',
+            '/guide/indicators',
+            '/guide/strategies',
         ]);
     });
 });
@@ -143,6 +148,8 @@ describe('지연표 가드 — page.tsx revalidate 리터럴 ≤ 표 값', () =>
             'methodology/page.tsx',
             'privacy/page.tsx',
             'terms/page.tsx',
+            'guide/page.tsx',
+            'guide/[category]/page.tsx',
         ],
     };
 

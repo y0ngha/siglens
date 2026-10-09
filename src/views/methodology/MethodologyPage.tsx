@@ -18,6 +18,7 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { guideCategoryPath } from '@/shared/lib/guidePaths';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { METHODOLOGY_CHANGELOG } from './lib/methodologyChangelog';
 
@@ -351,13 +352,22 @@ export async function MethodologyPage({
                             body={t('indicators.bollingerBody')}
                         />
                     </dl>
-                    <LocaleLink
-                        href="/backtesting"
-                        prefetch={false}
-                        className={cn(TEXT_LINK, 'mt-3 text-sm')}
-                    >
-                        {t('indicators.backtest')}
-                    </LocaleLink>
+                    <div className="mt-3 flex flex-col items-start gap-1.5">
+                        <LocaleLink
+                            href={guideCategoryPath('indicators')}
+                            prefetch={false}
+                            className={cn(TEXT_LINK, 'text-sm')}
+                        >
+                            {t('indicators.guide')}
+                        </LocaleLink>
+                        <LocaleLink
+                            href="/backtesting"
+                            prefetch={false}
+                            className={cn(TEXT_LINK, 'text-sm')}
+                        >
+                            {t('indicators.backtest')}
+                        </LocaleLink>
+                    </div>
                 </Section>
 
                 <Section

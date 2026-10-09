@@ -27,6 +27,15 @@ export const BARS_RESULT_MAX_CHARS = 6_000;
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
 
 /**
+ * `get_guide` ceiling. The best match carries up to 3,500 raw body characters
+ * (`GUIDE_BODY_MAX_CHARS`); Korean prose with newlines and quotes escapes to
+ * roughly 4,100 once JSON-serialized, plus ~600 for the two runner-up cards and
+ * the envelope. The shared 4,000 default would re-cut an already-fit result
+ * into a front-cut preview blob, so it gets its own ceiling.
+ */
+export const GUIDE_RESULT_MAX_CHARS = 6_000;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK

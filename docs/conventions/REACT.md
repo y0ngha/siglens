@@ -314,6 +314,20 @@ const derived = isLoading || initialValueRef.current;
 const [capturedValue] = useState(initialValue);
 ```
 
+<a id="CR-3"></a>
+
+#### CR-3 — Markdown renderers for Korean content disable single-tilde strikethrough
+
+`remark-gfm` treats `~text~` as strikethrough by default, but Korean prose writes ranges as `5~30분봉`, `266,500~270,666원`. Every `ReactMarkdown` that renders Korean text passes `[remarkGfm, { singleTilde: false }]` (hoisted to a module constant); `~~text~~` still works.
+
+```typescript
+// ❌ "5~30분봉 … 1~4시간봉" renders the middle as <del>
+remarkPlugins={[remarkGfm]}
+
+// ✅
+const REMARK_PLUGINS = [[remarkGfm, { singleTilde: false }]];
+```
+
 #### Other props and state rules
 
 - **Pass gating props explicitly.** A component that consumes a tier-gating prop (`isFreeUser` …) receives it from every call site; relying on a permissive default leaks free-tier surfaces (ads) to paid users.

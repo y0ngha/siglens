@@ -33,13 +33,16 @@ const HASH_LENGTH = 6;
  *   `DEFAULT_TITLE_BY_LOCALE` 맵이 이미 전부 들고 있으므로 미번역 문자열이 아니다.
  * - `entities/llm-provider/api/agent/fake.ts`: E2E 전용 가짜 프로바이더의 고정 답변.
  *   `isE2E()`일 때만 쓰이며 운영 경로에서는 렌더되지 않는다.
+ * - `src/shared/config/guideLinks.generated.ts`: 스킬 frontmatter의 한국어 `name`·탐지 id를
+ *   가이드 경로로 잇는 생성 매핑(`yarn guide:links`). 키는 스킬 파일의 원문과 글자까지 같아야
+ *   조회가 되는 **데이터**라 번역 대상이 아니고, 화면에 그대로 렌더되지도 않는다.
  * - `src/app/lp/`, `src/views/lp/`: 한국어 Google Ads 전용 랜딩(noindex).
  *   로케일 세그먼트도 카탈로그도 없이 한국어를 하드코딩하는 것이 설계다 — 다른
  *   로케일판이 존재하지 않고, 문구가 광고 심사(암호화폐 단어 금지)에 맞춰 고정돼
  *   있다(spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`).
  */
 const EXCLUDE_RE =
-    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts)/;
+    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts|src\/shared\/config\/guideLinks\.generated\.ts)/;
 
 /** 파일 경로 → 메시지 네임스페이스. */
 export function namespaceFor(relPath) {

@@ -115,6 +115,19 @@ describe('Footer', () => {
         expect(link).toHaveAccessibleName('분석 방법');
     });
 
+    it('renders the chart guide link right after the methodology link', () => {
+        render(<Footer />);
+
+        const info = screen.getByRole('navigation', { name: '사이트 정보' });
+        const links = within(info).getAllByRole('link');
+        const methodology = links.findIndex(
+            a => a.getAttribute('href') === '/methodology'
+        );
+        const link = links[methodology + 1]!;
+        expect(link).toHaveAttribute('href', '/guide');
+        expect(link).toHaveAccessibleName('차트 가이드');
+    });
+
     /**
      * 종목 디렉터리 링크는 **크롤 구조물**이다. 2026-09-18 실측에서 sitemap 심볼
      * 416개 중 147개가 홈에서 3클릭 안에 닿지 않았고, 푸터는 전 라우트에 렌더되므로

@@ -2256,6 +2256,7 @@
                 "bollingerBody": "A band is drawn two standard deviations above and below the 20-candle Moving Average. If the price moves outside the band, it indicates movement greater than usual.",
                 "counts": "The technical indicators used for analysis are {indicators} types, Candlestick Patterns are {candles} types, chart patterns are {patterns} types, and strategies are {strategies} types.",
                 "examplesTitle": "Examples of Calculation",
+                "guide": "Each indicator is explained in the Chart Guide",
                 "ma": "Moving Average",
                 "maBody": "It is the average closing price of the most recent 5, 20, 60, 120, and 200 bars. The trend is determined by whether the price is above or below the average.",
                 "macd": "MACD",
@@ -2703,6 +2704,56 @@
                 "web": "Web search"
             }
         },
+        "guide": {
+            "aliasesLabel": "Also known as",
+            "backToCategory": "Back to {name}",
+            "categoryCandlesticks": "Candlestick patterns",
+            "categoryChartPatterns": "Chart patterns",
+            "categoryHubLink": "Back to the Chart Guide",
+            "categoryIndicators": "Indicators",
+            "categoryIntroCandlesticks": "From a single candle to the shapes a few candles form, this section explains what candlestick patterns show. It covers how to read open, high, low and close, then reversal and continuation patterns such as the doji, hammer, engulfing and morning star.",
+            "categoryIntroChartPatterns": "These are the larger shapes many candles form. Double bottoms, head and shoulders, triangles, wedges and flags tend to appear when a trend continues or turns; each entry shows what they look like and how Siglens detects them.",
+            "categoryIntroIndicators": "Moving averages, RSI, MACD, Bollinger Bands and other indicators calculated from price and volume. Each entry covers how it is calculated, how to read it, and when it tends to mislead.",
+            "categoryIntroStrategies": "Ways of analysis that combine several signals, such as Elliott waves, Fibonacci retracements, divergence, breakouts and gaps. They help when a single indicator does not make the trend clear.",
+            "categorySeoDescription": "{name}: {count} entries explained with example charts, including how to read them, the criteria Siglens uses and what to watch out for.",
+            "categorySeoTitleCandlesticks": "Candlestick Patterns: Types and Meanings",
+            "categorySeoTitleChartPatterns": "Chart Patterns: Types and How to Read Them",
+            "categorySeoTitleIndicators": "Technical Indicators: Types and How to Read Them",
+            "categorySeoTitleStrategies": "Elliott Wave, Fibonacci and Divergence Strategies",
+            "categoryStrategies": "Strategies & theory",
+            "ctaBody": "Search a stock you follow to read its chart and analysis side by side.",
+            "ctaButton": "Search stocks",
+            "ctaHeading": "See it on a real stock",
+            "emptyAiQuestion": "A term missing from the guide: {query}. Explain it simply with a chart example",
+            "emptyAskAi": "Ask the AI",
+            "emptyBody": "Try another name, or ask the AI directly.",
+            "emptyReset": "Clear filters",
+            "emptyTitle": "No matching entries",
+            "entryCount": "{count, plural, one {# entry} other {# entries}}",
+            "faqHeading": "Frequently asked questions",
+            "filterAll": "All",
+            "filterLabel": "Filter by category",
+            "hubIntro": "Candlestick patterns, chart patterns, indicators and strategies that Siglens finds on charts, explained one by one. Each entry comes with an example chart and the criteria Siglens actually uses.",
+            "hubSeoDescription": "{count} entries on candlestick patterns, chart patterns, indicators and strategies, each with an example chart and the criteria Siglens actually uses.",
+            "hubSeoKeywords": "chart guide,candlestick patterns,chart patterns,technical indicators,technical analysis terms",
+            "hubSeoTitle": "Chart Guide: Patterns, Candles and Indicators",
+            "hubTitle": "Chart Guide",
+            "nextLabel": "Next entry",
+            "otherCategories": "Other categories",
+            "paginationLabel": "Previous and next entries",
+            "previousLabel": "Previous entry",
+            "relatedHeading": "Related entries",
+            "resultsHeading": "Search results",
+            "searchLabel": "Search the guide",
+            "searchPlaceholder": "Search by name (e.g. double bottom, RSI)",
+            "tableLabel": "Scrollable table",
+            "tocLabel": "On this page",
+            "unavailableBody": "The content could not be loaded right now. Please try again in a moment.",
+            "unavailableHome": "Go to home",
+            "unavailableTitle": "The guide is getting ready",
+            "updatedAt": "Last updated {date}",
+            "viewAllInCategory": "View all {name}"
+        },
         "about": {
             "hero": {
                 "eyebrow": "About SIGLENS",
@@ -3052,6 +3103,10 @@
                 "plain": "Simple",
                 "raw": "Original",
                 "rawDisclosure": "Show the original expert analysis"
+            },
+            "GuideHintLink": {
+                "aria": "Meaning of {name}",
+                "label": "Meaning"
             }
         },
         "backtesting": {
@@ -3190,7 +3245,8 @@
             "label": "Ask SIGLENS AI",
             "ariaLabel": "Ask SIGLENS AI (opens in a new tab)",
             "question": "Give me an overall read on how {name} is doing right now",
-            "shortLabel": "Ask AI"
+            "shortLabel": "Ask AI",
+            "guideQuestion": "Guide: {title}. Explain it simply with a chart example"
         },
         "congress": {
             "CongressTradesEmpty": {
@@ -3744,7 +3800,10 @@
                 "c78b79": "Skill Categories Tab",
                 "e0f5c5": "Low scores are also considered for supplementary analysis.",
                 "e20b1b": "{v0}% or less is low, {v1}",
-                "ebff92": "Reliability score of the analysis technique."
+                "ebff92": "Reliability score of the analysis technique.",
+                "guideLink": "View guide",
+                "guideLinkAria": "View guide: {name}",
+                "allGuides": "Browse the full guide"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS Analysis Scale"
@@ -3824,6 +3883,7 @@
                 "531f6a": "Contact Us",
                 "5f5d12": "Site Information",
                 "693b62": "Investment Disclaimer",
+                "guideLink": "Chart Guide",
                 "symbolsLink": "Most-viewed symbols"
             },
             "Header": {
@@ -3835,10 +3895,12 @@
                 "076925": "Menu",
                 "195da6": "Open Menu",
                 "923b26": "Close Menu",
-                "d28d27": "Close Menu Panel"
+                "d28d27": "Close Menu Panel",
+                "guideLink": "Chart Guide"
             },
             "HeaderNav": {
-                "5281d7": "Main Navigation"
+                "5281d7": "Main Navigation",
+                "guideLink": "Guide"
             },
             "HeaderNavMenu": {
                 "shortcutLabel": "{v0} shortcuts"
@@ -4434,7 +4496,8 @@
                 "toolPortfolio": "My portfolio",
                 "toolQuote": "Quote",
                 "toolSearchTicker": "Symbol search",
-                "toolWebSearch": "Web search"
+                "toolWebSearch": "Web search",
+                "toolGuide": "Chart Guide"
             }
         }
     }

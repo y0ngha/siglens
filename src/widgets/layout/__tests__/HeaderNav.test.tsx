@@ -129,4 +129,20 @@ describe('HeaderNav', () => {
             screen.queryByRole('link', { name: /SIGLENS AI|SiglensAI/i })
         ).toBeNull();
     });
+
+    it('renders a direct chart guide link that is active under /guide', () => {
+        vi.mocked(usePathname).mockReturnValue('/guide/indicators/rsi');
+        render(<HeaderNav items={NAV_TREE} />);
+
+        const link = linkByHref('/guide');
+        expect(link).toHaveTextContent('가이드');
+        expect(link).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('does not mark the chart guide link active elsewhere', () => {
+        vi.mocked(usePathname).mockReturnValue('/market');
+        render(<HeaderNav items={NAV_TREE} />);
+
+        expect(linkByHref('/guide')).not.toHaveAttribute('aria-current');
+    });
 });

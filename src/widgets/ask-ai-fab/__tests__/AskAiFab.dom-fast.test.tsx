@@ -63,6 +63,30 @@ describe('AskAiFab', () => {
         );
     });
 
+    it('question을 주면 종목명 질문 대신 그 문장이 href에 실린다', async () => {
+        render(
+            await AskAiFab({
+                question: '가이드: RSI — 차트 예시와 함께 쉽게 설명해 줘',
+                localePrefix: '/',
+            })
+        );
+
+        expect(screen.getByRole('link')).toHaveAttribute(
+            'href',
+            aiAskUrl('/', '가이드: RSI — 차트 예시와 함께 쉽게 설명해 줘')
+        );
+    });
+
+    it('question을 줄 때도 라벨·새 탭·nofollow 계약은 그대로다', async () => {
+        render(await AskAiFab({ question: '질문', localePrefix: '/' }));
+
+        const link = screen.getByRole('link');
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'nofollow noopener');
+        expect(link).toHaveAttribute('data-ask-ai-fab');
+        expect(screen.getByText('시그렌즈 AI에게 물어보기')).toBeVisible();
+    });
+
     // 실제 번역 카탈로그는 이 트리 위(RouteMessages)의 `setRequestLocale`이
     // 정하므로, 컴포넌트 단위 테스트에서는 앰비언트 로케일이 항상 ko다.
     // 여기서 검증할 것은 번역 문구가 아니라 이 컴포넌트가 `localePrefix` prop을

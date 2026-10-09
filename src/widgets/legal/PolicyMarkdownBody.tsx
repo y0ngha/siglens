@@ -73,7 +73,7 @@ export function PolicyMarkdownBody({ markdown }: PolicyMarkdownBodyProps) {
     return (
         <div className="space-y-8">
             <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
                 rehypePlugins={[rehypeSlug]}
                 components={components}
             >

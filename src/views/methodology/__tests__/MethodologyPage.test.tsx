@@ -408,4 +408,10 @@ describe('MethodologyPage', () => {
         const text = document.body.textContent ?? '';
         expect(text).not.toMatch(/views\.methodology|changelog\./);
     });
+
+    it('indicators section links to the indicator chart guide', async () => {
+        await renderPage();
+        const link = screen.getByRole('link', { name: m.indicators.guide });
+        expect(link).toHaveAttribute('href', '/guide/indicators');
+    });
 });
