@@ -44,3 +44,106 @@ describe('DrizzleFunnelEventRepository', () => {
         expect(query.params).toEqual(['2025-07-28T15:00:00.000Z']);
     });
 });
+
+/**
+ * `countByKeyAndEvent`·`signupBreakdown`은 select().from().where().groupBy()에서 끝난다 —
+ * groupBy가 곧 thenable이어야 한다.
+ */
+function makeSelectDb(rows: unknown[]) {
+    const groupBy = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn((_condition: unknown) => ({ groupBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn((_selection: unknown) => ({ from }));
+    return {
+        db: { select } as unknown as SiglensDatabase,
+        select,
+        where,
+        groupBy,
+    };
+}
+
+function makeExecuteDb(rows: unknown[]) {
+    const execute = vi.fn().mockResolvedValue(rows);
+    return { db: { execute } as unknown as SiglensDatabase, execute };
+}
+
+const FROM = new Date('2026-09-30T15:00:00.000Z');
+const TO_EXCLUSIVE = new Date('2026-10-31T15:00:00.000Z');
+
+describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
+    it('countByKeyAndEvent는 키를 gate·kind·lastGate 순으로 접어 (key, event)별로 센다', async () => {
+        const rows = [
+            { key: 'timeframe', event: 'gate_clicked', count: 12 },
+            { key: 'anon_auto', event: 'nudge_shown', count: 40 },
+        ];
+        const { db, select, where, groupBy } = makeSelectDb(rows);
+        await expect(
+            new DrizzleFunnelEventRepository(db).countByKeyAndEvent(
+                FROM,
+                TO_EXCLUSIVE
+            )
+        ).resolves.toEqual(rows);
+        const [selection] = onlyCall(select) as [{ key: unknown }];
+        const rendered = new PgDialect().sqlToQuery(selection.key as never);
+        expect(rendered.sql).toBe(
+            `coalesce("funnel_events"."context" ->> 'gate', "funnel_events"."context" ->> 'kind', "funnel_events"."context" ->> 'lastGate')`
+        );
+        expect(groupBy).toHaveBeenCalledTimes(1);
+        const [condition] = onlyCall(where);
+        const query = new PgDialect().sqlToQuery(condition as never);
+        expect(query.sql).toBe(
+            '("funnel_events"."occurred_at" >= $1 and "funnel_events"."occurred_at" < $2)'
+        );
+        expect(query.params).toEqual([
+            FROM.toISOString(),
+            TO_EXCLUSIVE.toISOString(),
+        ]);
+    });
+
+    it('signupBreakdown은 signup_completed만 method×lastGate로 센다', async () => {
+        const rows = [{ method: 'email', lastGate: 'timeframe', count: 3 }];
+        const { db, select, where } = makeSelectDb(rows);
+        const repo = new DrizzleFunnelEventRepository(db);
+        await expect(repo.signupBreakdown(FROM, TO_EXCLUSIVE)).resolves.toEqual(
+            rows
+        );
+        const [selection] = onlyCall(select) as [{ method: unknown }];
+        expect(new PgDialect().sqlToQuery(selection.method as never).sql).toBe(
+            `"funnel_events"."context" ->> 'method'`
+        );
+        const [condition] = onlyCall(where);
+        const query = new PgDialect().sqlToQuery(condition as never);
+        expect(query.sql).toBe(
+            '("funnel_events"."event" = $1 and "funnel_events"."occurred_at" >= $2 and "funnel_events"."occurred_at" < $3)'
+        );
+        expect(query.params).toEqual([
+            'signup_completed',
+            FROM.toISOString(),
+            TO_EXCLUSIVE.toISOString(),
+        ]);
+    });
+
+    it('signupCohortRetention은 가입일+7~+13, +30~+36일 창의 방문으로 재방문을 판정한다', async () => {
+        const rows = [{ week: '2026-09-28', signups: 10, d7: 4, d30: 2 }];
+        const { db, execute } = makeExecuteDb(rows);
+        await expect(
+            new DrizzleFunnelEventRepository(db).signupCohortRetention(
+                FROM,
+                TO_EXCLUSIVE
+            )
+        ).resolves.toEqual(rows);
+        const [query] = onlyCall(execute);
+        const rendered = new PgDialect().sqlToQuery(query as never);
+        const sqlText = rendered.sql.replace(/\s+/g, ' ');
+        expect(sqlText).toContain(
+            `(u.created_at at time zone 'Asia/Seoul')::date as signup_date from "users" u where u.created_at >= $1 and u.created_at < $2`
+        );
+        expect(sqlText).toContain(
+            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + 7 and c.signup_date + 13 )`
+        );
+        expect(sqlText).toContain(
+            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + 30 and c.signup_date + 36 )`
+        );
+        expect(rendered.params).toEqual([FROM, TO_EXCLUSIVE]);
+    });
+});

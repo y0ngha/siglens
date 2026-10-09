@@ -32,6 +32,7 @@
         "db:backfill:calendar": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/backfillEconomicCalendar.ts",
         "db:seed:calendar-analysis": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seedEconomicEventAnalysis.ts",
         "metrics": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/metrics.ts",
+        "funnel:report": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/funnel-report.ts",
         "test": "NODE_OPTIONS=--no-experimental-webstorage vitest run",
         "test:quiet": "NODE_NO_WARNINGS=1 NODE_OPTIONS=--no-experimental-webstorage vitest run --reporter=dot",
         "test:related": "NODE_NO_WARNINGS=1 NODE_OPTIONS=--no-experimental-webstorage vitest related --run --passWithNoTests",

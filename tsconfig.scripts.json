@@ -19,6 +19,8 @@
         "scripts/next-ambient.d.ts",
         "scripts/backfillEconomicCalendar.ts",
         "scripts/indexnow-backfill.ts",
+        "scripts/funnel-report.ts",
+        "scripts/lib/funnelReport.ts",
         "scripts/lib/chunkDateRange.ts",
         "scripts/lib/indexNowBackfill.ts",
         "scripts/lib/cryptoPoolInsert.ts",
@@ -43,7 +45,8 @@
         "scripts/lib/__tests__/krTrendingInsert.test.ts",
         "scripts/lib/__tests__/normalizeIndicatorBaseName.test.ts",
         "scripts/lib/__tests__/visitCandidates.test.ts",
-        "scripts/lib/__tests__/visitSources.test.ts"
+        "scripts/lib/__tests__/visitSources.test.ts",
+        "scripts/lib/__tests__/funnelReport.test.ts"
     ],
     "include": [],
     "exclude": []
