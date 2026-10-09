@@ -25,6 +25,11 @@ vi.mock('@/shared/lib/trendline', () => ({
         descending: 'descending',
     },
 }));
+// 미터 노출 중복 억제는 KST 날짜 계산(etTimeUtils)을 끌어와 아래 time 목에 없는 상수를
+// 읽는다. 이 파일의 관심사가 아니므로 모듈째 막는다.
+vi.mock('@/shared/lib/funnel/meterShownDedupe', () => ({
+    claimMeterShown: () => false,
+}));
 vi.mock('@/shared/config/time', () => ({
     MS_PER_SECOND: 1000,
     SECONDS_PER_MINUTE: 60,

@@ -1,5 +1,9 @@
 import { postBeacon } from '@/shared/lib/beacon';
-import type { ContextOf, FunnelEvent } from './funnelEvents';
+import {
+    FUNNEL_METER_REVEALED_GATE,
+    type ContextOf,
+    type FunnelEvent,
+} from './funnelEvents';
 import { rememberLastGate } from './lastGate';
 
 /**
@@ -12,7 +16,7 @@ export const FUNNEL_EVENT_ENDPOINT = '/api/presence/funnel';
  * 가입 퍼널 이벤트 하나를 보낸다. 한 요청에 이벤트 하나 — 묶음 전송은 만들지 않는다
  * (사건이 드물고, 묶으면 `keepalive` 전송이 커진다).
  *
- * 어떤 실패도 던지지 않는다. SSR에서 불리면 no-op. `nudge_shown`(회원용 `member_*` 제외)·`gate_clicked`는
+ * 어떤 실패도 던지지 않는다. SSR에서 불리면 no-op. `nudge_shown`(회원용 `member_*` 제외)·`gate_clicked`·`meter_clicked`는
  * "비회원이 마지막으로 누른 것"으로 `lastGate`에도 남긴다 — 가입 완료 이벤트가 붙인다.
  * 봇 필터는 서버의 `isBot`이 맡는다(Playwright·헤드리스 UA는 거기서 204).
  */
@@ -31,6 +35,9 @@ export function trackFunnelEvent<E extends FunnelEvent>(
         } else if (event === 'gate_clicked') {
             // 위와 같은 이유 — 시그니처가 gate_clicked의 context임을 보장한다.
             rememberLastGate((context as ContextOf<'gate_clicked'>).gate);
+        } else if (event === 'meter_clicked') {
+            // 공개 띠의 가입 링크. 소진 카드는 위 gate_clicked(locked_detail)로 남는다.
+            rememberLastGate(FUNNEL_METER_REVEALED_GATE);
         }
         postBeacon({ url: FUNNEL_EVENT_ENDPOINT, body: { event, context } });
     } catch {

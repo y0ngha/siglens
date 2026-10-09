@@ -52,6 +52,7 @@ import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsR
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import {
     createGenerationGateSlot,
+    createGuestResolver,
     createPromptAssemblyTracker,
     DONE_STATUS_PROBE,
     promptAssembledProbe,
@@ -61,6 +62,7 @@ import {
     shouldAttemptReanalyze,
     type GenerationGate,
 } from './generationQuota';
+import { meterPayload, resolveMeterGate } from './meteredRevealGate';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
@@ -100,6 +102,12 @@ import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacr
  * 쓴다 — `generationQuota.ts`의 `isVerifiedCrawlerRequest`). 위조 UA는 DNS에서 떨어져
  * 평소 한도를 그대로 받고, 크롤러를 주장하지 않는 UA는 DNS 조회조차 하지 않는다.
  * 면제는 생성 한도에만 적용된다 — 동시성 상한·본문·생성 트리거는 그대로다.
+ *
+ * **같은 크롤러 판정이 두 번째로 쓰이는 곳: 비회원 하루 무료 전체 공개 미터
+ * (2026-10-18 시행, `meteredRevealGate.ts`).** DNS로 검증된 크롤러는 미터를 건너뛰어
+ * 항상 현행 free 마스킹을 받는다. 갈리는 기준은 UA가 아니라 검증 결과이고, 미터 대상
+ * 방문자가 공개 본문을 받아도 색인되는 SEO 스냅샷(`peekAnalysisStatic`, tier free
+ * 고정)은 변하지 않는다.
  */
 export const dynamic = 'force-dynamic';
 
@@ -834,6 +842,24 @@ function withReaderViews<T>(
 }
 
 /**
+ * 클라이언트로 나가는 결과에서 `unfilteredResult`를 뺀 사본을 만든다.
+ *
+ * core의 `done` 결과는 이력 저장용으로 **tier 필터 전** 분석(`unfilteredResult`)을
+ * 함께 싣는다. 이 값이 SSE 본문으로 직렬화되면 free 비회원도 진입가·손절·목표가·
+ * 확신도를 응답 JSON에서 그대로 읽는다 — 화면의 잠금이 무의미해진다. 이력 저장
+ * 구독자는 원본 `work`를 읽으므로(`result.unfilteredResult`) 이 함수는 **클라이언트
+ * 쪽 가지**에만 건다. 다른 분석 타입 결과에는 이 필드가 없어 그대로 통과한다.
+ */
+function omitUnfiltered<T extends object>(
+    result: T
+): Omit<T, 'unfilteredResult'> {
+    const { unfilteredResult: _unfiltered, ...rest } = result as T & {
+        unfilteredResult?: unknown;
+    };
+    return rest;
+}
+
+/**
  * POST /api/analysis/stream
  *
  * Browser-side analysis requests MUST go through this SSE route, not server
@@ -882,6 +908,11 @@ export async function POST(request: Request): Promise<Response> {
         // 예약은 try 안에서 하지만, 예기치 못한 예외(아래 catch)에서도 되돌릴 수 있게
         // 칸을 바깥에 둔다. 환불은 멱등이라 정산 경로와 겹쳐도 두 번 빼지 않는다.
         const quotaSlot = createGenerationGateSlot();
+        // 하루 무료 공개 미터의 신규 기록도 같은 이유로 바깥 catch까지 들고 간다.
+        // 해제는 멱등(SREM)이고, 신규가 아니면 아무것도 하지 않는다.
+        const meterRelease: { current: () => Promise<void> } = {
+            current: async () => {},
+        };
 
         try {
             // 번역자는 핸들러 진입부에서 한 번만 확보한다 — E2E 분기부터 마지막
@@ -1023,12 +1054,33 @@ export async function POST(request: Request): Promise<Response> {
             // `rate_limited` 이벤트로 바꾼다. 재분석 의도도 함께 무시한다 — 캐시
             // 우회는 곧 새 생성이다.
             // 헤더는 크롤러 DNS 검증에만 쓴다 — UA는 *시도할지*만 정한다(파일 상단 불변식).
+            // 비회원 신원·크롤러 판정은 한도 예약과 미터가 한 번만 계산해 나눠 쓴다
+            // (쿠키 발급·크롤러 DNS 조회가 요청당 한 번).
+            const guest = createGuestResolver(request.headers);
             const quota = await quotaSlot.reserve(
                 userId,
                 cacheOnly === true,
-                request.headers
+                request.headers,
+                guest
             );
             const quotaLimited = quota.kind === 'rate_limited';
+
+            // --- 2f''. 비회원 하루 무료 전체 공개 미터 ---
+            //
+            // 동시성 검사(아래)보다 **앞**에서 판정한다 — 그 검사와 `heartbeatStream`
+            // 사이에는 await가 없어야 해서다. 대신 이후의 거절 경로(쿨다운·503·예외)는
+            // 신규 기록을 되돌려야 한다. `cacheOnly` 요청도 미터를 탄다(캐시 적중 결과도
+            // 공개 대상). 정책·시행일·크롤러 규칙은 `resolveMeterGate` 참고.
+            const meterGate = await resolveMeterGate({
+                userId,
+                tier,
+                symbol,
+                guest,
+                now: new Date(),
+            });
+            if (meterGate.kind === 'revealed') {
+                meterRelease.current = meterGate.release;
+            }
 
             // --- 2g. Build work promise and stream ---
             // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
@@ -1068,6 +1120,11 @@ export async function POST(request: Request): Promise<Response> {
                     capturedPrompt = record;
                 },
                 ...(userApiKey !== undefined ? { userApiKey } : {}),
+                // 공개 종목이면 마스킹만 member 깊이로 바꾼다. 캐시 키는 tier 기반이라
+                // free 생성분을 그대로 재사용한다(새 LLM 호출 없음).
+                ...(meterGate.kind === 'revealed'
+                    ? { tierConfig: meterGate.tierConfig }
+                    : {}),
             };
 
             /**
@@ -1106,6 +1163,7 @@ export async function POST(request: Request): Promise<Response> {
             if (cooldown !== null && !cooldown.ok) {
                 // 쿨다운 중 — 새 분석을 태우지 않고 남은 시간을 알려준다.
                 await releaseGenerationGate(quota);
+                await meterRelease.current();
                 return new Response(
                     heartbeatStream(
                         Promise.resolve({
@@ -1168,6 +1226,7 @@ export async function POST(request: Request): Promise<Response> {
                 );
                 await releaseOnFailure();
                 await releaseGenerationGate(quota);
+                await meterRelease.current();
                 return Response.json(
                     { error: t('busy') },
                     { status: 503, headers: { 'Retry-After': '30' } }
@@ -1304,10 +1363,35 @@ export async function POST(request: Request): Promise<Response> {
                 // `withReaderViews(work, ...)` below.
             });
 
+            // 클라이언트로 나가는 가지. 이력 저장 구독자(위)는 원본 `work`를 읽는다.
+            //
+            // 결과 없이 끝난 요청(에러·`miss_no_trigger`·한도 초과 캐시 전용 폴백의
+            // reject)은 공개 횟수를 쓰지 않도록 미터 기록을 되돌린다. `meter` 필드는
+            // 결과가 있는 `cached`·`done`에만 싣는다.
+            const clientWork = work.then(
+                result => {
+                    if (
+                        result.status !== 'cached' &&
+                        result.status !== 'done'
+                    ) {
+                        void meterRelease.current();
+                        return omitUnfiltered(result);
+                    }
+                    return {
+                        ...omitUnfiltered(result),
+                        ...meterPayload(meterGate),
+                    };
+                },
+                (error: unknown) => {
+                    void meterRelease.current();
+                    throw error;
+                }
+            );
+
             return new Response(
                 heartbeatStream(
                     withReaderViews(
-                        work,
+                        clientWork,
                         requestLocale,
                         'technical',
                         body.params.symbol
@@ -1321,6 +1405,7 @@ export async function POST(request: Request): Promise<Response> {
         } catch (err) {
             console.error('[streamAnalysisRoute] unexpected error:', err);
             await quotaSlot.release();
+            await meterRelease.current();
             return Response.json(
                 {
                     status: 'error',

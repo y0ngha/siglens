@@ -163,6 +163,17 @@ export interface AnalysisGateError {
     message: string;
 }
 
+/**
+ * 비회원 "하루 무료 전체 공개" 미터의 판정 결과 — 분석 SSE 결과(`cached`·`done`)에
+ * 실려 클라이언트로 간다. 필드가 없으면 미터가 적용되지 않은 응답(회원·정책 없음·
+ * 크롤러·시행 전·저장소 장애)이다.
+ */
+export type AnalysisMeterState = 'revealed' | 'exhausted';
+
+export interface AnalysisMeter {
+    readonly state: AnalysisMeterState;
+}
+
 /** Gate denial result — mirrors core's `{ status: 'error' }` discriminator. */
 export interface AnalysisGateBlockedResult {
     status: 'error';

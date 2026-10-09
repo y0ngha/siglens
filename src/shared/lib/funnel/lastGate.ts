@@ -7,7 +7,8 @@ import {
 
 /**
  * 비회원이 마지막으로 누른 게이트·넛지를 기억한다. `trackFunnelEvent`가 `nudge_shown`·
- * `gate_clicked`마다 덮어쓰고, `FunnelSignupPing`이 가입 완료에 붙인 뒤 지운다.
+ * `gate_clicked`·`meter_clicked`(공개 띠 클릭, `FUNNEL_METER_REVEALED_GATE`)마다 덮어쓰고,
+ * `FunnelSignupPing`이 가입 완료에 붙인 뒤 지운다.
  * 저장소가 막혀 있으면(프라이빗 모드) 가입 경로 하나를 모를 뿐이다 — 던지지 않는다.
  */
 export function rememberLastGate(gate: FunnelLastGate): void {

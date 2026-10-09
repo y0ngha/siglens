@@ -218,6 +218,7 @@ export function ChartContent({
         reanalyzeCooldownMs,
         cooldownNotice,
         isPersonalized,
+        meter,
         plain,
         isAwaitingInteraction,
         isInstantResponse,
@@ -473,6 +474,7 @@ export function ChartContent({
                     skillCount={skillCount}
                     lockedInfoDepth={lockedInfoDepth}
                     isPersonalized={isPersonalized}
+                    meter={meter}
                     plain={plain}
                     isFreeUser={isFreeUser}
                     overlaySourceRefs={overlaySourceRefs}
@@ -523,6 +525,7 @@ export function ChartContent({
         skillCount,
         lockedInfoDepth,
         isPersonalized,
+        meter,
         plain,
         isFreeUser,
         positionStatus,

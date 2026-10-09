@@ -33,9 +33,14 @@ import type {
     Trendline,
     TrendlineDirection,
 } from '@y0ngha/siglens-core';
-import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
+import {
+    getMeteredRevealPolicy,
+    HIGH_CONFIDENCE_WEIGHT,
+} from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
+import { useFunnelMeterShown } from '@/shared/hooks/useFunnelMeterShown';
+import type { AnalysisMeterState } from '@/shared/lib/types';
 import { LABEL_GROUP, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import {
@@ -1009,6 +1014,12 @@ interface AnalysisPanelProps {
      */
     isPersonalized?: boolean;
     /**
+     * 서버가 이번 응답에 실은 비회원 하루 무료 공개 미터 판정. `revealed`면 오늘의 공개
+     * 종목이라 진입·손절·목표가 위에 안내 띠를 보이고, `exhausted`면 잠금 카드 문구를
+     * 소진 안내로 바꾼다. `null`/미전달이면 미터와 무관한 기존 화면이다.
+     */
+    meter?: AnalysisMeterState | null;
+    /**
      * `chartOverlays[].sourceRef` 집합 — 패턴/전략 카드 중 이 집합에 속한
      * `id`만 '차트에서 보기' 토글을 렌더한다('원본' 보기 전용 — 쉽게보기 산문에는
      * 카드가 없다).
@@ -1043,6 +1054,7 @@ export function AnalysisPanel({
     indicatorCount = 0,
     skillCount = 0,
     isPersonalized = false,
+    meter = null,
     plain,
     overlaySourceRefs = EMPTY_OVERLAY_SOURCE_REFS,
     hiddenOverlayKeys = EMPTY_OVERLAY_SOURCE_REFS,
@@ -1056,6 +1068,11 @@ export function AnalysisPanel({
     const tReport = useTranslations('widgets.analysis.expertReport');
     const skillLabel = useSkillLabel();
     const locale = useResolvedLocale();
+    // 띠(revealed)와 소진 카드(exhausted)는 동시에 보이지 않으므로 한 ref 콜백을
+    // 그중 보이는 요소에 붙인다.
+    const setMeterNode = useFunnelMeterShown(meter, symbol);
+    // 문구의 종목 수는 core 정책이 단일 출처다(I18-6) — 정책이 꺼져도 문구는 렌더되므로 1로 접는다.
+    const meterDailySymbols = getMeteredRevealPolicy('free')?.dailySymbols ?? 1;
     const overlayControls = toOverlayCardControls(
         hiddenOverlayKeys,
         onToggleOverlay,
@@ -1351,6 +1368,33 @@ export function AnalysisPanel({
                         노출해 중복을 없앤다. */}
                             <div className="border-t border-secondary-700" />
 
+                            {meter === 'revealed' && !hasLockedActionDetail && (
+                                <div
+                                    ref={setMeterNode}
+                                    className="flex flex-col gap-1 rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-3"
+                                >
+                                    <p className="text-sm font-semibold text-secondary-100">
+                                        {tPanel('meter.revealedTitle')}
+                                    </p>
+                                    <p className="text-xs leading-relaxed text-secondary-300">
+                                        {tPanel('meter.revealedBody', {
+                                            count: meterDailySymbols,
+                                        })}
+                                    </p>
+                                    <Link
+                                        href="/signup"
+                                        onClick={() =>
+                                            trackFunnelEvent('meter_clicked', {
+                                                state: 'revealed',
+                                            })
+                                        }
+                                        className="w-fit text-xs font-semibold text-primary-300 underline underline-offset-2 hover:text-primary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        {tPanel('meter.revealedCta')}
+                                    </Link>
+                                </div>
+                            )}
+
                             {!hasLockedActionDetail &&
                                 analysis.actionRecommendation && (
                                     <ActionRecommendationSection
@@ -1581,17 +1625,34 @@ export function AnalysisPanel({
                         회원 전용 상세 항목 + 전체 스킬 수를 한 카드에 모아, 패널
                         하단에서 회원가입 CTA를 한 번만 노출한다(중복 제거). */}
                             {hasLockedDetails && (
-                                <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-5 text-center">
+                                <div
+                                    ref={
+                                        meter === 'exhausted'
+                                            ? setMeterNode
+                                            : undefined
+                                    }
+                                    className="flex flex-col items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-5 text-center"
+                                >
                                     <div className="flex flex-col gap-1.5">
                                         <p className="text-sm font-semibold text-balance text-secondary-100">
-                                            {t('AnalysisPanel.120a0a')}
+                                            {meter === 'exhausted'
+                                                ? tPanel('meter.exhaustedTitle')
+                                                : t('AnalysisPanel.120a0a')}
                                         </p>
                                         <p className="text-xs leading-relaxed text-balance text-secondary-300">
-                                            {skillCount > 0
-                                                ? tPanel('signupSkillUpsell', {
-                                                      v0: skillCount,
-                                                  })
-                                                : t('AnalysisPanel.f0256c')}
+                                            {meter === 'exhausted'
+                                                ? tPanel(
+                                                      'meter.exhaustedBody',
+                                                      {
+                                                          count: meterDailySymbols,
+                                                      }
+                                                  )
+                                                : skillCount > 0
+                                                  ? tPanel(
+                                                        'signupSkillUpsell',
+                                                        { v0: skillCount }
+                                                    )
+                                                  : t('AnalysisPanel.f0256c')}
                                         </p>
                                         <p className="text-xs leading-relaxed text-secondary-400">
                                             {t('AnalysisPanel.9971e1')}
@@ -1601,9 +1662,15 @@ export function AnalysisPanel({
                                         href="/signup"
                                         // 가입 페이지로 가는 잠긴 요소 클릭 — 가입 퍼널의 게이트다.
                                         onClick={() =>
-                                            trackFunnelEvent('gate_clicked', {
-                                                gate: 'locked_detail',
-                                            })
+                                            trackFunnelEvent(
+                                                'gate_clicked',
+                                                meter === 'exhausted'
+                                                    ? {
+                                                          gate: 'locked_detail',
+                                                          meter: 'exhausted',
+                                                      }
+                                                    : { gate: 'locked_detail' }
+                                            )
                                         }
                                         className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >

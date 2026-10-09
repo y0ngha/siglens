@@ -33,7 +33,10 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
 // AnalysisPanel을 실제로 렌더하기 위한 인프라 mock. trendUtils·
 // buildExpertAnalysisReport·MarkdownText·@/shared/lib/trendline 등 핵심
 // 렌더·계약 경로는 mock하지 않고 실제 구현을 통과시킨다.
-vi.mock('@/shared/config/time', () => ({
+// 실제 상수를 그대로 쓰고 필요한 값만 고정한다 — 부분 객체로 갈아끼우면 패널이 새로
+// 끌어오는 KST 날짜 계산(`etTimeUtils` → `marketSessionDate`)이 없는 상수를 읽다 깨진다.
+vi.mock('@/shared/config/time', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/config/time')>()),
     MS_PER_SECOND: 1000,
     SECONDS_PER_MINUTE: 60,
     MS_PER_MINUTE: 60000,

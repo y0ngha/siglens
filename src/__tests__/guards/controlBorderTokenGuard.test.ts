@@ -219,7 +219,7 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 줄 번호 키라 이 파일이 위에서 길어지면 함께 옮겨야 한다 —
     // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025 → 1055 → 1066 → 1187 → 1140 → 1143 → 1142 → 1201 → 1204 → 1217 → 1232 → 1233).
     // 1233 (1232에서 +1, 퍼널 import 추가): 차트 탭 SSR로 가격 표기를 페이지 로케일에 고정하며 포맷 헬퍼·훅 호출이 위에 늘었다.
-    'widgets/analysis/AnalysisPanel.tsx:1233',
+    'widgets/analysis/AnalysisPanel.tsx:1250',
 
     // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
     // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.

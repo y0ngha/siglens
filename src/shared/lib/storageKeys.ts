@@ -62,6 +62,13 @@ export const SESSION_STORAGE_NUDGE_SHOWN_KEY = 'siglens_nudge_shown_session';
 export const LOCAL_STORAGE_FUNNEL_LAST_GATE_KEY = 'siglens:funnel:last-gate';
 
 /**
+ * 하루 무료 공개 미터 노출(`meter_shown`)을 이미 보냈는지 — `{ date(KST), keys: ["SYMBOL:state"] }`.
+ * 같은 종목·같은 KST 날짜·같은 상태는 한 번만 보낸다(`shared/lib/funnel/meterShownDedupe.ts`).
+ */
+export const LOCAL_STORAGE_FUNNEL_METER_SHOWN_KEY =
+    'siglens:funnel:meter-shown';
+
+/**
  * 비회원 관심종목 — `Array<{ symbol, label, addedAt }>`. 키에 버전을 붙이는 이유는
  * `entities/ticker/lib/recentSearches.ts`의 `RECENT_SEARCHES_STORAGE_KEY` JSDoc(배포 직후
  * 24시간 옛 번들 공존)과 같다. 파서는 `features/watchlist/lib/localWatchlist.ts`.

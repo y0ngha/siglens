@@ -800,6 +800,11 @@ with the code path; on a mismatch change the code or the text, never leave both.
 user data, update the text in the same change. Keep non-advertising storage items out of the advertising-cookie
 paragraph.
 
+Check each claim kind against every reader and writer, not only the new one: "hashed"/"anonymised" must match what is
+stored raw; "used only for X" must hold for every host or route that reads the same cookie or key; identifiers held by
+a processor (e.g. a member id inside cache or quota keys) and every new event belong in the stored-data, purpose and
+retention sections; in-product copy names a cause only when every code path that shows it guarantees that cause.
+
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.
 

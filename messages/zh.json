@@ -155,7 +155,7 @@
                         "question": "{v0}是什么服务？"
                     },
                     "q10": {
-                        "answer": "目前无需注册即可免费使用。未来高级功能将以付费方案提供，基础分析将继续免费。",
+                        "answer": "基础分析无需注册即可免费使用。成为会员后可以使用更强的AI模型和推理选项，并在所有标的上查看入场、止损、目标价格区间。",
                         "question": "使用该服务需要付费吗？"
                     },
                     "q11": {
@@ -2986,6 +2986,13 @@
                 "confidenceMedium": "中等置信度",
                 "confidenceMediumTip1": "这是中等置信度的形态。",
                 "confidenceMediumTip2": "建议与其他指标结合参考，而非单独使用。",
+                "meter": {
+                    "exhaustedBody": "未注册用户每天只能查看{count, plural, other {#个标的}}的入场、止损和目标价。韩国时间（KST）零点重新开放，注册后即可立即查看所有标的。",
+                    "exhaustedTitle": "今天的免费完整分析已用完",
+                    "revealedBody": "未注册用户每天可查看{count, plural, other {#个标的}}的入场、止损和目标价。",
+                    "revealedCta": "注册后查看所有标的",
+                    "revealedTitle": "今天可免费查看这个标的的完整分析"
+                },
                 "reanalyze": "重新分析",
                 "reanalyzeCooldown": "距离可重新分析还有 {v0}",
                 "signupSkillUpsell": "注册后即可获得应用全部 {v0} 项技能的详细分析。"

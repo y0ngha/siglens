@@ -118,6 +118,7 @@ function analysisReturn(analysis: AnalysisResponse): UseAnalysisResult {
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
         isPersonalized: false,
+        meter: null,
         isAwaitingInteraction: false,
         isInstantResponse: false,
         syncReanalyzeCooldown: vi.fn(),
