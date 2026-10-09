@@ -9,9 +9,13 @@ describe('db/seeds/terms (real files)', () => {
         const files = await glob('**/*.md', { cwd: root, absolute: true });
         const seeds = files.map(parseSeedFile);
         expect(() => validateSeedFiles(seeds)).not.toThrow();
+        // 현행(최신) 방침이 네 로케일을 모두 갖췄는지 본다 — 버전을 리터럴로 박으면 새 버전이
+        // 생길 때마다 옛 버전만 검사하게 된다.
+        const privacy = seeds.filter(s => s.kind === 'privacy');
+        const latestPrivacy = Math.max(...privacy.map(s => s.version));
         expect(
-            seeds
-                .filter(s => s.kind === 'privacy' && s.version === 6)
+            privacy
+                .filter(s => s.version === latestPrivacy)
                 .map(s => s.locale ?? 'ko')
                 .toSorted()
         ).toEqual(['en', 'ja', 'ko', 'zh']);
