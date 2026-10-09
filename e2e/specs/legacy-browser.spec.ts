@@ -2,25 +2,25 @@ import { test, expect } from '../support/fixtures';
 
 /**
  * 구형 브라우저 흉내 — 지원 대상인데 일부 표준 메서드가 없는 브라우저(Chrome 109의
- * `toSorted`·`toReversed`, iOS 15.0~15.3의 `at`·`findLast`·`Object.hasOwn`)에서도 페이지가
- * 깨지지 않는지 본다.
+ * `toSorted`·`toReversed`, iOS 15.0~15.3의 `at`·`findLast`·`Object.hasOwn`, iOS 15의
+ * `AbortSignal.timeout`)에서도 페이지가 깨지지 않는지 본다.
  *
  * 페이지 스크립트보다 먼저 도는 `addInitScript`로 그 메서드들을 지운다. 그러면 앱이 쓰는
  * 순간 `… is not a function`이 나는데, `instrumentation-client.ts`의
  * `installLegacyBrowserPolyfills`가 앱 코드보다 먼저 채워 두므로 오류가 없어야 한다.
  * 운영 로그의 `[client-error] RootRoute … toSorted is not a function`이 이 형태였다.
  */
+// 폴리필(`legacyBrowserPolyfills.ts`)이 채우는 대상과 같게 둔다 — 단위 테스트의 TARGETS와도 같다.
 const REMOVE_MODERN_METHODS = `
     for (const [target, name] of [
         [Array.prototype, 'toSorted'],
         [Array.prototype, 'toReversed'],
-        [Array.prototype, 'toSpliced'],
-        [Array.prototype, 'with'],
         [Array.prototype, 'findLast'],
         [Array.prototype, 'findLastIndex'],
         [Array.prototype, 'at'],
         [String.prototype, 'at'],
         [Object, 'hasOwn'],
+        [AbortSignal, 'timeout'],
     ]) {
         delete target[name];
     }

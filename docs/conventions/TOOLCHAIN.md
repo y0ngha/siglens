@@ -260,7 +260,8 @@ Windows 7/8.1에서 올릴 수 있는 마지막 Chrome이라 실제 사용자가
 - **지원하지 않는다:** Chrome·Edge 109 미만, iOS 15 미만, IE. 이 환경의 오류는 고치지 않는다. 폴리필 덕에 일부가 우연히
   동작해도 보장하지 않는다.
 - 하한에 없는 메서드는 `src/shared/lib/legacyBrowserPolyfills.ts`가 `instrumentation-client.ts`에서 앱 코드보다 먼저
-  채운다. 지금 채우는 것: `toSorted`, `toReversed`, `findLast`, `findLastIndex`, Array·String `at`, `Object.hasOwn`.
+  채운다. 지금 채우는 것: `toSorted`, `toReversed`, `findLast`, `findLastIndex`, Array·String `at`, `Object.hasOwn`,
+  `AbortSignal.timeout`.
 - 그 밖에 하한보다 새 API(`Object.groupBy`·`Map.groupBy`, Set 연산 메서드, `Promise.withResolvers`, `Array.prototype.with`·
   `toSpliced`, `structuredClone` 등)는 서버 전용 코드에서만 쓴다. 클라이언트에서 필요하면 같은 파일에 명세대로
   폴리필을 추가하고, `e2e/specs/legacy-browser.spec.ts`의 삭제 목록에도 넣는다.

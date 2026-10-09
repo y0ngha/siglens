@@ -5,7 +5,8 @@
  * `toSorted`·`toReversed`(ES2023), `findLast`·`findLastIndex`·`at`·`Object.hasOwn`(ES2022)을
  * 곳곳에서 쓴다. 운영 로그의 `[client-error] … toSorted is not a function`은 Chrome 109
  * (Windows 7/8.1에서 올릴 수 있는 마지막 Chrome)에서 났고, browserslist가 지원 대상으로 잡은
- * iOS 15.0~15.3 Safari에는 `at`·`findLast`·`Object.hasOwn`도 없다.
+ * iOS 15.0~15.3 Safari에는 `at`·`findLast`·`Object.hasOwn`도 없다. iOS 15는 방문자 핑이 쓰는
+ * `AbortSignal.timeout`(Safari 16+)도 없다.
  *
  * 호출부를 하나씩 고치는 대신 여기서 채우는 이유: 쓰는 곳이 수십 곳이고 서버·클라이언트
  * 공용 모듈도 섞여 있어 "브라우저에 닿는 곳"을 정적으로 가려낼 수 없다. 의존 라이브러리가
@@ -48,12 +49,10 @@ function relativeIndex(length: number, index: number): number | null {
 }
 
 export function installLegacyBrowserPolyfills(): void {
-    const arrayProto = Array.prototype as unknown as Record<string, unknown>;
-
     defineMissing(
-        arrayProto,
+        Array.prototype,
         'toSorted',
-        function toSorted(this: unknown[], compare?: Comparator) {
+        function toSorted(this: unknown[], compare?: Comparator): unknown[] {
             if (compare !== undefined && typeof compare !== 'function') {
                 throw new TypeError('toSorted: comparator must be a function');
             }
@@ -62,20 +61,20 @@ export function installLegacyBrowserPolyfills(): void {
         }
     );
     defineMissing(
-        arrayProto,
+        Array.prototype,
         'toReversed',
-        function toReversed(this: unknown[]) {
+        function toReversed(this: unknown[]): unknown[] {
             return Array.from(this).reverse();
         }
     );
     defineMissing(
-        arrayProto,
+        Array.prototype,
         'findLastIndex',
         function findLastIndex(
             this: unknown[],
             predicate: Predicate,
             thisArg?: unknown
-        ) {
+        ): number {
             requireCallable(predicate, 'findLastIndex');
             for (let i = this.length - 1; i >= 0; i -= 1) {
                 if (predicate.call(thisArg, this[i], i, this)) return i;
@@ -84,13 +83,13 @@ export function installLegacyBrowserPolyfills(): void {
         }
     );
     defineMissing(
-        arrayProto,
+        Array.prototype,
         'findLast',
         function findLast(
             this: unknown[],
             predicate: Predicate,
             thisArg?: unknown
-        ) {
+        ): unknown {
             requireCallable(predicate, 'findLast');
             for (let i = this.length - 1; i >= 0; i -= 1) {
                 if (predicate.call(thisArg, this[i], i, this)) return this[i];
@@ -99,9 +98,9 @@ export function installLegacyBrowserPolyfills(): void {
         }
     );
     defineMissing(
-        arrayProto,
+        Array.prototype,
         'at',
-        function at(this: unknown[], index: number) {
+        function at(this: unknown[], index: number): unknown {
             const k = relativeIndex(this.length, index);
             return k === null ? undefined : this[k];
         }
@@ -109,7 +108,7 @@ export function installLegacyBrowserPolyfills(): void {
     defineMissing(
         String.prototype,
         'at',
-        function at(this: string, index: number) {
+        function at(this: string, index: number): string | undefined {
             const s = String(this);
             const k = relativeIndex(s.length, index);
             return k === null ? undefined : s.charAt(k);
@@ -118,8 +117,29 @@ export function installLegacyBrowserPolyfills(): void {
     defineMissing(
         Object,
         'hasOwn',
-        function hasOwn(object: object, key: PropertyKey) {
+        function hasOwn(object: object, key: PropertyKey): boolean {
             return Object.prototype.hasOwnProperty.call(object, key);
         }
     );
+    // 서버 런타임(Node)에는 늘 있지만, 이 함수는 브라우저에서만 불리므로 존재 검사만 한다.
+    if (typeof AbortSignal !== 'undefined') {
+        defineMissing(
+            AbortSignal,
+            'timeout',
+            function timeout(milliseconds: number): AbortSignal {
+                const controller = new AbortController();
+                setTimeout(
+                    () =>
+                        controller.abort(
+                            new DOMException(
+                                'The operation timed out.',
+                                'TimeoutError'
+                            )
+                        ),
+                    milliseconds
+                );
+                return controller.signal;
+            }
+        );
+    }
 }

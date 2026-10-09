@@ -9,7 +9,7 @@
 
 | Path | 목록에 안 보이는 규칙 |
 |---|---|
-| `shared/lib/` | 순수 유틸리티 + 서버 런타임 헬퍼(backgroundTask·afterWithDrain·enterLocale 등)를 함께 둔다. 장 세션 판정은 여기 없다 — `@y0ngha/siglens-core`로 단일화됨. **클래스 상수**(buttonStyles·surfaceStyles·typographyStyles·cardStyles)는 컴포넌트가 아니라 문자열이다 — DOM을 바꾸지 않고 `cn()`으로 합치고, buttonStyles는 톤만 담는다(크기는 호출부) |
+| `shared/lib/` | 순수 유틸리티 + 서버 런타임 헬퍼(backgroundTask·afterWithDrain·enterLocale 등)를 함께 둔다. 예외로 전역 프로토타입을 바꾸는 `legacyBrowserPolyfills`도 여기 있다 — 부수효과는 `install…()` 호출 안에만 있고 `instrumentation-client.ts` 한 곳에서만 부른다(TOOLCHAIN.md#TC-36). 장 세션 판정은 여기 없다 — `@y0ngha/siglens-core`로 단일화됨. **클래스 상수**(buttonStyles·surfaceStyles·typographyStyles·cardStyles)는 컴포넌트가 아니라 문자열이다 — DOM을 바꾸지 않고 `cn()`으로 합치고, buttonStyles는 톤만 담는다(크기는 호출부) |
 | `shared/config/` | popular-tickers·popular-options-tickers는 `update-popular-tickers.ts`가 생성한다 — 손으로 고치지 않는다 |
 | `shared/ui/` | 한 번 쓰는 `<svg>`를 그리기 전에 StrokeIcons(24px 획 아이콘 세트)부터 본다. ModalShell은 조건부 마운트 모달용(오버레이·포커스 트랩·Esc) — 늘 렌더되는 모달은 `useDialog`. Spinner는 장식용 |
 | `shared/api/` | 환경·feature 게이트 헬퍼는 같은 범주끼리 한 곳에 둔다(`e2eEnv.ts`, `offlineBuild.ts`). 같은 목적의 게이트를 다른 디렉터리에 흩뿌리면 관계가 가려지고 따로 변한다 |
