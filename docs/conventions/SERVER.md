@@ -347,6 +347,15 @@ provider is stalling, use the fallback") is passed through explicitly, for examp
 loop. Re-initializing it per call or per step resets the reduction (a multi-step turn pays a stall timeout on every
 step) and loses what earlier attempts learned.
 
+<a id="CC-10"></a>
+
+#### CC-10 — State concurrency bounds per path, and make limit checks atomic
+
+- A concurrency comment names the bound per code path. Two chunked calls inside one `Promise.all`, or another fetch
+  running alongside, add their in-flight counts, so "batch-wide limit N" is false unless one shared limiter enforces it.
+- A count-then-insert limit check (per-user cap) races across tabs and requests. Run it in a transaction holding a row
+  lock on the owner, and let an item that already exists bypass the cap instead of failing the re-add.
+
 ---
 
 ## Server Data Cache Rules (`unstable_cache` / `fetch`)
