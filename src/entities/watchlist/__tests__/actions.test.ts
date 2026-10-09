@@ -229,6 +229,24 @@ describe('addWatchlistItemAction', () => {
         );
     });
 
+    it('라벨이 심볼뿐이고 getAssetInfo에도 이름이 없으면 companyName은 null이다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+        mockGetAssetInfo.mockResolvedValue({
+            symbol: 'ZZZQ',
+            name: null,
+        } as never);
+        mockAdd.mockResolvedValue({
+            status: 'added',
+            item: record('ZZZQ', '2026-10-09T00:00:00.000Z'),
+            created: true,
+        });
+        await addWatchlistItemAction({ symbol: 'ZZZQ', label: 'ZZZQ' });
+        expect(mockAdd).toHaveBeenCalledWith(
+            expect.objectContaining({ symbol: 'ZZZQ', companyName: null }),
+            WATCHLIST_MAX_MEMBER
+        );
+    });
+
     it('getAssetInfo가 던지면(FMP 장애) 호출부 라벨로 저장을 진행한다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockGetAssetInfo.mockRejectedValue(new Error('fmp down'));
