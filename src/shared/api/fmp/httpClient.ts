@@ -24,11 +24,6 @@ export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
 /** Timeout for FMP fetch calls outside a page render (ms). Render path: `FMP_RENDER_FETCH_TIMEOUT_MS`. */
 const FMP_FETCH_TIMEOUT_MS = 10_000;
 
-/** Options for {@link fmpGet}. */
-export interface FmpGetOptions {
-    revalidate?: number;
-}
-
 /**
  * Parse the `Retry-After` response header value (seconds as integer).
  * Returns null if the header is absent, non-numeric, zero, or negative.
@@ -57,14 +52,22 @@ function parseRetryAfterSeconds(header: string | null): number | null {
  * — a single 429 retry chain is enough to push a page past Next's 60s
  * prerender timeout and fail the whole build.
  *
- * Pass `opts.revalidate` (seconds) to opt into Next.js Data Cache instead of
- * the default `cache: 'no-store'`. Callers that handle caching at a higher
- * level (e.g. Redis) should omit `opts` to keep the per-request bypass.
+ * Always `cache: 'no-store'` — FMP responses are cached only in Redis
+ * (`getOrSetCache`) by the callers. There used to be a `revalidate` option
+ * that opted into the Next data cache under that Redis layer; it was removed
+ * because Next serves a *stale* data-cache entry and refreshes it in the
+ * background, so every Redis refill outside a render (cron prewarm, server
+ * actions, calendar ingest) re-stored yesterday's response. The economic
+ * calendar showed it: hourly ingests changed rows only once or twice a day,
+ * landing released `actual` values 6–11 h late. Inside `unstable_cache` the
+ * option was ignored anyway (Next forces no-store there), so render paths
+ * lose nothing, and a no-store fetch inside `unstable_cache` does not make an
+ * ISR page dynamic. Do not call `fmpGet` bare in a page render — wrap it in
+ * `unstable_cache` (`staticSymbolCache`), or the page turns dynamic.
  */
 export async function fmpGet<T>(
     path: string,
-    query: Record<string, string> = {},
-    opts: FmpGetOptions = {}
+    query: Record<string, string> = {}
 ): Promise<T> {
     assertOnline(OFFLINE_BUILD_SERVICE.FMP, path);
     assertFmpAvailableAtBuild(path);
@@ -87,9 +90,7 @@ export async function fmpGet<T>(
         const res = await fetch(
             `${FMP_STABLE_BASE}/${path}?${params.toString()}`,
             {
-                ...(opts.revalidate !== undefined
-                    ? { next: { revalidate: opts.revalidate } }
-                    : { cache: 'no-store' }),
+                cache: 'no-store',
                 signal: AbortSignal.timeout(timeoutMs),
             }
         );

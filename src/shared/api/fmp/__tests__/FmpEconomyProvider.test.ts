@@ -3,7 +3,6 @@ vi.mock('@/shared/api/fmp/httpClient');
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockFmpGet = vi.mocked(fmpGet);
 
@@ -49,16 +48,15 @@ describe('FmpEconomyProvider', () => {
         expect(series.unit).toBeUndefined();
     });
 
-    it('getIndicator: economic-indicators?name+to(오늘) 호출 + 24h revalidate', async () => {
+    it('getIndicator: economic-indicators?name+to(오늘) 호출, 캐시 옵션 없음', async () => {
         mockFmpGet.mockResolvedValueOnce([] as unknown[]);
         await new FmpEconomyProvider().getIndicator('CPI');
         // `to` 없이 호출하면 FMP가 2025-12-01에서 멈춘 진행 중 창을 돌려준다(실측) —
         // 항상 오늘 날짜를 `to`로 보내야 최신 창이 온다.
-        expect(mockFmpGet).toHaveBeenCalledWith(
-            'economic-indicators',
-            { name: 'CPI', to: '2026-09-14' },
-            { revalidate: SECONDS_PER_DAY }
-        );
+        expect(mockFmpGet).toHaveBeenCalledWith('economic-indicators', {
+            name: 'CPI',
+            to: '2026-09-14',
+        });
     });
 
     it('getTreasury: 최신 행의 2Y/10Y 반환', async () => {
@@ -69,14 +67,10 @@ describe('FmpEconomyProvider', () => {
         expect(snap).toEqual({ date: '2026-06-15', year2: 4.07, year10: 4.47 });
     });
 
-    it('getTreasury: treasury-rates 호출 + 24h revalidate', async () => {
+    it('getTreasury: treasury-rates 호출, 캐시 옵션 없음', async () => {
         mockFmpGet.mockResolvedValueOnce([] as unknown[]);
         await new FmpEconomyProvider().getTreasury();
-        expect(mockFmpGet).toHaveBeenCalledWith(
-            'treasury-rates',
-            {},
-            { revalidate: SECONDS_PER_DAY }
-        );
+        expect(mockFmpGet).toHaveBeenCalledWith('treasury-rates');
     });
 
     it('getCalendar: US 필터 + 날짜 오름차순으로 정규화', async () => {
@@ -110,14 +104,13 @@ describe('FmpEconomyProvider', () => {
         expect(events[0].event).toBe('CPI YoY');
     });
 
-    it('getCalendar: from/to 그대로 전달 + 24h revalidate', async () => {
+    it('getCalendar: from/to 그대로 전달, 캐시 옵션 없음', async () => {
         mockFmpGet.mockResolvedValueOnce([] as unknown[]);
         await new FmpEconomyProvider().getCalendar('2026-06-16', '2026-06-30');
-        expect(mockFmpGet).toHaveBeenCalledWith(
-            'economic-calendar',
-            { from: '2026-06-16', to: '2026-06-30' },
-            { revalidate: SECONDS_PER_DAY }
-        );
+        expect(mockFmpGet).toHaveBeenCalledWith('economic-calendar', {
+            from: '2026-06-16',
+            to: '2026-06-30',
+        });
     });
 
     it('FMP throw는 그대로 전파(상위 캐시가 graceful 처리)', async () => {

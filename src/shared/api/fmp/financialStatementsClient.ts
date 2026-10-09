@@ -1,6 +1,5 @@
-import { fmpGet as fmpGetRaw } from './httpClient';
+import { fmpGet } from './httpClient';
 import { toFiniteNumber } from './toFiniteNumber';
-import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
 import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import type {
     BalanceSheetRow,
@@ -20,20 +19,6 @@ import type {
     RawFmpIncomeGrowth,
     RawFmpIncomeStatement,
 } from './financialStatements.types';
-
-/**
- * Thin fmpGet wrapper that injects the 24 h revalidate window shared by
- * both the Next Data Cache and the Redis TTL so the two cache layers'
- * freshness never diverges.
- */
-function fmpGet<T>(
-    path: string,
-    query: Record<string, string> = {}
-): Promise<T> {
-    return fmpGetRaw<T>(path, query, {
-        revalidate: FMP_STATEMENTS_REVALIDATE_SECONDS,
-    });
-}
 
 /** toFiniteNumber의 단항 별칭 — undefined 입력을 허용하는 로컬 쇼트핸드. */
 const num = (v: number | undefined): number | null => toFiniteNumber(v);

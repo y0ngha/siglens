@@ -467,6 +467,22 @@ describe('CachedFundamentalProvider — getStockPeersRaw', () => {
         expect(inner.getStockPeers).toHaveBeenCalledTimes(1);
     });
 
+    it('enrich 경로는 raw 캐시를 재사용해 FMP stock-peers를 한 번만 받는다', async () => {
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 3e12 },
+            ]),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        await provider.getStockPeersRaw('AAPL');
+        const enriched = await provider.getStockPeers('AAPL');
+
+        expect(enriched.map(p => p.symbol)).toEqual(['MSFT']);
+        expect(inner.getStockPeers).toHaveBeenCalledTimes(1);
+        expect(store.has('fundamental:peers:AAPL')).toBe(true);
+    });
+
     it('getStockPeersRaw caps result at PEER_LIMIT (no getKeyMetricsTtm calls)', async () => {
         const rawPeers = Array.from({ length: PEER_LIMIT + 3 }, (_, i) => ({
             symbol: `P${i}`,

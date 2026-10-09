@@ -5,7 +5,7 @@ import type {
     FinancialStatementsProvider,
     IncomeStatementRow,
 } from '@y0ngha/siglens-core';
-import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
+import { FMP_STATEMENTS_CACHE_TTL_SECONDS } from '@/shared/config/time';
 
 // In-memory fake Redis mirroring the pattern in CachedFundamentalProvider.test.ts.
 // NOTE: react cache is a pass-through in vitest — second calls re-enter
@@ -140,7 +140,7 @@ describe('CachedFinancialStatementsProvider — cache key format & TTL', () => {
         expect(setCall![0]).toBe('financials:income:AAPL:annual');
         // The getOrSetCache wrapper stores as { data: value }
         expect((setCall![2] as { ex?: number }).ex).toBe(
-            FMP_STATEMENTS_REVALIDATE_SECONDS
+            FMP_STATEMENTS_CACHE_TTL_SECONDS
         );
     });
 

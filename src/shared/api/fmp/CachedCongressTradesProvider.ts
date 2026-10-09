@@ -2,14 +2,14 @@ import 'server-only';
 import { cache } from 'react';
 import { sym } from './symKey';
 import { cachedListWithLimit } from './cachedListWithLimit';
-import { CONGRESS_REVALIDATE_SECONDS } from '@/shared/config/time';
+import { CONGRESS_CACHE_TTL_SECONDS } from '@/shared/config/time';
 import type {
     Chamber,
     CongressTradesProvider,
     RawCongressTrade,
 } from '@y0ngha/siglens-core';
 
-const TTL = CONGRESS_REVALIDATE_SECONDS;
+const TTL = CONGRESS_CACHE_TTL_SECONDS;
 
 /**
  * Cold-cache fetch는 항상 이 고정 상한으로 inner를 호출하고 전체 배열을 캐싱한다.
