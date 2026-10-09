@@ -81,7 +81,7 @@ export function WatchlistToggleButton({
             <button
                 type="button"
                 aria-pressed={pressed}
-                aria-label={pressed ? t('toggle.remove') : t('toggle.add')}
+                aria-label={t('toggle.label', { v0: label })}
                 aria-describedby={describedBy}
                 disabled={preHydration}
                 aria-disabled={blockedByLimit || undefined}

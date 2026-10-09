@@ -20,3 +20,13 @@ export function markWatchlistMergedThisSession(): void {
         // storage blocked — 같은 세션에 한 번 더 병합을 시도할 뿐이고, 서버는 멱등이다.
     }
 }
+
+/** 로그아웃 때 지운다 — 같은 탭에서 비회원으로 담고 다시 로그인하면 그 로컬 목록도 합쳐져야 한다. */
+export function clearWatchlistMergedThisSession(): void {
+    if (typeof window === 'undefined') return;
+    try {
+        sessionStorage.removeItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY);
+    } catch {
+        // storage blocked — 지울 것도 없다.
+    }
+}

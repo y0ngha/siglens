@@ -831,7 +831,8 @@
             },
             "PortfolioSignupCta": {
                 "body": "Sign up to manage holdings with your average cost and quantity",
-                "cta": "Sign up"
+                "cta": "Sign up",
+                "login": "Already a member? Log in"
             }
         },
         "premium-gate": {
@@ -946,9 +947,8 @@
         },
         "watchlist": {
             "toggle": {
-                "add": "Add to watchlist",
-                "remove": "Remove from watchlist",
-                "limit": "Your watchlist holds up to {v0} symbols. Free up space on My Symbols."
+                "limit": "Your watchlist holds up to {v0} symbols. Free up space on My Symbols.",
+                "label": "Watchlist: {v0}"
             },
             "toast": {
                 "added": "Added to your watchlist",
@@ -956,7 +956,8 @@
                 "limit": "Your watchlist holds up to {v0} symbols",
                 "failed": "Something went wrong. Please try again.",
                 "merged": "Moved {v0} watchlist symbols into your account",
-                "mergedSkipped": "{v1} were left out because of the {v0}-symbol limit"
+                "mergedSkipped": "{v1} were left out because of the {v0}-symbol limit",
+                "holdingKeptInWatchlist": "Holding saved, but it could not be removed from your watchlist. Remove it on My Symbols."
             },
             "coach": {
                 "body": "Tap ☆ to keep this symbol on your watchlist — sign up and it arrives in your email report",

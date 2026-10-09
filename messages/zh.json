@@ -831,7 +831,8 @@
             },
             "PortfolioSignupCta": {
                 "body": "注册后可连同均价、数量一起管理持仓",
-                "cta": "去注册"
+                "cta": "去注册",
+                "login": "已有账号？登录"
             }
         },
         "premium-gate": {
@@ -946,9 +947,8 @@
         },
         "watchlist": {
             "toggle": {
-                "add": "加入自选股",
-                "remove": "移出自选股",
-                "limit": "自选股最多 {v0} 只，请在“我的股票”中整理。"
+                "limit": "自选股最多 {v0} 只，请在“我的股票”中整理。",
+                "label": "自选股：{v0}"
             },
             "toast": {
                 "added": "已加入自选股",
@@ -956,7 +956,8 @@
                 "limit": "自选股最多 {v0} 只",
                 "failed": "出了点问题，请重试。",
                 "merged": "已将 {v0} 只自选股并入账户",
-                "mergedSkipped": "超出上限 {v0} 只，已排除 {v1} 只"
+                "mergedSkipped": "超出上限 {v0} 只，已排除 {v1} 只",
+                "holdingKeptInWatchlist": "持仓已保存，但未能从自选股中移除。请在“我的股票”中手动删除。"
             },
             "coach": {
                 "body": "点击 ☆ 把这只股票加入自选股，注册后还能收到邮件报告",

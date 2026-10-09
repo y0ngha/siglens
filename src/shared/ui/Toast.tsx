@@ -21,6 +21,8 @@ export interface ToastContent {
 interface ToastProps {
     toast: ToastContent | null;
     onDismiss: () => void;
+    /** 호버·포커스가 토스트 안에 있는 동안 true — 자동 닫힘 타이머를 멈추는 데 쓴다. */
+    onPauseChange?: (paused: boolean) => void;
 }
 
 /*
@@ -44,12 +46,26 @@ const CLOSE_BUTTON = cn(BUTTON_GHOST, 'size-8 shrink-0 rounded');
  * 라이브 영역은 토스트가 없어도 **늘 마운트**한다 — 내용과 같은 순간에 삽입된 `aria-live`
  * 영역은 보조기술이 읽지 않는다(`SuccessNotice`와 같은 이유). 안쪽만 바뀐다.
  */
-export function Toast({ toast, onDismiss }: ToastProps) {
+export function Toast({ toast, onDismiss, onPauseChange }: ToastProps) {
     const t = useTranslations('shared.ui');
     return (
         <div role="status" aria-live="polite" className={VIEWPORT}>
             {toast !== null && (
-                <div className={TOAST_CARD} data-testid="toast">
+                <div
+                    className={TOAST_CARD}
+                    data-testid="toast"
+                    onMouseEnter={() => onPauseChange?.(true)}
+                    onMouseLeave={() => onPauseChange?.(false)}
+                    onFocus={() => onPauseChange?.(true)}
+                    onBlur={event => {
+                        // 카드 안에서 포커스가 옮겨 다니는 동안(링크 → 닫기)은 멈춘 채로 둔다.
+                        if (
+                            !event.currentTarget.contains(event.relatedTarget)
+                        ) {
+                            onPauseChange?.(false);
+                        }
+                    }}
+                >
                     <div className="min-w-0 flex-1 space-y-1">
                         <p className="font-medium">
                             {toast.message}

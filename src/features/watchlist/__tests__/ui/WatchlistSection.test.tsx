@@ -9,12 +9,8 @@ vi.mock('@/shared/hooks/useInViewOnce', () => ({
     useInViewOnce: () => [vi.fn(), true],
 }));
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
-const identity = vi.hoisted(() => ({
-    currentUser: null as { id: string } | null,
-}));
-vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
-    useCurrentUser: () => ({ data: identity.currentUser, isPending: false }),
-}));
+const toast = vi.hoisted(() => ({ showToast: vi.fn(), dismiss: vi.fn() }));
+vi.mock('@/shared/ui/ToastProvider', () => ({ useToast: () => toast }));
 vi.mock('@/features/ticker-search/ui/TickerAutocomplete', () => ({
     TickerAutocomplete: () => <input aria-label="종목 티커 검색" />,
 }));
@@ -53,6 +49,7 @@ function setWatchlist(overrides: Partial<Watchlist> = {}): Watchlist {
         isAtLimit: false,
         limit: 20,
         isIdentityPending: false,
+        isMember: false,
         ...overrides,
     };
     mockUseWatchlist.mockReturnValue(value);
@@ -84,7 +81,6 @@ function setHoldings(
 describe('WatchlistSection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        identity.currentUser = null;
         setHoldings({
             status: 'ok',
             holding: {
@@ -171,8 +167,7 @@ describe('WatchlistSection', () => {
     });
 
     it('회원: 보유로 전환 → 심볼이 채워진 HoldingForm → 저장 성공 시 관심 항목 삭제·onHoldingsChange', async () => {
-        identity.currentUser = { id: 'user-1' };
-        const wl = setWatchlist();
+        const wl = setWatchlist({ isMember: true });
         const save = setHoldings({
             status: 'ok',
             holding: {
@@ -207,11 +202,39 @@ describe('WatchlistSection', () => {
         });
         expect(wl.remove).toHaveBeenCalledWith('AAPL');
         expect(onHoldingsChange).toHaveBeenCalledTimes(1);
+        expect(toast.showToast).not.toHaveBeenCalled();
+    });
+
+    it('회원: 보유는 저장됐는데 관심 항목 삭제가 실패하면 구체적인 토스트를 띄운다', async () => {
+        setWatchlist({ isMember: true, remove: vi.fn(async () => false) });
+        const onHoldingsChange = vi.fn();
+        const user = userEvent.setup();
+        render(<WatchlistSection onHoldingsChange={onHoldingsChange} />);
+        await user.click(
+            screen.getByRole('button', { name: 'AAPL 보유로 전환' })
+        );
+        const row = screen.getByRole('button', { name: '추가' }).closest('li')!;
+        await user.type(within(row).getByLabelText('수량'), '10');
+        await user.type(within(row).getByLabelText('평단'), '150');
+        await user.click(within(row).getByRole('button', { name: '추가' }));
+
+        expect(toast.showToast).toHaveBeenCalledWith({
+            message:
+                '보유종목은 저장했지만 관심종목에서는 빼지 못했어요. 내 종목에서 직접 삭제해 주세요.',
+        });
+        expect(onHoldingsChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('회원 판정은 useWatchlist의 isMember를 따른다(힌트만 있어도 전환 버튼)', () => {
+        setWatchlist({ isMember: true });
+        render(<WatchlistSection />);
+        expect(
+            screen.getByRole('button', { name: 'AAPL 보유로 전환' })
+        ).toBeInTheDocument();
     });
 
     it('회원: 저장이 error면 관심 항목을 지우지 않는다', async () => {
-        identity.currentUser = { id: 'user-1' };
-        const wl = setWatchlist();
+        const wl = setWatchlist({ isMember: true });
         setHoldings({
             status: 'error',
             code: 'invalid_quantity',

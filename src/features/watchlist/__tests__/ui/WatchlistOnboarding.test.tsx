@@ -47,6 +47,7 @@ function setWatchlist(overrides: Partial<Watchlist> = {}): Watchlist {
         isHydrated: true,
         isAtLimit: false,
         isIdentityPending: false,
+        isMember: false,
         limit: 20,
         ...overrides,
     };
@@ -85,11 +86,11 @@ describe('WatchlistOnboarding', () => {
             screen.getByRole('list', { name: '메가캡·지수 종목' })
         ).getAllByRole('listitem');
         const toggle = within(aapl!).getByRole('button', {
-            name: '관심종목에서 빼기',
+            name: '관심종목: 애플 (AAPL)',
         });
         const link = within(aapl!).getByRole('link', { name: '애플' });
         expect(toggle).toHaveAttribute('aria-pressed', 'true');
-        expect(toggle).toHaveAccessibleDescription('애플');
+        expect(toggle).not.toHaveAttribute('aria-describedby');
         expect(link).toHaveAttribute('href', '/AAPL');
         expect(
             toggle.compareDocumentPosition(link) &
@@ -121,11 +122,11 @@ describe('WatchlistOnboarding', () => {
             screen.getByRole('list', { name: '메가캡·지수 종목' })
         ).getAllByRole('listitem');
         const toggle = within(aapl!).getByRole('button', {
-            name: '관심종목에 담기',
+            name: '관심종목: 애플 (AAPL)',
         });
         expect(toggle).toHaveAttribute('aria-disabled', 'true');
         expect(toggle).not.toBeDisabled();
-        expect(toggle).toHaveAccessibleDescription(/애플.*최대 20개/);
+        expect(toggle).toHaveAccessibleDescription(/최대 20개/);
         await user.click(toggle);
         expect(wl.toggle).not.toHaveBeenCalled();
     });

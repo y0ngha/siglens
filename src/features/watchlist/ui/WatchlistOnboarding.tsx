@@ -174,7 +174,6 @@ export function WatchlistOnboarding() {
                     const label = assetLabel(item.symbol, item.name);
                     const pressed = isHydrated && has(item.symbol);
                     const blockedByLimit = isHydrated && !pressed && isAtLimit;
-                    const linkId = `${idPrefix}-${item.symbol}`;
                     return (
                         <li
                             key={item.symbol}
@@ -186,15 +185,11 @@ export function WatchlistOnboarding() {
                             <button
                                 type="button"
                                 aria-pressed={pressed}
-                                aria-label={
-                                    pressed
-                                        ? t('toggle.remove')
-                                        : t('toggle.add')
-                                }
+                                aria-label={t('toggle.label', {
+                                    v0: `${label} (${item.symbol})`,
+                                })}
                                 aria-describedby={
-                                    blockedByLimit
-                                        ? `${linkId} ${limitId}`
-                                        : linkId
+                                    blockedByLimit ? limitId : undefined
                                 }
                                 disabled={!isHydrated}
                                 aria-disabled={blockedByLimit || undefined}
@@ -217,7 +212,6 @@ export function WatchlistOnboarding() {
                                 />
                             </button>
                             <Link
-                                id={linkId}
                                 href={`/${item.symbol}`}
                                 prefetch={false}
                                 className={TILE_LINK}

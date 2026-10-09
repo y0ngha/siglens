@@ -109,6 +109,7 @@ describe('useWatchlist', () => {
             const { result } = renderHook(() => useWatchlist(), { wrapper });
             await waitFor(() => expect(result.current.isHydrated).toBe(true));
             expect(result.current.isIdentityPending).toBe(false);
+            expect(result.current.isMember).toBe(false);
             await act(async () => {
                 await Promise.resolve();
             });

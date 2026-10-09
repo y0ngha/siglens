@@ -11,6 +11,7 @@ import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { useToast } from '@/shared/ui/ToastProvider';
 import { readLocalWatchlist } from '../lib/localWatchlist';
 import {
+    clearWatchlistMergedThisSession,
     hasWatchlistMergedThisSession,
     markWatchlistMergedThisSession,
 } from '../lib/mergeSession';
@@ -87,6 +88,7 @@ export function useWatchlistMerge(): void {
     useEffect(() => {
         if (userId === null) {
             attemptedUserIdRef.current = null;
+            clearWatchlistMergedThisSession();
             return;
         }
         if (localCount === 0) return;

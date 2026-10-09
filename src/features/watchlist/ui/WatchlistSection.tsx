@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type {
     RawHoldingInput,
@@ -26,6 +25,7 @@ import {
 import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { symbolLabel } from '@/shared/lib/symbolLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useToast } from '@/shared/ui/ToastProvider';
 import { useWatchlist } from '../hooks/useWatchlist';
 import { useWatchlistQuote } from '../hooks/useWatchlistQuote';
 import { WATCHLIST_ONBOARDING_ID } from './WatchlistOnboarding';
@@ -185,17 +185,21 @@ function WatchlistRow({
  */
 export function WatchlistSection({ onHoldingsChange }: WatchlistSectionProps) {
     const t = useTranslations('features.watchlist');
-    const { items, isHydrated, isIdentityPending, remove } = useWatchlist();
-    const { data: currentUser } = useCurrentUser();
+    const { items, isHydrated, isIdentityPending, isMember, remove } =
+        useWatchlist();
+    const { showToast } = useToast();
     const { save } = usePortfolioHoldings({ enabled: false });
-    const isMember = currentUser != null;
 
     const handleConvert = async (
         input: RawHoldingInput
     ): Promise<SavePortfolioResult> => {
         const result = await save.mutateAsync(input);
         if (result.status === 'ok') {
-            await remove(result.holding.symbol);
+            // 보유는 이미 저장됐다. 관심 항목 삭제가 실패하면(훅이 띄운 일반 실패 토스트를 교체해)
+            // 무엇이 됐고 무엇이 안 됐는지 구체적으로 알린다.
+            if (!(await remove(result.holding.symbol))) {
+                showToast({ message: t('toast.holdingKeptInWatchlist') });
+            }
             onHoldingsChange?.();
         }
         return result;

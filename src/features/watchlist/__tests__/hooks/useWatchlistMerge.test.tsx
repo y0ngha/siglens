@@ -236,6 +236,46 @@ describe('useWatchlistMerge', () => {
         expect(mockTrack).not.toHaveBeenCalled();
     });
 
+    it('병합 → 로그아웃 → 비회원으로 담기 → 다시 로그인하면 같은 탭에서도 한 번 더 병합한다', async () => {
+        identity.currentUser = { id: 'user-1' };
+        mockMerge.mockResolvedValue({ status: 'ok', added: 2, skipped: 0 });
+        const { wrapper } = createQueryClientWrapper();
+        const { rerender } = renderHook(() => useWatchlistMerge(), {
+            wrapper,
+        });
+        await waitFor(() => expect(mockMerge).toHaveBeenCalledTimes(1));
+        await waitFor(() =>
+            expect(
+                sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+            ).toBe('1')
+        );
+
+        identity.currentUser = null;
+        rerender();
+        await waitFor(() =>
+            expect(
+                sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+            ).toBeNull()
+        );
+
+        act(() => {
+            localStorage.setItem(
+                LOCAL_STORAGE_WATCHLIST_KEY,
+                JSON.stringify([
+                    { symbol: 'TSLA', label: '테슬라', addedAt: 3 },
+                ])
+            );
+            window.dispatchEvent(new Event('siglens:watchlist-change'));
+        });
+        identity.currentUser = { id: 'user-1' };
+        rerender();
+
+        await waitFor(() => expect(mockMerge).toHaveBeenCalledTimes(2));
+        expect(mockMerge).toHaveBeenLastCalledWith([
+            { symbol: 'TSLA', label: '테슬라' },
+        ]);
+    });
+
     it('이미 이 세션에 병합했으면 부르지 않는다', async () => {
         sessionStorage.setItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY, '1');
         identity.currentUser = { id: 'user-1' };

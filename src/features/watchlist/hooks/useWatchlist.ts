@@ -41,6 +41,8 @@ export interface UseWatchlistResult {
     isHydrated: boolean;
     isAtLimit: boolean;
     limit: number;
+    /** 회원일 가능성(힌트 쿠키 또는 `currentUser` 확정). 목록 출처와 "보유로 전환" 노출이 이 값을 따른다. */
+    isMember: boolean;
     /**
      * 회원인지 비회원인지 아직 모른다(힌트 없음 · `currentUser` 조회 중). 이 동안 `items`는 로컬
      * 목록이라 "비어 있음"이 "계정에 없음"을 뜻하지 않는다 — 빈 상태 CTA는 이 값이 false일 때만 그린다.
@@ -174,6 +176,7 @@ export function useWatchlist(): UseWatchlistResult {
         isHydrated,
         isAtLimit,
         limit,
+        isMember: isMemberLikely,
         isIdentityPending,
     };
 }

@@ -25,6 +25,7 @@ function setWatchlist(overrides: Partial<Watchlist> = {}): Watchlist {
         isHydrated: true,
         isAtLimit: false,
         isIdentityPending: false,
+        isMember: false,
         limit: WATCHLIST_MAX_LOCAL,
         ...overrides,
     };
@@ -38,7 +39,7 @@ describe('WatchlistToggleButton', () => {
         mockUseCoach.mockReturnValue({ visible: false, dismiss: vi.fn() });
     });
 
-    it('담기 전: aria-pressed=false, 라벨 "관심종목에 담기"', () => {
+    it('담기 전: aria-pressed=false, 이름은 상태와 무관한 "관심종목: 애플"', () => {
         setWatchlist();
         render(
             <WatchlistToggleButton
@@ -47,12 +48,12 @@ describe('WatchlistToggleButton', () => {
                 source="symbol_header"
             />
         );
-        const button = screen.getByRole('button', { name: '관심종목에 담기' });
+        const button = screen.getByRole('button', { name: '관심종목: 애플' });
         expect(button).toHaveAttribute('aria-pressed', 'false');
         expect(button).toBeEnabled();
     });
 
-    it('담긴 뒤: aria-pressed=true, 라벨 "관심종목에서 빼기"', () => {
+    it('담긴 뒤: aria-pressed=true, 이름은 그대로 "관심종목: 애플"', () => {
         setWatchlist({ has: vi.fn(() => true) });
         render(
             <WatchlistToggleButton
@@ -62,7 +63,7 @@ describe('WatchlistToggleButton', () => {
             />
         );
         expect(
-            screen.getByRole('button', { name: '관심종목에서 빼기' })
+            screen.getByRole('button', { name: '관심종목: 애플' })
         ).toHaveAttribute('aria-pressed', 'true');
     });
 
@@ -75,7 +76,7 @@ describe('WatchlistToggleButton', () => {
                 source="symbol_header"
             />
         );
-        const button = screen.getByRole('button', { name: '관심종목에 담기' });
+        const button = screen.getByRole('button', { name: '관심종목: 애플' });
         expect(button).toBeDisabled();
         expect(button.className).toContain('size-11');
     });
@@ -90,7 +91,7 @@ describe('WatchlistToggleButton', () => {
                 source="symbol_header"
             />
         );
-        const button = screen.getByRole('button', { name: '관심종목에 담기' });
+        const button = screen.getByRole('button', { name: '관심종목: 애플' });
         expect(button).toHaveAttribute('aria-disabled', 'true');
         expect(button).toBeEnabled();
         expect(button).toHaveAccessibleDescription(
@@ -171,11 +172,11 @@ describe('WatchlistToggleButton', () => {
             '☆를 누르면 이 종목을 관심종목에 담아 두고'
         );
         expect(
-            screen.getByRole('button', { name: '관심종목에 담기' })
+            screen.getByRole('button', { name: '관심종목: 애플' })
         ).toHaveAttribute('aria-describedby', tooltip.id);
         expect(document.activeElement).not.toBe(tooltip);
         await user.click(
-            screen.getByRole('button', { name: '관심종목에 담기' })
+            screen.getByRole('button', { name: '관심종목: 애플' })
         );
         expect(dismiss).toHaveBeenCalledTimes(1);
     });

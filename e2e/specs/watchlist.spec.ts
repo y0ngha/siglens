@@ -9,8 +9,8 @@ import { LOCAL_STORAGE_WATCHLIST_KEY } from '@/shared/lib/storageKeys';
  * AAPL만 asset_translations에 시드돼 있지만 병합은 getAssetInfo를 부르지 않으므로 MSFT도 그대로 들어간다.
  */
 const ONBOARDING_HEADING = '관심 종목부터 담아 보세요';
-const ADD_LABEL = '관심종목에 담기';
-const REMOVE_LABEL = '관심종목에서 빼기';
+const toggleName = (symbol: string): RegExp =>
+    new RegExp(`^관심종목: .*\\(${symbol}\\)$`);
 const SETTLE_TIMEOUT_MS = 15_000;
 
 async function addFromHome(page: Page, symbols: string[]): Promise<void> {
@@ -19,10 +19,10 @@ async function addFromHome(page: Page, symbols: string[]): Promise<void> {
     await expect(block).toBeVisible();
     for (const symbol of symbols) {
         const tile = block.getByRole('listitem').filter({ hasText: symbol });
-        await tile.getByRole('button', { name: ADD_LABEL }).click();
-        await expect(
-            tile.getByRole('button', { name: REMOVE_LABEL })
-        ).toHaveAttribute('aria-pressed', 'true');
+        const toggle = tile.getByRole('button', { name: toggleName(symbol) });
+        await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     }
     await expect(
         block.getByText(`담은 종목 ${symbols.length}개`)
@@ -115,7 +115,7 @@ test.describe('watchlist (anonymous → signup merge)', () => {
         // 종목 헤더 ☆는 회원 목록을 반영한다.
         await page.goto('/AAPL');
         await expect(
-            page.getByRole('button', { name: REMOVE_LABEL })
+            page.getByRole('button', { name: /^관심종목: / })
         ).toHaveAttribute('aria-pressed', 'true', {
             timeout: SETTLE_TIMEOUT_MS,
         });

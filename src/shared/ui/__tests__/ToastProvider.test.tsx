@@ -96,6 +96,65 @@ describe('ToastProvider', () => {
         expect(screen.getByRole('status')).toBeEmptyDOMElement();
     });
 
+    it('호버 중에는 자동 닫힘이 멈추고, 떠나면 처음부터 다시 센다', () => {
+        vi.useFakeTimers();
+        render(
+            <ToastProvider>
+                <Trigger message="읽는 중" />
+            </ToastProvider>
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'show 읽는 중' }));
+        const card = screen.getByTestId('toast');
+        fireEvent.mouseEnter(card);
+        act(() => {
+            vi.advanceTimersByTime(TOAST_AUTO_DISMISS_MS * 3);
+        });
+        expect(screen.getByRole('status')).toHaveTextContent('읽는 중');
+        fireEvent.mouseLeave(card);
+        act(() => {
+            vi.advanceTimersByTime(TOAST_AUTO_DISMISS_MS - 1);
+        });
+        expect(screen.getByRole('status')).toHaveTextContent('읽는 중');
+        act(() => {
+            vi.advanceTimersByTime(1);
+        });
+        expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    });
+
+    it('포커스가 토스트 안에 있는 동안 멈추고, 안에서 옮겨 다녀도 유지되며, 밖으로 나가면 다시 센다', () => {
+        vi.useFakeTimers();
+        render(
+            <ToastProvider>
+                <Trigger
+                    message="링크"
+                    link={{ href: '/portfolio', label: '내 종목 보기' }}
+                />
+            </ToastProvider>
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'show 링크' }));
+        const link = screen.getByRole('link', { name: '내 종목 보기' });
+        const close = screen.getByRole('button', { name: '알림 닫기' });
+        fireEvent.focus(link);
+        act(() => {
+            vi.advanceTimersByTime(TOAST_AUTO_DISMISS_MS * 2);
+        });
+        expect(screen.getByRole('status')).toHaveTextContent('링크');
+
+        // 링크 → 닫기: relatedTarget이 카드 안이라 계속 멈춰 있다.
+        fireEvent.blur(link, { relatedTarget: close });
+        fireEvent.focus(close);
+        act(() => {
+            vi.advanceTimersByTime(TOAST_AUTO_DISMISS_MS * 2);
+        });
+        expect(screen.getByRole('status')).toHaveTextContent('링크');
+
+        fireEvent.blur(close, { relatedTarget: document.body });
+        act(() => {
+            vi.advanceTimersByTime(TOAST_AUTO_DISMISS_MS);
+        });
+        expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    });
+
     it('useToast는 프로바이더 밖에서 던진다', () => {
         const spy = vi
             .spyOn(console, 'error')
