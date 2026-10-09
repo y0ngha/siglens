@@ -50,38 +50,41 @@ export function useWatchlistMerge(): void {
         if (local.length === 0) return;
         inFlightRef.current = true;
         attemptedUserIdRef.current = id;
+        // `try … finally`는 React Compiler가 아직 내리지 못한다(react-hooks-js/todo) — 요청만
+        // try/catch로 감싸고 in-flight 해제는 그 뒤에 한 번 한다.
+        let result: Awaited<ReturnType<typeof mergeWatchlistAction>> | null;
         try {
-            const result = await mergeWatchlistAction(
+            result = await mergeWatchlistAction(
                 local.map(entry => ({
                     symbol: entry.symbol,
                     label: entry.label,
                 }))
             );
-            if (result.status !== 'ok') return;
-            clear();
-            markWatchlistMergedThisSession();
-            void qc.invalidateQueries({ queryKey: QUERY_KEYS.watchlist() });
-            const skippedLine =
-                result.skipped > 0
-                    ? t('toast.mergedSkipped', {
-                          v0: WATCHLIST_MAX_MEMBER,
-                          v1: result.skipped,
-                      })
-                    : null;
-            if (result.added > 0) {
-                showToast({
-                    message: t('toast.merged', { v0: result.added }),
-                    ...(skippedLine ? { detail: skippedLine } : {}),
-                    link: { href: '/portfolio', label: t('toast.viewMine') },
-                });
-                trackFunnelEvent('watchlist_merged', { count: result.added });
-            } else if (skippedLine) {
-                showToast({ message: skippedLine });
-            }
         } catch {
             // 조용히 — 로컬이 남아 있으므로 다음 페이지 로드에서 다시 시도한다.
-        } finally {
-            inFlightRef.current = false;
+            result = null;
+        }
+        inFlightRef.current = false;
+        if (result === null || result.status !== 'ok') return;
+        clear();
+        markWatchlistMergedThisSession();
+        void qc.invalidateQueries({ queryKey: QUERY_KEYS.watchlist() });
+        const skippedLine =
+            result.skipped > 0
+                ? t('toast.mergedSkipped', {
+                      v0: WATCHLIST_MAX_MEMBER,
+                      v1: result.skipped,
+                  })
+                : null;
+        if (result.added > 0) {
+            showToast({
+                message: t('toast.merged', { v0: result.added }),
+                ...(skippedLine ? { detail: skippedLine } : {}),
+                link: { href: '/portfolio', label: t('toast.viewMine') },
+            });
+            trackFunnelEvent('watchlist_merged', { count: result.added });
+        } else if (skippedLine) {
+            showToast({ message: skippedLine });
         }
     });
 
