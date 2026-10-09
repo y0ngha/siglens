@@ -21,6 +21,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { createDailyPruner, noContent } from './_shared/dailyPruner';
+import { resolveUserId } from './_shared/resolveUserId';
 
 const { HTTP_STATUS_INTERNAL_SERVER_ERROR } = constants;
 
@@ -83,6 +84,8 @@ export async function POST(): Promise<Response> {
         userAgent: userAgentHeader,
         country: headerList.get('cf-ipcountry'),
         landingPath: landingPathOf(headerList.get('referer')),
+        // 회원 D7/D30 재방문의 축. 세션 쿠키가 없으면 DB 왕복 없이 null이다.
+        userId: await resolveUserId('[visitor-metrics]'),
     };
     // 헤더는 위에서 다 읽었다 — 기록은 응답 뒤로 미룬다(`recordVisitAndPrune`).
     afterWithDrain(() => recordVisitAndPrune(visit));
