@@ -28,7 +28,9 @@ export const METERED_REVEAL_STARTS_AT = new Date('2026-10-18T00:00:00+09:00');
  * 쿠키를 지우고 다시 받는 방식의 남용을 막는 **백스톱**이다. 통신사 NAT·사무실처럼 한
  * IP를 여럿이 쓰는 곳에서는 먼저 쓴 사람이 몫을 가져갈 수 있는데, 소프트 미터라
  * 허용한다 — 최악이 "현행 잠금으로의 후퇴"일 뿐이다. 개인 한도(`policy.dailySymbols`)보다
- * 넉넉하게 잡아 정상 사용자가 걸리지 않게 한다.
+ * 넉넉하게 잡아 정상 사용자가 걸리지 않게 한다. 3은 측정값이 아니라 가정이다 — 개인 한도(1)의
+ * 세 배로, 한 IP 뒤의 가구·소규모 사무실 몇 명을 막지 않을 정도로 잡았다. 퍼널 리포트의
+ * revealed/exhausted 비율을 보고 조정한다.
  */
 export const IP_DAILY_SYMBOL_CAP = 3;
 
@@ -52,7 +54,7 @@ const LUA_NEW_IP_SHARED = 3;
  * KEYS[1]=게스트 집합, KEYS[2]=IP 집합 / ARGV: 종목, 개인 상한, IP 상한, 만료 시각(epoch 초).
  * 반환: 1=기존 공개, 2=신규 공개, 3=신규 공개(IP 집합엔 이미 있음), 0=소진.
  */
-export const DECIDE_SCRIPT = `
+const DECIDE_SCRIPT = `
 if redis.call('SISMEMBER', KEYS[1], ARGV[1]) == 1 then return ${LUA_EXISTING} end
 if redis.call('SCARD', KEYS[1]) < tonumber(ARGV[2]) and redis.call('SCARD', KEYS[2]) < tonumber(ARGV[3]) then
   redis.call('SADD', KEYS[1], ARGV[1])
@@ -136,6 +138,8 @@ export async function decideMeteredReveal(
         console.warn('[meter] no guest id — treating as unavailable');
         return { state: 'unavailable' };
     }
+    // pepper 읽기는 `app/api/presence/_shared/visitorIdentity.ts`와 의도적으로 중복이다 — 그쪽은
+    // app 레이어라 entities에서 import할 수 없고, 두 곳 다 "없으면 기능을 끈다"는 같은 처리를 한다.
     const pepper = process.env.VISITOR_HASH_PEPPER ?? '';
     if (pepper === '') {
         console.warn('[meter] VISITOR_HASH_PEPPER is not set — meter is off');

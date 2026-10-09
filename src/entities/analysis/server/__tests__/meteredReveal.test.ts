@@ -11,7 +11,6 @@ vi.mock('@/shared/cache/redisClient', () => ({
 import { createHmac } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    DECIDE_SCRIPT,
     decideMeteredReveal,
     IP_DAILY_SYMBOL_CAP,
     METERED_REVEAL_STARTS_AT,
@@ -127,28 +126,9 @@ describe('decideMeteredReveal', () => {
         expect(args).toEqual(['AAPL']);
     });
 
-    it('판정 스크립트는 기존 공개를 먼저 보고, 두 상한을 모두 검사한 뒤 두 집합에 넣고 만료를 건다', () => {
-        // Lua 엔진 없이 돌리는 테스트라 스크립트 본문을 고정한다 — `<`를 `<=`로 바꾸거나
-        // SADD·EXPIREAT 하나를 빼면 여기서 깨진다.
-        const lines = DECIDE_SCRIPT.trim()
-            .split('\n')
-            .map(line => line.trim());
-        expect(lines[0]).toBe(
-            "if redis.call('SISMEMBER', KEYS[1], ARGV[1]) == 1 then return 1 end"
-        );
-        expect(lines[1]).toBe(
-            "if redis.call('SCARD', KEYS[1]) < tonumber(ARGV[2]) and redis.call('SCARD', KEYS[2]) < tonumber(ARGV[3]) then"
-        );
-        expect(lines).toContain("redis.call('SADD', KEYS[1], ARGV[1])");
-        expect(lines).toContain(
-            "local ipAdded = redis.call('SADD', KEYS[2], ARGV[1])"
-        );
-        expect(lines).toContain("redis.call('EXPIREAT', KEYS[1], ARGV[4])");
-        expect(lines).toContain("redis.call('EXPIREAT', KEYS[2], ARGV[4])");
-        expect(lines).toContain('if ipAdded == 1 then return 2 end');
-        expect(lines.at(-1)).toBe('return 0');
-    });
-
+    // Lua 본문의 동작(SISMEMBER 우선, 두 상한 동시 검사, 두 집합 SADD·EXPIREAT)은 여기서 검증하지
+    // 않는다 — `eval`이 mock이라 스크립트를 실행할 수 없고, 문자열 고정은 동작을 보장하지 못한다
+    // (TESTING.md#TE-53). 이 파일은 TS 쪽 계약(키·인자·반환값 해석·release 분기)만 고정한다.
     it('release 실패는 삼키고 경고만 남긴다', async () => {
         mockEval.mockResolvedValueOnce(2);
         const decision = await decideMeteredReveal(BASE_INPUT);

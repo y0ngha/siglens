@@ -67,8 +67,8 @@ import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { formatFixed } from '@/shared/lib/formatNum';
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import {
-    selectLockedCardCopy,
-    type LockedCardCopy,
+    selectLockedCardBodyKind,
+    type LockedCardBodyKind,
 } from './utils/lockedCardCopy';
 
 /** 패널이 가격을 내는 소수 자릿수. */
@@ -1086,28 +1086,20 @@ export function AnalysisPanel({
         getMeteredRevealPolicy('free')?.dailySymbols ??
         FALLBACK_METER_DAILY_SYMBOLS;
     const isMeterExhausted = meter === 'exhausted';
-    const lockedCardCopy = selectLockedCardCopy({
-        isMeterExhausted,
-        skillCount,
-        meterDailySymbols,
-    });
-    // 판정(`selectLockedCardCopy`)이 고른 종류 → 번역 문구. `Record`라 종류가 늘면 컴파일러가 잡는다.
-    const lockedCardTitleByKind: Record<LockedCardCopy['title'], () => string> =
-        {
-            meterExhausted: () => tPanel('meter.exhaustedTitle'),
-            default: () => t('AnalysisPanel.120a0a'),
-        };
-    const lockedCardBodyByKind: Record<
-        LockedCardCopy['body']['kind'],
-        () => string
-    > = {
+    const lockedCardTitle = isMeterExhausted
+        ? tPanel('meter.exhaustedTitle')
+        : t('AnalysisPanel.120a0a');
+    // 판정(`selectLockedCardBodyKind`)이 고른 종류 → 번역 문구. `Record`라 종류가 늘면 컴파일러가 잡는다.
+    const lockedCardBodyByKind: Record<LockedCardBodyKind, () => string> = {
         meterExhausted: () =>
             tPanel('meter.exhaustedBody', { count: meterDailySymbols }),
         skillUpsell: () => tPanel('signupSkillUpsell', { v0: skillCount }),
         default: () => t('AnalysisPanel.f0256c'),
     };
-    const lockedCardTitle = lockedCardTitleByKind[lockedCardCopy.title]();
-    const lockedCardBody = lockedCardBodyByKind[lockedCardCopy.body.kind]();
+    const lockedCardBody =
+        lockedCardBodyByKind[
+            selectLockedCardBodyKind({ isMeterExhausted, skillCount })
+        ]();
     const overlayControls = toOverlayCardControls(
         hiddenOverlayKeys,
         onToggleOverlay,
