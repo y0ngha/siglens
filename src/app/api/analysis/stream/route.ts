@@ -853,6 +853,8 @@ function withReaderViews<T>(
 function omitUnfiltered<T extends object>(
     result: T
 ): Omit<T, 'unfilteredResult'> {
+    // 캐스트 근거: `unfilteredResult`는 core가 technical `done` 결과에만 붙이는 선택 필드다.
+    // 다른 결과 타입에는 없으므로 구조 분해에서 `undefined`로 빠질 뿐 나머지는 그대로다.
     const { unfilteredResult: _unfiltered, ...rest } = result as T & {
         unfilteredResult?: unknown;
     };

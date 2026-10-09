@@ -70,6 +70,12 @@ import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 /** 패널이 가격을 내는 소수 자릿수. */
 const PRICE_FRACTION_DIGITS = 2;
 
+/**
+ * 미터 문구의 "하루 N종목" 폴백. core 정책(`getMeteredRevealPolicy`)이 꺼져 값이 없을 때만
+ * 쓴다 — 그때는 미터 상태 자체가 오지 않아 문구가 보이지 않지만, 타입상 숫자가 필요하다.
+ */
+const FALLBACK_METER_DAILY_SYMBOLS = 1;
+
 /** 가격 소수 둘째 자리 고정(`12.30`). 로케일을 고정하는 이유는 `formatPriceUpTo2` JSDoc. */
 function formatPrice2(price: number, locale: Locale): string {
     return formatFixed(price, PRICE_FRACTION_DIGITS, locale);
@@ -1071,8 +1077,22 @@ export function AnalysisPanel({
     // 띠(revealed)와 소진 카드(exhausted)는 동시에 보이지 않으므로 한 ref 콜백을
     // 그중 보이는 요소에 붙인다.
     const setMeterNode = useFunnelMeterShown(meter, symbol);
-    // 문구의 종목 수는 core 정책이 단일 출처다(I18-6) — 정책이 꺼져도 문구는 렌더되므로 1로 접는다.
-    const meterDailySymbols = getMeteredRevealPolicy('free')?.dailySymbols ?? 1;
+    // 문구의 종목 수는 core 정책이 단일 출처다(I18-6) — 정책이 꺼져도 문구는 렌더되므로 폴백으로 접는다.
+    const meterDailySymbols =
+        getMeteredRevealPolicy('free')?.dailySymbols ??
+        FALLBACK_METER_DAILY_SYMBOLS;
+    const isMeterExhausted = meter === 'exhausted';
+    const lockedCardTitle = isMeterExhausted
+        ? tPanel('meter.exhaustedTitle')
+        : t('AnalysisPanel.120a0a');
+    const lockedCardBody = resolveLockedCardBody();
+    function resolveLockedCardBody(): string {
+        if (isMeterExhausted)
+            return tPanel('meter.exhaustedBody', { count: meterDailySymbols });
+        if (skillCount > 0)
+            return tPanel('signupSkillUpsell', { v0: skillCount });
+        return t('AnalysisPanel.f0256c');
+    }
     const overlayControls = toOverlayCardControls(
         hiddenOverlayKeys,
         onToggleOverlay,
@@ -1627,7 +1647,7 @@ export function AnalysisPanel({
                             {hasLockedDetails && (
                                 <div
                                     ref={
-                                        meter === 'exhausted'
+                                        isMeterExhausted
                                             ? setMeterNode
                                             : undefined
                                     }
@@ -1635,24 +1655,10 @@ export function AnalysisPanel({
                                 >
                                     <div className="flex flex-col gap-1.5">
                                         <p className="text-sm font-semibold text-balance text-secondary-100">
-                                            {meter === 'exhausted'
-                                                ? tPanel('meter.exhaustedTitle')
-                                                : t('AnalysisPanel.120a0a')}
+                                            {lockedCardTitle}
                                         </p>
                                         <p className="text-xs leading-relaxed text-balance text-secondary-300">
-                                            {meter === 'exhausted'
-                                                ? tPanel(
-                                                      'meter.exhaustedBody',
-                                                      {
-                                                          count: meterDailySymbols,
-                                                      }
-                                                  )
-                                                : skillCount > 0
-                                                  ? tPanel(
-                                                        'signupSkillUpsell',
-                                                        { v0: skillCount }
-                                                    )
-                                                  : t('AnalysisPanel.f0256c')}
+                                            {lockedCardBody}
                                         </p>
                                         <p className="text-xs leading-relaxed text-secondary-400">
                                             {t('AnalysisPanel.9971e1')}
@@ -1664,7 +1670,7 @@ export function AnalysisPanel({
                                         onClick={() =>
                                             trackFunnelEvent(
                                                 'gate_clicked',
-                                                meter === 'exhausted'
+                                                isMeterExhausted
                                                     ? {
                                                           gate: 'locked_detail',
                                                           meter: 'exhausted',
