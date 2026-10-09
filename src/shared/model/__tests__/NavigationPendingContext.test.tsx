@@ -22,6 +22,7 @@ const TARGETS = {
     same: '/ja/market?x=1',
     login: '/ja/login',
     portfolio: '/ja/portfolio',
+    account: '/ja/account',
 } as const;
 
 function Probe() {
@@ -186,12 +187,12 @@ describe('NavigationPendingContext', () => {
      * 영영 풀리지 않는다.
      */
     describe('auth-guarded destinations', () => {
-        it('a guest heading to /portfolio is pending on the login page', () => {
+        it('a guest heading to /portfolio is pending on /portfolio (open to guests)', () => {
             render(<Tree />);
 
             click('portfolio');
 
-            expect(pending()).toBe('/login');
+            expect(pending()).toBe('/portfolio');
         });
 
         it('a member heading to /portfolio is pending on /portfolio', () => {
@@ -213,11 +214,19 @@ describe('NavigationPendingContext', () => {
             expect(pending()).toBe('none');
         });
 
-        it('a guest already on /login clicking /portfolio stays idle', () => {
+        it('a guest heading to /account is pending on the login page', () => {
+            render(<Tree />);
+
+            click('account');
+
+            expect(pending()).toBe('/login');
+        });
+
+        it('a guest already on /login clicking /account stays idle', () => {
             mockPathname.mockReturnValue('/ja/login');
             render(<Tree />);
 
-            click('portfolio');
+            click('account');
 
             expect(pending()).toBe('none');
         });

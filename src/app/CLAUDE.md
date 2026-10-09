@@ -197,7 +197,7 @@ route의 `generateMetadata`가 필드(description, robots, canonical …)를 빼
 - **인증 리다이렉트는 쿼리를 보존한다.** `AUTH_REQUIRED_PATHS` 가드는 페이지 가드보다 먼저 실행돼 놓치기 쉽다.
   `next`에는 경로와 쿼리를 함께 넣고(`localePath(locale, pathname) + reqUrl.search`), sanitizer는 ①대상이
   guest-only 경로가 아닌지 ②쿼리가 끝까지 보존되는지를 모두 검증한다.
-  ❌ `loginUrl = localePath(locale, pathname)` — `/portfolio?symbol=AAPL`이 로그인 뒤 `/portfolio`가 된다.
+  ❌ `loginUrl = localePath(locale, pathname)` — `/account?tab=profile`이 로그인 뒤 `/account`가 된다.
 - **호스트 비교는 양쪽을 소문자로 정규화하고 실제 `Host` 헤더를 읽는다.** `req.url.host`는 `next start`가
   바인드 주소로 다시 만든 값이라 Host 헤더와 다를 수 있다. URL 파서가 소문자화한 `target.host`를 원본
   헤더와 비교하면 대소문자 불일치에서 루프 가드가 깨진다.

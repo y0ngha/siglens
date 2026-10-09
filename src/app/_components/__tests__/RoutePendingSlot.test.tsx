@@ -91,11 +91,19 @@ describe('RoutePendingSlot', () => {
     });
 
     it('게스트가 로그인 필요 페이지를 누르면 도착할 로그인 화면의 골격을 그린다', () => {
+        const { container } = render(<Tree targets={['/account']} />);
+
+        fireEvent.click(screen.getByRole('button', { name: '/account' }));
+
+        expect(skeletonKind(container)).toBe('auth');
+    });
+
+    it('내 종목(/portfolio)은 비회원에게 열려 있어 게스트도 그 페이지 골격을 그린다', () => {
         const { container } = render(<Tree targets={['/portfolio']} />);
 
         fireEvent.click(screen.getByRole('button', { name: '/portfolio' }));
 
-        expect(skeletonKind(container)).toBe('auth');
+        expect(skeletonKind(container)).toBe('portfolio');
     });
 
     it('떠나는 중임을 표식으로 남긴다 — 포털로 뜬 시트를 CSS가 감춘다', () => {

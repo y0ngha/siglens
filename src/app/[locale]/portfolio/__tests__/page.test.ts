@@ -1,11 +1,11 @@
 /**
  * `/portfolio` page tests — mirrors the account sibling pattern:
- * metadata (noindex/canonical), the `PortfolioGuard` auth redirect, the
+ * metadata (noindex/canonical), the guest CTA vs. member split, the
  * holdings-driven grid (one `PositionHoldingCard` per holding, server never
  * fetches per-symbol price ranges), the 0-holdings empty-state CTA, and the
  * degrade-to-error-state behavior on a transient DB read failure.
  *
- * `PortfolioGuard` reads holdings directly via `DrizzlePortfolioRepository`
+ * `PortfolioMemberArea` reads holdings directly via `DrizzlePortfolioRepository`
  * (not `getPortfolioHoldingsAction`, which re-resolves `getCurrentUser`
  * internally — see the page's doc comment), so this mocks the repository +
  * `getDatabaseClient` the same way `src/app/[locale]/privacy/__tests__/page.test.ts`
@@ -34,28 +34,31 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/link', () => ({ default: () => null }));
-vi.mock('next/navigation', () => ({
-    redirect: vi.fn(),
-}));
 vi.mock('@/widgets/portfolio-position/ui/PositionHoldingCard', () => ({
     PositionHoldingCard: () => null,
 }));
+vi.mock('@/features/portfolio-management/ui/PortfolioSignupCta', () => ({
+    PortfolioSignupCta: () => null,
+}));
+vi.mock('@/app/[locale]/portfolio/PortfolioManager', () => ({
+    PortfolioManager: () => null,
+}));
 
 import { isValidElement, type ReactNode } from 'react';
-import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
+import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
+import { PortfolioManager } from '@/app/[locale]/portfolio/PortfolioManager';
 import {
     generateMetadata,
     PortfolioEmptyState,
     PortfolioErrorState,
-    PortfolioGuard,
+    PortfolioMemberArea,
 } from '@/app/[locale]/portfolio/page';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { PortfolioHoldingRecord } from '@/shared/db/types';
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);
-const mockRedirect = vi.mocked(redirect);
 
 /** findElementByType only returns the FIRST match — this counts every match in the tree (grid has N cards). */
 function countElementsByType(node: ReactNode, type: unknown): number {
@@ -120,45 +123,42 @@ describe('Portfolio page', () => {
         );
     });
 
-    describe('PortfolioGuard', () => {
+    describe('PortfolioMemberArea', () => {
         beforeEach(() => {
             vi.clearAllMocks();
         });
 
-        it('redirects unauthenticated visitors to /login?next=/portfolio', async () => {
+        it('비로그인이면 리다이렉트 없이 가입 CTA 카드를 그리고 보유 카드는 없다', async () => {
             mockGetCurrentUser.mockResolvedValue(null);
-            mockFindByUser.mockResolvedValue([]);
+            const tree = await PortfolioMemberArea({ locale: 'ko' });
+            expect(findElementByType(tree, PortfolioSignupCta)).not.toBeNull();
+            expect(countElementsByType(tree, PositionHoldingCard)).toBe(0);
+            expect(countElementsByType(tree, PortfolioManager)).toBe(0);
+            expect(mockFindByUser).not.toHaveBeenCalled();
+        });
 
-            await PortfolioGuard({ locale: 'ko' });
-
-            expect(mockRedirect).toHaveBeenCalledWith(
-                `/login?next=${encodeURIComponent('/portfolio')}`
-            );
+        it('회원이면 보유 관리 섹션(PortfolioManager)과 카드 그리드를 함께 그린다', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
+            mockFindByUser.mockResolvedValue([RECORD_AAPL]);
+            const tree = await PortfolioMemberArea({ locale: 'ko' });
+            expect(countElementsByType(tree, PortfolioManager)).toBe(1);
+            expect(countElementsByType(tree, PositionHoldingCard)).toBe(1);
         });
 
         it('resolves the session only once (does not double-call getCurrentUser)', async () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
             mockFindByUser.mockResolvedValue([RECORD_AAPL]);
 
-            await PortfolioGuard({ locale: 'ko' });
+            await PortfolioMemberArea({ locale: 'ko' });
 
             expect(mockGetCurrentUser).toHaveBeenCalledTimes(1);
-        });
-
-        it('does not redirect an authenticated member', async () => {
-            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
-            mockFindByUser.mockResolvedValue([RECORD_AAPL]);
-
-            await PortfolioGuard({ locale: 'ko' });
-
-            expect(mockRedirect).not.toHaveBeenCalled();
         });
 
         it('reads holdings scoped to the resolved user id', async () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
             mockFindByUser.mockResolvedValue([RECORD_AAPL]);
 
-            await PortfolioGuard({ locale: 'ko' });
+            await PortfolioMemberArea({ locale: 'ko' });
 
             expect(mockFindByUser).toHaveBeenCalledWith('user-1');
         });
@@ -167,7 +167,7 @@ describe('Portfolio page', () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
             mockFindByUser.mockResolvedValue([RECORD_AAPL, RECORD_MSFT]);
 
-            const tree = await PortfolioGuard({ locale: 'ko' });
+            const tree = await PortfolioMemberArea({ locale: 'ko' });
 
             expect(countElementsByType(tree, PositionHoldingCard)).toBe(2);
         });
@@ -176,7 +176,7 @@ describe('Portfolio page', () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
             mockFindByUser.mockResolvedValue([RECORD_AAPL]);
 
-            const tree = await PortfolioGuard({ locale: 'ko' });
+            const tree = await PortfolioMemberArea({ locale: 'ko' });
 
             const card = findElementByType(tree, PositionHoldingCard);
             expect(card?.props).toEqual(
@@ -196,7 +196,7 @@ describe('Portfolio page', () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
             mockFindByUser.mockResolvedValue([]);
 
-            const tree = await PortfolioGuard({ locale: 'ko' });
+            const tree = await PortfolioMemberArea({ locale: 'ko' });
 
             expect(countElementsByType(tree, PositionHoldingCard)).toBe(0);
             expect(findElementByType(tree, PortfolioEmptyState)).not.toBeNull();
@@ -206,7 +206,7 @@ describe('Portfolio page', () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
             mockFindByUser.mockRejectedValue(new Error('transient DB error'));
 
-            const tree = await PortfolioGuard({ locale: 'ko' });
+            const tree = await PortfolioMemberArea({ locale: 'ko' });
 
             expect(findElementByType(tree, PortfolioErrorState)).not.toBeNull();
             expect(countElementsByType(tree, PositionHoldingCard)).toBe(0);

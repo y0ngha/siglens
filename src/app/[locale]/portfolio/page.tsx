@@ -3,6 +3,9 @@ import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import { PortfolioManager } from './PortfolioManager';
+import { WatchlistManager } from './WatchlistManager';
+import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { PLACEHOLDER_ON_INSET, SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
@@ -10,10 +13,9 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
-import { localePath, resolveLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import type { Locale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 
@@ -46,45 +48,53 @@ export async function generateMetadata({
             title,
             description,
         }),
-        // 로그인 전용 개인화 서페이스라 색인 대상이 아니다 — 비로그인 방문자는
-        // 아래에서 /login?next=/portfolio로 리다이렉트된다.
+        // 개인화 서페이스라 색인 대상이 아니다 — 비회원도 열리지만 내용(로컬 관심종목)이
+        // 방문자마다 다르다.
         robots: { index: false, follow: false },
     };
 }
 
 /**
- * Reads cookies via getCurrentUser — must be inside Suspense for PPR. Exported
- * (rather than module-private) so tests can `await PortfolioGuard()` directly
- * and assert the unauthenticated redirect target, mirroring the
- * `AccountContent` guard pattern in `src/app/[locale]/account/page.tsx`.
- *
- * Reads the user's holdings directly via `DrizzlePortfolioRepository` (the
- * same repo `getPortfolioHoldingsAction` wraps) instead of calling that
- * action, for two reasons: (1) the action re-resolves `getCurrentUser()`
- * internally, which would resolve the session twice per request; (2) the
- * action deliberately lets a transient DB read failure propagate (it's
- * designed as a React Query `queryFn`, where a thrown error just flips
- * `isError` — see its own doc comment), but here that would hit the *page's*
- * root error boundary instead. The try/catch below degrades to an in-page
- * `PortfolioErrorState` so a transient blip never breaks the whole page.
- *
- * Server cost is still bounded to a single holdings DB read — per-holding
- * price ranges are NEVER fetched here. Each `PositionHoldingCard` lazily
- * fetches its own symbol's bars on the client once scrolled into view, so
- * this dynamic (non-cached) page never fans out into an unbounded N-symbol
- * FMP fetch per visit.
+ * `PortfolioManager`는 `useSearchParams()`(`?symbol=`)를 읽는 클라이언트
+ * 컴포넌트라 Suspense 경계가 필요하다 — 없으면 이 정적 페이지 전체가 dynamic으로
+ * 강등된다(빌드 route 표에서 `●`/PPR → `ƒ`). 감싸는 `<section>`이 이미
+ * border/bg/padding을 갖고 있으므로 이 스켈레톤은 내부 블록만 채운다.
  */
-export async function PortfolioGuard({ locale }: { locale: Locale }) {
-    const user = await getCurrentUser();
-    if (!user) {
-        // 로케일을 유지한다 — 영어 사용자가 한국어 로그인 페이지로 떨어지면 안 된다.
-        redirect(
-            `${localePath(locale, '/login')}?next=${encodeURIComponent(
-                localePath(locale, '/portfolio')
-            )}`
-        );
-    }
+function PortfolioManagerSkeleton() {
+    return (
+        <div aria-hidden="true" className="animate-pulse space-y-4">
+            <div className="space-y-2">
+                <div className={cn('h-5 w-28 rounded', PLACEHOLDER_ON_INSET)} />
+                <div className={cn('h-4 w-56 rounded', PLACEHOLDER_ON_INSET)} />
+            </div>
+            <div className={cn('h-14 rounded-lg', PLACEHOLDER_ON_INSET)} />
+            <div className={cn('h-10 rounded-lg', PLACEHOLDER_ON_INSET)} />
+        </div>
+    );
+}
 
+/**
+ * 회원 영역. `getCurrentUser()`(쿠키 읽기)를 **한 번** 읽으므로 반드시 Suspense 안에서
+ * 그려야 PPR이 유지된다. 비회원에게는 가입 CTA 카드를, 회원에게는 보유종목 관리 폼과
+ * 위치 카드 그리드를 그린다. 비회원도 이 페이지에 들어온다 — 프록시 가드와 페이지
+ * `redirect`를 모두 뺐다(관심종목은 가입 전에도 본다, 설계 §6.3). 비회원은 보유 DB를
+ * 읽지 않는다. 테스트가 `await PortfolioMemberArea()`로 직접 검증하도록 export한다
+ * (`AccountContent` 패턴과 같다).
+ *
+ * 보유 목록은 `getPortfolioHoldingsAction`이 아니라 `DrizzlePortfolioRepository`로 직접
+ * 읽는다: (1) 액션은 `getCurrentUser()`를 다시 풀어 요청당 세션을 두 번 해석하고, (2) 액션은
+ * 일시적 DB 실패를 React Query `queryFn`용으로 그대로 던지는데 여기서는 페이지 루트 에러
+ * 바운더리로 번진다. 아래 try/catch가 페이지 안 `PortfolioErrorState`로 degrade시킨다.
+ *
+ * 서버 비용은 보유 DB 읽기 1회로 묶인다 — 종목별 가격 범위는 여기서 가져오지 않는다. 각
+ * `PositionHoldingCard`가 뷰포트에 들어올 때 자기 종목의 봉을 클라이언트에서 지연 로드하므로
+ * 이 동적 페이지가 방문마다 N-symbol FMP 팬아웃을 일으키지 않는다.
+ */
+export async function PortfolioMemberArea({ locale }: { locale: Locale }) {
+    const user = await getCurrentUser();
+    if (!user) return <PortfolioSignupCta />;
+
+    const t = await getTranslations({ locale, namespace: 'app.portfolio' });
     let holdings: PortfolioHoldingView[];
     try {
         const { db } = getDatabaseClient();
@@ -98,24 +108,48 @@ export async function PortfolioGuard({ locale }: { locale: Locale }) {
         return <PortfolioErrorState />;
     }
 
-    if (holdings.length === 0) {
-        return <PortfolioEmptyState />;
-    }
-
     return (
-        <div
-            data-testid="portfolio-holding-grid"
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-            {holdings.map(holding => (
-                <PositionHoldingCard key={holding.symbol} holding={holding} />
-            ))}
-        </div>
+        <>
+            <section
+                aria-label={t('page.06c7de')}
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+            >
+                <Suspense fallback={<PortfolioManagerSkeleton />}>
+                    <PortfolioManager />
+                </Suspense>
+            </section>
+            <section
+                aria-labelledby="portfolio-positions-heading"
+                className="space-y-4"
+            >
+                <h2
+                    id="portfolio-positions-heading"
+                    className={HEADING_SECTION}
+                >
+                    {t('page.55ca69')}
+                </h2>
+                {holdings.length === 0 ? (
+                    <PortfolioEmptyState />
+                ) : (
+                    <div
+                        data-testid="portfolio-holding-grid"
+                        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                    >
+                        {holdings.map(holding => (
+                            <PositionHoldingCard
+                                key={holding.symbol}
+                                holding={holding}
+                            />
+                        ))}
+                    </div>
+                )}
+            </section>
+        </>
     );
 }
 
 // Exported (not module-private) so tests can locate it in the unrendered
-// element tree returned by `PortfolioGuard()` via `findElementByType`,
+// element tree returned by `PortfolioMemberArea()` via `findElementByType`,
 // mirroring the `countElementsByType(tree, PositionHoldingCard)` check above.
 export function PortfolioEmptyState() {
     const t = useTranslations('app.portfolio');
@@ -136,7 +170,7 @@ export function PortfolioEmptyState() {
 
 // Exported (not module-private) for the same reason as `PortfolioEmptyState`
 // — tests locate it via `findElementByType` on the unrendered tree returned
-// by `PortfolioGuard()` when the holdings read throws.
+// by `PortfolioMemberArea()` when the holdings read throws.
 export function PortfolioErrorState() {
     const t = useTranslations('app.portfolio');
     return (
@@ -151,25 +185,6 @@ export function PortfolioErrorState() {
                 {t('page.92020d')}
             </p>
         </section>
-    );
-}
-
-/**
- * `PortfolioManager`는 `useSearchParams()`(`?symbol=`)를 읽는 클라이언트
- * 컴포넌트라 Suspense 경계가 필요하다 — 없으면 이 정적 페이지 전체가 dynamic으로
- * 강등된다(빌드 route 표에서 `●`/PPR → `ƒ`). 감싸는 `<section>`이 이미
- * border/bg/padding을 갖고 있으므로 이 스켈레톤은 내부 블록만 채운다.
- */
-function PortfolioManagerSkeleton() {
-    return (
-        <div aria-hidden="true" className="animate-pulse space-y-4">
-            <div className="space-y-2">
-                <div className={cn('h-5 w-28 rounded', PLACEHOLDER_ON_INSET)} />
-                <div className={cn('h-4 w-56 rounded', PLACEHOLDER_ON_INSET)} />
-            </div>
-            <div className={cn('h-14 rounded-lg', PLACEHOLDER_ON_INSET)} />
-            <div className={cn('h-10 rounded-lg', PLACEHOLDER_ON_INSET)} />
-        </div>
     );
 }
 
@@ -217,33 +232,26 @@ export default async function PortfolioPage({
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">
-                        {t('page.d9477a')}
+                        {t('page.title')}
                     </h1>
                     <p className="mt-1 text-sm text-secondary-400">
-                        {t('page.6aaec6')}
+                        {t('page.subtitle')}
                     </p>
                 </header>
+                <Suspense fallback={<PortfolioSkeleton />}>
+                    <PortfolioMemberArea locale={locale} />
+                </Suspense>
                 <section
-                    aria-label={t('page.06c7de')}
-                    className={cn(SURFACE_CARD, 'space-y-4 p-6')}
-                >
-                    <Suspense fallback={<PortfolioManagerSkeleton />}>
-                        <PortfolioManager />
-                    </Suspense>
-                </section>
-                <section
-                    aria-labelledby="portfolio-positions-heading"
+                    aria-labelledby="portfolio-watchlist-heading"
                     className="space-y-4"
                 >
                     <h2
-                        id="portfolio-positions-heading"
-                        className="text-lg font-semibold text-secondary-100"
+                        id="portfolio-watchlist-heading"
+                        className={HEADING_SECTION}
                     >
-                        {t('page.55ca69')}
+                        {t('page.watchlistHeading')}
                     </h2>
-                    <Suspense fallback={<PortfolioSkeleton />}>
-                        <PortfolioGuard locale={locale} />
-                    </Suspense>
+                    <WatchlistManager />
                 </section>
             </div>
         </main>

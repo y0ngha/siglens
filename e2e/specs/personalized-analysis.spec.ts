@@ -117,7 +117,7 @@ async function typeSymbolAndConfirm(page: Page, raw: string): Promise<void> {
 async function resetAaplHolding(page: Page): Promise<void> {
     await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '포트폴리오' })
+        page.getByRole('heading', { level: 1, name: '내 종목' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
     // Wait out the client-only holdings skeleton (usePortfolioHoldings fetches

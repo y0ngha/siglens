@@ -179,7 +179,7 @@ describe('proxy', () => {
     });
 
     describe('전방 가드 — auth-required 경로', () => {
-        const authRequiredPaths = ['/account', '/account/delete', '/portfolio'];
+        const authRequiredPaths = ['/account', '/account/delete'];
 
         it.each(authRequiredPaths)(
             '%s — 세션이 없으면 /login?next=%s 으로 redirect한다(복귀 경로 보존)',
@@ -192,6 +192,12 @@ describe('proxy', () => {
                 expect(mockPass).not.toHaveBeenCalled();
             }
         );
+
+        it('/portfolio — 세션이 없어도 next()로 통과시킨다(비회원 개방)', async () => {
+            await proxy(makeRequest(undefined, '/portfolio'));
+            expect(mockPass).toHaveBeenCalledTimes(1);
+            expect(mockRedirect).not.toHaveBeenCalled();
+        });
 
         it.each(authRequiredPaths)(
             '%s — 세션이 있으면 next()로 통과시킨다',
@@ -212,7 +218,7 @@ describe('proxy', () => {
             headers: { 'Next-Action': 'abc123' },
         };
 
-        it.each(['/account', '/account/delete', '/portfolio', '/ja/portfolio'])(
+        it.each(['/account', '/account/delete', '/ja/account'])(
             '%s — 세션 없는 액션 POST는 /login으로 보내지 않고 통과시킨다',
             async path => {
                 await proxy(makeRequest(undefined, path, actionInit));
@@ -231,9 +237,7 @@ describe('proxy', () => {
         );
 
         it('Next-Action 헤더 없는 POST는 여전히 /login으로 보낸다', async () => {
-            await proxy(
-                makeRequest(undefined, '/portfolio', { method: 'POST' })
-            );
+            await proxy(makeRequest(undefined, '/account', { method: 'POST' }));
             expect(mockRedirect).toHaveBeenCalledTimes(1);
             expect((mockRedirect.mock.calls[0]![0] as URL).pathname).toBe(
                 '/login'
@@ -345,7 +349,7 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
         'reserved 경로 %s 는 ticker로 오인하지 않는다 (no case redirect)',
         async path => {
             await proxy(makeRequest(undefined, path));
-            if (path === '/account' || path === '/portfolio') {
+            if (path === '/account') {
                 // auth-required guard: 비로그인 사용자는 /login?next=<path> 으로 redirect
                 expect(mockRedirect).toHaveBeenCalledTimes(1);
                 const [calledUrl] = mockRedirect.mock.calls[0]!;
@@ -460,13 +464,10 @@ describe('/portfolio 라우트 — ticker 오인으로 인한 /PORTFOLIO 404 방
     // 알파벳, 16자 이하)에 매칭돼 /PORTFOLIO으로 301 정규화되고, 이는 존재하지 않는
     // 라우트라 [symbol] fallback → 404로 이어진다 (실제 페이지의 auth guard는 우회당함,
     // /onboarding 사고와 동일 패턴).
-    it('세션이 없으면 대문자 redirect 없이 /login?next=/portfolio 으로 auth-required redirect한다', async () => {
+    it('세션이 없어도 대문자 redirect도 /login redirect도 없이 next()로 통과한다(비회원 개방)', async () => {
         await proxy(makeRequest(undefined, '/portfolio'));
-        expect(mockRedirect).toHaveBeenCalledTimes(1);
-        const [calledUrl] = mockRedirect.mock.calls[0]!;
-        expect((calledUrl as URL).pathname).toBe('/login');
-        expect((calledUrl as URL).searchParams.get('next')).toBe('/portfolio');
-        expect(mockPass).not.toHaveBeenCalled();
+        expect(mockRedirect).not.toHaveBeenCalled();
+        expect(mockPass).toHaveBeenCalledTimes(1);
     });
 
     it('세션이 있으면 /PORTFOLIO으로 대문자 redirect하지 않고 next()로 통과한다', async () => {
@@ -476,17 +477,17 @@ describe('/portfolio 라우트 — ticker 오인으로 인한 /PORTFOLIO 404 방
     });
 
     /**
-     * `/[symbol]/position`의 CTA(`?symbol=AAPL`)를 눌렀지만 로그인이 안 된
-     * 방문자. 이 forward auth guard가 `next`를 pathname만으로 만들면 쿼리가
-     * 사라져 로그인 후 심볼이 채워지지 않은 빈 폼에 도착한다.
+     * 쿼리가 붙은 가드 경로(`/account?tab=…`)로 들어온 비로그인 방문자. 이 forward
+     * auth guard가 `next`를 pathname만으로 만들면 쿼리가 사라져 로그인 후 원래
+     * 화면 상태를 잃는다.
      */
-    it('세션이 없으면 ?symbol= 쿼리를 next에 보존한다', async () => {
-        await proxy(makeRequest(undefined, '/portfolio?symbol=AAPL'));
+    it('세션이 없으면 쿼리를 next에 보존한다', async () => {
+        await proxy(makeRequest(undefined, '/account?tab=profile'));
         expect(mockRedirect).toHaveBeenCalledTimes(1);
         const [calledUrl] = mockRedirect.mock.calls[0]!;
         expect((calledUrl as URL).pathname).toBe('/login');
         expect((calledUrl as URL).searchParams.get('next')).toBe(
-            '/portfolio?symbol=AAPL'
+            '/account?tab=profile'
         );
     });
 });
@@ -552,7 +553,7 @@ describe('랜딩 ?q= redirect — proxy가 page.tsx 대신 처리 (ISR 보존)',
  * 정상으로 보이고, 프록시가 라우팅보다 먼저 도는 런타임에서만 깨진다 — 실제로
  * `/fear-greed`가 `/FEAR-GREED`로 301되는 것을 로컬 프로덕션 서버에서 잡았다.
  *
- * auth 가드가 걸린 라우트(`/account`, `/portfolio`)는 정상적으로 `/login`으로
+ * auth 가드가 걸린 라우트(`/account`)는 정상적으로 `/login`으로
  * redirect되므로 "redirect 없음"이 아니라 "대문자 정규화 redirect 없음"을 단언한다.
  */
 describe('정적 최상위 라우트는 ticker로 오인되지 않는다', () => {
@@ -627,11 +628,11 @@ describe('로케일 접두사 경로', () => {
         expect((mockRedirect.mock.calls[0]![0] as URL).pathname).toBe('/en');
     });
 
-    it('/ja/portfolio — 비로그인이면 /ja/login 으로 보내고 next를 보존한다', async () => {
-        await proxy(makeRequest(undefined, '/ja/portfolio'));
+    it('/ja/account — 비로그인이면 /ja/login 으로 보내고 next를 보존한다', async () => {
+        await proxy(makeRequest(undefined, '/ja/account'));
         const url = mockRedirect.mock.calls[0]![0] as URL;
         expect(url.pathname).toBe('/ja/login');
-        expect(url.searchParams.get('next')).toBe('/ja/portfolio');
+        expect(url.searchParams.get('next')).toBe('/ja/account');
     });
 
     it('/en/aapl — 로케일을 유지한 채 대문자로 301한다', async () => {

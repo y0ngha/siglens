@@ -84,7 +84,7 @@ async function typeSymbolAndConfirm(page: Page, raw: string): Promise<void> {
 async function resetAaplHolding(page: Page): Promise<void> {
     await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '포트폴리오' })
+        page.getByRole('heading', { level: 1, name: '내 종목' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
     // Wait out the client-only holdings skeleton (usePortfolioHoldings fetches
@@ -162,7 +162,7 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
         // ---- 3. Edit via the portfolio page ----
         await page.goto('/portfolio');
         await expect(
-            page.getByRole('heading', { level: 1, name: '포트폴리오' })
+            page.getByRole('heading', { level: 1, name: '내 종목' })
         ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
         const rowToEdit = aaplRow(page);
         await rowToEdit
@@ -188,7 +188,7 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
         // client-side React Query cache.
         await page.reload();
         await expect(
-            page.getByRole('heading', { level: 1, name: '포트폴리오' })
+            page.getByRole('heading', { level: 1, name: '내 종목' })
         ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
         const rowAfterReload = aaplRow(page);
         await expect(rowAfterReload).toContainText('20주', {
