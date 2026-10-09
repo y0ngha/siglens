@@ -254,9 +254,9 @@ export interface AddWatchlistItemInput {
     companyName: string | null;
 }
 
-/** `limit_reached`: the symbol is new and the member is already at the limit. */
+/** `created`: false when the symbol was already saved (idempotent upsert). `limit_reached`: the symbol is new and the member is already at the limit. */
 export type AddWatchlistResultRecord =
-    | { status: 'added'; item: WatchlistItemRecord }
+    | { status: 'added'; item: WatchlistItemRecord; created: boolean }
     | { status: 'limit_reached' };
 
 /** One local (anonymous) entry offered to `mergeSymbols`, most recently added first. */

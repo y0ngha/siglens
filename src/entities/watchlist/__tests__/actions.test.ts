@@ -142,6 +142,7 @@ describe('addWatchlistItemAction', () => {
         mockAdd.mockResolvedValue({
             status: 'added',
             item: record('AAPL', '2026-10-01T00:00:00.000Z'),
+            created: false,
         });
         const result = await addWatchlistItemAction({
             symbol: 'AAPL',
@@ -149,6 +150,7 @@ describe('addWatchlistItemAction', () => {
         });
         expect(result).toEqual({
             status: 'ok',
+            created: false,
             item: {
                 symbol: 'AAPL',
                 companyName: null,
@@ -171,7 +173,7 @@ describe('addWatchlistItemAction', () => {
         expect(mockAdd).not.toHaveBeenCalled();
     });
 
-    it('성공 시 getAssetInfo의 이름을 companyName으로 저장하고 뷰를 돌려준다', async () => {
+    it('성공 시 클라이언트 라벨(표시명)을 companyName으로 저장하고 뷰를 돌려준다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockGetAssetInfo.mockResolvedValue({
             symbol: 'AAPL',
@@ -182,8 +184,9 @@ describe('addWatchlistItemAction', () => {
             status: 'added',
             item: {
                 ...record('AAPL', '2026-10-09T00:00:00.000Z'),
-                companyName: 'Apple Inc.',
+                companyName: '애플',
             },
+            created: true,
         });
         const result = await addWatchlistItemAction({
             symbol: ' aapl ',
@@ -193,18 +196,37 @@ describe('addWatchlistItemAction', () => {
             {
                 userId: 'user-1',
                 symbol: 'AAPL',
-                companyName: 'Apple Inc.',
+                companyName: '애플',
             },
             WATCHLIST_MAX_MEMBER
         );
         expect(result).toEqual({
             status: 'ok',
+            created: true,
             item: {
                 symbol: 'AAPL',
-                companyName: 'Apple Inc.',
+                companyName: '애플',
                 addedAt: '2026-10-09T00:00:00.000Z',
             },
         });
+    });
+
+    it('라벨이 심볼뿐이면(넛지 경로) getAssetInfo 이름을 companyName으로 쓴다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+        mockGetAssetInfo.mockResolvedValue({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+        } as never);
+        mockAdd.mockResolvedValue({
+            status: 'added',
+            item: record('AAPL', '2026-10-09T00:00:00.000Z'),
+            created: true,
+        });
+        await addWatchlistItemAction({ symbol: 'AAPL', label: 'AAPL' });
+        expect(mockAdd).toHaveBeenCalledWith(
+            expect.objectContaining({ companyName: 'Apple Inc.' }),
+            WATCHLIST_MAX_MEMBER
+        );
     });
 
     it('getAssetInfo가 던지면(FMP 장애) 호출부 라벨로 저장을 진행한다', async () => {
@@ -216,6 +238,7 @@ describe('addWatchlistItemAction', () => {
                 ...record('TSLA', '2026-10-09T00:00:00.000Z'),
                 companyName: '테슬라',
             },
+            created: true,
         });
         const result = await addWatchlistItemAction({
             symbol: 'TSLA',
@@ -238,6 +261,7 @@ describe('addWatchlistItemAction', () => {
         mockAdd.mockResolvedValue({
             status: 'added',
             item: record('TSLA', '2026-10-09T00:00:00.000Z'),
+            created: true,
         });
         await addWatchlistItemAction({
             symbol: 'TSLA',
@@ -259,6 +283,7 @@ describe('addWatchlistItemAction', () => {
         mockAdd.mockResolvedValue({
             status: 'added',
             item: record('TSLA', '2026-10-09T00:00:00.000Z'),
+            created: true,
         });
         await addWatchlistItemAction({ symbol: 'TSLA', label: 'tsla' });
         expect(mockAdd).toHaveBeenCalledWith(

@@ -28,7 +28,12 @@ function fireInteraction(): void {
     });
 }
 
-const STORAGE_KEY = 'siglens:visit';
+const STORAGE_KEY = 'siglens:visit:v2';
+
+const authHint = vi.hoisted(() => ({ value: false }));
+vi.mock('@/entities/auth/hooks/useAuthHint', () => ({
+    useAuthHint: () => authHint.value,
+}));
 
 /**
  * 가짜 타이머를 쓰지 않는다. RTL의 `waitFor`가 타이머로 폴링하는데, vitest의
@@ -36,10 +41,13 @@ const STORAGE_KEY = 'siglens:visit';
  * 대신 실제 현재 시각의 KST 날짜를 그대로 기대값으로 쓴다.
  */
 const TODAY = kstDateKey(new Date());
+const GUEST_MARKER = `${TODAY}:guest`;
+const MEMBER_MARKER = `${TODAY}:member`;
 
 describe('VisitorPing', () => {
     beforeEach(() => {
         interaction.pending = [];
+        authHint.value = false;
         window.localStorage.clear();
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
         Object.defineProperty(navigator, 'webdriver', {
@@ -85,7 +93,7 @@ describe('VisitorPing', () => {
         const { unmount } = render(<VisitorPing />);
         fireInteraction();
         await waitFor(() => {
-            expect(window.localStorage.getItem(STORAGE_KEY)).toBe(TODAY);
+            expect(window.localStorage.getItem(STORAGE_KEY)).toBe(GUEST_MARKER);
         });
         unmount();
 
@@ -93,6 +101,42 @@ describe('VisitorPing', () => {
         fireInteraction();
         // 같은 날 두 번째 마운트는 요청을 만들지 않는다.
         expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('비회원으로 보낸 날 로그인 힌트가 생기면 한 번 더 보내고, 회원 마커를 남긴다', async () => {
+        const { rerender } = render(<VisitorPing />);
+        fireInteraction();
+        await waitFor(() => {
+            expect(window.localStorage.getItem(STORAGE_KEY)).toBe(GUEST_MARKER);
+        });
+        expect(fetch).toHaveBeenCalledTimes(1);
+
+        authHint.value = true;
+        rerender(<VisitorPing />);
+        fireInteraction();
+        await waitFor(() => {
+            expect(window.localStorage.getItem(STORAGE_KEY)).toBe(
+                MEMBER_MARKER
+            );
+        });
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('회원으로 이미 보낸 날은 다시 보내지 않는다', () => {
+        authHint.value = true;
+        window.localStorage.setItem(STORAGE_KEY, MEMBER_MARKER);
+        render(<VisitorPing />);
+        fireInteraction();
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('옛 형식(날짜만) 값은 무시하고 새 키로 보낸다', async () => {
+        window.localStorage.setItem('siglens:visit', TODAY);
+        render(<VisitorPing />);
+        fireInteraction();
+        await waitFor(() => {
+            expect(fetch).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('저장된 날짜가 오늘이 아니면 다시 보낸다', async () => {

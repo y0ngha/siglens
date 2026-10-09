@@ -125,7 +125,7 @@ export class DrizzleFunnelEventRepository implements FunnelEventRepository {
         toExclusive: Date
     ): Promise<SignupCohortRow[]> {
         // `visitor_days.date`는 KST 날짜라 가입 시각도 KST 날짜로 내려 비교한다. 쿼리
-        // 빌더로 쓰기엔 EXISTS 서브쿼리 두 개가 길어 raw SQL로 둔다 — `count(...)::int`는
+        // 빌더로 쓰기엔 EXISTS 서브쿼리 두 개가 길어 raw SQL로 둔다 — postgres-js는 raw `sql` 템플릿의 Date 바인딩을 거부(ERR_INVALID_ARG_TYPE)해 ISO 문자열 + `::timestamptz`로 넘긴다. `count(...)::int`는
         // postgres-js가 bigint를 문자열로 돌려주는 것을 막는다.
         const rows = await this.db.execute<
             SignupCohortRow & Record<string, unknown>
@@ -133,7 +133,7 @@ export class DrizzleFunnelEventRepository implements FunnelEventRepository {
             with cohort as (
                 select u.id, (u.created_at at time zone 'Asia/Seoul')::date as signup_date
                 from ${users} u
-                where u.created_at >= ${from} and u.created_at < ${toExclusive}
+                where u.created_at >= ${from.toISOString()}::timestamptz and u.created_at < ${toExclusive.toISOString()}::timestamptz
             )
             select
                 to_char(date_trunc('week', c.signup_date), 'YYYY-MM-DD') as week,

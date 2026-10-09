@@ -40,8 +40,9 @@ export interface WatchlistActionError {
     message: string;
 }
 
+/** `created`: 새로 담겼는지. 다른 탭에서 먼저 담긴 심볼이면 false(멱등 성공) — 퍼널 이벤트는 true일 때만. */
 export type AddWatchlistResult =
-    | { status: 'ok'; item: WatchlistItemView }
+    | { status: 'ok'; item: WatchlistItemView; created: boolean }
     | WatchlistActionError;
 
 export type RemoveWatchlistResult = { status: 'ok' } | WatchlistActionError;

@@ -136,7 +136,7 @@ describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
         const rendered = new PgDialect().sqlToQuery(query as never);
         const sqlText = rendered.sql.replace(/\s+/g, ' ');
         expect(sqlText).toContain(
-            `(u.created_at at time zone 'Asia/Seoul')::date as signup_date from "users" u where u.created_at >= $1 and u.created_at < $2`
+            `(u.created_at at time zone 'Asia/Seoul')::date as signup_date from "users" u where u.created_at >= $1::timestamptz and u.created_at < $2::timestamptz`
         );
         expect(sqlText).toContain(
             `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $3::int and c.signup_date + $4::int )`
@@ -144,6 +144,17 @@ describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
         expect(sqlText).toContain(
             `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $5::int and c.signup_date + $6::int )`
         );
-        expect(rendered.params).toEqual([FROM, TO_EXCLUSIVE, 7, 13, 30, 36]);
+        expect(rendered.params).toEqual([
+            FROM.toISOString(),
+            TO_EXCLUSIVE.toISOString(),
+            7,
+            13,
+            30,
+            36,
+        ]);
+        // postgres-js는 raw sql 템플릿의 Date 파라미터를 Bind에서 거부한다.
+        expect(rendered.params.some(param => param instanceof Date)).toBe(
+            false
+        );
     });
 });

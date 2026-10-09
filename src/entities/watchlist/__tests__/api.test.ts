@@ -157,7 +157,11 @@ describe('DrizzleWatchlistRepository', () => {
                 db
             ).addWithinLimit(input, 50);
 
-            expect(outcome).toEqual({ status: 'added', item: record('AAPL') });
+            expect(outcome).toEqual({
+                status: 'added',
+                item: record('AAPL'),
+                created: true,
+            });
             expect(captured).toHaveLength(3);
             expect(captured[0]).toEqual({
                 sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
@@ -204,7 +208,11 @@ describe('DrizzleWatchlistRepository', () => {
                 db
             ).addWithinLimit(input, 2);
 
-            expect(outcome).toEqual({ status: 'added', item: record('AAPL') });
+            expect(outcome).toEqual({
+                status: 'added',
+                item: record('AAPL'),
+                created: false,
+            });
             expect(captured).toHaveLength(3);
             expect(captured[2].sql).toContain(
                 'on conflict ("user_id","symbol") do update'

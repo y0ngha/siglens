@@ -29,7 +29,9 @@ async function resolveCompanyName(
     try {
         const info = await getAssetInfo(symbol);
         if (info === null) return { status: 'symbol_not_found' };
-        return { status: 'ok', companyName: info.name ?? fallback };
+        // 호출부 라벨이 진짜 표시명이면 그것을 쓴다 — 병합으로 들어온 항목(현지화된 라벨)과
+        // 한 목록에서 섞이지 않게. `getAssetInfo` 이름은 라벨이 없을 때(= 심볼 그대로)의 대체값.
+        return { status: 'ok', companyName: fallback ?? info.name ?? null };
     } catch (error) {
         console.warn(
             '[addWatchlistItemAction] symbol verification unavailable, proceeding',
@@ -102,7 +104,11 @@ export async function addWatchlistItemAction(
                 message: t('limitReached', { v0: WATCHLIST_MAX_MEMBER }),
             };
         }
-        return { status: 'ok', item: toWatchlistView(outcome.item) };
+        return {
+            status: 'ok',
+            item: toWatchlistView(outcome.item),
+            created: outcome.created,
+        };
     } catch (error) {
         // Drizzle 오류 메시지는 바인딩 파라미터(user id·심볼)를 품는다 — 코드만 남긴다.
         logActionError('[addWatchlistItemAction] add failed', error);

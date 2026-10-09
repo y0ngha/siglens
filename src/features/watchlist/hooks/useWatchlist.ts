@@ -166,7 +166,10 @@ export function useWatchlist(): UseWatchlistResult {
                     showToast({ message: result.message });
                     return 'failed';
                 }
-                trackFunnelEvent('watchlist_added', { source });
+                // 다른 탭에서 먼저 담겨 서버가 멱등 성공만 한 경우엔 이벤트를 또 보내지 않는다.
+                if (result.created) {
+                    trackFunnelEvent('watchlist_added', { source });
+                }
                 return 'added';
             } catch {
                 showToast({ message: t('toast.failed') });
