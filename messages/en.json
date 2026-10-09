@@ -95,10 +95,10 @@
             "page": {
                 "190fd1": "Stocks in your report",
                 "411c76": "Email report",
-                "513e32": "Manage stocks in your portfolio",
-                "97c221": "Up to {v0} stocks from your portfolio are included — overseas stocks first, then by largest cost basis.",
                 "b7b3c8": "Delivery settings",
-                "c1399c": "Get a report on your holdings by email on the days and time you choose."
+                "a613ae": "Holdings (overseas first, by cost) and watchlist symbols (most recently added first) are combined: the first {v0} get a full card and the next {v1} a summary row.",
+                "b38abd": "Get your holdings and watchlist report by email on the days and time you choose.",
+                "861f8f": "Manage in My Symbols"
             },
             "unsubscribe": {
                 "page": {
@@ -774,7 +774,6 @@
         },
         "email-report-settings": {
             "EmailReportSettingsSection": {
-                "313286": "We'll send daily charts, the Simple analysis, news and options activity for up to {v0} portfolio holdings.",
                 "633367": "Get reports by email",
                 "0c767c": "Try again",
                 "1f1712": "Save",
@@ -786,7 +785,15 @@
                 "dcc8a2": "Saving failed. Please try again in a moment.",
                 "e61b39": "Loading email report settings",
                 "f0cf28": "Time",
-                "f1ce16": "Choose at least one day."
+                "f1ce16": "Choose at least one day.",
+                "8d4110": "Up to {v0} holdings and watchlist symbols get the daily chart, plain-language analysis, news and options; the next {v1} get a close, trend and signal summary."
+            },
+            "ReportSymbolsPreview": {
+                "715443": "Of {v0} symbols, {v1} get the full card and the other {v2} a summary row.",
+                "bb4464": "Full",
+                "3ea27a": "Summary",
+                "d406d7": "You have no holdings or watchlist symbols yet. Add some and they'll be in your next report.",
+                "2f3e5b": "We couldn't load your report symbols right now."
             }
         },
         "email-report-unsubscribe": {
