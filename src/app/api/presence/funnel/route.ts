@@ -5,6 +5,11 @@
  * `presence` 하위인 이유는 `../route.ts`와 같다 — `analytics`·`track`·`collect` 경로는
  * EasyList 계열 차단 목록이 막는다. 봇·프로덕션·pepper·after() 구조도 그 라우트와 같다.
  * 설계: docs/superpowers/specs/2026-10-09-funnel-events-design.md §4.1
+ *
+ * 알려진 한계: 방문자·IP 단위 호출 제한(throttle)은 걸지 않았다. 공용 per-IP 제한 헬퍼가
+ * 아직 없고(`checkShareRateLimit`은 공유 생성 전용 키·한도), 이 라우트는 유료 업스트림을
+ * 부르지 않으며 본문 1KB 상한·카탈로그 검증·봇 필터 뒤에 1행 INSERT만 한다. 지금은 이
+ * 정도의 노출을 감수한다 — 남용이 보이면 공용 헬퍼를 먼저 만들고 여기에 건다.
  */
 import { constants } from 'node:http2';
 import { headers } from 'next/headers';
@@ -46,6 +51,10 @@ const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[funnel]');
 async function readPayload(
     request: Request
 ): Promise<FunnelEventPayload | null> {
+    // 선언된 길이로 먼저 거른다 — 본문을 메모리에 올리기 전에 끊는다. 헤더는 거짓일 수 있어
+    // 아래 바이트 검사는 그대로 둔다(백스톱).
+    const declared = Number(request.headers.get('content-length'));
+    if (declared > FUNNEL_BODY_MAX_BYTES) return null;
     try {
         const text = await request.text();
         if (Buffer.byteLength(text, 'utf8') > FUNNEL_BODY_MAX_BYTES)

@@ -190,6 +190,20 @@ describe('POST /api/presence/funnel', () => {
         expect(res.status).toBe(HTTP_STATUS_BAD_REQUEST);
     });
 
+    it('content-length가 상한을 넘으면 본문을 읽기 전에 400', async () => {
+        const { POST } = await importRoute();
+        const request = makeRequest(VALID);
+        request.headers.set(
+            'content-length',
+            String(FUNNEL_BODY_MAX_BYTES + 1)
+        );
+        const textSpy = vi.spyOn(request, 'text');
+        expect((await POST(request)).status).toBe(HTTP_STATUS_BAD_REQUEST);
+        expect(textSpy).not.toHaveBeenCalled();
+        await flushAfter();
+        expect(record).not.toHaveBeenCalled();
+    });
+
     it('JSON이 아니면 400', async () => {
         const { POST } = await importRoute();
         expect((await POST(makeRequest('{not json'))).status).toBe(

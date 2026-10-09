@@ -48,6 +48,16 @@ describe('trackFunnelEvent', () => {
         expect(readLastGate()).toBe('anon_auto');
     });
 
+    it.each(['member_setup', 'member_symbol'] as const)(
+        '회원용 %s 넛지는 lastGate를 건드리지 않는다',
+        kind => {
+            rememberLastGate('timeframe');
+            trackFunnelEvent('nudge_shown', { kind });
+            expect(readLastGate()).toBe('timeframe');
+            expect(fetch).toHaveBeenCalledTimes(1);
+        }
+    );
+
     it('gate_clicked는 gate를 lastGate로 기록한다', () => {
         trackFunnelEvent('gate_clicked', { gate: 'locked_detail' });
         expect(readLastGate()).toBe('locked_detail');

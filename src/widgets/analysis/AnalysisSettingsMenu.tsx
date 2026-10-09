@@ -71,14 +71,14 @@ export function AnalysisSettingsMenu({
     // model other than the app-wide default free model is selected. Read
     // from the same source of truth `useSelectedModel` falls back to
     // (`DEEPSEEK_V4_1_FLASH_MODEL`) rather than hardcoding a model id here.
+    const isActive = reasoning || modelId !== DEEPSEEK_V4_1_FLASH_MODEL;
+
     // 잠긴 토글 클릭 = 가입 넛지를 여는 게이트. 모달 노출(`nudge_shown`)은 모달이 따로 센다 —
     // 둘 다 기록되는 것이 의도다(스펙 §3.3: 전자는 "눌렀다", 후자는 "모달을 봤다").
     const handleLockedReasoningClick = (): void => {
         trackFunnelEvent('gate_clicked', { gate: 'reasoning_toggle' });
         openSignupNudge();
     };
-
-    const isActive = reasoning || modelId !== DEEPSEEK_V4_1_FLASH_MODEL;
 
     // Same source ModelSelector reads its own trigger label from — the gear's
     // accessible name/title surface the active model without widening the
