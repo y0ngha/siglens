@@ -16,6 +16,7 @@ features는 `entities/`와 `shared/`만 import 가능. **상위 레이어(widget
 | `features/symbol-model` | `features/reasoning-toggle` | reasoning 토글 상태/라벨을 symbol-model provider가 함께 조율한다 |
 | `features/analysis-nudge` | `features/reasoning-toggle` | 회원가입 넛지 copy가 reasoning 기능을 이름으로 부른다. 그 이름(`REASONING_FEATURE_LABEL_KEY`)의 단일 소스는 reasoning-toggle이 소유하므로 정의 파일에서 상수를 재사용한다 |
 | `features/portfolio-management` | `features/ticker-search` | 보유종목 추가 폼의 종목 선택에 `TickerAutocomplete`를 재사용한다 |
+| `features/watchlist` | `features/portfolio-management` | 내 종목 페이지의 "보유로 전환"이 `HoldingForm`을 심볼 채워 재사용한다. 폼을 entities로 내리면 `useActionState`·자동완성 배선이 깨진다 |
 | `features/share` | `features/symbol-model` | 공유 플로우가 현재 선택된 모델/티어 상태를 읽어 공유 스냅샷에 반영한다 |
 
 이 예외는 oxlint `no-restricted-imports`의 `from: 'features', allow: ['features', ...]`로 관리됨. Phase 7 cleanup 시 해소 가능.

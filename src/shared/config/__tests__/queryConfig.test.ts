@@ -7,12 +7,14 @@ import {
     ASSET_INFO_STALE_TIME_MS,
     BARS_STALE_TIME_MS,
     MARKET_SUMMARY_STALE_TIME_MS,
+    PORTFOLIO_HOLDINGS_STALE_TIME_MS,
     QUERY_GC_TIME_MS,
     QUERY_KEYS,
     QUERY_STALE_TIME_MS,
     REGISTERED_PROVIDERS_STALE_TIME_MS,
     SECTOR_SIGNALS_STALE_TIME_MS,
     TICKER_SEARCH_STALE_TIME_MS,
+    WATCHLIST_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 
 describe('queryConfig staleTime constants', () => {
@@ -179,6 +181,14 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
             'AAPL',
             TIMEFRAME,
         ]);
+    });
+
+    it('watchlist query key는 안정적이다', () => {
+        expect(QUERY_KEYS.watchlist()).toEqual(['watchlist']);
+    });
+
+    it('관심종목 staleTime은 보유종목과 같다 (회원의 명시적 편집에만 바뀐다)', () => {
+        expect(WATCHLIST_STALE_TIME_MS).toBe(PORTFOLIO_HOLDINGS_STALE_TIME_MS);
     });
 
     it('tickerSearch: 쿼리 문자열을 그대로 포함한다', () => {

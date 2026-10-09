@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useQuery } from '@tanstack/react-query';
+import { useInViewOnce } from '@/shared/hooks/useInViewOnce';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
@@ -23,41 +23,6 @@ type HoldingCardData = Pick<
 
 interface PositionHoldingCardProps {
     holding: HoldingCardData;
-}
-
-/**
- * 뷰포트 진입을 1회만 감지한다(진입 후 관찰 중단) — /portfolio가 보유종목을
- * 아무리 많이 가진 회원이라도, 화면에 보이는 카드만 자기 종목의 bars를
- * fetch하도록 게이팅하는 지연 로드 트리거. IntersectionObserver 미지원
- * 환경(구형 브라우저)에서는 즉시 visible로 degrade한다.
- */
-function useInViewOnce<T extends Element>(): [
-    (node: T | null) => void,
-    boolean,
-] {
-    const [node, setNode] = useState<T | null>(null);
-    // 구형 브라우저(IntersectionObserver 미지원) 방어를 lazy initializer로 결정해,
-    // 이후 effect 본문에서 setState를 동기 호출하지 않게 한다
-    // (react-hooks/set-state-in-effect — REACT.md#EF-1과 동일 원칙).
-    const [isVisible, setIsVisible] = useState(
-        () => typeof IntersectionObserver === 'undefined'
-    );
-
-    useEffect(() => {
-        if (node === null || isVisible) return;
-        const observer = new IntersectionObserver(
-            entries => {
-                if (entries.some(entry => entry.isIntersecting)) {
-                    setIsVisible(true);
-                }
-            },
-            { rootMargin: '200px' }
-        );
-        observer.observe(node);
-        return () => observer.disconnect();
-    }, [node, isVisible]);
-
-    return [setNode, isVisible];
 }
 
 // resolved 카드 본문(building min-h-280 + gap-3 + dl 3행)의 대략적 높이에 맞춰

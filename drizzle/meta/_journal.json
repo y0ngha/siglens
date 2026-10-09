@@ -302,6 +302,13 @@
       "when": 1791536096250,
       "tag": "0042_funnel_events",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791538652123,
+      "tag": "0043_watchlist_items",
+      "breakpoints": true
     }
   ]
 }

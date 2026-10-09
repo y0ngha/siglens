@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { LogoutButton } from '@/features/auth-logout/ui/LogoutButton';
+import { WatchlistCountBadge } from '@/features/watchlist/ui/WatchlistCountBadge';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
@@ -172,9 +173,10 @@ export function HeaderUserMenu({
                             href="/portfolio"
                             role="menuitem"
                             onClick={close}
-                            className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            {t('HeaderUserMenu.d9477a')}
+                            {t('HeaderUserMenu.mySymbols')}
+                            <WatchlistCountBadge />
                         </Link>
                         <Link
                             href="/email-report"

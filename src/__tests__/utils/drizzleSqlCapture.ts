@@ -16,7 +16,11 @@ export interface CapturedQuery {
  * 인덱스를 타는 WHERE인지, 배치 상한이 서브쿼리에 붙었는지 같은 것은 생성된 SQL로만
  * 확인할 수 있다(`entities/chat-conversation/__tests__/api.test.ts`와 같은 패턴).
  */
-export function createSqlCaptureDb(resolveWith: unknown[] = []): {
+export function createSqlCaptureDb(
+    resolveWith:
+        | unknown[]
+        | ((query: CapturedQuery, index: number) => unknown[]) = []
+): {
     db: SiglensDatabase;
     captured: CapturedQuery[];
 } {
@@ -31,10 +35,15 @@ export function createSqlCaptureDb(resolveWith: unknown[] = []): {
                     typeof (t as { toSQL?: unknown }).toSQL === 'function'
                 ) {
                     return (resolve: (v: unknown) => void) => {
-                        captured.push(
-                            (t as { toSQL: () => CapturedQuery }).toSQL()
+                        const query = (
+                            t as { toSQL: () => CapturedQuery }
+                        ).toSQL();
+                        captured.push(query);
+                        resolve(
+                            typeof resolveWith === 'function'
+                                ? resolveWith(query, captured.length - 1)
+                                : resolveWith
                         );
-                        resolve(resolveWith);
                         return Promise.resolve();
                     };
                 }

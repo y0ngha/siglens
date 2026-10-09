@@ -280,8 +280,9 @@
                 "ac9263": "您尚未注册任何持仓",
                 "d103d5": "注册持仓后，您可以通过各股票的图示查看您的平均成本在最近价格范围内的位置。",
                 "06c7de": "管理持仓",
-                "6aaec6": "管理您的持仓，并查看您的平均成本在各股票近期价格区间中的位置。",
-                "d9477a": "投资组合"
+                "title": "我的股票",
+                "subtitle": "自选股和持仓集中查看。持仓可查看均价在近期价格区间中的位置。",
+                "watchlistHeading": "自选股"
             }
         },
         "reset-password": {
@@ -595,6 +596,18 @@
             "seo": {
                 "title": "{v0} AI分析结果"
             }
+        },
+        "watchlist": {
+            "action": {
+                "deleteFailed": "无法从自选股中移除，请稍后重试。",
+                "invalidInput": "输入无效。",
+                "invalidSymbol": "请输入正确的股票代码。",
+                "limitReached": "自选股最多可添加 {v0} 只。",
+                "mergeFailed": "无法将自选股并入账户。",
+                "saveFailed": "无法加入自选股，请稍后重试。",
+                "symbolNotFound": "该代码不存在。",
+                "unauthenticated": "请先登录。"
+            }
         }
     },
     "features": {
@@ -815,6 +828,11 @@
             "toast": {
                 "holdingDeleted": "已删除 {v0} 的持仓",
                 "holdingSaved": "已保存 {v0} 的持仓"
+            },
+            "PortfolioSignupCta": {
+                "body": "注册后可连同均价、数量一起管理持仓",
+                "cta": "去注册",
+                "login": "已有账号？登录"
             }
         },
         "premium-gate": {
@@ -926,6 +944,50 @@
             "signup": "免费注册",
             "login": "登录",
             "close": "关闭"
+        },
+        "watchlist": {
+            "toggle": {
+                "limit": "自选股最多 {v0} 只，请在“我的股票”中整理。",
+                "label": "自选股：{v0}"
+            },
+            "toast": {
+                "added": "已加入自选股",
+                "viewMine": "查看我的股票",
+                "limit": "自选股最多 {v0} 只",
+                "failed": "出了点问题，请重试。",
+                "merged": "已将 {v0} 只自选股并入账户",
+                "mergedSkipped": "超出上限 {v0} 只，已排除 {v1} 只",
+                "holdingKeptInWatchlist": "持仓已保存，但未能从自选股中移除。请在“我的股票”中手动删除。"
+            },
+            "coach": {
+                "body": "点击 ☆ 把这只股票加入自选股，注册后还能收到邮件报告",
+                "dismiss": "关闭提示"
+            },
+            "badge": {
+                "count": "自选股 {v0} 只"
+            },
+            "onboarding": {
+                "title": "先从自选股开始",
+                "subtitle": "不知道代码也没关系。无需注册即可添加，注册后随处接着看。",
+                "categories": "股票分类",
+                "tiles": "{v0} 股票",
+                "count": "已添加 {v0} 只",
+                "viewMine": "查看我的股票",
+                "collapsed": "正在关注 {v0} 只自选股"
+            },
+            "section": {
+                "loading": "正在加载自选股",
+                "empty": "还没有添加股票",
+                "emptyCta": "去首页添加自选股",
+                "price": "现价",
+                "change": "涨跌幅",
+                "quoteUnavailable": "暂无行情",
+                "convert": "转为持仓",
+                "convertFor": "将 {v0} 转为持仓",
+                "remove": "删除",
+                "removeFor": "从自选股删除 {v0}",
+                "list": "自选股列表"
+            }
         }
     },
     "shared": {
@@ -1653,8 +1715,8 @@
             "oauthConsentFullTitle": "{v0} 社交登录注册条款同意",
             "oauthConsentTitle": "社交登录注册同意",
             "portfolio": {
-                "description": "SIGLENS个性化页面,显示您的持仓成本在各标的近期价格区间中的位置",
-                "title": "投资组合"
+                "description": "SIGLENS 个性化页面：集中查看自选股与持仓，并查看每只持仓的均价在近期价格区间中的位置",
+                "title": "我的股票"
             },
             "position": {
                 "breadcrumb": "我的持仓",
@@ -1963,6 +2025,9 @@
                 "dark": "深色",
                 "light": "浅色",
                 "system": "跟随系统"
+            },
+            "toast": {
+                "close": "关闭通知"
             }
         },
         "skillSummary": {
@@ -3749,7 +3814,7 @@
                 "e225a6": "登录",
                 "ecb4cc": "注册",
                 "menuLabel": "用户菜单（{v0}）",
-                "d9477a": "投资组合"
+                "mySymbols": "我的股票"
             },
             "githubRepoAria": "{v0} GitHub 仓库（在新标签页中打开）",
             "localeSwitcher": {

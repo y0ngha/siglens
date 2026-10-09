@@ -280,8 +280,9 @@
                 "ac9263": "You haven't registered any holdings yet.",
                 "d103d5": "If you register your holdings, you can see where your average price is within the recent price range for each stock, visualized as a building.",
                 "06c7de": "Manage holdings",
-                "6aaec6": "Manage your holdings and see where your average cost sits within each stock's recent price range.",
-                "d9477a": "Portfolio"
+                "title": "My Symbols",
+                "subtitle": "Your watchlist and holdings in one place. For holdings, see where your average cost sits within the recent price range.",
+                "watchlistHeading": "Watchlist"
             }
         },
         "reset-password": {
@@ -595,6 +596,18 @@
             "seo": {
                 "title": "{v0} AI analysis"
             }
+        },
+        "watchlist": {
+            "action": {
+                "deleteFailed": "Couldn't remove it from your watchlist. Please try again shortly.",
+                "invalidInput": "Invalid input.",
+                "invalidSymbol": "Enter a valid ticker symbol.",
+                "limitReached": "You can keep up to {v0} symbols in your watchlist.",
+                "mergeFailed": "Couldn't move your watchlist into your account.",
+                "saveFailed": "Couldn't add it to your watchlist. Please try again shortly.",
+                "symbolNotFound": "That symbol doesn't exist.",
+                "unauthenticated": "Please sign in."
+            }
         }
     },
     "features": {
@@ -815,6 +828,11 @@
             "toast": {
                 "holdingDeleted": "Removed the {v0} holding",
                 "holdingSaved": "Saved the {v0} holding"
+            },
+            "PortfolioSignupCta": {
+                "body": "Sign up to manage holdings with your average cost and quantity",
+                "cta": "Sign up",
+                "login": "Already a member? Log in"
             }
         },
         "premium-gate": {
@@ -926,6 +944,50 @@
             "signup": "Sign up for free",
             "login": "Log in",
             "close": "Close"
+        },
+        "watchlist": {
+            "toggle": {
+                "limit": "Your watchlist holds up to {v0} symbols. Free up space on My Symbols.",
+                "label": "Watchlist: {v0}"
+            },
+            "toast": {
+                "added": "Added to your watchlist",
+                "viewMine": "View My Symbols",
+                "limit": "Your watchlist holds up to {v0} symbols",
+                "failed": "Something went wrong. Please try again.",
+                "merged": "Moved {v0} watchlist symbols into your account",
+                "mergedSkipped": "{v1} were left out because of the {v0}-symbol limit",
+                "holdingKeptInWatchlist": "Holding saved, but it could not be removed from your watchlist. Remove it on My Symbols."
+            },
+            "coach": {
+                "body": "Tap ☆ to keep this symbol on your watchlist — sign up and it arrives in your email report",
+                "dismiss": "Close tip"
+            },
+            "badge": {
+                "count": "{v0} watchlist symbols"
+            },
+            "onboarding": {
+                "title": "Start with a watchlist",
+                "subtitle": "No ticker needed. Save symbols without signing up, then pick up anywhere once you do.",
+                "categories": "Symbol categories",
+                "tiles": "{v0} symbols",
+                "count": "{v0} symbols saved",
+                "viewMine": "View My Symbols",
+                "collapsed": "{v0} symbols on your watchlist"
+            },
+            "section": {
+                "loading": "Loading your watchlist",
+                "empty": "No symbols saved yet",
+                "emptyCta": "Pick symbols on the home page",
+                "price": "Price",
+                "change": "Change",
+                "quoteUnavailable": "No quote",
+                "convert": "Move to holdings",
+                "convertFor": "Move {v0} to holdings",
+                "remove": "Remove",
+                "removeFor": "Remove {v0} from watchlist",
+                "list": "Watchlist"
+            }
         }
     },
     "shared": {
@@ -1653,8 +1715,8 @@
             "oauthConsentFullTitle": "{v0} — social sign-up terms consent",
             "oauthConsentTitle": "Social sign-up consent",
             "portfolio": {
-                "description": "A personalized SIGLENS page showing where your average cost sits within each holding's recent price range.",
-                "title": "Portfolio"
+                "description": "A personalized SIGLENS page with your watchlist and holdings, showing where your average cost sits within each holding's recent price range.",
+                "title": "My Symbols"
             },
             "position": {
                 "breadcrumb": "My Position",
@@ -1963,6 +2025,9 @@
                 "dark": "Dark",
                 "light": "Light",
                 "system": "System"
+            },
+            "toast": {
+                "close": "Dismiss notification"
             }
         },
         "skillSummary": {
@@ -3749,7 +3814,7 @@
                 "e225a6": "Log In",
                 "ecb4cc": "Sign Up",
                 "menuLabel": "User menu ({v0})",
-                "d9477a": "Portfolio"
+                "mySymbols": "My Symbols"
             },
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
             "localeSwitcher": {

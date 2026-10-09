@@ -1,7 +1,7 @@
 /**
  * `PortfolioManager` test — the thin client wrapper that wires
  * `PortfolioSection`'s `onHoldingsChange` to `router.refresh()` so `/portfolio`'s
- * server-rendered position-card grid (`PortfolioGuard`) picks up edits made in
+ * server-rendered position-card grid (`PortfolioMemberArea`) picks up edits made in
  * the holdings-management section above it, and forwards `?symbol=` (from the
  * `/[symbol]/position` CTA) as the add form's starting symbol.
  */

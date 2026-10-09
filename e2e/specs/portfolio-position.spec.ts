@@ -11,7 +11,7 @@ import type { Locator, Page } from '@playwright/test';
  *     + `PositionCard` (readouts, an implicit `role="region"` section via
  *     `aria-labelledby` on its "내 위치" `<h2>`)).
  *   - `/portfolio` — a member page (`src/app/portfolio/page.tsx` →
- *     `PortfolioGuard` → one `PositionHoldingCard` per holding, each embedding
+ *     `PortfolioMemberArea` → one `PositionHoldingCard` per holding, each embedding
  *     the same `PositionBuilding`).
  *
  * This spec previously asserted the widget rendered directly ON `/AAPL`
@@ -101,7 +101,7 @@ async function typeSymbolAndConfirm(page: Page, raw: string): Promise<void> {
 async function resetAaplHolding(page: Page): Promise<void> {
     await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '포트폴리오' })
+        page.getByRole('heading', { level: 1, name: '내 종목' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
     // Wait out the client-only holdings skeleton (usePortfolioHoldings fetches
@@ -136,7 +136,7 @@ async function addAaplHolding(
 ): Promise<void> {
     await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '포트폴리오' })
+        page.getByRole('heading', { level: 1, name: '내 종목' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
     await expect(portfolioRegion(page).getByText(SKELETON_TEXT)).toHaveCount(
         0,
@@ -251,7 +251,7 @@ test.describe('/portfolio page (authed storageState)', () => {
 
         await page.goto('/portfolio');
         await expect(
-            page.getByRole('heading', { level: 1, name: '포트폴리오' })
+            page.getByRole('heading', { level: 1, name: '내 종목' })
         ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
         const grid = page.getByTestId('portfolio-holding-grid');

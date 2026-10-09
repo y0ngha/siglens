@@ -238,6 +238,60 @@ export interface PortfolioHoldingRepository {
     deleteByUserAndSymbol(userId: string, symbol: string): Promise<boolean>;
 }
 
+/** A persisted watchlist row — one row per (user, symbol). */
+export interface WatchlistItemRecord {
+    id: string;
+    userId: string;
+    symbol: string; // canonical UPPERCASE
+    companyName: string | null;
+    createdAt: Date;
+}
+
+/** Input for adding (or re-adding) one watchlist symbol. */
+export interface AddWatchlistItemInput {
+    userId: string;
+    symbol: string; // caller passes canonical UPPERCASE
+    companyName: string | null;
+}
+
+/** `limit_reached`: the symbol is new and the member is already at the limit. */
+export type AddWatchlistResultRecord =
+    | { status: 'added'; item: WatchlistItemRecord }
+    | { status: 'limit_reached' };
+
+/** One local (anonymous) entry offered to `mergeSymbols`, most recently added first. */
+export interface MergeWatchlistCandidate {
+    symbol: string; // canonical UPPERCASE
+    companyName: string | null;
+}
+
+/** `added`: rows inserted. `skipped`: new symbols dropped by the limit (already-present symbols count as neither). */
+export interface MergeWatchlistOutcome {
+    added: number;
+    skipped: number;
+}
+
+/** Persistence operations for member watchlists. */
+export interface WatchlistItemRepository {
+    findByUser(userId: string): Promise<WatchlistItemRecord[]>;
+    countByUser(userId: string): Promise<number>;
+    /**
+     * Upsert under a per-member lock so concurrent adds cannot exceed `limit`. Re-adding an existing
+     * symbol is idempotent (limit not applied): the row is kept and `companyName` backfilled only when null.
+     */
+    addWithinLimit(
+        input: AddWatchlistItemInput,
+        limit: number
+    ): Promise<AddWatchlistResultRecord>;
+    remove(userId: string, symbol: string): Promise<boolean>;
+    /** Union with the account list; candidates beyond `limit` (in the given order) are skipped. */
+    mergeSymbols(
+        userId: string,
+        candidates: readonly MergeWatchlistCandidate[],
+        limit: number
+    ): Promise<MergeWatchlistOutcome>;
+}
+
 /** A persisted email-report subscription row — one row per user. */
 export interface EmailReportSubscriptionRecord {
     userId: string;

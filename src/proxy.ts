@@ -290,9 +290,9 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
  * 서버 액션 POST(`Next-Action` 헤더)인지 본다. 이런 요청은 아래 두 인증 가드를
  * 건너뛴다.
  *
- * 왜 건너뛰나: `/portfolio`·`/account`를 열어 둔 탭에서 세션이 만료되거나 쿠키가
- * 지워지면, 그 페이지의 React Query 서버 액션 POST가 전방 가드에 걸려 `/login`으로
- * 307된다. 브라우저는 POST를 `/login`에 그대로 다시 보내는데 그 라우트는 해당 액션을
+ * 왜 건너뛰나: `/account`(또는 회원 액션을 보내는 어떤 페이지)를 열어 둔 탭에서 세션이
+ * 만료되거나 쿠키가 지워지면, 그 페이지의 React Query 서버 액션 POST가 전방 가드에 걸려
+ * `/login`으로 307된다. 브라우저는 POST를 `/login`에 그대로 다시 보내는데 그 라우트는 해당 액션을
  * 등록하지 않아 Next가 "Failed to find Server Action"을 내고, 클라이언트는 이를 버전
  * 스큐로 보고 페이지 전체를 새로고침한다(`providers.tsx`의 `reloadOnVersionSkew`).
  * 로그인된 사용자가 `/login`에서 액션을 보내는 반대 방향도 같은 식으로 깨진다.
@@ -604,20 +604,19 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     if (AUTH_REQUIRED_PATHS.some(p => pathname.startsWith(p)) && !hasSession) {
-        // page-level guards (e.g. `PortfolioGuard`) redirect unauthenticated
+        // page-level guards (e.g. `/account`'s content guard) redirect unauthenticated
         // visitors to `/login?next=<path>` so login returns them to where they
         // were headed — the proxy's forward guard fires first for these same
-        // paths, so it must preserve `next=` too, or a guest hitting `/portfolio`
+        // paths, so it must preserve `next=` too, or a guest hitting `/account`
         // directly loses the return path entirely.
         const loginUrl = new URL(localePath(locale, '/login'), req.url);
         // `next`는 로케일이 붙은 경로로 저장한다 — 로그인 후 사용자가 자기 언어의
         // 원래 페이지로 돌아와야 한다.
         //
-        // `reqUrl.search`도 반드시 붙인다 — 빠뜨리면 `/portfolio?symbol=AAPL`
-        // (`/[symbol]/position`의 CTA)로 들어온 게스트가 로그인 후 심볼이
-        // 채워지지 않은 빈 폼에 도착한다. `sanitizeNextPath`/`toSameOriginPath`는
-        // 쿼리를 검사 대상에서 제외하고 그대로 통과시키므로 로그인 액션 쪽에서도
-        // 안전하게 살아남는다 (redirect.ts 참고).
+        // `reqUrl.search`도 반드시 붙인다 — 빠뜨리면 `/account?tab=…`처럼
+        // 쿼리가 붙은 진입으로 들어온 게스트가 로그인 후 원래 화면 상태를 잃는다.
+        // `sanitizeNextPath`/`toSameOriginPath`는 쿼리를 검사 대상에서 제외하고 그대로
+        // 통과시키므로 로그인 액션 쪽에서도 안전하게 살아남는다 (redirect.ts 참고).
         loginUrl.searchParams.set(
             'next',
             localePath(locale, pathname) + reqUrl.search

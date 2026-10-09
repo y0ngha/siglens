@@ -34,6 +34,7 @@ const SRC_DIR = path.resolve(__dirname, '../..');
  * 회원 범위 데이터 소스(정규화한 `@/` import 경로). 2026-10-06 서버 액션 감사에서
  * `'use server'` 모듈 49개의 import를 전수로 뽑아 정했다.
  *  - portfolio·api-key·chat-conversation: 사용자별 행(`user_id`)을 읽고 쓰는 저장소.
+ *  - watchlist: 사용자별 관심종목 행.
  *  - auth/api: users·sessions 저장소. auth/lib/deleteAccount: 계정 삭제.
  *  - oauth-account/api: 사용자에 연결된 OAuth 계정. agreement/api: 사용자 약관 동의.
  *  - shared/lib/byokGate: `userId`로 등록 키(BYOK)와 tier를 조회한다 — `userId`를
@@ -42,6 +43,7 @@ const SRC_DIR = path.resolve(__dirname, '../..');
  */
 const USER_SCOPED_SOURCES: readonly string[] = [
     '@/entities/portfolio/api',
+    '@/entities/watchlist/api',
     '@/entities/api-key/api',
     '@/entities/chat-conversation/api',
     '@/entities/auth/api',

@@ -17,6 +17,7 @@ import { ShareButton } from '@/widgets/share/ui/ShareButton';
 import { FearGreedHeaderChip } from './FearGreedHeaderChip';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
+import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { SITE_NAME } from '@/shared/lib/seo';
@@ -104,6 +105,12 @@ export function SymbolLayoutHeader({
     const showKoreanName =
         !!assetInfo?.koreanName &&
         (locale === DEFAULT_LOCALE || !hasCompanyName);
+    // 담을 때 저장되는 표시명 — 브레드크럼과 같은 로케일 규칙(`showKoreanName`)을 따른다:
+    // 한국어명(ko 또는 영문명이 없을 때) → 영문명 → 티커.
+    const watchlistLabel =
+        (showKoreanName ? assetInfo?.koreanName : undefined) ??
+        assetInfo?.name ??
+        ticker;
 
     const {
         modelId,
@@ -286,7 +293,7 @@ export function SymbolLayoutHeader({
 
                 {/* 컨트롤 영역. 모델 셀렉터 + 상세분석 토글은 AnalysisSettingsMenu의
                     "⚙ 분석 설정" 팝오버 뒤로 합쳐 헤더 컨트롤 행에서 제거했다(헤더
-                    디클러터) — 남는 건 [평단 칩][공유][설정 기어] 3개의 size-11
+                    디클러터) — 남는 건 [☆][평단 칩(회원)][공유][설정 기어]의 size-11
                     아이콘형 컨트롤뿐이라 모바일도 데스크톱도 단일 행으로 충분하다.
                     이전엔 모바일에서 두 줄(공포·탐욕+공유 / 모델·토글·평단)로 쌓아야
                     했지만, 이제 한 줄에 다 들어가 헤더 높이가 늘어나지 않는다(웹킷
@@ -304,6 +311,15 @@ export function SymbolLayoutHeader({
                         </Suspense>
                     </ErrorBoundary>
                     <div className="flex items-center gap-2">
+                        {/* 관심종목 ☆ — 회원·비회원 모두에게 보인다. 폴백 셸
+                            (`SymbolHeaderShellFallback`)도 같은 폭의 자리를 둔다. */}
+                        <WatchlistToggleButton
+                            symbol={ticker}
+                            label={watchlistLabel}
+                            source="symbol_header"
+                            successToast
+                            showCoachMark
+                        />
                         <PortfolioChipMounted symbol={ticker} />
                         <ShareButton />
                         <AnalysisSettingsMenu

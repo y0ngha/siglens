@@ -168,6 +168,22 @@ vi.mock('@/features/portfolio-holding/ui/PortfolioChipMounted', () => ({
     ),
 }));
 
+const mockToggleProps = vi.hoisted(() => ({
+    last: null as Record<string, unknown> | null,
+}));
+vi.mock('@/features/watchlist/ui/WatchlistToggleButton', () => ({
+    WatchlistToggleButton: (props: Record<string, unknown>) => {
+        mockToggleProps.last = props;
+        return (
+            <button
+                type="button"
+                data-testid="watchlist-toggle"
+                aria-label="관심종목"
+            />
+        );
+    },
+}));
+
 describe('SymbolLayoutHeader', () => {
     beforeEach(() => {
         mockOpenSignupNudge.mockReset();
@@ -756,5 +772,83 @@ describe('SymbolLayoutHeader — 로케일별 이름', () => {
         );
 
         expect(screen.getByText(/삼성전자/)).toBeInTheDocument();
+    });
+
+    describe('관심종목 ☆ 토글', () => {
+        it('평단 칩 바로 왼쪽에 심볼·표시명·symbol_header 소스로 렌더되고, 토스트·코치 마크를 켠다', () => {
+            mockUseSymbolModel.mockReturnValue(symbolModelValue());
+            renderWithIntl(
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
+            );
+            const toggle = screen.getByTestId('watchlist-toggle');
+            const chip = screen.getByTestId('portfolio-chip');
+            expect(
+                toggle.compareDocumentPosition(chip) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+            expect(toggle.parentElement).toBe(chip.parentElement);
+            expect(mockToggleProps.last).toEqual(
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    label: '애플',
+                    source: 'symbol_header',
+                    successToast: true,
+                    showCoachMark: true,
+                })
+            );
+        });
+
+        it.each([
+            {
+                name: 'en 로케일: 한·영 이름이 모두 있으면 영문명',
+                info: { name: 'Apple Inc.', koreanName: '애플' },
+                locale: 'en' as const,
+                expected: 'Apple Inc.',
+            },
+            {
+                name: '한국어명이 없으면 영문명',
+                info: { name: 'Apple Inc.', koreanName: null },
+                locale: 'ko' as const,
+                expected: 'Apple Inc.',
+            },
+        ])('$name', ({ info, locale, expected }) => {
+            mockUseSymbolModel.mockReturnValue(symbolModelValue());
+            vi.mocked(useAssetInfo).mockReturnValueOnce({
+                ...info,
+                fmpSymbol: 'AAPL',
+            } as unknown as ReturnType<typeof useAssetInfo>);
+            renderWithIntl(
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />,
+                { locale }
+            );
+            expect(mockToggleProps.last).toEqual(
+                expect.objectContaining({ label: expected })
+            );
+        });
+
+        it('이름이 모두 없으면 티커', () => {
+            mockUseSymbolModel.mockReturnValue(symbolModelValue());
+            vi.mocked(useAssetInfo).mockReturnValueOnce(
+                null as unknown as ReturnType<typeof useAssetInfo>
+            );
+            renderWithIntl(
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
+            );
+            expect(mockToggleProps.last).toEqual(
+                expect.objectContaining({ label: 'AAPL' })
+            );
+        });
     });
 });

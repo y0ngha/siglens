@@ -276,12 +276,13 @@
                 "06c7de": "보유종목 관리",
                 "55ca69": "내 포트폴리오 위치",
                 "605ada": "보유종목 위치를 불러오는 중이에요",
-                "6aaec6": "보유종목을 관리하고, 최근 가격 범위에서 내 평단이 어디에\n                        있는지 확인하세요.",
                 "90a081": "포트폴리오를 불러오지 못했어요",
                 "92020d": "잠시 후 다시 시도해 주세요.",
                 "ac9263": "아직 등록한 보유종목이 없어요",
                 "d103d5": "보유종목을 등록하면 최근 가격 범위 안에서 내 평단이 어디에\n                있는지 종목별 빌딩으로 확인할 수 있어요.",
-                "d9477a": "포트폴리오"
+                "subtitle": "관심종목과 보유종목을 한곳에서 봅니다. 보유종목은 최근 가격 범위에서 내 평단이 어디에 있는지 확인하세요.",
+                "title": "내 종목",
+                "watchlistHeading": "관심종목"
             }
         },
         "reset-password": {
@@ -595,6 +596,18 @@
             "seo": {
                 "title": "{v0} AI 분석 결과"
             }
+        },
+        "watchlist": {
+            "action": {
+                "deleteFailed": "관심종목에서 빼지 못했어요. 잠시 후 다시 시도해 주세요.",
+                "invalidInput": "유효하지 않은 입력입니다.",
+                "invalidSymbol": "올바른 종목 코드를 입력해 주세요.",
+                "limitReached": "관심종목은 최대 {v0}개까지 담을 수 있어요.",
+                "mergeFailed": "관심종목을 계정으로 가져오지 못했어요.",
+                "saveFailed": "관심종목에 담지 못했어요. 잠시 후 다시 시도해 주세요.",
+                "symbolNotFound": "존재하지 않는 종목입니다.",
+                "unauthenticated": "로그인이 필요합니다."
+            }
         }
     },
     "features": {
@@ -819,6 +832,11 @@
                 "editHolding": "{v0} 보유종목 수정",
                 "fc81e2": "삭제"
             },
+            "PortfolioSignupCta": {
+                "body": "보유종목은 가입 후 평단·수량과 함께 관리할 수 있어요",
+                "cta": "가입하기",
+                "login": "이미 회원이신가요? 로그인"
+            },
             "toast": {
                 "holdingDeleted": "{v0} 보유종목을 삭제했어요",
                 "holdingSaved": "{v0} 보유종목을 저장했어요"
@@ -925,6 +943,50 @@
                 "searchingEllipsis": "검색 중…",
                 "triggerLabel": "종목 검색 열기",
                 "typeToSearch": "검색어를 입력하세요"
+            }
+        },
+        "watchlist": {
+            "badge": {
+                "count": "관심종목 {v0}개"
+            },
+            "coach": {
+                "body": "☆를 누르면 이 종목을 관심종목에 담아 두고, 가입하면 메일 리포트로 받아요",
+                "dismiss": "안내 닫기"
+            },
+            "onboarding": {
+                "categories": "종목 카테고리",
+                "collapsed": "관심종목 {v0}개를 지켜보고 있어요",
+                "count": "담은 종목 {v0}개",
+                "subtitle": "티커를 몰라도 괜찮아요. 가입 없이 담고, 가입하면 어디서든 이어 봅니다.",
+                "tiles": "{v0} 종목",
+                "title": "관심 종목부터 담아 보세요",
+                "viewMine": "내 종목 보기"
+            },
+            "section": {
+                "change": "등락률",
+                "convert": "보유로 전환",
+                "convertFor": "{v0} 보유로 전환",
+                "empty": "아직 담은 종목이 없어요",
+                "emptyCta": "홈에서 관심 종목 담기",
+                "list": "관심종목 목록",
+                "loading": "관심종목을 불러오는 중이에요",
+                "price": "현재가",
+                "quoteUnavailable": "시세 없음",
+                "remove": "삭제",
+                "removeFor": "{v0} 관심종목 삭제"
+            },
+            "toast": {
+                "added": "관심종목에 담았어요",
+                "failed": "요청 처리 중 문제가 발생했어요. 다시 시도해 주세요.",
+                "holdingKeptInWatchlist": "보유종목은 저장했지만 관심종목에서는 빼지 못했어요. 내 종목에서 직접 삭제해 주세요.",
+                "limit": "관심종목은 최대 {v0}개까지 담을 수 있어요",
+                "merged": "관심종목 {v0}개를 계정으로 가져왔어요",
+                "mergedSkipped": "상한 {v0}개를 넘어 {v1}개는 제외했어요",
+                "viewMine": "내 종목 보기"
+            },
+            "toggle": {
+                "label": "관심종목: {v0}",
+                "limit": "관심종목은 최대 {v0}개까지 담을 수 있어요. 내 종목에서 정리해 주세요."
             }
         }
     },
@@ -1653,8 +1715,8 @@
             "oauthConsentFullTitle": "{v0} 소셜 로그인 가입 약관 동의",
             "oauthConsentTitle": "소셜 로그인 가입 동의",
             "portfolio": {
-                "description": "시그렌즈 보유종목별 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지",
-                "title": "포트폴리오"
+                "description": "시그렌즈에서 담은 관심종목과 보유종목을 한곳에서 보고, 보유종목은 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지",
+                "title": "내 종목"
             },
             "position": {
                 "breadcrumb": "내 위치",
@@ -2060,6 +2122,9 @@
                 "dark": "다크",
                 "light": "라이트",
                 "system": "설정 따라가기"
+            },
+            "toast": {
+                "close": "알림 닫기"
             }
         }
     },
@@ -3873,10 +3938,10 @@
                 "b9a45e": "사용자 메뉴",
                 "ce5200": "로딩 중",
                 "ce7156": "인증",
-                "d9477a": "포트폴리오",
                 "e225a6": "로그인",
                 "ecb4cc": "회원가입",
-                "menuLabel": "사용자 메뉴 ({v0})"
+                "menuLabel": "사용자 메뉴 ({v0})",
+                "mySymbols": "내 종목"
             },
             "githubRepoAria": "{v0} GitHub 저장소 (새 탭에서 열림)",
             "localeSwitcher": {

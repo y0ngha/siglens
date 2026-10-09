@@ -21,13 +21,10 @@ import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 // (`애플, Apple Inc. (AAPL) 차트 분석` 등 9개 탭 전부 확인).
 // 컨트롤 크기(size-11)도 실제 헤더와 같아야 한다.
 //
-// 컨트롤은 **2개**만 둔다. 실제 헤더의 세 번째 칩(`PortfolioChipMounted`)은
-// 회원 전용이라 게스트에겐 아예 렌더되지 않는다(`useCurrentUser` null → null).
-// 클러스터가 우측 정렬이라 개수가 달라도 공유·설정 버튼의 x는 안 밀린다
-// (375px 실측: 폴백 2·3번이 [263,307]·[315,359], 실제 2개도 같은 좌표).
-// 그래서 남는 문제는 "뜬 자리가 사라지느냐 생기느냐"뿐이고, 다수인 게스트
-// 기준으로 팬텀이 없는 2개가 맞다 — 회원은 칩 하나가 클러스터 왼쪽에 붙을 뿐
-// 나머지 둘은 그대로다.
+// 컨트롤은 **3개**다 — [☆ 관심종목][공유][설정]. 실제 헤더의 평단 칩은 회원 전용이라
+// 게스트에겐 렌더되지 않으므로 자리를 두지 않는다(클러스터가 우측 정렬이라 개수가
+// 달라도 나머지 x는 안 밀린다 — 375px 실측 근거는 git 이력의 이전 주석). ☆는 회원·게스트
+// 모두에게 하이드레이션 전부터 같은 크기로 그려지므로 자리를 둔다.
 export function SymbolHeaderShellFallback() {
     return (
         <header className="py-3" aria-hidden="true">
@@ -50,6 +47,7 @@ export function SymbolHeaderShellFallback() {
                 <div className="flex shrink-0 items-center justify-end gap-2">
                     <span className="inline-block h-6 w-16 animate-pulse rounded bg-secondary-700 sm:hidden" />
                     <div className="flex items-center gap-2">
+                        <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
                         <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
                         <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
                     </div>

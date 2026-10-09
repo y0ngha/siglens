@@ -42,6 +42,7 @@ import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
 import { HeroIllustration } from '@/widgets/home/HeroIllustration';
 import { HERO_QUICK_LINKS } from '@/widgets/home/heroQuickLinks';
 import { SkillsShowcase } from '@/widgets/home/SkillsShowcase';
+import { WatchlistOnboarding } from '@/features/watchlist/ui/WatchlistOnboarding';
 import { StatsBar } from '@/widgets/home/StatsBar';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -394,6 +395,11 @@ export default async function Home({
                                 ))}
                             </div>
                         </div>
+                    </div>
+                    {/* 관심종목 온보딩 — 히어로(검색) 바로 아래, StatsBar 위(관심종목 설계 §6.2).
+                        클라이언트 컴포넌트지만 서버 렌더는 늘 펼친 상태라 크롤러도 본문을 본다. */}
+                    <div className="relative mt-10">
+                        <WatchlistOnboarding />
                     </div>
                     <div className="relative mt-10">
                         {/* 위에서 이미 읽은 `skillCounts`(히어로 카피와 같은 소스)를 그대로 쓴다 —

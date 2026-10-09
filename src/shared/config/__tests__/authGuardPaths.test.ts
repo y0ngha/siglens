@@ -6,12 +6,18 @@ import {
 
 describe('predictGuardedLanding', () => {
     describe('힌트 쿠키가 없을 때(게스트로 추정)', () => {
-        it.each(['/portfolio', '/account', '/account/delete'])(
+        it.each(['/account', '/account/delete'])(
             '%s는 로그인 페이지에 도착한다',
             path => {
                 expect(predictGuardedLanding(path, false)).toBe('/login');
             }
         );
+
+        it('/portfolio는 비로그인도 그대로 도착한다 — 관심종목은 가입 전에도 본다', () => {
+            expect(predictGuardedLanding('/portfolio', false)).toBe(
+                '/portfolio'
+            );
+        });
 
         it.each(['/login', '/signup', '/market', '/AAPL/news', '/'])(
             '%s는 그대로 도착한다',
@@ -45,7 +51,7 @@ describe('predictGuardedLanding', () => {
      */
     describe('프록시와 같은 매칭 방식', () => {
         it('로그인 필요 경로는 접두 일치다', () => {
-            expect(predictGuardedLanding('/portfolio/anything', false)).toBe(
+            expect(predictGuardedLanding('/account/anything', false)).toBe(
                 '/login'
             );
         });

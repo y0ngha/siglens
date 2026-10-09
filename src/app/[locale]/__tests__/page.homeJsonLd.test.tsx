@@ -23,6 +23,9 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
 }));
+vi.mock('@/features/watchlist/ui/WatchlistOnboarding', () => ({
+    WatchlistOnboarding: () => null,
+}));
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
 }));

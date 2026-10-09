@@ -39,6 +39,9 @@ export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;
 /** A member's own holdings change only on their explicit edit — short stale is fine. */
 export const PORTFOLIO_HOLDINGS_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 
+/** 관심종목도 회원의 명시적 담기·빼기에만 바뀐다 — 보유종목과 같은 주기. */
+export const WATCHLIST_STALE_TIME_MS = PORTFOLIO_HOLDINGS_STALE_TIME_MS;
+
 const upper = (s: string): string => s.toUpperCase();
 
 export const QUERY_KEYS = {
@@ -97,6 +100,7 @@ export const QUERY_KEYS = {
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
     portfolioHoldings: () => ['portfolio-holdings'] as const,
+    watchlist: () => ['watchlist'] as const,
     emailReportSettings: () => ['email-report-settings'] as const,
     // exact same key they always have — only a member's explicit `true` value
     // produces a distinct key (member-reasoning-toggle spec Part A: "changing

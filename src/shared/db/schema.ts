@@ -314,6 +314,34 @@ export const portfolioHoldings = pgTable(
 );
 
 /**
+ * 관심종목 — 보유종목(`portfolio_holdings`)과 **별도 테이블**. 두 목록은 의미가 다르고(보유 vs
+ * 지켜보기) 같은 심볼이 양쪽에 있을 수 있다. 합집합은 읽는 쪽(메일 리포트)이 만든다.
+ * 심볼은 대문자 정규형. `company_name`은 담을 때의 표시명 — 리포트·목록이 FMP 재조회 없이
+ * 쓰고, null이면 심볼로 표시한다.
+ */
+export const watchlistItems = pgTable(
+    'watchlist_items',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        companyName: text('company_name'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('watchlist_items_user_id_idx').on(table.userId),
+        uniqueIndex('watchlist_items_user_symbol_uidx').on(
+            table.userId,
+            table.symbol
+        ),
+    ]
+);
+
+/**
  * 회원 정기 메일 리포트 수신 설정 — 회원당 한 행.
  *
  * 행이 없으면 "한 번도 설정하지 않음"(= 수신 안 함)이다. 발송 시각은 회원의 `timezone`
