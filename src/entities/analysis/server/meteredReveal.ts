@@ -18,7 +18,7 @@ import { kstDateKey } from '@/shared/lib/etTimeUtils';
  * 개인정보처리방침 v9(`db/seeds/terms/privacy/v9.md`)의 시행일과 **같아야** 한다 —
  * v9가 게스트 쿠키와 이 미터의 서버 보관 항목을 고지하므로, 시행 전에는 미터가
  * 아무것도 기록하면 안 된다. 이 시각 전에는 라우트가 미터를 부르지 않고 현행(잠금)으로
- * 동작한다. 가드 테스트(`meteredRevealStartMatchesPrivacyV9`)가 두 날짜를 묶어 둔다.
+ * 동작한다. 가드 테스트(`src/__tests__/guards/meteredRevealStartsAtPrivacyV9.test.ts`)가 두 날짜를 묶어 둔다.
  */
 export const METERED_REVEAL_STARTS_AT = new Date('2026-10-18T00:00:00+09:00');
 

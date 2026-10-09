@@ -66,7 +66,10 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { formatFixed } from '@/shared/lib/formatNum';
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
-import { selectLockedCardCopy } from '@/widgets/analysis/utils/lockedCardCopy';
+import {
+    selectLockedCardCopy,
+    type LockedCardCopy,
+} from './utils/lockedCardCopy';
 
 /** 패널이 가격을 내는 소수 자릿수. */
 const PRICE_FRACTION_DIGITS = 2;
@@ -1088,18 +1091,23 @@ export function AnalysisPanel({
         skillCount,
         meterDailySymbols,
     });
-    const lockedCardTitle =
-        lockedCardCopy.title === 'meterExhausted'
-            ? tPanel('meter.exhaustedTitle')
-            : t('AnalysisPanel.120a0a');
-    const lockedCardBody =
-        lockedCardCopy.body.kind === 'meterExhausted'
-            ? tPanel('meter.exhaustedBody', {
-                  count: lockedCardCopy.body.count,
-              })
-            : lockedCardCopy.body.kind === 'skillUpsell'
-              ? tPanel('signupSkillUpsell', { v0: lockedCardCopy.body.count })
-              : t('AnalysisPanel.f0256c');
+    // 판정(`selectLockedCardCopy`)이 고른 종류 → 번역 문구. `Record`라 종류가 늘면 컴파일러가 잡는다.
+    const lockedCardTitleByKind: Record<LockedCardCopy['title'], () => string> =
+        {
+            meterExhausted: () => tPanel('meter.exhaustedTitle'),
+            default: () => t('AnalysisPanel.120a0a'),
+        };
+    const lockedCardBodyByKind: Record<
+        LockedCardCopy['body']['kind'],
+        () => string
+    > = {
+        meterExhausted: () =>
+            tPanel('meter.exhaustedBody', { count: meterDailySymbols }),
+        skillUpsell: () => tPanel('signupSkillUpsell', { v0: skillCount }),
+        default: () => t('AnalysisPanel.f0256c'),
+    };
+    const lockedCardTitle = lockedCardTitleByKind[lockedCardCopy.title]();
+    const lockedCardBody = lockedCardBodyByKind[lockedCardCopy.body.kind]();
     const overlayControls = toOverlayCardControls(
         hiddenOverlayKeys,
         onToggleOverlay,
