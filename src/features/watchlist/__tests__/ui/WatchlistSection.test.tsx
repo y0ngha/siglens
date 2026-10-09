@@ -44,6 +44,7 @@ function setWatchlist(overrides: Partial<Watchlist> = {}): Watchlist {
         items: [AAPL, ZZZQ],
         has: vi.fn(() => true),
         toggle: vi.fn(async () => 'removed' as const),
+        add: vi.fn(async () => 'added' as const),
         remove: vi.fn(async () => true),
         isHydrated: true,
         isAtLimit: false,

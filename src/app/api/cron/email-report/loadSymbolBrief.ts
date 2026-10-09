@@ -33,6 +33,21 @@ function noData(symbol: string): SymbolBrief {
     };
 }
 
+async function fetchBars(
+    symbol: string,
+    sources: SymbolBriefSources
+): Promise<BarsData | null> {
+    try {
+        return await sources.getDailyBars(symbol);
+    } catch (error) {
+        console.warn(
+            `[email-report] daily bars unavailable for ${symbol}`,
+            error
+        );
+        return null;
+    }
+}
+
 /**
  * 요약 표 한 행(과 카드의 신호 줄)에 필요한 것만 모은다 — 일봉 한 번. 스냅샷·뉴스·옵션은
  * 읽지 않는다. 실패는 그 종목 행만 "데이터 없음"으로 두고 메일은 나간다
@@ -46,16 +61,8 @@ export async function loadSymbolBrief(
     symbol: string,
     sources: SymbolBriefSources
 ): Promise<SymbolBrief> {
-    let data: BarsData;
-    try {
-        data = await sources.getDailyBars(symbol);
-    } catch (error) {
-        console.warn(
-            `[email-report] daily bars unavailable for ${symbol}`,
-            error
-        );
-        return noData(symbol);
-    }
+    const data = await fetchBars(symbol, sources);
+    if (data === null) return noData(symbol);
     try {
         return computeBrief(symbol, data);
     } catch (error) {

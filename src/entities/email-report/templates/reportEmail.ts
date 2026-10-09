@@ -104,6 +104,61 @@ function formatClose(value: number, locale: Locale): string {
     }).format(value);
 }
 
+function signalLabelsOf(
+    types: readonly string[],
+    signalLabel: SignalLabelResolver
+): string[] {
+    return types.map(signalLabel).filter((l): l is string => l !== null);
+}
+
+function cappedSignalList(
+    labels: readonly string[],
+    t: ReportEmailTranslator
+): string {
+    const shown = labels.slice(0, SIGNAL_BRIEF_MAX_LABELS);
+    const more = labels.length - shown.length;
+    return (
+        more > 0 ? [...shown, t('signalMore', { v0: String(more) })] : shown
+    ).join(', ');
+}
+
+function signalScorePart(signals: SignalBrief, t: ReportEmailTranslator) {
+    return signals.score === null
+        ? t('signalAbstain')
+        : t('signalScore', { v0: String(signals.score) });
+}
+
+function signalDirectionPart(
+    key: 'signalBullish' | 'signalBearish',
+    types: readonly string[],
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
+): string | null {
+    const labels = signalLabelsOf(types, signalLabel);
+    if (labels.length === 0) return null;
+    return `${t(key, { v0: String(labels.length) })} (${cappedSignalList(labels, t)})`;
+}
+
+function signalFreshPart(
+    signals: SignalBrief,
+    t: ReportEmailTranslator,
+    signalLabel: SignalLabelResolver
+): string | null {
+    const labels = signalLabelsOf(signals.fresh, signalLabel);
+    return labels.length === 0
+        ? null
+        : t('signalFresh', { v0: cappedSignalList(labels, t) });
+}
+
+function signalPullbackPart(
+    signals: SignalBrief,
+    t: ReportEmailTranslator
+): string | null {
+    return signals.pullback === null
+        ? null
+        : t('signalPullback', { v0: t(`pullback.${signals.pullback}`) });
+}
+
 /**
  * 신호 요약 한 줄(평문). 점수(보류면 "—") · 상승 N (라벨 최대 {@link SIGNAL_BRIEF_MAX_LABELS}개, +N)
  * · 하락 N (…) · 새로 켜짐: … · 눌림목: …. 라벨 사전에 없는 타입은 개수에서도 뺀다.
@@ -114,40 +169,14 @@ function signalBriefText(
     t: ReportEmailTranslator,
     signalLabel: SignalLabelResolver
 ): string {
-    const labelsOf = (types: readonly string[]) =>
-        types.map(signalLabel).filter((l): l is string => l !== null);
-    const cappedList = (labels: readonly string[]) => {
-        const shown = labels.slice(0, SIGNAL_BRIEF_MAX_LABELS);
-        const more = labels.length - shown.length;
-        return (
-            more > 0 ? [...shown, t('signalMore', { v0: String(more) })] : shown
-        ).join(', ');
-    };
     const parts = [
-        signals.score === null
-            ? t('signalAbstain')
-            : t('signalScore', { v0: String(signals.score) }),
+        signalScorePart(signals, t),
+        signalDirectionPart('signalBullish', signals.bullish, t, signalLabel),
+        signalDirectionPart('signalBearish', signals.bearish, t, signalLabel),
+        signalFreshPart(signals, t, signalLabel),
+        signalPullbackPart(signals, t),
     ];
-    for (const [key, types] of [
-        ['signalBullish', signals.bullish],
-        ['signalBearish', signals.bearish],
-    ] as const) {
-        const labels = labelsOf(types);
-        if (labels.length === 0) continue;
-        parts.push(
-            `${t(key, { v0: String(labels.length) })} (${cappedList(labels)})`
-        );
-    }
-    const fresh = labelsOf(signals.fresh);
-    if (fresh.length > 0) {
-        parts.push(t('signalFresh', { v0: cappedList(fresh) }));
-    }
-    if (signals.pullback !== null) {
-        parts.push(
-            t('signalPullback', { v0: t(`pullback.${signals.pullback}`) })
-        );
-    }
-    return parts.join(' · ');
+    return parts.filter((p): p is string => p !== null).join(' · ');
 }
 
 function signalLineHtml(
@@ -351,6 +380,11 @@ function sectionText(
     return lines.join('\n');
 }
 
+function changeColorFor(pct: number | null): string {
+    if (pct === null || pct === 0) return COLORS.muted;
+    return pct > 0 ? COLORS.bullish : COLORS.bearish;
+}
+
 function briefRowCells(
     row: SymbolBriefRow,
     locale: Locale,
@@ -377,12 +411,7 @@ function briefRowCells(
     return {
         close: brief.close === null ? '—' : formatClose(brief.close, locale),
         change: pct === null ? '' : formatSignedPercent(pct),
-        changeColor:
-            pct === null || pct === 0
-                ? COLORS.muted
-                : pct > 0
-                  ? COLORS.bullish
-                  : COLORS.bearish,
+        changeColor: changeColorFor(pct),
         trend: brief.trend === null ? '—' : t(`trendState.${brief.trend}`),
         signals: signalBriefText(brief.signals, t, signalLabel),
     };

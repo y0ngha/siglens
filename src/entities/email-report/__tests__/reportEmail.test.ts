@@ -292,6 +292,54 @@ describe('buildReportEmail', () => {
             expect(html).not.toContain('briefNoData');
         });
 
+        it('비어 있는 방향·새로 켜짐·눌림목 조각은 적지 않고 점수만 남긴다', () => {
+            const { html } = buildReportEmail({
+                ...INPUT,
+                sections: [
+                    {
+                        ...INPUT.sections[0]!,
+                        brief: briefOf('AAPL', {
+                            signals: {
+                                score: 10,
+                                bullish: [],
+                                bearish: [],
+                                fresh: [],
+                                pullback: null,
+                            },
+                        }),
+                    },
+                ],
+            });
+
+            expect(html).toContain('signalScore(10)');
+            expect(html).not.toContain('signalBullish');
+            expect(html).not.toContain('signalBearish');
+            expect(html).not.toContain('signalFresh');
+            expect(html).not.toContain('signalPullback');
+        });
+
+        it('하락만 있으면 상승 조각 없이 하락 조각만 적는다', () => {
+            const { html } = buildReportEmail({
+                ...INPUT,
+                sections: [
+                    {
+                        ...INPUT.sections[0]!,
+                        brief: briefOf('AAPL', {
+                            signals: {
+                                ...BRIEF.signals!,
+                                bullish: [],
+                                fresh: [],
+                                pullback: null,
+                            },
+                        }),
+                    },
+                ],
+            });
+
+            expect(html).not.toContain('signalBullish');
+            expect(html).toContain('signalBearish(1) (rsi_overbought)');
+        });
+
         it('사전에 없는 타입은 라벨도 개수도 빠진다', () => {
             const { html } = buildReportEmail({
                 ...INPUT,

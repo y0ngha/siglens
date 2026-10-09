@@ -88,7 +88,10 @@ function errorText(error: unknown): string {
     return text.slice(0, ERROR_MAX_LENGTH);
 }
 
-/** `items`를 `size`개씩 순서대로 처리한다 — 결과 순서는 입력 순서. */
+/**
+ * `items`를 `size`개씩 순서대로 처리한다 — 결과 순서는 입력 순서.
+ * 청크를 직렬로 돌리는 이유: 한 번에 떠 있는 조회를 `size`개로 묶기 위해서다.
+ */
 async function mapChunked<T, R>(
     items: readonly T[],
     size: number,
@@ -228,6 +231,7 @@ export async function runEmailReportBatch(
                 localDate,
                 sections: reports.map((report, i) => ({
                     report,
+                    // `briefs`는 `symbols`(= full 뒤에 brief) 순서라 앞 full개가 reports와 같은 인덱스다.
                     brief: fullBriefs[i]!,
                     chartUrl: buildChartImageUrl(
                         deps.siteUrl,

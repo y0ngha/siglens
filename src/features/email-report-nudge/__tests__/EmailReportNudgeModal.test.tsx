@@ -29,14 +29,14 @@ const watchlist = vi.hoisted(() => ({
     items: [] as Array<{ symbol: string }>,
     hydrated: true,
     identityPending: false,
-    toggle: vi.fn(),
+    add: vi.fn(),
 }));
 vi.mock('@/features/watchlist/hooks/useWatchlist', () => ({
     useWatchlist: () => ({
         items: watchlist.items,
         has: (symbol: string) =>
             watchlist.items.some(i => i.symbol === symbol.toUpperCase()),
-        toggle: watchlist.toggle,
+        add: watchlist.add,
         isHydrated: watchlist.hydrated,
         isIdentityPending: watchlist.identityPending,
         isAtLimit: false,
@@ -52,8 +52,8 @@ describe('EmailReportNudgeModal', () => {
         watchlist.items = [];
         watchlist.hydrated = true;
         watchlist.identityPending = false;
-        watchlist.toggle.mockReset();
-        watchlist.toggle.mockResolvedValue('added');
+        watchlist.add.mockReset();
+        watchlist.add.mockResolvedValue('added');
     });
 
     it('설정 권유는 보유·관심 종목 수를 알리고 넛지 출처를 달아 설정 페이지로 보낸다', () => {
@@ -91,7 +91,7 @@ describe('EmailReportNudgeModal', () => {
             .setup()
             .click(screen.getByRole('button', { name: ADD_CTA }));
 
-        expect(watchlist.toggle).toHaveBeenCalledWith(
+        expect(watchlist.add).toHaveBeenCalledWith(
             { symbol: '005930.KS', label: '005930.KS' },
             'nudge'
         );
@@ -114,10 +114,22 @@ describe('EmailReportNudgeModal', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('이미 담긴 상태에서는 담기 경로(add)를 부르지 않는다 — 제거로 이어질 길이 없다', () => {
+        watchlist.items = [{ symbol: 'TSLA' }];
+        render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(watchlist.add).not.toHaveBeenCalled();
+    });
+
     it.each(['at_limit', 'failed'] as const)(
         '담기가 %s로 끝나면 "담았어요"를 보이지 않고 CTA를 그대로 둔다',
         async outcome => {
-            watchlist.toggle.mockResolvedValue(outcome);
+            watchlist.add.mockResolvedValue(outcome);
             render(
                 <EmailReportNudgeModal
                     nudge={{ kind: 'symbol', symbol: 'TSLA' }}
@@ -157,7 +169,7 @@ describe('EmailReportNudgeModal', () => {
     });
 
     it('담기 진행 중에는 CTA가 aria-disabled이고 포커스를 유지하며 다시 눌러도 토글하지 않는다', async () => {
-        watchlist.toggle.mockReturnValue(new Promise(() => {}));
+        watchlist.add.mockReturnValue(new Promise(() => {}));
         render(
             <EmailReportNudgeModal
                 nudge={{ kind: 'symbol', symbol: 'TSLA' }}
@@ -172,7 +184,7 @@ describe('EmailReportNudgeModal', () => {
 
         expect(cta).toHaveAttribute('aria-disabled', 'true');
         expect(cta).toHaveFocus();
-        expect(watchlist.toggle).toHaveBeenCalledTimes(1);
+        expect(watchlist.add).toHaveBeenCalledTimes(1);
     });
 
     it('담김 상태로 바뀌면 포커스가 모달 안(상태 문구)에 남는다', async () => {

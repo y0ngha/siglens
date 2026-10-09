@@ -61,14 +61,11 @@ async function loadReportPreview(
             new DrizzlePortfolioRepository(db).findByUser(userId),
             new DrizzleWatchlistRepository(db).findByUser(userId),
         ]);
-        const names = new Map<string, string | null>();
-        for (const row of [...watchlist, ...holdings]) {
-            // 보유 행을 뒤에 두어 둘 다 있으면 보유 쪽 이름이 이기되, null 이름이 알려진 이름을 덮지 않는다.
-            names.set(
-                row.symbol,
-                row.companyName ?? names.get(row.symbol) ?? null
-            );
-        }
+        const names = new Map(
+            [...watchlist, ...holdings]
+                .filter(row => row.companyName != null)
+                .map(row => [row.symbol, row.companyName] as const)
+        );
         const selection = selectReportSymbols({ holdings, watchlist });
         const chip = (symbol: string) => ({
             symbol,

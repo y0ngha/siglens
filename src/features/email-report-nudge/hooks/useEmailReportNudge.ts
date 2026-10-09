@@ -187,7 +187,7 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         }
     }
 
-    // 종목 넛지를 실제로 띄운 경우에만 기록한다 — 꺼진 회원은 나중에 켜면 다시 후보가 된다.
+    // 꺼진 회원은 기록하지 않는다 — 나중에 켜면 다시 후보가 된다.
     useEffect(() => {
         if (symbolPending === null || symbolPending.status !== 'shown') return;
         const { userId: decidedFor, symbol, at } = symbolPending;
@@ -223,8 +223,7 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         }
     }
 
-    // 판정 결과를 저장소에 남긴다. 미룬 경우는 남기지 않는다 — 다음 세션에 다시 권한다.
-    // 판정한 회원의 id로 쓴다 — 지금 로그인한 회원이 아니라.
+    // 미룬 경우는 남기지 않는다 — 다음 세션에 다시 권한다. 판정한 회원의 id로 쓴다.
     useEffect(() => {
         if (setupDecision === null) return;
         const { userId: decidedFor, outcome } = setupDecision;
@@ -236,7 +235,6 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         if (outcome === 'shown') markNudgeShownThisSession();
     }, [setupDecision]);
 
-    // 구독 콜백이 최신 값을 읽도록 렌더마다 갱신한다(구독은 한 번만 건다).
     const latestRef = useRef({
         user,
         holdings,

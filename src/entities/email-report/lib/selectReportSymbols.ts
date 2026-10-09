@@ -74,16 +74,13 @@ function orderWatchlist(items: readonly ReportWatchlistItem[]): string[] {
 export function selectReportSymbols(
     sources: ReportSymbolSources
 ): ReportSymbolSelection {
-    const seen = new Set<string>();
-    const ordered: string[] = [];
-    for (const symbol of [
-        ...orderHoldings(sources.holdings),
-        ...orderWatchlist(sources.watchlist),
-    ]) {
-        if (seen.has(symbol)) continue;
-        seen.add(symbol);
-        ordered.push(symbol);
-    }
+    // Set은 삽입 순서를 지키므로 먼저 나온 보유 자리가 남는다.
+    const ordered = [
+        ...new Set([
+            ...orderHoldings(sources.holdings),
+            ...orderWatchlist(sources.watchlist),
+        ]),
+    ];
     return {
         full: ordered.slice(0, EMAIL_REPORT_MAX_SYMBOLS),
         brief: ordered.slice(

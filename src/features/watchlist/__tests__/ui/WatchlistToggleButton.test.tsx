@@ -21,6 +21,7 @@ function setWatchlist(overrides: Partial<Watchlist> = {}): Watchlist {
         items: [],
         has: vi.fn(() => false),
         toggle: vi.fn(async () => 'added' as const),
+        add: vi.fn(async () => 'added' as const),
         remove: vi.fn(async () => true),
         isHydrated: true,
         isAtLimit: false,
