@@ -15,6 +15,10 @@ import { normalizeCompanyName } from './normalizeCompanyName';
  * 전부 stock-list와 같은 실제 불일치였다 — 그동안 쌓인 재할당(FAGI 펀드 → 다른 회사 등)과
  * 표기 차이다. 누적분은 고정 개수로는 영영 가드를 넘지 못하므로, 매일 상한
  * (`RENAME_BATCH_MAX`)만큼 소진하게 두고 가드는 비교 대상의 큰 몫이 뒤집히는 경우만 잡는다.
+ *
+ * 그 대가로 가드가 받아들이는 후보 수는 커졌다(비교 3만 건이면 약 3,000건). 그 사이의
+ * 표기 체계 변경은 이 가드가 아니라 하루 상한(`RENAME_BATCH_MAX`)이 피해를 묶는다 — 하루에
+ * 그만큼만 다시 번역되고, 로그(`renamed …`)로 보이므로 다음 회차 전에 멈출 수 있다.
  */
 export const RENAME_GUARD_RATIO = 0.1;
 
@@ -93,10 +97,13 @@ export interface TickerNameReconcilePlan {
     guardSample: readonly RenameCandidate[];
 }
 
-/** 정규화된 두 이름의 토큰 겹침(Jaccard, 0~1). 1에 가까울수록 표기 차이에 가깝다. */
-function nameSimilarity(a: string, b: string): number {
-    const left = new Set(normalizeCompanyName(a).split(' '));
-    const right = new Set(normalizeCompanyName(b).split(' '));
+/**
+ * 이미 정규화한 두 이름(`normalizeCompanyName` 결과)의 토큰 겹침(Jaccard, 0~1). 1에
+ * 가까울수록 표기 차이에 가깝다.
+ */
+function nameSimilarity(normalizedA: string, normalizedB: string): number {
+    const left = new Set(normalizedA.split(' '));
+    const right = new Set(normalizedB.split(' '));
     const shared = [...left].filter(token => right.has(token)).length;
     return shared / new Set([...left, ...right]).size;
 }
@@ -107,15 +114,16 @@ function nameSimilarity(a: string, b: string): number {
  * 나눠 소진할 때 순서가 곧 우선순위다. 같으면 로케일에 흔들리지 않는 심볼순(`'en'`)이다 — 이월
  * 순서가 실행 환경과 무관하게 같아야 한다.
  */
-function byPriority(candidates: readonly RenameCandidate[]): RenameCandidate[] {
-    const similarity = new Map(
-        candidates.map(c => [c.symbol, nameSimilarity(c.oldName, c.newName)])
-    );
-    return candidates.toSorted(
-        (a, b) =>
-            (similarity.get(a.symbol) ?? 0) - (similarity.get(b.symbol) ?? 0) ||
-            a.symbol.localeCompare(b.symbol, 'en')
-    );
+function byPriority(
+    candidates: readonly (RenameCandidate & { similarity: number })[]
+): RenameCandidate[] {
+    return candidates
+        .toSorted(
+            (a, b) =>
+                a.similarity - b.similarity ||
+                a.symbol.localeCompare(b.symbol, 'en')
+        )
+        .map(({ symbol, oldName, newName }) => ({ symbol, oldName, newName }));
 }
 
 /** 가드 로그에 담을 샘플 수. */
@@ -151,22 +159,33 @@ export function planTickerNameReconcile(
     });
     const compared = new Set(looked.map(({ row }) => row.symbol));
 
+    // 정규화는 행마다 한 번만 한다 — 변경 판정과 우선순위(토큰 겹침)가 같은 값을 쓴다.
     // 같은 심볼이 두 테이블에 있으면 먼저 어긋난 쪽(`korean_tickers` 우선)만 남긴다.
     const changedBySymbol = looked
+        .map(({ row, newName }) => ({
+            row,
+            newName,
+            oldNormalized: normalizeCompanyName(row.name),
+            newNormalized: normalizeCompanyName(newName),
+        }))
         .filter(
-            ({ row, newName }) =>
-                normalizeCompanyName(row.name) !== normalizeCompanyName(newName)
+            ({ oldNormalized, newNormalized }) =>
+                oldNormalized !== newNormalized
         )
         .reduce(
-            (acc, { row, newName }) =>
+            (acc, { row, newName, oldNormalized, newNormalized }) =>
                 acc.has(row.symbol)
                     ? acc
                     : acc.set(row.symbol, {
                           symbol: row.symbol,
                           oldName: row.name,
                           newName,
+                          similarity: nameSimilarity(
+                              oldNormalized,
+                              newNormalized
+                          ),
                       }),
-            new Map<string, RenameCandidate>()
+            new Map<string, RenameCandidate & { similarity: number }>()
         );
 
     const all = byPriority([...changedBySymbol.values()]);

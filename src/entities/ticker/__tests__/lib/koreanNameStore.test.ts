@@ -584,7 +584,7 @@ describe('invalidateKoreanTickerCache', () => {
     beforeEach(resetMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('Redis를 건드리지 않는다 — 예전 korean:tickers 사본은 운영에서 지워졌다', () => {
+    it('Redis를 건드리지 않는다', () => {
         invalidateKoreanTickerCache();
         expect(mockCache.delete).not.toHaveBeenCalled();
         expect(mockCache.get).not.toHaveBeenCalled();
