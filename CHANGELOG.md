@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.104.0](https://github.com/y0ngha/siglens/compare/v0.103.0...v0.104.0) (2026-10-09)
+
+### Bug Fixes
+
+* 구형 브라우저(Chrome 109·iOS 15)에 없는 배열·문자열 메서드를 폴리필해 클라이언트 오류를 없앤다 ([#1009](https://github.com/y0ngha/siglens/issues/1009)) ([a4f7920](https://github.com/y0ngha/siglens/commit/a4f7920f75cb5d7c19870deb4490abcf8991a3b5)), closes [TOOLCHAIN.md#TC-36](https://github.com/TOOLCHAIN.md/issues/TC-36)
+* 병합 후 실측에서 나온 퍼널·관심종목·메일 문구 결함을 고친다 ([#1012](https://github.com/y0ngha/siglens/issues/1012)) ([ae71590](https://github.com/y0ngha/siglens/commit/ae71590391355230ec9d82fdf7293fdedd5813c2))
+* 티커 이름 재대조가 첫 누적분에 가드가 걸려 매일 건너뛰던 문제를 고치고 옛 korean:tickers 정리 코드를 제거한다 ([#1006](https://github.com/y0ngha/siglens/issues/1006)) ([e134767](https://github.com/y0ngha/siglens/commit/e134767b42166d70339ed6555a4b04cae6a1edc7))
+* FMP 응답을 Redis 아래 Next 데이터 캐시에 겹쳐 두지 않아 경제 캘린더 발표값이 늦게 들어오던 문제를 고친다 ([#1005](https://github.com/y0ngha/siglens/issues/1005)) ([204dc7f](https://github.com/y0ngha/siglens/commit/204dc7f09fa3850acb1e2975356279fbc2b1957e))
+
+### Features
+
+* 가입 퍼널 이벤트를 자체 테이블로 측정한다 ([#1008](https://github.com/y0ngha/siglens/issues/1008)) ([5d78441](https://github.com/y0ngha/siglens/commit/5d784417d724079ec34a962fcb7a106bfa6fe8aa))
+* 관심종목과 홈 온보딩, 내 종목 페이지 비회원 개방 ([#1010](https://github.com/y0ngha/siglens/issues/1010)) ([beeedc7](https://github.com/y0ngha/siglens/commit/beeedc73c2895d1ecf9534ac005bc01d04790a5c))
+* 메일 리포트에 관심종목과 신호 요약을 싣는다 ([#1011](https://github.com/y0ngha/siglens/issues/1011)) ([06f05a2](https://github.com/y0ngha/siglens/commit/06f05a2544407bdd7e375f584ca1c593a310ed38))
+
 # [0.103.0](https://github.com/y0ngha/siglens/compare/v0.102.1...v0.103.0) (2026-10-08)
 
 ### Bug Fixes
