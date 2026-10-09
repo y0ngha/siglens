@@ -60,3 +60,17 @@ export const SESSION_STORAGE_NUDGE_SHOWN_KEY = 'siglens_nudge_shown_session';
  * 가능성은 받아들인다 — 넛지 카운터(`anonAnalysisCount`)와 같은 입장.
  */
 export const LOCAL_STORAGE_FUNNEL_LAST_GATE_KEY = 'siglens:funnel:last-gate';
+
+/**
+ * 비회원 관심종목 — `Array<{ symbol, label, addedAt }>`. 키에 버전을 붙이는 이유는
+ * `entities/ticker/lib/recentSearches.ts`의 `RECENT_SEARCHES_STORAGE_KEY` JSDoc(배포 직후
+ * 24시간 옛 번들 공존)과 같다. 파서는 `features/watchlist/lib/localWatchlist.ts`.
+ */
+export const LOCAL_STORAGE_WATCHLIST_KEY = 'siglens:watchlist:v1';
+
+/** 종목 헤더 ☆ 코치 마크를 한 번 보여 줬다(닫기 또는 첫 토글). 다시 뜨지 않는다. */
+export const LOCAL_STORAGE_WATCHLIST_COACH_SEEN_KEY =
+    'siglens:watchlist:coach-seen';
+
+/** 이 탭 세션에서 로컬 관심종목을 계정으로 병합했다(sessionStorage). 실패 시엔 적지 않는다. */
+export const SESSION_STORAGE_WATCHLIST_MERGED_KEY = 'siglens:watchlist:merged';

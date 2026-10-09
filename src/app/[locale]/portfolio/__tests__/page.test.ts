@@ -99,7 +99,7 @@ describe('Portfolio page', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko' }),
         });
-        expect(metadata.title).toBe('포트폴리오');
+        expect(metadata.title).toBe('내 종목');
     });
 
     it('sets robots to noindex, nofollow', async () => {
