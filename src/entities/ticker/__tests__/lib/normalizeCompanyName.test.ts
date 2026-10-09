@@ -19,6 +19,8 @@ describe('normalizeCompanyName — 표기 차이는 같은 이름', () => {
         ['Ａｐｐｌｅ Inc', 'Apple Inc'],
         ['  Spaced   Out  Inc ', 'Spaced Out'],
         ['Icahn Enterprises L.P.', 'Icahn Enterprises'],
+        ['Walt Disney Co.', 'The Walt Disney Company'],
+        ['MFS Research Fund;A', 'MFS Research Fund A'],
     ])('%s ≡ %s', (a, b) => {
         expect(normalizeCompanyName(a)).toBe(normalizeCompanyName(b));
     });

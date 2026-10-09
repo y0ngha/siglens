@@ -20,15 +20,6 @@ export const ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN =
  */
 export const KOREAN_SEARCH_SNAPSHOT_TTL_MS = 10 * MS_PER_MINUTE;
 
-/**
- * 예전 한글 티커 Redis 캐시 키(`findAll()` 전체를 JSON 배열 하나로, TTL 1년). 지금은
- * 아무도 읽거나 쓰지 않으며 운영 Redis에 남은 사본을 `invalidateKoreanTickerCache`가
- * 지우기 위해서만 참조한다.
- *
- * TODO: 배포 후 KR cron이 한 번 지운 것을 확인하면 이 상수와 DEL 호출을 다음 정리 PR에서 제거한다.
- */
-export const LEGACY_KOREAN_TICKERS_REDIS_KEY = 'korean:tickers';
-
 /** FMP cryptocurrency-list membership cache key. */
 export const CRYPTO_FMP_LIST_CACHE_KEY = 'crypto:fmp-list';
 

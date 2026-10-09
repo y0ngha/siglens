@@ -973,7 +973,7 @@
     },
     {
         "file": "src/entities/ticker/lib/reconcileUsTickerNames.ts",
-        "line": 214,
+        "line": 234,
         "reason": "developer-diagnostic",
         "text": "`[ticker-names] renamed ${c.symbol}: \"${c.oldName}\" → \"${c.newName}\" (한글: ${oldK"
     },

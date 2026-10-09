@@ -9,6 +9,7 @@ import type {
 import type { TranslatorEntry } from '../model';
 import {
     planTickerNameReconcile,
+    RENAME_TRANSLATE_CHUNK,
     type RenameCandidate,
     type StockListEntry,
 } from './tickerNameReconcile';
@@ -77,7 +78,7 @@ export interface ReconcileUsTickerNamesDeps {
     /** `symbol:<SYM>` 태그 무효화. */
     revalidateSymbol: (symbol: string) => void;
     /** `setKoreanTickers`를 거치지 않는 쓰기 뒤 이 인스턴스의 한글 검색 스냅샷을 비운다. */
-    invalidateSearchSnapshot: () => Promise<void>;
+    invalidateSearchSnapshot: () => void;
 }
 
 /**
@@ -169,8 +170,27 @@ export async function reconcileUsTickerNames(
 
     if (plan.candidates.length === 0) return counts;
 
-    const translated = await translate(
-        plan.candidates.map(c => ({ symbol: c.symbol, name: c.newName }))
+    // `RENAME_TRANSLATE_CHUNK`개씩 순차로 번역한다 — 응답 하나가 깨져도(`{}`) 그 묶음만
+    // 다음 날로 밀린다. 순차 await라 결과 배열에 쌓는 예외 지점이다(아래 쓰기 루프와 같다).
+    const chunks = Array.from(
+        { length: Math.ceil(plan.candidates.length / RENAME_TRANSLATE_CHUNK) },
+        (_, i) =>
+            plan.candidates.slice(
+                i * RENAME_TRANSLATE_CHUNK,
+                (i + 1) * RENAME_TRANSLATE_CHUNK
+            )
+    );
+    const chunkResults: Record<string, string>[] = [];
+    for (const chunk of chunks) {
+        chunkResults.push(
+            await translate(
+                chunk.map(c => ({ symbol: c.symbol, name: c.newName }))
+            )
+        );
+    }
+    const translated: Record<string, string> = Object.assign(
+        {},
+        ...chunkResults
     );
     // 번역 응답에 키가 없는 심볼은 건너뛴다 — 쓰지 않으면 다음 날 다시 후보가 된다.
     const translatable = plan.candidates.filter(c => !!translated[c.symbol]);
@@ -220,8 +240,9 @@ export async function reconcileUsTickerNames(
         }
     };
 
-    // 순차로 처리한다(DB 연결 하나를 60개 upsert가 한꺼번에 두드리지 않게). 순차 await라
-    // 지역 누적을 쓰는 예외 지점이다 — `reduce` 안에서 프라미스를 이어 붙이면 의도가 가려진다.
+    // 순차로 처리한다(DB 연결 하나를 최대 `RENAME_BATCH_MAX`개 upsert가 한꺼번에
+    // 두드리지 않게). 순차 await라 지역 누적을 쓰는 예외 지점이다 — `reduce` 안에서
+    // 프라미스를 이어 붙이면 의도가 가려진다.
     const outcomes: boolean[] = [];
     for (const c of translatable) {
         outcomes.push(await renameOne(c));
@@ -231,7 +252,7 @@ export async function reconcileUsTickerNames(
 
     // `setKoreanTickers`를 거치지 않고 repository에 직접 썼으므로 이 인스턴스의 한글 검색
     // 스냅샷을 직접 비운다.
-    if (renamed > 0) await deps.invalidateSearchSnapshot();
+    if (renamed > 0) deps.invalidateSearchSnapshot();
 
     return { ...counts, renamed, failed };
 }

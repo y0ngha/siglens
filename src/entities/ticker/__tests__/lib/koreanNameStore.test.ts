@@ -54,10 +54,7 @@ import {
     searchByKoreanName,
     setKoreanTickers,
 } from '../../lib/koreanNameStore';
-import {
-    KOREAN_SEARCH_SNAPSHOT_TTL_MS,
-    LEGACY_KOREAN_TICKERS_REDIS_KEY,
-} from '../../lib/cacheKeys';
+import { KOREAN_SEARCH_SNAPSHOT_TTL_MS } from '../../lib/cacheKeys';
 
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',
@@ -272,7 +269,7 @@ describe('searchByKoreanName', () => {
         mockRepository.findAll.mockResolvedValueOnce([apple]);
         await searchByKoreanName('애');
 
-        await invalidateKoreanTickerCache();
+        invalidateKoreanTickerCache();
         mockRepository.findAll.mockResolvedValueOnce([]);
         mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
 
@@ -288,7 +285,7 @@ describe('searchByKoreanName', () => {
             })
         );
         const inFlight = searchByKoreanName('애');
-        await invalidateKoreanTickerCache();
+        invalidateKoreanTickerCache();
         release([apple]);
         await inFlight;
 
@@ -306,7 +303,7 @@ describe('searchByKoreanName', () => {
             })
         );
         const stale = searchByKoreanName('애');
-        await invalidateKoreanTickerCache();
+        invalidateKoreanTickerCache();
 
         mockRepository.findAll.mockResolvedValueOnce([apple, microsoft]);
         const fresh = await searchByKoreanName('마이크로');
@@ -587,27 +584,10 @@ describe('invalidateKoreanTickerCache', () => {
     beforeEach(resetMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('예전 Redis 키만 best-effort로 지운다', async () => {
-        await invalidateKoreanTickerCache();
-        expect(mockCache.delete).toHaveBeenCalledWith(
-            LEGACY_KOREAN_TICKERS_REDIS_KEY
-        );
+    it('Redis를 건드리지 않는다', () => {
+        invalidateKoreanTickerCache();
+        expect(mockCache.delete).not.toHaveBeenCalled();
         expect(mockCache.get).not.toHaveBeenCalled();
         expect(mockCache.set).not.toHaveBeenCalled();
-    });
-
-    it('cache provider 가 없으면 아무것도 지우지 않고 끝난다', async () => {
-        createCacheProviderMock.mockReturnValue(null);
-        await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
-        expect(mockCache.delete).not.toHaveBeenCalled();
-    });
-
-    it('cache delete 실패는 흡수한다', async () => {
-        mockCache.delete.mockRejectedValue(new Error('cache down'));
-        await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
-    });
-
-    it('예전 키 이름은 운영에 남은 사본과 같은 문자열이다', () => {
-        expect(LEGACY_KOREAN_TICKERS_REDIS_KEY).toBe('korean:tickers');
     });
 });

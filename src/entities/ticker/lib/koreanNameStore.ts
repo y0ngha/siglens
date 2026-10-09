@@ -1,9 +1,5 @@
 import { tryGetDatabaseClient } from '@/shared/db/client';
-import {
-    KOREAN_SEARCH_SNAPSHOT_TTL_MS,
-    LEGACY_KOREAN_TICKERS_REDIS_KEY,
-} from './cacheKeys';
-import { createCacheProvider } from '@y0ngha/siglens-core';
+import { KOREAN_SEARCH_SNAPSHOT_TTL_MS } from './cacheKeys';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
@@ -317,24 +313,9 @@ export async function getKoreanNames(
 /**
  * 이 인스턴스의 한글명 검색 스냅샷을 비운다. 다른 인스턴스는 최대
  * `KOREAN_SEARCH_SNAPSHOT_TTL_MS` 늦게 반영된다(데이터 정본은 DB).
- *
- * 부수로 예전 Redis 사본(`LEGACY_KOREAN_TICKERS_REDIS_KEY`)을 best-effort로 지운다 —
- * 배포 뒤 KR cron이 한 번 지우면 남은 수 MB 키가 정리된다. `DEL`은 멱등이고 일 1회라
- * 비용이 없다. 다음 정리 PR에서 이 부분을 제거한다.
  */
-export async function invalidateKoreanTickerCache(): Promise<void> {
+export function invalidateKoreanTickerCache(): void {
     clearSnapshot();
-    await deleteLegacyRedisKey();
-}
-
-async function deleteLegacyRedisKey(): Promise<void> {
-    try {
-        const cache = createCacheProvider();
-        if (!cache) return;
-        await cache.delete(LEGACY_KOREAN_TICKERS_REDIS_KEY);
-    } catch {
-        // Graceful degradation: 정리용 DEL의 실패는 전파하지 않는다.
-    }
 }
 
 /** Upsert ticker entries to the DB and drop this instance's search snapshot. */

@@ -77,7 +77,7 @@ export async function syncKrListedTickers(): Promise<KrTickerSyncCounts> {
     await repository.upsertMany(rows, { preserveExistingName: true });
     await repository.markRelisted(plan.relist);
     await repository.markDelisted(plan.delist);
-    await invalidateKoreanTickerCache();
+    invalidateKoreanTickerCache();
 
     return {
         // `rows`가 아니라 `items`를 센다 — KONEX 제외·중복 병합 전 원본 수신량이어야

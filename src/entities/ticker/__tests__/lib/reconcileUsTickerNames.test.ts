@@ -35,7 +35,8 @@ import {
 } from '../../lib/reconcileUsTickerNames';
 import {
     RENAME_BATCH_MAX,
-    RENAME_GUARD_MAX,
+    RENAME_GUARD_FLOOR,
+    RENAME_TRANSLATE_CHUNK,
 } from '../../lib/tickerNameReconcile';
 
 function tickerRow(
@@ -108,7 +109,7 @@ describe('reconcileUsTickerNames', () => {
         mockRevalidateTag.mockImplementation(() => {
             events.push('revalidate');
         });
-        mockInvalidate.mockImplementation(async () => {
+        mockInvalidate.mockImplementation(() => {
             events.push('invalidate:snapshot');
         });
         vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -366,8 +367,9 @@ describe('reconcileUsTickerNames', () => {
         );
     });
 
-    it('후보가 가드 상한을 넘으면 아무것도 쓰지 않고 skipped 로그를 남긴다', async () => {
-        const count = RENAME_GUARD_MAX + 1;
+    it('후보가 가드를 넘으면 아무것도 쓰지 않고 skipped 로그를 남긴다', async () => {
+        // 비교 대상 전부가 바뀐 것으로 잡힌다 — 하한과 비율을 모두 넘는다.
+        const count = RENAME_GUARD_FLOOR + 1;
         const symbols = Array.from({ length: count }, (_, i) => `S${i}`);
         mockFmpGet.mockResolvedValue(
             symbols.map(symbol => ({ symbol, companyName: `New ${symbol}` }))
@@ -390,7 +392,7 @@ describe('reconcileUsTickerNames', () => {
         );
     });
 
-    it('배치 상한을 넘는 후보는 deferred로 이월하고 상한만큼만 번역한다', async () => {
+    it('배치 상한을 넘는 후보는 deferred로 이월하고 상한만큼만 묶음으로 나눠 번역한다', async () => {
         const count = RENAME_BATCH_MAX + 3;
         const symbols = Array.from({ length: count }, (_, i) => `S${i}`);
         mockFmpGet.mockResolvedValue(
@@ -410,6 +412,41 @@ describe('reconcileUsTickerNames', () => {
         expect(counts.renamed).toBe(RENAME_BATCH_MAX);
         expect(counts.deferred).toBe(3);
         expect(mockRevalidateTag).toHaveBeenCalledTimes(RENAME_BATCH_MAX);
+        // 한 호출이 깨져도 그 묶음만 밀리도록 호출당 RENAME_TRANSLATE_CHUNK개 이하로 나눈다.
+        expect(mockTranslate).toHaveBeenCalledTimes(
+            Math.ceil(RENAME_BATCH_MAX / RENAME_TRANSLATE_CHUNK)
+        );
+        expect(
+            mockTranslate.mock.calls.every(
+                ([entries]) => entries.length <= RENAME_TRANSLATE_CHUNK
+            )
+        ).toBe(true);
+    });
+
+    it('번역 묶음 하나가 깨져도 나머지 묶음의 심볼은 갈아 쓴다', async () => {
+        const count = RENAME_TRANSLATE_CHUNK + 2;
+        const symbols = Array.from(
+            { length: count },
+            (_, i) => `S${String(i).padStart(3, '0')}`
+        );
+        mockFmpGet.mockResolvedValue(
+            symbols.map(symbol => ({ symbol, companyName: `New ${symbol}` }))
+        );
+        mockTickerRepo.findAllNonKr.mockResolvedValue(
+            symbols.map(symbol => tickerRow(symbol, `Old ${symbol} Industries`))
+        );
+        mockAssetRepo.findAll.mockResolvedValue([]);
+        // 첫 묶음은 깨진 응답(`{}`)으로 degrade, 두 번째 묶음만 번역된다.
+        mockTranslate
+            .mockImplementationOnce(async () => ({}))
+            .mockImplementationOnce(async (entries: { symbol: string }[]) =>
+                Object.fromEntries(entries.map(e => [e.symbol, '번역']))
+            );
+
+        const counts = await reconcileUsTickerNames(makeDeps());
+
+        expect(counts.renamed).toBe(2);
+        expect(mockRevalidateTag).toHaveBeenCalledTimes(2);
     });
 
     it('후보가 없으면 번역도 쓰기도 하지 않는다', async () => {
