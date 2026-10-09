@@ -21,23 +21,29 @@ export interface SignalBriefInput {
  */
 export function buildSignalBrief(input: SignalBriefInput): SignalBrief {
     const { confluence, pullback } = input;
-    const fresh =
-        confluence === null
-            ? []
-            : [
-                  ...new Set([
-                      ...confluence.freshBullish,
-                      ...confluence.freshBearish,
-                  ]),
-              ].toSorted();
+    const pullbackReading =
+        pullback === null || pullback.reading === 'none'
+            ? null
+            : pullback.reading;
+    if (confluence === null) {
+        return {
+            score: null,
+            bullish: [],
+            bearish: [],
+            fresh: [],
+            pullback: pullbackReading,
+        };
+    }
     return {
-        score: confluence === null ? null : scoreConfluence(confluence),
-        bullish: confluence === null ? [] : [...confluence.bullish],
-        bearish: confluence === null ? [] : [...confluence.bearish],
-        fresh,
-        pullback:
-            pullback === null || pullback.reading === 'none'
-                ? null
-                : pullback.reading,
+        score: scoreConfluence(confluence),
+        bullish: [...confluence.bullish],
+        bearish: [...confluence.bearish],
+        fresh: [
+            ...new Set([
+                ...confluence.freshBullish,
+                ...confluence.freshBearish,
+            ]),
+        ].toSorted(),
+        pullback: pullbackReading,
     };
 }

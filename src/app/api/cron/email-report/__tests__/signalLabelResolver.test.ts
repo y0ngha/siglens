@@ -1,7 +1,4 @@
-import {
-    __resetSignalLabelWarningsForTests,
-    createSignalLabelResolver,
-} from '@/app/api/cron/email-report/signalLabelResolver';
+import { createSignalLabelResolver } from '@/app/api/cron/email-report/signalLabelResolver';
 
 const DICT: Record<string, string> = {
     'signalType.golden_cross': '골든크로스',
@@ -16,10 +13,6 @@ function dictionary() {
 }
 
 describe('createSignalLabelResolver', () => {
-    beforeEach(() => {
-        __resetSignalLabelWarningsForTests();
-    });
-
     it('사전에 있는 타입은 라벨을 돌려준다', () => {
         const resolve = createSignalLabelResolver(dictionary(), vi.fn());
 
@@ -37,19 +30,28 @@ describe('createSignalLabelResolver', () => {
         );
     });
 
-    it('같은 미등록 타입은 한 번만 로그한다(로케일·리졸버가 달라도)', () => {
+    it('같은 리졸버 안에서 같은 미등록 타입은 한 번만 로그한다', () => {
         const warn = vi.fn();
-        const ko = createSignalLabelResolver(dictionary(), warn);
-        const en = createSignalLabelResolver(dictionary(), warn);
+        const resolve = createSignalLabelResolver(dictionary(), warn);
 
-        ko('brand_new_type');
-        ko('brand_new_type');
-        en('brand_new_type');
-        en('another_type');
+        resolve('brand_new_type');
+        resolve('brand_new_type');
+        resolve('another_type');
 
         expect(warn).toHaveBeenCalledTimes(2);
         expect(warn).toHaveBeenCalledWith(
             expect.stringContaining('another_type')
         );
+    });
+
+    it('리졸버가 다르면(로케일·배치마다) 각자 한 번씩 로그한다', () => {
+        const warn = vi.fn();
+        const ko = createSignalLabelResolver(dictionary(), warn);
+        const en = createSignalLabelResolver(dictionary(), warn);
+
+        ko('brand_new_type');
+        en('brand_new_type');
+
+        expect(warn).toHaveBeenCalledTimes(2);
     });
 });

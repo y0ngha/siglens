@@ -68,7 +68,7 @@ export async function loadSymbolBrief(
     } catch (error) {
         // core가 이상한 봉에서 던져도 그 종목 행만 "데이터 없음"으로 둔다 — 한 종목이
         // 수신자의 메일 전체를 막지 않게 한다.
-        console.warn(
+        console.error(
             `[email-report] brief computation failed for ${symbol}`,
             error
         );

@@ -256,6 +256,40 @@ describe('useEmailReportNudge', () => {
             expect(hasNudgeShownThisSession()).toBe(false);
         });
 
+        it('꺼짐이 확인된 회원은 이후 분석에서 수신 설정을 다시 조회하지 않는다', () => {
+            renderHook(() => useEmailReportNudge());
+
+            analyzeThreeTimes();
+            const queriesAfterFirst =
+                state.settingsEnabledArgs.filter(Boolean).length;
+            expect(queriesAfterFirst).toBeGreaterThan(0);
+            state.settingsEnabledArgs = [];
+
+            analyzeThreeTimes();
+
+            expect(state.settingsEnabledArgs.every(e => !e)).toBe(true);
+        });
+
+        it('설정 화면에 들어갔다 오면 꺼짐 기억을 버리고 켠 뒤 다시 후보가 된다', () => {
+            const { result, rerender } = renderHook(() =>
+                useEmailReportNudge()
+            );
+            analyzeThreeTimes();
+            expect(result.current.nudge).toBeNull();
+
+            state.pathname = '/email-report';
+            rerender();
+            state.pathname = '/TSLA';
+            state.settings = { ...OFF, enabled: true };
+            rerender();
+            analyzeThreeTimes();
+
+            expect(result.current.nudge).toEqual({
+                kind: 'symbol',
+                symbol: 'TSLA',
+            });
+        });
+
         it('리포트 켜짐 여부를 아직 모르면 띄우지 않는다', () => {
             state.settings = undefined;
             const { result } = renderHook(() => useEmailReportNudge());

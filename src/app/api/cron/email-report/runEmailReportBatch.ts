@@ -91,17 +91,35 @@ function errorText(error: unknown): string {
 /**
  * `items`를 `size`개씩 순서대로 처리한다 — 결과 순서는 입력 순서.
  * 청크를 직렬로 돌리는 이유: 한 번에 떠 있는 조회를 `size`개로 묶기 위해서다.
+ * reduce가 프라미스 체인을 만들어, 앞 청크가 끝나야 다음 청크의 `work`가 시작된다.
  */
-async function mapChunked<T, R>(
+function mapChunked<T, R>(
     items: readonly T[],
     size: number,
     work: (item: T) => Promise<R>
 ): Promise<R[]> {
-    const out: R[] = [];
-    for (let i = 0; i < items.length; i += size) {
-        out.push(...(await Promise.all(items.slice(i, i + size).map(work))));
-    }
-    return out;
+    const chunks = Array.from(
+        { length: Math.ceil(items.length / size) },
+        (_, i) => items.slice(i * size, (i + 1) * size)
+    );
+    return chunks.reduce<Promise<R[]>>(
+        (previous, chunk) =>
+            previous.then(done =>
+                Promise.all(chunk.map(work)).then(rows => [...done, ...rows])
+            ),
+        Promise.resolve([])
+    );
+}
+
+/** 요약 조회 결과에 그 종목이 없을 때의 빈 칸 — 메일은 그 종목을 "데이터 없음"으로 그린다. */
+function noDataBrief(symbol: string): SymbolBrief {
+    return {
+        symbol,
+        close: null,
+        changePercent: null,
+        trend: null,
+        signals: null,
+    };
 }
 
 /** 이 시각 슬롯에 보낼 회원. 타임존이 깨진 행은 건너뛴다(루프를 멈추지 않는다). */
@@ -223,16 +241,16 @@ export async function runEmailReportBatch(
                 translatorFor(locale),
                 signalLabelFor(locale),
             ]);
-            const fullBriefs = briefs.slice(0, selection.full.length);
-            const rowBriefs = briefs.slice(selection.full.length);
+            const briefBySymbol = new Map(briefs.map(b => [b.symbol, b]));
+            const briefOf = (symbol: string) =>
+                briefBySymbol.get(symbol) ?? noDataBrief(symbol);
             const email = buildReportEmail({
                 to: recipient.email,
                 locale,
                 localDate,
-                sections: reports.map((report, i) => ({
+                sections: reports.map(report => ({
                     report,
-                    // `briefs`는 `symbols`(= full 뒤에 brief) 순서라 앞 full개가 reports와 같은 인덱스다.
-                    brief: fullBriefs[i]!,
+                    brief: briefOf(report.symbol),
                     chartUrl: buildChartImageUrl(
                         deps.siteUrl,
                         deps.secret,
@@ -245,13 +263,9 @@ export async function runEmailReportBatch(
                         report.symbol
                     ),
                 })),
-                briefRows: rowBriefs.map(brief => ({
-                    brief,
-                    pageUrl: buildSymbolPageUrl(
-                        deps.siteUrl,
-                        locale,
-                        brief.symbol
-                    ),
+                briefRows: selection.brief.map(symbol => ({
+                    brief: briefOf(symbol),
+                    pageUrl: buildSymbolPageUrl(deps.siteUrl, locale, symbol),
                 })),
                 unsubscribePageUrl: buildUnsubscribePageUrl(
                     deps.siteUrl,

@@ -44,6 +44,7 @@ function sources(data: Promise<BarsData>): SymbolBriefSources {
 describe('loadSymbolBrief', () => {
     beforeEach(() => {
         vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     it('일봉을 한 번 받아 종가·등락률·추세·신호 요약을 채운다', async () => {
@@ -137,7 +138,7 @@ describe('loadSymbolBrief', () => {
             trend: null,
             signals: null,
         });
-        expect(console.warn).toHaveBeenCalledWith(
+        expect(console.error).toHaveBeenCalledWith(
             expect.stringContaining('ODD'),
             expect.any(Error)
         );

@@ -112,6 +112,9 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
     const [symbolPending, setSymbolPending] = useState<SymbolPending | null>(
         null
     );
+    // 이 탭에서 수신 설정이 꺼진 것으로 확인된 회원. 알려진 동안은 종목 넛지 후보를 만들지 않아
+    // 분석할 때마다 수신 설정을 다시 조회하지 않는다(쿼리 staleTime 1분 뒤에는 재조회된다).
+    const [reportOffUserId, setReportOffUserId] = useState<string | null>(null);
     const pathname = useAppPathname();
     const { data: user } = useCurrentUser();
 
@@ -167,6 +170,12 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         enabled: isSetupCandidate || awaitingSymbol !== null,
     });
 
+    // 렌더 중 조정(EF-1) — 설정을 바꿀 수 있는 화면(설정·계정)에 들어오면 "꺼져 있음" 기억을 버려
+    // 켜고 돌아온 회원이 다시 후보가 되게 한다.
+    if (isExcluded && reportOffUserId !== null) {
+        setReportOffUserId(null);
+    }
+
     // 렌더 중 조정(EF-1) — 종목 넛지 후보는 수신 설정이 도착한 이번 렌더에 한 번만 판정한다.
     // 꺼져 있거나(설정 권유가 맡는다) 이번 세션에 다른 넛지가 떴으면 띄우지 않는다.
     // 알 수 없는 동안(`undefined`)은 판정하지 않는다. 저장소 쓰기는 아래 effect에서만 한다.
@@ -184,6 +193,9 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
             });
         } else {
             setSymbolPending({ ...awaitingSymbol, status: 'skipped' });
+            if (settings === null || !settings.enabled) {
+                setReportOffUserId(awaitingSymbol.userId);
+            }
         }
     }
 
@@ -241,6 +253,7 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         hasHoldings,
         isWatchlistKnown,
         watchlistHas: watchlist.has,
+        reportOffUserId,
     });
     useEffect(() => {
         latestRef.current = {
@@ -249,6 +262,7 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
             hasHoldings,
             isWatchlistKnown,
             watchlistHas: watchlist.has,
+            reportOffUserId,
         };
     });
 
@@ -272,7 +286,12 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
                     now
                 );
                 writeMemberNudgeRecord(latest.user.id, record);
-                if (shouldNudge && !hasNudgeShownThisSession()) {
+                // 횟수는 계속 쌓되, 꺼져 있음이 확인된 회원은 후보(= 수신 설정 조회)를 만들지 않는다.
+                if (
+                    shouldNudge &&
+                    !hasNudgeShownThisSession() &&
+                    latest.reportOffUserId !== latest.user.id
+                ) {
                     setSymbolPending({
                         userId: latest.user.id,
                         symbol: upper,
