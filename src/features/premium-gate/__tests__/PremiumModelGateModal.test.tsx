@@ -142,16 +142,13 @@ describe('PremiumModelGateModal', () => {
             expect(onClose).toHaveBeenCalledTimes(1);
         });
 
-        it('byok 모드의 등록 CTA는 cta=settings', async () => {
+        it('byok 모드는 회원 전용 안내라 노출도 클릭도 기록하지 않는다', async () => {
             const user = userEvent.setup();
             render(<PremiumModelGateModal mode="byok" onClose={onClose} />);
             await user.click(
                 screen.getByRole('link', { name: '등록하러 가기' })
             );
-            expect(track).toHaveBeenCalledWith('nudge_clicked', {
-                kind: 'model_gate',
-                cta: 'settings',
-            });
+            expect(track).not.toHaveBeenCalled();
         });
     });
 });

@@ -1,6 +1,15 @@
 import 'server-only';
 
-import { count, countDistinct, desc, gte, lt, sql } from 'drizzle-orm';
+import {
+    and,
+    count,
+    countDistinct,
+    desc,
+    gte,
+    isNull,
+    lt,
+    sql,
+} from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -64,6 +73,12 @@ export class DrizzleVisitorRepository implements VisitorRepository {
                         // 같은 날 익명으로 먼저 온 행에만 회원 id를 채운다. 한 번 채워진
                         // 값은 바꾸지 않는다 — 공용 기기에서 다른 회원이 로그인해도 첫
                         // 회원에게 남는다(해시가 IP+UA라 어차피 한 사람으로 센다).
+                        // `setWhere`는 채울 때만 행을 다시 쓰게 한다 — 없으면 방문마다 충돌한
+                        // 행을 매번 UPDATE해 죽은 튜플이 쌓인다.
+                        setWhere: and(
+                            isNull(visitorDays.userId),
+                            sql`excluded.user_id is not null`
+                        ),
                         set: {
                             userId: sql`coalesce(${visitorDays.userId}, excluded.user_id)`,
                         },

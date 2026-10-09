@@ -22,6 +22,11 @@ describe('useFunnelNudgeShown', () => {
         expect(shownCalls()).toEqual([['nudge_shown', { kind: 'rate_limit' }]]);
     });
 
+    it('enabled=false면 보내지 않는다', () => {
+        renderHook(() => useFunnelNudgeShown({ kind: 'model_gate' }, false));
+        expect(track).not.toHaveBeenCalled();
+    });
+
     it('variant가 있으면 함께 보낸다', () => {
         renderHook(() =>
             useFunnelNudgeShown({ kind: 'anon_auto', variant: 'emailReport' })

@@ -15,7 +15,7 @@ import {
 } from '@/shared/lib/funnel/funnelEvents';
 
 describe('카탈로그 상수', () => {
-    it('스펙 §3.3의 이벤트 7종을 전부 가진다', () => {
+    it('카탈로그의 이벤트 7종을 전부 가진다', () => {
         expect([...FUNNEL_EVENTS].toSorted()).toEqual([
             'gate_clicked',
             'nudge_clicked',

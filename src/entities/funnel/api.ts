@@ -9,6 +9,7 @@ import type {
     FunnelEventContext,
 } from '@/shared/lib/funnel/funnelEvents';
 import { withRetry } from '@/shared/lib/withRetry';
+import { RETENTION_WINDOWS } from './retentionWindows';
 import type {
     FunnelKeyEventCount,
     SignupBreakdownRow,
@@ -49,7 +50,7 @@ export interface FunnelEventRepository {
     ): Promise<SignupBreakdownRow[]>;
     /**
      * 가입 주(KST, 월요일 시작)별 D7·D30 재방문. 가입일 +7·+30 **이후 7일 창** 안에
-     * `visitor_days.user_id` 방문이 있으면 재방문(스펙 §5).
+     * `visitor_days.user_id` 방문이 있으면 재방문.
      */
     signupCohortRetention(
         from: Date,
@@ -140,12 +141,12 @@ export class DrizzleFunnelEventRepository implements FunnelEventRepository {
                 count(*) filter (where exists (
                     select 1 from ${visitorDays} v
                     where v.user_id = c.id
-                      and v."date" between c.signup_date + 7 and c.signup_date + 13
+                      and v."date" between c.signup_date + ${RETENTION_WINDOWS.d7.startDay}::int and c.signup_date + ${RETENTION_WINDOWS.d7.endDay}::int
                 ))::int as d7,
                 count(*) filter (where exists (
                     select 1 from ${visitorDays} v
                     where v.user_id = c.id
-                      and v."date" between c.signup_date + 30 and c.signup_date + 36
+                      and v."date" between c.signup_date + ${RETENTION_WINDOWS.d30.startDay}::int and c.signup_date + ${RETENTION_WINDOWS.d30.endDay}::int
                 ))::int as d30
             from cohort c
             group by 1

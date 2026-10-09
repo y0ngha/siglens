@@ -1,5 +1,9 @@
 import { LOCAL_STORAGE_FUNNEL_LAST_GATE_KEY } from '@/shared/lib/storageKeys';
-import { FUNNEL_LAST_GATES, type FunnelLastGate } from './funnelEvents';
+import {
+    FUNNEL_LAST_GATES,
+    isOneOf,
+    type FunnelLastGate,
+} from './funnelEvents';
 
 /**
  * 비회원이 마지막으로 누른 게이트·넛지를 기억한다. `trackFunnelEvent`가 `nudge_shown`·
@@ -22,10 +26,7 @@ export function readLastGate(): FunnelLastGate | null {
         const raw = window.localStorage.getItem(
             LOCAL_STORAGE_FUNNEL_LAST_GATE_KEY
         );
-        return raw !== null &&
-            (FUNNEL_LAST_GATES as readonly string[]).includes(raw)
-            ? (raw as FunnelLastGate)
-            : null;
+        return isOneOf(FUNNEL_LAST_GATES, raw) ? raw : null;
     } catch {
         return null;
     }

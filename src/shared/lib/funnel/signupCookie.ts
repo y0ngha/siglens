@@ -3,7 +3,7 @@ import {
     SIGNUP_CONVERSION_COOKIE_DOMAIN,
     SIGNUP_CONVERSION_COOKIE_MAX_AGE_SECONDS,
 } from '@/shared/config/googleAds';
-import { SIGNUP_METHODS, type SignupMethod } from './funnelEvents';
+import { isOneOf, SIGNUP_METHODS, type SignupMethod } from './funnelEvents';
 
 export interface FunnelSignupCookie {
     name: string;
@@ -51,7 +51,5 @@ export function consumeFunnelSignupCookie(): SignupMethod | null {
     if (entry === undefined) return null;
     document.cookie = `${FUNNEL_SIGNUP_COOKIE_NAME}=; Max-Age=0; Path=/; Domain=${SIGNUP_CONVERSION_COOKIE_DOMAIN}`;
     const value = entry.slice(prefix.length);
-    return (SIGNUP_METHODS as readonly string[]).includes(value)
-        ? (value as SignupMethod)
-        : null;
+    return isOneOf(SIGNUP_METHODS, value) ? value : null;
 }

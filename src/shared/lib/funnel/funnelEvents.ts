@@ -1,8 +1,15 @@
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 
 /**
- * 가입 퍼널 이벤트 카탈로그 — 닫힌 유니언. 추가는 스펙
- * (`docs/superpowers/specs/2026-10-09-funnel-events-design.md` §3.3) 갱신과 함께.
+ * 왜 `shared`에 있나: 이 카탈로그는 도메인 어휘지만 `shared/hooks`(`useFunnelNudgeShown`)·
+ * `shared/ui`(`PlainAnalysisView`)·`shared/db/schema`가 직접 쓴다. `entities`에 두면
+ * shared가 상위 레이어를 import하게 되어 의존 방향(`CLAUDE.md` Layer Dependency Rules)을
+ * 깬다. features·widgets·entities/funnel·수집 라우트도 같은 한 곳에서 import한다.
+ */
+
+/**
+ * 가입 퍼널 이벤트 카탈로그 — 닫힌 유니언. 이벤트나 context
+ * 값을 늘리면 수집 라우트 검증·리포트 스크립트·개인정보처리방침의 고지 범위도 같이 본다.
  *
  * 검색어·URL·자유 문장은 어떤 context에도 넣지 않는다. 400일 보관되는 테이블이라
  * 한 번 섞이면 방침(§1 "서비스 이용 행태")이 거짓이 된다. `isFunnelEventPayload`가
@@ -112,7 +119,8 @@ export const FUNNEL_EVENTS = Object.keys(EVENT_SET) as readonly FunnelEvent[];
  */
 export const FUNNEL_BODY_MAX_BYTES = 1024;
 
-function isOneOf<T extends string>(
+/** 닫힌 목록 멤버십 + 타입 가드 — 호출부가 `as` 없이 좁힌다. */
+export function isOneOf<T extends string>(
     values: readonly T[],
     value: unknown
 ): value is T {
@@ -126,7 +134,8 @@ function hasOnlyKeys(
     record: Record<string, unknown>,
     allowed: readonly string[]
 ): boolean {
-    return Object.keys(record).every(key => allowed.includes(key));
+    const allowedSet = new Set(allowed);
+    return Object.keys(record).every(key => allowedSet.has(key));
 }
 
 function isNudgeKindContext(ctx: Record<string, unknown>): boolean {
@@ -156,9 +165,10 @@ const CONTEXT_VALIDATORS: {
         hasOnlyKeys(ctx, ['source']) && isOneOf(WATCHLIST_SOURCES, ctx.source),
     watchlist_merged: ctx =>
         hasOnlyKeys(ctx, ['count']) &&
+        typeof ctx.count === 'number' &&
         Number.isInteger(ctx.count) &&
-        (ctx.count as number) >= 0 &&
-        (ctx.count as number) <= WATCHLIST_MERGE_MAX,
+        ctx.count >= 0 &&
+        ctx.count <= WATCHLIST_MERGE_MAX,
     report_enabled: ctx =>
         hasOnlyKeys(ctx, ['source']) &&
         isOneOf(REPORT_ENABLED_SOURCES, ctx.source),
@@ -171,6 +181,7 @@ export function isFunnelEventPayload(
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         return false;
     }
+    // 위에서 비null·비배열 객체임을 확인했다. 값 타입은 아래에서 키별로 다시 본다.
     const record = value as Record<string, unknown>;
     if (!hasOnlyKeys(record, ['event', 'context'])) return false;
     const { event, context } = record;
@@ -182,5 +193,6 @@ export function isFunnelEventPayload(
     ) {
         return false;
     }
+    // 위에서 비null·비배열 객체임을 확인했다. 값 타입은 검증기가 키별로 다시 본다.
     return CONTEXT_VALIDATORS[event](context as Record<string, unknown>);
 }

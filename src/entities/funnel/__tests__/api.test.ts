@@ -139,11 +139,11 @@ describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
             `(u.created_at at time zone 'Asia/Seoul')::date as signup_date from "users" u where u.created_at >= $1 and u.created_at < $2`
         );
         expect(sqlText).toContain(
-            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + 7 and c.signup_date + 13 )`
+            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $3::int and c.signup_date + $4::int )`
         );
         expect(sqlText).toContain(
-            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + 30 and c.signup_date + 36 )`
+            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $5::int and c.signup_date + $6::int )`
         );
-        expect(rendered.params).toEqual([FROM, TO_EXCLUSIVE]);
+        expect(rendered.params).toEqual([FROM, TO_EXCLUSIVE, 7, 13, 30, 36]);
     });
 });

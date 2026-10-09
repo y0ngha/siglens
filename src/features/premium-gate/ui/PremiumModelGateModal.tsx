@@ -29,14 +29,18 @@ export function PremiumModelGateModal({
 
     const isAuth = mode === 'auth';
 
-    useFunnelNudgeShown({ kind: 'model_gate' });
+    // byok 모드는 로그인한 회원에게 API 키 등록을 안내하는 모달이다 — 가입 유도가 아니라
+    // 비회원 퍼널에 넣지 않는다(노출·클릭 모두).
+    useFunnelNudgeShown({ kind: 'model_gate' }, isAuth);
 
     // auth는 가입 페이지로, byok는 계정 설정(API 키 등록)으로 보낸다.
     const handleCtaClick = (): void => {
-        trackFunnelEvent('nudge_clicked', {
-            kind: 'model_gate',
-            cta: isAuth ? 'signup' : 'settings',
-        });
+        if (isAuth) {
+            trackFunnelEvent('nudge_clicked', {
+                kind: 'model_gate',
+                cta: 'signup',
+            });
+        }
         onClose();
     };
     const iconColorClass = isAuth

@@ -66,6 +66,34 @@ describe('buildGateTable', () => {
         ]);
     });
 
+    it.each([
+        ['gate_clicked', 'gateClicks'],
+        ['nudge_shown', 'shown'],
+        ['nudge_clicked', 'ctaClicks'],
+        ['signup_completed', 'signups'],
+    ])('%s는 %s 열에만 더해지고 같은 키·이벤트는 합산된다', (event, column) => {
+        const [row] = buildGateTable([
+            { key: 'k', event, count: 3 },
+            { key: 'k', event, count: 4 },
+        ]);
+        expect(row).toEqual({
+            key: 'k',
+            gateClicks: 0,
+            shown: 0,
+            ctaClicks: 0,
+            signups: 0,
+            [column]: 7,
+        });
+    });
+
+    it('표 밖 이벤트는 건수를 세지 않는다', () => {
+        expect(
+            buildGateTable([{ key: 'k', event: 'other', count: 5 }])
+        ).toEqual([
+            { key: 'k', gateClicks: 0, shown: 0, ctaClicks: 0, signups: 0 },
+        ]);
+    });
+
     it('노출 내림차순, 같으면 게이트 클릭 내림차순, 같으면 키 사전순', () => {
         const rows = [
             { key: 'b', event: 'nudge_shown', count: 1 },

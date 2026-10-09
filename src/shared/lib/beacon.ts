@@ -1,3 +1,9 @@
+/**
+ * 왜 `shared`에 있나: 방문자 비콘(`features/visitor-ping`)과 가입 퍼널 전송
+ * (`shared/lib/funnel/trackFunnelEvent`)이 같은 전송 정책(타임아웃·keepalive·첫 상호작용
+ * 지연)을 써야 한다. 퍼널 전송은 shared 레이어라 feature 안에 두면 상위 레이어를
+ * import하게 된다.
+ */
 import { onFirstInteraction } from '@/shared/lib/onFirstInteraction';
 
 /**

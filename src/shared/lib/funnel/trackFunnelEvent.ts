@@ -23,10 +23,13 @@ export function trackFunnelEvent<E extends FunnelEvent>(
     if (typeof window === 'undefined') return;
     try {
         if (event === 'nudge_shown') {
+            // 제네릭 E는 `event === 'nudge_shown'` 비교로 좁혀지지 않는다. 호출 시그니처가
+            // `ContextOf<E>`를 강제하므로 이 분기의 context는 항상 nudge_shown의 것이다.
             const { kind } = context as ContextOf<'nudge_shown'>;
             // 방침이 고지한 것은 "가입 전 마지막으로 본 것"이다 — 회원 넛지는 남기지 않는다.
             if (!kind.startsWith('member_')) rememberLastGate(kind);
         } else if (event === 'gate_clicked') {
+            // 위와 같은 이유 — 시그니처가 gate_clicked의 context임을 보장한다.
             rememberLastGate((context as ContextOf<'gate_clicked'>).gate);
         }
         postBeacon({ url: FUNNEL_EVENT_ENDPOINT, body: { event, context } });

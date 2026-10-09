@@ -1,4 +1,6 @@
 import type { FunnelKeyEventCount } from '@/entities/funnel/types';
+import { RETENTION_WINDOWS } from '@/entities/funnel/retentionWindows';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 
 /** 보고 구간 — KST `YYYY-MM-DD`, 양끝 포함. */
@@ -9,7 +11,6 @@ export interface ReportRange {
 
 const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const USAGE = 'usage: yarn funnel:report --from YYYY-MM-DD --to YYYY-MM-DD';
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function readFlag(argv: readonly string[], flag: string): string | undefined {
     const index = argv.indexOf(flag);
@@ -55,30 +56,40 @@ export interface GateTableRow {
     signups: number;
 }
 
+type GateCountColumn = 'gateClicks' | 'shown' | 'ctaClicks' | 'signups';
+
+/** 표에 오르는 이벤트와 그 열. 여기 없는 이벤트는 행만 만들고 건수는 세지 않는다. */
+const GATE_TABLE_COLUMN_BY_EVENT: ReadonlyMap<string, GateCountColumn> =
+    new Map([
+        ['gate_clicked', 'gateClicks'],
+        ['nudge_shown', 'shown'],
+        ['nudge_clicked', 'ctaClicks'],
+        ['signup_completed', 'signups'],
+    ]);
+
+function emptyGateRow(key: string): GateTableRow {
+    return { key, gateClicks: 0, shown: 0, ctaClicks: 0, signups: 0 };
+}
+
 /**
  * (키, 이벤트) 건수를 키 한 줄로 접는다. 같은 키(예: `reasoning_toggle`)가 게이트로도
- * 넛지로도 쓰이므로 `gate_clicked`와 `nudge_clicked`는 **다른 열**이다(스펙 §3.3).
+ * 넛지로도 쓰이므로 `gate_clicked`와 `nudge_clicked`는 **다른 열**이다.
  * 키가 없는 이벤트(관심종목·리포트)는 이 표 밖이다.
  */
 export function buildGateTable(
     rows: readonly FunnelKeyEventCount[]
 ): GateTableRow[] {
-    const byKey = new Map<string, GateTableRow>();
-    for (const { key, event, count } of rows) {
-        if (key === null) continue;
-        const row = byKey.get(key) ?? {
+    const byKey = rows.reduce((acc, { key, event, count }) => {
+        if (key === null) return acc;
+        const column = GATE_TABLE_COLUMN_BY_EVENT.get(event);
+        const row = acc.get(key) ?? emptyGateRow(key);
+        return new Map(acc).set(
             key,
-            gateClicks: 0,
-            shown: 0,
-            ctaClicks: 0,
-            signups: 0,
-        };
-        if (event === 'gate_clicked') row.gateClicks += count;
-        else if (event === 'nudge_shown') row.shown += count;
-        else if (event === 'nudge_clicked') row.ctaClicks += count;
-        else if (event === 'signup_completed') row.signups += count;
-        byKey.set(key, row);
-    }
+            column === undefined
+                ? row
+                : { ...row, [column]: row[column] + count }
+        );
+    }, new Map<string, GateTableRow>());
     return [...byKey.values()].sort(
         (a, b) =>
             b.shown - a.shown ||
@@ -111,9 +122,6 @@ export function renderTable(
 
 /** 한 주 코호트의 가장 늦은 가입일은 주 시작 + 6일이다. */
 const WEEK_LAST_DAY_OFFSET = 6;
-/** D7 창은 가입일 +13, D30 창은 +36일에 닫힌다(`signupCohortRetention`). */
-const D7_WINDOW_END_DAYS = 13;
-const D30_WINDOW_END_DAYS = 36;
 
 /**
  * 코호트 주의 D7·D30이 확정됐는지. 그 주의 **마지막 가입자**의 창이 어제까지 닫혀야
@@ -125,7 +133,11 @@ export function cohortMaturity(
 ): { d7: boolean; d30: boolean } {
     const weekEnd = kstDateKeyDaysBefore(weekStartKst, -WEEK_LAST_DAY_OFFSET);
     return {
-        d7: kstDateKeyDaysBefore(weekEnd, -D7_WINDOW_END_DAYS) < todayKst,
-        d30: kstDateKeyDaysBefore(weekEnd, -D30_WINDOW_END_DAYS) < todayKst,
+        d7:
+            kstDateKeyDaysBefore(weekEnd, -RETENTION_WINDOWS.d7.endDay) <
+            todayKst,
+        d30:
+            kstDateKeyDaysBefore(weekEnd, -RETENTION_WINDOWS.d30.endDay) <
+            todayKst,
     };
 }

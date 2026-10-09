@@ -49,7 +49,7 @@ export function AnalysisSignupNudgeModal({
     const t = useTranslations('features.analysis-nudge');
     const tA11y = useTranslations('features.reasoning-toggle.a11y');
     // `variant`는 자동 넛지에만 의미가 있다 — 문구를 번갈아 보여 주는 쪽. 잠금 토글
-    // 클릭은 늘 `reasoning` 문구라 기록해도 정보가 늘지 않고, 카탈로그(스펙 §3.3)도
+    // 클릭은 늘 `reasoning` 문구라 기록해도 정보가 늘지 않고, 이벤트 카탈로그도
     // `anon_auto`에만 허용한다.
     const funnelContext: ContextOf<'nudge_shown'> =
         kind === 'anon_auto' ? { kind, variant } : { kind };

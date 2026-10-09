@@ -16,7 +16,7 @@ describe('lastGate', () => {
         vi.restoreAllMocks();
     });
 
-    it('키는 스펙 §3.3의 값이다', () => {
+    it('키는 고정된 값이다(방침·리포트와 맞물린다)', () => {
         expect(LOCAL_STORAGE_FUNNEL_LAST_GATE_KEY).toBe(
             'siglens:funnel:last-gate'
         );

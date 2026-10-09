@@ -92,13 +92,17 @@ describe('DrizzleVisitorRepository', () => {
                 target: [visitorDays.date, visitorDays.visitorHash],
             })
         );
-        const [{ set }] = onConflictDoUpdate.mock.calls.find(
+        const [{ set, setWhere }] = onConflictDoUpdate.mock.calls.find(
             ([arg]) => arg !== undefined
-        ) as [{ set: { userId: unknown } }];
+        ) as [{ set: { userId: unknown }; setWhere: never }];
         expect(Object.keys(set)).toEqual(['userId']);
         const rendered = new PgDialect().sqlToQuery(set.userId as never);
         expect(rendered.sql).toBe(
             'coalesce("visitor_days"."user_id", excluded.user_id)'
+        );
+        // 채울 때만 쓴다: 기존 user_id가 비어 있고 들어온 값이 있을 때.
+        expect(new PgDialect().sqlToQuery(setWhere).sql).toBe(
+            '("visitor_days"."user_id" is null and excluded.user_id is not null)'
         );
     });
 

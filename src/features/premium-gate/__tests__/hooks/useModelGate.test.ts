@@ -279,7 +279,7 @@ describe('useModelGate', () => {
             });
         });
 
-        it('회원이 키 없는 byok 모델을 고르면 byok 게이트가 열리며 기록한다', () => {
+        it('회원이 키 없는 byok 모델을 고르면 byok 게이트가 열리지만 기록하지 않는다', () => {
             mockCurrentUser = { tier: 'member' };
             mockRegisteredProviders = [];
             const { result } = renderHook(() =>
@@ -289,9 +289,7 @@ describe('useModelGate', () => {
                 result.current.handleModelChange('premium-model' as ModelId)
             );
             expect(result.current.gateModal?.mode).toBe('byok');
-            expect(track).toHaveBeenCalledWith('gate_clicked', {
-                gate: 'model',
-            });
+            expect(track).not.toHaveBeenCalled();
         });
 
         it('free 모델 통과는 기록하지 않는다', () => {

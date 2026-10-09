@@ -4,7 +4,6 @@
  *
  * `presence` 하위인 이유는 `../route.ts`와 같다 — `analytics`·`track`·`collect` 경로는
  * EasyList 계열 차단 목록이 막는다. 봇·프로덕션·pepper·after() 구조도 그 라우트와 같다.
- * 설계: docs/superpowers/specs/2026-10-09-funnel-events-design.md §4.1
  *
  * 알려진 한계: 방문자·IP 단위 호출 제한(throttle)은 걸지 않았다. 공용 per-IP 제한 헬퍼가
  * 아직 없고(`checkShareRateLimit`은 공유 생성 전용 키·한도), 이 라우트는 유료 업스트림을
@@ -17,9 +16,6 @@ import {
     DrizzleFunnelEventRepository,
     type FunnelEventRecord,
 } from '@/entities/funnel/api';
-import { buildVisitorHash } from '@/entities/visitor/lib/visitorHash';
-import { getClientIp } from '@/shared/api/getClientIp';
-import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
@@ -30,9 +26,12 @@ import {
 } from '@/shared/lib/funnel/funnelEvents';
 import { createDailyPruner, noContent } from '../_shared/dailyPruner';
 import { resolveUserId } from '../_shared/resolveUserId';
+import {
+    rejectUncountedRequest,
+    resolveVisitorIdentity,
+} from '../_shared/visitorIdentity';
 
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_INTERNAL_SERVER_ERROR } =
-    constants;
+const { HTTP_STATUS_BAD_REQUEST } = constants;
 
 export const dynamic = 'force-dynamic';
 
@@ -68,32 +67,24 @@ async function readPayload(
 
 export async function POST(request: Request): Promise<Response> {
     const headerList = await headers();
-    if (isBot(headerList)) return noContent();
-    if (process.env.NODE_ENV !== 'production') return noContent();
+    const rejected = rejectUncountedRequest(headerList);
+    if (rejected !== null) return rejected;
 
     const payload = await readPayload(request);
     if (payload === null) {
         return new Response(null, { status: HTTP_STATUS_BAD_REQUEST });
     }
 
-    const pepper = process.env.VISITOR_HASH_PEPPER ?? '';
-    if (pepper === '') {
-        // 조용히 0이 찍히는 것이 최악이다. 프로덕션 로그에 남긴다.
-        console.error(
-            '[funnel] VISITOR_HASH_PEPPER is not set — funnel events are not being recorded'
-        );
-        return new Response(null, {
-            status: HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        });
-    }
+    const identity = await resolveVisitorIdentity(
+        headerList,
+        '[funnel]',
+        'funnel events'
+    );
+    if (!identity.ok) return identity.response;
 
     const event: FunnelEventRecord = {
         // `visitor_days`와 같은 입력 — 두 테이블을 같은 사람으로 잇는 열쇠다.
-        visitorHash: buildVisitorHash(
-            pepper,
-            await getClientIp(),
-            headerList.get('user-agent') ?? ''
-        ),
+        visitorHash: identity.visitorHash,
         userId: await resolveUserId('[funnel]'),
         event: payload.event,
         context: payload.context,

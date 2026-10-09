@@ -82,7 +82,8 @@ export function useModelGate({
         if (access !== 'free') {
             const requiredProvider = getProviderForModel(model);
             if (!currentUser) {
-                // 잠긴 모델 선택 = 게이트를 여는 클릭(스펙 §3.3). 모달 노출은 모달이 따로 센다.
+                // 잠긴 모델 선택 = 비회원이 게이트를 여는 클릭. 모달 노출은 모달이 따로 센다.
+                // 아래 byok 분기는 회원 전용 API 키 안내라 기록하지 않는다.
                 trackFunnelEvent('gate_clicked', { gate: 'model' });
                 setGateModal({ mode: 'auth', provider: requiredProvider });
                 return;
@@ -95,7 +96,6 @@ export function useModelGate({
                         p => p.provider === requiredProvider
                     )
                 ) {
-                    trackFunnelEvent('gate_clicked', { gate: 'model' });
                     setGateModal({ mode: 'byok', provider: requiredProvider });
                     return;
                 }
