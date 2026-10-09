@@ -95,7 +95,7 @@ describe('useWatchlistQuery', () => {
         };
         mockGet.mockResolvedValue([MSFT, AAPL]);
         await act(async () => {
-            pending.resolve({ status: 'ok', item: MSFT });
+            pending.resolve({ status: 'ok', item: MSFT, created: true });
         });
         await waitFor(() =>
             expect(client.getQueryData(QUERY_KEYS.watchlist())).toEqual([
@@ -258,7 +258,7 @@ describe('useWatchlistQuery', () => {
         expect(mockGet.mock.calls.length).toBe(callsBefore);
 
         await act(async () => {
-            nvda.resolve({ status: 'ok', item: NVDA });
+            nvda.resolve({ status: 'ok', item: NVDA, created: true });
         });
         await waitFor(() =>
             expect(client.getQueryData(QUERY_KEYS.watchlist())).toEqual([

@@ -69,7 +69,7 @@ describe('AnalysisSignupNudgeModal', () => {
         );
         expect(
             screen.getByRole('heading', {
-                name: '보유 종목 리포트를 메일로 받아보세요',
+                name: '보유·관심종목 리포트를 메일로 받아보세요',
             })
         ).toBeInTheDocument();
         expect(

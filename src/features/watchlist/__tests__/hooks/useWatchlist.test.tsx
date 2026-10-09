@@ -288,6 +288,7 @@ describe('useWatchlist', () => {
                     companyName: 'Microsoft Corp.',
                     addedAt: '2026-10-09T00:00:00.000Z',
                 },
+                created: true,
             });
             const { wrapper } = createQueryClientWrapper();
             const { result } = renderHook(() => useWatchlist(), { wrapper });
@@ -311,6 +312,31 @@ describe('useWatchlist', () => {
             expect(
                 localStorage.getItem(LOCAL_STORAGE_WATCHLIST_KEY)
             ).toBeNull();
+        });
+
+        it('서버에 이미 있던 심볼(다른 탭에서 담음, created=false)이면 added로 끝나되 이벤트는 보내지 않는다', async () => {
+            mockAdd.mockResolvedValue({
+                status: 'ok',
+                item: {
+                    symbol: 'MSFT',
+                    companyName: 'Microsoft Corp.',
+                    addedAt: '2026-10-09T00:00:00.000Z',
+                },
+                created: false,
+            });
+            const { wrapper } = createQueryClientWrapper();
+            const { result } = renderHook(() => useWatchlist(), { wrapper });
+            await waitFor(() => expect(result.current.isHydrated).toBe(true));
+            let outcome: string | undefined;
+            await act(async () => {
+                outcome = await result.current.add(
+                    { symbol: 'MSFT', label: 'MS' },
+                    'portfolio_page'
+                );
+            });
+            expect(outcome).toBe('added');
+            expect(mockAdd).toHaveBeenCalledTimes(1);
+            expect(mockTrack).not.toHaveBeenCalled();
         });
 
         it('액션이 error 결과면 failed, 에러 토스트, 이벤트 없음', async () => {

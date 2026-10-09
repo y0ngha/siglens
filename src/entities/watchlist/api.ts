@@ -114,7 +114,11 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
                     if (row === undefined) {
                         throw new Error('Failed to upsert watchlist item');
                     }
-                    return { status: 'added', item: row } as const;
+                    return {
+                        status: 'added',
+                        item: row,
+                        created: !alreadySaved,
+                    } as const;
                 }),
             DB_TRANSIENT_RETRY
         );

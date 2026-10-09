@@ -25,7 +25,7 @@ interface AnalysisSignupNudgeModalProps {
     /** 무엇이 열었나 — 자동 넛지(`anon_auto`)인지 잠긴 추론 토글 클릭(`reasoning_toggle`)인지. */
     kind: SignupNudgeKind;
     /**
-     * 어떤 기능을 알릴지. `reasoning`은 상세 분석(추론 토글), `emailReport`는 보유 종목
+     * 어떤 기능을 알릴지. `reasoning`은 상세 분석(추론 토글), `emailReport`는 보유·관심종목
      * 메일 리포트다. 잠금 토글 클릭은 늘 `reasoning`, 자동 넛지는 둘을 번갈아 쓴다.
      */
     variant: SignupNudgeVariant;
@@ -68,8 +68,8 @@ export function AnalysisSignupNudgeModal({
     > = {
         emailReport: {
             Icon: MailIcon,
-            title: t('AnalysisSignupNudgeModal.7e84b8'),
-            body: t('AnalysisSignupNudgeModal.ac43bc'),
+            title: t('AnalysisSignupNudgeModal.3dc0b0'),
+            body: t('AnalysisSignupNudgeModal.91d660'),
         },
         reasoning: {
             Icon: LayersIcon,

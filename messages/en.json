@@ -497,8 +497,8 @@
                 "chartAlt": "{v0} daily chart",
                 "confluenceNote": "Confluence is the degree (0–100) to which indicators point the same way; it is not investment advice.",
                 "disclaimer": "This email is for information only and is not investment advice. You are responsible for your investment decisions and their outcomes. AI analysis may be inaccurate.",
-                "heading": "Your holdings report",
-                "intro": "Here's the latest on your holdings as of {v0}.",
+                "heading": "Your holdings & watchlist report",
+                "intro": "Here's the latest on your holdings and watchlist as of {v0}.",
                 "manage": "Change settings",
                 "noAnalysis": "The AI analysis for this stock isn't ready yet. You can run it on the site right away.",
                 "optionsIv": "ATM implied volatility",
@@ -528,7 +528,7 @@
                 "signalMore": "+{v0}",
                 "signalPullback": "Pullback: {v0}",
                 "signalScore": "Confluence {v0}",
-                "subject": "[{v0}] Your holdings report · {v1}",
+                "subject": "[{v0}] Your holdings & watchlist report · {v1}",
                 "trendState": {
                     "downtrend": "Downtrend",
                     "sideways": "Sideways",
@@ -650,10 +650,10 @@
             "AnalysisSignupNudgeModal": {
                 "486011": "Sign up to enable ''{v0}'' and receive more detailed analysis reports.",
                 "2b8afd": "Go to Sign Up",
-                "7e84b8": "Get a report on your holdings by email",
+                "3dc0b0": "Get your holdings & watchlist report by email",
                 "84ff73": "Want deeper analysis?",
                 "94b7db": "Close",
-                "ac43bc": "Sign up and add your portfolio, and we'll email daily charts, the Simple analysis, news and options activity on the days and time you choose."
+                "91d660": "Sign up and add your holdings or watchlist, and we'll email daily charts, the Simple analysis, news and options activity on the days and time you choose."
             }
         },
         "api-key-management": {
