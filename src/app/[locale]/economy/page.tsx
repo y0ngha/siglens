@@ -53,8 +53,8 @@ function EconomyHeroH1({ title }: { title: string }) {
 }
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고 신선도는 클라 refetch가 책임진다.
-// `FmpEconomyProvider`의 `ECONOMY_REVALIDATE_SECONDS`(= `SECONDS_PER_DAY` = 86400)와
-// 동일 값으로 양 계층 TTL 일치시킨다. 출처 상수를 import하면 Next의 정적 분석이
+// 이 페이지 ISR과 스냅샷 정적 캐시(`getEconomySnapshotStatic`의 `SECONDS_PER_DAY`
+// = 86400) 두 값을 맞춘다. 출처 상수를 import하면 Next의 정적 분석이
 // 깨져 config가 무시되므로(CONVENTIONS.md#CS-3 단일 출처 + src/app/CLAUDE.md#AP-1 ISR 규약)
 // 리터럴 강제하고, 변경 시 두 곳을 함께 갱신한다.
 export const revalidate = 86400;

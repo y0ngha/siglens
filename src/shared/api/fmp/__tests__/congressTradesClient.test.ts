@@ -70,6 +70,14 @@ describe('FmpCongressTradesClient', () => {
         expect(String(mockFetch.mock.calls[0][0])).toContain('house-trades');
     });
 
+    it('Next 데이터 캐시를 쓰지 않는다(no-store, 캐시는 Redis 계층만)', async () => {
+        mockOk([]);
+        await new FmpCongressTradesClient().getTrades('AAPL', 'house', 50);
+        const opts = mockFetch.mock.calls[0]![1] as RequestInit;
+        expect(opts.cache).toBe('no-store');
+        expect(opts).not.toHaveProperty('next');
+    });
+
     it('limit으로 잘라 반환한다', async () => {
         mockOk([sampleSenate[0], sampleSenate[0], sampleSenate[0]]);
         const out = await new FmpCongressTradesClient().getTrades(

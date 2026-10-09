@@ -4,7 +4,7 @@ import type {
     CongressTradesProvider,
     RawCongressTrade,
 } from '@y0ngha/siglens-core';
-import { CONGRESS_REVALIDATE_SECONDS } from '@/shared/config/time';
+import { CONGRESS_CACHE_TTL_SECONDS } from '@/shared/config/time';
 
 // In-memory fake Redis mirroring the pattern in CachedFinancialStatementsProvider.test.ts.
 // NOTE: react cache is a pass-through in vitest — second calls re-enter
@@ -69,7 +69,7 @@ describe('CachedCongressTradesProvider — cache key format & TTL', () => {
         expect(setCall![0]).toBe('congress:senate:AAPL');
         // getOrSetCache stores as { data: value } — check the ex option
         expect((setCall![2] as { ex?: number }).ex).toBe(
-            CONGRESS_REVALIDATE_SECONDS
+            CONGRESS_CACHE_TTL_SECONDS
         );
     });
 

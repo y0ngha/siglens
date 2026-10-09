@@ -35,14 +35,21 @@ export const SECONDS_PER_QUARTER_DAY = SECONDS_PER_HOUR * 6;
 export const SESSION_KEYED_CACHE_REVALIDATE_SECONDS = SECONDS_PER_DAY;
 
 /**
- * 재무제표는 분기(~45일) 단위라 길게. fmpGet revalidate + Redis TTL이 이 상수를 공유.
+ * 24h — FMP 펀더멘털(프로필·밸류에이션·성장·애널리스트 등)의 Redis(`getOrSetCache`) TTL.
+ * 분기 단위 재무와 정합.
  *
- * Income/balance/cash-flow statements are published on a quarterly cadence
- * (~45 days lag). A 24 h TTL avoids stale data after an earnings release while
- * keeping FMP API call volume manageable.
+ * 아래 `FMP_STATEMENTS_CACHE_TTL_SECONDS`·`CONGRESS_CACHE_TTL_SECONDS`와 함께 이 데이터의
+ * 유일한 서버 캐시 계층이다 — 안쪽 `fmpGet`은 Next 데이터 캐시를 쓰지 않는다(`httpClient.ts`의
+ * `fmpGet` JSDoc 참고). 화면은 이 위에 `staticSymbolCache`(`unstable_cache`)를 한 겹 더
+ * 두지만 그건 렌더 결과 캐시이고, FMP 응답 자체는 여기서만 묵는다.
  */
-export const FMP_STATEMENTS_REVALIDATE_SECONDS = SECONDS_PER_DAY; // 24h
-export const CONGRESS_REVALIDATE_SECONDS = SECONDS_PER_DAY; // 24h — 의회 거래 공시지연 ~45일
+export const FMP_FUNDAMENTAL_CACHE_TTL_SECONDS = SECONDS_PER_DAY;
+/**
+ * 24h — 재무제표는 분기(~45일) 단위로 나오지만, 실적 발표 직후 하루 넘게 옛 값을
+ * 보이지 않도록 하루로 둔다.
+ */
+export const FMP_STATEMENTS_CACHE_TTL_SECONDS = SECONDS_PER_DAY;
+export const CONGRESS_CACHE_TTL_SECONDS = SECONDS_PER_DAY; // 24h — 의회 거래 공시지연 ~45일
 
 /**
  * `'YYYY-MM-DDTHH'` (length 13) → `new Date().toISOString().slice(0, 13)` gives

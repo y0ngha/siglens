@@ -1,6 +1,5 @@
-import { fmpGet as fmpGetRaw } from './httpClient';
+import { fmpGet } from './httpClient';
 import { toFiniteNumber } from './toFiniteNumber';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import type {
     RawFmpAnalystEstimate,
@@ -38,22 +37,6 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
-
-/**
- * 펀더멘털 데이터는 분기 단위 재무 + statements/congress와 정합 → 24시간 freshness 창.
- * Next Data Cache `revalidate`와 호출부의 Redis TTL이 이 단일 상수를 공유해,
- * 두 캐시 계층의 신선도가 절대 어긋나지 않는다.
- */
-export const FMP_FUNDAMENTAL_REVALIDATE_SECONDS = SECONDS_PER_DAY;
-
-function fmpGet<T>(
-    path: string,
-    query: Record<string, string> = {}
-): Promise<T> {
-    return fmpGetRaw<T>(path, query, {
-        revalidate: FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-    });
-}
 
 const ANALYST_ESTIMATES_PERIOD = 'annual';
 const ANALYST_ESTIMATES_PAGE = '0';
@@ -159,8 +142,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * getKeyMetricsTtm과 getRatiosTtm이 같은 요청에서 동시에 호출돼도(core의
      * Promise.all) in-flight 공유로 각 엔드포인트 fetch가 1회로 수렴한다. React.cache는
      * RSC 렌더 스코프 전용이라 Server Action(분석 경로)에서는 dedup되지 않으므로
-     * 인스턴스 in-flight 맵을 쓴다. Next Data Cache(fmpGet revalidate)는 cross-request
-     * 2차 방어선이지만 region/배포마다 초기화되므로 신선도 보장에 의존하지 않는다.
+     * 인스턴스 in-flight 맵을 쓴다. 요청을 넘는 캐시는 데코레이터의 Redis 계층뿐이다.
      *
      * in-flight 맵 키는 대문자로 정규화한다(예: 'aapl' → 'AAPL'). Redis 계층은
      * 이미 대문자 키를 사용하며, 혼합 케이스 동시 호출('aapl' + 'AAPL')이 각각 별도
@@ -483,8 +465,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         symbol: string,
         limit = EARNINGS_REPORT_LIMIT
     ): Promise<FmpEarningsReportItem[]> {
-        // earnings는 실적 발표 시점 실시간성이 중요 → 1h 캐시 대신 no-store(fmpGetRaw).
-        const arr = await fmpGetRaw<RawFmpEarningsReport[]>('earnings', {
+        const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', {
             symbol,
             limit: String(limit),
         });

@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { sym } from './symKey';
-import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from './fundamentalClient';
+import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
 import type { FmpEarningsReportItem } from './fundamentalClient';
 import type {
     FundamentalProvider,
@@ -27,7 +27,7 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 
-const TTL = FMP_FUNDAMENTAL_REVALIDATE_SECONDS;
+const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
 export const PEER_LIMIT = 10;
 
 /**
@@ -54,9 +54,9 @@ export const PEER_LIMIT = 10;
  * 미들웨어(`proxy.ts`), `getAssetInfo`, 색인 판정이 모두 쓰는 그 함수이고, JSDoc이
  * "FMP 호출 이전 단계라 402가 원천적으로 발생하지 않는다"고 명시한 목적 그대로다.
  *
- * **두 경로에 모두 걸어야 한다.** enrich 경로(`getStockPeers`)만 고치면 402는 멎지만
- * 화면에 보이는 표는 raw 경로(`getStockPeersRaw`)에서 오므로 죽은 링크가 그대로 남는다.
- * 그래서 필터를 여기 한 곳에 두고 둘이 함께 부른다.
+ * **두 경로 모두 이 필터를 거쳐야 한다.** enrich 경로(`getStockPeers`)만 고치면 402는
+ * 멎지만 화면에 보이는 표는 raw 경로(`getStockPeersRaw`)에서 오므로 죽은 링크가 그대로
+ * 남는다. 그래서 raw 경로가 이 필터를 부르고, enrich 경로는 raw 경로의 결과를 재사용한다.
  *
  * 자르는 순서도 중요하다: **필터 → cap**. 반대로 하면 해외 상장이 상위 N을 차지한 만큼
  * 실제로 보여줄 수 있는 peer가 줄어든다.
@@ -198,12 +198,13 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * accumulator를 잇는 async reduce — 다음 peer fetch는 직전 peer 완료 후에만 시작), 비정상
      * 적으로 큰 peer 목록은 PEER_LIMIT으로 제한한다.
      *
-     * 목록은 `serveablePeers`로 먼저 거른다 — 402와 죽은 링크의 원인이 거기 있다.
+     * 목록은 화면용 `getStockPeersRaw`(이미 `serveablePeers`로 거른 목록)를 재사용한다 —
+     * 402와 죽은 링크의 원인이 거기서 걸러지고, 같은 FMP `stock-peers` 응답을 두 Redis
+     * 키가 따로 받아 오지 않는다.
      */
     getStockPeers = cache((symbol: string): Promise<FundamentalPeerInput[]> =>
         getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
-            const raw = await this.inner.getStockPeers(symbol);
-            const peers = serveablePeers(raw);
+            const peers = await this.getStockPeersRaw(symbol);
             // 이전에는 async reduce로 peer를 한 건씩 직렬 조회해 지연이 PEER_LIMIT배로
             // 누적됐다. 심볼 단위로 dedupe한 뒤 병렬 조회한다 — 직렬 루프가 보장했던
             // "중복 심볼은 상류 1회 호출"(첫 조회가 캐시를 채워 두 번째가 히트)을

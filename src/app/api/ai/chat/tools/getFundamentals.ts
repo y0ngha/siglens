@@ -1,7 +1,9 @@
 import 'server-only';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamentalClient';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
@@ -23,13 +25,6 @@ import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { pctVs, ratioPct } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
-
-/**
- * 펀더멘털 값이 지나는 캐시 계층 수 — Redis(`getOrSetCache`) + Next Data Cache.
- * 둘 다 `FMP_FUNDAMENTAL_REVALIDATE_SECONDS`를 쓰지만 만료 시점이 독립이라
- * 최악의 나이는 두 창의 합에 가깝다.
- */
-const FUNDAMENTAL_CACHE_LAYERS = 2;
 
 function settledOrNull<T>(r: PromiseSettledResult<T>): T | null {
     return r.status === 'fulfilled' ? r.value : null;
@@ -195,7 +190,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         /*
          * `asOf`는 **조회 시각**이다 — 데이터가 그 시점 값이라는 뜻이 아니다.
          *
-         * 이 경로는 전부 `getOrSetCache(key, FMP_FUNDAMENTAL_REVALIDATE_SECONDS, …)`
+         * 이 경로는 전부 `getOrSetCache(key, FMP_FUNDAMENTAL_CACHE_TTL_SECONDS, …)`
          * 로 읽으므로 프로필·밸류에이션·성장·재무건전성·애널리스트 값이 최대
          * 24시간 묵었을 수 있는데, 예전에는 그걸 `asOf: now`로만 내보내 모델이
          * "지금 P/E"라고 단정할 근거를 줬다. 펀더멘털은 분기 단위로 바뀌므로
@@ -219,14 +214,11 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         // 문제는 아니다). `nextEarningsDate`/`daysToEarnings`는 DB 행이라 갱신이
         // 실패하면 몇 주 묵을 수 있다 — 하나의 숫자로 전부를 덮는다고 말하면
         // 그게 이 PR이 고치는 `asOf: now`와 같은 과장이 된다.
-        // **두 계층이 겹친다.** Redis(`getOrSetCache`)가 24h로 잡고, 그게 miss나면
-        // 안쪽 `fmpGet`이 Next Data Cache를 같은 24h `revalidate`로 읽는다
-        // (stale-while-revalidate). 두 창이 어긋나게 만료되면 실질 상한은 24h가
-        // 아니라 그 합에 가깝다 — 한 계층만 세면 이 PR이 고치는 `asOf: now`와
-        // 같은 과소평가가 된다.
+        // 이 도구는 프로바이더를 직접 부르므로 거치는 캐시는 Redis(`getOrSetCache`)
+        // 한 계층뿐이다 — miss면 안쪽 `fmpGet`이 FMP를 새로 읽는다(no-store). 예전엔
+        // 그 아래 Next 데이터 캐시가 같은 24h로 겹쳐 상한이 두 창의 합이었다.
         cachedSectionsMaxAgeHours:
-            (FMP_FUNDAMENTAL_REVALIDATE_SECONDS * FUNDAMENTAL_CACHE_LAYERS) /
-            SECONDS_PER_HOUR,
+            FMP_FUNDAMENTAL_CACHE_TTL_SECONDS / SECONDS_PER_HOUR,
         source: 'fundamental data provider (cached)',
         symbol,
         available: true,

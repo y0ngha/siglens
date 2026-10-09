@@ -27,7 +27,6 @@ import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { sleep } from '@/shared/lib/sleep';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import { FMP_RENDER_FETCH_TIMEOUT_MS } from '@/shared/api/fmp/fmpRetry';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     __resetFmpBuildBreakerForTests,
     __resetOfflineBuildWarningsForTests,
@@ -130,6 +129,9 @@ describe('fmpGet 함수는', () => {
 
             const options = mockFetch.mock.calls[0]![1] as RequestInit;
             expect(options.cache).toBe('no-store');
+            // Next 데이터 캐시를 켜는 옵션이 없어야 한다 — Redis 아래에서 만료된 응답을
+            // 다시 저장하게 만든다(`fmpGet` JSDoc).
+            expect(options).not.toHaveProperty('next');
         });
 
         it('AbortSignal 타임아웃을 설정한다', async () => {
@@ -396,25 +398,6 @@ describe('fmpGet 함수는', () => {
 
             await expect(fmpGet('profile')).rejects.toThrow(SyntaxError);
             expect(mockFetch).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('캐시 옵션에서는', () => {
-        it('revalidate 지정 시 next.revalidate 사용', async () => {
-            const fetchMock = vi
-                .spyOn(global, 'fetch')
-                .mockResolvedValue(
-                    new Response(JSON.stringify([]), { status: 200 })
-                );
-            await fmpGet(
-                'profile',
-                { symbol: 'AAPL' },
-                { revalidate: SECONDS_PER_HOUR }
-            );
-            expect(fetchMock.mock.calls[0]![1]).toMatchObject({
-                next: { revalidate: SECONDS_PER_HOUR },
-            });
-            fetchMock.mockRestore();
         });
     });
 });

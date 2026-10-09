@@ -3,7 +3,6 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { FmpFinancialStatementsClient } from '../financialStatementsClient';
-import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
 
 const mockFetch = vi.fn();
 
@@ -166,19 +165,16 @@ describe('FmpFinancialStatementsClient', () => {
             ).rejects.toThrow('404');
         });
 
-        it('uses FMP_STATEMENTS_REVALIDATE_SECONDS for Next cache revalidate', async () => {
+        it('does not use the Next data cache (no-store; Redis is the only cache layer)', async () => {
             mockOk([]);
             await new FmpFinancialStatementsClient().getIncomeStatements(
                 'AAPL',
                 'annual',
                 5
             );
-            const opts = mockFetch.mock.calls[0]![1] as RequestInit & {
-                next?: { revalidate?: number };
-            };
-            expect(opts.next?.revalidate).toBe(
-                FMP_STATEMENTS_REVALIDATE_SECONDS
-            );
+            const opts = mockFetch.mock.calls[0]![1] as RequestInit;
+            expect(opts.cache).toBe('no-store');
+            expect(opts).not.toHaveProperty('next');
         });
     });
 
