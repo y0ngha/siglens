@@ -17,6 +17,7 @@
  * (`toSorted`는 비교 함수가 없으면 기본 정렬, 원본은 바꾸지 않음).
  *
  * 이 파일 자체는 위 메서드를 쓰지 않는다 — 없는 브라우저에서 돌아야 하기 때문이다.
+ * 지원 하한과 폴리필 추가 절차는 TOOLCHAIN.md#TC-36.
  */
 
 type Comparator = (a: unknown, b: unknown) => number;
