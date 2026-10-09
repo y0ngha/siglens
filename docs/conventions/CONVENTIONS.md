@@ -777,6 +777,17 @@ type churn for a design that may change before use.
 Code kept under a TODO is referenced by other comments or commented-out code. Update or restore every reference
 before deleting it.
 
+<a id="CS-14"></a>
+
+#### CS-14 — Policy and notice text matches code behavior line by line
+
+Privacy policies, terms and in-product notices state exactly what the code does: list the storage items, the data
+actually used and every item sent to a third party (including identifiers embedded in links). Compare each sentence
+with the code path; on a mismatch change the code or the text, never leave both.
+
+- ❌ Policy says "quantity and average price are used" while the code only reads tickers.
+- ✅ Policy lists tickers only, matching what the code reads.
+
 ---
 
 ## Layer Dependency Rules
