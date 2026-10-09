@@ -84,7 +84,7 @@ describe('EmailReportNudgeModal', () => {
         );
 
         expect(
-            screen.getByText(/005930\.KS을\(를\) 관심종목에 담으면/)
+            screen.getByText(/005930\.KS 종목을 관심종목에 담으면/)
         ).toBeInTheDocument();
         expect(screen.queryByRole('link')).not.toBeInTheDocument();
         await userEvent

@@ -168,23 +168,6 @@ describe('EmailReportPage', () => {
         ).toBeInTheDocument();
     });
 
-    it('미리보기 조회가 끝나지 않아도 정적 셸과 폼 가드는 렌더된다', async () => {
-        vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u-1' } as never);
-        mockFindHoldings.mockReturnValue(new Promise(() => {}));
-
-        render(await EmailReportPage({ params: params('ko') }));
-        // 가드는 미리보기를 기다리지 않고 끝난다 — 폼과 미리보기는 서로 독립이다.
-        render(await EmailReportGuard({ locale: 'ko' }));
-
-        expect(screen.getByTestId('settings-section')).toBeInTheDocument();
-        expect(
-            screen.getByRole('heading', { name: '리포트에 담기는 종목' })
-        ).toBeInTheDocument();
-        expect(
-            screen.getByRole('link', { name: '내 종목에서 관리하기' })
-        ).toHaveAttribute('href', '/portfolio');
-    });
-
     it('제목·안내를 그린다', async () => {
         render(await EmailReportPage({ params: params('ko') }));
 

@@ -239,7 +239,41 @@ describe('useEmailReportNudge', () => {
             });
         });
 
+        const analyzeThreeTimes = () =>
+            act(() => {
+                for (let i = 0; i < SYMBOL_NUDGE_MIN_ANALYSES; i += 1) {
+                    publishSymbolAnalyzed('tsla');
+                }
+            });
+
+        it('리포트가 꺼진 회원에게는 종목 넛지를 띄우지 않고, 다시 후보가 되도록 기록하지 않는다', () => {
+            const { result } = renderHook(() => useEmailReportNudge());
+
+            analyzeThreeTimes();
+
+            expect(result.current.nudge).toBeNull();
+            expect(readMemberNudgeRecord('u-1').symbolsNudged).toEqual([]);
+            expect(hasNudgeShownThisSession()).toBe(false);
+        });
+
+        it('리포트 켜짐 여부를 아직 모르면 띄우지 않는다', () => {
+            state.settings = undefined;
+            const { result } = renderHook(() => useEmailReportNudge());
+
+            analyzeThreeTimes();
+
+            expect(result.current.nudge).toBeNull();
+            expect(readMemberNudgeRecord('u-1').symbolsNudged).toEqual([]);
+        });
+
+        it('후보가 생기기 전에는 수신 설정을 조회하지 않는다', () => {
+            renderHook(() => useEmailReportNudge());
+
+            expect(state.settingsEnabledArgs.every(e => !e)).toBe(true);
+        });
+
         it(`포트폴리오 밖 종목을 ${SYMBOL_NUDGE_MIN_ANALYSES}번 분석하면 그 종목으로 띄운다`, () => {
+            state.settings = { ...OFF, enabled: true };
             const { result } = renderHook(() => useEmailReportNudge());
 
             act(() => {

@@ -163,7 +163,7 @@ function SymbolNudgeModal({
                     {t('EmailReportNudgeModal.5da22e')}
                 </h2>
                 <p className="text-sm leading-relaxed text-secondary-300">
-                    {t('EmailReportNudgeModal.ae6739', { v0: symbol })}
+                    {t('EmailReportNudgeModal.ef5a22', { v0: symbol })}
                 </p>
             </div>
 

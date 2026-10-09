@@ -70,6 +70,16 @@ interface SetupDecision {
     userId: string;
     outcome: SetupOutcome;
 }
+/**
+ * 종목 넛지 후보. 담기 권유는 메일이 실제로 나갈 때만 약속이 되므로, 후보가 생긴 뒤에야
+ * 수신 설정을 조회해 켜져 있을 때만 띄운다(`awaiting` → `shown`/`skipped`).
+ */
+interface SymbolPending {
+    userId: string;
+    symbol: string;
+    at: number;
+    status: 'awaiting' | 'shown' | 'skipped';
+}
 interface OpenNudge {
     userId: string;
     nudge: EmailReportNudge;
@@ -97,6 +107,9 @@ export interface UseEmailReportNudgeResult {
 export function useEmailReportNudge(): UseEmailReportNudgeResult {
     const [openNudge, setOpenNudge] = useState<OpenNudge | null>(null);
     const [setupDecision, setSetupDecision] = useState<SetupDecision | null>(
+        null
+    );
+    const [symbolPending, setSymbolPending] = useState<SymbolPending | null>(
         null
     );
     const pathname = useAppPathname();
@@ -144,7 +157,46 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
         !isExcluded &&
         !storedSetupShown &&
         setupDecision?.userId !== user.id;
-    const { settings } = useEmailReportSettings({ enabled: isSetupCandidate });
+    const awaitingSymbol =
+        symbolPending !== null &&
+        symbolPending.status === 'awaiting' &&
+        symbolPending.userId === userId
+            ? symbolPending
+            : null;
+    const { settings } = useEmailReportSettings({
+        enabled: isSetupCandidate || awaitingSymbol !== null,
+    });
+
+    // 렌더 중 조정(EF-1) — 종목 넛지 후보는 수신 설정이 도착한 이번 렌더에 한 번만 판정한다.
+    // 꺼져 있거나(설정 권유가 맡는다) 이번 세션에 다른 넛지가 떴으면 띄우지 않는다.
+    // 알 수 없는 동안(`undefined`)은 판정하지 않는다. 저장소 쓰기는 아래 effect에서만 한다.
+    if (awaitingSymbol !== null && settings !== undefined) {
+        if (
+            settings !== null &&
+            settings.enabled &&
+            !hasNudgeShownThisSession() &&
+            nudge === null
+        ) {
+            setSymbolPending({ ...awaitingSymbol, status: 'shown' });
+            setOpenNudge({
+                userId: awaitingSymbol.userId,
+                nudge: { kind: 'symbol', symbol: awaitingSymbol.symbol },
+            });
+        } else {
+            setSymbolPending({ ...awaitingSymbol, status: 'skipped' });
+        }
+    }
+
+    // 종목 넛지를 실제로 띄운 경우에만 기록한다 — 꺼진 회원은 나중에 켜면 다시 후보가 된다.
+    useEffect(() => {
+        if (symbolPending === null || symbolPending.status !== 'shown') return;
+        const { userId: decidedFor, symbol, at } = symbolPending;
+        writeMemberNudgeRecord(
+            decidedFor,
+            markSymbolNudged(readMemberNudgeRecord(decidedFor), symbol, at)
+        );
+        markNudgeShownThisSession();
+    }, [symbolPending]);
 
     // 렌더 중 조정(EF-1) — 수신 설정이 도착한 이번 렌더에 한 번만 판정한다. 여기서
     // localStorage·sessionStorage를 읽어도 안전한 이유: 이 분기는 회원 정보와 수신 설정이
@@ -221,19 +273,15 @@ export function useEmailReportNudge(): UseEmailReportNudgeResult {
                     inReportSet,
                     now
                 );
-                if (shouldNudge && !hasNudgeShownThisSession()) {
-                    writeMemberNudgeRecord(
-                        latest.user.id,
-                        markSymbolNudged(record, upper, now)
-                    );
-                    markNudgeShownThisSession();
-                    setOpenNudge({
-                        userId: latest.user.id,
-                        nudge: { kind: 'symbol', symbol: upper },
-                    });
-                    return;
-                }
                 writeMemberNudgeRecord(latest.user.id, record);
+                if (shouldNudge && !hasNudgeShownThisSession()) {
+                    setSymbolPending({
+                        userId: latest.user.id,
+                        symbol: upper,
+                        at: now,
+                        status: 'awaiting',
+                    });
+                }
             }),
         []
     );

@@ -39,7 +39,9 @@ export const RECIPIENT_CONCURRENCY = 4;
 export const BATCH_DEADLINE_MS = 45 * 60 * 1000;
 /**
  * 한 회원의 요약 데이터(일봉)를 동시에 받는 종목 수. 최대 20종목/통을 한 번에 던지지 않는다(CC-1).
- * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 배치 전체 최악은 그 곱(20)이다.
+ * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 요약(일봉) 경로의 동시 조회 최악은 그 곱(20)이다.
+ * 전체 카드의 리포트 로드(`reportFor`)는 같은 회원 안에서 이 청크와 나란히 돌아 이 상한에
+ * 포함되지 않는다 — 배치 전체의 업스트림 호출 상한이 아니다.
  */
 export const BRIEF_CONCURRENCY = 5;
 const ERROR_MAX_LENGTH = 500;
@@ -210,8 +212,8 @@ export async function runEmailReportBatch(
             }
             const { locale } = recipient;
             // 요약 조회는 전체 카드·요약 행을 한 줄로 묶어 청크로 돌린다 — 회원 한 명당 동시에
-            // 떠 있는 일봉 조회가 BRIEF_CONCURRENCY를 넘지 않는다. 최악(회원 4명 동시, 서로 다른
-            // 종목 20개)에도 동시 조회는 RECIPIENT_CONCURRENCY × BRIEF_CONCURRENCY = 20.
+            // 떠 있는 일봉 조회가 BRIEF_CONCURRENCY를 넘지 않는다(최악 RECIPIENT_CONCURRENCY ×
+            // BRIEF_CONCURRENCY = 20). 전체 카드의 리포트 로드는 이 청크와 나란히 돈다.
             const [reports, briefs, t, signalLabel] = await Promise.all([
                 Promise.all(selection.full.map(s => reportFor(s, locale))),
                 mapChunked(symbols, BRIEF_CONCURRENCY, briefFor),
