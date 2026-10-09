@@ -53,3 +53,10 @@ export const LOCAL_STORAGE_MEMBER_EMAIL_REPORT_NUDGE_KEY =
  * 종류와 관계없이 하나만 띄운다.
  */
 export const SESSION_STORAGE_NUDGE_SHOWN_KEY = 'siglens_nudge_shown_session';
+
+/**
+ * 비회원이 마지막으로 누른 게이트·넛지 종류(`FunnelLastGate`). 가입 완료 퍼널 이벤트에
+ * `lastGate`로 붙인 뒤 지운다(`shared/lib/funnel/lastGate.ts`). 소프트 측정이라 조작
+ * 가능성은 받아들인다 — 넛지 카운터(`anonAnalysisCount`)와 같은 입장.
+ */
+export const LOCAL_STORAGE_FUNNEL_LAST_GATE_KEY = 'siglens:funnel:last-gate';

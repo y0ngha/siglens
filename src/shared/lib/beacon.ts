@@ -14,9 +14,9 @@ interface BeaconRequest {
     /**
      * 서버가 2xx로 받았을 때만 호출한다 — 하루 한 번 중복 방지 기록을 남기는 자리다.
      * 실패는 기록하지 않는다: pepper 미설정 같은 배포 오류가 다음 로드에서 다시
-     * 드러나야 한다.
+     * 드러나야 한다. 중복 방지가 필요 없는 비콘(퍼널 이벤트)은 생략한다.
      */
-    onDelivered: () => void;
+    onDelivered?: () => void;
 }
 
 /**
@@ -39,7 +39,7 @@ export function postBeacon({ url, body, onDelivered }: BeaconRequest): void {
         signal: AbortSignal.timeout(BEACON_TIMEOUT_MS),
     })
         .then(response => {
-            if (!response.ok) return;
+            if (!response.ok || onDelivered === undefined) return;
             try {
                 onDelivered();
             } catch {

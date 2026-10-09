@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    postBeacon,
-    sendOnHumanInteraction,
-} from '@/features/visitor-ping/lib/beacon';
+import { postBeacon, sendOnHumanInteraction } from '@/shared/lib/beacon';
 
 const onFirstInteraction = vi.hoisted(() => vi.fn(() => () => {}));
 vi.mock('@/shared/lib/onFirstInteraction', () => ({ onFirstInteraction }));
@@ -21,23 +18,31 @@ describe('postBeacon', () => {
         vi.unstubAllGlobals();
     });
 
-    it('sends a body-less keepalive POST when no body is given', () => {
+    it('본문이 없으면 headers·body 없이 keepalive POST를 보낸다', () => {
         postBeacon({ url: '/api/x', onDelivered: vi.fn() });
-        const init = vi.mocked(fetch).mock.calls[0][1];
-        expect(init).toMatchObject({ method: 'POST', keepalive: true });
+        expect(fetch).toHaveBeenCalledWith(
+            '/api/x',
+            expect.objectContaining({ method: 'POST', keepalive: true })
+        );
+        const init = vi
+            .mocked(fetch)
+            .mock.calls.find(([url]) => url === '/api/x')?.[1];
         expect(init).not.toHaveProperty('body');
         expect(init).not.toHaveProperty('headers');
     });
 
-    it('sends a JSON body when given', () => {
-        postBeacon({ url: '/api/x', body: { a: 1 }, onDelivered: vi.fn() });
-        expect(vi.mocked(fetch).mock.calls[0][1]).toMatchObject({
-            headers: { 'content-type': 'application/json' },
-            body: '{"a":1}',
-        });
+    it('본문이 있으면 JSON으로 보낸다', () => {
+        postBeacon({ url: '/api/y', body: { a: 1 }, onDelivered: vi.fn() });
+        expect(fetch).toHaveBeenCalledWith(
+            '/api/y',
+            expect.objectContaining({
+                headers: { 'content-type': 'application/json' },
+                body: '{"a":1}',
+            })
+        );
     });
 
-    it('calls onDelivered only for an ok response', async () => {
+    it('ok 응답에만 onDelivered를 부른다', async () => {
         const onDelivered = vi.fn();
         vi.mocked(fetch).mockResolvedValueOnce({ ok: false } as Response);
         postBeacon({ url: '/api/x', onDelivered });
@@ -49,7 +54,12 @@ describe('postBeacon', () => {
         expect(onDelivered).toHaveBeenCalledOnce();
     });
 
-    it('swallows network errors and onDelivered errors', async () => {
+    it('onDelivered 없이도 ok 응답을 조용히 끝낸다', async () => {
+        postBeacon({ url: '/api/x' });
+        await expect(flush()).resolves.toBeUndefined();
+    });
+
+    it('네트워크 오류와 onDelivered의 예외를 삼킨다', async () => {
         vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
         postBeacon({ url: '/api/x', onDelivered: vi.fn() });
         postBeacon({
@@ -67,7 +77,7 @@ describe('sendOnHumanInteraction', () => {
         onFirstInteraction.mockClear();
     });
 
-    it('never arms the gate for an automated browser', () => {
+    it('자동화 브라우저에서는 게이트를 걸지 않는다', () => {
         Object.defineProperty(navigator, 'webdriver', {
             value: true,
             configurable: true,
@@ -76,7 +86,7 @@ describe('sendOnHumanInteraction', () => {
         expect(onFirstInteraction).not.toHaveBeenCalled();
     });
 
-    it('arms the first-interaction gate otherwise', () => {
+    it('그 밖에는 첫 입력 게이트를 건다', () => {
         Object.defineProperty(navigator, 'webdriver', {
             value: false,
             configurable: true,
