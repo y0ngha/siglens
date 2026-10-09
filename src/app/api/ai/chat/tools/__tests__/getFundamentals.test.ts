@@ -59,8 +59,10 @@ import {
     daysUntil,
     getFundamentalsTool,
 } from '@/app/api/ai/chat/tools/getFundamentals';
-import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamentalClient';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 
 const ctx = {
     userId: 'u',
@@ -507,9 +509,9 @@ describe('펀더멘털 나이 표기', () => {
         expect(r.asOfIsFetchTime).toBe(true);
         // 상한은 펀더멘털 캐시 TTL에서 파생된다 — 리터럴을 복제하면 TTL이 바뀌어도
         // 테스트가 같이 바뀌어 아무것도 못 잡는다.
-        // Redis + Next Data Cache 두 계층이 각각 같은 창을 쓰므로 합으로 센다.
+        // FMP 응답은 Redis 한 계층에만 묵으므로 그 TTL이 곧 상한이다.
         expect(r.cachedSectionsMaxAgeHours).toBe(
-            (FMP_FUNDAMENTAL_REVALIDATE_SECONDS * 2) / SECONDS_PER_HOUR
+            FMP_FUNDAMENTAL_CACHE_TTL_SECONDS / SECONDS_PER_HOUR
         );
     });
 });

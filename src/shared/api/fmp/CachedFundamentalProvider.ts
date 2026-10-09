@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { sym } from './symKey';
-import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from './fundamentalClient';
+import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
 import type { FmpEarningsReportItem } from './fundamentalClient';
 import type {
     FundamentalProvider,
@@ -27,7 +27,7 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 
-const TTL = FMP_FUNDAMENTAL_REVALIDATE_SECONDS;
+const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
 export const PEER_LIMIT = 10;
 
 /**
@@ -198,12 +198,13 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * accumulator를 잇는 async reduce — 다음 peer fetch는 직전 peer 완료 후에만 시작), 비정상
      * 적으로 큰 peer 목록은 PEER_LIMIT으로 제한한다.
      *
-     * 목록은 `serveablePeers`로 먼저 거른다 — 402와 죽은 링크의 원인이 거기 있다.
+     * 목록은 화면용 `getStockPeersRaw`(이미 `serveablePeers`로 거른 목록)를 재사용한다 —
+     * 402와 죽은 링크의 원인이 거기서 걸러지고, 같은 FMP `stock-peers` 응답을 두 Redis
+     * 키가 따로 받아 오지 않는다.
      */
     getStockPeers = cache((symbol: string): Promise<FundamentalPeerInput[]> =>
         getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
-            const raw = await this.inner.getStockPeers(symbol);
-            const peers = serveablePeers(raw);
+            const peers = await this.getStockPeersRaw(symbol);
             // 이전에는 async reduce로 peer를 한 건씩 직렬 조회해 지연이 PEER_LIMIT배로
             // 누적됐다. 심볼 단위로 dedupe한 뒤 병렬 조회한다 — 직렬 루프가 보장했던
             // "중복 심볼은 상류 1회 호출"(첫 조회가 캐시를 채워 두 번째가 히트)을

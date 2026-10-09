@@ -14,14 +14,7 @@ import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
 } from '@/shared/config/economyIndicators';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
-
-/**
- * Next.js Data Cache 갱신 주기 — 24h, /economy revalidate(86400)와 단일 TTL 공유.
- * 같은 상수가 양 계층(`unstable_cache` + Next data cache)에 박혀 드리프트를 막는다.
- */
-const ECONOMY_REVALIDATE_SECONDS = SECONDS_PER_DAY;
 
 /** FMP `/stable/*` 어댑터 — core 정규화에 위임. */
 export class FmpEconomyProvider implements EconomyProvider {
@@ -33,11 +26,7 @@ export class FmpEconomyProvider implements EconomyProvider {
      */
     async getIndicator(name: string): Promise<EconomicIndicatorSeries> {
         const to = toUtcIsoDate(new Date());
-        const raw = await fmpGet<unknown>(
-            'economic-indicators',
-            { name, to },
-            { revalidate: ECONOMY_REVALIDATE_SECONDS }
-        );
+        const raw = await fmpGet<unknown>('economic-indicators', { name, to });
         // Only '%'-unit (rate-type) registry entries are forwarded — core's
         // `unit` param drives the macro-briefing prompt's pp-delta vs
         // level-delta formatting, and only cares about the '%' case
@@ -54,11 +43,7 @@ export class FmpEconomyProvider implements EconomyProvider {
     }
 
     async getTreasury(): Promise<TreasuryRateSnapshot | null> {
-        const raw = await fmpGet<unknown>(
-            'treasury-rates',
-            {},
-            { revalidate: ECONOMY_REVALIDATE_SECONDS }
-        );
+        const raw = await fmpGet<unknown>('treasury-rates');
         return normalizeTreasuryRates(raw);
     }
 
@@ -66,11 +51,7 @@ export class FmpEconomyProvider implements EconomyProvider {
         from: string,
         to: string
     ): Promise<EconomicCalendarEvent[]> {
-        const raw = await fmpGet<unknown>(
-            'economic-calendar',
-            { from, to },
-            { revalidate: ECONOMY_REVALIDATE_SECONDS }
-        );
+        const raw = await fmpGet<unknown>('economic-calendar', { from, to });
         return normalizeEconomicCalendar(raw);
     }
 
@@ -83,8 +64,8 @@ export class FmpEconomyProvider implements EconomyProvider {
      *
      * **두 국가가 같은 왕복을 공유하지는 않는다.** 조회 창이 다르기 때문이다
      * (`CALENDAR_PAST_WINDOW_DAYS` — US 30일 / KR 180일). `from`이 다르면 URL이
-     * 달라 Next data cache 엔트리도 갈린다. 같은 국가의 재호출만 `revalidate`
-     * 윈도 안에서 캐시를 탄다.
+     * 달라 FMP 호출도 따로 나간다. 매시간 수집이 매번 FMP를 새로 읽어야 발표된
+     * `actual`이 바로 들어온다(`fmpGet` JSDoc의 데이터 캐시 제거 경위 참고).
      *
      * KR 창은 210일(과거 180 + 미래 30)이다 — 플랜 상한(365일은 402) 안이고,
      * 2026-08-19 실측으로 200 + KR 94건을 확인했다.
@@ -94,11 +75,7 @@ export class FmpEconomyProvider implements EconomyProvider {
         to: string,
         country: string
     ): Promise<EconomicCalendarEvent[]> {
-        const raw = await fmpGet<unknown>(
-            'economic-calendar',
-            { from, to },
-            { revalidate: ECONOMY_REVALIDATE_SECONDS }
-        );
+        const raw = await fmpGet<unknown>('economic-calendar', { from, to });
         return normalizeCalendarForCountry(raw, country);
     }
 }

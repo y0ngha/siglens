@@ -2,17 +2,7 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import {
-    FmpFundamentalClient,
-    FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-} from '../fundamentalClient';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
-
-describe('FMP_FUNDAMENTAL_REVALIDATE_SECONDS', () => {
-    it('is 24h (SECONDS_PER_DAY) — fundamentals are quarterly; aligns with statements/congress', () => {
-        expect(FMP_FUNDAMENTAL_REVALIDATE_SECONDS).toBe(SECONDS_PER_DAY);
-    });
-});
+import { FmpFundamentalClient } from '../fundamentalClient';
 
 const mockFetch = vi.fn();
 
@@ -925,7 +915,7 @@ describe('FmpFundamentalClient', () => {
     // ------------------------------------------------------------------ //
 
     describe('캐시 옵션', () => {
-        it('fundamental fetch는 24h next.revalidate로 캐싱된다', async () => {
+        it('fundamental fetch는 Next 데이터 캐시를 쓰지 않는다(no-store, 캐시는 Redis 계층만)', async () => {
             mockOk([
                 {
                     symbol: 'AAPL',
@@ -939,10 +929,9 @@ describe('FmpFundamentalClient', () => {
                 },
             ]);
             await new FmpFundamentalClient().getProfile('AAPL');
-            const opts = mockFetch.mock.calls[0]![1] as RequestInit & {
-                next?: { revalidate?: number };
-            };
-            expect(opts.next?.revalidate).toBe(SECONDS_PER_DAY);
+            const opts = mockFetch.mock.calls[0]![1] as RequestInit;
+            expect(opts.cache).toBe('no-store');
+            expect(opts).not.toHaveProperty('next');
         });
 
         it('earnings fetch는 no-store(캐시 안 함)다', async () => {

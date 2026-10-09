@@ -2,7 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import { sym } from './symKey';
 import { cachedListWithLimit } from './cachedListWithLimit';
-import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
+import { FMP_STATEMENTS_CACHE_TTL_SECONDS } from '@/shared/config/time';
 import type {
     BalanceSheetRow,
     CashFlowGrowthRow,
@@ -14,7 +14,7 @@ import type {
     StatementPeriod,
 } from '@y0ngha/siglens-core';
 
-const TTL = FMP_STATEMENTS_REVALIDATE_SECONDS;
+const TTL = FMP_STATEMENTS_CACHE_TTL_SECONDS;
 
 /**
  * Cold-cache fetch는 항상 이 고정 상한으로 inner를 호출하고 전체 배열을 캐싱한다.

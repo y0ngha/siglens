@@ -3,7 +3,6 @@ import type {
     CongressTradesProvider,
     RawCongressTrade,
 } from '@y0ngha/siglens-core';
-import { CONGRESS_REVALIDATE_SECONDS } from '@/shared/config/time';
 import { fmpGet } from './httpClient';
 
 /**
@@ -31,11 +30,9 @@ export class FmpCongressTradesClient implements CongressTradesProvider {
         limit: number
     ): Promise<RawCongressTrade[]> {
         const upper = symbol.toUpperCase();
-        const raw = await fmpGet<RawCongressTrade[]>(
-            ENDPOINT[chamber],
-            { symbol: upper },
-            { revalidate: CONGRESS_REVALIDATE_SECONDS }
-        );
+        const raw = await fmpGet<RawCongressTrade[]>(ENDPOINT[chamber], {
+            symbol: upper,
+        });
         return Array.isArray(raw) ? raw.slice(0, limit) : [];
     }
 }

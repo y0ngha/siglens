@@ -48,7 +48,7 @@ export const CALENDAR_PAST_WINDOW_DAYS: Record<CalendarCountry, number> = {
  *
  * **왕복은 국가별로 따로 난다.** 조회 창이 다르기 때문이다
  * ({@link CALENDAR_PAST_WINDOW_DAYS} — US 30일 / KR 180일). `from`이 다르면 URL이
- * 달라 Next data cache 엔트리도 갈린다. 창을 통일하면 한 번으로 줄일 수 있지만,
+ * 달라 FMP 호출이 따로 나간다. 창을 통일하면 한 번으로 줄일 수 있지만,
  * 그러려면 미국이 쓰지 않는 180일치를 항상 받아야 해서 지금은 나누는 쪽이 싸다.
  */
 export type CalendarCountry = 'US' | 'KR';
