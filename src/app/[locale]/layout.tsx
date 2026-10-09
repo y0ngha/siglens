@@ -23,6 +23,7 @@ import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
+import { ToastProvider } from '@/shared/ui/ToastProvider';
 import { RoutePendingSlot } from '@/app/_components/RoutePendingSlot';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
@@ -239,38 +240,40 @@ export default async function RootLayout({
                             문구를 쓰므로 `NextIntlClientProvider` **안**이어야
                             한다 — 루트에 두면 로케일 컨텍스트 밖이 된다. */}
                             <NavigationPendingProvider>
-                                <SearchOverlayProvider>
-                                    {/* 방문자 집계 비콘. 렌더 결과가 없고 하루 한 번만 요청하므로 어느
+                                <ToastProvider>
+                                    <SearchOverlayProvider>
+                                        {/* 방문자 집계 비콘. 렌더 결과가 없고 하루 한 번만 요청하므로 어느
                                     위치에 두어도 무방하지만, 다른 UI보다 먼저 보내 이탈이 빠른
                                     방문자도 잡는다. */}
-                                    <VisitorPing />
-                                    {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
+                                        <VisitorPing />
+                                        {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
                                     렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
-                                    <FunnelSignupPing />
-                                    <PwaBanner />
-                                    <NoticePopupLoader />
-                                    {/* 분석 스트림이 비회원 생성 한도에 걸리면 가입 유도
+                                        <FunnelSignupPing />
+                                        <PwaBanner />
+                                        <NoticePopupLoader />
+                                        {/* 분석 스트림이 비회원 생성 한도에 걸리면 가입 유도
                                     모달을 띄운다. 분석은 여러 라우트(종목·허브)에서
                                     나오므로 루트에 하나만 둔다. */}
-                                    <AnalysisRateLimitModalHost />
-                                    <EmailReportNudgeHost />
-                                    {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
+                                        <AnalysisRateLimitModalHost />
+                                        <EmailReportNudgeHost />
+                                        {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
                         트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
-                                    <AuthSessionHeaderClient />
-                                    {/* 다른 라우트로 가는 이동은 클릭 즉시 목적지 모양의 골격으로
+                                        <AuthSessionHeaderClient />
+                                        {/* 다른 라우트로 가는 이동은 클릭 즉시 목적지 모양의 골격으로
                                     바꾼다. 클라이언트 상태라 직접 접속·SSR·404에는 관여하지
                                     않는다(`RoutePendingSlot` JSDoc). */}
-                                    <RoutePendingSlot>
-                                        {children}
-                                    </RoutePendingSlot>
-                                    {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
+                                        <RoutePendingSlot>
+                                            {children}
+                                        </RoutePendingSlot>
+                                        {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
                         footer가 있어 /market, /backtesting, /[symbol]/* 등 대부분 라우트
                         에 내부 링크가 누수됐다. 차트 페이지(/[symbol])는 SymbolLayout의
                         sticky-footer jail(`min-h-[calc(100dvh-3.5rem)]`)이 chart+AI를
                         첫 viewport에 가득 채우고, footer는 jail의 형제로 그 아래에
                         위치한다 — 사용자가 스크롤을 내리면 footer가 보인다. */}
-                                    <Footer />
-                                </SearchOverlayProvider>
+                                        <Footer />
+                                    </SearchOverlayProvider>
+                                </ToastProvider>
                             </NavigationPendingProvider>
                         </ReactQueryProvider>
                     </NextIntlClientProvider>
