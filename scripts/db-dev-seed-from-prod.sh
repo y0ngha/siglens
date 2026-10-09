@@ -41,6 +41,7 @@ readonly DOCKER_HOST_NAME="host.docker.internal"
 #   inquiries                                       문의(이메일·본문)
 #   chat_conversations, chat_messages               SiglensAI 대화 (messages는 conversations 소속)
 #   visitor_days                                    방문자 해시·UA·국가·진입 경로
+#   funnel_events                                   가입 퍼널 이벤트(방문자 해시·회원 id)
 #   shared_analyses                                 user_id가 users를 FK로 가리킨다. users 행 없이
 #                                                   복원하면 FK 위반이고, 작성자 연결을 지우면 의미가
 #                                                   없어 통째로 제외한다.
@@ -61,6 +62,7 @@ EXCLUDED_TABLES=(
     chat_conversations
     chat_messages
     visitor_days
+    funnel_events
     shared_analyses
 )
 
