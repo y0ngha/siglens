@@ -32,8 +32,11 @@ const TRAILING_TOKEN_SEQUENCES: readonly (readonly string[])[] = [
     ['adr'],
 ];
 
-/** 토큰으로 가르기 전에 공백으로 바꾸는 구두점. */
-const PUNCTUATION_RE = /[.,'"()/-]/g;
+/**
+ * 토큰으로 가르기 전에 공백으로 바꾸는 구두점. `;`는 FMP가 펀드 클래스를 붙이는
+ * 표기(`MFS Research Fund;A`)다.
+ */
+const PUNCTUATION_RE = /[.,;'"()/-]/g;
 
 function matchingTailLength(tokens: readonly string[]): number {
     const matched = TRAILING_TOKEN_SEQUENCES.find(
@@ -65,7 +68,9 @@ function stripTrailingTokens(tokens: readonly string[]): readonly string[] {
  * 남기는 것이 목적이다. 순수 함수이며 **저장하지 않는다** — 오직 "이름이 바뀌었나"
  * 판정(`planTickerNameReconcile`, `getAssetInfo`)에만 쓴다.
  *
- * NFKC → 소문자 → `&`→`and` → 구두점 공백화 → 공백 축약 → 꼬리 법인격 토큰 반복 제거.
+ * NFKC → 소문자 → `&`→`and` → 구두점 공백화 → 공백 축약 → 앞의 `the` 제거 → 꼬리 법인격
+ * 토큰 반복 제거. 앞의 `the`는 `Walt Disney Co.` ↔ `The Walt Disney Company` 같은 표기
+ * 차이다(뒤의 `the`는 `TRAILING_TOKEN_SEQUENCES`가 뗀다).
  * 전부 떼어 비면(예: `Holdings Group`) 떼기 전 토큰을 유지한다 — 빈 문자열끼리
  * 같다고 판정하는 것이 가장 위험한 오탐이다.
  */
@@ -78,5 +83,7 @@ export function normalizeCompanyName(name: string): string {
         .split(/\s+/)
         .filter(token => token.length > 0);
 
-    return stripTrailingTokens(tokens).join(' ');
+    const withoutLeadingThe =
+        tokens.length > 1 && tokens[0] === 'the' ? tokens.slice(1) : tokens;
+    return stripTrailingTokens(withoutLeadingThe).join(' ');
 }

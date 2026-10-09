@@ -2,26 +2,46 @@ import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
 import { normalizeCompanyName } from './normalizeCompanyName';
 
 /**
- * 후보가 이 수를 **넘으면 그 회차를 통째로 건너뛴다**(앞의 N개만 처리하는 상한이 아니다).
+ * 후보가 `max(RENAME_GUARD_FLOOR, 비교한 심볼 수 × 이 비율)`을 **넘으면 그 회차를 통째로
+ * 건너뛴다**(앞의 N개만 처리하는 상한이 아니다).
  *
- * 실제 사명 변경·티커 재할당은 하루 한 자릿수~수십 건이다. 수백 건이 한꺼번에 "바뀐 것"으로
- * 잡히면 FMP 표기 체계가 바뀌었거나 정규화에 결함이 있다는 뜻이라, 그 상태로 재번역(Gemini
- * 호출·DB 쓰기·ISR 무효화)을 돌리면 멀쩡한 한글명이 대량으로 갈아엎힌다. KR cron의 소실 상한
- * 가드(`KR_RECONCILE_DELIST_ABORT_THRESHOLD`)와 같은 철학이다 — 걸리면 하루 미뤄질 뿐이다.
+ * 막으려는 것은 FMP 표기 체계 변경이나 정규화 결함이다 — 그때는 비교 대상의 큰 몫이
+ * 한꺼번에 "바뀐 것"으로 잡히고, 그 상태로 재번역(Gemini 호출·DB 쓰기·ISR 무효화)을 돌리면
+ * 멀쩡한 한글명이 대량으로 갈아엎힌다. KR cron의 소실 상한 가드
+ * (`KR_RECONCILE_DELIST_ABORT_THRESHOLD`)와 같은 철학이다 — 걸리면 하루 미뤄질 뿐이다.
+ *
+ * 절대 개수(예전 300)가 아니라 비율인 이유: 첫 운영 회차(2026-10-09)가 비교 30,827건 중
+ * 후보 1,503건(4.9%)으로 가드에 걸려 통째로 건너뛰어졌다. FMP profile로 표본을 대조하니
+ * 전부 stock-list와 같은 실제 불일치였다 — 그동안 쌓인 재할당(FAGI 펀드 → 다른 회사 등)과
+ * 표기 차이다. 누적분은 고정 개수로는 영영 가드를 넘지 못하므로, 매일 상한
+ * (`RENAME_BATCH_MAX`)만큼 소진하게 두고 가드는 비교 대상의 큰 몫이 뒤집히는 경우만 잡는다.
  */
-export const RENAME_GUARD_MAX = 300;
+export const RENAME_GUARD_RATIO = 0.1;
+
+/**
+ * 가드의 하한 — 비교 대상이 작을 때(stock-list가 일부만 왔거나 저장 행이 적을 때) 비율만으로는
+ * 몇 건의 실제 변경에도 가드가 걸린다. 이 수 이하의 후보는 비율과 무관하게 처리한다.
+ */
+export const RENAME_GUARD_FLOOR = 300;
 
 /**
  * 정상일 때도 하루에 처리하는 최대 개수. 나머지는 다음 날 이어서 처리된다 — 처리된
- * 심볼은 저장 이름이 FMP와 같아져 후보에서 빠지므로 재대조가 멱등이다.
+ * 심볼은 저장 이름이 FMP와 같아져 후보에서 빠지므로 재대조가 멱등이다. 첫 회차 누적분
+ * (약 1,500건)을 열흘 안쪽에 소진하는 크기다.
  *
- * 시간 예산(SERVER.md#CC-7, 각 단계 최악의 합): 이 상한이 한 회차의 번역 호출 크기를 정한다 —
- * 번역은 **최대 이 개수를 담은 Gemini 호출 1회**이고, DB 쓰기는 심볼당 최대 2 upsert를
- * 순차로 한다. 같은 회차에서 앞단 KR 동기화(data.go.kr 페이지네이션)와 stock-list 수신
- * (`fmpGet` 시도당 10초 × 최대 4회 + 백오프 예산 60초 ≈ 최악 100초)가 먼저 돈다.
- * 202 + `after()`라 요청 타임아웃에 걸리지 않지만 SIGTERM drain이 이 합만큼 기다릴 수 있다.
+ * 시간 예산(SERVER.md#CC-7, 각 단계 최악의 합): 번역은 `RENAME_TRANSLATE_CHUNK`개씩 나눈
+ * Gemini 호출 최대 3회를 순차로 하고, DB 쓰기는 심볼당 최대 2 upsert를 순차로 한다. 같은
+ * 회차에서 앞단 KR 동기화(data.go.kr 페이지네이션)와 stock-list 수신(`fmpGet` 시도당 10초 ×
+ * 최대 4회 + 백오프 예산 60초 ≈ 최악 100초)이 먼저 돈다. 202 + `after()`라 요청 타임아웃에
+ * 걸리지 않지만 SIGTERM drain이 이 합만큼 기다릴 수 있다.
  */
-export const RENAME_BATCH_MAX = 60;
+export const RENAME_BATCH_MAX = 180;
+
+/**
+ * Gemini 번역 호출 한 번에 담는 최대 개수. 응답 하나가 깨지면(`translateCompanyNames`는 `{}`로
+ * degrade) 그 묶음 전체가 다음 날로 밀리므로, 하루 상한을 한 호출에 몰지 않는다.
+ */
+export const RENAME_TRANSLATE_CHUNK = 60;
 
 /** FMP `stock-list` 한 행(필요한 필드만). */
 export interface StockListEntry {
@@ -59,7 +79,7 @@ export interface TickerNameReconcileInput {
 }
 
 export interface TickerNameReconcilePlan {
-    /** 이번 회차에 처리할 후보(정본 제외, 최대 `RENAME_BATCH_MAX`, 심볼순). 가드가 걸리면 빈 배열. */
+    /** 이번 회차에 처리할 후보(정본 제외, 최대 `RENAME_BATCH_MAX`, 이름 차이가 큰 순). 가드가 걸리면 빈 배열. */
     candidates: readonly RenameCandidate[];
     /** 사람이 검토할 정본 심볼의 변경 — 로그만 남기고 쓰지 않는다. 가드가 걸리면 빈 배열. */
     canonicalRenamed: readonly RenameCandidate[];
@@ -73,9 +93,29 @@ export interface TickerNameReconcilePlan {
     guardSample: readonly RenameCandidate[];
 }
 
-/** 로케일에 흔들리지 않는 심볼순 — 이월 순서가 실행 환경과 무관하게 같아야 한다. */
-function compareBySymbol(a: RenameCandidate, b: RenameCandidate): number {
-    return a.symbol.localeCompare(b.symbol, 'en');
+/** 정규화된 두 이름의 토큰 겹침(Jaccard, 0~1). 1에 가까울수록 표기 차이에 가깝다. */
+function nameSimilarity(a: string, b: string): number {
+    const left = new Set(normalizeCompanyName(a).split(' '));
+    const right = new Set(normalizeCompanyName(b).split(' '));
+    const shared = [...left].filter(token => right.has(token)).length;
+    return shared / new Set([...left, ...right]).size;
+}
+
+/**
+ * 이름이 많이 다른 후보부터 처리한다 — 다른 회사로 넘어간 심볼(엉뚱한 한글명이 보이는
+ * 경우)이 표기 차이(`Fund Class A` ↔ `Fund;A`)보다 먼저 고쳐져야 한다. 하루 상한으로 누적분을
+ * 나눠 소진할 때 순서가 곧 우선순위다. 같으면 로케일에 흔들리지 않는 심볼순(`'en'`)이다 — 이월
+ * 순서가 실행 환경과 무관하게 같아야 한다.
+ */
+function byPriority(candidates: readonly RenameCandidate[]): RenameCandidate[] {
+    const similarity = new Map(
+        candidates.map(c => [c.symbol, nameSimilarity(c.oldName, c.newName)])
+    );
+    return candidates.toSorted(
+        (a, b) =>
+            (similarity.get(a.symbol) ?? 0) - (similarity.get(b.symbol) ?? 0) ||
+            a.symbol.localeCompare(b.symbol, 'en')
+    );
 }
 
 /** 가드 로그에 담을 샘플 수. */
@@ -129,9 +169,12 @@ export function planTickerNameReconcile(
             new Map<string, RenameCandidate>()
         );
 
-    const all = [...changedBySymbol.values()].sort(compareBySymbol);
+    const all = byPriority([...changedBySymbol.values()]);
 
-    if (all.length > RENAME_GUARD_MAX) {
+    if (
+        all.length >
+        Math.max(RENAME_GUARD_FLOOR, compared.size * RENAME_GUARD_RATIO)
+    ) {
         return {
             candidates: [],
             canonicalRenamed: [],

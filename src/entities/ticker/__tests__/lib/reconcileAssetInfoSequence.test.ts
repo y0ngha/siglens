@@ -134,7 +134,7 @@ function runCron() {
         ],
         translate: entries => cronTranslateMock(entries),
         revalidateSymbol: () => {},
-        invalidateSearchSnapshot: async () => {},
+        invalidateSearchSnapshot: () => {},
     });
 }
 

@@ -73,7 +73,6 @@ describe('syncKrListedTickers', () => {
         mockRepository.upsertMany.mockResolvedValue(undefined);
         mockRepository.markDelisted.mockResolvedValue(undefined);
         mockRepository.markRelisted.mockResolvedValue(undefined);
-        mockInvalidateCache.mockResolvedValue(undefined);
     });
 
     it('자격 증명이 없으면 던진다 — 조용히 no-op하면 마스터가 굳는다', async () => {
