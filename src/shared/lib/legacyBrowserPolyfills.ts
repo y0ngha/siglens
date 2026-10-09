@@ -13,7 +13,11 @@
  * 같은 메서드를 써도 함께 해결된다.
  *
  * `instrumentation-client.ts`가 가장 먼저 부른다 — Next는 그 파일을 하이드레이션과 라우트
- * 청크의 모듈 평가보다 먼저 실행한다(`next/dist/client/app-next.js`). 이미 있는 메서드는
+ * 청크의 모듈 평가보다 먼저 실행한다(Next 16.3.8의 `next/dist/client/app-next.js`에서
+ * `require-instrumentation-client`가 `app-index`·hydrate보다 앞선다, 2026-10-09 확인). 이 순서는
+ * e2e `legacy-browser.spec.ts`가 매번 검증한다 — 메서드를 지운 페이지가 오류 없이 하이드레이션되는지
+ * 본다(폴리필을 연결하지 않은 커밋에서는 `/AAPL`이 `findLast is not a function`으로 실패했다).
+ * Next를 올린 뒤 그 spec이 실패하면 이 전제부터 다시 본다. 이미 있는 메서드는
  * 건드리지 않으므로 최신 브라우저에서는 아무 일도 하지 않는다. 동작은 명세와 같게 둔다
  * (`toSorted`는 비교 함수가 없으면 기본 정렬, 원본은 바꾸지 않음).
  *
@@ -121,25 +125,22 @@ export function installLegacyBrowserPolyfills(): void {
             return Object.prototype.hasOwnProperty.call(object, key);
         }
     );
-    // 서버 런타임(Node)에는 늘 있지만, 이 함수는 브라우저에서만 불리므로 존재 검사만 한다.
-    if (typeof AbortSignal !== 'undefined') {
-        defineMissing(
-            AbortSignal,
-            'timeout',
-            function timeout(milliseconds: number): AbortSignal {
-                const controller = new AbortController();
-                setTimeout(
-                    () =>
-                        controller.abort(
-                            new DOMException(
-                                'The operation timed out.',
-                                'TimeoutError'
-                            )
-                        ),
-                    milliseconds
-                );
-                return controller.signal;
-            }
-        );
-    }
+    defineMissing(
+        AbortSignal,
+        'timeout',
+        function timeout(milliseconds: number): AbortSignal {
+            const controller = new AbortController();
+            setTimeout(
+                () =>
+                    controller.abort(
+                        new DOMException(
+                            'The operation timed out.',
+                            'TimeoutError'
+                        )
+                    ),
+                milliseconds
+            );
+            return controller.signal;
+        }
+    );
 }
