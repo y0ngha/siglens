@@ -17,6 +17,7 @@ import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { AnalysisRateLimitModalHost } from '@/features/analysis-rate-limit/ui/AnalysisRateLimitModalHost';
 import { EmailReportNudgeHost } from '@/features/email-report-nudge/ui/EmailReportNudgeHost';
+import { WatchlistMergeHost } from '@/features/watchlist/ui/WatchlistMergeHost';
 import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
 import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
 import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
@@ -256,6 +257,7 @@ export default async function RootLayout({
                                     나오므로 루트에 하나만 둔다. */}
                                         <AnalysisRateLimitModalHost />
                                         <EmailReportNudgeHost />
+                                        <WatchlistMergeHost />
                                         {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
                         트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
                                         <AuthSessionHeaderClient />

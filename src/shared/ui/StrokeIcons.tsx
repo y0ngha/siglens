@@ -199,3 +199,23 @@ export const LockIcon = (p: IconProps) => (
         <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </Icon>
 );
+
+interface StarIconProps extends IconProps {
+    readonly filled?: boolean;
+}
+
+/** 관심종목 ☆/★. `filled`면 `currentColor`로 채운다 — 테두리와 같은 색이라 테마와 함께 바뀐다. */
+export const StarIcon = ({ filled = false, className }: StarIconProps) => (
+    <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className={className ?? 'size-4'}
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z" />
+    </svg>
+);

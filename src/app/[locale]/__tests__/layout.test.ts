@@ -22,6 +22,9 @@ vi.mock('@/features/pwa-install/ui/PwaBanner', () => ({
 vi.mock('@/widgets/notice-popup/ui/NoticePopupLoader', () => ({
     NoticePopupLoader: () => null,
 }));
+vi.mock('@/features/watchlist/ui/WatchlistMergeHost', () => ({
+    WatchlistMergeHost: () => null,
+}));
 vi.mock('@/app/providers', () => ({
     ReactQueryProvider: ({ children }: { children: unknown }) => children,
 }));
