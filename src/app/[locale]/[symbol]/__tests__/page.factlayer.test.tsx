@@ -130,7 +130,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL',
         keywords: ['AAPL'],
     }),
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@tanstack/react-query', () => ({

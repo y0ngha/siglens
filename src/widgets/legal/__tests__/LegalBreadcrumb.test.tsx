@@ -20,7 +20,7 @@ import { NextIntlClientProvider } from 'next-intl';
 
 import messages from '../../../../messages/ko.json';
 import { LegalBreadcrumb } from '../LegalBreadcrumb';
-import { SITE_NAME_KO } from '@/shared/lib/seo';
+import { SITE_NAME_KO } from '@/shared/config/brand';
 
 const NAV_LABEL = messages.shared.ui.Breadcrumb['46c31f'];
 

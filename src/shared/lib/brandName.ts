@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 /**
  * 문장 속 브랜드 표기. ko는 한글 표기, 다른 로케일은 영문 표기.
@@ -26,11 +26,7 @@ export function brandAiName(locale: Locale): string {
  *
  * 루트 레이아웃의 `title.template`과 `absolute` 제목·OG/Twitter 제목을 직접 조립하는
  * 곳이 모두 이 함수를 써야 한 페이지의 `<title>`과 `og:title` 접미사가 갈리지 않는다.
- * `locale`을 모르는 호출부(옵션 인자)는 기본 로케일로 본다.
  */
-export function brandTitle(
-    title: string,
-    locale: Locale = DEFAULT_LOCALE
-): string {
+export function brandTitle(title: string, locale: Locale): string {
     return `${title} | ${brandName(locale)}`;
 }

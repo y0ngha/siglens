@@ -13,7 +13,7 @@ import { type AssetClass } from '@/shared/config/marketProfile/types';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { truncateWithEllipsis } from '@/shared/lib/truncate';
-// 순환 import(brandName.ts → seo.ts 상수)지만 양쪽 모두 호출 시점에만 상대를 읽어 안전하다.
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { brandName, brandTitle } from '@/shared/lib/brandName';
 
 export interface BreadcrumbItem {
@@ -122,22 +122,6 @@ function resolveSiteUrl(): string {
 }
 
 export const SITE_URL = resolveSiteUrl();
-
-export const SITE_NAME = 'SIGLENS';
-
-/**
- * 브랜드의 한글 표기. 번역 대상이 아니라 고유명사라 카탈로그가 아닌 상수다.
- *
- * 영문 `SIGLENS`는 로그 관리 프로젝트 SigLens(siglens.com)와 이름이 겹쳐,
- * 검색엔진과 AI 답변 엔진이 두 주체를 구분할 단서가 없었다(2026-10-04 조사:
- * 브랜드 검색 상위가 전부 그쪽이고, 한글 표기는 사이트 어디에도 없었다).
- * `WebSite`·`Organization`의 `alternateName`과 ko 화면(푸터·소개·홈 FAQ)에
- * 같은 표기를 심어 한글 브랜드 검색이 이 사이트로 귀결되게 한다.
- *
- * 화면에 넣을 때는 ko 로케일에서만 보인다 — 다른 로케일 독자에게 한글 독음은
- * 의미가 없다. 구조화 데이터의 `alternateName`은 로케일과 무관하게 싣는다.
- */
-export const SITE_NAME_KO = '시그렌즈';
 
 /**
  * 문장에서 브랜드를 **처음 소개할 때** 쓰는 표기. ko는 한글 표기에 영문을
@@ -1170,7 +1154,7 @@ export function buildSymbolSeoContent(
     return {
         ticker,
         title,
-        fullTitle: brandTitle(title, opts.locale),
+        fullTitle: brandTitle(title, opts.locale ?? DEFAULT_LOCALE),
         description: clampSeoDescription(
             buildSymbolDescription(t, displayName, opts.sector)
         ),
@@ -1436,7 +1420,7 @@ export function buildSymbolFinancialsSeoContent(
         core: t('symbol.financials.titleCore'),
         tail: t('symbol.financials.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1504,7 +1488,7 @@ export function buildSymbolCongressSeoContent(
         core: t('symbol.congress.titleCore'),
         tail: t('symbol.congress.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1570,7 +1554,7 @@ export function buildSymbolFundamentalSeoContent(
         core: t('symbol.fundamental.titleCore'),
         tail: t('symbol.fundamental.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1660,7 +1644,7 @@ export function buildSymbolOptionsSeoContent(
               locale: opts.locale,
               core: t('symbol.options.titleCore'),
           });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     return {
         ticker: upper,
         title,
@@ -1717,7 +1701,7 @@ export function buildSymbolNewsSeoContent(
         core: t('symbol.news.titleCore'),
         tail: t('symbol.news.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1788,7 +1772,7 @@ export function buildSymbolOverallSeoContent(
         core: t('symbol.overall.titleCore'),
         tail: t('symbol.overall.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1885,7 +1869,7 @@ export function buildCryptoSymbolSeoContent(
     return {
         ticker,
         title,
-        fullTitle: brandTitle(title, opts.locale),
+        fullTitle: brandTitle(title, opts.locale ?? DEFAULT_LOCALE),
         description: clampSeoDescription(
             buildCryptoSymbolDescription(t, displayName)
         ),
@@ -1954,7 +1938,7 @@ export function buildCryptoSymbolNewsSeoContent(
         core: t('symbol.cryptoNews.titleCore'),
         tail: t('symbol.cryptoNews.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     return {
         ticker,
         title,
@@ -2023,7 +2007,7 @@ export function buildCryptoSymbolOverallSeoContent(
         core: t('symbol.cryptoOverall.titleCore'),
         tail: t('symbol.cryptoOverall.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     return {
         ticker,
         title,
@@ -2088,7 +2072,7 @@ export function buildCryptoSymbolFearGreedSeoContent(
         core: t('symbol.fearGreed.titleCore'),
         tail: t('symbol.fearGreed.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     return {
         ticker,
         title,
@@ -2158,7 +2142,7 @@ export function buildSymbolFearGreedSeoContent(
         core: t('symbol.fearGreed.titleCore'),
         tail: t('symbol.fearGreed.titleTail'),
     });
-    const fullTitle = brandTitle(title, opts.locale);
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     return {
         ticker: upper,
         title,
@@ -2232,7 +2216,7 @@ export function buildSymbolPositionSeoContent(
     return {
         ticker: upper,
         title,
-        fullTitle: brandTitle(title, opts.locale),
+        fullTitle: brandTitle(title, opts.locale ?? DEFAULT_LOCALE),
         description: clampSeoDescription(
             t('position.description', { v0: displayName })
         ),

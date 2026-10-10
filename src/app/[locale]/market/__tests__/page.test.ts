@@ -106,7 +106,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     clampSeoDescription: (text: string) => text,
     ROOT_KEYWORDS: ['주식'],
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 

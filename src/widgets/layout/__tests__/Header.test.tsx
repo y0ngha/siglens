@@ -42,10 +42,6 @@ vi.mock('../HeaderUserMenu', () => ({
 vi.mock('@/features/ticker-search/ui/HeaderSearch', () => ({
     HeaderSearch: () => <div data-testid="ticker-search" />,
 }));
-vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
-    SITE_NAME_KO: '시그렌즈',
-}));
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';

@@ -43,7 +43,8 @@ import {
 } from '@/shared/config/assetClassNav';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
-import { GITHUB_URL, SITE_NAME, SITE_NAME_KO, X_URL } from '@/shared/lib/seo';
+import { GITHUB_URL, X_URL } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';

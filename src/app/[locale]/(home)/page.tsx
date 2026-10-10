@@ -20,11 +20,10 @@ import {
     localizedAbsoluteUrl,
     buildOrganizationCoreJsonLd,
     ORGANIZATION_JSON_LD_ID,
-    SITE_NAME,
-    SITE_NAME_KO,
     SITE_URL,
     X_URL,
 } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import {
     DEFAULT_LOCALE,

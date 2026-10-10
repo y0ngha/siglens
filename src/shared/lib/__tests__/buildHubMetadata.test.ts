@@ -6,7 +6,7 @@ import {
     localeOpenGraph,
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import type { Locale } from '@/shared/i18n/locales';
 

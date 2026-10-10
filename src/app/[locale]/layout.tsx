@@ -32,12 +32,8 @@ import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
-import {
-    brandIntroName,
-    ROOT_KEYWORDS,
-    SITE_NAME,
-    SITE_URL,
-} from '@/shared/lib/seo';
+import { brandIntroName, ROOT_KEYWORDS, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import { brandName, brandTitle } from '@/shared/lib/brandName';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';

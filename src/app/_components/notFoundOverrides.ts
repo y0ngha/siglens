@@ -5,7 +5,7 @@ import type {
 } from '@/app/_components/NotFoundView';
 import { AI_PRODUCT_NAME } from '@/app/ai/[locale]/aiSeo';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import { brandAiName, brandName } from '@/shared/lib/brandName';
 
 const HOME_NAMESPACE = 'app.home';

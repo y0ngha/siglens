@@ -76,7 +76,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: '',
         keywords: [],
     }),
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 

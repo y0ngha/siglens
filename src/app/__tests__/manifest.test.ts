@@ -1,8 +1,3 @@
-vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
-    SITE_NAME_KO: '시그렌즈',
-}));
-
 import manifest from '@/app/manifest';
 import { buildManifest } from '@/shared/lib/buildManifest';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';

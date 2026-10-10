@@ -22,7 +22,7 @@ import {
     OG_SUBTITLE_FONT_SIZE,
     OG_IMAGE_CACHE_CONTROL,
 } from '@/shared/lib/og';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 
 export const dynamic = 'force-static';
 export const revalidate = 2592000; // 30d

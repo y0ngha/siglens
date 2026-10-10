@@ -12,11 +12,11 @@ import {
     BACKTESTING_URL,
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    SITE_NAME,
     SITE_URL,
     type SeoTranslator,
     localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { TERMS_PATH } from '@/shared/lib/legal';

@@ -72,8 +72,6 @@ vi.mock('@/shared/lib/seo', () => ({
     X_URL: 'https://x.com/siglens_io',
     localizedAbsoluteUrl: (url: string) => url,
     SITE_DESCRIPTION: 'test description',
-    SITE_NAME: 'SIGLENS',
-    SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
     ORGANIZATION_JSON_LD_ID: 'https://siglens.io#organization',
     buildOrganizationCoreJsonLd: () => ({

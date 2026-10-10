@@ -21,7 +21,8 @@ import {
     methodologyDescription,
     formatKoreanDate,
 } from '@/shared/lib/legal';
-import { SITE_NAME, SITE_NAME_KO, type SeoTranslator } from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // title/description은 이제 `shared.seo` 카탈로그 번역자를 받는 함수다

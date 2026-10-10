@@ -74,9 +74,9 @@ import {
     GITHUB_URL,
     SEO_TITLE_MAX_WIDTH,
     seoTitleWidth,
-    SITE_NAME_KO,
     X_URL,
 } from '@/shared/lib/seo';
+import { SITE_NAME_KO } from '@/shared/config/brand';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { StatsBar } from '@/widgets/home/StatsBar';
 import { OPERATOR_SAME_AS, SITE_OPERATOR } from '@/shared/lib/legal';

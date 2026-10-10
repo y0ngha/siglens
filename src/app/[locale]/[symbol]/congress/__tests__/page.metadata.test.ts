@@ -64,7 +64,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL/congress',
         keywords: ['AAPL', 'AAPL 의회 거래'],
     }),
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({

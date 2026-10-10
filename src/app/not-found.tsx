@@ -12,7 +12,7 @@ import {
 import { NotFoundView } from '@/app/_components/NotFoundView';
 import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
 import { DEFAULT_LOCALE, localePath } from '@/shared/i18n/locales';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import { brandName } from '@/shared/lib/brandName';
 import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
 import './globals.css';

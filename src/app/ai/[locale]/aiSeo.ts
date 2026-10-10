@@ -15,12 +15,8 @@ import {
 } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { localePageRobots } from '@/shared/lib/seoAlternates';
-import {
-    ORGANIZATION_JSON_LD_ID,
-    SITE_NAME,
-    SITE_NAME_KO,
-    SITE_URL,
-} from '@/shared/lib/seo';
+import { ORGANIZATION_JSON_LD_ID, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { brandAiName } from '@/shared/lib/brandName';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 

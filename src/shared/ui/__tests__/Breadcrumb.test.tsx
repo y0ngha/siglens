@@ -22,7 +22,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import messages from '../../../../messages/ko.json';
 import { Breadcrumb, type BreadcrumbCrumb } from '@/shared/ui/Breadcrumb';
 import enMessages from '../../../../messages/en.json';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 const NAV_LABEL = messages.shared.ui.Breadcrumb['46c31f'];
 

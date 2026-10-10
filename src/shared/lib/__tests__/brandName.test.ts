@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { brandAiName, brandName, brandTitle } from '@/shared/lib/brandName';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 describe('brandName', () => {
     it('ko는 한글 표기를 돌려준다', () => {
@@ -36,10 +36,6 @@ describe('brandTitle', () => {
                 'Chart guide | SIGLENS'
             );
         }
-    });
-
-    it('로케일을 모르면 기본 로케일(ko) 접미사를 쓴다', () => {
-        expect(brandTitle('차트 가이드')).toBe('차트 가이드 | 시그렌즈');
     });
 
     it('루트 레이아웃 template 자리표시자도 같은 규칙을 따른다', () => {

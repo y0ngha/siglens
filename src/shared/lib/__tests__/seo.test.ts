@@ -20,14 +20,13 @@ import {
     SEO_DESCRIPTION_MAX_LENGTH,
     SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
     SITE_URL,
-    SITE_NAME,
-    SITE_NAME_KO,
     type SeoTranslator,
     resolveSymbolSeoContent,
     resolveSymbolNewsSeoContent,
     resolveSymbolOverallSeoContent,
     resolveSymbolFearGreedSeoContent,
 } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 // t는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 모든 builder 호출에 재사용한다.

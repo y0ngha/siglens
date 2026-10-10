@@ -2,7 +2,7 @@ import type { Bar } from '@y0ngha/siglens-core';
 import { ImageResponse } from 'next/og';
 import { CHART_COLORS_RAW_DARK } from '@/shared/lib/chartColors';
 import { OG_BG, OG_FG, OG_MUTED } from '@/shared/lib/og';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import { computeChartGeometry } from './chartGeometry';
 
 /** 메일 본문 폭 600px의 2배 — 레티나에서 흐리지 않게 한다. */

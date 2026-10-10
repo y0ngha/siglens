@@ -42,7 +42,8 @@ import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { brandIntroName, SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
+import { brandIntroName } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import koMessages from '@/../messages/ko.json';
 
 // 홈 제목은 `shared.seo.root` 카탈로그가 소유한다. 브랜드 접미사는 레이아웃이

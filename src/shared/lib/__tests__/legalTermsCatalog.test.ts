@@ -2,7 +2,7 @@ import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';
 import jaMessages from '../../../../messages/ja.json';
 import zhMessages from '../../../../messages/zh.json';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 
 type LegalTable = Record<string, string>;
 const legalOf = (messages: unknown): LegalTable =>

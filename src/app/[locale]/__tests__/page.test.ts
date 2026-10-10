@@ -40,7 +40,6 @@ vi.mock('@/entities/skill/api', () => ({
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     SITE_DESCRIPTION: 'test description',
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/link', () => ({ default: () => null }));
