@@ -3,7 +3,7 @@ title: Rising / Falling Three Methods
 aliases: [Rising Three Methods, Falling Three Methods, Three Methods]
 summary: "A five-bar continuation: a long bar, three small bars resting inside its range, then another long bar."
 seoTitle: Rising and Falling Three Methods Candlesticks
-seoDescription: How rising and falling three methods show a rest within a trend, and why the continuation rate is high but performance ranks low, using Bulkowski's data.
+seoDescription: How rising and falling three methods show a pause within a trend, and why they continue the trend often yet rank low on performance.
 demoCaption: "Synthetic, illustrative bars made for this explanation. A rising three methods: a long bullish bar, three small bars resting inside its range, then a long bullish bar closing above the first close."
 faq:
   - q: Is the three methods a reversal signal?

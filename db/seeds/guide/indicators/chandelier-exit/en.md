@@ -3,7 +3,7 @@ title: Chandelier Exit
 aliases: [Chandelier Stop, Chandelier Exit indicator, ATR trailing stop]
 summary: A trailing stop set 3 times ATR below the recent high. It manages an open position and is not an entry signal.
 seoTitle: Chandelier Exit Meaning and Trailing Stop
-seoDescription: The Chandelier Exit formula (22-bar high minus 3 times ATR), how to read the trend-flip marker, and why it shouldn't be used as an entry signal.
+seoDescription: The Chandelier Exit is the 22-bar high minus three times ATR. Learn how to read its trend-change marks and why it shouldn't be used as an entry signal.
 demoCaption: Synthetic, illustrative bars. The stop line rises as highs rise, and then the close drops below the stop line.
 faq:
   - q: Can I use the Chandelier Exit as a buy signal?

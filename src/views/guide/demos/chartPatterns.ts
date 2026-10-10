@@ -247,7 +247,7 @@ const ascendingTriangle = (): GuideDemo => {
                 label: 'Resistance',
                 role: 'resistance',
             },
-            ray(pt(14, 99.5), pt(34, 105.8), 42, 'support', 'Rising support'),
+            ray(pt(14, 99.5), pt(34, 105.8), 37, 'support', 'Rising support'),
             breakMarker(
                 breakIndex(bars, 35, () => 108, 'above'),
                 'above'
@@ -280,7 +280,7 @@ const descendingTriangle = (): GuideDemo =>
             ray(
                 pt(14, 100.5),
                 pt(34, 94.2),
-                42,
+                37,
                 'resistance',
                 'Falling resistance'
             ),
@@ -292,22 +292,22 @@ const descendingTriangle = (): GuideDemo =>
     );
 
 const symmetricalTriangle = (): GuideDemo => {
-    const upper = lineAt(pt(8, 108), pt(30, 101.5));
+    const upper = lineAt(pt(8, 108), pt(30, 103));
     return build(
         49,
         [
             pt(0, 92),
             pt(8, 108),
             pt(14, 94),
-            pt(20, 104),
-            pt(25, 96.5),
-            pt(30, 101.5),
-            pt(34, 98.2),
+            pt(20, 105),
+            pt(25, 96),
+            pt(30, 103),
+            pt(34, 97.5),
             pt(52, 114),
         ],
         bars => [
-            ray(pt(8, 108), pt(30, 101.5), 42, 'resistance', 'Falling highs'),
-            ray(pt(14, 94), pt(34, 98.2), 42, 'support', 'Rising lows'),
+            ray(pt(8, 108), pt(30, 103), 40, 'resistance', 'Falling highs'),
+            ray(pt(14, 94), pt(34, 97.5), 40, 'support', 'Rising lows'),
             breakMarker(breakIndex(bars, 35, upper, 'above'), 'above'),
         ]
     );
@@ -374,8 +374,8 @@ const ascendingChannel = (): GuideDemo => {
             pt(60, 100),
         ],
         bars => [
-            ray(pt(0, 101), pt(52, 127), 54, 'trend', 'Upper'),
-            ray(pt(0, 91), pt(52, 117), 54, 'trend', 'Lower'),
+            ray(pt(0, 101), pt(52, 127), 50, 'trend', 'Upper'),
+            ray(pt(0, 91), pt(52, 117), 48, 'trend', 'Lower'),
             breakMarker(breakIndex(bars, 49, lower, 'below'), 'below'),
         ]
     );
@@ -504,23 +504,23 @@ const bearFlag = (): GuideDemo => {
 };
 
 const pennant = (): GuideDemo => {
-    const upper = lineAt(pt(10, 120), pt(24, 115));
+    const upper = lineAt(pt(10, 120), pt(24, 116));
     return build(
         58,
         [
             pt(0, 92),
             pt(10, 120),
             pt(14, 111),
-            pt(18, 116),
-            pt(21, 112.5),
-            pt(24, 115),
-            pt(26, 113.5),
+            pt(18, 117.7),
+            pt(21, 112.2),
+            pt(24, 116),
+            pt(26, 113),
             pt(40, 134),
         ],
         bars => [
             ray(pt(0, 92), pt(10, 120), 10, 'neutral', 'Pole'),
-            ray(pt(10, 120), pt(24, 115), 28, 'trend'),
-            ray(pt(14, 111), pt(26, 113.5), 28, 'trend', 'Pennant'),
+            ray(pt(10, 120), pt(24, 116), 29, 'trend'),
+            ray(pt(14, 111), pt(26, 113), 29, 'trend', 'Pennant'),
             breakMarker(breakIndex(bars, 27, upper, 'above'), 'above'),
         ]
     );
@@ -565,28 +565,28 @@ const highTightFlag = (): GuideDemo =>
     );
 
 const cupAndHandle = (): GuideDemo => {
-    const cup = curve(0, 40, 4, i => 90 + 20 * ((i - 20) / 20) ** 2);
+    const cup = curve(8, 48, 4, i => 90 + 20 * ((i - 28) / 20) ** 2);
     return build(
         60,
-        [...cup, pt(47, 103), pt(64, 120)],
+        [pt(0, 98), ...cup, pt(55, 103), pt(72, 120)],
         bars => [
             {
                 kind: 'level',
                 price: 110,
-                fromIndex: 0,
+                fromIndex: 8,
                 label: 'Rim',
                 role: 'resistance',
             },
             {
                 kind: 'zone',
-                fromIndex: 40,
-                toIndex: 47,
+                fromIndex: 48,
+                toIndex: 55,
                 low: 102,
                 high: 111,
                 label: 'Handle',
             },
             breakMarker(
-                breakIndex(bars, 48, () => 110, 'above'),
+                breakIndex(bars, 56, () => 110, 'above'),
                 'above'
             ),
         ],

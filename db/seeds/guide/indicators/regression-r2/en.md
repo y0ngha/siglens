@@ -3,7 +3,7 @@ title: "Regression R² (Coefficient of Determination)"
 aliases: [R-squared, R2, Regression R2, Coefficient of Determination, Trend Cleanliness]
 summary: "A 0 to 1 reading of how closely recent prices followed a straight line. It says nothing about direction."
 seoTitle: "Regression R²: Checking How Clean a Trend Is"
-seoDescription: "What the R² of a price regression line means, the 0.3 threshold, and why it shows how clean a trend is without showing its direction."
+seoDescription: What the R² of a price regression line means, the 0.3 threshold, and why it tells you how clean a trend is but not which way it runs.
 demoCaption: "Synthetic, illustrative bars. One side rises close to a straight line and the other zigzags, so the R² difference can be compared."
 faq:
   - q: "Does a high regression R² mean the stock will rise?"

@@ -3,11 +3,11 @@ title: Bull Flag
 aliases: [Bullish Flag, Bull Flag Pattern, Rising Flag]
 summary: A sharp rise (pole) and a gentle pause on fading volume (flag). A break above it suggests the rise continues.
 seoTitle: "Bull Flag Pattern: How to Read It"
-seoDescription: What a bull flag looks like, how the pole and flag are measured, how often it hit its target in Bulkowski's data, and how it differs from a pennant.
+seoDescription: A bull flag is a pause on shrinking volume after a sharp rise. Learn the flag's retracement limits and how to confirm a break above the upper line.
 demoCaption: Synthetic, illustrative bars. Shows a sharp rise (the pole), a gently falling flag channel, and a bar closing above the channel.
 faq:
   - q: What does a bull flag look like?
-    a: A sharp rise over a short period (the pole) is followed by a section where price drifts down slightly or moves sideways between two parallel lines (the flag). If the flag retraces half the pole or more, it is not treated as a bull flag.
+    a: A sharp rise over a short period (the pole) is followed by a section where price drifts down slightly or moves sideways between two parallel lines (the flag). If the flag retraces more than half the pole, it is not treated as a bull flag.
   - q: How reliable is a bull flag?
     a: The shape is distinct, but the results after a breakout are modest. In Thomas Bulkowski's tabulation, fewer than half of flags (46%) reached their target.
   - q: How is a bull flag different from a pennant?
@@ -23,6 +23,12 @@ First comes a sharp rise over a short period. That is the pole. After it, price 
 It reads as a brief pause after a surge, while some holders take profits. A gentle pullback on fading volume means selling pressure is not heavy, so a break above the flag's upper line is read as the earlier advance continuing.
 
 The pattern completes when the close finishes above the flag's upper line. It is more convincing if volume returns to pole levels at that point. It is also viewed more favorably when the pole rises 10% or more, the flag retraces less than 38.2% of the pole, and the whole flag lasts a short 1 to 2 weeks. In Thomas Bulkowski's combined tabulation of bull and bear flags, 46% reached their target.
+
+## How it differs from a bear flag
+
+Bulkowski pooled bull flags and [bear flags](/guide/chart-patterns/bear-flag) in one tabulation. For upward breakouts, the break-even failure rate (the share that ended without moving far enough in the breakout direction) was 44%, and the average rise after the breakout was 9%. Bear flags came in at a 45% failure rate and an 8% average decline, nearly the same. Across all flags, 60% broke upward, but keep in mind that every case was collected in a bull market.
+
+In a bull flag, the flag is a rest driven by profit-taking after the surge. So when volume during the flag drops to less than half of the pole's volume, the case for a pause gets stronger. If the flag slopes upward and starts to resemble a rising wedge, it may be a weakening trend rather than a healthy rest. A flag that runs past 4 weeks may be turning into a [rectangle](/guide/chart-patterns/rectangle) or a [descending channel](/guide/chart-patterns/descending-channel).
 
 ## How Siglens detects it
 
@@ -44,5 +50,4 @@ After the breakout, the pattern stays on the chart for a while: 20 bars after th
 - If the pole is gentle or slow, it was not a real surge and the flag means less.
 - If the flag retraces more than 50% of the pole, it may be a sign that upward momentum is breaking down, not a pause.
 - If volume stays high during the flag, it may not be a rest; supply may be coming out.
-- A flag lasting more than 4 weeks is less likely to behave as a continuation.
-- A flag that slopes upward is considered less reliable.
+- If volume on the breakout bar is as light as during the flag, the breakout may be false.

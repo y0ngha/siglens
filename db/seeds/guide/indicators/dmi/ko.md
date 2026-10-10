@@ -6,7 +6,7 @@ title: DMI
 aliases: [방향성 지수, Directional Movement Index, +DI -DI, 디렉셔널 무브먼트]
 summary: 매수 쪽 힘(+DI)과 매도 쪽 힘(-DI) 두 선을 비교해 추세의 방향과 우위를 보여 주는 지표예요.
 seoTitle: DMI 지표 보는 법, +DI -DI 교차
-seoDescription: DMI의 +DI와 -DI가 무엇인지, 두 선의 교차를 ADX 20 기준으로 거르는 법과 횡보장에서 잔신호가 많은 이유까지 정리했어요.
+seoDescription: DMI의 +DI와 -DI가 무엇인지, 두 선의 교차를 ADX 20 기준으로 거르는 법, 횡보장에서 잔신호가 많은 이유까지 다뤄요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 상승이 이어지며 +DI가 -DI를 위로 가로지르고 ADX가 함께 오르는 모습을 보여 줘요.
 faq:
   - q: +DI가 -DI를 넘으면 상승 전환인가요?

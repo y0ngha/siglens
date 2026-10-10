@@ -2,8 +2,8 @@
 title: Hammer / Shooting Star
 aliases: [Hammer, Inverted Hammer, Hanging Man, Shooting Star]
 summary: A single bar with one wick at least twice the body. Check the preceding trend before trusting the name.
-seoTitle: Hammer and Shooting Star Candlestick Meaning
-seoDescription: How hammer, inverted hammer, hanging man and shooting star candles differ, how Siglens names them, and what Bulkowski's data shows about their real results.
+seoTitle: Hammer, Inverted Hammer, Hanging Man, Shooting Star
+seoDescription: Hammer, inverted hammer, hanging man and shooting star are told apart by wick direction and where they appear. See how Siglens names them and how they actually performed.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bar with a long lower wick at the end of a decline, and a bar with a long upper wick at the end of an advance.
 faq:
   - q: How is a hammer different from a hanging man?

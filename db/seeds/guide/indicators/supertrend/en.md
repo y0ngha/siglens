@@ -3,7 +3,7 @@ title: "Supertrend"
 aliases: [Supertrend, Super Trend, ATR Trend Line]
 summary: "Draws an ATR-based line above or below price to show trend direction, reversals and a trailing stop at once."
 seoTitle: "Supertrend Indicator: What a Color Change Means"
-seoDescription: "How Supertrend is calculated, what the line flipping above or below price means, how to use it as support or resistance, and where choppy markets fool it."
+seoDescription: The reversal signal when the Supertrend line flips above or below price, how to use it as support and resistance, and how it often misleads in ranging markets, with examples.
 demoCaption: "Synthetic, illustrative bars. In the uptrend the line rises beneath the bars; when the close breaks below it, the line moves above the bars."
 faq:
   - q: "What are the default Supertrend settings?"

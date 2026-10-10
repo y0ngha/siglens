@@ -3,8 +3,8 @@ title: Elliott Wave
 aliases: [Elliott wave theory, Elliott wave count, impulse wave, five-wave structure, wave theory]
 summary: A way of counting where price is in a five-wave advance and three-wave correction.
 seoTitle: "Elliott Wave Theory: Meaning and How to Count"
-seoDescription: The five-wave and three-wave structure, the three rules a count must not break, and how Siglens counts waves and sets the invalidation price.
-demoCaption: Synthetic, illustrative candles. Shows waves 1 to 5 up, the wave 2 and 4 corrections, and the wave 1 start that wave 2 must not break.
+seoDescription: The five waves up and three-wave correction of Elliott Wave theory, the three rules that must not break, and how Siglens counts waves and sets the invalidation price.
+demoCaption: Synthetic, illustrative candles. Shows waves 1 to 5 up, the wave 2 and 4 corrections, the wave 1 start that wave 2 must not break, and the A-B-C correction after wave 5.
 faq:
   - q: Does Elliott wave predict future prices?
     a: It is closer to a framework for describing the structure price is in than a forecasting tool. Two people can count the same chart differently, and a count often becomes clear only afterward. That is why Siglens shows alternate counts and an invalidation price alongside the main count.

@@ -3,7 +3,7 @@ title: Bearish Engulfing
 aliases: [Bearish Engulfing, Bearish Engulfing Pattern, Bearish Engulfing Candle]
 summary: "A bearish bar whose body fully covers the prior bullish bar. A clue to a reversal after an advance."
 seoTitle: Bearish Engulfing Candlestick Pattern Explained
-seoDescription: What a bearish engulfing candlestick looks like, where it matters most, and how often it led to a decline in Bulkowski's data, with Siglens' detection criteria.
+seoDescription: What a bearish engulfing candle looks like, where after a rise it carries more weight, how often it actually reversed, and how Siglens detects it.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bullish bar at the end of a rise is fully covered by a bearish bar with a larger body.
 faq:
   - q: Does price fall after a bearish engulfing?

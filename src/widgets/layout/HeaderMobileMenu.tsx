@@ -274,22 +274,23 @@ export function HeaderMobileMenu({
                                         ])}
                                     </div>
                                 ))}
+                                {/* 차트 가이드는 버티컬 목록의 마지막 그룹으로 둔다 — 아래 고정 영역(AI·로그인)에
+                                    두면 스크롤 목록이 그만큼 줄어 뉴스 하위 항목이 잘려 보인다. */}
+                                <div className="border-t border-secondary-700 py-2">
+                                    <MobileNavLink
+                                        href={GUIDE_PATH}
+                                        label={t('HeaderMobileMenu.guideLink')}
+                                        active={
+                                            pathname === GUIDE_PATH ||
+                                            pathname?.startsWith(
+                                                `${GUIDE_PATH}/`
+                                            ) === true
+                                        }
+                                        focusable={isOpen}
+                                        onNavigate={close}
+                                    />
+                                </div>
                             </nav>
-
-                            <div className="border-t border-secondary-700 py-2">
-                                <MobileNavLink
-                                    href={GUIDE_PATH}
-                                    label={t('HeaderMobileMenu.guideLink')}
-                                    active={
-                                        pathname === GUIDE_PATH ||
-                                        pathname?.startsWith(
-                                            `${GUIDE_PATH}/`
-                                        ) === true
-                                    }
-                                    focusable={isOpen}
-                                    onNavigate={close}
-                                />
-                            </div>
 
                             <div className="border-t border-secondary-700 p-3">
                                 <AiNavLink

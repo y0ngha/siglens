@@ -2,9 +2,9 @@
 title: 52-Week High Momentum
 aliases: [52-week high, 52-week low, 52-week high breakout, new high momentum, George and Hwang 52-week high]
 summary: "A 52-week high is read as strength that tends to continue, a 52-week low as weakness that tends to continue."
-seoTitle: "52-Week High Stocks: Overheated or Momentum?"
-seoDescription: Why a 52-week high can signal momentum (George & Hwang, 2004), Minervini's trend template, how Siglens defines highs and lows, and where the idea breaks down.
-demoCaption: Synthetic, illustrative candles. Shows the 52-week high line, the bar that closes above it, and moving averages stacked in order.
+seoTitle: Trading 52-Week Highs as a Momentum Signal
+seoDescription: Why stocks near their 52-week high tend to keep rising, how to screen new highs with Minervini's trend template, and where the approach falls short.
+demoCaption: Synthetic, illustrative candles. Shows the 52-week high line, the bar that closes above it, and the 20- and 60-day moving averages stacked in rising order (Siglens' own check uses the 60-, 120- and 200-day lines).
 faq:
   - q: Isn't a 52-week high a risky sign because the stock has already run up?
     a: The research points the other way. Stocks near their 52-week high tended to keep outperforming. But the study looked at averages across groups of stocks, so it does not promise anything for a single stock.

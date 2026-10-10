@@ -3,7 +3,7 @@ title: "成交量分布图"
 aliases: [成交量分布图, 成交量分布, 筹码分布, Volume Profile, POC, 价值区域]
 summary: "按价格区间累积成交量并用横向柱显示，指出成交集中的价格（POC）和价值区域（VAH、VAL）。"
 seoTitle: "成交量分布图怎么看？POC、VAH、VAL是什么"
-seoDescription: "成交量分布图如何显示各价位的成交量，POC、价值区域VAH与VAL、成交稀少区间怎么读，以及它的局限。"
+seoDescription: 如何解读成交量分布图中的POC、价值区（VAH、VAL）和成交稀少的价格区间，以及它的局限。
 demoCaption: "这是为说明而制作的虚构K线。在K线旁边画出各价位成交量柱，并标出最长的柱（POC）和价值区域的上下边界。"
 faq:
   - q: "POC是什么？"

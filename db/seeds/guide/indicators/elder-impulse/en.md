@@ -3,8 +3,8 @@ title: Elder Impulse System
 aliases: [Elder Impulse, Impulse System, Elder Impulse System indicator]
 summary: Paints bars green, red or blue to show which trade direction is off limits. Not a buy or sell signal.
 seoTitle: "Elder Impulse System: What the Bar Colors Mean"
-seoDescription: What the green, red and blue bars of the Elder Impulse System mean, the censorship rule behind them, and why it is a poor standalone signal.
-demoCaption: Synthetic, illustrative bars. Green bars continue through an advance and then change to blue and red.
+seoDescription: What green, red and blue bars mean in the Elder Impulse System, which trade direction each color blocks, and why it shouldn't be used as a standalone signal.
+demoCaption: Synthetic, illustrative bars. Colors come from the 13-bar EMA and the MACD histogram. Green bars continue through an advance and then change to blue and red.
 faq:
   - q: Does a green bar mean I should buy?
     a: No. Green means buying is allowed and short selling is blocked, not that you should buy. If you trade on the color alone, you end up buying and selling too often.

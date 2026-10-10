@@ -3,7 +3,7 @@ title: "Williams %R"
 aliases: [Williams %R, Williams Percent Range, "%R", Williams R]
 summary: "A momentum indicator from 0 to -100 showing how far the close is below the highest high of the recent period."
 seoTitle: "Williams %R: What -20 and -80 Mean"
-seoDescription: "How Williams %R is calculated, the -20 and -80 levels, signals when it leaves a zone, why it is the same as the Stochastic, and where it misleads in trends."
+seoDescription: Williams %R's -20 and -80 levels, the signal when it leaves those zones, why it is essentially the same indicator as the stochastic, and when it misleads in a trend.
 demoCaption: "Synthetic, illustrative bars. Price drops close to its recent low, %R sits below -80, and then rises back above -80."
 faq:
   - q: "How is Williams %R different from the Stochastic?"

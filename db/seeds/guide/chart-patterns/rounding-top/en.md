@@ -3,7 +3,7 @@ title: Rounding Top
 aliases: [Dome Top, Rounded Top, Dome Pattern, Inverted Saucer]
 summary: A gentle dome-shaped top, up slowly and back down slowly. A close below the lower rim is read as a turn down.
 seoTitle: Rounding Top (Dome) Pattern Explained
-seoDescription: What a rounding top (dome) looks like, why the dome alone is not a sell signal, how Bulkowski's data rates it, and how Siglens checks the curve.
+seoDescription: The dome shape of a rounding top and how to confirm a break below its rim, plus the cases where the dome breaks upward and other false signals.
 demoCaption: Synthetic, illustrative bars. Shows a gentle dome-shaped top, both rims, and a bar closing below the rims.
 faq:
   - q: Does a rounding top always lead to a decline?

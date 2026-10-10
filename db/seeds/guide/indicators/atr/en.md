@@ -3,8 +3,8 @@ title: ATR
 aliases: [Average True Range, ATR indicator, volatility indicator]
 summary: A volatility indicator that shows how far price moves per bar on average, regardless of direction. Often used to set stop distance and position size.
 seoTitle: ATR Indicator Meaning and Stop-Loss Distance
-seoDescription: What ATR is, how the 14-bar value is calculated, how to use it for stop distance and position size, and why it can't tell you which way price will go.
-demoCaption: Synthetic, illustrative bars. They show ATR rising as bar movement grows and falling as it calms down.
+seoDescription: What ATR is, how it is calculated over 14 bars, how to use it to set stop distance and position size, and why it says nothing about direction.
+demoCaption: Synthetic, illustrative bars. They show ATR rising in a stretch where the range widens and falling once things quiet down.
 faq:
   - q: Is a high ATR good or bad?
     a: Neither. It is just the size of the movement. A high value means price is swinging widely, and it doesn't say whether price will rise or fall.

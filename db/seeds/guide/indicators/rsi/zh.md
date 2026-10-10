@@ -3,7 +3,7 @@ title: "RSI"
 aliases: [RSI, 相对强弱指数, 相对强弱指标, Relative Strength Index, RSI 14, RSI背离]
 summary: "把一段时间内涨幅与跌幅的比率换算成0~100，用来判断超买与超卖的动量指标。"
 seoTitle: "RSI指标怎么看？70和30代表什么"
-seoDescription: "RSI 14的计算原理，70和30标准与50线突破，背离与失败摆动的读法，以及在趋势行情中容易被误导的情况。"
+seoDescription: RSI 14的计算原理，70、30标准和50线突破，如何解读背离和失败摆动，以及趋势行情中被RSI误导的情况。
 demoCaption: "这是为说明而制作的虚构K线。价格快速上涨后RSI升到70上方，随后掉头向下。"
 faq:
   - q: "RSI超过70就该卖出吗？"

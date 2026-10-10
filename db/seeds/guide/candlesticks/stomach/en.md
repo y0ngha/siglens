@@ -3,11 +3,11 @@ title: Above the Stomach / Below the Stomach
 aliases: [Above the Stomach, Below the Stomach]
 summary: "A long bar followed by an opposite-color bar opening past the midpoint of the first body. A two-bar reversal."
 seoTitle: Above the Stomach and Below the Stomach Candles
-seoDescription: "What above-the-stomach and below-the-stomach candlesticks look like, why you must check the trend first, and Bulkowski's data with Siglens' criteria."
+seoDescription: What above the stomach and below the stomach look like, and why you need to check the prior trend first when you see them.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bullish bar opening above the midpoint of a long bearish body and closing higher (above the stomach).
 faq:
   - q: What does above the stomach look like?
-    a: A long bearish bar followed by a bullish bar that opens and closes at or above the midpoint of the first body. Read as a bullish reversal after a decline.
+    a: A long bearish bar followed by a bullish bar that opens at or above the midpoint of the first body and closes above it. Read as a bullish reversal after a decline.
   - q: What if it overlaps another two-bar pattern?
     a: Siglens checks above and below the stomach last. If the same pair of bars already fits another name, such as engulfing, harami or piercing, it uses that name.
 ---

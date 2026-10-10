@@ -3,8 +3,8 @@ title: Harami
 aliases: [Harami, Bullish Harami, Bearish Harami, Harami Cross, Inside Bar Candle]
 summary: A small bar tucked inside the body of a big one. Closer to a hesitation than a reversal signal.
 seoTitle: Harami and Harami Cross Candlestick Meaning
-seoDescription: How bullish harami, bearish harami and harami cross differ, and why they are hard to read as reversal signals, using Bulkowski's data and Siglens' criteria.
-demoCaption: Synthetic, illustrative bars made for this explanation. A bullish harami with a small bullish bar inside a large bearish body, and a harami cross with a doji in that spot.
+seoDescription: How the bullish harami, bearish harami and harami cross differ, why they are hard to read as reversal signals, and how Siglens detects them.
+demoCaption: Synthetic, illustrative bars made for this explanation. A bullish harami with a small bullish bar inside a large bearish body, and a harami cross with a doji in place of the small bar.
 faq:
   - q: What does harami mean?
     a: It is a Japanese word meaning pregnant. A big bar holding a small one looks like that, hence the name.

@@ -3,7 +3,7 @@ title: 三线打击
 aliases: [三线打击, 看涨三线打击, 看跌三线打击, 三线反击, Three-Line Strike, Three Line Strike]
 summary: 同色三根K线被第四根整个抹去的罕见形态。尽管名字如此，统计中它是按反转走的。
 seoTitle: 三线打击K线形态是什么意思
-seoDescription: 三线打击为什么与名称相反，走的是反转而不是持续，以及布尔科夫斯基的统计和 Siglens 判断方向的标准。
+seoDescription: 三线打击虽然名字像持续形态，实际更多走向反转。这里说明原因，以及 Siglens 判断方向的标准。
 demoCaption: 为说明而制作的虚构K线。画的是三根下跌阴线，被第四根升到第一根开盘价之上的阳线抹去，即看跌三线打击。
 faq:
   - q: 看涨三线打击不是看涨信号吗？

@@ -3,7 +3,7 @@ title: Moving Average Grand Cycle Analysis
 aliases: [grand cycle analysis, moving average grand cycle, Granville's law, golden cross and death cross, Granville's rules]
 summary: "Sorts the market into one of six stages by the order of the short, medium and long moving averages."
 seoTitle: "Moving Average Grand Cycle: Reading the 6 Stages"
-seoDescription: The six grand cycle stages from the order of the 5-, 20- and 60-day lines, Granville's eight signals, and how Siglens decides the stage.
+seoDescription: The six stages of the moving average cycle read from the order of the 5-, 20- and 60-day lines, the eight signals of Granville's rules, and how Siglens assigns the stage.
 demoCaption: Synthetic, illustrative candles. Shows stage 1, with the 5-, 20- and 60-day moving averages in short, medium, long order from the top, and the points where the lines cross.
 faq:
   - q: What are the six stages of the grand cycle?

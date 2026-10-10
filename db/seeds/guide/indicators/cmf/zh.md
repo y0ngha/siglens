@@ -3,7 +3,7 @@ title: CMF
 aliases: [蔡金资金流量, Chaikin Money Flow, CMF指标, 资金流向指标]
 summary: 把一段时间内收盘价在K线中的位置与成交量相乘，以-1到+1显示资金是流入还是流出。
 seoTitle: CMF指标怎么看，资金流量零轴
-seoDescription: 蔡金资金流量（CMF）的计算方法、零轴突破与±0.25参考线、确认突破的用法，以及跳空和停牌日造成的失真。
+seoDescription: 蔡金资金流（CMF）穿越零轴或±0.25时的含义，如何用它确认突破，以及跳空和停牌日造成的失真。
 demoCaption: 示意用的虚构K线。展示收盘价持续落在K线上部，CMF向上穿过零轴的过程。
 faq:
   - q: CMF大于0是什么意思？

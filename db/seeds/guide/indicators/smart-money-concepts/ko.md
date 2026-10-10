@@ -6,7 +6,7 @@ title: 스마트 머니 컨셉(SMC)
 aliases: [SMC, Smart Money Concepts, 스마트머니 컨셉, 오더블록, 공정가치갭, FVG, BOS, CHoCH]
 summary: 스윙 고저점의 구조 변화, 오더블록, 공정가치갭, 같은 고점·저점을 이용해 주요 가격대를 짚는 방법이에요.
 seoTitle: 스마트 머니 컨셉(SMC) 오더블록·FVG 뜻
-seoDescription: 스마트 머니 컨셉의 BOS와 CHoCH, 오더블록, 공정가치갭, 프리미엄·디스카운트 구간을 뜻부터 Siglens 기준까지 정리했어요.
+seoDescription: 스마트 머니 컨셉(SMC)의 BOS와 CHoCH, 오더블록, 공정가치갭, 프리미엄·디스카운트 구간이 무엇인지 Siglens 기준과 함께 알아봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 스윙 고점을 넘는 봉(BOS), 그 직전 하락 봉(오더블록), 세 봉 사이에 생긴 빈 가격대(공정가치갭)를 표시했어요.
 faq:
   - q: 오더블록은 무엇인가요?

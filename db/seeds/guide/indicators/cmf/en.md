@@ -3,7 +3,7 @@ title: CMF
 aliases: [Chaikin Money Flow, CMF indicator, money flow indicator]
 summary: Weights where each bar closes within its range by volume over a set period, showing on a -1 to +1 scale whether money is flowing in or out.
 seoTitle: "CMF Indicator: Chaikin Money Flow Zero Line"
-seoDescription: How Chaikin Money Flow (CMF) is calculated, how to read zero-line crosses and the ±0.25 levels, how to confirm breakouts, and how gaps and halts distort it.
+seoDescription: What it means when Chaikin Money Flow (CMF) crosses zero or ±0.25, how to use it to confirm breakouts, and the distortion from gaps and trading halts.
 demoCaption: Synthetic, illustrative bars. Closes keep landing in the upper part of the bar, and CMF rises through the zero line.
 faq:
   - q: What does a CMF above 0 mean?

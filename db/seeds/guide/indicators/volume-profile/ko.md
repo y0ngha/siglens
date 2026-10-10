@@ -6,7 +6,7 @@ title: 볼륨 프로파일
 aliases: [매물대, 매물대 분석, Volume Profile, POC, 거래량 프로파일, 가치 영역]
 summary: 가격대별로 거래량을 쌓아 가로 막대로 보여 주고, 거래가 몰린 가격(POC)과 가치 영역(VAH·VAL)을 알려 줘요.
 seoTitle: 볼륨 프로파일 보는 법, POC·VAH·VAL 뜻
-seoDescription: 가격대별 거래량을 보여 주는 볼륨 프로파일의 POC, 가치 영역 VAH·VAL, 거래 공백 구간 읽는 법과 한계를 정리했어요.
+seoDescription: 볼륨 프로파일에서 POC와 가치 영역(VAH·VAL), 거래가 비어 있는 가격대를 어떻게 읽는지와 그 한계를 다뤄요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 봉 옆에 가격대별 거래량 막대를 세우고, 가장 긴 막대(POC)와 가치 영역의 위아래 경계를 표시했어요.
 faq:
   - q: POC는 무엇인가요?

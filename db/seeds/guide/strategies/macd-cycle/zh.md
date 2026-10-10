@@ -3,8 +3,8 @@ title: MACD大循环分析
 aliases: [MACD大循环, MACD上中下, 指数移动平均线大循环, MACD Cycle]
 summary: 用三条EMA之间的差值构造MACD上、中、下，再按各自的正负号把市场读成六个阶段之一的分析方法。
 seoTitle: MACD大循环分析上中下六阶段怎么看
-seoDescription: "由EMA 9、21、60之差构成的MACD上、中、下，按正负号划分的六个阶段，以及阶段转换信号和注意事项。"
-demoCaption: 示意用的虚构K线。标出了EMA 9、21、60排列顺序发生变化的区间，以及此时三个MACD值穿越零轴的情形。
+seoDescription: 用EMA 9、21、60之差构成的上、中、下三条MACD是什么，按正负号划分的六个阶段，以及阶段切换时的信号。
+demoCaption: 示意用的虚构K线。标出了EMA 9、21、60排列顺序发生变化的区间，以及此时三个MACD值依次跌破零轴的情形。
 faq:
   - q: MACD上、中、下是什么？
     a: 上是EMA 9减EMA 21，中是EMA 9减EMA 60，下是EMA 21减EMA 60。各自大于还是小于0，就能知道EMA的排列顺序。

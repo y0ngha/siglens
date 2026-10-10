@@ -3,7 +3,7 @@ title: "MACD-V"
 aliases: [MACD-V, MACD V, Volatility Normalised MACD, Volatility Normalized MACD]
 summary: "Divides MACD by ATR to measure momentum against volatility, so levels like ±150 work across stocks and periods."
 seoTitle: "MACD-V Explained: The ±150 Levels"
-seoDescription: "How MACD-V differs from MACD, the calculation dividing by the 26-day ATR, the ±150 overbought and oversold levels, and how to read it under a trend filter."
+seoDescription: How MACD-V differs from MACD, how dividing by ATR(26) works, and how to read its ±150 overbought and oversold levels with a trend filter.
 demoCaption: "Synthetic, illustrative bars. The marked stretch is where MACD-V rises above +150 and then drops back below it."
 faq:
   - q: "How is MACD-V different from MACD?"

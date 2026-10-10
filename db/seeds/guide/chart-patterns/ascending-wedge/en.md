@@ -3,7 +3,7 @@ title: Rising Wedge
 aliases: [Ascending Wedge, Rising Wedge Pattern]
 summary: Highs and lows both rise, but the range narrows. A break below the lower line is read as a reversal down.
 seoTitle: "Rising Wedge Pattern: Meaning and Reliability"
-seoDescription: What a rising wedge looks like, why a break of the lower line is read as a reversal, how reliable it was in Bulkowski's data, and how it differs from a channel.
+seoDescription: Why a rising wedge at the end of an uptrend is read as a bearish signal, how to confirm a break below its lower line, and where false signals come from.
 demoCaption: Synthetic, illustrative bars. Shows two rising, converging trendlines and a bar closing below the lower line.
 faq:
   - q: Why is a rising wedge a bearish signal?
@@ -23,6 +23,12 @@ Highs and lows both rise, and the upper and lower trendlines converge toward a s
 Price is rising, but the range of movement shrinks as it climbs. That signals fading upward momentum, so a close below the lower line is read as a turn down. For this reason it is known as a reversal pattern at the end of an uptrend.
 
 Its track record is poor, though. In Thomas Bulkowski's tabulation, 60% broke downward, but after breaking down, its performance ranked last among 36 bearish patterns. It is considered more reliable when volume shrinks during the narrowing and rises as the lower line breaks.
+
+## How it differs from a falling wedge
+
+The two wedges are mirror images in shape, but their records differ a lot. In Bulkowski's tabulation, rising wedges that broke downward had a break-even failure rate (the share that ended without moving far enough in the breakout direction) of 51%, and only 32% reached their target. [Falling wedges](/guide/chart-patterns/descending-wedge) that broke upward had a 26% failure rate and a 62% target rate. Direction is also less lopsided: 68% of falling wedges went up, while only 60% of rising wedges went down.
+
+So a rising wedge is better read as a warning that the advance is tiring than as a sure sell signal. A rising wedge that forms during strong news, such as an earnings release or a sector rotation, can break upward instead. A bearish divergence, where price keeps rising inside the wedge while the peaks of [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) get lower, adds weight to the downside. A break within the first two-thirds of the distance from the wedge's start to its apex is considered more reliable.
 
 ## How Siglens detects it
 

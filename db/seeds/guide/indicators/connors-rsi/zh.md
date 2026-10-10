@@ -3,7 +3,7 @@ title: 康纳斯RSI
 aliases: [康纳斯相对强弱指数, CRSI, ConnorsRSI, Connors RSI]
 summary: 把三种RSI类读数取平均，快速捕捉短期超买与超卖的指标。低于10、高于90视为极端。
 seoTitle: 康纳斯RSI怎么看，10与90参考线
-seoDescription: 介绍康纳斯RSI（3, 2, 100）的构成、低于10和高于90的极端值、50到80的离场区间，以及为什么难以作为单独信号使用。
+seoDescription: 认识康纳斯RSI(3,2,100)的三个组成部分、低于10和高于90的极端值、50~80的平仓区间，以及它为什么难以单独作为信号。
 demoCaption: 示意用的虚构K线。展示连续数日下跌之后，康纳斯RSI跌破10再回升的过程。
 faq:
   - q: 康纳斯RSI低于10就该买入吗？

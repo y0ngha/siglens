@@ -3,7 +3,7 @@ title: "挤压动量"
 aliases: [挤压动量, 挤压动量指标, Squeeze Momentum, TTM挤压, LazyBear挤压, 布林肯特纳挤压]
 summary: "同时观察布林带收窄到肯特纳通道内的波动率压缩区间，以及压缩释放时的动量方向。"
 seoTitle: "挤压动量指标怎么看？挤压ON和OFF"
-seoDescription: "挤压动量如何用布林带和肯特纳通道找出波动率压缩，它的计算方法，挤压ON和OFF的含义，以及动量柱怎么读。"
+seoDescription: 挤压动量如何用布林带和肯特纳通道找出波动收缩，ON、OFF代表什么，以及如何解读动量柱。
 demoCaption: "这是为说明而制作的虚构K线。显示K线波动幅度变窄的压缩区间，以及压缩释放后向上运行、动量柱转为正值并增大。"
 faq:
   - q: "挤压ON和OFF分别是什么意思？"

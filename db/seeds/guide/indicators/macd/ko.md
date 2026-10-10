@@ -5,8 +5,8 @@ related: [ema, rsi, macd-v, adx]
 title: MACD
 aliases: [맥디, 이동평균 수렴확산, Moving Average Convergence Divergence, MACD 히스토그램]
 summary: 12일과 26일 지수이동평균의 차이와 그 9일 평균을 비교해서 추세 방향과 모멘텀 변화를 보는 지표예요.
-seoTitle: MACD 보는 법, 골든크로스와 히스토그램
-seoDescription: MACD선과 시그널선 교차, 히스토그램, 0선 돌파, 다이버전스를 어떻게 읽는지와 횡보장에서 가짜 신호가 나오는 이유를 정리했어요.
+seoTitle: MACD 보는 법, 시그널선 교차와 히스토그램
+seoDescription: MACD선과 시그널선의 교차, 히스토그램, 0선 돌파, 다이버전스를 읽는 법과 횡보장에서 가짜 신호가 잦은 이유를 알아봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. MACD선이 시그널선을 아래에서 위로 넘고 히스토그램이 커지는 구간을 표시했어요.
 faq:
   - q: MACD 기본 설정 12, 26, 9는 무슨 뜻인가요?

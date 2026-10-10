@@ -3,7 +3,7 @@ title: Descending Channel
 aliases: [Falling Channel, Downward Channel, Downtrend Channel, Descending Trend Channel]
 summary: Price moves between two parallel falling trendlines. It maps the trend more than it signals a direction.
 seoTitle: "Descending Channel Pattern: Meaning and Breakouts"
-seoDescription: What a descending channel looks like, how price moves inside it, what a close beyond either line means, and how to tell it from a falling wedge.
+seoDescription: How bounces and declines repeat inside a descending channel, what a break above the upper line or below the lower line means, and how to tell it from a falling wedge.
 demoCaption: Synthetic, illustrative bars. Shows two parallel falling trendlines, bars moving between them, and a bar closing above the upper line.
 faq:
   - q: How do I tell a descending channel from a falling wedge?
@@ -16,17 +16,25 @@ faq:
 
 ## How it looks
 
-Price moves between two parallel falling trendlines, like a pipe tilted downward with price inside. Highs form near the upper line and lows near the lower line. If both lines are horizontal, it is a [rectangle](/guide/chart-patterns/rectangle).
+Highs and lows fall together, and price stays boxed in between two parallel trendlines heading down. Rallies stall at the upper line and drops pause near the lower line, over and over. If the lines are flat instead of sloped, it is treated separately as a [rectangle](/guide/chart-patterns/rectangle).
 
 ## What it tells you
 
-The downtrend is continuing within a steady range. While rebounds stall near the upper line, the trend is considered intact; a close above the upper line is read as a sign the decline has weakened.
+Sellers keep the upper hand, but the decline is orderly and holds a steady width. As long as rallies turn down near the upper line, the downtrend is considered intact; a close above the upper line suggests the decline may have broken.
 
-It has limits as a directional signal. Thomas Bulkowski did not tabulate channel performance separately and said only that it is probably similar to a rectangle. He also noted the breakout can go either way. For that reason, a channel is often used less as a buy or sell signal and more as a way to see the range the current trend is moving in.
+There is no scorecard for channels themselves. Thomas Bulkowski did not measure channel performance and only guessed it is similar to a rectangle. He also saw no set breakout direction. So a descending channel is used less as a signal of when to buy or sell and more as a gauge of how wide the decline is running.
+
+## How it differs from an ascending channel
+
+In an [ascending channel](/guide/chart-patterns/ascending-channel) the key event is a break of the lower line, but in a descending channel the break above the upper line matters more. Bulkowski says that if you shorted inside a down-sloping channel, you should cover when price breaks out upward. A close below the lower line, by contrast, is not a bottom; it means the decline is speeding up.
+
+In a falling market, price can look cheap every time it touches the lower line, which makes buying tempting. But while the channel holds, the lower line is not a floor; it is one wall of a pipe that keeps heading down. Bulkowski also advises avoiding longs inside a down-sloping channel and trading it from the short side.
+
+Reading the breakout direction ahead of time works the same way as in an ascending channel. When price turns up before reaching the lower line (a partial decline), expect an upward break; when it turns down before reaching the upper line (a partial rise), expect a downward break. Because the upper-line break is the key event here, a partial decline is worth watching as a possible early warning of it.
 
 ## How Siglens detects it
 
-Siglens confirms a swing high or swing low once price has reversed by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar). It draws the upper and lower boundaries through the 5 to 8 most recent swings, then extends back to earlier swings (up to 16) as long as the same lines still hold. Each line passes through actual swing extremes.
+A swing high or low is confirmed once price has reversed from that point by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar). The boundaries are drawn through the 5 to 8 most recent swings and, as long as the same lines hold, extended back up to 16 swings. They are not averaged regression lines; they pass through actual swing extremes.
 
 - Both lines must fall at least 1.5 times ATR over the span and be touched at least twice (a swing counts as a touch if it is within 0.35 times ATR of the line). No bar in the span may poke out past a line by more than 0.25 times ATR.
 - The final width must be 0.85 to 1.15 times the starting width for the lines to count as parallel.
@@ -40,8 +48,7 @@ If the close moves beyond a line by more than 0.25 times ATR and the last close 
 
 ## Watch out for
 
-- If price often comes near a line without touching it, the channel is loose.
-- If the channel is narrow relative to price, moving outside the lines is often just noise.
-- If price hugs one side instead of moving across the full width, the pattern means less.
+- If price often comes close to a line and turns away without touching it, the lines were drawn loosely.
+- In a channel that is narrow relative to price, a move outside the lines is often noise.
+- If price stays on one side and does not travel across the full width, the channel means less.
 - A close above the upper line that quickly returns inside the channel may be a false breakout, not a reversal.
-- A close below the lower line suggests the decline has accelerated.

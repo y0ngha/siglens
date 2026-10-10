@@ -3,7 +3,7 @@ title: Multi-Timeframe Analysis
 aliases: [multi timeframe, higher timeframe trend, timeframe alignment, MTF analysis, Multi Timeframe Analysis]
 summary: "Check the larger timeframe's trend first, then screen whether the signal you see agrees with it."
 seoTitle: "Multi-Timeframe Analysis: How to Read It"
-seoDescription: How a larger-timeframe trend filters signals, the 60, 120 and 200 moving average rules for estimating the big trend, and how to read timeframe alignment.
+seoDescription: Why signals are filtered by the higher-timeframe trend, how the 60-, 120- and 200-day moving averages are used to gauge that trend, and how to read timeframe alignment.
 demoCaption: Synthetic, illustrative candles. Shows a larger uptrend above the long moving averages and the short pullbacks inside it.
 faq:
   - q: Do I need to look at several charts for multi-timeframe analysis?

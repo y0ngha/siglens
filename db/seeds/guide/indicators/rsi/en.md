@@ -3,7 +3,7 @@ title: "RSI"
 aliases: [RSI, Relative Strength Index, RSI 14, RSI Divergence]
 summary: "Turns the ratio of recent gains to losses into a 0 to 100 scale to gauge overbought and oversold conditions."
 seoTitle: "RSI Explained: What 70 and 30 Mean"
-seoDescription: "How RSI 14 is calculated, the 70 and 30 levels, the 50 line, how to read divergence and failure swings, and where RSI misleads in trending markets."
+seoDescription: How RSI 14 is calculated, its 70 and 30 levels, 50-line crosses, how to read divergences and failure swings, and when RSI misleads you in a trend.
 demoCaption: "Synthetic, illustrative bars. Price rises sharply, RSI climbs above 70, and then turns down."
 faq:
   - q: "Should I sell when RSI goes above 70?"

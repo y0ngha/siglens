@@ -3,7 +3,7 @@ title: Donchian Channel
 aliases: [Donchian Channels, Turtle channel, 20-day breakout channel]
 summary: A channel drawn from the highest high and lowest low of the last 20 bars, best known as the breakout benchmark in Turtle Trading.
 seoTitle: Donchian Channel and the Turtle Breakout Rule
-seoDescription: The Donchian Channel formula, the Turtle rule of buying a 20-day high breakout and exiting at a 10-day low, plus false breakouts and low win rates in ranges.
+seoDescription: How the Donchian Channel is calculated, the Turtle rules of buying a 20-day high breakout and exiting on a 10-day low, and why fake breakouts pile up in ranging markets.
 demoCaption: Synthetic, illustrative bars. A close breaks above the 20-bar high line, and the channel narrows and then widens.
 faq:
   - q: How did Turtle Trading use the Donchian Channel?

@@ -3,7 +3,7 @@ title: Buy/Sell Volume
 aliases: [Buy/Sell Volume, buy and sell volume split, buy ratio]
 summary: Splits a bar's volume into buy and sell shares by close position, showing who had the edge in that bar.
 seoTitle: "Buy/Sell Volume Indicator: How to Read It"
-seoDescription: How a bar's volume is split into buy and sell parts by close position, the 60% and 40% buy-ratio levels, how to use it to confirm breakouts, and its limits.
+seoDescription: How a bar's volume is split into buying and selling by where it closes, the 60% and 40% buy-ratio levels, and how to use it to confirm breakouts, with its limits.
 demoCaption: Synthetic, illustrative bars. The buy share grows on bars that close near the high, and the sell share grows on bars that close near the low.
 faq:
   - q: Is buy volume the number of actual buy orders?

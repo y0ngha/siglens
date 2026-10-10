@@ -5,8 +5,8 @@ related: [three-soldiers-crows, morning-evening-star, hammer-shooting-star, cand
 title: 전진 블록형 / 사다리 바닥형
 aliases: [전진 블록, 사다리 바닥, 어드밴스 블록, 래더 바텀, Advance Block, Ladder Bottom]
 summary: 점점 힘이 빠지는 상승 3봉(전진 블록)과 하락 끝에서 반등하는 3봉(사다리 바닥)이에요. 둘 다 약한 단서예요.
-seoTitle: 전진 블록형 사다리 바닥형 캔들 뜻
-seoDescription: 전진 블록형과 사다리 바닥형이 어떤 모양인지, 교과서와 달리 전진 블록은 상승 지속이 많았던 이유를 불코우스키 집계로 정리했어요.
+seoTitle: 전진 블록형·사다리 바닥형 캔들 뜻과 신호
+seoDescription: 전진 블록형과 사다리 바닥형의 모양을 알아보고, 교과서와 달리 전진 블록형 뒤에 상승이 이어진 경우가 많았던 이유를 짚어 봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 몸통은 줄고 윗꼬리는 길어지는 양봉 세 개(전진 블록)를 그렸어요.
 faq:
   - q: 전진 블록형은 하락 신호인가요?

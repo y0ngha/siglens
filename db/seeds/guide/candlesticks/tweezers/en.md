@@ -3,7 +3,7 @@ title: Tweezers
 aliases: [Tweezers, Tweezers Top, Tweezers Bottom, Tweezer Top, Tweezer Bottom]
 summary: Two bars whose highs or lows meet at nearly the same level. Read as a price level to watch.
 seoTitle: Tweezer Top and Tweezer Bottom Candlesticks
-seoDescription: What tweezer top and tweezer bottom candlesticks look like, why they failed as reversal signals in Bulkowski's data, and the conditions that give them meaning.
+seoDescription: What tweezer tops and bottoms look like, why they didn't work well as reversal signals, and the conditions under which they still mean something.
 demoCaption: Synthetic, illustrative bars made for this explanation. One pair of bars with equal highs (tweezers top) and one pair with equal lows (tweezers bottom).
 faq:
   - q: Does price fall after a tweezers top?

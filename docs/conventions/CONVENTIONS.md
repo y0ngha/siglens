@@ -595,6 +595,7 @@ file or the rule it describes changes:
 - After splitting a function or JSDoc, check that each paragraph stays on the half it describes and that no
   sentence is cut in the middle or loses a field the next paragraph relies on.
 - Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
+- A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
 
 <a id="CM-3"></a>
 

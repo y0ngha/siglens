@@ -2715,11 +2715,15 @@
             "categoryIntroChartPatterns": "讲解由许多根 K线组成的大形态。双底、头肩形、三角形、楔形、旗形等在趋势延续或转向时常见的形态，长什么样，以及 Siglens 按什么标准识别，这里都有说明。",
             "categoryIntroIndicators": "汇集了移动平均线、RSI、MACD、布林带等由价格和成交量计算出来的技术指标。除了计算方法和读法，也写明了指标容易失灵的情况。",
             "categoryIntroStrategies": "讲解艾略特波浪、斐波那契回撤、背离、突破、跳空等把多个信号结合起来看的分析思路。这些理论适合在单个指标看不清走势时使用。",
-            "categorySeoDescription": "用示例图表讲解 {count} 个{name}条目，包含读法、Siglens 的判定标准和注意事项。",
+            "categoryListHeading": "{name}列表",
+            "categorySeoDescriptionCandlesticks": "用示例图表看十字星、锤子线、吞没形态、启明星等常见的 {count} 种K线形态，了解它们出现在什么位置才有意义。",
+            "categorySeoDescriptionChartPatterns": "用示例图表看双底、头肩顶、三角形、楔形等常见的 {count} 种图表形态，了解什么样的形状意味着趋势延续或反转。",
+            "categorySeoDescriptionIndicators": "用示例图表了解移动平均线、RSI、MACD、布林带等 {count} 种技术指标的计算方法、读法，以及数值容易失真的情况。",
+            "categorySeoDescriptionStrategies": "用示例图表整理艾略特波浪、斐波那契回撤、背离、突破、跳空等 {count} 种图表交易策略与理论。",
             "categorySeoTitleCandlesticks": "K线形态种类与含义汇总",
             "categorySeoTitleChartPatterns": "图表形态种类与看法汇总",
             "categorySeoTitleIndicators": "技术指标种类与看法汇总",
-            "categorySeoTitleStrategies": "艾略特波浪、斐波那契、背离等策略汇总",
+            "categorySeoTitleStrategies": "图表交易策略与理论种类汇总",
             "categoryStrategies": "策略与理论",
             "ctaBody": "搜索感兴趣的股票，就能把图表和分析放在一起看。",
             "ctaButton": "去搜索股票",
@@ -3106,6 +3110,7 @@
             },
             "GuideHintLink": {
                 "aria": "{name} 查看含义",
+                "entry": "形态、K线和指标的含义可在图表指南中查看",
                 "label": "查看含义"
             }
         },

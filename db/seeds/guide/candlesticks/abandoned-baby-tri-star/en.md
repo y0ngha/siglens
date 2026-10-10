@@ -3,7 +3,7 @@ title: Abandoned Baby / Tri-Star
 aliases: [Abandoned Baby, Tri-Star, Bullish Abandoned Baby, Bearish Abandoned Baby, Three-Star Doji]
 summary: "A rare three-bar reversal with a doji gapped clear of both neighbors, plus the tri-star of three dojis."
 seoTitle: Abandoned Baby and Tri-Star Candlestick Patterns
-seoDescription: "What abandoned baby and tri-star candlesticks look like, why they are rare, how often they reversed in Bulkowski's data, and Siglens' criteria."
+seoDescription: What the abandoned baby and tri-star look like, why they are rare, and how far you can trust them as reversal signals, with Siglens' detection rules.
 demoCaption: Synthetic, illustrative bars made for this explanation. A long bearish bar, a doji that gaps down with no shadow overlap, then a bullish bar that gaps back up.
 faq:
   - q: Why is it called an abandoned baby?

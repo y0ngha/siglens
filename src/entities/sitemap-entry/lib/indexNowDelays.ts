@@ -1,5 +1,5 @@
 import { MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
-import { STATIC_PAGE_PATHS } from './staticPagePaths';
+import { STATIC_PAGE_PATHS, isGuideEntryPath } from './staticPagePaths';
 
 /**
  * IndexNow 제출을 **얼마나 미룰지**의 표 — URL 종류별 지연.
@@ -53,7 +53,9 @@ export function classifyIndexNowUrl(url: string): IndexNowRouteKind | null {
     if (!URL.canParse(url)) return null;
     const path = new URL(url).pathname.replace(/\/$/, '') || '/';
     if (NEVER_SUBMIT_PATHS.has(path)) return null;
-    if (STATIC_PAGE_PATH_SET.has(path)) return 'staticPage';
+    if (STATIC_PAGE_PATH_SET.has(path) || isGuideEntryPath(path)) {
+        return 'staticPage';
+    }
     if (path === '/market' || path.startsWith('/market/')) return 'marketHub';
     if (path === '/economy' || path.startsWith('/economy/')) return 'economy';
     if (path === '/fear-greed' || path.startsWith('/fear-greed/')) {

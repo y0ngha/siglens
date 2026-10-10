@@ -5,8 +5,8 @@ related: [marubozu, piercing-dark-cloud, bullish-engulfing, candle-basics]
 title: 반격선 / 벨트 홀드형
 aliases: [반격선, 반격형, 상승 반격형, 하락 반격형, 벨트 홀드, 벨트홀드, Counterattack Line, Belt Hold, Meeting Lines]
 summary: 한쪽 끝에서 시작한 긴 봉(벨트 홀드)과 앞 봉 종가로 되돌아와 마감한 봉(반격선)이에요. 단기 방향 전환의 약한 단서예요.
-seoTitle: 벨트 홀드 반격선 캔들 뜻과 신호 정리
-seoDescription: 벨트 홀드와 반격선 캔들이 어떤 모양인지, 불코우스키 집계로는 얼마나 맞았는지, 어떻게 확인하는지 Siglens의 감지 기준과 함께 정리했어요.
+seoTitle: 반격선·벨트 홀드 캔들 뜻과 신호
+seoDescription: 반격선과 벨트 홀드 캔들이 어떻게 생겼는지, 반전 신호로 얼마나 맞았는지, 신호를 어떻게 확인하는지 짚어 봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 저가에서 시작한 긴 양봉(벨트 홀드)과, 긴 음봉 뒤에 같은 종가로 마감한 양봉(반격선)을 그렸어요.
 faq:
   - q: 벨트 홀드는 반전 신호인가요?

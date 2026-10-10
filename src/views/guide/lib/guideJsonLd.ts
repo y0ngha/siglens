@@ -8,7 +8,11 @@ import {
     LOCALE_HREFLANG,
     type Locale,
 } from '@/shared/i18n/locales';
-import { OPERATOR_PERSON_JSON_LD_ID } from '@/shared/lib/legal';
+import {
+    ABOUT_PATH,
+    OPERATOR_PERSON_JSON_LD_ID,
+    SITE_OPERATOR,
+} from '@/shared/lib/legal';
 import {
     buildBreadcrumbJsonLd,
     buildFaqJsonLd,
@@ -24,6 +28,21 @@ import {
 } from '@/shared/lib/guidePaths';
 
 const WEBSITE_REF = { '@type': 'WebSite', '@id': `${SITE_URL}#website` };
+
+/** 항목별 이미지가 없을 때의 대표 이미지 — 소셜 카드(`og:image`)와 같은 파일이다. */
+const GUIDE_DEFAULT_IMAGE_URL = `${SITE_URL}/og-image.png`;
+
+/**
+ * `author`. `/about`의 `Person`(`@id`)을 가리키되 `name`·`url`을 인라인으로 함께 싣는다 —
+ * 리치 결과 검사기는 다른 페이지에 정의된 노드를 따라가지 않아 `@id`만 있으면 작성자를 비어 있다고 본다.
+ * `@id`가 같아 크롤러는 `/about`의 노드와 한 개체로 합친다.
+ */
+const OPERATOR_PERSON_REF = {
+    '@type': 'Person',
+    '@id': OPERATOR_PERSON_JSON_LD_ID,
+    name: SITE_OPERATOR.name,
+    url: `${SITE_URL}${ABOUT_PATH}`,
+} as const;
 
 function absoluteGuideUrl(path: string, locale: Locale): string {
     return localizedAbsoluteUrl(`${SITE_URL}${path}`, locale);
@@ -83,6 +102,7 @@ interface ArticleInput {
 
 /**
  * 항목의 `TechArticle`. `dateModified`는 화면 하단 "마지막 업데이트"와 같은 `updatedAt`이다.
+ * `image`는 항목별 이미지가 아직 없어 기본 OG 이미지다.
  * 첫 발행 시각을 모르므로 `datePublished`는 내지 않는다(요청·빌드 시각으로 채우면 거짓이 된다).
  *
  * `inLanguage`는 **실제로 보여 주는 본문의 언어**다 — 번역이 없어 ko로 대신한 렌더가
@@ -108,7 +128,8 @@ export function buildGuideArticleJsonLd({
         inLanguage: LOCALE_HREFLANG[bodyLocale],
         dateModified: entry.updatedAt,
         isPartOf: WEBSITE_REF,
-        author: { '@id': OPERATOR_PERSON_JSON_LD_ID },
+        image: GUIDE_DEFAULT_IMAGE_URL,
+        author: OPERATOR_PERSON_REF,
         publisher: { '@id': ORGANIZATION_JSON_LD_ID },
     };
 }

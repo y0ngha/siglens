@@ -3,7 +3,7 @@ title: CCI
 aliases: [顺势指标, 商品通道指数, Commodity Channel Index, CCI指标]
 summary: 显示价格偏离均值多远的指标，以+100和-100为参考线，没有上下限。
 seoTitle: "CCI指标怎么看，+100与-100参考线"
-seoDescription: CCI的计算方式，+100、-100和零轴突破的读法，以及为什么在趋势行情中不能把超买读数直接当作卖出信号。
+seoDescription: CCI穿越+100、-100和零轴时如何解读，以及为什么在趋势行情中不能照单全收它的超买信号。
 demoCaption: 示意用的虚构K线。展示价格大幅偏离均值、CCI升过+100后又回落的过程。
 faq:
   - q: CCI超过+100就是超买吗？

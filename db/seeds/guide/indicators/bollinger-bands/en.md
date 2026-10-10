@@ -3,7 +3,7 @@ title: Bollinger Bands
 aliases: [BB, Bollinger Bands indicator, Bollinger Band squeeze]
 summary: Bands drawn 2 standard deviations above and below the 20-day moving average, showing how far price has strayed from its recent trend and how large volatility is.
 seoTitle: "How to Read Bollinger Bands: Squeeze and Band Walk"
-seoDescription: How Bollinger Bands are calculated, how to read band touches, the squeeze and the band walk, and why an upper-band touch is not a sell signal.
+seoDescription: How Bollinger Bands are calculated and how to read band touches, squeezes and band walks, plus why touching the upper band is not automatically a sell signal.
 demoCaption: Synthetic, illustrative bars. The bands narrow, then widen upward as price climbs along the upper band.
 faq:
   - q: Should I sell when price touches the upper Bollinger Band?

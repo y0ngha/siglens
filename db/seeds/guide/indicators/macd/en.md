@@ -2,8 +2,8 @@
 title: "MACD"
 aliases: [MACD, Moving Average Convergence Divergence, MACD Histogram, MACD Crossover]
 summary: "Compares the gap between the 12- and 26-day EMAs with its 9-day average to read trend and momentum shifts."
-seoTitle: "How to Read MACD: Crossovers and Histogram"
-seoDescription: "How to read MACD and signal line crossovers, the histogram, zero-line crosses and divergence, and why choppy markets produce false signals."
+seoTitle: "How to Read MACD: Signal Line Crosses and Histogram"
+seoDescription: How to read MACD and signal line crosses, the histogram, zero-line crosses and divergences, and why fake signals are common in ranging markets.
 demoCaption: "Synthetic, illustrative bars. The marked stretch is where the MACD line crosses above the signal line and the histogram grows."
 faq:
   - q: "What do the default MACD settings 12, 26, 9 mean?"

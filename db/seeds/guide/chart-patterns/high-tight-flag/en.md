@@ -3,7 +3,7 @@ title: High Tight Flag
 aliases: [HTF, High-Tight Flag, High and Tight Flag]
 summary: "A rare continuation pattern: price nearly doubles in two months, pauses shallowly, then clears the pole's top."
 seoTitle: "High Tight Flag Pattern: Rules and Reliability"
-seoDescription: What a high tight flag is, why it only shows up on daily charts, how the breakout is confirmed, and what Bulkowski's data says about its reliability.
+seoDescription: The conditions of a high tight flag, a 90%+ rise within 40 bars followed by a pause that gives back no more than 25%, and how to confirm the breakout with a close above the pole top.
 demoCaption: Synthetic, illustrative bars. Shows a sharp pole, a shallow pause, and a bar moving above the pole's top.
 faq:
   - q: How is a high tight flag different from an ordinary bull flag?

@@ -3,7 +3,7 @@ title: Pennant
 aliases: [Pennant Pattern, Bullish Pennant, Bearish Pennant, Triangular Flag]
 summary: A small narrowing triangle after a sharp move (the pole). A break in its direction suggests continuation.
 seoTitle: "Pennant Pattern: How to Read It"
-seoDescription: What a pennant looks like, how it differs from a flag and a symmetrical triangle, how reliable it was in Bulkowski's data, and what to check at the breakout.
+seoDescription: How a pennant, a short pause in a small triangle after a sharp move, differs from a flag and a symmetrical triangle, and how to confirm the breakout with volume.
 demoCaption: Synthetic, illustrative bars. Shows a sharp pole, a small narrowing triangle, and a bar closing above the triangle.
 faq:
   - q: How do I tell a pennant from a symmetrical triangle?

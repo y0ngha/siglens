@@ -3,7 +3,7 @@ title: EWMA Volatility
 aliases: [Exponentially Weighted Moving Average volatility, RiskMetrics volatility, EWMA Volatility]
 summary: A risk measure that weights recent returns more to track current volatility quickly. It gives no direction.
 seoTitle: "EWMA Volatility: Meaning and Lambda 0.94"
-seoDescription: What EWMA volatility is, what a lambda of 0.94 means, how to use it as a risk measure that carries no direction, and where it falls short.
+seoDescription: What EWMA volatility is, what a lambda of 0.94 means, and how to use it as a direction-free measure of risk, with its limits, in plain terms.
 demoCaption: Synthetic, illustrative bars. EWMA volatility jumps right after a large down bar and then slowly comes back down.
 faq:
   - q: Does high EWMA volatility mean the price will fall?

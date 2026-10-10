@@ -3,7 +3,7 @@ title: Cup and Handle
 aliases: [Cup with Handle, Cup and Handle Pattern, Cup-and-Handle]
 summary: A gentle U-shaped base (cup), then a small dip (handle). A break above the handle suggests the rise continues.
 seoTitle: "Cup and Handle Pattern: How to Read It"
-seoDescription: What a cup and handle looks like, how deep the cup and handle should be, why a V-shaped bottom does not count, and what Bulkowski's data says.
+seoDescription: The U-shaped cup and handle conditions of a cup and handle, how to read volume on the breakout, and cases like a V-shaped bottom that don't count as a cup, with an example chart.
 demoCaption: Synthetic, illustrative bars. Shows a U-shaped cup, a small handle after the right rim, and a bar closing above the handle.
 faq:
   - q: Who came up with the cup and handle?

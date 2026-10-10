@@ -3,7 +3,7 @@ title: Three-Line Strike
 aliases: [Three-Line Strike, Three Line Strike, Bullish Three-Line Strike, Bearish Three-Line Strike]
 summary: "A rare shape where a fourth bar wipes out three same-color bars. In the data it moved as a reversal."
 seoTitle: Three-Line Strike Candlestick Pattern Explained
-seoDescription: Why the three-line strike acts as a reversal rather than a continuation despite its name, using Bulkowski's data and how Siglens reads direction.
+seoDescription: Despite its name, the three-line strike more often led to a reversal than a continuation. Here is why, and how Siglens reads its direction.
 demoCaption: "Synthetic, illustrative bars made for this explanation. A bearish three-line strike: three falling bearish bars wiped out by a fourth bullish bar that rises above the first bar's open."
 faq:
   - q: Isn't a bullish three-line strike a bullish signal?

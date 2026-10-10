@@ -72,6 +72,8 @@ export type DemoOverlay =
           tone?: DemoSeriesTone;
           /** `dots`는 파라볼릭 SAR처럼 점으로 찍는다. 기본은 선. */
           style?: 'line' | 'dots';
+          /** 가격 범위에서 멀어도 보이는 가격 영역에 포함한다 (MA200처럼 기준이 되는 선). */
+          includeInDomain?: boolean;
       }
     | {
           /** 두 선 사이를 칠한 띠 (볼린저·켈트너·돈치안·일목 구름). */
@@ -80,6 +82,7 @@ export type DemoOverlay =
           lower: readonly (number | null)[];
           label: string;
           tone?: DemoSeriesTone;
+          includeInDomain?: boolean;
       }
     | {
           /** 가격대별 거래량 막대를 차트 오른쪽 가장자리에서 왼쪽으로 세운다. */

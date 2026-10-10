@@ -3,7 +3,7 @@ title: 布林线%B与带宽
 aliases: ["%B", 百分比B, 布林带宽, BandWidth, Bollinger %B]
 summary: "%B把价格在布林带内的位置换算成数值，带宽则把通道有多宽换算成数值。"
 seoTitle: "布林线%B含义与带宽收口怎么看"
-seoDescription: 布林线%B与带宽的计算公式、0.95和0.05的均值回归信号、收口的读法，以及为什么触及轨道本身不是信号。
+seoDescription: 布林线%B和带宽的算法，%B从0.95或0.05回落时的信号，以及如何解读收口。
 demoCaption: 示意用的虚构K线。展示价格升至上轨附近后回落，%B跌破0.95的场景。
 faq:
   - q: 布林线%B怎么读？

@@ -6,7 +6,7 @@ title: MACD-V
 aliases: [MACD V, 변동성 정규화 MACD, Volatility Normalised MACD, MACD-V]
 summary: MACD를 ATR로 나눠서 변동성 대비 모멘텀을 재는 지표로, 종목과 시기가 달라도 ±150 같은 기준을 같이 써요.
 seoTitle: MACD-V 뜻과 ±150 기준, 변동성 정규화 MACD
-seoDescription: MACD-V가 MACD와 어떻게 다른지, ATR 26으로 나누는 계산법, ±150 과매수 과매도 기준과 추세 필터 아래 해석을 정리했어요.
+seoDescription: MACD-V가 MACD와 어떻게 다른지, ATR(26)로 나누는 계산법과 ±150 과매수·과매도 기준을 추세 필터와 함께 읽는 법을 설명해요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. MACD-V가 +150선 위로 올라갔다가 아래로 내려오는 구간을 표시했어요.
 faq:
   - q: MACD-V는 MACD와 무엇이 다른가요?

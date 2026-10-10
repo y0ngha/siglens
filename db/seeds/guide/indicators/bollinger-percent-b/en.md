@@ -3,7 +3,7 @@ title: Bollinger %B and BandWidth
 aliases: ["%B", Percent B, BandWidth, Bollinger Band width, Bollinger %B]
 summary: "%B gives price's position inside the Bollinger Bands as a number. BandWidth gives how wide the bands are."
 seoTitle: "Bollinger %B Meaning and BandWidth Squeeze"
-seoDescription: "How Bollinger %B and BandWidth are calculated, how to read the 0.95 and 0.05 pullback signals and the squeeze, and why a band touch alone is not a signal."
+seoDescription: How Bollinger %B and Bandwidth are calculated, what it signals when %B turns back from 0.95 or 0.05, and how to read a squeeze.
 demoCaption: Synthetic, illustrative bars. They show %B dropping below 0.95 as price climbs near the upper band and then comes back down.
 faq:
   - q: How do I read Bollinger %B?

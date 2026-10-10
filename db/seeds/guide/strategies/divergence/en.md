@@ -3,8 +3,8 @@ title: Divergence
 aliases: [RSI divergence, bullish divergence, bearish divergence, hidden divergence, divergence trading]
 summary: "Price makes a new high or low but an indicator such as RSI does not follow: the trend may be losing strength."
 seoTitle: "RSI Divergence: Meaning and How to Read It"
-seoDescription: The difference between bullish, bearish and hidden divergence, how to confirm one, how Siglens finds RSI divergence, and what to watch out for.
-demoCaption: "Synthetic, illustrative candles. Shows a bullish divergence: price makes a lower second low while RSI makes a higher second low at the same time."
+seoDescription: How bullish, bearish and hidden divergences differ, how to confirm them, how Siglens finds RSI divergences, and what to watch out for.
+demoCaption: "Synthetic, illustrative candles. Shows a bullish divergence: within the last 20 bars, price makes a lower second low while RSI makes a higher second low at the same time."
 faq:
   - q: Does the trend reverse as soon as a divergence appears?
     a: No. A divergence is closer to a warning, and in a strong trend the reversal sometimes comes only after several of them. Many traders also wait for confirmation, such as RSI leaving oversold or overbought territory or price reacting at support or resistance.

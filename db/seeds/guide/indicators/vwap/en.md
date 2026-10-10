@@ -3,8 +3,8 @@ title: "VWAP"
 aliases: [VWAP, Volume Weighted Average Price, Anchored VWAP]
 summary: "A line of the volume-weighted average trade price through the day, used as an intraday fair-value reference."
 seoTitle: "VWAP Explained: Volume-Weighted Average Price"
-seoDescription: "What VWAP is, what it means when price is above or below it, how to read breakouts and support and resistance, and why it is hard to use on daily charts."
-demoCaption: "Synthetic, illustrative bars. Intraday bars with the VWAP line following them, and the point where a high-volume bar crosses above VWAP marked."
+seoDescription: What VWAP is, what it means when price is above or below it, how to use it as support and resistance, and why it is hard to use on daily charts.
+demoCaption: "Synthetic, illustrative bars. Intraday bars with the VWAP line built up from the session open, and the point where a high-volume bar crosses above VWAP marked."
 faq:
   - q: "Can VWAP be used on daily charts?"
     a: "It is an indicator built for intraday charts. On daily charts and above it loses meaning, and it only has analytical value as an anchored VWAP drawn from an important day such as an earnings date or a gap day."

@@ -3,7 +3,7 @@ title: Head and Shoulders
 aliases: [Head & Shoulders, H&S, Head and Shoulders Top, Head and Shoulders Pattern]
 summary: Three peaks with a higher middle one (head) between two shoulders. A neckline break is read as a turn down.
 seoTitle: "Head and Shoulders Pattern: Neckline Explained"
-seoDescription: What a head and shoulders looks like, how to confirm a neckline break, and which false signals to watch for when the shoulders differ a lot in height.
+seoDescription: How a head and shoulders top signals a turn down at the end of a rise, how to confirm a neckline break, and the false signals when the shoulders differ a lot in height.
 demoCaption: Synthetic, illustrative bars. Shows the left shoulder, head and right shoulder, the neckline through the two lows, and the bar that breaks it.
 faq:
   - q: When is a head and shoulders considered complete?
@@ -23,6 +23,12 @@ Three peaks form in sequence. The first is the left shoulder, the highest one in
 An uptrend runs, sets a new high at the head, and then the right shoulder fails to get above the head. That means the push to go higher has weakened, so it is read as a sign the uptrend may be ending and turning down.
 
 The pattern completes when the close finishes below the neckline. It is considered more reliable if volume during the right shoulder is lower than during the left shoulder and the head, and volume is above normal when the neckline breaks. A pullback, where price rises back after the break and is stopped at the neckline, also supports the bearish signal. In Thomas Bulkowski's tabulation of bull-market cases, 51% of head and shoulders patterns reached their target.
+
+## How it differs from an inverse head and shoulders
+
+The shape is just flipped, but Bulkowski's numbers differ. After a neckline break, head and shoulders tops had a break-even failure rate (the share that ended without moving far enough in the breakout direction) of 19% and ranked 9th of 36 bearish patterns. Yet only 51% reached the target, about half. The [inverse head and shoulders](/guide/chart-patterns/inverse-head-and-shoulders) did better, with an 11% failure rate and a 71% target rate. So treat the measured target of a head and shoulders as a distance price might cover, not a price it is sure to reach.
+
+Volume is read differently too. In a head and shoulders, shrinking volume while the right shoulder forms is itself evidence that buying has weakened. If volume does not fall on the right shoulder, the signal is rated lower. A bearish divergence, where price makes a new high at the head while the peaks of [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) get lower, adds weight. A head and shoulders that forms in the middle of a strong uptrend with no resistance overhead is considered less reliable.
 
 ## How Siglens detects it
 

@@ -5,8 +5,8 @@ related: [gap-two-crows-rabbits, three-methods, marubozu, candle-basics]
 title: 갭 지속형(타스키 갭 · 온넥 · 인넥)
 aliases: [갭 지속형, 타스키 갭, 상방갭 타스키, 하방갭 타스키, 온넥, 인넥, 온넥형, 인넥형, Tasuki Gap, On Neck, In Neck]
 summary: 갭이나 직전 저가에서 되돌림이 멈추면 추세가 쉬는 중이라고 읽는 모양이에요. 방향 신호로는 약해요.
-seoTitle: 타스키 갭 온넥 인넥 캔들 뜻과 신호
-seoDescription: 상방갭 타스키, 하방갭 타스키, 온넥, 인넥이 어떤 모양인지, 교과서와 집계가 어긋나는 부분과 Siglens의 해석 기준을 정리했어요.
+seoTitle: 타스키 갭·온넥·인넥 캔들 뜻과 신호
+seoDescription: 상방갭·하방갭 타스키와 온넥, 인넥이 어떤 모양인지, 교과서 해석과 실제 결과가 어긋나는 부분을 짚어 봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 갭 위로 올라간 양봉 뒤에 갭을 메우지 못한 음봉이 나오는 상방갭 타스키를 그렸어요.
 faq:
   - q: 타스키 갭은 추세가 이어진다는 신호인가요?

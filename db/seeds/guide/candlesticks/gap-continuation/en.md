@@ -2,8 +2,8 @@
 title: Gap Continuation (Tasuki Gap, On Neck, In Neck)
 aliases: [Tasuki Gap, Upside Tasuki Gap, Downside Tasuki Gap, On Neck, In Neck, On-Neck Line, In-Neck Line]
 summary: A pullback that stops at a gap or the prior low is read as the trend resting. A weak directional signal.
-seoTitle: Tasuki Gap, On Neck and In Neck Candlesticks
-seoDescription: What upside and downside Tasuki gaps and on-neck and in-neck candlesticks look like, where textbooks and data disagree, and how Siglens interprets them.
+seoTitle: "Tasuki Gap, On Neck and In Neck: Meaning and Signals"
+seoDescription: What upside and downside tasuki gaps, on neck and in neck patterns look like, and where the textbook reading and actual results part ways.
 demoCaption: "Synthetic, illustrative bars made for this explanation. An upside Tasuki gap: a bullish bar after a gap up, then a bearish bar that fails to fill the gap."
 faq:
   - q: Does a Tasuki gap mean the trend continues?

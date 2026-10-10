@@ -3,7 +3,7 @@ title: "肯特纳通道"
 aliases: [肯特纳通道, 肯特纳带, Keltner Channel, KC]
 summary: "以20日EMA为中轴、按ATR画出上下轨，用来观察波动范围、趋势和挤压。"
 seoTitle: "肯特纳通道怎么看，布林带挤压"
-seoDescription: "肯特纳通道的20日EMA与ATR算法，突破与回归通道怎么读，与布林带配合判断的挤压，以及使用时的局限。"
+seoDescription: 如何用20日EMA和ATR计算肯特纳通道，如何解读突破通道和回到通道内，以及如何结合布林带观察收口。
 demoCaption: "为说明而制作的虚构K线。标出了收盘价落在肯特纳通道上轨之外的区间。"
 faq:
   - q: "肯特纳通道和布林带有什么不同？"

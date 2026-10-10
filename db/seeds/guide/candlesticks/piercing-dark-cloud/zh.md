@@ -3,7 +3,7 @@ title: 刺透形态 / 乌云盖顶形态
 aliases: [刺透形态, 刺透线, 乌云盖顶, 乌云压顶, Piercing Line, Dark Cloud Cover]
 summary: 第二根K线深入第一根实体一半以上，但没能完全覆盖的两根反转形态。
 seoTitle: 刺透形态与乌云盖顶K线怎么看
-seoDescription: 刺透形态和乌云盖顶与吞噬形态有何不同，什么情况下意义更大，以及布尔科夫斯基的统计和 Siglens 的识别标准。
+seoDescription: 刺透形态和乌云盖顶与吞噬形态有何不同，在什么条件下意义更大，并结合 Siglens 的识别标准来说明。
 demoCaption: 为说明而制作的虚构K线。画的是越过长阴线中线的阳线（刺透形态），以及跌到长阳线中线之下的阴线（乌云盖顶）。
 faq:
   - q: 刺透形态和看涨吞噬有什么不同？

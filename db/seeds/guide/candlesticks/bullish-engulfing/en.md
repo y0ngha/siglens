@@ -3,7 +3,7 @@ title: Bullish Engulfing
 aliases: [Bullish Engulfing, Bullish Engulfing Pattern, Bullish Engulfing Candle]
 summary: "A bullish bar covers the prior bearish body: a reversal clue after a decline, with little follow-through."
 seoTitle: Bullish Engulfing Candlestick Pattern Explained
-seoDescription: What a bullish engulfing candlestick looks like, where it matters most, how often it reversed in Bulkowski's data, and why the move afterward tends to be small.
+seoDescription: A bullish engulfing pattern is a white candle that fully covers the black one before it. See how often the reversal held and why the move after it tends to be small.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bearish bar at the end of a decline is fully covered by a bullish bar with a larger body.
 faq:
   - q: Does price rise right after a bullish engulfing?

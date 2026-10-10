@@ -3,7 +3,7 @@ title: Symmetrical Triangle
 aliases: [Converging Triangle, Symmetric Triangle, Coil]
 summary: Highs fall and lows rise, so the range narrows. The direction only shows once price leaves one of the lines.
 seoTitle: "Symmetrical Triangle Pattern: How to Read It"
-seoDescription: What a symmetrical triangle looks like, why its direction is unknown until a breakout, how it differs from an ascending triangle, and what Bulkowski found.
+seoDescription: How to judge the breakout direction of a symmetrical triangle, and how to spot weak signals such as breakouts that come only near the apex.
 demoCaption: Synthetic, illustrative bars. Shows a falling upper line, a rising lower line, and a bar breaking out of the lines.
 faq:
   - q: Will a symmetrical triangle go up or down?

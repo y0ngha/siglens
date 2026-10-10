@@ -3,8 +3,8 @@ title: "VWAP（成交量加权平均价）"
 aliases: [VWAP, 成交量加权平均价, 成交量加权平均价格, Volume Weighted Average Price, 锚定VWAP]
 summary: "把一天内按成交量加权的平均成交价连成线，作为盘中公允价参考的指标。"
 seoTitle: "VWAP是什么？成交量加权平均价怎么看"
-seoDescription: "VWAP是什么，价格在VWAP上方或下方意味着什么，突破与支撑阻力怎么读，以及为什么难以用在日线上。"
-demoCaption: "这是为说明而制作的虚构K线。画出盘中K线和紧随其后的VWAP线，并标出带成交量的K线越过VWAP的位置。"
+seoDescription: VWAP是什么，价格在它上方或下方时意味着什么，如何把它当作支撑和阻力，以及为什么在日线上不好用。
+demoCaption: "这是为说明而制作的虚构K线。画出盘中K线和从开盘起累积计算的VWAP线，并标出带成交量的K线越过VWAP的位置。"
 faq:
   - q: "VWAP可以用在日线上吗？"
     a: "它是适合盘中图表的指标。在日线及以上周期意义减弱，只有从财报日或跳空日这类重要日期开始连续绘制的锚定VWAP才有分析价值。"

@@ -6,7 +6,7 @@ title: MFI(자금 흐름 지수)
 aliases: [MFI, 머니 플로우 인덱스, 자금흐름지수, Money Flow Index, 거래량 가중 RSI]
 summary: 가격과 거래량을 함께 써서 매수세와 매도세의 자금 흐름을 0에서 100 사이로 보여 주는 오실레이터예요.
 seoTitle: MFI 자금 흐름 지수 뜻과 보는 법, 80 20 기준
-seoDescription: MFI가 RSI와 어떻게 다른지, 80과 20 과매수 과매도 기준, 자금 흐름 다이버전스와 실패 스윙, 한계까지 쉽게 정리했어요.
+seoDescription: MFI가 RSI와 어떻게 다른지, 80·20 과매수·과매도 기준과 자금 흐름 다이버전스, 실패 스윙을 읽는 법을 짚어 봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. MFI가 20 아래로 내려갔다가 다시 올라오는 구간을 표시했어요.
 faq:
   - q: MFI와 RSI는 뭐가 다른가요?

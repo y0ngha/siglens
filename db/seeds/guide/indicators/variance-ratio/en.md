@@ -2,9 +2,9 @@
 title: "Variance Ratio"
 aliases: [Variance Ratio, Lo-MacKinlay Variance Ratio, VR Test, Variance Ratio Test]
 summary: "Uses the variance of returns to tell whether price moves like a random walk, keeps trending, or reverts."
-seoTitle: "Variance Ratio: Telling Trending from Ranging"
-seoDescription: "What the Lo and MacKinlay variance ratio test is, what values above and below 1 mean, how it separates trending from ranging markets, and Siglens' rule."
-demoCaption: "Synthetic, illustrative bars. A stretch that keeps going one way sits next to one that swings up and down, showing why the variance ratio differs."
+seoTitle: "Variance Ratio: How to Tell Trending from Ranging"
+seoDescription: A variance ratio above 1 points to trending, below 1 to mean reversion. See how it separates trending from ranging markets, Siglens' thresholds, and its limits.
+demoCaption: "Synthetic, illustrative bars. Shows the variance ratio splitting above and below the 1.0 line in a trending stretch and a mean-reverting stretch."
 faq:
   - q: "What does a variance ratio above 1 mean?"
     a: "It means returns tend to continue in the same direction, a trending tendency. Below 1 means a tendency to reverse, such as rising and then falling. It does not tell you which way price goes."

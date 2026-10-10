@@ -77,6 +77,7 @@ export async function guideEntryMetadata({
         ...localePageSocial(locale, path, {
             title: `${entry.seoTitle} | ${SITE_NAME}`,
             description: entry.seoDescription,
+            type: 'article',
         }),
     };
 }

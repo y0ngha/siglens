@@ -3,8 +3,8 @@ title: "Yang-Zhang Volatility"
 aliases: [Yang-Zhang, Yang-Zhang Volatility, YZ Volatility, Yang Zhang Estimator]
 summary: "Measures actual volatility from the open, high, low, close and overnight gap. It gives no direction."
 seoTitle: "Yang-Zhang Volatility: What It Is and Its Uses"
-seoDescription: "How Yang-Zhang volatility combines gaps and intraday moves, how to use it for stop width and position size, and why it gives no direction."
-demoCaption: "Synthetic, illustrative bars. The volatility value rises where gaps are large and bars are long, and falls in quiet stretches."
+seoDescription: How Yang-Zhang volatility captures both gaps and intraday moves, how to use it for stop distance and position size, and why it says nothing about direction.
+demoCaption: "Synthetic, illustrative bars. The volatility value rises while gaps and long bars keep coming."
 faq:
   - q: "Does high Yang-Zhang volatility mean the price will fall?"
     a: "No. Volatility only tells you how large the moves were, not whether price rises or falls. It is not used as a directional signal."

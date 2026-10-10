@@ -3,8 +3,8 @@ title: "Moving Average (MA)"
 aliases: [Moving Average, MA, SMA, Simple Moving Average, Golden Cross, Death Cross]
 summary: "A line of average closing prices over a set period, used to read trend, support and resistance, and crosses."
 seoTitle: "Moving Averages: Golden Cross and Death Cross"
-seoDescription: "How to read the 5, 20, 60, 120 and 200-day moving averages, golden and death crosses, bullish and bearish alignment, and why the lag limits them."
-demoCaption: "Synthetic, illustrative bars. The marked point is a golden cross, where a short moving average crosses above a long one."
+seoDescription: How to read the 5-, 20-, 60-, 120- and 200-day moving averages, what golden and death crosses and bullish or bearish alignment mean, and the limits of a lagging line.
+demoCaption: "Synthetic, illustrative bars. The marked point is a golden cross, where the 20-day line crosses above the 50-day line."
 faq:
   - q: "What are a golden cross and a death cross?"
     a: "A golden cross is when a short moving average crosses above a long one; a death cross is when it crosses below. Both confirm a trend change that has already started, so they are not a way to predict what comes next."

@@ -5,9 +5,9 @@ related: [hurst, regression-r2, ewma-volatility, bollinger-percent-b]
 title: 분산비율
 aliases: [분산비 검정, 로-맥킨리 분산비, Variance Ratio, Lo-MacKinlay, VR 검정]
 summary: 가격이 랜덤워크처럼 움직이는지, 추세를 이어 가는지, 되돌아오는지를 수익률 분산으로 가려내는 지표예요.
-seoTitle: 분산비율(Variance Ratio) 뜻, 추세장·횡보장 구분
-seoDescription: 로와 맥킨리의 분산비율 검정이 무엇인지, 1보다 크거나 작을 때 뜻, 추세장과 횡보장을 가르는 법, Siglens 기준과 한계를 정리했어요.
-demoCaption: 설명용으로 만든 가상의 봉이에요. 같은 방향으로 이어지는 구간과 오르내림을 반복하는 구간을 나란히 놓아 분산비율이 달라지는 이유를 보여 줘요.
+seoTitle: 분산비율 뜻, 추세장과 횡보장 구분하는 법
+seoDescription: 분산비율이 1보다 크면 추세, 작으면 되돌림 쪽으로 읽어요. 추세장과 횡보장을 가르는 법과 Siglens 기준, 한계를 짚어 봐요.
+demoCaption: 설명용으로 만든 가상의 봉이에요. 추세 구간과 되돌림 구간에서 분산비율이 1.0선 위아래로 갈리는 모습을 보여 줘요.
 faq:
   - q: 분산비율이 1보다 크면 무슨 뜻인가요?
     a: 수익률이 같은 방향으로 이어지는 경향, 즉 추세 성향이 있다는 뜻이에요. 1보다 작으면 오른 뒤 내리는 식의 되돌림 성향이에요. 어느 쪽으로 가는지는 알려 주지 않아요.

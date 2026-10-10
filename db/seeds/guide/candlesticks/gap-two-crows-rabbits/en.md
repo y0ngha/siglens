@@ -3,7 +3,7 @@ title: Upside Gap Two Crows / Downside Gap Two Rabbits
 aliases: [Upside Gap Two Crows, Downside Gap Two Rabbits, Two Crows, Two Rabbits, Gap Two Crows]
 summary: "Two bearish bars above a gap, a textbook bearish reversal. In the data, upward continuation was more common."
 seoTitle: Upside Gap Two Crows Candlestick Explained
-seoDescription: What the upside gap two crows and downside gap two rabbits look like, and why, unlike the textbook, they shouldn't be read as reversals, with Bulkowski's data.
+seoDescription: What the upside gap two crows and downside gap two rabbits look like, and why you shouldn't read them as reversal signals the way textbooks do.
 demoCaption: "Synthetic, illustrative bars made for this explanation. An upside gap two crows: two bearish bars in a row above a gap after a long bullish bar."
 faq:
   - q: Does a gap two crows mean a bearish reversal?

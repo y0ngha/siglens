@@ -3,7 +3,7 @@ title: EWMA波动率
 aliases: [指数加权移动平均波动率, 风险度量波动率, RiskMetrics波动率, EWMA Volatility]
 summary: 给近期收益率更大权重，快速跟上当前波动率水平的风险度量。它不说明方向。
 seoTitle: EWMA波动率含义与λ取0.94
-seoDescription: 用通俗的话介绍EWMA波动率是什么、λ取0.94的含义、如何当作无方向的风险度量使用，以及它的局限。
+seoDescription: 用浅白的话说明EWMA波动率是什么、λ=0.94代表什么，以及如何把它当作不分方向的风险尺度来用，还有它的局限。
 demoCaption: 示意用的虚构K线。展示一根大阴线之后EWMA波动率迅速升高，再慢慢回落的过程。
 faq:
   - q: EWMA波动率高是不是意味着股价会下跌？

@@ -3,7 +3,7 @@ title: Breakout
 aliases: [breakout trading, range breakout, resistance breakout, price breakout, false breakout]
 summary: "Watch for a close beyond a long-standing support or resistance line, then filter false breakouts with checks like volume."
 seoTitle: "Breakout Trading: Meaning and False Breakouts"
-seoDescription: How range, pattern, moving average and Donchian breakouts differ, how closes, volume and retests filter false breakouts, and what Siglens checks.
+seoDescription: How range, pattern, moving average and Donchian breakouts differ, and how to filter false breakouts by close, volume and retest, with Siglens' criteria.
 demoCaption: Synthetic, illustrative candles. Shows a fixed-width range, a close above the upper line with rising volume, and a retest back to the breakout line.
 faq:
   - q: When is a breakout considered confirmed?

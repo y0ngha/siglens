@@ -264,6 +264,8 @@ export function localePageRobots(
 export interface SocialCopy {
     readonly title: string;
     readonly description: string;
+    /** `og:type`. 생략하면 `website`, 글 성격의 페이지(가이드 항목)만 `article`을 넘긴다. */
+    readonly type?: 'website' | 'article';
 }
 
 export interface LocalePageSocial {
@@ -274,12 +276,12 @@ export interface LocalePageSocial {
 export function localePageSocial(
     locale: Locale,
     path: string,
-    { title, description }: SocialCopy
+    { title, description, type = 'website' }: SocialCopy
 ): LocalePageSocial {
     const url = localeCanonical(locale, path);
     return {
         openGraph: {
-            type: 'website',
+            type,
             siteName: SITE_NAME,
             title,
             description,

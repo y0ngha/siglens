@@ -6,7 +6,7 @@ title: EWMA 변동성
 aliases: [지수가중 이동평균 변동성, 리스크메트릭스 변동성, RiskMetrics Volatility, EWMA Volatility]
 summary: 최근 수익률에 더 큰 가중치를 줘서 지금 변동성이 어느 수준인지 빠르게 따라가는 위험 척도예요. 방향은 말해 주지 않아요.
 seoTitle: EWMA 변동성 뜻과 계산법, 람다 0.94
-seoDescription: EWMA 변동성이 무엇인지, 람다 0.94가 어떤 값인지, 방향 없는 위험 척도로 어떻게 쓰는지와 한계를 쉬운 말로 정리했어요.
+seoDescription: EWMA 변동성이 무엇이고 람다 0.94가 어떤 의미인지, 방향 없는 위험 척도로 어떻게 쓰는지와 한계를 쉬운 말로 설명해요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 큰 하락 봉 직후 EWMA 변동성이 빠르게 올랐다가 서서히 내려오는 모습을 표시했어요.
 faq:
   - q: EWMA 변동성이 높으면 주가가 내려간다는 뜻인가요?

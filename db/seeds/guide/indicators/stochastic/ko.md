@@ -5,8 +5,8 @@ related: [stochastic-rsi, williams-r, rsi, macd, bollinger-bands]
 title: 스토캐스틱
 aliases: [스토캐스틱 오실레이터, 스토캐스틱 슬로우, Stochastic Oscillator, Slow Stochastic, '%K %D']
 summary: 지금 종가가 최근 고가·저가 범위의 어디쯤인지를 0~100으로 보여 주는 모멘텀 지표예요.
-seoTitle: 스토캐스틱 지표 보는 법, %K %D 골든크로스
-seoDescription: 스토캐스틱 오실레이터의 계산 방법, 80·20 기준, %K·%D 교차와 다이버전스 읽는 법, 추세장에서 속는 경우를 정리했어요.
+seoTitle: "스토캐스틱 보는 법, %K·%D 교차와 80·20 기준"
+seoDescription: 스토캐스틱 계산법과 80·20 기준, %K·%D 교차와 다이버전스 읽는 법, 추세장에서 과매수·과매도 신호에 속는 경우를 설명해요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 가격이 바닥에서 올라올 때 %K가 20 아래에서 %D를 위로 가로지르는 모습을 보여 줘요.
 faq:
   - q: 스토캐스틱 (14, 3, 3)은 무슨 뜻인가요?

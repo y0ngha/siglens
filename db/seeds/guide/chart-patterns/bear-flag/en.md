@@ -3,11 +3,11 @@ title: Bear Flag
 aliases: [Bearish Flag, Bear Flag Pattern, Falling Flag]
 summary: A sharp drop (pole), then a weak bounce on fading volume (flag). A break below it suggests the fall continues.
 seoTitle: "Bear Flag Pattern: How to Read It"
-seoDescription: What a bear flag looks like, how the pole and flag are measured, how often it hit its target in Bulkowski's data, and how it differs from a bull flag.
+seoDescription: The pole and flag of a bear flag, its retracement and volume conditions, and how to confirm a break below the lower line.
 demoCaption: Synthetic, illustrative bars. Shows a sharp drop (the pole), a gently rising flag channel, and a bar closing below the channel.
 faq:
   - q: What does a bear flag look like?
-    a: A sharp drop over a short period (the pole) is followed by a section where price drifts up slightly or moves sideways between two parallel lines (the flag). If the flag retraces half the pole or more, it is not treated as a bear flag.
+    a: A sharp drop over a short period (the pole) is followed by a section where price drifts up slightly or moves sideways between two parallel lines (the flag). If the flag retraces more than half the pole, it is not treated as a bear flag.
   - q: How reliable is a bear flag?
     a: The shape is distinct, but the results after a breakout are modest. In Thomas Bulkowski's tabulation, fewer than half of flags (46%) reached their target.
   - q: How does it relate to a bull flag?
@@ -23,6 +23,12 @@ First comes a sharp drop over a short period. That is the pole. After it, price 
 It reads as a brief bounce, a breather after a sharp fall. A weak rise on fading volume means buying is not strong, so a break of the flag's lower line is read as the earlier decline continuing.
 
 The pattern completes when the close finishes below the flag's lower line. It is more convincing if volume returns to pole levels at that point. It is also viewed more favorably when the pole falls 10% or more, the flag retraces less than 38.2% of the pole, and the whole flag lasts a short 1 to 2 weeks. In Thomas Bulkowski's combined tabulation of bull and bear flags, 46% reached their target.
+
+## How it differs from a bull flag
+
+After breaking the lower line, bear flags had a break-even failure rate (the share that ended without moving far enough in the breakout direction) of 45% and an average decline of 8%. That is nearly the same as the [bull flag](/guide/chart-patterns/bull-flag)'s 44% and 9%. But Bulkowski's sample comes from a bull market, and with both flags pooled, 60% broke upward. There is no direction split for bear flags alone, so until the lower line breaks, it is wise to keep an upward resolution in mind.
+
+In a bear flag, the flag is not a profit-taking rest but a brief technical bounce after the plunge. So volume should shrink during the bounce; if it grows instead, bargain hunters may be accumulating. If the pole ended at a major long-standing support level, the flag can turn into a base rather than a pause before more decline. A flag that slopes downward may be ongoing capitulation (panic selling all at once) rather than a rest. A flag that runs past 4 weeks loses its bounce character and may be shifting into a base.
 
 ## How Siglens detects it
 
@@ -43,6 +49,4 @@ After the breakout, the pattern stays on the chart for a while: 20 bars after th
 
 - If the pole is gentle or slow, the drop was not panic-driven and the flag means less.
 - If the flag retraces more than 50% of the pole, it may be a base forming rather than a simple bounce.
-- If volume rises during the flag, accumulation may be under way.
-- A flag lasting more than 4 weeks is less likely to behave as a continuation.
-- A flag that slopes downward is considered less reliable as a bear flag.
+- If volume does not return to pole levels when the lower line breaks, it is hard to say selling pressure has resumed.

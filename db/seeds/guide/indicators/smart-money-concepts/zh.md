@@ -3,7 +3,7 @@ title: "聪明钱概念（SMC）"
 aliases: [SMC, 聪明钱概念, Smart Money Concepts, 订单块, 公允价值缺口, FVG, BOS, CHoCH]
 summary: "利用摆动高低点的结构变化、订单块、公允价值缺口和等高等低点，找出关键价格区域的方法。"
 seoTitle: "聪明钱概念SMC：订单块和FVG是什么"
-seoDescription: "聪明钱概念中的BOS与CHoCH、订单块、公允价值缺口、溢价区与折价区分别是什么意思，以及 Siglens 的判定标准。"
+seoDescription: 聪明钱概念（SMC）中的BOS和CHoCH、订单块、公允价值缺口、溢价与折价区间分别是什么，并结合 Siglens 的标准来看。
 demoCaption: "这是为说明而制作的虚构K线。标出了突破摆动高点的K线（BOS）、其前一根下跌K线（订单块），以及三根K线之间出现的价格空白（公允价值缺口）。"
 faq:
   - q: "订单块是什么？"

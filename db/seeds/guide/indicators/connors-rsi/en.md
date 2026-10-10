@@ -3,7 +3,7 @@ title: Connors RSI
 aliases: [CRSI, ConnorsRSI, Connors RSI indicator]
 summary: Averages three RSI-style readings to catch short-term extremes fast. Below 10 and above 90 are extremes.
 seoTitle: "Connors RSI: How to Read the 10 and 90 Levels"
-seoDescription: How Connors RSI (3, 2, 100) is built, the below-10 and above-90 extremes, the 50 to 80 exit zone, and why it is hard to use as a standalone signal.
+seoDescription: The three parts of Connors RSI (3,2,100), its extremes below 10 and above 90, the 50 to 80 exit zone, and why it is hard to use as a standalone signal.
 demoCaption: Synthetic, illustrative bars. After several days of falling, Connors RSI drops below 10 and then recovers.
 faq:
   - q: Should I buy when Connors RSI is below 10?

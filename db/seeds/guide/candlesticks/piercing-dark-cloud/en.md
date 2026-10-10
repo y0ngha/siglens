@@ -3,7 +3,7 @@ title: Piercing Line / Dark Cloud Cover
 aliases: [Piercing Line, Dark Cloud Cover, Piercing Pattern]
 summary: A two-bar reversal where the second bar goes deeper than half of the first body but doesn't cover all of it.
 seoTitle: Piercing Line and Dark Cloud Cover Candlesticks
-seoDescription: How piercing line and dark cloud cover differ from engulfing patterns, when they matter more, and what Bulkowski's data shows, with Siglens' detection criteria.
+seoDescription: How the piercing line and dark cloud cover differ from engulfing patterns and when they carry more weight, along with Siglens' detection rules.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bullish bar closing above the midpoint of a long bearish bar (piercing line), and a bearish bar dropping below the midpoint of a long bullish bar (dark cloud cover).
 faq:
   - q: How is a piercing line different from a bullish engulfing?

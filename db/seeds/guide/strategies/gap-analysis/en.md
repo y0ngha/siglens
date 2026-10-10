@@ -3,7 +3,7 @@ title: Gap Analysis
 aliases: [gap up, gap down, breakaway gap, runaway gap, exhaustion gap, gap trading]
 summary: "A way to read gaps by sorting them into four types based on position and trend context."
 seoTitle: "Gap Up and Gap Down: Types and Meaning"
-seoDescription: How to tell common, breakaway, runaway and exhaustion gaps by context, how Siglens detects gaps, and why the idea that gaps always fill is a problem.
+seoDescription: How to tell common, breakaway, runaway and exhaustion gaps apart by context, how Siglens detects gaps, and why the saying that every gap gets filled can be wrong.
 demoCaption: Synthetic, illustrative candles. Shows a gap-up bar above a range, the previous bar's high, and the empty price zone between them.
 faq:
   - q: Do gaps always get filled?

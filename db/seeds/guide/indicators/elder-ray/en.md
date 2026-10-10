@@ -3,7 +3,7 @@ title: Elder-Ray
 aliases: [Elder Ray, Bull Power, Bear Power, Elder-Ray Index]
 summary: Measures how far the high and low sit from the 13-day EMA to track buyer and seller strength separately.
 seoTitle: "Elder-Ray Index: Bull Power and Bear Power"
-seoDescription: How Elder-Ray's Bull Power and Bear Power are calculated, how to read the moment Bear Power turns up, and why using the indicator on its own is risky.
+seoDescription: How Elder Ray's Bull Power and Bear Power are calculated, how to read the point where Bear Power starts rising, and why using it alone is risky.
 demoCaption: Synthetic, illustrative bars. The 13-day EMA is drawn with Bull Power and Bear Power bars below it.
 faq:
   - q: What are Elder-Ray's Bull Power and Bear Power?

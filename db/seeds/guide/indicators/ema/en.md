@@ -3,7 +3,7 @@ title: Exponential Moving Average (EMA)
 aliases: [EMA, Exponential Moving Average, exponential moving average line, EMA indicator]
 summary: A moving average that weights recent prices more, so it follows price faster than a simple moving average.
 seoTitle: "EMA Explained: Crossovers and Alignment"
-seoDescription: How the exponential moving average differs from the simple one, how to read the 9, 20 and 60-day lines, and why crossovers fail in sideways markets.
+seoDescription: How the exponential moving average (EMA) differs from a simple moving average, how to read the 9-, 20- and 60-day lines, and why crossovers often fool you in ranging markets.
 demoCaption: Synthetic, illustrative bars. The 9-, 20- and 60-day EMAs are shown stacked in rising order.
 faq:
   - q: How is EMA different from a simple moving average (MA)?

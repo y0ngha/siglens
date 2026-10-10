@@ -3,7 +3,7 @@ title: 斐波那契回撤与扩展
 aliases: [斐波那契回撤, 斐波那契扩展, 斐波那契比例, 黄金分割, 61.8%回撤, Fibonacci Retracement, Fibonacci Extension]
 summary: 用比例估算大幅走势之后回调会在哪里止住、下一波行情可能延伸到哪里的方法。
 seoTitle: 斐波那契回撤 38.2% 50% 61.8% 怎么看
-seoDescription: "斐波那契回撤与扩展各比例的含义、在上涨和下跌波段上的画法，以及Siglens选取波段和计算价位的方式。"
+seoDescription: 斐波那契回撤和扩展比例的含义，如何在上涨、下跌波段上画线，以及 Siglens 如何挑选波段并计算各个价位。
 demoCaption: 示意用的虚构K线。标出了从波段低点到高点的上涨，以及随后回调区间内38.2%、50%、61.8%的回撤线。
 faq:
   - q: 斐波那契回撤画在哪里？

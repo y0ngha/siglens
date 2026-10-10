@@ -3,8 +3,8 @@ title: Double Top
 aliases: [M Pattern, M-Shaped Top, Double Top Pattern]
 summary: Two highs at similar levels; a break of the low between them (the neckline) is read as a turn down.
 seoTitle: "Double Top Pattern: How to Read It"
-seoDescription: What a double top looks like, how to confirm it with a close below the neckline, how it differs from a double bottom, and what Bulkowski's data says.
-demoCaption: Synthetic, illustrative bars. Shows two highs, the neckline between them, and a bar closing below the neckline.
+seoDescription: How a double top builds its M shape, how to confirm a break below the neckline, and how to weed out false signals within an uptrend.
+demoCaption: Synthetic, illustrative bars. Shows two highs, the neckline through the low between them, and a bar closing below the neckline.
 faq:
   - q: When is a double top considered complete?
     a: When, after the second high, a close finishes below the neckline (the low between the two highs). A brief intraday break that falls back is not a confirmation.
@@ -24,6 +24,14 @@ If a rise stops twice at the same price zone, there is a lot of selling at that 
 
 The pattern completes when the close finishes below the neckline. It is often considered more reliable when volume is lower at the second high than at the first and rises as price breaks the neckline. A bearish divergence, where [RSI](/guide/indicators/rsi) makes a lower high at the second high, is also used as supporting evidence.
 
+## How it differs from a double bottom
+
+Bulkowski split double tops into four variants by whether each peak is narrow and sharp (Adam) or wide and rounded (Eve). The break-even failure rate (the share that ended without moving far enough in the breakout direction) was highest at 25% for Adam & Adam, where both peaks are sharp, and 20% to 21% for the other three. They ranked 10th to 19th of 36 bearish patterns, and 43% to 64% reached their target.
+
+The [double bottom](/guide/chart-patterns/double-bottom), split the same four ways, had failure rates of 12% to 16% and target rates of 65% to 73%. Mirror-image shapes, but the top version worked less often. With only two peaks as reference points, it also gives more false signals than the [head and shoulders](/guide/chart-patterns/head-and-shoulders), which has the head as an extra reference. That makes volume and a confirmed close more important.
+
+The volume test is also the reverse of a double bottom. In a double top, volume on the second peak should be lower than on the first, showing that buying has faded. If price breaks the neckline, rallies back, and fails to reclaim it, the bearish case gets stronger.
+
 ## How Siglens detects it
 
 Siglens confirms a swing high or swing low once price has moved one way and then reversed by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar). A confirmed swing does not change as more bars arrive. If the two most recent swing highs meet all the conditions below, Siglens treats it as a double top.
@@ -37,8 +45,6 @@ Siglens confirms a swing high or swing low once price has moved one way and then
 - If the second high is too far back, it is not shown. The cutoff is the longer of the last 20 bars and half the pattern's length.
 
 The invalidation level is the higher of the two highs. A close above it means the pattern has broken. The measured target is the neckline minus the pattern height, and the conservative target is the neckline minus half the height. Patterns whose close has passed the invalidation level, or whose price has already reached the measured target, are no longer shown.
-
-In Thomas Bulkowski's tabulation of bull-market cases, 43% to 64% of double tops reached their target, depending on the specific shape. That is on the low side compared with the [double bottom](/guide/chart-patterns/double-bottom).
 
 ## Watch out for
 

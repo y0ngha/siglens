@@ -6,7 +6,7 @@ title: 파라볼릭 SAR
 aliases: [파라볼릭 에스에이알, 패러볼릭 SAR, Parabolic SAR, Stop and Reverse, PSAR]
 summary: 가격 위나 아래에 점을 찍어 추세 방향과 반전 시점, 추적 손절선을 한 번에 보여 주는 지표예요.
 seoTitle: 파라볼릭 SAR 보는 법, 점이 뒤집힐 때 의미
-seoDescription: 파라볼릭 SAR의 점이 가격 위아래에 찍히는 원리, 반전 신호 읽는 법, 횡보장에서 속는 경우를 가상 차트와 함께 정리했어요.
+seoDescription: 파라볼릭 SAR 점이 가격 위아래로 옮겨 찍히는 원리와 반전 신호 읽는 법, 횡보장에서 속기 쉬운 경우를 가상 차트로 알아봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 상승 구간에서는 점이 봉 아래에, 추세가 꺾인 뒤에는 봉 위에 찍히는 모습을 보여 줘요.
 faq:
   - q: 파라볼릭 SAR 점이 위로 넘어가면 무슨 뜻인가요?

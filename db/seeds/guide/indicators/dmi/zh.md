@@ -3,7 +3,7 @@ title: DMI
 aliases: [动向指标, 趋向指标, Directional Movement Index, +DI -DI]
 summary: 通过比较买方力量（+DI）与卖方力量（-DI）两条线，显示趋势方向和强弱对比的指标。
 seoTitle: DMI指标怎么看，+DI与-DI交叉
-seoDescription: 介绍DMI中的+DI和-DI是什么，如何用ADX 20过滤两线交叉，以及为什么横盘行情中两线交叉的假信号特别多。
+seoDescription: DMI中的+DI和-DI是什么，如何以ADX 20为标准过滤两线交叉，以及为什么震荡行情里杂讯信号多。
 demoCaption: 示意用的虚构K线。展示上涨持续，+DI向上穿过-DI，ADX随之上升的过程。
 faq:
   - q: +DI上穿-DI就是转为上涨吗？

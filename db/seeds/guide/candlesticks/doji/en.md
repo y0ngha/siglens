@@ -3,7 +3,7 @@ title: Doji / Spinning Top
 aliases: [Doji, Doji Candle, Dragonfly Doji, Gravestone Doji, Long-legged Doji, Spinning Top, Cross Candle]
 summary: "A bar with nearly equal open and close: buyers and sellers were evenly matched. The next close sets direction."
 seoTitle: "Doji Candlestick Meaning: Dragonfly, Gravestone"
-seoDescription: What a doji and a spinning top look like, how dragonfly and gravestone dojis differ, and why a doji alone can't give direction, with Bulkowski's data.
+seoDescription: What doji and spinning tops look like, how the dragonfly and gravestone doji differ, and why a doji on its own can't tell you the direction.
 demoCaption: Synthetic, illustrative bars made for this explanation. A standard doji, dragonfly, gravestone and spinning top side by side to compare body size.
 faq:
   - q: Does a doji mean the trend will change?

@@ -209,7 +209,9 @@ export function GuideBrowser({
                     <h2 id={`${searchId}-results`} className="sr-only">
                         {fixedCategory === undefined
                             ? t('resultsHeading')
-                            : categoryLabels[fixedCategory]}
+                            : t('categoryListHeading', {
+                                  name: categoryLabels[fixedCategory],
+                              })}
                     </h2>
                     <ul className={GRID}>
                         {results.map(entry => (
@@ -240,9 +242,11 @@ export function GuideBrowser({
                                         id={headingId}
                                         className={HEADING_SECTION}
                                     >
-                                        {categoryLabels[group.category]}
+                                        {categoryLabels[group.category]}{' '}
                                         <span className="ml-2 text-sm font-normal text-secondary-400 tabular-nums">
-                                            {group.entries.length}
+                                            {t('entryCount', {
+                                                count: group.entries.length,
+                                            })}
                                         </span>
                                     </h2>
                                     <LocaleLink

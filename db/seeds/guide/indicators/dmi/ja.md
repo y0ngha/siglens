@@ -3,7 +3,7 @@ title: DMI
 aliases: [方向性指数, Directional Movement Index, +DI -DI, ディレクショナル・ムーブメント]
 summary: 買い方向の力(+DI)と売り方向の力(-DI)の2本の線を比べて、トレンドの方向と優劣を示す指標です。
 seoTitle: DMI指標の見方と+DI・-DIのクロス
-seoDescription: DMIの+DIと-DIとは何か、2本の線の交差をADX 20を基準に選別する方法と、レンジ相場でダマシが多くなる理由までまとめました。
+seoDescription: DMIの+DIと-DIとは何か、2本の線のクロスをADX 20を基準にふるいにかける方法、レンジ相場で細かいシグナルが多い理由を説明します。
 demoCaption: 説明用に作った架空のローソク足です。上昇が続いて+DIが-DIを上抜け、ADXも一緒に上がる様子を示しています。
 faq:
   - q: +DIが-DIを上抜けたら上昇に転じたということですか？

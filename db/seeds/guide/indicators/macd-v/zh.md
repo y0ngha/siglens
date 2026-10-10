@@ -3,7 +3,7 @@ title: "MACD-V"
 aliases: [MACD-V, MACD V, 波动率标准化MACD, Volatility Normalised MACD]
 summary: "把MACD除以ATR，衡量相对波动率的动量，不同股票和时期都能共用±150这类标准。"
 seoTitle: "MACD-V是什么？±150标准与读法"
-seoDescription: "MACD-V与MACD有何不同，除以26日ATR的计算方法，±150超买超卖标准，以及趋势过滤下的解读。"
+seoDescription: MACD-V和MACD有何不同，除以ATR(26)的算法，以及如何结合趋势过滤来解读±150的超买、超卖标准。
 demoCaption: "为说明而制作的虚构K线。标出了MACD-V升到+150线上方后又回落到线下的区间。"
 faq:
   - q: "MACD-V和MACD有什么不同？"

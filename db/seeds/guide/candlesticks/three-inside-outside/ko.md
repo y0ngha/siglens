@@ -5,8 +5,8 @@ related: [harami, bullish-engulfing, bearish-engulfing, morning-evening-star]
 title: 쓰리 인사이드 / 아웃사이드
 aliases: [쓰리 인사이드 업, 쓰리 인사이드 다운, 쓰리 아웃사이드 업, 쓰리 아웃사이드 다운, Three Inside Up, Three Inside Down, Three Outside Up, Three Outside Down]
 summary: 잉태형(하라미)이나 장악형 뒤에 확인 봉이 하나 더 붙은 3봉 반전 모양이에요.
-seoTitle: 쓰리 인사이드 업 아웃사이드 업 캔들 뜻
-seoDescription: 쓰리 인사이드와 쓰리 아웃사이드 캔들이 잉태형, 장악형과 어떻게 다른지, 확인 봉이 왜 필요한지 불코우스키 집계로 반전 비율을 정리했어요.
+seoTitle: 쓰리 인사이드·아웃사이드 캔들 뜻과 확인법
+seoDescription: 쓰리 인사이드와 쓰리 아웃사이드가 잉태형, 장악형과 어떻게 다른지, 세 번째 확인 봉이 왜 필요한지 짚어 봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 큰 음봉, 그 안에 든 작은 양봉, 첫 봉의 시가를 넘는 양봉으로 이어지는 쓰리 인사이드 업을 그렸어요.
 faq:
   - q: 쓰리 인사이드와 잉태형(하라미)은 어떻게 다른가요?

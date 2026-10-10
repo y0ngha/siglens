@@ -18,9 +18,6 @@ import {
     windowed,
 } from '@/views/guide/demos/indicators';
 import {
-    DIVERGENCE_LOW_1,
-    DIVERGENCE_LOW_2,
-    getDivergenceSeries,
     getTrendSeries,
     TREND_DIP_LOW,
 } from '@/views/guide/demos/sharedSeries';
@@ -140,17 +137,36 @@ const breakout = (): GuideDemo => {
     };
 };
 
+/**
+ * 다이버전스 전략 데모의 두 저점. Siglens의 다이버전스 후보는 최근 20봉 안의 피벗 저점 둘이고
+ * 두 번째가 마지막 5봉 안이어야 하므로, 71봉 시세의 끝에서 20봉 안(51~70)에 두 저점을 둔다.
+ */
+const DIVERGENCE_LOW_A = 54;
+const DIVERGENCE_LOW_B = 66;
+
 const divergence = (): GuideDemo => {
-    const { bars, result } = getDivergenceSeries();
-    const rsi = result.rsi;
-    const a = num(rsi[DIVERGENCE_LOW_1]);
-    const b = num(rsi[DIVERGENCE_LOW_2]);
+    const bars = pathToBars(
+        wp([
+            [0, 122],
+            [16, 114],
+            [34, 128],
+            [46, 111],
+            [DIVERGENCE_LOW_A, 100],
+            [59, 107.5],
+            [DIVERGENCE_LOW_B, 98.5],
+            [70, 104],
+        ]),
+        { seed: 21, rangePct: 0.016, noisePct: 0.012 }
+    );
+    const rsi = calculateIndicators(toCoreBars(bars)).rsi;
+    const a = num(rsi[DIVERGENCE_LOW_A]);
+    const b = num(rsi[DIVERGENCE_LOW_B]);
     const link = bars.map((_, i) =>
-        i < DIVERGENCE_LOW_1 || i > DIVERGENCE_LOW_2
+        i < DIVERGENCE_LOW_A || i > DIVERGENCE_LOW_B
             ? null
             : a +
-              ((b - a) * (i - DIVERGENCE_LOW_1)) /
-                  (DIVERGENCE_LOW_2 - DIVERGENCE_LOW_1)
+              ((b - a) * (i - DIVERGENCE_LOW_A)) /
+                  (DIVERGENCE_LOW_B - DIVERGENCE_LOW_A)
     );
     return {
         bars,
@@ -158,14 +174,14 @@ const divergence = (): GuideDemo => {
             {
                 kind: 'line',
                 from: {
-                    i: DIVERGENCE_LOW_1,
-                    price: bars[DIVERGENCE_LOW_1].low,
+                    i: DIVERGENCE_LOW_A,
+                    price: bars[DIVERGENCE_LOW_A].low,
                 },
-                to: { i: DIVERGENCE_LOW_2, price: bars[DIVERGENCE_LOW_2].low },
+                to: { i: DIVERGENCE_LOW_B, price: bars[DIVERGENCE_LOW_B].low },
                 role: 'support',
                 label: 'Lower low',
             },
-            ...marker(DIVERGENCE_LOW_2, 'Bullish divergence', 'bull', 'below'),
+            ...marker(DIVERGENCE_LOW_B, 'Bullish divergence', 'bull', 'below'),
         ],
         panes: [
             pane('RSI 14', {
@@ -189,6 +205,8 @@ const elliottWave = (): GuideDemo => {
         [42, 132],
         [54, 160],
         [62, 146],
+        [68, 153],
+        [78, 128],
     ]);
     const bars = pathToBars(points, {
         seed: 74,
@@ -201,6 +219,9 @@ const elliottWave = (): GuideDemo => {
         [34, '3', 'above'],
         [42, '4', 'below'],
         [54, '5', 'above'],
+        [62, 'A', 'below'],
+        [68, 'B', 'above'],
+        [78, 'C', 'below'],
     ];
     return {
         bars,
@@ -295,8 +316,8 @@ const gapAnalysis = (): GuideDemo => {
             {
                 kind: 'level',
                 price: prevHigh,
-                fromIndex: 0,
-                label: 'Prior high',
+                fromIndex: gapIdx - 1,
+                label: 'Prior bar high',
                 role: 'resistance',
             },
             ...marker(gapIdx, 'Gap up', 'bull', 'below'),
@@ -316,17 +337,20 @@ const maCycle = windowed(110, c => {
             ...marker(
                 firstAfter(c, 5, crossedDown(m5, m20)),
                 'MA5 < MA20',
-                'bear'
+                'bear',
+                'below'
             ),
             ...marker(
                 firstAfter(c, 5, crossedDown(m5, m60)),
                 'MA5 < MA60',
-                'bear'
+                'bear',
+                'above'
             ),
             ...marker(
                 firstAfter(c, 5, crossedDown(m20, m60)),
                 'MA20 < MA60',
-                'bear'
+                'bear',
+                'below'
             ),
         ],
     };
@@ -385,16 +409,22 @@ const meanReversion = windowed(
                 abs > TREND_DIP_LOW &&
                 c.bars[abs - c.start].close > num(m5[abs])
         );
-        const lows = c.bars.slice(rel - 10, rel + 1).map(b => b.low);
+        const lows = c.bars.slice(rel - 13, rel + 1).map(b => b.low);
         return {
             overlays: [
-                overlayLine(c.s(maOf(c.r, 200)), 'MA200', 'c'),
+                {
+                    kind: 'series',
+                    values: c.s(maOf(c.r, 200)),
+                    label: 'MA200',
+                    tone: 'c',
+                    includeInDomain: true,
+                },
                 overlayLine(c.s(m5), 'MA5', 'a'),
                 {
                     kind: 'level',
                     price: Math.min(...lows),
-                    fromIndex: rel - 10,
-                    label: '2-week low',
+                    fromIndex: rel - 13,
+                    label: '14-day low',
                     role: 'support',
                 },
                 ...marker(rel, 'Near range low', 'bull', 'below'),

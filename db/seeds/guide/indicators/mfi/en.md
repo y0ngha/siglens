@@ -3,7 +3,7 @@ title: "MFI (Money Flow Index)"
 aliases: [MFI, Money Flow Index, Volume-Weighted RSI, Money Flow]
 summary: "An oscillator from 0 to 100 that uses price and volume to show the flow of money from buyers and sellers."
 seoTitle: "MFI Money Flow Index: How to Read 80 and 20"
-seoDescription: "How the Money Flow Index differs from RSI, the 80 and 20 overbought and oversold levels, money flow divergence, failure swings and the limits of MFI."
+seoDescription: How MFI differs from RSI, its 80 and 20 overbought and oversold levels, and how to read money-flow divergences and failure swings.
 demoCaption: "Synthetic, illustrative bars. The marked stretch is where MFI drops below 20 and then rises back above it."
 faq:
   - q: "How is MFI different from RSI?"

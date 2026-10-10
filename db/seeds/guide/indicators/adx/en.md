@@ -3,7 +3,7 @@ title: ADX
 aliases: [Average Directional Index, ADX indicator, trend strength indicator]
 summary: Shows how strong the current trend is on a 0 to 100 scale, without saying whether it points up or down.
 seoTitle: "ADX Indicator: How to Read the 25 Level"
-seoDescription: What ADX is, how to read the 20, 25 and 40 levels, why it says nothing about trend direction, and how to read it together with DMI.
+seoDescription: How to read ADX levels like 20, 25 and 40, why ADX alone tells you nothing about direction, and how to read it alongside DMI.
 demoCaption: Synthetic, illustrative bars. They show ADX rising as price moves sideways and then runs in one direction.
 faq:
   - q: Does ADX above 25 mean price is going up?
@@ -18,7 +18,7 @@ faq:
 
 ADX (Average Directional Index) was introduced by J. Welles Wilder in 1978 together with [DMI](/guide/indicators/dmi). DMI measures upward force (+DI) and downward force (-DI) separately. ADX takes the gap between the two as a share of their sum and averages it. The more one side outweighs the other, the higher the number. It moves between 0 and 100, and the default period is 14 bars.
 
-The averaging uses Wilder smoothing (each new value gets a weight of 1/N). That reacts more slowly than a regular [EMA](/guide/indicators/ema), so a trend only shows up in the number several bars after it starts. Readings above 60 are rare.
+The averaging uses Wilder smoothing (each new value gets a weight of 1/N). That reacts more slowly than a regular [EMA](/guide/indicators/ema), so a trend only shows up in the number several bars after it starts.
 
 ## What it tells you
 

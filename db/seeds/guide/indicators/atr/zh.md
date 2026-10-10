@@ -3,8 +3,8 @@ title: ATR
 aliases: [平均真实波幅, 真实波动幅度均值, Average True Range, ATR指标]
 summary: 不论方向，显示价格每根K线平均波动多大的波动率指标，常用来确定止损幅度和仓位大小。
 seoTitle: ATR指标含义与止损幅度设置
-seoDescription: ATR是什么、按14根K线的计算方式、如何用于设置止损幅度和仓位大小，以及它无法判断涨跌方向的局限。
-demoCaption: 示意用的虚构K线。展示K线波动变大时ATR上升，波动平息时ATR回落。
+seoDescription: ATR是什么、如何按14根K线计算、怎样用它来设定止损幅度和仓位大小，以及它不指示方向的局限。
+demoCaption: 示意用的虚构K线。展示波动幅度变大的区间ATR上升，行情平静下来后ATR回落。
 faq:
   - q: ATR数值大是好事还是坏事？
     a: 无所谓好坏，它只是波动的大小。数值大说明价格大幅震荡，但不说明会涨还是会跌。

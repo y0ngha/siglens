@@ -2,8 +2,8 @@
 title: 反击线 / 腰带线形态
 aliases: [反击线, 腰带线, 捉腰带线, 会合线, 相遇线, Belt Hold, Counterattack Line, Meeting Lines]
 summary: 从一端开盘的长K线（腰带线），以及收回到前一根收盘价的K线（反击线）。是短期转向的较弱线索。
-seoTitle: 腰带线与反击线K线形态详解
-seoDescription: 腰带线和反击线K线长什么样，布尔科夫斯基统计中的准确率，怎样确认，以及 Siglens 的识别标准。
+seoTitle: 反击线与腰带线的含义与信号
+seoDescription: 反击线和腰带线长什么样，作为反转信号应验了多少，以及如何确认信号。
 demoCaption: 为说明而制作的虚构K线。画的是从最低价开盘的长阳线（腰带线），以及长阴线之后收在同一价位的阳线（反击线）。
 faq:
   - q: 腰带线是反转信号吗？

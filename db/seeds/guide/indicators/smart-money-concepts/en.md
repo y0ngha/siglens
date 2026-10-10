@@ -3,7 +3,7 @@ title: "Smart Money Concepts (SMC)"
 aliases: [SMC, Smart Money Concepts, Order Block, Fair Value Gap, FVG, BOS, CHoCH]
 summary: "Marks key price zones using swing structure breaks, order blocks, fair value gaps and equal highs and lows."
 seoTitle: "Smart Money Concepts: Order Blocks and FVG"
-seoDescription: "Smart Money Concepts explained: BOS and CHoCH, order blocks, fair value gaps and premium/discount zones, from the basic meaning to the rules Siglens uses."
+seoDescription: What BOS and CHoCH, order blocks, fair value gaps and premium and discount zones mean in Smart Money Concepts (SMC), along with Siglens' rules.
 demoCaption: "Synthetic, illustrative bars. Marked are the bar that breaks a swing high (BOS), the down bar just before it (order block), and the empty price zone across three bars (fair value gap)."
 faq:
   - q: "What is an order block?"

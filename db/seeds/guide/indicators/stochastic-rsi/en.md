@@ -3,7 +3,7 @@ title: "Stochastic RSI"
 aliases: [Stochastic RSI, StochRSI, Stoch RSI]
 summary: "Applies the stochastic formula to RSI itself, showing momentum turns earlier than RSI on a 0 to 1 scale."
 seoTitle: "Stochastic RSI: How to Read 0.8 and 0.2"
-seoDescription: "How Stochastic RSI is calculated, the 0.8 and 0.2 levels, %K and %D crossovers, and why it reacts faster than RSI but gives more false signals."
+seoDescription: How Stochastic RSI is calculated, its 0.8 and 0.2 levels and %K/%D crosses, and why it reacts faster than RSI but gives more false signals.
 demoCaption: "Synthetic, illustrative bars. Price drifts down and stalls, and Stochastic RSI crosses up through %D below 0.2."
 faq:
   - q: "How is Stochastic RSI different from RSI?"
@@ -14,7 +14,7 @@ faq:
 
 ## How it's calculated
 
-Stochastic RSI was introduced by Tushar Chande and Stanley Kroll in 1994. Instead of price, it applies the [stochastic](/guide/indicators/stochastic) formula to RSI values. It shows, on a scale from 0 to 1, where the current RSI sits within the range of recent RSI values. Think of it as the RSI of the RSI.
+Stochastic RSI was introduced by Tushar Chande and Stanley Kroll in 1994. Instead of price, it applies the [stochastic](/guide/indicators/stochastic) formula to RSI values. It shows, on a scale from 0 to 1, where the current RSI sits within the range of recent RSI values. Think of it as RSI with the stochastic formula applied on top.
 
 The standard setting is [RSI](/guide/indicators/rsi) 14 and a stochastic window of 14. %K is smoothed over 3 bars, and %D is the 3-bar simple moving average of %K.
 

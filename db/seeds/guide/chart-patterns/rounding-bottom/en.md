@@ -3,7 +3,7 @@ title: Rounding Bottom
 aliases: [Saucer Bottom, Saucer Pattern, Rounded Bottom, Bowl Pattern]
 summary: A gentle saucer-shaped bottom. A close above the rim height is read as a turn up.
 seoTitle: Rounding Bottom (Saucer) Pattern Explained
-seoDescription: What a rounding bottom (saucer) looks like, how it differs from a cup and handle, how long it takes to form, and how Siglens checks the curve.
+seoDescription: The saucer shape of a rounding bottom, how to confirm a break above its rim, and why it helps to check whether volume also traces a U.
 demoCaption: Synthetic, illustrative bars. Shows a gentle saucer-shaped bottom, both rims, and a bar moving above the left rim's height.
 faq:
   - q: How is a rounding bottom different from a cup and handle?

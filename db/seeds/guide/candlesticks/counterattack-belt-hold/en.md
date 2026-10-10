@@ -2,8 +2,8 @@
 title: Counterattack / Belt Hold
 aliases: [Belt Hold, Counterattack Line, Counterattack Lines, Meeting Lines, Bullish Belt Hold, Bearish Belt Hold]
 summary: "A long bar opening at an extreme (belt hold) or closing at the prior close (counterattack). Weak turn clues."
-seoTitle: Belt Hold and Counterattack Line Candlesticks
-seoDescription: "What belt hold and counterattack line candles look like, how often they worked in Bulkowski's data, how to confirm them, and Siglens' detection criteria."
+seoTitle: "Counterattack Line and Belt Hold: Meaning and Signals"
+seoDescription: How counterattack lines and belt hold candles look, how often they worked as reversal signals, and how to confirm them.
 demoCaption: Synthetic, illustrative bars made for this explanation. A long bullish bar opening at its low (belt hold), and a bullish bar closing at the same price as a long bearish bar before it (counterattack).
 faq:
   - q: Is a belt hold a reversal signal?

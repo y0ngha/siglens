@@ -3,7 +3,7 @@ title: Three White Soldiers / Three Black Crows
 aliases: [Three White Soldiers, Three Black Crows, Three Soldiers, Three Crows]
 summary: Three big-bodied bars in the same direction, each setting a new close. Read as confirmation of a reversal.
 seoTitle: Three White Soldiers and Three Black Crows
-seoDescription: "What three white soldiers and three black crows look like, why Bulkowski's data shows a high reversal rate but small follow-through, and Siglens' criteria."
+seoDescription: What three white soldiers and three black crows look like, why the move after them was small despite a high reversal rate, and how Siglens detects them.
 demoCaption: Synthetic, illustrative bars made for this explanation. Three big bullish bars in a row after a decline (three white soldiers).
 faq:
   - q: Do three white soldiers confirm a rise?
@@ -27,7 +27,7 @@ One side won three times in a row, so it is read as a clue that the earlier tren
 
 All three bars must be the same color, with bodies at least 60% of their high-to-low range. The second and third bars must open inside the previous bar's body. For white soldiers, each open must be above the previous open and below the previous close. The preceding trend is not checked.
 
-In Thomas Bulkowski's data the bullish reversal rate for three white soldiers was 82% (3rd of 103) and the bearish reversal rate for three black crows was 78%, both high. But three white soldiers didn't travel far after the breakout, so their overall performance ranked only 32nd of 103, low compared with the reversal rate. Three black crows ranked 3rd for overall performance.
+In Thomas Bulkowski's data the bullish reversal rate for three white soldiers was 82%, 3rd of 103 in the reversal-rate ranking, and the bearish reversal rate for three black crows was 78%, both high. But three white soldiers didn't travel far after the breakout, so their overall performance ranked only 32nd of 103, low compared with the reversal rate. Three black crows ranked 3rd for overall performance.
 
 The high reversal rate has a structural reason too. The pattern already ends near the high (near the low for black crows), so it easily gets judged as having broken out in the same direction.
 

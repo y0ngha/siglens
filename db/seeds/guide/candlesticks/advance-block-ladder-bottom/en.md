@@ -2,8 +2,8 @@
 title: Advance Block / Ladder Bottom
 aliases: [Advance Block, Ladder Bottom, Three-Bar Advance Block, Stalling Candles]
 summary: "Three rising bars losing strength (advance block) and a three-bar rebound after a decline (ladder bottom). Both are weak clues."
-seoTitle: Advance Block and Ladder Bottom Candlesticks
-seoDescription: "What advance block and ladder bottom candles look like, and why Bulkowski's data shows advance blocks often continue upward, plus Siglens' criteria."
+seoTitle: "Advance Block and Ladder Bottom: Meaning and Signals"
+seoDescription: What the advance block and ladder bottom look like, and why, contrary to the textbook, the advance block was more often followed by further gains.
 demoCaption: Synthetic, illustrative bars made for this explanation. Three bullish bars with shrinking bodies and lengthening upper shadows (an advance block).
 faq:
   - q: Is an advance block a bearish signal?

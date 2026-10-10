@@ -2,8 +2,8 @@
 title: "Stochastic Oscillator"
 aliases: [Stochastic, Stochastic Oscillator, Slow Stochastic, "%K %D", Stochastics]
 summary: "A momentum indicator showing, from 0 to 100, where the current close sits within the recent high-low range."
-seoTitle: "Stochastic Oscillator: %K %D Crosses Explained"
-seoDescription: "How the Stochastic Oscillator is calculated, the 80 and 20 levels, how to read %K and %D crosses and divergence, and where it misleads in trending markets."
+seoTitle: "How to Read the Stochastic: %K/%D Crosses and 80/20"
+seoDescription: How the stochastic oscillator is calculated, its 80 and 20 levels, how to read %K/%D crosses and divergences, and when overbought and oversold readings mislead in a trend.
 demoCaption: "Synthetic, illustrative bars. As price rises off the bottom, %K crosses up through %D below 20."
 faq:
   - q: "What does Stochastic (14, 3, 3) mean?"

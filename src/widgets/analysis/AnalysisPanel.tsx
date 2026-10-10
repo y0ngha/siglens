@@ -62,7 +62,7 @@ import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { PlanCheckBlock } from './PlanCheckBlock';
-import { GuideHintLink } from './GuideHintLink';
+import { GuideEntryLink, GuideHintLink } from './GuideHintLink';
 import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
@@ -1722,6 +1722,10 @@ export function AnalysisPanel({
                     )}
                 </>
             </PlainAnalysisSwitch>
+
+            {/* 패널 전체에 한 줄만 두는 차트 가이드 진입점. 캔들 패턴은 차트 캔버스 마커로만
+                그려져 항목별 "뜻 보기"를 달 수 없으므로, 여기서 가이드 전체로 보낸다. */}
+            {!showProgress && <GuideEntryLink />}
 
             {onReanalyze !== undefined && (
                 <div className="mt-1">

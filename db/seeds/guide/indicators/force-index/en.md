@@ -3,7 +3,7 @@ title: Force Index
 aliases: [Force Index, Elder Force Index, force indicator]
 summary: Multiplies the size of each price move by volume, to show how much force was behind the move.
 seoTitle: "Force Index: Calculation, Zero Line, Divergence"
-seoDescription: How the Force Index combines price change and volume to measure force, how to read zero-line crosses and divergences, and why it is hard to use on its own.
+seoDescription: How the Force Index measures strength from price change and volume, how to read zero-line crosses and divergences, and why it is hard to use alone.
 demoCaption: Synthetic, illustrative bars. A stretch is marked where price makes lower lows while the Force Index makes higher lows.
 faq:
   - q: How is the Force Index calculated?

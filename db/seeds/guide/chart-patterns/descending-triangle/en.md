@@ -3,7 +3,7 @@ title: Descending Triangle
 aliases: [Falling Triangle, Descending Triangle Pattern]
 summary: Lows hold at a flat line while highs keep falling and the range narrows. Direction is close to a coin flip.
 seoTitle: "Descending Triangle Pattern: How to Read It"
-seoDescription: What a descending triangle looks like, why it breaks up about as often as down in Bulkowski's data, and how to read a close below support.
+seoDescription: A descending triangle completes with a drop below its flat support line, yet about half the time it breaks upward instead. Here is how to confirm a support break.
 demoCaption: Synthetic, illustrative bars. Shows a flat support line, a falling resistance line, and a bar closing below support.
 faq:
   - q: Does a descending triangle always break down?
@@ -23,6 +23,14 @@ The lows find support at nearly the same price along a horizontal line, while ea
 Buyers hold the same price every time, but each rebound peaks lower. Selling pressure is building, so textbooks put more weight on support breaking.
 
 The actual statistics differ somewhat. In Thomas Bulkowski's tabulation, 53% broke upward, so the direction was nearly 50-50, and performance has reportedly fallen by almost half since the 1990s. So it is safer to read this pattern as bearish only after a close finishes below the flat support line, and to treat both directions as open until then.
+
+## How it differs from an ascending triangle
+
+Unlike the [ascending triangle](/guide/chart-patterns/ascending-triangle), which leans 63% upward, the descending triangle says little about direction. In Bulkowski's tabulation, the break-even failure rate (the share that ended without moving far enough in the breakout direction) was similar both ways: 22% for upward breakouts and 23% for downward ones. 64% of upward and 50% of downward breakouts reached their target.
+
+By rank, downward breakouts did better, at 15th of 36 bearish patterns, than upward ones at 33rd of 39 bullish patterns. So once it breaks down, the move is fairly trustworthy, but before that there is little basis for calling the decline in advance.
+
+If the horizontal support lines up with a major long-standing support level and is being tested for the first time, a bounce becomes more likely. A breakdown is most reliable 50% to 75% of the way to the apex, and if a rally after the breakdown fails to reclaim the old support, the bearish case gets stronger.
 
 ## How Siglens detects it
 

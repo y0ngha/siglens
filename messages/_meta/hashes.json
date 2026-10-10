@@ -3298,6 +3298,7 @@
     "widgets.home.SkillsShowcase.allGuides": "893cfdad522d",
     "widgets.analysis.GuideHintLink.label": "4989e79b1c2f",
     "widgets.analysis.GuideHintLink.aria": "d8dc18791b9f",
+    "widgets.analysis.GuideHintLink.entry": "74f58a8a4ee2",
     "views.methodology.indicators.guide": "cfd988ba04df",
     "widgets.agent-chat.ToolActivity.toolGuide": "eae886d65279"
 }

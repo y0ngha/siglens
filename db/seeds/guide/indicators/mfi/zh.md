@@ -3,7 +3,7 @@ title: "MFI（资金流量指标）"
 aliases: [MFI, 资金流量指标, 资金流向指数, Money Flow Index, 成交量加权RSI]
 summary: "同时使用价格和成交量，在0到100之间显示买方与卖方资金流向的震荡指标。"
 seoTitle: "MFI指标怎么看？80和20超买超卖标准"
-seoDescription: "MFI和RSI有什么不同，80和20超买超卖标准怎么用，资金流背离与失败摆动怎么读，以及这个指标的局限。"
+seoDescription: MFI和RSI有何不同，80、20的超买超卖标准，以及如何解读资金流背离和失败摆动。
 demoCaption: "这是为说明而制作的虚构K线。标出的区间是MFI跌破20后又回升到其上方。"
 faq:
   - q: "MFI和RSI有什么不同？"

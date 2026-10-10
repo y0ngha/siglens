@@ -3,7 +3,7 @@ title: Marubozu
 aliases: [Marubozu, White Marubozu, Black Marubozu, Long Bullish Candle, Long Bearish Candle]
 summary: "A long body with almost no wicks. One side pushed the whole period, but it confirms a trend only weakly."
 seoTitle: Marubozu Candlestick Meaning and Signals
-seoDescription: "What a marubozu is, how to read it when it goes with or against the trend, and what Bulkowski's data actually showed about its results."
+seoDescription: How a marubozu, a candle with a body and no wicks, reads differently with the trend and against it, and how often it actually worked.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bullish marubozu that opens at its low and closes at its high with no wicks, next to its bearish opposite.
 faq:
   - q: Does a marubozu confirm a strong trend?
@@ -29,7 +29,7 @@ But a marubozu in the direction of the trend is weak evidence of trend confirmat
 
 A bar is a marubozu when its body is at least 90% of the high-to-low range. A bullish bar is a bullish marubozu and a bearish bar is a bearish marubozu. Siglens checks bar shape only, not the preceding trend.
 
-In Thomas Bulkowski's data, uptrends continued after a white marubozu 56% of the time and downtrends after a black marubozu 53%, both close to a coin flip. Bulkowski remarked that the marubozu has been given more weight by candle followers than it deserves.
+In Thomas Bulkowski's data, uptrends continued after a white marubozu 56% of the time and downtrends after a black marubozu 53%, both close to a coin flip. Bulkowski considered the marubozu overrated relative to its actual performance.
 
 The cases where Bulkowski confirmed good performance were actually those of the opposite color to the trend. A black marubozu inside an uptrend, followed by a close above that bar's high, ranked 2nd among common bullish continuation candles, with a 10-day average gain of 4.39%. A white marubozu inside a downtrend, followed by a close below that bar's low, ranked 2nd among common bearish continuation candles, with a 10-day average decline of 3.55%.
 

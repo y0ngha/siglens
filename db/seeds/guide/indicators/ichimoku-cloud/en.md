@@ -3,7 +3,7 @@ title: Ichimoku Cloud
 aliases: [Ichimoku Kinko Hyo, Ichimoku, Ichimoku Cloud, Ichimoku Sanjin]
 summary: Uses the Tenkan-sen, the Kijun-sen, a cloud built from two leading spans, and a lagging span to show trend, support and resistance on one chart.
 seoTitle: How to Read the Ichimoku Cloud and Its Lines
-seoDescription: How to read the five Ichimoku lines and the cloud, cloud breakouts, Tenkan-sen and Kijun-sen crosses, lagging span confirmation, and limits in sideways markets.
+seoDescription: How to read Ichimoku's five lines and the cloud, cloud breakouts and Tenkan-Kijun crosses, confirming with the Chikou span, and its limits in ranging markets.
 demoCaption: Synthetic, illustrative bars. Price has risen above the cloud and the Tenkan-sen sits above the Kijun-sen.
 faq:
   - q: What is the cloud in Ichimoku?

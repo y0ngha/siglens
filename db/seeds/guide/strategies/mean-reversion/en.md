@@ -3,11 +3,11 @@ title: Mean Reversion (Short-Term Oversold Pullback)
 aliases: [mean reversion strategy, short-term oversold bounce, buy the dip, pullback bounce, Williams %R oversold]
 summary: "Looks at the tendency of stocks in a long-term uptrend to bounce after a sharp drop over a few days."
 seoTitle: "Mean Reversion Strategy: Oversold Bounce Rules"
-seoDescription: The rule that treats a daily bar above the 200-day line with Williams %R at -90 or below as a pullback candidate, when it ends, and when it fails.
-demoCaption: Synthetic, illustrative candles. Shows a bar closing near the bottom of its 2-week range above the 200-day line, and the bounce back above the 5-day line.
+seoDescription: Why a day with Williams %R below -90 while price holds above the 200-day line counts as a mean-reversion candidate, when the bounce is done, and when the rule fails.
+demoCaption: Synthetic, illustrative candles. Shows a bar closing near the bottom of its 14-day range above the 200-day line, and the bounce back above the 5-day line.
 faq:
   - q: Does mean reversion only work in sideways markets?
-    a: Siglens found otherwise. Filtering for sideways markets only (ADX below 25), or stacking the lower Bollinger Band with RSI below 30, did worse than simple oversold, and sharp short-term drops inside a long-term uptrend were more consistent.
+    a: Siglens found otherwise. Picking only stretches with ADX below 25, or stacking the lower Bollinger Band with RSI below 30, did worse than simple oversold, and sharp short-term drops inside a long-term uptrend were more consistent.
   - q: What conditions have to be met?
     a: On a daily chart, the close must be above the 200-day line and Williams %R(14) must be -90 or below. A reading of -80 to -90 is the near stage, treated as a weaker version.
   - q: Does it work below the 200-day line?

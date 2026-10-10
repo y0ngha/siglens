@@ -3,8 +3,8 @@ title: How to Read Candlestick Charts
 aliases: [Candlestick Chart, Candlesticks, OHLC, Bullish and Bearish Candles, Candle Body and Wick]
 summary: One candle holds the open, high, low and close for a set period. Here is what the body and wicks mean.
 seoTitle: "How to Read Candlestick Charts: Body and Wicks"
-seoDescription: A step-by-step guide to bullish and bearish candles, what the body and wicks mean, and how the same shape reads differently on daily and intraday charts.
-demoCaption: Synthetic, illustrative bars made for this explanation. The open, close, high and low are marked on a bullish and a bearish candle.
+seoDescription: What bullish and bearish candles, bodies and wicks mean on a candlestick chart, and how the same shape reads differently on daily and minute charts, from the ground up.
+demoCaption: Synthetic, illustrative bars made for this explanation. Marks the open and close, high and low, and upper and lower wicks on a bullish and a bearish candle.
 faq:
   - q: How do I tell a bullish candle from a bearish one?
     a: If the close is above the open, it is bullish; if below, bearish. Korean stock charts usually draw bullish candles red and bearish ones blue, while US charts often use green and red.
@@ -18,7 +18,7 @@ faq:
 
 A single candle shows four prices for a set period at once: the open (first trade), the high (highest price), the low (lowest price) and the close (last price).
 
-If the close is above the open, the candle is bullish; if below, bearish. The color shows at a glance whether buyers or sellers won that period. Korean stock charts usually draw bullish candles red and bearish ones blue.
+If the close is above the open, the candle is bullish; if below, bearish. The color shows at a glance whether buyers or sellers won that period. Korean stock charts usually draw bullish candles red and bearish ones blue. The charts in this guide draw bullish candles green and bearish ones red.
 
 ## Body and wicks
 

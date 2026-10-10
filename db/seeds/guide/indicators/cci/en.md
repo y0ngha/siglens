@@ -3,7 +3,7 @@ title: CCI
 aliases: [Commodity Channel Index, CCI indicator]
 summary: Shows how far price has strayed from its average, using +100 and -100 as reference lines. It has no upper or lower limit.
 seoTitle: "CCI Indicator: How to Read +100 and -100"
-seoDescription: How CCI is calculated, how to read the +100, -100 and zero-line crosses, and why an overbought reading shouldn't be taken at face value in a trending market.
+seoDescription: How to read CCI crossing +100, -100 and the zero line, and why you shouldn't take its overbought signals at face value in a trending market.
 demoCaption: Synthetic, illustrative bars. Price strays far from its average, CCI rises above +100, and then comes back down.
 faq:
   - q: Is CCI above +100 overbought?

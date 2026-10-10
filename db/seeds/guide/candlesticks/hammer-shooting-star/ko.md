@@ -5,8 +5,8 @@ related: [doji, morning-evening-star, bullish-engulfing, candle-basics]
 title: 망치형 / 유성형
 aliases: [망치형, 역망치형, 교수형, 유성형, 슈팅스타, Hammer, Inverted Hammer, Hanging Man, Shooting Star]
 summary: 한쪽 꼬리가 몸통의 2배 이상 긴 한 봉짜리 모양이에요. 이름보다 직전 추세를 먼저 봐야 해요.
-seoTitle: 망치형 유성형 캔들 뜻, 교수형 역망치형
-seoDescription: 망치형, 역망치형, 교수형, 슈팅스타가 어떻게 다른지, Siglens가 이름을 붙이는 기준과 불코우스키의 실제 집계 결과를 함께 정리했어요.
+seoTitle: 망치형·역망치형·교수형·유성형 캔들 차이
+seoDescription: 망치형, 역망치형, 교수형, 유성형은 꼬리 방향과 나온 자리로 구분해요. Siglens가 이름을 붙이는 기준과 실제 성과를 알아봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 아랫꼬리가 긴 봉과 윗꼬리가 긴 봉을 하락 구간 끝과 상승 구간 끝에 각각 놓았어요.
 faq:
   - q: 망치형과 교수형은 어떻게 다른가요?

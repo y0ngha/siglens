@@ -52,6 +52,7 @@ const MIN_BODY = 2;
 const PRICE_PAD = 0.07;
 const FAR_SERIES_SPAN = 0.35;
 const ARROW = 5;
+const MARKER_ROOM = 0.12;
 
 const TEXT_HALO_PROPS = {
     paintOrder: 'stroke',
@@ -96,17 +97,30 @@ function priceDomain(demo: GuideDemo): [number, number] {
                 extend(overlay.high, true);
                 break;
             case 'series':
-                overlay.values.forEach(value => extend(value, false));
+                overlay.values.forEach(value =>
+                    extend(value, overlay.includeInDomain === true)
+                );
                 break;
             case 'band':
-                overlay.upper.forEach(value => extend(value, false));
-                overlay.lower.forEach(value => extend(value, false));
+                overlay.upper.forEach(value =>
+                    extend(value, overlay.includeInDomain === true)
+                );
+                overlay.lower.forEach(value =>
+                    extend(value, overlay.includeInDomain === true)
+                );
                 break;
             case 'profile':
                 overlay.rows.forEach(row => extend(row.price, true));
                 break;
-            case 'marker':
+            case 'marker': {
+                const bar = demo.bars[overlay.i];
+                if (bar === undefined) break;
+                // 표식과 라벨이 들어갈 자리를 남긴다 (봉 끝에 붙은 표식이 잘리거나 라벨이 멀리 밀리지 않게).
+                if (overlay.position === 'above')
+                    extend(bar.high + barSpan * MARKER_ROOM, true);
+                else extend(bar.low - barSpan * MARKER_ROOM, true);
                 break;
+            }
         }
     }
     const pad = (max - min || 1) * PRICE_PAD;
@@ -198,7 +212,21 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
         Math.max(MIN_BODY, pitch * BODY_RATIO)
     );
     const placed: LabelBox[] = [];
-    const bounds = { top: priceTop, bottom: priceBottom };
+    const obstacles: LabelBox[] = demo.bars.map((bar, index) => {
+        const top = yOf(bar.high);
+        return {
+            x: xOf(index) - bodyWidth / 2 - 1,
+            y: top,
+            width: bodyWidth + 2,
+            height: Math.max(1, yOf(bar.low) - top),
+        };
+    });
+    const bounds = {
+        top: priceTop,
+        bottom: priceBottom,
+        left: plotLeft,
+        right: plotRight,
+    };
     const box = (
         text: string,
         x: number,
@@ -256,7 +284,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                         placed,
                         box(overlay.label, x1 + 2, y1 + 8, 'start'),
                         1,
-                        bounds
+                        bounds,
+                        obstacles
                     );
                     labels.push(
                         <TextLabel
@@ -332,7 +361,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                                 'end'
                             ),
                             -1,
-                            bounds
+                            bounds,
+                            obstacles
                         );
                         labels.push(
                             <TextLabel
@@ -415,7 +445,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                     placed,
                     box(overlay.label, plotRight - 2, y - 8, 'end'),
                     -1,
-                    bounds
+                    bounds,
+                    obstacles
                 );
                 labels.push(
                     <TextLabel
@@ -455,7 +486,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                         placed,
                         box(overlay.label, x2, y2 - 9, 'end'),
                         -1,
-                        bounds
+                        bounds,
+                        obstacles
                     );
                     labels.push(
                         <TextLabel
@@ -510,12 +542,18 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                 });
                 const lastRun = runs[runs.length - 1];
                 const lastPoint = lastRun?.[lastRun.length - 1];
-                if (overlay.label !== '' && lastPoint !== undefined) {
+                if (
+                    overlay.label !== '' &&
+                    lastPoint !== undefined &&
+                    lastPoint.y >= priceTop &&
+                    lastPoint.y <= priceBottom
+                ) {
                     const b = placeLabel(
                         placed,
                         box(overlay.label, lastPoint.x, lastPoint.y - 9, 'end'),
                         -1,
-                        bounds
+                        bounds,
+                        obstacles
                     );
                     labels.push(
                         <TextLabel
@@ -552,7 +590,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                     placed,
                     box(overlay.label, x, labelY, 'middle'),
                     above ? -1 : 1,
-                    bounds
+                    bounds,
+                    obstacles
                 );
                 labels.push(
                     <TextLabel

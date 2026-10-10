@@ -3,7 +3,7 @@ title: "Parabolic SAR"
 aliases: [Parabolic SAR, PSAR, Stop and Reverse, SAR]
 summary: "Dots above or below price show trend direction, reversal points and a trailing stop level in one view."
 seoTitle: "Parabolic SAR: How to Read the Dot Flip"
-seoDescription: "How Parabolic SAR dots are placed above and below price, how to read reversal signals, and why it gets whipsawed in sideways markets."
+seoDescription: Why Parabolic SAR dots flip between above and below price, how to read its reversal signals, and when it misleads you in ranging markets, with a synthetic chart.
 demoCaption: "Synthetic, illustrative bars. The dots sit below the bars during the uptrend and above them after the trend turns."
 faq:
   - q: "What does it mean when the Parabolic SAR dots move above price?"

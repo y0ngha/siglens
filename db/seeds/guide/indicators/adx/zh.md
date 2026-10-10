@@ -3,7 +3,7 @@ title: ADX
 aliases: [平均趋向指数, 平均动向指数, Average Directional Index, ADX指标, 趋势强度指标]
 summary: 不判断趋势向上还是向下，只用0到100的数值显示当前趋势有多强的指标。
 seoTitle: ADX指标怎么看，25线与趋势强度
-seoDescription: ADX指标是什么，20、25、40等参考线怎么读，为什么它不能判断涨跌方向，以及怎样与DMI配合着看。
+seoDescription: 如何解读ADX的20、25、40等基准线，为什么单看ADX看不出方向，以及如何搭配DMI来看。
 demoCaption: 示意用的虚构K线。展示价格横盘后单边运行时ADX上升的过程。
 faq:
   - q: ADX超过25就代表会涨吗？
@@ -18,7 +18,7 @@ faq:
 
 ADX（Average Directional Index）由J. 威尔斯·威尔德于1978年与[DMI](/guide/indicators/dmi)一同提出。DMI分别衡量上涨一侧的力量（+DI）和下跌一侧的力量（-DI），ADX则是把两者之差占两者之和的比例取平均。一侧的力量越明显压过另一侧，数值越大，取值范围为0到100，默认周期是14根K线。
 
-求平均时使用威尔德平滑（新值占1/N的权重）。它比普通的[EMA](/guide/indicators/ema)反应更慢，趋势开始后要过几根K线才会体现在数值上。超过60的读数比较少见。
+求平均时使用威尔德平滑（新值占1/N的权重）。它比普通的[EMA](/guide/indicators/ema)反应更慢，趋势开始后要过几根K线才会体现在数值上。
 
 ## 说明了什么
 

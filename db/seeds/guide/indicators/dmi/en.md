@@ -3,7 +3,7 @@ title: DMI
 aliases: [Directional Movement Index, +DI -DI, directional movement, DMI indicator]
 summary: Compares buying force (+DI) and selling force (-DI) to show the direction and dominance of a trend.
 seoTitle: "DMI Indicator: How to Read +DI and -DI Crosses"
-seoDescription: What +DI and -DI are in DMI, how to filter their crossovers with ADX 20, and why sideways markets produce so many noise signals.
+seoDescription: What +DI and -DI in the DMI are, how to filter their crossovers with an ADX of 20, and why ranging markets throw off so many small signals.
 demoCaption: Synthetic, illustrative bars. The advance continues, +DI crosses above -DI, and ADX rises along with it.
 faq:
   - q: Does +DI crossing above -DI mean a turn to an uptrend?

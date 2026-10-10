@@ -104,7 +104,7 @@ import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacr
  * 면제는 생성 한도에만 적용된다 — 동시성 상한·본문·생성 트리거는 그대로다.
  *
  * **같은 크롤러 판정이 두 번째로 쓰이는 곳: 비회원 하루 무료 전체 공개 미터
- * (2026-10-18 시행, `meteredRevealGate.ts`).** DNS로 검증된 크롤러는 미터를 건너뛰어
+ * (2026-10-11 시행, `meteredRevealGate.ts`).** DNS로 검증된 크롤러는 미터를 건너뛰어
  * 항상 현행 free 마스킹을 받는다. 갈리는 기준은 UA가 아니라 검증 결과이고, 미터 대상
  * 방문자가 공개 본문을 받아도 색인되는 SEO 스냅샷(`peekAnalysisStatic`, tier free
  * 고정)은 변하지 않는다.

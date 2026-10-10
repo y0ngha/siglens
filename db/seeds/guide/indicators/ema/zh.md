@@ -2,8 +2,8 @@
 title: 指数移动平均线（EMA）
 aliases: [EMA, 指数移动平均, 指数平均线, Exponential Moving Average]
 summary: 给近期价格更大权重的移动平均线，比简单移动平均线更快地跟上价格变化。
-seoTitle: EMA指数移动平均线怎么看，金叉与排列
-seoDescription: 指数移动平均线与简单移动平均线有何不同，9日、20日、60日线怎么看，以及横盘行情中交叉为什么容易失灵。
+seoTitle: EMA指数移动平均线怎么看，交叉与排列
+seoDescription: 指数移动平均（EMA）和简单移动平均有何不同，如何解读9日、20日、60日线，以及为什么震荡行情中交叉信号常常骗人。
 demoCaption: 示意用的虚构K线。展示9日、20日、60日指数移动平均线按上升顺序排列的情形。
 faq:
   - q: EMA和简单移动平均线（MA）有什么区别？

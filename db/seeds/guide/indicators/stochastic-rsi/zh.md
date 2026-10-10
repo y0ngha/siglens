@@ -3,7 +3,7 @@ title: "随机RSI"
 aliases: [随机RSI, 随机相对强弱指标, StochRSI, Stochastic RSI]
 summary: "对RSI数值再套用一次随机指标公式，比RSI更早显示动量转折的0~1区间指标。"
 seoTitle: "随机RSI怎么看？0.8和0.2的含义"
-seoDescription: "随机RSI怎么计算，0.8和0.2标准怎么看，%K与%D交叉如何解读，以及它为什么比RSI更快、假信号也更多。"
+seoDescription: 认识随机RSI的算法、0.8和0.2标准、%K与%D交叉，以及它为什么比RSI快、假信号却更多。
 demoCaption: "这是为说明而制作的虚构K线。价格下跌后企稳，随机RSI在0.2以下向上穿过%D。"
 faq:
   - q: "随机RSI和RSI有什么不同？"
@@ -14,7 +14,7 @@ faq:
 
 ## 计算方法
 
-随机RSI由图沙尔·昌德和斯坦利·克罗尔在1994年提出，不是对价格，而是对RSI数值套用[随机指标](/guide/indicators/stochastic)公式。它用0到1之间的数字，表示当前RSI在近期RSI数值范围内所处的位置。可以理解为“RSI的RSI”。
+随机RSI由图沙尔·昌德和斯坦利·克罗尔在1994年提出，不是对价格，而是对RSI数值套用[随机指标](/guide/indicators/stochastic)公式。它用0到1之间的数字，表示当前RSI在近期RSI数值范围内所处的位置。可以理解为在RSI之上再套一次随机指标公式得到的值。
 
 标准参数是[RSI](/guide/indicators/rsi) 14、随机指标区间14。%K用3根K线平滑，%D是%K的3根K线简单移动平均线。
 

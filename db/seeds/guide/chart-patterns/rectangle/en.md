@@ -3,7 +3,7 @@ title: Rectangle
 aliases: [Trading Range, Box Range, Rectangle Pattern, Sideways Range]
 summary: Price moves between flat resistance and support. Upward breakouts were more common whatever the prior trend.
 seoTitle: "Rectangle Pattern: Breakouts and Direction"
-seoDescription: What a rectangle (trading range) looks like, which way it tends to break in Bulkowski's data, how many touches Siglens requires, and how to read false breaks.
+seoDescription: How to judge the breakout direction of a rectangle (trading range), how it relates to the prior trend, and how to spot false breakouts, with an example chart.
 demoCaption: Synthetic, illustrative bars. Shows flat resistance and support lines and a bar closing above the box.
 faq:
   - q: Does a rectangle break up or down?

@@ -3,7 +3,7 @@ title: Triple Bottom
 aliases: [Triple Bottom Pattern, Three-Bottom Pattern]
 summary: Three lows at similar levels; a move above the neckline through the highs between them is read as a turn up.
 seoTitle: "Triple Bottom Pattern: How to Read It"
-seoDescription: What a triple bottom looks like, how it differs from a double bottom and an inverse head and shoulders, and what Bulkowski's data says.
+seoDescription: How a triple bottom differs from a double bottom, and how to check the neckline breakout and volume, with an example chart.
 demoCaption: Synthetic, illustrative bars. Shows three lows, the neckline through the two highs between them, and a bar closing above the neckline.
 faq:
   - q: How is a triple bottom different from a double bottom?
@@ -31,7 +31,7 @@ Siglens confirms a swing high or swing low once price has moved one way and then
 - The difference between the highest and lowest of the three lows must be no more than the smaller of 1 times ATR and 3% of their average price.
 - Adjacent lows must be at least 10 bars apart, so the whole pattern is at least 21 bars long.
 - No bar between the first and last low may go below the lows by more than 0.25 times ATR.
-- Neckline: the highest price among the swing highs between the lows.
+- Neckline: instead of connecting the two highs, Siglens uses a horizontal line at the higher of the two highs.
 - Height: from the average low to the neckline, at least 2.5 times ATR and at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
 - If the highs between the lows clearly fall toward the lows (by at least 1.5 times ATR), Siglens treats it as a [descending triangle](/guide/chart-patterns/descending-triangle), not a triple bottom.
 - If the third low is too far back, it is not shown. The cutoff is the longer of the last 20 bars and half the pattern's length.
@@ -42,6 +42,6 @@ The invalidation level is the lowest of the three lows. A close below it means t
 
 - In a strong downtrend, the three lows can be a pause before further decline.
 - If each low is more than 3% lower than the one before, it is closer to a [descending channel](/guide/chart-patterns/descending-channel) than a triple bottom.
-- If the three lows form in under 20 bars, it may be a wobble rather than meaningful accumulation (steady buying of shares).
+- If the three lows are crowded into a short stretch, it may be a wobble rather than meaningful accumulation (steady buying of shares).
 - If the third low is clearly deeper than the first two, it may be a sign the decline is accelerating.
 - Crossing the neckline briefly intraday and falling back is not a confirmation.

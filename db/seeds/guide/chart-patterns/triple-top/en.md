@@ -3,7 +3,7 @@ title: Triple Top
 aliases: [Triple Top Pattern, Three-Top Pattern]
 summary: Three highs at similar levels; a break of the neckline through the lows between them is read as a turn down.
 seoTitle: "Triple Top Pattern: How to Read It"
-seoDescription: What a triple top looks like, how reliable it was in Bulkowski's data compared with a double top, and how it differs from an ascending triangle.
+seoDescription: A triple top turns down after price is stopped three times at a similar height. See how it differs from a double top and how to check the neckline break and volume.
 demoCaption: Synthetic, illustrative bars. Shows three highs, the neckline through the two lows between them, and a bar closing below the neckline.
 faq:
   - q: Is a triple top more reliable than a double top?
@@ -31,7 +31,7 @@ Siglens confirms a swing high or swing low once price has moved one way and then
 - The difference between the highest and lowest of the three highs must be no more than the smaller of 1 times ATR and 3% of their average price.
 - Adjacent highs must be at least 10 bars apart, so the whole pattern is at least 21 bars long.
 - No bar between the first and last high may rise above the highs by more than 0.25 times ATR.
-- Neckline: the lowest price among the swing lows between the highs.
+- Neckline: instead of connecting the two lows, Siglens uses a horizontal line at the lower of the two lows.
 - Height: from the average high to the neckline, at least 2.5 times ATR and at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
 - If the lows between the highs clearly rise toward the highs (by at least 1.5 times ATR), Siglens treats it as an [ascending triangle](/guide/chart-patterns/ascending-triangle), not a triple top.
 - If the third high is too far back, it is not shown. The cutoff is the longer of the last 20 bars and half the pattern's length.

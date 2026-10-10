@@ -3,8 +3,8 @@ title: MACD Grand Cycle Analysis
 aliases: [MACD grand cycle, MACD upper middle lower, exponential moving average grand cycle, MACD cycle]
 summary: "Builds upper, middle and lower MACD from three EMAs and reads the market as one of six stages by their signs."
 seoTitle: "MACD Grand Cycle: Reading the 6 Stages"
-seoDescription: What the upper, middle and lower MACD built from EMA 9, 21 and 60 mean, the six stages set by their signs, stage-change signals, and cautions.
-demoCaption: Synthetic, illustrative candles. Shows where the order of EMA 9, 21 and 60 changes and the three MACD values crossing the zero line at those points.
+seoDescription: What the upper, middle and lower MACD built from EMA 9, 21 and 60 are, the six stages set by their signs, and the signals when the stage changes.
+demoCaption: Synthetic, illustrative candles. Shows where the order of EMA 9, 21 and 60 changes and the three MACD values dropping below the zero line one after another at those points.
 faq:
   - q: What are the upper, middle and lower MACD?
     a: The upper is EMA 9 minus EMA 21, the middle is EMA 9 minus EMA 60, and the lower is EMA 21 minus EMA 60. Whether each is above or below zero tells you the order of the EMAs.

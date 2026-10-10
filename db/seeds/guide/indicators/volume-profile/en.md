@@ -3,7 +3,7 @@ title: "Volume Profile"
 aliases: [Volume Profile, POC, Point of Control, Value Area, Volume by Price]
 summary: "Stacks volume by price level as horizontal bars, showing where trading clustered (POC) and the value area."
 seoTitle: "Volume Profile: What POC, VAH and VAL Mean"
-seoDescription: "How to read Volume Profile, which shows volume at each price level: the POC, the VAH and VAL value area, and low-volume gaps, with its limits."
+seoDescription: How to read the POC, the value area (VAH and VAL) and thinly traded price gaps on a volume profile, and where it falls short.
 demoCaption: "Synthetic, illustrative bars. Volume-by-price bars sit beside the candles, with the longest bar (POC) and the upper and lower edges of the value area marked."
 faq:
   - q: "What is the POC?"

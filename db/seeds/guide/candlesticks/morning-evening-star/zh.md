@@ -3,7 +3,7 @@ title: 晨星 / 黄昏星形态
 aliases: [晨星, 黄昏星, 启明星, 暮星, 十字晨星, 十字黄昏星, Morning Star, Evening Star, Doji Star]
 summary: 由一根大K线、一根跳空分离的小K线、一根反方向大K线组成的三根反转形态。
 seoTitle: 晨星与黄昏星K线形态详解
-seoDescription: 晨星和黄昏星长什么样，十字晨星、十字黄昏星是否更可靠，以及布尔科夫斯基统计的反转比例和 Siglens 的识别标准。
+seoDescription: 晨星和黄昏星长什么样，中间那根是十字星时是否更可靠，以及反转比例和 Siglens 的识别标准。
 demoCaption: 为说明而制作的虚构K线。画的是长阴线、向下跳空的小K线、收在中线之上的阳线，组成的晨星。
 faq:
   - q: 怎么区分晨星和黄昏星？

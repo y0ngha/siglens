@@ -3,7 +3,7 @@ title: "Keltner Channel"
 aliases: [Keltner Channel, Keltner Bands, KC, Keltner Squeeze]
 summary: "ATR-based bands drawn above and below a 20-day EMA, used to read the volatility range, trend and squeezes."
 seoTitle: "Keltner Channel: How to Read It and the Squeeze"
-seoDescription: "How the Keltner Channel works: the 20-day EMA and ATR bands, breakouts and re-entries, the squeeze with Bollinger Bands, and where the signals fall short."
+seoDescription: How the Keltner Channel is built from a 20-day EMA and ATR, how to read channel breakouts and returns, and how to spot a squeeze together with Bollinger Bands.
 demoCaption: "Synthetic, illustrative bars. The marked stretch is where price closes outside the upper Keltner band."
 faq:
   - q: "How is a Keltner Channel different from Bollinger Bands?"

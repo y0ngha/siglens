@@ -3,7 +3,7 @@ title: Broadening Formation
 aliases: [Megaphone Pattern, Broadening Top, Broadening Bottom, Expanding Triangle]
 summary: Highs get higher and lows get lower, so the range keeps widening like a megaphone. It can break either way.
 seoTitle: Broadening Formation (Megaphone) Pattern Explained
-seoDescription: What a broadening formation (megaphone) looks like, whether it marks a top or a bottom, how it differs from a triangle, and what Bulkowski's data says.
+seoDescription: The megaphone shape of a broadening formation, where highs and lows keep spreading apart, how many touches each line needs, and how to judge the breakout direction.
 demoCaption: Synthetic, illustrative bars. Shows a rising upper line and a falling lower line that spread apart, with bars moving between them.
 faq:
   - q: Is a broadening formation a top or a bottom signal?
@@ -16,7 +16,7 @@ faq:
 
 ## How it looks
 
-Highs keep getting higher and lows keep getting lower, so the range widens over time like a megaphone. The upper line rises and the lower line falls, and they spread apart. It looks like a [symmetrical triangle](/guide/chart-patterns/symmetrical-triangle) in reverse.
+Highs keep getting higher and lows keep getting lower, so the range widens over time like a megaphone. The upper line rises and the lower line falls, and they spread apart. It looks like a [symmetrical triangle](/guide/chart-patterns/symmetrical-triangle) flipped left to right.
 
 ## What it tells you
 

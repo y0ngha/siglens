@@ -3,7 +3,7 @@ title: "MACD-V"
 aliases: [MACD-V, MACD V, ボラティリティ正規化MACD, Volatility Normalised MACD]
 summary: "MACDをATRで割り、ボラティリティに対するモメンタムを測る指標です。銘柄や時期が違っても±150などの基準を共通で使えます。"
 seoTitle: "MACD-Vとは？±150の基準と見方"
-seoDescription: "MACD-VがMACDとどう違うか、ATR26で割る計算、±150の買われすぎ・売られすぎの基準、トレンドフィルター下での読み方を整理しました。"
+seoDescription: MACD-VがMACDとどう違うのか、ATR(26)で割る計算方法と、±150の買われすぎ・売られすぎの基準をトレンドフィルターとあわせて読む方法を説明します。
 demoCaption: "説明用に作った架空のローソク足です。MACD-Vが+150線を上回り、その後下回る区間を示しています。"
 faq:
   - q: "MACD-VはMACDと何が違いますか？"

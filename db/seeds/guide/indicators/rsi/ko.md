@@ -6,7 +6,7 @@ title: RSI
 aliases: [상대강도지수, 알에스아이, Relative Strength Index, RSI 14, RSI 다이버전스]
 summary: 일정 기간 오른 폭과 내린 폭의 비율을 0~100으로 바꿔, 과열과 과매도를 가늠하는 모멘텀 지표예요.
 seoTitle: RSI 뜻과 보는 법, 70과 30의 의미
-seoDescription: RSI 14의 계산 원리, 70·30 기준과 50선 돌파, 다이버전스와 페일러 스윙 읽는 법, 추세장에서 속는 경우를 정리했어요.
+seoDescription: RSI 14의 계산 원리와 70·30 기준, 50선 돌파, 다이버전스와 페일러 스윙 읽는 법, 추세장에서 RSI에 속는 경우를 짚어 봐요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 가격이 급하게 오른 뒤 RSI가 70 위로 올라가고, 이후 꺾이는 모습을 보여 줘요.
 faq:
   - q: RSI가 70을 넘으면 팔아야 하나요?

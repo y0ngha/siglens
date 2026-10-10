@@ -2,8 +2,8 @@
 title: Three Inside / Three Outside
 aliases: [Three Inside Up, Three Inside Down, Three Outside Up, Three Outside Down]
 summary: "A three-bar reversal: a harami or an engulfing pattern with one more confirming bar."
-seoTitle: Three Inside Up and Three Outside Up Candles
-seoDescription: "How three inside and three outside patterns differ from harami and engulfing, why the confirming bar matters, and reversal rates in Bulkowski's data."
+seoTitle: "Three Inside and Outside Candles: How to Confirm"
+seoDescription: How three inside and three outside patterns differ from the harami and engulfing, and why the third, confirming candle matters.
 demoCaption: "Synthetic, illustrative bars made for this explanation. Three inside up: a big bearish bar, a small bullish bar inside it, then a bullish bar closing above the first bar's open."
 faq:
   - q: How is three inside different from a harami?

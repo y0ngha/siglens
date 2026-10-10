@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
-import { OPERATOR_PERSON_JSON_LD_ID } from '@/shared/lib/legal';
+import {
+    ABOUT_PATH,
+    OPERATOR_PERSON_JSON_LD_ID,
+    SITE_OPERATOR,
+} from '@/shared/lib/legal';
 import { ORGANIZATION_JSON_LD_ID, SITE_URL } from '@/shared/lib/seo';
 import {
     buildGuideArticleJsonLd,
@@ -32,7 +36,13 @@ describe('buildGuideArticleJsonLd', () => {
             description: 'RSI SEO 설명',
             inLanguage: 'ko',
             dateModified: '2026-10-09T15:00:00.000Z',
-            author: { '@id': OPERATOR_PERSON_JSON_LD_ID },
+            image: `${SITE_URL}/og-image.png`,
+            author: {
+                '@type': 'Person',
+                '@id': OPERATOR_PERSON_JSON_LD_ID,
+                name: SITE_OPERATOR.name,
+                url: `${SITE_URL}${ABOUT_PATH}`,
+            },
             publisher: { '@id': ORGANIZATION_JSON_LD_ID },
         });
         expect(ld).not.toHaveProperty('datePublished');

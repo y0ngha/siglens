@@ -3,8 +3,8 @@ title: Hurst Exponent
 aliases: [Hurst Exponent, Hurst H, R/S analysis, trending or mean-reverting indicator]
 summary: A single number between 0 and 1 that measures whether price moves tend to continue or tend to reverse.
 seoTitle: "Hurst Exponent: Trend vs Mean Reversion"
-seoDescription: How the Hurst exponent separates trending from mean-reverting markets around 0.5, how R/S is calculated, and limits such as small-sample bias.
-demoCaption: Synthetic, illustrative bars. A stretch that keeps running one way and a stretch that swings back up and down are marked separately.
+seoDescription: A Hurst exponent above 0.5 points to trending, below 0.5 to mean reversion. Learn how R/S analysis works and its limits, such as small-sample bias.
+demoCaption: Synthetic, illustrative bars. Shows the Hurst exponent splitting above and below the 0.5 line in a trending stretch and a mean-reverting stretch. It uses the last 100 bars, so the value lags for a while after the regime changes.
 faq:
   - q: What does a Hurst exponent above 0.5 mean?
     a: Price tends to keep going in the direction it has moved, which means there is a trend. Below 0.5 it tends to revert to the mean, and near 0.5 it is close to random.

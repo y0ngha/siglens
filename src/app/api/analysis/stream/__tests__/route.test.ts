@@ -4310,7 +4310,7 @@ describe('POST /api/analysis/stream', () => {
     });
     describe('비회원 하루 무료 전체 공개 미터', () => {
         const AFTER_START = new Date('2026-10-20T03:00:00+09:00');
-        const BEFORE_START = new Date('2026-10-17T23:59:59+09:00');
+        const BEFORE_START = new Date('2026-10-10T23:59:59+09:00');
         const MINTED_ID = '11111111-1111-4111-8111-111111111111';
         const mockRelease = vi.fn().mockResolvedValue(undefined);
 
@@ -4475,7 +4475,7 @@ describe('POST /api/analysis/stream', () => {
             expect(resultOf(events)).not.toHaveProperty('meter');
         });
 
-        it('시행일(KST 2026-10-18) 전에는 미터를 부르지 않는다', async () => {
+        it('시행일(KST 2026-10-11) 전에는 미터를 부르지 않는다', async () => {
             vi.setSystemTime(BEFORE_START);
 
             const events = await collectSseEvents(await POST(makeRequest()));
@@ -4485,7 +4485,7 @@ describe('POST /api/analysis/stream', () => {
         });
 
         it('시행일 정각부터 미터를 부른다', async () => {
-            vi.setSystemTime(new Date('2026-10-18T00:00:00+09:00'));
+            vi.setSystemTime(new Date('2026-10-11T00:00:00+09:00'));
             mockDecideMeteredReveal.mockResolvedValue({ state: 'exhausted' });
 
             await collectSseEvents(await POST(makeRequest()));

@@ -7,6 +7,9 @@ import { HEADING_SUBSECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 
+/** 카드에 싣는 다른 이름의 최대 개수 — 전체 목록(최대 11개)은 항목 페이지가 보여 준다. */
+export const GUIDE_CARD_ALIAS_LIMIT = 3;
+
 interface GuideCardProps {
     readonly entry: GuideEntrySummary;
     /** 카드 위쪽 분류 라벨. 분류가 이미 맥락인 목록에서는 넘기지 않는다. */
@@ -17,7 +20,7 @@ interface GuideCardProps {
  * 가이드 항목 카드 — 카드 전체가 항목 링크다. 제목은 `h3`이고, 둘러싼 목록이 `h2`를 가진다.
  *
  * 90개가 한 화면에 깔리므로 prefetch를 끈다(뷰포트 진입마다 RSC를 90번 예약하지 않는다).
- * 다른 이름은 한 줄로 자르고 요약은 세 줄에서 자른다 — 카드 높이가 그리드 안에서 고르게 유지된다.
+ * 다른 이름은 앞의 3개만 한 줄로 싣고 요약은 세 줄에서 자른다 — 카드 높이가 그리드 안에서 고르게 유지된다.
  */
 export function GuideCard({ entry, categoryLabel }: GuideCardProps) {
     return (
@@ -47,7 +50,9 @@ export function GuideCard({ entry, categoryLabel }: GuideCardProps) {
                 </div>
                 {entry.aliases.length > 0 ? (
                     <p className="mt-1 line-clamp-1 text-xs text-secondary-400">
-                        {entry.aliases.join(' · ')}
+                        {entry.aliases
+                            .slice(0, GUIDE_CARD_ALIAS_LIMIT)
+                            .join(' · ')}
                     </p>
                 ) : null}
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-secondary-300">

@@ -2,8 +2,8 @@
 title: "MACD"
 aliases: [MACD, 指数平滑异同移动平均线, 平滑异同移动平均线, Moving Average Convergence Divergence, MACD柱状图]
 summary: "比较12日与26日EMA之差及其9日平均，用来观察趋势方向和动量变化。"
-seoTitle: "MACD怎么看，金叉死叉与柱状图"
-seoDescription: "整理MACD线与信号线交叉、柱状图、零轴穿越、背离的读法，默认参数12、26、9的含义，以及为什么在震荡行情中会频繁出现假信号。"
+seoTitle: MACD怎么看，信号线交叉与柱状图
+seoDescription: 如何解读MACD线与信号线交叉、柱状图、零轴突破和背离，以及为什么震荡行情中假信号多。
 demoCaption: "为说明而制作的虚构K线。标出了MACD线从下向上穿过信号线、柱状图随之变大的区间。"
 faq:
   - q: "MACD默认参数12、26、9是什么意思？"

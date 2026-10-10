@@ -3,7 +3,7 @@ title: "Squeeze Momentum"
 aliases: [Squeeze Momentum, Squeeze Momentum Indicator, TTM Squeeze, LazyBear Squeeze, Bollinger Keltner Squeeze]
 summary: "Shows when Bollinger Bands narrow inside the Keltner Channel (the squeeze) and which way momentum points when it releases."
 seoTitle: "Squeeze Momentum Indicator: Squeeze ON and OFF"
-seoDescription: "How Squeeze Momentum finds volatility compression with Bollinger Bands and the Keltner Channel: the calculation, what ON and OFF mean, and how to read the bars."
+seoDescription: How Squeeze Momentum finds volatility compression with Bollinger Bands and Keltner Channels, what ON and OFF mean, and how to read the momentum bars.
 demoCaption: "Synthetic, illustrative bars. A compression stretch where bars narrow, then a move up after release, with the momentum bars growing positive."
 faq:
   - q: "What do squeeze ON and OFF mean?"
