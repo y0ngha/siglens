@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.105.0](https://github.com/y0ngha/siglens/compare/v0.104.0...v0.105.0) (2026-10-10)
+
+### Bug Fixes
+
+* 가이드 감사 반영과 개인정보처리방침 v9를 v8로 병합 ([#1016](https://github.com/y0ngha/siglens/issues/1016)) ([e708eb3](https://github.com/y0ngha/siglens/commit/e708eb3f884d38d1db14c6dbaa06a5b306a973ad))
+* 브랜드 표기를 로케일별로 통일한다(시그렌즈/SIGLENS) ([#1017](https://github.com/y0ngha/siglens/issues/1017)) ([3727334](https://github.com/y0ngha/siglens/commit/3727334e5f1d0bc54de9042d7bed8b141198a0a0))
+
+### Features
+
+* 비회원 하루 첫 종목 전체 공개 미터와 개인정보처리방침 v9를 추가한다 ([#1014](https://github.com/y0ngha/siglens/issues/1014)) ([e5e4cd5](https://github.com/y0ngha/siglens/commit/e5e4cd5b591b2f3796d57876b89d21f5cdb62415))
+* 패턴·캔들·지표·전략 차트 가이드를 추가한다 ([#1015](https://github.com/y0ngha/siglens/issues/1015)) ([9c4029d](https://github.com/y0ngha/siglens/commit/9c4029dac2a611051742571b313b7a3199ede994))
+
 # [0.104.0](https://github.com/y0ngha/siglens/compare/v0.103.0...v0.104.0) (2026-10-09)
 
 ### Bug Fixes
