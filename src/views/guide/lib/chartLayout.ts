@@ -129,26 +129,29 @@ export function placeLabel(
     }
     const minX = bounds.left ?? -Infinity;
     const maxX = bounds.right ?? Infinity;
-    let best: LabelBox | null = null;
-    let bestCost = Infinity;
-    for (const dx of dxs) {
-        const x = start.x + dx;
-        if (x < minX || x + start.width > maxX) continue;
-        for (const y of ys) {
-            if (y < bounds.top || y + start.height > bounds.bottom) continue;
-            const delta = y - start.y;
-            const cost =
-                (delta * direction > 0
-                    ? Math.abs(delta)
-                    : Math.abs(delta) * AGAINST_DIRECTION_PENALTY) +
-                Math.abs(dx) * SHIFT_WEIGHT;
-            if (cost >= bestCost) continue;
-            const candidate = { ...start, x, y };
-            if (blockers.some(other => overlaps(candidate, other))) continue;
-            best = candidate;
-            bestCost = cost;
-        }
-    }
+    const cost = (candidate: LabelBox): number => {
+        const delta = candidate.y - start.y;
+        const vertical =
+            delta * direction > 0
+                ? Math.abs(delta)
+                : Math.abs(delta) * AGAINST_DIRECTION_PENALTY;
+        return vertical + Math.abs(candidate.x - start.x) * SHIFT_WEIGHT;
+    };
+    // 후보는 dx 바깥·y 안쪽 순서로 나열하고, 비용이 같으면 먼저 나온 후보를 유지한다.
+    const best = dxs
+        .flatMap(dx => [...ys].map(y => ({ ...start, x: start.x + dx, y })))
+        .filter(
+            c =>
+                c.x >= minX &&
+                c.x + c.width <= maxX &&
+                c.y >= bounds.top &&
+                c.y + c.height <= bounds.bottom &&
+                !blockers.some(other => overlaps(c, other))
+        )
+        .reduce<LabelBox | null>(
+            (acc, c) => (acc === null || cost(c) < cost(acc) ? c : acc),
+            null
+        );
     const result = best ?? start;
     placed.push(result);
     return result;

@@ -1023,7 +1023,9 @@ added to one locale makes the others fall back to raw text. Skill cards are keye
 
 Keys written by hand add an entry to `messages/_meta/hashes.json` (`sha1(ko value).slice(0, 12)`) in the same
 change. Without it the next `yarn i18n:translate` treats the translations as stale and overwrites them, and
-`i18n:verify` does not catch the omission.
+`i18n:verify` does not catch the omission. A changed or removed key needs its entry recomputed or deleted too.
+Before opening the PR, diff `messages/ko.json` against `origin/master` and check that every added, changed and
+removed key has a matching `hashes.json` change (script it: recompute `sha1(ko).slice(0, 12)` for each changed key).
 
 <a id="I18-4"></a>
 

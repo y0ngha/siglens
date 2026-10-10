@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import ko from '../../../../messages/ko.json';
 import en from '../../../../messages/en.json';
-import { GuideEntryLink, GuideHintLink } from '../GuideHintLink';
+import { GuideHintLink } from '../GuideHintLink';
 
 describe('GuideHintLink', () => {
     it('가이드 경로로 가는 링크이고 접근성 이름에 항목 이름과 보이는 문구가 실린다', () => {
@@ -49,15 +49,5 @@ describe('GuideHintLink', () => {
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/en/guide/indicators/rsi');
         expect(link).toHaveTextContent(en.widgets.analysis.GuideHintLink.label);
-    });
-});
-
-describe('GuideEntryLink', () => {
-    it('차트 가이드 허브로 가는 한 줄 링크다', () => {
-        renderWithIntl(<GuideEntryLink />);
-
-        const link = screen.getByRole('link');
-        expect(link).toHaveAttribute('href', '/guide');
-        expect(link).toHaveTextContent(ko.widgets.analysis.GuideHintLink.entry);
     });
 });

@@ -56,16 +56,22 @@ function paneDomain(pane: DemoPane): [number, number] {
     return [min - pad, max + pad];
 }
 
+/** 절댓값이 이 값 이상이면 눈금·레벨 라벨을 K/M 단위 축약형으로 줄여 좁은 축 영역에 맞춘다. */
+const COMPACT_ABS_THRESHOLD = 1e4;
+
+/** 레벨 라벨 소수 자릿수 상한 — 0.0001 단위 지표값까지 구분하고 그 아래 꼬리 자릿수는 버린다. */
+const LEVEL_MAX_DECIMALS = 4;
+
 const tickText = (value: number, step: number): string =>
-    step >= 1000 || Math.abs(value) >= 1e4
+    step >= 1000 || Math.abs(value) >= COMPACT_ABS_THRESHOLD
         ? formatCompact(value)
         : formatTick(value, step);
 
 /** 레벨 라벨은 눈금 간격이 아니라 자기 값을 그대로(최대 4자리) 보여 준다. */
 const levelText = (value: number): string =>
-    Math.abs(value) >= 1e4
+    Math.abs(value) >= COMPACT_ABS_THRESHOLD
         ? formatCompact(value)
-        : String(Number(value.toFixed(4)));
+        : String(Number(value.toFixed(LEVEL_MAX_DECIMALS)));
 
 /** 가격 차트 아래에 붙는 보조 패널 (RSI·MACD·거래량 등). x축은 가격 차트와 공유한다. */
 export function GuideDemoPane({
