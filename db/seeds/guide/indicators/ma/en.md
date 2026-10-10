@@ -9,7 +9,7 @@ faq:
   - q: "What are a golden cross and a death cross?"
     a: "A golden cross is when a short moving average crosses above a long one; a death cross is when it crosses below. Both confirm a trend change that has already started, so they are not a way to predict what comes next."
   - q: "Which moving average periods are most common?"
-    a: "The 5, 20, 60, 120 and 200-day averages. Siglens calculates all five, and also uses the 50-day line for golden cross and support/resistance detection."
+    a: "The 5, 20, 60, 120 and 200-day averages. SIGLENS calculates all five, and also uses the 50-day line for golden cross and support/resistance detection."
   - q: "Can I trust golden crosses on minute or hourly charts?"
     a: "They are fairly reliable on daily charts and above. On minute and hourly charts, false signals are common."
 ---
@@ -25,13 +25,13 @@ A simple moving average (SMA) adds the last N closes and divides by N. Slide the
 - Alignment: when the lines sit in the order 5 > 20 > 60 > 120 > 200 from the top and price is above them all, that is bullish alignment, the strongest uptrend structure. The reverse order with price below all of them is bearish alignment. When the lines converge, the trend is weakening.
 - Distance (how far price has moved from a moving average): when price is more than 10–15% away from the 200-day line, that is often treated as an extreme, with a growing pull back toward the average.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens uses moving averages to read the frame of the current trend, and separately flags crosses and moments when price nears a key line. The 5, 20, 60, 120 and 200-day lines always go into the analysis: it works out how many percent price sits above or below each line, whether the lines are in bullish alignment, bearish alignment or mixed, and how far apart neighboring lines are. From the order of the 5, 20 and 60-day lines it also determines which stage of the [moving average grand cycle](/guide/strategies/ma-cycle) (a way of splitting a trend into stages by the order of those three lines) the chart is in.
+SIGLENS uses moving averages to read the frame of the current trend, and separately flags crosses and moments when price nears a key line. The 5, 20, 60, 120 and 200-day lines always go into the analysis: it works out how many percent price sits above or below each line, whether the lines are in bullish alignment, bearish alignment or mixed, and how far apart neighboring lines are. From the order of the 5, 20 and 60-day lines it also determines which stage of the [moving average grand cycle](/guide/strategies/ma-cycle) (a way of splitting a trend into stages by the order of those three lines) the chart is in.
 
 Crosses and approaches to support or resistance count as signals. The 50-day line used here is calculated separately from the five lines above.
 
-- Golden cross and death cross: if the 20-day line crosses above the 50-day line within the last 3 bars, it is a golden cross; crossing below is a death cross. Siglens uses this 20/50-day cross, not the 20/60-day over 120/200-day crosses described above.
+- Golden cross and death cross: if the 20-day line crosses above the 50-day line within the last 3 bars, it is a golden cross; crossing below is a death cross. SIGLENS uses this 20/50-day cross, not the 20/60-day over 120/200-day crosses described above.
 - Support approach: the close has fallen to within 2% above the 50-day or 200-day line while being lower than 5 bars ago.
 - Resistance approach: the close has risen to within 2% below the 50-day or 200-day line while being higher than 5 bars ago.
 

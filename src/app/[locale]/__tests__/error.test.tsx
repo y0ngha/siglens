@@ -17,9 +17,6 @@ vi.mock('next/link', () => ({
         </a>
     ),
 }));
-vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
-}));
 
 import RootError from '@/app/[locale]/error';
 

@@ -1,5 +1,4 @@
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 
@@ -49,7 +48,7 @@ describe('NewsError', () => {
 
     it('홈으로 링크가 렌더된다', () => {
         render(<NewsError error={new Error('e')} reset={vi.fn()} />);
-        const homeLink = screen.getByRole('link', { name: /SIGLENS 홈으로/ });
+        const homeLink = screen.getByRole('link', { name: /시그렌즈 홈으로/ });
         expect(homeLink).toHaveAttribute('href', '/');
     });
 });

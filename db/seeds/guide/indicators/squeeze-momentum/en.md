@@ -29,9 +29,9 @@ When price stays in a narrow range for a long time, volatility is considered to 
 - If the squeeze turns OFF while momentum is positive and growing, it is seen as releasing upward; if negative and falling further, downward.
 - If the squeeze has released but momentum direction is already turning, it can be a false breakout, or the move may have run out of force early.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens flags the moment the momentum bar crosses the zero line and changes direction.
+SIGLENS flags the moment the momentum bar crosses the zero line and changes direction.
 
 - Bullish signal: momentum turns from negative to positive within the last 3 bars
 - Bearish signal: momentum turns from positive to negative within the last 3 bars
@@ -41,7 +41,7 @@ For confirmation it looks at the direction of the [MACD](/guide/indicators/macd)
 
 The Bollinger Bands and Keltner Channel inside this indicator use different settings from the Bollinger Bands and Keltner Channel articles in this guide.
 
-- Bollinger Bands: the length is the same 20, but the deviation multiplier is 1.5 instead of the standard 2.0. LazyBear's original code is written that way, and Siglens follows the original. So the bands are narrower than regular Bollinger Bands (20, 2.0), and squeezes show up more often.
+- Bollinger Bands: the length is the same 20, but the deviation multiplier is 1.5 instead of the standard 2.0. LazyBear's original code is written that way, and SIGLENS follows the original. So the bands are narrower than regular Bollinger Bands (20, 2.0), and squeezes show up more often.
 - Keltner Channel: the Keltner Channel article adds and subtracts 2 times the 10-day ATR around a 20-day EMA, but here it is 1.5 times the 20-bar average True Range around a 20-bar simple moving average.
 
 So it is better not to compare their values directly with a Bollinger Band or Keltner Channel shown separately on the chart.
@@ -49,7 +49,7 @@ So it is better not to compare their values directly with a Bollinger Band or Ke
 ## Watch out for
 
 - A long-running squeeze does not make the signal weaker. Some hold that a longer squeeze leads to a bigger move after release, but its length doesn't tell you the direction.
-- In quiet, choppy markets, ON and OFF can flip often without any big move. So Siglens also checks whether [ADX](/guide/indicators/adx), which measures trend strength, is above 20.
+- In quiet, choppy markets, ON and OFF can flip often without any big move. So SIGLENS also checks whether [ADX](/guide/indicators/adx), which measures trend strength, is above 20.
 - The momentum value is smoothed by regression, so it misses sharp intraday reversals.
 - On short timeframes it crosses the zero line often. Look for whether it holds for a bar or two before judging.
 - It suits daily and hourly charts. On minute charts, some traders shorten the length to 10–14.

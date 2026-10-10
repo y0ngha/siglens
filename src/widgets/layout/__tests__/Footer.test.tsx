@@ -43,7 +43,8 @@ import {
 } from '@/shared/config/assetClassNav';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
-import { GITHUB_URL, SITE_NAME, SITE_NAME_KO, X_URL } from '@/shared/lib/seo';
+import { GITHUB_URL, X_URL } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';
@@ -62,30 +63,27 @@ describe('Footer', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders the copyright with year', () => {
-        render(<Footer />);
-
-        expect(screen.getByText(/© 2026 SIGLENS/)).toBeInTheDocument();
-    });
-
     /**
-     * 한글 표기는 전 페이지 푸터에서 워드마크 옆에 보인다 — 화면에서 "시그렌즈"가
-     * 사이트 전역으로 나오는 유일한 자리다. 한글 독음이라 ko에서만 낸다.
+     * 저작권 줄의 브랜드는 로케일 표기다 — ko `시그렌즈`, 그 외 `SIGLENS`
+     * (`CONVENTIONS.md#I18-11`).
      */
-    it('ko 푸터는 워드마크 옆에 한글 표기를 보인다', () => {
+    it('ko 저작권 줄은 한글 브랜드(시그렌즈)다', () => {
         renderWithIntl(<Footer />, { locale: 'ko' });
 
         expect(
-            screen.getByText(new RegExp(`© 2026 SIGLENS · ${SITE_NAME_KO}`))
+            screen.getByText(new RegExp(`© 2026 ${SITE_NAME_KO}`))
         ).toBeInTheDocument();
+        expect(screen.queryByText(/© 2026 SIGLENS/)).toBeNull();
     });
 
     it.each(['en', 'ja', 'zh'] as const)(
-        '%s 푸터에는 한글 표기가 없다',
+        '%s 저작권 줄은 영문 브랜드이고 한글 표기가 없다',
         locale => {
             const { container } = renderWithIntl(<Footer />, { locale });
 
-            expect(screen.getByText(/© 2026 SIGLENS/)).toBeInTheDocument();
+            expect(
+                screen.getByText(new RegExp(`© 2026 ${SITE_NAME}`))
+            ).toBeInTheDocument();
             expect(container.textContent).not.toContain(SITE_NAME_KO);
         }
     );
@@ -224,7 +222,7 @@ describe('Footer', () => {
         const { container } = render(<Footer />);
 
         const copyright = Array.from(container.querySelectorAll('p')).find(el =>
-            el.textContent?.includes('SIGLENS')
+            el.textContent?.includes('©')
         );
         expect(copyright).toBeDefined();
         expect(copyright!.className).toContain('whitespace-nowrap');
@@ -288,7 +286,10 @@ describe('Footer', () => {
             'noreferrer',
         ]);
         expect(link).toHaveAccessibleName(
-            koMessage('widgets.layout.xAccountAria').replace('{v0}', SITE_NAME)
+            koMessage('widgets.layout.xAccountAria').replace(
+                '{v0}',
+                SITE_NAME_KO
+            )
         );
     });
 

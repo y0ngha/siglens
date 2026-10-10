@@ -21,7 +21,7 @@ import {
 export interface NotFoundOverride {
     readonly documentTitle: string;
     readonly headline: string;
-    /** 메인 호스트에서만 있다 — SiglensAI는 제목과 새 대화 링크뿐이다. */
+    /** 메인 호스트에서만 있다 — SIGLENS AI는 제목과 새 대화 링크뿐이다. */
     readonly body?: string;
     readonly homeLabel: string;
 }

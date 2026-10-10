@@ -1,4 +1,4 @@
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import Image from 'next/image';

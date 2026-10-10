@@ -1,7 +1,7 @@
 import { test as base, expect } from '@playwright/test';
 import { SESSION_STORAGE_NUDGE_SHOWN_KEY } from '@/shared/lib/storageKeys';
 
-// ai.localhost:4300 is the SiglensAI subtree host (`ai` project, agent-chat.spec.ts) —
+// ai.localhost:4300 is the SIGLENS AI subtree host (`ai` project, agent-chat.spec.ts) —
 // same app/server, just routed by `src/proxy.ts` on Host, so it belongs in the allowlist
 // alongside the main host.
 const ALLOWED_HOSTS = new Set([

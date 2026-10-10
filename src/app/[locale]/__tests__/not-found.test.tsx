@@ -1,6 +1,3 @@
-vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
-}));
 vi.mock('@/shared/lib/brandName', () => ({
     brandName: () => 'SIGLENS',
 }));

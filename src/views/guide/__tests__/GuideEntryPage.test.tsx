@@ -102,7 +102,7 @@ describe('GuideEntryPage', () => {
             .map(li => li.textContent)
             .filter(text => text !== '/');
         expect(items).toEqual([
-            'SIGLENS',
+            '시그렌즈',
             g.hubTitle,
             g.categoryIndicators,
             'RSI',

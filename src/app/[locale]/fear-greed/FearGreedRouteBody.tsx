@@ -18,7 +18,6 @@ import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import {
     buildBreadcrumbJsonLd,
-    SITE_NAME,
     SITE_URL,
     buildWebPageJsonLd,
 } from '@/shared/lib/seo';
@@ -26,6 +25,7 @@ import { type FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 import type { FearGreedSymbolLink } from './fearGreedRoute';
+import { brandTitle } from '@/shared/lib/brandName';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
@@ -90,7 +90,7 @@ export function FearGreedRouteBody({
     const webPageJsonLd = {
         ...buildWebPageJsonLd({
             url,
-            name: `${copy.title} | ${SITE_NAME}`,
+            name: brandTitle(copy.title, locale),
             description: copy.description,
             locale,
         }),

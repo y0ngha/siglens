@@ -8,9 +8,9 @@ import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentF
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAuthSignupAction';
 import { OAUTH_ERROR_REDIRECT } from '@/entities/auth/lib/errorMessages';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { brandName } from '@/shared/lib/brandName';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
 /**
@@ -31,7 +31,7 @@ export async function generateMetadata({
     });
     return {
         title: tSeo('oauthConsentTitle'),
-        description: tSeo('oauthConsentFullTitle', { v0: SITE_NAME }),
+        description: tSeo('oauthConsentFullTitle', { v0: brandName(locale) }),
         alternates: {
             canonical: localeCanonical(locale, '/signup/oauth/consent'),
         },

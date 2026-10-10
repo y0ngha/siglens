@@ -35,9 +35,9 @@ It measures only the size of the swings, so it has no direction. It is mainly us
 - A high value means everyday swings are large, so a tight stop is easily hit by meaningless noise. A low value is taken only as a hint that there is little need to widen the stop much.
 - A rising value means price has room to go further when another signal appears, and a falling value means little room.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens flags Yang-Zhang volatility when it has grown or shrunk well beyond its usual level. It does not judge whether price will rise or fall, and uses the value only as a reference for gauging stop distance.
+SIGLENS flags Yang-Zhang volatility when it has grown or shrunk well beyond its usual level. It does not judge whether price will rise or fall, and uses the value only as a reference for gauging stop distance.
 
 - Range: the last 20 bars. Each bar needs the previous close, so the first 20 bars of the chart have no value.
 - High-volatility phase: the latest value is 1.5 times the last-20-bar average or more.

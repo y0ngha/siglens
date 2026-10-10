@@ -51,7 +51,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
     }),
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 

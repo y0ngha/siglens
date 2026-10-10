@@ -3,7 +3,7 @@ title: Piercing Line / Dark Cloud Cover
 aliases: [Piercing Line, Dark Cloud Cover, Piercing Pattern]
 summary: A two-bar reversal where the second bar goes deeper than half of the first body but doesn't cover all of it.
 seoTitle: Piercing Line and Dark Cloud Cover Candlesticks
-seoDescription: How the piercing line and dark cloud cover differ from engulfing patterns and when they carry more weight, along with Siglens' detection rules.
+seoDescription: How the piercing line and dark cloud cover differ from engulfing patterns and when they carry more weight, along with SIGLENS' detection rules.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bullish bar closing above the midpoint of a long bearish bar (piercing line), and a bearish bar dropping below the midpoint of a long bullish bar (dark cloud cover).
 faq:
   - q: How is a piercing line different from a bullish engulfing?
@@ -23,13 +23,13 @@ The second bar retraced more than half of the prior bar's move. The piercing lin
 
 Thomas Bulkowski tallied what actually happened after patterns across decades of US stock charts and published the results in books. In his data the piercing line actually turned up 64% of the time and the dark cloud cover turned down 60% of the time. That is only a little better than chance. Still, once a direction appeared, price tended to carry on in it. In his performance ranking, which ranks 103 candle patterns by how far price went afterward, the piercing line placed 13th and the dark cloud cover 22nd, both good results.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for a long bar followed by an opposite-color bar that cuts more than halfway into the prior body without covering all of it.
+SIGLENS looks for a long bar followed by an opposite-color bar that cuts more than halfway into the prior body without covering all of it.
 
 - The first body is at least 60% of its own high-to-low range.
-- The second bar opens beyond the prior close (below it for a piercing line, above it for a dark cloud cover). Textbooks want a gap beyond the prior bar's low (piercing line) or high (dark cloud cover), but Siglens accepts this wider range.
-- The second close passes the midpoint of the first body but does not reach the first bar's open. If it closes fully beyond the first body, Siglens treats it as an [engulfing](/guide/candlesticks/bullish-engulfing), not this pattern.
+- The second bar opens beyond the prior close (below it for a piercing line, above it for a dark cloud cover). Textbooks want a gap beyond the prior bar's low (piercing line) or high (dark cloud cover), but SIGLENS accepts this wider range.
+- The second close passes the midpoint of the first body but does not reach the first bar's open. If it closes fully beyond the first body, SIGLENS treats it as an [engulfing](/guide/candlesticks/bullish-engulfing), not this pattern.
 - The preceding trend is not checked.
 
 It carries more weight when:

@@ -24,7 +24,7 @@ new variance = λ × yesterday's variance + (1 − λ) × today's return squared
 
 For daily data λ (lambda) is 0.94, and with that it takes about 11 days for one day's return to lose half its influence. For monthly data, 0.97 is used. It uses only past returns, so no future information leaks in. The square root of the variance is the volatility.
 
-The value Siglens shows is per bar. On a daily chart it expresses, as a decimal, roughly how many percent price typically moves in a day, so it comes out much smaller than the annualized volatility you see in the news or broker reports.
+The value SIGLENS shows is per bar. On a daily chart it expresses, as a decimal, roughly how many percent price typically moves in a day, so it comes out much smaller than the annualized volatility you see in the news or broker reports.
 
 Compared with a simple average of squared returns, it reacts faster to a big shock, and the shock's effect fades gradually. A simple average has the problem that the estimate suddenly drops on the day a big return leaves the calculation window.
 
@@ -38,9 +38,9 @@ EWMA volatility is a measurement with no direction. A high value doesn't mean a 
 - Whether it is rising or falling tells you whether the market is calm now or has just taken a shock.
 - When another directional signal appears, it shows how volatile the backdrop to that signal is.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens flags EWMA volatility when it has risen well above or fallen well below its usual level. It doesn't consider whether price is rising or falling.
+SIGLENS flags EWMA volatility when it has risen well above or fallen well below its usual level. It doesn't consider whether price is rising or falling.
 
 - Calculation: lambda of 0.94.
 - Sharply risen: the latest value is 1.5 times the recent 20-bar average or more.

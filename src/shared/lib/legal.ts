@@ -1,4 +1,5 @@
-import { SITE_NAME, SITE_URL, type SeoTranslator } from '@/shared/lib/seo';
+import { brandTitle } from '@/shared/lib/brandName';
+import { SITE_URL, type SeoTranslator } from '@/shared/lib/seo';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 
@@ -71,8 +72,8 @@ export const OPERATOR_PERSON_JSON_LD_ID = `${SITE_URL}${ABOUT_PATH}#person`;
 export function privacyTitle(t: SeoTranslator): string {
     return t('privacy.title');
 }
-export function privacyFullTitle(t: SeoTranslator): string {
-    return `${privacyTitle(t)} | ${SITE_NAME}`;
+export function privacyFullTitle(t: SeoTranslator, locale: Locale): string {
+    return brandTitle(privacyTitle(t), locale);
 }
 export function privacyDescription(t: SeoTranslator): string {
     return t('privacy.description');
@@ -81,8 +82,8 @@ export function privacyDescription(t: SeoTranslator): string {
 export function termsTitle(t: SeoTranslator): string {
     return t('terms.title');
 }
-export function termsFullTitle(t: SeoTranslator): string {
-    return `${termsTitle(t)} | ${SITE_NAME}`;
+export function termsFullTitle(t: SeoTranslator, locale: Locale): string {
+    return brandTitle(termsTitle(t), locale);
 }
 export function termsDescription(t: SeoTranslator): string {
     return t('terms.description');
@@ -98,7 +99,7 @@ export function aboutTitle(t: SeoTranslator): string {
     return t('about.title');
 }
 /**
- * `<title>`·OG 제목. 다른 법무 페이지처럼 `${title} | SIGLENS`가 아니다 — 소개
+ * `<title>`·OG 제목. 다른 법무 페이지처럼 `brandTitle(title, locale)`(`… | 시그렌즈`)가 아니다 — 소개
  * 페이지는 브랜드 검색과 "AI 주식 분석" 류 검색을 함께 받으므로 무엇을 하는
  * 서비스인지가 제목에 들어가고, 그 문구가 이미 브랜드(ko는 `시그렌즈(SIGLENS)`)로
  * 시작한다.
@@ -114,8 +115,8 @@ export function methodologyTitle(t: SeoTranslator): string {
     return t('methodology.title');
 }
 /**
- * `<title>`·OG 제목. `/about`과 같은 이유로 `| SIGLENS` 접미사를 붙이지 않는다 —
- * 카탈로그 문구가 이미 `SIGLENS`로 시작한다.
+ * `<title>`·OG 제목. `/about`과 같은 이유로 브랜드 접미사를 붙이지 않는다 —
+ * 카탈로그 문구가 이미 브랜드(ko `시그렌즈`)로 시작한다.
  */
 export function methodologyFullTitle(t: SeoTranslator): string {
     return t('methodology.metaTitle');

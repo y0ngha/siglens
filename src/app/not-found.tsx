@@ -12,7 +12,8 @@ import {
 import { NotFoundView } from '@/app/_components/NotFoundView';
 import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
 import { DEFAULT_LOCALE, localePath } from '@/shared/i18n/locales';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
+import { brandName } from '@/shared/lib/brandName';
 import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
 import './globals.css';
 
@@ -29,7 +30,7 @@ export function generateMetadata(): Metadata {
 
 /**
  * 루트 404 — 어떤 라우트에도 매칭되지 않은 URL(`/foo/bar`, `/en/foo/bar`,
- * 알 수 없는 `/lp/*`, SiglensAI 호스트의 없는 경로)이 닿는다.
+ * 알 수 없는 `/lp/*`, SIGLENS AI 호스트의 없는 경로)이 닿는다.
  *
  * ## 왜 필요한가
  *
@@ -80,7 +81,7 @@ export default async function RootNotFound() {
                         homeHref={localePath(DEFAULT_LOCALE, '/')}
                         documentTitle={documentTitleOf(
                             t('not-found.6cbd6d'),
-                            SITE_NAME
+                            brandName(DEFAULT_LOCALE)
                         )}
                         navLabel={tNav(NAV_LABEL_KEY)}
                         navLinks={NAV_VERTICALS.map(vertical => ({
@@ -92,7 +93,9 @@ export default async function RootNotFound() {
                         description={t('not-found.03ecab')
                             .replace(/\s+/gu, ' ')
                             .trim()}
-                        homeLabel={t('not-found.ba81f0', { v0: SITE_NAME })}
+                        homeLabel={t('not-found.ba81f0', {
+                            v0: brandName(DEFAULT_LOCALE),
+                        })}
                         shortcuts={[
                             {
                                 id: 'market',

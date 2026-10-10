@@ -7,7 +7,7 @@ seoDescription: What the upside gap two crows and downside gap two rabbits look 
 demoCaption: "Synthetic, illustrative bars made for this explanation. An upside gap two crows: two bearish bars in a row above a gap after a long bullish bar."
 faq:
   - q: Does a gap two crows mean a bearish reversal?
-    a: Textbooks read it that way, but in Bulkowski's data 60% continued upward and only 40% reversed down. So Siglens doesn't treat it as a confirmed reversal.
+    a: Textbooks read it that way, but in Bulkowski's data 60% continued upward and only 40% reversed down. So SIGLENS doesn't treat it as a confirmed reversal.
   - q: How reliable is the downside gap two rabbits?
     a: It isn't in Bulkowski's list, so there are no published statistics. Treat it as a weak clue.
 ---
@@ -21,9 +21,9 @@ faq:
 
 Price gapped up (a gap is a stretch where it doesn't overlap the prior bar), and then two bars in a row were pushed back, so it is read as a clue that rising strength is weakening. But the gap hasn't been filled yet, so calling it a reversal is premature.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks only bar shape, not the preceding trend. The upside gap two crows must meet all of the conditions below; the downside gap two rabbits is the mirror image.
+SIGLENS checks only bar shape, not the preceding trend. The upside gap two crows must meet all of the conditions below; the downside gap two rabbits is the mirror image.
 
 - The first bullish bar's body is at least 60% of its own high-to-low range.
 - The first bearish bar's body sits entirely above the first bullish body.
@@ -32,7 +32,7 @@ Siglens checks only bar shape, not the preceding trend. The upside gap two crows
 
 Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, found that the upside gap two crows went against the textbook: 60% were upward continuations and 40% reversed down. Its performance rank (a ranking by how far price went afterward) was 74th of 103. Near the yearly high (the upper third of the year's price range), upward continuation was especially common. The downside gap two rabbits isn't in Bulkowski's list, so no published rate exists.
 
-So Siglens doesn't call either one a reversal. For the two crows, it keeps in mind that the data showed the uptrend continuing more often. A bearish read waits for a close below the pattern's low, and a bullish read of the two rabbits waits for a close above the pattern's high. It matters more when it appears at a known support or resistance level.
+So SIGLENS doesn't call either one a reversal. For the two crows, it keeps in mind that the data showed the uptrend continuing more often. A bearish read waits for a close below the pattern's low, and a bullish read of the two rabbits waits for a close above the pattern's high. It matters more when it appears at a known support or resistance level.
 
 ## Watch out for
 

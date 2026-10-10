@@ -214,7 +214,7 @@ const macdDemo = windowed(185, c => {
     };
 });
 
-/** Siglens 골든크로스는 20일선이 50일선을 넘는 것이라 core가 내지 않는 50일 단순이동평균을 직접 계산한다. */
+/** SIGLENS 골든크로스는 20일선이 50일선을 넘는 것이라 core가 내지 않는 50일 단순이동평균을 직접 계산한다. */
 function sma(values: readonly number[], period: number): Num[] {
     return values.map((_, index) =>
         index < period - 1

@@ -8,7 +8,7 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const copy = {
-    title: '주식·코인 AI 챗봇 — 시세·차트·뉴스 물어보기 | SIGLENS AI',
+    title: '주식·코인 AI 챗봇 — 시세·차트·뉴스 물어보기 | 시그렌즈 AI',
     description: '설명',
     ogLabel: '라벨',
 };
@@ -21,7 +21,7 @@ describe('buildAiHomeMetadata', () => {
         expect(m.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/`);
         expect(m.openGraph).toMatchObject({
-            siteName: 'SIGLENS AI',
+            siteName: '시그렌즈 AI',
             url: `${AI_SITE_URL}/`,
             images: [{ url: `${AI_SITE_URL}/api/ai/og/ko.png` }],
         });
@@ -38,6 +38,15 @@ describe('buildAiHomeMetadata', () => {
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en`);
         // A one-locale cluster is not a cluster: no hreflang map.
         expect(m.alternates?.languages).toBeUndefined();
+    });
+
+    it('product name in og:site_name / applicationName follows the locale', () => {
+        expect(buildAiHomeMetadata('ko', copy).applicationName).toBe(
+            '시그렌즈 AI'
+        );
+        const en = buildAiHomeMetadata('en', copy);
+        expect(en.applicationName).toBe('SIGLENS AI');
+        expect(en.openGraph).toMatchObject({ siteName: 'SIGLENS AI' });
     });
 });
 
@@ -72,6 +81,9 @@ describe('buildAiHomeJsonLd', () => {
             name: 'SIGLENS',
             url: expect.stringMatching(/^https?:\/\//),
         });
+        // The JSON-LD name stays the mark; the Korean name rides in alternateName.
+        expect(ld.name).toBe('SIGLENS AI');
+        expect(ld.alternateName).toBe('시그렌즈 AI');
         expect(ld).not.toHaveProperty('releaseNotes');
         expect(ld.applicationCategory).toBe('FinanceApplication');
     });

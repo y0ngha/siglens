@@ -28,9 +28,9 @@ The Turtle traders bought when price broke the 20-day high and took a position b
 
 Channel width is also a measure of volatility. A widening channel means expanding volatility and an active trend, and a narrowing one means contracting volatility and a breakout coming soon. A channel at its narrowest in several weeks is a sign that a big move is near. Price staying near the upper line means an uptrend, staying near the lower line means a downtrend, and moving back and forth between the two lines means a sideways market. The middle line is treated as a pullback target and as secondary support or resistance.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens watches whether price has reached the very top or bottom of the last 20 bars' range. The channel is calculated over 20 bars including the current bar.
+SIGLENS watches whether price has reached the very top or bottom of the last 20 bars' range. The channel is calculated over 20 bars including the current bar.
 
 - Reached: the current price has touched the upper or lower line
 - Near: the current price is within 5% of the channel width of the upper or lower line

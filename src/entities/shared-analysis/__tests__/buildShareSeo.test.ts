@@ -95,9 +95,9 @@ describe('buildShareMetadata', () => {
             );
         });
 
-        it('openGraph.siteName is SITE_NAME', () => {
+        it('openGraph.siteName is the locale brand (ko 시그렌즈)', () => {
             expect((meta.openGraph as { siteName?: string })?.siteName).toBe(
-                'SIGLENS'
+                '시그렌즈'
             );
         });
     });

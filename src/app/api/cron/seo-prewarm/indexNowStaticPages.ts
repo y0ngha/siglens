@@ -14,7 +14,12 @@ const TRACKED_STATIC_URLS: ReadonlySet<string> = new Set(
     STATIC_PAGE_PATHS.map(path => `${SITE_URL}${path}`)
 );
 
-/** 감시 대상인가 — 고정 정적 페이지이거나 가이드 항목(DB 발)이다. */
+/**
+ * 감시 대상인가 — 고정 정적 페이지이거나 가이드 항목(DB 발)이다.
+ *
+ * `url`은 sitemap 엔트리의 정규 URL이라 쿼리·해시가 없다. 쿼리·해시가 붙은 URL은 정적
+ * 페이지 집합과 정확 일치하지 않고 `isGuideEntryPath`도 거부하므로 감시 대상이 아니다.
+ */
 function isTrackedUrl(url: string): boolean {
     if (TRACKED_STATIC_URLS.has(url)) return true;
     if (!url.startsWith(SITE_URL)) return false;

@@ -9,7 +9,7 @@ faq:
   - q: Why is a rising wedge a bearish signal?
     a: Price keeps rising, but highs rise by less than lows do, so upward momentum fades as price climbs. That is why a break of the lower line is read as a reversal down.
   - q: How do I tell a rising wedge from an ascending channel?
-    a: In a rising wedge the two lines converge; in an ascending channel they run nearly parallel. Siglens treats a width ratio of 0.85 to 1.15 as a channel.
+    a: In a rising wedge the two lines converge; in an ascending channel they run nearly parallel. SIGLENS treats a width ratio of 0.85 to 1.15 as a channel.
   - q: How reliable is a rising wedge?
     a: Not very. In Thomas Bulkowski's tabulation, only 32% of rising wedges that broke downward reached their target.
 ---
@@ -30,9 +30,9 @@ The two wedges are mirror images in shape, but their records differ a lot. In Bu
 
 So a rising wedge is better read as a warning that the advance is tiring than as a sure sell signal. A rising wedge that forms during strong news, such as an earnings season or a sector rotation (money moving from one industry group to another), can break upward instead. A bearish divergence (price and indicator moving apart), where price keeps rising inside the wedge while the peaks of [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) get lower, adds weight to the downside. A break within the first two-thirds of the distance from the wedge's start to its apex is considered to carry more force.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines rise and gradually converge, it treats the shape as a rising wedge.
+SIGLENS connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines rise and gradually converge, it treats the shape as a rising wedge.
 
 - Both lines must rise at least 1.5 times ATR over the pattern.
 - Swings must touch each line at least 3 times. A swing within 0.35 times ATR of a line counts as a touch.
@@ -43,7 +43,7 @@ Siglens connects clearly turning highs and lows (swings: turning points where pr
 
 Following the textbook, the direction is set downward for the calculation. The measured target is the lower line minus the starting width (the pattern's height), and the conservative target subtracts half the height. The invalidation level, the price at which the pattern is considered broken, is the last swing high that touched the upper line. A close above it means the bearish pattern has failed.
 
-If the close breaks below the lower line by more than 0.25 times ATR and the last close then returns inside the wedge, Siglens marks it as a "failed breakout".
+If the close breaks below the lower line by more than 0.25 times ATR and the last close then returns inside the wedge, SIGLENS marks it as a "failed breakout".
 
 ## Watch out for
 

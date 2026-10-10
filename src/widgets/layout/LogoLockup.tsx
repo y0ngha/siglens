@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { cn } from '@/shared/lib/cn';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { AiNavLink } from './AiNavLink';
 

@@ -11,6 +11,7 @@ import {
     TERMS_PATH,
 } from '@/shared/lib/legal';
 import { GITHUB_URL, SITE_HOST, type FaqItem } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
@@ -105,9 +106,11 @@ interface PainRowProps {
     readonly was: string;
     readonly now: string;
     readonly wasLabel: string;
+    /** 오른쪽 칸 머리 — 로케일 브랜드(ko `시그렌즈`). */
+    readonly nowLabel: string;
 }
 
-function PainRow({ was, now, wasLabel }: PainRowProps) {
+function PainRow({ was, now, wasLabel, nowLabel }: PainRowProps) {
     return (
         <li
             className={cn(
@@ -126,7 +129,7 @@ function PainRow({ was, now, wasLabel }: PainRowProps) {
                     className="text-xs font-semibold text-secondary-100"
                     translate="no"
                 >
-                    SIGLENS
+                    {nowLabel}
                 </p>
                 <p className="mt-1 text-[15px] leading-6 text-secondary-100">
                     {now}
@@ -492,6 +495,7 @@ export async function AboutPage({
                                 was={was}
                                 now={now}
                                 wasLabel={t('pain.wasLabel')}
+                                nowLabel={brandName(locale)}
                             />
                         ))}
                     </ul>

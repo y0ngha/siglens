@@ -29,15 +29,15 @@ Gerald Appel created it in the late 1970s. It uses the difference between a shor
 - Zero line: when the MACD line crosses above 0, the short EMA has moved above the long EMA, which is read as a sign of a medium-term trend change.
 - Divergence (price and the indicator moving in different directions): if price makes higher highs while MACD makes lower highs, momentum is weakening; if price makes lower lows while MACD makes higher lows, selling pressure is easing. Along with [RSI](/guide/indicators/rsi), it is regarded as a major reversal signal.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for the moment the MACD line has just crossed the signal line, and for the shrinking histogram bars that come before it. It calculates with the 12, 26, 9 settings and flags two situations, each in a bullish and a bearish direction.
+SIGLENS looks for the moment the MACD line has just crossed the signal line, and for the shrinking histogram bars that come before it. It calculates with the 12, 26, 9 settings and flags two situations, each in a bullish and a bearish direction.
 
 - Golden cross and death cross: the MACD line crossed the signal line from below or from above within the last 3 bars.
 - Histogram convergence (bullish): the last 5 histogram bars are all negative and get shorter bar after bar, read as selling pressure fading.
 - Histogram convergence (bearish): the last 5 histogram bars are all positive and get shorter bar after bar, read as buying pressure fading. Convergence is an early warning that comes before a cross appears.
 
-When reading a cross, Siglens also weighs the market's character with other indicators.
+When reading a cross, SIGLENS also weighs the market's character with other indicators.
 
 - If [ADX](/guide/indicators/adx), which measures trend strength, is above 25, the cross is trusted more; below 20, less.
 - With price above the 20-bar or 60-bar EMA, bullish signals count for more; below it, bearish signals do.

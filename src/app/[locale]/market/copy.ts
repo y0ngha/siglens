@@ -11,7 +11,7 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
  */
 export interface MarketCopy {
     readonly path: string;
-    /** Root layout이 `| SIGLENS`를 붙이므로 브랜드명을 넣지 않는다. */
+    /** Root layout이 브랜드 접미사(ko `| 시그렌즈`, 그 외 `| SIGLENS`)를 붙이므로 브랜드명을 넣지 않는다. */
     readonly title: string;
     readonly description: string;
     readonly keywords: readonly string[];

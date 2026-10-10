@@ -210,7 +210,7 @@ describe('/guide/[category]', () => {
         const crumbs = nodes.find(n => n['@type'] === 'BreadcrumbList')
             ?.itemListElement as { name: string }[];
         expect(crumbs.map(c => c.name)).toEqual([
-            'SIGLENS',
+            '시그렌즈',
             ko.views.guide.hubTitle,
             ko.views.guide.categoryIndicators,
         ]);
@@ -275,7 +275,7 @@ describe('/guide/[category]/[slug]', () => {
 
     it('소셜 카드 제목에는 브랜드를 붙인다', async () => {
         const metadata = await entryMetadata(entryParams('indicators', 'rsi'));
-        expect(metadata.openGraph?.title).toBe(`${RSI.seoTitle} | SIGLENS`);
+        expect(metadata.openGraph?.title).toBe(`${RSI.seoTitle} | 시그렌즈`);
     });
 
     describe('JSON-LD', () => {
@@ -337,7 +337,7 @@ describe('/guide/[category]/[slug]', () => {
             const crumbs = nodes.find(n => n['@type'] === 'BreadcrumbList')
                 ?.itemListElement as { name: string; item: string }[];
             expect(crumbs.map(c => c.name)).toEqual([
-                'SIGLENS',
+                '시그렌즈',
                 ko.views.guide.hubTitle,
                 ko.views.guide.categoryIndicators,
                 'RSI',

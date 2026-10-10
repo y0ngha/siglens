@@ -31,19 +31,19 @@ The pattern completes when the close leaves the triangle in the direction of the
 
 A pennant is often said to sit in the middle of the whole move: the pole is the first half, and after the pennant price travels about the pole's length once more. But in the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, the pennant came at the midpoint only about 30% of the time. Expecting another pole-length move after a pennant was more often wrong than right.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens takes two clearly turned highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the start and end of the pole. If the two lines of the pause that follows converge, it is a pennant; if they run parallel, it is a flag. The conditions:
+SIGLENS takes two clearly turned highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the start and end of the pole. If the two lines of the pause that follows converge, it is a pennant; if they run parallel, it is a flag. The conditions:
 
 - Pole: a move of at least 3 times ATR within 20 bars, and also more than a set share of price (3% on daily bars).
 - Pause: 5 to 20 bars after the pole's end. It must not retrace more than half the pole, and no bar may go beyond the pole's end by more than 0.5 times ATR.
 - Two lines: one through the pause's minor highs, one through its minor lows. Each line needs at least 2 touches that are 2 or more bars apart, and the starting width must not exceed half the pole's length.
 - Narrowing: from the first touch to the last, the width must shrink to 0.7 times its start or less. If the upper line rises by 1.5 times ATR or more, or the lower line falls by 1.5 times ATR or more, it is not a pennant. If the two lines run parallel, it is a [bull flag](/guide/chart-patterns/bull-flag) or [bear flag](/guide/chart-patterns/bear-flag).
-- If the pause has already ended, the very next bar must be outside the lines. If price stays inside, Siglens treats it as a sideways range.
+- If the pause has already ended, the very next bar must be outside the lines. If price stays inside, SIGLENS treats it as a sideways range.
 
 Direction follows the pole. The measured target is the pole's length projected from the line on the breakout side, and the conservative target is half of that. The target is the price reached if the move repeats the pole's length; it is a reference drawn from past cases, not a promise that price will get there. The invalidation level is the price at which the pattern is considered broken: the lowest low of the pause (the highest high for a bearish pennant).
 
-If the close moves beyond the breakout line by more than 0.25 times ATR and the last close then returns inside, Siglens marks it as a "failed breakout". If two lines converge with no pole, it is a [symmetrical triangle](/guide/chart-patterns/symmetrical-triangle).
+If the close moves beyond the breakout line by more than 0.25 times ATR and the last close then returns inside, SIGLENS marks it as a "failed breakout". If two lines converge with no pole, it is a [symmetrical triangle](/guide/chart-patterns/symmetrical-triangle).
 
 ## Watch out for
 

@@ -3,7 +3,7 @@ title: Abandoned Baby / Tri-Star
 aliases: [Abandoned Baby, Tri-Star, Bullish Abandoned Baby, Bearish Abandoned Baby, Three-Star Doji]
 summary: "A rare three-bar reversal with a doji gapped clear of both neighbors, plus the tri-star of three dojis."
 seoTitle: Abandoned Baby and Tri-Star Candlestick Patterns
-seoDescription: What the abandoned baby and tri-star look like, why they are rare, and how far you can trust them as reversal signals, with Siglens' detection rules.
+seoDescription: What the abandoned baby and tri-star look like, why they are rare, and how far you can trust them as reversal signals, with SIGLENS' detection rules.
 demoCaption: Synthetic, illustrative bars made for this explanation. A long bearish bar, a doji that gaps down with no shadow overlap, then a bullish bar that gaps back up.
 faq:
   - q: Why is it called an abandoned baby?
@@ -25,9 +25,9 @@ A gap is a stretch where the price ranges of two neighboring bars do not overlap
 
 A doji means buyers and sellers were evenly matched. When gaps cut it off from the bars on both sides, direction changed abruptly. The conditions are stricter than for a [morning or evening star](/guide/candlesticks/morning-evening-star), so it appears rarely.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks only bar shape and gaps, not the preceding trend. Below, body ratios are measured against each bar's own high-to-low range.
+SIGLENS checks only bar shape and gaps, not the preceding trend. Below, body ratios are measured against each bar's own high-to-low range.
 
 - Abandoned baby, first bar: a long bar whose body is at least 60% of its own high-to-low range. Bearish for the bullish version, bullish for the bearish version.
 - Abandoned baby, middle bar: a doji whose body is at most 10% of its own high-to-low range. In the bullish version, the doji's high is below the first bar's low.
@@ -43,7 +43,7 @@ Thomas Bulkowski, who counted what price actually did after each pattern across 
 - Bullish tri-star: 60%.
 - Bearish tri-star: 52%, close to a coin flip.
 
-All four are rare, so the figures rest on small samples. Siglens reads the abandoned baby as the most reliable of the four and the tri-star as the weaker one. An abandoned baby matters more when the two outer bars are large, the gaps around the doji are clean, and it forms at support or resistance.
+All four are rare, so the figures rest on small samples. SIGLENS reads the abandoned baby as the most reliable of the four and the tri-star as the weaker one. An abandoned baby matters more when the two outer bars are large, the gaps around the doji are clean, and it forms at support or resistance.
 
 ## Watch out for
 

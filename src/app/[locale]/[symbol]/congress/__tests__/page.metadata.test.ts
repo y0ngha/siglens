@@ -64,7 +64,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL/congress',
         keywords: ['AAPL', 'AAPL 의회 거래'],
     }),
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({
@@ -211,7 +210,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.openGraph?.siteName).toBe('SIGLENS');
+        expect(metadata.openGraph?.siteName).toBe('시그렌즈');
     });
 });
 

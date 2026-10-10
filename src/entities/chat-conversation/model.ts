@@ -19,7 +19,7 @@ export const CONVERSATION_LIST_LIMIT = 300;
 type ChatMessageRole = 'user' | 'assistant' | 'tool';
 type ChatMessageStatus = 'complete' | 'aborted' | 'error' | 'superseded';
 
-/** A persisted SiglensAI conversation row (spec §6-1). */
+/** A persisted SIGLENS AI conversation row (spec §6-1). */
 export interface ChatConversationRecord {
     id: string;
     userId: string;

@@ -24,9 +24,9 @@ Even after nearly doubling, there is little profit-taking and price stays high. 
 
 In the counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, cases that failed to move far enough after the breakout were rare. Yet its performance rank (a ranking by how far price went afterward) was 30th of 39 bullish patterns. That means the rise after the breakout was often small relative to the pole. The 82% rate of reaching the target is also based on a target of half the pole height, not the full height. Tighter flags, and flags with shrinking volume, performed better.
 
-## How Siglens finds it
+## How SIGLENS finds it
 
-Siglens looks for a near-doubling within about two months followed by a shallow pause near the top. The conditions are so extreme that it shows up almost only on daily charts. If the same pause also meets the [bull flag](/guide/chart-patterns/bull-flag) or [pennant](/guide/chart-patterns/pennant) conditions, only the high tight flag is shown.
+SIGLENS looks for a near-doubling within about two months followed by a shallow pause near the top. The conditions are so extreme that it shows up almost only on daily charts. If the same pause also meets the [bull flag](/guide/chart-patterns/bull-flag) or [pennant](/guide/chart-patterns/pennant) conditions, only the high tight flag is shown.
 
 - Pole: within 40 bars, price rises at least 90% from the base (lowest low) to the top (highest high).
 - Pole top: the highest high of the last 31 bars, with no higher bar earlier in the pole either. This keeps a lower high inside a longer correction from being mistaken for the top.

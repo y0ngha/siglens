@@ -34,9 +34,9 @@ Ichimoku Kinko Hyo (一目均衡表) means "equilibrium chart at a glance." It w
 - Lagging span: above the price of 26 bars ago confirms the rise, and below confirms the fall.
 - Cloud shape: a cloud with Leading Span 1 on top is called a bullish cloud, and the balance ahead is seen as leaning up. A cloud with Leading Span 2 on top is a bearish cloud, leaning down.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens signals the moment price breaks up through the cloud or drops out of it. It uses the 9, 26 and 52 periods and the 26-bar shift as they are.
+SIGLENS signals the moment price breaks up through the cloud or drops out of it. It uses the 9, 26 and 52 periods and the 26-bar shift as they are.
 
 - Cloud breakout: the previous bar closed at or below the top edge of the cloud, and this bar closes above the top edge.
 - Cloud exit: the previous bar closed at or above the bottom edge of the cloud, and this bar closes below the bottom edge.

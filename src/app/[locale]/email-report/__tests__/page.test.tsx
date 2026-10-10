@@ -15,7 +15,6 @@ vi.mock('@/app/[locale]/email-report/_lib/loadReportPreview', () => ({
     loadReportPreview: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({

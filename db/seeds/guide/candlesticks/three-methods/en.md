@@ -25,16 +25,16 @@ The trend rested for a moment and then went back the way it was going. Because t
 
 Thomas Bulkowski tallied what actually happened after patterns across decades of US stock charts and published the results in books. In his data the advance continued after the rising three methods 74% of the time, and the decline continued after the falling three methods 71% of the time. The direction held well, but the moves afterward were smaller than for other candles. So in his performance ranking, which ranks 103 candle patterns by how far price went afterward, they placed low, at 94th and 89th. Both are also rare.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for five bars: two long bars with three small bars resting inside the first bar's range between them.
+SIGLENS looks for five bars: two long bars with three small bars resting inside the first bar's range between them.
 
 - The first and fifth bars are long, with bodies at least 60% of their own high-to-low range.
 - The three middle bars have shorter bodies, and both their highs and lows sit inside the first bar's range.
 - The fifth close goes beyond the first bar's close.
 - The preceding trend and the color of the middle bars are not considered. Bulkowski's definition requires the middle bars to drift against the trend.
 
-Siglens reads this pattern as the rest ending and the earlier move starting again, and doesn't expect a large move afterward. It carries more weight when:
+SIGLENS reads this pattern as the rest ending and the earlier move starting again, and doesn't expect a large move afterward. It carries more weight when:
 
 - A clear trend ran in the pattern's direction
 - The middle bars drifted against the trend on low volume

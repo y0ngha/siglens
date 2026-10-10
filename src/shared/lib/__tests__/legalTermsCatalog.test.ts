@@ -2,7 +2,7 @@ import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';
 import jaMessages from '../../../../messages/ja.json';
 import zhMessages from '../../../../messages/zh.json';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 
 type LegalTable = Record<string, string>;
 const legalOf = (messages: unknown): LegalTable =>
@@ -29,10 +29,10 @@ describe('shared.lib.legal 약관 문구', () => {
     });
 
     it('termsIntro: 이용약관 제1조(DB 시드 tos v2)와 같은 서비스 범위를 말한다', () => {
-        // 한때 "미국 주식 기술적 분석 웹 서비스"만 적어, 국내 주식·암호화폐·SiglensAI를
+        // 한때 "미국 주식 기술적 분석 웹 서비스"만 적어, 국내 주식·암호화폐·SIGLENS AI를
         // 쓰는 이용자에게 약관 첫 문장이 서비스 범위를 잘못 말했다.
         expect(ko.termsIntro).toContain(
-            '미국 주식·국내 주식·암호화폐 분석 웹 서비스 및 SiglensAI 대화 서비스(이하 "서비스")'
+            '미국 주식·국내 주식·암호화폐 분석 웹 서비스 및 시그렌즈 AI 대화 서비스(이하 "서비스")'
         );
         expect(ko.termsIntro).not.toContain('미국 주식 기술적 분석');
     });
@@ -41,17 +41,17 @@ describe('shared.lib.legal 약관 문구', () => {
         [
             'en',
             enMessages,
-            /US stock[\s\S]*Korean stock[\s\S]*crypto[\s\S]*SiglensAI/,
+            /US stock[\s\S]*Korean stock[\s\S]*crypto[\s\S]*SIGLENS AI/,
         ],
         [
             'ja',
             jaMessages,
-            /米国株[\s\S]*韓国株[\s\S]*暗号資産[\s\S]*SiglensAI/,
+            /米国株[\s\S]*韓国株[\s\S]*暗号資産[\s\S]*SIGLENS AI/,
         ],
         [
             'zh',
             zhMessages,
-            /美国股票[\s\S]*韩国股票[\s\S]*加密货币[\s\S]*SiglensAI/,
+            /美国股票[\s\S]*韩国股票[\s\S]*加密货币[\s\S]*SIGLENS AI/,
         ],
     ] as const)(
         '%s: termsIntro도 같은 서비스 범위와 {v0}를 유지한다',

@@ -7,7 +7,7 @@ seoDescription: The saucer shape of a rounding bottom, how to confirm a break ab
 demoCaption: Synthetic, illustrative bars. Shows a gentle saucer-shaped bottom, both rims, and a bar moving above the higher of the two rims.
 faq:
   - q: How is a rounding bottom different from a cup and handle?
-    a: A rounding bottom has no handle, and it does not require a prior advance. Siglens allows a rim price difference of up to 5% for a rounding bottom, but a more generous 7% for a cup and handle.
+    a: A rounding bottom has no handle, and it does not require a prior advance. SIGLENS allows a rim price difference of up to 5% for a rounding bottom, but a more generous 7% for a cup and handle.
   - q: How long does a rounding bottom take to form?
     a: On daily bars it usually takes several months and sometimes years. It needs at least 30 bars, and one lasting more than 50 bars is more reliable.
   - q: When is a rounding bottom considered complete?
@@ -26,9 +26,9 @@ The pattern completes only when a close finishes above the higher of the two rim
 
 Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, placed the rounding bottom 7th of 39 bullish patterns in his performance ranking (a ranking by how far price went after the breakout). He also found that the trend leading into this pattern was upward 67% of the time. In other words, it does not only appear at the end of a decline; more often it shows up as a pause within an advance.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens takes two clearly turned highs (swing highs: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the saucer. It fits a U-shaped curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding bottom. The conditions:
+SIGLENS takes two clearly turned highs (swing highs: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the saucer. It fits a U-shaped curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding bottom. The conditions:
 
 - The two rims must be at least 30 bars apart.
 - The rim prices must be within 5% of each other and no more than 25% of the saucer's depth apart. A looser match would also catch W-shaped bottoms, so the limit stays at 5%.

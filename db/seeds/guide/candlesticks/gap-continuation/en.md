@@ -25,9 +25,9 @@ A bar goes against the trend but fails to reverse it. A gap is a stretch where t
 
 A rebound or pullback was blocked at the gap or the prior low. Textbooks read this as the trend pausing, not reversing.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks only bar shape, not the preceding trend. All four are classified as neutral, with no set direction.
+SIGLENS checks only bar shape, not the preceding trend. All four are classified as neutral, with no set direction.
 
 - Upside Tasuki gap: the second bullish bar's low must be above the first bullish bar's high, so there is a gap. The third, bearish bar opens below the second close, and its close must stay above the first bar's high, so the gap is not fully filled. The downside version is the mirror image.
 - On neck: the first bearish bar has a long body, at least 60% of its own high-to-low range. The next bullish bar opens below the first bar's low and closes within 0.2% of that low.
@@ -40,7 +40,7 @@ In the data of Thomas Bulkowski, who counted what price actually did after each 
 - On neck: 56% downward continuation.
 - In neck: 53% downward continuation, 47% reversal.
 
-On direction alone they are close to a coin flip, so Siglens doesn't read them as directional signals but as a resting phase. Direction is set by whether a later close rises above the pattern's high or falls below its low. Which way price goes is roughly even, but once it breaks out it tends to travel far, so the performance rank (a ranking by how far price went afterward) was high. The upside Tasuki gap ranked 5th of 103 candlesticks.
+On direction alone they are close to a coin flip, so SIGLENS doesn't read them as directional signals but as a resting phase. Direction is set by whether a later close rises above the pattern's high or falls below its low. Which way price goes is roughly even, but once it breaks out it tends to travel far, so the performance rank (a ranking by how far price went afterward) was high. The upside Tasuki gap ranked 5th of 103 candlesticks.
 
 ## Watch out for
 

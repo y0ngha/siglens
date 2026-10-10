@@ -5,7 +5,7 @@ interface BetaBadgeProps {
 }
 
 /**
- * "Beta" tag for SiglensAI — sits next to the `AI` wordmark in the header and
+ * "Beta" tag for SIGLENS AI — sits next to the `AI` wordmark in the header and
  * in the product's own eyebrow. Same mono/tracked grammar as the wordmark so it
  * reads as part of the lockup, not a sticker. The word is a product label, not
  * copy: it stays in Latin script in every locale and is excluded from page

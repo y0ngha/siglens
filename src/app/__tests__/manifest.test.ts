@@ -1,7 +1,3 @@
-vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
-}));
-
 import manifest from '@/app/manifest';
 import { buildManifest } from '@/shared/lib/buildManifest';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
@@ -14,8 +10,9 @@ describe('manifest (기본 로케일)', () => {
         const result = await manifest();
 
         expect(result).toBeDefined();
-        expect(result.name).toContain('SIGLENS');
-        expect(result.short_name).toBe('SIGLENS');
+        // 홈 화면 이름은 로케일 브랜드다 — 기본 로케일(ko)은 시그렌즈.
+        expect(result.name).toContain('시그렌즈');
+        expect(result.short_name).toBe('시그렌즈');
     });
 
     it('sets display to standalone', async () => {

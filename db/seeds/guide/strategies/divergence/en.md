@@ -3,7 +3,7 @@ title: Divergence
 aliases: [RSI divergence, bullish divergence, bearish divergence, hidden divergence, divergence trading]
 summary: "Price makes a new high or low but an indicator such as RSI does not follow: the trend may be losing strength."
 seoTitle: "RSI Divergence: Meaning and How to Read It"
-seoDescription: How bullish, bearish and hidden divergences differ, how to confirm them, how Siglens finds RSI divergences, and what to watch out for.
+seoDescription: How bullish, bearish and hidden divergences differ, how to confirm them, how SIGLENS finds RSI divergences, and what to watch out for.
 demoCaption: "Synthetic, illustrative candles. Shows a bullish divergence: within the last 20 bars, price makes a lower second low while RSI makes a higher second low at the same time."
 faq:
   - q: Does the trend reverse as soon as a divergence appears?
@@ -29,15 +29,15 @@ Price and an indicator move in different directions. The indicator is usually an
 
 ## What it tells you
 
-What follows is the traditional reading. Siglens uses divergence as a warning to read alongside other evidence.
+What follows is the traditional reading. SIGLENS uses divergence as a warning to read alongside other evidence.
 
 If price makes a new low but RSI does not fall as far as before, the selling force has weakened. If price makes a new high but RSI's high is lower, the buying force has weakened.
 
 A divergence is a warning, though, not a signal of when to buy or sell. In a strong trend, divergences can appear several times in a row while the trend carries on. That is why it is usually read together with confirmation: RSI leaving the 30 line (oversold) or the 70 line (overbought), price reacting at support or resistance, or a reversal candle. Divergences on larger timeframes such as daily or weekly charts are considered less noisy than those on short minute charts.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens automatically finds regular RSI divergences within the last 20 bars and draws them on the chart. It picks two noticeable lows (or highs) and compares the direction of price and RSI.
+SIGLENS automatically finds regular RSI divergences within the last 20 bars and draws them on the chart. It picks two noticeable lows (or highs) and compares the direction of price and RSI.
 
 - A low is a bar whose low is below the 2 bars on each side; a high is a bar whose high is above the 2 bars on each side.
 - Bullish: comparing the two most recent lows, price's low is lower and RSI's low is higher.

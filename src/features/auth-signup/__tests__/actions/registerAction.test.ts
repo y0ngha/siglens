@@ -586,7 +586,7 @@ describe('registerAction', () => {
         });
 
         /** 같은-호스트 `/api/auth/handoff`는 서버 fetch로 소진돼 ai 호스트로 가지 않는다. */
-        it('SiglensAI에서 가입했으면 ai 호스트 핸드오프 start URL로 리다이렉트한다', async () => {
+        it('SIGLENS AI에서 가입했으면 ai 호스트 핸드오프 start URL로 리다이렉트한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
             mockLogin.mockResolvedValue({
                 ok: true,

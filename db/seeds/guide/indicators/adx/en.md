@@ -32,9 +32,9 @@ ADX measures force with no direction. A strong uptrend and a strong downtrend bo
 
 Look at the slope as well as the level. A rising ADX means the trend is strengthening. An ADX coming down from a peak means the force is fading even if direction hasn't changed. Flattening near 20 to 25 can mean the market is turning sideways. If price keeps moving the same way but the second ADX peak is lower than the first, read it as an early warning that the trend is cooling.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens first uses ADX to tell whether the market is trending at all. Direction comes not from ADX but from which of +DI and -DI is on top.
+SIGLENS first uses ADX to tell whether the market is trending at all. Direction comes not from ADX but from which of +DI and -DI is on top.
 
 - ADX(14) at or above 25: read as a trending market.
 - ADX below 20: read as a weak-trend market.
@@ -44,7 +44,7 @@ Siglens first uses ADX to tell whether the market is trending at all. Direction 
 
 When read alongside other indicators:
 
-- ADX above 25 with price above a mid-term moving average (Siglens uses the 60-bar EMA): the uptrend is confirmed by both trend strength and the moving average.
+- ADX above 25 with price above a mid-term moving average (SIGLENS uses the 60-bar EMA): the uptrend is confirmed by both trend strength and the moving average.
 - ADX above 25 with RSI overbought (the zone where price is seen as having risen too far): because the market is trending, this is read as the trend continuing rather than reversing.
 - ADX below 20: [MACD](/guide/indicators/macd) crossovers produce many small false signals, so they get less trust.
 

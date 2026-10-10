@@ -3,7 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName } from '@/shared/lib/brandName';
 import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface NewsErrorProps {
@@ -21,6 +22,7 @@ interface NewsErrorProps {
  */
 export default function NewsError({ error, reset }: NewsErrorProps) {
     const t = useTranslations('app.news');
+    const locale = useCurrentLocale();
     useEffect(() => {
         console.error('[NewsRoute] render error:', error);
         reportClientError(error, 'NewsRoute', error.digest);
@@ -51,7 +53,7 @@ export default function NewsError({ error, reset }: NewsErrorProps) {
                     href="/"
                     className="inline-flex min-h-11 items-center rounded-lg px-6 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                 >
-                    {t('error.eb2523', { v0: SITE_NAME })}
+                    {t('error.eb2523', { v0: brandName(locale) })}
                 </Link>
             </div>
         </main>

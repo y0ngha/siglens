@@ -30,9 +30,9 @@ Crossing above the zero line is an early sign of a shift from net selling to net
 
 It's also used to confirm breakouts. If CMF is positive and rising as price breaks resistance, buyers backed the breakout. If it's negative or turning down, volume isn't backing the breakout and it is more likely false. If price makes lower lows while CMF lows rise, price and CMF are diverging, which is read as selling pressure easing. CMF staying above 0 for a long time means volume supports the rise, and hovering near 0 suggests a directionless sideways market.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens signals the moment CMF crosses the zero line and the direction of money flow changes.
+SIGLENS signals the moment CMF crosses the zero line and the direction of money flow changes.
 
 - If CMF (21 bars) crosses the zero line from below within the last 3 bars, it is an accumulation shift; crossing from above is a distribution shift.
 - It doesn't conclude that flow has changed from a single cross. It also checks whether CMF stays above (or below) the zero line for the next few bars.

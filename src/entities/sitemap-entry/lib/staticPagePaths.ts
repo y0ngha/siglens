@@ -31,8 +31,14 @@ export const STATIC_PAGE_PATHS = [
  * 차트 가이드 항목 경로(`/guide/{category}/{slug}`)인가. 항목(90개)은 DB에서 와서
  * `STATIC_PAGE_PATHS`에 나열할 수 없으므로 모양으로 판정한다 — IndexNow 변화 감시와
  * 지연표 분류가 같은 판정을 쓴다.
+ *
+ * 인자는 **pathname**이다(쿼리·해시 없음). 지연표는 `new URL(url).pathname`을, 변화 감시는
+ * sitemap `entry.url`(쿼리·해시 없이 조립된 정규 URL)에서 origin을 뗀 값을 넘긴다. 그래도
+ * `?`·`#`가 섞여 오면 정규 항목 URL이 아니므로 항목으로 보지 않는다 — 같은 문서의 변형 URL이
+ * 감시 해시에 별도 키로 쌓여 중복 제출되는 일을 막는다.
  */
 export function isGuideEntryPath(path: string): boolean {
+    if (path.includes('?') || path.includes('#')) return false;
     const segments = path.split('/').filter(segment => segment.length > 0);
     return (
         segments.length === 3 &&

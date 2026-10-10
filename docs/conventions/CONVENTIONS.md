@@ -596,6 +596,7 @@ file or the rule it describes changes:
   sentence is cut in the middle or loses a field the next paragraph relies on.
 - Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
 - A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
+- Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 
 <a id="CM-3"></a>
 
@@ -1099,6 +1100,43 @@ const t = useTranslations('emailReport');
 
 // ✅
 const t = useTranslations('emailReport');
+```
+
+<a id="I18-11"></a>
+
+#### I18-11 — Brand name follows the locale
+
+The ko locale writes the brand as `시그렌즈` (AI product: `시그렌즈 AI`) in all body text, on-screen copy and page
+titles; every other locale writes `SIGLENS` (`SIGLENS AI`). Build it with `brandName` / `brandAiName` / `brandTitle`
+(`src/shared/lib/brandName.ts`) instead of interpolating `SITE_NAME`, so the title suffix reads `… | 시그렌즈` in ko and
+`… | SIGLENS` elsewhere. The first mention that introduces the brand uses `brandIntroName` (`시그렌즈(SIGLENS)` in ko).
+Exempt: the logo/wordmark (header logo, OG image wordmarks), the logo `alt`, and JSON-LD `name` (`SIGLENS`, with
+`시그렌즈` in `alternateName`) — they identify the mark, not the sentence.
+
+```typescript
+// ❌ ko title ends in "| SIGLENS"
+const fullTitle = `${title} | ${SITE_NAME}`;
+
+// ✅
+const fullTitle = brandTitle(title, locale);
+```
+
+<a id="I18-12"></a>
+
+#### I18-12 — Bulk catalog edits touch values only, and sweeps cover every spelling variant
+
+A scripted replacement over `messages/*.json` (brand rename, term change) must transform string values only: parse the
+JSON and map the values, or anchor the pattern on `": "`. A bare regex also renames keys that contain the word
+(`openOnSiglens`) and breaks typecheck. After the edit, diff the key set against the base branch (it must be identical).
+Search case-insensitively for every spelling variant (`SigLens`, `Siglens`, `SIGLENS`) and classify each hit: our brand
+versus a different company or a proper noun that must stay.
+
+```typescript
+// ❌ renames keys as well as values
+text.replace(/Siglens/g, brand);
+
+// ✅ values only, then compare key sets with the base branch
+const next = mapStringValues(JSON.parse(text), v => v.replace(/siglens/gi, brand));
 ```
 
 ---

@@ -24,9 +24,9 @@ Buyers and sellers are evenly matched and the price range keeps shrinking. After
 
 Textbooks say it continues in the direction of the prior trend. But in the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, only 60% broke upward. Its performance ranking (a ranking by how far price went after the breakout) was also low: 36th of 39 bullish patterns for upward breaks. Since neither side clearly dominates, the direction is judged only after a close clearly leaves one of the lines.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens connects clearly turned highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) into upper and lower lines, then checks whether the upper line falls, the lower line rises, and the gap narrows. The conditions:
+SIGLENS connects clearly turned highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) into upper and lower lines, then checks whether the upper line falls, the lower line rises, and the gap narrows. The conditions:
 
 - The upper line falls and the lower line rises, each by at least 1.5 times ATR. A line that moves no more than the smaller of 0.75 times ATR and 1% of price is treated as flat, and the pattern is classed as an [ascending triangle](/guide/chart-patterns/ascending-triangle) or [descending triangle](/guide/chart-patterns/descending-triangle) instead.
 - Both lines must be touched at least twice. A swing within 0.35 times ATR of a line counts as a touch.
@@ -35,11 +35,11 @@ Siglens connects clearly turned highs and lows (swings: turning points from whic
 - It must last at least 15 bars.
 - The width at the first touch must be at least 2.5 times ATR and also at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
 
-Direction follows the prior trend: the side toward which the close moved by at least 2 times ATR over the 20 bars before the pattern. Without a trend that large, Siglens sets no direction and computes no target. Siglens assumes the prior trend's direction, while keeping in mind that in the tabulation upward breaks were more common, at 60%.
+Direction follows the prior trend: the side toward which the close moved by at least 2 times ATR over the 20 bars before the pattern. Without a trend that large, SIGLENS sets no direction and computes no target. SIGLENS assumes the prior trend's direction, while keeping in mind that in the tabulation upward breaks were more common, at 60%.
 
 Once a direction is set, the measured target is the starting width (the pattern's height) projected from the line on the breakout side, and the conservative target is half of that. The target is the price reached if the move repeats the pattern's height; it is a reference drawn from past cases, not a promise that price will get there. Past cases reached it a little over half the time after upward breaks, and less often after downward breaks. The invalidation level is the price at which the pattern is considered broken: the last swing that touched the opposite line.
 
-If the close moves beyond a line by more than 0.25 times ATR and the last close then returns inside the triangle, Siglens marks it as a "failed breakout". The shape is still there, but the breakout has not been confirmed.
+If the close moves beyond a line by more than 0.25 times ATR and the last close then returns inside the triangle, SIGLENS marks it as a "failed breakout". The shape is still there, but the breakout has not been confirmed.
 
 ## Watch out for
 

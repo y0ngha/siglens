@@ -6,7 +6,7 @@ import {
     localeOpenGraph,
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import type { Locale } from '@/shared/i18n/locales';
 
@@ -24,7 +24,9 @@ async function legacyHubMetadata(
     keywords: string[],
     degraded: boolean
 ): Promise<Metadata> {
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    // 브랜드는 로케일 표기다(ko 시그렌즈, 그 외 SIGLENS) — 헬퍼를 거치지 않고 직접 적는다.
+    const brand = locale === 'ko' ? SITE_NAME_KO : SITE_NAME;
+    const fullTitle = `${title} | ${brand}`;
     return {
         title,
         description,
@@ -39,7 +41,7 @@ async function legacyHubMetadata(
             title: fullTitle,
             description,
             url: localeCanonical(locale, path),
-            siteName: SITE_NAME,
+            siteName: brand,
             ...localeOpenGraph(locale),
             type: 'website',
             images: [

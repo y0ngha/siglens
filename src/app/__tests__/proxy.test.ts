@@ -104,7 +104,7 @@ describe('proxy', () => {
         );
 
         /**
-         * SiglensAI 로그인 CTA를 누른 메인 로그인 사용자. 홈으로 보내면
+         * SIGLENS AI 로그인 CTA를 누른 메인 로그인 사용자. 홈으로 보내면
          * ai.siglens.io로 돌아갈 길이 끊긴다.
          */
         it('세션이 있으면 정제된 next(SSO 핸드오프)로 redirect한다', async () => {

@@ -3,11 +3,11 @@ title: Elliott Wave
 aliases: [Elliott wave theory, Elliott wave count, impulse wave, five-wave structure, wave theory]
 summary: A way of counting where price is in a five-wave advance and three-wave correction.
 seoTitle: "Elliott Wave Theory: Meaning and How to Count"
-seoDescription: The five waves up and three-wave correction of Elliott Wave theory, the three rules that must not break, and how Siglens counts waves and sets the invalidation price.
+seoDescription: The five waves up and three-wave correction of Elliott Wave theory, the three rules that must not break, and how SIGLENS counts waves and sets the invalidation price.
 demoCaption: Synthetic, illustrative candles. Shows waves 1 to 5 up, the wave 2 and 4 corrections, the wave 1 start that wave 2 must not break, and the A-B-C correction after wave 5.
 faq:
   - q: Does Elliott wave predict future prices?
-    a: It is closer to a framework for describing the structure price is in than a forecasting tool. Two people can count the same chart differently, and a count often becomes clear only afterward. That is why Siglens shows alternate counts and an invalidation price (the price beyond which the count is considered wrong) alongside the main count.
+    a: It is closer to a framework for describing the structure price is in than a forecasting tool. Two people can count the same chart differently, and a count often becomes clear only afterward. That is why SIGLENS shows alternate counts and an invalidation price (the price beyond which the count is considered wrong) alongside the main count.
   - q: What are the three Elliott wave rules?
     a: Wave 2 does not go below the start of wave 1. Wave 3 cannot be the shortest of waves 1, 3 and 5. Wave 4 does not enter the price range of wave 1. If any rule is broken, the count is considered wrong. The only exception to the wave 4 rule is the diagonal, a wedge-shaped five-wave move.
   - q: Do the Fibonacci ratios have to match exactly?
@@ -28,15 +28,15 @@ Corrections are grouped by shape. A zigzag pulls back steeply in one go. In a fl
 
 ## What it tells you
 
-What follows is the traditional reading. Siglens uses it as background for reading the current structure, not as a trading signal.
+What follows is the traditional reading. SIGLENS uses it as background for reading the current structure, not as a trading signal.
 
 It works as a map for judging whether price is early in a trend (waves 1 to 3), near the end (wave 5), or in a correction (A, B, C). During wave 3, the trend is read as still having strength. If momentum fades in wave 5, the correction is read as getting close.
 
 Counting waves involves a lot of judgment, though, and the ratio evidence is weak. Batchelor and Ramyar (2006) checked whether ratios between Dow Jones swings cluster near Fibonacci ratios more often than chance and found no such evidence. So treat Elliott wave as a framework for describing structure, and decide in advance how far price can go before the count is wrong.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens takes clearly turned highs and lows in the last 120 bars as wave vertices and checks whether they form a structure that fits the Elliott rules. A previous high or low becomes a vertex once price reverses by more than 1.5 times [ATR](/guide/indicators/atr) (the average range of recent bars). The structures it looks for are the impulse, the diagonal, and the contracting triangle (a five-leg correction that keeps narrowing).
+SIGLENS takes clearly turned highs and lows in the last 120 bars as wave vertices and checks whether they form a structure that fits the Elliott rules. A previous high or low becomes a vertex once price reverses by more than 1.5 times [ATR](/guide/indicators/atr) (the average range of recent bars). The structures it looks for are the impulse, the diagonal, and the contracting triangle (a five-leg correction that keeps narrowing).
 
 All three rules that must not break are checked.
 
@@ -44,7 +44,7 @@ All three rules that must not break are checked.
 - Wave 3 must not be the shortest of waves 1, 3 and 5.
 - Wave 4 must not enter wave 1's price range. Only the diagonal is exempt.
 
-Siglens adds a few criteria of its own. A count that misses any of them is not shown.
+SIGLENS adds a few criteria of its own. A count that misses any of them is not shown.
 
 - Wave 3 must not be shorter than wave 1.
 - Wave 2 must retrace only 23.6 to 88.6% of wave 1, and wave 4 only 14.6 to 61.8% of wave 3.
@@ -59,6 +59,6 @@ Each count carries an invalidation price: the end of wave 1 while wave 4 is in p
 
 - More than one count can fit the same chart. The main count and the alternates need to be read together.
 - Wave 1 is easily mistaken for a bounce inside a downtrend, so it is hard to be sure while it is in progress.
-- The textbook also allows a truncated fifth wave. Until price breaks back through the end of wave 4, it is a suspicion, not a confirmation. Because of the criteria above, Siglens does not offer truncated fifths as counts.
+- The textbook also allows a truncated fifth wave. Until price breaks back through the end of wave 4, it is a suspicion, not a confirmation. Because of the criteria above, SIGLENS does not offer truncated fifths as counts.
 - Once price passes the invalidation price, the count is considered wrong and the counting starts over.
 - A matching Fibonacci ratio alone is weak evidence.

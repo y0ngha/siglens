@@ -28,16 +28,16 @@ The counts of Thomas Bulkowski, who tallied what actually happened after pattern
 
 Both are close to a coin flip.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for two bars whose highs or lows meet at nearly the same level.
+SIGLENS looks for two bars whose highs or lows meet at nearly the same level.
 
 - Tweezers top: the first bar is bullish, and the two highs are within 0.2% of each other.
 - Tweezers bottom: the first bar is bearish, and the two lows are within 0.2% of each other.
 - Only the matching high or low is checked, not the preceding trend.
 - If the same two bars already fit another two-bar pattern such as an engulfing or harami, that name is used instead.
 
-Because the data doesn't match the textbook reversal reading, Siglens doesn't call tweezers a reversal signal and treats them only as a small price zone to watch. They matter when:
+Because the data doesn't match the textbook reversal reading, SIGLENS doesn't call tweezers a reversal signal and treats them only as a small price zone to watch. They matter when:
 
 - The shared level overlaps a known support or resistance
 - Both bars are taller than usual
@@ -45,4 +45,4 @@ Because the data doesn't match the textbook reversal reading, Siglens doesn't ca
 
 ## Watch out for
 
-When [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction, highs or lows often match by chance, so it is close to noise. Bulkowski found that tweezers were better read as the ongoing trend continuing. Siglens does not call a reversal from tweezers alone, and does not draw a price target from these bars.
+When [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction, highs or lows often match by chance, so it is close to noise. Bulkowski found that tweezers were better read as the ongoing trend continuing. SIGLENS does not call a reversal from tweezers alone, and does not draw a price target from these bars.

@@ -1,4 +1,4 @@
-/** Hosts served by the SiglensAI subtree. Port-suffixed dev host is stripped before matching. */
+/** Hosts served by the SIGLENS AI subtree. Port-suffixed dev host is stripped before matching. */
 const AI_HOSTS: ReadonlySet<string> = new Set([
     'ai.siglens.io',
     'ai.localhost',
@@ -32,7 +32,7 @@ export interface AiSeoCopy {
 }
 
 /**
- * SiglensAI home for a locale, optionally with a question prefilled in the
+ * SIGLENS AI home for a locale, optionally with a question prefilled in the
  * composer (`?q=`). The question is never sent on its own — the user still
  * presses send — so an entry link can't spend anyone's daily turns.
  */

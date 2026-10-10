@@ -42,7 +42,8 @@ import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { brandIntroName, SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
+import { brandIntroName } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import koMessages from '@/../messages/ko.json';
 
 // 홈 제목은 `shared.seo.root` 카탈로그가 소유한다. 브랜드 접미사는 레이아웃이
@@ -63,6 +64,23 @@ async function metadataFor(locale: string) {
  * 접미사(`| SIGLENS`)를 따로 붙이지 않고 같은 제목을 쓴다(둘 다 한글 표기를 담는다).
  */
 describe('RootLayout metadata', () => {
+    it('title.template 접미사와 og:site_name은 로케일 브랜드다 — ko 시그렌즈, 그 외 SIGLENS', async () => {
+        const ko = await metadataFor('ko');
+        expect(ko.title).toEqual(
+            expect.objectContaining({ template: `%s | ${SITE_NAME_KO}` })
+        );
+        expect(ko.openGraph?.siteName).toBe(SITE_NAME_KO);
+        expect(ko.applicationName).toBe(SITE_NAME_KO);
+
+        for (const locale of ['en', 'ja', 'zh']) {
+            const other = await metadataFor(locale);
+            expect(other.title).toEqual(
+                expect.objectContaining({ template: `%s | ${SITE_NAME}` })
+            );
+            expect(other.openGraph?.siteName).toBe(SITE_NAME);
+        }
+    });
+
     it('title.default는 브랜드가 들어간 ROOT_TITLE 그대로다(폭 ≤ 55)', async () => {
         const metadata = await metadataFor('ko');
         expect(metadata.title).toEqual(

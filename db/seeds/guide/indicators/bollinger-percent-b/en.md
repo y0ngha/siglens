@@ -25,7 +25,7 @@ Both are derived from [Bollinger Bands](/guide/indicators/bollinger-bands) by Jo
 
 ## What it tells you
 
-What follows is the traditional reading Bollinger laid out. Siglens uses it as context alongside other evidence, not as a standalone signal.
+What follows is the traditional reading Bollinger laid out. SIGLENS uses it as context alongside other evidence, not as a standalone signal.
 
 When BandWidth shrinks to the lowest level in many bars, that is a squeeze. Volatility is compressed, so a directional move is likely soon, but BandWidth alone can't tell you the direction. When BandWidth widens, it confirms that real volatility is behind a breakout.
 
@@ -35,9 +35,9 @@ For %B, a crossing that goes all the way to the edge and comes back is read as a
 - %B rising through 0.05 from below means price has bounced off the lower edge, which is read as an upward pullback.
 - When the two disagree, such as price making lower lows while %B makes higher lows (a divergence), Bollinger himself names it as a more reliable reversal pattern.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens catches the moment %B reaches a band edge and turns back inside. While %B stays near the edge, it is not read as a pullback signal.
+SIGLENS catches the moment %B reaches a band edge and turns back inside. While %B stays near the edge, it is not read as a pullback signal.
 
 - Downward pullback: the previous bar's %B was at or above 0.95 and this bar drops below 0.95
 - Upward pullback: the previous bar's %B was at or below 0.05 and this bar rises above 0.05
@@ -45,13 +45,13 @@ Siglens catches the moment %B reaches a band edge and turns back inside. While %
 
 There are several thresholds because each does a different job. 0.95 and 0.05 catch the turn back from the edge, 0.80 and 0.20 separate a trend that keeps hugging the edge, and the 0.98 and 0.02 in the [Bollinger Bands](/guide/indicators/bollinger-bands) article are a stricter check of whether price is pressed against a band on daily bars.
 
-Siglens checked this on two years of data for 10 large US stocks. On daily bars, after %B came down below 0.95, price tended to drift lower on average over the next 5 to 10 bars. The downward tendency was small, and the upward side after %B rose back above 0.05 was not even that clear. So Siglens puts less weight on the upward signal, and uses neither alone without a confirming indicator.
+SIGLENS checked this on two years of data for 10 large US stocks. On daily bars, after %B came down below 0.95, price tended to drift lower on average over the next 5 to 10 bars. The downward tendency was small, and the upward side after %B rose back above 0.05 was not even that clear. So SIGLENS puts less weight on the upward signal, and uses neither alone without a confirming indicator.
 
-For confirmation, Siglens adds money-flow indicators such as [MFI](/guide/indicators/mfi), volume, and reversal candles, rather than RSI or MACD, which measure the same momentum (the force behind a move) again. An extreme %B inside a squeeze, where BandWidth is narrow, is more likely the start of rising volatility than a pullback. So crossings carry more weight when BandWidth is normal or wide.
+For confirmation, SIGLENS adds money-flow indicators such as [MFI](/guide/indicators/mfi), volume, and reversal candles, rather than RSI or MACD, which measure the same momentum (the force behind a move) again. An extreme %B inside a squeeze, where BandWidth is narrow, is more likely the start of rising volatility than a pullback. So crossings carry more weight when BandWidth is normal or wide.
 
 ## Watch out for
 
-- Bollinger himself said that touching a band is just a touch, not a signal. Siglens doesn't decide on a %B crossing alone without confirmation either.
+- Bollinger himself said that touching a band is just a touch, not a signal. SIGLENS doesn't decide on a %B crossing alone without confirmation either.
 - The tendency above is for a short horizon of about 5 to 10 bars on daily charts. There is no evidence that it holds on minute charts or over several weeks.
 - In a clear trend, %B stays at the extreme for a long time, so reading it against the trend is easy to get wrong.
 - BandWidth tells you only that volatility is growing. Direction has to be judged separately.

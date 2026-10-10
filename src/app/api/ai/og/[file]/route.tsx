@@ -3,7 +3,7 @@ import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 import { isLocale } from '@/shared/i18n/locales';
 
 /**
- * SiglensAI 랜딩 공유 카드 — `/api/ai/og/<locale>.png`. **정적·엣지 캐시용 경로**다.
+ * SIGLENS AI 랜딩 공유 카드 — `/api/ai/og/<locale>.png`. **정적·엣지 캐시용 경로**다.
  *
  * 예전 `/api/ai/og?locale=ko`(상위 `route.tsx`)는 입력이 쿼리스트링이라 정적화할 수
  * 없었다(`force-static`은 `searchParams`를 비운다 → 전부 기본 로케일). 그래서 매 요청

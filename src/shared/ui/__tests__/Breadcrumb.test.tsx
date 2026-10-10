@@ -21,7 +21,8 @@ import { NextIntlClientProvider } from 'next-intl';
 
 import messages from '../../../../messages/ko.json';
 import { Breadcrumb, type BreadcrumbCrumb } from '@/shared/ui/Breadcrumb';
-import { SITE_NAME } from '@/shared/lib/seo';
+import enMessages from '../../../../messages/en.json';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 const NAV_LABEL = messages.shared.ui.Breadcrumb['46c31f'];
 
@@ -34,6 +35,28 @@ function renderCrumb(trail: readonly BreadcrumbCrumb[]) {
 }
 
 describe('Breadcrumb', () => {
+    it('ko 홈 마디는 한글 브랜드(시그렌즈)다', () => {
+        renderCrumb([{ label: '미국 시장 현황' }]);
+
+        expect(
+            screen.getByRole('link', { name: '시그렌즈' })
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: SITE_NAME })).toBeNull();
+    });
+
+    it('ko 외 로케일의 홈 마디는 영문 브랜드(SIGLENS)다', () => {
+        render(
+            <NextIntlClientProvider locale="en" messages={enMessages}>
+                <Breadcrumb trail={[{ label: 'US market' }]} />
+            </NextIntlClientProvider>
+        );
+
+        expect(screen.getByRole('link', { name: SITE_NAME })).toHaveAttribute(
+            'href',
+            '/'
+        );
+    });
+
     it('라벨 붙은 nav 랜드마크로 노출된다', () => {
         renderCrumb([{ label: '미국 시장 현황' }]);
 
@@ -45,10 +68,9 @@ describe('Breadcrumb', () => {
     it('홈 마디가 자동으로 앞에 붙는다 — 호출부가 넘기지 않는다', () => {
         renderCrumb([{ label: '미국 시장 현황' }]);
 
-        expect(screen.getByRole('link', { name: SITE_NAME })).toHaveAttribute(
-            'href',
-            '/'
-        );
+        expect(
+            screen.getByRole('link', { name: SITE_NAME_KO })
+        ).toHaveAttribute('href', '/');
     });
 
     it('중간 마디는 링크, 마지막 마디는 현재 페이지다', () => {
@@ -101,7 +123,7 @@ describe('Breadcrumb', () => {
             Array.from(container.querySelectorAll('li'))
                 .map(li => li.textContent?.trim())
                 .filter(text => text !== '/')
-        ).toEqual([SITE_NAME, '뉴스', '미국 시장 뉴스']);
+        ).toEqual([SITE_NAME_KO, '뉴스', '미국 시장 뉴스']);
     });
 
     /**
@@ -114,7 +136,7 @@ describe('Breadcrumb', () => {
             { label: '현황' },
         ]);
 
-        expect(screen.getByRole('link', { name: SITE_NAME })).toHaveClass(
+        expect(screen.getByRole('link', { name: SITE_NAME_KO })).toHaveClass(
             'tap-target'
         );
         expect(screen.getByRole('link', { name: '미국 시장' })).toHaveClass(

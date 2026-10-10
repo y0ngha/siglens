@@ -49,7 +49,7 @@ function guideUrl(entry: GuideEntry, locale: Locale): string {
 }
 
 /**
- * `get_guide` — Siglens 차트 가이드(캔들·차트 패턴·보조지표·전략) 검색.
+ * `get_guide` — SIGLENS 차트 가이드(캔들·차트 패턴·보조지표·전략) 검색.
  *
  * 허브 검색 UI와 같은 `searchGuide`를 쓴다. 최상위 1건만 본문을 싣고 나머지 최대 2건은
  * 제목·요약·url만 — 도구 결과 상한 안에서 모델이 근거를 인용하고 링크를 걸 수 있게 한다.

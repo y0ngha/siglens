@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName } from '@/shared/lib/brandName';
 import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface SymbolErrorProps {
@@ -21,6 +22,7 @@ interface SymbolErrorProps {
  */
 export default function SymbolError({ error, reset }: SymbolErrorProps) {
     const t = useTranslations('app.symbol');
+    const locale = useCurrentLocale();
     return (
         <RouteErrorView
             error={error}
@@ -30,7 +32,7 @@ export default function SymbolError({ error, reset }: SymbolErrorProps) {
             title={t('error.0de4f6')}
             body={t('error.2e23eb')}
             retryLabel={t('error.0c767c')}
-            homeLabel={t('error.eb2523', { v0: SITE_NAME })}
+            homeLabel={t('error.eb2523', { v0: brandName(locale) })}
             containerClassName="symbol-container"
         />
     );

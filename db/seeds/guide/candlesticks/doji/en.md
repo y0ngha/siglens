@@ -25,16 +25,16 @@ A doji is a bar whose open and close are almost the same, so the body is as thin
 
 A doji signals a pause, not a direction. After a long advance or near support or resistance, it is a clue that the trend is resting. A later close above the doji's high reads as upward, and a close below its low as downward. Until then, you are waiting for confirmation.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens sorts these bars by how thin the body is and which side the wicks are on. It does not check the preceding trend. All ratios below are measured against the bar's high-to-low range.
+SIGLENS sorts these bars by how thin the body is and which side the wicks are on. It does not check the preceding trend. All ratios below are measured against the bar's high-to-low range.
 
 - Doji: the body is at most 10% of the range. A long-legged doji is not separated and is counted here.
 - Dragonfly doji: a doji whose upper wick is at most 10% of the range.
 - Gravestone doji: a doji whose lower wick is at most 10% of the range.
-- Spinning top: the body is at most 40% of the range, with wicks on both sides. It is so common that Siglens doesn't list it as a detected pattern.
+- Spinning top: the body is at most 40% of the range, with wicks on both sides. It is so common that SIGLENS doesn't list it as a detected pattern.
 
-Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, found reversal rates (how often the direction turned after the pattern) of 50% for the dragonfly doji, 51% for the gravestone doji and 50-51% for the spinning top. A standard doji after a trend was also around 50%. All are close to a coin flip, so Siglens treats these bars as reference clues, not directional signals.
+Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, found reversal rates (how often the direction turned after the pattern) of 50% for the dragonfly doji, 51% for the gravestone doji and 50-51% for the spinning top. A standard doji after a trend was also around 50%. All are close to a coin flip, so SIGLENS treats these bars as reference clues, not directional signals.
 
 ## Watch out for
 

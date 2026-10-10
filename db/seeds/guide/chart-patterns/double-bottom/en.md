@@ -9,7 +9,7 @@ faq:
   - q: When is a double bottom considered complete?
     a: When, after the second low, a close finishes above the neckline (the high between the two lows). If only the wick clears the neckline and the close stays below, it is not yet confirmed.
   - q: How similar do the two lows have to be?
-    a: Siglens only picks up a double bottom when the two lows differ by no more than the smaller of 1 times ATR and 3% of their average price. A difference within 1% carries more weight.
+    a: SIGLENS only picks up a double bottom when the two lows differ by no more than the smaller of 1 times ATR and 3% of their average price. A difference within 1% carries more weight.
   - q: Does price always rise after a double bottom?
     a: No. In a strong downtrend, the two lows can be a brief pause before further decline. That is why the neckline breakout is read together with volume.
 ---
@@ -37,16 +37,16 @@ The same four types of [double top](/guide/chart-patterns/double-top) had failur
 
 Volume is read the opposite way from a double top. In a double bottom, volume at the second low should be higher than at the first or spike noticeably. That suggests someone is accumulating at that price. If price comes back down after clearing the neckline but holds above it, the bullish case gets stronger.
 
-## How Siglens finds it
+## How SIGLENS finds it
 
-Siglens takes the two most recent clear lows (swing lows: turning points where price bounced more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) and checks whether they form a W at a similar level. Once a turning point is set, it does not change as more bars arrive. All of these must hold:
+SIGLENS takes the two most recent clear lows (swing lows: turning points where price bounced more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) and checks whether they form a W at a similar level. Once a turning point is set, it does not change as more bars arrive. All of these must hold:
 
 - The two lows differ by no more than the smaller of 1× ATR and 3% of their average price.
 - The two lows are at least 10 bars apart.
 - No bar between them dips more than 0.25 ATR below the lows.
 - The neckline is the highest swing high between the two lows. It must sit in the middle half of the span between them, meaning at least 25% of the full distance from either low.
 - The height from the average low to the neckline is at least 2.5 ATR and at least a minimum share of price (0.5% on 5–30 minute bars, 1% on 1–4 hour bars, 3% on daily bars).
-- If the highs between the two lows clearly fall toward them (by 1.5 ATR or more), Siglens treats it as a [descending triangle](/guide/chart-patterns/descending-triangle), not a double bottom.
+- If the highs between the two lows clearly fall toward them (by 1.5 ATR or more), SIGLENS treats it as a [descending triangle](/guide/chart-patterns/descending-triangle), not a double bottom.
 - If the second low is older than the longer of the last 20 bars and half the pattern's length, it is not shown.
 
 The invalidation level (the price at which the pattern counts as broken) is the lower of the two lows. A close below it breaks the pattern. The neckline plus the pattern height is the measured target, and the neckline plus half the height is the conservative target. A target is the price reached if price moves another pattern height; it is a reference based on how often that happened in the past, not a promise. Once a close falls below the invalidation level or price has already reached the measured target, the pattern is no longer shown.

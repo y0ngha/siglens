@@ -7,9 +7,9 @@ seoDescription: Williams %R's -20 and -80 levels, the signal when it leaves thos
 demoCaption: "Synthetic, illustrative bars. Price drops close to its recent low, %R sits below -80, and then rises back above -80."
 faq:
   - q: "How is Williams %R different from the Stochastic?"
-    a: "It is the Stochastic %K before smoothing, minus 100, so it shows the same information on a different scale. Reading both does not double your confidence. But Siglens's Stochastic is slow %K, smoothed once, so comparing which one reaches an extreme first can be a hint."
+    a: "It is the Stochastic %K before smoothing, minus 100, so it shows the same information on a different scale. Reading both does not double your confidence. But SIGLENS's Stochastic is slow %K, smoothed once, so comparing which one reaches an extreme first can be a hint."
   - q: "Should I buy when Williams %R is below -80?"
-    a: "It only means an oversold zone, not a buy signal. The moment %R leaves the zone upward past -80 is usually treated as the signal rather than being inside it, and in a strong downtrend it can stay there for a long time. One exception: when the daily close is above the 200-day moving average, Siglens looks at a close at -90 or below by itself. In the past, 5-day returns after such days were better than usual, and waiting for the -80 cross made that difference disappear. This too is a past tendency, not a buy signal."
+    a: "It only means an oversold zone, not a buy signal. The moment %R leaves the zone upward past -80 is usually treated as the signal rather than being inside it, and in a strong downtrend it can stay there for a long time. One exception: when the daily close is above the 200-day moving average, SIGLENS looks at a close at -90 or below by itself. In the past, 5-day returns after such days were better than usual, and waiting for the -80 cross made that difference disappear. This too is a past tendency, not a buy signal."
 ---
 
 ## How it's calculated
@@ -26,21 +26,21 @@ It equals the [Stochastic](/guide/indicators/stochastic) %K before smoothing (fa
 - %R crossing up through -80 is read as the close moving away from the low and upward force (momentum) returning, and crossing down through -20 as the force turning downward. Treating the moment of leaving a zone as the signal, rather than being inside it, filters out many false signals during strong trends.
 - Failure swings (the indicator turning back without clearing its earlier high or low) and divergence (price and indicator moving in different directions) are watched too. They get more weight when they occur in the overbought or oversold zones.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks whether the close is pinned to the top or bottom of the recent range, and reads the moment it leaves that zone as the basic signal.
+SIGLENS checks whether the close is pinned to the top or bottom of the recent range, and reads the moment it leaves that zone as the basic signal.
 
 - It uses a period of 14.
 - It marks the last bar's %R at -20 or above as overbought and at -80 or below as oversold.
 - It reads the cross out of a zone as the basic signal, and failure swings and divergence as supporting signals.
 
-There is one exception. When the daily close is above the 200-day moving average, it looks at the value inside the zone itself rather than waiting for a cross. When Siglens checked data since 2000 across several periods, days when %R closed at -90 or below under this condition had better 5-day returns than usual in every period. In periods when the whole market fell sharply, the difference was in losing less. By contrast, counting from the cross back above -80 made this difference disappear. This describes a past tendency, not a buy signal. This case is also covered in the [mean reversion strategy](/guide/strategies/mean-reversion).
+There is one exception. When the daily close is above the 200-day moving average, it looks at the value inside the zone itself rather than waiting for a cross. When SIGLENS checked data since 2000 across several periods, days when %R closed at -90 or below under this condition had better 5-day returns than usual in every period. In periods when the whole market fell sharply, the difference was in losing less. By contrast, counting from the cross back above -80 made this difference disappear. This describes a past tendency, not a buy signal. This case is also covered in the [mean reversion strategy](/guide/strategies/mean-reversion).
 
-Siglens also refers to pairing [MACD](/guide/indicators/macd) for trend direction with %R for timing, and to cases where an oversold %R coincides with the lower Bollinger Band.
+SIGLENS also refers to pairing [MACD](/guide/indicators/macd) for trend direction with %R for timing, and to cases where an oversold %R coincides with the lower Bollinger Band.
 
 ## Watch out for
 
 - In a strong trend, it can stay above -20 for several bars. Expecting a decline just because it is overbought tends to go wrong.
-- It carries the same information as the Stochastic, so using both does not make signals twice as reliable. But Siglens's Stochastic is the smoothed slow %K, so comparing which one reaches an extreme first can be a hint.
+- It carries the same information as the Stochastic, so using both does not make signals twice as reliable. But SIGLENS's Stochastic is the smoothed slow %K, so comparing which one reaches an extreme first can be a hint.
 - The 14 period is the standard for daily charts. Some use 10 on shorter timeframes and 21 for a longer view.
 - It does not account for volume. Check with volume indicators such as [MFI](/guide/indicators/mfi) or OBV.

@@ -24,7 +24,6 @@ import {
     buildFaqJsonLd,
     buildWebPageJsonLd,
     ORGANIZATION_JSON_LD_ID,
-    SITE_NAME,
     SITE_URL,
     localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
@@ -38,6 +37,7 @@ import {
     getAboutFaq,
 } from '@/views/about/lib/aboutContent';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { brandName } from '@/shared/lib/brandName';
 
 const PAGE_URL = `${SITE_URL}${ABOUT_PATH}`;
 
@@ -113,7 +113,7 @@ export async function generateMetadata({
     const ogLocale = localeOpenGraph(locale);
     return {
         // 메타 타이틀은 이미 브랜드(ko는 `시그렌즈(SIGLENS)`)로 시작한다.
-        // 레이아웃 템플릿(`%s | SIGLENS`)을 타면 브랜드가 두 번 붙어 SERP 폭만
+        // 레이아웃 템플릿(ko `%s | 시그렌즈`)을 타면 브랜드가 두 번 붙어 SERP 폭만
         // 먹으므로 `absolute`로 끊는다.
         title: { absolute: aboutFullTitle(tSeo) },
         description: aboutDescription(tSeo),
@@ -121,7 +121,7 @@ export async function generateMetadata({
         alternates: await localeAlternatesFrom(params, ABOUT_PATH),
         openGraph: {
             type: 'article',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title: aboutFullTitle(tSeo),
             description: aboutDescription(tSeo),
             url: localizedAbsoluteUrl(PAGE_URL, locale),

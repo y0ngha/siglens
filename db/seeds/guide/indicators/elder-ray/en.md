@@ -25,7 +25,7 @@ The day's high is read as the most buyers could pull price up, and the low as th
 
 ## What it tells you
 
-What follows is the traditional reading Elder set out. Siglens uses it as reference context, not as a standalone signal.
+What follows is the traditional reading Elder set out. SIGLENS uses it as reference context, not as a standalone signal.
 
 Usually Bull Power is above 0 and Bear Power is below 0. So the signal is not whether a value is positive or negative, but how it moves from that usual position.
 
@@ -33,15 +33,15 @@ Elder saw an uptrend in which Bear Power rises back up from negative territory a
 
 The reading regarded as most reliable is the divergence (price and the indicator moving in different directions): price making lower lows while Bear Power makes higher lows (bullish), or price making higher highs while Bull Power makes lower highs (bearish).
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks not at the sign of the values but at whether, on the last bar, they turned compared with the previous bar. Both values are calculated with a 13-bar exponential moving average.
+SIGLENS looks not at the sign of the values but at whether, on the last bar, they turned compared with the previous bar. Both values are calculated with a 13-bar exponential moving average.
 
 - Bear Power negative but higher than the previous bar: read as sellers weakening.
 - Bull Power positive but lower than the previous bar: read as selling pressure coming in during a bounce.
 - Whether the shape matters is judged together with the slope of the 13-bar exponential moving average, that is, the trend direction.
 
-When Siglens checked later returns from this signal alone, there was no clear difference. So the indicator is used only as a reference, and it gets more weight when a higher-timeframe trend and a divergence coincide.
+When SIGLENS checked later returns from this signal alone, there was no clear difference. So the indicator is used only as a reference, and it gets more weight when a higher-timeframe trend and a divergence coincide.
 
 ## Watch out for
 

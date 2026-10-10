@@ -32,9 +32,9 @@ In practice it is used in three main ways.
 - Position size: a widely known method sets quantity = acceptable loss ÷ (ATR × multiple). With $500 of account risk, an ATR of $2.50 and a multiple of 2, that works out to 100 shares. This way, stocks with different volatility end up with a similar risk per trade.
 - Breakout confirmation: if ATR grows above its own 20-bar average during a breakout, the move is treated as having real volatility behind it. If ATR stays flat or shrinks, it is often a false breakout.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens doesn't use ATR to guess direction. It uses it to measure how big the current movement is and so gauge risk. ATR is calculated over the last 14 bars.
+SIGLENS doesn't use ATR to guess direction. It uses it to measure how big the current movement is and so gauge risk. ATR is calculated over the last 14 bars.
 
 - Volatility trend: whether ATR is rising or falling, and whether ATR grew along with a breakout, help judge whether the move is reliable.
 - Comparing stocks: ATR is expressed as a percentage of the current price, so volatility can be compared across stocks at different price levels.

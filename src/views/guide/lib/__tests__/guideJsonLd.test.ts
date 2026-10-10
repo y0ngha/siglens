@@ -94,7 +94,7 @@ describe('buildGuideBreadcrumbJsonLd', () => {
         });
 
         expect(trail(ld)).toEqual([
-            { position: 1, name: 'SIGLENS', item: SITE_URL },
+            { position: 1, name: '시그렌즈', item: SITE_URL },
             { position: 2, name: '차트 가이드', item: `${SITE_URL}/guide` },
         ]);
     });

@@ -18,7 +18,6 @@ vi.mock('@/entities/auth/lib/errorMessages', () => ({
     },
 }));
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({

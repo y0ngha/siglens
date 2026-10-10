@@ -27,9 +27,9 @@ Granville held that shifts between accumulation (buying up) and distribution (se
 - Leading breakout: sometimes OBV makes a new high or low before price does, or breaks its own trendline first. These moves can come several bars ahead of the price breakout.
 - Sideways: if price swings up and down but OBV stays flat, there is no directional volume.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens calculates OBV for every stock it analyzes and includes it. Rather than issuing a signal of its own, it uses the trend confirmation, divergence and early breakout described above to check whether volume is following price. It looks only at direction and slope, not the absolute value.
+SIGLENS calculates OBV for every stock it analyzes and includes it. Rather than issuing a signal of its own, it uses the trend confirmation, divergence and early breakout described above to check whether volume is following price. It looks only at direction and slope, not the absolute value.
 
 If an [RSI](/guide/indicators/rsi) divergence shows up at the same point, it puts more trust in it, and when OBV moves the same way as [MFI](/guide/indicators/mfi), it takes the two volume indicators as saying the same thing. If OBV rises above its own previous high while the Bollinger Bands are narrow (a squeeze), it reads that as force building behind a direction after a stretch of compressed movement.
 

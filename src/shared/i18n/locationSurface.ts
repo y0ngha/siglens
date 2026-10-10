@@ -7,7 +7,7 @@ import {
 
 export interface LocationSurface {
     readonly locale: Locale;
-    /** `ai.siglens.io`(SiglensAI) 호스트의 URL인가. 아니면 메인 사이트다. */
+    /** `ai.siglens.io`(SIGLENS AI) 호스트의 URL인가. 아니면 메인 사이트다. */
     readonly onAiHost: boolean;
 }
 

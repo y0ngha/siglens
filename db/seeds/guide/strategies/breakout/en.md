@@ -3,7 +3,7 @@ title: Breakout
 aliases: [breakout trading, range breakout, resistance breakout, price breakout, false breakout]
 summary: "Watch for a close beyond a long-standing support or resistance line, then filter false breakouts with checks like volume."
 seoTitle: "Breakout Trading: Meaning and False Breakouts"
-seoDescription: How range, pattern, moving average and Donchian breakouts differ, and how to filter false breakouts by close, volume and retest, with Siglens' criteria.
+seoDescription: How range, pattern, moving average and Donchian breakouts differ, and how to filter false breakouts by close, volume and retest, with SIGLENS' criteria.
 demoCaption: Synthetic, illustrative candles. Shows a fixed-width range, a close above the upper line with rising volume, and a retest back to the breakout line.
 faq:
   - q: When is a breakout considered confirmed?
@@ -25,7 +25,7 @@ A breakout is price pushing through a boundary where buyers and sellers had been
 
 ## What it tells you
 
-What follows is the traditional reading. Siglens treats a breakout signal as background to read alongside other evidence, not as a conclusion on its own.
+What follows is the traditional reading. SIGLENS treats a breakout signal as background to read alongside other evidence, not as a conclusion on its own.
 
 A breakout is read as a long-standing balance between buying and selling tipping to one side. Orders sitting near the boundary can fill all at once, sending price moving quickly.
 
@@ -36,9 +36,9 @@ That makes telling real breakouts from false ones the main task. Failure rates d
 - Do momentum indicators (such as [RSI](/guide/indicators/rsi) and [MACD](/guide/indicators/macd), which measure the force behind a move) point the same way?
 - Retest: when price comes back to the broken line, does the line hold?
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-When price closes outside the range it normally moves in (a band, channel or cloud), Siglens takes that as a sign a breakout may be under way and adds a breakout-focused analysis. Range and pattern boundaries differ from stock to stock, but these ranges can be calculated the same way for every stock, which makes them a practical starting point. It applies when one of the following appears on the last bar.
+When price closes outside the range it normally moves in (a band, channel or cloud), SIGLENS takes that as a sign a breakout may be under way and adds a breakout-focused analysis. Range and pattern boundaries differ from stock to stock, but these ranges can be calculated the same way for every stock, which makes them a practical starting point. It applies when one of the following appears on the last bar.
 
 - [Bollinger Bands](/guide/indicators/bollinger-bands): a close above the upper band. Where the previous bar sat does not matter.
 - [Keltner channel](/guide/indicators/keltner-channel): the previous close was inside the channel, and this close is above the upper line (or below the lower line).

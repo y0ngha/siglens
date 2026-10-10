@@ -28,9 +28,9 @@ The standard setting is [RSI](/guide/indicators/rsi) 14 and a stochastic window 
 - If RSI is still below 50 but Stochastic RSI jumps from near 0 to above 0.5, it is sometimes read as a leading sign that RSI and price may follow upward.
 - If price makes a lower low but the Stochastic RSI low is higher, that is bullish divergence (price and indicator moving in different directions); the opposite shape is bearish divergence.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks whether RSI has reached the top or bottom of its own recent range, and whether %K and %D cross there.
+SIGLENS checks whether RSI has reached the top or bottom of its own recent range, and whether %K and %D cross there.
 
 - It uses the standard setting (RSI 14, stochastic window 14, %K 3, %D 3).
 - It marks the last bar's %K at 0.8 or above as overbought and at 0.2 or below as oversold.

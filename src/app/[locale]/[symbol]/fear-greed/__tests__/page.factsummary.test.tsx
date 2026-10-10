@@ -178,7 +178,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     resolveSymbolFearGreedSeoContent: vi
         .fn()
         .mockReturnValue({ fullTitle: '', description: '', url: '' }),
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
     NOINDEX_SYMBOL_METADATA: {
         robots: { index: false, follow: true },

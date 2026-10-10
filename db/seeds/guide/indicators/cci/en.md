@@ -30,9 +30,9 @@ Unlike RSI or the stochastic, its values have no fixed range. When price moves a
 
 Staying above +100 for several bars is read as a strong uptrend. A pullback (a brief dip) to around +100 within that stretch is read as a correction inside the trend, not a sell signal. If price makes higher highs while CCI makes lower highs, that is a divergence (price and indicator moving in different directions) showing upward strength fading. A reading above +200 is a very rare extreme. A pullback tends to follow, but when it will come can't be known.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks whether CCI has just crossed a reference line. It calculates CCI(20) and flags only crossings within the last 3 bars as signals.
+SIGLENS checks whether CCI has just crossed a reference line. It calculates CCI(20) and flags only crossings within the last 3 bars as signals.
 
 - Upward side: CCI crosses -100 from below (leaving oversold), or crosses +100 from below (upward momentum).
 - Downward side: CCI comes down through +100 from above (leaving overbought), or comes down through the zero line from above (downward momentum).

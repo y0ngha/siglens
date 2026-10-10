@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
-import { resolveLocale } from '@/shared/i18n/locales';
+import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     selfCanonicalAlternates,
@@ -26,7 +26,6 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
 import { cn } from '@/shared/lib/cn';
@@ -34,6 +33,7 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import { brandName, brandTitle } from '@/shared/lib/brandName';
 
 // 24h ISR — 허브 인덱스는 지역 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -50,8 +50,8 @@ const NEWS_HUB_PATH = '/news';
 export function newsHubTitle(t: SeoTranslator): string {
     return t('newsHub.title');
 }
-function newsHubFullTitle(t: SeoTranslator): string {
-    return `${newsHubTitle(t)} | ${SITE_NAME}`;
+function newsHubFullTitle(t: SeoTranslator, locale: Locale): string {
+    return brandTitle(newsHubTitle(t), locale);
 }
 export function newsHubDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('newsHub.description'));
@@ -121,14 +121,14 @@ export async function generateMetadata({
             : localePageRobots(locale),
         openGraph: {
             type: 'website',
-            siteName: SITE_NAME,
-            title: newsHubFullTitle(tSeo),
+            siteName: brandName(locale),
+            title: newsHubFullTitle(tSeo, locale),
             description: newsHubDescription(tSeo),
             url,
             ...ogLocale,
         },
         twitter: buildTwitterMetadata({
-            title: newsHubFullTitle(tSeo),
+            title: newsHubFullTitle(tSeo, locale),
             description: newsHubDescription(tSeo),
         }),
     };
@@ -204,7 +204,7 @@ export default async function NewsHubPage({
     const webPageJsonLd = {
         ...buildWebPageJsonLd({
             url: hubUrl,
-            name: `${newsHubTitle(tSeo)} | ${SITE_NAME}`,
+            name: brandTitle(newsHubTitle(tSeo), locale),
             description: newsHubDescription(tSeo),
             locale,
         }),

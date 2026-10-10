@@ -3,7 +3,7 @@ title: Moving Average Grand Cycle Analysis
 aliases: [grand cycle analysis, moving average grand cycle, Granville's law, golden cross and death cross, Granville's rules]
 summary: "Sorts the market into one of six stages by the order of the short, medium and long moving averages."
 seoTitle: "Moving Average Grand Cycle: Reading the 6 Stages"
-seoDescription: The six stages of the moving average cycle read from the order of the 5-, 20- and 60-day lines, the eight signals of Granville's rules, and how Siglens assigns the stage.
+seoDescription: The six stages of the moving average cycle read from the order of the 5-, 20- and 60-day lines, the eight signals of Granville's rules, and how SIGLENS assigns the stage.
 demoCaption: Synthetic, illustrative candles. Shows stage 1, with the 5-, 20- and 60-day moving averages in short, medium, long order from the top, and the points where the lines cross.
 faq:
   - q: What are the six stages of the grand cycle?
@@ -11,7 +11,7 @@ faq:
   - q: Does a golden cross mean price will rise?
     a: If the long line is still falling, it may be a false signal. What matters most is whether the direction of the long line has changed, more than the cross itself. One study also found that the effect of simple moving average crossovers disappeared when tested on new data from after 1986.
   - q: Which moving averages does it use?
-    a: Siglens uses simple moving averages of 5 days (short), 20 days (medium) and 60 days (long).
+    a: SIGLENS uses simple moving averages of 5 days (short), 20 days (medium) and 60 days (long).
 ---
 
 ## How it looks
@@ -31,7 +31,7 @@ Usually stages 1 and 4 are long and the others are short. If stages 1 and 4 beco
 
 ## What it tells you
 
-What follows is the traditional way to read this analysis. Siglens uses it as context for describing what state the market is in.
+What follows is the traditional way to read this analysis. SIGLENS uses it as context for describing what state the market is in.
 
 You look at three things. The order shows the current situation, the gaps between lines show how likely the next stage is, and the slope helps screen out false signals.
 
@@ -43,21 +43,21 @@ If the medium and long lines are still rising in stage 2, the trend may not be o
 
 Granville's law lists four bullish and four bearish signals, based on the relationship between the short line and a base line (the medium or long line). Examples are a golden cross, a recross of a rising line, a bounce after a pullback, and a large gap from the moving average (roughly 10% or more as a reference).
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks at the order of the three moving averages on the last bar and sets the stage from the table above.
+SIGLENS looks at the order of the three moving averages on the last bar and sets the stage from the table above.
 
 - It sorts the 5-, 20- and 60-day simple moving average (SMA) values by size.
 - If two lines have exactly the same value, it does not set a stage. It does not use exponential moving averages (EMA). The [MACD grand cycle analysis](/guide/strategies/macd-cycle) uses EMA 9, 21 and 60, so its results differ.
 
-What brings this analysis up is separate from the six stages: the widely used 20-day/50-day crossover. When the 20-day line crosses above the 50-day line (golden cross) or below it (death cross) within the last 3 bars, Siglens looks at this analysis too. It also checks:
+What brings this analysis up is separate from the six stages: the widely used 20-day/50-day crossover. When the 20-day line crosses above the 50-day line (golden cross) or below it (death cross) within the last 3 bars, SIGLENS looks at this analysis too. It also checks:
 
 - Whether the market arrived from the previous stage in forward order or came back in reverse
 - The order, gaps and slope
 - Whether a Granville signal applies
 - Whether it is a sideways pattern where stages 1 and 4 are short and stages 2, 3, 5 and 6 repeat
 
-Siglens does not use a crossover as grounds for when to buy or sell. A study found that the edge simple moving average crossovers once had disappeared when tested on new data from after 1986 (Sullivan, Timmermann & White, 1999).
+SIGLENS does not use a crossover as grounds for when to buy or sell. A study found that the edge simple moving average crossovers once had disappeared when tested on new data from after 1986 (Sullivan, Timmermann & White, 1999).
 
 ## Watch out for
 

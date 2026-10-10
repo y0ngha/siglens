@@ -1079,7 +1079,7 @@ export const analysisHistory = pgTable(
 );
 
 /**
- * SiglensAI 대화(스펙 §6-1). 회원 전용. 삭제는 하드 삭제다 — 개인정보처리방침
+ * SIGLENS AI 대화(스펙 §6-1). 회원 전용. 삭제는 하드 삭제다 — 개인정보처리방침
  * (`db/seeds/terms/privacy/v4.md`)이 삭제 즉시 파기를 약속하므로,
  * `DrizzleChatConversationRepository.delete`가 행 자체를 지운다(메시지는
  * `chat_messages.conversation_id`의 `onDelete: 'cascade'`로 함께 삭제, 별도

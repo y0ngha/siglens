@@ -25,7 +25,6 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    SITE_NAME,
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
@@ -38,6 +37,7 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { brandTitle } from '@/shared/lib/brandName';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고, 신선도는 캘린더 인제스션의
 // `revalidateTag('economy:calendar')`가 책임진다. 시간 기반은 상한만 정한다.
@@ -274,7 +274,7 @@ function buildEconomyKrFaqJsonLd(t: SeoTranslator) {
 }
 
 function buildEconomyKrWebPageJsonLd(t: SeoTranslator, locale: Locale) {
-    const fullTitle = `${economyKrTitle(t)} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(economyKrTitle(t), locale);
     return {
         ...buildWebPageJsonLd({
             url: ECONOMY_KR_URL,

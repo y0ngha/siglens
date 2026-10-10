@@ -4,8 +4,8 @@ import {
     ROOT_KEYWORDS,
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
-    SITE_NAME_KO,
 } from '../seo';
+import { SITE_NAME_KO } from '@/shared/config/brand';
 import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';
 import jaMessages from '../../../../messages/ja.json';

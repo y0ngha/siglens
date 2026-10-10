@@ -25,7 +25,7 @@ describe('RootNotFound — ai 호스트', () => {
         visit('/foo/bar');
     });
 
-    it('SiglensAI 문구와 새 대화 시작 링크만 보여주고 시장 내비는 없다', async () => {
+    it('SIGLENS AI 문구와 새 대화 시작 링크만 보여주고 시장 내비는 없다', async () => {
         await renderRoot();
 
         expect(window.location.hostname).toBe('ai.siglens.io');
@@ -42,7 +42,7 @@ describe('RootNotFound — ai 호스트', () => {
         ).toHaveAttribute('href', '/');
         expect(screen.queryByRole('navigation')).toBeNull();
         expect(screen.queryByText(/요청하신 페이지가/)).toBeNull();
-        expect(document.title).toBe('페이지를 찾을 수 없습니다 | SIGLENS AI');
+        expect(document.title).toBe('페이지를 찾을 수 없습니다 | 시그렌즈 AI');
     });
 
     it('로케일 접두사를 유지한다', async () => {
@@ -56,7 +56,7 @@ describe('RootNotFound — ai 호스트', () => {
         expect(document.documentElement.lang).toBe('en');
     });
 
-    it('ai 호스트 주소에서 하이드레이션해도 불일치 오류가 없고 SiglensAI 문구로 바뀐다', async () => {
+    it('ai 호스트 주소에서 하이드레이션해도 불일치 오류가 없고 SIGLENS AI 문구로 바뀐다', async () => {
         const out = await hydrateServerMarkup();
 
         expect(out.recoverableErrors).toEqual([]);
@@ -64,6 +64,6 @@ describe('RootNotFound — ai 호스트', () => {
         expect(
             within(out.container).getByRole('link', { name: '새 대화 시작' })
         ).toBeInTheDocument();
-        expect(document.title).toBe('페이지를 찾을 수 없습니다 | SIGLENS AI');
+        expect(document.title).toBe('페이지를 찾을 수 없습니다 | 시그렌즈 AI');
     });
 });

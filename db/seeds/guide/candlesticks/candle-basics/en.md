@@ -36,9 +36,9 @@ One candle is only a clue. So traders usually wait to see whether the next candl
 
 The period each candle covers matters as well, whether daily, weekly or intraday. The shorter the period, the more random movement is mixed in, so the same pattern is less reliable.
 
-## How Siglens uses candlestick patterns
+## How SIGLENS uses candlestick patterns
 
-Siglens looks for candlestick patterns within the latest 15 bars using fixed rules. Multi-bar patterns are matched longest first: five-bar patterns, then four, three and two. Bars already used in a multi-bar pattern are not counted again as single-bar patterns. Ordinary bullish or bearish bars and the very common spinning top are not listed as patterns.
+SIGLENS looks for candlestick patterns within the latest 15 bars using fixed rules. Multi-bar patterns are matched longest first: five-bar patterns, then four, three and two. Bars already used in a multi-bar pattern are not counted again as single-bar patterns. Ordinary bullish or bearish bars and the very common spinning top are not listed as patterns.
 
 Body size is judged as a ratio of the high-to-low range. For example, a body at most 10% of that range is a [doji](/guide/candlesticks/doji), at least 90% is a [marubozu](/guide/candlesticks/marubozu), and at least 60% is the "long body" used in multi-bar patterns.
 
@@ -48,7 +48,7 @@ Detected patterns fall into three groups.
 - Continuation: hints that the trend may carry on, such as marubozu and the three methods
 - Wait-and-see: a state with no direction and evenly matched forces, such as a doji
 
-For most patterns Siglens checks bar shape only, not the preceding trend. So don't rely on the pattern name; also check on the chart what came before. For a few patterns the name and the actual measured direction are opposite, and Siglens follows the measured direction. The [three-line strike](/guide/candlesticks/three-line-strike) is the main example.
+For most patterns SIGLENS checks bar shape only, not the preceding trend. So don't rely on the pattern name; also check on the chart what came before. For a few patterns the name and the actual measured direction are opposite, and SIGLENS follows the measured direction. The [three-line strike](/guide/candlesticks/three-line-strike) is the main example.
 
 ## How to read the numbers in this guide
 

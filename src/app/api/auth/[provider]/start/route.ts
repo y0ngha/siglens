@@ -32,7 +32,7 @@ export async function GET(
         req.url
     );
     loginUrl.searchParams.set('error', 'oauth_unknown');
-    // 돌아갈 곳(예: SiglensAI 핸드오프)을 로그인 화면에 되실어 준다.
+    // 돌아갈 곳(예: SIGLENS AI 핸드오프)을 로그인 화면에 되실어 준다.
     if (next !== DEFAULT_REDIRECT_PATH) loginUrl.searchParams.set('next', next);
     if (!isOAuthProvider(provider)) {
         return NextResponse.redirect(loginUrl);

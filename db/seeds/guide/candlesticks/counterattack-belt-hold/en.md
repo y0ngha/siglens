@@ -23,9 +23,9 @@ faq:
 
 A belt hold means one side pushed from the very first trade. In a bullish counterattack, the second bar opens below the first bearish bar, then rallies hard back up to the first bar's close. In a bearish counterattack, the second bar opens above the first bullish bar, then drops hard back down to the first bar's close. Both are clues to a short change of direction.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks only bar shape, not the preceding trend.
+SIGLENS checks only bar shape, not the preceding trend.
 
 - Belt hold: the bar's body must be at least 60% of its high-to-low range, and the wick on the opening side (lower wick for a bullish bar, upper wick for a bearish one) must be at most 10% of the body length. If the body is 90% or more, it is classified separately as a [marubozu](/guide/candlesticks/marubozu).
 - Counterattack: both bars are long bars with bodies of at least 60%, and the second close is within 0.2% of the first close.
@@ -37,7 +37,7 @@ Thomas Bulkowski, who counted what price actually did after each pattern across 
 - Bullish counterattack: 56% bullish reversal, close to a coin flip.
 - Bearish counterattack: 49% bearish reversal, with upward continuation at 51%. However, when the bar after the pattern closed lower, it led to a reversal 67-70% of the time.
 
-So Siglens reads a belt hold as a short-lived turning clue. It treats a counterattack as a pattern whose direction is uncertain but whose trend tends to continue once a direction is set. Judge direction by the next bar's close.
+So SIGLENS reads a belt hold as a short-lived turning clue. It treats a counterattack as a pattern whose direction is uncertain but whose trend tends to continue once a direction is set. Judge direction by the next bar's close.
 
 ## Watch out for
 

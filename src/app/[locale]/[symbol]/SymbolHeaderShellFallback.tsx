@@ -1,4 +1,8 @@
+'use client';
+
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName } from '@/shared/lib/brandName';
 
 // Static shell mirroring SymbolLayoutHeader's outer shape. Used as the Suspense
 // fallback while params resolve and the bars prefetch completes.
@@ -26,13 +30,16 @@ import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 // 달라도 나머지 x는 안 밀린다 — 375px 실측 근거는 git 이력의 이전 주석). ☆는 회원·게스트
 // 모두에게 하이드레이션 전부터 같은 크기로 그려지므로 자리를 둔다.
 export function SymbolHeaderShellFallback() {
+    // 클라이언트 그래프(`SymbolEntrySkeleton`)에서만 그려져 컨텍스트 로케일을 읽는다 —
+    // 실제 헤더의 홈 마디(`brandName(locale)`)와 글자가 같아야 전환 때 폭이 튀지 않는다.
+    const locale = useCurrentLocale();
     return (
         <header className="py-3" aria-hidden="true">
             <div className="flex items-center gap-2 px-4 sm:gap-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                     {/* 실제 헤더처럼 모바일(sm 미만)에서는 브레드크럼을 감춘다. */}
                     <span className="hidden font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase sm:inline">
-                        SIGLENS
+                        {brandName(locale)}
                     </span>
                     <span className="hidden text-secondary-500 sm:inline">
                         /

@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { INTL_LOCALE, resolveLocale } from '@/shared/i18n/locales';
+import { INTL_LOCALE, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localePageSocial,
@@ -13,7 +13,6 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    SITE_NAME,
     SITE_URL,
     SYMBOLS_PATH,
     type SeoTranslator,
@@ -23,6 +22,7 @@ import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { loadSymbolNames } from '@/entities/ticker/lib/loadSymbolNames';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { brandTitle } from '@/shared/lib/brandName';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 
 /**
@@ -48,8 +48,8 @@ function symbolsTitle(t: SeoTranslator): string {
     return t('symbols.title');
 }
 
-function symbolsFullTitle(t: SeoTranslator): string {
-    return `${symbolsTitle(t)} | ${SITE_NAME}`;
+function symbolsFullTitle(t: SeoTranslator, locale: Locale): string {
+    return brandTitle(symbolsTitle(t), locale);
 }
 
 function symbolsDescription(t: SeoTranslator): string {
@@ -80,7 +80,7 @@ export async function generateMetadata({
         // `/og-image.png`도 함께 실린다(2026-09-18 실측: 이 라우트만 `og:image`가
         // 없었다 — 이미지를 아예 안 주면 공유 카드가 텅 빈 채로 나간다).
         ...localePageSocial(locale, PATH, {
-            title: symbolsFullTitle(tSeo),
+            title: symbolsFullTitle(tSeo, locale),
             description: symbolsDescription(tSeo),
         }),
     };
@@ -111,7 +111,7 @@ export default async function SymbolsDirectoryPage({
 
     const webPageJsonLd = buildWebPageJsonLd({
         url: `${SITE_URL}${PATH}`,
-        name: symbolsFullTitle(tSeo),
+        name: symbolsFullTitle(tSeo, locale),
         description: symbolsDescription(tSeo),
         locale,
     });

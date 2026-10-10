@@ -17,10 +17,6 @@ vi.mock('next/image', () => ({
     },
 }));
 
-vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
-}));
-
 describe('AuthCardShell', () => {
     it('renders the title', () => {
         render(<AuthCardShell title="Sign In">content</AuthCardShell>);

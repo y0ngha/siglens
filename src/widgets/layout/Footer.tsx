@@ -21,16 +21,10 @@ import {
     TERMS_PATH,
     termsTitle,
 } from '@/shared/lib/legal';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import {
-    GITHUB_URL,
-    SITE_NAME,
-    SITE_NAME_KO,
-    SYMBOLS_PATH,
-    X_URL,
-} from '@/shared/lib/seo';
+import { GITHUB_URL, SYMBOLS_PATH, X_URL } from '@/shared/lib/seo';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
+import { brandName } from '@/shared/lib/brandName';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**
@@ -169,15 +163,11 @@ export function Footer() {
                         바깥 여백 합(12 + 12)만큼은 간격이 있어야 하므로 24px이다. */}
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                         {/* `whitespace-nowrap`: 320px에서 `© 2026` / `SIGLENS`
-                            두 줄로 쪼개지던 회귀가 있었다(2026-08-25 사용자 제보). */}
+                            두 줄로 쪼개지던 회귀가 있었다(2026-08-25 사용자 제보).
+                            브랜드는 로케일 표기다 — ko `시그렌즈`, 그 외 `SIGLENS`
+                            (`CONVENTIONS.md#I18-11`). */}
                         <p className="text-sm whitespace-nowrap text-secondary-400">
-                            © <CurrentYear /> {SITE_NAME.toUpperCase()}
-                            {/* 워드마크 옆 한글 표기 — 전 페이지에서 "시그렌즈"가
-                                보이는 유일한 자리다(`SITE_NAME_KO` 주석). 한글 독음이라
-                                ko에서만 낸다. */}
-                            {locale === DEFAULT_LOCALE && (
-                                <> · {SITE_NAME_KO}</>
-                            )}
+                            © <CurrentYear /> {brandName(locale)}
                         </p>
                         <a
                             href={GITHUB_URL}
@@ -185,7 +175,9 @@ export function Footer() {
                             // 외부 탭으로 여는 링크는 opener를 끊는다. `noreferrer`는
                             // `noopener`를 포함하지만 둘 다 적어 의도를 남긴다.
                             rel="noopener noreferrer"
-                            aria-label={t('githubRepoAria', { v0: SITE_NAME })}
+                            aria-label={t('githubRepoAria', {
+                                v0: brandName(locale),
+                            })}
                             // 아이콘은 20px이지만 터치 영역은 44px(`size-11`)이다 —
                             // 아래 X 링크와 같은 처리(음수 마진 근거는 그쪽 주석).
                             className="-m-3 inline-flex size-11 items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
@@ -197,7 +189,9 @@ export function Footer() {
                             target="_blank"
                             // GitHub 링크와 같다 — 외부 탭은 opener를 끊는다.
                             rel="noopener noreferrer"
-                            aria-label={t('xAccountAria', { v0: SITE_NAME })}
+                            aria-label={t('xAccountAria', {
+                                v0: brandName(locale),
+                            })}
                             // 아이콘은 20px이지만 터치 영역은 44px(`size-11`)이어야 한다.
                             // 음수 마진(`-m-3`)이 늘어난 12px씩을 되돌려 레이아웃 몫은 20px
                             // 그대로다. 행 간격(`gap-x-6` = 24px)이 이웃 상자와의 바깥 여백

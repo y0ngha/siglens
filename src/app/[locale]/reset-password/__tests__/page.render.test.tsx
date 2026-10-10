@@ -29,7 +29,6 @@ vi.mock('@/shared/ui/auth/AuthFormSkeleton', () => ({
     ),
 }));
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/link', () => ({

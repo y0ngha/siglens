@@ -123,10 +123,10 @@ describe('HeaderNav', () => {
         ).toBeInTheDocument();
     });
 
-    it('SiglensAI 진입점은 로고 락업이 맡는다 — 데스크톱 내비에는 없다', () => {
+    it('SIGLENS AI 진입점은 로고 락업이 맡는다 — 데스크톱 내비에는 없다', () => {
         render(<HeaderNav items={NAV_TREE} />);
         expect(
-            screen.queryByRole('link', { name: /SIGLENS AI|SiglensAI/i })
+            screen.queryByRole('link', { name: /SIGLENS AI|시그렌즈 AI/i })
         ).toBeNull();
     });
 

@@ -14,7 +14,7 @@ function walk(dir: string): string[] {
 }
 
 describe('AI_CLIENT_PATHS', () => {
-    it('includes every useTranslations/getTranslations namespace used by the SiglensAI widgets/features/pages', () => {
+    it('includes every useTranslations/getTranslations namespace used by the SIGLENS AI widgets/features/pages', () => {
         const files = [
             ...walk(join(process.cwd(), 'src/widgets/agent-chat')),
             ...walk(join(process.cwd(), 'src/features/agent-chat')),

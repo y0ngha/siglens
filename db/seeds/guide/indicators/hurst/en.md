@@ -32,9 +32,9 @@ The name comes from hydrologist Harold Edwin Hurst (1951), who studied records o
 
 It tells you the character of the market, not direction. When H is above 0.5, trend-following signals carry more weight and signals that bet on a pullback are less reliable. When it is below 0.5, mean-reversion signals (bets on price returning toward its average) such as [Bollinger %B](/guide/indicators/bollinger-percent-b) work relatively well, and the case for a trend continuing is weaker. Near 0.5, it is hard to be confident in either direction.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens computes the Hurst exponent from price changes over the last 100 bars and points out which kind of market it is closer to only when the value is far enough from 0.5.
+SIGLENS computes the Hurst exponent from price changes over the last 100 bars and points out which kind of market it is closer to only when the value is far enough from 0.5.
 
 - Range: the last 100 bars. It finds the slope while varying the segment length over 25, 50 and 100 bars.
 - 0.6 or higher: read as closer to a trending market, where moves continue.

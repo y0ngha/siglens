@@ -11,7 +11,7 @@ faq:
   - q: How reliable is a bull flag?
     a: The shape is distinct, but the results after a breakout are modest. In Thomas Bulkowski's tabulation, fewer than half of flags (46%) reached their target.
   - q: How is a bull flag different from a pennant?
-    a: In a flag the two lines run parallel; in a pennant they converge and narrow. Siglens calls it a pennant if the final width narrows to 0.7 times the starting width or less, and a flag if it is wider than that.
+    a: In a flag the two lines run parallel; in a pennant they converge and narrow. SIGLENS calls it a pennant if the final width narrows to 0.7 times the starting width or less, and a flag if it is wider than that.
 ---
 
 ## How it looks
@@ -32,9 +32,9 @@ Bulkowski pooled bull flags and [bear flags](/guide/chart-patterns/bear-flag) in
 
 In a bull flag, the flag is a rest driven by profit-taking after the surge. So when volume during the flag drops below half of the pole's volume, the case for a pause gets stronger. If the flag slopes upward and starts to resemble a [rising wedge](/guide/chart-patterns/ascending-wedge), it may be a weakening trend rather than a normal pause. A flag that runs past 4 weeks may be turning into a [rectangle](/guide/chart-patterns/rectangle) or a [descending channel](/guide/chart-patterns/descending-channel).
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) and uses the surge from a swing low to the next swing high as the pole. When a narrow channel that drifts down or sideways follows, it treats the shape as a bull flag.
+SIGLENS looks for clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) and uses the surge from a swing low to the next swing high as the pole. When a narrow channel that drifts down or sideways follows, it treats the shape as a bull flag.
 
 - Pole: it must rise at least 3 times ATR within 20 bars and also exceed a set share of price (for example, 3% on daily bars).
 - Flag length: 5 to 20 bars after the pole top.
@@ -42,11 +42,11 @@ Siglens looks for clearly turning highs and lows (swings: turning points where p
 - The flag's starting width must be no more than half the pole's length.
 - The flag's upper and lower lines each need at least 2 touches at least 2 bars apart.
 - The final width must be more than 0.7 times and no more than 1.15 times the starting width, and neither line may rise by more than the smaller of 0.75 times ATR and 1% of price. If the width narrows to 0.7 times or less, it is treated as a [pennant](/guide/chart-patterns/pennant).
-- If the flag ended before the last bar, the very next bar must already be outside the channel. If it stays inside, Siglens treats it as a trading range, not a flag.
+- If the flag ended before the last bar, the very next bar must already be outside the channel. If it stays inside, SIGLENS treats it as a trading range, not a flag.
 
 The measured target is the upper line plus the pole length, and the conservative target adds half the pole length. The invalidation level is the flag's lowest low after the pole top.
 
-If the close breaks above the upper line by more than 0.25 times ATR and the last close then returns inside the channel, Siglens marks it as a "failed breakout".
+If the close breaks above the upper line by more than 0.25 times ATR and the last close then returns inside the channel, SIGLENS marks it as a "failed breakout".
 
 ## Watch out for
 

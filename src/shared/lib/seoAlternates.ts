@@ -1,5 +1,5 @@
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandName, brandTitle } from '@/shared/lib/brandName';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
 import {
@@ -282,7 +282,7 @@ export function localePageSocial(
     return {
         openGraph: {
             type,
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title,
             description,
             url,
@@ -311,7 +311,7 @@ export interface HubMetadataInput {
     readonly locale: Locale;
     /** 로케일 접두사가 없는 경로(`/market`, `/economy/kr`). */
     readonly path: string;
-    /** 브랜드 없는 제목 — `<title>`은 레이아웃 템플릿이, 소셜 카드는 여기서 `| SIGLENS`를 붙인다. */
+    /** 브랜드 없는 제목 — `<title>`은 레이아웃 템플릿이, 소셜 카드는 여기서 `brandTitle`로 로케일 접미사를 붙인다. */
     readonly title: string;
     readonly description: string;
     readonly keywords: readonly string[];
@@ -365,7 +365,7 @@ export async function buildHubMetadata({
             ? { index: false, follow: true }
             : localePageRobots(locale),
         ...localePageSocial(locale, path, {
-            title: `${title} | ${SITE_NAME}`,
+            title: brandTitle(title, locale),
             description,
         }),
     };

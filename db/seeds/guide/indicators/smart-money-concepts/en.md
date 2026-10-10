@@ -3,13 +3,13 @@ title: "Smart Money Concepts (SMC)"
 aliases: [SMC, Smart Money Concepts, Order Block, Fair Value Gap, FVG, BOS, CHoCH]
 summary: "A way of finding the traces large money leaves on a chart. It marks key price zones using high-low structure, order blocks and fair value gaps."
 seoTitle: "Smart Money Concepts: Order Blocks and FVG"
-seoDescription: What BOS and CHoCH, order blocks, fair value gaps and premium and discount zones mean in Smart Money Concepts (SMC), along with Siglens' rules.
+seoDescription: What BOS and CHoCH, order blocks, fair value gaps and premium and discount zones mean in Smart Money Concepts (SMC), along with SIGLENS' rules.
 demoCaption: "Synthetic, illustrative bars. Marked are the bar that breaks a swing high (BOS), the down bar just before it (order block), and the empty price zone across three bars (fair value gap)."
 faq:
   - q: "What is an order block?"
     a: "It is the last bar in the opposite direction just before a strong move. The last down bar before a bullish breakout is a bullish order block, seen as a price zone where large money placed orders."
   - q: "Does trading with Smart Money Concepts make money?"
-    a: "There is not enough evidence to say it does. When Siglens checked SPY (S&P 500 ETF) data, none of order blocks, fair value gaps, liquidity sweeps or structure breaks clearly raised subsequent returns. It fits better as a tool for describing chart structure and price zones."
+    a: "There is not enough evidence to say it does. When SIGLENS checked SPY (S&P 500 ETF) data, none of order blocks, fair value gaps, liquidity sweeps or structure breaks clearly raised subsequent returns. It fits better as a tool for describing chart structure and price zones."
 ---
 
 ## How it's calculated
@@ -28,15 +28,15 @@ Smart Money Concepts (SMC) is a way of finding the traces large money leaves on 
 
 ## What it tells you
 
-What follows is the traditional SMC reading. Siglens uses it as context for describing chart structure, not as a confirmed signal.
+What follows is the traditional SMC reading. SIGLENS uses it as context for describing chart structure, not as a confirmed signal.
 
 In an uptrend structure, highs and lows both rise; in a downtrend, both fall. A BOS is read as the trend continuing, and a CHoCH as a warning that the trend may change. A single CHoCH does not confirm a reversal.
 
 Order blocks and fair value gaps are read as price zones where a reaction may occur when price comes back to them. Zones that are not yet used up are the ones of interest; those already used up lose significance. Some hold that stop orders pile up near equal highs and lows, so liquidity sweeps around them are watched.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens finds these patterns automatically with fixed rules and shows them as candidate key price zones on the chart.
+SIGLENS finds these patterns automatically with fixed rules and shows them as candidate key price zones on the chart.
 
 - Swing highs and lows: the highest or lowest bar within 5 bars on each side.
 - BOS and CHoCH: a structure break is recorded when a close finishes above the latest swing high or below the latest swing low. If it goes the same direction as the previous break, it is a BOS; if the opposite direction, a CHoCH.
@@ -47,7 +47,7 @@ Siglens finds these patterns automatically with fixed rules and shows them as ca
 
 Strength is graded by how many elements overlap at the same price zone: 1 is weak, 2 is moderate, 3 or more is strong. This standard is not a value validated with data; it is a simple rule set for automated analysis.
 
-When Siglens checked SPY (S&P 500 ETF) data, none of order blocks, fair value gaps, liquidity sweeps or structure breaks clearly raised subsequent returns. So they are used only to describe structure and price zones, not as confirmed signals.
+When SIGLENS checked SPY (S&P 500 ETF) data, none of order blocks, fair value gaps, liquidity sweeps or structure breaks clearly raised subsequent returns. So they are used only to describe structure and price zones, not as confirmed signals.
 
 ## Watch out for
 

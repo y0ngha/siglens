@@ -16,7 +16,8 @@
  */
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { brandName } from '@/shared/lib/brandName';
 import { ContactDialog } from '@/widgets/layout/ContactDialog';
 import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import { cn } from '@/shared/lib/cn';
@@ -30,6 +31,7 @@ const CONTINUE_LINK_CLASSES = cn(
 
 export function NotFoundContent() {
     const t = useTranslations('app.home');
+    const locale = useResolvedLocale();
     return (
         <main className="flex flex-1 flex-col">
             <div className="flex flex-col items-center px-6 py-20 text-center">
@@ -39,7 +41,7 @@ export function NotFoundContent() {
                     href="/"
                     className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {t('not-found.ba81f0', { v0: SITE_NAME })}
+                    {t('not-found.ba81f0', { v0: brandName(locale) })}
                 </Link>
 
                 <p className="mt-10 text-sm text-secondary-400">

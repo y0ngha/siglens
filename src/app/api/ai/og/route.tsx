@@ -3,7 +3,7 @@ import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 import { resolveLocale } from '@/shared/i18n/locales';
 
 /**
- * Share card for the SiglensAI landing. A route handler rather than an
+ * Share card for the SIGLENS AI landing. A route handler rather than an
  * `opengraph-image` file: file-convention image URLs are built from the
  * internal `/ai/[locale]` path, which the ai host's rewrite would double
  * (`/ai/ko/ai/ko/...`) and the main host 301s away. `/api` is outside the

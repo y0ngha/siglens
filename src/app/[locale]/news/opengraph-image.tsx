@@ -18,7 +18,7 @@ import {
     OG_SUBTITLE_FONT_SIZE,
     OG_IMAGE_CACHE_CONTROL,
 } from '@/shared/lib/og';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 
 export const dynamic = 'force-static';
 // 30d — route segment config는 정적 분석 가능한 리터럴이어야 한다(식/import 상수로 추출하면

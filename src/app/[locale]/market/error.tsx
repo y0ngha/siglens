@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName } from '@/shared/lib/brandName';
 import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface MarketErrorProps {
@@ -22,6 +23,7 @@ interface MarketErrorProps {
  */
 export default function MarketError({ error, reset }: MarketErrorProps) {
     const t = useTranslations('app.market');
+    const locale = useCurrentLocale();
     return (
         <RouteErrorView
             error={error}
@@ -31,7 +33,7 @@ export default function MarketError({ error, reset }: MarketErrorProps) {
             title={t('error.cccc8a')}
             body={t('error.a92ddb')}
             retryLabel={t('error.0c767c')}
-            homeLabel={t('error.eb2523', { v0: SITE_NAME })}
+            homeLabel={t('error.eb2523', { v0: brandName(locale) })}
         />
     );
 }

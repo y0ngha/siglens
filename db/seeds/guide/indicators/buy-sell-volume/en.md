@@ -34,9 +34,9 @@ As a buy ratio (buy ÷ total), above 60% is buy-dominant, below 40% is sell-domi
 
 It's most useful alongside a breakout. If the bar that breaks resistance has a high buy ratio, the breakout carries buyers' conviction. A high sell ratio makes the breakout doubtful. If price makes lower lows while the lows in the buy ratio rise, that is sometimes read as selling pressure easing.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens calculates buy and sell volume for each bar with the formulas above and uses it to check whether price movement is backed by volume. It isn't used as a signal that sets direction.
+SIGLENS calculates buy and sell volume for each bar with the formulas above and uses it to check whether price movement is backed by volume. It isn't used as a signal that sets direction.
 
 - If the last bar's buy ratio is 65% or more, or 35% or less, that bar is singled out for interpretation. These are one step more lopsided than the 60% and 40% levels above, so only those bars get called out.
 - The trend in recent bars' buy ratio is used to judge whether buying or selling is accumulating.

@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/config/brand';
 import {
     OG_ACCENT,
     OG_BG,

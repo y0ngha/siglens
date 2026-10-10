@@ -99,7 +99,7 @@ export const CDN_CACHE_TAG_HEADER_RULES: readonly HeaderRule[] = [
         '/:path((?:.*/)?(?:opengraph|twitter)-image(?:[-.][^/]*)?(?:/.*)?)',
         CDN_CACHE_TAG.og
     ),
-    // SiglensAI 공유 카드 `/api/ai/og/<locale>.png`(`app/api/ai/og/[file]/route.tsx`)와 옛
+    // SIGLENS AI 공유 카드 `/api/ai/og/<locale>.png`(`app/api/ai/og/[file]/route.tsx`)와 옛
     // 쿼리스트링 경로 `/api/ai/og`. `.png`라 미디어 규칙에 걸리지만 문구·디자인을 코드로 그리므로
     // OG로 분류한다.
     tagRule('/api/ai/og/:path*', CDN_CACHE_TAG.og),

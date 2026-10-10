@@ -65,6 +65,20 @@ describe('diffStaticLastmod', () => {
         ]);
     });
 
+    it('쿼리·해시가 붙은 가이드 항목 URL은 정규 sitemap URL이 아니므로 감시하지 않는다', () => {
+        const diff = diffStaticLastmod(
+            [
+                entry('/guide/candlesticks/doji?x=1', '2026-10-01T00:00:00Z'),
+                entry('/guide/candlesticks/doji#h', '2026-10-01T00:00:00Z'),
+                entry('/guide/candlesticks/doji', '2026-10-01T00:00:00Z'),
+            ],
+            {}
+        );
+        expect(diff.changedUrls).toEqual([
+            'https://siglens.io/guide/candlesticks/doji',
+        ]);
+    });
+
     it('저장된 값이 없으면(첫 실행) 다섯 정적 페이지 전부 변경으로 센다 — 시드 + 1회 제출', () => {
         const diff = diffStaticLastmod(ENTRIES, {});
 

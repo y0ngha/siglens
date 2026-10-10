@@ -72,7 +72,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL/financials',
         keywords: ['AAPL', 'AAPL 재무제표'],
     }),
-    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({
@@ -200,7 +199,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.openGraph?.siteName).toBe('SIGLENS');
+        expect(metadata.openGraph?.siteName).toBe('시그렌즈');
     });
 });
 

@@ -29,7 +29,7 @@ function isValidUuid(id: string): boolean {
 }
 
 /**
- * Drizzle ORM implementation backing SiglensAI conversations/messages
+ * Drizzle ORM implementation backing SIGLENS AI conversations/messages
  * (spec §6-1).
  *
  * Conversation methods (`create`/`findForUser`/`listForUser`/`countForUser`/

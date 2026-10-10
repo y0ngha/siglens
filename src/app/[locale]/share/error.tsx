@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
-import { SITE_NAME } from '@/shared/lib/seo';
 import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface ShareErrorProps {
@@ -30,7 +29,7 @@ export default function ShareError({ error, reset }: ShareErrorProps) {
             title={t('error.3cf233')}
             body={t('error.1dedc8', { v0: brandName(locale) })}
             retryLabel={t('error.0c767c')}
-            homeLabel={t('error.eb2523', { v0: SITE_NAME })}
+            homeLabel={t('error.eb2523', { v0: brandName(locale) })}
         />
     );
 }

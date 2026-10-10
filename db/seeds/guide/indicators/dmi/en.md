@@ -34,13 +34,13 @@ Crossovers are read like this.
 
 Combining with ADX makes it more accurate. +DI dominant with ADX rising above 25 means an uptrend is forming and strengthening, and with -DI dominant, a downtrend is strengthening. If ADX peaks and comes down while the two lines are still far apart, the trend is running out of force.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks at whether +DI and -DI have just crossed, and whether the trend had real force behind it at that moment. A cross during a forceless sideways stretch doesn't count.
+SIGLENS looks at whether +DI and -DI have just crossed, and whether the trend had real force behind it at that moment. A cross during a forceless sideways stretch doesn't count.
 
 - Crossover signal: in DMI(14), +DI crossing above -DI within the last 3 bars is an upside signal, and -DI crossing above +DI is a downside signal.
 - It counts only when ADX on the crossover bar is at least 20. Below 20, the cross is treated as one inside a trendless sideways market and skipped.
-- Even without a crossover, Siglens checks which of +DI and -DI is currently higher, and whether ADX is at least 25 (trending) or below 20 (weak).
+- Even without a crossover, SIGLENS checks which of +DI and -DI is currently higher, and whether ADX is at least 25 (trending) or below 20 (weak).
 
 The combinations it looks at are these.
 

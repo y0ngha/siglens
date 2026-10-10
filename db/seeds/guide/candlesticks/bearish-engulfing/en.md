@@ -3,7 +3,7 @@ title: Bearish Engulfing
 aliases: [Bearish Engulfing, Bearish Engulfing Pattern, Bearish Engulfing Candle]
 summary: "A bearish bar whose body fully covers the prior bullish bar. A clue to a reversal after an advance."
 seoTitle: Bearish Engulfing Candlestick Pattern Explained
-seoDescription: What a bearish engulfing candle looks like, where after a rise it carries more weight, how often it actually reversed, and how Siglens detects it.
+seoDescription: What a bearish engulfing candle looks like, where after a rise it carries more weight, how often it actually reversed, and how SIGLENS detects it.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bullish bar at the end of a rise is fully covered by a bearish bar with a larger body.
 faq:
   - q: Does price fall after a bearish engulfing?
@@ -20,9 +20,9 @@ It has two bars. The first is bullish. The second is bearish: it opens at or abo
 
 One bar erased the prior advance, so it is read as a clue that control passed from buyers to sellers. Textbooks give it weight when it appears at the end of an uptrend.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens compares the two bodies only. It ignores the shadows and does not check whether an advance came first, so look at the chart yourself for the prior trend.
+SIGLENS compares the two bodies only. It ignores the shadows and does not check whether an advance came first, so look at the chart yourself for the prior trend.
 
 - The first bar is bullish and the second is bearish.
 - The second bar opens at or above the first bar's close.

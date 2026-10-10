@@ -9,7 +9,7 @@ faq:
   - q: "What does it mean when the Parabolic SAR dots move above price?"
     a: "When the dots switch from below price to above it, that is read as the uptrend ending and turning down. When they switch from above to below, it means the downtrend has ended and turned up. In sideways markets these flips happen often, so they are easy to be fooled by."
   - q: "What are the default Parabolic SAR settings?"
-    a: "The acceleration factor starts at 0.02, steps up by 0.02 and caps at 0.20. These are the values set by J. Welles Wilder, who created the indicator, and Siglens uses them too."
+    a: "The acceleration factor starts at 0.02, steps up by 0.02 and caps at 0.20. These are the values set by J. Welles Wilder, who created the indicator, and SIGLENS uses them too."
 ---
 
 ## How it's calculated
@@ -25,9 +25,9 @@ The dot moves a little closer each bar toward the extreme point, the furthest pr
 - A widening gap between dot and price means the trend is gaining strength. The dots naturally move closer to price as time passes. If they close in faster than that, or price touches a dot, a turn is near.
 - The dot value itself is also widely used as a trailing stop (a stop level that moves along with the trend). In an uptrend, for example, a close below the dot counts as a breakdown.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for the bar where the dot has just jumped to the other side of price, and checks whether that reversal came in a trending market.
+SIGLENS looks for the bar where the dot has just jumped to the other side of price, and checks whether that reversal came in a trending market.
 
 - Setting: Wilder's standard values as they are: AF start 0.02, increment 0.02, max 0.20.
 - Reversal signal: a dot moving from below price to above is a bearish reversal, and from above to below a bullish reversal. It is marked when that flip happened within the last 3 bars.
