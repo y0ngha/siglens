@@ -47,7 +47,7 @@ export async function generateMetadata({
         locale,
         path: guideCategoryPath(category),
         title: copy.seoTitle[category],
-        description: seo.categoryDescription(copy.label[category], count),
+        description: seo.categoryDescription(category, count),
         keywords: [copy.label[category], ...seo.hubSeoKeywords.slice(0, 1)],
         degraded: catalog === null,
     });
@@ -78,7 +78,7 @@ export default async function GuideCategoryRoute({
                     path,
                     name: copy.label[category],
                     description: seo.categoryDescription(
-                        copy.label[category],
+                        category,
                         inCategory.length
                     ),
                     entries: inCategory,

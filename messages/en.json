@@ -2715,11 +2715,15 @@
             "categoryIntroChartPatterns": "These are the larger shapes many candles form. Double bottoms, head and shoulders, triangles, wedges and flags tend to appear when a trend continues or turns; each entry shows what they look like and how Siglens detects them.",
             "categoryIntroIndicators": "Moving averages, RSI, MACD, Bollinger Bands and other indicators calculated from price and volume. Each entry covers how it is calculated, how to read it, and when it tends to mislead.",
             "categoryIntroStrategies": "Ways of analysis that combine several signals, such as Elliott waves, Fibonacci retracements, divergence, breakouts and gaps. They help when a single indicator does not make the trend clear.",
-            "categorySeoDescription": "{name}: {count} entries explained with example charts, including how to read them, the criteria Siglens uses and what to watch out for.",
+            "categoryListHeading": "{name} list",
+            "categorySeoDescriptionCandlesticks": "See {count} common candlestick patterns, like doji, hammer, engulfing and morning star, on example charts, and learn where each one actually means something.",
+            "categorySeoDescriptionChartPatterns": "See {count} common chart patterns, like double bottom, head and shoulders, triangles and wedges, on example charts, and learn what shapes mark a trend continuing or turning.",
+            "categorySeoDescriptionIndicators": "Learn how {count} technical indicators, like moving averages, RSI, MACD and Bollinger Bands, are calculated and read, and when their values mislead, with example charts.",
+            "categorySeoDescriptionStrategies": "{count} chart trading strategies and theories, like Elliott waves, Fibonacci retracements, divergence, breakouts and gaps, explained with example charts.",
             "categorySeoTitleCandlesticks": "Candlestick Patterns: Types and Meanings",
             "categorySeoTitleChartPatterns": "Chart Patterns: Types and How to Read Them",
             "categorySeoTitleIndicators": "Technical Indicators: Types and How to Read Them",
-            "categorySeoTitleStrategies": "Elliott Wave, Fibonacci and Divergence Strategies",
+            "categorySeoTitleStrategies": "Chart Trading Strategies and Theories Explained",
             "categoryStrategies": "Strategies & theory",
             "ctaBody": "Search a stock you follow to read its chart and analysis side by side.",
             "ctaButton": "Search stocks",
@@ -3106,6 +3110,7 @@
             },
             "GuideHintLink": {
                 "aria": "Meaning of {name}",
+                "entry": "Look up patterns, candlesticks and indicators in the chart guide",
                 "label": "Meaning"
             }
         },

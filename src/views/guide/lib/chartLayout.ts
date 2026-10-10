@@ -17,7 +17,7 @@ export function linearScale(
 }
 
 /** 1, 2, 5 × 10^n 단계로 눈금 간격을 고른다. */
-function niceStep(rawStep: number): number {
+export function niceStep(rawStep: number): number {
     const exponent = Math.floor(Math.log10(rawStep));
     const base = 10 ** exponent;
     const fraction = rawStep / base;
@@ -75,19 +75,30 @@ function overlaps(a: LabelBox, b: LabelBox): boolean {
     );
 }
 
+const MAX_SHIFT_STEPS = 10;
+const SHIFT_STRIDE = 6;
+const SHIFT_WEIGHT = 0.7;
+/** 제자리 기준으로 위아래 몇 줄까지 후보로 삼을지. */
+const MAX_ROW_STEPS = 12;
+/** `direction` 반대쪽으로 움직이는 후보에 곱하는 비용 가중치 (선호 방향을 우선한다). */
+const AGAINST_DIRECTION_PENALTY = 1.4;
+/** 겹치는 박스 가장자리에 붙일 때 남기는 틈(viewBox 단위). */
+const EDGE_GAP = 1;
+
 /**
- * 이미 놓인 라벨과 겹치지 않는 자리를 찾는다. `direction`(-1 위, +1 아래) 쪽으로 한 칸씩
- * 밀어 보고, 경계에 막히면 반대쪽도 시도한다. 놓은 박스는 `placed`에 쌓이고 최종 박스를 돌려준다.
+ * 이미 놓인 라벨·장애물(봉)과 겹치지 않는 자리를 찾는다. 후보는 제자리, 한 줄씩 민 자리,
+ * 겹치는 박스의 위/아래 가장자리에 딱 붙인 자리, 거기에 좌우로 조금 민 자리이고,
+ * `direction`(-1 위, +1 아래) 쪽으로 덜 움직인 후보를 고른다 (좌우 이동은 세로보다 싸게 쳐서
+ * 라벨이 자기 표식에서 멀리 떠나지 않게 한다). 놓은 박스는 `placed`에 쌓이고 최종 박스를 돌려준다.
+ * `obstacles`는 쌓이지 않는 고정 장애물(봉의 몸통·꼬리)이다.
  */
 export function placeLabel(
     placed: LabelBox[],
     box: LabelBox,
     direction: -1 | 1,
-    bounds: { top: number; bottom: number }
+    bounds: { top: number; bottom: number; left?: number; right?: number },
+    obstacles: readonly LabelBox[] = []
 ): LabelBox {
-    const inside = (candidate: LabelBox) =>
-        candidate.y >= bounds.top &&
-        candidate.y + candidate.height <= bounds.bottom;
     const clampY = (candidate: LabelBox): LabelBox => ({
         ...candidate,
         y: Math.min(
@@ -96,23 +107,52 @@ export function placeLabel(
         ),
     });
     const start = clampY(box);
-    const stride = box.height + 1;
-    let chosen: LabelBox | null = null;
-    for (let step = 0; step <= 12 && chosen === null; step++) {
-        const offsets =
-            step === 0 ? [0] : [direction * step, -direction * step];
-        for (const offset of offsets) {
-            const candidate = { ...start, y: start.y + offset * stride };
-            if (
-                inside(candidate) &&
-                !placed.some(other => overlaps(candidate, other))
-            ) {
-                chosen = candidate;
-                break;
-            }
-        }
+    const stride = box.height + EDGE_GAP;
+    const reach = SHIFT_STRIDE * MAX_SHIFT_STEPS;
+    const blockers = [...placed, ...obstacles].filter(
+        other =>
+            other.x < start.x + start.width + reach &&
+            start.x - reach < other.x + other.width
+    );
+    const ys = new Set<number>([start.y]);
+    for (let step = 1; step <= MAX_ROW_STEPS; step++) {
+        ys.add(start.y + step * stride);
+        ys.add(start.y - step * stride);
     }
-    const result = chosen ?? start;
+    for (const other of blockers) {
+        ys.add(other.y - start.height - EDGE_GAP);
+        ys.add(other.y + other.height + EDGE_GAP);
+    }
+    const dxs = [0];
+    for (let step = 1; step <= MAX_SHIFT_STEPS; step++) {
+        dxs.push(step * SHIFT_STRIDE, -step * SHIFT_STRIDE);
+    }
+    const minX = bounds.left ?? -Infinity;
+    const maxX = bounds.right ?? Infinity;
+    const cost = (candidate: LabelBox): number => {
+        const delta = candidate.y - start.y;
+        const vertical =
+            delta * direction > 0
+                ? Math.abs(delta)
+                : Math.abs(delta) * AGAINST_DIRECTION_PENALTY;
+        return vertical + Math.abs(candidate.x - start.x) * SHIFT_WEIGHT;
+    };
+    // 후보는 dx 바깥·y 안쪽 순서로 나열하고, 비용이 같으면 먼저 나온 후보를 유지한다.
+    const best = dxs
+        .flatMap(dx => [...ys].map(y => ({ ...start, x: start.x + dx, y })))
+        .filter(
+            c =>
+                c.x >= minX &&
+                c.x + c.width <= maxX &&
+                c.y >= bounds.top &&
+                c.y + c.height <= bounds.bottom &&
+                !blockers.some(other => overlaps(c, other))
+        )
+        .reduce<LabelBox | null>(
+            (acc, c) => (acc === null || cost(c) < cost(acc) ? c : acc),
+            null
+        );
+    const result = best ?? start;
     placed.push(result);
     return result;
 }

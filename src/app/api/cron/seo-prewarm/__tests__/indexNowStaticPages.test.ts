@@ -41,6 +41,30 @@ const ENTRIES = [
 ];
 
 describe('diffStaticLastmod', () => {
+    it('가이드 항목(DB 발) URL도 감시한다 — 첫 실행은 전부 제출, 이후는 바뀐 항목만', () => {
+        const entries = [
+            entry('/guide/candlesticks/doji', '2026-10-01T00:00:00Z'),
+            entry('/guide/indicators/rsi', '2026-10-02T00:00:00Z'),
+            entry('/guide/unknown/x', '2026-10-02T00:00:00Z'),
+        ];
+        const first = diffStaticLastmod(entries, {});
+        expect([...first.changedUrls].toSorted()).toEqual([
+            'https://siglens.io/guide/candlesticks/doji',
+            'https://siglens.io/guide/indicators/rsi',
+        ]);
+
+        const later = diffStaticLastmod(
+            [
+                entry('/guide/candlesticks/doji', '2026-10-01T00:00:00Z'),
+                entry('/guide/indicators/rsi', '2026-10-09T00:00:00Z'),
+            ],
+            first.updates
+        );
+        expect(later.changedUrls).toEqual([
+            'https://siglens.io/guide/indicators/rsi',
+        ]);
+    });
+
     it('저장된 값이 없으면(첫 실행) 다섯 정적 페이지 전부 변경으로 센다 — 시드 + 1회 제출', () => {
         const diff = diffStaticLastmod(ENTRIES, {});
 

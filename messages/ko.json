@@ -2513,12 +2513,16 @@
             "categoryIntroCandlesticks": "봉 하나부터 서너 개가 만드는 모양까지, 캔들 패턴이 무엇을 보여 주는지 설명해요. 시가·고가·저가·종가를 읽는 법부터 도지, 망치형, 장악형, 샛별형 같은 반전·지속 패턴까지 담았어요.",
             "categoryIntroChartPatterns": "여러 봉이 만드는 큰 모양을 다뤄요. 이중바닥, 헤드앤숄더, 삼각형, 쐐기, 깃발처럼 추세가 이어지거나 바뀔 때 자주 나타나는 패턴이 어떻게 생겼고, Siglens가 어떤 기준으로 찾는지 설명해요.",
             "categoryIntroIndicators": "이동평균, RSI, MACD, 볼린저 밴드처럼 가격과 거래량에서 계산하는 보조지표를 모았어요. 계산 방법과 읽는 법, 그리고 값이 자주 틀리는 상황까지 함께 적었어요.",
-            "categoryIntroStrategies": "엘리엇 파동, 피보나치 되돌림, 다이버전스, 돌파, 갭처럼 여러 신호를 엮어 보는 분석 관점을 설명해요. 지표 하나로는 알기 어려운 흐름을 읽을 때 쓰는 이론이에요.",
-            "categorySeoDescription": "{name} {count}개를 예시 차트와 함께 설명해요. 읽는 법과 Siglens의 판정 기준, 주의할 점을 담았어요.",
+            "categoryIntroStrategies": "엘리어트 파동, 피보나치 되돌림, 다이버전스, 돌파, 갭처럼 여러 신호를 엮어 보는 분석 관점을 설명해요. 지표 하나로는 알기 어려운 흐름을 읽을 때 쓰는 이론이에요.",
+            "categoryListHeading": "{name} 목록",
+            "categorySeoDescriptionCandlesticks": "도지, 망치형, 장악형, 샛별형처럼 자주 보는 캔들 패턴 {count}가지를 예시 차트로 보고, 어디서 나와야 의미가 있는지 알아봐요.",
+            "categorySeoDescriptionChartPatterns": "이중바닥, 헤드앤숄더, 삼각형, 쐐기처럼 자주 보는 차트 패턴 {count}가지를 예시 차트로 보고, 어떤 모양일 때 추세가 이어지거나 바뀌는지 알아봐요.",
+            "categorySeoDescriptionIndicators": "이동평균, RSI, MACD, 볼린저 밴드 같은 보조지표 {count}가지의 계산법과 읽는 법, 값이 틀리기 쉬운 상황을 예시 차트로 알아봐요.",
+            "categorySeoDescriptionStrategies": "엘리어트 파동, 피보나치 되돌림, 다이버전스, 돌파, 갭 등 차트 매매 전략·이론 {count}가지를 예시 차트와 함께 정리했어요.",
             "categorySeoTitleCandlesticks": "캔들 패턴 종류와 뜻 총정리",
             "categorySeoTitleChartPatterns": "차트 패턴 종류와 보는 법 총정리",
             "categorySeoTitleIndicators": "보조지표 종류와 보는 법 총정리",
-            "categorySeoTitleStrategies": "엘리엇 파동·피보나치·다이버전스 전략 정리",
+            "categorySeoTitleStrategies": "차트 매매 전략·이론 종류 정리",
             "categoryStrategies": "전략·이론",
             "ctaBody": "관심 있는 종목을 검색하면 차트와 분석을 함께 볼 수 있어요.",
             "ctaButton": "종목 검색하러 가기",
@@ -3111,6 +3115,7 @@
             },
             "GuideHintLink": {
                 "aria": "{name} 뜻 보기",
+                "entry": "패턴·캔들·지표의 뜻은 차트 가이드에서 볼 수 있어요",
                 "label": "뜻 보기"
             },
             "ModelSelector": {

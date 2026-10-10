@@ -218,9 +218,9 @@ describe('nextKstMidnightEpochSeconds', () => {
 });
 
 describe('METERED_REVEAL_STARTS_AT', () => {
-    it('KST 2026-10-18 00:00이다', () => {
+    it('KST 2026-10-11 00:00이다', () => {
         expect(METERED_REVEAL_STARTS_AT.toISOString()).toBe(
-            '2026-10-17T15:00:00.000Z'
+            '2026-10-10T15:00:00.000Z'
         );
     });
 });

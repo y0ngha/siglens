@@ -7,7 +7,13 @@ import {
     DIVERGENCE_LOW_1,
     DIVERGENCE_LOW_2,
     getDivergenceSeries,
+    getIntradaySeries,
+    getRegimeSeries,
     getSharedSeries,
+    getVolatilitySeries,
+    INTRADAY_BARS,
+    REGIME_TREND_END,
+    VOLATILITY_BARS,
     type SharedSeries,
 } from '@/views/guide/demos/sharedSeries';
 import type {
@@ -91,6 +97,17 @@ export const crossedDown =
         num(a[abs]) < num(b[abs]) &&
         num(a[abs - 1]) >= num(b[abs - 1]);
 
+/** 값이 기준선을 아래에서 위로 넘은(이전엔 <= level, 지금은 > level) 절대 인덱스 조건. */
+export const crossedUpLevel =
+    (values: readonly Num[], level: number) =>
+    (abs: number): boolean =>
+        abs > 0 && num(values[abs]) > level && num(values[abs - 1]) <= level;
+
+export const crossedDownLevel =
+    (values: readonly Num[], level: number) =>
+    (abs: number): boolean =>
+        abs > 0 && num(values[abs]) < level && num(values[abs - 1]) >= level;
+
 /** 구간 시작에서 `offset`봉 이후에 처음 `test`를 만족하는 구간 인덱스. */
 export const firstAfter = (
     c: Ctx,
@@ -159,10 +176,14 @@ export const overlayLine = (
 const percent = (values: readonly Num[]): Num[] =>
     values.map(v => (v === null ? null : v * 100));
 
-const rsiDemo = windowed(20, c => {
-    const idx = c.find(abs => abs >= c.start + 30 && num(c.r.rsi[abs]) > 70);
+const rsiDemo = windowed(5, c => {
+    const up = c.find(crossedUpLevel(c.r.rsi, 70));
+    const down = firstAfter(c, up + 1, crossedDownLevel(c.r.rsi, 70));
     return {
-        overlays: marker(idx, 'RSI > 70', 'bear'),
+        overlays: [
+            ...marker(up, 'RSI > 70', 'bear'),
+            ...marker(down, 'Back below 70', 'neutral'),
+        ],
         panes: [
             pane('RSI 14', {
                 lines: [{ values: c.s(c.r.rsi), label: '', tone: 'a' }],
@@ -173,30 +194,17 @@ const rsiDemo = windowed(20, c => {
     };
 });
 
-const macdDemo = windowed(55, c => {
-    const idx = c.find(
-        abs =>
-            abs >= c.start + 40 &&
-            crossedUp(
-                c.r.macd.map(m => m.macd),
-                c.r.macd.map(m => m.signal)
-            )(abs)
-    );
+const macdDemo = windowed(185, c => {
+    const macdLine = c.r.macd.map(m => m.macd);
+    const signalLine = c.r.macd.map(m => m.signal);
+    const idx = firstAfter(c, 15, crossedUp(macdLine, signalLine));
     return {
         overlays: marker(idx, 'Cross up', 'bull', 'below'),
         panes: [
             pane('12-26-9', {
                 lines: [
-                    {
-                        values: c.s(c.r.macd.map(m => m.macd)),
-                        label: 'MACD',
-                        tone: 'a',
-                    },
-                    {
-                        values: c.s(c.r.macd.map(m => m.signal)),
-                        label: 'Signal',
-                        tone: 'b',
-                    },
+                    { values: c.s(macdLine), label: 'MACD', tone: 'a' },
+                    { values: c.s(signalLine), label: 'Signal', tone: 'b' },
                 ],
                 histogram: c.s(c.r.macd.map(m => m.histogram)),
                 levels: [{ value: 0 }],
@@ -206,12 +214,29 @@ const macdDemo = windowed(55, c => {
     };
 });
 
-const maDemo = windowed(170, c => {
-    const idx = c.find(crossedUp(maOf(c.r, 20), maOf(c.r, 60)));
+/** Siglens 골든크로스는 20일선이 50일선을 넘는 것이라 core가 내지 않는 50일 단순이동평균을 직접 계산한다. */
+function sma(values: readonly number[], period: number): Num[] {
+    return values.map((_, index) =>
+        index < period - 1
+            ? null
+            : values
+                  .slice(index - period + 1, index + 1)
+                  .reduce((sum, v) => sum + v, 0) / period
+    );
+}
+
+export const GOLDEN_CROSS_SHORT = 20;
+export const GOLDEN_CROSS_LONG = 50;
+
+const maDemo = windowed(175, c => {
+    const closes = getSharedSeries().bars.map(b => b.close);
+    const short = maOf(c.r, GOLDEN_CROSS_SHORT);
+    const long = sma(closes, GOLDEN_CROSS_LONG);
+    const idx = c.find(crossedUp(short, long));
     return {
         overlays: [
-            overlayLine(c.s(maOf(c.r, 20)), 'MA20', 'a'),
-            overlayLine(c.s(maOf(c.r, 60)), 'MA60', 'b'),
+            overlayLine(c.s(short), 'MA20', 'a'),
+            overlayLine(c.s(long), 'MA50', 'b'),
             ...marker(idx, 'Golden cross', 'bull', 'below'),
         ],
     };
@@ -225,26 +250,27 @@ const emaDemo = windowed(40, c => ({
     ],
 }));
 
-const bollingerDemo = windowed(30, c => ({
-    overlays: [
-        {
-            kind: 'band',
-            upper: c.s(c.r.bollinger.map(b => b.upper)),
-            lower: c.s(c.r.bollinger.map(b => b.lower)),
-            label: '',
-            tone: 'a',
-        },
-        overlayLine(c.s(c.r.bollinger.map(b => b.middle)), 'MA20', 'c'),
-    ],
-}));
+const bollingerDemo = windowed(
+    10,
+    c => ({
+        overlays: [
+            {
+                kind: 'band',
+                upper: c.s(c.r.bollinger.map(b => b.upper)),
+                lower: c.s(c.r.bollinger.map(b => b.lower)),
+                label: '',
+                tone: 'a',
+            },
+            overlayLine(c.s(c.r.bollinger.map(b => b.middle)), 'MA20', 'c'),
+        ],
+    }),
+    getSharedSeries,
+    75
+);
 
 const percentBDemo = windowed(20, c => {
     const pctB = c.r.bollingerDerived.map(b => b.pctB);
-    const idx = firstAfter(
-        c,
-        40,
-        abs => num(pctB[abs]) < 0.95 && num(pctB[abs - 1]) >= 0.95
-    );
+    const idx = firstAfter(c, 50, crossedDownLevel(pctB, 0.95));
     return {
         overlays: [
             {
@@ -259,31 +285,37 @@ const percentBDemo = windowed(20, c => {
         panes: [
             pane('%B', {
                 lines: [{ values: c.s(pctB), label: '', tone: 'a' }],
-                levels: [{ value: 0.95 }, { value: 0.5 }, { value: 0.05 }],
+                levels: [
+                    { value: 0.95, label: '0.95' },
+                    { value: 0.5, label: '0.5' },
+                    { value: 0.05, label: '0.05' },
+                ],
                 range: [-0.2, 1.2],
             }),
         ],
     };
 });
 
-const buySellVolumeDemo = windowed(20, c => ({
-    panes: [
-        pane('Volume split', {
-            lines: [
-                {
-                    values: c.s(c.r.buySellVolume.map(v => v.buyVolume)),
-                    label: 'Buy',
-                    tone: 'bull',
-                },
-                {
-                    values: c.s(c.r.buySellVolume.map(v => v.sellVolume)),
-                    label: 'Sell',
-                    tone: 'bear',
-                },
-            ],
-        }),
-    ],
-}));
+// 매수분은 위(+), 매도분은 아래(-)로 세워 같은 봉 안에서 둘의 비중이 바로 읽히게 한다.
+const buySellVolumeDemo = windowed(
+    20,
+    c => ({
+        panes: [
+            pane('Buy volume', {
+                histogram: c.s(c.r.buySellVolume.map(v => v.buyVolume)),
+                levels: [{ value: 0 }],
+                height: 56,
+            }),
+            pane('Sell volume (-)', {
+                histogram: c.s(c.r.buySellVolume.map(v => -v.sellVolume)),
+                levels: [{ value: 0 }],
+                height: 56,
+            }),
+        ],
+    }),
+    getSharedSeries,
+    30
+);
 
 const cciDemo = windowed(30, c => {
     const up = firstAfter(
@@ -310,30 +342,41 @@ const cciDemo = windowed(30, c => {
     };
 });
 
-const chandelierDemo = windowed(100, c => {
-    const trend = c.r.chandelierExit.map(x => x.trend);
-    const stops = c.r.chandelierExit.map(x =>
-        x.trend === 'long' ? x.longStop : x.shortStop
-    );
-    const { up, down } = splitByDirection(c.s(stops), index => {
-        const t = c.s(trend)[index];
-        return t === null ? null : t === 'long';
-    });
-    const flip = c.find(
-        abs => trend[abs] === 'short' && trend[abs - 1] === 'long'
-    );
-    return {
-        overlays: [
-            overlayLine(up, 'Long stop', 'bull'),
-            overlayLine(down, '', 'bear'),
-            ...marker(flip, 'Exit', 'bear'),
-        ],
-    };
-});
+const chandelierDemo = windowed(
+    45,
+    c => {
+        const trend = c.r.chandelierExit.map(x => x.trend);
+        const stops = c.r.chandelierExit.map(x =>
+            x.trend === 'long' ? x.longStop : x.shortStop
+        );
+        const { up, down } = splitByDirection(c.s(stops), index => {
+            const t = c.s(trend)[index];
+            return t === null ? null : t === 'long';
+        });
+        const flip = c.find(
+            abs => trend[abs] === 'short' && trend[abs - 1] === 'long'
+        );
+        return {
+            overlays: [
+                overlayLine(up, 'Long stop', 'bull'),
+                overlayLine(down, '', 'bear'),
+                ...marker(flip, 'Exit', 'bear'),
+            ],
+        };
+    },
+    getSharedSeries,
+    105
+);
 
-const cmfDemo = windowed(20, c => ({
+const cmfDemo = windowed(180, c => ({
+    overlays: marker(
+        firstAfter(c, 10, crossedUpLevel(c.r.cmf, 0)),
+        'CMF > 0',
+        'bull',
+        'below'
+    ),
     panes: [
-        pane('CMF 20', { histogram: c.s(c.r.cmf), levels: [{ value: 0 }] }),
+        pane('CMF 21', { histogram: c.s(c.r.cmf), levels: [{ value: 0 }] }),
     ],
 }));
 
@@ -356,11 +399,11 @@ const connorsDemo = windowed(150, c => {
     };
 });
 
-const dmiDemo = windowed(95, c => ({
+const dmiDemo = windowed(170, c => ({
     overlays: marker(
         firstAfter(
             c,
-            10,
+            55,
             crossedUp(
                 c.r.dmi.map(d => d.diPlus),
                 c.r.dmi.map(d => d.diMinus)
@@ -427,13 +470,18 @@ const IMPULSE_TONE: Record<string, DemoBarTone> = {
 
 const elderImpulseDemo = windowed(20, c => {
     const colors = c.s(c.r.elderImpulse);
+    // core 임펄스는 13일 EMA의 방향을 쓴다 (ELDER_IMPULSE_EMA_PERIOD). core가 이 선을 내지 않아 직접 계산한다.
+    const ema13 = ema(
+        getSharedSeries().bars.map(b => b.close),
+        13
+    );
     // 임펄스는 봉 색으로 표시한다: 녹색(상승 동력), 청색(중립), 적색(하락 동력).
     return {
         bars: c.bars.map((bar, i) => ({
             ...bar,
             tone: IMPULSE_TONE[colors[i] ?? 'blue'],
         })),
-        overlays: [overlayLine(c.s(emaOf(c.r, 20)), 'EMA20', 'c')],
+        overlays: [overlayLine(c.s(ema13), 'EMA13', 'c')],
     };
 });
 
@@ -457,43 +505,82 @@ const elderRayDemo = windowed(40, c => {
     };
 });
 
-const ewmaDemo = windowed(150, c => {
-    let worst = 1;
-    for (let i = 1; i < c.bars.length; i++) {
-        if (
-            c.bars[i].close - c.bars[i - 1].close <
-            c.bars[worst].close - c.bars[worst - 1].close
-        )
-            worst = i;
-    }
-    return {
-        overlays: marker(worst, 'Big drop', 'bear'),
-        panes: [
-            pane('EWMA volatility (%)', {
-                lines: [
-                    {
-                        values: percent(c.s(c.r.ewmaVolatility)),
-                        label: '',
-                        tone: 'a',
-                    },
-                ],
-            }),
-        ],
+const ewmaDemo = windowed(
+    150,
+    c => {
+        let worst = 1;
+        for (let i = 1; i < c.bars.length; i++) {
+            if (
+                c.bars[i].close - c.bars[i - 1].close <
+                c.bars[worst].close - c.bars[worst - 1].close
+            )
+                worst = i;
+        }
+        return {
+            overlays: marker(worst, 'Big drop', 'bear'),
+            panes: [
+                pane('EWMA volatility (%)', {
+                    lines: [
+                        {
+                            values: percent(c.s(c.r.ewmaVolatility)),
+                            label: '',
+                            tone: 'a',
+                        },
+                    ],
+                }),
+            ],
+        };
+    },
+    getSharedSeries,
+    69
+);
+
+/** 장세 전환 시세의 추세/평균회귀 두 구간을 가격 띠로 칠해 보여 준다 (구간 인덱스는 창 기준). */
+function regimeZones(c: Ctx): DemoOverlay[] {
+    const trendEnd = c.at(REGIME_TREND_END - 1);
+    const spanOf = (from: number, to: number) => {
+        const part = c.bars.slice(from, to + 1);
+        return {
+            low: Math.min(...part.map(b => b.low)),
+            high: Math.max(...part.map(b => b.high)),
+        };
     };
-});
+    return [
+        {
+            kind: 'zone',
+            fromIndex: 0,
+            toIndex: trendEnd,
+            ...spanOf(0, trendEnd),
+            label: 'Trending',
+        },
+        {
+            kind: 'zone',
+            fromIndex: trendEnd + 1,
+            toIndex: c.bars.length - 1,
+            ...spanOf(trendEnd + 1, c.bars.length - 1),
+            label: 'Mean-reverting',
+        },
+    ];
+}
 
 const hurstDemo = windowed(
-    90,
+    70,
     c => ({
+        overlays: regimeZones(c),
         panes: [
             pane('Hurst', {
                 lines: [{ values: c.s(c.r.hurst), label: '', tone: 'a' }],
-                levels: [{ value: 0.5 }],
+                levels: [
+                    { value: 0.6, label: '0.6' },
+                    { value: 0.5, label: '0.5' },
+                    { value: 0.4, label: '0.4' },
+                ],
+                range: [0, 1],
             }),
         ],
     }),
-    getSharedSeries,
-    100
+    getRegimeSeries,
+    170
 );
 
 const ichimokuDemo = windowed(30, c => ({
@@ -656,46 +743,58 @@ const regressionDemo = windowed(
 );
 
 const smcDemo = windowed(
-    190,
+    215,
     c => {
         const { smc } = c.r;
-        const overlays: DemoOverlay[] = [];
-        smc.structureBreaks
+        const end = c.start + c.bars.length;
+        const overlays: DemoOverlay[] = smc.structureBreaks
             .filter(
-                b => b.index >= c.start && b.index < c.start + c.bars.length
+                b =>
+                    b.breakType === 'bos' && b.index >= c.start && b.index < end
             )
-            .forEach(b => {
-                overlays.push(
-                    ...marker(
-                        c.at(b.index),
-                        b.breakType === 'bos' ? 'BOS' : 'CHoCH',
-                        b.type === 'bullish' ? 'bull' : 'bear',
-                        b.type === 'bullish' ? 'below' : 'above'
-                    )
-                );
-            });
-        const lastEnd = c.start + c.bars.length - 1;
-        const block = smc.orderBlocks
-            .toReversed()
-            .find(o => o.type === 'bullish' && o.startIndex >= c.start);
-        if (block !== undefined) {
+            .flatMap(b =>
+                marker(
+                    c.at(b.index),
+                    'BOS',
+                    b.type === 'bullish' ? 'bull' : 'bear',
+                    b.type === 'bullish' ? 'above' : 'below'
+                )
+            );
+        // 상승 BOS 한 번에 이야기를 모은다: 돌파 직전 오더블록 → 돌파 → 돌파가 남긴 공정가치갭.
+        const bos = smc.structureBreaks.findLast(
+            b => b.breakType === 'bos' && b.type === 'bullish' && b.index < end
+        );
+        const block =
+            bos === undefined
+                ? undefined
+                : smc.orderBlocks.findLast(
+                      o =>
+                          o.type === 'bullish' &&
+                          o.startIndex >= c.start &&
+                          o.startIndex < bos.index
+                  );
+        const gap =
+            bos === undefined
+                ? undefined
+                : smc.fairValueGaps.find(
+                      f => f.type === 'bullish' && f.index >= bos.index
+                  );
+        if (bos !== undefined && block !== undefined) {
             overlays.push({
                 kind: 'zone',
                 fromIndex: c.at(block.startIndex),
-                toIndex: c.at(lastEnd),
+                toIndex: c.at(bos.index),
                 low: block.low,
                 high: block.high,
                 label: 'Order block',
             });
         }
-        const gap = smc.fairValueGaps
-            .toReversed()
-            .find(f => f.type === 'bullish' && f.index >= c.start);
         if (gap !== undefined) {
+            // 아직 메워지지 않은 갭이라 오른쪽 끝까지 이어서 그린다.
             overlays.push({
                 kind: 'zone',
                 fromIndex: c.at(gap.index - 1),
-                toIndex: c.at(gap.index + 1),
+                toIndex: c.bars.length - 1,
                 low: gap.low,
                 high: gap.high,
                 label: 'FVG',
@@ -704,10 +803,10 @@ const smcDemo = windowed(
         return { overlays };
     },
     getSharedSeries,
-    70
+    45
 );
 
-const squeezeDemo = windowed(60, c => {
+const squeezeDemo = windowed(180, c => {
     const sq = c.r.squeezeMomentum;
     const release = c.find(
         abs =>
@@ -802,83 +901,100 @@ const stochasticDemo = windowed(170, c => ({
     ],
 }));
 
-const supertrendDemo = windowed(100, c => {
-    const st = c.r.supertrend;
-    const { up, down } = splitByDirection(
-        c.s(st.map(x => x.supertrend)),
-        index => {
-            const t = c.s(st.map(x => x.trend))[index];
-            return t === null ? null : t === 'up';
-        }
-    );
-    return {
-        overlays: [
-            overlayLine(up, 'Supertrend', 'bull'),
-            overlayLine(down, '', 'bear'),
-            ...marker(
-                c.find(
-                    abs =>
-                        st[abs].trend !== st[abs - 1].trend &&
-                        st[abs - 1].trend !== null
+const supertrendDemo = windowed(
+    45,
+    c => {
+        const st = c.r.supertrend;
+        const { up, down } = splitByDirection(
+            c.s(st.map(x => x.supertrend)),
+            index => {
+                const t = c.s(st.map(x => x.trend))[index];
+                return t === null ? null : t === 'up';
+            }
+        );
+        return {
+            overlays: [
+                overlayLine(up, 'Supertrend', 'bull'),
+                overlayLine(down, '', 'bear'),
+                ...marker(
+                    c.find(
+                        abs =>
+                            st[abs].trend !== st[abs - 1].trend &&
+                            st[abs - 1].trend !== null
+                    ),
+                    'Flip',
+                    'bear'
                 ),
-                'Flip',
-                'bear'
-            ),
-        ],
-    };
-});
+            ],
+        };
+    },
+    getSharedSeries,
+    105
+);
 
 const varianceRatioDemo = windowed(
-    50,
+    60,
     c => ({
+        overlays: regimeZones(c),
         panes: [
             pane('Variance ratio', {
                 lines: [
                     { values: c.s(c.r.varianceRatio), label: '', tone: 'a' },
                 ],
-                levels: [{ value: 1 }],
+                levels: [
+                    { value: 1.2, label: '1.2' },
+                    { value: 1, label: '1' },
+                    { value: 0.8, label: '0.8' },
+                ],
             }),
         ],
     }),
+    getRegimeSeries,
+    180
+);
+
+// 프로파일 막대는 오른쪽 끝에서 왼쪽으로 세워지므로, 마지막 봉들이 얇은 가격대(가치 영역 아래)로 빠지는 구간을 골랐다.
+const volumeProfileDemo = windowed(
+    85,
+    c => {
+        const profile = calculateIndicators(toCoreBars(c.bars)).volumeProfile;
+        if (profile === null) return {};
+        return {
+            overlays: [
+                { kind: 'profile', rows: profile.profile },
+                {
+                    kind: 'level',
+                    price: profile.vah,
+                    label: 'VAH',
+                    role: 'neutral',
+                },
+                {
+                    kind: 'level',
+                    price: profile.poc,
+                    label: 'POC',
+                    role: 'resistance',
+                },
+                {
+                    kind: 'level',
+                    price: profile.val,
+                    label: 'VAL',
+                    role: 'neutral',
+                },
+            ],
+        };
+    },
     getSharedSeries,
     100
 );
 
-const volumeProfileDemo = windowed(100, c => {
-    const profile = calculateIndicators(toCoreBars(c.bars)).volumeProfile;
-    if (profile === null) return {};
-    return {
-        overlays: [
-            { kind: 'profile', rows: profile.profile },
-            {
-                kind: 'level',
-                price: profile.vah,
-                label: 'VAH',
-                role: 'neutral',
-            },
-            {
-                kind: 'level',
-                price: profile.poc,
-                label: 'POC',
-                role: 'resistance',
-            },
-            {
-                kind: 'level',
-                price: profile.val,
-                label: 'VAL',
-                role: 'neutral',
-            },
-        ],
-    };
-});
-
 const vwapDemo = windowed(
-    30,
+    0,
     c => {
-        const vwap = calculateIndicators(toCoreBars(c.bars)).vwap;
+        const vwap = c.s(c.r.vwap);
         const idx = c.bars.findIndex(
             (bar, i) =>
-                i > 5 &&
+                // 장 초반 잔교차는 건너뛰고, 거래량이 실려 VWAP 위로 올라서는 봉을 잡는다.
+                i > 40 &&
                 bar.close > num(vwap[i]) &&
                 c.bars[i - 1].close <= num(vwap[i - 1])
         );
@@ -898,8 +1014,8 @@ const vwapDemo = windowed(
             ],
         };
     },
-    getSharedSeries,
-    70
+    getIntradaySeries,
+    INTRADAY_BARS
 );
 
 const williamsDemo = windowed(170, c => ({
@@ -945,13 +1061,18 @@ const adxDemo = windowed(120, c => ({
     ],
 }));
 
-const atrDemo = windowed(100, c => ({
-    panes: [
-        pane('ATR 14', {
-            lines: [{ values: c.s(c.r.atr), label: '', tone: 'a' }],
-        }),
-    ],
-}));
+const atrDemo = windowed(
+    0,
+    c => ({
+        panes: [
+            pane('ATR 14', {
+                lines: [{ values: c.s(c.r.atr), label: '', tone: 'a' }],
+            }),
+        ],
+    }),
+    getVolatilitySeries,
+    VOLATILITY_BARS
+);
 
 export const INDICATOR_DEMOS: Record<string, () => GuideDemo> = {
     adx: adxDemo,

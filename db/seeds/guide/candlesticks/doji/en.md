@@ -3,13 +3,13 @@ title: Doji / Spinning Top
 aliases: [Doji, Doji Candle, Dragonfly Doji, Gravestone Doji, Long-legged Doji, Spinning Top, Cross Candle]
 summary: "A bar with nearly equal open and close: buyers and sellers were evenly matched. The next close sets direction."
 seoTitle: "Doji Candlestick Meaning: Dragonfly, Gravestone"
-seoDescription: What a doji and a spinning top look like, how dragonfly and gravestone dojis differ, and why a doji alone can't give direction, with Bulkowski's data.
+seoDescription: What doji and spinning tops look like, how the dragonfly and gravestone doji differ, and why a doji on its own can't tell you the direction.
 demoCaption: Synthetic, illustrative bars made for this explanation. A standard doji, dragonfly, gravestone and spinning top side by side to compare body size.
 faq:
   - q: Does a doji mean the trend will change?
     a: A single doji can't tell you that. It means a pause, and direction is only known once a close appears above the doji's high or below its low.
   - q: Is a dragonfly doji a bullish signal?
-    a: Textbooks say so, but the measured results differ. In Thomas Bulkowski's data the dragonfly doji's reversal rate was 50%, a coin flip.
+    a: Textbooks say so, but the measured results differ. In Thomas Bulkowski's data the dragonfly doji's reversal rate was 50%, an even split.
 ---
 
 ## How it looks
@@ -27,10 +27,15 @@ A doji signals a pause, not a direction. After a long advance or near support or
 
 ## How Siglens detects it
 
-A bar is a doji when its body is at most 10% of the high-to-low range. If the upper wick is also at most 10% of that range, it is a dragonfly; if the lower wick is at most 10%, it is a gravestone. A long-legged doji is not separated and is counted as a standard doji. A spinning top has a body of at most 40% of the range with wicks on both sides. It is so common that Siglens doesn't list it as a detected pattern.
+Siglens sorts these bars by how thin the body is and which side the wicks are on. It does not check the preceding trend. All ratios below are measured against the bar's high-to-low range.
 
-Siglens checks bar shape only, not the preceding trend. In Thomas Bulkowski's data the reversal rate was 50% for the dragonfly doji, 51% for the gravestone doji and 50-51% for the spinning top. A standard doji after a trend was also around 50%. All are close to a coin flip, so Siglens treats these bars as reference clues, not directional signals.
+- Doji: the body is at most 10% of the range. A long-legged doji is not separated and is counted here.
+- Dragonfly doji: a doji whose upper wick is at most 10% of the range.
+- Gravestone doji: a doji whose lower wick is at most 10% of the range.
+- Spinning top: the body is at most 40% of the range, with wicks on both sides. It is so common that Siglens doesn't list it as a detected pattern.
+
+Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, found reversal rates (how often the direction turned after the pattern) of 50% for the dragonfly doji, 51% for the gravestone doji and 50-51% for the spinning top. A standard doji after a trend was also around 50%. All are close to a coin flip, so Siglens treats these bars as reference clues, not directional signals.
 
 ## Watch out for
 
-A doji in a sideways market ([ADX](/guide/indicators/adx) below 20) only means volatility has shrunk. Don't conclude "up" from a dragonfly or "down" from a gravestone; wait for a confirming close. In another of Bulkowski's studies, when a dragonfly doji after an advance was followed by a break below its low, it performed second best among the common bearish reversal candles. That is the opposite of the textbook "bullish signal". A spinning top is so common that one alone carries almost no information.
+A doji in a sideways market (where [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and there is no clear direction) only means volatility has shrunk. Don't conclude "up" from a dragonfly or "down" from a gravestone; wait for a confirming close. In another of Bulkowski's studies, when a dragonfly doji after an advance broke below its low, it was the second-best performer among common bearish reversal candles. That is the opposite of the textbook bullish signal. A spinning top is so common that one alone carries almost no information.

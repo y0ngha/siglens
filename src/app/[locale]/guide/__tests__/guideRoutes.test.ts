@@ -172,6 +172,17 @@ describe('/guide/[category]', () => {
         );
     });
 
+    it('분류마다 설명이 다르다', async () => {
+        const descriptions = await Promise.all(
+            ['candlesticks', 'chart-patterns', 'indicators', 'strategies'].map(
+                async category =>
+                    (await categoryMetadata(categoryParams(category)))
+                        .description
+            )
+        );
+        expect(new Set(descriptions).size).toBe(4);
+    });
+
     it('분류 제목·설명과 canonical을 낸다', async () => {
         const metadata = await categoryMetadata(categoryParams('indicators'));
         expect(metadata.title).toBe(ko.views.guide.categorySeoTitleIndicators);
@@ -252,6 +263,16 @@ describe('/guide/[category]/[slug]', () => {
         );
     });
 
+    it('항목 소셜 카드는 og:type이 article이다', async () => {
+        const metadata = await entryMetadata(entryParams('indicators', 'rsi'));
+        expect(metadata.openGraph).toMatchObject({ type: 'article' });
+    });
+
+    it('분류 허브 소셜 카드는 og:type이 website다', async () => {
+        const metadata = await categoryMetadata(categoryParams('indicators'));
+        expect(metadata.openGraph).toMatchObject({ type: 'website' });
+    });
+
     it('소셜 카드 제목에는 브랜드를 붙인다', async () => {
         const metadata = await entryMetadata(entryParams('indicators', 'rsi'));
         expect(metadata.openGraph?.title).toBe(`${RSI.seoTitle} | SIGLENS`);
@@ -268,6 +289,12 @@ describe('/guide/[category]/[slug]', () => {
             expect(article?.url).toBe(`${SITE_URL}/guide/indicators/rsi`);
             expect(article?.inLanguage).toBe('ko');
             expect(article).not.toHaveProperty('datePublished');
+            expect(article?.image).toBe(`${SITE_URL}/og-image.png`);
+            expect(article?.author).toMatchObject({
+                '@type': 'Person',
+                name: expect.any(String),
+                url: `${SITE_URL}/about`,
+            });
         });
 
         it('번역이 없어 ko 본문을 보여 주면 inLanguage는 ko다', async () => {

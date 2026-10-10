@@ -51,8 +51,14 @@ export interface GuideHubSeoCopy {
     readonly hubSeoTitle: string;
     readonly hubSeoDescription: string;
     readonly hubSeoKeywords: readonly string[];
-    /** `{name}`·`{count}`를 채운 분류 허브 설명. */
-    readonly categoryDescription: (name: string, count: number) => string;
+    /**
+     * 분류 허브 설명 — 분류마다 문장이 다르다(같은 틀에 이름만 바꾸면 4개가 사실상 중복 description이다).
+     * `{count}`만 ICU로 채운다.
+     */
+    readonly categoryDescription: (
+        category: GuideCategory,
+        count: number
+    ) => string;
 }
 
 export async function loadGuideHubSeoCopy(
@@ -68,7 +74,18 @@ export async function loadGuideHubSeoCopy(
             .split(',')
             .map(keyword => keyword.trim())
             .filter(keyword => keyword !== ''),
-        categoryDescription: (name, count) =>
-            t('categorySeoDescription', { name, count }),
+        // 정적 리터럴 키 — 동적 조회는 i18n 추출기가 못 센다(위 `loadGuideCategoryCopy` 참고).
+        categoryDescription: (category, count) => {
+            switch (category) {
+                case 'candlesticks':
+                    return t('categorySeoDescriptionCandlesticks', { count });
+                case 'chart-patterns':
+                    return t('categorySeoDescriptionChartPatterns', { count });
+                case 'indicators':
+                    return t('categorySeoDescriptionIndicators', { count });
+                case 'strategies':
+                    return t('categorySeoDescriptionStrategies', { count });
+            }
+        },
     };
 }

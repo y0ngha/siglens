@@ -3,46 +3,62 @@ title: Head and Shoulders
 aliases: [Head & Shoulders, H&S, Head and Shoulders Top, Head and Shoulders Pattern]
 summary: Three peaks with a higher middle one (head) between two shoulders. A neckline break is read as a turn down.
 seoTitle: "Head and Shoulders Pattern: Neckline Explained"
-seoDescription: What a head and shoulders looks like, how to confirm a neckline break, and which false signals to watch for when the shoulders differ a lot in height.
+seoDescription: How a head and shoulders top signals a turn down at the end of a rise, how to confirm a neckline break, and the false signals when the shoulders differ a lot in height.
 demoCaption: Synthetic, illustrative bars. Shows the left shoulder, head and right shoulder, the neckline through the two lows, and the bar that breaks it.
 faq:
   - q: When is a head and shoulders considered complete?
     a: When, after the right shoulder, a close finishes below the neckline (the line through the two lows). If only a wick touches the neckline and price comes back, it is not confirmed.
   - q: Can the neckline be sloped?
-    a: Yes. But the closer to flat it is, the more reliable it is considered, and the steeper the slope, the less weight it gets.
+    a: Yes. But the closer to flat it is, the more weight the signal gets, and the steeper the slope, the less.
   - q: How is it different from an inverse head and shoulders?
     a: It is the same shape flipped upside down. A head and shoulders signals a turn down at the end of an advance; an inverse head and shoulders signals a turn up at the end of a decline.
 ---
 
-## How it looks
+## What it looks like
 
-Three peaks form in sequence. The first is the left shoulder, the highest one in the middle is the head, and the third is the right shoulder. The line through the two lows between the peaks is the neckline, which can be flat or sloped.
+Three peaks form in sequence. The first is the left shoulder, the tallest middle one is the head, and the third is the right shoulder. The line through the two lows between the peaks is the neckline; it can be flat or sloped.
 
 ## What it tells you
 
-An uptrend runs, sets a new high at the head, and then the right shoulder fails to get above the head. That means the push to go higher has weakened, so it is read as a sign the uptrend may be ending and turning down.
+An uptrend continues until the head makes a new high, but the right shoulder fails to get past the head. That means the push higher has weakened, so it is read as a sign the uptrend may end and turn down.
 
-The pattern completes when the close finishes below the neckline. It is considered more reliable if volume during the right shoulder is lower than during the left shoulder and the head, and volume is above normal when the neckline breaks. A pullback, where price rises back after the break and is stopped at the neckline, also supports the bearish signal. In Thomas Bulkowski's tabulation of bull-market cases, 51% of head and shoulders patterns reached their target.
+The pattern is complete only when, after the right shoulder, a close finishes below the neckline. Volume that shrinks on the right shoulder compared with the left shoulder and the head, and heavier-than-usual volume on the neckline break, add weight to the signal. A pullback that rises back to the neckline after the break and is stopped there also supports the bearish signal.
 
-## How Siglens detects it
+## How it differs from an inverse head and shoulders
 
-Siglens confirms a swing high or swing low once price has moved one way and then reversed by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar). Five consecutive swings (left shoulder, low, head, low, right shoulder) that meet all the conditions below are treated as a head and shoulders.
+It is only the same shape flipped, but the results differ. Here is what the bull-market counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, show:
 
-- The span from the left shoulder to the right shoulder must be at least 15 bars. The textbook standard is 20 bars or more, so patterns of 15 to 19 bars are rated lower.
-- The head must be at least 1 times ATR higher than both shoulders, and the two shoulders must differ by no more than 5% of the higher shoulder's price.
-- The neckline is the line through the two lows. It may slope, but if it rises by 1.5 times ATR or more in the direction of the prior advance, it is just rising lows within a trend and is excluded.
-- Both shoulders must be at least 1 times ATR above the neckline. From the second low to the right shoulder, no close may break through the neckline by more than 0.25 times ATR.
-- Closes must have risen at least 2 times ATR over the 20 bars before the left shoulder, and from then until the right shoulder, no bar may be higher than the head by more than 0.25 times ATR.
-- Height (from the neckline at the head's position up to the head) must be at least 2.5 times ATR and at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
+- After the neckline break, the share of head and shoulders that failed to move far enough (the break-even failure rate) was 19%.
+- Its performance rank (a ranking by how far price went afterward) was 9th of 36 bearish patterns.
+- It reached the price target 51% of the time, about half.
+- The [inverse head and shoulders](/guide/chart-patterns/inverse-head-and-shoulders) did better, with an 11% failure rate and 71% reaching the target.
 
-Siglens keeps showing the pattern until two more swings form after the right shoulder, so it does not disappear while price breaks down through the neckline. On the chart, the neckline is a solid line between the two lows and a dotted line out to the bar that first breaks it.
+So the measured target of a head and shoulders is better seen as a distance price might travel, not a price it will surely reach.
 
-The invalidation level is the right shoulder's high. A close above it means the pattern has broken. The measured target is the price where the neckline broke minus the pattern height, and the conservative target is that price minus half the height.
+Volume is read differently too. In a head and shoulders, shrinking volume while the right shoulder forms is itself evidence that buying has weakened. If volume does not shrink on the right shoulder, the signal is rated lower. A bearish divergence (price and an indicator pointing different ways), where price makes a new high at the head while [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) makes a lower high, adds to the evidence. A head and shoulders that forms in the middle of a strong advance, with no clear resistance overhead, is less reliable.
 
-## Watch out for
+## How Siglens finds it
 
-- A temporary pullback inside a strong uptrend can look like three peaks. Read it together with the larger trend.
-- If the two shoulders are at very different heights, the shape has broken down. Usually a difference over 10% is not treated as a head and shoulders, and Siglens only picks up differences within 5%.
-- If the distance from the head to the neckline is under 3% of the neckline price, the move afterward is likely to be small too.
-- A brief intraday break of the neckline that falls back is not a confirmation.
-- If volume does not rise as the neckline breaks, the signal is weighted lower.
+Siglens checks whether five clear turning points in a row (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) form a left shoulder, low, head, low, and right shoulder. All of these must hold:
+
+- The left shoulder to the right shoulder spans at least 15 bars. The textbook standard is 20 bars or more, so 15–19-bar patterns are rated lower.
+- The head is at least 1 ATR above both shoulders.
+- The two shoulders differ by no more than 5% of the higher shoulder's price.
+- The neckline is the line through the two lows. It may slope, but if it rises 1.5 ATR or more in the direction of the prior advance, it is just the trend's own rising lows and is excluded.
+- Both shoulders stand at least 1 ATR above the neckline.
+- From the second low to the right shoulder, no close breaks through the neckline by more than 0.25 ATR.
+- Over the 20 bars before the left shoulder, the close rose at least 2 ATR, so there was a prior advance.
+- From the start of those 20 bars to the right shoulder, no bar rises more than 0.25 ATR above the head.
+- The height (from the neckline at the head's bar to the head) is at least 2.5 ATR and at least a minimum share of price (0.5% on 5–30 minute bars, 1% on 1–4 hour bars, 3% on daily bars).
+
+Until two more swings form after the right shoulder, the pattern stays on the chart even while price breaks down through the neckline.
+
+The invalidation level (the price at which the pattern counts as broken) is the right shoulder's high. A close above it breaks the pattern. The neckline-break price minus the pattern height is the measured target, and minus half the height is the conservative target. A target is the price reached if price moves another pattern height; it is a reference drawn from past cases, not a promise. Only about half of past cases actually got that far.
+
+## Watch out when
+
+- A temporary correction inside a strong uptrend can look like three peaks. That is why the larger trend is read alongside it.
+- If the shoulders are very different in height, the shape has broken down. A gap of more than 10% usually rules out a head and shoulders, and Siglens only accepts 5% or less.
+- If the distance from the head to the neckline is less than 3% of the neckline price, the move afterward is likely to be small too.
+- A brief intraday break of the neckline that comes back is not confirmation.
+- If volume does not rise on the neckline break, the signal is rated lower.

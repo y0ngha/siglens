@@ -1,10 +1,11 @@
 import {
     formatCompact,
     formatTick,
+    estimateLabelWidth,
     linearScale,
+    niceStep,
     niceTicks,
     splitRuns,
-    tickStep,
     toPoints,
 } from '@/views/guide/lib/chartLayout';
 import type { DemoPane } from '@/views/guide/demos/types';
@@ -34,7 +35,6 @@ interface GuideDemoPaneProps {
 
 const PANE_PAD_RATIO = 0.12;
 const LEGEND_GAP = 10;
-const LABEL_CHAR_WIDTH = 0.6;
 
 function paneDomain(pane: DemoPane): [number, number] {
     if (pane.range !== undefined) return [pane.range[0], pane.range[1]];
@@ -56,8 +56,22 @@ function paneDomain(pane: DemoPane): [number, number] {
     return [min - pad, max + pad];
 }
 
+/** 절댓값이 이 값 이상이면 눈금·레벨 라벨을 K/M 단위 축약형으로 줄여 좁은 축 영역에 맞춘다. */
+const COMPACT_ABS_THRESHOLD = 1e4;
+
+/** 레벨 라벨 소수 자릿수 상한 — 0.0001 단위 지표값까지 구분하고 그 아래 꼬리 자릿수는 버린다. */
+const LEVEL_MAX_DECIMALS = 4;
+
 const tickText = (value: number, step: number): string =>
-    step >= 1000 ? formatCompact(value) : formatTick(value, step);
+    step >= 1000 || Math.abs(value) >= COMPACT_ABS_THRESHOLD
+        ? formatCompact(value)
+        : formatTick(value, step);
+
+/** 레벨 라벨은 눈금 간격이 아니라 자기 값을 그대로(최대 4자리) 보여 준다. */
+const levelText = (value: number): string =>
+    Math.abs(value) >= COMPACT_ABS_THRESHOLD
+        ? formatCompact(value)
+        : String(Number(value.toFixed(LEVEL_MAX_DECIMALS)));
 
 /** 가격 차트 아래에 붙는 보조 패널 (RSI·MACD·거래량 등). x축은 가격 차트와 공유한다. */
 export function GuideDemoPane({
@@ -70,17 +84,21 @@ export function GuideDemoPane({
     const innerBottom = frame.top + frame.height - 4;
     const yOf = linearScale(min, max, innerBottom, innerTop);
     const levelValues = (pane.levels ?? []).map(level => level.value);
-    const ticks = niceTicks(min, max, 3).filter(
+    const allTicks = niceTicks(min, max, 3);
+    const ticks = allTicks.filter(
         tick => !levelValues.some(v => Math.abs(yOf(v) - yOf(tick)) < 9)
     );
-    const step = tickStep(niceTicks(min, max, 3));
+    const step =
+        allTicks.length > 1
+            ? allTicks[1] - allTicks[0]
+            : niceStep((max - min) / 3);
     const baseline = min <= 0 && max >= 0 ? yOf(0) : innerBottom;
     const barWidth = Math.max(1.2, frame.pitch * 0.7);
     const legendLines = (pane.lines ?? []).filter(line => line.label !== '');
     const legendStart =
         frame.left +
         4 +
-        pane.label.length * labelFontSize * LABEL_CHAR_WIDTH +
+        estimateLabelWidth(pane.label, labelFontSize) +
         LEGEND_GAP;
     const legendXs = legendLines.reduce<number[]>((xs, line, index) => {
         const prev = legendLines[index - 1];
@@ -89,7 +107,7 @@ export function GuideDemoPane({
             prev === undefined
                 ? legendStart
                 : last +
-                      prev.label.length * labelFontSize * LABEL_CHAR_WIDTH +
+                      estimateLabelWidth(prev.label, labelFontSize) +
                       LEGEND_GAP
         );
         return xs;
@@ -140,7 +158,7 @@ export function GuideDemoPane({
                         x={frame.right + 4}
                         y={yOf(level.value)}
                     >
-                        {level.label ?? tickText(level.value, step)}
+                        {level.label ?? levelText(level.value)}
                     </text>
                 </g>
             ))}
@@ -153,7 +171,7 @@ export function GuideDemoPane({
                     x={frame.right + 4}
                     y={yOf(tick)}
                 >
-                    {formatTick(tick, step)}
+                    {tickText(tick, step)}
                 </text>
             ))}
             {(pane.lines ?? []).map(line =>

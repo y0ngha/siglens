@@ -3,11 +3,11 @@ title: "Volume Profile"
 aliases: [Volume Profile, POC, Point of Control, Value Area, Volume by Price]
 summary: "Stacks volume by price level as horizontal bars, showing where trading clustered (POC) and the value area."
 seoTitle: "Volume Profile: What POC, VAH and VAL Mean"
-seoDescription: "How to read Volume Profile, which shows volume at each price level: the POC, the VAH and VAL value area, and low-volume gaps, with its limits."
+seoDescription: How to read the POC, the value area (VAH and VAL) and thinly traded price gaps on a volume profile, and where it falls short.
 demoCaption: "Synthetic, illustrative bars. Volume-by-price bars sit beside the candles, with the longest bar (POC) and the upper and lower edges of the value area marked."
 faq:
   - q: "What is the POC?"
-    a: "It stands for Point of Control, the price with the most volume over the chosen period. It is the price market participants agreed on most, so it is seen as a magnet that price tends to return to."
+    a: "It stands for Point of Control, the price with the most volume over the chosen period. It is the price where market participants traded the most, so it is seen as a place price often comes back to."
   - q: "How is the value area set?"
     a: "It is the price range containing about 70% of total volume. The upper edge is the VAH and the lower edge is the VAL."
 ---
@@ -23,7 +23,7 @@ There are three key reference lines.
 
 ## What it tells you
 
-- When price is above the POC, it is trading above the price most participants agreed on, so the structure is read as bullish; below it, bearish. Price often returns to the POC, so it can act as support or resistance.
+- When price is above the POC, it is trading above the most-traded price, so the structure is read as bullish; below it, bearish. Price often returns to the POC, so it can act as support or resistance.
 - A close through the POC with heavy volume can be read as a sign that control is shifting between buyers and sellers.
 - While price is inside the value area, balanced, range-bound movement is likely. A move above the VAH with rising volume is read as the uptrend continuing, and a move below the VAL as the downtrend continuing.
 - When price that had left the value area comes back inside, it is seen as a move to return to the original range. Traders pass around an "80% rule" that says it often travels all the way across to the opposite edge of the value area, but that is a rule of thumb, not a validated probability.
@@ -31,9 +31,13 @@ There are three key reference lines.
 
 ## How Siglens detects it
 
-Siglens splits the price range of the calculation window into 24 slots. A bar's volume is divided among the slots its high-to-low span covers, in proportion to the overlap length. The POC is the slot with the most volume, and the value area is the range grown outward from the POC, up and down, until it holds 70% of total volume. It does not calculate when there are fewer than 30 bars.
+Siglens looks at where price sits relative to the POC, VAH and VAL, and whether a price level with short bars (little trading) is close by. It builds the profile like this:
 
-It reads where price sits relative to the POC, VAH and VAL, and whether a price level with short bars (little trading) is close by. When [VWAP](/guide/indicators/vwap) is near the POC, the time-based average and the volume distribution point to the same place, so it weighs that support or resistance more heavily. The same goes when the 20-day or 60-day moving average, or the Bollinger Band center line, overlaps with the POC.
+- The price range of the calculation window is split into 24 slots, and each bar's volume is shared among the slots its high-to-low span covers.
+- The slot with the most volume is the POC. The value area is grown outward from the POC, up and down, until it holds 70% of total volume.
+- It does not calculate when there are fewer than 30 bars.
+
+When [VWAP](/guide/indicators/vwap) (the volume-weighted average price) is near the POC, the two references point to the same place, so it weighs that support or resistance more heavily. The same goes when the 20-day or 60-day moving average, or the Bollinger Band center line, overlaps with the POC.
 
 ## Watch out for
 

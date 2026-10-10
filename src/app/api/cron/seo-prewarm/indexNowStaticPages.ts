@@ -1,5 +1,8 @@
 import 'server-only';
-import { STATIC_PAGE_PATHS } from '@/entities/sitemap-entry/lib/staticPagePaths';
+import {
+    STATIC_PAGE_PATHS,
+    isGuideEntryPath,
+} from '@/entities/sitemap-entry/lib/staticPagePaths';
 import type { SitemapEntry } from '@/entities/sitemap-entry/model';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { SITE_URL } from '@/shared/lib/seo';
@@ -10,6 +13,13 @@ export const STATIC_LASTMOD_KEY = 'indexnow:static-lastmod';
 const TRACKED_STATIC_URLS: ReadonlySet<string> = new Set(
     STATIC_PAGE_PATHS.map(path => `${SITE_URL}${path}`)
 );
+
+/** 감시 대상인가 — 고정 정적 페이지이거나 가이드 항목(DB 발)이다. */
+function isTrackedUrl(url: string): boolean {
+    if (TRACKED_STATIC_URLS.has(url)) return true;
+    if (!url.startsWith(SITE_URL)) return false;
+    return isGuideEntryPath(url.slice(SITE_URL.length));
+}
 
 export interface StaticLastmodDiff {
     /** 저장된 값과 다르거나 처음 보는 URL. */
@@ -32,8 +42,7 @@ export function diffStaticLastmod(
         entries
             .filter(
                 (entry): entry is SitemapEntry & { lastModified: Date } =>
-                    TRACKED_STATIC_URLS.has(entry.url) &&
-                    entry.lastModified !== undefined
+                    isTrackedUrl(entry.url) && entry.lastModified !== undefined
             )
             .map(
                 entry => [entry.url, entry.lastModified.toISOString()] as const

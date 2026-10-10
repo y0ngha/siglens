@@ -4,6 +4,7 @@ import {
     formatCompact,
     formatTick,
     linearScale,
+    niceStep,
     niceTicks,
     placeLabel,
     splitRuns,
@@ -117,5 +118,46 @@ describe('placeLabel fallback', () => {
         );
         expect(a.y).toBe(0);
         expect(b.y).toBeGreaterThanOrEqual(15);
+    });
+});
+
+describe('placeLabel with obstacles', () => {
+    const bounds = { top: 0, bottom: 200, left: 0, right: 300 };
+
+    it('moves a label off the candles under it, to the nearest free side', () => {
+        const candle: LabelBox = { x: 40, y: 40, width: 8, height: 60 };
+        const result = placeLabel(
+            [],
+            { x: 20, y: 60, width: 40, height: 14 },
+            -1,
+            bounds,
+            [candle]
+        );
+        const clear =
+            result.x + result.width <= candle.x ||
+            result.x >= candle.x + candle.width ||
+            result.y + result.height <= candle.y ||
+            result.y >= candle.y + candle.height;
+        expect(clear).toBe(true);
+    });
+
+    it('keeps the label inside the horizontal bounds', () => {
+        const result = placeLabel(
+            [],
+            { x: 0, y: 60, width: 40, height: 14 },
+            -1,
+            bounds,
+            [{ x: 0, y: 50, width: 60, height: 40 }]
+        );
+        expect(result.x).toBeGreaterThanOrEqual(0);
+        expect(result.x + result.width).toBeLessThanOrEqual(300);
+    });
+});
+
+describe('niceStep', () => {
+    it('rounds a raw step up to 1, 2, 5 x 10^n', () => {
+        expect(niceStep(0.3)).toBe(0.5);
+        expect(niceStep(1.4)).toBe(2);
+        expect(niceStep(700_000)).toBe(1_000_000);
     });
 });

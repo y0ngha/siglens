@@ -3,11 +3,11 @@ title: Marubozu
 aliases: [Marubozu, White Marubozu, Black Marubozu, Long Bullish Candle, Long Bearish Candle]
 summary: "A long body with almost no wicks. One side pushed the whole period, but it confirms a trend only weakly."
 seoTitle: Marubozu Candlestick Meaning and Signals
-seoDescription: "What a marubozu is, how to read it when it goes with or against the trend, and what Bulkowski's data actually showed about its results."
+seoDescription: How a marubozu, a candle with a body and no wicks, reads differently with the trend and against it, and how often it actually worked.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bullish marubozu that opens at its low and closes at its high with no wicks, next to its bearish opposite.
 faq:
   - q: Does a marubozu confirm a strong trend?
-    a: Textbooks say so, but the data is weak. In Thomas Bulkowski's data the trend continued after a white marubozu 56% of the time and after a black marubozu 53%.
+    a: Textbooks say so, but the data is weak. In Thomas Bulkowski's data the advance continued after a bullish marubozu 56% of the time, and the decline continued after a bearish marubozu 53% of the time.
   - q: Are a marubozu and a long bullish candle the same?
     a: They are similar, but a marubozu must have almost no wicks. A long body with long wicks is not a marubozu.
 ---
@@ -16,25 +16,30 @@ faq:
 
 Marubozu is Japanese for a shaved head. As the name says, it is a bar with almost no upper or lower wick, opening at one end and closing at the other.
 
-- Bullish (white) marubozu: opens near the low and closes near the high.
-- Bearish (black) marubozu: opens near the high and closes near the low.
+- Bullish marubozu: opens near the low and closes near the high.
+- Bearish marubozu: opens near the high and closes near the low.
 
 ## What it tells you
 
-One side pushed the price for the whole period. It carries more weight when it appears where price breaks through support or resistance.
+One side pushed the price for the whole period. It means more when it appears where price breaks through support or resistance.
 
-But a marubozu in the direction of the trend is weak evidence of trend confirmation. A marubozu of the opposite color to the trend is often a temporary pullback, not a reversal.
+Textbooks read a marubozu in the direction of the trend as confirmation that the trend is strong, but the data does not back that up. Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results in books, found that the advance continued after a bullish marubozu 56% of the time and the decline continued after a bearish marubozu 53% of the time. Both are close to a coin flip. Bulkowski thought the marubozu was overrated relative to its results.
+
+Where Bulkowski did find good results was the opposite-color case:
+
+- A bearish marubozu inside an uptrend, followed by a close above its high: 2nd-best performer among common bullish continuation candles, with an average rise of 4.39% ten days later.
+- A bullish marubozu inside a downtrend, followed by a close below its low: 2nd-best performer among common bearish continuation candles, with an average drop of 3.55% ten days later.
 
 ## How Siglens detects it
 
-A bar is a marubozu when its body is at least 90% of the high-to-low range. A bullish bar is a bullish marubozu and a bearish bar is a bearish marubozu. Siglens checks bar shape only, not the preceding trend.
+Siglens looks for a bar with almost no wicks, where the body fills nearly the whole bar.
 
-In Thomas Bulkowski's data, uptrends continued after a white marubozu 56% of the time and downtrends after a black marubozu 53%, both close to a coin flip. Bulkowski remarked that the marubozu has been given more weight by candle followers than it deserves.
+- The body is at least 90% of its own high-to-low range.
+- A bullish bar is a bullish marubozu; a bearish bar is a bearish marubozu.
+- Only the bar's shape is checked, not the preceding trend.
 
-The cases where Bulkowski confirmed good performance were actually those of the opposite color to the trend. A black marubozu inside an uptrend, followed by a close above that bar's high, ranked 2nd among common bullish continuation candles, with a 10-day average gain of 4.39%. A white marubozu inside a downtrend, followed by a close below that bar's low, ranked 2nd among common bearish continuation candles, with a 10-day average decline of 3.55%.
-
-So Siglens reads an opposite-color marubozu as a resumed trend only after such a confirming close appears, and withholds judgment before that.
+A marubozu against the trend is usually a brief pullback rather than a sign that the trend is turning. If a later close moves above that bar's high (a bearish bar in an uptrend) or below its low (a bullish bar in a downtrend), Siglens reads the original trend as resuming. Until such a close appears, it holds off.
 
 ## Watch out for
 
-A run of marubozu may mean price has already moved a lot, so check for overheating with an indicator such as [RSI](/guide/indicators/rsi). A marubozu on thin volume may just be a liquidity effect. Ignore it in a sideways market ([ADX](/guide/indicators/adx) below 20).
+Several marubozu in a row can mean price has already moved a lot. In that case, check [RSI](/guide/indicators/rsi) for overbought (risen so far it may pull back) or oversold (fallen so far it may bounce) conditions. A marubozu on low volume may be a shape that appeared by chance because trading was thin. When [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction, Siglens does not count it as a signal.

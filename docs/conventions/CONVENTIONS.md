@@ -595,6 +595,7 @@ file or the rule it describes changes:
 - After splitting a function or JSDoc, check that each paragraph stays on the half it describes and that no
   sentence is cut in the middle or loses a field the next paragraph relies on.
 - Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
+- A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
 
 <a id="CM-3"></a>
 
@@ -1022,7 +1023,9 @@ added to one locale makes the others fall back to raw text. Skill cards are keye
 
 Keys written by hand add an entry to `messages/_meta/hashes.json` (`sha1(ko value).slice(0, 12)`) in the same
 change. Without it the next `yarn i18n:translate` treats the translations as stale and overwrites them, and
-`i18n:verify` does not catch the omission.
+`i18n:verify` does not catch the omission. A changed or removed key needs its entry recomputed or deleted too.
+Before opening the PR, diff `messages/ko.json` against `origin/master` and check that every added, changed and
+removed key has a matching `hashes.json` change (script it: recompute `sha1(ko).slice(0, 12)` for each changed key).
 
 <a id="I18-4"></a>
 

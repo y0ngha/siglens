@@ -13,14 +13,14 @@ import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 /**
- * 비회원 "하루 무료 전체 공개" 미터가 시작되는 시각(KST 2026-10-18 00:00).
+ * 비회원 "하루 무료 전체 공개" 미터가 시작되는 시각(KST 2026-10-11 00:00).
  *
- * 개인정보처리방침 v9(`db/seeds/terms/privacy/v9.md`)의 시행일과 **같아야** 한다 —
- * v9가 게스트 쿠키와 이 미터의 서버 보관 항목을 고지하므로, 시행 전에는 미터가
+ * 개인정보처리방침 v8(`db/seeds/terms/privacy/v8.md`)의 시행일과 **같아야** 한다 —
+ * v8이 게스트 쿠키와 이 미터의 서버 보관 항목을 고지하므로, 시행 전에는 미터가
  * 아무것도 기록하면 안 된다. 이 시각 전에는 라우트가 미터를 부르지 않고 현행(잠금)으로
- * 동작한다. 가드 테스트(`src/__tests__/guards/meteredRevealStartsAtPrivacyV9.test.ts`)가 두 날짜를 묶어 둔다.
+ * 동작한다. 가드 테스트(`src/__tests__/guards/meteredRevealStartsAtPrivacy.test.ts`)가 두 날짜를 묶어 둔다.
  */
-export const METERED_REVEAL_STARTS_AT = new Date('2026-10-18T00:00:00+09:00');
+export const METERED_REVEAL_STARTS_AT = new Date('2026-10-11T00:00:00+09:00');
 
 /**
  * 같은 IP에서 하루에 공개받을 수 있는 서로 다른 종목 수의 상한.
@@ -101,7 +101,7 @@ export interface MeteredRevealInput {
     readonly now: Date;
 }
 
-/** 다음 KST 자정의 epoch 초. 키는 그 시각에 자동 삭제된다(방침 v9 고지와 같다). */
+/** 다음 KST 자정의 epoch 초. 키는 그 시각에 자동 삭제된다(방침 v8 고지와 같다). */
 export function nextKstMidnightEpochSeconds(now: Date): number {
     const offsetMs = KST_OFFSET_HOURS * MS_PER_HOUR;
     const kstDayStart =

@@ -108,14 +108,26 @@ describe('loadGuideHubSeoCopy', () => {
         );
     });
 
-    it('categoryDescription은 name·count를 치환한다', async () => {
+    it('categoryDescription은 count를 치환하고 분류마다 다른 문장이다', async () => {
         const copy = await loadGuideHubSeoCopy('ko', 1);
-        const text = copy.categoryDescription('보조지표', 17);
+        const texts = GUIDE_CATEGORIES.map(category =>
+            copy.categoryDescription(category, 17)
+        );
 
-        expect(text).toContain('보조지표');
-        expect(text).toContain('17');
-        expect(text).not.toContain('{');
+        expect(texts.every(text => text.includes('17'))).toBe(true);
+        expect(texts.some(text => text.includes('{'))).toBe(false);
+        expect(new Set(texts).size).toBe(GUIDE_CATEGORIES.length);
     });
+
+    it.each(['ko', 'en'] as const)(
+        '%s 전략·이론 SEO 제목에 특정 이론명이 박혀 있지 않다',
+        async locale => {
+            const copy = await loadGuideCategoryCopy(locale);
+            expect(copy.seoTitle.strategies).not.toMatch(
+                /엘리[엇어]트|Elliott/
+            );
+        }
+    );
 
     it('en은 영어 카탈로그를 읽는다', async () => {
         const copy = await loadGuideHubSeoCopy('en', 3);

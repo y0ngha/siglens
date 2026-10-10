@@ -2,14 +2,14 @@
 title: Hammer / Shooting Star
 aliases: [Hammer, Inverted Hammer, Hanging Man, Shooting Star]
 summary: A single bar with one wick at least twice the body. Check the preceding trend before trusting the name.
-seoTitle: Hammer and Shooting Star Candlestick Meaning
-seoDescription: How hammer, inverted hammer, hanging man and shooting star candles differ, how Siglens names them, and what Bulkowski's data shows about their real results.
+seoTitle: Hammer, Inverted Hammer, Hanging Man, Shooting Star
+seoDescription: Hammer, inverted hammer, hanging man and shooting star are told apart by wick direction and where they appear. See how Siglens names them and how they actually performed.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bar with a long lower wick at the end of a decline, and a bar with a long upper wick at the end of an advance.
 faq:
   - q: How is a hammer different from a hanging man?
     a: The shape is the same; the location differs. Textbooks call a long lower wick after a decline a hammer and one after an advance a hanging man. Siglens names them by body color, not by location.
   - q: Does price rebound after a hammer?
-    a: In Thomas Bulkowski's data a hammer was followed by a bullish reversal 60% of the time. That is only slightly better than even, so many traders check whether a later close rises above the hammer's high.
+    a: In Thomas Bulkowski's data a hammer was followed by a bullish reversal 60% of the time. That is only slightly better than even, so traders usually wait to see whether a later close rises above the hammer's high.
 ---
 
 ## How it looks
@@ -25,13 +25,19 @@ A long wick is a trace of price reaching a level and being pushed back. A long l
 
 ## How Siglens detects it
 
-A bar belongs to this family when one wick is at least twice the body and the opposite wick is no longer than the body. If the body is at most 10% of the high-to-low range, it is classified first as a [doji](/guide/candlesticks/doji) and doesn't count here.
+Siglens finds this family by comparing wick length with the body, and names each bar by its body color. It does not check the preceding trend.
 
-The name comes from body color, not the preceding trend. With a long lower wick, a bullish bar is a hammer and a bearish bar is a hanging man. With a long upper wick, a bullish bar is an inverted hammer and a bearish bar is a shooting star. Because the prior trend isn't checked, a "hammer" can be labeled at a top. Check the preceding move yourself before applying the textbook reading.
+- One wick is at least twice the body.
+- The opposite wick is no longer than the body.
+- If the body is at most 10% of the high-to-low range, the bar is classified first as a [doji](/guide/candlesticks/doji) and doesn't count here.
+- With a long lower wick, a bullish bar is a hammer and a bearish bar is a hanging man.
+- With a long upper wick, a bullish bar is an inverted hammer and a bearish bar is a shooting star.
 
-Thomas Bulkowski's data shows:
+Because the prior trend isn't checked, a "hammer" can be labeled at a top. Check the preceding move on the chart yourself before applying the textbook reading.
 
-- Hammer: 60% bullish reversal. Results were best with a white body.
+In the data of Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, the four did not split as neatly as their names suggest:
+
+- Hammer: 60% bullish reversal. Results were best when the bar was bullish.
 - Shooting star: 59% bearish reversal.
 - Hanging man: against the textbook, 59% continued upward and only 41% reversed down.
 - Inverted hammer: by Bulkowski's definition (an inverted hammer after a long bearish bar), 65% continued downward and 35% reversed up.
@@ -40,4 +46,4 @@ So for the hanging man and inverted hammer, Siglens doesn't give the textbook re
 
 ## Watch out for
 
-It matters more when the wick is at least three times the body, the bar touches support or resistance, and volume is above normal. Confirmation is a close beyond the bar's far end: above its high to read it as upward, below its low to read it as downward. Ignore it in a sideways market ([ADX](/guide/indicators/adx) below 20), and on very short timeframes the wick ratio is unstable.
+It matters more when the wick is at least three times the body, the bar touches support or resistance, and volume is above normal. To read it as upward, a later close must rise above the bar's high; to read it as downward, a later close must fall below its low. Ignore it in a sideways market (where [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and there is no clear direction), and on very short timeframes the wick ratio is unstable.

@@ -351,8 +351,8 @@ const counterattackBeltHold = (): GuideDemo => {
                 candle(99.6, 99.8, 97.7, 98),
                 candle(98.4, 104.2, 98.35, 103.2),
                 candle(103.3, 104.8, 102.9, 104.3),
-                candle(107.6, 108.2, 103.8, 104),
-                candle(100.2, 104.3, 100, 104.05),
+                candle(104.1, 104.4, 101, 101.2),
+                candle(98, 101.4, 97.8, 101.22),
             ],
         ],
         [
@@ -370,7 +370,7 @@ const gapContinuation = (): GuideDemo => {
             [
                 candle(100.2, 103.2, 100, 103),
                 candle(104.5, 107.5, 104.3, 107.2),
-                candle(106.5, 106.8, 104.6, 104.8),
+                candle(106.5, 106.8, 103.6, 103.8),
             ],
         ],
         [marker(8, 'Upside gap tasuki', 'bull', 'below')],
@@ -431,6 +431,8 @@ const candleBasics = (): GuideDemo => ({
         },
         marker(0, 'High', 'neutral', 'above'),
         marker(0, 'Low', 'neutral', 'below'),
+        marker(1, 'High', 'neutral', 'above'),
+        marker(1, 'Low', 'neutral', 'below'),
         marker(2, 'Upper wick', 'neutral', 'above'),
         marker(2, 'Lower wick', 'neutral', 'below'),
     ],

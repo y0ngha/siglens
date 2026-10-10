@@ -6,6 +6,7 @@ import { aiAskUrl } from '@/shared/config/aiHost';
 import type { GuideEntrySummary } from '@/entities/guide/types';
 import ko from '../../../../../messages/ko.json';
 import { GuideBrowser } from '../GuideBrowser';
+import { GUIDE_CARD_ALIAS_LIMIT } from '../GuideCard';
 
 const g = ko.views.guide;
 
@@ -82,10 +83,10 @@ describe('GuideBrowser — 필터가 없을 때', () => {
             .getAllByRole('heading', { level: 2 })
             .map(h => h.textContent);
         expect(headings).toEqual([
-            `${g.categoryCandlesticks}1`,
-            `${g.categoryChartPatterns}1`,
-            `${g.categoryIndicators}2`,
-            `${g.categoryStrategies}1`,
+            `${g.categoryCandlesticks} 1개 항목`,
+            `${g.categoryChartPatterns} 1개 항목`,
+            `${g.categoryIndicators} 2개 항목`,
+            `${g.categoryStrategies} 1개 항목`,
         ]);
         expect(cardTitles()).toEqual([
             '도지',
@@ -320,7 +321,10 @@ describe('GuideBrowser — 분류 허브(fixedCategory)', () => {
         expect(
             screen.getByRole('heading', {
                 level: 2,
-                name: g.categoryIndicators,
+                name: g.categoryListHeading.replace(
+                    '{name}',
+                    g.categoryIndicators
+                ),
             })
         ).toBeInTheDocument();
     });
@@ -353,5 +357,45 @@ describe('GuideBrowser — 분류 허브(fixedCategory)', () => {
             '',
             '/guide/indicators?q=rsi'
         );
+    });
+});
+
+describe('GuideBrowser — 제목 중복·카드 별칭', () => {
+    it('분류 허브의 목록 제목(h2)은 h1과 같은 글자가 아니다', () => {
+        renderBrowser('indicators');
+
+        const h2 = screen.getByRole('heading', { level: 2 });
+        expect(h2).toHaveTextContent(
+            g.categoryListHeading.replace('{name}', g.categoryIndicators)
+        );
+        expect(h2.textContent).not.toBe(g.categoryIndicators);
+    });
+
+    it('카드는 다른 이름을 GUIDE_CARD_ALIAS_LIMIT개까지만 싣는다', () => {
+        const aliases = Array.from(
+            { length: GUIDE_CARD_ALIAS_LIMIT + 2 },
+            (_, i) => `별칭${i}`
+        );
+        render(
+            <GuideBrowser
+                entries={[
+                    summary({
+                        slug: 'many',
+                        title: '많은 별칭',
+                        aliases,
+                    }),
+                ]}
+                categoryLabels={LABELS}
+            />
+        );
+
+        expect(
+            screen.getByText(
+                aliases.slice(0, GUIDE_CARD_ALIAS_LIMIT).join(' · ')
+            )
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText(new RegExp(aliases[GUIDE_CARD_ALIAS_LIMIT]))
+        ).toBeNull();
     });
 });

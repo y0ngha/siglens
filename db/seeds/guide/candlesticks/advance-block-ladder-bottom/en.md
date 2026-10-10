@@ -2,8 +2,8 @@
 title: Advance Block / Ladder Bottom
 aliases: [Advance Block, Ladder Bottom, Three-Bar Advance Block, Stalling Candles]
 summary: "Three rising bars losing strength (advance block) and a three-bar rebound after a decline (ladder bottom). Both are weak clues."
-seoTitle: Advance Block and Ladder Bottom Candlesticks
-seoDescription: "What advance block and ladder bottom candles look like, and why Bulkowski's data shows advance blocks often continue upward, plus Siglens' criteria."
+seoTitle: "Advance Block and Ladder Bottom: Meaning and Signals"
+seoDescription: What the advance block and ladder bottom look like, and why, contrary to the textbook, the advance block was more often followed by further gains.
 demoCaption: Synthetic, illustrative bars made for this explanation. Three bullish bars with shrinking bodies and lengthening upper shadows (an advance block).
 faq:
   - q: Is an advance block a bearish signal?
@@ -28,10 +28,10 @@ Siglens checks only bar shape, not the preceding trend. Here a "long body" means
 - Advance block: of three bullish bars, the first has a long body, the second and third bodies shrink in turn, and the upper shadows lengthen in turn.
 - Ladder bottom: the second bearish bar has a long body and opens inside the first bearish body. The third, bullish bar must open above the second bearish bar's open and close above the first bearish bar's open. Bulkowski defines this pattern with five bars, so Siglens' three-bar version is an approximation.
 
-In Thomas Bulkowski's data, advance blocks went the opposite way from the textbook: 64% continued upward and 36% reversed down. Upside breakouts were the most common outcome, and reversals worked best when the advance was a pullback rally inside a downtrend. The ladder bottom (five-bar version) reversed upward 56% of the time, close to a coin flip.
+Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, found that advance blocks went the opposite way from the textbook: 64% were upward continuations (the rise carried on after the pattern) and 36% reversed down. Upside breakouts were the most common outcome, and reversals worked best when the advance was a pullback rally inside a downtrend. The ladder bottom (five-bar version) reversed upward 56% of the time, close to a coin flip.
 
-So Siglens reads an advance block as weakening strength within a rise, not as a top, and only reads the bearish side after a close below the pattern's low. It gives more weight when the pattern sits near resistance or shows a divergence with [RSI](/guide/indicators/rsi) (price rising while momentum weakens). A ladder bottom is a weak rebound clue that needs follow-through closes above the pattern's high.
+So Siglens reads an advance block as weakening strength within a rise, not as a top, and only reads the bearish side after a close below the pattern's low. It gives more weight when the pattern sits near resistance or shows a divergence between price and [RSI](/guide/indicators/rsi) (price rising while the upward force RSI measures, its momentum, weakens). A ladder bottom is a weak rebound clue that needs follow-through closes above the pattern's high.
 
 ## Watch out for
 
-Siglens ignores both in a sideways market ([ADX](/guide/indicators/adx) below 20). Textbooks call the advance block bearish, but in the data upward continuation was more common. Don't assume a decline from the name alone.
+Siglens ignores both in a sideways market (where [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and there is no clear direction). Textbooks call the advance block bearish, but in the data upward continuation was more common. Don't assume a decline from the name alone.

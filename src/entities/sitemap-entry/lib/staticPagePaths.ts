@@ -26,3 +26,17 @@ export const STATIC_PAGE_PATHS = [
     GUIDE_PATH,
     ...GUIDE_CATEGORIES.map(guideCategoryPath),
 ] as const;
+
+/**
+ * 차트 가이드 항목 경로(`/guide/{category}/{slug}`)인가. 항목(90개)은 DB에서 와서
+ * `STATIC_PAGE_PATHS`에 나열할 수 없으므로 모양으로 판정한다 — IndexNow 변화 감시와
+ * 지연표 분류가 같은 판정을 쓴다.
+ */
+export function isGuideEntryPath(path: string): boolean {
+    const segments = path.split('/').filter(segment => segment.length > 0);
+    return (
+        segments.length === 3 &&
+        `/${segments[0]}` === GUIDE_PATH &&
+        (GUIDE_CATEGORIES as readonly string[]).includes(segments[1])
+    );
+}

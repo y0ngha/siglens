@@ -2715,11 +2715,15 @@
             "categoryIntroChartPatterns": "複数のローソクが作る大きな形を扱います。ダブルボトム、ヘッドアンドショルダー、三角持ち合い、ウェッジ、フラッグなど、トレンドが続くときや変わるときによく現れるパターンの形と、Siglensが探す基準を説明します。",
             "categoryIntroIndicators": "移動平均線、RSI、MACD、ボリンジャーバンドなど、価格と出来高から計算するテクニカル指標をまとめました。計算方法と読み方に加えて、値が当てにならない場面も載せています。",
             "categoryIntroStrategies": "エリオット波動、フィボナッチ・リトレースメント、ダイバージェンス、ブレイクアウト、ギャップなど、複数のシグナルを組み合わせて見る分析の考え方を解説します。指標1つでは分かりにくい流れを読むための理論です。",
-            "categorySeoDescription": "{name}{count}項目を例のチャートつきで解説。読み方とSiglensの判定基準、注意点を載せています。",
+            "categoryListHeading": "{name}一覧",
+            "categorySeoDescriptionCandlesticks": "ドジ、ハンマー、包み足、明けの明星など、よく見るローソク足パターン{count}種類を例のチャートで確認し、どこで出ると意味があるのかを解説します。",
+            "categorySeoDescriptionChartPatterns": "ダブルボトム、ヘッドアンドショルダー、三角持ち合い、ウェッジなど、よく見るチャートパターン{count}種類を例のチャートで確認し、トレンドが続く形と変わる形を解説します。",
+            "categorySeoDescriptionIndicators": "移動平均線、RSI、MACD、ボリンジャーバンドなどのテクニカル指標{count}種類の計算方法と見方、値がずれやすい場面を例のチャートで解説します。",
+            "categorySeoDescriptionStrategies": "エリオット波動、フィボナッチ・リトレースメント、ダイバージェンス、ブレイクアウト、ギャップなど、チャート売買の戦略・理論{count}種類を例のチャートつきでまとめました。",
             "categorySeoTitleCandlesticks": "ローソク足パターンの種類と意味まとめ",
             "categorySeoTitleChartPatterns": "チャートパターンの種類と見方まとめ",
             "categorySeoTitleIndicators": "テクニカル指標の種類と見方まとめ",
-            "categorySeoTitleStrategies": "エリオット波動・フィボナッチ・ダイバージェンス戦略まとめ",
+            "categorySeoTitleStrategies": "チャート売買の戦略・理論の種類まとめ",
             "categoryStrategies": "戦略・理論",
             "ctaBody": "気になる銘柄を検索すると、チャートと分析をあわせて見られます。",
             "ctaButton": "銘柄を検索する",
@@ -3106,6 +3110,7 @@
             },
             "GuideHintLink": {
                 "aria": "{name}の意味を見る",
+                "entry": "パターン・ローソク足・指標の意味はチャートガイドで確認できます",
                 "label": "意味を見る"
             }
         },

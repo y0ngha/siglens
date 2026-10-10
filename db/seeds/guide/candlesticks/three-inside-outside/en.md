@@ -2,8 +2,8 @@
 title: Three Inside / Three Outside
 aliases: [Three Inside Up, Three Inside Down, Three Outside Up, Three Outside Down]
 summary: "A three-bar reversal: a harami or an engulfing pattern with one more confirming bar."
-seoTitle: Three Inside Up and Three Outside Up Candles
-seoDescription: "How three inside and three outside patterns differ from harami and engulfing, why the confirming bar matters, and reversal rates in Bulkowski's data."
+seoTitle: "Three Inside and Outside Candles: How to Confirm"
+seoDescription: How three inside and three outside patterns differ from the harami and engulfing, and why the third, confirming candle matters.
 demoCaption: "Synthetic, illustrative bars made for this explanation. Three inside up: a big bearish bar, a small bullish bar inside it, then a bullish bar closing above the first bar's open."
 faq:
   - q: How is three inside different from a harami?
@@ -25,22 +25,24 @@ It is a three-bar reversal: a two-bar pattern plus one confirming bar.
 
 A harami or engulfing pattern alone is only a hint that direction might change. In three inside and three outside, the third bar moves once more in that direction, so there is one extra step of confirmation.
 
-## How Siglens detects it
+Thomas Bulkowski tallied what actually happened after patterns across decades of US stock charts and published the results in books. In his data, the reversal rates (the share that actually turned in the expected direction) were:
 
-Siglens checks only the shape of the three bars, not the preceding trend.
-
-- Three inside: the first bar's body must be at least 60% of its high-to-low range, and the second body must sit inside the first. The third bar must close beyond the first bar's open (above for up, below for down).
-- Three outside: the second body must cover the first body, and the third bar must close beyond the second bar's close. The length of the first body is not considered.
-
-Reversal rates in Thomas Bulkowski's data:
-
-- Three inside up: 65% bullish reversal. It was the second-best bullish reversal among common candles, with a 10-day average gain of 2.61%.
+- Three inside up: 65% bullish reversal. It was the second-best bullish reversal among common candles, with an average gain of 2.61% ten days later.
 - Three inside down: 60% bearish reversal.
 - Three outside up: 75% bullish reversal.
 - Three outside down: 69% bearish reversal.
 
-The bullish versions did better than the bearish ones. Bulkowski said results were best when a pullback against the larger trend ended and that trend resumed, for example a three inside up in a pullback within an uptrend. It carries more weight with large bodies, high volume on the third bar, and a location at support or resistance.
+The bullish versions did better than the bearish ones. Bulkowski said results were best when a pullback against the larger trend ended and that trend resumed. A three inside up during a pullback within an uptrend is one example.
+
+## How Siglens detects it
+
+Siglens looks for a harami or engulfing pattern followed by a third bar that takes one more step in the same direction. It checks only the shape of the three bars, not the preceding trend.
+
+- Three inside: the first body is at least 60% of its own high-to-low range, and the second body sits inside the first. The third bar closes beyond the first bar's open (above for up, below for down).
+- Three outside: the second body covers the first body, and the third bar closes beyond the second bar's close. The length of the first body is not considered.
+
+It carries more weight with large bodies, high volume on the third bar, and a location at support or resistance.
 
 ## Watch out for
 
-The third bar already serves as confirmation, but Bulkowski counts a breakout only after a close beyond the far end of the pattern (above the high for up, below the low for down). Patterns in a sideways market ([ADX](/guide/indicators/adx) below 20) and the three inside down are on the weak side.
+The third bar already serves as confirmation, but Bulkowski counted a breakout only when a later close moved above the highest high of the three bars (below the lowest low for the down versions). Patterns that appear when [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction, and the three inside down, are on the weak side.

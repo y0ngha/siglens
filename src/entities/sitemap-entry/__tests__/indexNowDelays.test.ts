@@ -35,6 +35,8 @@ describe('classifyIndexNowUrl', () => {
         ['https://siglens.io/privacy', 'staticPage'],
         ['https://siglens.io/terms', 'staticPage'],
         ['https://siglens.io/backtesting', 'staticPage'],
+        ['https://siglens.io/guide/candlesticks/doji', 'staticPage'],
+        ['https://siglens.io/guide/indicators/rsi', 'staticPage'],
     ] as const)('%s → %s', (url, kind) => {
         expect(classifyIndexNowUrl(url)).toBe(kind);
     });
@@ -45,6 +47,8 @@ describe('classifyIndexNowUrl', () => {
         'https://siglens.io/AAPL/fear-greed', // 종목별 공포탐욕은 주기 제출하지 않는다
         'https://siglens.io/AAPL/overall', // 항상 noindex 탭
         'https://siglens.io/AAPL/fundamental',
+        'https://siglens.io/guide/unknown/doji', // 카테고리가 아니면 대상 아님
+        'https://siglens.io/guide/candlesticks/doji/extra',
         'not a url',
     ])('%s → 제출 대상 아님', url => {
         expect(classifyIndexNowUrl(url)).toBeNull();
@@ -150,6 +154,7 @@ describe('지연표 가드 — page.tsx revalidate 리터럴 ≤ 표 값', () =>
             'terms/page.tsx',
             'guide/page.tsx',
             'guide/[category]/page.tsx',
+            'guide/[category]/[slug]/page.tsx',
         ],
     };
 
