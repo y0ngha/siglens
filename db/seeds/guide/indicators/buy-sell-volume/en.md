@@ -36,13 +36,16 @@ It's most useful alongside a breakout. If the bar that breaks resistance has a h
 
 ## How Siglens detects it
 
-Siglens calculates buy and sell volume for each bar with the formulas above. If the last bar's buy ratio is heavily one-sided, at 65% or more or 35% or less, that bar is singled out for interpretation. The trend in recent bars' buy ratio is used to judge whether buying or selling is accumulating. It isn't used as a signal that sets direction. It is used to check whether price movement is backed by volume.
+Siglens calculates buy and sell volume for each bar with the formulas above and uses it to check whether price movement is backed by volume. It isn't used as a signal that sets direction.
+
+- If the last bar's buy ratio is 65% or more, or 35% or less, that bar is singled out for interpretation. These are one step more lopsided than the 60% and 40% levels above, so only those bars get called out.
+- The trend in recent bars' buy ratio is used to judge whether buying or selling is accumulating.
 
 When overlapped with other indicators, it is read like this.
 
-- [OBV](/guide/indicators/obv) rising and buy ratio also high: an accumulation flow is clear.
+- [OBV](/guide/indicators/obv) rising and buy ratio also high: an accumulation (buying-up) flow is clear.
 - [CMF](/guide/indicators/cmf) positive and buy ratio rising: buying pressure is continuing.
-- [RSI](/guide/indicators/rsi) oversold and a high buy ratio on the same bar: selling has run dry and buyers absorbed the supply.
+- [RSI](/guide/indicators/rsi) oversold (fallen so far that a bounce may come) and a high buy ratio on the same bar: read as a possible sign that selling has run dry and buyers absorbed the supply.
 
 ## Watch out for
 

@@ -18,7 +18,7 @@ faq:
 
 A single candle shows four prices for a set period at once: the open (first trade), the high (highest price), the low (lowest price) and the close (last price).
 
-If the close is above the open, the candle is bullish; if below, bearish. The color shows at a glance whether buyers or sellers won that period. Korean stock charts usually draw bullish candles red and bearish ones blue. The charts in this guide draw bullish candles green and bearish ones red.
+If the close is above the open, the candle is bullish; if below, bearish. The color shows at a glance whether buyers or sellers won that period. Korean brokerage trading apps (HTS) usually draw bullish candles red and bearish ones blue. The charts in this guide follow US charts and draw bullish candles green and bearish ones red, so the colors can be reversed: a red candle is bullish in a Korean HTS but bearish in this guide.
 
 ## Body and wicks
 
@@ -32,7 +32,7 @@ The thick part between the open and close is the body. The thin lines above and 
 
 The same shape means different things depending on where it appears. A long lower wick at the end of a long decline and one in the middle of a sideways range are not the same signal. So look at the preceding trend and nearby support and resistance too.
 
-One candle is only a clue. Many traders check whether the next candle's close, volume or other indicators point the same way.
+One candle is only a clue. So traders usually wait to see whether the next candle's close, volume or other indicators point the same way.
 
 The period each candle covers matters as well, whether daily, weekly or intraday. The shorter the period, the more random movement is mixed in, so the same pattern is less reliable.
 
@@ -49,6 +49,14 @@ Detected patterns fall into three groups.
 - Wait-and-see: a state with no direction and evenly matched forces, such as a doji
 
 For most patterns Siglens checks bar shape only, not the preceding trend. So don't rely on the pattern name; also check on the chart what came before. For a few patterns the name and the actual measured direction are opposite, and Siglens follows the measured direction. The [three-line strike](/guide/candlesticks/three-line-strike) is the main example.
+
+## How to read the numbers in this guide
+
+Most numbers in the candlestick articles come from Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books. Three terms come up again and again.
+
+- Reversal rate: how often price turned in the direction the textbook expects after the pattern. Around 50% is a coin toss and says almost nothing about direction.
+- Performance rank: a ranking of 103 candlestick patterns by how far price went afterward. A pattern can get the direction right often and still rank low if the moves are small.
+- Upward or downward breakout: a later close above the pattern's high is an upward breakout; a close below its low is a downward breakout. Figures such as "the 10-day result" are measured from that breakout.
 
 ## Watch out for
 

@@ -25,15 +25,21 @@ The day's high is read as the most buyers could pull price up, and the low as th
 
 ## What it tells you
 
+What follows is the traditional reading Elder set out. Siglens uses it as reference context, not as a standalone signal.
+
 Usually Bull Power is above 0 and Bear Power is below 0. So the signal is not whether a value is positive or negative, but how it moves from that usual position.
 
-The best buying condition in Elder's view is an uptrend where Bear Power rises back up from negative territory. It means sellers are losing strength. In a downtrend, Bull Power that is positive and falling is read as selling pressure coming in during a bounce.
+Elder saw an uptrend in which Bear Power rises back up from negative territory as the strongest bullish signal. He read it as sellers losing strength. In a downtrend, Bull Power that is positive and falling is read as selling pressure coming in during a bounce.
 
-The reading known to be of the highest quality is the divergence. In an uptrend, that is price making lower lows while Bear Power makes higher lows, or price making higher highs while Bull Power makes lower highs.
+The reading regarded as most reliable is the divergence (price and the indicator moving in different directions): price making lower lows while Bear Power makes higher lows (bullish), or price making higher highs while Bull Power makes lower highs (bearish).
 
 ## How Siglens detects it
 
-Siglens calculates both values with a 13-bar exponential moving average and flags two shapes on the last bar. One is Bear Power that is negative but has risen from the previous bar (sellers weakening). The other is Bull Power that is positive but has fallen from the previous bar (selling pressure coming in during a bounce). It looks at the direction change compared with the previous bar, not at the sign of the value. Whether the shape matters is judged together with the slope of the 13-bar exponential moving average, that is, the trend direction.
+Siglens looks not at the sign of the values but at whether, on the last bar, they turned compared with the previous bar. Both values are calculated with a 13-bar exponential moving average.
+
+- Bear Power negative but higher than the previous bar: read as sellers weakening.
+- Bull Power positive but lower than the previous bar: read as selling pressure coming in during a bounce.
+- Whether the shape matters is judged together with the slope of the 13-bar exponential moving average, that is, the trend direction.
 
 When Siglens checked later returns from this signal alone, there was no clear difference. So the indicator is used only as a reference, and it gets more weight when a higher-timeframe trend and a divergence coincide.
 
@@ -41,4 +47,4 @@ When Siglens checked later returns from this signal alone, there was no clear di
 
 - If you judge only by crossing the zero line, false signals are frequent in a sideways market.
 - Because the baseline is the 13-day exponential moving average, the two values can be temporarily distorted when the average suddenly changes direction. It's better to check the trend separately with another tool.
-- Used alone, this indicator showed no clear effect. Check whether it overlaps with a divergence in another indicator such as [MACD](/guide/indicators/macd).
+- Checking whether another indicator such as [MACD](/guide/indicators/macd) shows a divergence too gives firmer grounds than looking at one indicator alone.

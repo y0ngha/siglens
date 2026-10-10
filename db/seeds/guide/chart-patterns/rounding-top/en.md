@@ -16,32 +16,31 @@ faq:
 
 ## How it looks
 
-Price rises slowly, stays flat at the top for a while, and then slides down slowly, forming a dome (an upturned bowl). It is a gentle curve, not a sharp spike up and down. The lows at the two ends of the dome are the rims, and they sit at similar prices. It is a [rounding bottom](/guide/chart-patterns/rounding-bottom) flipped upside down.
+Price rises slowly, stays flat at the top for a while, and then comes down slowly, forming a dome (an upside-down bowl). It is a gentle curve, not a sharp spike up and down. The lows at the two ends of the dome are the rims, and they sit at similar prices. It is a [rounding bottom](/guide/chart-patterns/rounding-bottom) flipped upside down.
 
 ## What it tells you
 
-Buying pressure fades gradually while selling builds gradually, so control slowly changes hands. Thomas Bulkowski described the basic form as one that comes after an uptrend. When it appears at the end of an uptrend, it is read as a candidate for a turn down.
+Buying pressure fades slowly and selling pressure builds slowly, so control changes hands gradually. Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, described the standard form as one with an uptrend leading into the pattern. When it appears at the end of an uptrend, it is read as a candidate for a turn down.
 
-The pattern completes when the close falls below the dome's lower rim. Until then it is only a candidate. A dome does not always lead to a decline either: in Bulkowski's tabulation, cases that broke out upward actually performed better. The higher the pattern and the heavier the volume as the rim breaks, the better the performance is said to be. The two rims act as support zones.
+The pattern completes only when a close falls below the lower of the two rims. Until then it is just a candidate. A dome does not always lead to a decline, either: in Bulkowski's tabulation, cases that broke upward actually performed better (went further after the breakout). He said taller patterns and heavier volume on the rim break both went with better performance. The two rims act as support zones, where a falling price tends to stall.
 
 ## How Siglens detects it
 
-Siglens confirms a swing high or swing low once price has reversed by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar), and uses two swing lows as the two rims of the dome. It fits a parabola to the closes between them and checks whether the shape is a dome.
+Siglens takes two clearly turned lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the dome. It fits an upside-down U curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding top. The conditions:
 
 - The two rims must be at least 30 bars apart.
-- The price difference between the rims must be within 5% and at most 25% of the dome's height.
-- No bar inside the dome may fall below the higher rim by more than 0.25 times ATR. The legs rising from and coming back down to the rims are excluded from this check.
-- The parabola must open downward, and both the parabola's peak and the actual highest point must fall in the middle half of the dome in time.
-- The parabola must fit the actual closes well: it must explain at least 60% of the movement in the closes (R² of 0.6 or higher).
-- Dome condition: at least 40% of the closes must lie in the upper third of the dome's height. A shape that spikes up and drops back is excluded.
-- The height (from the higher rim to the peak) must be at least 2.5 times ATR and at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
-- If the right rim is too far back, it is not shown. The cutoff is the longer of the last 20 bars and half the pattern's length.
+- The rim prices must be within 5% of each other and no more than 25% of the dome's height apart.
+- Leaving out the legs up from and back down to the rims, no bar inside the dome may fall below the higher rim by more than 0.25 times ATR.
+- The curve must open downward, and both its peak and the actual highest point must sit in the middle half of the span in time.
+- The curve must match the actual closes well: a single curve must explain at least 60% of the closes' ups and downs.
+- Dome shape: at least 40% of the closes must sit in the top third of the dome's height. Sharp spike-and-collapse shapes drop out here.
+- The height (from the higher rim to the peak) must be at least 2.5 times ATR and also at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
 
-A prior uptrend is not a condition. The breakdown level is the lower of the two rims. The measured target is that level minus the dome's height, and the conservative target is that level minus half the height. The invalidation level is the most recent swing high on the right side after the peak (the peak itself if there is none).
+A prior uptrend is not required. The breakdown level is the lower of the two rims. The measured target subtracts the dome's height from it, and the conservative target subtracts half. The target is the price reached if the move repeats the pattern's height; it is a reference value, not a promise. Rounding tops that broke downward in particular rarely reached it. The invalidation level is the price at which the pattern is considered broken: the most recent swing high on the right side after the peak (or the peak itself if there is none).
 
 ## Watch out for
 
-- If the right rim is higher than the left, performance is said to drop.
-- If price climbs back to the broken rim after the breakdown (a pullback), performance afterward is said to be worse. Pullbacks like this are common after downward breaks.
-- If the peak is skewed toward either end of the span, or the shape is a sharp spike rather than a curve, it is not a rounding top.
-- A dome shape alone is still only a candidate. Until a close falls below the lower rim, an upward break remains possible.
+- When the right rim is higher than the left, performance was reportedly worse.
+- If price climbs back to the broken rim after the breakdown (a pullback), later performance was reportedly worse. Such pullbacks are common after downward breaks.
+- If the peak sits near either end of the span, or it is a sharp spike rather than a curve, it is not a rounding top.
+- The dome shape alone is still only a candidate. Until a close falls below the lower rim, an upward break remains possible.

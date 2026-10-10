@@ -9,9 +9,9 @@ faq:
   - q: Does an ascending triangle always break upward?
     a: No. In Thomas Bulkowski's tabulation, 63% broke upward and the rest broke down. Judge the direction only after a close moves beyond one of the lines.
   - q: How do I tell an ascending triangle from a double or triple top?
-    a: Both have highs stalling at the same price, but in an ascending triangle the lows keep rising. When the lows between the highs rise by at least 1.5 times ATR, Siglens treats it as a triangle and excludes it from double and triple tops.
+    a: Both have highs stalling at the same price, but in an ascending triangle the lows keep rising. When the lows between the highs rise by at least 1.5 times ATR (the average range of recent bars), Siglens treats it as a triangle and excludes it from double and triple tops.
   - q: When is a breakout confirmed?
-    a: Many traders look for a close above the flat resistance line, and trust it more when volume rises with it.
+    a: Many traders look for a close above the flat resistance line, and give the signal more weight when volume rises with it.
 ---
 
 ## How it looks
@@ -22,29 +22,31 @@ The highs stall at nearly the same price along a horizontal line, while each low
 
 Sellers stop price at the same level every time, but buyers step in at higher prices each time. Buyers are steadily pushing price up, so many traders lean toward an upward break through resistance.
 
-That is only a modest tilt, not a certainty. In Thomas Bulkowski's tabulation, 63% broke upward and more than a third broke down. A breakout counts when the close finishes above resistance on rising volume. Volume usually shrinks as the triangle narrows.
+That is only a modest tilt, not a certainty. Thomas Bulkowski counted what actually happened after patterns across decades of US stock charts and published the results in his books. In his tabulation, 63% broke upward and more than a third broke down. A breakout counts when the close finishes above resistance on rising volume. Volume usually shrinks as the triangle narrows.
 
 ## How it differs from a descending triangle
 
-An ascending triangle leans fairly clearly to one side. In Bulkowski's tabulation, 63% broke upward, and after an upward breakout the break-even failure rate (the share that ended without moving far enough in the breakout direction) was 17%, with 70% reaching the target. It ranked 16th of 39 bullish patterns.
+An ascending triangle leans toward one side. In Bulkowski's tabulation, the 63% that broke upward had a break-even failure rate (the share that did not travel far enough after the breakout) of 17%, and 70% reached the target. A target is the price reached if the move extends by the pattern's height: a reference value based on how often past patterns went that far, not a promise. In the performance ranking, which orders patterns by how far price went after the breakout, it came 16th of 39 bullish patterns.
 
-The part to watch is the rest that broke down. Ascending triangles that broke downward had a 38% failure rate and a 44% target rate, ranking only 30th of 36 bearish patterns. Unlike the [descending triangle](/guide/chart-patterns/descending-triangle), which splits nearly evenly, the ascending triangle gives some reason to expect upside, but when it breaks down, the move that follows is hard to trust as well.
+The part to be careful with is the remainder that broke down. Ascending triangles that broke downward had a 38% failure rate and a 44% target hit rate, ranking only 30th of 36 bearish patterns. Unlike a [descending triangle](/guide/chart-patterns/descending-triangle), where up and down are nearly even, an ascending triangle gives some grounds for expecting the upside. Once it breaks down, though, the move that follows is hard to rely on too.
 
-A breakout is considered most reliable when it comes 50% to 75% of the way from the triangle's start to its apex. Volume at least 50% above average on the breakout bar, and a pullback that finds support at the old resistance, add confirmation. Higher lows that rise faster and faster are read as buying pressure building.
+A breakout is considered strongest when it comes 50% to 75% of the way from the start of the triangle to its apex. Volume on the breakout bar at least 50% above average, and a pullback after the breakout that holds at the old resistance line, add support. If the lows rise faster and faster, it is read as buying pressure growing.
 
 ## How Siglens detects it
 
-Siglens confirms a swing high or swing low once price has reversed by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar). It draws the upper and lower boundaries through the 5 to 8 most recent swings, then extends back to earlier swings (up to 16) as long as the same lines still hold. Each line passes through actual swing extremes.
+Siglens connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When the upper line is nearly flat, only the lower line rises, and the gap narrows, it treats the shape as an ascending triangle.
 
-- The upper line must be flat: across the whole pattern it moves less than the smaller of 0.75 times ATR and 1% of price.
-- The lower line must rise by at least 1.5 times ATR.
-- Both lines must be touched at least twice (a swing counts as a touch if it is within 0.35 times ATR of the line). No bar in the span may poke out past a line by more than 0.25 times ATR.
-- The width at the end must have narrowed to 0.7 times the starting width or less.
-- It must span at least 15 bars, and the width at the first touch must be at least 2.5 times ATR and at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
+- The upper line must be flat: over the whole pattern it must move less than the smaller of 0.75 times ATR and 1% of price.
+- The lower line must rise at least 1.5 times ATR.
+- Swings must touch each line at least twice. A swing within 0.35 times ATR of a line counts as a touch.
+- No bar may poke out past a line by more than 0.25 times ATR.
+- The width at the end must narrow to 0.7 times the starting width or less.
+- It must last at least 15 bars.
+- The width at the first touch must be at least 2.5 times ATR and at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
 
-Siglens takes the breakout direction as up. The measured target is resistance plus the starting width (the pattern height), and the conservative target is resistance plus half the height. The invalidation level is the last low that touched the lower line.
+Following the textbook, the direction is set upward for the calculation. The measured target is the resistance line plus the starting width (the pattern's height), and the conservative target adds half the height. The invalidation level, the price at which the pattern is considered broken, is the last low that touched the lower line.
 
-If the close breaks above resistance by more than 0.25 times ATR and the last close then returns inside the triangle, Siglens marks it as a "failed breakout". The shape is still there, but because price broke out and came back, the breakout is not treated as confirmed.
+If the close breaks above resistance by more than 0.25 times ATR and the last close then returns inside the triangle, Siglens marks it as a "failed breakout". The shape is still there, but because price broke out once and came back, the breakout is not treated as confirmed.
 
 ## Watch out for
 

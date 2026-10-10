@@ -9,7 +9,7 @@ faq:
   - q: How did Turtle Trading use the Donchian Channel?
     a: They bought when price rose above the 20-day high and sold short when it broke the 20-day low. Exits came at the 10-day low for longs and the 10-day high for shorts.
   - q: Is the win rate of Donchian breakout trading high?
-    a: It is known to be low. The method works by making the average gain on winning trades larger than the average loss on losing ones, so you have to put up with frequent small losses.
+    a: It is known to be low. The method works by making the average gain on winning trades larger than the average loss on losing ones, so small losses come often.
   - q: Can I use a period other than 20 bars?
     a: On short-term charts people sometimes use 10 to 15 bars, and for longer holds 50 to 55 bars. The longer the period, the fewer the noise signals.
 ---
@@ -20,27 +20,32 @@ The Donchian Channel was created by Richard Donchian, known as the "father of tr
 
 ## What it tells you
 
-- Close above the upper line: a new 20-bar high, an upside breakout. In a trend-following system it is the entry criterion.
+- Close above the upper line: a new 20-bar high, an upside breakout. Trend-following systems treat this spot as their buy criterion.
 - Close below the lower line: a new low, a downside breakout.
 - A breakout is seen as stronger when volume is above average and [ATR](/guide/indicators/atr) is rising.
 
-The Turtle rule enters long when price breaks the 20-day high and short when it breaks the 20-day low. Long positions are closed at the 10-day low and short positions at the 10-day high. With slow entries and fast exits, it is designed to let profits run and cut losses short.
+The Turtle traders bought when price broke the 20-day high and took a position betting on a fall (a short sale) when it broke the 20-day low. They closed long positions at the 10-day low and short positions at the 10-day high. Getting in slowly and out quickly, the approach was designed to let profits run and cut losses short.
 
 Channel width is also a measure of volatility. A widening channel means expanding volatility and an active trend, and a narrowing one means contracting volatility and a breakout coming soon. A channel at its narrowest in several weeks is a sign that a big move is near. Price staying near the upper line means an uptrend, staying near the lower line means a downtrend, and moving back and forth between the two lines means a sideways market. The middle line is treated as a pullback target and as secondary support or resistance.
 
 ## How Siglens detects it
 
-Siglens calculates a 20-bar Donchian Channel that includes the current bar. If the current price has touched the upper or lower line, or come within 5% of the channel width of it, that position is interpreted separately. Because the current bar is part of the channel, touching the upper line means the current bar has set a new 20-bar high.
+Siglens watches whether price has reached the very top or bottom of the last 20 bars' range. The channel is calculated over 20 bars including the current bar.
 
-To confirm a breakout, it uses combinations like these.
+- Reached: the current price has touched the upper or lower line
+- Near: the current price is within 5% of the channel width of the upper or lower line
 
-- Breakout together with rising ATR: the trend is likely starting. If ATR stays flat, a false breakout is more likely.
-- [ADX](/guide/indicators/adx) above 25 at the breakout: already in a trend, and the breakout is acceleration. Below 20: the breakout came in a sideways market and needs more confirmation.
-- [OBV](/guide/indicators/obv) at a new high in the breakout direction, or the MACD histogram growing: volume and momentum point the same way.
+Because the current bar is part of the channel, touching the upper line means the current bar has set a new 20-bar high. So in this calculation the close can never sit above the upper line; touching it is the new-high breakout. The "close above the upper line" described earlier assumes a channel drawn from the previous 20 bars, without the current one. Such a spot is read as a breakout candidate, and in a sideways market also as a resistance or support candidate.
+
+To check whether it is a real breakout, it looks at combinations like these.
+
+- Breakout together with rising ATR: the trend is likely starting. If ATR stays flat, it is often a false breakout.
+- [ADX](/guide/indicators/adx), which measures trend strength, above 25 at the breakout: already in a trend, and the breakout is acceleration. Below 20: the breakout came in a sideways market and needs more confirmation.
+- [OBV](/guide/indicators/obv) at a new high in the breakout direction, or the MACD histogram growing: volume and momentum (the force behind the move) point the same way.
 
 ## Watch out for
 
-- It uses price only and doesn't reflect volume. Look at breakouts together with a volume indicator.
-- In a sideways market the channel is flat, and breakouts and pullbacks repeat often (whipsaws). Filter out sideways markets with ADX or channel width.
-- Breakout trading has a low win rate. It only pays when the average gain is larger than the average loss, so you have to be able to take frequent small losses.
+- It uses price only and doesn't reflect volume, so breakouts are checked against a volume indicator.
+- In a sideways market the channel is flat, and breakouts and pullbacks repeat often (whipsaws). ADX or channel width is used to screen out those sideways stretches.
+- Breakout trading has a low win rate. It only pays when the average gain is larger than the average loss, so small losses come often.
 - It reacts the same way to real and false breakouts. Filters such as ATR, volume and ADX are essential.

@@ -21,7 +21,7 @@ faq:
 
 ## What it tells you
 
-A belt hold means one side pushed from the very first trade. In a counterattack, the second bar opens at a price pushed further in the first bar's direction (lower or higher), then moves sharply the other way and comes back to the first bar's close. Both are clues to a short change of direction.
+A belt hold means one side pushed from the very first trade. In a bullish counterattack, the second bar opens below the first bearish bar, then rallies hard back up to the first bar's close. In a bearish counterattack, the second bar opens above the first bullish bar, then drops hard back down to the first bar's close. Both are clues to a short change of direction.
 
 ## How Siglens detects it
 
@@ -30,7 +30,7 @@ Siglens checks only bar shape, not the preceding trend.
 - Belt hold: the bar's body must be at least 60% of its high-to-low range, and the wick on the opening side (lower wick for a bullish bar, upper wick for a bearish one) must be at most 10% of the body length. If the body is 90% or more, it is classified separately as a [marubozu](/guide/candlesticks/marubozu).
 - Counterattack: both bars are long bars with bodies of at least 60%, and the second close is within 0.2% of the first close.
 
-Thomas Bulkowski's data shows the following. Counterattack lines appear in his data as Meeting Lines.
+Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, tallied counterattack lines under the name Meeting Lines. The reversal rate (how often price turned in the expected direction) differed across the four:
 
 - Bullish belt hold: 71% bullish reversal. Reversals happened often, but the move over the next 10 days was weak.
 - Bearish belt hold: 68% bearish reversal.
@@ -41,4 +41,4 @@ So Siglens reads a belt hold as a short-lived turning clue. It treats a countera
 
 ## Watch out for
 
-A belt hold is a common bar, so one alone doesn't signal a trend change. It matters more when it is taller than recent bars and sits near support or resistance. In a sideways market ([ADX](/guide/indicators/adx) below 20), all four are weak.
+A belt hold is a common bar, so one alone doesn't signal a trend change. It matters more when it is taller than recent bars and sits near support or resistance. In a sideways market (where [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and there is no clear direction), all four are weak.

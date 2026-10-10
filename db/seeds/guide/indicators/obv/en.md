@@ -23,7 +23,7 @@ Granville held that shifts between accumulation (buying up) and distribution (se
 ## What it tells you
 
 - Trend confirmation: if OBV rises with price, volume is following the advance; if both fall, volume is following the decline.
-- Divergence: if price makes lower lows while OBV makes higher lows, volume may be quietly building. If price makes higher highs while OBV makes lower highs, volume is draining. It carries more weight near major support and resistance or after a long trend.
+- Divergence (price and OBV pointing in different directions): if price makes lower lows while OBV makes higher lows, volume may be quietly building. If price makes higher highs while OBV makes lower highs, volume is draining. It carries more weight near major support and resistance or after a long trend.
 - Leading breakout: sometimes OBV makes a new high or low before price does, or breaks its own trendline first. These moves can come several bars ahead of the price breakout.
 - Sideways: if price swings up and down but OBV stays flat, there is no directional volume.
 
@@ -31,11 +31,11 @@ Granville held that shifts between accumulation (buying up) and distribution (se
 
 Siglens calculates OBV for every stock it analyzes and includes it. Rather than issuing a signal of its own, it uses the trend confirmation, divergence and early breakout described above to check whether volume is following price. It looks only at direction and slope, not the absolute value.
 
-If an [RSI](/guide/indicators/rsi) divergence shows up at the same point, it puts more trust in it, and when OBV moves the same way as [MFI](/guide/indicators/mfi), it sees agreement in volume. If OBV breaks out during a Bollinger squeeze, it reads that as force building behind a direction inside a volatility contraction.
+If an [RSI](/guide/indicators/rsi) divergence shows up at the same point, it puts more trust in it, and when OBV moves the same way as [MFI](/guide/indicators/mfi), it takes the two volume indicators as saying the same thing. If OBV rises above its own previous high while the Bollinger Bands are narrow (a squeeze), it reads that as force building behind a direction after a stretch of compressed movement.
 
 ## Watch out for
 
 - Whether price rose 0.01% or 5%, the same volume is added the same way. The size of the move is not reflected.
 - Stocks with low volume or thin trading produce a lot of noise.
 - Days with gap ups or gap downs can distort OBV heavily. Even on a day with a wide gap and ordinary volume, the whole day's volume is added or subtracted in one piece.
-- It works better on daily charts and above. Minute-chart OBV is strongly affected by market microstructure noise.
+- It works better on daily charts and above. On minute charts, short-term trading noise moves OBV around a lot.

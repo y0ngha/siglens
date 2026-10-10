@@ -14,31 +14,31 @@ faq:
     a: Look for a close above the highest high in the pattern (usually the pole's top). Thomas Bulkowski found that clearing only the flag's upper line fails often.
 ---
 
-## How it looks
+## What it looks like
 
-It consists of a pole in which price nearly doubles in a short period, followed by a pause that does not give back much. The pause is often not as tidy as a flag or [pennant](/guide/chart-patterns/pennant); it just looks like the advance stalled for a moment. As the name says, price holds tightly at a high level.
+It consists of a pole, where price nearly doubles in a short time, followed by a pause that gives back little. The pause often does not look like a neat flag or [pennant](/guide/chart-patterns/pennant); it just looks like the rise has stopped for a moment. As the name says, price holds tightly at a high level.
 
 ## What it tells you
 
-After nearly doubling, there is almost no profit-taking and price stays high. The reading is that holders expect it to go higher and are not selling, so a close above the pole's top is read as the advance continuing. It appears only rarely, in stocks with very strong upward momentum.
+Even after nearly doubling, there is little profit-taking and price stays high. The reading is that holders expect more upside and are not selling, so a close above the pole's top is read as the advance continuing. It appears rarely, in stocks with very strong upward drive.
 
-In Thomas Bulkowski's tabulation, failures were rare, but its overall performance ranked 30th out of 39. That means the rise after the breakout is often small compared with the pole. The 82% figure for reaching the target is also measured against half the pole's height, not the full height. Performance is said to be better when the flag is tighter and when volume shrinks during the flag.
+In the counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, cases that failed to move far enough after the breakout were rare. Yet its performance rank (a ranking by how far price went afterward) was 30th of 39 bullish patterns. That means the rise after the breakout was often small relative to the pole. The 82% rate of reaching the target is also based on a target of half the pole height, not the full height. Tighter flags, and flags with shrinking volume, performed better.
 
-## How Siglens detects it
+## How Siglens finds it
 
-Siglens treats a pattern as a high tight flag when all of the following are met. The conditions are so extreme that it effectively appears only on daily charts. If the same pause also meets the conditions for a [bull flag](/guide/chart-patterns/bull-flag) or [pennant](/guide/chart-patterns/pennant), Siglens shows it only as a high tight flag.
+Siglens looks for a near-doubling within about two months followed by a shallow pause near the top. The conditions are so extreme that it shows up almost only on daily charts. If the same pause also meets the [bull flag](/guide/chart-patterns/bull-flag) or [pennant](/guide/chart-patterns/pennant) conditions, only the high tight flag is shown.
 
-- Pole: within 40 bars, price must rise at least 90% from the bottom (the lowest low) to the top (the highest high).
-- Pole top: it must be the highest high of the last 31 bars, and no bar in the pole section before it may be higher. This keeps a lower high inside a longer correction from being mistaken for the top.
-- Flag: it lasts at least 3 bars after the top and must not retrace more than 25% from the top.
-- The top and the flag low must both be confirmed swings. A swing is a turning point confirmed once price reverses by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar). So even when a breakout above the top appears, the top does not turn into the breakout bar.
+- Pole: within 40 bars, price rises at least 90% from the base (lowest low) to the top (highest high).
+- Pole top: the highest high of the last 31 bars, with no higher bar earlier in the pole either. This keeps a lower high inside a longer correction from being mistaken for the top.
+- Flag: lasts at least 3 bars after the top and does not give back more than 25% from the top.
+- The top and the flag low must both be clear turning points (swings: points where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars). So the reference top price does not change even after a breakout.
 
-A breakout counts when a close is above the highest high in the pattern (usually the pole's top). The measured target is the pole's top plus the pole's height, and the conservative target is the top plus half the height. Bulkowski's 82% is also based on half the pole's height as the target, so it should be compared with the conservative target. The invalidation level is the flag's low.
+A close above the highest high in the pattern (usually the pole top) counts as the breakout. The pole top plus the pole height is the measured target, and the pole top plus half the height is the conservative target. A target is the price reached if price moves another pole height; it is a reference drawn from past cases, not a promise. Bulkowski's 82% also uses a half-pole target, so it should be compared with the conservative target. The invalidation level (the price at which the pattern counts as broken) is the flag's low.
 
-## Watch out for
+## Watch out when
 
-- If the flag is loose, with price jumping around or often leaving the boundaries, performance drops.
-- The closer the dip gets to the 25% limit, the less reliable it is considered.
-- Until there is a close above the pole's top, it is not confirmed. Bulkowski said that in that case price may drift lower or sideways for months.
-- Because price has already nearly doubled, the absolute size of price swings inside the flag is large.
-- It is common for price to drift back toward the pole's top after the breakout. Bulkowski did not treat that alone as a failure.
+- If the flag is loose, with choppy prices or frequent moves outside its bounds, performance drops.
+- The closer the pullback in the flag gets to the 25% limit, the lower the signal is rated.
+- Without a close above the pole top, it is not confirmed. Bulkowski noted that price can then fall or move sideways for months.
+- Because price has already nearly doubled, even swings inside the flag are large in absolute terms.
+- It is common for price to come back down toward the pole top after the breakout. Bulkowski did not treat that alone as a failure.

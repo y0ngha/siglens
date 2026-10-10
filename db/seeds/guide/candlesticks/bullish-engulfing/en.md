@@ -7,7 +7,7 @@ seoDescription: A bullish engulfing pattern is a white candle that fully covers 
 demoCaption: Synthetic, illustrative bars made for this explanation. A bearish bar at the end of a decline is fully covered by a bullish bar with a larger body.
 faq:
   - q: Does price rise right after a bullish engulfing?
-    a: No. In Thomas Bulkowski's data the reversal rate was 63%, but the move after the breakout was small. Many traders wait to see whether a later close rises above the pattern's high.
+    a: No. In Thomas Bulkowski's data the reversal rate was 63%, but the move after the breakout was small. So traders usually wait to see whether a later close rises above the pattern's high.
   - q: Do the shadows have to be covered too?
     a: No. Only bodies are compared. If the second bar's body covers the first bar's body, shadows don't matter.
 ---
@@ -22,17 +22,21 @@ One bar reversed the prior decline, so it is read as a clue that control passed 
 
 ## How Siglens detects it
 
-Siglens compares bodies only. If the second bullish bar opens at or below the first bearish bar's close and closes at or above its open, it is a bullish engulfing. Shadows are ignored. Siglens does not check the preceding trend, so check the chart yourself for a prior decline.
+Siglens compares the two bodies only. It ignores the shadows and does not check whether a decline came first, so look at the chart yourself for the prior trend.
 
-In Thomas Bulkowski's data the bullish reversal rate was 63%, and the pattern is very common. But the moves that followed were weak, and its overall performance rank was 84th of 103. Even when a later close rose above the pattern's high (an upside breakout), the 10-day result was a 1.18% decline under the most favorable conditions. In other words, it often changes direction but doesn't go far.
+- The first bar is bearish and the second is bullish.
+- The second bar opens at or below the first bar's close.
+- The second bar closes at or above the first bar's open.
+
+Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, found a reversal rate (how often price turned up as expected) of 63%. The pattern is also very common. But the moves that followed were small, so its performance rank (a ranking by how far price went afterward) was 84th of 103. Even after a later close broke above the pattern's high, price ten days later was on average 1.18% lower (under the most favorable conditions). So it should not be read straight away as a signal that price will rise.
 
 It carries more weight when:
 
 - It ends a pullback inside a larger uptrend, or sits above support
 - The second body is noticeably larger than recent bars
 - The second bar's volume is above normal
-- [RSI](/guide/indicators/rsi) is oversold or price has touched the lower [Bollinger Band](/guide/indicators/bollinger-bands)
+- [RSI](/guide/indicators/rsi) is oversold (price has fallen so far, so fast that a bounce is considered possible) or price has touched the lower [Bollinger Band](/guide/indicators/bollinger-bands)
 
 ## Watch out for
 
-It is weak in a sideways market ([ADX](/guide/indicators/adx) below 20) and in the middle of a strong downtrend. Bulkowski also advised avoiding it when the larger trend is down. In markets that trade around the clock (crypto), the open sits right on the prior close, so this shape forms easily. Confirm more strictly that a later close rises above the pattern's high.
+It is weak in a sideways market (where [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and there is no clear direction) and in the middle of a strong downtrend. Bulkowski also found it works poorly when the larger trend is down. In markets that trade around the clock (crypto), the open sits right on the prior close, so this shape forms easily. That is why a later close above the pattern's high is checked more strictly there.

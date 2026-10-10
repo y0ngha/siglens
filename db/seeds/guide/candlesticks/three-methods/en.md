@@ -21,16 +21,25 @@ It has five bars.
 
 ## What it tells you
 
-The trend rested for a moment and then went back the way it was going. Because the small bars in the middle never leave the first bar's range, the pullback is read as having failed to gain strength.
+The trend rested for a moment and then went back the way it was going. Because the small bars in the middle never leave the first bar's range, the counter-move is read as weak.
+
+Thomas Bulkowski tallied what actually happened after patterns across decades of US stock charts and published the results in books. In his data the advance continued after the rising three methods 74% of the time, and the decline continued after the falling three methods 71% of the time. The direction held well, but the moves afterward were smaller than for other candles. So in his performance ranking, which ranks 103 candle patterns by how far price went afterward, they placed low, at 94th and 89th. Both are also rare.
 
 ## How Siglens detects it
 
-The first and fifth bars must be long bars whose bodies are at least 60% of their high-to-low range. The three middle bars must have shorter bodies, and both their highs and lows must sit inside the first bar's range. The fifth close must go beyond the first bar's close. The preceding trend is not checked, and the color of the middle bars is not considered (Bulkowski's definition requires them to drift against the trend).
+Siglens looks for five bars: two long bars with three small bars resting inside the first bar's range between them.
 
-In Thomas Bulkowski's data, the rising three methods continued upward 74% of the time and the falling three methods continued downward 71%. The continuation rates are high, but the moves after the pattern were smaller than for other candles, so they ranked 94th and 89th of 103 for performance. Both are rare.
+- The first and fifth bars are long, with bodies at least 60% of their own high-to-low range.
+- The three middle bars have shorter bodies, and both their highs and lows sit inside the first bar's range.
+- The fifth close goes beyond the first bar's close.
+- The preceding trend and the color of the middle bars are not considered. Bulkowski's definition requires the middle bars to drift against the trend.
 
-Siglens reads this pattern as the rest ending and the earlier move starting again, and doesn't expect a large move afterward. It carries more weight when a clear trend ran in the pattern's direction, the middle bars drifted against the trend on low volume, and the fifth bar has high volume.
+Siglens reads this pattern as the rest ending and the earlier move starting again, and doesn't expect a large move afterward. It carries more weight when:
+
+- A clear trend ran in the pattern's direction
+- The middle bars drifted against the trend on low volume
+- The fifth bar has high volume
 
 ## Watch out for
 
-Without a prior trend, it is just a breakout from a small range. Bulkowski also said the rising three methods is only useful when the larger trend is up. If a close returns inside the first bar's range after the pattern, the continuation read weakens. It is weak in a sideways market ([ADX](/guide/indicators/adx) below 20) too.
+Without a prior trend, it is just price leaving a narrow range. Bulkowski found the rising three methods useful only when the larger trend was up. If a close returns inside the first bar's range after the pattern, the continuation read weakens. It is also weak when [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction.

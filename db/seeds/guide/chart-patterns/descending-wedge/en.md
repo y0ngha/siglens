@@ -14,39 +14,44 @@ faq:
     a: In a falling wedge the two lines converge; in a descending channel they run nearly parallel. Siglens treats a width ratio of 0.85 to 1.15 as a channel.
 ---
 
-## How it looks
+## What it looks like
 
-Highs and lows both fall, and the upper and lower trendlines converge toward a single point. Both slope downward, but the upper line is steeper, so the range narrows into a wedge. It is the opposite shape of a [rising wedge](/guide/chart-patterns/ascending-wedge).
+Highs and lows both move lower while the two trendlines above and below converge toward a point. Both slope down, but the upper line is steeper, so the range narrows into a wedge. It is the mirror image of the [rising wedge](/guide/chart-patterns/ascending-wedge).
 
 ## What it tells you
 
-Price is falling, but the range of movement shrinks as it drops. That signals fading downward momentum, so a close above the upper line is read as a turn up. It is known as a reversal pattern at the end of a downtrend.
+Price is falling, but the swings get smaller as it falls. That is a sign downward pressure is fading, so a close above the upper line is read as a turn up. It is known as a reversal pattern that appears at the end of a downtrend.
 
-In Thomas Bulkowski's tabulation, 68% broke upward. But performance after the breakout was on the low side among bullish patterns. It is considered more reliable when volume shrinks during the narrowing and rises on the breakout.
+In the counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, 68% broke upward. Performance after the breakout, however, was on the low side among bullish patterns. Volume that shrinks as the wedge narrows and then rises on the breakout adds weight to the signal.
 
 ## How it differs from a rising wedge
 
-A falling wedge has a clearer direction than a [rising wedge](/guide/chart-patterns/ascending-wedge) and better results. 68% broke upward, and after an upward breakout the break-even failure rate (the share that ended without moving far enough in the breakout direction) was 26%, with 62% reaching the target. Compared with rising wedges that broke down (51% failure, 32% target rate), the gap is large.
+The falling wedge has a clearer direction than the [rising wedge](/guide/chart-patterns/ascending-wedge) and better results.
 
-That does not make it a strong pattern. It ranked 31st of 39 bullish patterns, and Bulkowski called it a poor performer as bullish chart patterns go. The remaining 32% broke downward, with a 29% failure rate. A falling wedge that forms while earnings are worsening or the sector is weak can resolve downward instead of up. A bullish divergence, where price keeps falling inside the wedge while the lows of [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) get higher, adds weight to the upside.
+- 68% broke upward.
+- After an upward breakout, the share that failed to move far enough (the break-even failure rate) was 26%, and 62% reached the price target.
+- A rising wedge that broke down had a 51% failure rate and reached its target 32% of the time, a wide gap.
 
-## How Siglens detects it
+That does not make it a strong pattern. Its performance rank (a ranking by how far price went afterward) was 31st of 39 bullish patterns, and Bulkowski himself rated it a poor performer among bullish chart patterns. The other 32% broke down, with a 29% failure rate in that case. A falling wedge that forms while earnings are deteriorating or the whole sector is weak can resolve downward instead of up. A bullish divergence (price and an indicator pointing different ways), where price makes lower lows inside the wedge while [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) makes higher lows, adds to the upside case.
 
-Siglens confirms a swing high or swing low once price has reversed by at least 1.5 times the [ATR](/guide/indicators/atr) (the average range of one bar). It draws the upper and lower boundaries through the 5 to 8 most recent swings, then extends back to earlier swings (up to 16) as long as the same lines still hold. Each line passes through actual swing extremes.
+## How Siglens finds it
 
-- Both lines must fall at least 1.5 times ATR over the span.
-- Both lines must be touched at least 3 times (a swing counts as a touch if it is within 0.35 times ATR of the line). No bar in the span may poke out past a line by more than 0.25 times ATR.
-- The final width must be 0.7 times the starting width or less. Ratios between 0.7 and 0.85 are not drawn, and a ratio of 0.85 to 1.15 means the lines are parallel, so it is a channel rather than a wedge.
-- It must span at least 15 bars, and the width at the first touch must be at least 2.5 times ATR and at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
+Siglens connects clear turning points (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) into upper and lower boundary lines, and checks whether both fall while narrowing. It starts with the latest 5–8 swings and, if the same shape holds, extends back to earlier swings (up to 16).
 
-Siglens takes the direction of this pattern as up. The measured target is the upper line plus the starting width (the pattern height), and the conservative target is the upper line plus half the height. The invalidation level is the last swing low that touched the lower line. A close below it means the bullish pattern has failed.
+- Both lines fall at least 1.5 ATR over the pattern.
+- Each line is touched at least three times. A swing within 0.35 ATR of a line counts as a touch.
+- No bar inside the span pokes more than 0.25 ATR outside the lines.
+- The final width is 0.7× the starting width or less. A ratio of 0.7–0.85 is not treated as a wedge, and a nearly parallel 0.85–1.15 counts as a channel.
+- It spans at least 15 bars, and the width at the first touch (the pattern height) is at least 2.5 ATR and at least a minimum share of price (0.5% on 5–30 minute bars, 1% on 1–4 hour bars, 3% on daily bars).
 
-If the close breaks above the upper line by more than 0.25 times ATR and the last close then returns inside the wedge, Siglens marks it as a "failed breakout".
+Siglens treats the direction as up and computes the measured target as the upper line plus the pattern height, and the conservative target as the upper line plus half the height. A target is the price reached if price moves another pattern height; it is a reference based on how often that happened in the past, not a promise. The invalidation level (the price at which the pattern counts as broken) is the last swing low that touched the lower line. A close below it breaks the bullish pattern.
 
-## Watch out for
+If a close clears the upper line by more than 0.25 ATR and the latest close is back inside the wedge, Siglens marks it as a "failed breakout."
 
-- With fewer than 3 touches, it is hard to call it a wedge.
-- A breakout near the apex leaves little room to move, so it tends to be weak.
-- If volume changes little while the wedge forms, it is considered less reliable.
+## Watch out when
+
+- With fewer than three touches on the lines, it is hard to call it a wedge.
+- A breakout near the apex has little room to run and tends to be weak.
+- If volume shows no clear change while the wedge forms, the signal is rated lower.
 - If the two lines are nearly parallel, it may be a [descending channel](/guide/chart-patterns/descending-channel) rather than a wedge.
-- Trendlines vary a little from person to person, so interpretations by eye can differ.
+- Trendlines vary a little depending on who draws them, so readings by eye can differ.

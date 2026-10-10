@@ -9,7 +9,7 @@ faq:
   - q: Do gaps always get filled?
     a: No. Breakaway and runaway gaps often stay open for a long time, and only exhaustion gaps tend to fill quickly. Siglens does not use gap-fill rates as evidence.
   - q: How big does a gap need to be?
-    a: Siglens counts only gaps of at least 0.25 times ATR(14) as meaningful. Smaller gaps are ignored.
+    a: Siglens counts only gaps of at least 0.25 times ATR(14) (the average move of the last 14 bars) as meaningful. Smaller gaps are ignored.
   - q: How do I tell the gap types apart?
     a: By position, not by the gap itself. A gap out of a range or pattern boundary is a breakaway gap, one in the middle of a trend is a runaway gap, and one with a volume surge at the end of a long advance is an exhaustion gap candidate.
 ---
@@ -18,28 +18,28 @@ faq:
 
 A gap is a price zone where no trading took place between one bar and the next. A gap up is when the next bar's low is above the previous bar's high. A gap down is when the next bar's high is below the previous bar's low.
 
-The classic classification by Edwards and Magee has four types, based on where the gap came from.
+Edwards and Magee, authors of one of the classic books on technical analysis, sorted gaps into four types based on where they came from.
 
 - **Common gap**: a gap inside a sideways range, on ordinary volume. It carries little meaning.
-- **Breakaway gap**: a gap formed as price leaves a range, a base or a chart pattern boundary. The more volume is above average, the more often it is read as the start of a new move.
-- **Runaway gap**: a gap in the trend direction in the middle of a trend. It is read as a sign that the trend is accelerating.
-- **Exhaustion gap**: a gap with a volume surge at the end of a long run. It is confirmed only if price reverses back through the gap within a few bars, so on the bar where the gap appears it can only be described as a possibility.
+- **Breakaway gap**: a gap formed as price leaves a range, a base or a chart pattern boundary. The more clearly volume is above average, the more it is read as the start of a new move. It is the most meaningful of the four.
+- **Runaway gap**: a gap in the trend direction in the middle of an established trend. The typical setting is a rising [ADX](/guide/indicators/adx), which measures trend strength, with moving averages lined up in the trend's direction. It is read as a sign that the trend is accelerating.
+- **Exhaustion gap**: a gap with a sudden volume surge at the end of a long run. It is confirmed only if price then reverses back through the gap within a few bars. So on the bar where the gap appears, it can only be called a possibility.
 
 ## What it tells you
 
-A gap of the same size means different things depending on where it came from. So the gap alone is not enough. The type is set from context such as position, trend and volume, and the gap is then used as supporting evidence when checking a [breakout](/guide/strategies/breakout) or a trend indicator such as [ADX](/guide/indicators/adx).
+A gap of the same size means different things depending on where it came from. So the gap alone is not enough. The type is set from position, trend and volume, and the gap then serves as supporting evidence read alongside whether a [breakout](/guide/strategies/breakout) happened and trend indicators such as ADX.
 
-Breakaway and runaway gaps are read as the move continuing in the direction of the gap. Common gaps and possible exhaustion gaps are read as neutral, with no direction. The previous bar's high (low) is useful as a price to watch.
+Breakaway and runaway gaps are read as the move continuing in the direction of the gap. Common gaps and possible exhaustion gaps are read as neutral, with no direction. The edge of the gap, the previous bar's high (its low for a gap down), becomes a price to watch.
 
 ## How Siglens detects it
 
-Siglens checks only the last bar.
+Siglens checks whether the last bar sits completely apart from the previous bar, with no overlapping prices. The gap has to stay open through the whole bar to count.
 
-- Gap up: the last bar's low must be above the previous bar's high. That means the gap is open across the entire bar.
+- Gap up: the last bar's low must be above the previous bar's high.
 - Gap down: the last bar's high must be below the previous bar's low.
-- The gap size must be at least 0.25 times [ATR](/guide/indicators/atr)(14). Small gaps are ignored.
+- The gap size must be at least 0.25 times [ATR](/guide/indicators/atr)(14) (the average move of the last 14 bars). Smaller gaps are ignored.
 
-When a gap is detected, Siglens calculates its direction, size and multiple of ATR, and uses them to decide the type. Assets that trade 24 hours rarely gap on daily bars, and on intraday bars gaps mostly form at the open.
+When a gap is found, Siglens calculates its direction, its size and how many ATRs that size is, and uses them when deciding the type. Assets that trade 24 hours rarely gap on daily bars, and on intraday bars gaps mostly form at the open.
 
 Siglens does not use the idea that "gaps always fill", or set targets from gap size, because there is no sourced evidence for them.
 

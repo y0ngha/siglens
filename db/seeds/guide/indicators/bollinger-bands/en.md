@@ -28,25 +28,27 @@ Standard deviation is how widely prices are scattered around the average. When v
 
 When price touches or breaks above the upper band, it is statistically high compared with the recent run. In a sideways market that is an overbought candidate, but in a strong uptrend a band walk can form, with price climbing along the upper band. The lower band works the same way: in a downtrend, price can keep sliding along it. A band touch has to be read in context; by itself it is not an entry or exit signal.
 
-- Squeeze: the band width has narrowed sharply. A big move is close, but the direction isn't set. Judge direction separately with [MACD](/guide/indicators/macd), ADX, or price structure such as rising lows.
-- Middle band break: a close that crosses the middle band from below is read as an early sign of upward momentum. The reverse is a sign of downward momentum.
-- Band walk: closes staying near the upper band for 3 or more bars point to a strong uptrend. Trades that bet on a pullback to the middle band don't fit here. Three or more bars at the lower band point to a strong downtrend.
-- Pullbacks in a sideways market: look for a pullback toward the middle band from the upper band, and a bounce from the lower band. It is more reliable when [RSI](/guide/indicators/rsi) agrees by being above 70 or below 30.
+- Squeeze: the band width has narrowed sharply. A big move is close, but the direction isn't set. Judge direction separately with [MACD](/guide/indicators/macd), [ADX](/guide/indicators/adx) (which measures trend strength), or price structure such as rising lows.
+- Middle band break: a close that crosses the middle band from below is read as an early sign that upward momentum (buying force) is starting. The reverse points the other way.
+- Band walk: closes staying near the upper band for 3 or more bars point to a strong uptrend. Expecting a pullback to the middle band tends not to work here. Three or more bars at the lower band point to a strong downtrend.
+- Pullbacks in a sideways market: the upper band is seen as a spot for a pullback toward the middle band, and the lower band as a spot for a bounce. If [RSI](/guide/indicators/rsi) points the same way by being above 70 or below 30, that adds one more piece of support.
 
 ## How Siglens detects it
 
-Siglens calculates the bands with the (20, 2) setting and flags these situations as signals.
+Siglens watches whether price bounces off the lower band, closes through the upper band, or sits in unusually narrow bands. The bands use the standard (20, 2) setting.
 
 - Lower-band bounce: the previous bar's low touched or went below the lower band, and this bar closes higher than the previous close.
-- Upper-band breakout: the close finishes above the upper band. It is classified as an overbought signal, but in a trending market it is read as continuation, as described below.
-- Squeeze: band width is within the narrowest 10% of the last 120 bars. If the close is above the middle of the bands (%B 0.5) and the 20-bar EMA is not falling, it counts as a squeeze leaning up. If the close is below the middle and the EMA is not rising, it leans down.
+- Upper-band breakout: the close finishes above the upper band. It is classified as an overbought signal, but in a trending market it is read as a sign the trend is continuing, as described below.
+- Squeeze: band width is within the narrowest 10% of the last 120 bars.
+- Squeeze leaning up: the close is above the exact middle of the bands (%B 0.5), and the 20-bar exponential moving average ([EMA](/guide/indicators/ema)) is not falling. This EMA is separate from the middle band (a simple moving average); it is used only to read trend direction.
+- Squeeze leaning down: the close is below the middle of the bands, and that EMA is not rising.
 
-When price sits right at a band edge (%B of 0.98 or above, or 0.02 or below, on daily bars), that position is interpreted separately. Even for the same upper-band touch, Siglens first sorts out the market regime. If ADX is above 25 and MACD also points to a trend, the touch is read as trend continuation rather than a reversal. In a market with weak direction, it is treated as a pullback candidate.
+When price sits right at a band edge (%B of 0.98 or above, or 0.02 or below, on daily bars), Siglens reads that spot as an overbought or support candidate, but it sorts out the market regime first. If ADX is above 25 and MACD also points to a trend, the touch is read as a sign the trend is continuing rather than a reversal. In a market with no clear direction, it is treated as a pullback candidate.
 
 If the lower-band bounce overlaps with the price where the most trading took place (the POC) in the [volume profile](/guide/indicators/volume-profile), the support is judged to be stronger.
 
 ## Watch out for
 
-- An upper-band touch is not an automatic sell signal. Trend trades often start at exactly that spot.
-- A squeeze only warns that volatility will grow. It doesn't set direction. Get a sense of direction first with a trend filter.
+- An upper-band touch is not an automatic sell signal. Trend followers read that very spot as a sign the trend is continuing.
+- A squeeze only warns that volatility will grow. It doesn't set direction. Direction is judged separately with indicators that read the trend.
 - (20, 2) is tuned for daily bars. Shortening the period makes it more sensitive and adds noise signals along with it.

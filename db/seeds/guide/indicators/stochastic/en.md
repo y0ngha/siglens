@@ -14,25 +14,31 @@ faq:
 
 ## How it's calculated
 
-The Stochastic Oscillator was popularized by George Lane in the 1950s. It expresses, as a percentage, where the current close sits between the highest high and lowest low of a recent period. A close near the recent high pushes it toward 100, and one near the recent low pushes it toward 0.
+The Stochastic Oscillator (an indicator that swings within a fixed range) was popularized by George Lane in the 1950s. It expresses, as a percentage, where the current close sits between the highest high and lowest low of a recent period. A close near the recent high pushes it toward 100, and one near the recent low pushes it toward 0. It measures momentum, the force behind a rise or fall.
 
 The standard setting is (14, 3, 3). The raw %K is built from the high-low range of 14 bars, and smoothing it with a 3-bar simple moving average gives slow %K. Taking a 3-bar simple moving average of that %K gives the signal line %D.
 
 ## What it tells you
 
-- %K above 80 is treated as overbought and below 20 as oversold. Above 90 or below 10 means the force in that direction is very strong, so betting against it without checking the trend is risky.
-- %K crossing above %D (golden cross) signals an upward turn, and crossing below (death cross) signals a downward turn. They are considered most reliable when both lines make a golden cross below 20 or a death cross above 80. Crosses between 40 and 60 are weak.
-- If price makes a lower low but the Stochastic low is higher, that is bullish divergence, meaning downward force is easing. If price makes a higher high but the Stochastic high is lower, that is bearish divergence. They count for more when they appear in the overbought or oversold zone.
+- %K above 80 is treated as overbought (up a lot in a short time, so a pullback may come) and below 20 as oversold (the reverse: down a lot). Above 90 or below 10 means the force in that direction is very strong, so expecting a reversal without checking the trend is risky.
+- %K crossing above %D (golden cross) is read as an upward turn, and crossing below (death cross) as a downward turn. The signal is considered strongest when both lines make a golden cross below 20 or a death cross above 80. Crosses between 40 and 60 are weak.
+- If price makes a lower low but the Stochastic low is higher, that is bullish divergence (price and indicator moving in different directions), meaning the selling force is easing. If price makes a higher high but the Stochastic high is lower, that is bearish divergence. They count for more when they appear in the overbought or oversold zone.
 - %D staying above 50 means upward momentum dominates, and staying below 50 means downward momentum dominates.
 
 ## How Siglens detects it
 
-Siglens uses the standard (14, 3, 3) and marks the last bar's slow %K at 80 or above as overbought and at 20 or below as oversold. [Williams %R](/guide/indicators/williams-r) carries the same information as this indicator, but the Stochastic Siglens shows is the smoothed slow %K, so reading the two together is meaningful. If the unsmoothed %R reaches an extreme first and slow %K follows, a turning point may be close.
+Siglens checks whether the last bar's close is pinned to the top or the bottom of the recent range. It then gives that signal more or less weight depending on whether the market is moving sideways or trending.
 
-It weighs reliability differently by market state. In a sideways market where [ADX](/guide/indicators/adx) is below 20, signals fit better, and in a trending market above 25, signals can lag price. A combination it recommends is timing with the Stochastic and medium-term direction with [MACD](/guide/indicators/macd), using a cross only when both point the same way.
+- It uses the standard (14, 3, 3) setting.
+- It marks the last bar's slow %K at 80 or above as overbought and at 20 or below as oversold.
+- In a sideways market with no clear direction, where [ADX](/guide/indicators/adx) (a measure of trend strength) is below 20, it treats signals as more reliable.
+- In a trending market with ADX above 25, it allows that signals can lag price.
+- It takes timing from the Stochastic and medium-term direction from [MACD](/guide/indicators/macd), and gives weight to a cross when both point the same way.
+
+[Williams %R](/guide/indicators/williams-r) is the same calculation as the raw %K before smoothing, just on a different scale, so it carries the same information. Reading both does not make a signal twice as trustworthy. But the Stochastic Siglens shows is slow %K, smoothed once, so comparing which one reaches an extreme first can be a hint. If the unsmoothed %R reaches an extreme first and slow %K follows, a turning point may be close.
 
 ## Watch out for
 
 - In a strong trend, it can sit above 80 or below 20 for several bars with no reversal. Do not treat crossing 80 as an immediate decline.
 - Shortening the %K period to 5 or 9 gives faster signals but adds noise. Lengthening it to 21 gives fewer signals, leaving only more filtered ones.
-- Rather than a standalone signal, it is often used together with another oscillator like RSI and a check at the lower Bollinger Band.
+- Rather than a standalone signal, it is often read alongside another oscillator like RSI, or alongside whether price has touched the lower Bollinger Band.

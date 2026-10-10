@@ -9,7 +9,7 @@ faq:
   - q: How is a piercing line different from a bullish engulfing?
     a: In an engulfing the second bar fully covers the first body. A piercing line goes past half the body but not to the first bar's open. If it closes above the open, it is an engulfing, not a piercing line.
   - q: Is a dark cloud cover a bearish signal?
-    a: In Thomas Bulkowski's data the bearish reversal rate was 60%. That is only slightly better than even, so many traders check whether a later close breaks the pattern's low.
+    a: In Thomas Bulkowski's data the bearish reversal rate was 60%. That is only slightly better than even, so it counts as confirmed only when a later close breaks below the lower of the two bars' lows.
 ---
 
 ## How it looks
@@ -21,11 +21,16 @@ faq:
 
 The second bar retraced more than half of the prior bar's move. The piercing line reversed a decline and the dark cloud cover reversed an advance, which is a clue that direction may change.
 
+Thomas Bulkowski tallied what actually happened after patterns across decades of US stock charts and published the results in books. In his data the piercing line actually turned up 64% of the time and the dark cloud cover turned down 60% of the time. That is only a little better than chance. Still, once a direction appeared, price tended to carry on in it. In his performance ranking, which ranks 103 candle patterns by how far price went afterward, the piercing line placed 13th and the dark cloud cover 22nd, both good results.
+
 ## How Siglens detects it
 
-The first bar must be a long bar whose body is at least 60% of its high-to-low range. Textbooks require the second bar to open with a gap beyond the prior bar's low (piercing line) or high (dark cloud cover), but Siglens accepts an open beyond the prior bar's close. The second close must pass the midpoint of the first body but not reach the first bar's open. If it closes fully beyond the first body, Siglens treats it as an [engulfing](/guide/candlesticks/bullish-engulfing), not this pattern. The preceding trend is not checked.
+Siglens looks for a long bar followed by an opposite-color bar that cuts more than halfway into the prior body without covering all of it.
 
-In Thomas Bulkowski's data the bullish reversal rate for the piercing line was 64% and the bearish reversal rate for the dark cloud cover was 60%. Those reversal rates are only a little above chance. But once a direction appears, the trend tends to continue, so overall performance ranks well: 13th of 103 for the piercing line and 22nd for the dark cloud cover.
+- The first body is at least 60% of its own high-to-low range.
+- The second bar opens beyond the prior close (below it for a piercing line, above it for a dark cloud cover). Textbooks want a gap beyond the prior bar's low (piercing line) or high (dark cloud cover), but Siglens accepts this wider range.
+- The second close passes the midpoint of the first body but does not reach the first bar's open. If it closes fully beyond the first body, Siglens treats it as an [engulfing](/guide/candlesticks/bullish-engulfing), not this pattern.
+- The preceding trend is not checked.
 
 It carries more weight when:
 
@@ -36,4 +41,4 @@ It carries more weight when:
 
 ## Watch out for
 
-Confirmation is a close beyond the far end of the pattern: above the high for a piercing line, below the low for a dark cloud cover. Until then it is only a clue. A piercing line is weak in a sideways market ([ADX](/guide/indicators/adx) below 20) or inside a strong downtrend. Bulkowski also advised avoiding piercing lines when the larger trend is down.
+A piercing line is confirmed only when a later close moves above the higher of the two bars' highs; a dark cloud cover, when a later close moves below the lower of the two lows. Until then it is only a clue. A piercing line is weak when [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction, or inside a strong downtrend. Bulkowski also considered piercing lines unreliable when the larger trend is down.

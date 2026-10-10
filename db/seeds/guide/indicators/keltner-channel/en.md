@@ -26,21 +26,27 @@ ATR is the average distance a single bar moves. The bands move more smoothly tha
 
 ## What it tells you
 
-- Breakout: a close outside the upper band means strong upward momentum beyond the usual range. In a trending market it reads as continuation; in a range it reads as a breakout attempt. Two or more consecutive closes outside the band make a false signal less likely.
-- Re-entry: when price that had moved outside the band comes back inside, momentum is fading and price may drift back toward the center line. This works best when the trend is weak (ADX below 25).
+- Breakout: a close outside the upper band means upward momentum (buying force) strong enough to push beyond the usual range. In a trending market it reads as continuation; in a range it reads as a breakout attempt. Two or more consecutive closes outside the band make a false signal less likely.
+- Re-entry: when price that had moved outside the band comes back inside, momentum is fading and price may drift back toward the center line. This works best when the trend is weak, with [ADX](/guide/indicators/adx), which measures trend strength, below 25.
 - Center line: with price above it, pullbacks tend to find support there; with price below it, rallies tend to meet resistance.
 - Channel width: widening means volatility is expanding, narrowing means it is contracting.
 - Squeeze: when the Bollinger Bands (20, 2) move inside the channel, volatility has contracted to an extreme. When they move back outside, a breakout is considered to have started, and the direction depends on which band price crosses.
 
 ## How Siglens detects it
 
-Siglens uses the standard settings: 20-day EMA center line, 10-day ATR, multiplier 2.0. If the previous bar closed inside the upper band and the current bar closes outside it, that is an upper breakout; the same thing on the downside is a lower breakdown. It also interprets the position separately when the current price is outside a band or within 0.5 times ATR(14) of one.
+Siglens watches for the moment a close moves outside the channel, and for price pressing right up against a band. The channel uses the standard settings (20-day EMA center line, 10-day ATR, multiplier 2.0).
 
-Read together with Bollinger Bands, it shows whether a squeeze is on, and the direction is checked by which way the [MACD](/guide/indicators/macd) histogram grows. With ADX above 25 and price outside the band, it reads as trend continuation; with ADX below 20 and price at the band edge, it reads as a pullback candidate.
+- Upper breakout: the previous bar closed inside the upper band and the current bar closes outside it
+- Lower breakdown: the same thing happens at the lower band
+- Near a band: the current price is outside a band, or within 0.5 times the ATR (the average move of the last 14 bars) of one. That spot is treated as a breakout or pullback candidate and read according to the market regime, as below.
+
+The bands are drawn with the 10-day ATR, as Keltner's standard calls for, but the distance to a band is measured with the shared 14-bar ATR that other indicator checks also use, so the periods differ.
+
+Read together with Bollinger Bands, it shows whether a squeeze is on, and the direction is checked by which way the [MACD](/guide/indicators/macd) histogram grows. With ADX above 25 and price outside the band, it reads as the trend continuing; with ADX below 20 and price at the band edge, it reads as a pullback candidate.
 
 ## Watch out for
 
 - ATR changes slowly, so the channel reacts late to sudden moves. You get fewer false signals but slower adaptation.
 - A squeeze cannot be built from the Keltner Channel alone. It needs the Bollinger Bands alongside.
-- In a strong trend, price can ride along outside the band for a long time (a band walk). Betting on a pullback then is risky.
+- In a strong trend, price can ride along outside the band for a long time (a band walk). Expecting a pullback then tends not to work.
 - The defaults are tuned for daily charts. On shorter timeframes some traders shorten the settings.

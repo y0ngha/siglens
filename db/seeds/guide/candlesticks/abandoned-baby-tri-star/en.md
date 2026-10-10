@@ -19,7 +19,7 @@ faq:
 - Bullish tri-star: three dojis in a row. The second gaps below the first, and the third closes higher.
 - Bearish tri-star: three dojis in a row. The second gaps above the first, and the third closes lower.
 
-A gap is a stretch where the price ranges of two neighboring bars do not overlap.
+A gap is a stretch where the price ranges of two neighboring bars do not overlap. In this article a gap means the full high-to-low ranges, shadows included, do not overlap at all. A [morning star](/guide/candlesticks/morning-evening-star) only needs the bodies to be separated, which is a looser rule.
 
 ## What it tells you
 
@@ -27,22 +27,24 @@ A doji means buyers and sellers were evenly matched. When gaps cut it off from t
 
 ## How Siglens detects it
 
-Siglens checks only bar shape and gaps, not the preceding trend.
+Siglens checks only bar shape and gaps, not the preceding trend. Below, body ratios are measured against each bar's own high-to-low range.
 
-- Abandoned baby: the first bar must be a long bar whose body is at least 60% of its high-to-low range. The middle bar must be a doji whose body is at most 10% of its range. For the bullish version, the doji's high is below the first bar's low, and the third bar's low is above the doji's high. The bearish version is the mirror image.
-- Tri-star: all three bars are dojis, and the second doji gaps away from the first. In the bullish version the third doji closes at or above its open; in the bearish version it closes below its open.
+- Abandoned baby, first bar: a long bar whose body is at least 60% of its own high-to-low range. Bearish for the bullish version, bullish for the bearish version.
+- Abandoned baby, middle bar: a doji whose body is at most 10% of its own high-to-low range. In the bullish version, the doji's high is below the first bar's low.
+- Abandoned baby, third bar: in the bullish version, a bullish bar whose low is above the doji's high. The bearish version is the mirror image.
+- Tri-star: all three bars are dojis, and the second gaps away from the first (down for the bullish version, up for the bearish one). In the bullish version the third doji's close is at or above its own open; in the bearish version it is below its own open.
 
-If the third bar closes beyond the midpoint of the first bar's body, Siglens classifies the setup as a [morning doji star or evening doji star](/guide/candlesticks/morning-evening-star) first. So an abandoned baby is shown only when the third bar fails to reach that midpoint.
+If the third bar closes beyond the midpoint of the first bar's body, the setup is classified as a [morning doji star or evening doji star](/guide/candlesticks/morning-evening-star) first, so an abandoned baby remains only when the third bar falls short of that midpoint.
 
-Reversal rates in Thomas Bulkowski's data:
+Thomas Bulkowski, who counted what price actually did after each pattern across decades of US stock charts and published the results in books, found that the reversal rate (how often price turned in the expected direction) differed across the four:
 
-- Bullish abandoned baby: 70% bullish reversal. Only 293 samples, and it often appeared at the end of a short decline.
-- Bearish abandoned baby: 69% bearish reversal.
-- Bullish tri-star: 60% bullish reversal.
-- Bearish tri-star: 52% bearish reversal, close to a coin flip.
+- Bullish abandoned baby: 70%. Only 293 samples, and it often appeared at the end of a short decline.
+- Bearish abandoned baby: 69%.
+- Bullish tri-star: 60%.
+- Bearish tri-star: 52%, close to a coin flip.
 
-All four are rare, so the statistics rest on small samples. Siglens reads the abandoned baby as the most reliable of the four and the tri-star as the weakest. It matters more when the outer bars are large, the gaps around the doji are clean, and the pattern forms at support or resistance.
+All four are rare, so the figures rest on small samples. Siglens reads the abandoned baby as the most reliable of the four and the tri-star as the weaker one. An abandoned baby matters more when the two outer bars are large, the gaps around the doji are clean, and it forms at support or resistance.
 
 ## Watch out for
 
-Confirmation is a close beyond the far end of the pattern: above the pattern's high for the bullish version, below its low for the bearish one. Until that close appears, treat a tri-star as undecided. Markets that trade around the clock, such as crypto, rarely produce true gaps, so be extra skeptical if this pattern is flagged there.
+The bullish version is confirmed when a later close rises above the highest high of the three bars; the bearish version, when a later close falls below their lowest low. Until that close appears, a tri-star is treated as undecided. Markets that trade around the clock, such as crypto, rarely produce true gaps, so be extra skeptical if this pattern is flagged there.

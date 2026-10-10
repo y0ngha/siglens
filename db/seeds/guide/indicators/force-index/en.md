@@ -25,18 +25,23 @@ Elder saw different uses for different periods. The 2-day is for fast short-term
 
 ## What it tells you
 
+What follows is the traditional reading Elder set out. Siglens uses it as context for checking volume, not as a basis for setting direction.
+
 - Zero-line cross: crossing above 0 means buyers have taken over, and crossing below means sellers have. It only marks a change of direction and isn't a trading signal by itself.
-- Divergence: price making lower lows while the Force Index makes higher lows is a warning that selling force is weakening. The opposite shape means buying force is weakening. Elder also said divergence is the most useful output of this indicator, but not a trading signal on its own.
-- Gauging pullback timing: in an uptrend where price is above the 22-day exponential moving average, a 2-day Force Index dropping to negative is often seen as a temporary pullback. It only means something when used with a trend filter.
+- Divergence (price and the indicator moving in different directions): price making lower lows while the Force Index makes higher lows is a warning that selling force is weakening. The opposite shape means buying force is weakening. Elder also said divergence is the most useful output of this indicator, but not a trading signal on its own.
+- Gauging pullback timing: in an uptrend where price is above the 22-day exponential moving average, a 2-day Force Index dropping to negative is read as a pullback (a spot where price eases back briefly during an uptrend). It only means something when used with a trend filter.
 
 ## How Siglens detects it
 
-Siglens calculates the 13-bar Force Index and flags the moment the last bar's value has a different sign from the previous bar, meaning it crossed the zero line. A value that stops exactly at 0 doesn't count as a cross. It also reads divergences between price and the Force Index.
+Siglens flags the moment the Force Index crosses the zero line and control of the force changes hands.
 
-When Siglens checked later returns from the zero-line cross alone, there was no clear difference. So it's used only as a supporting reason to check whether volume backs the move and to warn about divergences, not as a basis for setting direction. It is often viewed together with volume indicators of the same family, such as [OBV](/guide/indicators/obv) and [MFI](/guide/indicators/mfi).
+- Calculation: the 13-bar Force Index.
+- Zero-line cross: when the last bar's value has a different sign from the previous bar. A value that stops exactly at 0 doesn't count as a cross.
+- Divergence: it also reads whether price and the Force Index disagree.
+
+When Siglens checked later returns from the zero-line cross alone, there was no clear difference. So it's used only as a supporting reason to check whether volume backs the move and to warn about divergences, not as a basis for setting direction. It is viewed together with volume indicators of the same family, such as [OBV](/guide/indicators/obv) and [MFI](/guide/indicators/mfi).
 
 ## Watch out for
 
-- Used alone, this indicator showed almost no effect. Use it to confirm on top of other methods.
-- Volume is multiplied in, so you can't compare the size of values between stocks or between volume environments. Look at the sign and the slope.
+- Volume is multiplied in, so you can't compare the size of values between stocks or between volume environments. Read only the sign and the slope.
 - A divergence is a warning, not timing. It can last a long time without a reversal, or before one.

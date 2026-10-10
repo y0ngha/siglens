@@ -1,7 +1,7 @@
 ---
 title: "Variance Ratio"
 aliases: [Variance Ratio, Lo-MacKinlay Variance Ratio, VR Test, Variance Ratio Test]
-summary: "Uses the variance of returns to tell whether price moves like a random walk, keeps trending, or reverts."
+summary: "Uses how widely returns are spread (their variance) to tell whether price moves randomly, keeps trending, or reverts."
 seoTitle: "Variance Ratio: How to Tell Trending from Ranging"
 seoDescription: A variance ratio above 1 points to trending, below 1 to mean reversion. See how it separates trending from ranging markets, Siglens' thresholds, and its limits.
 demoCaption: "Synthetic, illustrative bars. Shows the variance ratio splitting above and below the 1.0 line in a trending stretch and a mean-reverting stretch."
@@ -14,11 +14,15 @@ faq:
 
 ## How it's calculated
 
-The variance ratio is a statistical test published by Andrew Lo and A. Craig MacKinlay in 1988. It has long been used to check whether price follows a random walk (random movement whose future cannot be predicted from the past). It compares the variance of one-day returns with the variance of multi-day returns.
+In one line: it checks whether movement over several days is larger or smaller than one day's movement stacked up for that many days. Larger points to a trend that keeps going the same way; smaller points to price coming back.
+
+The size of movement here is measured as variance (how widely returns are spread around their average).
 
 VR(q) = variance of q-period returns ÷ (q × variance of 1-period returns)
 
-If price is a random walk, variance grows in proportion to the period, so VR comes out near 1. Above 1, returns tend to continue in the same direction (positive autocorrelation, trending); below 1, they tend to reverse, such as rising and then falling (negative autocorrelation, mean reversion).
+If price is a random walk (random movement whose future cannot be predicted from the past), variance grows in proportion to the period, so VR comes out near 1. Above 1, returns tend to continue in the same direction, a trend; below 1, they tend to come back toward the average, such as rising and then falling (mean reversion).
+
+It is a statistical test published by Andrew Lo and A. Craig MacKinlay in 1988, and it has long been used to check whether price follows a random walk.
 
 ## What it tells you
 
@@ -30,15 +34,18 @@ It does not give direction. It only says the stretch is trending; whether price 
 
 ## How Siglens detects it
 
-Siglens calculates it from the per-bar log returns of the last 60 bars (daily returns on a daily chart), and gets the variance by grouping overlapping 2-bar (q=2) returns. If every price in the window is the same, the value is left empty.
+Siglens compares one-day movement with two-day movement and marks the trend side or the pullback side as clear only when the value is far enough from 1.
 
-If VR is 0.2 or more away from 1, meaning 1.2 or above or 0.8 or below, it marks a clear state. This threshold is not a formal statistical test; it is a simplification with a fixed cutoff. A formal test uses different cutoffs depending on q and the sample size.
+- Range: per-bar returns over the last 60 bars (daily returns on a daily chart).
+- Comparison: one bar versus two bars (q=2). On a daily chart, if two-day movement is more than twice one-day movement, it leans toward trend; if less, toward pullback.
+- 1.2 or above: the trend side is read as clear.
+- 0.8 or below: the pullback side is read as clear.
 
-It is one of three indicators, with the [Hurst exponent](/guide/indicators/hurst) and [regression R²](/guide/indicators/regression-r2), for reading the market's state. It trusts them most when all three point the same way. The variance ratio has a formal significance test, so it gets the most weight of the three, but it is not used to decide direction.
+It is one of three indicators, with the [Hurst exponent](/guide/indicators/hurst) and [regression R²](/guide/indicators/regression-r2), for reading the market's state, and confidence is highest when all three point the same way. The variance ratio originally comes with a formal statistical test, so it gets heavy weight among the three, but Siglens uses a simplified fixed cutoff instead of that test. In the formal test, the cutoff changes with the comparison period and the sample size. It is not used to decide direction.
 
 ## Watch out for
 
-- The value depends on how q is chosen. It is better to look at several values of q rather than relying on one.
-- Real markets show volatility that clusters for a while. A formal test also has to use a statistic that accounts for this (Z\*); otherwise it concludes too often that the series is not a random walk.
+- The value depends on how the comparison period (q) is chosen. It is better to look at several periods rather than relying on one.
+- In real markets, high-movement days cluster for a while. A formal test uses a statistic that accounts for this (Z\*); otherwise it concludes too often that the series is not a random walk.
 - A result of "not a random walk" is not a direction. It only says whether there is a trend.
-- The fixed 0.2 cutoff is a rough value and does not guarantee statistical significance.
+- The fixed 0.2 cutoff is a rough value. Crossing it does not mean the result is statistically significant.
