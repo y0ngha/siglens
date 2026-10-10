@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.105.1](https://github.com/y0ngha/siglens/compare/v0.105.0...v0.105.1) (2026-10-10)
+
 # [0.105.0](https://github.com/y0ngha/siglens/compare/v0.104.0...v0.105.0) (2026-10-10)
 
 ### Bug Fixes
