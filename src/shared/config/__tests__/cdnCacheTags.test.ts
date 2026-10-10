@@ -64,7 +64,7 @@ describe('CDN_CACHE_TAG_HEADER_RULES', () => {
         '/news/us/opengraph-image/0',
         // 확장자가 붙어도 미디어 규칙이 아니라 OG 규칙이 이긴다.
         '/AAPL/opengraph-image.png',
-        // SiglensAI 공유 카드 — `.png`지만 코드로 그린다(app/api/ai/og/[file]/route.tsx).
+        // SIGLENS AI 공유 카드 — `.png`지만 코드로 그린다(app/api/ai/og/[file]/route.tsx).
         '/api/ai/og/ko.png',
         '/api/ai/og/en.png',
         // 옛 쿼리스트링 경로(app/api/ai/og/route.tsx).

@@ -18,6 +18,7 @@ import {
 } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
 import type { FaqItem } from '@/shared/lib/seo';
+import { brandAiName } from '@/shared/lib/brandName';
 import { buildScenarios } from './lib/aboutContent';
 import { AboutCtaBar } from './ui/AboutCtaBar';
 import { ChatReplay } from '@/widgets/replay/ChatReplay';
@@ -227,7 +228,7 @@ export async function AiAboutPage({
                                             className="text-xs font-semibold text-secondary-100"
                                             translate="no"
                                         >
-                                            SIGLENS AI
+                                            {brandAiName(locale)}
                                         </p>
                                         <p className="mt-1 text-[15px] leading-6 text-secondary-100">
                                             {now}

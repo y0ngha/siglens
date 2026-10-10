@@ -11,11 +11,11 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     localizedAbsoluteUrl,
-    SITE_NAME,
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
+import { brandName } from '@/shared/lib/brandName';
 import {
     localeAlternatesFrom,
     selfCanonicalAlternates,
@@ -35,7 +35,7 @@ export interface LegalPolicy {
     /** 로케일 접두사 없는 경로(`TERMS_PATH`·`PRIVACY_PATH`). */
     readonly path: string;
     readonly title: (t: SeoTranslator) => string;
-    readonly fullTitle: (t: SeoTranslator) => string;
+    readonly fullTitle: (t: SeoTranslator, locale: Locale) => string;
     readonly description: (t: SeoTranslator) => string;
 }
 
@@ -90,7 +90,7 @@ export async function legalPolicyMetadata(
     const { status } = await loadLegalTerms(policy.kind, locale);
     if (status === 'missing') notFound();
     const indexable = status === 'ready';
-    const fullTitle = policy.fullTitle(tSeo);
+    const fullTitle = policy.fullTitle(tSeo, locale);
     const description = policy.description(tSeo);
     return {
         title: policy.title(tSeo),
@@ -103,7 +103,7 @@ export async function legalPolicyMetadata(
             : selfCanonicalAlternates(locale, policy.path),
         openGraph: {
             type: 'article',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title: fullTitle,
             description,
             url: localizedAbsoluteUrl(`${SITE_URL}${policy.path}`, locale),
@@ -139,7 +139,7 @@ export function legalPolicyWebPageJsonLd(
 ): Record<string, unknown> {
     return buildWebPageJsonLd({
         url: `${SITE_URL}${policy.path}`,
-        name: policy.fullTitle(t),
+        name: policy.fullTitle(t, locale),
         description: policy.description(t),
         locale,
     });

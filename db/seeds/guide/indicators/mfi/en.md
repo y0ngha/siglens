@@ -11,7 +11,7 @@ faq:
   - q: "What do MFI 80 and 20 mean?"
     a: "Above 80 is treated as overbought and below 20 as oversold. In a strong trend, MFI can stay above 80 or below 20 for a long time, so it should not be treated as an automatic reversal signal."
   - q: "What is the default MFI period?"
-    a: "14 bars is the standard. Siglens uses 14 too."
+    a: "14 bars is the standard. SIGLENS uses 14 too."
 ---
 
 ## How it's calculated
@@ -27,16 +27,16 @@ Think of it as the volume version of [RSI](/guide/indicators/rsi). Moves backed 
 - If MFI drops below 20, recovers, falls again but holds above the earlier low, then breaks above the high in between, that is a bullish failure swing. The mirror image above 80 is a bearish failure swing.
 - A cross above 50 suggests money inflow is stronger, and a cross below suggests outflow is stronger.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens watches not whether MFI is sitting in the oversold or overbought zone, but the moment it leaves that zone.
+SIGLENS watches not whether MFI is sitting in the oversold or overbought zone, but the moment it leaves that zone.
 
 - It uses a 14-bar MFI.
 - If MFI crosses above 20 from below within the last 3 bars, it flags an oversold bounce.
 - If MFI comes down through 80 from above within the last 3 bars, it flags an overbought turn.
 - Simply staying below 20 or above 80 does not count as a signal.
 
-When MFI moves the same way as [OBV](/guide/indicators/obv), volume is seen as telling the same story. Price near the lower Bollinger Band with MFI below 20 is read as a bounce candidate that volume also supports. In a strong trend, Siglens does not call a reversal from MFI above 80 or below 20 alone, and looks at trend information such as [ADX](/guide/indicators/adx), a measure of trend strength, as well.
+When MFI moves the same way as [OBV](/guide/indicators/obv), volume is seen as telling the same story. Price near the lower Bollinger Band with MFI below 20 is read as a bounce candidate that volume also supports. In a strong trend, SIGLENS does not call a reversal from MFI above 80 or below 20 alone, and looks at trend information such as [ADX](/guide/indicators/adx), a measure of trend strength, as well.
 
 ## Watch out for
 

@@ -139,17 +139,17 @@ describe('HeaderMobileMenu', () => {
             ...(v.overview ? [v.overview.href] : []),
             ...v.regions.flatMap(r => [r.href, ...r.children.map(c => c.href)]),
         ]);
-        // 차트 가이드 → SiglensAI 진입점 순서로 내비 목록 바로 다음, showAuthCta보다 앞이다.
+        // 차트 가이드 → SIGLENS AI 진입점 순서로 내비 목록 바로 다음, showAuthCta보다 앞이다.
         expected.push('/guide');
         expected.push(`${AI_SITE_URL}${localePath('ko', '/')}`);
         expect(hrefs).toEqual(expected);
     });
 
-    it('renders the SiglensAI entry point below the nav list', () => {
+    it('renders the SIGLENS AI entry point below the nav list', () => {
         render(<HeaderMobileMenu items={NAV_TREE} />);
 
         expect(
-            screen.getByRole('link', { name: 'SIGLENS AI Beta', hidden: true })
+            screen.getByRole('link', { name: '시그렌즈 AI Beta', hidden: true })
         ).toBeInTheDocument();
     });
 

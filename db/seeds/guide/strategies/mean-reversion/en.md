@@ -7,18 +7,18 @@ seoDescription: Why a day with Williams %R below -90 while price holds above the
 demoCaption: Synthetic, illustrative candles. Shows a bar closing near the bottom of its 14-day range above the 200-day line, and the bounce back above the 5-day line.
 faq:
   - q: Does mean reversion only work in sideways markets?
-    a: Siglens found otherwise. Picking only weak-trend stretches (ADX below 25), or stacking the lower Bollinger Band with RSI below 30, did worse than simple oversold, and sharp short-term drops inside a long-term uptrend were more consistent.
+    a: SIGLENS found otherwise. Picking only weak-trend stretches (ADX below 25), or stacking the lower Bollinger Band with RSI below 30, did worse than simple oversold, and sharp short-term drops inside a long-term uptrend were more consistent.
   - q: What conditions have to be met?
     a: On a daily chart, the close must be above the 200-day line and Williams %R(14) must be -90 or below. A reading of -80 to -90 is the near stage, treated as a weaker version.
   - q: Does it work below the 200-day line?
-    a: On average prices did bounce, but a further drop of more than 10% within 10 days was far more frequent. So Siglens does not treat it as this setup and describes it only as a higher-risk bounce candidate.
+    a: On average prices did bounce, but a further drop of more than 10% within 10 days was far more frequent. So SIGLENS does not treat it as this setup and describes it only as a higher-risk bounce candidate.
 ---
 
 ## What it is
 
 The strategy comes from the idea that when price moves far from its average, it tends to come back. The short-term reversal effect in stocks has been studied for a long time, and the "RSI(2) pullback" popularized by Larry Connors (aiming at a brief dip within an uptrend) belongs to the same family.
 
-The rule Siglens uses is a narrow one. It looks only at the tendency of a stock in a long-term uptrend that has dropped sharply over a few days to come back within a few days.
+The rule SIGLENS uses is a narrow one. It looks only at the tendency of a stock in a long-term uptrend that has dropped sharply over a few days to come back within a few days.
 
 - **Long-term trend**: close above the 200-day moving average
 - **Short-term oversold** (fallen so far so fast that a bounce back is possible): [Williams %R](/guide/indicators/williams-r)(14) at -90 or below. This means the bar closed within the bottom 10% of its last 14-bar range.
@@ -32,20 +32,20 @@ A day when all three conditions line up is called a setup. A setup is read as "a
 - If [Connors RSI](/guide/indicators/connors-rsi) is 10 or below, it is treated as confirming the same pullback from another angle, but it is not required.
 - A Williams %R of -80 to -90 counts as "near". It points the same way but is a weaker version with a smaller effect.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-With at least 200 daily bars, Siglens checks whether the last close is above the 200-day line and how low Williams %R(14) is. The result is one of four:
+With at least 200 daily bars, SIGLENS checks whether the last close is above the 200-day line and how low Williams %R(14) is. The result is one of four:
 
 - **Setup met**: above the 200-day line, Williams %R at -90 or below
 - **Near**: above the 200-day line, Williams %R between -80 and -90
 - **Sharp drop below the 200-day line**: described as a higher-risk bounce candidate, not this setup
 - **Not applicable**: everything else
 
-Siglens checked this rule on daily bars of large US stocks from 2000 to 2026. When the period was split into five segments, the average return over the 5 trading days after a setup was higher than for "any day above the 200-day line" in every segment, including the financial crisis segment.
+SIGLENS checked this rule on daily bars of large US stocks from 2000 to 2026. When the period was split into five segments, the average return over the 5 trading days after a setup was higher than for "any day above the 200-day line" in every segment, including the financial crisis segment.
 
 Some conditions were checked on the same data but did not improve results: requiring ADX below 25, combining the lower Bollinger Band with RSI(14) below 30, using the day Williams %R comes back above -80 as the reference, bullish confirmation such as a reversal candle, and placing the stop close. So these are not used as requirements for the setup. Likewise, the overbought side (-20 or above) is not treated as a bearish signal.
 
-If there was major news about earnings, guidance or regulation within the last 3 trading days, Siglens does not treat it as this setup.
+If there was major news about earnings, guidance or regulation within the last 3 trading days, SIGLENS does not treat it as this setup.
 
 ## Watch out for
 

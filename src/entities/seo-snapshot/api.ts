@@ -110,7 +110,7 @@ export class DrizzleSeoSnapshotRepository {
     /**
      * @param options.anyLocale - Readers get only languages they can read
      *   (`CONTENT_LOCALE_FALLBACK`). A consumer that re-expresses the analysis
-     *   in the reader's language itself (the SiglensAI agent) does not care
+     *   in the reader's language itself (the SIGLENS AI agent) does not care
      *   what language a row is in, so it gets the FRESHEST row per tab across
      *   all languages; only an exact `generatedAt` tie falls back to
      *   requested → Korean (the canonical one) → the rest. One row per tab,

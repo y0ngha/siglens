@@ -25,9 +25,9 @@ RSI (Relative Strength Index) is a momentum indicator (momentum being the force 
 - Divergence is a shape where price and RSI move in different directions. If price makes a higher high but the RSI high is lower, it points toward a bearish turn; if price makes a lower low but the RSI low is higher, it points toward a bullish turn. More detail is in the [divergence strategy](/guide/strategies/divergence).
 - If RSI goes above 70 and comes back down, then rises again but fails to clear the earlier high and breaks the low in between, that is a bearish failure swing. Conversely, if RSI drops below 30 and bounces, then falls again but holds above the earlier low and clears the high in between, that is a bullish failure swing.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks whether RSI has entered an extreme zone such as 70 or 30, and whether price and RSI have recently started to disagree. It also reads the same value differently depending on whether the trend is strong or weak.
+SIGLENS checks whether RSI has entered an extreme zone such as 70 or 30, and whether price and RSI have recently started to disagree. It also reads the same value differently depending on whether the trend is strong or weak.
 
 - It uses RSI 14.
 - It flags overbought when the last bar's RSI is above 70 and oversold when it is below 30.

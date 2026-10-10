@@ -3,7 +3,7 @@ title: Three White Soldiers / Three Black Crows
 aliases: [Three White Soldiers, Three Black Crows, Three Soldiers, Three Crows]
 summary: Three big-bodied bars in the same direction, each setting a new close. Read as a reversal clue, though three white soldiers tended not to go far afterward.
 seoTitle: Three White Soldiers and Three Black Crows
-seoDescription: What three white soldiers and three black crows look like, why the move after them was small despite a high reversal rate, and how Siglens detects them.
+seoDescription: What three white soldiers and three black crows look like, why the move after them was small despite a high reversal rate, and how SIGLENS detects them.
 demoCaption: Synthetic, illustrative bars made for this explanation. Three big bullish bars in a row after a decline (three white soldiers).
 faq:
   - q: Do three white soldiers confirm a rise?
@@ -29,9 +29,9 @@ The two split, though, in his performance ranking, which orders patterns by how 
 
 Part of the high reversal rate comes from the shape. Bulkowski counted a breakout in a direction when a later close moved above the pattern's highest high (below its lowest low for black crows). This pattern already ends near the high (near the low for black crows), so even a small further move easily counts as a breakout.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for three big same-color bars, each opening inside the previous body, that step in one direction like a staircase.
+SIGLENS looks for three big same-color bars, each opening inside the previous body, that step in one direction like a staircase.
 
 - All three bars are the same color.
 - Each body is at least 60% of its own high-to-low range.

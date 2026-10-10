@@ -25,6 +25,7 @@ vi.mock('@/shared/ui/auth/AuthFormSkeleton', () => ({
 }));
 vi.mock('@/shared/lib/seo', () => ({
     SITE_NAME: 'SIGLENS',
+    SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
 }));
 
@@ -50,7 +51,7 @@ describe('EmailReportUnsubscribePage', () => {
 
         expect(ko.title).toBe('메일 리포트 수신 거부');
         expect(ko.description).toBe(
-            'SIGLENS 정기 메일 리포트 수신을 거부합니다.'
+            '시그렌즈 정기 메일 리포트 수신을 거부합니다.'
         );
         expect(ko.robots).toEqual({ index: false, follow: false });
         expect(ko.alternates?.canonical).toBe(

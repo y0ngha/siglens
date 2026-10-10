@@ -7,7 +7,7 @@ seoDescription: Why signals are filtered by the higher-timeframe trend, how the 
 demoCaption: Synthetic, illustrative candles. Shows a larger uptrend above the long moving averages and the short pullbacks inside it.
 faq:
   - q: Do I need to look at several charts for multi-timeframe analysis?
-    a: The original approach is to read the direction on the weekly chart and pick the timing on the daily or hourly chart. Siglens analyzes one timeframe at a time, so it estimates the big trend from the long moving averages and price structure within that chart.
+    a: The original approach is to read the direction on the weekly chart and pick the timing on the daily or hourly chart. SIGLENS analyzes one timeframe at a time, so it estimates the big trend from the long moving averages and price structure within that chart.
   - q: Should I ignore counter-trend signals?
     a: No. A signal against the larger trend is read with a note that it needs more confirmation.
   - q: Does alignment mean price will rise?
@@ -18,7 +18,7 @@ faq:
 
 The same stock looks different on different timeframes. It may look like it is falling on the daily chart but be a pullback inside an uptrend on the weekly chart. Multi-timeframe analysis is the sequence of confirming direction on a larger timeframe and then picking the timing on a smaller one.
 
-Siglens analyzes bars from one timeframe at a time. So instead of comparing three charts, this strategy estimates the big trend from the long moving averages and price structure already on the chart, and uses it as a filter on other signals.
+SIGLENS analyzes bars from one timeframe at a time. So instead of comparing three charts, this strategy estimates the big trend from the long moving averages and price structure already on the chart, and uses it as a filter on other signals.
 
 ## What it tells you
 
@@ -26,9 +26,9 @@ A signal in the same direction as the big trend gets more weight, and a signal a
 
 This strategy does not predict direction. It is a filter that tells you whether other analysis agrees with the larger flow.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens sets the big trend to one of three states by checking whether price is above the long moving averages and whether highs and lows are rising or falling. The long lines are the 60-, 120- and 200-bar [moving averages](/guide/indicators/ma) (the 60-, 120- and 200-day lines on a daily chart), and highs and lows are judged from clear turning points (swings).
+SIGLENS sets the big trend to one of three states by checking whether price is above the long moving averages and whether highs and lows are rising or falling. The long lines are the 60-, 120- and 200-bar [moving averages](/guide/indicators/ma) (the 60-, 120- and 200-day lines on a daily chart), and highs and lows are judged from clear turning points (swings).
 
 - **Uptrend**: price is above the 120- and 200-day lines, the 60-day line is above the 200-day line and rising, and highs and lows are both getting higher.
 - **Downtrend**: price is below the 120- and 200-day lines, the 60-day line is below the 200-day line and falling, and highs and lows are both getting lower.

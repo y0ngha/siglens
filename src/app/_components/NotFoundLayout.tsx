@@ -12,7 +12,7 @@ export interface NotFoundLayoutProps {
      * 이유는 `NotFoundView`의 JSDoc 참고(`document.title` 직접 대입은 하이드레이션에 덮인다).
      */
     readonly documentTitle: string;
-    /** 시장 내비. 비어 있으면(SiglensAI·비기본 표면) 내비를 그리지 않는다. */
+    /** 시장 내비. 비어 있으면(SIGLENS AI·비기본 표면) 내비를 그리지 않는다. */
     readonly navLabel?: string;
     readonly navLinks?: readonly NotFoundLink[];
     readonly title: string;

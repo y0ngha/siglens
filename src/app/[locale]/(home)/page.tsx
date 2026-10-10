@@ -52,6 +52,7 @@ import { toSkillShowcaseItems } from '@/widgets/home/toSkillShowcaseItems';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { brandAiName, brandName } from '@/shared/lib/brandName';
 
 // 루트 레이아웃에서 canonical을 제거했으므로 홈 페이지 자체가 명시적으로 self-canonical을 선언한다.
 // 다른 인덱서블 페이지들(economy, market, backtesting 등)은 이미 자체 canonical을 갖고 있다.
@@ -81,7 +82,7 @@ export async function generateMetadata({
      * 통째로 사라져 공유 카드에서 미리보기 이미지가 없어졌다.
      */
     return {
-        // `absolute`가 없으면 루트 레이아웃의 `title.template`(`%s | SIGLENS`)이
+        // `absolute`가 없으면 루트 레이아웃의 `title.template`(ko `%s | 시그렌즈`)이
         // 먹는다 — v0.48.0에서 SERP 폭을 되찾으려고 일부러 뗀 접미사다.
         // 마스터의 홈은 `title`을 아예 반환하지 않아 레이아웃의 `default`가
         // 그대로 나갔고(템플릿 미적용), 로케일 카탈로그로 옮기면서 문자열을
@@ -95,7 +96,7 @@ export async function generateMetadata({
         }),
         openGraph: {
             type: 'website',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title,
             description,
             // 로케일마다 다른 문서다 — 전 로케일이 `og:url`로 ko 루트를 가리키면
@@ -290,14 +291,17 @@ export default async function Home({
                             <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
                         </div>
                         <div className="text-center lg:text-left">
-                            {/* The one SiglensAI hook on the main home: a quiet
-                                announcement line above the eyebrow, not a banner. */}
+                            {/* The one SIGLENS AI hook on the main home: a quiet
+                                announcement line above the eyebrow, not a banner.
+                                Product name follows the locale (ko `시그렌즈 AI`). */}
                             <a
                                 href={aiAskUrl(localePath(locale, '/'))}
                                 className="mb-4 inline-flex min-h-9 max-w-full items-center gap-2 rounded-full border border-border-control px-3 text-xs text-secondary-300 hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 <span className="inline-flex items-center gap-1.5 font-mono font-semibold tracking-[0.12em] text-primary-400 uppercase">
-                                    <span translate="no">SIGLENS AI</span>
+                                    <span translate="no">
+                                        {brandAiName(locale)}
+                                    </span>
                                     <BetaBadge />
                                 </span>
                                 <span className="truncate">

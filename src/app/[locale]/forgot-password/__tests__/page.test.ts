@@ -6,6 +6,7 @@ vi.mock('@/features/auth-password-reset/ui/ForgotPasswordForm', () => ({
 }));
 vi.mock('@/shared/lib/seo', () => ({
     SITE_NAME: 'SIGLENS',
+    SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/link', () => ({ default: () => null }));

@@ -8,11 +8,28 @@ describe('AiNavLink', () => {
     it('ko href는 AI_SITE_URL + localePath(ko, "/")', () => {
         render(<AiNavLink />);
 
-        const link = screen.getByRole('link', { name: 'SIGLENS AI Beta' });
+        const link = screen.getByRole('link', { name: '시그렌즈 AI Beta' });
         expect(link).toHaveAttribute(
             'href',
             `${AI_SITE_URL}${localePath('ko', '/')}`
         );
+    });
+
+    it('pill 라벨은 로케일 브랜드다 — ko 시그렌즈 AI, en SIGLENS AI', () => {
+        const { unmount } = render(<AiNavLink />);
+        expect(
+            screen.getByRole('link', { name: '시그렌즈 AI Beta' })
+        ).toHaveTextContent(/^시그렌즈 AIBeta$/);
+        unmount();
+
+        render(
+            <LocaleProvider locale="en">
+                <AiNavLink />
+            </LocaleProvider>
+        );
+        expect(
+            screen.getByRole('link', { name: 'SIGLENS AI Beta' })
+        ).toHaveTextContent(/^SIGLENS AIBeta$/);
     });
 
     it('en href는 AI_SITE_URL + localePath(en, "/")', () => {
@@ -33,7 +50,7 @@ describe('AiNavLink', () => {
         render(<AiNavLink />);
 
         expect(
-            screen.getByRole('link', { name: 'SIGLENS AI Beta' })
+            screen.getByRole('link', { name: '시그렌즈 AI Beta' })
         ).toHaveAttribute('translate', 'no');
     });
 
@@ -41,7 +58,7 @@ describe('AiNavLink', () => {
         render(<AiNavLink />);
 
         expect(
-            screen.getByRole('link', { name: 'SIGLENS AI Beta' })
+            screen.getByRole('link', { name: '시그렌즈 AI Beta' })
         ).not.toHaveAttribute('aria-current');
     });
 
@@ -53,7 +70,7 @@ describe('AiNavLink', () => {
         );
 
         expect(
-            screen.getByRole('link', { name: 'SIGLENS AI Beta' })
+            screen.getByRole('link', { name: '시그렌즈 AI Beta' })
         ).toHaveAttribute('aria-current', 'page');
     });
 

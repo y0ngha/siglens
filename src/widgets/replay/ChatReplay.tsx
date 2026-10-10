@@ -14,6 +14,8 @@ import {
     ReplaySteps,
 } from '@/shared/ui/ReplayParts';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
 
 interface ChatReplayLabels {
@@ -57,6 +59,7 @@ export function ChatReplay({
     doneIcon,
     sourcesSeparator = true,
 }: Props) {
+    const locale = useCurrentLocale();
     const { frame, paused, togglePaused, animated, rootRef, threadRef } =
         useReplayPlayback(scenarios);
 
@@ -85,7 +88,7 @@ export function ChatReplay({
                         aria-hidden="true"
                         className="size-1.5 rounded-full bg-ui-success"
                     />
-                    <span translate="no">SIGLENS AI</span>
+                    <span translate="no">{brandAiName(locale)}</span>
                 </span>
                 {animated ? (
                     <ReplayPauseButton

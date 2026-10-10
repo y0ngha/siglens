@@ -9,7 +9,7 @@ faq:
   - q: How is EMA different from a simple moving average (MA)?
     a: A simple moving average weights every close in the window equally, while EMA gives more weight to recent closes. That makes EMA react faster to price changes, but it also gives more false signals from small wiggles.
   - q: Which EMA lengths are used most?
-    a: The 9-day is common for short-term momentum, the 20- or 21-day for pullback support and resistance, and the 60-day for mid-term trend structure. Siglens also calculates the 9, 20, 21 and 60-day lines.
+    a: The 9-day is common for short-term momentum, the 20- or 21-day for pullback support and resistance, and the 60-day for mid-term trend structure. SIGLENS also calculates the 9, 20, 21 and 60-day lines.
   - q: Can I trust EMA crossovers?
     a: When a trend is clear, they signal a change of direction. In a sideways market, crossovers happen often and are noisy. Many people filter first with a trend-strength indicator such as ADX, or with price structure.
 ---
@@ -27,9 +27,9 @@ That is why it reacts faster to price changes than a [simple moving average](/gu
 - Crossovers: the 9-day line moving above the 20-day line means short-term momentum has strengthened, and the 20-day moving above the 60-day line is seen as a more structural turn.
 - Alignment: stacked in the order 9-day > 20-day > 60-day is a bullish alignment, and the reverse is a bearish alignment. Lines tangled together mean there is no trend.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens uses EMAs to read the direction of the trend and where price sits relative to each line. The 9, 20, 21 and 60-day EMAs always go into the analysis: it works out how many percent the current price is above or below each line, and whether the lines are in a bullish alignment, a bearish alignment or tangled. It also reads the pullback support and resistance, the slope and the crossovers described above.
+SIGLENS uses EMAs to read the direction of the trend and where price sits relative to each line. The 9, 20, 21 and 60-day EMAs always go into the analysis: it works out how many percent the current price is above or below each line, and whether the lines are in a bullish alignment, a bearish alignment or tangled. It also reads the pullback support and resistance, the slope and the crossovers described above.
 
 The trend is judged with the 20-day EMA.
 
@@ -37,7 +37,7 @@ The trend is judged with the 20-day EMA.
 - Downtrend: the 20-day EMA is down 3% or more from 20 bars ago and the close is below it
 - Sideways: everything else
 
-When price sits between the 20-day and 60-day lines, it's treated as a transition zone, and Siglens watches whether price leaves it in either direction and settles there. When [ADX](/guide/indicators/adx) (a gauge of trend strength) is above 25 and price is above the 60-day line, that is taken as one more piece of evidence for reading the trend direction.
+When price sits between the 20-day and 60-day lines, it's treated as a transition zone, and SIGLENS watches whether price leaves it in either direction and settles there. When [ADX](/guide/indicators/adx) (a gauge of trend strength) is above 25 and price is above the 60-day line, that is taken as one more piece of evidence for reading the trend direction.
 
 ## Watch out for
 

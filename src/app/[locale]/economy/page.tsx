@@ -24,7 +24,6 @@ import {
     buildFaqJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    SITE_NAME,
     SITE_URL,
     type FaqItem,
     type SeoTranslator,
@@ -42,6 +41,7 @@ import {
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
+import { brandTitle } from '@/shared/lib/brandName';
 
 /** 페이지 최상단 h1 — `EconomyContent` 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1({ title }: { title: string }) {
@@ -246,7 +246,7 @@ function buildEconomyFaq(t: SeoTranslator): readonly FaqItem[] {
 }
 
 function buildEconomyWebPageJsonLd(t: SeoTranslator, locale: Locale) {
-    const fullTitle = `${economyTitle(t)} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(economyTitle(t), locale);
     return {
         // dateModified 제거: SITE_BUILD_DATE는 모듈 로드 시점에 고정되어
         // 24h ISR 갱신 주기를 반영하지 못한다. /financials 등 peer 페이지와 동일하게 제외.

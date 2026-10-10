@@ -32,9 +32,9 @@ Bulkowski ranked 39 bullish and 36 bearish patterns separately by how far price 
 
 If the flat support lines up with a major long-standing support level and is being tested for the first time, a bounce becomes more likely. Breakouts between 50% and 75% of the way through the triangle were the most reliable, and if a rally after the break fails to reclaim the old support, the bearish case gets stronger.
 
-## How Siglens finds it
+## How SIGLENS finds it
 
-Siglens connects clear turning points (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) into upper and lower boundary lines, and checks for a flat bottom and a falling top that narrow together. It starts with the latest 5–8 swings and, if the same shape holds, extends back to earlier swings (up to 16).
+SIGLENS connects clear turning points (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) into upper and lower boundary lines, and checks for a flat bottom and a falling top that narrow together. It starts with the latest 5–8 swings and, if the same shape holds, extends back to earlier swings (up to 16).
 
 - The upper line falls at least 1.5 ATR over the pattern.
 - The lower line is flat: it moves less than the smaller of 0.75 ATR and 1% of price across the pattern.
@@ -43,9 +43,9 @@ Siglens connects clear turning points (swings: highs and lows where price revers
 - The end width narrows to 0.7× the starting width or less.
 - It spans at least 15 bars, and the width at the first touch (the pattern height) is at least 2.5 ATR and at least a minimum share of price (0.5% on 5–30 minute bars, 1% on 1–4 hour bars, 3% on daily bars).
 
-Following the textbook direction, Siglens computes the measured target as the support line minus the pattern height, and the conservative target as the support line minus half the height. This is a calculation rule, not a direction forecast. A target is the price reached if price moves another pattern height; it is a reference drawn from past cases, not a promise. Only about half of past cases actually got that far. The invalidation level (the price at which the pattern counts as broken) is the last high that touched the upper line. A close above it breaks the bearish pattern.
+Following the textbook direction, SIGLENS computes the measured target as the support line minus the pattern height, and the conservative target as the support line minus half the height. This is a calculation rule, not a direction forecast. A target is the price reached if price moves another pattern height; it is a reference drawn from past cases, not a promise. Only about half of past cases actually got that far. The invalidation level (the price at which the pattern counts as broken) is the last high that touched the upper line. A close above it breaks the bearish pattern.
 
-If a close breaks the support by more than 0.25 ATR and the latest close is back inside the triangle, Siglens marks it as a "failed breakout."
+If a close breaks the support by more than 0.25 ATR and the latest close is back inside the triangle, SIGLENS marks it as a "failed breakout."
 
 ## Watch out when
 

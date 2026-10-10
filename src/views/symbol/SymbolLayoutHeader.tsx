@@ -20,7 +20,7 @@ import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGa
 import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
 import type { SymbolSubTabKey } from './utils/symbolTabsConfig';
 
 interface SymbolLayoutHeaderProps {
@@ -185,13 +185,13 @@ export function SymbolLayoutHeader({
             <div className="flex items-center gap-2 px-4 sm:gap-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                     {/* 가시 브레드크럼 — 각 탭 페이지의 `BreadcrumbList` JSON-LD
-                        (`SIGLENS › 종목명 › 탭`)과 같은 마디를 같은 문자열로 그린다. 예전에는
+                        (`시그렌즈 › 종목명 › 탭`, ko 외 `SIGLENS › …`)과 같은 마디를 같은 문자열로 그린다. 예전에는
                         같은 줄을 링크·span 나열로만 그려 구조가 없었다. `<ol>`은 기존 줄과 같은
                         flex·gap이라 시각 배치는 그대로다. 홈 마디 텍스트는 JSON-LD와 같은
-                        `SITE_NAME`이고 대문자는 CSS(`uppercase`)가 만든다. */}
+                        `brandName(locale)`이고 영문 대문자는 CSS(`uppercase`)가 만든다. */}
                     <nav aria-label={breadcrumbLabel} className="min-w-0">
                         <ol className="flex min-w-0 items-center gap-2">
-                            {/* 모바일(sm 미만)에서는 "SIGLENS /" 브레드크럼과 영문명을 감춘다.
+                            {/* 모바일(sm 미만)에서는 홈 마디("시그렌즈 /") 브레드크럼과 영문명을 감춘다.
                                 375px에서 이 둘이 폭을 먹어 한국어 종목명이 "애플, App…"처럼
                                 잘렸다 — 모바일 헤더에서 사용자가 알아봐야 하는 건 종목명과
                                 티커뿐이고, 홈은 사이트 헤더 로고가 이미 가리킨다. */}
@@ -204,7 +204,7 @@ export function SymbolLayoutHeader({
                                     prefetch={false}
                                     className="font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300"
                                 >
-                                    {SITE_NAME}
+                                    {brandName(locale)}
                                 </Link>
                             </li>
                             <li
@@ -249,7 +249,7 @@ export function SymbolLayoutHeader({
                                 )}
                             </li>
                             {/* 셋째 마디(현재 탭)는 sm 이상에서만 보인다 — 모바일은 종목명이 폭을
-                                다 쓰고(위 SIGLENS 마디와 같은 이유), 바로 아래 탭 레일의 활성 탭이 같은
+                                다 쓰고(위 홈 마디와 같은 이유), 바로 아래 탭 레일의 활성 탭이 같은
                                 정보를 이미 보여 준다. */}
                             {subTab !== null && (
                                 <>

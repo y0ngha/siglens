@@ -3,7 +3,7 @@ title: Morning Star / Evening Star
 aliases: [Morning Star, Evening Star, Morning Doji Star, Evening Doji Star, Doji Star]
 summary: "A three-bar reversal: a big bar, a small bar that gaps away, then a big bar in the opposite direction."
 seoTitle: Morning Star and Evening Star Candlestick Patterns
-seoDescription: What the morning star and evening star look like, whether a doji in the middle makes them more reliable, how often they reversed, and how Siglens detects them.
+seoDescription: What the morning star and evening star look like, whether a doji in the middle makes them more reliable, how often they reversed, and how SIGLENS detects them.
 demoCaption: "Synthetic, illustrative bars made for this explanation. A morning star: a long bearish bar, a small bar that gaps down, then a bullish bar closing above the midpoint."
 faq:
   - q: How do I tell a morning star from an evening star?
@@ -33,9 +33,9 @@ Thomas Bulkowski tallied what actually happened after patterns across decades of
 
 A doji in the middle did not make the pattern more reliable; each doji star came in slightly below its regular star. All four are also rare. The best-performance figures for regular stars come from small samples, 108 morning stars and 63 evening stars, so the real figures may be lower.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for a long bar, a middle bar whose body is separated by a gap, and a third bar that retraces past half of the first body. The morning star criteria (the evening star is the mirror image):
+SIGLENS looks for a long bar, a middle bar whose body is separated by a gap, and a third bar that retraces past half of the first body. The morning star criteria (the evening star is the mirror image):
 
 - The first bearish body is at least 60% of its own high-to-low range.
 - The whole body of the middle bar is below the first body.

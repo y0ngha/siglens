@@ -1,7 +1,7 @@
 import { CHROME_CLIENT_PATHS } from '@/shared/i18n/clientNamespaces';
 
 /**
- * Client-visible next-intl namespaces for the SiglensAI subtree (spec §9-3).
+ * Client-visible next-intl namespaces for the SIGLENS AI subtree (spec §9-3).
  *
  * Kept in its own module rather than exported from `layout.tsx` — a Next.js
  * route file may only export the default component (and route config like

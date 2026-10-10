@@ -3,7 +3,7 @@ title: Fibonacci Retracement and Extension
 aliases: [Fibonacci retracement, Fibonacci extension, Fibonacci levels, 61.8% retracement, golden ratio trading]
 summary: Use ratios to estimate where a pullback after a big move may stop and how far the next move may extend.
 seoTitle: "Fibonacci Retracement: 38.2%, 50%, 61.8% Levels"
-seoDescription: What Fibonacci retracement and extension ratios mean, how to draw them on up and down swings, and how Siglens picks swings and calculates the levels.
+seoDescription: What Fibonacci retracement and extension ratios mean, how to draw them on up and down swings, and how SIGLENS picks swings and calculates the levels.
 demoCaption: Synthetic, illustrative candles. Shows a rise from swing low to swing high and the 38.2%, 50% and 61.8% retracement lines across the pullback.
 faq:
   - q: Where do you draw Fibonacci retracements?
@@ -25,7 +25,7 @@ For example, an upswing from $100 to $150 covers $50. The 38.2% retracement line
 
 ## What it tells you
 
-What follows is the traditional reading. Siglens uses these lines as background, checking whether they line up with other evidence.
+What follows is the traditional reading. SIGLENS uses these lines as background, checking whether they line up with other evidence.
 
 The depth of the retracement gives a read on the state of the trend.
 
@@ -37,9 +37,9 @@ The depth of the retracement gives a read on the state of the trend.
 
 A Fibonacci line is not a place where price must stop. It is a place many market participants are watching together. In Batchelor and Ramyar's 2006 study, ratios between Dow Jones swings did not cluster near Fibonacci values more often than chance. So lines that overlap prior swings, moving averages or high-volume price zones are given more weight. Extension lines do not tell you when to buy or sell; they are reference lines for gauging where the next move could reach.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens picks swings by a fixed rule instead of by hand, so anyone looking gets the same lines.
+SIGLENS picks swings by a fixed rule instead of by hand, so anyone looking gets the same lines.
 
 - A swing high is the bar with the highest high among the 5 bars on each side, and a swing low is the bar with the lowest low among the 5 bars on each side.
 - For each of the short, medium and long ranges (the last 20, 60 and 200 bars on a daily chart), it takes the most recent swing high and swing low. If the low comes first, it is an upswing; if the high comes first, a downswing.

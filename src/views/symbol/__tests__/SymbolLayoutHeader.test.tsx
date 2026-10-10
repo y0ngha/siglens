@@ -211,7 +211,7 @@ describe('SymbolLayoutHeader', () => {
         expect(nav.querySelector('ol')).not.toBeNull();
     });
 
-    it('renders the SIGLENS logo link (JSON-LD와 같은 SITE_NAME 텍스트, 대문자는 CSS)', () => {
+    it('renders the home crumb link (JSON-LD와 같은 brandName(locale) 텍스트 — ko 시그렌즈)', () => {
         render(
             <SymbolLayoutHeader
                 symbol="aapl"
@@ -219,7 +219,7 @@ describe('SymbolLayoutHeader', () => {
                 {...CRUMB_PROPS}
             />
         );
-        const link = screen.getByText('SIGLENS');
+        const link = screen.getByText('시그렌즈');
         expect(link.closest('a')?.getAttribute('href')).toBe('/');
         expect(link.className).toContain('uppercase');
     });
@@ -524,7 +524,7 @@ describe('SymbolLayoutHeader', () => {
     });
 
     describe('모바일 헤더 축약(375px에서 종목명이 잘리던 문제)', () => {
-        it('SIGLENS 링크와 구분 슬래시는 모바일에서 감추고 sm 이상에서만 보인다', () => {
+        it('홈 마디 링크와 구분 슬래시는 모바일에서 감추고 sm 이상에서만 보인다', () => {
             render(
                 <SymbolLayoutHeader
                     symbol="aapl"
@@ -534,10 +534,10 @@ describe('SymbolLayoutHeader', () => {
             );
 
             // 반응형 감춤은 마디(`<li>`)가 맡는다 — 안의 링크에 같은 클래스를 겹쳐 두지 않는다.
-            const crumb = screen.getByText('SIGLENS').closest('li');
+            const crumb = screen.getByText('시그렌즈').closest('li');
             expect(crumb?.className).toContain('hidden');
             expect(crumb?.className).toContain('sm:inline');
-            expect(screen.getByText('SIGLENS').className).not.toContain(
+            expect(screen.getByText('시그렌즈').className).not.toContain(
                 'hidden'
             );
             const slash = screen.getByText('/');

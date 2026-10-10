@@ -15,7 +15,6 @@ import {
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
 import { brandName } from '@/shared/lib/brandName';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import type { TermsRecord } from '@/entities/terms/api';
@@ -108,7 +107,7 @@ async function TermsContent({ locale, terms }: TermsContentProps) {
             breadcrumbTitle={termsTitle(tSeo)}
             eyebrow={TERMS_EYEBROW}
             title={termsTitle(tSeo)}
-            intro={tLegal('termsIntro', { v0: SITE_NAME })}
+            intro={tLegal('termsIntro', { v0: brandName(locale) })}
             effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
             toc={toc}
             topNotice={

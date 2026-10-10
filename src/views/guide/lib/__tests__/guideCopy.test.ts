@@ -1,7 +1,7 @@
 import { createTranslator } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GUIDE_CATEGORIES } from '@/entities/guide/types';
+import { GUIDE_CATEGORIES, type GuideCategory } from '@/entities/guide/types';
 import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
 
@@ -117,6 +117,14 @@ describe('loadGuideHubSeoCopy', () => {
         expect(texts.every(text => text.includes('17'))).toBe(true);
         expect(texts.some(text => text.includes('{'))).toBe(false);
         expect(new Set(texts).size).toBe(GUIDE_CATEGORIES.length);
+    });
+
+    it('categoryDescription은 모르는 분류를 조용히 undefined로 넘기지 않고 던진다', async () => {
+        const copy = await loadGuideHubSeoCopy('ko', 1);
+
+        expect(() =>
+            copy.categoryDescription('unknown' as GuideCategory, 1)
+        ).toThrow('Unhandled guide category: unknown');
     });
 
     it.each(['ko', 'en'] as const)(

@@ -3,7 +3,7 @@
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { useCurrentLocale, useHrefBase } from '@/shared/i18n/LocaleContext';
 import { localePath } from '@/shared/i18n/locales';
-import { brandName } from '@/shared/lib/brandName';
+import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
 
@@ -15,8 +15,9 @@ interface Props {
      * (same mono/tracking grammar as the wordmark, brand colour). `pill` — the
      * labelled entry in the mobile drawer. `text` — a plain inline link (footer
      * sitemap row): no Beta badge, no `aria-label` override since the visible
-     * text already is the full product name. Unlike the other two (brand
-     * marks), it sits among prose labels, so it reads `시그렌즈 AI` in ko.
+     * text already is the full product name. `pill` and `text` are text labels,
+     * so they read `시그렌즈 AI` in ko; only `wordmark` (half of the logo
+     * lockup) keeps `SIGLENS AI` (`CONVENTIONS.md#I18-11`).
      */
     readonly variant?: 'pill' | 'wordmark' | 'text';
 }
@@ -34,7 +35,7 @@ function useAiHomeHref(): string {
  * (`useHrefBase() !== ''`), which is how the link knows to show itself as the
  * current page.
  *
- * The accessible name is always "SIGLENS AI Beta" — the wordmark variant only
+ * The wordmark's accessible name is always "SIGLENS AI Beta" — it only
  * *shows* "AI" + the Beta tag (the "SIGLENS" half is the logo right next to
  * it), so the label restores the full product name for assistive tech and the
  * E2E suite while still containing every visible word (WCAG 2.5.3).
@@ -52,7 +53,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
                 tabIndex={tabIndex}
                 className={className}
             >
-                {`${brandName(locale)} AI`}
+                {brandAiName(locale)}
             </a>
         );
     }
@@ -83,7 +84,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
         <a
             href={href}
             translate="no"
-            aria-label="SIGLENS AI Beta"
+            aria-label={`${brandAiName(locale)} Beta`}
             aria-current={onAiHost ? 'page' : undefined}
             tabIndex={tabIndex}
             className={cn(
@@ -92,7 +93,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
                 className
             )}
         >
-            SIGLENS AI
+            {brandAiName(locale)}
             <BetaBadge className="ml-1.5" />
         </a>
     );

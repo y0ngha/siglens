@@ -32,9 +32,9 @@ After breaking the lower line, bear flags had a break-even failure rate (the sha
 
 In a bear flag, the flag is not a profit-taking rest but a brief retracement after the plunge (a technical bounce). So volume should shrink during the bounce; if it grows instead, bargain hunters may be accumulating. If the pole ended at a major long-standing support level, the flag can turn into a base rather than a pause before more decline. A flag that slopes downward may be ongoing capitulation (panic selling all at once) rather than a rest. A flag that runs past 4 weeks loses its bounce character and may be shifting into a base.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) and uses the plunge from a swing high to the next swing low as the pole. When a narrow channel that drifts up or sideways follows, it treats the shape as a bear flag.
+SIGLENS looks for clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) and uses the plunge from a swing high to the next swing low as the pole. When a narrow channel that drifts up or sideways follows, it treats the shape as a bear flag.
 
 - Pole: it must fall at least 3 times ATR within 20 bars and also exceed a set share of price (for example, 3% on daily bars).
 - Flag length: 5 to 20 bars after the pole bottom.
@@ -42,11 +42,11 @@ Siglens looks for clearly turning highs and lows (swings: turning points where p
 - The flag's starting width must be no more than half the pole's length.
 - The flag's upper and lower lines each need at least 2 touches at least 2 bars apart.
 - The final width must be more than 0.7 times and no more than 1.15 times the starting width, and neither line may fall by more than the smaller of 0.75 times ATR and 1% of price. If the width narrows to 0.7 times or less, it is treated as a [pennant](/guide/chart-patterns/pennant).
-- If the flag ended before the last bar, the very next bar must already be outside the channel. If it stays inside, Siglens treats it as a trading range, not a flag.
+- If the flag ended before the last bar, the very next bar must already be outside the channel. If it stays inside, SIGLENS treats it as a trading range, not a flag.
 
 The measured target is the lower line minus the pole length, and the conservative target subtracts half the pole length. The invalidation level is the flag's highest high after the pole bottom.
 
-If the close breaks below the lower line by more than 0.25 times ATR and the last close then returns inside the channel, Siglens marks it as a "failed breakout".
+If the close breaks below the lower line by more than 0.25 times ATR and the last close then returns inside the channel, SIGLENS marks it as a "failed breakout".
 
 ## Watch out for
 

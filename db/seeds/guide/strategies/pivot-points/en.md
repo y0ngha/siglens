@@ -7,11 +7,11 @@ seoDescription: What the pivot point PP, R1 to R3 and S1 to S3 mean, and how the
 demoCaption: Synthetic, illustrative candles. Shows the pivot line (PP) calculated from the high, low and close of the prior day's bars, shaded on the chart, with resistance R1 above and support S1 below.
 faq:
   - q: How are pivot points calculated?
-    a: In the classic method, the pivot (PP) is the prior day's high, low and close added together and divided by 3. R1 is twice PP minus the low, and S1 is twice PP minus the high. Siglens calculates these values and shows them.
+    a: In the classic method, the pivot (PP) is the prior day's high, low and close added together and divided by 3. R1 is twice PP minus the low, and S1 is twice PP minus the high. SIGLENS calculates these values and shows them.
   - q: Can I use them on daily charts?
     a: You can, but only as a secondary reference. On a daily chart the prior session is simply the previous bar, so the levels mean far less than swing structure (clearly turned highs and lows) or moving averages.
   - q: There are several pivot methods. Which do I look at?
-    a: Siglens puts the classic and Fibonacci pivots first and treats Camarilla (for short-term trading), Woodie (weighted toward the close) and DeMark as secondary.
+    a: SIGLENS puts the classic and Fibonacci pivots first and treats Camarilla (for short-term trading), Woodie (weighted toward the close) and DeMark as secondary.
 ---
 
 ## What it is
@@ -34,7 +34,7 @@ There are several ways to calculate them.
 
 ## What it tells you
 
-What follows is the traditional reading. Siglens uses pivots only as reference lines that show where price may react that day.
+What follows is the traditional reading. SIGLENS uses pivots only as reference lines that show where price may react that day.
 
 - A bounce off S1 on rising volume is often read as support, and a stall at R1 with a bearish candle as resistance.
 - A close through R1 or S1 with volume is read as the move continuing in that direction.
@@ -43,9 +43,9 @@ What follows is the traditional reading. Siglens uses pivots only as reference l
 - Where a pivot overlaps a moving average, [Bollinger Bands](/guide/indicators/bollinger-bands) or a [Fibonacci](/guide/strategies/fibonacci) line, it is read as a firmer level.
 - A gap open makes the prior session's lines less relevant.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens calculates the pivot values for all five methods and shows which line price is near. How the prior-session values are built depends on the chart's timeframe. On minute and hourly charts, it combines all of the previous trading day's bars into that day's high, low and close, because calculating from one short bar would put the lines right on top of the current price. On a daily chart, the previous bar already is the previous trading day, so it is used as is.
+SIGLENS calculates the pivot values for all five methods and shows which line price is near. How the prior-session values are built depends on the chart's timeframe. On minute and hourly charts, it combines all of the previous trading day's bars into that day's high, low and close, because calculating from one short bar would put the lines right on top of the current price. On a daily chart, the previous bar already is the previous trading day, so it is used as is.
 
 - On minute and hourly charts, pivots are a primary support and resistance reference. On daily and longer charts, they are only a secondary reference behind swing structure and moving averages.
 - Classic and Fibonacci pivots come first; Woodie and DeMark are secondary.

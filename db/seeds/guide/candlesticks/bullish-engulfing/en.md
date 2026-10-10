@@ -20,9 +20,9 @@ It has two bars. The first is bearish. The second is bullish: it opens at or bel
 
 One bar reversed the prior decline, so it is read as a clue that control passed from sellers to buyers. Textbooks give it weight only when it appears at the end of a downtrend.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens compares the two bodies only. It ignores the shadows and does not check whether a decline came first, so look at the chart yourself for the prior trend.
+SIGLENS compares the two bodies only. It ignores the shadows and does not check whether a decline came first, so look at the chart yourself for the prior trend.
 
 - The first bar is bearish and the second is bullish.
 - The second bar opens at or below the first bar's close.

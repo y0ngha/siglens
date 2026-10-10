@@ -25,9 +25,9 @@ The standard setting is (14, 3, 3). The raw %K is built from the high-low range 
 - If price makes a lower low but the Stochastic low is higher, that is bullish divergence (price and indicator moving in different directions), meaning the selling force is easing. If price makes a higher high but the Stochastic high is lower, that is bearish divergence. They count for more when they appear in the overbought or oversold zone.
 - %D staying above 50 means upward momentum dominates, and staying below 50 means downward momentum dominates.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks whether the last bar's close is pinned to the top or the bottom of the recent range. It then gives that signal more or less weight depending on whether the market is moving sideways or trending.
+SIGLENS checks whether the last bar's close is pinned to the top or the bottom of the recent range. It then gives that signal more or less weight depending on whether the market is moving sideways or trending.
 
 - It uses the standard (14, 3, 3) setting.
 - It marks the last bar's slow %K at 80 or above as overbought and at 20 or below as oversold.
@@ -35,7 +35,7 @@ Siglens checks whether the last bar's close is pinned to the top or the bottom o
 - In a trending market with ADX above 25, it allows that signals can lag price.
 - It takes timing from the Stochastic and medium-term direction from [MACD](/guide/indicators/macd), and gives weight to a cross when both point the same way.
 
-[Williams %R](/guide/indicators/williams-r) is the same calculation as the raw %K before smoothing, just on a different scale, so it carries the same information. Reading both does not make a signal twice as trustworthy. But the Stochastic Siglens shows is slow %K, smoothed once, so comparing which one reaches an extreme first can be a hint. If the unsmoothed %R reaches an extreme first and slow %K follows, a turning point may be close.
+[Williams %R](/guide/indicators/williams-r) is the same calculation as the raw %K before smoothing, just on a different scale, so it carries the same information. Reading both does not make a signal twice as trustworthy. But the Stochastic SIGLENS shows is slow %K, smoothed once, so comparing which one reaches an extreme first can be a hint. If the unsmoothed %R reaches an extreme first and slow %K follows, a turning point may be close.
 
 ## Watch out for
 

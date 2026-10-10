@@ -32,9 +32,9 @@ ATR is the average distance a single bar moves. The bands move more smoothly tha
 - Channel width: widening means volatility is expanding, narrowing means it is contracting.
 - Squeeze: when the Bollinger Bands (20, 2) move inside the channel, volatility has contracted to an extreme. When they move back outside, a breakout is considered to have started, and the direction depends on which band price crosses.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens watches for the moment a close moves outside the channel, and for price pressing right up against a band. The channel uses the standard settings (20-day EMA center line, 10-day ATR, multiplier 2.0).
+SIGLENS watches for the moment a close moves outside the channel, and for price pressing right up against a band. The channel uses the standard settings (20-day EMA center line, 10-day ATR, multiplier 2.0).
 
 - Upper breakout: the previous bar closed inside the upper band and the current bar closes outside it
 - Lower breakdown: the same thing happens at the lower band

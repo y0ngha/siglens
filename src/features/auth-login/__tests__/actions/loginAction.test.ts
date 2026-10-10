@@ -165,7 +165,7 @@ describe('loginAction', () => {
     });
 
     /**
-     * SiglensAI 로그인 CTA 복귀. 같은-호스트 `/api/auth/handoff`로 redirect하면
+     * SIGLENS AI 로그인 CTA 복귀. 같은-호스트 `/api/auth/handoff`로 redirect하면
      * Next.js가 302 체인을 서버 fetch 안에서 소진해 브라우저가 ai 호스트로 가지
      * 않는다. 다른 호스트(ai start)의 절대 URL이어야 하드 내비게이션이 된다.
      * 비-ko에서도 `/en/api/…`(404)가 되면 안 된다.

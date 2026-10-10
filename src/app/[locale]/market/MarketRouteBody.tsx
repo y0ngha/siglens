@@ -30,7 +30,6 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     localizedAbsoluteUrl,
-    SITE_NAME,
     SITE_URL,
     SYMBOLS_PATH,
 } from '@/shared/lib/seo';
@@ -41,6 +40,7 @@ import {
     loadMarketSignals,
     type LoadMarketSignalsResult,
 } from './loadMarketSignals';
+import { brandTitle } from '@/shared/lib/brandName';
 
 /**
  * SSR seed를 만들어 dehydrate한다.
@@ -196,7 +196,7 @@ export async function MarketRouteBody({
     const tLayout = await getTranslations('widgets.layout');
     const copy = marketCopyFor(scope.id, t);
     const url = `${SITE_URL}${copy.path}`;
-    const fullTitle = `${copy.title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(copy.title, locale);
 
     // metadata가 noindex를 거는 것과 **같은 술어**로 구조화데이터를 끈다. 빈 렌더에
     // "이 URL은 정식 WebPage이고 섹터 ETF 11종을 담은 ItemList"라고 주장하면

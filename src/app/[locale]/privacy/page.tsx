@@ -14,7 +14,6 @@ import {
     termsTitle,
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import type { TermsRecord } from '@/entities/terms/api';
 import type { Metadata } from 'next';
@@ -29,6 +28,7 @@ import {
     type LegalPolicy,
 } from '../_legal/legalPolicy';
 import { renderLegalUnavailable } from '../_legal/renderLegalUnavailable';
+import { brandName } from '@/shared/lib/brandName';
 
 /**
  * 약관 본문은 코드가 아니라 `terms` 테이블에 있고, 발효일이 되면
@@ -87,7 +87,7 @@ async function PrivacyContent({ locale, terms }: PrivacyContentProps) {
             breadcrumbTitle={privacyTitle(tSeo)}
             eyebrow={PRIVACY_EYEBROW}
             title={privacyTitle(tSeo)}
-            intro={tLegal('privacyIntro', { v0: SITE_NAME })}
+            intro={tLegal('privacyIntro', { v0: brandName(locale) })}
             effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
             toc={toc}
             topNotice={

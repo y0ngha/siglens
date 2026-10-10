@@ -21,7 +21,6 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     ORGANIZATION_JSON_LD_ID,
-    SITE_NAME,
     SITE_URL,
     localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
@@ -32,6 +31,7 @@ import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { MethodologyPage } from '@/views/methodology/MethodologyPage';
 import { EMPTY_SKILL_COUNTS } from '@/views/about/lib/aboutContent';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { brandName } from '@/shared/lib/brandName';
 
 const PAGE_URL = `${SITE_URL}${METHODOLOGY_PATH}`;
 
@@ -93,7 +93,7 @@ export async function generateMetadata({
     });
     const ogLocale = localeOpenGraph(locale);
     return {
-        // 메타 타이틀이 이미 `SIGLENS`로 시작한다 — 레이아웃 템플릿(`%s | SIGLENS`)을
+        // 메타 타이틀이 이미 브랜드로 시작한다 — 레이아웃 템플릿(ko `%s | 시그렌즈`)을
         // 타면 브랜드가 두 번 붙으므로 `absolute`로 끊는다(`/about`과 같다).
         title: { absolute: methodologyFullTitle(tSeo) },
         description: methodologyDescription(tSeo),
@@ -102,7 +102,7 @@ export async function generateMetadata({
         alternates: await localeAlternatesFrom(params, METHODOLOGY_PATH),
         openGraph: {
             type: 'article',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title: methodologyFullTitle(tSeo),
             description: methodologyDescription(tSeo),
             url: localizedAbsoluteUrl(PAGE_URL, locale),

@@ -15,10 +15,19 @@ import {
 } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { localePageRobots } from '@/shared/lib/seoAlternates';
-import { ORGANIZATION_JSON_LD_ID, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import {
+    ORGANIZATION_JSON_LD_ID,
+    SITE_NAME,
+    SITE_NAME_KO,
+    SITE_URL,
+} from '@/shared/lib/seo';
+import { brandAiName } from '@/shared/lib/brandName';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
-/** Product name as it appears in titles, cards and structured data. */
+/**
+ * Product name as a mark: JSON-LD `name` and wordmarks. Titles, `og:site_name` and
+ * on-screen copy use `brandAiName(locale)` instead (ko `시그렌즈 AI`, `CONVENTIONS.md#I18-11`).
+ */
 export const AI_PRODUCT_NAME = 'SIGLENS AI';
 
 export type { AiSeoCopy };
@@ -33,7 +42,7 @@ function aiHomeUrl(locale: Locale): string {
 }
 
 /**
- * Metadata for the SiglensAI landing (`/`, per locale) — one of the ai host's
+ * Metadata for the SIGLENS AI landing (`/`, per locale) — one of the ai host's
  * public, indexable pages (`AI_INDEXABLE_PATHS`: `/` and `/about`). Uses the same locale gate as the main
  * site's static pages, so an un-gated locale is `noindex` and gets no hreflang
  * cluster (a cluster of one is not a cluster).
@@ -80,7 +89,7 @@ function buildAiPageMetadata(
     return {
         title: { absolute: copy.title },
         description: copy.description,
-        applicationName: AI_PRODUCT_NAME,
+        applicationName: brandAiName(locale),
         alternates: {
             canonical: aiUrl(locale, path),
             ...(Object.keys(languages).length > 0 ? { languages } : {}),
@@ -90,7 +99,7 @@ function buildAiPageMetadata(
         robots: localePageRobots(locale),
         openGraph: {
             type: 'website',
-            siteName: AI_PRODUCT_NAME,
+            siteName: brandAiName(locale),
             title: copy.title,
             description: copy.description,
             url: aiUrl(locale, path),
@@ -107,7 +116,7 @@ function buildAiPageMetadata(
 
 /**
  * `WebApplication` node tied into the main site's entity graph through the
- * shared `Organization` `@id` — SiglensAI is a product of siglens, not a
+ * shared `Organization` `@id` — SIGLENS AI is a product of siglens, not a
  * separate publisher.
  */
 export function buildAiHomeJsonLd(
@@ -120,7 +129,7 @@ export function buildAiHomeJsonLd(
         '@type': 'WebApplication',
         '@id': `${aiHomeUrl(locale)}#webapplication`,
         name: AI_PRODUCT_NAME,
-        alternateName: `${SITE_NAME} AI`,
+        alternateName: `${SITE_NAME_KO} AI`,
         description: copy.description,
         url: aiHomeUrl(locale),
         inLanguage: LOCALE_HREFLANG[locale],

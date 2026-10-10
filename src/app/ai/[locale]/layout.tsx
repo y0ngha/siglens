@@ -13,7 +13,12 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_VIEWPORT } from '@/shared/config/viewport';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { pickMessages } from '@/shared/i18n/loadMessages';
-import { isLocale, LOCALE_HREFLANG } from '@/shared/i18n/locales';
+import {
+    isLocale,
+    LOCALE_HREFLANG,
+    resolveLocale,
+} from '@/shared/i18n/locales';
+import { brandAiName } from '@/shared/lib/brandName';
 import Script from 'next/script';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
@@ -21,7 +26,6 @@ import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
-import { AI_PRODUCT_NAME } from './aiSeo';
 import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
@@ -34,12 +38,28 @@ export const dynamic = 'force-dynamic';
  */
 export const viewport: Viewport = SITE_VIEWPORT;
 
-export const metadata: Metadata = {
+/**
+ * 제목의 제품명은 로케일을 따른다 — ko `시그렌즈 AI`, 그 외 `SIGLENS AI`
+ * (`CONVENTIONS.md#I18-11`). 그래서 정적 `metadata`가 아니라 `generateMetadata`다.
+ */
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale: raw } = await params;
+    const productName = brandAiName(resolveLocale(raw));
+    return {
+        ...AI_LAYOUT_METADATA,
+        title: {
+            default: productName,
+            template: `%s | ${productName}`,
+        },
+    };
+}
+
+const AI_LAYOUT_METADATA: Metadata = {
     metadataBase: new URL(AI_SITE_URL),
-    title: {
-        default: AI_PRODUCT_NAME,
-        template: `%s | ${AI_PRODUCT_NAME}`,
-    },
     // Default for everything under the ai host (conversations, not-found):
     // private or empty, never indexed. The landing (`page.tsx`) overrides it.
     robots: { index: false, follow: false },

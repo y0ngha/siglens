@@ -38,6 +38,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { brandName, brandTitle } from '@/shared/lib/brandName';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
@@ -98,19 +99,19 @@ export async function generateMetadata({
         metadataBase: new URL(SITE_URL),
         title: {
             default: rootTitle,
-            template: `%s | ${SITE_NAME}`,
+            template: brandTitle('%s', locale),
         },
         description: tSeo('root.description'),
         // 로케일별 매니페스트. 기본 `/manifest.webmanifest`를 그대로 두면 `/en`에서
         // 설치해도 홈 화면 이름·바로가기가 한국어로 굳는다.
         manifest: `${localePath(locale, '/manifest.webmanifest')}`,
         keywords: ROOT_KEYWORDS,
-        applicationName: SITE_NAME,
+        applicationName: brandName(locale),
         authors: [{ name: SITE_NAME, url: SITE_URL }],
         creator: SITE_NAME,
         openGraph: {
             type: 'website',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title: rootTitle,
             description: tSeo('root.description'),
             url: siteUrl,

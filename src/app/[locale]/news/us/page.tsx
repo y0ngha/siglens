@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
-import { resolveLocale } from '@/shared/i18n/locales';
+import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     selfCanonicalAlternates,
@@ -24,11 +24,11 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import { brandName, brandTitle } from '@/shared/lib/brandName';
 
 // 24h ISR — 허브 인덱스는 카테고리 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -39,8 +39,8 @@ const PATH = '/news/us';
 function newsUsTitle(t: SeoTranslator): string {
     return t('newsUs.title');
 }
-function newsUsFullTitle(t: SeoTranslator): string {
-    return `${newsUsTitle(t)} | ${SITE_NAME}`;
+function newsUsFullTitle(t: SeoTranslator, locale: Locale): string {
+    return brandTitle(newsUsTitle(t), locale);
 }
 function newsUsDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('newsUs.description'));
@@ -101,8 +101,8 @@ export async function generateMetadata({
             : localePageRobots(locale),
         openGraph: {
             type: 'website',
-            siteName: SITE_NAME,
-            title: newsUsFullTitle(tSeo),
+            siteName: brandName(locale),
+            title: newsUsFullTitle(tSeo, locale),
             description: newsUsDescription(tSeo),
             url,
             ...ogLocale,
@@ -113,7 +113,7 @@ export async function generateMetadata({
             images: [`${SITE_URL}/news/opengraph-image`],
         },
         twitter: buildTwitterMetadata({
-            title: newsUsFullTitle(tSeo),
+            title: newsUsFullTitle(tSeo, locale),
             description: newsUsDescription(tSeo),
             images: [`${SITE_URL}/news/opengraph-image`],
         }),
@@ -146,7 +146,7 @@ export default async function UsNewsHubPage({
     const webPageJsonLd = {
         ...buildWebPageJsonLd({
             url: url,
-            name: `${newsUsTitle(tSeo)} | ${SITE_NAME}`,
+            name: brandTitle(newsUsTitle(tSeo), locale),
             description: newsUsDescription(tSeo),
             locale,
         }),

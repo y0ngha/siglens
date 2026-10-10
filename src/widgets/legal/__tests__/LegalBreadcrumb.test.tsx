@@ -20,7 +20,7 @@ import { NextIntlClientProvider } from 'next-intl';
 
 import messages from '../../../../messages/ko.json';
 import { LegalBreadcrumb } from '../LegalBreadcrumb';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME_KO } from '@/shared/lib/seo';
 
 const NAV_LABEL = messages.shared.ui.Breadcrumb['46c31f'];
 
@@ -44,7 +44,7 @@ describe('LegalBreadcrumb', () => {
     it('renders the site name as a link to home', () => {
         renderCrumb('이용약관');
 
-        const homeLink = screen.getByRole('link', { name: SITE_NAME });
+        const homeLink = screen.getByRole('link', { name: SITE_NAME_KO });
         expect(homeLink).toHaveAttribute('href', '/');
     });
 

@@ -62,6 +62,7 @@ vi.mock('@/entities/skill/api', () => ({
 }));
 vi.mock('@/shared/lib/brandName', () => ({
     brandName: () => 'SIGLENS',
+    brandAiName: () => 'SIGLENS AI',
 }));
 vi.mock('@/shared/lib/seo', () => ({
     brandIntroName: () => 'SIGLENS',

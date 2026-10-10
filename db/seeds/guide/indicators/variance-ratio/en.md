@@ -3,7 +3,7 @@ title: "Variance Ratio"
 aliases: [Variance Ratio, Lo-MacKinlay Variance Ratio, VR Test, Variance Ratio Test]
 summary: "Uses how widely returns are spread (their variance) to tell whether price moves randomly, keeps trending, or reverts."
 seoTitle: "Variance Ratio: How to Tell Trending from Ranging"
-seoDescription: A variance ratio above 1 points to trending, below 1 to mean reversion. See how it separates trending from ranging markets, Siglens' thresholds, and its limits.
+seoDescription: A variance ratio above 1 points to trending, below 1 to mean reversion. See how it separates trending from ranging markets, SIGLENS' thresholds, and its limits.
 demoCaption: "Synthetic, illustrative bars. Shows the variance ratio splitting above and below the 1.0 line in a trending stretch and a mean-reverting stretch."
 faq:
   - q: "What does a variance ratio above 1 mean?"
@@ -32,16 +32,16 @@ It is a statistical test published by Andrew Lo and A. Craig MacKinlay in 1988, 
 
 It does not give direction. It only says the stretch is trending; whether price is rising or falling has to be read from other indicators.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens compares one-day movement with two-day movement and marks the trend side or the pullback side as clear only when the value is far enough from 1.
+SIGLENS compares one-day movement with two-day movement and marks the trend side or the pullback side as clear only when the value is far enough from 1.
 
 - Range: per-bar returns over the last 60 bars (daily returns on a daily chart).
 - Comparison: one bar versus two bars (q=2). On a daily chart, if two-day movement is more than twice one-day movement, it leans toward trend; if less, toward pullback.
 - 1.2 or above: the trend side is read as clear.
 - 0.8 or below: the pullback side is read as clear.
 
-It is one of three indicators, with the [Hurst exponent](/guide/indicators/hurst) and [regression R²](/guide/indicators/regression-r2), for reading the market's state, and confidence is highest when all three point the same way. The variance ratio originally comes with a formal statistical test, so it gets heavy weight among the three, but Siglens uses a simplified fixed cutoff instead of that test. In the formal test, the cutoff changes with the comparison period and the sample size. It is not used to decide direction.
+It is one of three indicators, with the [Hurst exponent](/guide/indicators/hurst) and [regression R²](/guide/indicators/regression-r2), for reading the market's state, and confidence is highest when all three point the same way. The variance ratio originally comes with a formal statistical test, so it gets heavy weight among the three, but SIGLENS uses a simplified fixed cutoff instead of that test. In the formal test, the cutoff changes with the comparison period and the sample size. It is not used to decide direction.
 
 ## Watch out for
 

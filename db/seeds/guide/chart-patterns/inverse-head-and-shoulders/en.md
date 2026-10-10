@@ -34,9 +34,9 @@ In the counts of Thomas Bulkowski, who tallied what actually happened after patt
 
 Volume is read differently in the two patterns. In a head and shoulders, falling volume on the right shoulder counts as bearish evidence, but in an inverse head and shoulders it is common and does not count as evidence either way. Bulkowski found that volume is usually heaviest on the left shoulder or head and lighter on the right shoulder, and volume declined over the pattern in 65% of cases. So what matters is whether volume rises at the moment price clears the neckline. A bullish divergence (price and an indicator pointing different ways), where price makes a new low at the head while [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) makes a higher low, adds to the evidence.
 
-## How Siglens finds it
+## How SIGLENS finds it
 
-Siglens checks whether five clear turning points in a row (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) form a left shoulder, high, head, high, and right shoulder. All of these must hold:
+SIGLENS checks whether five clear turning points in a row (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) form a left shoulder, high, head, high, and right shoulder. All of these must hold:
 
 - The left shoulder to the right shoulder spans at least 15 bars. The textbook standard is 20 bars or more, so 15–19-bar patterns are rated lower.
 - The head is at least 1 ATR below both shoulders.
@@ -55,7 +55,7 @@ The invalidation level (the price at which the pattern counts as broken) is the 
 ## Watch out when
 
 - In a strong downtrend, a brief relief rally can look like three troughs. Whether the larger trend points toward a bottom matters as well.
-- If the shoulders differ a lot in depth, the shape has broken down. A gap of more than 10% usually rules out an inverse head and shoulders, and Siglens is stricter, accepting only 5% or less.
+- If the shoulders differ a lot in depth, the shape has broken down. A gap of more than 10% usually rules out an inverse head and shoulders, and SIGLENS is stricter, accepting only 5% or less.
 - If the head is less than 3% of the neckline price below the neckline, the rise after clearing it tends to be small.
 - If only a wick clears the neckline and the close stays below, it is not complete yet.
 - If volume never rises and only shrinks from the right shoulder to the neckline break, the case for the bullish signal is weak.

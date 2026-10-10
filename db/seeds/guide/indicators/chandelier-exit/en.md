@@ -27,22 +27,22 @@ By the formula, the line can also drop when ATR grows or an old high drops out o
 
 ## What it tells you
 
-What follows is the traditional reading from the indicator's creators. Siglens uses it as context for the trend phase, not as a reason to enter.
+What follows is the traditional reading from the indicator's creators. SIGLENS uses it as context for the trend phase, not as a reason to enter.
 
 The most important number is the stop price. For a long position, a close below the stop line becomes the exit criterion. For a short position it is the mirror image: the line sits above price, and a close above it becomes the exit criterion.
 
 When the reference switches from the long stop to the short stop (or the reverse), it becomes a trend-flip marker. It's only a reference marker, and it matters when the direction has just changed, not while the trend continues.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens flags the moment the trend direction has just flipped. It doesn't flag anything while the trend is simply continuing.
+SIGLENS flags the moment the trend direction has just flipped. It doesn't flag anything while the trend is simply continuing.
 
 - Stop lines: both stop lines are calculated on every bar from the last 22 bars' high and low and 3 times ATR(22).
 - Up to down: while reading the trend as up, a close below the long stop switches it to down.
 - Down to up: while reading it as down, a close above the short stop switches it to up.
 - Flip marker: flagged only when this switch happened within the last 3 bars.
 
-When Siglens tested these flips as entry signals, returns after the flip did not clearly improve. That is the expected result for a line that trails behind ATR, and it means the indicator wasn't built for entries in the first place. So it is read only as an exit line and a reference for trend phase.
+When SIGLENS tested these flips as entry signals, returns after the flip did not clearly improve. That is the expected result for a line that trails behind ATR, and it means the indicator wasn't built for entries in the first place. So it is read only as an exit line and a reference for trend phase.
 
 Whether the stop distance is wide or narrow for current volatility is checked alongside ATR or other volatility indicators. Whether a flip marker is a real trend change or noise inside a range is judged with trend-phase indicators.
 

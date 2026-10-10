@@ -75,7 +75,7 @@ describe('홈 generateMetadata', () => {
             const meta = await load(locale);
 
             // `absolute`여야 한다 — 문자열로 돌려주면 루트 레이아웃의
-            // `title.template`(`%s | SIGLENS`)이 먹는다. 마스터의 홈은 title을
+            // `title.template`(ko `%s | 시그렌즈`)이 먹는다. 마스터의 홈은 title을
             // 아예 반환하지 않아 레이아웃 `default`가 그대로 나갔고(템플릿
             // 미적용), 카탈로그로 옮기며 문자열을 돌려주는 순간 v0.48.0에서
             // 일부러 뗀 접미사가 조용히 돌아왔다.

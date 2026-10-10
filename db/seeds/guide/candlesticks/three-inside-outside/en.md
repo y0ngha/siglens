@@ -34,9 +34,9 @@ Thomas Bulkowski tallied what actually happened after patterns across decades of
 
 The bullish versions did better than the bearish ones. Bulkowski said results were best when a pullback against the larger trend ended and that trend resumed. A three inside up during a pullback within an uptrend is one example.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for a harami or engulfing pattern followed by a third bar that takes one more step in the same direction. It checks only the shape of the three bars, not the preceding trend.
+SIGLENS looks for a harami or engulfing pattern followed by a third bar that takes one more step in the same direction. It checks only the shape of the three bars, not the preceding trend.
 
 - Three inside: the first body is at least 60% of its own high-to-low range, and the second body sits inside the first. The third bar closes beyond the first bar's open (above for up, below for down).
 - Three outside: the second body covers the first body, and the third bar closes beyond the second bar's close. The length of the first body is not considered.

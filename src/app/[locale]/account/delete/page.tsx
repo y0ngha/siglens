@@ -9,8 +9,8 @@ import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { Spinner } from '@/shared/ui/Spinner';
 import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { SITE_NAME } from '@/shared/lib/seo';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { brandName } from '@/shared/lib/brandName';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
 /**
@@ -31,7 +31,7 @@ export async function generateMetadata({
     });
     return {
         title: tSeo('accountDeleteTitle'),
-        description: tSeo('accountDeleteFullTitle', { v0: SITE_NAME }),
+        description: tSeo('accountDeleteFullTitle', { v0: brandName(locale) }),
         alternates: { canonical: localeCanonical(locale, '/account/delete') },
         openGraph: { url: localeCanonical(locale, '/account/delete') },
         robots: { index: false, follow: false },

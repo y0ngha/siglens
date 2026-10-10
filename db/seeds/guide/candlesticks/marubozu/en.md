@@ -30,16 +30,16 @@ Where Bulkowski did find good results was the opposite-color case:
 - A bearish marubozu inside an uptrend, followed by a close above its high: 2nd-best performer among common bullish continuation candles, with an average rise of 4.39% ten days later.
 - A bullish marubozu inside a downtrend, followed by a close below its low: 2nd-best performer among common bearish continuation candles, with an average drop of 3.55% ten days later.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for a bar with almost no wicks, where the body fills nearly the whole bar.
+SIGLENS looks for a bar with almost no wicks, where the body fills nearly the whole bar.
 
 - The body is at least 90% of its own high-to-low range.
 - A bullish bar is a bullish marubozu; a bearish bar is a bearish marubozu.
 - Only the bar's shape is checked, not the preceding trend.
 
-A marubozu against the trend is usually a brief pullback rather than a sign that the trend is turning. If a later close moves above that bar's high (a bearish bar in an uptrend) or below its low (a bullish bar in a downtrend), Siglens reads the original trend as resuming. Until such a close appears, it holds off.
+A marubozu against the trend is usually a brief pullback rather than a sign that the trend is turning. If a later close moves above that bar's high (a bearish bar in an uptrend) or below its low (a bullish bar in a downtrend), SIGLENS reads the original trend as resuming. Until such a close appears, it holds off.
 
 ## Watch out for
 
-Several marubozu in a row can mean price has already moved a lot. In that case, check [RSI](/guide/indicators/rsi) for overbought (risen so far it may pull back) or oversold (fallen so far it may bounce) conditions. A marubozu on low volume may be a shape that appeared by chance because trading was thin. When [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction, Siglens does not count it as a signal.
+Several marubozu in a row can mean price has already moved a lot. In that case, check [RSI](/guide/indicators/rsi) for overbought (risen so far it may pull back) or oversold (fallen so far it may bounce) conditions. A marubozu on low volume may be a shape that appeared by chance because trading was thin. When [ADX](/guide/indicators/adx), which measures trend strength, is below 20 and the market has no clear direction, SIGLENS does not count it as a signal.

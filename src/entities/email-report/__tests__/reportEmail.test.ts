@@ -109,7 +109,7 @@ describe('buildReportEmail', () => {
         const email = buildReportEmail(INPUT);
 
         expect(email.to).toBe('member@example.com');
-        expect(email.subject).toBe('subject(SIGLENS,10월 8일)');
+        expect(email.subject).toBe('subject(시그렌즈,10월 8일)');
     });
 
     it('원클릭 수신거부 헤더를 단다', () => {

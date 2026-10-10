@@ -304,7 +304,7 @@ describe('ma demo', () => {
     const d = demo('ma');
     const [short, long] = series(d);
 
-    it('shows MA20 and MA50 (the Siglens golden-cross pair)', () => {
+    it('shows MA20 and MA50 (the SIGLENS golden-cross pair)', () => {
         expect([short.label, long.label]).toEqual(['MA20', 'MA50']);
     });
 

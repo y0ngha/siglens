@@ -28,22 +28,22 @@ Alex Spiroglou proposed it in his 2022 paper "MACD-V: Volatility Normalised Mome
 
 ## What it tells you
 
-What follows is the traditional reading Spiroglou proposed. Siglens uses it as context about the momentum state, not as a trading signal.
+What follows is the traditional reading Spiroglou proposed. SIGLENS uses it as context about the momentum state, not as a trading signal.
 
 - ±150: the outer boundary that values reach only rarely. Most values (about 95%) move inside these lines; +150 or above is read as overbought (risen too far), and −150 or below as oversold (fallen too far). Crossing −150 from below is read as oversold relief; crossing +150 from above as a turn down after being overbought.
 - ±50 marks the boundary between weak and strong momentum, and the zero line is where momentum changes direction.
 - Momentum stages: Spiroglou reads the value together with its direction and sorts it into stages such as ranging, rallying, rebounding, retracing, reversing and risk. It does not split things into just buy or sell.
 - Asymmetry by trend: when Spiroglou used the 200-day EMA as the trend reference, pullbacks (temporary dips within an uptrend) in an uptrend with price above it often ended near −100 instead of −150.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens flags the stretches where MACD-V moves outside ±150.
+SIGLENS flags the stretches where MACD-V moves outside ±150.
 
 - Calculation: the 12, 26, 9 settings, divided by the 26-day ATR.
 - Flag: when the value enters the zone at or above +150 or at or below −150.
 - Interpretation: it pays particular attention to oversold relief (crossing up through −150) and overbought relief (crossing down through +150).
 
-When Siglens checked two years of data, simply entering these zones did not clearly change subsequent returns. The original paper classifies momentum states rather than claiming profits, so the two do not conflict. Siglens therefore uses MACD-V only as context that describes the momentum state alongside trend direction, and gives it weight only when it overlaps with other signals.
+When SIGLENS checked two years of data, simply entering these zones did not clearly change subsequent returns. The original paper classifies momentum states rather than claiming profits, so the two do not conflict. SIGLENS therefore uses MACD-V only as context that describes the momentum state alongside trend direction, and gives it weight only when it overlaps with other signals.
 
 ## Watch out for
 

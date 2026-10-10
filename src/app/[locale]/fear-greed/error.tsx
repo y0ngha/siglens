@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName } from '@/shared/lib/brandName';
 import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface FearGreedErrorProps {
@@ -20,6 +21,7 @@ interface FearGreedErrorProps {
  */
 export default function FearGreedError({ error, reset }: FearGreedErrorProps) {
     const t = useTranslations('app.fear-greed');
+    const locale = useCurrentLocale();
     return (
         <RouteErrorView
             error={error}
@@ -29,7 +31,7 @@ export default function FearGreedError({ error, reset }: FearGreedErrorProps) {
             title={t('error.e533f3')}
             body={t('error.4749c9')}
             retryLabel={t('error.0c767c')}
-            homeLabel={t('error.eb2523', { v0: SITE_NAME })}
+            homeLabel={t('error.eb2523', { v0: brandName(locale) })}
         />
     );
 }

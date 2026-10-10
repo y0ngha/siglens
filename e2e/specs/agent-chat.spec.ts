@@ -4,7 +4,7 @@ import { AUTH_STORAGE_STATE } from '../support/authUser';
 const AI = 'http://ai.localhost:4300';
 const MAIN = 'http://localhost:4300';
 
-test.describe('SiglensAI agent chat', () => {
+test.describe('SIGLENS AI agent chat', () => {
     test.use({ storageState: AUTH_STORAGE_STATE }); // main-host session only
 
     test('메인 로그인 세션이 ai 호스트로 SSO 핸드오프되고, 대화·툴·저장·재생성이 동작한다', async ({
@@ -126,7 +126,7 @@ test.describe('SiglensAI agent chat', () => {
     // (not a `LocaleLink`) pointing at the ai host — a plain HTML fetch of the
     // main host is enough to prove it is wired, no `ai.localhost` DNS needed.
     // The logo lockup shows only "AI"; the product name is its accessible name.
-    test('메인 호스트 헤더에 ai 호스트로 나가는 SiglensAI 링크가 있다', async ({
+    test('메인 호스트 헤더에 ai 호스트로 나가는 SIGLENS AI 링크가 있다', async ({
         request,
     }) => {
         const res = await request.get(`${MAIN}/`);
@@ -137,10 +137,10 @@ test.describe('SiglensAI agent chat', () => {
         )?.[0];
         expect(anchor).toBeDefined();
         expect(anchor).toContain('aria-label="SIGLENS AI Beta"');
-        // The home hero's one-line SiglensAI teaser also points at the ai host.
+        // The home hero's one-line AI teaser (ko `시그렌즈 AI`) also points at the ai host.
         expect(html).toMatch(
             new RegExp(
-                `<a[^>]+href="${AI}/?"[^>]*>(?:(?!</a>).)*SIGLENS AI`,
+                `<a[^>]+href="${AI}/?"[^>]*>(?:(?!</a>).)*시그렌즈 AI`,
                 's'
             )
         );
@@ -218,7 +218,7 @@ test.describe('SiglensAI agent chat', () => {
     });
 });
 
-test.describe('SiglensAI SEO', () => {
+test.describe('SIGLENS AI SEO', () => {
     const GOOGLEBOT =
         'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
 
@@ -234,7 +234,7 @@ test.describe('SiglensAI SEO', () => {
         const html = await res.text();
         expect(html).not.toContain('http-equiv="refresh"');
         expect(html).toMatch(
-            /<title>주식·코인 AI 챗봇[^<]+\| SIGLENS AI<\/title>/
+            /<title>주식·코인 AI 챗봇[^<]+\| 시그렌즈 AI<\/title>/
         );
         expect(html).toMatch(/<meta name="description" content="[^"]{40,}"/);
         expect(html).toContain('<meta name="robots" content="index, follow"/>');

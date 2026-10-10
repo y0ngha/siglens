@@ -10,7 +10,7 @@ import {
 
 /**
  * Reads the `siglens_guest` cookie without minting one. Used by routes that
- * must NOT be able to issue a guest id on their own (SiglensAI's chat stream
+ * must NOT be able to issue a guest id on their own (SIGLENS AI's chat stream
  * route — see `proxy.ts`'s `handleAiHost`, which mints the cookie on page
  * view instead) so that only a real browser page load can create a guest
  * identity. Returns `null` for an unsigned/legacy or forged value, same as a

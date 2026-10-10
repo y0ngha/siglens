@@ -85,6 +85,13 @@ export async function loadGuideHubSeoCopy(
                     return t('categorySeoDescriptionIndicators', { count });
                 case 'strategies':
                     return t('categorySeoDescriptionStrategies', { count });
+                default: {
+                    // 분류가 추가되면 여기서 컴파일 에러가 난다 — 문구 키를 함께 추가해야 한다.
+                    const exhaustive: never = category;
+                    throw new Error(
+                        `Unhandled guide category: ${String(exhaustive)}`
+                    );
+                }
             }
         },
     };

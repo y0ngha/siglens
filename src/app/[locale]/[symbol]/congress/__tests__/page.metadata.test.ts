@@ -211,7 +211,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.openGraph?.siteName).toBe('SIGLENS');
+        expect(metadata.openGraph?.siteName).toBe('시그렌즈');
     });
 });
 

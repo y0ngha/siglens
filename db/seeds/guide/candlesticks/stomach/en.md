@@ -9,7 +9,7 @@ faq:
   - q: What does above the stomach look like?
     a: A long bearish bar followed by a bullish bar that opens at or above the midpoint of the first body and closes above it. Read as a bullish reversal after a decline.
   - q: What if it overlaps another two-bar pattern?
-    a: Siglens checks above and below the stomach last. If the same pair of bars already fits another name, such as engulfing, harami or piercing, it uses that name.
+    a: SIGLENS checks above and below the stomach last. If the same pair of bars already fits another name, such as engulfing, harami or piercing, it uses that name.
 ---
 
 ## How it looks
@@ -30,16 +30,16 @@ The bullish version clearly did better than the bearish one. Above the stomach w
 
 These figures were measured on patterns that came after a trend (above the stomach after a decline, below the stomach after an advance). The same shape with no trend before it is just two bars wobbling in a sideways market.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks for a long bar followed by an opposite-color bar that starts beyond the halfway point of the first body.
+SIGLENS looks for a long bar followed by an opposite-color bar that starts beyond the halfway point of the first body.
 
 - The first body is at least 60% of its own high-to-low range.
 - The second bar is the opposite color.
 - The second bar opens beyond the midpoint of the first body: at or above it for above the stomach, at or below it for below the stomach.
 - The preceding trend is not checked.
 
-Because Siglens does not check the trend, the figures above cannot be carried over as-is to what Siglens detects. Check on the chart what trend came before.
+Because SIGLENS does not check the trend, the figures above cannot be carried over as-is to what SIGLENS detects. Check on the chart what trend came before.
 
 ## Watch out for
 

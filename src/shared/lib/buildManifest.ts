@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
 import {
     LOCALE_HREFLANG,
     localePath,
@@ -36,8 +36,8 @@ export function buildManifest(
     ];
     return {
         id: home,
-        name: t('name', { v0: SITE_NAME }),
-        short_name: SITE_NAME,
+        name: t('name', { v0: brandName(locale) }),
+        short_name: brandName(locale),
         description: t('description'),
         lang: LOCALE_HREFLANG[locale],
         dir: 'ltr',

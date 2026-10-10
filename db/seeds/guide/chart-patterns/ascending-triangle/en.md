@@ -9,7 +9,7 @@ faq:
   - q: Does an ascending triangle always break upward?
     a: No. In Thomas Bulkowski's tabulation, 63% broke upward and the rest broke down. Judge the direction only after a close moves beyond one of the lines.
   - q: How do I tell an ascending triangle from a double or triple top?
-    a: Both have highs stalling at the same price, but in an ascending triangle the lows keep rising. When the lows between the highs rise by at least 1.5 times ATR (the average range of recent bars), Siglens treats it as a triangle and excludes it from double and triple tops.
+    a: Both have highs stalling at the same price, but in an ascending triangle the lows keep rising. When the lows between the highs rise by at least 1.5 times ATR (the average range of recent bars), SIGLENS treats it as a triangle and excludes it from double and triple tops.
   - q: When is a breakout confirmed?
     a: Many traders look for a close above the flat resistance line, and give the signal more weight when volume rises with it.
 ---
@@ -32,9 +32,9 @@ The part to be careful with is the remainder that broke down. Ascending triangle
 
 A breakout is considered strongest when it comes 50% to 75% of the way from the start of the triangle to its apex. Volume on the breakout bar at least 50% above average, and a pullback after the breakout that holds at the old resistance line, add support. If the lows rise faster and faster, it is read as buying pressure growing.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When the upper line is nearly flat, only the lower line rises, and the gap narrows, it treats the shape as an ascending triangle.
+SIGLENS connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When the upper line is nearly flat, only the lower line rises, and the gap narrows, it treats the shape as an ascending triangle.
 
 - The upper line must be flat: over the whole pattern it must move less than the smaller of 0.75 times ATR and 1% of price.
 - The lower line must rise at least 1.5 times ATR.
@@ -46,7 +46,7 @@ Siglens connects clearly turning highs and lows (swings: turning points where pr
 
 Following the textbook, the direction is set upward for the calculation. The measured target is the resistance line plus the starting width (the pattern's height), and the conservative target adds half the height. The invalidation level, the price at which the pattern is considered broken, is the last low that touched the lower line.
 
-If the close breaks above resistance by more than 0.25 times ATR and the last close then returns inside the triangle, Siglens marks it as a "failed breakout". The shape is still there, but because price broke out once and came back, the breakout is not treated as confirmed.
+If the close breaks above resistance by more than 0.25 times ATR and the last close then returns inside the triangle, SIGLENS marks it as a "failed breakout". The shape is still there, but because price broke out once and came back, the breakout is not treated as confirmed.
 
 ## Watch out for
 

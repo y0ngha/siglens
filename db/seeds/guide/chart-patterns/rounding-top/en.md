@@ -9,7 +9,7 @@ faq:
   - q: Does a rounding top always lead to a decline?
     a: No. The dome shape alone is not a bearish signal. It is confirmed only when a close falls below the lower rim, and Thomas Bulkowski said that cases breaking out above the dome also performed well.
   - q: How is a rounding top different from a double top?
-    a: A double top has two distinct sharp highs, while a rounding top has highs joined in one gentle curve. Siglens treats it as rounded only if the curve explains at least 60% of the movement in the closes.
+    a: A double top has two distinct sharp highs, while a rounding top has highs joined in one gentle curve. SIGLENS treats it as rounded only if the curve explains at least 60% of the movement in the closes.
   - q: Does price usually fall all the way to the target after the breakdown?
     a: Rarely. In Thomas Bulkowski's tabulation, only 14% of rounding tops that broke downward reached their target. So it is more realistic to treat about half of that (the conservative target) as the reference.
 ---
@@ -24,9 +24,9 @@ Buying pressure fades slowly and selling pressure builds slowly, so control chan
 
 The pattern completes only when a close falls below the lower of the two rims. Until then it is just a candidate. A dome does not always lead to a decline, either: in Bulkowski's tabulation, cases that broke upward actually performed better (went further after the breakout). He said taller patterns and heavier volume on the rim break both went with better performance. The two rims act as support zones, where a falling price tends to stall.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens takes two clearly turned lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the dome. It fits an upside-down U curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding top. The conditions:
+SIGLENS takes two clearly turned lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the dome. It fits an upside-down U curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding top. The conditions:
 
 - The two rims must be at least 30 bars apart.
 - The rim prices must be within 5% of each other and no more than 25% of the dome's height apart.

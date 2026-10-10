@@ -114,7 +114,7 @@ const NAMED_ENTITIES: Record<string, string> = {
  * 네이버는 검색어와 일치하는 구간을 `<b>` 태그로 감싸고 본문을 HTML 엔티티로 인코딩해
  * 보낸다. 그대로 저장하면 제목에 마크업이 섞이고, AI 분석 입력에도 태그가 들어간다.
  *
- * 소비자는 네이버만이 아니다 — SiglensAI `web_search`(`app/api/ai/chat/tools/webSearch.ts`)가
+ * 소비자는 네이버만이 아니다 — SIGLENS AI `web_search`(`app/api/ai/chat/tools/webSearch.ts`)가
  * Brave 결과(`<strong>` 하이라이트, `&#x27;` 같은 숫자 참조)도 이 함수로 정리한다. 네이버
  * 전용으로 동작을 바꾸면 Brave 경로도 함께 바뀐다.
  */
@@ -174,7 +174,7 @@ function credentials(): NaverCredentials | null {
 }
 
 /**
- * SiglensAI `web_search` 전용 애플리케이션(`NAVER_AI_CLIENT_*`). 뉴스 수집용
+ * SIGLENS AI `web_search` 전용 애플리케이션(`NAVER_AI_CLIENT_*`). 뉴스 수집용
  * `NAVER_CLIENT_*`와 **일부러 분리**한다 — 에이전트 검색량이 `/news/kr` 수집의
  * 일일 쿼터를 깎아 먹거나, 한쪽 키 회수가 다른 쪽을 같이 죽이면 안 된다.
  */

@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName } from '@/shared/lib/brandName';
 import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface RootErrorProps {
@@ -20,6 +21,7 @@ interface RootErrorProps {
  */
 export default function RootError({ error, reset }: RootErrorProps) {
     const t = useTranslations('app.home');
+    const locale = useCurrentLocale();
     return (
         <RouteErrorView
             error={error}
@@ -29,7 +31,7 @@ export default function RootError({ error, reset }: RootErrorProps) {
             title={t('error.80dac7')}
             body={t('error.32c8a0')}
             retryLabel={t('error.0c767c')}
-            homeLabel={t('error.eb2523', { v0: SITE_NAME })}
+            homeLabel={t('error.eb2523', { v0: brandName(locale) })}
         />
     );
 }

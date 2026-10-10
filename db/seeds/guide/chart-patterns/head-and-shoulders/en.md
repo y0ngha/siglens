@@ -37,9 +37,9 @@ So the measured target of a head and shoulders is better seen as a distance pric
 
 Volume is read differently too. In a head and shoulders, shrinking volume while the right shoulder forms is itself evidence that buying has weakened. If volume does not shrink on the right shoulder, the signal is rated lower. A bearish divergence (price and an indicator pointing different ways), where price makes a new high at the head while [RSI](/guide/indicators/rsi) or [MACD](/guide/indicators/macd) makes a lower high, adds to the evidence. A head and shoulders that forms in the middle of a strong advance, with no clear resistance overhead, is less reliable.
 
-## How Siglens finds it
+## How SIGLENS finds it
 
-Siglens checks whether five clear turning points in a row (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) form a left shoulder, low, head, low, and right shoulder. All of these must hold:
+SIGLENS checks whether five clear turning points in a row (swings: highs and lows where price reversed more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) form a left shoulder, low, head, low, and right shoulder. All of these must hold:
 
 - The left shoulder to the right shoulder spans at least 15 bars. The textbook standard is 20 bars or more, so 15–19-bar patterns are rated lower.
 - The head is at least 1 ATR above both shoulders.
@@ -58,7 +58,7 @@ The invalidation level (the price at which the pattern counts as broken) is the 
 ## Watch out when
 
 - A temporary correction inside a strong uptrend can look like three peaks. That is why the larger trend is read alongside it.
-- If the shoulders are very different in height, the shape has broken down. A gap of more than 10% usually rules out a head and shoulders, and Siglens only accepts 5% or less.
+- If the shoulders are very different in height, the shape has broken down. A gap of more than 10% usually rules out a head and shoulders, and SIGLENS only accepts 5% or less.
 - If the distance from the head to the neckline is less than 3% of the neckline price, the move afterward is likely to be small too.
 - A brief intraday break of the neckline that comes back is not confirmation.
 - If volume does not rise on the neckline break, the signal is rated lower.

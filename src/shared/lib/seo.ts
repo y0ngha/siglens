@@ -13,6 +13,8 @@ import { type AssetClass } from '@/shared/config/marketProfile/types';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { truncateWithEllipsis } from '@/shared/lib/truncate';
+// 순환 import(brandName.ts → seo.ts 상수)지만 양쪽 모두 호출 시점에만 상대를 읽어 안전하다.
+import { brandName, brandTitle } from '@/shared/lib/brandName';
 
 export interface BreadcrumbItem {
     name: string;
@@ -524,7 +526,8 @@ export function clampSeoDescription(text: string): string {
  *
  * Google 데스크톱 title 예산은 약 58~60 폭단위다. 글자 수로 재면 한글 제목의
  * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 기술적 신호, 지지선·저항선 | SIGLENS`은
- * 42글자지만 58 폭단위로 이미 경계에 있다(2026-07-26 실측 — 이 함수로 직접 측정).
+ * 42글자지만 58 폭단위로 이미 경계에 있다(2026-07-26 실측 — 이 함수로 직접 측정, 당시 ko
+ * 접미사는 `| SIGLENS`였고 지금의 `| 시그렌즈`는 폭단위 1이 더 넓다).
  *
  * 코드포인트 기준으로 순회해 서로게이트 페어를 쪼개지 않는다
  * ({@link clampSeoDescription}과 동일한 방침).
@@ -1167,7 +1170,7 @@ export function buildSymbolSeoContent(
     return {
         ticker,
         title,
-        fullTitle: `${title} | ${SITE_NAME}`,
+        fullTitle: brandTitle(title, opts.locale),
         description: clampSeoDescription(
             buildSymbolDescription(t, displayName, opts.sector)
         ),
@@ -1266,8 +1269,8 @@ export function buildWebPageJsonLd(params: {
  * Next.js Metadata 형태로 매핑한다. 동일한 구조가 8 곳에 중복됐던 것을 제거.
  *
  * `title`은 `{ absolute: title }`로 반환해 루트 레이아웃의 `title.template`
- * (`%s | SIGLENS` 자동 접미사)을 무시한다 — `| SIGLENS` 8글자(폭단위 8)를
- * 2,247개 URL 전부에서 검색 의도 카피에 되돌려준다. 브랜드 검색어("siglens")는
+ * (ko `%s | 시그렌즈` · 그 외 `%s | SIGLENS` 자동 접미사)을 무시한다 — 접미사 폭(앞 공백 포함
+ * ko 11 · 그 외 10 폭단위)을 2,247개 URL 전부에서 검색 의도 카피에 되돌려준다. 브랜드 검색어("siglens")는
  * 이미 자연 순위 2.0위라 title 폭을 추가로 쓸 이유가 없다. `/backtesting`이
  * 같은 `absolute` 메커니즘을 쓰지만 그쪽은 반대로 `fullTitle`(브랜드 포함)을
  * 넣는다 — 단일 페이지라 폭 제약이 이만큼 타이트하지 않고 브랜드 노출도 원해서다.
@@ -1299,7 +1302,7 @@ export function symbolMetadataFromSeo(
         }),
         openGraph: {
             type: 'website',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title: fullTitle,
             description,
             url: localizedUrl,
@@ -1332,7 +1335,8 @@ export function symbolMetadataFromSeo(
     };
 }
 
-// 홈(SIGLENS → SITE_URL)이 첫 항목으로 자동 삽입된다.
+// 홈(`brandName(locale)` → SITE_URL)이 첫 항목으로 자동 삽입된다 — 가시 브레드크럼
+// (`shared/ui/Breadcrumb`·`SymbolLayoutHeader`)의 홈 마디와 같은 표기다.
 // schema.org BreadcrumbList의 `item`은 절대 URL이어야 하므로
 // 상대 경로로 들어온 trail은 SITE_URL prefix를 붙여 절대화한다.
 //
@@ -1348,7 +1352,7 @@ export function buildBreadcrumbJsonLd(
     locale: Locale
 ): Record<string, unknown> {
     const items: BreadcrumbItem[] = [
-        { name: SITE_NAME, url: SITE_URL },
+        { name: brandName(locale), url: SITE_URL },
         ...trail,
     ];
     return {
@@ -1393,7 +1397,7 @@ export function buildFaqJsonLd(
 
 export const BACKTESTING_PATH = '/backtesting';
 export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;
-// Root layout template appends "| SIGLENS" — exclude brand name to prevent duplication
+// Root layout template appends the brand suffix ("| 시그렌즈" in ko) — exclude brand name to prevent duplication
 export function backtestingTitle(t: SeoTranslator): string {
     return t('backtesting.title');
 }
@@ -1432,7 +1436,7 @@ export function buildSymbolFinancialsSeoContent(
         core: t('symbol.financials.titleCore'),
         tail: t('symbol.financials.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1500,7 +1504,7 @@ export function buildSymbolCongressSeoContent(
         core: t('symbol.congress.titleCore'),
         tail: t('symbol.congress.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1566,7 +1570,7 @@ export function buildSymbolFundamentalSeoContent(
         core: t('symbol.fundamental.titleCore'),
         tail: t('symbol.fundamental.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1656,7 +1660,7 @@ export function buildSymbolOptionsSeoContent(
               locale: opts.locale,
               core: t('symbol.options.titleCore'),
           });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     return {
         ticker: upper,
         title,
@@ -1713,7 +1717,7 @@ export function buildSymbolNewsSeoContent(
         core: t('symbol.news.titleCore'),
         tail: t('symbol.news.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1784,7 +1788,7 @@ export function buildSymbolOverallSeoContent(
         core: t('symbol.overall.titleCore'),
         tail: t('symbol.overall.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     const subject = opts.displayName ?? upper;
     return {
         ticker: upper,
@@ -1881,7 +1885,7 @@ export function buildCryptoSymbolSeoContent(
     return {
         ticker,
         title,
-        fullTitle: `${title} | ${SITE_NAME}`,
+        fullTitle: brandTitle(title, opts.locale),
         description: clampSeoDescription(
             buildCryptoSymbolDescription(t, displayName)
         ),
@@ -1950,7 +1954,7 @@ export function buildCryptoSymbolNewsSeoContent(
         core: t('symbol.cryptoNews.titleCore'),
         tail: t('symbol.cryptoNews.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     return {
         ticker,
         title,
@@ -2019,7 +2023,7 @@ export function buildCryptoSymbolOverallSeoContent(
         core: t('symbol.cryptoOverall.titleCore'),
         tail: t('symbol.cryptoOverall.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     return {
         ticker,
         title,
@@ -2084,7 +2088,7 @@ export function buildCryptoSymbolFearGreedSeoContent(
         core: t('symbol.fearGreed.titleCore'),
         tail: t('symbol.fearGreed.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     return {
         ticker,
         title,
@@ -2154,7 +2158,7 @@ export function buildSymbolFearGreedSeoContent(
         core: t('symbol.fearGreed.titleCore'),
         tail: t('symbol.fearGreed.titleTail'),
     });
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, opts.locale);
     return {
         ticker: upper,
         title,
@@ -2228,7 +2232,7 @@ export function buildSymbolPositionSeoContent(
     return {
         ticker: upper,
         title,
-        fullTitle: `${title} | ${SITE_NAME}`,
+        fullTitle: brandTitle(title, opts.locale),
         description: clampSeoDescription(
             t('position.description', { v0: displayName })
         ),

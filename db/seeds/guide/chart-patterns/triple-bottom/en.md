@@ -11,12 +11,12 @@ faq:
   - q: Is it a triple bottom if the middle low is much lower?
     a: No. If the middle low is clearly lower than the other two, it is treated as an inverse head and shoulders.
   - q: When is a triple bottom considered complete?
-    a: When a close finishes above the neckline (for Siglens, the higher of the two highs). A wick that clears it intraday is not a confirmation.
+    a: When a close finishes above the neckline (for SIGLENS, the higher of the two highs). A wick that clears it intraday is not a confirmation.
 ---
 
 ## How it looks
 
-Price falls to a similar low and bounces three times. Two highs form between the lows, and the line connecting those two highs is the neckline. It is a [double bottom](/guide/chart-patterns/double-bottom) with one more low added. Instead of a sloped line through the two highs, Siglens draws a horizontal line at the higher of the two and uses it as the neckline.
+Price falls to a similar low and bounces three times. Two highs form between the lows, and the line connecting those two highs is the neckline. It is a [double bottom](/guide/chart-patterns/double-bottom) with one more low added. Instead of a sloped line through the two highs, SIGLENS draws a horizontal line at the higher of the two and uses it as the neckline.
 
 ## What it tells you
 
@@ -30,16 +30,16 @@ The pattern completes only when a close finishes above the neckline. It counts a
 
 In the tabulation of bull-market cases by Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, 74% of triple bottoms reached their target.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens checks whether the three most recent clearly turned lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) sit at a similar price. Once a swing is set, it does not change as more bars arrive. The conditions:
+SIGLENS checks whether the three most recent clearly turned lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) sit at a similar price. Once a swing is set, it does not change as more bars arrive. The conditions:
 
 - The gap between the highest and lowest of the three lows must be within the smaller of 1 times ATR and 3% of the average price.
 - Neighboring lows must be at least 10 bars apart, so the whole pattern spans at least 21 bars.
 - Between the first and last low, no bar may fall below the lows by more than 0.25 times ATR.
 - The neckline is a horizontal line at the higher of the two highs.
 - The height (from the average low to the neckline) must be at least 2.5 times ATR and also at least a set share of price (0.5% on 5- to 30-minute bars, 1% on 1- to 4-hour bars, 3% on daily bars).
-- If the highs between the lows drop clearly toward the lows (by 1.5 times ATR or more), Siglens treats it as a [descending triangle](/guide/chart-patterns/descending-triangle), not a triple bottom.
+- If the highs between the lows drop clearly toward the lows (by 1.5 times ATR or more), SIGLENS treats it as a [descending triangle](/guide/chart-patterns/descending-triangle), not a triple bottom.
 - If the third low is older than the last 20 bars or half the pattern's length, whichever is longer, it is not shown.
 
 The measured target adds the pattern's height to the neckline, and the conservative target adds half the height. The target is the price reached if the move repeats the pattern's height; it is a reference value because past moves often went that far, not a promise that price will get there. The invalidation level is the price at which the pattern is considered broken: the lowest of the three lows. If a close falls below it, the pattern is treated as broken.

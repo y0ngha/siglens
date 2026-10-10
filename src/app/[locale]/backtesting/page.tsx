@@ -30,6 +30,7 @@ import backtestData from '@/entities/backtest-case/data/data.json';
 import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { brandName, brandTitle } from '@/shared/lib/brandName';
 
 // JSON import typed as any; validateBacktestData ensures shape at load time
 const data = validateBacktestData(backtestData as unknown);
@@ -55,7 +56,7 @@ export async function generateMetadata({
     });
     const title = backtestingTitle(tSeo);
     const description = backtestingDescription(tSeo);
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, locale);
     const ogLocale = localeOpenGraph(locale);
     return {
         title: { absolute: fullTitle },
@@ -66,7 +67,7 @@ export async function generateMetadata({
             title: fullTitle,
             description,
             url: localizedAbsoluteUrl(BACKTESTING_URL, locale),
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             ...ogLocale,
             type: 'website',
             images: [
@@ -74,7 +75,7 @@ export async function generateMetadata({
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: tSeo('backtestingOgAlt', { v0: SITE_NAME }),
+                    alt: tSeo('backtestingOgAlt', { v0: brandName(locale) }),
                 },
             ],
         },
@@ -112,7 +113,7 @@ function buildBacktestingJsonLd(
 ) {
     const title = backtestingTitle(t);
     const description = backtestingDescription(t);
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, locale);
     return {
         webPageJsonLd: {
             // 손으로 다시 짜지 않는다 — `@id`·`url`의 로케일 접두사와
@@ -131,7 +132,7 @@ function buildBacktestingJsonLd(
         datasetJsonLd: {
             '@context': 'https://schema.org',
             '@type': 'Dataset',
-            name: tPage('datasetName', { v0: SITE_NAME }),
+            name: tPage('datasetName', { v0: brandName(locale) }),
             description,
             // 로케일별 URL — 같은 Dataset을 네 URL이 각자 자기 주소로 선언해야
             // 크롤러가 언어 클러스터를 하나로 접지 않는다.

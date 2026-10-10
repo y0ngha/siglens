@@ -4,6 +4,7 @@ import {
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
     SITE_NAME,
+    SITE_NAME_KO,
     type SeoTranslator,
 } from '@/shared/lib/seo';
 
@@ -14,8 +15,14 @@ import {
  * 것은 접미사가 붙은 쪽이라 가드가 통째로 무의미해진다 — 옛 꼬리표로 만든
  * `한국 증시 뉴스 — 최신 시장 흐름과 AI 다이제스트`는 그 자체로는 47이라 상한 55를
  * 통과하지만, `| SIGLENS`(폭 10)까지 더하면 57로 넘는다.
+ *
+ * 접미사는 로케일마다 다르다(ko `| 시그렌즈` 폭 11, 그 외 `| SIGLENS` 폭 10 —
+ * `brandTitle`). 이 함수는 로케일을 받지 않으므로 넓은 쪽으로 예산을 잡는다.
  */
-const SITE_SUFFIX_WIDTH = seoTitleWidth(` | ${SITE_NAME}`);
+const SITE_SUFFIX_WIDTH = Math.max(
+    seoTitleWidth(` | ${SITE_NAME}`),
+    seoTitleWidth(` | ${SITE_NAME_KO}`)
+);
 
 /**
  * Single source for the category page title string.
@@ -33,7 +40,7 @@ export function buildCategoryPageTitle(
      * 꼬리표를 `— 최신 시장 흐름과 AI 다이제스트`에서 줄였다.
      *
      * 라벨 길이가 카테고리마다 달라서(`미국 마켓 아티클` vs `미국 주식`) 긴 꼬리표를
-     * 붙이면 폭 예산을 넘는 조합이 생긴다. 실측(접미사 `| SIGLENS` 포함):
+     * 붙이면 폭 예산을 넘는 조합이 생긴다. 실측(접미사 `| SIGLENS` 포함, ko 접미사는 폭이 1 더 넓다):
      * 옛 꼬리표는 6개 카테고리가 56~64로 **전부** 상한 55를 넘었고, 지금은 45~53이다.
      *
      * clamp도 남겨 둔다 — 나중에 라벨이 더 긴 카테고리가 붙어도 잘려 나가지

@@ -29,9 +29,9 @@ There are three key reference lines.
 - When price that had left the value area comes back inside, it is seen as a move to return to the original range. Traders pass around an "80% rule" that says it often travels all the way across to the opposite edge of the value area, but that is a rule of thumb, not a validated probability.
 - Places with heavy trading (HVN) act as support or resistance where price tends to linger or turn, while places with little trading (LVN) tend to be crossed quickly.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens looks at where price sits relative to the POC, VAH and VAL, and whether a price level with short bars (little trading) is close by. It builds the profile like this:
+SIGLENS looks at where price sits relative to the POC, VAH and VAL, and whether a price level with short bars (little trading) is close by. It builds the profile like this:
 
 - The price range of the calculation window is split into 24 slots, and each bar's volume is shared among the slots its high-to-low span covers.
 - The slot with the most volume is the POC. The value area is grown outward from the POC, up and down, until it holds 70% of total volume.

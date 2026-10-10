@@ -1,7 +1,7 @@
 import type { EmailMessage } from '@/shared/email/types';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
 import {
     SIGNAL_BRIEF_MAX_LABELS,
     type SignalBrief,
@@ -299,7 +299,8 @@ function optionsHtml(
 function sectionHtml(
     section: ReportEmailSection,
     t: ReportEmailTranslator,
-    signalLabel: SignalLabelResolver
+    signalLabel: SignalLabelResolver,
+    brand: string
 ): string {
     const { report } = section;
     const symbol = escapeHtml(report.symbol);
@@ -325,14 +326,15 @@ function sectionHtml(
   ${analysis}
   ${newsHtml(report.news, t)}
   ${optionsHtml(report.options, t)}
-  <p style="margin:20px 0 0;"><a href="${escapeHtml(section.pageUrl)}" style="color:${COLORS.link};font-size:14px;font-weight:600;text-decoration:none;">${escapeHtml(t('viewOnSite', { v0: SITE_NAME }))} →</a></p>
+  <p style="margin:20px 0 0;"><a href="${escapeHtml(section.pageUrl)}" style="color:${COLORS.link};font-size:14px;font-weight:600;text-decoration:none;">${escapeHtml(t('viewOnSite', { v0: brand }))} →</a></p>
 </div>`;
 }
 
 function sectionText(
     section: ReportEmailSection,
     t: ReportEmailTranslator,
-    signalLabel: SignalLabelResolver
+    signalLabel: SignalLabelResolver,
+    brand: string
 ): string {
     const { report, brief } = section;
     const lines = [`■ ${report.symbol}`];
@@ -376,7 +378,7 @@ function sectionText(
             if (report.options.summary) lines.push(report.options.summary);
         }
     }
-    lines.push('', `${t('viewOnSite', { v0: SITE_NAME })}: ${section.pageUrl}`);
+    lines.push('', `${t('viewOnSite', { v0: brand })}: ${section.pageUrl}`);
     return lines.join('\n');
 }
 
@@ -490,16 +492,18 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     const showConfluenceNote =
         input.sections.some(s => s.brief.signals !== null) ||
         input.briefRows.some(r => r.brief.signals !== null);
-    const reason = t('reason', { v0: SITE_NAME });
+    // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`CONVENTIONS.md#I18-11`).
+    const brand = brandName(locale);
+    const reason = t('reason', { v0: brand });
 
     const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head><body style="font-family:${FONT};background:${COLORS.page};color:${COLORS.body};padding:24px 12px;margin:0;">
 <div style="max-width:600px;margin:0 auto;">
   <div style="padding:8px 8px 20px;">
-    <p style="font-size:13px;color:${COLORS.muted};margin:0 0 4px;">${escapeHtml(SITE_NAME)}</p>
+    <p style="font-size:13px;color:${COLORS.muted};margin:0 0 4px;">${escapeHtml(brand)}</p>
     <h1 style="font-size:22px;margin:0 0 8px;color:${COLORS.heading};">${escapeHtml(heading)}</h1>
     <p style="font-size:14px;color:${COLORS.body};margin:0;">${escapeHtml(intro)}</p>
   </div>
-  ${input.sections.map(s => sectionHtml(s, t, input.signalLabel)).join('\n')}
+  ${input.sections.map(s => sectionHtml(s, t, input.signalLabel, brand)).join('\n')}
   ${briefTableHtml(input.briefRows, locale, t, input.signalLabel)}
   <div style="padding:16px 8px;border-top:1px solid ${COLORS.rule};">
     <p style="font-size:12px;line-height:1.6;color:${COLORS.muted};margin:0 0 8px;">${escapeHtml(disclaimer)}</p>
@@ -513,7 +517,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
         intro,
         '',
         ...input.sections.flatMap(s => [
-            sectionText(s, t, input.signalLabel),
+            sectionText(s, t, input.signalLabel, brand),
             '',
         ]),
         ...briefTableText(input.briefRows, locale, t, input.signalLabel),
@@ -527,7 +531,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
 
     return {
         to: input.to,
-        subject: t('subject', { v0: SITE_NAME, v1: date }),
+        subject: t('subject', { v0: brand, v1: date }),
         html,
         text,
         headers: {

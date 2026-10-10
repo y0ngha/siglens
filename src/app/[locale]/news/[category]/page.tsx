@@ -36,7 +36,6 @@ import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
@@ -47,6 +46,7 @@ import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
 import { isDatabaseConfigured } from '@/shared/db/config';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { brandName, brandTitle } from '@/shared/lib/brandName';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
@@ -216,7 +216,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             // 선언한다 — 자기 제목·설명·URL을 낸다.
             openGraph: {
                 type: 'website',
-                siteName: SITE_NAME,
+                siteName: brandName(locale),
                 title: emptyTitle,
                 description: emptyDescription,
                 url: emptyUrl,
@@ -230,7 +230,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const title = buildCategoryPageTitle(tRoot(cfg.labelKey), tSeo);
-    const fullTitle = `${title} | ${SITE_NAME}`;
+    const fullTitle = brandTitle(title, locale);
     const description = buildCategoryPageDescription(
         tRoot(cfg.descriptionKey),
         tSeo
@@ -258,7 +258,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         }),
         openGraph: {
             type: 'website',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title: fullTitle,
             description,
             url: `${SITE_URL}${localePath(locale, canonicalPath)}`,
@@ -303,7 +303,10 @@ export default async function CategoryNewsPage({ params }: Props) {
         ? {
               ...buildWebPageJsonLd({
                   url: categoryUrl,
-                  name: `${buildCategoryPageTitle(tNav(cfg.labelKey), tSeo)} | ${SITE_NAME}`,
+                  name: brandTitle(
+                      buildCategoryPageTitle(tNav(cfg.labelKey), tSeo),
+                      locale
+                  ),
                   description: buildCategoryPageDescription(
                       tNav(cfg.descriptionKey),
                       tSeo

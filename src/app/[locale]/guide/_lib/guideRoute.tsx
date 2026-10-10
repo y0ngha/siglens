@@ -14,7 +14,7 @@ import {
     localePageRobots,
     localePageSocial,
 } from '@/shared/lib/seoAlternates';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandTitle } from '@/shared/lib/brandName';
 import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
 
 export type GuideRouteParams = Promise<{ locale: string }>;
@@ -60,7 +60,7 @@ interface EntryMetadataInput {
 
 /**
  * 항목 메타데이터. 제목·설명은 DB의 `seoTitle`·`seoDescription`이다.
- * `<title>`은 레이아웃 템플릿(`%s | SIGLENS`)이 브랜드를 붙이고, 소셜 카드는 직접 붙인다.
+ * `<title>`은 레이아웃 템플릿(`brandTitle` — ko `%s | 시그렌즈`, 그 외 `%s | SIGLENS`)이 브랜드를 붙이고, 소셜 카드는 직접 붙인다.
  * 색인은 `localePageRobots`가 로케일 게이트(ko만)로 정한다.
  */
 export async function guideEntryMetadata({
@@ -75,7 +75,7 @@ export async function guideEntryMetadata({
         alternates: await localeAlternatesFrom(params, path),
         robots: localePageRobots(locale),
         ...localePageSocial(locale, path, {
-            title: `${entry.seoTitle} | ${SITE_NAME}`,
+            title: brandTitle(entry.seoTitle, locale),
             description: entry.seoDescription,
             type: 'article',
         }),

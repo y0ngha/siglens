@@ -1,7 +1,7 @@
 import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import type { EmailTranslator } from './emailTranslator';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
 
 interface BuildEmailVerificationEmailInput {
     to: string;
@@ -22,7 +22,7 @@ export function buildEmailVerificationEmail({
     locale = DEFAULT_LOCALE,
     t,
 }: BuildEmailVerificationEmailInput): EmailMessage {
-    const heading = t('verifyHeading', { v0: SITE_NAME });
+    const heading = t('verifyHeading', { v0: brandName(locale) });
     const intro = t('verifyIntro');
     const expiry = t('verifyExpiry');
     const ignore = t('verifyIgnore');
@@ -43,5 +43,10 @@ export function buildEmailVerificationEmail({
   <p style="font-size:12px;color:#94a3b8;margin:0;">${expiry}</p>
   <p style="font-size:12px;color:#64748b;margin:24px 0 0;">${ignore}</p>
 </div></body></html>`;
-    return { to, subject: t('verifySubject', { v0: SITE_NAME }), html, text };
+    return {
+        to,
+        subject: t('verifySubject', { v0: brandName(locale) }),
+        html,
+        text,
+    };
 }

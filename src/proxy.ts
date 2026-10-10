@@ -57,7 +57,7 @@ const intlMiddleware = createIntlMiddleware(routing);
 const AI_CSP =
     "frame-ancestors 'none'; img-src 'self' data: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr";
 /**
- * SiglensAI의 공개 면은 로케일별 홈과 `/about`(`AI_INDEXABLE_PATHS`)이다. 대화(`/c/*`)는 회원 본인만
+ * SIGLENS AI의 공개 면은 로케일별 홈과 `/about`(`AI_INDEXABLE_PATHS`)이다. 대화(`/c/*`)는 회원 본인만
  * 볼 수 있는 사적 기록이라 크롤러에 열 이유가 없고, 게스트에게는 404다.
  * `/api/`는 크롤러가 쓸 이유가 아예 없는 SSE 엔드포인트라 함께 막는다 —
  * `POST /api/ai/chat/stream`은 어차피 Origin 검사로 브라우저 세션만 받는다.
@@ -184,7 +184,7 @@ function landingLocaleRedirect(req: NextRequest): NextResponse | null {
     return response;
 }
 
-/** `ai.siglens.io`(SiglensAI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
+/** `ai.siglens.io`(SIGLENS AI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
 async function handleAiHost(req: NextRequest): Promise<NextResponse> {
     const url = new URL(req.url);
     if (isLandingPath(url.pathname)) {
@@ -367,12 +367,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     /**
-     * `/ai` 예약 라우트(SiglensAI) — 메인 호스트로 잘못 들어온 요청을
+     * `/ai` 예약 라우트(SIGLENS AI) — 메인 호스트로 잘못 들어온 요청을
      * `ai.siglens.io`로 영구 이관한다.
      *
      * **정확히 소문자 `ai` 전체 세그먼트만** 매치한다 — `AI`는 실존 티커
      * (C3.ai, popular-tickers·sitemap 등재)라서 대소문자 무시로 매치하면
-     * `/AI`·`/AI/news`·`/en/AI`가 전부 SiglensAI 호스트로 오탐 리다이렉트된다.
+     * `/AI`·`/AI/news`·`/en/AI`가 전부 SIGLENS AI 호스트로 오탐 리다이렉트된다.
      * 로케일과 철자가 같은 티커를 구제하는 `KO` 판정과 같은 원칙이다.
      *
      * 로케일 접두사 제거(`/ko/*` 정규화)보다 먼저 처리해야 `/ko/ai/c/x`가
@@ -584,7 +584,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (GUEST_ONLY_PATHS.has(pathname) && hasSession) {
         // 이미 로그인된 사용자는 `next`(돌아갈 곳)를 따라 보낸다. 무시하고 홈으로
-        // 보내면 SiglensAI 로그인 CTA(`/login?next=/api/auth/handoff?to=ai…`)를
+        // 보내면 SIGLENS AI 로그인 CTA(`/login?next=/api/auth/handoff?to=ai…`)를
         // 누른 메인 로그인 사용자 — ai 쪽만 로그아웃했거나, `?sso=none` 이후
         // 다른 탭에서 로그인한 경우 — 가 ai.siglens.io로 못 돌아가고 메인 홈에
         // 버려진다. 여기는 진짜 HTTP 리다이렉트라 핸드오프 302 체인도 브라우저가

@@ -85,7 +85,7 @@ describe('RootNotFound', () => {
         it('문서 제목은 한국어 · 메인 호스트 제목이고 <title>은 하나뿐이다', async () => {
             await renderRoot();
 
-            expect(document.title).toBe('페이지를 찾을 수 없습니다 | SIGLENS');
+            expect(document.title).toBe('페이지를 찾을 수 없습니다 | 시그렌즈');
             expect(document.querySelectorAll('title')).toHaveLength(1);
         });
 

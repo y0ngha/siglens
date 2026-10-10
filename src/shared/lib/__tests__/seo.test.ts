@@ -44,6 +44,14 @@ beforeAll(async () => {
 const TAB_LABEL = '주가 분석';
 
 describe('buildSymbolSeoContent', () => {
+    it('제목 접미사는 로케일 브랜드다 — ko `| 시그렌즈`, en `| SIGLENS`', () => {
+        const ko = buildSymbolSeoContent('aapl', t, { locale: 'ko' });
+        const en = buildSymbolSeoContent('aapl', t, { locale: 'en' });
+
+        expect(ko.fullTitle).toBe(`${ko.title} | ${SITE_NAME_KO}`);
+        expect(en.fullTitle).toBe(`${en.title} | ${SITE_NAME}`);
+    });
+
     it('동적 세그먼트 플레이스홀더가 아닌 실제 티커로 심볼 메타데이터를 만든다', () => {
         const content = buildSymbolSeoContent('aapl', t);
 
@@ -55,7 +63,7 @@ describe('buildSymbolSeoContent', () => {
         // 리터럴 단언은 seo.composeSymbolTitle.test.ts의 책임이다.
         expect(content.title).toContain('AAPL');
         expect(content.title).toContain('주가 분석');
-        expect(content.fullTitle).toBe(`${content.title} | SIGLENS`);
+        expect(content.fullTitle).toBe(`${content.title} | 시그렌즈`);
         expect(content.description).toContain('AAPL');
         expect(content.url).toBe('https://siglens.io/AAPL');
         expect(content.keywords).toContain('AAPL 주가');
@@ -110,18 +118,18 @@ describe('buildSymbolFundamentalSeoContent', () => {
         // 압박 시 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
         expect(content.title).toContain('AAPL');
         expect(content.title).toContain('펀더멘털');
-        expect(content.fullTitle).toBe(`${content.title} | SIGLENS`);
+        expect(content.fullTitle).toBe(`${content.title} | 시그렌즈`);
     });
 
     it('title에 브랜드명이 포함되지 않는다 (루트 레이아웃이 자동 추가)', () => {
         const content = buildSymbolFundamentalSeoContent('TSLA', t);
-        expect(content.title).not.toContain('SIGLENS');
+        expect(content.title).not.toContain(SITE_NAME_KO);
         expect(content.title).not.toContain('|');
     });
 
     it('fullTitle에 브랜드명이 포함된다', () => {
         const content = buildSymbolFundamentalSeoContent('MSFT', t);
-        expect(content.fullTitle).toContain('SIGLENS');
+        expect(content.fullTitle).toContain(SITE_NAME_KO);
     });
 
     it('URL이 /[SYMBOL]/fundamental 형식이다', () => {
@@ -220,18 +228,18 @@ describe('buildSymbolFinancialsSeoContent', () => {
         // 전체 문자열을 고정하면 카피 문구만 바뀌어도 이 테스트가 깨진다.
         expect(content.title).toContain('TSLA');
         expect(content.title).toContain('재무제표');
-        expect(content.fullTitle).toBe(`${content.title} | SIGLENS`);
+        expect(content.fullTitle).toBe(`${content.title} | 시그렌즈`);
     });
 
     it('title에 브랜드명이 포함되지 않는다 (루트 레이아웃이 자동 추가)', () => {
         const content = buildSymbolFinancialsSeoContent('TSLA', t);
-        expect(content.title).not.toContain('SIGLENS');
+        expect(content.title).not.toContain(SITE_NAME_KO);
         expect(content.title).not.toContain('|');
     });
 
     it('fullTitle에 브랜드명이 포함된다', () => {
         const content = buildSymbolFinancialsSeoContent('MSFT', t);
-        expect(content.fullTitle).toContain('SIGLENS');
+        expect(content.fullTitle).toContain(SITE_NAME_KO);
     });
 
     it('URL이 /[SYMBOL]/financials 형식이다', () => {
@@ -296,12 +304,12 @@ describe('buildSymbolNewsSeoContent', () => {
         // 전체 문자열을 고정하지 않는다.
         expect(content.title).toContain('AAPL');
         expect(content.title).toContain('뉴스');
-        expect(content.fullTitle).toBe(`${content.title} | SIGLENS`);
+        expect(content.fullTitle).toBe(`${content.title} | 시그렌즈`);
     });
 
     it('title에 브랜드명이 포함되지 않는다 (루트 레이아웃이 자동 추가)', () => {
         const content = buildSymbolNewsSeoContent('TSLA', t);
-        expect(content.title).not.toContain('SIGLENS');
+        expect(content.title).not.toContain(SITE_NAME_KO);
         expect(content.title).not.toContain('|');
     });
 
@@ -370,7 +378,7 @@ describe('buildSymbolNewsSeoContent', () => {
 
     it('fullTitle에 브랜드명이 포함된다', () => {
         const content = buildSymbolNewsSeoContent('AMZN', t);
-        expect(content.fullTitle).toContain('SIGLENS');
+        expect(content.fullTitle).toContain(SITE_NAME_KO);
     });
 });
 
@@ -382,7 +390,7 @@ describe('buildSymbolOverallSeoContent', () => {
         // 전체 문자열을 고정하지 않는다.
         expect(content.title).toContain('AAPL');
         expect(content.title).toContain('종합 분석');
-        expect(content.fullTitle).toBe(`${content.title} | SIGLENS`);
+        expect(content.fullTitle).toBe(`${content.title} | 시그렌즈`);
     });
 
     it('URL이 절대 경로 /[SYMBOL]/overall 형식이다', () => {
@@ -392,13 +400,13 @@ describe('buildSymbolOverallSeoContent', () => {
 
     it('title에 브랜드명이 포함되지 않는다 (루트 레이아웃이 자동 추가)', () => {
         const content = buildSymbolOverallSeoContent('TSLA', t);
-        expect(content.title).not.toContain('SIGLENS');
+        expect(content.title).not.toContain(SITE_NAME_KO);
         expect(content.title).not.toContain('|');
     });
 
     it('fullTitle에 브랜드명이 포함된다', () => {
         const content = buildSymbolOverallSeoContent('MSFT', t);
-        expect(content.fullTitle).toContain('SIGLENS');
+        expect(content.fullTitle).toContain(SITE_NAME_KO);
     });
 
     it('description에 티커와 핵심 키워드가 포함된다', () => {
@@ -586,7 +594,11 @@ describe('buildBreadcrumbJsonLd', () => {
         }>;
         expect(items).toHaveLength(2);
         expect(items[0].position).toBe(1);
-        expect(items[0].name).toBe(SITE_NAME);
+        expect(items[0].name).toBe(SITE_NAME_KO);
+        // 비기본 로케일의 홈 마디는 영문 표기 — 가시 브레드크럼과 같은 글자다.
+        const en = buildBreadcrumbJsonLd([{ name: 'AAPL', url: '/AAPL' }], 'en')
+            .itemListElement as Array<{ name: string }>;
+        expect(en[0]!.name).toBe(SITE_NAME);
         expect(items[0].item).toBe(SITE_URL);
         expect(items[1].position).toBe(2);
         expect(items[1].name).toBe('AAPL');
@@ -1132,12 +1144,19 @@ describe('symbolMetadataFromSeo', () => {
         expect(meta.alternates?.canonical).toBe(baseSeo.url);
     });
 
+    it('en의 og:site_name은 SIGLENS다', () => {
+        const meta = symbolMetadataFromSeo(baseSeo, 'en');
+        const og = meta.openGraph as Record<string, unknown>;
+
+        expect(og['siteName']).toBe(SITE_NAME);
+    });
+
     it('openGraph에 type/siteName/locale이 고정값으로 들어간다', () => {
         const meta = symbolMetadataFromSeo(baseSeo, 'ko');
         const og = meta.openGraph as Record<string, unknown>;
 
         expect(og['type']).toBe('website');
-        expect(og['siteName']).toBe(SITE_NAME);
+        expect(og['siteName']).toBe(SITE_NAME_KO);
         expect(og['locale']).toBe('ko_KR');
         expect(og['title']).toBe(baseSeo.fullTitle);
         expect(og['description']).toBe(baseSeo.description);
@@ -1152,7 +1171,7 @@ describe('symbolMetadataFromSeo', () => {
         // twitter.title은 fullTitle(브랜드 포함) — 소셜 카드는 SERP 폭
         // 제약이 없고 브랜드 노출이 도움이 된다(Task 6).
         expect(tw['title']).toBe(baseSeo.fullTitle);
-        expect(tw['title']).toContain('SIGLENS');
+        expect(tw['title']).toContain(SITE_NAME_KO);
         expect(tw['description']).toBe(baseSeo.description);
     });
 
@@ -1169,10 +1188,10 @@ describe('symbolMetadataFromSeo', () => {
         // 단언하는 게 아니다.
         const titleMeta = meta.title as { absolute: string };
         expect(titleMeta.absolute).toBe(baseSeo.title);
-        expect(titleMeta.absolute).not.toContain('SIGLENS');
+        expect(titleMeta.absolute).not.toContain(SITE_NAME_KO);
         // openGraph/twitter title은 fullTitle(브랜드 포함) 사용 —
         // 소셜 카드는 SERP 폭 제약이 없고 브랜드 노출이 도움이 된다.
-        expect(og['title']).toContain('SIGLENS');
+        expect(og['title']).toContain(SITE_NAME_KO);
     });
 });
 

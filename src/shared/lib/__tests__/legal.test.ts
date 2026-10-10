@@ -66,8 +66,13 @@ describe('legal constants', () => {
         expect(privacyTitle(t)).toBe('개인정보처리방침');
     });
 
-    it('privacyFullTitle(t) includes site name', () => {
-        expect(privacyFullTitle(t)).toBe(`${privacyTitle(t)} | ${SITE_NAME}`);
+    it('privacyFullTitle(t, locale) uses the locale brand suffix', () => {
+        expect(privacyFullTitle(t, 'ko')).toBe(
+            `${privacyTitle(t)} | ${SITE_NAME_KO}`
+        );
+        expect(privacyFullTitle(t, 'en')).toBe(
+            `${privacyTitle(t)} | ${SITE_NAME}`
+        );
     });
 
     it('privacyDescription(t) includes the Korean site name', () => {
@@ -78,8 +83,11 @@ describe('legal constants', () => {
         expect(termsTitle(t)).toBe('이용약관');
     });
 
-    it('termsFullTitle(t) includes site name', () => {
-        expect(termsFullTitle(t)).toBe(`${termsTitle(t)} | ${SITE_NAME}`);
+    it('termsFullTitle(t, locale) uses the locale brand suffix', () => {
+        expect(termsFullTitle(t, 'ko')).toBe(
+            `${termsTitle(t)} | ${SITE_NAME_KO}`
+        );
+        expect(termsFullTitle(t, 'en')).toBe(`${termsTitle(t)} | ${SITE_NAME}`);
     });
 
     it('termsDescription(t) includes the Korean site name', () => {

@@ -36,16 +36,16 @@ The same four types of [double bottom](/guide/chart-patterns/double-bottom) had 
 
 The volume rule is also the opposite of a double bottom. In a double top, volume on the second high should be lower than on the first to show buying has faded. If price rallies back after breaking the neckline, fails to reclaim it, and turns down, the bearish case gets stronger.
 
-## How Siglens finds it
+## How SIGLENS finds it
 
-Siglens takes the two most recent clear highs (swing highs: turning points where price pulled back more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) and checks whether they form an M at a similar level. Once a turning point is set, it does not change as more bars arrive. All of these must hold:
+SIGLENS takes the two most recent clear highs (swing highs: turning points where price pulled back more than 1.5 times [ATR](/guide/indicators/atr), the average range of recent bars) and checks whether they form an M at a similar level. Once a turning point is set, it does not change as more bars arrive. All of these must hold:
 
 - The two highs differ by no more than the smaller of 1× ATR and 3% of their average price.
 - The two highs are at least 10 bars apart.
 - No bar between them rises more than 0.25 ATR above the highs.
 - The neckline is the lowest swing low between the two highs. It must sit in the middle half of the span between them, meaning at least 25% of the full distance from either high.
 - The height from the average high to the neckline is at least 2.5 ATR and at least a minimum share of price (0.5% on 5–30 minute bars, 1% on 1–4 hour bars, 3% on daily bars).
-- If the lows between the two highs clearly rise toward them (by 1.5 ATR or more), Siglens treats it as an [ascending triangle](/guide/chart-patterns/ascending-triangle), not a double top.
+- If the lows between the two highs clearly rise toward them (by 1.5 ATR or more), SIGLENS treats it as an [ascending triangle](/guide/chart-patterns/ascending-triangle), not a double top.
 - If the second high is older than the longer of the last 20 bars and half the pattern's length, it is not shown.
 
 The invalidation level (the price at which the pattern counts as broken) is the higher of the two highs. A close above it breaks the pattern. The neckline minus the pattern height is the measured target, and the neckline minus half the height is the conservative target. A target is the price reached if price moves another pattern height; it is a reference drawn from past cases, not a promise. Only about half of past cases actually got that far. Once a close rises above the invalidation level or price has already reached the measured target, the pattern is no longer shown.

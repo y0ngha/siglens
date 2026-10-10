@@ -352,7 +352,7 @@ describe('proxy — ai host', () => {
     /**
      * `AI`는 실존 티커(C3.ai, popular-tickers·sitemap 등재)다. `/ai` 판정은
      * 정확한 소문자 전체 세그먼트일 때만 걸려야 하고, 대소문자 무시로 판정하면
-     * `/AI`·`/AI/news`·`/en/AI`가 전부 SiglensAI 호스트로 오탐 리다이렉트된다
+     * `/AI`·`/AI/news`·`/en/AI`가 전부 SIGLENS AI 호스트로 오탐 리다이렉트된다
      * (로케일과 철자가 같은 티커를 구제하는 `KO` 판정과 동일한 원칙).
      */
     it.each(['/AI', '/AI/news', '/en/AI'])(

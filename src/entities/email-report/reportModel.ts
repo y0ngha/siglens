@@ -58,7 +58,7 @@ export const REPORT_MAX_NEWS = 3;
 /**
  * core 판정기의 신호 요약 — `evaluateConfluence`·`scoreConfluence`·`evaluatePullback`
  * 결과를 메일 문구에 필요한 만큼만 옮긴 것. **규칙 상태(`entryTrigger`/`exitTrigger`)는
- * 담지 않는다** — 매수·매도 지시로 읽힐 수 있는 필드는 SiglensAI 도구(`getBarsIndicators`)와
+ * 담지 않는다** — 매수·매도 지시로 읽힐 수 있는 필드는 SIGLENS AI 도구(`getBarsIndicators`)와
  * 같은 이유로 처음부터 자리를 두지 않는다.
  *
  * `bullish`·`bearish`·`fresh`는 core의 `ConfluenceSnapshot`이 주는 `string[]`을 그대로 둔다 —

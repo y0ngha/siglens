@@ -1,6 +1,7 @@
 import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
-import { SITE_HOST, SITE_NAME } from '@/shared/lib/seo';
+import { SITE_HOST } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
 import type { EmailTranslator } from './emailTranslator';
 
 // `SITE_URL`(shared/lib/seo)과 같은 기본값. 그 상수를 직접 쓰지 않는 이유는 아래
@@ -43,7 +44,7 @@ export function buildPasswordResetEmail({
     t,
 }: BuildPasswordResetEmailInput): EmailMessage {
     const link = `${buildSiteUrl()}${localePath(locale, RESET_PATH)}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
-    const heading = t('resetHeading', { v0: SITE_NAME });
+    const heading = t('resetHeading', { v0: brandName(locale) });
     const expiry = t('resetExpiry');
     const ignore = t('resetIgnore');
     const text = [
@@ -67,7 +68,7 @@ export function buildPasswordResetEmail({
 </div></body></html>`;
     return {
         to: email,
-        subject: t('resetSubject', { v0: SITE_NAME }),
+        subject: t('resetSubject', { v0: brandName(locale) }),
         html,
         text,
     };

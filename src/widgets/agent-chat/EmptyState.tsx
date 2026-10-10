@@ -11,6 +11,8 @@ import {
 } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
 
 /** Member suggestions still being generated; resolves to null when there are none. */
@@ -146,6 +148,7 @@ export function EmptyState({
     suggestions,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
+    const locale = useResolvedLocale();
     // Localized fallback — kept inside the component (not hoisted) so the
     // extraction codemod can find them as real `t()` calls.
     // The first card is the portfolio question for members. A guest has no
@@ -186,7 +189,7 @@ export function EmptyState({
                 <div className="flex flex-col items-center text-center">
                     <SiglensMark size="lg" className="mb-5" />
                     <p className="mb-3 flex items-center gap-2 font-mono text-xs font-semibold tracking-[0.2em] text-primary-400 uppercase">
-                        <span translate="no">SIGLENS AI</span>
+                        <span translate="no">{brandAiName(locale)}</span>
                         <BetaBadge />
                     </p>
                     <h1 className="text-3xl font-semibold tracking-tight text-balance text-secondary-50 sm:text-4xl">

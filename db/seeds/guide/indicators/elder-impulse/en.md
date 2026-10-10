@@ -26,7 +26,7 @@ MACD uses the standard (12, 26, 9). The 13-bar EMA captures trend inertia and th
 
 ## What it tells you
 
-What follows is the traditional reading Elder set out. Siglens also uses it not as a trading signal but as context about which direction is blocked.
+What follows is the traditional reading Elder set out. SIGLENS also uses it not as a trading signal but as context about which direction is blocked.
 
 Elder himself called this a prohibition rule, not a rule that tells you when to buy. His words: it doesn't tell you what to do, it tells you what you must not do. So the colors are not instructions to buy or sell; they only say which side of trading is blocked.
 
@@ -36,14 +36,14 @@ Elder himself called this a prohibition rule, not a rule that tells you when to 
 
 The moments that matter most are when the color changes (green to blue, blue to red, and so on), because what is prohibited changes. Elder's advice was to "enter cautiously and get out fast."
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens colors every bar and points out the moments when a direction is blocked or when the blocked direction changes.
+SIGLENS colors every bar and points out the moments when a direction is blocked or when the blocked direction changes.
 
 - Calculation: each bar's color comes from the 13-bar EMA and the MACD (12, 26, 9) histogram.
 - When it is flagged: when the last bar is green or red (a state that blocks one direction), or when the color changed from the previous bar (the blocked direction has changed).
 
-When Siglens checked later returns from the colors alone, there was no clear difference. That is an expected result, because a prohibition rule is not a tool that earns money by itself. It is a tool attached to another trading method to filter out trades against the trend. So Siglens uses this indicator as a filter that permits a direction, not as a buy or sell signal.
+When SIGLENS checked later returns from the colors alone, there was no clear difference. That is an expected result, because a prohibition rule is not a tool that earns money by itself. It is a tool attached to another trading method to filter out trades against the trend. So SIGLENS uses this indicator as a filter that permits a direction, not as a buy or sell signal.
 
 For example, when daily [Bollinger %B](/guide/indicators/bollinger-percent-b) says "price has risen too far and a pullback may come," that signal is ignored if the impulse is green and accepted only when it is red or blue. The clearer the trend in a market, the more costly trades against the trend tend to be, so this filter is more useful there.
 

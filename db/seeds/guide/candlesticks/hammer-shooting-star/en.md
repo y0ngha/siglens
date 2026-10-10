@@ -3,11 +3,11 @@ title: Hammer / Shooting Star
 aliases: [Hammer, Inverted Hammer, Hanging Man, Shooting Star]
 summary: A single bar with one wick at least twice the body. Check the preceding trend before trusting the name.
 seoTitle: Hammer, Inverted Hammer, Hanging Man, Shooting Star
-seoDescription: Hammer, inverted hammer, hanging man and shooting star are told apart by wick direction and where they appear. See how Siglens names them and how they actually performed.
+seoDescription: Hammer, inverted hammer, hanging man and shooting star are told apart by wick direction and where they appear. See how SIGLENS names them and how they actually performed.
 demoCaption: Synthetic, illustrative bars made for this explanation. A bar with a long lower wick at the end of a decline, and a bar with a long upper wick at the end of an advance.
 faq:
   - q: How is a hammer different from a hanging man?
-    a: The shape is the same; the location differs. Textbooks call a long lower wick after a decline a hammer and one after an advance a hanging man. Siglens names them by body color, not by location.
+    a: The shape is the same; the location differs. Textbooks call a long lower wick after a decline a hammer and one after an advance a hanging man. SIGLENS names them by body color, not by location.
   - q: Does price rebound after a hammer?
     a: In Thomas Bulkowski's data a hammer was followed by a bullish reversal 60% of the time. That is only slightly better than even, so traders usually wait to see whether a later close rises above the hammer's high.
 ---
@@ -23,9 +23,9 @@ A bar with a small body, one wick at least twice as long as the body, and a shor
 
 A long wick is a trace of price reaching a level and being pushed back. A long lower wick means price fell and recovered; a long upper wick means it rose and was pushed back. That is why a long lower wick near support or a long upper wick near resistance carries meaning.
 
-## How Siglens detects it
+## How SIGLENS detects it
 
-Siglens finds this family by comparing wick length with the body, and names each bar by its body color. It does not check the preceding trend.
+SIGLENS finds this family by comparing wick length with the body, and names each bar by its body color. It does not check the preceding trend.
 
 - One wick is at least twice the body.
 - The opposite wick is no longer than the body.
@@ -42,7 +42,7 @@ In the data of Thomas Bulkowski, who counted what price actually did after each 
 - Hanging man: against the textbook, 59% continued upward and only 41% reversed down.
 - Inverted hammer: by Bulkowski's definition (an inverted hammer after a long bearish bar), 65% continued downward and 35% reversed up.
 
-So for the hanging man and inverted hammer, Siglens doesn't give the textbook reversal reading. Like the data, it reads them as the existing trend more often continuing.
+So for the hanging man and inverted hammer, SIGLENS doesn't give the textbook reversal reading. Like the data, it reads them as the existing trend more often continuing.
 
 ## Watch out for
 

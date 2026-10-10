@@ -1,7 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { brandName } from '@/shared/lib/brandName';
 
 export interface BreadcrumbCrumb {
     /**
@@ -15,7 +16,7 @@ export interface BreadcrumbCrumb {
 }
 
 interface BreadcrumbProps {
-    /** 홈(`SITE_NAME`) **다음** 마디들. 홈은 여기서 자동으로 앞에 붙는다. */
+    /** 홈(`brandName(locale)`) **다음** 마디들. 홈은 여기서 자동으로 앞에 붙는다. */
     readonly trail: readonly BreadcrumbCrumb[];
 }
 
@@ -30,11 +31,12 @@ interface BreadcrumbProps {
  * 같은 문자열을 받는 것이 계약이다.
  *
  * 홈 마디를 인자로 받지 않는 이유는 `buildBreadcrumbJsonLd`와 같다 — 그쪽도
- * `SITE_NAME`을 자동으로 앞에 붙인다. 두 표면이 각자 홈을 받으면 한쪽만 빠뜨릴 수
+ * `brandName(locale)`(ko `시그렌즈`, 그 외 `SIGLENS`)을 자동으로 앞에 붙인다. 두 표면이 각자 홈을 받으면 한쪽만 빠뜨릴 수
  * 있고, 그 어긋남은 화면에 표시가 나지 않는다.
  */
 export function Breadcrumb({ trail }: BreadcrumbProps) {
     const t = useTranslations('shared.ui');
+    const locale = useResolvedLocale();
     return (
         <nav aria-label={t('Breadcrumb.46c31f')} className="mb-6 text-xs">
             <ol className="flex flex-wrap items-center gap-2 text-secondary-500">
@@ -46,7 +48,7 @@ export function Breadcrumb({ trail }: BreadcrumbProps) {
                         prefetch={false}
                         className="tap-target transition-colors hover:text-secondary-300"
                     >
-                        {SITE_NAME}
+                        {brandName(locale)}
                     </Link>
                 </li>
                 {trail.map((crumb, index) => {

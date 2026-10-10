@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import type { Locale } from '@/shared/i18n/locales';
 import { localeOpenGraph } from '@/shared/lib/seoAlternates';
-import { SITE_NAME, localizedAbsoluteUrl } from '@/shared/lib/seo';
+import { localizedAbsoluteUrl } from '@/shared/lib/seo';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { SharedAnalysisLookup } from '../types';
 import { buildOgText, type OgTranslator } from '../server/buildOgText';
+import { brandName } from '@/shared/lib/brandName';
 
 /** `entities.shared-analysis.seo` 네임스페이스 번역자. */
 type ShareSeoTranslator = (
@@ -56,7 +57,7 @@ export function buildShareMetadata(
         alternates: { canonical: null },
         openGraph: {
             type: 'website',
-            siteName: SITE_NAME,
+            siteName: brandName(locale),
             title,
             description,
             // 예전에는 `'ko_KR'` 고정이라 `/ja/share/x`가 한국어 로케일을
