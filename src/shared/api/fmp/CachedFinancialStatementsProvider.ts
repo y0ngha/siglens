@@ -2,6 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import { sym } from './symKey';
 import { cachedListWithLimit } from './cachedListWithLimit';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { FMP_STATEMENTS_CACHE_TTL_SECONDS } from '@/shared/config/time';
 import type {
     BalanceSheetRow,
@@ -31,6 +32,12 @@ const TTL = FMP_STATEMENTS_CACHE_TTL_SECONDS;
  * 5~10행보다 충분히 크고, FMP가 무료 플랜에서 돌려주는 행 수 상한과도 정합적이다.
  */
 const MAX_STATEMENT_LIMIT = 40;
+
+const cashFlowKey = (symbol: string, period: StatementPeriod): string =>
+    `financials:cashflow:${sym(symbol)}:${period}`;
+
+const incomeGrowthKey = (symbol: string, period: StatementPeriod): string =>
+    `financials:income-growth:${sym(symbol)}:${period}`;
 
 /**
  * `FinancialStatementsProvider`를 감싸 메서드별 Redis 캐싱을 주입하는 데코레이터.
@@ -104,7 +111,7 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             limit: number
         ): Promise<CashFlowRow[]> =>
             cachedListWithLimit(
-                `financials:cashflow:${sym(symbol)}:${period}`,
+                cashFlowKey(symbol, period),
                 TTL,
                 limit,
                 () =>
@@ -127,7 +134,7 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             limit: number
         ): Promise<IncomeGrowthRow[]> =>
             cachedListWithLimit(
-                `financials:income-growth:${sym(symbol)}:${period}`,
+                incomeGrowthKey(symbol, period),
                 TTL,
                 limit,
                 () =>
@@ -187,5 +194,51 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
                     logPrefix: '[CachedFinancials] cashflow-growth failed:',
                 }
             )
+    );
+
+    /**
+     * 최신 연간 현금흐름표 한 행. 펀더멘털 탭(`CachedFundamentalProvider.getCashFlowStatement`)이
+     * 쓴다 — 그 탭은 따로 `cash-flow-statement`를 받아 `fundamental:cash-flow` 키에 두었는데,
+     * 그건 이 클래스가 `financials:cashflow:<SYM>:annual`에 이미 둔 응답의 첫 행과 같은
+     * 데이터라 FMP 호출만 종목당 하루 한 번 더 났다. 그래서 같은 키를 같은 fetcher로 읽는다.
+     *
+     * 목록 메서드와 달리 **FMP 장애를 삼키지 않고 throw한다.** 펀더멘털 탭은 throw를 받아야
+     * `staticSymbolCache`가 결과를 굽지 않고 ISR 주기를 줄인다(`degradeSection`). 빈 배열로
+     * 바꾸면 장애가 "데이터 없음"으로 하루 동안 굳는다.
+     */
+    getLatestAnnualCashFlow = cache(
+        async (symbol: string): Promise<CashFlowRow | null> => {
+            const rows = await getOrSetCache(
+                cashFlowKey(symbol, 'annual'),
+                TTL,
+                () =>
+                    this.inner.getCashFlowStatements(
+                        symbol,
+                        'annual',
+                        MAX_STATEMENT_LIMIT
+                    )
+            );
+            return rows[0] ?? null;
+        }
+    );
+
+    /**
+     * 최신 연간 손익 성장률 한 행. {@link getLatestAnnualCashFlow}와 같은 이유로
+     * `financials:income-growth:<SYM>:annual` 키를 공유하고, FMP 장애는 throw한다.
+     */
+    getLatestAnnualIncomeGrowth = cache(
+        async (symbol: string): Promise<IncomeGrowthRow | null> => {
+            const rows = await getOrSetCache(
+                incomeGrowthKey(symbol, 'annual'),
+                TTL,
+                () =>
+                    this.inner.getIncomeStatementGrowths(
+                        symbol,
+                        'annual',
+                        MAX_STATEMENT_LIMIT
+                    )
+            );
+            return rows[0] ?? null;
+        }
     );
 }
