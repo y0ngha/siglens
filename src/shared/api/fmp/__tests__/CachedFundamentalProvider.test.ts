@@ -3,6 +3,7 @@ import {
     CachedFundamentalProvider,
     PEER_LIMIT,
 } from '@/shared/api/fmp/CachedFundamentalProvider';
+import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 
@@ -407,6 +408,112 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
         expect(peers[0].psr).toBe(5);
         expect(peers[2].per).toBe(20);
         expect(peers[2].psr).toBe(5);
+    });
+});
+
+describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
+    beforeEach(() => {
+        resetSharedState();
+        __resetInFlightForTests();
+    });
+
+    const metrics = {
+        peRatioTTM: 10,
+        priceToSalesRatioTTM: 3,
+        pbRatioTTM: null,
+        pegRatioTTM: null,
+        enterpriseValueOverEBITDATTM: null,
+        epsTTM: null,
+    };
+    const ratios = { dividendYieldTTM: 0.01 } as unknown as NonNullable<
+        Awaited<ReturnType<FundamentalProvider['getRatiosTtm']>>
+    >;
+
+    function makePairInner(overrides: Partial<FundamentalProvider> = {}) {
+        return makeInner({
+            getKeyMetricsTtm: vi.fn(async () => metrics),
+            getRatiosTtm: vi.fn(async () => ratios),
+            ...overrides,
+        });
+    }
+
+    it('key-metrics miss fills ratios too: ratios is then a Redis hit', async () => {
+        const inner = makePairInner();
+        const provider = new CachedFundamentalProvider(inner);
+
+        expect(await provider.getKeyMetricsTtm('aapl')).toEqual(metrics);
+        expect(store.has('fundamental:ratios:AAPL')).toBe(true);
+
+        expect(await provider.getRatiosTtm('aapl')).toEqual(ratios);
+        expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(1);
+        expect(inner.getRatiosTtm).toHaveBeenCalledTimes(1);
+    });
+
+    it('ratios miss fills key-metrics too (reverse order)', async () => {
+        const inner = makePairInner();
+        const provider = new CachedFundamentalProvider(inner);
+
+        expect(await provider.getRatiosTtm('aapl')).toEqual(ratios);
+        expect(store.has('fundamental:key-metrics:AAPL')).toBe(true);
+
+        expect(await provider.getKeyMetricsTtm('aapl')).toEqual(metrics);
+        expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(1);
+        expect(inner.getRatiosTtm).toHaveBeenCalledTimes(1);
+    });
+
+    it('caches a legit null pair for both keys', async () => {
+        const inner = makePairInner({
+            getKeyMetricsTtm: vi.fn(async () => null),
+            getRatiosTtm: vi.fn(async () => null),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        expect(await provider.getKeyMetricsTtm('NODATA')).toBeNull();
+        expect(await provider.getRatiosTtm('NODATA')).toBeNull();
+        expect(store.has('fundamental:key-metrics:NODATA')).toBe(true);
+        expect(store.has('fundamental:ratios:NODATA')).toBe(true);
+        expect(inner.getRatiosTtm).toHaveBeenCalledTimes(1);
+    });
+
+    it('inner throw: neither key is written, both return null, error logged', async () => {
+        const error = new Error('FMP 503');
+        const inner = makePairInner({
+            getRatiosTtm: vi.fn(async () => {
+                throw error;
+            }),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        let logged: unknown[][];
+        try {
+            expect(await provider.getKeyMetricsTtm('ERR')).toBeNull();
+            expect(await provider.getRatiosTtm('ERR')).toBeNull();
+            logged = spy.mock.calls.slice();
+        } finally {
+            spy.mockRestore();
+        }
+
+        expect(store.has('fundamental:key-metrics:ERR')).toBe(false);
+        expect(store.has('fundamental:ratios:ERR')).toBe(false);
+        expect(logged.some(args => args[1] === error)).toBe(true);
+        expect(logged.length).toBe(2);
+    });
+
+    it('peer enrichment also fills fundamental:ratios:<PEER>', async () => {
+        const inner = makePairInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
+                { symbol: 'GOOG', companyName: 'Alphabet', marketCap: 1.5e12 },
+            ]),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        await provider.getStockPeers('AAPL');
+
+        expect(store.has('fundamental:ratios:MSFT')).toBe(true);
+        expect(store.has('fundamental:ratios:GOOG')).toBe(true);
+        expect(await provider.getRatiosTtm('MSFT')).toEqual(ratios);
+        expect(inner.getRatiosTtm).toHaveBeenCalledTimes(2);
     });
 });
 

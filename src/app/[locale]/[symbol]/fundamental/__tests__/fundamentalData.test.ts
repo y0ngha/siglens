@@ -66,6 +66,7 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
         (_key: string, _ttl: number, fetcher: () => Promise<unknown>) =>
             fetcher()
     ),
+    setCacheValue: vi.fn(async () => true),
 }));
 vi.mock('react', async () => {
     const actual = await vi.importActual<typeof import('react')>('react');
