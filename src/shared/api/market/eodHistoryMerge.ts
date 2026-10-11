@@ -48,22 +48,19 @@ function closeEnough(a: number, b: number): boolean {
     );
 }
 
+export type OverlapStatus = 'match' | 'missing' | 'different';
+
 /**
- * 캐시의 마지막 봉(`cachedLast`)이 새로 받은 `fetched` 안의 같은 날짜 봉과 OHLC가 같은지.
+ * 캐시의 마지막 봉(`cachedLast`)이 새로 받은 `fetched` 안의 같은 날짜 봉과 OHLC가 같은지 —
+ * 같으면 `'match'`, 응답에 그 날짜 봉이 없으면 `'missing'`, 값이 다르면 `'different'`.
  *
  * FMP·Yahoo 일봉은 분할 조정값이라 분할이 나면 **과거 봉이 소급해서 바뀐다**(NVDA 10:1:
  * 분할 전 봉이 ~1209가 아니라 120.89로 온다). 마지막 캐시 봉부터 겹쳐 받아 이 봉이 그대로인지
  * 보면, 그 앞 봉 전체가 같은 조정 상태라는 것을 한 봉으로 확인할 수 있다 — 분할은 분할일 이전
- * 모든 봉에 같은 비율을 곱하기 때문이다. 겹친 봉이 응답에 없어도 확인할 수 없으므로 `false`다.
+ * 모든 봉에 같은 비율을 곱하기 때문이다. 겹친 봉이 응답에 없으면 확인할 수 없으므로 `'missing'`
+ * (호출부는 `'match'`가 아니면 전체 창을 다시 받고, 사유를 경고 로그에 남긴다).
  * 거래량은 비교하지 않는다: 늦게 정정되는 일이 흔해 불필요한 전체 재조회만 늘린다.
  */
-export function overlapMatches(cachedLast: Bar, fetched: Bar[]): boolean {
-    return overlapStatus(cachedLast, fetched) === 'match';
-}
-
-export type OverlapStatus = 'match' | 'missing' | 'different';
-
-/** {@link overlapMatches}와 같은 판정이되, 실패 사유(응답에 없음 / 값이 다름)를 구분해 돌려준다. */
 export function overlapStatus(cachedLast: Bar, fetched: Bar[]): OverlapStatus {
     const same = fetched.find(b => b.time === cachedLast.time);
     if (same === undefined) return 'missing';

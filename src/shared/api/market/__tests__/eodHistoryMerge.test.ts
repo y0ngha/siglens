@@ -4,7 +4,6 @@ import {
     canExtendIncrementally,
     isEntryServable,
     mergeIncremental,
-    overlapMatches,
     overlapStatus,
     EOD_HISTORY_FULL_REFRESH_MS,
     reachesLastClosed,
@@ -25,40 +24,43 @@ const bar = (iso: string, close = 100): Bar => ({
     volume: 1000,
 });
 
-describe('overlapMatches', () => {
+describe('overlapStatus — 일치 판정', () => {
+    const isMatch = (cachedLast: Bar, fetched: Bar[]): boolean =>
+        overlapStatus(cachedLast, fetched) === 'match';
+
     const cached = bar('2026-06-29', 120.89);
 
     it('같은 날짜의 OHLC가 같으면 true', () => {
-        expect(overlapMatches(cached, [bar('2026-06-29', 120.89)])).toBe(true);
+        expect(isMatch(cached, [bar('2026-06-29', 120.89)])).toBe(true);
     });
 
     it('상대 1e-6 이내의 부동소수 잡음은 같은 봉으로 본다', () => {
         const noisy = { ...cached, close: cached.close * (1 + 1e-9) };
-        expect(overlapMatches(cached, [noisy])).toBe(true);
+        expect(isMatch(cached, [noisy])).toBe(true);
     });
 
     it('분할 조정으로 가격이 바뀌면 false (NVDA 10:1)', () => {
         const preSplit = bar('2024-06-07', 1208.88);
         const adjusted = bar('2024-06-07', 120.888);
-        expect(overlapMatches(preSplit, [adjusted])).toBe(false);
+        expect(isMatch(preSplit, [adjusted])).toBe(false);
     });
 
     it.each(['open', 'high', 'low', 'close'] as const)(
         '%s 하나만 달라도 false',
         field => {
             const changed = { ...cached, [field]: cached[field] * 1.001 };
-            expect(overlapMatches(cached, [changed])).toBe(false);
+            expect(isMatch(cached, [changed])).toBe(false);
         }
     );
 
     it('응답에 같은 날짜 봉이 없으면 false', () => {
-        expect(overlapMatches(cached, [bar('2026-06-30')])).toBe(false);
-        expect(overlapMatches(cached, [])).toBe(false);
+        expect(isMatch(cached, [bar('2026-06-30')])).toBe(false);
+        expect(isMatch(cached, [])).toBe(false);
     });
 
     it('다른 날짜 봉이 섞여 있어도 같은 날짜 봉만 비교한다', () => {
         expect(
-            overlapMatches(cached, [
+            isMatch(cached, [
                 bar('2026-06-26', 1),
                 bar('2026-06-29', 120.89),
                 bar('2026-06-30', 2),
@@ -68,7 +70,7 @@ describe('overlapMatches', () => {
 
     it('거래량만 달라도 같은 봉이다(정정이 잦아 전체 재조회를 부르지 않는다)', () => {
         expect(
-            overlapMatches(cached, [{ ...cached, volume: cached.volume + 5 }])
+            isMatch(cached, [{ ...cached, volume: cached.volume + 5 }])
         ).toBe(true);
     });
 
@@ -81,7 +83,7 @@ describe('overlapMatches', () => {
             close: 0,
             volume: 0,
         };
-        expect(overlapMatches(zero, [{ ...zero }])).toBe(true);
+        expect(isMatch(zero, [{ ...zero }])).toBe(true);
     });
 });
 
