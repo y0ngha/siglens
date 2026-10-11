@@ -29,11 +29,13 @@ import {
     type EodServeContext,
     canExtendIncrementally,
     isEntryServable,
+    hasSuspiciousGap,
     mergeIncremental,
     overlapStatus,
     trimToWindow,
 } from './eodHistoryMerge';
 import { mergeBarsByTime } from './mergeBarsByTime';
+import { quoteSnapshotTtlSeconds } from './quoteSnapshotTtl';
 import type {
     QuoteSnapshot,
     SiglensMarketProvider,
@@ -188,11 +190,12 @@ function buildQuoteSnapshotKey(symbol: string): string {
  * 한쪽만 있는 스냅샷은 굳힌다 — 예전 두 가드(`quote`는 null 미저장, `bars:today`는 빈
  * 봉 미저장)와 다른 점이다. 두 방향 모두 의도적으로 허용한다:
  * - 시세만 있고 오늘 봉이 없음: FMP quote 행의 timestamp가 깨져 오늘 봉 매핑만 실패할 때다.
- *   TTL 동안 오늘 봉 없이(live tail 없음) 서빙하고, 그 종목의 1Day 조회마다 FMP를 다시
- *   부르지 않는다.
+ *   그동안 오늘 봉 없이(live tail 없음) 서빙하고, 그 종목의 1Day 조회마다 FMP를 다시 부르지
+ *   않는다.
  * - 오늘 봉만 있고 시세가 없음: 시세 매핑만 실패할 때다(지금 매퍼로는 사실상 생기지 않는다).
- *   TTL 동안 `getQuote`가 `null`을 돌려준다 — 예전엔 null 시세를 굳히지 않았다.
- * 어느 쪽이든 같은 행을 다시 받아도 같은 결과라 재조회로 얻을 것이 없다. TTL은 장중 60초다.
+ *   그동안 `getQuote`가 `null`을 돌려준다 — 예전엔 null 시세를 굳히지 않았다.
+ * 저장 기간은 세션 TTL(장중 60초)이되 장외에도 5분을 넘기지 않는다(`quoteSnapshotTtlSeconds`)
+ * — 공급자가 행을 고치면 5분 안에 반영된다.
  */
 function isUsableSnapshot(snapshot: QuoteSnapshot): boolean {
     return snapshot.quote !== null || snapshot.todayBar !== null;
@@ -219,8 +222,10 @@ function buildBarsRawKey(o: GetBarsOptions): string {
  * bars를 재사용해 FMP 직격을 막는다. `CachedFundamentalProvider` 패턴과 동형이다.
  *
  * inner.getBars가 FMP 장애로 throw하면 getOrSetCache의 set 전에 전파되어 장애가
- * 캐싱되지 않는다(poison 방지). 빈 봉/ null quote는 shouldCache 가드로 미캐싱해
- * transient 결과를 TTL 동안 굳히지 않는다. Redis 미설정/장애 시 getOrSetCache가
+ * 캐싱되지 않는다(poison 방지). 빈 봉과 시세·오늘 봉이 둘 다 없는 스냅샷은 shouldCache
+ * 가드로 미캐싱해 transient 결과를 TTL 동안 굳히지 않는다(한쪽만 있는 스냅샷은 캐싱한다 —
+ * `isUsableSnapshot` 참고). 시세 스냅샷은 장외에도 5분을 넘겨 두지 않는다
+ * (`quoteSnapshotTtlSeconds`). Redis 미설정/장애 시 getOrSetCache가
  * graceful fallback(inner 직접 호출)한다.
  *
  * market summary 경로는 이 데코레이터를 쓰지 않는다(getMarketDataProvider raw 사용 —
@@ -330,7 +335,8 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      *     쿨다운 뒤 재확인이 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
      *   요청 `from`이 고정 창 안이면 엔트리가 창을 덮는지만 본다(창보다 이른 `from`만 `entry.from`으로
      *   커버를 판정한다 — truncation 방지).
-     * - today `quote:snapshot:<SYM>`: `inner.getQuoteSnapshot`의 `todayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
+     * - today `quote:snapshot:<SYM>`: `inner.getQuoteSnapshot`의 `todayBar`(quote 기반 OHLCV). 세션 TTL(장중 60s)이되
+     *   장외에도 5분을 넘기지 않는다(`quoteSnapshotTtlSeconds`).
      *   `getQuote`와 같은 키·같은 업스트림 호출을 공유한다(예전 `bars:today`·`quote:` 이중 키 폐지).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
      * 단일 `getBars(from)`와 동일 집합을 만든다. history는 항상 마지막 마감까지
@@ -567,7 +573,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                 toUtcIsoDate(new Date(cachedLast.time * MS_PER_SECOND))
             );
             const status = overlapStatus(cachedLast, fetched);
-            if (status === 'match') {
+            if (status === 'match' && !hasSuspiciousGap(cachedLast, fetched)) {
                 return build(
                     trimToWindow(
                         mergeIncremental(stale.bars, fetched, cachedLast.time),
@@ -575,6 +581,18 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                     ),
                     stale.fullAt
                 );
+            }
+            if (status === 'match') {
+                // 겹친 봉은 그대로인데 새 봉이 직전 종가에서 크게 뛰었다 — 공급자가 분할 후 봉을
+                // 먼저 내고 과거 봉 조정은 나중에 하면 겹침 비교만으로는 못 잡는다(`hasSuspiciousGap`).
+                // 지금 전체를 다시 받고, `fullAt`을 0으로 둬 다음 롤에서도 한 번 더 전체를 받는다 —
+                // 조정이 하루 늦게 반영돼도 그때 바로잡힌다(예전 매일 전체 조회와 같은 상한).
+                // 실제 급등락이면 전체 조회 두 번이 비용의 전부이고 결과는 같다.
+                console.warn(
+                    '[CachedMarketDataProvider] eodhist price gap, full refetch:',
+                    options.symbol.toUpperCase()
+                );
+                return build(await fetchBars(ctx.fetchFrom), 0);
             }
             // 영구적으로 반복되면(경계 의미가 다른 공급자 등) 증분의 이득이 사라지므로 보이게 남긴다.
             console.warn(
@@ -627,7 +645,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     private getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot> {
         return getOrSetCache(
             buildQuoteSnapshotKey(symbol),
-            this.ttl(QUOTE_TTL_TIMEFRAME),
+            quoteSnapshotTtlSeconds(this.ttl(QUOTE_TTL_TIMEFRAME)),
             () => this.inner.getQuoteSnapshot(symbol),
             isUsableSnapshot
         );

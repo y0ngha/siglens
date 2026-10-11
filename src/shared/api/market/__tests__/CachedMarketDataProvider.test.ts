@@ -15,6 +15,7 @@ import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { decodeCacheValue } from '@/shared/cache/cacheValueCodec';
 import type { EodHistoryEntry } from '@/shared/api/market/eodHistoryMerge';
+import { QUOTE_SNAPSHOT_MAX_TTL_SECONDS } from '@/shared/api/market/quoteSnapshotTtl';
 
 // Counts finished decodes of eodhist entries read from Redis. The single-flight tests wait on
 // this instead of wall-clock time: a caller only takes its owner/waiter role in getOrSetCache
@@ -255,6 +256,51 @@ describe('CachedMarketDataProvider', () => {
         expect(store.has('quote:snapshot:AAPL')).toBe(true);
         await p.getQuote('aapl');
         expect(inner.getQuote).toHaveBeenCalledTimes(1);
+    });
+
+    describe('quote snapshot TTL off-hours', () => {
+        beforeEach(() => vi.useFakeTimers({ toFake: ['Date'] }));
+        afterEach(() => vi.useRealTimers());
+
+        const snapshotTtl = (): number | undefined =>
+            fakeRedis.set.mock.calls.find(
+                ([key]) => key === 'quote:snapshot:AAPL'
+            )?.[2]?.ex;
+        const fullSnapshotInner = () =>
+            makeInner({
+                getTodayBar: vi.fn(async () =>
+                    bar(Math.floor(Date.parse('2026-06-30T00:00:00Z') / 1000))
+                ),
+            });
+
+        it.each([
+            ['right after the close (Tue 16:30 EDT)', '2026-06-30T20:30:00Z'],
+            ['late evening (Tue 20:30 EDT)', '2026-07-01T00:30:00Z'],
+            ['over the weekend (Sat)', '2026-07-04T15:00:00Z'],
+        ])(
+            '%s: kept at most 5 minutes, not until the next open',
+            async (_label, iso) => {
+                vi.setSystemTime(new Date(iso));
+                await new CachedMarketDataProvider(
+                    fullSnapshotInner()
+                ).getQuote('AAPL');
+                expect(snapshotTtl()).toBe(QUOTE_SNAPSHOT_MAX_TTL_SECONDS);
+            }
+        );
+
+        it('during the session it stays 60 seconds', async () => {
+            vi.setSystemTime(new Date('2026-06-30T15:00:00Z')); // 11:00 EDT
+            await new CachedMarketDataProvider(fullSnapshotInner()).getQuote(
+                'AAPL'
+            );
+            expect(snapshotTtl()).toBe(60);
+        });
+
+        it('a partial snapshot (no today bar) gets the same 5-minute cap off-hours', async () => {
+            vi.setSystemTime(new Date('2026-07-01T00:30:00Z'));
+            await new CachedMarketDataProvider(makeInner()).getQuote('AAPL');
+            expect(snapshotTtl()).toBe(QUOTE_SNAPSHOT_MAX_TTL_SECONDS);
+        });
     });
 
     it('getQuote: null(미가용)은 캐싱하지 않는다', async () => {
@@ -1425,6 +1471,67 @@ describe('CachedMarketDataProvider', () => {
             );
             // none of the pre-split prices survive
             expect(result.every(b => b.close < 20)).toBe(true);
+        });
+
+        it('a late split adjustment (overlap matches, new bar jumps) refetches now and again at the next roll', async () => {
+            const gapWarnings = (): unknown[][] =>
+                warnSpy.mock.calls.filter(([message]: unknown[]) =>
+                    String(message).includes('eodhist price gap')
+                );
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+
+            // The provider publishes the post-split 06-30 bar but has not adjusted the past yet:
+            // the overlap bar (06-29) is unchanged, so only the jump into 06-30 reveals it.
+            ledger = [...ledger, ...barsOn(['2026-06-30'], 0.1)];
+            vi.setSystemTime(ROLL_AT);
+            await providerOver(getBars).getBars(fullOpts);
+
+            // cold + overlap probe + immediate full refetch
+            expect(getBars).toHaveBeenCalledTimes(3);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: WINDOW_START_AFTER_ROLL,
+                    before: '2026-06-30',
+                })
+            );
+            expect(gapWarnings()).toHaveLength(1);
+            expect((await readEodEntry('AAPL'))?.fullAt).toBe(0);
+
+            // A day later the provider has adjusted the whole history.
+            ledger = barsOn(
+                daysBetween(addDays(WINDOW_START, -10), '2026-07-01'),
+                0.1
+            );
+            vi.setSystemTime(new Date('2026-07-02T00:30:00Z')); // lastClosed 07-01
+            const healed = await providerOver(getBars).getBars(fullOpts);
+
+            // fullAt 0 forces a full fetch at this roll instead of an incremental one
+            expect(getBars).toHaveBeenCalledTimes(4);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: addDays(WINDOW_START, 2),
+                    before: '2026-07-01',
+                })
+            );
+            expect(healed.every(b => b.close < 20)).toBe(true);
+            expect((await readEodEntry('AAPL'))?.fullAt).toBeGreaterThan(0);
+        });
+
+        it('a normal roll without a price jump stays incremental and logs no gap warning', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            await providerOver(getBars).getBars(fullOpts);
+
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(
+                warnSpy.mock.calls.some(([message]: unknown[]) =>
+                    String(message).includes('eodhist price gap')
+                )
+            ).toBe(false);
         });
 
         it('a missing overlap bar in the upstream response refetches the whole window', async () => {

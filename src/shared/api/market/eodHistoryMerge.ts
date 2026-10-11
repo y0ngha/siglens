@@ -73,6 +73,36 @@ export function overlapStatus(cachedLast: Bar, fetched: Bar[]): OverlapStatus {
 }
 
 /**
+ * 이어 붙일 봉의 시가가 직전 종가에서 이 비율보다 크게 벌어지면 분할 조정 누락을 의심한다.
+ * 분할은 2:1(−50%)·3:2(−33%)·10:1(−90%)처럼 크고, 하루 갭이 25%를 넘는 일은 드물다. 5:4
+ * 분할(−20%)처럼 작은 비율은 못 잡는데, 그건 7일 전체 재조회(`EOD_HISTORY_FULL_REFRESH_MS`)가
+ * 덮는다. 오탐(실제 급등락)의 비용은 전체 조회 두 번이고 결과는 같다.
+ */
+export const SUSPICIOUS_GAP_RATIO = 0.25;
+
+/**
+ * 캐시의 마지막 봉(`cachedLast`)부터 새로 받은 봉들까지 이어 볼 때, 어느 날의 시가가 전날
+ * 종가에서 {@link SUSPICIOUS_GAP_RATIO}를 넘게 벌어졌는가.
+ *
+ * 겹침 비교({@link overlapStatus})는 공급자가 과거 봉 조정을 이미 반영한 경우만 잡는다.
+ * 분할 후 봉이 먼저 나오고 과거 봉 조정이 늦게 오면 겹친 봉은 그대로라 일치로 보이고, 새 봉만
+ * 분할 후 가격대로 붙어 차트에 절벽이 생긴다. 그 절벽을 이어 붙이는 순간에 본다. 직전 종가가
+ * 0 이하인 봉(가격 없음)은 비율을 정의할 수 없어 건너뛴다.
+ */
+export function hasSuspiciousGap(cachedLast: Bar, fetched: Bar[]): boolean {
+    const appended = fetched
+        .filter(b => b.time > cachedLast.time)
+        .toSorted((a, b) => a.time - b.time);
+    return appended.some((bar, i) => {
+        const prevClose = (i === 0 ? cachedLast : appended[i - 1]!).close;
+        return (
+            prevClose > 0 &&
+            Math.abs(bar.open / prevClose - 1) > SUSPICIOUS_GAP_RATIO
+        );
+    });
+}
+
+/**
  * 캐시된 봉 뒤에 겹쳐 받은 봉을 이어 붙인다. `overlapTime`보다 이른 응답 봉은 버리고
  * (겹침 이전 구간은 캐시 값이 정본이다), 같은 시각은 새로 받은 값이 이긴다.
  */
