@@ -6,6 +6,7 @@ import {
     type MarketQuote,
     type MarketSessionSpec,
     type Timeframe,
+    FEAR_GREED_LOOKBACK_DAYS,
     US_EQUITY_SESSION,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
@@ -25,7 +26,10 @@ import {
     SECONDS_PER_MINUTE,
 } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
-import type { SiglensMarketProvider } from './marketProvider.types';
+import type {
+    QuoteSnapshot,
+    SiglensMarketProvider,
+} from './marketProvider.types';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
@@ -36,7 +40,23 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
 const EOD_LONG_WINDOW_GATE_DAYS = 10;
 
 /**
- * EOD history 캐시 TTL에 더하는 여유. 세션-날짜 키(`bars:eodhist:<SYM>:<date>`)는
+ * EOD history 키가 덮는 고정 창의 길이(일). 키의 세션 날짜(`lastClosed`)에서 이만큼
+ * 거슬러 간 날짜부터 받는다. core의 1Day 호출부 가운데 가장 긴 창(공포·탐욕 5년,
+ * `now − FEAR_GREED_LOOKBACK_DAYS`)과 같은 값이라, `lastClosed ≤ 오늘`이므로 모든 호출부의
+ * `from`이 이 창 안에 든다. 섹터 스캔(400일)처럼 짧은 창은 받은 값을 잘라 쓴다.
+ */
+const EOD_HISTORY_WINDOW_DAYS = FEAR_GREED_LOOKBACK_DAYS;
+
+/**
+ * EOD history 키 접두사. 고정 창으로 바꾸면서 `v2`로 올렸다 — 옛 키에는 섹터 스캔이
+ * 400일 창으로 받아 둔 값이 섞여 있어, 새 판정(키 안의 값은 항상 고정 창 전체)이
+ * 그 값을 5년치로 잘못 믿게 된다. 키는 어차피 세션마다 날짜가 바뀌므로, 올리는 비용은
+ * 종목당 한 번 더 받는 것(평소의 세션 롤 한 번)과 같다.
+ */
+const EOD_HISTORY_KEY_PREFIX = 'bars:eodhist:v2';
+
+/**
+ * EOD history 캐시 TTL에 더하는 여유. 세션-날짜 키(`bars:eodhist:v2:<SYM>:<date>`)는
  * 다음 세션 마감 + 발행 버퍼에 날짜가 넘어가 다시 읽히지 않으므로, TTL은 "넘어가는
  * 시각까지 남은 시간"(`secondsUntilSessionRoll`)이면 충분하다. 이 여유는 인스턴스 간
  * 시계 차이로 넘어가기 직전에 읽는 요청을 덮는 정도다.
@@ -126,6 +146,35 @@ export interface CachedMarketDataProviderOptions {
 const QUOTE_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
 
 /**
+ * 시세 스냅샷 키. `getQuote`(시세)와 일봉의 오늘 봉(`getCachedDailyBars`)이 같은 키를
+ * 읽는다 — 둘 다 업스트림 `quote` 한 번에서 나오는데, 예전에는 `quote:<SYM>`과
+ * `bars:today:<SYM>` 두 키로 같은 데이터를 두 번 받았다.
+ *
+ * 이름이 `quote:<SYM>`/`bars:today:<SYM>`과 겹치지 않아야 한다: 옛 키는 각각 `MarketQuote`·
+ * `Bar[]` 모양이라, 같은 키를 재사용하면 배포 직후 옛 엔트리를 스냅샷으로 잘못 읽는다.
+ * 옛 키는 읽는 코드가 없어 각자의 세션 TTL로 저절로 사라진다.
+ */
+function buildQuoteSnapshotKey(symbol: string): string {
+    return `quote:snapshot:${symbol.toUpperCase()}`;
+}
+
+/**
+ * 둘 다 null(조회 실패·빈 응답)인 스냅샷은 굳히지 않는다.
+ *
+ * 한쪽만 있는 스냅샷은 굳힌다 — 예전 두 가드(`quote`는 null 미저장, `bars:today`는 빈
+ * 봉 미저장)와 다른 점이다. 두 방향 모두 의도적으로 허용한다:
+ * - 시세만 있고 오늘 봉이 없음: FMP quote 행의 timestamp가 깨져 오늘 봉 매핑만 실패할 때다.
+ *   TTL 동안 오늘 봉 없이(live tail 없음) 서빙하고, 그 종목의 1Day 조회마다 FMP를 다시
+ *   부르지 않는다.
+ * - 오늘 봉만 있고 시세가 없음: 시세 매핑만 실패할 때다(지금 매퍼로는 사실상 생기지 않는다).
+ *   TTL 동안 `getQuote`가 `null`을 돌려준다 — 예전엔 null 시세를 굳히지 않았다.
+ * 어느 쪽이든 같은 행을 다시 받아도 같은 결과라 재조회로 얻을 것이 없다. TTL은 장중 60초다.
+ */
+function isUsableSnapshot(snapshot: QuoteSnapshot): boolean {
+    return snapshot.quote !== null || snapshot.todayBar !== null;
+}
+
+/**
  * 캐시 키는 결과에 영향을 줄 수 있는 `GetBarsOptions` 필드를 모두 포함한다 —
  * symbol/timeframe/from/before에 더해 limit까지. 현재 FmpMarketProvider는 limit을
  * URL에 쓰지 않지만, 캐시를 거치는 호출부(fetchBarsWithIndicators)는 limit을
@@ -141,7 +190,7 @@ function buildBarsRawKey(o: GetBarsOptions): string {
 /**
  * `MarketDataProvider`를 감싸 getBars/getQuote에 provider 레벨 Redis 캐싱을 주입하는
  * 데코레이터. 분석/차트 경로가 동일 provider를 거치므로(차트 getBarsAction, 분석
- * runAnalysis/runOverallAnalysis), 여기서 캐싱하면 차트·분석·today-quote·
+ * runAnalysis/runOverallAnalysis), 여기서 캐싱하면 차트·분석·시세 스냅샷(today-quote)·
  * fear&greed 1Day가 같은 캐시를 공유한다 — 분석 결과 cache-miss 시 차트가 워밍한
  * bars를 재사용해 FMP 직격을 막는다. `CachedFundamentalProvider` 패턴과 동형이다.
  *
@@ -238,8 +287,9 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
     /**
      * 1Day 일봉을 불변 과거(history, EOD)와 오늘(today, quote)로 나눠 병렬 fetch 후 병합한다.
-     * - history `bars:eodhist:<SYM>:<lastClosed>`: 세션-날짜 키가 세션 마감마다 자동 롤 →
-     *   세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
+     * - history `bars:eodhist:v2:<SYM>:<lastClosed>`: 세션-날짜 키가 세션 마감마다 자동 롤 →
+     *   세션당 1회 재조회. 요청 `from`과 무관하게 `lastClosed − EOD_HISTORY_WINDOW_DAYS`부터
+     *   `before=lastClosed`(완료된 EOD)까지의 고정 창을 받는다.
      *   `lastClosed`는 `lastClosedSessionDate(this.session, now)`가 세션 스펙에서 유도한다:
      *   - US 주식: 16:00 ET(반장은 13:00) 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말·NYSE 휴장일 되감기.
      *   - 한국 주식: 15:30 KST 마감 + 같은 버퍼 + 주말·KRX 휴장일 되감기
@@ -253,12 +303,14 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      *     `lastClosed`가 오늘 당일의 세션 날짜와 같을 때(마감+버퍼 당일)만 해당한다. FMP 발행 지연이
      *     전일 봉에 걸리는 일반 장중 케이스에서는 해당 날짜가 EOD 발행 전까지 진정으로 부재하며,
      *     short TTL 재시도가 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
-     *   isFresh는 요청 from 커버(truncation 방지)만 판정.
-     * - today `bars:today:<SYM>`: `inner.getTodayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
+     *   isFresh는 요청 `from`이 고정 창 안이면 비어 있지 않은지만 본다(창보다 이른 `from`만
+     *   첫 봉으로 커버를 판정한다 — truncation 방지).
+     * - today `quote:snapshot:<SYM>`: `inner.getQuoteSnapshot`의 `todayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
+     *   `getQuote`와 같은 키·같은 업스트림 호출을 공유한다(예전 `bars:today`·`quote:` 이중 키 폐지).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
      * 단일 `getBars(from)`와 동일 집합을 만든다. 세션-날짜 키로 history는 항상 마지막 마감까지
-     * 커버, today(quote)와 갭 없음. 키 전제: 모든 long-1Day 호출부가 core 730d lookback 공유
-     * (짧은 lookback은 isLongDailyWindow가 단일 경로로 분기).
+     * 커버, today(quote)와 갭 없음. 키 전제: long-1Day 호출부의 `from`은
+     * 모두 고정 창 안이다(짧은 lookback은 isLongDailyWindow가 단일 경로로 분기).
      *
      * `now`는 `getBars`에서 캡처한 단일 클락 값을 받아, 한 번의 호출 안에서 `isLongDailyWindow`와
      * 동일 시각 기준으로 동작하도록 보장한다.
@@ -273,10 +325,28 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         // NYSE만 쉬는 날 KRX 봉이 `before=lastClosed`에 잘려 나간다.
         const lastClosed = lastClosedSessionDate(this.session, now);
         const lastClosedThreshold = utcMidnightSeconds(lastClosed);
-        const fromThreshold =
-            options.from !== undefined
-                ? utcMidnightSeconds(options.from)
-                : null;
+        // 히스토리는 요청 `from`이 아니라 키(세션 날짜)에서 정해지는 고정 창으로 받는다.
+        //
+        // 예전에는 요청 `from`으로 받고 "첫 봉 ≤ from"일 때만 캐시 값을 썼다. 그런데 FMP는
+        // `from` 이후 첫 **거래일**부터 주므로, `from`이 주말·휴장일이면(core의
+        // `now − 1830일`은 매주 화·수요일에 주말이 된다) 첫 봉이 항상 `from`보다 늦고,
+        // 상장한 지 5년이 안 된 종목은 매일 그랬다(2026-10 운영 표본 18% — Redis의
+        // `bars:eodhist:*` 키를 표본 추출해 첫 봉 날짜가 창 시작보다 늦은 비율로 쟀다). 그때마다
+        // 캐시를 무시하고 5년치를 다시 받아 다시 썼다 — FMP 대시보드의 엔드포인트별 Size에서
+        // `historical-price-eod/full`이 1위였던 데 이 경로가 크게 기여했다.
+        //
+        // 이제 키 안의 값은 언제나 `historyFrom`부터 받은 것이므로, 요청 `from`이 창 안이면
+        // 첫 봉 날짜와 상관없이 그대로 쓴다(그 앞에 봉이 없다는 뜻일 뿐이다). 창보다 이른
+        // `from`(지금은 호출부가 없다)만 예전처럼 첫 봉으로 판정하고 그 `from`으로 받는다.
+        const historyFrom = isoDateDaysAgo(
+            new Date(utcMidnightSeconds(lastClosed) * MS_PER_SECOND),
+            EOD_HISTORY_WINDOW_DAYS
+        );
+        const requestedFrom = options.from?.slice(0, ISO_DATE_LENGTH);
+        const withinWindow =
+            requestedFrom === undefined || requestedFrom >= historyFrom;
+        const fetchFrom = withinWindow ? historyFrom : requestedFrom;
+        const fromThreshold = utcMidnightSeconds(fetchFrom);
         const symbolKey = options.symbol.toUpperCase();
         // 이 키가 다시 읽히지 않게 되는 시각(다음 세션 마감 + 발행 버퍼)까지만 둔다.
         const rollTtlSeconds =
@@ -285,7 +355,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
         const [history, todayBars] = await Promise.all([
             this.getHistory(
-                `bars:eodhist:${symbolKey}:${lastClosed}`,
+                `${EOD_HISTORY_KEY_PREFIX}:${symbolKey}:${lastClosed}`,
                 bars =>
                     bars.length > 0 &&
                     bars[bars.length - 1]!.time >= lastClosedThreshold
@@ -294,19 +364,18 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                               EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS,
                               rollTtlSeconds
                           ),
-                () => this.inner.getBars({ ...options, before: lastClosed }),
+                () =>
+                    this.inner.getBars({
+                        ...options,
+                        from: fetchFrom,
+                        before: lastClosed,
+                    }),
                 bars =>
                     bars.length > 0 &&
-                    (fromThreshold === null || bars[0]!.time <= fromThreshold)
+                    (withinWindow || bars[0]!.time <= fromThreshold)
             ),
-            getOrSetCache<Bar[]>(
-                `bars:today:${symbolKey}`,
-                this.ttl('1Day'),
-                async () => {
-                    const bar = await this.inner.getTodayBar(options.symbol);
-                    return bar !== null ? [bar] : [];
-                },
-                bars => bars.length > 0
+            this.getQuoteSnapshot(options.symbol).then(({ todayBar }) =>
+                todayBar !== null ? [todayBar] : []
             ),
         ]);
 
@@ -424,11 +493,21 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         return bars;
     }
 
-    getQuote = (symbol: string): Promise<MarketQuote | null> =>
-        getOrSetCache(
-            `quote:${symbol.toUpperCase()}`,
+    /**
+     * `getQuote`와 일봉 오늘 봉이 공유하는 단일 읽기 경로. 두 호출자가 같은 키를 같은
+     * `ttl`·`isUsableSnapshot`으로 부르므로 `getOrSetCache`의 in-flight 공유(소유자 인자가
+     * 전원에게 적용된다)와 어긋나지 않는다 — 새 호출자를 더하면 이 메서드만 거칠 것.
+     * 업스트림에는 첫 호출자의 symbol 표기가 그대로 간다(키만 대문자화).
+     */
+    private getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot> {
+        return getOrSetCache(
+            buildQuoteSnapshotKey(symbol),
             this.ttl(QUOTE_TTL_TIMEFRAME),
-            () => this.inner.getQuote(symbol),
-            quote => quote !== null
+            () => this.inner.getQuoteSnapshot(symbol),
+            isUsableSnapshot
         );
+    }
+
+    getQuote = async (symbol: string): Promise<MarketQuote | null> =>
+        (await this.getQuoteSnapshot(symbol)).quote;
 }
