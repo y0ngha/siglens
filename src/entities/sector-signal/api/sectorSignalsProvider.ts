@@ -19,9 +19,9 @@ import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor
  * 예전에는 raw provider(`marketDataProviderFor`)를 썼다. 미국 scope 일봉 스캔은 ~80종목
  * 각각에 `historical-price-eod/full`(400일) + `quote`(오늘 봉) + `quote`(getQuote, 같은 엔드포인트)를
  * 불렀다 — 리필 한 번에 FMP ~240회이고, 400일 일봉 응답을 매번 통째로 받았다. 캐시
- * provider(`CachedMarketDataProvider`)로 바꾸면 과거 일봉은 종목 페이지와 같은 세션 롤
- * 키(`bars:eodhist:v2:<SYM>:<lastClosed>`)를 공유해 세션당 한 번만 받고(그 키는 요청 창과
- * 무관하게 늘 5년 고정 창을 담으므로 400일 요청은 잘라 쓴다), 리필 비용은
+ * provider(`CachedMarketDataProvider`)로 바꾸면 과거 일봉은 종목 페이지와 같은
+ * 종목당 키(`bars:eodhist:v3:<SYM>`)를 공유해 세션당 한 번, 그것도 새 봉만 증분으로 받고(그 키는
+ * 요청 창과 무관하게 늘 5년 고정 창을 담으므로 400일 요청은 잘라 쓴다), 리필 비용은
  * 60초 캐시된 오늘 봉·시세뿐이다.
  *
  * ## KR 인트라데이는 raw로 둔다
@@ -30,7 +30,7 @@ import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor
  * yahoo provider는 그 값을 그대로 쓰므로 캐시 provider의 단일 키 경로(`bars:raw:*`)에서
  * 키가 매번 달라져 **읽히지 않는 SET만 늘어난다**. FMP scope는 인트라데이도 날짜 단위
  * 히스토리/tail 분리(`intradayDateTimeZone`)가 키를 날짜로 정규화하고, 일봉은 어느
- * scope든 세션 날짜 키라 문제가 없다.
+ * scope든 종목당 고정 키라 문제가 없다.
  */
 export function sectorSignalsProviderFor(
     scope: DashboardScopeId,
