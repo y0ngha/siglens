@@ -29,6 +29,9 @@ import type { EarningsReport } from '@y0ngha/siglens-core';
  * "오늘"은 UTC 날짜다. 미국 실적일(ET)과 최대 하루 어긋날 수 있지만, 그 경계 구간은 위의
  * "하루 안" 규칙이 1시간 TTL로 덮는다.
  */
+// 두 값은 지금 같지만(1시간) 이유가 달라 따로 둔다 — 실적일 직전·당일은 FMP가 다음 분기 일정을
+// 추가하는 시점을 놓치지 않으려는 것이고, 일정 없음은 새로 잡힌 일정을 늦게 보지 않으려는 것이다.
+// 한쪽만 조정할 일이 생기면 서로 끌려가지 않는다.
 const NEAR_EARNINGS_TTL_SECONDS = SECONDS_PER_HOUR;
 const NO_SCHEDULE_TTL_SECONDS = SECONDS_PER_HOUR;
 const DEFAULT_TTL_SECONDS = SECONDS_PER_QUARTER_DAY;
@@ -62,6 +65,8 @@ export function nextEarningsTtlSeconds(
     today: string
 ): number {
     if (report === null) return NO_SCHEDULE_TTL_SECONDS;
+    // 지난 실적일(음수)도 이 분기로 1시간이 된다. 호출부는 지난 실적일을 `shouldCache`로 먼저
+    // 걸러 저장하지 않으므로 실제로는 닿지 않는다 — 그 가드가 빠져도 오래 남지 않게 하는 방어다.
     return daysFromToday(report.earningsDate, today) <=
         NEAR_EARNINGS_WINDOW_DAYS
         ? NEAR_EARNINGS_TTL_SECONDS
