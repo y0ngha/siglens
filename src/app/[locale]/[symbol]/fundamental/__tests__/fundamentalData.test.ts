@@ -47,6 +47,18 @@ vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
         getPriceTargetSummary = fundamentalClient.getPriceTargetSummary;
     },
 }));
+// FMP 경로의 현금흐름·성장률은 재무제표 클라이언트에서 온다(`getFundamentalDataProvider`가
+// 재무제표 캐시를 주입한다). 그 클라이언트도 모킹해 실제 FMP로 나가지 않게 한다.
+const statementsClient = vi.hoisted(() => ({
+    getCashFlowStatements: vi.fn().mockResolvedValue([]),
+    getIncomeStatementGrowths: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('@/shared/api/fmp/financialStatementsClient', () => ({
+    FmpFinancialStatementsClient: class MockFmpFinancialStatementsClient {
+        getCashFlowStatements = statementsClient.getCashFlowStatements;
+        getIncomeStatementGrowths = statementsClient.getIncomeStatementGrowths;
+    },
+}));
 // Redis 레이어는 getOrSetCache.test.ts에서 독립적으로 커버한다. 여기서는 fetcher로
 // 위임만 시켜, Redis 환경변수가 설정된 CI에서도 실제 I/O 없이 격리되게 한다.
 vi.mock('@/shared/cache/getOrSetCache', () => ({
@@ -107,6 +119,14 @@ describe('fundamentalData', () => {
     it('getIncomeStatementGrowth returns null', async () => {
         const result = await getIncomeStatementGrowth('AAPL');
         expect(result).toBeNull();
+        expect(statementsClient.getIncomeStatementGrowths).toHaveBeenCalledWith(
+            'AAPL',
+            'annual',
+            40
+        );
+        expect(
+            fundamentalClient.getIncomeStatementGrowth
+        ).not.toHaveBeenCalled();
     });
 
     it('getFinancialScores returns null', async () => {
@@ -117,6 +137,12 @@ describe('fundamentalData', () => {
     it('getCashFlowStatement returns null', async () => {
         const result = await getCashFlowStatement('AAPL');
         expect(result).toBeNull();
+        expect(statementsClient.getCashFlowStatements).toHaveBeenCalledWith(
+            'AAPL',
+            'annual',
+            40
+        );
+        expect(fundamentalClient.getCashFlowStatement).not.toHaveBeenCalled();
     });
 
     it('getAnalystEstimates returns null', async () => {

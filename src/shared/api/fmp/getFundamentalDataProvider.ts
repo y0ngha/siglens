@@ -1,14 +1,29 @@
 import { FmpFundamentalClient } from './fundamentalClient';
 import { CachedFundamentalProvider } from './CachedFundamentalProvider';
+import { CachedFinancialStatementsProvider } from './CachedFinancialStatementsProvider';
+import { FmpFinancialStatementsClient } from './financialStatementsClient';
 import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { YahooFundamentalProvider } from '@/shared/api/yahoo/YahooFundamentalProvider';
 import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
-/** FMP(미국·크립토) 경로. E2E에서는 Fake로 대체된다. */
+/**
+ * FMP(미국·크립토) 경로. E2E에서는 Fake로 대체된다.
+ *
+ * 현금흐름·성장률은 재무제표 캐시(`financials:*:<SYM>:annual`)에서 꺼낸다 — 같은 FMP
+ * 응답을 펀더멘털 키로 한 번 더 받지 않기 위해서다(`LatestAnnualStatementsSource` 참고).
+ * 재무제표 provider 싱글턴과 인스턴스는 다르지만, 공유하는 것은 Redis 키와
+ * `getOrSetCache`의 프로세스 단위 in-flight 맵이라 FMP 호출은 하나로 접힌다.
+ */
 const getFmpProvider: () => FundamentalProviderWithRawPeers =
     createE2EGatedSingleton(
-        () => new CachedFundamentalProvider(new FmpFundamentalClient()),
+        () =>
+            new CachedFundamentalProvider(
+                new FmpFundamentalClient(),
+                new CachedFinancialStatementsProvider(
+                    new FmpFinancialStatementsClient()
+                )
+            ),
         () => {
             // Sync factory — no dynamic import possible here, so the fake loads via a
             // gated require. Server-only and dead when E2E_TEST is unset (Turbopack

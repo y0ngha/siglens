@@ -10,6 +10,7 @@ import type {
     FundamentalProviderWithRawPeers,
 } from './fundamentalProvider.types';
 import type {
+    CashFlowRow,
     EarningsReport,
     FundamentalAnalystEstimateInput,
     FundamentalCashFlowInput,
@@ -25,6 +26,7 @@ import type {
     FundamentalSectorPerformanceInput,
     FundamentalValuationMetrics,
     GradesEvent,
+    IncomeGrowthRow,
 } from '@y0ngha/siglens-core';
 
 const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
@@ -69,8 +71,30 @@ function serveablePeers(
         .slice(0, PEER_LIMIT);
 }
 
+/**
+ * 재무제표 캐시에서 최신 연간 행을 꺼내는 출처 — `CachedFinancialStatementsProvider`가 구현한다.
+ *
+ * FMP 경로에서 펀더멘털 탭의 현금흐름·성장률은 재무제표 탭이 이미 받아 둔 연간 응답의 첫
+ * 행과 같은 데이터다. 이걸 주입하면 두 탭이 FMP 응답 하나와 Redis 키 하나를 함께 쓴다.
+ * 출처는 FMP 장애를 throw해야 한다(빈 값으로 삼키면 장애가 "데이터 없음"으로 캐싱된다).
+ */
+export interface LatestAnnualStatementsSource {
+    getLatestAnnualCashFlow(symbol: string): Promise<CashFlowRow | null>;
+    getLatestAnnualIncomeGrowth(
+        symbol: string
+    ): Promise<IncomeGrowthRow | null>;
+}
+
 export class CachedFundamentalProvider implements FundamentalProviderWithRawPeers {
-    constructor(private readonly inner: FundamentalProvider) {}
+    /**
+     * @param annualStatements 주면 `getCashFlowStatement`·`getIncomeStatementGrowth`를 여기서
+     *   꺼낸다. yahoo 경로는 두 값이 이미 다른 펀더멘털과 한 응답(`getYahooFundamentals`)에서
+     *   나오므로 주지 않고, 종전처럼 inner + 자체 키를 쓴다.
+     */
+    constructor(
+        private readonly inner: FundamentalProvider,
+        private readonly annualStatements: LatestAnnualStatementsSource | null = null
+    ) {}
 
     getProfile = cache((symbol: string): Promise<FundamentalProfile | null> =>
         getOrSetCache(`fundamental:profile:${sym(symbol)}`, TTL, () =>
@@ -123,17 +147,43 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
     );
 
     getCashFlowStatement = cache(
-        (symbol: string): Promise<FundamentalCashFlowInput | null> =>
-            getOrSetCache(`fundamental:cash-flow:${sym(symbol)}`, TTL, () =>
-                this.inner.getCashFlowStatement(symbol)
-            )
+        async (symbol: string): Promise<FundamentalCashFlowInput | null> => {
+            if (this.annualStatements === null) {
+                return getOrSetCache(
+                    `fundamental:cash-flow:${sym(symbol)}`,
+                    TTL,
+                    () => this.inner.getCashFlowStatement(symbol)
+                );
+            }
+            const row =
+                await this.annualStatements.getLatestAnnualCashFlow(symbol);
+            return row === null
+                ? null
+                : {
+                      operatingCashFlow: row.operatingCashFlow,
+                      reportedCurrency: row.reportedCurrency,
+                  };
+        }
     );
 
     getIncomeStatementGrowth = cache(
-        (symbol: string): Promise<FundamentalGrowthInput | null> =>
-            getOrSetCache(`fundamental:growth:${sym(symbol)}`, TTL, () =>
-                this.inner.getIncomeStatementGrowth(symbol)
-            )
+        async (symbol: string): Promise<FundamentalGrowthInput | null> => {
+            if (this.annualStatements === null) {
+                return getOrSetCache(
+                    `fundamental:growth:${sym(symbol)}`,
+                    TTL,
+                    () => this.inner.getIncomeStatementGrowth(symbol)
+                );
+            }
+            const row =
+                await this.annualStatements.getLatestAnnualIncomeGrowth(symbol);
+            return row === null
+                ? null
+                : {
+                      growthRevenue: row.growthRevenue,
+                      growthEPS: row.growthEPS,
+                  };
+        }
     );
 
     getFinancialScores = cache(
