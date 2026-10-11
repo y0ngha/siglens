@@ -461,6 +461,19 @@ describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
         expect(inner.getRatiosTtm).toHaveBeenCalledTimes(1);
     });
 
+    it('a failed sibling write does not affect the requested value or its own key', async () => {
+        // fetchValuationPair writes the sibling (ratios) first; make that Redis write fail.
+        fakeRedis.set.mockImplementationOnce(async () => {
+            throw new Error('redis write failed');
+        });
+        const inner = makePairInner();
+        const provider = new CachedFundamentalProvider(inner);
+
+        expect(await provider.getKeyMetricsTtm('aapl')).toEqual(metrics);
+        expect(store.has('fundamental:key-metrics:AAPL')).toBe(true);
+        expect(store.has('fundamental:ratios:AAPL')).toBe(false);
+    });
+
     it('caches a legit null pair for both keys', async () => {
         const inner = makePairInner({
             getKeyMetricsTtm: vi.fn(async () => null),

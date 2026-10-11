@@ -33,9 +33,10 @@ export class FakeMarketProvider implements SiglensMarketProvider {
     }
 
     async getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot> {
-        return {
-            quote: await this.getQuote(symbol),
-            todayBar: await this.getTodayBar(symbol),
-        };
+        const [quote, todayBar] = await Promise.all([
+            this.getQuote(symbol),
+            this.getTodayBar(symbol),
+        ]);
+        return { quote, todayBar };
     }
 }

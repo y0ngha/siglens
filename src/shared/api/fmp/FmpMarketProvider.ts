@@ -20,6 +20,7 @@ import {
     nthSundayDay,
     getEasternOffsetHours,
 } from '@/shared/lib/eastern';
+import { mapOrNull } from '@/shared/api/market/mapOrNull';
 
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
 
@@ -292,25 +293,15 @@ export class FmpMarketProvider implements SiglensMarketProvider {
         }
         const row = raw[0]!;
         return {
-            quote: this.safeMap('getQuote', symbol, () =>
+            quote: mapOrNull('FmpMarketProvider', 'getQuote', symbol, () =>
                 toFmpMarketQuote(symbol, row)
             ),
-            todayBar: this.safeMap('today-quote', symbol, () =>
-                toFmpTodayBar(row)
+            todayBar: mapOrNull(
+                'FmpMarketProvider',
+                'today-quote',
+                symbol,
+                () => toFmpTodayBar(row)
             ),
         };
-    }
-
-    private safeMap<T>(label: string, symbol: string, map: () => T): T | null {
-        try {
-            return map();
-        } catch (error) {
-            console.warn(
-                `[FmpMarketProvider] ${label} mapping failed:`,
-                symbol,
-                error
-            );
-            return null;
-        }
     }
 }

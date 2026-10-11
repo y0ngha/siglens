@@ -26,6 +26,10 @@ export interface QuoteSnapshot {
  * `getQuote`와 `getTodayBar`가 같은 FMP `quote` 엔드포인트를 따로 불러, 캐시 계층이 같은
  * 데이터를 두 키로 두 번 받았다. 캐시 데코레이터는 이 메서드 하나만 부른다.
  * 실패는 던지지 않고 `{ quote: null, todayBar: null }`로 degrade한다(기존 getQuote 의미).
+ *
+ * `getTodayBar`는 캐시 계층이 더는 부르지 않지만 포트에 남긴다 — FMP 어댑터의 캐시 없는
+ * 일봉 경로(`getDailyBars`)가 오늘 봉을 붙일 때 쓰고, 캐시를 거치지 않는 raw provider
+ * 소비자가 "오늘 봉만" 필요할 때 스냅샷의 시세 매핑까지 요구하지 않게 하려는 것이다.
  */
 export interface SiglensMarketProvider extends MarketDataProvider {
     getTodayBar(symbol: string): Promise<Bar | null>;

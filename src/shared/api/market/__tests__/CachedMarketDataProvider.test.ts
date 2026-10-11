@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
 import {
     CRYPTO_SESSION,
+    FEAR_GREED_LOOKBACK_DAYS,
     type Bar,
     type GetBarsOptions,
     type MarketQuote,
@@ -615,11 +616,22 @@ describe('CachedMarketDataProvider', () => {
         });
 
         // ── covers/truncation: isFresh=false when oldest bar > from ──────────
-        // History window for lastClosed 2026-06-29: 2026-06-29 − 1830d = 2021-06-25.
+        // History window for lastClosed 2026-06-29 starts FEAR_GREED_LOOKBACK_DAYS earlier.
+        // Derived (not literal) so a change to the core constant moves the expectations too.
+        const addDays = (iso: string, days: number): string =>
+            new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000)
+                .toISOString()
+                .slice(0, 10);
+        const utcSeconds = (iso: string): number =>
+            Math.floor(Date.parse(`${iso}T00:00:00Z`) / 1000);
+        const WINDOW_START = addDays('2026-06-29', -FEAR_GREED_LOOKBACK_DAYS);
+        // First Saturday inside the window, and the Monday FMP would start at instead.
+        const WINDOW_SATURDAY = Array.from({ length: 7 }, (_, i) =>
+            addDays(WINDOW_START, i + 1)
+        ).find(d => new Date(`${d}T00:00:00Z`).getUTCDay() === 6)!;
+        const WINDOW_MONDAY = addDays(WINDOW_SATURDAY, 2);
         it('[fixed window] history is fetched from the key window, not the request from', async () => {
-            const getBars = vi.fn(async () => [
-                bar(Math.floor(Date.parse('2021-06-25T00:00:00Z') / 1000)),
-            ]);
+            const getBars = vi.fn(async () => [bar(utcSeconds(WINDOW_START))]);
             const provider = new CachedMarketDataProvider(
                 makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
             );
@@ -628,7 +640,7 @@ describe('CachedMarketDataProvider', () => {
 
             expect(getBars).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    from: '2021-06-25',
+                    from: WINDOW_START,
                     before: '2026-06-29',
                 })
             );
@@ -639,8 +651,8 @@ describe('CachedMarketDataProvider', () => {
             // The fake honours `from` like FMP, so a request-shaped fetch would store
             // only the 2025 bar and force the wide request to fetch again.
             const all = [
-                bar(Math.floor(Date.parse('2021-06-25T00:00:00Z') / 1000)),
-                bar(Math.floor(Date.parse('2025-06-30T00:00:00Z') / 1000)),
+                bar(utcSeconds(WINDOW_START)),
+                bar(utcSeconds('2025-06-30')),
             ];
             const getBars = vi.fn(async (o: GetBarsOptions) =>
                 all.filter(
@@ -657,7 +669,7 @@ describe('CachedMarketDataProvider', () => {
             });
             const wide = await provider.getBars({
                 ...longOpts,
-                from: '2021-06-30',
+                from: addDays(WINDOW_START, 5),
             });
 
             expect(getBars).toHaveBeenCalledTimes(1);
@@ -685,14 +697,14 @@ describe('CachedMarketDataProvider', () => {
             // core asks for now − 1830d, which lands on a weekend every Tue/Wed;
             // FMP then starts at the next trading day, after `from`.
             const getBars = vi.fn(async () => [
-                bar(Math.floor(Date.parse('2021-06-28T00:00:00Z') / 1000)), // Mon
-                bar(Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)),
+                bar(utcSeconds(WINDOW_MONDAY)),
+                bar(utcSeconds('2026-06-29')),
             ]);
             const inner = makeInner({
                 getBars,
                 getTodayBar: vi.fn(async () => null),
             });
-            const weekendFrom = { ...longOpts, from: '2021-06-26' }; // Sat
+            const weekendFrom = { ...longOpts, from: WINDOW_SATURDAY };
 
             await new CachedMarketDataProvider(inner).getBars(weekendFrom);
             await new CachedMarketDataProvider(inner).getBars(weekendFrom);
@@ -701,9 +713,7 @@ describe('CachedMarketDataProvider', () => {
         });
 
         it('[truncation fix] a from older than the window refetches from that from', async () => {
-            const getBars = vi.fn(async () => [
-                bar(Math.floor(Date.parse('2021-06-25T00:00:00Z') / 1000)),
-            ]);
+            const getBars = vi.fn(async () => [bar(utcSeconds(WINDOW_START))]);
             const provider = new CachedMarketDataProvider(
                 makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
             );
@@ -711,10 +721,11 @@ describe('CachedMarketDataProvider', () => {
             await provider.getBars(longOpts);
             expect(getBars).toHaveBeenCalledTimes(1);
 
-            await provider.getBars({ ...longOpts, from: '2020-01-01' });
+            const olderFrom = addDays(WINDOW_START, -30);
+            await provider.getBars({ ...longOpts, from: olderFrom });
             expect(getBars).toHaveBeenCalledTimes(2); // covers fail → refetch
             expect(getBars).toHaveBeenLastCalledWith(
-                expect.objectContaining({ from: '2020-01-01' })
+                expect.objectContaining({ from: olderFrom })
             );
         });
 
@@ -1327,7 +1338,8 @@ describe('CachedMarketDataProvider', () => {
             const getBars = vi.fn(async () => completeHistory);
             const p = new CachedMarketDataProvider(makeInner({ getBars }));
             await p.getBars(longOpts);
-            // 고정 창(2021-06-25~)보다 이른 from이라야 L1 값이 덮지 못한다.
+            // 고정 창 시작(마감일 − FEAR_GREED_LOOKBACK_DAYS)보다 이른 from이라야 L1 값이 덮지 못한다 —
+            // 상수가 커져 창이 이 날짜를 넘어가면 재조회가 안 일어나 이 테스트가 실패로 알린다.
             const older = [
                 bar(Math.floor(Date.parse('2021-01-04T00:00:00Z') / 1000)),
                 ...completeHistory,

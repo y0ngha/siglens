@@ -162,9 +162,13 @@ function buildQuoteSnapshotKey(symbol: string): string {
  * 둘 다 null(조회 실패·빈 응답)인 스냅샷은 굳히지 않는다.
  *
  * 한쪽만 있는 스냅샷은 굳힌다 — 예전 두 가드(`quote`는 null 미저장, `bars:today`는 빈
- * 봉 미저장)와 다른 점이다. 실제로 생기는 경우는 FMP quote 행의 timestamp가 깨져 오늘 봉
- * 매핑만 실패할 때인데, 그 행이 고쳐지지 않는 한 다시 받아도 같다. 그래서 TTL 동안 오늘
- * 봉 없이(live tail 없음) 서빙하고, 그 종목의 1Day 조회마다 FMP를 다시 부르지 않는다.
+ * 봉 미저장)와 다른 점이다. 두 방향 모두 의도적으로 허용한다:
+ * - 시세만 있고 오늘 봉이 없음: FMP quote 행의 timestamp가 깨져 오늘 봉 매핑만 실패할 때다.
+ *   TTL 동안 오늘 봉 없이(live tail 없음) 서빙하고, 그 종목의 1Day 조회마다 FMP를 다시
+ *   부르지 않는다.
+ * - 오늘 봉만 있고 시세가 없음: 시세 매핑만 실패할 때다(지금 매퍼로는 사실상 생기지 않는다).
+ *   TTL 동안 `getQuote`가 `null`을 돌려준다 — 예전엔 null 시세를 굳히지 않았다.
+ * 어느 쪽이든 같은 행을 다시 받아도 같은 결과라 재조회로 얻을 것이 없다. TTL은 장중 60초다.
  */
 function isUsableSnapshot(snapshot: QuoteSnapshot): boolean {
     return snapshot.quote !== null || snapshot.todayBar !== null;
@@ -326,8 +330,10 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         // 예전에는 요청 `from`으로 받고 "첫 봉 ≤ from"일 때만 캐시 값을 썼다. 그런데 FMP는
         // `from` 이후 첫 **거래일**부터 주므로, `from`이 주말·휴장일이면(core의
         // `now − 1830일`은 매주 화·수요일에 주말이 된다) 첫 봉이 항상 `from`보다 늦고,
-        // 상장한 지 5년이 안 된 종목은 매일 그랬다(2026-10 운영 표본 18%). 그때마다 캐시를
-        // 무시하고 5년치를 다시 받아 다시 썼다 — FMP 대역폭 1위 엔드포인트의 상당 부분이다.
+        // 상장한 지 5년이 안 된 종목은 매일 그랬다(2026-10 운영 표본 18% — Redis의
+        // `bars:eodhist:*` 키를 표본 추출해 첫 봉 날짜가 창 시작보다 늦은 비율로 쟀다). 그때마다
+        // 캐시를 무시하고 5년치를 다시 받아 다시 썼다 — FMP 대시보드의 엔드포인트별 Size에서
+        // `historical-price-eod/full`이 1위였던 데 이 경로가 크게 기여했다.
         //
         // 이제 키 안의 값은 언제나 `historyFrom`부터 받은 것이므로, 요청 `from`이 창 안이면
         // 첫 봉 날짜와 상관없이 그대로 쓴다(그 앞에 봉이 없다는 뜻일 뿐이다). 창보다 이른

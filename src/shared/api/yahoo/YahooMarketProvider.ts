@@ -14,6 +14,7 @@ import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
 import { pickYahooDisplayName } from './displayName';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { mapOrNull } from '@/shared/api/market/mapOrNull';
 
 const yahooFinance = getYahooClient();
 
@@ -256,25 +257,15 @@ export class YahooMarketProvider implements SiglensMarketProvider {
         }
         if (!hasQuotedPrice(q)) return { quote: null, todayBar: null };
         return {
-            quote: this.safeMap('getQuote', symbol, () =>
+            quote: mapOrNull('YahooMarketProvider', 'getQuote', symbol, () =>
                 toYahooMarketQuote(symbol, q)
             ),
-            todayBar: this.safeMap('today-quote', symbol, () =>
-                toYahooTodayBar(q)
+            todayBar: mapOrNull(
+                'YahooMarketProvider',
+                'today-quote',
+                symbol,
+                () => toYahooTodayBar(q)
             ),
         };
-    }
-
-    private safeMap<T>(label: string, symbol: string, map: () => T): T | null {
-        try {
-            return map();
-        } catch (error) {
-            console.warn(
-                `[YahooMarketProvider] ${label} mapping failed:`,
-                symbol,
-                error
-            );
-            return null;
-        }
     }
 }
