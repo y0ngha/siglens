@@ -6,8 +6,9 @@ import {
 } from '@/shared/config/time';
 import type { EarningsReport } from '@y0ngha/siglens-core';
 
-/**
- * `getEarningsReport`(다음 실적 일정 1건) Redis 캐시의 신선도·TTL 규칙.
+/*
+ * `getEarningsReport`(다음 실적 일정 1건) Redis 캐시의 신선도·TTL 규칙 — 이 파일 전체의 정책.
+ * 아래 두 함수가 이 규칙을 구현한다(읽기 판정 / 쓰기 TTL).
  *
  * 이 값은 core 펀더멘털 분석이 `nextEarningsAt`으로 프롬프트에 넣는다. 캐시 때문에 **이미 지난
  * 실적일**이나 **바뀐 일정**을 오래 쓰면 안 된다. 그래서:
@@ -41,7 +42,10 @@ function daysFromToday(earningsDate: string, today: string): number {
     );
 }
 
-/** 캐시된 값을 그대로 써도 되는가. 지난 실적일은 다시 받는다. */
+/**
+ * 캐시된 값을 그대로 써도 되는가. 지난 실적일(오늘 UTC보다 이전)은 쓰지 않고 다시 받는다.
+ * 같은 판정을 쓰기 쪽 `shouldCache`에도 써서, 받은 값이 지난 날짜면 저장하지 않는다.
+ */
 export function isNextEarningsCacheFresh(
     report: EarningsReport | null,
     today: string
@@ -49,7 +53,10 @@ export function isNextEarningsCacheFresh(
     return report === null || daysFromToday(report.earningsDate, today) >= 0;
 }
 
-/** 방금 받은 값의 TTL(초). */
+/**
+ * 방금 받은 값의 TTL(초): 일정 없음(null) 1시간, 실적일이 오늘·내일이면 1시간, 그 외 6시간.
+ * 근거와 감수하는 지연은 파일 상단 주석 참고.
+ */
 export function nextEarningsTtlSeconds(
     report: EarningsReport | null,
     today: string

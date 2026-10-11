@@ -75,8 +75,9 @@ export function daysUntil(
  * `nextEarningsDate` goes through `getNextEarningsReport` — the same
  * DB-backed, 24h-staleness-gated loader the news/analysis paths already use
  * (`entities/earnings-report`) — rather than the provider's own
- * `getEarningsReport` (a separate 24h Redis key used by core's fundamental
- * analysis). Routing through it here means this tool shares the DB rows the
+ * `getEarningsReport` (a separate Redis key, `fundamental:earnings-next:<SYM>`,
+ * used by core's fundamental analysis; its date-dependent TTLs live in
+ * `nextEarningsCachePolicy.ts`). Routing through it here means this tool shares the DB rows the
  * news tab shows instead of adding another FMP/yahoo call per turn.
  *
  * `profitability`/`growth` fields are RENAMED with an explicit `...Pct`
