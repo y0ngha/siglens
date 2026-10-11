@@ -85,8 +85,11 @@ describe('callGeminiAgent', () => {
         );
         expect(params.reasoning_effort).toBe('minimal');
         expect(params.thinking).toBeUndefined();
+        // Google ignores sampling params from 3.6 Flash on and announced a 400
+        // for them on upcoming models — none may be sent.
+        expect(params).not.toHaveProperty('temperature');
+        expect(params).not.toHaveProperty('top_p');
         expect(params).toMatchObject({
-            temperature: 0,
             stream: true,
             stream_options: { include_usage: true },
             tool_choice: 'auto',

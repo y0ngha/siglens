@@ -35,7 +35,6 @@ export const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ModelDisplayInfo>> = {
         fullName: 'Gemini 3.5 Flash Lite',
     },
     'gemini-3.6-flash': { label: 'Flash 3.6', fullName: 'Gemini 3.6 Flash' },
-    'gemini-3.7-flash': { label: 'Flash 3.7', fullName: 'Gemini 3.7 Flash' },
     'gemini-3.8-flash': { label: 'Flash 3.8', fullName: 'Gemini 3.8 Flash' },
     'gemini-3.1-pro-preview': {
         label: 'Pro 3.1',

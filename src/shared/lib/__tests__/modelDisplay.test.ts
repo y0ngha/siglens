@@ -72,9 +72,8 @@ describe('MODEL_DISPLAY_MAP', () => {
         // Claude Opus: 4.8과 5가 공존한다.
         expect(getModelDisplay('claude-opus-4-8').label).toBe('Opus 4.8');
         expect(getModelDisplay('claude-opus-5').label).toBe('Opus 5');
-        // Gemini Flash: 3.6/3.7/3.8이 공존한다.
+        // Gemini Flash: 3.6/3.8이 공존한다.
         expect(getModelDisplay('gemini-3.6-flash').label).toBe('Flash 3.6');
-        expect(getModelDisplay('gemini-3.7-flash').label).toBe('Flash 3.7');
         expect(getModelDisplay('gemini-3.8-flash').label).toBe('Flash 3.8');
         // Flash Lite는 Flash와 다른 라인이므로 라인명도 함께 남긴다.
         expect(getModelDisplay('gemini-3.5-flash-lite').label).toBe(

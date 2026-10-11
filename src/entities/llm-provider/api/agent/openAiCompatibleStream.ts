@@ -45,6 +45,12 @@ export interface OpenAiCompatibleRequest {
     messages: OpenAI.Chat.ChatCompletionMessageParam[];
     /** Provider-only top-level body fields (e.g. DeepSeek `thinking`). */
     extraBody: Record<string, unknown>;
+    /**
+     * Sampling temperature; omitted from the body when `undefined`. Gemini
+     * leaves it out: Google ignores custom sampling from 3.6 Flash on and
+     * announced a 400 for it on upcoming models.
+     */
+    temperature?: number;
 }
 
 /**
@@ -158,7 +164,9 @@ export async function streamOpenAiCompatibleAgent(
                       }
                     : {}),
                 max_tokens: o.maxOutputTokens,
-                temperature: 0,
+                ...(req.temperature !== undefined
+                    ? { temperature: req.temperature }
+                    : {}),
                 ...req.extraBody,
                 stream: true,
                 stream_options: { include_usage: true },

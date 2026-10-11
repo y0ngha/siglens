@@ -1,4 +1,7 @@
-import { migrateLegacyAnalysisModel } from '@/features/symbol-model/lib/migrateAnalysisModel';
+import {
+    migrateLegacyAnalysisModel,
+    migrateRetiredAnalysisModel,
+} from '@/features/symbol-model/lib/migrateAnalysisModel';
 import {
     LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
     LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
@@ -125,6 +128,71 @@ describe('migrateLegacyAnalysisModel', () => {
         const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
 
         expect(() => migrateLegacyAnalysisModel()).not.toThrow();
+        expect(setItemSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('migrateRetiredAnalysisModel', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    it('moves a stored gemini-3.7-flash to its successor gemini-3.8-flash', () => {
+        localStorage.setItem(
+            LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+            'gemini-3.7-flash'
+        );
+
+        migrateRetiredAnalysisModel();
+
+        expect(readStored()).toBe('gemini-3.8-flash');
+    });
+
+    it('runs on every call — no one-time flag gates it', () => {
+        // The legacy migration's flag must not stop this one.
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY, '1');
+        localStorage.setItem(
+            LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+            'gemini-3.7-flash'
+        );
+
+        migrateRetiredAnalysisModel();
+
+        expect(readStored()).toBe('gemini-3.8-flash');
+    });
+
+    it('leaves a live model and an empty slot untouched', () => {
+        migrateRetiredAnalysisModel();
+        expect(readStored()).toBeNull();
+
+        localStorage.setItem(
+            LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+            'gemini-3.6-flash'
+        );
+        migrateRetiredAnalysisModel();
+        expect(readStored()).toBe('gemini-3.6-flash');
+    });
+
+    it('ignores prototype member names instead of treating them as retired ids', () => {
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'toString');
+
+        migrateRetiredAnalysisModel();
+
+        expect(readStored()).toBe('toString');
+    });
+
+    it('silently no-ops when localStorage throws', () => {
+        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            throw new DOMException('Storage disabled', 'SecurityError');
+        });
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+
+        expect(() => migrateRetiredAnalysisModel()).not.toThrow();
         expect(setItemSpy).not.toHaveBeenCalled();
     });
 });

@@ -46,6 +46,36 @@ function hangUntilAborted(signal: AbortSignal): Promise<never> {
     });
 }
 
+describe('streamOpenAiCompatibleAgent sampling temperature', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    function emptyStream() {
+        return (async function* () {
+            yield { choices: [{ delta: {}, finish_reason: 'stop' }] };
+        })();
+    }
+
+    it('temperature를 주지 않으면 본문에서 키 자체를 뺀다(Gemini)', async () => {
+        mockCreate.mockResolvedValue(emptyStream());
+        await streamOpenAiCompatibleAgent(
+            opts(new AbortController().signal),
+            REQ
+        );
+        expect(mockCreate.mock.lastCall![0]).not.toHaveProperty('temperature');
+    });
+
+    it('temperature를 주면 그 값을 그대로 보낸다(DeepSeek)', async () => {
+        mockCreate.mockResolvedValue(emptyStream());
+        await streamOpenAiCompatibleAgent(opts(new AbortController().signal), {
+            ...REQ,
+            temperature: 0,
+        });
+        expect(mockCreate.mock.lastCall![0].temperature).toBe(0);
+    });
+});
+
 describe('streamOpenAiCompatibleAgent stall watchdog', () => {
     beforeEach(() => {
         vi.clearAllMocks();
