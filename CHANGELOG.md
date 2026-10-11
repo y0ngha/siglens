@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.105.2](https://github.com/y0ngha/siglens/compare/v0.105.1...v0.105.2) (2026-10-11)
+
+### Bug Fixes
+
+* 공포·탐욕 지수 캐시 키에 마감일을 넣어 재요청을 줄인다 ([#1024](https://github.com/y0ngha/siglens/issues/1024)) ([d50bb4f](https://github.com/y0ngha/siglens/commit/d50bb4fed5a18b6db282568134e55dd8e9692dbb))
+* 구버전 엔진에서 compact 통화 표기가 달라 하이드레이션이 깨지던 문제를 고친다 ([#1019](https://github.com/y0ngha/siglens/issues/1019)) ([f8d77f2](https://github.com/y0ngha/siglens/commit/f8d77f2130b53665b974b29c2c16ac214cb1a754))
+* 봉 히스토리를 고정 창으로 받아 캐시 적중시킨다 ([#1021](https://github.com/y0ngha/siglens/issues/1021)) ([b67bb72](https://github.com/y0ngha/siglens/commit/b67bb724e33564fb849fab0baa9e7eb6b8f2e5f1))
+* 시세와 오늘 봉을 FMP quote 한 번으로 받아 같은 종목의 중복 호출을 없앤다 ([#1025](https://github.com/y0ngha/siglens/issues/1025)) ([a8272c7](https://github.com/y0ngha/siglens/commit/a8272c7d046e4b1ec17172b6ff7f5dfe6f24f635))
+* 점 표기 종목의 실적이 매번 다시 조회되던 문제를 고치고 다음 실적 일정 조회를 캐싱한다 ([#1026](https://github.com/y0ngha/siglens/issues/1026)) ([e38ba6e](https://github.com/y0ngha/siglens/commit/e38ba6ecd9dc1a2b714359abc712910273e83410))
+* 펀더멘털 탭 FMP 중복 호출을 재무제표 캐시로 제거 ([#1020](https://github.com/y0ngha/siglens/issues/1020)) ([dca6073](https://github.com/y0ngha/siglens/commit/dca607369ca8f89dabafab57a666ab329bc96dd7))
+* FMP 펀더멘털 쌍 호출 결과를 두 캐시 키에 함께 저장 ([#1023](https://github.com/y0ngha/siglens/issues/1023)) ([464bd50](https://github.com/y0ngha/siglens/commit/464bd50d8ab069a74fddce566f0dc1d9a3e2c285))
+* Gemini 호출에서 sampling 파라미터를 빼고 gemini-3.7-flash 선택값을 3.8로 옮긴다 ([#1022](https://github.com/y0ngha/siglens/issues/1022)) ([530563f](https://github.com/y0ngha/siglens/commit/530563f8bb1e71a968b70b9749b6323ed31f6f94))
+
+### Performance Improvements
+
+* 일봉 히스토리를 세션마다 5년치 통째로 받지 않고 새 봉만 이어 받는다 ([#1027](https://github.com/y0ngha/siglens/issues/1027)) ([6265ad1](https://github.com/y0ngha/siglens/commit/6265ad1ea4d4f0c9dd63bad2e9795db49a3b4188)), closes [#1025](https://github.com/y0ngha/siglens/issues/1025)
+
 ## [0.105.1](https://github.com/y0ngha/siglens/compare/v0.105.0...v0.105.1) (2026-10-10)
 
 # [0.105.0](https://github.com/y0ngha/siglens/compare/v0.104.0...v0.105.0) (2026-10-10)
