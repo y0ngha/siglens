@@ -12,10 +12,44 @@ import type {
     SiglensMarketProvider,
 } from '@/shared/api/market/marketProvider.types';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
+import { decodeCacheValue } from '@/shared/cache/cacheValueCodec';
+import type { EodHistoryEntry } from '@/shared/api/market/eodHistoryMerge';
 
-/** 2026-06-30T15:00Z 기준 eodhist 롤 TTL: 07-01T00:00Z까지 9h + 여유 1h. */
-const ROLL_TTL_AT_TUE_1500Z = SECONDS_PER_HOUR * 10;
+// Counts finished decodes of eodhist entries read from Redis. The single-flight tests wait on
+// this instead of wall-clock time: a caller only takes its owner/waiter role in getOrSetCache
+// after its read is decoded (zstd runs off the microtask queue), so "every caller has decoded"
+// is the exact point at which the roles are fixed.
+const eodDecodes = vi.hoisted(() => ({ count: 0 }));
+vi.mock('@/shared/cache/cacheValueCodec', async importOriginal => {
+    const actual =
+        await importOriginal<typeof import('@/shared/cache/cacheValueCodec')>();
+    return {
+        ...actual,
+        decodeCacheValue: async (value: unknown) => {
+            const decoded = await actual.decodeCacheValue(value);
+            const data = (decoded as { data?: { asOf?: unknown } } | null)
+                ?.data;
+            if (data?.asOf !== undefined) eodDecodes.count += 1;
+            return decoded;
+        },
+    };
+});
+
+/** `since` 이후 eodhist 엔트리 디코드가 `n`번 끝날 때까지 기다린다(시간이 아니라 사건 기준). */
+async function waitForEodDecodes(since: number, n: number): Promise<void> {
+    await vi.waitFor(() => {
+        expect(eodDecodes.count - since).toBeGreaterThanOrEqual(n);
+    });
+}
+
+/**
+ * eodhist 엔트리의 Redis TTL(정리용 상한). 세션 롤이 아니라 엔트리의 asOf/checkedAt이 유효성을
+ * 정하므로 완전/불완전과 무관하게 항상 같다.
+ */
+const EOD_ENTRY_TTL = SECONDS_PER_DAY * 5;
+/** 불완전 히스토리를 업스트림 재확인 없이 내주는 쿨다운(EOD_PUBLISH_BUFFER_HOURS = 4h). */
+const INCOMPLETE_COOLDOWN_MS = SECONDS_PER_HOUR * 4 * 1000;
 
 /**
  * Captures the `ex` TTL passed to redis.set so we can assert that
@@ -45,6 +79,32 @@ let redisEnabled = true;
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => (redisEnabled ? fakeRedis : null),
 }));
+
+/** Redis 스토어에 쓰인 eodhist 엔트리를 코덱으로 풀어 읽는다(`{ data: entry }` envelope). */
+async function readEodEntry(
+    symbol: string
+): Promise<EodHistoryEntry | undefined> {
+    const raw = store.get(`bars:eodhist:v3:${symbol}`);
+    if (raw === undefined) return undefined;
+    return ((await decodeCacheValue(raw)) as { data: EodHistoryEntry }).data;
+}
+
+/**
+ * History window for lastClosed 2026-06-29 starts FEAR_GREED_LOOKBACK_DAYS earlier.
+ * Derived (not literal) so a change to the core constant moves the expectations too.
+ */
+const addDays = (iso: string, days: number): string =>
+    new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000)
+        .toISOString()
+        .slice(0, 10);
+const utcSeconds = (iso: string): number =>
+    Math.floor(Date.parse(`${iso}T00:00:00Z`) / 1000);
+const WINDOW_START = addDays('2026-06-29', -FEAR_GREED_LOOKBACK_DAYS);
+// First Saturday inside the window, and the Monday FMP would start at instead.
+const WINDOW_SATURDAY = Array.from({ length: 7 }, (_, i) =>
+    addDays(WINDOW_START, i + 1)
+).find(d => new Date(`${d}T00:00:00Z`).getUTCDay() === 6)!;
+const WINDOW_MONDAY = addDays(WINDOW_SATURDAY, 2);
 
 /** Minimal bar factory for EOD split tests. */
 const bar = (time: number): Bar => ({
@@ -231,8 +291,8 @@ describe('CachedMarketDataProvider', () => {
             from: '2024-06-30',
         };
 
-        // ── key format: session-dated ─────────────────────────────────────────
-        it('key format: history key is bars:eodhist:v2:AAPL:<lastClosed>', async () => {
+        // ── key format: one key per symbol ────────────────────────────────────
+        it('key format: history key is bars:eodhist:v3:AAPL (no date in the key); the entry records asOf=lastClosed', async () => {
             // At 2026-06-30T15:00Z (Tue 11:00 EDT, before close), lastClosed = 2026-06-29 (Mon)
             const histBar = bar(
                 Math.floor(Date.parse('2024-06-30T00:00:00Z') / 1000)
@@ -248,9 +308,23 @@ describe('CachedMarketDataProvider', () => {
 
             await provider.getBars(longOpts);
 
-            // lastClosed = 2026-06-29 (Monday — most recent closed session before Tue 11:00 EDT)
-            expect(store.has('bars:eodhist:v2:AAPL:2026-06-29')).toBe(true);
+            expect(store.has('bars:eodhist:v3:AAPL')).toBe(true);
             expect(store.has('quote:snapshot:AAPL')).toBe(true);
+            const entry = await readEodEntry('AAPL');
+            expect(entry).toMatchObject({
+                asOf: '2026-06-29',
+                checkedAt: Date.parse('2026-06-30T15:00:00Z'),
+                fullAt: Date.parse('2026-06-30T15:00:00Z'),
+                bars: [histBar],
+            });
+            // getOrSetCache envelope detection keys off a top-level `data`.
+            expect(Object.keys(entry!).toSorted()).toEqual([
+                'asOf',
+                'bars',
+                'checkedAt',
+                'from',
+                'fullAt',
+            ]);
         });
 
         // ── cold = 1 EOD (before=lastClosed) + 1 getTodayBar ──────────────────
@@ -279,95 +353,20 @@ describe('CachedMarketDataProvider', () => {
             expect(getTodayBar).toHaveBeenCalledTimes(1);
             expect(getTodayBar).toHaveBeenCalledWith('AAPL');
             // both cache keys written
-            expect(store.has('bars:eodhist:v2:AAPL:2026-06-29')).toBe(true);
+            expect(store.has('bars:eodhist:v3:AAPL')).toBe(true);
             expect(store.has('quote:snapshot:AAPL')).toBe(true);
         });
 
-        // ── eodhist TTL = time until the session key rolls + 1h margin ─────────
-        // 2026-06-30T15:00Z (Tue 11:00 EDT) → lastClosed 06-29. The key rolls at Tue close
-        // 16:00 EDT + 4h buffer = 2026-07-01T00:00Z, 9h away → TTL 9h + 1h = 10h.
-        // (Was a fixed 7 days: dead date keys piled up ~7 per symbol.)
-        it('bars:eodhist TTL = until next session roll + 1h when newest bar reaches lastClosed', async () => {
-            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
-            // newest bar must be at 2026-06-29 UTC midnight to trigger long TTL
-            const lastClosedBar = bar(
-                Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)
-            );
-            const getBars = vi.fn(async () => [lastClosedBar]);
-            const getTodayBar = vi.fn(async () => null);
-            const provider = new CachedMarketDataProvider(
-                makeInner({ getBars, getTodayBar })
-            );
-
-            await provider.getBars(longOpts);
-
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
-            );
-            expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(ROLL_TTL_AT_TUE_1500Z);
-        });
-
-        // ── FMP publish-lag / permanent-incomplete → cooldown TTL ──────────────
-        it('[FMP lag / permanent-incomplete] history newest bar BEFORE lastClosed → cooldown TTL (4h = 14400s)', async () => {
-            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
-            // FMP has not yet published the 2026-06-29 EOD (or symbol is delisted);
-            // newest bar is 2026-06-28.
-            const laggedBar = bar(
-                Math.floor(Date.parse('2026-06-28T00:00:00Z') / 1000)
-            );
-            const getBars = vi.fn(async () => [laggedBar]);
-            const getTodayBar = vi.fn(async () => null);
-            const provider = new CachedMarketDataProvider(
-                makeInner({ getBars, getTodayBar })
-            );
-
-            await provider.getBars(longOpts);
-
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
-            );
-            expect(histSetCall).toBeDefined();
-            // Cooldown TTL = 4h (14400 seconds) — bounds refetch to ≈6/day/symbol
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
-        });
-
-        // ── FMP publish-lag: complete history → long TTL ──────────────────────
-        it('[FMP lag] history newest bar AT lastClosed → roll TTL (10h)', async () => {
-            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
-            // FMP has published; newest bar is exactly 2026-06-29
-            const completeBar = bar(
-                Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)
-            );
-            const getBars = vi.fn(async () => [completeBar]);
-            const getTodayBar = vi.fn(async () => null);
-            const provider = new CachedMarketDataProvider(
-                makeInner({ getBars, getTodayBar })
-            );
-
-            await provider.getBars(longOpts);
-
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
-            );
-            expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(ROLL_TTL_AT_TUE_1500Z);
-        });
-
-        // ── roll TTL right before the key rolls: cooldown is capped by the roll ─
-        // 2026-06-30T23:30Z (Tue 19:30 EDT) → lastClosed still 06-29; the key rolls at
-        // 2026-07-01T00:00Z, 30 min away → roll TTL 0.5h + 1h = 1.5h, which also caps the
-        // 4h incomplete cooldown (no point keeping a key past the moment it stops being read).
+        // ── Redis TTL is a cleanup bound, not the freshness rule ─────────────
+        // Freshness lives in the entry (asOf / checkedAt), so complete and incomplete
+        // histories are stored with the same long TTL — and stay readable across a roll,
+        // which is what makes the incremental refresh possible.
         it.each([
             ['complete', '2026-06-29T00:00:00Z'],
             ['incomplete (FMP lag)', '2026-06-28T00:00:00Z'],
         ])(
-            '30 min before roll: %s history → TTL 1.5h',
+            'bars:eodhist TTL is the 5-day cleanup bound for a %s history',
             async (_label, newestIso) => {
-                vi.setSystemTime(new Date('2026-06-30T23:30:00Z'));
                 const getBars = vi.fn(async () => [
                     bar(Math.floor(Date.parse(newestIso) / 1000)),
                 ]);
@@ -378,16 +377,15 @@ describe('CachedMarketDataProvider', () => {
                 await provider.getBars(longOpts);
 
                 const histSetCall = fakeRedis.set.mock.calls.find(
-                    ([key]) => key === 'bars:eodhist:v2:AAPL:2026-06-29'
+                    ([key]) => key === 'bars:eodhist:v3:AAPL'
                 );
-                expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 1.5);
+                expect(histSetCall![2]?.ex).toBe(EOD_ENTRY_TTL);
             }
         );
 
-        // ── roll TTL follows the provider's own session, not US ─────────────────
-        it('KR session: Chuseok eve → TTL spans the holiday (143.5h + 1h), not the US roll', async () => {
-            // 2026-09-23T11:00Z = 20:00 KST Wed → lastClosed 09-23. KRX is closed 9/24–9/28,
-            // so the key rolls at 9/29 19:30 KST (10:30Z). A US-session TTL here would be 14h.
+        // ── each session spec derives its own lastClosed (asOf) ───────────────
+        it('KR session: Chuseok eve → entry is asOf the KRX session (09-23), key is per symbol', async () => {
+            // 2026-09-23T11:00Z = 20:00 KST Wed → lastClosed 09-23.
             vi.setSystemTime(new Date('2026-09-23T11:00:00Z'));
             const getBars = vi.fn(async () => [
                 bar(Math.floor(Date.parse('2026-09-23T00:00:00Z') / 1000)),
@@ -399,15 +397,14 @@ describe('CachedMarketDataProvider', () => {
 
             await provider.getBars({ ...longOpts, symbol: '005930.KS' });
 
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) => key === 'bars:eodhist:v2:005930.KS:2026-09-23'
+            expect(getBars).toHaveBeenCalledWith(
+                expect.objectContaining({ before: '2026-09-23' })
             );
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 144.5);
+            expect((await readEodEntry('005930.KS'))?.asOf).toBe('2026-09-23');
         });
 
-        it('crypto session: TTL runs to the next UTC midnight (+1h), not the US roll', async () => {
-            // 2026-07-04T15:00Z (Sat). Crypto lastClosed = 07-03, rolls at 07-05T00:00Z (9h).
-            // The US key would roll Mon 07-06 20:00 EDT (NYSE closed Fri 07-03 for July 4th).
+        it('crypto session: entry is asOf yesterday UTC (07-03), not the US session date', async () => {
+            // 2026-07-04T15:00Z (Sat). Crypto lastClosed = 07-03; NYSE is closed Fri 07-03.
             vi.setSystemTime(new Date('2026-07-04T15:00:00Z'));
             const getBars = vi.fn(async () => [
                 bar(Math.floor(Date.parse('2026-07-03T00:00:00Z') / 1000)),
@@ -419,113 +416,130 @@ describe('CachedMarketDataProvider', () => {
 
             await provider.getBars({ ...longOpts, symbol: 'BTCUSD' });
 
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) => key === 'bars:eodhist:v2:BTCUSD:2026-07-03'
-            );
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 10);
+            expect((await readEodEntry('BTCUSD'))?.asOf).toBe('2026-07-03');
         });
 
-        // ── FMP publish-lag: retry after short TTL catches up → long TTL ──────
-        it('[FMP lag] retry after short-TTL expiry with FMP caught up → long TTL on second set', async () => {
+        // ── FMP publish-lag: cooldown, then incremental catch-up ──────────────
+        it('[FMP lag] incomplete history is served as-is within the cooldown, then re-checked incrementally; once FMP catches up the new bar is appended', async () => {
             // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
-            // First fetch: FMP lagged, newest bar = 2026-06-28 → short TTL
-            const laggedBar = bar(
-                Math.floor(Date.parse('2026-06-28T00:00:00Z') / 1000)
-            );
-            const completeBar = bar(
-                Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)
-            );
+            // First fetch: FMP lagged, newest bar = 2026-06-28
+            const laggedBar = bar(utcSeconds('2026-06-28'));
+            const completeBar = bar(utcSeconds('2026-06-29'));
             const getBars = vi.fn().mockResolvedValueOnce([laggedBar]);
             const provider = new CachedMarketDataProvider(
                 makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
             );
 
             await provider.getBars(longOpts);
+            expect(getBars).toHaveBeenCalledTimes(1);
 
-            const firstHistSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
-            );
-            expect(firstHistSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
-
-            // Simulate short-TTL expiry by clearing the eodhist key from the store.
-            // The instance L1 holds at most 30 min — well inside the 4h cooldown — so by
-            // the time Redis expires it is gone too; a new instance models that.
-            for (const key of store.keys()) {
-                if (key.startsWith('bars:eodhist')) store.delete(key);
-            }
-            fakeRedis.set.mockClear();
-
-            // Second fetch: FMP has now published 2026-06-29 bar → long TTL
-            getBars.mockResolvedValueOnce([completeBar]);
+            // Within the cooldown: no upstream call, even on a fresh instance (Redis hit).
+            vi.setSystemTime(new Date('2026-06-30T18:59:00Z'));
             await new CachedMarketDataProvider(
                 makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
             ).getBars(longOpts);
+            expect(getBars).toHaveBeenCalledTimes(1);
 
-            const secondHistSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            // Past the cooldown, FMP has now published 2026-06-29: one incremental call
+            // from the last cached bar (overlap) appends it.
+            vi.setSystemTime(new Date('2026-06-30T19:01:00Z'));
+            getBars.mockResolvedValueOnce([laggedBar, completeBar]);
+            const result = await new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
+            ).getBars(longOpts);
+
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: '2026-06-28',
+                    before: '2026-06-29',
+                })
             );
-            expect(secondHistSetCall).toBeDefined();
-            expect(secondHistSetCall![2]?.ex).toBe(ROLL_TTL_AT_TUE_1500Z);
+            expect(result.map(b => b.time)).toEqual([
+                laggedBar.time,
+                completeBar.time,
+            ]);
+
+            // Now complete → served until the session rolls, no further calls.
+            vi.setSystemTime(new Date('2026-06-30T23:00:00Z'));
+            await new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
+            ).getBars(longOpts);
+            expect(getBars).toHaveBeenCalledTimes(2);
         });
 
-        // ── delisted/permanent-incomplete: cooldown TTL + within-cooldown cache hit ──
-        it('[delisted] permanent-incomplete (months-old newest bar) → cooldown TTL (4h), within-cooldown = cache hit (no 2nd inner.getBars)', async () => {
+        // ── delisted/permanent-incomplete: ≤ 1 upstream call per cooldown ──────
+        it('[delisted] permanent-incomplete history → at most one (incremental) upstream call per cooldown, never one per request', async () => {
             /**
-             * Scenario: a delisted symbol's history newest bar is months before lastClosed.
-             * We use from='2024-01-01' so that the bar (at 2024-01-15) satisfies the
-             * isFresh coverage check (bars[0].time <= fromThreshold).
-             *
-             * Expected:
-             * (a) bars:eodhist is cached with cooldown TTL (4h = 14400s).
-             * (b) A repeat call within the cooldown (cache still populated) is a hit —
-             *     inner.getBars is NOT called a second time.
-             * This documents that permanent-incomplete history no longer thrashes.
+             * A delisted symbol's newest bar is months before lastClosed, so the entry
+             * never reaches lastClosed. Within the cooldown every request is a cache hit;
+             * after it the next request re-checks incrementally (overlap bar only) and the
+             * entry is stamped again — so the cost is ≤ 6 tiny calls/day, not one per request.
              */
             // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
-            // Bar at 2024-01-15 is months before lastClosed (incomplete), and before
-            // from='2024-01-01'? No — we use from='2024-01-15' so bar[0].time == threshold.
             const delistedOpts: GetBarsOptions = {
                 symbol: 'DELIST',
                 timeframe: '1Day',
                 from: '2023-01-01', // old enough to trigger long window gate
             };
-            const oldBar = bar(
-                Math.floor(Date.parse('2023-01-01T00:00:00Z') / 1000) // oldest bar satisfies coverage check
-            );
+            const oldBar = bar(utcSeconds('2024-01-15'));
             const getBars = vi.fn(async () => [oldBar]);
-            const getTodayBar = vi.fn(async () => null);
             const provider = new CachedMarketDataProvider(
-                makeInner({ getBars, getTodayBar })
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
             );
 
-            // First call: cache miss → fetches and stores with cooldown TTL
+            // First call: cold full fetch.
             await provider.getBars(delistedOpts);
-
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            expect(getBars).toHaveBeenCalledTimes(1);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({ from: WINDOW_START })
             );
-            expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4); // 14400s
+            expect((await readEodEntry('DELIST'))?.checkedAt).toBe(
+                Date.parse('2026-06-30T15:00:00Z')
+            );
 
-            // Second call: key still in store (cooldown not expired) → cache hit, no 2nd fetch
-            await provider.getBars(delistedOpts);
-            expect(getBars).toHaveBeenCalledTimes(1); // still 1 — cache hit
+            // A burst of requests inside the cooldown: all cache hits.
+            for (let i = 0; i < 5; i++) await provider.getBars(delistedOpts);
+            expect(getBars).toHaveBeenCalledTimes(1);
+
+            // Past the cooldown: exactly one incremental re-check, then hits again.
+            vi.setSystemTime(
+                new Date(
+                    Date.parse('2026-06-30T15:00:00Z') +
+                        INCOMPLETE_COOLDOWN_MS +
+                        60_000
+                )
+            );
+            for (let i = 0; i < 5; i++) await provider.getBars(delistedOpts);
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: '2024-01-15',
+                    before: '2026-06-29',
+                })
+            );
+
+            // The next cooldown window costs one more call.
+            vi.setSystemTime(
+                new Date(
+                    Date.parse('2026-06-30T15:00:00Z') +
+                        2 * INCOMPLETE_COOLDOWN_MS +
+                        120_000
+                )
+            );
+            for (let i = 0; i < 5; i++) await provider.getBars(delistedOpts);
+            expect(getBars).toHaveBeenCalledTimes(3);
         });
 
-        // ── holiday-labeled key: cooldown TTL + no gap (history + today contiguous) ──
-        it('[holiday key] incomplete history (holiday-labeled lastClosed, real last trading day older) → cooldown TTL + no gap (history + today contiguous)', async () => {
+        // ── holiday-labeled key: cooldown + no gap (history + today contiguous) ──
+        it('[holiday key] incomplete history (holiday-labeled lastClosed, real last trading day older) → served within cooldown + no gap (history + today contiguous)', async () => {
             /**
              * Scenario: lastClosed falls on a date that is treated as a holiday by the
              * exchange (no trading). The EOD fetch returns bars whose newest is the real
-             * last trading day (older than lastClosed). This is the "holiday-labeled key"
-             * case — the eodhist key is keyed on the holiday date but returns data up to
-             * the preceding trading day. today(quote) fills the live tail.
+             * last trading day (older than lastClosed). today(quote) fills the live tail.
              *
              * Expected:
-             * (a) bars:eodhist is cached with cooldown TTL (not long TTL).
+             * (a) the second call inside the cooldown does not hit the upstream.
              * (b) merged result = history bars (up to real last trading day) + today bar,
              *     contiguous (no gap).
              */
@@ -543,14 +557,10 @@ describe('CachedMarketDataProvider', () => {
             );
 
             const result = await provider.getBars(longOpts);
+            await provider.getBars(longOpts);
 
-            // (a) cooldown TTL because newest bar (2026-06-26) < lastClosed (2026-06-29)
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
-            );
-            expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
+            // (a) newest bar (2026-06-26) < lastClosed (2026-06-29): cooldown, one call
+            expect(getBars).toHaveBeenCalledTimes(1);
 
             // (b) merged result is contiguous: history up to real last trading day + today
             const times = result.map(b => b.time);
@@ -583,14 +593,14 @@ describe('CachedMarketDataProvider', () => {
             // Advance time within the same session (still before Tue 20:00Z EDT close)
             vi.setSystemTime(new Date('2026-06-30T17:00:00Z'));
 
-            // 2nd call same session — key is still bars:eodhist:v2:AAPL:2026-06-29 → cache hit
+            // 2nd call same session — entry asOf is still 2026-06-29 → cache hit
             await provider.getBars(longOpts);
             expect(getBars).toHaveBeenCalledTimes(1); // still 1
             expect(getTodayBar).toHaveBeenCalledTimes(1); // still 1 (quote:snapshot TTL may vary but key exists)
         });
 
-        // ── new session → new key → refetch ───────────────────────────────────
-        it('new session (after Tue close+buffer) → new key → refetch', async () => {
+        // ── new session → incremental refresh of the same key ─────────────────
+        it('new session (after Tue close+buffer) → same key refreshed incrementally from the last cached bar', async () => {
             const histBar = bar(
                 Math.floor(Date.parse('2024-06-30T00:00:00Z') / 1000)
             );
@@ -603,33 +613,29 @@ describe('CachedMarketDataProvider', () => {
             // First call: Tue 15:00Z (before close) → lastClosed = 2026-06-29 (Monday)
             await provider.getBars(longOpts);
             expect(getBars).toHaveBeenCalledTimes(1);
-            expect(store.has('bars:eodhist:v2:AAPL:2026-06-29')).toBe(true);
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-06-29');
 
             // Advance past Tue close+buffer: Wed 00:30Z = 20:30 EDT Tue
             // (20:00 ET + 4h buffer = 00:00 UTC Wed; 00:30Z is past buffer)
             vi.setSystemTime(new Date('2026-07-01T00:30:00Z'));
 
             await provider.getBars(longOpts);
-            // New key → cache miss → refetch
+            // asOf is behind → one upstream refresh, overlapping the last cached bar
             expect(getBars).toHaveBeenCalledTimes(2);
-            expect(store.has('bars:eodhist:v2:AAPL:2026-06-30')).toBe(true);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: '2024-06-30',
+                    before: '2026-06-30',
+                })
+            );
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-06-30');
+            // one key per symbol: no dated copies pile up
+            expect(
+                [...store.keys()].filter(k => k.startsWith('bars:eodhist'))
+            ).toEqual(['bars:eodhist:v3:AAPL']);
         });
 
         // ── covers/truncation: isFresh=false when oldest bar > from ──────────
-        // History window for lastClosed 2026-06-29 starts FEAR_GREED_LOOKBACK_DAYS earlier.
-        // Derived (not literal) so a change to the core constant moves the expectations too.
-        const addDays = (iso: string, days: number): string =>
-            new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000)
-                .toISOString()
-                .slice(0, 10);
-        const utcSeconds = (iso: string): number =>
-            Math.floor(Date.parse(`${iso}T00:00:00Z`) / 1000);
-        const WINDOW_START = addDays('2026-06-29', -FEAR_GREED_LOOKBACK_DAYS);
-        // First Saturday inside the window, and the Monday FMP would start at instead.
-        const WINDOW_SATURDAY = Array.from({ length: 7 }, (_, i) =>
-            addDays(WINDOW_START, i + 1)
-        ).find(d => new Date(`${d}T00:00:00Z`).getUTCDay() === 6)!;
-        const WINDOW_MONDAY = addDays(WINDOW_SATURDAY, 2);
         it('[fixed window] history is fetched from the key window, not the request from', async () => {
             const getBars = vi.fn(async () => [bar(utcSeconds(WINDOW_START))]);
             const provider = new CachedMarketDataProvider(
@@ -943,7 +949,7 @@ describe('CachedMarketDataProvider', () => {
             }); // no from
             expect(
                 [...store.keys()].some(k =>
-                    k.startsWith('bars:eodhist:v2:AAPL:')
+                    k.startsWith('bars:eodhist:v3:AAPL')
                 )
             ).toBe(true);
             expect(store.has('quote:snapshot:AAPL')).toBe(true);
@@ -1049,10 +1055,10 @@ describe('CachedMarketDataProvider', () => {
         it('[gap-free] buffer prevents stale EOD being served the next session', async () => {
             // Scenario:
             // (a) Fri 7/10 20:30 UTC = 16:30 EDT — after close but WITHIN 4h buffer.
-            //     lastClosed = 2026-07-09 (Thu). A request caches history under key :2026-07-09.
+            //     lastClosed = 2026-07-09 (Thu). A request caches the history as of 07-09.
             // (b) Mon 7/13 13:40 UTC = 09:40 EDT — during regular session.
-            //     lastClosed = 2026-07-10 (Fri) — key :2026-07-10 is a fresh miss (not the stale :2026-07-09 one).
-            //     getBars is called with before: '2026-07-10', proving no stale 7/09 data is served.
+            //     lastClosed = 2026-07-10 (Fri). The entry (asOf 07-09) is behind, so it is
+            //     refreshed up to before='2026-07-10' — the stale 7/09 history is never served.
             //
             // Note: from='2025-06-01' is used to ensure isLongDailyWindow=true regardless of system time.
 
@@ -1088,15 +1094,14 @@ describe('CachedMarketDataProvider', () => {
 
             await providerA.getBars(longFrom);
             // At 7/10 16:30 EDT (within buffer), lastClosed = 2026-07-09
-            expect(store.has('bars:eodhist:v2:AAPL:2026-07-09')).toBe(true);
-            expect(store.has('bars:eodhist:v2:AAPL:2026-07-10')).toBe(false);
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-07-09');
             expect(getBarsA).toHaveBeenCalledWith(
                 expect.objectContaining({ before: '2026-07-09' })
             );
 
-            // (b) Mon 7/13 during session — lastClosed = 2026-07-10 (Fri, after buffer passed overnight)
+            // (b) Mon 7/13 during session — lastClosed = 2026-07-10 (Fri, after buffer passed
+            // overnight). The Redis entry from (a) is kept (no reset): it must be refreshed.
             vi.setSystemTime(new Date('2026-07-13T13:40:00Z')); // 09:40 EDT Mon
-            resetSharedState();
 
             const getBarsB = vi.fn(async () => [friHistBar, monHistBar]);
             const providerB = new CachedMarketDataProvider(
@@ -1106,16 +1111,16 @@ describe('CachedMarketDataProvider', () => {
                 })
             );
 
-            await providerB.getBars(longFrom);
-            // Key is :2026-07-10 (Fri) — not the stale :2026-07-09 from step (a)
-            expect(store.has('bars:eodhist:v2:AAPL:2026-07-10')).toBe(true);
-            expect(store.has('bars:eodhist:v2:AAPL:2026-07-09')).toBe(false);
-            // getBars fetched with before='2026-07-10', not '2026-07-09'
+            const result = await providerB.getBars(longFrom);
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-07-10');
+            // refreshed with before='2026-07-10', not '2026-07-09'
             expect(getBarsB).toHaveBeenCalledWith(
-                expect.objectContaining({ before: '2026-07-10' })
+                expect.objectContaining({
+                    from: '2026-07-09',
+                    before: '2026-07-10',
+                })
             );
             // History includes monHistBar (7/10 data) — no 1-day gap
-            const result = await providerB.getBars(longFrom);
             expect(result.map(b => b.time)).toContain(monHistBar.time);
         });
 
@@ -1182,9 +1187,8 @@ describe('CachedMarketDataProvider', () => {
 
             await cryptoProvider.getBars(cryptoOpts);
 
-            // Crypto key must use Saturday (yesterday UTC), not Friday
-            expect(store.has('bars:eodhist:v2:BTC:2026-07-11')).toBe(true);
-            expect(store.has('bars:eodhist:v2:BTC:2026-07-10')).toBe(false);
+            // Crypto entry must be as of Saturday (yesterday UTC), not Friday
+            expect((await readEodEntry('BTC'))?.asOf).toBe('2026-07-11');
             expect(cryptoBars).toHaveBeenCalledWith(
                 expect.objectContaining({ before: '2026-07-11' })
             );
@@ -1207,22 +1211,22 @@ describe('CachedMarketDataProvider', () => {
                 from: '2024-01-01',
             });
 
-            // Equity key is Friday (weekend rewind)
-            expect(store.has('bars:eodhist:v2:AAPL:2026-07-10')).toBe(true);
-            expect(store.has('bars:eodhist:v2:AAPL:2026-07-11')).toBe(false);
+            // Equity entry is as of Friday (weekend rewind)
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-07-10');
         });
 
         // ── merge-under-lag: documents behavior when history lags behind today ─
-        it('[merge-under-lag] history lags (newest < lastClosed) → short TTL + result includes today bar', async () => {
+        it('[merge-under-lag] history lags (newest < lastClosed) → cooldown-limited + result includes today bar', async () => {
             /**
              * Behavior-documenting test: FMP has not yet published day N's EOD.
              * History newest bar = day N-1 (lag). today bar = day N+1 (advanced quote).
              *
              * Expected:
-             * (a) bars:eodhist is written with SHORT retry TTL (15min = 900s) — completeness
-             *     check (newest >= lastClosed) fails, so we schedule a retry.
-             * (b) merged result still contains history bars + the today bar — the short TTL
-             *     drives re-fetch once FMP publishes N; until then the series has today via quote.
+             * (a) the lagged entry is stored as of lastClosed (the cooldown, not a short Redis
+             *     TTL, bounds the retries): a repeat call inside the cooldown does not refetch.
+             * (b) merged result still contains history bars + the today bar — the cooldown
+             *     re-check picks up day N once FMP publishes it; until then the series has
+             *     today via quote.
              *
              * System time: 2026-06-30 15:00 UTC (Tue 11:00 EDT, before close)
              * lastClosed = 2026-06-29 (Mon). History newest = 2026-06-28 (lag, N-1).
@@ -1251,19 +1255,550 @@ describe('CachedMarketDataProvider', () => {
                 timeframe: '1Day',
                 from: '2024-01-01',
             });
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            });
 
-            // (a) cooldown TTL because history newest (2026-06-28) < lastClosed (2026-06-29)
-            const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:eodhist')
-            );
-            expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
+            // (a) stored as of lastClosed (2026-06-29) although newest (2026-06-28) is behind
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-06-29');
+            expect(getBars).toHaveBeenCalledTimes(1);
 
             // (b) merged result contains both lagged history and today bar
             const times = result.map(b => b.time);
             expect(times).toContain(laggedHistBar.time);
             expect(times).toContain(advancedTodayBar.time);
+        });
+    });
+
+    describe('incremental EOD history refresh at a session roll', () => {
+        let warnSpy: ReturnType<typeof vi.spyOn>;
+        const overlapWarnings = (): unknown[][] =>
+            warnSpy.mock.calls.filter(([message]: unknown[]) =>
+                String(message).includes('eodhist overlap mismatch')
+            );
+        beforeEach(() => {
+            warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            resetSharedState();
+            vi.useFakeTimers();
+            // Tue 2026-06-30 15:00Z = 11:00 EDT → lastClosed 2026-06-29 (Mon)
+            vi.setSystemTime(new Date('2026-06-30T15:00:00Z'));
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+            warnSpy.mockRestore();
+        });
+
+        // Roll: Wed 2026-07-01 00:30Z = Tue 20:30 EDT → lastClosed 2026-06-30
+        const ROLL_AT = new Date('2026-07-01T00:30:00Z');
+        const WINDOW_START_AFTER_ROLL = addDays(WINDOW_START, 1);
+        const fullOpts: GetBarsOptions = { symbol: 'AAPL', timeframe: '1Day' };
+
+        /** One bar per listed day; prices differ per day so a changed bar is detectable. */
+        const barsOn = (days: string[], scale = 1): Bar[] =>
+            days.map(day => {
+                const t = utcSeconds(day);
+                const base = 50 + ((t / 86_400) % 97);
+                return {
+                    time: t,
+                    open: base * scale,
+                    high: (base + 2) * scale,
+                    low: (base - 2) * scale,
+                    close: (base + 1) * scale,
+                    volume: 1000,
+                };
+            });
+        const daysBetween = (fromIso: string, toIso: string): string[] => {
+            const out: string[] = [];
+            for (let d = fromIso; d <= toIso; d = addDays(d, 1)) out.push(d);
+            return out;
+        };
+        /** FMP-like upstream: bars in [from, before], inclusive, from the mutable `ledger`. */
+        const makeUpstream = (
+            ledger: () => Bar[],
+            override?: (o: GetBarsOptions) => Bar[] | undefined
+        ) =>
+            vi.fn(async (o: GetBarsOptions) => {
+                const overridden = override?.(o);
+                if (overridden !== undefined) return overridden;
+                const lo = utcSeconds(o.from!);
+                const hi = utcSeconds(o.before!);
+                return ledger().filter(b => b.time >= lo && b.time <= hi);
+            });
+        const providerOver = (
+            getBars: SiglensMarketProvider['getBars'],
+            session?: ConstructorParameters<typeof CachedMarketDataProvider>[1]
+        ) =>
+            new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) }),
+                session
+            );
+
+        let ledger: Bar[];
+        beforeEach(() => {
+            ledger = barsOn(
+                daysBetween(addDays(WINDOW_START, -10), '2026-06-29')
+            );
+        });
+        const appendRollDay = () => {
+            ledger = [...ledger, ...barsOn(['2026-06-30'])];
+        };
+        const expectedWindow = (toIso: string, fromIso: string): Bar[] =>
+            ledger.filter(
+                b =>
+                    b.time >= utcSeconds(fromIso) && b.time <= utcSeconds(toIso)
+            );
+
+        it('rolls with upstream from = last cached bar date (overlap), not the window start; result equals a full fetch', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+            expect(getBars).toHaveBeenCalledTimes(1);
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            const result = await providerOver(getBars).getBars(fullOpts);
+
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: '2026-06-29',
+                    before: '2026-06-30',
+                })
+            );
+            expect(getBars).not.toHaveBeenLastCalledWith(
+                expect.objectContaining({ from: WINDOW_START_AFTER_ROLL })
+            );
+            expect(result).toEqual(
+                expectedWindow('2026-06-30', WINDOW_START_AFTER_ROLL)
+            );
+        });
+
+        it('drops bars older than the new window start after the merge', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+            // The cold entry still holds the bar on the old window start.
+            expect((await readEodEntry('AAPL'))?.bars[0]?.time).toBe(
+                utcSeconds(WINDOW_START)
+            );
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            await providerOver(getBars).getBars(fullOpts);
+
+            const entry = await readEodEntry('AAPL');
+            expect(entry?.from).toBe(WINDOW_START_AFTER_ROLL);
+            expect(entry?.bars[0]?.time).toBe(
+                utcSeconds(WINDOW_START_AFTER_ROLL)
+            );
+            expect(entry?.bars.at(-1)?.time).toBe(utcSeconds('2026-06-30'));
+        });
+
+        it('a split (overlap bar differs) refetches the whole window and replaces the old bars', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+
+            // 10:1 split overnight: every past bar now comes back split-adjusted.
+            ledger = [
+                ...barsOn(
+                    daysBetween(addDays(WINDOW_START, -10), '2026-06-29'),
+                    0.1
+                ),
+                ...barsOn(['2026-06-30'], 0.1),
+            ];
+            vi.setSystemTime(ROLL_AT);
+            const result = await providerOver(getBars).getBars(fullOpts);
+
+            // cold + overlap probe + full refetch of the new window
+            expect(getBars).toHaveBeenCalledTimes(3);
+            expect(getBars).toHaveBeenCalledWith(
+                expect.objectContaining({ from: '2026-06-29' })
+            );
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: WINDOW_START_AFTER_ROLL,
+                    before: '2026-06-30',
+                })
+            );
+            expect(result).toEqual(
+                expectedWindow('2026-06-30', WINDOW_START_AFTER_ROLL)
+            );
+            // none of the pre-split prices survive
+            expect(result.every(b => b.close < 20)).toBe(true);
+        });
+
+        it('a missing overlap bar in the upstream response refetches the whole window', async () => {
+            const getBars = makeUpstream(
+                () => ledger,
+                o =>
+                    o.from === '2026-06-29'
+                        ? ledger.filter(
+                              b =>
+                                  b.time > utcSeconds('2026-06-29') &&
+                                  b.time <= utcSeconds(o.before!)
+                          )
+                        : undefined
+            );
+            await providerOver(getBars).getBars(fullOpts);
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            const result = await providerOver(getBars).getBars(fullOpts);
+
+            expect(getBars).toHaveBeenCalledTimes(3);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({ from: WINDOW_START_AFTER_ROLL })
+            );
+            expect(result).toEqual(
+                expectedWindow('2026-06-30', WINDOW_START_AFTER_ROLL)
+            );
+        });
+
+        it('concurrent requests at the roll share one upstream refresh', async () => {
+            const base = makeUpstream(() => ledger);
+            await providerOver(base).getBars(fullOpts);
+
+            // Hold the refresh until every caller is waiting on it: a caller whose (zstd) decode
+            // finishes after the refresh completed would legitimately see the new entry instead.
+            let release!: () => void;
+            const gate = new Promise<void>(resolve => (release = resolve));
+            const getBars = vi.fn(async (o: GetBarsOptions) => {
+                if (o.from === '2026-06-29') await gate;
+                return base(o);
+            });
+            const provider = providerOver(getBars);
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            const decodesBefore = eodDecodes.count;
+            const pending = Promise.all([
+                provider.getBars(fullOpts),
+                provider.getBars({ ...fullOpts, from: '2025-06-01' }),
+                providerOver(getBars).getBars(fullOpts),
+                providerOver(getBars).getBars({
+                    ...fullOpts,
+                    from: '2024-06-30',
+                }),
+            ]);
+            // every caller has read and decoded the stale entry → one owner, three waiters
+            await waitForEodDecodes(decodesBefore, 4);
+            release();
+            const results = await pending;
+
+            // exactly one refresh for the four concurrent callers
+            expect(getBars).toHaveBeenCalledTimes(1);
+            expect(results[0]).toEqual(
+                expectedWindow('2026-06-30', WINDOW_START_AFTER_ROLL)
+            );
+            expect(results[1]).toEqual(
+                expectedWindow('2026-06-30', '2025-06-01')
+            );
+        });
+
+        it('an upstream error during the refresh propagates and keeps the previous entry', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+
+            vi.setSystemTime(ROLL_AT);
+            const failing = vi.fn(async () => {
+                throw new Error('FMP 503');
+            });
+            await expect(
+                providerOver(failing).getBars(fullOpts)
+            ).rejects.toThrow('FMP 503');
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-06-29');
+        });
+
+        it('an empty upstream result at the roll is not cached (previous entry kept)', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+
+            vi.setSystemTime(ROLL_AT);
+            const empty = vi.fn(async () => []);
+            const result = await providerOver(empty).getBars(fullOpts);
+
+            expect(result).toEqual([]);
+            // overlap probe (empty → unverifiable) then the full refetch (empty)
+            expect(empty).toHaveBeenCalledTimes(2);
+            expect((await readEodEntry('AAPL'))?.asOf).toBe('2026-06-29');
+        });
+
+        it('KR (yahoo session): an entry still in Redis at the next KRX session is extended from the last cached session (overlap)', async () => {
+            vi.setSystemTime(new Date('2026-09-23T11:00:00Z')); // L = 09-23
+            const krDays = [...daysBetween('2021-01-01', '2026-09-23')];
+            ledger = barsOn(krDays);
+            const getBars = makeUpstream(() => ledger);
+            const opts: GetBarsOptions = {
+                symbol: '005930.KS',
+                timeframe: '1Day',
+            };
+            await providerOver(getBars, KR_EQUITY_SESSION).getBars(opts);
+
+            // KRX closed 09-24..09-28; the next session is 09-29. (In production the 5-day TTL would
+            // have expired this entry over a 6-day gap and the next read would fetch the full window;
+            // the fake Redis does not expire, which isolates the yahoo-session overlap logic.)
+            ledger = [...ledger, ...barsOn(['2026-09-29'])];
+            vi.setSystemTime(new Date('2026-09-29T11:00:00Z')); // L = 09-29
+            const result = await providerOver(
+                getBars,
+                KR_EQUITY_SESSION
+            ).getBars(opts);
+
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    symbol: '005930.KS',
+                    from: '2026-09-23',
+                    before: '2026-09-29',
+                })
+            );
+            expect(result.at(-1)?.time).toBe(utcSeconds('2026-09-29'));
+            expect((await readEodEntry('005930.KS'))?.asOf).toBe('2026-09-29');
+        });
+
+        it('crypto session: rolls the next UTC day with the overlap from the last cached day', async () => {
+            vi.setSystemTime(new Date('2026-07-04T15:00:00Z')); // L = 07-03
+            ledger = barsOn(daysBetween('2021-01-01', '2026-07-03'));
+            const getBars = makeUpstream(() => ledger);
+            const opts: GetBarsOptions = {
+                symbol: 'BTCUSD',
+                timeframe: '1Day',
+            };
+            await providerOver(getBars, CRYPTO_SESSION).getBars(opts);
+
+            ledger = [...ledger, ...barsOn(['2026-07-04'])];
+            vi.setSystemTime(new Date('2026-07-05T15:00:00Z')); // L = 07-04
+            const result = await providerOver(getBars, CRYPTO_SESSION).getBars(
+                opts
+            );
+
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: '2026-07-03',
+                    before: '2026-07-04',
+                })
+            );
+            expect(result.at(-1)?.time).toBe(utcSeconds('2026-07-04'));
+        });
+
+        it('a normal incremental merge neither warns nor resets fullAt', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+            const coldFullAt = (await readEodEntry('AAPL'))?.fullAt;
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            await providerOver(getBars).getBars(fullOpts);
+
+            expect(overlapWarnings()).toHaveLength(0);
+            expect((await readEodEntry('AAPL'))?.fullAt).toBe(coldFullAt);
+            expect((await readEodEntry('AAPL'))?.checkedAt).toBe(
+                ROLL_AT.getTime()
+            );
+        });
+
+        it('warns once with the symbol and "different" when the overlap bar differs (split)', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+            ledger = [
+                ...barsOn(
+                    daysBetween(addDays(WINDOW_START, -10), '2026-06-29'),
+                    0.1
+                ),
+                ...barsOn(['2026-06-30'], 0.1),
+            ];
+            vi.setSystemTime(ROLL_AT);
+            await providerOver(getBars).getBars(fullOpts);
+
+            expect(overlapWarnings()).toEqual([
+                [
+                    '[CachedMarketDataProvider] eodhist overlap mismatch, full refetch:',
+                    'AAPL',
+                    'different',
+                ],
+            ]);
+        });
+
+        it('warns with "missing" when the overlap bar is absent from the response', async () => {
+            const getBars = makeUpstream(
+                () => ledger,
+                o =>
+                    o.from === '2026-06-29'
+                        ? ledger.filter(b => b.time > utcSeconds('2026-06-29'))
+                        : undefined
+            );
+            await providerOver(getBars).getBars(fullOpts);
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            await providerOver(getBars).getBars(fullOpts);
+
+            expect(overlapWarnings()).toEqual([
+                [
+                    '[CachedMarketDataProvider] eodhist overlap mismatch, full refetch:',
+                    'AAPL',
+                    'missing',
+                ],
+            ]);
+        });
+
+        // ── bounded self-heal: a full refetch at least weekly ─────────────────
+        it('an entry older than the full-refresh interval refetches the whole window at the roll and resets fullAt', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts); // cold, fullAt = 06-30 15:00Z
+
+            // 8 days later (Wed 07-08): L = 07-07. The ledger holds every day through then.
+            ledger = [
+                ...ledger,
+                ...barsOn(daysBetween('2026-06-30', '2026-07-07')),
+            ];
+            const later = new Date('2026-07-08T15:00:00Z');
+            vi.setSystemTime(later);
+            const result = await providerOver(getBars).getBars(fullOpts);
+
+            const windowStart = addDays(WINDOW_START, 8);
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    from: windowStart,
+                    before: '2026-07-07',
+                })
+            );
+            expect(result).toEqual(expectedWindow('2026-07-07', windowStart));
+            expect((await readEodEntry('AAPL'))?.fullAt).toBe(later.getTime());
+            // routine, not a mismatch
+            expect(overlapWarnings()).toHaveLength(0);
+        });
+
+        it('a younger entry rolls incrementally and keeps its fullAt across several rolls', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+            const coldFullAt = Date.parse('2026-06-30T15:00:00Z');
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT); // L = 06-30
+            await providerOver(getBars).getBars(fullOpts);
+            ledger = [...ledger, ...barsOn(['2026-07-01'])];
+            vi.setSystemTime(new Date('2026-07-02T00:30:00Z')); // L = 07-01
+            await providerOver(getBars).getBars(fullOpts);
+
+            // cold + two incremental refreshes, no full refetch
+            expect(getBars).toHaveBeenCalledTimes(3);
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({ from: '2026-06-30' })
+            );
+            expect((await readEodEntry('AAPL'))?.fullAt).toBe(coldFullAt);
+        });
+
+        // ── single-flight with different contexts (closure-coupled isFresh) ───
+        // The owner's overlap fetch is held on a gate so the second request arrives while it is
+        // in flight. `getBars` captures `now` at call time, so the clock is moved between the two
+        // calls. The waits are on events (upstream call started, eodhist decode finished), not time.
+        it("a waiter at an EARLIER lastClosed than the owner never receives the owner's newer bars; it refetches its own window and writes nothing", async () => {
+            // Entry cached on Fri 06-26 (L = 06-25). Redis then holds asOf 06-25 for both callers.
+            vi.setSystemTime(new Date('2026-06-26T15:00:00Z'));
+            ledger = barsOn(
+                daysBetween(addDays(WINDOW_START, -10), '2026-06-30')
+            );
+            const base = makeUpstream(() => ledger);
+            await providerOver(base).getBars(fullOpts);
+
+            let release!: () => void;
+            const gate = new Promise<void>(resolve => (release = resolve));
+            const getBars = vi.fn(async (o: GetBarsOptions) => {
+                if (o.from === '2026-06-25') await gate; // the owner's overlap fetch
+                return base(o);
+            });
+            const provider = providerOver(getBars);
+
+            vi.setSystemTime(ROLL_AT); // owner: L = 06-30
+            const owner = provider.getBars(fullOpts);
+            // The owner is in its fetcher (in-flight registered) once its upstream call starts.
+            await vi.waitFor(() => expect(getBars).toHaveBeenCalledTimes(1));
+            vi.setSystemTime(new Date('2026-06-30T15:00:00Z')); // waiter: L = 06-29
+            const decodesBefore = eodDecodes.count;
+            const waiter = provider.getBars(fullOpts);
+            await waitForEodDecodes(decodesBefore, 1); // the waiter has joined the in-flight
+            release();
+            const [ownerBars, waiterBars] = await Promise.all([owner, waiter]);
+
+            const ownerWindow = expectedWindow(
+                '2026-06-30',
+                addDays(WINDOW_START, 1)
+            );
+            const waiterWindow = expectedWindow('2026-06-29', WINDOW_START);
+            expect(ownerBars).toEqual(ownerWindow);
+            // the waiter's own lastClosed: nothing after 06-29, full window from its own start
+            expect(waiterBars).toEqual(waiterWindow);
+            // owner: one overlap fetch; waiter: one full fetch ending at its own lastClosed
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    from: '2026-06-25',
+                    before: '2026-06-30',
+                })
+            );
+            expect(getBars).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    from: WINDOW_START,
+                    before: '2026-06-29',
+                })
+            );
+            // Redis keeps the owner's entry; the waiter's uncached result did not overwrite it.
+            const entry = await readEodEntry('AAPL');
+            expect(entry?.asOf).toBe('2026-06-30');
+            expect(entry?.bars.at(-1)?.time).toBe(utcSeconds('2026-06-30'));
+        });
+
+        it("a waiter whose from is older than the owner's window gets its own wider fetch; the stored entry keeps the owner's window", async () => {
+            const base = makeUpstream(() => ledger);
+            await providerOver(base).getBars(fullOpts); // cold at 06-30 15:00Z, L = 06-29
+
+            appendRollDay();
+            let release!: () => void;
+            const gate = new Promise<void>(resolve => (release = resolve));
+            const getBars = vi.fn(async (o: GetBarsOptions) => {
+                if (o.from === '2026-06-29') await gate; // the owner's overlap fetch
+                return base(o);
+            });
+            const provider = providerOver(getBars);
+            const older = addDays(WINDOW_START_AFTER_ROLL, -20);
+
+            vi.setSystemTime(ROLL_AT);
+            const owner = provider.getBars(fullOpts);
+            await vi.waitFor(() => expect(getBars).toHaveBeenCalledTimes(1));
+            const decodesBefore = eodDecodes.count;
+            const waiter = provider.getBars({ ...fullOpts, from: older });
+            await waitForEodDecodes(decodesBefore, 1);
+            release();
+            const [ownerBars, waiterBars] = await Promise.all([owner, waiter]);
+
+            expect(ownerBars).toEqual(
+                expectedWindow('2026-06-30', WINDOW_START_AFTER_ROLL)
+            );
+            // satisfies the waiter's own from, which the owner's value could not cover
+            expect(waiterBars).toEqual(expectedWindow('2026-06-30', older));
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenCalledWith(
+                expect.objectContaining({ from: older, before: '2026-06-30' })
+            );
+            const entry = await readEodEntry('AAPL');
+            expect(entry?.from).toBe(WINDOW_START_AFTER_ROLL);
+        });
+
+        it('a request older than the cached window refetches from that from instead of extending', async () => {
+            const getBars = makeUpstream(() => ledger);
+            await providerOver(getBars).getBars(fullOpts);
+
+            appendRollDay();
+            vi.setSystemTime(ROLL_AT);
+            const older = addDays(WINDOW_START_AFTER_ROLL, -20);
+            await providerOver(getBars).getBars({ ...fullOpts, from: older });
+
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({ from: older, before: '2026-06-30' })
+            );
+            expect((await readEodEntry('AAPL'))?.from).toBe(older);
         });
     });
 
@@ -1328,7 +1863,7 @@ describe('CachedMarketDataProvider', () => {
 
             await p.getBars(longOpts);
             const keys = fakeRedis.get.mock.calls.map(([k]) => k);
-            expect(keys).not.toContain('bars:eodhist:v2:AAPL:2026-06-29');
+            expect(keys).not.toContain('bars:eodhist:v3:AAPL');
             // 오늘 봉(작은 live 부분)은 여전히 Redis TTL을 따른다.
             expect(keys).toContain('quote:snapshot:AAPL');
             expect(getBars).toHaveBeenCalledTimes(1);
@@ -1358,7 +1893,7 @@ describe('CachedMarketDataProvider', () => {
             fakeRedis.get.mockClear();
             await p.getBars(longOpts);
             expect(fakeRedis.get.mock.calls.map(([k]) => k)).toContain(
-                'bars:eodhist:v2:AAPL:2026-06-29'
+                'bars:eodhist:v3:AAPL'
             );
             // Redis hit이라 inner는 다시 부르지 않는다.
             expect(getBars).toHaveBeenCalledTimes(1);
