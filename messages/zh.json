@@ -98,7 +98,8 @@
                 "b7b3c8": "接收设置",
                 "a613ae": "持仓（海外优先、按买入金额）与自选股（按最近添加）合并后，前 {v0} 只为详细卡片，其后 {v1} 只为摘要表。",
                 "b38abd": "在您选择的日期和时间通过邮件接收持仓与自选股报告。",
-                "861f8f": "在“我的股票”中管理"
+                "managePortfolio": "管理持仓",
+                "manageWatchlist": "管理自选股"
             },
             "unsubscribe": {
                 "page": {
@@ -280,9 +281,9 @@
                 "ac9263": "您尚未注册任何持仓",
                 "d103d5": "注册持仓后，您可以通过各股票的图示查看您的平均成本在最近价格范围内的位置。",
                 "06c7de": "管理持仓",
-                "title": "我的股票",
-                "subtitle": "自选股和持仓集中查看。持仓可查看均价在近期价格区间中的位置。",
-                "watchlistHeading": "自选股"
+                "title": "我的投资组合",
+                "subtitle": "注册持仓，查看您的平均买入价在近期价格范围内的位置。",
+                "toWatchlist": "查看自选股"
             }
         },
         "reset-password": {
@@ -409,6 +410,13 @@
             "page": {
                 "heading": "热门标的",
                 "intro": "这里是常被查看的标的。没有列出的标的也可以在搜索框输入代码，同样可以分析。"
+            }
+        },
+        "watchlist": {
+            "page": {
+                "subtitle": "在一个地方查看您已添加的股票和最近查看的股票的实时报价。",
+                "title": "自选股",
+                "toPortfolio": "查看我的投资组合"
             }
         }
     },
@@ -862,9 +870,12 @@
                 "holdingSaved": "已保存 {v0} 的持仓"
             },
             "PortfolioSignupCta": {
-                "body": "注册后可连同均价、数量一起管理持仓",
                 "cta": "去注册",
-                "login": "已有账号？登录"
+                "login": "已有账号？登录",
+                "body": "注册并输入您的平均成本和数量，我们将显示您的平均成本在每个股票的最新价格范围内的位置。",
+                "title": "注册并添加您的持仓",
+                "watchlistHint": "即使不注册，您也可以将自选股保存在此设备上。",
+                "watchlistLink": "查看自选股"
             }
         },
         "premium-gate": {
@@ -979,38 +990,26 @@
         },
         "watchlist": {
             "toggle": {
-                "limit": "自选股最多 {v0} 只，请在“我的股票”中整理。",
+                "limit": "自选股最多可添加 {v0} 个。请在自选股页面进行整理。",
                 "label": "自选股：{v0}"
             },
             "toast": {
                 "added": "已加入自选股",
-                "viewMine": "查看我的股票",
                 "limit": "自选股最多 {v0} 只",
                 "failed": "出了点问题，请重试。",
                 "merged": "已将 {v0} 只自选股并入账户",
                 "mergedSkipped": "超出上限 {v0} 只，已排除 {v1} 只",
-                "holdingKeptInWatchlist": "持仓已保存，但未能从自选股中移除。请在“我的股票”中手动删除。"
+                "holdingKeptInWatchlist": "持仓已保存，但未能从自选股中移除。请在自选股页面手动删除。",
+                "undo": "撤销",
+                "viewWatchlist": "查看自选股"
             },
             "coach": {
                 "body": "点击 ☆ 把这只股票加入自选股，注册后还能收到邮件报告",
                 "dismiss": "关闭提示"
             },
-            "badge": {
-                "count": "自选股 {v0} 只"
-            },
-            "onboarding": {
-                "title": "先从自选股开始",
-                "subtitle": "不知道代码也没关系。无需注册即可添加，注册后随处接着看。",
-                "categories": "股票分类",
-                "tiles": "{v0} 股票",
-                "count": "已添加 {v0} 只",
-                "viewMine": "查看我的股票",
-                "collapsed": "正在关注 {v0} 只自选股"
-            },
             "section": {
                 "loading": "正在加载自选股",
                 "empty": "还没有添加股票",
-                "emptyCta": "去首页添加自选股",
                 "price": "现价",
                 "change": "涨跌幅",
                 "quoteUnavailable": "暂无行情",
@@ -1019,6 +1018,38 @@
                 "remove": "删除",
                 "removeFor": "从自选股删除 {v0}",
                 "list": "自选股列表"
+            },
+            "home": {
+                "heading": "我的自选股",
+                "more": "查看更多 {v0} 个",
+                "popular": "查看热门股票",
+                "viewAll": "查看全部"
+            },
+            "page": {
+                "sort": "排序",
+                "sortAdded": "按添加顺序",
+                "sortChange": "按涨跌幅",
+                "sortName": "按名称"
+            },
+            "preview": {
+                "edit": "编辑",
+                "emptyRecent": "您还没有浏览过任何股票。打开股票页面后，它们会显示在此处。",
+                "emptyWatchlist": "您还没有添加任何股票。点击股票旁边的星号即可将其添加。",
+                "tabRecent": "最近查看",
+                "tabWatchlist": "自选",
+                "tabsLabel": "列表分类",
+                "title": "自选股",
+                "viewAll": "查看所有自选股"
+            },
+            "quick": {
+                "label": "自选",
+                "open": "打开自选股",
+                "openWithCount": "打开自选股，{v0} 个"
+            },
+            "common": {
+                "add": "添加股票",
+                "emptyBody": "点击股票旁边的星号，即可将其添加到此处，以便每次进入时都能立即查看其报价。",
+                "search": "搜索股票"
             }
         }
     },
@@ -1747,8 +1778,8 @@
             "oauthConsentFullTitle": "{v0} 社交登录注册条款同意",
             "oauthConsentTitle": "社交登录注册同意",
             "portfolio": {
-                "description": "SIGLENS 个性化页面：集中查看自选股与持仓，并查看每只持仓的均价在近期价格区间中的位置",
-                "title": "我的股票"
+                "description": "个性化页面，根据您的平均买入价，查看您在Siglens中注册的持仓在近期价格范围内的位置。",
+                "title": "我的投资组合"
             },
             "position": {
                 "breadcrumb": "我的持仓",
@@ -1851,6 +1882,10 @@
             "terms": {
                 "description": "了解SIGLENS服务条款 — 注册与使用条件、AI分析与回测等投资信息提供的免责声明、账户与内容使用规则,以及用户与公司各自的权利义务,均可在本页详细查看。",
                 "title": "服务条款"
+            },
+            "watchlist": {
+                "description": "个性化页面，在一个地方查看您在Siglens中添加的自选股和最近查看的股票的实时报价和5日走势。",
+                "title": "自选股"
             }
         },
         "skillName": {
@@ -3920,7 +3955,7 @@
                 "e225a6": "登录",
                 "ecb4cc": "注册",
                 "menuLabel": "用户菜单（{v0}）",
-                "mySymbols": "我的股票"
+                "myPortfolio": "我的投资组合"
             },
             "githubRepoAria": "{v0} GitHub 仓库（在新标签页中打开）",
             "localeSwitcher": {

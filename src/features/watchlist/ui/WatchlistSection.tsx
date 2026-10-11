@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useOpenTickerSearch } from '../hooks/useOpenTickerSearch';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type {
     RawHoldingInput,
@@ -17,6 +18,7 @@ import {
     BUTTON_OUTLINE_DANGER,
 } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import {
     formatCurrencyForSymbol,
     formatSignedPercent,
@@ -27,19 +29,20 @@ import { symbolLabel } from '@/shared/lib/symbolLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useToast } from '@/shared/ui/ToastProvider';
 import { useWatchlist } from '../hooks/useWatchlist';
+import { useWatchlistChanges } from '../hooks/useWatchlistChanges';
 import { useWatchlistQuote } from '../hooks/useWatchlistQuote';
-import { WATCHLIST_ONBOARDING_ID } from './WatchlistOnboarding';
+import { WATCHLIST_ROW_CHROME } from '../lib/watchlistStyles';
+import { sortWatchlistItems, type WatchlistSort } from '../lib/sortWatchlist';
+import { MiniTrend } from './MiniQuoteRow';
 
-const ROW_CHROME =
-    'ring-secondary-700 bg-secondary-900/60 rounded-lg p-4 ring-1';
 const ACTION_BUTTON = cn(BUTTON_OUTLINE, 'px-3 py-1.5 text-xs');
 const DANGER_BUTTON = cn(BUTTON_OUTLINE_DANGER, 'px-3 py-1.5 text-xs');
 const NAME_LINK =
     'truncate font-semibold text-secondary-100 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 interface WatchlistSectionProps {
-    /** 보유로 전환이 저장에 성공한 뒤. `/portfolio`는 서버가 그린 보유 카드를 다시 읽는다(`router.refresh`). */
-    onHoldingsChange?: () => void;
+    /** 정렬 기준. 등락률 순일 때만 모든 행의 시세를 한꺼번에 불러온다(그 외에는 보일 때만). */
+    sort?: WatchlistSort;
 }
 
 interface RowQuoteProps {
@@ -117,7 +120,7 @@ function WatchlistRow({
 
     if (isConverting) {
         return (
-            <li ref={setNode} className={ROW_CHROME}>
+            <li ref={setNode} className={WATCHLIST_ROW_CHROME}>
                 <HoldingForm
                     defaultSymbol={item.symbol}
                     onSubmit={async input => {
@@ -136,7 +139,7 @@ function WatchlistRow({
         <li
             ref={setNode}
             className={cn(
-                ROW_CHROME,
+                WATCHLIST_ROW_CHROME,
                 'flex flex-wrap items-center justify-between gap-3'
             )}
         >
@@ -152,6 +155,11 @@ function WatchlistRow({
                     <RowQuote symbol={item.symbol} enabled={isVisible} />
                 </div>
             </div>
+            <MiniTrend
+                symbol={item.symbol}
+                enabled={isVisible}
+                className="hidden h-8 w-28 sm:block"
+            />
             <div className="flex shrink-0 items-center gap-2">
                 {isMember && (
                     <button
@@ -179,16 +187,26 @@ function WatchlistRow({
 }
 
 /**
- * 내 종목 페이지의 관심종목 섹션(§6.3). 비회원은 로컬 목록을 본다. 시세는 행이 뷰포트에
- * 들어올 때만 봉 캐시에서 파생한다. "보유로 전환"은 회원만 — `HoldingForm`을 심볼 채워 열고
- * 저장 성공 시 관심 항목을 지운다. 제목(h2)은 페이지가 그린다.
+ * `/watchlist`의 관심 탭 목록. 비회원은 로컬 목록을 본다. 시세는 행이 뷰포트에 들어올 때만
+ * 봉 캐시에서 파생한다(등락률 정렬을 고르면 그때 전부). "보유로 전환"은 회원만 —
+ * `HoldingForm`을 심볼 채워 열고 저장 성공 시 관심 항목을 지운다.
  */
-export function WatchlistSection({ onHoldingsChange }: WatchlistSectionProps) {
+export function WatchlistSection({ sort = 'added' }: WatchlistSectionProps) {
     const t = useTranslations('features.watchlist');
     const { items, isHydrated, isIdentityPending, isMember, remove } =
         useWatchlist();
     const { showToast } = useToast();
     const { save } = usePortfolioHoldings({ enabled: false });
+    const assetLabel = useAssetLabel();
+    const locale = useResolvedLocale();
+    const openSearch = useOpenTickerSearch();
+    const changeBySymbol = useWatchlistChanges(items, sort === 'change');
+    const sorted = sortWatchlistItems(items, sort, {
+        nameOf: item =>
+            assetLabel(item.symbol, item.companyName ?? item.symbol),
+        changeOf: item => changeBySymbol.get(item.symbol) ?? null,
+        locale,
+    });
 
     const handleConvert = async (
         input: RawHoldingInput
@@ -200,7 +218,6 @@ export function WatchlistSection({ onHoldingsChange }: WatchlistSectionProps) {
             if (!(await remove(result.holding.symbol))) {
                 showToast({ message: t('toast.holdingKeptInWatchlist') });
             }
-            onHoldingsChange?.();
         }
         return result;
     };
@@ -214,7 +231,10 @@ export function WatchlistSection({ onHoldingsChange }: WatchlistSectionProps) {
                     {[0, 1].map(i => (
                         <div
                             key={i}
-                            className={cn(ROW_CHROME, 'h-16 animate-pulse')}
+                            className={cn(
+                                WATCHLIST_ROW_CHROME,
+                                'h-16 animate-pulse'
+                            )}
                         />
                     ))}
                 </div>
@@ -224,22 +244,28 @@ export function WatchlistSection({ onHoldingsChange }: WatchlistSectionProps) {
 
     if (items.length === 0) {
         return (
-            <div className="rounded-lg border border-dashed border-secondary-700 px-4 py-6 text-center text-sm text-secondary-400">
-                <p>{t('section.empty')}</p>
-                <Link
-                    href={`/#${WATCHLIST_ONBOARDING_ID}`}
-                    prefetch={false}
-                    className="mt-2 inline-block font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+            <div className="rounded-lg border border-dashed border-secondary-700 px-4 py-8 text-center text-sm text-secondary-400">
+                <p className="font-medium text-secondary-200">
+                    {t('section.empty')}
+                </p>
+                <p className="mt-1">{t('common.emptyBody')}</p>
+                <button
+                    type="button"
+                    onClick={openSearch}
+                    className={cn(
+                        LINK_ACCENT,
+                        'mt-3 inline-flex min-h-11 items-center rounded px-2'
+                    )}
                 >
-                    {t('section.emptyCta')}
-                </Link>
+                    {t('common.search')}
+                </button>
             </div>
         );
     }
 
     return (
         <ul aria-label={t('section.list')} className="space-y-2">
-            {items.map(item => (
+            {sorted.map(item => (
                 <WatchlistRow
                     key={item.symbol}
                     item={item}

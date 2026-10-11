@@ -3,7 +3,8 @@ import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import { PortfolioManager } from './PortfolioManager';
-import { WatchlistManager } from './WatchlistManager';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { PAGE_HEADER_LINK } from '../_personal/pageHeaderLink';
 import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
@@ -48,8 +49,8 @@ export async function generateMetadata({
             title,
             description,
         }),
-        // 개인화 서페이스라 색인 대상이 아니다 — 비회원도 열리지만 내용(로컬 관심종목)이
-        // 방문자마다 다르다.
+        // 개인화 서페이스라 색인 대상이 아니다 — 비회원에게는 가입 CTA, 회원에게는 자기
+        // 보유종목만 보인다.
         robots: { index: false, follow: false },
     };
 }
@@ -76,9 +77,9 @@ function PortfolioManagerSkeleton() {
 /**
  * 회원 영역. `getCurrentUser()`(쿠키 읽기)를 **한 번** 읽으므로 반드시 Suspense 안에서
  * 그려야 PPR이 유지된다. 비회원에게는 가입 CTA 카드를, 회원에게는 보유종목 관리 폼과
- * 위치 카드 그리드를 그린다. 비회원도 이 페이지에 들어온다 — 프록시 가드와 페이지
- * `redirect`를 모두 뺐다(관심종목은 가입 전에도 본다, 설계 §6.3). 비회원은 보유 DB를
- * 읽지 않는다. 테스트가 `await PortfolioMemberArea()`로 직접 검증하도록 export한다
+ * 위치 카드 그리드를 그린다. 비회원도 이 페이지에 들어온다(프록시 가드·`redirect` 없음) —
+ * 가입 CTA가 이 페이지의 비회원 콘텐츠다. 관심종목은 2026-10 동선 개편으로 `/watchlist`로
+ * 옮겼다. 비회원은 보유 DB를 읽지 않는다. 테스트가 `await PortfolioMemberArea()`로 직접 검증하도록 export한다
  * (`AccountContent` 패턴과 같다).
  *
  * 보유 목록은 `getPortfolioHoldingsAction`이 아니라 `DrizzlePortfolioRepository`로 직접
@@ -230,29 +231,26 @@ export default async function PortfolioPage({
     return (
         <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-5xl space-y-6">
-                <header>
-                    <h1 className="text-2xl font-semibold text-secondary-50">
-                        {t('page.title')}
-                    </h1>
-                    <p className="mt-1 text-sm text-secondary-400">
-                        {t('page.subtitle')}
-                    </p>
+                <header className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                        <h1 className="text-2xl font-semibold text-secondary-50">
+                            {t('page.title')}
+                        </h1>
+                        <p className="mt-1 text-sm text-secondary-400">
+                            {t('page.subtitle')}
+                        </p>
+                    </div>
+                    <Link
+                        href="/watchlist"
+                        prefetch={false}
+                        className={PAGE_HEADER_LINK}
+                    >
+                        {t('page.toWatchlist')}
+                    </Link>
                 </header>
                 <Suspense fallback={<PortfolioSkeleton />}>
                     <PortfolioMemberArea locale={locale} />
                 </Suspense>
-                <section
-                    aria-labelledby="portfolio-watchlist-heading"
-                    className="space-y-4"
-                >
-                    <h2
-                        id="portfolio-watchlist-heading"
-                        className={HEADING_SECTION}
-                    >
-                        {t('page.watchlistHeading')}
-                    </h2>
-                    <WatchlistManager />
-                </section>
             </div>
         </main>
     );

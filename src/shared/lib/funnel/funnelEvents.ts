@@ -73,12 +73,18 @@ export type MeterState = (typeof METER_STATES)[number];
 export const SIGNUP_METHODS = ['email', 'oauth'] as const;
 export type SignupMethod = (typeof SIGNUP_METHODS)[number];
 
-/** 2편·3편(관심종목·메일 리포트)이 보낸다. 지금은 카탈로그만 둔다. */
+/**
+ * 관심종목 담기 지점. `home_onboarding`·`portfolio_page`는 2026-10 동선 개편으로 더 이상 발화하지
+ * 않지만 과거 이벤트 집계가 이 값을 그대로 읽으므로 카탈로그에서 지우지 않는다.
+ */
 export const WATCHLIST_SOURCES = [
     'home_onboarding',
     'symbol_header',
     'portfolio_page',
     'nudge',
+    'search',
+    'home_popular',
+    'watchlist_page',
 ] as const;
 export type WatchlistSource = (typeof WATCHLIST_SOURCES)[number];
 /** 병합 한 번에 들어올 수 있는 종목 수 상한 — 관심종목 상한보다 넉넉히. */

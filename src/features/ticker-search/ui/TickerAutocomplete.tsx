@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { isKoreanInput } from '@/entities/ticker/lib/ticker';
+import { SearchWatchlistStar } from '@/features/watchlist/ui/SearchWatchlistStar';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { marketBadgeSpec, resultDisplayNames } from '../lib/resultDisplay';
 import { MarketBadge } from './MarketBadge';
@@ -62,6 +63,10 @@ interface TickerAutocompleteProps {
      * keep the unchanged default behavior.
      */
     ariaLabelledby?: string;
+    /** 입력 id. 헤더 검색만 준다 — 다른 곳의 "종목 검색" 버튼이 이 입력에 포커스를 보낸다. */
+    inputId?: string;
+    /** 결과 행에 관심종목 ★를 붙인다. 종목 페이지로 가는 검색에만 준다(폼 입력에는 주지 않는다). */
+    showWatchlistStar?: boolean;
 }
 
 export function TickerAutocomplete({
@@ -73,6 +78,8 @@ export function TickerAutocomplete({
     ariaInvalid,
     ariaDescribedby,
     ariaLabelledby,
+    inputId,
+    showWatchlistStar = false,
 }: TickerAutocompleteProps) {
     const t = useTranslations('features.ticker-search');
     const {
@@ -107,6 +114,7 @@ export function TickerAutocomplete({
             <div className="relative min-w-0 flex-1">
                 <input
                     ref={inputRef}
+                    id={inputId}
                     name="symbol"
                     autoComplete="off"
                     role="combobox"
@@ -178,6 +186,7 @@ export function TickerAutocomplete({
                                 isSelected={index === selectedIndex}
                                 onSelect={navigate}
                                 onPrefetch={prefetch}
+                                showWatchlistStar={showWatchlistStar}
                             />
                         ))}
                     </div>
@@ -202,6 +211,7 @@ interface ResultItemProps {
     isSelected: boolean;
     onSelect: (symbol: string, label: string) => void;
     onPrefetch: (symbol: string) => void;
+    showWatchlistStar: boolean;
 }
 
 function ResultItem({
@@ -210,13 +220,14 @@ function ResultItem({
     isSelected,
     onSelect,
     onPrefetch,
+    showWatchlistStar,
 }: ResultItemProps) {
     // 표시 규칙(한글명 우선·국내 종목 영문명 억제·시장 배지)은 오버레이와 공유한다.
     // 근거와 드리프트 이력은 `lib/resultDisplay.ts` 상단 JSDoc 참고.
     const { primaryName, secondaryName } = resultDisplayNames(result);
     const badge = marketBadgeSpec(result);
 
-    return (
+    const option = (
         <button
             id={id}
             type="button"
@@ -225,7 +236,8 @@ function ResultItem({
             onClick={() => onSelect(result.symbol, primaryName)}
             onMouseEnter={() => onPrefetch(result.symbol)}
             className={cn(
-                'hover:bg-secondary-700 focus-visible:ring-primary-500 w-full px-4 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                'hover:bg-secondary-700 focus-visible:ring-primary-500 px-4 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                showWatchlistStar ? 'min-w-0 flex-1' : 'w-full',
                 isSelected && 'bg-secondary-700'
             )}
         >
@@ -247,5 +259,21 @@ function ResultItem({
                 )}
             </div>
         </button>
+    );
+    if (!showWatchlistStar) return option;
+    // 옵션 안에는 상호작용 요소를 둘 수 없어 ★를 옵션의 형제로 둔다. ★는 포인터 전용 보조
+    // 컨트롤이라 접근성 트리에서 숨기고(`aria-hidden` + `tabIndex=-1`) — 그래야 listbox가 옵션만
+    // 소유한다(`role="none"` 래퍼만으로는 ★ 버튼이 listbox의 자식으로 남는다). 보조기술 사용자는
+    // 버튼 목록인 모바일 검색 오버레이의 ★나 종목 헤더 ☆로 담는다.
+    return (
+        <div role="none" className="flex items-center">
+            {option}
+            <SearchWatchlistStar
+                symbol={result.symbol}
+                label={primaryName}
+                focusable={false}
+                className="mr-1 size-9"
+            />
+        </div>
     );
 }

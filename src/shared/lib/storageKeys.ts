@@ -75,6 +75,12 @@ export const LOCAL_STORAGE_FUNNEL_METER_SHOWN_KEY =
  */
 export const LOCAL_STORAGE_WATCHLIST_KEY = 'siglens:watchlist:v1';
 
+/**
+ * 최근 본 종목 — `Array<{ symbol, label, viewedAt }>`(최근 것부터). 종목 페이지에 들어갈 때마다
+ * 기록하고, 회원도 서버에 올리지 않는다(기기 로컬 전용). 파서는 `features/watchlist/lib/recentSymbols.ts`.
+ */
+export const LOCAL_STORAGE_RECENT_SYMBOLS_KEY = 'siglens:recent-symbols:v1';
+
 /** 종목 헤더 ☆ 코치 마크를 한 번 보여 줬다(닫기 또는 첫 토글). 다시 뜨지 않는다. */
 export const LOCAL_STORAGE_WATCHLIST_COACH_SEEN_KEY =
     'siglens:watchlist:coach-seen';

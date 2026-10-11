@@ -11,6 +11,7 @@ import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { SEARCH_TRIGGER_LABEL_KEY } from '@/features/ticker-search/lib/searchLabels';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { HEADER_SEARCH_INPUT_ID } from '@/shared/model/SearchOverlayTriggerContext';
 
 // 문구를 테스트에 복제하지 않는다 — 카탈로그를 읽으면 키 오타나 문구 변경이
 // 곧바로 여기서 드러난다(TESTING.md#TE-10).
@@ -42,6 +43,14 @@ describe('HeaderSearch', () => {
             <QueryClientProvider client={qc}>{tree}</QueryClientProvider>
         );
     }
+
+    it('데스크톱 검색 입력이 "종목 검색" 버튼(`useOpenTickerSearch`)이 찾는 id를 단다', () => {
+        renderWithProvider();
+        // 이 id가 빠지면 관심종목 카드·페이지의 "종목 검색" 버튼이 PC에서 조용히 아무 일도 안 한다.
+        expect(document.getElementById(HEADER_SEARCH_INPUT_ID)).toBe(
+            screen.getByRole('combobox')
+        );
+    });
 
     it('모바일 트리거가 ml-auto를 갖는다', () => {
         renderWithProvider();

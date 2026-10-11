@@ -15,7 +15,7 @@ interface WatchlistToggleButtonProps {
     /** 표시명(회사명). 담을 때 저장되는 라벨이다. 모르면 심볼을 넘긴다. */
     label: string;
     source: WatchlistSource;
-    /** 담기 성공에 "관심종목에 담았어요 · 내 종목 보기" 토스트(종목 헤더만). */
+    /** 담기 성공에 "관심종목에 담았어요 · 관심종목 보기" 토스트(종목 헤더만). */
     successToast?: boolean;
     /** 관심종목 0개인 첫 방문자에게 1회 코치 마크(종목 헤더만). */
     showCoachMark?: boolean;
@@ -71,7 +71,7 @@ export function WatchlistToggleButton({
         if (outcome === 'added' && successToast) {
             showToast({
                 message: t('toast.added'),
-                link: { href: '/portfolio', label: t('toast.viewMine') },
+                link: { href: '/watchlist', label: t('toast.viewWatchlist') },
             });
         }
     };

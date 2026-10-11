@@ -20,8 +20,10 @@ import { normalizeLabel } from '../lib/normalizeLabel';
 import { isImeComposing } from '../lib/isImeComposing';
 import { POPULAR_PREVIEW_GROUPS } from '../lib/popularPreview';
 import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
+import { resultDisplayNames } from '../lib/resultDisplay';
 import { SEARCH_PLACEHOLDER_KEY, SEARCH_ROW_CLASS } from '../lib/searchLabels';
 import { SearchResultRow } from './SearchResultRow';
+import { SearchWatchlistStar } from '@/features/watchlist/ui/SearchWatchlistStar';
 
 interface SearchOverlayProps {
     isOpen: boolean;
@@ -363,11 +365,26 @@ function SearchOverlayBody({
                     // 버튼 목록이고 Tab으로 완전히 조작된다.
                     <section aria-label={t('search.resultsLabel')}>
                         {results.map(result => (
-                            <SearchResultRow
+                            // 행(이동)과 ★(담기)는 형제 버튼이다 — 버튼 목록이라 둘 다 Tab
+                            // 정지점이고, ★를 눌러도 이동하지 않는다.
+                            <div
                                 key={result.symbol}
-                                result={result}
-                                onSelect={handleSelect}
-                            />
+                                className="flex items-center pr-2"
+                            >
+                                <SearchResultRow
+                                    result={result}
+                                    onSelect={handleSelect}
+                                    className="min-w-0 flex-1"
+                                />
+                                <SearchWatchlistStar
+                                    symbol={result.symbol}
+                                    label={
+                                        resultDisplayNames(result).primaryName
+                                    }
+                                    focusable
+                                    className="size-11"
+                                />
+                            </div>
                         ))}
                         {isSearching && (
                             <p className="px-4 py-3 text-sm text-secondary-400">

@@ -94,7 +94,7 @@ describe('useWatchlistMerge', () => {
         expect(toast.showToast).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: '관심종목 2개를 계정으로 가져왔어요',
-                link: { href: '/portfolio', label: '내 종목 보기' },
+                link: { href: '/watchlist', label: '관심종목 보기' },
             })
         );
         expect(toast.showToast).toHaveBeenCalledWith(

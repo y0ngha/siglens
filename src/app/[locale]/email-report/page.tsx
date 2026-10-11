@@ -116,9 +116,13 @@ function IncludedSymbolsNote() {
             <Suspense fallback={<PreviewSkeleton />}>
                 <ReportPreviewLoader />
             </Suspense>
-            <p className="text-sm">
+            {/* 리포트 종목은 관심종목과 보유종목의 합이라 관리 화면도 둘이다. */}
+            <p className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                <Link href="/watchlist" className={LINK}>
+                    {t('page.manageWatchlist')}
+                </Link>
                 <Link href="/portfolio" className={LINK}>
-                    {t('page.861f8f')}
+                    {t('page.managePortfolio')}
                 </Link>
             </p>
         </section>

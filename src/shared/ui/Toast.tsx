@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
@@ -11,11 +12,18 @@ export interface ToastLink {
     label: string;
 }
 
+/** 토스트 안의 버튼 하나(검색에서 담은 직후의 "되돌리기"). 누르면 실행하고 토스트를 닫는다. */
+export interface ToastAction {
+    label: string;
+    onAction: () => void;
+}
+
 export interface ToastContent {
     message: string;
     /** 둘째 줄 보조 문장(병합 토스트의 "M개는 제외했어요"). */
     detail?: string;
     link?: ToastLink;
+    action?: ToastAction;
 }
 
 interface ToastProps {
@@ -41,7 +49,9 @@ const TOAST_CARD = cn(
     'pointer-events-auto flex w-full items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-900 p-4 text-sm text-secondary-100 shadow-2xl',
     'motion-safe:animate-[fade-in_150ms_ease-out]'
 );
-const CLOSE_BUTTON = cn(BUTTON_GHOST, 'size-8 shrink-0 rounded');
+// 닫기 버튼(32px)이 첫 줄(text-sm, 20px)보다 커서 카드 높이를 정하고 문장이 위로 치우쳐 보였다.
+// 세로 음수 여백으로 버튼을 첫 줄 중앙에 겹쳐, 카드 높이는 문장이 정하게 한다(누르는 영역은 그대로 32px).
+const CLOSE_BUTTON = cn(BUTTON_GHOST, '-my-1.5 size-8 shrink-0 rounded');
 
 /**
  * 라이브 영역은 토스트가 없어도 **늘 마운트**한다 — 내용과 같은 순간에 삽입된 `aria-live`
@@ -83,10 +93,31 @@ export function Toast({ toast, onDismiss, onPauseChange }: ToastProps) {
                                         href={toast.link.href}
                                         prefetch={false}
                                         onClick={onDismiss}
-                                        className="font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        className={LINK_ACCENT}
                                     >
                                         {toast.link.label}
                                     </Link>
+                                </>
+                            )}
+                            {toast.action && (
+                                <>
+                                    <span
+                                        aria-hidden="true"
+                                        className="text-secondary-500"
+                                    >
+                                        {' '}
+                                        ·{' '}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            toast.action?.onAction();
+                                            onDismiss();
+                                        }}
+                                        className={LINK_ACCENT}
+                                    >
+                                        {toast.action.label}
+                                    </button>
                                 </>
                             )}
                         </p>

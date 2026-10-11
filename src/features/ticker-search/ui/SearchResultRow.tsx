@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/shared/lib/cn';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { SEARCH_ROW_CLASS } from '../lib/searchLabels';
 import { marketBadgeSpec, resultDisplayNames } from '../lib/resultDisplay';
@@ -8,6 +9,7 @@ import { MarketBadge } from './MarketBadge';
 interface SearchResultRowProps {
     result: TickerSearchResult;
     onSelect: (symbol: string, label: string) => void;
+    className?: string;
 }
 
 /**
@@ -35,7 +37,11 @@ interface SearchResultRowProps {
  * 히스토리가 `[NVDA, 검색, AAPL]`이 되어 뒤로가기가 유령 항목에 걸린다. 모든 행은
  * 같은 `onSelect`를 거쳐 `router.replace`로 이동한다.
  */
-export function SearchResultRow({ result, onSelect }: SearchResultRowProps) {
+export function SearchResultRow({
+    result,
+    onSelect,
+    className,
+}: SearchResultRowProps) {
     // 표시 규칙은 데스크톱 자동완성과 공유한다 — `lib/resultDisplay.ts` 참고.
     const { primaryName, secondaryName } = resultDisplayNames(result);
     const badge = marketBadgeSpec(result);
@@ -44,7 +50,7 @@ export function SearchResultRow({ result, onSelect }: SearchResultRowProps) {
         <button
             type="button"
             onClick={() => onSelect(result.symbol, primaryName)}
-            className={SEARCH_ROW_CLASS}
+            className={cn(SEARCH_ROW_CLASS, className)}
         >
             {badge && <MarketBadge {...badge} />}
             {/* `min-w-0`이 없으면 flex 자식이 축소되지 않아 `truncate`가 동작하지 않는다. */}

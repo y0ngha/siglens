@@ -3,6 +3,7 @@
 import { SearchTriggerButton } from './SearchTriggerButton';
 import { TickerAutocomplete } from './TickerAutocomplete';
 import { useSearchOverlayTrigger } from '../model/SearchOverlayContext';
+import { HEADER_SEARCH_INPUT_ID } from '@/shared/model/SearchOverlayTriggerContext';
 
 /**
  * 헤더의 검색 표면. 브레이크포인트에 따라 두 얼굴을 갖는다.
@@ -46,7 +47,12 @@ export function HeaderSearch() {
                 {/* `w-full`이 없으면 입력이 **내용 폭**(브라우저 기본 `size=20`,
                     ≈176px)에 머문다 — 래퍼의 `max-w-*`는 상한일 뿐 늘리지 못한다.
                     1440px에서도 176px이던 원인이 이것이다. */}
-                <TickerAutocomplete size="sm" className="w-full" />
+                <TickerAutocomplete
+                    size="sm"
+                    className="w-full"
+                    inputId={HEADER_SEARCH_INPUT_ID}
+                    showWatchlistStar
+                />
             </div>
         </>
     );

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { LOCAL_STORAGE_RECENT_SYMBOLS_KEY } from '@/shared/lib/storageKeys';
 
 vi.mock('next/link', () => ({
     default: ({
@@ -274,6 +275,24 @@ describe('SymbolLayoutHeader', () => {
             />
         );
         expect(screen.getByText('Apple Inc.')).toBeDefined();
+    });
+
+    it('들어온 종목을 실제 저장소의 "최근 본 종목"에 남긴다(헤더 ★·홈 카드의 최근 본 탭 원천)', () => {
+        localStorage.clear();
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
+        const stored = JSON.parse(
+            localStorage.getItem(LOCAL_STORAGE_RECENT_SYMBOLS_KEY) ?? '[]'
+        );
+        expect(stored[0]).toMatchObject({
+            symbol: 'AAPL',
+            label: mockToggleProps.last?.['label'],
+        });
     });
 
     it('renders the korean name', () => {
