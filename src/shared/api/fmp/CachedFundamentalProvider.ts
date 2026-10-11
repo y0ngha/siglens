@@ -4,6 +4,11 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { sym } from './symKey';
 import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import {
+    isNextEarningsCacheFresh,
+    nextEarningsTtlSeconds,
+} from './nextEarningsCachePolicy';
 import type { FmpEarningsReportItem } from './fundamentalClient';
 import type {
     FundamentalProvider,
@@ -42,7 +47,9 @@ export const PEER_LIMIT = 10;
  * (`barsDataCache`와 동일 형태). 키/TTL은 기존 `fundamentalData.ts`·`newsData.ts`
  * 스킴을 그대로 따른다.
  *
- * earnings(no-store + DB 영속)와 historical-sector(빈 stub)는 pass-through한다.
+ * `getEarningsReports`(뉴스 탭 비교용 — DB가 영속·신선도를 맡는다)와 historical-sector(빈
+ * stub)는 pass-through한다. `getEarningsReport`(다음 실적 일정 1건)는 실적일에 맞춘 TTL로
+ * 캐싱한다(`nextEarningsCachePolicy.ts`).
  */
 /**
  * 우리가 페이지를 낼 수 있는 peer만 남긴다.
@@ -314,9 +321,27 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
             )
     );
 
-    // earnings: 실적 발표 시점 실시간성이 중요(no-store) → Redis TTL 미적용. fundamentalClient 주석 참고.
-    getEarningsReport = (symbol: string): Promise<EarningsReport | null> =>
-        this.inner.getEarningsReport(symbol);
+    /**
+     * 다음 실적 일정 1건 — core 펀더멘털 분석이 `nextEarningsAt` 한 값만 꺼내 쓴다.
+     *
+     * 예전엔 "실적 발표 시점 실시간성"을 이유로 캐시 없이 통과시켜, 분석(프리웜 포함)마다
+     * FMP `earnings`를 불렀다. 이 값은 보통 발표 몇 주 전에 정해지는 날짜라 캐싱하되, 지난
+     * 실적일은 쓰지 않고 발표 전후·일정 미정은 짧게 둔다(규칙은 `nextEarningsCachePolicy.ts`).
+     * FMP 장애는 throw라 캐싱되지 않는다.
+     */
+    getEarningsReport = cache(
+        (symbol: string): Promise<EarningsReport | null> => {
+            const today = toUtcIsoDate(new Date());
+            return getOrSetCache(
+                `fundamental:earnings-next:${sym(symbol)}`,
+                report => nextEarningsTtlSeconds(report, today),
+                () => this.inner.getEarningsReport(symbol),
+                // 지난 실적일은 읽을 때 버리므로(아래 isFresh) 쓸 필요도 없다.
+                report => isNextEarningsCacheFresh(report, today),
+                report => isNextEarningsCacheFresh(report, today)
+            );
+        }
+    );
 
     getEarningsReports = (
         symbol: string,

@@ -75,10 +75,9 @@ export function daysUntil(
  * `nextEarningsDate` goes through `getNextEarningsReport` — the same
  * DB-backed, 24h-staleness-gated loader the news/analysis paths already use
  * (`entities/earnings-report`) — rather than the provider's own
- * `getEarningsReport`, which is deliberately `no-store` at the FMP/yahoo
- * client (earnings-day real-time-ness matters there). Routing through it
- * here means this tool shares that cache instead of adding an uncached
- * FMP/yahoo call per turn.
+ * `getEarningsReport` (a separate 24h Redis key used by core's fundamental
+ * analysis). Routing through it here means this tool shares the DB rows the
+ * news tab shows instead of adding another FMP/yahoo call per turn.
  *
  * `profitability`/`growth` fields are RENAMED with an explicit `...Pct`
  * suffix (spec §3.4, audit B6): FMP returns these as decimals (`0.25` =
