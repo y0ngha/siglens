@@ -10,7 +10,10 @@ import {
 } from 'react';
 import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
-import { migrateLegacyAnalysisModel } from '../lib/migrateAnalysisModel';
+import {
+    migrateLegacyAnalysisModel,
+    migrateRetiredAnalysisModel,
+} from '../lib/migrateAnalysisModel';
 
 const DEFAULT_MODEL: ModelId = DEEPSEEK_V4_1_FLASH_MODEL;
 
@@ -67,6 +70,9 @@ export function useSelectedModel(
         // Run the one-time legacy-default migration BEFORE reading, so the read
         // below picks up the migrated value for users still on gemini-3.5-flash-lite.
         migrateLegacyAnalysisModel();
+        // A retired model would fail the allowlist and drop to the default;
+        // move it to its successor first (gemini-3.7-flash → 3.8-flash).
+        migrateRetiredAnalysisModel();
         const stored = readStoredModel();
         const resolved =
             stored !== null && allowedModels.includes(stored)

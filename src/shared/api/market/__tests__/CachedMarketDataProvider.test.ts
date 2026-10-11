@@ -231,7 +231,7 @@ describe('CachedMarketDataProvider', () => {
         };
 
         // ── key format: session-dated ─────────────────────────────────────────
-        it('key format: history key is bars:eodhist:AAPL:<lastClosed>', async () => {
+        it('key format: history key is bars:eodhist:v2:AAPL:<lastClosed>', async () => {
             // At 2026-06-30T15:00Z (Tue 11:00 EDT, before close), lastClosed = 2026-06-29 (Mon)
             const histBar = bar(
                 Math.floor(Date.parse('2024-06-30T00:00:00Z') / 1000)
@@ -248,7 +248,7 @@ describe('CachedMarketDataProvider', () => {
             await provider.getBars(longOpts);
 
             // lastClosed = 2026-06-29 (Monday — most recent closed session before Tue 11:00 EDT)
-            expect(store.has('bars:eodhist:AAPL:2026-06-29')).toBe(true);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-06-29')).toBe(true);
             expect(store.has('quote:snapshot:AAPL')).toBe(true);
         });
 
@@ -278,7 +278,7 @@ describe('CachedMarketDataProvider', () => {
             expect(getTodayBar).toHaveBeenCalledTimes(1);
             expect(getTodayBar).toHaveBeenCalledWith('AAPL');
             // both cache keys written
-            expect(store.has('bars:eodhist:AAPL:2026-06-29')).toBe(true);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-06-29')).toBe(true);
             expect(store.has('quote:snapshot:AAPL')).toBe(true);
         });
 
@@ -377,7 +377,7 @@ describe('CachedMarketDataProvider', () => {
                 await provider.getBars(longOpts);
 
                 const histSetCall = fakeRedis.set.mock.calls.find(
-                    ([key]) => key === 'bars:eodhist:AAPL:2026-06-29'
+                    ([key]) => key === 'bars:eodhist:v2:AAPL:2026-06-29'
                 );
                 expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 1.5);
             }
@@ -399,7 +399,7 @@ describe('CachedMarketDataProvider', () => {
             await provider.getBars({ ...longOpts, symbol: '005930.KS' });
 
             const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) => key === 'bars:eodhist:005930.KS:2026-09-23'
+                ([key]) => key === 'bars:eodhist:v2:005930.KS:2026-09-23'
             );
             expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 144.5);
         });
@@ -419,7 +419,7 @@ describe('CachedMarketDataProvider', () => {
             await provider.getBars({ ...longOpts, symbol: 'BTCUSD' });
 
             const histSetCall = fakeRedis.set.mock.calls.find(
-                ([key]) => key === 'bars:eodhist:BTCUSD:2026-07-03'
+                ([key]) => key === 'bars:eodhist:v2:BTCUSD:2026-07-03'
             );
             expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 10);
         });
@@ -447,7 +447,9 @@ describe('CachedMarketDataProvider', () => {
             );
             expect(firstHistSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
 
-            // Simulate short-TTL expiry by clearing the eodhist key from the store
+            // Simulate short-TTL expiry by clearing the eodhist key from the store.
+            // The instance L1 holds at most 30 min — well inside the 4h cooldown — so by
+            // the time Redis expires it is gone too; a new instance models that.
             for (const key of store.keys()) {
                 if (key.startsWith('bars:eodhist')) store.delete(key);
             }
@@ -455,7 +457,9 @@ describe('CachedMarketDataProvider', () => {
 
             // Second fetch: FMP has now published 2026-06-29 bar → long TTL
             getBars.mockResolvedValueOnce([completeBar]);
-            await provider.getBars(longOpts);
+            await new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
+            ).getBars(longOpts);
 
             const secondHistSetCall = fakeRedis.set.mock.calls.find(
                 ([key]) =>
@@ -578,7 +582,7 @@ describe('CachedMarketDataProvider', () => {
             // Advance time within the same session (still before Tue 20:00Z EDT close)
             vi.setSystemTime(new Date('2026-06-30T17:00:00Z'));
 
-            // 2nd call same session — key is still bars:eodhist:AAPL:2026-06-29 → cache hit
+            // 2nd call same session — key is still bars:eodhist:v2:AAPL:2026-06-29 → cache hit
             await provider.getBars(longOpts);
             expect(getBars).toHaveBeenCalledTimes(1); // still 1
             expect(getTodayBar).toHaveBeenCalledTimes(1); // still 1 (quote:snapshot TTL may vary but key exists)
@@ -598,7 +602,7 @@ describe('CachedMarketDataProvider', () => {
             // First call: Tue 15:00Z (before close) → lastClosed = 2026-06-29 (Monday)
             await provider.getBars(longOpts);
             expect(getBars).toHaveBeenCalledTimes(1);
-            expect(store.has('bars:eodhist:AAPL:2026-06-29')).toBe(true);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-06-29')).toBe(true);
 
             // Advance past Tue close+buffer: Wed 00:30Z = 20:30 EDT Tue
             // (20:00 ET + 4h buffer = 00:00 UTC Wed; 00:30Z is past buffer)
@@ -607,29 +611,111 @@ describe('CachedMarketDataProvider', () => {
             await provider.getBars(longOpts);
             // New key → cache miss → refetch
             expect(getBars).toHaveBeenCalledTimes(2);
-            expect(store.has('bars:eodhist:AAPL:2026-06-30')).toBe(true);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-06-30')).toBe(true);
         });
 
         // ── covers/truncation: isFresh=false when oldest bar > from ──────────
-        it('[truncation fix] shorter cache does not truncate a longer request → refetch', async () => {
-            // 1st call: from='2025-06-30', oldest bar=2025-06-30 → covers OK → cached
-            // 2nd call: from='2024-06-30', oldest bar=2025-06-30 > 2024-06-30 → covers FAIL → refetch
-            const shortOldest = Math.floor(
-                Date.parse('2025-06-30T00:00:00Z') / 1000
-            );
+        // History window for lastClosed 2026-06-29: 2026-06-29 − 1830d = 2021-06-25.
+        it('[fixed window] history is fetched from the key window, not the request from', async () => {
             const getBars = vi.fn(async () => [
-                { ...bar(shortOldest), time: shortOldest },
+                bar(Math.floor(Date.parse('2021-06-25T00:00:00Z') / 1000)),
             ]);
-            const getTodayBar = vi.fn(async () => null);
             const provider = new CachedMarketDataProvider(
-                makeInner({ getBars, getTodayBar })
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
             );
 
             await provider.getBars({ ...longOpts, from: '2025-06-30' });
+
+            expect(getBars).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    from: '2021-06-25',
+                    before: '2026-06-29',
+                })
+            );
+        });
+
+        it('[fixed window] a narrower request cannot leave a short entry that a wider one would trust', async () => {
+            // Sector scan (400d) first, then the 5y page window: both share one fetch.
+            // The fake honours `from` like FMP, so a request-shaped fetch would store
+            // only the 2025 bar and force the wide request to fetch again.
+            const all = [
+                bar(Math.floor(Date.parse('2021-06-25T00:00:00Z') / 1000)),
+                bar(Math.floor(Date.parse('2025-06-30T00:00:00Z') / 1000)),
+            ];
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                all.filter(
+                    x => x.time >= Date.parse(`${o.from!}T00:00:00Z`) / 1000
+                )
+            );
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
+            );
+
+            const narrow = await provider.getBars({
+                ...longOpts,
+                from: '2025-06-01',
+            });
+            const wide = await provider.getBars({
+                ...longOpts,
+                from: '2021-06-30',
+            });
+
+            expect(getBars).toHaveBeenCalledTimes(1);
+            expect(narrow).toHaveLength(1);
+            expect(wide).toHaveLength(1);
+        });
+
+        it('[fixed window] a young listing (first bar long after from) is a cache hit, not a refetch', async () => {
+            // Listed 2025-03-28 — FMP has nothing earlier, so the first bar never reaches `from`.
+            const getBars = vi.fn(async () => [
+                bar(Math.floor(Date.parse('2025-03-28T00:00:00Z') / 1000)),
+                bar(Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)),
+            ]);
+            const getTodayBar = vi.fn(async () => null);
+            const inner = makeInner({ getBars, getTodayBar });
+
+            await new CachedMarketDataProvider(inner).getBars(longOpts);
+            // A new instance skips L1 and must be served from Redis.
+            await new CachedMarketDataProvider(inner).getBars(longOpts);
+
+            expect(getBars).toHaveBeenCalledTimes(1);
+        });
+
+        it('[fixed window] a from that falls on a weekend is a cache hit, not a refetch', async () => {
+            // core asks for now − 1830d, which lands on a weekend every Tue/Wed;
+            // FMP then starts at the next trading day, after `from`.
+            const getBars = vi.fn(async () => [
+                bar(Math.floor(Date.parse('2021-06-28T00:00:00Z') / 1000)), // Mon
+                bar(Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)),
+            ]);
+            const inner = makeInner({
+                getBars,
+                getTodayBar: vi.fn(async () => null),
+            });
+            const weekendFrom = { ...longOpts, from: '2021-06-26' }; // Sat
+
+            await new CachedMarketDataProvider(inner).getBars(weekendFrom);
+            await new CachedMarketDataProvider(inner).getBars(weekendFrom);
+
+            expect(getBars).toHaveBeenCalledTimes(1);
+        });
+
+        it('[truncation fix] a from older than the window refetches from that from', async () => {
+            const getBars = vi.fn(async () => [
+                bar(Math.floor(Date.parse('2021-06-25T00:00:00Z') / 1000)),
+            ]);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
+            );
+
+            await provider.getBars(longOpts);
             expect(getBars).toHaveBeenCalledTimes(1);
 
-            await provider.getBars({ ...longOpts, from: '2024-06-30' });
+            await provider.getBars({ ...longOpts, from: '2020-01-01' });
             expect(getBars).toHaveBeenCalledTimes(2); // covers fail → refetch
+            expect(getBars).toHaveBeenLastCalledWith(
+                expect.objectContaining({ from: '2020-01-01' })
+            );
         });
 
         // ── today=null (delisted) → history only, no crash ───────────────────
@@ -845,7 +931,9 @@ describe('CachedMarketDataProvider', () => {
                 timeframe: '1Day',
             }); // no from
             expect(
-                [...store.keys()].some(k => k.startsWith('bars:eodhist:AAPL:'))
+                [...store.keys()].some(k =>
+                    k.startsWith('bars:eodhist:v2:AAPL:')
+                )
             ).toBe(true);
             expect(store.has('quote:snapshot:AAPL')).toBe(true);
             expect(getBars).toHaveBeenCalledTimes(1);
@@ -989,8 +1077,8 @@ describe('CachedMarketDataProvider', () => {
 
             await providerA.getBars(longFrom);
             // At 7/10 16:30 EDT (within buffer), lastClosed = 2026-07-09
-            expect(store.has('bars:eodhist:AAPL:2026-07-09')).toBe(true);
-            expect(store.has('bars:eodhist:AAPL:2026-07-10')).toBe(false);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-07-09')).toBe(true);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-07-10')).toBe(false);
             expect(getBarsA).toHaveBeenCalledWith(
                 expect.objectContaining({ before: '2026-07-09' })
             );
@@ -1009,8 +1097,8 @@ describe('CachedMarketDataProvider', () => {
 
             await providerB.getBars(longFrom);
             // Key is :2026-07-10 (Fri) — not the stale :2026-07-09 from step (a)
-            expect(store.has('bars:eodhist:AAPL:2026-07-10')).toBe(true);
-            expect(store.has('bars:eodhist:AAPL:2026-07-09')).toBe(false);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-07-10')).toBe(true);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-07-09')).toBe(false);
             // getBars fetched with before='2026-07-10', not '2026-07-09'
             expect(getBarsB).toHaveBeenCalledWith(
                 expect.objectContaining({ before: '2026-07-10' })
@@ -1084,8 +1172,8 @@ describe('CachedMarketDataProvider', () => {
             await cryptoProvider.getBars(cryptoOpts);
 
             // Crypto key must use Saturday (yesterday UTC), not Friday
-            expect(store.has('bars:eodhist:BTC:2026-07-11')).toBe(true);
-            expect(store.has('bars:eodhist:BTC:2026-07-10')).toBe(false);
+            expect(store.has('bars:eodhist:v2:BTC:2026-07-11')).toBe(true);
+            expect(store.has('bars:eodhist:v2:BTC:2026-07-10')).toBe(false);
             expect(cryptoBars).toHaveBeenCalledWith(
                 expect.objectContaining({ before: '2026-07-11' })
             );
@@ -1109,8 +1197,8 @@ describe('CachedMarketDataProvider', () => {
             });
 
             // Equity key is Friday (weekend rewind)
-            expect(store.has('bars:eodhist:AAPL:2026-07-10')).toBe(true);
-            expect(store.has('bars:eodhist:AAPL:2026-07-11')).toBe(false);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-07-10')).toBe(true);
+            expect(store.has('bars:eodhist:v2:AAPL:2026-07-11')).toBe(false);
         });
 
         // ── merge-under-lag: documents behavior when history lags behind today ─
@@ -1229,7 +1317,7 @@ describe('CachedMarketDataProvider', () => {
 
             await p.getBars(longOpts);
             const keys = fakeRedis.get.mock.calls.map(([k]) => k);
-            expect(keys).not.toContain('bars:eodhist:AAPL:2026-06-29');
+            expect(keys).not.toContain('bars:eodhist:v2:AAPL:2026-06-29');
             // 오늘 봉(작은 live 부분)은 여전히 Redis TTL을 따른다.
             expect(keys).toContain('quote:snapshot:AAPL');
             expect(getBars).toHaveBeenCalledTimes(1);
@@ -1239,12 +1327,13 @@ describe('CachedMarketDataProvider', () => {
             const getBars = vi.fn(async () => completeHistory);
             const p = new CachedMarketDataProvider(makeInner({ getBars }));
             await p.getBars(longOpts);
+            // 고정 창(2021-06-25~)보다 이른 from이라야 L1 값이 덮지 못한다.
             const older = [
-                bar(Math.floor(Date.parse('2021-07-01T00:00:00Z') / 1000)),
+                bar(Math.floor(Date.parse('2021-01-04T00:00:00Z') / 1000)),
                 ...completeHistory,
             ];
             getBars.mockResolvedValueOnce(older);
-            const r = await p.getBars({ ...longOpts, from: '2021-07-01' });
+            const r = await p.getBars({ ...longOpts, from: '2021-01-04' });
             expect(getBars).toHaveBeenCalledTimes(2);
             expect(r[0]!.time).toBe(older[0]!.time);
         });
@@ -1257,7 +1346,7 @@ describe('CachedMarketDataProvider', () => {
             fakeRedis.get.mockClear();
             await p.getBars(longOpts);
             expect(fakeRedis.get.mock.calls.map(([k]) => k)).toContain(
-                'bars:eodhist:AAPL:2026-06-29'
+                'bars:eodhist:v2:AAPL:2026-06-29'
             );
             // Redis hit이라 inner는 다시 부르지 않는다.
             expect(getBars).toHaveBeenCalledTimes(1);

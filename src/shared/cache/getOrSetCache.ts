@@ -180,8 +180,8 @@ export async function getOrSetCache<T>(
     const shared = inFlight.get(key) as Promise<T> | undefined;
     if (shared !== undefined) {
         const value = await shared;
-        // `isFresh`는 호출부마다 다를 수 있다(예: `bars:eodhist`는 요청 `from`을
-        // 커버하는지로 판정). 공유 결과가 내 기준에 못 미치면 dedup을 포기하고
+        // `isFresh`는 호출부마다 다를 수 있다(예: `bars:eodhist`는 고정 창보다 이른
+        // `from`을 요청받으면 그 `from`을 커버하는지로 판정). 공유 결과가 내 기준에 못 미치면 dedup을 포기하고
         // 직접 fetch한다 — 잘림(truncation)을 방지하는 정확성 가드다.
         // 이 경로는 캐시에 쓰지 않는다: 소유자가 방금 쓴 값을 좁은 기준으로
         // 덮어쓰면 다른 호출부의 캐시를 무효화하기 때문이다.

@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { getOrSetCache, setCacheValue } from '@/shared/cache/getOrSetCache';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { sym } from './symKey';
 import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
@@ -122,7 +122,7 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
     getKeyMetricsTtm = cache(
         (symbol: string): Promise<FundamentalValuationMetrics | null> =>
             getOrSetCache(`fundamental:key-metrics:${sym(symbol)}`, TTL, () =>
-                this.inner.getKeyMetricsTtm(symbol)
+                this.fetchValuationPair(symbol, 'key-metrics')
             ).catch(error => {
                 console.error(
                     '[CachedFundamentalProvider] key-metrics fetch failed (not cached):',
@@ -136,7 +136,7 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
     getRatiosTtm = cache(
         (symbol: string): Promise<FundamentalRatiosInput | null> =>
             getOrSetCache(`fundamental:ratios:${sym(symbol)}`, TTL, () =>
-                this.inner.getRatiosTtm(symbol)
+                this.fetchValuationPair(symbol, 'ratios')
             ).catch(error => {
                 console.error(
                     '[CachedFundamentalProvider] ratios fetch failed (not cached):',
@@ -145,6 +145,53 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
                 return null;
             })
     );
+
+    /**
+     * key-metrics-ttm + ratios-ttm은 FMP에서 항상 쌍으로 온다(inner가 한 번의 상류 쌍
+     * 호출로 둘을 내준다). 그런데 두 Redis 키는 독립이라, 한쪽 miss가 쌍 전체를 받아
+     * 놓고 절반만 저장하면 다른 쪽이 나중에 또 miss해 같은 쌍을 FMP에서 다시 받는다.
+     * 그래서 요청한 쪽은 `getOrSetCache`가 평소대로 저장하고, 형제 키는 여기서 같은
+     * 쌍으로 함께 쓴다(`setCacheValue` — `getOrSetCache`가 읽는 envelope과 같은 포맷).
+     *
+     * 형제 키가 이미 있는지는 읽어 보지 않고 그냥 덮어쓴다. 같은 시점에 받은 신선한
+     * 쌍이라 덮어써도 해가 없고, 존재 확인은 Redis 왕복만 늘린다(TTL이 서로 어긋난
+     * 채 만료되는 상황은 오히려 이 덮어쓰기가 정렬해 준다).
+     *
+     * 쌍의 한쪽이라도 throw하면 둘 다 throw한다(`Promise.all`) — 아무것도 쓰지 않고
+     * 호출부의 `.catch`가 로깅·graceful null을 맡는 기존 계약 그대로다. 정상 null(빈
+     * 200)은 두 키 모두에 캐싱된다. 형제 쓰기 실패는 `setCacheValue`가 삼킨다.
+     */
+    private async fetchValuationPair(
+        symbol: string,
+        requested: 'key-metrics'
+    ): Promise<FundamentalValuationMetrics | null>;
+    private async fetchValuationPair(
+        symbol: string,
+        requested: 'ratios'
+    ): Promise<FundamentalRatiosInput | null>;
+    private async fetchValuationPair(
+        symbol: string,
+        requested: 'key-metrics' | 'ratios'
+    ): Promise<FundamentalValuationMetrics | FundamentalRatiosInput | null> {
+        const [keyMetrics, ratios] = await Promise.all([
+            this.inner.getKeyMetricsTtm(symbol),
+            this.inner.getRatiosTtm(symbol),
+        ]);
+        if (requested === 'key-metrics') {
+            await setCacheValue(
+                `fundamental:ratios:${sym(symbol)}`,
+                ratios,
+                TTL
+            );
+            return keyMetrics;
+        }
+        await setCacheValue(
+            `fundamental:key-metrics:${sym(symbol)}`,
+            keyMetrics,
+            TTL
+        );
+        return ratios;
+    }
 
     getCashFlowStatement = cache(
         async (symbol: string): Promise<FundamentalCashFlowInput | null> => {

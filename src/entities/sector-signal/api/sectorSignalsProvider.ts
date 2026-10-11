@@ -20,8 +20,8 @@ import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor
  * 각각에 `historical-price-eod/full`(400일) + `quote`(오늘 봉) + `quote`(getQuote, 같은 엔드포인트)를
  * 불렀다 — 리필 한 번에 FMP ~240회이고, 400일 일봉 응답을 매번 통째로 받았다. 캐시
  * provider(`CachedMarketDataProvider`)로 바꾸면 과거 일봉은 종목 페이지와 같은 세션 롤
- * 키(`bars:eodhist:<SYM>:<lastClosed>`)를 공유해 세션당 한 번만 받고(그 키는 보통 종목
- * 페이지의 5년 창이 이미 채워 둔다 — `isFresh`가 400일 커버를 확인한다), 리필 비용은
+ * 키(`bars:eodhist:v2:<SYM>:<lastClosed>`)를 공유해 세션당 한 번만 받고(그 키는 요청 창과
+ * 무관하게 늘 5년 고정 창을 담으므로 400일 요청은 잘라 쓴다), 리필 비용은
  * 60초 캐시된 오늘 봉·시세뿐이다.
  *
  * ## KR 인트라데이는 raw로 둔다

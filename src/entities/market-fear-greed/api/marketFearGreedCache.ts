@@ -4,11 +4,13 @@ import {
     computeMarketFearGreedHistory,
     computeMarketFearGreedIndex,
     type MarketFearGreedInput,
+    US_EQUITY_SESSION,
 } from '@y0ngha/siglens-core';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { secondsUntilSessionRoll } from '@/shared/lib/marketSessionDate';
 import { buildMarketFearGreedComparisons } from '../lib/buildMarketFearGreedComparisons';
+import { sessionKeyedTtlSeconds } from '../lib/sessionKeyedTtl';
 import {
     fetchDailyCloses,
     lastPublishedSessionDate,
@@ -47,24 +49,13 @@ export const MARKET_FEAR_GREED_CONFIG_FINGERPRINT =
 const MARKET_FEAR_GREED_CACHE_KEY = `market:fear-greed:${MARKET_FEAR_GREED_CONFIG_FINGERPRINT}`;
 
 /**
- * Flat one-hour TTL, matching the ISR `revalidate` in front of it.
- *
- * Deliberately NOT `computeBarsEffectiveTtl`: that policy caps at "time until
- * the next open", which after a Friday close would pin this reading for a full
- * day — and the EOD closes this index consumes only land *after* the close, so
- * the entry cached at 16:05 ET is exactly the one that must not survive. A flat
- * hour bounds staleness to ~2h (Redis hour + ISR hour) at 144 FMP calls a day.
- */
-const MARKET_FEAR_GREED_TTL_SECONDS = SECONDS_PER_HOUR;
-
-/**
  * Fetch all six series and reduce them to what the page renders.
  *
  * SERVER.md#CC-1 검토: 호출 수가 고정이라 별도 동시성 상수를 두지 않는다.
  * 동시성 정책은 peer 페이지들의 `Promise.all` 패턴이다 — `getMarketSummary`(지수 +
  * 섹터 ETF, 통상 11+), `economySnapshotCache`(11), financials(6)이 모두 같은 모양으로
- * production에서 돌고 있다. 여기는 6개이고 1시간 Redis 캐시 뒤에 있어 cold-gen 시
- * 시간당 6 calls — FMP 분당 한도 대비 무시 가능하다. 청크 분할 이득이 없다.
+ * production에서 돌고 있다. 여기는 6개이고 마감일 키 Redis 캐시 뒤에 있어 세션당
+ * 한 번(발행 지연 시 1시간 간격 재시도) 6 calls — FMP 분당 한도 대비 무시 가능하다. 청크 분할 이득이 없다.
  */
 async function buildMarketFearGreedView(
     now: Date
@@ -103,16 +94,31 @@ function hasSnapshot(view: MarketFearGreedView): boolean {
 /**
  * Market-wide Fear & Greed reading, via `React.cache` → Redis → FMP.
  *
+ * The Redis key carries the last published session date (`to`): the reading is
+ * a pure function of closes up to `to`, so it is fetched once per session and
+ * kept until `to` rolls (`sessionKeyedTtlSeconds`). Deliberately NOT
+ * `computeBarsEffectiveTtl`: that caps at "time until the next open", and the
+ * closes land only *after* the close — the dated key handles that instead, since
+ * the post-close reading lives under the next session's key.
+ *
  * A failed FMP call throws out of `Promise.all` rather than degrading to an
  * empty series — a partial basket would silently change what the score means,
  * and `getOrSetCache` never writes when the fetcher throws.
  */
 export const getCachedMarketFearGreed = cache(
-    (): Promise<MarketFearGreedView> =>
-        getOrSetCache(
-            MARKET_FEAR_GREED_CACHE_KEY,
-            MARKET_FEAR_GREED_TTL_SECONDS,
-            () => buildMarketFearGreedView(new Date()),
+    (): Promise<MarketFearGreedView> => {
+        const now = new Date();
+        const to = lastPublishedSessionDate(now);
+        return getOrSetCache(
+            `${MARKET_FEAR_GREED_CACHE_KEY}:${to}`,
+            view =>
+                sessionKeyedTtlSeconds(
+                    view,
+                    to,
+                    secondsUntilSessionRoll(US_EQUITY_SESSION, now)
+                ),
+            () => buildMarketFearGreedView(now),
             hasSnapshot
-        )
+        );
+    }
 );

@@ -90,9 +90,39 @@ describe('getCachedMarketFearGreedCrypto', () => {
         );
     });
 
-    it('TTL은 1시간 고정이다', async () => {
-        await getCachedMarketFearGreedCrypto();
-        expect(lastGetOrSetCall()[1]).toBe(SECONDS_PER_HOUR);
+    describe('마감일(UTC) 키', () => {
+        // 2026-09-25T00:30Z: 마지막으로 닫힌 UTC 일은 09-24, 키는 다음 UTC 자정(23.5h 뒤)에 넘어간다.
+        beforeEach(() => {
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-09-25T00:30:00Z'));
+        });
+
+        const ttlFn = () =>
+            lastGetOrSetCall()[1] as (view: {
+                snapshot: { asOf: string } | null;
+                comparisons: unknown[];
+            }) => number;
+
+        it('Redis 키에 마지막으로 닫힌 UTC 일을 넣는다', async () => {
+            await getCachedMarketFearGreedCrypto();
+            expect(lastGetOrSetCall()[0]).toBe(
+                `market:fear-greed:crypto:${MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT}:2026-09-24`
+            );
+        });
+
+        it('어제 봉까지 차 있으면 다음 UTC 자정(+1h 여유)까지 둔다', async () => {
+            await getCachedMarketFearGreedCrypto();
+            expect(
+                ttlFn()({ snapshot: { asOf: '2026-09-24' }, comparisons: [] })
+            ).toBe(23.5 * SECONDS_PER_HOUR + SECONDS_PER_HOUR);
+        });
+
+        it('어제 봉이 아직 없으면 1시간 뒤 다시 받는다', async () => {
+            await getCachedMarketFearGreedCrypto();
+            expect(
+                ttlFn()({ snapshot: { asOf: '2026-09-23' }, comparisons: [] })
+            ).toBe(SECONDS_PER_HOUR);
+        });
     });
 
     it('BTC·금·유니버스 19개를 어제(UTC)까지 받아 core에 넘긴다', async () => {
