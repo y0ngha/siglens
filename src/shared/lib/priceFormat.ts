@@ -67,8 +67,26 @@ function compactFormatter(
         notation: 'compact',
         style: 'currency',
         currency,
+        currencyDisplay: currencyDisplayFor(currency),
+        // 최소 자릿수를 반드시 명시한다. 생략하면 구버전 엔진(Chrome ≤130 — 네이버 앱
+        // 웹뷰 128, 삼성 인터넷 28)은 USD 기본 최소 2를 최대 1로 깎아 `US$3152.0만`을,
+        // 서버(Node 24)와 최신 브라우저는 compact 기본 최소 0으로 `US$3152만`을 내서
+        // 뉴스·재무제표 탭이 React #418(서버 텍스트 불일치)로 깨졌다.
+        minimumFractionDigits: 0,
         maximumFractionDigits: 1,
     });
+}
+
+/**
+ * 원화 기호는 `narrowSymbol`로 고정한다. 기본(`symbol`)이면 구버전 엔진의 zh CLDR이
+ * 전각 `￦`을, 서버와 최신 브라우저가 `₩`을 내서 `/zh` 국내 종목 페이지가 하이드레이션
+ * 불일치로 깨진다. ko·en·ja에서는 두 값의 출력이 같다. 달러는 `symbol`을 유지한다 —
+ * `narrowSymbol`이면 ko의 `US$`가 `$`로 바뀐다.
+ */
+function currencyDisplayFor(
+    currency: 'USD' | 'KRW'
+): 'symbol' | 'narrowSymbol' {
+    return currency === 'KRW' ? 'narrowSymbol' : 'symbol';
 }
 
 /**
@@ -86,6 +104,7 @@ export function formatCurrencyForSymbol(
     return cachedNumberFormat(INTL_LOCALE[locale], {
         style: 'currency',
         currency,
+        currencyDisplay: currencyDisplayFor(currency),
         // 원화는 소수점을 쓰지 않는다.
         maximumFractionDigits: currencyFractionDigits(currency),
     }).format(value);

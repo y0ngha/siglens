@@ -48,3 +48,9 @@ export function cachedDateTimeFormat(
         () => new Intl.DateTimeFormat(locale, options)
     );
 }
+
+/** Clear the cached formatters so a test that stubs `Intl` gets fresh instances. */
+export function __resetIntlFormatCacheForTests(): void {
+    NUMBER_FORMATS.clear();
+    DATE_TIME_FORMATS.clear();
+}
