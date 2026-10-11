@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import { PortfolioManager } from './PortfolioManager';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { PAGE_HEADER_LINK } from '@/shared/lib/linkStyles';
 import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
@@ -242,7 +243,7 @@ export default async function PortfolioPage({
                     <Link
                         href="/watchlist"
                         prefetch={false}
-                        className="inline-flex min-h-11 items-center rounded px-1 text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className={PAGE_HEADER_LINK}
                     >
                         {t('page.toWatchlist')}
                     </Link>

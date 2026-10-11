@@ -8,16 +8,21 @@ import {
     useWatchlistPreview,
     type WatchlistPreviewItem,
 } from '../hooks/useWatchlistPreview';
+import { WATCHLIST_ROW_CHROME } from '../lib/watchlistStyles';
 import { MiniQuote, MiniTrend } from './MiniQuoteRow';
 import { WatchlistToggleButton } from './WatchlistToggleButton';
 
-const ROW_CHROME =
-    'ring-secondary-700 bg-secondary-900/60 rounded-lg p-4 ring-1';
+interface RecentRowProps {
+    item: WatchlistPreviewItem;
+}
 
-function RecentRow({ item }: { item: WatchlistPreviewItem }) {
+function RecentRow({ item }: RecentRowProps) {
     const [setNode, isVisible] = useInViewOnce<HTMLLIElement>();
     return (
-        <li ref={setNode} className={cn(ROW_CHROME, 'flex items-center gap-3')}>
+        <li
+            ref={setNode}
+            className={cn(WATCHLIST_ROW_CHROME, 'flex items-center gap-3')}
+        >
             <Link
                 href={`/${item.symbol}`}
                 prefetch={false}

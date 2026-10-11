@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import { useOpenTickerSearch } from '@/shared/hooks/useOpenTickerSearch';
+import { useOpenTickerSearch } from '../hooks/useOpenTickerSearch';
 import {
     HOME_POPULAR_ANCHOR_ID,
     HOME_WATCHLIST_DESKTOP_COUNT,
@@ -17,15 +17,15 @@ import { StarIcon } from '@/shared/ui/StrokeIcons';
 import {
     useWatchlistPreview,
     type WatchlistPreviewItem,
-    type WatchlistPreviewTab,
 } from '../hooks/useWatchlistPreview';
-import { MiniQuote, MiniQuoteRow, MiniTrend } from './MiniQuoteRow';
-import { watchlistPageHref } from './WatchlistPreviewPanel';
 import {
-    WatchlistTabs,
+    watchlistPageHref,
     watchlistPanelId,
     watchlistTabId,
-} from './WatchlistTabs';
+    type WatchlistPreviewTab,
+} from '../lib/watchlistTabs';
+import { MiniQuote, MiniQuoteRow, MiniTrend } from './MiniQuoteRow';
+import { WatchlistTabs } from './WatchlistTabs';
 
 /**
  * 빈 카드와 하이드레이션 전 자리표시자가 같은 높이를 쓴다 — 첫 방문자(대부분의 검색 유입)는
@@ -37,7 +37,11 @@ const EMPTY_HEIGHT = 'min-h-[13.5rem] sm:min-h-[9rem]';
 const LINK_SUBTLE =
     'inline-flex min-h-10 items-center rounded px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
-function DesktopCard({ item }: { item: WatchlistPreviewItem }) {
+interface DesktopCardProps {
+    item: WatchlistPreviewItem;
+}
+
+function DesktopCard({ item }: DesktopCardProps) {
     return (
         <li>
             <Link
@@ -116,11 +120,12 @@ function EmptyCard() {
 }
 
 /**
- * 홈 히어로 아래 "내 관심종목" 카드(설계 §4.1). 상태가 셋이다:
+ * 홈 히어로 아래 "내 관심종목" 카드. 상태가 셋이다:
  * - 담은 것도 최근 본 것도 없으면 빈 카드(검색·인기 종목으로 안내)
  * - 담은 것은 없고 최근 본 것이 있으면 최근 본 탭이 열린 카드
  * - 담은 것이 있으면 관심 탭이 열린 카드
- * 홈은 캐시되는 페이지라 이 카드는 클라이언트 아일랜드다. 크롤러는 빈 카드만 본다.
+ * 홈은 캐시되는 페이지라 이 카드는 클라이언트 아일랜드다. 서버 HTML에는 내용 없는 자리표시자만
+ * 있고(크롤러가 읽을 본문이 없다), 크롤러가 따라갈 종목 링크는 아래 인기 종목 섹션이 서버 렌더로 낸다.
  */
 export function HomeWatchlistCard() {
     const t = useTranslations('features.watchlist');

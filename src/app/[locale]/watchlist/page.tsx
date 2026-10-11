@@ -5,6 +5,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { PAGE_HEADER_LINK } from '@/shared/lib/linkStyles';
 
 /**
  * `generateMetadata`인 이유는 `/portfolio`와 같다 — 정적 객체는 로케일을 못 봐서 `/en/watchlist`의
@@ -31,7 +32,7 @@ export async function generateMetadata({
 }
 
 /**
- * 관심종목 페이지(관심종목 동선 설계 §3.1). 비회원에게도 열린다 — 목록의 출처(계정 DB 또는 기기
+ * 관심종목 페이지. 비회원에게도 열린다 — 목록의 출처(계정 DB 또는 기기
  * localStorage)는 `useWatchlist`가 숨긴다. 쿠키·DB를 읽지 않는 정적 셸이고 본문은 전부
  * 클라이언트에서 그린다. 보유종목은 `/portfolio`가 따로 맡는다.
  */
@@ -58,7 +59,7 @@ export default async function WatchlistPage({
                     <Link
                         href="/portfolio"
                         prefetch={false}
-                        className="inline-flex min-h-11 items-center rounded px-1 text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className={PAGE_HEADER_LINK}
                     >
                         {t('page.toPortfolio')}
                     </Link>

@@ -2,7 +2,7 @@ const quote = vi.hoisted(() => ({ useWatchlistQuote: vi.fn() }));
 const openSearch = vi.hoisted(() => vi.fn());
 vi.mock('@/features/watchlist/hooks/useWatchlist');
 vi.mock('@/features/watchlist/hooks/useWatchlistQuote', () => quote);
-vi.mock('@/shared/hooks/useOpenTickerSearch', () => ({
+vi.mock('@/features/watchlist/hooks/useOpenTickerSearch', () => ({
     useOpenTickerSearch: () => openSearch,
 }));
 

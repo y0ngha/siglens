@@ -16,13 +16,12 @@ import { useUrlSearchParam } from '@/shared/hooks/useUrlSearchParam';
 import { INTL_LOCALE, resolveLocale } from '@/shared/i18n/locales';
 import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { NativeSelect } from '@/shared/ui/NativeSelect';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 
 const SAVE_BUTTON = cn(BUTTON_PRIMARY, 'h-10 px-4 text-sm');
 const RETRY_BUTTON = cn(BUTTON_OUTLINE, 'h-9 px-3 text-sm');
 const FIELD_LABEL = 'mb-2 block text-xs font-medium text-secondary-400';
-const HOUR_SELECT =
-    'h-10 w-full touch-manipulation rounded-lg border border-border-control bg-secondary-950 px-3 text-sm text-secondary-100 tabular-nums transition-colors outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 sm:w-40';
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 // 2024-01-07은 일요일 — `Date#getDay()`가 n인 날짜를 만들려고 n일을 더한다.
 const SUNDAY_UTC = Date.UTC(2024, 0, 7);
@@ -144,7 +143,20 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <div className="flex items-start justify-between gap-4 rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700">
+            {/* 체크박스를 문장 앞에 둔다 — 폼의 다른 선택(요일)처럼 왼쪽 정렬로 읽히게. */}
+            <div className="flex items-start gap-3 rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700">
+                <input
+                    id={toggleId}
+                    type="checkbox"
+                    role="switch"
+                    checked={enabled}
+                    aria-checked={enabled}
+                    onChange={event => {
+                        setMessage(null);
+                        setEnabled(event.target.checked);
+                    }}
+                    className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-primary-600"
+                />
                 <div>
                     <label
                         htmlFor={toggleId}
@@ -159,18 +171,6 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                         })}
                     </p>
                 </div>
-                <input
-                    id={toggleId}
-                    type="checkbox"
-                    role="switch"
-                    checked={enabled}
-                    aria-checked={enabled}
-                    onChange={event => {
-                        setMessage(null);
-                        setEnabled(event.target.checked);
-                    }}
-                    className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-primary-600"
-                />
             </div>
 
             <div className={cn('space-y-5', !enabled && 'opacity-60')}>
@@ -216,7 +216,8 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                     <label htmlFor={hourId} className={FIELD_LABEL}>
                         {t('EmailReportSettingsSection.f0cf28')}
                     </label>
-                    <select
+                    <NativeSelect
+                        wrapperClassName="w-full sm:w-40"
                         id={hourId}
                         value={sendHour}
                         disabled={!enabled}
@@ -224,14 +225,13 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
                             setMessage(null);
                             setSendHour(Number(event.target.value));
                         }}
-                        className={HOUR_SELECT}
                     >
                         {HOURS.map(hour => (
                             <option key={hour} value={hour}>
                                 {labels.hour(hour)}
                             </option>
                         ))}
-                    </select>
+                    </NativeSelect>
                     <p className="mt-2 text-xs text-secondary-400">
                         {t('EmailReportSettingsSection.a4c309', {
                             v0: timezone,

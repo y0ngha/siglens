@@ -14,7 +14,7 @@ vi.mock(
 const bars = vi.hoisted(() => ({ getBarsAction: vi.fn() }));
 vi.mock('@/entities/bars/actions/getBarsAction', () => bars);
 const openSearch = vi.hoisted(() => vi.fn());
-vi.mock('@/shared/hooks/useOpenTickerSearch', () => ({
+vi.mock('@/features/watchlist/hooks/useOpenTickerSearch', () => ({
     useOpenTickerSearch: () => openSearch,
 }));
 vi.mock('@/shared/hooks/useInViewOnce', () => ({

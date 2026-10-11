@@ -58,7 +58,6 @@
     "app.economy.page.ae2ce9": "ae2ce9213712",
     "app.email-report.page.190fd1": "190fd1e1508c",
     "app.email-report.page.411c76": "411c76ce246f",
-    "app.email-report.page.861f8f": "861f8f3a7f60",
     "app.email-report.page.a613ae": "a613aef2a7d4",
     "app.email-report.page.b38abd": "b38abdb4886a",
     "app.email-report.page.b7b3c8": "b7b3c81501ae",
@@ -3218,7 +3217,7 @@
     "features.watchlist.section.remove": "fc81e222b97c",
     "features.watchlist.section.removeFor": "86ae0046693b",
     "features.watchlist.section.list": "0a019492d258",
-    "features.portfolio-management.PortfolioSignupCta.body": "fa09087ae226",
+    "features.portfolio-management.PortfolioSignupCta.body": "752e58512584",
     "features.portfolio-management.PortfolioSignupCta.cta": "1314de2e1225",
     "features.portfolio-management.PortfolioSignupCta.login": "03d18f6183ad",
     "shared.ui.toast.close": "d7556ddd225d",
@@ -3323,5 +3322,10 @@
     "features.watchlist.toast.viewWatchlist": "97f46a6656be",
     "shared.seo.watchlist.description": "7bebadc1a180",
     "shared.seo.watchlist.title": "a447fc3a41fb",
-    "widgets.layout.HeaderUserMenu.myPortfolio": "f3fedd319ddf"
+    "widgets.layout.HeaderUserMenu.myPortfolio": "f3fedd319ddf",
+    "features.portfolio-management.PortfolioSignupCta.title": "2981e6b2b616",
+    "features.portfolio-management.PortfolioSignupCta.watchlistHint": "99c26aaa0a47",
+    "features.portfolio-management.PortfolioSignupCta.watchlistLink": "97f46a6656be",
+    "app.email-report.page.managePortfolio": "edf22527af4c",
+    "app.email-report.page.manageWatchlist": "43ba9dfbfaa4"
 }

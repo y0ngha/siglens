@@ -8,25 +8,14 @@ vi.mock('@/features/watchlist/ui/RecentSymbolsList', () => ({
     RecentSymbolsList: () => <div data-testid="recent-list" />,
 }));
 const openSearch = vi.hoisted(() => vi.fn());
-vi.mock('@/shared/hooks/useOpenTickerSearch', () => ({
+vi.mock('@/features/watchlist/hooks/useOpenTickerSearch', () => ({
     useOpenTickerSearch: () => openSearch,
 }));
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
-import {
-    tabFromParam,
-    WatchlistPageContent,
-} from '@/features/watchlist/ui/WatchlistPageContent';
-
-describe('tabFromParam', () => {
-    it('recent만 최근 본 탭이고 나머지는 관심 탭이다', () => {
-        expect(tabFromParam('recent')).toBe('recent');
-        expect(tabFromParam(null)).toBe('watchlist');
-        expect(tabFromParam('other')).toBe('watchlist');
-    });
-});
+import { WatchlistPageContent } from '@/features/watchlist/ui/WatchlistPageContent';
 
 describe('WatchlistPageContent', () => {
     beforeEach(() => {

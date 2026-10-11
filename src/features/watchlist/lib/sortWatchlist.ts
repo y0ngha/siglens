@@ -25,19 +25,27 @@ export function sortWatchlistItems(
     sort: WatchlistSort,
     { nameOf, changeOf, locale }: SortAccessors
 ): WatchlistItemView[] {
-    if (sort === 'name') {
-        const collator = new Intl.Collator(locale);
-        return items.toSorted((a, b) => collator.compare(nameOf(a), nameOf(b)));
+    switch (sort) {
+        case 'name': {
+            const collator = new Intl.Collator(locale);
+            return items.toSorted((a, b) =>
+                collator.compare(nameOf(a), nameOf(b))
+            );
+        }
+        case 'change':
+            return items.toSorted((a, b) => {
+                const ca = changeOf(a);
+                const cb = changeOf(b);
+                if (ca === null && cb === null) return 0;
+                if (ca === null) return 1;
+                if (cb === null) return -1;
+                return cb - ca;
+            });
+        case 'added':
+            return [...items];
+        default: {
+            const unreachable: never = sort;
+            return unreachable;
+        }
     }
-    if (sort === 'change') {
-        return items.toSorted((a, b) => {
-            const ca = changeOf(a);
-            const cb = changeOf(b);
-            if (ca === null && cb === null) return 0;
-            if (ca === null) return 1;
-            if (cb === null) return -1;
-            return cb - ca;
-        });
-    }
-    return [...items];
 }

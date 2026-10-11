@@ -7,6 +7,7 @@ import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**
@@ -29,15 +30,16 @@ export function PortfolioSignupCta() {
     return (
         <section
             data-testid="portfolio-signup-cta"
-            className={cn(
-                SURFACE_CARD,
-                'flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between'
-            )}
+            aria-labelledby="portfolio-signup-heading"
+            className={cn(SURFACE_CARD, 'p-6 sm:p-8')}
         >
-            <p className="text-sm leading-relaxed text-secondary-200">
+            <h2 id="portfolio-signup-heading" className={HEADING_SECTION}>
+                {t('PortfolioSignupCta.title')}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-secondary-300">
                 {t('PortfolioSignupCta.body')}
             </p>
-            <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
                 <Link
                     href={`/signup?next=${encodedNext}`}
                     prefetch={false}
@@ -46,7 +48,7 @@ export function PortfolioSignupCta() {
                             gate: 'portfolio_page',
                         })
                     }
-                    className={cn(BUTTON_PRIMARY, 'h-10 px-5 text-sm')}
+                    className={cn(BUTTON_PRIMARY, 'h-11 px-5 text-sm')}
                 >
                     {t('PortfolioSignupCta.cta')}
                 </Link>
@@ -58,6 +60,17 @@ export function PortfolioSignupCta() {
                     {t('PortfolioSignupCta.login')}
                 </Link>
             </div>
+            {/* 가입 전에도 쓸 수 있는 쪽으로 출구를 하나 둔다 — 관심종목은 비회원도 기기에 담는다. */}
+            <p className="mt-6 border-t border-secondary-700 pt-4 text-sm text-secondary-400">
+                {t('PortfolioSignupCta.watchlistHint')}{' '}
+                <Link
+                    href="/watchlist"
+                    prefetch={false}
+                    className="inline-flex min-h-11 items-center rounded font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                >
+                    {t('PortfolioSignupCta.watchlistLink')}
+                </Link>
+            </p>
         </section>
     );
 }

@@ -4,45 +4,49 @@ import { getEmailDebug } from '../support/emailHelper';
 import { LOCAL_STORAGE_WATCHLIST_KEY } from '@/shared/lib/storageKeys';
 
 /**
- * 관심종목(2026-10-09 설계 §9 E2E): 비회원이 홈에서 2개 담고 /portfolio("내 종목")에서 보는 흐름과,
- * 그 상태로 가입하면 랜딩(/portfolio)에서 병합 토스트가 뜨고 로컬이 비는 흐름.
- * AAPL만 asset_translations에 시드돼 있지만 병합은 getAssetInfo를 부르지 않으므로 MSFT도 그대로 들어간다.
+ * 관심종목: 비회원이 홈 인기 종목 알약의 ★로 2개 담고, 헤더 ★·`/watchlist`에서 보는 흐름과,
+ * 그 상태로 가입하면 랜딩(/portfolio)에서 병합 토스트가 뜨고 로컬이 비며 `/watchlist`가 서버 목록을
+ * 그리는 흐름. AAPL만 asset_translations에 시드돼 있지만 병합은 getAssetInfo를 부르지 않으므로
+ * MSFT도 그대로 들어간다.
  */
-const ONBOARDING_HEADING = '관심 종목부터 담아 보세요';
-const toggleName = (symbol: string): RegExp =>
-    new RegExp(`^관심종목: .*\\(${symbol}\\)$`);
 const SETTLE_TIMEOUT_MS = 15_000;
 
 async function addFromHome(page: Page, symbols: string[]): Promise<void> {
     await page.goto('/');
-    const block = page.getByRole('region', { name: ONBOARDING_HEADING });
-    await expect(block).toBeVisible();
+    const popular = page.locator('#popular');
     for (const symbol of symbols) {
-        const tile = block.getByRole('listitem').filter({ hasText: symbol });
-        const toggle = tile.getByRole('button', { name: toggleName(symbol) });
-        await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+        const pill = popular
+            .getByRole('listitem')
+            .filter({ has: page.locator(`a[href="/${symbol}"]`) });
+        const toggle = pill.getByRole('button', { name: /^관심종목: / });
+        await expect(toggle).toHaveAttribute('aria-pressed', 'false', {
+            timeout: SETTLE_TIMEOUT_MS,
+        });
         await toggle.click();
         await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     }
+    // 홈 "내 관심종목" 카드가 담은 개수로 관심 탭을 연다.
     await expect(
-        block.getByText(`담은 종목 ${symbols.length}개`)
-    ).toBeVisible();
+        page.getByRole('tab', { name: `관심 ${symbols.length}` })
+    ).toHaveAttribute('aria-selected', 'true');
 }
 
 test.describe('watchlist (anonymous → signup merge)', () => {
     test.describe.configure({ timeout: 90_000 });
 
-    test('guest saves two symbols on home and sees them on /portfolio without a login redirect', async ({
+    test('guest saves two symbols on home and sees them in the header and on /watchlist', async ({
         page,
     }) => {
         await addFromHome(page, ['AAPL', 'MSFT']);
-
-        await page.goto('/portfolio');
-        await expect(page).toHaveURL(/\/portfolio$/);
         await expect(
-            page.getByRole('heading', { level: 1, name: '내 종목' })
+            page.getByRole('button', { name: '관심종목 열기, 2개' })
         ).toBeVisible();
-        await expect(page.getByTestId('portfolio-signup-cta')).toBeVisible();
+
+        await page.goto('/watchlist');
+        await expect(page).toHaveURL(/\/watchlist$/);
+        await expect(
+            page.getByRole('heading', { level: 1, name: '관심종목' })
+        ).toBeVisible();
 
         const list = page.getByRole('list', { name: '관심종목 목록' });
         await expect(list.getByRole('listitem')).toHaveCount(2, {
@@ -59,6 +63,13 @@ test.describe('watchlist (anonymous → signup merge)', () => {
             LOCAL_STORAGE_WATCHLIST_KEY
         );
         expect(stored).toContain('AAPL');
+
+        // 보유종목은 /portfolio가 따로 맡고, 비회원에게는 가입 카드를 보여 준다.
+        await page.goto('/portfolio');
+        await expect(
+            page.getByRole('heading', { level: 1, name: '내 포트폴리오' })
+        ).toBeVisible();
+        await expect(page.getByTestId('portfolio-signup-cta')).toBeVisible();
     });
 
     test('signing up with local symbols merges them and shows the toast on the landing page', async ({
@@ -92,10 +103,11 @@ test.describe('watchlist (anonymous → signup merge)', () => {
             { timeout: SETTLE_TIMEOUT_MS }
         );
         await expect(
-            status.getByRole('link', { name: '내 종목 보기' })
-        ).toBeVisible();
+            status.getByRole('link', { name: '관심종목 보기' })
+        ).toHaveAttribute('href', '/watchlist');
 
         // 서버 목록으로 바뀌었고 로컬은 비었다.
+        await page.goto('/watchlist');
         const list = page.getByRole('list', { name: '관심종목 목록' });
         await expect(list.getByRole('listitem')).toHaveCount(2, {
             timeout: SETTLE_TIMEOUT_MS,

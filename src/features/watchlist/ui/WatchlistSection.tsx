@@ -1,9 +1,10 @@
 'use client';
 
 import { useQueries } from '@tanstack/react-query';
+import type { Bar } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useOpenTickerSearch } from '@/shared/hooks/useOpenTickerSearch';
+import { useOpenTickerSearch } from '../hooks/useOpenTickerSearch';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type {
     RawHoldingInput,
@@ -34,11 +35,10 @@ import {
     watchlistQuoteQuery,
 } from '../hooks/useWatchlistQuote';
 import { quoteFromBars } from '../lib/quoteFromBars';
+import { WATCHLIST_ROW_CHROME } from '../lib/watchlistStyles';
 import { sortWatchlistItems, type WatchlistSort } from '../lib/sortWatchlist';
 import { MiniTrend } from './MiniQuoteRow';
 
-const ROW_CHROME =
-    'ring-secondary-700 bg-secondary-900/60 rounded-lg p-4 ring-1';
 const ACTION_BUTTON = cn(BUTTON_OUTLINE, 'px-3 py-1.5 text-xs');
 const DANGER_BUTTON = cn(BUTTON_OUTLINE_DANGER, 'px-3 py-1.5 text-xs');
 const NAME_LINK =
@@ -47,6 +47,20 @@ const NAME_LINK =
 interface WatchlistSectionProps {
     /** 정렬 기준. 등락률 순일 때만 모든 행의 시세를 한꺼번에 불러온다(그 외에는 보일 때만). */
     sort?: WatchlistSort;
+}
+
+/**
+ * 시세 쿼리 결과 → 등락률 배열(쿼리 순서 그대로). 모듈 수준에 둬 참조가 안정적이다 — 인라인
+ * `combine`은 렌더마다 새 함수라 React Query가 결과를 다시 합친다.
+ */
+function changesOf(
+    results: readonly { data?: { bars: readonly Bar[] } }[]
+): (number | null)[] {
+    return results.map(result =>
+        result.data
+            ? (quoteFromBars(result.data.bars)?.changePct ?? null)
+            : null
+    );
 }
 
 interface RowQuoteProps {
@@ -124,7 +138,7 @@ function WatchlistRow({
 
     if (isConverting) {
         return (
-            <li ref={setNode} className={ROW_CHROME}>
+            <li ref={setNode} className={WATCHLIST_ROW_CHROME}>
                 <HoldingForm
                     defaultSymbol={item.symbol}
                     onSubmit={async input => {
@@ -143,7 +157,7 @@ function WatchlistRow({
         <li
             ref={setNode}
             className={cn(
-                ROW_CHROME,
+                WATCHLIST_ROW_CHROME,
                 'flex flex-wrap items-center justify-between gap-3'
             )}
         >
@@ -204,21 +218,17 @@ export function WatchlistSection({ sort = 'added' }: WatchlistSectionProps) {
     const assetLabel = useAssetLabel();
     const locale = useResolvedLocale();
     const openSearch = useOpenTickerSearch();
-    const changeBySymbol = useQueries({
+    const changes = useQueries({
         queries: items.map(item => ({
             ...watchlistQuoteQuery(item.symbol),
             enabled: sort === 'change',
         })),
-        combine: results =>
-            new Map(
-                results.map((result, index) => [
-                    items[index]?.symbol ?? '',
-                    result.data
-                        ? (quoteFromBars(result.data.bars)?.changePct ?? null)
-                        : null,
-                ])
-            ),
+        combine: changesOf,
     });
+    // `useQueries` 결과는 `queries`와 같은 순서다 — 심볼은 `items`에서 바로 짝짓는다.
+    const changeBySymbol = new Map(
+        items.map((item, index) => [item.symbol, changes[index] ?? null])
+    );
     const sorted = sortWatchlistItems(items, sort, {
         nameOf: item =>
             assetLabel(item.symbol, item.companyName ?? item.symbol),
@@ -249,7 +259,10 @@ export function WatchlistSection({ sort = 'added' }: WatchlistSectionProps) {
                     {[0, 1].map(i => (
                         <div
                             key={i}
-                            className={cn(ROW_CHROME, 'h-16 animate-pulse')}
+                            className={cn(
+                                WATCHLIST_ROW_CHROME,
+                                'h-16 animate-pulse'
+                            )}
                         />
                     ))}
                 </div>

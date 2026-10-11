@@ -75,16 +75,14 @@ export function MiniQuote({ symbol, enabled, align = 'end' }: MiniQuoteProps) {
     );
 }
 
-/** 미니 차트. 시세와 같은 쿼리 키라 추가 요청이 없다. */
-export function MiniTrend({
-    symbol,
-    enabled,
-    className,
-}: {
+interface MiniTrendProps {
     symbol: string;
     enabled: boolean;
     className?: string;
-}) {
+}
+
+/** 미니 차트. 시세와 같은 쿼리 키라 추가 요청이 없다. */
+export function MiniTrend({ symbol, enabled, className }: MiniTrendProps) {
     const { quote } = useWatchlistQuote(symbol, enabled);
     if (quote === null)
         return (

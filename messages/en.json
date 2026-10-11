@@ -98,7 +98,8 @@
                 "b7b3c8": "Delivery settings",
                 "a613ae": "Holdings (overseas first, by cost) and watchlist symbols (most recently added first) are combined: the first {v0} get a full card and the next {v1} a summary row.",
                 "b38abd": "Get your holdings and watchlist report by email on the days and time you choose.",
-                "861f8f": "Manage in My Symbols"
+                "managePortfolio": "Manage Holdings",
+                "manageWatchlist": "Manage Watchlist"
             },
             "unsubscribe": {
                 "page": {
@@ -869,9 +870,12 @@
                 "holdingSaved": "Saved the {v0} holding"
             },
             "PortfolioSignupCta": {
-                "body": "Sign up to manage holdings with your average cost and quantity",
                 "cta": "Sign up",
-                "login": "Already a member? Log in"
+                "login": "Already a member? Log in",
+                "body": "Register your average price and quantity to see where your average price stands within the recent price range for each stock.",
+                "title": "Sign up and register your Holdings",
+                "watchlistHint": "You can keep Watchlist items on this device even without signing up.",
+                "watchlistLink": "View Watchlist"
             }
         },
         "premium-gate": {

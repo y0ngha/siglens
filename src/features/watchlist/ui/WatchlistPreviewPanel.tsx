@@ -6,16 +6,15 @@ import { WATCHLIST_PREVIEW_COUNT } from '@/shared/config/watchlist';
 import { cn } from '@/shared/lib/cn';
 import { PLACEHOLDER_ON_CARD } from '@/shared/lib/surfaceStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useWatchlistPreview } from '../hooks/useWatchlistPreview';
 import {
-    useWatchlistPreview,
-    type WatchlistPreviewTab,
-} from '../hooks/useWatchlistPreview';
-import { MiniQuoteRow } from './MiniQuoteRow';
-import {
-    WatchlistTabs,
+    watchlistPageHref,
     watchlistPanelId,
     watchlistTabId,
-} from './WatchlistTabs';
+    type WatchlistPreviewTab,
+} from '../lib/watchlistTabs';
+import { MiniQuoteRow } from './MiniQuoteRow';
+import { WatchlistTabs } from './WatchlistTabs';
 
 interface WatchlistPreviewPanelProps {
     /**
@@ -27,11 +26,6 @@ interface WatchlistPreviewPanelProps {
     quotesEnabled: boolean;
     /** 행·링크를 눌러 다른 페이지로 갈 때 팝오버·시트를 닫는다. */
     onNavigate: () => void;
-}
-
-/** 탭과 목록 전환 시 목적지. 최근 본 탭에서 "전체 보기"를 누르면 그 탭이 열린 채로 간다. */
-export function watchlistPageHref(tab: WatchlistPreviewTab): string {
-    return tab === 'recent' ? '/watchlist?tab=recent' : '/watchlist';
 }
 
 /**

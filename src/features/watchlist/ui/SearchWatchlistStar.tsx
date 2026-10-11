@@ -20,7 +20,7 @@ interface SearchWatchlistStarProps {
 }
 
 /**
- * 검색 결과 행의 ★(관심종목 동선 설계 §6). 누르면 페이지로 이동하지 않고 담는다. 담았으면
+ * 검색 결과 행의 ★. 누르면 페이지로 이동하지 않고 담는다. 담았으면
  * "되돌리기" 토스트를 띄워 잘못 누른 담기를 바로 무를 수 있게 한다.
  */
 export function SearchWatchlistStar({

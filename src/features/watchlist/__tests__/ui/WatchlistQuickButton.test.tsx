@@ -106,6 +106,8 @@ describe('WatchlistQuickButton', () => {
         const button = screen.getByRole('button', { name: /관심종목 열기/ });
         await user.click(button);
         expect(screen.getByRole('dialog')).toBeInTheDocument();
+        // 열리면 포커스가 대화상자 안의 선택된 탭으로 들어간다.
+        expect(screen.getByRole('tab', { name: /관심/ })).toHaveFocus();
         await user.keyboard('{Escape}');
         expect(screen.queryByRole('dialog')).toBeNull();
         expect(button).toHaveFocus();

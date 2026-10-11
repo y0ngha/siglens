@@ -101,7 +101,7 @@ async function typeSymbolAndConfirm(page: Page, raw: string): Promise<void> {
 async function resetAaplHolding(page: Page): Promise<void> {
     await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '내 종목' })
+        page.getByRole('heading', { level: 1, name: '내 포트폴리오' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
     // Wait out the client-only holdings skeleton (usePortfolioHoldings fetches
@@ -136,7 +136,7 @@ async function addAaplHolding(
 ): Promise<void> {
     await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '내 종목' })
+        page.getByRole('heading', { level: 1, name: '내 포트폴리오' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
     await expect(portfolioRegion(page).getByText(SKELETON_TEXT)).toHaveCount(
         0,
@@ -251,7 +251,7 @@ test.describe('/portfolio page (authed storageState)', () => {
 
         await page.goto('/portfolio');
         await expect(
-            page.getByRole('heading', { level: 1, name: '내 종목' })
+            page.getByRole('heading', { level: 1, name: '내 포트폴리오' })
         ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
         const grid = page.getByTestId('portfolio-holding-grid');

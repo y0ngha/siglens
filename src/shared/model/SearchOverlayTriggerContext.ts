@@ -16,5 +16,5 @@ export interface SearchOverlayTrigger {
 export const SearchOverlayTriggerContext =
     createContext<SearchOverlayTrigger | null>(null);
 
-/** 데스크톱 헤더 검색 입력의 id. "종목 검색" 버튼(`useOpenTickerSearch`)이 이 입력에 포커스를 보낸다. */
+/** 데스크톱 헤더 검색 입력의 id. "종목 검색" 버튼(`features/watchlist`의 `useOpenTickerSearch`)이 이 입력에 포커스를 보낸다. */
 export const HEADER_SEARCH_INPUT_ID = 'header-ticker-search';

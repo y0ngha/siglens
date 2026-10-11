@@ -48,7 +48,9 @@ const TOAST_CARD = cn(
     'pointer-events-auto flex w-full items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-900 p-4 text-sm text-secondary-100 shadow-2xl',
     'motion-safe:animate-[fade-in_150ms_ease-out]'
 );
-const CLOSE_BUTTON = cn(BUTTON_GHOST, 'size-8 shrink-0 rounded');
+// 닫기 버튼(32px)이 첫 줄(text-sm, 20px)보다 커서 카드 높이를 정하고 문장이 위로 치우쳐 보였다.
+// 세로 음수 여백으로 버튼을 첫 줄 중앙에 겹쳐, 카드 높이는 문장이 정하게 한다(누르는 영역은 그대로 32px).
+const CLOSE_BUTTON = cn(BUTTON_GHOST, '-my-1.5 size-8 shrink-0 rounded');
 
 /**
  * 라이브 영역은 토스트가 없어도 **늘 마운트**한다 — 내용과 같은 순간에 삽입된 `aria-live`

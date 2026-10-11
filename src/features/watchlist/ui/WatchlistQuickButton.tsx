@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
@@ -32,6 +32,7 @@ export function WatchlistQuickButton() {
     const popoverId = useId();
     const containerRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
     const [mode, setMode] = useState<OpenMode>('closed');
     // 시트 청크는 한 번 열린 뒤로 계속 마운트해 둔다 — 닫힘 애니메이션이 끝까지 돌게.
     const [sheetMounted, setSheetMounted] = useState(false);
@@ -46,6 +47,15 @@ export function WatchlistQuickButton() {
         enabled: mode === 'popover',
     });
     useEscapeKey(closeAndRestoreFocus, mode === 'popover');
+
+    // 열리면 포커스를 대화상자 안(선택된 탭)으로 옮긴다 — `role="dialog"`를 연 버튼의 약속이다.
+    // 닫힐 때는 `closeAndRestoreFocus`가 버튼으로 돌려준다. DOM 포커스라 effect다.
+    useEffect(() => {
+        if (mode !== 'popover') return;
+        popoverRef.current
+            ?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+            ?.focus();
+    }, [mode]);
 
     const handleClick = () => {
         if (mode !== 'closed') {
@@ -107,6 +117,7 @@ export function WatchlistQuickButton() {
             </button>
             {mode === 'popover' && (
                 <div
+                    ref={popoverRef}
                     id={popoverId}
                     role="dialog"
                     aria-label={t('preview.title')}

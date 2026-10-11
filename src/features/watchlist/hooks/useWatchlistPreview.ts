@@ -1,9 +1,8 @@
 'use client';
 
+import type { WatchlistPreviewTab } from '../lib/watchlistTabs';
 import { useRecentSymbols } from './useRecentSymbols';
 import { useWatchlist } from './useWatchlist';
-
-export type WatchlistPreviewTab = 'watchlist' | 'recent';
 
 export interface WatchlistPreviewItem {
     symbol: string;

@@ -29,7 +29,7 @@ describe('PortfolioSignupCta', () => {
         );
         expect(
             screen.getByText(
-                '보유종목은 가입 후 평단·수량과 함께 관리할 수 있어요'
+                '평단과 수량을 등록하면 종목마다 최근 가격 범위 안에서 내 평단이 어디쯤인지 보여 드려요.'
             )
         ).toBeInTheDocument();
         await user.click(link);
@@ -72,5 +72,18 @@ describe('PortfolioSignupCta', () => {
             screen.getByRole('link', { name: '이미 회원이신가요? 로그인' })
         );
         expect(vi.mocked(trackFunnelEvent)).not.toHaveBeenCalled();
+    });
+
+    it('제목을 h2로 두고, 가입 없이 쓸 수 있는 관심종목으로 가는 출구를 둔다', () => {
+        render(<PortfolioSignupCta />);
+        expect(
+            screen.getByRole('heading', {
+                level: 2,
+                name: '가입하고 보유종목을 등록해 보세요',
+            })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: '관심종목 보기' })
+        ).toHaveAttribute('href', '/watchlist');
     });
 });

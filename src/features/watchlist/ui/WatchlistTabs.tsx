@@ -3,7 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { useRef, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
-import type { WatchlistPreviewTab } from '../hooks/useWatchlistPreview';
+import {
+    watchlistPanelId,
+    watchlistTabId,
+    type WatchlistPreviewTab,
+} from '../lib/watchlistTabs';
 
 const TABS: readonly WatchlistPreviewTab[] = ['watchlist', 'recent'];
 
@@ -15,14 +19,6 @@ interface WatchlistTabsProps {
     /** 탭과 패널을 잇는 id 접두사. 한 화면에 탭이 둘 이상 뜰 수 있어 호출부가 `useId`로 준다. */
     idBase: string;
     size?: 'sm' | 'md';
-}
-
-export function watchlistTabId(idBase: string, tab: WatchlistPreviewTab) {
-    return `${idBase}-tab-${tab}`;
-}
-
-export function watchlistPanelId(idBase: string) {
-    return `${idBase}-panel`;
 }
 
 /**
