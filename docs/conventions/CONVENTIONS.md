@@ -588,6 +588,8 @@ file or the rule it describes changes:
   route or caller doc that describes it, for example a "short, no lock needed" claim.
 - When a function's input, data source or location changes, or a file or function is deleted, grep for comments,
   JSDoc and test names that mention it and update them in the same change (see CS-8).
+- When a method gains a cache or otherwise changes behavior, re-read the class- or module-level summary and sibling
+  files that describe it, not only the method's own JSDoc; a summary listing the method under its old behavior goes stale.
 - After reversing a layout contract, grep the whole repo (`src/`, `e2e/`, `docs/`) for the old wording, including
   test names.
 - A time-zone comment must match the literal exactly; check DST dates with

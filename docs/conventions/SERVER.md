@@ -479,6 +479,22 @@ A cache layer often also absorbs failures of the layer behind it (DB unavailable
 what it absorbed and keep a short-TTL fallback write for the DB-unavailable path, otherwise an outage becomes
 repeated provider calls. Back the fallback with a test that fails when the write is removed (see TESTING.md#TE-13).
 
+<a id="DC-9"></a>
+
+#### DC-9 — State the cache's staleness window and never write what every read discards
+
+Document the accepted lag next to a time-bounded cache: which changes (a moved date, a newly scheduled event) can
+stay invisible for up to the TTL, not only the one guarantee it gives. If the read-side freshness check rejects a
+class of values, skip the write for that class with the same predicate; a write that every read discards costs a
+round-trip for nothing.
+
+```ts
+// ❌ stores past-dated results although isFresh rejects them on every read
+await cache.set(key, report, ttl);
+// ✅ one predicate decides both write and read
+if (shouldCache(report)) await cache.set(key, report, ttl);
+```
+
 ---
 
 ## Database & Migrations
