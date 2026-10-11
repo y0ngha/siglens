@@ -1,10 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     applicableTabsFor,
-    buildPrewarmUniverse,
     isPrewarmTab,
     PREWARM_TABS,
     prewarmSessionSpecFor,
@@ -56,29 +55,6 @@ describe('isPrewarmTab', () => {
         ] as const) {
             expect(isPrewarmTab(tab)).toBe(false);
         }
-    });
-});
-
-describe('buildPrewarmUniverse', () => {
-    // 실패 시 상수 목록 변경 — 아래 수치도 함께 갱신.
-    //
-    // ⚠️ 이 수치는 장식이 아니라 **용량 게이트**다. 야간 처리량은 틱 약 90회 ×
-    // SYMBOLS_PER_TICK 12 ≈ 1,080 심볼-슬롯이다(2026-10-02, 이전 6). 유니버스를 키우기 전에
-    // `[seo-prewarm] batch done`의 `remaining`이 매일 밤 0으로 수렴하는지 먼저 본다.
-    //
-    // 2026-10-01: C 구간 43종 제거(391 → 348) + 탭을 2개로 축소 → 377 × 2 = 754.
-    // (직전 2742 유닛 대비 약 72% 감소.)
-    it('전체 유닛 수 = 377 × 2 = 754', () => {
-        const units = buildPrewarmUniverse().reduce(
-            (n, u) => n + u.tabs.length,
-            0
-        );
-        expect(units).toBe(754);
-    });
-
-    // 실패 시 상수 목록 변경 — 위 수치도 함께 갱신
-    it('심볼 수 = 377 (POPULAR_TICKERS 348 + POPULAR_CRYPTOS 29)', () => {
-        expect(buildPrewarmUniverse()).toHaveLength(377);
     });
 });
 

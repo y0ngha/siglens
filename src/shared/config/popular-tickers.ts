@@ -706,4 +706,13 @@ export const POPULAR_TICKERS = [
     'BX',
     'MPC',
     'WELL',
+
+    // --- Trending (2026-10-11) ---
+    'MRNA',
+    'UMC',
+    'TFC',
+    'COHR',
+    'FAST',
+    'SE',
+    'LITE',
 ] as const;
