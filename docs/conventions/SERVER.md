@@ -528,3 +528,15 @@ manifests follow the same logic: after editing sources run the generator (see I1
 A script writing to a database resolved from the environment calls `guardRemoteWrite(databaseUrl, '<name>')`
 (`db/scripts/lib/dbTarget.ts`) before connecting. Docs must not claim broader coverage than the code provides
 (for example "covers every `yarn db:*` script") unless every such script calls it.
+
+<a id="DB-5"></a>
+
+#### DB-5 — A new table that references `users` joins the dev-seed exclusion list
+
+`scripts/db-dev-seed-from-prod.sh` copies production data into a dev database and must not copy per-user rows. Add every
+new table with a foreign key to `users` to its `EXCLUDED_TABLES` in the same change; its test fails otherwise. A schema
+change reaches that script and `scripts/__tests__`, so derive the test scope from the file graph and include them
+(see `CLAUDE.md#RT-1`), not just `src` paths.
+
+- ❌ New `users`-FK table, scoped test run over `src/` only, CI catches the missing exclusion.
+- ✅ Table added to `EXCLUDED_TABLES` and `scripts/__tests__` run locally.
