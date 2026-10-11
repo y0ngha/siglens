@@ -12,6 +12,7 @@ import { cn } from '@/shared/lib/cn';
 import { NativeSelect } from '@/shared/ui/NativeSelect';
 import { useWatchlist } from '../hooks/useWatchlist';
 import {
+    DEFAULT_WATCHLIST_TAB,
     tabFromParam,
     WATCHLIST_TAB_PARAM,
     watchlistPanelId,
@@ -26,8 +27,9 @@ import { WatchlistTabs } from './WatchlistTabs';
 /** 탭을 URL에 남긴다(새로고침·공유에 유지). 관심 탭은 기본값이라 파라미터를 지운다. */
 function writeTabToUrl(tab: WatchlistPreviewTab): void {
     const url = new URL(window.location.href);
-    if (tab === 'recent') url.searchParams.set(WATCHLIST_TAB_PARAM, 'recent');
-    else url.searchParams.delete(WATCHLIST_TAB_PARAM);
+    if (tab === DEFAULT_WATCHLIST_TAB)
+        url.searchParams.delete(WATCHLIST_TAB_PARAM);
+    else url.searchParams.set(WATCHLIST_TAB_PARAM, tab);
     window.history.replaceState(window.history.state, '', url);
 }
 

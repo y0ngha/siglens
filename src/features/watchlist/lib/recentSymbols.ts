@@ -47,15 +47,16 @@ export function parseRecentSymbols(raw: string | null): RecentSymbolEntry[] {
     try {
         const parsed: unknown = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
-        const seen = new Set<string>();
-        return parsed
+        const newestFirst = parsed
             .flatMap(toEntry)
-            .toSorted((a, b) => b.viewedAt - a.viewedAt)
-            .filter(entry => {
-                if (seen.has(entry.symbol)) return false;
-                seen.add(entry.symbol);
-                return true;
-            })
+            .toSorted((a, b) => b.viewedAt - a.viewedAt);
+        // 같은 심볼은 가장 최근 것 하나만 — 최신순이라 첫 등장이 그것이다.
+        return newestFirst
+            .filter(
+                (entry, index) =>
+                    newestFirst.findIndex(e => e.symbol === entry.symbol) ===
+                    index
+            )
             .slice(0, RECENT_SYMBOLS_MAX);
     } catch {
         return [];

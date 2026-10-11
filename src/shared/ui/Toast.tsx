@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
@@ -92,7 +93,7 @@ export function Toast({ toast, onDismiss, onPauseChange }: ToastProps) {
                                         href={toast.link.href}
                                         prefetch={false}
                                         onClick={onDismiss}
-                                        className="font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        className={LINK_ACCENT}
                                     >
                                         {toast.link.label}
                                     </Link>
@@ -113,7 +114,7 @@ export function Toast({ toast, onDismiss, onPauseChange }: ToastProps) {
                                             toast.action?.onAction();
                                             onDismiss();
                                         }}
-                                        className="font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        className={LINK_ACCENT}
                                     >
                                         {toast.action.label}
                                     </button>

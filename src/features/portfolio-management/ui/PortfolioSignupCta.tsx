@@ -5,6 +5,7 @@ import { useUrlSearchParam } from '@/shared/hooks/useUrlSearchParam';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -66,7 +67,10 @@ export function PortfolioSignupCta() {
                 <Link
                     href="/watchlist"
                     prefetch={false}
-                    className="inline-flex min-h-11 items-center rounded font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className={cn(
+                        LINK_ACCENT,
+                        'inline-flex min-h-11 items-center rounded'
+                    )}
                 >
                     {t('PortfolioSignupCta.watchlistLink')}
                 </Link>

@@ -4,12 +4,12 @@ import { useTranslations } from 'next-intl';
 import { useRef, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
 import {
+    adjacentWatchlistTab,
+    WATCHLIST_TABS,
     watchlistPanelId,
     watchlistTabId,
     type WatchlistPreviewTab,
 } from '../lib/watchlistTabs';
-
-const TABS: readonly WatchlistPreviewTab[] = ['watchlist', 'recent'];
 
 interface WatchlistTabsProps {
     value: WatchlistPreviewTab;
@@ -40,7 +40,10 @@ export function WatchlistTabs({
     const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
         event.preventDefault();
-        const next = value === 'watchlist' ? 'recent' : 'watchlist';
+        const next = adjacentWatchlistTab(
+            value,
+            event.key === 'ArrowRight' ? 1 : -1
+        );
         onChange(next);
         refs.current[next]?.focus();
     };
@@ -51,7 +54,7 @@ export function WatchlistTabs({
             aria-label={t('preview.tabsLabel')}
             className="flex items-center gap-1"
         >
-            {TABS.map(tab => {
+            {WATCHLIST_TABS.map(tab => {
                 const selected = tab === value;
                 return (
                     <button

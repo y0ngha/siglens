@@ -1,4 +1,5 @@
 import {
+    adjacentWatchlistTab,
     tabFromParam,
     watchlistPageHref,
     watchlistPanelId,
@@ -20,5 +21,13 @@ describe('watchlistTabs', () => {
     it('탭 id와 패널 id는 접두사를 공유하고 서로 다르다', () => {
         expect(watchlistTabId('x', 'recent')).toBe('x-tab-recent');
         expect(watchlistPanelId('x')).toBe('x-panel');
+    });
+});
+
+describe('adjacentWatchlistTab', () => {
+    it('좌우로 옮기고 끝에서 처음으로 돈다', () => {
+        expect(adjacentWatchlistTab('watchlist', 1)).toBe('recent');
+        expect(adjacentWatchlistTab('recent', 1)).toBe('watchlist');
+        expect(adjacentWatchlistTab('watchlist', -1)).toBe('recent');
     });
 });

@@ -30,15 +30,16 @@ type OpenMode = 'closed' | 'popover' | 'sheet';
 export function WatchlistQuickButton() {
     const t = useTranslations('features.watchlist');
     const popoverId = useId();
-    const containerRef = useRef<HTMLDivElement>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    const popoverRef = useRef<HTMLDivElement>(null);
     const [mode, setMode] = useState<OpenMode>('closed');
     // 시트 청크는 한 번 열린 뒤로 계속 마운트해 둔다 — 닫힘 애니메이션이 끝까지 돌게.
     const [sheetMounted, setSheetMounted] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
     const { items, isHydrated } = useWatchlist();
     const count = isHydrated ? items.length : null;
 
+    // 아래 두 훅(바깥 클릭·Esc)이 이 핸들러를 입력으로 받으므로 그 앞에 선언한다.
     const closeAndRestoreFocus = (): void => {
         setMode('closed');
         buttonRef.current?.focus();

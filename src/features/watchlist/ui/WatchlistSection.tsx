@@ -1,7 +1,5 @@
 'use client';
 
-import { useQueries } from '@tanstack/react-query';
-import type { Bar } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useOpenTickerSearch } from '../hooks/useOpenTickerSearch';
@@ -20,6 +18,7 @@ import {
     BUTTON_OUTLINE_DANGER,
 } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import {
     formatCurrencyForSymbol,
     formatSignedPercent,
@@ -30,11 +29,8 @@ import { symbolLabel } from '@/shared/lib/symbolLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useToast } from '@/shared/ui/ToastProvider';
 import { useWatchlist } from '../hooks/useWatchlist';
-import {
-    useWatchlistQuote,
-    watchlistQuoteQuery,
-} from '../hooks/useWatchlistQuote';
-import { quoteFromBars } from '../lib/quoteFromBars';
+import { useWatchlistChanges } from '../hooks/useWatchlistChanges';
+import { useWatchlistQuote } from '../hooks/useWatchlistQuote';
 import { WATCHLIST_ROW_CHROME } from '../lib/watchlistStyles';
 import { sortWatchlistItems, type WatchlistSort } from '../lib/sortWatchlist';
 import { MiniTrend } from './MiniQuoteRow';
@@ -47,20 +43,6 @@ const NAME_LINK =
 interface WatchlistSectionProps {
     /** 정렬 기준. 등락률 순일 때만 모든 행의 시세를 한꺼번에 불러온다(그 외에는 보일 때만). */
     sort?: WatchlistSort;
-}
-
-/**
- * 시세 쿼리 결과 → 등락률 배열(쿼리 순서 그대로). 모듈 수준에 둬 참조가 안정적이다 — 인라인
- * `combine`은 렌더마다 새 함수라 React Query가 결과를 다시 합친다.
- */
-function changesOf(
-    results: readonly { data?: { bars: readonly Bar[] } }[]
-): (number | null)[] {
-    return results.map(result =>
-        result.data
-            ? (quoteFromBars(result.data.bars)?.changePct ?? null)
-            : null
-    );
 }
 
 interface RowQuoteProps {
@@ -218,19 +200,7 @@ export function WatchlistSection({ sort = 'added' }: WatchlistSectionProps) {
     const assetLabel = useAssetLabel();
     const locale = useResolvedLocale();
     const openSearch = useOpenTickerSearch();
-    // 등락률 정렬일 때만 구독한다 — 평소에도 같은 키를 50개 구독하면 행 시세가 도착할 때마다
-    // 목록 전체가 다시 그려진다.
-    const changes = useQueries({
-        queries:
-            sort === 'change'
-                ? items.map(item => watchlistQuoteQuery(item.symbol))
-                : [],
-        combine: changesOf,
-    });
-    // `useQueries` 결과는 `queries`와 같은 순서다 — 심볼은 `items`에서 바로 짝짓는다.
-    const changeBySymbol = new Map(
-        items.map((item, index) => [item.symbol, changes[index] ?? null])
-    );
+    const changeBySymbol = useWatchlistChanges(items, sort === 'change');
     const sorted = sortWatchlistItems(items, sort, {
         nameOf: item =>
             assetLabel(item.symbol, item.companyName ?? item.symbol),
@@ -282,7 +252,10 @@ export function WatchlistSection({ sort = 'added' }: WatchlistSectionProps) {
                 <button
                     type="button"
                     onClick={openSearch}
-                    className="mt-3 inline-flex min-h-11 items-center rounded px-2 font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className={cn(
+                        LINK_ACCENT,
+                        'mt-3 inline-flex min-h-11 items-center rounded px-2'
+                    )}
                 >
                     {t('common.search')}
                 </button>

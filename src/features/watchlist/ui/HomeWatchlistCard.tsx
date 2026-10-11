@@ -11,6 +11,7 @@ import {
 } from '@/shared/config/watchlist';
 import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import { PLACEHOLDER_ON_CARD, SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -185,7 +186,10 @@ export function HomeWatchlistCard() {
                     <Link
                         href={href}
                         prefetch={false}
-                        className="inline-flex min-h-10 items-center rounded px-2 text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className={cn(
+                            LINK_ACCENT,
+                            'inline-flex min-h-10 items-center rounded px-2 text-sm'
+                        )}
                     >
                         {t('home.viewAll')}
                     </Link>
@@ -203,7 +207,9 @@ export function HomeWatchlistCard() {
                     </p>
                 ) : (
                     <>
-                        {/* 뷰포트에 맞는 한쪽만 그린다 — 숨긴 쪽도 시세를 요청하지 않게. */}
+                        {/* 뷰포트에 맞는 한쪽만 그린다 — 숨긴 쪽도 시세를 요청하지 않게. `isBelowLg`가
+                            null인 구간은 하이드레이션 렌더뿐이고, 그때는 `isReady`도 false라 위의
+                            자리표시자가 그려지므로 빈 본문이 보이는 프레임은 없다. */}
                         {isBelowLg === false && (
                             <ul className="grid grid-cols-6 gap-3">
                                 {desktopItems.map(item => (
@@ -232,7 +238,10 @@ export function HomeWatchlistCard() {
                             <Link
                                 href={href}
                                 prefetch={false}
-                                className="mt-1 flex min-h-11 items-center justify-center rounded-lg text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                className={cn(
+                                    LINK_ACCENT,
+                                    'mt-1 flex min-h-11 items-center justify-center rounded-lg text-sm'
+                                )}
                             >
                                 {t('home.more', { v0: hiddenOnMobile })}
                             </Link>
