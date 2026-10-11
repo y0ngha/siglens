@@ -808,10 +808,15 @@
                 "f1ce16": "요일을 하나 이상 골라 주세요."
             },
             "ReportSymbolChip": {
+                "clear": "기록 지우기",
+                "clearLabel": "{v0} 제외 기록 지우기",
+                "clearedToast": "제외 기록을 지웠어요: {v0}",
                 "exclude": "{v0} 리포트에서 빼기",
+                "excludedToast": "리포트에서 뺐어요: {v0}",
                 "failed": "처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
                 "include": "다시 넣기",
-                "includeLabel": "{v0} 리포트에 다시 넣기"
+                "includeLabel": "{v0} 리포트에 다시 넣기",
+                "includedToast": "리포트에 다시 넣었어요: {v0}"
             },
             "ReportSymbolsPreview": {
                 "715443": "전체 {v0}개 중 {v1}개는 상세, 나머지 {v2}개는 요약으로 들어가요.",
@@ -821,7 +826,9 @@
                 "bb4464": "상세",
                 "d406d7": "아직 보유·관심종목이 없어요. 종목을 담으면 다음 리포트부터 들어가요.",
                 "excludedGroup": "리포트에서 뺀 종목",
-                "removeHint": "종목 옆 ✕를 누르면 그 종목은 리포트에서 빠지고, 뒤의 종목이 그 자리를 채워요. 보유·관심종목 목록은 그대로예요."
+                "removeHint": "종목 옆 ✕를 누르면 그 종목은 리포트에서 빠지고, 뒤의 종목이 그 자리를 채워요. 보유·관심종목 목록은 그대로예요.",
+                "staleExcludedGroup": "목록에서 지운 종목의 제외 기록",
+                "staleExcludedHint": "이미 보유·관심종목에서 지운 종목이라 리포트에는 영향이 없고, 리포트 제외 한도({v0}개)만 차지해요. 필요 없으면 지워 주세요."
             }
         },
         "email-report-unsubscribe": {

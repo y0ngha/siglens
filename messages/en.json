@@ -808,13 +808,20 @@
                 "2f3e5b": "We couldn't load your report symbols right now.",
                 "allExcluded": "All symbols have been excluded from the report. Re-including them will add them to future reports.",
                 "excludedGroup": "Excluded Symbols",
-                "removeHint": "Click the ✕ next to a symbol to exclude it from the report; the next symbol will take its place. Your Holdings and Watchlist remain unchanged."
+                "removeHint": "Click the ✕ next to a symbol to exclude it from the report; the next symbol will take its place. Your Holdings and Watchlist remain unchanged.",
+                "staleExcludedGroup": "Exclusion history for deleted symbols",
+                "staleExcludedHint": "These stocks are no longer in your holdings or watchlist, so they don't affect the report. They only count toward the {v0}-stock exclusion limit, so clear them if you don't need them."
             },
             "ReportSymbolChip": {
                 "exclude": "Exclude {v0} from report",
                 "failed": "Failed to process. Please try again shortly.",
                 "include": "Re-include",
-                "includeLabel": "Re-include {v0} in report"
+                "includeLabel": "Re-include {v0} in report",
+                "clear": "Clear history",
+                "clearLabel": "Clear exclusion history for {v0}",
+                "clearedToast": "Exclusion history cleared: {v0}",
+                "excludedToast": "Excluded from report: {v0}",
+                "includedToast": "Included in report again: {v0}"
             }
         },
         "email-report-unsubscribe": {

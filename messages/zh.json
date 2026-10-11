@@ -808,13 +808,20 @@
                 "2f3e5b": "目前无法加载报告股票。",
                 "allExcluded": "您已将所有股票从报告中排除。重新加入后，它们将包含在下一份报告中。",
                 "excludedGroup": "已从报告中排除的股票",
-                "removeHint": "点击股票旁边的 ✕，该股票将从报告中排除，后续股票将填补其位置。持仓和自选股列表保持不变。"
+                "removeHint": "点击股票旁边的 ✕，该股票将从报告中排除，后续股票将填补其位置。持仓和自选股列表保持不变。",
+                "staleExcludedGroup": "已从列表中删除的股票的排除记录",
+                "staleExcludedHint": "这些股票已从持仓和自选股中删除,不会影响报告,只会占用报告排除上限({v0}个)。如不需要,请清除。"
             },
             "ReportSymbolChip": {
-                "exclude": "从 {v0} 报告中排除",
+                "exclude": "将 {v0} 从报告中排除",
                 "failed": "未能处理。请稍后重试。",
                 "include": "重新加入",
-                "includeLabel": "将 {v0} 重新加入报告"
+                "includeLabel": "将 {v0} 重新加入报告",
+                "clear": "清除记录",
+                "clearLabel": "清除 {v0} 的排除记录",
+                "clearedToast": "已清除排除记录：{v0}",
+                "excludedToast": "已从报告中排除：{v0}",
+                "includedToast": "已重新加入报告：{v0}"
             }
         },
         "email-report-unsubscribe": {

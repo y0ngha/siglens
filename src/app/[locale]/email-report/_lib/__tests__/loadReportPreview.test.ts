@@ -109,11 +109,9 @@ describe('loadReportPreview', () => {
         expect(preview).toEqual({
             full: [{ symbol: 'TSLA', name: 'Tesla' }],
             brief: [],
-            // 목록에서 지운 GONE도 칩으로 돌려준다(이름은 모른다) — 화면에서 다시 넣어 기록을 지울 수 있게.
-            excluded: [
-                { symbol: 'AAPL', name: 'Apple' },
-                { symbol: 'GONE', name: null },
-            ],
+            excluded: [{ symbol: 'AAPL', name: 'Apple' }],
+            // 목록에서 지운 GONE은 따로 돌려준다(이름은 모른다) — 화면에서 기록을 지울 수 있게.
+            staleExcluded: [{ symbol: 'GONE', name: null }],
         });
     });
 

@@ -23,7 +23,7 @@ import userEvent from '@testing-library/user-event';
 import { ReportSymbolChip } from '@/features/email-report-settings/ui/ReportSymbolChip';
 
 function renderChip(props: {
-    mode: 'exclude' | 'include';
+    mode: 'exclude' | 'include' | 'clear';
     name?: string | null;
 }) {
     return render(
@@ -56,7 +56,9 @@ describe('ReportSymbolChip', () => {
             await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
             expect(mocks.exclude).toHaveBeenCalledWith({ symbol: 'AAPL' });
             expect(mocks.include).not.toHaveBeenCalled();
-            expect(mocks.showToast).not.toHaveBeenCalled();
+            expect(mocks.showToast).toHaveBeenCalledWith({
+                message: '리포트에서 뺐어요: Apple',
+            });
         });
 
         it('이름이 없으면 라벨에 심볼을 쓴다', () => {
@@ -77,6 +79,23 @@ describe('ReportSymbolChip', () => {
                 name: 'Apple 리포트에 다시 넣기',
             });
             expect(button).toHaveTextContent('다시 넣기');
+            await user.click(button);
+
+            await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+            expect(mocks.include).toHaveBeenCalledWith({ symbol: 'AAPL' });
+            expect(mocks.exclude).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('clear 모드(지운 종목의 제외 기록 칩)', () => {
+        it('기록 지우기 버튼을 그리고, 누르면 넣기 액션으로 기록을 지운 뒤 새로고침한다', async () => {
+            const user = userEvent.setup();
+            renderChip({ mode: 'clear', name: null });
+
+            const button = screen.getByRole('button', {
+                name: 'AAPL 제외 기록 지우기',
+            });
+            expect(button).toHaveTextContent('기록 지우기');
             await user.click(button);
 
             await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
@@ -120,7 +139,7 @@ describe('ReportSymbolChip', () => {
             expect(mocks.refresh).not.toHaveBeenCalled();
         });
 
-        it('요청이 끝날 때까지 버튼을 비활성화해 중복 호출을 막는다', async () => {
+        it('요청이 끝날 때까지 aria-disabled로 표시하고(포커스 유지) 다시 눌러도 액션은 한 번만 나간다', async () => {
             let resolve!: (value: { status: 'ok' }) => void;
             mocks.exclude.mockReturnValue(
                 new Promise(r => {
@@ -130,15 +149,21 @@ describe('ReportSymbolChip', () => {
             const user = userEvent.setup();
             renderChip({ mode: 'exclude' });
             const button = screen.getByRole('button');
+            expect(button).not.toHaveAttribute('aria-disabled');
 
             await user.click(button);
 
-            await waitFor(() => expect(button).toBeDisabled());
+            await waitFor(() =>
+                expect(button).toHaveAttribute('aria-disabled', 'true')
+            );
+            expect(button).not.toBeDisabled();
             await user.click(button);
             expect(mocks.exclude).toHaveBeenCalledTimes(1);
 
             resolve({ status: 'ok' });
-            await waitFor(() => expect(button).toBeEnabled());
+            await waitFor(() =>
+                expect(button).not.toHaveAttribute('aria-disabled')
+            );
         });
     });
 });

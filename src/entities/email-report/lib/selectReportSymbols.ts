@@ -30,11 +30,15 @@ export interface ReportSymbolSelection {
     /** "그 외 관심종목" 요약 표. 최대 {@link EMAIL_REPORT_MAX_BRIEF_SYMBOLS}. */
     brief: string[];
     /**
-     * 뺀 심볼 전부. 보유·관심종목에 **있는** 것을 먼저(보유 → 관심 순), 목록에서 이미 지운 심볼을
-     * 그 뒤에(저장된 순서대로) 싣는다. 지운 심볼도 보여 줘야 회원이 "다시 넣기"로 그 기록을
-     * 지울 수 있다 — 숨기면 보이지도 지워지지도 않는 행이 제외 상한(200개)만 차지한다.
+     * 뺀 심볼 중 보유·관심종목에 **아직 있는** 것(보유 → 관심 순). 회원이 "다시 넣기"로 되돌릴 수
+     * 있는 칩이다.
      */
     excluded: string[];
+    /**
+     * 뺀 심볼 중 보유·관심종목에서 **이미 사라진** 것(저장된 순서). 리포트엔 어차피 안 실리지만
+     * 행은 제외 상한(200개)을 차지하므로, 화면에 보여 줘 회원이 기록을 지울 수 있게 한다.
+     */
+    staleExcluded: string[];
 }
 
 /**
@@ -77,7 +81,7 @@ function orderWatchlist(items: readonly ReportWatchlistItem[]): string[] {
  * 보유와 관심에 모두 있는 심볼은 보유 자리에서 한 번만 센다. 회원이 뺀 심볼은 자르기
  * **전에** 걸러내 뒤의 종목이 빈자리를 채운다. 앞의 {@link EMAIL_REPORT_MAX_SYMBOLS}개가
  * 전체 카드, 그다음 {@link EMAIL_REPORT_MAX_BRIEF_SYMBOLS}개가 요약 표, 나머지는 버린다.
- * 둘 다 비면 `{ full: [], brief: [], excluded: [] }` — 호출자가 `skipped`로 기록한다.
+ * 둘 다 비면 `full`·`brief`가 비어 — 호출자가 `skipped`로 기록한다.
  */
 export function selectReportSymbols(
     sources: ReportSymbolSources
@@ -90,6 +94,7 @@ export function selectReportSymbols(
         ]),
     ];
     const excludedSet = new Set(sources.excluded ?? []);
+    const candidateSet = new Set(candidates);
     const ordered = candidates.filter(symbol => !excludedSet.has(symbol));
     return {
         full: ordered.slice(0, EMAIL_REPORT_MAX_SYMBOLS),
@@ -97,9 +102,9 @@ export function selectReportSymbols(
             EMAIL_REPORT_MAX_SYMBOLS,
             EMAIL_REPORT_MAX_SYMBOLS + EMAIL_REPORT_MAX_BRIEF_SYMBOLS
         ),
-        excluded: [
-            ...candidates.filter(symbol => excludedSet.has(symbol)),
-            ...[...excludedSet].filter(symbol => !candidates.includes(symbol)),
-        ],
+        excluded: candidates.filter(symbol => excludedSet.has(symbol)),
+        staleExcluded: [...excludedSet].filter(
+            symbol => !candidateSet.has(symbol)
+        ),
     };
 }

@@ -21,6 +21,7 @@ vi.mock('@/entities/email-report/api', () => ({
 }));
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { logActionError } from '@/shared/lib/logActionError';
 import { excludeReportSymbolAction } from '@/entities/email-report/actions/excludeReportSymbolAction';
 import { includeReportSymbolAction } from '@/entities/email-report/actions/includeReportSymbolAction';
 import { EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS } from '@/entities/email-report/lib/emailReportConstants';
@@ -94,7 +95,8 @@ describe('excludeReportSymbolAction', () => {
 
     it('저장소 예외는 던지지 않고 storage_unavailable로 돌려준다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
-        mockExclude.mockRejectedValue(new Error('db down'));
+        const failure = new Error('db down');
+        mockExclude.mockRejectedValue(failure);
 
         const result = await excludeReportSymbolAction({ symbol: 'AAPL' });
 
@@ -102,6 +104,10 @@ describe('excludeReportSymbolAction', () => {
             status: 'error',
             code: 'storage_unavailable',
         });
+        expect(logActionError).toHaveBeenCalledWith(
+            '[excludeReportSymbolAction] exclude failed',
+            failure
+        );
     });
 });
 
@@ -155,7 +161,8 @@ describe('includeReportSymbolAction', () => {
 
     it('저장소 예외는 던지지 않고 storage_unavailable로 돌려준다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
-        mockInclude.mockRejectedValue(new Error('db down'));
+        const failure = new Error('db down');
+        mockInclude.mockRejectedValue(failure);
 
         const result = await includeReportSymbolAction({ symbol: 'TSLA' });
 
@@ -163,5 +170,9 @@ describe('includeReportSymbolAction', () => {
             status: 'error',
             code: 'storage_unavailable',
         });
+        expect(logActionError).toHaveBeenCalledWith(
+            '[includeReportSymbolAction] include failed',
+            failure
+        );
     });
 });

@@ -361,6 +361,13 @@ describe('DrizzleEmailReportExclusionRepository', () => {
 
         expect(outcome).toBe('excluded');
         expect(captured).toHaveLength(3);
+        // 상한 판정용 개수 조회는 이 회원의 행만 읽는다.
+        expect(captured[1]).toEqual({
+            sql: expect.stringMatching(
+                /^select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"\."user_id" = \$1/
+            ),
+            params: ['user-1'],
+        });
         expect(captured[0]).toEqual({
             sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
             params: ['user-1'],
@@ -386,7 +393,7 @@ describe('DrizzleEmailReportExclusionRepository', () => {
     });
 
     it('이미 뺀 심볼은 상한이어도 멱등 성공이다', async () => {
-        const { db } = txDb([
+        const { db, captured } = txDb([
             [{ id: 'user-1' }],
             [{ symbol: 'MSFT' }, { symbol: 'AAPL' }],
             [],
@@ -399,6 +406,10 @@ describe('DrizzleEmailReportExclusionRepository', () => {
                 2
             )
         ).resolves.toBe('excluded');
+        // 삽입은 여전히 나가지만 충돌 무시라 행이 늘지 않는다.
+        expect(captured[2].sql).toMatch(
+            /^insert into "email_report_excluded_symbols".* on conflict \("user_id","symbol"\) do nothing/
+        );
     });
 
     it('includeSymbol은 (회원, 심볼) 행만 지우고 지웠는지를 돌려준다', async () => {

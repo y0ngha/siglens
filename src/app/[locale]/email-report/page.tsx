@@ -10,6 +10,7 @@ import {
 } from '@/entities/email-report/lib/emailReportConstants';
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
 import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
+import { REPORT_SYMBOLS_HEADING_ID } from '@/features/email-report-settings/lib/reportSymbolsPreviewIds';
 import { ReportSymbolsPreview } from '@/features/email-report-settings/ui/ReportSymbolsPreview';
 import { localePath, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
@@ -98,11 +99,11 @@ function IncludedSymbolsNote() {
     const t = useTranslations('app.email-report');
     return (
         <section
-            aria-labelledby="email-report-symbols-heading"
+            aria-labelledby={REPORT_SYMBOLS_HEADING_ID}
             className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <h2
-                id="email-report-symbols-heading"
+                id={REPORT_SYMBOLS_HEADING_ID}
                 className="text-sm font-semibold text-secondary-100"
             >
                 {t('page.190fd1')}

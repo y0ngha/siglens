@@ -3338,5 +3338,12 @@
     "features.email-report-settings.ReportSymbolChip.includeLabel": "20ed443964e9",
     "features.email-report-settings.ReportSymbolsPreview.allExcluded": "8274438a2595",
     "features.email-report-settings.ReportSymbolsPreview.excludedGroup": "6b900e0d91ea",
-    "features.email-report-settings.ReportSymbolsPreview.removeHint": "fa340e6bafcf"
+    "features.email-report-settings.ReportSymbolsPreview.removeHint": "fa340e6bafcf",
+    "features.email-report-settings.ReportSymbolChip.clear": "eae8ca21e2e5",
+    "features.email-report-settings.ReportSymbolChip.clearLabel": "270e2536706c",
+    "features.email-report-settings.ReportSymbolChip.clearedToast": "f59d685b7e6a",
+    "features.email-report-settings.ReportSymbolChip.excludedToast": "7ce9f3506684",
+    "features.email-report-settings.ReportSymbolChip.includedToast": "3e8e8497f1fd",
+    "features.email-report-settings.ReportSymbolsPreview.staleExcludedGroup": "9c7680123c44",
+    "features.email-report-settings.ReportSymbolsPreview.staleExcludedHint": "a7ff9c5638ea"
 }

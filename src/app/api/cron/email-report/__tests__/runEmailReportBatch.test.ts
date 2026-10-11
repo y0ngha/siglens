@@ -393,6 +393,25 @@ describe('runEmailReportBatch', () => {
         );
     });
 
+    it('제외 종목 조회가 실패하면 아무것도 보내지 않고 그 오류로 failed 기록한다', async () => {
+        const { deps, sent } = makeDeps({
+            findExcludedSymbols: vi
+                .fn()
+                .mockRejectedValue(new Error('exclusion down')),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(counts.failed).toBe(1);
+        expect(sent).toHaveLength(0);
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'failed',
+            [],
+            'exclusion down'
+        );
+    });
+
     it('발송이 거부되면 failed로 기록하고 다른 회원은 계속 보낸다', async () => {
         const { deps } = makeDeps({
             subscriptions: {

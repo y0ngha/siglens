@@ -40,6 +40,7 @@ export async function loadReportPreview(
             full: selection.full.map(chip),
             brief: selection.brief.map(chip),
             excluded: selection.excluded.map(chip),
+            staleExcluded: selection.staleExcluded.map(chip),
         };
     } catch (error) {
         console.error('[email-report] preview load failed', error);

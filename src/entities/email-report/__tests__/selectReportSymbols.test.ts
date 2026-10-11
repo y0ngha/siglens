@@ -146,6 +146,7 @@ describe('selectReportSymbols', () => {
             full: [],
             brief: [],
             excluded: [],
+            staleExcluded: [],
         });
     });
 
@@ -165,18 +166,19 @@ describe('selectReportSymbols', () => {
             expect(excluded).toEqual(['H1']);
         });
 
-        it('excluded는 목록에 있는 심볼을 보유 → 관심 순으로 먼저, 목록에서 지운 심볼을 뒤에 담는다', () => {
-            const { excluded } = selectReportSymbols({
+        it('excluded는 목록에 있는 심볼을 보유 → 관심 순으로, 목록에서 지운 심볼은 staleExcluded에 저장 순서대로 나눠 담는다', () => {
+            const { excluded, staleExcluded } = selectReportSymbols({
                 holdings: [holding('AAPL', '1', '100')],
                 watchlist: [
                     watched('TSLA', '2026-10-08T00:00:00Z'),
                     watched('NVDA', '2026-10-07T00:00:00Z'),
                 ],
-                excluded: ['NVDA', 'GONE', 'AAPL'],
+                excluded: ['NVDA', 'GONE', 'AAPL', 'OLD'],
             });
 
-            // GONE은 목록에서 지워졌지만 화면에서 "다시 넣기"로 기록을 지울 수 있어야 한다.
-            expect(excluded).toEqual(['AAPL', 'NVDA', 'GONE']);
+            expect(excluded).toEqual(['AAPL', 'NVDA']);
+            // GONE·OLD는 목록에서 지워졌지만 화면에서 기록을 지울 수 있어야 한다.
+            expect(staleExcluded).toEqual(['GONE', 'OLD']);
         });
 
         it('보유와 관심에 모두 있는 뺀 심볼은 한 번만 나오고 full에는 없다', () => {
@@ -193,6 +195,7 @@ describe('selectReportSymbols', () => {
                 full: ['TSLA'],
                 brief: [],
                 excluded: ['AAPL'],
+                staleExcluded: [],
             });
         });
 
@@ -203,7 +206,12 @@ describe('selectReportSymbols', () => {
                     watchlist: [],
                     excluded: ['AAPL'],
                 })
-            ).toEqual({ full: [], brief: [], excluded: ['AAPL'] });
+            ).toEqual({
+                full: [],
+                brief: [],
+                excluded: ['AAPL'],
+                staleExcluded: [],
+            });
         });
     });
 });
