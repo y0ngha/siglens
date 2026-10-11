@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     __resetFixedWindowLimiterForTests,
     createFixedWindowLimiter,
@@ -15,6 +15,16 @@ function limiter(limit = 3, maxTrackedKeys = 100) {
 }
 
 describe('createFixedWindowLimiter', () => {
+    // 리미터는 `admit`에 넘긴 `now`로 창을 판정하지만, 키를 담는 LRU는 자기 시계(`Date.now`)로
+    // 항목을 만료시킨다. 테스트는 가상의 `now`(0, 999…)를 넘기므로 실제 시계가 흐르면 둘이
+    // 어긋난다 — 창 끝 1ms 전에 쓴 항목은 TTL이 1ms라, 다음 호출까지 실제로 1ms만 지나도(CI 부하)
+    // 항목이 사라져 새 창이 열렸다. 실제 시계를 멈춰 판정을 `now` 인자에만 묶는다.
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(0);
+    });
+    afterEach(() => vi.useRealTimers());
+
     it('창 안에서 상한까지 받고 그다음부터 거절한다', () => {
         const l = limiter(3);
 

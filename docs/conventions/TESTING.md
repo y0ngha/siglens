@@ -360,6 +360,11 @@ Defensive guards, fallbacks, timeouts and degradations kept "because X" need a t
 
 Code using `Date.now()` or `new Date()` runs under a mocked clock (`vi.useFakeTimers` / `vi.setSystemTime`). Hardcoded expected TTLs or dates without a fixed clock make flaky tests.
 
+This includes a clock passed as an argument: if a dependency (an LRU, a cache) also reads the real clock, freeze it too so only the injected value decides. Do not sleep real time to let callers interleave; wait on an observable event.
+
+- ❌ Passing a synthetic `now` of `999` to a limiter whose backing cache expires entries on `Date.now()`; a 1 ms TTL elapses in real CI time and a new window opens.
+- ✅ Freeze the clock for the suite (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
+
 <a id="TE-9"></a>
 
 #### TE-9 — Wait for the passive-effect listener before dispatching
