@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.105.3](https://github.com/y0ngha/siglens/compare/v0.105.2...v0.105.3) (2026-10-11)
+
+### Bug Fixes
+
+* 장외 시세가 마감 직후 값으로 다음 개장까지 굳지 않게 하고, 늦게 반영된 액면분할을 하루 안에 바로잡는다 ([#1029](https://github.com/y0ngha/siglens/issues/1029)) ([ef8eeb5](https://github.com/y0ngha/siglens/commit/ef8eeb5840bf2de9c951dca7da78e24dbdb990cd))
+
 ## [0.105.2](https://github.com/y0ngha/siglens/compare/v0.105.1...v0.105.2) (2026-10-11)
 
 ### Bug Fixes
