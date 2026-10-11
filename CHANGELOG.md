@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.106.0](https://github.com/y0ngha/siglens/compare/v0.105.4...v0.106.0) (2026-10-11)
+
+### Features
+
+* 관심종목 네비게이션과 /watchlist 페이지 추가 ([#1030](https://github.com/y0ngha/siglens/issues/1030)) ([caed967](https://github.com/y0ngha/siglens/commit/caed96788015d75f44b62bd7b1d7b6f9a5be1cef))
+* 메일 리포트 종목 개별 제외 ([#1031](https://github.com/y0ngha/siglens/issues/1031)) ([2a692a2](https://github.com/y0ngha/siglens/commit/2a692a28e7e6170d5ca0301094d5516e085b640a))
+
 ## [0.105.4](https://github.com/y0ngha/siglens/compare/v0.105.3...v0.105.4) (2026-10-11)
 
 ## [0.105.3](https://github.com/y0ngha/siglens/compare/v0.105.2...v0.105.3) (2026-10-11)
