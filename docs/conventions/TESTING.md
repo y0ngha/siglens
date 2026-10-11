@@ -275,6 +275,7 @@ Import and exercise the real function; a local redefinition makes the test tauto
 
 - ❌ `const shouldShowAd = (x) => x.enabled; expect(shouldShowAd(mock)).toBe(true)`.
 - ✅ `import { shouldShowAd } from '@/shared/lib/ads'`.
+- ❌ A fixed-window test hard-codes `2021-06-25`, or a guard asserts `version === 6`; changing the constant or adding a version leaves the test silently checking the old value. ✅ Derive the date from the exported constant and the latest version from the data.
 
 <a id="TE-6"></a>
 
@@ -490,3 +491,4 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
 - ✅ Render the condition to SQL plus params and assert both.
+- ❌ After renaming a cache key, a negative assertion still checks the old key (`store.has('old:KEY') === false`), which passes on any implementation. ✅ Point it at the key the code now writes, and add a test that flips when a deliberately changed guard (for example, caching a partial result) is reverted.

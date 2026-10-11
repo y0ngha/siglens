@@ -470,19 +470,29 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
             limit: String(limit),
         });
 
-        return arr.flatMap(toFmpEarningsReportItem);
+        return arr.flatMap(raw => toFmpEarningsReportItem(raw, symbol));
     }
 }
 
+/**
+ * `symbol`은 **요청한 앱 심볼**을 쓴다 — 응답의 `raw.symbol`이 아니다.
+ *
+ * `fmpGet`은 요청 심볼을 FMP 표기로 바꿔 보내고(`BRK.B` → `BRK-B`, `toFmpSymbol`) FMP는
+ * 응답에 그 FMP 표기를 싣는다. 그 값을 그대로 저장하면 DB 행이 `BRK-B`로 들어가는데, 신선도
+ * 판정(`getLatestFetchedAt`)과 비교 조회는 앱 심볼 `BRK.B`로 읽는다. 그러면 행이 영원히 안
+ * 보여 매 요청 "오래됨"으로 FMP를 다시 부르고, 뉴스 탭 실적 비교도 늘 비었다. yahoo 어댑터는
+ * 원래 요청 심볼을 썼다.
+ */
 function toFmpEarningsReportItem(
-    raw: RawFmpEarningsReport
+    raw: RawFmpEarningsReport,
+    symbol: string
 ): FmpEarningsReportItem[] {
     const earningsDate = toEarningsDate(raw);
     if (earningsDate === null) return [];
 
     return [
         {
-            symbol: raw.symbol,
+            symbol,
             earningsDate,
             epsActual: toFiniteNumber(raw.epsActual ?? raw.eps),
             epsEstimated: toFiniteNumber(raw.epsEstimated),

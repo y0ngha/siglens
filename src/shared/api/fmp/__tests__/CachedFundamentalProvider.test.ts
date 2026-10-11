@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     CachedFundamentalProvider,
     PEER_LIMIT,
@@ -6,6 +6,10 @@ import {
 import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
+import {
+    SECONDS_PER_HOUR,
+    SECONDS_PER_QUARTER_DAY,
+} from '@/shared/config/time';
 
 // 인메모리 fake Redis. envelope 포맷({data})을 그대로 저장/반환.
 // NOTE: react는 mock하지 않는다 — vitest에서 React.cache는 pass-through이므로
@@ -673,21 +677,139 @@ describe('CachedFundamentalProvider — sector + pass-through', () => {
         );
     });
 
-    it('does NOT cache earnings (pass-through, fresh each call)', async () => {
+    it('passes getEarningsReports through — the DB loader owns that cache', async () => {
         const inner = makeInner({
             getEarningsReports: vi.fn(async () => []),
-            getEarningsReport: vi.fn(async () => null),
         });
         const provider = new CachedFundamentalProvider(inner);
 
         await provider.getEarningsReports('AAPL', 5);
         await provider.getEarningsReports('AAPL', 5);
-        await provider.getEarningsReport('AAPL');
-        await provider.getEarningsReport('AAPL');
 
         expect(inner.getEarningsReports).toHaveBeenCalledTimes(2);
-        expect(inner.getEarningsReport).toHaveBeenCalledTimes(2);
         expect(store.size).toBe(0);
+    });
+
+    describe('getEarningsReport (다음 실적 일정)', () => {
+        beforeEach(() => {
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-10-11T12:00:00Z'));
+        });
+        afterEach(() => vi.useRealTimers());
+
+        it('fundamental:earnings-next:<SYM>에 캐싱하고, 실적일이 멀면 6시간 둔다', async () => {
+            const inner = makeInner({
+                getEarningsReport: vi.fn(async () => ({
+                    symbol: 'AAPL',
+                    earningsDate: '2026-10-30',
+                })),
+            });
+            const provider = new CachedFundamentalProvider(inner);
+
+            await provider.getEarningsReport('aapl');
+            const second = await provider.getEarningsReport('AAPL');
+
+            expect(second).toEqual({
+                symbol: 'AAPL',
+                earningsDate: '2026-10-30',
+            });
+            expect(inner.getEarningsReport).toHaveBeenCalledTimes(1);
+            expect(fakeRedis.set).toHaveBeenCalledWith(
+                'fundamental:earnings-next:AAPL',
+                expect.anything(),
+                { ex: SECONDS_PER_QUARTER_DAY }
+            );
+        });
+
+        it('캐시된 실적일이 지나면 그 값을 쓰지 않고 다시 받는다', async () => {
+            const getEarningsReport = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    symbol: 'AAPL',
+                    earningsDate: '2026-10-12',
+                })
+                .mockResolvedValueOnce({
+                    symbol: 'AAPL',
+                    earningsDate: '2027-01-28',
+                });
+            const provider = new CachedFundamentalProvider(
+                makeInner({ getEarningsReport })
+            );
+
+            await provider.getEarningsReport('AAPL');
+            // 실적일(10-12)이 지난 뒤 — 캐시 TTL이 남아 있어도 옛 일정을 돌려주면 안 된다.
+            vi.setSystemTime(new Date('2026-10-13T12:00:00Z'));
+            const next = await provider.getEarningsReport('AAPL');
+
+            expect(next).toEqual({
+                symbol: 'AAPL',
+                earningsDate: '2027-01-28',
+            });
+            expect(getEarningsReport).toHaveBeenCalledTimes(2);
+        });
+
+        it('방금 받은 값이 지난 실적일이면 돌려주되 저장하지 않는다', async () => {
+            const getEarningsReport = vi.fn(async () => ({
+                symbol: 'AAPL',
+                earningsDate: '2026-07-30',
+            }));
+            const provider = new CachedFundamentalProvider(
+                makeInner({ getEarningsReport })
+            );
+
+            expect(await provider.getEarningsReport('AAPL')).toEqual({
+                symbol: 'AAPL',
+                earningsDate: '2026-07-30',
+            });
+            await provider.getEarningsReport('AAPL');
+
+            expect(store.has('fundamental:earnings-next:AAPL')).toBe(false);
+            expect(getEarningsReport).toHaveBeenCalledTimes(2);
+        });
+
+        it('실적일이 하루 안이면 1시간만 둔다', async () => {
+            const provider = new CachedFundamentalProvider(
+                makeInner({
+                    getEarningsReport: vi.fn(async () => ({
+                        symbol: 'AAPL',
+                        earningsDate: '2026-10-12',
+                    })),
+                })
+            );
+
+            await provider.getEarningsReport('AAPL');
+
+            expect(fakeRedis.set).toHaveBeenCalledWith(
+                'fundamental:earnings-next:AAPL',
+                expect.anything(),
+                { ex: SECONDS_PER_HOUR }
+            );
+        });
+
+        it('일정이 없으면(null) 1시간 캐싱하고, FMP 장애는 캐싱하지 않는다', async () => {
+            const failing = makeInner({
+                getEarningsReport: vi.fn(async () => {
+                    throw new Error('FMP earnings 429');
+                }),
+            });
+            await expect(
+                new CachedFundamentalProvider(failing).getEarningsReport('AAPL')
+            ).rejects.toThrow('FMP earnings 429');
+            expect(store.has('fundamental:earnings-next:AAPL')).toBe(false);
+
+            const empty = makeInner({
+                getEarningsReport: vi.fn(async () => null),
+            });
+            const provider = new CachedFundamentalProvider(empty);
+            await provider.getEarningsReport('SPY');
+            await provider.getEarningsReport('SPY');
+            expect(empty.getEarningsReport).toHaveBeenCalledTimes(1);
+            expect(fakeRedis.set).toHaveBeenCalledWith(
+                'fundamental:earnings-next:SPY',
+                expect.anything(),
+                { ex: SECONDS_PER_HOUR }
+            );
+        });
     });
 
     it('passes through historical sector performance without caching', async () => {
