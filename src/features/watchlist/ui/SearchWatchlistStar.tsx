@@ -11,9 +11,9 @@ interface SearchWatchlistStarProps {
     /** 담을 때 저장되는 표시명(검색 결과의 주 이름). */
     label: string;
     /**
-     * Tab 정지점으로 둘지. 오버레이(버튼 목록)는 true. 데스크톱 자동완성은 false — combobox
-     * 옵션 안에는 상호작용 요소를 둘 수 없어 포인터 전용 보조 컨트롤로 두고, 화살표·Enter
-     * 흐름은 그대로 둔다. 키보드 사용자는 종목 페이지 헤더 ☆로 담는다.
+     * Tab 정지점·접근성 트리에 둘지. 오버레이(버튼 목록)는 true. 데스크톱 자동완성은 false —
+     * listbox 안에는 옵션만 둘 수 있어 포인터 전용 보조 컨트롤로 숨기고(`aria-hidden`), 화살표·Enter
+     * 흐름은 그대로 둔다. 키보드·보조기술 사용자는 종목 페이지 헤더 ☆로 담는다.
      */
     focusable: boolean;
     className?: string;
@@ -51,6 +51,8 @@ export function SearchWatchlistStar({
         <button
             type="button"
             tabIndex={focusable ? undefined : -1}
+            // 포인터 전용(자동완성 listbox 안)일 때는 접근성 트리에서도 뺀다 — listbox 자식 규칙.
+            aria-hidden={focusable ? undefined : true}
             aria-pressed={pressed}
             aria-label={t('toggle.label', { v0: label })}
             disabled={!isHydrated}

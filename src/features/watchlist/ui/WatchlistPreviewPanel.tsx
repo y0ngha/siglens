@@ -6,7 +6,11 @@ import { WATCHLIST_PREVIEW_COUNT } from '@/shared/config/watchlist';
 import { cn } from '@/shared/lib/cn';
 import { PLACEHOLDER_ON_CARD } from '@/shared/lib/surfaceStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { useWatchlistPreview } from '../hooks/useWatchlistPreview';
+import {
+    useWatchlistPreview,
+    type WatchlistPreviewItem,
+} from '../hooks/useWatchlistPreview';
+import { WATCHLIST_SUBTLE_LINK } from '../lib/watchlistStyles';
 import {
     watchlistPageHref,
     watchlistPanelId,
@@ -28,6 +32,76 @@ interface WatchlistPreviewPanelProps {
     onNavigate: () => void;
 }
 
+interface PanelBodyProps {
+    isReady: boolean;
+    rows: WatchlistPreviewItem[];
+    tab: WatchlistPreviewTab;
+    quotesEnabled: boolean;
+    onNavigate: () => void;
+}
+
+/** 패널 본문의 세 상태: 확인 중(로딩) / 비어 있음 / 목록. */
+function PanelBody({
+    isReady,
+    rows,
+    tab,
+    quotesEnabled,
+    onNavigate,
+}: PanelBodyProps) {
+    const t = useTranslations('features.watchlist');
+    // 키는 정적으로 적는다 — i18n 추출기가 동적 조회(`t(map[tab])`)를 못 봐서 헤더 라우트
+    // 카탈로그에서 문구가 빠진다.
+    const isWatchlistTab = tab === 'watchlist';
+    if (!isReady) {
+        return (
+            <div
+                role="status"
+                aria-busy="true"
+                className="space-y-1 px-1.5 py-1"
+            >
+                <span className="sr-only">{t('section.loading')}</span>
+                {[0, 1, 2].map(i => (
+                    <div
+                        key={i}
+                        aria-hidden="true"
+                        className={cn(
+                            'h-12 animate-pulse rounded-lg',
+                            PLACEHOLDER_ON_CARD
+                        )}
+                    />
+                ))}
+            </div>
+        );
+    }
+    if (rows.length === 0) {
+        return (
+            <p className="px-3 py-8 text-center text-sm leading-relaxed text-secondary-400">
+                {isWatchlistTab
+                    ? t('preview.emptyWatchlist')
+                    : t('preview.emptyRecent')}
+            </p>
+        );
+    }
+    return (
+        <ul
+            aria-label={
+                isWatchlistTab
+                    ? t('preview.tabWatchlist')
+                    : t('preview.tabRecent')
+            }
+        >
+            {rows.map(item => (
+                <MiniQuoteRow
+                    key={item.symbol}
+                    item={item}
+                    quotesEnabled={quotesEnabled}
+                    onNavigate={onNavigate}
+                />
+            ))}
+        </ul>
+    );
+}
+
 /**
  * 헤더 ★가 여는 관심종목 미리보기. PC 팝오버와 모바일 시트가 같은 본문을 쓴다.
  * 헤더(탭·편집)와 바닥 링크는 고정이고 목록만 스크롤한다.
@@ -39,11 +113,10 @@ export function WatchlistPreviewPanel({
 }: WatchlistPreviewPanelProps) {
     const t = useTranslations('features.watchlist');
     const idBase = useId();
-    const { watchlist, recent, isReady, defaultTab } = useWatchlistPreview();
-    // 사용자가 탭을 고르기 전에는 내용에 맞는 기본 탭을 따른다(데이터가 늦게 와도 맞춰진다).
     const [chosenTab, setChosenTab] = useState<WatchlistPreviewTab | null>(
         null
     );
+    const { watchlist, recent, isReady, defaultTab } = useWatchlistPreview();
     const tab = chosenTab ?? defaultTab;
     const all = tab === 'watchlist' ? watchlist : recent;
     const rows =
@@ -69,7 +142,7 @@ export function WatchlistPreviewPanel({
                         href="/watchlist"
                         prefetch={false}
                         onClick={onNavigate}
-                        className="inline-flex min-h-10 items-center rounded px-2 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className={WATCHLIST_SUBTLE_LINK}
                     >
                         {t('preview.edit')}
                     </Link>
@@ -86,48 +159,13 @@ export function WatchlistPreviewPanel({
                         : 'max-h-[min(60vh,26rem)] overflow-y-auto'
                 )}
             >
-                {!isReady ? (
-                    <div
-                        role="status"
-                        aria-busy="true"
-                        className="space-y-1 px-1.5 py-1"
-                    >
-                        <span className="sr-only">{t('section.loading')}</span>
-                        {[0, 1, 2].map(i => (
-                            <div
-                                key={i}
-                                aria-hidden="true"
-                                className={cn(
-                                    'h-12 animate-pulse rounded-lg',
-                                    PLACEHOLDER_ON_CARD
-                                )}
-                            />
-                        ))}
-                    </div>
-                ) : rows.length === 0 ? (
-                    <p className="px-3 py-8 text-center text-sm leading-relaxed text-secondary-400">
-                        {tab === 'watchlist'
-                            ? t('preview.emptyWatchlist')
-                            : t('preview.emptyRecent')}
-                    </p>
-                ) : (
-                    <ul
-                        aria-label={
-                            tab === 'watchlist'
-                                ? t('preview.tabWatchlist')
-                                : t('preview.tabRecent')
-                        }
-                    >
-                        {rows.map(item => (
-                            <MiniQuoteRow
-                                key={item.symbol}
-                                item={item}
-                                quotesEnabled={quotesEnabled}
-                                onNavigate={onNavigate}
-                            />
-                        ))}
-                    </ul>
-                )}
+                <PanelBody
+                    isReady={isReady}
+                    rows={rows}
+                    tab={tab}
+                    quotesEnabled={quotesEnabled}
+                    onNavigate={onNavigate}
+                />
             </div>
             <div
                 className={cn(

@@ -3296,12 +3296,9 @@
     "app.watchlist.page.subtitle": "a991989c2a8c",
     "app.watchlist.page.title": "a447fc3a41fb",
     "app.watchlist.page.toPortfolio": "3c7ddc91c028",
-    "features.watchlist.home.add": "5908068e2133",
-    "features.watchlist.home.emptyBody": "b55ce25d6997",
     "features.watchlist.home.heading": "5b4039f07bd7",
     "features.watchlist.home.more": "a5dfcbfdfe6d",
     "features.watchlist.home.popular": "d037585fbc25",
-    "features.watchlist.home.search": "b9a99e85b11e",
     "features.watchlist.home.viewAll": "1f9029ebd444",
     "features.watchlist.page.sort": "7745cc5ae3ab",
     "features.watchlist.page.sortAdded": "c686f982a59e",
@@ -3327,5 +3324,8 @@
     "features.portfolio-management.PortfolioSignupCta.watchlistHint": "99c26aaa0a47",
     "features.portfolio-management.PortfolioSignupCta.watchlistLink": "97f46a6656be",
     "app.email-report.page.managePortfolio": "edf22527af4c",
-    "app.email-report.page.manageWatchlist": "43ba9dfbfaa4"
+    "app.email-report.page.manageWatchlist": "43ba9dfbfaa4",
+    "features.watchlist.common.add": "5908068e2133",
+    "features.watchlist.common.search": "b9a99e85b11e",
+    "features.watchlist.common.emptyBody": "b55ce25d6997"
 }

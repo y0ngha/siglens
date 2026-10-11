@@ -261,8 +261,10 @@ function ResultItem({
         </button>
     );
     if (!showWatchlistStar) return option;
-    // 옵션 안에는 상호작용 요소를 둘 수 없어 ★를 옵션의 형제로 둔다. 감싸는 div는 접근성
-    // 트리에서 빠지므로(`role="none"`) listbox의 자식은 여전히 옵션들이다.
+    // 옵션 안에는 상호작용 요소를 둘 수 없어 ★를 옵션의 형제로 둔다. ★는 포인터 전용 보조
+    // 컨트롤이라 접근성 트리에서 숨기고(`aria-hidden` + `tabIndex=-1`) — 그래야 listbox가 옵션만
+    // 소유한다(`role="none"` 래퍼만으로는 ★ 버튼이 listbox의 자식으로 남는다). 보조기술 사용자는
+    // 버튼 목록인 모바일 검색 오버레이의 ★나 종목 헤더 ☆로 담는다.
     return (
         <div role="none" className="flex items-center">
             {option}

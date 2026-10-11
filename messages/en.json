@@ -1020,12 +1020,9 @@
                 "list": "Watchlist"
             },
             "home": {
-                "add": "Add Stock",
-                "emptyBody": "Tap the star next to a stock to add it here and see its price immediately every time you visit.",
                 "heading": "My Watchlist",
                 "more": "View {v0} more",
                 "popular": "View Popular Stocks",
-                "search": "Search Stocks",
                 "viewAll": "View All"
             },
             "page": {
@@ -1048,6 +1045,11 @@
                 "label": "Watchlist",
                 "open": "Open Watchlist",
                 "openWithCount": "Open Watchlist, {v0} items"
+            },
+            "common": {
+                "add": "Add Stock",
+                "emptyBody": "Tap the star next to a stock to add it here and see its price immediately every time you visit.",
+                "search": "Search Stocks"
             }
         }
     },

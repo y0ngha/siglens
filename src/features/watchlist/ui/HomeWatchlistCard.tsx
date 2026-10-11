@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import { useIsBelowLg } from '../hooks/useIsBelowLg';
 import { useOpenTickerSearch } from '../hooks/useOpenTickerSearch';
 import {
     HOME_POPULAR_ANCHOR_ID,
@@ -24,6 +25,7 @@ import {
     watchlistTabId,
     type WatchlistPreviewTab,
 } from '../lib/watchlistTabs';
+import { WATCHLIST_SUBTLE_LINK } from '../lib/watchlistStyles';
 import { MiniQuote, MiniQuoteRow, MiniTrend } from './MiniQuoteRow';
 import { WatchlistTabs } from './WatchlistTabs';
 
@@ -33,9 +35,6 @@ import { WatchlistTabs } from './WatchlistTabs';
  * (예전 온보딩 블록이 3개 이상에서 접히던 것과 같은 성격의 변화다).
  */
 const EMPTY_HEIGHT = 'min-h-[13.5rem] sm:min-h-[9rem]';
-
-const LINK_SUBTLE =
-    'inline-flex min-h-10 items-center rounded px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 interface DesktopCardProps {
     item: WatchlistPreviewItem;
@@ -91,7 +90,7 @@ function EmptyCard() {
                     {t('home.heading')}
                 </h2>
                 <p className="mt-1 text-sm leading-relaxed text-secondary-400">
-                    {t('home.emptyBody')}
+                    {t('common.emptyBody')}
                 </p>
             </div>
             <div className="flex shrink-0 gap-2">
@@ -103,7 +102,7 @@ function EmptyCard() {
                         'h-11 flex-1 px-4 text-sm sm:flex-none'
                     )}
                 >
-                    {t('home.search')}
+                    {t('common.search')}
                 </button>
                 <a
                     href={`#${HOME_POPULAR_ANCHOR_ID}`}
@@ -130,10 +129,11 @@ function EmptyCard() {
 export function HomeWatchlistCard() {
     const t = useTranslations('features.watchlist');
     const idBase = useId();
-    const { watchlist, recent, isReady, defaultTab } = useWatchlistPreview();
     const [chosenTab, setChosenTab] = useState<WatchlistPreviewTab | null>(
         null
     );
+    const { watchlist, recent, isReady, defaultTab } = useWatchlistPreview();
+    const isBelowLg = useIsBelowLg();
 
     if (!isReady) {
         return (
@@ -177,10 +177,7 @@ export function HomeWatchlistCard() {
                         <Link
                             href="/watchlist"
                             prefetch={false}
-                            className={cn(
-                                LINK_SUBTLE,
-                                'text-secondary-400 hover:text-secondary-200'
-                            )}
+                            className={WATCHLIST_SUBTLE_LINK}
                         >
                             {t('preview.edit')}
                         </Link>
@@ -188,10 +185,7 @@ export function HomeWatchlistCard() {
                     <Link
                         href={href}
                         prefetch={false}
-                        className={cn(
-                            LINK_SUBTLE,
-                            'font-semibold text-primary-400 hover:text-primary-300'
-                        )}
+                        className="inline-flex min-h-10 items-center rounded px-2 text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         {t('home.viewAll')}
                     </Link>
@@ -209,28 +203,36 @@ export function HomeWatchlistCard() {
                     </p>
                 ) : (
                     <>
-                        <ul className="hidden grid-cols-6 gap-3 lg:grid">
-                            {desktopItems.map(item => (
-                                <DesktopCard key={item.symbol} item={item} />
-                            ))}
-                            <li>
-                                <AddCard />
-                            </li>
-                        </ul>
-                        <ul className="-mx-1.5 lg:hidden">
-                            {mobileItems.map(item => (
-                                <MiniQuoteRow
-                                    key={item.symbol}
-                                    item={item}
-                                    quotesEnabled
-                                />
-                            ))}
-                        </ul>
-                        {hiddenOnMobile > 0 && (
+                        {/* 뷰포트에 맞는 한쪽만 그린다 — 숨긴 쪽도 시세를 요청하지 않게. */}
+                        {isBelowLg === false && (
+                            <ul className="grid grid-cols-6 gap-3">
+                                {desktopItems.map(item => (
+                                    <DesktopCard
+                                        key={item.symbol}
+                                        item={item}
+                                    />
+                                ))}
+                                <li>
+                                    <AddCard />
+                                </li>
+                            </ul>
+                        )}
+                        {isBelowLg === true && (
+                            <ul className="-mx-1.5">
+                                {mobileItems.map(item => (
+                                    <MiniQuoteRow
+                                        key={item.symbol}
+                                        item={item}
+                                        quotesEnabled
+                                    />
+                                ))}
+                            </ul>
+                        )}
+                        {isBelowLg === true && hiddenOnMobile > 0 && (
                             <Link
                                 href={href}
                                 prefetch={false}
-                                className="mt-1 flex min-h-11 items-center justify-center rounded-lg text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none lg:hidden"
+                                className="mt-1 flex min-h-11 items-center justify-center rounded-lg text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 {t('home.more', { v0: hiddenOnMobile })}
                             </Link>
@@ -254,7 +256,7 @@ function AddCard() {
             <span aria-hidden="true" className="text-xl leading-none">
                 +
             </span>
-            {t('home.add')}
+            {t('common.add')}
         </button>
     );
 }

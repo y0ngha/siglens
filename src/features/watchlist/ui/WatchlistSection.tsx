@@ -218,11 +218,13 @@ export function WatchlistSection({ sort = 'added' }: WatchlistSectionProps) {
     const assetLabel = useAssetLabel();
     const locale = useResolvedLocale();
     const openSearch = useOpenTickerSearch();
+    // 등락률 정렬일 때만 구독한다 — 평소에도 같은 키를 50개 구독하면 행 시세가 도착할 때마다
+    // 목록 전체가 다시 그려진다.
     const changes = useQueries({
-        queries: items.map(item => ({
-            ...watchlistQuoteQuery(item.symbol),
-            enabled: sort === 'change',
-        })),
+        queries:
+            sort === 'change'
+                ? items.map(item => watchlistQuoteQuery(item.symbol))
+                : [],
         combine: changesOf,
     });
     // `useQueries` 결과는 `queries`와 같은 순서다 — 심볼은 `items`에서 바로 짝짓는다.
@@ -276,13 +278,13 @@ export function WatchlistSection({ sort = 'added' }: WatchlistSectionProps) {
                 <p className="font-medium text-secondary-200">
                     {t('section.empty')}
                 </p>
-                <p className="mt-1">{t('home.emptyBody')}</p>
+                <p className="mt-1">{t('common.emptyBody')}</p>
                 <button
                     type="button"
                     onClick={openSearch}
                     className="mt-3 inline-flex min-h-11 items-center rounded px-2 font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {t('home.search')}
+                    {t('common.search')}
                 </button>
             </div>
         );

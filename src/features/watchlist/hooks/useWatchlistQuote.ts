@@ -16,7 +16,11 @@ export interface UseWatchlistQuoteResult {
  * 관심종목 시세 쿼리 옵션. 행 훅(`useWatchlistQuote`)과 목록 정렬(`useQueries`)이 같은 키를 써야
  * 정렬 때 불러온 시세를 행이 그대로 재사용한다.
  */
-export function watchlistQuoteQuery(symbol: string) {
+export function watchlistQuoteQuery(symbol: string): {
+    queryKey: ReturnType<typeof QUERY_KEYS.bars>;
+    queryFn: () => ReturnType<typeof getBarsAction>;
+    staleTime: number;
+} {
     return {
         queryKey: QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME),
         queryFn: () => getBarsAction(symbol, DEFAULT_TIMEFRAME),
@@ -27,8 +31,9 @@ export function watchlistQuoteQuery(symbol: string) {
 /**
  * 관심종목 행의 현재가·등락률. `PositionHoldingCard`와 같은 봉 쿼리 키를 써 종목 페이지를 먼저
  * 봤다면 캐시를 재사용하고(`fmpSymbol`이 없는 종목에 한해 — 관심종목 행은 `fmpSymbol`을 모르므로
- * KR·일부 지수는 키가 달라 캐시를 공유하지 못하고 서버가 다시 응답한다), `enabled`(뷰포트 진입)일 때만
- * 요청한다 — N-symbol 팬아웃 금지 원칙.
+ * KR·일부 지수는 키가 달라 캐시를 공유하지 못하고 서버가 다시 응답한다), `enabled`일 때만 요청한다 —
+ * N-symbol 팬아웃 금지 원칙. 켜는 쪽이 정한다: 목록 행은 뷰포트 진입, 헤더 미리보기는 열렸을 때,
+ * 홈 카드는 보이는 목록의 몇 개, `/watchlist`의 등락률 정렬은 사용자가 그 정렬을 골랐을 때.
  */
 export function useWatchlistQuote(
     symbol: string,

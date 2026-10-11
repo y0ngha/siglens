@@ -40,10 +40,10 @@ export function WatchlistPageContent() {
     const t = useTranslations('features.watchlist');
     const idBase = useId();
     const sortId = useId();
+    const [sort, setSort] = useState<WatchlistSort>('added');
     const urlTab = tabFromParam(useUrlSearchParam(WATCHLIST_TAB_PARAM));
     const [pickedTab, pickTab] = usePickUntilPopstate<WatchlistPreviewTab>();
     const tab = pickedTab ?? urlTab;
-    const [sort, setSort] = useState<WatchlistSort>('added');
     const { items, isHydrated } = useWatchlist();
     const openSearch = useOpenTickerSearch();
 
@@ -98,7 +98,7 @@ export function WatchlistPageContent() {
                         onClick={openSearch}
                         className={cn(BUTTON_PRIMARY, 'h-10 px-4 text-sm')}
                     >
-                        {t('home.add')}
+                        {t('common.add')}
                     </button>
                 </div>
             </div>

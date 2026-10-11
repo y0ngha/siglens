@@ -59,7 +59,7 @@ describe('SearchWatchlistStar', () => {
         expect(toast.showToast).not.toHaveBeenCalled();
     });
 
-    it('자동완성용(focusable=false)은 Tab 정지점이 아니다', () => {
+    it('자동완성용(focusable=false)은 Tab 정지점도 접근성 트리 항목도 아니다(listbox 자식 규칙)', () => {
         setWatchlist('added');
         render(
             <SearchWatchlistStar
@@ -68,6 +68,9 @@ describe('SearchWatchlistStar', () => {
                 focusable={false}
             />
         );
-        expect(screen.getByRole('button')).toHaveAttribute('tabindex', '-1');
+        expect(screen.queryByRole('button')).toBeNull();
+        const star = screen.getByRole('button', { hidden: true });
+        expect(star).toHaveAttribute('tabindex', '-1');
+        expect(star).toHaveAttribute('aria-hidden', 'true');
     });
 });

@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import { PortfolioManager } from './PortfolioManager';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { PAGE_HEADER_LINK } from '@/shared/lib/linkStyles';
+import { PAGE_HEADER_LINK } from '../_personal/pageHeaderLink';
 import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';

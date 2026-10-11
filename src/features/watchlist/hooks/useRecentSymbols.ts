@@ -55,7 +55,11 @@ function subscribe(callback: () => void): () => void {
     };
 }
 
-/** 기기 로컬의 최근 본 종목. 회원·비회원 구분 없이 같은 저장소를 쓴다. */
+/**
+ * 기기 로컬의 최근 본 종목. 회원·비회원 구분 없이 같은 저장소를 쓴다. 로그아웃해도 지우지 않는다 —
+ * 계정 데이터(관심종목)가 아니라 "최근 검색"과 같은 이 기기의 탐색 이력이고, 서버로 보내지 않는다.
+ * 개인정보처리방침(v9) 쿠키·로컬 스토리지 항목에 같은 내용으로 고지한다.
+ */
 export function useRecentSymbols(): UseRecentSymbolsResult {
     const entries = useSyncExternalStore(
         subscribe,

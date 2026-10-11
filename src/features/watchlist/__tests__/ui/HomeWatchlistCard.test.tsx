@@ -13,6 +13,7 @@ import { HomeWatchlistCard } from '@/features/watchlist/ui/HomeWatchlistCard';
 import {
     HOME_POPULAR_ANCHOR_ID,
     HOME_WATCHLIST_DESKTOP_COUNT,
+    HOME_WATCHLIST_MOBILE_COUNT,
 } from '@/shared/config/watchlist';
 import { LOCAL_STORAGE_RECENT_SYMBOLS_KEY } from '@/shared/lib/storageKeys';
 
@@ -96,13 +97,41 @@ describe('HomeWatchlistCard', () => {
             'aria-selected',
             'true'
         );
-        const [desktop] = screen.getAllByRole('list');
-        // 카드 N개 + "종목 담기" 카드 1개
-        expect(within(desktop!).getAllByRole('listitem')).toHaveLength(
+        // PC(기본 matchMedia 폴리필은 lg 미만이 아니다)는 카드 목록만 그린다: 카드 N개 + "종목 담기" 1개.
+        const lists = screen.getAllByRole('list');
+        expect(lists).toHaveLength(1);
+        expect(within(lists[0]!).getAllByRole('listitem')).toHaveLength(
             HOME_WATCHLIST_DESKTOP_COUNT + 1
         );
-        expect(
-            screen.getByRole('link', { name: /개 더 보기/ })
-        ).toHaveAttribute('href', '/watchlist');
+        expect(screen.queryByRole('link', { name: /개 더 보기/ })).toBeNull();
+        expect(quote.useWatchlistQuote).not.toHaveBeenCalledWith(
+            `S${HOME_WATCHLIST_DESKTOP_COUNT}`,
+            true
+        );
+    });
+
+    it('lg 미만이면 행 목록만 그리고 나머지는 "더 보기"로 보낸다', () => {
+        const original = window.matchMedia;
+        window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+            matches: true,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }));
+        try {
+            const many = Array.from({ length: 5 }, (_, i) => `S${i}`);
+            setWatchlist(many);
+            render(<HomeWatchlistCard />);
+            const lists = screen.getAllByRole('list');
+            expect(lists).toHaveLength(1);
+            expect(within(lists[0]!).getAllByRole('listitem')).toHaveLength(
+                HOME_WATCHLIST_MOBILE_COUNT
+            );
+            expect(
+                screen.getByRole('link', { name: '2개 더 보기' })
+            ).toHaveAttribute('href', '/watchlist');
+        } finally {
+            window.matchMedia = original;
+        }
     });
 });

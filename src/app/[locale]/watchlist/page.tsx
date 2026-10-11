@@ -5,7 +5,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { PAGE_HEADER_LINK } from '@/shared/lib/linkStyles';
+import { PAGE_HEADER_LINK } from '../_personal/pageHeaderLink';
 
 /**
  * `generateMetadata`인 이유는 `/portfolio`와 같다 — 정적 객체는 로케일을 못 봐서 `/en/watchlist`의

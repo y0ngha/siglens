@@ -17,11 +17,14 @@ export function tabFromParam(value: string | null): WatchlistPreviewTab {
 }
 
 /** 탭 버튼 id. 한 화면에 탭이 둘 이상 뜰 수 있어 호출부의 `useId`를 접두사로 받는다. */
-export function watchlistTabId(idBase: string, tab: WatchlistPreviewTab) {
+export function watchlistTabId(
+    idBase: string,
+    tab: WatchlistPreviewTab
+): string {
     return `${idBase}-tab-${tab}`;
 }
 
 /** 두 탭이 번갈아 가리키는 패널 하나의 id. */
-export function watchlistPanelId(idBase: string) {
+export function watchlistPanelId(idBase: string): string {
     return `${idBase}-panel`;
 }

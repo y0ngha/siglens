@@ -4,6 +4,8 @@ export const WATCHLIST_SORTS = ['added', 'change', 'name'] as const;
 export type WatchlistSort = (typeof WATCHLIST_SORTS)[number];
 
 export function isWatchlistSort(value: string): value is WatchlistSort {
+    // 리터럴 튜플을 `readonly string[]`로 넓히는 것뿐이다(좁히는 단언이 아니다) — `includes`가
+    // 임의의 문자열을 받게 하려는 것이고, 판정 결과가 곧 타입 가드다.
     return (WATCHLIST_SORTS as readonly string[]).includes(value);
 }
 

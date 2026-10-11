@@ -1,14 +1,14 @@
+// 관심종목 ★는 React Query(`useWatchlist`)를 쓴다 — 이 테스트의 관심사가 아니라 비운다.
+vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
+    WatchlistPillToggle: () => null,
+}));
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import type { GateMode } from '@/shared/lib/types';
-
-// 관심종목 ★는 React Query(`useWatchlist`)를 쓴다 — 이 테스트의 관심사가 아니라 비운다.
-vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
-    WatchlistPillToggle: () => null,
-}));
 
 const mockPush = vi.fn();
 
