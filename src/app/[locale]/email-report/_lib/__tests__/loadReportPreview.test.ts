@@ -1,5 +1,6 @@
 const mockFindHoldings = vi.fn();
 const mockFindWatchlist = vi.fn();
+const mockFindExcluded = vi.fn();
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/entities/portfolio/api', () => ({
@@ -12,6 +13,13 @@ vi.mock('@/entities/watchlist/api', () => ({
         return { findByUser: mockFindWatchlist };
     }),
 }));
+vi.mock('@/entities/email-report/api', () => ({
+    DrizzleEmailReportExclusionRepository: vi
+        .fn()
+        .mockImplementation(function () {
+            return { findExcludedSymbols: mockFindExcluded };
+        }),
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
@@ -23,6 +31,7 @@ describe('loadReportPreview', () => {
         vi.clearAllMocks();
         mockFindHoldings.mockResolvedValue([]);
         mockFindWatchlist.mockResolvedValue([]);
+        mockFindExcluded.mockResolvedValue([]);
     });
 
     it('보유·관심종목을 읽어 상세 그룹에 이름 칩을 담는다', async () => {
@@ -74,6 +83,38 @@ describe('loadReportPreview', () => {
         const preview = await loadReportPreview('u-1');
 
         expect(preview?.full).toEqual([{ symbol: 'AAPL', name: 'Apple' }]);
+    });
+
+    it('뺀 종목은 상세·요약에서 빠지고 excluded 칩으로 돌려준다', async () => {
+        mockFindHoldings.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                companyName: 'Apple',
+                quantity: '1',
+                averagePrice: '100',
+            },
+        ]);
+        mockFindWatchlist.mockResolvedValue([
+            {
+                symbol: 'TSLA',
+                companyName: 'Tesla',
+                createdAt: new Date('2026-10-08T00:00:00Z'),
+            },
+        ]);
+        mockFindExcluded.mockResolvedValue(['AAPL', 'GONE']);
+
+        const preview = await loadReportPreview('u-1');
+
+        expect(mockFindExcluded).toHaveBeenCalledWith('u-1');
+        expect(preview).toEqual({
+            full: [{ symbol: 'TSLA', name: 'Tesla' }],
+            brief: [],
+            // 목록에서 지운 GONE도 칩으로 돌려준다(이름은 모른다) — 화면에서 다시 넣어 기록을 지울 수 있게.
+            excluded: [
+                { symbol: 'AAPL', name: 'Apple' },
+                { symbol: 'GONE', name: null },
+            ],
+        });
     });
 
     it('종목 조회가 실패하면 로그를 남기고 null로 degrade한다', async () => {

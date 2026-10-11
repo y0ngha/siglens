@@ -2,6 +2,7 @@ import 'server-only';
 import { getTranslations } from 'next-intl/server';
 import {
     DrizzleEmailReportDeliveryRepository,
+    DrizzleEmailReportExclusionRepository,
     DrizzleEmailReportSubscriptionRepository,
 } from '@/entities/email-report/api';
 import type { ReportEmailTranslator } from '@/entities/email-report/templates/reportEmail';
@@ -26,6 +27,7 @@ export function createEmailReportDeps(
     const { db } = getDatabaseClient();
     const portfolio = new DrizzlePortfolioRepository(db);
     const watchlist = new DrizzleWatchlistRepository(db);
+    const exclusions = new DrizzleEmailReportExclusionRepository(db);
     const sources = createSymbolReportSources();
     const briefSources = createSymbolBriefSources();
     return {
@@ -33,6 +35,7 @@ export function createEmailReportDeps(
         deliveries: new DrizzleEmailReportDeliveryRepository(db),
         findHoldings: userId => portfolio.findByUser(userId),
         findWatchlist: userId => watchlist.findByUser(userId),
+        findExcludedSymbols: userId => exclusions.findExcludedSymbols(userId),
         loadReport: (symbol, locale) =>
             loadSymbolReport(symbol, locale, now, sources),
         loadBrief: symbol => loadSymbolBrief(symbol, briefSources),

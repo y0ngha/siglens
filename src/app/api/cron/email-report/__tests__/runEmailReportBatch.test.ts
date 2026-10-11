@@ -76,6 +76,7 @@ function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
             { symbol: 'MSFT', quantity: '1', averagePrice: '300' },
         ]),
         findWatchlist: vi.fn().mockResolvedValue([]),
+        findExcludedSymbols: vi.fn().mockResolvedValue([]),
         loadReport: vi.fn(async (symbol: string) => report(symbol)),
         loadBrief: vi.fn(async (symbol: string) => brief(symbol)),
         getTranslator: vi.fn().mockResolvedValue((key: string) => key),
@@ -168,6 +169,7 @@ describe('runEmailReportBatch', () => {
         expect(sent).toHaveLength(0);
         expect(deps.findHoldings).not.toHaveBeenCalled();
         expect(deps.findWatchlist).not.toHaveBeenCalled();
+        expect(deps.findExcludedSymbols).not.toHaveBeenCalled();
         expect(counts.alreadyClaimed).toBe(1);
     });
 
@@ -175,6 +177,42 @@ describe('runEmailReportBatch', () => {
         const { deps, sent } = makeDeps({
             findHoldings: vi.fn().mockResolvedValue([]),
             findWatchlist: vi.fn().mockResolvedValue([]),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(0);
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'skipped',
+            [],
+            null
+        );
+        expect(counts.skipped).toBe(1);
+    });
+
+    it('회원이 리포트에서 뺀 종목은 메일과 발송 기록에서 빠진다', async () => {
+        const { deps, sent } = makeDeps({
+            findExcludedSymbols: vi.fn().mockResolvedValue(['MSFT']),
+        });
+
+        await runEmailReportBatch(deps, NOW);
+
+        expect(deps.findExcludedSymbols).toHaveBeenCalledWith('u-1');
+        expect(sent[0]!.html).toContain('AAPL');
+        expect(sent[0]!.html).not.toContain('MSFT');
+        expect(deps.loadReport).not.toHaveBeenCalledWith('MSFT', 'ko');
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'sent',
+            ['AAPL'],
+            null
+        );
+    });
+
+    it('담긴 종목을 전부 빼면 보내지 않고 skipped로 기록한다', async () => {
+        const { deps, sent } = makeDeps({
+            findExcludedSymbols: vi.fn().mockResolvedValue(['AAPL', 'MSFT']),
         });
 
         const counts = await runEmailReportBatch(deps, NOW);

@@ -344,6 +344,26 @@ export interface EmailReportSubscriptionRepository {
     disable(userId: string): Promise<boolean>;
 }
 
+/** Outcome of excluding a symbol from a member's email report. */
+export type ExcludeReportSymbolOutcome = 'excluded' | 'limit_reached';
+
+/** Persistence operations for the symbols a member left out of their email report. */
+export interface EmailReportExclusionRepository {
+    /** Excluded symbols (uppercase) of the user, in no particular order. */
+    findExcludedSymbols(userId: string): Promise<string[]>;
+    /**
+     * Idempotent insert under a per-member lock so concurrent calls cannot exceed `limit`.
+     * An already-excluded symbol succeeds regardless of the limit.
+     */
+    excludeSymbol(
+        userId: string,
+        symbol: string,
+        limit: number
+    ): Promise<ExcludeReportSymbolOutcome>;
+    /** Puts the symbol back; `false` when it was not excluded. */
+    includeSymbol(userId: string, symbol: string): Promise<boolean>;
+}
+
 /** Final state of a claimed delivery. */
 export type EmailReportDeliveryOutcome = 'sent' | 'failed' | 'skipped';
 

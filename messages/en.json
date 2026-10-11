@@ -494,7 +494,11 @@
                 "invalidUnsubscribeLink": "This unsubscribe link isn't valid. Please open the link in the email again.",
                 "saveFailed": "Saving failed. Please try again in a moment.",
                 "unauthenticated": "You need to sign in.",
-                "unsubscribeFailed": "Unsubscribing failed. Please try again in a moment."
+                "unsubscribeFailed": "Unsubscribing failed. Please try again in a moment.",
+                "excludeFailed": "Failed to exclude from the report. Please try again shortly.",
+                "excludeLimitReached": "You can exclude a maximum of {v0} items from the report.",
+                "includeFailed": "Failed to re-include in the report. Please try again shortly.",
+                "invalidSymbol": "Invalid ticker symbol."
             },
             "email": {
                 "briefColPrice": "Close · change",
@@ -801,7 +805,16 @@
                 "bb4464": "Full",
                 "3ea27a": "Summary",
                 "d406d7": "You have no holdings or watchlist symbols yet. Add some and they'll be in your next report.",
-                "2f3e5b": "We couldn't load your report symbols right now."
+                "2f3e5b": "We couldn't load your report symbols right now.",
+                "allExcluded": "All symbols have been excluded from the report. Re-including them will add them to future reports.",
+                "excludedGroup": "Excluded Symbols",
+                "removeHint": "Click the ✕ next to a symbol to exclude it from the report; the next symbol will take its place. Your Holdings and Watchlist remain unchanged."
+            },
+            "ReportSymbolChip": {
+                "exclude": "Exclude {v0} from report",
+                "failed": "Failed to process. Please try again shortly.",
+                "include": "Re-include",
+                "includeLabel": "Re-include {v0} in report"
             }
         },
         "email-report-unsubscribe": {

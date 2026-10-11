@@ -145,6 +145,65 @@ describe('selectReportSymbols', () => {
         expect(selectReportSymbols({ holdings: [], watchlist: [] })).toEqual({
             full: [],
             brief: [],
+            excluded: [],
+        });
+    });
+
+    describe('뺀 종목', () => {
+        it('뺀 심볼은 full·brief에서 사라지고 자르기 전에 걸러져 뒤의 종목이 빈자리를 채운다', () => {
+            const holdings = Array.from({ length: 7 }, (_, i) =>
+                holding(`H${i}`, '1', String(1000 - i))
+            );
+            const { full, brief, excluded } = selectReportSymbols({
+                holdings,
+                watchlist: [watched('WATCH', '2026-10-08T00:00:00Z')],
+                excluded: ['H1'],
+            });
+
+            expect(full).toEqual(['H0', 'H2', 'H3', 'H4', 'H5']);
+            expect(brief).toEqual(['H6', 'WATCH']);
+            expect(excluded).toEqual(['H1']);
+        });
+
+        it('excluded는 목록에 있는 심볼을 보유 → 관심 순으로 먼저, 목록에서 지운 심볼을 뒤에 담는다', () => {
+            const { excluded } = selectReportSymbols({
+                holdings: [holding('AAPL', '1', '100')],
+                watchlist: [
+                    watched('TSLA', '2026-10-08T00:00:00Z'),
+                    watched('NVDA', '2026-10-07T00:00:00Z'),
+                ],
+                excluded: ['NVDA', 'GONE', 'AAPL'],
+            });
+
+            // GONE은 목록에서 지워졌지만 화면에서 "다시 넣기"로 기록을 지울 수 있어야 한다.
+            expect(excluded).toEqual(['AAPL', 'NVDA', 'GONE']);
+        });
+
+        it('보유와 관심에 모두 있는 뺀 심볼은 한 번만 나오고 full에는 없다', () => {
+            const result = selectReportSymbols({
+                holdings: [holding('AAPL', '1', '100')],
+                watchlist: [
+                    watched('AAPL', '2026-10-08T00:00:00Z'),
+                    watched('TSLA', '2026-10-07T00:00:00Z'),
+                ],
+                excluded: ['AAPL'],
+            });
+
+            expect(result).toEqual({
+                full: ['TSLA'],
+                brief: [],
+                excluded: ['AAPL'],
+            });
+        });
+
+        it('전부 빼면 full·brief가 비고 excluded만 남는다', () => {
+            expect(
+                selectReportSymbols({
+                    holdings: [holding('AAPL', '1', '100')],
+                    watchlist: [],
+                    excluded: ['AAPL'],
+                })
+            ).toEqual({ full: [], brief: [], excluded: ['AAPL'] });
         });
     });
 });

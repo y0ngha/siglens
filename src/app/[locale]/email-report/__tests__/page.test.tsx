@@ -11,6 +11,15 @@ vi.mock(
         ),
     })
 );
+vi.mock('@/features/email-report-settings/ui/ReportSymbolChip', () => ({
+    ReportSymbolChip: ({
+        symbol,
+        name,
+    }: {
+        symbol: string;
+        name: string | null;
+    }) => <li>{name ?? symbol}</li>,
+}));
 vi.mock('@/app/[locale]/email-report/_lib/loadReportPreview', () => ({
     loadReportPreview: vi.fn(),
 }));
@@ -98,6 +107,7 @@ describe('EmailReportPage', () => {
                 { symbol: 'TSLA', name: 'Tesla' },
             ],
             brief: [],
+            excluded: [],
         });
 
         render(await ReportPreviewLoader());
