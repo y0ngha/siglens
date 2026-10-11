@@ -11,6 +11,17 @@ vi.mock(
         ),
     })
 );
+vi.mock('@/features/email-report-settings/ui/ReportSymbolChip', () => ({
+    ReportSymbolChip: ({
+        symbol,
+        name,
+        mode,
+    }: {
+        symbol: string;
+        name: string | null;
+        mode: string;
+    }) => <li data-mode={mode}>{name ?? symbol}</li>,
+}));
 vi.mock('@/app/[locale]/email-report/_lib/loadReportPreview', () => ({
     loadReportPreview: vi.fn(),
 }));
@@ -98,6 +109,8 @@ describe('EmailReportPage', () => {
                 { symbol: 'TSLA', name: 'Tesla' },
             ],
             brief: [],
+            excluded: [{ symbol: 'NVDA', name: 'NVIDIA' }],
+            staleExcluded: [{ symbol: 'GONE', name: null }],
         });
 
         render(await ReportPreviewLoader());
@@ -106,6 +119,15 @@ describe('EmailReportPage', () => {
         const group = screen.getByRole('group', { name: '상세' });
         expect(group).toHaveTextContent('Apple');
         expect(group).toHaveTextContent('Tesla');
+        expect(screen.getByText('Apple')).toHaveAttribute(
+            'data-mode',
+            'exclude'
+        );
+        expect(screen.getByText('NVIDIA')).toHaveAttribute(
+            'data-mode',
+            'include'
+        );
+        expect(screen.getByText('GONE')).toHaveAttribute('data-mode', 'clear');
     });
 
     it('종목 조회가 실패하면(null) 미리보기만 안내로 대체한다', async () => {

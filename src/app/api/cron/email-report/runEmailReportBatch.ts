@@ -54,6 +54,8 @@ export interface EmailReportBatchDeps {
     deliveries: EmailReportDeliveryRepository;
     findHoldings: (userId: string) => Promise<ReportHolding[]>;
     findWatchlist: (userId: string) => Promise<ReportWatchlistItem[]>;
+    /** 회원이 리포트에서 뺀 심볼. */
+    findExcludedSymbols: (userId: string) => Promise<string[]>;
     loadReport: (symbol: string, locale: Locale) => Promise<SymbolReport>;
     /** 로케일 무관 경량 경로 — `(symbol)`마다 배치 안에서 한 번. */
     loadBrief: (symbol: string) => Promise<SymbolBrief>;
@@ -220,11 +222,16 @@ export async function runEmailReportBatch(
         }
         let symbols: string[] = [];
         try {
-            const [holdings, watchlist] = await Promise.all([
+            const [holdings, watchlist, excluded] = await Promise.all([
                 deps.findHoldings(recipient.userId),
                 deps.findWatchlist(recipient.userId),
+                deps.findExcludedSymbols(recipient.userId),
             ]);
-            const selection = selectReportSymbols({ holdings, watchlist });
+            const selection = selectReportSymbols({
+                holdings,
+                watchlist,
+                excluded,
+            });
             symbols = [...selection.full, ...selection.brief];
             if (symbols.length === 0) {
                 await deps.deliveries.finish(claimId, 'skipped', [], null);

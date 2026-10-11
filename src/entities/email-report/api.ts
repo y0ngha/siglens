@@ -2,11 +2,14 @@ import { and, eq, inArray, lt, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     emailReportDeliveries,
+    emailReportExcludedSymbols,
     emailReportSubscriptions,
     users,
 } from '@/shared/db/schema';
 import type {
     EmailReportDeliveryOutcome,
+    EmailReportExclusionRepository,
+    ExcludeReportSymbolOutcome,
     EmailReportDeliveryRepository,
     EmailReportRecipient,
     EmailReportSubscriptionRecord,
@@ -201,5 +204,85 @@ export class DrizzleEmailReportDeliveryRepository implements EmailReportDelivery
             DB_TRANSIENT_RETRY
         );
         return deleted.length;
+    }
+}
+
+/**
+ * Drizzle implementation of {@link EmailReportExclusionRepository}. `(user_id, symbol)` is the
+ * primary key, so a symbol is excluded at most once per member.
+ */
+export class DrizzleEmailReportExclusionRepository implements EmailReportExclusionRepository {
+    constructor(private readonly db: SiglensDatabase) {}
+
+    async findExcludedSymbols(userId: string): Promise<string[]> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({ symbol: emailReportExcludedSymbols.symbol })
+                    .from(emailReportExcludedSymbols)
+                    .where(eq(emailReportExcludedSymbols.userId, userId)),
+            DB_TRANSIENT_RETRY
+        );
+        return rows.map(row => row.symbol);
+    }
+
+    /**
+     * 회원 행을 `FOR NO KEY UPDATE`로 잠가 같은 회원의 동시 호출을 직렬화한다 — "개수 조회 →
+     * 삽입"을 따로 하면 두 탭이 같은 개수를 보고 둘 다 통과해 상한을 넘긴다(관심종목
+     * `addWithinLimit`과 같은 이유·같은 잠금 모드). 이미 뺀 심볼은 상한과 무관하게 멱등 성공이다.
+     */
+    async excludeSymbol(
+        userId: string,
+        symbol: string,
+        limit: number
+    ): Promise<ExcludeReportSymbolOutcome> {
+        return withRetry(
+            () =>
+                this.db.transaction(async tx => {
+                    await tx
+                        .select({ id: users.id })
+                        .from(users)
+                        .where(eq(users.id, userId))
+                        .for('no key update');
+                    const owned = await tx
+                        .select({ symbol: emailReportExcludedSymbols.symbol })
+                        .from(emailReportExcludedSymbols)
+                        .where(eq(emailReportExcludedSymbols.userId, userId));
+                    const alreadyExcluded = owned.some(
+                        row => row.symbol === symbol
+                    );
+                    if (!alreadyExcluded && owned.length >= limit) {
+                        return 'limit_reached' as const;
+                    }
+                    await tx
+                        .insert(emailReportExcludedSymbols)
+                        .values({ userId, symbol })
+                        .onConflictDoNothing({
+                            target: [
+                                emailReportExcludedSymbols.userId,
+                                emailReportExcludedSymbols.symbol,
+                            ],
+                        });
+                    return 'excluded' as const;
+                }),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    async includeSymbol(userId: string, symbol: string): Promise<boolean> {
+        const deleted = await withRetry(
+            () =>
+                this.db
+                    .delete(emailReportExcludedSymbols)
+                    .where(
+                        and(
+                            eq(emailReportExcludedSymbols.userId, userId),
+                            eq(emailReportExcludedSymbols.symbol, symbol)
+                        )
+                    )
+                    .returning({ symbol: emailReportExcludedSymbols.symbol }),
+            DB_TRANSIENT_RETRY
+        );
+        return deleted.length > 0;
     }
 }

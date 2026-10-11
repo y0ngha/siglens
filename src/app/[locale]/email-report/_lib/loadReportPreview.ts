@@ -1,4 +1,5 @@
 import 'server-only';
+import { DrizzleEmailReportExclusionRepository } from '@/entities/email-report/api';
 import { selectReportSymbols } from '@/entities/email-report/lib/selectReportSymbols';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
@@ -14,16 +15,23 @@ export async function loadReportPreview(
 ): Promise<ReportSymbolsPreviewData | null> {
     try {
         const { db } = getDatabaseClient();
-        const [holdings, watchlist] = await Promise.all([
+        const [holdings, watchlist, excluded] = await Promise.all([
             new DrizzlePortfolioRepository(db).findByUser(userId),
             new DrizzleWatchlistRepository(db).findByUser(userId),
+            new DrizzleEmailReportExclusionRepository(db).findExcludedSymbols(
+                userId
+            ),
         ]);
         const names = new Map(
             [...watchlist, ...holdings]
                 .filter(row => row.companyName != null)
                 .map(row => [row.symbol, row.companyName] as const)
         );
-        const selection = selectReportSymbols({ holdings, watchlist });
+        const selection = selectReportSymbols({
+            holdings,
+            watchlist,
+            excluded,
+        });
         const chip = (symbol: string) => ({
             symbol,
             name: names.get(symbol) ?? null,
@@ -31,6 +39,8 @@ export async function loadReportPreview(
         return {
             full: selection.full.map(chip),
             brief: selection.brief.map(chip),
+            excluded: selection.excluded.map(chip),
+            staleExcluded: selection.staleExcluded.map(chip),
         };
     } catch (error) {
         console.error('[email-report] preview load failed', error);

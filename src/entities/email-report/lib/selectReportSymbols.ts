@@ -20,6 +20,8 @@ export interface ReportWatchlistItem {
 export interface ReportSymbolSources {
     holdings: readonly ReportHolding[];
     watchlist: readonly ReportWatchlistItem[];
+    /** 회원이 리포트에서 뺀 심볼. 없으면 아무것도 빼지 않는다. */
+    excluded?: readonly string[];
 }
 
 export interface ReportSymbolSelection {
@@ -27,6 +29,16 @@ export interface ReportSymbolSelection {
     full: string[];
     /** "그 외 관심종목" 요약 표. 최대 {@link EMAIL_REPORT_MAX_BRIEF_SYMBOLS}. */
     brief: string[];
+    /**
+     * 뺀 심볼 중 보유·관심종목에 **아직 있는** 것(보유 → 관심 순). 회원이 "다시 넣기"로 되돌릴 수
+     * 있는 칩이다.
+     */
+    excluded: string[];
+    /**
+     * 뺀 심볼 중 보유·관심종목에서 **이미 사라진** 것(저장된 순서). 리포트엔 어차피 안 실리지만
+     * 행은 제외 상한(200개)을 차지하므로, 화면에 보여 줘 회원이 기록을 지울 수 있게 한다.
+     */
+    staleExcluded: string[];
 }
 
 /**
@@ -66,26 +78,33 @@ function orderWatchlist(items: readonly ReportWatchlistItem[]): string[] {
 
 /**
  * 메일에 실을 종목을 고른다. 보유 종목(위 순서) 뒤에 관심종목(최근 담은 순)을 잇고,
- * 보유와 관심에 모두 있는 심볼은 보유 자리에서 한 번만 센다. 앞의
- * {@link EMAIL_REPORT_MAX_SYMBOLS}개가 전체 카드, 그다음
- * {@link EMAIL_REPORT_MAX_BRIEF_SYMBOLS}개가 요약 표, 나머지는 버린다.
- * 둘 다 비면 `{ full: [], brief: [] }` — 호출자가 `skipped`로 기록한다.
+ * 보유와 관심에 모두 있는 심볼은 보유 자리에서 한 번만 센다. 회원이 뺀 심볼은 자르기
+ * **전에** 걸러내 뒤의 종목이 빈자리를 채운다. 앞의 {@link EMAIL_REPORT_MAX_SYMBOLS}개가
+ * 전체 카드, 그다음 {@link EMAIL_REPORT_MAX_BRIEF_SYMBOLS}개가 요약 표, 나머지는 버린다.
+ * 둘 다 비면 `full`·`brief`가 비어 — 호출자가 `skipped`로 기록한다.
  */
 export function selectReportSymbols(
     sources: ReportSymbolSources
 ): ReportSymbolSelection {
     // Set은 삽입 순서를 지키므로 먼저 나온 보유 자리가 남는다.
-    const ordered = [
+    const candidates = [
         ...new Set([
             ...orderHoldings(sources.holdings),
             ...orderWatchlist(sources.watchlist),
         ]),
     ];
+    const excludedSet = new Set(sources.excluded ?? []);
+    const candidateSet = new Set(candidates);
+    const ordered = candidates.filter(symbol => !excludedSet.has(symbol));
     return {
         full: ordered.slice(0, EMAIL_REPORT_MAX_SYMBOLS),
         brief: ordered.slice(
             EMAIL_REPORT_MAX_SYMBOLS,
             EMAIL_REPORT_MAX_SYMBOLS + EMAIL_REPORT_MAX_BRIEF_SYMBOLS
+        ),
+        excluded: candidates.filter(symbol => excludedSet.has(symbol)),
+        staleExcluded: [...excludedSet].filter(
+            symbol => !candidateSet.has(symbol)
         ),
     };
 }

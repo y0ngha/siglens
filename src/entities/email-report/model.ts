@@ -59,3 +59,22 @@ export type UnsubscribeEmailReportResult =
           code: 'invalid_link' | 'storage_unavailable';
           message: string;
       };
+
+export type ReportSymbolActionErrorCode =
+    | 'unauthenticated'
+    | 'invalid_symbol'
+    | 'limit_reached'
+    | 'storage_unavailable';
+
+/** 리포트에서 빼거나 다시 넣는 액션의 입력. 경계에서 모양부터 다시 검증한다. */
+export interface RawReportSymbolInput {
+    symbol: string;
+}
+
+export type ReportSymbolActionResult =
+    | { status: 'ok' }
+    | {
+          status: 'error';
+          code: ReportSymbolActionErrorCode;
+          message: string;
+      };

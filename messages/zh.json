@@ -494,7 +494,11 @@
                 "invalidUnsubscribeLink": "退订链接无效。请重新点击邮件中的链接。",
                 "saveFailed": "保存失败。请稍后重试。",
                 "unauthenticated": "需要登录。",
-                "unsubscribeFailed": "退订失败。请稍后重试。"
+                "unsubscribeFailed": "退订失败。请稍后重试。",
+                "excludeFailed": "未能从报告中排除。请稍后重试。",
+                "excludeLimitReached": "报告中最多可排除 {v0} 个股票。",
+                "includeFailed": "未能重新加入报告。请稍后重试。",
+                "invalidSymbol": "股票代码无效。"
             },
             "email": {
                 "briefColPrice": "收盘 · 涨跌幅",
@@ -801,7 +805,23 @@
                 "bb4464": "详细",
                 "3ea27a": "摘要",
                 "d406d7": "您还没有持仓或自选股。添加后将从下一份报告开始包含。",
-                "2f3e5b": "目前无法加载报告股票。"
+                "2f3e5b": "目前无法加载报告股票。",
+                "allExcluded": "您已将所有股票从报告中排除。重新加入后，它们将包含在下一份报告中。",
+                "excludedGroup": "已从报告中排除的股票",
+                "removeHint": "点击股票旁边的 ✕，该股票将从报告中排除，后续股票将填补其位置。持仓和自选股列表保持不变。",
+                "staleExcludedGroup": "已从列表中删除的股票的排除记录",
+                "staleExcludedHint": "这些股票已从持仓和自选股中删除,不会影响报告,只会占用报告排除上限({v0}个)。如不需要,请清除。"
+            },
+            "ReportSymbolChip": {
+                "exclude": "将 {v0} 从报告中排除",
+                "failed": "未能处理。请稍后重试。",
+                "include": "重新加入",
+                "includeLabel": "将 {v0} 重新加入报告",
+                "clear": "清除记录",
+                "clearLabel": "清除 {v0} 的排除记录",
+                "clearedToast": "已清除排除记录：{v0}",
+                "excludedToast": "已从报告中排除：{v0}",
+                "includedToast": "已重新加入报告：{v0}"
             }
         },
         "email-report-unsubscribe": {

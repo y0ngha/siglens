@@ -412,6 +412,28 @@ export const emailReportDeliveries = pgTable(
 );
 
 /**
+ * 메일 리포트에서 뺀 종목 — 회원이 보유·관심종목 중 메일에는 싣지 않기로 한 심볼.
+ *
+ * 보유종목·관심종목 목록 자체는 건드리지 않는다(그 목록은 다른 화면의 진실이다). 리포트
+ * 선택(`selectReportSymbols`)만 이 표를 보고 해당 심볼을 건너뛴다. 심볼은 대문자 정규형이다.
+ * 보유·관심종목에서 사라진 심볼의 행도 남는다 — 리포트엔 실리지 않지만 설정 화면이 "목록에서
+ * 지운 종목의 제외 기록"으로 보여 주고, 회원이 지우기 전까지 제외 상한(200개)을 차지한다.
+ */
+export const emailReportExcludedSymbols = pgTable(
+    'email_report_excluded_symbols',
+    {
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [primaryKey({ columns: [table.userId, table.symbol] })]
+);
+
+/**
  * Korean stock ticker metadata — keyed by ticker symbol.
  *
  * `delisted_at` is the listing-status column: `NULL` means currently listed.

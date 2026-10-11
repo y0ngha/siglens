@@ -9,8 +9,10 @@ import {
     emailReportDeliveries,
     emailReportSubscriptions,
 } from '@/shared/db/schema';
+import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import {
     DrizzleEmailReportDeliveryRepository,
+    DrizzleEmailReportExclusionRepository,
     DrizzleEmailReportSubscriptionRepository,
 } from '@/entities/email-report/api';
 import type {
@@ -311,5 +313,126 @@ describe('DrizzleEmailReportDeliveryRepository', () => {
             repo.pruneOlderThan(new Date('2026-07-01T00:00:00Z'))
         ).resolves.toBe(2);
         expect(del).toHaveBeenCalledWith(emailReportDeliveries);
+    });
+});
+
+describe('DrizzleEmailReportExclusionRepository', () => {
+    /** 트랜잭션 콜백에 실제 Drizzle SQL 캡처 DB를 넘기고, 쿼리 순서대로 결과를 준다. */
+    function txDb(results: unknown[][]) {
+        const { db: tx, captured } = createSqlCaptureDb(
+            (_query, index) => results[index] ?? []
+        );
+        const db = {
+            transaction: (cb: (t: SiglensDatabase) => Promise<unknown>) =>
+                cb(tx),
+        } as unknown as SiglensDatabase;
+        return { db, captured };
+    }
+
+    it('findExcludedSymbols는 회원의 행만 읽어 심볼 배열로 돌려준다', async () => {
+        const { db, captured } = createSqlCaptureDb(() => [
+            { symbol: 'AAPL' },
+            { symbol: 'TSLA' },
+        ]);
+
+        const symbols = await new DrizzleEmailReportExclusionRepository(
+            db
+        ).findExcludedSymbols('user-1');
+
+        expect(symbols).toEqual(['AAPL', 'TSLA']);
+        expect(captured).toEqual([
+            {
+                sql: 'select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"."user_id" = $1',
+                params: ['user-1'],
+            },
+        ]);
+    });
+
+    it('excludeSymbol은 회원 행을 FOR NO KEY UPDATE로 잠근 뒤 개수를 읽고 충돌 무시로 삽입한다', async () => {
+        const { db, captured } = txDb([
+            [{ id: 'user-1' }],
+            [{ symbol: 'MSFT' }],
+            [],
+        ]);
+
+        const outcome = await new DrizzleEmailReportExclusionRepository(
+            db
+        ).excludeSymbol('user-1', 'AAPL', 200);
+
+        expect(outcome).toBe('excluded');
+        expect(captured).toHaveLength(3);
+        // 상한 판정용 개수 조회는 이 회원의 행만 읽는다.
+        expect(captured[1]).toEqual({
+            sql: expect.stringMatching(
+                /^select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"\."user_id" = \$1/
+            ),
+            params: ['user-1'],
+        });
+        expect(captured[0]).toEqual({
+            sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
+            params: ['user-1'],
+        });
+        expect(captured[2].sql).toMatch(
+            /^insert into "email_report_excluded_symbols" \("user_id", "symbol", "created_at"\) values \(\$1, \$2, default\) on conflict \("user_id","symbol"\) do nothing/
+        );
+        expect(captured[2].params).toEqual(['user-1', 'AAPL']);
+    });
+
+    it('새 심볼이고 이미 상한이면 삽입하지 않고 limit_reached', async () => {
+        const { db, captured } = txDb([
+            [{ id: 'user-1' }],
+            [{ symbol: 'MSFT' }, { symbol: 'NVDA' }],
+        ]);
+
+        const outcome = await new DrizzleEmailReportExclusionRepository(
+            db
+        ).excludeSymbol('user-1', 'AAPL', 2);
+
+        expect(outcome).toBe('limit_reached');
+        expect(captured.some(q => q.sql.startsWith('insert'))).toBe(false);
+    });
+
+    it('이미 뺀 심볼은 상한이어도 멱등 성공이다', async () => {
+        const { db, captured } = txDb([
+            [{ id: 'user-1' }],
+            [{ symbol: 'MSFT' }, { symbol: 'AAPL' }],
+            [],
+        ]);
+
+        await expect(
+            new DrizzleEmailReportExclusionRepository(db).excludeSymbol(
+                'user-1',
+                'AAPL',
+                2
+            )
+        ).resolves.toBe('excluded');
+        // 삽입은 여전히 나가지만 충돌 무시라 행이 늘지 않는다.
+        expect(captured[2].sql).toMatch(
+            /^insert into "email_report_excluded_symbols".* on conflict \("user_id","symbol"\) do nothing/
+        );
+    });
+
+    it('includeSymbol은 (회원, 심볼) 행만 지우고 지웠는지를 돌려준다', async () => {
+        const removed = createSqlCaptureDb(() => [{ symbol: 'AAPL' }]);
+        await expect(
+            new DrizzleEmailReportExclusionRepository(removed.db).includeSymbol(
+                'user-1',
+                'AAPL'
+            )
+        ).resolves.toBe(true);
+        expect(removed.captured[0]).toEqual({
+            sql: expect.stringMatching(
+                /^delete from "email_report_excluded_symbols" where \("email_report_excluded_symbols"\."user_id" = \$1 and "email_report_excluded_symbols"\."symbol" = \$2\) returning /
+            ),
+            params: ['user-1', 'AAPL'],
+        });
+
+        const none = createSqlCaptureDb(() => []);
+        await expect(
+            new DrizzleEmailReportExclusionRepository(none.db).includeSymbol(
+                'user-1',
+                'AAPL'
+            )
+        ).resolves.toBe(false);
     });
 });
