@@ -4,6 +4,7 @@ import {
     canExtendIncrementally,
     isEntryServable,
     mergeIncremental,
+    SUSPICIOUS_GAP_RATIO,
     hasSuspiciousGap,
     overlapStatus,
     EOD_HISTORY_FULL_REFRESH_MS,
@@ -319,6 +320,23 @@ describe('hasSuspiciousGap', () => {
         expect(hasSuspiciousGap(last, [last, at('2026-06-30', 121, 122)])).toBe(
             true
         );
+    });
+
+    // 경계: 시가/직전 종가의 비율이 1 ± SUSPICIOUS_GAP_RATIO 안이면 정상, 밖이면 의심.
+    it.each([
+        ['하락 경계 안쪽', 1 - SUSPICIOUS_GAP_RATIO, false],
+        ['하락 경계 밖', 1 - SUSPICIOUS_GAP_RATIO - 0.01, true],
+        ['상승 경계 안쪽', 1 + SUSPICIOUS_GAP_RATIO, false],
+        [
+            '상승 경계 밖(역분할처럼 급등)',
+            1 + SUSPICIOUS_GAP_RATIO + 0.01,
+            true,
+        ],
+    ])('%s: 시가 = 직전 종가 × %s → %s', (_label, ratio, expected) => {
+        const prev = at('2026-06-29', 100, 100);
+        expect(
+            hasSuspiciousGap(prev, [prev, at('2026-06-30', 100 * ratio, 100)])
+        ).toBe(expected);
     });
 
     it('평범한 하루 변동은 의심하지 않는다', () => {

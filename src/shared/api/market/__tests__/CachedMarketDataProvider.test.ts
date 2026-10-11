@@ -15,6 +15,7 @@ import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { decodeCacheValue } from '@/shared/cache/cacheValueCodec';
 import type { EodHistoryEntry } from '@/shared/api/market/eodHistoryMerge';
+import { QUOTE_SNAPSHOT_MAX_TTL_SECONDS } from '@/shared/api/market/quoteSnapshotTtl';
 
 // Counts finished decodes of eodhist entries read from Redis. The single-flight tests wait on
 // this instead of wall-clock time: a caller only takes its owner/waiter role in getOrSetCache
@@ -283,7 +284,7 @@ describe('CachedMarketDataProvider', () => {
                 await new CachedMarketDataProvider(
                     fullSnapshotInner()
                 ).getQuote('AAPL');
-                expect(snapshotTtl()).toBe(5 * 60);
+                expect(snapshotTtl()).toBe(QUOTE_SNAPSHOT_MAX_TTL_SECONDS);
             }
         );
 
@@ -298,7 +299,7 @@ describe('CachedMarketDataProvider', () => {
         it('a partial snapshot (no today bar) gets the same 5-minute cap off-hours', async () => {
             vi.setSystemTime(new Date('2026-07-01T00:30:00Z'));
             await new CachedMarketDataProvider(makeInner()).getQuote('AAPL');
-            expect(snapshotTtl()).toBe(5 * 60);
+            expect(snapshotTtl()).toBe(QUOTE_SNAPSHOT_MAX_TTL_SECONDS);
         });
     });
 
