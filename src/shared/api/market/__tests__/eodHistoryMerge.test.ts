@@ -4,6 +4,7 @@ import {
     canExtendIncrementally,
     isEntryServable,
     mergeIncremental,
+    hasSuspiciousGap,
     overlapStatus,
     EOD_HISTORY_FULL_REFRESH_MS,
     reachesLastClosed,
@@ -300,5 +301,60 @@ describe('isEntryServable / canExtendIncrementally', () => {
                 can(entry({ fullAt: NOW - EOD_HISTORY_FULL_REFRESH_MS }))
             ).toBe(false);
         });
+    });
+});
+
+describe('hasSuspiciousGap', () => {
+    const at = (iso: string, open: number, close: number): Bar => ({
+        time: utc(iso),
+        open,
+        high: Math.max(open, close),
+        low: Math.min(open, close),
+        close,
+        volume: 1,
+    });
+    const last = at('2026-06-29', 1200, 1210);
+
+    it('새 봉 시가가 직전 종가에서 25% 넘게 벌어지면 의심한다 (10:1 분할)', () => {
+        expect(hasSuspiciousGap(last, [last, at('2026-06-30', 121, 122)])).toBe(
+            true
+        );
+    });
+
+    it('평범한 하루 변동은 의심하지 않는다', () => {
+        expect(
+            hasSuspiciousGap(last, [last, at('2026-06-30', 1230, 1250)])
+        ).toBe(false);
+    });
+
+    it('겹친 봉 자체와 그 이전 봉은 보지 않는다', () => {
+        expect(hasSuspiciousGap(last, [at('2026-06-26', 1, 1), last])).toBe(
+            false
+        );
+    });
+
+    it('여러 날을 이어 붙이면 새 봉끼리의 연결도 본다', () => {
+        expect(
+            hasSuspiciousGap(last, [
+                last,
+                at('2026-06-30', 1215, 1220),
+                at('2026-07-01', 600, 610),
+            ])
+        ).toBe(true);
+    });
+
+    it('직전 종가가 0이면 비율을 정의할 수 없어 건너뛴다', () => {
+        expect(
+            hasSuspiciousGap(at('2026-06-29', 0, 0), [at('2026-06-30', 5, 5)])
+        ).toBe(false);
+    });
+
+    it('정렬되지 않은 응답도 시간순으로 이어 본다', () => {
+        expect(
+            hasSuspiciousGap(last, [
+                at('2026-07-01', 1225, 1230),
+                at('2026-06-30', 1215, 1220),
+            ])
+        ).toBe(false);
     });
 });
