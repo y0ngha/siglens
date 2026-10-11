@@ -345,4 +345,61 @@ describe('YahooMarketProvider', () => {
             ).toBeNull();
         });
     });
+
+    describe('getQuoteSnapshot', () => {
+        const row = {
+            regularMarketPrice: 274500,
+            regularMarketOpen: 275000,
+            regularMarketDayHigh: 275500,
+            regularMarketDayLow: 266000,
+            regularMarketVolume: 21669476,
+            regularMarketChangePercent: 1.5,
+            longName: 'Samsung Electronics Co., Ltd.',
+            regularMarketTime: new Date('2026-08-14T06:30:24.000Z'),
+        };
+
+        it('quote 시세와 오늘 봉을 yahoo quote 한 번으로 만든다', async () => {
+            quote.mockResolvedValue(row);
+
+            const snapshot = await new YahooMarketProvider().getQuoteSnapshot(
+                '005930.KS'
+            );
+
+            expect(quote).toHaveBeenCalledTimes(1);
+            expect(snapshot.quote).toMatchObject({
+                symbol: '005930.KS',
+                price: 274500,
+                changesPercentage: 1.5,
+            });
+            expect(snapshot.todayBar).toEqual({
+                time: UTC_MIDNIGHT_AUG14,
+                open: 275000,
+                high: 275500,
+                low: 266000,
+                close: 274500,
+                volume: 21669476,
+            });
+        });
+
+        it('종목 없음(undefined)은 둘 다 null', async () => {
+            quote.mockResolvedValue(undefined);
+            expect(
+                await new YahooMarketProvider().getQuoteSnapshot('999999.KS')
+            ).toEqual({ quote: null, todayBar: null });
+        });
+
+        it('yahoo 예외는 던지지 않고 둘 다 null로 degrade', async () => {
+            quote.mockRejectedValue(new Error('boom'));
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            try {
+                expect(
+                    await new YahooMarketProvider().getQuoteSnapshot(
+                        '005930.KS'
+                    )
+                ).toEqual({ quote: null, todayBar: null });
+            } finally {
+                warn.mockRestore();
+            }
+        });
+    });
 });

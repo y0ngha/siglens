@@ -17,7 +17,7 @@ import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor
  * ## 왜 캐시 provider인가 (2026-10)
  *
  * 예전에는 raw provider(`marketDataProviderFor`)를 썼다. 미국 scope 일봉 스캔은 ~80종목
- * 각각에 `historical-price-eod/full`(400일) + `quote`(오늘 봉) + `quote`(getQuote)를
+ * 각각에 `historical-price-eod/full`(400일) + `quote`(오늘 봉) + `quote`(getQuote, 같은 엔드포인트)를
  * 불렀다 — 리필 한 번에 FMP ~240회이고, 400일 일봉 응답을 매번 통째로 받았다. 캐시
  * provider(`CachedMarketDataProvider`)로 바꾸면 과거 일봉은 종목 페이지와 같은 세션 롤
  * 키(`bars:eodhist:v2:<SYM>:<lastClosed>`)를 공유해 세션당 한 번만 받고(그 키는 요청 창과

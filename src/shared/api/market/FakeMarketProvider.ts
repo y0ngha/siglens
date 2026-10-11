@@ -1,5 +1,8 @@
 import type { Bar, GetBarsOptions, MarketQuote } from '@y0ngha/siglens-core';
-import type { SiglensMarketProvider } from './marketProvider.types';
+import type {
+    QuoteSnapshot,
+    SiglensMarketProvider,
+} from './marketProvider.types';
 import bars from '@e2e/fixtures/bars.json';
 
 // bars.json is authored to match the core Bar shape (time/open/high/low/close/volume).
@@ -27,5 +30,13 @@ export class FakeMarketProvider implements SiglensMarketProvider {
 
     async getTodayBar(_symbol: string): Promise<Bar | null> {
         return null;
+    }
+
+    async getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot> {
+        const [quote, todayBar] = await Promise.all([
+            this.getQuote(symbol),
+            this.getTodayBar(symbol),
+        ]);
+        return { quote, todayBar };
     }
 }

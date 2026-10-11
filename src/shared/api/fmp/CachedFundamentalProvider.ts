@@ -32,6 +32,12 @@ import type {
 const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
 export const PEER_LIMIT = 10;
 
+/** key-metrics·ratios 키. 한 쌍을 함께 쓰는 `fetchValuationPair`와 읽는 쪽이 같은 함수를 쓴다. */
+const keyMetricsKey = (symbol: string): string =>
+    `fundamental:key-metrics:${sym(symbol)}`;
+const ratiosKey = (symbol: string): string =>
+    `fundamental:ratios:${sym(symbol)}`;
+
 /**
  * `FundamentalProvider`를 감싸 메서드별 Redis 캐싱을 주입하는 데코레이터.
  *
@@ -121,7 +127,7 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      */
     getKeyMetricsTtm = cache(
         (symbol: string): Promise<FundamentalValuationMetrics | null> =>
-            getOrSetCache(`fundamental:key-metrics:${sym(symbol)}`, TTL, () =>
+            getOrSetCache(keyMetricsKey(symbol), TTL, () =>
                 this.fetchValuationPair(symbol, 'key-metrics')
             ).catch(error => {
                 console.error(
@@ -135,7 +141,7 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
     /** valuation 장애를 로깅 후 캐싱 없이 graceful null로 변환 — 사유는 getKeyMetricsTtm JSDoc 참고. */
     getRatiosTtm = cache(
         (symbol: string): Promise<FundamentalRatiosInput | null> =>
-            getOrSetCache(`fundamental:ratios:${sym(symbol)}`, TTL, () =>
+            getOrSetCache(ratiosKey(symbol), TTL, () =>
                 this.fetchValuationPair(symbol, 'ratios')
             ).catch(error => {
                 console.error(
@@ -160,6 +166,12 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * 쌍의 한쪽이라도 throw하면 둘 다 throw한다(`Promise.all`) — 아무것도 쓰지 않고
      * 호출부의 `.catch`가 로깅·graceful null을 맡는 기존 계약 그대로다. 정상 null(빈
      * 200)은 두 키 모두에 캐싱된다. 형제 쓰기 실패는 `setCacheValue`가 삼킨다.
+     *
+     * 두 키가 **동시에** miss하면(core 분석은 두 메서드를 `Promise.all`로 부른다) `getOrSetCache`의
+     * in-flight 공유가 키 단위라 소유자가 둘이 되고, 각자 이 메서드를 돌려 같은 쌍을 Redis에
+     * 네 번 쓴다(예전 두 번). FMP 호출은 inner의 in-flight 공유로 한 번이고 값도 같아 정합성
+     * 문제는 없다. 줄이려면 요청 스코프에서 쌍 쓰기를 하나로 묶어야 하는데, 수 KB짜리 값 두
+     * 번을 아끼려고 그 결합을 들이지 않는다 — 의도한 트레이드오프다.
      */
     private async fetchValuationPair(
         symbol: string,
@@ -178,18 +190,10 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
             this.inner.getRatiosTtm(symbol),
         ]);
         if (requested === 'key-metrics') {
-            await setCacheValue(
-                `fundamental:ratios:${sym(symbol)}`,
-                ratios,
-                TTL
-            );
+            await setCacheValue(ratiosKey(symbol), ratios, TTL);
             return keyMetrics;
         }
-        await setCacheValue(
-            `fundamental:key-metrics:${sym(symbol)}`,
-            keyMetrics,
-            TTL
-        );
+        await setCacheValue(keyMetricsKey(symbol), keyMetrics, TTL);
         return ratios;
     }
 

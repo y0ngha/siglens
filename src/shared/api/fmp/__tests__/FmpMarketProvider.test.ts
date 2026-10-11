@@ -487,4 +487,67 @@ describe('FmpMarketProvider', () => {
             );
         });
     });
+
+    describe('getQuoteSnapshot', () => {
+        const timestampSec = Math.floor(
+            Date.UTC(2026, 3, 15, 14, 0, 0) / MS_PER_SECOND
+        );
+
+        it('/quote 한 번으로 시세와 오늘 봉을 함께 만든다', async () => {
+            mockFmpGet.mockResolvedValueOnce([makeQuote(timestampSec)]);
+
+            const snapshot = await provider.getQuoteSnapshot('AAPL');
+
+            expect(mockFmpGet).toHaveBeenCalledTimes(1);
+            expect(mockFmpGet).toHaveBeenCalledWith('quote', {
+                symbol: 'AAPL',
+            });
+            expect(snapshot.quote).toMatchObject({
+                symbol: 'AAPL',
+                price: 150,
+                timestamp: timestampSec,
+            });
+            expect(snapshot.todayBar).toEqual({
+                time: Date.UTC(2026, 3, 15) / MS_PER_SECOND,
+                open: 145,
+                high: 155,
+                low: 140,
+                close: 150,
+                volume: 5000,
+            });
+        });
+
+        it('getQuote·getTodayBar는 각각 같은 스냅샷의 한 쪽을 돌려준다', async () => {
+            mockFmpGet.mockResolvedValue([makeQuote(timestampSec)]);
+
+            expect((await provider.getQuote('AAPL'))?.price).toBe(150);
+            expect((await provider.getTodayBar('AAPL'))?.close).toBe(150);
+        });
+
+        it.each([
+            ['빈 배열', [] as unknown],
+            ['비배열', {} as unknown],
+        ])('%s 응답은 둘 다 null', async (_label, response) => {
+            mockFmpGet.mockResolvedValueOnce(response);
+            expect(await provider.getQuoteSnapshot('AAPL')).toEqual({
+                quote: null,
+                todayBar: null,
+            });
+        });
+
+        it('fmpGet 예외는 던지지 않고 둘 다 null로 degrade', async () => {
+            mockFmpGet.mockRejectedValueOnce(new Error('network error'));
+            expect(await provider.getQuoteSnapshot('AAPL')).toEqual({
+                quote: null,
+                todayBar: null,
+            });
+        });
+
+        it('봉 날짜 매핑이 던져도(비정상 timestamp) 시세는 살린다', async () => {
+            mockFmpGet.mockResolvedValueOnce([makeQuote(Number.NaN)]);
+            const snapshot = await provider.getQuoteSnapshot('AAPL');
+            expect(snapshot.todayBar).toBeNull();
+            expect(snapshot.quote).toMatchObject({ price: 150 });
+        });
+    });
 });

@@ -28,7 +28,7 @@ function isCacheEnvelope<T>(value: unknown): value is CacheEnvelope<T> {
  *
  * 이게 없으면 같은 키의 동시 miss가 전부 독립적으로 fetch하고 전부 Redis에 쓴다
  * (캐시 스탬피드). 한 종목 페이지 렌더는 차트·분석·fear&greed가 **같은**
- * `bars:eodhist:<SYM>:<date>` 키를 병렬로 요청하고(CachedMarketDataProvider 주석의
+ * `bars:eodhist:v2:<SYM>:<date>` 키를 병렬로 요청하고(CachedMarketDataProvider 주석의
  * "차트·분석·today-quote·fear&greed 1Day가 같은 캐시를 공유한다" 참조), 동시
  * 방문자와 pre-warm cron이 여기에 겹친다. 44KB짜리 봉 배열이 한 번의 만료마다
  * 수십 번 재기록되던 이유다.
@@ -174,7 +174,7 @@ export async function getOrSetCache<T>(
 
     // `as` 근거: 맵은 `Promise<unknown>`을 담으므로 키와 `T`의 연결은 컴파일러가
     // 강제하지 못한다. 런타임 보장은 호출 규약에서 온다 — 캐시 키는 값 타입을 결정하는
-    // 식별자이고(예: `bars:eodhist:<SYM>:<date>`는 언제나 `Bar[]`), 같은 키에 서로 다른
+    // 식별자이고(예: `bars:eodhist:v2:<SYM>:<date>`는 언제나 `Bar[]`), 같은 키에 서로 다른
     // `T`로 접근하는 호출부는 이미 Redis 계층에서도 깨진다(같은 직렬화 값을 공유하므로).
     // 즉 이 캐스트는 새로운 타입 구멍을 만들지 않고 기존 규약을 그대로 따른다.
     const shared = inFlight.get(key) as Promise<T> | undefined;
