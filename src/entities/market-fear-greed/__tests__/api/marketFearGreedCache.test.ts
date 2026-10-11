@@ -14,7 +14,7 @@ vi.mock('@/entities/market-fear-greed/lib/fetchDailyCloses', async () => ({
     fetchDailyCloses: mockFetchDailyCloses,
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     getCachedMarketFearGreed,
@@ -48,22 +48,65 @@ describe('getCachedMarketFearGreed', () => {
         );
     });
 
-    it('Redis 키가 market:fear-greed:로 시작하고 설정 fingerprint를 포함한다', async () => {
-        await getCachedMarketFearGreed();
+    describe('세션 날짜 키', () => {
+        // 화 2026-06-30 15:00Z(11:00 EDT): 마지막 발행 세션은 월 2026-06-29이고, 키는
+        // 화요일 마감 + 4h 버퍼(2026-07-01T00:00Z)에 넘어간다 — 지금부터 9시간 뒤.
+        const NOW = new Date('2026-06-30T15:00:00Z');
+        const TO = '2026-06-29';
+        const SECONDS_UNTIL_ROLL = 9 * SECONDS_PER_HOUR;
 
-        const [key] = mockGetOrSetCache.mock.calls[0]!;
-        expect(key).toMatch(/^market:fear-greed:[a-f0-9]{12}$/);
-        expect(key).toBe(
-            `market:fear-greed:${MARKET_FEAR_GREED_CONFIG_FINGERPRINT}`
-        );
-    });
+        beforeEach(() => {
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(NOW);
+        });
+        afterEach(() => vi.useRealTimers());
 
-    it('TTL로 고정 SECONDS_PER_HOUR(3600)를 전달한다(세션 의존 정책 아님)', async () => {
-        await getCachedMarketFearGreed();
+        const ttlFn = () =>
+            mockGetOrSetCache.mock.calls[0]![1] as (
+                view: MarketFearGreedView
+            ) => number;
 
-        const [, ttl] = mockGetOrSetCache.mock.calls[0]!;
-        expect(ttl).toBe(SECONDS_PER_HOUR);
-        expect(ttl).toBe(3600);
+        it('Redis 키는 설정 fingerprint와 마지막 발행 세션 날짜를 담는다', async () => {
+            await getCachedMarketFearGreed();
+
+            const [key] = mockGetOrSetCache.mock.calls[0]!;
+            expect(key).toBe(
+                `market:fear-greed:${MARKET_FEAR_GREED_CONFIG_FINGERPRINT}:${TO}`
+            );
+        });
+
+        it('세션이 넘어가면 다른 키를 읽는다', async () => {
+            await getCachedMarketFearGreed();
+            vi.setSystemTime(new Date('2026-07-01T00:30:00Z'));
+            await getCachedMarketFearGreed();
+
+            const keys = mockGetOrSetCache.mock.calls.map(([key]) => key);
+            expect(keys[1]).toBe(
+                `market:fear-greed:${MARKET_FEAR_GREED_CONFIG_FINGERPRINT}:2026-06-30`
+            );
+        });
+
+        it('판독값이 마지막 세션까지 차 있으면 키가 넘어갈 때까지(+1h 여유) 둔다', async () => {
+            await getCachedMarketFearGreed();
+
+            expect(
+                ttlFn()({
+                    snapshot: { ...SAMPLE_SNAPSHOT, asOf: TO },
+                    comparisons: [],
+                })
+            ).toBe(SECONDS_UNTIL_ROLL + SECONDS_PER_HOUR);
+        });
+
+        it('어느 시리즈가 아직 마지막 세션을 발행하지 않았으면 1시간 뒤 다시 받는다', async () => {
+            await getCachedMarketFearGreed();
+
+            expect(
+                ttlFn()({
+                    snapshot: { ...SAMPLE_SNAPSHOT, asOf: '2026-06-26' },
+                    comparisons: [],
+                })
+            ).toBe(SECONDS_PER_HOUR);
+        });
     });
 
     it('6개 시리즈 전부를 동일한 from으로 fetchDailyCloses에 요청한다', async () => {

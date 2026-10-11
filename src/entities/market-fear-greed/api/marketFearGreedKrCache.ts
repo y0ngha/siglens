@@ -48,10 +48,13 @@ export const MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT =
 const CACHE_KEY = `market:fear-greed:kr:${MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT}`;
 
 /**
- * 평평한 1시간 TTL. 미국 캐시와 같은 근거다 — `computeBarsEffectiveTtl`은 "다음 개장까지"로
- * 상한을 잡는데, 그러면 금요일 마감 뒤 하루 종일 같은 값이 고정된다. 이 지수가 먹는
- * EOD 종가는 **마감 직후에** 들어오므로, 마감 시각에 캐시된 항목이야말로 살아남으면
- * 안 되는 항목이다.
+ * 평평한 1시간 TTL. `computeBarsEffectiveTtl`은 "다음 개장까지"로 상한을 잡는데, 그러면
+ * 금요일 마감 뒤 하루 종일 같은 값이 고정된다. 이 지수가 먹는 EOD 종가는 **마감 직후에**
+ * 들어오므로, 마감 시각에 캐시된 항목이야말로 살아남으면 안 되는 항목이다.
+ *
+ * 미국·크립토판은 마감일을 키에 넣어 세션당 한 번만 받도록 바꿨다(`sessionKeyedTtlSeconds`).
+ * 이 한국판은 무인증 yahoo라 FMP 쿼터·대역폭과 무관해서 그대로 1시간으로 둔다 — 같은
+ * 방식으로 바꿀 수는 있지만, 그러면 yahoo 호출만 줄 뿐 이 레포가 겪는 비용과는 관계가 없다.
  */
 const TTL_SECONDS = SECONDS_PER_HOUR;
 

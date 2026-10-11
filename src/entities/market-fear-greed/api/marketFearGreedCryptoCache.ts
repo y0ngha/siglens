@@ -3,11 +3,13 @@ import { cache } from 'react';
 import {
     computeCryptoFearGreedHistory,
     computeCryptoFearGreedIndex,
+    CRYPTO_SESSION,
 } from '@y0ngha/siglens-core';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { secondsUntilSessionRoll } from '@/shared/lib/marketSessionDate';
 import { buildCalendarDayComparisons } from '../lib/buildMarketFearGreedComparisons';
+import { sessionKeyedTtlSeconds } from '../lib/sessionKeyedTtl';
 import {
     cryptoLookbackStartDate,
     fetchCryptoDailyBars,
@@ -39,16 +41,11 @@ export const MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT =
 const CACHE_KEY = `market:fear-greed:crypto:${MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT}`;
 
 /**
- * 평평한 1시간 TTL. `computeBarsEffectiveTtl`을 쓰지 않는 이유는 미국판과 같다 —
- * 일봉은 마감 **뒤에** 확정되므로 마감 직후 캐시된 항목이 오래 살아남으면 안 된다.
- */
-const TTL_SECONDS = SECONDS_PER_HOUR;
-
-/**
  * 21개 시리즈(BTC + 금 + 유니버스 19)를 받아 페이지가 그리는 형태로 줄인다.
  *
- * 21번의 FMP 호출은 1시간 Redis 캐시 뒤에 있어 시간당 최대 21회다. 미국판
- * `getMarketSummary`(11+)와 같은 `Promise.all` 규모라 청크 분할 이득이 없다.
+ * 21번의 FMP 호출은 마감일(`to`) 키 Redis 캐시 뒤에 있어 UTC 하루에 한 번이다(FMP가
+ * 어제 봉을 늦게 내면 1시간 간격으로 몇 번 더). 미국판 `getMarketSummary`(11+)와 같은
+ * `Promise.all` 규모라 청크 분할 이득이 없다.
  */
 async function buildView(now: Date): Promise<MarketFearGreedCryptoView> {
     const from = cryptoLookbackStartDate(now);
@@ -91,16 +88,28 @@ function hasSnapshot(view: MarketFearGreedCryptoView): boolean {
 /**
  * 암호화폐 시장 공포·탐욕 판독값 — `React.cache` → Redis → FMP.
  *
+ * Redis 키에 마지막으로 닫힌 UTC 일(`to`)을 넣는다. 판독값은 `to`까지의 일봉만으로
+ * 정해지므로 하루에 한 번 받고 다음 UTC 자정까지 둔다(`sessionKeyedTtlSeconds`). 미국판과
+ * 같은 이유로 `computeBarsEffectiveTtl`은 쓰지 않는다.
+ *
  * FMP 호출이 하나라도 실패하면 `Promise.all`에서 그대로 던진다. 유니버스가 일부만
  * 채워지면 폭·알트시즌 요인의 의미가 조용히 바뀌고, `getOrSetCache`는 fetcher가
  * 던지면 아무것도 쓰지 않는다.
  */
 export const getCachedMarketFearGreedCrypto = cache(
-    (): Promise<MarketFearGreedCryptoView> =>
-        getOrSetCache(
-            CACHE_KEY,
-            TTL_SECONDS,
-            () => buildView(new Date()),
+    (): Promise<MarketFearGreedCryptoView> => {
+        const now = new Date();
+        const to = lastClosedUtcDate(now);
+        return getOrSetCache(
+            `${CACHE_KEY}:${to}`,
+            view =>
+                sessionKeyedTtlSeconds(
+                    view,
+                    to,
+                    secondsUntilSessionRoll(CRYPTO_SESSION, now)
+                ),
+            () => buildView(now),
             hasSnapshot
-        )
+        );
+    }
 );
