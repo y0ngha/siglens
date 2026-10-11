@@ -25,7 +25,10 @@ import {
     SECONDS_PER_MINUTE,
 } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
-import type { SiglensMarketProvider } from './marketProvider.types';
+import type {
+    QuoteSnapshot,
+    SiglensMarketProvider,
+} from './marketProvider.types';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
@@ -126,6 +129,31 @@ export interface CachedMarketDataProviderOptions {
 const QUOTE_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
 
 /**
+ * 시세 스냅샷 키. `getQuote`(시세)와 일봉의 오늘 봉(`getCachedDailyBars`)이 같은 키를
+ * 읽는다 — 둘 다 업스트림 `quote` 한 번에서 나오는데, 예전에는 `quote:<SYM>`과
+ * `bars:today:<SYM>` 두 키로 같은 데이터를 두 번 받았다.
+ *
+ * 이름이 `quote:<SYM>`/`bars:today:<SYM>`과 겹치지 않아야 한다: 옛 키는 각각 `MarketQuote`·
+ * `Bar[]` 모양이라, 같은 키를 재사용하면 배포 직후 옛 엔트리를 스냅샷으로 잘못 읽는다.
+ * 옛 키는 읽는 코드가 없어 각자의 세션 TTL로 저절로 사라진다.
+ */
+function buildQuoteSnapshotKey(symbol: string): string {
+    return `quote:snapshot:${symbol.toUpperCase()}`;
+}
+
+/**
+ * 둘 다 null(조회 실패·빈 응답)인 스냅샷은 굳히지 않는다.
+ *
+ * 한쪽만 있는 스냅샷은 굳힌다 — 예전 두 가드(`quote`는 null 미저장, `bars:today`는 빈
+ * 봉 미저장)와 다른 점이다. 실제로 생기는 경우는 FMP quote 행의 timestamp가 깨져 오늘 봉
+ * 매핑만 실패할 때인데, 그 행이 고쳐지지 않는 한 다시 받아도 같다. 그래서 TTL 동안 오늘
+ * 봉 없이(live tail 없음) 서빙하고, 그 종목의 1Day 조회마다 FMP를 다시 부르지 않는다.
+ */
+function isUsableSnapshot(snapshot: QuoteSnapshot): boolean {
+    return snapshot.quote !== null || snapshot.todayBar !== null;
+}
+
+/**
  * 캐시 키는 결과에 영향을 줄 수 있는 `GetBarsOptions` 필드를 모두 포함한다 —
  * symbol/timeframe/from/before에 더해 limit까지. 현재 FmpMarketProvider는 limit을
  * URL에 쓰지 않지만, 캐시를 거치는 호출부(fetchBarsWithIndicators)는 limit을
@@ -141,7 +169,7 @@ function buildBarsRawKey(o: GetBarsOptions): string {
 /**
  * `MarketDataProvider`를 감싸 getBars/getQuote에 provider 레벨 Redis 캐싱을 주입하는
  * 데코레이터. 분석/차트 경로가 동일 provider를 거치므로(차트 getBarsAction, 분석
- * runAnalysis/runOverallAnalysis), 여기서 캐싱하면 차트·분석·today-quote·
+ * runAnalysis/runOverallAnalysis), 여기서 캐싱하면 차트·분석·시세 스냅샷(today-quote)·
  * fear&greed 1Day가 같은 캐시를 공유한다 — 분석 결과 cache-miss 시 차트가 워밍한
  * bars를 재사용해 FMP 직격을 막는다. `CachedFundamentalProvider` 패턴과 동형이다.
  *
@@ -254,7 +282,8 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      *     전일 봉에 걸리는 일반 장중 케이스에서는 해당 날짜가 EOD 발행 전까지 진정으로 부재하며,
      *     short TTL 재시도가 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
      *   isFresh는 요청 from 커버(truncation 방지)만 판정.
-     * - today `bars:today:<SYM>`: `inner.getTodayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
+     * - today `quote:snapshot:<SYM>`: `inner.getQuoteSnapshot`의 `todayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
+     *   `getQuote`와 같은 키·같은 업스트림 호출을 공유한다(예전 `bars:today`·`quote:` 이중 키 폐지).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
      * 단일 `getBars(from)`와 동일 집합을 만든다. 세션-날짜 키로 history는 항상 마지막 마감까지
      * 커버, today(quote)와 갭 없음. 키 전제: 모든 long-1Day 호출부가 core 730d lookback 공유
@@ -299,14 +328,8 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                     bars.length > 0 &&
                     (fromThreshold === null || bars[0]!.time <= fromThreshold)
             ),
-            getOrSetCache<Bar[]>(
-                `bars:today:${symbolKey}`,
-                this.ttl('1Day'),
-                async () => {
-                    const bar = await this.inner.getTodayBar(options.symbol);
-                    return bar !== null ? [bar] : [];
-                },
-                bars => bars.length > 0
+            this.getQuoteSnapshot(options.symbol).then(({ todayBar }) =>
+                todayBar !== null ? [todayBar] : []
             ),
         ]);
 
@@ -424,11 +447,21 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         return bars;
     }
 
-    getQuote = (symbol: string): Promise<MarketQuote | null> =>
-        getOrSetCache(
-            `quote:${symbol.toUpperCase()}`,
+    /**
+     * `getQuote`와 일봉 오늘 봉이 공유하는 단일 읽기 경로. 두 호출자가 같은 키를 같은
+     * `ttl`·`isUsableSnapshot`으로 부르므로 `getOrSetCache`의 in-flight 공유(소유자 인자가
+     * 전원에게 적용된다)와 어긋나지 않는다 — 새 호출자를 더하면 이 메서드만 거칠 것.
+     * 업스트림에는 첫 호출자의 symbol 표기가 그대로 간다(키만 대문자화).
+     */
+    private getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot> {
+        return getOrSetCache(
+            buildQuoteSnapshotKey(symbol),
             this.ttl(QUOTE_TTL_TIMEFRAME),
-            () => this.inner.getQuote(symbol),
-            quote => quote !== null
+            () => this.inner.getQuoteSnapshot(symbol),
+            isUsableSnapshot
         );
+    }
+
+    getQuote = async (symbol: string): Promise<MarketQuote | null> =>
+        (await this.getQuoteSnapshot(symbol)).quote;
 }

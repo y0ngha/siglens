@@ -6,7 +6,10 @@ import type {
     MarketQuote,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
+import type {
+    QuoteSnapshot,
+    SiglensMarketProvider,
+} from '@/shared/api/market/marketProvider.types';
 import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
 import { pickYahooDisplayName } from './displayName';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
@@ -78,6 +81,70 @@ function utcMidnightSeconds(isoDate: string): number {
     return Math.floor(Date.parse(isoDate + 'T00:00:00Z') / MS_PER_SECOND);
 }
 
+type YahooQuote = NonNullable<Awaited<ReturnType<typeof yahooFinance.quote>>>;
+
+/**
+ * 쓸 수 있는 시세가 왔는지. 상장폐지/오타 심볼에 대해 yahoo는 throw가 아니라 `undefined`를
+ * 돌려준다(실측: `999999.KS` → undefined) — 옵셔널 체이닝 없이 접근하면 TypeError가 된다.
+ * `getQuoteOrThrow`와 `getQuoteSnapshot`이 같은 판정을 쓰도록 한 곳에 둔다.
+ */
+function hasQuotedPrice(q: YahooQuote | undefined | null): q is YahooQuote {
+    return !!q && q.regularMarketPrice !== undefined;
+}
+
+function toYahooMarketQuote(symbol: string, q: YahooQuote): MarketQuote {
+    return {
+        symbol,
+        price: q.regularMarketPrice!,
+        changesPercentage: q.regularMarketChangePercent ?? 0,
+        // 일부 KRX 종목은 사명 대신 코드 나열이 온다 — `displayName.ts` 참조.
+        name: pickYahooDisplayName(symbol, q.longName, q.shortName),
+        // core `MarketQuote.timestamp` — yahoo reports the quote time as a `Date`
+        // (`regularMarketTime`), converted to unix seconds. Same field
+        // `toYahooTodayBar` reads for its own KST trading-date derivation.
+        ...(q.regularMarketTime instanceof Date
+            ? {
+                  timestamp: Math.floor(
+                      q.regularMarketTime.getTime() / MS_PER_SECOND
+                  ),
+              }
+            : {}),
+    };
+}
+
+/**
+ * 오늘(최근 거래일) 봉. 날짜는 KST 벽시계 기준으로 뽑는다. 정규장(09:00~15:30 KST =
+ * 00:00~06:30 UTC)은 UTC 날짜와 KST 날짜가 같지만, 시간외 체결이나 지연된
+ * `regularMarketTime`이 UTC 날짜 경계를 넘길 수 있어 KST로 명시 환산한다.
+ */
+function toYahooTodayBar(q: YahooQuote): Bar {
+    const at =
+        q.regularMarketTime instanceof Date ? q.regularMarketTime : new Date();
+    const close = q.regularMarketPrice!;
+
+    // 장 시작 전·마감 뒤에는 open/high/low가 비어 오거나 **0으로** 온다(실측:
+    // 2026-10 KRX 휴장 직후 `regularMarketOpen/DayHigh/DayLow = 0`). `?? close`는
+    // undefined만 잡아 0이 그대로 통과하므로, 양의 유한수가 아닌 값은 전부
+    // 없는 값으로 보고 종가로 채운다 — 0으로 무너진 봉은 core `hasUsablePrices`에
+    // 걸려 시리즈에서 사라지고, 같은 날짜의 확정 EOD 봉까지 가리는 원인이 됐다.
+    const open = positiveOr(q.regularMarketOpen, close);
+    const high = Math.max(
+        positiveOr(q.regularMarketDayHigh, close),
+        open,
+        close
+    );
+    const low = Math.min(positiveOr(q.regularMarketDayLow, close), open, close);
+
+    return {
+        time: utcMidnightSeconds(kstDateKey(at)),
+        open,
+        high,
+        low,
+        close,
+        volume: q.regularMarketVolume ?? 0,
+    };
+}
+
 /**
  * yahoo-finance2 어댑터 — KOSPI/KOSDAQ(`005930.KS` / `247540.KQ`) 전용.
  *
@@ -138,29 +205,16 @@ export class YahooMarketProvider implements SiglensMarketProvider {
      */
     async getQuoteOrThrow(symbol: string): Promise<MarketQuote | null> {
         const q = await yahooFinance.quote(symbol);
-        // 상장폐지/오타 심볼에 대해 yahoo는 throw가 아니라 `undefined`를 돌려준다
-        // (실측: `999999.KS` → undefined). 옵셔널 체이닝 없이 접근하면 TypeError가 된다.
-        if (!q || q.regularMarketPrice === undefined) return null;
-        return {
-            symbol,
-            price: q.regularMarketPrice,
-            changesPercentage: q.regularMarketChangePercent ?? 0,
-            // 일부 KRX 종목은 사명 대신 코드 나열이 온다 — `displayName.ts` 참조.
-            name: pickYahooDisplayName(symbol, q.longName, q.shortName),
-            // core `MarketQuote.timestamp` — yahoo reports
-            // the quote time as a `Date` (`regularMarketTime`), converted to
-            // unix seconds. Same field `getTodayBar` below already reads for
-            // its own KST trading-date derivation.
-            ...(q.regularMarketTime instanceof Date
-                ? {
-                      timestamp: Math.floor(
-                          q.regularMarketTime.getTime() / MS_PER_SECOND
-                      ),
-                  }
-                : {}),
-        };
+        if (!hasQuotedPrice(q)) return null;
+        return toYahooMarketQuote(symbol, q);
     }
 
+    /**
+     * `getQuoteSnapshot`에 위임하지 않는다 — 시세 조회의 원형은 {@link getQuoteOrThrow}이고
+     * (인프라 실패를 던져야 하는 호출부가 있다), 이 메서드는 그 실패를 `null`로 접는 얇은
+     * 래퍼다. 캐시 계층(`CachedMarketDataProvider`)은 이 메서드가 아니라 스냅샷을 부르므로
+     * 중복 호출은 거기서 이미 사라졌다.
+     */
     async getQuote(symbol: string): Promise<MarketQuote | null> {
         try {
             return await this.getQuoteOrThrow(symbol);
@@ -175,52 +229,48 @@ export class YahooMarketProvider implements SiglensMarketProvider {
     }
 
     /**
-     * 오늘(최근 거래일) 봉을 quote로 조회한다. EOD 캐시의 live tail 전용이며,
-     * `CachedMarketDataProvider`가 `bars:today:<SYM>` 키로 별도 TTL을 건다.
-     *
-     * 날짜는 KST 벽시계 기준으로 뽑는다. 정규장(09:00~15:30 KST = 00:00~06:30 UTC)은
-     * UTC 날짜와 KST 날짜가 같지만, 시간외 체결이나 지연된 `regularMarketTime`이
-     * UTC 날짜 경계를 넘길 수 있어 KST로 명시 환산한다.
+     * 오늘(최근 거래일) 봉을 quote로 조회한다. EOD 캐시의 live tail 전용.
+     * `CachedMarketDataProvider`는 이 메서드 대신 {@link getQuoteSnapshot}을 부른다.
      */
     async getTodayBar(symbol: string): Promise<Bar | null> {
+        return (await this.getQuoteSnapshot(symbol)).todayBar;
+    }
+
+    /**
+     * yahoo `quote` 한 번으로 시세와 오늘 봉을 함께 만든다. 캐시 계층은 예전에 `getQuote`와
+     * `getTodayBar`를 따로 불러 같은 `yahooFinance.quote(symbol)`가 두 번 나갔다 — FMP
+     * 어댑터와 같은 이유로 캐시 계층이 이 메서드 하나만 부르게 했다(`getQuote`는 위 주석대로
+     * 따로 남는다). 실패(예외)·종목 없음은 둘 다 `null`로 degrade한다.
+     */
+    async getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot> {
+        let q: Awaited<ReturnType<typeof yahooFinance.quote>>;
         try {
-            const q = await yahooFinance.quote(symbol);
-            if (!q || q.regularMarketPrice === undefined) return null;
-
-            const at =
-                q.regularMarketTime instanceof Date
-                    ? q.regularMarketTime
-                    : new Date();
-            const close = q.regularMarketPrice;
-
-            // 장 시작 전·마감 뒤에는 open/high/low가 비어 오거나 **0으로** 온다(실측:
-            // 2026-10 KRX 휴장 직후 `regularMarketOpen/DayHigh/DayLow = 0`). `?? close`는
-            // undefined만 잡아 0이 그대로 통과하므로, 양의 유한수가 아닌 값은 전부
-            // 없는 값으로 보고 종가로 채운다 — 0으로 무너진 봉은 core `hasUsablePrices`에
-            // 걸려 시리즈에서 사라지고, 같은 날짜의 확정 EOD 봉까지 가리는 원인이 됐다.
-            const open = positiveOr(q.regularMarketOpen, close);
-            const high = Math.max(
-                positiveOr(q.regularMarketDayHigh, close),
-                open,
-                close
-            );
-            const low = Math.min(
-                positiveOr(q.regularMarketDayLow, close),
-                open,
-                close
-            );
-
-            return {
-                time: utcMidnightSeconds(kstDateKey(at)),
-                open,
-                high,
-                low,
-                close,
-                volume: q.regularMarketVolume ?? 0,
-            };
+            q = await yahooFinance.quote(symbol);
         } catch (error) {
             console.warn(
-                '[YahooMarketProvider] today-quote fetch failed:',
+                '[YahooMarketProvider] quote snapshot fetch failed:',
+                symbol,
+                error
+            );
+            return { quote: null, todayBar: null };
+        }
+        if (!hasQuotedPrice(q)) return { quote: null, todayBar: null };
+        return {
+            quote: this.safeMap('getQuote', symbol, () =>
+                toYahooMarketQuote(symbol, q)
+            ),
+            todayBar: this.safeMap('today-quote', symbol, () =>
+                toYahooTodayBar(q)
+            ),
+        };
+    }
+
+    private safeMap<T>(label: string, symbol: string, map: () => T): T | null {
+        try {
+            return map();
+        } catch (error) {
+            console.warn(
+                `[YahooMarketProvider] ${label} mapping failed:`,
                 symbol,
                 error
             );

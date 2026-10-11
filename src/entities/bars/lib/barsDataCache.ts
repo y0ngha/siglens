@@ -56,7 +56,7 @@ const barsInFlight = createSingleFlight<BarsData>();
  *      `computeBarsEffectiveTtl`: 장중 60초, 장외는 다음 개장까지). 같은 키의 동시
  *      miss는 `createSingleFlight`로 한 번의 계산에 접힌다.
  *   3. provider(`CachedMarketDataProvider`)의 Redis 캐시 — 원재료 봉만 담는다. 일봉은
- *      세션 날짜로 롤되는 히스토리(`bars:eodhist`) + 60초 오늘 봉(`bars:today`),
+ *      세션 날짜로 롤되는 히스토리(`bars:eodhist`) + 60초 시세 스냅샷(`quote:snapshot`, 오늘 봉 포함),
  *      인트라데이도 같은 모양(`bars:intrahist` + 오늘 tail)이라 장중 1분마다 다시
  *      받는 것은 작은 live 부분뿐이다.
  *

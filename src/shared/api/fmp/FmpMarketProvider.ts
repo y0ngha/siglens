@@ -4,7 +4,10 @@ import type {
     MarketQuote,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
+import type {
+    QuoteSnapshot,
+    SiglensMarketProvider,
+} from '@/shared/api/market/marketProvider.types';
 import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
@@ -167,6 +170,42 @@ function buildBarsQuery(
     };
 }
 
+function toFmpMarketQuote(symbol: string, quote: FmpQuote): MarketQuote {
+    return {
+        symbol,
+        price: quote.price,
+        changesPercentage: quote.changePercentage,
+        name: quote.name ?? symbol,
+        // core `MarketQuote.timestamp` — the raw FMP row already carries this
+        // (also used by `toFmpTodayBar`), just not previously passed through.
+        ...(Number.isFinite(quote.timestamp)
+            ? { timestamp: quote.timestamp }
+            : {}),
+    };
+}
+
+function toFmpTodayBar(quote: FmpQuote): Bar {
+    // Derive the ET-local trading date from the quote timestamp.
+    // UTC toISOString() would cross to the next calendar day after ~19:00 EST
+    // (or ~20:00 EDT) for after-hours trades — producing a wrong +1 day date.
+    // Shift by the ET offset first so getUTCDate/Month/FullYear reflect wall-clock ET.
+    const quoteMs = quote.timestamp * MS_PER_SECOND;
+    const etDate = new Date(
+        quoteMs + getEasternOffsetHours(new Date(quoteMs)) * MS_PER_HOUR
+    );
+    const dateStr = etDate.toISOString().split('T')[ISO_DATE_PART_INDEX]!;
+    return {
+        time: Math.floor(
+            new Date(dateStr + 'T00:00:00Z').getTime() / MS_PER_SECOND
+        ),
+        open: quote.open,
+        high: quote.dayHigh,
+        low: quote.dayLow,
+        close: quote.price,
+        volume: quote.volume,
+    };
+}
+
 /**
  * FMP adapter for the core `MarketDataProvider` port. Fetches bars/quotes via
  * the shared `fmpGet` HTTP client (retry + structured FmpHttpError). Quote
@@ -207,7 +246,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
                 buildBarsQuery(symbol, fromDate, endDate)
             ),
             endDate === undefined
-                ? this.fetchTodayQuoteBar(symbol)
+                ? this.getTodayBar(symbol)
                 : Promise.resolve(null),
         ]);
         if (!Array.isArray(raw)) return [];
@@ -220,62 +259,55 @@ export class FmpMarketProvider implements SiglensMarketProvider {
     }
 
     async getQuote(symbol: string): Promise<MarketQuote | null> {
-        try {
-            const raw = await fmpGet<FmpQuote[]>('quote', { symbol });
-            if (!Array.isArray(raw) || raw.length === 0) return null;
-            const quote = raw[0]!;
-            return {
-                symbol,
-                price: quote.price,
-                changesPercentage: quote.changePercentage,
-                name: quote.name ?? symbol,
-                // core `MarketQuote.timestamp` — the raw
-                // FMP row already carries this (used above in
-                // `fetchTodayQuoteBar`), just not previously passed through.
-                ...(Number.isFinite(quote.timestamp)
-                    ? { timestamp: quote.timestamp }
-                    : {}),
-            };
-        } catch (error) {
-            console.warn('[FmpMarketProvider] getQuote failed:', symbol, error);
-            return null;
-        }
+        return (await this.getQuoteSnapshot(symbol)).quote;
     }
 
     /** 오늘(최근 거래일) 봉을 /quote로 조회한다(OHLCV). EOD 캐시의 live tail 전용. */
     async getTodayBar(symbol: string): Promise<Bar | null> {
-        return this.fetchTodayQuoteBar(symbol);
+        return (await this.getQuoteSnapshot(symbol)).todayBar;
     }
 
-    private async fetchTodayQuoteBar(symbol: string): Promise<Bar | null> {
+    /**
+     * `/quote` 한 번으로 시세와 오늘 봉을 함께 만든다. 예전에는 `getQuote`와
+     * `getTodayBar`가 같은 엔드포인트를 각각 불렀다.
+     *
+     * 실패 의미는 둘 다 기존과 같다 — 조회 예외·빈/비배열 응답은 경고 로그 후 둘 다 `null`.
+     * 두 매핑은 서로 독립이라 한쪽 매핑이 던져도(예: 비정상 timestamp로 봉 날짜 계산 실패)
+     * 다른 쪽은 살린다.
+     */
+    async getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot> {
+        let raw: FmpQuote[];
         try {
-            const raw = await fmpGet<FmpQuote[]>('quote', { symbol });
-            if (!Array.isArray(raw) || raw.length === 0) return null;
-            const quote = raw[0]!;
-            // Derive the ET-local trading date from the quote timestamp.
-            // UTC toISOString() would cross to the next calendar day after ~19:00 EST
-            // (or ~20:00 EDT) for after-hours trades — producing a wrong +1 day date.
-            // Shift by the ET offset first so getUTCDate/Month/FullYear reflect wall-clock ET.
-            const quoteMs = quote.timestamp * MS_PER_SECOND;
-            const etDate = new Date(
-                quoteMs + getEasternOffsetHours(new Date(quoteMs)) * MS_PER_HOUR
-            );
-            const dateStr = etDate.toISOString().split('T')[
-                ISO_DATE_PART_INDEX
-            ]!;
-            return {
-                time: Math.floor(
-                    new Date(dateStr + 'T00:00:00Z').getTime() / MS_PER_SECOND
-                ),
-                open: quote.open,
-                high: quote.dayHigh,
-                low: quote.dayLow,
-                close: quote.price,
-                volume: quote.volume,
-            };
+            raw = await fmpGet<FmpQuote[]>('quote', { symbol });
         } catch (error) {
             console.warn(
-                '[FmpMarketProvider] today-quote fetch failed:',
+                '[FmpMarketProvider] quote snapshot fetch failed:',
+                symbol,
+                error
+            );
+            return { quote: null, todayBar: null };
+        }
+        if (!Array.isArray(raw) || raw.length === 0) {
+            return { quote: null, todayBar: null };
+        }
+        const row = raw[0]!;
+        return {
+            quote: this.safeMap('getQuote', symbol, () =>
+                toFmpMarketQuote(symbol, row)
+            ),
+            todayBar: this.safeMap('today-quote', symbol, () =>
+                toFmpTodayBar(row)
+            ),
+        };
+    }
+
+    private safeMap<T>(label: string, symbol: string, map: () => T): T | null {
+        try {
+            return map();
+        } catch (error) {
+            console.warn(
+                `[FmpMarketProvider] ${label} mapping failed:`,
+                symbol,
                 error
             );
             return null;

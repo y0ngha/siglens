@@ -6,7 +6,10 @@ import {
     type GetBarsOptions,
     type MarketQuote,
 } from '@y0ngha/siglens-core';
-import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
+import type {
+    QuoteSnapshot,
+    SiglensMarketProvider,
+} from '@/shared/api/market/marketProvider.types';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
@@ -70,12 +73,21 @@ const SAMPLE_QUOTE: MarketQuote = {
 function makeInner(
     overrides: Partial<SiglensMarketProvider> = {}
 ): SiglensMarketProvider {
-    return {
+    const base = {
         getBars: vi.fn(async () => SAMPLE_BARS),
         getQuote: vi.fn(async () => SAMPLE_QUOTE),
         getTodayBar: vi.fn(async () => null),
         ...overrides,
-    } as SiglensMarketProvider;
+    };
+    // 캐시 데코레이터는 getQuoteSnapshot만 부른다. 별도로 주지 않으면 개별 getQuote/
+    // getTodayBar 스텁을 합쳐 스냅샷을 만든다(기존 케이스가 두 스텁으로 값을 지정한다).
+    return {
+        getQuoteSnapshot: vi.fn(async (symbol: string) => ({
+            quote: await base.getQuote(symbol),
+            todayBar: await base.getTodayBar(symbol),
+        })),
+        ...base,
+    } as unknown as SiglensMarketProvider;
 }
 
 /**
@@ -173,13 +185,13 @@ describe('CachedMarketDataProvider', () => {
         expect(boom).toHaveBeenCalledTimes(2);
     });
 
-    it('getQuote: miss→fetch→set(quote:SYM), hit→캐시값, 심볼 대문자화', async () => {
+    it('getQuote: miss→fetch→set(quote:snapshot:SYM), hit→캐시값, 심볼 대문자화', async () => {
         const inner = makeInner();
         const p = new CachedMarketDataProvider(inner);
         const first = await p.getQuote('aapl');
         expect(first).toEqual(SAMPLE_QUOTE);
-        expect(inner.getQuote).toHaveBeenCalledTimes(1);
-        expect(store.has('quote:AAPL')).toBe(true);
+        expect(inner.getQuoteSnapshot).toHaveBeenCalledTimes(1);
+        expect(store.has('quote:snapshot:AAPL')).toBe(true);
         await p.getQuote('aapl');
         expect(inner.getQuote).toHaveBeenCalledTimes(1);
     });
@@ -190,7 +202,7 @@ describe('CachedMarketDataProvider', () => {
         expect(await p.getQuote('NODATA')).toBeNull();
         expect(await p.getQuote('NODATA')).toBeNull();
         expect(inner.getQuote).toHaveBeenCalledTimes(2);
-        expect(store.has('quote:NODATA')).toBe(false);
+        expect(store.has('quote:snapshot:NODATA')).toBe(false);
     });
 
     it('Redis 부재 시 inner로 fallback(worst case)', async () => {
@@ -237,7 +249,7 @@ describe('CachedMarketDataProvider', () => {
 
             // lastClosed = 2026-06-29 (Monday — most recent closed session before Tue 11:00 EDT)
             expect(store.has('bars:eodhist:AAPL:2026-06-29')).toBe(true);
-            expect(store.has('bars:today:AAPL')).toBe(true);
+            expect(store.has('quote:snapshot:AAPL')).toBe(true);
         });
 
         // ── cold = 1 EOD (before=lastClosed) + 1 getTodayBar ──────────────────
@@ -267,7 +279,7 @@ describe('CachedMarketDataProvider', () => {
             expect(getTodayBar).toHaveBeenCalledWith('AAPL');
             // both cache keys written
             expect(store.has('bars:eodhist:AAPL:2026-06-29')).toBe(true);
-            expect(store.has('bars:today:AAPL')).toBe(true);
+            expect(store.has('quote:snapshot:AAPL')).toBe(true);
         });
 
         // ── eodhist TTL = time until the session key rolls + 1h margin ─────────
@@ -569,7 +581,7 @@ describe('CachedMarketDataProvider', () => {
             // 2nd call same session — key is still bars:eodhist:AAPL:2026-06-29 → cache hit
             await provider.getBars(longOpts);
             expect(getBars).toHaveBeenCalledTimes(1); // still 1
-            expect(getTodayBar).toHaveBeenCalledTimes(1); // still 1 (bars:today TTL may vary but key exists)
+            expect(getTodayBar).toHaveBeenCalledTimes(1); // still 1 (quote:snapshot TTL may vary but key exists)
         });
 
         // ── new session → new key → refetch ───────────────────────────────────
@@ -628,14 +640,18 @@ describe('CachedMarketDataProvider', () => {
             const getBars = vi.fn(async () => [histBar]);
             const getTodayBar = vi.fn(async () => null);
             const provider = new CachedMarketDataProvider(
-                makeInner({ getBars, getTodayBar })
+                makeInner({
+                    getBars,
+                    getTodayBar,
+                    getQuote: vi.fn(async () => null),
+                })
             );
 
             const result = await provider.getBars(longOpts);
             expect(result).toHaveLength(1);
             expect(result[0]!.time).toBe(histBar.time);
-            // bars:today key is NOT written (shouldCache: bars.length > 0 → false for [])
-            expect(store.has('bars:today:AAPL')).toBe(false);
+            // snapshot key is NOT written (shouldCache: 둘 다 null → false)
+            expect(store.has('quote:snapshot:AAPL')).toBe(false);
         });
 
         // ── merge: today bar appears last; today wins on same-time overlap ────
@@ -750,7 +766,7 @@ describe('CachedMarketDataProvider', () => {
                 [...store.keys()].some(k => k.startsWith('bars:eodhist'))
             ).toBe(false);
             expect(
-                [...store.keys()].some(k => k.startsWith('bars:today'))
+                [...store.keys()].some(k => k.startsWith('quote:snapshot'))
             ).toBe(false);
             expect(store.has('bars:raw:AAPL:1Day:2024-01-01:2026-06-20:')).toBe(
                 true
@@ -831,7 +847,7 @@ describe('CachedMarketDataProvider', () => {
             expect(
                 [...store.keys()].some(k => k.startsWith('bars:eodhist:AAPL:'))
             ).toBe(true);
-            expect(store.has('bars:today:AAPL')).toBe(true);
+            expect(store.has('quote:snapshot:AAPL')).toBe(true);
             expect(getBars).toHaveBeenCalledTimes(1);
             expect(result.map(b => b.time)).toEqual([histT, todayT]);
         });
@@ -842,7 +858,7 @@ describe('CachedMarketDataProvider', () => {
                 throw new Error('FMP 503');
             });
             const provider = new CachedMarketDataProvider(
-                makeInner({ getBars })
+                makeInner({ getBars, getQuote: vi.fn(async () => null) })
             );
 
             await expect(
@@ -876,7 +892,7 @@ describe('CachedMarketDataProvider', () => {
         });
 
         // ── empty history shouldCache guard ───────────────────────────────────
-        it('history returns [] → bars:eodhist NOT written; bars:today written if non-empty', async () => {
+        it('history returns [] → bars:eodhist NOT written; quote:snapshot written if non-empty', async () => {
             const todayT = Math.floor(
                 Date.parse('2026-06-30T00:00:00Z') / 1000
             );
@@ -894,12 +910,12 @@ describe('CachedMarketDataProvider', () => {
             expect(
                 [...store.keys()].some(k => k.startsWith('bars:eodhist'))
             ).toBe(false);
-            expect(store.has('bars:today:AAPL')).toBe(true);
+            expect(store.has('quote:snapshot:AAPL')).toBe(true);
             expect(result.map(b => b.time)).toEqual([todayT]);
         });
 
-        // ── bars:today TTL: session-aware ─────────────────────────────────────
-        it('bars:today TTL: market-open instant → 60s', async () => {
+        // ── quote:snapshot (today bar) TTL: session-aware ─────────────────────
+        it('quote:snapshot(today) TTL: market-open instant → 60s', async () => {
             // ET regular session open: Mon 2026-06-29 14:30 UTC = 10:30 EDT
             vi.setSystemTime(new Date('2026-06-29T14:30:00Z'));
             resetSharedState();
@@ -924,7 +940,7 @@ describe('CachedMarketDataProvider', () => {
 
             const todaySetCall = fakeRedis.set.mock.calls.find(
                 ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:today')
+                    typeof key === 'string' && key.startsWith('quote:snapshot')
             );
             expect(todaySetCall).toBeDefined();
             expect(todaySetCall![2]?.ex).toBe(60); // open-session TTL
@@ -1004,7 +1020,7 @@ describe('CachedMarketDataProvider', () => {
             expect(result.map(b => b.time)).toContain(monHistBar.time);
         });
 
-        it('bars:today TTL: market-closed instant → > 60s', async () => {
+        it('quote:snapshot(today) TTL: market-closed instant → > 60s', async () => {
             // Saturday 2026-06-27 12:00 UTC — US equity market closed
             vi.setSystemTime(new Date('2026-06-27T12:00:00Z'));
             resetSharedState();
@@ -1029,7 +1045,7 @@ describe('CachedMarketDataProvider', () => {
 
             const todaySetCall = fakeRedis.set.mock.calls.find(
                 ([key]) =>
-                    typeof key === 'string' && key.startsWith('bars:today')
+                    typeof key === 'string' && key.startsWith('quote:snapshot')
             );
             expect(todaySetCall).toBeDefined();
             expect(todaySetCall![2]?.ex).toBeGreaterThan(60); // closed-session TTL > 60s
@@ -1215,7 +1231,7 @@ describe('CachedMarketDataProvider', () => {
             const keys = fakeRedis.get.mock.calls.map(([k]) => k);
             expect(keys).not.toContain('bars:eodhist:AAPL:2026-06-29');
             // 오늘 봉(작은 live 부분)은 여전히 Redis TTL을 따른다.
-            expect(keys).toContain('bars:today:AAPL');
+            expect(keys).toContain('quote:snapshot:AAPL');
             expect(getBars).toHaveBeenCalledTimes(1);
         });
 
@@ -1382,5 +1398,129 @@ describe('CachedMarketDataProvider', () => {
                 from: '2026-06-30',
             });
         });
+    });
+});
+
+describe('CachedMarketDataProvider — quote 스냅샷 단일 업스트림 호출', () => {
+    const TODAY_T = Math.floor(Date.parse('2026-06-30T00:00:00Z') / 1000);
+    const HIST_T = Math.floor(Date.parse('2026-06-26T00:00:00Z') / 1000);
+    const dailyOpts: GetBarsOptions = {
+        symbol: 'AAPL',
+        timeframe: '1Day',
+        from: '2024-01-01',
+    };
+
+    /**
+     * 업스트림 `quote` 호출 횟수를 하나의 스파이로 센다. raw provider처럼 `getQuote`·
+     * `getTodayBar`·`getQuoteSnapshot`이 각각 업스트림을 한 번씩 부르므로, 캐시 계층이
+     * 두 개별 메서드를 따로 부르면(옛 구조) 같은 종목에 2번이 세어진다.
+     */
+    function makeSnapshotInner(
+        snapshot: QuoteSnapshot = {
+            quote: SAMPLE_QUOTE,
+            todayBar: bar(TODAY_T),
+        }
+    ) {
+        const fetchQuote = vi.fn(async (_symbol: string) => snapshot);
+        const inner = {
+            getBars: vi.fn(async () => [bar(HIST_T)]),
+            getQuote: vi.fn(async (s: string) => (await fetchQuote(s)).quote),
+            getTodayBar: vi.fn(
+                async (s: string) => (await fetchQuote(s)).todayBar
+            ),
+            getQuoteSnapshot: fetchQuote,
+        } as unknown as SiglensMarketProvider;
+        return { inner, fetchQuote };
+    }
+
+    beforeEach(() => {
+        reset();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-30T15:00:00Z'));
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('getQuote 뒤 getBars(1Day): 업스트림 quote 호출은 1번', async () => {
+        const { inner, fetchQuote } = makeSnapshotInner();
+        const p = new CachedMarketDataProvider(inner);
+
+        expect(await p.getQuote('AAPL')).toEqual(SAMPLE_QUOTE);
+        const bars = await p.getBars(dailyOpts);
+
+        expect(fetchQuote).toHaveBeenCalledTimes(1);
+        expect(bars.map(b => b.time)).toEqual([HIST_T, TODAY_T]);
+    });
+
+    it('getBars(1Day) 뒤 getQuote: 업스트림 quote 호출은 1번', async () => {
+        const { inner, fetchQuote } = makeSnapshotInner();
+        const p = new CachedMarketDataProvider(inner);
+
+        await p.getBars(dailyOpts);
+        expect(await p.getQuote('AAPL')).toEqual(SAMPLE_QUOTE);
+
+        expect(fetchQuote).toHaveBeenCalledTimes(1);
+    });
+
+    it('동시 호출(getQuote ∥ getBars)도 in-flight로 접혀 1번', async () => {
+        const { inner, fetchQuote } = makeSnapshotInner();
+        const p = new CachedMarketDataProvider(inner);
+
+        await Promise.all([p.getQuote('aapl'), p.getBars(dailyOpts)]);
+
+        expect(fetchQuote).toHaveBeenCalledTimes(1);
+    });
+
+    it('단일 키 quote:snapshot:<SYM>만 쓰고 옛 quote:<SYM>·bars:today:<SYM>는 쓰지 않는다', async () => {
+        const { inner } = makeSnapshotInner();
+        const p = new CachedMarketDataProvider(inner);
+
+        await p.getQuote('AAPL');
+        await p.getBars(dailyOpts);
+
+        expect(store.has('quote:snapshot:AAPL')).toBe(true);
+        expect(store.has('quote:AAPL')).toBe(false);
+        expect(store.has('bars:today:AAPL')).toBe(false);
+    });
+
+    it('옛 키에 남은 엔트리는 스냅샷으로 읽히지 않는다', async () => {
+        store.set('quote:AAPL', { data: { ...SAMPLE_QUOTE, price: 999 } });
+        store.set('bars:today:AAPL', { data: [bar(TODAY_T + 86400)] });
+        const { inner, fetchQuote } = makeSnapshotInner();
+        const p = new CachedMarketDataProvider(inner);
+
+        expect(await p.getQuote('AAPL')).toEqual(SAMPLE_QUOTE);
+        expect(fetchQuote).toHaveBeenCalledTimes(1);
+    });
+
+    it('시세만 있고 오늘 봉이 없는 스냅샷은 캐싱한다 — TTL 동안 live tail 없이 재조회하지 않는다', async () => {
+        // FMP에서 이 상태는 quote 행의 timestamp가 깨져 오늘 봉 매핑만 실패할 때뿐이다. 행
+        // 단위로 지속되는 상태라 매 요청 다시 받아도 결과가 같다 — 예전 `bars:today`는 빈
+        // 결과를 굳히지 않아 그 종목의 1Day 조회마다 FMP를 다시 불렀다.
+        const { inner, fetchQuote } = makeSnapshotInner({
+            quote: SAMPLE_QUOTE,
+            todayBar: null,
+        });
+        const p = new CachedMarketDataProvider(inner);
+
+        expect(await p.getQuote('AAPL')).toEqual(SAMPLE_QUOTE);
+        expect(await p.getBars(dailyOpts)).toEqual([bar(HIST_T)]);
+        expect(await p.getBars(dailyOpts)).toEqual([bar(HIST_T)]);
+
+        expect(store.has('quote:snapshot:AAPL')).toBe(true);
+        expect(fetchQuote).toHaveBeenCalledTimes(1);
+    });
+
+    it('둘 다 null인 스냅샷은 캐싱하지 않는다(getQuote null·빈 오늘 봉)', async () => {
+        const { inner, fetchQuote } = makeSnapshotInner({
+            quote: null,
+            todayBar: null,
+        });
+        const p = new CachedMarketDataProvider(inner);
+
+        expect(await p.getQuote('AAPL')).toBeNull();
+        expect(await p.getBars(dailyOpts)).toEqual([bar(HIST_T)]);
+
+        expect(store.has('quote:snapshot:AAPL')).toBe(false);
+        expect(fetchQuote).toHaveBeenCalledTimes(2);
     });
 });
