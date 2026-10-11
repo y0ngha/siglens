@@ -156,6 +156,28 @@ describe('useSelectedModel', () => {
         });
     });
 
+    it('resolves a stored retired model (gemini-3.7-flash) to its successor instead of the default', async () => {
+        const successor = 'gemini-3.8-flash' as ModelId;
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY, '1');
+        localStorage.setItem(
+            LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+            'gemini-3.7-flash'
+        );
+
+        const { result } = renderHook(() =>
+            useSelectedModel([DEFAULT_MODEL, successor], true)
+        );
+
+        await waitFor(() => {
+            expect(result.current[2]).toBe(true);
+        });
+
+        expect(result.current[0]).toBe(successor);
+        expect(localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY)).toBe(
+            successor
+        );
+    });
+
     it('migrates a legacy-default (gemini-2.5-flash-lite) stored value to the new default on mount', async () => {
         // Legacy user: old analysis default stored, migration flag not yet set.
         localStorage.setItem(

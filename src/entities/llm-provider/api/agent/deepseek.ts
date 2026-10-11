@@ -13,6 +13,8 @@ export async function callDeepseekAgent(
     return streamOpenAiCompatibleAgent(o, {
         baseURL: 'https://api.deepseek.com',
         messages: toOpenAiChatMessages(o.messages),
+        // Thinking is off, so DeepSeek applies the sampling temperature.
+        temperature: 0,
         // DeepSeek-only top-level field, absent from the openai SDK types.
         extraBody: { thinking: { type: 'disabled' } },
     });
