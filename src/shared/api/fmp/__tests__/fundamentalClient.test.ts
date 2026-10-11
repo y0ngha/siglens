@@ -863,6 +863,15 @@ describe('FmpFundamentalClient', () => {
             const client = new FmpFundamentalClient();
             expect(await client.getEarningsReport('X')).toBeNull();
         });
+
+        it('labels rows with the requested app symbol, not the FMP spelling in the response', async () => {
+            // fmpGet sends BRK.B as BRK-B and FMP echoes BRK-B back. Stored as BRK-B, the
+            // rows were invisible to the BRK.B freshness check and comparison query.
+            mockOk([{ symbol: 'BRK-B', date: '2026-11-07' }]);
+            const client = new FmpFundamentalClient();
+            const [row] = await client.getEarningsReports('BRK.B', 5);
+            expect(row!.symbol).toBe('BRK.B');
+        });
     });
 
     // ------------------------------------------------------------------ //

@@ -15,7 +15,6 @@ import { createMemoryLru, type MemoryLru } from '@/shared/cache/memoryLru';
 import {
     EOD_PUBLISH_BUFFER_HOURS,
     lastClosedSessionDate,
-    secondsUntilSessionRoll,
     zonedDate,
 } from '@/shared/lib/marketSessionDate';
 import {
@@ -25,6 +24,15 @@ import {
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
 } from '@/shared/config/time';
+import {
+    type EodHistoryEntry,
+    type EodServeContext,
+    canExtendIncrementally,
+    isEntryServable,
+    mergeIncremental,
+    overlapStatus,
+    trimToWindow,
+} from './eodHistoryMerge';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type {
     QuoteSnapshot,
@@ -48,28 +56,42 @@ const EOD_LONG_WINDOW_GATE_DAYS = 10;
 const EOD_HISTORY_WINDOW_DAYS = FEAR_GREED_LOOKBACK_DAYS;
 
 /**
- * EOD history 키 접두사. 고정 창으로 바꾸면서 `v2`로 올렸다 — 옛 키에는 섹터 스캔이
- * 400일 창으로 받아 둔 값이 섞여 있어, 새 판정(키 안의 값은 항상 고정 창 전체)이
- * 그 값을 5년치로 잘못 믿게 된다. 키는 어차피 세션마다 날짜가 바뀌므로, 올리는 비용은
- * 종목당 한 번 더 받는 것(평소의 세션 롤 한 번)과 같다.
- */
-const EOD_HISTORY_KEY_PREFIX = 'bars:eodhist:v2';
-
-/**
- * EOD history 캐시 TTL에 더하는 여유. 세션-날짜 키(`bars:eodhist:v2:<SYM>:<date>`)는
- * 다음 세션 마감 + 발행 버퍼에 날짜가 넘어가 다시 읽히지 않으므로, TTL은 "넘어가는
- * 시각까지 남은 시간"(`secondsUntilSessionRoll`)이면 충분하다. 이 여유는 인스턴스 간
- * 시계 차이로 넘어가기 직전에 읽는 요청을 덮는 정도다.
+ * EOD history 키 접두사. 종목당 키 하나(`bars:eodhist:v3:<SYM>`)에 {@link EodHistoryEntry}를
+ * 담는다. `v2`(세션 날짜가 키에 든 `Bar[]`)와 값 모양이 달라 접두사를 올렸다 — 같은 키를
+ * 재사용하면 배포 직후 옛 엔트리를 새 모양으로 잘못 읽는다. 옛 키는 읽는 코드가 없어 각자의
+ * TTL로 저절로 사라진다. 올리는 비용은 종목당 전체 창을 한 번 더 받는 것(평소의 세션 롤 한 번)과
+ * 같지만, 전 종목이 같은 시점에 겹치므로 배포 직후 FMP 호출이 한꺼번에 몰린다.
  *
- * 예전에는 7일 고정이었다. 날짜가 넘어간 키가 최대 7일 남아 종목마다 옛 날짜 키가
- * 평균 7개씩 쌓였고(2026-10-04 운영 36,279키·326MB), 반대로 KRX 추석·설 연휴처럼
- * 날짜가 7일 넘게 안 바뀌는 구간에는 키가 먼저 사라져 같은 히스토리를 다시 받았다.
+ * ## 증분 갱신 (2026-10)
+ *
+ * 예전에는 키가 세션 날짜(`lastClosed`)별이라 세션이 넘어갈 때마다 활성 종목 전부가 5년치
+ * (~1,260봉, 압축 ~41KB)를 FMP `historical-price-eod/full`에서 통째로 다시 받았다 — 엔드포인트별
+ * 바이트 1위였다. 이제 세션이 바뀌면 **마지막 캐시 봉의 날짜부터** 겹쳐 받아 새 봉만 이어 붙인다
+ * (`getEodHistory`). 키가 세션과 무관하니 종목당 한 벌만 남는다 — 날짜별 사본이 쌓이지 않는다
+ * (날짜 키를 7일 TTL로 쌓아 두던 시절 326MB — 2026-10-04 운영). 보관 기간은 아래 TTL 참고.
  */
-const EOD_HIST_ROLL_MARGIN_SECONDS = SECONDS_PER_HOUR;
+const EOD_HISTORY_KEY_PREFIX = 'bars:eodhist:v3';
 
 /**
- * 불완전 EOD history(상장폐지/거래정지, 휴장일로 라벨된 키, 드물게 4h를 초과하는 FMP 지연)를
- * 캐싱할 쿨다운 TTL. 이 값으로 재fetch를 제한(≈6회/일/심볼)해 스래싱을 방지한다.
+ * EOD history 엔트리의 Redis TTL. 이제 세션 롤이 아니라 엔트리 안의 `asOf`가 유효성을 정하므로
+ * TTL은 "오래 안 보는 종목을 치우는" 정리용 상한이다. 엔트리가 사라져도 정확성은 그대로이고
+ * (다음 요청이 전체 창을 한 번 받는다) 증분의 이득만 잃는다. 쓸 때마다 갱신된다.
+ *
+ * 5일은 저장량과 증분 이득의 절충이다. 매일 조회되는 종목은 쓸 때마다 갱신돼 사라지지 않는다.
+ * 고정 TTL은 쓴 시각부터 세므로, 금요일 저녁(~20:00 ET)에 쓴 엔트리는 월요일이 휴장인 연휴 뒤
+ * 화요일 롤(~4일 뒤)까지 살아 있어야 한다 — 4일이면 그 직전에 만료돼 시장 전체가 한꺼번에
+ * 전체 창을 받는다. 5일은 일반 주말(금→월 롤)과 월·금요일 휴장 연휴(사흘 연휴)를 덮는다.
+ * 덮지 못하는 것은 그보다 긴 휴장(KRX 추석 등)으로, 그 뒤에는 종목당 한 번 전체 창을 받는다
+ * (예전과 같은 비용). 그보다 길게 안 보이는 롱테일 종목까지 붙들면 그 수만큼 5년치 봉이
+ * Redis에 남는다(종목당 ~41KB) — 예전 날짜 키는 롤 + 1시간이면 사라졌다.
+ */
+const EOD_HISTORY_TTL_SECONDS = 5 * SECONDS_PER_DAY;
+
+/**
+ * 불완전 EOD history(상장폐지/거래정지, 휴장일로 라벨된 세션, 드물게 4h를 초과하는 FMP 지연)를
+ * 업스트림 재확인 없이 내주는 쿨다운. 엔트리의 `checkedAt`부터 이 시간이 지나야 다음 요청이
+ * 증분 재확인을 하므로 재fetch가 ≈6회/일/심볼로 제한되어 스래싱을 막는다(재확인은 겹침 봉
+ * 하나 + 새 봉뿐이라 작다).
  *
  * 4h publish buffer가 대부분의 일시적 FMP 지연을 이미 흡수하므로, "불완전" 조회는 거의 항상
  * 영구적 상황(상장폐지, 거래 없는 휴장일 키)이다. 갭은 발생하지 않는다: today(quote)가
@@ -78,6 +100,8 @@ const EOD_HIST_ROLL_MARGIN_SECONDS = SECONDS_PER_HOUR;
  */
 const EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS =
     EOD_PUBLISH_BUFFER_HOURS * SECONDS_PER_HOUR;
+const EOD_HIST_INCOMPLETE_COOLDOWN_MS =
+    EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS * MS_PER_SECOND;
 
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
@@ -125,9 +149,9 @@ const EMPTY_INTRADAY_TAIL_MAX_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
 const HISTORY_MEMORY_MAX_ENTRIES = 128;
 
 /**
- * 히스토리 L1의 TTL 상한. 완성된 히스토리는 세션 날짜 키 안에서 바뀌지 않지만, 미완성
- * (FMP 발행 지연 → 쿨다운 TTL) 값은 Redis 쪽이 먼저 갱신될 수 있다. 메모리 쪽이 그보다
- * 오래 낡은 값을 쥐지 않도록 30분마다 Redis를 다시 본다 — 그 비용은 키당 GET 한 번이다.
+ * 히스토리 L1의 TTL 상한. 유효성은 엔트리의 `asOf`·`checkedAt`이 정하지만(L1 hit에도 같은
+ * 판정을 한다), 다른 인스턴스가 Redis 쪽을 먼저 갱신할 수 있다. 메모리 쪽이 그보다 오래 낡은
+ * 값을 쥐지 않도록 30분마다 Redis를 다시 본다 — 그 비용은 키당 GET 한 번이다.
  */
 const HISTORY_MEMORY_TTL_CAP_SECONDS = 30 * SECONDS_PER_MINUTE;
 
@@ -209,13 +233,13 @@ function buildBarsRawKey(o: GetBarsOptions): string {
  */
 export class CachedMarketDataProvider implements MarketDataProvider {
     /**
-     * 히스토리 L1. Redis 히스토리 키는 세션 날짜로만 바뀌는데, 장중에는 종목 페이지·섹터
+     * 히스토리 L1. Redis 히스토리 키는 세션이 바뀔 때만 갱신되는데, 장중에는 종목 페이지·섹터
      * 스캔이 그 키(5년 일봉 ~41KB 압축)를 분마다 다시 GET했다. 같은 인스턴스가 이미 들고
-     * 있는 값이라 메모리에서 낸다.
+     * 있는 값이라 메모리에서 낸다. 일봉은 {@link EodHistoryEntry}, 인트라데이는 `Bar[]`를
+     * 담는다 — 한 LRU에 섞어 둬야 인스턴스 힙 상한(`HISTORY_MEMORY_MAX_ENTRIES`)이 하나로 유지된다.
      */
-    private readonly historyMemory: MemoryLru<Bar[]> = createMemoryLru<Bar[]>(
-        HISTORY_MEMORY_MAX_ENTRIES
-    );
+    private readonly historyMemory: MemoryLru<Bar[] | EodHistoryEntry> =
+        createMemoryLru<Bar[] | EodHistoryEntry>(HISTORY_MEMORY_MAX_ENTRIES);
 
     constructor(
         private readonly inner: SiglensMarketProvider,
@@ -287,28 +311,29 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
     /**
      * 1Day 일봉을 불변 과거(history, EOD)와 오늘(today, quote)로 나눠 병렬 fetch 후 병합한다.
-     * - history `bars:eodhist:v2:<SYM>:<lastClosed>`: 세션-날짜 키가 세션 마감마다 자동 롤 →
-     *   세션당 1회 재조회. 요청 `from`과 무관하게 `lastClosed − EOD_HISTORY_WINDOW_DAYS`부터
-     *   `before=lastClosed`(완료된 EOD)까지의 고정 창을 받는다.
+     * - history `bars:eodhist:v3:<SYM>`: 종목당 하나. 요청 `from`과 무관하게
+     *   `lastClosed − EOD_HISTORY_WINDOW_DAYS`부터 `before=lastClosed`(완료된 EOD)까지의 고정 창을
+     *   담고, 세션이 바뀌면 전체를 다시 받지 않고 **증분 갱신**한다(`getEodHistory`).
      *   `lastClosed`는 `lastClosedSessionDate(this.session, now)`가 세션 스펙에서 유도한다:
      *   - US 주식: 16:00 ET(반장은 13:00) 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말·NYSE 휴장일 되감기.
      *   - 한국 주식: 15:30 KST 마감 + 같은 버퍼 + 주말·KRX 휴장일 되감기
      *     (`KR_MARKET_HOLIDAYS`; `KR_CALENDAR_HORIZON` 밖 날짜는 정상 개장으로 폴백).
      *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·버퍼 없음.
-     *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
-     *   - 도달했으면(newest.time >= lastClosedThreshold) 다음 세션 롤까지 + 여유(EOD_HIST_ROLL_MARGIN_SECONDS).
-     *   - 미도달이면(FMP EOD 미발행/지연, 상장폐지, 휴장일 키) 4h 쿨다운 TTL(EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS)로
-     *     재fetch를 제한(≈6회/일/심볼)한다. FMP가 따라잡으면 long TTL로 승격된다.
+     *   엔트리가 마지막 마감 봉까지 도달했는지에 따라 유효 기간이 갈린다:
+     *   - 도달했으면(newest.time >= lastClosedThreshold) `asOf`가 바뀔 때(다음 세션 롤)까지.
+     *   - 미도달이면(FMP EOD 미발행/지연, 상장폐지, 휴장일) `checkedAt`부터 4h 쿨다운
+     *     (EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS) 동안만 — 그 뒤 첫 요청이 증분 재확인을 해서
+     *     재fetch를 ≈6회/일/심볼로 제한한다. FMP가 따라잡으면 그 재확인에서 새 봉이 붙는다.
      *     갭은 발생하지 않는다: today(quote)가 경계를 채우며 휴장일/주말은 거래가 없다. 단, today(quote)가 lastClosed를 채우는 것은
      *     `lastClosed`가 오늘 당일의 세션 날짜와 같을 때(마감+버퍼 당일)만 해당한다. FMP 발행 지연이
      *     전일 봉에 걸리는 일반 장중 케이스에서는 해당 날짜가 EOD 발행 전까지 진정으로 부재하며,
-     *     short TTL 재시도가 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
-     *   isFresh는 요청 `from`이 고정 창 안이면 비어 있지 않은지만 본다(창보다 이른 `from`만
-     *   첫 봉으로 커버를 판정한다 — truncation 방지).
+     *     쿨다운 뒤 재확인이 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
+     *   요청 `from`이 고정 창 안이면 엔트리가 창을 덮는지만 본다(창보다 이른 `from`만 `entry.from`으로
+     *   커버를 판정한다 — truncation 방지).
      * - today `quote:snapshot:<SYM>`: `inner.getQuoteSnapshot`의 `todayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
      *   `getQuote`와 같은 키·같은 업스트림 호출을 공유한다(예전 `bars:today`·`quote:` 이중 키 폐지).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
-     * 단일 `getBars(from)`와 동일 집합을 만든다. 세션-날짜 키로 history는 항상 마지막 마감까지
+     * 단일 `getBars(from)`와 동일 집합을 만든다. history는 항상 마지막 마감까지
      * 커버, today(quote)와 갭 없음. 키 전제: long-1Day 호출부의 `from`은
      * 모두 고정 창 안이다(짧은 lookback은 isLongDailyWindow가 단일 경로로 분기).
      *
@@ -325,7 +350,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         // NYSE만 쉬는 날 KRX 봉이 `before=lastClosed`에 잘려 나간다.
         const lastClosed = lastClosedSessionDate(this.session, now);
         const lastClosedThreshold = utcMidnightSeconds(lastClosed);
-        // 히스토리는 요청 `from`이 아니라 키(세션 날짜)에서 정해지는 고정 창으로 받는다.
+        // 히스토리는 요청 `from`이 아니라 `lastClosed`에서 정해지는 고정 창으로 받는다.
         //
         // 예전에는 요청 `from`으로 받고 "첫 봉 ≤ from"일 때만 캐시 값을 썼다. 그런데 FMP는
         // `from` 이후 첫 **거래일**부터 주므로, `from`이 주말·휴장일이면(core의
@@ -335,9 +360,10 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         // 캐시를 무시하고 5년치를 다시 받아 다시 썼다 — FMP 대시보드의 엔드포인트별 Size에서
         // `historical-price-eod/full`이 1위였던 데 이 경로가 크게 기여했다.
         //
-        // 이제 키 안의 값은 언제나 `historyFrom`부터 받은 것이므로, 요청 `from`이 창 안이면
-        // 첫 봉 날짜와 상관없이 그대로 쓴다(그 앞에 봉이 없다는 뜻일 뿐이다). 창보다 이른
-        // `from`(지금은 호출부가 없다)만 예전처럼 첫 봉으로 판정하고 그 `from`으로 받는다.
+        // 이제 엔트리는 자기가 덮는 창 시작(`entry.from`)을 들고 있고 언제나 그 날짜부터 받은
+        // 것이므로, 요청 `from`이 창 안이면 첫 봉 날짜와 상관없이 그대로 쓴다(그 앞에 봉이
+        // 없다는 뜻일 뿐이다). 창보다 이른 `from`(지금은 호출부가 없다)은 엔트리가 그 `from`을
+        // 덮지 못하면 그 `from`으로 다시 받는다.
         const historyFrom = isoDateDaysAgo(
             new Date(utcMidnightSeconds(lastClosed) * MS_PER_SECOND),
             EOD_HISTORY_WINDOW_DAYS
@@ -346,34 +372,15 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         const withinWindow =
             requestedFrom === undefined || requestedFrom >= historyFrom;
         const fetchFrom = withinWindow ? historyFrom : requestedFrom;
-        const fromThreshold = utcMidnightSeconds(fetchFrom);
-        const symbolKey = options.symbol.toUpperCase();
-        // 이 키가 다시 읽히지 않게 되는 시각(다음 세션 마감 + 발행 버퍼)까지만 둔다.
-        const rollTtlSeconds =
-            secondsUntilSessionRoll(this.session, now) +
-            EOD_HIST_ROLL_MARGIN_SECONDS;
 
         const [history, todayBars] = await Promise.all([
-            this.getHistory(
-                `${EOD_HISTORY_KEY_PREFIX}:${symbolKey}:${lastClosed}`,
-                bars =>
-                    bars.length > 0 &&
-                    bars[bars.length - 1]!.time >= lastClosedThreshold
-                        ? rollTtlSeconds
-                        : Math.min(
-                              EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS,
-                              rollTtlSeconds
-                          ),
-                () =>
-                    this.inner.getBars({
-                        ...options,
-                        from: fetchFrom,
-                        before: lastClosed,
-                    }),
-                bars =>
-                    bars.length > 0 &&
-                    (withinWindow || bars[0]!.time <= fromThreshold)
-            ),
+            this.getEodHistory(options, {
+                lastClosed,
+                lastClosedThreshold,
+                fetchFrom,
+                nowMs: now.getTime(),
+                cooldownMs: EOD_HIST_INCOMPLETE_COOLDOWN_MS,
+            }),
             this.getQuoteSnapshot(options.symbol).then(({ todayBar }) =>
                 todayBar !== null ? [todayBar] : []
             ),
@@ -463,6 +470,123 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     }
 
     /**
+     * 일봉 EOD 히스토리를 읽는다: L1 → Redis(`getOrSetCache`) → 증분 갱신 또는 전체 fetch.
+     *
+     * 엔트리가 `isEntryServable`이면 업스트림 호출 없이 낸다. 아니면(세션이 바뀜, 불완전 쿨다운
+     * 만료, 요청 창을 못 덮음) 낡은 엔트리를 밑천으로 `refreshEodHistory`가 겹쳐 받아 이어 붙이거나,
+     * 이어 붙일 수 없으면 고정 창 전체를 받는다. 빈 결과는 어디에도 두지 않는다.
+     *
+     * ## 동시성: 왜 `getOrSetCache`의 `isFresh` 클로저로 낡은 엔트리를 붙잡는가
+     *
+     * 세션이 넘어가는 순간 차트·분석·fear&greed·섹터 스캔·프리웜이 같은 종목을 동시에 요청한다.
+     * 증분인지 전체인지 정하려면 캐시 값을 먼저 봐야 하는데, 별도로 GET하면 41KB를 한 번 더 받고
+     * 단일 비행(single-flight)도 직접 만들어야 한다. `getOrSetCache`는 같은 키의 miss를 하나의
+     * fetch로 접으므로(`inFlight`), 그 `isFresh` 판정 자리에서 "낡은 값이었다"를 클로저 변수에
+     * 담아 두면 소유자의 fetcher가 그 값을 밑천으로 쓴다 — GET은 한 번이고 업스트림 호출도 키당
+     * 하나다. 대기자는 소유자 결과가 자기 기준에 맞으면 그대로 받고, 안 맞으면(세션 경계에서
+     * 서로 `lastClosed`가 다름, 더 이른 `from`) 소유자 결과를 밑천 삼아 직접 갱신한다(캐시에는
+     * 쓰지 않는다 — `getOrSetCache` 규약).
+     *
+     * Redis가 없거나 GET이 실패하면 L1의 낡은 엔트리가 밑천이다(L1이 비어 있으면 전체 fetch).
+     */
+    private async getEodHistory(
+        options: GetBarsOptions,
+        ctx: EodServeContext
+    ): Promise<Bar[]> {
+        const key = `${EOD_HISTORY_KEY_PREFIX}:${options.symbol.toUpperCase()}`;
+        const memo = this.historyMemory.get(key);
+        let stale: EodHistoryEntry | undefined;
+        if (memo !== undefined && !Array.isArray(memo)) {
+            if (isEntryServable(memo, ctx)) return memo.bars;
+            stale = memo;
+        }
+
+        const entry = await getOrSetCache<EodHistoryEntry>(
+            key,
+            EOD_HISTORY_TTL_SECONDS,
+            () => this.refreshEodHistory(options, ctx, stale),
+            fetched => fetched.bars.length > 0,
+            cached => {
+                const servable = isEntryServable(cached, ctx);
+                // 낡았지만 읽힌 값은 증분 갱신의 밑천이다. 같은 키에 둘 이상이면 가장 최근
+                // `checkedAt`이 더 많은 봉을 안다.
+                if (
+                    !servable &&
+                    (stale === undefined || cached.checkedAt >= stale.checkedAt)
+                ) {
+                    stale = cached;
+                }
+                return servable;
+            }
+        );
+        if (entry.bars.length > 0 && isEntryServable(entry, ctx)) {
+            this.historyMemory.set(
+                key,
+                entry,
+                HISTORY_MEMORY_TTL_CAP_SECONDS * MS_PER_SECOND
+            );
+        }
+        return entry.bars;
+    }
+
+    /**
+     * 낡은 엔트리(`stale`) 뒤를 이어 붙이거나, 못 하면 고정 창 전체를 받아 새 엔트리를 만든다.
+     *
+     * 증분: `from` = 마지막 캐시 봉의 날짜(포함)로 `before=lastClosed`까지 받는다. 그 봉이 캐시와
+     * 같으면(`overlapStatus`) 이후 봉만 이어 붙이고 새 창 앞쪽을 자른다(`fullAt`은 이어받는다). 다르거나 응답에 없으면
+     * 분할 등으로 과거가 소급 조정됐거나 알 수 없는 상태이므로 전체 창을 다시 받는다 — 분할 뒤
+     * 단순 이어 붙이기는 차트·지표를 조용히 망가뜨리기 때문이다. 증분 호출이 던지면 그대로
+     * 전파한다(전체 fetch와 같은 장애 정책, 장애를 캐시하지 않는다).
+     */
+    private async refreshEodHistory(
+        options: GetBarsOptions,
+        ctx: EodServeContext,
+        stale: EodHistoryEntry | undefined
+    ): Promise<EodHistoryEntry> {
+        const fromThreshold = utcMidnightSeconds(ctx.fetchFrom);
+        const build = (bars: Bar[], fullAt: number): EodHistoryEntry => ({
+            asOf: ctx.lastClosed,
+            from: ctx.fetchFrom,
+            checkedAt: ctx.nowMs,
+            fullAt,
+            bars,
+        });
+        const fetchBars = (from: string): Promise<Bar[]> =>
+            this.inner.getBars({ ...options, from, before: ctx.lastClosed });
+
+        const cachedLast = stale?.bars.at(-1);
+        if (
+            stale !== undefined &&
+            cachedLast !== undefined &&
+            canExtendIncrementally(stale, ctx, fromThreshold)
+        ) {
+            // `from`을 포함하는지는 실측으로 확인했다(2026-10): FMP `eod/full`은 `from` 날짜 봉을
+            // 포함하고, yahoo chart는 `period1 = '2026-10-07'`에 2026-10-07T00:00:00Z 봉을 준다
+            // (005930.KS). 두 공급자 모두 겹침 봉이 응답에 들어온다.
+            const fetched = await fetchBars(
+                toUtcIsoDate(new Date(cachedLast.time * MS_PER_SECOND))
+            );
+            const status = overlapStatus(cachedLast, fetched);
+            if (status === 'match') {
+                return build(
+                    trimToWindow(
+                        mergeIncremental(stale.bars, fetched, cachedLast.time),
+                        fromThreshold
+                    ),
+                    stale.fullAt
+                );
+            }
+            // 영구적으로 반복되면(경계 의미가 다른 공급자 등) 증분의 이득이 사라지므로 보이게 남긴다.
+            console.warn(
+                '[CachedMarketDataProvider] eodhist overlap mismatch, full refetch:',
+                options.symbol.toUpperCase(),
+                status
+            );
+        }
+        return build(await fetchBars(ctx.fetchFrom), ctx.nowMs);
+    }
+
+    /**
      * 히스토리 키 읽기: L1 메모리 → `getOrSetCache`(Redis + in-flight dedup) 순. 빈 결과는
      * 어느 쪽에도 두지 않는다. `isFresh`는 L1 hit에도 똑같이 적용한다 — 넓은 기준으로 저장된
      * 값만 좁은 요청을 덮는다(`getOrSetCache`의 isFresh 규약과 같다).
@@ -474,7 +598,8 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         isFresh: (bars: Bar[]) => boolean
     ): Promise<Bar[]> {
         const memo = this.historyMemory.get(key);
-        if (memo !== undefined && isFresh(memo)) return memo;
+        if (memo !== undefined && Array.isArray(memo) && isFresh(memo))
+            return memo;
         const bars = await getOrSetCache<Bar[]>(
             key,
             ttlSeconds,
