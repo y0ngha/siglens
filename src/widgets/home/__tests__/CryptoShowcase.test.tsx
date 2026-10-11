@@ -41,6 +41,11 @@ import { render, screen } from '@testing-library/react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { CryptoShowcase } from '../CryptoShowcase';
 
+// 관심종목 ★는 React Query(`useWatchlist`)를 쓴다 — 이 테스트의 관심사가 아니라 비운다.
+vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
+    WatchlistPillToggle: () => null,
+}));
+
 describe('CryptoShowcase', () => {
     it('섹션 heading이 "암호화폐 인기 종목"이다', () => {
         render(<CryptoShowcase />);

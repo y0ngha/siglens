@@ -18,6 +18,7 @@ import { FearGreedHeaderChip } from './FearGreedHeaderChip';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
+import { RecordRecentSymbol } from '@/features/watchlist/ui/RecordRecentSymbol';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { brandName } from '@/shared/lib/brandName';
@@ -319,6 +320,11 @@ export function SymbolLayoutHeader({
                             source="symbol_header"
                             successToast
                             showCoachMark
+                        />
+                        {/* 헤더 ★·홈 카드·`/watchlist`의 "최근 본" 탭 기록. 그리는 것은 없다. */}
+                        <RecordRecentSymbol
+                            symbol={ticker}
+                            label={watchlistLabel}
                         />
                         <PortfolioChipMounted symbol={ticker} />
                         <ShareButton />

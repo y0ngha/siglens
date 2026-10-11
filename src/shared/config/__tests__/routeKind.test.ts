@@ -35,6 +35,7 @@ describe('routeKindOf', () => {
         ['/account', 'account'],
         ['/account/delete', 'account'],
         ['/portfolio', 'portfolio'],
+        ['/watchlist?tab=recent', 'portfolio'],
         ['/share/abc123', 'share'],
         ['/AAPL', 'symbol'],
         ['/AAPL/news', 'symbol'],

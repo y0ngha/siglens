@@ -11,11 +11,18 @@ export interface ToastLink {
     label: string;
 }
 
+/** 토스트 안의 버튼 하나(검색에서 담은 직후의 "되돌리기"). 누르면 실행하고 토스트를 닫는다. */
+export interface ToastAction {
+    label: string;
+    onAction: () => void;
+}
+
 export interface ToastContent {
     message: string;
     /** 둘째 줄 보조 문장(병합 토스트의 "M개는 제외했어요"). */
     detail?: string;
     link?: ToastLink;
+    action?: ToastAction;
 }
 
 interface ToastProps {
@@ -87,6 +94,27 @@ export function Toast({ toast, onDismiss, onPauseChange }: ToastProps) {
                                     >
                                         {toast.link.label}
                                     </Link>
+                                </>
+                            )}
+                            {toast.action && (
+                                <>
+                                    <span
+                                        aria-hidden="true"
+                                        className="text-secondary-500"
+                                    >
+                                        {' '}
+                                        ·{' '}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            toast.action?.onAction();
+                                            onDismiss();
+                                        }}
+                                        className="font-semibold text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        {toast.action.label}
+                                    </button>
                                 </>
                             )}
                         </p>

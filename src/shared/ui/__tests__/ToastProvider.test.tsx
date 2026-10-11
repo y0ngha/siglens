@@ -51,6 +51,36 @@ describe('ToastProvider', () => {
         ).toHaveAttribute('href', '/portfolio');
     });
 
+    it('action 버튼은 실행한 뒤 토스트를 닫는다', async () => {
+        const user = userEvent.setup();
+        const onAction = vi.fn();
+        function ActionTrigger() {
+            const { showToast } = useToast();
+            return (
+                <button
+                    type="button"
+                    onClick={() =>
+                        showToast({
+                            message: '담았어요',
+                            action: { label: '되돌리기', onAction },
+                        })
+                    }
+                >
+                    show
+                </button>
+            );
+        }
+        render(
+            <ToastProvider>
+                <ActionTrigger />
+            </ToastProvider>
+        );
+        await user.click(screen.getByRole('button', { name: 'show' }));
+        await user.click(screen.getByRole('button', { name: '되돌리기' }));
+        expect(onAction).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    });
+
     it('한 번에 하나 — 두 번째 토스트가 첫 토스트를 교체한다', async () => {
         const user = userEvent.setup();
         render(

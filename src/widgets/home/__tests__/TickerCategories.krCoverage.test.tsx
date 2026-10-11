@@ -20,6 +20,11 @@ import { render, screen } from '@testing-library/react';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { TickerCategories } from '../TickerCategories';
 
+// 관심종목 ★는 React Query(`useWatchlist`)를 쓴다 — 이 테스트의 관심사가 아니라 비운다.
+vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
+    WatchlistPillToggle: () => null,
+}));
+
 /**
  * 이 그리드는 저장소 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한 `<a>`**다
  * (검색 자동완성은 `<button>` + `router.push`). 여기서 빠진 종목은 sitemap에만 있는

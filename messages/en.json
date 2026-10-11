@@ -280,9 +280,9 @@
                 "ac9263": "You haven't registered any holdings yet.",
                 "d103d5": "If you register your holdings, you can see where your average price is within the recent price range for each stock, visualized as a building.",
                 "06c7de": "Manage holdings",
-                "title": "My Symbols",
-                "subtitle": "Your watchlist and holdings in one place. For holdings, see where your average cost sits within the recent price range.",
-                "watchlistHeading": "Watchlist"
+                "title": "My Portfolio",
+                "subtitle": "Register your holdings and see where your average price stands within the recent price range.",
+                "toWatchlist": "View Watchlist"
             }
         },
         "reset-password": {
@@ -409,6 +409,13 @@
             "page": {
                 "heading": "Most-viewed symbols",
                 "intro": "The symbols people look up most. Anything not listed still works — type its ticker in the search box and it is analyzed the same way."
+            }
+        },
+        "watchlist": {
+            "page": {
+                "subtitle": "Check prices for your saved and recently viewed stocks in one place.",
+                "title": "Watchlist",
+                "toPortfolio": "View My Portfolio"
             }
         }
     },
@@ -979,38 +986,26 @@
         },
         "watchlist": {
             "toggle": {
-                "limit": "Your watchlist holds up to {v0} symbols. Free up space on My Symbols.",
+                "limit": "You can add up to {v0} stocks to your Watchlist. Please manage them on the Watchlist page.",
                 "label": "Watchlist: {v0}"
             },
             "toast": {
                 "added": "Added to your watchlist",
-                "viewMine": "View My Symbols",
                 "limit": "Your watchlist holds up to {v0} symbols",
                 "failed": "Something went wrong. Please try again.",
                 "merged": "Moved {v0} watchlist symbols into your account",
                 "mergedSkipped": "{v1} were left out because of the {v0}-symbol limit",
-                "holdingKeptInWatchlist": "Holding saved, but it could not be removed from your watchlist. Remove it on My Symbols."
+                "holdingKeptInWatchlist": "Holding saved, but could not remove from Watchlist. Please delete it manually from the Watchlist page.",
+                "undo": "Undo",
+                "viewWatchlist": "View Watchlist"
             },
             "coach": {
                 "body": "Tap ☆ to keep this symbol on your watchlist — sign up and it arrives in your email report",
                 "dismiss": "Close tip"
             },
-            "badge": {
-                "count": "{v0} watchlist symbols"
-            },
-            "onboarding": {
-                "title": "Start with a watchlist",
-                "subtitle": "No ticker needed. Save symbols without signing up, then pick up anywhere once you do.",
-                "categories": "Symbol categories",
-                "tiles": "{v0} symbols",
-                "count": "{v0} symbols saved",
-                "viewMine": "View My Symbols",
-                "collapsed": "{v0} symbols on your watchlist"
-            },
             "section": {
                 "loading": "Loading your watchlist",
                 "empty": "No symbols saved yet",
-                "emptyCta": "Pick symbols on the home page",
                 "price": "Price",
                 "change": "Change",
                 "quoteUnavailable": "No quote",
@@ -1019,6 +1014,36 @@
                 "remove": "Remove",
                 "removeFor": "Remove {v0} from watchlist",
                 "list": "Watchlist"
+            },
+            "home": {
+                "add": "Add Stock",
+                "emptyBody": "Tap the star next to a stock to add it here and see its price immediately every time you visit.",
+                "heading": "My Watchlist",
+                "more": "View {v0} more",
+                "popular": "View Popular Stocks",
+                "search": "Search Stocks",
+                "viewAll": "View All"
+            },
+            "page": {
+                "sort": "Sort",
+                "sortAdded": "Date Added",
+                "sortChange": "Change %",
+                "sortName": "Name"
+            },
+            "preview": {
+                "edit": "Edit",
+                "emptyRecent": "You haven't viewed any stocks yet. They will appear here after you open a stock page.",
+                "emptyWatchlist": "You haven't added any stocks yet. Tap the star next to a stock to add it here.",
+                "tabRecent": "Recent",
+                "tabWatchlist": "Watchlist",
+                "tabsLabel": "List selection",
+                "title": "Watchlist",
+                "viewAll": "View All Watchlist"
+            },
+            "quick": {
+                "label": "Watchlist",
+                "open": "Open Watchlist",
+                "openWithCount": "Open Watchlist, {v0} items"
             }
         }
     },
@@ -1747,8 +1772,8 @@
             "oauthConsentFullTitle": "{v0} — social sign-up terms consent",
             "oauthConsentTitle": "Social sign-up consent",
             "portfolio": {
-                "description": "A personalized SIGLENS page with your watchlist and holdings, showing where your average cost sits within each holding's recent price range.",
-                "title": "My Symbols"
+                "description": "A personalized page to check where your average price stands within the recent price range for holdings registered on SigLens.",
+                "title": "My Portfolio"
             },
             "position": {
                 "breadcrumb": "My Position",
@@ -1851,6 +1876,10 @@
             "terms": {
                 "description": "Read SIGLENS's Terms of Service — sign-up and usage conditions, disclaimers for AI analysis and backtesting, account and content rules, and the rights and obligations of users and the company.",
                 "title": "Terms of Service"
+            },
+            "watchlist": {
+                "description": "A personalized page to view prices and 5-day trends for your saved Watchlist stocks and recently viewed stocks on SigLens, all in one place.",
+                "title": "Watchlist"
             }
         },
         "skillName": {
@@ -3920,7 +3949,7 @@
                 "e225a6": "Log In",
                 "ecb4cc": "Sign Up",
                 "menuLabel": "User menu ({v0})",
-                "mySymbols": "My Symbols"
+                "myPortfolio": "My Portfolio"
             },
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
             "localeSwitcher": {

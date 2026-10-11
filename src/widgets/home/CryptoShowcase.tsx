@@ -39,6 +39,7 @@ export function CryptoShowcase() {
             heading={t('CryptoShowcase.5c8e33')}
             ariaLabel={t('CryptoShowcase.ab6a33')}
             cards={CRYPTO_CARDS}
+            watchlistSource="home_popular"
         />
     );
 }

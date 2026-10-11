@@ -73,7 +73,11 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                 </button>
             )}
             <div ref={desktopSearchRef} className="hidden lg:block">
-                <TickerAutocomplete size="lg" onSelect={addSearch} />
+                <TickerAutocomplete
+                    size="lg"
+                    onSelect={addSearch}
+                    showWatchlistStar
+                />
             </div>
 
             {recentSearches.length > 0 && (

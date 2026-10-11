@@ -1,4 +1,6 @@
 import { useTranslations } from 'next-intl';
+import type { WatchlistSource } from '@/entities/watchlist/model';
+import { WatchlistPillToggle } from '@/features/watchlist/ui/WatchlistPillToggle';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
@@ -31,6 +33,10 @@ interface CategoryCardGridProps {
     heading: string;
     ariaLabel: string;
     cards: readonly CategoryCard[];
+    /** 있으면 종목 알약마다 관심종목 ★를 붙이고 이 값으로 담기 지점을 기록한다. */
+    watchlistSource?: WatchlistSource;
+    /** 섹션 앵커(홈 빈 카드의 "인기 종목 보기"가 가리킨다). */
+    sectionId?: string;
 }
 
 // 주식(섹터)·암호화폐 두 섹션이 동일한 카드 디자인을 공유하도록 추출한
@@ -39,11 +45,17 @@ export function CategoryCardGrid({
     heading,
     ariaLabel,
     cards,
+    watchlistSource,
+    sectionId,
 }: CategoryCardGridProps) {
     const t = useTranslations('widgets.home');
     const assetLabel = useAssetLabel();
     return (
-        <nav aria-label={ariaLabel} className="page-container py-10">
+        <nav
+            id={sectionId}
+            aria-label={ariaLabel}
+            className="page-container scroll-mt-20 py-10"
+        >
             {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다
                 (`shared/lib/typographyStyles.ts`). 한글 제목이라 uppercase·넓은
                 자간을 쓰지 않는 근거도 그 상수의 주석에 있다. */}
@@ -81,7 +93,14 @@ export function CategoryCardGrid({
                             })}
                         >
                             {card.items.map(item => (
-                                <li key={item.symbol}>
+                                <li
+                                    key={item.symbol}
+                                    className={
+                                        watchlistSource
+                                            ? 'inline-flex items-center rounded-full border border-border-control transition-colors hover:border-primary-500'
+                                            : undefined
+                                    }
+                                >
                                     <Link
                                         href={`/${item.symbol}`}
                                         title={t(
@@ -93,7 +112,13 @@ export function CategoryCardGrid({
                                         // origin에서 당겨오므로 prefetch를 끈다
                                         // (docs/architecture/CDN_CACHING.md §1).
                                         prefetch={false}
-                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control px-3 py-1 text-xs text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        className={cn(
+                                            'inline-flex items-baseline gap-1.5 rounded-full py-1 text-xs text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                                            // ★가 붙으면 테두리는 알약(`li`)이 갖고 링크는 왼쪽 몫만 쓴다.
+                                            watchlistSource
+                                                ? 'pr-0.5 pl-3'
+                                                : 'border border-border-control px-3 hover:border-primary-500'
+                                        )}
                                     >
                                         {/* config의 `name`은 한국어 데이터다 —
                                             표시는 `shared.assetName` 카탈로그를
@@ -105,6 +130,16 @@ export function CategoryCardGrid({
                                             {item.symbol}
                                         </span>
                                     </Link>
+                                    {watchlistSource && (
+                                        <WatchlistPillToggle
+                                            symbol={item.symbol}
+                                            label={assetLabel(
+                                                item.symbol,
+                                                item.name
+                                            )}
+                                            source={watchlistSource}
+                                        />
+                                    )}
                                 </li>
                             ))}
                         </ul>

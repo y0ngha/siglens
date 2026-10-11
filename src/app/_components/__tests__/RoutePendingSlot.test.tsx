@@ -98,7 +98,7 @@ describe('RoutePendingSlot', () => {
         expect(skeletonKind(container)).toBe('auth');
     });
 
-    it('내 종목(/portfolio)은 비회원에게 열려 있어 게스트도 그 페이지 골격을 그린다', () => {
+    it('내 포트폴리오(/portfolio)는 비회원에게도 열려 있어(가입 CTA) 게스트도 그 페이지 골격을 그린다', () => {
         const { container } = render(<Tree targets={['/portfolio']} />);
 
         fireEvent.click(screen.getByRole('button', { name: '/portfolio' }));

@@ -45,7 +45,7 @@ export interface UseWatchlistResult {
         entry: RawWatchlistInput,
         source: WatchlistSource
     ) => Promise<WatchlistAddOutcome>;
-    /** 명시적 삭제(내 종목 섹션·보유로 전환). 이벤트 없음. */
+    /** 명시적 삭제(`/watchlist` 목록·보유로 전환·검색 담기 되돌리기). 이벤트 없음. */
     remove: (symbol: string) => Promise<boolean>;
     /** 하이드레이션 전(회원은 첫 목록 도착 전)엔 false — 토글 비활성, 목록 비어 있음. */
     isHydrated: boolean;

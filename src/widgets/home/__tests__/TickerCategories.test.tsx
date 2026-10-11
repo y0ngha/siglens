@@ -46,6 +46,11 @@ import { render, screen } from '@testing-library/react';
 
 import { TickerCategories } from '../TickerCategories';
 
+// 관심종목 ★는 React Query(`useWatchlist`)를 쓴다 — 이 테스트의 관심사가 아니라 비운다.
+vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
+    WatchlistPillToggle: () => null,
+}));
+
 describe('TickerCategories', () => {
     it('renders category headings', () => {
         render(<TickerCategories />);

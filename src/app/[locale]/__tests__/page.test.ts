@@ -9,8 +9,8 @@ vi.mock('@/widgets/home/StatsBar', () => ({
         return null;
     },
 }));
-vi.mock('@/features/watchlist/ui/WatchlistOnboarding', () => ({
-    WatchlistOnboarding: function WatchlistOnboarding() {
+vi.mock('@/features/watchlist/ui/HomeWatchlistCard', () => ({
+    HomeWatchlistCard: function HomeWatchlistCard() {
         return null;
     },
 }));
@@ -152,22 +152,20 @@ describe('홈 generateMetadata', () => {
     );
 });
 
-describe('홈 관심종목 온보딩 배치', () => {
-    it('WatchlistOnboarding이 히어로 섹션 안, StatsBar 앞에 한 번 렌더된다', async () => {
+describe('홈 관심종목 카드 배치', () => {
+    it('HomeWatchlistCard가 히어로 섹션 안, StatsBar 앞에 한 번 렌더된다', async () => {
         const { default: Home } = await import('../(home)/page');
-        const { WatchlistOnboarding } =
-            await import('@/features/watchlist/ui/WatchlistOnboarding');
+        const { HomeWatchlistCard } =
+            await import('@/features/watchlist/ui/HomeWatchlistCard');
         const { findAllElementsByType } =
             await import('@/__tests__/utils/findElementByType');
         const tree = await Home({ params: Promise.resolve({ locale: 'ko' }) });
-        expect(findAllElementsByType(tree, WatchlistOnboarding)).toHaveLength(
-            1
-        );
-        // 문서 순서: 온보딩 블록이 StatsBar보다 먼저 나온다.
+        expect(findAllElementsByType(tree, HomeWatchlistCard)).toHaveLength(1);
+        // 문서 순서: 관심종목 카드가 StatsBar보다 먼저 나온다.
         const flat = JSON.stringify(tree, (_key, value) =>
             typeof value === 'function' ? value.name : value
         );
-        expect(flat.indexOf('WatchlistOnboarding')).toBeLessThan(
+        expect(flat.indexOf('HomeWatchlistCard')).toBeLessThan(
             flat.indexOf('StatsBar')
         );
     });

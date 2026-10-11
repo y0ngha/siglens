@@ -46,6 +46,8 @@ const KIND_BY_FIRST_SEGMENT: Readonly<Record<string, RouteKind>> = {
     'email-report': 'account',
     account: 'account',
     portfolio: 'portfolio',
+    // 관심종목 목록은 내 포트폴리오와 같은 "제목 + 카드 목록" 골격이다.
+    watchlist: 'portfolio',
     share: 'share',
 };
 

@@ -96,7 +96,7 @@ describe('WatchlistToggleButton', () => {
         expect(button).toHaveAttribute('aria-disabled', 'true');
         expect(button).toBeEnabled();
         expect(button).toHaveAccessibleDescription(
-            `관심종목은 최대 ${WATCHLIST_MAX_LOCAL}개까지 담을 수 있어요. 내 종목에서 정리해 주세요.`
+            `관심종목은 최대 ${WATCHLIST_MAX_LOCAL}개까지 담을 수 있어요. 관심종목 페이지에서 정리해 주세요.`
         );
         await user.tab();
         expect(button).toHaveFocus();
@@ -121,7 +121,7 @@ describe('WatchlistToggleButton', () => {
         );
     });
 
-    it('successToast면 담기 성공에 "담았어요 · 내 종목 보기" 토스트를 띄운다(빼기엔 안 띄운다)', async () => {
+    it('successToast면 담기 성공에 "담았어요 · 관심종목 보기" 토스트를 띄운다(빼기엔 안 띄운다)', async () => {
         setWatchlist({ toggle: vi.fn(async () => 'added' as const) });
         const user = userEvent.setup();
         render(
@@ -136,7 +136,7 @@ describe('WatchlistToggleButton', () => {
         await waitFor(() =>
             expect(toast.showToast).toHaveBeenCalledWith({
                 message: '관심종목에 담았어요',
-                link: { href: '/portfolio', label: '내 종목 보기' },
+                link: { href: '/watchlist', label: '관심종목 보기' },
             })
         );
     });

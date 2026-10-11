@@ -83,7 +83,7 @@ export function useWatchlistMerge(): void {
             showToast({
                 message: t('toast.merged', { v0: result.added }),
                 ...(skippedLine ? { detail: skippedLine } : {}),
-                link: { href: '/portfolio', label: t('toast.viewMine') },
+                link: { href: '/watchlist', label: t('toast.viewWatchlist') },
             });
             trackFunnelEvent('watchlist_merged', { count: result.added });
         } else if (skippedLine) {

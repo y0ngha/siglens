@@ -21,6 +21,16 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 
+vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
+    WatchlistPillToggle: ({
+        symbol,
+        source,
+    }: {
+        symbol: string;
+        source: string;
+    }) => <button data-testid={`star-${symbol}`}>{source}</button>,
+}));
+
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
@@ -120,5 +130,30 @@ describe('CategoryCardGrid 카테고리 설명', () => {
             />
         );
         expect(container.querySelectorAll('p')).toHaveLength(0);
+    });
+
+    it('watchlistSource가 있으면 알약마다 링크와 형제인 ★를 붙이고 앵커 id를 단다', () => {
+        render(
+            <CategoryCardGrid
+                heading="h"
+                ariaLabel="a"
+                cards={CARDS}
+                watchlistSource="home_popular"
+                sectionId="popular"
+            />
+        );
+        const star = screen.getByTestId('star-BTCUSD');
+        expect(star).toHaveTextContent('home_popular');
+        // ★는 링크 안이 아니라 옆에 있다 — 누르면 담기만 하고 이동하지 않는다.
+        expect(star.closest('a')).toBeNull();
+        expect(screen.getByRole('navigation', { name: 'a' })).toHaveAttribute(
+            'id',
+            'popular'
+        );
+    });
+
+    it('watchlistSource가 없으면 ★를 그리지 않는다', () => {
+        render(<CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />);
+        expect(screen.queryByTestId('star-BTCUSD')).toBeNull();
     });
 });

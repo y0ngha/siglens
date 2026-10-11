@@ -20,6 +20,7 @@ describe('quoteFromBars', () => {
         expect(quoteFromBars([bar(90), bar(100), bar(110)])).toEqual({
             price: 110,
             changePct: 10,
+            trend: [90, 100, 110],
         });
     });
 
@@ -27,6 +28,12 @@ describe('quoteFromBars', () => {
         expect(quoteFromBars([bar(0), bar(5)])).toEqual({
             price: 5,
             changePct: null,
+            trend: [0, 5],
         });
+    });
+
+    it('추세는 최근 5개 종가만 남긴다', () => {
+        const bars = [1, 2, 3, 4, 5, 6, 7].map(bar);
+        expect(quoteFromBars(bars)?.trend).toEqual([3, 4, 5, 6, 7]);
     });
 });

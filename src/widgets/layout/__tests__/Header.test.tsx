@@ -50,6 +50,11 @@ import { Header } from '../Header';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 
+// 관심종목 ★는 React Query(`useWatchlist`)를 쓴다 — 이 테스트의 관심사가 아니라 비운다.
+vi.mock('@/features/watchlist/ui/WatchlistQuickButton', () => ({
+    WatchlistQuickButton: () => null,
+}));
+
 describe('Header', () => {
     it('renders the site logo and name', () => {
         render(<Header currentUser={null} />);

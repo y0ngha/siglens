@@ -38,6 +38,11 @@ vi.mock('@/features/ticker-search/hooks/useRecentSearches', () => ({
 
 import { SearchOverlay } from '@/features/ticker-search/ui/SearchOverlay';
 
+// 관심종목 ★는 React Query(`useWatchlist`)를 쓴다 — 이 테스트의 관심사가 아니라 비운다.
+vi.mock('@/features/watchlist/ui/SearchWatchlistStar', () => ({
+    SearchWatchlistStar: () => null,
+}));
+
 describe('SearchOverlay', () => {
     const onNavigateMock = vi.fn();
     function renderOverlay(onClose = vi.fn()) {

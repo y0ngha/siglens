@@ -17,8 +17,8 @@ export const GUEST_ONLY_PATHS: ReadonlySet<string> = new Set([
 
 /**
  * 비로그인 사용자가 들어오면 `/login`으로 보내는 경로(접두 일치).
- * `/portfolio`는 **없다** — "내 종목"은 비회원에게도 열려 로컬 관심종목을 보여 준다
- * (2026-10-09 관심종목 설계 §6.3). 보유종목 영역만 페이지 안에서 가입 CTA로 대체한다.
+ * `/watchlist`·`/portfolio`는 **없다** — `/watchlist`는 비회원에게도 로컬 관심종목을 보여 주고,
+ * `/portfolio`는 비회원에게 리다이렉트 대신 보유종목 자리에 가입 CTA를 그린다.
  */
 export const AUTH_REQUIRED_PATHS: readonly string[] = ['/account'];
 

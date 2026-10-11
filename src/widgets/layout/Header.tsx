@@ -5,6 +5,7 @@ import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
+import { WatchlistQuickButton } from '@/features/watchlist/ui/WatchlistQuickButton';
 import { LogoLockup } from './LogoLockup';
 import { cn } from '@/shared/lib/cn';
 
@@ -92,6 +93,10 @@ export function Header({
                     자동완성. 폭 계약(`ml-auto`)까지 이 컴포넌트가 소유한다 —
                     `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
                 <HeaderSearch />
+                {/* 관심종목 상시 진입점. ai 호스트(`authNext`가 있을 때)에는 두지 않는다 —
+                    비회원 관심종목은 출처별 localStorage라 ai.siglens.io에서는 비어 보이고,
+                    목록 행·"전체 보기"가 모두 메인 호스트로 나가는 전체 이동이 된다. */}
+                {authNext === undefined && <WatchlistQuickButton />}
                 {/*
                     모바일 갭이 **행 갭(`gap-2`)과 같아야** 한다. 검색 트리거와
                     햄버거는 이 div의 형제라 행 갭을 쓰는데, 안쪽만 다른 값을

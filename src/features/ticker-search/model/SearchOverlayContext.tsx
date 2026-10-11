@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    createContext,
-    use,
-    useCallback,
-    useMemo,
-    type ReactNode,
-} from 'react';
+import { use, useCallback, useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
@@ -23,13 +17,10 @@ import { useSearchOverlay } from '../hooks/useSearchOverlay';
 import { NavigationProgressBar } from '../ui/NavigationProgressBar';
 import { SearchOverlay } from '../ui/SearchOverlay';
 
-interface SearchOverlayContextValue {
-    open: () => void;
-}
-
-const SearchOverlayContext = createContext<SearchOverlayContextValue | null>(
-    null
-);
+import {
+    SearchOverlayTriggerContext,
+    type SearchOverlayTrigger,
+} from '@/shared/model/SearchOverlayTriggerContext';
 
 /**
  * 전체화면 검색 오버레이를 **앱 전체에 단 하나만** 호스팅한다.
@@ -112,7 +103,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
     const value = useMemo(() => ({ open }), [open]);
 
     return (
-        <SearchOverlayContext value={value}>
+        <SearchOverlayTriggerContext value={value}>
             {children}
             <SearchOverlay
                 isOpen={isOpen}
@@ -126,7 +117,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
             <span role="status" className="sr-only">
                 {pendingHref !== null ? t('search.navigating') : ''}
             </span>
-        </SearchOverlayContext>
+        </SearchOverlayTriggerContext>
     );
 }
 
@@ -135,6 +126,6 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
  * 트리거 자체를 렌더하지 않도록 분기할 수 있다 — 테스트나 스토리북처럼 Provider가
  * 없는 환경에서 터지지 않게 하기 위함이다.
  */
-export function useSearchOverlayTrigger(): SearchOverlayContextValue | null {
-    return use(SearchOverlayContext);
+export function useSearchOverlayTrigger(): SearchOverlayTrigger | null {
+    return use(SearchOverlayTriggerContext);
 }

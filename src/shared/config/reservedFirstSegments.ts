@@ -34,6 +34,9 @@ export const RESERVED_FIRST_SEGMENTS: ReadonlySet<string> = new Set([
     // 정규화되고, 그 경로는 [symbol] fallback을 타 404가 된다.
     'onboarding',
     'portfolio',
+    // 관심종목(`/watchlist`). `isAdmissibleSymbolShape('watchlist')`가 참이라 여기 없으면
+    // `/WATCHLIST` 티커로 301된다.
+    'watchlist',
     'share',
     'backtesting',
     'terms',
