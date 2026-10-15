@@ -9,6 +9,7 @@ import {
     API_GENERATABLE_MODELS,
     API_KNOWN_MODELS,
 } from '@/entities/siglens-api-key/lib/apiModels';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 
 /**
  * 에이전트가 쓰는 도구 중 공개 API에 **내보내지 않는** 것.
@@ -50,8 +51,7 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */
 export const PUBLIC_API_FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
 
-const FRESH_ANALYSIS_DESCRIPTION =
-    'Get an AI analysis for a symbol (kind: technical, overall, news or options) in the same structure as get_cached_analysis. A shared cached analysis is returned at no cost (meta.source "cache"). Otherwise a NEW analysis is generated (30-250 seconds) with YOUR registered LLM key — BYOK only, SigLens never spends its own key — and counts against the stricter "ai" rate limit. Generating needs a premium model that runs on your own key and a registered key for its provider.';
+const FRESH_ANALYSIS_DESCRIPTION = `Get an AI analysis for a symbol (kind: technical, overall, news or options) in the same structure as get_cached_analysis. A shared cached analysis is returned at no cost (meta.source "cache"). Otherwise a NEW analysis is generated (usually about a minute, at most ${FRESH_ANALYSIS_DEADLINE_SECONDS} seconds) with YOUR registered LLM key — BYOK only, SigLens never spends its own key — and counts against the stricter "ai" rate limit. Generating needs a premium model that runs on your own key and a registered key for its provider.`;
 
 /**
  * 에이전트 스펙(`inputSchema`: symbol·kind·timeframe)에 API 전용 `model`을 더한다. 생략하면 계정의 "API 기본 모델"이다.

@@ -998,6 +998,7 @@
                 "creating": "作成中…",
                 "description": "APIキーを使って、AIエージェントやスクリプトから株価・チャート・ニュースなどのSIGLENSデータを取得できます。",
                 "dismiss": "保管しました",
+                "docsLink": "APIドキュメントを見る",
                 "downloadSkill": "Skillをダウンロード",
                 "emailNotVerified": "メール認証を完了してから、APIキーを作成できます。先にアカウントのメールを認証してください。",
                 "empty": "まだキーがありません。",
@@ -1763,6 +1764,11 @@
                 "title": "AAPL・NVDA・TSLA バックテスト — シグナル事後検証"
             },
             "backtestingOgAlt": "{v0} AIバックテスト結果",
+            "developers": {
+                "description": "株価、チャート指標、ニュース、オプション、財務、保存済みのAI分析をAPIで取得できます。AI分析はご自身のLLMキー(BYOK)で作成し、OpenAPIドキュメントとClaude Skillも入手できます。",
+                "metaTitle": "SIGLENS開発者API: 銘柄分析データをHTTPで取得",
+                "title": "開発者API"
+            },
             "economy": {
                 "kr": {
                     "description": "韓国の経済指標を1ページで確認できます。政策金利・消費者物価・雇用率・GDP成長率などの主要指標から国庫債金利、輸出増加率までまとめて表示し、今後の指標発表予定もご案内します。",
@@ -2125,6 +2131,12 @@
             },
             "Breadcrumb": {
                 "46c31f": "パンくずリスト"
+            },
+            "CodeBlock": {
+                "buttonLabel": "{action}: {label}",
+                "copied": "コピーしました",
+                "copy": "コピー",
+                "copyFailed": "コピーに失敗"
             },
             "ConsentCheckboxGroup": {
                 "1f835a": "同意項目",
@@ -2857,6 +2869,122 @@
                 "search": "銘柄検索",
                 "web": "ウェブ検索"
             }
+        },
+        "developers": {
+            "authentication": {
+                "byokBody": "run_fresh_analysisは、共有キャッシュに分析があれば無料で返し、ない場合にだけアカウントに登録したLLMキーで新しく作成します。新規作成にはBYOKクラスのモデルとそのプロバイダーのキー登録が必要で、モデルはアカウント設定か、リクエストのmodel引数で選びます。SIGLENSのサーバーキーは使いません。",
+                "byokTitle": "AI分析はご自身のキーで(BYOK)",
+                "cookies": "ログインセッションのCookieは読み取りません。ブラウザでログインしていても、キーがなければ拒否されます。",
+                "failure": "キーがない、形式が正しくない、無効化済み、または未知のキーの場合は、理由を区別せずすべて401 invalid_api_keyを返します。",
+                "headerLabel": "Authorizationヘッダーの例",
+                "revoke": "キーはアカウント設定でいつでも無効化でき、無効化するとすぐに使えなくなります。",
+                "sub": "ドキュメントのダウンロードを除くすべてのリクエストに、APIキーをBearerトークンとして送ります。",
+                "title": "認証"
+            },
+            "downloads": {
+                "action": "{file}をダウンロード",
+                "baseUrl": "ベースURL",
+                "jsonBody": "OpenAPI 3.1ドキュメント(JSON)です。コードジェネレーター、Postman、Swaggerなどに取り込んでください。",
+                "skillBody": "Claude CodeとClaude.ai Skills向けのSKILL.mdです。",
+                "sub": "APIキーなしで取得でき、ツールが変わるとファイルの内容も一緒に変わります。",
+                "title": "ダウンロード",
+                "yamlBody": "同じOpenAPIドキュメントのYAML版です。"
+            },
+            "hero": {
+                "byok": "AI分析はご自身で登録したLLMキー(BYOK)で作成します。SIGLENSがAIの費用を負担することはなく、すでにキャッシュされた分析の読み取りは無料です。",
+                "createKey": "APIキーを作成",
+                "eyebrow": "開発者",
+                "lede": "AIエージェントが使っているデータツールを、そのままHTTPで呼び出せます。銘柄検索、株価、チャートと指標、ニュース、オプション、財務、議会取引、経済指標、保存済みのAI分析を取得できます。",
+                "quickstart": "クイックスタートを見る",
+                "title": "SIGLENS APIドキュメント"
+            },
+            "localeSection": {
+                "body": "{header}ヘッダーにko、en、ja、zhのいずれかを送ります。デフォルトはウェブサイトと同じkoなので、ウェブで作成済みのキャッシュ分析をそのまま受け取れます。ヘッダーがない場合や未知の値の場合もkoとして扱います。",
+                "exampleLabel": "言語ヘッダーの例",
+                "sub": "ローカライズされるテキストの言語を選べます。",
+                "title": "言語"
+            },
+            "quickstart": {
+                "meLabel": "キーの状態を確認するcurlの例",
+                "skillBody": "SKILL.mdをSkillとして登録すると、Claudeが必要なときにこのAPIを直接呼び出します。Skillは環境変数{env}のキーを使います。Claude Codeでは、次のコマンドでダウンロードしておきます。",
+                "skillClaudeAi": "Claude.aiでは、siglensフォルダにSKILL.mdを入れてzipにまとめ、Skillsの設定からアップロードします。",
+                "skillLabel": "SKILL.mdをインストールするコマンド",
+                "skillTitle": "Claude CodeとClaude.aiで使う",
+                "step1Body": "アカウント設定のSIGLENS APIセクションでキーを作成します。メール認証を完了した会員が作成でき、キーは最大{max}個まで持てます。キー本体は作成時に一度だけ表示されるので、すぐにコピーしてください。",
+                "step1Link": "アカウント設定でキーを作成",
+                "step1Title": "APIキーを作成する",
+                "step2Body": "次の名前で設定すると、このページの例とSkillがそのまま動作します。",
+                "step2Label": "環境変数を設定するコマンド",
+                "step2Title": "環境変数に設定する",
+                "step3Body": "まずキーの状態と残りの上限を確認してから、ツールを1つ呼び出してみましょう。",
+                "step3Title": "呼び出してみる",
+                "sub": "キーを作成して環境変数に設定し、1回呼び出してみましょう。",
+                "title": "クイックスタート",
+                "toolLabel": "{name}を呼び出すcurlの例"
+            },
+            "rateLimits": {
+                "body": "ツール呼び出しは1分あたり{dataPerMinute}回、1日あたり{dataPerDay, number}回までです。キャッシュにない分析を新しく作成する呼び出しには、これとは別に1分あたり{aiPerMinute}回、1日あたり{aiPerDay, number}回の上限があります。キャッシュ済みの分析を読む呼び出しは、ツールの上限だけを使います。",
+                "colHeader": "ヘッダー",
+                "colMeaning": "意味",
+                "headerAiLimit": "新規分析の作成に対するAI上限です。作成時のストリーミングレスポンスにのみ付きます。",
+                "headerAiRemaining": "AI上限の枠に残っている作成回数です。",
+                "headerAiReset": "AI上限の枠が終わる時刻です(エポック秒)。",
+                "headerLimit": "ツールの上限です。1分の枠が基準で、超過して拒否されるときは超えた枠が基準です。",
+                "headerRemaining": "その枠に残っている回数です。",
+                "headerReset": "その枠が終わる時刻です(エポック秒)。",
+                "headerRetryAfter": "429や503のあと、再試行するまで待つ秒数です。",
+                "over": "上限を超えると、HTTP 429とRetry-Afterヘッダー(待つ秒数)が返ります。上限の保存先に問題があるときは、無制限で通さず503 rate_limiter_unavailableで拒否します。",
+                "sub": "上限はアカウント単位なので、キーを複数作成しても共有されます。",
+                "tableCaption": "上限に関するレスポンスヘッダー",
+                "title": "利用上限",
+                "unmetered": "計測の前に拒否されたレスポンス(401、400、404、413)には、上限ヘッダーは付きません。"
+            },
+            "responses": {
+                "codesNote": "エラーコードと説明は、APIが返す英語のまま記載しています。",
+                "codesTitle": "エラーコード",
+                "colCode": "ステータスとコード",
+                "colMeaning": "説明",
+                "errorAdvice": "ステータスコードとerror.codeで分岐してください。error.messageは人が読む英語の文なので解析せず、未知のコードはステータスコードで処理してください。",
+                "errorLabel": "失敗レスポンスの例",
+                "errorTitle": "失敗",
+                "streamedNote": "run_fresh_analysisでは、ストリーミング開始後にこのエラーが起きると200の本文のerrorフィールドで届きます。",
+                "sub": "成功と失敗では形が異なるため、ステータスコードと本文の最上位キーで見分けます。",
+                "successLabel": "成功レスポンスの例",
+                "successTitle": "成功",
+                "tableCaption": "エラーコードの一覧",
+                "title": "レスポンスとエラー",
+                "truncated": "結果がツールごとのサイズ上限を超えると、meta.truncatedがtrueになり、dataはtruncatedとpreviewだけを持つオブジェクトに縮小されます。バー数を減らすなど、引数を絞って再度呼び出してください。"
+            },
+            "streaming": {
+                "disconnect": "接続を閉じても生成は取り消されません。最後まで実行されてご自身のキーに課金され、結果は共有キャッシュに保存されるので、次に呼び出すとキャッシュからすぐ受け取れます。",
+                "early": "キャッシュヒットと、認証・上限・引数・モデル・キー未登録のように生成前にわかる失敗は、通常のステータスコードと通常のJSONで返ります。",
+                "exampleLabel": "新規分析を作成するcurlの例",
+                "how": "キャッシュにない分析を新しく作成するには、通常1分前後かかり、長くてもツールの期限である{deadline}秒以内に終わります(超えるとtool_timeoutになります)。認証、上限、引数、モデル、キーの確認をすべて通過すると、レスポンスはすぐHTTP 200で始まり、接続が切れないように改行の空白バイトを定期的に送り、最後にJSON本文を書き込みます。",
+                "parse": "JSONは先頭の空白を許容するため、本文全体をそのままパースできます。200を送ったあとの失敗も200の本文で届くので、このツールではステータスコードにかかわらず、必ずerrorフィールドの有無を確認してください。",
+                "sub": "run_fresh_analysisのみが対象です。ほかのツールは通常のJSONレスポンスです。",
+                "title": "新規分析の作成とストリーミング"
+            },
+            "toc": {
+                "label": "開発者ドキュメントの目次"
+            },
+            "tools": {
+                "argsCaption": "{name}の引数",
+                "argsTitle": "引数",
+                "byokBadge": "BYOK",
+                "byokNote": "新規分析の作成にはご自身のLLMキーが使われ、AI上限を別に消費します。共有キャッシュから読む場合は無料です。",
+                "colArgument": "引数",
+                "colDescription": "説明",
+                "curlLabel": "{name}のcurlの例",
+                "enumMore": "残り{count}件を表示",
+                "indexLabel": "ツールへ移動",
+                "noArgs": "このツールに引数はありません。本文を空にするか、空のJSONオブジェクトを送ってください。",
+                "note": "ツールと引数の説明はAIエージェントが読むため英語で書かれており、翻訳せずそのまま表示しています。この一覧はGET /tools、OpenAPIドキュメントと同じソースから作られるため、ツールが増えると一緒に増えます。説明に出てくるツールのうち、この一覧にないものは無視してください。",
+                "optional": "任意",
+                "required": "必須",
+                "sub": "ツールごとに専用のパスがあり、本文は引数のJSONです。",
+                "title": "ツールリファレンス"
+            },
+            "updatedAt": "最終更新 {date}"
         },
         "guide": {
             "aliasesLabel": "別名",
@@ -4049,6 +4177,7 @@
                 "531f6a": "お問い合わせ",
                 "5f5d12": "サイト情報",
                 "693b62": "投資免責事項",
+                "developersLink": "開発者API",
                 "guideLink": "チャートガイド",
                 "symbolsLink": "よく見られる銘柄"
             },

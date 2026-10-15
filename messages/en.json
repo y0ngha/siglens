@@ -998,6 +998,7 @@
                 "creating": "Creating…",
                 "description": "Use an API key to read SIGLENS data such as quotes, charts and news from an AI agent or a script.",
                 "dismiss": "I've saved it",
+                "docsLink": "View API docs",
                 "downloadSkill": "Download Skill",
                 "emailNotVerified": "You can create an API key after verifying your email. Please verify your account email first.",
                 "empty": "You haven't created any keys yet.",
@@ -1763,6 +1764,11 @@
                 "title": "AAPL, NVDA, TSLA Backtest — Signal Review"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
+            "developers": {
+                "description": "Fetch quotes, chart indicators, news, options, fundamentals and stored AI analyses over HTTP. AI analysis runs on your own LLM key (BYOK). The OpenAPI spec and a Claude Skill are included.",
+                "metaTitle": "SIGLENS Developer API: Stock Analysis Data over HTTP",
+                "title": "Developer API"
+            },
             "economy": {
                 "kr": {
                     "description": "See Korea's economic indicators on one page — policy rate, CPI, employment rate, and GDP growth, plus government bond yields and export growth, along with upcoming release dates.",
@@ -2125,6 +2131,12 @@
             },
             "Breadcrumb": {
                 "46c31f": "Breadcrumb"
+            },
+            "CodeBlock": {
+                "buttonLabel": "{action}: {label}",
+                "copied": "Copied",
+                "copy": "Copy",
+                "copyFailed": "Copy failed"
             },
             "ConsentCheckboxGroup": {
                 "1f835a": "Consent Items",
@@ -2857,6 +2869,122 @@
                 "search": "Ticker search",
                 "web": "Web search"
             }
+        },
+        "developers": {
+            "authentication": {
+                "byokBody": "run_fresh_analysis returns a shared cached analysis at no cost, and only when none exists does it generate a new one with the LLM key you registered in your account. Generating needs a BYOK-class model and a registered key for its provider. Pick the model in account settings or with the model argument. SIGLENS never uses its own server keys for this.",
+                "byokTitle": "AI analysis on your own key (BYOK)",
+                "cookies": "Login session cookies are never read. Being signed in in a browser does not replace a key.",
+                "failure": "A missing, malformed, revoked or unknown key all get the same answer, 401 invalid_api_key, without saying which one it was.",
+                "headerLabel": "Authorization header example",
+                "revoke": "You can revoke a key in account settings at any time, and it stops working immediately.",
+                "sub": "Send your API key as a Bearer token with every request except the document downloads.",
+                "title": "Authentication"
+            },
+            "downloads": {
+                "action": "Download {file}",
+                "baseUrl": "Base URL",
+                "jsonBody": "The OpenAPI 3.1 document as JSON. Import it into code generators, Postman or Swagger.",
+                "skillBody": "SKILL.md for Claude Code and Claude.ai Skills.",
+                "sub": "No API key is needed, and the files change when the tools change.",
+                "title": "Downloads",
+                "yamlBody": "The same OpenAPI document as YAML."
+            },
+            "hero": {
+                "byok": "AI analysis runs on your own LLM key (BYOK). SIGLENS does not pay for your AI calls, and reading an analysis that is already cached costs nothing.",
+                "createKey": "Create an API key",
+                "eyebrow": "Developers",
+                "lede": "Call the data tools behind the SIGLENS AI agent over plain HTTP: ticker search, quotes, bars and indicators, news, options, fundamentals, Congressional Trades, economic data and stored AI analyses.",
+                "quickstart": "See the quick start",
+                "title": "SIGLENS API Documentation"
+            },
+            "localeSection": {
+                "body": "Send one of ko, en, ja or zh in the {header} header. The default is ko, the same as the website, so you get analyses that the website already wrote. A missing or unknown value is treated as ko.",
+                "exampleLabel": "Language header example",
+                "sub": "Choose the language of localized text.",
+                "title": "Language"
+            },
+            "quickstart": {
+                "meLabel": "curl example for checking the key status",
+                "skillBody": "Register SKILL.md as a Skill and Claude calls this API when it needs to. The Skill reads the key from the {env} environment variable. For Claude Code, download it with the command below.",
+                "skillClaudeAi": "In Claude.ai, put SKILL.md in a folder named siglens, zip it, and upload it in the Skills settings.",
+                "skillLabel": "Command to install SKILL.md",
+                "skillTitle": "Use it from Claude Code and Claude.ai",
+                "step1Body": "Create a key in the SIGLENS API section of your account settings. Members with a verified email can create keys, and you can hold up to {max} at a time. The full key is shown only once when you create it, so copy it right away.",
+                "step1Link": "Create a key in account settings",
+                "step1Title": "Create an API key",
+                "step2Body": "Use this name and the examples on this page and the Skill work as they are.",
+                "step2Label": "Command to set the environment variable",
+                "step2Title": "Set an environment variable",
+                "step3Body": "Check the key status and your remaining quota first, then call a tool.",
+                "step3Title": "Make a call",
+                "sub": "Create a key, put it in an environment variable, and make one call.",
+                "title": "Quick start",
+                "toolLabel": "curl example for {name}"
+            },
+            "rateLimits": {
+                "body": "Tool calls are limited to {dataPerMinute} per minute and {dataPerDay, number} per day. Calls that generate a new analysis because none is cached have a separate limit of {aiPerMinute} per minute and {aiPerDay, number} per day. Reading a cached analysis only uses the tool limit.",
+                "colHeader": "Header",
+                "colMeaning": "Meaning",
+                "headerAiLimit": "The AI limit for generating new analyses. Sent only on the streaming response of a generation.",
+                "headerAiRemaining": "Generations left in the AI window.",
+                "headerAiReset": "When the AI window ends, in epoch seconds.",
+                "headerLimit": "The tool limit. It is for the minute window, or for the window that was exceeded when a request is refused.",
+                "headerRemaining": "Calls left in that window.",
+                "headerReset": "When that window ends, in epoch seconds.",
+                "headerRetryAfter": "Seconds to wait before retrying after a 429 or 503.",
+                "over": "Over the limit you get HTTP 429 with a Retry-After header (seconds to wait). If the limit store has a problem, requests are refused with 503 rate_limiter_unavailable instead of being left unlimited.",
+                "sub": "Limits are per account, so all of your keys share them.",
+                "tableCaption": "Rate limit response headers",
+                "title": "Rate limits",
+                "unmetered": "Responses refused before metering (401, 400, 404, 413) do not carry the limit headers."
+            },
+            "responses": {
+                "codesNote": "Error codes and descriptions are written in English, as the API sends them.",
+                "codesTitle": "Error codes",
+                "colCode": "Status and code",
+                "colMeaning": "Description",
+                "errorAdvice": "Branch on the status code and error.code. error.message is an English sentence for people, so do not parse it, and handle an unknown code by its status code.",
+                "errorLabel": "Failure response example",
+                "errorTitle": "Failure",
+                "streamedNote": "For run_fresh_analysis, once streaming has started this error arrives as the error field of the 200 body.",
+                "sub": "Success and failure have different shapes, so tell them apart by the status code and the top-level key.",
+                "successLabel": "Success response example",
+                "successTitle": "Success",
+                "tableCaption": "List of error codes",
+                "title": "Responses and errors",
+                "truncated": "When a result is over the size cap of its tool, meta.truncated is true and data shrinks to an object with only truncated and preview fields. Call again with narrower arguments, for example fewer bars."
+            },
+            "streaming": {
+                "disconnect": "Closing the connection does not cancel the generation. It runs to the end and is charged to your key, and the result goes into the shared cache, so the next call gets it from the cache.",
+                "early": "Cache hits and failures that are known before generation, such as authentication, limits, bad arguments, the model or a missing key, use a normal status code and a normal JSON body.",
+                "exampleLabel": "curl example for generating a new analysis",
+                "how": "Generating an analysis that is not cached usually takes about a minute, and never longer than the {deadline}-second tool deadline (after that you get tool_timeout). Once the request passes the authentication, rate limit, argument, model and key checks, the response starts at once as HTTP 200, sends newline whitespace bytes now and then so the connection is not dropped, and writes the JSON body at the end.",
+                "parse": "JSON allows leading whitespace, so parse the whole body as it is. A failure after the 200 was sent also arrives as a 200 body, so for this tool always check for an error field, whatever the status code is.",
+                "sub": "This applies to run_fresh_analysis only. Every other tool returns a normal JSON response.",
+                "title": "Generating new analyses and streaming"
+            },
+            "toc": {
+                "label": "Developer docs contents"
+            },
+            "tools": {
+                "argsCaption": "Arguments of {name}",
+                "argsTitle": "Arguments",
+                "byokBadge": "BYOK",
+                "byokNote": "Generating a new analysis uses your own LLM key and counts against the AI limit. Reading from the shared cache is free.",
+                "colArgument": "Argument",
+                "colDescription": "Description",
+                "curlLabel": "curl example for {name}",
+                "enumMore": "Show {count} more",
+                "indexLabel": "Jump to a tool",
+                "noArgs": "This tool takes no arguments. Send an empty body or an empty JSON object.",
+                "note": "Tool and argument descriptions are written in English for the AI agent, so they are shown as they are, untranslated. This list comes from the same source as GET /tools and the OpenAPI document, so it grows when tools are added. Ignore references to tools that are not listed here.",
+                "optional": "optional",
+                "required": "required",
+                "sub": "Each tool has its own path, and the body is the arguments as JSON.",
+                "title": "Tool reference"
+            },
+            "updatedAt": "Last updated {date}"
         },
         "guide": {
             "aliasesLabel": "Also known as",
@@ -4049,6 +4177,7 @@
                 "531f6a": "Contact Us",
                 "5f5d12": "Site Information",
                 "693b62": "Investment Disclaimer",
+                "developersLink": "Developer API",
                 "guideLink": "Chart Guide",
                 "symbolsLink": "Most-viewed symbols"
             },

@@ -1,5 +1,6 @@
 import type { AgentToolSpec } from '@y0ngha/siglens-core';
 import { buildSkillMarkdown } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import { PUBLIC_API_RATE_LIMITS } from '@/shared/config/publicApi';
 
 const quote: AgentToolSpec = {
@@ -129,7 +130,10 @@ describe('buildSkillMarkdown', () => {
             expect(md).toContain('(BYOK)');
             expect(md).toContain('never spends its own key');
             expect(md).toContain('no LLM call');
-            expect(md).toContain('30-250 seconds');
+            expect(md).toContain('about a minute');
+            expect(md).toContain(
+                `${FRESH_ANALYSIS_DEADLINE_SECONDS}-second tool deadline`
+            );
         });
 
         it('BYOK 등급 모델만 생성할 수 있고 무료·회원 등급은 공유 캐시 읽기만 된다고 분명히 적는다', () => {

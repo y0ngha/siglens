@@ -33,6 +33,8 @@ const KIND_BY_FIRST_SEGMENT: Readonly<Record<string, RouteKind>> = {
     backtesting: 'backtesting',
     about: 'article',
     methodology: 'article',
+    // 개발자 포털도 읽을거리 골격(제목 + 목차 + 긴 본문)이다.
+    developers: 'article',
     guide: 'article',
     privacy: 'legal',
     terms: 'legal',

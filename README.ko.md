@@ -27,9 +27,9 @@ SIGLENS는 주문을 넣지 않습니다. 분석만 제공하며, 투자 판단�
 
 ### siglens.io: 종목별 분석
 
-`AAPL`, `005930.KS`, `BTCUSD` 같은 티커를 입력하면 보조지표가 얹힌 차트와 감지된 패턴, 그리고 실시간으로 작성되는 AI 리포트가 나타납니다. 차트 옆 탭에서는 뉴스, 공포·탐욕 지수, 종합 전망을 볼 수 있습니다. 주식은 펀더멘털과 재무제표를, 미국 주식은 옵션 시장과 의회 거래 동향을 추가로 제공합니다.
+`AAPL`, `005930.KS`, `BTCUSD` 같은 티커를 입력하면 보조지표가 얹힌 차트와 감지된 패턴, 그리고 실시간으로 작성되는 AI 리포트가 나타납니다. 차트 옆 탭에서는 뉴스, 공포·탐욕 지수, 종합 전망을 볼 수 있습니다. 주식은 펀더멘털과 재무제표를, 미국 주식은 옵션 시장, 의회 거래 동향, 프리마켓·애프터마켓 시세를 추가로 제공합니다. AI 리포트는 Claude Haiku·Sonnet·Opus 5.5, GPT-6 Luna·GPT-6 Sol·GPT-6.1 Sol, Gemini 4 Argon 중에서 골라 작성할 수 있습니다.
 
-개별 종목 외에도 섹터 신호 대시보드, 시장 공포·탐욕 지수, 뉴스 허브, 거시경제 대시보드, 과거 AI 분석의 백테스팅 결과를 볼 수 있습니다.
+개별 종목 외에도 관심종목, 섹터 신호 대시보드, 시장 공포·탐욕 지수, 뉴스 허브, 거시경제 대시보드, 과거 AI 분석의 백테스팅 결과를 볼 수 있습니다.
 
 ```mermaid
 flowchart LR
@@ -82,6 +82,18 @@ flowchart LR
     style LOOKUP fill:#f1f5f9,stroke:#94a3b8,color:#1e293b
     style ANALYSIS fill:#f5f3ff,stroke:#a78bfa,color:#1e293b
 ```
+
+로그인한 회원은 관심 있는 종목의 분석을 정기 메일 리포트로 받을 수 있고, 비회원은 [샘플 페이지](https://siglens.io/email-report/sample)에서 어떤 메일이 오는지 미리 볼 수 있습니다.
+
+## 오픈 API와 에이전트 스킬
+
+AI 에이전트가 쓰는 데이터 도구를 HTTP로도 쓸 수 있습니다. 계정 설정에서 API 키를 만들면 스크립트에서 호출하거나 직접 만든 에이전트에 연결할 수 있습니다.
+
+- **API 문서**: [siglens.io/developers](https://siglens.io/developers)에 인증, 사용 한도, 오류, 도구별 curl 예시가 있습니다.
+- **OpenAPI 3.1**: [openapi.json](https://siglens.io/api/v1/openapi.json), [openapi.yaml](https://siglens.io/api/v1/openapi.yaml). API와 같은 도구 목록에서 만들어집니다.
+- **에이전트 스킬**: [SKILL.md](https://siglens.io/api/v1/skill)를 등록하면 Claude Code나 Claude.ai가 API를 직접 호출합니다.
+
+AI 분석은 사용자가 등록한 LLM 키(BYOK)로 실행되어 SIGLENS가 비용을 대지 않고, 이미 만들어진 캐시 분석을 읽는 데는 비용이 들지 않습니다. 내 키로 새 분석을 만들 수 있는 것은 Claude Opus 5.5, GPT-6.1 Sol, Gemini 4 Argon 같은 프리미엄 모델뿐이고, 나머지 모델은 공유 캐시에 이미 있는 분석만 읽을 수 있습니다.
 
 ## 지원 시장
 
