@@ -95,7 +95,7 @@ describe('POST /api/v1/tools/{name} — 인증', () => {
 });
 
 describe('POST /api/v1/tools/{name} — 도구 선택', () => {
-    it.each(['web_search', 'run_fresh_analysis', 'no_such_tool'])(
+    it.each(['web_search', 'no_such_tool'])(
         '%s는 404 unknown_tool이고 한도도 소비하지 않는다',
         async name => {
             const response = await call(name, {});
@@ -107,6 +107,237 @@ describe('POST /api/v1/tools/{name} — 도구 선택', () => {
             expect(mockExecute).not.toHaveBeenCalled();
         }
     );
+});
+
+describe('POST /api/v1/tools/{name} — run_fresh_analysis', () => {
+    it('model은 스키마가 받아들이고 실행에 그대로 전달된다', async () => {
+        const response = await call('run_fresh_analysis', {
+            symbol: 'AAPL',
+            kind: 'technical',
+            model: 'claude-opus-5',
+        });
+        expect(response.status).toBe(200);
+        expect(mockExecute.mock.calls[0][0].name).toBe('run_fresh_analysis');
+        expect(mockExecute.mock.calls[0][1]).toEqual({
+            symbol: 'AAPL',
+            kind: 'technical',
+            model: 'claude-opus-5',
+        });
+    });
+
+    it('로스터에 없는 model은 400 invalid_args이고 한도를 소비하지 않는다', async () => {
+        const response = await call('run_fresh_analysis', {
+            symbol: 'AAPL',
+            kind: 'technical',
+            model: 'no-such-model',
+        });
+        expect(response.status).toBe(400);
+        expect(mockConsume).not.toHaveBeenCalled();
+        expect(mockExecute).not.toHaveBeenCalled();
+    });
+
+    it('userId 같은 필드는 여전히 거절한다', async () => {
+        const response = await call('run_fresh_analysis', {
+            symbol: 'AAPL',
+            kind: 'technical',
+            userId: 'someone-else',
+        });
+        expect(response.status).toBe(400);
+        expect(mockExecute).not.toHaveBeenCalled();
+    });
+
+    it('캐시 적중 결과의 meta.source·model을 응답 meta에 싣는다', async () => {
+        mockExecute.mockResolvedValue({
+            ok: true,
+            data: { found: true },
+            truncated: false,
+            meta: { source: 'cache', model: 'claude-opus-5' },
+        });
+        const response = await call('run_fresh_analysis', {
+            symbol: 'AAPL',
+            kind: 'technical',
+            model: 'claude-opus-5',
+        });
+        await expect(response.json()).resolves.toEqual({
+            data: { found: true },
+            meta: {
+                tool: 'run_fresh_analysis',
+                source: 'cache',
+                model: 'claude-opus-5',
+            },
+        });
+        expect(mockConsume).toHaveBeenCalledTimes(1);
+        expect(mockConsume).toHaveBeenCalledWith('user-1', 'data');
+    });
+
+    it('ai 버킷 429는 X-RateLimit-AI-*와 Retry-After를 싣고 data 버킷 X-RateLimit-*를 덮지 않는다', async () => {
+        mockExecute.mockResolvedValue({
+            ok: false,
+            status: 429,
+            code: 'rate_limited',
+            message: 'Rate limit exceeded (ai bucket, minute window).',
+            headers: {
+                'X-RateLimit-AI-Limit': '10',
+                'X-RateLimit-AI-Remaining': '0',
+                'X-RateLimit-AI-Reset': '1792000040',
+                'Retry-After': '17',
+            },
+        });
+        const response = await call('run_fresh_analysis', {
+            symbol: 'AAPL',
+            kind: 'technical',
+            model: 'claude-opus-5',
+        });
+        expect(response.status).toBe(429);
+        // ai 버킷 상태
+        expect(response.headers.get('X-RateLimit-AI-Limit')).toBe('10');
+        expect(response.headers.get('X-RateLimit-AI-Remaining')).toBe('0');
+        expect(response.headers.get('X-RateLimit-AI-Reset')).toBe('1792000040');
+        expect(response.headers.get('Retry-After')).toBe('17');
+        // data 버킷 상태는 그대로(이 요청이 소비한 data 한도)
+        expect(response.headers.get('X-RateLimit-Limit')).toBe('60');
+        expect(response.headers.get('X-RateLimit-Remaining')).toBe('59');
+        expect(response.headers.get('X-RateLimit-Reset')).toBe('1792000020');
+    });
+
+    it('오류 details(provider_error의 provider·status)를 본문에 싣는다', async () => {
+        mockExecute.mockResolvedValue({
+            ok: false,
+            status: 502,
+            code: 'provider_error',
+            message: 'The anthropic API rejected the request with HTTP 401.',
+            details: { provider: 'anthropic', status: 401 },
+        });
+        const response = await call('run_fresh_analysis', {
+            symbol: 'AAPL',
+            kind: 'technical',
+            model: 'claude-opus-5',
+        });
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: 'provider_error',
+                details: { provider: 'anthropic', status: 401 },
+            },
+        });
+    });
+});
+
+describe('POST /api/v1/tools/{name} — 스트리밍 응답(생성 시작 뒤)', () => {
+    const body = { symbol: 'AAPL', kind: 'technical', model: 'claude-opus-5' };
+
+    it('200 + json + no-transform으로 시작하고 최종 본문이 일반 봉투와 같은 모양이다', async () => {
+        mockExecute.mockResolvedValue({
+            streaming: true,
+            completion: Promise.resolve({
+                ok: true,
+                data: { found: true },
+                truncated: false,
+                meta: { source: 'fresh', model: 'claude-opus-5' },
+            }),
+        });
+        const response = await call('run_fresh_analysis', body);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get('Content-Type')).toContain(
+            'application/json'
+        );
+        expect(response.headers.get('Cache-Control')).toBe(
+            'no-store, no-transform'
+        );
+        expect(response.headers.get('X-Accel-Buffering')).toBe('no');
+        // data 버킷 한도 헤더는 스트림 응답에도 실린다.
+        expect(response.headers.get('X-RateLimit-Limit')).toBe('60');
+        const text = await response.text();
+        expect(text.startsWith('\n')).toBe(true);
+        expect(JSON.parse(text)).toEqual({
+            data: { found: true },
+            meta: {
+                tool: 'run_fresh_analysis',
+                source: 'fresh',
+                model: 'claude-opus-5',
+            },
+        });
+    });
+
+    it('스트림 응답에는 소비한 ai 버킷 상태(X-RateLimit-AI-*)가 data 버킷 헤더와 함께 실린다', async () => {
+        mockExecute.mockResolvedValue({
+            streaming: true,
+            headers: {
+                'X-RateLimit-AI-Limit': '10',
+                'X-RateLimit-AI-Remaining': '7',
+                'X-RateLimit-AI-Reset': '1792000020',
+            },
+            completion: Promise.resolve({
+                ok: true,
+                data: {},
+                truncated: false,
+            }),
+        });
+        const response = await call('run_fresh_analysis', body);
+        expect(response.headers.get('X-RateLimit-AI-Limit')).toBe('10');
+        expect(response.headers.get('X-RateLimit-AI-Remaining')).toBe('7');
+        expect(response.headers.get('X-RateLimit-AI-Reset')).toBe('1792000020');
+        // data 버킷 헤더는 이름이 겹치지 않고 그대로 있다.
+        expect(response.headers.get('X-RateLimit-Limit')).toBe('60');
+        await response.text();
+    });
+
+    it('시작 뒤의 실패는 상태 200 그대로 본문에 { error }로 온다', async () => {
+        mockExecute.mockResolvedValue({
+            streaming: true,
+            completion: Promise.resolve({
+                ok: false,
+                status: 502,
+                code: 'provider_error',
+                message:
+                    'The anthropic API rejected the request with HTTP 401.',
+                details: { provider: 'anthropic', status: 401 },
+            }),
+        });
+        const response = await call('run_fresh_analysis', body);
+
+        expect(response.status).toBe(200);
+        expect(JSON.parse(await response.text())).toEqual({
+            error: {
+                code: 'provider_error',
+                message:
+                    'The anthropic API rejected the request with HTTP 401.',
+                details: { provider: 'anthropic', status: 401 },
+            },
+        });
+    });
+
+    it('completion이 예기치 않게 reject되면 내부 상세 없는 internal_error 봉투', async () => {
+        mockExecute.mockResolvedValue({
+            streaming: true,
+            completion: Promise.reject(new Error('secret connection string')),
+        });
+        const response = await call('run_fresh_analysis', body);
+        const text = await response.text();
+        expect(JSON.parse(text)).toMatchObject({
+            error: { code: 'internal_error' },
+        });
+        expect(text).not.toContain('secret');
+    });
+
+    it('스트림이 아닌 결과(사전 거절)는 일반 상태 코드와 본문이다', async () => {
+        mockExecute.mockResolvedValue({
+            ok: false,
+            status: 400,
+            code: 'byok_key_required',
+            message: 'No key.',
+            details: { provider: 'anthropic' },
+        });
+        const response = await call('run_fresh_analysis', body);
+        expect(response.status).toBe(400);
+        expect(response.headers.get('Content-Type')).toContain(
+            'application/json'
+        );
+        await expect(response.json()).resolves.toMatchObject({
+            error: { code: 'byok_key_required' },
+        });
+    });
 });
 
 describe('POST /api/v1/tools/{name} — 요청 검증', () => {

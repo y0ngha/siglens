@@ -601,6 +601,7 @@ file or the rule it describes changes:
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
+- After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 
 <a id="CM-3"></a>
 
@@ -629,6 +630,8 @@ file, not from assumptions about business hours. When there is no measurement, s
 When inserting a helper, constant or export above existing code, insert it above the `/**` of the existing block,
 never between the JSDoc and its declaration. If the line above your insertion point ends with `*/`, move up. The
 same applies to JSX: when wrapping an element that has a preceding comment block, put the wrapper above the comment.
+
+The inverse also holds: when removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left above the next declaration.
 
 <a id="CM-5"></a>
 

@@ -110,16 +110,68 @@ describe('buildSkillMarkdown', () => {
         );
     });
 
-    it('run_fresh_analysis가 없으면 BYOK 안내를 싣지 않는다', () => {
-        expect(build([quote])).not.toContain('BYOK');
+    it('run_fresh_analysis가 없으면 BYOK·생성 안내를 싣지 않는다', () => {
+        const md = build([quote]);
+        expect(md).not.toContain('BYOK');
+        expect(md).not.toContain('byok_key_required');
+        expect(md).not.toContain('provider_error');
     });
 
-    it('run_fresh_analysis가 있으면 BYOK 안내를 싣는다', () => {
+    describe('run_fresh_analysis가 있으면', () => {
         const fresh: AgentToolSpec = {
             ...noArgs,
             name: 'run_fresh_analysis',
             costClass: 'expensive',
         };
-        expect(build([quote, fresh])).toContain('(BYOK)');
+        const md = build([quote, fresh]);
+
+        it('캐시는 무료고 생성만 사용자 BYOK 키를 쓴다고 안내한다', () => {
+            expect(md).toContain('(BYOK)');
+            expect(md).toContain('never spends its own key');
+            expect(md).toContain('no LLM call');
+            expect(md).toContain('30-250 seconds');
+        });
+
+        it('BYOK 등급 모델만 생성할 수 있고 무료·회원 등급은 공유 캐시 읽기만 된다고 분명히 적는다', () => {
+            expect(md).toContain(
+                'Only BYOK-class (premium) models can generate'
+            );
+            expect(md).toContain(
+                'Free and member models can only read the shared cache'
+            );
+        });
+
+        it('생성은 200 스트림이고 실패도 200 본문의 error 필드로 온다고 안내한다', () => {
+            expect(md).toContain('whitespace keepalive bytes');
+            expect(md).toContain('Leading whitespace is valid JSON');
+            expect(md).toContain('an `error` field means failure even on 200');
+            expect(md).toContain(
+                'Closing the connection does not cancel the generation'
+            );
+        });
+
+        it('model 인자와 계정 기본 모델을 안내한다', () => {
+            expect(md).toContain('`model`');
+            expect(md).toContain('`defaultModel`');
+        });
+
+        it('ai 버킷 한도 숫자는 설정 상수에서 온다', () => {
+            const { perMinute, perDay } = PUBLIC_API_RATE_LIMITS.ai;
+            expect(md).toContain(
+                `${perMinute}/minute, ${perDay.toLocaleString('en-US')}/day`
+            );
+        });
+
+        it.each([
+            'model_required',
+            'invalid_model',
+            'byok_key_required',
+            'byok_model_required',
+            'analysis_failed',
+            'rate_limited',
+            'provider_error',
+        ])('오류 코드 %s를 안내한다', code => {
+            expect(md).toContain(`\`${code}\``);
+        });
     });
 });

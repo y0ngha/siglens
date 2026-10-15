@@ -4,6 +4,8 @@ const {
     HTTP_STATUS_BAD_REQUEST,
     HTTP_STATUS_UNAUTHORIZED,
     HTTP_STATUS_NOT_FOUND,
+    HTTP_STATUS_UNPROCESSABLE_ENTITY,
+    HTTP_STATUS_BAD_GATEWAY,
     HTTP_STATUS_PAYLOAD_TOO_LARGE,
     HTTP_STATUS_TOO_MANY_REQUESTS,
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
@@ -36,6 +38,10 @@ export interface ApiMeta {
     tool?: string;
     /** 결과가 크기 상한에 걸려 `{ truncated, preview }`로 접혔다. 접히지 않았으면 키 자체가 없다. */
     truncated?: true;
+    /** 분석 도구만: 공유 캐시 적중(`cache`)인지 사용자 키로 새로 만들었는지(`fresh`). */
+    source?: 'cache' | 'fresh';
+    /** 분석 도구만: 실제로 쓴(또는 캐시를 읽은) 모델. */
+    model?: string;
 }
 
 export function apiJson(
@@ -48,15 +54,34 @@ export function apiJson(
     return Response.json(body, { status, headers: merged });
 }
 
+/** 성공 본문 `{ data, meta }` — 일반 응답과 스트리밍 응답이 같은 모양을 쓴다. */
+export function okBody(data: unknown, meta: ApiMeta = {}): unknown {
+    return { data, meta };
+}
+
 export function apiOk(
     data: unknown,
     meta: ApiMeta = {},
     headers?: HeadersInit
 ): Response {
-    return apiJson(200, { data, meta }, headers);
+    return apiJson(200, okBody(data, meta), headers);
 }
 
-/** 실패 본문 `{ error: { code, message } }`. message는 외부 API라 영어 고정이다. */
+/** 실패 본문 `{ error: { code, message, details? } }`. message는 외부 API라 영어 고정이다. */
+export function errorBody(
+    code: ApiErrorCode,
+    message: string,
+    details?: unknown
+): unknown {
+    return {
+        error: {
+            code,
+            message,
+            ...(details === undefined ? {} : { details }),
+        },
+    };
+}
+
 export function apiError(
     status: number,
     code: ApiErrorCode,
@@ -65,15 +90,7 @@ export function apiError(
 ): Response {
     return apiJson(
         status,
-        {
-            error: {
-                code,
-                message,
-                ...(options.details === undefined
-                    ? {}
-                    : { details: options.details }),
-            },
-        },
+        errorBody(code, message, options.details),
         options.headers
     );
 }
@@ -83,6 +100,8 @@ export const API_STATUS = {
     unauthorized: HTTP_STATUS_UNAUTHORIZED,
     forbidden: HTTP_STATUS_FORBIDDEN,
     notFound: HTTP_STATUS_NOT_FOUND,
+    unprocessable: HTTP_STATUS_UNPROCESSABLE_ENTITY,
+    badGateway: HTTP_STATUS_BAD_GATEWAY,
     payloadTooLarge: HTTP_STATUS_PAYLOAD_TOO_LARGE,
     tooManyRequests: HTTP_STATUS_TOO_MANY_REQUESTS,
     internalError: HTTP_STATUS_INTERNAL_SERVER_ERROR,

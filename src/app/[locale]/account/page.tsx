@@ -3,16 +3,24 @@ import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import { SiglensApiKeySection } from '@/features/siglens-api-key-management/ui/SiglensApiKeySection';
+import { DefaultModelForm } from '@/features/siglens-api-key-management/ui/DefaultModelForm';
+import {
+    buildApiModelOptionGroups,
+    listApiKeyProviderLabels,
+} from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
 import { EmailReportLinkCard } from '@/features/email-report-settings/ui/EmailReportLinkCard';
 import { localePath, type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 import { listSiglensApiKeysAction } from '@/entities/siglens-api-key/actions/listSiglensApiKeysAction';
+import { getApiDefaultModelAction } from '@/entities/siglens-api-key/actions/getApiDefaultModelAction';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
     PUBLIC_API_BASE_PATH,
 } from '@/shared/config/publicApi';
 import { SITE_URL } from '@/shared/lib/seo';
+import { getModelDisplay } from '@/shared/lib/modelDisplay';
+import { isActiveModelId } from '@/shared/lib/isActiveModelId';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -55,14 +63,19 @@ export async function generateMetadata({
     };
 }
 
+/** "AI 모델 API 키" 섹션의 앵커 — API 기본 모델 영역의 "키 등록하러 가기" 링크가 가리킨다. */
+const BYOK_SECTION_ID = 'byok-keys';
+
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
 async function AccountContent({ locale }: { locale: Locale }) {
     const t = await getTranslations('app.account');
-    const [user, rawProviders, siglensApiKeys] = await Promise.all([
-        getCurrentUser(),
-        getRegisteredProvidersAction(),
-        listSiglensApiKeysAction(),
-    ]);
+    const [user, rawProviders, siglensApiKeys, apiDefaultModel] =
+        await Promise.all([
+            getCurrentUser(),
+            getRegisteredProvidersAction(),
+            listSiglensApiKeysAction(),
+            getApiDefaultModelAction(),
+        ]);
     if (!user) {
         // 로케일을 유지한다 — 영어 사용자가 한국어 로그인 페이지로 떨어지면 안 된다.
         redirect(
@@ -72,6 +85,7 @@ async function AccountContent({ locale }: { locale: Locale }) {
         );
     }
     const registeredProviders = rawProviders.map(({ provider }) => provider);
+    const apiModelGroups = buildApiModelOptionGroups(registeredProviders);
     return (
         <>
             <section
@@ -104,6 +118,7 @@ async function AccountContent({ locale }: { locale: Locale }) {
             <EmailReportLinkCard />
 
             <section
+                id={BYOK_SECTION_ID}
                 aria-label={t('page.64f90b')}
                 className={cn(SURFACE_CARD, 'space-y-4 p-6')}
             >
@@ -120,6 +135,20 @@ async function AccountContent({ locale }: { locale: Locale }) {
                     emailVerified={user.emailVerified}
                     apiBaseUrl={`${SITE_URL}${PUBLIC_API_BASE_PATH}`}
                     skillHref={`${PUBLIC_API_BASE_PATH}/skill`}
+                    defaultModelSlot={
+                        <DefaultModelForm
+                            defaultModel={apiDefaultModel}
+                            groups={apiModelGroups}
+                            defaultModelLabel={
+                                apiDefaultModel !== null &&
+                                isActiveModelId(apiDefaultModel)
+                                    ? getModelDisplay(apiDefaultModel).fullName
+                                    : null
+                            }
+                            byokHref={`#${BYOK_SECTION_ID}`}
+                            keyProviderLabels={listApiKeyProviderLabels()}
+                        />
+                    }
                 />
             </section>
 

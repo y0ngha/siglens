@@ -1,20 +1,14 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/shared/i18n/locales';
 import {
-    runOptionsAnalysis,
     type RunOptionsAnalysisResult,
     type ModelId,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
+import { executeOptionsAnalysis } from '@/entities/options-chain/server/optionsAnalysisRunner';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import {
-    resolveTierAndByok,
-    resolveReasoning,
-    buildGateError,
-} from '@/shared/lib/byokGate';
+import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
@@ -95,36 +89,22 @@ export async function submitOptionsAnalysisAction(
             return { status: 'error', error: gate.error };
         }
 
-        const snapshot = await fetchOptionsSnapshot(symbol);
-        if (snapshot === null) {
-            return {
-                status: 'no_chains_error',
-                code: 'no_options_chains',
-                error: (
-                    await getTranslations({
-                        locale,
-                        namespace: 'app.api.stream',
-                    })
-                )('noOptionsChains'),
-            };
-        }
-
-        return await runOptionsAnalysis({
+        return await executeOptionsAnalysis({
+            caller: {
+                userId,
+                tier: gate.tier,
+                ...(gate.userApiKey !== undefined
+                    ? { userApiKey: gate.userApiKey }
+                    : {}),
+            },
             symbol,
-            // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
-            // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
-            locale,
             companyName,
             expirationDate,
             modelId,
-            snapshot,
-            tier: gate.tier,
-            reasoning: resolveReasoning(gate.tier, reasoning),
-            skipEnqueueIfMiss,
+            locale,
+            reasoning,
             signal,
-            ...(gate.userApiKey !== undefined
-                ? { userApiKey: gate.userApiKey }
-                : {}),
+            cacheOnly: skipEnqueueIfMiss,
         });
     } catch (err) {
         console.error('[submitOptionsAnalysisAction] unexpected error:', err);

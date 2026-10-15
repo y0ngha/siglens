@@ -5,6 +5,7 @@ import * as OpenAI from 'openai';
 import {
     caughtAnalysisErrorCode,
     isAiProviderFailure,
+    providerFailureStatus,
 } from '@/shared/lib/aiProviderFailure';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 
@@ -141,5 +142,73 @@ describe('caughtAnalysisErrorCode', () => {
         expect(caughtAnalysisErrorCode(new Error('db down'))).toBe(
             'unexpected_error'
         );
+    });
+});
+
+describe('providerFailureStatus — 사용자 키 호출의 거절·실패 (공개 API)', () => {
+    it.each([
+        [
+            'Anthropic 401',
+            new Anthropic.AuthenticationError(401, undefined, 'bad', HEADERS),
+            401,
+        ],
+        [
+            'Anthropic 429',
+            new Anthropic.RateLimitError(429, undefined, 'slow', HEADERS),
+            429,
+        ],
+        [
+            'OpenAI 403',
+            new OpenAI.PermissionDeniedError(403, undefined, 'no', HEADERS),
+            403,
+        ],
+        [
+            'OpenAI 400',
+            new OpenAI.BadRequestError(400, undefined, 'bad req', HEADERS),
+            400,
+        ],
+        [
+            'OpenAI 503',
+            new OpenAI.APIError(503, undefined, 'down', HEADERS),
+            503,
+        ],
+        [
+            'Gemini 401',
+            new GeminiApiError({ message: 'API key not valid', status: 401 }),
+            401,
+        ],
+    ])('%s → 상태를 그대로 돌려준다', (_label, error, status) => {
+        expect(providerFailureStatus(error)).toEqual({ status });
+    });
+
+    it('연결 실패·타임아웃은 status가 없어 null', () => {
+        expect(
+            providerFailureStatus(
+                new OpenAI.APIConnectionError({ message: 'socket hang up' })
+            )
+        ).toEqual({ status: null });
+    });
+
+    it('core 재시도 소진 sentinel·DeepSeek 정지는 원본 상태를 모르므로 null', () => {
+        expect(providerFailureStatus(new Error('AI_SERVER_UNSTABLE'))).toEqual({
+            status: null,
+        });
+        expect(
+            providerFailureStatus(
+                Object.assign(new Error('stalled'), {
+                    code: 'DEEPSEEK_STALLED',
+                })
+            )
+        ).toEqual({ status: null });
+    });
+
+    it('provider 탓이 아닌 오류(FMP·일반 Error·값)는 null 자체', () => {
+        expect(
+            providerFailureStatus(new FmpHttpError('/quote', 503, null))
+        ).toBeNull();
+        expect(providerFailureStatus(new Error('db down'))).toBeNull();
+        expect(providerFailureStatus(new TypeError('fetch failed'))).toBeNull();
+        expect(providerFailureStatus('AI_SERVER_UNSTABLE')).toBeNull();
+        expect(providerFailureStatus(null)).toBeNull();
     });
 });

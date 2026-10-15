@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import { useSiglensApiKeyForms } from '../hooks/useSiglensApiKeyForms';
@@ -19,6 +19,8 @@ interface SiglensApiKeySectionProps {
     apiBaseUrl: string;
     /** Skill 파일 경로(`/api/v1/skill`). */
     skillHref: string;
+    /** 키 목록과 시작 가이드 사이에 들어갈 영역(API 기본 모델 선택). 서버 컴포넌트가 데이터를 채워 넘긴다. */
+    defaultModelSlot?: ReactNode;
 }
 
 export function SiglensApiKeySection({
@@ -27,6 +29,7 @@ export function SiglensApiKeySection({
     emailVerified,
     apiBaseUrl,
     skillHref,
+    defaultModelSlot,
 }: SiglensApiKeySectionProps) {
     const t = useTranslations('features.siglens-api-key-management');
     const { createState, createFormAction, revokeState, revokeFormAction } =
@@ -112,6 +115,8 @@ export function SiglensApiKeySection({
                     </span>
                 )}
             </div>
+
+            {defaultModelSlot}
 
             <QuickStart apiBaseUrl={apiBaseUrl} skillHref={skillHref} />
         </div>

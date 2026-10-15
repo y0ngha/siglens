@@ -659,8 +659,10 @@
         "siglens-api-key": {
             "action": {
                 "emailNotVerified": "完成邮箱验证后才能创建 API 密钥。",
+                "invalidModel": "无法选择该模型。请从列表中重新选择。",
                 "invalidName": "请输入密钥名称（最多 {v0} 个字符）。",
                 "limitReached": "最多可创建 {v0} 个有效密钥。请先吊销不再使用的密钥，然后重试。",
+                "modelProviderKeyMissing": "请先注册该模型服务商的 BYOK 密钥。",
                 "notFound": "该密钥已被吊销或不存在。",
                 "serverError": "处理时出了问题，请稍后再试。",
                 "unauthenticated": "需要先登录。"
@@ -1020,6 +1022,20 @@
                 "step2": "把 Skill 文件交给你的智能体。将下载的 SKILL.md 放进智能体的 skills/siglens 文件夹即可。",
                 "step3": "在终端里试着搜索一只股票。",
                 "title": "SIGLENS API 接入"
+            },
+            "DefaultModelForm": {
+                "cleared": "已清除默认模型。",
+                "description": "通过 API 生成新分析时如果省略 model，就会使用此模型。分析使用您已注册的 BYOK 密钥运行，费用也计入该密钥。",
+                "goToByok": "前往 AI 模型 API 密钥",
+                "hint": "只有 BYOK 级别的模型可以生成新的分析。免费和会员级别的模型只能读取已有的共享分析。仅列出您已注册密钥的服务商的模型。",
+                "noKeys": "您还没有可用自己密钥运行的模型。注册 {v0} 之一的 BYOK 密钥后，就能在这里选择模型。",
+                "notSetOption": "未设置（每次请求都指定 model）",
+                "saveButton": "保存",
+                "saved": "已保存默认模型。",
+                "saving": "保存中…",
+                "selectLabel": "默认模型",
+                "title": "API 默认模型",
+                "unavailable": "已保存的默认模型（{v0}）目前无法使用。请重新注册其服务商的密钥，或选择其他模型。"
             }
         },
         "ticker-search": {
