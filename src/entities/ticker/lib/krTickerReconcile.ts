@@ -68,7 +68,21 @@ export interface KrTickerReconcileOptions {
      * 빈 응답으로 테이블을 비우는 경로는 어떤 플래그로도 열리지 않는다.
      */
     allowLargeDelist?: boolean;
+    /**
+     * 보충 소스(주식시세 V2)를 이번 실행에서 온전히 받지 못했다(오류·0건·잘림).
+     *
+     * 마스터(KRX 상장종목정보)는 보통주만 주므로 우선주는 보충으로만 관측된다. 이때 상폐를
+     * 판정하면 보충 장애 하루에 우선주가 응답에서 "사라진" 것으로 보여 상폐로 찍힌다 —
+     * 25개 미만이면 대량 상폐 가드도 통과한다. upsert·relist는 그대로 두고 상폐만 건너뛴다.
+     * `allowLargeDelist`로도 열리지 않는다: 그 플래그는 "목록을 눈으로 봤다"는 승인이지
+     * 보충 없이 판정해도 된다는 뜻이 아니다.
+     */
+    supplementUnavailable?: boolean;
 }
+
+/** {@link KrTickerReconcileOptions.supplementUnavailable}일 때의 `guardTrip` 사유. */
+export const KR_RECONCILE_SUPPLEMENT_UNAVAILABLE =
+    'supplement (stock price V2) unavailable — delist skipped to protect supplement-only rows';
 
 /**
  * 공공데이터포털 응답과 DB 현재 상태를 대조해 상장 상태 변경분을 계산한다.
@@ -101,11 +115,13 @@ export function planKrTickerReconcile(
         .filter(row => !fetched.has(row.symbol))
         .map(row => row.symbol);
 
-    const guardTrip = checkGuards(
-        fetched.size,
-        candidates.length,
-        options.allowLargeDelist === true
-    );
+    const guardTrip = options.supplementUnavailable
+        ? KR_RECONCILE_SUPPLEMENT_UNAVAILABLE
+        : checkGuards(
+              fetched.size,
+              candidates.length,
+              options.allowLargeDelist === true
+          );
     const delist = guardTrip === null ? candidates : [];
 
     return {

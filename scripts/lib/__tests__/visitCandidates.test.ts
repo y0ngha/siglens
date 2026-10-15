@@ -96,4 +96,18 @@ describe('extractExistingKrTickers', () => {
         ].join('\n');
         expect([...extractExistingKrTickers(content)]).toEqual(['005930.KS']);
     });
+
+    it('영문이 섞인 단축코드 심볼도 기존 KR 종목으로 읽는다', () => {
+        // [회귀] `\d{6}`로 고정돼 있으면 이미 있는 영문코드 종목을 신규로 판정해 중복 삽입한다.
+        const content = [
+            'export const POPULAR_TICKERS = [',
+            "    '0001A0.KQ', // 덕양에너젠",
+            "    '00088K.KS', // 한화3우B",
+            '] as const;',
+        ].join('\n');
+        expect([...extractExistingKrTickers(content)].sort()).toEqual([
+            '0001A0.KQ',
+            '00088K.KS',
+        ]);
+    });
 });

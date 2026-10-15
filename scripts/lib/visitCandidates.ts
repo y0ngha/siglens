@@ -5,7 +5,10 @@
  * 고른다. 시장 필터(가격·시총 등)는 각 스크립트가 이 뒤에서 건다.
  */
 import type { SymbolViewTally } from '@/entities/symbol-view/types';
-import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
+import {
+    KR_EXCHANGE_SUFFIX_RE,
+    KR_SHORT_CODE_PATTERN,
+} from '@/shared/config/ticker';
 
 export type AssetClass = 'us' | 'kr' | 'crypto';
 
@@ -58,6 +61,10 @@ export function extractExistingKrTickers(fileContent: string): Set<string> {
     if (start === -1) return new Set();
     const section = fileContent.slice(start);
     return new Set(
-        [...section.matchAll(/['"](\d{6}\.K[SQ])['"]/g)].map(m => m[1]!)
+        [
+            ...section.matchAll(
+                new RegExp(`['"](${KR_SHORT_CODE_PATTERN}\\.K[SQ])['"]`, 'g')
+            ),
+        ].map(m => m[1]!)
     );
 }

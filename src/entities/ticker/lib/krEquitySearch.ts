@@ -4,15 +4,19 @@ import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import { isKoreanInput } from './ticker';
 import { pickYahooDisplayName } from '@/shared/api/yahoo/displayName';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
 
 /**
- * 종목코드 형상 — 6자리 숫자, 거래소 접미사는 선택.
+ * 종목코드 형상 — KRX 단축코드(`KR_SHORT_CODE_PATTERN`, 영문 포함 가능), 거래소 접미사는 선택.
  *
  * KONEX(`.KN`)는 넣지 않는다. yahoo에 KONEX 데이터가 없음을 실측으로 확인했다
  * (2026-08-16: `.KN` 심볼 검색 0건, 후보 코드 전부 `.KQ`로만 해석). 통과시켜 봐야
  * 시세가 없어 404로 끝나므로, 형상 단계에서 막아 헛된 조회를 없앤다.
  */
-const KR_CODE_QUERY_RE = /^\d{6}(\.K[SQ])?$/i;
+const KR_CODE_QUERY_RE = new RegExp(
+    `^${KR_SHORT_CODE_PATTERN}(\\.K[SQ])?$`,
+    'i'
+);
 
 /** 라틴 문자·숫자로 이뤄진 회사명 질의(`samsung`, `SK hynix`). 최소 2자. */
 const LATIN_NAME_QUERY_RE = /^[A-Za-z0-9][A-Za-z0-9 .&'-]{1,}$/;

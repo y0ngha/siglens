@@ -9,6 +9,7 @@ function item(overrides: Partial<KrxListedItem> = {}): KrxListedItem {
         market: 'KOSPI',
         isin: 'KR7005930003',
         corpName: '삼성전자주식회사',
+        basDt: '20261014',
         ...overrides,
     };
 }

@@ -5,6 +5,7 @@ import {
     formatCandidates,
     KR_RECONCILE_DELIST_ABORT_THRESHOLD,
     KR_RECONCILE_MIN_COUNT,
+    KR_RECONCILE_SUPPLEMENT_UNAVAILABLE,
     planKrTickerReconcile,
     type KrTickerListingRow,
 } from '@/entities/ticker/lib/krTickerReconcile';
@@ -17,6 +18,40 @@ function padSymbols(count: number, prefix = 'PAD'): string[] {
 function listed(symbols: readonly string[]): KrTickerListingRow[] {
     return symbols.map(symbol => ({ symbol, delistedAt: null }));
 }
+
+describe('planKrTickerReconcile — 보충 불가', () => {
+    it('보충 소스를 못 받았으면 상폐를 건너뛰고 후보와 사유는 남긴다', () => {
+        const pad = padSymbols(KR_RECONCILE_MIN_COUNT);
+        const plan = planKrTickerReconcile(pad, listed([...pad, '005387.KS']), {
+            supplementUnavailable: true,
+        });
+
+        expect(plan.delist).toEqual([]);
+        expect(plan.delistCandidates).toEqual(['005387.KS']);
+        expect(plan.guardTrip).toBe(KR_RECONCILE_SUPPLEMENT_UNAVAILABLE);
+    });
+
+    it('allowLargeDelist여도 보충 불가면 상폐하지 않는다', () => {
+        const pad = padSymbols(KR_RECONCILE_MIN_COUNT);
+        const plan = planKrTickerReconcile(pad, listed([...pad, '005387.KS']), {
+            supplementUnavailable: true,
+            allowLargeDelist: true,
+        });
+
+        expect(plan.delist).toEqual([]);
+    });
+
+    it('보충 불가여도 relist는 한다 — 행을 살리는 방향이라 안전하다', () => {
+        const pad = padSymbols(KR_RECONCILE_MIN_COUNT);
+        const plan = planKrTickerReconcile(
+            [...pad, 'BACK.KS'],
+            [...listed(pad), { symbol: 'BACK.KS', delistedAt: new Date() }],
+            { supplementUnavailable: true }
+        );
+
+        expect(plan.relist).toEqual(['BACK.KS']);
+    });
+});
 
 describe('planKrTickerReconcile — 상폐 판정', () => {
     it('응답에서 사라진 상장 종목을 상폐 대상으로 잡는다', () => {

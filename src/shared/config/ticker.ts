@@ -24,7 +24,21 @@ export const TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
 export const SYMBOL_EDGE_RE = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
 
 /**
- * 한국 상장 종목 canonical 형상 — 6자리 종목코드 + 거래소 접미사(`.KS` 유가증권 / `.KQ` 코스닥).
+ * KRX 단축코드 형상(정규식 **소스 문자열**) — 이 레포에서 KRX 코드 형상을 정의하는 유일한 곳.
+ *
+ * 숫자로 시작하는 6자리다. 오래된 종목은 숫자뿐(`005930`)이지만 최근 신규 상장분과 일부
+ * 우선주는 영문 대문자가 섞인다(`0001A0` 덕양에너젠, `00088K` 한화3우B, `0220WL`).
+ * 예전에 `\d{6}`로 고정해 두어 이 종목들이 수집 단계에서 버려지고 페이지가 404였다
+ * (2026-10-15 운영 실측 64종목). 소비처는 이 소스로 정규식을 파생한다 — `\.K[SQ]`
+ * 접미사와 묶인 하드코딩은 `src/__tests__/guards/krShortCodeSingleSource.test.ts`가 막는다.
+ */
+export const KR_SHORT_CODE_PATTERN = '[0-9][0-9A-Z]{5}';
+
+/** 거래소 접미사 없는 단축코드 하나(`0001A0`). 대문자 입력을 전제한다. */
+export const KR_SHORT_CODE_RE = new RegExp(`^${KR_SHORT_CODE_PATTERN}$`);
+
+/**
+ * 한국 상장 종목 canonical 형상 — 단축코드({@link KR_SHORT_CODE_PATTERN}) + 거래소 접미사(`.KS` 유가증권 / `.KQ` 코스닥).
  *
  * **{@link SUPPORTED_DOT_SUFFIXES}에 `KS`/`KQ`를 추가하지 않고 독립 정규식을 두는 이유**:
  * 그 집합은 미국 dual-class 구분자(`BRK.B`)만 허용해 `.L`/`.TO`/`.V`/`.CN` 같은 해외
@@ -33,13 +47,14 @@ export const SYMBOL_EDGE_RE = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
  * 미국 클래스 구분자용 하이픈 정규화(`toFmpSearchSymbol`) 경로로 흘러들어 간다.
  *
  * 두 규칙의 교집합은 공집합이다 — 미국 티커는 영문 대문자로 시작하고(`TICKER_RE`),
- * 한국 종목코드는 숫자 6자리로 고정이다. 따라서 서로의 동작을 바꾸지 않는다.
+ * 한국 단축코드는 숫자로 시작하며 `.KS`/`.KQ` 접미사가 붙는다({@link KR_SHORT_CODE_PATTERN}).
+ * 따라서 서로의 동작을 바꾸지 않는다.
  *
  * 접미사를 canonical 심볼에 내장하는 설계 의도: 이 정규식 하나로 DB 조회 없이
  * `kr-equity` 판정이 끝난다. 크립토가 `crypto_assets` 멤버십 조회를 필요로 하는 것과
  * 달리, 미들웨어·ISR cold-gen·탭 가드가 전부 순수 함수로 해결된다.
  */
-export const KR_SYMBOL_RE = /^\d{6}\.K[SQ]$/;
+export const KR_SYMBOL_RE = new RegExp(`^${KR_SHORT_CODE_PATTERN}\\.K[SQ]$`);
 
 /**
  * 거래소 접미사만 떼기 위한 부분 정규식 — canonical 심볼에서 **표기용 코드**를 얻는다.

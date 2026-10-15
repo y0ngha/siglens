@@ -1,4 +1,5 @@
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { KR_SHORT_CODE_RE } from '@/shared/config/ticker';
 /**
  * 공공데이터포털 — 금융위원회 KRX상장종목정보.
  *
@@ -24,8 +25,20 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
  * 호출 시점에 `process.env`에서 읽으므로 클라이언트에서는 자연히 비어 빈 배열로 끝난다.
  */
 
-const ENDPOINT =
+const LISTED_INFO_ENDPOINT =
     'https://apis.data.go.kr/1160100/service/GetKrxListedInfoService/getItemInfo';
+
+/**
+ * 금융위원회_주식시세정보 V2(공공데이터포털 활용신청 필요 — 운영 키는 2026-10-15 승인).
+ *
+ * **경로에 `/service/`가 없고 서비스·기능명 끝에 `_V2`가 붙는다** — 옛 경로
+ * (`/service/GetStockSecuritiesInfoService/getStockPriceInfo`)는 이 키로 403이다
+ * (2026-10-15 실측). 우선주를 포함한 상장 주식 전체가 오므로, 보통주만 주는 마스터의
+ * **보충**으로 쓴다. 응답 필드(`srtnCd`·`itmsNm`·`mrktCtg`·`isinCd`)가 마스터와 같아
+ * 같은 파서를 쓰고, 시세 필드(`clpr` 등)는 읽지 않는다. `srtnCd`에 `A` 접두사가 없다.
+ */
+const STOCK_PRICE_ENDPOINT =
+    'https://apis.data.go.kr/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2';
 
 /** API가 허용하는 페이지당 최대 행 수. */
 const MAX_ROWS_PER_PAGE = 1000;
@@ -54,8 +67,8 @@ const PAGE_TIMEOUT_MS = 10_000;
  * 그 전체가 끝나야 promise가 resolve한다. 그러니 실제 제약은
  * `TOTAL_BUDGET_MS + 최악 DB 단계 <= SHUTDOWN_DRAIN_DEADLINE_MS(180초)`다 —
  * 넘치면 드레인이 먼저 끝나고 동기화가 잘리는데, EventBridge는 이미 202를 받았고
- * `sync done`/`sync failed` 어느 쪽도 안 찍혀 **아무 알람도 안 뜬다**. 90초로
- * 잡아 DB 단계에 90초를 남긴다.
+ * `sync done`/`sync failed` 어느 쪽도 안 찍혀 **아무 알람도 안 뜬다**. 마스터 70초 +
+ * 보충({@link SUPPLEMENT_BUDGET_MS}) 20초 = 90초로 잡아 DB 단계에 90초를 남긴다.
  *
  * 후보 루프에서만 재면 도달할 수 없다: `collectAllPages`는 첫 페이지가 비었을
  * 때만 `[]`를 돌려주고, 한 건이라도 있으면 호출부가 즉시 반환하므로 후보를
@@ -73,7 +86,7 @@ const PAGE_TIMEOUT_MS = 10_000;
  *
  * 정상 경로는 첫 후보 3~4페이지로 끝나 수 초다.
  */
-const TOTAL_BUDGET_MS = 90_000;
+const TOTAL_BUDGET_MS = 70_000;
 
 /**
  * 남은 예산이 이보다 적으면 페이지를 아예 시작하지 않는다.
@@ -82,15 +95,21 @@ const TOTAL_BUDGET_MS = 90_000;
  * `TimeoutError`로 올라가 **이미 모은 페이지를 통째로 버린다**. 그 밑에서 취할 수
  * 있는 건 아무것도 없으므로, 그럴 바엔 모은 만큼 들고 문서화된 truncation 경로로
  * 빠지는 편이 낫다 — 대량 상폐 가드가 그 목록을 받아 상폐만 건너뛴다.
- * 1초는 실측 페이지 응답(수백 ms)보다 넉넉하고, 예산 90초에 비해 무시할 만하다.
+ * 1초는 실측 페이지 응답(수백 ms)보다 넉넉하고, 예산 70초에 비해 무시할 만하다.
  */
 const MIN_PAGE_BUDGET_MS = 1_000;
+
+/**
+ * 보충(주식시세 V2) 수집 예산. 한 기준일 약 2,900행 = 3페이지라 정상은 수 초다.
+ * 마스터 예산과 합쳐 90초를 넘지 않게 잡는다(위 {@link TOTAL_BUDGET_MS} 참조).
+ */
+const SUPPLEMENT_BUDGET_MS = 20_000;
 
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
 type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
 
 export interface KrxListedItem {
-    /** 단축코드 6자리(예: `005930`). 거래소 접미사는 붙어 있지 않다. */
+    /** 단축코드(예: `005930`, `0001A0`). 거래소 접미사는 붙어 있지 않다. */
     shortCode: string;
     /** 한글 종목명(예: `삼성전자`). */
     koreanName: string;
@@ -98,8 +117,10 @@ export interface KrxListedItem {
     market: KrxMarket;
     /** ISIN 12자리. */
     isin: string;
-    /** 법인명(한글). 종목명과 다를 수 있다(우선주·ETF 등). */
+    /** 법인명(한글). 종목명과 다를 수 있다(우선주·ETF 등). 보충 소스는 없어 종목명을 쓴다. */
     corpName: string;
+    /** 이 항목을 받은 기준일(`YYYYMMDD`). 마스터와 보충을 같은 날로 맞추는 데 쓴다. */
+    basDt: string;
 }
 
 interface RawItem {
@@ -168,23 +189,26 @@ function toMarket(raw: string | undefined): KrxMarket | null {
 }
 
 /**
- * 단축코드에서 앞의 `A` 접두사를 떼어 6자리 종목코드만 남긴다.
+ * 단축코드에서 앞의 `A` 접두사를 떼어 종목코드만 남긴다.
  *
  * 실측(2026-08-17): 이 API의 `srtnCd`는 `A900110` 형태로 온다 — KRX 내부 표기라
- * 앞에 종목 구분 문자가 붙는다. 우리 canonical 심볼(`005930.KS`)은 순수 6자리를
+ * 앞에 종목 구분 문자가 붙는다. 우리 canonical 심볼(`005930.KS`)은 단축코드만
  * 쓰므로 여기서 정규화해야 한다. 접두사를 그대로 두면 형상 검사에서 전부 탈락해
  * **시드 결과가 조용히 0건이 된다**(실제로 그렇게 실패했다).
  *
- * 접두사가 없는 형태로 바뀌어도 동작하도록 있을 때만 떼어낸다.
+ * 접두사가 없는 형태로 바뀌어도 동작하도록 있을 때만 떼어낸다(주식시세 V2는 접두사가 없다).
+ * 단축코드는 숫자로 시작하므로(`KR_SHORT_CODE_PATTERN`) 첫 `A`를 떼도 코드가 상하지 않는다.
+ * 형상은 숫자 6자리가 아니다 — 영문이 섞인 코드(`0001A0`)를 여기서 버려 64종목이
+ * 통째로 누락됐었다(2026-10-15).
  */
 function toShortCode(raw: string | undefined): string | null {
     const trimmed = raw?.trim().toUpperCase();
     if (!trimmed) return null;
-    const digits = trimmed.startsWith('A') ? trimmed.slice(1) : trimmed;
-    return /^\d{6}$/.test(digits) ? digits : null;
+    const code = trimmed.startsWith('A') ? trimmed.slice(1) : trimmed;
+    return KR_SHORT_CODE_RE.test(code) ? code : null;
 }
 
-function toItem(raw: RawItem): KrxListedItem[] {
+function toItem(raw: RawItem, basDt: string): KrxListedItem[] {
     const shortCode = toShortCode(raw.srtnCd);
     const koreanName = raw.itmsNm?.trim();
     const market = toMarket(raw.mrktCtg);
@@ -199,6 +223,7 @@ function toItem(raw: RawItem): KrxListedItem[] {
             market,
             isin: raw.isinCd?.trim() ?? '',
             corpName: raw.corpNm?.trim() ?? koreanName,
+            basDt,
         },
     ];
 }
@@ -212,38 +237,61 @@ function unwrapItems(
     return items.item ?? [];
 }
 
+/** 어느 API를 부르는지 — 엔드포인트와 로그 태그. */
+interface DataGoKrSource {
+    endpoint: string;
+    tag: string;
+    budgetMs: number;
+}
+
+const LISTED_INFO_SOURCE: DataGoKrSource = {
+    endpoint: LISTED_INFO_ENDPOINT,
+    tag: '[krxListedInfo]',
+    budgetMs: TOTAL_BUDGET_MS,
+};
+
+const STOCK_PRICE_SOURCE: DataGoKrSource = {
+    endpoint: STOCK_PRICE_ENDPOINT,
+    tag: '[stockPriceInfo]',
+    budgetMs: SUPPLEMENT_BUDGET_MS,
+};
+
 async function fetchPage(
+    source: DataGoKrSource,
     key: string,
     pageNo: number,
-    basDt: string | undefined,
+    basDt: string,
     timeoutMs: number = PAGE_TIMEOUT_MS
-): Promise<{ items: KrxListedItem[]; totalCount: number }> {
+): Promise<{ items: KrxListedItem[]; rawCount: number; totalCount: number }> {
     const params = new URLSearchParams({
         serviceKey: key,
         resultType: 'json',
         numOfRows: String(MAX_ROWS_PER_PAGE),
         pageNo: String(pageNo),
-        ...(basDt ? { basDt } : {}),
+        basDt,
     });
 
-    const res = await fetch(`${ENDPOINT}?${params}`, {
+    const res = await fetch(`${source.endpoint}?${params}`, {
         cache: 'no-store',
         signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) {
-        throw new Error(`[krxListedInfo] HTTP ${res.status}`);
+        throw new Error(`${source.tag} HTTP ${res.status}`);
     }
 
     const body = (await res.json()) as RawResponse;
     const code = body.response?.header?.resultCode;
     if (code !== undefined && code !== RESULT_CODE_OK) {
         throw new Error(
-            `[krxListedInfo] resultCode=${code} ${body.response?.header?.resultMsg ?? ''}`
+            `${source.tag} resultCode=${code} ${body.response?.header?.resultMsg ?? ''}`
         );
     }
 
+    const rawItems = unwrapItems(body.response?.body?.items);
     return {
-        items: unwrapItems(body.response?.body?.items).flatMap(toItem),
+        items: rawItems.flatMap(raw => toItem(raw, basDt)),
+        // 형상 필터 전 원본 행 수 — `totalCount`(역시 원본 기준)와 비교해 잘림을 판정한다.
+        rawCount: rawItems.length,
         totalCount: body.response?.body?.totalCount ?? 0,
     };
 }
@@ -299,7 +347,12 @@ export async function fetchKrxListedItems(
     const deadline = Date.now() + TOTAL_BUDGET_MS;
 
     for (const date of candidates) {
-        const items = await collectAllPages(key, date, deadline);
+        const { items } = await collectAllPages(
+            LISTED_INFO_SOURCE,
+            key,
+            date,
+            deadline
+        );
         if (items.length > 0) return items;
         // 주말·공휴일이거나 아직 갱신 전이다 — 하루 더 거슬러 올라간다.
         if (Date.now() >= deadline) {
@@ -316,45 +369,90 @@ export async function fetchKrxListedItems(
     return [];
 }
 
-/** 한 기준일의 전 페이지를 모은다. */
+/**
+ * 주식시세 V2에서 한 기준일의 상장 주식 목록을 받는다 — 마스터에 없는 우선주를 보충하기 위해서다.
+ *
+ * `basDt`는 필수다. 마스터가 실제로 데이터를 찾은 날짜({@link KrxListedItem.basDt})를 넘겨야
+ * 두 목록의 합집합이 같은 날을 가리킨다. 키가 없으면 빈 목록, 네트워크·API 오류는 던진다.
+ *
+ * `truncated`를 함께 돌려준다 — 마스터는 잘린 목록을 대량 상폐 가드가 받아 주지만, 보충은
+ * 25개 미만이 빠지면 그 가드를 그대로 통과해 우선주가 조용히 상폐된다. 호출부는 잘린 보충을
+ * "보충 불가"로 다뤄야 한다.
+ */
+export async function fetchStockPriceItems(
+    basDt: string
+): Promise<{ items: KrxListedItem[]; truncated: boolean }> {
+    const key = serviceKey();
+    if (!key) return { items: [], truncated: false };
+    return collectAllPages(
+        STOCK_PRICE_SOURCE,
+        key,
+        basDt,
+        Date.now() + STOCK_PRICE_SOURCE.budgetMs
+    );
+}
+
+/**
+ * 한 기준일의 전 페이지를 모은다.
+ *
+ * `truncated`: 예산 하한이나 `MAX_PAGES`에 걸려 마지막 페이지 전에 멈췄거나, 빈 페이지로
+ * 끝났는데 받은 원본 행 수가 API가 알린 `totalCount`보다 적다(중간 페이지가 일시적으로 비어
+ * 온 경우). 원본 기준으로 세므로 형상 필터로 떨어진 행은 잘림으로 보지 않는다.
+ */
 async function collectAllPages(
+    source: DataGoKrSource,
     key: string,
     basDt: string,
     deadline: number
-): Promise<KrxListedItem[]> {
+): Promise<{ items: KrxListedItem[]; truncated: boolean }> {
     const collected: KrxListedItem[] = [];
     let pageNo = 1;
+    let truncated = false;
+    let rawCollected = 0;
+    let reportedTotal = 0;
 
     for (; pageNo <= MAX_PAGES; pageNo++) {
         const remaining = deadline - Date.now();
         if (remaining < MIN_PAGE_BUDGET_MS) {
             console.warn(
-                `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을 수 있다`
+                `${source.tag} 예산(${source.budgetMs}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을 수 있다`
             );
+            truncated = true;
             break;
         }
         // 남은 예산으로 잘라 준다 — 검사만으로는 예산 직전에 통과한 페이지가
         // `PAGE_TIMEOUT_MS`만큼 더 끌고 갈 수 있어 상한이 예산 + 10초가 된다.
-        const { items, totalCount } = await fetchPage(
+        const { items, rawCount, totalCount } = await fetchPage(
+            source,
             key,
             pageNo,
             basDt,
             Math.min(PAGE_TIMEOUT_MS, remaining)
         );
         collected.push(...items);
+        rawCollected += rawCount;
+        reportedTotal = Math.max(reportedTotal, totalCount);
 
         // 마지막 페이지 판정: 이번 페이지가 비었거나 총계에 도달했을 때.
         // `totalCount`는 형상 검사로 걸러지기 전의 원본 건수라 `collected.length`가
         // 그보다 작을 수 있다 — 빈 페이지 조건이 실질적인 종료 신호다.
-        if (items.length === 0) break;
+        if (rawCount === 0) break;
         if (totalCount > 0 && pageNo * MAX_ROWS_PER_PAGE >= totalCount) break;
     }
 
     if (pageNo > MAX_PAGES) {
         console.warn(
-            `[krxListedInfo] MAX_PAGES(${MAX_PAGES}) 도달 — 결과가 잘렸을 수 있다`
+            `${source.tag} MAX_PAGES(${MAX_PAGES}) 도달 — 결과가 잘렸을 수 있다`
         );
+        truncated = true;
     }
 
-    return collected;
+    if (!truncated && reportedTotal > 0 && rawCollected < reportedTotal) {
+        console.warn(
+            `${source.tag} ${basDt} 원본 ${rawCollected}건 < totalCount ${reportedTotal} — 중간 페이지가 비어 왔다, 결과가 잘렸다`
+        );
+        truncated = true;
+    }
+
+    return { items: collected, truncated };
 }
