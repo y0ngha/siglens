@@ -2316,6 +2316,42 @@
         "text": "수출(전년비)"
     },
     {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 21,
+        "reason": "search-alias-data",
+        "text": "씰스큐"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 21,
+        "reason": "search-alias-data",
+        "text": "실에스큐"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 21,
+        "reason": "search-alias-data",
+        "text": "씰에스큐"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 23,
+        "reason": "search-alias-data",
+        "text": "쉐브론"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 25,
+        "reason": "search-alias-data",
+        "text": "엑손모빌"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 27,
+        "reason": "search-alias-data",
+        "text": "아이비엠"
+    },
+    {
         "file": "src/shared/config/popular-tickers.ts",
         "line": 8,
         "reason": "catalog-backed-data",
