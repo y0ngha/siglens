@@ -785,6 +785,11 @@
             }
         },
         "email-report-settings": {
+            "EmailReportLinkCard": {
+                "heading": "邮件报告",
+                "description": "在邮件报告页面设置接收持仓与自选股报告的星期和时间。",
+                "link": "设置邮件报告"
+            },
             "EmailReportSettingsSection": {
                 "633367": "通过邮件接收报告",
                 "0c767c": "重试",

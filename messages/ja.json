@@ -785,6 +785,11 @@
             }
         },
         "email-report-settings": {
+            "EmailReportLinkCard": {
+                "heading": "メールレポート",
+                "description": "保有銘柄・ウォッチリストのレポートを受け取る曜日と時刻は、メールレポート画面で設定できます。",
+                "link": "メールレポートを設定する"
+            },
             "EmailReportSettingsSection": {
                 "633367": "メールでレポートを受け取る",
                 "0c767c": "再試行",

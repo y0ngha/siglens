@@ -3345,5 +3345,8 @@
     "features.email-report-settings.ReportSymbolChip.excludedToast": "7ce9f3506684",
     "features.email-report-settings.ReportSymbolChip.includedToast": "3e8e8497f1fd",
     "features.email-report-settings.ReportSymbolsPreview.staleExcludedGroup": "9c7680123c44",
-    "features.email-report-settings.ReportSymbolsPreview.staleExcludedHint": "a7ff9c5638ea"
+    "features.email-report-settings.ReportSymbolsPreview.staleExcludedHint": "a7ff9c5638ea",
+    "features.email-report-settings.EmailReportLinkCard.heading": "411c76ce246f",
+    "features.email-report-settings.EmailReportLinkCard.description": "3434176bf0ca",
+    "features.email-report-settings.EmailReportLinkCard.link": "8be32910f3bc"
 }
