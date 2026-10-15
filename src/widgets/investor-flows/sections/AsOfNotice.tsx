@@ -4,6 +4,7 @@ import type { InvestorFlowsScorecard } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { ISO_DATE_LENGTH } from '@/shared/config/time';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import { formatInteger } from '../utils/flowFormat';
@@ -113,7 +114,7 @@ export function AsOfNotice({
                     </>
                 )}
                 <Row term={t('asOf.termSnapshot')}>
-                    {snapshotAsOf.slice(0, 10)}
+                    {snapshotAsOf.slice(0, ISO_DATE_LENGTH)}
                 </Row>
             </dl>
             <p className="text-xs leading-relaxed text-secondary-300">

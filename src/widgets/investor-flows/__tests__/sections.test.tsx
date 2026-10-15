@@ -5,6 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { ScorecardCard } from '../sections/ScorecardCard';
 import { InstitutionalSection } from '../sections/InstitutionalSection';
 import { ShortSection } from '../sections/ShortSection';
+import { ShortInterestBlock } from '../sections/ShortInterestBlock';
+import { buildShortInterestView } from '../utils/short';
 import { InsiderSection } from '../sections/InsiderSection';
 import { LargeHoldersSection } from '../sections/LargeHoldersSection';
 import { AsOfNotice } from '../sections/AsOfNotice';
@@ -444,5 +446,95 @@ describe('InvestorFlowsEmpty', () => {
     it('"데이터 없음"을 명시한다', () => {
         render(<InvestorFlowsEmpty />);
         expect(screen.getByText(/데이터 없음/)).toBeInTheDocument();
+    });
+});
+
+describe('분기별 문구 선택(레코드 맵)', () => {
+    it('내부자 순매도·균형 문구를 순변화 부호로 고른다', () => {
+        const base = makeSnapshot();
+        const sellOnly = makeSnapshot({
+            insider: {
+                transactions: [
+                    makeTransaction({
+                        type: 'sell',
+                        value: 5_000_000,
+                        shares: 1000,
+                    }),
+                ],
+            },
+        });
+        render(
+            <InsiderSection
+                transactions={sellOnly.insider.transactions}
+                scorecard={evaluate(sellOnly)}
+            />
+        );
+        expect(screen.getByText(/^순매도 /)).toBeInTheDocument();
+        expect(base.insider.transactions.length).toBeGreaterThan(0);
+    });
+
+    it('4분할 카드: 증가·감소·같음·비교 없음 문구가 각각 나온다', () => {
+        const q = makeSnapshot().institutional.quarters;
+        const flat = [
+            { ...q[0], period: '2025-12-31', newHolders: 310 },
+            { ...q[2], period: '2026-03-31' },
+        ];
+        render(
+            <InstitutionalSection
+                institutional={{
+                    ...makeSnapshot().institutional,
+                    quarters: flat,
+                }}
+            />
+        );
+        expect(
+            screen.getAllByText('직전 분기와 같아요').length
+        ).toBeGreaterThan(0);
+        const single = [q[2]];
+        render(
+            <InstitutionalSection
+                institutional={{
+                    ...makeSnapshot().institutional,
+                    quarters: single,
+                }}
+            />
+        );
+        expect(
+            screen.getAllByText('비교할 직전 분기가 없어요').length
+        ).toBeGreaterThan(0);
+    });
+
+    it('대량보유: 13G·기타 양식 배지', () => {
+        render(
+            <LargeHoldersSection
+                filings={[
+                    makeLargeHolder({ form: 'weird', filer: 'Other Co' }),
+                ]}
+            />
+        );
+        expect(screen.getByText('기타')).toBeInTheDocument();
+    });
+
+    it.each([
+        ['rising', '최근 흐름: 증가 추세'],
+        ['falling', '최근 흐름: 감소 추세'],
+        ['flat', '최근 흐름: 보합'],
+    ] as const)('공매도 추이 %s → %s', (trend, text) => {
+        const snapshot = makeSnapshot();
+        const metrics = {
+            ...evaluate(snapshot).short.metrics,
+            shortInterestTrend: trend,
+        };
+        render(
+            <ShortInterestBlock
+                rows={
+                    buildShortInterestView(snapshot.shortInterest ?? [], null)
+                        .rows
+                }
+                metrics={metrics}
+                previousChange={null}
+            />
+        );
+        expect(screen.getByText(text)).toBeInTheDocument();
     });
 });

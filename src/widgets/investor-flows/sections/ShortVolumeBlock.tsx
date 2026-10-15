@@ -39,6 +39,11 @@ export function ShortVolumeBlock({ series, marker }: ShortVolumeBlockProps) {
     const latest = series.latest;
     if (latest === null || latest.ratio === null) return null;
     const markerKey: MarkerKey = marker ?? 'normal';
+    const markerLabels: Record<MarkerKey, string> = {
+        surge: t('short.markerSurge'),
+        drop: t('short.markerDrop'),
+        normal: t('short.markerNormal'),
+    };
     const percents = series.rows.map(row =>
         row.ratio === null ? null : row.ratio * 100
     );
@@ -65,11 +70,7 @@ export function ShortVolumeBlock({ series, marker }: ShortVolumeBlockProps) {
                     )}
                 >
                     <span aria-hidden="true">{MARKER_MARK[markerKey]}</span>
-                    {markerKey === 'surge'
-                        ? t('short.markerSurge')
-                        : markerKey === 'drop'
-                          ? t('short.markerDrop')
-                          : t('short.markerNormal')}
+                    {markerLabels[markerKey]}
                 </span>
             </p>
             {series.rows.length > 1 && (

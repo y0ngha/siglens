@@ -5,6 +5,7 @@ import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import { formatInteger, formatUsdCompact } from '../utils/flowFormat';
+import { flowDirection, type FlowDirection } from '../utils/institutional';
 
 function netClass(netValueUsd: number): string {
     if (netValueUsd > 0) return 'text-ui-success-text';
@@ -45,14 +46,13 @@ export function InsiderSummaryCards({ metrics }: InsiderSummaryCardsProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     const net = metrics.netValueUsd;
-    const netText =
-        net > 0
-            ? t('insider.netBuy', { amount: formatUsdCompact(net, locale) })
-            : net < 0
-              ? t('insider.netSell', {
-                    amount: formatUsdCompact(Math.abs(net), locale),
-                })
-              : t('insider.netFlat');
+    const amount = formatUsdCompact(Math.abs(net), locale);
+    const netTexts: Record<FlowDirection, string> = {
+        in: t('insider.netBuy', { amount }),
+        out: t('insider.netSell', { amount }),
+        flat: t('insider.netFlat'),
+    };
+    const netText = netTexts[flowDirection(net)];
     return (
         <div>
             <ul className="grid gap-2 sm:grid-cols-3">

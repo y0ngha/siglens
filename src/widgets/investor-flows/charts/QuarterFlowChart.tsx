@@ -36,6 +36,12 @@ interface QuarterFlowChartProps {
 export function QuarterFlowChart({ bars }: QuarterFlowChartProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
+    // 라벨은 리터럴 `t()` 호출로 만들어 두고 방향으로 고른다(추출기가 키를 볼 수 있게).
+    const directionLabels: Record<FlowDirection, string> = {
+        in: t('flowChart.in'),
+        out: t('flowChart.out'),
+        flat: t('flowChart.flat'),
+    };
     const maxAbs = Math.max(
         ...bars.map(bar => Math.abs(bar.netShareChange)),
         1
@@ -74,11 +80,7 @@ export function QuarterFlowChart({ bars }: QuarterFlowChartProps) {
                                 DIRECTION_TEXT_CLASS[bar.direction]
                             )}
                         >
-                            {bar.direction === 'in'
-                                ? t('flowChart.in')
-                                : bar.direction === 'out'
-                                  ? t('flowChart.out')
-                                  : t('flowChart.flat')}
+                            {directionLabels[bar.direction]}
                         </span>
                         <svg
                             width="100%"

@@ -8,6 +8,7 @@ import type {
     ShortInterestPoint,
     ShortVolumePoint,
 } from '@y0ngha/siglens-core';
+import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
 import {
     addDays,
     latestQuarterEndOnOrBefore,
@@ -28,12 +29,11 @@ import {
  * - `SQUEEZX`: 공매도 잔고가 유통주식의 약 19.5%(2.9e9주 / 1.49e10주), 상환일수 7일로 오르는 종목 — 숏스퀴즈 경고 배지 검증.
  */
 
-const MS_PER_DAY = 86_400_000;
 const SHARES_OUTSTANDING = 15_000_000_000;
 const FLOAT_SHARES = 14_900_000_000;
 
 function isoDay(date: Date): string {
-    return date.toISOString().slice(0, 10);
+    return date.toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
 function quarterEnds(today: string, count: number): string[] {

@@ -7,6 +7,7 @@ import {
     flowDirection,
     holderChangePercent,
     holderChangeShares,
+    splitDeltaKind,
     MAX_QUARTER_BARS,
 } from '../../utils/institutional';
 import {
@@ -137,5 +138,16 @@ describe('holders helpers', () => {
         expect(
             holderChangePercent(makeHolder({ shares: 10, prevShares: 0 }))
         ).toBeNull();
+    });
+});
+
+describe('splitDeltaKind', () => {
+    it('null은 none, 0은 flat, 양수는 up, 음수는 down이다', () => {
+        expect([
+            splitDeltaKind(null),
+            splitDeltaKind(0),
+            splitDeltaKind(3),
+            splitDeltaKind(-3),
+        ]).toEqual(['none', 'flat', 'up', 'down']);
     });
 });

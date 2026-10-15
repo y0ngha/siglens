@@ -1,6 +1,5 @@
 import type {
     InstitutionalHolderChange,
-    InstitutionalHolderChangeKind,
     InstitutionalQuarter,
 } from '@y0ngha/siglens-core';
 import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
@@ -43,6 +42,15 @@ export function buildQuarterBars(
             netShareChange: quarter.netShareChange,
             direction: flowDirection(quarter.netShareChange),
         }));
+}
+
+export type SplitDeltaKind = 'none' | 'flat' | 'up' | 'down';
+
+/** 4분할 카드 증감 표시 종류: 비교할 직전 분기가 없으면 `none`, 같으면 `flat`, 늘면 `up`, 줄면 `down`. */
+export function splitDeltaKind(delta: number | null): SplitDeltaKind {
+    if (delta === null) return 'none';
+    if (delta === 0) return 'flat';
+    return delta > 0 ? 'up' : 'down';
 }
 
 export type SplitKey = 'newHolders' | 'increased' | 'decreased' | 'exited';
@@ -136,12 +144,3 @@ export function holderChangePercent(
     if (holder.prevShares === null || holder.prevShares === 0) return null;
     return ((holder.shares - holder.prevShares) / holder.prevShares) * 100;
 }
-
-/** 상태 배지에 쓰는 순서(상세 표시 순서와 무관). */
-export const HOLDER_CHANGE_KINDS: readonly InstitutionalHolderChangeKind[] = [
-    'new',
-    'increased',
-    'decreased',
-    'exited',
-    'unchanged',
-];

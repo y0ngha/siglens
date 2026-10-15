@@ -40,13 +40,10 @@ export function buildLineGeometry(
             ? 50
             : PADDING + (1 - (value - min) / span) * (100 - PADDING * 2);
     const lastIndex = Math.max(values.length - 1, 1);
+    const toX = (index: number): number =>
+        values.length === 1 ? 50 : (index / lastIndex) * 100;
     const points = values.map((value, index) =>
-        value === null
-            ? null
-            : {
-                  x: values.length === 1 ? 50 : (index / lastIndex) * 100,
-                  y: toY(value),
-              }
+        value === null ? null : { x: toX(index), y: toY(value) }
     );
     // `null`(결측)에서 선을 끊는다: 앞에 결측이 몇 개 있었는지가 같은 유효 점끼리 한 구간이다.
     const segmentIds = values.map(

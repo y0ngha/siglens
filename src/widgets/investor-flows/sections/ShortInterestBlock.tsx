@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { ShortMetrics } from '@y0ngha/siglens-core';
+import type { ShortInterestTrend, ShortMetrics } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
@@ -91,6 +91,11 @@ export function ShortInterestBlock({
 }: ShortInterestBlockProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
+    const trendLabels: Record<ShortInterestTrend, string> = {
+        rising: t('short.trendRising'),
+        falling: t('short.trendFalling'),
+        flat: t('short.trendFlat'),
+    };
     const latest = rows[rows.length - 1];
     const hasFloat = latest.pctOfFloat !== null;
     const chartValues = rows.map(row =>
@@ -159,11 +164,7 @@ export function ShortInterestBlock({
                     )}
                     {metrics.shortInterestTrend !== null && (
                         <p className="mt-1 text-xs text-secondary-300">
-                            {metrics.shortInterestTrend === 'rising'
-                                ? t('short.trendRising')
-                                : metrics.shortInterestTrend === 'falling'
-                                  ? t('short.trendFalling')
-                                  : t('short.trendFlat')}
+                            {trendLabels[metrics.shortInterestTrend]}
                         </p>
                     )}
                 </li>

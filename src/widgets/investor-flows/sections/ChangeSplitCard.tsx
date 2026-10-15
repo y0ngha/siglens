@@ -5,7 +5,12 @@ import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip, type FlowTerm } from '../investorFlowsTooltips';
 import { formatInteger } from '../utils/flowFormat';
-import type { SplitComparison, SplitKey } from '../utils/institutional';
+import {
+    splitDeltaKind,
+    type SplitComparison,
+    type SplitDeltaKind,
+    type SplitKey,
+} from '../utils/institutional';
 
 const LABEL_KEY: Record<SplitKey, string> = {
     newHolders: 'newHolders',
@@ -28,6 +33,33 @@ const VALUE_CLASS: Record<SplitKey, string> = {
     decreased: 'text-ui-danger-text',
     exited: 'text-ui-danger-text',
 };
+
+const DELTA_MARK: Record<SplitDeltaKind, string> = {
+    none: '',
+    flat: '',
+    up: '▲ ',
+    down: '▼ ',
+};
+
+/** 직전 분기 대비 증감 문구. 문구는 종류별로 한 번에 만들어 두고(리터럴 `t()` 호출) 종류로 고른다. */
+function SplitDelta({ delta }: { readonly delta: number | null }) {
+    const t = useTranslations('widgets.investor-flows');
+    const locale = useResolvedLocale();
+    const kind = splitDeltaKind(delta);
+    const amount = formatInteger(Math.abs(delta ?? 0), locale);
+    const texts: Record<SplitDeltaKind, string> = {
+        none: t('split.noPrevious'),
+        flat: t('split.deltaFlat'),
+        up: t('split.deltaUp', { delta: amount }),
+        down: t('split.deltaDown', { delta: amount }),
+    };
+    return (
+        <>
+            <span aria-hidden="true">{DELTA_MARK[kind]}</span>
+            {texts[kind]}
+        </>
+    );
+}
 
 interface ChangeSplitCardProps {
     readonly comparison: SplitComparison;
@@ -73,30 +105,7 @@ export function ChangeSplitCard({ comparison }: ChangeSplitCardProps) {
                             })}
                         </p>
                         <p className="mt-1 text-xs text-secondary-300 tabular-nums">
-                            {metric.delta === null ? (
-                                t('split.noPrevious')
-                            ) : metric.delta === 0 ? (
-                                t('split.deltaFlat')
-                            ) : (
-                                <>
-                                    <span aria-hidden="true">
-                                        {metric.delta > 0 ? '▲' : '▼'}{' '}
-                                    </span>
-                                    {metric.delta > 0
-                                        ? t('split.deltaUp', {
-                                              delta: formatInteger(
-                                                  Math.abs(metric.delta),
-                                                  locale
-                                              ),
-                                          })
-                                        : t('split.deltaDown', {
-                                              delta: formatInteger(
-                                                  Math.abs(metric.delta),
-                                                  locale
-                                              ),
-                                          })}
-                                </>
-                            )}
+                            <SplitDelta delta={metric.delta} />
                         </p>
                     </li>
                 ))}

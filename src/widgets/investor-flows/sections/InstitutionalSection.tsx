@@ -21,6 +21,7 @@ import {
     buildSplitComparison,
     findPartialQuarter,
     flowDirection,
+    type FlowDirection,
 } from '../utils/institutional';
 import { ChangeSplitCard } from './ChangeSplitCard';
 import { TopHoldersList } from './TopHoldersList';
@@ -55,12 +56,13 @@ export function InstitutionalSection({
     const hasData = quarters.length > 0 || topHolders.length > 0;
     const partialFlow =
         partial === null ? null : flowDirection(partial.netShareChange);
+    const directionLabels: Record<FlowDirection, string> = {
+        in: t('flowChart.in'),
+        out: t('flowChart.out'),
+        flat: t('flowChart.flat'),
+    };
     const partialDirection =
-        partialFlow === 'in'
-            ? t('flowChart.in')
-            : partialFlow === 'out'
-              ? t('flowChart.out')
-              : t('flowChart.flat');
+        partialFlow === null ? '' : directionLabels[partialFlow];
 
     return (
         <section

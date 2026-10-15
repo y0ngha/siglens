@@ -33,6 +33,11 @@ function FilingRow({ filing }: { readonly filing: LargeHolderFiling }) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     const kind = largeHolderKind(filing.form);
+    const kindLabels: Record<LargeHolderKind, string> = {
+        '13d': t('largeHolders.kind13d'),
+        '13g': t('largeHolders.kind13g'),
+        other: t('largeHolders.kindOther'),
+    };
     const href = toSafeHttpUrl(filing.url);
     return (
         <li className={cn(SURFACE_NESTED, 'p-3')}>
@@ -48,11 +53,7 @@ function FilingRow({ filing }: { readonly filing: LargeHolderFiling }) {
                         KIND_CLASS[kind]
                     )}
                 >
-                    {kind === '13d'
-                        ? t('largeHolders.kind13d')
-                        : kind === '13g'
-                          ? t('largeHolders.kind13g')
-                          : t('largeHolders.kindOther')}
+                    {kindLabels[kind]}
                 </span>
             </div>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-4">
@@ -109,6 +110,40 @@ function FilingRow({ filing }: { readonly filing: LargeHolderFiling }) {
     );
 }
 
+function LargeHoldersBody({
+    filings,
+    rows,
+}: {
+    readonly filings: readonly LargeHolderFiling[] | null;
+    readonly rows: readonly LargeHolderFiling[];
+}) {
+    const t = useTranslations('widgets.investor-flows');
+    if (filings === null) {
+        return (
+            <p className="text-sm text-secondary-300">
+                {t('largeHolders.unavailable')}
+            </p>
+        );
+    }
+    if (rows.length === 0) {
+        return (
+            <p className="text-sm text-secondary-300">
+                {t('largeHolders.noData')}
+            </p>
+        );
+    }
+    return (
+        <ul className="grid gap-2 md:grid-cols-2">
+            {rows.map(filing => (
+                <FilingRow
+                    key={`${filing.filingDate}-${filing.filer}-${filing.form}-${filing.url}`}
+                    filing={filing}
+                />
+            ))}
+        </ul>
+    );
+}
+
 /**
  * 5% 이상 대량보유(13D·13G) 최근 공시 목록. 13D(행동주의·경영 참여 가능)와 13G(단순 투자)를 배지 글자로
  * 구분한다. 조회가 실패했으면(`null`) "불러오지 못했어요"라고, 공시가 없으면 "데이터 없음"이라고 갈라 말한다.
@@ -131,24 +166,7 @@ export function LargeHoldersSection({ filings }: LargeHoldersSectionProps) {
                     {t('largeHolders.subtitle')}
                 </p>
             </div>
-            {filings === null ? (
-                <p className="text-sm text-secondary-300">
-                    {t('largeHolders.unavailable')}
-                </p>
-            ) : rows.length === 0 ? (
-                <p className="text-sm text-secondary-300">
-                    {t('largeHolders.noData')}
-                </p>
-            ) : (
-                <ul className="grid gap-2 md:grid-cols-2">
-                    {rows.map(filing => (
-                        <FilingRow
-                            key={`${filing.filingDate}-${filing.filer}-${filing.form}-${filing.url}`}
-                            filing={filing}
-                        />
-                    ))}
-                </ul>
-            )}
+            <LargeHoldersBody filings={filings} rows={rows} />
         </section>
     );
 }

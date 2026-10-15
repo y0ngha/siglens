@@ -7,7 +7,6 @@ import {
     formatSignedCompact,
     formatSignedDecimal,
     formatSignedPercent,
-    formatSignedUsdCompact,
     formatUsdCompact,
 } from '../../utils/flowFormat';
 import { buildLineGeometry, segmentToPath } from '../../utils/linePath';
@@ -26,7 +25,6 @@ describe('flowFormat', () => {
     it('달러·퍼센트 포맷', () => {
         expect(formatUsdCompact(1_200_000, 'en')).toBe('$1.2M');
         expect(formatUsdCompact(-300_000, 'en')).toBe('-$300K');
-        expect(formatSignedUsdCompact(2_500, 'en')).toBe('+$2.5K');
         expect(formatPercent(12.34, 'en')).toBe('12.3%');
         expect(formatSignedPercent(-0.44, 'en')).toBe('-0.4%');
         expect(formatSignedPercent(0, 'en')).toBe('0.0%');

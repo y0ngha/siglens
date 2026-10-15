@@ -33,9 +33,8 @@ export function InvestorFlowsContent({
         snapshot.shortInterest,
         snapshot.shortVolume
     );
-    // 섹션 순서: 공매도를 기관 바로 다음에 둔다(내부자·대량보유보다 앞). 사용자가 "공매도·기관 IN/OUT은 UI로 확실히
-    // 보여 달라"고 지시해(설계 §7) 두 구간을 점수 카드 직후 첫 화면 범위에 놓는 것이 의도다 — 데이터 크기
-    // 순서(내부자·대량보유가 더 작다)에 맞춰 바꾸지 않는다.
+    // 공매도·기관 IN/OUT이 이 탭의 핵심 정보라 기관 바로 아래(내부자·대량보유보다 앞)에 둔다 — 섹션 크기 순으로
+    // 재정렬하지 않는다.
     return (
         <>
             <ScorecardCard scorecard={scorecard} showShort={showShort} />

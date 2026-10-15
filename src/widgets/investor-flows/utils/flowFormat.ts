@@ -39,12 +39,6 @@ export function formatUsdCompact(value: number, locale: Locale): string {
     return value < 0 ? `-${body}` : body;
 }
 
-/** 부호를 항상 붙인 달러 축약(`+$1.2M`, `-$300K`). */
-export function formatSignedUsdCompact(value: number, locale: Locale): string {
-    if (value === 0) return formatUsdCompact(0, locale);
-    return `${value > 0 ? '+' : '-'}${formatUsdCompact(Math.abs(value), locale)}`;
-}
-
 /** 소수 `digits`자리 퍼센트(`12.3%`). 값은 이미 퍼센트 단위(12.3)다. */
 export function formatPercent(
     value: number,

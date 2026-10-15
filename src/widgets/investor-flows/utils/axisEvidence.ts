@@ -22,24 +22,25 @@ function institutionalLines(
     locale: Locale
 ): AxisEvidenceLine[] {
     const m = scorecard.institutional.metrics;
+    const holdersId =
+        m.holderCountChangePct === null ? 'holdersOnly' : 'holders';
+    const holdersChange =
+        m.holderCountChangePct === null
+            ? ''
+            : formatSignedPercent(m.holderCountChangePct, locale);
+    const netSharesId =
+        m.netShareChangeBasis === 'priorHoldings'
+            ? 'netSharesPrior'
+            : 'netSharesOutstanding';
     return [
         ...(m.holders === null
             ? []
             : [
                   {
-                      id:
-                          m.holderCountChangePct === null
-                              ? 'holdersOnly'
-                              : 'holders',
+                      id: holdersId,
                       values: {
                           count: formatInteger(m.holders, locale),
-                          change:
-                              m.holderCountChangePct === null
-                                  ? ''
-                                  : formatSignedPercent(
-                                        m.holderCountChangePct,
-                                        locale
-                                    ),
+                          change: holdersChange,
                       },
                   },
               ]),
@@ -47,10 +48,7 @@ function institutionalLines(
             ? []
             : [
                   {
-                      id:
-                          m.netShareChangeBasis === 'priorHoldings'
-                              ? 'netSharesPrior'
-                              : 'netSharesOutstanding',
+                      id: netSharesId,
                       values: {
                           pct: formatSignedPercent(
                               m.netShareChangePct,

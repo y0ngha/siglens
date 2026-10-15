@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import type {
+    InsiderMetrics,
     InsiderTransaction,
     InvestorFlowsScorecard,
 } from '@y0ngha/siglens-core';
@@ -20,6 +21,37 @@ interface InsiderSectionProps {
     readonly scorecard: InvestorFlowsScorecard;
 }
 
+interface InsiderBodyProps {
+    readonly transactions: readonly InsiderTransaction[];
+    readonly metrics: InsiderMetrics | null;
+    readonly windowDays: number;
+}
+
+/** 데이터 없음 → 최근 창 거래 없음 → 요약 카드 + 거래 목록 순으로 첫 해당 분기만 그린다. */
+function InsiderBody({ transactions, metrics, windowDays }: InsiderBodyProps) {
+    const t = useTranslations('widgets.investor-flows');
+    const locale = useResolvedLocale();
+    if (transactions.length === 0) {
+        return (
+            <p className="text-sm text-secondary-300">{t('insider.noData')}</p>
+        );
+    }
+    return (
+        <>
+            {metrics === null ? (
+                <p className="text-sm text-secondary-300">
+                    {t('insider.noRecent', {
+                        days: formatInteger(windowDays, locale),
+                    })}
+                </p>
+            ) : (
+                <InsiderSummaryCards metrics={metrics} />
+            )}
+            <InsiderTradeList table={buildInsiderTable(transactions)} />
+        </>
+    );
+}
+
 /**
  * 내부자 거래(Form 4) 섹션 — 최근 90일 순매수/순매도 요약, 클러스터 매수 배지, 거래 목록.
  * 요약은 core 점수표(`insider.metrics`, 창 길이는 `freshness.insiderWindow`)를 그대로 쓴다. 데이터가 없으면 "데이터 없음".
@@ -31,7 +63,7 @@ export function InsiderSection({
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     const metrics = scorecard.insider.metrics;
-    const window = scorecard.freshness.insiderWindow;
+    const insiderWindow = scorecard.freshness.insiderWindow;
 
     return (
         <section
@@ -43,35 +75,22 @@ export function InsiderSection({
                     {t('insider.title')}
                     <FlowTooltip term="form4" />
                 </h2>
-                {window.from !== null && window.to !== null && (
+                {insiderWindow.from !== null && insiderWindow.to !== null && (
                     <p className="mt-1 text-xs text-secondary-400">
                         {t('insider.window', {
-                            days: formatInteger(window.days, locale),
-                            from: window.from,
-                            to: window.to,
+                            days: formatInteger(insiderWindow.days, locale),
+                            from: insiderWindow.from,
+                            to: insiderWindow.to,
                         })}
                     </p>
                 )}
             </div>
 
-            {transactions.length === 0 ? (
-                <p className="text-sm text-secondary-300">
-                    {t('insider.noData')}
-                </p>
-            ) : (
-                <>
-                    {metrics === null ? (
-                        <p className="text-sm text-secondary-300">
-                            {t('insider.noRecent', {
-                                days: formatInteger(window.days, locale),
-                            })}
-                        </p>
-                    ) : (
-                        <InsiderSummaryCards metrics={metrics} />
-                    )}
-                    <InsiderTradeList table={buildInsiderTable(transactions)} />
-                </>
-            )}
+            <InsiderBody
+                transactions={transactions}
+                metrics={metrics}
+                windowDays={insiderWindow.days}
+            />
         </section>
     );
 }
