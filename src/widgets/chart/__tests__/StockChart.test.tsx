@@ -4,7 +4,10 @@ import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
-import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import {
+    INACTIVE_PANE_INDEX,
+    TRANSPARENT_COLOR,
+} from '@/widgets/chart/constants';
 import type { OverlayMenuItem } from '@/widgets/chart/utils/overlayItems';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
@@ -53,8 +56,31 @@ const {
     paneSpies,
     mockToggle,
     mockUseIndicatorVisibility,
+    mockAttachPrimitive,
+    mockDetachPrimitive,
+    mockUseIchimokuOverlay,
+    mockSetVisibleLogicalRange,
+    viewMock,
 } = vi.hoisted(() => {
+    const mockSetVisibleLogicalRange = vi.fn();
+    /*
+     * 시간축이 "보던 자리"를 어떻게 답하는지 테스트가 바꾼다. `phase`는 캔들 `setData` 전/후를 가른다 —
+     * 데이터가 바뀌면 같은 시각이 다른 논리 인덱스를 가리키는 것을 흉내 낸다.
+     */
+    const viewMock = {
+        phase: 'before' as 'before' | 'after',
+        visibleRange: null as { from: number; to: number } | null,
+        logicalRange: null as { from: number; to: number } | null,
+        indexBefore: {} as Record<number, number>,
+        indexAfter: {} as Record<number, number>,
+    };
     const mockToggle = vi.fn();
+    const mockAttachPrimitive = vi.fn();
+    const mockDetachPrimitive = vi.fn();
+    const mockUseIchimokuOverlay = vi.fn(() => ({
+        isVisible: false,
+        toggle: vi.fn(),
+    }));
     const mockUseIndicatorVisibility = vi.fn();
     interface PaneSpec {
         stretch: number;
@@ -92,6 +118,10 @@ const {
         setData: mockSetData,
         applyOptions: vi.fn(),
         setMarkers: vi.fn(),
+        attachPrimitive: mockAttachPrimitive,
+        detachPrimitive: mockDetachPrimitive,
+        seriesType: () => 'Line',
+        options: () => ({ color: '#c', crosshairMarkerBackgroundColor: '' }),
     }));
     /* 인자 타입을 적어 둔다 — 없으면 호출 시그니처가 `() => …`로 추론돼
        `mock.calls[0][1]`(옵션) 접근이 타입 에러가 난다. 옵션은 이 테스트가
@@ -121,6 +151,13 @@ const {
             timeScale: vi.fn(() => ({
                 fitContent: mockFitContent,
                 scrollToRealTime: vi.fn(),
+                setVisibleLogicalRange: mockSetVisibleLogicalRange,
+                getVisibleRange: () => viewMock.visibleRange,
+                getVisibleLogicalRange: () => viewMock.logicalRange,
+                timeToIndex: (time: number) =>
+                    (viewMock.phase === 'before'
+                        ? viewMock.indexBefore
+                        : viewMock.indexAfter)[time] ?? null,
             })),
             subscribeCrosshairMove: vi.fn(),
             priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),
@@ -136,6 +173,11 @@ const {
         paneSpies,
         mockToggle,
         mockUseIndicatorVisibility,
+        mockAttachPrimitive,
+        mockDetachPrimitive,
+        mockUseIchimokuOverlay,
+        mockSetVisibleLogicalRange,
+        viewMock,
     };
 });
 
@@ -157,6 +199,9 @@ vi.mock('@/shared/lib/chartColors', () => ({
         grid: '#2a2a3e',
         bullish: '#26a69a',
         bearish: '#ef5350',
+        extendedBullish: '#ext-bull',
+        extendedBearish: '#ext-bear',
+        extendedSessionBand: '#ext-band',
         bollingerUpper: '#aaaaff',
         bollingerMiddle: '#8888cc',
         bollingerLower: '#6666aa',
@@ -253,10 +298,7 @@ vi.mock('@/widgets/chart/hooks/useVolumeProfileOverlay', () => ({
 }));
 
 vi.mock('@/widgets/chart/hooks/useIchimokuOverlay', () => ({
-    useIchimokuOverlay: () => ({
-        isVisible: false,
-        toggle: vi.fn(),
-    }),
+    useIchimokuOverlay: mockUseIchimokuOverlay,
 }));
 
 vi.mock('@/widgets/chart/hooks/useKeltnerOverlay', () => ({
@@ -513,6 +555,15 @@ async function flushFrame(): Promise<void> {
 describe('StockChart', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        viewMock.phase = 'before';
+        viewMock.visibleRange = null;
+        viewMock.logicalRange = null;
+        viewMock.indexBefore = {};
+        viewMock.indexAfter = {};
+        // 캔들 데이터가 바뀐 뒤에는 시각→인덱스 답이 달라진다.
+        mockSetData.mockImplementation(() => {
+            viewMock.phase = 'after';
+        });
         setPaneLayout([{ stretch: 2, height: 200 }]);
         mockUseIndicatorVisibility.mockReturnValue({
             visible: DEFAULT_VISIBLE,
@@ -1267,6 +1318,476 @@ describe('StockChart', () => {
                 });
 
                 expect(onRightGutterChange).toHaveBeenLastCalledWith(0);
+            });
+        });
+    });
+    describe('프리·애프터마켓(시간외) 봉', () => {
+        // 정규장 봉(mockBars: 100·200·300)과 같은 ET 거래일(2026-10-14, EDT)의 확장 봉으로 쓰려고 시각을 맞춘다.
+        const REGULAR_OPEN = Date.parse('2026-10-14T13:30:00Z') / 1000;
+        const regular: Bar[] = [
+            {
+                time: REGULAR_OPEN,
+                open: 100,
+                high: 101,
+                low: 99,
+                close: 100,
+                volume: 5,
+            },
+            {
+                time: REGULAR_OPEN + 300,
+                open: 100,
+                high: 102,
+                low: 99,
+                close: 101,
+                volume: 6,
+            },
+        ];
+        const pre: Bar = {
+            time: REGULAR_OPEN - 300, // 09:25 ET — 프리마켓
+            open: 98,
+            high: 99,
+            low: 97,
+            close: 98.5,
+            volume: 1,
+        };
+        const bearishAfter: Bar = {
+            time: Date.parse('2026-10-14T20:00:00Z') / 1000, // 16:00 ET — 애프터마켓
+            open: 103,
+            high: 104,
+            low: 101,
+            close: 102,
+            volume: 2,
+        };
+        const extended = [pre, bearishAfter];
+        const display = [pre, ...regular, bearishAfter];
+
+        const lastCandleData = (): {
+            time: number;
+            color?: string;
+            close: number;
+        }[] => {
+            // `mockSetData`는 모든 시리즈가 공유한다 — 캔들 호출은 `close`를 가진 점이고 봉 수가 display와 같다.
+            const call = mockSetData.mock.calls
+                .filter(
+                    ([d]) =>
+                        Array.isArray(d) &&
+                        d.length === display.length &&
+                        d.every(p => 'close' in p)
+                )
+                .at(-1);
+            return call![0];
+        };
+
+        it('캔들 시리즈에 정규장 캔들과 속 빈 시간외 캔들을 시각순으로 그린다', () => {
+            render(
+                <StockChart
+                    bars={regular}
+                    displayBars={display}
+                    extendedBars={extended}
+                    timeframe="5Min"
+                />
+            );
+
+            const data = lastCandleData();
+            expect(data.map(c => c.time)).toEqual(display.map(b => b.time));
+            // 정규장 캔들은 기본 색(색 필드 없음), 시간외 캔들만 방향별 흐린 색
+            expect(data[1]).not.toHaveProperty('color');
+            // 시간외 캔들은 속 빈 몸통 + 방향색 테두리·심지
+            expect(data[0]).toMatchObject({
+                color: TRANSPARENT_COLOR,
+                borderColor: '#ext-bull', // 종가 ≥ 시가
+                wickColor: '#ext-bull',
+            });
+            expect(data[3]).toMatchObject({
+                color: TRANSPARENT_COLOR,
+                borderColor: '#ext-bear', // 종가 < 시가
+                wickColor: '#ext-bear',
+            });
+        });
+
+        it('시간외 구간 음영 primitive를 캔들 시리즈에 붙이고, 언마운트하면 떼어 낸다', () => {
+            const { unmount } = render(
+                <StockChart
+                    bars={regular}
+                    displayBars={display}
+                    extendedBars={extended}
+                    timeframe="5Min"
+                />
+            );
+            expect(mockAttachPrimitive).toHaveBeenCalledTimes(1);
+            // 음영 primitive는 `setRanges`를 가진 것으로 가려낸다(호출 순서에 기대지 않는다)
+            const primitive = mockAttachPrimitive.mock.calls.find(
+                ([p]) => typeof p.setRanges === 'function'
+            )![0];
+            expect(primitive.paneViews()[0].zOrder()).toBe('bottom');
+
+            unmount();
+            expect(mockDetachPrimitive).toHaveBeenCalledWith(primitive);
+        });
+
+        it('시간외 봉이 없으면 primitive도 범례도 없다(기존 차트와 같다)', () => {
+            render(<StockChart bars={regular} timeframe="5Min" />);
+            expect(mockAttachPrimitive).not.toHaveBeenCalled();
+            expect(
+                screen.queryByText('음영: 시간외(프리·애프터마켓)')
+            ).toBeNull();
+        });
+
+        it('시간외 봉이 있으면 음영이 시간외(프리·애프터마켓)임을 말하는 범례를 띄운다', () => {
+            render(
+                <StockChart
+                    bars={regular}
+                    displayBars={display}
+                    extendedBars={extended}
+                    timeframe="5Min"
+                />
+            );
+            expect(
+                screen.getByText('음영: 시간외(프리·애프터마켓)')
+            ).toBeInTheDocument();
+        });
+
+        it('그려지는 봉이 바뀌면(시간외 봉 도착) 시간축을 다시 맞춘다', () => {
+            const { rerender } = render(
+                <StockChart bars={regular} timeframe="5Min" />
+            );
+            mockFitContent.mockClear();
+            rerender(
+                <StockChart
+                    bars={regular}
+                    displayBars={display}
+                    extendedBars={extended}
+                    timeframe="5Min"
+                />
+            );
+            expect(mockFitContent).toHaveBeenCalled();
+        });
+
+        it('일목균형표 구름은 마지막 **그려진** 봉(애프터마켓)에서 이어진다', () => {
+            render(
+                <StockChart
+                    bars={regular}
+                    displayBars={display}
+                    extendedBars={extended}
+                    timeframe="5Min"
+                />
+            );
+            expect(mockUseIchimokuOverlay).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    bars: regular,
+                    futureAnchorTime: bearishAfter.time,
+                })
+            );
+        });
+
+        it('지표 훅에는 정규장 봉만 넘어간다(시간외 봉이 지표 정렬을 밀지 않는다)', () => {
+            render(
+                <StockChart
+                    bars={regular}
+                    displayBars={display}
+                    extendedBars={extended}
+                    timeframe="5Min"
+                />
+            );
+            expect(mockUseIchimokuOverlay).toHaveBeenLastCalledWith(
+                expect.objectContaining({ bars: regular })
+            );
+        });
+
+        describe('지표 선은 시간외 구간에서 끊기고, 추세선·작도 레벨은 이어진다', () => {
+            const renderExtended = () =>
+                render(
+                    <StockChart
+                        bars={regular}
+                        displayBars={display}
+                        extendedBars={extended}
+                        timeframe="5Min"
+                    />
+                );
+            // 시간외 봉(pre·애프터)을 사이에 둔 두 정규장 시각의 점 — 밤새 구간을 가로지르는 선
+            const overnight = [
+                { time: pre.time - 600, value: 30 },
+                { time: bearishAfter.time + 600, value: 60 },
+            ];
+            const seriesFrom = (hook: 'indicator' | 'overlay') => {
+                const params =
+                    hook === 'indicator'
+                        ? vi.mocked(useLinePaneChart).mock.calls.at(-1)![0]
+                        : vi.mocked(useChartOverlays).mock.calls.at(-1)![0];
+                return params.chartRef.current!.addSeries(
+                    'LineSeries' as never,
+                    {} as never
+                );
+            };
+
+            const HIDDEN = TRANSPARENT_COLOR;
+
+            it('지표 훅이 만드는 선 시리즈는 한 시리즈로 남고, 시간외 구간 앞 점만 투명 색을 받는다(값은 그대로)', () => {
+                renderExtended();
+                mockAddSeries.mockClear();
+                mockSetData.mockClear();
+
+                seriesFrom('indicator').setData(overnight as never);
+
+                expect(mockAddSeries).toHaveBeenCalledTimes(1);
+                expect(mockSetData).toHaveBeenCalledWith([
+                    { ...overnight[0], color: HIDDEN },
+                    overnight[1],
+                ]);
+            });
+
+            it('시간외 구간을 건너지 않는 선(정규장 안쪽)은 그대로다', () => {
+                renderExtended();
+                const inside = [
+                    { time: regular[0]!.time, value: 1 },
+                    { time: regular[1]!.time, value: 2 },
+                ];
+                seriesFrom('indicator').setData(inside as never);
+                expect(mockSetData).toHaveBeenLastCalledWith(inside);
+            });
+
+            it('작도 레벨(useChartOverlays)의 시리즈는 이어진다(투명 색 없음)', () => {
+                renderExtended();
+                mockSetData.mockClear();
+
+                seriesFrom('overlay').setData(overnight as never);
+
+                expect(mockSetData).toHaveBeenCalledWith(overnight);
+            });
+
+            it('시간외 봉이 나중에 도착하면 이미 그려진 지표 선을 다시 채운다', () => {
+                const { rerender } = render(
+                    <StockChart bars={regular} timeframe="5Min" />
+                );
+                seriesFrom('indicator').setData(overnight as never);
+                expect(mockSetData).toHaveBeenLastCalledWith(overnight);
+                mockSetData.mockClear();
+
+                rerender(
+                    <StockChart
+                        bars={regular}
+                        displayBars={display}
+                        extendedBars={extended}
+                        timeframe="5Min"
+                    />
+                );
+
+                expect(mockSetData).toHaveBeenCalledWith([
+                    { ...overnight[0], color: HIDDEN },
+                    overnight[1],
+                ]);
+            });
+        });
+
+        describe('시간외 봉이 나중에 도착할 때 보던 자리', () => {
+            const T0 = regular[0]!.time;
+            const T1 = regular[1]!.time;
+            /** 사용자가 보던 자리: 첫·둘째 정규 봉, 양끝에 빈 공간 2봉씩. */
+            const setUserView = (): void => {
+                viewMock.visibleRange = { from: T0, to: T1 };
+                viewMock.logicalRange = { from: -2, to: 3 };
+                viewMock.indexBefore = { [T0]: 0, [T1]: 1 };
+                // 시간외 봉이 끼어 같은 봉이 다른 인덱스를 가진다
+                viewMock.indexAfter = { [T0]: 66, [T1]: 67 };
+            };
+            /**
+             * `useChartSync`의 조정 기록을 흉내 낸다 — 입력 리스너는 그 훅 한 곳에만 있고(두 차트의 입력을
+             * 모두 센다), `StockChart`는 조회·초기화 콜백만 받는다.
+             */
+            function syncStub() {
+                const state = { adjusted: false };
+                return {
+                    state,
+                    props: {
+                        isViewAdjusted: () => state.adjusted,
+                        onViewAdjustmentReset: vi.fn(() => {
+                            state.adjusted = false;
+                        }),
+                    },
+                };
+            }
+            const renderBare = (extra: Record<string, unknown> = {}) =>
+                render(
+                    <StockChart bars={regular} timeframe="5Min" {...extra} />
+                );
+            const arrive = (
+                rerender: ReturnType<typeof render>['rerender'],
+                extra: Record<string, unknown> = {}
+            ): void => {
+                // 첫 렌더의 setData가 단계를 넘겼다 — 사용자가 보던 시점으로 되돌린다.
+                viewMock.phase = 'before';
+                rerender(
+                    <StockChart
+                        bars={regular}
+                        displayBars={display}
+                        extendedBars={extended}
+                        timeframe="5Min"
+                        {...extra}
+                    />
+                );
+            };
+
+            it('사용자가 밀거나 확대했다면(어느 차트에서든) 맞추지 않고, 같은 봉이 화면에 남도록 새 인덱스로 옮겨 복원한다(여백 포함)', () => {
+                setUserView();
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true; // 첫 맞춤 뒤 사용자가 가격 또는 거래량 차트를 밀었다
+                mockFitContent.mockClear();
+
+                arrive(rerender, props);
+
+                expect(mockFitContent).not.toHaveBeenCalled();
+                // 첫 봉 66 − 왼쪽 여백 2, 둘째 봉 67 + 오른쪽 여백 2
+                expect(mockSetVisibleLogicalRange).toHaveBeenLastCalledWith({
+                    from: 64,
+                    to: 69,
+                });
+            });
+
+            it('사용자가 건드리지 않았다면 새 봉에 맞춘다', () => {
+                setUserView();
+                const { props } = syncStub();
+                const { rerender } = renderBare(props);
+                mockFitContent.mockClear();
+
+                arrive(rerender, props);
+
+                expect(mockFitContent).toHaveBeenCalled();
+                expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
+            });
+
+            it('조정 기록 콜백이 없으면(단독 사용) 항상 맞춘다', () => {
+                setUserView();
+                const { rerender } = renderBare();
+                mockFitContent.mockClear();
+                arrive(rerender);
+                expect(mockFitContent).toHaveBeenCalled();
+                expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
+            });
+
+            it('차트에는 사용자 입력 리스너를 직접 걸지 않는다(입력은 useChartSync 한 곳에서 듣는다)', () => {
+                const add = vi.spyOn(HTMLElement.prototype, 'addEventListener');
+                const { unmount } = renderBare();
+                const container = screen.getByRole('img');
+                const inputTypes = ['pointerdown', 'wheel', 'touchstart'];
+                const own = add.mock.calls.filter(
+                    ([type], i) =>
+                        add.mock.contexts[i] === container &&
+                        inputTypes.includes(type)
+                );
+                expect(own).toEqual([]);
+                unmount();
+                add.mockRestore();
+            });
+
+            it('정규장 봉이 바뀌면(새 타임프레임·새로고침) 사용자가 밀었어도 기존처럼 맞춘다', () => {
+                setUserView();
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
+                mockFitContent.mockClear();
+
+                arrive(rerender, { ...props, bars: [...regular] });
+
+                expect(mockFitContent).toHaveBeenCalled();
+                expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
+            });
+
+            it('정규장 봉이 바뀌어 맞추면 조정 기록 초기화를 요청하고, 그 뒤 새 입력 없이 도착한 시간외 봉에는 맞춘다', () => {
+                setUserView();
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
+                // 정규장 봉이 바뀐다(맞춤 + 조정 기록 초기화 요청)
+                const refreshed = [...regular];
+                props.onViewAdjustmentReset.mockClear();
+                rerender(
+                    <StockChart bars={refreshed} timeframe="5Min" {...props} />
+                );
+                expect(props.onViewAdjustmentReset).toHaveBeenCalledTimes(1);
+                expect(state.adjusted).toBe(false);
+
+                setUserView();
+                viewMock.phase = 'before';
+                mockFitContent.mockClear();
+                // 새 입력 없이 시간외 봉 도착
+                rerender(
+                    <StockChart
+                        bars={refreshed}
+                        displayBars={display}
+                        extendedBars={extended}
+                        timeframe="5Min"
+                        {...props}
+                    />
+                );
+
+                expect(mockFitContent).toHaveBeenCalled();
+                expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
+            });
+
+            it('시간외 봉만 도착해 복원할 때는 초기화하지 않는다(다음 도착도 보존)', () => {
+                setUserView();
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
+                props.onViewAdjustmentReset.mockClear();
+                arrive(rerender, props);
+                expect(props.onViewAdjustmentReset).not.toHaveBeenCalled();
+                expect(state.adjusted).toBe(true);
+            });
+
+            it('보던 자리를 아직 모르면(범위 없음) 맞춘다', () => {
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
+                mockFitContent.mockClear();
+                arrive(rerender, props);
+                expect(mockFitContent).toHaveBeenCalled();
+            });
+
+            it('복원할 봉의 새 인덱스를 못 찾으면 맞춘다', () => {
+                setUserView();
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
+                viewMock.indexAfter = {};
+                mockFitContent.mockClear();
+                arrive(rerender, props);
+                expect(mockFitContent).toHaveBeenCalled();
+                expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('시간외 표시 토글(차트 작도 메뉴)', () => {
+            it('설정을 주면 메뉴가 뜨고 행을 누르면 반대 값으로 onChange를 부른다', () => {
+                const onChange = vi.fn();
+                render(
+                    <StockChart
+                        bars={regular}
+                        timeframe="5Min"
+                        extendedHours={{ checked: true, onChange }}
+                    />
+                );
+                // 작도 항목이 없어도 설정 행 때문에 메뉴가 뜬다 — 트리거는 "차트 설정"
+                fireEvent.click(
+                    screen.getByRole('button', { name: /차트 설정/ })
+                );
+                const row = screen.getByRole('button', {
+                    name: '시간외 거래(프리·애프터마켓) 표시',
+                });
+                expect(row).toHaveAttribute('aria-pressed', 'true');
+                fireEvent.click(row);
+                expect(onChange).toHaveBeenCalledWith(false);
+            });
+
+            it('설정을 주지 않으면(일봉·크립토·한국 주식) 행도 메뉴도 없다', () => {
+                render(<StockChart bars={regular} timeframe="1Day" />);
+                expect(
+                    screen.queryByRole('button', { name: /차트 설정/ })
+                ).toBeNull();
+                expect(
+                    screen.queryByText('시간외 거래(프리·애프터마켓) 표시')
+                ).toBeNull();
             });
         });
     });

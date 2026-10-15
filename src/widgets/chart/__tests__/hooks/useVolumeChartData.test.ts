@@ -148,4 +148,119 @@ describe('useVolumeChartData', () => {
         expect(mockTotalSetData).toHaveBeenCalledWith([]);
         expect(mockBuySetData).toHaveBeenCalledWith([]);
     });
+
+    describe('프리·애프터마켓 봉', () => {
+        const EXTENDED: Bar[] = [
+            { time: 500, open: 1, high: 2, low: 1, close: 1.5, volume: 700 },
+            { time: 3000, open: 1, high: 2, low: 1, close: 1.5, volume: 800 },
+        ];
+
+        it('총 거래량 시리즈에는 시각순으로 얹고(중립 색), 매수 시리즈는 정규장 봉에만 짝짓는다', () => {
+            const refs = makeRefs(true);
+            renderHook(() =>
+                useVolumeChartData({
+                    ...refs,
+                    bars: FAKE_BARS,
+                    extendedBars: EXTENDED,
+                    buySellVolume: FAKE_BUY_SELL,
+                })
+            );
+
+            const total = mockTotalSetData.mock.calls.at(-1)![0] as {
+                time: number;
+                value: number;
+                color?: string;
+            }[];
+            expect(total.map(p => [p.time, p.value])).toEqual([
+                [500, 700],
+                [1000, 5000],
+                [2000, 6000],
+                [3000, 800],
+            ]);
+            // 정규장 막대는 시리즈 기본 색(color 없음), 시간외 막대만 색을 가진다.
+            expect(total.map(p => p.color !== undefined)).toEqual([
+                true,
+                false,
+                false,
+                true,
+            ]);
+            // 매수 시리즈: 정규장 봉 2개 그대로 — 시간외 시각에는 점이 없다.
+            expect(mockBuySetData).toHaveBeenCalledWith([
+                { time: 1000, value: 3000 },
+                { time: 2000, value: 4000 },
+            ]);
+        });
+
+        it('접힌(짧은) 매수/매도 지표는 시간외 봉이 있어도 마지막 **정규장** 봉에 붙는다', () => {
+            const refs = makeRefs(true);
+            renderHook(() =>
+                useVolumeChartData({
+                    ...refs,
+                    bars: FAKE_BARS,
+                    extendedBars: EXTENDED, // 마지막 봉(3000)은 애프터마켓
+                    buySellVolume: [{ buyVolume: 4000, sellVolume: 2000 }],
+                })
+            );
+            expect(mockBuySetData).toHaveBeenCalledWith([
+                { time: 2000, value: 4000 },
+            ]);
+        });
+
+        it('시간외 봉만 나중에 도착하면 시간축을 다시 맞추지 않는다(정규장 데이터가 바뀔 때만 맞춘다)', () => {
+            const refs = makeRefs(true);
+            const { rerender } = renderHook(
+                (props: { extendedBars: Bar[] }) =>
+                    useVolumeChartData({
+                        ...refs,
+                        bars: FAKE_BARS,
+                        extendedBars: props.extendedBars,
+                        buySellVolume: FAKE_BUY_SELL,
+                    }),
+                { initialProps: { extendedBars: [] as Bar[] } }
+            );
+            expect(mockFitContent).toHaveBeenCalledTimes(1);
+
+            rerender({ extendedBars: EXTENDED });
+
+            expect(mockTotalSetData).toHaveBeenCalledTimes(2);
+            expect(mockFitContent).toHaveBeenCalledTimes(1);
+        });
+
+        it('runUpdate로 setData·시간축 맞춤을 감싼다(거래량 갱신이 가격 차트 범위를 덮지 않게)', () => {
+            const order: string[] = [];
+            mockTotalSetData.mockImplementation(() => order.push('total'));
+            mockBuySetData.mockImplementation(() => order.push('buy'));
+            mockFitContent.mockImplementation(() => order.push('fit'));
+            const runUpdate = vi.fn((update: () => void) => {
+                order.push('begin');
+                update();
+                order.push('end');
+            });
+            const refs = makeRefs(true);
+            renderHook(() =>
+                useVolumeChartData({
+                    ...refs,
+                    bars: FAKE_BARS,
+                    buySellVolume: FAKE_BUY_SELL,
+                    runUpdate,
+                })
+            );
+            expect(order).toEqual(['begin', 'total', 'buy', 'fit', 'end']);
+        });
+
+        it('extendedBars를 생략하면 기존과 같다(색 필드도 없다)', () => {
+            const refs = makeRefs(true);
+            renderHook(() =>
+                useVolumeChartData({
+                    ...refs,
+                    bars: FAKE_BARS,
+                    buySellVolume: FAKE_BUY_SELL,
+                })
+            );
+            expect(mockTotalSetData).toHaveBeenCalledWith([
+                { time: 1000, value: 5000 },
+                { time: 2000, value: 6000 },
+            ]);
+        });
+    });
 });

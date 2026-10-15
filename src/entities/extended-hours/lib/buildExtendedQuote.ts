@@ -4,8 +4,8 @@ import type { ExtendedHoursQuote } from '../model';
 import {
     etDayNumber,
     previousTradingEtDay,
-    type ExtendedSessionWindow,
-} from './extendedSession';
+} from '@/shared/api/market/usSessionClock';
+import type { ExtendedSessionWindow } from './extendedSession';
 
 /** 서버·FMP 시계 차이 허용치 — 이보다 미래인 체결은 깨진 데이터로 본다. */
 const TRADE_CLOCK_SKEW_MS = 5 * MS_PER_MINUTE;

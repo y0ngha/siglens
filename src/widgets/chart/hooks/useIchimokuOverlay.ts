@@ -21,6 +21,11 @@ interface UseIchimokuOverlayParams {
     bars: Bar[];
     indicators: IndicatorResult;
     lineWidth?: LineWidth;
+    /**
+     * 선행 구름 미래 점의 시작 기준 시각. 시간외 봉이 그려질 때 마지막 **그려진** 봉의 시각을 준다 —
+     * 정규장 마지막 봉에서 시작하면 구름이 시간외 캔들 위에 겹친다. 생략하면 `bars`의 마지막 봉.
+     */
+    futureAnchorTime?: number;
 }
 
 interface UseIchimokuOverlayReturn {
@@ -33,6 +38,7 @@ export function useIchimokuOverlay({
     bars,
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
+    futureAnchorTime,
 }: UseIchimokuOverlayParams): UseIchimokuOverlayReturn {
     const prevChartRef = useRef<IChartApi | null>(null);
     const tenkanRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -233,7 +239,12 @@ export function useIchimokuOverlay({
             finalCloudBearish,
         } =
             bars.length >= 2
-                ? extendWithFutureCloud(bars, buildCloudData(futureCloud), base)
+                ? extendWithFutureCloud(
+                      bars,
+                      buildCloudData(futureCloud),
+                      base,
+                      futureAnchorTime
+                  )
                 : {
                       finalSenkouA: senkouAData,
                       finalSenkouB: senkouBData,
@@ -248,7 +259,7 @@ export function useIchimokuOverlay({
         senkouBRef.current.setData(finalSenkouB);
         cloudBullishRef.current.setData(finalCloudBullish);
         cloudBearishRef.current.setData(finalCloudBearish);
-    }, [indicators, bars, isVisible]);
+    }, [indicators, bars, isVisible, futureAnchorTime]);
 
     return { isVisible, toggle };
 }

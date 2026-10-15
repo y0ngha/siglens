@@ -44,6 +44,23 @@ export const CHART_COLORS_RAW_DARK = {
     volumeBullish: '#26a69a80',
     volumeBearish: '#ef535080',
 
+    /*
+     * 프리·애프터마켓(시간외) 구간 (DESIGN.md "시간외 구간" 절에 실측 대비를 적었다).
+     *
+     * - extendedSessionBand: 가격·거래량 pane 배경에 깔리는 옅은 면(알파 ~12%).
+     * - extendedBullish/Bearish: 시간외 캔들의 **테두리·심지**. 몸통은 투명(속 빈 캔들)이라 "흐림"은
+     *   알파를 낮춘 색이 아니라 밴드와 속 빈 몸통이 만든다 — 알파를 낮추면 라이트 테마에서 3:1이 무너진다.
+     * - extendedVolume: 시간외 거래량 막대(매수/매도 분해가 없는 중립색).
+     *
+     * 대비 가드(`chartPaletteContrastGuard`)는 알파를 떼고 **밑색만** 잰다. 알파가 든 값(밴드·거래량)의
+     * 합성 대비는 `src/__tests__/guards/extendedSessionContrast.test.ts`가 밴드를 깐 배경 위에서 따로
+     * 재고, 잰 값은 DESIGN.md "시간외 구간"에 적었다.
+     */
+    extendedSessionBand: '#94a3b81f',
+    extendedBullish: '#26a69a',
+    extendedBearish: '#ef5350',
+    extendedVolume: '#94a3b899',
+
     // MA / EMA 기간별 컬러 (MA 실선, EMA 점선 공용)
     period5: '#ef4444',
     period10: '#f97316',
@@ -239,6 +256,11 @@ export const CHART_COLORS_LIGHT = {
     overlayPattern5: '#6d28d9',
     overlayPattern6: '#854d0e',
     volumeBullish: '#1e938880',
+    extendedSessionBand: '#7a81a914',
+    extendedBullish: '#1e9388',
+    // 라이트: 밴드 위에서 3:1을 넘기려고 하락 캔들색보다 한 단계 진한 레드(#ef5350은 밴드 위 3.02:1)
+    extendedBearish: '#e5403d',
+    extendedVolume: '#565c66b3',
     period5: '#f24425',
     period10: '#de5b00',
     period20: '#ab7c02',

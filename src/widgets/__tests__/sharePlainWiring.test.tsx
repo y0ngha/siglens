@@ -117,6 +117,9 @@ vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
 vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
     AnalysisProgress: () => <div data-testid="analysis-progress" />,
 }));
+vi.mock('@/entities/extended-bars/hooks/useExtendedBars', () => ({
+    useExtendedBars: () => null,
+}));
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [
