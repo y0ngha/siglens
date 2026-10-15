@@ -89,6 +89,27 @@ function withCanonicalKoreanName(info: AssetInfo | null): AssetInfo | null {
     return canonical === undefined ? info : { ...info, koreanName: canonical };
 }
 
+/**
+ * 서버 키 LLM을 못 쓰는 흐름(공개 API)이면 번역 없이 영문명 결과를 API 전용 키에 1시간 두고 `true`를 돌려준다.
+ * 웹의 12시간 임시 항목은 쓰지 않는다(웹의 번역 시도까지 막는다) — API 전용 키는 반복 호출이 FMP/Yahoo를
+ * 다시 부르지 않게 할 뿐이다. 웹은 이 키를 읽지 않고, 웹이 번역해 DB에 넣으면 DB 조회가 먼저 잡는다.
+ * 웹 흐름이면 아무것도 하지 않고 `false` — 호출부가 평소처럼 번역을 시작한다.
+ */
+function cacheUntranslatedForApi(
+    upper: string,
+    info: AssetInfo,
+    cache: CacheProvider | null
+): boolean {
+    if (isServerLlmAllowed()) return false;
+    setCacheBestEffort(
+        cache,
+        buildApiAssetInfoCacheKey(upper),
+        info,
+        API_UNTRANSLATED_CACHE_TTL
+    );
+    return true;
+}
+
 function setCacheBestEffort(
     cache: CacheProvider | null,
     cacheKey: string,
@@ -279,18 +300,7 @@ async function resolveKrEquityAssetInfo(
         return info;
     }
 
-    // 서버 키 LLM을 못 쓰는 흐름(공개 API)은 영문명으로 답하고 번역하지 않는다. 웹의 12시간 임시 항목은
-    // 쓰지 않는다(웹의 번역 시도까지 막는다) — 대신 API 전용 키에 1시간만 두어 반복 호출이 FMP/Yahoo를
-    // 다시 부르지 않게 한다. 웹은 이 키를 읽지 않고, 웹이 번역해 DB에 넣으면 DB 조회가 먼저 잡는다.
-    if (!isServerLlmAllowed()) {
-        setCacheBestEffort(
-            cache,
-            buildApiAssetInfoCacheKey(upper),
-            info,
-            API_UNTRANSLATED_CACHE_TTL
-        );
-        return info;
-    }
+    if (cacheUntranslatedForApi(upper, info, cache)) return info;
 
     const exchange = krExchangeOf(upper);
     fireAndForget(
@@ -517,18 +527,7 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
         return info;
     }
 
-    // 서버 키 LLM을 못 쓰는 흐름(공개 API)은 영문명으로 답하고 번역하지 않는다. 웹의 12시간 임시 항목은
-    // 쓰지 않는다(웹의 번역 시도까지 막는다) — 대신 API 전용 키에 1시간만 두어 반복 호출이 FMP/Yahoo를
-    // 다시 부르지 않게 한다. 웹은 이 키를 읽지 않고, 웹이 번역해 DB에 넣으면 DB 조회가 먼저 잡는다.
-    if (!isServerLlmAllowed()) {
-        setCacheBestEffort(
-            cache,
-            buildApiAssetInfoCacheKey(upper),
-            info,
-            API_UNTRANSLATED_CACHE_TTL
-        );
-        return info;
-    }
+    if (cacheUntranslatedForApi(upper, info, cache)) return info;
 
     fireAndForget(
         translateAndPersist(
