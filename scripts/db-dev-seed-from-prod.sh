@@ -56,6 +56,7 @@ EXCLUDED_TABLES=(
     sessions
     oauth_accounts
     user_api_keys
+    siglens_api_keys
     portfolio_holdings
     email_report_subscriptions
     email_report_deliveries

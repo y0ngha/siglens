@@ -19,7 +19,8 @@
                 "c4079e": "プロフィール読み込み中",
                 "c6c674": "未設定",
                 "f5162c": "会員ランク",
-                "fa7c86": "退会手続きへ進む"
+                "fa7c86": "退会手続きへ進む",
+                "siglensApi": "SIGLENS API連携"
             }
         },
         "ai": {
@@ -655,6 +656,16 @@
                 "title": "{v0} AI分析結果"
             }
         },
+        "siglens-api-key": {
+            "action": {
+                "emailNotVerified": "メール認証を完了してから、APIキーを作成できます。",
+                "invalidName": "キー名を入力してください（最大{v0}文字）。",
+                "limitReached": "有効なキーは最大{v0}個までです。使わないキーを無効化してから、もう一度お試しください。",
+                "notFound": "すでに無効化されているか、見つからないキーです。",
+                "serverError": "処理中に問題が発生しました。しばらくしてからもう一度お試しください。",
+                "unauthenticated": "ログインが必要です。"
+            }
+        },
         "watchlist": {
             "action": {
                 "deleteFailed": "ウォッチリストから外せませんでした。しばらくしてからもう一度お試しください。",
@@ -973,6 +984,42 @@
             "useShareFlow": {
                 "shareText": "{v0}のAI分析結果をSIGLENSで確認しましょう",
                 "shareTitle": "{v0} AI分析結果"
+            }
+        },
+        "siglens-api-key-management": {
+            "SiglensApiKeySection": {
+                "copied": "コピーしました",
+                "copy": "コピー",
+                "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
+                "createButton": "新しいキーを作成",
+                "createdAt": "作成日 {v0}",
+                "creating": "作成中…",
+                "description": "APIキーを使って、AIエージェントやスクリプトから株価・チャート・ニュースなどのSIGLENSデータを取得できます。",
+                "dismiss": "保管しました",
+                "downloadSkill": "Skillをダウンロード",
+                "emailNotVerified": "メール認証を完了してから、APIキーを作成できます。先にアカウントのメールを認証してください。",
+                "empty": "まだキーがありません。",
+                "lastUsedAt": "最終使用 {v0}",
+                "limitHint": "有効なキーは最大{v0}個まで作成できます。使わないキーを無効化すると新しく作成できます。",
+                "listLabel": "発行済みのAPIキー一覧",
+                "loadFailed": "キー一覧を読み込めませんでした。しばらくしてからもう一度お試しください。",
+                "nameLabel": "キー名",
+                "namePlaceholder": "例: マイエージェント",
+                "neverUsed": "未使用",
+                "quickStartTitle": "30秒スタートガイド",
+                "revealedTitle": "新しいキーを作成しました",
+                "revealedWarning": "このキーは今だけ表示されます。再表示できないので、すぐに安全な場所に保管してください。",
+                "revoke": "無効化",
+                "revokeAria": "キー {v0} を無効化",
+                "revokeCancel": "キャンセル",
+                "revokeConfirm": "無効化する",
+                "revokePrompt": "このキーを無効化しますか？このキーでの呼び出しはすぐに拒否され、元に戻せません。",
+                "revoked": "キーを無効化しました。",
+                "revoking": "無効化中…",
+                "step1": "上でキーを作成し、環境変数に保存します。",
+                "step2": "エージェントにSkillファイルを渡します。ダウンロードしたSKILL.mdをエージェントのskills/siglensフォルダに置いてください。",
+                "step3": "ターミナルで銘柄を検索してみましょう。",
+                "title": "SIGLENS API連携"
             }
         },
         "ticker-search": {

@@ -1802,6 +1802,14 @@ UI(`useModelGate`) 는 잠금 해제 모달만 책임지고, 어떤 모델이 �
 - 등록/조회/삭제: `src/entities/api-key/actions/` 의 Server Action
 - core 정책은 키 자체를 보지 않으며, provider 식별자만 다룬다
 
+### SigLens 공개 API (`/api/v1/*`)
+
+- 외부 에이전트·스크립트가 Bearer 키(`slk_…`)로 시그렌즈 데이터를 읽는 REST API. 키는 이메일 인증을 마친 회원만 발급한다(회원당 활성 5개).
+- 키 원문은 발급 응답에서 한 번만 보이고 DB에는 sha256 해시만 저장한다. 폐기는 소프트 삭제이며 인증 캐시 항목을 바로 지운다.
+- 도구 표면은 ai.siglens.io 에이전트와 같은 실행기·스펙을 쓰되 서버 비용을 쓰지 않는다: `web_search`(서버 검색 키)와 서버 키로 분석을 생성하는 `run_fresh_analysis`(BYOK 전용 경로가 생기는 PR-B에서 노출)는 내보내지 않고, `get_news`의 서버 키 적재·분석 갱신은 끄고 저장된 기사만 돌려준다. 결과 상한은 API 전용 값이며 잘리면 `meta.truncated`가 붙는다. 노출 목록은 `src/app/api/v1/publicApiTools.ts`가 단일 출처다.
+- 한도는 회원 단위 고정 창(분·일, 키를 폐기·재발급하거나 돌려써도 같은 카운터)이며 숫자는 `src/shared/config/publicApi.ts` 한 곳에 있다. 한도 저장소(Redis) 장애는 fail-open이 아니라 503이다.
+- 계정 화면에서 키를 만들고 폐기하며, `GET /api/v1/skill`(인증 없음)이 도구 스펙에서 생성한 `SKILL.md`를 내려준다.
+
 ---
 
 ## Free Analysis Tier Gating

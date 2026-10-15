@@ -41,6 +41,7 @@
         "entities.portfolio.action",
         "entities.shared-analysis.og",
         "entities.shared-analysis.seo",
+        "entities.siglens-api-key.action",
         "features.analysis-rate-limit",
         "features.auth-signup.SignupForm.stepCode",
         "features.auth-signup.SignupForm.stepDetails",

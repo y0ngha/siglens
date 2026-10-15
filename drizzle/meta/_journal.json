@@ -323,6 +323,13 @@
       "when": 1791729012564,
       "tag": "0045_email_report_excluded_symbols",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1792046721512,
+      "tag": "0046_siglens_api_keys",
+      "breakpoints": true
     }
   ]
 }

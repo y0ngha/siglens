@@ -35,4 +35,18 @@ describe('proxy matcher', () => {
         expect(matchesProxy('/robots.txt')).toBe(true);
         expect(matchesProxy('/sitemap.xml')).toBe(true);
     });
+
+    /**
+     * 공개 API(`/api/v1/*`)는 Bearer 키로 인증하는 서버 간 호출이다. 프록시를 타면 로케일 접두
+     * 리다이렉트·인증 가드(세션 쿠키 기준)·게스트 쿠키 발급이 붙어 쿠키 없는 Bearer 요청이
+     * 로그인 페이지로 튕기거나 `Set-Cookie`가 섞인다. matcher의 `api` 제외가 이 경로를 덮는다.
+     */
+    it.each([
+        '/api/v1/me',
+        '/api/v1/tools',
+        '/api/v1/tools/search_ticker',
+        '/api/v1/skill',
+    ])('공개 API %s는 프록시를 타지 않는다', pathname => {
+        expect(matchesProxy(pathname)).toBe(false);
+    });
 });

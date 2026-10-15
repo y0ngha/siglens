@@ -22,6 +22,7 @@ import {
 import type { FunnelEventContext } from '@/shared/lib/funnel/funnelEvents';
 import { LOCALES } from '@/shared/i18n/locales';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
+import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import {
     OAUTH_PROVIDER_VALUES,
     SHAREABLE_KIND_VALUES,
@@ -34,6 +35,8 @@ const SYMBOL_MAX_LENGTH = 32;
 const EXCHANGE_MAX_LENGTH = 32;
 const FMP_SYMBOL_MAX_LENGTH = 64;
 const NOTICE_TITLE_MAX_LENGTH = 200;
+const API_KEY_PREFIX_MAX_LENGTH = 16;
+const SHA256_HEX_LENGTH = 64;
 
 // Repositories also set updated_at explicitly via `sql`now()`` in their
 // `update()` / `onConflictDoUpdate()` calls; this $onUpdateFn(nowFn) hook is
@@ -277,6 +280,35 @@ export const userApiKeys = pgTable(
             table.provider
         ),
     ]
+);
+
+/**
+ * SigLens public API keys (`Authorization: Bearer slk_...`) — several per member.
+ * Only `sha256(raw key)` is stored (`key_hash`); the raw key is shown once at creation and
+ * never persisted. `revoked_at` is a soft delete so the audit trail survives; the auth path
+ * filters on `revoked_at IS NULL`. `last_used_at` is throttled to ~1 write per minute.
+ */
+export const siglensApiKeys = pgTable(
+    'siglens_api_keys',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        name: varchar('name', { length: API_KEY_NAME_MAX_LENGTH }).notNull(),
+        keyPrefix: varchar('key_prefix', {
+            length: API_KEY_PREFIX_MAX_LENGTH,
+        }).notNull(),
+        keyHash: char('key_hash', { length: SHA256_HEX_LENGTH })
+            .notNull()
+            .unique(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+        revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    },
+    table => [index('siglens_api_keys_user_id_idx').on(table.userId)]
 );
 
 /** Member portfolio holdings — one row per (user, symbol); the user inputs the average price directly (not a lot ledger). */

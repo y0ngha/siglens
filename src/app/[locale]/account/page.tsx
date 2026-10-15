@@ -2,10 +2,17 @@ import { useTranslations } from 'next-intl';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
+import { SiglensApiKeySection } from '@/features/siglens-api-key-management/ui/SiglensApiKeySection';
 import { EmailReportLinkCard } from '@/features/email-report-settings/ui/EmailReportLinkCard';
 import { localePath, type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
+import { listSiglensApiKeysAction } from '@/entities/siglens-api-key/actions/listSiglensApiKeysAction';
+import {
+    API_KEY_MAX_ACTIVE_PER_USER,
+    PUBLIC_API_BASE_PATH,
+} from '@/shared/config/publicApi';
+import { SITE_URL } from '@/shared/lib/seo';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -51,9 +58,10 @@ export async function generateMetadata({
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
 async function AccountContent({ locale }: { locale: Locale }) {
     const t = await getTranslations('app.account');
-    const [user, rawProviders] = await Promise.all([
+    const [user, rawProviders, siglensApiKeys] = await Promise.all([
         getCurrentUser(),
         getRegisteredProvidersAction(),
+        listSiglensApiKeysAction(),
     ]);
     if (!user) {
         // 로케일을 유지한다 — 영어 사용자가 한국어 로그인 페이지로 떨어지면 안 된다.
@@ -100,6 +108,19 @@ async function AccountContent({ locale }: { locale: Locale }) {
                 className={cn(SURFACE_CARD, 'space-y-4 p-6')}
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
+            </section>
+
+            <section
+                aria-label={t('page.siglensApi')}
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+            >
+                <SiglensApiKeySection
+                    keys={siglensApiKeys}
+                    maxKeys={API_KEY_MAX_ACTIVE_PER_USER}
+                    emailVerified={user.emailVerified}
+                    apiBaseUrl={`${SITE_URL}${PUBLIC_API_BASE_PATH}`}
+                    skillHref={`${PUBLIC_API_BASE_PATH}/skill`}
+                />
             </section>
 
             <section
@@ -173,6 +194,16 @@ function AccountContentSkeleton() {
                         </div>
                     </div>
                 ))}
+            </section>
+
+            {/* SigLens API 키 섹션 */}
+            <section
+                aria-label={t('page.siglensApi')}
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+            >
+                <SkeletonLine className="h-6 w-32" />
+                <SkeletonLine className="h-4 w-64" />
+                <SkeletonLine className="h-10 w-full" />
             </section>
         </>
     );

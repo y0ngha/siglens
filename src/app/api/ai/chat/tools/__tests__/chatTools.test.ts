@@ -509,6 +509,38 @@ describe('tool registry', () => {
             expect(typeof runtimes[0]!.ensureSymbolData).toBe('function');
         });
 
+        it('refreshSymbolData: false면 ensureSymbolData가 아무것도 부르지 않는 no-op이다', async () => {
+            const runtimes: ToolRuntime[] = [];
+            search.mockImplementation(
+                async (_args: unknown, _ctx: unknown, runtime: ToolRuntime) => {
+                    runtimes.push(runtime);
+                    return { ok: true };
+                }
+            );
+            const exec = createToolExecutor(
+                { analysisModel: 'm' as never },
+                { refreshSymbolData: false }
+            );
+            await exec('search_ticker', { query: 'a' }, makeCtx());
+
+            await expect(
+                runtimes[0]!.ensureSymbolData('LAES')
+            ).resolves.toBeUndefined();
+
+            expect(ensureSymbolNewsFresh).not.toHaveBeenCalled();
+        });
+
+        it('옵션을 안 주면(에이전트) 기본으로 수급한다', async () => {
+            ensureSymbolNewsFresh.mockResolvedValue({
+                refreshed: true,
+                changedCount: 0,
+            });
+            const { exec, runtimes } = capture();
+            await exec('search_ticker', { query: 'a' }, makeCtx());
+            await runtimes[0]!.ensureSymbolData('LAES');
+            expect(ensureSymbolNewsFresh).toHaveBeenCalledOnce();
+        });
+
         it('같은 턴에서 같은 심볼은 한 번만 수급한다', async () => {
             ensureSymbolNewsFresh.mockResolvedValue({
                 refreshed: true,
@@ -561,5 +593,76 @@ describe('tool registry', () => {
 
             errorSpy.mockRestore();
         });
+    });
+});
+
+describe('결과 상한 옵션(resultCaps)', () => {
+    const caps = {
+        standard: 9_000,
+        bars: BARS_RESULT_MAX_CHARS,
+        aggregate: 9_000,
+        guide: 9_000,
+        cachedAnalysis: 20_000,
+        cachedAnalysisBudget: 20_000,
+    };
+    const big = (chars: number) => ({ blob: 'x'.repeat(chars) });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', '');
+    });
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('기본(에이전트) 상한에서는 5,000자 결과가 잘린다', async () => {
+        search.mockResolvedValue(big(5_000));
+        const exec = createToolExecutor({ analysisModel: 'm' as never });
+        const result = (await exec(
+            'search_ticker',
+            { query: 'a' },
+            makeCtx()
+        )) as {
+            truncated?: boolean;
+        };
+        expect(result.truncated).toBe(true);
+    });
+
+    it('더 높은 standard 상한을 주면 같은 결과가 그대로 나간다', async () => {
+        search.mockResolvedValue(big(5_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: caps }
+        );
+        const result = await exec('search_ticker', { query: 'a' }, makeCtx());
+        expect(result).toEqual(big(5_000));
+    });
+
+    it('상한을 넘으면 여전히 잘린다', async () => {
+        search.mockResolvedValue(big(12_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: caps }
+        );
+        const result = (await exec(
+            'search_ticker',
+            { query: 'a' },
+            makeCtx()
+        )) as {
+            truncated?: boolean;
+        };
+        expect(result.truncated).toBe(true);
+    });
+
+    it('분석 결과는 cachedAnalysis 상한을 쓴다', async () => {
+        getCachedAnalysis.mockResolvedValue(big(15_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: caps }
+        );
+        const result = await exec(
+            'get_cached_analysis',
+            { symbol: 'AAPL', tab: 'technical' },
+            makeCtx()
+        );
+        expect(result).toEqual(big(15_000));
     });
 });
