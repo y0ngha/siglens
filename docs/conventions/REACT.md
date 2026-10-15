@@ -494,6 +494,21 @@ useEffect(() => { /* slot, snapToPoint */ }, [isFullSnap, snapToPoint]);
 useEffect(() => { /* slot, snapToPoint */ }, [isFullSnap, slot]);
 ```
 
+<a id="EF-3"></a>
+
+#### EF-3 — Keep `try/finally` and listener wiring out of hook bodies (React Compiler / React Doctor)
+
+`try … finally` inside a hook or handler body is rejected by React Doctor (`react-hooks-js/todo`), and `addEventListener`/`removeEventListener` written inline in a hook body is flagged too. Use `try/catch` followed by unconditional cleanup (or `.catch`), and hoist listener attach/detach into module-level function declarations that the effect calls. Reading a ref-object getter during render is flagged as well; keep the value in a plain ref and read it in effects or handlers (CR-2).
+
+```typescript
+// ❌ finally in a hook body
+try { await run(); } finally { setBusy(false); }
+
+// ✅ catch, then cleanup on every path
+try { await run(); } catch (error) { report(error); }
+setBusy(false);
+```
+
 ---
 
 ## Lightweight Charts Rules
@@ -550,6 +565,20 @@ try { chart.unsubscribeCrosshairMove(handler); } catch { /* already disposed */ 
 A primitive that wraps a library object with its own lifecycle (attach, update, detach) needs tests that verify each lifecycle method is called at the expected render boundary (mount, update, unmount). Without them render-order regressions go unseen.
 
 Derived `className`/`style` objects in chart widgets are memoized per `REACT.md#CR-1`.
+
+<a id="LW-3"></a>
+
+#### LW-3 — Series-wide options gate on the series' live rendering mode
+
+A generic wrapper that applies a series-wide option to fix one point (a per-point transparent colour, `crosshairMarkerBackgroundColor`, a shared marker style) also reaches series that render differently. A marker-only series (`lineVisible: false`) carrying per-point colours loses its dots, or has its hover colour overridden. Gate the option by the series' current rendering mode, and cover a marker-only series with a test.
+
+```typescript
+// ❌ applied to every wrapped series
+series.applyOptions({ crosshairMarkerBackgroundColor: 'transparent' });
+
+// ✅ only where the series draws a line
+if (series.options().lineVisible) series.applyOptions({ crosshairMarkerBackgroundColor: 'transparent' });
+```
 
 ---
 

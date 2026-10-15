@@ -40,6 +40,9 @@ vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
 // lightweight-charts/useVolumeChartData가 mock 데이터에서 크래시하므로 stub한다.
 vi.mock('@/widgets/chart/StockChart', () => ({ StockChart: () => null }));
 vi.mock('@/widgets/chart/VolumeChart', () => ({ VolumeChart: () => null }));
+vi.mock('@/entities/extended-bars/hooks/useExtendedBars', () => ({
+    useExtendedBars: () => null,
+}));
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: () => ({
         bars: [

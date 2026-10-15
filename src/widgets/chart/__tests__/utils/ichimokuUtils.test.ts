@@ -147,6 +147,43 @@ describe('extendWithFutureCloud', () => {
         expect(result.finalCloudBearish).toEqual([{ time: expectedTime }]);
     });
 
+    describe('anchorTime — 시간외 봉이 정규장 봉 뒤에 그려질 때', () => {
+        const point: IchimokuCloudPoint = {
+            tenkan: null,
+            kijun: null,
+            senkouA: 105,
+            senkouB: 100,
+            cloudBullishUpper: 105,
+            cloudBearishUpper: null,
+            chikou: null,
+        };
+
+        it('더 늦은 anchorTime에서 시작하고 간격은 bars의 마지막 두 봉에서 구한다', () => {
+            const result = extendWithFutureCloud(
+                mockBars, // 마지막 300, 간격 100
+                [point, point],
+                emptyBase,
+                1000
+            );
+            expect(result.finalSenkouA.map(p => p.time)).toEqual([1100, 1200]);
+        });
+
+        it('anchorTime이 마지막 봉보다 이르면 앞당기지 않는다', () => {
+            const result = extendWithFutureCloud(
+                mockBars,
+                [point],
+                emptyBase,
+                150
+            );
+            expect(result.finalSenkouA.map(p => p.time)).toEqual([400]);
+        });
+
+        it('anchorTime을 생략하면 기존과 같다', () => {
+            const result = extendWithFutureCloud(mockBars, [point], emptyBase);
+            expect(result.finalSenkouA.map(p => p.time)).toEqual([400]);
+        });
+    });
+
     it('preserves base data when extending', () => {
         const base: FutureCloudBase = {
             senkouAData: [{ time: 100 as UTCTimestamp, value: 50 }],

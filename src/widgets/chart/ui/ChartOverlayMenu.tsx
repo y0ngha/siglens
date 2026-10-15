@@ -9,16 +9,11 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
+import type { ToggleSetting } from '../types';
 import type {
     OverlayMenuGroupKind,
     OverlayMenuItem,
 } from '../utils/overlayItems';
-
-/** 수평 레벨 오른쪽 연장 설정 — 값과 변경 콜백. */
-export interface RightExtendSetting {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-}
 
 interface ChartOverlayMenuProps {
     /** 켜고 끌 수 있는 항목 — `buildOverlayMenuItems`가 실제로 그려지는 작도만 담는다. */
@@ -29,7 +24,13 @@ interface ChartOverlayMenuProps {
      * 수평 레벨 오른쪽 연장 설정(작도 항목이 아닌 표시 환경설정 — 트리거 개수에 세지 않는다).
      * 연장할 레벨이 없으면 넘기지 않아 행을 숨긴다.
      */
-    rightExtend?: RightExtendSetting;
+    rightExtend?: ToggleSetting;
+    /**
+     * 프리·애프터마켓(시간외) 봉·음영 표시 설정 — 미국 주식 인트라데이에서만 넘긴다(그 밖에는 행이
+     * 없다). 작도 항목이 아니라 표시 환경설정이라 트리거 개수에 세지 않는다. 작도 항목이 하나도
+     * 없어도 이 행 때문에 메뉴가 뜬다.
+     */
+    extendedHours?: ToggleSetting;
     /** 항목 key → 차트에 그린 색. 있으면 항목 앞에 색 점을 찍어 선과 짝짓는다. */
     itemColors?: ReadonlyMap<string, string>;
     /** 항목 hover·focus로 그 작도를 강조한다(축 라벨이 가려질 때 고르는 수단). */
@@ -99,6 +100,30 @@ function CheckBox({ state }: { state: CheckState }) {
     );
 }
 
+interface SettingRowProps {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+    label: string;
+}
+
+/** 표시 환경설정 한 줄 — 체크박스 + 라벨이 든 토글 버튼(`aria-pressed`). */
+function SettingRow({ checked, onChange, label }: SettingRowProps) {
+    return (
+        <button
+            type="button"
+            aria-pressed={checked}
+            onClick={() => onChange(!checked)}
+            className={cn(
+                ROW_CLASS,
+                checked ? 'text-secondary-100' : 'text-secondary-400'
+            )}
+        >
+            <CheckBox state={checked} />
+            <span>{label}</span>
+        </button>
+    );
+}
+
 /**
  * "차트 작도" 드롭다운 — 매매 가격선과 AI가 참조한 로직 작도(패턴·추세선·
  * 다이버전스·피보나치·엘리어트 파동)를 **항목 단위로** 켜고 끈다. AI 패널 카드의
@@ -121,6 +146,7 @@ export function ChartOverlayMenu({
     hiddenKeys,
     onSetVisible,
     rightExtend,
+    extendedHours,
     itemColors = NO_ITEM_COLORS,
     onHighlight,
 }: ChartOverlayMenuProps) {
@@ -153,7 +179,7 @@ export function ChartOverlayMenu({
         onHighlight?.(null);
     }, [isOpen, onHighlight]);
 
-    if (items.length === 0) return null;
+    if (items.length === 0 && extendedHours === undefined) return null;
 
     const isOn = (key: string): boolean => !hiddenKeys.has(key);
     // 켜진 **항목 수**다(카테고리 수가 아니다).
@@ -174,7 +200,11 @@ export function ChartOverlayMenu({
         return item.label ?? t(KIND_LABEL_KEY[item.kind]);
     };
 
-    const triggerLabel = t('ChartOverlayMenu.4b1cdc', { v0: activeCount });
+    // 작도 항목 없이 환경설정 행만 있을 때는 "차트 작도 0"이 거짓 안내가 된다.
+    const triggerLabel =
+        items.length === 0
+            ? t('ChartOverlayMenu.settingsTrigger')
+            : t('ChartOverlayMenu.4b1cdc', { v0: activeCount });
 
     return (
         <div className="relative">
@@ -316,24 +346,28 @@ export function ChartOverlayMenu({
                             </div>
                         );
                     })}
-                    {rightExtend && (
-                        <div className="mt-1 border-t border-secondary-700/60 pt-1">
-                            <button
-                                type="button"
-                                aria-pressed={rightExtend.checked}
-                                onClick={() =>
-                                    rightExtend.onChange(!rightExtend.checked)
-                                }
-                                className={cn(
-                                    ROW_CLASS,
-                                    rightExtend.checked
-                                        ? 'text-secondary-100'
-                                        : 'text-secondary-400'
-                                )}
-                            >
-                                <CheckBox state={rightExtend.checked} />
-                                <span>{t('ChartOverlayMenu.a57483')}</span>
-                            </button>
+                    {(rightExtend || extendedHours) && (
+                        <div
+                            className={cn(
+                                'flex flex-col',
+                                groups.length > 0 &&
+                                    'mt-1 border-t border-secondary-700/60 pt-1'
+                            )}
+                        >
+                            {rightExtend && (
+                                <SettingRow
+                                    checked={rightExtend.checked}
+                                    onChange={rightExtend.onChange}
+                                    label={t('ChartOverlayMenu.a57483')}
+                                />
+                            )}
+                            {extendedHours && (
+                                <SettingRow
+                                    checked={extendedHours.checked}
+                                    onChange={extendedHours.onChange}
+                                    label={t('ChartOverlayMenu.extendedHours')}
+                                />
+                            )}
                         </div>
                     )}
                 </div>

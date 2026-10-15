@@ -15,6 +15,51 @@ interface ChartSyncHandlers {
      * 적용한다.
      */
     setRightOffsetPixels: (pixels: number) => void;
+    /**
+     * 사용자가 **두 차트 중 어느 쪽이든** 직접 밀거나 확대했는가(포인터·휠·터치 입력). 시간외 봉이
+     * 나중에 도착했을 때 보던 자리를 지킬지 정하는 근거다(`StockChart`). 차트 하나의 입력만 보면
+     * 거래량 pane을 밀어 본 사용자의 보기가 시간외 봉 도착에 날아간다.
+     */
+    isUserAdjustedView: () => boolean;
+    /** 맞춤이 새로 일어나 조정 기록을 지운다(다음 시간외 봉 도착은 사용자가 다시 건드려야 보존된다). */
+    resetUserAdjustedView: () => void;
+    /**
+     * 거래량 차트의 데이터 갱신을 감싼다. 갱신 중 거래량 차트가 내는 보이는 범위 변경은 가격 차트로
+     * 번지지 않게 막고(데이터가 바뀌면 lightweight-charts가 오른쪽 여백 기준으로 범위를 보정해 **낡은 범위**를
+     * 가격 차트에 되밀 수 있다), 끝나면 거래량 차트를 가격 차트의 **현재** 범위에 맞춘다 — 보기의 주인은
+     * 가격 차트다.
+     */
+    runVolumeDataUpdate: (update: () => void) => void;
+}
+
+const USER_VIEW_INPUT_EVENTS = ['pointerdown', 'wheel', 'touchstart'] as const;
+
+/**
+ * 요소의 밀기·확대 입력(포인터·휠·터치)을 듣고 `onInput`을 부른다. 해제 함수를 돌려준다. 리스너를 걸고 푸는
+ * 쌍을 한 함수에 둔다(훅 본문에서 try/finally·이벤트 등록을 섞지 않는다).
+ */
+function listenForViewInput(
+    element: HTMLElement,
+    onInput: () => void
+): () => void {
+    USER_VIEW_INPUT_EVENTS.forEach(type =>
+        element.addEventListener(type, onInput, { passive: true })
+    );
+    return () => {
+        USER_VIEW_INPUT_EVENTS.forEach(type =>
+            element.removeEventListener(type, onInput)
+        );
+    };
+}
+
+/** `flag.current`를 `update` 실행 동안만 `true`로 둔다(던져도 푼다). */
+function runWithFlag(flag: { current: boolean }, update: () => void): void {
+    flag.current = true;
+    try {
+        update();
+    } finally {
+        flag.current = false;
+    }
 }
 
 function applyRightOffsetPixels(chart: IChartApi, pixels: number): void {
@@ -61,6 +106,29 @@ export function useChartSync(): ChartSyncHandlers {
     // 차트마다 마지막으로 입힌 가격축 최소 폭 — 같은 값을 다시 입히지 않는다.
     const appliedScaleWidthRef = useRef(new Map<IChartApi, number>());
     const scaleFrameRef = useRef<number | null>(null);
+    const userAdjustedViewRef = useRef(false);
+    // 거래량 데이터 갱신 중에는 거래량 차트의 범위 변경을 가격 차트로 보내지 않는다(runVolumeDataUpdate).
+    const volumeDataUpdatingRef = useRef(false);
+    // 차트마다 건 입력 리스너의 해제 함수.
+    const inputCleanupRef = useRef(new Map<IChartApi, () => void>());
+
+    const listenForUserAdjustment = useCallback((chart: IChartApi): void => {
+        inputCleanupRef.current.set(
+            chart,
+            listenForViewInput(chart.chartElement(), () => {
+                userAdjustedViewRef.current = true;
+            })
+        );
+    }, []);
+
+    const stopListeningForUserAdjustment = useCallback(
+        (chart: IChartApi | null): void => {
+            if (chart === null) return;
+            inputCleanupRef.current.get(chart)?.();
+            inputCleanupRef.current.delete(chart);
+        },
+        []
+    );
 
     /*
      * 한쪽 차트가 사라지면 남은 차트의 하한을 풀고 기록을 비운다. 그대로 두면 다시
@@ -154,16 +222,18 @@ export function useChartSync(): ChartSyncHandlers {
             stockHandlerRef.current = handler;
             chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
             attachScaleWidthSync(chart);
+            listenForUserAdjustment(chart);
         },
-        [attachScaleWidthSync]
+        [attachScaleWidthSync, listenForUserAdjustment]
     );
 
     const handleStockChartRemove = useCallback((): void => {
+        stopListeningForUserAdjustment(stockChartRef.current);
         detachChart(stockChartRef.current, stockHandlerRef.current);
         stockChartRef.current = null;
         stockHandlerRef.current = null;
         releaseScaleWidthFloor(volumeChartRef.current);
-    }, [detachChart, releaseScaleWidthFloor]);
+    }, [detachChart, releaseScaleWidthFloor, stopListeningForUserAdjustment]);
 
     const handleVolumeChartReady = useCallback(
         (chart: IChartApi): void => {
@@ -172,6 +242,7 @@ export function useChartSync(): ChartSyncHandlers {
                 applyRightOffsetPixels(chart, rightOffsetPixelsRef.current);
             }
             const handler = (range: LogicalRange | null) => {
+                if (volumeDataUpdatingRef.current) return;
                 if (range !== null && stockChartRef.current !== null) {
                     stockChartRef.current
                         .timeScale()
@@ -181,16 +252,36 @@ export function useChartSync(): ChartSyncHandlers {
             volumeHandlerRef.current = handler;
             chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
             attachScaleWidthSync(chart);
+            listenForUserAdjustment(chart);
         },
-        [attachScaleWidthSync]
+        [attachScaleWidthSync, listenForUserAdjustment]
     );
 
     const handleVolumeChartRemove = useCallback((): void => {
+        stopListeningForUserAdjustment(volumeChartRef.current);
         detachChart(volumeChartRef.current, volumeHandlerRef.current);
         volumeChartRef.current = null;
         volumeHandlerRef.current = null;
         releaseScaleWidthFloor(stockChartRef.current);
-    }, [detachChart, releaseScaleWidthFloor]);
+    }, [detachChart, releaseScaleWidthFloor, stopListeningForUserAdjustment]);
+
+    const isUserAdjustedView = useCallback(
+        (): boolean => userAdjustedViewRef.current,
+        []
+    );
+    const resetUserAdjustedView = useCallback((): void => {
+        userAdjustedViewRef.current = false;
+    }, []);
+
+    const runVolumeDataUpdate = useCallback((update: () => void): void => {
+        runWithFlag(volumeDataUpdatingRef, update);
+        const stock = stockChartRef.current;
+        const volume = volumeChartRef.current;
+        const range = stock?.timeScale().getVisibleLogicalRange();
+        if (range && volume !== null) {
+            volume.timeScale().setVisibleLogicalRange(range);
+        }
+    }, []);
 
     const setRightOffsetPixels = useCallback((pixels: number): void => {
         if (rightOffsetPixelsRef.current === pixels) return;
@@ -206,5 +297,8 @@ export function useChartSync(): ChartSyncHandlers {
         handleVolumeChartReady,
         handleVolumeChartRemove,
         setRightOffsetPixels,
+        isUserAdjustedView,
+        resetUserAdjustedView,
+        runVolumeDataUpdate,
     };
 }

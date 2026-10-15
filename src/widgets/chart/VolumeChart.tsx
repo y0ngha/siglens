@@ -3,16 +3,30 @@
 import { useMemo, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
-import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
+import type { Bar, BuySellVolumeResult, Timeframe } from '@y0ngha/siglens-core';
+import {
+    NO_EXTENDED_BARS,
+    NO_SESSION_RANGES,
+    buildExtendedSessionRanges,
+    isExtendedBarTimeframe,
+} from '@/shared/api/market/extendedBarsSession';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { usePaneLabels } from './hooks/usePaneLabels';
+import { useExtendedSessionBand } from './hooks/useExtendedSessionBand';
 import { useVolumeChartData } from './hooks/useVolumeChartData';
 import { useVolumeChartLifecycle } from './hooks/useVolumeChartLifecycle';
 import type { PaneLabelConfig } from './types';
 import { useTranslations } from 'next-intl';
 
 interface VolumeChartProps {
+    /** 정규장 봉 — 매수/매도 분해는 이 배열과 짝지어진다. */
     bars: Bar[];
+    /** 프리·애프터마켓 봉(총 거래량 막대와 음영만). 생략하면 기존과 같다. */
+    extendedBars?: Bar[];
+    /** 음영 구간을 세션 창으로 나눌 때 쓰는 타임프레임. */
+    timeframe?: Timeframe;
+    /** 데이터 갱신을 감싸는 래퍼(`useChartSync.runVolumeDataUpdate`) — 가격 차트가 보던 범위를 지킨다. */
+    runDataUpdate?: (update: () => void) => void;
     buySellVolume: BuySellVolumeResult[];
     /** 차트 인스턴스가 준비되면 호출된다. 캔들차트와 visible range 동기화에 사용된다. */
     onChartReady?: (chart: IChartApi) => void;
@@ -24,6 +38,9 @@ interface VolumeChartProps {
 
 export function VolumeChart({
     bars,
+    extendedBars = NO_EXTENDED_BARS,
+    timeframe,
+    runDataUpdate,
     buySellVolume,
     onChartReady,
     onChartRemove,
@@ -50,8 +67,19 @@ export function VolumeChart({
         totalSeriesRef,
         buySeriesRef,
         bars,
+        extendedBars,
         buySellVolume,
+        runUpdate: runDataUpdate,
     });
+
+    const extendedRanges = useMemo(
+        () =>
+            timeframe !== undefined && isExtendedBarTimeframe(timeframe)
+                ? buildExtendedSessionRanges(extendedBars, timeframe)
+                : NO_SESSION_RANGES,
+        [extendedBars, timeframe]
+    );
+    useExtendedSessionBand(totalSeriesRef, extendedRanges);
 
     /* `CHART_COLORS`는 **접근 시점에** 테마를 보는 게터다. 모듈 상수로 두면
        로드 시점의 색이 굳으므로 렌더 안에서 읽되, 읽은 결과를 지역 변수로

@@ -20,3 +20,9 @@ export interface PaneLabelConfig {
 }
 
 export type PaneIndices = Record<IndicatorKey, number>;
+
+/** 표시 환경설정 토글 하나 — 값과 변경 콜백(오른쪽 연장·시간외 표시 등). */
+export interface ToggleSetting {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}

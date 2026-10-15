@@ -34,6 +34,14 @@ import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
 import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
+import { useExtendedBars } from '@/entities/extended-bars/hooks/useExtendedBars';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import { STORAGE_KEYS } from '@/widgets/chart/constants';
+import {
+    NO_EXTENDED_BARS,
+    isExtendedBarTimeframe,
+    mergeExtendedBars,
+} from '@/shared/api/market/extendedBarsSession';
 import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { shouldRefetchBarsSeed } from './utils/shouldRefetchBarsSeed';
@@ -187,6 +195,35 @@ export function ChartContent({
         }),
     });
 
+    // 프리·애프터마켓 봉(미국 주식 인트라데이, 기본 켜짐). 지표·분석·작도는 위 `bars`(정규장)만 쓰고,
+    // 이 봉은 캔들·거래량·음영에만 얹는다 — 아래 `StockChart`·`VolumeChart` 주석 참고.
+    const [extendedHoursOn, setExtendedHoursOn] = usePersistentState(
+        STORAGE_KEYS.extendedHours,
+        true
+    );
+    const extendedBarsRaw = useExtendedBars({
+        symbol,
+        timeframe,
+        marketProfile,
+        toggledOn: extendedHoursOn,
+    });
+    const supportsExtendedHours =
+        marketProfile === 'us-equity' && isExtendedBarTimeframe(timeframe);
+    const { displayBars, extendedBars } = useMemo(
+        () =>
+            isExtendedBarTimeframe(timeframe)
+                ? mergeExtendedBars(bars, extendedBarsRaw, timeframe)
+                : { displayBars: bars, extendedBars: NO_EXTENDED_BARS },
+        [bars, extendedBarsRaw, timeframe]
+    );
+    const extendedHoursSetting = useMemo(
+        () =>
+            supportsExtendedHours
+                ? { checked: extendedHoursOn, onChange: setExtendedHoursOn }
+                : undefined,
+        [supportsExtendedHours, extendedHoursOn, setExtendedHoursOn]
+    );
+
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
 
@@ -196,6 +233,9 @@ export function ChartContent({
         handleVolumeChartReady,
         handleVolumeChartRemove,
         setRightOffsetPixels,
+        isUserAdjustedView,
+        resetUserAdjustedView,
+        runVolumeDataUpdate,
     } = useChartSync();
 
     const {
@@ -676,6 +716,11 @@ export function ChartContent({
                     <StockChart
                         key={themeVersion}
                         bars={bars}
+                        displayBars={displayBars}
+                        extendedBars={extendedBars}
+                        extendedHours={extendedHoursSetting}
+                        isViewAdjusted={isUserAdjustedView}
+                        onViewAdjustmentReset={resetUserAdjustedView}
                         timeframe={timeframe}
                         indicators={indicators}
                         actionPrices={validatedActionPrices}
@@ -714,6 +759,9 @@ export function ChartContent({
                     <VolumeChart
                         key={themeVersion}
                         bars={bars}
+                        extendedBars={extendedBars}
+                        timeframe={timeframe}
+                        runDataUpdate={runVolumeDataUpdate}
                         buySellVolume={indicators.buySellVolume}
                         onChartReady={handleVolumeChartReady}
                         onChartRemove={handleVolumeChartRemove}
@@ -724,11 +772,16 @@ export function ChartContent({
                 {/* 안내 */}
                 <p className="px-2 py-1 text-right text-[10px] text-secondary-500">
                     {/*
-                     * Pre-market/After-market 안내는 미국 주식(equity)에만 해당한다.
-                     * 암호화폐는 24/7 거래라 장전·장후 세션 구분 자체가 없으므로
-                     * crypto 마켓 프로파일에서는 이 문구를 표시하지 않는다.
+                     * 시간외 안내는 **지금 그려지는 것**과 맞아야 한다. 시간외 봉이 그려지면(미국 주식
+                     * 인트라데이, 토글 켜짐) "차트는 Pre-market, After-market 주가를 반영하지 않습니다"가
+                     * 화면과 모순이라, 음영이 시간외 거래이고 지표·AI 분석은 정규장 봉만 쓴다고 말한다.
+                     * 그 밖(일봉·토글 꺼짐·한국 주식)은 기존 문구다. 암호화폐는 24/7 거래라 장전·장후
+                     * 세션 구분 자체가 없어 두 문구 모두 표시하지 않는다.
                      */}
-                    {marketProfile !== 'crypto' && t('ChartContent.93c3a3')}
+                    {extendedBars.length > 0
+                        ? t('ChartContent.extendedHoursNotice')
+                        : marketProfile !== 'crypto' &&
+                          t('ChartContent.93c3a3')}
                     {/* 지연 분(分)은 시장 프로파일이 안다(미국·암호화폐 0, 국내 20).
                         예전에는 전 시장에 "최대 15분 지연"을 박아 실시간인 시장에도
                         지연이라고 말했다. */}
