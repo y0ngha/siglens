@@ -1,6 +1,6 @@
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://siglens.io' }));
 
-import { buildSampleReportEmail } from '@/entities/email-report/lib/buildSampleReportEmail';
+import { buildSampleReportEmail } from '@/entities/email-report/server';
 
 describe('buildSampleReportEmail', () => {
     it('한국어 카탈로그로 실제 메일 문구와 샘플 산문을 그린다', async () => {

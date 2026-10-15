@@ -3364,5 +3364,8 @@
     "entities.email-report.sample.aapl.plain": "6e19645007d7",
     "entities.email-report.sample.aapl.technical": "c71149481736",
     "entities.email-report.sample.aapl.pattern": "a8c66e23f536",
-    "entities.email-report.sample.aapl.newsSummary1": "b9912059d374"
+    "entities.email-report.sample.aapl.newsSummary1": "b9912059d374",
+    "features.email-report-settings.EmailReportLinkCard.heading": "411c76ce246f",
+    "features.email-report-settings.EmailReportLinkCard.description": "3434176bf0ca",
+    "features.email-report-settings.EmailReportLinkCard.link": "8be32910f3bc"
 }

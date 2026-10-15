@@ -8,6 +8,8 @@ import {
     SAMPLE_REPORT_DATE,
 } from '@/entities/email-report/lib/sampleReportData';
 
+import { SECONDS_PER_DAY } from '@/shared/config/time';
+
 const { HTTP_STATUS_NOT_FOUND } = constants;
 
 /**
@@ -19,7 +21,7 @@ const { HTTP_STATUS_NOT_FOUND } = constants;
 export const dynamic = 'force-static';
 export const dynamicParams = false;
 
-const SAMPLE_CHART_CACHE_CONTROL = 'public, max-age=86400, s-maxage=86400'; // 1d
+const SAMPLE_CHART_CACHE_CONTROL = `public, max-age=${SECONDS_PER_DAY}, s-maxage=${SECONDS_PER_DAY}`; // 1d
 
 export function generateStaticParams(): Array<{ symbol: string }> {
     return SAMPLE_CHART_SYMBOLS.map(symbol => ({ symbol }));

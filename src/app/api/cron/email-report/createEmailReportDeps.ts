@@ -7,7 +7,7 @@ import {
 import {
     getReportEmailTranslator,
     getReportSignalLabelResolver,
-} from '@/entities/email-report/lib/reportEmailTranslators';
+} from '@/entities/email-report/server';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { getDatabaseClient } from '@/shared/db/client';

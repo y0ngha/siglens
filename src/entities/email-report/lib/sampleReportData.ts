@@ -1,4 +1,9 @@
 import { calculateMA, type Bar } from '@y0ngha/siglens-core';
+import {
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import type { SymbolBrief, SymbolReport } from '../reportModel';
 import { REPORT_CHART_MA_PERIODS } from './buildReportChartImage';
@@ -53,17 +58,50 @@ const SAMPLE_BAR_SEEDS: Record<SampleChartSymbol, BarSeed> = {
 };
 
 const SAMPLE_BAR_COUNT = 90;
-const SECONDS_PER_DAY = 86_400;
-/** 미국 정규장 시작(UTC 13:30)의 하루 안 초. 봉 시각이 날짜와 어긋나지 않게 한다. */
-const MARKET_OPEN_SECONDS = 13 * 3_600 + 30 * 60;
+/**
+ * 미국 정규장 시작(UTC 13:30)의 하루 안 초. 봉 시각이 날짜와 어긋나지 않게 한다.
+ * 시간 단위 환산은 `shared/config/time`을 쓴다.
+ */
+const MARKET_OPEN_UTC_HOUR = 13;
+const MARKET_OPEN_UTC_MINUTE = 30;
+const MARKET_OPEN_SECONDS =
+    MARKET_OPEN_UTC_HOUR * SECONDS_PER_HOUR +
+    MARKET_OPEN_UTC_MINUTE * SECONDS_PER_MINUTE;
+/** 주말이 끼어도 `count`개 거래일을 채울 만큼 거꾸로 훑는 달력일 배수. */
+const CALENDAR_DAYS_PER_TRADING_DAY = 2;
 
-/** 선형 합동 생성기 — `Math.random` 없이 같은 시드에서 늘 같은 수열을 낸다. */
-function createRng(seed: number): () => number {
-    let state = seed >>> 0;
-    return () => {
-        state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
-        return state / 0x1_0000_0000;
-    };
+interface RandomDraw {
+    value: number;
+    state: number;
+}
+
+/**
+ * 선형 합동 생성기의 한 걸음 — 상태를 받아 `[0, 1)` 값과 다음 상태를 돌려준다.
+ * `Math.random`도 클로저 변수도 없이, 같은 시드에서 늘 같은 수열을 낸다.
+ */
+function nextRandom(state: number): RandomDraw {
+    const next = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+    return { value: next / 0x1_0000_0000, state: next };
+}
+
+/** 상태를 이어 받으며 `count`개를 뽑는다. */
+function drawRandoms(
+    state: number,
+    count: number
+): { values: number[]; state: number } {
+    return Array.from({ length: count }).reduce<{
+        values: number[];
+        state: number;
+    }>(
+        acc => {
+            const draw = nextRandom(acc.state);
+            return {
+                values: [...acc.values, draw.value],
+                state: draw.state,
+            };
+        },
+        { values: [], state }
+    );
 }
 
 function round2(value: number): number {
@@ -72,44 +110,65 @@ function round2(value: number): number {
 
 /** `SAMPLE_REPORT_DATE`에서 거꾸로 세어 주말을 건너뛴 거래일(초 단위 epoch) 목록, 오래된 순. */
 function sampleTradingTimes(count: number): number[] {
-    const times: number[] = [];
     const end = Date.parse(`${SAMPLE_REPORT_DATE}T00:00:00Z`) / 1_000;
-    for (let day = end; times.length < count; day -= SECONDS_PER_DAY) {
-        const weekday = new Date(day * 1_000).getUTCDay();
-        if (weekday !== 0 && weekday !== 6) {
-            times.push(day + MARKET_OPEN_SECONDS);
-        }
-    }
-    return times.reverse();
+    return Array.from(
+        { length: count * CALENDAR_DAYS_PER_TRADING_DAY },
+        (_, back) => end - back * SECONDS_PER_DAY
+    )
+        .filter(day => {
+            const weekday = new Date(day * 1_000).getUTCDay();
+            return weekday !== 0 && weekday !== 6;
+        })
+        .slice(0, count)
+        .map(day => day + MARKET_OPEN_SECONDS)
+        .reverse();
+}
+
+interface BarWalk {
+    bars: Bar[];
+    previousClose: number;
+    rngState: number;
 }
 
 /**
  * 샘플 일봉. 모양은 실제 `Bar` 그대로이고, 값은 시드 고정 난수 보행이라 빌드마다 같다.
  * 가격은 센트까지 반올림한다 — 차트 헤더의 종가·등락률이 메일 본문과 같은 값에서 나온다.
+ * 직전 종가와 난수 상태를 `reduce`로 이어 받는다(봉마다 난수 4개: 등락·윗꼬리·아랫꼬리·거래량).
  */
 export function buildSampleBars(symbol: SampleChartSymbol): Bar[] {
     const { start, drift, volatility, seed } = SAMPLE_BAR_SEEDS[symbol];
-    const rng = createRng(seed);
-    let previousClose = start;
-    return sampleTradingTimes(SAMPLE_BAR_COUNT).map(time => {
-        const open = previousClose;
-        const change = drift + (rng() - 0.5) * 2 * volatility;
-        const close = round2(open * (1 + change));
-        const wick = 1 + rng() * volatility * 0.6;
-        const high = round2(Math.max(open, close) * wick);
-        const low = round2(
-            Math.min(open, close) / (1 + rng() * volatility * 0.6)
-        );
-        previousClose = close;
-        return {
-            time,
-            open: round2(open),
-            high,
-            low,
-            close,
-            volume: Math.round(1_000_000 + rng() * 4_000_000),
-        };
-    });
+    return sampleTradingTimes(SAMPLE_BAR_COUNT).reduce<BarWalk>(
+        (walk, time) => {
+            const open = walk.previousClose;
+            const {
+                values: [changeDraw, upperDraw, lowerDraw, volumeDraw],
+                state,
+            } = drawRandoms(walk.rngState, 4);
+            const change = drift + (changeDraw! - 0.5) * 2 * volatility;
+            const close = round2(open * (1 + change));
+            const wick = 1 + upperDraw! * volatility * 0.6;
+            const high = round2(Math.max(open, close) * wick);
+            const low = round2(
+                Math.min(open, close) / (1 + lowerDraw! * volatility * 0.6)
+            );
+            return {
+                bars: [
+                    ...walk.bars,
+                    {
+                        time,
+                        open: round2(open),
+                        high,
+                        low,
+                        close,
+                        volume: Math.round(1_000_000 + volumeDraw! * 4_000_000),
+                    },
+                ],
+                previousClose: close,
+                rngState: state,
+            };
+        },
+        { bars: [], previousClose: start, rngState: seed >>> 0 }
+    ).bars;
 }
 
 /** 차트 이미지에 겹치는 이동평균 — 라우트가 쓰는 기간과 같고, core 계산기를 그대로 쓴다. */
@@ -223,6 +282,12 @@ const SAMPLE_BRIEFS: readonly SymbolBrief[] = [
 /** 샘플 산문을 읽는 번역자 — `entities.email-report.sample` 네임스페이스. */
 export type SampleTextTranslator = (key: string) => string;
 
+/**
+ * 뉴스 제목은 로케일과 무관하게 영어 원문으로 둔다. 실제 리포트는 `titleLocalized ?? titleKo ??
+ * titleEn` 순으로 고르므로(`buildSymbolReport`) 번역된 제목이 있으면 그걸 싣고, 없으면 영어
+ * 원문으로 떨어진다 — 샘플은 그 폴백 모양을 보여 준다(`summary`만 카탈로그의 로케일 문장).
+ * 즉 번역 제목이 있는 기사라면 실제 메일에서는 제목도 수신자 언어로 보일 수 있다.
+ */
 function nvdaReport(text: SampleTextTranslator, newsUrl: string): SymbolReport {
     return {
         symbol: 'NVDA',
