@@ -176,7 +176,7 @@ const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
  * (`/ko/AAPL/opengraph-image`)와 하위 탭(`/ko/AAPL/news/opengraph-image`)을 한 번에 연다. 열면
  * 안 되는 쪽은 **더 긴 Disallow**로 되돌린다(아래) — "더 긴 일치가 우선"이라는 표준 규칙이다.
  * - 항상 noindex인 탭(`ALWAYS_NOINDEX_TAB_ROBOTS`: overall·fundamental·financials·options·
- *   congress, 그리고 position) → `NOINDEX_TAB_OG_DISALLOW`
+ *   congress·flows, 그리고 position) → `NOINDEX_TAB_OG_DISALLOW`
  * - 공유 카드(`/ko/share/{id}/opengraph-image`, 사용자 생성 URL) → `SHARE_OG_DISALLOW`
  *
  * 비-ko 로케일은 계속 막힌다(Allow가 `/ko/`에서 시작하고 `opengraph-image`만 가리킨다).
@@ -193,6 +193,7 @@ const NOINDEX_TAB_OG_DISALLOW = [
     'fundamental',
     'options',
     'congress',
+    'flows',
     'position',
 ].map(tab => `/${DEFAULT_LOCALE}/*/${tab}/opengraph-image`);
 const SHARE_OG_DISALLOW = [`/${DEFAULT_LOCALE}/share/*/opengraph-image`];

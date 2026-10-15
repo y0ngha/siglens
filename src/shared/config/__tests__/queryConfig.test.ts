@@ -239,6 +239,12 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
         );
     });
 
+    it('investorFlows: symbol 대문자 정규화 + modelId + reasoning(기본 false) + locale', () => {
+        expect(QUERY_KEYS.investorFlows('aapl', MODEL_ID, false, 'ja')).toEqual(
+            ['investor-flows', 'AAPL', MODEL_ID, false, 'ja']
+        );
+    });
+
     it('newsAnalysis: symbol 대문자 정규화 + companyName + modelId + reasoning(기본 false)', () => {
         expect(
             QUERY_KEYS.newsAnalysis('aapl', 'Apple Inc.', MODEL_ID, false, 'ko')

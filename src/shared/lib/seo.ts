@@ -195,13 +195,13 @@ export const X_URL = 'https://x.com/siglens_io';
  *
  * 2026-10-01 SEO 감사(`docs/architecture/SEO_RECOVERY_2026_09.md` §10)로 종목별
  * 색인을 차트·뉴스·공포탐욕 세 탭으로 좁혔다. overall·fundamental·financials·
- * congress·options 다섯 탭은 이 값을 쓴다.
+ * congress·flows·options 여섯 탭은 이 값을 쓴다.
  *
  * `NOINDEX_SYMBOL_METADATA`(실존하지 않는 종목·degrade용)와 같은 robots이고 둘 다
  * self-canonical을 쓴다 — 이 페이지들은 정상 페이지라 제목·설명도 그대로 둔다.
  * `follow: true`인 이유는 `NOINDEX_SYMBOL_METADATA` 주석과 같다(형제 탭 크롤 경로).
  *
- * 다섯 페이지가 같은 상수를 써야 sitemap 빌더(`buildPopularEntries`)의 "이 탭은
+ * 여섯 페이지가 같은 상수를 써야 sitemap 빌더(`buildPopularEntries`)의 "이 탭은
  * 싣지 않는다"와 한 곳에서 대응된다. 탭을 다시 열 때는 여기가 아니라 각 페이지에서
  * 이 값을 걷어내고 sitemap 빌더에 엔트리를 되돌린다.
  */
@@ -254,6 +254,7 @@ export type SymbolSeoTab =
     | 'fundamental'
     | 'financials'
     | 'congress'
+    | 'flows'
     | 'news'
     | 'options'
     | 'fear-greed'
@@ -296,6 +297,7 @@ const SYMBOL_TAB_LABEL_KEYS: Record<
     fundamental: { equity: 'symbol.fundamental.titleCore' },
     financials: { equity: 'symbol.financials.titleCore' },
     congress: { equity: 'symbol.congress.titleCore' },
+    flows: { equity: 'symbol.flows.titleCore' },
     news: {
         equity: 'symbol.news.titleCore',
         crypto: 'symbol.cryptoNews.titleCore',
@@ -357,6 +359,7 @@ const SYMBOL_SEO_TAB_BUILDERS: Record<
     fundamental: { equity: buildSymbolFundamentalSeoContent },
     financials: { equity: buildSymbolFinancialsSeoContent },
     congress: { equity: buildSymbolCongressSeoContent },
+    flows: { equity: buildSymbolFlowsSeoContent },
     news: {
         equity: buildSymbolNewsSeoContent,
         crypto: buildCryptoSymbolNewsSeoContent,
@@ -1536,6 +1539,61 @@ function buildSymbolCongressKeywords(
         '정치인 주식 매매',
         'STOCK Act',
         '의회 공시',
+    ];
+}
+
+/** Build SEO metadata for the `/[symbol]/flows` (기관·내부자·공매도 수급) page. */
+export function buildSymbolFlowsSeoContent(
+    symbol: string,
+    t: SeoTranslator,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.flows.titleCore'),
+        tail: t('symbol.flows.titleTail'),
+    });
+    const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
+    const subject = opts.displayName ?? upper;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: clampSeoDescription(
+            t('symbol.flows.description', { subject })
+        ),
+        url: `${SITE_URL}/${upper}/flows`,
+        keywords: buildSymbolFlowsKeywords(upper, opts.koreanName),
+    };
+}
+
+function buildSymbolFlowsKeywords(
+    ticker: string,
+    koreanName?: string
+): string[] {
+    return [
+        ticker,
+        `${ticker} 수급`,
+        `${ticker} 기관 매수`,
+        `${ticker} 기관 보유`,
+        `${ticker} 공매도`,
+        `${ticker} 내부자 거래`,
+        ...(koreanName
+            ? [
+                  `${koreanName} 수급`,
+                  `${koreanName} 기관 매수`,
+                  `${koreanName} 공매도`,
+              ]
+            : []),
+        '기관 수급',
+        '13F',
+        '공매도 잔고',
+        '내부자 거래',
+        '대량보유',
     ];
 }
 

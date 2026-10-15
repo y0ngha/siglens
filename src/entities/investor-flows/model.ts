@@ -1,4 +1,4 @@
-/** Investor Flows 데이터 계층의 내부 도메인 타입(수집·저장용). 화면·분석 계약은 `coreTypes.ts`. */
+/** Investor Flows 데이터 계층의 내부 도메인 타입(수집·저장용). 화면·분석 계약은 `@y0ngha/siglens-core`. */
 
 /** 13F 정정 종류. `13F-HR/A`의 `amendmentInfo/amendmentType`. */
 export type AmendmentType = 'RESTATEMENT' | 'NEW HOLDINGS';

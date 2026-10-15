@@ -1738,3 +1738,37 @@ describe('buildSnapshotMetaDescription — 원문 경로의 라벨·소제목 �
         expect(result).toBe(`${PREFIX}${plain}`);
     });
 });
+
+describe('buildSymbolFlowsSeoContent', () => {
+    it('/flows URL과 수급 제목·설명·키워드를 낸다', async () => {
+        const { getTranslations } = await import('next-intl/server');
+        const t = await getTranslations({
+            locale: 'ko',
+            namespace: 'shared.seo',
+        });
+        const { buildSymbolFlowsSeoContent } = await import('@/shared/lib/seo');
+        const seo = buildSymbolFlowsSeoContent('aapl', t, {
+            displayName: '애플(AAPL)',
+            koreanName: '애플',
+            locale: 'ko',
+        });
+        expect(seo.url.endsWith('/AAPL/flows')).toBe(true);
+        expect(seo.title).toContain('기관 수급');
+        expect(seo.description).toContain('애플(AAPL)');
+        expect(seo.keywords).toEqual(
+            expect.arrayContaining(['AAPL 수급', '애플 공매도', '13F'])
+        );
+    });
+
+    it('한국어명이 없으면 한국어명 키워드를 만들지 않는다', async () => {
+        const { getTranslations } = await import('next-intl/server');
+        const t = await getTranslations({
+            locale: 'ko',
+            namespace: 'shared.seo',
+        });
+        const { buildSymbolFlowsSeoContent } = await import('@/shared/lib/seo');
+        const seo = buildSymbolFlowsSeoContent('MSFT', t);
+        expect(seo.keywords.some(k => k.includes('undefined'))).toBe(false);
+        expect(seo.keywords).toContain('MSFT 수급');
+    });
+});

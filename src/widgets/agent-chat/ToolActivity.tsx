@@ -11,6 +11,7 @@ import {
     CandlesIcon,
     CheckIcon,
     ChevronDownIcon,
+    FlowsIcon,
     GavelIcon,
     GlobeIcon,
     LayersIcon,
@@ -40,6 +41,7 @@ const ICON: Record<string, IconComponent> = {
     get_market_overview: LayersIcon,
     get_economy: BankIcon,
     get_congress_trades: GavelIcon,
+    get_investor_flows: FlowsIcon,
     get_guide: BookIcon,
 };
 
@@ -92,6 +94,7 @@ export function ToolActivity({
         get_market_overview: t('ToolActivity.toolMarketOverview'),
         get_economy: t('ToolActivity.toolEconomy'),
         get_congress_trades: t('ToolActivity.toolCongressTrades'),
+        get_investor_flows: t('ToolActivity.toolInvestorFlows'),
         get_guide: t('ToolActivity.toolGuide'),
     };
     const labelOf = (name: string): string =>

@@ -131,6 +131,16 @@
         "widgets.home.skillBadge",
         "widgets.home.skillFilter",
         "widgets.home.tickerCategory",
+        "widgets.investor-flows.axis",
+        "widgets.investor-flows.ev",
+        "widgets.investor-flows.filter",
+        "widgets.investor-flows.label",
+        "widgets.investor-flows.split.decreased",
+        "widgets.investor-flows.split.exited",
+        "widgets.investor-flows.split.increased",
+        "widgets.investor-flows.split.newHolders",
+        "widgets.investor-flows.status",
+        "widgets.investor-flows.tooltip",
         "widgets.layout.localeSwitcher",
         "widgets.legal.unavailableNotice",
         "widgets.legal.unavailableNoticeLabel",
@@ -154,6 +164,10 @@
         "shared.lib.byokGate"
     ],
     "routeWide": {
-        "views.symbol.technicalFacts": ["[symbol]/(page)"]
+        "views.symbol.technicalFacts": ["[symbol]/(page)"],
+        "widgets.investor-flows.ev": ["[symbol]/flows"],
+        "widgets.investor-flows.label": ["[symbol]/flows"],
+        "widgets.investor-flows.split": ["[symbol]/flows"],
+        "widgets.investor-flows.tooltip": ["[symbol]/flows"]
     }
 }

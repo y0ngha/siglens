@@ -12,6 +12,7 @@ vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
             'get_market_overview',
             'get_economy',
             'get_congress_trades',
+            'get_investor_flows',
             'get_guide',
             'get_my_portfolio',
             'run_fresh_analysis',
@@ -45,7 +46,22 @@ describe('GET /api/v1/skill', () => {
         const markdown = await (await GET()).text();
         const exposed = publicApiToolSpecs().map(spec => spec.name);
         expect(toolHeadings(markdown)).toEqual(exposed);
-        expect(exposed).toHaveLength(13);
+        expect(exposed).toHaveLength(14);
+    });
+
+    it('get_investor_flows(수급)를 나열하고, 서버 LLM 키를 쓰지 않는 데이터 도구로 설명한다', async () => {
+        const markdown = await (await GET()).text();
+        expect(toolHeadings(markdown)).toContain('get_investor_flows');
+        const section = markdown.slice(
+            markdown.indexOf('### `get_investor_flows`'),
+            markdown.indexOf(
+                '### `',
+                markdown.indexOf('### `get_investor_flows`') + 1
+            )
+        );
+        expect(section).toContain('Investor flows');
+        expect(section).toContain('- `symbol` (');
+        expect(section).not.toContain('- `model` (');
     });
 
     it('web_search는 나열하지 않고 run_fresh_analysis는 나열한다', async () => {

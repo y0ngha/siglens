@@ -103,6 +103,17 @@ export function OverallView({
                         listLabel={t('FinancialsSummary.ecbc52')}
                         bullets={r.financialsBulletsKo}
                     />
+                    {/*
+                        수급(기관·내부자·공매도) 요약은 core가 점수표를 받았을 때만 채운다
+                        (`investorFlowsBulletsKo`는 선택 필드) — 필드가 없거나 비면 BulletSection이
+                        섹션째 뺀다. 필드 도입 전에 캐시된 종합 결과도 그대로 유효하다.
+                    */}
+                    <BulletSection
+                        headingId="investor-flows-summary-heading"
+                        title={t('InvestorFlowsSummary.title')}
+                        listLabel={t('InvestorFlowsSummary.listLabel')}
+                        bullets={r.investorFlowsBulletsKo ?? []}
+                    />
                 </>
             )}
             <BulletSection

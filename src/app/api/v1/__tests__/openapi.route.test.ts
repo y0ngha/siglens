@@ -12,6 +12,7 @@ vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
             'get_market_overview',
             'get_economy',
             'get_congress_trades',
+            'get_investor_flows',
             'get_guide',
             'get_my_portfolio',
             'run_fresh_analysis',
@@ -69,7 +70,17 @@ describe('GET /api/v1/openapi.json', () => {
         const doc = (await (await getJson()).json()) as Json;
         const exposed = publicApiToolSpecs().map(spec => `/tools/${spec.name}`);
         expect(toolPaths(doc)).toEqual(exposed);
-        expect(exposed).toHaveLength(13);
+        expect(exposed).toHaveLength(14);
+    });
+
+    it('exposes get_investor_flows as a data tool: symbol input, no model argument (no server LLM)', async () => {
+        const doc = (await (await getJson()).json()) as Json;
+        expect(toolPaths(doc)).toContain('/tools/get_investor_flows');
+        const operation = JSON.stringify(
+            doc.paths['/tools/get_investor_flows']
+        );
+        expect(operation).toContain('Investor flows');
+        expect(operation).not.toContain('"model"');
     });
 
     it('leaves web_search out although the executor has it, and keeps run_fresh_analysis with its BYOK notes', async () => {

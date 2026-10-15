@@ -78,6 +78,12 @@ describe('relatedSymbolPages', () => {
         ).toEqual([{ symbol: 'AAPL', tab: 'congress' }]);
     });
 
+    it('get_investor_flows points at the flows tab', () => {
+        expect(
+            relatedSymbolPages([tool('get_investor_flows', { symbol: 'AAPL' })])
+        ).toEqual([{ symbol: 'AAPL', tab: 'flows' }]);
+    });
+
     it('get_market_overview/get_economy name no symbol and are skipped', () => {
         expect(
             relatedSymbolPages([

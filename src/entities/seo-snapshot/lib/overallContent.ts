@@ -83,6 +83,8 @@ interface NarrowedOverallContent {
     newsBulletsKo: string[];
     optionsBulletsKo: string[];
     financialsBulletsKo: string[];
+    /** 수급 요약 — core가 점수표를 받았을 때만 채워지는 선택 필드라 없으면 빈 배열. */
+    investorFlowsBulletsKo: string[];
 }
 
 /**
@@ -146,6 +148,9 @@ export function narrowOverallContent(
     const newsBulletsKo = narrowStringArray(record.newsBulletsKo);
     const optionsBulletsKo = narrowStringArray(record.optionsBulletsKo);
     const financialsBulletsKo = narrowStringArray(record.financialsBulletsKo);
+    const investorFlowsBulletsKo = narrowStringArray(
+        record.investorFlowsBulletsKo
+    );
 
     if (
         headlineKo.length === 0 &&
@@ -158,7 +163,8 @@ export function narrowOverallContent(
         fundamentalBulletsKo.length === 0 &&
         newsBulletsKo.length === 0 &&
         optionsBulletsKo.length === 0 &&
-        financialsBulletsKo.length === 0
+        financialsBulletsKo.length === 0 &&
+        investorFlowsBulletsKo.length === 0
     ) {
         return null;
     }
@@ -171,6 +177,7 @@ export function narrowOverallContent(
         newsBulletsKo,
         optionsBulletsKo,
         financialsBulletsKo,
+        investorFlowsBulletsKo,
         bullishBullets,
         neutralBullets,
         bearishBullets,

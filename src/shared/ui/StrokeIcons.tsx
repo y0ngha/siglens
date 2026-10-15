@@ -185,6 +185,13 @@ export const GavelIcon = (p: IconProps) => (
         <path d="M11.5 8.5l-6 6" />
     </Icon>
 );
+/** 수급(자금의 들어옴·나감) — 위아래로 엇갈린 두 화살표. */
+export const FlowsIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M8 20V5M4.5 8.5L8 5l3.5 3.5" />
+        <path d="M16 4v15M12.5 15.5L16 19l3.5-3.5" />
+    </Icon>
+);
 
 export const BookIcon = (p: IconProps) => (
     <Icon {...p}>

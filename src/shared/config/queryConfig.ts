@@ -146,6 +146,12 @@ export const QUERY_KEYS = {
         reasoning = false,
         locale: Locale
     ) => ['congress-trend', upper(symbol), modelId, reasoning, locale] as const,
+    investorFlows: (
+        symbol: string,
+        modelId: ModelId,
+        reasoning = false,
+        locale: Locale
+    ) => ['investor-flows', upper(symbol), modelId, reasoning, locale] as const,
     // News augment (chart page) and news analysis (news page) share this key so
     // a single React Query entry serves both pages within a session — preventing
     // a duplicate fetch when the user navigates between /AAPL and /AAPL/news.

@@ -353,6 +353,11 @@
                 "2e23eb": "外部数据提供商可能暂时无响应。请稍后重试。\n                ",
                 "eb2523": "{v0} 主页"
             },
+            "flows": {
+                "degradedBody": "数据存储暂时无响应。请稍后再次访问，即可查看机构、内部人与做空的资金流向。",
+                "degradedTitle": "暂时无法加载资金流向数据",
+                "heading": "{v0} 机构资金与做空"
+            },
             "loading": {
                 "486c8b": "数据加载中…",
                 "673e73": "正在加载 AI 期权分析"
@@ -366,7 +371,8 @@
                 "8b7ae7": "AI 综合分析",
                 "a74840": "图表分析",
                 "f1b01b": "期权分析",
-                "f9482c": "恐惧与贪婪指数"
+                "f9482c": "恐惧与贪婪指数",
+                "flows": "机构资金与做空"
             },
             "page": {
                 "2ab959": "当前价格位于这栋楼的第几层？",
@@ -1426,6 +1432,7 @@
                 "congress": "参众两院议员交易披露与AI趋势解读",
                 "fear-greed": "基于成交量与价格位置的0-100分",
                 "financials": "利润表、资产负债表与现金流量表",
+                "flows": "机构买卖、内部人交易、卖空余额与AI解读",
                 "fundamental": "财务、估值与分析师展望",
                 "news": "实时新闻＋分析师观点分析",
                 "options": "期权市场看到的价格区间与预期波动率",
@@ -1437,6 +1444,7 @@
                 "congress": "国会交易",
                 "fear-greed": "恐惧贪婪指数",
                 "financials": "财务报表",
+                "flows": "机构资金与做空",
                 "fundamental": "基本面分析",
                 "news": "新闻分析",
                 "options": "期权分析",
@@ -1977,6 +1985,11 @@
                     "titleCore": "财务报表",
                     "titleTail": "营收·利润·现金流"
                 },
+                "flows": {
+                    "description": "汇总查看{subject}的机构持仓变化(13F)、内部人交易、5%大额持股披露与卖空余额，并由AI解读资金流向。",
+                    "titleCore": "机构资金与做空",
+                    "titleTail": "13F·内部人·做空"
+                },
                 "fundamental": {
                     "description": "一页汇总{subject}的公司概况、PER/PSR/EPS估值、ROE与利润率、负债与现金流健康度,并附分析师一致预期与目标价。",
                     "descriptionWithSector": "一页汇总{subject}的公司概况、PER/PSR/EPS估值、ROE与利润率、负债与现金流健康度,并附其在{sector}板块中的位置、分析师一致预期与目标价。",
@@ -2115,6 +2128,7 @@
             "congress": "国会交易",
             "fear-greed": "恐惧贪婪指数",
             "financials": "财务报表",
+            "flows": "资金流向",
             "fundamental": "基本面",
             "news": "新闻",
             "options": "期权",
@@ -2540,7 +2554,8 @@
                 "af0480": "风险因素",
                 "b8f729": "看涨情景",
                 "da6fd3": "技术分析",
-                "de4a87": "综合分析摘要"
+                "de4a87": "综合分析摘要",
+                "investorFlows": "资金流向"
             },
             "RelatedSymbols": {
                 "c35191": "相关股票"
@@ -4166,6 +4181,278 @@
                 "Altcoins": "山寨币"
             }
         },
+        "investor-flows": {
+            "ai": {
+                "axes": "分维度解读",
+                "dataNotes": "数据说明",
+                "errorFallback": "解读资金流向时出现错误。",
+                "keySignals": "关键信号",
+                "noData": "资金流向数据不足，因此未生成AI解读。",
+                "progress": "AI正在解读资金流向…",
+                "risks": "注意事项",
+                "title": "AI资金流向解读"
+            },
+            "asOf": {
+                "delay": "13F申报的是季度末持仓，并在季度结束后最多45天内提交。因此这里的机构数据反映的是一两个月甚至更早之前的状态，而不是当下。",
+                "insiderNone": "暂无数据",
+                "insiderWindow": "{from} ~ {to}(近{days}天)",
+                "institutionalComplete": "{period}季度末 · 已提交完毕",
+                "institutionalNone": "暂无数据",
+                "institutionalPartial": "更近的{period}季度仅有部分机构提交，为部分汇总。",
+                "shortInterestDate": "结算日 {date}",
+                "shortInterestNone": "暂无数据",
+                "shortVolumeDate": "最后交易日 {date}",
+                "shortVolumeNone": "暂无数据",
+                "sources": "来源:美国SEC EDGAR的13F(机构持仓)、Form 4与13D/G(内部人与大额持股，通过FMP提供)。",
+                "sourcesWithFinra": "来源:美国SEC EDGAR的13F(机构持仓)、Form 4与13D/G(内部人与大额持股，通过FMP提供)、FINRA(卖空余额与场外申报交易)。",
+                "termInsider": "内部人交易",
+                "termInstitutional": "机构持仓(13F)",
+                "termShortInterest": "卖空余额",
+                "termShortVolume": "每日卖空占比",
+                "termSnapshot": "查询日期",
+                "title": "数据时点与来源"
+            },
+            "axis": {
+                "insider": "内部人",
+                "institutional": "机构",
+                "largeHolders": "大额持股(5%)",
+                "short": "做空"
+            },
+            "empty": {
+                "body": "暂无数据 — 该股票还没有机构持仓(13F)、内部人或卖空数据。新上市或交易规模较小的股票经常出现这种情况。",
+                "title": "资金流向数据"
+            },
+            "ev": {
+                "daysToCover": "回补天数 {days}天",
+                "holders": "持仓机构 {count}家(较上季度 {change})",
+                "holdersOnly": "持仓机构 {count}家",
+                "insiderCluster": "集中买入:{count}位不同内部人",
+                "insiderCounts": "买入 {buys}笔 · 卖出 {sells}笔",
+                "insiderNetBuy": "近{days}天净买入 {amount}",
+                "insiderNetSell": "近{days}天净卖出 {amount}",
+                "largeHolderCounts": "13D {d}份 · 13G {g}份(近{days}天)",
+                "netSharesOutstanding": "机构持股净变化 {pct}(占总股本)",
+                "netSharesPrior": "机构持股净变化 {pct}(较上季度持仓量)",
+                "newExited": "新进 {added}家 · 清仓 {exited}家",
+                "shortPct": "卖空余额 {pct}(占流通股)",
+                "shortRatio": "场外卖空占比 {pct}(最近交易日)",
+                "shortTrend": "余额变化 {pct}(最近3个结算日)"
+            },
+            "filter": {
+                "all": "全部 {count}",
+                "exited": "清仓 {count}",
+                "new": "新进 {count}"
+            },
+            "flowChart": {
+                "caption": "向上的柱表示净买入(IN)，向下的柱表示净卖出(OUT)。虚线柱为尚未提交完毕的部分汇总。",
+                "flat": "无变化",
+                "in": "IN",
+                "out": "OUT",
+                "partial": "部分汇总",
+                "title": "各季度机构净买入(IN)与净卖出(OUT)"
+            },
+            "holders": {
+                "basis": "以{period}季度末持仓为准，变化为与上季度相比。",
+                "colChange": "较上季度",
+                "colName": "机构",
+                "colShares": "持股数",
+                "colStatus": "状态",
+                "emptyFiltered": "没有符合条件的机构。",
+                "filterLabel": "查看筛选",
+                "noChange": "无变化",
+                "noData": "暂无数据 — 还没有主要持仓机构名单。",
+                "title": "主要持仓机构"
+            },
+            "holdersTrend": {
+                "aria": "持仓机构数量从{from}家变为{to}家",
+                "caption": "仅绘制已提交完毕的季度。曲线上升表示持有该股票的机构增加。",
+                "title": "持仓机构数量变化"
+            },
+            "insider": {
+                "buy": "买入",
+                "buys": "买入",
+                "clusterBadge": "集中买入 · {count}位内部人",
+                "colDate": "交易日",
+                "colFiling": "披露",
+                "colName": "内部人",
+                "colShares": "股数",
+                "colType": "类型",
+                "colValue": "金额",
+                "filing": "查看披露",
+                "net": "净买入/净卖出",
+                "netBuy": "净买入 {amount}",
+                "netFlat": "无净买卖",
+                "netSell": "净卖出 {amount}",
+                "noData": "暂无数据 — 没有内部人交易申报。",
+                "noRecent": "最近{days}天没有内部人买卖申报。",
+                "noTrades": "没有可列出的买卖申报。",
+                "omittedOther": "赠与、期权行权等其他申报{count}笔未列入表格。",
+                "sell": "卖出",
+                "sells": "卖出",
+                "summary": "{count}笔 · {people}人 · {amount}",
+                "tableTitle": "近期内部人买卖",
+                "title": "内部人交易(Form 4)",
+                "window": "统计最近{days}天({from} ~ {to})。"
+            },
+            "institutional": {
+                "noData": "暂无数据 — 该股票还没有机构持仓(13F)数据。",
+                "partialNote": "进行中的{period}季度尚未提交完毕，为部分汇总：目前已有{holders}家提交，净变化{net}({direction})。",
+                "subtitle": "通过大型机构每季度申报的持仓(13F)，查看流入(IN)与流出(OUT)。",
+                "title": "机构买卖(13F)"
+            },
+            "label": {
+                "bearish": "看跌",
+                "bullish": "看涨",
+                "insufficient": "数据不足",
+                "neutral": "中性",
+                "strongBearish": "强烈看跌",
+                "strongBullish": "强烈看涨"
+            },
+            "largeHolders": {
+                "colDate": "披露日",
+                "colForm": "表格",
+                "colPercent": "持股比例",
+                "colShares": "持股数",
+                "filing": "查看披露",
+                "kind13d": "13D 积极股东",
+                "kind13g": "13G 被动投资",
+                "kindOther": "其他",
+                "noData": "暂无数据 — 没有5%大额持股披露。",
+                "subtitle": "持有公司5%以上股份的股东最近提交的披露。",
+                "title": "5%以上大额持股(13D·13G)",
+                "unavailable": "无法加载大额持股披露，请稍后再查看。",
+                "unknownFiler": "提交人未知"
+            },
+            "scorecard": {
+                "axisInsufficient": "数据不足，未计入评分。",
+                "axisScore": "{score}分",
+                "compositeCaption": "基于{count}个维度的综合评分(-100 ~ +100)",
+                "compositeInsufficient": "数据不足，无法计算综合评分。",
+                "title": "资金流向评分"
+            },
+            "short": {
+                "change": "较上一结算日",
+                "changeDown": "减少",
+                "changeFlat": "无变化",
+                "changeUp": "增加",
+                "changeVs": "较{date} {shares}股",
+                "chartAria": "{count}个结算日的卖空余额走势图",
+                "chartDaysToCover": "回补天数走势(天)",
+                "chartDtcAria": "{count}个结算日的回补天数走势图",
+                "chartPctFloat": "卖空余额走势(占流通股%)",
+                "chartQty": "卖空余额走势(股)",
+                "days": "{days}天",
+                "daysToCover": "回补天数",
+                "interestBasis": "截至最近结算日{date}。",
+                "interestTitle": "卖空余额与回补天数(按结算日)",
+                "markerDrop": "明显低于常态",
+                "markerNormal": "处于常态",
+                "markerSurge": "明显高于常态",
+                "noPreviousSettlement": "没有可比较的上一结算日",
+                "pctFloat": "占流通股",
+                "qty": "卖空余额(股)",
+                "squeezeBadge": "轧空风险",
+                "squeezeNote": "卖空余额占流通股{pct}，回补天数{days}天，均处于偏高水平。若股价上涨，回补买盘可能同时涌入。",
+                "subtitle": "查看借股卖出后尚未归还的余额，以及每个交易日的场外卖空占比。",
+                "title": "做空",
+                "trendFalling": "近期走势:下降",
+                "trendFlat": "近期走势:持平",
+                "trendRising": "近期走势:上升",
+                "unknown": "未知",
+                "volumeAria": "最近{count}个交易日的每日场外卖空占比走势图",
+                "volumeAverage": "虚线为最近{days}个交易日的平均值{pct}。",
+                "volumeFootnote": "仅基于场外(TRF)申报数据，不含在交易所内成交的卖空。",
+                "volumeLatest": "{date} {pct}",
+                "volumeTitle": "每日场外(TRF)卖空占比"
+            },
+            "split": {
+                "basis": "以{period}季度为准，与{previous}季度比较。",
+                "basisNoPrevious": "以{period}季度为准，没有可比较的上季度数据。",
+                "count": "{count}家",
+                "decreased": "减持",
+                "deltaDown": "比上季度少{delta}家",
+                "deltaFlat": "与上季度相同",
+                "deltaUp": "比上季度多{delta}家",
+                "exited": "清仓",
+                "increased": "增持",
+                "newHolders": "新进",
+                "noPrevious": "没有可比较的上季度",
+                "title": "与上季度相比的机构动向"
+            },
+            "status": {
+                "decreased": "减持",
+                "exited": "清仓",
+                "increased": "增持",
+                "new": "新进",
+                "unchanged": "持平"
+            },
+            "tooltip": {
+                "daysToCover": [
+                    "回补天数(Days to Cover)是卖空余额除以平均成交量，表示把卖空的股票全部买回需要几天。",
+                    "数字越大，买回可能越困难。"
+                ],
+                "flowScore": [
+                    "把机构、内部人、大额持股和卖空的动向合成一个-100到+100的分数，分数越高表示看涨信号越多。",
+                    "它是依据规则对过往披露进行计算得出的参考指标，并不能预示未来股价。"
+                ],
+                "form4": [
+                    "Form 4是高管、董事、持股10%以上的股东等内部人买卖本公司股票后，须在2个工作日内提交的申报表。",
+                    "可以由此看到内部人在公开市场上的实际买卖记录。"
+                ],
+                "increasedDecreased": [
+                    "增持是持股数比上季度增加的机构，减持是持股数减少的机构。",
+                    "只统计本季度仍然持有该股票的机构。"
+                ],
+                "insiderCluster": [
+                    "集中买入指在较短时间内，有多位不同的内部人在公开市场买入股票。",
+                    "它只说明多人在相近时间买入，并不保证之后的股价走势。"
+                ],
+                "institutionalHolding": [
+                    "指基金、养老金、资产管理公司等机构持有这只股票的数量。",
+                    "采用13F中申报的季度末持股数。"
+                ],
+                "largeHolder13dg": [
+                    "13D和13G是持有公司5%以上股份的股东提交的披露文件。",
+                    "13D用于意图影响公司经营的情形(积极股东)，13G用于单纯投资的情形。"
+                ],
+                "netBuySell": [
+                    "净买入(IN)是机构买入的股数多于卖出的股数，净卖出(OUT)则相反。",
+                    "根据季度末持股数相比上季度是增加还是减少来计算。"
+                ],
+                "newExited": [
+                    "新进是上季度未持有、本季度新买入的机构；清仓是把上季度持有的股票全部卖出的机构。",
+                    "这里统计的是机构数量而不是金额，持仓规模需要另外查看。"
+                ],
+                "offExchangeShortRatio": [
+                    "指当天场外(TRF)申报的交易中，卖空所占的比例。",
+                    "不含在交易所内成交的卖空，因此可能比整体卖空占比显得更小。"
+                ],
+                "partialAggregation": [
+                    "部分汇总表示13F提交期限尚未截止，目前只收集到部分机构的申报。",
+                    "数字看起来偏小不一定是真的减少，所以评分只使用已提交完毕的季度。"
+                ],
+                "pctOfFloat": [
+                    "占流通股比例是卖空余额除以市场上实际可交易的股数。",
+                    "同样的余额，流通股越少的股票，影响越大。"
+                ],
+                "settlementDate": [
+                    "结算日是卖空交易实际完成结算的基准日，通常在每月15日和月底前后。",
+                    "FINRA在结算日约8个工作日后公布余额，因此页面上的余额存在相应的滞后。"
+                ],
+                "shortInterest": [
+                    "卖空余额是借入股票卖出后尚未买回归还的股票总量。",
+                    "这些头寸在股价下跌时获利，数量越大，说明押注下跌的越多。"
+                ],
+                "shortSqueeze": [
+                    "轧空是指卖空方为了减少损失而集中买回股票，导致股价急剧上涨的现象。",
+                    "当卖空余额占比和回补天数都很高时发生的可能性更大，但并非一定会发生。"
+                ],
+                "thirteenF": [
+                    "13F是管理规模较大的机构每季度向美国SEC提交的持股报告。",
+                    "它在季度结束后最多45天才会公开，因此反映的是上个季度末的持仓，而不是当下。"
+                ]
+            }
+        },
         "layout": {
             "ContactDialog": {
                 "531f6a": "联系我们",
@@ -4508,6 +4795,10 @@
             "IntegratedConclusion": {
                 "85f201": "综合结论"
             },
+            "InvestorFlowsSummary": {
+                "listLabel": "资金流向要点",
+                "title": "资金流向摘要"
+            },
             "NewsSummary": {
                 "218ec8": "新闻分析摘要",
                 "2f750a": "新闻分析项目"
@@ -4783,6 +5074,7 @@
                 "toolCongressTrades": "国会交易",
                 "toolEconomy": "经济数据",
                 "toolFundamentals": "公司基本面",
+                "toolInvestorFlows": "机构、内部人与做空资金流向",
                 "toolMarketOverview": "市场概况",
                 "toolFreshAnalysis": "生成新分析",
                 "toolNews": "新闻",

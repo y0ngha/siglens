@@ -31,6 +31,46 @@ function makeResult(
     };
 }
 
+describe('OverallView — 수급(investorFlowsBulletsKo) 섹션', () => {
+    it('core가 수급 요약을 채웠으면 섹션으로 렌더한다', () => {
+        render(
+            <OverallView
+                result={makeResult({
+                    investorFlowsBulletsKo: ['기관은 순매수'],
+                })}
+                assetClass="equity"
+                hasOptions
+            />
+        );
+        expect(
+            screen.getByRole('heading', { name: '수급 요약' })
+        ).toBeInTheDocument();
+        expect(screen.getByText('기관은 순매수')).toBeInTheDocument();
+    });
+
+    it('필드가 없는 옛 캐시 결과(미통합)는 섹션째 뺀다', () => {
+        render(
+            <OverallView result={makeResult()} assetClass="equity" hasOptions />
+        );
+        expect(
+            screen.queryByRole('heading', { name: '수급 요약' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('빈 배열(데이터 없음)도 섹션째 뺀다', () => {
+        render(
+            <OverallView
+                result={makeResult({ investorFlowsBulletsKo: [] })}
+                assetClass="equity"
+                hasOptions
+            />
+        );
+        expect(
+            screen.queryByRole('heading', { name: '수급 요약' })
+        ).not.toBeInTheDocument();
+    });
+});
+
 /**
  * 회귀 가드(SEO 감사 finding 2, 2026-08-18): 한국 개별주식은 assetClass가
  * 'equity'라 예전 `isEquity` 단독 게이트로는 옵션 시장이 없는데도

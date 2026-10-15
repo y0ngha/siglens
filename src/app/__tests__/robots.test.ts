@@ -387,12 +387,13 @@ describe('robots', () => {
                 '/ko/news/stock/opengraph-image',
             ];
             const BLOCKED = [
-                // 항상 noindex인 탭 6종 — 더 긴 Disallow가 이긴다
+                // 항상 noindex인 탭 7종 — 더 긴 Disallow가 이긴다
                 '/ko/AAPL/overall/opengraph-image',
                 '/ko/AAPL/financials/opengraph-image',
                 '/ko/AAPL/fundamental/opengraph-image',
                 '/ko/AAPL/options/opengraph-image',
                 '/ko/AAPL/congress/opengraph-image',
+                '/ko/AAPL/flows/opengraph-image',
                 '/ko/AAPL/position/opengraph-image',
                 // 공유 카드
                 '/ko/share/abc123/opengraph-image',
@@ -417,7 +418,7 @@ describe('robots', () => {
                 expect(isAllowedForGooglebot(path)).toBe(false);
             });
 
-            it('Allow가 `/ko/*/opengraph-image`로 시작하고 noindex 탭 6종 + 공유 카드의 더 긴 Disallow가 짝으로 있다', () => {
+            it('Allow가 `/ko/*/opengraph-image`로 시작하고 noindex 탭 7종 + 공유 카드의 더 긴 Disallow가 짝으로 있다', () => {
                 const group = findGroupByUserAgent(robots().rules, 'Googlebot');
                 const allow = [group?.allow ?? []].flat();
                 const disallow = [group?.disallow ?? []].flat();
@@ -428,6 +429,7 @@ describe('robots', () => {
                     'fundamental',
                     'options',
                     'congress',
+                    'flows',
                     'position',
                 ]) {
                     const pattern = `/ko/*/${tab}/opengraph-image`;

@@ -1,10 +1,11 @@
 import 'server-only';
+import { isE2E } from '@/shared/api/e2eEnv';
 import { getInvestorFlowsFmpProvider } from '@/shared/api/fmp/getInvestorFlowsFmpProvider';
 import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsShortRepository } from '../api/investorFlowsShortRepository';
 import { DrizzleInvestorFlowsSnapshotRepository } from '../api/investorFlowsSnapshotRepository';
-import type { InvestorFlowsDataProvider } from '../coreTypes';
+import type { InvestorFlowsDataProvider } from '@y0ngha/siglens-core';
 import { DbFmpInvestorFlowsDataProvider } from './loadInvestorFlowsSnapshot';
 
 /**
@@ -12,6 +13,13 @@ import { DbFmpInvestorFlowsDataProvider } from './loadInvestorFlowsSnapshot';
  * resilient 로더가 degrade로 흡수한다(빈 스냅샷으로 위장하지 않는다).
  */
 export function getInvestorFlowsDataProvider(): InvestorFlowsDataProvider {
+    if (isE2E()) {
+        // 동기 팩토리라 동적 import를 못 쓴다 — 가짜는 게이트된 require로 읽는다
+        // (`getInvestorFlowsFmpProvider`와 같은 이유·같은 형태).
+        const { FakeInvestorFlowsDataProvider } =
+            require('./FakeInvestorFlowsDataProvider') as typeof import('./FakeInvestorFlowsDataProvider');
+        return new FakeInvestorFlowsDataProvider(isFinraShortDataEnabled);
+    }
     const client = tryGetDatabaseClient();
     if (client === null)
         throw new Error('[investor-flows] database unavailable');

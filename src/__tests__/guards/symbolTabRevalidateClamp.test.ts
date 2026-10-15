@@ -49,6 +49,7 @@ const TAB_PAGES = [
     'fundamental/page.tsx',
     'financials/page.tsx',
     'congress/page.tsx',
+    'flows/page.tsx',
     'options/page.tsx',
     'position/page.tsx',
     'fear-greed/page.tsx',
@@ -224,6 +225,19 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
             revalidate: time.SECONDS_PER_DAY,
         },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
+    ],
+    'flows/page.tsx': [
+        {
+            token: 'getInvestorFlowsScorecard',
+            via: 'getInvestorFlowsResilient → getInvestorFlowsSnapshot (staticSymbolCache)',
+            revalidate: time.SECONDS_PER_HALF_DAY,
+        },
+        { token: 'getProfileResilient', revalidate: time.SECONDS_PER_DAY },
+        {
+            token: 'isTabAllowedForSymbol',
+            via: 'isCryptoSymbolStatic',
+            revalidate: time.SECONDS_PER_DAY,
+        },
     ],
     'options/page.tsx': [
         { token: "'options:has'", revalidate: time.SECONDS_PER_HALF_DAY },

@@ -18,6 +18,7 @@ describe('market profile registry', () => {
                 'fundamental',
                 'financials',
                 'congress',
+                'flows',
                 'options',
                 'fear-greed',
                 'overall',

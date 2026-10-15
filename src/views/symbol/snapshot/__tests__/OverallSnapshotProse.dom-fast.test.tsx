@@ -333,6 +333,37 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
         ).toBeInTheDocument();
     });
 
+    it('investorFlowsBulletsKo(선택 필드)를 수급 라벨 붙은 목록으로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    investorFlowsBulletsKo: ['기관 순매수가 이어졌습니다.'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />
+        );
+
+        expect(screen.getByText('수급')).toBeInTheDocument();
+        expect(
+            screen.getByText('기관 순매수가 이어졌습니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('필드가 없는 옛 스냅샷은 수급 섹션을 내지 않는다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({ financialsBulletsKo: ['재무 한 줄'] })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />
+        );
+
+        expect(screen.queryByText('수급')).not.toBeInTheDocument();
+    });
+
     it('다섯 bullet 배열이 모두 비어있으면 다섯 섹션 헤딩 모두 렌더하지 않는다', () => {
         render(
             <OverallSnapshotProse

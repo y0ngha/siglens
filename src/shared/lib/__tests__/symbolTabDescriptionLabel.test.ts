@@ -4,6 +4,7 @@ import type { AssetClass } from '@/shared/config/marketProfile/types';
 import {
     buildSymbolCongressSeoContent,
     buildSymbolFinancialsSeoContent,
+    buildSymbolFlowsSeoContent,
     buildSymbolFundamentalSeoContent,
     buildSymbolOptionsSeoContent,
     buildSymbolPositionSeoContent,
@@ -82,6 +83,7 @@ const CASES: ReadonlyArray<
         'equity',
         tr => buildSymbolCongressSeoContent('AAPL', tr, opts),
     ],
+    ['flows', 'equity', tr => buildSymbolFlowsSeoContent('AAPL', tr, opts)],
     ['options', 'equity', tr => buildSymbolOptionsSeoContent('AAPL', tr, opts)],
     [
         'fear-greed',

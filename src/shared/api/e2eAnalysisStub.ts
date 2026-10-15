@@ -3,10 +3,13 @@ import type {
     CongressTrendResponse,
     FinancialsAnalysisResponse,
     FundamentalAnalysisResponse,
+    InvestorFlowsAnalysisResponse,
     NewsAnalysisResponse,
     OptionsAnalysisResponse,
     OverallAnalysisResponse,
     RunAnalysisResult,
+    RunInvestorFlowsAnalysisCached,
+    RunInvestorFlowsAnalysisFetchError,
     Tier,
     SubmitCongressTrendCached,
     SubmitCongressTrendFetchError,
@@ -46,6 +49,7 @@ interface E2eAnalysisFixture {
     options: OptionsAnalysisResponse;
     financials: FinancialsAnalysisResponse;
     congressTrend: CongressTrendResponse;
+    investorFlows: InvestorFlowsAnalysisResponse;
 }
 const typedFixture = fixture as E2eAnalysisFixture;
 
@@ -169,5 +173,31 @@ export function e2eForcedCongressError(): SubmitCongressTrendFetchError {
         status: 'error',
         code: 'fetch_failed',
         error: 'E2E 강제 congress 동향 분석 실패 (resilience 테스트용)',
+    };
+}
+
+/**
+ * Cookie name an E2E test sets to force the next investor-flows analysis to
+ * return a transient failure instead of the cached fixture. Read server-side by
+ * `runInvestorFlowsAction` (only under `E2E_TEST=1`).
+ */
+export const E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE =
+    'e2e_force_investor_flows_error';
+
+/** Fixed `{ status: 'cached' }` investor-flows result for E2E runs. */
+export function e2eCachedInvestorFlows(): RunInvestorFlowsAnalysisCached {
+    return { status: 'cached', result: typedFixture.investorFlows };
+}
+
+/**
+ * Deterministic transient-failure result for E2E resilience tests targeting the
+ * investor-flows analysis flow. Returned by `runInvestorFlowsAction` (under
+ * `E2E_TEST=1`) when `E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE` is present.
+ */
+export function e2eForcedInvestorFlowsError(): RunInvestorFlowsAnalysisFetchError {
+    return {
+        status: 'error',
+        code: 'fetch_failed',
+        error: 'E2E 강제 수급 분석 실패 (resilience 테스트용)',
     };
 }

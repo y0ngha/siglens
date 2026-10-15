@@ -29,6 +29,7 @@ import { getFundamentalsTool } from './getFundamentals';
 import { getMarketOverviewTool } from './getMarketOverview';
 import { getEconomyTool } from './getEconomy';
 import { getCongressTradesTool } from './getCongressTrades';
+import { getInvestorFlowsTool } from './getInvestorFlows';
 import { getGuideTool } from './getGuide';
 import { safeErrorFields } from './logToolDegrade';
 import { isGuestSubject } from '../guestSubject';
@@ -126,6 +127,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_market_overview: getMarketOverviewTool,
     get_economy: getEconomyTool,
     get_congress_trades: getCongressTradesTool,
+    get_investor_flows: getInvestorFlowsTool,
     get_guide: getGuideTool,
 };
 
@@ -226,7 +228,14 @@ export function createToolExecutor(
         // here would re-cut an already-fit 6,000-char result down to 4,000
         // and collapse it into a front-cut preview blob.
         if (name === 'get_bars_indicators') return resultCaps.bars;
-        if (name === 'get_market_overview' || name === 'get_economy')
+        // `get_investor_flows`는 점수표 + 상위 보유 기관·내부자 목록(`SUMMARY_MAX_*` 상한,
+        // `summarizeInvestorFlows.ts`)이라 기본 4,000자를 넘는다 —
+        // 이미 상한 안으로 자른 결과를 기본 한도로 다시 자르면 앞부분 미리보기 덩어리로 무너진다.
+        if (
+            name === 'get_market_overview' ||
+            name === 'get_economy' ||
+            name === 'get_investor_flows'
+        )
             return resultCaps.aggregate;
         if (name === 'get_guide') return resultCaps.guide;
         if (!isAnalysis(name)) return resultCaps.standard;

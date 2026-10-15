@@ -28,6 +28,7 @@ const CRUMB_PROPS = {
         fundamental: '펀더멘털',
         financials: '재무제표',
         congress: '의회 거래',
+        flows: '수급',
         options: '옵션',
         'fear-greed': '공포 탐욕 지수',
         overall: '종합',

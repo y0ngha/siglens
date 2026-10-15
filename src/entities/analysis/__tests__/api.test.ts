@@ -76,6 +76,13 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
+const { mockOverallFlows } = vi.hoisted(() => ({
+    mockOverallFlows: vi.fn(async () => undefined as unknown),
+}));
+vi.mock(
+    '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard',
+    () => ({ getOverallInvestorFlowsScorecard: mockOverallFlows })
+);
 vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
 }));
@@ -855,6 +862,21 @@ describe('prewarmOverall', () => {
         expect(mockGetFinancialsSnapshot).toHaveBeenCalledWith('AAPL');
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ financialsScorecard: scorecard })
+        );
+    });
+
+    it('passes the investor-flows scorecard (same helper as the web/API path → same inputHash)', async () => {
+        const scorecard = { composite: { score: 7 } };
+        mockOverallFlows.mockResolvedValueOnce(scorecard);
+
+        await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+        expect(mockOverallFlows).toHaveBeenCalledWith(
+            'AAPL',
+            expect.any(String)
+        );
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ investorFlowsScorecard: scorecard })
         );
     });
 
