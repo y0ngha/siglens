@@ -823,6 +823,11 @@
             "title": "이런 메일을 받아요"
         },
         "email-report-settings": {
+            "EmailReportLinkCard": {
+                "description": "보유·관심종목 리포트를 받을 요일과 시각은 메일 리포트 화면에서 정해요.",
+                "heading": "메일 리포트",
+                "link": "메일 리포트 설정하기"
+            },
             "EmailReportSettingsSection": {
                 "633367": "메일로 리포트 받기",
                 "0c767c": "다시 시도",

@@ -497,3 +497,12 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
 - ✅ Render the condition to SQL plus params and assert both.
 - ❌ After renaming a cache key, a negative assertion still checks the old key (`store.has('old:KEY') === false`), which passes on any implementation. ✅ Point it at the key the code now writes, and add a test that flips when a deliberately changed guard (for example, caching a partial result) is reverted.
+
+<a id="TE-54"></a>
+
+#### TE-54 — Pin new CSS rules and cover replaced page sections
+
+A new global stylesheet rule (for example a `:has()` selector) has no runtime test unless one reads the source: assert the normalized rule text (whitespace collapsed) so deleting or weakening the selector or its declarations fails. A page section that is replaced or inlined gets extracted into a component and covered by a render test, so the swap does not drop its coverage.
+
+- ❌ A `:has()` rule added to `globals.css` and a page card rewritten inline, with no test touching either.
+- ✅ A test reads `globals.css`, normalizes whitespace and asserts the exact rule; the card lives in a feature component with its own render test.

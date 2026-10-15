@@ -26,6 +26,9 @@ import { CloseIcon } from '@/shared/ui/StrokeIcons';
  * - sm 이상: 왼쪽 아래 `w-96` 카드. FAB은 오른쪽이라 겹치지 않는다.
  * - 모바일 분석 시트(z-50): PEEK 띠 위에는 배너가 뜨고(FAB과 같은 관계), 시트가
  *   HALF/FULL로 펼쳐지면 globals.css가 배너를 숨긴다 — 분석 본문을 가리지 않는다.
+ * - 모달 바텀시트(관심종목 시트 등, `data-modal-sheet`): 열려 있는 동안 시트 바깥은
+ *   pointer-events가 꺼져 배너를 누를 수 없으므로 globals.css가 배너를 숨긴다 — 그대로
+ *   두면 X를 누른 탭이 배너를 통과해 시트 하단 링크가 눌린다.
  * - 검색 오버레이·모바일 메뉴(z-70), 진행 바(z-80), 공지·모달(z-9999)은 배너 위다.
  *
  * 하단 safe-area(홈 인디케이터)만큼 띄운다 — 앱은 `viewportFit: 'cover'`다.
