@@ -811,6 +811,12 @@ stored raw; "used only for X" must hold for every host or route that reads the s
 a processor (e.g. a member id inside cache or quota keys) and every new event belong in the stored-data, purpose and
 retention sections; in-product copy names a cause only when every code path that shows it guarantees that cause.
 
+Also check these claim kinds: a retention period counted "after storage" must hold for counters whose TTL refreshes on
+every write (state the real trigger); "encrypted" must not imply the server cannot read the value when it decrypts at
+use; a disclosure names every flow and analysis kind that sends the value, and says "may send" where a cache hit sends
+nothing; a new use extends the purpose list; stores found during the revision that were never disclosed (user-supplied
+keys, bands, counters) are added in the same change. Parallel locale texts use the same enumeration and punctuation.
+
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.
 
