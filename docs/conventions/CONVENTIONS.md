@@ -823,6 +823,18 @@ keys, bands, counters) are added in the same change. Parallel locale texts use t
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.
 
+<a id="CS-15"></a>
+
+#### CS-15 — A name promises only what the code proves
+
+A function, variable or field name states what the code guarantees, not what it usually is. Before naming a value
+`close`, `latest` or `verified`, check that the code establishes it (a date match alone does not prove a bar is the
+close); a helper named for one behavior (`formatKoreanDate`) must not silently do another (locale-aware). When the
+guarantee is weaker, name the weaker fact or add the missing check.
+
+- ❌ `const close = bar.close` after verifying only that `bar.date` matches the session date.
+- ✅ Verify the bar is final, or name it for what is known (`lastBarClose`).
+
 ---
 
 ## Layer Dependency Rules

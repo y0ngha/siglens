@@ -52,6 +52,21 @@ export const FMP_STATEMENTS_CACHE_TTL_SECONDS = SECONDS_PER_DAY;
 export const CONGRESS_CACHE_TTL_SECONDS = SECONDS_PER_DAY; // 24h — 의회 거래 공시지연 ~45일
 
 /**
+ * 60s — 미국 프리마켓·애프터마켓 시세(`quote:ext:<SYM>`)의 Redis TTL.
+ *
+ * 클라이언트 폴링 주기(`EXTENDED_QUOTE_REFETCH_MS`)와 같은 값이다 — 종목·분당 FMP 호출이
+ * 열려 있는 탭 수와 무관하게 최대 1회로 묶인다. 이 키는 확장 세션 안에서만 쓰이고
+ * (세션 밖은 FMP도 Redis도 건드리지 않는다), 정규장 시세·봉 캐시 키와 분리돼 있다.
+ */
+export const EXTENDED_QUOTE_CACHE_TTL_SECONDS = SECONDS_PER_MINUTE;
+
+/**
+ * 10s — 체결 조회가 시간 초과로 포기됐을 때 `null`을 굳히는 짧은 TTL. 회복한 FMP를 오래 가리지
+ * 않으면서, 느린 FMP에 폴링마다 새 재시도 체인이 쌓이는 것을 종목당 분당 6회로 묶는다.
+ */
+export const EXTENDED_QUOTE_TIMEOUT_CACHE_TTL_SECONDS = 10;
+
+/**
  * `'YYYY-MM-DDTHH'` (length 13) → `new Date().toISOString().slice(0, 13)` gives
  * the current UTC hour string (e.g. `'2026-06-17T14'`), used as an
  * `unstable_cache`/cache-key hour bucket by multiple callers. Mirrors

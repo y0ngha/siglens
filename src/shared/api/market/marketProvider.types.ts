@@ -19,6 +19,18 @@ export interface QuoteSnapshot {
 }
 
 /**
+ * FMP `aftermarket-trade`의 마지막 체결 한 건 — 프리·애프터마켓 **표시 전용** 가격.
+ *
+ * 봉·`todayBar`·지표·분석 입력에는 절대 섞지 않는다(정규장 시세 스냅샷과 별개 계통).
+ * `timestampMs`는 FMP 원본 그대로 epoch 밀리초다(`quote`의 `timestamp`는 초라 단위가 다르다).
+ */
+export interface ExtendedHoursTrade {
+    price: number;
+    tradeSize: number;
+    timestampMs: number;
+}
+
+/**
  * siglens 확장 market provider — core `MarketDataProvider` 포트에 오늘 봉(quote 기반)
  * 조회를 더한다. EOD 일봉 캐시가 과거(EOD)와 오늘(quote)을 분리 조달하는 데 쓴다.
  *

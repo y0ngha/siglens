@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { ChartErrorFallback } from '@/widgets/chart/ChartErrorFallback';
 import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
 import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
+import { ExtendedHoursQuoteLine } from '@/widgets/extended-hours/ui/ExtendedHoursQuoteLine';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
@@ -147,6 +148,10 @@ export function SymbolPageClient({
     const isMobileViewport = useIsMobileViewport();
     // seed가 없으면 서버·하이드레이션 렌더에서 차트를 그리지 않는다(`hasBarsSeed` JSDoc).
     const canRenderChart = hasBarsSeed || isHydrated;
+    // 프리·애프터마켓 한 줄은 미국 주식에만 붙는다. 프로필을 확정할 수 없으면(자산 정보
+    // 미도착) 붙이지 않는다 — 서버 액션도 같은 판정을 다시 하지만 호출 자체를 아낀다.
+    const resolvedProfile =
+        marketProfile ?? (assetInfo ? marketProfileOf(assetInfo) : undefined);
 
     return (
         <SymbolPageProvider
@@ -261,6 +266,17 @@ export function SymbolPageClient({
                                         seedHasFormingBarTrimmed
                                     }
                                     fmpSymbol={assetInfo?.fmpSymbol}
+                                    // 프리·애프터마켓 시세(표시 전용)는 차트 상단 띠 위 오버레이로
+                                    // 얹는다 — 제목 `h1` 행에 형제로 두면 칩이 나타날 때 h1 폭이
+                                    // 줄어 줄바꿈이 바뀐다. 호출은 사용자 입력이 있은 뒤에만 나간다
+                                    // (`useExtendedHoursQuote`), 크롤러 렌더는 FMP를 건드리지 않는다.
+                                    chartCornerSlot={
+                                        resolvedProfile === 'us-equity' ? (
+                                            <ExtendedHoursQuoteLine
+                                                symbol={symbol}
+                                            />
+                                        ) : undefined
+                                    }
                                     marketProfile={
                                         marketProfile ??
                                         (assetInfo

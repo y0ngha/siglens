@@ -33,6 +33,12 @@ export const BARS_STALE_TIME_MS = 30_000;
  */
 export const SYMBOL_FEAR_GREED_STALE_TIME_MS = BARS_STALE_TIME_MS;
 
+/**
+ * 프리·애프터마켓 시세 폴링 주기. 서버 캐시 TTL(`EXTENDED_QUOTE_CACHE_TTL_SECONDS`, 60s)과 같다 —
+ * 더 짧게 돌려도 같은 캐시 값을 다시 받을 뿐이다.
+ */
+export const EXTENDED_QUOTE_REFETCH_MS = MS_PER_MINUTE;
+
 /** Registered LLM providers list refreshes only after the user adds/removes a key — short stale is fine. */
 export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;
 
@@ -59,6 +65,9 @@ export const QUERY_KEYS = {
     /** 종목 공포·탐욕(서버 계산, 5년 기준). fmpSymbol이 봉을 바꾸므로 키에 포함. */
     symbolFearGreed: (symbol: string, fmpSymbol?: string) =>
         ['symbol-fear-greed', upper(symbol), fmpSymbol] as const,
+    /** 프리·애프터마켓 한 줄 시세(표시 전용 — 봉·지표와 무관). */
+    extendedQuote: (symbol: string) =>
+        ['extended-quote', upper(symbol)] as const,
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
     /** Order-insensitive: the same symbols in any order share one lookup. */
