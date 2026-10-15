@@ -785,6 +785,11 @@
             }
         },
         "email-report-settings": {
+            "EmailReportLinkCard": {
+                "heading": "Email report",
+                "description": "Choose the days and time for your holdings and watchlist report on the email report page.",
+                "link": "Email report settings"
+            },
             "EmailReportSettingsSection": {
                 "633367": "Get reports by email",
                 "0c767c": "Try again",
