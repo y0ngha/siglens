@@ -44,6 +44,12 @@ export function etDayNumber(ms: number): number {
 const MAX_PREVIOUS_TRADING_DAY_LOOKBACK = 10;
 
 /**
+ * 그 ET 날짜의 거래일 여부를 물을 때 쓰는 UTC 시각(17시). EDT(UTC−4)에서는 13시, EST(UTC−5)에서는
+ * 12시라 서머타임과 무관하게 같은 ET 날짜 한가운데를 가리킨다 — 자정 근처로 물으면 날짜가 어긋난다.
+ */
+const ET_MIDDAY_PROBE_UTC_HOUR = 17;
+
+/**
  * `etDay`(ET 달력일 번호) **보다 앞선** 가장 가까운 거래일의 ET 달력일 번호. 주말·NYSE 휴장일을
  * 건너뛴다(core `isUsTradingDay`). 탐색 상한 안에 없으면 `null`.
  *
@@ -54,7 +60,12 @@ export function previousTradingEtDay(etDay: number): number | null {
     for (let back = 1; back <= MAX_PREVIOUS_TRADING_DAY_LOOKBACK; back += 1) {
         const candidate = etDay - back;
         if (
-            isUsTradingDay(new Date(candidate * MS_PER_DAY + 17 * MS_PER_HOUR))
+            isUsTradingDay(
+                new Date(
+                    candidate * MS_PER_DAY +
+                        ET_MIDDAY_PROBE_UTC_HOUR * MS_PER_HOUR
+                )
+            )
         ) {
             return candidate;
         }
