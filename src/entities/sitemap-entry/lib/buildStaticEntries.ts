@@ -178,8 +178,9 @@ export function buildStaticEntries(
     );
     // `/news/us`도 **싣는 카테고리만** 본다. 정체돼 sitemap에서 빠진 카테고리의
     // 시각을 쓰면, 허브가 자기가 더 이상 나열하지 않는 글을 근거로 신선도를 주장한다.
+    const newsCategorySet = new Set(newsCategories);
     const freshUsCategories = categoriesInRegion('us').filter(cat =>
-        newsCategories.includes(cat)
+        newsCategorySet.has(cat)
     );
     const newsUsLastModified = latestOf(
         freshUsCategories.map(latestOfCategory),

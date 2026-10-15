@@ -120,6 +120,8 @@ export function WatchlistQuickButton() {
                 <div
                     ref={popoverRef}
                     id={popoverId}
+                    // 비모달 팝오버를 직접 포커스·바깥 클릭 처리로 관리한다. 네이티브 <dialog>로 바꾸면 위치·포커스·닫기 동작이 달라진다.
+                    // react-doctor-disable-next-line react-doctor/prefer-html-dialog
                     role="dialog"
                     aria-label={t('preview.title')}
                     className="absolute top-full right-0 z-50 mt-2 w-[23rem] overflow-hidden rounded-lg border border-secondary-600 bg-secondary-800 shadow-2xl"

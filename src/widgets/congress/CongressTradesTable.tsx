@@ -377,6 +377,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                    자연 키가 없으므로 인덱스를 덧붙여 유일성을
                                    보장한다. 목록은 서버가 정렬해 내려주고 클라이언트
                                    재정렬이 없어 인덱스가 흔들리지 않는다. */
+                                // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                                 key={`${trade.office}-${trade.transactionDate}-${trade.side}-${trade.amount.label}-${trade.assetDescription}-${idx}`}
                                 className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-700/30"
                             >

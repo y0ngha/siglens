@@ -23,6 +23,8 @@ async function fetchMissingLabels(
     // 서버 액션은 클라이언트에서 어차피 직렬화된다 — 순서대로 묻는다.
     for (let i = 0; i < missing.length; i += LABELS_PER_CALL) {
         const batch = missing.slice(i, i + LABELS_PER_CALL);
+        // 위 주석대로 서버 액션이 직렬화되므로 배치를 병렬로 던져도 이득이 없다.
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         const { labels, failed } = await getAssetLabelsAction(batch);
         const failedSet = new Set(failed);
         for (const symbol of batch) {

@@ -93,6 +93,8 @@ export function GuideBrowser({
 
     return (
         <div>
+            {/* <search> 요소는 지원 하한(Chrome 109, iOS 15)에서 미지원이라 알 수 없는 요소로 취급되어 role 의미와 블록 표시를 잃는다. */}
+            {/* react-doctor-disable-next-line react-doctor/prefer-tag-over-role */}
             <div role="search" className="space-y-4">
                 <div className="relative">
                     <label htmlFor={searchId} className="sr-only">

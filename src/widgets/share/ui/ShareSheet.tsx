@@ -71,6 +71,8 @@ export function ShareSheet({
         <div
             ref={panelRef}
             className="absolute right-0 z-50 mt-2 w-72 rounded-lg border border-secondary-700 bg-secondary-900 p-2 shadow-2xl"
+            // 트리거 옆에 앵커된 비모달 팝오버다. 네이티브 <dialog>로 바꾸면 위치·포커스·닫기 동작이 달라진다.
+            // react-doctor-disable-next-line react-doctor/prefer-html-dialog
             role="dialog"
             aria-label={title}
         >

@@ -34,6 +34,8 @@ export function cachedNumberFormat(
     return getOrCreate(
         NUMBER_FORMATS,
         cacheKey(locale, options),
+        // 이 파일 자체가 포매터 캐시다 — 팩토리는 캐시 미스에서만 실행된다.
+        // react-doctor-disable-next-line react-doctor/js-hoist-intl
         () => new Intl.NumberFormat(locale, options)
     );
 }
@@ -45,6 +47,8 @@ export function cachedDateTimeFormat(
     return getOrCreate(
         DATE_TIME_FORMATS,
         cacheKey(locale, options),
+        // 위와 같다 — 캐시 미스에서만 실행된다.
+        // react-doctor-disable-next-line react-doctor/js-hoist-intl
         () => new Intl.DateTimeFormat(locale, options)
     );
 }

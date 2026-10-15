@@ -15,7 +15,8 @@ import {
     OptionsIcon,
     QuoteIcon,
 } from '@/shared/ui/StrokeIcons';
-import { LP_PRIMARY_BUTTON, LpDisclaimer, LpShell } from './ui/LpShell';
+import { LpDisclaimer, LpShell } from './ui/LpShell';
+import { LP_PRIMARY_BUTTON } from './ui/lpPrimaryButton';
 import { ReportReplay } from '@/widgets/replay/ReportReplay';
 
 const CTA = '종목 분석 시작';

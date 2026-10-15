@@ -403,6 +403,9 @@ function economyCalendarTargets(): HubTarget[] {
         path: economyHubPath(CALENDAR_COUNTRY_REGION[country]),
         run: async () => {
             const logLabel = `hub-prewarm:economy-calendar:${country}`;
+            // 적재 → 분석 → 번역은 의도된 직렬이다. 분석·번역은 앞 단계가 DB에 쓴 행을 읽고,
+            // FMP·LLM 호출을 한 번에 몰지 않으려는 레이트 제한 순서이기도 하다(위 JSDoc).
+            // react-doctor-disable-next-line react-doctor/async-parallel
             const ingested = await ingestEconomicCalendar(
                 country,
                 logLabel
@@ -410,6 +413,8 @@ function economyCalendarTargets(): HubTarget[] {
                 console.error(`[${logLabel}] ingest threw`, error);
                 return null;
             });
+            // 앞 단계(적재)가 쓴 행을 읽는 분석이라 병렬화하면 갓 적재된 이벤트를 놓친다.
+            // react-doctor-disable-next-line react-doctor/server-sequential-independent-await
             const analyzed = await analyzeEconomicEvents(country, {
                 limit: HUB_CALENDAR_ANALYSIS_LIMIT,
                 logLabel,
@@ -754,6 +759,7 @@ export async function runHubPrewarm(
         }
     }
 
+    const generatedUrlSet = new Set(generatedUrls);
     return {
         attempted: targets.length - skippedByDeadline,
         generated,
@@ -765,6 +771,6 @@ export async function runHubPrewarm(
         skippedByCooldown,
         generatedUrls,
         // 같은 tick에 다른 대상이 같은 페이지를 새로 구웠다면 그쪽이 이긴다.
-        changedUrls: changedUrls.filter(url => !generatedUrls.includes(url)),
+        changedUrls: changedUrls.filter(url => !generatedUrlSet.has(url)),
     };
 }

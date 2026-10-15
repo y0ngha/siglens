@@ -117,12 +117,16 @@ export async function playScenario(
     ctx.setFrame(base);
     for (let i = 1; i <= scenario.question.length; i++) {
         ctx.setFrame({ ...base, typed: i });
+        // 프레임 단위 타이밍 재생이라 직렬 대기가 곧 기능이다.
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await waitPlaying(ctx, TYPE_MS * (0.6 + ctx.random() * 0.8));
     }
     await waitPlaying(ctx, AFTER_TYPING_MS);
     const typed = scenario.question.length;
     for (let t = 0; t < scenario.tools.length; t++) {
         ctx.setFrame({ ...base, typed, toolsShown: t + 1, toolsDone: t });
+        // 프레임 단위 타이밍 재생이라 직렬 대기가 곧 기능이다.
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await waitPlaying(ctx, scenario.tools[t]!.ms);
         ctx.setFrame({ ...base, typed, toolsShown: t + 1, toolsDone: t + 1 });
         await waitPlaying(ctx, TOOL_GAP_MS);
@@ -134,6 +138,8 @@ export async function playScenario(
     );
     for (let c = 0; c <= total; c += STREAM_STEP) {
         ctx.setFrame({ ...base, typed, summary: true, chars: c });
+        // 프레임 단위 타이밍 재생이라 직렬 대기가 곧 기능이다.
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await waitPlaying(ctx, STREAM_MS);
     }
     ctx.setFrame(completeFrame(index));

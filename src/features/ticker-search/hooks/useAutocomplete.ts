@@ -238,6 +238,8 @@ export function useAutocomplete({
     useEffect(() => {
         if (!pendingNav || firedNavRef.current === pendingNav) return;
         firedNavRef.current = pendingNav;
+        // 위 JSDoc대로 선택 확정(pendingNav) 이후 한 번만 onSelect를 쏘는 의도된 구조다. 렌더 중 호출/로컬 setState 연쇄를 피하려고 effect에 둔다.
+        // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-pass-live-state-to-parent
         onSelect?.({
             symbol: pendingNav.symbol,
             label: normalizeLabel(pendingNav.label, pendingNav.symbol),
@@ -247,6 +249,8 @@ export function useAutocomplete({
         if (base) assignLocation(`${base}${href}`);
         else {
             startNavigation(href);
+            // 자동 리다이렉트가 아니라 사용자가 고른 결과로의 이동이다(위 JSDoc). 첫 페이지를 그리고 나서 튕기는 흐름이 아니다.
+            // react-doctor-disable-next-line react-doctor/nextjs-no-client-side-redirect
             router.push(href);
         }
     }, [

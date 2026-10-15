@@ -833,6 +833,8 @@ export function useAnalysis({
             // result can land BEFORE the holdings query resolves, and an unconditional
             // reset here would then wrongly clear the correct badge with no re-submit
             // to restore it.
+            // 티어/보유 평단 전환을 ref로 구분해 분석을 재시작하는 부작용 effect다. setState가 restartAnalysis(외부 SSE 시작)와 한 묶음이라 렌더 중 조정으로 옮길 수 없다.
+            // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change
             if (symbolChanged) setIsPersonalized(false);
             hasHandledHoldingHydrationRef.current = true;
             prevHoldingSymbolRef.current = symbol;
@@ -873,6 +875,8 @@ export function useAnalysis({
 
         if (tier === prevTierRef.current) return;
         prevTierRef.current = tier;
+        // 위와 같다 — 티어 전환 시 결과를 비우고 같은 effect 안에서 분석을 재시작한다. 렌더 중 조정으로 옮기면 SSE 재시작이 렌더 단계에서 일어난다.
+        // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change
         setAnalysisResult(null);
         setLockedInfoDepth(tier === 'free' ? initialLockedInfoDepth : []);
         restartAnalysis();
