@@ -12,12 +12,16 @@ import { reportClientError } from '@/shared/lib/reportClientError';
 // iOS 15.0~15.3)에 없는 배열·문자열 메서드를 채운다(`legacyBrowserPolyfills.ts`).
 installLegacyBrowserPolyfills();
 
+// `instrumentation-client`는 Next가 브라우저에서만 로드하는 진입점이라 SSR에서 평가되지 않는다.
+// react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
 window.addEventListener('error', event => {
     // 리소스 로드 실패(img/script)는 `error`가 없는 이벤트로 온다 — 노이즈라 버린다.
     if (event.error === undefined || event.error === null) return;
     reportClientError(event.error, 'window.onerror');
 });
 
+// 위와 같다 — 브라우저 전용 진입점.
+// react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
 window.addEventListener('unhandledrejection', event => {
     reportClientError(event.reason, 'unhandledrejection');
 });

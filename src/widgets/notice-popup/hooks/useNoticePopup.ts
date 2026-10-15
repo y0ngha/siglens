@@ -90,6 +90,8 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
 
     // 활성 공지 fetch는 외부 시스템 동기화 effect. canonical hook order(effects last)에 따라
     // useMemo/useCallback 뒤에 둔다. 서버 액션(POST) 대신 GET이라 Googlebot 렌더러가 건너뛰는 `/api/` 경로로 간다(CDN 공유는 규칙이 붙을 때만).
+    // AbortController로 언마운트·로케일 변경 시 취소하고 취소된 응답은 버린다. 공지는 쿼리 캐시 없이 마운트당 한 번 읽는 부가 기능이라 데이터 레이어를 두지 않는다.
+    // react-doctor-disable-next-line react-doctor/no-fetch-in-effect
     useEffect(() => {
         const controller = new AbortController();
         fetchActiveNotices(locale, controller.signal)

@@ -115,6 +115,8 @@ function FollowUps({ items, onPick }: FollowUpsProps) {
                 {items.map((item, i) => (
                     // Index in the key: the model may repeat an item, and a
                     // collision would silently drop a chip.
+                    // 위 설명대로 모델이 같은 항목을 반복할 수 있어 인덱스를 key에 섞는다.
+                    // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                     <li key={`${i}-${item}`} className="max-w-full">
                         <button
                             type="button"

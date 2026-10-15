@@ -131,6 +131,8 @@ export function GuideDemoPane({
                     (value >= 0 ? 'bull' : 'bear');
                 return (
                     <rect
+                        // 히스토그램 막대는 위치가 곧 x좌표인 정적 시리즈라 인덱스 외의 정체성이 없다.
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={index}
                         className={TONE_FILL[tone]}
                         height={Math.max(0.8, Math.abs(baseline - y))}

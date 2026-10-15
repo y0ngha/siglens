@@ -177,6 +177,9 @@ function runLane(
 ): Promise<readonly PickOutcome[]> {
     return lane.reduce<Promise<readonly PickOutcome[]>>(
         async (previous, pick) => {
+            // 레인 안은 의도된 직렬 체인이다 — 종목마다 마감을 확인하고 외부 호출을 한 번에
+            // 하나만 띄운다(레인 간 병렬은 `OPTIONS_WARM_CONCURRENCY`가 맡는다).
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
             const done = await previous;
             if (Date.now() >= startDeadlineMs) {
                 return [...done, { pick, result: null }];
@@ -205,9 +208,12 @@ async function runWarmStep({
     }
 
     const universe = buildOptionsWarmUniverse();
-    const cursor = await readCursor(redis);
     // 후보 전체의 capturedAt을 MGET 한 번으로 읽는다. 값이 없으면 미확보로 본다.
-    const capturedAtBySymbol = await readLastGoodCapturedAtBatch(universe);
+    // 커서 읽기와 서로 독립이라 함께 기다린다.
+    const [cursor, capturedAtBySymbol] = await Promise.all([
+        readCursor(redis),
+        readLastGoodCapturedAtBatch(universe),
+    ]);
 
     const selection = selectOptionsWarmSymbols({
         universe,
@@ -233,19 +239,15 @@ async function runWarmStep({
         )
     ).flat();
 
-    const counts = outcomes.reduce<OptionsWarmCounts>(
-        (acc, { result }) =>
-            result === null
-                ? { ...acc, deferred: acc.deferred + 1 }
-                : { ...acc, [result]: acc[result] + 1 },
-        {
-            written: 0,
-            stale: 0,
-            none: 0,
-            skipped: selection.skipped,
-            deferred: 0,
-        }
-    );
+    const countOf = (result: LastGoodRefreshResult | null): number =>
+        outcomes.filter(o => o.result === result).length;
+    const counts: OptionsWarmCounts = {
+        written: countOf('written'),
+        stale: countOf('stale'),
+        none: countOf('none'),
+        skipped: selection.skipped,
+        deferred: countOf(null),
+    };
 
     // 미룬 종목 중 가장 앞 걸음 직전까지만 전진한다 — 미룬 종목이 다음 tick의 첫 후보가
     // 된다. 레인이 서로 다른 시각에 마감을 만나면 미룬 종목 뒤의 종목이 이미 처리됐을 수

@@ -289,6 +289,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                     );
                     labels.push(
                         <TextLabel
+                            // 정적 데모 오버레이 목록이다. key는 종류+위치로 만들고 재정렬이 없다.
+                            // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                             key={key}
                             anchor="start"
                             box={b}
@@ -366,6 +368,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                         );
                         labels.push(
                             <TextLabel
+                                // 정적 데모 오버레이 목록이다. key는 종류+위치로 만들고 재정렬이 없다.
+                                // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                                 key={key}
                                 anchor="end"
                                 box={b}
@@ -450,6 +454,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                 );
                 labels.push(
                     <TextLabel
+                        // 정적 데모 오버레이 목록이다. key는 종류+위치로 만들고 재정렬이 없다.
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={key}
                         anchor="end"
                         box={b}
@@ -491,6 +497,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                     );
                     labels.push(
                         <TextLabel
+                            // 정적 데모 오버레이 목록이다. key는 종류+위치로 만들고 재정렬이 없다.
+                            // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                             key={key}
                             anchor="end"
                             box={b}
@@ -557,6 +565,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                     );
                     labels.push(
                         <TextLabel
+                            // 정적 데모 오버레이 목록이다. key는 종류+위치로 만들고 재정렬이 없다.
+                            // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                             key={key}
                             anchor="end"
                             box={b}
@@ -595,6 +605,8 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                 );
                 labels.push(
                     <TextLabel
+                        // 정적 데모 오버레이 목록이다. key는 종류+위치로 만들고 재정렬이 없다.
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={key}
                         anchor="middle"
                         box={b}

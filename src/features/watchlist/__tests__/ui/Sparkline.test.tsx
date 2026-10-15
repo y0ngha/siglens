@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react';
-import { Sparkline, sparklinePoints } from '@/features/watchlist/ui/Sparkline';
+import { sparklinePoints } from '@/features/watchlist/lib/sparklinePoints';
+import { Sparkline } from '@/features/watchlist/ui/Sparkline';
 
 describe('sparklinePoints', () => {
     it('첫 점은 왼쪽 끝, 마지막 점은 오른쪽 끝이고 큰 값일수록 위에 있다', () => {

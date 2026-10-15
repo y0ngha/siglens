@@ -52,6 +52,8 @@ export function useIndicatorTranslationTrigger(
     useEffect(() => {
         if (triggeredRef.current) return;
         triggeredRef.current = true;
+        // 부모 전달이 아니다 — 마운트 시 한 번 서버 액션을 발사하는 외부 부작용이다(triggeredRef로 중복 방지).
+        // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
         triggerOnce();
     }, []);
 }

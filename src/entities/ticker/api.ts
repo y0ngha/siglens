@@ -134,6 +134,9 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             i < entries.length;
             i += KOREAN_TICKER_UPSERT_BATCH_SIZE
         ) {
+            // 청크는 쿼리 페이로드 한도 때문에 나눈 것이고, DB 연결 하나를 한꺼번에 두드리지
+            // 않도록 의도적으로 직렬 실행한다.
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await this.upsertBatch(
                 entries.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE),
                 options
@@ -235,6 +238,8 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             i < symbols.length;
             i += KOREAN_TICKER_UPSERT_BATCH_SIZE
         ) {
+            // 청크 직렬 실행은 의도다(`upsertMany`와 같은 이유).
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await this.markDelistedBatch(
                 symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
             );
@@ -270,6 +275,8 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             i < symbols.length;
             i += KOREAN_TICKER_UPSERT_BATCH_SIZE
         ) {
+            // 청크 직렬 실행은 의도다(`upsertMany`와 같은 이유).
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await this.markRelistedBatch(
                 symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
             );
@@ -388,6 +395,8 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
             i += KOREAN_TICKER_UPSERT_BATCH_SIZE
         ) {
             const chunk = symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE);
+            // 청크 직렬 실행은 의도다(`upsertMany`와 같은 이유).
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await withRetry(
                 () =>
                     this.db

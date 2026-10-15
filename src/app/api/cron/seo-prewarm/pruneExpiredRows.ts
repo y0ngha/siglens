@@ -35,11 +35,14 @@ export async function pruneExpiredRows(
     db: SiglensDatabase,
     now: Date = new Date()
 ): Promise<PruneExpiredRowsResult> {
-    const sessionsDeleted = await settle('sessions', () =>
-        new DrizzleSessionRepository(db).pruneExpiredSessions(now)
-    );
-    const sharedAnalysesDeleted = await settle('shared_analyses', () =>
-        new DrizzleSharedAnalysisRepository(db).pruneExpired(now)
-    );
+    // 두 테이블은 서로 격리돼 있고 `settle`이 throw하지 않으므로 함께 기다린다.
+    const [sessionsDeleted, sharedAnalysesDeleted] = await Promise.all([
+        settle('sessions', () =>
+            new DrizzleSessionRepository(db).pruneExpiredSessions(now)
+        ),
+        settle('shared_analyses', () =>
+            new DrizzleSharedAnalysisRepository(db).pruneExpired(now)
+        ),
+    ]);
     return { sessionsDeleted, sharedAnalysesDeleted };
 }

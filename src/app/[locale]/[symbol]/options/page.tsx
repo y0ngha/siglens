@@ -71,27 +71,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // false(노출 안 함)로 degrade → noindex로 안전하게 처리한다. (이 fetch는
     // staticSymbolCache로 감싸져 DSU를 throw하지 않고, DSU가 발생하더라도 위
     // `requireResolvableAsset`이 이미 같은 요청 안에서 rethrow했으므로 제어 흐름은 보존된다.)
-    const hasOptions = await staticSymbolCache(
-        ['options:has', upper],
-        upper,
-        () => hasOptionsMarket(upper),
-        [],
-        SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error(
-            '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
-            e
-        );
-        return false;
-    });
-    const blockedMetadata = await getBlockedSymbolMetadata({
-        locale,
-        symbol: upper,
-        assetInfo,
-        degraded,
-        revalidateSeconds: revalidate,
-        tab: 'options',
-    });
+    const [hasOptions, blockedMetadata] = await Promise.all([
+        staticSymbolCache(
+            ['options:has', upper],
+            upper,
+            () => hasOptionsMarket(upper),
+            [],
+            SECONDS_PER_HALF_DAY
+        ).catch((e: unknown) => {
+            console.error(
+                '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
+                e
+            );
+            return false;
+        }),
+        // 차단 판정은 옵션 시장 조회와 독립이다 — 겹쳐서 기다린다.
+        getBlockedSymbolMetadata({
+            locale,
+            symbol: upper,
+            assetInfo,
+            degraded,
+            revalidateSeconds: revalidate,
+            tab: 'options',
+        }),
+    ]);
     if (blockedMetadata) return blockedMetadata;
 
     const displayName = buildDisplayName(assetInfo, upper, locale);

@@ -255,14 +255,24 @@ export async function SymbolLayoutChrome({
     // 읽으므로 칩이 세션 롤을 넘겨 묵지 않는다(`sessionBarsStaticCache.ts` JSDoc).
     // 값은 공포·탐욕 탭 본문과 같은 축소 봉·같은 세션 키에서 계산한다.
     // 이 탭들의 revalidate 관계는 `src/__tests__/guards/symbolTabRevalidateClamp.test.ts`가 고정한다.
-    const fearGreedSnapshot = await getSymbolFearGreedChipStatic(
-        symbol.toUpperCase(),
-        marketProfileOf(assetInfo),
-        assetInfo.fmpSymbol
-    ).catch((e: unknown) => {
-        console.error('[SymbolLayout] getSymbolFearGreedChipStatic failed:', e);
-        return null;
-    });
+    // 브레드크럼 라벨 번역은 칩 조회와 독립이라 같은 `Promise.all`에서 함께 기다린다.
+    const [fearGreedSnapshot, tUi, tTab] = await Promise.all([
+        getSymbolFearGreedChipStatic(
+            symbol.toUpperCase(),
+            marketProfileOf(assetInfo),
+            assetInfo.fmpSymbol
+        ).catch((e: unknown) => {
+            console.error(
+                '[SymbolLayout] getSymbolFearGreedChipStatic failed:',
+                e
+            );
+            return null;
+        }),
+        // 가시 브레드크럼 라벨은 서버에서 번역해 내린다. 셋째 마디(탭) 라벨은 각 탭 페이지의
+        // `BreadcrumbList` JSON-LD와 같은 `shared.symbolTab` 키에서 나와야 둘이 글자까지 같다.
+        getTranslations({ locale, namespace: 'shared.ui' }),
+        getTranslations({ locale, namespace: 'shared.symbolTab' }),
+    ]);
     // 위에서 공포·탐욕 칩 값을 **서버에서 확정**했다. 계산은 공용 입구 `symbolFearGreedSnapshot`
     // (5년 일봉, AI 호출 없음)이고, 공포·탐욕 페이지·색인 게이트와 같은 입력·같은 세션 키다.
     //
@@ -302,12 +312,6 @@ export async function SymbolLayoutChrome({
     //
     // 조회 실패(FMP 키 없음·degrade)나 점수 부족이면 스냅샷이 null → 칩이 기존
     // "데이터 부족" 문구로 폴백한다.
-    // 가시 브레드크럼 라벨은 서버에서 번역해 내린다. 셋째 마디(탭) 라벨은 각 탭 페이지의
-    // `BreadcrumbList` JSON-LD와 같은 `shared.symbolTab` 키에서 나와야 둘이 글자까지 같다.
-    const [tUi, tTab] = await Promise.all([
-        getTranslations({ locale, namespace: 'shared.ui' }),
-        getTranslations({ locale, namespace: 'shared.symbolTab' }),
-    ]);
     // `Object.fromEntries`는 키 타입을 `string`으로 넓힌다 — 키가 `SYMBOL_SUB_TAB_KEYS` 전수라
     // 레코드는 빠짐없이 채워진다.
     const tabCrumbLabels = Object.fromEntries(

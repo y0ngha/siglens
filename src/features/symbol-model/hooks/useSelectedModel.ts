@@ -87,6 +87,8 @@ export function useSelectedModel(
     useEffect(() => {
         if (!isTierHydrated || hasReadRef.current) return;
         hasReadRef.current = true;
+        // localStorage(외부 시스템)를 티어 하이드레이션 뒤 한 번 읽어 이 훅의 로컬 상태를 채운다. 부모로 올리는 데이터가 아니다.
+        // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
         readFromStorage();
     }, [isTierHydrated]);
 
@@ -95,6 +97,8 @@ export function useSelectedModel(
         if (!isTierHydrated) return;
         if (
             allowedModels.length > 0 &&
+            // 티어가 비동기로 하이드레이션·변경되므로 허용 모델 목록 변화에 맞춰 선택을 폴백시킨다. 부모 전달이 아니라 이 훅 내부 보정이다.
+            // react-doctor-disable-next-line react-doctor/no-pass-live-state-to-parent
             !allowedModels.includes(selectedModel)
         ) {
             const fallback = allowedModels.includes(DEFAULT_MODEL)

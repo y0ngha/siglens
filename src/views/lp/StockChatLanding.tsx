@@ -16,7 +16,8 @@ import {
 } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
 import { ChatReplay } from '@/widgets/replay/ChatReplay';
-import { LP_PRIMARY_BUTTON, LpDisclaimer, LpShell } from './ui/LpShell';
+import { LpDisclaimer, LpShell } from './ui/LpShell';
+import { LP_PRIMARY_BUTTON } from './ui/lpPrimaryButton';
 
 const CTA = 'AI에게 물어보기';
 const CTA_HREF = `${AI_SITE_URL}/`;

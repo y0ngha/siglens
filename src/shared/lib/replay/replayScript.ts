@@ -105,7 +105,10 @@ export function groupLines(lines: readonly ReplayLine[]): LineGroup[] {
                   ...groups.slice(0, -1),
                   { kind: last.kind, items: [...last.items, item] },
               ]
-            : [...groups, { kind: line.kind, items: [item] }];
+            : // 리플레이 대본은 한 장면에 몇 줄뿐이라 매 줄 복사해도 비용이 없다 — 순수 함수의
+              // 불변 누적(CONVENTIONS.md#CP-6)을 지킨다.
+              // react-doctor-disable-next-line react-doctor/no-spread-accumulator-in-reduce
+              [...groups, { kind: line.kind, items: [item] }];
     }, []);
 }
 

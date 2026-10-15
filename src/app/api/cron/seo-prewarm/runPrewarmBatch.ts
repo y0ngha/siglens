@@ -434,15 +434,15 @@ export async function runPrewarmBatch(
     // 써야 한다(`SLOW_REFRESH_TABS`).
     const universe = buildPrewarmUniverse();
     const repo = new DrizzleSeoSnapshotRepository(getDatabaseClient().db);
-    const generatedAtMap = await repo.findGeneratedAtMap(
-        universe.map(u => u.symbol)
-    );
 
     // 구조적으로 못 만드는 유닛(의회 거래 없는 종목의 congress 등)은 stale 판정에서
     // 뺀다 — 안 빼면 그 심볼이 영구 stale로 남아 회전마다 슬롯만 먹는다
     // (`loadStructurallyUnavailable` JSDoc에 2026-08-30 실측). SMEMBERS 1회라
-    // 심볼별 Redis 왕복이 늘지 않는다.
-    const structural = await loadStructurallyUnavailable();
+    // 심볼별 Redis 왕복이 늘지 않는다. DB 조회와 독립이라 함께 기다린다.
+    const [generatedAtMap, structural] = await Promise.all([
+        repo.findGeneratedAtMap(universe.map(u => u.symbol)),
+        loadStructurallyUnavailable(),
+    ]);
     const staleSymbols = universe.filter(u =>
         u.tabs.some(tab =>
             isTabPending(u.symbol, tab, generatedAtMap, structural, now)

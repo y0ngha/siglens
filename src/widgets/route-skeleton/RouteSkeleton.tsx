@@ -268,6 +268,8 @@ interface RouteSkeletonProps {
 export function RouteSkeleton({ kind }: RouteSkeletonProps) {
     const layout = LAYOUTS[kind];
     const blocks = layout.blocks.map((block, i) => (
+        // 정적 스켈레톤 블록 목록이라 정체성이 없다.
+        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
         <SkeletonBlock key={i} block={block} />
     ));
     return (

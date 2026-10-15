@@ -44,14 +44,11 @@ export function useOverlayItemVisibility(
 
     const setVisible = useCallback(
         (keys: readonly string[], visible: boolean) => {
-            setHiddenKeys(
-                prev =>
-                    new Set(
-                        visible
-                            ? [...prev].filter(key => !keys.includes(key))
-                            : [...prev, ...keys]
-                    )
-            );
+            setHiddenKeys(prev => {
+                if (!visible) return new Set([...prev, ...keys]);
+                const toShow = new Set(keys);
+                return new Set([...prev].filter(key => !toShow.has(key)));
+            });
         },
         []
     );

@@ -161,6 +161,8 @@ export function AgentMarkdown({ children }: AgentMarkdownProps) {
             {splitMarkdownBlocks(children).map((block, index) => (
                 // 위치가 곧 정체성이다 — 답변은 끝에서만 자라므로 앞 블록의 인덱스는
                 // 변하지 않고, 그래야 memo가 그 블록의 재파싱을 건너뛴다.
+                // 위 설명대로 위치가 곧 정체성이다(답변은 끝에서만 자란다).
+                // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                 <MarkdownBlock key={index} source={block} />
             ))}
         </div>

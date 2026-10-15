@@ -47,6 +47,8 @@ export function PlainAnalysisView({
             <div className="flex flex-col gap-3">
                 {paragraphs.map((paragraph, index) => (
                     <p
+                        // 문단은 AI 텍스트를 분할한 정적 목록이라 정체성이 없고 재정렬되지 않는다.
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={index}
                         className="text-sm leading-7 text-secondary-200"
                     >
