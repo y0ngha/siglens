@@ -4,10 +4,12 @@ import {
     FRESH_ANALYSIS_TOOL,
     typeLabel,
 } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     API_KEY_ENV_NAME,
     PUBLIC_API_BASE_PATH,
 } from '@/shared/config/publicApi';
+import type { YamlValue } from '@/shared/lib/toYaml';
 
 export interface ApiToolArgument {
     readonly name: string;
@@ -29,7 +31,7 @@ export interface ApiToolReference {
     readonly url: string;
     readonly arguments: readonly ApiToolArgument[];
     /** 필수 인자만으로 만든 예시 본문. */
-    readonly exampleArgs: Readonly<Record<string, unknown>>;
+    readonly exampleArgs: Readonly<Record<string, YamlValue>>;
     readonly curl: string;
     /** 새 분석 생성이 사용자 BYOK 키를 쓰는 도구인가. */
     readonly byok: boolean;
@@ -45,12 +47,12 @@ export interface BuildApiToolReferencesInput {
  * 스펙만으로는 뜻 있는 값을 못 만드는 도구의 예시 보정. 값이 스키마 열거값과 어긋나면 호출이 400이라
  * `exampleArgumentsFor`가 필수 인자 이름만 보고 만든 값 위에 덮어쓴다.
  */
-const EXAMPLE_OVERRIDES: Readonly<Record<string, Record<string, unknown>>> = {
+const EXAMPLE_OVERRIDES: Readonly<Record<string, Record<string, YamlValue>>> = {
     search_ticker: { query: 'apple' },
     get_guide: { query: 'MACD' },
 };
 
-function exampleValue(name: string, prop: JsonSchemaProperty): unknown {
+function exampleValue(name: string, prop: JsonSchemaProperty): YamlValue {
     if (prop.enum !== undefined)
         return prop.enum.includes('1Day') ? '1Day' : prop.enum[0];
     switch (prop.type) {
@@ -73,14 +75,14 @@ function exampleValue(name: string, prop: JsonSchemaProperty): unknown {
 /** 필수 인자만으로 만든 호출 본문. 필수 인자가 없으면 `{}`다. */
 export function exampleArgumentsFor(
     tool: AgentToolSpec
-): Record<string, unknown> {
+): Record<string, YamlValue> {
     const required = new Set(tool.inputSchema.required ?? []);
     const generated = Object.fromEntries(
         Object.entries(tool.inputSchema.properties)
             .filter(([name]) => required.has(name))
             .map(([name, prop]) => [name, exampleValue(name, prop)])
     );
-    const args: Record<string, unknown> = {
+    const args: Record<string, YamlValue> = {
         ...generated,
         ...EXAMPLE_OVERRIDES[tool.name],
     };
@@ -96,12 +98,20 @@ export function exampleArgumentsFor(
     return args;
 }
 
+export interface CurlExampleOptions {
+    /** 오래 걸리는 호출(새 분석 생성)용 `--max-time`. 도구 마감보다 짧으면 클라이언트가 먼저 끊는다. */
+    readonly maxTimeSeconds?: number;
+}
+
 export function buildCurlExample(
     url: string,
-    args: Readonly<Record<string, unknown>>
+    args: Readonly<Record<string, YamlValue>>,
+    { maxTimeSeconds }: CurlExampleOptions = {}
 ): string {
+    const maxTime =
+        maxTimeSeconds === undefined ? '' : ` --max-time ${maxTimeSeconds}`;
     return [
-        `curl -s -X POST ${url} \\`,
+        `curl -s${maxTime} -X POST ${url} \\`,
         `  -H "Authorization: Bearer $${API_KEY_ENV_NAME}" \\`,
         '  -H "Content-Type: application/json" \\',
         `  -d '${JSON.stringify(args)}'`,
@@ -119,23 +129,37 @@ function argumentsOf(tool: AgentToolSpec): ApiToolArgument[] {
     }));
 }
 
+/** 도구 하나의 문서 표현. OpenAPI 경로 빌더가 도구마다 부르고, `buildApiToolReferences`가 목록으로 묶는다. */
+export function buildApiToolReference({
+    baseUrl,
+    tool,
+}: {
+    readonly baseUrl: string;
+    readonly tool: AgentToolSpec;
+}): ApiToolReference {
+    const path = `/tools/${tool.name}`;
+    const url = `${baseUrl}${PUBLIC_API_BASE_PATH}${path}`;
+    const exampleArgs = exampleArgumentsFor(tool);
+    const byok = tool.name === FRESH_ANALYSIS_TOOL;
+    return {
+        name: tool.name,
+        description: tool.description,
+        path,
+        url,
+        arguments: argumentsOf(tool),
+        exampleArgs,
+        curl: buildCurlExample(
+            url,
+            exampleArgs,
+            byok ? { maxTimeSeconds: FRESH_ANALYSIS_DEADLINE_SECONDS } : {}
+        ),
+        byok,
+    };
+}
+
 export function buildApiToolReferences({
     baseUrl,
     tools,
 }: BuildApiToolReferencesInput): ApiToolReference[] {
-    return tools.map(tool => {
-        const path = `/tools/${tool.name}`;
-        const url = `${baseUrl}${PUBLIC_API_BASE_PATH}${path}`;
-        const exampleArgs = exampleArgumentsFor(tool);
-        return {
-            name: tool.name,
-            description: tool.description,
-            path,
-            url,
-            arguments: argumentsOf(tool),
-            exampleArgs,
-            curl: buildCurlExample(url, exampleArgs),
-            byok: tool.name === FRESH_ANALYSIS_TOOL,
-        };
-    });
+    return tools.map(tool => buildApiToolReference({ baseUrl, tool }));
 }

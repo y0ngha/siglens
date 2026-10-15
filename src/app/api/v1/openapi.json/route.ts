@@ -2,6 +2,7 @@ import { apiError, API_STATUS, withApiErrorBoundary } from '../apiResponse';
 import {
     buildPublicOpenApiDocument,
     OPENAPI_CACHE_CONTROL,
+    OPENAPI_CORS_HEADERS,
 } from '../openApiDocument';
 
 export const dynamic = 'force-dynamic';
@@ -13,11 +14,12 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(): Promise<Response> {
     return withApiErrorBoundary('openapi.json', async () => {
+        // `/api/v1/skill`과 같은 모양: 생성 실패만 따로 기록해 일반 500 봉투로 바꾼다(바깥 경계는 그 밖의 예기치 못한 throw용).
         try {
             return Response.json(buildPublicOpenApiDocument(), {
                 headers: {
                     'Cache-Control': OPENAPI_CACHE_CONTROL,
-                    'Access-Control-Allow-Origin': '*',
+                    ...OPENAPI_CORS_HEADERS,
                 },
             });
         } catch (error) {
@@ -25,7 +27,8 @@ export async function GET(): Promise<Response> {
             return apiError(
                 API_STATUS.internalError,
                 'internal_error',
-                'Could not generate the OpenAPI document.'
+                'Could not generate the OpenAPI document.',
+                { headers: OPENAPI_CORS_HEADERS }
             );
         }
     });

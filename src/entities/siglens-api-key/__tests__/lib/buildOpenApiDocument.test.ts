@@ -5,12 +5,14 @@ import {
     type OpenApiDocument,
 } from '@/entities/siglens-api-key/lib/buildOpenApiDocument';
 import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     LOCALE_HEADER_DOC_NAME,
     PUBLIC_API_BASE_PATH,
     PUBLIC_API_DOC_PATHS,
     PUBLIC_API_RATE_LIMITS,
 } from '@/shared/config/publicApi';
+import { USER_TIER_VALUES } from '@/shared/db/constants';
 import { ANALYSIS_LOCALE_HEADER, LOCALES } from '@/shared/i18n/locales';
 
 const quote: AgentToolSpec = {
@@ -469,6 +471,17 @@ describe('buildOpenApiDocument — errors and headers', () => {
         expect(
             at(doc.components, 'headers', 'RateLimitLimit').description
         ).toContain(`${PUBLIC_API_RATE_LIMITS.data.perMinute}/minute`);
+    });
+
+    it('derives the tier enum from the tier source of truth and cites the sourced deadline', () => {
+        const me = at(doc.components, 'schemas', 'MeResponse');
+        const tier = at(at(at(me, 'properties', 'data'), 'properties'), 'tier');
+        expect(tier.enum).toEqual([...USER_TIER_VALUES]);
+        const fresh = JSON.stringify(doc.paths['/tools/run_fresh_analysis']);
+        expect(fresh).toContain(
+            `${FRESH_ANALYSIS_DEADLINE_SECONDS}-second tool deadline`
+        );
+        expect(fresh).not.toContain('30-250');
     });
 
     it('never leaks anything that looks like a secret', () => {

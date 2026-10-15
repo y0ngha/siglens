@@ -2959,7 +2959,7 @@
                 "disconnect": "Closing the connection does not cancel the generation. It runs to the end and is charged to your key, and the result goes into the shared cache, so the next call gets it from the cache.",
                 "early": "Cache hits and failures that are known before generation, such as authentication, limits, bad arguments, the model or a missing key, use a normal status code and a normal JSON body.",
                 "exampleLabel": "curl example for generating a new analysis",
-                "how": "Generating an analysis that is not cached takes 30 to 250 seconds. Once the request passes the authentication, rate limit, argument, model and key checks, the response starts at once as HTTP 200, sends newline whitespace bytes now and then so the connection is not dropped, and writes the JSON body at the end.",
+                "how": "Generating an analysis that is not cached usually takes about a minute, and never longer than the {deadline}-second tool deadline (after that you get tool_timeout). Once the request passes the authentication, rate limit, argument, model and key checks, the response starts at once as HTTP 200, sends newline whitespace bytes now and then so the connection is not dropped, and writes the JSON body at the end.",
                 "parse": "JSON allows leading whitespace, so parse the whole body as it is. A failure after the 200 was sent also arrives as a 200 body, so for this tool always check for an error field, whatever the status code is.",
                 "sub": "This applies to run_fresh_analysis only. Every other tool returns a normal JSON response.",
                 "title": "Generating new analyses and streaming"

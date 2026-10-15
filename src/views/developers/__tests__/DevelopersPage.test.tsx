@@ -4,6 +4,7 @@ import type { AgentToolSpec } from '@y0ngha/siglens-core';
 import { describe, expect, it, vi } from 'vitest';
 import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
 import { buildApiToolReferences } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
     PUBLIC_API_BASE_PATH,
@@ -90,10 +91,22 @@ const fresh: AgentToolSpec = {
     },
 };
 
+const searchTicker: AgentToolSpec = {
+    name: 'search_ticker',
+    description: 'Find tickers.',
+    costClass: 'free',
+    inputSchema: {
+        type: 'object',
+        properties: { query: { type: 'string' } },
+        required: ['query'],
+        additionalProperties: false,
+    },
+};
+
 const BASE_URL = 'https://example.test';
 const tools = buildApiToolReferences({
     baseUrl: BASE_URL,
-    tools: [quote, noArgs, fresh],
+    tools: [quote, noArgs, fresh, searchTicker],
 });
 
 async function renderPage(locale: Locale = 'ko') {
@@ -234,7 +247,12 @@ describe('DevelopersPage', () => {
         const example = within(section).getByRole('region', {
             name: d.streaming.exampleLabel,
         });
-        expect(example).toHaveTextContent('--max-time 300');
+        expect(example).toHaveTextContent(
+            `--max-time ${FRESH_ANALYSIS_DEADLINE_SECONDS}`
+        );
+        expect(section).toHaveTextContent(
+            String(FRESH_ANALYSIS_DEADLINE_SECONDS)
+        );
         expect(example).toHaveTextContent('/tools/run_fresh_analysis');
     });
 
@@ -245,6 +263,7 @@ describe('DevelopersPage', () => {
             'tool-get_quote',
             'tool-get_economy',
             'tool-run_fresh_analysis',
+            'tool-search_ticker',
         ]);
         const index = screen.getByRole('list', { name: d.tools.indexLabel });
         expect(
@@ -255,6 +274,7 @@ describe('DevelopersPage', () => {
             '#tool-get_quote',
             '#tool-get_economy',
             '#tool-run_fresh_analysis',
+            '#tool-search_ticker',
         ]);
     });
 
@@ -376,6 +396,22 @@ describe('DevelopersPage', () => {
         });
         expect(skill).toHaveTextContent(`${BASE_URL}/api/v1/skill`);
         expect(skill).toHaveTextContent('~/.claude/skills/siglens/SKILL.md');
+    });
+
+    it('picks the quick-start call example by tool name, not by list position', async () => {
+        await renderPage();
+        const quickstart = document
+            .getElementById('quickstart')!
+            .closest('section')!;
+        const example = within(quickstart).getByRole('region', {
+            name: d.quickstart.toolLabel.replace('{name}', 'search_ticker'),
+        });
+        expect(example).toHaveTextContent('/tools/search_ticker');
+        expect(
+            within(quickstart).queryByRole('region', {
+                name: d.quickstart.toolLabel.replace('{name}', 'get_quote'),
+            })
+        ).toBeNull();
     });
 
     it('prints the update date from the prop', async () => {

@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
 import type { ApiToolReference } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     API_KEY_ENV_NAME,
     API_KEY_MAX_ACTIVE_PER_USER,
@@ -23,7 +24,11 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { CodeBlock } from '@/shared/ui/CodeBlock';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 import {
+    ACCOUNT_PATH,
+    DEVELOPER_SECTION_IDS,
     ERROR_RESPONSE_EXAMPLE,
+    QUICKSTART_TOOL,
+    SKILL_FILE_NAME,
     SUCCESS_RESPONSE_EXAMPLE,
     type DeveloperSectionId,
 } from './lib/developersContent';
@@ -154,30 +159,33 @@ function InfoTable({
 }
 
 interface DownloadCardProps {
-    readonly href: string;
-    readonly download: string;
-    readonly title: string;
+    /** `PUBLIC_API_DOC_PATHS`의 값. 링크와 파일 이름이 여기서 나온다. */
+    readonly path: (typeof PUBLIC_API_DOC_PATHS)[keyof typeof PUBLIC_API_DOC_PATHS];
     readonly body: string;
+    /** 버튼 글자(`openapi.json 내려받기`). 파일 이름이 들어가 번역기가 필요해 호출부가 만든다. */
     readonly action: string;
 }
 
-function DownloadCard({
-    href,
-    download,
-    title,
-    body,
-    action,
-}: DownloadCardProps) {
+/** `/openapi.json` → `openapi.json`. 확장자가 없는 Skill 경로만 `SKILL.md`로 받는다. */
+function downloadFileName(path: DownloadCardProps['path']): string {
+    return path === PUBLIC_API_DOC_PATHS.skill
+        ? SKILL_FILE_NAME
+        : path.replace(/^\//, '');
+}
+
+function DownloadCard({ path, body, action }: DownloadCardProps) {
+    const file = downloadFileName(path);
     return (
         <li className={cn(SURFACE_CARD, 'flex flex-col p-4 sm:p-5')}>
-            <h3 className={cn(HEADING_SUBSECTION, 'font-mono')}>{title}</h3>
+            <h3 className={cn(HEADING_SUBSECTION, 'font-mono')}>{file}</h3>
             <p className="mt-2 flex-1 text-sm leading-6 text-secondary-300">
                 {body}
             </p>
-            {/* 같은 오리진 파일 다운로드라 next/link가 아니라 일반 앵커다(크롤러도 파일 링크로 읽는다). */}
+            {/* 같은 오리진 파일 다운로드라 next/link가 아니라 일반 앵커다(크롤러도 파일 링크로 읽는다).
+                상대 경로(계정 화면의 Skill 링크와 같다) — 미리보기·로컬 환경에서도 그 서버의 파일을 받는다. */}
             <a
-                href={href}
-                download={download}
+                href={`${PUBLIC_API_BASE_PATH}${path}`}
+                download={file}
                 className={cn(BUTTON_OUTLINE, 'mt-4 h-10 px-4 text-sm')}
             >
                 {action}
@@ -208,19 +216,22 @@ export async function DevelopersPage({
     });
     const apiBase = `${baseUrl}${PUBLIC_API_BASE_PATH}`;
     const docUrl = (path: string): string => `${apiBase}${path}`;
-    // 내려받기 링크는 상대 경로다(계정 화면의 Skill 링크와 같다) — 미리보기·로컬 환경에서도 그 서버의 파일을 받는다.
-    const docHref = (path: string): string => `${PUBLIC_API_BASE_PATH}${path}`;
 
-    const toc: readonly (readonly [DeveloperSectionId, string])[] = [
-        ['quickstart', t('quickstart.title')],
-        ['authentication', t('authentication.title')],
-        ['rate-limits', t('rateLimits.title')],
-        ['responses', t('responses.title')],
-        ['streaming', t('streaming.title')],
-        ['locale', t('localeSection.title')],
-        ['tools', t('tools.title')],
-        ['downloads', t('downloads.title')],
-    ];
+    // 제목을 id로 묶어 둔 표 — `Record`라 새 섹션 id를 추가하고 제목을 빠뜨리면 컴파일이 실패하고, 목차 순서는
+    // `DEVELOPER_SECTION_IDS` 하나가 정한다.
+    const sectionTitles: Record<DeveloperSectionId, string> = {
+        quickstart: t('quickstart.title'),
+        authentication: t('authentication.title'),
+        'rate-limits': t('rateLimits.title'),
+        responses: t('responses.title'),
+        streaming: t('streaming.title'),
+        locale: t('localeSection.title'),
+        tools: t('tools.title'),
+        downloads: t('downloads.title'),
+    };
+    const toc = DEVELOPER_SECTION_IDS.map(
+        id => [id, sectionTitles[id]] as const
+    );
 
     const rateLimitHeaders: readonly InfoRow[] = [
         {
@@ -252,6 +263,99 @@ export async function DevelopersPage({
     }));
 
     const freshTool = tools.find(tool => tool.byok);
+    const quickstartTool = tools.find(tool => tool.name === QUICKSTART_TOOL);
+
+    const quickstartSteps: readonly {
+        readonly title: string;
+        readonly body: string;
+        readonly content: ReactNode;
+    }[] = [
+        {
+            title: t('quickstart.step1Title'),
+            body: t('quickstart.step1Body', {
+                max: API_KEY_MAX_ACTIVE_PER_USER,
+            }),
+            content: (
+                <LocaleLink
+                    href={ACCOUNT_PATH}
+                    prefetch={false}
+                    className={TEXT_LINK}
+                >
+                    {t('quickstart.step1Link')}
+                </LocaleLink>
+            ),
+        },
+        {
+            title: t('quickstart.step2Title'),
+            body: t('quickstart.step2Body'),
+            content: (
+                <CodeBlock
+                    code={`export ${API_KEY_ENV_NAME}=${API_KEY_PREFIX}…`}
+                    language="bash"
+                    label={t('quickstart.step2Label')}
+                />
+            ),
+        },
+        {
+            title: t('quickstart.step3Title'),
+            body: t('quickstart.step3Body'),
+            content: (
+                <div className="flex flex-col gap-3">
+                    <CodeBlock
+                        code={[
+                            `curl -s ${apiBase}/me \\`,
+                            `  -H "Authorization: Bearer $${API_KEY_ENV_NAME}"`,
+                        ].join('\n')}
+                        language="bash"
+                        label={t('quickstart.meLabel')}
+                    />
+                    {quickstartTool ? (
+                        <CodeBlock
+                            code={quickstartTool.curl}
+                            language="bash"
+                            label={t('quickstart.toolLabel', {
+                                name: quickstartTool.name,
+                            })}
+                        />
+                    ) : null}
+                </div>
+            ),
+        },
+        {
+            title: t('quickstart.skillTitle'),
+            body: t('quickstart.skillBody', { env: API_KEY_ENV_NAME }),
+            content: (
+                <>
+                    <CodeBlock
+                        code={[
+                            'mkdir -p ~/.claude/skills/siglens',
+                            `curl -s ${docUrl(PUBLIC_API_DOC_PATHS.skill)} \\`,
+                            '  -o ~/.claude/skills/siglens/SKILL.md',
+                        ].join('\n')}
+                        language="bash"
+                        label={t('quickstart.skillLabel')}
+                    />
+                    <p className="mt-3 text-sm leading-6 text-secondary-300">
+                        {t('quickstart.skillClaudeAi')}
+                    </p>
+                </>
+            ),
+        },
+    ];
+
+    const downloadOf = (
+        path: DownloadCardProps['path'],
+        body: string
+    ): DownloadCardProps => ({
+        path,
+        body,
+        action: t('downloads.action', { file: downloadFileName(path) }),
+    });
+    const downloads: readonly DownloadCardProps[] = [
+        downloadOf(PUBLIC_API_DOC_PATHS.openapiJson, t('downloads.jsonBody')),
+        downloadOf(PUBLIC_API_DOC_PATHS.openapiYaml, t('downloads.yamlBody')),
+        downloadOf(PUBLIC_API_DOC_PATHS.skill, t('downloads.skillBody')),
+    ];
 
     return (
         <main className="relative isolate flex-1 pb-16">
@@ -273,7 +377,7 @@ export async function DevelopersPage({
                     </p>
                     <div className="mt-6 flex flex-wrap gap-3">
                         <LocaleLink
-                            href="/account"
+                            href={ACCOUNT_PATH}
                             prefetch={false}
                             className={cn(BUTTON_PRIMARY, 'h-11 px-5 text-sm')}
                         >
@@ -310,96 +414,33 @@ export async function DevelopersPage({
                     <div className="min-w-0">
                         <Section
                             id="quickstart"
-                            title={t('quickstart.title')}
+                            title={sectionTitles['quickstart']}
                             sub={t('quickstart.sub')}
                         >
                             <ol className="mt-6 flex flex-col gap-4">
-                                <li className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                                    <h3 className={HEADING_SUBSECTION}>
-                                        {t('quickstart.step1Title')}
-                                    </h3>
-                                    <p className="mt-1 text-sm leading-6 text-secondary-300">
-                                        {t('quickstart.step1Body', {
-                                            max: API_KEY_MAX_ACTIVE_PER_USER,
-                                        })}
-                                    </p>
-                                    <LocaleLink
-                                        href="/account"
-                                        prefetch={false}
-                                        className={TEXT_LINK}
+                                {quickstartSteps.map(step => (
+                                    <li
+                                        key={step.title}
+                                        className={cn(
+                                            SURFACE_CARD,
+                                            'p-4 sm:p-5'
+                                        )}
                                     >
-                                        {t('quickstart.step1Link')}
-                                    </LocaleLink>
-                                </li>
-                                <li className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                                    <h3 className={HEADING_SUBSECTION}>
-                                        {t('quickstart.step2Title')}
-                                    </h3>
-                                    <p className="mt-1 mb-3 text-sm leading-6 text-secondary-300">
-                                        {t('quickstart.step2Body')}
-                                    </p>
-                                    <CodeBlock
-                                        code={`export ${API_KEY_ENV_NAME}=${API_KEY_PREFIX}…`}
-                                        language="bash"
-                                        label={t('quickstart.step2Label')}
-                                    />
-                                </li>
-                                <li className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                                    <h3 className={HEADING_SUBSECTION}>
-                                        {t('quickstart.step3Title')}
-                                    </h3>
-                                    <p className="mt-1 mb-3 text-sm leading-6 text-secondary-300">
-                                        {t('quickstart.step3Body')}
-                                    </p>
-                                    <div className="flex flex-col gap-3">
-                                        <CodeBlock
-                                            code={[
-                                                `curl -s ${apiBase}/me \\`,
-                                                `  -H "Authorization: Bearer $${API_KEY_ENV_NAME}"`,
-                                            ].join('\n')}
-                                            language="bash"
-                                            label={t('quickstart.meLabel')}
-                                        />
-                                        {tools[0] ? (
-                                            <CodeBlock
-                                                code={tools[0].curl}
-                                                language="bash"
-                                                label={t(
-                                                    'quickstart.toolLabel',
-                                                    { name: tools[0].name }
-                                                )}
-                                            />
-                                        ) : null}
-                                    </div>
-                                </li>
-                                <li className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                                    <h3 className={HEADING_SUBSECTION}>
-                                        {t('quickstart.skillTitle')}
-                                    </h3>
-                                    <p className="mt-1 mb-3 text-sm leading-6 text-secondary-300">
-                                        {t('quickstart.skillBody', {
-                                            env: API_KEY_ENV_NAME,
-                                        })}
-                                    </p>
-                                    <CodeBlock
-                                        code={[
-                                            'mkdir -p ~/.claude/skills/siglens',
-                                            `curl -s ${docUrl(PUBLIC_API_DOC_PATHS.skill)} \\`,
-                                            '  -o ~/.claude/skills/siglens/SKILL.md',
-                                        ].join('\n')}
-                                        language="bash"
-                                        label={t('quickstart.skillLabel')}
-                                    />
-                                    <p className="mt-3 text-sm leading-6 text-secondary-300">
-                                        {t('quickstart.skillClaudeAi')}
-                                    </p>
-                                </li>
+                                        <h3 className={HEADING_SUBSECTION}>
+                                            {step.title}
+                                        </h3>
+                                        <p className="mt-1 mb-3 text-sm leading-6 text-secondary-300">
+                                            {step.body}
+                                        </p>
+                                        {step.content}
+                                    </li>
+                                ))}
                             </ol>
                         </Section>
 
                         <Section
                             id="authentication"
-                            title={t('authentication.title')}
+                            title={sectionTitles['authentication']}
                             sub={t('authentication.sub')}
                         >
                             <div className="mt-4 max-w-2xl">
@@ -426,7 +467,7 @@ export async function DevelopersPage({
 
                         <Section
                             id="rate-limits"
-                            title={t('rateLimits.title')}
+                            title={sectionTitles['rate-limits']}
                             sub={t('rateLimits.sub')}
                         >
                             <p className={cn(BODY, 'mt-4')}>
@@ -456,7 +497,7 @@ export async function DevelopersPage({
 
                         <Section
                             id="responses"
-                            title={t('responses.title')}
+                            title={sectionTitles['responses']}
                             sub={t('responses.sub')}
                         >
                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -504,11 +545,13 @@ export async function DevelopersPage({
 
                         <Section
                             id="streaming"
-                            title={t('streaming.title')}
+                            title={sectionTitles['streaming']}
                             sub={t('streaming.sub')}
                         >
                             <p className={cn(BODY, 'mt-4')}>
-                                {t('streaming.how')}
+                                {t('streaming.how', {
+                                    deadline: FRESH_ANALYSIS_DEADLINE_SECONDS,
+                                })}
                             </p>
                             <p className={cn(BODY, 'mt-3')}>
                                 {t('streaming.parse')}
@@ -523,10 +566,7 @@ export async function DevelopersPage({
                                 <div className="mt-4">
                                     <CodeBlock
                                         code={[
-                                            freshTool.curl.replace(
-                                                'curl -s',
-                                                'curl -s --max-time 300'
-                                            ),
+                                            freshTool.curl,
                                             "  | jq 'if .error then {failed: .error} else .data end'",
                                         ].join('\n')}
                                         language="bash"
@@ -538,7 +578,7 @@ export async function DevelopersPage({
 
                         <Section
                             id="locale"
-                            title={t('localeSection.title')}
+                            title={sectionTitles['locale']}
                             sub={t('localeSection.sub')}
                         >
                             <p className={cn(BODY, 'mt-4')}>
@@ -557,7 +597,7 @@ export async function DevelopersPage({
 
                         <Section
                             id="tools"
-                            title={t('tools.title')}
+                            title={sectionTitles['tools']}
                             sub={t('tools.sub')}
                         >
                             <p className={cn(BODY, 'mt-4')}>
@@ -594,41 +634,13 @@ export async function DevelopersPage({
 
                         <Section
                             id="downloads"
-                            title={t('downloads.title')}
+                            title={sectionTitles['downloads']}
                             sub={t('downloads.sub')}
                         >
                             <ul className="mt-6 grid gap-3 sm:grid-cols-3">
-                                <DownloadCard
-                                    href={docHref(
-                                        PUBLIC_API_DOC_PATHS.openapiJson
-                                    )}
-                                    download="openapi.json"
-                                    title="openapi.json"
-                                    body={t('downloads.jsonBody')}
-                                    action={t('downloads.action', {
-                                        file: 'openapi.json',
-                                    })}
-                                />
-                                <DownloadCard
-                                    href={docHref(
-                                        PUBLIC_API_DOC_PATHS.openapiYaml
-                                    )}
-                                    download="openapi.yaml"
-                                    title="openapi.yaml"
-                                    body={t('downloads.yamlBody')}
-                                    action={t('downloads.action', {
-                                        file: 'openapi.yaml',
-                                    })}
-                                />
-                                <DownloadCard
-                                    href={docHref(PUBLIC_API_DOC_PATHS.skill)}
-                                    download="SKILL.md"
-                                    title="SKILL.md"
-                                    body={t('downloads.skillBody')}
-                                    action={t('downloads.action', {
-                                        file: 'SKILL.md',
-                                    })}
-                                />
+                                {downloads.map(item => (
+                                    <DownloadCard key={item.path} {...item} />
+                                ))}
                             </ul>
                             <p className="mt-6 max-w-2xl text-sm leading-6 text-secondary-400">
                                 {t('downloads.baseUrl')}{' '}

@@ -35,20 +35,12 @@ const PAGE_URL = `${SITE_URL}${DEVELOPERS_PATH}`;
 // 이 페이지는 DB·Redis·외부 API를 읽지 않아 E2E처럼 데이터 저장소가 없는 환경에서도 렌더된다.
 export const revalidate = 86400;
 
-function developersTitle(t: SeoTranslator): string {
-    return t('developers.title');
-}
-
 /**
  * `<title>`·OG 제목. `/methodology`와 같은 이유로 레이아웃 템플릿(`%s | 시그렌즈`)을 타지 않는다 —
  * 카탈로그 문구가 이미 브랜드로 시작하므로 `absolute`로 끊는다.
  */
 function developersFullTitle(t: SeoTranslator): string {
     return t('developers.metaTitle');
-}
-
-function developersDescription(t: SeoTranslator): string {
-    return t('developers.description');
 }
 
 /**
@@ -64,7 +56,7 @@ function buildDevelopersJsonLd(
         ...buildWebPageJsonLd({
             url: PAGE_URL,
             name: developersFullTitle(t),
-            description: developersDescription(t),
+            description: t('developers.description'),
             locale,
         }),
         dateModified: DEVELOPERS_UPDATED_AT.toISOString(),
@@ -81,7 +73,7 @@ export async function generateMetadata({
     const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const title = developersFullTitle(tSeo);
-    const description = developersDescription(tSeo);
+    const description = tSeo('developers.description');
     return {
         title: { absolute: title },
         description,
@@ -134,13 +126,13 @@ export default async function DevelopersRoute({
             <JsonLd data={buildDevelopersJsonLd(tSeo, locale)} />
             <JsonLd
                 data={buildBreadcrumbJsonLd(
-                    [{ name: developersTitle(tSeo), url: PAGE_URL }],
+                    [{ name: tSeo('developers.title'), url: PAGE_URL }],
                     locale
                 )}
             />
             <DevelopersPage
                 locale={locale}
-                title={developersTitle(tSeo)}
+                title={tSeo('developers.title')}
                 baseUrl={SITE_URL}
                 tools={tools}
                 updatedAt={formatKoreanDate(DEVELOPERS_UPDATED_AT, locale)}

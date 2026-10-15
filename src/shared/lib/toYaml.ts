@@ -118,7 +118,10 @@ function renderLiteral(text: string, depth: number): string {
 }
 
 /** `value`가 컨테이너가 아닐 때의 한 줄(또는 블록 리터럴) 표현. */
-function renderLeaf(value: string | number | boolean | null, depth: number) {
+function renderLeaf(
+    value: string | number | boolean | null,
+    depth: number
+): string {
     if (typeof value === 'string')
         return canUseBlockLiteral(value)
             ? renderLiteral(value, depth)
@@ -172,8 +175,9 @@ function renderInline(value: YamlValue, depth: number): string {
 function definedEntries(value: {
     readonly [key: string]: YamlValue | undefined;
 }): [string, YamlValue][] {
-    return Object.entries(value).flatMap(([key, child]) =>
-        child === undefined ? [] : [[key, child] as [string, YamlValue]]
+    return Object.entries(value).flatMap(
+        ([key, child]): [string, YamlValue][] =>
+            child === undefined ? [] : [[key, child]]
     );
 }
 

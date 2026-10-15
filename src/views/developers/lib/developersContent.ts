@@ -29,3 +29,12 @@ export const ERROR_RESPONSE_EXAMPLE = `{
     "message": "The tool arguments do not match the tool schema."
   }
 }`;
+
+/** 계정 화면(키 만들기·BYOK 키 등록). 히어로 버튼과 빠른 시작 링크가 같은 경로를 쓴다. */
+export const ACCOUNT_PATH = '/account';
+
+/** 빠른 시작의 첫 호출 예시 도구. 목록 순서가 아니라 이름으로 고른다 — 순서가 바뀌어도 예시가 같다. */
+export const QUICKSTART_TOOL = 'search_ticker';
+
+/** Skill 다운로드 파일 이름. 경로(`/skill`)에는 확장자가 없다. */
+export const SKILL_FILE_NAME = 'SKILL.md';

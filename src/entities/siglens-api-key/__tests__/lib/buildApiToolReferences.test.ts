@@ -1,10 +1,12 @@
 import type { AgentToolSpec } from '@y0ngha/siglens-core';
 import { API_GENERATABLE_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import {
+    buildApiToolReference,
     buildApiToolReferences,
     buildCurlExample,
     exampleArgumentsFor,
 } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 
 const spec = (
     name: string,
@@ -110,6 +112,49 @@ describe('buildCurlExample', () => {
                 `  -d '{"q":1}'`,
             ].join('\n')
         );
+    });
+});
+
+describe('buildCurlExample --max-time', () => {
+    it('adds --max-time only when asked', () => {
+        expect(buildCurlExample('https://x.test/a', {})).toMatch(
+            /^curl -s -X POST/
+        );
+        expect(
+            buildCurlExample('https://x.test/a', {}, { maxTimeSeconds: 42 })
+        ).toMatch(/^curl -s --max-time 42 -X POST/);
+    });
+});
+
+describe('buildApiToolReference', () => {
+    const fresh = spec('run_fresh_analysis', { symbol: { type: 'string' } }, [
+        'symbol',
+    ]);
+
+    it('builds one tool reference, the same as the list builder does', () => {
+        const single = buildApiToolReference({
+            baseUrl: 'https://x.test',
+            tool: fresh,
+        });
+        expect(
+            buildApiToolReferences({
+                baseUrl: 'https://x.test',
+                tools: [fresh],
+            })
+        ).toEqual([single]);
+    });
+
+    it('gives only the BYOK generation tool the deadline-bound --max-time', () => {
+        const base = 'https://x.test';
+        expect(
+            buildApiToolReference({ baseUrl: base, tool: fresh }).curl
+        ).toContain(`--max-time ${FRESH_ANALYSIS_DEADLINE_SECONDS}`);
+        expect(
+            buildApiToolReference({
+                baseUrl: base,
+                tool: spec('get_economy', {}),
+            }).curl
+        ).not.toContain('--max-time');
     });
 });
 

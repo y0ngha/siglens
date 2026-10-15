@@ -19,6 +19,25 @@ vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
         ]),
     createToolExecutor: vi.fn(),
 }));
+const failure = vi.hoisted(() => ({ on: false }));
+vi.mock(
+    '@/entities/siglens-api-key/lib/buildOpenApiDocument',
+    async importOriginal => {
+        const actual =
+            await importOriginal<
+                typeof import('@/entities/siglens-api-key/lib/buildOpenApiDocument')
+            >();
+        return {
+            ...actual,
+            buildOpenApiDocument: (
+                ...args: Parameters<typeof actual.buildOpenApiDocument>
+            ) => {
+                if (failure.on) throw new Error('boom');
+                return actual.buildOpenApiDocument(...args);
+            },
+        };
+    }
+);
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://example.test' }));
 
 import { parse } from 'yaml';
@@ -105,4 +124,36 @@ describe('GET /api/v1/openapi.yaml', () => {
         const yaml = await (await getYaml()).text();
         expect(parse(yaml)).toEqual(json);
     });
+});
+
+describe('openapi routes when generation fails', () => {
+    afterEach(() => {
+        failure.on = false;
+    });
+
+    it.each([
+        ['openapi.json', getJson],
+        ['openapi.yaml', getYaml],
+    ])(
+        '%s answers a generic 500 envelope that browsers can still read (CORS on errors)',
+        async (_name, get) => {
+            failure.on = true;
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            const response = await get();
+            errorSpy.mockRestore();
+            expect(response.status).toBe(500);
+            expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
+                '*'
+            );
+            expect(response.headers.get('Cache-Control')).toBe('no-store');
+            const body = (await response.json()) as {
+                error: { code: string; message: string };
+            };
+            expect(body.error.code).toBe('internal_error');
+            // 내부 오류 내용은 싣지 않는다.
+            expect(JSON.stringify(body)).not.toContain('boom');
+        }
+    );
 });

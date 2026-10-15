@@ -5,7 +5,7 @@ import {
     type ApiErrorScope,
 } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
 import {
-    buildApiToolReferences,
+    buildApiToolReference,
     type ApiToolReference,
 } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
 import {
@@ -13,6 +13,7 @@ import {
     renderFreshAnalysisNotes,
     renderLimits,
 } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     API_KEY_PREFIX,
     LOCALE_HEADER_DOC_NAME,
@@ -22,6 +23,7 @@ import {
     PUBLIC_API_RATE_LIMITS,
 } from '@/shared/config/publicApi';
 import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
+import { USER_TIER_VALUES } from '@/shared/db/constants';
 import type { YamlValue } from '@/shared/lib/toYaml';
 
 export const OPENAPI_VERSION = '3.1.0';
@@ -55,8 +57,6 @@ const ref = (target: string): OpenApiObject => ({
 });
 
 const JSON_CONTENT = 'application/json';
-
-// ─── 오류 응답 ──────────────────────────────────────────────────────────────
 
 /** 오류 응답 묶음. 이름 접두가 `components.responses`의 키가 된다. */
 interface ErrorGroup {
@@ -164,8 +164,6 @@ function errorRefs(group: ErrorGroup): OpenApiObject {
     );
 }
 
-// ─── 도구 → 요청 본문 스키마 ────────────────────────────────────────────────
-
 function propertySchema(prop: JsonSchemaProperty): OpenApiObject {
     return {
         type: prop.type,
@@ -195,8 +193,6 @@ function requestSchema(tool: AgentToolSpec): OpenApiObject {
     };
 }
 
-// ─── 경로 ───────────────────────────────────────────────────────────────────
-
 const LOCALE_PARAMETER = ref('parameters/SiglensLocale');
 const SECURED: YamlValue[] = [{ [BEARER_SCHEME]: [] }];
 
@@ -215,7 +211,7 @@ function aiRateLimitHeaders(): OpenApiObject {
 const FRESH_ANALYSIS_STREAM_DESCRIPTION = [
     'Returned when a cached analysis exists (`meta.source: "cache"`) or a new analysis was generated (`meta.source: "fresh"`).',
     '',
-    'A new analysis takes 30-250 seconds. After the request passes validation, authentication, rate limits and the model and key checks, the response starts immediately as HTTP 200 and is written in two parts: whitespace keepalive bytes (a newline, sent periodically so proxies do not close the silent connection), then the JSON body. Leading whitespace is valid JSON, so parse the whole body. Because the 200 status is already sent, a failure after that point is a 200 whose body is `{ "error": { ... } }`. Always check for an `error` field, even on 200.',
+    `A new analysis usually takes about a minute and never longer than the ${FRESH_ANALYSIS_DEADLINE_SECONDS}-second tool deadline (then \`tool_timeout\`). After the request passes validation, authentication, rate limits and the model and key checks, the response starts immediately as HTTP 200 and is written in two parts: whitespace keepalive bytes (a newline, sent periodically so proxies do not close the silent connection), then the JSON body. Leading whitespace is valid JSON, so parse the whole body. Because the 200 status is already sent, a failure after that point is a 200 whose body is \`{ "error": { ... } }\`. Always check for an \`error\` field, even on 200.`,
     '',
     'A streamed response carries `X-RateLimit-AI-*` for the `ai` quota it used. Cache hits are normal JSON responses without those headers.',
 ].join('\n');
@@ -267,7 +263,7 @@ function toolOperation(
             content: {
                 [JSON_CONTENT]: {
                     schema: requestSchema(tool),
-                    example: reference.exampleArgs as YamlValue,
+                    example: reference.exampleArgs,
                 },
             },
         },
@@ -282,13 +278,10 @@ function buildToolPaths(
 ): OpenApiObject {
     return Object.fromEntries(
         tools.map(tool => {
-            const [reference] = buildApiToolReferences({
-                baseUrl,
-                tools: [tool],
-            });
+            const reference = buildApiToolReference({ baseUrl, tool });
             return [
                 `/tools/${tool.name}`,
-                { post: toolOperation(tool, reference as ApiToolReference) },
+                { post: toolOperation(tool, reference) },
             ];
         })
     );
@@ -388,8 +381,6 @@ function buildDocPaths(): OpenApiObject {
         ),
     };
 }
-
-// ─── components ─────────────────────────────────────────────────────────────
 
 function rateWindowSchema(): OpenApiObject {
     return {
@@ -506,7 +497,7 @@ function buildSchemas(): OpenApiObject {
                         },
                         tier: {
                             type: 'string',
-                            enum: ['free', 'member', 'pro'],
+                            enum: [...USER_TIER_VALUES],
                         },
                         defaultModel: {
                             type: ['string', 'null'],
@@ -624,8 +615,6 @@ function buildComponents(): OpenApiObject {
         responses: buildErrorResponses(),
     };
 }
-
-// ─── 문서 ───────────────────────────────────────────────────────────────────
 
 function buildInfoDescription(baseUrl: string): string {
     return [

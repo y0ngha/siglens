@@ -5,6 +5,14 @@ import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 
+type CopyState = 'copied' | 'failed' | 'idle';
+
+function copyStateOf(copied: boolean, failed: boolean): CopyState {
+    if (copied) return 'copied';
+    if (failed) return 'failed';
+    return 'idle';
+}
+
 interface CodeBlockProps {
     /** 복사되는 원문이자 화면에 그대로 보이는 텍스트. */
     readonly code: string;
@@ -25,11 +33,11 @@ export function CodeBlock({ code, label, language }: CodeBlockProps) {
     const t = useTranslations('shared.ui');
     const { copied, failed, copy } = useCopyToClipboard();
     // 결과가 버튼 글자와 상태 영역에 같이 나가야 보는 사람과 듣는 사람이 같은 결과를 안다.
-    const status = copied
-        ? t('CodeBlock.copied')
-        : failed
-          ? t('CodeBlock.copyFailed')
-          : '';
+    const status = {
+        copied: t('CodeBlock.copied'),
+        failed: t('CodeBlock.copyFailed'),
+        idle: '',
+    }[copyStateOf(copied, failed)];
     const actionText = status === '' ? t('CodeBlock.copy') : status;
     return (
         <div className="overflow-hidden rounded-lg border border-border-control bg-secondary-950">
