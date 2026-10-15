@@ -1,4 +1,7 @@
-import { buildApiModelOptionGroups } from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
+import {
+    buildApiModelOptionGroups,
+    listApiKeyProviderLabels,
+} from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
 import { listApiSelectableModels } from '@/entities/siglens-api-key/lib/apiModels';
 
 describe('buildApiModelOptionGroups', () => {
@@ -43,5 +46,15 @@ describe('buildApiModelOptionGroups', () => {
             'google',
             'openai',
         ]);
+    });
+});
+
+describe('listApiKeyProviderLabels', () => {
+    it('생성 가능한 모델이 있는 provider의 표시 이름만 나열한다(deepseek은 byok 모델이 없어 빠진다)', () => {
+        const label = listApiKeyProviderLabels();
+        expect(label).toContain('Claude (Anthropic)');
+        expect(label).toContain('ChatGPT (OpenAI)');
+        expect(label).toContain('Gemini (Google)');
+        expect(label).not.toContain('DeepSeek');
     });
 });

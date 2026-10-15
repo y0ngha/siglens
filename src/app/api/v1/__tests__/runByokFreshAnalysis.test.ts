@@ -187,10 +187,8 @@ vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
 }));
 
-import {
-    prepareRunner,
-    runByokFreshAnalysis,
-} from '@/app/api/v1/runByokFreshAnalysis';
+import { prepareRunner } from '@/app/api/v1/freshAnalysisRunner';
+import { runByokFreshAnalysis } from '@/app/api/v1/runByokFreshAnalysis';
 import type { ModelId } from '@y0ngha/siglens-core';
 import {
     __resetFreshSemaphoreForTests,
@@ -393,6 +391,22 @@ describe('공유 캐시 적중 — LLM 미호출, ai 한도 미소비', () => {
             keyUsedForLlm: null,
         });
         expect(m.consume).not.toHaveBeenCalled();
+    });
+
+    it('서버 키 모델은 키 조회를 하지 않으므로 키 저장소 장애가 캐시 읽기를 막지 않는다', async () => {
+        m.findKey.mockRejectedValue(new Error('key store down'));
+        const result = await run({ model: FREE_MODEL });
+        expect(result).toMatchObject({
+            ok: true,
+            meta: { source: 'cache', model: FREE_MODEL },
+        });
+        expect(m.findKey).not.toHaveBeenCalled();
+    });
+
+    it('반대로 생성 가능한 모델은 키 저장소 장애가 503이다(대조)', async () => {
+        m.findKey.mockRejectedValue(new Error('key store down'));
+        const result = await run({ model: BYOK_MODEL });
+        expect(result).toMatchObject({ ok: false, status: 503 });
     });
 
     it('free/member 등급 모델(서버 키 모델)도 캐시는 읽는다', async () => {

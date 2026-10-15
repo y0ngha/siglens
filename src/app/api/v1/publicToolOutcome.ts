@@ -35,3 +35,15 @@ export function isPublicToolStream(
 ): result is PublicToolStream {
     return 'streaming' in result;
 }
+
+/** `truncateToolResult`가 크기 상한에 걸렸을 때 만드는 `{ truncated: true, preview }` 봉투인지. */
+export function isTruncatedEnvelope(value: unknown): boolean {
+    if (typeof value !== 'object' || value === null || Array.isArray(value))
+        return false;
+    return (
+        'truncated' in value &&
+        value.truncated === true &&
+        'preview' in value &&
+        typeof value.preview === 'string'
+    );
+}

@@ -4,7 +4,10 @@ import { getTranslations } from 'next-intl/server';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import { SiglensApiKeySection } from '@/features/siglens-api-key-management/ui/SiglensApiKeySection';
 import { DefaultModelForm } from '@/features/siglens-api-key-management/ui/DefaultModelForm';
-import { buildApiModelOptionGroups } from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
+import {
+    buildApiModelOptionGroups,
+    listApiKeyProviderLabels,
+} from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
 import { EmailReportLinkCard } from '@/features/email-report-settings/ui/EmailReportLinkCard';
 import { localePath, type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
@@ -143,6 +146,7 @@ async function AccountContent({ locale }: { locale: Locale }) {
                                     : null
                             }
                             byokHref={`#${BYOK_SECTION_ID}`}
+                            keyProviderLabels={listApiKeyProviderLabels()}
                         />
                     }
                 />

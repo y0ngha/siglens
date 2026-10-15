@@ -24,8 +24,11 @@ type Tier = Parameters<typeof resolveHoldingPositionBucket>[0]['tier'];
  * triggered from chat WRITES the same personalized cache key the site reads.
  * Degrades to `undefined` (no holding, guest, or lookup failure) — see
  * `resolveHoldingPositionBucket`'s own JSDoc.
+ *
+ * Not shared with `get_cached_analysis`'s `positionBucketFor`: that one takes only a symbol and resolves the market
+ * profile itself (degrading on failure), while a fresh run already holds the resolved profile.
  */
-export async function positionBucketFor(
+async function freshRunPositionBucket(
     userId: string,
     tier: Tier,
     symbol: string,
@@ -88,7 +91,7 @@ export async function loadTechnicalAnalysisInputs(input: {
             symbol,
             ...marketEventsLookback(timeframe, session),
         }),
-        positionBucketFor(
+        freshRunPositionBucket(
             input.userId,
             input.tier,
             symbol,

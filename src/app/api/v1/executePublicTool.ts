@@ -17,6 +17,7 @@ import {
 import { API_STATUS } from './apiResponse';
 import {
     isPublicToolStream,
+    isTruncatedEnvelope,
     type PublicToolOutcome,
     type PublicToolResult,
 } from './publicToolOutcome';
@@ -88,17 +89,6 @@ function isToolErrorPayload(value: unknown): value is ToolErrorPayload {
         value !== null &&
         !Array.isArray(value) &&
         typeof (value as { error?: unknown }).error === 'string'
-    );
-}
-
-/** `truncateToolResult`가 크기 상한에 걸렸을 때 만드는 `{ truncated: true, preview }` 봉투. */
-function isTruncatedEnvelope(value: unknown): boolean {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value) &&
-        (value as { truncated?: unknown }).truncated === true &&
-        typeof (value as { preview?: unknown }).preview === 'string'
     );
 }
 

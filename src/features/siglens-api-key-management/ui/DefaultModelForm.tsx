@@ -16,6 +16,8 @@ interface DefaultModelFormProps {
     defaultModelLabel: string | null;
     /** AI 모델 API 키(BYOK) 섹션으로 가는 앵커. */
     byokHref: string;
+    /** 키를 등록하면 모델을 고를 수 있는 회사 이름 목록(`listApiKeyProviderLabels`). */
+    keyProviderLabels: string;
 }
 
 const STATUS_ID = 'siglens-api-default-model-status';
@@ -29,6 +31,7 @@ export function DefaultModelForm({
     groups,
     defaultModelLabel,
     byokHref,
+    keyProviderLabels,
 }: DefaultModelFormProps) {
     const t = useTranslations('features.siglens-api-key-management');
     const { state, formAction } = useApiDefaultModelForm();
@@ -55,7 +58,7 @@ export function DefaultModelForm({
 
             {groups.length === 0 ? (
                 <p className="text-sm text-secondary-300">
-                    {t('DefaultModelForm.noKeys')}{' '}
+                    {t('DefaultModelForm.noKeys', { v0: keyProviderLabels })}{' '}
                     {/* 같은 페이지 안의 앵커라 next/link가 아니라 일반 앵커다. */}
                     <a
                         href={byokHref}

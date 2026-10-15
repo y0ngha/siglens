@@ -1,6 +1,7 @@
 import { getModelAccess, TIER_CONFIG } from '@y0ngha/siglens-core';
 import {
     API_GENERATABLE_MODELS,
+    API_GENERATABLE_PROVIDERS,
     API_KNOWN_MODELS,
     checkApiModel,
     isApiGeneratableModel,
@@ -24,6 +25,16 @@ describe('API_GENERATABLE_MODELS', () => {
             expect(getModelAccess(id)).toBe('byok');
         expect(API_GENERATABLE_MODELS).not.toContain('claude-haiku-5-5');
         expect(API_GENERATABLE_MODELS).not.toContain('claude-sonnet-5-5');
+    });
+});
+
+describe('API_GENERATABLE_PROVIDERS', () => {
+    it('생성 가능한 모델이 있는 provider만이다', () => {
+        expect([...API_GENERATABLE_PROVIDERS].toSorted()).toEqual([
+            'anthropic',
+            'google',
+            'openai',
+        ]);
     });
 });
 

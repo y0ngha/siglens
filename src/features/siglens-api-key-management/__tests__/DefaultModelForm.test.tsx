@@ -55,6 +55,7 @@ function renderForm(
             groups={[ANTHROPIC, OPENAI]}
             defaultModelLabel={null}
             byokHref="#byok-keys"
+            keyProviderLabels="Claude (Anthropic), Gemini (Google)"
             {...props}
         />
     );
@@ -177,9 +178,11 @@ describe('DefaultModelForm — 키가 없을 때', () => {
         ).toHaveAttribute('href', '#byok-keys');
     });
 
-    it('안내 문구가 있다', () => {
+    it('안내 문구에 키를 등록할 수 있는 회사 목록을 인자로 주입한다', () => {
         expect(
-            screen.getByText(/직접 만들 수 있는 모델이 아직 없어요/)
+            screen.getByText(
+                /직접 만들 수 있는 모델이 아직 없어요. Claude \(Anthropic\), Gemini \(Google\) 중 하나의 BYOK 키를/
+            )
         ).toBeInTheDocument();
     });
 });

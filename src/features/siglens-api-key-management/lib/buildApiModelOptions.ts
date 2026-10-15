@@ -1,5 +1,8 @@
 import { getProviderForModel } from '@y0ngha/siglens-core';
-import { listApiSelectableModels } from '@/entities/siglens-api-key/lib/apiModels';
+import {
+    API_GENERATABLE_PROVIDERS,
+    listApiSelectableModels,
+} from '@/entities/siglens-api-key/lib/apiModels';
 import type { LlmProvider } from '@/shared/config/llmProviders';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
@@ -23,16 +26,24 @@ export interface ApiModelOptionGroup {
 export function buildApiModelOptionGroups(
     registeredProviders: readonly LlmProvider[]
 ): ApiModelOptionGroup[] {
-    const groups = new Map<LlmProvider, ApiModelOptionGroup>();
-    for (const id of listApiSelectableModels(registeredProviders)) {
-        const provider = getProviderForModel(id);
-        const group = groups.get(provider) ?? {
-            provider,
-            providerLabel: LLM_PROVIDER_LABELS[provider],
-            options: [],
-        };
-        group.options.push({ id, label: getModelDisplay(id).fullName });
-        groups.set(provider, group);
-    }
-    return [...groups.values()];
+    const ids = listApiSelectableModels(registeredProviders);
+    const providers = [...new Set(ids.map(id => getProviderForModel(id)))];
+    return providers.map(provider => ({
+        provider,
+        providerLabel: LLM_PROVIDER_LABELS[provider],
+        options: ids
+            .filter(id => getProviderForModel(id) === provider)
+            .map(id => ({ id, label: getModelDisplay(id).fullName })),
+    }));
+}
+
+/**
+ * 키를 등록하면 모델을 고를 수 있는 회사들의 표시 이름 목록(예: "Claude (Anthropic), Gemini (Google), …").
+ * 안내 문구에 회사 이름을 박아 두면 core 로스터가 바뀔 때 어긋나므로, 생성 가능한 모델이 실제로 있는
+ * provider에서 파생한다(CONVENTIONS.md#I18-6: 문구에는 ICU 인자로 주입).
+ */
+export function listApiKeyProviderLabels(): string {
+    return API_GENERATABLE_PROVIDERS.map(
+        provider => LLM_PROVIDER_LABELS[provider]
+    ).join(', ');
 }

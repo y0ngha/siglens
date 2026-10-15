@@ -1028,7 +1028,7 @@
                 "description": "When you leave out model on an API request for a new analysis, this model is used. The analysis runs on your own registered BYOK key and is billed to that key.",
                 "goToByok": "Go to AI model API keys",
                 "hint": "Only BYOK-class models can generate new analyses. Free and member models can only read the shared cache. Models are listed only for providers you have registered a key with.",
-                "noKeys": "You don't have a model you can run on your own key yet. Register a BYOK key for Claude, ChatGPT or Gemini, then pick a model here.",
+                "noKeys": "You don't have a model you can run on your own key yet. Register a BYOK key for one of {v0}, then pick a model here.",
                 "notSetOption": "Not set (pass model on every request)",
                 "saveButton": "Save",
                 "saved": "Default model saved.",
