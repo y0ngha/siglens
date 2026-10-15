@@ -27,7 +27,11 @@ export function WatchlistQuickSheet({
         <Drawer.Root open={open} onOpenChange={onOpenChange}>
             <Drawer.Portal>
                 <Drawer.Overlay className="fixed inset-0 z-[60] bg-black/60" />
+                {/* `data-modal-sheet`: 열려 있는 동안 globals.css가 PWA 설치 배너·Ask-AI FAB을 숨긴다.
+                    모달 시트는 바깥 요소의 pointer-events를 끄므로(Radix Dialog), 시트 위에 떠 있는
+                    배너의 X를 누르면 탭이 배너를 통과해 아래의 시트 링크("관심종목 설정하기")가 눌렸다. */}
                 <Drawer.Content
+                    data-modal-sheet
                     aria-describedby={undefined}
                     className="fixed inset-x-0 bottom-0 z-[60] flex h-[min(80svh,40rem)] flex-col rounded-t-lg border-t border-secondary-600 bg-secondary-800 outline-none"
                 >
