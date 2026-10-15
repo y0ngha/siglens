@@ -2467,6 +2467,7 @@
             "ChartContent": {
                 "93c3a3": "The chart does not reflect Pre-market, After-market prices. | ",
                 "d1a23e": "Adjust Panel Width",
+                "extendedHoursNotice": "Shaded areas are pre-/after-market (extended hours) trading; indicators and AI analysis use regular-session bars only. | ",
                 "f69071": "AI Chart Analysis",
                 "quoteAsOfLoad": "Prices are as of page load time.",
                 "quoteDelayed": "Price data is delayed by approximately {v0} minutes."
@@ -3348,6 +3349,7 @@
                 "6c577b": "{v0} breakout",
                 "87cc60": "Bounce {v0}",
                 "a547a0": "Price Chart",
+                "extendedHoursLegend": "Shaded: extended hours",
                 "fd8510": "ABC downside target {v0}",
                 "b7de20": "Invalidation",
                 "c70cbe": "{v0} invalidation",
@@ -3397,7 +3399,9 @@
                 "ac1149": "Downtrend Trendline #{v0}",
                 "bdeea2": "Chart Pattern",
                 "bfe4b6": "Uptrend Trendline #{v0}",
-                "c178bc": "Partially On"
+                "c178bc": "Partially On",
+                "extendedHours": "Show extended hours (pre/after-market)",
+                "settingsTrigger": "Chart settings"
             }
         },
         "ask-ai-fab": {

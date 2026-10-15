@@ -3425,5 +3425,9 @@
     "entities.email-report.sample.aapl.newsSummary1": "b9912059d374",
     "features.email-report-settings.EmailReportLinkCard.heading": "411c76ce246f",
     "features.email-report-settings.EmailReportLinkCard.description": "3434176bf0ca",
-    "features.email-report-settings.EmailReportLinkCard.link": "8be32910f3bc"
+    "features.email-report-settings.EmailReportLinkCard.link": "8be32910f3bc",
+    "widgets.chart.ChartOverlayMenu.extendedHours": "7ff1ef1013fa",
+    "widgets.chart.ChartOverlayMenu.settingsTrigger": "8198910f75f4",
+    "widgets.chart.StockChart.extendedHoursLegend": "8e76ad7a1a47",
+    "views.symbol.ChartContent.extendedHoursNotice": "dedf14bfd3a6"
 }

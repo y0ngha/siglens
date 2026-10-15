@@ -65,6 +65,12 @@ export const QUERY_KEYS = {
     /** 종목 공포·탐욕(서버 계산, 5년 기준). fmpSymbol이 봉을 바꾸므로 키에 포함. */
     symbolFearGreed: (symbol: string, fmpSymbol?: string) =>
         ['symbol-fear-greed', upper(symbol), fmpSymbol] as const,
+    /**
+     * 프리·애프터마켓 봉(표시 전용). `bars` 키와 **접두사부터 다르다** — `barsPrefix` 취소·무효화가
+     * 확장 봉을 건드리지 않고, 정규장 봉의 캐시 항목과 섞이지 않는다.
+     */
+    extendedBars: (symbol: string, timeframe: Timeframe, fmpSymbol?: string) =>
+        ['extended-bars', upper(symbol), timeframe, fmpSymbol] as const,
     /** 프리·애프터마켓 한 줄 시세(표시 전용 — 봉·지표와 무관). */
     extendedQuote: (symbol: string) =>
         ['extended-quote', upper(symbol)] as const,

@@ -574,4 +574,168 @@ describe('useChartSync', () => {
             );
         });
     });
+
+    describe('사용자 조정 기록(userAdjustedViewRef)', () => {
+        function chartWithElement() {
+            const chart = makeMockChart();
+            const element = document.createElement('div');
+            return {
+                chart: {
+                    ...chart,
+                    chartElement: () => element,
+                } as never,
+                element,
+            };
+        }
+
+        it('기본값은 false다', () => {
+            const { result } = renderHook(() => useChartSync());
+            expect(result.current.isUserAdjustedView()).toBe(false);
+        });
+
+        it.each(['pointerdown', 'wheel', 'touchstart'])(
+            '가격 차트의 %s 입력으로 켜진다',
+            type => {
+                const { result } = renderHook(() => useChartSync());
+                const { chart, element } = chartWithElement();
+                result.current.handleStockChartReady(chart);
+                element.dispatchEvent(new Event(type));
+                expect(result.current.isUserAdjustedView()).toBe(true);
+            }
+        );
+
+        it.each(['pointerdown', 'wheel', 'touchstart'])(
+            '거래량 차트의 %s 입력으로도 켜진다',
+            type => {
+                const { result } = renderHook(() => useChartSync());
+                const { chart, element } = chartWithElement();
+                result.current.handleVolumeChartReady(chart);
+                element.dispatchEvent(new Event(type));
+                expect(result.current.isUserAdjustedView()).toBe(true);
+            }
+        );
+
+        it('차트가 제거되면 입력 리스너를 뗀다(가격·거래량 모두)', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = chartWithElement();
+            const volume = chartWithElement();
+            result.current.handleStockChartReady(stock.chart);
+            result.current.handleVolumeChartReady(volume.chart);
+            result.current.handleStockChartRemove();
+            result.current.handleVolumeChartRemove();
+
+            stock.element.dispatchEvent(new Event('wheel'));
+            volume.element.dispatchEvent(new Event('pointerdown'));
+            expect(result.current.isUserAdjustedView()).toBe(false);
+        });
+
+        it('resetUserAdjustedView가 기록을 지운다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const { chart, element } = chartWithElement();
+            result.current.handleStockChartReady(chart);
+            element.dispatchEvent(new Event('wheel'));
+            expect(result.current.isUserAdjustedView()).toBe(true);
+            result.current.resetUserAdjustedView();
+            expect(result.current.isUserAdjustedView()).toBe(false);
+        });
+
+        it('요소를 줄 수 없는 차트(chartElement 없음)는 입력을 듣지 않고도 던지지 않는다', () => {
+            const { result } = renderHook(() => useChartSync());
+            expect(() =>
+                result.current.handleStockChartReady(makeMockChart() as never)
+            ).not.toThrow();
+        });
+    });
+
+    describe('runVolumeDataUpdate — 거래량 갱신이 가격 차트의 범위를 덮지 않는다', () => {
+        function pair() {
+            const stock = makeMockChart();
+            const volume = makeMockChart();
+            const stockTs = stock._timeScaleMock as Record<string, unknown>;
+            stockTs.getVisibleLogicalRange = vi.fn(() => ({
+                from: 10,
+                to: 90,
+            }));
+            const { result } = renderHook(() => useChartSync());
+            result.current.handleStockChartReady(stock as never);
+            result.current.handleVolumeChartReady(volume as never);
+            // 같은 이벤트에 축 폭 맞춤 콜백(인자 없음)도 구독된다 — 범위 인자를 받는 쪽이 동기화 핸들러다.
+            const volumeHandler =
+                volume._timeScaleMock.subscribeVisibleLogicalRangeChange.mock.calls
+                    .map(
+                        ([handler]) =>
+                            handler as (
+                                r: { from: number; to: number } | null
+                            ) => void
+                    )
+                    .find(handler => handler.length === 1)!;
+            return { stock, volume, result, volumeHandler };
+        }
+
+        it('갱신 밖의 거래량 범위 변경(사용자가 거래량을 밂)은 가격 차트로 전해진다', () => {
+            const { stock, volumeHandler } = pair();
+            volumeHandler({ from: 1, to: 2 });
+            expect(
+                stock._timeScaleMock.setVisibleLogicalRange
+            ).toHaveBeenCalledWith({
+                from: 1,
+                to: 2,
+            });
+        });
+
+        it('갱신 중 거래량이 내는 범위 변경(오른쪽 여백 보정)은 가격 차트로 전해지지 않는다', () => {
+            const { stock, result, volumeHandler } = pair();
+            result.current.runVolumeDataUpdate(() => {
+                volumeHandler({ from: 500, to: 900 }); // 낡은 범위
+            });
+            expect(
+                stock._timeScaleMock.setVisibleLogicalRange
+            ).not.toHaveBeenCalledWith({
+                from: 500,
+                to: 900,
+            });
+        });
+
+        it('갱신이 끝나면 거래량 차트를 가격 차트의 현재 범위에 맞춘다', () => {
+            const { volume, result } = pair();
+            const update = vi.fn();
+            result.current.runVolumeDataUpdate(update);
+            expect(update).toHaveBeenCalledTimes(1);
+            expect(
+                volume._timeScaleMock.setVisibleLogicalRange
+            ).toHaveBeenCalledWith({
+                from: 10,
+                to: 90,
+            });
+        });
+
+        it('갱신이 던져도 억제를 풀어 이후 범위 전달이 막히지 않는다', () => {
+            const { stock, result, volumeHandler } = pair();
+            expect(() =>
+                result.current.runVolumeDataUpdate(() => {
+                    throw new Error('setData failed');
+                })
+            ).toThrow('setData failed');
+            volumeHandler({ from: 7, to: 8 });
+            expect(
+                stock._timeScaleMock.setVisibleLogicalRange
+            ).toHaveBeenCalledWith({
+                from: 7,
+                to: 8,
+            });
+        });
+
+        it('가격 차트가 아직 범위를 모르면(null) 맞추지 않고 갱신만 한다', () => {
+            const { stock, volume, result } = pair();
+            (
+                stock._timeScaleMock as Record<string, unknown>
+            ).getVisibleLogicalRange = vi.fn(() => null);
+            const update = vi.fn();
+            result.current.runVolumeDataUpdate(update);
+            expect(update).toHaveBeenCalled();
+            expect(
+                volume._timeScaleMock.setVisibleLogicalRange
+            ).not.toHaveBeenCalled();
+        });
+    });
 });

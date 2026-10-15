@@ -5,7 +5,7 @@ import { INTL_LOCALE } from '@/shared/i18n/locales';
 
 import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
     IChartApi,
     ISeriesApi,
@@ -24,6 +24,19 @@ import type {
 } from '@y0ngha/siglens-core';
 import { getTimeFormatter } from '@/shared/lib/timeFormat';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import {
+    buildExtendedSessionRanges,
+    isExtendedBarTimeframe,
+    type ExtendedSessionRange,
+} from '@/shared/api/market/extendedBarsSession';
+import { buildCandlestickDataWithExtended } from './utils/extendedBarsDisplay';
+import { useExtendedSessionBand } from './hooks/useExtendedSessionBand';
+import { createExtendedGapController } from './utils/extendedGapChart';
+import {
+    restoreVisibleView,
+    snapshotVisibleView,
+    type VisibleViewSnapshot,
+} from './utils/visibleViewSnapshot';
 import { useMAOverlay } from './hooks/useMAOverlay';
 import { useEMAOverlay } from './hooks/useEMAOverlay';
 import { useBollingerOverlay } from './hooks/useBollingerOverlay';
@@ -55,13 +68,13 @@ import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
 import { OverlayLegend } from './OverlayLegend';
 import { buildPaneLabels } from './utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from './utils/overlayLabelUtils';
-import { buildCandlestickData } from './utils/candlestickDataUtils';
 import {
     EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
 } from '@y0ngha/siglens-core';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import type { ToggleSetting } from './types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import { ChartOverlayMenu } from './ui/ChartOverlayMenu';
@@ -100,6 +113,8 @@ const EMPTY_OVERLAY_ITEMS: readonly OverlayMenuItem[] = [];
 const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
 const NOOP_SET_VISIBLE = (): void => {};
 const EMPTY_OVERLAY_COLORS: Record<string, string> = {};
+const EMPTY_BARS: Bar[] = [];
+const EMPTY_SESSION_RANGES: readonly ExtendedSessionRange[] = [];
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -109,7 +124,28 @@ interface CommonHookParams {
 }
 
 interface StockChartProps {
+    /**
+     * **정규장 봉** — 지표·작도·캔들 패턴·Elder 임펄스 색의 기준이다. 모든 지표 오버레이는 이
+     * 배열과 짝지어지고(tail 정렬) 이 봉들의 시각에 찍힌다. 시간외 봉이 있어도 바뀌지 않는다.
+     */
     bars: Bar[];
+    /**
+     * 캔들·거래량에 그릴 봉 전체(정규장 봉 + 시간외 봉, 시각 오름차순). 생략하면 `bars`.
+     * 시간외 봉이 없을 때는 `bars`와 같은 참조여야 한다(불필요한 재계산 방지).
+     */
+    displayBars?: Bar[];
+    /** `displayBars` 중 프리·애프터마켓 봉만. 비어 있으면 캔들·음영·범례가 기존과 같다. */
+    extendedBars?: Bar[];
+    /**
+     * 다른 차트(거래량)에서 사용자가 밀거나 확대했는가(`useChartSync.isUserAdjustedView`). 이 차트의 입력과
+     * 합쳐 "사용자가 보기를 조정했다"를 판정한다 — 거래량 pane을 밀어 본 사용자의 보기가 시간외 봉 도착에
+     * 날아가지 않게 한다. 생략하면 이 차트의 입력만 센다.
+     */
+    isViewAdjustedElsewhere?: () => boolean;
+    /** 맞춤이 새로 일어나 조정 기록을 지울 때 부른다(`useChartSync.resetUserAdjustedView`). */
+    onViewAdjustmentReset?: () => void;
+    /** 시간외 표시 토글. 넘기면 "차트 작도" 메뉴에 행이 생긴다(미국 주식 인트라데이만). */
+    extendedHours?: ToggleSetting;
     timeframe: Timeframe;
     indicators?: IndicatorResult;
     actionPrices?: ValidatedActionPrices;
@@ -155,6 +191,11 @@ const defaultMeasureText = createCanvasTextMeasurer(LEVEL_TITLE_FONT);
 
 export function StockChart({
     bars,
+    displayBars,
+    extendedBars = EMPTY_BARS,
+    extendedHours,
+    isViewAdjustedElsewhere,
+    onViewAdjustmentReset,
     timeframe,
     indicators = EMPTY_INDICATOR_RESULT,
     actionPrices,
@@ -256,6 +297,14 @@ export function StockChart({
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
+    // 사용자가 이 차트를 직접 밀거나 확대했는가, 그리고 마지막으로 보인 시간 범위 — 시간외 봉이 **나중에**
+    // 도착했을 때 보던 자리를 지키는 데 쓴다(아래 시간축 맞춤 effect).
+    const userAdjustedViewRef = useRef(false);
+    const isViewAdjustedElsewhereRef = useRef(isViewAdjustedElsewhere);
+    const onViewAdjustmentResetRef = useRef(onViewAdjustmentReset);
+    // 데이터를 바꾸기 직전의 보던 자리(`snapshotVisibleView` JSDoc).
+    const viewBeforeDataRef = useRef<VisibleViewSnapshot | null>(null);
+    const lastFitBarsRef = useRef<Bar[] | null>(null);
     const onChartReadyRef = useRef(onChartReady);
     const onChartRemoveRef = useRef(onChartRemove);
     const onRightGutterChangeRef = useRef(onRightGutterChange);
@@ -274,12 +323,36 @@ export function StockChart({
         true
     );
 
+    // 지표 시리즈가 시간외 구간에서 끊기게 하는 차트 어댑터 — **지표 훅에만** 준다. 추세선·작도
+    // 레벨(`useChartOverlays`)과 primitive는 진짜 `chartRef`를 써서 계속 이어진다.
+    const [gapController] = useState(createExtendedGapController);
+    const indicatorChartRef = useMemo<RefObject<IChartApi | null>>(
+        () => ({
+            get current() {
+                return gapController.wrap(chartRef.current);
+            },
+        }),
+        [gapController]
+    );
+
     const commonHookParams: CommonHookParams = {
-        chartRef,
+        chartRef: indicatorChartRef,
         bars,
         indicators,
         lineWidth: DEFAULT_LINE_WIDTH,
     };
+
+    // 캔들·시간축 맞춤에 쓰는 봉(정규장 + 시간외). 지표 훅은 위 `bars`(정규장)만 받는다.
+    const chartBars = displayBars ?? bars;
+    // 일목균형표 선행 구름은 마지막 **그려진** 봉 오른쪽에서 시작해야 한다(시간외 캔들 위로 겹치지 않게).
+    const futureAnchorTime = chartBars.at(-1)?.time;
+    const extendedRanges = useMemo(
+        () =>
+            isExtendedBarTimeframe(timeframe)
+                ? buildExtendedSessionRanges(extendedBars, timeframe)
+                : EMPTY_SESSION_RANGES,
+        [extendedBars, timeframe]
+    );
 
     // 가격 표시 소수 자릿수 — 캔들 시리즈 priceFormat과 오버레이 범례가 공유한다.
     // descriptor가 fixed/integer면 정적, dynamic(크립토)이면 최신 종가의 크기에서
@@ -293,6 +366,8 @@ export function StockChart({
         onChartReadyRef.current = onChartReady;
         onChartRemoveRef.current = onChartRemove;
         onRightGutterChangeRef.current = onRightGutterChange;
+        isViewAdjustedElsewhereRef.current = isViewAdjustedElsewhere;
+        onViewAdjustmentResetRef.current = onViewAdjustmentReset;
         priceDecimalsRef.current = priceDecimals;
     });
 
@@ -344,9 +419,22 @@ export function StockChart({
             // LWC addSeries() 반환 타입에 UTCTimestamp 제네릭이 없어 타입 가드 불가 — 라이브러리 타입 한계.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
+        // 밀기·확대는 포인터·휠·터치 입력으로만 일어난다. 프로그램의 fitContent와 구분하려고 입력을 직접 듣는다.
+        const container = containerRef.current;
+        const markAdjusted = (): void => {
+            userAdjustedViewRef.current = true;
+        };
+        const inputEvents = ['pointerdown', 'wheel', 'touchstart'] as const;
+        inputEvents.forEach(type =>
+            container.addEventListener(type, markAdjusted, { passive: true })
+        );
+
         onChartReadyRef.current?.(chart);
 
         return () => {
+            inputEvents.forEach(type =>
+                container.removeEventListener(type, markAdjusted)
+            );
             onChartRemoveRef.current?.();
             // autoSize 해제 후 remove — LWC ResizeObserver가 disposed 객체에 접근하는 에러 방지.
             chart.applyOptions({ autoSize: false });
@@ -373,20 +461,59 @@ export function StockChart({
     useEffect(() => {
         if (!seriesRef.current || !chartRef.current) return;
 
+        // setData가 보이는 범위를 동기로 밀어내므로 그 전에 보던 자리를 찍어 둔다.
+        viewBeforeDataRef.current = snapshotVisibleView(
+            chartRef.current.timeScale()
+        );
         seriesRef.current.setData(
-            buildCandlestickData(
+            buildCandlestickDataWithExtended(
                 bars,
+                extendedBars,
                 indicators.elderImpulse,
                 visible.elderImpulse
             )
         );
-    }, [bars, indicators.elderImpulse, visible.elderImpulse]);
+    }, [bars, extendedBars, indicators.elderImpulse, visible.elderImpulse]);
 
-    // fitContent는 bars(데이터 로드/심볼·타임프레임 변경) 변화에만 호출 — Elder Impulse 토글로
-    // setData가 재실행돼도 사용자의 줌/스크롤 상태가 초기화되지 않도록 의존성을 분리한다.
+    // 시간축 맞춤. 정규장 봉(`bars`)이 바뀌거나(데이터 로드·심볼·타임프레임·새로고침) 첫 렌더면 맞춘다 — Elder
+    // Impulse 토글로 setData가 재실행돼도 줌·스크롤이 초기화되지 않도록 의존성은 봉 배열뿐이다.
+    // 시간외 봉만 **나중에** 도착·토글된 경우(`bars` 동일)에는, 사용자가 이미 밀거나 확대했다면 맞추지 않고
+    // 보던 시간 범위를 그대로 복원한다(같은 정규장 봉이 계속 화면에 있다). 사용자가 건드리지 않았다면 맞춘다.
     useEffect(() => {
-        chartRef.current?.timeScale().fitContent();
-    }, [bars]);
+        const chart = chartRef.current;
+        if (!chart) return;
+        const previous = lastFitBarsRef.current;
+        const regularChanged = previous !== bars;
+        lastFitBarsRef.current = bars;
+        const view = viewBeforeDataRef.current;
+        if (
+            previous !== null &&
+            !regularChanged &&
+            (userAdjustedViewRef.current ||
+                isViewAdjustedElsewhereRef.current?.() === true) &&
+            view !== null &&
+            restoreVisibleView(chart.timeScale(), view)
+        ) {
+            return;
+        }
+        if (regularChanged) {
+            userAdjustedViewRef.current = false;
+            onViewAdjustmentResetRef.current?.();
+        }
+        chart.timeScale().fitContent();
+    }, [bars, chartBars]);
+
+    // 시간외 시각마다 지표 선을 끊는다(`extendedGapChart` JSDoc). 이미 그려진 시리즈도 다시 채운다.
+    const gapTimes = useMemo(
+        () => extendedBars.map(b => b.time),
+        [extendedBars]
+    );
+    useEffect(() => {
+        gapController.setGapTimes(gapTimes);
+    }, [gapController, gapTimes]);
+
+    // 프리·애프터마켓 구간 음영(시간외 봉이 없으면 아무것도 붙이지 않는다).
+    useExtendedSessionBand(seriesRef, extendedRanges);
 
     // 컴포넌트가 마운트된 채 클라이언트 사이드 심볼 탐색(예: 일반 주식 → 크립토)이 일어나면
     // mount-only effect의 priceFormat이 구식이 된다. priceDecimals 변경 시 기존 시리즈에
@@ -430,7 +557,7 @@ export function StockChart({
         useVolumeProfileOverlay(commonHookParams);
 
     const { isVisible: ichimokuVisible, toggle: toggleIchimoku } =
-        useIchimokuOverlay(commonHookParams);
+        useIchimokuOverlay({ ...commonHookParams, futureAnchorTime });
 
     useLinePaneChart({
         ...commonHookParams,
@@ -900,6 +1027,7 @@ export function StockChart({
                               }
                             : undefined
                     }
+                    extendedHours={extendedHours}
                 />
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
@@ -913,6 +1041,15 @@ export function StockChart({
                 {/* 범례는 자기 pane(pane 0) 안에만 머문다 — 넘치면 보조 pane 라벨을
                     덮어 두 글자가 겹쳐 찍힌다. 상한은 OverlayLegend가 실측 크기에서
                     계산하고, 넘친 항목 수는 `+N` 칩으로 드러낸다. */}
+                {extendedBars.length > 0 && (
+                    <div className="pointer-events-none absolute top-1 right-16 z-10 flex items-center gap-1 rounded bg-secondary-900/80 px-1.5 py-0.5 text-[10px] text-secondary-300">
+                        <span
+                            aria-hidden="true"
+                            className="size-2 shrink-0 rounded-sm border border-secondary-500/70 bg-secondary-500/30"
+                        />
+                        <span>{t('StockChart.extendedHoursLegend')}</span>
+                    </div>
+                )}
                 <div className="pointer-events-none absolute top-2 left-2 z-10">
                     <OverlayLegend
                         items={overlayLegendItems}

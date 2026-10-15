@@ -551,6 +551,20 @@ A primitive that wraps a library object with its own lifecycle (attach, update, 
 
 Derived `className`/`style` objects in chart widgets are memoized per `REACT.md#CR-1`.
 
+<a id="LW-3"></a>
+
+#### LW-3 — Series-wide options gate on the series' live rendering mode
+
+A generic wrapper that applies a series-wide option to fix one point (a per-point transparent colour, `crosshairMarkerBackgroundColor`, a shared marker style) also reaches series that render differently. A marker-only series (`lineVisible: false`) carrying per-point colours loses its dots, or has its hover colour overridden. Gate the option by the series' current rendering mode, and cover a marker-only series with a test.
+
+```typescript
+// ❌ applied to every wrapped series
+series.applyOptions({ crosshairMarkerBackgroundColor: 'transparent' });
+
+// ✅ only where the series draws a line
+if (series.options().lineVisible) series.applyOptions({ crosshairMarkerBackgroundColor: 'transparent' });
+```
+
 ---
 
 ## Tailwind CSS Rules

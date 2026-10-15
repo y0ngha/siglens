@@ -13,6 +13,10 @@ const { mockCreateChart, mockResize } = vi.hoisted(() => {
         timeScale: vi.fn(() => ({
             fitContent: vi.fn(),
             scrollToRealTime: vi.fn(),
+            getVisibleRange: vi.fn(() => null),
+            getVisibleLogicalRange: vi.fn(() => null),
+            setVisibleLogicalRange: vi.fn(),
+            timeToIndex: vi.fn(() => null),
         })),
         subscribeCrosshairMove: vi.fn(),
         priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),

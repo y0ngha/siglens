@@ -26,6 +26,8 @@ export const STORAGE_KEYS = {
     emaPeriods: `${STORAGE_PREFIX}.ema.periods`,
     /** 작도 수평 레벨을 가격축 앞까지 연장할지(기본 켜짐). */
     levelRightExtend: `${STORAGE_PREFIX}.levelRightExtend`,
+    /** 미국 주식 인트라데이에서 프리·애프터마켓 봉·음영을 보일지(기본 켜짐). */
+    extendedHours: `${STORAGE_PREFIX}.extendedHours`,
     overlay: (key: OverlayStorageKey): string =>
         `${STORAGE_PREFIX}.overlay.${key}`,
 } as const;
