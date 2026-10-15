@@ -837,6 +837,17 @@ guarantee is weaker, name the weaker fact or add the missing check.
 - ❌ `const close = bar.close` after verifying only that `bar.date` matches the session date.
 - ✅ Verify the bar is final, or name it for what is known (`lastBarClose`).
 
+<a id="CS-16"></a>
+
+#### CS-16 — Comments, logs and operator messages describe what the code path actually does
+
+A comment, help text or log line on a destructive or operator-facing script must match the code path: do not say
+"not touched" or "read-only" when a branch replaces or deletes data, and keep log wording in step with the counting
+rule (what is counted, per what unit). When the behavior changes, change the text in the same edit.
+
+- ❌ "Existing rows are left untouched" above a path that replaces them.
+- ✅ State the replacement and the condition under which it happens.
+
 ---
 
 ## Layer Dependency Rules

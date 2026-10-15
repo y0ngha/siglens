@@ -62,6 +62,11 @@ OPTIONAL_KEYS=(
   NAVER_AI_CLIENT_ID
   NAVER_AI_CLIENT_SECRET
   AGENT_CHAT_DISABLED
+  # Investor flows data crons: FINRA_SHORT_DATA_ENABLED unset = enabled (non-commercial phase),
+  # OPENFIGI_API_KEY unset = anonymous OpenFIGI limits, SEC_USER_AGENT unset = built-in default.
+  FINRA_SHORT_DATA_ENABLED
+  OPENFIGI_API_KEY
+  SEC_USER_AGENT
 )
 
 # 필수 키 수집: KEY=... 형태 라인에서 KEY만 추출(주석/빈 줄 스킵, EXCLUDE 제외).

@@ -513,3 +513,17 @@ A new global stylesheet rule (for example a `:has()` selector) has no runtime te
 
 - ❌ A `:has()` rule added to `globals.css` and a page card rewritten inline, with no test touching either.
 - ✅ A test reads `globals.css`, normalizes whitespace and asserts the exact rule; the card lives in a feature component with its own render test.
+
+## Real-database tests
+
+<a id="TE-55"></a>
+
+#### TE-55 — SQL whose meaning is the feature is verified on a real Postgres, and CI runs it
+
+A rendered-SQL assertion (`sqlToQuery` text and params) proves the statement is built, not that it computes the right numbers: joins, `FILTER` counts, `IS DISTINCT FROM` guards and `ON CONFLICT` behaviour only show up when the statement runs. Aggregation, dedup and pruning SQL therefore gets a `*.db.test.ts` that runs the real statements against Postgres, asserts the invariants (for example `priorHolders = holders − new + exited`) and seeds through the real write path instead of hand-inserting the rows the query is meant to produce.
+
+- The test is opt-in by URL: every `*.db.test.ts` guards on the one shared variable, `describe.skipIf(!process.env.TEST_DATABASE_URL)`. It refuses any target that is not a local database (`describeTarget`: not local, or a tunnel port) and works in a throwaway schema it drops afterwards.
+- CI runs them where a Postgres already exists: the `e2e` workflow's shard 1, after `Migrate + seed e2e DB`, as `yarn test .db.test.ts` with `TEST_DATABASE_URL` set to the compose Postgres (`postgres://siglens:siglens@localhost:5433/siglens_e2e`). The step selects by the file-name pattern, so a new `*.db.test.ts` joins CI without touching the workflow — name it that way and read the shared variable, never a per-feature one.
+- Locally use a private compose project name so you cannot tear down someone else's stack: `docker compose -p <name> -f docker-compose.e2e.yml up -d --pull never postgres`, then `TEST_DATABASE_URL=postgres://siglens:siglens@localhost:5433/siglens_e2e yarn test .db.test.ts`.
+- ❌ Only `expect(sqlText).toContain('FULL OUTER JOIN')` for an aggregate query; a wrong join or filter still passes.
+- ✅ The same statement run on seeded rows, asserting the counts and the identity between two quarters.

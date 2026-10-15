@@ -358,6 +358,29 @@ step) and loses what earlier attempts learned.
 - A count-then-insert limit check (per-user cap) races across tabs and requests. Run it in a transaction holding a row
   lock on the owner, and let an item that already exists bypass the cap instead of failing the re-add.
 
+<a id="CC-11"></a>
+
+#### CC-11 — A "backlog is empty" gate needs a drain guarantee, and counts the right unit
+
+A gate that waits for a backlog to reach zero stalls forever unless every failure mode either drains the backlog or
+is surfaced as a separate state. Give each failure mode an exit (retry cap, dead-letter, skip-with-record) and bound the wait.
+
+- Count per the unit the policy names: a "N days of failure" counter increments once per day, not once per run.
+- A blanket outage (provider down, auth failure) is not a per-symbol fault; do not charge it against each item's failure budget.
+- ❌ Gate holds until `pending = 0`, while an item that always errors never leaves `pending`; a per-run counter trips the threshold in one busy day.
+- ✅ Failing items move to a terminal state after a cap, the day counter is keyed by date, and an outage trips a run-level breaker instead.
+
+<a id="CC-12"></a>
+
+#### CC-12 — Enforce ordering preconditions in code with a durable gate, and alarm on liveness
+
+A correctness precondition ("job A must run before job B") written only in a comment or runbook drifts from the
+deploy script and breaks silently. Encode it as a durable check the dependent step reads (a stored watermark or
+marker row), and add an alarm for the gate that never opens so a stalled prerequisite is noticed.
+
+- ❌ "Runs after the ingest cron" in a comment while the schedule says otherwise.
+- ✅ The dependent job refuses to run until the prerequisite's durable marker for that period exists; a staleness alarm covers a marker that stops advancing.
+
 ---
 
 ## Server Data Cache Rules (`unstable_cache` / `fetch`)
@@ -559,3 +582,34 @@ change reaches that script and `scripts/__tests__`, so derive the test scope fro
 
 - ❌ New `users`-FK table, scoped test run over `src/` only, CI catches the missing exclusion.
 - ✅ Table added to `EXCLUDED_TABLES` and `scripts/__tests__` run locally.
+
+<a id="DB-6"></a>
+
+#### DB-6 — Multi-step state transitions are atomic or leave a durable pending record
+
+A transition spanning several writes (mark a ledger row processed and recompute the dependent aggregate, replace rows
+and re-apply derived state, switch a mode) must not have a crash window in which one step is committed and the next is
+lost. Do all steps in one transaction, or write the follow-up work into a durable "pending" record in the same
+transaction that a later run drains.
+
+- ❌ Mark the input processed, commit, then recompute; a crash between them leaves the recompute never done.
+- ✅ Mark processed and enqueue (or perform) the recompute in the same transaction.
+
+<a id="DB-7"></a>
+
+#### DB-7 — Compare timestamps from one clock
+
+Do not compare an app-clock timestamp (`new Date()`, `Date.now()`) with a DB-clock one (`now()`, a `defaultNow`
+column) in a predicate or guard; skew flips the result. Take both from the database in the statement, or both from
+one injected value.
+
+<a id="DB-8"></a>
+
+#### DB-8 — Baseline and eligibility rules key on the ingestion fact, not wall-clock or mapping time
+
+A rule such as "is this the first observation / a baseline" must be decided from the recorded fact about the data
+(the period or filing date it describes, the ingestion order) rather than when the code happened to run or map it;
+wall-clock rules are wrong for backfill and replays.
+
+- ❌ `isBaseline = now - createdAt < window` — a backfilled old row is misclassified.
+- ✅ Decide from the stored period or ingestion marker, so a replay yields the same answer.

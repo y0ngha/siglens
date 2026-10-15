@@ -71,6 +71,8 @@
         "db:backfill:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/backfillContentLocale.ts",
         "db:backfill:snapshot-first-gen": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/backfillSnapshotFirstGeneratedAt.ts",
         "db:verify:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/verifyContentLocale.ts",
+        "investor-flows:reingest-13f": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/reingest-investor-flows-13f.ts",
+        "investor-flows:rebuild-aggregates": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/rebuild-investor-flows-aggregates.ts",
         "db:translate:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/translateContentLocale.ts"
     },
     "dependencies": {
@@ -97,6 +99,7 @@
         "rehype-slug": "^6.0.0",
         "remark-gfm": "^4.0.1",
         "resend": "^6.28.1",
+        "saxes": "^6.0.0",
         "sharp": "^0.35.4",
         "tailwind-merge": "^3.7.0",
         "vaul": "patch:vaul@npm%3A1.1.2#~/.yarn/patches/vaul-npm-1.1.2-7a571c1ad6.patch",

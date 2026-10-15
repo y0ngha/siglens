@@ -870,6 +870,12 @@
         "text": "[guide] 카탈로그 조회 실패"
     },
     {
+        "file": "src/entities/investor-flows/server/getInvestorFlowsResilient.ts",
+        "line": 35,
+        "reason": "developer-diagnostic",
+        "text": "[getInvestorFlowsResilient] 수급 데이터 장애, degrade:"
+    },
+    {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
         "line": 76,
         "reason": "catalog-backed-data",

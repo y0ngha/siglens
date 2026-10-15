@@ -10825,6 +10825,7 @@ __metadata:
     release-it: "npm:^21.1.0"
     remark-gfm: "npm:^4.0.1"
     resend: "npm:^6.28.1"
+    saxes: "npm:^6.0.0"
     server-only: "npm:^0.0.1"
     sharp: "npm:^0.35.4"
     stylelint: "npm:^17.15.0"

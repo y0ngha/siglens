@@ -2,6 +2,7 @@ import 'server-only';
 
 import { sql } from 'drizzle-orm';
 import {
+    bigint,
     boolean,
     char,
     date,
@@ -13,6 +14,7 @@ import {
     pgEnum,
     pgTable,
     primaryKey,
+    smallint,
     text,
     timestamp,
     uniqueIndex,
@@ -1272,4 +1274,232 @@ export const guideEntryContents = pgTable(
             .defaultNow(),
     },
     table => [primaryKey({ columns: [table.slug, table.locale] })]
+);
+
+/**
+ * Investor Flows — CUSIP↔symbol map for the US common-stock universe.
+ *
+ * SEC 13F information tables identify issuers by CUSIP only, so this map is the
+ * universe filter of the 13F ingester (rows whose CUSIP is absent are dropped
+ * while streaming). `source` records where the pairing came from: `fmp`
+ * (FMP profile `cusip`) or `openfigi` (ISIN-derived CUSIP confirmed by OpenFIGI).
+ * CUSIP lists must not be redistributed (licence) — internal use only, never
+ * exposed through an API.
+ *
+ * `id` is the compact surrogate the (large) positions table stores instead of the
+ * 9-char CUSIP. `created_at` (DB clock) is when the CUSIP was FIRST mapped. A filing is
+ * parsed against the universe loaded at its `sec_13f_filings.universe_stamp` (also DB
+ * clock), so a CUSIP mapped AFTER the earliest-parsed filing of a quarter is missing from
+ * that filing's positions: that quarter has no baseline for it and its change columns stay
+ * NULL (rule: `created_at <= min(universe_stamp)` of the prior quarter, see `aggregateSql.ts`).
+ * `checked_at` drives the periodic re-check
+ * of `fmp` mappings against the FMP profile (CUSIP changes after reverse splits etc.).
+ */
+export const cusipSymbolMap = pgTable(
+    'cusip_symbol_map',
+    {
+        id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+        cusip: char('cusip', { length: 9 }).notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        source: varchar('source', { length: 16 }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        checkedAt: timestamp('checked_at', { withTimezone: true }),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        uniqueIndex('cusip_symbol_map_cusip_uidx').on(table.cusip),
+        index('cusip_symbol_map_symbol_idx').on(table.symbol),
+    ]
+);
+
+/** Investor Flows — 13F filer (institution) directory, keyed by the numeric SEC CIK. */
+export const sec13fFilers = pgTable('sec_13f_filers', {
+    cik: integer('cik').primaryKey(),
+    name: text('name').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow()
+        .$onUpdateFn(nowFn),
+});
+
+/**
+ * Investor Flows — one row per 13F-HR / 13F-HR/A accession we have seen.
+ *
+ * Doubles as the idempotency ledger (`processed_at IS NOT NULL` = positions were
+ * applied) and the retry queue: a failed accession keeps `processed_at NULL` and
+ * counts `attempts`, so `period` is nullable (a filing can fail before its primary
+ * document is parsed). `period` is the report period (`PERIODOFREPORT`), never the
+ * filing date — quarters are attributed by it. `cik` is the numeric CIK (the 10-digit
+ * zero-padded form is only a display format).
+ */
+export const sec13fFilings = pgTable(
+    'sec_13f_filings',
+    {
+        accession: varchar('accession', { length: 20 }).primaryKey(),
+        cik: integer('cik').notNull(),
+        period: date('period', { mode: 'string' }),
+        filingDate: date('filing_date', { mode: 'string' }).notNull(),
+        submissionType: varchar('submission_type', { length: 16 }).notNull(),
+        amendmentType: varchar('amendment_type', { length: 32 }),
+        attempts: smallint('attempts').notNull().default(0),
+        lastError: text('last_error'),
+        processedAt: timestamp('processed_at', { withTimezone: true }),
+        /**
+         * DB-clock time of the universe snapshot (`cusip_symbol_map`) this filing was
+         * parsed against. Rows for CUSIPs mapped later were filtered out of this filing,
+         * so `aggregateSql.ts` baselines a CUSIP only if `created_at <= min(universe_stamp)`
+         * of the prior quarter. NULL while unprocessed (and treated as "no baseline").
+         */
+        universeStamp: timestamp('universe_stamp', { withTimezone: true }),
+    },
+    table => [
+        index('sec_13f_filings_cik_period_idx').on(table.cik, table.period),
+        index('sec_13f_filings_filing_date_idx').on(table.filingDate),
+        // Retry queue: only unprocessed rows are indexed, so it stays tiny.
+        index('sec_13f_filings_pending_idx')
+            .on(table.filingDate)
+            .where(sql`${table.processedAt} IS NULL`),
+        // "Which filers filed this period" — the filer sets behind the panel/baseline rules.
+        index('sec_13f_filings_period_cik_processed_idx')
+            .on(table.period, table.cik)
+            .where(sql`${table.processedAt} IS NOT NULL`),
+    ]
+);
+
+/**
+ * Investor Flows — institutional positions restricted to the universe
+ * (SH rows without put/call), kept for the 2 latest complete quarters plus the
+ * in-progress one.
+ *
+ * COMPACT BY DESIGN (≈ 8–9M rows): fixed-width columns only, laid out so the heap
+ * tuple has no padding — `shares` (8) first, then four 4-byte columns = 24 bytes of
+ * data + 24 header = 48 bytes/row. `cusip_id` references `cusip_symbol_map.id` (no FK —
+ * the row-level trigger cost is not worth it for an append/prune table), `cik` is the
+ * numeric CIK. `value_k` is the reported value in THOUSANDS of USD, clamped to int4
+ * ($2.1T per position): the dollar precision is irrelevant for the display and the
+ * sums, and int4 costs nothing extra because the tuple is already 8-byte aligned.
+ *
+ * PK (cik, period, cusip_id): "all positions of a filer in a period" (restatement
+ * delete, panel/exits) is a PK-prefix scan. (cusip_id, period) serves "all holders of an
+ * issuer in a period". BRIN(period) serves the `period < floor` prune at ~zero size.
+ *
+ * SIZE (measured on local Postgres 17, 2.7M rows inserted incrementally): heap 52 B/row +
+ * PK index 52 B/row + (cusip_id, period) index ~10 B/row (btree dedup) ≈ 112 B/row all-in,
+ * BRIN 24 kB. At 3 quarters × ~2.8M universe rows ≈ 8.4M rows ≈ 0.95 GB; a one-time
+ * REINDEX (removes PK bloat from non-sorted inserts) brings it to ≈ 0.75 GB. The design
+ * floor for 3 quarters is ~0.65 GB (24 B data + 24 B header + a 28 B key per row), so the
+ * originally approved ~0.5 GB is not reachable without keeping fewer quarters.
+ */
+export const sec13fPositions = pgTable(
+    'sec_13f_positions',
+    {
+        shares: bigint('shares', { mode: 'number' }).notNull(),
+        cik: integer('cik').notNull(),
+        cusipId: integer('cusip_id').notNull(),
+        period: date('period', { mode: 'string' }).notNull(),
+        valueK: integer('value_k').notNull(),
+    },
+    table => [
+        primaryKey({ columns: [table.cik, table.period, table.cusipId] }),
+        index('sec_13f_positions_cusip_period_idx').on(
+            table.cusipId,
+            table.period
+        ),
+        index('sec_13f_positions_period_brin_idx').using('brin', table.period),
+    ]
+);
+
+/**
+ * Investor Flows — per (cusip, period) institutional aggregate, kept long after
+ * the positions are pruned. The change columns are NULL when there is no
+ * prior-quarter baseline (nothing to compare against), never 0.
+ */
+export const sec13fAggregates = pgTable(
+    'sec_13f_aggregates',
+    {
+        cusip: char('cusip', { length: 9 }).notNull(),
+        period: date('period', { mode: 'string' }).notNull(),
+        holders: integer('holders').notNull(),
+        shares: bigint('shares', { mode: 'number' }).notNull(),
+        valueUsd: bigint('value_usd', { mode: 'number' }).notNull(),
+        newHolders: integer('new_holders'),
+        increased: integer('increased'),
+        decreased: integer('decreased'),
+        exited: integer('exited'),
+        netShareChange: bigint('net_share_change', { mode: 'number' }),
+        computedAt: timestamp('computed_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [primaryKey({ columns: [table.cusip, table.period] })]
+);
+
+/**
+ * Investor Flows — durable "dirty" queue of (period, cusip) aggregates that must be
+ * recomputed. Rows are written in the SAME transaction as the positions they come
+ * from and deleted only after the recompute committed, so a crash/deploy/OOM between
+ * the two can never lose recompute work (the next run flushes what is left).
+ */
+export const sec13fDirtyAggregates = pgTable(
+    'sec_13f_dirty_aggregates',
+    {
+        period: date('period', { mode: 'string' }).notNull(),
+        cusipId: integer('cusip_id').notNull(),
+    },
+    table => [primaryKey({ columns: [table.period, table.cusipId] })]
+);
+
+/** Investor Flows — tiny key/value state for the ingesters (last-pruned floors etc.). */
+export const investorFlowsState = pgTable('investor_flows_state', {
+    key: text('key').primaryKey(),
+    value: text('value').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});
+
+/**
+ * Investor Flows — FINRA bi-monthly short interest (⚠ non-commercial licence;
+ * ingestion is gated by `FINRA_SHORT_DATA_ENABLED`, see `shared/api/finra/finraShortDataEnabled.ts`).
+ * Retained for ~2 years.
+ */
+export const finraShortInterest = pgTable(
+    'finra_short_interest',
+    {
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        settlementDate: date('settlement_date', { mode: 'string' }).notNull(),
+        shortQty: bigint('short_qty', { mode: 'number' }).notNull(),
+        prevShortQty: bigint('prev_short_qty', { mode: 'number' }),
+        avgDailyVolume: bigint('avg_daily_volume', { mode: 'number' }),
+        daysToCover: numeric('days_to_cover', { precision: 10, scale: 2 }),
+    },
+    table => [
+        primaryKey({ columns: [table.symbol, table.settlementDate] }),
+        index('finra_short_interest_settlement_date_idx').on(
+            table.settlementDate
+        ),
+    ]
+);
+
+/**
+ * Investor Flows — FINRA Reg SHO daily short sale volume, off-exchange (TRF)
+ * reporting only (⚠ same non-commercial licence). Rolling 120 days.
+ */
+export const finraShortVolume = pgTable(
+    'finra_short_volume',
+    {
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        tradeDate: date('trade_date', { mode: 'string' }).notNull(),
+        shortVolume: bigint('short_volume', { mode: 'number' }).notNull(),
+        totalVolume: bigint('total_volume', { mode: 'number' }).notNull(),
+    },
+    table => [
+        primaryKey({ columns: [table.symbol, table.tradeDate] }),
+        index('finra_short_volume_trade_date_idx').on(table.tradeDate),
+    ]
 );

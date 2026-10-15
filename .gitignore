@@ -109,6 +109,10 @@ next-env.d.ts
 # 한국 상장 종목 한글명 시드(공공데이터포털). package.json의 `db:seed:kr-names`가
 # 이 파일을 실행하므로 추적하지 않으면 fresh checkout에서 스크립트가 사라진다.
 !/scripts/seed-kr-listed-names.ts
+# 수급 13F 집계 재계산(기준 규칙을 바꾼 뒤 수동 실행). package.json `investor-flows:rebuild-aggregates`.
+!/scripts/rebuild-investor-flows-aggregates.ts
+# 늦게 매핑된 CUSIP을 위한 13F 재수집 준비. package.json `investor-flows:reingest-13f`.
+!/scripts/reingest-investor-flows-13f.ts
 # Tracked because scripts/__tests__/ imports them — untracking these two while
 # keeping their test files broke every fresh checkout and CI run.
 !/scripts/seed-crypto-korean-names.ts
