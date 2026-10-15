@@ -1590,6 +1590,22 @@ describe('StockChart', () => {
                 // 시간외 봉이 끼어 같은 봉이 다른 인덱스를 가진다
                 viewMock.indexAfter = { [T0]: 66, [T1]: 67 };
             };
+            /**
+             * `useChartSync`의 조정 기록을 흉내 낸다 — 입력 리스너는 그 훅 한 곳에만 있고(두 차트의 입력을
+             * 모두 센다), `StockChart`는 조회·초기화 콜백만 받는다.
+             */
+            function syncStub() {
+                const state = { adjusted: false };
+                return {
+                    state,
+                    props: {
+                        isViewAdjusted: () => state.adjusted,
+                        onViewAdjustmentReset: vi.fn(() => {
+                            state.adjusted = false;
+                        }),
+                    },
+                };
+            }
             const renderBare = (extra: Record<string, unknown> = {}) =>
                 render(
                     <StockChart bars={regular} timeframe="5Min" {...extra} />
@@ -1611,13 +1627,14 @@ describe('StockChart', () => {
                 );
             };
 
-            it('사용자가 밀거나 확대했다면 맞추지 않고, 같은 봉이 화면에 남도록 새 인덱스로 옮겨 복원한다(여백 포함)', () => {
+            it('사용자가 밀거나 확대했다면(어느 차트에서든) 맞추지 않고, 같은 봉이 화면에 남도록 새 인덱스로 옮겨 복원한다(여백 포함)', () => {
                 setUserView();
-                const { rerender } = renderBare();
-                fireEvent.wheel(screen.getByRole('img'));
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true; // 첫 맞춤 뒤 사용자가 가격 또는 거래량 차트를 밀었다
                 mockFitContent.mockClear();
 
-                arrive(rerender);
+                arrive(rerender, props);
 
                 expect(mockFitContent).not.toHaveBeenCalled();
                 // 첫 봉 66 − 왼쪽 여백 2, 둘째 봉 67 + 오른쪽 여백 2
@@ -1629,53 +1646,70 @@ describe('StockChart', () => {
 
             it('사용자가 건드리지 않았다면 새 봉에 맞춘다', () => {
                 setUserView();
-                const { rerender } = renderBare();
+                const { props } = syncStub();
+                const { rerender } = renderBare(props);
                 mockFitContent.mockClear();
 
-                arrive(rerender);
+                arrive(rerender, props);
 
                 expect(mockFitContent).toHaveBeenCalled();
                 expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
             });
 
-            it.each(['pointerdown', 'touchstart'] as const)(
-                '%s 입력도 조정으로 본다',
-                type => {
-                    setUserView();
-                    const { rerender } = renderBare();
-                    fireEvent(
-                        screen.getByRole('img'),
-                        new Event(type, { bubbles: true })
-                    );
-                    mockFitContent.mockClear();
-                    arrive(rerender);
-                    expect(mockFitContent).not.toHaveBeenCalled();
-                }
-            );
+            it('조정 기록 콜백이 없으면(단독 사용) 항상 맞춘다', () => {
+                setUserView();
+                const { rerender } = renderBare();
+                mockFitContent.mockClear();
+                arrive(rerender);
+                expect(mockFitContent).toHaveBeenCalled();
+                expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
+            });
+
+            it('차트에는 사용자 입력 리스너를 직접 걸지 않는다(입력은 useChartSync 한 곳에서 듣는다)', () => {
+                const add = vi.spyOn(HTMLElement.prototype, 'addEventListener');
+                const { unmount } = renderBare();
+                const container = screen.getByRole('img');
+                const inputTypes = ['pointerdown', 'wheel', 'touchstart'];
+                const own = add.mock.calls.filter(
+                    ([type], i) =>
+                        add.mock.contexts[i] === container &&
+                        inputTypes.includes(type)
+                );
+                expect(own).toEqual([]);
+                unmount();
+                add.mockRestore();
+            });
 
             it('정규장 봉이 바뀌면(새 타임프레임·새로고침) 사용자가 밀었어도 기존처럼 맞춘다', () => {
                 setUserView();
-                const { rerender } = renderBare();
-                fireEvent.wheel(screen.getByRole('img'));
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
                 mockFitContent.mockClear();
 
-                arrive(rerender, { bars: [...regular] });
+                arrive(rerender, { ...props, bars: [...regular] });
 
                 expect(mockFitContent).toHaveBeenCalled();
                 expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
             });
 
-            it('정규장 봉이 바뀌어 맞춘 뒤에는 조정 기록이 지워져, 새 입력 없이 나중에 도착한 시간외 봉에도 맞춘다', () => {
+            it('정규장 봉이 바뀌어 맞추면 조정 기록 초기화를 요청하고, 그 뒤 새 입력 없이 도착한 시간외 봉에는 맞춘다', () => {
                 setUserView();
-                const { rerender } = renderBare();
-                fireEvent.wheel(screen.getByRole('img'));
-                // 정규장 봉이 바뀐다(맞춤 + 조정 기록 초기화)
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
+                // 정규장 봉이 바뀐다(맞춤 + 조정 기록 초기화 요청)
                 const refreshed = [...regular];
-                rerender(<StockChart bars={refreshed} timeframe="5Min" />);
+                props.onViewAdjustmentReset.mockClear();
+                rerender(
+                    <StockChart bars={refreshed} timeframe="5Min" {...props} />
+                );
+                expect(props.onViewAdjustmentReset).toHaveBeenCalledTimes(1);
+                expect(state.adjusted).toBe(false);
+
                 setUserView();
                 viewMock.phase = 'before';
                 mockFitContent.mockClear();
-
                 // 새 입력 없이 시간외 봉 도착
                 rerender(
                     <StockChart
@@ -1683,6 +1717,7 @@ describe('StockChart', () => {
                         displayBars={display}
                         extendedBars={extended}
                         timeframe="5Min"
+                        {...props}
                     />
                 );
 
@@ -1690,103 +1725,36 @@ describe('StockChart', () => {
                 expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
             });
 
+            it('시간외 봉만 도착해 복원할 때는 초기화하지 않는다(다음 도착도 보존)', () => {
+                setUserView();
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
+                props.onViewAdjustmentReset.mockClear();
+                arrive(rerender, props);
+                expect(props.onViewAdjustmentReset).not.toHaveBeenCalled();
+                expect(state.adjusted).toBe(true);
+            });
+
             it('보던 자리를 아직 모르면(범위 없음) 맞춘다', () => {
-                const { rerender } = renderBare();
-                fireEvent.wheel(screen.getByRole('img'));
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
                 mockFitContent.mockClear();
-                arrive(rerender);
+                arrive(rerender, props);
                 expect(mockFitContent).toHaveBeenCalled();
             });
 
             it('복원할 봉의 새 인덱스를 못 찾으면 맞춘다', () => {
                 setUserView();
-                const { rerender } = renderBare();
-                fireEvent.wheel(screen.getByRole('img'));
+                const { state, props } = syncStub();
+                const { rerender } = renderBare(props);
+                state.adjusted = true;
                 viewMock.indexAfter = {};
                 mockFitContent.mockClear();
-                arrive(rerender);
+                arrive(rerender, props);
                 expect(mockFitContent).toHaveBeenCalled();
                 expect(mockSetVisibleLogicalRange).not.toHaveBeenCalled();
-            });
-
-            it('언마운트하면 건 입력 리스너를 모두 떼어 낸다', () => {
-                const add = vi.spyOn(HTMLElement.prototype, 'addEventListener');
-                const remove = vi.spyOn(
-                    HTMLElement.prototype,
-                    'removeEventListener'
-                );
-                const { unmount } = renderBare();
-                const container = screen.getByRole('img');
-                const added = add.mock.calls.filter(
-                    (_, i) => add.mock.contexts[i] === container
-                );
-                const types = ['pointerdown', 'wheel', 'touchstart'];
-                for (const type of types) {
-                    expect(added.some(([t]) => t === type)).toBe(true);
-                }
-                unmount();
-                const removed = remove.mock.calls.filter(
-                    (_, i) => remove.mock.contexts[i] === container
-                );
-                for (const type of types) {
-                    const handler = added.find(([t]) => t === type)![1];
-                    expect(
-                        removed.some(([t, h]) => t === type && h === handler)
-                    ).toBe(true);
-                }
-                add.mockRestore();
-                remove.mockRestore();
-            });
-
-            describe('차트 사이 공유 조정 기록(isViewAdjustedElsewhere)', () => {
-                it('거래량 차트에서 밀었다면(이 차트 입력 없이도) 복원한다', () => {
-                    setUserView();
-                    let elsewhere = false;
-                    const props = {
-                        isViewAdjustedElsewhere: () => elsewhere,
-                    };
-                    const { rerender } = renderBare(props);
-                    elsewhere = true; // 첫 맞춤 뒤 거래량 차트에서 밀었다
-                    mockFitContent.mockClear();
-                    arrive(rerender, props);
-                    expect(mockFitContent).not.toHaveBeenCalled();
-                    expect(mockSetVisibleLogicalRange).toHaveBeenCalled();
-                });
-
-                it('다른 차트도 이 차트도 조정하지 않았다면 맞춘다', () => {
-                    setUserView();
-                    const props = { isViewAdjustedElsewhere: () => false };
-                    const { rerender } = renderBare(props);
-                    mockFitContent.mockClear();
-                    arrive(rerender, props);
-                    expect(mockFitContent).toHaveBeenCalled();
-                });
-
-                it('정규장 봉이 바뀌어 맞추면 공유 기록 초기화를 요청한다', () => {
-                    setUserView();
-                    const onViewAdjustmentReset = vi.fn();
-                    const props = {
-                        isViewAdjustedElsewhere: () => false,
-                        onViewAdjustmentReset,
-                    };
-                    const { rerender } = renderBare(props);
-                    onViewAdjustmentReset.mockClear();
-                    arrive(rerender, { ...props, bars: [...regular] });
-                    expect(onViewAdjustmentReset).toHaveBeenCalledTimes(1);
-                });
-
-                it('시간외 봉만 도착해 복원할 때는 초기화하지 않는다(다음 도착도 보존)', () => {
-                    setUserView();
-                    const onViewAdjustmentReset = vi.fn();
-                    const props = {
-                        isViewAdjustedElsewhere: () => true,
-                        onViewAdjustmentReset,
-                    };
-                    const { rerender } = renderBare(props);
-                    onViewAdjustmentReset.mockClear();
-                    arrive(rerender, props);
-                    expect(onViewAdjustmentReset).not.toHaveBeenCalled();
-                });
             });
         });
 

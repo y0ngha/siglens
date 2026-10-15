@@ -136,11 +136,11 @@ interface StockChartProps {
     /** `displayBars` 중 프리·애프터마켓 봉만. 비어 있으면 캔들·음영·범례가 기존과 같다. */
     extendedBars?: Bar[];
     /**
-     * 다른 차트(거래량)에서 사용자가 밀거나 확대했는가(`useChartSync.isUserAdjustedView`). 이 차트의 입력과
-     * 합쳐 "사용자가 보기를 조정했다"를 판정한다 — 거래량 pane을 밀어 본 사용자의 보기가 시간외 봉 도착에
-     * 날아가지 않게 한다. 생략하면 이 차트의 입력만 센다.
+     * 사용자가 **두 차트 중 어느 쪽이든** 밀거나 확대했는가(`useChartSync.isUserAdjustedView` — 입력 리스너는
+     * 거기 한 곳에만 있다). 시간외 봉이 나중에 도착했을 때 보던 자리를 지킬지 정한다. 생략하면 조정 기록이 없는
+     * 것으로 보고 항상 맞춘다.
      */
-    isViewAdjustedElsewhere?: () => boolean;
+    isViewAdjusted?: () => boolean;
     /** 맞춤이 새로 일어나 조정 기록을 지울 때 부른다(`useChartSync.resetUserAdjustedView`). */
     onViewAdjustmentReset?: () => void;
     /** 시간외 표시 토글. 넘기면 "차트 작도" 메뉴에 행이 생긴다(미국 주식 인트라데이만). */
@@ -193,7 +193,7 @@ export function StockChart({
     displayBars,
     extendedBars = NO_EXTENDED_BARS,
     extendedHours,
-    isViewAdjustedElsewhere,
+    isViewAdjusted,
     onViewAdjustmentReset,
     timeframe,
     indicators = EMPTY_INDICATOR_RESULT,
@@ -296,10 +296,8 @@ export function StockChart({
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
-    // 사용자가 이 차트를 직접 밀거나 확대했는가, 그리고 마지막으로 보인 시간 범위 — 시간외 봉이 **나중에**
-    // 도착했을 때 보던 자리를 지키는 데 쓴다(아래 시간축 맞춤 effect).
-    const userAdjustedViewRef = useRef(false);
-    const isViewAdjustedElsewhereRef = useRef(isViewAdjustedElsewhere);
+    // 조정 기록의 조회·초기화 콜백 — 시간외 봉이 **나중에** 도착했을 때 보던 자리를 지키는 데 쓴다(아래 맞춤 effect).
+    const isViewAdjustedRef = useRef(isViewAdjusted);
     const onViewAdjustmentResetRef = useRef(onViewAdjustmentReset);
     // 데이터를 바꾸기 직전의 보던 자리(`snapshotVisibleView` JSDoc).
     const viewBeforeDataRef = useRef<VisibleViewSnapshot | null>(null);
@@ -361,7 +359,7 @@ export function StockChart({
         onChartReadyRef.current = onChartReady;
         onChartRemoveRef.current = onChartRemove;
         onRightGutterChangeRef.current = onRightGutterChange;
-        isViewAdjustedElsewhereRef.current = isViewAdjustedElsewhere;
+        isViewAdjustedRef.current = isViewAdjusted;
         onViewAdjustmentResetRef.current = onViewAdjustmentReset;
         priceDecimalsRef.current = priceDecimals;
     });
@@ -415,22 +413,9 @@ export function StockChart({
             // LWC addSeries() 반환 타입에 UTCTimestamp 제네릭이 없어 타입 가드 불가 — 라이브러리 타입 한계.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
-        // 밀기·확대는 포인터·휠·터치 입력으로만 일어난다. 프로그램의 fitContent와 구분하려고 입력을 직접 듣는다.
-        const container = containerRef.current;
-        const markAdjusted = (): void => {
-            userAdjustedViewRef.current = true;
-        };
-        const inputEvents = ['pointerdown', 'wheel', 'touchstart'] as const;
-        inputEvents.forEach(type =>
-            container.addEventListener(type, markAdjusted, { passive: true })
-        );
-
         onChartReadyRef.current?.(chart);
 
         return () => {
-            inputEvents.forEach(type =>
-                container.removeEventListener(type, markAdjusted)
-            );
             onChartRemoveRef.current?.();
             // autoSize 해제 후 remove — LWC ResizeObserver가 disposed 객체에 접근하는 에러 방지.
             chart.applyOptions({ autoSize: false });
@@ -486,15 +471,13 @@ export function StockChart({
         if (
             previous !== null &&
             !regularChanged &&
-            (userAdjustedViewRef.current ||
-                isViewAdjustedElsewhereRef.current?.() === true) &&
+            isViewAdjustedRef.current?.() === true &&
             view !== null &&
             restoreVisibleView(chart.timeScale(), view)
         ) {
             return;
         }
         if (regularChanged) {
-            userAdjustedViewRef.current = false;
             onViewAdjustmentResetRef.current?.();
         }
         chart.timeScale().fitContent();

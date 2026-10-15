@@ -10,6 +10,9 @@ import { TRANSPARENT_COLOR as TRANSPARENT } from '../constants';
  * 값 없는 점(`{ time }`, whitespace)을 끼우는 방법은 **통하지 않는다** — lightweight-charts는 whitespace
  * 행을 그리기 전에 걸러 내고 인접한 유효 점끼리 잇는다(2026-10-15 실물 차트 + 렌더러 소스로 확인).
  *
+ * **공개 API가 아닌 렌더러 동작에 기댄다 — lightweight-charts를 올릴 때 다시 확인한다(TOOLCHAIN.md#TC-37, 확인한
+ * 버전: 5.2.1).**
+ *
  * 대신 **구간을 잇는 선분을 투명하게** 칠한다. lightweight-charts 5.2의 `walkLine`은 점 `i-1 → i` 선분을
  * `i-1` 점의 점별 스타일(`color`)로 칠한다(스타일이 바뀌는 점에서 이전 스타일로 경로를 마무리한다). 그래서
  * 시간외 구간을 건너는 두 정규장 점 중 **앞 점**에 투명 색을 주면 그 선분만 안 보이고, 시리즈는 하나로

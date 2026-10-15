@@ -719,7 +719,7 @@ export function ChartContent({
                         displayBars={displayBars}
                         extendedBars={extendedBars}
                         extendedHours={extendedHoursSetting}
-                        isViewAdjustedElsewhere={isUserAdjustedView}
+                        isViewAdjusted={isUserAdjustedView}
                         onViewAdjustmentReset={resetUserAdjustedView}
                         timeframe={timeframe}
                         indicators={indicators}

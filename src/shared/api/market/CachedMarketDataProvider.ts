@@ -45,7 +45,7 @@ import {
     extendedTailTtlSeconds,
     filterOutOfSessionBars,
     isExtendedBarTimeframe,
-} from '@/shared/api/market/extendedBarsSession';
+} from './extendedBarsSession';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**

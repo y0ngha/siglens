@@ -42,13 +42,13 @@ function listenForViewInput(
     element: HTMLElement,
     onInput: () => void
 ): () => void {
-    for (const type of USER_VIEW_INPUT_EVENTS) {
-        element.addEventListener(type, onInput, { passive: true });
-    }
+    USER_VIEW_INPUT_EVENTS.forEach(type =>
+        element.addEventListener(type, onInput, { passive: true })
+    );
     return () => {
-        for (const type of USER_VIEW_INPUT_EVENTS) {
-            element.removeEventListener(type, onInput);
-        }
+        USER_VIEW_INPUT_EVENTS.forEach(type =>
+            element.removeEventListener(type, onInput)
+        );
     };
 }
 

@@ -7,7 +7,7 @@ import {
     isTradingEtDay,
     usSessionDayAt,
     type UsSessionDay,
-} from '@/shared/api/market/usSessionClock';
+} from './usSessionClock';
 import {
     MS_PER_SECOND,
     SECONDS_PER_DAY,

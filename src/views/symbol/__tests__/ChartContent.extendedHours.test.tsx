@@ -32,14 +32,20 @@ vi.mock('next/dynamic', () => ({
 vi.mock('@/widgets/chart/ChartSkeleton', () => ({
     ChartSkeleton: () => null,
 }));
-vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
-    useChartSync: () => ({
+const { syncApi } = vi.hoisted(() => ({
+    syncApi: {
         handleStockChartReady: vi.fn(),
         handleStockChartRemove: vi.fn(),
         handleVolumeChartReady: vi.fn(),
         handleVolumeChartRemove: vi.fn(),
         setRightOffsetPixels: vi.fn(),
-    }),
+        isUserAdjustedView: vi.fn(() => false),
+        resetUserAdjustedView: vi.fn(),
+        runVolumeDataUpdate: vi.fn(),
+    },
+}));
+vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
+    useChartSync: () => syncApi,
 }));
 vi.mock('@/entities/extended-bars/hooks/useExtendedBars', () => ({
     useExtendedBars: vi.fn(() => null),
@@ -220,6 +226,15 @@ describe('ChartContent — 시간외 봉 배선', () => {
         // 같은 시각 중복은 정규장 값이 이긴다
         expect(stock.displayBars[1]).toBe(REGULAR[0]);
         expect(stock.extendedBars).toEqual([PRE, AFTER]);
+    });
+
+    it('두 차트의 조정 기록·거래량 갱신 래퍼를 useChartSync에서 받아 각 차트에 한 번씩 내려준다', () => {
+        renderChart('5Min');
+        const stock = stockProps() as unknown as Record<string, unknown>;
+        expect(stock.isViewAdjusted).toBe(syncApi.isUserAdjustedView);
+        expect(stock.onViewAdjustmentReset).toBe(syncApi.resetUserAdjustedView);
+        const volume = chartProps.VolumeChart as Record<string, unknown>;
+        expect(volume.runDataUpdate).toBe(syncApi.runVolumeDataUpdate);
     });
 
     it('거래량 차트도 같은 시간외 봉·타임프레임을 받는다(정규장 `bars`는 매수/매도 분해용)', () => {
