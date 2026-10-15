@@ -1,5 +1,6 @@
 import type {
     Bar,
+    GetBarsOptions,
     MarketDataProvider,
     MarketQuote,
 } from '@y0ngha/siglens-core';
@@ -46,4 +47,15 @@ export interface ExtendedHoursTrade {
 export interface SiglensMarketProvider extends MarketDataProvider {
     getTodayBar(symbol: string): Promise<Bar | null>;
     getQuoteSnapshot(symbol: string): Promise<QuoteSnapshot>;
+}
+
+/**
+ * 프리·애프터마켓을 포함한 인트라데이 봉 조회 — **표시 전용** 계통.
+ *
+ * `MarketDataProvider.getBars`(정규장 봉: 지표·분석·섹터 스캔·SEO의 입력)와 분리된 메서드다.
+ * 이 결과를 지표·분석 입력에 섞지 않는다(`src/__tests__/guards/extendedBarsDisplayOnly.test.ts`).
+ * 구현은 FMP 어댑터와 그것을 감싸는 `CachedMarketDataProvider`뿐이다(Yahoo·Fake는 없음).
+ */
+export interface ExtendedBarsProvider {
+    getExtendedBars(options: GetBarsOptions): Promise<Bar[]>;
 }

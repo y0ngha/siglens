@@ -211,6 +211,7 @@ Module-load reads count too: importing a new constant from a partially mocked mo
 A repository, service or client mock implements all methods the code calls; update it whenever the code adds a dependency call.
 
 - ❌ `{ fetch: vi.fn() }` when the action also calls `listBySymbol`.
+- Production code never defends against a mock's missing method (`fn?.()` / `typeof x.method === 'function'`); complete the mock instead.
 
 <a id="TE-25"></a>
 

@@ -2,14 +2,14 @@ import 'server-only';
 import { sleep } from '@/shared/lib/sleep';
 
 const OPENFIGI_MAPPING_URL = 'https://api.openfigi.com/v3/mapping';
-const OPENFIGI_TIMEOUT_MS = 30_000;
+export const OPENFIGI_TIMEOUT_MS = 30_000;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
  * OpenFIGI 한도. 키가 없으면 분당 25요청 × 요청당 10잡, 키가 있으면 6초당 25요청 × 100잡
  * (2026-10 실측: 키 없이 11잡을 보내면 `Request may only contain 10 mapping jobs`).
  */
-const LIMITS = {
+export const LIMITS = {
     anonymous: { jobsPerRequest: 10, minIntervalMs: 2_400 },
     keyed: { jobsPerRequest: 100, minIntervalMs: 250 },
 } as const;

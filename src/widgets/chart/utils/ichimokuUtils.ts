@@ -26,13 +26,20 @@ export interface FutureCloudBase {
     cloudBearishData: SeriesPoint[];
 }
 
+/**
+ * 선행 구름 미래 점을 끝에 이어 붙인다. 간격은 `bars`의 마지막 두 봉에서 구하고, 시작 시각은
+ * `anchorTime`(생략 시 마지막 봉) — 시간외 봉이 `bars`(정규장) 뒤에 그려질 때 구름이 그 캔들
+ * 오른쪽에서 시작하도록 더 늦은 시각을 줄 수 있다. 앞당기지는 않는다(`Math.max`).
+ */
 export function extendWithFutureCloud(
     bars: Bar[],
     futureCloud: IchimokuCloudPoint[],
-    base: FutureCloudBase
+    base: FutureCloudBase,
+    anchorTime?: number
 ): IchimokuCloudSeriesAccumulator {
-    const lastTime = bars[bars.length - 1].time;
-    const interval = lastTime - bars[bars.length - 2].time;
+    const barsLastTime = bars[bars.length - 1].time;
+    const interval = barsLastTime - bars[bars.length - 2].time;
+    const lastTime = Math.max(barsLastTime, anchorTime ?? barsLastTime);
     return futureCloud.reduce(
         (
             acc: IchimokuCloudSeriesAccumulator,

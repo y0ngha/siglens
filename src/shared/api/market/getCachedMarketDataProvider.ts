@@ -7,6 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getMarketDataProvider } from './getMarketDataProvider';
 import { CachedMarketDataProvider } from './CachedMarketDataProvider';
+import type { ExtendedBarsProvider } from './marketProvider.types';
 import { KR_EQUITY_SESSION } from './sessionSpecFor';
 import { YahooMarketProvider } from '@/shared/api/yahoo/YahooMarketProvider';
 import { FMP_EXCHANGE_TIME_ZONE } from '@/shared/api/fmp/FmpMarketProvider';
@@ -79,4 +80,15 @@ export function getCachedMarketDataProvider(
         FMP_PROVIDER_OPTIONS
     );
     return cached;
+}
+
+/**
+ * 프리·애프터마켓 봉 전용 provider — 미국 주식 캐시 싱글톤(`getCachedMarketDataProvider()`와 같은
+ * 인스턴스)을 확장 봉 포트로 좁혀 돌려준다. **표시 전용**: 결과를 지표·분석 입력에 쓰지 않는다.
+ *
+ * E2E(Fake provider는 확장 봉을 모른다)에서는 `null`이라 호출부가 FMP·Redis 없이 degrade한다.
+ */
+export function getCachedExtendedBarsProvider(): ExtendedBarsProvider | null {
+    const provider = getCachedMarketDataProvider(US_EQUITY_SESSION);
+    return provider instanceof CachedMarketDataProvider ? provider : null;
 }

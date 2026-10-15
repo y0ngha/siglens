@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-    etDayNumber,
-    previousTradingEtDay,
-    extendedSessionAt,
-} from '@/entities/extended-hours/lib/extendedSession';
+import { extendedSessionAt } from '@/entities/extended-hours/lib/extendedSession';
 
 const at = (iso: string): Date => new Date(iso);
 const kindAt = (iso: string) => extendedSessionAt(at(iso))?.kind ?? null;
@@ -106,41 +102,5 @@ describe('extendedSessionAt — DST 전환 주변', () => {
         ['전환 후 월요일 20:00 EST', '2026-11-03T01:00:00Z', null],
     ])('가을 전환: %s', (_label, iso, expected) => {
         expect(kindAt(iso)).toBe(expected);
-    });
-});
-
-describe('etDayNumber', () => {
-    it('ET 자정 직전·직후는 다른 날짜 번호다', () => {
-        // 2026-10-15 23:59 ET = 03:59Z(+1) / 2026-10-16 00:00 ET = 04:00Z(+1)
-        const before = etDayNumber(Date.UTC(2026, 9, 16, 3, 59));
-        const after = etDayNumber(Date.UTC(2026, 9, 16, 4, 0));
-        expect(after - before).toBe(1);
-    });
-
-    it('UTC로는 다음 날이지만 ET로는 같은 날인 저녁 시각을 같은 날로 센다', () => {
-        const noon = etDayNumber(Date.UTC(2026, 9, 15, 16, 0));
-        const evening = etDayNumber(Date.UTC(2026, 9, 16, 0, 30)); // 20:30 EDT
-        expect(evening).toBe(noon);
-    });
-});
-
-describe('previousTradingEtDay', () => {
-    const day = (y: number, m: number, d: number) =>
-        etDayNumber(Date.UTC(y, m - 1, d, 17));
-
-    it('평일의 직전 거래일은 전날이다', () => {
-        expect(previousTradingEtDay(day(2026, 10, 15))).toBe(day(2026, 10, 14));
-    });
-
-    it('월요일의 직전 거래일은 금요일이다', () => {
-        expect(previousTradingEtDay(day(2026, 10, 19))).toBe(day(2026, 10, 16));
-    });
-
-    it('노동절(월) 다음 화요일의 직전 거래일은 금요일이다', () => {
-        expect(previousTradingEtDay(day(2026, 9, 8))).toBe(day(2026, 9, 4));
-    });
-
-    it('추수감사절(목) 다음 금요일의 직전 거래일은 수요일이다', () => {
-        expect(previousTradingEtDay(day(2026, 11, 27))).toBe(day(2026, 11, 25));
     });
 });

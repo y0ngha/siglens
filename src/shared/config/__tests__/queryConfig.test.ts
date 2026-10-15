@@ -166,6 +166,17 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
     const TIMEFRAME: Timeframe = '1Day';
     const DASHBOARD_TF: DashboardTimeframe = '1Day';
 
+    it('extendedBars: 심볼 대문자 + 타임프레임뿐이고 `bars` 접두사와 다르다(서버가 FMP 심볼을 풀므로 키에 없다)', () => {
+        expect(QUERY_KEYS.extendedBars('aapl', '5Min')).toEqual([
+            'extended-bars',
+            'AAPL',
+            '5Min',
+        ]);
+        expect(QUERY_KEYS.extendedBars('aapl', '5Min')[0]).not.toBe(
+            QUERY_KEYS.barsPrefix('aapl', '5Min')[0]
+        );
+    });
+
     it('bars: symbol 대문자 정규화 + fmpSymbol 포함', () => {
         expect(QUERY_KEYS.bars('aapl', TIMEFRAME, 'AAPL')).toEqual([
             'bars',

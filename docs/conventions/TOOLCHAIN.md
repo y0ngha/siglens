@@ -4,7 +4,7 @@
 "왜 이렇게 되어 있는지"를 남기는 문서라, 도구를 바꾸기 전에 여기부터 읽는다.
 
 **Rule IDs.** 반복해서 어겨진 규칙에는 바뀌지 않는 ID(`TC-N`)와 앵커가 붙어 있다. `TOOLCHAIN.md#TC-3`처럼 인용한다.
-TC-1~2 타입체크 · TC-3~4 oxfmt · TC-5~6 React Doctor · TC-7~10·35 의존성·프레임워크 업그레이드 ·
+TC-1~2 타입체크 · TC-3~4 oxfmt · TC-5~6 React Doctor · TC-7~10·35·37 의존성·프레임워크 업그레이드 ·
 TC-11~13 외부 호출 차단 게이트 · TC-14~16 저장소 설정 파일 · TC-17~28 셸·인프라 스크립트 · TC-29~34 codemod.
 
 ## Node 런타임 버전 정책
@@ -225,6 +225,21 @@ fake·stub·테스트 더블을 모두 찾아 변경 노트와 대조한다(예:
 `grep -rn "16\.[0-9]*\.[0-9]*\|next/dist/"`로 전부 찾아 각 인용을 새 버전의 소스에서 다시 확인하고, 줄 번호와 버전 문구를 함께 고친다.
 ❌ 버전만 올리고 `next/dist/...:540` 인용을 그대로 둔다
 ✅ 새 버전 소스에서 줄을 다시 찾아 고치고, 실측값은 측정한 버전을 명시한다
+
+<a id="TC-37"></a>
+
+#### TC-37 — lightweight-charts를 올리면 렌더러 내부에 기댄 코드를 실물 차트로 다시 확인한다
+
+`src/widgets/chart/utils/extendedGapChart.ts`는 **공개 API가 아닌 렌더러 동작**에 기댄다 — 5.2의 `walkLine`이 점 `i-1 → i` 선분을
+`i-1` 점의 점별 스타일로 칠하고(그래서 앞 점을 투명으로 만들면 선분만 사라진다), 선이 안 보이는 시리즈(`lineVisible: false`)의
+마커도 같은 점별 스타일을 쓰며, `crosshairMarkerBackgroundColor`가 비면 마커 배경이 점별 색을 따른다는 것이다. 마이너 업그레이드에서도
+이 동작이 바뀌면 단위 테스트(목 시리즈)는 그대로 초록이고 **차트만** 조용히 틀린다.
+올릴 때는 `node_modules/lightweight-charts/dist/lightweight-charts.development.mjs`에서 `walkLine`의 스타일 전환 위치와
+`drawSeriesPointMarkers`·`_private__markerBackgroundColor`를 다시 읽고, 로컬 스택에서 인트라데이 차트(RSI·볼린저 영역·파라볼릭 SAR·
+스퀴즈 점)를 열어 시간외 구간에서 선이 끊기고 점·크로스헤어 마커가 살아 있는지 눈으로 확인한 뒤, 확인한 버전을 그 파일 JSDoc에 적는다
+(현재 5.2.1).
+❌ 버전만 올리고 `yarn test`가 초록이니 넘어간다
+✅ 렌더러 소스를 다시 읽고 실물 차트에서 끊김·마커를 확인한 뒤 JSDoc의 검증 버전을 고친다
 
 ## 외부 호출 차단 게이트
 

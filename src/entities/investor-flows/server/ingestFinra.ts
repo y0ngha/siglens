@@ -88,7 +88,12 @@ export async function runFinraIngest(
         return emptyResult('empty_universe');
     }
     const resolver = buildFinraSymbolResolver(universeSymbols);
-    const result = emptyResult('ok');
+    // 결과는 로컬에 모았다가 마지막에 한 번 만든다(함수 중간에 결과 객체를 바꾸지 않는다).
+    let status: IngestFinraResult['status'] = 'ok';
+    let volumeFiles = 0;
+    let volumeRows = 0;
+    let interestFiles = 0;
+    let interestRows = 0;
     const today = toUtcIsoDate(deps.now());
     const changedSymbols = new Set<string>();
 
@@ -100,7 +105,7 @@ export async function runFinraIngest(
     ).slice(0, MAX_SHORT_VOLUME_FILES_PER_RUN);
     for (const date of volumeDates) {
         if (deps.isDeadlineReached()) {
-            result.status = 'deadline';
+            status = 'deadline';
             break;
         }
         // 파일은 하나씩 받아 메모리·CDN 부담을 묶는다.
@@ -110,13 +115,13 @@ export async function runFinraIngest(
         const rows = parseCnmsShortVolume(text, resolver);
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await deps.repo.upsertShortVolume(rows);
-        result.volumeFiles += 1;
-        result.volumeRows += rows.length;
+        volumeFiles += 1;
+        volumeRows += rows.length;
         for (const row of rows) changedSymbols.add(row.symbol);
     }
 
     // ── 공매도 잔고(결제일별) ──
-    if (result.status === 'ok') {
+    if (status === 'ok') {
         const have = await deps.repo.listShortInterestSettlementDates(
             addDays(today, -SHORT_INTEREST_BACKFILL_LOOKBACK_DAYS)
         );
@@ -129,10 +134,16 @@ export async function runFinraIngest(
         );
         for (const group of groups.slice(0, MAX_SHORT_INTEREST_FILES_PER_RUN)) {
             if (deps.isDeadlineReached()) {
-                result.status = 'deadline';
+                status = 'deadline';
                 break;
             }
             for (const variant of group) {
+                // 그룹은 변형이 최대 5개라 파일당 최악(재시도 포함)이 곱해진다 — 마감이 지나면 남은 변형은 시작하지 않는다
+                // (락 TTL = 마감 + 파일 하나의 최악, `finra-short/route.ts`·`route.test.ts`).
+                if (deps.isDeadlineReached()) {
+                    status = 'deadline';
+                    break;
+                }
                 // 공휴일로 결제일이 앞당겨졌을 수 있어 변형을 순서대로 본다.
                 // react-doctor-disable-next-line react-doctor/async-await-in-loop
                 const text = await deps.finra.fetchShortInterestText(variant);
@@ -140,8 +151,8 @@ export async function runFinraIngest(
                 const rows = parseShortInterest(text, resolver);
                 // react-doctor-disable-next-line react-doctor/async-await-in-loop
                 await deps.repo.upsertShortInterest(rows);
-                result.interestFiles += 1;
-                result.interestRows += rows.length;
+                interestFiles += 1;
+                interestRows += rows.length;
                 for (const row of rows) changedSymbols.add(row.symbol);
                 break;
             }
@@ -151,12 +162,9 @@ export async function runFinraIngest(
     const toInvalidate = [...changedSymbols]
         .sort()
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
-    if (toInvalidate.length > 0) {
-        await deps.invalidateSymbols(toInvalidate);
-        result.invalidated = toInvalidate.length;
-    }
+    if (toInvalidate.length > 0) await deps.invalidateSymbols(toInvalidate);
 
-    result.pruned = {
+    const pruned = {
         shortVolume: await deps.repo.pruneShortVolumeBefore(
             addDays(today, -INVESTOR_FLOWS_SHORT_VOLUME_RETENTION_DAYS)
         ),
@@ -164,5 +172,13 @@ export async function runFinraIngest(
             addDays(today, -INVESTOR_FLOWS_SHORT_INTEREST_RETENTION_DAYS)
         ),
     };
-    return result;
+    return {
+        status,
+        volumeFiles,
+        volumeRows,
+        interestFiles,
+        interestRows,
+        invalidated: toInvalidate.length,
+        pruned,
+    };
 }

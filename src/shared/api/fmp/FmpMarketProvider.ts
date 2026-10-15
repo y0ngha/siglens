@@ -55,7 +55,7 @@ const FMP_DATETIME_SECOND_END = 19;
 /**
  * FMP 날짜 문자열의 연도·1-indexed 월·일을 받아 ET UTC 오프셋을 반환한다.
  *
- * date-only 비교: FMP 장중 데이터의 시각은 항상 09:30~16:00 ET이고
+ * date-only 비교: FMP 장중 데이터의 시각은 04:00(확장 세션 포함)~20:00 ET 안에 있고
  * DST 전환 기준 시각(02:00 ET)보다 늦으므로 날짜 단위 비교로 오프셋을 정확히 결정할 수 있다.
  * hour 인수를 받지 않는 이 설계는 의도적이며 기존 동작을 보존한다.
  *
@@ -201,12 +201,17 @@ function toFmpDailyBar(raw: FmpOhlcvBar): Bar {
 function buildBarsQuery(
     symbol: string,
     fromDate: string | undefined,
-    endDate: string | undefined
+    endDate: string | undefined,
+    extended = false
 ): Record<string, string> {
     return {
         symbol,
         ...(fromDate !== undefined ? { from: fromDate } : {}),
         ...(endDate !== undefined ? { to: endDate } : {}),
+        // 프리·애프터마켓 포함(04:00~20:00 ET). 인트라데이에만 의미가 있다 — 일봉 엔드포인트는
+        // 이 인자를 무시한다(2026-10-14 실측). 기본값 `false`는 쿼리에 아무것도 더하지 않아
+        // 기존 정규장 요청의 URL을 바꾸지 않는다.
+        ...(extended ? { extended: 'true' } : {}),
     };
 }
 
@@ -265,11 +270,48 @@ export class FmpMarketProvider implements SiglensMarketProvider {
             return this.getDailyBars(symbol, fromDate, endDate);
         }
         // Safe: the '1Day' branch returned above, so timeframe is guaranteed non-'1Day' here.
-        const fmpTimeframe =
-            FMP_INTRADAY_TIMEFRAME_MAP[timeframe as Exclude<Timeframe, '1Day'>];
+        return this.getIntradayBars(
+            symbol,
+            timeframe as Exclude<Timeframe, '1Day'>,
+            fromDate,
+            endDate,
+            false
+        );
+    }
+
+    /**
+     * 프리·애프터마켓을 포함한 **인트라데이** 봉(`extended=true`, 04:00~20:00 ET).
+     *
+     * `getBars`와 별개 메서드다 — `getBars`(차트·지표·분석·섹터 스캔·SEO가 쓰는 정규장 봉)의
+     * 요청 URL·결과는 이 메서드가 있어도 한 글자도 바뀌지 않는다. 확장 봉은 표시 전용 계통이라
+     * 지표·분석에 섞지 않는다(`extendedBarsDisplayOnly` 가드).
+     *
+     * 1Day는 `extended`를 무시하므로(실측) 빈 배열을 돌려, 일봉 경로에 이 메서드를 쓰는 실수를
+     * 호출 비용 없이 막는다. 1시간·4시간 버킷은 시계 정각에 정렬돼 정규장을 가로지르므로 원본
+     * 그대로 돌려주고, 정규장과의 정리는 `extendedBarsSession`이 맡는다.
+     */
+    async getExtendedBars(options: GetBarsOptions): Promise<Bar[]> {
+        const { symbol, timeframe, before, from } = options;
+        if (timeframe === '1Day') return [];
+        return this.getIntradayBars(
+            symbol,
+            timeframe as Exclude<Timeframe, '1Day'>,
+            from?.substring(0, ISO_DATE_PREFIX_LENGTH),
+            before?.substring(0, ISO_DATE_PREFIX_LENGTH),
+            true
+        );
+    }
+
+    private async getIntradayBars(
+        symbol: string,
+        timeframe: Exclude<Timeframe, '1Day'>,
+        fromDate: string | undefined,
+        endDate: string | undefined,
+        extended: boolean
+    ): Promise<Bar[]> {
         const raw = await fmpGet<FmpOhlcvBar[]>(
-            `historical-chart/${fmpTimeframe}`,
-            buildBarsQuery(symbol, fromDate, endDate)
+            `historical-chart/${FMP_INTRADAY_TIMEFRAME_MAP[timeframe]}`,
+            buildBarsQuery(symbol, fromDate, endDate, extended)
         );
         if (!Array.isArray(raw)) return [];
         return raw.map(r => toFmpBar(r)).toReversed();

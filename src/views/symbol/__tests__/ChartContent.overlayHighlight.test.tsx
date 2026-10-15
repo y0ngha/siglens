@@ -50,6 +50,9 @@ vi.mock('@/widgets/chart/StockChart', () => ({
     ),
 }));
 vi.mock('@/widgets/chart/VolumeChart', () => ({ VolumeChart: () => null }));
+vi.mock('@/entities/extended-bars/hooks/useExtendedBars', () => ({
+    useExtendedBars: () => null,
+}));
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: () => ({
         bars: [

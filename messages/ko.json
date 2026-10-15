@@ -3005,6 +3005,7 @@
             "ChartContent": {
                 "93c3a3": "차트는 Pre-market, After-market 주가를 반영하지 않습니다. | ",
                 "d1a23e": "패널 너비 조절",
+                "extendedHoursNotice": "음영 구간은 프리·애프터마켓(시간외) 거래이며, 지표·AI 분석은 정규장 봉만 사용합니다. | ",
                 "f69071": "AI 차트 분석",
                 "quoteAsOfLoad": "시세는 페이지를 불러온 시점 기준이에요.",
                 "quoteDelayed": "시세 데이터는 약 {v0}분 지연됩니다."
@@ -3615,7 +3616,9 @@
                 "ac1149": "하락 추세선 #{v0}",
                 "bdeea2": "차트 패턴",
                 "bfe4b6": "상승 추세선 #{v0}",
-                "c178bc": "일부 켜짐"
+                "c178bc": "일부 켜짐",
+                "extendedHours": "시간외 거래(프리·애프터마켓) 표시",
+                "settingsTrigger": "차트 설정"
             },
             "ChartSkeleton": {
                 "486c8b": "데이터 로딩 중…"
@@ -3651,6 +3654,7 @@
                 "b3fa71": "5파 상한",
                 "b7de20": "무효화",
                 "c70cbe": "{v0} 무효화",
+                "extendedHoursLegend": "음영: 시간외(프리·애프터마켓)",
                 "fd8510": "ABC 하락 목표 {v0}"
             },
             "TimeframeSelector": {

@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useIchimokuOverlay } from '../../hooks/useIchimokuOverlay';
 import { STORAGE_KEYS } from '../../constants';
+import { extendWithFutureCloud } from '../../utils/ichimokuUtils';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -131,6 +132,25 @@ describe('useIchimokuOverlay', () => {
         });
 
         expect(mockAddSeries).toHaveBeenCalledTimes(7);
+    });
+
+    it('futureAnchorTime을 선행 구름 시작 기준으로 extendWithFutureCloud에 넘긴다(시간외 봉 뒤에서 잇기)', () => {
+        localStorage.setItem(STORAGE_KEYS.overlay('ichimoku'), 'true');
+        renderHook(() =>
+            useIchimokuOverlay({
+                chartRef: makeChartRef(makeChart()),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+                futureAnchorTime: 9000,
+            })
+        );
+
+        expect(extendWithFutureCloud).toHaveBeenLastCalledWith(
+            FAKE_BARS,
+            expect.anything(),
+            expect.anything(),
+            9000
+        );
     });
 
     it('removes series when toggled off', () => {

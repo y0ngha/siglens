@@ -68,6 +68,8 @@ describe('fetching', () => {
         await expect(
             fetchCnmsShortVolumeText('2026-10-14')
         ).rejects.toMatchObject({ name: 'FinraHttpError', status: 403 });
+        // a blocked 403 is not transient: exactly one request, no retry
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
     it('retries a 503 and then succeeds', async () => {

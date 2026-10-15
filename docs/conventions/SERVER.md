@@ -189,6 +189,8 @@ Never rely on client-side normalization (`trim()`, length limits) for a rule the
 input that the client would have rejected must also be rejected by the server-side validator. Route handlers
 reject invalid types and formats with `400` (not `204` or silence), and validate against an explicit allowlist
 (`Set`), not a truthiness check.
+A Server Action also never trusts a client-supplied upstream or provider symbol: resolve it server-side from the
+validated asset identity.
 
 <a id="SA-10"></a>
 

@@ -51,6 +51,9 @@ vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
 
+vi.mock('@/entities/extended-bars/hooks/useExtendedBars', () => ({
+    useExtendedBars: () => null,
+}));
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [

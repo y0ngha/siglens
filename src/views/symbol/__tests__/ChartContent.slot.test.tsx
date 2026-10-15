@@ -33,6 +33,9 @@ vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
         handleVolumeChartRemove: vi.fn(),
     }),
 }));
+vi.mock('@/entities/extended-bars/hooks/useExtendedBars', () => ({
+    useExtendedBars: () => null,
+}));
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: () => ({
         bars: [
