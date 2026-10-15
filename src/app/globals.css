@@ -665,6 +665,20 @@ body:has([data-vaul-drawer][data-sheet-expanded]) [data-pwa-banner] {
 }
 
 /*
+ * 모달 바텀시트(`data-modal-sheet`, 예: 관심종목 시트)가 열려 있으면 PWA 설치 배너와
+ * Ask-AI FAB을 숨긴다.
+ *
+ * 배너(z-65)·FAB(z-60)는 시트보다 위에 그려지지만, 모달 시트(vaul = Radix Dialog)는 열려
+ * 있는 동안 시트 바깥 요소의 pointer-events를 끈다. 그래서 배너가 보이기만 하고 눌리지 않아,
+ * 배너의 X를 누른 탭이 그 아래 시트 하단 링크로 떨어졌다. 눌리지 않는 오버레이는 숨기는 게 맞다.
+ * 시트가 닫히면 vaul이 콘텐츠를 언마운트해 `:has()`가 풀리고 원래대로 돌아온다.
+ */
+body:has([data-vaul-drawer][data-modal-sheet]) [data-ask-ai-fab],
+body:has([data-vaul-drawer][data-modal-sheet]) [data-pwa-banner] {
+    display: none;
+}
+
+/*
  * PWA 설치 배너(`features/pwa-install/ui/PwaBanner`)가 떠 있는 동안 모바일에서
  * Ask-AI FAB을 배너 위로 올린다.
  *
