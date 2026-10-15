@@ -66,7 +66,6 @@ async function readActiveApiKeyHashes(
     userId: string,
     dependencies: Pick<DeleteAccountDependencies, 'apiKeys'>
 ): Promise<string[]> {
-    if (dependencies.apiKeys === undefined) return [];
     try {
         return await dependencies.apiKeys.listActiveKeyHashes(userId);
     } catch (error) {
@@ -79,7 +78,7 @@ async function revokeApiKeyAuth(
     keyHashes: readonly string[],
     dependencies: Pick<DeleteAccountDependencies, 'apiKeys'>
 ): Promise<void> {
-    if (dependencies.apiKeys === undefined || keyHashes.length === 0) return;
+    if (keyHashes.length === 0) return;
     try {
         await dependencies.apiKeys.revokeAuth(keyHashes);
     } catch (error) {

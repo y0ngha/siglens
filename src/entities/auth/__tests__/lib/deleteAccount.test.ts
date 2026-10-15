@@ -2,6 +2,7 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/entities/auth/lib/sessionCookie';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
+import type { DeleteAccountApiKeys } from '@/entities/auth/lib/authUseCaseTypes';
 
 async function waitFor(
     assertion: () => void | Promise<void>,
@@ -23,11 +24,20 @@ async function waitFor(
     throw lastError ?? new Error('waitFor: timeout');
 }
 
+/** 활성 키가 없는 회원 — apiKeys 의존성은 필수이므로 키와 무관한 테스트도 채워 넘긴다. */
+function noApiKeys(): DeleteAccountApiKeys {
+    return {
+        listActiveKeyHashes: vi.fn().mockResolvedValue([]),
+        revokeAuth: vi.fn().mockResolvedValue(undefined),
+    };
+}
+
 function makeDependencies(deleted: boolean): {
     dependencies: {
         users: UserRepository;
         oauthAccounts: OAuthAccountRepository;
         oauthRevoker: OAuthRevoker;
+        apiKeys: DeleteAccountApiKeys;
     };
     deleteUser: ReturnType<typeof vi.fn>;
 } {
@@ -47,6 +57,11 @@ function makeDependencies(deleted: boolean): {
             },
             oauthRevoker: {
                 revokeToken: vi.fn().mockResolvedValue(undefined),
+            },
+            // 기본값: 활성 키 없음. 키 폐기 동작은 아래 전용 describe가 고정한다.
+            apiKeys: {
+                listActiveKeyHashes: vi.fn().mockResolvedValue([]),
+                revokeAuth: vi.fn().mockResolvedValue(undefined),
             },
         },
         deleteUser,
@@ -146,6 +161,7 @@ describe('deleteAccount', () => {
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
+            apiKeys: noApiKeys(),
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -187,6 +203,7 @@ describe('deleteAccount', () => {
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
+            apiKeys: noApiKeys(),
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -216,6 +233,7 @@ describe('deleteAccount', () => {
             oauthRevoker: {
                 revokeToken: vi.fn().mockResolvedValue(undefined),
             },
+            apiKeys: noApiKeys(),
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -258,6 +276,7 @@ describe('deleteAccount', () => {
             oauthRevoker: {
                 revokeToken: vi.fn().mockRejectedValue(revokeError),
             },
+            apiKeys: noApiKeys(),
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);

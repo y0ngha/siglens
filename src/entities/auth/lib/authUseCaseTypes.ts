@@ -139,7 +139,7 @@ export interface DeleteAccountDependencies {
     users: UserRepository;
     oauthAccounts: OAuthAccountRepository;
     oauthRevoker: OAuthRevoker;
-    apiKeys?: DeleteAccountApiKeys;
+    apiKeys: DeleteAccountApiKeys;
 }
 
 export interface DeleteAccountOptions {

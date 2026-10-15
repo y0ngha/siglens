@@ -70,4 +70,83 @@ describe('readToolArgs', () => {
         const outcome = await readToolArgs(post(`{"q":"${filler}"}`));
         expect(outcome.ok).toBe(true);
     });
+
+    describe('chunked(Content-Length 없음) 본문', () => {
+        /** 청크가 몇 개 읽혔는지 세는 스트림 본문. 취소되면 `cancelled`가 선다. */
+        function chunkedRequest(chunks: string[]) {
+            const state = { pulled: 0, cancelled: false };
+            const encoder = new TextEncoder();
+            const body = new ReadableStream<Uint8Array>({
+                pull(controller) {
+                    if (state.pulled >= chunks.length) {
+                        controller.close();
+                        return;
+                    }
+                    controller.enqueue(encoder.encode(chunks[state.pulled]));
+                    state.pulled += 1;
+                },
+                cancel() {
+                    state.cancelled = true;
+                },
+            });
+            const request = new Request(
+                'https://siglens.io/api/v1/tools/get_quote',
+                {
+                    method: 'POST',
+                    body,
+                    duplex: 'half',
+                } as RequestInit
+            );
+            return { request, state };
+        }
+
+        it('상한을 넘는 즉시 읽기를 멈추고 413 (나머지 청크를 끌어오지 않는다)', async () => {
+            const chunk = 'x'.repeat(1_000);
+            const chunks = Array.from({ length: 200 }, () => chunk);
+            const { request, state } = chunkedRequest(chunks);
+            expect(request.headers.get('content-length')).toBeNull();
+
+            const outcome = await readToolArgs(request);
+
+            if (outcome.ok) throw new Error('expected failure');
+            expect(outcome.response.status).toBe(413);
+            expect(state.cancelled).toBe(true);
+            // 200개를 다 읽지 않았다 — 상한(8,192자) 직후 몇 개에서 멈춘다.
+            expect(state.pulled).toBeLessThan(20);
+        });
+
+        it('정상 크기의 chunked 본문은 이어 붙여 파싱한다', async () => {
+            const { request, state } = chunkedRequest([
+                '{"symbols":',
+                '["AAPL",',
+                '"MSFT"]}',
+            ]);
+            await expect(readToolArgs(request)).resolves.toEqual({
+                ok: true,
+                args: { symbols: ['AAPL', 'MSFT'] },
+            });
+            expect(state.cancelled).toBe(false);
+        });
+
+        it('멀티바이트 문자가 청크 경계에 걸려도 깨지지 않는다', async () => {
+            const bytes = new TextEncoder().encode('{"q":"한글"}');
+            const split = 7; // '한'의 중간
+            const body = new ReadableStream<Uint8Array>({
+                start(controller) {
+                    controller.enqueue(bytes.slice(0, split));
+                    controller.enqueue(bytes.slice(split));
+                    controller.close();
+                },
+            });
+            const request = new Request('https://siglens.io/api/v1/x', {
+                method: 'POST',
+                body,
+                duplex: 'half',
+            } as RequestInit);
+            await expect(readToolArgs(request)).resolves.toEqual({
+                ok: true,
+                args: { q: '한글' },
+            });
+        });
+    });
 });
