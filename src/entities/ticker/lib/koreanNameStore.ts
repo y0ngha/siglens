@@ -2,6 +2,7 @@ import { tryGetDatabaseClient } from '@/shared/db/client';
 import { KOREAN_SEARCH_SNAPSHOT_TTL_MS } from './cacheKeys';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
+import { KOREAN_SEARCH_ALIASES } from '@/shared/config/korean-search-aliases';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import { DrizzleKoreanTickerRepository } from '../api';
 import type { KoreanTickerRepository } from '@/shared/db/types';
@@ -40,12 +41,12 @@ function tryGetRepository(): KoreanTickerRepository | null {
  * 두면서 예전 Redis 왕복과 수 MB 파싱을 없앤다.
  */
 interface KoreanSearchSnapshot {
-    entries: KoreanTickerEntry[];
+    entries: SearchableKoreanEntry[];
     loadedAt: number;
 }
 
 let snapshot: KoreanSearchSnapshot | null = null;
-let snapshotLoad: Promise<KoreanTickerEntry[]> | null = null;
+let snapshotLoad: Promise<SearchableKoreanEntry[]> | null = null;
 /**
  * 로드 도중 무효화가 일어났는지 가리는 세대 번호. 무효화가 로드 중에 끼면 그 로드가
  * 가져온 (이미 낡은) 결과를 스냅샷에 넣지 않는다.
@@ -81,14 +82,16 @@ export function __resetKoreanSearchSnapshotForTests(): void {
  * 심볼 조회(`findBySymbols`)는 PK 조회라 따로 쓰기 폴백을 두지 않는다 — 호출부가 영문명으로
  * degrade한다.
  */
-async function loadSnapshotFromDatabase(): Promise<KoreanTickerEntry[]> {
+async function loadSnapshotFromDatabase(): Promise<SearchableKoreanEntry[]> {
     const repository = tryGetRepository();
     if (!repository) return snapshot?.entries ?? [];
 
     const generation = snapshotGeneration;
     // 정본은 **로드 지점**에서 입힌다 — 매칭 술어와 반환값 모두 자동으로 정본을 본다
     // (`withCanonical` JSDoc).
-    const entries = (await readAllFromDatabase(repository)).map(withCanonical);
+    const entries = (await readAllFromDatabase(repository))
+        .map(withCanonical)
+        .map(toSearchableEntry);
     // 빈 결과(DB 장애)는 새 스냅샷으로 삼지 않고 직전 스냅샷으로 답한다. 무효화가 로드 중에
     // 끼었으면 `snapshot`이 이미 비어 있어 `[]`로 떨어진다(낡은 목록을 되살리지 않는다).
     // 결과가 비지 않았는데 세대가 어긋난 경우(아래)는 저장하지 않을 뿐, 이 로드에 합류했던
@@ -101,7 +104,7 @@ async function loadSnapshotFromDatabase(): Promise<KoreanTickerEntry[]> {
     return entries;
 }
 
-async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
+async function loadAllEntries(): Promise<SearchableKoreanEntry[]> {
     if (
         snapshot !== null &&
         Date.now() - snapshot.loadedAt < KOREAN_SEARCH_SNAPSHOT_TTL_MS
@@ -111,7 +114,7 @@ async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
 
     // single-flight — 만료 순간 몰린 요청이 `findAll()`을 N번 치지 않게 한다.
     if (snapshotLoad === null) {
-        const load: Promise<KoreanTickerEntry[]> =
+        const load: Promise<SearchableKoreanEntry[]> =
             loadSnapshotFromDatabase().finally(() => {
                 // 무효화로 더 새로운 로드가 들어섰을 수 있다 — 내 것일 때만 비운다.
                 if (snapshotLoad === load) snapshotLoad = null;
@@ -206,21 +209,53 @@ function withCanonical(entry: KoreanTickerEntry): KoreanTickerEntry {
 }
 
 /**
+ * 검색 스냅샷 한 행 — 정본을 입힌 행에 매칭용 이름 목록을 미리 계산해 붙인다.
+ * 키 입력마다 3.3만 행의 소문자화·공백 제거를 다시 하지 않으려는 것이다.
+ * 반환할 때는 `koreanEntryToSearchResult`가 필드를 골라 담으므로 `searchNames`는
+ * 밖으로 새지 않는다.
+ */
+interface SearchableKoreanEntry extends KoreanTickerEntry {
+    /** 소문자·공백 제거한 정본 한글명과 검색 별칭(`KOREAN_SEARCH_ALIASES`). */
+    readonly searchNames: readonly string[];
+}
+
+const WHITESPACE_REGEX = /\s+/g;
+
+/** 소문자로 바꾸고 공백을 모두 지운다 — `퀀텀컴퓨팅`이 `퀀텀 컴퓨팅`에 걸리게 한다. */
+function compact(value: string): string {
+    return value.toLowerCase().replace(WHITESPACE_REGEX, '');
+}
+
+function toSearchableEntry(entry: KoreanTickerEntry): SearchableKoreanEntry {
+    const aliases = KOREAN_SEARCH_ALIASES.get(entry.symbol) ?? [];
+    return {
+        ...entry,
+        searchNames: [entry.koreanName, ...aliases].map(compact),
+    };
+}
+
+/**
  * Korean-name substring lookup over the in-memory snapshot of the persisted ticker store.
  *
  * ⚠️ **매칭 술어와 반환값 둘 다** 정본을 봐야 한다. 반환값만 덮으면 표시만 고쳐지고
  * 검색은 여전히 저장된(틀린) 이름으로만 걸린다 — 사용자가 올바른 이름(`실스큐`)을
  * 치면 0건, 틀린 이름(`씰스큐`)을 쳐야 나오는 상태가 된다(리뷰 round 2 지적).
- * `withCanonical`을 먼저 입히고 그 결과로 필터링하는 이유다.
+ * `withCanonical`을 먼저 입히고 그 결과로 필터링하는 이유다. 옛 표기(`씰스큐`)를
+ * 계속 찾게 하려면 저장된 값이 아니라 `KOREAN_SEARCH_ALIASES`에 명시한다 — 그래도
+ * 반환되는 이름은 정본이다.
+ *
+ * 매칭은 대소문자와 공백을 무시한다. 한글·영문이 섞인 질의는 토막별로 맞춘다
+ * ({@link matchesMixedScriptRuns}).
  */
 export async function searchByKoreanName(
     query: string
 ): Promise<TickerSearchResult[]> {
     const entries = await loadAllEntries();
-    const normalizedQuery = query.toLowerCase();
-    const mixedRuns = splitMixedScriptRuns(normalizedQuery);
+    const compactQuery = compact(query);
+    if (compactQuery === '') return [];
+    const mixedRuns = splitMixedScriptRuns(query.toLowerCase());
     return entries.flatMap(entry =>
-        entry.koreanName.toLowerCase().includes(normalizedQuery) ||
+        entry.searchNames.some(name => name.includes(compactQuery)) ||
         (mixedRuns !== null && matchesMixedScriptRuns(entry, mixedRuns))
             ? [koreanEntryToSearchResult(entry)]
             : []
@@ -242,32 +277,32 @@ interface MixedScriptRuns {
  * `삼성 SDI`로. 저장된 한글명(`실스큐`)에는 질의 전체가 부분 문자열로 들어 있지 않아
  * 0건이 되므로, 토막별로 나눠 맞춘다({@link matchesMixedScriptRuns}).
  */
-function splitMixedScriptRuns(normalizedQuery: string): MixedScriptRuns | null {
-    const hangul = normalizedQuery.match(HANGUL_RUN_REGEX) ?? [];
-    const latin = normalizedQuery.match(LATIN_RUN_REGEX) ?? [];
+function splitMixedScriptRuns(lowerQuery: string): MixedScriptRuns | null {
+    const hangul = lowerQuery.match(HANGUL_RUN_REGEX) ?? [];
+    const latin = lowerQuery.match(LATIN_RUN_REGEX) ?? [];
     return hangul.length > 0 && latin.length > 0 ? { hangul, latin } : null;
 }
 
 /**
- * 한글 토막은 전부 한글명에, 영문 토막은 전부 한글명·영문명·심볼 중 하나에 들어 있어야
- * 일치로 본다. 영문 토막을 한글명에도 대 보는 이유: `삼성SDI`처럼 한글명 자체가 영문을
- * 품은 종목을 띄어 쓴 질의(`삼성 SDI`)로도 찾게 하려는 것이다.
+ * 한글 토막은 전부 한글명(별칭 포함)에, 영문 토막은 전부 한글명·영문명·심볼 중 하나에
+ * 들어 있어야 일치로 본다. 영문 토막을 한글명에도 대 보는 이유: `삼성SDI`처럼 한글명
+ * 자체가 영문을 품은 종목을 띄어 쓴 질의(`삼성 SDI`)로도 찾게 하려는 것이다.
  *
  * 토막 전부를 요구(AND)하므로 `실` 한 글자처럼 넓은 한글 토막도 영문 토막이 좁혀 준다.
  */
 function matchesMixedScriptRuns(
-    entry: KoreanTickerEntry,
+    entry: SearchableKoreanEntry,
     runs: MixedScriptRuns
 ): boolean {
-    const koreanName = entry.koreanName.toLowerCase();
     const latinFields = [
-        koreanName,
+        ...entry.searchNames,
         entry.name.toLowerCase(),
         entry.symbol.toLowerCase(),
     ];
     return (
-        runs.hangul.every(run => koreanName.includes(run)) &&
-        runs.latin.every(run => latinFields.some(f => f.includes(run)))
+        runs.hangul.every(run =>
+            entry.searchNames.some(name => name.includes(run))
+        ) && runs.latin.every(run => latinFields.some(f => f.includes(run)))
     );
 }
 
