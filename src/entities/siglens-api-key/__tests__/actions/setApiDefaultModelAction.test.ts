@@ -96,8 +96,6 @@ describe('setApiDefaultModelAction', () => {
 
     it.each([
         ['로스터에 없는 ID', 'no-such-model'],
-        ['서버 키로 호출되는 free 등급 모델', 'claude-haiku-5-5'],
-        ['서버 키로 호출되는 member 등급 모델', 'claude-sonnet-5-5'],
         ['프로토타입 키', 'constructor'],
         ['SQL 조각', "claude-opus-5'; DROP TABLE users;--"],
     ])('%s는 invalid_model이고 저장하지 않는다', async (_label, model) => {
@@ -114,6 +112,25 @@ describe('setApiDefaultModelAction', () => {
         });
         expect(mockSetModel).not.toHaveBeenCalled();
     });
+
+    it.each([
+        ['free 등급', 'claude-haiku-5-5'],
+        ['member 등급', 'claude-sonnet-5-5'],
+        ['byok 등급', 'claude-opus-5'],
+    ])(
+        '%s 모델도 그 provider의 키가 있으면 기본 모델로 저장된다(API는 모든 모델을 사용자 키로 생성한다)',
+        async (_label, model) => {
+            providers('anthropic');
+
+            const result = await setApiDefaultModelAction(
+                IDLE,
+                makeFormData({ model })
+            );
+
+            expect(result).toEqual({ status: 'saved', model });
+            expect(mockSetModel).toHaveBeenCalledWith(USER_ID, model);
+        }
+    );
 
     it('model 필드가 문자열이 아니면 invalid_model', async () => {
         const result = await setApiDefaultModelAction(IDLE, new FormData());

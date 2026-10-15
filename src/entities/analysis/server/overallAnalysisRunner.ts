@@ -33,7 +33,7 @@ import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCa
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
 import {
-    assertCallerRouting,
+    resolveCallerKeyOptions,
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
 
@@ -110,7 +110,8 @@ export interface ExecuteOverallAnalysisParams {
  *
  * `runOverallAnalysisAction`(쿠키 세션)과 공개 API의 `run_fresh_analysis`가 공유한다. 세션을 읽지
  * 않고 `caller`(userId·tier·userApiKey)만 쓴다 — 어떤 키로 LLM을 부르는지는 호출부가 정하고,
- * `caller.byokOnly`면 core를 부르기 전에 서버 키가 선택될 수 없음을 확인한다.
+ * `caller.byokOnly`면 `resolveCallerKeyOptions`가 core에 `keyPolicy: 'byok-only'`를 싣는다. 캐시 확인(`cacheOnly`)은
+ * 키 없이 보내며, core는 적중이면 키 없이 돌려주고 미스면 `miss_no_trigger`로 끝낸다(단일 축과 같다).
  *
  * 예외는 삼키지 않고 던진다. 쿠키 액션은 자기 catch-all로 게이트 오류로 바꾸고, API는 provider
  * 상태 코드를 보존해 502로 바꾼다. (`'use server'` 파일이 아니므로 클라이언트에서 호출할 수 없다.)
@@ -126,7 +127,10 @@ export async function executeOverallAnalysis({
     signal,
 }: ExecuteOverallAnalysisParams): Promise<RunOverallAnalysisResult> {
     const userId = caller.userId;
-    assertCallerRouting(caller, modelId, options.cacheOnly === true);
+    const keyOptions = resolveCallerKeyOptions(
+        caller,
+        options.cacheOnly === true
+    );
     const { db } = getDatabaseClient();
     const newsRepo = new DrizzleNewsRepository(db);
 
@@ -273,9 +277,7 @@ export async function executeOverallAnalysis({
         optionsOiStale,
         financialsScorecard,
         signal,
-        ...(caller.userApiKey !== undefined
-            ? { userApiKey: caller.userApiKey }
-            : {}),
+        ...keyOptions,
         ...(options.force ? { force: true } : {}),
         ...(options.onPromptAssembled !== undefined
             ? { onPromptAssembled: options.onPromptAssembled }

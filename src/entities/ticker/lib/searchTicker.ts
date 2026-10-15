@@ -1,6 +1,8 @@
 import { deduplicateResults, isKoreanInput } from './ticker';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import {
+    API_UNTRANSLATED_CACHE_TTL,
+    buildApiTickerSearchCacheKey,
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,
 } from './cacheKeys';
@@ -10,6 +12,7 @@ import {
     searchBySymbol,
     toTickerSearchResult,
 } from './fmpTickerApi';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
 import { translateCompanyNames } from './koreanTranslator';
 import {
     getKoreanNames,
@@ -192,6 +195,13 @@ export async function searchTicker(
         try {
             const cached = await cache.get<TickerSearchResult[]>(cacheKey);
             if (cached) return cached;
+            // 서버 키 LLM을 못 쓰는 흐름(공개 API)이 남긴 번역 없는 결과 — 웹은 이 키를 읽지 않는다.
+            if (!isServerLlmAllowed()) {
+                const untranslated = await cache.get<TickerSearchResult[]>(
+                    buildApiTickerSearchCacheKey(trimmed)
+                );
+                if (untranslated) return untranslated;
+            }
         } catch {
             // Graceful degradation: cache read failure falls through to provider fetch.
         }
@@ -231,7 +241,8 @@ export async function searchTicker(
     // LLM 출력 토큰을 썼다(2026-10 비용 감사 L2). 잘린 종목은 다른 질의에서 상위에
     // 오를 때 그때 번역된다.
     const unmapped = final.filter(r => !r.koreanName);
-    if (unmapped.length > 0) {
+    const translate = isServerLlmAllowed();
+    if (translate && unmapped.length > 0) {
         fireAndForget(
             translateAndCache(unmapped).catch(e =>
                 console.warn('[searchTicker] background translation failed', e)
@@ -240,10 +251,20 @@ export async function searchTicker(
         );
     }
 
+    // 서버 키 LLM을 못 쓰는 흐름(공개 API)이 번역 없는 결과를 웹이 읽는 캐시(24시간)에 쓰면, 웹이 그 캐시를
+    // 적중해 번역을 시도할 기회를 잃는다. 그런 결과는 API 전용 키에 1시간만 두어 반복 호출이 FMP/Yahoo를
+    // 다시 부르지 않게 한다(웹은 이 키를 읽지 않는다). 번역이 끝난 결과는 그대로 공유 캐시에 쓴다.
     if (cache) {
+        const apiOnly = !translate && unmapped.length > 0;
         fireAndForget(
             cache
-                .set(cacheKey, final, TICKER_SEARCH_CACHE_TTL)
+                .set(
+                    apiOnly ? buildApiTickerSearchCacheKey(trimmed) : cacheKey,
+                    final,
+                    apiOnly
+                        ? API_UNTRANSLATED_CACHE_TTL
+                        : TICKER_SEARCH_CACHE_TTL
+                )
                 .catch(e =>
                     console.warn('[searchTicker] cache write failed', e)
                 ),

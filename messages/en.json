@@ -1028,7 +1028,7 @@
                 "cleared": "Default model cleared.",
                 "description": "When you leave out model on an API request for a new analysis, this model is used. The analysis runs on your own registered BYOK key and is billed to that key.",
                 "goToByok": "Go to AI model API keys",
-                "hint": "Only BYOK-class models can generate new analyses. Free and member models can only read the shared cache. Models are listed only for providers you have registered a key with.",
+                "hint": "Every model can generate new analyses, whatever its class, but only with your own key for that model's provider. On the website the free and member models run on SIGLENS's server key, but the API never uses the server key. Models are listed only for providers you have registered a key with.",
                 "noKeys": "You don't have a model you can run on your own key yet. Register a BYOK key for one of {v0}, then pick a model here.",
                 "notSetOption": "Not set (pass model on every request)",
                 "saveButton": "Save",
@@ -2872,7 +2872,7 @@
         },
         "developers": {
             "authentication": {
-                "byokBody": "run_fresh_analysis returns a shared cached analysis at no cost, and only when none exists does it generate a new one with the LLM key you registered in your account. Generating needs a BYOK-class model and a registered key for its provider. Pick the model in account settings or with the model argument. SIGLENS never uses its own server keys for this.",
+                "byokBody": "run_fresh_analysis returns a shared cached analysis at no cost, and only when none exists does it generate a new one with the LLM key you registered in your account. Generating works with any model, as long as you have registered a key for its provider. Pick the model in account settings or with the model argument. SIGLENS never uses its own LLM keys for this.",
                 "byokTitle": "AI analysis on your own key (BYOK)",
                 "cookies": "Login session cookies are never read. Being signed in in a browser does not replace a key.",
                 "failure": "A missing, malformed, revoked or unknown key all get the same answer, 401 invalid_api_key, without saying which one it was.",

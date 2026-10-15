@@ -1,5 +1,5 @@
 import type { AgentToolSpec } from '@y0ngha/siglens-core';
-import { API_GENERATABLE_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
+import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import {
     buildApiToolReference,
     buildApiToolReferences,
@@ -95,7 +95,7 @@ describe('exampleArgumentsFor', () => {
         ).toEqual({
             symbol: 'AAPL',
             kind: 'technical',
-            model: API_GENERATABLE_MODELS[0],
+            model: API_KNOWN_MODELS[0],
         });
     });
 });

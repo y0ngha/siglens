@@ -77,7 +77,7 @@ describe('GET /api/v1/openapi.json', () => {
         expect(Object.keys(doc.paths)).not.toContain('/tools/web_search');
         const fresh = JSON.stringify(doc.paths['/tools/run_fresh_analysis']);
         expect(fresh).toContain('BYOK');
-        expect(fresh).toContain('SigLens never spends its own key');
+        expect(fresh).toContain('SigLens never spends its own LLM key');
         // 설명문이 다른 도구를 언급할 수는 있다(에이전트용 문장 그대로) — 호출 가능한 오퍼레이션이 없다는 뜻이다.
         expect(JSON.stringify(doc)).not.toContain('"operationId":"web_search"');
     });

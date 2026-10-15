@@ -9,7 +9,7 @@ import {
 import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { resolveReasoning } from '@/shared/lib/byokGate';
 import {
-    assertCallerRouting,
+    resolveCallerKeyOptions,
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
@@ -46,7 +46,7 @@ export async function executeOptionsAnalysis({
     signal,
     cacheOnly,
 }: ExecuteOptionsAnalysisParams): Promise<RunOptionsAnalysisResult> {
-    assertCallerRouting(caller, modelId, cacheOnly);
+    const keyOptions = resolveCallerKeyOptions(caller, cacheOnly);
     const skipEnqueueIfMiss = cacheOnly;
     const snapshot = await fetchOptionsSnapshot(symbol);
     if (snapshot === null) {
@@ -75,8 +75,6 @@ export async function executeOptionsAnalysis({
         reasoning: resolveReasoning(caller.tier, reasoning),
         skipEnqueueIfMiss,
         signal,
-        ...(caller.userApiKey !== undefined
-            ? { userApiKey: caller.userApiKey }
-            : {}),
+        ...keyOptions,
     });
 }

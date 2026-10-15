@@ -1,5 +1,5 @@
 import type { AgentToolSpec, JsonSchemaProperty } from '@y0ngha/siglens-core';
-import { API_GENERATABLE_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
+import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import {
     FRESH_ANALYSIS_TOOL,
     typeLabel,
@@ -87,8 +87,8 @@ export function exampleArgumentsFor(
         ...EXAMPLE_OVERRIDES[tool.name],
     };
     // `run_fresh_analysis`: `model`이 없으면 계정에 기본 모델이 있어야 한다. 예시는 그 없이도 돌아가게
-    // 생성 가능한 첫 모델을 싣는다(스펙에 `model` 인자가 있을 때만).
-    const [firstModel] = API_GENERATABLE_MODELS;
+    // 로스터의 첫 모델을 싣는다(스펙에 `model` 인자가 있을 때만).
+    const [firstModel] = API_KNOWN_MODELS;
     if (
         tool.name === FRESH_ANALYSIS_TOOL &&
         'model' in tool.inputSchema.properties &&

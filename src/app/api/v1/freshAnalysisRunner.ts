@@ -20,10 +20,8 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import type { Locale } from '@/shared/i18n/locales';
 import {
-    assertCallerRouting,
     ByokOnlyRoutingError,
-    CACHE_PROBE_KEY_PLACEHOLDER,
-    tierForByokOnly,
+    resolveCallerKeyOptions,
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
 
@@ -43,11 +41,8 @@ export interface RunArgs {
 }
 
 export interface Runner {
-    callerFor(input: {
-        userKey: string | undefined;
-        byokOnly: boolean;
-        useProbePlaceholder: boolean;
-    }): AnalysisCaller;
+    /** 공개 API 호출자는 항상 BYOK 전용이다. 키가 없으면(캐시 확인) `userKey`를 비운다. */
+    callerFor(userKey: string | undefined): AnalysisCaller;
     run(args: RunArgs): Promise<Outcome>;
 }
 
@@ -57,28 +52,20 @@ export interface Runner {
  */
 export async function prepareRunner(input: RunnerInput): Promise<Runner> {
     const { symbol, kind, timeframe, model, locale, principal } = input;
-    const coreTier = tierForByokOnly(principal.tier);
     const [profile, asset] = await Promise.all([
         resolveMarketProfile(symbol),
         resolveAssetInfoOrNull(symbol, 'run_fresh_analysis'),
     ]);
     const companyName = asset?.name ?? symbol;
 
-    const callerFor: Runner['callerFor'] = ({
-        userKey,
-        byokOnly,
-        useProbePlaceholder,
-    }) => {
-        const userApiKey = useProbePlaceholder
-            ? CACHE_PROBE_KEY_PLACEHOLDER
-            : userKey;
-        return {
-            userId: principal.userId,
-            tier: coreTier,
-            byokOnly,
-            ...(userApiKey === undefined ? {} : { userApiKey }),
-        };
-    };
+    // tier는 호출자의 실제 값이다. BYOK 전용에서는 core가 tier로 키를 고르지 않으므로(서버 키를 읽지
+    // 않는다) tier는 타임프레임 접근·정보 깊이에만 쓰인다.
+    const callerFor: Runner['callerFor'] = userKey => ({
+        userId: principal.userId,
+        tier: principal.tier,
+        byokOnly: true,
+        ...(userKey === undefined ? {} : { userApiKey: userKey }),
+    });
 
     // 캐시 확인과 생성이 같은 이력 입력을 보게 한다(캐시 키에 접히는 값이라 둘이 어긋나면 안 되고,
     // 같은 조회를 두 번 하지 않는다). 첫 호출 때만 읽는다.
@@ -89,7 +76,7 @@ export async function prepareRunner(input: RunnerInput): Promise<Runner> {
             profile,
             fmpSymbol: asset?.fmpSymbol,
             userId: principal.userId,
-            tier: coreTier,
+            tier: principal.tier,
             positionBucketLogTag:
                 '[api/v1] run_fresh_analysis position bucket resolution failed, degrading to no-bucket:',
         })
@@ -103,8 +90,8 @@ export async function prepareRunner(input: RunnerInput): Promise<Runner> {
         caller,
         signal,
     }: RunArgs): Promise<Outcome> => {
-        // 생성(LLM을 부를 수 있는) 호출은 반드시 BYOK 전용 검사를 거친다. 캐시 확인만 이 검사 없이 돈다
-        // (자리표시 키·free/member 등급 모델은 `cacheOnly`에서만 허용된다).
+        // 공개 API 호출은 언제나 BYOK 전용이다. 생성(LLM을 부를 수 있는) 호출이 그 표시 없이 오면
+        // `keyPolicy: 'byok-only'`가 core에 가지 않아 서버 키 경로가 열리므로 core를 부르기 전에 거절한다.
         if (!cacheOnly && caller.byokOnly !== true)
             throw new ByokOnlyRoutingError(
                 'generating call without the BYOK-only check'
@@ -129,16 +116,13 @@ export async function prepareRunner(input: RunnerInput): Promise<Runner> {
                     locale,
                     skipEnqueueIfMiss: cacheOnly,
                     signal,
-                    // 서버 키 fallback 금지: `providerFallback`을 켜면 사용자 DeepSeek 호출이 실패할 때
-                    // core가 서버 Gemini 키로 다시 시도한다. 사용자가 고른 모델이므로 쓰지 않는다.
+                    // 서버 키 fallback 금지: `providerFallback`을 켜지 않는다(`keyPolicy: 'byok-only'`도 core에서
+                    // 이를 끈다). 사용자가 고른 모델이므로 실패는 그대로 드러나야 한다.
                     priorAnalyses: inputs.priorAnalyses,
                     marketEvents: inputs.marketEvents,
                     positionBucket: inputs.positionBucket,
-                    ...(caller.userApiKey === undefined
-                        ? {}
-                        : { userApiKey: caller.userApiKey }),
+                    ...resolveCallerKeyOptions(caller, cacheOnly),
                 };
-                assertCallerRouting(caller, model, cacheOnly);
                 return (await runAnalysis(
                     symbol,
                     companyName,

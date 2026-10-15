@@ -622,7 +622,7 @@ function buildInfoDescription(baseUrl: string): string {
         '',
         `- Base URL: \`${baseUrl}${PUBLIC_API_BASE_PATH}\`.`,
         `- Authentication: \`Authorization: Bearer ${API_KEY_PREFIX}...\`. Create a key at siglens.io/account.`,
-        '- AI analysis uses your own LLM key (BYOK). SigLens never spends its own key on API calls, and a cached analysis costs nothing.',
+        '- AI analysis uses your own LLM key (BYOK). SigLens never spends its own LLM key on API calls, and a cached analysis costs nothing.',
         `- Rate limits are per account, shared by all your keys: ${renderLimits(PUBLIC_API_RATE_LIMITS.data)} for tools; generating a new analysis has its own limit of ${renderLimits(PUBLIC_API_RATE_LIMITS.ai)}.`,
         `- Responses are \`{ "data": ..., "meta": ... }\` on success and \`{ "error": { "code", "message" } }\` on failure. A request body is limited to ${PUBLIC_API_MAX_BODY_CHARS.toLocaleString('en-US')} characters.`,
         `- Send \`${LOCALE_HEADER_DOC_NAME}: ${LOCALES.join('|')}\` to choose the language of localized text.`,

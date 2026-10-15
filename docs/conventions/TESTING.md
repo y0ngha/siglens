@@ -230,6 +230,11 @@ When a function starts passing a new argument or dependency to a mocked collabor
 
 Do not use `mock.calls[0]` or `[1]`: a late call from an earlier test can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`.
 
+Assert what was written (the key and TTL), not just how many times the collaborator was called.
+
+- ❌ `expect(set.mock.calls[0][0]).toBe(key)` or `expect(set).toHaveBeenCalledTimes(1)`.
+- ✅ `expect(set).toHaveBeenCalledWith(key, value, ttl)`.
+
 <a id="TE-28"></a>
 
 #### TE-28 — Test-only resets are separate exports

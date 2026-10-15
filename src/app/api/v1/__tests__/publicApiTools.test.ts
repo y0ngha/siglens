@@ -39,10 +39,7 @@ vi.mock('@/app/api/ai/chat/tools/getCongressTrades', () => ({
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
-import {
-    API_GENERATABLE_MODELS,
-    API_KNOWN_MODELS,
-} from '@/entities/siglens-api-key/lib/apiModels';
+import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import {
     findPublicApiToolSpec,
     PUBLIC_API_EXCLUDED_TOOLS,
@@ -124,14 +121,14 @@ describe('run_fresh_analysis의 API 전용 스펙', () => {
         expect(core.inputSchema.properties).not.toHaveProperty('model');
     });
 
-    it('model 열거값은 로스터 전체, 설명은 생성 가능한 byok 모델을 나열한다', () => {
+    it('model 열거값은 로스터 전체(등급 무관)이고, 설명은 어느 모델이든 사용자 키로 생성한다고 말한다', () => {
         const model = api.inputSchema.properties.model;
         expect(model.enum).toEqual([...API_KNOWN_MODELS]);
-        for (const id of API_GENERATABLE_MODELS) {
-            expect(model.enum).toContain(id);
-            expect(model.description).toContain(id);
-        }
-        expect(model.description).not.toContain('claude-haiku-5-5');
+        expect(model.enum).toContain('claude-haiku-5-5');
+        expect(model.enum).toContain('claude-opus-5');
+        expect(model.description).toContain('your own provider key');
+        expect(model.description).not.toContain('premium');
+        expect(api.description).not.toContain('premium');
     });
 
     it('설명은 에이전트용 문구("턴당 3회")가 아니라 BYOK·ai 한도를 말한다', () => {
