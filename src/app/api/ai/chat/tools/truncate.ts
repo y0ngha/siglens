@@ -13,14 +13,14 @@ export const TOOL_RESULT_MAX_CHARS = 4_000;
 export const BARS_RESULT_MAX_CHARS = 6_000;
 
 /**
- * `get_market_overview` / `get_economy` ceiling. Measured on representative
+ * `get_market_overview` / `get_economy` / `get_investor_flows` ceiling. Measured on representative
  * worst-case fixtures (2026-09-14): a full US signal scan (15 sectors, 10
  * capped top signals, long tickers/labels) serializes to ~3,460 chars;
  * a dense macro week (9 indicators, 10 capped calendar events, a two-
  * paragraph Korean briefing) serializes to ~3,670 chars. Both already cap
  * their list lengths by construction (`topSignals`/`upcomingCalendar`), so
  * this ceiling is headroom against the JSON envelope, not a rescue for an
- * unbounded list. `get_fundamentals` and `get_congress_trades` fit
+ * unbounded list. `get_investor_flows` (2026-10-16, full tool output incl. envelope, heavier-than-real worst case: 30 long-named holders, 40 insiders with long roles, 10 large holders, squeeze data) measures ~5,260 chars — the `SUMMARY_MAX_*` caps in `summarizeInvestorFlows.ts` keep it ≥600 under this ceiling (`getInvestorFlows.test.ts` pins it). `get_fundamentals` and `get_congress_trades` fit
  * comfortably under the shared `TOOL_RESULT_MAX_CHARS` default (~830 and
  * ~2,500 chars respectively) and do not need their own ceiling.
  */

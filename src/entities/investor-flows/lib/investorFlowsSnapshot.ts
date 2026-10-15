@@ -14,7 +14,7 @@ import type {
     InvestorFlowsSnapshot,
     ShortInterestPoint,
     ShortVolumePoint,
-} from '../coreTypes';
+} from '@y0ngha/siglens-core';
 import { addDays, isPeriodComplete } from './investorFlowsDates';
 
 /** 스냅샷에 담는 상한 — 화면·프롬프트 크기를 묶는다. */

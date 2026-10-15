@@ -72,6 +72,7 @@ import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverall
 import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
 import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
 import { runCongressTrendAction } from '@/entities/analysis/actions/runCongressTrendAction';
+import { runInvestorFlowsAction } from '@/entities/analysis/actions/runInvestorFlowsAction';
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
@@ -125,6 +126,7 @@ type AnalysisType =
     | 'marketNewsDigest'
     | 'options'
     | 'congress'
+    | 'investorFlows'
     | 'briefing'
     | 'macroBriefing';
 
@@ -568,6 +570,16 @@ const DISPATCH: Record<
 
     congress: (params, signal, locale, quota) =>
         runCongressTrendAction(
+            params.symbol as string,
+            params.modelId as ModelId,
+            locale,
+            params.reasoning as boolean | undefined,
+            signal,
+            quota.cacheOnly
+        ),
+
+    investorFlows: (params, signal, locale, quota) =>
+        runInvestorFlowsAction(
             params.symbol as string,
             params.modelId as ModelId,
             locale,

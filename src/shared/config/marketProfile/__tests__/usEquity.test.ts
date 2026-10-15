@@ -25,6 +25,11 @@ describe('us-equity market profile descriptor', () => {
         expect(d.tabs).toContain('financials');
     });
 
+    it('includes the flows (수급) tab, placed after congress (US-only: KRX redistribution licence rules KR out)', () => {
+        expect(d.tabs).toContain('flows');
+        expect(d.tabs.indexOf('flows')).toBe(d.tabs.indexOf('congress') + 1);
+    });
+
     it('supports the full intraday timeframe set including 4Hour', () => {
         expect(d.allowedTimeframes).toEqual([
             '5Min',

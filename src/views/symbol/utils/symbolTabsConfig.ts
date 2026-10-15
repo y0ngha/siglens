@@ -39,6 +39,11 @@ export const TABS = [
         hrefBuilder: (s: string) => `/${s}/congress`,
     },
     {
+        key: 'flows',
+        labelKey: 'flows',
+        hrefBuilder: (s: string) => `/${s}/flows`,
+    },
+    {
         key: 'options',
         labelKey: 'options',
         hrefBuilder: (s: string) => `/${s}/options`,

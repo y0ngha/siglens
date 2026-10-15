@@ -21,6 +21,9 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+// Cross-entity(investor-flows): 종합 분석이 수급 점수표를 입력으로 받는다 — `src/entities/CLAUDE.md`
+// "의도적 예외" 표에 등재된 허용 경로.
+import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
@@ -190,14 +193,32 @@ export async function executeOverallAnalysis({
                 return undefined;
             });
 
-    const [rows, next, optionsSnapshot, financialsScorecard, macroCalendar] =
-        await Promise.all([
-            newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-            getNextEarningsReport(symbol, db),
-            optionsSnapshotPromise,
-            financialsScorecardPromise,
-            loadNewsMacroCalendar(),
-        ]);
+    // 시장 프로필은 아래에서도 쓴다 — 수급 점수표가 미국 주식에만 붙으므로 먼저 시작해 다른 fetch와 겹친다.
+    const marketProfilePromise = resolveMarketProfile(symbol);
+    /**
+     * 수급(기관·내부자·공매도) 점수표. 미국 주식이 아니거나 장애면 `undefined`(= 종합에 넣지 않음),
+     * 미국 주식인데 데이터가 없으면 `null`(= 프롬프트가 "데이터 없음"을 명시). 세 경로(웹·공개 API·프리웜)가
+     * 같은 함수를 불러야 inputHash가 같다 — `getOverallInvestorFlowsScorecard` JSDoc.
+     */
+    const investorFlowsScorecardPromise = marketProfilePromise.then(profile =>
+        getOverallInvestorFlowsScorecard(symbol, profile)
+    );
+
+    const [
+        rows,
+        next,
+        optionsSnapshot,
+        financialsScorecard,
+        investorFlowsScorecard,
+        macroCalendar,
+    ] = await Promise.all([
+        newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
+        getNextEarningsReport(symbol, db),
+        optionsSnapshotPromise,
+        financialsScorecardPromise,
+        investorFlowsScorecardPromise,
+        loadNewsMacroCalendar(),
+    ]);
 
     // Overall news axis는 core 안에서 동일한 `runNewsAnalysis`를 호출한다
     // (dependencyResolver → runNewsAnalysis). `/news` 페이지의 호출과 동일한
@@ -217,7 +238,7 @@ export async function executeOverallAnalysis({
     // to avoid a lossy assetClass→profileId round-trip at the sessionSpecFor call.
     // assetClass lets core treat absent fundamentals/options/earnings as intentional
     // for crypto (2-axis: technical + news) rather than missing stock data.
-    const marketProfile = await resolveMarketProfile(symbol);
+    const marketProfile = await marketProfilePromise;
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
     const session = sessionSpecFor(marketProfile);
@@ -276,6 +297,8 @@ export async function executeOverallAnalysis({
         optionsSnapshot: optionsSnapshot ?? undefined,
         optionsOiStale,
         financialsScorecard,
+        // `undefined`면 필드를 생략한 것과 같다(core: 캐시 키·프롬프트가 도입 전과 바이트 동일).
+        investorFlowsScorecard,
         signal,
         ...keyOptions,
         ...(options.force ? { force: true } : {}),

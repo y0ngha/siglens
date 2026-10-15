@@ -1,0 +1,299 @@
+import { test, expect } from '../support/fixtures';
+import { E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
+
+/**
+ * 수급(기관·내부자·공매도) 탭 E2E — `/[symbol]/flows`.
+ *
+ * - 본문은 서버 렌더(RSC)이고 데이터는 `FakeInvestorFlowsDataProvider`(E2E_TEST=1)가 준다: DB·FMP·FINRA를
+ *   부르지 않는다. 날짜는 오늘 기준 상대값이라 **숫자·라벨**로 단언한다(날짜 문자열 금지).
+ * - AI 해석은 클라이언트 훅이 `runInvestorFlowsAction`을 부르고, E2E에서는 고정 fixture
+ *   (`e2e/fixtures/analysis.json`의 `investorFlows`)가 즉시 돌아온다.
+ * - `EMPTYX`: 수급 데이터 없음(정상 빈 상태, degrade 아님).
+ * - 미국 주식 전용 — 한국 종목·크립토는 404(탭이 없다).
+ */
+
+const AI_SUMMARY =
+    'E2E 고정 수급 해석: 기관은 순매수, 내부자는 클러스터 매수가 보여요.';
+const AI_FETCH_FAILED = '데이터를 불러오지 못했습니다.';
+const FORCED_ERROR_LOG = 'E2E 강제 수급 분석 실패 (resilience 테스트용)';
+
+test.describe('flows: happy path', () => {
+    test('h1·활성 탭·점수 카드·기준 시점이 렌더된다', async ({ page }) => {
+        await page.goto('/AAPL/flows');
+
+        await expect(
+            page.getByRole('heading', {
+                level: 1,
+                name: /AAPL.*기관·공매도 수급/,
+            })
+        ).toBeVisible();
+        await expect(
+            page
+                .getByRole('navigation', { name: '분석 종류' })
+                .getByRole('link', { name: '수급', exact: true })
+        ).toHaveAttribute('aria-current', 'page');
+
+        await expect(
+            page.getByRole('heading', { level: 2, name: /수급 점수/ })
+        ).toBeVisible();
+        // 축별 라벨은 색이 아니라 글자로도 나온다(데이터 부족 포함).
+        const scorecard = page.locator(
+            'section[aria-labelledby="flows-scorecard-heading"]'
+        );
+        await expect(scorecard.getByRole('heading', { level: 3 })).toHaveCount(
+            4
+        );
+
+        const asOf = page.locator(
+            'section[aria-labelledby="flows-asof-heading"]'
+        );
+        await expect(asOf).toContainText('제출 완료');
+        await expect(asOf).toContainText('부분 집계');
+        await expect(asOf).toContainText('마지막 거래일');
+        await expect(asOf).toContainText('최대 45일 안에 제출');
+    });
+
+    test('기관 IN/OUT 막대와 4분할 카드가 방향을 글자·부호로 보여 준다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        const chart = page.getByRole('list', { name: /분기별 기관 순매수/ });
+        await expect(chart).toBeVisible();
+        await expect(
+            chart.getByText('IN', { exact: true }).first()
+        ).toBeVisible();
+        await expect(
+            chart.getByText('OUT', { exact: true }).first()
+        ).toBeVisible();
+        await expect(chart.getByText('부분 집계')).toBeVisible();
+        await expect(chart.getByText(/^\+/).first()).toBeVisible();
+        await expect(chart.getByText(/^-/).first()).toBeVisible();
+
+        for (const label of [
+            '신규 진입',
+            '지분 증가',
+            '지분 감소',
+            '완전 청산',
+        ]) {
+            // 라벨 옆에 (i) 툴팁 버튼이 붙어 있어 exact 매칭이 안 된다.
+            await expect(page.getByText(label).first()).toBeVisible();
+        }
+        await expect(
+            page.getByText(/직전 분기보다 \d+곳 (많아요|적어요)/).first()
+        ).toBeVisible();
+    });
+
+    test('상위 보유 기관 표에서 신규·청산 필터가 동작한다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        await expect(
+            page
+                .getByText('Fixture Index Advisors')
+                .filter({ visible: true })
+                .first()
+        ).toBeVisible();
+        await page.getByRole('button', { name: /^완전 청산 \d+$/ }).click();
+        await expect(
+            page
+                .getByText('Fixture Hedge Fund LP')
+                .filter({ visible: true })
+                .first()
+        ).toBeVisible();
+        await expect(
+            page.getByText('Fixture Index Advisors').filter({ visible: true })
+        ).toHaveCount(0);
+    });
+
+    test('공매도(FINRA) 구간: 잔고·상환일수·장외(TRF) 비중과 각주가 나온다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        const short = page.locator(
+            'section[aria-labelledby="flows-short-heading"]'
+        );
+        await expect(short).toBeVisible();
+        await expect(short.getByText('공매도 잔고(주)')).toBeVisible();
+        await expect(short.getByText('상환일수').first()).toBeVisible();
+        await expect(short.getByText('평소보다 급증')).toBeVisible();
+        await expect(
+            short.getByText(/장외\(TRF\) 보고분 기준이에요/)
+        ).toBeVisible();
+    });
+
+    test('내부자: 클러스터 매수 배지와 매수·매도 라벨이 나온다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        const insider = page.locator(
+            'section[aria-labelledby="flows-insider-heading"]'
+        );
+        await expect(insider.getByText(/클러스터 매수/)).toBeVisible();
+        await expect(
+            insider
+                .getByText('매수', { exact: true })
+                .filter({ visible: true })
+                .first()
+        ).toBeVisible();
+        await expect(
+            insider
+                .getByText('매도', { exact: true })
+                .filter({ visible: true })
+                .first()
+        ).toBeVisible();
+    });
+
+    test('용어 (i) 툴팁이 열린다', async ({ page }) => {
+        await page.goto('/AAPL/flows');
+
+        const heading = page.getByRole('heading', {
+            level: 2,
+            name: /수급 점수/,
+        });
+        await heading.getByRole('button').hover();
+        await expect(
+            page.getByRole('tooltip').getByText(/점수\(-100~\+100\)로 합친 값/)
+        ).toBeVisible();
+    });
+
+    test('AI 해석이 마지막 섹션으로 렌더된다', async ({ page }) => {
+        await page.goto('/AAPL/flows');
+
+        await expect(
+            page.getByRole('heading', { level: 2, name: 'AI 수급 해석' })
+        ).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText(AI_SUMMARY)).toBeVisible({
+            timeout: 10_000,
+        });
+    });
+
+    test('항상 noindex이고 JSON-LD가 SSR에 있다', async ({ page }) => {
+        const response = await page.request.get('/AAPL/flows');
+        expect(response.status()).toBe(200);
+        const html = await response.text();
+        expect(html).toMatch(/<meta name="robots" content="noindex/);
+        expect(html).toContain('application/ld+json');
+    });
+});
+
+test.describe('flows: 모바일(390px)', () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
+    test('표 대신 카드로 나오고 가로 스크롤이 생기지 않는다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+        await expect(
+            page.locator('table').filter({ visible: true })
+        ).toHaveCount(0);
+        await expect(
+            page
+                .getByText('Fixture Index Advisors')
+                .filter({ visible: true })
+                .first()
+        ).toBeVisible();
+        const overflow = await page.evaluate(
+            () =>
+                document.documentElement.scrollWidth -
+                document.documentElement.clientWidth
+        );
+        expect(overflow).toBeLessThanOrEqual(0);
+    });
+});
+
+test.describe('flows: 데이터 없음', () => {
+    test('EMPTYX는 200 + "데이터 없음" 빈 상태(degrade 아님)이고 AI를 부르지 않는다', async ({
+        page,
+    }) => {
+        const response = await page.goto('/EMPTYX/flows');
+        expect(response?.status()).toBe(200);
+
+        await expect(
+            page.getByRole('heading', {
+                level: 1,
+                name: /EMPTYX.*기관·공매도 수급/,
+            })
+        ).toBeVisible();
+        await expect(page.getByText(/데이터 없음 — 이 종목은/)).toBeVisible();
+        await expect(
+            page.getByRole('heading', { name: 'AI 수급 해석' })
+        ).toHaveCount(0);
+    });
+});
+
+test.describe('flows: resilience', () => {
+    test('AI 오류 쿠키 → 오류 UI, 수급 본문은 그대로, 다시 시도로 복구', async ({
+        page,
+        context,
+    }) => {
+        await context.addCookies([
+            {
+                name: E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE,
+                value: '1',
+                url: 'http://localhost:4300',
+            },
+        ]);
+        const consoleErrors: string[] = [];
+        page.on('console', msg => {
+            if (msg.type() === 'error') consoleErrors.push(msg.text());
+        });
+
+        await page.goto('/AAPL/flows');
+
+        await expect(
+            page.getByRole('alert').filter({ hasText: AI_FETCH_FAILED })
+        ).toBeVisible({ timeout: 10_000 });
+        await expect
+            .poll(
+                () =>
+                    consoleErrors.some(line => line.includes(FORCED_ERROR_LOG)),
+                { timeout: 10_000 }
+            )
+            .toBe(true);
+        await expect(
+            page.getByText(FORCED_ERROR_LOG, { exact: false })
+        ).toHaveCount(0);
+        // 본문은 AI와 독립이다.
+        await expect(
+            page.getByRole('heading', { level: 2, name: /수급 점수/ })
+        ).toBeVisible();
+
+        await context.clearCookies({
+            name: E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE,
+        });
+        await page.getByRole('button', { name: '다시 시도' }).click();
+        await expect(page.getByText(AI_SUMMARY)).toBeVisible({
+            timeout: 10_000,
+        });
+    });
+});
+
+test.describe('flows: 미국 주식 전용', () => {
+    test('한국 종목은 404 + noindex다(탭이 없다)', async ({ page }) => {
+        const response = await page.request.get('/005930.KS/flows');
+        expect(response.status()).toBe(404);
+        expect(await response.text()).toMatch(
+            /<meta name="robots" content="noindex/
+        );
+    });
+
+    test('크립토는 404다', async ({ page }) => {
+        const response = await page.request.get('/BTCUSD/flows');
+        expect(response.status()).toBe(404);
+    });
+
+    test('한국 종목 탭 바에는 수급 탭이 없다', async ({ page }) => {
+        await page.goto('/005930.KS');
+        await expect(
+            page
+                .getByRole('navigation', { name: '분석 종류' })
+                .getByRole('link', { name: '수급', exact: true })
+        ).toHaveCount(0);
+    });
+});

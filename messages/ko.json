@@ -353,6 +353,11 @@
                 "2e23eb": "외부 데이터 제공처가 일시적으로 응답하지 않을 수 있어요. 잠시 후\n                다시 시도해 주세요.",
                 "eb2523": "{v0} 홈으로"
             },
+            "flows": {
+                "degradedBody": "데이터 저장소가 잠시 응답하지 않고 있어요. 잠시 후 다시 방문하시면 기관·내부자·공매도 수급을 보실 수 있어요.",
+                "degradedTitle": "수급 데이터를 일시적으로 불러올 수 없어요",
+                "heading": "{v0} 기관·공매도 수급"
+            },
             "loading": {
                 "486c8b": "데이터 로딩 중…",
                 "673e73": "AI 옵션 분석 불러오는 중"
@@ -366,7 +371,8 @@
                 "8b7ae7": "AI 종합 분석",
                 "a74840": "차트 분석",
                 "f1b01b": "옵션 분석",
-                "f9482c": "공포 탐욕 지수"
+                "f9482c": "공포 탐욕 지수",
+                "flows": "기관·공매도 수급"
             },
             "page": {
                 "2ab959": "지금 가격은 이 아파트 몇 층?",
@@ -1426,6 +1432,7 @@
                 "congress": "상원·하원 의원 매매 공시와 AI 동향 해석",
                 "fear-greed": "거래량·가격 위치로 본 0~100 점수",
                 "financials": "손익계산서·재무상태표·현금흐름표",
+                "flows": "기관 매수·매도, 내부자 거래, 공매도 잔고와 AI 해석",
                 "fundamental": "재무·밸류에이션·애널리스트 전망",
                 "news": "실시간 뉴스 + 애널리스트 의견 분석",
                 "options": "옵션 시장이 보는 가격대와 기대 변동성",
@@ -1437,6 +1444,7 @@
                 "congress": "의회 거래",
                 "fear-greed": "공포 탐욕 지수",
                 "financials": "재무제표",
+                "flows": "기관·공매도 수급",
                 "fundamental": "펀더멘털 분석",
                 "news": "뉴스 분석",
                 "options": "옵션 분석",
@@ -1977,6 +1985,11 @@
                     "titleCore": "재무제표",
                     "titleTail": "매출·이익·현금흐름"
                 },
+                "flows": {
+                    "description": "{subject}의 기관 보유 변화(13F), 내부자 거래, 5% 대량보유 공시, 공매도 잔고를 한곳에 모아 보여주고 AI가 수급 흐름을 해석합니다.",
+                    "titleCore": "기관 수급",
+                    "titleTail": "13F·내부자·공매도"
+                },
                 "fundamental": {
                     "description": "{subject} 회사 프로필, PER·PSR·EPS 밸류에이션, ROE·마진 수익성, 부채·현금흐름 재무 건전성을 한 페이지에서 정리합니다. 애널리스트 컨센서스와 목표 주가도 이어 봅니다.",
                     "descriptionWithSector": "{subject} 회사 프로필, PER·PSR·EPS 밸류에이션, ROE·마진 수익성, 부채·현금흐름 재무 건전성을 한 페이지에서 정리합니다. {sector} 섹터 위치와 애널리스트 컨센서스와 목표 주가도 이어 봅니다.",
@@ -2212,6 +2225,7 @@
             "congress": "의회 거래",
             "fear-greed": "공포 탐욕 지수",
             "financials": "재무제표",
+            "flows": "수급",
             "fundamental": "펀더멘털",
             "news": "뉴스",
             "options": "옵션",
@@ -3053,7 +3067,8 @@
                 "af0480": "위험 요인",
                 "b8f729": "강세 시나리오",
                 "da6fd3": "기술적 분석",
-                "de4a87": "종합 분석 요약"
+                "de4a87": "종합 분석 요약",
+                "investorFlows": "수급"
             },
             "RelatedSymbols": {
                 "c35191": "관련 종목"
@@ -3333,6 +3348,7 @@
                 "toolFreshAnalysis": "새 분석 생성",
                 "toolFundamentals": "기업 개요·재무",
                 "toolGuide": "차트 가이드",
+                "toolInvestorFlows": "기관·내부자·공매도 수급",
                 "toolMarketOverview": "시장 동향",
                 "toolNews": "뉴스",
                 "toolOptions": "옵션",
@@ -4298,6 +4314,278 @@
                 "Trendinginterest": "관심 급상승"
             }
         },
+        "investor-flows": {
+            "ai": {
+                "axes": "축별 해석",
+                "dataNotes": "데이터 참고",
+                "errorFallback": "수급 해석 중 오류가 발생했습니다.",
+                "keySignals": "핵심 신호",
+                "noData": "수급 데이터가 부족해 AI 해석을 만들지 않았어요.",
+                "progress": "AI 수급 해석 진행 중…",
+                "risks": "유의할 점",
+                "title": "AI 수급 해석"
+            },
+            "asOf": {
+                "delay": "13F는 분기말 보유 현황을 분기가 끝나고 최대 45일 안에 제출해요. 그래서 이 화면의 기관 수치는 지금이 아니라 한두 달 이상 지난 시점의 모습이에요.",
+                "insiderNone": "데이터 없음",
+                "insiderWindow": "{from} ~ {to} (최근 {days}일)",
+                "institutionalComplete": "{period} 분기말 · 제출 완료",
+                "institutionalNone": "데이터 없음",
+                "institutionalPartial": "더 최근인 {period} 분기는 일부만 제출된 부분 집계예요.",
+                "shortInterestDate": "결제일 {date}",
+                "shortInterestNone": "데이터 없음",
+                "shortVolumeDate": "마지막 거래일 {date}",
+                "shortVolumeNone": "데이터 없음",
+                "sources": "출처: 미국 SEC EDGAR의 13F(기관 보유), Form 4·13D/G(내부자·대량보유, FMP 제공).",
+                "sourcesWithFinra": "출처: 미국 SEC EDGAR의 13F(기관 보유), Form 4·13D/G(내부자·대량보유, FMP 제공), FINRA(공매도 잔고·장외 보고분 거래).",
+                "termInsider": "내부자 거래",
+                "termInstitutional": "기관 보유(13F)",
+                "termShortInterest": "공매도 잔고",
+                "termShortVolume": "일별 공매도 비중",
+                "termSnapshot": "조회 기준일",
+                "title": "기준 시점·출처"
+            },
+            "axis": {
+                "insider": "내부자",
+                "institutional": "기관",
+                "largeHolders": "대량보유(5%)",
+                "short": "공매도"
+            },
+            "empty": {
+                "body": "데이터 없음 — 이 종목은 기관 보유(13F)·내부자·공매도 데이터가 아직 없어요. 신규 상장이거나 거래 규모가 작은 종목에서 흔해요.",
+                "title": "수급 데이터"
+            },
+            "ev": {
+                "daysToCover": "상환일수 {days}일",
+                "holders": "보유 기관 {count}곳 (직전 분기 대비 {change})",
+                "holdersOnly": "보유 기관 {count}곳",
+                "insiderCluster": "클러스터 매수: 서로 다른 내부자 {count}명",
+                "insiderCounts": "매수 {buys}건 · 매도 {sells}건",
+                "insiderNetBuy": "최근 {days}일 순매수 {amount}",
+                "insiderNetSell": "최근 {days}일 순매도 {amount}",
+                "largeHolderCounts": "13D {d}건 · 13G {g}건 (최근 {days}일)",
+                "netSharesOutstanding": "기관 보유 주식 순변화 {pct} (발행주식 대비)",
+                "netSharesPrior": "기관 보유 주식 순변화 {pct} (직전 분기 보유량 대비)",
+                "newExited": "신규 진입 {added}곳 · 완전 청산 {exited}곳",
+                "shortPct": "공매도 잔고 {pct} (유통주식 대비)",
+                "shortRatio": "장외 공매도 비중 {pct} (최근 거래일)",
+                "shortTrend": "잔고 변화 {pct} (최근 3회 결제일 기준)"
+            },
+            "filter": {
+                "all": "전체 {count}",
+                "exited": "완전 청산 {count}",
+                "new": "신규 진입 {count}"
+            },
+            "flowChart": {
+                "caption": "위로 향한 막대는 순매수(IN), 아래로 향한 막대는 순매도(OUT)예요. 점선 막대는 아직 제출이 끝나지 않은 부분 집계예요.",
+                "flat": "변화 없음",
+                "in": "IN",
+                "out": "OUT",
+                "partial": "부분 집계",
+                "title": "분기별 기관 순매수(IN)·순매도(OUT)"
+            },
+            "holders": {
+                "basis": "{period} 분기말 보유 기준이고, 변화는 직전 분기와 비교한 값이에요.",
+                "colChange": "직전 분기 대비",
+                "colName": "기관",
+                "colShares": "보유 주식",
+                "colStatus": "상태",
+                "emptyFiltered": "해당하는 기관이 없어요.",
+                "filterLabel": "보기 필터",
+                "noChange": "변화 없음",
+                "noData": "데이터 없음 — 상위 보유 기관 목록이 아직 없어요.",
+                "title": "상위 보유 기관"
+            },
+            "holdersTrend": {
+                "aria": "보유 기관 수가 {from}곳에서 {to}곳으로 변했어요",
+                "caption": "제출이 끝난 분기만 그려요. 선이 오르면 이 종목을 담은 기관이 늘었다는 뜻이에요.",
+                "title": "보유 기관 수 추이"
+            },
+            "insider": {
+                "buy": "매수",
+                "buys": "매수",
+                "clusterBadge": "클러스터 매수 · 내부자 {count}명",
+                "colDate": "거래일",
+                "colFiling": "공시",
+                "colName": "내부자",
+                "colShares": "주식 수",
+                "colType": "구분",
+                "colValue": "금액",
+                "filing": "공시 보기",
+                "net": "순매수·순매도",
+                "netBuy": "순매수 {amount}",
+                "netFlat": "순매수·순매도 없음",
+                "netSell": "순매도 {amount}",
+                "noData": "데이터 없음 — 신고된 내부자 거래가 없어요.",
+                "noRecent": "최근 {days}일 동안 내부자 매수·매도 신고가 없어요.",
+                "noTrades": "표에 담을 매수·매도 신고가 없어요.",
+                "omittedOther": "증여·옵션 행사 등 기타 신고 {count}건은 표에서 뺐어요.",
+                "sell": "매도",
+                "sells": "매도",
+                "summary": "{count}건 · {people}명 · {amount}",
+                "tableTitle": "최근 내부자 매수·매도",
+                "title": "내부자 거래 (Form 4)",
+                "window": "최근 {days}일({from} ~ {to}) 기준이에요."
+            },
+            "institutional": {
+                "noData": "데이터 없음 — 이 종목의 기관 보유(13F) 데이터가 아직 없어요.",
+                "partialNote": "진행 중인 {period} 분기는 제출이 끝나지 않은 부분 집계예요. 지금까지 {holders}곳이 제출했고 순변화는 {net}({direction})이에요.",
+                "subtitle": "대형 기관이 분기마다 신고하는 보유 주식(13F)으로 들어온(IN) 흐름과 나간(OUT) 흐름을 봐요.",
+                "title": "기관 매수·매도 (13F)"
+            },
+            "label": {
+                "bearish": "약세 신호",
+                "bullish": "강세 신호",
+                "insufficient": "데이터 부족",
+                "neutral": "중립",
+                "strongBearish": "강한 약세 신호",
+                "strongBullish": "강한 강세 신호"
+            },
+            "largeHolders": {
+                "colDate": "공시일",
+                "colForm": "양식",
+                "colPercent": "지분율",
+                "colShares": "보유 주식",
+                "filing": "공시 보기",
+                "kind13d": "13D 행동주의",
+                "kind13g": "13G 단순 투자",
+                "kindOther": "기타",
+                "noData": "데이터 없음 — 접수된 5% 대량보유 공시가 없어요.",
+                "subtitle": "한 회사 지분을 5% 넘게 가진 주주가 낸 최근 공시예요.",
+                "title": "5% 이상 대량보유 (13D·13G)",
+                "unavailable": "대량보유 공시를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.",
+                "unknownFiler": "제출자 미상"
+            },
+            "scorecard": {
+                "axisInsufficient": "데이터가 부족해 점수에 반영하지 않았어요.",
+                "axisScore": "{score}점",
+                "compositeCaption": "{count}개 축 기준 종합 점수 (-100 ~ +100)",
+                "compositeInsufficient": "데이터가 부족해 종합 점수를 계산하지 못했어요.",
+                "title": "수급 점수"
+            },
+            "short": {
+                "change": "직전 결제일 대비",
+                "changeDown": "감소",
+                "changeFlat": "변화 없음",
+                "changeUp": "증가",
+                "changeVs": "{date} 대비 {shares}주",
+                "chartAria": "결제일 {count}회의 공매도 잔고 추이 그래프",
+                "chartDaysToCover": "상환일수 추이(일)",
+                "chartDtcAria": "결제일 {count}회의 상환일수 추이 그래프",
+                "chartPctFloat": "공매도 잔고 추이(유통주식 대비 %)",
+                "chartQty": "공매도 잔고 추이(주)",
+                "days": "{days}일",
+                "daysToCover": "상환일수",
+                "interestBasis": "최근 결제일 {date} 기준이에요.",
+                "interestTitle": "공매도 잔고·상환일수 (결제일별)",
+                "markerDrop": "평소보다 급감",
+                "markerNormal": "평소 수준",
+                "markerSurge": "평소보다 급증",
+                "noPreviousSettlement": "비교할 직전 결제일이 없어요",
+                "pctFloat": "유통주식 대비",
+                "qty": "공매도 잔고(주)",
+                "squeezeBadge": "숏스퀴즈 위험",
+                "squeezeNote": "공매도 잔고가 유통주식의 {pct}, 상환일수가 {days}일로 높은 편이에요. 주가가 오르면 되사려는 수요가 한꺼번에 몰릴 수 있어요.",
+                "subtitle": "주식을 빌려 팔고 아직 갚지 않은 물량과, 거래일마다의 장외 공매도 비중을 봐요.",
+                "title": "공매도",
+                "trendFalling": "최근 흐름: 감소 추세",
+                "trendFlat": "최근 흐름: 보합",
+                "trendRising": "최근 흐름: 증가 추세",
+                "unknown": "알 수 없음",
+                "volumeAria": "최근 {count}거래일의 일별 장외 공매도 비중 그래프",
+                "volumeAverage": "점선은 최근 {days}거래일 평균 {pct}예요.",
+                "volumeFootnote": "장외(TRF) 보고분 기준이에요. 거래소 안에서 체결된 공매도는 포함하지 않아요.",
+                "volumeLatest": "{date} 기준 {pct}",
+                "volumeTitle": "일별 장외(TRF) 공매도 비중"
+            },
+            "split": {
+                "basis": "{period} 분기 기준, {previous} 분기와 비교해요.",
+                "basisNoPrevious": "{period} 분기 기준이에요. 비교할 직전 분기 자료는 없어요.",
+                "count": "{count}곳",
+                "decreased": "지분 감소",
+                "deltaDown": "직전 분기보다 {delta}곳 적어요",
+                "deltaFlat": "직전 분기와 같아요",
+                "deltaUp": "직전 분기보다 {delta}곳 많아요",
+                "exited": "완전 청산",
+                "increased": "지분 증가",
+                "newHolders": "신규 진입",
+                "noPrevious": "비교할 직전 분기가 없어요",
+                "title": "직전 분기 대비 기관 움직임"
+            },
+            "status": {
+                "decreased": "감소",
+                "exited": "청산",
+                "increased": "증가",
+                "new": "신규",
+                "unchanged": "유지"
+            },
+            "tooltip": {
+                "daysToCover": [
+                    "상환일수(Days to Cover)는 공매도 잔고를 평균 거래량으로 나눈 값으로, 공매도한 물량을 모두 되사는 데 며칠 걸리는지를 뜻해요.",
+                    "숫자가 클수록 되사기가 어려워질 수 있어요."
+                ],
+                "flowScore": [
+                    "기관·내부자·대량보유·공매도 흐름을 점수(-100~+100)로 합친 값이에요. 높을수록 강세 쪽 신호가 많다는 뜻이에요.",
+                    "과거 공시를 규칙으로 계산한 참고 지표이고, 앞으로의 주가를 알려 주지는 않아요."
+                ],
+                "form4": [
+                    "Form 4는 임원·이사·10% 이상 주주 같은 내부자가 자기 회사 주식을 사거나 팔면 2영업일 안에 내는 신고서예요.",
+                    "내부자가 공개 시장에서 직접 사고판 내역을 볼 수 있어요."
+                ],
+                "increasedDecreased": [
+                    "지분 증가는 직전 분기보다 주식 수를 늘린 기관, 지분 감소는 줄인 기관이에요.",
+                    "이번 분기에도 계속 보유하고 있는 기관만 센 값이에요."
+                ],
+                "insiderCluster": [
+                    "짧은 기간에 서로 다른 내부자 여러 명이 공개 시장에서 주식을 산 경우예요.",
+                    "여러 사람이 비슷한 시기에 샀다는 사실만 알려 주고, 이후 주가를 보장하지는 않아요."
+                ],
+                "institutionalHolding": [
+                    "펀드·연기금·자산운용사 같은 기관이 이 종목을 얼마나 들고 있는지를 말해요.",
+                    "13F에 보고된 분기말 기준 주식 수예요."
+                ],
+                "largeHolder13dg": [
+                    "13D와 13G는 한 회사 주식을 5% 넘게 가진 주주가 내는 공시예요.",
+                    "13D는 경영에 영향을 주려는 목적(행동주의)일 때, 13G는 단순 투자일 때 내요."
+                ],
+                "netBuySell": [
+                    "순매수(IN)는 기관들이 산 주식 수가 판 주식 수보다 많은 경우, 순매도(OUT)는 그 반대예요.",
+                    "분기말 보유 주식 수가 직전 분기보다 늘었는지 줄었는지로 계산해요."
+                ],
+                "newExited": [
+                    "신규 진입은 직전 분기에는 없다가 이번 분기에 새로 담은 기관이고, 완전 청산은 직전 분기에 있던 보유분을 모두 판 기관이에요.",
+                    "기관의 수를 센 값이라 금액이 큰지 작은지는 따로 봐야 해요."
+                ],
+                "offExchangeShortRatio": [
+                    "그날 장외(TRF)에서 보고된 거래 중 공매도가 차지한 비율이에요.",
+                    "거래소 안에서 체결된 공매도는 빠져 있어서 전체 공매도 비중보다 작게 보일 수 있어요."
+                ],
+                "partialAggregation": [
+                    "부분 집계는 아직 13F 제출 기한이 지나지 않아 일부 기관의 보고만 모인 상태예요.",
+                    "수치가 작아 보여도 줄어든 게 아닐 수 있어서, 점수에는 제출이 끝난 분기만 써요."
+                ],
+                "pctOfFloat": [
+                    "유통주식 대비 %는 공매도 잔고를 시장에서 실제로 거래될 수 있는 주식 수로 나눈 값이에요.",
+                    "같은 잔고라도 유통주식이 적은 종목에서 더 크게 느껴져요."
+                ],
+                "settlementDate": [
+                    "결제일은 공매도 거래가 실제로 정산되는 기준일이에요. 보통 매달 15일과 말일 무렵이에요.",
+                    "FINRA는 결제일로부터 약 8영업일 뒤에 잔고를 공개해서, 화면의 잔고는 그만큼 늦은 자료예요."
+                ],
+                "shortInterest": [
+                    "공매도 잔고는 주식을 빌려서 판 뒤 아직 되갚지 않은 주식의 총량이에요.",
+                    "주가가 내려가면 이익을 보는 쪽에 걸린 물량이라, 많을수록 하락에 건 베팅이 많다는 뜻이에요."
+                ],
+                "shortSqueeze": [
+                    "숏스퀴즈는 공매도한 쪽이 손실을 줄이려고 주식을 한꺼번에 되사면서 주가가 가파르게 오르는 현상이에요.",
+                    "공매도 잔고 비중과 상환일수가 모두 높을 때 가능성이 커지지만, 반드시 일어나는 건 아니에요."
+                ],
+                "thirteenF": [
+                    "13F는 운용 규모가 큰 기관이 분기마다 미국 SEC에 내는 보유 주식 보고서예요.",
+                    "분기가 끝나고 최대 45일 뒤에 공개돼서, 지금이 아니라 지난 분기말 시점의 보유 현황이에요."
+                ]
+            }
+        },
         "layout": {
             "ContactDialog": {
                 "531f6a": "문의하기",
@@ -4639,6 +4927,10 @@
             },
             "IntegratedConclusion": {
                 "85f201": "통합 결론"
+            },
+            "InvestorFlowsSummary": {
+                "listLabel": "수급 항목",
+                "title": "수급 요약"
             },
             "NewsSummary": {
                 "218ec8": "뉴스 분석 요약",

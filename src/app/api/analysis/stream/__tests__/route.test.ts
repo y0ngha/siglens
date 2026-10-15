@@ -241,6 +241,9 @@ vi.mock('@/entities/analysis/actions/runFinancialsAnalysisAction', () => ({
 vi.mock('@/entities/analysis/actions/runCongressTrendAction', () => ({
     runCongressTrendAction: vi.fn(),
 }));
+vi.mock('@/entities/analysis/actions/runInvestorFlowsAction', () => ({
+    runInvestorFlowsAction: vi.fn(),
+}));
 vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
     submitNewsAnalysisAction: vi.fn(),
 }));
@@ -316,6 +319,7 @@ import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverall
 import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
 import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
 import { runCongressTrendAction } from '@/entities/analysis/actions/runCongressTrendAction';
+import { runInvestorFlowsAction } from '@/entities/analysis/actions/runInvestorFlowsAction';
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
@@ -916,6 +920,32 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 undefined,
+                expect.any(AbortSignal),
+                false
+            );
+        });
+
+        it('investorFlows → runInvestorFlowsAction (symbol, modelId, locale, reasoning, signal, cacheOnly)', async () => {
+            vi.mocked(runInvestorFlowsAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'investorFlows',
+                params: {
+                    symbol: 'AAPL',
+                    modelId: 'gemini-3.6-flash',
+                    reasoning: true,
+                },
+            });
+            const response = await POST(makeRequest(undefined, body, 'ja'));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(runInvestorFlowsAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'gemini-3.6-flash',
+                'ja',
+                true,
                 expect.any(AbortSignal),
                 false
             );

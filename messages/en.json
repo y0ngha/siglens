@@ -353,6 +353,11 @@
                 "2e23eb": "The external data provider may be temporarily unresponsive. Please try again later.",
                 "eb2523": "{v0} Home"
             },
+            "flows": {
+                "degradedBody": "The data store is temporarily unresponsive. Please visit again shortly to see institutional, insider and short-selling flows.",
+                "degradedTitle": "Investor flows data is temporarily unavailable",
+                "heading": "{v0} Investor Flows"
+            },
             "loading": {
                 "486c8b": "Loading data…",
                 "673e73": "Loading AI Options Analysis"
@@ -366,7 +371,8 @@
                 "8b7ae7": "AI Overall Analysis",
                 "a74840": "Chart Analysis",
                 "f1b01b": "Options Analysis",
-                "f9482c": "Fear & Greed Index"
+                "f9482c": "Fear & Greed Index",
+                "flows": "Investor Flows"
             },
             "page": {
                 "2ab959": "which floor of this building is the price on?",
@@ -1426,6 +1432,7 @@
                 "congress": "Senate and House trade disclosures with AI trend reading",
                 "fear-greed": "0–100 score from volume and price position",
                 "financials": "Income statement, balance sheet and cash flow",
+                "flows": "Institutional buying and selling, insider trades, short interest and an AI reading",
                 "fundamental": "Financials, valuation and analyst outlook",
                 "news": "Real-time news plus analyst opinion analysis",
                 "options": "Price levels and implied volatility as the options market sees them",
@@ -1437,6 +1444,7 @@
                 "congress": "Congressional Trades",
                 "fear-greed": "Fear & Greed Index",
                 "financials": "Financial Statements",
+                "flows": "Investor Flows",
                 "fundamental": "Fundamental Analysis",
                 "news": "News Analysis",
                 "options": "Options Analysis",
@@ -1977,6 +1985,11 @@
                     "titleCore": "Financial Statements",
                     "titleTail": "Revenue, Profit & Cash Flow"
                 },
+                "flows": {
+                    "description": "See institutional 13F holding changes, insider trades, 5% holder filings and short interest for {subject} in one place, with an AI reading of the flows.",
+                    "titleCore": "Investor Flows",
+                    "titleTail": "13F, Insider & Short Interest"
+                },
                 "fundamental": {
                     "description": "See {subject}'s company profile, PER/PSR/EPS valuation, ROE and margin profitability, and debt/cash-flow health on one page, plus analyst consensus and price targets.",
                     "descriptionWithSector": "See {subject}'s company profile, PER/PSR/EPS valuation, ROE and margin profitability, and debt/cash-flow health on one page, plus its position in the {sector} sector, analyst consensus, and price targets.",
@@ -2115,6 +2128,7 @@
             "congress": "Congressional Trades",
             "fear-greed": "Fear & Greed",
             "financials": "Financial Statements",
+            "flows": "Flows",
             "fundamental": "Fundamentals",
             "news": "News",
             "options": "Options",
@@ -2541,7 +2555,8 @@
                 "af0480": "Risk Factors",
                 "b8f729": "Bullish Scenario",
                 "da6fd3": "Technical Analysis",
-                "de4a87": "Overall Analysis Summary"
+                "de4a87": "Overall Analysis Summary",
+                "investorFlows": "Investor flows"
             },
             "RelatedSymbols": {
                 "c35191": "Related tickers"
@@ -4170,6 +4185,278 @@
                 "Altcoins": "Altcoins"
             }
         },
+        "investor-flows": {
+            "ai": {
+                "axes": "Reading by axis",
+                "dataNotes": "Data notes",
+                "errorFallback": "Something went wrong while reading investor flows.",
+                "keySignals": "Key signals",
+                "noData": "There is not enough investor flow data, so no AI reading was generated.",
+                "progress": "Generating the AI reading of investor flows…",
+                "risks": "Things to keep in mind",
+                "title": "AI Reading of Investor Flows"
+            },
+            "asOf": {
+                "delay": "A 13F reports quarter-end holdings and is filed up to 45 days after the quarter ends. So the institutional figures here show positions from a month or two ago or more, not today.",
+                "insiderNone": "No data",
+                "insiderWindow": "{from} to {to} (last {days} days)",
+                "institutionalComplete": "End of {period} quarter · fully filed",
+                "institutionalNone": "No data",
+                "institutionalPartial": "The more recent {period} quarter is a partial count with only some filings in.",
+                "shortInterestDate": "Settlement date {date}",
+                "shortInterestNone": "No data",
+                "shortVolumeDate": "Last trading day {date}",
+                "shortVolumeNone": "No data",
+                "sources": "Sources: SEC EDGAR 13F (institutional holdings) and Form 4 and 13D/G (insiders and large holders, via FMP).",
+                "sourcesWithFinra": "Sources: SEC EDGAR 13F (institutional holdings), Form 4 and 13D/G (insiders and large holders, via FMP), and FINRA (short interest and off-exchange reported trades).",
+                "termInsider": "Insider trades",
+                "termInstitutional": "Institutional holdings (13F)",
+                "termShortInterest": "Short interest",
+                "termShortVolume": "Daily short ratio",
+                "termSnapshot": "Data pulled on",
+                "title": "As-of Dates & Sources"
+            },
+            "axis": {
+                "insider": "Insiders",
+                "institutional": "Institutions",
+                "largeHolders": "Large holders (5%)",
+                "short": "Short selling"
+            },
+            "empty": {
+                "body": "No data — this stock has no institutional (13F), insider or short-selling data yet. That is common for new listings and small, thinly traded stocks.",
+                "title": "Investor Flow Data"
+            },
+            "ev": {
+                "daysToCover": "Days to cover {days}",
+                "holders": "{count} institutions hold it ({change} vs prior quarter)",
+                "holdersOnly": "{count} institutions hold it",
+                "insiderCluster": "Cluster buy by {count} different insiders",
+                "insiderCounts": "{buys} buys · {sells} sells",
+                "insiderNetBuy": "Net buying of {amount} in the last {days} days",
+                "insiderNetSell": "Net selling of {amount} in the last {days} days",
+                "largeHolderCounts": "{d} Schedule 13D · {g} Schedule 13G filings (last {days} days)",
+                "netSharesOutstanding": "Net change in institutional shares {pct} (of shares outstanding)",
+                "netSharesPrior": "Net change in institutional shares {pct} (vs prior-quarter holdings)",
+                "newExited": "{added} new positions · {exited} full exits",
+                "shortPct": "Short interest {pct} (of float)",
+                "shortRatio": "Off-exchange short ratio {pct} (latest trading day)",
+                "shortTrend": "Short interest change {pct} (last 3 settlement dates)"
+            },
+            "filter": {
+                "all": "All {count}",
+                "exited": "Exited {count}",
+                "new": "New {count}"
+            },
+            "flowChart": {
+                "caption": "Bars pointing up are net buying (IN) and bars pointing down are net selling (OUT). A dashed bar is a partial count that is still being filed.",
+                "flat": "No change",
+                "in": "IN",
+                "out": "OUT",
+                "partial": "Partial",
+                "title": "Institutional Net Buying (IN) & Selling (OUT) by Quarter"
+            },
+            "holders": {
+                "basis": "Holdings as of the end of the {period} quarter; changes are versus the prior quarter.",
+                "colChange": "Vs prior quarter",
+                "colName": "Institution",
+                "colShares": "Shares held",
+                "colStatus": "Status",
+                "emptyFiltered": "No institutions match this filter.",
+                "filterLabel": "View filter",
+                "noChange": "No change",
+                "noData": "No data — the list of top holders is not available yet.",
+                "title": "Top Institutional Holders"
+            },
+            "holdersTrend": {
+                "aria": "The number of institutional holders changed from {from} to {to}",
+                "caption": "Only fully filed quarters are drawn. A rising line means more institutions hold the stock.",
+                "title": "Number of Institutional Holders"
+            },
+            "insider": {
+                "buy": "Buy",
+                "buys": "Buys",
+                "clusterBadge": "Cluster buy · {count} insiders",
+                "colDate": "Trade date",
+                "colFiling": "Filing",
+                "colName": "Insider",
+                "colShares": "Shares",
+                "colType": "Type",
+                "colValue": "Value",
+                "filing": "View filing",
+                "net": "Net buying or selling",
+                "netBuy": "Net buy {amount}",
+                "netFlat": "No net buying or selling",
+                "netSell": "Net sell {amount}",
+                "noData": "No data — no insider trades have been reported.",
+                "noRecent": "No insider buys or sells were reported in the last {days} days.",
+                "noTrades": "There are no buy or sell filings to list.",
+                "omittedOther": "{count} other filings, such as gifts and option exercises, are left out of the table.",
+                "sell": "Sell",
+                "sells": "Sells",
+                "summary": "{count} trades · {people} insiders · {amount}",
+                "tableTitle": "Recent Insider Buys & Sells",
+                "title": "Insider Trading (Form 4)",
+                "window": "Covers the last {days} days ({from} to {to})."
+            },
+            "institutional": {
+                "noData": "No data — there are no institutional (13F) holdings for this stock yet.",
+                "partialNote": "The {period} quarter is still being filed, so it is a partial count: {holders} institutions so far, net change {net} ({direction}).",
+                "subtitle": "Quarterly 13F holdings reported by large institutions show what flowed in (IN) and what flowed out (OUT).",
+                "title": "Institutional Buying & Selling (13F)"
+            },
+            "label": {
+                "bearish": "Bearish",
+                "bullish": "Bullish",
+                "insufficient": "Not enough data",
+                "neutral": "Neutral",
+                "strongBearish": "Strongly bearish",
+                "strongBullish": "Strongly bullish"
+            },
+            "largeHolders": {
+                "colDate": "Filed",
+                "colForm": "Form",
+                "colPercent": "Stake",
+                "colShares": "Shares",
+                "filing": "View filing",
+                "kind13d": "13D activist",
+                "kind13g": "13G passive",
+                "kindOther": "Other",
+                "noData": "No data — no 5% large-holder filings were found.",
+                "subtitle": "Recent filings by shareholders who own more than 5% of the company.",
+                "title": "5%+ Large Holders (13D · 13G)",
+                "unavailable": "Could not load large-holder filings. Please check again shortly.",
+                "unknownFiler": "Unknown filer"
+            },
+            "scorecard": {
+                "axisInsufficient": "Not enough data, so this axis is left out of the score.",
+                "axisScore": "Score {score}",
+                "compositeCaption": "Overall score from {count} {count, plural, one {axis} other {axes}} (-100 to +100)",
+                "compositeInsufficient": "There is not enough data to calculate an overall score.",
+                "title": "Flow Score"
+            },
+            "short": {
+                "change": "Vs previous settlement",
+                "changeDown": "Down",
+                "changeFlat": "No change",
+                "changeUp": "Up",
+                "changeVs": "{shares} shares vs {date}",
+                "chartAria": "Chart of short interest across {count} settlement dates",
+                "chartDaysToCover": "Days to cover trend (days)",
+                "chartDtcAria": "Chart of days to cover across {count} settlement dates",
+                "chartPctFloat": "Short interest trend (% of float)",
+                "chartQty": "Short interest trend (shares)",
+                "days": "{days} days",
+                "daysToCover": "Days to cover",
+                "interestBasis": "As of the latest settlement date, {date}.",
+                "interestTitle": "Short Interest & Days to Cover (by settlement date)",
+                "markerDrop": "Sharply below normal",
+                "markerNormal": "Near normal",
+                "markerSurge": "Sharply above normal",
+                "noPreviousSettlement": "No previous settlement date to compare",
+                "pctFloat": "Of float",
+                "qty": "Short interest (shares)",
+                "squeezeBadge": "Short squeeze risk",
+                "squeezeNote": "Short interest is {pct} of the float and days to cover is {days}, both on the high side. If the price rises, buy-to-cover demand could surge all at once.",
+                "subtitle": "Shares sold short and not yet repaid, plus the daily share of off-exchange short selling.",
+                "title": "Short Selling",
+                "trendFalling": "Recent trend: falling",
+                "trendFlat": "Recent trend: flat",
+                "trendRising": "Recent trend: rising",
+                "unknown": "Unknown",
+                "volumeAria": "Chart of the daily off-exchange short ratio over the last {count} trading days",
+                "volumeAverage": "The dashed line is the {days}-trading-day average of {pct}.",
+                "volumeFootnote": "Based on off-exchange (TRF) reports only. Short sales executed on exchanges are not included.",
+                "volumeLatest": "{pct} on {date}",
+                "volumeTitle": "Daily Off-Exchange (TRF) Short Ratio"
+            },
+            "split": {
+                "basis": "Based on the {period} quarter, compared with {previous}.",
+                "basisNoPrevious": "Based on the {period} quarter. There is no prior quarter to compare with.",
+                "count": "{count}",
+                "decreased": "Decreased",
+                "deltaDown": "{delta} fewer than last quarter",
+                "deltaFlat": "Same as last quarter",
+                "deltaUp": "{delta} more than last quarter",
+                "exited": "Fully exited",
+                "increased": "Increased",
+                "newHolders": "New positions",
+                "noPrevious": "No prior quarter to compare",
+                "title": "Institutional Moves vs the Prior Quarter"
+            },
+            "status": {
+                "decreased": "Decreased",
+                "exited": "Exited",
+                "increased": "Increased",
+                "new": "New",
+                "unchanged": "Unchanged"
+            },
+            "tooltip": {
+                "daysToCover": [
+                    "Days to cover is short interest divided by average trading volume, meaning how many days it would take to buy back all the shorted shares.",
+                    "The bigger the number, the harder it may be to buy them back."
+                ],
+                "flowScore": [
+                    "The flow score combines institutional, insider, large-holder and short-selling activity into one number from -100 to +100. A higher score means more bullish signals.",
+                    "It is a reference figure calculated by rules from past filings and does not tell you where the price will go next."
+                ],
+                "form4": [
+                    "Form 4 is a report that insiders such as officers, directors and 10% owners must file within two business days of buying or selling their own company's stock.",
+                    "It lets you see what insiders actually bought and sold on the open market."
+                ],
+                "increasedDecreased": [
+                    "Increased means an institution holds more shares than last quarter, and decreased means it holds fewer.",
+                    "Only institutions that still hold the stock this quarter are counted."
+                ],
+                "insiderCluster": [
+                    "A cluster buy is when several different insiders buy the stock on the open market within a short period.",
+                    "It only tells you several people bought around the same time, and says nothing certain about the price afterwards."
+                ],
+                "institutionalHolding": [
+                    "This is how much of the stock institutions such as funds, pension plans and asset managers hold.",
+                    "It uses the share counts reported in 13F filings as of the quarter end."
+                ],
+                "largeHolder13dg": [
+                    "Schedules 13D and 13G are filings made by shareholders who own more than 5% of a company.",
+                    "13D is filed when the holder may try to influence management (activism), and 13G when it is a passive investment."
+                ],
+                "netBuySell": [
+                    "Net buying (IN) means institutions bought more shares than they sold, and net selling (OUT) is the opposite.",
+                    "It is worked out from whether quarter-end holdings rose or fell versus the previous quarter."
+                ],
+                "newExited": [
+                    "A new position is an institution that did not hold the stock last quarter but does now, and a full exit is one that sold everything it held last quarter.",
+                    "These count institutions, not dollars, so the size of each position has to be checked separately."
+                ],
+                "offExchangeShortRatio": [
+                    "This is the share of that day's off-exchange (TRF) reported trades that were short sales.",
+                    "Short sales executed on exchanges are left out, so it can look smaller than the true overall short share."
+                ],
+                "partialAggregation": [
+                    "A partial count means the 13F filing deadline has not passed yet, so only some institutions' reports are in.",
+                    "Low numbers may not mean a real drop, so the score only uses quarters whose filings are complete."
+                ],
+                "pctOfFloat": [
+                    "Percent of float is short interest divided by the number of shares that can actually trade on the market.",
+                    "The same short interest weighs more heavily on a stock with a smaller float."
+                ],
+                "settlementDate": [
+                    "The settlement date is the reference date on which short sales are actually settled, usually around the 15th and the end of each month.",
+                    "FINRA publishes the figures about 8 business days after the settlement date, so what you see is that much behind."
+                ],
+                "shortInterest": [
+                    "Short interest is the total number of shares that were borrowed and sold short and have not yet been bought back.",
+                    "These positions profit if the price falls, so a larger number means more bets on a decline."
+                ],
+                "shortSqueeze": [
+                    "A short squeeze is a sharp price jump that happens when short sellers rush to buy back shares to limit their losses.",
+                    "It becomes more likely when both short interest and days to cover are high, but it does not always happen."
+                ],
+                "thirteenF": [
+                    "A 13F is a report of stock holdings that large institutions file with the US SEC every quarter.",
+                    "It is published up to 45 days after the quarter ends, so it shows holdings as of the last quarter end, not today."
+                ]
+            }
+        },
         "layout": {
             "ContactDialog": {
                 "531f6a": "Contact Us",
@@ -4512,6 +4799,10 @@
             "IntegratedConclusion": {
                 "85f201": "Integrated Conclusion"
             },
+            "InvestorFlowsSummary": {
+                "listLabel": "Investor flows items",
+                "title": "Investor Flows Summary"
+            },
             "NewsSummary": {
                 "218ec8": "News Analysis Summary",
                 "2f750a": "News Analysis Items"
@@ -4787,6 +5078,7 @@
                 "toolCongressTrades": "Congressional Trades",
                 "toolEconomy": "Economic data",
                 "toolFundamentals": "Company fundamentals",
+                "toolInvestorFlows": "Investor flows",
                 "toolMarketOverview": "Market overview",
                 "toolFreshAnalysis": "Fresh analysis",
                 "toolNews": "News",

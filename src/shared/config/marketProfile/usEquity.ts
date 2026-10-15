@@ -38,6 +38,7 @@ export const US_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
         'fundamental',
         'financials',
         'congress',
+        'flows',
         'options',
         'fear-greed',
         'overall',

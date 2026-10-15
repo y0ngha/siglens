@@ -42,6 +42,13 @@ vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
+const { mockFlowsScorecard } = vi.hoisted(() => ({
+    mockFlowsScorecard: vi.fn(async () => undefined as unknown),
+}));
+vi.mock(
+    '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard',
+    () => ({ getOverallInvestorFlowsScorecard: mockFlowsScorecard })
+);
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveReasoning: vi.fn(
         (tier: string, clientReasoning?: boolean) =>
@@ -80,6 +87,46 @@ const byokCaller = {
 beforeEach(() => {
     vi.clearAllMocks();
     mockRun.mockResolvedValue({ status: 'done', result: {} } as never);
+    mockFlowsScorecard.mockResolvedValue(undefined);
+});
+
+describe('executeOverallAnalysis — 수급 점수표(investorFlowsScorecard) 주입', () => {
+    it('웹 액션·공개 API가 공유하는 이 경로가 점수표를 core에 그대로 넘긴다', async () => {
+        const scorecard = { composite: { score: 12 } };
+        mockFlowsScorecard.mockResolvedValue(scorecard);
+
+        await executeOverallAnalysis({
+            ...base,
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+
+        expect(mockFlowsScorecard).toHaveBeenCalledWith('AAPL', 'us-equity');
+        expect(callFor(BYOK_MODEL)).toMatchObject({
+            investorFlowsScorecard: scorecard,
+        });
+    });
+
+    it('데이터 없음(null)은 null로, 미통합(undefined)은 undefined로 구분해 넘긴다', async () => {
+        mockFlowsScorecard.mockResolvedValue(null);
+        await executeOverallAnalysis({
+            ...base,
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+        expect(callFor(BYOK_MODEL)).toMatchObject({
+            investorFlowsScorecard: null,
+        });
+
+        mockRun.mockClear();
+        mockFlowsScorecard.mockResolvedValue(undefined);
+        await executeOverallAnalysis({
+            ...base,
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+        expect(callFor(BYOK_MODEL)?.investorFlowsScorecard).toBeUndefined();
+    });
 });
 
 describe('executeOverallAnalysis', () => {

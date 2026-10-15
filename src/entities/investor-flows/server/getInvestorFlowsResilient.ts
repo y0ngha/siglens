@@ -2,7 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import type { InvestorFlowsSnapshot } from '../coreTypes';
+import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import { getInvestorFlowsSnapshot } from './getInvestorFlowsSnapshot';
 
 export interface ResilientInvestorFlows {

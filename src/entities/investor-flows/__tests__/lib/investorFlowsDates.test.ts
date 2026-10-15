@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     addDays,
+    compareIsoDate,
     eachDate,
     isPeriodComplete,
     isQuarterEnd,
@@ -90,5 +91,36 @@ describe('investorFlowsDates', () => {
             expect(positionsRetentionFloor('2026-10-15')).toBe('2026-03-31');
             expect(positionsRetentionFloor('2026-11-30')).toBe('2026-06-30');
         });
+    });
+});
+
+describe('compareIsoDate', () => {
+    it('오름차순: 앞이 이르면 -1, 늦으면 1, 같으면 0', () => {
+        expect(compareIsoDate('2026-06-30', '2026-09-30')).toBe(-1);
+        expect(compareIsoDate('2026-09-30', '2026-06-30')).toBe(1);
+        expect(compareIsoDate('2026-06-30', '2026-06-30')).toBe(0);
+    });
+
+    it('월·연 경계에서도 사전순이 시간순이다', () => {
+        expect(compareIsoDate('2025-12-31', '2026-01-01')).toBe(-1);
+        expect(compareIsoDate('2026-02-09', '2026-02-10')).toBe(-1);
+    });
+
+    it('인자를 바꿔 쓰면 내림차순 정렬이 된다', () => {
+        expect(
+            ['2026-03-31', '2026-09-30', '2026-06-30'].toSorted((a, b) =>
+                compareIsoDate(b, a)
+            )
+        ).toEqual(['2026-09-30', '2026-06-30', '2026-03-31']);
+    });
+
+    it('같은 키는 입력 순서를 유지한다(안정 정렬 — 0을 돌려주기 때문)', () => {
+        const rows = [
+            { d: '2026-01-01', n: 1 },
+            { d: '2026-01-01', n: 2 },
+        ];
+        expect(
+            rows.toSorted((a, b) => compareIsoDate(a.d, b.d)).map(r => r.n)
+        ).toEqual([1, 2]);
     });
 });

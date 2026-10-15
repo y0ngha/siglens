@@ -12,6 +12,7 @@ export type TabKey =
     | 'fundamental'
     | 'financials'
     | 'congress'
+    | 'flows'
     | 'options'
     | 'fear-greed'
     | 'overall'

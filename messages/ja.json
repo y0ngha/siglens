@@ -353,6 +353,11 @@
                 "2e23eb": "外部データ提供元が一時的に応答しない場合があります。しばらくしてから\n                再試行してください。",
                 "eb2523": "{v0} ホームへ"
             },
+            "flows": {
+                "degradedBody": "データストアが一時的に応答していません。しばらくしてから再度アクセスすると、機関・インサイダー・空売りの需給をご覧いただけます。",
+                "degradedTitle": "需給データを一時的に読み込めません",
+                "heading": "{v0} 機関・空売りの需給"
+            },
             "loading": {
                 "486c8b": "データ読み込み中…",
                 "673e73": "AIオプション分析読み込み中"
@@ -366,7 +371,8 @@
                 "8b7ae7": "AI総合分析",
                 "a74840": "チャート分析",
                 "f1b01b": "オプション分析",
-                "f9482c": "恐怖・強欲指数"
+                "f9482c": "恐怖・強欲指数",
+                "flows": "機関・空売りの需給"
             },
             "page": {
                 "2ab959": "今の価格はこのマンションの何階？",
@@ -1426,6 +1432,7 @@
                 "congress": "上院・下院議員の売買開示とAIによる動向解釈",
                 "fear-greed": "出来高と価格位置で見る0〜100点",
                 "financials": "損益計算書・貸借対照表・キャッシュフロー計算書",
+                "flows": "機関の売買、インサイダー取引、空売り残高とAIによる解釈",
                 "fundamental": "財務・バリュエーション・アナリスト見通し",
                 "news": "リアルタイムニュース＋アナリスト見解の分析",
                 "options": "オプション市場が見る価格帯とボラティリティ",
@@ -1437,6 +1444,7 @@
                 "congress": "議会取引",
                 "fear-greed": "恐怖・強欲指数",
                 "financials": "財務諸表",
+                "flows": "機関・空売りの需給",
                 "fundamental": "ファンダメンタルズ分析",
                 "news": "ニュース分析",
                 "options": "オプション分析",
@@ -1977,6 +1985,11 @@
                     "titleCore": "財務諸表",
                     "titleTail": "売上・利益・キャッシュフロー"
                 },
+                "flows": {
+                    "description": "{subject}の機関投資家の保有変化(13F)、インサイダー取引、5%大量保有報告、空売り残高をまとめて確認でき、AIが需給の流れを読み解きます。",
+                    "titleCore": "機関・空売りの需給",
+                    "titleTail": "13F・インサイダー・空売り"
+                },
                 "fundamental": {
                     "description": "{subject}の企業プロフィール、PER・PSR・EPSバリュエーション、ROE・利益率、負債・キャッシュフローの財務健全性を1ページで整理します。アナリストのコンセンサスと目標株価も確認できます。",
                     "descriptionWithSector": "{subject}の企業プロフィール、PER・PSR・EPSバリュエーション、ROE・利益率、負債・キャッシュフローの財務健全性を1ページで整理します。{sector}セクター内の位置づけとアナリストのコンセンサス、目標株価も確認できます。",
@@ -2115,6 +2128,7 @@
             "congress": "議会取引",
             "fear-greed": "恐怖・強欲指数",
             "financials": "財務諸表",
+            "flows": "需給",
             "fundamental": "ファンダメンタルズ",
             "news": "ニュース",
             "options": "オプション",
@@ -2541,7 +2555,8 @@
                 "af0480": "リスク要因",
                 "b8f729": "強気シナリオ",
                 "da6fd3": "テクニカル分析",
-                "de4a87": "総合分析サマリー"
+                "de4a87": "総合分析サマリー",
+                "investorFlows": "需給"
             },
             "RelatedSymbols": {
                 "c35191": "関連銘柄"
@@ -4170,6 +4185,278 @@
                 "Altcoins": "アルトコイン"
             }
         },
+        "investor-flows": {
+            "ai": {
+                "axes": "軸ごとの解釈",
+                "dataNotes": "データに関する補足",
+                "errorFallback": "需給の解釈中にエラーが発生しました。",
+                "keySignals": "主なシグナル",
+                "noData": "需給データが足りないため、AIの解釈は作成しませんでした。",
+                "progress": "AIが需給を解釈しています…",
+                "risks": "注意点",
+                "title": "AIによる需給の解釈"
+            },
+            "asOf": {
+                "delay": "13Fは四半期末の保有状況を、四半期終了後45日以内に提出します。そのため、この画面の機関の数値は現在ではなく、1~2か月以上前の状態です。",
+                "insiderNone": "データなし",
+                "insiderWindow": "{from} ~ {to}(直近{days}日)",
+                "institutionalComplete": "{period}四半期末 · 提出完了",
+                "institutionalNone": "データなし",
+                "institutionalPartial": "より新しい{period}四半期は、一部のみ提出された部分集計です。",
+                "shortInterestDate": "決済日 {date}",
+                "shortInterestNone": "データなし",
+                "shortVolumeDate": "最終取引日 {date}",
+                "shortVolumeNone": "データなし",
+                "sources": "出典:米国SEC EDGARの13F(機関保有)、Form 4・13D/G(インサイダー・大量保有、FMP経由)。",
+                "sourcesWithFinra": "出典:米国SEC EDGARの13F(機関保有)、Form 4・13D/G(インサイダー・大量保有、FMP経由)、FINRA(空売り残高・場外報告分の取引)。",
+                "termInsider": "インサイダー取引",
+                "termInstitutional": "機関保有(13F)",
+                "termShortInterest": "空売り残高",
+                "termShortVolume": "日次の空売り比率",
+                "termSnapshot": "取得日",
+                "title": "基準時点・出典"
+            },
+            "axis": {
+                "insider": "インサイダー",
+                "institutional": "機関投資家",
+                "largeHolders": "大量保有(5%)",
+                "short": "空売り"
+            },
+            "empty": {
+                "body": "データなし — この銘柄には機関保有(13F)・インサイダー・空売りのデータがまだありません。新規上場や取引規模の小さい銘柄ではよくあることです。",
+                "title": "需給データ"
+            },
+            "ev": {
+                "daysToCover": "カバー日数 {days}日",
+                "holders": "保有機関 {count}社(前四半期比 {change})",
+                "holdersOnly": "保有機関 {count}社",
+                "insiderCluster": "クラスター買い:異なるインサイダー {count}人",
+                "insiderCounts": "買い {buys}件 · 売り {sells}件",
+                "insiderNetBuy": "直近{days}日の純買い {amount}",
+                "insiderNetSell": "直近{days}日の純売り {amount}",
+                "largeHolderCounts": "13D {d}件 · 13G {g}件(直近{days}日)",
+                "netSharesOutstanding": "機関の保有株数の純増減 {pct}(発行済株式比)",
+                "netSharesPrior": "機関の保有株数の純増減 {pct}(前四半期の保有量比)",
+                "newExited": "新規 {added}社 · 全売却 {exited}社",
+                "shortPct": "空売り残高 {pct}(浮動株比)",
+                "shortRatio": "場外空売り比率 {pct}(直近の取引日)",
+                "shortTrend": "残高の変化 {pct}(直近3回の決済日)"
+            },
+            "filter": {
+                "all": "すべて {count}",
+                "exited": "完全売却 {count}",
+                "new": "新規参入 {count}"
+            },
+            "flowChart": {
+                "caption": "上向きの棒は純買い(IN)、下向きの棒は純売り(OUT)です。点線の棒はまだ提出が終わっていない部分集計です。",
+                "flat": "変化なし",
+                "in": "IN",
+                "out": "OUT",
+                "partial": "部分集計",
+                "title": "四半期別の機関の純買い(IN)・純売り(OUT)"
+            },
+            "holders": {
+                "basis": "{period}四半期末時点の保有で、変化は前四半期との比較です。",
+                "colChange": "前四半期比",
+                "colName": "機関",
+                "colShares": "保有株数",
+                "colStatus": "状態",
+                "emptyFiltered": "該当する機関はありません。",
+                "filterLabel": "表示フィルター",
+                "noChange": "変化なし",
+                "noData": "データなし — 主要保有機関の一覧はまだありません。",
+                "title": "主要保有機関"
+            },
+            "holdersTrend": {
+                "aria": "保有機関数は{from}社から{to}社に変わりました",
+                "caption": "提出が完了した四半期のみ描画します。線が上がれば、この銘柄を保有する機関が増えたことを意味します。",
+                "title": "保有機関数の推移"
+            },
+            "insider": {
+                "buy": "買い",
+                "buys": "買い",
+                "clusterBadge": "クラスター買い · インサイダー{count}人",
+                "colDate": "取引日",
+                "colFiling": "開示",
+                "colName": "インサイダー",
+                "colShares": "株数",
+                "colType": "区分",
+                "colValue": "金額",
+                "filing": "開示を見る",
+                "net": "純買い・純売り",
+                "netBuy": "純買い {amount}",
+                "netFlat": "純買い・純売りなし",
+                "netSell": "純売り {amount}",
+                "noData": "データなし — 届け出られたインサイダー取引はありません。",
+                "noRecent": "直近{days}日間に届け出られたインサイダーの売買はありません。",
+                "noTrades": "表に載せる売買の届け出がありません。",
+                "omittedOther": "贈与・オプション行使などのその他の届け出{count}件は表から除いています。",
+                "sell": "売り",
+                "sells": "売り",
+                "summary": "{count}件 · {people}人 · {amount}",
+                "tableTitle": "最近のインサイダーの売買",
+                "title": "インサイダー取引(Form 4)",
+                "window": "直近{days}日({from} ~ {to})が対象です。"
+            },
+            "institutional": {
+                "noData": "データなし — この銘柄の機関保有(13F)データはまだありません。",
+                "partialNote": "進行中の{period}四半期は提出が終わっていない部分集計です。これまでに{holders}社が提出し、純増減は{net}({direction})です。",
+                "subtitle": "大手機関が四半期ごとに報告する保有株式(13F)から、流入(IN)と流出(OUT)を見ます。",
+                "title": "機関の売買(13F)"
+            },
+            "label": {
+                "bearish": "弱気",
+                "bullish": "強気",
+                "insufficient": "データ不足",
+                "neutral": "中立",
+                "strongBearish": "強い弱気",
+                "strongBullish": "強い強気"
+            },
+            "largeHolders": {
+                "colDate": "提出日",
+                "colForm": "様式",
+                "colPercent": "持株比率",
+                "colShares": "保有株数",
+                "filing": "開示を見る",
+                "kind13d": "13D アクティビスト",
+                "kind13g": "13G 純投資",
+                "kindOther": "その他",
+                "noData": "データなし — 提出された5%大量保有の開示はありません。",
+                "subtitle": "会社の株式を5%超保有する株主が提出した最近の開示です。",
+                "title": "5%以上の大量保有(13D・13G)",
+                "unavailable": "大量保有の開示を読み込めませんでした。しばらくしてからもう一度ご確認ください。",
+                "unknownFiler": "提出者不明"
+            },
+            "scorecard": {
+                "axisInsufficient": "データが足りないため、スコアには反映していません。",
+                "axisScore": "{score}点",
+                "compositeCaption": "{count}軸に基づく総合スコア(-100 ~ +100)",
+                "compositeInsufficient": "データが足りず、総合スコアを計算できませんでした。",
+                "title": "需給スコア"
+            },
+            "short": {
+                "change": "前回の決済日比",
+                "changeDown": "減少",
+                "changeFlat": "変化なし",
+                "changeUp": "増加",
+                "changeVs": "{date}比 {shares}株",
+                "chartAria": "{count}回の決済日にわたる空売り残高の推移グラフ",
+                "chartDaysToCover": "カバー日数の推移(日)",
+                "chartDtcAria": "{count}回の決済日にわたるカバー日数の推移グラフ",
+                "chartPctFloat": "空売り残高の推移(浮動株比%)",
+                "chartQty": "空売り残高の推移(株)",
+                "days": "{days}日",
+                "daysToCover": "カバー日数",
+                "interestBasis": "直近の決済日{date}時点です。",
+                "interestTitle": "空売り残高・カバー日数(決済日別)",
+                "markerDrop": "平常より急減",
+                "markerNormal": "平常並み",
+                "markerSurge": "平常より急増",
+                "noPreviousSettlement": "比較できる前回の決済日がありません",
+                "pctFloat": "浮動株比",
+                "qty": "空売り残高(株)",
+                "squeezeBadge": "ショートスクイーズのリスク",
+                "squeezeNote": "空売り残高は浮動株の{pct}、カバー日数は{days}日と高めです。株価が上がると、買い戻し需要が一気に集中することがあります。",
+                "subtitle": "株を借りて売り、まだ返していない残高と、取引日ごとの場外空売り比率を見ます。",
+                "title": "空売り",
+                "trendFalling": "最近の流れ:減少傾向",
+                "trendFlat": "最近の流れ:横ばい",
+                "trendRising": "最近の流れ:増加傾向",
+                "unknown": "不明",
+                "volumeAria": "直近{count}取引日の日次場外空売り比率グラフ",
+                "volumeAverage": "点線は直近{days}取引日の平均{pct}です。",
+                "volumeFootnote": "場外(TRF)で報告された分のみが対象です。取引所内で約定した空売りは含まれません。",
+                "volumeLatest": "{date}時点 {pct}",
+                "volumeTitle": "日次の場外(TRF)空売り比率"
+            },
+            "split": {
+                "basis": "{period}四半期を基準に、{previous}四半期と比較しています。",
+                "basisNoPrevious": "{period}四半期を基準にしています。比較できる前四半期のデータはありません。",
+                "count": "{count}社",
+                "decreased": "持分減少",
+                "deltaDown": "前四半期より{delta}社少ない",
+                "deltaFlat": "前四半期と同じ",
+                "deltaUp": "前四半期より{delta}社多い",
+                "exited": "完全売却",
+                "increased": "持分増加",
+                "newHolders": "新規参入",
+                "noPrevious": "比較できる前四半期がありません",
+                "title": "前四半期と比べた機関の動き"
+            },
+            "status": {
+                "decreased": "減少",
+                "exited": "売却",
+                "increased": "増加",
+                "new": "新規",
+                "unchanged": "維持"
+            },
+            "tooltip": {
+                "daysToCover": [
+                    "カバー日数(Days to Cover)は、空売り残高を平均出来高で割った値で、空売りした分をすべて買い戻すのに何日かかるかを表します。",
+                    "数字が大きいほど、買い戻しが難しくなることがあります。"
+                ],
+                "flowScore": [
+                    "機関・インサイダー・大量保有・空売りの動きを、-100~+100のスコアにまとめた値です。高いほど強気のシグナルが多いことを意味します。",
+                    "過去の開示をルールに沿って計算した参考指標で、今後の株価を示すものではありません。"
+                ],
+                "form4": [
+                    "Form 4は、役員・取締役・10%以上の株主などのインサイダーが自社株を売買したとき、2営業日以内に提出する届け出です。",
+                    "インサイダーが公開市場で実際に売買した内容を確認できます。"
+                ],
+                "increasedDecreased": [
+                    "持分増加は前四半期より株数を増やした機関、持分減少は減らした機関です。",
+                    "今期も引き続き保有している機関だけを数えた値です。"
+                ],
+                "insiderCluster": [
+                    "クラスター買いは、短い期間に複数の異なるインサイダーが公開市場で株を買った場合です。",
+                    "複数の人が近い時期に買ったという事実を示すだけで、その後の株価を保証するものではありません。"
+                ],
+                "institutionalHolding": [
+                    "ファンド・年金・運用会社などの機関が、この銘柄をどれだけ保有しているかを表します。",
+                    "13Fで報告された四半期末時点の株数です。"
+                ],
+                "largeHolder13dg": [
+                    "13Dと13Gは、会社の株式を5%超保有する株主が提出する開示です。",
+                    "13Dは経営への影響を目的とする場合(アクティビスト)、13Gは純投資の場合に提出します。"
+                ],
+                "netBuySell": [
+                    "純買い(IN)は機関が買った株数が売った株数より多い場合、純売り(OUT)はその逆です。",
+                    "四半期末の保有株数が前四半期より増えたか減ったかで計算します。"
+                ],
+                "newExited": [
+                    "新規参入は前四半期には保有しておらず今期に新たに組み入れた機関、完全売却は前四半期の保有分をすべて売った機関です。",
+                    "機関の数を数えた値なので、金額の大きさは別に確認する必要があります。"
+                ],
+                "offExchangeShortRatio": [
+                    "その日に場外(TRF)で報告された取引のうち、空売りが占める割合です。",
+                    "取引所内で約定した空売りは含まれないため、全体の空売り比率より小さく見えることがあります。"
+                ],
+                "partialAggregation": [
+                    "部分集計は、13Fの提出期限がまだ過ぎておらず、一部の機関の報告しか集まっていない状態です。",
+                    "数値が小さく見えても減ったとは限らないため、スコアには提出が完了した四半期だけを使います。"
+                ],
+                "pctOfFloat": [
+                    "浮動株比は、空売り残高を市場で実際に取引できる株数で割った値です。",
+                    "同じ残高でも、浮動株が少ない銘柄ほど重みが大きくなります。"
+                ],
+                "settlementDate": [
+                    "決済日は、空売り取引が実際に決済される基準日で、通常は毎月15日と月末ごろです。",
+                    "FINRAは決済日の約8営業日後に残高を公表するため、画面の残高はその分だけ遅れたデータです。"
+                ],
+                "shortInterest": [
+                    "空売り残高は、株を借りて売り、まだ買い戻していない株式の総量です。",
+                    "株価が下がると利益になる側の残高なので、多いほど下落に賭けている量が多いという意味です。"
+                ],
+                "shortSqueeze": [
+                    "ショートスクイーズは、空売りをした側が損失を抑えようと一斉に株を買い戻し、株価が急上昇する現象です。",
+                    "空売り残高の比率とカバー日数がともに高いと起こりやすくなりますが、必ず起こるわけではありません。"
+                ],
+                "thirteenF": [
+                    "13Fは、運用規模の大きい機関が四半期ごとに米SECへ提出する保有株式の報告書です。",
+                    "四半期終了後、最大45日たってから公開されるため、現在ではなく前四半期末時点の保有状況です。"
+                ]
+            }
+        },
         "layout": {
             "ContactDialog": {
                 "531f6a": "お問い合わせ",
@@ -4512,6 +4799,10 @@
             "IntegratedConclusion": {
                 "85f201": "統合結論"
             },
+            "InvestorFlowsSummary": {
+                "listLabel": "需給の項目",
+                "title": "需給の要約"
+            },
             "NewsSummary": {
                 "218ec8": "ニュース分析要約",
                 "2f750a": "ニュース分析項目"
@@ -4787,6 +5078,7 @@
                 "toolCongressTrades": "議会取引",
                 "toolEconomy": "経済指標",
                 "toolFundamentals": "企業概要・財務",
+                "toolInvestorFlows": "機関・インサイダー・空売りの需給",
                 "toolMarketOverview": "市場概況",
                 "toolFreshAnalysis": "新規分析",
                 "toolNews": "ニュース",

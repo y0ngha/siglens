@@ -24,7 +24,7 @@ describe('CrossLinkCards', () => {
         expect(section).toBeInTheDocument();
     });
 
-    it('renders 8 cards (all pages including financials and congress) for us-equity', () => {
+    it('renders 9 cards (all pages including financials, congress and flows) for us-equity', () => {
         const { container } = render(
             <CrossLinkCards
                 symbol="AAPL"
@@ -33,13 +33,13 @@ describe('CrossLinkCards', () => {
             />
         );
         // sr-only h2가 첫 자식이므로 카드만 센다 — 그 h2는 문서 개요에서
-        // 카드 제목(h3) 여덟 개가 앞 섹션의 h2 밑으로 들어가던 것을 고친다.
+        // 카드 제목(h3) 여러 개가 앞 섹션의 h2 밑으로 들어가던 것을 고친다.
         const section = container.querySelector('section')!;
         expect(section.querySelector('h2.sr-only')).not.toBeNull();
         expect(section.getAttribute('aria-labelledby')).toBe(
             section.querySelector('h2')!.id
         );
-        expect(section.querySelectorAll('h3')).toHaveLength(8);
+        expect(section.querySelectorAll('h3')).toHaveLength(9);
     });
 
     it('marks the current page card with aria-current="page"', () => {
@@ -183,7 +183,49 @@ describe('CrossLinkCards — crypto profile', () => {
             const { container } = render(
                 <CrossLinkCards symbol="AAPL" current="news" />
             );
-            expect(container.querySelectorAll('h3')).toHaveLength(8);
+            expect(container.querySelectorAll('h3')).toHaveLength(9);
+        });
+    });
+
+    describe('flows(수급) 카드', () => {
+        it('us-equity에서는 /flows 링크 카드를 낸다', () => {
+            const { container } = render(
+                <CrossLinkCards symbol="AAPL" current="chart" />
+            );
+            expect(
+                container.querySelector('a[href="/AAPL/flows"]')
+            ).not.toBeNull();
+        });
+
+        it('현재 페이지가 flows면 링크 대신 aria-current 카드다', () => {
+            const { container } = render(
+                <CrossLinkCards symbol="AAPL" current="flows" />
+            );
+            expect(container.querySelector('a[href="/AAPL/flows"]')).toBeNull();
+            expect(
+                container.querySelector('[aria-current="page"]')
+            ).not.toBeNull();
+        });
+
+        it.each(['kr-equity', 'crypto'] as const)(
+            '%s에는 없는 탭이라 카드를 내지 않는다',
+            marketProfile => {
+                const { container } = render(
+                    <CrossLinkCards
+                        symbol="X"
+                        current="chart"
+                        marketProfile={marketProfile}
+                    />
+                );
+                expect(container.querySelector('a[href$="/flows"]')).toBeNull();
+            }
+        );
+
+        it('색인되는 탭만 내는 모드(indexableOnly)에서는 noindex인 flows 카드를 뺀다', () => {
+            const { container } = render(
+                <CrossLinkCards symbol="AAPL" current="news" indexableOnly />
+            );
+            expect(container.querySelector('a[href$="/flows"]')).toBeNull();
         });
     });
 });

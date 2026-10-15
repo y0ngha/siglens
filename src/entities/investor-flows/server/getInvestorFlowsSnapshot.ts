@@ -2,7 +2,7 @@ import 'server-only';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
-import type { InvestorFlowsSnapshot } from '../coreTypes';
+import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import { investorFlowsTag } from '../lib/investorFlowsTag';
 import { getInvestorFlowsDataProvider } from './getInvestorFlowsDataProvider';
 

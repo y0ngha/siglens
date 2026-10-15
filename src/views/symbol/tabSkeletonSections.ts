@@ -11,6 +11,7 @@ export const SYMBOL_TAB_SECTION_COUNT = {
     fundamental: 6,
     financials: 4,
     congress: 4,
+    flows: 5,
     'fear-greed': 4,
     position: 3,
 } as const satisfies Readonly<Record<string, number>>;

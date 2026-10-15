@@ -1,4 +1,4 @@
-/** Investor Flows 데이터 계층의 내부 도메인 타입(수집·저장용). 화면·분석 계약은 `coreTypes.ts`. */
+/** Investor Flows 데이터 계층의 내부 도메인 타입(수집·저장용). 화면·분석 계약은 `@y0ngha/siglens-core`. */
 
 /** 13F 정정 종류. `13F-HR/A`의 `amendmentInfo/amendmentType`. */
 export type AmendmentType = 'RESTATEMENT' | 'NEW HOLDINGS';
@@ -66,4 +66,13 @@ export interface ShortInterestRow {
     prevShortQty: number | null;
     avgDailyVolume: number | null;
     daysToCover: number | null;
+}
+
+export interface PreviousSettlementChange {
+    /** 비교 대상인 직전 결제일. */
+    readonly previousDate: string;
+    /** 최신 결제일 잔고 - 직전 결제일 잔고(주). */
+    readonly sharesChange: number;
+    /** 직전 잔고 대비 변화율(%). 직전 잔고가 0이면 `null`. */
+    readonly pct: number | null;
 }

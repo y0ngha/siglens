@@ -9,7 +9,7 @@ import {
 import type {
     InvestorFlowsDataProvider,
     InvestorFlowsSnapshot,
-} from '../coreTypes';
+} from '@y0ngha/siglens-core';
 import {
     assembleInvestorFlowsSnapshot,
     SNAPSHOT_MAX_EXITED_HOLDERS,

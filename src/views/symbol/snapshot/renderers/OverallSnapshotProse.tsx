@@ -156,6 +156,13 @@ export function OverallSnapshotProse({
                     items={narrowed.financialsBulletsKo}
                     keyPrefix="financials-bullet"
                 />
+                <SnapshotBulletList
+                    title={t('OverallSnapshotProse.investorFlows')}
+                    symbol={symbol}
+                    ariaSuffix={t('OverallSnapshotProse.investorFlows')}
+                    items={narrowed.investorFlowsBulletsKo}
+                    keyPrefix="investor-flows-bullet"
+                />
 
                 <SnapshotBulletList
                     title={t('OverallSnapshotProse.b8f729')}

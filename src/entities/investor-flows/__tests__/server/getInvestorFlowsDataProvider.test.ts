@@ -12,6 +12,8 @@ vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
 vi.mock('@/shared/api/fmp/getInvestorFlowsFmpProvider', () => ({
     getInvestorFlowsFmpProvider: mockFmp,
 }));
+const { mockE2E } = vi.hoisted(() => ({ mockE2E: vi.fn(() => false) }));
+vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: mockE2E }));
 vi.mock('@/shared/api/finra/finraShortDataEnabled', () => ({
     isFinraShortDataEnabled: mockEnabled,
 }));
@@ -21,7 +23,12 @@ describe('getInvestorFlowsDataProvider', () => {
         mockClient.mockReset();
         mockFmp.mockReset();
         mockEnabled.mockReturnValue(true);
+        mockE2E.mockReturnValue(false);
     });
+
+    // NOTE: the E2E branch (`require('./FakeInvestorFlowsDataProvider')`) is not unit-tested: vitest cannot
+    // resolve the synchronous require (same limitation as getInvestorFlowsFmpProvider.test.ts). The fake itself is
+    // covered by investorFlowsCachedProviderAndFake.test.ts; the e2e specs exercise the gate end to end.
 
     it('throws when the database is unavailable instead of faking an empty snapshot', () => {
         mockClient.mockReturnValue(null);

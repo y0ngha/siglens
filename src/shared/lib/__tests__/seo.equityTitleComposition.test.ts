@@ -5,6 +5,7 @@ import {
     buildSymbolSeoContent,
     buildSymbolFinancialsSeoContent,
     buildSymbolCongressSeoContent,
+    buildSymbolFlowsSeoContent,
     buildSymbolFundamentalSeoContent,
     buildSymbolOptionsSeoContent,
     buildSymbolNewsSeoContent,
@@ -36,6 +37,7 @@ const EQUITY_BUILDERS: readonly (readonly [string, EquityBuilder, string])[] = [
     ['chart', buildSymbolSeoContent, '주가 분석'],
     ['financials', buildSymbolFinancialsSeoContent, '재무제표'],
     ['congress', buildSymbolCongressSeoContent, '의회 거래'],
+    ['flows', buildSymbolFlowsSeoContent, '기관 수급'],
     ['fundamental', buildSymbolFundamentalSeoContent, '펀더멘털'],
     ['options', buildSymbolOptionsSeoContent, '옵션 분석'],
     ['news', buildSymbolNewsSeoContent, '뉴스'],
@@ -43,7 +45,7 @@ const EQUITY_BUILDERS: readonly (readonly [string, EquityBuilder, string])[] = [
     ['fear-greed', buildSymbolFearGreedSeoContent, '공포 탐욕 지수'],
 ];
 
-describe('주식 title 템플릿 8개 — 한국어 회사명 주입', () => {
+describe('주식 title 템플릿 9개 — 한국어 회사명 주입', () => {
     it.each(EQUITY_BUILDERS)(
         '%s: 한국어명이 있으면 애플(AAPL)로 시작한다',
         (_name, build) => {

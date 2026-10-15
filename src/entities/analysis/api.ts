@@ -31,6 +31,7 @@ import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialSta
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
@@ -346,13 +347,26 @@ export async function prewarmOverall(
                 return undefined;
             });
 
-    const [rows, next, optionsSnapshot, financialsScorecard] =
-        await Promise.all([
-            newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-            getNextEarningsReport(symbol, db),
-            optionsSnapshotPromise,
-            financialsScorecardPromise,
-        ]);
+    // 웹·공개 API 경로(`executeOverallAnalysis`)와 같은 함수 — 프리웜이 데운 캐시를 사용자가 맞히려면
+    // inputHash에 접히는 수급 입력이 두 경로에서 같아야 한다.
+    const marketProfilePromise = resolveMarketProfile(symbol);
+    const investorFlowsScorecardPromise = marketProfilePromise.then(profile =>
+        getOverallInvestorFlowsScorecard(symbol, profile)
+    );
+
+    const [
+        rows,
+        next,
+        optionsSnapshot,
+        financialsScorecard,
+        investorFlowsScorecard,
+    ] = await Promise.all([
+        newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
+        getNextEarningsReport(symbol, db),
+        optionsSnapshotPromise,
+        financialsScorecardPromise,
+        investorFlowsScorecardPromise,
+    ]);
 
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
         buildAnalysisNewsItems(rows);
@@ -363,7 +377,7 @@ export async function prewarmOverall(
         !isEtRegularSessionOpen(new Date()) &&
         isOpenInterestSnapshotStale(optionsSnapshot);
 
-    const marketProfile = await resolveMarketProfile(symbol);
+    const marketProfile = await marketProfilePromise;
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
     const session = sessionSpecFor(marketProfile);
@@ -450,6 +464,7 @@ export async function prewarmOverall(
         optionsSnapshot: optionsSnapshot ?? undefined,
         optionsOiStale,
         financialsScorecard,
+        investorFlowsScorecard,
         priorAnalyses: overallPriorAnalyses,
         ...(force ? { force: true } : {}),
     });

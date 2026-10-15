@@ -36,6 +36,9 @@ vi.mock('@/app/api/ai/chat/tools/getEconomy', () => ({
 vi.mock('@/app/api/ai/chat/tools/getCongressTrades', () => ({
     getCongressTradesTool: vi.fn(),
 }));
+vi.mock('@/app/api/ai/chat/tools/getInvestorFlows', () => ({
+    getInvestorFlowsTool: vi.fn(),
+}));
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
@@ -60,6 +63,7 @@ const EXPECTED_TOOLS = [
     'get_market_overview',
     'get_economy',
     'get_congress_trades',
+    'get_investor_flows',
     'get_guide',
     'get_my_portfolio',
     'run_fresh_analysis',
@@ -68,7 +72,7 @@ const EXPECTED_TOOLS = [
 describe('publicApiToolNames', () => {
     afterEach(() => vi.unstubAllEnvs());
 
-    it('데이터 도구 12개와 BYOK 분석 도구를 정확히 노출한다', () => {
+    it('데이터 도구 13개와 BYOK 분석 도구를 정확히 노출한다', () => {
         expect([...publicApiToolNames()].toSorted()).toEqual(
             EXPECTED_TOOLS.toSorted()
         );

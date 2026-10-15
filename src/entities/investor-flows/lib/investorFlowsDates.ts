@@ -4,6 +4,12 @@ import {
     INVESTOR_FLOWS_13F_FILING_DEADLINE_DAYS,
 } from './investorFlowsPolicy';
 
+/** ISO 날짜(`yyyy-mm-dd`) 문자열 오름차순 비교자 — 사전순이 곧 시간순이다. 내림차순은 인자를 바꿔 쓴다. */
+export function compareIsoDate(a: string, b: string): number {
+    if (a < b) return -1;
+    return a > b ? 1 : 0;
+}
+
 /** `YYYY-MM-DD`(UTC 달력 날짜)에 `days`일을 더한다. 음수도 된다. */
 export function addDays(isoDate: string, days: number): string {
     const ms = Date.parse(`${isoDate}T00:00:00Z`) + days * MS_PER_DAY;

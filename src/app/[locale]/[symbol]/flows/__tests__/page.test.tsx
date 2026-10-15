@@ -1,0 +1,220 @@
+// @vitest-environment jsdom
+vi.mock('@/entities/ticker/api', () => ({
+    isTabAllowedForSymbol: vi.fn(),
+}));
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
+    buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
+    buildDisplayName: vi.fn().mockReturnValue('애플(AAPL)'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+    getAssetInfoResilient: vi.fn(),
+}));
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+    getProfileResilient: vi.fn(),
+}));
+vi.mock('@/app/[locale]/[symbol]/requireResolvableAsset', () => ({
+    requireResolvableAsset: vi.fn(),
+}));
+vi.mock('@/app/[locale]/[symbol]/symbolIndexabilityMetadata', () => ({
+    getBlockedSymbolMetadata: vi.fn().mockResolvedValue(null),
+}));
+vi.mock('@/entities/investor-flows/server/getInvestorFlowsScorecard', () => ({
+    getInvestorFlowsScorecard: vi.fn(),
+}));
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('@/widgets/investor-flows/InvestorFlowsContent', () => ({
+    InvestorFlowsContent: ({ finraEnabled }: { finraEnabled: boolean }) => (
+        <div data-testid="content" data-finra={String(finraEnabled)} />
+    ),
+}));
+vi.mock('@/widgets/investor-flows/InvestorFlowsEmpty', () => ({
+    InvestorFlowsEmpty: () => <div data-testid="empty" />,
+}));
+vi.mock('@/widgets/investor-flows/InvestorFlowsSummary', () => ({
+    InvestorFlowsSummary: ({ symbol }: { symbol: string }) => (
+        <div data-testid="summary" data-symbol={symbol} />
+    ),
+}));
+vi.mock('@/app/[locale]/[symbol]/flows/FlowsDegraded', () => ({
+    FlowsDegraded: () => <div data-testid="degraded" />,
+}));
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
+    SymbolPageHeading: ({ children }: { children: React.ReactNode }) => (
+        <h1>{children}</h1>
+    ),
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: ({ current }: { current: string }) => (
+        <div data-testid="cross" data-current={current} />
+    ),
+}));
+vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
+vi.mock('next/navigation', () => ({
+    notFound: vi.fn(() => {
+        throw new Error('NEXT_NOT_FOUND');
+    }),
+}));
+
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
+import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
+import FlowsPage, {
+    generateMetadata,
+    generateStaticParams,
+    revalidate,
+} from '@/app/[locale]/[symbol]/flows/page';
+
+const ASSET = {
+    assetInfo: {
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        koreanName: '애플',
+        fmpSymbol: 'AAPL',
+    },
+    degraded: false,
+};
+const params = (symbol = 'AAPL') => Promise.resolve({ locale: 'ko', symbol });
+
+function arrange(flows: Record<string, unknown>) {
+    vi.mocked(isTabAllowedForSymbol).mockResolvedValue(true);
+    vi.mocked(getAssetInfoResilient).mockResolvedValue(ASSET as never);
+    vi.mocked(requireResolvableAsset).mockResolvedValue(ASSET as never);
+    vi.mocked(getProfileResilient).mockResolvedValue({
+        profile: { symbol: 'AAPL' },
+        degraded: false,
+    } as never);
+    vi.mocked(getInvestorFlowsScorecard).mockResolvedValue({
+        snapshot: null,
+        scorecard: null,
+        degraded: false,
+        finraEnabled: true,
+        ...flows,
+    } as never);
+}
+
+describe('flows page ISR config', () => {
+    it('revalidate는 리터럴 43200(12h) — 스냅샷 캐시 TTL과 같다', () => {
+        expect(revalidate).toBe(43200);
+    });
+
+    it('generateStaticParams는 빈 배열(on-demand ISR)', async () => {
+        expect(await generateStaticParams()).toEqual([]);
+    });
+});
+
+describe('flows page 탭 가드', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('수급 탭이 없는 심볼(KR·크립토)은 데이터를 읽기 전에 notFound()다', async () => {
+        vi.mocked(isTabAllowedForSymbol).mockResolvedValue(false);
+        await expect(FlowsPage({ params: params('BTCUSD') })).rejects.toThrow(
+            'NEXT_NOT_FOUND'
+        );
+        expect(isTabAllowedForSymbol).toHaveBeenCalledWith('BTCUSD', 'flows');
+        expect(getInvestorFlowsScorecard).not.toHaveBeenCalled();
+        expect(getProfileResilient).not.toHaveBeenCalled();
+    });
+
+    it('잘못된 심볼 형식은 가드 이전에 notFound()다', async () => {
+        await expect(FlowsPage({ params: params('../x') })).rejects.toThrow(
+            'NEXT_NOT_FOUND'
+        );
+        expect(isTabAllowedForSymbol).not.toHaveBeenCalled();
+    });
+
+    it('generateMetadata도 같은 가드로 404다', async () => {
+        vi.mocked(requireResolvableAsset).mockResolvedValue(ASSET as never);
+        vi.mocked(isTabAllowedForSymbol).mockResolvedValue(false);
+        await expect(
+            generateMetadata({ params: params('005930.KS') })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+});
+
+describe('flows generateMetadata', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('항상 noindex(follow 유지, 의회 거래 탭과 같은 정책)이고 self-canonical을 낸다', async () => {
+        vi.mocked(isTabAllowedForSymbol).mockResolvedValue(true);
+        vi.mocked(requireResolvableAsset).mockResolvedValue(ASSET as never);
+        const meta = await generateMetadata({ params: params() });
+        expect(meta.robots).toEqual(ALWAYS_NOINDEX_TAB_ROBOTS);
+        expect(meta.alternates?.canonical).toContain('/AAPL/flows');
+    });
+});
+
+describe('flows page 본문', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('데이터가 있으면 본문 + AI 해석 + 크로스링크(current=flows)를 그린다', async () => {
+        arrange({
+            snapshot: { asOf: 'x' },
+            scorecard: { composite: {} },
+            finraEnabled: false,
+        });
+        render(await FlowsPage({ params: params() }));
+        expect(screen.getByTestId('content')).toHaveAttribute(
+            'data-finra',
+            'false'
+        );
+        expect(screen.getByTestId('summary')).toHaveAttribute(
+            'data-symbol',
+            'AAPL'
+        );
+        expect(screen.getByTestId('cross')).toHaveAttribute(
+            'data-current',
+            'flows'
+        );
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+            '애플(AAPL) 기관·공매도 수급'
+        );
+    });
+
+    it('데이터 없음(정상)은 빈 상태 + 크로스링크이고 AI를 부르지 않는다', async () => {
+        arrange({});
+        render(await FlowsPage({ params: params() }));
+        expect(screen.getByTestId('empty')).toBeInTheDocument();
+        expect(screen.queryByTestId('summary')).toBeNull();
+        expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+    });
+
+    it('수급 인프라 장애는 degrade 화면이고 revalidate를 5분으로 낮춘다', async () => {
+        arrange({ degraded: true });
+        render(await FlowsPage({ params: params() }));
+        expect(screen.getByTestId('degraded')).toBeInTheDocument();
+        expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+    });
+
+    it('profile 조회 장애도 degrade 화면이다(수급 조회 결과와 무관)', async () => {
+        arrange({ snapshot: { asOf: 'x' }, scorecard: {} });
+        vi.mocked(getProfileResilient).mockResolvedValue({
+            profile: null,
+            degraded: true,
+        } as never);
+        render(await FlowsPage({ params: params() }));
+        expect(screen.getByTestId('degraded')).toBeInTheDocument();
+    });
+
+    it('profile이 null(실존하지 않는 종목)이면 notFound()다', async () => {
+        arrange({});
+        vi.mocked(getProfileResilient).mockResolvedValue({
+            profile: null,
+            degraded: false,
+        } as never);
+        await expect(FlowsPage({ params: params() })).rejects.toThrow(
+            'NEXT_NOT_FOUND'
+        );
+    });
+});

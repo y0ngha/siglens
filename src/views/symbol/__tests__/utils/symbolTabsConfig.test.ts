@@ -13,8 +13,8 @@ const CATALOGS = {
 import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 describe('TABS (symbolTabsConfig)', () => {
-    it('contains all 9 analysis tabs', () => {
-        expect(TABS).toHaveLength(9);
+    it('contains all 10 analysis tabs', () => {
+        expect(TABS).toHaveLength(10);
     });
 
     it('has unique keys', () => {
@@ -70,6 +70,15 @@ describe('TABS (symbolTabsConfig)', () => {
         expect(tab).toBeDefined();
         expect(tab.labelKey).toBe('congress');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/congress');
+    });
+
+    it('flows tab exists with correct href, right after congress', () => {
+        const tab = TABS.find(t => t.key === 'flows')!;
+        expect(tab.labelKey).toBe('flows');
+        expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/flows');
+        expect(TABS.findIndex(t => t.key === 'flows')).toBe(
+            TABS.findIndex(t => t.key === 'congress') + 1
+        );
     });
 
     it('congress tab is positioned after financials tab', () => {
