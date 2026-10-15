@@ -58,12 +58,12 @@ const SAMPLE_BAR_SEEDS: Record<SampleChartSymbol, BarSeed> = {
 };
 
 const SAMPLE_BAR_COUNT = 90;
+const MARKET_OPEN_UTC_HOUR = 13;
+const MARKET_OPEN_UTC_MINUTE = 30;
 /**
  * 미국 정규장 시작(UTC 13:30)의 하루 안 초. 봉 시각이 날짜와 어긋나지 않게 한다.
  * 시간 단위 환산은 `shared/config/time`을 쓴다.
  */
-const MARKET_OPEN_UTC_HOUR = 13;
-const MARKET_OPEN_UTC_MINUTE = 30;
 const MARKET_OPEN_SECONDS =
     MARKET_OPEN_UTC_HOUR * SECONDS_PER_HOUR +
     MARKET_OPEN_UTC_MINUTE * SECONDS_PER_MINUTE;
@@ -84,24 +84,38 @@ function nextRandom(state: number): RandomDraw {
     return { value: next / 0x1_0000_0000, state: next };
 }
 
-/** 상태를 이어 받으며 `count`개를 뽑는다. */
-function drawRandoms(
-    state: number,
-    count: number
-): { values: number[]; state: number } {
-    return Array.from({ length: count }).reduce<{
-        values: number[];
-        state: number;
-    }>(
-        acc => {
-            const draw = nextRandom(acc.state);
-            return {
-                values: [...acc.values, draw.value],
-                state: draw.state,
-            };
+/** `Date#getUTCDay`의 주말 값. */
+const SUNDAY = 0;
+const SATURDAY = 6;
+/** 꼬리 길이 = 하루 변동 폭 × 이 비율 × 난수. 위·아래 꼬리가 같은 비율을 쓴다. */
+const WICK_VOLATILITY_RATIO = 0.6;
+/** 거래량 = 기준 + 난수 × 폭(주). */
+const SAMPLE_VOLUME_BASE = 1_000_000;
+const SAMPLE_VOLUME_SPREAD = 4_000_000;
+
+/** 봉 하나가 쓰는 난수 네 개. 뽑는 순서(등락 → 윗꼬리 → 아랫꼬리 → 거래량)가 곧 수열 위치다. */
+interface BarDraws {
+    change: number;
+    upperWick: number;
+    lowerWick: number;
+    volume: number;
+}
+
+/** 상태를 이어 받으며 봉 하나 몫의 난수 네 개를 뽑는다. 길이가 타입으로 고정돼 단언이 필요 없다. */
+function drawBarRandoms(state: number): { draws: BarDraws; state: number } {
+    const change = nextRandom(state);
+    const upperWick = nextRandom(change.state);
+    const lowerWick = nextRandom(upperWick.state);
+    const volume = nextRandom(lowerWick.state);
+    return {
+        draws: {
+            change: change.value,
+            upperWick: upperWick.value,
+            lowerWick: lowerWick.value,
+            volume: volume.value,
         },
-        { values: [], state }
-    );
+        state: volume.state,
+    };
 }
 
 function round2(value: number): number {
@@ -117,7 +131,7 @@ function sampleTradingTimes(count: number): number[] {
     )
         .filter(day => {
             const weekday = new Date(day * 1_000).getUTCDay();
-            return weekday !== 0 && weekday !== 6;
+            return weekday !== SUNDAY && weekday !== SATURDAY;
         })
         .slice(0, count)
         .map(day => day + MARKET_OPEN_SECONDS)
@@ -133,23 +147,22 @@ interface BarWalk {
 /**
  * 샘플 일봉. 모양은 실제 `Bar` 그대로이고, 값은 시드 고정 난수 보행이라 빌드마다 같다.
  * 가격은 센트까지 반올림한다 — 차트 헤더의 종가·등락률이 메일 본문과 같은 값에서 나온다.
- * 직전 종가와 난수 상태를 `reduce`로 이어 받는다(봉마다 난수 4개: 등락·윗꼬리·아랫꼬리·거래량).
+ * 직전 종가와 난수 상태를 `reduce`로 이어 받는다(봉마다 난수 4개 — {@link drawBarRandoms}).
  */
 export function buildSampleBars(symbol: SampleChartSymbol): Bar[] {
     const { start, drift, volatility, seed } = SAMPLE_BAR_SEEDS[symbol];
     return sampleTradingTimes(SAMPLE_BAR_COUNT).reduce<BarWalk>(
         (walk, time) => {
             const open = walk.previousClose;
-            const {
-                values: [changeDraw, upperDraw, lowerDraw, volumeDraw],
-                state,
-            } = drawRandoms(walk.rngState, 4);
-            const change = drift + (changeDraw! - 0.5) * 2 * volatility;
+            const { draws, state } = drawBarRandoms(walk.rngState);
+            const change = drift + (draws.change - 0.5) * 2 * volatility;
             const close = round2(open * (1 + change));
-            const wick = 1 + upperDraw! * volatility * 0.6;
-            const high = round2(Math.max(open, close) * wick);
+            const wickScale = volatility * WICK_VOLATILITY_RATIO;
+            const high = round2(
+                Math.max(open, close) * (1 + draws.upperWick * wickScale)
+            );
             const low = round2(
-                Math.min(open, close) / (1 + lowerDraw! * volatility * 0.6)
+                Math.min(open, close) / (1 + draws.lowerWick * wickScale)
             );
             return {
                 bars: [
@@ -160,7 +173,10 @@ export function buildSampleBars(symbol: SampleChartSymbol): Bar[] {
                         high,
                         low,
                         close,
-                        volume: Math.round(1_000_000 + volumeDraw! * 4_000_000),
+                        volume: Math.round(
+                            SAMPLE_VOLUME_BASE +
+                                draws.volume * SAMPLE_VOLUME_SPREAD
+                        ),
                     },
                 ],
                 previousClose: close,

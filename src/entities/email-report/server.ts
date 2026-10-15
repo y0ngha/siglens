@@ -27,6 +27,9 @@ import {
 export async function getReportEmailTranslator(
     locale: Locale
 ): Promise<ReportEmailTranslator> {
+    // next-intl 번역자는 `(key, values?) => string` 호출을 받는 함수지만 키를 리터럴 유니온으로
+    // 좁힌 제네릭 타입이라 문자열 키 시그니처에 바로 대입되지 않는다. 템플릿은 이 네임스페이스의
+    // 키만 쓰고, 런타임 호출 형태는 같다.
     return (await getTranslations({
         locale,
         namespace: 'entities.email-report.email',
