@@ -83,3 +83,8 @@ export const ISO_DATE_HOUR_SLICE_END = 13;
  * 호출한다. 여러 모듈이 각자 리터럴 10을 들고 있었다 — 한 곳으로 모아 드리프트를 막는다.
  */
 export const ISO_DATE_LENGTH = 10;
+
+/** 12h — Form 4 내부자 거래(FMP `insider-trading/*`) Redis 캐시 TTL. 공시 지연이 T+2라 반나절이면 충분하다. */
+export const INVESTOR_FLOWS_INSIDER_CACHE_TTL_SECONDS = SECONDS_PER_HALF_DAY;
+/** 24h — 5% 대량보유(13D/G)·유통주식수 Redis 캐시 TTL. 공시가 수일 단위로 갱신된다. */
+export const INVESTOR_FLOWS_LARGE_HOLDER_CACHE_TTL_SECONDS = SECONDS_PER_DAY;

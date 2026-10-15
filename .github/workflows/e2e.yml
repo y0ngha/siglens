@@ -137,6 +137,16 @@ jobs:
             - name: Migrate + seed e2e DB
               run: yarn e2e:db
 
+            # 집계·정리 SQL의 의미는 렌더 문자열이 아니라 진짜 Postgres에서만 검증된다(TESTING.md#TE-55). 이미 떠 있는
+            # compose Postgres를 재사용하므로 거의 공짜이고(임시 스키마를 만들고 지운다), 샤드마다 되풀이할 이유가 없어
+            # 1번 샤드에서만 돈다. 파일 이름이 아니라 **패턴**(`.db.test.ts`)으로 고르므로 새 `*.db.test.ts`는 이 파일을
+            # 고치지 않아도 자동으로 합류한다 — 모두 `TEST_DATABASE_URL` 하나를 `describe.skipIf`로 확인한다.
+            - name: Real-Postgres SQL tests (shard 1 only)
+              if: matrix.shard == 1
+              run: yarn test .db.test.ts
+              env:
+                  TEST_DATABASE_URL: postgres://siglens:siglens@localhost:5433/siglens_e2e
+
             # 프로덕션 빌드를 Playwright webServer 밖에서 미리 한다. 위에서 백그라운드로
             # 시작한 브라우저 설치와 겹치게 하려는 것이다 — webServer 안에서 빌드하면
             # `playwright test`가 브라우저 설치를 기다린 **뒤에야** 빌드가 시작된다.
