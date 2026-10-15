@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "api_default_model" varchar(64);

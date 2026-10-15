@@ -407,3 +407,33 @@ describe('SiglensApiKeySection', () => {
         });
     });
 });
+
+describe('SiglensApiKeySection — API 기본 모델 영역', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        formStatus.pending = false;
+        setForms();
+    });
+
+    it('defaultModelSlot을 키 목록과 시작 가이드 사이에 그린다', () => {
+        renderSection({
+            defaultModelSlot: <div data-testid="slot">기본 모델 영역</div>,
+        });
+        const slot = screen.getByTestId('slot');
+        const guide = screen.getByRole('heading', { name: '30초 시작 가이드' });
+        const list = screen.getByRole('list', { name: '발급한 API 키 목록' });
+        expect(
+            list.compareDocumentPosition(slot) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            slot.compareDocumentPosition(guide) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('slot이 없으면 아무것도 더하지 않는다', () => {
+        renderSection();
+        expect(screen.queryByTestId('slot')).not.toBeInTheDocument();
+    });
+});

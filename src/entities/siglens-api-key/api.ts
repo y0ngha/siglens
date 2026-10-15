@@ -167,6 +167,39 @@ export class DrizzleSiglensApiKeyRepository {
     }
 
     /**
+     * 회원의 API 기본 모델(`users.api_default_model`). 설정이 없거나 회원이 없으면 `null`.
+     * 요청 경로에서 매번 읽는다(캐시하지 않는다) — 계정 화면에서 바꾸면 다음 요청부터 반영돼야 한다.
+     */
+    async findApiDefaultModel(userId: string): Promise<string | null> {
+        const [row] = await this.db
+            .select({ model: users.apiDefaultModel })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+        return row?.model ?? null;
+    }
+
+    /**
+     * 기본 모델을 저장한다(`null`이면 해제). 회원 행이 없으면 `false`.
+     * 유효성(로스터·등록된 BYOK provider)은 호출부(`setApiDefaultModelAction`)가 이미 확인했다.
+     */
+    async setApiDefaultModel(
+        userId: string,
+        model: string | null
+    ): Promise<boolean> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .update(users)
+                    .set({ apiDefaultModel: model })
+                    .where(eq(users.id, userId))
+                    .returning({ id: users.id }),
+            DB_TRANSIENT_RETRY
+        );
+        return rows.length > 0;
+    }
+
+    /**
      * `last_used_at`을 최대 분당 한 번만 쓴다. 조건이 WHERE에 있어 최근에 갱신된 행은
      * 아무것도 쓰지 않는다 — 호출이 잦아도 쓰기가 늘지 않는다.
      */

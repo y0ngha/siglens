@@ -1,11 +1,11 @@
-const { mockAuth, mockPeek, mockConsume, mockFindProviders } = vi.hoisted(
-    () => ({
+const { mockAuth, mockPeek, mockConsume, mockFindProviders, mockFindModel } =
+    vi.hoisted(() => ({
         mockAuth: vi.fn(),
         mockConsume: vi.fn(),
         mockPeek: vi.fn(),
         mockFindProviders: vi.fn(),
-    })
-);
+        mockFindModel: vi.fn(),
+    }));
 vi.mock('@/entities/siglens-api-key/server/apiKeyAuth', () => ({
     authenticateApiKey: mockAuth,
 }));
@@ -22,6 +22,11 @@ vi.mock('@/entities/siglens-api-key/server/rateLimit', async () => {
 vi.mock('@/entities/api-key/api', () => ({
     DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
         return { findByUser: mockFindProviders };
+    }),
+}));
+vi.mock('@/entities/siglens-api-key/api', () => ({
+    DrizzleSiglensApiKeyRepository: vi.fn().mockImplementation(function () {
+        return { findApiDefaultModel: mockFindModel };
     }),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -61,6 +66,7 @@ describe('GET /api/v1/me', () => {
             { provider: 'openai' },
             { provider: 'anthropic' },
         ]);
+        mockFindModel.mockResolvedValue(null);
     });
 
     it('키·tier·BYOK provider·남은 한도를 돌려준다', async () => {
@@ -83,8 +89,23 @@ describe('GET /api/v1/me', () => {
         });
     });
 
-    it('BYOK provider는 키 소유자 id로만 조회한다', async () => {
+    it('계정 화면에서 고른 API 기본 모델을 defaultModel로 돌려준다', async () => {
+        mockFindModel.mockResolvedValue('claude-opus-5');
+        const body = (await (await GET(request())).json()) as {
+            data: { defaultModel: string | null };
+        };
+        expect(body.data.defaultModel).toBe('claude-opus-5');
+    });
+
+    it('기본 모델 조회가 실패하면 503', async () => {
+        mockFindModel.mockRejectedValue(new Error('db down'));
+        const response = await GET(request());
+        expect(response.status).toBe(503);
+    });
+
+    it('BYOK provider와 기본 모델은 키 소유자 id로만 조회한다', async () => {
         await GET(request());
+        expect(mockFindModel).toHaveBeenCalledWith(principal.userId);
         expect(mockFindProviders).toHaveBeenCalledWith(principal.userId);
         expect(mockPeek).toHaveBeenCalledWith(principal.userId);
     });

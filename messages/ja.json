@@ -659,8 +659,10 @@
         "siglens-api-key": {
             "action": {
                 "emailNotVerified": "メール認証を完了してから、APIキーを作成できます。",
+                "invalidModel": "選択できないモデルです。リストから選び直してください。",
                 "invalidName": "キー名を入力してください（最大{v0}文字）。",
                 "limitReached": "有効なキーは最大{v0}個までです。使わないキーを無効化してから、もう一度お試しください。",
+                "modelProviderKeyMissing": "このモデルのプロバイダーの BYOK キーを先に登録してください。",
                 "notFound": "すでに無効化されているか、見つからないキーです。",
                 "serverError": "処理中に問題が発生しました。しばらくしてからもう一度お試しください。",
                 "unauthenticated": "ログインが必要です。"
@@ -1020,6 +1022,20 @@
                 "step2": "エージェントにSkillファイルを渡します。ダウンロードしたSKILL.mdをエージェントのskills/siglensフォルダに置いてください。",
                 "step3": "ターミナルで銘柄を検索してみましょう。",
                 "title": "SIGLENS API連携"
+            },
+            "DefaultModelForm": {
+                "cleared": "デフォルトモデルの設定を解除しました。",
+                "description": "API で新しい分析を作成するときに model を省略すると、このモデルが使われます。分析は登録済みの BYOK キーで実行され、料金もそのキーに請求されます。",
+                "goToByok": "AI モデルの API キー登録へ",
+                "hint": "新しく生成できるのは BYOK クラスのモデルだけです。無料・メンバークラスのモデルは、すでにある共有分析の読み取りのみ可能です。キーを登録済みのプロバイダーのモデルだけが表示されます。",
+                "noKeys": "自分のキーで実行できるモデルがまだありません。Claude・ChatGPT・Gemini のいずれかの BYOK キーを登録すると、ここでモデルを選べます。",
+                "notSetOption": "未設定（リクエストごとに model を指定）",
+                "saveButton": "保存",
+                "saved": "デフォルトモデルを保存しました。",
+                "saving": "保存中…",
+                "selectLabel": "デフォルトモデル",
+                "title": "API のデフォルトモデル",
+                "unavailable": "保存済みのデフォルトモデル（{v0}）は現在使えません。そのプロバイダーのキーを再登録するか、別のモデルを選んでください。"
             }
         },
         "ticker-search": {

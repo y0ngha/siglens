@@ -659,8 +659,10 @@
         "siglens-api-key": {
             "action": {
                 "emailNotVerified": "Verify your email before creating an API key.",
+                "invalidModel": "That model can't be selected. Pick one from the list.",
                 "invalidName": "Enter a key name (up to {v0} characters).",
                 "limitReached": "You can have up to {v0} active keys. Revoke one you no longer use and try again.",
+                "modelProviderKeyMissing": "Register a BYOK key for this model's provider first.",
                 "notFound": "This key was already revoked or could not be found.",
                 "serverError": "Something went wrong. Please try again shortly.",
                 "unauthenticated": "You need to sign in."
@@ -1020,6 +1022,20 @@
                 "step2": "Give your agent the Skill file. Put the downloaded SKILL.md in the agent's skills/siglens folder.",
                 "step3": "Try searching for a ticker in your terminal.",
                 "title": "SIGLENS API"
+            },
+            "DefaultModelForm": {
+                "cleared": "Default model cleared.",
+                "description": "When you leave out model on an API request for a new analysis, this model is used. The analysis runs on your own registered BYOK key and is billed to that key.",
+                "goToByok": "Go to AI model API keys",
+                "hint": "Only BYOK-class models can generate new analyses. Free and member models can only read the shared cache. Models are listed only for providers you have registered a key with.",
+                "noKeys": "You don't have a model you can run on your own key yet. Register a BYOK key for Claude, ChatGPT or Gemini, then pick a model here.",
+                "notSetOption": "Not set (pass model on every request)",
+                "saveButton": "Save",
+                "saved": "Default model saved.",
+                "saving": "Saving…",
+                "selectLabel": "Default model",
+                "title": "API default model",
+                "unavailable": "Your saved default model ({v0}) can't be used right now. Register a key for its provider again, or pick another model."
             }
         },
         "ticker-search": {

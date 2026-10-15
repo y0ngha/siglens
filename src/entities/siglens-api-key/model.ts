@@ -76,3 +76,21 @@ export type RevokeSiglensApiKeyState =
           code: SiglensApiKeyActionErrorCode;
           message: string;
       };
+
+export type ApiDefaultModelErrorCode =
+    | 'unauthenticated'
+    | 'invalid_model'
+    | 'provider_key_missing'
+    | 'server_error';
+
+/**
+ * API 기본 모델 저장 액션 상태. `saved.model`이 `null`이면 설정을 해제했다는 뜻이다.
+ */
+export type SetApiDefaultModelState =
+    | { status: 'idle' }
+    | { status: 'saved'; model: string | null }
+    | {
+          status: 'error';
+          code: ApiDefaultModelErrorCode;
+          message: string;
+      };

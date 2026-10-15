@@ -78,6 +78,12 @@ export const users = pgTable('users', {
     avatarUrl: text('avatar_url'),
     tier: userTierEnum('tier').notNull().default('member'),
     emailVerified: boolean('email_verified').notNull().default(false),
+    /**
+     * 공개 API(`/api/v1`)의 기본 모델(ModelId). `null`이면 `run_fresh_analysis`가 요청마다
+     * `model`을 요구한다. 모델 ID는 core 로스터가 바뀌어도 DB 제약이 발목을 잡지 않도록 enum이
+     * 아니라 varchar이고, 유효성은 `setApiDefaultModelAction`이 core 로스터로 검증한다.
+     */
+    apiDefaultModel: varchar('api_default_model', { length: 64 }),
     createdAt: timestamp('created_at', { withTimezone: true })
         .notNull()
         .defaultNow(),

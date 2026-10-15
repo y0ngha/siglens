@@ -46,7 +46,7 @@ export interface PublicApiRateLimit {
 
 /**
  * 회원(userId) 단위 고정 창 한도 — 키를 폐기·재발급해도 카운터가 이어진다. `data`는 데이터 도구 전부, `ai`는 캐시 미스로 LLM을 부르는
- * 분석 생성 시도(PR-B에서 쓴다). 회원 tier와 무관하게 같다(1차).
+ * 분석 생성 시도(`run_fresh_analysis`가 캐시 미스로 사용자 키 LLM을 부를 때만 소비; 캐시 적중은 `data`만 쓴다). 회원 tier와 무관하게 같다(1차).
  */
 export const PUBLIC_API_RATE_LIMITS: Readonly<
     Record<PublicApiRateBucket, PublicApiRateLimit>

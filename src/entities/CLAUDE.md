@@ -12,11 +12,11 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 
 | from | to | 사유 |
 |---|---|---|
-| `entities/analysis/actions/*` | `entities/news-article`, `entities/earnings-report`, `entities/options-chain` | submitOverallAnalysisAction이 여러 entity 데이터를 조합하는 multi-entity orchestration. FSD에서는 features 레이어가 담당해야 하나, Next.js Server Action 구조상 entity에 위치 |
-| `entities/news-article/actions/*` | `entities/analysis` | submitNewsAnalysisAction이 byokGate(shared/lib) 경유로 analysis 의존 |
+| `entities/analysis/actions/*`, `entities/analysis/server/overallAnalysisRunner.ts` | `entities/news-article`, `entities/earnings-report`, `entities/options-chain` | submitOverallAnalysisAction이 여러 entity 데이터를 조합하는 multi-entity orchestration. FSD에서는 features 레이어가 담당해야 하나, Next.js Server Action 구조상 entity에 위치. 본문은 쿠키 액션과 공개 API가 공유하도록 `server/overallAnalysisRunner.ts`로 추출됐다(액션 파일은 `'use server'`라 non-action export를 둘 수 없다) |
+| `entities/news-article/actions/*`, `entities/news-article/server/*` | `entities/analysis` | submitNewsAnalysisAction이 byokGate(shared/lib) 경유로 analysis 의존 |
 | `entities/agent-suggestions/api.ts` | `entities/market-news/api/marketNewsRepository` (`DrizzleMarketNewsRepository`), `entities/llm-provider` | `getAgentSuggestions`이 카테고리 헤드라인(market-news)과 agent LLM provider(llm-provider)를 조합하는 multi-entity orchestration — `entities/analysis/actions/*` → `news-article` 예외와 동일한 사유. `market-news`는 `lib/categoryConfig`(`CATEGORY_CONFIG`)와 `api/marketNewsRepository`(`DrizzleMarketNewsRepository`) 양쪽 다 사용 |
 | `entities/sitemap-entry/server.ts` | `entities/market-news/api/marketNewsRepository` (`DrizzleMarketNewsRepository`), `entities/terms/api` (`DrizzleTermsRepository`) | `loadStaticSitemapInputs`이 sitemap `lastmod`를 채우려 뉴스 최신 게시일(market-news)과 활성 약관 발효일(terms)을 조합하는 multi-entity orchestration |
-| `entities/analysis` (`actions/runOverallAnalysisAction.ts`, `api.ts`), `entities/news-article` (`actions/submitNewsAnalysisAction.ts`, `api.ts`) | `entities/economy/api/loadNewsMacroCalendar` | 뉴스 분석과 종합 분석의 뉴스 축이 동일한 매크로 캘린더를 넘겨야 core의 뉴스 캐시 키가 두 경로에서 일치한다 — server-only deep import, `economy` barrel 제외 대상 |
+| `entities/analysis` (`server/overallAnalysisRunner.ts`, `api.ts`), `entities/news-article` (`server/newsAnalysisRunner.ts`, `api.ts`) | `entities/economy/api/loadNewsMacroCalendar` | 뉴스 분석과 종합 분석의 뉴스 축이 동일한 매크로 캘린더를 넘겨야 core의 뉴스 캐시 키가 두 경로에서 일치한다 — server-only deep import, `economy` barrel 제외 대상 |
 
 이 예외들은 ESLint `boundaries/element-types`에서 `entities → entities` 허용으로 관리됨.
 

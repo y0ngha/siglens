@@ -659,8 +659,10 @@
         "siglens-api-key": {
             "action": {
                 "emailNotVerified": "이메일 인증을 마친 뒤에 API 키를 만들 수 있어요.",
+                "invalidModel": "선택할 수 없는 모델이에요. 목록에서 다시 골라 주세요.",
                 "invalidName": "키 이름을 입력해 주세요. (최대 {v0}자)",
                 "limitReached": "활성 키는 최대 {v0}개까지 만들 수 있어요. 안 쓰는 키를 폐기한 뒤 다시 시도해 주세요.",
+                "modelProviderKeyMissing": "이 모델 회사의 BYOK 키를 먼저 등록해 주세요.",
                 "notFound": "이미 폐기됐거나 찾을 수 없는 키예요.",
                 "serverError": "처리하는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.",
                 "unauthenticated": "로그인이 필요해요."
@@ -1002,6 +1004,20 @@
             }
         },
         "siglens-api-key-management": {
+            "DefaultModelForm": {
+                "cleared": "기본 모델 설정을 해제했어요.",
+                "description": "API로 새 분석을 만들 때 model을 생략하면 이 모델을 써요. 분석은 내가 등록한 BYOK 키로 만들어지고 비용도 내 키에 청구돼요.",
+                "goToByok": "AI 모델 API 키 등록하러 가기",
+                "hint": "직접 새로 생성할 수 있는 건 BYOK 등급 모델뿐이에요. 무료·회원 등급 모델은 이미 만들어진 공유 분석만 읽을 수 있어요. 키를 등록한 회사의 모델만 목록에 나와요.",
+                "noKeys": "직접 만들 수 있는 모델이 아직 없어요. Claude·ChatGPT·Gemini 중 하나의 BYOK 키를 등록하면 여기서 모델을 고를 수 있어요.",
+                "notSetOption": "설정 안 함 (요청마다 model 지정)",
+                "saveButton": "저장",
+                "saved": "기본 모델을 저장했어요.",
+                "saving": "저장 중…",
+                "selectLabel": "기본 모델",
+                "title": "API 기본 모델",
+                "unavailable": "저장된 기본 모델({v0})을 지금은 쓸 수 없어요. 해당 회사의 키를 다시 등록하거나 다른 모델을 골라 주세요."
+            },
             "SiglensApiKeySection": {
                 "copied": "복사했어요",
                 "copy": "복사",
