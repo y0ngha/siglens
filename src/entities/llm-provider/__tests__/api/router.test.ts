@@ -82,15 +82,15 @@ describe('callAiProviderRouter', () => {
     });
 
     describe('Anthropic 모델 라우팅', () => {
-        it('claude-haiku-4-5 모델은 callAnthropicChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
-            const options = { ...BASE_OPTIONS, model: 'claude-haiku-4-5' };
+        it('claude-haiku-5-5 모델은 callAnthropicChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+            const options = { ...BASE_OPTIONS, model: 'claude-haiku-5-5' };
 
             const result = await callAiProviderRouter(options);
 
             expect(result).toBe('anthropic response');
             expect(mockCallAnthropicChat).toHaveBeenCalledTimes(1);
             expect(mockCallAnthropicChat).toHaveBeenCalledWith(
-                expectedAdapterCall('claude-haiku-4-5-20251001')
+                expectedAdapterCall('claude-haiku-5-5')
             );
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
@@ -114,15 +114,15 @@ describe('callAiProviderRouter', () => {
     });
 
     describe('OpenAI 모델 라우팅', () => {
-        it('gpt-5.6-luna 모델은 callOpenaiChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
-            const options = { ...BASE_OPTIONS, model: 'gpt-5.6-luna' };
+        it('gpt-6-luna 모델은 callOpenaiChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+            const options = { ...BASE_OPTIONS, model: 'gpt-6-luna' };
 
             const result = await callAiProviderRouter(options);
 
             expect(result).toBe('openai response');
             expect(mockCallOpenaiChat).toHaveBeenCalledTimes(1);
             expect(mockCallOpenaiChat).toHaveBeenCalledWith(
-                expectedAdapterCall('gpt-5.6-luna')
+                expectedAdapterCall('gpt-6-luna')
             );
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
@@ -153,7 +153,7 @@ describe('callAiProviderRouter', () => {
                 userApiKey: 'user-key',
                 serverApiKey: 'server-key',
                 contents: 'Hello',
-                model: 'claude-haiku-4-5',
+                model: 'claude-haiku-5-5',
             });
 
             expect(mockCallAnthropicChat).toHaveBeenCalledWith(
@@ -166,7 +166,7 @@ describe('callAiProviderRouter', () => {
                 userApiKey: undefined,
                 serverApiKey: 'server-key',
                 contents: 'Hello',
-                model: 'claude-haiku-4-5',
+                model: 'claude-haiku-5-5',
             });
 
             expect(mockCallAnthropicChat).toHaveBeenCalledWith(
@@ -185,10 +185,10 @@ describe('callAiProviderRouter', () => {
                     userApiKey: undefined,
                     serverApiKey: undefined,
                     contents: 'Hello',
-                    model: 'claude-haiku-4-5',
+                    model: 'claude-haiku-5-5',
                 })
             ).rejects.toThrow(
-                '[router] No API key supplied for model: claude-haiku-4-5'
+                '[router] No API key supplied for model: claude-haiku-5-5'
             );
 
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();

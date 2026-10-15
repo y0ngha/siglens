@@ -104,13 +104,13 @@ describe('useOverallAnalysis — branch coverage', () => {
         expect(mockSubmit).not.toHaveBeenCalled();
 
         // tier 확정 — modelId가 회원의 저장 모델로 넓어지고 게이트가 열린다.
-        rerender({ modelId: 'claude-sonnet-5', settingsHydrated: true });
+        rerender({ modelId: 'claude-sonnet-5-5', settingsHydrated: true });
 
         await waitFor(() => {
             expect(mockSubmit).toHaveBeenCalledTimes(1);
         });
         expect(mockSubmit.mock.calls[0]?.[0]?.params?.modelId).toBe(
-            'claude-sonnet-5'
+            'claude-sonnet-5-5'
         );
         await waitFor(() => {
             if (result.current.state.status !== 'done')

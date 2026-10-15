@@ -50,9 +50,11 @@ interface SymbolModelContextValue {
      * Whether the selected model's reasoning toggle changes anything at all.
      *
      * Orthogonal to {@link canUseReasoning}: that one is about the caller's
-     * tier, this one about the model. A member on `claude-haiku-4-5` may use
-     * the feature in principle but the toggle is inert for that model, so the
-     * control is disabled rather than shown as an unlocked switch.
+     * tier, this one about the model. On a model whose `off` and `on` states
+     * are identical (core spec `toggleable: false`, decided by
+     * `isReasoningToggleable`) the toggle is inert, so the control is disabled
+     * rather than shown as an unlocked switch. The 2026-10 roster has no such
+     * model; the branch stays for future ones.
      */
     isReasoningSupported: boolean;
     /**
@@ -136,9 +138,10 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // 미리 false로 접어 두면 downgrade(로그아웃/등급 하락) 직후 stale true 값이
     // 한 프레임이라도 실제 submit에 실려 나가는 것을 방지한다.
     const canUseReasoning = tier !== 'free';
-    // 등급과 별개로, 토글이 아무 효과도 없는 모델이 있다(`claude-haiku-4-5` —
-    // `off`와 `on`이 동일). 그런 모델에서는 컨트롤을 비활성화해야 한다. 켜도
-    // 아무 일이 없는데 켜졌다고 보이는 편이 더 나쁘다.
+    // 등급과 별개로, 토글이 아무 효과도 없는 모델(`off`와 `on`이 같은 모델)에서는
+    // 컨트롤을 비활성화한다. 켜도 아무 일이 없는데 켜졌다고 보이는 편이 더 나쁘다.
+    // 판정은 core `isReasoningToggleable`(스펙의 `toggleable: false`)이 한다. 2026-10
+    // 로스터에는 그런 모델이 없지만(Haiku 4.5 퇴역), 다시 생길 때를 위해 분기를 유지한다.
     const isReasoningSupported = isReasoningToggleable(modelId);
     const reasoning =
         canUseReasoning && isReasoningSupported && storedReasoning;

@@ -29,7 +29,7 @@ EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 # DEEPSEEK_CHAT_API_KEY — `getServerPrimaryKey` in
 # src/entities/llm-provider/lib/serverKeys.ts is read by the SiglensAI agent router
 # (src/entities/llm-provider/api/agent/router.ts) and analysis-plain for every request
-# whose model routes to that provider, including the free-tier models claude-haiku-4-5 and
+# whose model routes to that provider, including the free-tier models claude-haiku-5-5 and
 # gpt-5-mini. Listing them as optional meant this gate would wave through a deploy that
 # had silently lost them, breaking Claude/ChatGPT for every non-BYOK caller. All four
 # *_CHAT_API_KEY are REQUIRED.
@@ -40,7 +40,7 @@ EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 # The *_API_KEY (no CHAT) quartet is REQUIRED for the same class of reason:
 # ANTHROPIC/GEMINI/OPENAI/DEEPSEEK_API_KEY are the analysis-side server keys read by
 # @y0ngha/siglens-core's resolveServerApiKey, and every one of the four providers appears
-# in TIER_CONFIG.models.free (claude-haiku-4-5 -> Anthropic, gpt-5-mini -> OpenAI,
+# in TIER_CONFIG.models.free (claude-haiku-5-5 -> Anthropic, gpt-5-mini -> OpenAI,
 # gemini-2.5-flash* -> Gemini, deepseek-v4-* -> DeepSeek), i.e. the server pays for all
 # four. Core validates them lazily at call time, so a missing key does not crash startup —
 # it fails the first analysis that routes to that provider, over SSE, with HTTP 200. That

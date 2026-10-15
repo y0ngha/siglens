@@ -61,12 +61,12 @@ describe('migrateLegacyAnalysisModel', () => {
         expect(isFlagSet()).toBe(true);
     });
 
-    it('leaves an unrelated stored model (gpt-5.6-luna) unchanged and sets the flag', () => {
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'gpt-5.6-luna');
+    it('leaves an unrelated stored model (gpt-6-luna) unchanged and sets the flag', () => {
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'gpt-6-luna');
 
         migrateLegacyAnalysisModel();
 
-        expect(readStored()).toBe('gpt-5.6-luna');
+        expect(readStored()).toBe('gpt-6-luna');
         expect(isFlagSet()).toBe(true);
     });
 
@@ -151,6 +151,19 @@ describe('migrateRetiredAnalysisModel', () => {
         migrateRetiredAnalysisModel();
 
         expect(readStored()).toBe('gemini-3.8-flash');
+    });
+
+    it.each([
+        ['claude-haiku-4-5', 'claude-haiku-5-5'],
+        ['claude-sonnet-5', 'claude-sonnet-5-5'],
+        ['gpt-5.6-luna', 'gpt-6-luna'],
+        ['gpt-5.6-terra', 'gpt-6-sol'],
+    ])('moves the retired %s to its successor %s', (retired, successor) => {
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, retired);
+
+        migrateRetiredAnalysisModel();
+
+        expect(readStored()).toBe(successor);
     });
 
     it('runs on every call — no one-time flag gates it', () => {

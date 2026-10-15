@@ -41,8 +41,8 @@ import type { Page } from '@playwright/test';
  *     that list here: it grows every time a model generation lands and a
  *     hand-maintained copy silently goes stale. Read it from tier.ts.
  *     The default/selected model is deepseek-v4.1-flash → trigger shows
- *     "DeepSeek Flash". We exercise the premium branch with "Claude Sonnet 5"
- *     (label "Sonnet 5", `member` class ⇒ guest auth gate).
+ *     "DeepSeek Flash". We exercise the premium branch with "Claude Sonnet 5.5"
+ *     (label "Sonnet 5.5", `member` class ⇒ guest auth gate).
  *
  *   - The gate modal is a `role="dialog"` (aria-labelledby the
  *     "프리미엄 모델 사용 안내" heading in auth mode) with a `<Link role="link">`
@@ -72,8 +72,8 @@ const FREE_OPTION_ACCESSIBLE_NAME = 'Flash 3.6 Gemini 3.6 Flash';
 // The same option's trigger label. Labels carry their generation, so this is
 // no longer a prefix of any other option's label ("Flash Lite 3.5", "Flash 3.7").
 const FREE_OPTION_LABEL = 'Flash 3.6';
-const PREMIUM_OPTION_FULLNAME = 'Claude Sonnet 5'; // `member` class ⇒ guest auth gate
-const PREMIUM_MODEL_ID = 'claude-sonnet-5';
+const PREMIUM_OPTION_FULLNAME = 'Claude Sonnet 5.5'; // `member` class ⇒ guest auth gate
+const PREMIUM_MODEL_ID = 'claude-sonnet-5-5';
 // 접근 등급 뱃지. 등급이 free/member/byok 셋으로 갈리면서 단일 "PRO"가
 // "MEMBER"(로그인만으로 서버 키가 열림)와 "BYOK"(사용자 키 필요)로 나뉘었다 —
 // `shared/ui/ModelAccessBadge` 참고. free에는 뱃지가 붙지 않는다.

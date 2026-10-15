@@ -24,6 +24,11 @@ const LEGACY_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
  */
 const RETIRED_MODEL_SUCCESSORS: ReadonlyMap<string, ModelId> = new Map([
     ['gemini-3.7-flash', 'gemini-3.8-flash'],
+    // 2026-10 모델 로스터 교체 — 같은 등급(free/member)의 후속 모델로 옮긴다.
+    ['claude-haiku-4-5', 'claude-haiku-5-5'],
+    ['claude-sonnet-5', 'claude-sonnet-5-5'],
+    ['gpt-5.6-luna', 'gpt-6-luna'],
+    ['gpt-5.6-terra', 'gpt-6-sol'],
 ]);
 
 /**

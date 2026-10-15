@@ -38,7 +38,7 @@ function readStoredModel(): ModelId | null {
  *
  * `isTierHydrated`가 필수인 이유: tier는 서버 왕복(`useUserTier`)이라 마운트 직후엔
  * 항상 `DEFAULT_TIER='free'`다. 그 시점에 저장값을 검증하면 member/pro 전용 모델
- * (claude-sonnet-5 등)이 허용 목록 밖으로 판정돼 DEFAULT_MODEL로 강등되고, tier가
+ * (claude-sonnet-5-5 등)이 허용 목록 밖으로 판정돼 DEFAULT_MODEL로 강등되고, tier가
  * 확정돼 목록이 넓어져도 복원 경로가 없어(재검증은 좁힐 때만 동작) 회원의 선택이
  * 매 로드마다 조용히 사라진다. 그래서 읽기·재검증 둘 다 tier 확정까지 미룬다.
  */
