@@ -2,9 +2,9 @@ import 'server-only';
 import { withRetry } from '@/shared/lib/withRetry';
 
 const FINRA_CDN_BASE = 'https://cdn.finra.org/equity';
-const FINRA_REQUEST_TIMEOUT_MS = 60_000;
-const FINRA_RETRY_BASE_DELAY_MS = 1_000;
-const FINRA_MAX_RETRIES = 2;
+export const FINRA_REQUEST_TIMEOUT_MS = 60_000;
+export const FINRA_RETRY_BASE_DELAY_MS = 1_000;
+export const FINRA_MAX_RETRIES = 2;
 const HTTP_NOT_FOUND = 404;
 const HTTP_FORBIDDEN = 403;
 const HTTP_TOO_MANY_REQUESTS = 429;

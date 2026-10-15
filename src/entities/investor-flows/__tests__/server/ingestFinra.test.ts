@@ -147,6 +147,28 @@ describe('runFinraIngest', () => {
             expect(result.interestRows).toBe(4);
         });
 
+        it('does not start the remaining holiday variants once the deadline passes (lease sizing assumes one file in flight)', async () => {
+            let fetches = 0;
+            const { deps, calls } = build(
+                {
+                    // the deadline passes during the first variant fetch
+                    isDeadlineReached: () => fetches > 0,
+                    finra: {
+                        fetchCnmsShortVolumeText: async () => null,
+                        fetchShortInterestText: async () => {
+                            fetches += 1;
+                            return null;
+                        },
+                    },
+                },
+                { latestVolume: '2026-10-15', haveInterest: STORED }
+            );
+            const result = await runFinraIngest(deps);
+            expect(fetches).toBe(1);
+            expect(calls.interestFetched).toEqual([]);
+            expect(result.status).toBe('deadline');
+        });
+
         it('falls back to the previous weekday when the nominal settlement file is absent', async () => {
             const { deps, calls } = build(
                 {},

@@ -301,14 +301,17 @@ async function processFiling(
         return;
     }
 
-    const rows = await readPositions(
-        deps,
-        filing.cik,
-        filing.accession,
-        docs.infoTable,
-        universe
-    );
-    const existing = await repo.findProcessedFilings(filing.cik, meta.period);
+    // 정보테이블 다운로드(SEC)와 기존 원장 조회(DB)는 서로 독립이라 함께 띄운다.
+    const [rows, existing] = await Promise.all([
+        readPositions(
+            deps,
+            filing.cik,
+            filing.accession,
+            docs.infoTable,
+            universe
+        ),
+        repo.findProcessedFilings(filing.cik, meta.period),
+    ]);
     const incoming: AmendmentFiling = {
         accession: filing.accession,
         filingDate: filing.filingDate,
@@ -531,17 +534,23 @@ async function reconcilePeriodModes(
     today: string
 ): Promise<void> {
     const { repo } = deps;
+    // 일부러 직렬이다: 분기는 서로 독립이지만 `markPeriodDirty`가 같은 dirty 테이블에 큰 INSERT…SELECT를 쓰므로 한 번에
+    // 하나씩 해야 DB 쓰기 부하와 로그 순서가 예측 가능하다(분기는 ~3개라 병렬로 얻는 시간도 없다).
     for (const period of retainedPeriods(floor, today)) {
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         const desired = await aggregateModeFor(repo, period, floor, today);
         const key = stateKeyPeriodMode(period);
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         const stored = await repo.getState(key);
         if (stored === desired) continue;
         if (stored !== null) {
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
             const marked = await repo.markPeriodDirty(period);
             deps.log(
                 `[sec-13f] aggregate mode of ${period} changed ${stored} -> ${desired}; ${marked} CUSIPs queued for recompute`
             );
         }
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await repo.setState(key, desired);
     }
 }
