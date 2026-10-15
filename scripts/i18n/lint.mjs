@@ -48,6 +48,8 @@ for (const relPath of candidateFiles(ROOT)) {
             // 표시 번역이 카탈로그로 옮겨진 데이터 config — 여기 남은 한국어는
             // 원본 데이터이고 화면은 카탈로그를 조회한다(§context.mjs).
             verdict.reason === 'catalog-backed-data' ||
+            // 한글 검색 별칭 — 사용자가 치는 한국어를 매칭하는 키다(§context.mjs).
+            verdict.reason === 'search-alias-data' ||
             // 콘솔 로그·`[모듈]` 접두 throw — 운영자만 읽는다(§context.mjs).
             verdict.reason === 'developer-diagnostic' ||
             // E2E 전용 스텁 — 프로덕션 렌더 경로에 닿지 않는다(§context.mjs).

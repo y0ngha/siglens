@@ -197,6 +197,14 @@ const CATALOG_BACKED_DATA_RE =
     /src\/shared\/config\/(canonical-korean-names|popular-tickers|dashboard-tickers|dashboard-tickers-kr|crypto-categories|economyIndicators|economyIndicatorsKr|economyLabelKey|tickerCategoryLabel)\.ts$|src\/entities\/economy\/lib\/indicatorNameKo\.ts$|src\/entities\/market-news\/lib\/categoryConfig\.ts$/;
 
 /**
+ * **한글 종목 검색에만 쓰는 별칭.**
+ *
+ * 사용자가 치는 한국어 표기(`쉐브론`, `씰스큐`)를 매칭하는 키라 화면에 나가지 않고,
+ * 질의가 한국어라 로케일마다 갈리지도 않는다. 번역하면 매칭 키가 바뀌어 검색이 깨진다.
+ */
+const SEARCH_ALIAS_DATA_RE = /src\/shared\/config\/korean-search-aliases\.ts$/;
+
+/**
  * **개발자에게만 보이는 진단 문자열**인가 — 콘솔 로그와 `[tag]` 접두 throw.
  *
  * 이 문자열들은 화면에 나가지 않는다. 서버 로그(CloudWatch)와 빌드 실패
@@ -324,6 +332,9 @@ export function classify({ candidate, filePath, code }) {
      */
     if (CATALOG_BACKED_DATA_RE.test(filePath)) {
         return { applicable: false, reason: 'catalog-backed-data' };
+    }
+    if (SEARCH_ALIAS_DATA_RE.test(filePath)) {
+        return { applicable: false, reason: 'search-alias-data' };
     }
     if (ASSET_TERM_DATA_RE.test(filePath)) {
         return { applicable: false, reason: 'catalog-backed-data' };
