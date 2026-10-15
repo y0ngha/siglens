@@ -101,6 +101,12 @@
                 "managePortfolio": "Manage Holdings",
                 "manageWatchlist": "Manage Watchlist"
             },
+            "sample": {
+                "page": {
+                    "description": "See what the regular holdings and watchlist email report looks like before you sign up.",
+                    "title": "Email report sample"
+                }
+            },
             "unsubscribe": {
                 "page": {
                     "title": "Unsubscribe from email reports",
@@ -548,6 +554,22 @@
                 },
                 "unsubscribe": "Unsubscribe",
                 "viewOnSite": "See details on {v0}"
+            },
+            "sample": {
+                "aapl": {
+                    "newsSummary1": "The launch schedule for upcoming products was disclosed, drawing more market attention.",
+                    "pattern": "Price has risen to near the top of its range of the past two months.",
+                    "plain": "After trading in a narrow range for a while, the stock has recently moved above its 20-day and 60-day averages. The 20-day line is edging closer to the 60-day line.",
+                    "technical": "The close is above the 20-day and 60-day moving averages. The 20-day has edged up over the past few days while the 60-day is nearly flat, so it is too early to say the trend has changed."
+                },
+                "nvda": {
+                    "newsSummary1": "Reports say the company lifted its quarterly outlook as data-center demand continued.",
+                    "newsSummary2": "An industry analysis says supply bottlenecks are easing.",
+                    "options": "Calls have outtraded puts into the nearby expiration, which points to a mildly upbeat tone among options traders.",
+                    "pattern": "Highs and lows have both been rising inside an upward channel for about six weeks.",
+                    "plain": "The stock has climbed steadily over the past four months and is trading above its 20-day and 60-day moving averages. The 20-day line sits above the 60-day line, and both are pointing up.",
+                    "technical": "Price sits above both the 20-day and 60-day moving averages, and both are rising. MACD recently crossed up. RSI is near overbought territory, so short-term volatility may rise."
+                }
             }
         },
         "email-token": {
@@ -665,7 +687,8 @@
                 "3dc0b0": "Get your holdings & watchlist report by email",
                 "84ff73": "Want deeper analysis?",
                 "94b7db": "Close",
-                "91d660": "Sign up and add your holdings or watchlist, and we'll email daily charts, the Simple analysis, news and options activity on the days and time you choose."
+                "91d660": "Sign up and add your holdings or watchlist, and we'll email daily charts, the Simple analysis, news and options activity on the days and time you choose.",
+                "d7bbf8": "View a sample email"
             }
         },
         "api-key-management": {
@@ -1071,6 +1094,14 @@
                 "emptyBody": "Tap the star next to a stock to add it here and see its price immediately every time you visit.",
                 "search": "Search Stocks"
             }
+        },
+        "email-report-sample": {
+            "frameTitle": "Email report sample preview",
+            "note": "The tickers, figures, and text shown here are all examples. Your actual email carries the latest analysis for the holdings and watchlist stocks you've added.",
+            "settings": "Already a member? Go to email report settings",
+            "signup": "Sign up to get it",
+            "subtitle": "Sign up and we'll send your holdings and watchlist updates in an email like this, on the days and time you choose.",
+            "title": "Here's the email you'll get"
         }
     },
     "shared": {

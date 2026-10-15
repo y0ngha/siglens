@@ -4,7 +4,11 @@ import { useTranslations } from 'next-intl';
 import { REASONING_FEATURE_LABEL_KEY } from '@/features/reasoning-toggle/model/reasoningFeature';
 import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
-import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import {
+    BUTTON_GHOST,
+    BUTTON_OUTLINE,
+    BUTTON_PRIMARY,
+} from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import type {
     ContextOf,
@@ -109,6 +113,16 @@ export function AnalysisSignupNudgeModal({
                 >
                     {t('AnalysisSignupNudgeModal.2b8afd')}
                 </Link>
+                {/* 메일 리포트 문구에서만 — 가입 전에 메일이 어떻게 오는지 보여 주는 보조 동선이다. */}
+                {variant === 'emailReport' && (
+                    <Link
+                        href="/email-report/sample"
+                        onClick={onClose}
+                        className={cn(BUTTON_OUTLINE, ACTION_SIZE)}
+                    >
+                        {t('AnalysisSignupNudgeModal.d7bbf8')}
+                    </Link>
+                )}
                 <button
                     type="button"
                     onClick={onClose}

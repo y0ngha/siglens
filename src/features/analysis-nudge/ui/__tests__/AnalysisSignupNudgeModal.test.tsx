@@ -83,6 +83,57 @@ describe('AnalysisSignupNudgeModal', () => {
         ).toHaveAttribute('href', '/signup');
     });
 
+    it('emailReport 문구는 가입 CTA 아래에 샘플 메일 보기 링크를 둔다', () => {
+        render(
+            <AnalysisSignupNudgeModal
+                kind="anon_auto"
+                variant="emailReport"
+                onClose={vi.fn()}
+            />
+        );
+        const links = screen.getAllByRole('link');
+        expect(links.map(l => l.getAttribute('href'))).toEqual([
+            '/signup',
+            '/email-report/sample',
+        ]);
+        expect(
+            screen.getByRole('link', { name: '샘플 메일 보기' })
+        ).toHaveAttribute('href', '/email-report/sample');
+    });
+
+    it('샘플 메일 링크를 누르면 모달을 닫고 가입 퍼널 이벤트는 남기지 않는다', async () => {
+        const onClose = vi.fn();
+        track.mockClear();
+        render(
+            <AnalysisSignupNudgeModal
+                kind="anon_auto"
+                variant="emailReport"
+                onClose={onClose}
+            />
+        );
+        await userEvent
+            .setup()
+            .click(screen.getByRole('link', { name: '샘플 메일 보기' }));
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(track).not.toHaveBeenCalledWith(
+            'nudge_clicked',
+            expect.anything()
+        );
+    });
+
+    it('상세 분석 문구에는 샘플 메일 링크가 없다', () => {
+        render(
+            <AnalysisSignupNudgeModal
+                kind="reasoning_toggle"
+                variant="reasoning"
+                onClose={vi.fn()}
+            />
+        );
+        expect(
+            screen.queryByRole('link', { name: '샘플 메일 보기' })
+        ).not.toBeInTheDocument();
+    });
+
     it('renders the signup CTA linking to /signup', () => {
         render(
             <AnalysisSignupNudgeModal
