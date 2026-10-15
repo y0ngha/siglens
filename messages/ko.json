@@ -19,7 +19,8 @@
                 "c4079e": "프로필 로딩 중",
                 "c6c674": "미설정",
                 "f5162c": "회원 등급",
-                "fa7c86": "회원 탈퇴 진행"
+                "fa7c86": "회원 탈퇴 진행",
+                "siglensApi": "시그렌즈 API"
             }
         },
         "ai": {
@@ -655,6 +656,18 @@
                 "title": "{v0} AI 분석 결과"
             }
         },
+        "siglens-api-key": {
+            "action": {
+                "emailNotVerified": "이메일 인증을 마친 뒤에 API 키를 만들 수 있어요.",
+                "invalidModel": "선택할 수 없는 모델이에요. 목록에서 다시 골라 주세요.",
+                "invalidName": "키 이름을 입력해 주세요. (최대 {v0}자)",
+                "limitReached": "활성 키는 최대 {v0}개까지 만들 수 있어요. 안 쓰는 키를 폐기한 뒤 다시 시도해 주세요.",
+                "modelProviderKeyMissing": "이 모델 회사의 BYOK 키를 먼저 등록해 주세요.",
+                "notFound": "이미 폐기됐거나 찾을 수 없는 키예요.",
+                "serverError": "처리하는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.",
+                "unauthenticated": "로그인이 필요해요."
+            }
+        },
         "watchlist": {
             "action": {
                 "deleteFailed": "관심종목에서 빼지 못했어요. 잠시 후 다시 시도해 주세요.",
@@ -988,6 +1001,56 @@
             "useShareFlow": {
                 "shareText": "{v0} AI 분석 결과를 시그렌즈에서 확인하세요",
                 "shareTitle": "{v0} AI 분석 결과"
+            }
+        },
+        "siglens-api-key-management": {
+            "DefaultModelForm": {
+                "cleared": "기본 모델 설정을 해제했어요.",
+                "description": "API로 새 분석을 만들 때 model을 생략하면 이 모델을 써요. 분석은 내가 등록한 BYOK 키로 만들어지고 비용도 내 키에 청구돼요.",
+                "goToByok": "AI 모델 API 키 등록하러 가기",
+                "hint": "직접 새로 생성할 수 있는 건 BYOK 등급 모델뿐이에요. 무료·회원 등급 모델은 이미 만들어진 공유 분석만 읽을 수 있어요. 키를 등록한 회사의 모델만 목록에 나와요.",
+                "noKeys": "직접 만들 수 있는 모델이 아직 없어요. {v0} 중 하나의 BYOK 키를 등록하면 여기서 모델을 고를 수 있어요.",
+                "notSetOption": "설정 안 함 (요청마다 model 지정)",
+                "saveButton": "저장",
+                "saved": "기본 모델을 저장했어요.",
+                "saving": "저장 중…",
+                "selectLabel": "기본 모델",
+                "title": "API 기본 모델",
+                "unavailable": "저장된 기본 모델({v0})을 지금은 쓸 수 없어요. 해당 회사의 키를 다시 등록하거나 다른 모델을 골라 주세요."
+            },
+            "SiglensApiKeySection": {
+                "copied": "복사했어요",
+                "copy": "복사",
+                "copyFailed": "복사하지 못했어요. 키를 직접 선택해 복사해 주세요.",
+                "createButton": "새 키 만들기",
+                "createdAt": "만든 날 {v0}",
+                "creating": "만드는 중…",
+                "description": "API 키로 AI 에이전트나 스크립트에서 시세·차트·뉴스 같은 시그렌즈 데이터를 조회할 수 있어요.",
+                "dismiss": "보관했어요",
+                "downloadSkill": "Skill 내려받기",
+                "emailNotVerified": "이메일 인증을 마친 뒤에 API 키를 만들 수 있어요. 계정 이메일을 먼저 인증해 주세요.",
+                "empty": "아직 만든 키가 없어요.",
+                "lastUsedAt": "마지막 사용 {v0}",
+                "limitHint": "활성 키는 최대 {v0}개까지 만들 수 있어요. 안 쓰는 키를 폐기하면 새로 만들 수 있어요.",
+                "listLabel": "발급한 API 키 목록",
+                "loadFailed": "키 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+                "nameLabel": "키 이름",
+                "namePlaceholder": "예: 내 에이전트",
+                "neverUsed": "아직 사용한 적 없어요",
+                "quickStartTitle": "30초 시작 가이드",
+                "revealedTitle": "새 키를 만들었어요",
+                "revealedWarning": "이 키는 지금만 볼 수 있어요. 다시 볼 수 없으니 안전한 곳에 바로 보관해 주세요.",
+                "revoke": "폐기",
+                "revokeAria": "{v0} 키 폐기",
+                "revokeCancel": "취소",
+                "revokeConfirm": "폐기하기",
+                "revokePrompt": "이 키를 폐기할까요? 이 키로 하던 호출은 바로 막히고 되돌릴 수 없어요.",
+                "revoked": "키를 폐기했어요.",
+                "revoking": "폐기 중…",
+                "step1": "위에서 키를 만든 뒤 환경변수에 저장해요.",
+                "step2": "에이전트에 Skill 파일을 넣어요. 내려받은 SKILL.md는 에이전트의 skills/siglens 폴더에 두면 돼요.",
+                "step3": "터미널에서 종목을 검색해 보세요.",
+                "title": "시그렌즈 API"
             }
         },
         "ticker-search": {

@@ -126,10 +126,20 @@ export interface DeleteAccountInput {
     userId: string;
 }
 
+/**
+ * 계정 삭제가 공개 API 키 인증을 즉시 끊기 위한 포트. 키 행은 FK cascade로 지워지지만
+ * 인증 캐시는 TTL 동안 살아 있으므로, 삭제 전에 활성 키 해시를 읽고 삭제 뒤 무효화한다.
+ */
+export interface DeleteAccountApiKeys {
+    listActiveKeyHashes(userId: string): Promise<string[]>;
+    revokeAuth(keyHashes: readonly string[]): Promise<unknown>;
+}
+
 export interface DeleteAccountDependencies {
     users: UserRepository;
     oauthAccounts: OAuthAccountRepository;
     oauthRevoker: OAuthRevoker;
+    apiKeys: DeleteAccountApiKeys;
 }
 
 export interface DeleteAccountOptions {

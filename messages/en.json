@@ -19,7 +19,8 @@
                 "c4079e": "Loading Profile",
                 "c6c674": "Not Set",
                 "f5162c": "Membership Level",
-                "fa7c86": "Proceed with Account Withdrawal"
+                "fa7c86": "Proceed with Account Withdrawal",
+                "siglensApi": "SIGLENS API"
             }
         },
         "ai": {
@@ -655,6 +656,18 @@
                 "title": "{v0} AI analysis"
             }
         },
+        "siglens-api-key": {
+            "action": {
+                "emailNotVerified": "Verify your email before creating an API key.",
+                "invalidModel": "That model can't be selected. Pick one from the list.",
+                "invalidName": "Enter a key name (up to {v0} characters).",
+                "limitReached": "You can have up to {v0} active keys. Revoke one you no longer use and try again.",
+                "modelProviderKeyMissing": "Register a BYOK key for this model's provider first.",
+                "notFound": "This key was already revoked or could not be found.",
+                "serverError": "Something went wrong. Please try again shortly.",
+                "unauthenticated": "You need to sign in."
+            }
+        },
         "watchlist": {
             "action": {
                 "deleteFailed": "Couldn't remove it from your watchlist. Please try again shortly.",
@@ -973,6 +986,56 @@
             "useShareFlow": {
                 "shareText": "See the {v0} AI analysis on SIGLENS",
                 "shareTitle": "{v0} AI Analysis"
+            }
+        },
+        "siglens-api-key-management": {
+            "SiglensApiKeySection": {
+                "copied": "Copied",
+                "copy": "Copy",
+                "copyFailed": "Couldn't copy. Select the key and copy it manually.",
+                "createButton": "Create new key",
+                "createdAt": "Created {v0}",
+                "creating": "Creating…",
+                "description": "Use an API key to read SIGLENS data such as quotes, charts and news from an AI agent or a script.",
+                "dismiss": "I've saved it",
+                "downloadSkill": "Download Skill",
+                "emailNotVerified": "You can create an API key after verifying your email. Please verify your account email first.",
+                "empty": "You haven't created any keys yet.",
+                "lastUsedAt": "Last used {v0}",
+                "limitHint": "You can have up to {v0} active keys. Revoke one you no longer use to create another.",
+                "listLabel": "Issued API keys",
+                "loadFailed": "Couldn't load your keys. Please try again shortly.",
+                "nameLabel": "Key name",
+                "namePlaceholder": "e.g. My agent",
+                "neverUsed": "Never used",
+                "quickStartTitle": "30-second quick start",
+                "revealedTitle": "Your new key is ready",
+                "revealedWarning": "You can only see this key now. Store it somewhere safe right away — it can't be shown again.",
+                "revoke": "Revoke",
+                "revokeAria": "Revoke key {v0}",
+                "revokeCancel": "Cancel",
+                "revokeConfirm": "Revoke key",
+                "revokePrompt": "Revoke this key? Calls made with it stop working immediately, and this can't be undone.",
+                "revoked": "Key revoked.",
+                "revoking": "Revoking…",
+                "step1": "Create a key above, then save it as an environment variable.",
+                "step2": "Give your agent the Skill file. Put the downloaded SKILL.md in the agent's skills/siglens folder.",
+                "step3": "Try searching for a ticker in your terminal.",
+                "title": "SIGLENS API"
+            },
+            "DefaultModelForm": {
+                "cleared": "Default model cleared.",
+                "description": "When you leave out model on an API request for a new analysis, this model is used. The analysis runs on your own registered BYOK key and is billed to that key.",
+                "goToByok": "Go to AI model API keys",
+                "hint": "Only BYOK-class models can generate new analyses. Free and member models can only read the shared cache. Models are listed only for providers you have registered a key with.",
+                "noKeys": "You don't have a model you can run on your own key yet. Register a BYOK key for one of {v0}, then pick a model here.",
+                "notSetOption": "Not set (pass model on every request)",
+                "saveButton": "Save",
+                "saved": "Default model saved.",
+                "saving": "Saving…",
+                "selectLabel": "Default model",
+                "title": "API default model",
+                "unavailable": "Your saved default model ({v0}) can't be used right now. Register a key for its provider again, or pick another model."
             }
         },
         "ticker-search": {

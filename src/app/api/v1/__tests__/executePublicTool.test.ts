@@ -1,0 +1,225 @@
+const { mockCreateExecutor, mockExecute } = vi.hoisted(() => ({
+    mockCreateExecutor: vi.fn(),
+    mockExecute: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+    createToolExecutor: mockCreateExecutor,
+    availableToolNames: () => new Set(),
+}));
+vi.mock('@/entities/llm-provider/api/agent/router', () => ({
+    AGENT_MODEL: 'agent-model-for-test',
+}));
+vi.mock('@y0ngha/siglens-core', async importOriginal => ({
+    ...(await importOriginal<typeof import('@y0ngha/siglens-core')>()),
+    // 마감 시간을 짧게 줄여 타임아웃 경로를 실제 타이머로 태운다.
+    TOOL_TIMEOUT_MS: { free: 25, cached: 25, external: 25, expensive: 25 },
+}));
+
+import { findToolSpec } from '@y0ngha/siglens-core';
+import {
+    executePublicTool,
+    resolveApiLocale,
+} from '@/app/api/v1/executePublicTool';
+import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
+import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
+
+const spec = findToolSpec('get_quote')!;
+const principal: ApiKeyPrincipal = {
+    keyId: 'key-a',
+    keyName: 'A',
+    keyPrefix: 'slk_aaaaaa',
+    userId: 'user-a',
+    tier: 'pro',
+};
+const run = (
+    args: Record<string, unknown> = { symbols: ['AAPL'] },
+    signal: AbortSignal = new AbortController().signal
+) => executePublicTool(spec, args, principal, 'ja', signal);
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    mockCreateExecutor.mockReturnValue(mockExecute);
+    mockExecute.mockResolvedValue({ quotes: [] });
+});
+
+describe('executePublicTool — 실행 문맥', () => {
+    it('userId·tier는 principal에서, locale은 요청에서 온다', async () => {
+        await run();
+        expect(mockExecute).toHaveBeenCalledTimes(1);
+        const [name, args, ctx] = mockExecute.mock.calls[0];
+        expect(name).toBe('get_quote');
+        expect(args).toEqual({ symbols: ['AAPL'] });
+        expect(ctx).toMatchObject({
+            userId: 'user-a',
+            tier: 'pro',
+            locale: 'ja',
+        });
+        expect(ctx.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('tier는 키 소유자의 값을 그대로 넘긴다(고정값이 아니다)', async () => {
+        for (const tier of ['free', 'member', 'pro'] as const) {
+            mockExecute.mockClear();
+            await executePublicTool(
+                spec,
+                { symbols: ['AAPL'] },
+                { ...principal, tier },
+                'en',
+                new AbortController().signal
+            );
+            expect(mockExecute.mock.calls[0][2]).toMatchObject({ tier });
+        }
+    });
+
+    it('에이전트와 같은 분석 모델(AGENT_MODEL)로, 서버 비용 경로는 끄고 API 전용 결과 상한으로 실행기를 만든다', async () => {
+        await run();
+        expect(mockCreateExecutor).toHaveBeenCalledWith(
+            { analysisModel: 'agent-model-for-test' },
+            { refreshSymbolData: false, resultCaps: PUBLIC_API_RESULT_CAPS }
+        );
+    });
+
+    it('요청마다 새 실행기를 만든다(턴 상태가 요청 사이에 새지 않는다)', async () => {
+        await run();
+        await run();
+        expect(mockCreateExecutor).toHaveBeenCalledTimes(2);
+    });
+
+    it('성공 결과는 그대로 data로 돌려준다', async () => {
+        mockExecute.mockResolvedValue({ quotes: [{ symbol: 'AAPL' }] });
+        await expect(run()).resolves.toEqual({
+            ok: true,
+            data: { quotes: [{ symbol: 'AAPL' }] },
+            truncated: false,
+        });
+    });
+
+    it('error 필드가 없는 결과(found:false 등)는 오류로 보지 않는다', async () => {
+        mockExecute.mockResolvedValue({ found: false });
+        await expect(run()).resolves.toEqual({
+            ok: true,
+            data: { found: false },
+            truncated: false,
+        });
+    });
+
+    it('배열 결과도 성공이다', async () => {
+        mockExecute.mockResolvedValue([{ symbol: 'AAPL' }]);
+        await expect(run()).resolves.toMatchObject({ ok: true });
+    });
+});
+
+describe('executePublicTool — 잘림 표시', () => {
+    it('{ truncated: true, preview } 봉투면 truncated: true', async () => {
+        mockExecute.mockResolvedValue({ truncated: true, preview: '{"a":' });
+        await expect(run()).resolves.toMatchObject({
+            ok: true,
+            truncated: true,
+        });
+    });
+
+    it.each([
+        ['preview 없음', { truncated: true }],
+        ['truncated가 true가 아님', { truncated: false, preview: 'x' }],
+        ['데이터에 우연히 든 비슷한 이름', { items: [], truncatedCount: 2 }],
+    ])('%s이면 잘린 것이 아니다', async (_label, value) => {
+        mockExecute.mockResolvedValue(value);
+        await expect(run()).resolves.toMatchObject({
+            ok: true,
+            truncated: false,
+        });
+    });
+});
+
+describe('executePublicTool — 실행기 오류 → HTTP', () => {
+    it.each([
+        ['invalid_symbol', 400],
+        ['invalid_args', 400],
+        ['invalid_query', 400],
+        ['unknown_tool', 404],
+        ['login_required', 403],
+        ['aborted', 504],
+        ['tool_failed', 500],
+    ])('%s -> %i', async (code, status) => {
+        mockExecute.mockResolvedValue({ error: code });
+        await expect(run()).resolves.toMatchObject({
+            ok: false,
+            status,
+            code,
+        });
+    });
+
+    it('모르는 오류 코드는 500으로 두되 코드는 그대로 싣는다', async () => {
+        mockExecute.mockResolvedValue({ error: 'busy', retryAfterSeconds: 60 });
+        await expect(run()).resolves.toMatchObject({
+            ok: false,
+            status: 500,
+            code: 'busy',
+            details: { retryAfterSeconds: 60 },
+        });
+    });
+
+    it('추가 필드가 없으면 details를 만들지 않는다', async () => {
+        mockExecute.mockResolvedValue({ error: 'tool_failed' });
+        const outcome = await run();
+        expect(outcome).not.toHaveProperty('details');
+    });
+
+    it('error가 문자열이 아니면 오류로 보지 않는다', async () => {
+        mockExecute.mockResolvedValue({ error: { nested: true } });
+        await expect(run()).resolves.toMatchObject({ ok: true });
+    });
+});
+
+describe('executePublicTool — 마감과 중단', () => {
+    it('도구가 마감 시간을 넘기면 504 tool_timeout', async () => {
+        mockExecute.mockImplementation(() => new Promise(() => undefined));
+        await expect(run()).resolves.toMatchObject({
+            ok: false,
+            status: 504,
+            code: 'tool_timeout',
+        });
+    });
+
+    it('클라이언트가 끊으면 504 aborted(타임아웃과 구분)', async () => {
+        const controller = new AbortController();
+        mockExecute.mockImplementation(() => new Promise(() => undefined));
+        const pending = run({ symbols: ['AAPL'] }, controller.signal);
+        controller.abort();
+        await expect(pending).resolves.toMatchObject({
+            ok: false,
+            status: 504,
+            code: 'aborted',
+        });
+    });
+
+    it('마감 전에 끝나면 타임아웃으로 바뀌지 않는다', async () => {
+        mockExecute.mockResolvedValue({ ok: 1 });
+        const outcome = await run();
+        await new Promise(resolve => setTimeout(resolve, 40));
+        expect(outcome).toEqual({
+            ok: true,
+            data: { ok: 1 },
+            truncated: false,
+        });
+    });
+});
+
+describe('resolveApiLocale', () => {
+    const withHeader = (value?: string): Request =>
+        new Request('https://siglens.io/api/v1/me', {
+            headers: value === undefined ? {} : { 'x-siglens-locale': value },
+        });
+
+    it('지원하는 로케일은 그대로', () => {
+        expect(resolveApiLocale(withHeader('ko'))).toBe('ko');
+        expect(resolveApiLocale(withHeader(' ja '))).toBe('ja');
+    });
+
+    it('헤더가 없거나 모르는 값이면 앱 기본 로케일(ko) — 웹이 채운 공유 분석 캐시에 적중하도록', () => {
+        expect(resolveApiLocale(withHeader())).toBe('ko');
+        expect(resolveApiLocale(withHeader('fr'))).toBe('ko');
+        expect(resolveApiLocale(withHeader('KO'))).toBe('ko');
+        expect(resolveApiLocale(withHeader('en'))).toBe('en');
+    });
+});

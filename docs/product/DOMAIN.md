@@ -1802,6 +1802,20 @@ UI(`useModelGate`) 는 잠금 해제 모달만 책임지고, 어떤 모델이 �
 - 등록/조회/삭제: `src/entities/api-key/actions/` 의 Server Action
 - core 정책은 키 자체를 보지 않으며, provider 식별자만 다룬다
 
+### SigLens 공개 API (`/api/v1/*`)
+
+- 외부 에이전트·스크립트가 Bearer 키(`slk_…`)로 시그렌즈 데이터를 읽는 REST API. 키는 이메일 인증을 마친 회원만 발급한다(회원당 활성 5개).
+- 키 원문은 발급 응답에서 한 번만 보이고 DB에는 sha256 해시만 저장한다. 폐기는 소프트 삭제이며 인증 캐시 항목을 바로 지운다.
+- 도구 표면은 ai.siglens.io 에이전트와 같은 실행기·스펙을 쓰되 서버 비용을 쓰지 않는다: `web_search`(서버 검색 키)는 내보내지 않고, `get_news`의 서버 키 적재·분석 갱신은 끄고 저장된 기사만 돌려준다. 결과 상한은 API 전용 값이며 잘리면 `meta.truncated`가 붙는다. 노출 목록은 `src/app/api/v1/publicApiTools.ts`가 단일 출처다.
+- `run_fresh_analysis`는 에이전트 구현(서버 키)이 아니라 **사용자 BYOK 키 전용** 구현(`src/app/api/v1/runByokFreshAnalysis.ts`)으로 간다. `model` 인자(없으면 계정 화면의 "API 기본 모델" `users.api_default_model`, 둘 다 없으면 400 `model_required`)를 정한 뒤: (1) 공유 분석 캐시만 확인 — 적중이면 LLM 미호출·`ai` 한도 미소비로 `meta.source: "cache"`; (2) 미스면 그 모델 provider의 사용자 키가 필수(없으면 400 `byok_key_required { provider }`, 서버 키 fallback 없음), `ai` 버킷(회원 단위, 숫자는 `publicApi.ts`) 소비 후 사용자 키로 생성; (3) provider의 키 거절·한도 오류는 502 `provider_error { provider, status }`.
+- core는 `free`·`member` 등급 모델이거나 `pro` tier면 사용자 키를 무시하고 서버 키를 고른다. 그래서 생성은 `byok` 등급 모델만 되고(`api_default_model`도 그 모델만 저장할 수 있다), core에 넘기는 tier는 `pro`를 `member`로 내린다(`shared/lib/byokOnly.ts`). `free`/`member` 등급 모델은 캐시 적중 읽기만 된다.
+- 수용한 예외: 처음 보는 심볼의 회사명 한글 번역(`getAssetInfo`의 lazy 번역)은 서버 Gemini 키로 나간다 — 심볼당 최초 1회, 결과는 전 사용자 공유, 웹·데이터 도구도 같은 경로. 공개 API 호출이 그 번역을 먼저 일으킬 수는 있어도 사용자별 비용 경로가 아니다.
+- 생성이 시작되면(모든 사전 검사 통과 후) `POST /api/v1/tools/run_fresh_analysis`는 200 `application/json`을 먼저 열고 `HEARTBEAT_INTERVAL_MS`(SSE 라우트와 같은 값)마다 공백 한 바이트를 흘리다가 최종 JSON을 쓴다 — 30~250초 침묵이 Cloudflare Proxy Read Timeout(125.9초 실측)에 끊기지 않게 한다. 시작 뒤 실패는 상태가 200으로 확정돼 본문의 `{ error }`로 나간다. 캐시 적중과 사전 오류는 일반 상태·본문이다. 클라이언트가 끊으면 스트림만 닫힌다 — 생성은 core의 공유 생성(`dedupeInFlight`: 사이트·에이전트·다른 호출이 같은 캐시 키로 공유)이라 취소하지 않고 끝까지 돌며, 사용자 키로 과금되고 공유 캐시를 채운다(슬롯은 생성이 끝나면 반납). 도구 마감(`TOOL_TIMEOUT_MS.expensive`)은 **응답만** 닫는다 — 스트림 시작 전에 마감이 오면 504 `tool_timeout`/`aborted`, 시작 뒤에는 이미 200이 나갔으므로 200 본문의 `{ error: tool_timeout }`(또는 `aborted`)다. 생성 자체의 상한이 아니다. 이 라우트에는 `maxDuration` 설정이 없다(SSE 라우트도 없다). 생성 응답에는 `data` 버킷 헤더와 함께 소비한 `ai` 버킷 상태가 `X-RateLimit-AI-Limit/Remaining/Reset`으로 실린다(캐시 적중은 `ai`를 읽지 않아 없다).
+- API 기본 로케일은 앱 기본(`ko`)이다 — 캐시 키 접미가 없는 웹 분석과 같은 항목을 읽으려는 것이며 `X-Siglens-Locale`로 바꾼다.
+- 분석 본문은 세션 쿠키를 읽지 않는 함수(`entities/{analysis,news-article,options-chain}/server/*Runner.ts`)로 추출돼 쿠키 액션과 공개 API가 공유한다. 주체(`userId`·`tier`·`userApiKey`)와 BYOK 전용 여부는 호출부가 넘긴다.
+- 한도는 회원 단위 고정 창(분·일, 키를 폐기·재발급하거나 돌려써도 같은 카운터)이며 숫자는 `src/shared/config/publicApi.ts` 한 곳에 있다. 한도 저장소(Redis) 장애는 fail-open이 아니라 503이다.
+- 계정 화면에서 키를 만들고 폐기하며 API 기본 모델(등록한 BYOK provider의 모델만)을 고른다. `GET /api/v1/skill`(인증 없음)이 도구 스펙에서 생성한 `SKILL.md`를 내려준다.
+
 ---
 
 ## Free Analysis Tier Gating

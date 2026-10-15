@@ -2,6 +2,7 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/entities/auth/lib/sessionCookie';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
+import type { DeleteAccountApiKeys } from '@/entities/auth/lib/authUseCaseTypes';
 
 async function waitFor(
     assertion: () => void | Promise<void>,
@@ -23,11 +24,20 @@ async function waitFor(
     throw lastError ?? new Error('waitFor: timeout');
 }
 
+/** 활성 키가 없는 회원 — apiKeys 의존성은 필수이므로 키와 무관한 테스트도 채워 넘긴다. */
+function noApiKeys(): DeleteAccountApiKeys {
+    return {
+        listActiveKeyHashes: vi.fn().mockResolvedValue([]),
+        revokeAuth: vi.fn().mockResolvedValue(undefined),
+    };
+}
+
 function makeDependencies(deleted: boolean): {
     dependencies: {
         users: UserRepository;
         oauthAccounts: OAuthAccountRepository;
         oauthRevoker: OAuthRevoker;
+        apiKeys: DeleteAccountApiKeys;
     };
     deleteUser: ReturnType<typeof vi.fn>;
 } {
@@ -47,6 +57,11 @@ function makeDependencies(deleted: boolean): {
             },
             oauthRevoker: {
                 revokeToken: vi.fn().mockResolvedValue(undefined),
+            },
+            // 기본값: 활성 키 없음. 키 폐기 동작은 아래 전용 describe가 고정한다.
+            apiKeys: {
+                listActiveKeyHashes: vi.fn().mockResolvedValue([]),
+                revokeAuth: vi.fn().mockResolvedValue(undefined),
             },
         },
         deleteUser,
@@ -146,6 +161,7 @@ describe('deleteAccount', () => {
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
+            apiKeys: noApiKeys(),
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -187,6 +203,7 @@ describe('deleteAccount', () => {
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
+            apiKeys: noApiKeys(),
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -216,6 +233,7 @@ describe('deleteAccount', () => {
             oauthRevoker: {
                 revokeToken: vi.fn().mockResolvedValue(undefined),
             },
+            apiKeys: noApiKeys(),
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -258,6 +276,7 @@ describe('deleteAccount', () => {
             oauthRevoker: {
                 revokeToken: vi.fn().mockRejectedValue(revokeError),
             },
+            apiKeys: noApiKeys(),
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -268,6 +287,93 @@ describe('deleteAccount', () => {
                 '[deleteAccount] OAuth revokeToken failed',
                 revokeError
             );
+        });
+    });
+
+    describe('API key auth revocation', () => {
+        const HASHES = ['a'.repeat(64), 'b'.repeat(64)];
+
+        it('reads the active key hashes BEFORE deleting and revokes auth AFTER the commit', async () => {
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const order: string[] = [];
+            deleteUser.mockImplementation(async () => {
+                order.push('delete');
+                return true;
+            });
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn(async () => {
+                    order.push('list');
+                    return HASHES;
+                }),
+                revokeAuth: vi.fn(async () => {
+                    order.push('revoke');
+                }),
+            };
+
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+
+            expect(order).toEqual(['list', 'delete', 'revoke']);
+            expect(apiKeys.listActiveKeyHashes).toHaveBeenCalledWith('user-1');
+            expect(apiKeys.revokeAuth).toHaveBeenCalledWith(HASHES);
+        });
+
+        it('does not revoke auth when the delete did not happen', async () => {
+            const { dependencies } = makeDependencies(false);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockResolvedValue(HASHES),
+                revokeAuth: vi.fn(),
+            };
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
+        });
+
+        it('still deletes when listing the hashes fails', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockRejectedValue(new Error('db')),
+                revokeAuth: vi.fn(),
+            };
+            const result = await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(deleteUser).toHaveBeenCalled();
+            expect(result.ok).toBe(true);
+            expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
+        });
+
+        it('still succeeds when revoking auth fails (the rows are already gone)', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const { dependencies } = makeDependencies(true);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockResolvedValue(HASHES),
+                revokeAuth: vi.fn().mockRejectedValue(new Error('redis')),
+            };
+            const result = await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(result.ok).toBe(true);
+        });
+
+        it('skips revocation when the user has no active keys', async () => {
+            const { dependencies } = makeDependencies(true);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockResolvedValue([]),
+                revokeAuth: vi.fn(),
+            };
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
         });
     });
 });

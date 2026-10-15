@@ -601,6 +601,7 @@ file or the rule it describes changes:
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
+- After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 
 <a id="CM-3"></a>
 
@@ -629,6 +630,8 @@ file, not from assumptions about business hours. When there is no measurement, s
 When inserting a helper, constant or export above existing code, insert it above the `/**` of the existing block,
 never between the JSDoc and its declaration. If the line above your insertion point ends with `*/`, move up. The
 same applies to JSX: when wrapping an element that has a preceding comment block, put the wrapper above the comment.
+
+The inverse also holds: when removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left above the next declaration.
 
 <a id="CM-5"></a>
 
@@ -810,6 +813,12 @@ Check each claim kind against every reader and writer, not only the new one: "ha
 stored raw; "used only for X" must hold for every host or route that reads the same cookie or key; identifiers held by
 a processor (e.g. a member id inside cache or quota keys) and every new event belong in the stored-data, purpose and
 retention sections; in-product copy names a cause only when every code path that shows it guarantees that cause.
+
+Also check these claim kinds: a retention period counted "after storage" must hold for counters whose TTL refreshes on
+every write (state the real trigger); "encrypted" must not imply the server cannot read the value when it decrypts at
+use; a disclosure names every flow and analysis kind that sends the value, and says "may send" where a cache hit sends
+nothing; a new use extends the purpose list; stores found during the revision that were never disclosed (user-supplied
+keys, bands, counters) are added in the same change. Parallel locale texts use the same enumeration and punctuation.
 
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.

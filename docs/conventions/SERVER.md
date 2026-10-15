@@ -495,6 +495,23 @@ await cache.set(key, report, ttl);
 if (shouldCache(report)) await cache.set(key, report, ttl);
 ```
 
+<a id="DC-10"></a>
+
+#### DC-10 — Invalidation must outlive requests already in flight
+
+A request that started before an invalidation can finish after it and write the stale value back. Invalidate in a way
+that the late writer cannot undo: clear the in-flight (single-flight) promise too, and record a tombstone or bump a
+generation that every writer re-checks before it stores. Decide the re-check's failure mode on purpose; if the store
+holding the tombstone errors, fail closed (skip the write) rather than storing unchecked.
+
+```ts
+// ❌ delete the key; a slower in-flight load then sets the old value again
+await cache.del(key);
+// ✅ tombstone first, and the writer re-checks it before set
+await cache.set(tombstoneKey, now, ttl);
+if (!(await isTombstoned(tombstoneKey, startedAt))) await cache.set(key, value, ttl);
+```
+
 ---
 
 ## Database & Migrations

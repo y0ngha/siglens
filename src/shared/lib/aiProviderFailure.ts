@@ -84,3 +84,31 @@ export function caughtAnalysisErrorCode(
         ? 'ai_server_unstable'
         : 'unexpected_error';
 }
+
+/**
+ * provider가 **사용자 키로 한** 호출에 거절·실패를 돌려줬는지, 그리고 그 HTTP 상태.
+ *
+ * `isAiProviderFailure`는 "모델을 바꿔 보라"가 맞는 일시 장애만 참이다(401/403/400은 거짓).
+ * 공개 API는 사용자 키 오류(잘못된·만료된 키 401, 한도 429 …)를 **원인과 함께** 돌려줘야 하므로
+ * SDK API 에러면 상태와 무관하게 참이다.
+ *
+ *  - SDK API 에러(모양으로 판정, `isLlmSdkApiError`): `status`가 숫자면 그 값, 연결 실패·타임아웃처럼
+ *    `status`가 없으면 `null`.
+ *  - core `withRetry` 소진 sentinel(`AI_SERVER_UNSTABLE`)·`DEEPSEEK_STALLED`: 원본 상태는 core가
+ *    버리므로 `null`(429 또는 5xx를 재시도하다 포기했다).
+ *  - 그 밖(FMP·DB·내부 버그)은 `null` 자체 — provider 탓이 아니다.
+ */
+export function providerFailureStatus(
+    error: unknown
+): { readonly status: number | null } | null {
+    if (!isRecord(error)) return null;
+    if (
+        error.message === AI_SERVER_UNSTABLE ||
+        error.code === DEEPSEEK_STALLED_CODE
+    )
+        return { status: null };
+    if (!isLlmSdkApiError(error)) return null;
+    return {
+        status: typeof error.status === 'number' ? error.status : null,
+    };
+}
