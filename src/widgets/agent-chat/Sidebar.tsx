@@ -304,6 +304,8 @@ export function Sidebar({
                                     )}
                                 >
                                     {renaming?.id === item.id ? (
+                                        // 대화 이름 바꾸기 인라인 폼이다. 비동기 서버 액션 호출과 상태 정리를 클라이언트에서 직접 하므로 JS 없는 제출 경로가 없다.
+                                        // react-doctor-disable-next-line react-doctor/no-prevent-default
                                         <form
                                             className="flex-1"
                                             onSubmit={async e => {

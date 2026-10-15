@@ -77,6 +77,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                     >
                         다시 시도 / Retry
                     </button>
+                    {/* global-error는 루트 레이아웃을 대체하는 경계라 Next 라우터·프로바이더가 없다. 전체 새로고침 이동이 의도다. */}
+                    {/* react-doctor-disable-next-line react-doctor/nextjs-no-a-element */}
                     <a
                         href="/"
                         className="inline-flex min-h-11 items-center rounded-lg px-6 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"

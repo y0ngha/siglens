@@ -582,6 +582,8 @@ export function ChartContent({
     });
 
     useEffect(() => {
+        // 모바일 시트(부모가 소유한 포털)에 이 화면의 분석 콘텐츠를 렌더하도록 알린다. 콘텐츠가 이 컴포넌트의 상태에서만 만들어지므로 상태 끌어올리기는 구조 변경이다.
+        // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-pass-live-state-to-parent, react-doctor/no-prop-callback-in-effect
         notifyMobileContent(mobileContent);
     }, [mobileContent]);
 

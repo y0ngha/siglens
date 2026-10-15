@@ -31,6 +31,10 @@
             "src/**/*.test.ts",
             "src/**/*.test.tsx",
             "src/__integration__/**",
+            // 테스트 인프라(vitest 셋업, 렌더 래퍼/목 유틸)도 프로덕션 렌더 경로가 아니다.
+            // 셋업은 jsdom 전역을 모듈 스코프에서 직접 만지는 것이 목적이다.
+            "vitest.setup*.ts",
+            "src/shared/test-utils/**",
             ".claude/**",
             ".agents/**",
             ".codex/**",

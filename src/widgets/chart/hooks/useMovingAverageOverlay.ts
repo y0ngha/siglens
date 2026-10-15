@@ -116,6 +116,8 @@ export function useMovingAverageOverlay({
     useEffect(() => {
         for (const period of visiblePeriods) {
             const series = seriesRef.current[period];
+            // 부모 전달이 아니다 — lightweight-charts 시리즈(외부 명령형 시스템)에 데이터를 동기화하는 effect다.
+            // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
             const data = stableGetIndicatorData(indicators, period);
             if (!series || !data) continue;
 

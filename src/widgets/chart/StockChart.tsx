@@ -769,6 +769,8 @@ export function StockChart({
     );
 
     useEffect(() => {
+        // 측정된 라벨 폭에서 계산한 우측 여백을 부모 차트 레이아웃에 알린다. 콜백은 ref로 읽어 재등록이 없고, 값은 렌더 중에 알 수 없다(텍스트 측정).
+        // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
         onRightGutterChangeRef.current?.(rightGutterPx);
     }, [rightGutterPx]);
 

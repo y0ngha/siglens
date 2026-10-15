@@ -243,6 +243,8 @@ export async function translateUnresolvedCalendarIndicators(
     let translated = 0;
     // 순차 — 이름 수가 적고(보통 0~몇 건), 동시에 던지면 프로바이더 레이트리밋에 걸린다.
     for (const base of targets) {
+        // 프로바이더 레이트리밋 때문에 의도된 직렬 호출이다(위 주석).
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         const outcome = await translateIndicator(base, logLabel).catch(
             (error: unknown) => {
                 console.error(`[${logLabel}] translate failed: ${base}`, error);

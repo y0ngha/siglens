@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
  * 종합 탭의 첫 JS에 실리는데, 그 화면들의 마크다운은 하이드레이션 뒤 AI 응답이 와야
  * 그려진다(2026-10-05 JS 커버리지: `/AAPL`에서 이 청크 78% 미사용).
  */
-export const MARKDOWN_TEXT_COMPONENTS: Components = {
+const MARKDOWN_TEXT_COMPONENTS: Components = {
     p: ({ children }) => (
         <p className="mb-2 leading-[1.75] whitespace-pre-line last:mb-0">
             {children}

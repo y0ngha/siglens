@@ -52,7 +52,7 @@ export function Composer({
     initialValue = '',
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
-    const [text, setText] = useState(initialValue.slice(0, MAX));
+    const [text, setText] = useState(() => initialValue.slice(0, MAX));
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const overLimit = text.length > MAX;
     const canSend =

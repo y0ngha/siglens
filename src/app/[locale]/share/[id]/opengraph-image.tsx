@@ -34,15 +34,17 @@ export default async function Image({ params }: Props) {
     // 명시적으로 로케일을 넘긴다 — 안 넘기면 `getTranslations`가 요청 스코프를
     // 못 찾아 기본 로케일로 조용히 떨어진다(심볼 OG 이미지의 `force-static` 경로에서
     // 실측된 바 있음: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일해진 사례).
-    const tLabel = await getTranslations({
-        locale: resolvedLocale,
-        namespace: 'shared.enumLabel',
-    });
-    const t = await getTranslations({
-        locale: resolvedLocale,
-        namespace: 'app.share',
-    });
-    const lookup = await getCachedSharedAnalysis(id);
+    const [tLabel, t, lookup] = await Promise.all([
+        getTranslations({
+            locale: resolvedLocale,
+            namespace: 'shared.enumLabel',
+        }),
+        getTranslations({
+            locale: resolvedLocale,
+            namespace: 'app.share',
+        }),
+        getCachedSharedAnalysis(id),
+    ]);
 
     if (lookup.status === 'found') {
         const { snapshot } = lookup;

@@ -27,6 +27,8 @@ function AnswerWithLinks({ answer }: { answer: string }) {
             {splitSitePaths(answer).map((segment, index) =>
                 segment.kind === 'path' ? (
                     <LocaleLink
+                        // 같은 경로가 한 답변에 반복될 수 있어 위치로 유일성을 보탠다. 세그먼트는 문자열 분할 결과라 재정렬이 없다.
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={`${index}-${segment.value}`}
                         href={segment.value}
                         prefetch={false}
