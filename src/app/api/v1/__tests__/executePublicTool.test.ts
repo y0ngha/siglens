@@ -216,9 +216,10 @@ describe('resolveApiLocale', () => {
         expect(resolveApiLocale(withHeader(' ja '))).toBe('ja');
     });
 
-    it('헤더가 없거나 모르는 값이면 en(앱 기본 ko가 아니다)', () => {
-        expect(resolveApiLocale(withHeader())).toBe('en');
-        expect(resolveApiLocale(withHeader('fr'))).toBe('en');
-        expect(resolveApiLocale(withHeader('KO'))).toBe('en');
+    it('헤더가 없거나 모르는 값이면 앱 기본 로케일(ko) — 웹이 채운 공유 분석 캐시에 적중하도록', () => {
+        expect(resolveApiLocale(withHeader())).toBe('ko');
+        expect(resolveApiLocale(withHeader('fr'))).toBe('ko');
+        expect(resolveApiLocale(withHeader('KO'))).toBe('ko');
+        expect(resolveApiLocale(withHeader('en'))).toBe('en');
     });
 });

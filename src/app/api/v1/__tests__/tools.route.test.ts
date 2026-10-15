@@ -65,6 +65,7 @@ describe('GET /api/v1/tools', () => {
         expect(body.data.tools.map(t => t.name)).toEqual([
             'search_ticker',
             'get_quote',
+            'run_fresh_analysis',
             'get_my_portfolio',
         ]);
         for (const tool of body.data.tools) {
@@ -74,6 +75,31 @@ describe('GET /api/v1/tools', () => {
                 'name',
             ]);
         }
+    });
+
+    it('run_fresh_analysis는 model 인자를 더한 API 전용 스키마로 나간다', async () => {
+        mockAuth.mockResolvedValue({ status: 'ok', principal });
+        const body = (await (
+            await GET(request({ authorization: 'Bearer slk_x' }))
+        ).json()) as {
+            data: {
+                tools: Array<{
+                    name: string;
+                    inputSchema: {
+                        properties: Record<string, unknown>;
+                        required: string[];
+                    };
+                }>;
+            };
+        };
+        const fresh = body.data.tools.find(
+            t => t.name === 'run_fresh_analysis'
+        );
+        expect(
+            Object.keys(fresh?.inputSchema.properties ?? {}).toSorted()
+        ).toEqual(['kind', 'model', 'symbol', 'timeframe']);
+        // model은 선택이다 — 기본 모델이 있으면 생략할 수 있다.
+        expect(fresh?.inputSchema.required).toEqual(['symbol', 'kind']);
     });
 
     it('스키마는 core 스펙 그대로다', async () => {

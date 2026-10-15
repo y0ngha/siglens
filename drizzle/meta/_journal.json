@@ -330,6 +330,13 @@
       "when": 1792046721512,
       "tag": "0046_siglens_api_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1792052292318,
+      "tag": "0047_api_default_model",
+      "breakpoints": true
     }
   ]
 }

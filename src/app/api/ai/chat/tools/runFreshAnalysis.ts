@@ -13,15 +13,8 @@ import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/op
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
-import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
-import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
-import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
-import { isGuestSubject } from '../guestSubject';
 import { AGENT_BUSY_LOG } from '../busyLog';
 import { fitProse, type ProseSpec } from './fitProse';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
@@ -30,33 +23,10 @@ import {
     projectTechnicalAnalysis,
 } from './projectTechnicalAnalysis';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
-
-/**
- * Member position-bucket hint — the same holding→bucket resolution the
- * analysis SSE route and `get_cached_analysis` use, so a fresh analysis
- * triggered from chat WRITES the same personalized cache key the site reads.
- * Degrades to `undefined` (no holding, guest, or lookup failure) — see
- * `resolveHoldingPositionBucket`'s own JSDoc.
- */
-async function positionBucketFor(
-    userId: string,
-    tier: Parameters<typeof resolveHoldingPositionBucket>[0]['tier'],
-    symbol: string,
-    fmpSymbol: string | undefined,
-    profile: Awaited<ReturnType<typeof resolveMarketProfile>>
-): Promise<Awaited<ReturnType<typeof resolveHoldingPositionBucket>>> {
-    if (isGuestSubject(userId)) return undefined;
-    return resolveHoldingPositionBucket({
-        userId,
-        tier,
-        symbol,
-        quoteSymbol: fmpSymbol,
-        marketDataProvider: getCachedMarketDataProvider(
-            sessionSpecFor(profile)
-        ),
-        logTag: '[AgentTool] run_fresh_analysis position bucket resolution failed, degrading to no-bucket:',
-    });
-}
+import {
+    loadOverallHistoryInputs,
+    loadTechnicalAnalysisInputs,
+} from './freshAnalysisInputs';
 
 /**
  * Per-instance concurrency cap — distinct from core's per-turn cap. Each run
@@ -70,10 +40,41 @@ export function __resetFreshSemaphoreForTests(): void {
     inFlight = 0;
 }
 
-const DEFAULT_TIMEFRAME: Timeframe = '1Day';
-const KINDS = new Set(['technical', 'overall', 'news', 'options']);
+/**
+ * Takes one of this instance's fresh-analysis slots, or `null` when they are all busy (and logs the
+ * alarm marker). The returned function frees the slot AND the deploy-drain handle; call it exactly
+ * once, in a `finally`. The public API (`/api/v1`) shares the same cap so the agent and API traffic
+ * together stay under what one instance can run.
+ */
+export function tryAcquireFreshSlot(): (() => void) | null {
+    if (inFlight >= MAX_CONCURRENT_FRESH) {
+        // Alarm marker (infra/aws/07-alarms.sh `siglens-agent-busy`): a busy
+        // refusal means this instance is at capacity — the operator wants to
+        // hear about it, not find it in a user's complaint.
+        console.warn(AGENT_BUSY_LOG, {
+            reason: 'fresh_analysis_slots',
+            inFlight,
+            cap: MAX_CONCURRENT_FRESH,
+        });
+        return null;
+    }
+    inFlight += 1;
+    const releaseStream = registerActiveStream();
+    return () => {
+        inFlight -= 1;
+        releaseStream();
+    };
+}
 
-type Outcome = {
+export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
+export const FRESH_ANALYSIS_KINDS: ReadonlySet<string> = new Set([
+    'technical',
+    'overall',
+    'news',
+    'options',
+]);
+
+export type Outcome = {
     status: string;
     result?: unknown;
     /** Machine-readable code sitting at the top level in several core error
@@ -86,7 +87,7 @@ type Outcome = {
 };
 
 /** Extracts `error.code` when `error` is a structured object; `undefined` otherwise (e.g. `error` is a plain string). */
-function errorObjectCode(outcome: Outcome): string | undefined {
+export function errorObjectCode(outcome: Outcome): string | undefined {
     const err = outcome.error;
     if (typeof err !== 'object' || err === null) return undefined;
     const code = (err as { code?: unknown }).code;
@@ -210,7 +211,7 @@ function buildFreshResult(
     return { ...envelope, analysis: { ...analysis, ...fitted } };
 }
 
-function unwrap(
+export function unwrap(
     kind: string,
     timeframe: Timeframe | undefined,
     outcome: Outcome
@@ -332,25 +333,14 @@ export const runFreshAnalysisTool: ToolExecutor = async (
             error: 'invalid_args',
             issues: [{ path: 'symbol', message: 'invalid symbol' }],
         };
-    if (!KINDS.has(kind))
+    if (!FRESH_ANALYSIS_KINDS.has(kind))
         return {
             error: 'invalid_args',
             issues: [{ path: 'kind', message: 'unknown kind' }],
         };
 
-    if (inFlight >= MAX_CONCURRENT_FRESH) {
-        // Alarm marker (infra/aws/07-alarms.sh `siglens-agent-busy`): a busy
-        // refusal means this instance is at capacity — the operator wants to
-        // hear about it, not find it in a user's complaint.
-        console.warn(AGENT_BUSY_LOG, {
-            reason: 'fresh_analysis_slots',
-            inFlight,
-            cap: MAX_CONCURRENT_FRESH,
-        });
-        return { error: 'busy', retryAfterSeconds: 60 };
-    }
-    inFlight += 1;
-    const release = registerActiveStream();
+    const release = tryAcquireFreshSlot();
+    if (release === null) return { error: 'busy', retryAfterSeconds: 60 };
     try {
         /*
          * 뉴스 축을 입력으로 쓰는 kind만 수급한다. `technical`·`options`는 DB의
@@ -402,37 +392,19 @@ export const runFreshAnalysisTool: ToolExecutor = async (
         const descriptor = getDescriptor(profile);
         switch (kind) {
             case 'technical': {
-                // Task S5 (prior-analysis-context) — same history/events/
-                // positionBucket wiring as the SSE route's technical branch
-                // and `get_cached_analysis`, so a fresh analysis triggered
-                // from chat writes the SAME cache key the site reads/writes.
-                const historyDb = getDatabaseClient().db;
-                // One spec for history, events and core — the history query's
-                // `generatedBeforeMs` must sit on the same session boundary core
-                // uses to cut the cache-key history.
-                const session = sessionSpecFor(profile);
-                const [priorAnalyses, marketEvents, positionBucket] =
-                    await Promise.all([
-                        new DrizzleAnalysisHistoryRepository(
-                            historyDb
-                        ).findRecentForPrompt({
-                            symbol,
-                            timeframe,
-                            tab: 'technical',
-                            session,
-                        }),
-                        findMarketEventsForPrompt(historyDb, {
-                            symbol,
-                            ...marketEventsLookback(timeframe, session),
-                        }),
-                        positionBucketFor(
-                            ctx.userId,
-                            ctx.tier,
-                            symbol,
-                            asset?.fmpSymbol,
-                            profile
-                        ),
-                    ]);
+                // Task S5 — history/events/positionBucket wiring shared with the
+                // SSE route and `get_cached_analysis` (see `freshAnalysisInputs`).
+                const { session, priorAnalyses, marketEvents, positionBucket } =
+                    await loadTechnicalAnalysisInputs({
+                        symbol,
+                        timeframe,
+                        profile,
+                        fmpSymbol: asset?.fmpSymbol,
+                        userId: ctx.userId,
+                        tier: ctx.tier,
+                        positionBucketLogTag:
+                            '[AgentTool] run_fresh_analysis position bucket resolution failed, degrading to no-bucket:',
+                    });
                 const options: SubmitAnalysisOptions = {
                     modelId: runtime.analysisModel,
                     marketDataProvider: getCachedMarketDataProvider(session),
@@ -466,40 +438,17 @@ export const runFreshAnalysisTool: ToolExecutor = async (
             // overall/news/options go through server actions shared with siglens.io's
             // user-chosen model paths, which must not fall back — no providerFallback there.
             case 'overall': {
-                // Task S5 — same two-array split as the SSE route's overall
-                // branch (S2): the technical axis and overall's own
-                // top-level `priorAnalyses` read different recency windows
-                // (`analysisHistoryQuery`'s axis argument).
-                const overallDb = getDatabaseClient().db;
-                const overallHistoryRepo = new DrizzleAnalysisHistoryRepository(
-                    overallDb
-                );
-                // Same spec `runOverallAnalysisAction` hands core as
-                // `technical.session` (both derive it from this profile).
-                const session = sessionSpecFor(profile);
-                const [
+                // Task S5 — the two-array split (technical axis vs overall's own
+                // window) lives in `loadOverallHistoryInputs`.
+                const {
                     technicalPriorAnalyses,
                     overallPriorAnalyses,
                     marketEvents,
-                ] = await Promise.all([
-                    overallHistoryRepo.findRecentForPrompt({
-                        symbol,
-                        timeframe,
-                        tab: 'technical',
-                        session,
-                    }),
-                    overallHistoryRepo.findRecentForPrompt({
-                        symbol,
-                        timeframe,
-                        tab: 'technical',
-                        axis: 'overall',
-                        session,
-                    }),
-                    findMarketEventsForPrompt(overallDb, {
-                        symbol,
-                        ...marketEventsLookback(timeframe, session),
-                    }),
-                ]);
+                } = await loadOverallHistoryInputs({
+                    symbol,
+                    timeframe,
+                    profile,
+                });
                 return unwrap(
                     kind,
                     timeframe,
@@ -551,7 +500,6 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                 };
         }
     } finally {
-        inFlight -= 1;
         release();
     }
 };

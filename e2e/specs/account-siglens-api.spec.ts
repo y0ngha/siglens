@@ -17,6 +17,8 @@ import { test, expect } from '../support/fixtures';
  * leftovers from an earlier failed run so the 5-key cap can't accumulate.
  */
 const KEY_NAME = 'e2e-agent';
+/** OpenAI byok 등급 모델 — 이 사용자는 OpenAI 키를 등록하지 않은 상태에서 시작한다. */
+const UNKEYED_MODEL = 'gpt-6-astra';
 const SETTLE_TIMEOUT_MS = 45_000;
 
 async function revokeAllKeys(page: Page): Promise<void> {
@@ -74,16 +76,53 @@ test.describe('SigLens API keys', () => {
             expect(search.headers()['x-ratelimit-limit']).toBe('60');
             expect((await search.json()).meta.tool).toBe('search_ticker');
 
-            // 제외된 도구는 키가 있어도 닿지 않는다. (web_search는 E2E에서 실행기 목록 자체가 빠뜨려
-            // 이 단언이 공회전하므로 쓰지 않는다 — run_fresh_analysis는 E2E에서도 실행기에 있다.)
-            const excluded = await api.post(
+            // run_fresh_analysis는 BYOK 전용으로 열려 있다. LLM은 부르지 않는 거절 경로만 본다:
+            // 모델도 기본 모델도 없으면 400, 로스터에 없는 모델은 스키마 거절, 캐시가 비고 사용자
+            // 키가 없으면 400 byok_key_required(서버 키로 넘어가지 않는다). OpenAI 모델을 쓰는 이유는
+            // 같은 사용자의 account-api-key 스펙이 Anthropic 키를 등록·삭제하기 때문이다.
+            const noModel = await api.post('/api/v1/tools/run_fresh_analysis', {
+                headers: bearer,
+                data: { symbol: 'AAPL', kind: 'technical' },
+            });
+            expect(noModel.status()).toBe(400);
+            expect((await noModel.json()).error.code).toBe('model_required');
+
+            const badModel = await api.post(
                 '/api/v1/tools/run_fresh_analysis',
                 {
                     headers: bearer,
-                    data: { symbol: 'AAPL', kind: 'technical' },
+                    data: {
+                        symbol: 'AAPL',
+                        kind: 'technical',
+                        model: 'gpt-99-imaginary',
+                    },
                 }
             );
-            expect(excluded.status()).toBe(404);
+            expect(badModel.status()).toBe(400);
+            expect((await badModel.json()).error.code).toBe('invalid_args');
+
+            const noKey = await api.post('/api/v1/tools/run_fresh_analysis', {
+                headers: bearer,
+                data: {
+                    symbol: 'AAPL',
+                    kind: 'technical',
+                    model: UNKEYED_MODEL,
+                },
+            });
+            expect(noKey.status()).toBe(400);
+            const noKeyBody = await noKey.json();
+            expect(noKeyBody.error.code).toBe('byok_key_required');
+            expect(noKeyBody.error.details).toEqual({ provider: 'openai' });
+            // 거절 경로는 ai 버킷을 쓰지 않는다 — data 버킷 한도 헤더만 있다.
+            expect(noKey.headers()['x-ratelimit-limit']).toBe('60');
+
+            expect(
+                (
+                    await (
+                        await api.get('/api/v1/me', { headers: bearer })
+                    ).json()
+                ).data.defaultModel
+            ).toBeNull();
 
             // 세션 쿠키만으로는 API를 쓸 수 없다.
             expect((await page.request.get('/api/v1/me')).status()).toBe(401);
@@ -107,6 +146,95 @@ test.describe('SigLens API keys', () => {
         }
     });
 
+    test('API 기본 모델: BYOK 키를 등록한 provider의 모델만 고를 수 있고 /me에 반영된다', async ({
+        page,
+        baseURL,
+    }) => {
+        test.setTimeout(120_000);
+        const openai = page.getByTestId('api-key-card-openai');
+        const modelSection = page.getByTestId('siglens-api-default-model');
+        const status = modelSection.getByRole('status');
+
+        // 이전 실행이 남긴 OpenAI 키가 있으면 지워 깨끗한 상태에서 시작한다.
+        if (await openai.getByText('등록됨', { exact: true }).isVisible()) {
+            await openai
+                .getByRole('button', { name: '삭제', exact: true })
+                .click();
+            await expect(
+                openai.getByText('미등록', { exact: true })
+            ).toBeVisible({
+                timeout: SETTLE_TIMEOUT_MS,
+            });
+        }
+
+        // 1) OpenAI 키가 없으면 OpenAI 모델은 선택지에 없다.
+        await expect(modelSection).toBeVisible();
+        await expect(
+            modelSection.getByRole('option', { name: 'GPT-6 Astra' })
+        ).toHaveCount(0);
+
+        // 2) OpenAI 키를 등록하면 그 provider의 byok 모델이 나타난다.
+        await openai
+            .getByRole('textbox', { name: /API 키/ })
+            .fill('sk-e2e-dummy');
+        await openai.getByRole('button', { name: '저장', exact: true }).click();
+        await expect(openai.getByText('등록됨', { exact: true })).toBeVisible({
+            timeout: SETTLE_TIMEOUT_MS,
+        });
+        const select = modelSection.getByRole('combobox', {
+            name: '기본 모델',
+        });
+        await expect(
+            select.getByRole('option', { name: 'GPT-6 Astra' })
+        ).toHaveCount(1, { timeout: SETTLE_TIMEOUT_MS });
+        // 서버 키로 호출되는 모델은 키를 등록해도 선택지에 없다.
+        await expect(
+            select.getByRole('option', { name: /Claude Haiku/ })
+        ).toHaveCount(0);
+
+        // 3) 선택·저장 -> 상태 문구.
+        await select.selectOption({ label: 'GPT-6 Astra' });
+        await modelSection
+            .getByRole('button', { name: '저장', exact: true })
+            .click();
+        await expect(status).toHaveText('기본 모델을 저장했어요.', {
+            timeout: SETTLE_TIMEOUT_MS,
+        });
+
+        // 4) API에서 보인다.
+        const section = page.getByTestId('siglens-api-key-section');
+        await section.getByLabel('키 이름').fill(KEY_NAME);
+        await section.getByRole('button', { name: '새 키 만들기' }).click();
+        const raw = section.getByTestId('siglens-api-key-raw');
+        await expect(raw).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
+        const rawKey = (await raw.textContent())?.trim() ?? '';
+
+        const api = await playwrightRequest.newContext({ baseURL });
+        try {
+            const me = await api.get('/api/v1/me', {
+                headers: { Authorization: `Bearer ${rawKey}` },
+            });
+            const body = (await me.json()).data;
+            expect(body.defaultModel).toBe('gpt-6-astra');
+            expect(body.byokProviders).toContain('openai');
+        } finally {
+            await api.dispose();
+        }
+
+        // 5) 정리: 설정 해제 -> 키 삭제 -> API 키 폐기 (다음 실행·다른 스펙에 영향이 없게).
+        await select.selectOption({ value: '' });
+        await modelSection
+            .getByRole('button', { name: '저장', exact: true })
+            .click();
+        await expect(status).toHaveText('기본 모델 설정을 해제했어요.', {
+            timeout: SETTLE_TIMEOUT_MS,
+        });
+        await openai.getByRole('button', { name: '삭제', exact: true }).click();
+        await expect(openai.getByText('미등록', { exact: true })).toBeVisible({
+            timeout: SETTLE_TIMEOUT_MS,
+        });
+    });
+
     test('Skill 파일을 내려받을 수 있다', async ({ page }) => {
         await page.goto('/account');
         const response = await page.request.get('/api/v1/skill');
@@ -116,7 +244,9 @@ test.describe('SigLens API keys', () => {
         expect(body).toContain('name: siglens');
         expect(body).toContain('### `search_ticker`');
         expect(body).not.toContain('### `web_search`');
-        expect(body).not.toContain('### `run_fresh_analysis`');
+        expect(body).toContain('### `run_fresh_analysis`');
+        expect(body).toContain('- `model` (');
+        expect(body).toContain('(BYOK)');
         await expect(
             page.getByRole('link', { name: 'Skill 내려받기' })
         ).toHaveAttribute('href', '/api/v1/skill');

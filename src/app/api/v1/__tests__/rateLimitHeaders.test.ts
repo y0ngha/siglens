@@ -8,6 +8,7 @@ vi.mock('@/entities/siglens-api-key/server/rateLimit', async () => {
 
 import {
     enforceRateLimit,
+    prefixRateLimitHeaders,
     rateLimitHeaders,
 } from '@/app/api/v1/rateLimitHeaders';
 import {
@@ -38,6 +39,24 @@ describe('rateLimitHeaders', () => {
             'X-RateLimit-Limit': '60',
             'X-RateLimit-Remaining': '41',
             'X-RateLimit-Reset': '1792000020',
+        });
+    });
+});
+
+describe('prefixRateLimitHeaders', () => {
+    it('X-RateLimit-*에 버킷 접두를 붙이고 다른 헤더는 버린다', () => {
+        expect(
+            prefixRateLimitHeaders(
+                {
+                    ...rateLimitHeaders(allowed),
+                    'Retry-After': '9',
+                },
+                'AI'
+            )
+        ).toEqual({
+            'X-RateLimit-AI-Limit': '60',
+            'X-RateLimit-AI-Remaining': '41',
+            'X-RateLimit-AI-Reset': '1792000020',
         });
     });
 });
