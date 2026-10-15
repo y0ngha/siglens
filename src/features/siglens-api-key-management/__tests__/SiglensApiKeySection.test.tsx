@@ -83,6 +83,13 @@ describe('SiglensApiKeySection', () => {
         ).toBeInTheDocument();
     });
 
+    it('개발자 포털(/developers)로 가는 링크를 보여 준다', () => {
+        renderSection();
+        expect(
+            screen.getByRole('link', { name: 'API 문서 보기' })
+        ).toHaveAttribute('href', '/developers');
+    });
+
     describe('키 목록', () => {
         it('키마다 이름과 표시용 접두를 보여 준다', () => {
             renderSection();

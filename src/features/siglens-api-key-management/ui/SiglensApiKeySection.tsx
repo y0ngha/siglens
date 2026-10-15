@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
+import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
+import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { useSiglensApiKeyForms } from '../hooks/useSiglensApiKeyForms';
 import { CreateKeyForm } from './CreateKeyForm';
 import { KeyRow } from './KeyRow';
@@ -57,6 +59,14 @@ export function SiglensApiKeySection({
                 <p className="mt-1 text-sm text-secondary-400">
                     {t('SiglensApiKeySection.description')}
                 </p>
+                {/* 개발자 포털로 가는 계정 쪽 입구 — 키를 만든 사람이 엔드포인트·도구 레퍼런스를 찾는 곳. */}
+                <LocaleLink
+                    href={DEVELOPERS_PATH}
+                    prefetch={false}
+                    className="mt-2 inline-flex min-h-11 items-center rounded text-sm text-secondary-300 underline underline-offset-2 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                >
+                    {t('SiglensApiKeySection.docsLink')}
+                </LocaleLink>
             </div>
 
             {revealedKey !== null && (

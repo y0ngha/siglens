@@ -127,6 +127,21 @@ describe('Footer', () => {
     });
 
     /**
+     * 개발자 API 링크는 공개 API 포털(`/developers`)의 전역 입구다 — 지워지면 sitemap 말고는
+     * 크롤 경로가 없는 고아가 된다(AP-4).
+     */
+    it('renders the developer API link right after the chart guide link', () => {
+        render(<Footer />);
+
+        const info = screen.getByRole('navigation', { name: '사이트 정보' });
+        const links = within(info).getAllByRole('link');
+        const guide = links.findIndex(a => a.getAttribute('href') === '/guide');
+        const link = links[guide + 1]!;
+        expect(link).toHaveAttribute('href', '/developers');
+        expect(link).toHaveAccessibleName('개발자 API');
+    });
+
+    /**
      * 종목 디렉터리 링크는 **크롤 구조물**이다. 2026-09-18 실측에서 sitemap 심볼
      * 416개 중 147개가 홈에서 3클릭 안에 닿지 않았고, 푸터는 전 라우트에 렌더되므로
      * 이 한 줄이 디렉터리를 1클릭·모든 종목을 2클릭으로 만든다. 지워지면 그 구조가

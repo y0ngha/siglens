@@ -27,9 +27,9 @@ SIGLENS never places an order. It offers analysis only, and every investment dec
 
 ### siglens.io: analysis by symbol
 
-Enter a ticker such as `AAPL`, `005930.KS`, or `BTCUSD`. The page shows a chart with indicators, detected patterns, and an AI report that streams in as it is written. Tabs next to the chart cover news, the fear and greed index, and a combined outlook. Stocks add fundamentals and financial statements, and US stocks add the options market and congressional trading.
+Enter a ticker such as `AAPL`, `005930.KS`, or `BTCUSD`. The page shows a chart with indicators, detected patterns, and an AI report that streams in as it is written. Tabs next to the chart cover news, the fear and greed index, and a combined outlook. Stocks add fundamentals and financial statements, and US stocks add the options market, congressional trading, and pre-market and after-market quotes. The AI report can be written by Claude Haiku, Sonnet or Opus 5.5, GPT-6 Luna, GPT-6 Sol or GPT-6.1 Sol, or Gemini 4 Argon.
 
-Beyond single symbols, the site offers a sector signal dashboard, a market-wide fear and greed index, a news hub, a macroeconomic dashboard, and backtesting results for past AI analyses.
+Beyond single symbols, the site offers a watchlist, a sector signal dashboard, a market-wide fear and greed index, a news hub, a macroeconomic dashboard, and backtesting results for past AI analyses.
 
 ```mermaid
 flowchart LR
@@ -82,6 +82,18 @@ flowchart LR
     style LOOKUP fill:#f1f5f9,stroke:#94a3b8,color:#1e293b
     style ANALYSIS fill:#f5f3ff,stroke:#a78bfa,color:#1e293b
 ```
+
+Signed-in members can also receive a regular email report on the symbols they follow. Guests can preview what it looks like on the [sample page](https://siglens.io/email-report/sample).
+
+## Open API and Agent Skill
+
+The data tools behind the AI agent are also available over HTTP. Create an API key in your account settings, then call them from a script or hand them to your own agent.
+
+- **API reference**: [siglens.io/developers](https://siglens.io/developers) covers authentication, rate limits, errors, and every tool with a curl example.
+- **OpenAPI 3.1**: [openapi.json](https://siglens.io/api/v1/openapi.json) and [openapi.yaml](https://siglens.io/api/v1/openapi.yaml), generated from the same tool list as the API.
+- **Agent Skill**: [SKILL.md](https://siglens.io/api/v1/skill) lets Claude Code or Claude.ai call the API on its own.
+
+AI analysis runs on your own LLM key (BYOK), so SIGLENS does not pay for it, and reading an analysis that is already cached costs nothing. Only premium models such as Claude Opus 5.5, GPT-6.1 Sol and Gemini 4 Argon generate a new analysis on your key. The other models can only read analyses already in the shared cache.
 
 ## Supported markets
 

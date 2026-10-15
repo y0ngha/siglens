@@ -19,6 +19,7 @@ describe('routeKindOf', () => {
         ['/backtesting', 'backtesting'],
         ['/about', 'article'],
         ['/methodology', 'article'],
+        ['/developers', 'article'],
         ['/guide', 'article'],
         ['/guide/indicators', 'article'],
         ['/guide/indicators/rsi', 'article'],
