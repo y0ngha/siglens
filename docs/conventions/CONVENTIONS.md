@@ -1013,6 +1013,9 @@ markers in `messages/_meta/skips.json`) or after changing a route's import graph
 same change. Make it the last step before committing: any later source edit shifts the line numbers again and
 CI's "i18n extract drift" check fails.
 
+The same applies after adding a file with Korean literals or a new classify reason in `scripts/i18n/lib/context.mjs`:
+run `yarn i18n:lint` and `yarn i18n:extract --write` before committing, since the pre-push gate and CI both check them.
+
 <a id="I18-2"></a>
 
 #### I18-2 — Keep all locale catalogs in step
