@@ -106,13 +106,12 @@ describe('DefaultModelForm — 키가 있을 때', () => {
         ).toHaveAttribute('name', 'model');
     });
 
-    it('생성은 BYOK 등급 모델만, 무료·회원 등급은 공유 분석 읽기만 된다고 안내한다', () => {
+    it('등급과 상관없이 모든 모델을 내 키로 만들 수 있다고 안내한다', () => {
         renderForm();
         expect(
-            screen.getByText(
-                /BYOK 등급 모델뿐이에요.*공유 분석만 읽을 수 있어요/
-            )
+            screen.getByText(/모든 모델로 새 분석을 만들 수 있어요/)
         ).toBeInTheDocument();
+        expect(screen.queryByText(/BYOK 등급 모델뿐/)).not.toBeInTheDocument();
     });
 
     it('저장 버튼이 있고 BYOK 안내 링크는 없다', () => {

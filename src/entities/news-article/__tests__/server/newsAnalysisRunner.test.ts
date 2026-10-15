@@ -34,14 +34,15 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 import { runNewsAnalysis, type ModelId } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysisRunner';
-import {
-    ByokOnlyRoutingError,
-    CACHE_PROBE_KEY_PLACEHOLDER,
-} from '@/shared/lib/byokOnly';
+import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 
 const mockRun = vi.mocked(runNewsAnalysis);
 const BYOK_MODEL = 'claude-opus-5' as ModelId;
 const FREE_MODEL = 'gemini-3.6-flash' as ModelId;
+
+/** 호출을 모델로 고른다(인덱스로 잡지 않는다). */
+const callFor = (modelId: ModelId) =>
+    mockRun.mock.calls.find(([arg]) => arg.modelId === modelId)?.[0];
 const ROW = {
     id: 'n1',
     symbol: 'AAPL',
@@ -93,76 +94,60 @@ describe('executeNewsAnalysis', () => {
                 locale: 'en',
                 skipEnqueueIfMiss: false,
                 reasoning: false,
+                keyPolicy: 'byok-only',
             })
         );
         expect(getCurrentUser).not.toHaveBeenCalled();
     });
 
-    it('cacheOnly는 skipEnqueueIfMiss로 전달된다', async () => {
+    it('cacheOnly 확인 호출은 키 없이 byok-only로 보내고 skipEnqueueIfMiss를 켠다', async () => {
         await executeNewsAnalysis({
             ...base,
-            caller: {
-                userId: 'u1',
-                tier: 'member',
-                userApiKey: CACHE_PROBE_KEY_PLACEHOLDER,
-                byokOnly: true,
-            },
+            caller: { userId: 'u1', tier: 'member', byokOnly: true },
             modelId: BYOK_MODEL,
             cacheOnly: true,
         });
-        expect(mockRun).toHaveBeenCalledWith(
-            expect.objectContaining({ skipEnqueueIfMiss: true })
-        );
+        const arg = callFor(BYOK_MODEL);
+        expect(arg).toMatchObject({
+            skipEnqueueIfMiss: true,
+            keyPolicy: 'byok-only',
+        });
+        expect(arg).not.toHaveProperty('userApiKey');
     });
 
-    it('byokOnly에서 pro tier는 core가 서버 키를 고르므로 core를 부르기 전에 거절한다', async () => {
-        await expect(
-            executeNewsAnalysis({
+    it.each(['free', 'member', 'pro'] as const)(
+        'byokOnly는 %s tier·free 등급 모델도 실제 tier 그대로 사용자 키와 byok-only로 보낸다',
+        async tier => {
+            await executeNewsAnalysis({
                 ...base,
                 caller: {
                     userId: 'u1',
-                    tier: 'pro',
-                    userApiKey: 'sk-user',
-                    byokOnly: true,
-                },
-                modelId: BYOK_MODEL,
-            })
-        ).rejects.toBeInstanceOf(ByokOnlyRoutingError);
-        expect(mockRun).not.toHaveBeenCalled();
-        expect(mockListBySymbol).not.toHaveBeenCalled();
-    });
-
-    it('byokOnly에서 free 등급 모델은 서버 키로 가므로 거절한다', async () => {
-        await expect(
-            executeNewsAnalysis({
-                ...base,
-                caller: {
-                    userId: 'u1',
-                    tier: 'member',
+                    tier,
                     userApiKey: 'sk-user',
                     byokOnly: true,
                 },
                 modelId: FREE_MODEL,
-            })
-        ).rejects.toBeInstanceOf(ByokOnlyRoutingError);
-        expect(mockRun).not.toHaveBeenCalled();
-    });
+            });
+            expect(callFor(FREE_MODEL)).toMatchObject({
+                tier,
+                userApiKey: 'sk-user',
+                keyPolicy: 'byok-only',
+                modelId: FREE_MODEL,
+            });
+        }
+    );
 
-    it('자리표시 키로는 생성(cacheOnly: false)을 할 수 없다', async () => {
+    it('byokOnly에서 생성 호출에 키가 없으면 core를 부르기 전에 거절한다', async () => {
         await expect(
             executeNewsAnalysis({
                 ...base,
-                caller: {
-                    userId: 'u1',
-                    tier: 'member',
-                    userApiKey: CACHE_PROBE_KEY_PLACEHOLDER,
-                    byokOnly: true,
-                },
+                caller: { userId: 'u1', tier: 'member', byokOnly: true },
                 modelId: BYOK_MODEL,
                 cacheOnly: false,
             })
         ).rejects.toBeInstanceOf(ByokOnlyRoutingError);
         expect(mockRun).not.toHaveBeenCalled();
+        expect(mockListBySymbol).not.toHaveBeenCalled();
     });
 
     it('쿠키 액션 호출자(byokOnly 아님)는 검사를 받지 않는다 — 서버 키 정책 그대로', async () => {
@@ -171,9 +156,11 @@ describe('executeNewsAnalysis', () => {
             caller: { userId: 'u1', tier: 'pro' },
             modelId: FREE_MODEL,
         });
-        const arg = mockRun.mock.calls[0][0];
+        const arg = callFor(FREE_MODEL);
         expect(arg).toMatchObject({ tier: 'pro', modelId: FREE_MODEL });
         expect(arg).not.toHaveProperty('userApiKey');
+        // 웹 쿠키 경로는 기본 tier 정책 그대로다 — keyPolicy를 싣지 않는다.
+        expect(arg).not.toHaveProperty('keyPolicy');
     });
 
     it('core의 예외는 삼키지 않고 던진다(호출부가 상태 코드를 보존한다)', async () => {

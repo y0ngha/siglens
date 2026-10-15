@@ -1,4 +1,5 @@
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 
 const { callGeminiMock } = vi.hoisted(() => ({
     callGeminiMock: vi.fn(),
@@ -34,6 +35,24 @@ describe('translateCompanyNames', () => {
     it('빈 입력은 즉시 빈 객체를 반환한다', async () => {
         await expect(translateCompanyNames([])).resolves.toEqual({});
         expect(callGeminiMock).not.toHaveBeenCalled();
+    });
+
+    it('서버 키 LLM을 막은 흐름(공개 API)에서는 키가 있어도 Gemini를 부르지 않는다', async () => {
+        callGeminiMock.mockResolvedValue('{"AAPL":"애플"}');
+        await expect(
+            runWithoutServerLlm(() =>
+                translateCompanyNames([{ symbol: 'AAPL', name: 'Apple Inc.' }])
+            )
+        ).resolves.toEqual({});
+        await expect(
+            runWithoutServerLlm(() => translateCompanyDescription('A company'))
+        ).resolves.toBeNull();
+        expect(callGeminiMock).not.toHaveBeenCalled();
+        // 대조: 감싸지 않은 웹 경로는 같은 입력으로 번역한다.
+        await expect(
+            translateCompanyNames([{ symbol: 'AAPL', name: 'Apple Inc.' }])
+        ).resolves.toEqual({ AAPL: '애플' });
+        expect(callGeminiMock).toHaveBeenCalledTimes(1);
     });
 
     it('GEMINI_API_KEY 가 없으면 빈 객체 반환', async () => {

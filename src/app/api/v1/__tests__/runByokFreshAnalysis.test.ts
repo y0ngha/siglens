@@ -20,10 +20,12 @@ interface CoreCall {
     model: string;
     tier: string;
     providerFallback: unknown;
+    keyPolicy: string | undefined;
     userApiKey: string | undefined;
     /** core가 LLM에 실제로 쓸 키. 서버 키를 골랐다면 env 값. 캐시 확인만 한 호출은 `null`. */
     keyUsedForLlm: string | null;
 }
+const serverKeys = vi.hoisted(() => ({ getServerPrimaryKey: vi.fn() }));
 const core = vi.hoisted(() => ({
     cache: null as object | null,
     fresh: { summary: 'fresh', trend: 'bullish' } as object,
@@ -39,10 +41,12 @@ const core = vi.hoisted(() => ({
 }));
 
 /*
- * core의 `runAnalysis`를 키 선택 규칙까지 흉내 내는 가짜로 바꾼다. 실제 규칙은 core의
- * `shouldUseServerKey(model, tier) = !requiresByokKey(tier, model)`(domain/keyRouting.js)이고 여기서도
- * 진짜 `requiresByokKey`로 판정한다 — 가짜가 서버 키를 고르는 조건이 core와 같아야 이 테스트가 의미가 있다.
- * BYOK 게이트가 캐시 확인보다 **앞**인 순서(runAnalysis.js)도 같다.
+ * core의 `runAnalysis`를 키 정책(core 2.18.0 `keyPolicy`)까지 흉내 내는 가짜로 바꾼다. 실제 규칙은
+ * core의 `shouldUseServerKey`·`isUserApiKeyGateDeniedAt`(domain/keyRouting.js, application/byok/gate.js):
+ *  - `keyPolicy: 'byok-only'`: 모델 등급·tier와 무관하게 서버 키를 고르지 않고, 키 게이트가 캐시 조회와
+ *    `skipEnqueueIfMiss`의 `miss_no_trigger` **뒤**에 있어 캐시 적중은 키 없이 돌려준다.
+ *  - 기본 정책(`tier`): 진짜 `requiresByokKey`로 판정하고 게이트가 캐시 조회 **앞**이다(웹 경로, 바뀌지 않았다).
+ * 서버 키를 고르면 `getServerPrimaryKey`(서버 env 경로)를 부른다 — byok-only에서는 불리면 안 된다.
  */
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
@@ -62,25 +66,34 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
                 tierContext: { tier: Tier };
                 skipEnqueueIfMiss?: boolean;
                 userApiKey?: string;
+                keyPolicy?: string;
                 providerFallback?: unknown;
                 signal?: AbortSignal;
             }
         ) => {
             if (options.signal !== undefined) core.signals.push(options.signal);
-            const serverKeyChosen = !actual.requiresByokKey(
-                options.tierContext.tier,
-                options.modelId
-            );
+            const byokOnly =
+                options.keyPolicy !== undefined && options.keyPolicy !== 'tier';
+            const serverKeyChosen =
+                !byokOnly &&
+                !actual.requiresByokKey(
+                    options.tierContext.tier,
+                    options.modelId
+                );
             const record: CoreCall = {
                 cacheOnly: options.skipEnqueueIfMiss === true,
                 model: options.modelId,
                 tier: options.tierContext.tier,
                 providerFallback: options.providerFallback,
+                keyPolicy: options.keyPolicy,
                 userApiKey: options.userApiKey,
                 keyUsedForLlm: null,
             };
             core.calls.push(record);
-            if (!serverKeyChosen && options.userApiKey === undefined)
+            const keyMissing =
+                options.userApiKey === undefined || options.userApiKey === '';
+            // 기본 정책의 게이트: 캐시 조회 앞.
+            if (!byokOnly && !serverKeyChosen && keyMissing)
                 return { status: 'key_error', code: 'user_api_key_required' };
             if (core.cache !== null)
                 return { status: 'cached', result: core.cache };
@@ -88,6 +101,13 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
                 core.onProbe?.();
                 return { status: 'miss_no_trigger' };
             }
+            // byok-only의 게이트: 캐시 조회·miss_no_trigger 뒤.
+            if (byokOnly && keyMissing)
+                return { status: 'key_error', code: 'user_api_key_required' };
+            if (serverKeyChosen)
+                serverKeys.getServerPrimaryKey(
+                    actual.getProviderForModel(options.modelId)
+                );
             record.keyUsedForLlm = serverKeyChosen
                 ? (process.env.ANTHROPIC_API_KEY ?? 'SERVER-KEY')
                 : (options.userApiKey ?? null);
@@ -112,6 +132,9 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         },
     };
 });
+vi.mock('@/entities/llm-provider/lib/serverKeys', () => ({
+    getServerPrimaryKey: serverKeys.getServerPrimaryKey,
+}));
 vi.mock('@/entities/analysis/server/overallAnalysisRunner', () => ({
     executeOverallAnalysis: m.overall,
 }));
@@ -189,7 +212,7 @@ vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
 
 import { prepareRunner } from '@/app/api/v1/freshAnalysisRunner';
 import { runByokFreshAnalysis } from '@/app/api/v1/runByokFreshAnalysis';
-import type { ModelId } from '@y0ngha/siglens-core';
+import { UserApiKeyMissingError, type ModelId } from '@y0ngha/siglens-core';
 import {
     __resetFreshSemaphoreForTests,
     tryAcquireFreshSlot,
@@ -197,10 +220,7 @@ import {
 import { isPublicToolStream } from '@/app/api/v1/publicToolOutcome';
 import { RateLimiterUnavailableError } from '@/entities/siglens-api-key/server/rateLimit';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
-import {
-    ByokOnlyRoutingError,
-    CACHE_PROBE_KEY_PLACEHOLDER,
-} from '@/shared/lib/byokOnly';
+import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 import { PUBLIC_API_RATE_LIMITS } from '@/shared/config/publicApi';
 import {
     __activeStreamCount,
@@ -224,6 +244,7 @@ const SERVER_ENV_KEYS = {
 } as const;
 
 const BYOK_MODEL = 'claude-opus-5';
+const MEMBER_MODEL = 'claude-sonnet-5-5';
 const FREE_MODEL = 'claude-haiku-5-5';
 
 const principal = (tier: ApiKeyPrincipal['tier'] = 'pro'): ApiKeyPrincipal => ({
@@ -287,6 +308,7 @@ beforeEach(() => {
     core.abortable = false;
     core.signals.length = 0;
     core.calls.length = 0;
+    serverKeys.getServerPrimaryKey.mockReset();
     m.findKey.mockResolvedValue(null);
     m.findDefaultModel.mockResolvedValue(null);
     m.consume.mockResolvedValue(allowedVerdict);
@@ -365,7 +387,7 @@ describe('공유 캐시 적중 — LLM 미호출, ai 한도 미소비', () => {
         core.cache = { summary: 'cached', trend: 'bullish' };
     });
 
-    it('등록된 키가 없어도 캐시를 돌려준다(source: cache)', async () => {
+    it('등록된 키가 없어도 캐시를 돌려준다(source: cache) — core에는 byok-only로, 키 없이 보낸다', async () => {
         const result = await run({ model: BYOK_MODEL });
         expect(result).toMatchObject({
             ok: true,
@@ -375,10 +397,35 @@ describe('공유 캐시 적중 — LLM 미호출, ai 한도 미소비', () => {
         expect(core.calls[0]).toMatchObject({
             cacheOnly: true,
             keyUsedForLlm: null,
-            userApiKey: CACHE_PROBE_KEY_PLACEHOLDER,
+            keyPolicy: 'byok-only',
         });
+        expect(core.calls[0].userApiKey).toBeUndefined();
         expect(m.consume).not.toHaveBeenCalled();
     });
+
+    it.each([
+        ['byok 등급', BYOK_MODEL],
+        ['member 등급', MEMBER_MODEL],
+        ['free 등급', FREE_MODEL],
+    ])(
+        '%s 모델도 키 없이 캐시 적중을 받는다(200 source: cache, 키 없이 byok-only)',
+        async (_label, model) => {
+            const result = await run({ model });
+            expect(result).toMatchObject({
+                ok: true,
+                meta: { source: 'cache', model },
+            });
+            expect(core.calls).toHaveLength(1);
+            expect(core.calls[0]).toMatchObject({
+                cacheOnly: true,
+                keyPolicy: 'byok-only',
+                keyUsedForLlm: null,
+            });
+            expect(core.calls[0].userApiKey).toBeUndefined();
+            expect(m.consume).not.toHaveBeenCalled();
+            expect(serverKeys.getServerPrimaryKey).not.toHaveBeenCalled();
+        }
+    );
 
     it('키가 있으면 확인 호출에도 그 키를 쓰고 LLM은 부르지 않는다', async () => {
         registerUserKey();
@@ -387,40 +434,32 @@ describe('공유 캐시 적중 — LLM 미호출, ai 한도 미소비', () => {
         expect(core.calls).toHaveLength(1);
         expect(core.calls[0]).toMatchObject({
             cacheOnly: true,
+            keyPolicy: 'byok-only',
             userApiKey: USER_ANTHROPIC_KEY,
             keyUsedForLlm: null,
         });
         expect(m.consume).not.toHaveBeenCalled();
     });
 
-    it('서버 키 모델은 키 조회를 하지 않으므로 키 저장소 장애가 캐시 읽기를 막지 않는다', async () => {
+    it('키 저장소 장애여도 캐시 적중은 키 없이 돌려준다(미스일 때만 503)', async () => {
         m.findKey.mockRejectedValue(new Error('key store down'));
         const result = await run({ model: FREE_MODEL });
         expect(result).toMatchObject({
             ok: true,
             meta: { source: 'cache', model: FREE_MODEL },
         });
-        expect(m.findKey).not.toHaveBeenCalled();
+        expect(core.calls[0].userApiKey).toBeUndefined();
     });
 
-    it('반대로 생성 가능한 모델은 키 저장소 장애가 503이다(대조)', async () => {
+    it('키 저장소 장애 + 캐시 미스는 503이다(키 없음으로 오인시키지 않는다)', async () => {
+        core.cache = null;
         m.findKey.mockRejectedValue(new Error('key store down'));
         const result = await run({ model: BYOK_MODEL });
-        expect(result).toMatchObject({ ok: false, status: 503 });
-    });
-
-    it('free/member 등급 모델(서버 키 모델)도 캐시는 읽는다', async () => {
-        const result = await run({ model: FREE_MODEL });
         expect(result).toMatchObject({
-            ok: true,
-            meta: { source: 'cache', model: FREE_MODEL },
+            ok: false,
+            status: 503,
+            code: 'service_unavailable',
         });
-        expect(core.calls[0]).toMatchObject({
-            cacheOnly: true,
-            keyUsedForLlm: null,
-        });
-        // 키를 등록하지 않았으면 core에 키 자체를 넘기지 않는다(서버 env 값도, 자리표시도 아니다).
-        expect(core.calls[0].userApiKey).toBeUndefined();
         expect(m.consume).not.toHaveBeenCalled();
     });
 
@@ -495,22 +534,65 @@ describe('캐시 미스', () => {
         expect(result).toMatchObject({ ok: false, status: 503 });
     });
 
-    it('서버 키 모델(free/member 등급)은 사용자 키로 만들 수 없어 400 byok_model_required이고 생성하지 않는다', async () => {
-        registerUserKey('anthropic');
+    it('free 등급 모델도 키가 없으면 400 byok_key_required { provider }이고 ai 한도를 소비하지 않는다', async () => {
         const result = await run({ model: FREE_MODEL });
         expect(result).toMatchObject({
             ok: false,
             status: 400,
-            code: 'byok_model_required',
+            code: 'byok_key_required',
+            details: { provider: 'anthropic' },
         });
         expect(m.consume).not.toHaveBeenCalled();
         expect(core.calls.every(call => call.cacheOnly)).toBe(true);
-        // 사용자 키를 등록해 뒀어도 서버 키 모델에는 넘기지 않는다.
-        expect(core.calls.map(call => call.userApiKey)).not.toContain(
-            USER_ANTHROPIC_KEY
-        );
         expect(core.calls.some(call => call.keyUsedForLlm !== null)).toBe(
             false
+        );
+        expect(serverKeys.getServerPrimaryKey).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['free 등급', FREE_MODEL],
+        ['member 등급', MEMBER_MODEL],
+    ])(
+        '%s 모델은 사용자 키로 생성하고 core에 byok-only를 넘기며 서버 키 경로를 읽지 않는다',
+        async (_label, model) => {
+            registerUserKey();
+            const result = await run({ model }, 'member');
+
+            expect(result).toMatchObject({
+                ok: true,
+                meta: { source: 'fresh', model },
+            });
+            expect(m.consume).toHaveBeenCalledWith(USER_ID, 'ai');
+            const generation = core.calls.find(call => !call.cacheOnly);
+            expect(generation).toMatchObject({
+                model,
+                keyPolicy: 'byok-only',
+                userApiKey: USER_ANTHROPIC_KEY,
+                keyUsedForLlm: USER_ANTHROPIC_KEY,
+            });
+            for (const call of core.calls)
+                expect(call.keyPolicy).toBe('byok-only');
+            expect(serverKeys.getServerPrimaryKey).not.toHaveBeenCalled();
+            expect(Object.values(SERVER_ENV_KEYS)).not.toContain(
+                generation?.keyUsedForLlm
+            );
+        }
+    );
+
+    it('core가 UserApiKeyMissingError를 던져도 500이 아니라 400 byok_key_required다', async () => {
+        registerUserKey();
+        core.failWith = new UserApiKeyMissingError();
+        const result = await run({ model: BYOK_MODEL });
+        expect(result).toMatchObject({
+            ok: false,
+            status: 400,
+            code: 'byok_key_required',
+            details: { provider: 'anthropic' },
+        });
+        expect(console.error).not.toHaveBeenCalledWith(
+            expect.stringContaining('failed'),
+            expect.anything()
         );
     });
 
@@ -543,21 +625,21 @@ describe('캐시 미스', () => {
             }
         });
 
-        it('pro 회원도 core에는 pro가 아닌 tier로 넘겨 서버 키 선택을 막는다', async () => {
-            await run({ model: BYOK_MODEL }, 'pro');
-            expect(core.calls.map(call => call.tier)).toEqual([
-                'member',
-                'member',
-            ]);
-            expect(
-                core.calls.find(call => !call.cacheOnly)?.keyUsedForLlm
-            ).toBe(USER_ANTHROPIC_KEY);
-        });
-
-        it('member·free 회원의 tier는 그대로 넘긴다', async () => {
-            await run({ model: BYOK_MODEL }, 'free');
-            expect(core.calls[0].tier).toBe('free');
-        });
+        it.each(['free', 'member', 'pro'] as const)(
+            '%s 회원은 실제 tier 그대로 넘기고 byok-only로 사용자 키를 쓴다(tier로 키를 고르지 않는다)',
+            async tier => {
+                await run({ model: BYOK_MODEL }, tier);
+                expect(core.calls.map(call => call.tier)).toEqual([tier, tier]);
+                expect(core.calls.map(call => call.keyPolicy)).toEqual([
+                    'byok-only',
+                    'byok-only',
+                ]);
+                expect(
+                    core.calls.find(call => !call.cacheOnly)?.keyUsedForLlm
+                ).toBe(USER_ANTHROPIC_KEY);
+                expect(serverKeys.getServerPrimaryKey).not.toHaveBeenCalled();
+            }
+        );
 
         it('기술 분석은 providerFallback을 켜지 않는다(실패해도 서버 Gemini 키로 재시도하지 않는다)', async () => {
             await run({ model: BYOK_MODEL });
@@ -849,15 +931,16 @@ describe('종류별 실행', () => {
                 modelId: BYOK_MODEL,
                 locale: 'en',
             });
+            // tier는 회원의 실제 값 그대로다(pro도 member로 내리지 않는다).
             expect(probe.caller).toMatchObject({
                 userId: USER_ID,
-                tier: 'member',
+                tier: 'pro',
                 byokOnly: true,
                 userApiKey: USER_ANTHROPIC_KEY,
             });
             expect(generation.caller).toMatchObject({
                 userId: USER_ID,
-                tier: 'member',
+                tier: 'pro',
                 byokOnly: true,
                 userApiKey: USER_ANTHROPIC_KEY,
             });
@@ -900,15 +983,117 @@ describe('종류별 실행', () => {
         );
     });
 
-    it('키가 없으면 확인 호출은 자리표시 키를 쓰고 생성은 하지 않는다', async () => {
+    it('키가 없으면 확인 호출은 키 없이 byok 전용 호출자로 보내고 생성은 하지 않는다', async () => {
         m.findKey.mockResolvedValue(null);
         const result = await run({ kind: 'news', model: BYOK_MODEL });
         expect(result).toMatchObject({ code: 'byok_key_required' });
         expect(m.news).toHaveBeenCalledTimes(1);
-        expect(m.news.mock.calls[0][0].caller.userApiKey).toBe(
-            CACHE_PROBE_KEY_PLACEHOLDER
+        const [probe] = m.news.mock.calls.map(c => c[0]);
+        expect(probe.caller).toMatchObject({ byokOnly: true });
+        expect(probe.caller.userApiKey).toBeUndefined();
+        expect(probe.cacheOnly).toBe(true);
+        expect(m.consume).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['news', () => m.news],
+        ['options', () => m.options],
+    ])(
+        '%s: 키 없이 캐시 적중이면 200 source: cache이다(core가 키 게이트 전에 돌려준다)',
+        async (kind, pick) => {
+            m.findKey.mockResolvedValue(null);
+            pick().mockResolvedValue({
+                status: 'cached',
+                result: RESULT_BY_KIND[kind],
+            });
+            const result = await run({ kind, model: BYOK_MODEL });
+            expect(result).toMatchObject({
+                ok: true,
+                meta: { source: 'cache' },
+            });
+            expect(m.consume).not.toHaveBeenCalled();
+            expect(pick()).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    modelId: BYOK_MODEL,
+                    cacheOnly: true,
+                    caller: expect.not.objectContaining({
+                        userApiKey: expect.anything(),
+                    }),
+                })
+            );
+        }
+    );
+
+    it('overall: 키 없이 캐시 적중이면 200 source: cache이고 키 없는 byok 전용 호출자로 확인한다', async () => {
+        m.findKey.mockResolvedValue(null);
+        m.overall.mockResolvedValue({
+            status: 'cached',
+            result: RESULT_BY_KIND.overall,
+        });
+        const result = await run({ kind: 'overall', model: BYOK_MODEL });
+        expect(result).toMatchObject({
+            ok: true,
+            meta: { source: 'cache', model: BYOK_MODEL },
+        });
+        expect(m.consume).not.toHaveBeenCalled();
+        expect(m.overall).toHaveBeenCalledTimes(1);
+        expect(m.overall).toHaveBeenCalledWith(
+            expect.objectContaining({
+                modelId: BYOK_MODEL,
+                options: expect.objectContaining({ cacheOnly: true }),
+                caller: expect.objectContaining({ byokOnly: true }),
+            })
         );
-        expect(m.news.mock.calls[0][0].cacheOnly).toBe(true);
+        expect(m.overall).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                caller: expect.objectContaining({
+                    userApiKey: expect.anything(),
+                }),
+            })
+        );
+    });
+
+    it('overall: 키 없이 미스면 400 byok_key_required이고 ai 한도를 소비하지 않는다', async () => {
+        m.findKey.mockResolvedValue(null);
+        m.overall.mockResolvedValue({ status: 'miss_no_trigger' });
+        const result = await run({ kind: 'overall', model: BYOK_MODEL });
+        expect(result).toMatchObject({
+            ok: false,
+            status: 400,
+            code: 'byok_key_required',
+            details: { provider: 'anthropic' },
+        });
+        expect(m.consume).not.toHaveBeenCalled();
+        expect(m.overall).toHaveBeenCalledTimes(1);
+    });
+
+    it('생성 호출이 key_error를 돌려주면 422 analysis_failed가 아니라 400 byok_key_required이다', async () => {
+        m.news
+            .mockResolvedValueOnce({ status: 'miss_no_trigger' })
+            .mockResolvedValueOnce({
+                status: 'key_error',
+                code: 'user_api_key_required',
+                error: 'key required',
+            });
+        const result = await run({ kind: 'news', model: BYOK_MODEL });
+        expect(result).toMatchObject({
+            ok: false,
+            status: 400,
+            code: 'byok_key_required',
+            details: { provider: 'anthropic' },
+        });
+    });
+
+    it('news 생성 중 core가 UserApiKeyMissingError를 던져도 400 byok_key_required다', async () => {
+        m.news
+            .mockResolvedValueOnce({ status: 'miss_no_trigger' })
+            .mockRejectedValueOnce(new UserApiKeyMissingError());
+        const result = await run({ kind: 'news', model: BYOK_MODEL });
+        expect(result).toMatchObject({
+            ok: false,
+            status: 400,
+            code: 'byok_key_required',
+        });
     });
 
     it('core가 분석을 만들지 못한 상태는 422 analysis_failed + 원인 코드', async () => {
@@ -1133,36 +1318,36 @@ describe('BYOK 가드 — 생성 호출은 byokOnly 검사를 거친다', () => 
         }
     );
 
-    it('technical: 생성 호출의 서버 키 라우팅(pro tier)을 core 호출 직전에 거절한다', async () => {
-        const runner = await prepareRunner({
-            ...base,
-            kind: 'technical',
-            principal: principal('pro'),
-        });
-        // runner는 pro를 member로 내려 만든다 — 호출자가 pro를 직접 넘기는 버그를 흉내 낸다.
+    it('technical: 키 없는 생성 호출은 core를 부르기 전에 거절한다', async () => {
+        const runner = await prepareRunner({ ...base, kind: 'technical' });
         await expect(
             runner.run({
                 cacheOnly: false,
                 signal,
-                caller: { ...unchecked, tier: 'pro', byokOnly: true },
+                caller: { userId: USER_ID, tier: 'member', byokOnly: true },
             })
         ).rejects.toBeInstanceOf(ByokOnlyRoutingError);
         expect(core.calls).toHaveLength(0);
     });
 
-    it('technical: 확인(cacheOnly) 호출도 서버 키 모델에 byokOnly를 주면 거절한다', async () => {
+    it('technical: 키 없는 확인(cacheOnly) 호출은 byok-only로 core에 간다', async () => {
         const runner = await prepareRunner({
             ...base,
             kind: 'technical',
             model: FREE_MODEL as ModelId,
         });
-        await expect(
-            runner.run({
-                cacheOnly: true,
-                signal,
-                caller: { ...unchecked, byokOnly: true },
-            })
-        ).rejects.toBeInstanceOf(ByokOnlyRoutingError);
-        expect(core.calls).toHaveLength(0);
+        core.cache = { summary: 'cached' };
+        await runner.run({
+            cacheOnly: true,
+            signal,
+            caller: runner.callerFor(undefined),
+        });
+        expect(core.calls).toHaveLength(1);
+        expect(core.calls[0]).toMatchObject({
+            cacheOnly: true,
+            keyPolicy: 'byok-only',
+            tier: 'member',
+        });
+        expect(core.calls[0].userApiKey).toBeUndefined();
     });
 });

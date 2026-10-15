@@ -1,6 +1,7 @@
 import 'server-only';
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 import { parseJsonResponse } from '@/entities/llm-provider/lib/parseJsonResponse';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
 import { tryReadTranslatorConfig } from './config';
 import type { TranslatorConfig, TranslatorEntry } from '../model';
 
@@ -60,6 +61,8 @@ export async function translateCompanyNames(
     entries: readonly TranslatorEntry[]
 ): Promise<Record<string, string>> {
     if (entries.length === 0) return {};
+    // 마지막 방어선: 서버 키를 읽기 전에 막는다(호출부는 이 전에 이미 건너뛴다 — `isServerLlmAllowed` JSDoc).
+    if (!isServerLlmAllowed()) return {};
 
     const config = tryReadTranslatorConfig();
     if (!config) return {};
@@ -89,6 +92,7 @@ export async function translateCompanyNames(
 export async function translateCompanyDescription(
     description: string
 ): Promise<string | null> {
+    if (!isServerLlmAllowed()) return null;
     const config = tryReadTranslatorConfig();
     if (!config) return null;
 

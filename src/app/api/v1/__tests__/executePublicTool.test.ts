@@ -22,6 +22,7 @@ import {
 } from '@/app/api/v1/executePublicTool';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
 
 const spec = findToolSpec('get_quote')!;
 const principal: ApiKeyPrincipal = {
@@ -77,6 +78,20 @@ describe('executePublicTool — 실행 문맥', () => {
             { analysisModel: 'agent-model-for-test' },
             { refreshSymbolData: false, resultCaps: PUBLIC_API_RESULT_CAPS }
         );
+    });
+
+    it('데이터 도구도 서버 키 LLM(회사명 번역 등)을 막은 흐름 안에서 실행한다', async () => {
+        const seen: boolean[] = [];
+        mockExecute.mockImplementation(async () => {
+            seen.push(isServerLlmAllowed());
+            await Promise.resolve();
+            seen.push(isServerLlmAllowed());
+            return { quotes: [] };
+        });
+        await run();
+        expect(seen).toEqual([false, false]);
+        // 감싼 흐름 밖(웹·에이전트)은 그대로 허용이다.
+        expect(isServerLlmAllowed()).toBe(true);
     });
 
     it('요청마다 새 실행기를 만든다(턴 상태가 요청 사이에 새지 않는다)', async () => {

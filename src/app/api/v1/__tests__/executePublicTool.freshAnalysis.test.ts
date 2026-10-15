@@ -28,6 +28,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 import { findToolSpec } from '@y0ngha/siglens-core';
 import { executePublicTool } from '@/app/api/v1/executePublicTool';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
 
 const spec = findToolSpec('run_fresh_analysis')!;
 const principal: ApiKeyPrincipal = {
@@ -53,6 +54,24 @@ beforeEach(() => {
 });
 
 describe('executePublicTool — run_fresh_analysis', () => {
+    it('서버 키 LLM(회사명 번역 등)을 막은 흐름 안에서 BYOK 구현을 부른다', async () => {
+        const seen: boolean[] = [];
+        mockByok.mockImplementation(async () => {
+            seen.push(isServerLlmAllowed());
+            await Promise.resolve();
+            seen.push(isServerLlmAllowed());
+            return {
+                ok: true,
+                data: {},
+                truncated: false,
+                meta: { source: 'cache', model: 'claude-opus-5' },
+            };
+        });
+        await run();
+        expect(seen).toEqual([false, false]);
+        expect(isServerLlmAllowed()).toBe(true);
+    });
+
     it('BYOK 전용 구현으로만 보낸다: 에이전트 실행기·createToolExecutor는 만들지도 않는다', async () => {
         const result = await run();
 

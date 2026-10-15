@@ -1,5 +1,9 @@
 import 'server-only';
-import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
+import {
+    UserApiKeyMissingError,
+    type ModelId,
+    type Timeframe,
+} from '@y0ngha/siglens-core';
 import { truncateToolResult } from '@/app/api/ai/chat/tools/truncate';
 import { unwrap, type Outcome } from '@/app/api/ai/chat/tools/runFreshAnalysis';
 import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
@@ -62,6 +66,33 @@ function errorCodeOf(value: unknown): string | undefined {
         : undefined;
 }
 
+/**
+ * 400 `byok_key_required { provider }` — 이 API는 사용자 키로만 생성한다. `unreadable`이면 저장된 키를
+ * 복호화하지 못한 경우라 다시 등록하라고 안내한다.
+ */
+export function byokKeyRequired(
+    provider: string,
+    reason: 'not_registered' | 'unreadable' = 'not_registered'
+): Failure {
+    return fail(
+        API_STATUS.badRequest,
+        'byok_key_required',
+        reason === 'unreadable'
+            ? `Your stored ${provider} key could not be read. Register it again at siglens.io/account.`
+            : `No cached analysis exists and generating one needs your own ${provider} API key. Register it at siglens.io/account.`,
+        { provider }
+    );
+}
+
+/**
+ * core가 키 게이트에서 돌려주는 `key_error` 결과인가(그 결과의 코드는 키 게이트가 유일하게 내는 값이라
+ * `status`만 본다).
+ * 생성 호출은 사용자 키를 싣고 가므로 보통은 오지 않는다.
+ */
+export function isKeyRequiredOutcome(outcome: Outcome): boolean {
+    return outcome.status === 'key_error';
+}
+
 export function analysisFailed(
     kind: string,
     timeframe: Timeframe,
@@ -82,6 +113,9 @@ export function analysisFailed(
  * 끊김·마감 응답은 이 함수가 아니라 `executePublicTool`의 경쟁이 만든다.
  */
 export function mapThrown(error: unknown, provider: string): Failure {
+    // 키 게이트가 없는 use-case는 키가 없으면 던진다(`key_error` 변종이 없다). 500이 아니라 400이다.
+    if (error instanceof UserApiKeyMissingError)
+        return byokKeyRequired(provider);
     if (error instanceof ByokOnlyRoutingError) {
         // 호출자 버그다. 사용자에게는 일반 500이고, 서버 키로는 나가지 않았다.
         console.error(
