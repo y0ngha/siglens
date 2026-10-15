@@ -960,6 +960,162 @@
         "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },
     {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 77,
+        "reason": "search-alias-data",
+        "text": "에이"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 78,
+        "reason": "search-alias-data",
+        "text": "비"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 79,
+        "reason": "search-alias-data",
+        "text": "씨"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 80,
+        "reason": "search-alias-data",
+        "text": "디"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 81,
+        "reason": "search-alias-data",
+        "text": "이"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 82,
+        "reason": "search-alias-data",
+        "text": "에프"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 83,
+        "reason": "search-alias-data",
+        "text": "지"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 84,
+        "reason": "search-alias-data",
+        "text": "에이치"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 85,
+        "reason": "search-alias-data",
+        "text": "아이"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 86,
+        "reason": "search-alias-data",
+        "text": "제이"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 87,
+        "reason": "search-alias-data",
+        "text": "케이"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 88,
+        "reason": "search-alias-data",
+        "text": "엘"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 89,
+        "reason": "search-alias-data",
+        "text": "엠"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 90,
+        "reason": "search-alias-data",
+        "text": "엔"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 91,
+        "reason": "search-alias-data",
+        "text": "오"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 92,
+        "reason": "search-alias-data",
+        "text": "피"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 93,
+        "reason": "search-alias-data",
+        "text": "큐"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 94,
+        "reason": "search-alias-data",
+        "text": "알"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 95,
+        "reason": "search-alias-data",
+        "text": "에스"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 96,
+        "reason": "search-alias-data",
+        "text": "티"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 97,
+        "reason": "search-alias-data",
+        "text": "유"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 98,
+        "reason": "search-alias-data",
+        "text": "브이"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 99,
+        "reason": "search-alias-data",
+        "text": "더블유"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 100,
+        "reason": "search-alias-data",
+        "text": "엑스"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 101,
+        "reason": "search-alias-data",
+        "text": "와이"
+    },
+    {
+        "file": "src/entities/ticker/lib/koreanSearchKey.ts",
+        "line": 102,
+        "reason": "search-alias-data",
+        "text": "지"
+    },
+    {
         "file": "src/entities/ticker/lib/koreanTranslator.ts",
         "line": 9,
         "reason": "ai-prompt",
@@ -2314,6 +2470,24 @@
         "line": 35,
         "reason": "catalog-backed-data",
         "text": "수출(전년비)"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 24,
+        "reason": "search-alias-data",
+        "text": "실에스큐"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 26,
+        "reason": "search-alias-data",
+        "text": "쉐브론"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 28,
+        "reason": "search-alias-data",
+        "text": "엑손모빌"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",

@@ -137,6 +137,143 @@ describe('searchByKoreanName', () => {
         });
     });
 
+    it('공백을 무시하고 맞춘다 (`퀀텀컴퓨팅` → `퀀텀 컴퓨팅`)', async () => {
+        const qubt: KoreanTickerEntry = {
+            symbol: 'QUBT',
+            name: 'Quantum Computing Inc.',
+            koreanName: '퀀텀 컴퓨팅',
+            exchange: 'NASDAQ',
+            exchangeFullName: 'NASDAQ Capital Market',
+        };
+        mockRepository.findAll.mockResolvedValue([qubt, apple]);
+
+        expect(
+            (await searchByKoreanName('퀀텀컴퓨팅')).map(r => r.symbol)
+        ).toEqual(['QUBT']);
+        expect((await searchByKoreanName('애 플')).map(r => r.symbol)).toEqual([
+            'AAPL',
+        ]);
+    });
+
+    it('된소리·모음 표기 차이를 접는다 (`써클` → `서클 인터넷 그룹`)', async () => {
+        const circle: KoreanTickerEntry = {
+            symbol: 'CRCL',
+            name: 'Circle Internet Group',
+            koreanName: '서클 인터넷 그룹',
+            exchange: 'NYSE',
+            exchangeFullName: 'New York Stock Exchange',
+        };
+        mockRepository.findAll.mockResolvedValue([circle, apple]);
+
+        expect((await searchByKoreanName('써클')).map(r => r.symbol)).toEqual([
+            'CRCL',
+        ]);
+        // ㅐ/ㅔ — `애플`을 `에플`로 쳐도 걸린다.
+        expect((await searchByKoreanName('에플')).map(r => r.symbol)).toEqual([
+            'AAPL',
+        ]);
+    });
+
+    it('한글명의 영문 약어를 글자 이름으로 친 질의도 찾는다 (`에스케이하이닉스`)', async () => {
+        const hynix: KoreanTickerEntry = {
+            symbol: '000660.KS',
+            name: 'SK하이닉스',
+            koreanName: 'SK하이닉스',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+        };
+        mockRepository.findAll.mockResolvedValue([hynix, apple]);
+
+        const result = await searchByKoreanName('에스케이하이닉스');
+
+        expect(result.map(r => r.symbol)).toEqual(['000660.KS']);
+        expect(result[0].koreanName).toBe('SK하이닉스');
+    });
+
+    it('한 글자 질의는 글자 읽기 표기에 대 보지 않는다', async () => {
+        // `SK하이닉스`의 글자 읽기 `에스케이하이닉스`에는 `케`가 들어 있지만, 화면의
+        // 이름에는 없는 글자라 한 글자 `케`로는 걸리지 않아야 한다.
+        const hynix: KoreanTickerEntry = {
+            symbol: '000660.KS',
+            name: 'SK하이닉스',
+            koreanName: 'SK하이닉스',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+        };
+        mockRepository.findAll.mockResolvedValue([hynix]);
+
+        expect(await searchByKoreanName('케')).toEqual([]);
+        expect((await searchByKoreanName('에스케')).map(r => r.symbol)).toEqual(
+            ['000660.KS']
+        );
+    });
+
+    it('공백뿐인 질의는 아무것도 반환하지 않는다', async () => {
+        mockRepository.findAll.mockResolvedValue([apple, microsoft]);
+        await expect(searchByKoreanName('  ')).resolves.toEqual([]);
+    });
+
+    describe('한글·영문 혼합 질의', () => {
+        const sealsq: KoreanTickerEntry = {
+            symbol: 'LAES',
+            name: 'SEALSQ Corp',
+            koreanName: '실스큐',
+            exchange: 'NASDAQ',
+            exchangeFullName: 'NASDAQ Capital Market',
+        };
+        const silicon: KoreanTickerEntry = {
+            symbol: 'SLAB',
+            name: 'Silicon Laboratories Inc.',
+            koreanName: '실리콘랩스',
+            exchange: 'NASDAQ',
+            exchangeFullName: 'NASDAQ Global Select',
+        };
+        const samsungSdi: KoreanTickerEntry = {
+            symbol: '006400.KS',
+            name: 'Samsung SDI Co., Ltd.',
+            koreanName: '삼성SDI',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+        };
+
+        it('한글 토막은 한글명, 영문 토막은 영문명으로 맞춘다 (`실SQ` → LAES)', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon, apple]);
+            const result = await searchByKoreanName('실SQ');
+            // `실`만 보면 실리콘랩스도 걸린다 — 영문 토막 `sq`가 LAES 하나로 좁힌다.
+            expect(result.map(r => r.symbol)).toEqual(['LAES']);
+        });
+
+        it('영문 토막은 심볼로도 맞춘다', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon]);
+            const result = await searchByKoreanName('실 LAES');
+            expect(result.map(r => r.symbol)).toEqual(['LAES']);
+        });
+
+        it('한글명이 영문을 품은 종목은 띄어 쓴 질의로도 찾는다 (`삼성 SDI`)', async () => {
+            mockRepository.findAll.mockResolvedValue([samsungSdi, apple]);
+            const result = await searchByKoreanName('삼성 SDI');
+            expect(result.map(r => r.symbol)).toEqual(['006400.KS']);
+        });
+
+        it('영문 토막은 대소문자를 가리지 않는다 (`실sq`)', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon]);
+            const result = await searchByKoreanName('실sq');
+            expect(result.map(r => r.symbol)).toEqual(['LAES']);
+        });
+
+        it('한글 토막은 검색 별칭에도 맞춘다 (`씰SQ`)', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon]);
+            const result = await searchByKoreanName('씰SQ');
+            expect(result.map(r => r.symbol)).toEqual(['LAES']);
+        });
+
+        it('토막 하나라도 어긋나면 일치로 보지 않는다', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon]);
+            expect(await searchByKoreanName('실XYZ')).toEqual([]);
+            expect(await searchByKoreanName('마SQ')).toEqual([]);
+        });
+    });
+
     it('스냅샷을 재사용한다 — TTL 안에서는 findAll을 한 번만 호출한다', async () => {
         mockRepository.findAll.mockResolvedValue([apple, microsoft]);
 
@@ -334,9 +471,30 @@ describe('searchByKoreanName', () => {
         expect(result[0].koreanName).toBe('실스큐');
     });
 
-    it('틀린 저장 이름으로는 더 이상 걸리지 않는다', async () => {
+    it('옛 표기는 검색 키 접기로 걸리되 반환값은 정본이다', async () => {
+        // `씰스큐`는 저장된 값이 아니라 된소리 접기(`씰`→`실`)로 정본에 걸린다 — 아래
+        // 테스트가 저장된 값만으로는 안 걸린다는 것을 따로 고정한다.
         mockRepository.findAll.mockResolvedValue([laes]);
-        await expect(searchByKoreanName('씰스큐')).resolves.toEqual([]);
+
+        const result = await searchByKoreanName('씰스큐');
+
+        expect(result.map(r => r.symbol)).toEqual(['LAES']);
+        expect(result[0].koreanName).toBe('실스큐');
+    });
+
+    it('검색 별칭으로도 걸린다 (`실에스큐`)', async () => {
+        mockRepository.findAll.mockResolvedValue([laes]);
+        const result = await searchByKoreanName('실에스큐');
+        expect(result.map(r => r.symbol)).toEqual(['LAES']);
+    });
+
+    it('별칭에 없는 저장 이름으로는 걸리지 않는다', async () => {
+        // 정본이 있는 심볼의 저장값(LLM 번역)은 매칭에 쓰지 않는다 — 별칭은 명시한
+        // 것만이다.
+        mockRepository.findAll.mockResolvedValue([
+            { ...laes, koreanName: '세알시큐리티' },
+        ]);
+        await expect(searchByKoreanName('세알시큐리티')).resolves.toEqual([]);
     });
 
     it('한국 종목에는 marketProfile을 붙인다 — 미국 종목에는 안 붙인다', async () => {
