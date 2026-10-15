@@ -21,6 +21,10 @@ import {
     METHODOLOGY_PATH,
     METHODOLOGY_UPDATED_AT,
 } from '@/shared/lib/legal';
+import {
+    DEVELOPERS_PATH,
+    DEVELOPERS_UPDATED_AT,
+} from '@/shared/config/publicApi';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { sitemapAlternates } from '../lib/sitemapAlternates';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
@@ -240,6 +244,31 @@ describe('buildStaticEntries', () => {
         const methodology = entries.find(e => e.url.endsWith('/methodology'));
         expect(methodology?.alternates).toEqual(
             sitemapAlternates(METHODOLOGY_PATH, STATIC_INDEXABLE_LOCALES)
+        );
+    });
+
+    it('/developers는 monthly, priority 0.5이고 /methodology 바로 뒤에 온다', () => {
+        const entries = buildStaticEntries(NOW);
+        const developers = entries.filter(e => e.url.endsWith('/developers'));
+        expect(developers).toHaveLength(1);
+        expect(developers[0].url).toBe('https://siglens.io/developers');
+        expect(developers[0].changeFrequency).toBe('monthly');
+        expect(developers[0].priority).toBe(0.5);
+        const methodologyIndex = entries.findIndex(e =>
+            e.url.endsWith('/methodology')
+        );
+        expect(entries[methodologyIndex + 1]?.url).toBe(developers[0].url);
+    });
+
+    it('/developers는 본문 갱신 상수와 색인 로케일 집합에서 lastmod·alternates를 파생한다', () => {
+        const developers = buildStaticEntries(NOW).find(e =>
+            e.url.endsWith('/developers')
+        );
+        expect(developers?.lastModified?.getTime()).toBe(
+            DEVELOPERS_UPDATED_AT.getTime()
+        );
+        expect(developers?.alternates).toEqual(
+            sitemapAlternates(DEVELOPERS_PATH, STATIC_INDEXABLE_LOCALES)
         );
     });
 

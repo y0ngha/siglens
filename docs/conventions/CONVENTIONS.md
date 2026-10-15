@@ -813,6 +813,8 @@ Check each claim kind against every reader and writer, not only the new one: "ha
 stored raw; "used only for X" must hold for every host or route that reads the same cookie or key; identifiers held by
 a processor (e.g. a member id inside cache or quota keys) and every new event belong in the stored-data, purpose and
 retention sections; in-product copy names a cause only when every code path that shows it guarantees that cause.
+An absolute claim ("never uses the server key", "only X") is written only after auditing every transitive path, including
+indirect callers such as search or name-translation helpers that reach the same dependency.
 
 Also check these claim kinds: a retention period counted "after storage" must hold for counters whose TTL refreshes on
 every write (state the real trigger); "encrypted" must not imply the server cannot read the value when it decrypts at

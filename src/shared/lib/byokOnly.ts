@@ -1,28 +1,4 @@
-import { requiresByokKey, type ModelId, type Tier } from '@y0ngha/siglens-core';
-
-/**
- * core는 **모델 등급과 tier로** 서버 키 사용 여부를 정한다(`shouldUseServerKey`):
- * `free`·`member` 등급 모델이거나 `pro` tier면 `userApiKey`를 **무시하고** 서버 키를 쓴다.
- * 즉 "사용자 키를 넘겼다"는 사실만으로는 서버 키 fallback이 막히지 않는다.
- *
- * 공개 API(`/api/v1`)는 서버 비용을 쓰면 안 되므로 호출 전에 이 두 가지를 직접 보장한다:
- *  1. 모델이 `byok` 등급일 것 (`requiresByokKey`가 core의 분류와 같은 함수다).
- *  2. core에 넘기는 tier가 `pro`가 아닐 것 — `tierForByokOnly`가 `pro`를 `member`로 내린다.
- */
-export function tierForByokOnly(tier: Tier): Tier {
-    return tier === 'pro' ? 'member' : tier;
-}
-
-/**
- * 캐시 적중 확인용 자리표시 키. 캐시 조회는 core에서 BYOK 게이트(키 없으면 `key_error`) **뒤**에
- * 있어서, 키가 없는 사용자도 공유 캐시를 읽으려면 게이트를 통과할 값이 필요하다.
- *
- * 안전한 이유: `cacheOnly`(core의 `skipEnqueueIfMiss`)는 캐시가 비면 LLM 호출 전에
- * `miss_no_trigger`로 끝난다. 그리고 `assertByokOnlyRouting`이 이 값을 `cacheOnly`가 아닌 호출에는
- * 거절하고, 모델이 `byok` 등급·non-pro tier라 서버 키가 선택될 수도 없다 — 어느 경로로도
- * 이 문자열이 provider에 가거나 서버 키로 바뀌지 않는다.
- */
-export const CACHE_PROBE_KEY_PLACEHOLDER = 'siglens-cache-probe-no-llm-call';
+import type { KeyPolicy, Tier } from '@y0ngha/siglens-core';
 
 /**
  * 분석을 요청하는 주체. 쿠키 액션은 `getCurrentUser()`·`resolveTierAndByok`로 만들고, 공개 API는
@@ -30,16 +6,24 @@ export const CACHE_PROBE_KEY_PLACEHOLDER = 'siglens-cache-probe-no-llm-call';
  */
 export interface AnalysisCaller {
     readonly userId: string | null;
+    /** 호출자의 실제 tier. BYOK 전용이어도 그대로 넘긴다 — 타임프레임 접근·정보 깊이에만 쓰인다. */
     readonly tier: Tier;
     readonly userApiKey?: string;
     /**
-     * `true`면 서버 키가 선택될 수 있는 호출을 core에 보내기 전에 거절한다
-     * (`assertByokOnlyRouting`). 쿠키 액션은 켜지 않는다(서버 키가 정책상 맞는 경로다).
+     * `true`면 core에 `keyPolicy: 'byok-only'`를 보낸다: **모델 등급·tier와 무관하게** 사용자 키로만
+     * LLM을 부르고 서버 키는 읽지 않으며 서버 키 provider fallback도 꺼진다. 캐시 적중은 키 없이도
+     * 돌려준다 — 모든 종류가 같다(`skipEnqueueIfMiss`의 확인 호출은 core가 키 게이트 전에 적중을 돌려주고, 미스면
+     * `miss_no_trigger`로 끝낸다). 공개 API(`/api/v1`)만 켠다 — 쿠키 액션은 켜지 않아
+     * 기본 정책(`tier`)을 그대로 쓴다.
      */
     readonly byokOnly?: boolean;
 }
 
-/** BYOK 전용 호출이 서버 키를 쓸 수 있는 형태로 만들어졌다 — 호출자 버그라 상위가 500으로 다룬다. */
+/**
+ * BYOK 전용 라우팅 불변식 위반 — 호출자 버그라 상위가 500으로 다룬다. 던지는 곳은 둘이다:
+ * 키 없이(또는 빈 키로) 생성하려는 호출(`resolveCallerKeyOptions`), 그리고 BYOK 전용 표시 없이 생성하려는
+ * 호출(공개 API 러너의 `run`). 둘 다 서버 키 경로가 열릴 수 있는 형태라 core를 부르기 전에 막는다.
+ */
 export class ByokOnlyRoutingError extends Error {
     constructor(reason: string) {
         super(`BYOK-only routing violated: ${reason}`);
@@ -47,45 +31,42 @@ export class ByokOnlyRoutingError extends Error {
     }
 }
 
-export interface ByokOnlyRoutingInput {
-    readonly tier: Tier;
-    readonly modelId: ModelId;
-    readonly userApiKey: string | undefined;
-    readonly cacheOnly: boolean;
+/** core 분석 옵션에 그대로 펼쳐 넣는 키 관련 필드. */
+export interface CallerKeyOptions {
+    readonly keyPolicy?: Extract<KeyPolicy, 'byok-only'>;
+    readonly userApiKey?: string;
 }
 
 /**
- * core를 부르기 직전 마지막 방어선. 서버 키가 선택되거나 키가 비어 있는 호출은 던진다.
+ * `caller`에서 core에 보낼 키 정책과 사용자 키를 **한 곳에서** 만든다. 러너는 `userApiKey`·`keyPolicy`를
+ * 따로 조립하지 않고 이 결과만 펼친다 — `byokOnly` 호출자가 정책을 빠뜨린 채 core에 가는 일이 없다.
  *
- * @throws {ByokOnlyRoutingError}
+ * - 쿠키 액션(`byokOnly` 아님): 기본 정책이므로 `keyPolicy`는 싣지 않고 키가 있으면 `userApiKey`만 싣는다.
+ * - BYOK 전용: 항상 `keyPolicy: 'byok-only'`. 생성하는(`cacheOnly`가 아닌) 호출은 비어 있지 않은 사용자 키가
+ *   반드시 있어야 하고, 없으면 core를 부르기 전에 던진다. 캐시 확인 호출은 키 없이 보낸다 — core가 적중이면
+ *   그대로 돌려주고, 미스면 키 게이트 전에 `miss_no_trigger`로 끝난다.
+ *
+ * @throws {ByokOnlyRoutingError} BYOK 전용 호출자가 키 없이 생성하려 할 때.
  */
-export function assertByokOnlyRouting({
-    tier,
-    modelId,
-    userApiKey,
-    cacheOnly,
-}: ByokOnlyRoutingInput): void {
-    if (userApiKey === undefined || userApiKey === '')
-        throw new ByokOnlyRoutingError('no user API key');
-    if (userApiKey === CACHE_PROBE_KEY_PLACEHOLDER && !cacheOnly)
-        throw new ByokOnlyRoutingError('cache-probe key on a generating call');
-    if (!requiresByokKey(tier, modelId))
-        throw new ByokOnlyRoutingError(
-            `core would route ${modelId} on tier ${tier} to the server key`
-        );
-}
-
-/** `caller.byokOnly`일 때만 검사한다. 쿠키 액션 경로는 그대로 통과한다. */
-export function assertCallerRouting(
+export function resolveCallerKeyOptions(
     caller: AnalysisCaller,
-    modelId: ModelId,
     cacheOnly: boolean
-): void {
-    if (caller.byokOnly !== true) return;
-    assertByokOnlyRouting({
-        tier: caller.tier,
-        modelId,
-        userApiKey: caller.userApiKey,
-        cacheOnly,
-    });
+): CallerKeyOptions {
+    // 쿠키 액션 경로는 예전과 바이트 단위로 같다 — 값을 가공하지 않고 그대로 싣는다.
+    if (caller.byokOnly !== true)
+        return caller.userApiKey === undefined
+            ? {}
+            : { userApiKey: caller.userApiKey };
+    const userApiKey =
+        caller.userApiKey === undefined || caller.userApiKey === ''
+            ? undefined
+            : caller.userApiKey;
+    if (!cacheOnly && userApiKey === undefined)
+        throw new ByokOnlyRoutingError(
+            'generating call without a user API key'
+        );
+    return {
+        keyPolicy: 'byok-only',
+        ...(userApiKey === undefined ? {} : { userApiKey }),
+    };
 }

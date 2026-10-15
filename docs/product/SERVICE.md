@@ -49,6 +49,15 @@ Investors who want a single, consolidated interpretation of multiple indicators.
 5. On-demand AI re-analysis
 ```
 
+## Public API
+
+```
+REST API (/api/v1) + OpenAPI 3.1 (/api/v1/openapi.json) + Agent Skill (SKILL.md).
+Same data tools as the ai.siglens.io agent; API key per member (created at /account).
+AI analysis runs on the caller's own LLM key (BYOK); cached analyses are free.
+Developer portal: /developers.
+```
+
 ## 운영 기능
 
 ```

@@ -64,6 +64,13 @@ import {
     MAX_SEARCH_RESULTS,
     searchTicker,
 } from '../../lib/searchTicker';
+import {
+    API_UNTRANSLATED_CACHE_TTL,
+    buildApiTickerSearchCacheKey,
+    buildTickerSearchCacheKey,
+    TICKER_SEARCH_CACHE_TTL,
+} from '../../lib/cacheKeys';
+import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',
@@ -476,6 +483,123 @@ describe('searchTicker', () => {
 
         await searchTicker('AAPL');
         expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('서버 키 LLM을 막은 흐름(공개 API)은 번역을 부르지 않고, 번역 없는 결과는 웹 캐시가 아닌 API 전용 키(1시간)에 쓴다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        searchByNameMock.mockResolvedValue([]);
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        const result = await runWithoutServerLlm(() => searchTicker('AAPL'));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(result.map(r => r.symbol)).toEqual(['AAPL']);
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(setKoreanTickersMock).not.toHaveBeenCalled();
+        expect(mockCache.set).toHaveBeenCalledTimes(1);
+        expect(mockCache.set).toHaveBeenCalledWith(
+            buildApiTickerSearchCacheKey('AAPL'),
+            result,
+            API_UNTRANSLATED_CACHE_TTL
+        );
+        expect(API_UNTRANSLATED_CACHE_TTL).toBeLessThanOrEqual(3600);
+        expect(mockCache.set).not.toHaveBeenCalledWith(
+            buildTickerSearchCacheKey('AAPL'),
+            expect.anything(),
+            expect.anything()
+        );
+    });
+
+    it('API 전용 키는 사용자 입력 앞의 고정 접두라 웹 질의로 만들 수 없다', () => {
+        expect(buildTickerSearchCacheKey('x:api-untranslated')).not.toBe(
+            buildApiTickerSearchCacheKey('x')
+        );
+        expect(buildApiTickerSearchCacheKey('x')).toMatch(
+            /^ticker:search:api-untranslated:v3:/
+        );
+        // 웹 키는 어떤 입력이든 `ticker:search:v3:`로 시작해 API 접두와 겹치지 않는다.
+        expect(buildTickerSearchCacheKey('api-untranslated:v3:x')).not.toBe(
+            buildApiTickerSearchCacheKey('x')
+        );
+    });
+
+    describe('API가 남긴 번역 없는 결과와 웹', () => {
+        let store: Map<string, unknown>;
+        beforeEach(() => {
+            store = new Map();
+            mockCache.get.mockImplementation(
+                async (key: string) => store.get(key) ?? null
+            );
+            mockCache.set.mockImplementation(
+                async (key: string, value: unknown) => {
+                    store.set(key, value);
+                }
+            );
+            searchBySymbolMock.mockResolvedValue([apple]);
+            searchByNameMock.mockResolvedValue([]);
+            getKoreanNamesMock.mockResolvedValue({});
+            translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+        });
+
+        it('(a) 같은 질의를 API로 다시 부르면 캐시를 적중해 FMP를 다시 부르지 않는다', async () => {
+            await runWithoutServerLlm(() => searchTicker('AAPL'));
+            await new Promise(resolve => setImmediate(resolve));
+            const again = await runWithoutServerLlm(() => searchTicker('AAPL'));
+
+            expect(again.map(r => r.symbol)).toEqual(['AAPL']);
+            expect(searchBySymbolMock).toHaveBeenCalledTimes(1);
+            expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        });
+
+        it('(b) 그 뒤 웹 호출은 API 항목에 가려지지 않고 번역을 정확히 한 번 시도하며, 치유된 결과를 이어서 내준다', async () => {
+            await runWithoutServerLlm(() => searchTicker('AAPL'));
+            await new Promise(resolve => setImmediate(resolve));
+
+            await searchTicker('AAPL');
+            await new Promise(resolve => setImmediate(resolve));
+            expect(searchBySymbolMock).toHaveBeenCalledTimes(2);
+            expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+            expect(store.has(buildTickerSearchCacheKey('AAPL'))).toBe(true);
+
+            // 웹 캐시가 채워진 뒤의 웹 호출은 캐시에서 나가고 다시 번역하지 않는다.
+            await searchTicker('AAPL');
+            expect(searchBySymbolMock).toHaveBeenCalledTimes(2);
+            expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('(c) 웹은 API 전용 키를 읽지 않는다 — 웹 경로의 키·수명은 그대로다', async () => {
+            await searchTicker('AAPL');
+            await new Promise(resolve => setImmediate(resolve));
+            expect(mockCache.get).not.toHaveBeenCalledWith(
+                buildApiTickerSearchCacheKey('AAPL')
+            );
+            expect(mockCache.set).toHaveBeenCalledTimes(1);
+            expect(mockCache.set).toHaveBeenCalledWith(
+                buildTickerSearchCacheKey('AAPL'),
+                expect.anything(),
+                TICKER_SEARCH_CACHE_TTL
+            );
+        });
+    });
+
+    it('서버 키 LLM을 막은 흐름이라도 번역이 이미 다 된 결과는 캐시에 쓴다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        searchByNameMock.mockResolvedValue([]);
+        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        await runWithoutServerLlm(() => searchTicker('AAPL'));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(mockCache.set).toHaveBeenCalledTimes(1);
+        expect(mockCache.set).toHaveBeenCalledWith(
+            buildTickerSearchCacheKey('AAPL'),
+            expect.anything(),
+            TICKER_SEARCH_CACHE_TTL
+        );
     });
 
     /**

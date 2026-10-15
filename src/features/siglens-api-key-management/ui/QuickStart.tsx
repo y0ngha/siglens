@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
+import { API_KEY_ENV_NAME, API_KEY_PREFIX } from '@/shared/config/publicApi';
 import { cn } from '@/shared/lib/cn';
 
 interface QuickStartProps {
@@ -13,7 +14,7 @@ export function QuickStart({ apiBaseUrl, skillHref }: QuickStartProps) {
     const t = useTranslations('features.siglens-api-key-management');
     const curlExample = [
         `curl -s -X POST ${apiBaseUrl}/tools/search_ticker \\`,
-        '  -H "Authorization: Bearer $SIGLENS_API_KEY" \\',
+        `  -H "Authorization: Bearer $${API_KEY_ENV_NAME}" \\`,
         '  -H "Content-Type: application/json" \\',
         `  -d '{"query":"apple"}'`,
     ].join('\n');
@@ -26,7 +27,7 @@ export function QuickStart({ apiBaseUrl, skillHref }: QuickStartProps) {
                 <li>
                     {t('SiglensApiKeySection.step1')}
                     <code className="mt-1 block rounded-lg bg-secondary-950 px-3 py-2 font-mono text-xs break-all text-secondary-100">
-                        export SIGLENS_API_KEY=slk_…
+                        export {API_KEY_ENV_NAME}={API_KEY_PREFIX}…
                     </code>
                 </li>
                 <li>

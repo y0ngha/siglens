@@ -1008,7 +1008,7 @@
                 "cleared": "기본 모델 설정을 해제했어요.",
                 "description": "API로 새 분석을 만들 때 model을 생략하면 이 모델을 써요. 분석은 내가 등록한 BYOK 키로 만들어지고 비용도 내 키에 청구돼요.",
                 "goToByok": "AI 모델 API 키 등록하러 가기",
-                "hint": "직접 새로 생성할 수 있는 건 BYOK 등급 모델뿐이에요. 무료·회원 등급 모델은 이미 만들어진 공유 분석만 읽을 수 있어요. 키를 등록한 회사의 모델만 목록에 나와요.",
+                "hint": "등급과 상관없이 모든 모델로 새 분석을 만들 수 있어요. 단, 그 모델을 만든 회사의 내 키가 필요해요. 웹에서는 무료·회원 모델이 시그렌즈 서버 키로 돌지만, API에서는 서버 키를 쓰지 않아요. 키를 등록한 회사의 모델만 목록에 나와요.",
                 "noKeys": "직접 만들 수 있는 모델이 아직 없어요. {v0} 중 하나의 BYOK 키를 등록하면 여기서 모델을 고를 수 있어요.",
                 "notSetOption": "설정 안 함 (요청마다 model 지정)",
                 "saveButton": "저장",
@@ -1027,6 +1027,7 @@
                 "creating": "만드는 중…",
                 "description": "API 키로 AI 에이전트나 스크립트에서 시세·차트·뉴스 같은 시그렌즈 데이터를 조회할 수 있어요.",
                 "dismiss": "보관했어요",
+                "docsLink": "API 문서 보기",
                 "downloadSkill": "Skill 내려받기",
                 "emailNotVerified": "이메일 인증을 마친 뒤에 API 키를 만들 수 있어요. 계정 이메일을 먼저 인증해 주세요.",
                 "empty": "아직 만든 키가 없어요.",
@@ -1763,6 +1764,11 @@
                 "title": "AAPL, NVDA, TSLA 백테스트 — 기술적 신호 사후 검증"
             },
             "backtestingOgAlt": "{v0} AI 백테스팅 결과",
+            "developers": {
+                "description": "시세, 차트 지표, 뉴스, 옵션, 재무, 저장된 AI 분석을 API로 가져가세요. AI 분석은 내 LLM 키(BYOK)로 만들고, OpenAPI 문서와 Claude Skill도 받을 수 있어요.",
+                "metaTitle": "시그렌즈 개발자 API: 종목 분석 데이터를 HTTP로 가져가기",
+                "title": "개발자 API"
+            },
             "economy": {
                 "kr": {
                     "description": "한국 경제 지표를 한 페이지에서 확인해요. 기준금리·소비자물가·고용률·GDP 성장률 같은 핵심 지표부터 국고채 금리, 수출 증가율까지 모아서 보여드리고, 다가오는 국내 경제 발표 일정도 함께 안내해드려요.",
@@ -2223,6 +2229,12 @@
             "Breadcrumb": {
                 "46c31f": "탐색 경로"
             },
+            "CodeBlock": {
+                "buttonLabel": "{action}: {label}",
+                "copied": "복사됨",
+                "copy": "복사",
+                "copyFailed": "복사 실패"
+            },
             "ConsentCheckboxGroup": {
                 "1f835a": "동의 항목",
                 "337a9a": "이용약관 자세히 보기",
@@ -2656,6 +2668,122 @@
                 "search": "종목 검색",
                 "web": "웹 검색"
             }
+        },
+        "developers": {
+            "authentication": {
+                "byokBody": "run_fresh_analysis는 공유 캐시에 분석이 있으면 비용 없이 돌려주고, 없을 때만 계정에 등록한 내 LLM 키로 새로 만들어요. 새로 만들 때는 어떤 모델이든 그 모델을 만든 회사의 키를 등록해 두어야 하고, 모델은 계정 설정에서 고르거나 요청의 model 인자로 정해요. 시그렌즈의 서버 AI 키는 쓰지 않아요.",
+                "byokTitle": "AI 분석은 내 키로 (BYOK)",
+                "cookies": "로그인 세션 쿠키는 읽지 않아요. 브라우저에서 로그인한 상태여도 키가 없으면 거절돼요.",
+                "failure": "키가 없거나 형식이 틀렸거나, 폐기됐거나, 모르는 키이면 이유를 알려 주지 않고 모두 401 invalid_api_key로 답해요.",
+                "headerLabel": "Authorization 헤더 예시",
+                "revoke": "키는 계정 설정에서 언제든 폐기할 수 있고, 폐기하면 바로 막혀요.",
+                "sub": "문서를 내려받는 경로를 뺀 모든 요청에 API 키를 Bearer 토큰으로 보내요.",
+                "title": "인증"
+            },
+            "downloads": {
+                "action": "{file} 내려받기",
+                "baseUrl": "기본 URL",
+                "jsonBody": "OpenAPI 3.1 문서(JSON)예요. 코드 생성기, Postman, Swagger 같은 도구에 가져가세요.",
+                "skillBody": "Claude Code와 Claude.ai Skills용 SKILL.md예요.",
+                "sub": "인증 없이 받을 수 있고, 도구가 바뀌면 파일 내용도 함께 바뀌어요.",
+                "title": "내려받기",
+                "yamlBody": "같은 OpenAPI 문서를 YAML로 받아요."
+            },
+            "hero": {
+                "byok": "AI 분석은 내가 등록한 LLM 키(BYOK)로 만들어요. 시그렌즈가 AI 비용을 대지 않고, 이미 만들어진 캐시 분석을 읽는 데는 비용이 들지 않아요.",
+                "createKey": "API 키 만들기",
+                "eyebrow": "개발자",
+                "lede": "AI 에이전트가 쓰는 데이터 도구를 HTTP로 그대로 호출할 수 있어요. 종목 검색, 시세, 차트와 지표, 뉴스, 옵션, 재무, 의회 거래, 경제 지표와 저장된 AI 분석을 가져갈 수 있어요.",
+                "quickstart": "빠른 시작 보기",
+                "title": "시그렌즈 API 문서"
+            },
+            "localeSection": {
+                "body": "{header} 헤더에 ko, en, ja, zh 중 하나를 보내면 돼요. 기본값은 웹사이트와 같은 ko라서 웹에서 만들어진 캐시 분석을 그대로 받고, 헤더가 없거나 모르는 값이어도 ko로 처리해요.",
+                "exampleLabel": "언어 헤더 예시",
+                "sub": "번역되는 텍스트의 언어를 고를 수 있어요.",
+                "title": "언어"
+            },
+            "quickstart": {
+                "meLabel": "키 상태 확인 curl 예시",
+                "skillBody": "SKILL.md를 Skill로 등록하면 Claude가 필요할 때 이 API를 직접 불러요. Skill은 {env} 환경 변수의 키를 써요. Claude Code는 아래 명령으로 내려받아 두면 돼요.",
+                "skillClaudeAi": "Claude.ai에서는 siglens 폴더에 SKILL.md를 넣고 zip으로 묶어 Skills 설정에서 올려요.",
+                "skillLabel": "SKILL.md 설치 명령",
+                "skillTitle": "Claude Code·Claude.ai에서 쓰기",
+                "step1Body": "계정 설정의 시그렌즈 API 영역에서 키를 만들어요. 이메일 인증을 마친 회원이 만들 수 있고, 키는 최대 {max}개까지 가질 수 있어요. 키 원문은 만들 때 한 번만 보이니 바로 복사해 두세요.",
+                "step1Link": "계정 설정에서 키 만들기",
+                "step1Title": "API 키 만들기",
+                "step2Body": "아래 이름으로 넣어 두면 이 문서의 예제와 Skill이 그대로 동작해요.",
+                "step2Label": "환경 변수 설정 명령",
+                "step2Title": "환경 변수에 넣기",
+                "step3Body": "먼저 키 상태와 남은 한도를 확인하고, 도구를 하나 불러 보세요.",
+                "step3Title": "호출해 보기",
+                "sub": "키를 만들고, 환경 변수에 넣고, 한 번 호출해 보세요.",
+                "title": "빠른 시작",
+                "toolLabel": "{name} 호출 curl 예시"
+            },
+            "rateLimits": {
+                "body": "도구 호출은 분당 {dataPerMinute}회, 하루 {dataPerDay, number}회까지예요. 캐시에 없는 분석을 새로 만드는 호출은 이와 별개로 분당 {aiPerMinute}회, 하루 {aiPerDay, number}회까지예요. 캐시에 있는 분석을 읽는 호출은 도구 한도만 써요.",
+                "colHeader": "헤더",
+                "colMeaning": "뜻",
+                "headerAiLimit": "새 분석을 만드는 AI 한도예요. 생성 중 스트리밍 응답에만 붙어요.",
+                "headerAiRemaining": "AI 한도 창에 남은 생성 횟수예요.",
+                "headerAiReset": "AI 한도 창이 끝나는 시각이에요(epoch 초).",
+                "headerLimit": "도구 한도예요. 분 단위 창 기준이고, 초과해서 거절될 때는 넘긴 창 기준이에요.",
+                "headerRemaining": "그 창에 남은 횟수예요.",
+                "headerReset": "그 창이 끝나는 시각이에요(epoch 초).",
+                "headerRetryAfter": "429나 503을 받은 뒤 다시 시도하기까지 기다릴 초예요.",
+                "over": "한도를 넘기면 HTTP 429와 Retry-After 헤더(기다릴 초)가 돌아와요. 한도 저장소에 문제가 있을 때는 제한 없이 열어 두지 않고 503 rate_limiter_unavailable로 거절해요.",
+                "sub": "한도는 계정 단위라 키를 여러 개 만들어도 함께 써요.",
+                "tableCaption": "한도 관련 응답 헤더",
+                "title": "사용 한도",
+                "unmetered": "한도를 세기 전에 거절된 응답(401, 400, 404, 413)에는 한도 헤더가 붙지 않아요."
+            },
+            "responses": {
+                "codesNote": "오류 코드와 설명은 API가 쓰는 영어 그대로 적었어요.",
+                "codesTitle": "오류 코드",
+                "colCode": "상태와 코드",
+                "colMeaning": "설명",
+                "errorAdvice": "상태 코드와 error.code로 분기하세요. error.message는 사람이 읽는 영어 문장이라 파싱하지 말고, 모르는 코드는 상태 코드로 처리하세요.",
+                "errorLabel": "실패 응답 예시",
+                "errorTitle": "실패",
+                "streamedNote": "run_fresh_analysis는 스트리밍이 시작된 뒤에 이 오류가 나면 200 본문의 error 필드로 와요.",
+                "sub": "성공과 실패는 모양이 달라서 상태 코드와 본문의 최상위 키로 구분해요.",
+                "successLabel": "성공 응답 예시",
+                "successTitle": "성공",
+                "tableCaption": "오류 코드 목록",
+                "title": "응답과 오류",
+                "truncated": "결과가 도구별 크기 상한을 넘으면 meta.truncated가 true가 되고, data는 truncated와 preview 필드만 담은 객체로 줄어요. 봉 개수를 줄이는 식으로 인자를 좁혀서 다시 호출하세요."
+            },
+            "streaming": {
+                "disconnect": "연결을 끊어도 생성은 취소되지 않아요. 끝까지 진행되어 내 키로 비용이 나가고, 결과는 공유 캐시에 저장돼서 다음에 부르면 캐시에서 바로 받아요.",
+                "early": "캐시 적중과, 인증·한도·인자·모델·키 누락처럼 생성 전에 알 수 있는 실패는 일반 상태 코드와 일반 JSON으로 와요.",
+                "exampleLabel": "새 분석 생성 curl 예시",
+                "how": "캐시에 없는 분석을 새로 만들 때는 보통 1분 안팎이 걸리고, 길어도 도구 마감인 {deadline}초 안에 끝나요(넘기면 tool_timeout 오류예요). 인증, 한도, 인자, 모델, 키 확인을 모두 통과하면 응답이 바로 HTTP 200으로 시작하고, 연결이 끊기지 않도록 줄바꿈 공백 바이트를 주기적으로 보낸 뒤 마지막에 JSON 본문을 써요.",
+                "parse": "JSON은 앞쪽 공백을 허용하므로 본문 전체를 그대로 파싱하면 돼요. 이미 200을 보낸 뒤의 실패도 200 본문으로 오기 때문에, 이 도구는 상태 코드와 상관없이 error 필드가 있는지 확인해야 해요.",
+                "sub": "run_fresh_analysis에만 해당해요. 다른 도구는 일반 JSON 응답이에요.",
+                "title": "새 분석 생성과 스트리밍"
+            },
+            "toc": {
+                "label": "개발자 문서 목차"
+            },
+            "tools": {
+                "argsCaption": "{name} 인자",
+                "argsTitle": "인자",
+                "byokBadge": "BYOK",
+                "byokNote": "새 분석을 만들 때는 내 LLM 키가 쓰이고 AI 한도를 따로 써요. 공유 캐시에서 읽는 경우는 무료예요.",
+                "colArgument": "인자",
+                "colDescription": "설명",
+                "curlLabel": "{name} curl 예시",
+                "enumMore": "나머지 {count}개 보기",
+                "indexLabel": "도구 바로가기",
+                "noArgs": "인자가 없는 도구예요. 본문을 비우거나 빈 JSON 객체를 보내면 돼요.",
+                "note": "도구 설명과 인자 설명은 AI 에이전트가 읽도록 영어로 쓰여 있어서 번역하지 않고 그대로 보여드려요. 이 목록은 GET /tools, OpenAPI 문서와 같은 소스라서 도구가 늘면 함께 늘어요. 설명에 나오는 도구 중 이 목록에 없는 것은 무시하세요.",
+                "optional": "선택",
+                "required": "필수",
+                "sub": "도구마다 경로가 하나씩 있고, 본문은 인자 JSON이에요.",
+                "title": "도구 레퍼런스"
+            },
+            "updatedAt": "마지막 업데이트 {date}"
         },
         "guide": {
             "aliasesLabel": "다른 이름",
@@ -4177,6 +4305,7 @@
                 "531f6a": "문의하기",
                 "5f5d12": "사이트 정보",
                 "693b62": "투자 면책 고지",
+                "developersLink": "개발자 API",
                 "guideLink": "차트 가이드",
                 "symbolsLink": "많이 찾는 종목"
             },

@@ -16,7 +16,7 @@ import { resolveReasoning } from '@/shared/lib/byokGate';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
-    assertCallerRouting,
+    resolveCallerKeyOptions,
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
 
@@ -50,7 +50,7 @@ export async function executeNewsAnalysis({
     signal,
     cacheOnly = false,
 }: ExecuteNewsAnalysisParams): Promise<RunNewsAnalysisResult> {
-    assertCallerRouting(caller, modelId, cacheOnly);
+    const keyOptions = resolveCallerKeyOptions(caller, cacheOnly);
     // Resolve profile once; derive both assetClass and currency from it
     // (same pattern as runOverallAnalysisAction/prewarmOverall).
     const marketProfile = await resolveMarketProfile(symbol);
@@ -93,8 +93,6 @@ export async function executeNewsAnalysis({
         // core는 통화를 심볼에서 추론하지 않는다 — 한국 종목 프레이밍·실적 추정 통화.
         currency: descriptor.priceFormat.currency,
         signal,
-        ...(caller.userApiKey !== undefined
-            ? { userApiKey: caller.userApiKey }
-            : {}),
+        ...keyOptions,
     });
 }

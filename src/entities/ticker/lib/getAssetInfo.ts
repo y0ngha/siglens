@@ -13,7 +13,9 @@ import type {
     AssetTranslationRepository,
 } from '@/shared/db/types';
 import {
+    API_UNTRANSLATED_CACHE_TTL,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
+    buildApiAssetInfoCacheKey,
     buildAssetInfoProvisionalCacheKey,
 } from './cacheKeys';
 import { tryGetDatabaseClient } from '@/shared/db/client';
@@ -22,6 +24,7 @@ import {
     findExactUsMatch,
     searchBySymbol,
 } from './fmpTickerApi';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
 import { translateCompanyNames } from './koreanTranslator';
 import {
     getKoreanNames,
@@ -84,6 +87,27 @@ function withCanonicalKoreanName(info: AssetInfo | null): AssetInfo | null {
     if (info === null) return info;
     const canonical = CANONICAL_KOREAN_NAMES.get(info.symbol);
     return canonical === undefined ? info : { ...info, koreanName: canonical };
+}
+
+/**
+ * 서버 키 LLM을 못 쓰는 흐름(공개 API)이면 번역 없이 영문명 결과를 API 전용 키에 1시간 두고 `true`를 돌려준다.
+ * 웹의 12시간 임시 항목은 쓰지 않는다(웹의 번역 시도까지 막는다) — API 전용 키는 반복 호출이 FMP/Yahoo를
+ * 다시 부르지 않게 할 뿐이다. 웹은 이 키를 읽지 않고, 웹이 번역해 DB에 넣으면 DB 조회가 먼저 잡는다.
+ * 웹 흐름이면 아무것도 하지 않고 `false` — 호출부가 평소처럼 번역을 시작한다.
+ */
+function cacheUntranslatedForApi(
+    upper: string,
+    info: AssetInfo,
+    cache: CacheProvider | null
+): boolean {
+    if (isServerLlmAllowed()) return false;
+    setCacheBestEffort(
+        cache,
+        buildApiAssetInfoCacheKey(upper),
+        info,
+        API_UNTRANSLATED_CACHE_TTL
+    );
+    return true;
 }
 
 function setCacheBestEffort(
@@ -276,6 +300,8 @@ async function resolveKrEquityAssetInfo(
         return info;
     }
 
+    if (cacheUntranslatedForApi(upper, info, cache)) return info;
+
     const exchange = krExchangeOf(upper);
     fireAndForget(
         translateAndPersist(
@@ -364,7 +390,8 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
  * 심볼 하나의 AssetInfo를 해석한다. 정본 덮어쓰기는 호출자(`getAssetInfo`)가 한다.
  *
  * 해석 순서: `crypto_assets` DB → FMP 크립토 목록 → `asset_translations` DB →
- * Redis 임시 항목(12시간) → 한국 종목(yahoo) → FMP 검색.
+ * Redis 임시 항목(12시간) → (서버 키 LLM을 못 쓰는 공개 API 흐름만) API 전용 번역 없는 항목(1시간) →
+ * 한국 종목(yahoo) → FMP 검색.
  *
  * ⚠️ **Redis를 맨 앞에서 읽지 않는다.** 예전에는 `asset-info:<SYM>`을 먼저 읽고
  * 번역 완료 항목을 1년 TTL로 써 두었는데, 2026-10 실측에서 Redis의 32,667개 키가
@@ -382,7 +409,9 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
  * Redis에는 번역이 아직 없거나 DB에 저장하지 못한 심볼의 임시 항목(12시간, 전용 키
  * `buildAssetInfoProvisionalCacheKey`)만 남는다. 읽기가 DB 미스
  * 뒤라서, 번역이 `asset_translations`에 들어가는 즉시 한글명이 나가고 임시
- * 항목의 영문 이름이 12시간 늦게까지 남지 않는다.
+ * 항목의 영문 이름이 12시간 늦게까지 남지 않는다. 공개 API 흐름은 번역을 하지 않으므로 웹 임시 항목을
+ * 쓰지 않고(웹의 번역 시도를 막는다) 전용 키 `buildApiAssetInfoCacheKey`에 1시간만 둔다 — 반복 호출이
+ * FMP/Yahoo를 다시 부르지 않게 하는 용도이고, 웹은 이 키를 읽지 않는다.
  */
 async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
     const upper = symbol.toUpperCase();
@@ -436,6 +465,13 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
         try {
             const provisional = await cache.get<AssetInfo>(cacheKey);
             if (provisional) return provisional;
+            // 서버 키 LLM을 못 쓰는 흐름(공개 API)이 남긴 번역 없는 항목 — 웹은 이 키를 읽지 않는다.
+            if (!isServerLlmAllowed()) {
+                const untranslated = await cache.get<AssetInfo>(
+                    buildApiAssetInfoCacheKey(upper)
+                );
+                if (untranslated) return untranslated;
+            }
         } catch {
             // Graceful degradation: cache read failure falls through to provider fetch.
         }
@@ -490,6 +526,8 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
         );
         return info;
     }
+
+    if (cacheUntranslatedForApi(upper, info, cache)) return info;
 
     fireAndForget(
         translateAndPersist(

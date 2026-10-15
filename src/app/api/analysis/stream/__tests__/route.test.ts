@@ -1559,6 +1559,30 @@ describe('POST /api/analysis/stream', () => {
             >;
             expect(Object.hasOwn(opts, 'userApiKey')).toBe(false);
         });
+
+        it('웹 경로는 core에 keyPolicy를 보내지 않는다 — 기본 tier 정책(서버 키 정책)이 그대로다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger' as const,
+            });
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'ok',
+                tier: 'member',
+                userApiKey: 'sk-user',
+            } as never);
+
+            const response = await POST(makeRequest(undefined, MODEL_BODY));
+            await collectSseEvents(response);
+
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(
+                    args =>
+                        (args[5] as { modelId?: unknown } | undefined)
+                            ?.modelId !== undefined
+                );
+            expect(call).toBeDefined();
+            expect(Object.hasOwn(call?.[5] as object, 'keyPolicy')).toBe(false);
+        });
     });
 
     describe('예기치 못한 예외 → JSON 500', () => {
