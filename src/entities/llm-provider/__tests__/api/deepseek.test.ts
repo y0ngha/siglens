@@ -310,11 +310,9 @@ describe('callDeepseekChat', () => {
             await expect(
                 callDeepseekChat({
                     ...FLASH_OPTIONS,
-                    model: 'gpt-5.6-luna',
+                    model: 'gpt-6-luna',
                 })
-            ).rejects.toThrow(
-                '[deepseek] Non-DeepSeek model spec: gpt-5.6-luna'
-            );
+            ).rejects.toThrow('[deepseek] Non-DeepSeek model spec: gpt-6-luna');
             expect(mockCreate).not.toHaveBeenCalled();
         });
     });

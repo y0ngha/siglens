@@ -52,8 +52,8 @@ export async function callAiProviderRouter(
 
     const provider = getProviderForModel(options.model);
 
-    // Internal model key (e.g. 'claude-haiku-4-5') → provider API model ID
-    // (e.g. 'claude-haiku-4-5-20251001'). The two may differ; always use apiModelId
+    // Internal model key (e.g. 'claude-haiku-5-5') → provider API model ID
+    // (a dated snapshot id for older models). The two may differ; always use apiModelId
     // for the actual SDK call so the provider recognises the model.
     const apiOptions: ProviderCallOptions = {
         ...rest,

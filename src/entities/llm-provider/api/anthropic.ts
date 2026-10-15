@@ -121,17 +121,27 @@ export async function callAnthropicChat({
                           }
                         : {}),
                     ...(adaptiveConfig !== undefined
-                        ? adaptiveConfig.mode === 'disabled'
-                            ? { thinking: { type: 'disabled' as const } }
-                            : {
+                        ? adaptiveConfig.mode === 'between_tools'
+                            ? {
+                                  // Sonnet 5.5의 추론 OFF — `disabled`는 400이다.
+                                  // `display`·`output_config.effort xhigh`와 함께 보낼 수
+                                  // 없으므로 thinking 하나만 보낸다. SDK 타입에 아직
+                                  // 없어 단언한다. 챗은 tool_choice를 쓰지 않는다.
                                   thinking: {
-                                      type: 'adaptive' as const,
-                                      display: 'omitted' as const,
-                                  },
-                                  output_config: {
-                                      effort: adaptiveConfig.effort,
-                                  },
+                                      type: 'between_tools',
+                                  } as unknown as Anthropic.Messages.ThinkingConfigParam,
                               }
+                            : adaptiveConfig.mode === 'disabled'
+                              ? { thinking: { type: 'disabled' as const } }
+                              : {
+                                    thinking: {
+                                        type: 'adaptive' as const,
+                                        display: 'omitted' as const,
+                                    },
+                                    output_config: {
+                                        effort: adaptiveConfig.effort,
+                                    },
+                                }
                         : { temperature: spec.temperature }),
                 },
                 deadline.signal !== undefined

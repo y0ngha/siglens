@@ -142,9 +142,9 @@ export function AnalysisSettingsMenu({
                         onChange={setReasoning}
                         canUse={canUseReasoning}
                         onLockedClick={handleLockedReasoningClick}
-                        // `disabled`가 `canUse`보다 우선한다 — 비회원이 haiku를
+                        // `disabled`가 `canUse`보다 우선한다 — 비회원이 토글이 무의미한 모델을
                         // 고른 상태에서 가입 유도를 띄우면 "가입하면 열린다"는
-                        // 거짓 약속이 된다. haiku는 가입해도 열리지 않는다.
+                        // 거짓 약속이 된다. 그런 모델은 가입해도 열리지 않는다.
                         disabled={!isReasoningSupported}
                     />
                 </PopoverSurface>

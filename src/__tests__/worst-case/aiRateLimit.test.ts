@@ -47,17 +47,16 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // 어댑터가 provider로 좁히므로 어긋나면 429가 아니라 'Non-ChatGPT model spec'이
     // 먼저 던져져 이 스위트가 겨냥한 재시도 경로에 닿지 못한다.
     MODEL_SPECS: {
-        'claude-haiku-4-5': {
-            apiModelId: 'claude-haiku-4-5-20251001',
+        // 실제 claude-haiku-5-5 행과 같은 형태(adaptive, 온도 없음).
+        'claude-haiku-5-5': {
+            apiModelId: 'claude-haiku-5-5',
             provider: 'claude',
-            thinkingApi: 'budget',
-            maxOutputTokens: 8192,
-            temperature: 1.0,
+            thinkingApi: 'adaptive',
+            maxOutputTokens: 128_000,
             reasoning: {
-                off: { budgetTokens: 0 },
-                on: { budgetTokens: 0 },
+                off: { mode: 'disabled' },
+                on: { mode: 'adaptive', effort: 'high' },
                 default: 'off',
-                toggleable: false,
             },
         },
         'gpt-4.1-mini': {
@@ -84,7 +83,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
     },
     getProviderForModel: (model: string) => {
         const map: Record<string, string> = {
-            'claude-haiku-4-5': 'anthropic',
+            'claude-haiku-5-5': 'anthropic',
             'gpt-4.1-mini': 'openai',
             'gemini-3.6-flash': 'google',
         };
@@ -117,7 +116,7 @@ describe('AI provider 429 rate limit errors', () => {
         );
 
         await expect(
-            callAiProviderRouter({ ...BASE, model: 'claude-haiku-4-5' })
+            callAiProviderRouter({ ...BASE, model: 'claude-haiku-5-5' })
         ).rejects.toThrow('429');
     });
 

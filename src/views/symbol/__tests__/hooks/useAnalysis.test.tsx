@@ -502,7 +502,7 @@ describe('useAnalysis', () => {
             rerender({
                 isTierHydrated: true,
                 isModelHydrated: true,
-                modelId: 'claude-sonnet-5',
+                modelId: 'claude-sonnet-5-5',
             });
 
             await waitFor(() => {
@@ -511,7 +511,7 @@ describe('useAnalysis', () => {
             expect(mockSubmit).toHaveBeenCalledWith(
                 expect.objectContaining({
                     params: expect.objectContaining({
-                        modelId: 'claude-sonnet-5',
+                        modelId: 'claude-sonnet-5-5',
                     }),
                 })
             );

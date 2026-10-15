@@ -8,10 +8,10 @@ import type { ConversationTurn } from '@y0ngha/siglens-core';
 
 describe('findSpecByApiModelId', () => {
     it('유효한 apiModelId로 일치하는 ModelSpec을 반환한다', () => {
-        // MODEL_SPECS의 'claude-sonnet-5' 키는 apiModelId 'claude-sonnet-5'을 가진다.
-        const result = findSpecByApiModelId('claude-sonnet-5');
+        // MODEL_SPECS의 'claude-sonnet-5-5' 키는 apiModelId 'claude-sonnet-5-5'을 가진다.
+        const result = findSpecByApiModelId('claude-sonnet-5-5');
         expect(result).toBeDefined();
-        expect(result?.apiModelId).toBe('claude-sonnet-5');
+        expect(result?.apiModelId).toBe('claude-sonnet-5-5');
     });
 
     it('존재하지 않는 apiModelId는 undefined를 반환한다', () => {
