@@ -126,7 +126,9 @@ export async function callAnthropicChat({
                                   // Sonnet 5.5의 추론 OFF — `disabled`는 400이다.
                                   // `display`·`output_config.effort xhigh`와 함께 보낼 수
                                   // 없으므로 thinking 하나만 보낸다. SDK 타입에 아직
-                                  // 없어 단언한다. 챗은 tool_choice를 쓰지 않는다.
+                                  // 없어 단언한다(2026-10-15 실측으로 API가 이 형태를 받음).
+                                  // SDK가 이 값을 타입에 넣으면 단언을 지운다. 챗은
+                                  // tool_choice를 쓰지 않는다.
                                   thinking: {
                                       type: 'between_tools',
                                   } as unknown as Anthropic.Messages.ThinkingConfigParam,
