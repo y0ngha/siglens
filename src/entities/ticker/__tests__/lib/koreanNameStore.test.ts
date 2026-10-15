@@ -155,6 +155,59 @@ describe('searchByKoreanName', () => {
         ]);
     });
 
+    it('된소리·모음 표기 차이를 접는다 (`써클` → `서클 인터넷 그룹`)', async () => {
+        const circle: KoreanTickerEntry = {
+            symbol: 'CRCL',
+            name: 'Circle Internet Group',
+            koreanName: '서클 인터넷 그룹',
+            exchange: 'NYSE',
+            exchangeFullName: 'New York Stock Exchange',
+        };
+        mockRepository.findAll.mockResolvedValue([circle, apple]);
+
+        expect((await searchByKoreanName('써클')).map(r => r.symbol)).toEqual([
+            'CRCL',
+        ]);
+        // ㅐ/ㅔ — `애플`을 `에플`로 쳐도 걸린다.
+        expect((await searchByKoreanName('에플')).map(r => r.symbol)).toEqual([
+            'AAPL',
+        ]);
+    });
+
+    it('한글명의 영문 약어를 글자 이름으로 친 질의도 찾는다 (`에스케이하이닉스`)', async () => {
+        const hynix: KoreanTickerEntry = {
+            symbol: '000660.KS',
+            name: 'SK하이닉스',
+            koreanName: 'SK하이닉스',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+        };
+        mockRepository.findAll.mockResolvedValue([hynix, apple]);
+
+        const result = await searchByKoreanName('에스케이하이닉스');
+
+        expect(result.map(r => r.symbol)).toEqual(['000660.KS']);
+        expect(result[0].koreanName).toBe('SK하이닉스');
+    });
+
+    it('한 글자 질의는 글자 읽기 표기에 대 보지 않는다', async () => {
+        // `SK하이닉스`의 글자 읽기 `에스케이하이닉스`에는 `케`가 들어 있지만, 화면의
+        // 이름에는 없는 글자라 한 글자 `케`로는 걸리지 않아야 한다.
+        const hynix: KoreanTickerEntry = {
+            symbol: '000660.KS',
+            name: 'SK하이닉스',
+            koreanName: 'SK하이닉스',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+        };
+        mockRepository.findAll.mockResolvedValue([hynix]);
+
+        expect(await searchByKoreanName('케')).toEqual([]);
+        expect((await searchByKoreanName('에스케')).map(r => r.symbol)).toEqual(
+            ['000660.KS']
+        );
+    });
+
     it('공백뿐인 질의는 아무것도 반환하지 않는다', async () => {
         mockRepository.findAll.mockResolvedValue([apple, microsoft]);
         await expect(searchByKoreanName('  ')).resolves.toEqual([]);
@@ -217,7 +270,7 @@ describe('searchByKoreanName', () => {
         it('토막 하나라도 어긋나면 일치로 보지 않는다', async () => {
             mockRepository.findAll.mockResolvedValue([sealsq, silicon]);
             expect(await searchByKoreanName('실XYZ')).toEqual([]);
-            expect(await searchByKoreanName('애SQ')).toEqual([]);
+            expect(await searchByKoreanName('마SQ')).toEqual([]);
         });
     });
 
@@ -418,8 +471,8 @@ describe('searchByKoreanName', () => {
         expect(result[0].koreanName).toBe('실스큐');
     });
 
-    it('옛 표기는 검색 별칭으로 걸리되 반환값은 정본이다', async () => {
-        // `씰스큐`는 저장된 값이 아니라 `KOREAN_SEARCH_ALIASES`로 걸린다 — 아래
+    it('옛 표기는 검색 키 접기로 걸리되 반환값은 정본이다', async () => {
+        // `씰스큐`는 저장된 값이 아니라 된소리 접기(`씰`→`실`)로 정본에 걸린다 — 아래
         // 테스트가 저장된 값만으로는 안 걸린다는 것을 따로 고정한다.
         mockRepository.findAll.mockResolvedValue([laes]);
 
@@ -427,6 +480,12 @@ describe('searchByKoreanName', () => {
 
         expect(result.map(r => r.symbol)).toEqual(['LAES']);
         expect(result[0].koreanName).toBe('실스큐');
+    });
+
+    it('검색 별칭으로도 걸린다 (`실에스큐`)', async () => {
+        mockRepository.findAll.mockResolvedValue([laes]);
+        const result = await searchByKoreanName('실에스큐');
+        expect(result.map(r => r.symbol)).toEqual(['LAES']);
     });
 
     it('별칭에 없는 저장 이름으로는 걸리지 않는다', async () => {

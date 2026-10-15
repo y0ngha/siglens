@@ -3,6 +3,7 @@ import { KOREAN_SEARCH_SNAPSHOT_TTL_MS } from './cacheKeys';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import { KOREAN_SEARCH_ALIASES } from '@/shared/config/korean-search-aliases';
+import { koreanSearchKey, spellLatinLetters } from './koreanSearchKey';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import { DrizzleKoreanTickerRepository } from '../api';
 import type { KoreanTickerRepository } from '@/shared/db/types';
@@ -209,29 +210,48 @@ function withCanonical(entry: KoreanTickerEntry): KoreanTickerEntry {
 }
 
 /**
- * 검색 스냅샷 한 행 — 정본을 입힌 행에 매칭용 이름 목록을 미리 계산해 붙인다.
- * 키 입력마다 3.3만 행의 소문자화·공백 제거를 다시 하지 않으려는 것이다.
+ * 검색 스냅샷 한 행 — 정본을 입힌 행에 매칭 키 목록을 미리 계산해 붙인다.
+ * 키 입력마다 3.3만 행의 키 변환을 다시 하지 않으려는 것이다.
  * 반환할 때는 `koreanEntryToSearchResult`가 필드를 골라 담으므로 `searchNames`는
  * 밖으로 새지 않는다.
  */
 interface SearchableKoreanEntry extends KoreanTickerEntry {
-    /** 소문자·공백 제거한 정본 한글명과 검색 별칭(`KOREAN_SEARCH_ALIASES`). */
+    /** 정본 한글명과 검색 별칭(`KOREAN_SEARCH_ALIASES`)의 {@link koreanSearchKey}. */
     readonly searchNames: readonly string[];
+    /**
+     * 한글명의 영문 약어를 글자 이름으로 읽은 표기의 검색 키(`SK하이닉스` →
+     * `에스케이하이닉스`). 한글명에 영문이 없으면 `null`.
+     *
+     * `searchNames`와 따로 두는 이유: 글자 이름에는 `이`(e)·`지`(g)·`비`(b) 같은 한 음절이
+     * 많아, 한 글자 질의를 여기에 대면 화면의 이름에는 없는 글자로 영문이 섞인 종목이
+     * 무더기로 걸린다. {@link SPELLED_MIN_QUERY_LENGTH} 이상인 질의만 대 본다.
+     */
+    readonly spelledName: string | null;
 }
 
-const WHITESPACE_REGEX = /\s+/g;
-
-/** 소문자로 바꾸고 공백을 모두 지운다 — `퀀텀컴퓨팅`이 `퀀텀 컴퓨팅`에 걸리게 한다. */
-function compact(value: string): string {
-    return value.toLowerCase().replace(WHITESPACE_REGEX, '');
-}
+/** 글자 읽기 표기(`spelledName`)에 대 볼 최소 질의 길이(검색 키 기준 글자 수). */
+const SPELLED_MIN_QUERY_LENGTH = 2;
 
 function toSearchableEntry(entry: KoreanTickerEntry): SearchableKoreanEntry {
     const aliases = KOREAN_SEARCH_ALIASES.get(entry.symbol) ?? [];
+    const spelled = spellLatinLetters(entry.koreanName);
     return {
         ...entry,
-        searchNames: [entry.koreanName, ...aliases].map(compact),
+        searchNames: [
+            ...new Set([entry.koreanName, ...aliases].map(koreanSearchKey)),
+        ],
+        spelledName: spelled === null ? null : koreanSearchKey(spelled),
     };
+}
+
+/** 검색 키 하나가 이 행의 이름(필요하면 글자 읽기 표기 포함)에 들어 있는가. */
+function nameKeyIncludes(entry: SearchableKoreanEntry, key: string): boolean {
+    if (entry.searchNames.some(name => name.includes(key))) return true;
+    return (
+        entry.spelledName !== null &&
+        key.length >= SPELLED_MIN_QUERY_LENGTH &&
+        entry.spelledName.includes(key)
+    );
 }
 
 /**
@@ -244,18 +264,19 @@ function toSearchableEntry(entry: KoreanTickerEntry): SearchableKoreanEntry {
  * 계속 찾게 하려면 저장된 값이 아니라 `KOREAN_SEARCH_ALIASES`에 명시한다 — 그래도
  * 반환되는 이름은 정본이다.
  *
- * 매칭은 대소문자와 공백을 무시한다. 한글·영문이 섞인 질의는 토막별로 맞춘다
- * ({@link matchesMixedScriptRuns}).
+ * 매칭은 질의와 저장명 양쪽을 {@link koreanSearchKey}로 바꿔 비교한다 — 대소문자·공백,
+ * 된소리(`써클`/`서클`)와 구별되지 않는 모음 차이를 무시한다. 한글·영문이 섞인 질의는
+ * 토막별로 맞춘다({@link matchesMixedScriptRuns}).
  */
 export async function searchByKoreanName(
     query: string
 ): Promise<TickerSearchResult[]> {
     const entries = await loadAllEntries();
-    const compactQuery = compact(query);
-    if (compactQuery === '') return [];
+    const queryKey = koreanSearchKey(query);
+    if (queryKey === '') return [];
     const mixedRuns = splitMixedScriptRuns(query.toLowerCase());
     return entries.flatMap(entry =>
-        entry.searchNames.some(name => name.includes(compactQuery)) ||
+        nameKeyIncludes(entry, queryKey) ||
         (mixedRuns !== null && matchesMixedScriptRuns(entry, mixedRuns))
             ? [koreanEntryToSearchResult(entry)]
             : []
@@ -278,7 +299,9 @@ interface MixedScriptRuns {
  * 0건이 되므로, 토막별로 나눠 맞춘다({@link matchesMixedScriptRuns}).
  */
 function splitMixedScriptRuns(lowerQuery: string): MixedScriptRuns | null {
-    const hangul = lowerQuery.match(HANGUL_RUN_REGEX) ?? [];
+    const hangul = (lowerQuery.match(HANGUL_RUN_REGEX) ?? []).map(
+        koreanSearchKey
+    );
     const latin = lowerQuery.match(LATIN_RUN_REGEX) ?? [];
     return hangul.length > 0 && latin.length > 0 ? { hangul, latin } : null;
 }
@@ -300,9 +323,8 @@ function matchesMixedScriptRuns(
         entry.symbol.toLowerCase(),
     ];
     return (
-        runs.hangul.every(run =>
-            entry.searchNames.some(name => name.includes(run))
-        ) && runs.latin.every(run => latinFields.some(f => f.includes(run)))
+        runs.hangul.every(run => nameKeyIncludes(entry, run)) &&
+        runs.latin.every(run => latinFields.some(f => f.includes(run)))
     );
 }
 
