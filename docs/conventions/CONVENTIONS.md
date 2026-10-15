@@ -187,7 +187,7 @@ lines.reduce((acc, line) => { ... }, init);
 
 #### CP-6 — No `push` accumulation in pure calculations or functional contexts
 
-Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation.
+Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation. It applies only where the immutable form has a real cost; a `reduce` over a constant-size object or a short list stays immutable, and a lint warning alone does not justify rewriting it to `push`/in-place mutation. Where the exception is used, a one-line comment names the cost that justifies the mutable accumulator.
 
 ```typescript
 // ❌
