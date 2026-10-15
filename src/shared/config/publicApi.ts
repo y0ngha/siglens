@@ -9,6 +9,35 @@
 /** 경로 접두. 라우트 폴더(`src/app/api/v1`)와 SKILL.md의 curl 예시가 같은 값을 쓴다. */
 export const PUBLIC_API_BASE_PATH = '/api/v1';
 
+/**
+ * 인증 없이 받는 문서 경로(`PUBLIC_API_BASE_PATH` 아래). 라우트 폴더, OpenAPI 문서의 `paths`,
+ * `/developers`의 내려받기 링크가 같은 값을 쓴다.
+ */
+export const PUBLIC_API_DOC_PATHS = {
+    skill: '/skill',
+    openapiJson: '/openapi.json',
+    openapiYaml: '/openapi.yaml',
+} as const;
+
+/** 키를 담는 환경 변수 이름. SKILL.md·계정 화면 시작 가이드·`/developers`·curl 예시가 같은 이름을 쓴다. */
+export const API_KEY_ENV_NAME = 'SIGLENS_API_KEY';
+
+/**
+ * 문서에 적는 로케일 헤더 이름(SKILL.md와 같은 표기). 라우트가 읽는 값(`ANALYSIS_LOCALE_HEADER`)은 소문자
+ * 정규형이라 HTTP 헤더 이름의 대소문자 무시로만 같다 — 테스트가 둘이 같은 헤더를 가리킴을 고정한다.
+ */
+export const LOCALE_HEADER_DOC_NAME = 'X-Siglens-Locale';
+
+/** 개발자 포털(`/developers`)의 로케일 접두사 없는 경로. */
+export const DEVELOPERS_PATH = '/developers';
+
+/**
+ * `/developers` 본문 마지막 갱신일 — 본문(`messages/*.json`의 `views.developers`)이나 문서 구성을 고치면
+ * 함께 올린다. 화면 하단 "마지막 업데이트", JSON-LD `dateModified`, 정적 sitemap `lastmod`가 이 값 하나를 읽는다
+ * (배포 시각을 쓰면 본문을 안 고친 배포까지 "갱신됨"으로 나간다). 도구 목록은 코어에서 와서 따로 올릴 필요가 없다.
+ */
+export const DEVELOPERS_UPDATED_AT = new Date('2026-10-15T00:00:00+09:00');
+
 /** 키 원문 접두. 이 접두로 시작하지 않는 Bearer 값은 DB를 보기 전에 거절한다. */
 export const API_KEY_PREFIX = 'slk_';
 

@@ -51,6 +51,9 @@ export const RESERVED_FIRST_SEGMENTS: ReadonlySet<string> = new Set([
     // 메일 리포트 설정(`/email-report`)과 수신거부 확인(`/email-report/unsubscribe`). 여기
     // 없으면 `/EMAIL-REPORT`로 301되어 메뉴와 메일 속 링크가 전부 깨진다.
     'email-report',
+    // 개발자 포털(`/developers`). `isAdmissibleSymbolShape('developers')`가 참이라 여기 없으면
+    // `/DEVELOPERS`로 301되어 푸터·계정 화면·README가 거는 링크 전부가 깨진다.
+    'developers',
     // 광고 랜딩(`src/app/lp/`, `[locale]` 밖의 별도 루트라 스캐너 테스트가 못 본다).
     // 여기 없으면 `/ko/lp/stock-analysis`가 `/LP/stock-analysis`로 301된다.
     'lp',

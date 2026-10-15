@@ -998,6 +998,7 @@
                 "creating": "创建中…",
                 "description": "使用 API 密钥，即可在 AI 智能体或脚本中查询行情、图表、新闻等 SIGLENS 数据。",
                 "dismiss": "我已保存",
+                "docsLink": "查看 API 文档",
                 "downloadSkill": "下载 Skill",
                 "emailNotVerified": "完成邮箱验证后才能创建 API 密钥。请先验证账号邮箱。",
                 "empty": "还没有创建密钥。",
@@ -1763,6 +1764,11 @@
                 "title": "AAPL、NVDA、TSLA 回测 — 技术信号事后验证"
             },
             "backtestingOgAlt": "{v0} AI 回测结果",
+            "developers": {
+                "description": "通过 API 获取行情、图表指标、新闻、期权、财务和已保存的 AI 分析。AI 分析使用你自己的 LLM 密钥（BYOK）生成，还可下载 OpenAPI 文档和 Claude Skill。",
+                "metaTitle": "SIGLENS 开发者 API：通过 HTTP 获取标的分析数据",
+                "title": "开发者 API"
+            },
             "economy": {
                 "kr": {
                     "description": "一页查看韩国经济指标 — 基准利率、消费者物价、就业率、GDP增速等核心指标,加上国债收益率与出口增速,并提供即将发布的数据日程。",
@@ -2125,6 +2131,12 @@
             },
             "Breadcrumb": {
                 "46c31f": "面包屑导航"
+            },
+            "CodeBlock": {
+                "buttonLabel": "{action}：{label}",
+                "copied": "已复制",
+                "copy": "复制",
+                "copyFailed": "复制失败"
             },
             "ConsentCheckboxGroup": {
                 "1f835a": "同意事项",
@@ -2857,6 +2869,122 @@
                 "search": "股票搜索",
                 "web": "网页搜索"
             }
+        },
+        "developers": {
+            "authentication": {
+                "byokBody": "如果共享缓存中已有分析，run_fresh_analysis 会免费返回；只有缓存中没有时，才会用你在账号中注册的 LLM 密钥新生成。新生成需要 BYOK 级别的模型和该服务商的已注册密钥，模型可在账号设置中选择，也可用请求中的 model 参数指定。不会使用 SIGLENS 的服务器密钥。",
+                "byokTitle": "用自己的密钥生成 AI 分析（BYOK）",
+                "cookies": "不会读取登录会话 Cookie。即使在浏览器中已登录，没有密钥也会被拒绝。",
+                "failure": "密钥缺失、格式错误、已吊销或未知时，一律返回 401 invalid_api_key，不会说明具体原因。",
+                "headerLabel": "Authorization 请求头示例",
+                "revoke": "可以随时在账号设置中吊销密钥，吊销后立即失效。",
+                "sub": "除文档下载外，每个请求都要把 API 密钥作为 Bearer 令牌发送。",
+                "title": "认证"
+            },
+            "downloads": {
+                "action": "下载 {file}",
+                "baseUrl": "基础 URL",
+                "jsonBody": "JSON 格式的 OpenAPI 3.1 文档，可导入代码生成器、Postman 或 Swagger。",
+                "skillBody": "适用于 Claude Code 和 Claude.ai Skills 的 SKILL.md。",
+                "sub": "无需 API 密钥即可下载，工具变化时文件内容也会随之更新。",
+                "title": "下载",
+                "yamlBody": "同一份 OpenAPI 文档的 YAML 版本。"
+            },
+            "hero": {
+                "byok": "AI 分析使用你自己注册的 LLM 密钥（BYOK）生成。SIGLENS 不承担 AI 费用，读取已缓存的分析不产生任何费用。",
+                "createKey": "创建 API 密钥",
+                "eyebrow": "开发者",
+                "lede": "可以通过 HTTP 直接调用 AI 智能体所使用的数据工具：标的搜索、行情、K 线与指标、新闻、期权、财务、国会交易、经济数据以及已保存的 AI 分析。",
+                "quickstart": "查看快速开始",
+                "title": "SIGLENS API 文档"
+            },
+            "localeSection": {
+                "body": "在 {header} 请求头中发送 ko、en、ja、zh 之一。默认值是与网站相同的 ko，因此能直接获得网站已生成的缓存分析；缺少该请求头或值未知时，按 ko 处理。",
+                "exampleLabel": "语言请求头示例",
+                "sub": "可以选择本地化文本的语言。",
+                "title": "语言"
+            },
+            "quickstart": {
+                "meLabel": "查看密钥状态的 curl 示例",
+                "skillBody": "把 SKILL.md 注册为 Skill 后，Claude 会在需要时直接调用此 API。Skill 使用环境变量 {env} 中的密钥。Claude Code 可用下面的命令下载。",
+                "skillClaudeAi": "在 Claude.ai 中，把 SKILL.md 放进名为 siglens 的文件夹并压缩为 zip，然后在 Skills 设置中上传。",
+                "skillLabel": "安装 SKILL.md 的命令",
+                "skillTitle": "在 Claude Code 和 Claude.ai 中使用",
+                "step1Body": "在账号设置的 SIGLENS API 区域创建密钥。完成邮箱验证的会员可以创建，最多可同时持有 {max} 个。密钥原文只在创建时显示一次，请立即复制。",
+                "step1Link": "在账号设置中创建密钥",
+                "step1Title": "创建 API 密钥",
+                "step2Body": "使用下面的名称设置后，本页的示例和 Skill 即可直接运行。",
+                "step2Label": "设置环境变量的命令",
+                "step2Title": "设置环境变量",
+                "step3Body": "先查看密钥状态和剩余额度，再调用一个工具。",
+                "step3Title": "发起调用",
+                "sub": "创建密钥，放入环境变量，然后调用一次。",
+                "title": "快速开始",
+                "toolLabel": "调用 {name} 的 curl 示例"
+            },
+            "rateLimits": {
+                "body": "工具调用每分钟最多 {dataPerMinute} 次，每天最多 {dataPerDay, number} 次。因缓存中没有而新生成分析的调用，另有独立额度：每分钟最多 {aiPerMinute} 次，每天最多 {aiPerDay, number} 次。读取已缓存分析的调用只占用工具额度。",
+                "colHeader": "响应头",
+                "colMeaning": "含义",
+                "headerAiLimit": "生成新分析的 AI 额度。仅出现在生成时的流式响应上。",
+                "headerAiRemaining": "AI 窗口剩余的生成次数。",
+                "headerAiReset": "AI 窗口结束的时间（epoch 秒）。",
+                "headerLimit": "工具额度。以分钟窗口为准，请求因超额被拒绝时以超出的那个窗口为准。",
+                "headerRemaining": "该窗口剩余的次数。",
+                "headerReset": "该窗口结束的时间（epoch 秒）。",
+                "headerRetryAfter": "收到 429 或 503 后，重试前需要等待的秒数。",
+                "over": "超出额度时会返回 HTTP 429 和 Retry-After 响应头（需要等待的秒数）。额度存储出现问题时，不会放任无限制访问，而是以 503 rate_limiter_unavailable 拒绝。",
+                "sub": "额度按账号计算，因此你的所有密钥共用。",
+                "tableCaption": "额度相关的响应头",
+                "title": "调用额度",
+                "unmetered": "在计量之前就被拒绝的响应（401、400、404、413）不带额度响应头。"
+            },
+            "responses": {
+                "codesNote": "错误码及说明保持 API 返回的英文原文。",
+                "codesTitle": "错误码",
+                "colCode": "状态与错误码",
+                "colMeaning": "说明",
+                "errorAdvice": "请根据状态码和 error.code 分支处理。error.message 是给人看的英文句子，不要解析它；遇到未知的错误码，按状态码处理。",
+                "errorLabel": "失败响应示例",
+                "errorTitle": "失败",
+                "streamedNote": "对 run_fresh_analysis 而言，流式响应开始后发生此错误时，会出现在 200 正文的 error 字段中。",
+                "sub": "成功与失败的结构不同，请根据状态码和正文的顶层键来区分。",
+                "successLabel": "成功响应示例",
+                "successTitle": "成功",
+                "tableCaption": "错误码列表",
+                "title": "响应与错误",
+                "truncated": "结果超过该工具的大小上限时，meta.truncated 为 true，data 会缩减为只含 truncated 和 preview 字段的对象。请缩小参数（例如减少 K 线数量）后重新调用。"
+            },
+            "streaming": {
+                "disconnect": "关闭连接不会取消生成。生成会运行到结束，费用记在你的密钥上，结果存入共享缓存，下次调用即可直接从缓存获取。",
+                "early": "缓存命中，以及认证、额度、参数、模型、缺少密钥这类在生成前就能确定的失败，会使用普通状态码和普通 JSON 正文返回。",
+                "exampleLabel": "生成新分析的 curl 示例",
+                "how": "生成缓存中没有的分析需要 30 到 250 秒。请求通过认证、额度、参数、模型和密钥检查后，响应会立即以 HTTP 200 开始，并定期发送换行空白字节以免连接被断开，最后写入 JSON 正文。",
+                "parse": "JSON 允许前导空白，因此直接解析完整正文即可。200 发出之后发生的失败也会以 200 正文送达，所以对这个工具，无论状态码是什么，都要检查是否有 error 字段。",
+                "sub": "仅适用于 run_fresh_analysis。其他工具返回普通的 JSON 响应。",
+                "title": "生成新分析与流式响应"
+            },
+            "toc": {
+                "label": "开发者文档目录"
+            },
+            "tools": {
+                "argsCaption": "{name} 的参数",
+                "argsTitle": "参数",
+                "byokBadge": "BYOK",
+                "byokNote": "生成新分析会使用你自己的 LLM 密钥，并占用独立的 AI 额度。从共享缓存读取则免费。",
+                "colArgument": "参数",
+                "colDescription": "说明",
+                "curlLabel": "{name} 的 curl 示例",
+                "enumMore": "显示其余 {count} 项",
+                "indexLabel": "跳转到工具",
+                "noArgs": "该工具没有参数。发送空正文或空的 JSON 对象即可。",
+                "note": "工具和参数的说明是写给 AI 智能体读的英文，这里不翻译，按原样显示。此列表与 GET /tools 和 OpenAPI 文档来自同一数据源，新增工具时会一并增加。说明中提到、但不在此列表里的工具请忽略。",
+                "optional": "可选",
+                "required": "必填",
+                "sub": "每个工具都有独立的路径，请求正文是 JSON 格式的参数。",
+                "title": "工具参考"
+            },
+            "updatedAt": "最后更新 {date}"
         },
         "guide": {
             "aliasesLabel": "别名",
@@ -4049,6 +4177,7 @@
                 "531f6a": "联系我们",
                 "5f5d12": "网站信息",
                 "693b62": "投资免责声明",
+                "developersLink": "开发者 API",
                 "guideLink": "图表指南",
                 "symbolsLink": "热门标的"
             },

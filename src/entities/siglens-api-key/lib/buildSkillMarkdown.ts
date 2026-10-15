@@ -1,5 +1,7 @@
 import type { AgentToolSpec, JsonSchemaProperty } from '@y0ngha/siglens-core';
 import {
+    API_KEY_ENV_NAME,
+    LOCALE_HEADER_DOC_NAME,
     PUBLIC_API_BASE_PATH,
     PUBLIC_API_RATE_LIMITS,
     type PublicApiRateLimit,
@@ -13,12 +15,13 @@ export interface BuildSkillMarkdownInput {
 }
 
 /** 이 도구가 노출되면 분석 생성이 사용자 BYOK 키를 쓴다는 안내를 덧붙인다. */
-const FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
+export const FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
 
 const SKILL_DESCRIPTION =
     "Query SigLens stock analysis (US/KR equities, crypto) — ticker search, quotes, bars with indicators, AI technical analysis, news, options, fundamentals, congress trades, macro. Use when the user asks about a stock's chart, signals or analysis.";
 
-function typeLabel(prop: JsonSchemaProperty): string {
+/** 인자 타입의 사람용 표기(`"1Day" | "1Hour"`, `integer (10..60)`). `/developers`의 인자 표도 같은 표기를 쓴다. */
+export function typeLabel(prop: JsonSchemaProperty): string {
     if (prop.enum !== undefined)
         return prop.enum.map(value => `"${value}"`).join(' | ');
     if (prop.type === 'array')
@@ -53,15 +56,15 @@ function renderTool(tool: AgentToolSpec): string {
     ].join('\n');
 }
 
-function renderLimits(limits: PublicApiRateLimit): string {
+export function renderLimits(limits: PublicApiRateLimit): string {
     return `${limits.perMinute}/minute, ${limits.perDay.toLocaleString('en-US')}/day`;
 }
 
 /**
- * `run_fresh_analysis`가 노출될 때만 붙는 BYOK 안내. 오류 코드는 `runByokFreshAnalysis`가 내는 값과
+ * `run_fresh_analysis`가 노출될 때만 붙는 BYOK 안내(OpenAPI 문서의 같은 도구 설명도 이 줄들을 쓴다). 오류 코드는 `runByokFreshAnalysis`가 내는 값과
  * 같아야 한다(문서가 실제 응답을 앞서가지 않도록 그쪽 테스트가 코드를 고정한다).
  */
-function renderFreshAnalysisNotes(): string[] {
+export function renderFreshAnalysisNotes(): string[] {
     return [
         '- `run_fresh_analysis` first looks for a shared cached analysis: a hit is returned at no cost (`meta.source: "cache"`, no LLM call, no `ai` quota) with a normal JSON response. Only when none exists does it generate one — with your own LLM key registered at siglens.io/account (BYOK). SigLens never spends its own key on API calls.',
         "- Only BYOK-class (premium) models can generate a new analysis, and only with a registered key for that model's provider (the `model` argument description lists them). Free and member models can only read the shared cache: on a cache miss they return 400 `byok_model_required`.",
@@ -90,7 +93,7 @@ export function buildSkillMarkdown({
         ...(hasFreshAnalysis ? renderFreshAnalysisNotes() : []),
         `- Rate limits are per account (all your keys share them): ${renderLimits(PUBLIC_API_RATE_LIMITS.data)}. Every call to \`/me\`, \`/tools\` and a tool counts. Over the limit you get HTTP 429 with \`Retry-After\`. Every metered response (success, tool error and 429) carries \`X-RateLimit-Limit\`, \`X-RateLimit-Remaining\` and \`X-RateLimit-Reset\` (epoch seconds); requests rejected before metering (401, 400, 404, 413) do not.`,
         '- Responses are `{ "data": ..., "meta": { "tool": "<name>" } }` on success (`run_fresh_analysis` adds `meta.source` and `meta.model`) and `{ "error": { "code": "...", "message": "..." } }` on failure (401 `invalid_api_key`, 400 `invalid_args`, 429 `rate_limited`, 503 `rate_limiter_unavailable`).',
-        '- Send `X-Siglens-Locale: ko|en|ja|zh` to choose the language of localized text (default `ko`, the same as siglens.io, so cached analyses written by the website are shared).',
+        `- Send \`${LOCALE_HEADER_DOC_NAME}: ko|en|ja|zh\` to choose the language of localized text (default \`ko\`, the same as siglens.io, so cached analyses written by the website are shared).`,
         '- Not investment advice. Quote delays and data freshness are reported in each result — pass them on to the user.',
     ];
     return [
@@ -101,13 +104,13 @@ export function buildSkillMarkdown({
         '',
         '# SigLens',
         '',
-        'Auth: create an API key at siglens.io/account, export it as `SIGLENS_API_KEY`, and send `Authorization: Bearer $SIGLENS_API_KEY` with every request.',
+        `Auth: create an API key at siglens.io/account, export it as \`${API_KEY_ENV_NAME}\`, and send \`Authorization: Bearer $${API_KEY_ENV_NAME}\` with every request.`,
         '',
         'Call a tool with:',
         '',
         '```bash',
         `curl -s -X POST ${endpoint}/tools/<name> \\`,
-        '  -H "Authorization: Bearer $SIGLENS_API_KEY" \\',
+        `  -H "Authorization: Bearer $${API_KEY_ENV_NAME}" \\`,
         '  -H "Content-Type: application/json" \\',
         "  -d '<json args>'",
         '```',
