@@ -136,11 +136,11 @@ describe('useSelectedModel — branch coverage', () => {
         // Change allowedModels to exclude both selected AND default model
         await act(async () => {
             rerender({
-                allowed: ['claude-haiku-4-5'] as ModelId[],
+                allowed: ['claude-haiku-5-5'] as ModelId[],
             });
         });
 
         // Should fall back to allowedModels[0]
-        expect(result.current[0]).toBe('claude-haiku-4-5');
+        expect(result.current[0]).toBe('claude-haiku-5-5');
     });
 });

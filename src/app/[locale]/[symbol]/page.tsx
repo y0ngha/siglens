@@ -420,6 +420,9 @@ export default async function SymbolPage({ params }: Props) {
                                 // 아무것도 안 떼지만, 그 시각 뒤 생긴 오늘 봉을 분석이 참조할 수 있다).
                                 seedHasFormingBarTrimmed={hasFormingBar(
                                     sessionSpecFor(marketProfile),
+                                    // RSC(서버 컴포넌트) 렌더에서 평가해 prop으로 내리는 값이라 클라이언트에서
+                                    // 다시 계산되지 않는다 — 하이드레이션 불일치 경로가 아니다.
+                                    // react-doctor-disable-next-line react-doctor/rendering-hydration-mismatch-time
                                     new Date()
                                 )}
                             />

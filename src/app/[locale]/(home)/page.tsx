@@ -167,6 +167,9 @@ export default async function Home({
     // 숨김 `<template>` 청크를 남겨 JS 없는 크롤러에게 본문을 뒤로 밀고, 하이드레이션 때
     // 스켈레톤→실제 목록 교체로 레이아웃이 흔들렸다. 로드는 파일시스템 읽기(+ 요청 스코프
     // `cache`)라 짧고 ISR이므로 문서 셸이 기다려도 비용이 없다.
+    // 번역 묶음과 합치지 않는다 — 가드(`serverDataSuspenseBoundaries`)가 스킬 개수와 쇼케이스를
+    // 한 `Promise.all`에서 읽는 구조를 고정하고, 이미 각 묶음 안에서 병렬이다.
+    // react-doctor-disable-next-line react-doctor/server-sequential-independent-await
     const [skillCounts, showcaseSkills] = await Promise.all([
         countSkillFiles().catch(e => {
             console.error('[Home] countSkillFiles failed:', e);

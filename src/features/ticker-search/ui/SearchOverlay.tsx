@@ -245,10 +245,14 @@ function SearchOverlayBody({
      * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로
      * 보내는 것보다 정직하다.
      */
+    // Enter 시점에 디바운스된 검색이 아직 안 끝났을 수 있어, 제출 의도를 ref에 두고 결과가 settle된 뒤에 이동한다(위 JSDoc). 핸들러에서 즉시 처리하면 한 박자 전 질의 결과로 이동한다.
+    // react-doctor-disable-next-line react-doctor/no-event-handler
     useEffect(() => {
         if (!pendingSubmitRef.current || !isSettled || isSearching) return;
         pendingSubmitRef.current = false;
         if (isError) return;
+        // 위 effect와 같다 — 검색 settle 뒤 확정된 목적지로 이동/선택을 알리는 것이며 라이브 상태를 부모에 동기화하는 것이 아니다.
+        // react-doctor-disable-next-line react-doctor/no-pass-live-state-to-parent
         submitResolvedTarget();
     }, [submitTick, isSettled, isSearching, isError]);
 

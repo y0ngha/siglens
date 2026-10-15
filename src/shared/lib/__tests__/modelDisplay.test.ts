@@ -39,22 +39,32 @@ describe('MODEL_DISPLAY_MAP', () => {
         expect(duplicated).toEqual([]);
     });
 
+    it('labels the 2026-10 model roster', () => {
+        expect(getModelDisplay('claude-opus-5-5').label).toBe('Opus 5.5');
+        expect(getModelDisplay('claude-haiku-5-5').label).toBe('Haiku 5.5');
+        expect(getModelDisplay('gemini-4-argon').fullName).toBe(
+            'Gemini 4 Argon'
+        );
+        expect(getModelDisplay('gpt-6-luna').label).toBe('GPT 6 Luna');
+        expect(getModelDisplay('gpt-6.1-sol').fullName).toBe('GPT-6.1 Sol');
+    });
+
     it('labels the 2026-07 model generation', () => {
         expect(getModelDisplay('claude-opus-5')).toEqual({
             label: 'Opus 5',
             fullName: 'Claude Opus 5',
         });
-        expect(getModelDisplay('claude-sonnet-5')).toEqual({
-            label: 'Sonnet 5',
-            fullName: 'Claude Sonnet 5',
+        expect(getModelDisplay('claude-sonnet-5-5')).toEqual({
+            label: 'Sonnet 5.5',
+            fullName: 'Claude Sonnet 5.5',
         });
         expect(getModelDisplay('gpt-5.6-sol')).toEqual({
             label: 'GPT 5.6 Sol',
             fullName: 'GPT-5.6 Sol',
         });
-        expect(getModelDisplay('gpt-5.6-terra')).toEqual({
-            label: 'GPT 5.6 Terra',
-            fullName: 'GPT-5.6 Terra',
+        expect(getModelDisplay('gpt-6-sol')).toEqual({
+            label: 'GPT 6 Sol',
+            fullName: 'GPT-6 Sol',
         });
         expect(getModelDisplay('gemini-3.6-flash')).toEqual({
             label: 'Flash 3.6',

@@ -187,7 +187,7 @@ lines.reduce((acc, line) => { ... }, init);
 
 #### CP-6 — No `push` accumulation in pure calculations or functional contexts
 
-Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation.
+Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation. It applies only where the immutable form has a real cost; a `reduce` over a constant-size object or a short list stays immutable, and a lint warning alone does not justify rewriting it to `push`/in-place mutation. Where the exception is used, a one-line comment names the cost that justifies the mutable accumulator.
 
 ```typescript
 // ❌
@@ -599,6 +599,7 @@ file or the rule it describes changes:
 - Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
 - A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
+- A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
 
 <a id="CM-3"></a>
@@ -771,7 +772,7 @@ Reference docs, runbooks and architecture docs that describe an API, type, setti
 in the same change as the code. Examples and folder trees must exist in the code (no illustrative edges or
 directories that are not real). A documented default must work at merge time (do not make a local DB the default if
 the runtime driver cannot reach it) and, when PR order matters, the order is stated. Reference docs (for example a
-local `docs/reference/API.md`) list every provider, path and parameter enum.
+local `docs/reference/API.md`) list every provider, path and parameter enum. A fast-changing union or list is not mirrored in a public doc; point at its source of truth so the doc cannot go stale.
 
 <a id="CS-11"></a>
 

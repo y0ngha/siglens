@@ -109,6 +109,8 @@ function SettingsForm({ initial, save }: SettingsFormProps) {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        // 저장 중에 더블클릭·연타 Enter가 같은 요청을 두 번 보내지 않게 한다.
+        if (save.isPending) return;
         setMessage(null);
         try {
             const result = await save.mutateAsync({

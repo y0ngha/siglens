@@ -32,13 +32,13 @@ import type Anthropic from '@anthropic-ai/sdk';
 
 const BASE_OPTIONS = {
     apiKey: 'server-key',
-    model: 'claude-haiku-4-5-20251001', // haiku apiModelId
+    model: 'claude-haiku-5-5', // haiku apiModelId
     contents: 'Hello',
 } as const;
 
 const SONNET_OPTIONS = {
     ...BASE_OPTIONS,
-    model: 'claude-sonnet-5', // sonnet apiModelId — member 등급(기본 OFF)
+    model: 'claude-sonnet-5-5', // sonnet apiModelId — member 등급(기본 OFF)
 } as const;
 
 /** byok 등급 — `reasoning.default: 'on'`이라 adaptive 경로를 탄다. */
@@ -178,7 +178,7 @@ describe('callAnthropicChat', () => {
             );
             expect(payload).toMatchObject({
                 jobId: 'chat',
-                model: 'claude-haiku-4-5-20251001',
+                model: 'claude-haiku-5-5',
                 promptTokens: 120,
                 cachedTokens: 40,
                 cacheWriteTokens: 10,
@@ -196,8 +196,8 @@ describe('callAnthropicChat', () => {
         });
     });
 
-    describe('haiku — temperature 모드', () => {
-        it('thinking 없이 temperature로 호출한다', async () => {
+    describe('haiku 5.5 — thinking disabled 모드', () => {
+        it('thinking disabled로 호출하고 temperature는 보내지 않는다', async () => {
             mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'ok' }],
                 stop_reason: 'end_turn',
@@ -206,10 +206,37 @@ describe('callAnthropicChat', () => {
             await callAnthropicChat(BASE_OPTIONS);
 
             const call = mockStream.mock.calls[0][0];
-            expect(call).not.toHaveProperty('thinking');
+            expect(call.thinking).toEqual({ type: 'disabled' });
             expect(call).not.toHaveProperty('output_config');
-            expect(call.temperature).toBeDefined();
+            // 5.5 세대는 temperature를 400으로 거부한다.
+            expect(call).not.toHaveProperty('temperature');
         });
+    });
+
+    describe('5.5 세대 공통 계약 — temperature·forced tool_choice 금지', () => {
+        // 세 모델 모두 temperature를 400으로 거부하고, sonnet·opus 5.5는 forced
+        // tool_choice도 거부한다(2026-10-15 실측). core 스펙이 budget 경로로 바뀌는 등
+        // 어느 한 모델이 temperature 분기로 새면 여기서 걸린다.
+        it.each([
+            'claude-haiku-5-5',
+            'claude-sonnet-5-5',
+            'claude-opus-5-5',
+        ] as const)(
+            '%s는 temperature·tool_choice를 보내지 않는다',
+            async model => {
+                mockFinalMessage.mockResolvedValue({
+                    content: [{ type: 'text', text: 'ok' }],
+                    stop_reason: 'end_turn',
+                });
+
+                await callAnthropicChat({ ...BASE_OPTIONS, model });
+
+                const call = mockStream.mock.lastCall?.[0];
+                expect(call).toBeDefined();
+                expect(call).not.toHaveProperty('temperature');
+                expect(call).not.toHaveProperty('tool_choice');
+            }
+        );
     });
 
     describe('Sonnet/Opus — adaptive thinking 모드', () => {
@@ -224,9 +251,10 @@ describe('callAnthropicChat', () => {
             expect(result).toBe('deep answer');
             const call = mockStream.mock.calls[0][0];
             // 챗은 추론 토글이 없어 스펙의 `reasoning.default`를 따른다.
-            // claude-sonnet-5는 member 등급이라 기본 OFF다.
-            expect(call.thinking).toEqual({ type: 'disabled' });
-            // thinking이 꺼지면 output_config 자체를 보내지 않는다.
+            // claude-sonnet-5-5는 member 등급이라 기본 OFF이고, `disabled`를 400으로
+            // 거부하므로 OFF는 `between_tools`다(display·effort 없이).
+            expect(call.thinking).toEqual({ type: 'between_tools' });
+            // between_tools는 output_config를 함께 보내지 않는다.
             expect(call).not.toHaveProperty('output_config');
             expect(call).not.toHaveProperty('temperature');
         });
@@ -240,6 +268,26 @@ describe('callAnthropicChat', () => {
             const result = await callAnthropicChat(OPUS_OPTIONS);
 
             expect(result).toBe('deep answer');
+            const call = mockStream.mock.calls[0][0];
+            expect(call.thinking).toEqual({
+                type: 'adaptive',
+                display: 'omitted',
+            });
+            expect(call.output_config).toEqual({ effort: 'high' });
+            expect(call).not.toHaveProperty('temperature');
+        });
+
+        it('opus-5-5는 adaptive thinking(effort high)으로 호출하고 temperature·between_tools는 보내지 않는다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                model: 'claude-opus-5-5',
+            });
+
             const call = mockStream.mock.calls[0][0];
             expect(call.thinking).toEqual({
                 type: 'adaptive',

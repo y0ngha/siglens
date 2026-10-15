@@ -48,16 +48,17 @@ export function mergeMessages(
     return Object.entries(overlay).reduce<MessageTree>(
         (acc, [key, value]) => {
             const current = acc[key];
-            return {
-                ...acc,
-                [key]:
-                    isTree(current) && isTree(value)
-                        ? mergeMessages(
-                              current as AbstractIntlMessages,
-                              value as AbstractIntlMessages
-                          )
-                        : value,
-            };
+            // 누적기를 직접 고친다 — 카탈로그는 수천 키라 매 키마다 `{ ...acc }`로 복사하면
+            // O(K²)가 된다(CONVENTIONS.md#CP-6의 누적기 예외). 시작값이 `{ ...base }` 사본이라
+            // 입력은 바뀌지 않는다.
+            acc[key] =
+                isTree(current) && isTree(value)
+                    ? mergeMessages(
+                          current as AbstractIntlMessages,
+                          value as AbstractIntlMessages
+                      )
+                    : value;
+            return acc;
         },
         { ...base }
     ) as AbstractIntlMessages;

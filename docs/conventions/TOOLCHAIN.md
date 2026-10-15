@@ -105,7 +105,13 @@ JSON 설정(IAM 정책, 설정 파일 등)을 범용 직렬화기로 다시 쓰�
 
 ## React Doctor
 
-- 로컬: `npx react-doctor@latest`
+- 로컬: `yarn doctor`(= `react-doctor --no-supply-chain`). 상세는 `yarn doctor --verbose`,
+  PR 게이트 재현은 `yarn doctor --scope changed --base master --verbose`.
+- CLI는 `react-doctor@0.9.18`로 devDependency에 **정확 고정**돼 있다(룰 세트가 버전마다 바뀌어
+  점수가 흔들리는 것을 막는다). 올릴 때는 `yarn add -D -E react-doctor@<버전>` 후 전체 진단을
+  다시 읽고 `doctor.config.json`의 근거를 재확인한다.
+- CI는 액션 메이저 태그(`millionco/react-doctor@v2`)를 쓰며 액션에 번들된 CLI가 돈다 —
+  로컬 고정 버전과 CI 버전이 어긋날 수 있으니, CI 결과가 로컬과 다르면 버전부터 본다.
 - CI: `.github/workflows/react-doctor.yml` — 모든 PR에서 실행하고, 그 PR이 **새로
   추가한 error 등급** 지적이 있을 때만 실패시킨다(`scope: changed`).
 - 룰 정책: `doctor.config.json`. 끈 룰마다 근거를 주석으로 남긴다.

@@ -13,7 +13,7 @@ vi.mock('@y0ngha/siglens-core', async actual => {
 
 const MODELS = [
     'gemini-3.6-flash',
-    'claude-sonnet-5',
+    'claude-sonnet-5-5',
     'claude-opus-5',
 ] as ModelId[];
 
@@ -40,7 +40,7 @@ function renderListbox(
 
 describe('ModelListbox', () => {
     it('marks only the selected option as selected and tabbable', () => {
-        renderListbox('claude-sonnet-5' as ModelId);
+        renderListbox('claude-sonnet-5-5' as ModelId);
         const opts = screen.getAllByRole('option');
 
         expect(opts.map(o => o.getAttribute('aria-selected'))).toEqual([
@@ -53,7 +53,7 @@ describe('ModelListbox', () => {
     });
 
     it('moves focus to the selected option when it opens', () => {
-        renderListbox('claude-sonnet-5' as ModelId);
+        renderListbox('claude-sonnet-5-5' as ModelId);
         expect(screen.getAllByRole('option')[1]).toHaveFocus();
     });
 
@@ -64,9 +64,9 @@ describe('ModelListbox', () => {
     });
 
     it.each([
-        ['ArrowDown', 'gemini-3.6-flash', 'claude-sonnet-5', 1],
+        ['ArrowDown', 'gemini-3.6-flash', 'claude-sonnet-5-5', 1],
         ['ArrowDown', 'claude-opus-5', 'gemini-3.6-flash', 0],
-        ['ArrowUp', 'claude-sonnet-5', 'gemini-3.6-flash', 0],
+        ['ArrowUp', 'claude-sonnet-5-5', 'gemini-3.6-flash', 0],
         ['ArrowUp', 'gemini-3.6-flash', 'claude-opus-5', 2],
         ['Home', 'claude-opus-5', 'gemini-3.6-flash', 0],
         ['End', 'gemini-3.6-flash', 'claude-opus-5', 2],
@@ -103,7 +103,7 @@ describe('ModelListbox', () => {
         );
         fireEvent.click(screen.getAllByRole('option')[1]!);
 
-        expect(onChange).toHaveBeenCalledWith('claude-sonnet-5');
+        expect(onChange).toHaveBeenCalledWith('claude-sonnet-5-5');
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
@@ -125,7 +125,7 @@ describe('ModelListbox', () => {
         renderListbox('free-model' as ModelId, {
             models: [
                 'free-model',
-                'claude-sonnet-5',
+                'claude-sonnet-5-5',
                 'claude-opus-5',
             ] as ModelId[],
         });

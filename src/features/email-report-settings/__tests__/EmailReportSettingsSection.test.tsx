@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
 import { useEmailReportSettings } from '@/entities/email-report/hooks/useEmailReportSettings';
@@ -93,6 +93,24 @@ describe('EmailReportSettingsSection', () => {
             timezone: 'Europe/Berlin',
         });
         expect(await screen.findByText('저장했어요.')).toBeInTheDocument();
+    });
+
+    it('저장 중이면 폼 제출(Enter 등)을 다시 보내지 않는다', () => {
+        const mutateAsync = vi.fn();
+        setup({
+            save: {
+                mutateAsync,
+                isPending: true,
+            } as unknown as HookReturn['save'],
+        });
+        render(<EmailReportSettingsSection />);
+
+        // 버튼은 disabled라 클릭으로는 막히지만, 폼 제출(Enter)은 버튼을 거치지 않는다.
+        const form = screen.getByRole('switch').closest('form');
+        expect(form).not.toBeNull();
+        fireEvent.submit(form as HTMLFormElement);
+
+        expect(mutateAsync).not.toHaveBeenCalled();
     });
 
     it('서버 오류 결과의 문구를 그대로 보인다', async () => {

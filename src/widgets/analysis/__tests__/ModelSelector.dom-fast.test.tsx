@@ -6,7 +6,7 @@ import type { ModelId } from '@y0ngha/siglens-core';
 const ALLOWED_MODELS: readonly ModelId[] = [
     'gemini-3.5-flash-lite',
     'gemini-3.6-flash',
-    'claude-sonnet-5',
+    'claude-sonnet-5-5',
 ] as const;
 
 function renderSelector(
@@ -51,7 +51,7 @@ describe('ModelSelector', () => {
         const listbox = screen.getByRole('listbox');
         expect(listbox).toBeInTheDocument();
         expect(screen.getByText('Flash 3.6')).toBeInTheDocument();
-        expect(screen.getByText('Sonnet 5')).toBeInTheDocument();
+        expect(screen.getByText('Sonnet 5.5')).toBeInTheDocument();
     });
 
     it('clicking a model option calls onModelChange and closes dropdown', async () => {
@@ -133,7 +133,7 @@ describe('ModelSelector', () => {
         it('ArrowDown selects the next model and wraps to the first after the last', async () => {
             const user = userEvent.setup();
             const { onModelChange } = renderSelector({
-                selectedModel: 'claude-sonnet-5',
+                selectedModel: 'claude-sonnet-5-5',
             });
 
             await user.click(
@@ -141,7 +141,7 @@ describe('ModelSelector', () => {
             );
             await user.keyboard('{ArrowDown}');
 
-            // claude-sonnet-5 is the last of ALLOWED_MODELS, so ArrowDown wraps
+            // claude-sonnet-5-5 is the last of ALLOWED_MODELS, so ArrowDown wraps
             expect(onModelChange).toHaveBeenCalledWith('gemini-3.5-flash-lite');
         });
 
@@ -156,13 +156,13 @@ describe('ModelSelector', () => {
             );
             await user.keyboard('{ArrowUp}');
 
-            expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5');
+            expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5-5');
         });
 
         it('Home selects the first model in the list', async () => {
             const user = userEvent.setup();
             const { onModelChange } = renderSelector({
-                selectedModel: 'claude-sonnet-5',
+                selectedModel: 'claude-sonnet-5-5',
             });
 
             await user.click(
@@ -184,7 +184,7 @@ describe('ModelSelector', () => {
             );
             await user.keyboard('{End}');
 
-            expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5');
+            expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5-5');
         });
     });
 

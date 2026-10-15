@@ -94,6 +94,8 @@ export function PopoverSurface({
     const panel = (
         <div
             ref={dialogRef}
+            // 데스크톱 팝오버/모바일 바텀시트(vaul) 겸용 표면이다. 네이티브 <dialog> 이전은 동작 변경이라 하지 않는다.
+            // react-doctor-disable-next-line react-doctor/prefer-html-dialog
             role="dialog"
             aria-modal={isMobile ? true : undefined}
             aria-labelledby={titleId}

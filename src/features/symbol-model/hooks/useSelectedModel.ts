@@ -38,7 +38,7 @@ function readStoredModel(): ModelId | null {
  *
  * `isTierHydrated`가 필수인 이유: tier는 서버 왕복(`useUserTier`)이라 마운트 직후엔
  * 항상 `DEFAULT_TIER='free'`다. 그 시점에 저장값을 검증하면 member/pro 전용 모델
- * (claude-sonnet-5 등)이 허용 목록 밖으로 판정돼 DEFAULT_MODEL로 강등되고, tier가
+ * (claude-sonnet-5-5 등)이 허용 목록 밖으로 판정돼 DEFAULT_MODEL로 강등되고, tier가
  * 확정돼 목록이 넓어져도 복원 경로가 없어(재검증은 좁힐 때만 동작) 회원의 선택이
  * 매 로드마다 조용히 사라진다. 그래서 읽기·재검증 둘 다 tier 확정까지 미룬다.
  */
@@ -87,6 +87,8 @@ export function useSelectedModel(
     useEffect(() => {
         if (!isTierHydrated || hasReadRef.current) return;
         hasReadRef.current = true;
+        // localStorage(외부 시스템)를 티어 하이드레이션 뒤 한 번 읽어 이 훅의 로컬 상태를 채운다. 부모로 올리는 데이터가 아니다.
+        // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
         readFromStorage();
     }, [isTierHydrated]);
 
@@ -95,6 +97,8 @@ export function useSelectedModel(
         if (!isTierHydrated) return;
         if (
             allowedModels.length > 0 &&
+            // 티어가 비동기로 하이드레이션·변경되므로 허용 모델 목록 변화에 맞춰 선택을 폴백시킨다. 부모 전달이 아니라 이 훅 내부 보정이다.
+            // react-doctor-disable-next-line react-doctor/no-pass-live-state-to-parent
             !allowedModels.includes(selectedModel)
         ) {
             const fallback = allowedModels.includes(DEFAULT_MODEL)

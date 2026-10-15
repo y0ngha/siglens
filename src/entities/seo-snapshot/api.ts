@@ -217,13 +217,15 @@ export class DrizzleSeoSnapshotRepository {
                 ),
             }))
             .toSorted((a, b) => a.rank - b.rank);
-        const firstPerKey = ranked.reduce<typeof ranked>(
-            (kept, row) =>
-                kept.some(k => k.symbol === row.symbol && k.tab === row.tab)
-                    ? kept
-                    : [...kept, row],
-            []
-        );
+        // 순위 순으로 (심볼, 탭)마다 첫 행만 남긴다. Set을 바꾸는 필터인 이유: 이전의
+        // `reduce` + `some`은 행마다 앞 결과를 훑어 O(N²)였다(CONVENTIONS.md#CP-6 예외).
+        const seenKeys = new Set<string>();
+        const firstPerKey = ranked.filter(row => {
+            const key = `${row.symbol}\u0000${row.tab}`;
+            if (seenKeys.has(key)) return false;
+            seenKeys.add(key);
+            return true;
+        });
         return firstPerKey.map(({ symbol, tab, generatedAt, prose }) => ({
             symbol,
             tab,
@@ -292,7 +294,10 @@ function proseProjection(): SQL<unknown> {
                 if (!/^[A-Za-z]+$/.test(field)) {
                     throw new Error(`invalid prose field name: ${field}`);
                 }
+                // `field`는 위 정규식으로 영문자만 통과시킨 상수 `PROSE_SOURCE_FIELDS`의 키
+                // 이름이다 — 사용자 입력이 아니고 인용부호·구분자가 들어올 수 없다.
                 return [
+                    // react-doctor-disable-next-line react-doctor/raw-sql-injection-risk
                     sql.raw(`'${field}'`),
                     sql`${seoAnalysisSnapshots.content} -> ${sql.raw(`'${field}'`)}`,
                 ];

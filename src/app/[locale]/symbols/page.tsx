@@ -95,18 +95,15 @@ export default async function SymbolsDirectoryPage({
     const locale = enterLocale(rawLocale);
     // 배포 빌드에는 DB가 없다 — 이름/미리보기 없이 구워진 이 렌더를 60초 뒤 재생성하게 한다.
     await shortenRevalidateIfDatabaseMissingAtBuild();
-    const [t, tNav, tSeo] = await Promise.all([
+    // 이름은 로케일에 맞는 것을 읽는다(ko는 한글명, 나머지는 영문명). 못 읽으면
+    // 빈 맵이 와서 티커만 찍힌다 — 링크는 어떤 경우에도 남는다.
+    // 번역 로드와 독립이라 함께 기다린다.
+    const [t, tNav, tSeo, names] = await Promise.all([
         getTranslations('app.symbols'),
         getTranslations(),
         getTranslations('shared.seo'),
+        loadSymbolNames([...POPULAR_TICKERS, ...POPULAR_CRYPTOS], locale),
     ]);
-
-    // 이름은 로케일에 맞는 것을 읽는다(ko는 한글명, 나머지는 영문명). 못 읽으면
-    // 빈 맵이 와서 티커만 찍힌다 — 링크는 어떤 경우에도 남는다.
-    const names = await loadSymbolNames(
-        [...POPULAR_TICKERS, ...POPULAR_CRYPTOS],
-        locale
-    );
     const sections = buildSymbolDirectory(names, INTL_LOCALE[locale]);
 
     const webPageJsonLd = buildWebPageJsonLd({

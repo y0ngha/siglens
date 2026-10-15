@@ -183,6 +183,8 @@ export async function reconcileUsTickerNames(
     const chunkResults: Record<string, string>[] = [];
     for (const chunk of chunks) {
         chunkResults.push(
+            // 번역 프로바이더 레이트리밋을 피하려고 청크를 직렬로 보낸다.
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await translate(
                 chunk.map(c => ({ symbol: c.symbol, name: c.newName }))
             )
@@ -245,6 +247,8 @@ export async function reconcileUsTickerNames(
     // 프라미스를 이어 붙이면 의도가 가려진다.
     const outcomes: boolean[] = [];
     for (const c of translatable) {
+        // DB 연결을 한꺼번에 두드리지 않으려는 의도된 직렬 처리다(위 주석).
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
         outcomes.push(await renameOne(c));
     }
     const renamed = outcomes.filter(Boolean).length;

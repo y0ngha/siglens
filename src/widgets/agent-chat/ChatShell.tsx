@@ -123,6 +123,8 @@ export function ChatShell({
      * here already — the created conversation's id and title arrive on the stream,
      * rename/delete come from the rail — so apply them locally instead.
      */
+    // 위 JSDoc대로 서버가 준 목록을 초기값으로만 쓰고 이후 변경은 로컬에서 적용하는 의도된 설계다. 새 prop으로 덮으면 router.refresh 없이 반영한 낙관 상태를 잃는다.
+    // react-doctor-disable-next-line react-doctor/no-derived-useState
     const [conversationItems, setConversationItems] = useState(conversations);
     const drawerRef = useRef<HTMLDivElement>(null);
     const drawerTriggerRef = useRef<HTMLButtonElement>(null);

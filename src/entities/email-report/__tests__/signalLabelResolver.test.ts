@@ -1,4 +1,4 @@
-import { createSignalLabelResolver } from '@/app/api/cron/email-report/signalLabelResolver';
+import { createSignalLabelResolver } from '@/entities/email-report/lib/signalLabelResolver';
 
 const DICT: Record<string, string> = {
     'signalType.golden_cross': '골든크로스',

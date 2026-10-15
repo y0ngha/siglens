@@ -59,6 +59,45 @@ interface DigestResultViewProps {
     result: NewsAnalysisResponse;
 }
 
+interface DigestEventListProps {
+    events: readonly string[];
+    heading: string;
+    listLabel: string;
+    marker: string;
+    markerClassName: string;
+    className?: string;
+}
+
+/** 제목 + 글머리 목록. 주요 이벤트와 예정 이벤트가 마커·간격만 달리 쓴다. */
+function DigestEventList({
+    events,
+    heading,
+    listLabel,
+    marker,
+    markerClassName,
+    className,
+}: DigestEventListProps) {
+    if (events.length === 0) return null;
+    return (
+        <div className={className}>
+            <h3 className={cn('mb-2', HEADING_SUBSECTION)}>{heading}</h3>
+            <ul className="space-y-1.5" aria-label={listLabel}>
+                {events.map(event => (
+                    <li
+                        key={event}
+                        className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
+                    >
+                        <span aria-hidden="true" className={markerClassName}>
+                            {marker}
+                        </span>
+                        <span className="min-w-0 wrap-break-word">{event}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 function DigestResultView({ result }: DigestResultViewProps) {
     const t = useTranslations('widgets.market-news');
     // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
@@ -94,63 +133,22 @@ function DigestResultView({ result }: DigestResultViewProps) {
                 {result.currentDriverKo}
             </p>
 
-            {result.keyEventsKo.length > 0 && (
-                <div className="mb-4">
-                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        {t('MarketNewsDigest.77f553')}
-                    </h3>
-                    <ul
-                        className="space-y-1.5"
-                        aria-label={t('MarketNewsDigest.569722')}
-                    >
-                        {result.keyEventsKo.map(event => (
-                            <li
-                                key={event}
-                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0"
-                                >
-                                    •
-                                </span>
-                                <span className="min-w-0 wrap-break-word">
-                                    {event}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            <DigestEventList
+                events={result.keyEventsKo}
+                heading={t('MarketNewsDigest.77f553')}
+                listLabel={t('MarketNewsDigest.569722')}
+                marker="•"
+                markerClassName="mt-0.5 shrink-0"
+                className="mb-4"
+            />
 
-            {result.upcomingEventsKo.length > 0 && (
-                <div>
-                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        {t('MarketNewsDigest.29339e')}
-                    </h3>
-                    <ul
-                        className="space-y-1.5"
-                        aria-label={t('MarketNewsDigest.a404a6')}
-                    >
-                        {result.upcomingEventsKo.map(event => (
-                            <li
-                                key={event}
-                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-ui-warning-text"
-                                >
-                                    ⚠
-                                </span>
-                                <span className="min-w-0 wrap-break-word">
-                                    {event}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            <DigestEventList
+                events={result.upcomingEventsKo}
+                heading={t('MarketNewsDigest.29339e')}
+                listLabel={t('MarketNewsDigest.a404a6')}
+                marker="⚠"
+                markerClassName="mt-0.5 shrink-0 text-ui-warning-text"
+            />
         </section>
     );
 }
