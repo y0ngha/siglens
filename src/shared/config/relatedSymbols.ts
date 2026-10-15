@@ -413,7 +413,7 @@ function themePeerEntriesOf(symbol: string): readonly ThemePeer[] {
  * 아니다 — 테마 피어는 시장을 넘어도 되고(`themePeersOf` JSDoc), 배열 인접성만
  * 시장을 넘을 근거가 되지 못한다는 뜻이다.
  *
- * 한국 종목은 `KR_SYMBOL_RE`(6자리 + `.KS`/`.KQ`)로 판별한다 — canonical 심볼에
+ * 한국 종목은 `KR_SYMBOL_RE`(KRX 단축코드 + `.KS`/`.KQ`)로 판별한다 — canonical 심볼에
  * 접미사가 내장돼 있어 DB 조회 없이 순수 함수로 끝난다(그 상수의 설계 의도).
  */
 const KR_RING: readonly string[] = POPULAR_TICKERS.filter(s =>

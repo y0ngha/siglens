@@ -2,11 +2,8 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { and, inArray, isNull, like, or, sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import {
-    fetchKrxListedItems,
-    hasDataGoKrCredentials,
-} from '../src/shared/api/dataGoKr/krxListedInfoClient';
-import { toKoreanTickerRows } from '../src/shared/api/dataGoKr/toKoreanTickerRows';
+import { hasDataGoKrCredentials } from '../src/shared/api/dataGoKr/krxListedInfoClient';
+import { fetchKrTickerRows } from '../src/shared/api/dataGoKr/fetchKrTickerRows';
 import {
     formatCandidates,
     planKrTickerReconcile,
@@ -89,20 +86,30 @@ async function main() {
         );
     }
 
-    const items = await fetchKrxListedItems();
-    console.log(`Fetched ${items.length} listed items from data.go.kr`);
+    // 크론과 같은 관문을 쓴다 — 시드만 보충(우선주)을 빠뜨리면 손으로 돌린 복구가
+    // 우선주를 상폐 후보로 만든다.
+    const { masterItems, rows, supplemented, supplementUnavailable } =
+        await fetchKrTickerRows();
+    console.log(
+        `Fetched ${masterItems.length} listed items from data.go.kr (master)`
+    );
 
-    const byMarket = items.reduce<Record<string, number>>((acc, i) => {
+    const byMarket = masterItems.reduce<Record<string, number>>((acc, i) => {
         acc[i.market] = (acc[i.market] ?? 0) + 1;
         return acc;
     }, {});
     console.log('By market:', byMarket);
 
-    const rows = toKoreanTickerRows(items);
-    const skipped = items.length - rows.length;
+    // 보충 행이 `rows`에 섞이므로 마스터에서 걸러낸 수는 보충분을 빼고 센다.
+    const skipped = masterItems.length - (rows.length - supplemented);
     console.log(
-        `Upserting ${rows.length} rows (skipped ${skipped}: KONEX + duplicates)`
+        `Upserting ${rows.length} rows (skipped ${skipped}: KONEX + duplicates; supplemented ${supplemented} from stock price V2)`
     );
+    if (supplementUnavailable) {
+        console.warn(
+            'Supplement (stock price V2) unavailable — delist will be skipped this run'
+        );
+    }
 
     if (rows.length === 0) {
         console.warn('No rows to write — aborting without touching the table');
@@ -134,7 +141,7 @@ async function main() {
         const plan = planKrTickerReconcile(
             rows.map(row => row.symbol),
             existing,
-            { allowLargeDelist: FORCE_DELIST }
+            { allowLargeDelist: FORCE_DELIST, supplementUnavailable }
         );
 
         let written = 0;

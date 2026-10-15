@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
     TICKER_RE,
     SYMBOL_EDGE_RE,
+    KR_SHORT_CODE_RE,
+    KR_SYMBOL_RE,
     isAdmissibleSymbolShape,
 } from '@/shared/config/ticker';
 
@@ -146,5 +148,31 @@ describe('symbol shape checks', () => {
             // proxy.ts가 정규식이 아니라 함수를 쓰도록 바뀐 이유이기도 하다.
             expect(SYMBOL_EDGE_RE.test('HVO.L')).toBe(true);
         });
+    });
+});
+
+describe('KRX 단축코드 형상', () => {
+    it.each(['005930', '0001A0', '00088K', '0220WL', '00104K', '900140'])(
+        '단축코드 %s를 받는다',
+        code => expect(KR_SHORT_CODE_RE.test(code)).toBe(true)
+    );
+
+    it.each(['A05930', '00593', '0059300', '0001a0', 'AAPL'])(
+        '형상 밖 %s는 거부한다',
+        code => expect(KR_SHORT_CODE_RE.test(code)).toBe(false)
+    );
+
+    it.each(['005930.KS', '0001A0.KQ', '00088K.KS', '0220WL.KS'])(
+        '심볼 %s를 한국 종목으로 판정한다',
+        symbol => expect(KR_SYMBOL_RE.test(symbol)).toBe(true)
+    );
+
+    it.each(['0001A0', 'AAPL.KS', '005930.KN', 'BRK.B'])(
+        '%s는 한국 종목 심볼이 아니다',
+        symbol => expect(KR_SYMBOL_RE.test(symbol)).toBe(false)
+    );
+
+    it('영문코드 심볼도 형상 사전 검사를 통과한다(소문자 입력 포함)', () => {
+        expect(isAdmissibleSymbolShape('0001a0.kq')).toBe(true);
     });
 });

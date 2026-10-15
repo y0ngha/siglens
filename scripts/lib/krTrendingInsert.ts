@@ -10,6 +10,7 @@
  * 검사가 깨진다. 라인 번호가 아니라 앵커 문자열로 위치를 찾고, 앵커가 없으면 던진다.
  */
 import { extractExistingKrTickers } from './visitCandidates';
+import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
 
 export interface KrTrendingItem {
     symbol: string;
@@ -25,7 +26,10 @@ const CATEGORIES_END = '\n];\n';
 const CATEGORY_ITEMS_END = '\n        ],';
 const POPULAR_DECLARATION = 'export const POPULAR_TICKERS = [';
 const POPULAR_END = '] as const;';
-const KR_POPULAR_LINE_RE = /^ {4}'\d{6}\.K[SQ]',.*$/gm;
+const KR_POPULAR_LINE_RE = new RegExp(
+    `^ {4}'${KR_SHORT_CODE_PATTERN}\\.K[SQ]',.*$`,
+    'gm'
+);
 
 function quote(value: string): string {
     return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;

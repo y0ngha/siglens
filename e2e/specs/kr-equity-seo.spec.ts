@@ -1,4 +1,5 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { KR_SHORT_CODE_PATTERN, KR_SYMBOL_RE } from '@/shared/config/ticker';
 import { test, expect } from '../support/fixtures';
 
 /**
@@ -167,14 +168,19 @@ test.describe('KR equity SEO (crawler-facing)', () => {
         const home = await (await page.request.get('/')).text();
 
         const curatedKr: readonly string[] = POPULAR_TICKERS.filter(symbol =>
-            /^\d{6}\.K[SQ]$/.test(symbol)
+            KR_SYMBOL_RE.test(symbol)
         );
         expect(curatedKr.length).toBeGreaterThan(0);
 
         const advertisedKr = [
             ...new Set(
                 Array.from(
-                    sitemap.matchAll(/<loc>[^<]*\/(\d{6}\.K[SQ])<\/loc>/g),
+                    sitemap.matchAll(
+                        new RegExp(
+                            `<loc>[^<]*\\/(${KR_SHORT_CODE_PATTERN}\\.K[SQ])<\\/loc>`,
+                            'g'
+                        )
+                    ),
                     m => m[1]!
                 )
             ),

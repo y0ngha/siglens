@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { insertKrTrendingItems } from '../krTrendingInsert';
 import { extractExistingKrTickers } from '../visitCandidates';
+import { KR_SHORT_CODE_PATTERN } from '@/shared/config/ticker';
 
 const REAL = readFileSync(
     resolve(process.cwd(), 'src/shared/config/popular-tickers.ts'),
@@ -66,12 +67,31 @@ describe('insertKrTrendingItems', () => {
             out.indexOf('export const KR_CATEGORY_IDS')
         );
         const categoryKr = new Set(
-            [...categoryPart.matchAll(/symbol: '(\d{6}\.K[SQ])'/g)].map(
-                m => m[1]!
-            )
+            [
+                ...categoryPart.matchAll(
+                    new RegExp(
+                        `symbol: '(${KR_SHORT_CODE_PATTERN}\\.K[SQ])'`,
+                        'g'
+                    )
+                ),
+            ].map(m => m[1]!)
         );
         expect([...categoryKr].sort()).toEqual(
             [...extractExistingKrTickers(out)].sort()
+        );
+    });
+
+    it('KR 블록의 마지막 줄이 영문 단축코드여도 그 뒤에 넣는다', () => {
+        // [회귀] KR 줄 정규식이 `\d{6}`면 영문코드 줄을 KR 블록으로 못 보고 그 앞에 끼워 넣는다.
+        const ALNUM = { symbol: '99999Z.KQ', name: '가상영문코드' };
+        const once = insertKrTrendingItems(BASE, [ALNUM]);
+        const twice = insertKrTrendingItems(once, [ITEM_A]);
+        const popular = twice.slice(
+            twice.indexOf('export const POPULAR_TICKERS')
+        );
+
+        expect(popular.indexOf("'999990.KS', // 가상종목A")).toBeGreaterThan(
+            popular.indexOf("'99999Z.KQ', // 가상영문코드")
         );
     });
 

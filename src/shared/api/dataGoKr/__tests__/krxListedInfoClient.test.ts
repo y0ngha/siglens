@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     fetchKrxListedItems,
+    fetchStockPriceItems,
     hasDataGoKrCredentials,
 } from '../krxListedInfoClient';
 
@@ -52,6 +53,7 @@ describe('fetchKrxListedItems', () => {
                 market: 'KOSPI',
                 isin: 'KR7005930003',
                 corpName: '삼성전자주식회사',
+                basDt: expect.stringMatching(/^\d{8}$/),
             },
         ]);
     });
@@ -253,7 +255,7 @@ describe('fetchKrxListedItems', () => {
             await fetchKrxListedItems();
 
             expect(fetchSpy.mock.calls.length).toBeLessThan(20); // MAX_PAGES
-            expect(fetchSpy.mock.calls.length).toBe(3); // 90초 / 30초
+            expect(fetchSpy.mock.calls.length).toBe(3); // 70초 예산: 0·30·60초에 시작
         } finally {
             vi.useRealTimers();
         }
@@ -274,15 +276,15 @@ describe('fetchKrxListedItems', () => {
                 timeouts.push(ms);
                 return realTimeout(ms);
             });
-            // 페이지당 42초 — 3페이지째 진입 시각이 84초라 남은 예산이 6초다.
+            // 페이지당 32초 — 3페이지째 진입 시각이 64초라 남은 예산(70초)이 6초다.
             fetchSpy.mockImplementation(async () => {
-                vi.advanceTimersByTime(42_000);
+                vi.advanceTimersByTime(32_000);
                 return page([SAMSUNG], 999_999);
             });
 
             await fetchKrxListedItems();
 
-            // 3번째가 10초면 총 94초로 예산을 넘긴다.
+            // 3번째가 10초면 총 74초로 예산을 넘긴다.
             expect(timeouts).toEqual([10_000, 10_000, 6_000]);
         } finally {
             vi.useRealTimers();
@@ -298,9 +300,9 @@ describe('fetchKrxListedItems', () => {
     it('남은 예산이 하한 미만이면 페이지를 시작하지 않고 모은 만큼 반환한다', async () => {
         vi.useFakeTimers();
         try {
-            // 페이지당 89.5초 — 1페이지를 받고 나면 남은 예산이 500ms로 하한 미만이다.
+            // 페이지당 69.5초 — 1페이지를 받고 나면 남은 예산이 500ms로 하한 미만이다.
             fetchSpy.mockImplementation(async () => {
-                vi.advanceTimersByTime(89_500);
+                vi.advanceTimersByTime(69_500);
                 return page([SAMSUNG], 999_999);
             });
 
@@ -319,6 +321,181 @@ describe('fetchKrxListedItems', () => {
 
         expect(await fetchKrxListedItems()).toEqual([]);
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('영문 단축코드', () => {
+    beforeEach(() => {
+        vi.stubEnv('DATA_GO_KR_SERVICE_KEY', 'test-key');
+        fetchSpy.mockReset();
+        vi.stubGlobal('fetch', fetchSpy);
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.unstubAllGlobals();
+    });
+
+    it('영문이 섞인 단축코드를 버리지 않는다', async () => {
+        // [회귀] `^\d{6}$`로 걸러 신규 상장 64종목이 마스터에서 통째로 빠졌었다.
+        fetchSpy.mockResolvedValue(
+            page([
+                {
+                    ...SAMSUNG,
+                    srtnCd: 'A0001A0',
+                    itmsNm: '덕양에너젠',
+                    mrktCtg: 'KOSDAQ',
+                },
+            ])
+        );
+
+        const items = await fetchKrxListedItems('20261014');
+
+        expect(items.map(i => [i.shortCode, i.basDt])).toEqual([
+            ['0001A0', '20261014'],
+        ]);
+    });
+});
+
+describe('fetchStockPriceItems', () => {
+    beforeEach(() => {
+        vi.stubEnv('DATA_GO_KR_SERVICE_KEY', 'test-key');
+        fetchSpy.mockReset();
+        vi.stubGlobal('fetch', fetchSpy);
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.unstubAllGlobals();
+    });
+
+    // 실측(2026-10-15) V2 응답 — `srtnCd`에 `A` 접두사가 없고 시세 필드가 함께 온다.
+    const HYUNDAI_PREF = {
+        basDt: '20261014',
+        srtnCd: '005387',
+        isinCd: 'KR7005387006',
+        itmsNm: '현대차2우B',
+        mrktCtg: 'KOSPI',
+        clpr: '153700',
+    };
+
+    it('V2 엔드포인트를 주어진 기준일로 호출한다', async () => {
+        fetchSpy.mockResolvedValue(page([HYUNDAI_PREF]));
+
+        await fetchStockPriceItems('20261014');
+
+        const url = String(fetchSpy.mock.calls[0]?.[0]);
+        // 옛 경로(`/service/GetStockSecuritiesInfoService/getStockPriceInfo`)는 403이다.
+        expect(url).toContain(
+            '/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2?'
+        );
+        expect(url).not.toContain('/service/');
+        expect(new URL(url).searchParams.get('basDt')).toBe('20261014');
+    });
+
+    it('우선주·영문코드를 매핑하고 법인명이 없으면 종목명을 쓴다', async () => {
+        fetchSpy.mockResolvedValue(
+            page([
+                HYUNDAI_PREF,
+                {
+                    ...HYUNDAI_PREF,
+                    srtnCd: '00088K',
+                    itmsNm: '한화3우B',
+                    isinCd: '',
+                },
+            ])
+        );
+
+        const { items, truncated } = await fetchStockPriceItems('20261014');
+
+        expect(truncated).toBe(false);
+        expect(items).toEqual([
+            {
+                shortCode: '005387',
+                koreanName: '현대차2우B',
+                market: 'KOSPI',
+                isin: 'KR7005387006',
+                corpName: '현대차2우B',
+                basDt: '20261014',
+            },
+            {
+                shortCode: '00088K',
+                koreanName: '한화3우B',
+                market: 'KOSPI',
+                isin: '',
+                corpName: '한화3우B',
+                basDt: '20261014',
+            },
+        ]);
+    });
+
+    it('예산이 닳아 멈추면 잘렸다고 알린다', async () => {
+        vi.useFakeTimers();
+        try {
+            // 페이지당 15초 — 20초 예산에서 2페이지째 시작 시 남은 5초, 3페이지째는 하한 미만.
+            fetchSpy.mockImplementation(async () => {
+                vi.advanceTimersByTime(15_000);
+                return page([HYUNDAI_PREF], 999_999);
+            });
+
+            const { truncated } = await fetchStockPriceItems('20261014');
+
+            expect(truncated).toBe(true);
+            expect(fetchSpy).toHaveBeenCalledTimes(2);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('중간 페이지가 비어 와 totalCount보다 적게 받으면 잘렸다고 알린다', async () => {
+        // [회귀] 빈 페이지를 정상 종료로만 보면, 일시적으로 빈 2페이지를 받은 날 보충이
+        // "완전"으로 판정되고 빠진 우선주가 상폐된다(25개 미만이면 가드도 통과한다).
+        const full = Array.from({ length: 1000 }, (_, i) => ({
+            ...HYUNDAI_PREF,
+            srtnCd: String(100_000 + i),
+        }));
+        fetchSpy
+            .mockResolvedValueOnce(page(full, 2900))
+            .mockResolvedValueOnce(page([], 2900));
+
+        const { items, truncated } = await fetchStockPriceItems('20261014');
+
+        expect(items).toHaveLength(1000);
+        expect(truncated).toBe(true);
+    });
+
+    it('totalCount만큼 다 받으면 잘리지 않은 것이다', async () => {
+        const rows = (n: number, base: number) =>
+            Array.from({ length: n }, (_, i) => ({
+                ...HYUNDAI_PREF,
+                srtnCd: String(base + i),
+            }));
+        fetchSpy
+            .mockResolvedValueOnce(page(rows(1000, 100_000), 1500))
+            .mockResolvedValueOnce(page(rows(500, 200_000), 1500));
+
+        const { items, truncated } = await fetchStockPriceItems('20261014');
+
+        expect(items).toHaveLength(1500);
+        expect(truncated).toBe(false);
+    });
+
+    it('키가 없으면 호출 없이 빈 목록', async () => {
+        vi.stubEnv('DATA_GO_KR_SERVICE_KEY', '');
+
+        expect(await fetchStockPriceItems('20261014')).toEqual({
+            items: [],
+            truncated: false,
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('HTTP 오류는 던진다 — 호출부가 보충 불가로 처리한다', async () => {
+        fetchSpy.mockResolvedValue({ ok: false, status: 403 } as Response);
+
+        await expect(fetchStockPriceItems('20261014')).rejects.toThrow(
+            '[stockPriceInfo] HTTP 403'
+        );
     });
 });
 

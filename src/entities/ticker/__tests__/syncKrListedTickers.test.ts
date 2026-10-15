@@ -1,11 +1,11 @@
 const {
-    mockFetchKrxListedItems,
+    mockFetchRows,
     mockHasCredentials,
     mockTryGetClient,
     mockInvalidateCache,
     mockRepository,
 } = vi.hoisted(() => ({
-    mockFetchKrxListedItems: vi.fn(),
+    mockFetchRows: vi.fn(),
     mockHasCredentials: vi.fn(),
     mockTryGetClient: vi.fn(),
     mockInvalidateCache: vi.fn(),
@@ -18,8 +18,13 @@ const {
 }));
 
 vi.mock('@/shared/api/dataGoKr/krxListedInfoClient', () => ({
-    fetchKrxListedItems: mockFetchKrxListedItems,
     hasDataGoKrCredentials: mockHasCredentials,
+}));
+
+// 마스터·보충 조립과 KONEX 제외는 `fetchKrTickerRows`(자체 테스트 있음)가 맡는다 — 여기서는
+// 관문이 준 행을 그대로 쓰는지만 본다.
+vi.mock('@/shared/api/dataGoKr/fetchKrTickerRows', () => ({
+    fetchKrTickerRows: mockFetchRows,
 }));
 
 vi.mock('@/shared/db/client', async importOriginal => ({
@@ -42,6 +47,8 @@ vi.mock('../api', () => ({
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KrxListedItem } from '@/shared/api/dataGoKr/krxListedInfoClient';
+import { toKoreanTickerRows } from '@/shared/api/dataGoKr/toKoreanTickerRows';
+import { KR_RECONCILE_SUPPLEMENT_UNAVAILABLE } from '../lib/krTickerReconcile';
 import { syncKrListedTickers } from '../lib/syncKrListedTickers';
 
 function item(
@@ -54,7 +61,21 @@ function item(
         market,
         isin: `KR${shortCode}`,
         corpName: `법인${shortCode}`,
+        basDt: '20261014',
     };
+}
+
+/** 관문이 마스터 항목만 돌려준 것처럼 둔다(보충 0건이지만 정상 수신). */
+function serve(
+    items: KrxListedItem[],
+    supplement: { supplemented?: number; supplementUnavailable?: boolean } = {}
+): void {
+    mockFetchRows.mockResolvedValue({
+        masterItems: items,
+        rows: toKoreanTickerRows(items),
+        supplemented: supplement.supplemented ?? 0,
+        supplementUnavailable: supplement.supplementUnavailable ?? false,
+    });
 }
 
 /** 절대 하한(1,000)을 넘기는 응답 — 가드를 통과시키고 싶을 때 쓴다. */
@@ -80,7 +101,7 @@ describe('syncKrListedTickers', () => {
         await expect(syncKrListedTickers()).rejects.toThrow(
             'DATA_GO_KR_SERVICE_KEY'
         );
-        expect(mockFetchKrxListedItems).not.toHaveBeenCalled();
+        expect(mockFetchRows).not.toHaveBeenCalled();
     });
 
     it('DB를 못 잡으면 던진다', async () => {
@@ -91,7 +112,7 @@ describe('syncKrListedTickers', () => {
     });
 
     it('KONEX는 upsert에서 빠진다 — yahoo에 시세가 없어 죽은 링크가 된다', async () => {
-        mockFetchKrxListedItems.mockResolvedValue([
+        serve([
             item('005930', 'KOSPI'),
             item('247540', 'KOSDAQ'),
             item('999999', 'KONEX'),
@@ -113,7 +134,7 @@ describe('syncKrListedTickers', () => {
         // rows의 name은 공공데이터포털에 영문명이 없어 채운 한글명 placeholder다
         // (toKoreanTickerRows 참조). 이 옵션 없이 upsert하면 방문 시 getAssetInfo가
         // 이미 써 둔 진짜 영문명을 이 크론이 매일 밤 placeholder로 되돌린다.
-        mockFetchKrxListedItems.mockResolvedValue([item('005930', 'KOSPI')]);
+        serve([item('005930', 'KOSPI')]);
 
         await syncKrListedTickers();
 
@@ -125,7 +146,7 @@ describe('syncKrListedTickers', () => {
 
     it('사라진 종목을 상폐 표시하고 캐시를 비운다', async () => {
         const items = bulkItems(1_200);
-        mockFetchKrxListedItems.mockResolvedValue(items);
+        serve(items);
         mockRepository.findAllListingStatuses.mockResolvedValue([
             ...items.map(i => ({
                 symbol: `${i.shortCode}.KS`,
@@ -144,7 +165,7 @@ describe('syncKrListedTickers', () => {
     });
 
     it('부분 응답이면 상폐를 건너뛰고 upsert만 한다', async () => {
-        mockFetchKrxListedItems.mockResolvedValue([item('005930', 'KOSPI')]);
+        serve([item('005930', 'KOSPI')]);
         mockRepository.findAllListingStatuses.mockResolvedValue(
             bulkItems(2_500).map(i => ({
                 symbol: `${i.shortCode}.KS`,
@@ -172,7 +193,7 @@ describe('syncKrListedTickers', () => {
      */
     it('[회귀] 미국 종목이 섞여 들어오면 가드가 걸려 상폐가 통째로 멈춘다', async () => {
         const items = bulkItems(1_200);
-        mockFetchKrxListedItems.mockResolvedValue(items);
+        serve(items);
         mockRepository.findAllListingStatuses.mockResolvedValue([
             ...items.map(i => ({
                 symbol: `${i.shortCode}.KS`,
@@ -191,9 +212,35 @@ describe('syncKrListedTickers', () => {
         expect(counts.delisted).toBe(0);
     });
 
+    it('보충을 온전히 못 받았으면 upsert는 하고 상폐는 하지 않는다', async () => {
+        const items = bulkItems(1_200);
+        serve(items, { supplementUnavailable: true });
+        mockRepository.findAllListingStatuses.mockResolvedValue([
+            ...items.map(i => ({
+                symbol: `${i.shortCode}.KS`,
+                delistedAt: null,
+            })),
+            // 보충으로만 존재하던 우선주 — 보충 장애 하루에 상폐되면 안 된다.
+            { symbol: '005387.KS', delistedAt: null },
+        ]);
+
+        const counts = await syncKrListedTickers();
+
+        expect(mockRepository.upsertMany).toHaveBeenCalledOnce();
+        expect(mockRepository.markDelisted).toHaveBeenCalledWith([]);
+        expect(counts.delisted).toBe(0);
+        expect(counts.guardTrip).toBe(KR_RECONCILE_SUPPLEMENT_UNAVAILABLE);
+    });
+
+    it('보충 건수를 결과에 싣는다', async () => {
+        serve(bulkItems(1_200), { supplemented: 114 });
+
+        expect((await syncKrListedTickers()).supplemented).toBe(114);
+    });
+
     it('다시 상장된 종목은 표시를 해제한다', async () => {
         const items = bulkItems(1_200);
-        mockFetchKrxListedItems.mockResolvedValue(items);
+        serve(items);
         mockRepository.findAllListingStatuses.mockResolvedValue(
             items.map((i, idx) => ({
                 symbol: `${i.shortCode}.KS`,

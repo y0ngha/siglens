@@ -1,18 +1,18 @@
 import 'server-only';
-import {
-    fetchKrxListedItems,
-    hasDataGoKrCredentials,
-} from '@/shared/api/dataGoKr/krxListedInfoClient';
-import { toKoreanTickerRows } from '@/shared/api/dataGoKr/toKoreanTickerRows';
+import { hasDataGoKrCredentials } from '@/shared/api/dataGoKr/krxListedInfoClient';
+import { fetchKrTickerRows } from '@/shared/api/dataGoKr/fetchKrTickerRows';
 import { formatCandidates, planKrTickerReconcile } from './krTickerReconcile';
 import { DrizzleKoreanTickerRepository } from '../api';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { invalidateKoreanTickerCache } from './koreanNameStore';
 
 export interface KrTickerSyncCounts {
-    /** 공공데이터포털 응답의 원본 항목 수 — KONEX 제외·중복 병합 전. */
+    /** 마스터(KRX 상장종목정보) 응답의 원본 항목 수 — KONEX 제외·중복 병합 전. */
     fetched: number;
+    /** upsert한 행 수 — 마스터 행 + 보충 행. */
     upserted: number;
+    /** 마스터에 없어 주식시세 V2에서 보충한 행 수(우선주 등). */
+    supplemented: number;
     delisted: number;
     relisted: number;
     /** 가드가 걸려 상폐 처리를 건너뛴 사유. 정상이면 `null`. */
@@ -23,6 +23,8 @@ export interface KrTickerSyncCounts {
  * 공공데이터포털 KRX 상장종목현황 → `korean_tickers` 일 1회 동기화.
  *
  * 세 가지를 한 번에 한다: 신규 상장 추가, 기존 행 갱신, 사라진 종목 상폐 표시.
+ * 마스터는 보통주만 주므로 우선주는 같은 기준일의 주식시세 V2로 보충한다
+ * (`fetchKrTickerRows`). 보충을 온전히 못 받은 날은 상폐만 건너뛴다.
  * 종전 시드(`yarn db:seed:kr-names`)는 upsert만 해서 폐지 종목이 영구 잔류했고,
  * 그 종목이 한글 검색에 뜬 뒤 클릭하면 시세가 없는 죽은 페이지로 갔다.
  *
@@ -43,13 +45,14 @@ export async function syncKrListedTickers(): Promise<KrTickerSyncCounts> {
     if (!client) throw new Error('[kr-tickers] database unavailable');
     const repository = new DrizzleKoreanTickerRepository(client.db);
 
-    const items = await fetchKrxListedItems();
-    const rows = toKoreanTickerRows(items);
+    const { masterItems, rows, supplemented, supplementUnavailable } =
+        await fetchKrTickerRows();
 
     const existing = await repository.findAllListingStatuses();
     const plan = planKrTickerReconcile(
         rows.map(row => row.symbol),
-        existing
+        existing,
+        { supplementUnavailable }
     );
 
     if (plan.guardTrip !== null) {
@@ -80,10 +83,12 @@ export async function syncKrListedTickers(): Promise<KrTickerSyncCounts> {
     invalidateKoreanTickerCache();
 
     return {
-        // `rows`가 아니라 `items`를 센다 — KONEX 제외·중복 병합 전 원본 수신량이어야
-        // 로그에서 필터가 몇 건을 걸러냈는지(fetched - upserted) 읽을 수 있다.
-        fetched: items.length,
+        // `rows`가 아니라 마스터 원본을 센다 — KONEX 제외·중복 병합 전 수신량이어야
+        // 로그에서 필터가 몇 건을 걸러냈는지 읽을 수 있다. 보충 행이 `upserted`에 섞이므로
+        // 걸러낸 수는 `fetched - (upserted - supplemented)`다.
+        fetched: masterItems.length,
         upserted: rows.length,
+        supplemented,
         delisted: plan.delist.length,
         relisted: plan.relist.length,
         guardTrip: plan.guardTrip,
