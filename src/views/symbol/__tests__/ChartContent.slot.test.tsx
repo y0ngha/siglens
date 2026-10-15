@@ -166,4 +166,39 @@ describe('ChartContent 슬롯 규칙', () => {
         // 텍스트로 항상 유지하고, AnalysisPanel은 그 위에 서사를 additive로 얹는다.
         expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
     });
+    describe('chartCornerSlot (차트 상단 띠 오버레이)', () => {
+        const renderWithSlot = (slot?: React.ReactNode) => {
+            baseAnalysis.mockReturnValue(analysisReturn(FALLBACK_ANALYSIS));
+            return render(
+                <ChartContent
+                    {...props}
+                    initialAnalysis={FALLBACK_ANALYSIS}
+                    initialAnalysisFailed={true}
+                    chartCornerSlot={slot}
+                />
+            );
+        };
+
+        it('슬롯이 없으면 오버레이 래퍼도 그리지 않는다', () => {
+            renderWithSlot(undefined);
+
+            expect(screen.queryByTestId('corner-slot')).toBeNull();
+        });
+
+        it('슬롯은 흐름 밖(absolute)·포인터 통과 래퍼 안에 놓인다 — 레이아웃을 밀지 않는다', () => {
+            renderWithSlot(<span data-testid="corner-slot">x</span>);
+
+            const wrapper = screen.getByTestId('corner-slot').parentElement;
+            expect(wrapper).toHaveClass(
+                'absolute',
+                'pointer-events-none',
+                'top-0',
+                'left-2',
+                'right-32',
+                '@container',
+                'h-8',
+                'z-10'
+            );
+        });
+    });
 });

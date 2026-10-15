@@ -3661,6 +3661,13 @@
                 "year2Label": "2 年期国债"
             }
         },
+        "extended-hours": {
+            "basisAfter": "较今日收盘价",
+            "basisPre": "较前收盘价",
+            "sessionAfter": "盘后",
+            "sessionPre": "盘前",
+            "tradedAt": "{time} ET 成交"
+        },
         "fear-greed": {
             "FearGreedGroupBar": {
                 "groupNameFlow": "供需",

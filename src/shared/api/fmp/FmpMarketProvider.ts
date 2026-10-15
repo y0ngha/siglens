@@ -5,6 +5,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type {
+    ExtendedHoursTrade,
     QuoteSnapshot,
     SiglensMarketProvider,
 } from '@/shared/api/market/marketProvider.types';
@@ -131,6 +132,44 @@ interface FmpQuote {
     timestamp: number;
     changePercentage: number;
     name: string;
+}
+
+/** FMP `aftermarket-trade` 행. 필드가 비어 올 수 있어 전부 `unknown`으로 받아 검증한다. */
+interface FmpAftermarketTradeRow {
+    price?: unknown;
+    tradeSize?: unknown;
+    timestamp?: unknown;
+}
+
+/**
+ * `aftermarket-trade` 응답 → 마지막 체결. 비배열·빈 배열·가격/시각이 유한한 양수가 아닌
+ * 행은 `null`이다(표시할 근거가 없으면 아무것도 보이지 않는 편이 낫다). `tradeSize`는
+ * 표시에 쓰지 않으므로 깨져 있어도 0으로 둔다.
+ */
+export function parseAftermarketTrade(raw: unknown): ExtendedHoursTrade | null {
+    if (!Array.isArray(raw)) return null;
+    // 빈 배열이면 `raw[0]`이 `undefined`라 아래 검사에서 같이 걸러진다.
+    const row = raw[0] as FmpAftermarketTradeRow | null | undefined;
+    if (row === null || typeof row !== 'object') return null;
+    const { price, tradeSize, timestamp } = row;
+    if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) {
+        return null;
+    }
+    if (
+        typeof timestamp !== 'number' ||
+        !Number.isFinite(timestamp) ||
+        timestamp <= 0
+    ) {
+        return null;
+    }
+    return {
+        price,
+        tradeSize:
+            typeof tradeSize === 'number' && Number.isFinite(tradeSize)
+                ? tradeSize
+                : 0,
+        timestampMs: timestamp,
+    };
 }
 
 function toFmpBar(raw: FmpOhlcvBar): Bar {
@@ -266,6 +305,33 @@ export class FmpMarketProvider implements SiglensMarketProvider {
     /** 오늘(최근 거래일) 봉을 /quote로 조회한다(OHLCV). EOD 캐시의 live tail 전용. */
     async getTodayBar(symbol: string): Promise<Bar | null> {
         return (await this.getQuoteSnapshot(symbol)).todayBar;
+    }
+
+    /**
+     * 프리·애프터마켓 마지막 체결(`/aftermarket-trade`) — **표시 전용**.
+     *
+     * `/quote`는 정규장에만 갱신되므로(2026-10-15 실측) 확장 세션 가격은 이 엔드포인트가 유일한
+     * 출처다. 결과를 봉·`todayBar`·지표·분석에 섞지 않는다(`getQuoteSnapshot`과 별개 계통).
+     * `aftermarket-quote`(호가·거래량)는 한 줄 표시에 쓰이는 값이 없어 부르지 않는다 —
+     * 호출마다 FMP 대역폭이 든다. 배치 변형(`batch-aftermarket-*`)은 Starter 플랜에서 402다.
+     *
+     * 조회 예외·빈/깨진 응답은 경고 후 `null`(조용히 아무것도 안 그린다).
+     */
+    async getExtendedHoursTrade(
+        symbol: string
+    ): Promise<ExtendedHoursTrade | null> {
+        let raw: unknown;
+        try {
+            raw = await fmpGet<unknown>('aftermarket-trade', { symbol });
+        } catch (error) {
+            console.warn(
+                '[FmpMarketProvider] aftermarket trade fetch failed:',
+                symbol,
+                error
+            );
+            return null;
+        }
+        return parseAftermarketTrade(raw);
     }
 
     /**

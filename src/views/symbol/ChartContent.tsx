@@ -134,6 +134,12 @@ interface ChartContentProps {
      * 복원 재조회를 연다(`shouldRefetchBarsSeed`). 생략하면 참 — 옛 동작(항상 연다)을 유지한다.
      */
     seedHasFormingBarTrimmed?: boolean;
+    /**
+     * 캔들 차트 상단 띠(StockChart 헤더 `h-8`) 왼쪽 빈 자리에 얹는 슬롯. 절대 위치 오버레이라
+     * 슬롯이 나타나거나 사라져도 차트·제목 행의 레이아웃이 움직이지 않는다. 호출부가 자산군
+     * 판정을 끝낸 뒤 넣는다(프리·애프터마켓 한 줄).
+     */
+    chartCornerSlot?: ReactNode;
 }
 
 export function ChartContent({
@@ -149,6 +155,7 @@ export function ChartContent({
     fmpSymbol,
     marketProfile = 'us-equity',
     seedHasFormingBarTrimmed = true,
+    chartCornerSlot,
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
     const tFallback = useTranslations('entities.analysis.fallback');
@@ -687,6 +694,19 @@ export function ChartContent({
                         onSetOverlayVisible={setOverlayVisible}
                         onHighlightOverlay={setHighlightedOverlay}
                     />
+                    {/* StockChart 헤더 띠(h-8)의 왼쪽은 비어 있다(오른쪽엔 작도 메뉴). 그 자리에
+                        절대 위치로 얹는다 — 캔버스·범례(캔버스 안 왼쪽 위, z-10)와 겹치지 않고,
+                        띠는 고정 높이라 슬롯 유무로 아무것도 밀리지 않는다. 래퍼는 포인터를
+                        통과시키고 슬롯 자신만 받는다. 오른쪽 `right-32`(128px)는 작도 메뉴 버튼 몫이다(320px에서
+                        실측: 메뉴 왼쪽 끝 x=197.7 — 슬롯은 그 앞에서 끝난다). 래퍼는 컨테이너 쿼리
+                        기준(`@container`)이다 — 차트 열이 좁아 슬롯 폭이 9rem 아래면 알약이 숨는다
+                        (기본 AI 패널 640px + 768px 뷰포트에서 차트 열 124px). 작도 메뉴 드롭다운은
+                        z-50이라 슬롯 위로 열린다. */}
+                    {chartCornerSlot !== undefined && (
+                        <div className="@container pointer-events-none absolute top-0 right-32 left-2 z-10 flex h-8 items-center">
+                            {chartCornerSlot}
+                        </div>
+                    )}
                 </div>
 
                 {/* Buy/Sell Volume 차트 */}

@@ -3661,6 +3661,13 @@
                 "year2Label": "米国債2年"
             }
         },
+        "extended-hours": {
+            "basisAfter": "本日終値比",
+            "basisPre": "前日終値比",
+            "sessionAfter": "アフターマーケット",
+            "sessionPre": "プレマーケット",
+            "tradedAt": "{time} ET 約定"
+        },
         "fear-greed": {
             "FearGreedGroupBar": {
                 "groupNameFlow": "需給",
