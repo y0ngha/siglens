@@ -270,4 +270,91 @@ describe('deleteAccount', () => {
             );
         });
     });
+
+    describe('API key auth revocation', () => {
+        const HASHES = ['a'.repeat(64), 'b'.repeat(64)];
+
+        it('reads the active key hashes BEFORE deleting and revokes auth AFTER the commit', async () => {
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const order: string[] = [];
+            deleteUser.mockImplementation(async () => {
+                order.push('delete');
+                return true;
+            });
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn(async () => {
+                    order.push('list');
+                    return HASHES;
+                }),
+                revokeAuth: vi.fn(async () => {
+                    order.push('revoke');
+                }),
+            };
+
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+
+            expect(order).toEqual(['list', 'delete', 'revoke']);
+            expect(apiKeys.listActiveKeyHashes).toHaveBeenCalledWith('user-1');
+            expect(apiKeys.revokeAuth).toHaveBeenCalledWith(HASHES);
+        });
+
+        it('does not revoke auth when the delete did not happen', async () => {
+            const { dependencies } = makeDependencies(false);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockResolvedValue(HASHES),
+                revokeAuth: vi.fn(),
+            };
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
+        });
+
+        it('still deletes when listing the hashes fails', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockRejectedValue(new Error('db')),
+                revokeAuth: vi.fn(),
+            };
+            const result = await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(deleteUser).toHaveBeenCalled();
+            expect(result.ok).toBe(true);
+            expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
+        });
+
+        it('still succeeds when revoking auth fails (the rows are already gone)', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const { dependencies } = makeDependencies(true);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockResolvedValue(HASHES),
+                revokeAuth: vi.fn().mockRejectedValue(new Error('redis')),
+            };
+            const result = await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(result.ok).toBe(true);
+        });
+
+        it('skips revocation when the user has no active keys', async () => {
+            const { dependencies } = makeDependencies(true);
+            const apiKeys = {
+                listActiveKeyHashes: vi.fn().mockResolvedValue([]),
+                revokeAuth: vi.fn(),
+            };
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, apiKeys }
+            );
+            expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
+        });
+    });
 });

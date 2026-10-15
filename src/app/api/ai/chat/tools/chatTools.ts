@@ -63,6 +63,42 @@ export interface ToolRuntime {
  */
 export type ToolRuntimeInput = Omit<ToolRuntime, 'ensureSymbolData'>;
 
+/** Result-size ceilings (chars) the executor applies per tool class. */
+export interface ToolResultCaps {
+    /** Default for tools without a class of their own. */
+    standard: number;
+    /** `get_bars_indicators` (the tool also fits itself against `BARS_RESULT_MAX_CHARS`). */
+    bars: number;
+    /** `get_market_overview` / `get_economy`. */
+    aggregate: number;
+    guide: number;
+    /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
+    cachedAnalysis: number;
+    /** Total analysis chars one executor instance may spend above `standard`. */
+    cachedAnalysisBudget: number;
+}
+
+/** The agent's caps: they protect an LLM context window across a multi-step turn. */
+export const AGENT_RESULT_CAPS: ToolResultCaps = {
+    standard: TOOL_RESULT_MAX_CHARS,
+    bars: BARS_RESULT_MAX_CHARS,
+    aggregate: AGGREGATE_RESULT_MAX_CHARS,
+    guide: GUIDE_RESULT_MAX_CHARS,
+    cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
+    cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
+};
+
+export interface ToolExecutorOptions {
+    /**
+     * `false` turns `ensureSymbolData` into a no-op: no FMP ingest and no server-key LLM news-card
+     * analysis (`ensureSymbolNewsFresh`); tools return only what is already stored. Default `true`
+     * (the agent). The public API passes `false` — its callers must never spend server money.
+     */
+    refreshSymbolData?: boolean;
+    /** Defaults to {@link AGENT_RESULT_CAPS}. */
+    resultCaps?: ToolResultCaps;
+}
+
 export type ToolExecutor = (
     args: Record<string, unknown>,
     ctx: ToolExecutionContext,
@@ -142,7 +178,12 @@ function symbolsIn(args: Record<string, unknown>): string[] {
  * process-local gate costs one line and survives a future core change that
  * stops guaranteeing that invariant.
  */
-export function createToolExecutor(runtime: ToolRuntimeInput): ExecuteTool {
+export function createToolExecutor(
+    runtime: ToolRuntimeInput,
+    options: ToolExecutorOptions = {}
+): ExecuteTool {
+    const { refreshSymbolData = true, resultCaps = AGENT_RESULT_CAPS } =
+        options;
     /**
      * 턴당 심볼별 1회. 한 대화에서 같은 심볼로 여러 툴이 불리는 게 정상이고
      * (뉴스 → 분석), 그때마다 수급을 돌리면 Redis TTL에 기대더라도 왕복이 툴
@@ -155,6 +196,7 @@ export function createToolExecutor(runtime: ToolRuntimeInput): ExecuteTool {
      */
     const refreshed = new Map<string, Promise<void>>();
     const ensureSymbolData = (raw: string): Promise<void> => {
+        if (!refreshSymbolData) return Promise.resolve();
         const symbol = raw.toUpperCase();
         const existing = refreshed.get(symbol);
         if (existing !== undefined) return existing;
@@ -171,7 +213,7 @@ export function createToolExecutor(runtime: ToolRuntimeInput): ExecuteTool {
 
     // One executor per turn (`stream/route.ts`), so this closure is the turn's
     // allowance for oversized stored analyses — see `CACHED_ANALYSIS_MAX_CHARS`.
-    let cachedAnalysisCharsLeft = CACHED_ANALYSIS_TURN_BUDGET_CHARS;
+    let cachedAnalysisCharsLeft = resultCaps.cachedAnalysisBudget;
     // `run_fresh_analysis` returns the same analysis shape as
     // `get_cached_analysis` (see `runFreshAnalysis.ts`), so a just-run
     // analysis must not be cut harder than a stored one.
@@ -183,14 +225,14 @@ export function createToolExecutor(runtime: ToolRuntimeInput): ExecuteTool {
         // `fitBarsToBudget`) — routing it through the shared 4,000 default
         // here would re-cut an already-fit 6,000-char result down to 4,000
         // and collapse it into a front-cut preview blob.
-        if (name === 'get_bars_indicators') return BARS_RESULT_MAX_CHARS;
+        if (name === 'get_bars_indicators') return resultCaps.bars;
         if (name === 'get_market_overview' || name === 'get_economy')
-            return AGGREGATE_RESULT_MAX_CHARS;
-        if (name === 'get_guide') return GUIDE_RESULT_MAX_CHARS;
-        if (!isAnalysis(name)) return TOOL_RESULT_MAX_CHARS;
+            return resultCaps.aggregate;
+        if (name === 'get_guide') return resultCaps.guide;
+        if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
-            TOOL_RESULT_MAX_CHARS,
-            Math.min(CACHED_ANALYSIS_MAX_CHARS, cachedAnalysisCharsLeft)
+            resultCaps.standard,
+            Math.min(resultCaps.cachedAnalysis, cachedAnalysisCharsLeft)
         );
     };
     return async (name, args, ctx) => {

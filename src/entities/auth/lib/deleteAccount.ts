@@ -62,6 +62,31 @@ async function revokeOAuthTokens(
     );
 }
 
+async function readActiveApiKeyHashes(
+    userId: string,
+    dependencies: Pick<DeleteAccountDependencies, 'apiKeys'>
+): Promise<string[]> {
+    if (dependencies.apiKeys === undefined) return [];
+    try {
+        return await dependencies.apiKeys.listActiveKeyHashes(userId);
+    } catch (error) {
+        console.warn('[deleteAccount] listing API key hashes failed', error);
+        return [];
+    }
+}
+
+async function revokeApiKeyAuth(
+    keyHashes: readonly string[],
+    dependencies: Pick<DeleteAccountDependencies, 'apiKeys'>
+): Promise<void> {
+    if (dependencies.apiKeys === undefined || keyHashes.length === 0) return;
+    try {
+        await dependencies.apiKeys.revokeAuth(keyHashes);
+    } catch (error) {
+        console.warn('[deleteAccount] API key auth revocation failed', error);
+    }
+}
+
 const USER_NOT_FOUND_MESSAGE = '사용자 계정을 찾을 수 없습니다.';
 
 function userNotFoundError(): DeleteAccountError {
@@ -78,12 +103,20 @@ export async function deleteAccount(
     options: DeleteAccountOptions = {}
 ): Promise<DeleteAccountResult> {
     await revokeOAuthTokens(input.userId, dependencies);
+    // 삭제 전에 읽는다: 키 행이 cascade로 사라지면 인증 캐시를 지울 해시를 알 방법이 없다.
+    const apiKeyHashes = await readActiveApiKeyHashes(
+        input.userId,
+        dependencies
+    );
 
     const deleted = await dependencies.users.deleteUser(input.userId);
 
     if (!deleted) {
         return { ok: false, error: userNotFoundError() };
     }
+
+    // 커밋 뒤에 끊는다. 실패해도 삭제는 이미 끝났다(키는 DB에 없고 캐시는 TTL 안에 만료).
+    await revokeApiKeyAuth(apiKeyHashes, dependencies);
 
     const cookie = createExpiredSessionCookie({
         name: options.cookieName,

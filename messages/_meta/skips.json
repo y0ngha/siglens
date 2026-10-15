@@ -529,7 +529,7 @@
     },
     {
         "file": "src/entities/auth/lib/deleteAccount.ts",
-        "line": 65,
+        "line": 90,
         "reason": "log-fallback-message",
         "text": "사용자 계정을 찾을 수 없습니다."
     },

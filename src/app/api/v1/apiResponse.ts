@@ -1,0 +1,111 @@
+import { constants } from 'node:http2';
+
+const {
+    HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_UNAUTHORIZED,
+    HTTP_STATUS_NOT_FOUND,
+    HTTP_STATUS_PAYLOAD_TOO_LARGE,
+    HTTP_STATUS_TOO_MANY_REQUESTS,
+    HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    HTTP_STATUS_SERVICE_UNAVAILABLE,
+    HTTP_STATUS_GATEWAY_TIMEOUT,
+    HTTP_STATUS_FORBIDDEN,
+} = constants;
+
+/**
+ * 모든 v1 응답에 붙는다. 응답이 키별·회원별이고 Cloudflare 캐시 규칙이 `/api`를 제외하더라도
+ * 규칙이 바뀔 때를 위해 헤더로도 막는다(공유 캐시에 키 소유자의 데이터가 남으면 안 된다).
+ */
+const NO_STORE_CACHE_CONTROL = 'no-store';
+
+export type ApiErrorCode =
+    | 'invalid_api_key'
+    | 'invalid_body'
+    | 'body_too_large'
+    | 'invalid_args'
+    | 'unknown_tool'
+    | 'rate_limited'
+    | 'rate_limiter_unavailable'
+    | 'service_unavailable'
+    | 'tool_timeout'
+    | 'tool_failed'
+    | 'internal_error'
+    | (string & {});
+
+export interface ApiMeta {
+    tool?: string;
+    /** 결과가 크기 상한에 걸려 `{ truncated, preview }`로 접혔다. 접히지 않았으면 키 자체가 없다. */
+    truncated?: true;
+}
+
+export function apiJson(
+    status: number,
+    body: unknown,
+    headers?: HeadersInit
+): Response {
+    const merged = new Headers(headers);
+    merged.set('Cache-Control', NO_STORE_CACHE_CONTROL);
+    return Response.json(body, { status, headers: merged });
+}
+
+export function apiOk(
+    data: unknown,
+    meta: ApiMeta = {},
+    headers?: HeadersInit
+): Response {
+    return apiJson(200, { data, meta }, headers);
+}
+
+/** 실패 본문 `{ error: { code, message } }`. message는 외부 API라 영어 고정이다. */
+export function apiError(
+    status: number,
+    code: ApiErrorCode,
+    message: string,
+    options: { headers?: HeadersInit; details?: unknown } = {}
+): Response {
+    return apiJson(
+        status,
+        {
+            error: {
+                code,
+                message,
+                ...(options.details === undefined
+                    ? {}
+                    : { details: options.details }),
+            },
+        },
+        options.headers
+    );
+}
+
+export const API_STATUS = {
+    badRequest: HTTP_STATUS_BAD_REQUEST,
+    unauthorized: HTTP_STATUS_UNAUTHORIZED,
+    forbidden: HTTP_STATUS_FORBIDDEN,
+    notFound: HTTP_STATUS_NOT_FOUND,
+    payloadTooLarge: HTTP_STATUS_PAYLOAD_TOO_LARGE,
+    tooManyRequests: HTTP_STATUS_TOO_MANY_REQUESTS,
+    internalError: HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    serviceUnavailable: HTTP_STATUS_SERVICE_UNAVAILABLE,
+    gatewayTimeout: HTTP_STATUS_GATEWAY_TIMEOUT,
+} as const;
+
+/**
+ * 핸들러 최상단 경계. 예기치 못한 throw가 Next 기본 오류 페이지(HTML)로 새지 않게
+ * 같은 `{ error }` 모양의 500으로 바꾼다. 내부 오류 상세는 응답에 싣지 않는다.
+ */
+export async function withApiErrorBoundary(
+    label: string,
+    handler: () => Promise<Response>
+): Promise<Response> {
+    try {
+        return await handler();
+    } catch (error) {
+        console.error(`[api/v1/${label}] unexpected error:`, error);
+        return apiError(
+            API_STATUS.internalError,
+            'internal_error',
+            'Unexpected server error.'
+        );
+    }
+}

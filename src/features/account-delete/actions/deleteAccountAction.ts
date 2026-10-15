@@ -8,6 +8,8 @@ import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
+import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuth';
 import { cookies } from 'next/headers';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
@@ -56,6 +58,13 @@ export async function deleteAccountAction(
                 users: new DrizzleUserRepository(db),
                 oauthAccounts: new DrizzleOAuthAccountRepository(db),
                 oauthRevoker: compositeOAuthRevoker,
+                apiKeys: {
+                    listActiveKeyHashes: userId =>
+                        new DrizzleSiglensApiKeyRepository(
+                            db
+                        ).listActiveKeyHashesByUser(userId),
+                    revokeAuth: revokeApiKeyAuth,
+                },
             },
             { secureCookie: secure }
         );

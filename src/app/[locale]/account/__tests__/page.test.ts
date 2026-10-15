@@ -1,6 +1,13 @@
 vi.mock('@/features/api-key-management/ui/ApiKeySection', () => ({
     ApiKeySection: () => null,
 }));
+vi.mock(
+    '@/features/siglens-api-key-management/ui/SiglensApiKeySection',
+    () => ({ SiglensApiKeySection: () => null })
+);
+vi.mock('@/entities/siglens-api-key/actions/listSiglensApiKeysAction', () => ({
+    listSiglensApiKeysAction: vi.fn(),
+}));
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
