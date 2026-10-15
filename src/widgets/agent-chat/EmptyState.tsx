@@ -45,7 +45,6 @@ function SuggestionCards({ label, items, onPick }: SuggestionCardsProps) {
                 // Index in the key: AI-generated strings carry no uniqueness
                 // guarantee at this boundary, and a collision would silently
                 // drop a card.
-                // 위 설명대로 AI 문자열은 유일성 보장이 없어 인덱스를 key에 섞는다.
                 // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                 <li key={`${i}-${s}`}>
                     <button

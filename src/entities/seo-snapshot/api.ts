@@ -217,6 +217,8 @@ export class DrizzleSeoSnapshotRepository {
                 ),
             }))
             .toSorted((a, b) => a.rank - b.rank);
+        // 순위 순으로 (심볼, 탭)마다 첫 행만 남긴다. Set을 바꾸는 필터인 이유: 이전의
+        // `reduce` + `some`은 행마다 앞 결과를 훑어 O(N²)였다(CONVENTIONS.md#CP-6 예외).
         const seenKeys = new Set<string>();
         const firstPerKey = ranked.filter(row => {
             const key = `${row.symbol}\u0000${row.tab}`;
