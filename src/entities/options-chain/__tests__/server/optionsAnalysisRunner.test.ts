@@ -19,15 +19,16 @@ import { runOptionsAnalysis, type ModelId } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { executeOptionsAnalysis } from '@/entities/options-chain/server/optionsAnalysisRunner';
-import {
-    ByokOnlyRoutingError,
-    CACHE_PROBE_KEY_PLACEHOLDER,
-} from '@/shared/lib/byokOnly';
+import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 
 const mockRun = vi.mocked(runOptionsAnalysis);
 const mockFetch = vi.mocked(fetchOptionsSnapshot);
 const BYOK_MODEL = 'gpt-6-astra' as ModelId;
 const FREE_MODEL = 'gemini-3.6-flash' as ModelId;
+
+/** 호출을 모델로 고른다(인덱스로 잡지 않는다). */
+const callFor = (modelId: ModelId) =>
+    mockRun.mock.calls.find(([arg]) => arg.modelId === modelId)?.[0];
 const SNAPSHOT = {
     symbol: 'AAPL',
     underlyingPrice: 150,
@@ -68,22 +69,43 @@ describe('executeOptionsAnalysis', () => {
                 modelId: BYOK_MODEL,
                 expirationDate: 'all',
                 skipEnqueueIfMiss: false,
+                keyPolicy: 'byok-only',
             })
         );
         expect(getCurrentUser).not.toHaveBeenCalled();
     });
 
-    it('cacheOnly는 skipEnqueueIfMiss로 전달된다', async () => {
+    it('cacheOnly 확인 호출은 키 없이 byok-only로 보내고 skipEnqueueIfMiss를 켠다', async () => {
         await executeOptionsAnalysis({
             ...base,
-            caller: { ...byokCaller, userApiKey: CACHE_PROBE_KEY_PLACEHOLDER },
+            caller: { userId: 'u1', tier: 'member', byokOnly: true },
             modelId: BYOK_MODEL,
             cacheOnly: true,
         });
-        expect(mockRun).toHaveBeenCalledWith(
-            expect.objectContaining({ skipEnqueueIfMiss: true })
-        );
+        const arg = callFor(BYOK_MODEL);
+        expect(arg).toMatchObject({
+            skipEnqueueIfMiss: true,
+            keyPolicy: 'byok-only',
+        });
+        expect(arg).not.toHaveProperty('userApiKey');
     });
+
+    it.each(['free', 'member', 'pro'] as const)(
+        'byokOnly는 %s tier·free 등급 모델도 실제 tier 그대로 사용자 키와 byok-only로 보낸다',
+        async tier => {
+            await executeOptionsAnalysis({
+                ...base,
+                caller: { ...byokCaller, tier },
+                modelId: FREE_MODEL,
+            });
+            expect(callFor(FREE_MODEL)).toMatchObject({
+                tier,
+                userApiKey: 'sk-user',
+                keyPolicy: 'byok-only',
+                modelId: FREE_MODEL,
+            });
+        }
+    );
 
     it('스냅샷이 없으면 no_chains_error를 돌려준다(core를 부르지 않는다)', async () => {
         mockFetch.mockResolvedValue(null);
@@ -100,24 +122,17 @@ describe('executeOptionsAnalysis', () => {
         expect(mockRun).not.toHaveBeenCalled();
     });
 
-    it.each([
-        ['pro tier', { ...byokCaller, tier: 'pro' as const }, BYOK_MODEL],
-        ['free 등급 모델', byokCaller, FREE_MODEL],
-        [
-            '키 없음',
-            { userId: 'u1', tier: 'member' as const, byokOnly: true },
-            BYOK_MODEL,
-        ],
-    ])(
-        'byokOnly에서 %s은 core를 부르기 전에 거절한다',
-        async (_l, caller, modelId) => {
-            await expect(
-                executeOptionsAnalysis({ ...base, caller, modelId })
-            ).rejects.toBeInstanceOf(ByokOnlyRoutingError);
-            expect(mockFetch).not.toHaveBeenCalled();
-            expect(mockRun).not.toHaveBeenCalled();
-        }
-    );
+    it('byokOnly에서 생성 호출에 키가 없으면 스냅샷 조회·core 호출 전에 거절한다', async () => {
+        await expect(
+            executeOptionsAnalysis({
+                ...base,
+                caller: { userId: 'u1', tier: 'member', byokOnly: true },
+                modelId: BYOK_MODEL,
+            })
+        ).rejects.toBeInstanceOf(ByokOnlyRoutingError);
+        expect(mockFetch).not.toHaveBeenCalled();
+        expect(mockRun).not.toHaveBeenCalled();
+    });
 
     it('쿠키 액션 호출자(byokOnly 아님)는 검사를 받지 않는다', async () => {
         await executeOptionsAnalysis({
@@ -125,6 +140,9 @@ describe('executeOptionsAnalysis', () => {
             caller: { userId: 'u1', tier: 'pro' },
             modelId: FREE_MODEL,
         });
-        expect(mockRun.mock.calls[0][0]).not.toHaveProperty('userApiKey');
+        const arg = callFor(FREE_MODEL);
+        expect(arg).not.toHaveProperty('userApiKey');
+        // 웹 쿠키 경로는 기본 tier 정책 그대로다 — keyPolicy를 싣지 않는다.
+        expect(arg).not.toHaveProperty('keyPolicy');
     });
 });

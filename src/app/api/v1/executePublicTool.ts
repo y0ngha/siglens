@@ -23,6 +23,7 @@ import {
 } from './publicToolOutcome';
 import { PUBLIC_API_FRESH_ANALYSIS_TOOL } from './publicApiTools';
 import { runByokFreshAnalysis } from './runByokFreshAnalysis';
+import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 
 /**
  * `X-Siglens-Locale`이 없거나 모르는 값이면 앱 기본 로케일(`DEFAULT_LOCALE`, ko)이다. 이 값은 분석 캐시 키에
@@ -169,10 +170,15 @@ export async function executePublicTool(
     });
     // `run_fresh_analysis`는 `createToolExecutor`(에이전트 실행기 — 서버 키로 LLM을 부른다)를 거치지
     // 않고 BYOK 전용 구현으로만 간다.
-    const work: Promise<PublicToolResult> =
+    //
+    // 도구 흐름 전체를 `runWithoutServerLlm`으로 감싼다: 회사명 번역(`getAssetInfo`·`searchTicker`의
+    // 서버 Gemini 키 호출)은 도구·분석 러너 어디서든 닿는 깊은 길에 있어, 이 한 겹이 사이트의 서버 키
+    // LLM을 공개 API에서 통째로 막는다. 웹·에이전트는 감싸지 않아 그대로 번역한다.
+    const work: Promise<PublicToolResult> = runWithoutServerLlm(() =>
         spec.name === PUBLIC_API_FRESH_ANALYSIS_TOOL
             ? runByokFreshAnalysis({ args, principal, locale, signal })
-            : runViaExecutor(spec, args, ctx);
+            : runViaExecutor(spec, args, ctx)
+    );
     const result = await Promise.race([work, abortedPromise]);
 
     const abortedOutcome = (): PublicToolOutcome =>

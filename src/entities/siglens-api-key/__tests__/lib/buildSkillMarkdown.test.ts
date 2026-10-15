@@ -128,7 +128,7 @@ describe('buildSkillMarkdown', () => {
 
         it('캐시는 무료고 생성만 사용자 BYOK 키를 쓴다고 안내한다', () => {
             expect(md).toContain('(BYOK)');
-            expect(md).toContain('never spends its own key');
+            expect(md).toContain('never spends its own LLM key');
             expect(md).toContain('no LLM call');
             expect(md).toContain('about a minute');
             expect(md).toContain(
@@ -136,13 +136,13 @@ describe('buildSkillMarkdown', () => {
             );
         });
 
-        it('BYOK 등급 모델만 생성할 수 있고 무료·회원 등급은 공유 캐시 읽기만 된다고 분명히 적는다', () => {
+        it('모든 모델이 사용자 키로 생성되고 서버 키는 쓰지 않는다고 분명히 적는다', () => {
             expect(md).toContain(
-                'Only BYOK-class (premium) models can generate'
+                'Every model in the `model` argument list can generate a new analysis, free and member models included'
             );
-            expect(md).toContain(
-                'Free and member models can only read the shared cache'
-            );
+            expect(md).toContain("SigLens's own LLM key is never used");
+            expect(md).not.toContain('premium');
+            expect(md).not.toContain('only read the shared cache');
         });
 
         it('생성은 200 스트림이고 실패도 200 본문의 error 필드로 온다고 안내한다', () => {
@@ -170,7 +170,6 @@ describe('buildSkillMarkdown', () => {
             'model_required',
             'invalid_model',
             'byok_key_required',
-            'byok_model_required',
             'analysis_failed',
             'rate_limited',
             'provider_error',

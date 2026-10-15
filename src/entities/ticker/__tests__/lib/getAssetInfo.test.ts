@@ -97,7 +97,12 @@ import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
 } from '../../lib/getAssetInfo';
-import { ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN } from '../../lib/cacheKeys';
+import {
+    API_UNTRANSLATED_CACHE_TTL,
+    ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
+    buildApiAssetInfoCacheKey,
+} from '../../lib/cacheKeys';
+import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 import { getCryptoAsset } from '../../lib/cryptoAssetStore';
 import { fmpCryptoMembership } from '../../lib/fmpCryptoMembership';
 
@@ -356,6 +361,113 @@ describe('getAssetInfo', () => {
             ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
         );
         expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('서버 키 LLM을 막은 흐름(공개 API)은 영문명으로 답하고 번역하지 않으며, 웹 임시 항목 대신 API 전용 키(1시간)에 쓴다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getTickerDisplayNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        const result = await runWithoutServerLlm(() => getAssetInfo('AAPL'));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(setKoreanTickersMock).not.toHaveBeenCalled();
+        expect(mockCache.set).toHaveBeenCalledTimes(1);
+        expect(mockCache.set).toHaveBeenCalledWith(
+            buildApiAssetInfoCacheKey('AAPL'),
+            result,
+            API_UNTRANSLATED_CACHE_TTL
+        );
+        expect(API_UNTRANSLATED_CACHE_TTL).toBeLessThanOrEqual(3600);
+        expect(mockCache.set).not.toHaveBeenCalledWith(
+            'asset-info:provisional:AAPL',
+            expect.anything(),
+            expect.anything()
+        );
+    });
+
+    describe('API가 남긴 번역 없는 항목과 웹', () => {
+        let store: Map<string, unknown>;
+        beforeEach(() => {
+            store = new Map();
+            mockCache.get.mockImplementation(
+                async (key: string) => store.get(key) ?? null
+            );
+            mockCache.set.mockImplementation(
+                async (key: string, value: unknown) => {
+                    store.set(key, value);
+                }
+            );
+            mockRepository.findBySymbol.mockResolvedValue(null);
+            searchBySymbolMock.mockResolvedValue([apple]);
+            getTickerDisplayNamesMock.mockResolvedValue({});
+            translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+        });
+
+        it('(a) 같은 심볼을 API로 다시 부르면 캐시를 적중해 FMP를 다시 부르지 않는다', async () => {
+            await runWithoutServerLlm(() => getAssetInfo('AAPL'));
+            const again = await runWithoutServerLlm(() => getAssetInfo('AAPL'));
+
+            expect(again).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+            expect(searchBySymbolMock).toHaveBeenCalledTimes(1);
+            expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        });
+
+        it('(b) 그 뒤 웹 호출은 API 항목에 가려지지 않고 번역을 정확히 한 번 시도하며, 이어서 임시 항목이 나간다', async () => {
+            await runWithoutServerLlm(() => getAssetInfo('AAPL'));
+
+            await getAssetInfo('AAPL');
+            await new Promise(resolve => setImmediate(resolve));
+            expect(searchBySymbolMock).toHaveBeenCalledTimes(2);
+            expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+            expect(store.has('asset-info:provisional:AAPL')).toBe(true);
+
+            // 웹 임시 항목이 생긴 뒤의 웹 호출은 거기서 나가고 다시 번역하지 않는다.
+            await getAssetInfo('AAPL');
+            expect(searchBySymbolMock).toHaveBeenCalledTimes(2);
+            expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('(c) 웹은 API 전용 키를 읽지 않는다 — 웹 임시 항목의 키·수명은 그대로다', async () => {
+            await getAssetInfo('AAPL');
+            await new Promise(resolve => setImmediate(resolve));
+            expect(mockCache.get).not.toHaveBeenCalledWith(
+                buildApiAssetInfoCacheKey('AAPL')
+            );
+            expect(mockCache.set).toHaveBeenCalledWith(
+                'asset-info:provisional:AAPL',
+                { symbol: 'AAPL', name: 'Apple Inc.' },
+                ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+            );
+        });
+    });
+
+    it('서버 키 LLM을 막은 흐름의 KR 종목도 번역 없이 영문 이름으로 답하고 API 전용 키에만 쓴다', async () => {
+        const symbol = '999999.KQ';
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        fetchKrEquityQuoteNameMock.mockResolvedValue('Fake Korea Inc.');
+        getKoreanNamesMock.mockResolvedValue({});
+
+        const result = await runWithoutServerLlm(() => getAssetInfo(symbol));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(result).toEqual({
+            symbol,
+            name: 'Fake Korea Inc.',
+            marketProfile: 'kr-equity',
+        });
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(mockCache.set).toHaveBeenCalledTimes(1);
+        expect(mockCache.set).toHaveBeenCalledWith(
+            buildApiAssetInfoCacheKey(symbol),
+            result,
+            API_UNTRANSLATED_CACHE_TTL
+        );
     });
 
     it('한국명 보유 시 koreanName 결과 + DB upsert만 하고 Redis는 쓰지 않는다', async () => {

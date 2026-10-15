@@ -311,7 +311,7 @@ describe('buildOpenApiDocument — run_fresh_analysis', () => {
     it('carries the BYOK and streaming notes on the operation', () => {
         const description = op.description as string;
         expect(description).toContain('(BYOK)');
-        expect(description).toContain('SigLens never spends its own key');
+        expect(description).toContain('SigLens never spends its own LLM key');
         expect(description).toContain('`byok_key_required`');
         expect(description).toContain('whitespace keepalive');
         expect(description).toContain(
@@ -345,12 +345,10 @@ describe('buildOpenApiDocument — run_fresh_analysis', () => {
             $ref: '#/components/responses/FreshAnalysisError400',
         });
         const bad = at(doc.components, 'responses', 'FreshAnalysisError400');
-        for (const code of [
-            'model_required',
-            'byok_key_required',
-            'byok_model_required',
-        ])
+        for (const code of ['model_required', 'byok_key_required'])
             expect(bad.description).toContain(`\`${code}\``);
+        // 모든 모델이 사용자 키로 생성되므로 "BYOK 등급이 아닌 모델" 오류는 더 이상 없다.
+        expect(bad.description).not.toContain('byok_model_required');
         expect(
             at(doc.components, 'responses', 'FreshAnalysisError503').description
         ).toContain('`busy`');

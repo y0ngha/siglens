@@ -147,13 +147,6 @@ export const API_ERROR_DOCS: readonly ApiErrorDoc[] = [
             'No cached analysis exists and generating one needs your own key. error.details.provider is the provider whose key you must register at siglens.io/account.',
     },
     {
-        code: 'byok_model_required',
-        status: 400,
-        scope: 'fresh-analysis',
-        summary:
-            'No cached analysis exists for this model and it cannot be generated on your own key. Pick a BYOK model (see the model argument).',
-    },
-    {
         code: 'busy',
         status: 503,
         scope: 'fresh-analysis',

@@ -28,16 +28,21 @@ describe('buildApiModelOptionGroups', () => {
         ).toBe('Claude Opus 5');
     });
 
-    it('등록하지 않은 provider와 서버 키 모델(haiku 등)은 나오지 않는다', () => {
+    it('등록한 provider의 free·member 등급 모델(haiku·sonnet)도 선택지에 나오고, 등록하지 않은 provider 모델은 나오지 않는다', () => {
         const ids = buildApiModelOptionGroups(['anthropic']).flatMap(group =>
             group.options.map(option => option.id)
         );
-        expect(ids).not.toContain('claude-haiku-5-5');
+        expect(ids).toContain('claude-haiku-5-5');
+        expect(ids).toContain('claude-sonnet-5-5');
+        expect(ids).toContain('claude-opus-5');
         expect(ids.some(id => id.startsWith('gpt-'))).toBe(false);
     });
 
-    it('byok 모델이 없는 provider만 등록했으면 그룹이 없다', () => {
-        expect(buildApiModelOptionGroups(['deepseek'])).toEqual([]);
+    it('deepseek만 등록해도 그 provider의 모델이 선택지가 된다(모든 모델을 사용자 키로 생성한다)', () => {
+        const groups = buildApiModelOptionGroups(['deepseek']);
+        expect(groups).toHaveLength(1);
+        expect(groups[0].provider).toBe('deepseek');
+        expect(groups[0].options.length).toBeGreaterThan(0);
     });
 
     it('여러 provider를 등록하면 각각 그룹이 된다', () => {
@@ -50,11 +55,11 @@ describe('buildApiModelOptionGroups', () => {
 });
 
 describe('listApiKeyProviderLabels', () => {
-    it('생성 가능한 모델이 있는 provider의 표시 이름만 나열한다(deepseek은 byok 모델이 없어 빠진다)', () => {
+    it('로스터에 모델이 있는 provider의 표시 이름을 나열한다(등급과 무관하므로 DeepSeek도 들어간다)', () => {
         const label = listApiKeyProviderLabels();
         expect(label).toContain('Claude (Anthropic)');
         expect(label).toContain('ChatGPT (OpenAI)');
         expect(label).toContain('Gemini (Google)');
-        expect(label).not.toContain('DeepSeek');
+        expect(label).toContain('DeepSeek');
     });
 });

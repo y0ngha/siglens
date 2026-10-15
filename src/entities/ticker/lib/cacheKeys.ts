@@ -20,6 +20,25 @@ export const ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN =
  */
 export const KOREAN_SEARCH_SNAPSHOT_TTL_MS = 10 * MS_PER_MINUTE;
 
+/**
+ * 공개 API(서버 키 LLM을 못 쓰는 흐름) 전용 캐시 수명: 번역 없는 결과를 반복 호출마다 FMP/Yahoo로 다시 받지
+ * 않게 하는 용도다. 웹 항목(24시간·12시간)을 가리지 않도록 **키도 분리**하고 수명도 짧게(1시간) 둔다.
+ */
+export const API_UNTRANSLATED_CACHE_TTL = SECONDS_PER_HOUR;
+
+/**
+ * API 전용 번역 없는 검색 결과 캐시 키. 네임스페이스를 사용자 입력 **앞**의 고정 접두에 둔다 — 뒤에 접미로
+ * 붙이면 웹 질의 `x:api-untranslated`가 `x`의 API 키와 같은 문자열이 된다. 버전은 웹 키와 함께 오른다.
+ */
+export function buildApiTickerSearchCacheKey(query: string): string {
+    return `ticker:search:api-untranslated:${TICKER_SEARCH_CACHE_VERSION}:${query.toLowerCase()}`;
+}
+
+/** API 전용 번역 없는 자산정보 캐시 키. 웹이 읽는 임시 항목 키(`asset-info:provisional:`)와 접두가 다르다. */
+export function buildApiAssetInfoCacheKey(symbol: string): string {
+    return `asset-info:api-untranslated:${symbol.toUpperCase()}`;
+}
+
 /** FMP cryptocurrency-list membership cache key. */
 export const CRYPTO_FMP_LIST_CACHE_KEY = 'crypto:fmp-list';
 
@@ -32,8 +51,10 @@ export const CRYPTO_FMP_LIST_CACHE_KEY = 'crypto:fmp-list';
  * v2: KRX 주 상장을 미국 OTC 중복 앞에 두는 정렬 도입(2026-08).
  * v3: 동점 처리 추가 — 일치한 필드가 짧은 쪽 → 인기 순위 → 입력 순서(2026-10).
  */
+const TICKER_SEARCH_CACHE_VERSION = 'v3';
+
 export function buildTickerSearchCacheKey(query: string): string {
-    return `ticker:search:v3:${query.toLowerCase()}`;
+    return `ticker:search:${TICKER_SEARCH_CACHE_VERSION}:${query.toLowerCase()}`;
 }
 
 /**
