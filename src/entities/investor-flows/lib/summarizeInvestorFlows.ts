@@ -20,10 +20,9 @@ import type {
     ShortInterestTrend,
     InsiderTransactionType,
 } from '@y0ngha/siglens-core';
-import {
-    computePreviousSettlementChange,
-    type PreviousSettlementChange,
-} from './shortInterestChange';
+import { compareIsoDate } from './investorFlowsDates';
+import type { PreviousSettlementChange } from '../model';
+import { computePreviousSettlementChange } from './shortInterestChange';
 
 /**
  * 에이전트 도구(`get_investor_flows`) 결과의 상한. 도구 결과 한도는 6,000자(`AGGREGATE_RESULT_MAX_CHARS`)이고,
@@ -222,7 +221,7 @@ function pickSignals(scorecard: InvestorFlowsScorecard): SummarySignal[] {
     ];
     return all
         .map((signal, index) => ({ signal, index }))
-        .sort(
+        .toSorted(
             (a, b) =>
                 STRENGTH_RANK[b.signal.strength] -
                     STRENGTH_RANK[a.signal.strength] || a.index - b.index
@@ -246,7 +245,9 @@ function summarizeAxis(axis: SummaryAxis): SummaryAxis {
 }
 
 function latestBy<T>(rows: readonly T[], key: (row: T) => string): T | null {
-    return [...rows].sort((a, b) => (key(a) < key(b) ? -1 : 1)).at(-1) ?? null;
+    return (
+        rows.toSorted((a, b) => compareIsoDate(key(a), key(b))).at(-1) ?? null
+    );
 }
 
 function summarizeShort(
@@ -308,8 +309,8 @@ export function summarizeInvestorFlows(
         signals: pickSignals(scorecard),
         freshness: scorecard.freshness,
         institutional: {
-            quarters: [...snapshot.institutional.quarters]
-                .sort((a, b) => (a.period < b.period ? 1 : -1))
+            quarters: snapshot.institutional.quarters
+                .toSorted((a, b) => compareIsoDate(b.period, a.period))
                 .slice(0, SUMMARY_MAX_QUARTERS)
                 .map(summarizeQuarter),
             topHoldersPeriod: snapshot.institutional.topHoldersPeriod,
@@ -319,16 +320,18 @@ export function summarizeInvestorFlows(
         },
         insider: {
             metrics: scorecard.insider.metrics,
-            recentTransactions: [...snapshot.insider.transactions]
-                .sort((a, b) => (a.date < b.date ? 1 : -1))
+            recentTransactions: snapshot.insider.transactions
+                .toSorted((a, b) => compareIsoDate(b.date, a.date))
                 .slice(0, SUMMARY_MAX_INSIDER_TRANSACTIONS)
                 .map(summarizeTransaction),
         },
         largeHolders:
             snapshot.largeHolders === null
                 ? null
-                : [...snapshot.largeHolders]
-                      .sort((a, b) => (a.filingDate < b.filingDate ? 1 : -1))
+                : snapshot.largeHolders
+                      .toSorted((a, b) =>
+                          compareIsoDate(b.filingDate, a.filingDate)
+                      )
                       .slice(0, SUMMARY_MAX_LARGE_HOLDERS)
                       .map(summarizeLargeHolder),
         short: summarizeShort(snapshot, scorecard),

@@ -67,3 +67,12 @@ export interface ShortInterestRow {
     avgDailyVolume: number | null;
     daysToCover: number | null;
 }
+
+export interface PreviousSettlementChange {
+    /** 비교 대상인 직전 결제일. */
+    readonly previousDate: string;
+    /** 최신 결제일 잔고 - 직전 결제일 잔고(주). */
+    readonly sharesChange: number;
+    /** 직전 잔고 대비 변화율(%). 직전 잔고가 0이면 `null`. */
+    readonly pct: number | null;
+}

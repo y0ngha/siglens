@@ -411,6 +411,14 @@ test.describe('financials: overall page integration', () => {
                 })
         ).toBeVisible();
 
+        // Let hydration and the overall page's mount-time Server Action polls (news-card wait,
+        // `useWaitForNewsCards`) finish BEFORE clicking. A poll that Next's action queue holds
+        // behind the tab navigation is replayed against the destination URL (`POST /AAPL/financials`),
+        // whose action manifest lacks it → 404 `UnrecognizedActionError` → Next bounces back to
+        // /AAPL/overall, so `waitForURL` never sees /financials. The next poll tick is 3s away,
+        // far beyond the 500ms quiet window `networkidle` needs.
+        await page.waitForLoadState('networkidle');
+
         // Clicking the financials tab navigates to the financials page.
         await page
             .getByRole('navigation', { name: '분석 종류' })

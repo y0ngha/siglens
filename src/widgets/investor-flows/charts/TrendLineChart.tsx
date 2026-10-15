@@ -42,6 +42,7 @@ export function TrendLineChart({
 }: TrendLineChartProps) {
     const geometry = buildLineGeometry(values, average);
     if (geometry === null) return null;
+    // 안전한 캐스트: 값은 이 파일이 만든 `%` 문자열(숫자 + `%`)뿐이라 CSS 변수 두 개 외에는 담지 않는다.
     const dotStyle =
         geometry.last === null
             ? undefined

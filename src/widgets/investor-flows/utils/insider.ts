@@ -1,4 +1,5 @@
 import type { InsiderTransaction } from '@y0ngha/siglens-core';
+import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
 
 /** 거래 표에 싣는 최대 건수(매수·매도만, 최신순). */
 export const MAX_INSIDER_ROWS = 15;
@@ -16,8 +17,8 @@ export interface InsiderTableData {
 export function buildInsiderTable(
     transactions: readonly InsiderTransaction[]
 ): InsiderTableData {
-    const sorted = [...transactions].sort((a, b) =>
-        a.date < b.date ? 1 : a.date > b.date ? -1 : 0
+    const sorted = transactions.toSorted((a, b) =>
+        compareIsoDate(b.date, a.date)
     );
     const traded = sorted.filter(tx => tx.type !== 'other');
     return {

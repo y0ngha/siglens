@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-    compareSettlementDate,
-    computePreviousSettlementChange,
-} from '../../lib/shortInterestChange';
+import { computePreviousSettlementChange } from '../../lib/shortInterestChange';
 
 const point = (settlementDate: string, shortQty: number) => ({
     settlementDate,
@@ -52,19 +49,5 @@ describe('computePreviousSettlementChange', () => {
             computePreviousSettlementChange([point('2026-09-15', 1)])
         ).toBeNull();
         expect(computePreviousSettlementChange([])).toBeNull();
-    });
-});
-
-describe('compareSettlementDate', () => {
-    it('날짜 오름차순으로 비교한다', () => {
-        expect(
-            [
-                point('2026-09-15', 1),
-                point('2026-08-31', 2),
-                point('2026-09-15', 3),
-            ]
-                .toSorted(compareSettlementDate)
-                .map(p => p.shortQty)
-        ).toEqual([2, 1, 3]);
     });
 });

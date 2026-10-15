@@ -1,28 +1,10 @@
+import type { PreviousSettlementChange } from '../model';
+import { compareIsoDate } from './investorFlowsDates';
+
 /** `ShortInterestPoint`의 구조적 부분집합 — core 타입을 import하지 않고도 쓸 수 있게 필요한 필드만 적는다. */
 interface SettlementPoint {
     readonly settlementDate: string;
     readonly shortQty: number;
-}
-
-/** 결제일(`yyyy-mm-dd`) 오름차순 비교자 — 변화 계산과 화면의 결제일별 행 정렬이 같은 순서를 쓴다. */
-export function compareSettlementDate(
-    a: { readonly settlementDate: string },
-    b: { readonly settlementDate: string }
-): number {
-    return a.settlementDate < b.settlementDate
-        ? -1
-        : a.settlementDate > b.settlementDate
-          ? 1
-          : 0;
-}
-
-export interface PreviousSettlementChange {
-    /** 비교 대상인 직전 결제일. */
-    readonly previousDate: string;
-    /** 최신 결제일 잔고 - 직전 결제일 잔고(주). */
-    readonly sharesChange: number;
-    /** 직전 잔고 대비 변화율(%). 직전 잔고가 0이면 `null`. */
-    readonly pct: number | null;
 }
 
 /**
@@ -35,7 +17,9 @@ export interface PreviousSettlementChange {
 export function computePreviousSettlementChange(
     points: readonly SettlementPoint[]
 ): PreviousSettlementChange | null {
-    const sorted = points.toSorted(compareSettlementDate);
+    const sorted = points.toSorted((a, b) =>
+        compareIsoDate(a.settlementDate, b.settlementDate)
+    );
     const latest = sorted.at(-1);
     const previous = sorted.at(-2);
     if (latest === undefined || previous === undefined) return null;

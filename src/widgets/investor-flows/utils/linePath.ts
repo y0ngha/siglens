@@ -48,16 +48,16 @@ export function buildLineGeometry(
                   y: toY(value),
               }
     );
-    // `null`(결측)에서 선을 끊는다: 연속한 유효 점끼리 한 구간이다.
-    const segments = points
-        .reduce<LinePoint[][]>(
-            (acc, point) => {
-                if (point === null) return [...acc, []];
-                const head = acc.slice(0, -1);
-                const tail = acc.at(-1) ?? [];
-                return [...head, [...tail, point]];
-            },
-            [[]]
+    // `null`(결측)에서 선을 끊는다: 앞에 결측이 몇 개 있었는지가 같은 유효 점끼리 한 구간이다.
+    const segmentIds = values.map(
+        (_, index) => values.slice(0, index).filter(v => v === null).length
+    );
+    const segments = Array.from(new Set(segmentIds))
+        .map(id =>
+            points.filter(
+                (point): point is LinePoint =>
+                    point !== null && segmentIds[points.indexOf(point)] === id
+            )
         )
         .filter(segment => segment.length > 0);
     const last = points.findLast(point => point !== null) ?? null;

@@ -5,6 +5,11 @@ import {
 } from './investorFlowsPolicy';
 
 /** `YYYY-MM-DD`(UTC 달력 날짜)에 `days`일을 더한다. 음수도 된다. */
+/** ISO 날짜(`yyyy-mm-dd`) 문자열 오름차순 비교자 — 사전순이 곧 시간순이다. 내림차순은 인자를 바꿔 쓴다. */
+export function compareIsoDate(a: string, b: string): number {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
 export function addDays(isoDate: string, days: number): string {
     const ms = Date.parse(`${isoDate}T00:00:00Z`) + days * MS_PER_DAY;
     return new Date(ms).toISOString().slice(0, ISO_DATE_LENGTH);

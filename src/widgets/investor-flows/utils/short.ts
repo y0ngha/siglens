@@ -3,7 +3,9 @@ import type {
     ShortInterestPoint,
     ShortVolumePoint,
 } from '@y0ngha/siglens-core';
-import { compareSettlementDate } from '@/entities/investor-flows/lib/shortInterestChange';
+import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
+import { computePreviousSettlementChange } from '@/entities/investor-flows/lib/shortInterestChange';
+import type { PreviousSettlementChange } from '@/entities/investor-flows/model';
 
 /** 일별 공매도 비중 그래프가 그리는 최대 거래일 수와, 평균선의 기준 거래일 수. */
 export const SHORT_VOLUME_CHART_DAYS = 60;
@@ -24,7 +26,9 @@ export function buildShortInterestRows(
     points: readonly ShortInterestPoint[],
     floatShares: number | null
 ): ShortInterestRow[] {
-    const sorted = points.toSorted(compareSettlementDate);
+    const sorted = points.toSorted((a, b) =>
+        compareIsoDate(a.settlementDate, b.settlementDate)
+    );
     return sorted.map(point => ({
         settlementDate: point.settlementDate,
         shortQty: point.shortQty,
@@ -34,6 +38,24 @@ export function buildShortInterestRows(
                 : null,
         daysToCover: point.daysToCover,
     }));
+}
+
+export interface ShortInterestView {
+    /** 결제일 오름차순 행(추이 그래프용). */
+    rows: ShortInterestRow[];
+    /** 최신 결제일의 직전 결제일 대비 변화 — 에이전트 도구 요약과 같은 함수의 값. 비교할 결제일이 없으면 `null`. */
+    previousChange: PreviousSettlementChange | null;
+}
+
+/** 공매도 잔고 블록이 쓰는 데이터를 한 번에 만든다(훅이 아니라 순수 util — 위젯 `.tsx`가 entity lib를 직접 부르지 않는다). */
+export function buildShortInterestView(
+    points: readonly ShortInterestPoint[],
+    floatShares: number | null
+): ShortInterestView {
+    return {
+        rows: buildShortInterestRows(points, floatShares),
+        previousChange: computePreviousSettlementChange(points),
+    };
 }
 
 export type ChangeDirection = 'up' | 'down' | 'flat';
@@ -63,8 +85,8 @@ export interface ShortVolumeSeries {
 export function buildShortVolumeSeries(
     points: readonly ShortVolumePoint[]
 ): ShortVolumeSeries {
-    const rows = [...points]
-        .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    const rows = points
+        .toSorted((a, b) => compareIsoDate(a.date, b.date))
         .slice(-SHORT_VOLUME_CHART_DAYS)
         .map<ShortVolumeRow>(point => ({
             date: point.date,

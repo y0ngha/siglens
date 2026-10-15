@@ -14,14 +14,31 @@ import {
     formatSignedCompact,
     formatSignedPercent,
 } from '../utils/flowFormat';
-import { changeDirection, type ShortInterestRow } from '../utils/short';
-import type { PreviousSettlementChange } from '@/entities/investor-flows/lib/shortInterestChange';
+import {
+    changeDirection,
+    type ChangeDirection,
+    type ShortInterestRow,
+} from '../utils/short';
+import type { PreviousSettlementChange } from '@/entities/investor-flows/model';
+
+/** 색과 별개로 붙는 방향 기호. */
+const DIRECTION_MARK: Record<ChangeDirection, string> = {
+    up: '▲',
+    down: '▼',
+    flat: '■',
+};
 
 function ChangeBadge({ changePct }: { readonly changePct: number }) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     const direction = changeDirection(changePct);
-    const mark = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '■';
+    const mark = DIRECTION_MARK[direction];
+    // 라벨은 리터럴 `t()` 호출로 만들어 두고 방향으로 고른다(추출기가 키를 볼 수 있게).
+    const labels: Record<ChangeDirection, string> = {
+        up: t('short.changeUp'),
+        down: t('short.changeDown'),
+        flat: t('short.changeFlat'),
+    };
     return (
         <span className="inline-flex items-center gap-1">
             <span aria-hidden="true">{mark}</span>
@@ -29,11 +46,7 @@ function ChangeBadge({ changePct }: { readonly changePct: number }) {
                 {formatSignedPercent(changePct, locale, 1)}
             </span>
             <span className="text-xs font-normal text-secondary-300">
-                {direction === 'up'
-                    ? t('short.changeUp')
-                    : direction === 'down'
-                      ? t('short.changeDown')
-                      : t('short.changeFlat')}
+                {labels[direction]}
             </span>
         </span>
     );

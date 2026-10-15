@@ -3,6 +3,7 @@ import type {
     InstitutionalHolderChangeKind,
     InstitutionalQuarter,
 } from '@y0ngha/siglens-core';
+import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
 
 /** 막대 그래프에 그리는 분기 수(최신 분기부터 거꾸로). */
 export const MAX_QUARTER_BARS = 6;
@@ -26,9 +27,7 @@ export interface QuarterBar {
 function sortedAscending(
     quarters: readonly InstitutionalQuarter[]
 ): InstitutionalQuarter[] {
-    return [...quarters].sort((a, b) =>
-        a.period < b.period ? -1 : a.period > b.period ? 1 : 0
-    );
+    return quarters.toSorted((a, b) => compareIsoDate(a.period, b.period));
 }
 
 /** 분기별 순매수(IN)·순매도(OUT) 막대 — 오래된 분기부터 최신 분기까지, 최대 `MAX_QUARTER_BARS`개. */

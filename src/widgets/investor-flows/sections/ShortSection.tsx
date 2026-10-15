@@ -9,11 +9,10 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { computePreviousSettlementChange } from '@/entities/investor-flows/lib/shortInterestChange';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import { formatDecimal, formatPercent } from '../utils/flowFormat';
 import {
-    buildShortInterestRows,
+    buildShortInterestView,
     buildShortVolumeSeries,
     shortVolumeMarker,
 } from '../utils/short';
@@ -43,7 +42,10 @@ export function ShortSection({
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     const squeezeId = useId();
-    const rows = buildShortInterestRows(shortInterest ?? [], floatShares);
+    const { rows, previousChange } = buildShortInterestView(
+        shortInterest ?? [],
+        floatShares
+    );
     const series = buildShortVolumeSeries(shortVolume ?? []);
     const metrics = scorecard.short.metrics;
 
@@ -103,9 +105,7 @@ export function ShortSection({
                 <ShortInterestBlock
                     rows={rows}
                     metrics={metrics}
-                    previousChange={computePreviousSettlementChange(
-                        shortInterest ?? []
-                    )}
+                    previousChange={previousChange}
                 />
             )}
             <ShortVolumeBlock

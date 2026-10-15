@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildShortInterestRows,
+    buildShortInterestView,
     buildShortVolumeSeries,
     changeDirection,
     hasShortData,
@@ -106,5 +107,26 @@ describe('hasShortData', () => {
     it('켜져 있어도 null/빈 배열뿐이면 false다', () => {
         expect(hasShortData(true, null, null)).toBe(false);
         expect(hasShortData(true, [], [])).toBe(false);
+    });
+});
+
+describe('buildShortInterestView', () => {
+    it('행과 직전 결제일 대비 변화를 한 번에 만든다(에이전트 요약과 같은 함수)', () => {
+        const view = buildShortInterestView(
+            makeShortInterest(3),
+            1_000_000_000
+        );
+        expect(view.rows).toHaveLength(3);
+        expect(view.previousChange).toEqual({
+            previousDate: '2026-07-15',
+            sharesChange: 6_000_000,
+            pct: (6_000_000 / 116_000_000) * 100,
+        });
+    });
+
+    it('결제일이 하나면 변화는 null이다', () => {
+        expect(
+            buildShortInterestView(makeShortInterest(1), null).previousChange
+        ).toBeNull();
     });
 });

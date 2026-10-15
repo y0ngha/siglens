@@ -1,4 +1,5 @@
 import type { LargeHolderFiling } from '@y0ngha/siglens-core';
+import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
 
 export const MAX_LARGE_HOLDER_ROWS = 8;
 
@@ -16,13 +17,7 @@ export function largeHolderKind(form: string): LargeHolderKind {
 export function buildLargeHolderRows(
     filings: readonly LargeHolderFiling[]
 ): LargeHolderFiling[] {
-    return [...filings]
-        .sort((a, b) =>
-            a.filingDate < b.filingDate
-                ? 1
-                : a.filingDate > b.filingDate
-                  ? -1
-                  : 0
-        )
+    return filings
+        .toSorted((a, b) => compareIsoDate(b.filingDate, a.filingDate))
         .slice(0, MAX_LARGE_HOLDER_ROWS);
 }

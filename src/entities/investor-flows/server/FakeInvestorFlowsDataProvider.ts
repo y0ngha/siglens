@@ -37,13 +37,14 @@ function isoDay(date: Date): string {
 }
 
 function quarterEnds(today: string, count: number): string[] {
-    const ends: string[] = [];
-    let period = latestQuarterEndOnOrBefore(today);
-    for (let i = 0; i < count; i += 1) {
-        ends.unshift(period);
-        period = previousQuarterEnd(period);
-    }
-    return ends;
+    const latest = latestQuarterEndOnOrBefore(today);
+    // `k`분기 전 분기말(접기 `k`번) — 오래된 → 최신 순으로 돌려준다.
+    return Array.from({ length: count }, (_, k) =>
+        Array.from({ length: k }).reduce<string>(
+            period => previousQuarterEnd(period),
+            latest
+        )
+    ).reverse();
 }
 
 function buildQuarters(today: string): InstitutionalQuarter[] {
@@ -188,19 +189,26 @@ function buildLargeHolders(today: string): LargeHolderFiling[] {
     ];
 }
 
+/** 오늘 이전 `days`일(가까운 날 먼저). */
+function daysBefore(today: string, days: number): Date[] {
+    const base = new Date(`${today}T00:00:00Z`).getTime();
+    return Array.from(
+        { length: days },
+        (_, i) => new Date(base - (i + 1) * MS_PER_DAY)
+    );
+}
+
 function settlementDates(today: string, count: number): string[] {
-    const dates: string[] = [];
-    let cursor = new Date(`${today}T00:00:00Z`);
-    // 가장 가까운 "15일 또는 말일" 결제일들을 과거 방향으로 모은다.
-    while (dates.length < count) {
-        cursor = new Date(cursor.getTime() - MS_PER_DAY);
-        const day = cursor.getUTCDate();
-        const tomorrow = new Date(cursor.getTime() + MS_PER_DAY);
-        if (day === 15 || tomorrow.getUTCDate() === 1) {
-            dates.unshift(isoDay(cursor));
-        }
-    }
-    return dates;
+    // 가장 가까운 "15일 또는 말일" 결제일들을 모아 오래된 → 최신 순으로 돌려준다.
+    return daysBefore(today, 150)
+        .filter(
+            date =>
+                date.getUTCDate() === 15 ||
+                new Date(date.getTime() + MS_PER_DAY).getUTCDate() === 1
+        )
+        .slice(0, count)
+        .map(isoDay)
+        .reverse();
 }
 
 function buildShortInterest(
@@ -219,23 +227,20 @@ function buildShortInterest(
 }
 
 function buildShortVolume(today: string): ShortVolumePoint[] {
-    const points: ShortVolumePoint[] = [];
-    let cursor = new Date(`${today}T00:00:00Z`);
-    while (points.length < 70) {
-        cursor = new Date(cursor.getTime() - MS_PER_DAY);
-        const weekday = cursor.getUTCDay();
-        if (weekday === 0 || weekday === 6) continue;
-        const index = points.length;
-        // 최근 5거래일(index 0..4)은 비중이 급등하게 만든다.
-        const ratio = index < 5 ? 0.62 : 0.44 + (index % 7) * 0.004;
-        const totalVolume = 30_000_000;
-        points.unshift({
-            date: isoDay(cursor),
-            shortVolume: Math.round(totalVolume * ratio),
-            totalVolume,
-        });
-    }
-    return points;
+    const totalVolume = 30_000_000;
+    return daysBefore(today, 120)
+        .filter(date => date.getUTCDay() !== 0 && date.getUTCDay() !== 6)
+        .slice(0, 70)
+        .map((date, index) => {
+            // `index` 0이 가장 최근 거래일 — 최근 5거래일은 비중이 급등하게 만든다.
+            const ratio = index < 5 ? 0.62 : 0.44 + (index % 7) * 0.004;
+            return {
+                date: isoDay(date),
+                shortVolume: Math.round(totalVolume * ratio),
+                totalVolume,
+            };
+        })
+        .reverse();
 }
 
 export class FakeInvestorFlowsDataProvider implements InvestorFlowsDataProvider {
