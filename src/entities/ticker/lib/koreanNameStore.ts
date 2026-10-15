@@ -218,10 +218,56 @@ export async function searchByKoreanName(
 ): Promise<TickerSearchResult[]> {
     const entries = await loadAllEntries();
     const normalizedQuery = query.toLowerCase();
+    const mixedRuns = splitMixedScriptRuns(normalizedQuery);
     return entries.flatMap(entry =>
-        entry.koreanName.toLowerCase().includes(normalizedQuery)
+        entry.koreanName.toLowerCase().includes(normalizedQuery) ||
+        (mixedRuns !== null && matchesMixedScriptRuns(entry, mixedRuns))
             ? [koreanEntryToSearchResult(entry)]
             : []
+    );
+}
+
+const HANGUL_RUN_REGEX = /[ㄱ-ㅣ가-힣]+/g;
+const LATIN_RUN_REGEX = /[a-z0-9]+/g;
+
+interface MixedScriptRuns {
+    readonly hangul: readonly string[];
+    readonly latin: readonly string[];
+}
+
+/**
+ * 한글과 영문(숫자)이 섞인 질의를 문자 체계별 토막으로 나눈다. 한쪽만 있으면 `null`.
+ *
+ * 사용자는 회사명의 일부만 한글로 옮겨 적는다 — `SEALSQ`를 `실SQ`로, `삼성SDI`를
+ * `삼성 SDI`로. 저장된 한글명(`실스큐`)에는 질의 전체가 부분 문자열로 들어 있지 않아
+ * 0건이 되므로, 토막별로 나눠 맞춘다({@link matchesMixedScriptRuns}).
+ */
+function splitMixedScriptRuns(normalizedQuery: string): MixedScriptRuns | null {
+    const hangul = normalizedQuery.match(HANGUL_RUN_REGEX) ?? [];
+    const latin = normalizedQuery.match(LATIN_RUN_REGEX) ?? [];
+    return hangul.length > 0 && latin.length > 0 ? { hangul, latin } : null;
+}
+
+/**
+ * 한글 토막은 전부 한글명에, 영문 토막은 전부 한글명·영문명·심볼 중 하나에 들어 있어야
+ * 일치로 본다. 영문 토막을 한글명에도 대 보는 이유: `삼성SDI`처럼 한글명 자체가 영문을
+ * 품은 종목을 띄어 쓴 질의(`삼성 SDI`)로도 찾게 하려는 것이다.
+ *
+ * 토막 전부를 요구(AND)하므로 `실` 한 글자처럼 넓은 한글 토막도 영문 토막이 좁혀 준다.
+ */
+function matchesMixedScriptRuns(
+    entry: KoreanTickerEntry,
+    runs: MixedScriptRuns
+): boolean {
+    const koreanName = entry.koreanName.toLowerCase();
+    const latinFields = [
+        koreanName,
+        entry.name.toLowerCase(),
+        entry.symbol.toLowerCase(),
+    ];
+    return (
+        runs.hangul.every(run => koreanName.includes(run)) &&
+        runs.latin.every(run => latinFields.some(f => f.includes(run)))
     );
 }
 

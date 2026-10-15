@@ -137,6 +137,55 @@ describe('searchByKoreanName', () => {
         });
     });
 
+    describe('한글·영문 혼합 질의', () => {
+        const sealsq: KoreanTickerEntry = {
+            symbol: 'LAES',
+            name: 'SEALSQ Corp',
+            koreanName: '실스큐',
+            exchange: 'NASDAQ',
+            exchangeFullName: 'NASDAQ Capital Market',
+        };
+        const silicon: KoreanTickerEntry = {
+            symbol: 'SLAB',
+            name: 'Silicon Laboratories Inc.',
+            koreanName: '실리콘랩스',
+            exchange: 'NASDAQ',
+            exchangeFullName: 'NASDAQ Global Select',
+        };
+        const samsungSdi: KoreanTickerEntry = {
+            symbol: '006400.KS',
+            name: 'Samsung SDI Co., Ltd.',
+            koreanName: '삼성SDI',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+        };
+
+        it('한글 토막은 한글명, 영문 토막은 영문명으로 맞춘다 (`실SQ` → LAES)', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon, apple]);
+            const result = await searchByKoreanName('실SQ');
+            // `실`만 보면 실리콘랩스도 걸린다 — 영문 토막 `sq`가 LAES 하나로 좁힌다.
+            expect(result.map(r => r.symbol)).toEqual(['LAES']);
+        });
+
+        it('영문 토막은 심볼로도 맞춘다', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon]);
+            const result = await searchByKoreanName('실 LAES');
+            expect(result.map(r => r.symbol)).toEqual(['LAES']);
+        });
+
+        it('한글명이 영문을 품은 종목은 띄어 쓴 질의로도 찾는다 (`삼성 SDI`)', async () => {
+            mockRepository.findAll.mockResolvedValue([samsungSdi, apple]);
+            const result = await searchByKoreanName('삼성 SDI');
+            expect(result.map(r => r.symbol)).toEqual(['006400.KS']);
+        });
+
+        it('토막 하나라도 어긋나면 일치로 보지 않는다', async () => {
+            mockRepository.findAll.mockResolvedValue([sealsq, silicon]);
+            expect(await searchByKoreanName('실XYZ')).toEqual([]);
+            expect(await searchByKoreanName('애SQ')).toEqual([]);
+        });
+    });
+
     it('스냅샷을 재사용한다 — TTL 안에서는 findAll을 한 번만 호출한다', async () => {
         mockRepository.findAll.mockResolvedValue([apple, microsoft]);
 
