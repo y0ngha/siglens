@@ -27,20 +27,15 @@ function normalizeSymbol(value: unknown): string | null {
  * 호출부는 I/O 없이 곧바로 degrade한다. 심볼 형식은 페이지가 쓰는 허용 판정(`isAdmissibleSymbolShape`)과
  * 같다.
  *
- * `fmpSymbol`은 **형식만** 검증하고 결과에 싣지 않는다 — 어느 FMP 심볼을 조회할지는 서버가 푼 자산
- * (`asset.fmpSymbol ?? ticker`)이 정한다. 클라이언트 값을 그대로 쓰면 아무 심볼의 확장 봉을 FMP에서
- * 끌어오는 통로가 된다. `^SPX` 같은 지수 표기는 형식 밖이라 여기서 걸러진다(지수에는 확장 세션이 없다).
+ * 조회할 FMP 심볼은 요청에 없다 — 서버가 푼 자산(`asset.fmpSymbol ?? ticker`)이 정한다. 클라이언트 값을 받으면
+ * 아무 심볼의 확장 봉을 FMP에서 끌어오는 통로가 된다.
  */
 export function parseExtendedBarsRequest(
     symbol: unknown,
-    timeframe: unknown,
-    fmpSymbol: unknown
+    timeframe: unknown
 ): ExtendedBarsRequest | null {
     const ticker = normalizeSymbol(symbol);
     if (ticker === null || !isExtendedBarTimeframe(timeframe)) return null;
-    if (fmpSymbol !== undefined && normalizeSymbol(fmpSymbol) === null) {
-        return null;
-    }
     return { ticker, timeframe };
 }
 

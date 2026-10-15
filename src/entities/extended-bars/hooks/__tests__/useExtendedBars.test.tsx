@@ -54,7 +54,6 @@ function render(client: QueryClient, props: HookProps = {}) {
             useExtendedBars({
                 symbol: 'aapl',
                 timeframe: p.timeframe ?? '5Min',
-                fmpSymbol: undefined,
                 marketProfile: p.marketProfile ?? 'us-equity',
                 toggledOn: p.toggledOn ?? true,
             }),
@@ -121,7 +120,7 @@ describe('useExtendedBars', () => {
     it('자격이 되면 대문자 심볼·타임프레임으로 액션을 부르고 봉을 돌려준다', async () => {
         const { result } = render(makeClient());
         await waitFor(() => expect(result.current).toEqual(BARS));
-        expect(mockedAction).toHaveBeenCalledWith('AAPL', '5Min', undefined);
+        expect(mockedAction).toHaveBeenCalledWith('AAPL', '5Min');
     });
 
     it('정규장 봉 키(`bars`)와 다른 키를 쓴다', async () => {

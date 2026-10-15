@@ -11,7 +11,6 @@ import { isExtendedBarTimeframe } from '@/shared/api/market/extendedBarsSession'
 interface UseExtendedBarsOptions {
     symbol: string;
     timeframe: Timeframe;
-    fmpSymbol?: string;
     marketProfile: MarketProfileId;
     /** 사용자가 시간외 표시를 켜 두었는가(`siglens.chart.extendedHours`, 기본 켜짐). */
     toggledOn: boolean;
@@ -53,23 +52,23 @@ export function isExtendedBarsFetchEnabled({
  * 프리·애프터마켓 봉(정규장 밖 봉만). 조회하지 않을 때·값이 없을 때는 `null`이다 — 호출부는 그 경우
  * 정규장 봉만 그린다(기존 동작 그대로).
  *
- * 갱신 규약은 정규장 봉(`useBars`)과 같다: staleTime `BARS_STALE_TIME_MS`(30초), 폴링 없음, 포커스·
- * 마운트 시 stale이면 재조회. 서버 캐시의 tail TTL이 60초라 더 자주 물어도 같은 값을 받는다.
+ * 갱신 규약은 정규장 봉(`useBars`)과 같다: staleTime `BARS_STALE_TIME_MS`, 폴링 없음, 포커스·
+ * 마운트 시 stale이면 재조회. 서버 캐시의 tail TTL(`CachedMarketDataProvider`의 `EXTENDED_TAIL_LIVE_TTL_SECONDS`)이
+ * staleTime보다 길거나 같아 더 자주 물어도 같은 값을 받는다.
  * 표시 보조 값이라 실패를 재시도로 증폭하지 않는다(`retry: false`).
  */
 export function useExtendedBars({
     symbol,
     timeframe,
-    fmpSymbol,
     marketProfile,
     toggledOn,
 }: UseExtendedBarsOptions): Bar[] | null {
     const humanInteracted = useHumanInteracted();
     const gate = { marketProfile, timeframe, toggledOn };
     const { data } = useQuery({
-        queryKey: QUERY_KEYS.extendedBars(symbol, timeframe, fmpSymbol),
-        queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
-            getExtendedBarsAction(qSymbol, qTimeframe, qFmpSymbol),
+        queryKey: QUERY_KEYS.extendedBars(symbol, timeframe),
+        queryFn: ({ queryKey: [, qSymbol, qTimeframe] }) =>
+            getExtendedBarsAction(qSymbol, qTimeframe),
         enabled: isExtendedBarsFetchEnabled({ ...gate, humanInteracted }),
         staleTime: BARS_STALE_TIME_MS,
         retry: false,

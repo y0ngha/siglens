@@ -4,7 +4,10 @@ import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
-import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import {
+    INACTIVE_PANE_INDEX,
+    TRANSPARENT_COLOR,
+} from '@/widgets/chart/constants';
 import type { OverlayMenuItem } from '@/widgets/chart/utils/overlayItems';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
@@ -1391,12 +1394,12 @@ describe('StockChart', () => {
             expect(data[1]).not.toHaveProperty('color');
             // 시간외 캔들은 속 빈 몸통 + 방향색 테두리·심지
             expect(data[0]).toMatchObject({
-                color: 'rgba(0, 0, 0, 0)',
+                color: TRANSPARENT_COLOR,
                 borderColor: '#ext-bull', // 종가 ≥ 시가
                 wickColor: '#ext-bull',
             });
             expect(data[3]).toMatchObject({
-                color: 'rgba(0, 0, 0, 0)',
+                color: TRANSPARENT_COLOR,
                 borderColor: '#ext-bear', // 종가 < 시가
                 wickColor: '#ext-bear',
             });
@@ -1517,7 +1520,7 @@ describe('StockChart', () => {
                 );
             };
 
-            const HIDDEN = 'rgba(0, 0, 0, 0)';
+            const HIDDEN = TRANSPARENT_COLOR;
 
             it('지표 훅이 만드는 선 시리즈는 한 시리즈로 남고, 시간외 구간 앞 점만 투명 색을 받는다(값은 그대로)', () => {
                 renderExtended();

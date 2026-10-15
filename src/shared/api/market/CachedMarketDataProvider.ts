@@ -692,18 +692,21 @@ export class CachedMarketDataProvider
     getExtendedBars = async (options: GetBarsOptions): Promise<Bar[]> => {
         const timeZone = this.options.intradayDateTimeZone;
         const { timeframe, from } = options;
+        // 좁힌 const로 들고 간다 — 클로저 안에서 `this.inner.getExtendedBars`의 undefined 검사가 풀리지 않게.
+        const innerGetExtendedBars = this.inner.getExtendedBars?.bind(
+            this.inner
+        );
         if (
             timeZone === undefined ||
             this.session !== US_EQUITY_SESSION ||
-            this.inner.getExtendedBars === undefined ||
+            innerGetExtendedBars === undefined ||
             !isExtendedBarTimeframe(timeframe) ||
             from === undefined
         ) {
             return [];
         }
-        const inner = this.inner;
         const fetchExtended = (o: GetBarsOptions): Promise<Bar[]> =>
-            inner.getExtendedBars!(o);
+            innerGetExtendedBars(o);
         const now = new Date();
         const today = zonedDate(now, timeZone);
         const fromDate = from.slice(0, ISO_DATE_LENGTH);

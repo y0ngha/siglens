@@ -1,4 +1,5 @@
 import type { IChartApi, ISeriesApi, SeriesType } from 'lightweight-charts';
+import { TRANSPARENT_COLOR as TRANSPARENT } from '../constants';
 
 /**
  * 지표 시리즈(선·영역)가 프리·애프터마켓 구간에서 **끊겨 보이게** 하는 차트 어댑터.
@@ -39,8 +40,6 @@ interface TimedPoint {
 /** 끊을 필요가 있는 시리즈 종류(점끼리 잇는 선·영역). 히스토그램 등은 이어질 선이 없다. */
 const BREAKABLE_TYPES: readonly SeriesType[] = ['Line', 'Area'];
 
-const TRANSPARENT = 'rgba(0, 0, 0, 0)';
-
 /** 시리즈 종류별로 "이 점에서 출발하는 선분을 안 보이게" 하는 점별 스타일. */
 function hiddenSegmentStyle(type: SeriesType): Record<string, string> {
     return type === 'Area'
@@ -62,7 +61,9 @@ export function hideSegmentsAcrossGaps<T extends TimedPoint>(
     gapTimes: readonly number[],
     style: Record<string, string>
 ): T[] {
+    // `readonly T[]` → `T[]`: 입력을 돌려주기만 하고 이 함수는 입력을 변경하지 않는다.
     if (data.length < 2 || gapTimes.length === 0) return data as T[];
+    // 점 수(수백~천 개) × 시리즈 수만큼 setData마다 돌므로 O(N) 단일 순회 + 필요할 때만 복사(copy-on-write)한다.
     let out: T[] | null = null;
     let g = 0;
     let previousIndex = -1;
@@ -71,6 +72,7 @@ export function hideSegmentsAcrossGaps<T extends TimedPoint>(
         if (typeof point.time !== 'number') return data as T[];
         if (point.value === undefined) continue;
         if (previousIndex >= 0) {
+            // 앞선 반복에서 `typeof time === 'number'`를 이미 확인한 점이다.
             const previous = data[previousIndex]!.time as number;
             while (g < gapTimes.length && gapTimes[g]! <= previous) g += 1;
             if (g < gapTimes.length && gapTimes[g]! < point.time) {
@@ -122,6 +124,7 @@ export function createExtendedGapController(): ExtendedGapController {
      */
     const syncMarkerColor = (entry: Entry): void => {
         if (!entry.autoMarker) return;
+        // 선·영역 시리즈 옵션의 부분 집합만 읽는다(다른 종류는 `BREAKABLE_TYPES`가 거른다).
         const options = entry.real.options() as LineLikeOptions;
         if (options.lineVisible === false) {
             if (entry.pinned) {
@@ -144,6 +147,7 @@ export function createExtendedGapController(): ExtendedGapController {
         if (entry.raw === null) return;
         const type = entry.real.seriesType();
         const lineVisible =
+            // 선·영역 시리즈 옵션의 부분 집합(`lineVisible`)만 읽는다.
             (entry.real.options() as LineLikeOptions).lineVisible !== false;
         const data =
             BREAKABLE_TYPES.includes(type) && lineVisible
@@ -153,6 +157,7 @@ export function createExtendedGapController(): ExtendedGapController {
                       hiddenSegmentStyle(type)
                   )
                 : entry.raw;
+        // 시리즈 종류별 `setData` 인자 타입이 달라 하나로 좁히지 못한다 — 런타임은 같은 점 배열이다.
         (entry.real.setData as SetData)(data);
     };
 
@@ -167,6 +172,7 @@ export function createExtendedGapController(): ExtendedGapController {
         };
         entry.autoMarker =
             BREAKABLE_TYPES.includes(real.seriesType()) &&
+            // 선·영역 시리즈 옵션의 부분 집합만 읽는다.
             (real.options() as LineLikeOptions)
                 .crosshairMarkerBackgroundColor === '';
         syncMarkerColor(entry);
@@ -186,11 +192,13 @@ export function createExtendedGapController(): ExtendedGapController {
                             entry.autoMarker = false;
                             entry.pinned = false;
                         }
+                        // Proxy 안에서 종류별 옵션 타입을 모른다 — 받은 옵션을 그대로 넘긴다.
                         (target.applyOptions as (o: unknown) => void)(options);
                         syncMarkerColor(entry);
                     };
                 }
                 const value: unknown = Reflect.get(target, prop);
+                // `typeof === 'function'`을 확인한 값이라 호출 가능하다(메서드를 시리즈에 묶어 전달).
                 return typeof value === 'function'
                     ? (value as (...a: unknown[]) => unknown).bind(target)
                     : value;
@@ -204,6 +212,7 @@ export function createExtendedGapController(): ExtendedGapController {
         new Proxy(chart, {
             get(target, prop) {
                 if (prop === 'addSeries') {
+                    // 종류별 `addSeries` 오버로드를 하나로 좁히지 못해 인자를 그대로 전달한다.
                     return (...args: unknown[]) =>
                         wrapSeries(
                             (
@@ -221,6 +230,7 @@ export function createExtendedGapController(): ExtendedGapController {
                     };
                 }
                 const value: unknown = Reflect.get(target, prop);
+                // `typeof === 'function'`을 확인한 값이라 호출 가능하다.
                 return typeof value === 'function'
                     ? (value as (...a: unknown[]) => unknown).bind(target)
                     : value;

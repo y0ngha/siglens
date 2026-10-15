@@ -100,6 +100,7 @@ export function createExtendedSessionPrimitive(
             return;
         }
         const timeScale = param.chart.timeScale();
+        // `Logical`·`Time`은 숫자에 붙인 브랜드일 뿐이다 — 런타임 값은 그대로 숫자다.
         const zero = timeScale.logicalToCoordinate(0 as Logical);
         const one = timeScale.logicalToCoordinate(1 as Logical);
         barSpacing = zero !== null && one !== null ? one - zero : 0;

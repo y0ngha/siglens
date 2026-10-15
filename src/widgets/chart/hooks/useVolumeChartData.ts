@@ -2,6 +2,7 @@
 
 import { type RefObject, useEffect, useRef } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import { NO_EXTENDED_BARS } from '@/shared/api/market/extendedBarsSession';
 import { tailAligned } from '../utils/seriesDataUtils';
 import { buildTotalVolumeData } from '../utils/extendedBarsDisplay';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
@@ -23,7 +24,6 @@ interface UseVolumeChartDataOptions {
     runUpdate?: (update: () => void) => void;
 }
 
-const NO_EXTENDED_BARS: Bar[] = [];
 const runDirectly = (update: () => void): void => update();
 
 export function useVolumeChartData({

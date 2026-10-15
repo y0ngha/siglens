@@ -5,9 +5,10 @@ import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, BuySellVolumeResult, Timeframe } from '@y0ngha/siglens-core';
 import {
+    NO_EXTENDED_BARS,
+    NO_SESSION_RANGES,
     buildExtendedSessionRanges,
     isExtendedBarTimeframe,
-    type ExtendedSessionRange,
 } from '@/shared/api/market/extendedBarsSession';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { usePaneLabels } from './hooks/usePaneLabels';
@@ -16,9 +17,6 @@ import { useVolumeChartData } from './hooks/useVolumeChartData';
 import { useVolumeChartLifecycle } from './hooks/useVolumeChartLifecycle';
 import type { PaneLabelConfig } from './types';
 import { useTranslations } from 'next-intl';
-
-const NO_EXTENDED_BARS: Bar[] = [];
-const NO_SESSION_RANGES: readonly ExtendedSessionRange[] = [];
 
 interface VolumeChartProps {
     /** 정규장 봉 — 매수/매도 분해는 이 배열과 짝지어진다. */

@@ -50,6 +50,7 @@ export function isExtendedBarTimeframe(
 ): value is ExtendedBarTimeframe {
     return (
         typeof value === 'string' &&
+        // 리터럴 튜플을 string 배열로 넓혀 임의 문자열을 `includes`로 비교한다(읽기만 한다)
         (EXTENDED_BAR_TIMEFRAMES as readonly string[]).includes(value)
     );
 }
@@ -149,6 +150,7 @@ export function filterOutOfSessionBars(
  * 확장 봉이 없을 때 모든 호출이 돌려주는 **같은 빈 배열**(동결). 호출마다 새 `[]`을 만들면 참조가 매번 달라져
  * `useMemo`·effect 의존성(`extendedBars`)이 렌더마다 깨진다 — 음영 primitive가 다시 붙고 시간축이 다시 맞춰진다.
  */
+// 동결 배열을 `Bar[]`로 본다 — 소비자는 이 배열을 변경하지 않는다(읽기·참조 비교만).
 export const NO_EXTENDED_BARS: Bar[] = Object.freeze([]) as unknown as Bar[];
 
 export interface MergedExtendedBars {
@@ -201,6 +203,11 @@ export function mergeExtendedBars(
     };
 }
 
+/** 구간이 없을 때 모든 호출이 쓰는 같은 빈 배열(동결) — `NO_EXTENDED_BARS`와 같은 이유로 참조를 고정한다. */
+export const NO_SESSION_RANGES: readonly ExtendedSessionRange[] = Object.freeze(
+    []
+);
+
 export interface ExtendedSessionRange {
     session: ExtendedBarSession;
     /** 구간의 첫 확장 봉 시각(epoch 초). */
@@ -219,25 +226,36 @@ export function buildExtendedSessionRanges(
     timeframe: ExtendedBarTimeframe
 ): ExtendedSessionRange[] {
     const interval = EXTENDED_BAR_INTERVAL_SECONDS[timeframe];
-    const ranges: ExtendedSessionRange[] = [];
-    let currentKey: string | null = null;
-    for (const bar of extendedBars) {
-        const session = classifyExtendedBar(bar.time, interval);
-        if (session === null) continue;
-        const key = `${etDayOfBar(bar.time)}:${session}`;
-        const last = ranges.at(-1);
-        if (key === currentKey && last !== undefined) {
-            last.endTime = bar.time;
-        } else {
-            ranges.push({
-                session,
-                startTime: bar.time,
-                endTime: bar.time,
-            });
-            currentKey = key;
-        }
-    }
-    return ranges;
+    // 구간은 많아야 거래일 수 × 2개(5분봉 10일 ≈ 14, 4시간봉 200일 ≈ 400)라 매 봉마다 구간 배열을 새로
+    // 만들어도 비용이 작다 — 불변 reduce로 쓴다(CP-6).
+    return extendedBars.reduce<{
+        ranges: ExtendedSessionRange[];
+        key: string | null;
+    }>(
+        (acc, bar) => {
+            const session = classifyExtendedBar(bar.time, interval);
+            if (session === null) return acc;
+            const key = `${etDayOfBar(bar.time)}:${session}`;
+            const last = acc.ranges.at(-1);
+            if (key === acc.key && last !== undefined) {
+                return {
+                    key,
+                    ranges: [
+                        ...acc.ranges.slice(0, -1),
+                        { ...last, endTime: bar.time },
+                    ],
+                };
+            }
+            return {
+                key,
+                ranges: [
+                    ...acc.ranges,
+                    { session, startTime: bar.time, endTime: bar.time },
+                ],
+            };
+        },
+        { ranges: [], key: null }
+    ).ranges;
 }
 
 /**

@@ -20,6 +20,8 @@ function makeMockChart(scaleWidth = 0) {
         timeScale: () => ts,
         priceScale: () => priceScale,
         applyOptions: vi.fn(),
+        // 실제 차트처럼 그려지는 요소를 준다(사용자 입력 리스너가 여기에 걸린다)
+        chartElement: () => document.createElement('div'),
         _timeScaleMock: ts,
         _priceScaleMock: priceScale,
     };
@@ -637,13 +639,6 @@ describe('useChartSync', () => {
             expect(result.current.isUserAdjustedView()).toBe(true);
             result.current.resetUserAdjustedView();
             expect(result.current.isUserAdjustedView()).toBe(false);
-        });
-
-        it('요소를 줄 수 없는 차트(chartElement 없음)는 입력을 듣지 않고도 던지지 않는다', () => {
-            const { result } = renderHook(() => useChartSync());
-            expect(() =>
-                result.current.handleStockChartReady(makeMockChart() as never)
-            ).not.toThrow();
         });
     });
 

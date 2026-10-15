@@ -32,14 +32,35 @@ interface ChartSyncHandlers {
     runVolumeDataUpdate: (update: () => void) => void;
 }
 
-/** 차트가 그려지는 DOM 요소 — 사용자 입력을 듣는 자리. 요소를 줄 수 없는 차트(목)는 `null`. */
-function elementOf(chart: IChartApi): HTMLElement | null {
-    return typeof chart.chartElement === 'function'
-        ? chart.chartElement()
-        : null;
+const USER_VIEW_INPUT_EVENTS = ['pointerdown', 'wheel', 'touchstart'] as const;
+
+/**
+ * 요소의 밀기·확대 입력(포인터·휠·터치)을 듣고 `onInput`을 부른다. 해제 함수를 돌려준다. 리스너를 걸고 푸는
+ * 쌍을 한 함수에 둔다(훅 본문에서 try/finally·이벤트 등록을 섞지 않는다).
+ */
+function listenForViewInput(
+    element: HTMLElement,
+    onInput: () => void
+): () => void {
+    for (const type of USER_VIEW_INPUT_EVENTS) {
+        element.addEventListener(type, onInput, { passive: true });
+    }
+    return () => {
+        for (const type of USER_VIEW_INPUT_EVENTS) {
+            element.removeEventListener(type, onInput);
+        }
+    };
 }
 
-const USER_VIEW_INPUT_EVENTS = ['pointerdown', 'wheel', 'touchstart'] as const;
+/** `flag.current`를 `update` 실행 동안만 `true`로 둔다(던져도 푼다). */
+function runWithFlag(flag: { current: boolean }, update: () => void): void {
+    flag.current = true;
+    try {
+        update();
+    } finally {
+        flag.current = false;
+    }
+}
 
 function applyRightOffsetPixels(chart: IChartApi, pixels: number): void {
     chart.applyOptions({ timeScale: { rightOffsetPixels: pixels } });
@@ -92,19 +113,12 @@ export function useChartSync(): ChartSyncHandlers {
     const inputCleanupRef = useRef(new Map<IChartApi, () => void>());
 
     const listenForUserAdjustment = useCallback((chart: IChartApi): void => {
-        const element = elementOf(chart);
-        if (element === null) return;
-        const markAdjusted = (): void => {
-            userAdjustedViewRef.current = true;
-        };
-        for (const type of USER_VIEW_INPUT_EVENTS) {
-            element.addEventListener(type, markAdjusted, { passive: true });
-        }
-        inputCleanupRef.current.set(chart, () => {
-            for (const type of USER_VIEW_INPUT_EVENTS) {
-                element.removeEventListener(type, markAdjusted);
-            }
-        });
+        inputCleanupRef.current.set(
+            chart,
+            listenForViewInput(chart.chartElement(), () => {
+                userAdjustedViewRef.current = true;
+            })
+        );
     }, []);
 
     const stopListeningForUserAdjustment = useCallback(
@@ -260,12 +274,7 @@ export function useChartSync(): ChartSyncHandlers {
     }, []);
 
     const runVolumeDataUpdate = useCallback((update: () => void): void => {
-        volumeDataUpdatingRef.current = true;
-        try {
-            update();
-        } finally {
-            volumeDataUpdatingRef.current = false;
-        }
+        runWithFlag(volumeDataUpdatingRef, update);
         const stock = stockChartRef.current;
         const volume = volumeChartRef.current;
         const range = stock?.timeScale().getVisibleLogicalRange();

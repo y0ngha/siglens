@@ -5,6 +5,7 @@ import type {
 } from 'lightweight-charts';
 import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { TRANSPARENT_COLOR } from '../constants';
 import { buildCandlestickData } from './candlestickDataUtils';
 
 /**
@@ -17,7 +18,7 @@ import { buildCandlestickData } from './candlestickDataUtils';
  */
 
 /** 몸통을 비운다(알파 0) — 밴드가 비치는 속 빈 캔들. */
-const HOLLOW_BODY = 'rgba(0, 0, 0, 0)';
+const HOLLOW_BODY = TRANSPARENT_COLOR;
 
 /**
  * 시간외 캔들 — **속 빈 몸통 + 방향색 테두리·심지**. 방향은 종가 ≥ 시가(상승)로 정하고, 정규장 캔들과
@@ -29,6 +30,7 @@ function extendedCandle(bar: Bar): CandlestickData<UTCTimestamp> {
             ? CHART_COLORS.extendedBullish
             : CHART_COLORS.extendedBearish;
     return {
+        // Bar.time은 epoch seconds 정수 — LWC UTCTimestamp(브랜드 number)와 런타임 형태가 같다.
         time: bar.time as UTCTimestamp,
         open: bar.open,
         high: bar.high,
@@ -72,6 +74,7 @@ export function buildTotalVolumeData(
     regularBars: readonly Bar[],
     extendedBars: readonly Bar[]
 ): HistogramData<UTCTimestamp>[] {
+    // Bar.time은 epoch seconds 정수 — UTCTimestamp 브랜드와 런타임 형태가 같다(아래 두 곳도 같다).
     const regular = regularBars.map(({ time, volume }) => ({
         time: time as UTCTimestamp,
         value: volume,

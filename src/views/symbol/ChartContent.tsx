@@ -12,7 +12,6 @@ import { computePositionStatus } from '@/widgets/portfolio-position/lib/position
 import { PositionStatusSummary } from '@/widgets/portfolio-position/ui/PositionStatusSummary';
 import {
     type AnalysisResponse,
-    type Bar,
     type TierInfoDepth,
     type Timeframe,
 } from '@y0ngha/siglens-core';
@@ -39,6 +38,7 @@ import { useExtendedBars } from '@/entities/extended-bars/hooks/useExtendedBars'
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import { STORAGE_KEYS } from '@/widgets/chart/constants';
 import {
+    NO_EXTENDED_BARS,
     isExtendedBarTimeframe,
     mergeExtendedBars,
 } from '@/shared/api/market/extendedBarsSession';
@@ -81,8 +81,6 @@ const VolumeChart = dynamic(
     () => import('@/widgets/chart/VolumeChart').then(mod => mod.VolumeChart),
     { ssr: false, loading: () => <ChartSkeleton /> }
 );
-
-const NO_EXTENDED_BARS: Bar[] = [];
 
 interface ErrorBannerProps {
     message: string;
@@ -206,7 +204,6 @@ export function ChartContent({
     const extendedBarsRaw = useExtendedBars({
         symbol,
         timeframe,
-        fmpSymbol,
         marketProfile,
         toggledOn: extendedHoursOn,
     });

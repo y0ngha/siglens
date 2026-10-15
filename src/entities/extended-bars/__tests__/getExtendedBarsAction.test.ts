@@ -32,9 +32,9 @@ describe('getExtendedBarsAction', () => {
     });
 
     it('검증된 입력과 티어가 통과하면 로더 결과를 그대로 돌려준다', async () => {
-        await expect(
-            getExtendedBarsAction('aapl', '5Min', 'brk-b')
-        ).resolves.toEqual(BARS);
+        await expect(getExtendedBarsAction('aapl', '5Min')).resolves.toEqual(
+            BARS
+        );
         expect(mockedLoad).toHaveBeenCalledWith('AAPL', '5Min');
     });
 

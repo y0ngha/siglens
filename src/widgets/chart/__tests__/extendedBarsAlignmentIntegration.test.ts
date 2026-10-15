@@ -7,6 +7,7 @@
  * 인덱스가 밀리기 때문이다. 설계는 지표·임펄스 색을 항상 정규장 봉으로 만들고, 시간외 봉은 캔들·
  * 거래량 시리즈에 **시각으로** 얹는 것이다. 이 파일이 그 불변식을 실물로 고정한다.
  */
+import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/shared/api/fmp/httpClient', () => ({
@@ -182,7 +183,7 @@ describe.each(SHAPES)('시간외 봉이 있는 $name', shape => {
             CHART_COLORS.extendedBearish,
         ]);
         for (const c of extendedCandles) {
-            expect(c.color).toBe('rgba(0, 0, 0, 0)');
+            expect(c.color).toBe(TRANSPARENT_COLOR);
             expect(directional.has(c.borderColor as string)).toBe(true);
             expect(c.wickColor).toBe(c.borderColor);
         }

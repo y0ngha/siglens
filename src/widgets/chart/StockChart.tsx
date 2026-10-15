@@ -25,9 +25,10 @@ import type {
 import { getTimeFormatter } from '@/shared/lib/timeFormat';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import {
+    NO_EXTENDED_BARS,
+    NO_SESSION_RANGES,
     buildExtendedSessionRanges,
     isExtendedBarTimeframe,
-    type ExtendedSessionRange,
 } from '@/shared/api/market/extendedBarsSession';
 import { buildCandlestickDataWithExtended } from './utils/extendedBarsDisplay';
 import { useExtendedSessionBand } from './hooks/useExtendedSessionBand';
@@ -113,8 +114,6 @@ const EMPTY_OVERLAY_ITEMS: readonly OverlayMenuItem[] = [];
 const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
 const NOOP_SET_VISIBLE = (): void => {};
 const EMPTY_OVERLAY_COLORS: Record<string, string> = {};
-const EMPTY_BARS: Bar[] = [];
-const EMPTY_SESSION_RANGES: readonly ExtendedSessionRange[] = [];
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -192,7 +191,7 @@ const defaultMeasureText = createCanvasTextMeasurer(LEVEL_TITLE_FONT);
 export function StockChart({
     bars,
     displayBars,
-    extendedBars = EMPTY_BARS,
+    extendedBars = NO_EXTENDED_BARS,
     extendedHours,
     isViewAdjustedElsewhere,
     onViewAdjustmentReset,
@@ -326,14 +325,10 @@ export function StockChart({
     // 지표 시리즈가 시간외 구간에서 끊기게 하는 차트 어댑터 — **지표 훅에만** 준다. 추세선·작도
     // 레벨(`useChartOverlays`)과 primitive는 진짜 `chartRef`를 써서 계속 이어진다.
     const [gapController] = useState(createExtendedGapController);
-    const indicatorChartRef = useMemo<RefObject<IChartApi | null>>(
-        () => ({
-            get current() {
-                return gapController.wrap(chartRef.current);
-            },
-        }),
-        [gapController]
-    );
+    // 차트 생성 effect(`[]` 의존)가 읽도록 ref로 들고 있다 — 컨트롤러는 인스턴스 수명 동안 안 바뀐다.
+    const gapControllerRef = useRef(gapController);
+    // 차트 생성 effect가 `chartRef`와 함께 채운다(지표 훅 effect는 선언 순서상 그 뒤에 돈다).
+    const indicatorChartRef = useRef<IChartApi | null>(null);
 
     const commonHookParams: CommonHookParams = {
         chartRef: indicatorChartRef,
@@ -350,7 +345,7 @@ export function StockChart({
         () =>
             isExtendedBarTimeframe(timeframe)
                 ? buildExtendedSessionRanges(extendedBars, timeframe)
-                : EMPTY_SESSION_RANGES,
+                : NO_SESSION_RANGES,
         [extendedBars, timeframe]
     );
 
@@ -401,6 +396,7 @@ export function StockChart({
         });
 
         chartRef.current = chart;
+        indicatorChartRef.current = gapControllerRef.current.wrap(chart);
 
         const decimals = priceDecimalsRef.current;
 
@@ -440,6 +436,7 @@ export function StockChart({
             chart.applyOptions({ autoSize: false });
             chart.remove();
             chartRef.current = null;
+            indicatorChartRef.current = null;
             seriesRef.current = null;
         };
     }, []);
@@ -501,7 +498,9 @@ export function StockChart({
             onViewAdjustmentResetRef.current?.();
         }
         chart.timeScale().fitContent();
-    }, [bars, chartBars]);
+        // 의존성은 **그려지는 봉을 바꾸는 두 입력**이다: 정규장 봉(`bars`)과 시간외 봉(`extendedBars`, 도착·토글).
+        // `extendedBars`는 본문이 읽지 않고 재실행 트리거로만 쓴다.
+    }, [bars, extendedBars]);
 
     // 시간외 시각마다 지표 선을 끊는다(`extendedGapChart` JSDoc). 이미 그려진 시리즈도 다시 채운다.
     const gapTimes = useMemo(

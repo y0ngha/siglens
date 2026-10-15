@@ -1,4 +1,6 @@
 export const DEFAULT_LINE_WIDTH = 1;
+/** 알파 0 — 시간외 캔들의 속 빈 몸통과 지표 선의 숨긴 선분이 같은 값을 쓴다(테마 팔레트 색이 아니다). */
+export const TRANSPARENT_COLOR = 'rgba(0, 0, 0, 0)';
 export const DEFAULT_POINT_MARKERS_RADIUS = 2;
 export const INACTIVE_PANE_INDEX = -1;
 export const FIRST_INDICATOR_PANE_INDEX = 1;

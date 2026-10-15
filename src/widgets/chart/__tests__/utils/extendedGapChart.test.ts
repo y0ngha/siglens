@@ -1,3 +1,4 @@
+import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/shared/api/fmp/httpClient', () => ({
@@ -37,7 +38,7 @@ async function load(
         : provider.getBars(options);
 }
 
-const HIDDEN = { color: 'rgba(0, 0, 0, 0)' };
+const HIDDEN = { color: TRANSPARENT_COLOR };
 const pt = (time: number, value?: number) =>
     value === undefined ? { time } : { time, value };
 const hidden = (time: number, value: number) => ({ time, value, ...HIDDEN });
@@ -100,7 +101,7 @@ describe('hideSegmentsAcrossGaps', () => {
         expect(out[0]).toEqual({
             time: 10,
             value: 1,
-            color: 'rgba(0, 0, 0, 0)',
+            color: TRANSPARENT_COLOR,
         });
         expect(out[1]).toBe(next);
     });
@@ -199,9 +200,9 @@ describe('createExtendedGapController', () => {
             pt(10, 1),
             {
                 ...pt(20, 2),
-                lineColor: 'rgba(0, 0, 0, 0)',
-                topColor: 'rgba(0, 0, 0, 0)',
-                bottomColor: 'rgba(0, 0, 0, 0)',
+                lineColor: TRANSPARENT_COLOR,
+                topColor: TRANSPARENT_COLOR,
+                bottomColor: TRANSPARENT_COLOR,
             },
             pt(40, 3),
             pt(70, 4),
@@ -517,7 +518,7 @@ describe.each([
         const marked = received.filter(p => p.color !== undefined);
         // 하루 중 이어진 점은 모두 그대로, 밤새 건너는 점 단 하나만 투명
         expect(marked).toHaveLength(1);
-        expect(marked[0]!.color).toBe('rgba(0, 0, 0, 0)');
+        expect(marked[0]!.color).toBe(TRANSPARENT_COLOR);
         // 그 점은 1일차의 마지막 정규장 봉이다
         const lastOfDayOne = regular[regular.length / 2 - 1]!;
         expect(marked[0]!.time).toBe(lastOfDayOne.time);
