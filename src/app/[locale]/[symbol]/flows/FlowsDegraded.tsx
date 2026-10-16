@@ -5,6 +5,8 @@ interface FlowsDegradedProps {
     /** Resolved display name (Korean+English+ticker, or bare-ticker fallback). */
     displayName: string;
     symbol: string;
+    /** 한국 종목 — 제목·안내가 DART 지분공시 문구다. */
+    krListing: boolean;
 }
 
 /**
@@ -15,15 +17,26 @@ interface FlowsDegradedProps {
  * (`InvestorFlowsEmpty`)로 렌더되고, 인프라 장애만 이 soft-200 화면이 된다. 이 탭은 `generateMetadata`가 항상
  * noindex라(`ALWAYS_NOINDEX_TAB_ROBOTS`) degrade 여부로 메타를 따로 가르지 않는다 — 어느 쪽이든 색인되지 않는다. `FundamentalDegraded`처럼 `<h1>` 하나와 형제 탭 링크는 남겨 둔다.
  */
-export function FlowsDegraded({ displayName, symbol }: FlowsDegradedProps) {
+export function FlowsDegraded({
+    displayName,
+    symbol,
+    krListing,
+}: FlowsDegradedProps) {
     const t = useTranslations('app.symbol');
     return (
         <SymbolDegradedShell
-            heading={t('flows.heading', { v0: displayName })}
+            heading={
+                krListing
+                    ? t('flows.krHeading', { v0: displayName })
+                    : t('flows.heading', { v0: displayName })
+            }
             noticeTitle={t('flows.degradedTitle')}
-            noticeBody={t('flows.degradedBody')}
+            noticeBody={
+                krListing ? t('flows.krDegradedBody') : t('flows.degradedBody')
+            }
             symbol={symbol}
             current="flows"
+            marketProfile={krListing ? 'kr-equity' : 'us-equity'}
         >
             {null}
         </SymbolDegradedShell>

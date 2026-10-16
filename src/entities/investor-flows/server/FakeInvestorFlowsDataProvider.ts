@@ -13,12 +13,14 @@ import type {
     ShortVolumePoint,
     ThresholdListStatus,
 } from '@y0ngha/siglens-core';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
 import {
     addDays,
     latestQuarterEndOnOrBefore,
     previousQuarterEnd,
 } from '../lib/investorFlowsDates';
+import { buildFakeKrSnapshot } from './fakeKrDart';
 
 /**
  * E2E 전용 `InvestorFlowsDataProvider`: DB·FMP·FINRA 대신 결정적인 합성 스냅샷을 돌려준다.
@@ -32,6 +34,8 @@ import {
  *   13D·13G 각 1건, 공매도 잔고·일별 공매도 비중이 모두 있는 종목. 13F 옵션(풋·콜 명목), Form 144 3건(1건은 10b5-1 계획),
  *   증자 공시 3건(ATM·선반 등록·사모), 결제 불이행(FTD) 며칠, 과열 목록 미등재.
  * - `EMPTYX`: 수급 데이터가 전혀 없는 종목(`null`) — 빈 상태 UI 검증.
+ * - 한국 심볼(`005930.KS`·우선주 `005935.KS`): 가짜 DART 응답을 수집기 파서·스냅샷 조립에 통과시킨 `market: 'kr'` 스냅샷
+ *   (`buildFakeKrSnapshot`). 가짜 DART에 없는 회사는 `null`, 수집 중이면(DART 백필 전 — 테이블이 비어 있다) `null`.
  * - `SQUEEZX`: 공매도 잔고가 유통주식의 약 19.5%(2.9e9주 / 1.49e10주), 상환일수 7일로 오르는 종목 — 숏스퀴즈 경고 배지 검증.
  *   FTD가 크고(발행주식의 약 0.6%) 과열 목록에 15거래일 연속 올라 있다(Reg SHO 플래그가 켜져 있을 때).
  */
@@ -398,6 +402,8 @@ export class FakeInvestorFlowsDataProvider implements InvestorFlowsDataProvider 
         const upper = symbol.toUpperCase();
         if (upper === 'EMPTYX') return null;
         const now = new Date();
+        if (isKrEquitySymbol(upper))
+            return this.collecting ? null : buildFakeKrSnapshot(upper, now);
         const today = isoDay(now);
         const quarters = buildQuarters(today);
         const latestComplete = [...quarters]

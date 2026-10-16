@@ -7,9 +7,13 @@ import {
     formatDecimal,
     formatInteger,
     formatPercent,
+    formatSignedCompact,
     formatSignedPercent,
     formatUsdCompact,
 } from './flowFormat';
+
+/** Form 144 예정 주식의 발행주식 대비 % 자리 — core 판정 경계가 0.05%·0.25%라 세 자리면 경계 근처가 갈린다. */
+const PROPOSED_SALE_PCT_DIGITS = 3;
 
 /** 점수표 카드가 축마다 보여 주는 근거 한 줄 — 카탈로그 키(`widgets.investor-flows.ev.<id>`)와 보간 값이다. */
 export interface AxisEvidenceLine {
@@ -82,10 +86,87 @@ function institutionalLines(
     ];
 }
 
+/** 한국 임원·주요주주 축 — core `insider.krMetrics`(DART 소유보고·거래계획). */
+function krInsiderLines(
+    scorecard: InvestorFlowsScorecard,
+    locale: Locale
+): AxisEvidenceLine[] {
+    const m = scorecard.insider.krMetrics;
+    if (m === undefined) return [];
+    const days = formatInteger(scorecard.freshness.insiderWindow.days, locale);
+    return [
+        {
+            id: 'krInsiderReports',
+            values: {
+                days,
+                reports: formatInteger(m.reports, locale),
+                reporters: formatInteger(m.reporters, locale),
+            },
+        },
+        {
+            id: 'krInsiderNetShares',
+            values: { shares: formatSignedCompact(m.netSharesChange, locale) },
+        },
+        ...(m.netChangePct === null
+            ? []
+            : [
+                  {
+                      id: 'krInsiderNetPct',
+                      values: {
+                          pct: formatSignedPercent(m.netChangePct, locale, 2),
+                      },
+                  },
+              ]),
+        ...(m.tradingPlans === 0
+            ? []
+            : [
+                  {
+                      id: 'krTradingPlans',
+                      values: {
+                          count: formatInteger(m.tradingPlans, locale),
+                      },
+                  },
+              ]),
+    ];
+}
+
+/** 한국 대량보유 축 — core `largeHolders.krMetrics`(DART 대량보유 보고). */
+function krLargeHolderLines(
+    scorecard: InvestorFlowsScorecard,
+    locale: Locale
+): AxisEvidenceLine[] {
+    const m = scorecard.largeHolders.krMetrics;
+    if (m === undefined) return [];
+    return [
+        {
+            id: 'krMajorHolderReports',
+            values: {
+                days: formatInteger(
+                    scorecard.freshness.largeHolderWindow.days,
+                    locale
+                ),
+                reports: formatInteger(m.reports, locale),
+                reporters: formatInteger(m.reporters, locale),
+            },
+        },
+        ...(m.detailedReports === 0
+            ? []
+            : [
+                  {
+                      id: 'krMajorHolderDetailed',
+                      values: {
+                          count: formatInteger(m.detailedReports, locale),
+                      },
+                  },
+              ]),
+    ];
+}
+
 function insiderLines(
     scorecard: InvestorFlowsScorecard,
     locale: Locale
 ): AxisEvidenceLine[] {
+    if (scorecard.market === 'kr') return krInsiderLines(scorecard, locale);
     const m = scorecard.insider.metrics;
     if (m === null) return [];
     const days = formatInteger(scorecard.freshness.insiderWindow.days, locale);
@@ -127,6 +208,20 @@ function insiderLines(
                           ),
                       },
                   },
+                  ...(m.proposedSalePctOutstanding === null
+                      ? []
+                      : [
+                            {
+                                id: 'insiderProposedSalePct',
+                                values: {
+                                    pct: formatPercent(
+                                        m.proposedSalePctOutstanding,
+                                        locale,
+                                        PROPOSED_SALE_PCT_DIGITS
+                                    ),
+                                },
+                            },
+                        ]),
               ]),
     ];
 }
@@ -135,6 +230,7 @@ function largeHolderLines(
     scorecard: InvestorFlowsScorecard,
     locale: Locale
 ): AxisEvidenceLine[] {
+    if (scorecard.market === 'kr') return krLargeHolderLines(scorecard, locale);
     const m = scorecard.largeHolders.metrics;
     if (m === null) return [];
     return [
@@ -273,7 +369,8 @@ function dilutionLines(
 
 /**
  * 축별 근거 수치. 점수표의 `metrics`만 읽는다(재계산 금지) — `sufficiency: 'insufficient'`인 축은
- * 근거 줄을 만들지 않는다. 점수가 없는 축에 `0` 같은 숫자를 늘어놓으면 중립으로 읽히기 때문이다.
+ * 근거 줄을 만들지 않는다. 점수가 없는 축에 `0` 같은 숫자를 늘어놓으면 중립으로 읽히기 때문이다. 한국 점수표(`market: 'kr'`)의
+ * 내부자·대량보유 축은 DART 수치(`krMetrics`)로 근거를 만든다.
  */
 export function buildAxisEvidence(
     scorecard: InvestorFlowsScorecard,

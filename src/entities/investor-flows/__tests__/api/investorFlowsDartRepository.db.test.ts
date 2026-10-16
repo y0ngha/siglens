@@ -401,13 +401,16 @@ describe.skipIf(!URL)('DART repository on a real Postgres', () => {
         expect(result).toMatchObject({
             status: 'complete',
             backfillDone: true,
-            majorRowsStored: 1,
-            insiderRowsStored: 1,
+            majorRowsStored: 2,
+            insiderRowsStored: 3,
             tradingPlansStored: 1,
         });
         expect(
             await repo.findMajorHoldings(SAMSUNG, '2026-01-01')
-        ).toHaveLength(1);
+        ).toHaveLength(2);
+        expect(
+            await repo.findInsiderReports(SAMSUNG, '2026-01-01')
+        ).toHaveLength(2);
         expect(
             await repo.findInsiderReports(HANWHA, '2026-01-01')
         ).toHaveLength(1);

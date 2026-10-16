@@ -1579,6 +1579,8 @@ export const secForm144 = pgTable(
         issuerCik: integer('issuer_cik').notNull(),
         symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
         filerName: text('filer_name').notNull(),
+        /** 신고자 CIK(10자리 0 패딩). 0050 이전에 저장된 행과 CIK가 없는 신고는 null — core가 이름 정규화로 센다. */
+        filerCik: text('filer_cik'),
         relationships: text('relationships').array().notNull(),
         securityClass: text('security_class').notNull(),
         shares: bigint('shares', { mode: 'number' }).notNull(),

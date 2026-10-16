@@ -1549,13 +1549,15 @@ export function buildSymbolFlowsSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
+    // 한국 종목의 수급 탭은 DART 지분공시(대량보유·임원 소유보고)다 — 13F·공매도 카피를 쓰지 않는다.
+    const kr = isKrEquitySymbol(upper);
     const title = composeSymbolTitle({
         ticker: upper,
         koreanName: opts.koreanName,
         englishName: opts.englishName,
         locale: opts.locale,
-        core: t('symbol.flows.titleCore'),
-        tail: t('symbol.flows.titleTail'),
+        core: kr ? t('symbol.flows.krTitleCore') : t('symbol.flows.titleCore'),
+        tail: kr ? t('symbol.flows.krTitleTail') : t('symbol.flows.titleTail'),
     });
     const fullTitle = brandTitle(title, opts.locale ?? DEFAULT_LOCALE);
     const subject = opts.displayName ?? upper;
@@ -1564,11 +1566,40 @@ export function buildSymbolFlowsSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            t('symbol.flows.description', { subject })
+            kr
+                ? t('symbol.flows.krDescription', { subject })
+                : t('symbol.flows.description', { subject })
         ),
         url: `${SITE_URL}/${upper}/flows`,
-        keywords: buildSymbolFlowsKeywords(upper, opts.koreanName),
+        keywords: kr
+            ? buildKrSymbolFlowsKeywords(upper, opts.koreanName)
+            : buildSymbolFlowsKeywords(upper, opts.koreanName),
     };
+}
+
+function buildKrSymbolFlowsKeywords(
+    ticker: string,
+    koreanName?: string
+): string[] {
+    // KRX 티커(`005930.KS`)는 아무도 검색하지 않는 형태라 단축코드와 한글명을 쓴다.
+    const code = ticker.replace(KR_EXCHANGE_SUFFIX_RE, '');
+    return [
+        code,
+        `${code} 대량보유`,
+        `${code} 지분 공시`,
+        ...(koreanName
+            ? [
+                  `${koreanName} 대량보유`,
+                  `${koreanName} 지분 변동`,
+                  `${koreanName} 임원 지분`,
+                  `${koreanName} 주요주주`,
+              ]
+            : []),
+        '대량보유 보고',
+        '임원 소유 보고',
+        '거래계획 보고서',
+        'DART 지분공시',
+    ];
 }
 
 function buildSymbolFlowsKeywords(

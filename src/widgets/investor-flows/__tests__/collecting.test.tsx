@@ -30,6 +30,7 @@ const READY: InvestorFlowsPipelineReadiness = {
     failsToDeliver: 'ready',
     filings: 'ready',
     thresholdList: 'ready',
+    dart: 'ready',
 };
 const COLLECTING: InvestorFlowsPipelineReadiness = {
     institutional: 'collecting',
@@ -37,6 +38,7 @@ const COLLECTING: InvestorFlowsPipelineReadiness = {
     failsToDeliver: 'collecting',
     filings: 'collecting',
     thresholdList: 'collecting',
+    dart: 'collecting',
 };
 const UNKNOWN: InvestorFlowsPipelineReadiness = {
     institutional: 'unknown',
@@ -44,6 +46,7 @@ const UNKNOWN: InvestorFlowsPipelineReadiness = {
     failsToDeliver: 'unknown',
     filings: 'unknown',
     thresholdList: 'unknown',
+    dart: 'unknown',
 };
 const NO_ARMS: CollectingArms = {
     institutional: false,

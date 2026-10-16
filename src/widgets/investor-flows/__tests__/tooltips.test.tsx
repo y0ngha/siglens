@@ -32,6 +32,9 @@ const TERMS: Record<FlowTerm, true> = {
     failsToDeliver: true,
     thresholdList: true,
     squeezeScore: true,
+    krFlowScore: true,
+    krMajorHolder: true,
+    krInsider: true,
 };
 
 const CATALOGS = {

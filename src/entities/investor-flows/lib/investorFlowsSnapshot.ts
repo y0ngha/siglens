@@ -395,6 +395,7 @@ export function buildProposedSales(
         .map(row => ({
             filingDate: row.filingDate,
             filer: row.filer,
+            filerCik: row.filerCik,
             relationships: row.relationships,
             shares: row.shares,
             valueUsd: row.valueUsd,

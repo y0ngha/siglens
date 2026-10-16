@@ -88,6 +88,7 @@ function build(
                 filingDate: '2026-10-09',
                 formType: '144',
                 filer: 'Fixture Officer',
+                filerCik: '0001622864',
                 relationships: ['Officer'],
                 shares: 30_000,
                 valueUsd: 7_400_000,

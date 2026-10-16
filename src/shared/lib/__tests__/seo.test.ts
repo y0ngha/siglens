@@ -1771,4 +1771,28 @@ describe('buildSymbolFlowsSeoContent', () => {
         expect(seo.keywords.some(k => k.includes('undefined'))).toBe(false);
         expect(seo.keywords).toContain('MSFT 수급');
     });
+
+    it('한국 종목은 DART 지분공시 제목·설명·키워드를 낸다(13F·공매도 카피 없음)', async () => {
+        const { getTranslations } = await import('next-intl/server');
+        const t = await getTranslations({
+            locale: 'ko',
+            namespace: 'shared.seo',
+        });
+        const { buildSymbolFlowsSeoContent } = await import('@/shared/lib/seo');
+        const seo = buildSymbolFlowsSeoContent('005930.ks', t, {
+            displayName: '삼성전자',
+            koreanName: '삼성전자',
+            locale: 'ko',
+        });
+        expect(seo.url.endsWith('/005930.KS/flows')).toBe(true);
+        expect(seo.title).toContain('지분 공시');
+        expect(seo.title).not.toContain('기관 수급');
+        expect(seo.description).toContain('삼성전자');
+        expect(seo.description).toContain('DART');
+        expect(seo.keywords).toEqual(
+            expect.arrayContaining(['005930 대량보유', '삼성전자 임원 지분'])
+        );
+        expect(seo.keywords.some(k => k.includes('13F'))).toBe(false);
+        expect(seo.keywords.some(k => k.includes('.KS'))).toBe(false);
+    });
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "sec_form144" ADD COLUMN "filer_cik" text;

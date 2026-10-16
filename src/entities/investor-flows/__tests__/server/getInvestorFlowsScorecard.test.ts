@@ -5,10 +5,16 @@ import { getOverallInvestorFlowsScorecard } from '../../server/getOverallInvesto
 
 vi.mock('server-only', () => ({}));
 
-const { mockResilient, mockOptions, mockReadiness } = vi.hoisted(() => ({
-    mockResilient: vi.fn(),
-    mockOptions: vi.fn(),
-    mockReadiness: vi.fn(),
+const { mockResilient, mockOptions, mockReadiness, mockKrCorp } = vi.hoisted(
+    () => ({
+        mockResilient: vi.fn(),
+        mockOptions: vi.fn(),
+        mockReadiness: vi.fn(),
+        mockKrCorp: vi.fn(),
+    })
+);
+vi.mock('../../server/getKrDartCorp', () => ({
+    getKrDartCorp: mockKrCorp,
 }));
 vi.mock('../../server/getInvestorFlowsPipelineReadiness', () => ({
     getInvestorFlowsPipelineReadiness: mockReadiness,
@@ -26,6 +32,7 @@ const READY = {
     failsToDeliver: 'ready',
     filings: 'ready',
     thresholdList: 'ready',
+    dart: 'ready',
 } as const;
 const COLLECTING = {
     institutional: 'collecting',
@@ -33,6 +40,7 @@ const COLLECTING = {
     failsToDeliver: 'collecting',
     filings: 'collecting',
     thresholdList: 'collecting',
+    dart: 'collecting',
 } as const;
 const UNKNOWN = {
     institutional: 'unknown',
@@ -40,8 +48,50 @@ const UNKNOWN = {
     failsToDeliver: 'unknown',
     filings: 'unknown',
     thresholdList: 'unknown',
+    dart: 'unknown',
 } as const;
-const OPTIONS_ON = { includeFinraData: true, includeExchangeLists: true };
+const OPTIONS_ON = {
+    market: 'us',
+    includeFinraData: true,
+    includeExchangeLists: true,
+} as const;
+const KR_OPTIONS = {
+    market: 'kr',
+    includeFinraData: false,
+    includeExchangeLists: false,
+} as const;
+
+/** 수급 신호가 나는 한국 스냅샷 — 5%를 새로 넘은 보고자 하나. */
+const KR_SNAPSHOT = {
+    asOf: '2026-10-16',
+    market: 'kr',
+    sharesOutstanding: null,
+    floatShares: null,
+    institutional: { quarters: [], topHolders: [], topHoldersPeriod: null },
+    insider: { transactions: [] },
+    largeHolders: null,
+    shortInterest: null,
+    shortVolume: null,
+    failsToDeliver: null,
+    thresholdList: null,
+    kr: {
+        majorHolders: [
+            {
+                receiptDate: '2026-10-14',
+                reporter: '픽스처운용',
+                reportForm: 'abbreviated',
+                shares: 3e8,
+                sharesChange: 3e8,
+                ratioPct: 5.05,
+                ratioChangePct: 5.05,
+                reason: '신규',
+                url: 'https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261014000124',
+            },
+        ],
+        insiders: [],
+        tradingPlans: [],
+    },
+};
 
 /** 기준일 전 30세션(주말 제외) — 최근 20세션 주가가 오른다. */
 function squeezeContext() {
@@ -86,6 +136,53 @@ describe('getInvestorFlowsScorecard', () => {
         mockReadiness.mockResolvedValue(READY);
         mockOptions.mockReset();
         mockOptions.mockResolvedValue(OPTIONS_ON);
+        mockKrCorp.mockReset();
+    });
+
+    it('미국 종목은 market us이고 DART 회사 조회를 하지 않는다(krCompany null)', async () => {
+        mockResilient.mockResolvedValue({
+            snapshot: SNAPSHOT,
+            degraded: false,
+        });
+        const result = await getInvestorFlowsScorecard('AAPL');
+        expect(result.market).toBe('us');
+        expect(result.krCompany).toBeNull();
+        expect(mockKrCorp).not.toHaveBeenCalled();
+    });
+
+    it('한국 종목은 market kr, DART 점수표와 우선주 안내용 회사 정보를 싣는다', async () => {
+        mockResilient.mockResolvedValue({
+            snapshot: KR_SNAPSHOT,
+            degraded: false,
+        });
+        mockOptions.mockResolvedValue(KR_OPTIONS);
+        mockKrCorp.mockResolvedValue({
+            corpCode: '00126380',
+            corpName: '삼성전자',
+            matchedStockCode: '005930',
+            viaCommonShare: true,
+        });
+        const result = await getInvestorFlowsScorecard('005935.KS');
+        expect(result.market).toBe('kr');
+        expect(result.krCompany).toEqual({
+            corpName: '삼성전자',
+            viaCommonShare: true,
+        });
+        expect(mockKrCorp).toHaveBeenCalledWith('005935.KS');
+        expect(result.scorecard?.market).toBe('kr');
+        expect(result.scorecard?.largeHolders.signals[0]?.id).toBe(
+            'kr_major_holder_new'
+        );
+        expect(result.finraEnabled).toBe(false);
+    });
+
+    it('한국 종목의 DART 매핑이 없으면 krCompany는 null이다', async () => {
+        mockResilient.mockResolvedValue({ snapshot: null, degraded: false });
+        mockOptions.mockResolvedValue(KR_OPTIONS);
+        mockKrCorp.mockResolvedValue(null);
+        const result = await getInvestorFlowsScorecard('999990.KS');
+        expect(result.krCompany).toBeNull();
+        expect(result.scorecard).toBeNull();
     });
 
     it('스냅샷이 있으면 core evaluateInvestorFlows 결과를 그대로 돌려준다', async () => {
@@ -134,6 +231,7 @@ describe('getInvestorFlowsScorecard', () => {
             degraded: false,
         });
         mockOptions.mockResolvedValue({
+            market: 'us',
             includeFinraData: true,
             includeExchangeLists: false,
         });
@@ -144,6 +242,7 @@ describe('getInvestorFlowsScorecard', () => {
 
     it('FINRA 플래그가 꺼져 있으면 includeFinraData: false로 점수를 낸다(옛 캐시 스냅샷이 섞이지 않는다)', async () => {
         mockOptions.mockResolvedValue({
+            market: 'us',
             includeFinraData: false,
             includeExchangeLists: true,
         });
@@ -216,15 +315,48 @@ describe('getOverallInvestorFlowsScorecard', () => {
         mockOptions.mockResolvedValue(OPTIONS_ON);
     });
 
-    it.each(['kr-equity', 'crypto'] as const)(
-        '%s는 조회도 하지 않고 undefined다(종합에 넣지 않음 — 캐시 키 불변)',
-        async profile => {
-            expect(
-                await getOverallInvestorFlowsScorecard('X', profile)
-            ).toBeUndefined();
-            expect(mockResilient).not.toHaveBeenCalled();
-        }
-    );
+    it('크립토는 조회도 하지 않고 undefined다(종합에 넣지 않음 — 캐시 키 불변)', async () => {
+        expect(
+            await getOverallInvestorFlowsScorecard('BTCUSD', 'crypto')
+        ).toBeUndefined();
+        expect(mockResilient).not.toHaveBeenCalled();
+    });
+
+    it('한국 주식도 DART 점수표를 종합에 넣는다', async () => {
+        mockResilient.mockResolvedValue({
+            snapshot: KR_SNAPSHOT,
+            degraded: false,
+        });
+        mockOptions.mockResolvedValue(KR_OPTIONS);
+        mockKrCorp.mockResolvedValue(null);
+        const result = await getOverallInvestorFlowsScorecard(
+            '005930.KS',
+            'kr-equity'
+        );
+        expect(result?.market).toBe('kr');
+    });
+
+    it('한국 주식은 DART 백필 중일 때만 스냅샷 없음을 undefined로 돌린다(13F 수집 중은 영향 없음)', async () => {
+        mockResilient.mockResolvedValue({ snapshot: null, degraded: false });
+        mockOptions.mockResolvedValue(KR_OPTIONS);
+        mockKrCorp.mockResolvedValue(null);
+        mockReadiness.mockResolvedValue({ ...COLLECTING, dart: 'ready' });
+        expect(
+            await getOverallInvestorFlowsScorecard('005930.KS', 'kr-equity')
+        ).toBeNull();
+        mockReadiness.mockResolvedValue({ ...READY, dart: 'collecting' });
+        expect(
+            await getOverallInvestorFlowsScorecard('005930.KS', 'kr-equity')
+        ).toBeUndefined();
+    });
+
+    it('미국 주식은 DART 백필 중이어도 데이터 없음을 null로 둔다', async () => {
+        mockResilient.mockResolvedValue({ snapshot: null, degraded: false });
+        mockReadiness.mockResolvedValue({ ...READY, dart: 'collecting' });
+        expect(
+            await getOverallInvestorFlowsScorecard('ZZZZ', 'us-equity')
+        ).toBeNull();
+    });
 
     it('미국 주식 + 점수표는 그대로 돌려준다', async () => {
         mockResilient.mockResolvedValue({

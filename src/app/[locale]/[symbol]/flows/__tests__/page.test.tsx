@@ -51,14 +51,29 @@ vi.mock('@/widgets/investor-flows/InvestorFlowsEmpty', () => ({
     InvestorFlowsEmpty: ({
         collecting,
         shortCollecting,
+        market,
     }: {
         collecting?: boolean;
         shortCollecting?: boolean;
+        market?: string;
     }) => (
         <div
             data-testid="empty"
             data-collecting={String(collecting)}
             data-short={String(shortCollecting)}
+            data-market={String(market)}
+        />
+    ),
+}));
+vi.mock('@/widgets/investor-flows/KrInvestorFlowsContent', () => ({
+    KrInvestorFlowsContent: ({
+        krCompany,
+    }: {
+        krCompany: { viaCommonShare: boolean } | null;
+    }) => (
+        <div
+            data-testid="kr-content"
+            data-via-common={String(krCompany?.viaCommonShare)}
         />
     ),
 }));
@@ -76,8 +91,18 @@ vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     ),
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
-    CrossLinkCards: ({ current }: { current: string }) => (
-        <div data-testid="cross" data-current={current} />
+    CrossLinkCards: ({
+        current,
+        marketProfile,
+    }: {
+        current: string;
+        marketProfile?: string;
+    }) => (
+        <div
+            data-testid="cross"
+            data-current={current}
+            data-profile={String(marketProfile)}
+        />
     ),
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
@@ -145,7 +170,7 @@ describe('flows page ISR config', () => {
 describe('flows page 탭 가드', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('수급 탭이 없는 심볼(KR·크립토)은 데이터를 읽기 전에 notFound()다', async () => {
+    it('수급 탭이 없는 심볼(크립토)은 데이터를 읽기 전에 notFound()다', async () => {
         vi.mocked(isTabAllowedForSymbol).mockResolvedValue(false);
         await expect(FlowsPage({ params: params('BTCUSD') })).rejects.toThrow(
             'NEXT_NOT_FOUND'
@@ -209,6 +234,10 @@ describe('flows page 본문', () => {
         expect(screen.getByTestId('cross')).toHaveAttribute(
             'data-current',
             'flows'
+        );
+        expect(screen.getByTestId('cross')).toHaveAttribute(
+            'data-profile',
+            'us-equity'
         );
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
             '애플(AAPL) 기관·공매도 수급'
@@ -326,5 +355,100 @@ describe('flows page 본문', () => {
         await expect(FlowsPage({ params: params() })).rejects.toThrow(
             'NEXT_NOT_FOUND'
         );
+    });
+});
+
+describe('flows page 본문 — 한국 종목', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    const KR_ASSET = {
+        assetInfo: {
+            symbol: '005930.KS',
+            name: 'Samsung Electronics',
+            koreanName: '삼성전자',
+        },
+        degraded: false,
+    };
+    const READY_ALL = {
+        institutional: 'ready',
+        short: 'ready',
+        failsToDeliver: 'ready',
+        filings: 'ready',
+        thresholdList: 'ready',
+        dart: 'ready',
+    };
+
+    function arrangeKr(flows: Record<string, unknown>) {
+        arrange({
+            market: 'kr',
+            krCompany: null,
+            finraEnabled: false,
+            regShoEnabled: false,
+            readiness: READY_ALL,
+            ...flows,
+        });
+        vi.mocked(getAssetInfoResilient).mockResolvedValue(KR_ASSET as never);
+    }
+
+    it('DART 레이아웃: 한국 본문 → AI 해석 → 크로스링크 순이고 미국 본문은 없다', async () => {
+        arrangeKr({
+            snapshot: { asOf: '2026-10-16', market: 'kr' },
+            scorecard: { composite: {}, market: 'kr' },
+            krCompany: { corpName: '삼성전자', viaCommonShare: true },
+        });
+        render(await FlowsPage({ params: params('005935.KS') }));
+        expect(screen.queryByTestId('content')).toBeNull();
+        const krContent = screen.getByTestId('kr-content');
+        expect(krContent).toHaveAttribute('data-via-common', 'true');
+        const summary = screen.getByTestId('summary');
+        const before = Node.DOCUMENT_POSITION_FOLLOWING;
+        expect(krContent.compareDocumentPosition(summary) & before).toBe(
+            before
+        );
+        expect(
+            summary.compareDocumentPosition(screen.getByTestId('cross')) &
+                before
+        ).toBe(before);
+        // 크로스링크는 한국 탭 집합(옵션·의회 거래 없음)으로 그린다.
+        expect(screen.getByTestId('cross')).toHaveAttribute(
+            'data-profile',
+            'kr-equity'
+        );
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+            '대량보유·임원 지분 공시'
+        );
+    });
+
+    it('데이터가 없으면 한국 빈 상태이고, 13F·FINRA가 수집 중이어도 "수집 중"이 아니다', async () => {
+        arrangeKr({
+            readiness: {
+                ...READY_ALL,
+                institutional: 'collecting',
+                short: 'collecting',
+            },
+        });
+        render(await FlowsPage({ params: params('005930.KS') }));
+        const empty = screen.getByTestId('empty');
+        expect(empty).toHaveAttribute('data-market', 'kr');
+        expect(empty).toHaveAttribute('data-collecting', 'false');
+        expect(screen.queryByTestId('summary')).toBeNull();
+    });
+
+    it('DART 백필 중이면 한국 빈 상태가 "수집 중"이다', async () => {
+        arrangeKr({ readiness: { ...READY_ALL, dart: 'collecting' } });
+        render(await FlowsPage({ params: params('005930.KS') }));
+        expect(screen.getByTestId('empty')).toHaveAttribute(
+            'data-collecting',
+            'true'
+        );
+    });
+
+    it('한국 종목도 항상 noindex이고 메타데이터가 지분공시 카피다', async () => {
+        vi.mocked(isTabAllowedForSymbol).mockResolvedValue(true);
+        vi.mocked(requireResolvableAsset).mockResolvedValue(KR_ASSET as never);
+        const meta = await generateMetadata({ params: params('005930.KS') });
+        expect(meta.robots).toEqual(ALWAYS_NOINDEX_TAB_ROBOTS);
+        expect(JSON.stringify(meta.title)).toContain('지분 공시');
+        expect(String(meta.description)).toContain('DART');
     });
 });

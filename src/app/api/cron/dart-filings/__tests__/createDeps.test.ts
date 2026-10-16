@@ -1,9 +1,15 @@
-const { mockClient, mockRevalidate } = vi.hoisted(() => ({
-    mockClient: vi.fn(),
-    mockRevalidate: vi.fn(),
-}));
+const { mockClient, mockRevalidate, mockRevalidateReadiness } = vi.hoisted(
+    () => ({
+        mockClient: vi.fn(),
+        mockRevalidate: vi.fn(),
+        mockRevalidateReadiness: vi.fn(),
+    })
+);
 vi.mock('../../revalidateSymbols', () => ({
     revalidateSymbols: mockRevalidate,
+}));
+vi.mock('../../revalidateFlowsReadiness', () => ({
+    revalidateFlowsReadiness: mockRevalidateReadiness,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
@@ -17,6 +23,7 @@ describe('createDartFilingsDeps', () => {
     beforeEach(() => {
         mockClient.mockReset();
         mockRevalidate.mockReset();
+        mockRevalidateReadiness.mockReset();
     });
     afterEach(() => {
         vi.unstubAllEnvs();
@@ -52,5 +59,11 @@ describe('createDartFilingsDeps', () => {
         mockClient.mockReturnValue({ db: {} });
         createDartFilingsDeps(() => false).invalidateSymbols(['005930.KS']);
         expect(mockRevalidate).toHaveBeenCalledWith(['005930.KS']);
+    });
+
+    it('wires the backfill-completed hook to the readiness cache invalidation', () => {
+        mockClient.mockReturnValue({ db: {} });
+        createDartFilingsDeps(() => false).onBackfillCompleted?.();
+        expect(mockRevalidateReadiness).toHaveBeenCalledTimes(1);
     });
 });

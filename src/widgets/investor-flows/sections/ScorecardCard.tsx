@@ -3,6 +3,7 @@ import {
     INVESTOR_FLOWS_AXES,
     type InvestorFlowsAxisId,
     type InvestorFlowsLabel,
+    type InvestorFlowsMarket,
     type InvestorFlowsScorecard,
 } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -12,9 +13,9 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
-import { FlowTooltip } from '../investorFlowsTooltips';
+import { FlowTooltip, type FlowTerm } from '../investorFlowsTooltips';
 import { buildAxisEvidence } from '../utils/axisEvidence';
-import { AXIS_TITLE_KEY } from '../utils/axisKeys';
+import { axisTitleKey } from '../utils/axisKeys';
 import { formatSignedDecimal } from '../utils/flowFormat';
 import {
     COLLECTING_MARK,
@@ -26,13 +27,28 @@ import {
 const HEADING_ID = 'flows-scorecard-heading';
 
 /** 축 제목 옆 용어 풀이. */
-const AXIS_TERM = {
+const AXIS_TERM: Record<InvestorFlowsAxisId, FlowTerm> = {
     institutional: 'institutionalHolding',
     insider: 'form4',
     largeHolders: 'largeHolder13dg',
     short: 'shortInterest',
     dilution: 'dilution',
-} as const;
+};
+
+/** 한국 점수표의 축 풀이 — DART 대량보유·임원·주요주주 소유보고(13D/G·Form 4가 아니다). */
+const KR_AXIS_TERM: Partial<Record<InvestorFlowsAxisId, FlowTerm>> = {
+    insider: 'krInsider',
+    largeHolders: 'krMajorHolder',
+};
+
+function axisTerm(
+    axis: InvestorFlowsAxisId,
+    market: InvestorFlowsMarket
+): FlowTerm {
+    return (
+        (market === 'kr' ? KR_AXIS_TERM[axis] : undefined) ?? AXIS_TERM[axis]
+    );
+}
 
 function LabelBadge({
     label,
@@ -78,8 +94,8 @@ function AxisCard({
         <li className={cn(SURFACE_NESTED, 'p-4')}>
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className={HEADING_SUBSECTION}>
-                    {tAxis(AXIS_TITLE_KEY[axis])}
-                    <FlowTooltip term={AXIS_TERM[axis]} />
+                    {tAxis(axisTitleKey(axis, scorecard.market))}
+                    <FlowTooltip term={axisTerm(axis, scorecard.market)} />
                 </h3>
                 <LabelBadge label={data.label} collecting={collecting} />
             </div>
@@ -114,13 +130,18 @@ interface ScorecardCardProps {
      * 매겨진 축은 목록에 있어도 영향이 없다(`insufficient`일 때만 바뀐다).
      */
     readonly collectingAxes?: readonly InvestorFlowsAxisId[];
+    /** 그릴 축(순서대로). 기본은 다섯 축 전부 — 한국 점수표는 DART 원천이 있는 두 축만 넘긴다. */
+    readonly axes?: readonly InvestorFlowsAxisId[];
+    /** 축 목록 아래 안내 한 줄(한국: 제공하지 않는 축·기관·외국인 순매수 미제공). */
+    readonly note?: string;
 }
 
 /**
  * 수급 점수 카드 — 종합 점수와 축별(기관·내부자·대량보유·공매도·증자 희석) 방향 라벨, 각 근거 수치.
  *
- * 축 카드는 다섯 개 모두 그린다 — 공매도 축은 FINRA가 꺼져도 SEC 결제 불이행·과열 목록을 중립 맥락으로 담고, 데이터가 없으면
- * "데이터 부족"이라고 말한다(빈 카드로 숨기지 않는다).
+ * 미국 종목은 축 카드 다섯 개를 모두 그린다(`axes` 기본값) — 공매도 축은 FINRA가 꺼져도 SEC 결제 불이행·과열 목록을 중립
+ * 맥락으로 담고, 데이터가 없으면 "데이터 부족"이라고 말한다(빈 카드로 숨기지 않는다). 한국 종목은 DART 원천이 있는 대량보유·
+ * 임원·주요주주 두 축만 그리고, 원천이 없는 축은 `note`로 "제공하지 않음"을 밝힌다(core도 그 축을 `insufficient`로 준다).
  *
  * 점수·라벨은 core의 `evaluateInvestorFlows` 결과를 그대로 옮긴다(화면이 다시 계산하지 않는다). 방향은
  * 색 + 기호(▲▼■) + 글자 라벨 세 겹으로 전하고, 데이터가 부족한 축은 "데이터 부족"이라고 말한다(중립이 아니다). 초기 수집이
@@ -129,6 +150,8 @@ interface ScorecardCardProps {
 export function ScorecardCard({
     scorecard,
     collectingAxes = [],
+    axes = INVESTOR_FLOWS_AXES,
+    note,
 }: ScorecardCardProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
@@ -141,7 +164,11 @@ export function ScorecardCard({
         >
             <h2 id={HEADING_ID} className={cn('mb-4', HEADING_SECTION)}>
                 {t('scorecard.title')}
-                <FlowTooltip term="flowScore" />
+                <FlowTooltip
+                    term={
+                        scorecard.market === 'kr' ? 'krFlowScore' : 'flowScore'
+                    }
+                />
             </h2>
             <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
                 {composite.score === null ? (
@@ -165,7 +192,7 @@ export function ScorecardCard({
                 )}
             </div>
             <ul className="grid gap-3 md:grid-cols-2">
-                {INVESTOR_FLOWS_AXES.map(axis => (
+                {axes.map(axis => (
                     <AxisCard
                         key={axis}
                         axis={axis}
@@ -177,6 +204,11 @@ export function ScorecardCard({
                     />
                 ))}
             </ul>
+            {note !== undefined && (
+                <p className="mt-4 text-xs leading-relaxed text-secondary-300">
+                    {note}
+                </p>
+            )}
         </section>
     );
 }

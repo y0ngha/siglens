@@ -39,7 +39,7 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.
- * - 시세·봉·재무·옵션·의회 거래·수급(`get_investor_flows`: DB의 13F·FINRA + FMP 내부자·13D/G를 읽어 코드가 계산한
+ * - 시세·봉·재무·옵션·의회 거래·수급(`get_investor_flows`: DB의 13F·FINRA·DART + FMP 내부자·13D/G를 읽어 코드가 계산한
  *   점수표를 압축할 뿐 LLM을 부르지 않는다)·경제 지표는 서버의 **시장 데이터 키**(FMP/Yahoo)를 쓴다. LLM이 아니고
  *   공유 캐시를 거치며, 회원 단위 분당/일 한도(`PUBLIC_API_RATE_LIMITS.data`)가 호출 수를 묶는다.
  * - `get_guide`·`get_my_portfolio`·`get_news`(저장분)는 DB(와 보유종목 시세 캐시)만 읽는다.

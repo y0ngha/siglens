@@ -16,6 +16,12 @@ import {
     type ShortInterestPoint,
     type ShortVolumePoint,
 } from '@y0ngha/siglens-core';
+import type {
+    DartInsiderReportRecord,
+    DartMajorHoldingRecord,
+    DartTradingPlanRecord,
+} from '@/entities/investor-flows/api/investorFlowsDartRepository';
+import { assembleKrInvestorFlowsSnapshot } from '@/entities/investor-flows/lib/krInvestorFlowsSnapshot';
 
 /** 테스트 기준일(고정) — 90일 창·분기 완결 판정이 시간에 흔들리지 않게 모든 날짜를 이 날 기준으로 적는다. */
 export const FLOWS_AS_OF = '2026-10-16';
@@ -387,4 +393,99 @@ export function makeEmptySnapshot(): InvestorFlowsSnapshot {
         shortInterest: [],
         shortVolume: [],
     });
+}
+
+// ── 한국(DART) ──────────────────────────────────────────────────────────────────────────────────────────────
+// 손으로 core 타입을 만들지 않고 저장소 행 → `assembleKrInvestorFlowsSnapshot`(실제 매핑)을 거쳐 만든다.
+
+export function makeKrMajorHoldingRecord(
+    over: Partial<DartMajorHoldingRecord> = {}
+): DartMajorHoldingRecord {
+    return {
+        rceptNo: '20261014000124',
+        receiptDate: '2026-10-14',
+        reporter: '픽스처자산운용',
+        reportForm: 'abbreviated',
+        shares: 301_500_000,
+        sharesChange: 301_500_000,
+        ratioPct: 5.05,
+        ratioChangePct: 5.05,
+        reason: '신규 보고',
+        ...over,
+    };
+}
+
+export function makeKrInsiderRecord(
+    over: Partial<DartInsiderReportRecord> = {}
+): DartInsiderReportRecord {
+    return {
+        rceptNo: '20261013000457',
+        receiptDate: '2026-10-13',
+        reporter: '최임원',
+        position: '부사장',
+        registered: false,
+        majorShareholder: null,
+        shares: 8_000,
+        sharesChange: -2_000,
+        ratioPct: 0,
+        ratioChangePct: 0,
+        ...over,
+    };
+}
+
+export function makeKrTradingPlanRecord(
+    over: Partial<DartTradingPlanRecord> = {}
+): DartTradingPlanRecord {
+    return {
+        rceptNo: '20261012000789',
+        receiptDate: '2026-10-12',
+        reporter: '이임원',
+        title: '임원ㆍ주요주주특정증권등거래계획보고서',
+        ...over,
+    };
+}
+
+/** 대량보유 2건(5% 신규 진입 포함)·소유보고 2건·거래계획 1건의 한국 스냅샷. */
+export function makeKrSnapshot(
+    over: Partial<{
+        majorHoldings: DartMajorHoldingRecord[];
+        insiderReports: DartInsiderReportRecord[];
+        tradingPlans: DartTradingPlanRecord[];
+    }> = {}
+): InvestorFlowsSnapshot {
+    const { snapshot } = assembleKrInvestorFlowsSnapshot({
+        asOf: FLOWS_AS_OF,
+        majorHoldings: over.majorHoldings ?? [
+            makeKrMajorHoldingRecord(),
+            makeKrMajorHoldingRecord({
+                rceptNo: '20261010000001',
+                receiptDate: '2026-10-10',
+                reporter: '국민연금공단',
+                reportForm: 'detailed',
+                shares: 432_154_213,
+                sharesChange: -5_120_000,
+                ratioPct: 7.24,
+                ratioChangePct: -0.09,
+                reason: '보유주식등의 수 변동',
+            }),
+        ],
+        insiderReports: over.insiderReports ?? [
+            makeKrInsiderRecord(),
+            makeKrInsiderRecord({
+                rceptNo: '20261013000458',
+                reporter: '박주주',
+                position: null,
+                registered: null,
+                majorShareholder: '10%이상주주',
+                shares: 650_000_000,
+                sharesChange: 18_000_000,
+                ratioPct: 10.89,
+                ratioChangePct: 0.3,
+            }),
+        ],
+        tradingPlans: over.tradingPlans ?? [makeKrTradingPlanRecord()],
+        sharesOutstanding: null,
+    });
+    if (snapshot === null) throw new Error('makeKrSnapshot: empty fixture');
+    return snapshot;
 }

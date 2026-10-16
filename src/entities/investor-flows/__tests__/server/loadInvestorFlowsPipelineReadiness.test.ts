@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     INVESTOR_FLOWS_STATE_BACKFILL_DONE,
+    INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
@@ -22,6 +23,7 @@ function build(
         listThresholdTradeDates: async () => [],
         isFinraEnabled: () => true,
         isRegShoEnabled: () => true,
+        isDartEnabled: () => true,
         now: () => NOW,
         ...over,
     };
@@ -39,13 +41,14 @@ const ALL_13F = [
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
     INVESTOR_FLOWS_STATE_BACKFILL_DONE,
 ];
+const ALL_MARKERS = [...ALL_13F, INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE];
 
 describe('loadInvestorFlowsPipelineReadiness', () => {
     it('every source loaded -> everything ready', async () => {
         expect(
             await loadInvestorFlowsPipelineReadiness(
-                build(ALL_13F, {
-                    getState: withCursor(ALL_13F, '2026-10-15'),
+                build(ALL_MARKERS, {
+                    getState: withCursor(ALL_MARKERS, '2026-10-15'),
                     hasAnyShortRow: async () => true,
                     hasAnyFtdFile: async () => true,
                     listThresholdTradeDates: async () => ['2026-10-15'],
@@ -57,6 +60,7 @@ describe('loadInvestorFlowsPipelineReadiness', () => {
             failsToDeliver: 'ready',
             filings: 'ready',
             thresholdList: 'ready',
+            dart: 'ready',
         });
     });
 
@@ -67,7 +71,27 @@ describe('loadInvestorFlowsPipelineReadiness', () => {
             failsToDeliver: 'collecting',
             filings: 'collecting',
             thresholdList: 'collecting',
+            dart: 'collecting',
         });
+    });
+
+    it('DART is ready once the initial backfill marker exists, independent of the 13F markers', async () => {
+        const result = await loadInvestorFlowsPipelineReadiness(
+            build([INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE])
+        );
+        expect(result.dart).toBe('ready');
+        expect(result.institutional).toBe('collecting');
+    });
+
+    it('without a DART key the DART branch is unknown (never "collecting") and its marker is not read', async () => {
+        const getState = vi.fn(async () => 'x');
+        const result = await loadInvestorFlowsPipelineReadiness(
+            build([], { getState, isDartEnabled: () => false })
+        );
+        expect(result.dart).toBe('unknown');
+        expect(getState).not.toHaveBeenCalledWith(
+            INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE
+        );
     });
 
     it('a filings cursor that still trails the backfill keeps filings collecting', async () => {

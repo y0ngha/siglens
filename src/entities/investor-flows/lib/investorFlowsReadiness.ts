@@ -10,6 +10,7 @@ export const UNKNOWN_PIPELINE_READINESS: InvestorFlowsPipelineReadiness = {
     failsToDeliver: 'unknown',
     filings: 'unknown',
     thresholdList: 'unknown',
+    dart: 'unknown',
 };
 
 /**
@@ -66,6 +67,18 @@ export function deriveThresholdListStatus(input: {
 }): PipelineStatus {
     if (!input.regShoEnabled) return 'unknown';
     return input.hasIngestedDate ? 'ready' : 'collecting';
+}
+
+/**
+ * 한국 DART 지분공시 준비 상태. 키가 없으면 수집 자체가 돌지 않으므로 `unknown`(해당 없음 — 화면은 "수집 중"이 아니라 "데이터
+ * 없음"이고, 키 설정 여부를 드러내지 않는다). 키가 있으면 초기 백필 표식이 있어야 `ready`다.
+ */
+export function deriveDartStatus(input: {
+    readonly dartEnabled: boolean;
+    readonly backfillDone: boolean;
+}): PipelineStatus {
+    if (!input.dartEnabled) return 'unknown';
+    return input.backfillDone ? 'ready' : 'collecting';
 }
 
 /** 행 목록 하나(`null`·`undefined`는 행 없음으로 본다). */
@@ -234,3 +247,20 @@ export const EMPTY_COLLECTING_SNAPSHOT: CollectingSnapshotFields = {
     offerings: [],
     thresholdList: null,
 };
+
+/**
+ * 한국 종목의 지분공시가 "데이터 없음"이 아니라 "아직 수집 중"인가 — DART 백필이 끝나지 않았고 이 종목의 세 목록(대량보유·소유보고·
+ * 거래계획)이 모두 비어 있을 때만 참이다. 미국 갈래(13F·FINRA·SEC)는 보지 않는다(설계 §4.5). 스냅샷이 없으면(`null`) 빈 목록으로
+ * 본다. 화면·에이전트 도구·종합 분석이 같은 판정을 쓴다.
+ */
+export function isKrDisclosureCollecting(
+    readiness: InvestorFlowsPipelineReadiness,
+    snapshot: InvestorFlowsSnapshot | null
+): boolean {
+    const kr = snapshot?.kr;
+    return isCollectingAndEmpty(
+        readiness.dart,
+        [kr?.majorHolders, kr?.insiders, kr?.tradingPlans],
+        true
+    );
+}

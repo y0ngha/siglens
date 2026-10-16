@@ -1,16 +1,26 @@
 import 'server-only';
 import {
     evaluateInvestorFlows,
+    type InvestorFlowsMarket,
     type InvestorFlowsScorecard,
     type InvestorFlowsSnapshot,
 } from '@y0ngha/siglens-core';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { maskUncollectedSections } from '../lib/investorFlowsReadiness';
-import type { InvestorFlowsPipelineReadiness } from '../model';
+import type {
+    InvestorFlowsPipelineReadiness,
+    KrDisclosureCompany,
+} from '../model';
+import { getKrDartCorp } from './getKrDartCorp';
 import { getInvestorFlowsEvaluationOptions } from './getInvestorFlowsEvaluationOptions';
 import { getInvestorFlowsPipelineReadiness } from './getInvestorFlowsPipelineReadiness';
 import { getInvestorFlowsResilient } from './getInvestorFlowsResilient';
 
 export interface InvestorFlowsScorecardResult {
+    /** 종목의 시장. 화면·도구가 미국(13F·FINRA·SEC)과 한국(DART) 구성을 가른다. */
+    market: InvestorFlowsMarket;
+    /** 한국 종목이고 DART 회사 매핑이 있을 때만 값이 있다(미국 종목·매핑 실패·조회 실패면 `null`). */
+    krCompany: KrDisclosureCompany | null;
     /** 데이터가 없는 종목이거나 인프라 장애면 `null`. */
     snapshot: InvestorFlowsSnapshot | null;
     /** `snapshot`이 있을 때만 값이 있다 — 스냅샷 없이 점수를 만들어 내지 않는다. */
@@ -44,16 +54,30 @@ export interface InvestorFlowsScorecardResult {
  * 채점 입력은 AI 해석(`investorFlowsCachedProvider`)과 같은 마스킹(`maskUncollectedSections`)을 거친다 — 아직 수집 중인 빈
  * 구간이 "없음"으로 채점되지 않게 하고, 두 경로의 점수가 같게 한다. 돌려주는 `snapshot`은 원본이다(화면은 수집 중 판정을
  * `resolveCollectingArms`로 따로 한다).
+ *
+ * 한국 종목(`005930.KS`)은 DART 지분공시 스냅샷(`market: 'kr'`)이고, 미국 갈래 마스킹은 할 일이 없다(한국 스냅샷의 미국 필드는
+ * 처음부터 비어 있거나 `null`). 우선주 안내용 회사 정보(`krCompany`)를 함께 읽는다.
  */
 export async function getInvestorFlowsScorecard(
     symbol: string
 ): Promise<InvestorFlowsScorecardResult> {
-    const [{ snapshot, degraded }, readiness, options] = await Promise.all([
-        getInvestorFlowsResilient(symbol),
-        getInvestorFlowsPipelineReadiness(),
-        getInvestorFlowsEvaluationOptions(symbol),
-    ]);
+    const kr = isKrEquitySymbol(symbol);
+    const [{ snapshot, degraded }, readiness, options, corp] =
+        await Promise.all([
+            getInvestorFlowsResilient(symbol),
+            getInvestorFlowsPipelineReadiness(),
+            getInvestorFlowsEvaluationOptions(symbol),
+            kr ? getKrDartCorp(symbol) : Promise.resolve(null),
+        ]);
     return {
+        market: options.market,
+        krCompany:
+            corp === null
+                ? null
+                : {
+                      corpName: corp.corpName,
+                      viaCommonShare: corp.viaCommonShare,
+                  },
         snapshot,
         scorecard:
             snapshot === null

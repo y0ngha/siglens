@@ -108,4 +108,19 @@ describe('getInvestorFlowsDataProvider', () => {
         expect(executed).toContain('["tradeDate","market"]');
         expect(executed).toContain('["value"]');
     });
+
+    it('routes a Korean symbol to the DART tables only — no FMP provider, no 13F/FINRA/SEC reads', async () => {
+        const executed: string[] = [];
+        mockClient.mockReturnValue({ db: recordingDb(executed) });
+        const snapshot =
+            await getInvestorFlowsDataProvider().getInvestorFlowsSnapshot(
+                '005930.KS'
+            );
+        expect(snapshot).toBeNull();
+        expect(mockFmp).not.toHaveBeenCalled();
+        // dart_corp_code 조회(stockCode·corpCode·corpName)만 일어나고, 매핑이 없으니 공시 조회도 없다.
+        expect(executed).toEqual(['["stockCode","corpCode","corpName"]']);
+        expect(executed).not.toContain('["cusip"]');
+        expect(executed).not.toContain('execute');
+    });
 });

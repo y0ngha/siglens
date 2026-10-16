@@ -356,7 +356,9 @@
             "flows": {
                 "degradedBody": "데이터 저장소가 잠시 응답하지 않고 있어요. 잠시 후 다시 방문하시면 기관·내부자·공매도 수급을 보실 수 있어요.",
                 "degradedTitle": "수급 데이터를 일시적으로 불러올 수 없어요",
-                "heading": "{v0} 기관·공매도 수급"
+                "heading": "{v0} 기관·공매도 수급",
+                "krDegradedBody": "데이터 저장소가 잠시 응답하지 않고 있어요. 잠시 후 다시 방문하시면 대량보유·임원 지분 공시를 보실 수 있어요.",
+                "krHeading": "{v0} 대량보유·임원 지분 공시"
             },
             "loading": {
                 "486c8b": "데이터 로딩 중…",
@@ -1446,6 +1448,7 @@
                 "options": "옵션 시장이 보는 가격대와 기대 변동성",
                 "overall": "4축 통합 AI 결론 + 시나리오"
             },
+            "descriptionFlowsKr": "5% 대량보유·임원 소유 공시와 AI 해석",
             "descriptionOverallCrypto": "차트·뉴스·시장 분위기 통합 AI 결론 + 시나리오",
             "title": {
                 "chart": "차트 분석",
@@ -1457,7 +1460,8 @@
                 "news": "뉴스 분석",
                 "options": "옵션 분석",
                 "overall": "AI 종합 분석"
-            }
+            },
+            "titleFlowsKr": "지분 공시 수급"
         },
         "enumLabel": {
             "backtestRiskLevel": {
@@ -1995,6 +1999,9 @@
                 },
                 "flows": {
                     "description": "{subject}의 기관 보유 변화(13F), 내부자 거래, 5% 대량보유 공시, 공매도 잔고를 한곳에 모아 보여주고 AI가 수급 흐름을 해석합니다.",
+                    "krDescription": "{subject}의 5% 대량보유 보고, 임원·주요주주 소유 변동, 거래계획 보고서를 금융감독원 전자공시(DART)에서 모아 보여주고 AI가 지분 흐름을 해석합니다.",
+                    "krTitleCore": "지분 공시",
+                    "krTitleTail": "대량보유·임원 소유",
                     "titleCore": "기관 수급",
                     "titleTail": "13F·내부자·공매도"
                 },
@@ -2811,7 +2818,7 @@
                     "get_economy": "미국 정책금리·물가·고용·GDP 같은 거시 지표와 국채 금리, 앞으로의 주요 경제 일정, 시그렌즈 거시 브리핑을 줘요. 인자는 필요 없어요.",
                     "get_fundamentals": "기업 개요, 밸류에이션 지표, 수익성·성장·재무 건전성 점수, 애널리스트 컨센서스와 목표가, 다음 실적 발표일을 줘요. 미국·한국 주식 전용이고 암호화폐는 지원하지 않아요.",
                     "get_guide": "캔들 패턴·차트 패턴·보조지표·투자 이론 같은 기술적 분석 개념을 시그렌즈 가이드로 설명해 줘요. 종목 없이 \"이게 뭐예요?\"를 물을 때 쓰고, 가이드 페이지 주소도 함께 줘요.",
-                    "get_investor_flows": "미국 주식의 수급, 즉 누가 사고파는지를 줘요. 기관·내부자·5% 보유자·공매도·증자 희석 점수표와 상위 기관 보유·13F 풋콜, 내부자 거래와 매도 예정 신고(Form 144), 대량보유·증자 공시, 공매도·결제 불이행·과열 목록 데이터, 숏스퀴즈 점수를 담아요. 공시가 늦게 나오는 데이터라 항목마다 기준일도 함께 돌려줘요.",
+                    "get_investor_flows": "미국·한국 주식의 수급, 즉 누가 사고파는지를 줘요. 미국 주식은 기관·내부자·5% 보유자·공매도·증자 희석 점수표와 상위 기관 보유·13F 풋콜, 내부자 거래와 매도 예정 신고(Form 144), 대량보유·증자 공시, 공매도·결제 불이행·과열 목록 데이터, 숏스퀴즈 점수를 담아요. 한국 주식은 DART의 대량보유(5%)·임원·주요주주 소유 보고·거래계획 보고서와 그 점수를 담고, 기관·외국인 순매수는 주지 않아요. 공시가 늦게 나오는 데이터라 항목마다 기준일도 함께 돌려줘요.",
                     "get_market_overview": "시장 전체의 공포·탐욕 지수와 주요 지수·섹터 등락, 시그렌즈의 시장 브리핑, 섹터별 신호 스캔 결과를 줘요. \"오늘 시장 어때?\"를 물을 때 써요.",
                     "get_my_portfolio": "로그인한 사용자의 보유 종목을 수량·평균 단가·평가손익·비중과 함께 돌려줘요. 내 포지션이나 손익을 물을 때만 써요.",
                     "get_news": "시그렌즈가 모아 둔 종목 또는 시장 카테고리 뉴스를 감성과 요약, 건수 집계와 함께 돌려줘요. 소식이나 \"왜 움직였나\"를 알아볼 때 써요.",
@@ -4395,10 +4402,15 @@
                 "dilution": "증자·희석",
                 "insider": "내부자",
                 "institutional": "기관",
+                "krInsider": "임원·주요주주",
                 "largeHolders": "대량보유(5%)",
                 "short": "공매도"
             },
             "collecting": {
+                "dart": {
+                    "body": "금융감독원 전자공시시스템(DART)에서 대량보유·임원 소유 공시를 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
+                    "title": "지분 공시를 모으는 중이에요"
+                },
                 "empty": {
                     "body": "기관 보유(13F)와 공매도 데이터를 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
                     "bodyInstitutionalOnly": "기관 보유(13F) 데이터를 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
@@ -4456,7 +4468,14 @@
                 "insiderCounts": "매수 {buys}건 · 매도 {sells}건",
                 "insiderNetBuy": "최근 {days}일 순매수 {amount}",
                 "insiderNetSell": "최근 {days}일 순매도 {amount}",
+                "insiderProposedSalePct": "매도 예정 주식 {pct} (발행주식 대비)",
                 "insiderProposedSales": "매도 예정 신고(Form 144) {count}건 · {amount}",
+                "krInsiderNetPct": "보유 비율 순증감 {pct}",
+                "krInsiderNetShares": "순증감 {shares}주",
+                "krInsiderReports": "최근 {days}일 소유 보고 {reports}건 · 보고자 {reporters}명",
+                "krMajorHolderDetailed": "일반 보고 {count}건",
+                "krMajorHolderReports": "최근 {days}일 대량보유 보고 {reports}건 · 보고자 {reporters}명",
+                "krTradingPlans": "거래계획 보고서 {count}건",
                 "largeHolderCounts": "13D {d}건 · 13G {g}건 (최근 {days}일)",
                 "netSharesOutstanding": "기관 보유 주식 순변화 {pct} (발행주식 대비)",
                 "netSharesPrior": "기관 보유 주식 순변화 {pct} (직전 분기 보유량 대비)",
@@ -4504,7 +4523,9 @@
                 "latestQty": "최근 결제 불이행",
                 "multiple": "최근 최대치(평소 대비)",
                 "none": "최근 {days}일 동안 결제 불이행 기록이 없어요.",
+                "peakDate": "결제일 {date}",
                 "peakPct": "최근 최대치(발행주식 대비)",
+                "peakQty": "최근 최대치",
                 "shares": "{shares}주",
                 "times": "{times}배",
                 "title": "결제 불이행 (SEC FTD)",
@@ -4558,6 +4579,62 @@
                 "partialNote": "진행 중인 {period} 분기는 제출이 끝나지 않은 부분 집계예요. 지금까지 {holders}곳이 제출했고 순변화는 {net}({direction})이에요.",
                 "subtitle": "대형 기관이 분기마다 신고하는 보유 주식(13F)으로 들어온(IN) 흐름과 나간(OUT) 흐름을 봐요.",
                 "title": "기관 매수·매도 (13F)"
+            },
+            "kr": {
+                "asOf": {
+                    "delay": "대량보유 보고와 임원·주요주주 보고는 변동이 생기고 5영업일 안에 접수돼요. 그래서 최근 며칠 사이의 변동은 아직 안 보일 수 있어요.",
+                    "latestNone": "데이터 없음",
+                    "termLatest": "가장 최근 접수일",
+                    "termWindow": "점수 반영 기간"
+                },
+                "change": "증감 {value}",
+                "colFiling": "공시",
+                "colReceipt": "접수일",
+                "colReporter": "보고자",
+                "empty": {
+                    "body": "데이터 없음 — 최근 2년 동안 이 종목의 대량보유·임원 소유 공시를 찾지 못했어요.",
+                    "title": "지분 공시 데이터"
+                },
+                "filing": "DART 원문",
+                "filingLabel": "{reporter} DART 원문",
+                "insiders": {
+                    "caption": "임원과 10% 이상 주주가 회사 주식 보유량이 바뀔 때마다 내는 보고예요. 장내 매매인지 증여·상속인지는 보고서에 나오지 않아요.",
+                    "colMajor": "주요주주",
+                    "colRatio": "소유 비율",
+                    "colRegistered": "등기 여부",
+                    "colReporter": "보고자·직위",
+                    "colShares": "소유 주식",
+                    "majorNo": "아님",
+                    "majorYes": "해당",
+                    "none": "최근 2년 동안 접수된 임원·주요주주 소유 보고가 없어요.",
+                    "positionNone": "직위 없음",
+                    "registered": "등기임원",
+                    "title": "임원·주요주주 소유 보고",
+                    "unregistered": "비등기"
+                },
+                "majorHolders": {
+                    "caption": "주식을 5% 넘게 가진 주주가 5%를 처음 넘거나 보유 비율이 1%p 넘게 바뀌면 내는 보고예요. 보유 목적은 이 목록에 나오지 않아요.",
+                    "colForm": "보고 구분",
+                    "colRatio": "보유 비율",
+                    "colReason": "사유",
+                    "colSharesChange": "보유 주식 증감",
+                    "formAbbreviated": "약식",
+                    "formDetailed": "일반",
+                    "none": "최근 2년 동안 접수된 대량보유 보고가 없어요.",
+                    "reasonNone": "사유 미기재",
+                    "title": "대량보유 보고 (5% 이상)"
+                },
+                "notProvided": "기관·외국인 순매수는 제공하지 않아요.",
+                "omitted": "오래된 보고 {count}건은 목록에서 뺐어요.",
+                "pointChange": "{value}%p",
+                "preferredShare": "지분공시는 회사 단위라 {corpName} 보통주와 같은 내용이에요.",
+                "scorecardNote": "한국 종목은 대량보유와 임원·주요주주 보고로만 점수를 매겨요. 기관·공매도·증자 희석 점수는 제공하지 않아요.",
+                "source": "출처: 금융감독원 전자공시시스템(DART)",
+                "tradingPlans": {
+                    "caption": "임원·주요주주가 앞으로 주식을 사거나 팔 계획을 미리 알린 보고예요. 실제 거래가 끝났다는 뜻은 아니에요.",
+                    "none": "최근 2년 동안 접수된 거래계획 보고서가 없어요.",
+                    "title": "거래계획 보고서"
+                }
             },
             "label": {
                 "bearish": "약세 신호",
@@ -4621,12 +4698,14 @@
                 "noPreviousSettlement": "비교할 직전 결제일이 없어요",
                 "pctFloat": "유통주식 대비",
                 "qty": "공매도 잔고(주)",
+                "recentChange": "{from} → {to} 결제일 기준 {pct}",
                 "squeezeBadge": "숏스퀴즈 위험",
                 "squeezeNote": "공매도 잔고가 유통주식의 {pct}, 상환일수가 {days}일로 높은 편이에요. 주가가 오르면 되사려는 수요가 한꺼번에 몰릴 수 있어요.",
                 "subtitle": "주식을 빌려 팔고 아직 갚지 않은 물량, 거래일마다의 장외 공매도 비중, 결제 불이행을 봐요.",
                 "title": "공매도",
                 "trendFalling": "최근 흐름: 감소 추세",
                 "trendFlat": "최근 흐름: 보합",
+                "trendMixed": "최근 흐름: 혼조",
                 "trendRising": "최근 흐름: 증가 추세",
                 "unknown": "알 수 없음",
                 "volumeAria": "최근 {count}거래일의 일별 장외 공매도 비중 그래프",
@@ -4736,6 +4815,18 @@
                 "institutionalHolding": [
                     "펀드·연기금·자산운용사 같은 기관이 이 종목을 얼마나 들고 있는지를 말해요.",
                     "13F에 보고된 분기말 기준 주식 수예요."
+                ],
+                "krFlowScore": [
+                    "대량보유 보고와 임원·주요주주 소유 보고의 흐름을 점수(-100~+100)로 합친 값이에요. 높을수록 강세 쪽 신호가 많다는 뜻이에요.",
+                    "과거 공시를 규칙으로 계산한 참고 지표이고, 앞으로의 주가를 알려 주지는 않아요."
+                ],
+                "krInsider": [
+                    "임원·주요주주 소유 보고는 회사 임원과 10% 이상 주주가 자기 회사 주식 보유량이 바뀔 때 내는 공시예요.",
+                    "장내 매매·증여·상속·주식매수선택권 행사가 모두 같은 형식으로 보고돼서, 증감만으로는 사고판 이유를 알 수 없어요."
+                ],
+                "krMajorHolder": [
+                    "대량보유 보고는 한 회사 주식을 5% 넘게 가진 주주가 금융감독원에 내는 공시예요. 5%를 처음 넘거나 보유 비율이 1%p 넘게 바뀌면 5영업일 안에 내요.",
+                    "일반 보고와 약식 보고는 서식 차이일 뿐이라, 약식이라고 해서 단순 투자라고 단정할 수는 없어요."
                 ],
                 "largeHolder13dg": [
                     "13D와 13G는 한 회사 주식을 5% 넘게 가진 주주가 내는 공시예요.",
