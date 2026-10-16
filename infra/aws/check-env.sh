@@ -62,9 +62,10 @@ OPTIONAL_KEYS=(
   NAVER_AI_CLIENT_ID
   NAVER_AI_CLIENT_SECRET
   AGENT_CHAT_DISABLED
-  # Investor flows data crons: FINRA_SHORT_DATA_ENABLED unset = enabled (non-commercial phase),
-  # OPENFIGI_API_KEY unset = anonymous OpenFIGI limits, SEC_USER_AGENT unset = built-in default.
+  # Investor flows data crons: FINRA_SHORT_DATA_ENABLED / REG_SHO_THRESHOLD_DATA_ENABLED unset = enabled
+  # (non-commercial phase), OPENFIGI_API_KEY unset = anonymous OpenFIGI limits, SEC_USER_AGENT unset = built-in default.
   FINRA_SHORT_DATA_ENABLED
+  REG_SHO_THRESHOLD_DATA_ENABLED
   # Public Open API launch flag: unset = OFF (/developers and /api/v1/* return 404).
   PUBLIC_API_ENABLED
   OPENFIGI_API_KEY

@@ -9,6 +9,7 @@ import {
     isNull,
     max,
     sql,
+    type SQL,
 } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
@@ -17,6 +18,7 @@ import {
     sec13fDirtyAggregates,
     sec13fFilers,
     sec13fFilings,
+    sec13fOptionPositions,
     sec13fPositions,
 } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -32,6 +34,7 @@ import { nextQuarterEnd, previousQuarterEnd } from '../lib/investorFlowsDates';
 import type {
     AmendmentType,
     FilingRecord,
+    OptionPositionRow,
     PositionApplyMode,
     PositionRow,
 } from '../model';
@@ -39,6 +42,8 @@ import {
     buildAggregateDeleteSql,
     buildAggregateUpsertSql,
     buildBaselinelessAggregateUpsertSql,
+    buildOptionAggregateDeleteSql,
+    buildOptionAggregateUpsertSql,
     buildResetChangesSql,
     type AggregateMode,
 } from './aggregateSql';
@@ -57,6 +62,11 @@ export interface ApplyFilingInput {
     filerName: string | null;
     mode: PositionApplyMode;
     rows: readonly PositionRow[];
+    /**
+     * 같은 information table의 옵션 행(풋·콜). 주식 포지션과 **같은 모드·같은 트랜잭션**으로 반영된다 — 교체는 그 (cik, period)의
+     * 옵션 행도 지우고, 병합은 upsert, 건너뜀은 손대지 않는다.
+     */
+    optionRows: readonly OptionPositionRow[];
     /** 유니버스 CUSIP → map id. 포지션은 id로 저장한다. */
     cusipIds: ReadonlyMap<string, number>;
     /**
@@ -81,6 +91,7 @@ export interface ApplyFilingInput {
 export interface ReapplyAmendment {
     accession: string;
     rows: readonly PositionRow[];
+    optionRows: readonly OptionPositionRow[];
 }
 
 /** 실패(재시도 대기) 기록에 필요한 값. */
@@ -319,7 +330,7 @@ export class Drizzle13fRepository {
     }
 
     /**
-     * 제출 하나를 반영한다(한 트랜잭션).
+     * 제출 하나를 반영한다(한 트랜잭션). 주식 포지션과 옵션 포지션(`sec_13f_option_positions`)에 같은 모드를 적용한다.
      *
      *  - `replace`: 그 (cik, period) 포지션을 **전부 지우고** 새로 넣는다(지워지는 CUSIP도 dirty).
      *  - `merge`: upsert — 값이 실제로 바뀐 행만 갱신하고 그 CUSIP만 dirty.
@@ -373,6 +384,21 @@ export class Drizzle13fRepository {
                                         eq(sec13fPositions.period, period)
                                     )
                                 );
+                            // 옵션 행도 같은 규칙: 지우기 전에 그 CUSIP들을 dirty로 옮긴다(옵션 행은 CUSIP 문자열이라 맵으로 id를 찾는다).
+                            await tx.execute(sql`
+                                INSERT INTO sec_13f_dirty_aggregates (period, cusip_id)
+                                SELECT o.period, m.id FROM sec_13f_option_positions o
+                                JOIN cusip_symbol_map m ON m.cusip = o.cusip
+                                WHERE o.cik = ${cik} AND o.period = ${period}::date
+                                ON CONFLICT DO NOTHING`);
+                            await tx
+                                .delete(sec13fOptionPositions)
+                                .where(
+                                    and(
+                                        eq(sec13fOptionPositions.cik, cik),
+                                        eq(sec13fOptionPositions.period, period)
+                                    )
+                                );
                         }
                         // 한 분기 포지션 행들을 청크로 upsert하고 값이 바뀐 CUSIP을 dirty로 표시한다(교체 본문과 재반영이 공유).
                         const upsertRows = async (
@@ -424,12 +450,71 @@ export class Drizzle13fRepository {
                                 }
                             }
                         };
+                        // 옵션 행 upsert — 값이 바뀐 (CUSIP, 종류)의 CUSIP을 dirty로 표시한다(옵션 집계도 같은 큐로 재계산된다).
+                        const upsertOptionRows = async (
+                            source: readonly OptionPositionRow[]
+                        ): Promise<void> => {
+                            const rows = source.filter(row =>
+                                input.cusipIds.has(row.cusip)
+                            );
+                            for (const chunk of chunked(
+                                rows,
+                                INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
+                            )) {
+                                // react-doctor-disable-next-line react-doctor/async-await-in-loop
+                                const changed = await tx
+                                    .insert(sec13fOptionPositions)
+                                    .values(
+                                        chunk.map(row => ({
+                                            cik,
+                                            cusip: row.cusip,
+                                            period,
+                                            putCall: row.putCall,
+                                            shares: row.shares,
+                                            valueUsd: row.valueUsd,
+                                        }))
+                                    )
+                                    .onConflictDoUpdate({
+                                        target: [
+                                            sec13fOptionPositions.cik,
+                                            sec13fOptionPositions.cusip,
+                                            sec13fOptionPositions.period,
+                                            sec13fOptionPositions.putCall,
+                                        ],
+                                        set: {
+                                            shares: sql`excluded.shares`,
+                                            valueUsd: sql`excluded.value_usd`,
+                                        },
+                                        setWhere: sql`${sec13fOptionPositions.shares} IS DISTINCT FROM excluded.shares OR ${sec13fOptionPositions.valueUsd} IS DISTINCT FROM excluded.value_usd`,
+                                    })
+                                    .returning({
+                                        cusip: sec13fOptionPositions.cusip,
+                                    });
+                                const ids = [
+                                    ...new Set(
+                                        changed.flatMap(row => {
+                                            const id = input.cusipIds.get(
+                                                row.cusip
+                                            );
+                                            return id === undefined ? [] : [id];
+                                        })
+                                    ),
+                                ];
+                                // react-doctor-disable-next-line react-doctor/async-await-in-loop
+                                await markDirty(period, ids);
+                                for (const row of changed)
+                                    written.add(row.cusip);
+                            }
+                        };
                         await upsertRows(input.rows);
+                        await upsertOptionRows(input.optionRows);
                         // 교체가 지운 뒤 나중 NEW HOLDINGS를 같은 트랜잭션에서 다시 얹는다.
                         for (const amendment of input.reapply ?? []) {
                             // 순서가 의미를 가져 직렬이다(교체 → 오래된 정정부터).
                             // react-doctor-disable-next-line react-doctor/async-await-in-loop
                             await upsertRows(amendment.rows);
+                            // react-doctor-disable-next-line react-doctor/async-await-in-loop
+                            await upsertOptionRows(amendment.optionRows);
                         }
                         if (input.firstForPeriod) {
                             // 이번 분기에서 빠진 종목의 `exited`는 쓰인 행이 없어 갱신될 길이 이것뿐이다.
@@ -567,7 +652,7 @@ export class Drizzle13fRepository {
 
     /**
      * (period, cusips) 집계를 다시 계산한다. `mode`는 비교 정의(`aggregateSql.ts`): `complete`(전체 대 전체),
-     * `panel`(진행 중 분기, 양 분기 필러만), `none`(비교 기준 없음 — 수량만, 변화 열 NULL).
+     * `panel`(진행 중 분기, 양 분기 필러만), `none`(비교 기준 없음 — 수량만, 변화 열 NULL). 옵션 집계(풋·콜)도 함께 다시 쓴다.
      */
     async recomputeAggregates(
         period: string,
@@ -596,6 +681,23 @@ export class Drizzle13fRepository {
                 () =>
                     this.db.execute(
                         buildAggregateDeleteSql(mode, period, prevPeriod, chunk)
+                    ),
+                DB_TRANSIENT_RETRY
+            );
+            // 옵션 집계는 비교 모드와 무관하다(변화 열 없음) — 같은 dirty 청크로 함께 다시 계산한다.
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
+            await withRetry(
+                () =>
+                    this.db.execute(
+                        buildOptionAggregateUpsertSql(period, chunk)
+                    ),
+                DB_TRANSIENT_RETRY
+            );
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
+            await withRetry(
+                () =>
+                    this.db.execute(
+                        buildOptionAggregateDeleteSql(period, chunk)
                     ),
                 DB_TRANSIENT_RETRY
             );
@@ -680,11 +782,34 @@ export class Drizzle13fRepository {
     }
 
     /**
-     * 보존 하한보다 이른 분기의 포지션을 **배치로** 지운다(집계는 남는다). `RETURNING`을 쓰지 않고 드라이버의
-     * 영향 행 수만 읽는다(수백만 행을 메모리에 올리지 않는다). 한 배치는 `INVESTOR_FLOWS_PRUNE_BATCH_SIZE`행을
-     * ctid로 지운다 — `period < floor`는 BRIN 인덱스가 받친다. `shouldStop`이 true가 되면 멈추고 `done=false`.
+     * 보존 하한보다 이른 분기의 포지션을 **배치로** 지운다(집계는 남는다) — 주식 포지션 다음 옵션 포지션(같은 보존 규칙).
+     * `RETURNING`을 쓰지 않고 드라이버의 영향 행 수만 읽는다(수백만 행을 메모리에 올리지 않는다). 한 배치는
+     * `INVESTOR_FLOWS_PRUNE_BATCH_SIZE`행을 ctid로 지운다 — `period < floor`는 BRIN 인덱스가 받친다. `shouldStop`이 true가 되면
+     * 멈추고 `done=false`(두 테이블을 다 비워야 `done`).
      */
     async prunePositionsBefore(
+        floor: string,
+        shouldStop: () => boolean
+    ): Promise<{ deleted: number; done: boolean }> {
+        const stock = await this.pruneBatchesBefore(
+            sql`sec_13f_positions`,
+            floor,
+            shouldStop
+        );
+        if (!stock.done) return stock;
+        const options = await this.pruneBatchesBefore(
+            sql`sec_13f_option_positions`,
+            floor,
+            shouldStop
+        );
+        return {
+            deleted: stock.deleted + options.deleted,
+            done: options.done,
+        };
+    }
+
+    private async pruneBatchesBefore(
+        table: SQL,
         floor: string,
         shouldStop: () => boolean
     ): Promise<{ deleted: number; done: boolean }> {
@@ -696,9 +821,9 @@ export class Drizzle13fRepository {
             const result = await withRetry(
                 () =>
                     this.db.execute(sql`
-                        DELETE FROM sec_13f_positions
+                        DELETE FROM ${table}
                         WHERE ctid IN (
-                            SELECT ctid FROM sec_13f_positions
+                            SELECT ctid FROM ${table}
                             WHERE period < ${floor}::date
                             LIMIT ${INVESTOR_FLOWS_PRUNE_BATCH_SIZE}
                         )`),
@@ -711,8 +836,9 @@ export class Drizzle13fRepository {
         }
     }
 
+    /** 오래된 분기 집계를 지운다 — 주식 집계와 옵션 집계(같은 36개월 보존). 지운 행 수의 합. */
     async pruneAggregatesBefore(cutoffPeriod: string): Promise<number> {
-        return affectedRows(
+        const stock = affectedRows(
             await withRetry(
                 () =>
                     this.db.execute(
@@ -721,6 +847,16 @@ export class Drizzle13fRepository {
                 DB_TRANSIENT_RETRY
             )
         );
+        const options = affectedRows(
+            await withRetry(
+                () =>
+                    this.db.execute(
+                        sql`DELETE FROM sec_13f_option_aggregates WHERE period < ${cutoffPeriod}::date`
+                    ),
+                DB_TRANSIENT_RETRY
+            )
+        );
+        return stock + options;
     }
 
     /** 오래된 제출 원장 행을 지운다(멱등 판정에 더는 필요 없는 옛 제출일). */

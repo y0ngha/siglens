@@ -4,11 +4,8 @@ import {
     INVESTOR_FLOWS_SHORT_INTEREST_RETENTION_DAYS,
     INVESTOR_FLOWS_SHORT_VOLUME_RETENTION_DAYS,
 } from '../lib/investorFlowsPolicy';
-import {
-    buildFinraSymbolResolver,
-    parseCnmsShortVolume,
-    parseShortInterest,
-} from '../lib/finraParsers';
+import { parseCnmsShortVolume, parseShortInterest } from '../lib/finraParsers';
+import { buildSymbolAliasResolver } from '../lib/symbolAliasResolver';
 import {
     shortInterestCandidateGroups,
     shortVolumeCandidateDates,
@@ -95,7 +92,7 @@ export async function runFinraIngest(
         deps.log('[finra-short] empty universe — run cusip-map first');
         return emptyResult('empty_universe');
     }
-    const resolver = buildFinraSymbolResolver(universeSymbols);
+    const resolver = buildSymbolAliasResolver(universeSymbols);
     // 결과는 로컬에 모았다가 마지막에 한 번 만든다(함수 중간에 결과 객체를 바꾸지 않는다).
     let status: IngestFinraResult['status'] = 'ok';
     let volumeFiles = 0;

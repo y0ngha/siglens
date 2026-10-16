@@ -1,34 +1,8 @@
 import type { ShortInterestRow, ShortVolumeRow } from '../model';
+import type { SymbolResolver } from './symbolAliasResolver';
 
 /** FINRA가 "계산 불가/상한"으로 쓰는 값(`999.99`). */
 const DAYS_TO_COVER_CAP = 999.99;
-
-/** FINRA 파일 심볼 → 우리 심볼. 유니버스 밖이면 null. */
-export type FinraSymbolResolver = (finraSymbol: string) => string | null;
-
-/**
- * 유니버스 심볼에서 FINRA 표기 → 우리 표기 조회를 만든다.
- *
- * FINRA는 클래스 주식을 파일마다 다르게 쓴다(2026-10 실측): 일별 거래량(CNMS)은 `BF/A`·`BF/B`,
- * 공매도 잔고는 구분자 없이 `BFA`·`BFB`. 우리 표기는 `BF.A`·`BF-B`다. 그래서 정확 일치를 먼저
- * 등록하고, 구분자를 `/`로 바꾼 것과 지운 것을 별칭으로 **정확 일치가 없을 때만** 추가한다 —
- * 별칭이 다른 유니버스 심볼의 정확 일치를 가로채면 안 된다.
- */
-export function buildFinraSymbolResolver(
-    universeSymbols: Iterable<string>
-): FinraSymbolResolver {
-    const symbols = [...universeSymbols].map(symbol => symbol.toUpperCase());
-    const lookup = new Map<string, string>();
-    for (const symbol of symbols) lookup.set(symbol, symbol);
-    for (const symbol of symbols) {
-        if (!/[.-]/.test(symbol)) continue;
-        const slashed = symbol.replace(/[.-]/g, '/');
-        const compact = symbol.replace(/[.-]/g, '');
-        if (!lookup.has(slashed)) lookup.set(slashed, symbol);
-        if (!lookup.has(compact)) lookup.set(compact, symbol);
-    }
-    return finraSymbol => lookup.get(finraSymbol.trim().toUpperCase()) ?? null;
-}
 
 function unquote(cell: string): string {
     const trimmed = cell.trim();
@@ -81,7 +55,7 @@ function toIsoDate(raw: string | null): string | null {
  */
 export function parseCnmsShortVolume(
     text: string,
-    resolveSymbol: FinraSymbolResolver
+    resolveSymbol: SymbolResolver
 ): ShortVolumeRow[] {
     const lines = text.split(/\r?\n/);
     const header = lines.shift();
@@ -121,7 +95,7 @@ export function parseCnmsShortVolume(
  */
 export function parseShortInterest(
     text: string,
-    resolveSymbol: FinraSymbolResolver
+    resolveSymbol: SymbolResolver
 ): ShortInterestRow[] {
     const lines = text.split(/\r?\n/);
     const header = lines.shift();

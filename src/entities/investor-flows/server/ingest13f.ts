@@ -37,9 +37,9 @@ import {
 import { parseSec13fFormIndex } from '../lib/sec13fIndex';
 import { PositionAccumulator } from '../lib/sec13fPositions';
 import type {
+    FilingPositions,
     FilingRecord,
     PositionApplyMode,
-    PositionRow,
     Sec13fFilingMeta,
     Sec13fIndexEntry,
 } from '../model';
@@ -232,14 +232,14 @@ async function readDocuments(
     );
 }
 
-/** information table 하나를 스트리밍으로 읽어 유니버스 포지션만 모은다. */
+/** information table 하나를 스트리밍으로 읽어 유니버스 포지션(주식 + 옵션)만 모은다. */
 async function readPositions(
     deps: Ingest13fDeps,
     cik: string,
     accession: string,
     infoTable: string | null,
     universe: InvestorFlowsUniverse
-): Promise<PositionRow[]> {
+): Promise<FilingPositions> {
     if (infoTable === null)
         throw new Error('information table not found in filing index');
     const stream = await deps.sec.fetchFilingDocumentStream(
@@ -252,7 +252,7 @@ async function readPositions(
     await streamXmlElements(stream, 'infoTable', element =>
         accumulator.add(element)
     );
-    return accumulator.toRows();
+    return accumulator.toPositions();
 }
 
 const cusipIdsOf = (universe: InvestorFlowsUniverse): Map<string, number> =>
@@ -305,12 +305,17 @@ async function processFiling(
               ? 'notice'
               : null;
     if (skipReason !== null) {
-        await repo.applyFiling({ ...base, mode: 'skip', rows: [] });
+        await repo.applyFiling({
+            ...base,
+            mode: 'skip',
+            rows: [],
+            optionRows: [],
+        });
         return;
     }
 
     // 정보테이블 다운로드(SEC)와 기존 원장 조회(DB)는 서로 독립이라 함께 띄운다.
-    const [rows, existing] = await Promise.all([
+    const [positions, existing] = await Promise.all([
         readPositions(
             deps,
             filing.cik,
@@ -363,13 +368,13 @@ async function processFiling(
             reapply.push({
                 accession: amendment.accession,
                 // react-doctor-disable-next-line react-doctor/async-await-in-loop
-                rows: await readPositions(
+                ...(await readPositions(
                     deps,
                     filing.cik,
                     amendment.accession,
                     amendmentDocs.infoTable,
                     universe
-                ),
+                )),
             });
         }
     }
@@ -377,7 +382,8 @@ async function processFiling(
     await repo.applyFiling({
         ...base,
         mode,
-        rows,
+        rows: positions.rows,
+        optionRows: positions.optionRows,
         reapply,
         firstForPeriod:
             mode !== 'skip' &&

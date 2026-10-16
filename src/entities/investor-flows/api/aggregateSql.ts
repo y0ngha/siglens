@@ -178,3 +178,55 @@ UPDATE sec_13f_aggregates
 SET new_holders = NULL, increased = NULL, decreased = NULL, exited = NULL, net_share_change = NULL, computed_at = now()
 WHERE period = ${period}::date AND new_holders IS NOT NULL`;
 }
+
+/**
+ * (period, cusips) 13F **옵션** 집계 재계산 — 풋·콜 각각의 보유 필러 수·기초자산 주식 수·명목금액 합계. 옵션 포지션은 필러·
+ * CUSIP·분기·종류마다 한 행이라 `count(*)`가 곧 보유 필러 수다. 변화 열이 없어 비교 모드(완결/패널/기준 없음)와 무관하다 —
+ * 진행 중 분기는 주식 집계처럼 부분 집계이고, 완결 여부는 읽는 쪽이 분기 날짜로 판단한다.
+ */
+export function buildOptionAggregateUpsertSql(
+    period: string,
+    cusips: readonly string[]
+): SQL {
+    return sql`
+INSERT INTO sec_13f_option_aggregates AS a
+    (cusip, period, put_holders, put_shares, put_value_usd, call_holders, call_shares, call_value_usd, computed_at)
+SELECT
+    o.cusip,
+    ${period}::date,
+    (count(*) FILTER (WHERE o.put_call = 'put'))::int,
+    (coalesce(sum(o.shares) FILTER (WHERE o.put_call = 'put'), 0))::bigint,
+    (coalesce(sum(o.value_usd) FILTER (WHERE o.put_call = 'put'), 0))::bigint,
+    (count(*) FILTER (WHERE o.put_call = 'call'))::int,
+    (coalesce(sum(o.shares) FILTER (WHERE o.put_call = 'call'), 0))::bigint,
+    (coalesce(sum(o.value_usd) FILTER (WHERE o.put_call = 'call'), 0))::bigint,
+    now()
+FROM sec_13f_option_positions o
+WHERE o.period = ${period} AND o.cusip IN ${cusips}
+GROUP BY o.cusip
+ON CONFLICT (cusip, period) DO UPDATE SET
+    put_holders = excluded.put_holders,
+    put_shares = excluded.put_shares,
+    put_value_usd = excluded.put_value_usd,
+    call_holders = excluded.call_holders,
+    call_shares = excluded.call_shares,
+    call_value_usd = excluded.call_value_usd,
+    computed_at = now()
+WHERE (a.put_holders, a.put_shares, a.put_value_usd, a.call_holders, a.call_shares, a.call_value_usd)
+    IS DISTINCT FROM
+    (excluded.put_holders, excluded.put_shares, excluded.put_value_usd, excluded.call_holders, excluded.call_shares, excluded.call_value_usd)`;
+}
+
+/** 재계산 대상인데 그 분기 옵션 포지션이 하나도 남지 않은 CUSIP의 옵션 집계 행을 지운다(정정으로 옵션 행이 사라진 경우). */
+export function buildOptionAggregateDeleteSql(
+    period: string,
+    cusips: readonly string[]
+): SQL {
+    return sql`
+DELETE FROM sec_13f_option_aggregates a
+WHERE a.period = ${period} AND a.cusip IN ${cusips}
+  AND NOT EXISTS (
+      SELECT 1 FROM sec_13f_option_positions o
+      WHERE o.cusip = a.cusip AND o.period = ${period}
+  )`;
+}

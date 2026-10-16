@@ -1503,3 +1503,313 @@ export const finraShortVolume = pgTable(
         index('finra_short_volume_trade_date_idx').on(table.tradeDate),
     ]
 );
+
+/**
+ * Investor Flows — SEC fails-to-deliver (CNS fails), one row per (CUSIP, settlement date) for
+ * universe CUSIPs only. A row exists only on days with fails (no row = no fails, not missing data).
+ * `symbol` is OUR symbol resolved from `cusip_symbol_map` (the file's own SYMBOL is concatenated,
+ * e.g. `BRKB`, and only used as a same-issuer fallback); readers sum by symbol because one symbol
+ * can have more than one CUSIP over time. `price` is NULL when the file prints `.`. Retained ~2 years.
+ */
+export const secFtd = pgTable(
+    'sec_ftd',
+    {
+        cusip: char('cusip', { length: 9 }).notNull(),
+        settlementDate: date('settlement_date', { mode: 'string' }).notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        failsQty: bigint('fails_qty', { mode: 'number' }).notNull(),
+        price: numeric('price', { precision: 14, scale: 4 }),
+    },
+    table => [
+        primaryKey({ columns: [table.cusip, table.settlementDate] }),
+        index('sec_ftd_symbol_settlement_date_idx').on(
+            table.symbol,
+            table.settlementDate
+        ),
+        index('sec_ftd_settlement_date_idx').on(table.settlementDate),
+    ]
+);
+
+/**
+ * Investor Flows — FTD half-month files (`YYYYMMa`/`YYYYMMb` key) seen by the ingester. A file's rows and
+ * `processed_at` are written in ONE transaction, so `processed_at IS NOT NULL` means the file is fully
+ * stored. A file that could not be stored (trailer mismatch, unreadable zip, missing link target) keeps
+ * `processed_at` NULL and counts `attempts` / `last_error`, so it is retried after the healthy files and
+ * given up after a few attempts instead of starving the older backfill.
+ */
+export const secFtdFiles = pgTable('sec_ftd_files', {
+    fileKey: varchar('file_key', { length: 8 }).primaryKey(),
+    rowCount: integer('row_count').notNull().default(0),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    attempts: smallint('attempts').notNull().default(0),
+    lastError: text('last_error'),
+});
+
+/**
+ * Investor Flows — SEC CIK → our symbol, from `www.sec.gov/files/company_tickers.json` restricted to
+ * the universe (`cusip_symbol_map` symbols). One CIK can map to several universe symbols (share
+ * classes). Refreshed weekly by the cusip-map cron; it is the pre-filter for Form 144 / offering rows.
+ */
+export const secCikSymbolMap = pgTable(
+    'sec_cik_symbol_map',
+    {
+        cik: integer('cik').notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        primaryKey({ columns: [table.cik, table.symbol] }),
+        index('sec_cik_symbol_map_symbol_idx').on(table.symbol),
+    ]
+);
+
+/**
+ * Investor Flows — Form 144 (notice of proposed sale), one row per accession (the same accession is
+ * listed under the issuer AND the reporting person in the daily index). `symbol` is one
+ * representative universe symbol of `issuer_cik`; readers resolve by `issuer_cik` through
+ * `sec_cik_symbol_map` so every share class sees the filing. Amounts are summed over the filing's
+ * `securitiesInformation` blocks. Retained ~1 year.
+ */
+export const secForm144 = pgTable(
+    'sec_form144',
+    {
+        accession: varchar('accession', { length: 20 }).primaryKey(),
+        issuerCik: integer('issuer_cik').notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        filerName: text('filer_name').notNull(),
+        relationships: text('relationships').array().notNull(),
+        securityClass: text('security_class').notNull(),
+        shares: bigint('shares', { mode: 'number' }).notNull(),
+        valueUsd: bigint('value_usd', { mode: 'number' }).notNull(),
+        sharesOutstanding: bigint('shares_outstanding', { mode: 'number' }),
+        approxSaleDate: date('approx_sale_date', { mode: 'string' }),
+        planAdoptionDate: date('plan_adoption_date', { mode: 'string' }),
+        broker: text('broker'),
+        formType: varchar('form_type', { length: 16 }).notNull(),
+        filingDate: date('filing_date', { mode: 'string' }).notNull(),
+    },
+    table => [
+        index('sec_form144_issuer_cik_filing_date_idx').on(
+            table.issuerCik,
+            table.filingDate
+        ),
+        index('sec_form144_filing_date_idx').on(table.filingDate),
+    ]
+);
+
+/**
+ * Investor Flows — capital-raising / dilution filings (S-1, S-3, F-1, F-3, 424B*, Form D …) of universe
+ * issuers. Co-registrants share one accession, so the key is (accession, symbol). `kind` is derived
+ * from the form (`424B5` from the document text: atm / underwritten / best_efforts / other).
+ * Retained ~2 years.
+ */
+export const secOfferingFilings = pgTable(
+    'sec_offering_filings',
+    {
+        accession: varchar('accession', { length: 20 }).notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        issuerCik: integer('issuer_cik').notNull(),
+        formType: varchar('form_type', { length: 16 }).notNull(),
+        filingDate: date('filing_date', { mode: 'string' }).notNull(),
+        kind: varchar('kind', { length: 24 }).notNull(),
+        url: text('url').notNull(),
+    },
+    table => [
+        primaryKey({ columns: [table.accession, table.symbol] }),
+        index('sec_offering_filings_symbol_filing_date_idx').on(
+            table.symbol,
+            table.filingDate
+        ),
+        index('sec_offering_filings_filing_date_idx').on(table.filingDate),
+    ]
+);
+
+/**
+ * Investor Flows — retry queue for Form 144 / 424B5 documents that failed to download or parse.
+ * `cik`/`form_type`/`filing_date` carry what a retry needs outside the daily-index scan window.
+ * `skipped = true` is a durable NEGATIVE marker, not a failure: the document was read and deliberately
+ * not stored (a Form 144 whose issuer is outside the universe), so it is never fetched again and does
+ * not count toward the failed-document backlog.
+ */
+export const secFilingsFailures = pgTable('sec_filings_failures', {
+    accession: varchar('accession', { length: 20 }).primaryKey(),
+    cik: integer('cik').notNull(),
+    formType: varchar('form_type', { length: 16 }).notNull(),
+    filingDate: date('filing_date', { mode: 'string' }).notNull(),
+    attempts: smallint('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    skipped: boolean('skipped').notNull().default(false),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});
+
+/**
+ * Investor Flows — 13F option rows (`putCall` present) restricted to universe CUSIPs, summed per
+ * (filer, CUSIP, period, put/call). `shares` is the UNDERLYING share count (`sshPrnamt`) and
+ * `value_usd` the underlying notional — not the option premium. Same amendment / restatement /
+ * retention rules as `sec_13f_positions` (written in the same transaction as the filing's positions).
+ */
+export const sec13fOptionPositions = pgTable(
+    'sec_13f_option_positions',
+    {
+        cik: integer('cik').notNull(),
+        cusip: char('cusip', { length: 9 }).notNull(),
+        period: date('period', { mode: 'string' }).notNull(),
+        putCall: varchar('put_call', { length: 4 }).notNull(),
+        shares: bigint('shares', { mode: 'number' }).notNull(),
+        valueUsd: bigint('value_usd', { mode: 'number' }).notNull(),
+    },
+    table => [
+        primaryKey({
+            columns: [table.cik, table.cusip, table.period, table.putCall],
+        }),
+        index('sec_13f_option_positions_cusip_period_idx').on(
+            table.cusip,
+            table.period
+        ),
+        index('sec_13f_option_positions_period_brin_idx').using(
+            'brin',
+            table.period
+        ),
+    ]
+);
+
+/** Investor Flows — per (CUSIP, period) put/call totals across filers (recomputed with the 13F aggregates). */
+export const sec13fOptionAggregates = pgTable(
+    'sec_13f_option_aggregates',
+    {
+        cusip: char('cusip', { length: 9 }).notNull(),
+        period: date('period', { mode: 'string' }).notNull(),
+        putHolders: integer('put_holders').notNull(),
+        putShares: bigint('put_shares', { mode: 'number' }).notNull(),
+        putValueUsd: bigint('put_value_usd', { mode: 'number' }).notNull(),
+        callHolders: integer('call_holders').notNull(),
+        callShares: bigint('call_shares', { mode: 'number' }).notNull(),
+        callValueUsd: bigint('call_value_usd', { mode: 'number' }).notNull(),
+        computedAt: timestamp('computed_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [primaryKey({ columns: [table.cusip, table.period] })]
+);
+
+/**
+ * Investor Flows — Reg SHO threshold-security lists (Nasdaq, NYSE, NYSE American, NYSE Arca, Cboe BZX),
+ * one row per (our symbol, trade date, market) the symbol was listed. ⚠ exchange data is
+ * non-commercial: ingestion is gated by `REG_SHO_THRESHOLD_DATA_ENABLED`
+ * (`shared/api/exchange/regShoThresholdDataEnabled.ts`). Retained ~180 days.
+ */
+export const regShoThreshold = pgTable(
+    'reg_sho_threshold',
+    {
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        tradeDate: date('trade_date', { mode: 'string' }).notNull(),
+        market: varchar('market', { length: 16 }).notNull(),
+    },
+    table => [
+        primaryKey({
+            columns: [table.symbol, table.tradeDate, table.market],
+        }),
+        index('reg_sho_threshold_trade_date_idx').on(table.tradeDate),
+    ]
+);
+
+/**
+ * Investor Flows (KR) — DART `corpCode.xml`: listed stock code (6 chars, may contain letters) → DART
+ * corp code. Preferred shares are absent from the file and map to the common share's row.
+ */
+export const dartCorpCode = pgTable('dart_corp_code', {
+    stockCode: varchar('stock_code', { length: 6 }).primaryKey(),
+    corpCode: char('corp_code', { length: 8 }).notNull(),
+    corpName: text('corp_name').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});
+
+/**
+ * Investor Flows (KR) — DART `majorstock.json` (5% large-holding reports). `report_form` is
+ * `detailed` (일반) or `abbreviated` (약식). Quantities may be absent in the source, so they are
+ * nullable. Retained ~2 years.
+ */
+export const dartMajorHoldings = pgTable(
+    'dart_major_holdings',
+    {
+        rceptNo: varchar('rcept_no', { length: 14 }).notNull(),
+        corpCode: char('corp_code', { length: 8 }).notNull(),
+        receiptDate: date('receipt_date', { mode: 'string' }).notNull(),
+        reporter: text('reporter').notNull(),
+        reportForm: varchar('report_form', { length: 16 }).notNull(),
+        shares: bigint('shares', { mode: 'number' }),
+        sharesChange: bigint('shares_change', { mode: 'number' }),
+        ratioPct: numeric('ratio_pct', { precision: 8, scale: 4 }),
+        ratioChangePct: numeric('ratio_change_pct', {
+            precision: 8,
+            scale: 4,
+        }),
+        reason: text('reason'),
+    },
+    table => [
+        primaryKey({ columns: [table.rceptNo, table.reporter] }),
+        index('dart_major_holdings_corp_code_receipt_date_idx').on(
+            table.corpCode,
+            table.receiptDate
+        ),
+    ]
+);
+
+/**
+ * Investor Flows (KR) — DART `elestock.json` (executive / major-shareholder ownership reports).
+ * `registered` = registered executive (등기임원), `major_shareholder` = the source's relation text
+ * (NULL when the source prints `-`). The source has no transaction cause. Retained ~2 years.
+ */
+export const dartInsiderReports = pgTable(
+    'dart_insider_reports',
+    {
+        rceptNo: varchar('rcept_no', { length: 14 }).notNull(),
+        corpCode: char('corp_code', { length: 8 }).notNull(),
+        receiptDate: date('receipt_date', { mode: 'string' }).notNull(),
+        reporter: text('reporter').notNull(),
+        position: text('position'),
+        registered: boolean('registered'),
+        majorShareholder: text('major_shareholder'),
+        shares: bigint('shares', { mode: 'number' }),
+        sharesChange: bigint('shares_change', { mode: 'number' }),
+        ratioPct: numeric('ratio_pct', { precision: 8, scale: 4 }),
+        ratioChangePct: numeric('ratio_change_pct', {
+            precision: 8,
+            scale: 4,
+        }),
+    },
+    table => [
+        primaryKey({ columns: [table.rceptNo, table.reporter] }),
+        index('dart_insider_reports_corp_code_receipt_date_idx').on(
+            table.corpCode,
+            table.receiptDate
+        ),
+    ]
+);
+
+/**
+ * Investor Flows (KR) — DART `list.json` D005 rows (trading-plan reports, 거래계획보고서): only the
+ * list row itself (reporter, receipt date, title) is kept; the link is derived from `rcept_no`.
+ */
+export const dartTradingPlans = pgTable(
+    'dart_trading_plans',
+    {
+        rceptNo: varchar('rcept_no', { length: 14 }).primaryKey(),
+        corpCode: char('corp_code', { length: 8 }).notNull(),
+        receiptDate: date('receipt_date', { mode: 'string' }).notNull(),
+        reporter: text('reporter').notNull(),
+        title: text('title').notNull(),
+    },
+    table => [
+        index('dart_trading_plans_corp_code_receipt_date_idx').on(
+            table.corpCode,
+            table.receiptDate
+        ),
+    ]
+);

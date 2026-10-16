@@ -111,3 +111,45 @@ export const INVESTOR_FLOWS_CUSIP_FAILURE_THRESHOLD = 3;
  */
 export const INVESTOR_FLOWS_CUSIP_BLANKET_MIN_ATTEMPTS = 20;
 export const INVESTOR_FLOWS_CUSIP_BLANKET_FAILURE_RATIO = 0.9;
+
+// ── 수급 확장(SEC FTD·Form 144·증자 공시·Reg SHO) ─────────────────────────────────────────────────────
+
+/**
+ * Form 144·증자 공시 daily index 백필 범위(일). core의 희석 축이 최근 180일 공시를 보고, 내부자 축의 Form 144 신호(30일 군집)는
+ * 그 안에 든다 — 그보다 오래된 공시는 신호에 쓰이지 않는다.
+ */
+export const INVESTOR_FLOWS_SEC_FILINGS_BACKFILL_DAYS = 180;
+/** Form 144·424B5 문서 실패를 다시 시도하는 최대 횟수. 넘으면 영구 실패로 두고 그 accession은 더 받지 않는다. */
+export const INVESTOR_FLOWS_SEC_FILINGS_MAX_ATTEMPTS = 3;
+/** 보존: Form 144 1년, 증자 공시 2년. 재시도 큐는 Form 144 보존과 같은 1년이 지나면 지운다. */
+export const INVESTOR_FLOWS_FORM144_RETENTION_DAYS = 365;
+export const INVESTOR_FLOWS_OFFERING_RETENTION_DAYS = 730;
+
+/** 보존: FTD 2년. 처음 비어 있을 때는 최근 24개 반월 파일(1년)을 백필하고, 실행당 최대 4개 파일을 받는다. */
+export const INVESTOR_FLOWS_FTD_RETENTION_DAYS = 730;
+export const INVESTOR_FLOWS_FTD_BACKFILL_FILES = 24;
+export const INVESTOR_FLOWS_FTD_MAX_FILES_PER_RUN = 4;
+/**
+ * 저장하지 못한 FTD 파일(trailer 불일치·깨진 zip·링크 대상 없음)을 다시 받는 최대 횟수. 실패한 파일은 건강한 파일 **뒤에** 줄 서고
+ * 이 횟수를 넘기면 더 받지 않는다 — 영구히 깨진 최신 파일이 실행당 상한(4개)을 차지해 옛 파일 백필을 굶기지 않게 한다.
+ */
+export const INVESTOR_FLOWS_FTD_MAX_ATTEMPTS = 3;
+
+/** 보존: Reg SHO 과열 목록 180일. 비어 있으면 최근 60일(달력)을 백필한다 — 13 결제일 연속 규칙을 보기에 충분하다. */
+export const INVESTOR_FLOWS_REG_SHO_RETENTION_DAYS = 180;
+export const INVESTOR_FLOWS_REG_SHO_BACKFILL_DAYS = 60;
+
+/** `company_tickers.json` → `sec_cik_symbol_map` 갱신 주기(일). cusip-map cron(매일)이 이 간격이 지났을 때만 받는다. */
+export const INVESTOR_FLOWS_CIK_MAP_REFRESH_DAYS = 7;
+/**
+ * `sec_cik_symbol_map` 교체를 받아들이는 최소 쌍 수 — 형식이 바뀌었거나 유니버스가 비어 쌍이 거의 없는 결과로 맵을 통째로
+ * 비우지 않는 안전장치다(미국 보통주 유니버스는 수천 종목, `INVESTOR_FLOWS_UNIVERSE_MIN_MAPPED`와 같은 규모).
+ */
+export const INVESTOR_FLOWS_CIK_MAP_MIN_PAIRS = 1_000;
+
+/** `investor_flows_state` 키 — Form 144·증자 공시 daily index 커서(마지막으로 끝까지 처리한 날짜 `YYYY-MM-DD`). */
+export const INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR = 'sec_filings_cursor';
+/** `investor_flows_state` 키 — Reg SHO 과열 목록 커서(시장별 마지막 처리 거래일, JSON 객체). */
+export const INVESTOR_FLOWS_STATE_REG_SHO_CURSOR = 'reg_sho_cursor';
+/** `investor_flows_state` 키 — `sec_cik_symbol_map`을 마지막으로 갱신한 날(`YYYY-MM-DD`, UTC). */
+export const INVESTOR_FLOWS_STATE_CIK_MAP_SYNCED = 'sec_cik_map_synced_on';
