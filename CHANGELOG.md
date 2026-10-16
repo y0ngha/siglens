@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.107.2](https://github.com/y0ngha/siglens/compare/v0.107.1...v0.107.2) (2026-10-16)
+
+### Bug Fixes
+
+* 일괄 upsert 중복 키 정리 — cusip-map 21000 장애(같은 CUSIP 두 종목) ([#1063](https://github.com/y0ngha/siglens/issues/1063)) ([af11fd8](https://github.com/y0ngha/siglens/commit/af11fd87cbea98c5dd737798b8dec57e9a7ed63b))
+
 ## [0.107.1](https://github.com/y0ngha/siglens/compare/v0.107.0...v0.107.1) (2026-10-16)
 
 ### Bug Fixes
