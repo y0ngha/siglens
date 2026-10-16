@@ -26,6 +26,7 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { loadDilutionHeadingBadge } from '@/app/[locale]/[symbol]/dilutionHeadingBadge';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
@@ -237,6 +238,15 @@ export default async function SymbolPage({ params }: Props) {
         console.error('[SymbolPage] peekAnalysisStatic failed:', error);
         return null;
     });
+    // 헤더 증자·희석 배지(미국 개별 주식만 — 판정·실패 처리는 `loadDilutionHeadingBadge` JSDoc). 봉과 독립이라
+    // peek과 함께 먼저 시작하고 렌더 직전 `Promise.all`에서 기다린다.
+    //
+    // 로더는 조회 실패를 스스로 `undefined`로 삼키고, 다시 던지는 것은 Next의 정적 생성 제어 흐름 오류
+    // (`DYNAMIC_SERVER_USAGE`)뿐이다 — 그건 삼키면 안 되고 렌더를 끊어야 한다. 그래서 `.catch(→ null)`로 바꾸지
+    // 않고, 빈 핸들러만 미리 달아 봉을 기다리는 사이 reject가 "처리되지 않은 rejection"으로 잡히지 않게 한다.
+    // 아래에서 **원래 promise**를 await하므로 그 오류는 그대로 전파된다.
+    const headingBadgePromise = loadDilutionHeadingBadge(ticker, assetInfo);
+    void headingBadgePromise.catch(() => undefined);
     const quantizedFactBars = await getQuantizedBarsStatic(
         ticker,
         DEFAULT_TIMEFRAME,
@@ -343,7 +353,10 @@ export default async function SymbolPage({ params }: Props) {
         }
     }
 
-    const cachedAnalysis = await cachedAnalysisPromise;
+    const [cachedAnalysis, headingBadge] = await Promise.all([
+        cachedAnalysisPromise,
+        headingBadgePromise,
+    ]);
     // 폴백 summary도 요청 로케일로 — 예전엔 한국어 상수라 `/en/AAPL`이 분석
     // 실패 시 영어 화면에 한국어 요약을 렌더했다.
     const tFallback = await getTranslations('entities.analysis.fallback');
@@ -411,6 +424,9 @@ export default async function SymbolPage({ params }: Props) {
                                 skillCount={chartSkillTotal(skillCounts)}
                                 marketProfile={marketProfile}
                                 hasBarsSeed={hasBarsSeed}
+                                // 서버에서 판정·렌더를 끝낸 엘리먼트를 넘긴다 — 첫 HTML에 이미 있어 나중에 끼어들며
+                                // 헤더를 밀지 않는다. 사건이 없으면(대부분의 종목) 아무것도 그리지 않는다.
+                                headingBadge={headingBadge}
                                 // 이 HTML을 만든 시점에 정규장이 열려 있었는가(= 형성 중 봉이 있을 수
                                 // 있었는가). 클라이언트의 seed 복원 재조회만 게이트한다: 장중에 만든
                                 // ISR HTML을 장 마감 뒤에 열면 분석 작도가 그날 봉을 참조하는데 seed에는

@@ -182,6 +182,12 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
             revalidate: time.SECONDS_PER_QUARTER_DAY,
         },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
+        {
+            // 헤더 증자·희석 배지(미국 개별 주식만)
+            token: 'getRecentDilutionEvent',
+            via: "dilutionHeadingBadge.tsx → getRecentDilutionEventStatic → staticSymbolCache('investor-flows:dilution-badge-v1')",
+            revalidate: time.SECONDS_PER_HALF_DAY,
+        },
     ],
     'news/page.tsx': [
         { token: 'getNewsList', revalidate: time.SECONDS_PER_HALF_DAY },

@@ -20,10 +20,14 @@ const {
     mockGetSeoSnapshotsStatic,
     mockGetQuantizedBarsStatic,
     mockGetSeedBarsStatic,
+    mockGetRecentDilutionEvent,
+    mockClassifyAsset,
 } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
     mockGetQuantizedBarsStatic: vi.fn(),
     mockGetSeedBarsStatic: vi.fn(),
+    mockGetRecentDilutionEvent: vi.fn(async (): Promise<unknown> => null),
+    mockClassifyAsset: vi.fn((): string => 'stock'),
 }));
 
 vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
@@ -63,6 +67,11 @@ vi.mock('@/shared/config/market', async importOriginal => ({
 }));
 vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    classifyAsset: mockClassifyAsset,
+}));
+// 헤더 증자·희석 배지 로더(DB·캐시) — 기본은 사건 없음.
+vi.mock('@/entities/investor-flows/server/getRecentDilutionEvent', () => ({
+    getRecentDilutionEvent: mockGetRecentDilutionEvent,
 }));
 vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
@@ -156,6 +165,7 @@ import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
+import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
@@ -216,6 +226,110 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         // 자체는 무관하지만, 페이지가 `.catch(→null)`로 감싸므로 mock이 **Promise를
         // 돌려줘야** 한다. `vi.fn()` 기본 반환은 undefined라 `.catch`에서 터진다.
         mockGetSeedBarsStatic.mockResolvedValue(null);
+        mockGetRecentDilutionEvent.mockResolvedValue(null);
+        mockClassifyAsset.mockReturnValue('stock');
+    });
+
+    /**
+     * 헤더 증자·희석 배지 — 페이지가 대상 판정(미국 개별 주식)과 조회를 끝내고 서버 렌더 엘리먼트로
+     * `SymbolPageClient`에 넘긴다. 사건이 없거나 대상이 아니면 아무것도 넘기지 않는다.
+     */
+    describe('증자·희석 배지 배선', () => {
+        const EVENT = { kind: 'atm', filingDate: '2026-10-09' } as const;
+
+        const headingBadgeOf = async (symbol = 'aapl') => {
+            mockBarsStatic.mockResolvedValue(ONE_BAR);
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'ko', symbol }),
+            });
+            const client = findElementByType(tree, SymbolPageClient);
+            return (client?.props as { headingBadge?: unknown }).headingBadge;
+        };
+
+        it('미국 개별 주식 + 최근 공급 공시 → DilutionRiskBadge를 넘긴다', async () => {
+            mockGetRecentDilutionEvent.mockResolvedValue(EVENT);
+
+            const badge = await headingBadgeOf();
+
+            expect(mockGetRecentDilutionEvent).toHaveBeenCalledWith('AAPL');
+            expect(isValidElement(badge)).toBe(true);
+            expect(isValidElement(badge) ? badge.type : undefined).toBe(
+                DilutionRiskBadge
+            );
+            expect(isValidElement(badge) ? badge.props : undefined).toEqual({
+                symbol: 'AAPL',
+                event: EVENT,
+            });
+        });
+
+        it('사건이 없으면(null) 배지를 넘기지 않는다', async () => {
+            expect(await headingBadgeOf()).toBeUndefined();
+        });
+
+        it('ETF·지수는 조회하지 않는다', async () => {
+            mockClassifyAsset.mockReturnValue('etf');
+            mockGetRecentDilutionEvent.mockResolvedValue(EVENT);
+
+            expect(await headingBadgeOf('spy')).toBeUndefined();
+            expect(mockGetRecentDilutionEvent).not.toHaveBeenCalled();
+        });
+
+        /**
+         * 배지 promise는 봉보다 먼저 시작해 렌더 직전에 기다린다. 그 사이 reject해도 "처리되지 않은 rejection"이
+         * 되면 안 되고(Node가 경고·종료할 수 있다), 로더가 다시 던지는 정적 생성 제어 흐름 오류는 삼키지 않고
+         * 페이지 렌더를 끊어야 한다.
+         */
+        it('봉을 기다리는 사이 배지 로더가 reject해도 unhandled rejection이 없고, 그 오류는 페이지로 전파된다', async () => {
+            const dynamicError = Object.assign(
+                new Error('Dynamic server usage'),
+                { digest: 'DYNAMIC_SERVER_USAGE' }
+            );
+            mockGetRecentDilutionEvent.mockRejectedValue(dynamicError);
+            // 봉이 늦게 와서, 배지 promise가 await되기 전에 먼저 reject한다.
+            mockBarsStatic.mockImplementation(
+                () =>
+                    new Promise(resolve =>
+                        setTimeout(() => resolve(ONE_BAR), 20)
+                    )
+            );
+            const unhandled: unknown[] = [];
+            const onUnhandled = (reason: unknown) => unhandled.push(reason);
+            process.on('unhandledRejection', onUnhandled);
+            try {
+                await expect(
+                    SymbolPage({
+                        params: Promise.resolve({
+                            locale: 'ko',
+                            symbol: 'aapl',
+                        }),
+                    })
+                ).rejects.toBe(dynamicError);
+                // unhandledRejection은 매크로태스크 경계에서 보고된다 — 한 번 넘겨 확인한다.
+                await new Promise(resolve => setTimeout(resolve, 0));
+                expect(unhandled).toEqual([]);
+            } finally {
+                process.off('unhandledRejection', onUnhandled);
+            }
+        });
+
+        it.each(['kr-equity', 'crypto'] as const)(
+            '%s 종목은 조회하지 않는다',
+            async marketProfile => {
+                mockGetAssetInfoResilient.mockResolvedValue({
+                    assetInfo: {
+                        symbol: 'X',
+                        name: 'X',
+                        fmpSymbol: 'X',
+                        marketProfile,
+                    },
+                    degraded: false,
+                } as never);
+                mockGetRecentDilutionEvent.mockResolvedValue(EVENT);
+
+                expect(await headingBadgeOf('x')).toBeUndefined();
+                expect(mockGetRecentDilutionEvent).not.toHaveBeenCalled();
+            }
+        );
     });
 
     it('SymbolPageClient를 Suspense로 감싸지 않는다(트리 어디에도 경계가 없다)', async () => {

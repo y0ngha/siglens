@@ -18,6 +18,11 @@ const { mockGetAssetInfoResilient, mockGetQuantizedBarsStatic } = vi.hoisted(
 
 vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    classifyAsset: vi.fn(() => 'stock'),
+}));
+// 헤더 증자·희석 배지 로더(DB·캐시) — 기본은 사건 없음.
+vi.mock('@/entities/investor-flows/server/getRecentDilutionEvent', () => ({
+    getRecentDilutionEvent: vi.fn(async () => null),
 }));
 vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string }) => info.name,

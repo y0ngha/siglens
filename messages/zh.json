@@ -2519,6 +2519,11 @@
                 "b2e4d7": "注意事项",
                 "f7e3fb": "国会交易趋势摘要"
             },
+            "DilutionRiskBadge": {
+                "atm": "增发·稀释：近期 ATM（按市价随时发行）申报 · {date}",
+                "note": "依据近期 SEC 申报文件，实际出售规模无法从申报中得知。",
+                "priced": "增发·稀释：近期公开发行申报 · {date}"
+            },
             "FearGreedFactsSummary": {
                 "asOfClose": "(截至 {v0} 收盘)",
                 "fa167e": "当前分数",
