@@ -28,6 +28,20 @@ const ROOT = process.cwd();
  * 그대로 재현했는데도 가드는 초록이었다. 그래서 목록을 **도출**한다:
  * `'use client'` 모듈이 내보내는 `use*`는 전부 대상이다.
  */
+/**
+ * 테스트·테스트 헬퍼 파일은 서버 컴포넌트가 아니다(vitest가 한 런타임에서 직접 렌더한다) — `'use client'`
+ * 없이 훅을 부르는 하네스(`__integration__`, `*.test.tsx`)를 위반으로 잡으면 가드가 거짓 양성이 된다.
+ * 프로덕션 모듈은 이 목록에 걸리지 않는다(경로 조각·접미사로만 판정, 아래 단언이 고정한다).
+ */
+function isNonProductionFile(rel: string): boolean {
+    return (
+        rel.includes('__tests__') ||
+        rel.includes('__integration__') ||
+        rel.includes('test-utils') ||
+        /\.(?:test|spec)\.tsx?$/.test(rel)
+    );
+}
+
 describe('클라이언트 전용 훅은 서버 컴포넌트에서 호출되지 않는다', () => {
     const sources = execSync(
         `find ${JSON.stringify(`${ROOT}/src`)} -name '*.ts' -o -name '*.tsx'`,
@@ -37,9 +51,7 @@ describe('클라이언트 전용 훅은 서버 컴포넌트에서 호출되지 �
         .split('\n')
         .filter(Boolean)
         .map(f => f.replace(`${ROOT}/`, ''))
-        .filter(
-            rel => !rel.includes('__tests__') && !rel.includes('test-utils')
-        );
+        .filter(rel => !isNonProductionFile(rel));
 
     // 파일마다 한 번만 읽는다 — 예전엔 판정·훅 수집·위반 검사가 같은 파일을
     // 각각 다시 읽었다.
@@ -61,6 +73,25 @@ describe('클라이언트 전용 훅은 서버 컴포넌트에서 호출되지 �
             clientOnlyHooks.set(m[1]!, rel);
         }
     }
+
+    it('제외는 테스트 파일에만 적용되고 프로덕션 모듈은 스캔 대상에 남는다', () => {
+        for (const rel of [
+            'src/__integration__/chartIndicatorFlow.test.tsx',
+            'src/widgets/chart/__tests__/StockChart.test.tsx',
+            'src/shared/foo/bar.spec.ts',
+            'src/shared/test-utils/catalogTranslator.ts',
+        ])
+            expect(isNonProductionFile(rel)).toBe(true);
+        for (const rel of [
+            'src/views/symbol/ChartContent.tsx',
+            'src/app/[locale]/page.tsx',
+            'src/widgets/chart/hooks/useExclusiveChartMenu.ts',
+        ])
+            expect(isNonProductionFile(rel)).toBe(false);
+        // 실제 스캔 대상에는 테스트 파일이 없고, 프로덕션 서버 모듈이 들어 있다.
+        expect(sources.some(rel => /\.test\.tsx?$/.test(rel))).toBe(false);
+        expect(sources).toContain('src/views/symbol/ChartContent.tsx');
+    });
 
     it('클라이언트 전용 훅을 실제로 찾아낸다', () => {
         // 0건이면 아래 단언이 통째로 무의미해진다.

@@ -16,6 +16,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { DATA_ATTRIBUTION } from '@/shared/config/marketProfile/dataAttribution';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
@@ -150,10 +151,6 @@ interface ChartContentProps {
     chartHeaderStartSlot?: ReactNode;
 }
 
-/** FMP 이용 조건의 출처 표기 — 브랜드 고유명이라 로케일과 무관하게 영어 그대로 둔다(카탈로그 번역 대상 아님). */
-const FMP_ATTRIBUTION_TEXT = 'Data provided by Financial Modeling Prep';
-const FMP_ATTRIBUTION_URL = 'https://financialmodelingprep.com';
-
 export function ChartContent({
     symbol,
     companyName,
@@ -258,7 +255,7 @@ export function ChartContent({
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
     const { indicatorCount, skillCount } = useSymbolPageContext();
     const { quoteDelayMinutes, dataProvider } = getDescriptor(marketProfile);
-    const showFmpAttribution = dataProvider === 'fmp';
+    const attribution = DATA_ATTRIBUTION[dataProvider];
 
     const {
         analysis,
@@ -762,21 +759,20 @@ export function ChartContent({
                     />
                 </div>
 
-                {/* 안내 + 데이터 출처. 출처는 시세가 FMP에서 오는 시장(미국 주식·암호화폐)에만 단다 —
-                    한국 주식은 Yahoo라 달지 않는다(`dataProvider`가 어댑터와 짝이다). 서버가 아는 prop에서
+                {/* 안내 + 데이터 출처. 출처 표기는 `DATA_ATTRIBUTION[dataProvider]`가 정한다 — 시세가
+                    FMP에서 오는 시장(미국 주식·암호화폐)에만 있고 Yahoo(한국 주식)는 없다. 안내 `<p>`는 `ml-auto`라
+                    출처가 없어도 오른쪽에 붙는다. 서버가 아는 prop에서
                     정해져 첫 페인트부터 있으므로 자리가 늦게 밀리지 않고, 좁은 폭에서는 줄을 바꿔 쌓인다. */}
                 <div className="flex flex-wrap items-center justify-between gap-x-3 px-2 py-1">
-                    {showFmpAttribution ? (
+                    {attribution !== null && (
                         <a
-                            href={FMP_ATTRIBUTION_URL}
+                            href={attribution.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[10px] text-secondary-400 underline-offset-2 hover:text-secondary-200 hover:underline focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            {FMP_ATTRIBUTION_TEXT}
+                            {attribution.text}
                         </a>
-                    ) : (
-                        <span aria-hidden="true" />
                     )}
                     <p className="ml-auto text-right text-[10px] text-secondary-500">
                         {/*
