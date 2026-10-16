@@ -419,7 +419,15 @@ export function fetchSubmissionsJson(
     );
 }
 
-/** 본문을 `maxBytes`까지 모은다(넘으면 던진다). 요청 타임아웃은 호출부(`secGetDocument`)가 건다. */
+/**
+ * 본문을 `maxBytes`까지 모은다(넘으면 던진다). 요청 타임아웃은 호출부(`secGetDocument`)가 건다.
+ *
+ * 공용 `readBoundedBody`(`shared/lib/readBoundedBody.ts`)를 쓰지 않는 이유: 이 경로의 계약은 바이트 상한만이 아니라
+ * **청크 사이 정체(`SEC_BODY_IDLE_TIMEOUT_MS`)와 본문 전체 예산**을 `SecBodyTimeoutError(kind)`로 구분해 던지는 것이다
+ * (`streamWithLimits` — 13F information table 스트림과 같은 한도 로직). 공용 헬퍼는 시간 상한을 호출부의 `signal`에 맡겨
+ * 정체와 전체 타임아웃을 가르지 못하고 `DOMException`(abort)으로 끝나므로, 그 오류 종류를 그대로 옮길 수 없다. 대신 이 함수는
+ * 이미 공용 스트림 한도(`streamWithLimits`) 위의 얇은 수집기라 중복 로직은 청크 이어 붙이기뿐이다.
+ */
 async function readBodyCapped(
     res: Response,
     maxBytes: number
