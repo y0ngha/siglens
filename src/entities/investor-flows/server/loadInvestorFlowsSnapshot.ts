@@ -1,3 +1,4 @@
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import type {
     InvestorFlowsFmpProvider,
     RawSharesFloat,
@@ -222,7 +223,7 @@ export async function loadInvestorFlowsSnapshot(
     const symbol = rawSymbol.toUpperCase();
     const finraShortDataEnabled = deps.isFinraEnabled();
     const regShoEnabled = deps.isRegShoEnabled();
-    const today = deps.now().toISOString().slice(0, 10);
+    const today = toUtcIsoDate(deps.now());
 
     const [
         institutional,

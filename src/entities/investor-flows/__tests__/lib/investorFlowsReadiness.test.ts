@@ -6,6 +6,7 @@ import {
     deriveInstitutionalStatus,
     deriveShortStatus,
     deriveThresholdListStatus,
+    isCollectingAndEmpty,
     maskUncollectedSections,
     resolveCollectingArms,
     UNKNOWN_PIPELINE_READINESS,
@@ -151,6 +152,18 @@ describe('deriveThresholdListStatus', () => {
                 hasIngestedDate: true,
             })
         ).toBe('ready');
+    });
+});
+
+describe('isCollectingAndEmpty', () => {
+    it('is true only while collecting, enabled and every row list is empty', () => {
+        expect(
+            isCollectingAndEmpty('collecting', [[], null, undefined], true)
+        ).toBe(true);
+        expect(isCollectingAndEmpty('collecting', [[], [1]], true)).toBe(false);
+        expect(isCollectingAndEmpty('ready', [[]], true)).toBe(false);
+        expect(isCollectingAndEmpty('unknown', [[]], true)).toBe(false);
+        expect(isCollectingAndEmpty('collecting', [[]], false)).toBe(false);
     });
 });
 

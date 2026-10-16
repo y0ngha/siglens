@@ -1,6 +1,6 @@
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import type { InvestorFlowsPipelineReadiness, PipelineStatus } from '../model';
-import { addDays } from './investorFlowsDates';
+import { addDays, compareIsoDate } from './investorFlowsDates';
 import { INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS } from './investorFlowsPolicy';
 
 /** 상태를 읽지 못했을 때(또는 해당 없음) — 화면은 "수집 중"을 주장하지 않고 예전 동작으로 돌아간다. */
@@ -52,9 +52,11 @@ export function deriveFilingsStatus(
     today: string
 ): PipelineStatus {
     if (cursor === null) return 'collecting';
-    return cursor >= addDays(today, -INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS)
-        ? 'ready'
-        : 'collecting';
+    const readyFrom = addDays(
+        today,
+        -INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS
+    );
+    return compareIsoDate(cursor, readyFrom) >= 0 ? 'ready' : 'collecting';
 }
 
 /** Reg SHO 과열 목록 준비 상태. 플래그가 꺼져 있으면 화면이 배지를 그리지 않으므로 `unknown`(해당 없음). */
@@ -64,6 +66,27 @@ export function deriveThresholdListStatus(input: {
 }): PipelineStatus {
     if (!input.regShoEnabled) return 'unknown';
     return input.hasIngestedDate ? 'ready' : 'collecting';
+}
+
+/** 행 목록 하나(`null`·`undefined`는 행 없음으로 본다). */
+type SectionRows = readonly unknown[] | null | undefined;
+
+/**
+ * "이 구간은 아직 수집 중이고 비어 있다" — 마스킹(`maskUncollectedSections`)과 화면·도구 판정(`resolveCollectingArms`)이 같은
+ * 규칙을 쓰도록 한 곳에 둔다. 준비 상태가 `collecting`이고 **모든** 행 목록이 비어 있을 때만 참이다(`ready`·`unknown`이면 거짓,
+ * 이미 있는 데이터는 가리지 않는다). `enabled`는 라이선스 플래그다 — 화면·도구 판정은 FINRA·Reg SHO 플래그를 넘기고, 마스킹은
+ * 꺼진 피드가 이미 `null`이라 `true`를 넘긴다(두 호출부의 차이를 인자로 드러낸다).
+ */
+export function isCollectingAndEmpty(
+    status: PipelineStatus,
+    rows: readonly SectionRows[],
+    enabled: boolean
+): boolean {
+    return (
+        enabled &&
+        status === 'collecting' &&
+        rows.every(list => (list?.length ?? 0) === 0)
+    );
 }
 
 /**
@@ -79,19 +102,27 @@ export function maskUncollectedSections(
     snapshot: InvestorFlowsSnapshot,
     readiness: InvestorFlowsPipelineReadiness
 ): InvestorFlowsSnapshot {
-    const shortCollecting =
-        readiness.short === 'collecting' &&
-        (snapshot.shortInterest?.length ?? 0) === 0 &&
-        (snapshot.shortVolume?.length ?? 0) === 0;
-    const ftdCollecting =
-        readiness.failsToDeliver === 'collecting' &&
-        (snapshot.failsToDeliver?.length ?? 0) === 0;
-    const proposedSalesCollecting =
-        readiness.filings === 'collecting' &&
-        (snapshot.proposedSales?.length ?? 0) === 0;
-    const offeringsCollecting =
-        readiness.filings === 'collecting' &&
-        (snapshot.offerings?.length ?? 0) === 0;
+    // 꺼진 피드는 스냅샷이 이미 `null`이고 준비 상태도 `unknown`이라 플래그를 따로 보지 않는다(`enabled: true`).
+    const shortCollecting = isCollectingAndEmpty(
+        readiness.short,
+        [snapshot.shortInterest, snapshot.shortVolume],
+        true
+    );
+    const ftdCollecting = isCollectingAndEmpty(
+        readiness.failsToDeliver,
+        [snapshot.failsToDeliver],
+        true
+    );
+    const proposedSalesCollecting = isCollectingAndEmpty(
+        readiness.filings,
+        [snapshot.proposedSales],
+        true
+    );
+    const offeringsCollecting = isCollectingAndEmpty(
+        readiness.filings,
+        [snapshot.offerings],
+        true
+    );
     if (
         !shortCollecting &&
         !ftdCollecting &&
@@ -154,30 +185,42 @@ export function resolveCollectingArms(input: {
     readonly regShoEnabled: boolean;
 }): CollectingArms {
     const { readiness, snapshot } = input;
-    const hasInstitutional =
-        snapshot.institutional.quarters.length > 0 ||
-        snapshot.institutional.topHolders.length > 0;
-    const hasShort =
-        (snapshot.shortInterest?.length ?? 0) > 0 ||
-        (snapshot.shortVolume?.length ?? 0) > 0;
     return {
-        institutional:
-            readiness.institutional === 'collecting' && !hasInstitutional,
-        short:
-            input.finraEnabled && readiness.short === 'collecting' && !hasShort,
-        failsToDeliver:
-            readiness.failsToDeliver === 'collecting' &&
-            (snapshot.failsToDeliver?.length ?? 0) === 0,
-        proposedSales:
-            readiness.filings === 'collecting' &&
-            (snapshot.proposedSales?.length ?? 0) === 0,
-        offerings:
-            readiness.filings === 'collecting' &&
-            (snapshot.offerings?.length ?? 0) === 0,
+        institutional: isCollectingAndEmpty(
+            readiness.institutional,
+            [
+                snapshot.institutional.quarters,
+                snapshot.institutional.topHolders,
+            ],
+            true
+        ),
+        short: isCollectingAndEmpty(
+            readiness.short,
+            [snapshot.shortInterest, snapshot.shortVolume],
+            input.finraEnabled
+        ),
+        failsToDeliver: isCollectingAndEmpty(
+            readiness.failsToDeliver,
+            [snapshot.failsToDeliver],
+            true
+        ),
+        proposedSales: isCollectingAndEmpty(
+            readiness.filings,
+            [snapshot.proposedSales],
+            true
+        ),
+        offerings: isCollectingAndEmpty(
+            readiness.filings,
+            [snapshot.offerings],
+            true
+        ),
+        // 과열 목록은 행 목록이 아니라 상태 하나다 — 상태가 없을 때(`null`)만 비어 있다.
         thresholdList:
-            input.regShoEnabled &&
-            readiness.thresholdList === 'collecting' &&
-            (snapshot.thresholdList ?? null) === null,
+            isCollectingAndEmpty(
+                readiness.thresholdList,
+                [],
+                input.regShoEnabled
+            ) && (snapshot.thresholdList ?? null) === null,
     };
 }
 

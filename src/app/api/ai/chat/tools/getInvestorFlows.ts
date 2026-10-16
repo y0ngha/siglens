@@ -27,14 +27,23 @@ type InvestorFlowsDataStatus = Partial<
     Readonly<Record<CollectingSource, 'collecting'>>
 > & { readonly note: string };
 
-const COLLECTING_SOURCES: readonly CollectingSource[] = [
-    'institutional',
-    'short',
-    'failsToDeliver',
-    'proposedSales',
-    'offerings',
-    'thresholdList',
-];
+/**
+ * `dataStatus`에 실을 수 있는 갈래 — `Record<CollectingSource, true>`라 `CollectingArms`에 갈래가 늘면 여기서 컴파일 오류가 나
+ * 새 갈래가 조용히 빠지지 않는다. 키 순서가 출력 순서다.
+ */
+const COLLECTING_SOURCE_SET: Readonly<Record<CollectingSource, true>> = {
+    institutional: true,
+    short: true,
+    failsToDeliver: true,
+    proposedSales: true,
+    offerings: true,
+    thresholdList: true,
+};
+
+// 안전한 캐스트: `Object.keys`는 `string[]`로 넓히지만 값은 위 `Record<CollectingSource, true>`의 키뿐이다.
+const COLLECTING_SOURCES = Object.keys(
+    COLLECTING_SOURCE_SET
+) as CollectingSource[];
 
 /**
  * 수집 파이프라인 상태를 모델에 알린다. `collecting`인 갈래의 빈 데이터는 "활동 없음"이 아니라 "아직 못 모았다"이므로

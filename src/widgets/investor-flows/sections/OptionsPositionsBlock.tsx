@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { useTranslations } from 'next-intl';
 import type {
     InstitutionalMetrics,
@@ -14,6 +15,34 @@ import {
     formatUsdCompact,
 } from '../utils/flowFormat';
 import { buildOptionsRows } from '../utils/options';
+
+/**
+ * 풋/콜 명목 비율 한 줄 — 값은 점수표(core)의 것이고 화면이 다시 나누지 않는다. 비율·직전 분기 값은 한 번씩만 포맷한다.
+ * 비율이 없으면 아무것도 그리지 않는다.
+ */
+function PutCallRatioLine({
+    metrics,
+}: {
+    readonly metrics: InstitutionalMetrics;
+}) {
+    const t = useTranslations('widgets.investor-flows');
+    const locale = useResolvedLocale();
+    const { optionsPeriod, putCallValueRatio, priorPutCallValueRatio } =
+        metrics;
+    if (optionsPeriod === null || putCallValueRatio === null) return null;
+    const ratio = formatDecimal(putCallValueRatio, locale, 2);
+    const text =
+        priorPutCallValueRatio === null
+            ? t('options.ratio', { period: optionsPeriod, ratio })
+            : t('options.ratioWithPrior', {
+                  period: optionsPeriod,
+                  ratio,
+                  prior: formatDecimal(priorPutCallValueRatio, locale, 2),
+              });
+    return (
+        <p className="mt-2 text-xs text-secondary-300 tabular-nums">{text}</p>
+    );
+}
 
 interface OptionsPositionsBlockProps {
     readonly quarters: readonly InstitutionalOptionsQuarter[];
@@ -56,67 +85,43 @@ export function OptionsPositionsBlock({
                             )}
                         </p>
                         <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                            <dt className="text-secondary-400">
-                                {t('options.put')}
-                            </dt>
-                            <dd className="text-right text-secondary-200 tabular-nums">
-                                {t('options.value', {
-                                    amount: formatUsdCompact(
-                                        row.putValueUsd,
-                                        locale
-                                    ),
-                                    holders: formatInteger(
-                                        row.putHolders,
-                                        locale
-                                    ),
-                                })}
-                            </dd>
-                            <dt className="text-secondary-400">
-                                {t('options.call')}
-                            </dt>
-                            <dd className="text-right text-secondary-200 tabular-nums">
-                                {t('options.value', {
-                                    amount: formatUsdCompact(
-                                        row.callValueUsd,
-                                        locale
-                                    ),
-                                    holders: formatInteger(
-                                        row.callHolders,
-                                        locale
-                                    ),
-                                })}
-                            </dd>
+                            {[
+                                {
+                                    side: 'put',
+                                    label: t('options.put'),
+                                    valueUsd: row.putValueUsd,
+                                    holders: row.putHolders,
+                                },
+                                {
+                                    side: 'call',
+                                    label: t('options.call'),
+                                    valueUsd: row.callValueUsd,
+                                    holders: row.callHolders,
+                                },
+                            ].map(leg => (
+                                <Fragment key={leg.side}>
+                                    <dt className="text-secondary-400">
+                                        {leg.label}
+                                    </dt>
+                                    <dd className="text-right text-secondary-200 tabular-nums">
+                                        {t('options.value', {
+                                            amount: formatUsdCompact(
+                                                leg.valueUsd,
+                                                locale
+                                            ),
+                                            holders: formatInteger(
+                                                leg.holders,
+                                                locale
+                                            ),
+                                        })}
+                                    </dd>
+                                </Fragment>
+                            ))}
                         </dl>
                     </li>
                 ))}
             </ul>
-            {metrics.optionsPeriod !== null &&
-                metrics.putCallValueRatio !== null && (
-                    <p className="mt-2 text-xs text-secondary-300 tabular-nums">
-                        {metrics.priorPutCallValueRatio === null
-                            ? t('options.ratio', {
-                                  period: metrics.optionsPeriod,
-                                  ratio: formatDecimal(
-                                      metrics.putCallValueRatio,
-                                      locale,
-                                      2
-                                  ),
-                              })
-                            : t('options.ratioWithPrior', {
-                                  period: metrics.optionsPeriod,
-                                  ratio: formatDecimal(
-                                      metrics.putCallValueRatio,
-                                      locale,
-                                      2
-                                  ),
-                                  prior: formatDecimal(
-                                      metrics.priorPutCallValueRatio,
-                                      locale,
-                                      2
-                                  ),
-                              })}
-                    </p>
-                )}
+            <PutCallRatioLine metrics={metrics} />
         </div>
     );
 }

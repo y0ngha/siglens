@@ -1,3 +1,4 @@
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import {
     INVESTOR_FLOWS_STATE_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR,
@@ -44,7 +45,7 @@ export async function loadInvestorFlowsPipelineReadiness(
 ): Promise<InvestorFlowsPipelineReadiness> {
     const finraEnabled = deps.isFinraEnabled();
     const regShoEnabled = deps.isRegShoEnabled();
-    const today = deps.now().toISOString().slice(0, 10);
+    const today = toUtcIsoDate(deps.now());
     const [
         universe,
         backfill,

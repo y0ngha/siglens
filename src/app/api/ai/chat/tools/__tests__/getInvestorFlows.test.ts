@@ -37,6 +37,10 @@ import {
     makeTransaction,
 } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
 import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
+import {
+    EMPTY_COLLECTING_SNAPSHOT,
+    resolveCollectingArms,
+} from '@/entities/investor-flows/lib/investorFlowsReadiness';
 
 const ctx = {
     userId: 'u',
@@ -347,6 +351,40 @@ describe('getInvestorFlowsTool', () => {
             )) as ToolOutput;
             expect(result.thresholdList).toBeNull();
             expect(result.source).not.toContain('Reg SHO');
+        });
+
+        it('모든 갈래가 수집 중이면 dataStatus가 CollectingArms의 갈래를 하나도 빠뜨리지 않고 싣는다', async () => {
+            const readiness: InvestorFlowsPipelineReadiness = {
+                institutional: 'collecting',
+                short: 'collecting',
+                failsToDeliver: 'collecting',
+                filings: 'collecting',
+                thresholdList: 'collecting',
+            };
+            loadScorecard.mockResolvedValue({
+                snapshot: null,
+                scorecard: null,
+                degraded: false,
+                finraEnabled: true,
+                regShoEnabled: true,
+                readiness,
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'ZZZZ' },
+                ctx,
+                rt
+            )) as { dataStatus: Record<string, string> };
+            const arms = resolveCollectingArms({
+                readiness,
+                snapshot: EMPTY_COLLECTING_SNAPSHOT,
+                finraEnabled: true,
+                regShoEnabled: true,
+            });
+            expect(
+                Object.keys(result.dataStatus)
+                    .filter(key => key !== 'note')
+                    .toSorted()
+            ).toEqual(Object.keys(arms).toSorted());
         });
 
         it('Reg SHO 플래그가 꺼지면 준비 상태가 수집 중이어도 dataStatus에 과열 목록을 싣지 않는다', async () => {
