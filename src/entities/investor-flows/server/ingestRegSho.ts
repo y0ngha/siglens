@@ -48,6 +48,11 @@ export interface IngestRegShoDeps {
     now: () => Date;
     isDeadlineReached: () => boolean;
     invalidateSymbols: (symbols: readonly string[]) => void | Promise<void>;
+    /**
+     * 받은 목록이 하나도 없던 상태(`reg_sho_cursor.ingestedDates` 비어 있음)에서 **처음** 목록을 받은 실행이 한 번 부른다 — 수급 탭의
+     * "과열 목록 수집 중" 안내를 담은 준비 상태 캐시를 무효화한다(`runFinraIngest`의 `onFirstDataStored`와 같은 역할).
+     */
+    onFirstListStored?: () => void | Promise<void>;
     log: (message: string, detail?: unknown) => void;
 }
 
@@ -67,6 +72,8 @@ export interface IngestRegShoResult {
     failedMarkets: string[];
     invalidated: number;
     pruned: number;
+    /** 이번 실행이 처음으로 목록을 받았는가(= 준비 상태가 `collecting` → `ready`로 바뀌었다). */
+    firstListStored: boolean;
 }
 
 const emptyResult = (
@@ -79,6 +86,7 @@ const emptyResult = (
     failedMarkets: [],
     invalidated: 0,
     pruned: 0,
+    firstListStored: false,
 });
 
 interface MarketOutcome {
@@ -194,6 +202,7 @@ export async function runRegShoIngest(
     let cursor: RegShoCursor = parseRegShoCursor(
         await deps.repo.getState(INVESTOR_FLOWS_STATE_REG_SHO_CURSOR)
     );
+    const hadIngestedDate = cursor.ingestedDates.length > 0;
     const result = emptyResult('ok');
     const changed = new Set<string>();
     for (const market of deps.markets) {
@@ -242,5 +251,8 @@ export async function runRegShoIngest(
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
     if (toInvalidate.length > 0) await deps.invalidateSymbols(toInvalidate);
     result.invalidated = toInvalidate.length;
+    result.firstListStored =
+        !hadIngestedDate && cursor.ingestedDates.length > 0;
+    if (result.firstListStored) await deps.onFirstListStored?.();
     return result;
 }

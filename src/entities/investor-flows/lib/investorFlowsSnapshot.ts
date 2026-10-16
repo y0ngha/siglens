@@ -5,17 +5,33 @@ import type {
     RawSharesFloat,
 } from '@/shared/api/fmp/investorFlowsProvider.types';
 import type {
+    FailsToDeliverPoint,
     InsiderStatistics,
     InsiderTransaction,
     InstitutionalHolderChange,
     InstitutionalHolderChangeKind,
+    InstitutionalOptionsQuarter,
     InstitutionalQuarter,
     LargeHolderFiling,
     InvestorFlowsSnapshot,
+    OfferingFiling,
+    ProposedSale,
     ShortInterestPoint,
     ShortVolumePoint,
+    ThresholdListStatus,
 } from '@y0ngha/siglens-core';
-import { addDays, isPeriodComplete } from './investorFlowsDates';
+import type {
+    FtdPointRecord,
+    OfferingRecord,
+    OptionAggregateRecord,
+    ProposedSaleRecord,
+    ThresholdStatusSummary,
+} from '../model';
+import {
+    addDays,
+    compareIsoDate,
+    isPeriodComplete,
+} from './investorFlowsDates';
 
 /** 스냅샷에 담는 상한 — 화면·프롬프트 크기를 묶는다. */
 export const SNAPSHOT_MAX_QUARTERS = 8;
@@ -29,6 +45,19 @@ export const SNAPSHOT_MAX_LARGE_HOLDERS = 60;
 export const LARGE_HOLDER_WINDOW_DAYS = 730;
 export const SNAPSHOT_MAX_SHORT_INTEREST_POINTS = 12;
 export const SNAPSHOT_MAX_SHORT_VOLUME_POINTS = 120;
+/**
+ * FTD를 읽는 창(일). core는 최근 30일(`FTD_RECENT_WINDOW_DAYS`)과 그 앞 60일 기준선(`FTD_BASELINE_WINDOW_DAYS`)을 보므로
+ * 90일이면 판정에 충분하고, 화면 막대 그래프도 같은 창을 쓴다. 여유 30일은 SEC 게시 지연(약 2주)과 반월 경계 몫이다.
+ */
+export const FTD_LOOKBACK_DAYS = 120;
+/** FTD 행은 실패가 있던 결제일에만 있다 — 120일 창의 거래일 수(약 84)를 넘지 않는다. */
+export const SNAPSHOT_MAX_FTD_POINTS = 90;
+/** Form 144는 약 1년치(core 계약, 저장 보존 기간과 같다). 대형주도 1년 수십 건이다. */
+export const PROPOSED_SALE_LOOKBACK_DAYS = 365;
+export const SNAPSHOT_MAX_PROPOSED_SALES = 60;
+/** 증자·희석 공시는 약 2년치(core 계약). */
+export const OFFERING_LOOKBACK_DAYS = 730;
+export const SNAPSHOT_MAX_OFFERINGS = 40;
 
 /** DB에서 읽은 분기 집계 한 행(변화 열은 이전 분기 기준이 없으면 null). */
 export interface AggregateRecord {
@@ -342,6 +371,89 @@ export function buildShortVolume(
     }));
 }
 
+export function buildFailsToDeliver(
+    rows: readonly FtdPointRecord[]
+): FailsToDeliverPoint[] {
+    return ascendingTail(
+        rows,
+        row => row.settlementDate,
+        SNAPSHOT_MAX_FTD_POINTS
+    ).map(row => ({
+        settlementDate: row.settlementDate,
+        failsQty: row.failsQty,
+        price: row.price,
+    }));
+}
+
+/** 최신 신고일 먼저 — 상한으로 자를 때 오래된 쪽을 버린다. */
+export function buildProposedSales(
+    rows: readonly ProposedSaleRecord[]
+): ProposedSale[] {
+    return rows
+        .toSorted((a, b) => compareIsoDate(b.filingDate, a.filingDate))
+        .slice(0, SNAPSHOT_MAX_PROPOSED_SALES)
+        .map(row => ({
+            filingDate: row.filingDate,
+            filer: row.filer,
+            relationships: row.relationships,
+            shares: row.shares,
+            valueUsd: row.valueUsd,
+            approxSaleDate: row.approxSaleDate,
+            planAdoptionDate: row.planAdoptionDate,
+            url: row.url,
+        }));
+}
+
+export function buildOfferings(
+    rows: readonly OfferingRecord[]
+): OfferingFiling[] {
+    return rows
+        .toSorted((a, b) => compareIsoDate(b.filingDate, a.filingDate))
+        .slice(0, SNAPSHOT_MAX_OFFERINGS)
+        .map(row => ({
+            filingDate: row.filingDate,
+            form: row.formType,
+            kind: row.kind,
+            url: row.url,
+        }));
+}
+
+/** 분기별 13F 옵션 집계 → core 타입(오래된 분기 먼저). 진행 중 분기는 `complete: false`라 core가 채점하지 않는다. */
+export function buildOptionQuarters(
+    rows: readonly OptionAggregateRecord[],
+    today: string
+): InstitutionalOptionsQuarter[] {
+    return ascendingTail(rows, row => row.period, SNAPSHOT_MAX_QUARTERS).map(
+        row => ({
+            period: row.period,
+            complete: isPeriodComplete(row.period, today),
+            putHolders: row.putHolders,
+            putShares: row.putShares,
+            putValueUsd: row.putValueUsd,
+            callHolders: row.callHolders,
+            callShares: row.callShares,
+            callValueUsd: row.callValueUsd,
+        })
+    );
+}
+
+/**
+ * 과열 목록 요약 → core 타입. 수집된 거래일이 하나도 없으면(`asOf: null`) "미등재"가 아니라 "모름"이라 `null`이다 —
+ * core는 `null`을 꺼진 피드처럼 다룬다. `asOf`(목록 날짜)를 함께 넘겨 core가 낡은 상태(7일 초과)를 스스로 버리게 한다.
+ */
+export function buildThresholdList(
+    summary: ThresholdStatusSummary
+): ThresholdListStatus | null {
+    if (summary.asOf === null) return null;
+    return {
+        listed: summary.listed,
+        consecutiveDays: summary.consecutiveDays,
+        firstListedDate: summary.firstListedDate,
+        markets: summary.markets,
+        asOf: summary.asOf,
+    };
+}
+
 export interface InvestorFlowsSnapshotInput {
     now: Date;
     aggregates: readonly AggregateRecord[];
@@ -357,6 +469,14 @@ export interface InvestorFlowsSnapshotInput {
     /** `null` = FINRA 꺼짐 — 스냅샷에도 `null`로 전달한다(0건과 다르다). */
     shortInterest: readonly ShortInterestRecord[] | null;
     shortVolume: readonly ShortVolumeRecord[] | null;
+    /** `null` = 조회 실패(실패가 없던 날은 행이 없을 뿐이라 `[]`과 다르다). */
+    failsToDeliver: readonly FtdPointRecord[] | null;
+    /** `null` = 조회 실패 — 스냅샷에서 필드를 뺀다(core는 없는 필드를 "옛 스냅샷"으로 보고 채점하지 않는다). */
+    proposedSales: readonly ProposedSaleRecord[] | null;
+    offerings: readonly OfferingRecord[] | null;
+    optionAggregates: readonly OptionAggregateRecord[] | null;
+    /** `null` = Reg SHO 플래그 꺼짐 또는 조회 실패. */
+    thresholdList: ThresholdStatusSummary | null;
 }
 
 /**
@@ -380,14 +500,38 @@ export function assembleInvestorFlowsSnapshot(
             : buildShortInterest(input.shortInterest);
     const shortVolume =
         input.shortVolume === null ? null : buildShortVolume(input.shortVolume);
+    const failsToDeliver =
+        input.failsToDeliver === null
+            ? null
+            : buildFailsToDeliver(input.failsToDeliver);
+    const proposedSales =
+        input.proposedSales === null
+            ? null
+            : buildProposedSales(input.proposedSales);
+    const offerings =
+        input.offerings === null ? null : buildOfferings(input.offerings);
+    const options =
+        input.optionAggregates === null
+            ? null
+            : buildOptionQuarters(input.optionAggregates, today);
+    const thresholdList =
+        input.thresholdList === null
+            ? null
+            : buildThresholdList(input.thresholdList);
 
+    // 과열 목록 "미등재"는 데이터가 아니다(모든 종목이 대부분 미등재) — 등재됐을 때만 데이터로 센다.
     const hasData =
         quarters.length > 0 ||
         transactions.length > 0 ||
         stats.length > 0 ||
         (largeHolders?.length ?? 0) > 0 ||
         (shortInterest?.length ?? 0) > 0 ||
-        (shortVolume?.length ?? 0) > 0;
+        (shortVolume?.length ?? 0) > 0 ||
+        (failsToDeliver?.length ?? 0) > 0 ||
+        (proposedSales?.length ?? 0) > 0 ||
+        (offerings?.length ?? 0) > 0 ||
+        (options?.length ?? 0) > 0 ||
+        thresholdList?.listed === true;
     if (!hasData) return null;
 
     return {
@@ -398,10 +542,15 @@ export function assembleInvestorFlowsSnapshot(
             quarters,
             topHolders: buildTopHolders(input.topHolders, input.exitedHolders),
             topHoldersPeriod: input.topHoldersPeriod,
+            ...(options === null ? {} : { options }),
         },
         insider: { transactions, stats },
         largeHolders,
         shortInterest,
         shortVolume,
+        failsToDeliver,
+        ...(proposedSales === null ? {} : { proposedSales }),
+        ...(offerings === null ? {} : { offerings }),
+        thresholdList,
     };
 }

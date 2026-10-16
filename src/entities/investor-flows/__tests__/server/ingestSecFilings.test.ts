@@ -235,6 +235,43 @@ describe('runSecFilingsIngest', () => {
             expect(calls.indexDates[0]).toBe(addDays(start, 1));
         });
 
+        it('calls onCaughtUp exactly once — on the run whose cursor first comes within the ready lag of today', async () => {
+            const onCaughtUp = vi.fn();
+            const { deps } = build(
+                { unset: [INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR] },
+                { onCaughtUp }
+            );
+            const first = await runSecFilingsIngest(deps);
+            expect(first.caughtUp).toBe(true);
+            expect(onCaughtUp).toHaveBeenCalledTimes(1);
+            // the stored cursor is now within the lag — later runs are not a transition
+            const second = await runSecFilingsIngest(deps);
+            expect(second.caughtUp).toBe(false);
+            expect(onCaughtUp).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not call onCaughtUp while the backfill still trails today', async () => {
+            const onCaughtUp = vi.fn();
+            const { deps } = build(
+                {
+                    unset: [INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR],
+                    indexes: { '2026-06-01': FORM_INDEX_EXPANSION_EXCERPT },
+                },
+                { onCaughtUp }
+            );
+            const result = await runSecFilingsIngest(deps);
+            expect(result.cursor).toBe('2026-06-01');
+            expect(result.caughtUp).toBe(false);
+            expect(onCaughtUp).not.toHaveBeenCalled();
+        });
+
+        it('does not call onCaughtUp when the cursor was already caught up before the run', async () => {
+            const onCaughtUp = vi.fn();
+            const { deps } = build({}, { onCaughtUp });
+            await runSecFilingsIngest(deps);
+            expect(onCaughtUp).not.toHaveBeenCalled();
+        });
+
         it('moves the cursor to the last day whose index existed, not to a missing (unpublished) day', async () => {
             const { deps, state } = build();
             const result = await runSecFilingsIngest(deps);

@@ -31,14 +31,17 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
 vi.mock('@/widgets/investor-flows/InvestorFlowsContent', () => ({
     InvestorFlowsContent: ({
         finraEnabled,
+        regShoEnabled,
         readiness,
     }: {
         finraEnabled: boolean;
+        regShoEnabled: boolean;
         readiness: { institutional: string; short: string };
     }) => (
         <div
             data-testid="content"
             data-finra={String(finraEnabled)}
+            data-regsho={String(regShoEnabled)}
             data-institutional={readiness.institutional}
             data-short={readiness.short}
         />
@@ -123,6 +126,7 @@ function arrange(flows: Record<string, unknown>) {
         scorecard: null,
         degraded: false,
         finraEnabled: true,
+        regShoEnabled: true,
         readiness: { institutional: 'ready', short: 'ready' },
         ...flows,
     } as never);
@@ -187,10 +191,15 @@ describe('flows page 본문', () => {
             snapshot: { asOf: 'x' },
             scorecard: { composite: {} },
             finraEnabled: false,
+            regShoEnabled: false,
         });
         render(await FlowsPage({ params: params() }));
         expect(screen.getByTestId('content')).toHaveAttribute(
             'data-finra',
+            'false'
+        );
+        expect(screen.getByTestId('content')).toHaveAttribute(
+            'data-regsho',
             'false'
         );
         expect(screen.getByTestId('summary')).toHaveAttribute(

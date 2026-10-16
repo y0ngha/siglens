@@ -16,14 +16,19 @@ vi.mock('../../server/getInvestorFlowsPipelineReadiness', () => ({
     getInvestorFlowsPipelineReadiness: mockReadiness,
 }));
 
+const READY = {
+    institutional: 'ready',
+    short: 'ready',
+    failsToDeliver: 'ready',
+    filings: 'ready',
+    thresholdList: 'ready',
+} as const;
+
 describe('investorFlowsCachedProvider', () => {
     beforeEach(() => {
         mockSnapshot.mockReset();
         mockReadiness.mockReset();
-        mockReadiness.mockResolvedValue({
-            institutional: 'ready',
-            short: 'ready',
-        });
+        mockReadiness.mockResolvedValue(READY);
     });
 
     it('페이지와 같은 캐시 스냅샷 로더에 위임한다', async () => {
@@ -48,6 +53,7 @@ describe('investorFlowsCachedProvider', () => {
             shortVolume: [],
         });
         mockReadiness.mockResolvedValue({
+            ...READY,
             institutional: 'collecting',
             short: 'collecting',
         });
@@ -56,12 +62,39 @@ describe('investorFlowsCachedProvider', () => {
         ).toEqual({ asOf: 'x', shortInterest: null, shortVolume: null });
     });
 
+    it('SEC 공시·FTD 수집 중에는 빈 FTD를 null로, 빈 Form 144·증자 공시는 필드를 빼서 AI에 건넨다', async () => {
+        mockSnapshot.mockResolvedValue({
+            asOf: 'x',
+            shortInterest: [],
+            shortVolume: [],
+            failsToDeliver: [],
+            proposedSales: [],
+            offerings: [],
+        });
+        mockReadiness.mockResolvedValue({
+            ...READY,
+            failsToDeliver: 'collecting',
+            filings: 'collecting',
+        });
+        expect(
+            await investorFlowsCachedProvider.getInvestorFlowsSnapshot('AAPL')
+        ).toEqual({
+            asOf: 'x',
+            shortInterest: [],
+            shortVolume: [],
+            failsToDeliver: null,
+        });
+    });
+
     it('준비 상태를 못 읽으면(unknown) 스냅샷을 건드리지 않는다', async () => {
         const snapshot = { asOf: 'x', shortInterest: [], shortVolume: [] };
         mockSnapshot.mockResolvedValue(snapshot);
         mockReadiness.mockResolvedValue({
             institutional: 'unknown',
             short: 'unknown',
+            failsToDeliver: 'unknown',
+            filings: 'unknown',
+            thresholdList: 'unknown',
         });
         expect(
             await investorFlowsCachedProvider.getInvestorFlowsSnapshot('AAPL')
@@ -90,6 +123,10 @@ describe('FakeInvestorFlowsDataProvider', () => {
         });
         expect(snapshot.shortInterest).toEqual([]);
         expect(snapshot.shortVolume).toEqual([]);
+        expect(snapshot.failsToDeliver).toEqual([]);
+        expect(snapshot.proposedSales).toEqual([]);
+        expect(snapshot.offerings).toEqual([]);
+        expect(snapshot.thresholdList).toBeNull();
         expect(snapshot.insider.transactions.length).toBeGreaterThan(0);
         expect(snapshot.largeHolders?.length).toBeGreaterThan(0);
         const card = evaluateInvestorFlows(snapshot, {
@@ -146,5 +183,49 @@ describe('FakeInvestorFlowsDataProvider', () => {
             evaluateInvestorFlows(snapshot, { includeFinraData: true }).short
                 .metrics.squeezeRisk
         ).toBe(true);
+    });
+
+    it('기본 종목은 13F 옵션·Form 144(1건 10b5-1)·증자 공시·FTD를 갖고 과열 목록에는 없다', async () => {
+        const snapshot = (await new FakeInvestorFlowsDataProvider(
+            () => true
+        ).getInvestorFlowsSnapshot('AAPL'))!;
+        expect(snapshot.institutional.options?.length).toBe(
+            snapshot.institutional.quarters.length
+        );
+        expect(snapshot.proposedSales).toHaveLength(3);
+        expect(
+            snapshot.proposedSales?.filter(s => s.planAdoptionDate !== null)
+        ).toHaveLength(1);
+        expect(snapshot.offerings?.map(o => o.kind)).toEqual([
+            'atm',
+            'shelf',
+            'private_placement',
+        ]);
+        expect(snapshot.failsToDeliver?.length).toBeGreaterThan(0);
+        expect(snapshot.thresholdList?.listed).toBe(false);
+        const card = evaluateInvestorFlows(snapshot, {
+            includeFinraData: true,
+        });
+        expect(card.dilution.sufficiency).toBe('sufficient');
+    });
+
+    it('SQUEEZX는 과열 목록에 15거래일 연속 올라 있다', async () => {
+        const snapshot = (await new FakeInvestorFlowsDataProvider(
+            () => true
+        ).getInvestorFlowsSnapshot('SQUEEZX'))!;
+        expect(snapshot.thresholdList).toMatchObject({
+            listed: true,
+            consecutiveDays: 15,
+            markets: ['Nasdaq'],
+        });
+    });
+
+    it('Reg SHO 플래그가 꺼지면 thresholdList는 null이다(진짜 구현과 같은 규칙)', async () => {
+        const snapshot = await new FakeInvestorFlowsDataProvider(
+            () => true,
+            false,
+            () => false
+        ).getInvestorFlowsSnapshot('SQUEEZX');
+        expect(snapshot?.thresholdList).toBeNull();
     });
 });

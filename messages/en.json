@@ -3014,7 +3014,7 @@
                     "get_economy": "Returns US macro indicators such as the policy rate, inflation, employment and GDP, Treasury yields, upcoming economic events and the SIGLENS macro briefing. It takes no arguments.",
                     "get_fundamentals": "Returns the company profile, valuation ratios, profitability, growth and financial health scores, analyst consensus and price targets, and the next earnings date. Stocks only (US and Korean); crypto is not supported.",
                     "get_guide": "Explains a technical-analysis concept, such as a candlestick pattern, chart pattern, indicator or strategy, using the SIGLENS guide. Use it for \"what is this?\" questions without a symbol; the result includes the guide page URL.",
-                    "get_investor_flows": "Returns the investor flows of a US stock, meaning who is buying and selling it: a scorecard for institutions, insiders, 5% holders and short sellers, the largest institutional holders, insider transactions, large-holder filings and short-selling data. The data is filed with a delay, so every source comes with its as-of date.",
+                    "get_investor_flows": "Returns the investor flows of a US stock, meaning who is buying and selling it: a scorecard for institutions, insiders, 5% holders, short sellers and dilution, the largest institutional holders and 13F puts and calls, insider transactions and Form 144 proposed sales, large-holder and offering filings, short-selling, fails-to-deliver and threshold-list data, and a short squeeze score. The data is filed with a delay, so every source comes with its as-of date.",
                     "get_market_overview": "Returns the market-wide fear & greed index, major index and sector moves, the SIGLENS market briefing and the sector signal scan. Use it for \"how is the market today?\".",
                     "get_my_portfolio": "Returns the signed-in user's own holdings with quantity, average price, profit/loss and weight. Use it only for questions about your own positions or profit and loss.",
                     "get_news": "Returns news that SIGLENS has already collected for a symbol or a market category, with sentiment, summaries and counts. Use it for events and \"why did it move\" questions.",
@@ -4228,6 +4228,11 @@
             "asOf": {
                 "collecting": "Collecting",
                 "delay": "A 13F reports quarter-end holdings and is filed up to 45 days after the quarter ends. So the institutional figures here show positions from a month or two ago or more, not today.",
+                "filingsNone": "No data",
+                "filingsWindow": "{from} to {to} (last {days} days)",
+                "ftdDate": "Settlement date {date}",
+                "ftdDelay": "Fails to deliver (FTD) are published by the SEC about two weeks after each half-month, so the most recent two weeks or so are not in yet.",
+                "ftdNone": "No data",
                 "insiderNone": "No data",
                 "insiderWindow": "{from} to {to} (last {days} days)",
                 "institutionalComplete": "End of {period} quarter · fully filed",
@@ -4237,16 +4242,23 @@
                 "shortInterestNone": "No data",
                 "shortVolumeDate": "Last trading day {date}",
                 "shortVolumeNone": "No data",
-                "sources": "Sources: SEC EDGAR 13F (institutional holdings) and Form 4 and 13D/G (insiders and large holders, via FMP).",
-                "sourcesWithFinra": "Sources: SEC EDGAR 13F (institutional holdings), Form 4 and 13D/G (insiders and large holders, via FMP), and FINRA (short interest and off-exchange reported trades).",
+                "sources": "Sources: SEC EDGAR 13F (institutional holdings and options), Form 144, offering filings, fails to deliver (FTD), and Form 4 and 13D/G (insiders and large holders, via FMP).",
+                "sourcesWithExchange": "{sources} The Reg SHO threshold lists are published by Nasdaq, NYSE and Cboe.",
+                "sourcesWithFinra": "Sources: SEC EDGAR 13F (institutional holdings and options), Form 144, offering filings, fails to deliver (FTD), Form 4 and 13D/G (insiders and large holders, via FMP), and FINRA (short interest and off-exchange reported trades).",
+                "termFilings": "Form 144 and offering filings",
+                "termFtd": "Fails to deliver (FTD)",
                 "termInsider": "Insider trades",
                 "termInstitutional": "Institutional holdings (13F)",
                 "termShortInterest": "Short interest",
                 "termShortVolume": "Daily short ratio",
                 "termSnapshot": "Data pulled on",
+                "termThreshold": "Reg SHO threshold list",
+                "thresholdDate": "List of {date}",
+                "thresholdNone": "No data",
                 "title": "As-of Dates & Sources"
             },
             "axis": {
+                "dilution": "Dilution",
                 "insider": "Insiders",
                 "institutional": "Institutions",
                 "largeHolders": "Large holders (5%)",
@@ -4258,6 +4270,14 @@
                     "bodyInstitutionalOnly": "We are gathering institutional holdings (13F) data for the first time. It will appear here automatically once it is ready.",
                     "title": "Collecting investor flow data"
                 },
+                "failsToDeliver": {
+                    "body": "We are loading the fails-to-deliver (FTD) files the SEC publishes for the first time. They will show up here automatically once they are in.",
+                    "title": "Collecting fails-to-deliver data"
+                },
+                "filings": {
+                    "body": "We are loading Form 144 notices and offering filings from the start. They will show up here automatically once recent filings are in.",
+                    "title": "Collecting SEC filings"
+                },
                 "institutional": {
                     "body": "We are gathering SEC 13F filings for the first time. Once it fills in within a few days, it will appear here automatically.",
                     "title": "Collecting institutional holdings data"
@@ -4267,25 +4287,51 @@
                     "title": "Collecting FINRA short-selling data"
                 }
             },
+            "dilution": {
+                "filing": "SEC filing",
+                "kind": {
+                    "atm": "ATM",
+                    "bestEfforts": "Best efforts",
+                    "other": "Other",
+                    "privatePlacement": "Private placement",
+                    "prospectus": "Prospectus",
+                    "registration": "Registration",
+                    "shelf": "Shelf",
+                    "underwritten": "Underwritten"
+                },
+                "none": "No offering or dilution filings on file.",
+                "omitted": "{count} older filings are left out of the list.",
+                "source": "Source: SEC EDGAR (S-1, S-3, F-1, F-3, 424B, Form D).",
+                "subtitle": "Filings a company makes with the SEC so it can issue and sell new shares. When it does sell, existing holders own a smaller slice.",
+                "title": "Offerings and dilution filings",
+                "unavailable": "Could not load the offering filings. Please check again shortly.",
+                "window": "The score uses filings from the last {days} days ({from} to {to})."
+            },
             "empty": {
                 "body": "No data — this stock has no institutional (13F), insider or short-selling data yet. That is common for new listings and small, thinly traded stocks.",
                 "title": "Investor Flow Data"
             },
             "ev": {
                 "daysToCover": "Days to cover {days}",
+                "dilutionFilings": "{count} offering and registration filings in the last {days} days",
+                "dilutionIssuance": "ATM {atm} · marketed offerings {marketed}",
+                "ftdPct": "Peak fails to deliver {pct} (of shares outstanding)",
                 "holders": "{count} institutions hold it ({change} vs prior quarter)",
                 "holdersOnly": "{count} institutions hold it",
                 "insiderCluster": "Cluster buy by {count} different insiders",
                 "insiderCounts": "{buys} buys · {sells} sells",
                 "insiderNetBuy": "Net buying of {amount} in the last {days} days",
                 "insiderNetSell": "Net selling of {amount} in the last {days} days",
+                "insiderProposedSales": "Proposed sale notices (Form 144): {count} · {amount}",
                 "largeHolderCounts": "{d} Schedule 13D · {g} Schedule 13G filings (last {days} days)",
                 "netSharesOutstanding": "Net change in institutional shares {pct} (of shares outstanding)",
                 "netSharesPrior": "Net change in institutional shares {pct} (vs prior-quarter holdings)",
                 "newExited": "{added} new positions · {exited} full exits",
+                "putCallRatio": "13F option put/call notional ratio {ratio}",
                 "shortPct": "Short interest {pct} (of float)",
                 "shortRatio": "Off-exchange short ratio {pct} (latest trading day)",
-                "shortTrend": "Short interest change {pct} (last 3 settlement dates)"
+                "shortTrend": "Short interest change {pct} (last 3 settlement dates)",
+                "thresholdListed": "On the threshold list for {days} trading days in a row"
             },
             "filter": {
                 "all": "All {count}",
@@ -4299,6 +4345,36 @@
                 "out": "OUT",
                 "partial": "Partial",
                 "title": "Institutional Net Buying (IN) & Selling (OUT) by Quarter"
+            },
+            "form144": {
+                "caption": "Filed by officers, directors and major holders before they sell. It announces a plan to sell; the actual sale shows up later on a separate Form 4.",
+                "colFiled": "Filed",
+                "colFiler": "Filer",
+                "colFiling": "Filing",
+                "colSaleDate": "Approx. sale date",
+                "colShares": "Shares",
+                "colValue": "Value",
+                "filing": "View filing",
+                "none": "No proposed sale notices on file.",
+                "omitted": "{count} older notices are left out of the list.",
+                "planBadge": "10b5-1 plan",
+                "relationshipUnknown": "Relationship not stated",
+                "title": "Proposed sales (Form 144)",
+                "unavailable": "Could not load the proposed sale notices. Please check again shortly."
+            },
+            "ftd": {
+                "basis": "The latest record is for settlement date {date}.",
+                "caveat": "Fails to deliver are not evidence of naked short selling. They only record trades that did not settle on time, which can happen for many reasons (SEC).",
+                "chartAria": "Bar chart of fails on the {count} settlement dates that had any",
+                "lag": "The SEC publishes each half-month about two weeks after it ends, so the most recent two weeks or so are not in yet.",
+                "latestQty": "Latest fails",
+                "multiple": "Recent peak vs. usual",
+                "none": "No fails to deliver recorded in the last {days} days.",
+                "peakPct": "Recent peak (% of shares outstanding)",
+                "shares": "{shares} shares",
+                "times": "{times}×",
+                "title": "Fails to deliver (SEC FTD)",
+                "unavailable": "Could not load the fails-to-deliver data. Please check again shortly."
             },
             "holders": {
                 "basis": "Holdings as of the end of the {period} quarter; changes are versus the prior quarter.",
@@ -4373,6 +4449,15 @@
                 "unavailable": "Could not load large-holder filings. Please check again shortly.",
                 "unknownFiler": "Unknown filer"
             },
+            "options": {
+                "call": "Calls",
+                "caveat": "This is the underlying value of options reported on 13F, not what was paid for them (the premium). Much of it is often hedging of shares already held.",
+                "put": "Puts",
+                "ratio": "{period} put/call notional ratio {ratio}",
+                "ratioWithPrior": "{period} put/call notional ratio {ratio} (prior quarter {prior})",
+                "title": "Option positions (put and call notional)",
+                "value": "{amount} · {holders} filers"
+            },
             "scorecard": {
                 "axisCollecting": "Data is still being collected, so this axis is not in the score yet.",
                 "axisInsufficient": "Not enough data, so this axis is left out of the score.",
@@ -4404,7 +4489,7 @@
                 "qty": "Short interest (shares)",
                 "squeezeBadge": "Short squeeze risk",
                 "squeezeNote": "Short interest is {pct} of the float and days to cover is {days}, both on the high side. If the price rises, buy-to-cover demand could surge all at once.",
-                "subtitle": "Shares sold short and not yet repaid, plus the daily share of off-exchange short selling.",
+                "subtitle": "Shares sold short and not yet repaid, the daily share of off-exchange short selling, and fails to deliver.",
                 "title": "Short Selling",
                 "trendFalling": "Recent trend: falling",
                 "trendFlat": "Recent trend: flat",
@@ -4430,6 +4515,41 @@
                 "noPrevious": "No prior quarter to compare",
                 "title": "Institutional Moves vs the Prior Quarter"
             },
+            "squeeze": {
+                "capped": "There is no short interest data, so this uses only fails to deliver and price. In that case it never goes above Elevated.",
+                "component": {
+                    "days_to_cover": "Days to cover",
+                    "fails_to_deliver_pct": "Fails to deliver (% of shares outstanding)",
+                    "off_exchange_short_ratio_z": "Change in off-exchange short ratio",
+                    "price_change_20d": "Price change over 20 sessions",
+                    "short_interest_pct_float": "Short interest (% of float)",
+                    "short_interest_trend": "Short interest trend",
+                    "threshold_list_days": "Days on the threshold list",
+                    "volume_ratio": "Volume vs. usual"
+                },
+                "insufficient": "There is not enough short-side data to score it.",
+                "level": {
+                    "elevated": "Elevated",
+                    "extreme": "Extreme",
+                    "high": "High",
+                    "low": "Low"
+                },
+                "partial": "{count} inputs were missing, so the weights were rebalanced over the rest.",
+                "points": "+{points} pts",
+                "score": "{score} / 100",
+                "sourceExchange": "exchange threshold lists",
+                "sourceFinra": "FINRA short data",
+                "sourcePrice": "daily price and volume",
+                "sourceSec": "SEC fails to deliver",
+                "sources": "Based on: {sources}",
+                "sourcesWithPrice": "Based on: {sources} (prices through the {date} close)",
+                "title": "Short squeeze score",
+                "unit": {
+                    "days": "{value} days",
+                    "multiple": "{value}×",
+                    "z": "z-score {value}"
+                }
+            },
             "status": {
                 "decreased": "Decreased",
                 "exited": "Exited",
@@ -4437,14 +4557,35 @@
                 "new": "New",
                 "unchanged": "Unchanged"
             },
+            "threshold": {
+                "collecting": "Collecting the threshold lists.",
+                "listedBadge": "On the threshold list",
+                "listedDetail": "{days} trading days in a row · {markets}",
+                "notListed": "Not on a threshold list right now.",
+                "source": "Source: Nasdaq, NYSE, Cboe",
+                "sourceWithDate": "Source: Nasdaq, NYSE, Cboe (lists as of {date})",
+                "title": "Reg SHO threshold list"
+            },
             "tooltip": {
                 "daysToCover": [
                     "Days to cover is short interest divided by average trading volume, meaning how many days it would take to buy back all the shorted shares.",
                     "The bigger the number, the harder it may be to buy them back."
                 ],
+                "dilution": [
+                    "An offering is when a company issues and sells new shares. Dilution is the drop in existing holders’ ownership share as the share count grows.",
+                    "A shelf registration only registers shares to sell later, so no new shares hit the market right away. ATM programs and underwritten deals are closer to actual selling."
+                ],
+                "failsToDeliver": [
+                    "Fails to deliver (FTD) are shares a seller did not hand over by the settlement date. The SEC publishes them every half-month.",
+                    "Settlement can be late for many reasons, so this alone does not show naked short selling."
+                ],
                 "flowScore": [
-                    "The flow score combines institutional, insider, large-holder and short-selling activity into one number from -100 to +100. A higher score means more bullish signals.",
+                    "The flow score combines institutional, insider, large-holder, short-selling and dilution activity into one number from -100 to +100. A higher score means more bullish signals.",
                     "It is a reference figure calculated by rules from past filings and does not tell you where the price will go next."
+                ],
+                "form144": [
+                    "Form 144 is a notice that affiliates such as officers, directors and major holders file with the SEC before selling shares.",
+                    "A sale under a 10b5-1 plan follows a schedule set in advance, so it is different from a sale decided on the spot."
                 ],
                 "form4": [
                     "Form 4 is a report that insiders such as officers, directors and 10% owners must file within two business days of buying or selling their own company's stock.",
@@ -4478,6 +4619,10 @@
                     "This is the share of that day's off-exchange (TRF) reported trades that were short sales.",
                     "Short sales executed on exchanges are left out, so it can look smaller than the true overall short share."
                 ],
+                "optionsNotional": [
+                    "This is the underlying value of the put and call options reported on 13F, not the money spent buying them (the premium).",
+                    "Institutions often buy puts to protect shares they hold, so a lot of puts does not by itself mean a bet on a fall."
+                ],
                 "partialAggregation": [
                     "A partial count means the 13F filing deadline has not passed yet, so only some institutions' reports are in.",
                     "Low numbers may not mean a real drop, so the score only uses quarters whose filings are complete."
@@ -4498,9 +4643,17 @@
                     "A short squeeze is a sharp price jump that happens when short sellers rush to buy back shares to limit their losses.",
                     "It becomes more likely when both short interest and days to cover are high, but it does not always happen."
                 ],
+                "squeezeScore": [
+                    "The short squeeze score (0 to 100) combines short interest, days to cover, fails to deliver, threshold lists and recent price and volume by fixed rules. A higher score means more pressure on short sellers to buy back at once.",
+                    "Missing inputs are covered by rebalancing the rest. A high score does not guarantee the price will rise."
+                ],
                 "thirteenF": [
                     "A 13F is a report of stock holdings that large institutions file with the US SEC every quarter.",
                     "It is published up to 45 days after the quarter ends, so it shows holdings as of the last quarter end, not today."
+                ],
+                "thresholdList": [
+                    "The Reg SHO threshold list is a daily exchange list of stocks whose fails to deliver stayed above a set size for five settlement days in a row.",
+                    "If a stock stays on the list for more than 13 trading days, the rule requires the remaining fails to be closed out."
                 ]
             }
         },

@@ -6,6 +6,12 @@ const { mockClient, mockRevalidate, mockFetchList } = vi.hoisted(() => ({
 vi.mock('../../revalidateSymbols', () => ({
     revalidateSymbols: mockRevalidate,
 }));
+const { mockRevalidateReadiness } = vi.hoisted(() => ({
+    mockRevalidateReadiness: vi.fn(),
+}));
+vi.mock('../../revalidateFlowsReadiness', () => ({
+    revalidateFlowsReadiness: mockRevalidateReadiness,
+}));
 vi.mock('server-only', () => ({}));
 vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
 vi.mock('@/shared/api/exchange/regShoClient', async importOriginal => ({
@@ -64,5 +70,12 @@ describe('createRegShoDeps', () => {
         mockClient.mockReturnValue({ db: {} });
         createRegShoDeps(() => false).invalidateSymbols(['GME']);
         expect(mockRevalidate).toHaveBeenCalledWith(['GME']);
+    });
+
+    it('wires the first-data hook to the readiness-cache invalidation', () => {
+        mockClient.mockReturnValue({ db: {} });
+        mockRevalidateReadiness.mockReset();
+        createRegShoDeps(() => false).onFirstListStored?.();
+        expect(mockRevalidateReadiness).toHaveBeenCalledTimes(1);
     });
 });

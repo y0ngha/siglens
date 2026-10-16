@@ -26,6 +26,12 @@ const TERMS: Record<FlowTerm, true> = {
     settlementDate: true,
     partialAggregation: true,
     flowScore: true,
+    optionsNotional: true,
+    form144: true,
+    dilution: true,
+    failsToDeliver: true,
+    thresholdList: true,
+    squeezeScore: true,
 };
 
 const CATALOGS = {

@@ -1,5 +1,6 @@
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { addDays, eachDate, isWeekend } from '../lib/investorFlowsDates';
+import { deriveFilingsStatus } from '../lib/investorFlowsReadiness';
 import {
     INVESTOR_FLOWS_FORM144_RETENTION_DAYS,
     INVESTOR_FLOWS_OFFERING_RETENTION_DAYS,
@@ -111,6 +112,12 @@ export interface IngestSecFilingsDeps {
     isDeadlineReached: () => boolean;
     /** 새 공시가 저장된 심볼의 캐시 태그 무효화(실행당 상한 `INVESTOR_FLOWS_REVALIDATE_CAP`). */
     invalidateSymbols: (symbols: readonly string[]) => void | Promise<void>;
+    /**
+     * 공시 커서가 이번 실행에서 "따라잡음"(오늘에서 `INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS`일 안, `deriveFilingsStatus`)으로
+     * **넘어갔을 때** 한 번 부른다 — 수급 탭의 Form 144·증자 공시 "수집 중" 안내를 담은 준비 상태 캐시를 무효화한다(`runFinraIngest`의
+     * `onFirstDataStored`와 같은 역할). 실행 전에 이미 따라잡은 상태였으면 부르지 않는다.
+     */
+    onCaughtUp?: () => void | Promise<void>;
     log: (message: string, detail?: unknown) => void;
 }
 
@@ -137,6 +144,8 @@ export interface IngestSecFilingsResult {
     retried: number;
     invalidated: number;
     pruned: FilingsPruneResult;
+    /** 이번 실행으로 커서가 처음 "따라잡음"이 됐는가(= 준비 상태 `collecting` → `ready`). */
+    caughtUp: boolean;
 }
 
 class SecBlockedSignal extends Error {}
@@ -480,6 +489,7 @@ export async function runSecFilingsIngest(
             retried: 0,
             invalidated: 0,
             pruned: emptyPruned(),
+            caughtUp: false,
         },
     };
 
@@ -556,6 +566,10 @@ export async function runSecFilingsIngest(
         await deps.invalidateSymbols(toInvalidate);
         state.result.invalidated = toInvalidate.length;
     }
+    state.result.caughtUp =
+        deriveFilingsStatus(cursor, today) === 'collecting' &&
+        deriveFilingsStatus(state.result.cursor, today) === 'ready';
+    if (state.result.caughtUp) await deps.onCaughtUp?.();
     return state.result;
 }
 

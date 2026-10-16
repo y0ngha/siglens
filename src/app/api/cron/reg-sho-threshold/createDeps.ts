@@ -5,6 +5,7 @@ import {
     type RegShoMarket,
 } from '@/shared/api/exchange/regShoClient';
 import { isRegShoThresholdDataEnabled } from '@/shared/api/exchange/regShoThresholdDataEnabled';
+import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsRegShoRepository } from '@/entities/investor-flows/api/investorFlowsRegShoRepository';
@@ -38,6 +39,7 @@ export function createRegShoDeps(
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
+        onFirstListStored: revalidateFlowsReadiness,
         log: (message, detail) => console.warn(message, detail),
     };
 }

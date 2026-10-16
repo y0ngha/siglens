@@ -7,8 +7,8 @@ import {
     type ModelId,
     type RunInvestorFlowsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
 import { investorFlowsCachedProvider } from '@/entities/investor-flows/server/getInvestorFlowsCachedProvider';
+import { getInvestorFlowsEvaluationOptions } from '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions';
 import { runGatedAnalysis } from '../lib/runGatedAnalysis';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
@@ -29,9 +29,11 @@ export type RunInvestorFlowsActionResult =
  * 프리미엄 모델 → 저장된 BYOK 키가 없으면 차단). 게이트·E2E 단락·봇 동등성·추론 토글 규칙·catch-all은
  * `runGatedAnalysis`가 fundamental/financials/congress와 공유한다.
  *
- * `includeFinraData`는 FINRA 플래그(`FINRA_SHORT_DATA_ENABLED`)를 그대로 따른다 — core 캐시 키에 접히므로
- * 플래그를 끄면 공매도가 섞인 옛 해석이 캐시에서 나오지 않는다. 스냅샷은 페이지가 그리는 것과 같은
- * 캐시 스냅샷을 쓴다(`investorFlowsCachedProvider`).
+ * 평가 옵션(`includeFinraData`·`includeExchangeLists`·`squeezeContext`)은 화면 점수표와 같은 함수
+ * (`getInvestorFlowsEvaluationOptions`)에서 받는다 — 플래그는 core 캐시 키에 접히므로 끄면 그 데이터가 섞인 옛 해석이
+ * 캐시에서 나오지 않고, 숏스퀴즈 일봉이 있으면 키에 `:squeeze=on`이 붙어 점수 블록이 든 해석을 따로 캐시한다. 스냅샷은
+ * 페이지가 그리는 것과 같은 캐시 스냅샷을 쓴다(`investorFlowsCachedProvider`). 수급 탭은 미국 주식 전용이라 `market`은
+ * core 기본값(`'us'`)이다.
  */
 export async function runInvestorFlowsAction(
     symbol: string,
@@ -66,13 +68,13 @@ export async function runInvestorFlowsAction(
                 ? stub.e2eForcedInvestorFlowsError()
                 : stub.e2eCachedInvestorFlows();
         },
-        submit: gated =>
+        submit: async gated =>
             runInvestorFlowsAnalysis({
                 symbol,
                 locale,
                 modelId,
                 dataProvider: investorFlowsCachedProvider,
-                includeFinraData: isFinraShortDataEnabled(),
+                ...(await getInvestorFlowsEvaluationOptions(symbol)),
                 signal,
                 ...gated,
             }),

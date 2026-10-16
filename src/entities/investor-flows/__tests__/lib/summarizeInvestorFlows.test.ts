@@ -3,13 +3,18 @@ import { evaluateInvestorFlows } from '@y0ngha/siglens-core';
 import {
     summarizeInvestorFlows,
     SUMMARY_MAX_INSIDER_TRANSACTIONS,
+    SUMMARY_MAX_PROPOSED_SALES,
     SUMMARY_MAX_QUARTERS,
+    SUMMARY_MAX_SQUEEZE_COMPONENTS,
     SUMMARY_MAX_SIGNALS,
     SUMMARY_MAX_TOP_HOLDERS,
 } from '../../lib/summarizeInvestorFlows';
 import {
+    makeExpandedSnapshot,
     makeHolder,
+    makeProposedSale,
     makeSnapshot,
+    makeSqueezeContext,
     makeTransaction,
     evaluate,
 } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
@@ -138,5 +143,85 @@ describe('summarizeInvestorFlows', () => {
         const out = summarizeInvestorFlows(snapshot, evaluate(snapshot));
         expect(out.institutional.quarters).toEqual([]);
         expect(out.signals.filter(s => s.id !== 'data_stale')).toEqual([]);
+    });
+
+    it('희석 축을 다섯 번째 축으로 옮기고, 그 축의 신호도 신호 후보에 넣는다', () => {
+        const snapshot = makeExpandedSnapshot();
+        const card = evaluate(snapshot);
+        const out = summarizeInvestorFlows(snapshot, card);
+        expect(Object.keys(out.axes).toSorted()).toEqual([
+            'dilution',
+            'insider',
+            'institutional',
+            'largeHolders',
+            'short',
+        ]);
+        expect(out.axes.dilution).toEqual({
+            label: card.dilution.label,
+            score: card.dilution.score,
+            sufficiency: card.dilution.sufficiency,
+        });
+    });
+
+    it('다른 축에 신호가 없으면 희석 축 신호가 신호 목록에 그대로 나온다', () => {
+        const snapshot = makeExpandedSnapshot({
+            institutional: {
+                quarters: [],
+                topHolders: [],
+                topHoldersPeriod: null,
+            },
+            insider: { transactions: [] },
+            largeHolders: [],
+            shortInterest: [],
+            shortVolume: [],
+            failsToDeliver: [],
+            proposedSales: [],
+            thresholdList: null,
+        });
+        const card = evaluate(snapshot);
+        const out = summarizeInvestorFlows(snapshot, card);
+        expect(card.dilution.signals.length).toBeGreaterThan(0);
+        expect(
+            out.signals.filter(s => s.axis === 'dilution').map(s => s.id)
+        ).toEqual(
+            card.dilution.signals.slice(0, SUMMARY_MAX_SIGNALS).map(s => s.id)
+        );
+    });
+
+    it('Form 144는 최신순 상한, 관계는 한 줄로, 10b5-1은 불리언이다', () => {
+        const snapshot = makeExpandedSnapshot({
+            proposedSales: Array.from({ length: 8 }, (_, i) =>
+                makeProposedSale({
+                    filingDate: `2026-09-${String(i + 10).padStart(2, '0')}`,
+                    relationships: ['Officer', 'Director'],
+                    planAdoptionDate: i % 2 === 0 ? '2026-05-01' : null,
+                })
+            ),
+        });
+        const out = summarizeInvestorFlows(snapshot, evaluate(snapshot));
+        expect(out.insider.proposedSales).toHaveLength(
+            SUMMARY_MAX_PROPOSED_SALES
+        );
+        expect(out.insider.proposedSales?.[0]).toMatchObject({
+            filingDate: '2026-09-17',
+            relationships: 'Officer, Direct…',
+            plan10b5_1: false,
+        });
+    });
+
+    it('숏스퀴즈 점수는 점수표 값을 옮기고 상위 구성요소만 싣는다', () => {
+        const snapshot = makeExpandedSnapshot();
+        const card = evaluate(snapshot, true, {
+            squeezeContext: makeSqueezeContext(),
+        });
+        const out = summarizeInvestorFlows(snapshot, card);
+        expect(out.squeezeRisk?.score).toBe(card.squeezeRisk?.score);
+        expect(out.squeezeRisk?.level).toBe(card.squeezeRisk?.level);
+        expect(out.squeezeRisk?.topComponents.length).toBeLessThanOrEqual(
+            SUMMARY_MAX_SQUEEZE_COMPONENTS
+        );
+        expect(out.squeezeRisk?.topComponents[0]?.id).toBe(
+            card.squeezeRisk?.components[0]?.id
+        );
     });
 });

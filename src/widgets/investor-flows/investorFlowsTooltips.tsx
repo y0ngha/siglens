@@ -21,7 +21,13 @@ export type FlowTerm =
     | 'offExchangeShortRatio'
     | 'settlementDate'
     | 'partialAggregation'
-    | 'flowScore';
+    | 'flowScore'
+    | 'optionsNotional'
+    | 'form144'
+    | 'dilution'
+    | 'failsToDeliver'
+    | 'thresholdList'
+    | 'squeezeScore';
 
 /** 용어 옆 (i) 풀이. 기존 `InfoTooltip` 패턴(펀더멘털·옵션 탭)을 그대로 쓴다. */
 export function FlowTooltip({ term }: { readonly term: FlowTerm }) {

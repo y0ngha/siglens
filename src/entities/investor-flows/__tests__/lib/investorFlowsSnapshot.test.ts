@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
     assembleInvestorFlowsSnapshot,
+    buildFailsToDeliver,
+    buildOfferings,
+    buildOptionQuarters,
+    buildProposedSales,
+    buildThresholdList,
     buildInsiderStats,
     buildInsiderTransactions,
     buildInstitutionalQuarters,
@@ -10,11 +15,19 @@ import {
     buildTopHolders,
     inferLargeHolderForm,
     mapInsiderTransactionType,
+    SNAPSHOT_MAX_FTD_POINTS,
+    SNAPSHOT_MAX_OFFERINGS,
+    SNAPSHOT_MAX_PROPOSED_SALES,
     SNAPSHOT_MAX_QUARTERS,
     SNAPSHOT_MAX_TOP_HOLDERS,
     type AggregateRecord,
     type InvestorFlowsSnapshotInput,
 } from '../../lib/investorFlowsSnapshot';
+import type {
+    OfferingRecord,
+    OptionAggregateRecord,
+    ProposedSaleRecord,
+} from '../../model';
 
 const NOW = new Date('2026-10-15T12:00:00Z');
 
@@ -48,7 +61,51 @@ const baseInput = (
     sharesFloat: null,
     shortInterest: [],
     shortVolume: [],
+    failsToDeliver: [],
+    proposedSales: [],
+    offerings: [],
+    optionAggregates: [],
+    thresholdList: null,
     ...over,
+});
+
+const sale = (
+    filingDate: string,
+    over: Partial<ProposedSaleRecord> = {}
+): ProposedSaleRecord => ({
+    accession: `acc-${filingDate}`,
+    filingDate,
+    formType: '144',
+    filer: 'Fixture Officer',
+    relationships: ['Officer'],
+    shares: 1200,
+    valueUsd: 250_000,
+    approxSaleDate: filingDate,
+    planAdoptionDate: null,
+    url: `https://www.sec.gov/${filingDate}`,
+    ...over,
+});
+
+const offering = (
+    filingDate: string,
+    over: Partial<OfferingRecord> = {}
+): OfferingRecord => ({
+    accession: `acc-${filingDate}`,
+    filingDate,
+    formType: '424B5',
+    kind: 'atm',
+    url: `https://www.sec.gov/o-${filingDate}`,
+    ...over,
+});
+
+const optionAggregate = (period: string): OptionAggregateRecord => ({
+    period,
+    putHolders: 3,
+    putShares: 900,
+    putValueUsd: 90_000,
+    callHolders: 4,
+    callShares: 1100,
+    callValueUsd: 110_000,
 });
 
 describe('buildInstitutionalQuarters', () => {
@@ -550,5 +607,210 @@ describe('assembleInvestorFlowsSnapshot', () => {
         expect(snapshot?.institutional.quarters).toEqual([]);
         expect(snapshot?.largeHolders).toHaveLength(1);
         expect(snapshot?.institutional.topHoldersPeriod).toBeNull();
+    });
+});
+
+describe('SEC expansion builders', () => {
+    it('buildFailsToDeliver sorts oldest first and keeps the newest SNAPSHOT_MAX_FTD_POINTS days', () => {
+        const rows = Array.from(
+            { length: SNAPSHOT_MAX_FTD_POINTS + 3 },
+            (_, i) => ({
+                settlementDate: `2026-${String(1 + Math.floor(i / 28)).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
+                failsQty: 1000 + i,
+                price: i === 0 ? null : 10,
+            })
+        ).reverse();
+        const points = buildFailsToDeliver(rows);
+        expect(points).toHaveLength(SNAPSHOT_MAX_FTD_POINTS);
+        expect(points[0].failsQty).toBe(1003);
+        expect(points.at(-1)?.failsQty).toBe(
+            1000 + SNAPSHOT_MAX_FTD_POINTS + 2
+        );
+    });
+
+    it('buildFailsToDeliver keeps a missing price as null', () => {
+        expect(
+            buildFailsToDeliver([
+                { settlementDate: '2026-09-01', failsQty: 5, price: null },
+            ])[0].price
+        ).toBeNull();
+    });
+
+    it('buildProposedSales orders newest first, caps the list and maps to the core shape', () => {
+        const rows = Array.from(
+            { length: SNAPSHOT_MAX_PROPOSED_SALES + 2 },
+            (_, i) =>
+                sale(
+                    `2026-0${(i % 9) + 1}-${String((i % 27) + 1).padStart(2, '0')}`,
+                    {
+                        accession: `a${i}`,
+                    }
+                )
+        );
+        const sales = buildProposedSales(rows);
+        expect(sales).toHaveLength(SNAPSHOT_MAX_PROPOSED_SALES);
+        expect(sales[0].filingDate >= sales[1].filingDate).toBe(true);
+        expect(Object.keys(sales[0]).sort()).toEqual(
+            [
+                'approxSaleDate',
+                'filer',
+                'filingDate',
+                'planAdoptionDate',
+                'relationships',
+                'shares',
+                'url',
+                'valueUsd',
+            ].sort()
+        );
+    });
+
+    it('buildProposedSales carries the 10b5-1 plan date', () => {
+        expect(
+            buildProposedSales([
+                sale('2026-10-01', { planAdoptionDate: '2026-05-02' }),
+            ])[0].planAdoptionDate
+        ).toBe('2026-05-02');
+    });
+
+    it('buildOfferings renames formType to form, keeps the kind and caps newest first', () => {
+        const rows = Array.from(
+            { length: SNAPSHOT_MAX_OFFERINGS + 1 },
+            (_, i) =>
+                offering(
+                    `2025-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 27) + 1).padStart(2, '0')}`,
+                    {
+                        accession: `o${i}`,
+                        kind: i === 0 ? 'shelf' : 'atm',
+                    }
+                )
+        );
+        const filings = buildOfferings(rows);
+        expect(filings).toHaveLength(SNAPSHOT_MAX_OFFERINGS);
+        expect(filings[0]).toEqual({
+            filingDate: filings[0].filingDate,
+            form: '424B5',
+            kind: expect.any(String),
+            url: expect.stringContaining('https://www.sec.gov/'),
+        });
+        expect(filings[0].filingDate >= filings[1].filingDate).toBe(true);
+    });
+
+    it('buildOptionQuarters orders oldest first and marks an in-progress quarter incomplete', () => {
+        const quarters = buildOptionQuarters(
+            [optionAggregate('2026-09-30'), optionAggregate('2026-06-30')],
+            '2026-10-15'
+        );
+        expect(quarters.map(q => [q.period, q.complete])).toEqual([
+            ['2026-06-30', true],
+            ['2026-09-30', false],
+        ]);
+        expect(quarters[0].putValueUsd).toBe(90_000);
+        expect(quarters[0].callHolders).toBe(4);
+    });
+
+    it('buildThresholdList returns null when no list was ingested (unknown, not "not listed")', () => {
+        expect(
+            buildThresholdList({
+                listed: false,
+                consecutiveDays: 0,
+                firstListedDate: null,
+                markets: [],
+                asOf: null,
+            })
+        ).toBeNull();
+    });
+
+    it('buildThresholdList carries the list date as asOf so core can drop a stale status', () => {
+        expect(
+            buildThresholdList({
+                listed: true,
+                consecutiveDays: 14,
+                firstListedDate: '2026-09-25',
+                markets: ['Nasdaq'],
+                asOf: '2026-10-14',
+            })
+        ).toEqual({
+            listed: true,
+            consecutiveDays: 14,
+            firstListedDate: '2026-09-25',
+            markets: ['Nasdaq'],
+            asOf: '2026-10-14',
+        });
+    });
+});
+
+describe('assembleInvestorFlowsSnapshot — SEC expansion fields', () => {
+    const listed = {
+        listed: true,
+        consecutiveDays: 3,
+        firstListedDate: '2026-10-10',
+        markets: ['NYSE'],
+        asOf: '2026-10-14',
+    };
+
+    it('counts FTD, Form 144, offerings, options and a listing as data on their own', () => {
+        for (const over of [
+            {
+                failsToDeliver: [
+                    { settlementDate: '2026-09-01', failsQty: 1, price: 1 },
+                ],
+            },
+            { proposedSales: [sale('2026-10-01')] },
+            { offerings: [offering('2026-10-01')] },
+            { optionAggregates: [optionAggregate('2026-06-30')] },
+            { thresholdList: listed },
+        ] satisfies Partial<InvestorFlowsSnapshotInput>[]) {
+            expect(
+                assembleInvestorFlowsSnapshot(baseInput(over))
+            ).not.toBeNull();
+        }
+    });
+
+    it('does not count a "not listed" threshold status as data', () => {
+        expect(
+            assembleInvestorFlowsSnapshot(
+                baseInput({ thresholdList: { ...listed, listed: false } })
+            )
+        ).toBeNull();
+    });
+
+    it('passes FTD null through and omits failed Form 144 / offering / option fields', () => {
+        const snapshot = assembleInvestorFlowsSnapshot(
+            baseInput({
+                aggregates: [aggregate('2026-06-30')],
+                failsToDeliver: null,
+                proposedSales: null,
+                offerings: null,
+                optionAggregates: null,
+            })
+        );
+        expect(snapshot?.failsToDeliver).toBeNull();
+        expect(snapshot && 'proposedSales' in snapshot).toBe(false);
+        expect(snapshot && 'offerings' in snapshot).toBe(false);
+        expect(snapshot && 'options' in snapshot.institutional).toBe(false);
+    });
+
+    it('fills every expansion field when present', () => {
+        const snapshot = assembleInvestorFlowsSnapshot(
+            baseInput({
+                aggregates: [aggregate('2026-06-30')],
+                proposedSales: [sale('2026-10-01')],
+                offerings: [offering('2026-09-01')],
+                optionAggregates: [optionAggregate('2026-06-30')],
+                thresholdList: listed,
+            })
+        );
+        expect(snapshot?.proposedSales).toHaveLength(1);
+        expect(snapshot?.offerings?.[0].form).toBe('424B5');
+        expect(snapshot?.institutional.options).toHaveLength(1);
+        expect(snapshot?.thresholdList).toEqual(listed);
+        expect(snapshot?.failsToDeliver).toEqual([]);
+    });
+
+    it('passes a switched-off threshold list as null', () => {
+        const snapshot = assembleInvestorFlowsSnapshot(
+            baseInput({ aggregates: [aggregate('2026-06-30')] })
+        );
+        expect(snapshot?.thresholdList).toBeNull();
     });
 });

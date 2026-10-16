@@ -250,6 +250,38 @@ describe('runRegShoIngest', () => {
         ).toBe('2025-11-28');
     });
 
+    it('calls onFirstListStored exactly once — on the run that ingests the first list, never on later runs', async () => {
+        const onFirstListStored = vi.fn();
+        const { deps } = build({ cursor: null }, { onFirstListStored });
+        const first = await runRegShoIngest(deps);
+        expect(first.firstListStored).toBe(true);
+        expect(onFirstListStored).toHaveBeenCalledTimes(1);
+        const second = await runRegShoIngest(deps);
+        expect(second.firstListStored).toBe(false);
+        expect(onFirstListStored).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not call onFirstListStored when lists were already ingested before the run', async () => {
+        const onFirstListStored = vi.fn();
+        const { deps } = build({}, { onFirstListStored });
+        const result = await runRegShoIngest(deps);
+        expect(result.listsFetched).toBeGreaterThan(0);
+        expect(onFirstListStored).not.toHaveBeenCalled();
+    });
+
+    it('does not call onFirstListStored while no list has been published yet', async () => {
+        const onFirstListStored = vi.fn();
+        const { deps } = build(
+            {
+                cursor: null,
+                lists: { nasdaq: {}, nyse_arca: {}, cboe_bzx: {} },
+            },
+            { onFirstListStored }
+        );
+        expect((await runRegShoIngest(deps)).firstListStored).toBe(false);
+        expect(onFirstListStored).not.toHaveBeenCalled();
+    });
+
     it('backfills 60 days for a market without a cursor', async () => {
         const { deps, calls } = build({
             cursor: null,

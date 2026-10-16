@@ -43,12 +43,12 @@ test.describe('flows: happy path', () => {
         await expect(
             page.getByRole('heading', { level: 2, name: /수급 점수/ })
         ).toBeVisible();
-        // 축별 라벨은 색이 아니라 글자로도 나온다(데이터 부족 포함).
+        // 축별 라벨은 색이 아니라 글자로도 나온다(데이터 부족 포함). 기관·내부자·대량보유·공매도·증자 희석 다섯 축.
         const scorecard = page.locator(
             'section[aria-labelledby="flows-scorecard-heading"]'
         );
         await expect(scorecard.getByRole('heading', { level: 3 })).toHaveCount(
-            4
+            5
         );
 
         const asOf = page.locator(
@@ -58,6 +58,9 @@ test.describe('flows: happy path', () => {
         await expect(asOf).toContainText('부분 집계');
         await expect(asOf).toContainText('마지막 거래일');
         await expect(asOf).toContainText('최대 45일 안에 제출');
+        await expect(asOf).toContainText('결제 불이행(FTD)');
+        await expect(asOf).toContainText('약 2주 뒤에 공개');
+        await expect(asOf).toContainText('Nasdaq·NYSE·Cboe');
     });
 
     test('기관 IN/OUT 막대와 4분할 카드가 방향을 글자·부호로 보여 준다', async ({
@@ -129,6 +132,114 @@ test.describe('flows: happy path', () => {
         await expect(
             short.getByText(/장외\(TRF\) 보고분 기준이에요/)
         ).toBeVisible();
+    });
+
+    test('공매도 구간: 숏스퀴즈 점수 카드가 맨 위, 그 아래 결제 불이행(FTD) 막대와 SEC 안내, 과열 목록 줄이 나온다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        const short = page.locator(
+            'section[aria-labelledby="flows-short-heading"]'
+        );
+        const squeeze = short.getByTestId('flows-squeeze-card');
+        await expect(squeeze).toBeVisible();
+        await expect(
+            squeeze.getByRole('heading', { level: 3, name: /숏스퀴즈 점수/ })
+        ).toBeVisible();
+        const ftd = short.getByTestId('flows-ftd');
+        await expect(
+            ftd.getByRole('img', { name: /결제 불이행이 있던 \d+개 결제일/ })
+        ).toBeVisible();
+        await expect(
+            ftd.getByText(/결제 불이행은 무차입 공매도의 증거가 아니에요/)
+        ).toBeVisible();
+        await expect(ftd.getByText(/약 2주 뒤에 공개해요/)).toBeVisible();
+        const squeezeBox = await squeeze.boundingBox();
+        const ftdBox = await ftd.boundingBox();
+        expect(squeezeBox!.y).toBeLessThan(ftdBox!.y);
+        await expect(
+            short
+                .getByTestId('flows-threshold')
+                .getByText('지금은 과열 목록에 없어요.')
+        ).toBeVisible();
+    });
+
+    test('SQUEEZX: 과열 목록 등재 배지가 연속 거래일·시장·출처와 함께 나온다', async ({
+        page,
+    }) => {
+        await page.goto('/SQUEEZX/flows');
+
+        const threshold = page
+            .locator('section[aria-labelledby="flows-short-heading"]')
+            .getByTestId('flows-threshold');
+        await expect(threshold.getByText('과열 목록 등재')).toBeVisible();
+        await expect(
+            threshold.getByText('15거래일 연속 · Nasdaq')
+        ).toBeVisible();
+        await expect(
+            threshold.getByText(/출처: Nasdaq·NYSE·Cboe/)
+        ).toBeVisible();
+    });
+
+    test('기관: 옵션 포지션(풋·콜 명목)과 헤지 안내가 나온다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        const options = page
+            .locator('section[aria-labelledby="flows-institutional-heading"]')
+            .getByTestId('flows-options');
+        await expect(
+            options.getByRole('heading', { level: 3, name: /옵션 포지션/ })
+        ).toBeVisible();
+        await expect(options.getByText(/헤지일 때가 많아요/)).toBeVisible();
+        await expect(options.getByText(/풋\/콜 명목 비율/)).toBeVisible();
+    });
+
+    test('내부자: 매도 예정 신고(Form 144) 표에 10b5-1 계획 배지와 SEC 링크가 있다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        const form144 = page
+            .locator('section[aria-labelledby="flows-insider-heading"]')
+            .getByTestId('flows-form144');
+        await expect(
+            form144.getByRole('heading', { level: 3, name: /매도 예정 신고/ })
+        ).toBeVisible();
+        await expect(
+            form144
+                .getByText('10b5-1 계획', { exact: true })
+                .filter({ visible: true })
+        ).toHaveCount(1);
+        await expect(
+            form144
+                .getByRole('link', { name: '공시 보기' })
+                .filter({ visible: true })
+        ).toHaveCount(3);
+    });
+
+    test('증자·희석 공시 섹션: 종류 배지(ATM·선반 등록·사모)와 SEC 원문 링크, 점수 창이 나온다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        const dilution = page.locator(
+            'section[aria-labelledby="flows-dilution-heading"]'
+        );
+        await expect(
+            dilution.getByRole('heading', { level: 2, name: /증자·희석 공시/ })
+        ).toBeVisible();
+        for (const kind of ['ATM', '선반 등록', '사모']) {
+            await expect(
+                dilution.getByText(kind, { exact: true })
+            ).toBeVisible();
+        }
+        await expect(
+            dilution.getByRole('link', { name: 'SEC 원문' })
+        ).toHaveCount(3);
+        await expect(dilution.getByText(/점수는 최근 \d+일\(/)).toBeVisible();
     });
 
     test('내부자: 클러스터 매수 배지와 매수·매도 라벨이 나온다', async ({

@@ -12,6 +12,9 @@ import { LargeHoldersSection } from '../sections/LargeHoldersSection';
 import { AsOfNotice } from '../sections/AsOfNotice';
 import { InvestorFlowsContent } from '../InvestorFlowsContent';
 import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
+import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
+import type { CollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
 import {
     evaluate,
     makeEmptySnapshot,
@@ -20,7 +23,59 @@ import {
     makeTransaction,
 } from './fixtures/flowsFixtures';
 
-const READY_READINESS = { institutional: 'ready', short: 'ready' } as const;
+const READY_READINESS: InvestorFlowsPipelineReadiness = {
+    institutional: 'ready',
+    short: 'ready',
+    failsToDeliver: 'ready',
+    filings: 'ready',
+    thresholdList: 'ready',
+};
+
+const NOT_COLLECTING: CollectingArms = {
+    institutional: false,
+    short: false,
+    failsToDeliver: false,
+    proposedSales: false,
+    offerings: false,
+    thresholdList: false,
+};
+
+function institutionalProps(snapshot: InvestorFlowsSnapshot) {
+    return {
+        institutional: snapshot.institutional,
+        metrics: evaluate(snapshot).institutional.metrics,
+    };
+}
+
+function shortProps(snapshot: InvestorFlowsSnapshot) {
+    return {
+        snapshot,
+        scorecard: evaluate(snapshot),
+        finraEnabled: true,
+        regShoEnabled: true,
+        collecting: NOT_COLLECTING,
+    };
+}
+
+function insiderProps(snapshot: InvestorFlowsSnapshot) {
+    return {
+        transactions: snapshot.insider.transactions,
+        proposedSales: snapshot.proposedSales,
+        proposedSalesCollecting: false,
+        scorecard: evaluate(snapshot),
+    };
+}
+
+function asOfProps(snapshot: InvestorFlowsSnapshot, showFinra: boolean) {
+    return {
+        freshness: evaluate(snapshot, showFinra).freshness,
+        snapshotAsOf: snapshot.asOf,
+        showFinra,
+        regShoEnabled: false,
+        thresholdAsOf: null,
+        collecting: NOT_COLLECTING,
+    };
+}
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (
@@ -29,13 +84,19 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
 }));
 
 describe('ScorecardCard', () => {
-    it('종합 점수·라벨(기호+글자)과 4개 축을 그린다', () => {
+    it('종합 점수·라벨(기호+글자)과 5개 축을 그린다', () => {
         const snapshot = makeSnapshot();
-        render(<ScorecardCard scorecard={evaluate(snapshot)} showShort />);
+        render(<ScorecardCard scorecard={evaluate(snapshot)} />);
         expect(
             screen.getByRole('heading', { level: 2, name: /수급 점수/ })
         ).toBeInTheDocument();
-        for (const axis of ['기관', '내부자', '대량보유(5%)', '공매도']) {
+        for (const axis of [
+            '기관',
+            '내부자',
+            '대량보유(5%)',
+            '공매도',
+            '증자·희석',
+        ]) {
             expect(
                 screen.getByRole('heading', {
                     level: 3,
@@ -45,25 +106,23 @@ describe('ScorecardCard', () => {
         }
     });
 
-    it('showShort가 false면 공매도 축 카드를 그리지 않는다', () => {
-        render(
-            <ScorecardCard
-                scorecard={evaluate(makeSnapshot())}
-                showShort={false}
-            />
-        );
+    it('FINRA가 꺼져도 공매도 축 카드는 남고 "데이터 부족"이라고 말한다(빈 카드로 숨기지 않는다)', () => {
+        const snapshot = makeSnapshot({
+            shortInterest: null,
+            shortVolume: null,
+        });
+        render(<ScorecardCard scorecard={evaluate(snapshot, false)} />);
+        const card = screen
+            .getByRole('heading', { level: 3, name: /공매도/ })
+            .closest('li');
+        expect(card).not.toBeNull();
         expect(
-            screen.queryByRole('heading', { level: 3, name: /공매도/ })
-        ).toBeNull();
+            within(card as HTMLElement).getByText('데이터 부족')
+        ).toBeInTheDocument();
     });
 
     it('데이터가 없는 축은 "데이터 부족"을 말하고 점수 숫자를 내지 않는다', () => {
-        render(
-            <ScorecardCard
-                scorecard={evaluate(makeEmptySnapshot())}
-                showShort
-            />
-        );
+        render(<ScorecardCard scorecard={evaluate(makeEmptySnapshot())} />);
         expect(screen.getAllByText('데이터 부족').length).toBeGreaterThan(0);
         expect(
             screen.getByText(/종합 점수를 계산하지 못했어요/)
@@ -75,9 +134,7 @@ describe('ScorecardCard', () => {
 describe('InstitutionalSection', () => {
     it('IN/OUT 막대 라벨과 부호를 글자로 낸다', () => {
         render(
-            <InstitutionalSection
-                institutional={makeSnapshot().institutional}
-            />
+            <InstitutionalSection {...institutionalProps(makeSnapshot())} />
         );
         const chart = screen.getByRole('list', { name: /분기별 기관 순매수/ });
         expect(within(chart).getAllByText('IN').length).toBe(3);
@@ -91,9 +148,7 @@ describe('InstitutionalSection', () => {
 
     it('4분할 카드에 직전 분기 대비 증감을 화살표·글자로 낸다', () => {
         render(
-            <InstitutionalSection
-                institutional={makeSnapshot().institutional}
-            />
+            <InstitutionalSection {...institutionalProps(makeSnapshot())} />
         );
         expect(screen.getByText('신규 진입')).toBeInTheDocument();
         expect(screen.getByText('310곳')).toBeInTheDocument();
@@ -107,9 +162,7 @@ describe('InstitutionalSection', () => {
 
     it('진행 중 분기는 부분 집계 안내로 따로 알린다', () => {
         render(
-            <InstitutionalSection
-                institutional={makeSnapshot().institutional}
-            />
+            <InstitutionalSection {...institutionalProps(makeSnapshot())} />
         );
         expect(screen.getByTestId('flows-partial-quarter')).toHaveTextContent(
             '2026-09-30'
@@ -119,7 +172,7 @@ describe('InstitutionalSection', () => {
     it('데이터가 전혀 없으면 "데이터 없음"을 명시한다', () => {
         render(
             <InstitutionalSection
-                institutional={makeEmptySnapshot().institutional}
+                {...institutionalProps(makeEmptySnapshot())}
             />
         );
         expect(screen.getByText(/데이터 없음/)).toBeInTheDocument();
@@ -128,9 +181,7 @@ describe('InstitutionalSection', () => {
     it('필터로 신규·청산 기관만 볼 수 있다', async () => {
         const user = userEvent.setup();
         render(
-            <InstitutionalSection
-                institutional={makeSnapshot().institutional}
-            />
+            <InstitutionalSection {...institutionalProps(makeSnapshot())} />
         );
         await user.click(screen.getByRole('button', { name: '완전 청산 1' }));
         expect(
@@ -148,9 +199,7 @@ describe('InstitutionalSection', () => {
 
     it('상태 배지는 글자로 구분한다(신규/증가/감소/청산)', () => {
         render(
-            <InstitutionalSection
-                institutional={makeSnapshot().institutional}
-            />
+            <InstitutionalSection {...institutionalProps(makeSnapshot())} />
         );
         for (const label of ['신규', '증가', '감소', '청산']) {
             expect(screen.getAllByText(label).length).toBeGreaterThan(0);
@@ -160,12 +209,7 @@ describe('InstitutionalSection', () => {
 
 describe('ShortSection', () => {
     const snapshot = makeSnapshot();
-    const props = {
-        shortInterest: snapshot.shortInterest,
-        shortVolume: snapshot.shortVolume,
-        floatShares: snapshot.floatShares,
-        scorecard: evaluate(snapshot),
-    };
+    const props = shortProps(snapshot);
 
     it('잔고·유통주식 대비·상환일수와 증감 배지를 그린다', () => {
         render(<ShortSection {...props} />);
@@ -196,14 +240,7 @@ describe('ShortSection', () => {
                 daysToCover: 5.5 + i * 0.3,
             })),
         });
-        render(
-            <ShortSection
-                shortInterest={squeeze.shortInterest}
-                shortVolume={squeeze.shortVolume}
-                floatShares={squeeze.floatShares}
-                scorecard={evaluate(squeeze)}
-            />
-        );
+        render(<ShortSection {...shortProps(squeeze)} />);
         expect(screen.getByText(/숏스퀴즈 위험/)).toBeInTheDocument();
         // role="note"에는 접근 가능한 이름이 있다(AX-2).
         expect(
@@ -225,13 +262,19 @@ describe('ShortSection', () => {
     });
 
     it('잔고만 있고 비중 데이터가 없으면 비중 블록을 그리지 않는다', () => {
-        render(<ShortSection {...props} shortVolume={[]} />);
+        render(
+            <ShortSection {...shortProps(makeSnapshot({ shortVolume: [] }))} />
+        );
         expect(screen.queryByText('일별 장외(TRF) 공매도 비중')).toBeNull();
         expect(screen.queryByText(/장외\(TRF\) 보고분 기준이에요/)).toBeNull();
     });
 
     it('비중만 있고 잔고가 없으면 잔고 블록을 그리지 않는다', () => {
-        render(<ShortSection {...props} shortInterest={[]} />);
+        render(
+            <ShortSection
+                {...shortProps(makeSnapshot({ shortInterest: [] }))}
+            />
+        );
         expect(screen.queryByText('공매도 잔고(주)')).toBeNull();
         expect(
             screen.getByText('일별 장외(TRF) 공매도 비중')
@@ -243,12 +286,7 @@ describe('InsiderSection', () => {
     const snapshot = makeSnapshot();
 
     it('90일 순매수 요약과 클러스터 매수 배지를 낸다', () => {
-        render(
-            <InsiderSection
-                transactions={snapshot.insider.transactions}
-                scorecard={evaluate(snapshot)}
-            />
-        );
+        render(<InsiderSection {...insiderProps(snapshot)} />);
         expect(screen.getByText(/^순매수 \S+/)).toBeInTheDocument();
         expect(
             screen.getByText(/클러스터 매수 · 내부자 4명/)
@@ -256,12 +294,7 @@ describe('InsiderSection', () => {
     });
 
     it('거래는 매수/매도 글자 배지와 기타 제외 안내를 낸다', () => {
-        render(
-            <InsiderSection
-                transactions={snapshot.insider.transactions}
-                scorecard={evaluate(snapshot)}
-            />
-        );
+        render(<InsiderSection {...insiderProps(snapshot)} />);
         expect(screen.getAllByText('매수').length).toBeGreaterThan(0);
         expect(screen.getAllByText('매도').length).toBeGreaterThan(0);
         expect(
@@ -270,12 +303,7 @@ describe('InsiderSection', () => {
     });
 
     it('SEC 공시 링크는 새 창 + noopener로 연다', () => {
-        render(
-            <InsiderSection
-                transactions={snapshot.insider.transactions}
-                scorecard={evaluate(snapshot)}
-            />
-        );
+        render(<InsiderSection {...insiderProps(snapshot)} />);
         const link = screen.getAllByRole('link', { name: '공시 보기' })[0];
         expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         expect(link).toHaveAttribute('target', '_blank');
@@ -285,8 +313,7 @@ describe('InsiderSection', () => {
         const txs = [makeTransaction({ url: 'javascript:alert(1)' })];
         render(
             <InsiderSection
-                transactions={txs}
-                scorecard={evaluate(
+                {...insiderProps(
                     makeSnapshot({ insider: { transactions: txs } })
                 )}
             />
@@ -295,12 +322,7 @@ describe('InsiderSection', () => {
     });
 
     it('내부자 데이터가 없으면 "데이터 없음"이다', () => {
-        render(
-            <InsiderSection
-                transactions={[]}
-                scorecard={evaluate(makeEmptySnapshot())}
-            />
-        );
+        render(<InsiderSection {...insiderProps(makeEmptySnapshot())} />);
         expect(screen.getByText(/데이터 없음/)).toBeInTheDocument();
     });
 });
@@ -333,13 +355,7 @@ describe('LargeHoldersSection', () => {
 describe('AsOfNotice', () => {
     it('13F 기준 분기·부분 집계·FINRA 결제일·지연 설명을 모두 적는다', () => {
         const snapshot = makeSnapshot();
-        render(
-            <AsOfNotice
-                freshness={evaluate(snapshot).freshness}
-                snapshotAsOf={snapshot.asOf}
-                showShort
-            />
-        );
+        render(<AsOfNotice {...asOfProps(snapshot, true)} />);
         expect(
             screen.getByText('2026-06-30 분기말 · 제출 완료')
         ).toBeInTheDocument();
@@ -359,26 +375,14 @@ describe('AsOfNotice', () => {
             shortInterest: null,
             shortVolume: null,
         });
-        render(
-            <AsOfNotice
-                freshness={evaluate(snapshot, false).freshness}
-                snapshotAsOf={snapshot.asOf}
-                showShort={false}
-            />
-        );
+        render(<AsOfNotice {...asOfProps(snapshot, false)} />);
         expect(screen.queryByText(/FINRA/)).toBeNull();
         expect(screen.queryByText('공매도 잔고')).toBeNull();
     });
 
     it('기관 데이터가 없으면 "데이터 없음"이다', () => {
         const snapshot = makeEmptySnapshot();
-        render(
-            <AsOfNotice
-                freshness={evaluate(snapshot).freshness}
-                snapshotAsOf={snapshot.asOf}
-                showShort={false}
-            />
-        );
+        render(<AsOfNotice {...asOfProps(snapshot, false)} />);
         expect(screen.getAllByText('데이터 없음').length).toBeGreaterThan(0);
     });
 });
@@ -391,6 +395,7 @@ describe('InvestorFlowsContent', () => {
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot)}
                 finraEnabled
+                regShoEnabled
                 readiness={READY_READINESS}
             />
         );
@@ -399,7 +404,7 @@ describe('InvestorFlowsContent', () => {
         ).toBeInTheDocument();
     });
 
-    it('FINRA 플래그가 꺼지면 공매도 섹션과 "공매도" 점수 카드가 사라진다(빈 껍데기 없음)', () => {
+    it('FINRA 플래그가 꺼지면 FINRA 블록과 FINRA 출처가 사라지고, 공매도 섹션은 SEC 결제 불이행으로 남는다', () => {
         const snapshot = makeSnapshot({
             shortInterest: null,
             shortVolume: null,
@@ -409,24 +414,32 @@ describe('InvestorFlowsContent', () => {
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot, false)}
                 finraEnabled={false}
+                regShoEnabled
                 readiness={READY_READINESS}
             />
         );
-        expect(screen.queryByRole('heading', { name: /^공매도/ })).toBeNull();
+        expect(
+            screen.getByRole('heading', { level: 2, name: /^공매도/ })
+        ).toBeInTheDocument();
+        expect(screen.getByTestId('flows-ftd')).toBeInTheDocument();
+        expect(screen.queryByText('공매도 잔고(주)')).toBeNull();
         expect(screen.queryByText(/FINRA/)).toBeNull();
     });
 
-    it('플래그는 켜졌지만 FINRA 데이터가 비었으면 공매도 구간을 생략한다', () => {
+    it('플래그는 켜졌지만 FINRA 데이터가 비었으면 FINRA 블록만 생략한다', () => {
         const snapshot = makeSnapshot({ shortInterest: [], shortVolume: [] });
         render(
             <InvestorFlowsContent
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot)}
                 finraEnabled
+                regShoEnabled
                 readiness={READY_READINESS}
             />
         );
-        expect(screen.queryByRole('heading', { name: /^공매도/ })).toBeNull();
+        expect(screen.queryByText('공매도 잔고(주)')).toBeNull();
+        expect(screen.queryByText('일별 장외(TRF) 공매도 비중')).toBeNull();
+        expect(screen.getByTestId('flows-ftd')).toBeInTheDocument();
     });
 
     it('내부자 데이터가 없어도 나머지 구간은 그린다', () => {
@@ -436,6 +449,7 @@ describe('InvestorFlowsContent', () => {
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot)}
                 finraEnabled
+                regShoEnabled
                 readiness={READY_READINESS}
             />
         );
@@ -469,12 +483,7 @@ describe('분기별 문구 선택(레코드 맵)', () => {
                 ],
             },
         });
-        render(
-            <InsiderSection
-                transactions={sellOnly.insider.transactions}
-                scorecard={evaluate(sellOnly)}
-            />
-        );
+        render(<InsiderSection {...insiderProps(sellOnly)} />);
         expect(screen.getByText(/^순매도 /)).toBeInTheDocument();
         expect(base.insider.transactions.length).toBeGreaterThan(0);
     });
@@ -491,6 +500,7 @@ describe('분기별 문구 선택(레코드 맵)', () => {
                     ...makeSnapshot().institutional,
                     quarters: flat,
                 }}
+                metrics={evaluate(makeSnapshot()).institutional.metrics}
             />
         );
         expect(
@@ -503,6 +513,7 @@ describe('분기별 문구 선택(레코드 맵)', () => {
                     ...makeSnapshot().institutional,
                     quarters: single,
                 }}
+                metrics={evaluate(makeSnapshot()).institutional.metrics}
             />
         );
         expect(

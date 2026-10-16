@@ -364,6 +364,27 @@ describe('DrizzleInvestorFlowsFtdRepository', () => {
         ]);
     });
 
+    it('hasAnyProcessedFile is true once a processed file exists (one LIMIT 1 probe of the file markers)', async () => {
+        const { db, ops } = createFakeDb([[{ fileKey: '202609b' }]]);
+        expect(
+            await new DrizzleInvestorFlowsFtdRepository(
+                db
+            ).hasAnyProcessedFile()
+        ).toBe(true);
+        expect(callsOf(ops[0] as never, 'from')).toEqual([[secFtdFiles]]);
+        expect(callsOf(ops[0] as never, 'limit')).toEqual([[1]]);
+        expect(callsOf(ops[0] as never, 'where')).toHaveLength(1);
+    });
+
+    it('hasAnyProcessedFile is false when no file has been stored', async () => {
+        const { db } = createFakeDb([[]]);
+        expect(
+            await new DrizzleInvestorFlowsFtdRepository(
+                db
+            ).hasAnyProcessedFile()
+        ).toBe(false);
+    });
+
     it('records a rejected file by counting an attempt without marking it processed', async () => {
         const { db, ops } = createFakeDb();
         await new DrizzleInvestorFlowsFtdRepository(db).recordRejected(

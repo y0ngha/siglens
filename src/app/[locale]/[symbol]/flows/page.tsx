@@ -179,7 +179,8 @@ export default async function FlowsPage({ params }: Props) {
         locale
     );
 
-    const { snapshot, scorecard, finraEnabled, readiness } = flows;
+    const { snapshot, scorecard, finraEnabled, regShoEnabled, readiness } =
+        flows;
 
     return (
         <>
@@ -209,6 +210,7 @@ export default async function FlowsPage({ params }: Props) {
                             snapshot={snapshot}
                             scorecard={scorecard}
                             finraEnabled={finraEnabled}
+                            regShoEnabled={regShoEnabled}
                             readiness={readiness}
                         />
                     </>

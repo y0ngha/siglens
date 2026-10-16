@@ -3,6 +3,7 @@ import {
     cusipSymbolMap,
     finraShortInterest,
     finraShortVolume,
+    sec13fOptionAggregates,
 } from '@/shared/db/schema';
 import { DrizzleInvestorFlowsShortRepository } from '../../api/investorFlowsShortRepository';
 import { DrizzleInvestorFlowsSnapshotRepository } from '../../api/investorFlowsSnapshotRepository';
@@ -278,6 +279,29 @@ describe('DrizzleInvestorFlowsSnapshotRepository', () => {
             7
         );
         expect(callsOf(ops[0] as never, 'limit')).toEqual([[7]]);
+        expect(callsOf(ops[0] as never, 'orderBy')).toHaveLength(1);
+    });
+
+    it('reads 13F option aggregates newest first with the limit, passing the rows through', async () => {
+        const row = {
+            period: '2026-06-30',
+            putHolders: 640,
+            putShares: 280_000_000,
+            putValueUsd: 58_800_000_000,
+            callHolders: 700,
+            callShares: 190_000_000,
+            callValueUsd: 39_900_000_000,
+        };
+        const { db, ops } = createFakeDb([[row]]);
+        expect(
+            await new DrizzleInvestorFlowsSnapshotRepository(
+                db
+            ).findOptionAggregates('037833100', 8)
+        ).toEqual([row]);
+        expect(callsOf(ops[0] as never, 'from')).toEqual([
+            [sec13fOptionAggregates],
+        ]);
+        expect(callsOf(ops[0] as never, 'limit')).toEqual([[8]]);
         expect(callsOf(ops[0] as never, 'orderBy')).toHaveLength(1);
     });
 

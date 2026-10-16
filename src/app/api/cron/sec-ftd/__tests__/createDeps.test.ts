@@ -5,6 +5,12 @@ const { mockClient, mockRevalidate } = vi.hoisted(() => ({
 vi.mock('../../revalidateSymbols', () => ({
     revalidateSymbols: mockRevalidate,
 }));
+const { mockRevalidateReadiness } = vi.hoisted(() => ({
+    mockRevalidateReadiness: vi.fn(),
+}));
+vi.mock('../../revalidateFlowsReadiness', () => ({
+    revalidateFlowsReadiness: mockRevalidateReadiness,
+}));
 vi.mock('server-only', () => ({}));
 vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
 
@@ -41,5 +47,12 @@ describe('createSecFtdDeps', () => {
         mockClient.mockReturnValue({ db: {} });
         createSecFtdDeps(() => false).invalidateSymbols(['GME']);
         expect(mockRevalidate).toHaveBeenCalledWith(['GME']);
+    });
+
+    it('wires the first-data hook to the readiness-cache invalidation', () => {
+        mockClient.mockReturnValue({ db: {} });
+        mockRevalidateReadiness.mockReset();
+        createSecFtdDeps(() => false).onFirstFileStored?.();
+        expect(mockRevalidateReadiness).toHaveBeenCalledTimes(1);
     });
 });

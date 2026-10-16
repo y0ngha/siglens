@@ -1,8 +1,14 @@
 import { useTranslations } from 'next-intl';
 
+export type CollectingVariant =
+    | 'institutional'
+    | 'short'
+    | 'failsToDeliver'
+    | 'filings';
+
 interface CollectingNoticeProps {
     /** 어느 구간의 안내인지 — 문구가 다르다. */
-    readonly variant: 'institutional' | 'short';
+    readonly variant: CollectingVariant;
 }
 
 /**
@@ -16,14 +22,26 @@ interface CollectingNoticeProps {
  */
 export function CollectingNotice({ variant }: CollectingNoticeProps) {
     const t = useTranslations('widgets.investor-flows');
-    const title =
-        variant === 'institutional'
-            ? t('collecting.institutional.title')
-            : t('collecting.short.title');
-    const body =
-        variant === 'institutional'
-            ? t('collecting.institutional.body')
-            : t('collecting.short.body');
+    // 리터럴 `t()` 호출로 만들어 두고 고른다(추출기가 키를 볼 수 있게).
+    const texts: Record<CollectingVariant, { title: string; body: string }> = {
+        institutional: {
+            title: t('collecting.institutional.title'),
+            body: t('collecting.institutional.body'),
+        },
+        short: {
+            title: t('collecting.short.title'),
+            body: t('collecting.short.body'),
+        },
+        failsToDeliver: {
+            title: t('collecting.failsToDeliver.title'),
+            body: t('collecting.failsToDeliver.body'),
+        },
+        filings: {
+            title: t('collecting.filings.title'),
+            body: t('collecting.filings.body'),
+        },
+    };
+    const { title, body } = texts[variant];
     return (
         <div
             role="note"

@@ -121,6 +121,12 @@ export const INVESTOR_FLOWS_CUSIP_BLANKET_FAILURE_RATIO = 0.9;
 export const INVESTOR_FLOWS_SEC_FILINGS_BACKFILL_DAYS = 180;
 /** Form 144·424B5 문서 실패를 다시 시도하는 최대 횟수. 넘으면 영구 실패로 두고 그 accession은 더 받지 않는다. */
 export const INVESTOR_FLOWS_SEC_FILINGS_MAX_ATTEMPTS = 3;
+/**
+ * Form 144·증자 공시 수집이 "따라잡았다"고 보는 커서 지연(일). 커서(`sec_filings_cursor`)는 백필 시작일(180일 전)부터 앞으로
+ * 나아가므로, 오늘에서 이 일수 안에 들어오기 전에는 최근 공시가 비어 있을 수 있다 — 수급 탭이 그 빈 구간을 "공시 없음" 대신
+ * "수집 중"으로 말하는 기준이다. 7일은 주말·연휴에 cron 한두 번이 비어도 다시 "수집 중"으로 돌아가지 않게 둔 여유다.
+ */
+export const INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS = 7;
 /** 보존: Form 144 1년, 증자 공시 2년. 재시도 큐는 Form 144 보존과 같은 1년이 지나면 지운다. */
 export const INVESTOR_FLOWS_FORM144_RETENTION_DAYS = 365;
 export const INVESTOR_FLOWS_OFFERING_RETENTION_DAYS = 730;

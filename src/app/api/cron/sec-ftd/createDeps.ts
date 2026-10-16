@@ -4,6 +4,7 @@ import {
     fetchSecFile,
     isSecBlockedError,
 } from '@/shared/api/sec/secClient';
+import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsFtdRepository } from '@/entities/investor-flows/api/investorFlowsFtdRepository';
@@ -25,6 +26,7 @@ export function createSecFtdDeps(
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
+        onFirstFileStored: revalidateFlowsReadiness,
         log: (message, detail) => console.warn(message, detail),
     };
 }

@@ -3014,7 +3014,7 @@
                     "get_economy": "返回美国政策利率、物价、就业、GDP 等宏观指标，国债收益率，即将到来的重要经济事件，以及 SIGLENS 的宏观简报。无需参数。",
                     "get_fundamentals": "返回公司概况、估值指标、盈利能力、成长性和财务健康评分、分析师共识与目标价，以及下一次财报日期。仅支持美国和韩国股票，不支持加密货币。",
                     "get_guide": "用 SIGLENS 指南讲解技术分析概念，例如 K线形态、图表形态、指标和投资理论。不涉及具体标的、只问“这是什么”时使用，并附带指南页面地址。",
-                    "get_investor_flows": "返回美国股票的资金流向，也就是谁在买入和卖出。包含机构、内部人士、5% 持有人和卖空的评分表，以及主要机构持仓、内部人士交易、大额持股申报和卖空数据。这些数据披露有延迟，所以每项数据都附带截至日期。",
+                    "get_investor_flows": "返回美国股票的资金流向，也就是谁在买入和卖出。包含机构、内部人士、5% 持有人、卖空和增发稀释的评分表，主要机构持仓与13F看跌/看涨期权，内部人士交易与拟出售申报(Form 144)，大额持股与增发申报，卖空、交收失败和门槛名单数据，以及轧空评分。这些数据披露有延迟，所以每项数据都附带截至日期。",
                     "get_market_overview": "返回整个市场的恐惧与贪婪指数、主要指数和板块涨跌、SIGLENS 的市场简报，以及各板块的信号扫描结果。询问“今天市场怎么样”时使用。",
                     "get_my_portfolio": "返回已登录用户自己的持仓，包括数量、平均成本、盈亏和占比。仅在询问自己的持仓或盈亏时使用。",
                     "get_news": "返回 SIGLENS 已收集的个股或市场分类新闻，附带情绪判断、摘要和数量统计。了解动态或“为什么涨跌”时使用。",
@@ -4228,6 +4228,11 @@
             "asOf": {
                 "collecting": "收集中",
                 "delay": "13F申报的是季度末持仓，并在季度结束后最多45天内提交。因此这里的机构数据反映的是一两个月甚至更早之前的状态，而不是当下。",
+                "filingsNone": "无数据",
+                "filingsWindow": "{from}至{to}(近{days}天)",
+                "ftdDate": "交收日 {date}",
+                "ftdDelay": "交收失败(FTD)由SEC每半个月在约两周后公布，因此最近两周左右的数据尚未包含。",
+                "ftdNone": "无数据",
                 "insiderNone": "暂无数据",
                 "insiderWindow": "{from} ~ {to}(近{days}天)",
                 "institutionalComplete": "{period}季度末 · 已提交完毕",
@@ -4237,16 +4242,23 @@
                 "shortInterestNone": "暂无数据",
                 "shortVolumeDate": "最后交易日 {date}",
                 "shortVolumeNone": "暂无数据",
-                "sources": "来源:美国SEC EDGAR的13F(机构持仓)、Form 4与13D/G(内部人与大额持股，通过FMP提供)。",
-                "sourcesWithFinra": "来源:美国SEC EDGAR的13F(机构持仓)、Form 4与13D/G(内部人与大额持股，通过FMP提供)、FINRA(卖空余额与场外申报交易)。",
+                "sources": "来源: 美国SEC EDGAR的13F(机构持股·期权)、Form 144、增发申报、交收失败(FTD)、Form 4·13D/G(内部人·大额持股，由FMP提供)。",
+                "sourcesWithExchange": "{sources} Reg SHO门槛名单由Nasdaq、NYSE和Cboe发布。",
+                "sourcesWithFinra": "来源: 美国SEC EDGAR的13F(机构持股·期权)、Form 144、增发申报、交收失败(FTD)、Form 4·13D/G(内部人·大额持股，由FMP提供)，以及FINRA(卖空余额·场外报告交易)。",
+                "termFilings": "Form 144·增发申报",
+                "termFtd": "交收失败(FTD)",
                 "termInsider": "内部人交易",
                 "termInstitutional": "机构持仓(13F)",
                 "termShortInterest": "卖空余额",
                 "termShortVolume": "每日卖空占比",
                 "termSnapshot": "查询日期",
+                "termThreshold": "Reg SHO门槛名单",
+                "thresholdDate": "{date}的名单",
+                "thresholdNone": "无数据",
                 "title": "数据时点与来源"
             },
             "axis": {
+                "dilution": "增发·稀释",
                 "insider": "内部人",
                 "institutional": "机构",
                 "largeHolders": "大额持股(5%)",
@@ -4258,6 +4270,14 @@
                     "bodyInstitutionalOnly": "正在首次收集机构持仓(13F)数据，准备好后会自动显示在这里。",
                     "title": "正在收集资金流向数据"
                 },
+                "failsToDeliver": {
+                    "body": "我们正在首次收集SEC公布的交收失败(FTD)文件。收集完成后会自动显示在这里。",
+                    "title": "正在收集交收失败数据"
+                },
+                "filings": {
+                    "body": "我们正在从头收集Form 144和增发相关申报。收集到最近的申报后会自动显示在这里。",
+                    "title": "正在收集SEC申报"
+                },
                 "institutional": {
                     "body": "正在首次收集 SEC 13F 披露文件，几天内补齐后会自动显示在这里。",
                     "title": "正在收集机构持仓数据"
@@ -4267,25 +4287,51 @@
                     "title": "正在收集 FINRA 卖空数据"
                 }
             },
+            "dilution": {
+                "filing": "SEC原文",
+                "kind": {
+                    "atm": "ATM",
+                    "bestEfforts": "尽力推销",
+                    "other": "其他",
+                    "privatePlacement": "私募",
+                    "prospectus": "招股说明书",
+                    "registration": "注册",
+                    "shelf": "储架注册",
+                    "underwritten": "承销"
+                },
+                "none": "没有已受理的增发·稀释申报。",
+                "omitted": "较早的{count}份申报未列入。",
+                "source": "来源: 美国SEC EDGAR(S-1、S-3、F-1、F-3、424B、Form D)。",
+                "subtitle": "公司为发行并出售新股而向SEC提交的申报。一旦真正出售，现有股东的持股比例就会相应被稀释。",
+                "title": "增发·稀释申报",
+                "unavailable": "未能加载增发·稀释申报，请稍后再查看。",
+                "window": "评分依据近{days}天({from}至{to})的申报。"
+            },
             "empty": {
                 "body": "暂无数据 — 该股票还没有机构持仓(13F)、内部人或卖空数据。新上市或交易规模较小的股票经常出现这种情况。",
                 "title": "资金流向数据"
             },
             "ev": {
                 "daysToCover": "回补天数 {days}天",
+                "dilutionFilings": "近{days}天增发及注册申报 {count}份",
+                "dilutionIssuance": "ATM {atm}份 · 公开发行 {marketed}份",
+                "ftdPct": "交收失败峰值 {pct}(占已发行股份)",
                 "holders": "持仓机构 {count}家(较上季度 {change})",
                 "holdersOnly": "持仓机构 {count}家",
                 "insiderCluster": "集中买入:{count}位不同内部人",
                 "insiderCounts": "买入 {buys}笔 · 卖出 {sells}笔",
                 "insiderNetBuy": "近{days}天净买入 {amount}",
                 "insiderNetSell": "近{days}天净卖出 {amount}",
+                "insiderProposedSales": "拟出售申报(Form 144) {count}笔 · {amount}",
                 "largeHolderCounts": "13D {d}份 · 13G {g}份(近{days}天)",
                 "netSharesOutstanding": "机构持股净变化 {pct}(占总股本)",
                 "netSharesPrior": "机构持股净变化 {pct}(较上季度持仓量)",
                 "newExited": "新进 {added}家 · 清仓 {exited}家",
+                "putCallRatio": "13F期权看跌/看涨名义金额比 {ratio}",
                 "shortPct": "卖空余额 {pct}(占流通股)",
                 "shortRatio": "场外卖空占比 {pct}(最近交易日)",
-                "shortTrend": "余额变化 {pct}(最近3个结算日)"
+                "shortTrend": "余额变化 {pct}(最近3个结算日)",
+                "thresholdListed": "连续{days}个交易日列入门槛名单"
             },
             "filter": {
                 "all": "全部 {count}",
@@ -4299,6 +4345,36 @@
                 "out": "OUT",
                 "partial": "部分汇总",
                 "title": "各季度机构净买入(IN)与净卖出(OUT)"
+            },
+            "form144": {
+                "caption": "高管、董事和大股东在出售股票前提交的申报。它只是告知出售计划，实际卖出会在之后另行以Form 4披露。",
+                "colFiled": "申报日",
+                "colFiler": "申报人",
+                "colFiling": "申报",
+                "colSaleDate": "预计出售日",
+                "colShares": "拟售股数",
+                "colValue": "拟售金额",
+                "filing": "查看申报",
+                "none": "没有已受理的拟出售申报。",
+                "omitted": "较早的{count}份申报未列入。",
+                "planBadge": "10b5-1计划",
+                "relationshipUnknown": "未注明关系",
+                "title": "拟出售申报(Form 144)",
+                "unavailable": "未能加载拟出售申报，请稍后再查看。"
+            },
+            "ftd": {
+                "basis": "最新记录的交收日为{date}。",
+                "caveat": "交收失败并不是裸卖空的证据。它只记录了未按时完成交收的交易，原因有很多(SEC说明)。",
+                "chartAria": "出现交收失败的{count}个交收日的数量柱状图",
+                "lag": "SEC每半个月的数据约在两周后公布，因此最近两周左右的数据尚未出现。",
+                "latestQty": "最近交收失败",
+                "multiple": "近期峰值(相对平时)",
+                "none": "近{days}天没有交收失败记录。",
+                "peakPct": "近期峰值(占已发行股份)",
+                "shares": "{shares}股",
+                "times": "{times}倍",
+                "title": "交收失败(SEC FTD)",
+                "unavailable": "未能加载交收失败数据，请稍后再查看。"
             },
             "holders": {
                 "basis": "以{period}季度末持仓为准，变化为与上季度相比。",
@@ -4373,6 +4449,15 @@
                 "unavailable": "无法加载大额持股披露，请稍后再查看。",
                 "unknownFiler": "提交人未知"
             },
+            "options": {
+                "call": "看涨",
+                "caveat": "这是13F中申报的期权所对应的标的资产金额，不是期权价格(权利金)，其中很多是为保护持股而做的对冲。",
+                "put": "看跌",
+                "ratio": "{period}看跌/看涨名义金额比 {ratio}",
+                "ratioWithPrior": "{period}看跌/看涨名义金额比 {ratio}(上一季度 {prior})",
+                "title": "期权头寸(看跌·看涨名义金额)",
+                "value": "{amount} · {holders}家"
+            },
             "scorecard": {
                 "axisCollecting": "数据收集中，暂未计入评分。",
                 "axisInsufficient": "数据不足，未计入评分。",
@@ -4404,7 +4489,7 @@
                 "qty": "卖空余额(股)",
                 "squeezeBadge": "轧空风险",
                 "squeezeNote": "卖空余额占流通股{pct}，回补天数{days}天，均处于偏高水平。若股价上涨，回补买盘可能同时涌入。",
-                "subtitle": "查看借股卖出后尚未归还的余额，以及每个交易日的场外卖空占比。",
+                "subtitle": "查看借股卖出后尚未归还的数量、每个交易日的场外卖空占比以及交收失败。",
                 "title": "做空",
                 "trendFalling": "近期走势:下降",
                 "trendFlat": "近期走势:持平",
@@ -4430,6 +4515,41 @@
                 "noPrevious": "没有可比较的上季度",
                 "title": "与上季度相比的机构动向"
             },
+            "squeeze": {
+                "capped": "没有卖空余额数据，仅用交收失败和股价计算。此时最高只到“偏高”。",
+                "component": {
+                    "days_to_cover": "回补天数",
+                    "fails_to_deliver_pct": "交收失败(占已发行股份)",
+                    "off_exchange_short_ratio_z": "场外卖空占比变化",
+                    "price_change_20d": "近20个交易日股价变化",
+                    "short_interest_pct_float": "卖空余额(占流通股)",
+                    "short_interest_trend": "余额增长趋势",
+                    "threshold_list_days": "连续列入门槛名单",
+                    "volume_ratio": "成交量(相对平时)"
+                },
+                "insufficient": "卖空方面的数据不足，未给出评分。",
+                "level": {
+                    "elevated": "偏高",
+                    "extreme": "极高",
+                    "high": "高",
+                    "low": "低"
+                },
+                "partial": "缺少{count}项输入，已按其余输入重新分配权重。",
+                "points": "+{points}分",
+                "score": "{score} / 100",
+                "sourceExchange": "交易所门槛名单",
+                "sourceFinra": "FINRA卖空数据",
+                "sourcePrice": "日线价格与成交量",
+                "sourceSec": "SEC交收失败",
+                "sources": "所用数据: {sources}",
+                "sourcesWithPrice": "所用数据: {sources}(价格截至{date}收盘)",
+                "title": "轧空评分",
+                "unit": {
+                    "days": "{value}天",
+                    "multiple": "{value}倍",
+                    "z": "z分数 {value}"
+                }
+            },
             "status": {
                 "decreased": "减持",
                 "exited": "清仓",
@@ -4437,14 +4557,35 @@
                 "new": "新进",
                 "unchanged": "持平"
             },
+            "threshold": {
+                "collecting": "正在收集门槛名单。",
+                "listedBadge": "已列入门槛名单",
+                "listedDetail": "连续{days}个交易日 · {markets}",
+                "notListed": "目前不在门槛名单上。",
+                "source": "来源: Nasdaq、NYSE、Cboe",
+                "sourceWithDate": "来源: Nasdaq、NYSE、Cboe(以{date}名单为准)",
+                "title": "Reg SHO门槛名单"
+            },
             "tooltip": {
                 "daysToCover": [
                     "回补天数(Days to Cover)是卖空余额除以平均成交量，表示把卖空的股票全部买回需要几天。",
                     "数字越大，买回可能越困难。"
                 ],
+                "dilution": [
+                    "增发是公司发行并出售新股。股数增加导致现有股东持股比例下降，就叫稀释。",
+                    "储架注册只是先登记以便日后出售，并不会马上有新股流入市场。ATM和承销发行则更接近实际出售。"
+                ],
+                "failsToDeliver": [
+                    "交收失败(FTD)是卖方在交收日前未能交付的股数，SEC每半个月公布一次。",
+                    "交收延迟的原因有很多，仅凭这一点不能说明存在裸卖空。"
+                ],
                 "flowScore": [
-                    "把机构、内部人、大额持股和卖空的动向合成一个-100到+100的分数，分数越高表示看涨信号越多。",
+                    "把机构、内部人、大额持股、卖空和增发的动向合成一个-100到+100的分数，分数越高表示看涨信号越多。",
                     "它是依据规则对过往披露进行计算得出的参考指标，并不能预示未来股价。"
+                ],
+                "form144": [
+                    "Form 144是高管、董事、大股东等关联人在出售股票前向SEC提交的拟出售申报。",
+                    "按10b5-1计划进行的出售是按事先定好的时间表执行的，与临时决定的出售性质不同。"
                 ],
                 "form4": [
                     "Form 4是高管、董事、持股10%以上的股东等内部人买卖本公司股票后，须在2个工作日内提交的申报表。",
@@ -4478,6 +4619,10 @@
                     "指当天场外(TRF)申报的交易中，卖空所占的比例。",
                     "不含在交易所内成交的卖空，因此可能比整体卖空占比显得更小。"
                 ],
+                "optionsNotional": [
+                    "这是13F中申报的看跌和看涨期权所对应的标的资产金额，不是买入期权所花的钱(权利金)。",
+                    "机构常常为保护所持股票而买入看跌期权，所以看跌期权多并不代表押注下跌。"
+                ],
                 "partialAggregation": [
                     "部分汇总表示13F提交期限尚未截止，目前只收集到部分机构的申报。",
                     "数字看起来偏小不一定是真的减少，所以评分只使用已提交完毕的季度。"
@@ -4498,9 +4643,17 @@
                     "轧空是指卖空方为了减少损失而集中买回股票，导致股价急剧上涨的现象。",
                     "当卖空余额占比和回补天数都很高时发生的可能性更大，但并非一定会发生。"
                 ],
+                "squeezeScore": [
+                    "轧空评分(0~100)按固定规则综合了卖空余额、回补天数、交收失败、门槛名单以及近期股价和成交量。分数越高，卖空方集中回补的压力越大。",
+                    "缺失的数据会用其余数据重新分配权重。分数高并不保证股价会上涨。"
+                ],
                 "thirteenF": [
                     "13F是管理规模较大的机构每季度向美国SEC提交的持股报告。",
                     "它在季度结束后最多45天才会公开，因此反映的是上个季度末的持仓，而不是当下。"
+                ],
+                "thresholdList": [
+                    "Reg SHO门槛名单是交易所每天发布的名单，列出交收失败连续5个交收日超过一定规模的股票。",
+                    "如果在名单上停留超过13个交易日，按规定必须了结剩余的交收失败。"
                 ]
             }
         },

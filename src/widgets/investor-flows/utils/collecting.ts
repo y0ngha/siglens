@@ -6,5 +6,6 @@ export function collectingAxes(state: CollectingArms): InvestorFlowsAxisId[] {
     return [
         ...(state.institutional ? (['institutional'] as const) : []),
         ...(state.short ? (['short'] as const) : []),
+        ...(state.offerings ? (['dilution'] as const) : []),
     ];
 }
