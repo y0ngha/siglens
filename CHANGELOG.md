@@ -1,5 +1,39 @@
 # Changelog
 
+# [0.107.0](https://github.com/y0ngha/siglens/compare/v0.106.0...v0.107.0) (2026-10-16)
+
+### Bug Fixes
+
+* 개발자 문서 가독성·SEO, 시간외 시세 표기, 차트 팝오버, 수급 탭 AI 우선 ([#1048](https://github.com/y0ngha/siglens/issues/1048)) ([5c7b509](https://github.com/y0ngha/siglens/commit/5c7b5091727a51101316462897e7ee164de31625))
+* 모달 시트 열림 중 PWA 배너 탭 가로채기 수정 외 2건 ([#1033](https://github.com/y0ngha/siglens/issues/1033)) ([ed18128](https://github.com/y0ngha/siglens/commit/ed18128403996918ca4f496927a9480483ef5349))
+* 실데이터 리허설 반영 — DART 공시 유형 필터·커서, 13F 백필 중 공시 수집, 13F 수집 중 표시, 한국 상장주식수(0051), FINRA 최신순, core 2.22.1 ([#1061](https://github.com/y0ngha/siglens/issues/1061)) ([dcdc2a5](https://github.com/y0ngha/siglens/commit/dcdc2a55a8bd7bfe9341d873844f0d1a4c066d40))
+* 에이전트 종합 분석 결과에 수급·재무 요약 포함, 매수 판단 질문 수급 호출(core 2.21.1), 수급 화면 표기 다듬기 ([#1060](https://github.com/y0ngha/siglens/issues/1060)) ([55f1d97](https://github.com/y0ngha/siglens/commit/55f1d973e13d1cf1ffd00abc6e1e690656f68d94))
+* 한글·영문 혼합 종목 질의 검색 및 0건 힌트 추가 ([#1032](https://github.com/y0ngha/siglens/issues/1032)) ([e19dfbb](https://github.com/y0ngha/siglens/commit/e19dfbb4d14fe3633a3def3126797ef6903d77c3))
+
+### Features
+
+* 개발자 API 문서 페이지와 OpenAPI 스펙 추가 ([#1043](https://github.com/y0ngha/siglens/issues/1043)) ([cebf3ed](https://github.com/y0ngha/siglens/commit/cebf3edcdb7b0da31adbf3f79e33520dbe9d7113))
+* 공개 API 2단계 — BYOK 전용 AI 분석과 API 기본 모델 설정 ([#1038](https://github.com/y0ngha/siglens/issues/1038)) ([8bd9405](https://github.com/y0ngha/siglens/commit/8bd940598e20c8e99b3c7e8104f3f19ee6b5243c))
+* 공개 API 출시 스위치(PUBLIC_API_ENABLED, 기본 꺼짐)로 개발자 페이지·API·계정 섹션 숨김 ([#1052](https://github.com/y0ngha/siglens/issues/1052)) ([2a25032](https://github.com/y0ngha/siglens/commit/2a2503265bfd5321dd39797cffc2d93dd4abb5ec)), closes [#1053](https://github.com/y0ngha/siglens/issues/1053)
+* 공개 API get_chart_data — 주가와 보조지표를 한 번에 ([#1049](https://github.com/y0ngha/siglens/issues/1049)) ([e566e1d](https://github.com/y0ngha/siglens/commit/e566e1d174051c3f50bbd0ba4c0af58a95cc2f41))
+* 공개 API를 core byok-only 키 정책으로 전환 (모든 모델 사용자 키 생성) ([#1045](https://github.com/y0ngha/siglens/issues/1045)) ([ab22c8b](https://github.com/y0ngha/siglens/commit/ab22c8ba87befb7330009e63d78158740653732c))
+* 미국 수급 탭 확장 — 숏스퀴즈 점수·결제 불이행·Form 144·증자·희석 공시·13F 옵션·Reg SHO 배지 (core 2.19.0) ([1126693](https://github.com/y0ngha/siglens/commit/1126693085891b044761bb8acb994c464a2c6866))
+* 미국 종목 차트에 프리·애프터마켓 봉 표시 ([#1044](https://github.com/y0ngha/siglens/issues/1044)) ([97df412](https://github.com/y0ngha/siglens/commit/97df41276f845a06664c1c73a99a185fc8d3f1d6))
+* 미국 종목 프리마켓·애프터마켓 시세 표시 ([#1041](https://github.com/y0ngha/siglens/issues/1041)) ([e2ba7d5](https://github.com/y0ngha/siglens/commit/e2ba7d5ff14d58003aee9a902aa69fdf64eb4b86))
+* 비회원용 메일 리포트 샘플 미리보기 추가 ([#1035](https://github.com/y0ngha/siglens/issues/1035)) ([ba26a7e](https://github.com/y0ngha/siglens/commit/ba26a7e9eb5a19b01817772ac2fe608f012585bd))
+* 수급 탭 데이터 수집 중 안내(13F·FINRA 초기 적재 동안) ([#1054](https://github.com/y0ngha/siglens/issues/1054)) ([0b644c7](https://github.com/y0ngha/siglens/commit/0b644c7e390360b3195f2f46107775a12a581f02))
+* 수급 탭·에이전트 도구·종합 분석 연동 ([#1047](https://github.com/y0ngha/siglens/issues/1047)) ([a883f62](https://github.com/y0ngha/siglens/commit/a883f62068cd0a3f6b978d1d24bd3a470089102a))
+* 수급 확장 데이터 수집 — SEC FTD·Form 144·증자 공시·13F 옵션·Reg SHO 과열 목록 (마이그레이션 0049) ([#1055](https://github.com/y0ngha/siglens/issues/1055)) ([2cd11cc](https://github.com/y0ngha/siglens/commit/2cd11cc5482adffb1d19feb914f00486e04f6b0f))
+* 수급(기관 13F·FINRA 공매도) 데이터 적재 파이프라인 ([#1046](https://github.com/y0ngha/siglens/issues/1046)) ([b52467b](https://github.com/y0ngha/siglens/commit/b52467ba371c50f8b5a1f930944e154af23da96c))
+* 시그렌즈 공개 API 1단계 (API 키·Bearer 인증·rate limit) ([#1037](https://github.com/y0ngha/siglens/issues/1037)) ([c3fc36d](https://github.com/y0ngha/siglens/commit/c3fc36d37d2bc872958f050420326ad0d4691c2d))
+* 차트 헤더 메뉴 재구성(보조지표 분리, 톱니바퀴=차트 설정), FMP 출처 표기 ([#1051](https://github.com/y0ngha/siglens/issues/1051)) ([47a2721](https://github.com/y0ngha/siglens/commit/47a2721b72bfaa7cb8388c51395400e73fbf09fd))
+* 차트 화면 희석 위험 배지 — 최근 90일 ATM·공모 공시 ([#1059](https://github.com/y0ngha/siglens/issues/1059)) ([2fb8bf2](https://github.com/y0ngha/siglens/commit/2fb8bf2b474ac7935941fd43c174be1a65c47112))
+* 한국 우선주·영문 단축코드 종목 수집 및 페이지 지원 ([#1039](https://github.com/y0ngha/siglens/issues/1039)) ([6dcb635](https://github.com/y0ngha/siglens/commit/6dcb635b6205235301d57e1d1c54624b395be3f2))
+* 한국 종목 수급 탭 — DART 대량보유·임원 소유·거래계획, AI 해석·에이전트 도구 연동 (core 2.21.0, 마이그레이션 0050) ([#1058](https://github.com/y0ngha/siglens/issues/1058)) ([f0a972f](https://github.com/y0ngha/siglens/commit/f0a972f86e4d4330a980f147ef574826028370f0))
+* API 기본 모델을 ModelListbox로, API 키 발급 전 BYOK 등록 안내 ([#1050](https://github.com/y0ngha/siglens/issues/1050)) ([adad9fe](https://github.com/y0ngha/siglens/commit/adad9fe9ecedd9d402b7f47dc5f937f1f8cf10b9))
+* DART 지분공시 수집 — 대량보유·임원 소유보고·거래계획 크론과 클라이언트 ([8db9e7b](https://github.com/y0ngha/siglens/commit/8db9e7b5f0315b597da1d568d622d17c07c699f1))
+* siglens-core 2.17.0 모델 7종 추가 및 구모델 교체 ([#1036](https://github.com/y0ngha/siglens/issues/1036)) ([5872e34](https://github.com/y0ngha/siglens/commit/5872e344973cbbad62529a13f5877e7931a8427c))
+
 # [0.106.0](https://github.com/y0ngha/siglens/compare/v0.105.4...v0.106.0) (2026-10-11)
 
 ### Features
