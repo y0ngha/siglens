@@ -120,7 +120,12 @@ async function AccountContent({ locale }: { locale: Locale }) {
             <section
                 id={BYOK_SECTION_ID}
                 aria-label={t('page.64f90b')}
-                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+                // 시그렌즈 API 키 발급 안내 모달의 "키 등록하러 가기"가 포커스를 옮기는 대상이다.
+                tabIndex={-1}
+                className={cn(
+                    SURFACE_CARD,
+                    'space-y-4 p-6 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
+                )}
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
             </section>
@@ -133,6 +138,8 @@ async function AccountContent({ locale }: { locale: Locale }) {
                     keys={siglensApiKeys}
                     maxKeys={API_KEY_MAX_ACTIVE_PER_USER}
                     emailVerified={user.emailVerified}
+                    hasByokKey={apiModelGroups.length > 0}
+                    byokSectionId={BYOK_SECTION_ID}
                     apiBaseUrl={`${SITE_URL}${PUBLIC_API_BASE_PATH}`}
                     skillHref={`${PUBLIC_API_BASE_PATH}/skill`}
                     defaultModelSlot={

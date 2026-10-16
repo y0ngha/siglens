@@ -200,9 +200,9 @@ function DownloadCard({ path, body, action }: DownloadCardProps) {
  *
  * **같은 소스에서 나온 문서다.** 도구 목록·인자 표·curl 예시는 `/api/v1/openapi.json`, SKILL.md,
  * `GET /tools`와 같은 도구 스펙(`tools` props)에서 오고, 한도 숫자는 `PUBLIC_API_RATE_LIMITS`, 오류 코드는
- * `API_ERROR_DOCS`에서 온다 — 문구에 숫자를 따로 적지 않는다(ICU 인자). 도구 설명은 코어가 영어로
- * 쓴 것이라 번역하지 않고 `lang="en"`으로 접어서 보여 주고, 카드 첫머리에는 카탈로그의 사람용 요약
- * (`tools.summaries.<name>`)을 둔다.
+ * `API_ERROR_DOCS`에서 온다 — 문구에 숫자를 따로 적지 않는다(ICU 인자). 카드에는 카탈로그의 사람용 요약
+ * (`tools.summaries.<name>`)만 두고, 코어가 에이전트용으로 영어로 쓴 도구 설명은 이 페이지에 싣지 않는다 —
+ * 그 원문은 OpenAPI JSON·YAML과 SKILL.md에만 있다. 인자 설명은 영어 그대로 `lang="en"`으로 보여 준다.
  */
 export async function DevelopersPage({
     locale,

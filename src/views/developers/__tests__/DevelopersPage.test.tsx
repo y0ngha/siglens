@@ -278,11 +278,9 @@ describe('DevelopersPage', () => {
         ]);
     });
 
-    it('shows the core description untranslated, the argument table and a curl example per tool', async () => {
+    it('shows the argument table (English descriptions as written) and a curl example per tool', async () => {
         await renderPage();
         const card = screen.getByRole('article', { name: /get_quote/ });
-        const original = within(card).getByText(quote.description);
-        expect(original).toHaveAttribute('lang', 'en');
         const table = within(card).getByRole('table');
         const row = within(table)
             .getByRole('rowheader', { name: /symbols/ })
@@ -290,6 +288,10 @@ describe('DevelopersPage', () => {
         expect(row).toHaveTextContent('array of string');
         expect(row).toHaveTextContent(d.tools.required);
         expect(row).toHaveTextContent('Up to 3 symbols');
+        expect(within(row).getByText('Up to 3 symbols')).toHaveAttribute(
+            'lang',
+            'en'
+        );
         const curl = within(card).getByRole('region', {
             name: 'get_quote curl 예시',
         });
@@ -301,21 +303,16 @@ describe('DevelopersPage', () => {
         );
     });
 
-    it('leads each card with the plain-language summary and folds the agent-facing original into a closed disclosure', async () => {
+    it('leads each card with the plain-language summary and keeps the English agent description off the page', async () => {
         await renderPage();
         const card = screen.getByRole('article', { name: /get_quote/ });
         const summary = within(card).getByText(d.tools.summaries.get_quote);
         expect(summary.tagName).toBe('P');
-        expect(summary.closest('details')).toBeNull();
-        const details = card.querySelector('details')!;
-        expect(details.open).toBe(false);
-        expect(
-            within(details).getByText(d.tools.agentDescriptionToggle).tagName
-        ).toBe('SUMMARY');
-        expect(details).toHaveTextContent(quote.description);
-        // 요약은 영어 원문과 다른 문장이고, 원문은 접힌 곳에만 있다.
+        // 요약은 영어 원문과 다른 문장이고, 원문은 페이지 어디에도 없다(OpenAPI JSON·YAML과 SKILL.md에만 있다).
         expect(d.tools.summaries.get_quote).not.toBe(quote.description);
-        expect(within(card).getAllByText(quote.description)).toHaveLength(1);
+        expect(card).not.toHaveTextContent(quote.description);
+        expect(document.body).not.toHaveTextContent(quote.description);
+        expect(card.querySelector('details')).toBeNull();
     });
 
     it('localizes the summary for the page language', async () => {
@@ -326,12 +323,10 @@ describe('DevelopersPage', () => {
                 en.views.developers.tools.summaries.get_quote
             )
         ).toBeInTheDocument();
-        expect(card).toHaveTextContent(
-            en.views.developers.tools.agentDescriptionToggle
-        );
+        expect(card).not.toHaveTextContent(quote.description);
     });
 
-    it('falls back to the original description when a tool has no summary key', async () => {
+    it('omits the summary paragraph instead of printing the English description when a tool has no summary key', async () => {
         const unknown: AgentToolSpec = {
             name: 'get_unlisted_tool',
             description: 'A tool the catalog does not know yet.',
@@ -355,7 +350,8 @@ describe('DevelopersPage', () => {
             })
         );
         const card = screen.getByRole('article', { name: /get_unlisted_tool/ });
-        expect(within(card).getByText(unknown.description)).toBeInTheDocument();
+        expect(card).not.toHaveTextContent(unknown.description);
+        expect(within(card).getByText(d.tools.argsTitle)).toBeInTheDocument();
         expect(card.querySelector('details')).toBeNull();
     });
 
