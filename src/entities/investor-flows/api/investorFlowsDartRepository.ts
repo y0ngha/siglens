@@ -5,6 +5,7 @@ import {
     eq,
     gte,
     inArray,
+    isNotNull,
     isNull,
     like,
     or,
@@ -312,6 +313,34 @@ export class DrizzleInvestorFlowsDartRepository {
         return match === null || corpName === undefined
             ? null
             : { ...match, corpName };
+    }
+
+    /**
+     * 단축코드의 상장주식수(`korean_tickers.listed_shares`, `kr-tickers` cron이 주식시세 V2에서 채운다). 상장 중인 `.KS`·`.KQ`
+     * 행에 값이 있을 때만 숫자, 아니면 null(발행주식수 모름 — core는 비율을 쓰지 않는다).
+     */
+    async findListedShares(stockCode: string): Promise<number | null> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({ listedShares: koreanTickers.listedShares })
+                    .from(koreanTickers)
+                    .where(
+                        and(
+                            inArray(
+                                koreanTickers.symbol,
+                                KR_SYMBOL_LIKE_PATTERNS.map(pattern =>
+                                    pattern.replace('%', stockCode)
+                                )
+                            ),
+                            isNull(koreanTickers.delistedAt),
+                            isNotNull(koreanTickers.listedShares)
+                        )
+                    )
+                    .limit(1),
+            DB_TRANSIENT_RETRY
+        );
+        return rows[0]?.listedShares ?? null;
     }
 
     /** 회사의 대량보유 보고(`sinceDate` 이후 접수, 최근 순). */

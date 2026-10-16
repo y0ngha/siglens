@@ -170,7 +170,8 @@ export function AsOfNotice({
             </h2>
             <dl className="space-y-2">
                 <Row term={t('asOf.termInstitutional')}>
-                    {scored === null ? (
+                    {/* 수집 중이면 점수표에 분기가 남아 있어도(낡은 캐시) 부분 집계 분기를 기준 시점으로 적지 않는다 — 기관 섹션과 같은 판정. */}
+                    {scored === null || collecting.institutional ? (
                         institutionalEmpty
                     ) : (
                         <>

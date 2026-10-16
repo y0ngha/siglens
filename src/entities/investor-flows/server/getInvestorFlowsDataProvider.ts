@@ -16,6 +16,7 @@ import type { InvestorFlowsDataProvider } from '@y0ngha/siglens-core';
 import { isE2EFlowsPipelineCollecting } from './e2eFlowsPipeline';
 import { DbDartInvestorFlowsDataProvider } from './loadKrInvestorFlowsSnapshot';
 import { DbFmpInvestorFlowsDataProvider } from './loadInvestorFlowsSnapshot';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 
 /** 미국 주식 — DB(13F·FINRA·SEC FTD·Form 144·증자 공시·Reg SHO)와 FMP(내부자·13D/G·유통주식). */
 function buildUsProvider(db: SiglensDatabase): InvestorFlowsDataProvider {
@@ -51,7 +52,7 @@ function buildUsProvider(db: SiglensDatabase): InvestorFlowsDataProvider {
         isFinraEnabled: isFinraShortDataEnabled,
         isRegShoEnabled: isRegShoThresholdDataEnabled,
         now: () => new Date(),
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     });
 }
 
@@ -66,9 +67,10 @@ function buildKrProvider(db: SiglensDatabase): InvestorFlowsDataProvider {
             findInsiderReports: (c, since) =>
                 dartRepo.findInsiderReports(c, since),
             findTradingPlans: (c, since) => dartRepo.findTradingPlans(c, since),
+            findListedShares: code => dartRepo.findListedShares(code),
         },
         now: () => new Date(),
-        log: (message, detail) => console.warn(message, detail ?? ''),
+        log: warnWithDetail,
     });
 }
 

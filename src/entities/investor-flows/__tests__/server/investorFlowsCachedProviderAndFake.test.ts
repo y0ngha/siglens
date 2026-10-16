@@ -54,12 +54,36 @@ describe('investorFlowsCachedProvider', () => {
         });
         mockReadiness.mockResolvedValue({
             ...READY,
-            institutional: 'collecting',
             short: 'collecting',
         });
         expect(
             await investorFlowsCachedProvider.getInvestorFlowsSnapshot('AAPL')
         ).toEqual({ asOf: 'x', shortInterest: null, shortVolume: null });
+    });
+
+    it('13F 수집 중에는 이미 있는 부분 집계도 빈 기관 구간으로 바꿔 AI에 건넨다', async () => {
+        mockSnapshot.mockResolvedValue({
+            asOf: 'x',
+            institutional: {
+                quarters: [{ period: '2026-06-30' }],
+                topHolders: [{ holder: 'Partial Fund' }],
+                topHoldersPeriod: '2026-06-30',
+            },
+        });
+        mockReadiness.mockResolvedValue({
+            ...READY,
+            institutional: 'collecting',
+        });
+        expect(
+            await investorFlowsCachedProvider.getInvestorFlowsSnapshot('AAPL')
+        ).toEqual({
+            asOf: 'x',
+            institutional: {
+                quarters: [],
+                topHolders: [],
+                topHoldersPeriod: null,
+            },
+        });
     });
 
     it('SEC 공시·FTD 수집 중에는 빈 FTD를 null로, 빈 Form 144·증자 공시는 필드를 빼서 AI에 건넨다', async () => {

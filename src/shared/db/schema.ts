@@ -492,6 +492,11 @@ export const koreanTickers = pgTable(
         }).notNull(),
         exchangeFullName: text('exchange_full_name').notNull(),
         delistedAt: timestamp('delisted_at', { withTimezone: true }),
+        /**
+         * 상장주식수(공공데이터포털 주식시세 V2 `lstgStCnt`, `kr-tickers` cron이 매일 갱신). 한국 수급 스냅샷의 발행주식수다.
+         * 미국 행과 보충 소스를 받지 못한 날의 신규 행은 null.
+         */
+        listedShares: bigint('listed_shares', { mode: 'number' }),
         updatedAt: timestamp('updated_at', { withTimezone: true })
             .notNull()
             .defaultNow()

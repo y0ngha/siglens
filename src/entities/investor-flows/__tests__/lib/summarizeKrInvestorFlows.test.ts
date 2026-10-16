@@ -5,6 +5,7 @@ import {
 } from '../../lib/summarizeKrInvestorFlows';
 import {
     evaluate,
+    makeKrInsiderRecord,
     makeKrMajorHoldingRecord,
     makeKrSnapshot,
     makeKrTradingPlanRecord,
@@ -112,5 +113,58 @@ describe('summarizeKrInvestorFlows', () => {
         const summary = summarizeKrInvestorFlows(snapshot, evaluate(snapshot));
         expect(summary.majorHolders.recent).toEqual([]);
         expect(summary.tradingPlans).toEqual([]);
+    });
+
+    describe('routine mass filing (core kr_insider_routine_mass_filing)', () => {
+        /** 40 reporters (core's cap is 30) each filing a tiny change in one month — stock awards, new officers. */
+        const massFiling = makeKrSnapshot({
+            majorHoldings: [],
+            tradingPlans: [],
+            insiderReports: Array.from({ length: 40 }, (_, i) =>
+                makeKrInsiderRecord({
+                    rceptNo: `202610${String(1 + (i % 9)).padStart(2, '0')}00${String(i).padStart(4, '0')}`,
+                    receiptDate: `2026-10-0${1 + (i % 9)}`,
+                    reporter: `임원${i}`,
+                    sharesChange: 120,
+                    ratioChangePct: 0,
+                })
+            ),
+        });
+        const routineOf = (
+            summary: ReturnType<typeof summarizeKrInvestorFlows>
+        ) =>
+            summary.signals.find(
+                signal => signal.id === 'kr_insider_routine_mass_filing'
+            );
+
+        it('carries the neutral signal with its median as % of shares outstanding when the listed share count is known', () => {
+            const snapshot = {
+                ...massFiling,
+                sharesOutstanding: 5_919_637_922,
+            };
+            const routine = routineOf(
+                summarizeKrInvestorFlows(snapshot, evaluate(snapshot))
+            );
+            expect(routine).toMatchObject({
+                direction: 'neutral',
+                evidence: { reporters: 40, reports: 40 },
+            });
+            expect(routine?.evidence).toHaveProperty(
+                'medianChangePctOutstanding'
+            );
+            expect(routine?.evidence).not.toHaveProperty(
+                'medianRatioChangePct'
+            );
+        });
+
+        it('falls back to the ratio-change median without a listed share count', () => {
+            const routine = routineOf(
+                summarizeKrInvestorFlows(massFiling, evaluate(massFiling))
+            );
+            expect(routine?.evidence).toHaveProperty('medianRatioChangePct');
+            expect(routine?.evidence).not.toHaveProperty(
+                'medianChangePctOutstanding'
+            );
+        });
     });
 });

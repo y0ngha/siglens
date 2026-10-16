@@ -39,7 +39,8 @@ interface InstitutionalSectionProps {
     /** 점수표(core) 기관 지표 — 옵션 풋/콜 명목 비율. */
     readonly metrics: InstitutionalMetrics;
     /**
-     * 13F 초기 수집이 아직 안 끝났다. 데이터가 없을 때만 의미가 있고, 있으면 무시한다(있는 데이터를 가리지 않는다).
+     * 13F 초기 수집이 아직 안 끝났다(`resolveCollectingArms`). 행이 있어도 백필 중의 부분 집계라(보유 기관 수·순매수가 실제보다
+     * 작다) 본문 대신 "모으는 중" 안내를 낸다 — 점수·AI 해석도 같은 판정으로 이 구간을 뺀다(`maskUncollectedSections`).
      */
     readonly collecting?: boolean;
 }
@@ -50,8 +51,9 @@ interface InstitutionalSectionProps {
  * 분기별 순매수/순매도 막대 → 보유 기관 수 추이 → 4분할 카드(신규·증가·감소·청산) → 상위 보유 기관 표 → 옵션 포지션(풋·콜
  * 명목) 순서다.
  * 4분할 카드와 기준 분기 문구는 **가장 최근 완결 분기**를 기준으로 하고, 그보다 새로 시작된 진행 중 분기는
- * 별도 안내 한 줄로 "부분 집계"임을 밝힌다. 데이터가 하나도 없으면 "데이터 없음"을 명시하되, 13F 초기 수집이 아직
- * 끝나지 않았다면(`collecting`) "모으는 중" 안내로 바꾼다 — 그 시점의 빈 구간은 이 종목에 데이터가 없다는 뜻이 아니다.
+ * 별도 안내 한 줄로 "부분 집계"임을 밝힌다. 데이터가 하나도 없으면 "데이터 없음"을 명시한다. 13F 초기 수집이 아직 끝나지
+ * 않았으면(`collecting`) 데이터 유무와 관계없이 "모으는 중" 안내만 낸다 — 그 시점의 빈 구간은 이 종목에 데이터가 없다는 뜻이
+ * 아니고, 있는 행은 제출이 덜 모인 부분 집계라 상위 보유 기관 표·추이가 "기관 이탈"처럼 읽힌다.
  */
 export function InstitutionalSection({
     institutional,
@@ -80,12 +82,12 @@ export function InstitutionalSection({
     const partialDirection =
         partialFlow === null ? '' : directionLabels[partialFlow];
 
-    // 데이터가 없을 때만 채워지는 자리 — 수집 중이면 안내, 아니면 "데이터 없음". 있으면 `null`이라 본문을 그린다.
+    // 본문 대신 그리는 자리 — 수집 중이면(행이 있어도) 안내, 데이터가 없으면 "데이터 없음". 둘 다 아니면 `null`이라 본문을 그린다.
     let emptyState: ReactNode = null;
-    if (!hasData) {
-        emptyState = collecting ? (
-            <CollectingNotice variant="institutional" />
-        ) : (
+    if (collecting) {
+        emptyState = <CollectingNotice variant="institutional" />;
+    } else if (!hasData) {
+        emptyState = (
             <p className="text-sm text-secondary-300">
                 {t('institutional.noData')}
             </p>

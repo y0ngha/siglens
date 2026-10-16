@@ -62,6 +62,7 @@ function item(
         isin: `KR${shortCode}`,
         corpName: `법인${shortCode}`,
         basDt: '20261014',
+        listedShares: null,
     };
 }
 

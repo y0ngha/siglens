@@ -146,7 +146,7 @@ describe('dartClient', () => {
     });
 
     describe('fetchDisclosureList', () => {
-        it('queries equity disclosures of one detail type with compact dates, 100 per page, oldest first', async () => {
+        it('queries one detail type without pblntf_ty (DART ignores the detail filter when both are sent), compact dates, 100 per page, oldest first', async () => {
             fetchSpy.mockResolvedValueOnce(
                 json({
                     status: '000',
@@ -178,7 +178,6 @@ describe('dartClient', () => {
                 crtfc_key: KEY,
                 bgn_de: '20261009',
                 end_de: '20261016',
-                pblntf_ty: 'D',
                 pblntf_detail_ty: 'D002',
                 page_no: '2',
                 page_count: String(DART_LIST_PAGE_COUNT),

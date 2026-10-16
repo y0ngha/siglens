@@ -4,6 +4,7 @@ import {
     fetchShortInterestText,
 } from '@/shared/api/finra/finraClient';
 import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
@@ -28,6 +29,6 @@ export function createFinraShortDeps(
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onFirstDataStored: revalidateFlowsReadiness,
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }

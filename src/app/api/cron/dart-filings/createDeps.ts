@@ -3,6 +3,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { dartFatalReason, realDartClient } from '@/shared/api/dart/dartClient';
 import { createFakeDartClient } from '@/shared/api/dart/fakeDartClient';
 import { tryGetDatabaseClient } from '@/shared/db/client';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { DrizzleInvestorFlowsDartRepository } from '@/entities/investor-flows/api/investorFlowsDartRepository';
 import type { IngestDartFilingsDeps } from '@/entities/investor-flows/server/ingestDartFilings';
 import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
@@ -25,6 +26,6 @@ export function createDartFilingsDeps(
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onBackfillCompleted: revalidateFlowsReadiness,
-        log: (message, detail) => console.warn(message, detail ?? ''),
+        log: warnWithDetail,
     };
 }

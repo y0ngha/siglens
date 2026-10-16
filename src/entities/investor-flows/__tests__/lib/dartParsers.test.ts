@@ -13,6 +13,7 @@ import {
     parseExecutiveStockRows,
     parseMajorStockRows,
     toTradingPlanRow,
+    disclosureMatchesDetailType,
 } from '../../lib/dartParsers';
 import {
     CORP_CODE_XML,
@@ -282,6 +283,30 @@ describe('parseDisclosureListRows', () => {
             reporter: '홍길동',
             title: '임원ㆍ주요주주특정증권등거래계획보고서',
         });
+    });
+});
+
+describe('disclosureMatchesDetailType', () => {
+    it.each([
+        ['D001', '주식등의대량보유상황보고서(일반)'],
+        ['D001', '[기재정정]주식등의대량보유상황보고서(약식)'],
+        ['D002', '임원ㆍ주요주주특정증권등소유상황보고서'],
+        ['D002', '[기재정정]임원ㆍ주요주주특정증권등소유상황보고서'],
+        ['D005', '임원ㆍ주요주주특정증권등거래계획보고서'],
+        ['D005', '임원ㆍ주요주주특정증권등거래계획철회보고서'],
+        ['D005', '임원·주요주주특정증권등거래계획보고서'],
+    ] as const)('accepts %s title %j', (detailType, title) => {
+        expect(disclosureMatchesDetailType(detailType, title)).toBe(true);
+    });
+
+    it.each([
+        ['D001', '임원ㆍ주요주주특정증권등소유상황보고서'],
+        ['D002', '임원ㆍ주요주주특정증권등거래계획보고서'],
+        ['D005', '임원ㆍ주요주주특정증권등소유상황보고서'],
+        ['D005', '주식등의대량보유상황보고서(일반)'],
+        ['D005', '공개매수신고서'],
+    ] as const)('rejects %s title %j', (detailType, title) => {
+        expect(disclosureMatchesDetailType(detailType, title)).toBe(false);
     });
 });
 

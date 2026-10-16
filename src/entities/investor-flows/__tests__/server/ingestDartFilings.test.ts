@@ -308,7 +308,11 @@ describe('runDartFilingsIngest — first run', () => {
             calls: 3 + 6,
         });
         expect(state.get(INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE)).toBe(TODAY);
-        expect(listCursorOf(state)).toEqual({ through: TODAY, pending: [] });
+        expect(listCursorOf(state)).toEqual({
+            through: TODAY,
+            pending: [],
+            tradingPlansFrom: null,
+        });
         expect(
             parseDartBackfillCursor(
                 state.get(INVESTOR_FLOWS_STATE_DART_BACKFILL_CURSOR) ?? null
@@ -485,6 +489,190 @@ describe('runDartFilingsIngest — later runs', () => {
                 String(message).includes('queueing the whole universe')
             )
         ).toBe(true);
+    });
+});
+
+describe('runDartFilingsIngest — D005 page-cap overflow', () => {
+    const D005_FLOOR = addDays(
+        TODAY,
+        -INVESTOR_FLOWS_DART_LIST_MAX_LOOKBACK_DAYS
+    );
+    const overflowD005 = (query: DartListQuery) =>
+        query.detailType === 'D005'
+            ? INVESTOR_FLOWS_DART_MAX_LIST_PAGES + 3
+            : undefined;
+
+    it('keeps the D005 resume date at the last receipt date it read instead of advancing to today', async () => {
+        const { deps, state, stored } = build({ totalPage: overflowD005 });
+        const result = await runDartFilingsIngest(deps);
+        // The first D005 page holds both 2026-10-14 rows; the rest of the cap is empty.
+        expect(stored.plans.map(plan => plan.rceptNo)).toEqual([
+            '20261014000789',
+        ]);
+        expect(result.listComplete).toBe(false);
+        expect(listCursorOf(state)).toEqual({
+            through: TODAY,
+            pending: [],
+            tradingPlansFrom: '2026-10-14',
+        });
+    });
+
+    it('resumes D005 from that date on the next run while D001/D002 read from the cursor, then clears it', async () => {
+        const first = build({ totalPage: overflowD005 });
+        await runDartFilingsIngest(first.deps);
+        const second = build({ state: Object.fromEntries(first.state) });
+        const result = await runDartFilingsIngest(second.deps);
+        const startOf = (type: DartDisclosureDetailType) =>
+            second.listQueries.find(query => query.detailType === type)
+                ?.beginDate;
+        expect(startOf('D001')).toBe(TODAY);
+        expect(startOf('D002')).toBe(TODAY);
+        expect(startOf('D005')).toBe('2026-10-14');
+        expect(result.listComplete).toBe(true);
+        expect(listCursorOf(second.state).tradingPlansFrom).toBeNull();
+    });
+
+    it('moves past a start day that alone fills the page cap, so the next run makes progress', async () => {
+        const floorCompact = D005_FLOOR.replaceAll('-', '');
+        const { deps, state, log } = build({
+            totalPage: overflowD005,
+            data: {
+                ...DEFAULT_DATA,
+                disclosures: {
+                    ...DEFAULT_DATA.disclosures,
+                    D005: [
+                        listRow({
+                            rcept_no: `${floorCompact}000001`,
+                            rcept_dt: floorCompact,
+                            report_nm: '임원ㆍ주요주주특정증권등거래계획보고서',
+                        }),
+                    ],
+                },
+            },
+        });
+        await runDartFilingsIngest(deps);
+        expect(listCursorOf(state).tradingPlansFrom).toBe(
+            addDays(D005_FLOOR, 1)
+        );
+        expect(
+            log.mock.calls.some(([message]) =>
+                String(message).includes('skipping the rest of that day')
+            )
+        ).toBe(true);
+    });
+
+    it('keeps an earlier D005 resume date when the scan stops before finishing', async () => {
+        const { deps, state } = build({
+            state: {
+                [INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE]: '2026-10-10',
+                [INVESTOR_FLOWS_STATE_DART_LIST_CURSOR]: JSON.stringify({
+                    through: '2026-10-15',
+                    pending: [],
+                    tradingPlansFrom: '2026-09-01',
+                }),
+            },
+            fail: (endpoint, arg) =>
+                endpoint === 'list.json' && arg === 'D001'
+                    ? new DartApiError('list.json', 'HTTP 503', {
+                          httpStatus: 503,
+                      })
+                    : undefined,
+        });
+        await runDartFilingsIngest(deps);
+        expect(listCursorOf(state)).toEqual({
+            through: '2026-10-15',
+            pending: [],
+            tradingPlansFrom: '2026-09-01',
+        });
+    });
+});
+
+describe('runDartFilingsIngest — rows of another report type', () => {
+    const MISMATCHED: FakeDartData = {
+        ...DEFAULT_DATA,
+        disclosures: {
+            ...DEFAULT_DATA.disclosures,
+            // A D002 title under D005 — what an ignored detail filter returns.
+            D005: [
+                ...(DEFAULT_DATA.disclosures.D005 ?? []),
+                listRow({
+                    rcept_no: '20261014000901',
+                    rcept_dt: '20261014',
+                    report_nm: '임원ㆍ주요주주특정증권등소유상황보고서',
+                }),
+            ],
+            // A trading plan under D002 for a corp with no other filing.
+            D002: [
+                ...(DEFAULT_DATA.disclosures.D002 ?? []),
+                listRow({
+                    rcept_no: '20261015000902',
+                    corp_code: SK_CORP,
+                    stock_code: '000660',
+                    report_nm: '임원ㆍ주요주주특정증권등거래계획보고서',
+                }),
+            ],
+        },
+    };
+
+    it('does not store a mismatched D005 row as a trading plan', async () => {
+        const { deps, stored } = build({ data: MISMATCHED });
+        await runDartFilingsIngest(deps);
+        expect(stored.plans.map(plan => plan.rceptNo)).toEqual([
+            '20261014000789',
+        ]);
+    });
+
+    it('does not queue a corp whose only D002 row is another report type', async () => {
+        const { deps } = build({
+            data: MISMATCHED,
+            state: {
+                [INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE]: '2026-10-10',
+            },
+        });
+        const result = await runDartFilingsIngest(deps);
+        // Samsung (D001) and Hanwha (D002) only — SK hynix's row was a trading plan.
+        expect(result.changedCorps).toBe(2);
+    });
+
+    it('counts and logs the dropped rows', async () => {
+        const { deps, log } = build({ data: MISMATCHED });
+        const result = await runDartFilingsIngest(deps);
+        expect(result.mismatchedRows).toBe(2);
+        expect(
+            log.mock.calls.filter(([message]) =>
+                String(message).includes('rows of another report type')
+            )
+        ).toHaveLength(2);
+    });
+
+    it('keeps amended and withdrawn titles of the requested type', async () => {
+        const { deps, stored } = build({
+            data: {
+                ...DEFAULT_DATA,
+                disclosures: {
+                    D005: [
+                        listRow({
+                            rcept_no: '20261014000903',
+                            rcept_dt: '20261014',
+                            report_nm:
+                                '[기재정정]임원ㆍ주요주주특정증권등거래계획보고서',
+                        }),
+                        listRow({
+                            rcept_no: '20261014000904',
+                            rcept_dt: '20261014',
+                            report_nm:
+                                '임원ㆍ주요주주특정증권등거래계획철회보고서',
+                        }),
+                    ],
+                },
+            },
+        });
+        const result = await runDartFilingsIngest(deps);
+        expect(stored.plans.map(plan => plan.rceptNo)).toEqual([
+            '20261014000903',
+            '20261014000904',
+        ]);
+        expect(result.mismatchedRows).toBe(0);
     });
 });
 

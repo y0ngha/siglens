@@ -137,25 +137,32 @@ export async function runAnalysisStream<T>({
     signal,
     messages,
 }: RunAnalysisStreamOptions): Promise<T> {
-    const response = await fetch('/api/analysis/stream', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            /**
-             * 분석 응답을 어느 언어로 받을지 알린다.
-             *
-             * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 서버가
-             * 요청 로케일을 알 방법이 없다. 호출부마다 로케일을 프롭으로
-             * 내려보내는 대신 **현재 주소에서 유도**한다 — 이 함수는 항상
-             * 클라이언트에서 돌고, 주소는 로케일의 단일 소스다.
-             */
-            [ANALYSIS_LOCALE_HEADER]: splitLocalePath(
-                typeof window === 'undefined' ? null : window.location.pathname
-            ).locale,
-        },
-        body: JSON.stringify({ type, params }),
+    const response = await withLocalizedNetworkError(
+        () =>
+            fetch('/api/analysis/stream', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    /**
+                     * 분석 응답을 어느 언어로 받을지 알린다.
+                     *
+                     * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 서버가
+                     * 요청 로케일을 알 방법이 없다. 호출부마다 로케일을 프롭으로
+                     * 내려보내는 대신 **현재 주소에서 유도**한다 — 이 함수는 항상
+                     * 클라이언트에서 돌고, 주소는 로케일의 단일 소스다.
+                     */
+                    [ANALYSIS_LOCALE_HEADER]: splitLocalePath(
+                        typeof window === 'undefined'
+                            ? null
+                            : window.location.pathname
+                    ).locale,
+                },
+                body: JSON.stringify({ type, params }),
+                signal,
+            }),
         signal,
-    });
+        messages
+    );
 
     if (!response.ok || response.body === null) {
         /**
@@ -185,7 +192,11 @@ export async function runAnalysisStream<T>({
     let buffer = '';
     try {
         for (;;) {
-            const { value, done } = await reader.read();
+            const { value, done } = await withLocalizedNetworkError(
+                () => reader.read(),
+                signal,
+                messages
+            );
             if (done) break;
             buffer += value;
 
@@ -212,6 +223,25 @@ export async function runAnalysisStream<T>({
     }
 
     throw new Error(messages.disconnected);
+}
+
+/**
+ * 네트워크 단계의 실패(`fetch`·스트림 읽기가 던지는 `TypeError` — 브라우저마다 `Failed to fetch`·`Load failed`·
+ * `NetworkError when attempting to fetch resource.`)를 현지화된 끊김 문구로 바꾼다. 그대로 두면 영어 원문이 분석 배너에 그대로
+ * 렌더된다(실데이터 리허설: 수급 AI 해석 자리에 "Failed to fetch"). 중단(`signal` abort — React Query 취소·탭 이동)은 호출부가
+ * 구분해야 하므로 원래 오류 그대로 던진다. 원래 오류는 `cause`에 남긴다.
+ */
+async function withLocalizedNetworkError<R>(
+    run: () => Promise<R>,
+    signal: AbortSignal | undefined,
+    messages: StreamErrorMessages
+): Promise<R> {
+    try {
+        return await run();
+    } catch (error) {
+        if (signal?.aborted || !(error instanceof TypeError)) throw error;
+        throw new Error(messages.disconnected, { cause: error });
+    }
 }
 
 type ParsedFrame<T> =

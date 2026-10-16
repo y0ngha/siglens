@@ -699,7 +699,7 @@ describe('getInvestorFlowsTool', () => {
             expect('dataStatus' in result).toBe(false);
         });
 
-        it('비어 있는 갈래만 알린다: 13F는 데이터가 있고 공매도만 비었으면 short만 collecting이다(unknown 13F도 생략)', async () => {
+        it('행 단위 갈래는 비어 있을 때만 알리고, 13F는 데이터가 있어도(부분 집계) 수집 중이면 알리고 기관 구간을 비운다', async () => {
             arrange(
                 makeSnapshot({ shortInterest: [], shortVolume: [] }),
                 true,
@@ -712,12 +712,38 @@ describe('getInvestorFlowsTool', () => {
                 { symbol: 'AAPL' },
                 ctx,
                 rt
+            )) as ToolOutput & {
+                dataStatus: Record<string, string>;
+                institutional: { quarters: unknown[]; topHolders: unknown[] };
+            };
+            expect(Object.keys(result.dataStatus).toSorted()).toEqual([
+                'institutional',
+                'note',
+                'short',
+            ]);
+            expect(result.dataStatus.short).toBe('collecting');
+            expect(result.institutional.quarters).toEqual([]);
+            expect(result.institutional.topHolders).toEqual([]);
+        });
+
+        it('13F가 준비됐고 공매도만 비었으면 short만 collecting이다', async () => {
+            arrange(
+                makeSnapshot({ shortInterest: [], shortVolume: [] }),
+                true,
+                {
+                    institutional: 'ready',
+                    short: 'collecting',
+                }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
             )) as ToolOutput & { dataStatus: Record<string, string> };
             expect(Object.keys(result.dataStatus).toSorted()).toEqual([
                 'note',
                 'short',
             ]);
-            expect(result.dataStatus.short).toBe('collecting');
         });
 
         it('상태를 전혀 못 읽었으면(unknown 둘) 예전 응답과 같다', async () => {

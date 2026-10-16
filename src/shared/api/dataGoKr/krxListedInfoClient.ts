@@ -35,7 +35,9 @@ const LISTED_INFO_ENDPOINT =
  * (`/service/GetStockSecuritiesInfoService/getStockPriceInfo`)는 이 키로 403이다
  * (2026-10-15 실측). 우선주를 포함한 상장 주식 전체가 오므로, 보통주만 주는 마스터의
  * **보충**으로 쓴다. 응답 필드(`srtnCd`·`itmsNm`·`mrktCtg`·`isinCd`)가 마스터와 같아
- * 같은 파서를 쓰고, 시세 필드(`clpr` 등)는 읽지 않는다. `srtnCd`에 `A` 접두사가 없다.
+ * 같은 파서를 쓰고, 시세 필드(`clpr` 등)는 읽지 않는다. 예외는 상장주식수(`lstgStCnt`)다 — 마스터에는 없고
+ * (개발가이드 15094775 응답 명세) 이쪽에만 있어(15094808 응답 명세 "종목의 상장주식수") 한국 수급 스냅샷의
+ * 발행주식수로 쓴다. `srtnCd`에 `A` 접두사가 없다.
  */
 const STOCK_PRICE_ENDPOINT =
     'https://apis.data.go.kr/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2';
@@ -121,6 +123,8 @@ export interface KrxListedItem {
     corpName: string;
     /** 이 항목을 받은 기준일(`YYYYMMDD`). 마스터와 보충을 같은 날로 맞추는 데 쓴다. */
     basDt: string;
+    /** 상장주식수(`lstgStCnt`). 주식시세 V2에만 있다 — 마스터 항목과 값이 없거나 형식이 틀린 행은 null. */
+    listedShares: number | null;
 }
 
 interface RawItem {
@@ -129,6 +133,8 @@ interface RawItem {
     mrktCtg?: string;
     isinCd?: string;
     corpNm?: string;
+    /** 명세는 number지만 공공데이터포털은 숫자를 문자열로 주기도 한다(`clpr` 실측). */
+    lstgStCnt?: number | string;
 }
 
 interface RawResponse {
@@ -208,6 +214,17 @@ function toShortCode(raw: string | undefined): string | null {
     return KR_SHORT_CODE_RE.test(code) ? code : null;
 }
 
+/** 상장주식수 — 양의 안전 정수만 받는다(빈 문자열·0·소수·쉼표 표기는 null). */
+function toListedShares(raw: number | string | undefined): number | null {
+    const value =
+        typeof raw === 'string' && /^\d+$/.test(raw.trim())
+            ? Number(raw.trim())
+            : raw;
+    return typeof value === 'number' && Number.isSafeInteger(value) && value > 0
+        ? value
+        : null;
+}
+
 function toItem(raw: RawItem, basDt: string): KrxListedItem[] {
     const shortCode = toShortCode(raw.srtnCd);
     const koreanName = raw.itmsNm?.trim();
@@ -224,6 +241,7 @@ function toItem(raw: RawItem, basDt: string): KrxListedItem[] {
             isin: raw.isinCd?.trim() ?? '',
             corpName: raw.corpNm?.trim() ?? koreanName,
             basDt,
+            listedShares: toListedShares(raw.lstgStCnt),
         },
     ];
 }

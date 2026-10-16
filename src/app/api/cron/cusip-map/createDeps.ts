@@ -7,6 +7,7 @@ import {
 } from '@/shared/api/openfigi/openFigiClient';
 import { fetchSecFile, isSecBlockedError } from '@/shared/api/sec/secClient';
 import { tryGetDatabaseClient } from '@/shared/db/client';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { createRedisCusipMissStore } from '@/entities/investor-flows/api/cusipMissStore';
 import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
@@ -35,7 +36,7 @@ export function createCusipMapDeps(
             error instanceof OpenFigiRateLimitedError,
         isDeadlineReached,
         now: () => new Date(),
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }
 
@@ -59,6 +60,6 @@ export function createCikSymbolMapDeps(): SyncCikSymbolMapDeps {
             (await universeRepo.loadUniverse()).symbols,
         isSecBlockedError,
         now: () => new Date(),
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }

@@ -234,6 +234,23 @@ describe('DrizzleInvestorFlowsShortRepository', () => {
     });
 });
 
+describe('DrizzleInvestorFlowsShortRepository.listShortVolumeTradeDates', () => {
+    it('collects the stored trade dates on or after `since` into a set', async () => {
+        const { db, ops } = createFakeDb([
+            [{ tradeDate: '2026-10-14' }, { tradeDate: '2026-10-15' }],
+        ]);
+        const dates = await new DrizzleInvestorFlowsShortRepository(
+            db
+        ).listShortVolumeTradeDates('2026-07-17');
+        expect([...dates]).toEqual(['2026-10-14', '2026-10-15']);
+        expect(callsOf(ops[0] as never, 'from')).toEqual([[finraShortVolume]]);
+        const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
+        const { text, params } = renderSql(where);
+        expect(text).toContain('"trade_date" >= $1');
+        expect(params).toEqual(['2026-07-17']);
+    });
+});
+
 describe('DrizzleInvestorFlowsSnapshotRepository', () => {
     it('falls back to the cik when a filer name is unknown', async () => {
         const { db } = createFakeDb([

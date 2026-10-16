@@ -1,3 +1,4 @@
+import type { DartDisclosureDetailType } from '@/shared/api/dart/dartClient';
 import { KR_SHORT_CODE_RE } from '@/shared/config/ticker';
 import {
     streamXmlElements,
@@ -245,6 +246,30 @@ export function parseDisclosureListRows(
     });
     const rows = parsed.filter(row => row !== null);
     return { rows, skipped: parsed.length - rows.length };
+}
+
+/**
+ * 상세 유형별 보고서명(`report_nm`) 형태 — 공시검색이 그 유형의 보고서를 돌려줬는지 확인한다. 정정 접두(`[기재정정]` 등)와 괄호
+ * 접미(`(일반)`·`(약식)`)가 붙으므로 본문만 찾는다. 가운뎃점은 원천이 `ㆍ`(U+318D)를 쓰지만 `·`로 바뀌어도 맞게 둔다.
+ * 실데이터(2026-10-17): D001 `주식등의대량보유상황보고서(일반|약식)`, D002 `임원ㆍ주요주주특정증권등소유상황보고서`,
+ * D005 `임원ㆍ주요주주특정증권등거래계획보고서`·`…거래계획철회보고서`.
+ */
+const DETAIL_TYPE_TITLE_RE: Readonly<Record<DartDisclosureDetailType, RegExp>> =
+    {
+        D001: /주식등의대량보유상황보고서/,
+        D002: /임원[ㆍ·]?주요주주특정증권등소유상황보고서/,
+        D005: /임원[ㆍ·]?주요주주특정증권등거래계획(?:철회)?보고서/,
+    };
+
+/**
+ * 공시 행이 요청한 상세 유형의 보고서인가. 아니면 호출부가 버리고 센다 — 필터가 무시되면(`pblntf_ty`를 같이 보냈을 때처럼)
+ * 지분공시 전체가 거래계획보고서로 저장되거나 모든 회사가 재조회 대기열에 들어가는 것을 막는 방어선이다.
+ */
+export function disclosureMatchesDetailType(
+    detailType: DartDisclosureDetailType,
+    title: string
+): boolean {
+    return DETAIL_TYPE_TITLE_RE[detailType].test(title);
 }
 
 /** D005 공시 행 → 거래계획보고서 저장 행(보고자 = 제출인). */

@@ -10,13 +10,14 @@ import {
 } from '../../lib/dartIngestState';
 
 describe('dart list cursor', () => {
-    it('round-trips through and the pending queue', () => {
+    it('round-trips through, the pending queue and the trading-plan resume date', () => {
         const cursor = {
             through: '2026-10-15',
             pending: [
                 { corpCode: '00126380', attempts: 0 },
                 { corpCode: '00160843', attempts: 2 },
             ],
+            tradingPlansFrom: '2026-08-02',
         };
         expect(parseDartListCursor(serializeDartListCursor(cursor))).toEqual(
             cursor
@@ -42,14 +43,28 @@ describe('dart list cursor', () => {
                         { corpCode: '00126380', attempts: 2 },
                         'x',
                     ],
+                    tradingPlansFrom: '20260802',
                 })
             )
         ).toEqual({
             through: null,
+            tradingPlansFrom: null,
             pending: [
                 { corpCode: '00126380', attempts: 2 },
                 { corpCode: '00160843', attempts: 0 },
             ],
+        });
+    });
+
+    it('reads a cursor written before tradingPlansFrom existed as "no D005 resume date"', () => {
+        expect(
+            parseDartListCursor(
+                JSON.stringify({ through: '2026-10-15', pending: [] })
+            )
+        ).toEqual({
+            through: '2026-10-15',
+            pending: [],
+            tradingPlansFrom: null,
         });
     });
 });

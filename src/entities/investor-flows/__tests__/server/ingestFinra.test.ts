@@ -9,15 +9,28 @@ import {
     CNMS_SAMPLE,
     SHORT_INTEREST_SAMPLE,
 } from '../fixtures/investorFlowsSamples';
+import { shortVolumeCandidateDates } from '../../lib/finraSchedule';
+import { addDays } from '../../lib/investorFlowsDates';
 
 const NOW = new Date('2026-10-15T12:00:00Z');
 /** Settlements inside the 75-day lookback other than the 10-15 one (08-14, 08-31, 09-15, 09-30). */
 const STORED = ['2026-08-14', '2026-08-31', '2026-09-15', '2026-09-30'];
+/** First day before the 90-day short-volume window (exclusive bound, like the ingest). */
+const VOLUME_WINDOW_START = addDays(
+    '2026-10-15',
+    -SHORT_VOLUME_BACKFILL_DAYS - 1
+);
+/** Every window weekday through `latest` — "the store is caught up to `latest`". */
+const storedThrough = (latest: string): string[] =>
+    shortVolumeCandidateDates(VOLUME_WINDOW_START, latest);
 
 function build(
     over: Partial<IngestFinraDeps> = {},
     state: {
+        /** Store caught up through this day (every window weekday up to it). */
         latestVolume?: string | null;
+        /** Explicit stored trade dates (overrides `latestVolume`). */
+        haveVolume?: string[];
         haveInterest?: string[];
         files?: Record<string, string>;
     } = {}
@@ -30,6 +43,7 @@ function build(
         universeLoads: 0,
         prunes: [] as string[],
         invalidated: [] as string[][],
+        volumeSince: [] as string[],
     };
     const deps: IngestFinraDeps = {
         isEnabled: () => true,
@@ -48,7 +62,15 @@ function build(
             },
         },
         repo: {
-            latestShortVolumeDate: async () => state.latestVolume ?? null,
+            listShortVolumeTradeDates: async since => {
+                calls.volumeSince.push(since);
+                return new Set(
+                    state.haveVolume ??
+                        (state.latestVolume
+                            ? storedThrough(state.latestVolume)
+                            : [])
+                );
+            },
             listShortInterestSettlementDates: async () =>
                 new Set(state.haveInterest ?? []),
             upsertShortVolume: async rows => {
@@ -95,7 +117,7 @@ describe('runFinraIngest', () => {
     });
 
     describe('daily short volume', () => {
-        it('fetches weekdays after the last stored date, stores universe rows, skips missing days', async () => {
+        it('fetches the missing weekdays newest first, stores universe rows, skips missing days', async () => {
             const { deps, calls } = build(
                 {},
                 {
@@ -105,9 +127,12 @@ describe('runFinraIngest', () => {
             );
             const result = await runFinraIngest(deps);
             expect(calls.volumeFetched).toEqual([
-                '2026-10-13',
-                '2026-10-14',
                 '2026-10-15',
+                '2026-10-14',
+                '2026-10-13',
+            ]);
+            expect(calls.volumeSince).toEqual([
+                addDays(VOLUME_WINDOW_START, 1),
             ]);
             expect(result.volumeFiles).toBe(1);
             expect(result.volumeRows).toBe(4);
@@ -118,16 +143,26 @@ describe('runFinraIngest', () => {
             ).toEqual(['AAPL', 'BF.A', 'BF.B', 'MSFT']);
         });
 
-        it('backfills 90 days on an empty table, capped per run', async () => {
+        it('backfills 90 days on an empty table newest first, capped per run', async () => {
             const { deps, calls } = build();
             await runFinraIngest(deps);
-            expect(calls.volumeFetched).toHaveLength(
-                MAX_SHORT_VOLUME_FILES_PER_RUN
-            );
-            expect((calls.volumeFetched[0] as string) >= '2026-07-17').toBe(
-                true
+            const window = storedThrough('2026-10-15');
+            expect(calls.volumeFetched).toEqual(
+                window.toReversed().slice(0, MAX_SHORT_VOLUME_FILES_PER_RUN)
             );
             expect(SHORT_VOLUME_BACKFILL_DAYS).toBe(90);
+        });
+
+        it('fills the older days a capped first run left, on the next run', async () => {
+            const window = storedThrough('2026-10-15');
+            const firstRun = window
+                .toReversed()
+                .slice(0, MAX_SHORT_VOLUME_FILES_PER_RUN);
+            const { deps, calls } = build({}, { haveVolume: firstRun });
+            await runFinraIngest(deps);
+            expect(calls.volumeFetched).toEqual(
+                window.filter(date => !firstRun.includes(date)).toReversed()
+            );
         });
     });
 
@@ -206,14 +241,27 @@ describe('runFinraIngest', () => {
             expect(calls.interestFetched).toEqual([]);
         });
 
-        it('looks back a year when nothing is stored yet', async () => {
+        it('looks back a year when nothing is stored yet, newest settlement first', async () => {
             const { deps, calls } = build({}, { latestVolume: '2026-10-15' });
             await runFinraIngest(deps);
-            // 8-file cap, oldest settlements first (all absent in this fake → 4 variants each)
+            // 8-file cap, newest settlements first (all absent in this fake → variants each)
             expect(calls.interestFetched.length).toBeGreaterThan(20);
-            expect((calls.interestFetched[0] as string) < '2025-11-30').toBe(
-                true
+            expect(calls.interestFetched[0]).toBe('2026-10-15');
+            expect(
+                calls.interestFetched.every(date => date > '2026-01-01')
+            ).toBe(true);
+        });
+
+        it('a capped first backfill leaves the older settlements for the next run', async () => {
+            const { deps, calls } = build(
+                {},
+                {
+                    latestVolume: '2026-10-15',
+                    haveInterest: ['2026-10-15', '2026-09-30', '2026-09-15'],
+                }
             );
+            await runFinraIngest(deps);
+            expect(calls.interestFetched[0]).toBe('2026-08-31');
         });
     });
 
@@ -293,7 +341,7 @@ describe('runFinraIngest', () => {
             const onFirstDataStored = vi.fn();
             const { deps } = build({
                 onFirstDataStored,
-                // The backfill walks the oldest days first, so serve the sample for whichever day is asked.
+                // Serve the sample for whichever day is asked.
                 finra: {
                     fetchCnmsShortVolumeText: async () => CNMS_SAMPLE,
                     fetchShortInterestText: async () => null,

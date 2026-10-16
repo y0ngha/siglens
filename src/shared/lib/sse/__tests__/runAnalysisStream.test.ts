@@ -388,6 +388,57 @@ describe('runAnalysisStream', () => {
         );
     });
 
+    it('네트워크 실패(fetch의 TypeError)는 영어 원문 대신 현지화된 끊김 문구로 throw한다', async () => {
+        fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+        const error = await runAnalysisStream({
+            type: 'investorFlows',
+            params: {},
+            messages: TEST_STREAM_MESSAGES,
+        }).catch((caught: unknown) => caught);
+
+        if (!(error instanceof Error)) throw new Error('expected an Error');
+        expect(error.message).toBe(TEST_STREAM_MESSAGES.disconnected);
+        expect(error.cause).toBeInstanceOf(TypeError);
+    });
+
+    it('스트림을 읽다 네트워크가 끊겨도(TypeError) 현지화된 끊김 문구로 throw한다', async () => {
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode('event: open\ndata: {}\n\n')
+                );
+            },
+            pull(controller) {
+                controller.error(new TypeError('network error'));
+            },
+        });
+        fetchMock.mockResolvedValue(new Response(body, { status: 200 }));
+
+        await expect(
+            runAnalysisStream({
+                type: 'investorFlows',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow(TEST_STREAM_MESSAGES.disconnected);
+    });
+
+    it('중단된 요청의 TypeError는 바꾸지 않고 그대로 전파한다', async () => {
+        const controller = new AbortController();
+        controller.abort();
+        fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+        await expect(
+            runAnalysisStream({
+                type: 'investorFlows',
+                params: {},
+                signal: controller.signal,
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow('Failed to fetch');
+    });
+
     it('abort된 fetch의 거부를 그대로 전파한다', async () => {
         fetchMock.mockRejectedValue(
             new DOMException('The operation was aborted.', 'AbortError')

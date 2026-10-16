@@ -1,0 +1,1 @@
+ALTER TABLE "korean_tickers" ADD COLUMN "listed_shares" bigint;

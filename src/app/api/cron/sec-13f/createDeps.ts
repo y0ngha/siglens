@@ -8,6 +8,7 @@ import {
     isSecBlockedError,
 } from '@/shared/api/sec/secClient';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
@@ -36,8 +37,7 @@ export function createSec13fDeps(
     if (client === null) throw new Error('[sec-13f] database unavailable');
     const universeRepo = new DrizzleInvestorFlowsUniverseRepository(client.db);
     const now = (): Date => new Date();
-    const log = (message: string, detail?: unknown): void =>
-        console.warn(message, detail);
+    const log = warnWithDetail;
     const sharedIndex = rememberRecentIndexes(
         fetchDailyFormIndex,
         addDays(toUtcIsoDate(now()), -SHARED_INDEX_DAYS)

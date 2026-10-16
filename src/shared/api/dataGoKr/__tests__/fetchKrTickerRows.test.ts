@@ -25,6 +25,7 @@ function item(
         isin: `KR${shortCode}`,
         corpName: koreanName,
         basDt: '20261014',
+        listedShares: null,
     };
 }
 
@@ -57,6 +58,33 @@ describe('fetchKrTickerRows', () => {
         expect(r.supplemented).toBe(2);
         expect(r.supplementUnavailable).toBe(false);
         expect(r.masterItems).toHaveLength(1);
+    });
+
+    it('마스터 행에도 같은 코드의 보충 상장주식수를 붙인다', async () => {
+        mockMaster.mockResolvedValue([item('005380', 'KOSPI', '현대차')]);
+        mockSupplement.mockResolvedValue({
+            items: [
+                { ...item('005380', 'KOSPI'), listedShares: 204_757_766 },
+                { ...item('005387', 'KOSPI'), listedShares: 36_613_865 },
+            ],
+            truncated: false,
+        });
+
+        const r = await fetchKrTickerRows();
+
+        expect(r.rows.map(x => [x.symbol, x.listedShares])).toEqual([
+            ['005380.KS', 204_757_766],
+            ['005387.KS', 36_613_865],
+        ]);
+    });
+
+    it('보충을 받지 못하면 상장주식수는 비어 있다(upsert가 저장된 값을 지우지 않는다)', async () => {
+        mockMaster.mockResolvedValue([item('005380', 'KOSPI')]);
+        mockSupplement.mockResolvedValue({ items: [], truncated: false });
+
+        const r = await fetchKrTickerRows();
+
+        expect(r.rows.map(x => x.listedShares)).toEqual([null]);
     });
 
     it('시장 구분이 어긋나도 같은 코드는 보충하지 않는다', async () => {

@@ -63,7 +63,8 @@ const COLLECTING_SOURCES = Object.keys(
  * 모델이 그렇게 말해야 한다. **어느 한 갈래라도 수집 중일 때만** 싣는다 — 정상 상태(전부 `ready`/`unknown`)에서는
  * 키를 생략해 응답이 예전과 같다(도구 결과는 6,000자 상한이라 매번 싣는 비용이 크다).
  * 그 종목의 해당 구간이 실제로 비어 있는 갈래만 싣는다(화면과 같은 `resolveCollectingArms` 판정) — 데이터가 있으면
- * 수집 중 표시여도, `unknown`(상태를 못 읽음)·플래그 꺼짐이어도 그 갈래는 없다.
+ * 수집 중 표시여도, `unknown`(상태를 못 읽음)·플래그 꺼짐이어도 그 갈래는 없다. 예외는 13F다: 백필 중의 부분 집계라 행이 있어도
+ * 수집 중이면 싣고, 본문의 기관 구간도 같은 판정으로 비운다(`maskUncollectedSections`).
  */
 function buildDataStatus(
     snapshot: InvestorFlowsSnapshot | null,

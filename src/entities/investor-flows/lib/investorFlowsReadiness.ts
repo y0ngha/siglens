@@ -84,11 +84,19 @@ export function deriveDartStatus(input: {
 /** 행 목록 하나(`null`·`undefined`는 행 없음으로 본다). */
 type SectionRows = readonly unknown[] | null | undefined;
 
+/*
+ * 구간의 "수집 중" 판정은 두 종류다 — 마스킹(`maskUncollectedSections`)과 화면·도구 판정(`resolveCollectingArms`)이 같은 규칙을
+ * 쓰도록 둘 다 여기 둔다.
+ *  - 행 단위 원천(FINRA·FTD·Form 144·증자·과열 목록·DART): 수집 중에 들어온 행은 그 자체로 맞는 행이다 — 비어 있을 때만 수집
+ *    중이다(`isCollectingAndEmpty`, 이미 있는 데이터는 가리지 않는다).
+ *  - 집계 원천(13F 기관): 분기 합계·상위 보유 기관은 **모든** 제출을 모아야 맞는 값이다. 백필 중의 부분 집계는 보유 기관 수·순매수가
+ *    실제보다 작아 "기관 이탈"처럼 읽히므로, 행이 있어도 준비 상태가 `collecting`이면 수집 중이다(`isCollectingAggregate`).
+ */
+
 /**
- * "이 구간은 아직 수집 중이고 비어 있다" — 마스킹(`maskUncollectedSections`)과 화면·도구 판정(`resolveCollectingArms`)이 같은
- * 규칙을 쓰도록 한 곳에 둔다. 준비 상태가 `collecting`이고 **모든** 행 목록이 비어 있을 때만 참이다(`ready`·`unknown`이면 거짓,
- * 이미 있는 데이터는 가리지 않는다). `enabled`는 라이선스 플래그다 — 화면·도구 판정은 FINRA·Reg SHO 플래그를 넘기고, 마스킹은
- * 꺼진 피드가 이미 `null`이라 `true`를 넘긴다(두 호출부의 차이를 인자로 드러낸다).
+ * 행 단위 구간이 "아직 수집 중이고 비어 있다". 준비 상태가 `collecting`이고 **모든** 행 목록이 비어 있을 때만 참이다(`ready`·
+ * `unknown`이면 거짓). `enabled`는 라이선스 플래그다 — 화면·도구 판정은 FINRA·Reg SHO 플래그를 넘기고, 마스킹은 꺼진 피드가 이미
+ * `null`이라 `true`를 넘긴다(두 호출부의 차이를 인자로 드러낸다).
  */
 export function isCollectingAndEmpty(
     status: PipelineStatus,
@@ -103,19 +111,38 @@ export function isCollectingAndEmpty(
 }
 
 /**
+ * 집계 구간(13F)이 "아직 수집 중" — 행이 있어도 부분 집계라 보이지도 채점하지도 않는다. 준비 상태가 `collecting`일 때만 참이다
+ * (`ready`·`unknown`이면 거짓 — 상태를 못 읽으면 예전처럼 있는 데이터를 그린다).
+ */
+export function isCollectingAggregate(status: PipelineStatus): boolean {
+    return status === 'collecting';
+}
+
+/** 비어 있는 기관(13F) 구간 — core가 "NO DATA(중립 아님)"로 다룬다. */
+const EMPTY_INSTITUTIONAL: InvestorFlowsSnapshot['institutional'] = {
+    quarters: [],
+    topHolders: [],
+    topHoldersPeriod: null,
+};
+
+/**
  * 아직 수집 중인 구간을 core 계약의 "조회 불가"로 바꾼다 — 빈 배열(`[]`)은 "조회했더니 없음"으로 읽혀 AI·에이전트가
  * "공매도 활동 없음"·"증자 공시 없음"이라고 말할 수 있다. 데이터가 이미 있는 구간은 건드리지 않는다.
  *
  * - 공매도(FINRA)·FTD: `null`(core: 꺼진 피드처럼 빠진다). 과열 목록은 첫 목록을 받기 전이면 이미 `null`이라 할 일이 없다.
  * - Form 144·증자 공시: 필드를 뺀다(core 타입에 `null`이 없다 — 없는 필드는 "이 원천이 없던 옛 스냅샷"으로 보고 채점하지 않는다).
- * - 기관(13F)은 core 스냅샷이 `null`을 표현하지 못해(비널 `institutional`) 이 방식으로 가릴 수 없다 — core가 빈 분기 목록을
- *   "NO DATA(중립 아님)"로 렌더하는 것에 맡긴다.
+ * - 기관(13F): core 스냅샷이 `null`을 표현하지 못해(비널 `institutional`) 빈 구간으로 바꾼다 — core가 빈 분기 목록을
+ *   "NO DATA(중립 아님)"로 렌더·채점한다. 집계 구간이라 행이 있어도 수집 중이면 바꾼다(`isCollectingAggregate`) — 부분 집계가
+ *   점수·AI 해석에 "기관 순매도"로 들어가지 않게 한다.
  */
 export function maskUncollectedSections(
     snapshot: InvestorFlowsSnapshot,
     readiness: InvestorFlowsPipelineReadiness
 ): InvestorFlowsSnapshot {
     // 꺼진 피드는 스냅샷이 이미 `null`이고 준비 상태도 `unknown`이라 플래그를 따로 보지 않는다(`enabled: true`).
+    const institutionalCollecting = isCollectingAggregate(
+        readiness.institutional
+    );
     const shortCollecting = isCollectingAndEmpty(
         readiness.short,
         [snapshot.shortInterest, snapshot.shortVolume],
@@ -137,6 +164,7 @@ export function maskUncollectedSections(
         true
     );
     if (
+        !institutionalCollecting &&
         !shortCollecting &&
         !ftdCollecting &&
         !proposedSalesCollecting &&
@@ -147,6 +175,9 @@ export function maskUncollectedSections(
     const { proposedSales, offerings, ...rest } = snapshot;
     return {
         ...rest,
+        ...(institutionalCollecting
+            ? { institutional: EMPTY_INSTITUTIONAL }
+            : {}),
         ...(shortCollecting ? { shortInterest: null, shortVolume: null } : {}),
         ...(ftdCollecting ? { failsToDeliver: null } : {}),
         ...(proposedSalesCollecting || proposedSales === undefined
@@ -159,7 +190,7 @@ export function maskUncollectedSections(
 }
 
 export interface CollectingArms {
-    /** 13F 구간이 비어 있고 초기 수집이 아직 안 끝났다. */
+    /** 13F 초기 수집이 아직 안 끝났다 — 구간에 행이 있어도(부분 집계) 참이다(`isCollectingAggregate`). */
     readonly institutional: boolean;
     /** FINRA가 켜져 있고 공매도 구간이 비어 있으며 첫 수집이 아직 안 끝났다. */
     readonly short: boolean;
@@ -187,8 +218,9 @@ export type CollectingSnapshotFields = Pick<
 
 /**
  * 이 종목의 어느 구간이 "데이터 없음"이 아니라 "아직 수집 중"으로 말해야 하는지 — 화면(`InvestorFlowsContent`)과 에이전트
- * 도구(`dataStatus`)가 같은 판정을 쓰도록 한 곳에 둔다. **구간이 실제로 비어 있을 때만** 참이다: 준비 상태 캐시가 낡았어도
- * 이미 있는 데이터를 "수집 중"이라고 가리지 않고, `ready`·`unknown`이면 항상 거짓이다(예전 동작).
+ * 도구(`dataStatus`)가 같은 판정을 쓰도록 한 곳에 둔다. 행 단위 구간은 **실제로 비어 있을 때만** 참이다: 준비 상태 캐시가
+ * 낡았어도 이미 있는 데이터를 "수집 중"이라고 가리지 않는다. 기관(13F)은 집계 구간이라 행이 있어도 수집 중이면 참이다 — 마스킹이
+ * 같은 판정으로 점수·AI에서 빼므로, 화면·도구도 그 부분 집계를 결과처럼 보이지 않는다. `ready`·`unknown`이면 항상 거짓이다(예전 동작).
  */
 export function resolveCollectingArms(input: {
     readonly readiness: InvestorFlowsPipelineReadiness;
@@ -199,14 +231,7 @@ export function resolveCollectingArms(input: {
 }): CollectingArms {
     const { readiness, snapshot } = input;
     return {
-        institutional: isCollectingAndEmpty(
-            readiness.institutional,
-            [
-                snapshot.institutional.quarters,
-                snapshot.institutional.topHolders,
-            ],
-            true
-        ),
+        institutional: isCollectingAggregate(readiness.institutional),
         short: isCollectingAndEmpty(
             readiness.short,
             [snapshot.shortInterest, snapshot.shortVolume],
@@ -239,7 +264,7 @@ export function resolveCollectingArms(input: {
 
 /** 스냅샷이 없는 종목(`null`)의 판정 입력 — 모든 구간이 비어 있다. */
 export const EMPTY_COLLECTING_SNAPSHOT: CollectingSnapshotFields = {
-    institutional: { quarters: [], topHolders: [], topHoldersPeriod: null },
+    institutional: EMPTY_INSTITUTIONAL,
     shortInterest: [],
     shortVolume: [],
     failsToDeliver: [],

@@ -35,6 +35,7 @@ function reads(
         ]),
         findInsiderReports: vi.fn(async () => []),
         findTradingPlans: vi.fn(async () => []),
+        findListedShares: vi.fn(async () => null),
         ...over,
     };
 }
@@ -61,6 +62,30 @@ describe('loadKrInvestorFlowsSnapshot', () => {
             '2024-10-16'
         );
         expect(snapshot).toMatchObject({ asOf: '2026-10-16', market: 'kr' });
+    });
+
+    it('uses the listed share count of the matched common stock as sharesOutstanding', async () => {
+        const r = reads({
+            findListedShares: vi.fn(async (code: string) =>
+                code === '005930' ? 5_919_637_922 : 815_974_664
+            ),
+        });
+        const snapshot = await loadKrInvestorFlowsSnapshot('005935.KS', {
+            reads: r,
+            now: () => NOW,
+            log: () => {},
+        });
+        expect(r.findListedShares).toHaveBeenCalledWith('005930');
+        expect(snapshot?.sharesOutstanding).toBe(5_919_637_922);
+    });
+
+    it('leaves sharesOutstanding null when the listed share count is unknown', async () => {
+        const snapshot = await loadKrInvestorFlowsSnapshot('005930.KS', {
+            reads: reads(),
+            now: () => NOW,
+            log: () => {},
+        });
+        expect(snapshot?.sharesOutstanding).toBeNull();
     });
 
     it('is null without a DART company mapping and reads no filings', async () => {

@@ -4,6 +4,7 @@ import {
     fetchSecFile,
     isSecBlockedError,
 } from '@/shared/api/sec/secClient';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
@@ -27,6 +28,6 @@ export function createSecFtdDeps(
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onFirstFileStored: revalidateFlowsReadiness,
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }
