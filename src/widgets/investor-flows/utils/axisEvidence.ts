@@ -8,8 +8,8 @@ import {
     formatInteger,
     formatPercent,
     formatSignedCompact,
-    formatSmallPercent,
     formatSignedPercent,
+    formatSmallPercent,
     formatUsdCompact,
 } from './flowFormat';
 
