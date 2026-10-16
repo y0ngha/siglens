@@ -1,8 +1,3 @@
-import type {
-    KrInsiderReport,
-    KrMajorHolderReport,
-    KrTradingPlan,
-} from '@y0ngha/siglens-core';
 import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
 import type { LimitedRows } from './secFilings';
 
@@ -22,15 +17,10 @@ export function newestKrRows<T extends { readonly receiptDate: string }>(
     };
 }
 
-/** 한 접수번호에 보고자가 여럿일 수 있어(공동 보고) 보고자까지 키에 넣는다. */
-export function majorHolderKey(row: KrMajorHolderReport): string {
-    return `${row.url}-${row.reporter}`;
-}
-
-export function insiderReportKey(row: KrInsiderReport): string {
-    return `${row.url}-${row.reporter}`;
-}
-
-export function tradingPlanKey(row: KrTradingPlan): string {
+/** 한 접수번호에 보고자가 여럿일 수 있어(공동 보고) 보고자까지 키에 넣는다. 세 표(대량보유·소유보고·거래계획)가 같은 규칙을 쓴다. */
+export function krDisclosureKey(row: {
+    readonly url: string;
+    readonly reporter: string;
+}): string {
     return `${row.url}-${row.reporter}`;
 }

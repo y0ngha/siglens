@@ -12,7 +12,7 @@ import {
     formatSignedCompact,
     formatSignedDecimal,
 } from '../utils/flowFormat';
-import { insiderReportKey, newestKrRows } from '../utils/krDisclosures';
+import { krDisclosureKey, newestKrRows } from '../utils/krDisclosures';
 import { CollectingNotice } from './CollectingNotice';
 import { DartFilingLink } from './DartFilingLink';
 
@@ -159,7 +159,7 @@ function InsiderBody({ reports, collecting }: KrInsiderSectionProps) {
         <>
             <ul className="space-y-2 md:hidden">
                 {rows.map(row => (
-                    <InsiderCard key={insiderReportKey(row)} row={row} />
+                    <InsiderCard key={krDisclosureKey(row)} row={row} />
                 ))}
             </ul>
             <div className="hidden md:block">
@@ -216,7 +216,7 @@ function InsiderBody({ reports, collecting }: KrInsiderSectionProps) {
                     <tbody>
                         {rows.map(row => (
                             <InsiderTableRow
-                                key={insiderReportKey(row)}
+                                key={krDisclosureKey(row)}
                                 row={row}
                             />
                         ))}

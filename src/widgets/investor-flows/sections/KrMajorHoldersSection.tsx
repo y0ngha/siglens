@@ -14,7 +14,7 @@ import {
     formatSignedCompact,
     formatSignedDecimal,
 } from '../utils/flowFormat';
-import { majorHolderKey, newestKrRows } from '../utils/krDisclosures';
+import { krDisclosureKey, newestKrRows } from '../utils/krDisclosures';
 import { CollectingNotice } from './CollectingNotice';
 import { DartFilingLink } from './DartFilingLink';
 
@@ -153,7 +153,7 @@ function MajorHoldersBody({ reports, collecting }: KrMajorHoldersSectionProps) {
         <>
             <ul className="space-y-2 md:hidden">
                 {rows.map(row => (
-                    <MajorHolderCard key={majorHolderKey(row)} row={row} />
+                    <MajorHolderCard key={krDisclosureKey(row)} row={row} />
                 ))}
             </ul>
             <div className="hidden md:block">
@@ -210,7 +210,7 @@ function MajorHoldersBody({ reports, collecting }: KrMajorHoldersSectionProps) {
                     <tbody>
                         {rows.map(row => (
                             <MajorHolderTableRow
-                                key={majorHolderKey(row)}
+                                key={krDisclosureKey(row)}
                                 row={row}
                             />
                         ))}

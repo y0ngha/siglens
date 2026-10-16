@@ -5,7 +5,7 @@ import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { formatInteger } from '../utils/flowFormat';
-import { newestKrRows, tradingPlanKey } from '../utils/krDisclosures';
+import { krDisclosureKey, newestKrRows } from '../utils/krDisclosures';
 import { CollectingNotice } from './CollectingNotice';
 import { DartFilingLink } from './DartFilingLink';
 
@@ -34,7 +34,7 @@ function TradingPlansBody({ plans, collecting }: KrTradingPlansSectionProps) {
             <ul className="space-y-2">
                 {rows.map(plan => (
                     <li
-                        key={tradingPlanKey(plan)}
+                        key={krDisclosureKey(plan)}
                         className={cn(
                             SURFACE_NESTED,
                             'flex flex-wrap items-start justify-between gap-2 p-3'

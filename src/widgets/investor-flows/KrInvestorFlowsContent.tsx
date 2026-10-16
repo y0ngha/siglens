@@ -16,7 +16,7 @@ import { KrTradingPlansSection } from './sections/KrTradingPlansSection';
 import { ScorecardCard } from './sections/ScorecardCard';
 
 /** 한국 점수표가 그리는 축 — DART 원천이 있는 두 축(core가 KR 평가 결과를 이 슬롯에 넣는다, 설계 §4.4). */
-export const KR_SCORECARD_AXES: readonly InvestorFlowsAxisId[] = [
+const KR_SCORECARD_AXES: readonly InvestorFlowsAxisId[] = [
     'largeHolders',
     'insider',
 ];
