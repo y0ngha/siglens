@@ -80,6 +80,8 @@ describe('GET /api/v1/skill', () => {
             )
         );
         expect(section).toContain('Investor flows');
+        // core 2.20 설명이 한국(DART) 결과를 포함한다 — SKILL.md는 요청 때 core 스펙에서 만든다.
+        expect(section).toContain('DART');
         expect(section).toContain('- `symbol` (');
         expect(section).not.toContain('- `model` (');
     });

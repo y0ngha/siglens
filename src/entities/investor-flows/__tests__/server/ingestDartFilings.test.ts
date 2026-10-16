@@ -175,6 +175,7 @@ function build(scenario: Scenario = {}) {
         invalidated: [] as string[],
     };
     const log = vi.fn();
+    const onBackfillCompleted = vi.fn();
     const repo: IngestDartFilingsDeps['repo'] = {
         getState: async key => state.get(key) ?? null,
         setState: async (key, value) => {
@@ -211,9 +212,18 @@ function build(scenario: Scenario = {}) {
         invalidateSymbols: symbols => {
             stored.invalidated.push(...symbols);
         },
+        onBackfillCompleted,
         log,
     };
-    return { deps, state, stored, listQueries, corpCalls, log };
+    return {
+        deps,
+        state,
+        stored,
+        listQueries,
+        corpCalls,
+        log,
+        onBackfillCompleted,
+    };
 }
 
 const listCursorOf = (state: Map<string, string>) =>
@@ -266,6 +276,12 @@ describe('runDartFilingsIngest — first run', () => {
             addDays(TODAY, -INVESTOR_FLOWS_DART_LIST_MAX_LOOKBACK_DAYS)
         );
         expect(listQueries.every(query => query.endDate === TODAY)).toBe(true);
+    });
+
+    it('calls the backfill-completed hook once, on the run that first writes the marker', async () => {
+        const { deps, onBackfillCompleted } = build();
+        await runDartFilingsIngest(deps);
+        expect(onBackfillCompleted).toHaveBeenCalledTimes(1);
     });
 
     it('refetches the corps with new filings first, then backfills the rest, and marks the backfill done', async () => {
@@ -386,6 +402,12 @@ describe('runDartFilingsIngest — later runs', () => {
             pending: [],
         }),
     };
+
+    it('does not call the backfill-completed hook once the marker already exists', async () => {
+        const { deps, onBackfillCompleted } = build({ state: doneState });
+        await runDartFilingsIngest(deps);
+        expect(onBackfillCompleted).not.toHaveBeenCalled();
+    });
 
     it('rescans from the cursor day itself and refetches only corps with new filings', async () => {
         const { deps, listQueries, corpCalls } = build({ state: doneState });

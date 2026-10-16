@@ -43,6 +43,7 @@ describe('getInvestorFlowsEvaluationOptions', () => {
 
     it('reads closed daily bars from the session-keyed cache as a US listing and passes both flags', async () => {
         expect(await getInvestorFlowsEvaluationOptions('aapl')).toEqual({
+            market: 'us',
             includeFinraData: true,
             includeExchangeLists: true,
             squeezeContext: {
@@ -52,6 +53,15 @@ describe('getInvestorFlowsEvaluationOptions', () => {
             },
         });
         expect(mockBars).toHaveBeenCalledWith('AAPL', 'us-equity');
+    });
+
+    it('gives a Korean listing market kr without FINRA, Reg SHO or squeeze input, and reads no bars', async () => {
+        expect(await getInvestorFlowsEvaluationOptions('005930.ks')).toEqual({
+            market: 'kr',
+            includeFinraData: false,
+            includeExchangeLists: false,
+        });
+        expect(mockBars).not.toHaveBeenCalled();
     });
 
     it('follows the FINRA and Reg SHO flags', async () => {

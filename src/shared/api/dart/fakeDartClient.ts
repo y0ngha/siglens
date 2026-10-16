@@ -35,7 +35,8 @@ export interface FakeDartData {
 const compact = (isoDate: string): string => isoDate.replaceAll('-', '');
 
 /**
- * 삼성전자(가이드 예시 고유번호 `00126380`)와 우선주 매핑 확인용 한화(`000880` ↔ `00088K`). 접수일은 **`now`의 KST 날짜 기준
+ * 삼성전자(가이드 예시 고유번호 `00126380`)와 우선주 매핑 확인용 한화(`000880` ↔ `00088K`). 삼성전자에는 대량보유 2건(5%를 새로
+ * 넘은 보고자 포함)·소유보고 2건·거래계획 1건이 있어 E2E 수급 탭(`005930.KS`, 우선주 `005935.KS`)이 표와 방향 신호를 그린다. 접수일은 **`now`의 KST 날짜 기준
  * 상대값**이다(대량보유·소유보고 1일 전, 거래계획 2일 전) — 수집기의 첫 공시검색 창(D001·D002 7일, D005 89일) 안에 늘 들어가
  * 실행 날짜와 무관하게 같은 결과가 나온다. 접수번호도 그 날짜에서 만든다(`YYYYMMDD` + 일련번호 6자리).
  */
@@ -46,6 +47,12 @@ export function buildFakeDartData(now: Date): FakeDartData {
     const majorReceipt = `${compact(filed)}000123`;
     const insiderReceipt = `${compact(filed)}000456`;
     const planReceipt = `${compact(planned)}000789`;
+    // 삼성전자 수급 탭(E2E `005930.KS/flows`)이 방향 신호를 내도록 둔 행 — 5%를 새로 넘은 보고자 하나, 같은 날 소유보고 둘.
+    const newHolderReceipt = `${compact(filed)}000124`;
+    const samsungInsiderReceipts = [
+        `${compact(filed)}000457`,
+        `${compact(filed)}000458`,
+    ] as const;
     return {
         corpCodes: [
             { corpCode: '00126380', corpName: '삼성전자', stockCode: '005930' },
@@ -111,9 +118,54 @@ export function buildFakeDartData(now: Date): FakeDartData {
                     ctr_stkrt: '-',
                     report_resn: '보유주식등의 수 변동',
                 },
+                {
+                    rcept_no: newHolderReceipt,
+                    rcept_dt: compact(filed),
+                    corp_code: '00126380',
+                    corp_name: '삼성전자',
+                    report_tp: '약식',
+                    repror: '픽스처자산운용',
+                    stkqy: '301,500,000',
+                    stkqy_irds: '301,500,000',
+                    stkrt: '5.05',
+                    stkrt_irds: '5.05',
+                    ctr_stkqy: '-',
+                    ctr_stkrt: '-',
+                    report_resn: '신규 보고',
+                },
             ],
         },
         executiveStock: {
+            '00126380': [
+                {
+                    rcept_no: samsungInsiderReceipts[0],
+                    rcept_dt: filed,
+                    corp_code: '00126380',
+                    corp_name: '삼성전자',
+                    repror: '박주주',
+                    isu_exctv_rgist_at: '-',
+                    isu_exctv_ofcps: '-',
+                    isu_main_shrholdr: '10%이상주주',
+                    sp_stock_lmp_cnt: '650,000,000',
+                    sp_stock_lmp_irds_cnt: '18,000,000',
+                    sp_stock_lmp_rate: '10.89',
+                    sp_stock_lmp_irds_rate: '0.30',
+                },
+                {
+                    rcept_no: samsungInsiderReceipts[1],
+                    rcept_dt: filed,
+                    corp_code: '00126380',
+                    corp_name: '삼성전자',
+                    repror: '최임원',
+                    isu_exctv_rgist_at: '비등기임원',
+                    isu_exctv_ofcps: '부사장',
+                    isu_main_shrholdr: '-',
+                    sp_stock_lmp_cnt: '8,000',
+                    sp_stock_lmp_irds_cnt: '-2,000',
+                    sp_stock_lmp_rate: '0.00',
+                    sp_stock_lmp_irds_rate: '0.00',
+                },
+            ],
             '00160843': [
                 {
                     rcept_no: insiderReceipt,

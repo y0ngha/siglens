@@ -79,7 +79,7 @@ export type DartTradingPlanRecord = Omit<DartTradingPlanRow, 'corpCode'>;
 /**
  * 한국 DART 지분공시 저장소(설계 §4.2) — `dart_corp_code`·`dart_major_holdings`·`dart_insider_reports`·`dart_trading_plans`와
  * 수집 상태(`investor_flows_state`). 화면·도구는 이 테이블만 읽고 DART를 직접 부르지 않는다(봇 크롤·공개 API가 할당량을 쓰지
- * 않게). 읽기 함수(`find*`·`resolveCorpCode`)는 KR 수급 탭 PR이 스냅샷에 연결한다.
+ * 않게). 읽기 함수(`find*`·`resolveCorpCode`)는 한국 수급 스냅샷(`loadKrInvestorFlowsSnapshot`)과 종목 매핑 조회(`getKrDartCorp`)가 쓴다.
  */
 export class DrizzleInvestorFlowsDartRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -282,7 +282,7 @@ export class DrizzleInvestorFlowsDartRepository {
         return (major ?? 0) + (insider ?? 0) + (plans ?? 0);
     }
 
-    // ── 읽기(KR 수급 탭 PR이 스냅샷에 연결) ──────────────────────────────────────────────────────────
+    // ── 읽기(한국 수급 탭 스냅샷·매핑 조회) ──────────────────────────────────────────────────────────
 
     /**
      * 단축코드(`005930`, 우선주 `005935`) → 고유번호. 우선주는 끝자리를 `0`으로 바꾼 보통주 코드로 찾는다(`dartSymbol.ts`).

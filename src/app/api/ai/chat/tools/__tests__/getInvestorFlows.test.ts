@@ -25,8 +25,18 @@ import {
     type InvestorFlowsSummary,
 } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
 import {
+    KR_SUMMARY_MAX_INSIDERS,
+    KR_SUMMARY_MAX_MAJOR_HOLDERS,
+    KR_SUMMARY_MAX_TRADING_PLANS,
+    type KrInvestorFlowsSummary,
+} from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
+import {
     evaluate,
     makeExpandedSnapshot,
+    makeKrInsiderRecord,
+    makeKrMajorHoldingRecord,
+    makeKrSnapshot,
+    makeKrTradingPlanRecord,
     makeHolder,
     makeLargeHolder,
     makeOffering,
@@ -67,6 +77,7 @@ const READY: InvestorFlowsPipelineReadiness = {
     failsToDeliver: 'ready',
     filings: 'ready',
     thresholdList: 'ready',
+    dart: 'ready',
 };
 
 /** 테스트가 바꾸는 갈래만 주면 나머지는 `ready`다. */
@@ -98,16 +109,16 @@ describe('getInvestorFlowsTool', () => {
         isTabAllowed.mockResolvedValue(true);
     });
 
-    it('수급 탭이 없는 심볼(KR·크립토)은 조회 없이 available:false', async () => {
+    it('수급 탭이 없는 심볼(크립토)은 조회 없이 available:false', async () => {
         isTabAllowed.mockResolvedValue(false);
         expect(
-            await getInvestorFlowsTool({ symbol: '005930.KS' }, ctx, rt)
+            await getInvestorFlowsTool({ symbol: 'BTCUSD' }, ctx, rt)
         ).toEqual({
-            symbol: '005930.KS',
+            symbol: 'BTCUSD',
             available: false,
             reason: 'tab_not_available',
         });
-        expect(isTabAllowed).toHaveBeenCalledWith('005930.KS', 'flows');
+        expect(isTabAllowed).toHaveBeenCalledWith('BTCUSD', 'flows');
         expect(loadScorecard).not.toHaveBeenCalled();
     });
 
@@ -169,7 +180,8 @@ describe('getInvestorFlowsTool', () => {
         expect(
             result.institutional.quarters.map(q => [q.period, q.netFlow])
         ).toEqual([
-            ['2026-09-30', 'IN'],
+            // 진행 중 분기(부분 집계)는 방향 라벨을 내지 않는다.
+            ['2026-09-30', null],
             ['2026-06-30', 'IN'],
         ]);
         expect(result.institutional.topHolders.map(h => h.change)).toEqual([
@@ -210,9 +222,14 @@ describe('getInvestorFlowsTool', () => {
             changeVsPrevious: {
                 previousDate: '2026-08-15',
                 sharesChange: 6_000_000,
-                pct: (6_000_000 / 122_000_000) * 100,
+                // 도구 출력은 소수 둘째 자리(6,000,000 / 122,000,000 × 100 = 4.918…).
+                pct: 4.92,
             },
             recentChangePct: scorecard.short.metrics.shortInterestChangePct,
+            recentChangeFromDate:
+                scorecard.short.metrics.shortInterestChangeFromDate,
+            recentChangeToDate:
+                scorecard.short.metrics.shortInterestChangeToDate,
             trend: scorecard.short.metrics.shortInterestTrend,
         });
         expect(result.short?.offExchangeVolume?.shortRatio).toBe(
@@ -360,6 +377,7 @@ describe('getInvestorFlowsTool', () => {
                 failsToDeliver: 'collecting',
                 filings: 'collecting',
                 thresholdList: 'collecting',
+                dart: 'collecting',
             };
             loadScorecard.mockResolvedValue({
                 snapshot: null,
@@ -552,7 +570,7 @@ describe('getInvestorFlowsTool', () => {
             expect(result.offerings).toHaveLength(SUMMARY_MAX_OFFERINGS);
         });
 
-        it('봉투를 포함한 도구 출력 전체가 8,000자 상한 안에 여유(600자 이상)를 두고 들어간다', async () => {
+        it('봉투를 포함한 도구 출력 전체가 상한(INVESTOR_FLOWS_RESULT_MAX_CHARS) 안에 여유(600자 이상)를 두고 들어간다', async () => {
             arrange(heavySnapshot(), true, {}, { squeeze: true });
             const result = await getInvestorFlowsTool(
                 { symbol: 'AAPL' },
@@ -589,6 +607,7 @@ describe('getInvestorFlowsTool', () => {
                     failsToDeliver: 'collecting',
                     filings: 'collecting',
                     thresholdList: 'collecting',
+                    dart: 'collecting',
                 },
                 { squeeze: true }
             );
@@ -734,6 +753,191 @@ describe('getInvestorFlowsTool', () => {
             )) as { noData: boolean; dataStatus: { institutional: string } };
             expect(result.noData).toBe(true);
             expect(result.dataStatus.institutional).toBe('collecting');
+        });
+    });
+
+    describe('한국 종목(DART)', () => {
+        type KrOutput = KrInvestorFlowsSummary & {
+            asOf: string;
+            source: string;
+            symbol: string;
+            market: 'kr';
+            available: true;
+            noData: false;
+            notProvided: string;
+            shareClassNote?: string;
+            dataStatus?: { dart: 'collecting'; note: string };
+        };
+
+        function arrangeKr(
+            snapshot: ReturnType<typeof makeKrSnapshot> | null,
+            over: {
+                readiness?: Partial<InvestorFlowsPipelineReadiness>;
+                viaCommonShare?: boolean;
+            } = {}
+        ) {
+            loadScorecard.mockResolvedValue({
+                market: 'kr',
+                krCompany: {
+                    corpName: '삼성전자',
+                    viaCommonShare: over.viaCommonShare ?? false,
+                },
+                snapshot,
+                scorecard: snapshot === null ? null : evaluate(snapshot),
+                degraded: false,
+                finraEnabled: false,
+                regShoEnabled: false,
+                readiness: { ...READY, ...over.readiness },
+            });
+        }
+
+        it('DART 출처·시장·미제공 안내와 최근 공시 요약을 싣는다(미국 13F·FINRA 필드 없음)', async () => {
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                rt
+            )) as KrOutput;
+            expect(result).toMatchObject({
+                symbol: '005930.KS',
+                market: 'kr',
+                available: true,
+                noData: false,
+                asOf: '2026-10-16',
+            });
+            expect(result.source).toContain('DART');
+            expect(result.source).not.toContain('13F');
+            expect(result.notProvided).toContain(
+                'Institutional and foreign net buying'
+            );
+            expect(result.majorHolders.recent.map(r => r.reporter)).toEqual([
+                '픽스처자산운용',
+                '국민연금공단',
+            ]);
+            expect(result.majorHolders.recent[0]).toEqual({
+                receiptDate: '2026-10-14',
+                reporter: '픽스처자산운용',
+                form: 'abbreviated',
+                ratioPct: 5.05,
+                ratioChangePct: 5.05,
+                sharesChange: 301_500_000,
+                reason: '신규 보고',
+            });
+            expect(result.majorHolders.metrics).toEqual({
+                reports: 2,
+                reporters: 2,
+                detailedReports: 1,
+            });
+            expect(result.insiders.recent).toHaveLength(2);
+            expect(result.insiders.metrics?.tradingPlans).toBe(1);
+            expect(result.tradingPlans).toEqual([
+                {
+                    receiptDate: '2026-10-12',
+                    reporter: '이임원',
+                    title: '임원ㆍ주요주주특정증권등거래계획보고서',
+                },
+            ]);
+            expect(result.axes.institutional.sufficiency).toBe('insufficient');
+            expect(result.axes.largeHolders.sufficiency).toBe('sufficient');
+            expect(result.signals.map(s => s.id)).toContain(
+                'kr_major_holder_new'
+            );
+            expect(result.freshness.latestReceiptDate).toBe('2026-10-14');
+            expect('institutional' in result).toBe(false);
+            expect('short' in result).toBe(false);
+            expect('shareClassNote' in result).toBe(false);
+            expect('dataStatus' in result).toBe(false);
+        });
+
+        it('우선주는 지분공시가 보통주와 같다는 안내를 붙인다', async () => {
+            arrangeKr(makeKrSnapshot(), { viaCommonShare: true });
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005935.KS' },
+                ctx,
+                rt
+            )) as KrOutput;
+            expect(result.shareClassNote).toContain('preferred share');
+        });
+
+        it('공시가 없으면 noData:true이고, 미국 갈래가 수집 중이어도 dataStatus를 싣지 않는다', async () => {
+            arrangeKr(null, {
+                readiness: {
+                    institutional: 'collecting',
+                    short: 'collecting',
+                    filings: 'collecting',
+                },
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+            expect(result).toMatchObject({
+                market: 'kr',
+                available: true,
+                noData: true,
+            });
+            expect('dataStatus' in result).toBe(false);
+        });
+
+        it('DART 백필 중이고 비어 있으면 dataStatus.dart가 collecting이다', async () => {
+            arrangeKr(null, { readiness: { dart: 'collecting' } });
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                rt
+            )) as KrOutput;
+            expect(result.dataStatus?.dart).toBe('collecting');
+            expect(result.dataStatus?.note).toContain('not collected yet');
+        });
+
+        it('최악 입력(긴 이름·사유·제목, 목록마다 상한 초과)도 상한만큼만 싣고 도구 출력 전체가 600자 여유를 둔다', async () => {
+            const long = (prefix: string): string => prefix.repeat(60);
+            const snapshot = makeKrSnapshot({
+                majorHoldings: Array.from({ length: 12 }, (_, i) =>
+                    makeKrMajorHoldingRecord({
+                        rceptNo: `2026101000${String(i).padStart(4, '0')}`,
+                        reporter: `${long('가')}${i}`,
+                        reason: long('나'),
+                    })
+                ),
+                insiderReports: Array.from({ length: 12 }, (_, i) =>
+                    makeKrInsiderRecord({
+                        rceptNo: `2026101100${String(i).padStart(4, '0')}`,
+                        reporter: `${long('다')}${i}`,
+                        position: long('라'),
+                        majorShareholder: '10%이상주주',
+                    })
+                ),
+                tradingPlans: Array.from({ length: 12 }, (_, i) =>
+                    makeKrTradingPlanRecord({
+                        rceptNo: `2026101200${String(i).padStart(4, '0')}`,
+                        reporter: `${long('마')}${i}`,
+                        title: long('바'),
+                    })
+                ),
+            });
+            arrangeKr(snapshot, {
+                viaCommonShare: true,
+                readiness: { dart: 'collecting' },
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005935.KS' },
+                ctx,
+                rt
+            )) as KrOutput;
+            expect(result.majorHolders.recent).toHaveLength(
+                KR_SUMMARY_MAX_MAJOR_HOLDERS
+            );
+            expect(result.insiders.recent).toHaveLength(
+                KR_SUMMARY_MAX_INSIDERS
+            );
+            expect(result.tradingPlans).toHaveLength(
+                KR_SUMMARY_MAX_TRADING_PLANS
+            );
+            expect(JSON.stringify(result).length).toBeLessThanOrEqual(
+                INVESTOR_FLOWS_RESULT_MAX_CHARS - 600
+            );
         });
     });
 });

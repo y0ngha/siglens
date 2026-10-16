@@ -80,6 +80,11 @@ export interface IngestDartFilingsDeps {
     now: () => Date;
     isDeadlineReached: () => boolean;
     invalidateSymbols: (symbols: readonly string[]) => void | Promise<void>;
+    /**
+     * 최초 백필 완료 표식(`dart_backfill_done`)을 **처음** 기록한 실행이 한 번 부른다 — 한국 수급 탭의 "지분공시 수집 중" 안내를 담은
+     * 준비 상태 캐시를 무효화한다(`sec-13f`의 `onBackfillCompleted`와 같은 역할). 이후 실행은 부르지 않는다.
+     */
+    onBackfillCompleted?: () => void | Promise<void>;
     log: (message: string, detail?: unknown) => void;
 }
 
@@ -544,6 +549,7 @@ export async function runDartFilingsIngest(
         deps.log(
             `[dart-filings] initial backfill complete (${universe.corpCodes.length} corps)`
         );
+        await deps.onBackfillCompleted?.();
     }
 
     const pruned = await deps.repo.pruneBefore(ctx.retentionFloor);

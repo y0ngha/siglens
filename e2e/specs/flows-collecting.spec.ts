@@ -105,3 +105,15 @@ test.describe('flows: 수집 중 안내', () => {
         );
     });
 });
+
+test.describe('flows(한국): DART 수집 중 안내', () => {
+    test('DART 백필 전에는 한국 탭이 "지분 공시를 모으는 중"이라고 말하고 13F·FINRA 문구는 없다', async ({
+        page,
+    }) => {
+        await page.goto('/005930.KS/flows');
+        await expect(
+            page.getByText('지분 공시를 모으는 중이에요')
+        ).toBeVisible();
+        await expect(page.getByText(/13F|FINRA/)).toHaveCount(0);
+    });
+});

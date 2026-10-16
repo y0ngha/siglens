@@ -84,7 +84,7 @@ export interface PreviousSettlementChange {
 export type PipelineStatus = 'ready' | 'collecting' | 'unknown';
 
 /**
- * 종목과 무관한 수집 파이프라인 준비 상태 — 13F(기관)·FINRA(공매도)·SEC FTD·SEC 공시(Form 144·증자)·Reg SHO 과열 목록.
+ * 종목과 무관한 수집 파이프라인 준비 상태 — 13F(기관)·FINRA(공매도)·SEC FTD·SEC 공시(Form 144·증자)·Reg SHO 과열 목록·DART.
  * 내부자(Form 4)·13D/G·유통주식은 FMP 라이브라 해당 없다.
  */
 export interface InvestorFlowsPipelineReadiness {
@@ -96,6 +96,12 @@ export interface InvestorFlowsPipelineReadiness {
     readonly filings: PipelineStatus;
     /** Reg SHO 과열 목록 — 플래그가 꺼져 있으면 `unknown`(해당 없음). */
     readonly thresholdList: PipelineStatus;
+    /**
+     * 한국 DART 지분공시 — 초기 백필 표식(`dart_backfill_done`)이 있으면 `ready`. `DART_API_KEY`가 없으면 `unknown`(수집이 돌지
+     * 않으므로 "수집 중"이라고 말하지 않는다 — 화면은 "데이터 없음"). **한국 종목은 이 갈래만 본다** — 13F·FINRA·SEC 갈래가
+     * 수집 중이어도 한국 탭에 "수집 중"이 뜨지 않는다(설계 §4.5).
+     */
+    readonly dart: PipelineStatus;
 }
 
 // ── 수급 확장(SEC FTD·Form 144·증자 공시·13F 옵션·Reg SHO) — 수집·저장용 내부 타입 ────────────────────────
@@ -212,6 +218,8 @@ export interface Form144Document {
     issuerCik: string;
     issuerName: string | null;
     filerName: string;
+    /** 신고자 CIK(10자리 0 패딩, `headerData/filerInfo/filer/filerCredentials/cik`). 없으면 null. */
+    filerCik: string | null;
     relationships: string[];
     securityClass: string;
     /** 매도 예정 수량(여러 `securitiesInformation` 블록 합계). */
@@ -270,6 +278,8 @@ export interface ProposedSaleRecord {
     filingDate: string;
     formType: string;
     filer: string;
+    /** 신고자 CIK(10자리). 0050 이전 행·CIK 없는 신고는 null. */
+    filerCik: string | null;
     relationships: string[];
     shares: number;
     valueUsd: number;
@@ -318,7 +328,7 @@ export interface ThresholdStatusSummary {
     asOf: string | null;
 }
 
-// ── 한국 DART 지분공시(PR C — 수집만, 화면 연결은 후속 PR) ──────────────────────────────────────────────────
+// ── 한국 DART 지분공시(수집·저장 행 — 화면·분석 계약은 core `Kr*`) ──────────────────────────────────────────────────
 
 /** `corpCode.xml`의 상장사 한 행 — 종목코드(6자리, 영문 섞일 수 있음) → DART 고유번호(8자리). */
 export interface DartCorpCodeRow {
@@ -392,6 +402,13 @@ export interface DartCorpMatch {
     matchedStockCode: string;
     /** 우선주라 보통주 코드로 찾았는가. 화면이 "지분공시는 회사 단위라 보통주와 같다"는 안내에 쓴다. */
     viaCommonShare: boolean;
+}
+
+/** 한국 종목의 DART 회사 정보(`getInvestorFlowsScorecard`의 `krCompany`) — 화면·도구가 우선주 안내에 쓴다. */
+export interface KrDisclosureCompany {
+    readonly corpName: string;
+    /** 우선주라 보통주 코드로 찾았다 — 지분공시는 회사 단위라 보통주와 같은 내용이다. */
+    readonly viaCommonShare: boolean;
 }
 
 /** `dart_corp_code` 읽기 결과(`resolveCorpCode`). */

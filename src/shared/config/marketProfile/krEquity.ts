@@ -31,11 +31,14 @@ export const KR_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
     searchSource: 'kr-store',
     // options: 국내 개별주식옵션은 유동성이 사실상 없다(상장된 것은 KOSPI200 지수옵션).
     // congress: 공직자 주식 백지신탁은 관보 PDF로만 공개되어 API가 존재하지 않는다.
+    // flows: 수급은 DART 지분공시(대량보유·임원·주요주주 소유보고·거래계획)만 담는다 — 기관·외국인 순매수(KRX)는
+    // 재배포 라이선스로 제외한다. 탭 게이트(`isTabAllowedForSymbol`)라 에이전트 `get_investor_flows`도 함께 열린다.
     tabs: [
         'chart',
         'news',
         'fundamental',
         'financials',
+        'flows',
         'fear-greed',
         'overall',
         'position',

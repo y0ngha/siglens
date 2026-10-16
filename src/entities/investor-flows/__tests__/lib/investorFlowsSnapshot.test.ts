@@ -77,6 +77,7 @@ const sale = (
     filingDate,
     formType: '144',
     filer: 'Fixture Officer',
+    filerCik: '0001622864',
     relationships: ['Officer'],
     shares: 1200,
     valueUsd: 250_000,
@@ -654,6 +655,7 @@ describe('SEC expansion builders', () => {
             [
                 'approxSaleDate',
                 'filer',
+                'filerCik',
                 'filingDate',
                 'planAdoptionDate',
                 'relationships',
@@ -764,6 +766,21 @@ describe('assembleInvestorFlowsSnapshot — SEC expansion fields', () => {
                 assembleInvestorFlowsSnapshot(baseInput(over))
             ).not.toBeNull();
         }
+    });
+
+    it('maps the stored filer CIK onto ProposedSale.filerCik (core counts filers by CIK)', () => {
+        const snapshot = assembleInvestorFlowsSnapshot(
+            baseInput({
+                proposedSales: [
+                    sale('2026-10-01'),
+                    sale('2026-10-02', { filerCik: null }),
+                ],
+            })
+        );
+        expect(snapshot?.proposedSales?.map(p => p.filerCik)).toEqual([
+            null,
+            '0001622864',
+        ]);
     });
 
     it('does not count a "not listed" threshold status as data', () => {

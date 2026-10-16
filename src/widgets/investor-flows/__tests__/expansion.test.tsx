@@ -160,6 +160,34 @@ describe('SqueezeScoreCard', () => {
 describe('FailsToDeliverBlock', () => {
     const metrics = evaluate(makeExpandedSnapshot()).short.metrics;
 
+    it('shows the recent peak with its own settlement date', () => {
+        render(
+            <FailsToDeliverBlock
+                points={makeFailsToDeliver()}
+                metrics={{
+                    ...metrics,
+                    failsToDeliverPeakQty: 4_200_000,
+                    failsToDeliverPeakDate: '2026-09-24',
+                }}
+                collecting={false}
+            />
+        );
+        expect(screen.getByText('최근 최대치')).toBeInTheDocument();
+        expect(screen.getByText('결제일 2026-09-24')).toBeInTheDocument();
+    });
+
+    it('keeps four decimals for a tiny share of outstanding instead of showing 0.00%', () => {
+        render(
+            <FailsToDeliverBlock
+                points={makeFailsToDeliver()}
+                metrics={{ ...metrics, failsToDeliverPctOutstanding: 0.0006 }}
+                collecting={false}
+            />
+        );
+        expect(screen.getByText('0.0006%')).toBeInTheDocument();
+        expect(screen.queryByText('0.00%')).toBeNull();
+    });
+
     it('draws the bar chart, the latest date and the SEC caveat and lag note', () => {
         render(
             <FailsToDeliverBlock

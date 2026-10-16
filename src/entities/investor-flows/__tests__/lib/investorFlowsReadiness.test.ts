@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import {
+    deriveDartStatus,
     deriveFilingsStatus,
     deriveFtdStatus,
     deriveInstitutionalStatus,
     deriveShortStatus,
     deriveThresholdListStatus,
     isCollectingAndEmpty,
+    isKrDisclosureCollecting,
     maskUncollectedSections,
     resolveCollectingArms,
     UNKNOWN_PIPELINE_READINESS,
@@ -53,6 +55,7 @@ const READY: InvestorFlowsPipelineReadiness = {
     failsToDeliver: 'ready',
     filings: 'ready',
     thresholdList: 'ready',
+    dart: 'ready',
 };
 const POINT = {
     settlementDate: '2026-09-30',
@@ -68,6 +71,7 @@ const collecting = (
     failsToDeliver: 'collecting',
     filings: 'collecting',
     thresholdList: 'collecting',
+    dart: 'collecting',
     ...over,
 });
 
@@ -312,5 +316,76 @@ describe('resolveCollectingArms', () => {
                 })
             ).every(arm => !arm)
         ).toBe(true);
+    });
+});
+
+describe('deriveDartStatus', () => {
+    it('is unknown without a DART key (never "collecting" — the page says no data)', () => {
+        expect(
+            deriveDartStatus({ dartEnabled: false, backfillDone: false })
+        ).toBe('unknown');
+        expect(
+            deriveDartStatus({ dartEnabled: false, backfillDone: true })
+        ).toBe('unknown');
+    });
+
+    it('is collecting with a key until the backfill marker exists, then ready', () => {
+        expect(
+            deriveDartStatus({ dartEnabled: true, backfillDone: false })
+        ).toBe('collecting');
+        expect(
+            deriveDartStatus({ dartEnabled: true, backfillDone: true })
+        ).toBe('ready');
+    });
+});
+
+describe('isKrDisclosureCollecting', () => {
+    const KR_SNAPSHOT: InvestorFlowsSnapshot = {
+        ...BASE,
+        market: 'kr',
+        kr: {
+            majorHolders: [],
+            insiders: [],
+            tradingPlans: [
+                {
+                    receiptDate: '2026-10-14',
+                    reporter: '이임원',
+                    title: '거래계획',
+                    url: 'https://dart.fss.or.kr/dsaf001/main.do?rcpNo=1',
+                },
+            ],
+        },
+    };
+
+    it('is true only while DART is collecting and the stock has no reports (null snapshot counts as empty)', () => {
+        expect(
+            isKrDisclosureCollecting({ ...READY, dart: 'collecting' }, null)
+        ).toBe(true);
+        expect(
+            isKrDisclosureCollecting(
+                { ...READY, dart: 'collecting' },
+                KR_SNAPSHOT
+            )
+        ).toBe(false);
+    });
+
+    it('ignores the US branches — 13F and FINRA collecting do not make a Korean page collecting', () => {
+        expect(
+            isKrDisclosureCollecting(
+                {
+                    ...READY,
+                    institutional: 'collecting',
+                    short: 'collecting',
+                    dart: 'ready',
+                },
+                null
+            )
+        ).toBe(false);
+    });
+
+    it('is false when DART readiness is unknown (no key or unreadable state)', () => {
+        expect(
+            isKrDisclosureCollecting({ ...READY, dart: 'unknown' }, null)
+        ).toBe(false);
     });
 });

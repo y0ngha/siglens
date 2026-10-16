@@ -29,6 +29,7 @@ const READY_READINESS: InvestorFlowsPipelineReadiness = {
     failsToDeliver: 'ready',
     filings: 'ready',
     thresholdList: 'ready',
+    dart: 'ready',
 };
 
 const NOT_COLLECTING: CollectingArms = {
@@ -536,6 +537,7 @@ describe('분기별 문구 선택(레코드 맵)', () => {
         ['rising', '최근 흐름: 증가 추세'],
         ['falling', '최근 흐름: 감소 추세'],
         ['flat', '최근 흐름: 보합'],
+        ['mixed', '최근 흐름: 혼조'],
     ] as const)('공매도 추이 %s → %s', (trend, text) => {
         const snapshot = makeSnapshot();
         const metrics = {
@@ -553,5 +555,43 @@ describe('분기별 문구 선택(레코드 맵)', () => {
             />
         );
         expect(screen.getByText(text)).toBeInTheDocument();
+    });
+
+    it('최근 3회 결제 변화율을 양 끝 결제일과 함께 보이고, 끝 날짜가 없으면 숨긴다', () => {
+        const snapshot = makeSnapshot();
+        const base = evaluate(snapshot).short.metrics;
+        const rows = buildShortInterestView(
+            snapshot.shortInterest ?? [],
+            null
+        ).rows;
+        const { unmount } = render(
+            <ShortInterestBlock
+                rows={rows}
+                metrics={{
+                    ...base,
+                    shortInterestChangePct: -25.12,
+                    shortInterestChangeFromDate: '2026-08-31',
+                    shortInterestChangeToDate: '2026-09-30',
+                }}
+                previousChange={null}
+            />
+        );
+        expect(
+            screen.getByText('2026-08-31 → 2026-09-30 결제일 기준 -25.1%')
+        ).toBeInTheDocument();
+        unmount();
+        render(
+            <ShortInterestBlock
+                rows={rows}
+                metrics={{
+                    ...base,
+                    shortInterestChangePct: -25.12,
+                    shortInterestChangeFromDate: null,
+                    shortInterestChangeToDate: null,
+                }}
+                previousChange={null}
+            />
+        );
+        expect(screen.queryByText(/결제일 기준/)).toBeNull();
     });
 });

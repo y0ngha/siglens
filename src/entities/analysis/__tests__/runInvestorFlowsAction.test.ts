@@ -102,6 +102,7 @@ describe('runInvestorFlowsAction', () => {
         mockIsE2E.mockReturnValue(false);
         mockOptions.mockReset();
         mockOptions.mockResolvedValue({
+            market: 'us',
             includeFinraData: true,
             includeExchangeLists: true,
         });
@@ -131,6 +132,7 @@ describe('runInvestorFlowsAction', () => {
 
         it('화면 점수표와 같은 평가 옵션(플래그·숏스퀴즈 일봉)을 그대로 넘긴다', async () => {
             mockOptions.mockResolvedValue({
+                market: 'us',
                 includeFinraData: true,
                 includeExchangeLists: true,
                 squeezeContext: SQUEEZE_CONTEXT,
@@ -148,8 +150,27 @@ describe('runInvestorFlowsAction', () => {
             );
         });
 
+        it('한국 종목은 market: kr을 core에 넘긴다(캐시 키에 미국 원천 접미사가 붙지 않는다)', async () => {
+            mockOptions.mockResolvedValue({
+                market: 'kr',
+                includeFinraData: false,
+                includeExchangeLists: false,
+            });
+
+            await runInvestorFlowsAction('005930.KS', MODEL_ID, 'ko');
+
+            expect(mockOptions).toHaveBeenCalledWith('005930.KS');
+            expect(mockRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: '005930.KS',
+                    market: 'kr',
+                })
+            );
+        });
+
         it('플래그가 꺼져 있으면 includeFinraData·includeExchangeLists: false를 넘긴다(캐시 키가 갈린다)', async () => {
             mockOptions.mockResolvedValue({
+                market: 'us',
                 includeFinraData: false,
                 includeExchangeLists: false,
             });

@@ -292,7 +292,7 @@ describe('runSecFilingsIngest', () => {
             ]);
         });
 
-        it('stores the AMD Form 144 under its issuer CIK and symbol', async () => {
+        it('stores the AMD Form 144 under its issuer CIK and symbol, with the filer CIK from the header', async () => {
             const { deps, calls } = build({ form144Docs: DOCS });
             await runSecFilingsIngest(deps);
             expect(calls.form144).toEqual([
@@ -301,6 +301,7 @@ describe('runSecFilingsIngest', () => {
                     issuerCik: 2488,
                     symbol: 'AMD',
                     filerName: 'FORREST E NORROD',
+                    filerCik: '0001622864',
                     relationships: ['Officer'],
                     securityClass: 'Common',
                     shares: 17262,

@@ -1,12 +1,17 @@
 import 'server-only';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
+import {
+    getInvestorFlowsScorecard,
+    type InvestorFlowsScorecardResult,
+} from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
 import {
     EMPTY_COLLECTING_SNAPSHOT,
+    isKrDisclosureCollecting,
     maskUncollectedSections,
     resolveCollectingArms,
 } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import { summarizeInvestorFlows } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
+import { summarizeKrInvestorFlows } from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
 import type { CollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
@@ -16,6 +21,14 @@ const BASE_SOURCE =
     'SEC 13F (institutions and their put/call options, quarterly, filed up to ~45 days after quarter end), Form 4 and 13D/13G via FMP, SEC Form 144, registration/offering filings and fails-to-deliver';
 const FINRA_SOURCE = 'FINRA short interest/volume';
 const EXCHANGE_LIST_SOURCE = 'Nasdaq/NYSE/Cboe Reg SHO threshold lists';
+const KR_SOURCE =
+    'DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports';
+const KR_NOT_PROVIDED =
+    'Institutional and foreign net buying, short selling and offering filings are not provided for Korean stocks - say so and never estimate them.';
+const KR_PREFERRED_SHARE_NOTE =
+    'This is a preferred share. DART ownership filings are company-level, so these are the same reports as the common share.';
+const KR_COLLECTING_NOTE =
+    'The initial DART collection is still running. No reports here means not collected yet, not that there were no filings - say the data is still being collected.';
 const COLLECTING_NOTE =
     'Initial collection is still running for the sources marked collecting. Empty or insufficient data there means not collected yet, not that the stock has no such activity - say the data is still being collected.';
 
@@ -81,12 +94,50 @@ function sourceLine(finraEnabled: boolean, regShoEnabled: boolean): string {
 }
 
 /**
- * 미국 주식의 수급(기관 13F·풋콜 · 내부자 Form 4·Form 144 · 5% 대량보유 · 증자·희석 공시 · FINRA 공매도 · SEC FTD ·
- * Reg SHO 과열 목록 · 숏스퀴즈 점수) 요약.
+ * 한국 종목(DART) 결과. 미국 갈래(13F·FINRA·SEC)의 수집 상태는 보지 않는다 — DART 백필이 끝나지 않았고 이 종목 목록이 비어 있을 때만
+ * `dataStatus.dart: 'collecting'`이다. 우선주는 지분공시가 보통주와 같다는 안내를 붙인다. 기관·외국인 순매수 미제공은 항상 밝힌다.
+ */
+function krResult(
+    symbol: string,
+    result: InvestorFlowsScorecardResult
+): Record<string, unknown> {
+    const { snapshot, scorecard, readiness, krCompany } = result;
+    const collecting = isKrDisclosureCollecting(readiness, snapshot);
+    const envelope = {
+        source: KR_SOURCE,
+        symbol,
+        market: 'kr' as const,
+        available: true,
+        notProvided: KR_NOT_PROVIDED,
+        ...(krCompany?.viaCommonShare === true
+            ? { shareClassNote: KR_PREFERRED_SHARE_NOTE }
+            : {}),
+        ...(collecting
+            ? {
+                  dataStatus: {
+                      dart: 'collecting' as const,
+                      note: KR_COLLECTING_NOTE,
+                  },
+              }
+            : {}),
+    };
+    if (snapshot === null || scorecard === null)
+        return { asOf: new Date().toISOString(), ...envelope, noData: true };
+    return {
+        asOf: snapshot.asOf,
+        ...envelope,
+        noData: false,
+        ...summarizeKrInvestorFlows(snapshot, scorecard),
+    };
+}
+
+/**
+ * 수급 요약. 미국 주식은 기관 13F·풋콜 · 내부자 Form 4·Form 144 · 5% 대량보유 · 증자·희석 공시 · FINRA 공매도 · SEC FTD ·
+ * Reg SHO 과열 목록 · 숏스퀴즈 점수, 한국 주식은 DART 대량보유(5%)·임원·주요주주 소유보고·거래계획보고서(`krResult`, `market: 'kr'`)다.
  *
- * 서버 LLM을 부르지 않는다 — DB에 쌓인 13F·FINRA와 FMP 내부자 데이터를 읽어 `evaluateInvestorFlows`
- * 점수표(코드 계산)를 압축할 뿐이라 공개 API(`/api/v1`)에 그대로 내보내도 서버 키 비용이 없다.
- * 탭 게이트는 `get_congress_trades`/`get_options_summary`와 같다: 한국·크립토 심볼에는 수급 탭이 없다.
+ * 서버 LLM을 부르지 않는다 — DB에 쌓인 13F·FINRA·DART와 FMP 내부자 데이터를 읽어 `evaluateInvestorFlows`
+ * 점수표(코드 계산)를 압축할 뿐이라 공개 API(`/api/v1`)에 그대로 내보내도 서버 키 비용이 없다. 한국 종목은 DB의 DART 테이블만
+ * 읽는다(DART를 직접 부르지 않는다). 탭 게이트는 `get_congress_trades`/`get_options_summary`와 같다: 크립토 심볼에는 수급 탭이 없다.
  *
  * `dataStatus`는 초기 수집이 아직 끝나지 않은 갈래가 있을 때만 실린다(그 갈래 키에 `'collecting'`). 그때 해당 구간이 비어
  * 있는 것은 그 종목에 활동이 없어서가 아니므로 "데이터를 모으는 중"이라고 말해야 한다. 키가 없으면 수집이 끝난 정상 상태다.
@@ -101,16 +152,13 @@ export const getInvestorFlowsTool: ToolExecutor = async args => {
     if (!(await isTabAllowedForSymbol(symbol, 'flows')))
         return { symbol, available: false, reason: 'tab_not_available' };
 
-    const {
-        snapshot,
-        scorecard,
-        degraded,
-        finraEnabled,
-        regShoEnabled,
-        readiness,
-    } = await getInvestorFlowsScorecard(symbol);
-    if (degraded)
+    const result = await getInvestorFlowsScorecard(symbol);
+    if (result.degraded)
         return { symbol, available: false, reason: 'provider_failed' };
+    if (result.market === 'kr') return krResult(symbol, result);
+
+    const { snapshot, scorecard, finraEnabled, regShoEnabled, readiness } =
+        result;
 
     const source = sourceLine(finraEnabled, regShoEnabled);
     const dataStatus = buildDataStatus(snapshot, readiness, {

@@ -23,6 +23,7 @@ describe('parseForm144Xml', () => {
                 issuerCik: '0000002488',
                 issuerName: 'ADVANCED MICRO DEVICES, INC.',
                 filerName: 'FORREST E NORROD',
+                filerCik: '0001622864',
                 relationships: ['Officer'],
                 securityClass: 'Common',
                 shares: 17262,
@@ -40,6 +41,7 @@ describe('parseForm144Xml', () => {
             expect(await parseForm144Xml(FORM144_TRU_COM)).toMatchObject({
                 issuerCik: '0001552033',
                 filerName: 'Abdelsadek Mohamed',
+                filerCik: '0002058648',
                 shares: 500,
                 valueUsd: 35000,
                 broker: 'Fidelity Brokerage Services LLC',
@@ -50,6 +52,39 @@ describe('parseForm144Xml', () => {
             expect(
                 (await parseForm144Xml(FORM144_TRU_COM))?.planAdoptionDate
             ).toBe('2026-06-11');
+        });
+    });
+
+    describe('filer CIK (headerData/filerInfo/filer/filerCredentials/cik)', () => {
+        it('zero-pads a short CIK to 10 digits', async () => {
+            const xml = FORM144_TRU_COM.replace(
+                '<cik>0002058648</cik>',
+                '<cik>2058648</cik>'
+            );
+            expect((await parseForm144Xml(xml))?.filerCik).toBe('0002058648');
+        });
+
+        it('reads it under a prefixed namespace too', async () => {
+            const xml = FORM144_TRU_COM.replace(
+                '<cik>0002058648</cik>',
+                '<com:cik>0002058648</com:cik>'
+            );
+            expect((await parseForm144Xml(xml))?.filerCik).toBe('0002058648');
+        });
+
+        it('is null when the header has no CIK or it is not numeric (the filing is still parsed)', async () => {
+            const noHeader = FORM144_TRU_COM.replace(
+                /<headerData>[\s\S]*<\/headerData>/,
+                ''
+            );
+            const parsedNoHeader = await parseForm144Xml(noHeader);
+            expect(parsedNoHeader?.filerCik).toBeNull();
+            expect(parsedNoHeader?.filerName).toBe('Abdelsadek Mohamed');
+            const bad = FORM144_TRU_COM.replace(
+                '<cik>0002058648</cik>',
+                '<cik>ABC</cik>'
+            );
+            expect((await parseForm144Xml(bad))?.filerCik).toBeNull();
         });
     });
 
