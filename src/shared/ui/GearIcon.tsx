@@ -4,7 +4,7 @@ interface GearIconProps {
 
 /**
  * House-style outline gear glyph — shared by every "settings" affordance in
- * the app (chart toolbar's `IndicatorSettingsPopover` trigger, symbol-page
+ * the app (chart toolbar's `ChartSettingsMenu` trigger, symbol-page
  * header's `AnalysisSettingsMenu` trigger) so they read as the same icon
  * language. Extracted here because both call sites previously declared
  * byte-identical inline `GearIcon` components (CONVENTIONS.md#CS-1 — don't

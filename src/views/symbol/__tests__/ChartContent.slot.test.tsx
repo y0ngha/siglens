@@ -16,6 +16,20 @@ const FALLBACK_ANALYSIS = buildFallbackAnalysis(
 // vitest가 vi.mock 호출을 파일 최상단으로 호이스팅하므로, 선언 위치와 무관하게
 // 모킹이 적용된다. eslint import/first를 만족시키려고 import를 모두 위에 모으고
 // mock 선언을 그 아래에 둔다 (둘 다 동작하는 동등 표현).
+// StockChart만 스텁으로 바꾼다 — 슬롯이 `headerStartSlot`으로 넘어가는 배선만 본다.
+vi.mock('next/dynamic', () => ({
+    default: (loader: () => Promise<unknown>) => {
+        if (!loader.toString().includes('StockChart')) return () => null;
+        const Stub = (props: Record<string, unknown>) => {
+            return (
+                <div data-testid="stock-chart-stub">
+                    {props.headerStartSlot as React.ReactNode}
+                </div>
+            );
+        };
+        return Stub;
+    },
+}));
 vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => null,
 }));
@@ -139,7 +153,9 @@ const props = {
 };
 
 describe('ChartContent 슬롯 규칙', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
 
     it('FALLBACK(서사 없음)이면 사실 층을 렌더한다', () => {
         baseAnalysis.mockReturnValue(analysisReturn(FALLBACK_ANALYSIS));
@@ -169,7 +185,7 @@ describe('ChartContent 슬롯 규칙', () => {
         // 텍스트로 항상 유지하고, AnalysisPanel은 그 위에 서사를 additive로 얹는다.
         expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
     });
-    describe('chartCornerSlot (차트 상단 띠 오버레이)', () => {
+    describe('chartHeaderStartSlot (차트 헤더 띠 왼쪽 칸)', () => {
         const renderWithSlot = (slot?: React.ReactNode) => {
             baseAnalysis.mockReturnValue(analysisReturn(FALLBACK_ANALYSIS));
             return render(
@@ -177,31 +193,65 @@ describe('ChartContent 슬롯 규칙', () => {
                     {...props}
                     initialAnalysis={FALLBACK_ANALYSIS}
                     initialAnalysisFailed={true}
-                    chartCornerSlot={slot}
+                    chartHeaderStartSlot={slot}
                 />
             );
         };
 
-        it('슬롯이 없으면 오버레이 래퍼도 그리지 않는다', () => {
+        it('슬롯이 없으면 StockChart 헤더 칸에 아무것도 넣지 않는다', () => {
             renderWithSlot(undefined);
 
+            expect(
+                screen.getByTestId('stock-chart-stub')
+            ).toBeEmptyDOMElement();
             expect(screen.queryByTestId('corner-slot')).toBeNull();
         });
 
-        it('슬롯은 흐름 밖(absolute)·포인터 통과 래퍼 안에 놓인다 — 레이아웃을 밀지 않는다', () => {
+        it('슬롯은 별도 절대 위치 래퍼 없이 StockChart 헤더 띠의 headerStartSlot으로 넘어간다', () => {
             renderWithSlot(<span data-testid="corner-slot">x</span>);
 
-            const wrapper = screen.getByTestId('corner-slot').parentElement;
-            expect(wrapper).toHaveClass(
-                'absolute',
-                'pointer-events-none',
-                'top-0',
-                'left-2',
-                'right-32',
-                '@container',
-                'h-8',
-                'z-10'
+            // 자리는 띠 안의 flex 칸이 정한다 — ChartContent는 inset·z-index·포인터 우회 래퍼를 두지 않는다.
+            const host = screen.getByTestId('stock-chart-stub');
+            expect(host).toContainElement(screen.getByTestId('corner-slot'));
+            expect(
+                screen.getByTestId('corner-slot').closest('.absolute')
+            ).toBeNull();
+        });
+    });
+
+    describe('FMP 데이터 출처 표기', () => {
+        const ATTRIBUTION = 'Data provided by Financial Modeling Prep';
+        const renderFor = (
+            marketProfile: 'us-equity' | 'crypto' | 'kr-equity'
+        ) => {
+            baseAnalysis.mockReturnValue(analysisReturn(FALLBACK_ANALYSIS));
+            return render(
+                <ChartContent
+                    {...props}
+                    marketProfile={marketProfile}
+                    initialAnalysis={FALLBACK_ANALYSIS}
+                    initialAnalysisFailed={true}
+                />
             );
+        };
+
+        it.each(['us-equity', 'crypto'] as const)(
+            '%s는 출처 링크를 새 탭·noopener noreferrer·제휴 파라미터 없는 주소로 보인다',
+            marketProfile => {
+                renderFor(marketProfile);
+                const link = screen.getByRole('link', { name: ATTRIBUTION });
+                expect(link).toHaveAttribute(
+                    'href',
+                    'https://financialmodelingprep.com'
+                );
+                expect(link).toHaveAttribute('target', '_blank');
+                expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+            }
+        );
+
+        it('한국 주식(Yahoo)에는 출처 표기가 없다', () => {
+            renderFor('kr-equity');
+            expect(screen.queryByText(ATTRIBUTION)).toBeNull();
         });
     });
 });

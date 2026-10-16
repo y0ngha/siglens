@@ -39,10 +39,10 @@ vi.mock('@/shared/hooks/useIsMobileViewport', () => ({
 }));
 vi.mock('@/views/symbol/ChartContent', () => ({
     ChartContent: ({
-        chartCornerSlot,
+        chartHeaderStartSlot,
     }: {
-        chartCornerSlot?: React.ReactNode;
-    }) => <div data-testid="chart-content">{chartCornerSlot}</div>,
+        chartHeaderStartSlot?: React.ReactNode;
+    }) => <div data-testid="chart-content">{chartHeaderStartSlot}</div>,
 }));
 vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(() => undefined),

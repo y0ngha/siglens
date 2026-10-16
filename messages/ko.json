@@ -3634,9 +3634,12 @@
                 "ac1149": "하락 추세선 #{v0}",
                 "bdeea2": "차트 패턴",
                 "bfe4b6": "상승 추세선 #{v0}",
-                "c178bc": "일부 켜짐",
+                "c178bc": "일부 켜짐"
+            },
+            "ChartSettingsMenu": {
                 "extendedHours": "시간외 거래(프리·애프터마켓) 표시",
-                "settingsTrigger": "차트 설정"
+                "extendedHoursUnavailable": "1일봉·한국 종목·코인에는 시간외 거래가 없어요",
+                "label": "차트 설정"
             },
             "ChartSkeleton": {
                 "486c8b": "데이터 로딩 중…"
@@ -3644,8 +3647,10 @@
             "FearGreedHistoricalChart": {
                 "9b98f6": "최근 1년 공포 탐욕 지수 추이 차트"
             },
-            "IndicatorSettingsPopover": {
-                "c6e1ca": "보조지표 설정"
+            "IndicatorMenu": {
+                "panelLabel": "보조지표 설정",
+                "trigger": "보조지표 · {v0}",
+                "triggerEmpty": "보조지표"
             },
             "ShareCandlestickChart": {
                 "1b2664": "차트 데이터가 없습니다",

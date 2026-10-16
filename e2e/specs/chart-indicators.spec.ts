@@ -1,23 +1,25 @@
 import { test, expect } from '../support/fixtures';
 
 /**
- * 차트 보조지표 설정 팝오버 — 우상단 톱니바퀴 → 카테고리 체크박스/period 칩 → 닫기("차트 작도" 메뉴와 같은 앵커드 팝오버).
+ * 차트 보조지표 설정 팝오버 — 헤더 띠 "보조지표" 메뉴 → 카테고리 체크박스/period 칩 → 닫기("차트 작도" 메뉴와 같은 앵커드 팝오버).
  * 데스크톱(chromium)만 실행(@webkit 미태깅): 모바일 시트의 Radix aria-hidden이
  * role 쿼리를 방해하는 이슈를 피한다(symbol-tabs.spec.ts 참조). canvas 반영 대신
  * 모달 UI 흐름을 검증한다 — 차트 데이터에 비의존이라 안정적이다.
  */
 test.describe('chart indicator settings popover', () => {
-    const GEAR = '보조지표 설정';
+    // 트리거는 글자 메뉴("보조지표" / 켜진 지표가 있으면 "보조지표 · N")라 이름이 바뀐다 — 패널(group) 이름은 고정.
+    const TRIGGER = /^보조지표/;
+    const PANEL = '보조지표 설정';
 
-    test('opens the popover from the gear and shows category groups (incl. SMC)', async ({
+    test('opens the popover from the 보조지표 trigger and shows category groups (incl. SMC)', async ({
         page,
     }) => {
         await page.goto('/AAPL');
-        const gear = page.getByRole('button', { name: GEAR });
-        await expect(gear).toBeVisible({ timeout: 15_000 });
-        await gear.click();
+        const trigger = page.getByRole('button', { name: TRIGGER });
+        await expect(trigger).toBeVisible({ timeout: 15_000 });
+        await trigger.click();
 
-        const dialog = page.getByRole('group', { name: GEAR });
+        const dialog = page.getByRole('group', { name: PANEL });
         await expect(dialog).toBeVisible();
         await expect(dialog.getByText('추세')).toBeVisible();
         await expect(dialog.getByText('모멘텀')).toBeVisible();
@@ -31,11 +33,11 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles the RSI checkbox on', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
+        await page.getByRole('button', { name: TRIGGER }).click();
         // exact: true — 'RSI'와 'StochRSI'가 모두 /RSI/에 매칭돼 strict mode를
         // 위반하므로 정확히 'RSI'만 선택한다.
         const rsi = page
-            .getByRole('group', { name: GEAR })
+            .getByRole('group', { name: PANEL })
             .getByRole('checkbox', { name: 'RSI', exact: true });
         await rsi.check();
         await expect(rsi).toBeChecked();
@@ -43,9 +45,9 @@ test.describe('chart indicator settings popover', () => {
 
     test('selects an MA period chip (aria-pressed)', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
+        await page.getByRole('button', { name: TRIGGER }).click();
         const chip = page
-            .getByRole('group', { name: GEAR })
+            .getByRole('group', { name: PANEL })
             .getByRole('button', { name: /^20$/ })
             .first();
         await chip.click();
@@ -54,18 +56,18 @@ test.describe('chart indicator settings popover', () => {
 
     test('closes on Escape', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        await expect(page.getByRole('group', { name: GEAR })).toBeVisible();
+        await page.getByRole('button', { name: TRIGGER }).click();
+        await expect(page.getByRole('group', { name: PANEL })).toBeVisible();
         await page.keyboard.press('Escape');
-        await expect(page.getByRole('group', { name: GEAR })).toHaveCount(0);
+        await expect(page.getByRole('group', { name: PANEL })).toHaveCount(0);
     });
 
     test('shows the statistical category and toggles MFI into a pane', async ({
         page,
     }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         // hurst/varianceRatio가 'statistical' 카테고리를 등록하므로 '통계' 그룹이 보인다.
         await expect(dialog.getByText('통계')).toBeVisible();
         // MFI는 모멘텀 카테고리의 체크박스(label 'MFI'). exact로 다른 라벨 substring 회피.
@@ -84,8 +86,8 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles ATR into a pane via the popover', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         // ATR은 변동성 카테고리의 체크박스(label 'ATR'). exact로 다른 라벨 substring 회피.
         await dialog
             .getByRole('checkbox', { name: 'ATR', exact: true })
@@ -100,8 +102,8 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles Elder Ray into a pane via the popover', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         await dialog
             .getByRole('checkbox', { name: 'Elder Ray', exact: true })
             .check();
@@ -115,8 +117,8 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles Squeeze into a pane via the popover', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         await dialog
             .getByRole('checkbox', { name: 'Squeeze', exact: true })
             .check();
@@ -128,8 +130,8 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles Regression into a pane via the popover', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         await dialog
             .getByRole('checkbox', { name: 'Regression', exact: true })
             .check();
@@ -145,8 +147,8 @@ test.describe('chart indicator settings popover', () => {
         page,
     }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         // Keltner는 가격 OVERLAY(페인 아님) — OverlayLegend 라벨이 crosshair
         // hover에만 나타나 E2E에서 fragile하다. 안정적인 모달 체크박스 상태로
         // 검증한다. 'Keltner'는 변동성 카테고리 체크박스이며 exact로 substring
@@ -161,8 +163,8 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles the Supertrend overlay via the popover', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         // Supertrend는 가격 OVERLAY(페인 아님) — Keltner와 동일하게 모달 체크박스
         // 상태로 검증한다. 'Supertrend'는 추세 카테고리 체크박스이며 exact로
         // substring 충돌을 피한다.
@@ -179,8 +181,8 @@ test.describe('chart indicator settings popover', () => {
         page,
     }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         // Parabolic SAR는 가격 OVERLAY(점 마커) — Keltner/Supertrend와 동일하게
         // 모달 체크박스 상태로 검증한다. exact로 substring 충돌 방지.
         const psar = dialog.getByRole('checkbox', {
@@ -194,8 +196,8 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles the Chandelier overlay via the popover', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         const chandelier = dialog.getByRole('checkbox', {
             name: 'Chandelier',
             exact: true,
@@ -209,8 +211,8 @@ test.describe('chart indicator settings popover', () => {
         page,
     }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         // Elder Impulse는 메인 캔들을 재색칠(candle-paint) — pane/overlay 라벨이 없어
         // 모달 체크박스 상태로 검증한다. exact로 substring 충돌 방지.
         const impulse = dialog.getByRole('checkbox', {
@@ -224,8 +226,8 @@ test.describe('chart indicator settings popover', () => {
 
     test('toggles SMC Zones via the popover', async ({ page }) => {
         await page.goto('/AAPL');
-        await page.getByRole('button', { name: GEAR }).click();
-        const dialog = page.getByRole('group', { name: GEAR });
+        await page.getByRole('button', { name: TRIGGER }).click();
+        const dialog = page.getByRole('group', { name: PANEL });
         // SMC Zones는 가격선(zone) — pane/overlay 라벨이 없어 모달 체크박스 상태로 검증.
         // smc 등록으로 'SMC' 카테고리 그룹이 모달에 처음 노출된다('SMC Zones' 스팬과 구별 위해 heading).
         await expect(
@@ -238,5 +240,28 @@ test.describe('chart indicator settings popover', () => {
         await expect(smc).not.toBeChecked();
         await smc.check();
         await expect(smc).toBeChecked();
+    });
+
+    test('the gear is the chart settings menu, and only one header menu is open at a time', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL');
+        const trigger = page.getByRole('button', { name: TRIGGER });
+        await expect(trigger).toBeVisible({ timeout: 15_000 });
+        await trigger.click();
+        await expect(page.getByRole('group', { name: PANEL })).toBeVisible();
+
+        await page.getByRole('button', { name: '차트 설정' }).click();
+        await expect(
+            page.getByRole('group', { name: '차트 설정' })
+        ).toBeVisible();
+        // 하나를 열면 나머지는 닫힌다.
+        await expect(page.getByRole('group', { name: PANEL })).toHaveCount(0);
+        // 시간외 거래 행은 이 메뉴에 있다(적용 여부와 무관하게 항상 보인다).
+        await expect(
+            page.getByRole('group', { name: '차트 설정' }).getByRole('button', {
+                name: /시간외 거래\(프리·애프터마켓\) 표시/,
+            })
+        ).toBeVisible();
     });
 });

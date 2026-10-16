@@ -18,16 +18,18 @@ vi.mock('@/shared/lib/chartColors', () => ({
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { IndicatorSettingsPopover } from '../../ui/IndicatorSettingsPopover';
+import type { ComponentProps } from 'react';
+import { useExclusiveChartMenu } from '../../hooks/useExclusiveChartMenu';
+import { IndicatorMenu } from '../../ui/IndicatorMenu';
 import { CHART_POPOVER_PANEL } from '../../ui/chartPopoverStyles';
 import {
     INDICATOR_META,
     type IndicatorBinding,
 } from '../../model/indicatorRegistry';
 
-/** 톱니바퀴를 눌러 팝오버를 연다 — 닫힌 동안에는 패널이 DOM에 없다. */
+/** 트리거를 눌러 팝오버를 연다 — 닫힌 동안에는 패널이 DOM에 없다. */
 function openPanel(): void {
-    fireEvent.click(screen.getByRole('button', { name: '보조지표 설정' }));
+    fireEvent.click(screen.getByRole('button', { name: /^보조지표/ }));
 }
 
 const rsiBinding = (
@@ -39,6 +41,13 @@ const rsiBinding = (
     ...over,
 });
 
+function IndicatorMenuHarness(
+    props: Omit<ComponentProps<typeof IndicatorMenu>, 'menu'>
+) {
+    const { bind } = useExclusiveChartMenu();
+    return <IndicatorMenu menu={bind('indicators')} {...props} />;
+}
+
 const maBinding = (over: Partial<IndicatorBinding> = {}): IndicatorBinding => ({
     meta: INDICATOR_META.ma!,
     active: false,
@@ -48,17 +57,40 @@ const maBinding = (over: Partial<IndicatorBinding> = {}): IndicatorBinding => ({
     ...over,
 });
 
-describe('IndicatorSettingsPopover', () => {
-    it('renders the gear trigger button', () => {
-        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
+describe('IndicatorMenu', () => {
+    it('renders a text trigger named "보조지표" (no count) when no indicator is on', () => {
+        render(<IndicatorMenuHarness bindings={[rsiBinding()]} />);
         expect(
-            screen.getByRole('button', { name: '보조지표 설정' })
+            screen.getByRole('button', { name: '보조지표' })
+        ).toBeInTheDocument();
+        // 톱니바퀴가 아니라 "차트 작도"와 같은 글자 트리거(▾는 장식).
+        expect(
+            screen.getByRole('button', { name: '보조지표' }).textContent
+        ).toBe('보조지표▾');
+    });
+
+    it('shows the number of enabled indicators in the trigger label', () => {
+        render(
+            <IndicatorMenuHarness
+                bindings={[
+                    rsiBinding({ active: true }),
+                    maBinding({ active: true, visiblePeriods: [20] }),
+                    {
+                        meta: INDICATOR_META.bollinger!,
+                        active: false,
+                        onToggle: vi.fn(),
+                    },
+                ]}
+            />
+        );
+        expect(
+            screen.getByRole('button', { name: '보조지표 · 2' })
         ).toBeInTheDocument();
     });
 
     it('keeps the panel out of the DOM while closed and marks the trigger collapsed', () => {
-        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
-        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        render(<IndicatorMenuHarness bindings={[rsiBinding()]} />);
+        const gear = screen.getByRole('button', { name: /^보조지표/ });
         expect(gear).toHaveAttribute('aria-expanded', 'false');
         expect(
             screen.queryByRole('group', { name: '보조지표 설정' })
@@ -67,9 +99,9 @@ describe('IndicatorSettingsPopover', () => {
     });
 
     it('opens an anchored popover (not a modal) under the trigger, with the same panel surface as the drawing menu', () => {
-        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
+        render(<IndicatorMenuHarness bindings={[rsiBinding()]} />);
         openPanel();
-        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        const gear = screen.getByRole('button', { name: /^보조지표/ });
         expect(gear).toHaveAttribute('aria-expanded', 'true');
         const panel = screen.getByRole('group', { name: '보조지표 설정' });
         expect(gear).toHaveAttribute('aria-controls', panel.id);
@@ -84,7 +116,7 @@ describe('IndicatorSettingsPopover', () => {
     });
 
     it('closes when the gear is clicked again, on Escape and on an outside click', () => {
-        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
+        render(<IndicatorMenuHarness bindings={[rsiBinding()]} />);
         const panelQuery = () =>
             screen.queryByRole('group', { name: '보조지표 설정' });
         openPanel();
@@ -100,9 +132,7 @@ describe('IndicatorSettingsPopover', () => {
     });
 
     it('renders category headings only for non-empty categories', () => {
-        render(
-            <IndicatorSettingsPopover bindings={[rsiBinding(), maBinding()]} />
-        );
+        render(<IndicatorMenuHarness bindings={[rsiBinding(), maBinding()]} />);
         openPanel();
         expect(
             screen.getByRole('group', { name: '보조지표 설정' })
@@ -115,7 +145,7 @@ describe('IndicatorSettingsPopover', () => {
 
     it('orders category sections by CATEGORY_ORDER regardless of binding input order', () => {
         render(
-            <IndicatorSettingsPopover
+            <IndicatorMenuHarness
                 bindings={[
                     rsiBinding(), // momentum
                     maBinding(), // trend
@@ -136,9 +166,7 @@ describe('IndicatorSettingsPopover', () => {
 
     it('renders a checkbox for non-period indicators and calls onToggle', () => {
         const onToggle = vi.fn();
-        render(
-            <IndicatorSettingsPopover bindings={[rsiBinding({ onToggle })]} />
-        );
+        render(<IndicatorMenuHarness bindings={[rsiBinding({ onToggle })]} />);
         openPanel();
         const checkbox = screen.getByRole('checkbox', { name: /RSI/ });
         expect(checkbox).not.toBeChecked();
@@ -148,9 +176,7 @@ describe('IndicatorSettingsPopover', () => {
 
     it('reflects active state on the checkbox', () => {
         render(
-            <IndicatorSettingsPopover
-                bindings={[rsiBinding({ active: true })]}
-            />
+            <IndicatorMenuHarness bindings={[rsiBinding({ active: true })]} />
         );
         openPanel();
         expect(screen.getByRole('checkbox', { name: /RSI/ })).toBeChecked();
@@ -159,7 +185,7 @@ describe('IndicatorSettingsPopover', () => {
     it('renders period chips (not a checkbox) for ma/ema and toggles a period', () => {
         const onTogglePeriod = vi.fn();
         render(
-            <IndicatorSettingsPopover
+            <IndicatorMenuHarness
                 bindings={[maBinding({ visiblePeriods: [20], onTogglePeriod })]}
             />
         );
@@ -174,7 +200,7 @@ describe('IndicatorSettingsPopover', () => {
     });
 
     it('renders an empty panel body without crashing when bindings is empty (worst case)', () => {
-        render(<IndicatorSettingsPopover bindings={[]} />);
+        render(<IndicatorMenuHarness bindings={[]} />);
         openPanel();
         expect(
             screen.getByRole('group', { name: '보조지표 설정' })
@@ -184,7 +210,7 @@ describe('IndicatorSettingsPopover', () => {
 
     it('handles a period indicator with no available periods (worst case)', () => {
         render(
-            <IndicatorSettingsPopover
+            <IndicatorMenuHarness
                 bindings={[
                     maBinding({ availablePeriods: [], visiblePeriods: [] }),
                 ]}
@@ -198,9 +224,7 @@ describe('IndicatorSettingsPopover', () => {
     });
 
     it('renders indicator items in a 2-column grid container (layout regression)', () => {
-        render(
-            <IndicatorSettingsPopover bindings={[rsiBinding(), maBinding()]} />
-        );
+        render(<IndicatorMenuHarness bindings={[rsiBinding(), maBinding()]} />);
         openPanel();
         // 카테고리별 항목 컨테이너가 2열 그리드여야 모달 길이가 짧아져 모바일에서 안 가려진다.
         // rsi(momentum)+ma(trend) = 정확히 2개 카테고리 → 그리드 컨테이너 2개(결정적).
@@ -208,7 +232,7 @@ describe('IndicatorSettingsPopover', () => {
     });
 
     it('wraps period rows with col-span-2 so chips span the full width', () => {
-        render(<IndicatorSettingsPopover bindings={[maBinding()]} />);
+        render(<IndicatorMenuHarness bindings={[maBinding()]} />);
         openPanel();
         // period 행(MA/EMA)은 칩이 넓어 2열 그리드에서 전체폭(col-span-2)을 차지해야 한다.
         // ma 바인딩 1개 → col-span-2 래퍼 정확히 1개(결정적).

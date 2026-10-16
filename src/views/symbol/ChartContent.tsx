@@ -143,12 +143,16 @@ interface ChartContentProps {
      */
     seedHasFormingBarTrimmed?: boolean;
     /**
-     * 캔들 차트 상단 띠(StockChart 헤더 `h-8`) 왼쪽 빈 자리에 얹는 슬롯. 절대 위치 오버레이라
-     * 슬롯이 나타나거나 사라져도 차트·제목 행의 레이아웃이 움직이지 않는다. 호출부가 자산군
-     * 판정을 끝낸 뒤 넣는다(프리·애프터마켓 한 줄).
+     * 캔들 차트 상단 띠(StockChart 헤더 `h-8`) 왼쪽에 넣는 슬롯(`StockChart`의 `headerStartSlot`). 띠 안의
+     * `flex-1 min-w-0` 칸이라 폭은 오른쪽 메뉴 셋의 실제 폭이 정하고(로케일 무관), 띠는 고정 높이라 슬롯이
+     * 나타나거나 사라져도 차트·제목 행이 움직이지 않는다. 호출부가 자산군 판정을 끝낸 뒤 넣는다(프리·애프터마켓 한 줄).
      */
-    chartCornerSlot?: ReactNode;
+    chartHeaderStartSlot?: ReactNode;
 }
+
+/** FMP 이용 조건의 출처 표기 — 브랜드 고유명이라 로케일과 무관하게 영어 그대로 둔다(카탈로그 번역 대상 아님). */
+const FMP_ATTRIBUTION_TEXT = 'Data provided by Financial Modeling Prep';
+const FMP_ATTRIBUTION_URL = 'https://financialmodelingprep.com';
 
 export function ChartContent({
     symbol,
@@ -163,7 +167,7 @@ export function ChartContent({
     fmpSymbol,
     marketProfile = 'us-equity',
     seedHasFormingBarTrimmed = true,
-    chartCornerSlot,
+    chartHeaderStartSlot,
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
     const tFallback = useTranslations('entities.analysis.fallback');
@@ -253,7 +257,8 @@ export function ChartContent({
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
     const { indicatorCount, skillCount } = useSymbolPageContext();
-    const { quoteDelayMinutes } = getDescriptor(marketProfile);
+    const { quoteDelayMinutes, dataProvider } = getDescriptor(marketProfile);
+    const showFmpAttribution = dataProvider === 'fmp';
 
     const {
         analysis,
@@ -719,6 +724,7 @@ export function ChartContent({
                         displayBars={displayBars}
                         extendedBars={extendedBars}
                         extendedHours={extendedHoursSetting}
+                        headerStartSlot={chartHeaderStartSlot}
                         isViewAdjusted={isUserAdjustedView}
                         onViewAdjustmentReset={resetUserAdjustedView}
                         timeframe={timeframe}
@@ -739,19 +745,6 @@ export function ChartContent({
                         onSetOverlayVisible={setOverlayVisible}
                         onHighlightOverlay={setHighlightedOverlay}
                     />
-                    {/* StockChart 헤더 띠(h-8)의 왼쪽은 비어 있다(오른쪽엔 작도 메뉴). 그 자리에
-                        절대 위치로 얹는다 — 캔버스·범례(캔버스 안 왼쪽 위, z-10)와 겹치지 않고,
-                        띠는 고정 높이라 슬롯 유무로 아무것도 밀리지 않는다. 래퍼는 포인터를
-                        통과시키고 슬롯 자신만 받는다. 오른쪽 `right-32`(128px)는 작도 메뉴 버튼 몫이다(320px에서
-                        실측: 메뉴 왼쪽 끝 x=197.7 — 슬롯은 그 앞에서 끝난다). 래퍼는 컨테이너 쿼리
-                        기준(`@container`)이다 — 차트 열이 좁아 슬롯 폭이 9rem 아래면 캡션이 숨는다
-                        (기본 AI 패널 640px + 768px 뷰포트에서 차트 열 124px). 작도 메뉴 드롭다운은
-                        z-50이라 슬롯 위로 열린다. */}
-                    {chartCornerSlot !== undefined && (
-                        <div className="@container pointer-events-none absolute top-0 right-32 left-2 z-10 flex h-8 items-center">
-                            {chartCornerSlot}
-                        </div>
-                    )}
                 </div>
 
                 {/* Buy/Sell Volume 차트 */}
@@ -769,28 +762,44 @@ export function ChartContent({
                     />
                 </div>
 
-                {/* 안내 */}
-                <p className="px-2 py-1 text-right text-[10px] text-secondary-500">
-                    {/*
-                     * 시간외 안내는 **지금 그려지는 것**과 맞아야 한다. 시간외 봉이 그려지면(미국 주식
-                     * 인트라데이, 토글 켜짐) "차트는 Pre-market, After-market 주가를 반영하지 않습니다"가
-                     * 화면과 모순이라, 음영이 시간외 거래이고 지표·AI 분석은 정규장 봉만 쓴다고 말한다.
-                     * 그 밖(일봉·토글 꺼짐·한국 주식)은 기존 문구다. 암호화폐는 24/7 거래라 장전·장후
-                     * 세션 구분 자체가 없어 두 문구 모두 표시하지 않는다.
-                     */}
-                    {extendedBars.length > 0
-                        ? t('ChartContent.extendedHoursNotice')
-                        : marketProfile !== 'crypto' &&
-                          t('ChartContent.93c3a3')}
-                    {/* 지연 분(分)은 시장 프로파일이 안다(미국·암호화폐 0, 국내 20).
+                {/* 안내 + 데이터 출처. 출처는 시세가 FMP에서 오는 시장(미국 주식·암호화폐)에만 단다 —
+                    한국 주식은 Yahoo라 달지 않는다(`dataProvider`가 어댑터와 짝이다). 서버가 아는 prop에서
+                    정해져 첫 페인트부터 있으므로 자리가 늦게 밀리지 않고, 좁은 폭에서는 줄을 바꿔 쌓인다. */}
+                <div className="flex flex-wrap items-center justify-between gap-x-3 px-2 py-1">
+                    {showFmpAttribution ? (
+                        <a
+                            href={FMP_ATTRIBUTION_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-secondary-400 underline-offset-2 hover:text-secondary-200 hover:underline focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                            {FMP_ATTRIBUTION_TEXT}
+                        </a>
+                    ) : (
+                        <span aria-hidden="true" />
+                    )}
+                    <p className="ml-auto text-right text-[10px] text-secondary-500">
+                        {/*
+                         * 시간외 안내는 **지금 그려지는 것**과 맞아야 한다. 시간외 봉이 그려지면(미국 주식
+                         * 인트라데이, 토글 켜짐) "차트는 Pre-market, After-market 주가를 반영하지 않습니다"가
+                         * 화면과 모순이라, 음영이 시간외 거래이고 지표·AI 분석은 정규장 봉만 쓴다고 말한다.
+                         * 그 밖(일봉·토글 꺼짐·한국 주식)은 기존 문구다. 암호화폐는 24/7 거래라 장전·장후
+                         * 세션 구분 자체가 없어 두 문구 모두 표시하지 않는다.
+                         */}
+                        {extendedBars.length > 0
+                            ? t('ChartContent.extendedHoursNotice')
+                            : marketProfile !== 'crypto' &&
+                              t('ChartContent.93c3a3')}
+                        {/* 지연 분(分)은 시장 프로파일이 안다(미국·암호화폐 0, 국내 20).
                         예전에는 전 시장에 "최대 15분 지연"을 박아 실시간인 시장에도
                         지연이라고 말했다. */}
-                    {quoteDelayMinutes > 0
-                        ? t('ChartContent.quoteDelayed', {
-                              v0: quoteDelayMinutes,
-                          })
-                        : t('ChartContent.quoteAsOfLoad')}
-                </p>
+                        {quoteDelayMinutes > 0
+                            ? t('ChartContent.quoteDelayed', {
+                                  v0: quoteDelayMinutes,
+                              })
+                            : t('ChartContent.quoteAsOfLoad')}
+                    </p>
+                </div>
             </div>
 
             {/* 드래그 핸들 — flex 형제로 배치 (데스크톱 전용) */}

@@ -23,10 +23,9 @@ const US_PRICE_FORMAT = getDescriptor('us-equity').priceFormat;
  * 등락 기준(`basis*`: 프리마켓이면 직전 세션 종가, 애프터마켓이면 오늘 정규장 종가)과 체결 시각은
  * 줄에서 뺀 대신 ⓘ(`InfoTooltip`)에 담는다 — 호버·포커스·탭 어디서든 같은 정보를 준다.
  *
- * 자리는 호출부(`ChartContent`의 `chartCornerSlot`)가 절대 위치로 정한다. 이 컴포넌트는 흐름에서
- * 공간을 차지하는 형제로 두지 않는다 — 그래서 나타나도 제목 `h1`·차트 행이 움직이지 않는다.
+ * 자리는 호출부(`ChartContent`의 `chartHeaderStartSlot` → `StockChart` 헤더 띠의 `flex-1 min-w-0` 칸)가 정한다. 띠가
+ * 고정 높이(`h-8`)라 나타나도 제목 `h1`·차트 행이 움직이지 않고, 폭은 메뉴 셋의 실제 폭이 남긴 만큼이다.
  * 폭이 모자라면 글줄만 말줄임(`truncate`)하고 ⓘ는 `shrink-0`으로 남겨 잘리지 않게 하며, 래퍼(컨테이너 쿼리 기준)가 9rem보다 좁으면 통째로 숨긴다.
- * 캡션만 포인터를 받는다(`pointer-events-auto`) — 래퍼는 통과시켜 차트 조작을 막지 않는다.
  *
  * - 스크린리더: 캡션 맨 앞 `sr-only` 기준 문구.
  * - sm 미만(터치): 등락 금액을 빼고 %만 보인다 — 폭을 아낀다.
@@ -51,7 +50,7 @@ export function ExtendedHoursQuoteLine({
     return (
         <span
             data-testid="extended-hours-quote"
-            className="pointer-events-auto hidden max-w-full items-center text-xs text-secondary-300 tabular-nums @min-[9rem]:flex"
+            className="hidden max-w-full items-center text-xs text-secondary-300 tabular-nums @min-[9rem]:flex"
         >
             {/* 글줄만 말줄임한다 — ⓘ는 `shrink-0` 형제라 좁은 폭(320px)에서도 잘리지 않는다. */}
             <span

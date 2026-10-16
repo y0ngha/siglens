@@ -2,7 +2,16 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { OverlayMenuItem } from '../../utils/overlayItems';
 import { ACTION_PRICES_ITEM_KEY } from '../../utils/overlayItems';
+import type { ComponentProps } from 'react';
+import { useExclusiveChartMenu } from '../../hooks/useExclusiveChartMenu';
 import { ChartOverlayMenu } from '../../ui/ChartOverlayMenu';
+
+function OverlayMenuHarness(
+    props: Omit<ComponentProps<typeof ChartOverlayMenu>, 'menu'>
+) {
+    const { bind } = useExclusiveChartMenu();
+    return <ChartOverlayMenu menu={bind('overlays')} {...props} />;
+}
 
 function renderMenu(
     items: readonly OverlayMenuItem[],
@@ -12,7 +21,7 @@ function renderMenu(
     return {
         onSetVisible,
         ...render(
-            <ChartOverlayMenu
+            <OverlayMenuHarness
                 items={items}
                 hiddenKeys={hiddenKeys}
                 onSetVisible={onSetVisible}
@@ -238,7 +247,7 @@ describe('ChartOverlayMenu — level right-extend toggle', () => {
         const user = userEvent.setup();
         const onChange = vi.fn();
         render(
-            <ChartOverlayMenu
+            <OverlayMenuHarness
                 items={[patternItem]}
                 hiddenKeys={new Set()}
                 onSetVisible={vi.fn()}
@@ -267,7 +276,7 @@ describe('ChartOverlayMenu — 항목 색·강조', () => {
     const open = async (onHighlight = vi.fn()) => {
         const user = userEvent.setup();
         render(
-            <ChartOverlayMenu
+            <OverlayMenuHarness
                 items={[patternItem, second]}
                 hiddenKeys={new Set()}
                 onSetVisible={vi.fn()}
@@ -327,131 +336,71 @@ describe('ChartOverlayMenu — 항목 색·강조', () => {
     });
 });
 
-describe('ChartOverlayMenu — 표시 환경설정 행(오른쪽 연장·시간외)', () => {
-    const EXTENDED_LABEL = '시간외 거래(프리·애프터마켓) 표시';
+describe('ChartOverlayMenu — 오른쪽 연장 행과 트리거 이름', () => {
     const EXTEND_LABEL = '레벨선 오른쪽 연장';
+    const EXTENDED_LABEL = '시간외 거래(프리·애프터마켓) 표시';
 
-    function renderWithSettings(
+    function renderWithExtend(
         items: readonly OverlayMenuItem[],
-        settings: {
-            rightExtend?: { checked: boolean; onChange: (v: boolean) => void };
-            extendedHours?: {
-                checked: boolean;
-                onChange: (v: boolean) => void;
-            };
-        }
+        rightExtend?: { checked: boolean; onChange: (v: boolean) => void }
     ) {
         return render(
-            <ChartOverlayMenu
+            <OverlayMenuHarness
                 items={items}
                 hiddenKeys={new Set()}
                 onSetVisible={vi.fn()}
-                {...settings}
+                rightExtend={rightExtend}
             />
         );
     }
 
-    it('작도 항목도 시간외 설정도 없으면 아무것도 그리지 않는다(오른쪽 연장만 있어도 항목이 없으면 그대로)', () => {
-        const { container } = renderWithSettings([], {});
+    it('작도 항목도 오른쪽 연장도 없으면 아무것도 그리지 않는다', () => {
+        const { container } = renderWithExtend([]);
         expect(container).toBeEmptyDOMElement();
-        const onlyExtend = renderWithSettings([], {
-            rightExtend: { checked: true, onChange: vi.fn() },
-        });
-        expect(onlyExtend.container.querySelector('button')).toBeNull();
     });
 
-    it('작도 항목 없이 시간외 설정만 있으면 메뉴가 뜨고 트리거는 "차트 설정"이다(개수 없음)', async () => {
+    it('작도 항목 없이 오른쪽 연장만 있어도 트리거는 개수 없는 "차트 작도"다("차트 설정" 대체 이름은 없다)', async () => {
         const user = userEvent.setup();
-        renderWithSettings([], {
-            extendedHours: { checked: true, onChange: vi.fn() },
-        });
-        const trigger = screen.getByRole('button', { name: '차트 설정' });
-        expect(screen.queryByRole('button', { name: /차트 작도/ })).toBeNull();
-        await user.click(trigger);
-        expect(
-            within(getPanel()).getByRole('button', { name: EXTENDED_LABEL })
-        ).toBeInTheDocument();
-    });
-
-    it('작도 항목이 있으면 트리거는 개수가 든 "차트 작도"다', () => {
-        renderWithSettings([patternItem], {
-            extendedHours: { checked: true, onChange: vi.fn() },
-        });
-        expect(
-            screen.getByRole('button', { name: /차트 작도 · 1/ })
-        ).toBeInTheDocument();
+        renderWithExtend([], { checked: true, onChange: vi.fn() });
+        const trigger = screen.getByRole('button', { name: '차트 작도' });
         expect(screen.queryByRole('button', { name: /차트 설정/ })).toBeNull();
+        await user.click(trigger);
+        const row = within(getPanel()).getByRole('button', {
+            name: EXTEND_LABEL,
+        });
+        // 작도 그룹이 없으면 구분선도 없다.
+        expect(row.parentElement).not.toHaveClass('border-t');
     });
 
-    it('설정 행 위의 구분선은 작도 그룹이 있을 때만 그린다', async () => {
+    it('작도 항목이 있으면 트리거는 개수가 든 "차트 작도"이고 오른쪽 연장 행 위에 구분선을 그린다', async () => {
         const user = userEvent.setup();
-        const withGroups = renderWithSettings([patternItem], {
-            extendedHours: { checked: true, onChange: vi.fn() },
-        });
-        await user.click(screen.getByRole('button', { name: /차트 작도/ }));
-        const rowWithGroups = within(getPanel()).getByRole('button', {
-            name: EXTENDED_LABEL,
-        });
-        expect(rowWithGroups.parentElement).toHaveClass('border-t');
-        withGroups.unmount();
-
-        renderWithSettings([], {
-            extendedHours: { checked: true, onChange: vi.fn() },
-        });
-        await user.click(screen.getByRole('button', { name: /차트 설정/ }));
-        const rowAlone = within(getPanel()).getByRole('button', {
-            name: EXTENDED_LABEL,
-        });
-        expect(rowAlone.parentElement).not.toHaveClass('border-t');
+        renderWithExtend([patternItem], { checked: true, onChange: vi.fn() });
+        await user.click(screen.getByRole('button', { name: /차트 작도 · 1/ }));
+        expect(
+            within(getPanel()).getByRole('button', { name: EXTEND_LABEL })
+                .parentElement
+        ).toHaveClass('border-t');
     });
 
-    it.each([
-        ['시간외 표시', EXTENDED_LABEL, 'extendedHours'],
-        ['오른쪽 연장', EXTEND_LABEL, 'rightExtend'],
-    ] as const)(
-        '%s 행: 체크 상태를 aria-pressed로 보이고 누르면 반대 값으로 콜백한다',
-        async (_name, label, key) => {
-            const user = userEvent.setup();
-            const onChange = vi.fn();
-            renderWithSettings([patternItem], {
-                [key]: { checked: true, onChange },
-            });
-            await user.click(screen.getByRole('button', { name: /차트 작도/ }));
-            const row = within(getPanel()).getByRole('button', { name: label });
-            expect(row).toHaveAttribute('aria-pressed', 'true');
-            await user.click(row);
-            expect(onChange).toHaveBeenCalledWith(false);
-        }
-    );
+    it('시간외 거래 행은 이 메뉴에 없다(톱니바퀴 "차트 설정"으로 옮겼다)', async () => {
+        const user = userEvent.setup();
+        renderWithExtend([patternItem], { checked: true, onChange: vi.fn() });
+        await user.click(screen.getByRole('button', { name: /차트 작도/ }));
+        expect(
+            within(getPanel()).queryByRole('button', { name: EXTENDED_LABEL })
+        ).toBeNull();
+    });
 
-    it('꺼진 행을 누르면 켜는 값으로 콜백한다', async () => {
+    it('꺼진 오른쪽 연장 행을 누르면 켜는 값으로 콜백한다', async () => {
         const user = userEvent.setup();
         const onChange = vi.fn();
-        renderWithSettings([patternItem], {
-            extendedHours: { checked: false, onChange },
-        });
+        renderWithExtend([patternItem], { checked: false, onChange });
         await user.click(screen.getByRole('button', { name: /차트 작도/ }));
         const row = within(getPanel()).getByRole('button', {
-            name: EXTENDED_LABEL,
+            name: EXTEND_LABEL,
         });
         expect(row).toHaveAttribute('aria-pressed', 'false');
         await user.click(row);
         expect(onChange).toHaveBeenCalledWith(true);
-    });
-
-    it('두 설정이 함께 있으면 두 행이 모두 있고 서로 독립이다', async () => {
-        const user = userEvent.setup();
-        const onExtend = vi.fn();
-        const onHours = vi.fn();
-        renderWithSettings([patternItem], {
-            rightExtend: { checked: true, onChange: onExtend },
-            extendedHours: { checked: true, onChange: onHours },
-        });
-        await user.click(screen.getByRole('button', { name: /차트 작도/ }));
-        await user.click(
-            within(getPanel()).getByRole('button', { name: EXTENDED_LABEL })
-        );
-        expect(onHours).toHaveBeenCalledWith(false);
-        expect(onExtend).not.toHaveBeenCalled();
     });
 });

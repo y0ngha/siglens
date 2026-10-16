@@ -53,7 +53,7 @@ import { cn } from '@/shared/lib/cn';
  * 경로에서 이를 의도적으로 제거한 판단은 유효하다. 이번 변경은 모바일
  * 경로에만 추가하는 것으로 그 판단을 뒤집지 않는다.
  *
- * 차트 헤더 띠 메뉴(`ChartOverlayMenu`·`IndicatorSettingsPopover`)는 이 표면을 쓰지 않는다 — 모바일에서도
+ * 차트 헤더 띠 메뉴(`ChartOverlayMenu`·`IndicatorMenu`·`ChartSettingsMenu`)는 이 표면을 쓰지 않는다 — 모바일에서도
  * 중앙 모달이 아니라 트리거 아래에 열려야 해서, 같은 "body 포털" 아이디어를 `ChartPopoverPanel`(뷰포트 좌표 +
  * clamp)로 따로 구현한다.
  */
