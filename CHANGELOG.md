@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.107.1](https://github.com/y0ngha/siglens/compare/v0.107.0...v0.107.1) (2026-10-16)
+
+### Bug Fixes
+
+* AWS RDS CA 번들 갱신에 맞춰 Dockerfile 체크섬 교체 ([#1062](https://github.com/y0ngha/siglens/issues/1062)) ([9d655bd](https://github.com/y0ngha/siglens/commit/9d655bd5c8261f16494405838e5bdaff344fb7cc))
+
 # [0.107.0](https://github.com/y0ngha/siglens/compare/v0.106.0...v0.107.0) (2026-10-16)
 
 ### Bug Fixes
