@@ -28,7 +28,25 @@ describe('buildAxisEvidence', () => {
         const line = buildAxisEvidence(expanded, 'insider', 'en').find(
             l => l.id === 'insiderProposedSalePct'
         );
-        expect(line?.values.pct).toBe(`${pct!.toFixed(3)}%`);
+        // 픽스처는 대형주(발행주식 150억 주)라 몇 건의 Form 144가 0.001%에도 못 미친다 — `0.000%`("없음"으로 읽힌다)가
+        // 아니라 하한으로 보인다.
+        expect(pct!).toBeGreaterThan(0);
+        expect(pct!).toBeLessThan(0.0005);
+        expect(line?.values.pct).toBe('<0.001%');
+    });
+
+    it('내부자: 발행주식 대비 %가 0.001% 이상이면 소수 세 자리로 낸다', () => {
+        const expanded = evaluate(
+            makeExpandedSnapshot({ sharesOutstanding: 10_000_000 })
+        );
+        const pct = expanded.insider.metrics?.proposedSalePctOutstanding;
+        expect(pct!).toBeGreaterThanOrEqual(0.001);
+        const line = buildAxisEvidence(expanded, 'insider', 'en').find(
+            l => l.id === 'insiderProposedSalePct'
+        );
+        expect(line?.values.pct).toBe(
+            `${pct!.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}%`
+        );
     });
 
     it('내부자: 발행주식 대비 %가 없으면 그 줄을 내지 않는다', () => {

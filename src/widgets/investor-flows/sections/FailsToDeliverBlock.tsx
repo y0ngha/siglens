@@ -11,7 +11,7 @@ import {
     formatDecimal,
     formatInteger,
     formatMonthDay,
-    formatPercent,
+    formatSmallPercent,
 } from '../utils/flowFormat';
 import { buildFailsToDeliverSeries } from '../utils/failsToDeliver';
 import { CollectingNotice } from './CollectingNotice';
@@ -120,7 +120,7 @@ function FtdBody({ points, metrics, collecting }: FailsToDeliverBlockProps) {
                     value={
                         metrics.failsToDeliverPctOutstanding === null
                             ? t('short.unknown')
-                            : formatPercent(
+                            : formatSmallPercent(
                                   metrics.failsToDeliverPctOutstanding,
                                   locale,
                                   pctDigits(

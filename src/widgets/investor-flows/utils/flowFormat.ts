@@ -51,6 +51,23 @@ export function formatPercent(
     }).format(value)}%`;
 }
 
+/**
+ * 아주 작은 비율용 퍼센트. 0이 아닌데 `digits`자리에서 0으로 반올림되면 `<0.001%`처럼 하한을 보이고(`0.000%`는 "없음"으로
+ * 읽힌다), 정확히 0이면 소수 없이 `0%`, 나머지는 `formatPercent`와 같다. 값은 이미 퍼센트 단위다.
+ */
+export function formatSmallPercent(
+    value: number,
+    locale: Locale,
+    digits: number
+): string {
+    if (value === 0) return formatPercent(0, locale, 0);
+    const floor = 10 ** -digits;
+    if (Math.abs(value) < floor / 2) {
+        return `${value < 0 ? '>-' : '<'}${formatPercent(floor, locale, digits)}`;
+    }
+    return formatPercent(value, locale, digits);
+}
+
 /** 부호를 항상 붙인 퍼센트(`+2.5%`, `-0.4%`). 0은 `0.0%`. */
 export function formatSignedPercent(
     value: number,

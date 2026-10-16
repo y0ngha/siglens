@@ -2520,9 +2520,9 @@
                 "f7e3fb": "Congressional Trades Trends Summary"
             },
             "DilutionRiskBadge": {
-                "atm": "Dilution: recent ATM (at-the-market) offering filing · {date}",
+                "atm": "Dilution: recent ATM (at-the-market) offering filing",
                 "note": "Based on recent SEC filings; the actual amount sold can't be known from the filings.",
-                "priced": "Dilution: recent priced offering filing · {date}"
+                "priced": "Dilution: recent priced offering filing"
             },
             "FearGreedFactsSummary": {
                 "asOfClose": "(as of {v0} close)",
@@ -4575,6 +4575,8 @@
                 "unit": {
                     "days": "{value} days",
                     "multiple": "{value}×",
+                    "notListed": "not listed",
+                    "tradingDays": "{value} trading days",
                     "z": "z-score {value}"
                 }
             },
