@@ -105,6 +105,9 @@ function ToggleRow({ binding }: IndicatorRowProps) {
     );
 }
 
+/** 두 열 체크박스가 들어가는 폭(22rem). 뷰포트가 좁으면 `ChartPopoverPanel`이 줄인다. */
+const POPOVER_WIDTH_PX = 352;
+
 /**
  * 톱니바퀴 "보조지표 설정" — 보조지표를 카테고리별로 켜고 끄는 **앵커드 팝오버**다. "차트 작도" 메뉴
  * (`ChartOverlayMenu`)와 같은 패널(`ChartPopoverPanel`: body 포털 + 뷰포트 clamp)·같은 훅(`usePopoverToggle` +
@@ -116,8 +119,6 @@ function ToggleRow({ binding }: IndicatorRowProps) {
  * 쓰지 않는다: 그 오프셋은 작도 항목 hover로 뜨는 가격 축 라벨을 비키려는 값이고, 지표 설정에는 그런 라벨이 없다.
  * `role="group"`인 이유는 `ChartOverlayMenu`와 같다(순수 토글 모음이지 ARIA menu가 아니다).
  */
-/** 두 열 체크박스가 들어가는 폭(22rem). 뷰포트가 좁으면 `ChartPopoverPanel`이 줄인다. */
-const POPOVER_WIDTH_PX = 352;
 
 export function IndicatorSettingsPopover({
     bindings,

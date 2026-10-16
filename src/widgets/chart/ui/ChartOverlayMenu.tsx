@@ -230,9 +230,6 @@ export function ChartOverlayMenu({
                     // 개수 없는 고정 이름 — 항목을 켤 때마다 그룹 이름이 바뀌어 읽히지 않게 한다.
                     label={t('ChartOverlayMenu.5d0ffc')}
                     width={PANEL_WIDTH_PX}
-                    // lg 이상에서는 가격 축과 축 라벨 폭만큼 왼쪽에 연다 — 항목 hover로 띄운 무효화·목표
-                    // 축 라벨을 패널이 덮지 않게 한다. 라벨 폭은 언어마다 달라("ヘッドアンドショルダー
-                    // 無効化") 넉넉히 잡는다.
                     axisInset={PANEL_AXIS_INSET_PX}
                 >
                     {groups.map((group, index) => {
