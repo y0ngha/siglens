@@ -1,6 +1,10 @@
-const { mockCreateExecutor, mockExecute } = vi.hoisted(() => ({
+const { mockCreateExecutor, mockExecute, mockChartData } = vi.hoisted(() => ({
     mockCreateExecutor: vi.fn(),
     mockExecute: vi.fn(),
+    mockChartData: vi.fn(),
+}));
+vi.mock('@/app/api/v1/getChartData', () => ({
+    getChartDataTool: mockChartData,
 }));
 vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
     createToolExecutor: mockCreateExecutor,
@@ -16,6 +20,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 }));
 
 import { findToolSpec } from '@y0ngha/siglens-core';
+import { CHART_DATA_TOOL_SPEC } from '@/app/api/v1/chartDataToolSpec';
 import {
     executePublicTool,
     resolveApiLocale,
@@ -236,5 +241,115 @@ describe('resolveApiLocale', () => {
         expect(resolveApiLocale(withHeader('fr'))).toBe('ko');
         expect(resolveApiLocale(withHeader('KO'))).toBe('ko');
         expect(resolveApiLocale(withHeader('en'))).toBe('en');
+    });
+});
+
+describe('executePublicTool — get_chart_data (공개 API 전용 도구)', () => {
+    const chartArgs = { symbol: 'AAPL', timeframe: '1Day' };
+    const runChart = (
+        args: Record<string, unknown> = chartArgs,
+        signal: AbortSignal = new AbortController().signal,
+        tier: ApiKeyPrincipal['tier'] = 'member'
+    ) =>
+        executePublicTool(
+            CHART_DATA_TOOL_SPEC,
+            args,
+            { ...principal, tier },
+            'en',
+            signal
+        );
+
+    beforeEach(() => {
+        mockChartData.mockResolvedValue({ symbol: 'AAPL', bars: 1 });
+    });
+
+    it('에이전트 실행기(createToolExecutor)를 거치지 않고 전용 실행기로 간다', async () => {
+        await expect(runChart()).resolves.toEqual({
+            ok: true,
+            data: { symbol: 'AAPL', bars: 1 },
+            truncated: false,
+        });
+        expect(mockChartData).toHaveBeenCalledTimes(1);
+        expect(mockCreateExecutor).not.toHaveBeenCalled();
+    });
+
+    it('검증된 인자와 principal의 tier를 넘긴다(본문으로 바꿀 수 없다)', async () => {
+        const args = { ...chartArgs, indicators: ['rsi'], bars: 20 };
+        await runChart(args, undefined, 'free');
+        const [calledArgs, ctx] = mockChartData.mock.calls.find(
+            ([a]) => a.symbol === 'AAPL'
+        )!;
+        expect(calledArgs).toEqual(args);
+        expect(ctx).toMatchObject({ userId: 'user-a', tier: 'free' });
+    });
+
+    it('서버 키 LLM을 막은 흐름 안에서 실행한다', async () => {
+        const seen: boolean[] = [];
+        mockChartData.mockImplementation(async () => {
+            seen.push(isServerLlmAllowed());
+            await Promise.resolve();
+            seen.push(isServerLlmAllowed());
+            return {};
+        });
+        await runChart();
+        expect(seen).toEqual([false, false]);
+        expect(isServerLlmAllowed()).toBe(true);
+    });
+
+    it('모양이 맞지 않는 심볼은 도구를 부르기 전에 400 invalid_symbol', async () => {
+        await expect(
+            runChart({ symbol: '../etc/passwd', timeframe: '1Day' })
+        ).resolves.toMatchObject({
+            ok: false,
+            status: 400,
+            code: 'invalid_symbol',
+        });
+        expect(mockChartData).not.toHaveBeenCalled();
+    });
+
+    it('timeframe_not_allowed는 403이고 tier·허용 목록을 details로 싣는다', async () => {
+        mockChartData.mockResolvedValue({
+            error: 'timeframe_not_allowed',
+            tier: 'free',
+            timeframe: '5Min',
+            allowedTimeframes: ['1Day'],
+        });
+        await expect(runChart()).resolves.toMatchObject({
+            ok: false,
+            status: 403,
+            code: 'timeframe_not_allowed',
+            details: { tier: 'free', allowedTimeframes: ['1Day'] },
+        });
+    });
+
+    it('bars_not_found는 404', async () => {
+        mockChartData.mockResolvedValue({ error: 'bars_not_found' });
+        await expect(runChart()).resolves.toMatchObject({
+            ok: false,
+            status: 404,
+            code: 'bars_not_found',
+        });
+    });
+
+    it('도구가 throw하면 내부 상세 없이 500 tool_failed', async () => {
+        const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockChartData.mockRejectedValue(new Error('secret db detail'));
+        const outcome = await runChart();
+        expect(outcome).toMatchObject({
+            ok: false,
+            status: 500,
+            code: 'tool_failed',
+        });
+        expect(JSON.stringify(outcome)).not.toContain('secret db detail');
+        logged.mockRestore();
+    });
+
+    it('이미 중단된 요청은 도구를 부르지 않고 504 aborted', async () => {
+        const controller = new AbortController();
+        controller.abort();
+        await expect(
+            runChart(chartArgs, controller.signal)
+        ).resolves.toMatchObject({ ok: false, status: 504, code: 'aborted' });
+        expect(mockChartData).not.toHaveBeenCalled();
     });
 });

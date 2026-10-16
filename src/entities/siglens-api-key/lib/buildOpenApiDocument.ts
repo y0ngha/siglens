@@ -10,6 +10,7 @@ import {
 } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
 import {
     FRESH_ANALYSIS_TOOL,
+    renderChartDataNotes,
     renderFreshAnalysisNotes,
     renderLimits,
 } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
@@ -18,6 +19,7 @@ import {
     API_KEY_PREFIX,
     LOCALE_HEADER_DOC_NAME,
     PUBLIC_API_BASE_PATH,
+    PUBLIC_API_CHART_DATA,
     PUBLIC_API_DOC_PATHS,
     PUBLIC_API_MAX_BODY_CHARS,
     PUBLIC_API_RATE_LIMITS,
@@ -225,7 +227,9 @@ function toolOperation(
     const hasRequired = reference.arguments.some(arg => arg.required);
     const description = isFresh
         ? `${reference.description}\n\n${renderFreshAnalysisNotes().join('\n')}`
-        : reference.description;
+        : reference.name === PUBLIC_API_CHART_DATA.tool
+          ? `${reference.description}\n\n${renderChartDataNotes().join('\n')}`
+          : reference.description;
     const success: OpenApiObject = isFresh
         ? {
               description: FRESH_ANALYSIS_STREAM_DESCRIPTION,

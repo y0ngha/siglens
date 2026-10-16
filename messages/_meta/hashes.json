@@ -3735,6 +3735,7 @@
     "views.developers.tools.agentDescriptionToggle": "26f9ab379f59",
     "views.developers.tools.summaries.get_bars_indicators": "9f58c8806ea9",
     "views.developers.tools.summaries.get_cached_analysis": "04a3c19103ae",
+    "views.developers.tools.summaries.get_chart_data": "80fb61402469",
     "views.developers.tools.summaries.get_congress_trades": "52b85b7dc186",
     "views.developers.tools.summaries.get_economy": "9c5f9c44849c",
     "views.developers.tools.summaries.get_fundamentals": "6387207ff6a9",

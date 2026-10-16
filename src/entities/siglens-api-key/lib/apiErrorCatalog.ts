@@ -107,6 +107,20 @@ export const API_ERROR_DOCS: readonly ApiErrorDoc[] = [
         summary: 'This tool needs a member account.',
     },
     {
+        code: 'timeframe_not_allowed',
+        status: 403,
+        scope: 'tools',
+        summary:
+            'get_chart_data only: the timeframe is not open to the account tier, the same rule as the website chart. error.details lists tier and allowedTimeframes.',
+    },
+    {
+        code: 'bars_not_found',
+        status: 404,
+        scope: 'tools',
+        summary:
+            'get_chart_data only: no price bars exist for this symbol and timeframe.',
+    },
+    {
         code: 'tool_timeout',
         status: 504,
         scope: 'tools',

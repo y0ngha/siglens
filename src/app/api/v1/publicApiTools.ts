@@ -7,6 +7,7 @@ import {
 import { availableToolNames } from '@/app/api/ai/chat/tools/chatTools';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
+import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
 
 /**
  * 에이전트가 쓰는 도구 중 공개 API에 **내보내지 않는** 것.
@@ -84,6 +85,19 @@ function toApiSpec(spec: AgentToolSpec): AgentToolSpec {
         : spec;
 }
 
+/**
+ * 공개 API에만 있는 도구(에이전트·core 스펙에는 없다). 시장 데이터 키만 쓰는 읽기 전용 도구이고 LLM을
+ * 부르지 않는다(`executePublicTool`이 `runWithoutServerLlm`으로 감싸 이중으로 막는다) — 감사 기준은 위와 같다.
+ * 실행은 `createToolExecutor`가 아니라 `getChartDataTool`로 간다.
+ */
+export const PUBLIC_API_ONLY_TOOL_SPECS: readonly AgentToolSpec[] = [
+    CHART_DATA_TOOL_SPEC,
+];
+
+export function isPublicApiOnlyTool(name: string): boolean {
+    return PUBLIC_API_ONLY_TOOL_SPECS.some(spec => spec.name === name);
+}
+
 export function publicApiToolNames(): ReadonlySet<string> {
     return new Set(
         [...availableToolNames()].filter(
@@ -94,11 +108,16 @@ export function publicApiToolNames(): ReadonlySet<string> {
 
 /** 노출 도구의 core 스펙(순서는 `AGENT_TOOL_SPECS` 그대로). */
 export function publicApiToolSpecs(): AgentToolSpec[] {
-    return selectTools(publicApiToolNames()).map(toApiSpec);
+    return [
+        ...selectTools(publicApiToolNames()).map(toApiSpec),
+        ...PUBLIC_API_ONLY_TOOL_SPECS,
+    ];
 }
 
 /** 노출 도구가 아니면 `undefined` — 제외 목록의 도구도 여기서 걸러진다. */
 export function findPublicApiToolSpec(name: string): AgentToolSpec | undefined {
+    const apiOnly = PUBLIC_API_ONLY_TOOL_SPECS.find(spec => spec.name === name);
+    if (apiOnly !== undefined) return apiOnly;
     const spec = publicApiToolNames().has(name)
         ? findToolSpec(name)
         : undefined;

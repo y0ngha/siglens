@@ -112,3 +112,36 @@ export const PUBLIC_API_RESULT_CAPS = {
     cachedAnalysis: 32_000,
     cachedAnalysisBudget: 32_000,
 } as const;
+
+/**
+ * `get_chart_data`(봉 + 전 지표 시계열, 공개 API 전용)의 상수. 봉 수 한도는 스키마(`minimum`/`maximum`)와 SKILL.md가
+ * 같은 값을 읽는다.
+ *
+ * `maxResponseChars`는 응답 JSON 전체(라우트의 `{ data, meta }` 봉투와 `data.meta`까지)의 문자 수 안전 상한이다. 모든 지표를 요청했을 때의 실측 크기는 아래
+ * `PUBLIC_API_CHART_DATA_MEASURED_SIZES`에 한 곳으로 모았고 모두 이 상한 안이라 정상 요청은 닿지 않는다 —
+ * 예상 밖으로 숫자가 긴 자산을 위한 마지막 방어선이다.
+ * 넘으면 최신 봉부터 남기고 오래된 봉을 줄이며 `data.meta.barsLimitedBySize`가 알린다.
+ * 다른 도구의 16,000~32,000자 상한(`PUBLIC_API_RESULT_CAPS`)은 LLM 컨텍스트를 지키려는 값이라 이 도구에 맞지 않고,
+ * 잘린 `{ truncated, preview }` 봉투는 시계열에는 쓸모가 없어서 봉 수를 줄이는 쪽을 택했다.
+ */
+export const PUBLIC_API_CHART_DATA = {
+    tool: 'get_chart_data',
+    defaultBars: 100,
+    minBars: 1,
+    maxBars: 500,
+    maxResponseChars: 500_000,
+} as const;
+
+/**
+ * `get_chart_data`에 **모든 지표**를 요청했을 때의 응답 JSON 문자 수(2026-10, 결정적 합성 일봉 1,000개를 실제
+ * `calculateIndicators` → `roundIndicators` → `buildChartData`에 통과시켜 잼; 실제 FMP 데이터가 아니다). 문서
+ * (SKILL.md·OpenAPI)와 `maxResponseChars` 근거가 모두 이 값을 읽는다. 측정한 봉 수는 `shortBars`·`longBars`
+ * 리터럴이며 `defaultBars`·`maxBars`와 같아야 한다(테스트가 고정한다) — 그래야 문서의 "N봉일 때 약 M자"가 맞다.
+ * 값은 백 자리로 반올림했다. `lowPricedCrypto`는 가격이 $0.00002 수준이라 숫자가 길다.
+ */
+export const PUBLIC_API_CHART_DATA_MEASURED_SIZES = {
+    shortBars: 100,
+    longBars: 500,
+    equity: { short: 64_800, long: 316_000 },
+    lowPricedCrypto: { short: 84_300, long: 414_500 },
+} as const;

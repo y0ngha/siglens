@@ -19,6 +19,8 @@ export interface ApiToolArgument {
     readonly description: string;
     /** 열거형 인자의 허용값 전체. 화면이 긴 목록을 접을 때 쓴다. */
     readonly enumValues?: readonly string[];
+    /** 배열 인자인가. 열거값이 원소의 허용값(`array of "a" | "b"`)임을 화면이 밝힐 때 쓴다. */
+    readonly array?: true;
 }
 
 /** 도구 하나의 문서용 표현. OpenAPI 문서의 경로와 `/developers`의 도구 레퍼런스가 같이 쓴다. */
@@ -50,6 +52,12 @@ export interface BuildApiToolReferencesInput {
 const EXAMPLE_OVERRIDES: Readonly<Record<string, Record<string, YamlValue>>> = {
     search_ticker: { query: 'apple' },
     get_guide: { query: 'MACD' },
+    get_chart_data: {
+        symbol: 'AAPL',
+        timeframe: '1Day',
+        indicators: ['rsi', 'macd', 'ma'],
+        bars: 50,
+    },
 };
 
 function exampleValue(name: string, prop: JsonSchemaProperty): YamlValue {
@@ -125,7 +133,13 @@ function argumentsOf(tool: AgentToolSpec): ApiToolArgument[] {
         type: typeLabel(prop),
         required: required.has(name),
         description: prop.description ?? '',
-        ...(prop.enum === undefined ? {} : { enumValues: prop.enum }),
+        // 열거형 배열(`indicators`)은 원소의 허용값을 접는 목록에 쓴다 — 타입 칸이 36개 이름으로 터지지 않게.
+        ...(prop.enum === undefined && prop.items?.enum === undefined
+            ? {}
+            : { enumValues: prop.enum ?? prop.items?.enum }),
+        ...(prop.enum === undefined && prop.items?.enum !== undefined
+            ? { array: true as const }
+            : {}),
     }));
 }
 
