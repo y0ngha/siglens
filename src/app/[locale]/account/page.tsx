@@ -25,6 +25,7 @@ import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { Suspense } from 'react';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -69,12 +70,14 @@ const BYOK_SECTION_ID = 'byok-keys';
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
 async function AccountContent({ locale }: { locale: Locale }) {
     const t = await getTranslations('app.account');
+    // 공개 API 출시 전에는 "시그렌즈 API" 섹션을 그리지 않고 그 데이터도 읽지 않는다.
+    const publicApiEnabled = isPublicApiEnabled();
     const [user, rawProviders, siglensApiKeys, apiDefaultModel] =
         await Promise.all([
             getCurrentUser(),
             getRegisteredProvidersAction(),
-            listSiglensApiKeysAction(),
-            getApiDefaultModelAction(),
+            publicApiEnabled ? listSiglensApiKeysAction() : null,
+            publicApiEnabled ? getApiDefaultModelAction() : null,
         ]);
     if (!user) {
         // 로케일을 유지한다 — 영어 사용자가 한국어 로그인 페이지로 떨어지면 안 된다.
@@ -130,34 +133,37 @@ async function AccountContent({ locale }: { locale: Locale }) {
                 <ApiKeySection registeredProviders={registeredProviders} />
             </section>
 
-            <section
-                aria-label={t('page.siglensApi')}
-                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
-            >
-                <SiglensApiKeySection
-                    keys={siglensApiKeys}
-                    maxKeys={API_KEY_MAX_ACTIVE_PER_USER}
-                    emailVerified={user.emailVerified}
-                    hasByokKey={apiModelGroups.length > 0}
-                    byokSectionId={BYOK_SECTION_ID}
-                    apiBaseUrl={`${SITE_URL}${PUBLIC_API_BASE_PATH}`}
-                    skillHref={`${PUBLIC_API_BASE_PATH}/skill`}
-                    defaultModelSlot={
-                        <DefaultModelForm
-                            defaultModel={apiDefaultModel}
-                            groups={apiModelGroups}
-                            defaultModelLabel={
-                                apiDefaultModel !== null &&
-                                isActiveModelId(apiDefaultModel)
-                                    ? getModelDisplay(apiDefaultModel).fullName
-                                    : null
-                            }
-                            byokHref={`#${BYOK_SECTION_ID}`}
-                            keyProviderLabels={listApiKeyProviderLabels()}
-                        />
-                    }
-                />
-            </section>
+            {publicApiEnabled && (
+                <section
+                    aria-label={t('page.siglensApi')}
+                    className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+                >
+                    <SiglensApiKeySection
+                        keys={siglensApiKeys}
+                        maxKeys={API_KEY_MAX_ACTIVE_PER_USER}
+                        emailVerified={user.emailVerified}
+                        hasByokKey={apiModelGroups.length > 0}
+                        byokSectionId={BYOK_SECTION_ID}
+                        apiBaseUrl={`${SITE_URL}${PUBLIC_API_BASE_PATH}`}
+                        skillHref={`${PUBLIC_API_BASE_PATH}/skill`}
+                        defaultModelSlot={
+                            <DefaultModelForm
+                                defaultModel={apiDefaultModel}
+                                groups={apiModelGroups}
+                                defaultModelLabel={
+                                    apiDefaultModel !== null &&
+                                    isActiveModelId(apiDefaultModel)
+                                        ? getModelDisplay(apiDefaultModel)
+                                              .fullName
+                                        : null
+                                }
+                                byokHref={`#${BYOK_SECTION_ID}`}
+                                keyProviderLabels={listApiKeyProviderLabels()}
+                            />
+                        }
+                    />
+                </section>
+            )}
 
             <section
                 aria-label={t('page.1987ac')}
@@ -232,15 +238,17 @@ function AccountContentSkeleton() {
                 ))}
             </section>
 
-            {/* SigLens API 키 섹션 */}
-            <section
-                aria-label={t('page.siglensApi')}
-                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
-            >
-                <SkeletonLine className="h-6 w-32" />
-                <SkeletonLine className="h-4 w-64" />
-                <SkeletonLine className="h-10 w-full" />
-            </section>
+            {/* SigLens API 키 섹션 — 공개 API 출시 전에는 본문에도 없으므로 스켈레톤도 그리지 않는다. */}
+            {isPublicApiEnabled() && (
+                <section
+                    aria-label={t('page.siglensApi')}
+                    className={cn(SURFACE_CARD, 'space-y-4 p-6')}
+                >
+                    <SkeletonLine className="h-6 w-32" />
+                    <SkeletonLine className="h-4 w-64" />
+                    <SkeletonLine className="h-10 w-full" />
+                </section>
+            )}
         </>
     );
 }

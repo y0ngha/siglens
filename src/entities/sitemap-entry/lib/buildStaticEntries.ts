@@ -13,6 +13,7 @@ import {
     DEVELOPERS_UPDATED_AT,
 } from '@/shared/config/publicApi';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
@@ -240,6 +241,24 @@ export function buildStaticEntries(
         ];
     });
 
+    // 공개 API 출시 전에는 `/developers`가 404라 sitemap에서도 뺀다(`isPublicApiEnabled`).
+    const developersEntries: SitemapEntry[] = isPublicApiEnabled()
+        ? [
+              // `/developers` — 공개 API 개발자 포털(레퍼런스·OpenAPI·SKILL.md 내려받기). 본문이 카탈로그와 코드
+              // 상수(한도·오류 코드)라 lastmod는 `DEVELOPERS_UPDATED_AT` 하나다. 정적 안내 페이지보다 한 단계
+              // 높은 0.5 — 외부 개발자가 검색으로 들어오는 유일한 입구지만 종목·허브(0.8)만큼 자주 바뀌지는 않는다.
+              {
+                  url: `${SITE_URL}${DEVELOPERS_PATH}`,
+                  lastModified: DEVELOPERS_UPDATED_AT,
+                  changeFrequency: 'monthly',
+                  priority: 0.5,
+                  alternates: sitemapAlternates(
+                      DEVELOPERS_PATH,
+                      STATIC_INDEXABLE_LOCALES
+                  ),
+              },
+          ]
+        : [];
     return [
         {
             url: SITE_URL,
@@ -330,18 +349,6 @@ export function buildStaticEntries(
                 STATIC_INDEXABLE_LOCALES
             ),
         },
-        // `/developers` — 공개 API 개발자 포털(레퍼런스·OpenAPI·SKILL.md 내려받기). 본문이 카탈로그와 코드
-        // 상수(한도·오류 코드)라 lastmod는 `DEVELOPERS_UPDATED_AT` 하나다. 정적 안내 페이지보다 한 단계
-        // 높은 0.5 — 외부 개발자가 검색으로 들어오는 유일한 입구지만 종목·허브(0.8)만큼 자주 바뀌지는 않는다.
-        {
-            url: `${SITE_URL}${DEVELOPERS_PATH}`,
-            lastModified: DEVELOPERS_UPDATED_AT,
-            changeFrequency: 'monthly',
-            priority: 0.5,
-            alternates: sitemapAlternates(
-                DEVELOPERS_PATH,
-                STATIC_INDEXABLE_LOCALES
-            ),
-        },
+        ...developersEntries,
     ];
 }

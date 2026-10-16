@@ -3,6 +3,7 @@
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
 
 /**
@@ -12,6 +13,8 @@ import { getDatabaseClient } from '@/shared/db/client';
 export async function listSiglensApiKeysAction(): Promise<
     SiglensApiKeySummary[] | null
 > {
+    // 출시 전에는 키 데이터를 읽지 않는다(세션·DB 조회 없음).
+    if (!isPublicApiEnabled()) return [];
     // 세션 조회(cookies)는 try 밖에 둔다 — 안에 두면 Next의 동적 렌더 신호
     // (DYNAMIC_SERVER_USAGE)를 조회 실패로 삼켜 로그를 오염시키고 렌더 판정을 흐린다.
     // `getRegisteredProvidersAction`과 같은 구조다.

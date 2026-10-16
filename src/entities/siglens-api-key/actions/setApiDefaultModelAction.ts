@@ -10,9 +10,13 @@ import type {
     ApiDefaultModelErrorCode,
     SetApiDefaultModelState,
 } from '@/entities/siglens-api-key/model';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
 
-const ERROR_MESSAGE_KEY: Record<ApiDefaultModelErrorCode, string> = {
+const ERROR_MESSAGE_KEY: Record<
+    Exclude<ApiDefaultModelErrorCode, 'not_available'>,
+    string
+> = {
     unauthenticated: 'unauthenticated',
     invalid_model: 'invalidModel',
     provider_key_missing: 'modelProviderKeyMissing',
@@ -20,7 +24,7 @@ const ERROR_MESSAGE_KEY: Record<ApiDefaultModelErrorCode, string> = {
 };
 
 async function errorState(
-    code: ApiDefaultModelErrorCode
+    code: Exclude<ApiDefaultModelErrorCode, 'not_available'>
 ): Promise<SetApiDefaultModelState> {
     const t = await getTranslations('entities.siglens-api-key.action');
     return { status: 'error', code, message: t(ERROR_MESSAGE_KEY[code]) };
@@ -40,6 +44,13 @@ export async function setApiDefaultModelAction(
     _prevState: SetApiDefaultModelState,
     formData: FormData
 ): Promise<SetApiDefaultModelState> {
+    // 서버 액션은 화면 밖에서도 직접 호출할 수 있다 — 출시 전에는 화면을 가리는 것만으로 부족하다.
+    if (!isPublicApiEnabled())
+        return {
+            status: 'error',
+            code: 'not_available',
+            message: 'The API default model is not available.',
+        };
     try {
         const user = await getCurrentUser();
         if (user === null) return await errorState('unauthenticated');

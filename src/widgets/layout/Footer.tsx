@@ -21,6 +21,7 @@ import {
     TERMS_PATH,
     termsTitle,
 } from '@/shared/lib/legal';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { GITHUB_URL, SYMBOLS_PATH, X_URL } from '@/shared/lib/seo';
@@ -232,15 +233,17 @@ export function Footer() {
                             >
                                 {t('Footer.guideLink')}
                             </Link>
-                            {/* 개발자 API — 공개 API 포털(`/developers`)의 전역 진입 링크. 계정 화면의
-                                시작 가이드와 README가 같은 페이지로 건다. */}
-                            <Link
-                                href={DEVELOPERS_PATH}
-                                prefetch={false}
-                                className={LINK_CLASSES}
-                            >
-                                {t('Footer.developersLink')}
-                            </Link>
+                            {/* 개발자 API — 공개 API 포털(`/developers`)의 전역 진입 링크. 공개 API 출시 전(`isPublicApiEnabled` 꺼짐)에는
+                                페이지가 404라 링크도 내지 않는다. */}
+                            {isPublicApiEnabled() && (
+                                <Link
+                                    href={DEVELOPERS_PATH}
+                                    prefetch={false}
+                                    className={LINK_CLASSES}
+                                >
+                                    {t('Footer.developersLink')}
+                                </Link>
+                            )}
                             {/*
                              * 종목 디렉터리 — 이 링크가 있는 이유는 크롤 구조다.
                              * 2026-09-18 실측에서 sitemap 심볼 416개 중 147개가

@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getTranslations } from 'next-intl/server';
 import { publicApiToolSpecs } from '@/app/api/v1/publicApiTools';
 import { buildApiToolReferences } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
@@ -69,6 +71,8 @@ export async function generateMetadata({
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+    // 공개 API 출시 전에는 페이지가 없다 — 메타데이터 단계에서도 404로 끊어 noindex 404가 나가게 한다.
+    if (!isPublicApiEnabled()) notFound();
     const { locale: rawLocale } = await params;
     const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
@@ -110,6 +114,7 @@ export default async function DevelopersRoute({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
+    if (!isPublicApiEnabled()) notFound();
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
