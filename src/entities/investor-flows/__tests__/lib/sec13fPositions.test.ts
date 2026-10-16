@@ -6,9 +6,11 @@ import {
 import {
     PositionAccumulator,
     normalizeCusip,
+    toOptionPositionRow,
     toPositionRow,
 } from '../../lib/sec13fPositions';
 import {
+    INFO_TABLE_OPTIONS_SAMPLE,
     INFO_TABLE_PREFIXED,
     INFO_TABLE_SAMPLE,
     INFO_TABLE_ZERO_SHARES_ROW,
@@ -110,9 +112,101 @@ describe('PositionAccumulator', () => {
 
     it('counts rows seen vs kept', async () => {
         const acc = await accumulate();
+        // 4 stock rows + the MSFT put row (options are kept as option positions now)
         expect({ seen: acc.rowsSeen, kept: acc.rowsKept }).toEqual({
             seen: 7,
-            kept: 4,
+            kept: 5,
         });
+    });
+
+    it('keeps the MSFT put row as an option position, not a stock position', async () => {
+        const acc = await accumulate();
+        expect(acc.toOptionRows()).toEqual([
+            { cusip: MSFT, putCall: 'put', shares: 6795, valueUsd: 3485841 },
+        ]);
+    });
+});
+
+const AAPL = '037833100';
+
+describe('toOptionPositionRow', () => {
+    it('reads a real Call row as underlying shares and notional', async () => {
+        const [call] = await rows(INFO_TABLE_OPTIONS_SAMPLE);
+        expect(
+            toOptionPositionRow(call as XmlElement, new Set([AAPL]))
+        ).toEqual({
+            cusip: AAPL,
+            putCall: 'call',
+            shares: 38600,
+            valueUsd: 11169296,
+        });
+    });
+
+    it('returns null for a stock row (no putCall)', async () => {
+        const [, stock] = await rows(INFO_TABLE_OPTIONS_SAMPLE);
+        expect(
+            toOptionPositionRow(stock as XmlElement, new Set([AAPL]))
+        ).toBeNull();
+    });
+
+    it('returns null for an option on a CUSIP outside the universe', async () => {
+        const [call] = await rows(INFO_TABLE_OPTIONS_SAMPLE);
+        expect(
+            toOptionPositionRow(call as XmlElement, new Set([MSFT]))
+        ).toBeNull();
+    });
+
+    it('returns null for an unknown putCall value', async () => {
+        const [odd] = await rows(
+            INFO_TABLE_OPTIONS_SAMPLE.replace(
+                '<putCall>Call</putCall>',
+                '<putCall>Straddle</putCall>'
+            )
+        );
+        expect(
+            toOptionPositionRow(odd as XmlElement, new Set([AAPL]))
+        ).toBeNull();
+    });
+});
+
+describe('PositionAccumulator with real option rows', () => {
+    async function accumulateOptions(): Promise<PositionAccumulator> {
+        const acc = new PositionAccumulator(new Set([AAPL]));
+        await streamXmlElements([INFO_TABLE_OPTIONS_SAMPLE], 'infoTable', el =>
+            acc.add(el)
+        );
+        return acc;
+    }
+
+    it('sums put rows and call rows separately per CUSIP', async () => {
+        const options = (await accumulateOptions()).toOptionRows();
+        expect(options).toHaveLength(2);
+        expect(options).toEqual(
+            expect.arrayContaining([
+                {
+                    cusip: AAPL,
+                    putCall: 'call',
+                    shares: 38600 + 31194700,
+                    valueUsd: 11169296 + 9026498392,
+                },
+                {
+                    cusip: AAPL,
+                    putCall: 'put',
+                    shares: 33100 + 21541000,
+                    valueUsd: 9577816 + 6233103760,
+                },
+            ])
+        );
+    });
+
+    it('keeps the stock position free of option shares', async () => {
+        const { rows: stock } = (await accumulateOptions()).toPositions();
+        expect(stock).toEqual([
+            {
+                cusip: AAPL,
+                shares: 7211515 + 84561,
+                valueUsd: 2086723980 + 24468571,
+            },
+        ]);
     });
 });

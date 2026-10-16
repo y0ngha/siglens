@@ -309,6 +309,19 @@ describe('run13fIngest', () => {
             });
         });
 
+        it('passes the filing’s option rows (the MSFT put) next to the stock rows, in the same applyFiling call', async () => {
+            const { deps, calls } = build(original());
+            await run13fIngest(deps);
+            expect(calls.applied[0]?.optionRows).toEqual([
+                {
+                    cusip: MSFT,
+                    putCall: 'put',
+                    shares: 6795,
+                    valueUsd: 3485841,
+                },
+            ]);
+        });
+
         it('reports the symbols whose aggregates changed for cache invalidation', async () => {
             const { deps, calls } = build(original());
             const result = await run13fIngest(deps);
@@ -894,6 +907,14 @@ describe('run13fIngest', () => {
                 ).toBeGreaterThan(0);
             });
 
+            it('re-applies the later amendment’s option rows with its stock rows', async () => {
+                const { deps, calls } = build(restatementScenario());
+                await run13fIngest(deps);
+                expect(calls.applied[0]?.reapply?.[0]?.optionRows).toEqual([
+                    expect.objectContaining({ cusip: MSFT, putCall: 'put' }),
+                ]);
+            });
+
             it('downloads the later amendment’s own information table BEFORE applying anything', async () => {
                 const { deps, calls } = build(restatementScenario());
                 await run13fIngest(deps);
@@ -1037,6 +1058,7 @@ describe('run13fIngest', () => {
                 expect(calls.applied[0]).toMatchObject({
                     mode: 'skip',
                     rows: [],
+                    optionRows: [],
                 });
                 expect(calls.infoTable).toEqual([]);
             }

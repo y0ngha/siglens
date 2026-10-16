@@ -10,10 +10,23 @@
  */
 export const SEC_USER_AGENT_DEFAULT = 'SigLens dev.y0ngha@gmail.com';
 
+/** EDGAR Archives 루트 — 클라이언트 요청 URL과 저장·표시용 원문 링크(`secFilingIndexUrl`)가 함께 쓴다. */
+export const SEC_ARCHIVES_BASE_URL = 'https://www.sec.gov/Archives/edgar';
+
 /**
- * SEC 요청 시작 사이의 최소 간격(ms). 공식 한도는 초당 10건이고 우리는 그 절반 아래(초당 ~4.5건)로
- * 둔다. 프로세스 전역 하나의 게이트를 모든 SEC 호출이 공유한다 — cron 락이 동시에 한 실행만
- * 허용하므로 인스턴스 간 합산도 이 값을 넘지 않는다.
+ * SEC 요청 시작 사이의 최소 간격(ms). 공식 한도는 초당 10건이고 우리는 그 절반 아래(초당 ~4.5건)로 둔다.
+ *
+ * ── 불변식: SEC를 두드리는 배치 cron 합계가 이 속도를 넘지 않는다 ─────────────────────────────────
+ * 이 게이트는 **프로세스 안** 모듈 변수라 인스턴스(ASG 최대 4대) 사이에는 공유되지 않는다. 그래서 인스턴스 간 합산은
+ * **cron 락**이 지킨다 — 대량 SEC 요청을 내는 cron은 이름별 락이 아니라 **공유 락 `investor-flows:cron-lock:sec`** 하나를
+ * 함께 잡는다(`sec-13f`·`sec-ftd`, `app/api/cron/leasedCron.ts`의 `leaseName`). 동시에 한 SEC cron만 돌므로 cron 합계는
+ * 한 프로세스의 이 게이트(~4.5건/초)를 넘지 않는다.
+ *  - Form 144·증자 공시(424B5) 추출은 별도 cron이 아니라 `sec-13f` 실행 **안에서** 13F 다음에 남은 시간으로 한다 — 같은
+ *    daily index를 쓰고 같은 게이트·락 아래다.
+ *  - `cusip-map`의 `company_tickers.json` 주간 갱신은 **주 1건**이라 공유 락 밖에 둔다(같은 프로세스 게이트는 지난다).
+ *  - 렌더 경로의 submissions 조회(`fetchSubmissionsJson`)는 cron 예산 밖이다 — 같은 게이트를 지나되 슬롯 대기까지 포함한
+ *    `SEC_SUBMISSIONS_BUDGET_MS` 안에 끝나지 못하면 degrade한다.
+ * 새 SEC cron을 만들면 공유 락을 잡을 것. 이름별 락을 쓰면 두 인스턴스에서 동시에 돌아 합계가 두 배가 된다.
  */
 export const SEC_MIN_REQUEST_INTERVAL_MS = 220;
 
@@ -45,3 +58,15 @@ export const SEC_SUBMISSIONS_BUDGET_MS = 8_000;
 
 /** information table 본문 크기 상한(바이트). 초대형 필러(수십만 행)도 이 안에 든다. */
 export const SEC_MAX_INFO_TABLE_BYTES = 200 * 1024 * 1024;
+
+/**
+ * `www.sec.gov/files/...` 정적 파일·목록 페이지 본문 상한(바이트). 실측(2026-10-16): FTD 반월 zip ≈1.5MB, FTD 목록 페이지
+ * ≈0.4MB, `company_tickers.json` ≈0.8MB — 여유를 크게 둔 값이다.
+ */
+export const SEC_MAX_FILE_BYTES = 16 * 1024 * 1024;
+
+/**
+ * 문서 머리 읽기(`fetchFilingDocumentHead`) 상한(바이트). 424B5 분류는 태그를 지운 앞 10,000자만 본다 — 실측 4건(2026-10-15
+ * 제출)에서 그만큼의 본문 글자는 원문 앞 15~54KB 안에 있었다. 제출 `.txt` 앞의 SEC 헤더(수 KB)를 더해도 남는 값이다.
+ */
+export const SEC_FILING_HEAD_MAX_BYTES = 256 * 1024;

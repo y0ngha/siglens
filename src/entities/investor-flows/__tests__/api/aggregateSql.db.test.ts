@@ -29,16 +29,16 @@ vi.mock('server-only', () => ({}));
  *   TEST_DATABASE_URL=postgres://siglens:siglens@localhost:5433/siglens_e2e yarn test db.test
  *   docker compose -p flows-test -f docker-compose.e2e.yml down -v
  *
- * 안전: 접속 대상이 로컬(터널 포트 제외)이 아니면 거부한다. 임시 스키마를 만들어 마이그레이션 `0048` SQL을
+ * 안전: 접속 대상이 로컬(터널 포트 제외)이 아니면 거부한다. 임시 스키마를 만들어 마이그레이션 `0048`·`0049` SQL을
  * 그대로 적용하고 끝나면 스키마를 통째로 지운다 — 기존 테이블·데이터는 건드리지 않는다.
  */
 const URL = process.env.TEST_DATABASE_URL;
 const SCHEMA = `investor_flows_test_${process.pid}`;
-const MIGRATION = path.join(
-    process.cwd(),
-    'drizzle',
-    '0048_investor_flows_data.sql'
-);
+/** The investor-flows migrations, applied in journal order (0049 adds the option tables used below). */
+const MIGRATIONS = [
+    '0048_investor_flows_data.sql',
+    '0049_investor_flows_expansion.sql',
+].map(file => path.join(process.cwd(), 'drizzle', file));
 
 const CUR = '2026-06-30'; // complete quarter
 const PREV = '2026-03-31';
@@ -66,10 +66,12 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
             max: 1,
             connection: { search_path: SCHEMA },
         });
-        for (const statement of readFileSync(MIGRATION, 'utf8').split(
-            '--> statement-breakpoint'
-        )) {
-            await client.unsafe(statement);
+        for (const migration of MIGRATIONS) {
+            for (const statement of readFileSync(migration, 'utf8').split(
+                '--> statement-breakpoint'
+            )) {
+                await client.unsafe(statement);
+            }
         }
         db = drizzle(client, { schema });
         repo = new Drizzle13fRepository(db as never);
@@ -88,6 +90,8 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
     async function reset(): Promise<void> {
         for (const table of [
             'sec_13f_positions',
+            'sec_13f_option_positions',
+            'sec_13f_option_aggregates',
             'sec_13f_filings',
             'sec_13f_aggregates',
             'sec_13f_dirty_aggregates',
@@ -129,6 +133,7 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
                 shares === null
                     ? []
                     : [{ cusip: C, shares, valueUsd: shares * 1000 }],
+            optionRows: [],
             cusipIds: new Map([[C, cusipId]]),
             firstForPeriod: false,
             // the snapshot stamp the real ingester takes from `loadUniverse` (DB clock), unless the test pins one
@@ -470,6 +475,7 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
             filerName: 'Filer Two',
             mode: 'merge' as const,
             rows: [{ cusip: C, shares: 50, valueUsd: 5_000 }],
+            optionRows: [],
             firstForPeriod: false,
             universeStamp: STAMP,
             ...over,
@@ -526,6 +532,106 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
         });
     });
 
+    describe('13F option positions and put/call aggregates', () => {
+        const optionAggregate = async () =>
+            (await db.execute(
+                sql`SELECT put_holders, put_shares::text AS put_shares, put_value_usd::text AS put_value_usd,
+                           call_holders, call_shares::text AS call_shares, call_value_usd::text AS call_value_usd
+                    FROM sec_13f_option_aggregates WHERE cusip = ${C} AND period = ${CUR}::date`
+            )) as unknown as Record<string, unknown>[];
+        const options = (
+            puts: number | null,
+            calls: number | null
+        ): {
+            cusip: string;
+            putCall: 'put' | 'call';
+            shares: number;
+            valueUsd: number;
+        }[] => [
+            ...(puts === null
+                ? []
+                : [
+                      {
+                          cusip: C,
+                          putCall: 'put' as const,
+                          shares: puts,
+                          valueUsd: puts * 10,
+                      },
+                  ]),
+            ...(calls === null
+                ? []
+                : [
+                      {
+                          cusip: C,
+                          putCall: 'call' as const,
+                          shares: calls,
+                          valueUsd: calls * 10,
+                      },
+                  ]),
+        ];
+
+        it('stores option rows through applyFiling, marks them dirty, and sums puts and calls per filer count', async () => {
+            await reset();
+            await ingest(1, CUR, 100, { optionRows: options(300, 40) });
+            await ingest(2, CUR, null, { optionRows: options(null, 60) });
+            await ingest(3, CUR, null, { optionRows: options(5, null) });
+            expect(await dirty()).toEqual([{ period: CUR, cusip_id: cusipId }]);
+            await repo.recomputeAggregates(CUR, [C], 'none');
+            expect(await optionAggregate()).toEqual([
+                {
+                    put_holders: 2,
+                    put_shares: '305',
+                    put_value_usd: '3050',
+                    call_holders: 2,
+                    call_shares: '100',
+                    call_value_usd: '1000',
+                },
+            ]);
+        });
+
+        it('a RESTATEMENT replace removes the filer’s old option rows (dirty) and the recompute drops an emptied aggregate', async () => {
+            await reset();
+            await ingest(1, CUR, 100, { optionRows: options(300, null) });
+            await repo.recomputeAggregates(CUR, [C], 'none');
+            expect(await optionAggregate()).toHaveLength(1);
+            await db.execute(sql`DELETE FROM sec_13f_dirty_aggregates`);
+            await ingest(1, CUR, 100, {
+                suffix: '-A',
+                mode: 'replace',
+                amendmentType: 'RESTATEMENT',
+                optionRows: [],
+            });
+            expect(await dirty()).toEqual([{ period: CUR, cusip_id: cusipId }]);
+            await repo.recomputeAggregates(CUR, [C], 'none');
+            expect(await optionAggregate()).toEqual([]);
+        });
+
+        it('a merge with unchanged option values does not mark the CUSIP dirty again', async () => {
+            await reset();
+            await ingest(1, CUR, null, { optionRows: options(300, null) });
+            await db.execute(sql`DELETE FROM sec_13f_dirty_aggregates`);
+            await ingest(1, CUR, null, {
+                suffix: '-again',
+                optionRows: options(300, null),
+            });
+            expect(await dirty()).toEqual([]);
+        });
+
+        it('prunes option positions with the positions floor and option aggregates with the aggregate cutoff', async () => {
+            await reset();
+            await ingest(1, PREV, null, { optionRows: options(10, 10) });
+            await ingest(1, CUR, null, { optionRows: options(20, 20) });
+            await repo.recomputeAggregates(PREV, [C], 'none');
+            const pruned = await repo.prunePositionsBefore(CUR, () => false);
+            expect(pruned).toEqual({ deleted: 2, done: true });
+            const left = (await db.execute(
+                sql`SELECT period::text AS period FROM sec_13f_option_positions ORDER BY period, put_call`
+            )) as unknown as { period: string }[];
+            expect(left.map(r => r.period)).toEqual([CUR, CUR]);
+            expect(await repo.pruneAggregatesBefore(CUR)).toBe(1);
+        });
+    });
+
     describe('batched prune', () => {
         it('deletes everything below the floor in ctid batches, counts via the driver, keeps newer periods', async () => {
             await reset();
@@ -578,6 +684,7 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
             period: CUR,
             filerName: 'Filer Seven',
             mode: 'replace' as const,
+            optionRows: [],
             firstForPeriod: false,
             universeStamp: STAMP,
         });
@@ -610,6 +717,7 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
                         {
                             accession: '0001768130-26-000020',
                             rows: [{ cusip: C, shares: 1e30, valueUsd: 1 }],
+                            optionRows: [],
                         },
                     ],
                     cusipIds: new Map([[C, cusipId]]),
@@ -637,6 +745,7 @@ describe.skipIf(!URL)('investor flows SQL on a real Postgres', () => {
                 filerName: 'Filer Seven',
                 mode: 'merge',
                 rows: [],
+                optionRows: [],
                 cusipIds: new Map([[C, cusipId]]),
                 firstForPeriod: true,
                 universeStamp: STAMP,

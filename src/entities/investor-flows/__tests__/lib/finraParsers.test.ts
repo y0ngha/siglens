@@ -1,36 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-    buildFinraSymbolResolver,
     parseCnmsShortVolume,
     parseShortInterest,
 } from '../../lib/finraParsers';
+import { buildSymbolAliasResolver } from '../../lib/symbolAliasResolver';
 import {
     CNMS_SAMPLE,
     SHORT_INTEREST_SAMPLE,
 } from '../fixtures/investorFlowsSamples';
 
 // Universe uses OUR notation (dot class separator).
-const resolver = buildFinraSymbolResolver(['AAPL', 'MSFT', 'BF.A', 'BF.B']);
-
-describe('buildFinraSymbolResolver', () => {
-    it('resolves exact matches', () => {
-        expect(resolver('AAPL')).toBe('AAPL');
-    });
-
-    it('resolves the slash form (CNMS) and the compact form (short interest) of a class share', () => {
-        expect(resolver('BF/B')).toBe('BF.B');
-        expect(resolver('BFB')).toBe('BF.B');
-    });
-
-    it('returns null for symbols outside the universe', () => {
-        expect(resolver('ZZZZ')).toBeNull();
-    });
-
-    it('lets an exact universe symbol win over another symbol’s alias', () => {
-        const r = buildFinraSymbolResolver(['BF.A', 'BFA']);
-        expect(r('BFA')).toBe('BFA');
-    });
-});
+const resolver = buildSymbolAliasResolver(['AAPL', 'MSFT', 'BF.A', 'BF.B']);
 
 describe('parseCnmsShortVolume (real CNMS rows)', () => {
     const rows = parseCnmsShortVolume(CNMS_SAMPLE, resolver);

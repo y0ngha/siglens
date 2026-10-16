@@ -5,12 +5,16 @@ import {
     cusipSymbolMap,
     sec13fAggregates,
     sec13fFilings,
+    sec13fOptionAggregates,
+    sec13fOptionPositions,
     sec13fPositions,
 } from '@/shared/db/schema';
 import {
     buildAggregateDeleteSql,
     buildAggregateUpsertSql,
     buildBaselinelessAggregateUpsertSql,
+    buildOptionAggregateDeleteSql,
+    buildOptionAggregateUpsertSql,
     buildResetChangesSql,
 } from '../../api/aggregateSql';
 
@@ -204,5 +208,48 @@ describe('buildResetChangesSql', () => {
         }
         expect(text).toContain('new_holders IS NOT NULL');
         expect(params).toEqual(['2026-03-31']);
+    });
+});
+
+describe('option aggregate SQL', () => {
+    it('names the schema tables', () => {
+        const text = [
+            render(buildOptionAggregateUpsertSql('2026-09-30', ['A'])).text,
+            render(buildOptionAggregateDeleteSql('2026-09-30', ['A'])).text,
+        ].join(' ');
+        expect(text).toContain(getTableName(sec13fOptionAggregates));
+        expect(text).toContain(getTableName(sec13fOptionPositions));
+    });
+
+    it('splits puts and calls with FILTER and binds the period and CUSIPs', () => {
+        const { text, params } = render(
+            buildOptionAggregateUpsertSql('2026-09-30', [
+                '037833100',
+                '594918104',
+            ])
+        );
+        expect(text).toContain(
+            "(count(*) FILTER (WHERE o.put_call = 'put'))::int"
+        );
+        expect(text).toContain(
+            "(coalesce(sum(o.value_usd) FILTER (WHERE o.put_call = 'call'), 0))::bigint"
+        );
+        expect(text).toContain('IS DISTINCT FROM');
+        expect(params).toEqual([
+            '2026-09-30',
+            '2026-09-30',
+            '037833100',
+            '594918104',
+        ]);
+    });
+
+    it('deletes an aggregate only when no option position of that period is left', () => {
+        const { text, params } = render(
+            buildOptionAggregateDeleteSql('2026-09-30', ['A'])
+        );
+        expect(text).toContain(
+            'NOT EXISTS ( SELECT 1 FROM sec_13f_option_positions o WHERE o.cusip = a.cusip AND o.period = $3 )'
+        );
+        expect(params).toEqual(['2026-09-30', 'A', '2026-09-30']);
     });
 });

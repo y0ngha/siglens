@@ -45,68 +45,7 @@ CRON_SECRET="$(aws ssm get-parameter --name /siglens/CRON_SECRET --with-decrypti
 ### 2) 공유 Connection(Authorization: Bearer <CRON_SECRET>) ###
 ensure_cron_connection "$REGION" "$CRON_SECRET"
 
-# ensure_investor_flows_cron <name> <schedule-expression> <metric-weight>
-#   name 하나당 IAM 역할 + API Destination + Rule + target + 실패 로그 메트릭 필터를 만든다.
-ensure_investor_flows_cron() {
-  local name="$1" schedule="$2" weight="$3"
-  local role_name="siglens-${name}-eventbridge"
-  local destination_name="siglens-${name}"
-  local rule_name="siglens-${name}-schedule"
-  local endpoint="https://siglens.io/api/cron/${name}"
-
-  if aws iam get-role --role-name "$role_name" >/dev/null 2>&1; then
-    log "role $role_name exists"
-  else
-    aws iam create-role --role-name "$role_name" --assume-role-policy-document '{
-         "Version":"2012-10-17",
-         "Statement":[{"Effect":"Allow","Principal":{"Service":"events.amazonaws.com"},"Action":"sts:AssumeRole"}]
-       }' >/dev/null
-    log "role $role_name created"
-  fi
-  aws iam put-role-policy --role-name "$role_name" --policy-name "siglens-${name}-invoke" \
-    --policy-document "{
-      \"Version\":\"2012-10-17\",
-      \"Statement\":[{\"Effect\":\"Allow\",
-        \"Action\":\"events:InvokeApiDestination\",
-        \"Resource\":\"arn:aws:events:$REGION:$ACCOUNT_ID:api-destination/$destination_name/*\"}]
-    }"
-  local role_arn
-  role_arn="$(aws iam get-role --role-name "$role_name" --query 'Role.Arn' --output text)"
-
-  ensure_api_destination "$REGION" "$destination_name" "$endpoint" "$CONNECTION_ARN"
-
-  aws events put-rule --name "$rule_name" --schedule-expression "$schedule" \
-    --state ENABLED --region "$REGION" >/dev/null
-  aws events put-targets --rule "$rule_name" --region "$REGION" \
-    --targets "[{\"Id\":\"${name}\",\"Arn\":\"$DEST_ARN\",\"RoleArn\":\"$role_arn\",\"HttpParameters\":{\"HeaderParameters\":{},\"QueryStringParameters\":{},\"PathParameterValues\":[]}}]" \
-    >/dev/null
-  log "rule $rule_name -> $destination_name ready ($schedule)"
-
-  # 실행 실패 — 라우트가 `[<name>] run failed:`를 남긴다. ASCII 접두만 필터에 쓴다(14-kr-tickers-cron.sh와
-  # 같은 근거). 로그 그룹이 아직 없으면 `|| true`로 넘어가므로 10-logs.sh 뒤에 이 스크립트를 재실행할 것.
-  aws logs put-metric-filter --log-group-name "$LOG_GROUP" \
-    --filter-name "siglens-${name}-run-failed" \
-    --filter-pattern "\"[${name}] run failed\"" \
-    --metric-transformations "metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=${weight}" \
-    --region "$REGION" >/dev/null 2>&1 || log "WARNING: put-metric-filter failed for $name (log group $LOG_GROUP missing?)"
-
-  # 운영 신호 — 전부 라우트가 남기는 ASCII 접두 로그를 필터로 센다(JSON 숫자 추출 없이 건수만). 점수는
-  # `siglens-p2` 알람이 합산 평가하므로 한 번은 약하고 **반복되면** 발화한다.
-  #   lease held        이전 실행이 스케줄 주기를 넘겨 매달려 있다(락이 풀리지 않는다) — 204로 건너뜀
-  #   redis unavailable 락을 못 잡아 실행 자체를 못 한다(fail-closed)
-  put_signal_filter "$name" "lease-held" "\"[${name}] lease held\"" 20
-  put_signal_filter "$name" "redis-unavailable" "\"[${name}] redis unavailable\"" 50
-}
-
-# put_signal_filter <cron> <suffix> <pattern> <weight> — P2Score 가중치로 발행하는 로그 메트릭 필터 하나.
-put_signal_filter() {
-  local name="$1" suffix="$2" pattern="$3" weight="$4"
-  aws logs put-metric-filter --log-group-name "$LOG_GROUP" \
-    --filter-name "siglens-${name}-${suffix}" \
-    --filter-pattern "$pattern" \
-    --metric-transformations "metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=${weight}" \
-    --region "$REGION" >/dev/null 2>&1 || log "WARNING: put-metric-filter ${name}-${suffix} failed"
-}
+# ensure_investor_flows_cron·put_signal_filter는 lib-cron.sh에 있다(19-investor-flows-expansion-crons.sh와 공유).
 
 # sec-13f는 데이터 신선도의 핵심이라 가중치 100(1건=즉시 발화), 나머지는 며칠 밀려도 치명적이지 않아 50.
 ensure_investor_flows_cron sec-13f     "cron(15 0/2 * * ? *)"      100

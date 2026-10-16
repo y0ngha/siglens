@@ -1,54 +1,76 @@
 import 'server-only';
 import {
     fetchDailyFormIndex,
+    fetchFilingDocumentHead,
     fetchFilingDocumentStream,
     fetchFilingDocumentText,
     fetchFilingIndexJson,
-    SecHttpError,
+    isSecBlockedError,
 } from '@/shared/api/sec/secClient';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { Drizzle13fRepository } from '@/entities/investor-flows/api/investorFlows13fRepository';
+import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
+import { addDays } from '@/entities/investor-flows/lib/investorFlowsDates';
 import type { Ingest13fDeps } from '@/entities/investor-flows/server/ingest13f';
+import type { IngestSecFilingsDeps } from '@/entities/investor-flows/server/ingestSecFilings';
+import { rememberRecentIndexes } from '@/entities/investor-flows/server/runSecIndexIngest';
 
-const HTTP_FORBIDDEN = 403;
-const HTTP_TOO_MANY_REQUESTS = 429;
+/** 두 단계(13F·공시)가 함께 쓰도록 기억하는 최근 daily index 범위(일) — 평소 두 커서가 머무는 구간(겹침 3일 + 주말). */
+const SHARED_INDEX_DAYS = 7;
 
-/**
- * SEC가 속도 제한·차단으로 거절했는가. 재시도를 다 쓴 429와 S3 AccessDenied가 아닌 403이 여기에 온다 —
- * 이 신호를 받으면 배치는 SEC를 더 두드리지 않고 멈춘다.
- */
-export function isSecBlockedError(error: unknown): boolean {
-    return (
-        error instanceof SecHttpError &&
-        (error.status === HTTP_FORBIDDEN ||
-            error.status === HTTP_TOO_MANY_REQUESTS)
-    );
+/** `sec-13f` 한 실행의 두 단계 의존 — 13F와 Form 144·증자 공시. 같은 마감·같은 index 캐시를 쓴다. */
+export interface Sec13fCronDeps {
+    thirteenF: Ingest13fDeps;
+    filings: IngestSecFilingsDeps;
 }
 
 /** I/O 구성은 entity `lib/`가 아니라 이 호출자에 둔다(EN-1). DB가 없으면 던진다. */
 export function createSec13fDeps(
     isDeadlineReached: () => boolean
-): Ingest13fDeps {
+): Sec13fCronDeps {
     const client = tryGetDatabaseClient();
     if (client === null) throw new Error('[sec-13f] database unavailable');
     const universeRepo = new DrizzleInvestorFlowsUniverseRepository(client.db);
+    const now = (): Date => new Date();
+    const log = (message: string, detail?: unknown): void =>
+        console.warn(message, detail);
+    const sharedIndex = rememberRecentIndexes(
+        fetchDailyFormIndex,
+        addDays(toUtcIsoDate(now()), -SHARED_INDEX_DAYS)
+    );
     return {
-        sec: {
-            fetchDailyFormIndex,
-            fetchFilingIndexJson,
-            fetchFilingDocumentText,
-            fetchFilingDocumentStream,
+        thirteenF: {
+            sec: {
+                fetchDailyFormIndex: sharedIndex,
+                fetchFilingIndexJson,
+                fetchFilingDocumentText,
+                fetchFilingDocumentStream,
+            },
+            repo: new Drizzle13fRepository(client.db),
+            loadUniverse: () => universeRepo.loadUniverse(),
+            isSecBlockedError,
+            now,
+            isDeadlineReached,
+            invalidateSymbols: symbols => revalidateSymbols(symbols),
+            onBackfillCompleted: revalidateFlowsReadiness,
+            log,
         },
-        repo: new Drizzle13fRepository(client.db),
-        loadUniverse: () => universeRepo.loadUniverse(),
-        isSecBlockedError,
-        now: () => new Date(),
-        isDeadlineReached,
-        invalidateSymbols: symbols => revalidateSymbols(symbols),
-        onBackfillCompleted: revalidateFlowsReadiness,
-        log: (message, detail) => console.warn(message, detail),
+        filings: {
+            sec: {
+                fetchDailyFormIndex: sharedIndex,
+                fetchFilingDocumentText,
+                fetchFilingDocumentHead,
+            },
+            repo: new DrizzleSecFilingsRepository(client.db),
+            isSecBlockedError,
+            now,
+            isDeadlineReached,
+            invalidateSymbols: symbols => revalidateSymbols(symbols),
+            log,
+        },
     };
 }

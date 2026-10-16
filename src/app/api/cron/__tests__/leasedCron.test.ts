@@ -26,7 +26,7 @@ vi.mock('@/shared/cache/createRedisLease', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleLeasedCron } from '../leasedCron';
+import { handleLeasedCron, SEC_CRON_LEASE_NAME } from '../leasedCron';
 
 const OPTIONS = { name: 'sec-13f', leaseTtlSeconds: 900, deadlineMs: 720_000 };
 
@@ -100,6 +100,86 @@ describe('handleLeasedCron', () => {
                 arg: undefined
             ) => string;
             expect(keyFn(undefined)).toBe('investor-flows:cron-lock:sec-13f');
+        });
+
+        it('uses the shared lock key when a lease name is given, keeping the cron name for logs', async () => {
+            await handleLeasedCron(request('Bearer test-secret'), {
+                ...OPTIONS,
+                name: 'sec-ftd',
+                leaseName: SEC_CRON_LEASE_NAME,
+                run: vi.fn(),
+            });
+            const call = mockCreateLease.mock.calls.find(
+                ([, , prefix]) => prefix === '[sec-ftd] lease'
+            );
+            const keyFn = call?.[0] as (arg: undefined) => string;
+            expect(keyFn(undefined)).toBe('investor-flows:cron-lock:sec');
+        });
+
+        it('also takes each legacy lease key (rollout overlap guard)', async () => {
+            await handleLeasedCron(request('Bearer test-secret'), {
+                ...OPTIONS,
+                leaseName: SEC_CRON_LEASE_NAME,
+                legacyLeaseNames: ['sec-13f'],
+                run: vi.fn(),
+            });
+            const keys = mockCreateLease.mock.calls
+                .filter(([, , prefix]) => prefix === '[sec-13f] lease')
+                .map(([keyFn]) => keyFn(undefined));
+            expect(keys).toEqual([
+                'investor-flows:cron-lock:sec',
+                'investor-flows:cron-lock:sec-13f',
+            ]);
+        });
+
+        it('skips with 204 and releases the shared lease when a legacy key is held by an old instance', async () => {
+            const releaseShared = vi.fn(async () => undefined);
+            mockTryAcquire
+                .mockResolvedValueOnce({
+                    status: 'acquired',
+                    release: releaseShared,
+                })
+                .mockResolvedValueOnce({ status: 'held' });
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const run = vi.fn();
+            const res = await handleLeasedCron(request('Bearer test-secret'), {
+                ...OPTIONS,
+                leaseName: SEC_CRON_LEASE_NAME,
+                legacyLeaseNames: ['sec-13f'],
+                run,
+            });
+            expect(res.status).toBe(204);
+            expect(releaseShared).toHaveBeenCalledTimes(1);
+            expect(run).not.toHaveBeenCalled();
+            expect(mockAfter).not.toHaveBeenCalled();
+            expect(warn).toHaveBeenCalledWith(
+                '[sec-13f] lease held — previous run still active, skipping (investor-flows:cron-lock:sec-13f)'
+            );
+            warn.mockRestore();
+        });
+
+        it('releases the shared and the legacy lease after the run', async () => {
+            const releaseShared = vi.fn(async () => undefined);
+            const releaseLegacy = vi.fn(async () => undefined);
+            mockTryAcquire
+                .mockResolvedValueOnce({
+                    status: 'acquired',
+                    release: releaseShared,
+                })
+                .mockResolvedValueOnce({
+                    status: 'acquired',
+                    release: releaseLegacy,
+                });
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            await handleLeasedCron(request('Bearer test-secret'), {
+                ...OPTIONS,
+                leaseName: SEC_CRON_LEASE_NAME,
+                legacyLeaseNames: ['sec-13f'],
+                run: vi.fn(async () => 'ok'),
+            });
+            await runAfter();
+            expect(releaseShared).toHaveBeenCalledTimes(1);
+            expect(releaseLegacy).toHaveBeenCalledTimes(1);
         });
 
         it('logs a metric-filter line when the lease is held (a previous run overran its schedule)', async () => {

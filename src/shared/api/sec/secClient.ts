@@ -1,8 +1,11 @@
 import 'server-only';
 import {
+    SEC_ARCHIVES_BASE_URL,
     SEC_BODY_IDLE_TIMEOUT_MS,
+    SEC_FILING_HEAD_MAX_BYTES,
     SEC_HEADER_TIMEOUT_MS,
     SEC_INFO_TABLE_BODY_BUDGET_MS,
+    SEC_MAX_FILE_BYTES,
     SEC_MAX_INFO_TABLE_BYTES,
     SEC_MAX_RETRIES,
     SEC_MIN_REQUEST_INTERVAL_MS,
@@ -15,7 +18,13 @@ import {
 import { sleep } from '@/shared/lib/sleep';
 import { withRetry } from '@/shared/lib/withRetry';
 
-const SEC_ARCHIVES_BASE = 'https://www.sec.gov/Archives/edgar';
+const SEC_WWW_BASE = 'https://www.sec.gov';
+const SEC_ARCHIVES_BASE = SEC_ARCHIVES_BASE_URL;
+/** `www.sec.gov/files/...` — FTD zip·`company_tickers.json` 같은 정적 데이터 파일. */
+const SEC_FILES_PREFIX = '/files/';
+/** FTD 파일 목록 페이지(파일 URL은 이 페이지의 링크에서 뽑는다 — 일부 월은 다른 폴더에 있다). */
+export const SEC_FTD_LISTING_PATH =
+    '/data-research/sec-markets-data/fails-deliver-data';
 const HTTP_NOT_FOUND = 404;
 const HTTP_FORBIDDEN = 403;
 const HTTP_TOO_MANY_REQUESTS = 429;
@@ -116,11 +125,33 @@ const retryOptions = (timeoutMs: number, maxRetries: number) => ({
             : null,
 });
 
-/** 응답 상태 분류: 정상은 `true`, 없는 문서(404·S3 AccessDenied 403)는 `false`, 그 밖은 던진다. */
-async function acceptStatus(res: Response, url: string): Promise<boolean> {
+/**
+ * SEC가 속도 제한·차단으로 거절했는가 — **모든** SEC 엔드포인트 공통 판정(Archives·`www.sec.gov/files`·목록 페이지·
+ * data.sec.gov). 재시도하지 않는 429와, "없는 문서"로 분류되지 않은 403이 여기에 온다(Archives의 S3 AccessDenied 403은
+ * `acceptStatus`가 먼저 "없음"으로 돌려 이 오류가 되지 않는다). 배치는 이 신호를 받으면 **그 실행의 SEC 요청을 전부** 멈춘다 —
+ * SEC는 한도를 넘긴 IP를 10분간 막고, 계속 두드리면 더 길어진다.
+ */
+export function isSecBlockedError(error: unknown): boolean {
+    return (
+        error instanceof SecHttpError &&
+        (error.status === HTTP_FORBIDDEN ||
+            error.status === HTTP_TOO_MANY_REQUESTS)
+    );
+}
+
+/**
+ * 응답 상태 분류: 정상은 `true`, 없는 문서는 `false`, 그 밖은 던진다. 없는 문서는 404, 그리고 **Archives에 한해** S3
+ * AccessDenied 403(없는 daily index에 404 대신 온다). `www.sec.gov/files`·목록 페이지는 S3 앞단이 아니라 403이면 그대로
+ * 차단(`SecHttpError`)이다 — 거기서 AccessDenied 본문을 "없음"으로 읽으면 차단을 빈 응답으로 오인한다.
+ */
+async function acceptStatus(
+    res: Response,
+    url: string,
+    accessDeniedMeansMissing: boolean
+): Promise<boolean> {
     if (res.ok) return true;
     if (res.status === HTTP_NOT_FOUND) return false;
-    if (res.status === HTTP_FORBIDDEN) {
+    if (res.status === HTTP_FORBIDDEN && accessDeniedMeansMissing) {
         const body = await res.text().catch(() => '');
         if (body.includes(ACCESS_DENIED_MARKER)) return false;
     }
@@ -139,11 +170,19 @@ interface DocumentOptions {
     timeoutMs: number;
     /** 있으면 슬롯 대기 + 요청 + 본문 **전체**가 이 안에 끝나야 한다(렌더 경로). */
     totalBudgetMs?: number;
+    /** Archives(S3)만 true — AccessDenied 403을 "없는 문서"로 본다(`acceptStatus`). */
+    accessDeniedMeansMissing: boolean;
 }
 
 const DOCUMENT_OPTIONS: DocumentOptions = {
     maxRetries: SEC_MAX_RETRIES,
     timeoutMs: SEC_REQUEST_TIMEOUT_MS,
+    accessDeniedMeansMissing: true,
+};
+
+const WWW_DOCUMENT_OPTIONS: DocumentOptions = {
+    ...DOCUMENT_OPTIONS,
+    accessDeniedMeansMissing: false,
 };
 
 /**
@@ -175,7 +214,14 @@ async function secGetDocument<T>(
                     cache: 'no-store',
                     signal: controller.signal,
                 });
-                if (!(await acceptStatus(res, url))) return null;
+                if (
+                    !(await acceptStatus(
+                        res,
+                        url,
+                        options.accessDeniedMeansMissing
+                    ))
+                )
+                    return null;
                 return await read(res);
             } finally {
                 clearTimeout(timer);
@@ -330,7 +376,7 @@ export async function fetchFilingDocumentStream(
                     cache: 'no-store',
                     signal: controller.signal,
                 });
-                if (!(await acceptStatus(res, url))) return null;
+                if (!(await acceptStatus(res, url, true))) return null;
                 return { res, controller };
             } finally {
                 // 헤더가 왔으면 헤더 타임아웃은 역할을 다했다 — 본문은 아래 한도가 지킨다.
@@ -368,6 +414,97 @@ export function fetchSubmissionsJson(
             maxRetries: 0,
             timeoutMs: SEC_SUBMISSIONS_BUDGET_MS,
             totalBudgetMs: SEC_SUBMISSIONS_BUDGET_MS,
+            accessDeniedMeansMissing: true,
         }
+    );
+}
+
+/** 본문을 `maxBytes`까지 모은다(넘으면 던진다). 요청 타임아웃은 호출부(`secGetDocument`)가 건다. */
+async function readBodyCapped(
+    res: Response,
+    maxBytes: number
+): Promise<Uint8Array> {
+    if (res.body === null) return new Uint8Array(0);
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for await (const chunk of streamWithLimits(res.body, {
+        maxBytes,
+        idleMs: SEC_BODY_IDLE_TIMEOUT_MS,
+        totalMs: SEC_REQUEST_TIMEOUT_MS,
+    })) {
+        chunks.push(chunk);
+        total += chunk.byteLength;
+    }
+    const out = new Uint8Array(total);
+    chunks.reduce((offset, chunk) => {
+        out.set(chunk, offset);
+        return offset + chunk.byteLength;
+    }, 0);
+    return out;
+}
+
+/**
+ * 본문의 **앞 `maxBytes`**만 텍스트로 읽고 나머지는 받지 않는다(스트림을 끊는다). SEC는 Range 헤더를 무시하므로 큰 문서의
+ * 머리만 필요할 때(424B5 표지 분류) 이렇게 읽는다.
+ */
+async function readBodyHead(res: Response, maxBytes: number): Promise<string> {
+    if (res.body === null) return '';
+    const decoder = new TextDecoder('utf-8');
+    let text = '';
+    let received = 0;
+    for await (const chunk of streamWithLimits(res.body, {
+        maxBytes: Number.POSITIVE_INFINITY,
+        idleMs: SEC_BODY_IDLE_TIMEOUT_MS,
+        totalMs: SEC_REQUEST_TIMEOUT_MS,
+    })) {
+        const room = maxBytes - received;
+        const part = chunk.byteLength > room ? chunk.subarray(0, room) : chunk;
+        text += decoder.decode(part, { stream: true });
+        received += part.byteLength;
+        // 머리를 다 받았으면 여기서 끊는다 — 제너레이터의 finally가 본문 스트림을 취소한다.
+        if (received >= maxBytes) break;
+    }
+    return text + decoder.decode();
+}
+
+/**
+ * `www.sec.gov/files/...`의 정적 데이터 파일(FTD zip, `company_tickers.json`) 바이트. `path`는 `/files/`로 시작해야 한다
+ * (다른 경로를 이 함수로 받지 않는다). 없으면 `null`, 403·429는 차단(`isSecBlockedError`). 크기 상한 `SEC_MAX_FILE_BYTES`.
+ */
+export function fetchSecFile(path: string): Promise<Uint8Array | null> {
+    if (!path.startsWith(SEC_FILES_PREFIX)) {
+        throw new Error(`fetchSecFile only serves ${SEC_FILES_PREFIX} paths`);
+    }
+    return secGetDocument(
+        `${SEC_WWW_BASE}${path}`,
+        res => readBodyCapped(res, SEC_MAX_FILE_BYTES),
+        WWW_DOCUMENT_OPTIONS
+    );
+}
+
+/** FTD 목록 페이지 HTML(`SEC_FTD_LISTING_PATH`). 없으면 `null`, 403·429는 차단. */
+export function fetchFailsToDeliverListing(): Promise<string | null> {
+    return secGetDocument(
+        `${SEC_WWW_BASE}${SEC_FTD_LISTING_PATH}`,
+        async res =>
+            new TextDecoder('utf-8').decode(
+                await readBodyCapped(res, SEC_MAX_FILE_BYTES)
+            ),
+        WWW_DOCUMENT_OPTIONS
+    );
+}
+
+/**
+ * 제출 폴더 안 문서의 **앞부분**(최대 `SEC_FILING_HEAD_MAX_BYTES`) 텍스트. 424B5처럼 수백 KB인 문서의 표지만 필요할 때 쓴다 —
+ * 머리를 받으면 연결을 끊는다. 없으면 `null`.
+ */
+export function fetchFilingDocumentHead(
+    cik: string,
+    accession: string,
+    fileName: string
+): Promise<string | null> {
+    return secGetDocument(
+        `${filingFolderUrl(cik, accession)}/${encodeURIComponent(fileName)}`,
+        res => readBodyHead(res, SEC_FILING_HEAD_MAX_BYTES)
     );
 }

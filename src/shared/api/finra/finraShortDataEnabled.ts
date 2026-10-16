@@ -1,3 +1,5 @@
+import { isDefaultOnFlagEnabled } from '@/shared/lib/defaultOnEnvFlag';
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * ⚠️  FINRA 데이터 이용 약관 — 비상업(non-commercial) 전용. 상업화 전에 반드시 끄거나 라이선스를 받을 것.
@@ -22,7 +24,5 @@
  * (3) 라이선스 확보 시에만 다시 켠다. 기본값을 바꿔야 한다면 이 함수 한 곳만 고친다.
  */
 export function isFinraShortDataEnabled(): boolean {
-    const raw = process.env.FINRA_SHORT_DATA_ENABLED?.trim().toLowerCase();
-    if (raw === undefined || raw === '') return true;
-    return !['false', '0', 'off', 'no'].includes(raw);
+    return isDefaultOnFlagEnabled(process.env.FINRA_SHORT_DATA_ENABLED);
 }

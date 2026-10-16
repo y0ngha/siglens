@@ -3,10 +3,15 @@ import {
     __resetSecThrottleForTests,
     dailyFormIndexUrl,
     fetchDailyFormIndex,
+    fetchFailsToDeliverListing,
+    fetchFilingDocumentHead,
     fetchFilingDocumentStream,
     fetchFilingDocumentText,
     fetchFilingIndexJson,
+    fetchSecFile,
     fetchSubmissionsJson,
+    isSecBlockedError,
+    SEC_FTD_LISTING_PATH,
     submissionsFileName,
     filingFolderUrl,
     SecBodyTimeoutError,
@@ -15,7 +20,9 @@ import {
     streamWithLimits,
 } from '../secClient';
 import {
+    SEC_FILING_HEAD_MAX_BYTES,
     SEC_HEADER_TIMEOUT_MS,
+    SEC_MAX_FILE_BYTES,
     SEC_MAX_INFO_TABLE_BYTES,
 } from '@/shared/config/investorFlows';
 
@@ -518,5 +525,143 @@ describe('render-path submissions lookup budget', () => {
         const assertion = expect(run).rejects.toBeInstanceOf(DOMException);
         await vi.advanceTimersByTimeAsync(9_000);
         await assertion;
+    });
+});
+
+describe('isSecBlockedError', () => {
+    it.each([403, 429])('treats SEC %i as a block (stop hammering)', status => {
+        expect(isSecBlockedError(new SecHttpError('u', status, null))).toBe(
+            true
+        );
+    });
+
+    it('does not treat a 5xx as a block', () => {
+        expect(isSecBlockedError(new SecHttpError('u', 503, null))).toBe(false);
+    });
+
+    it('does not treat a plain error mentioning 403 as a block', () => {
+        expect(isSecBlockedError(new Error('403'))).toBe(false);
+    });
+});
+
+describe('fetchSecFile (www.sec.gov/files)', () => {
+    it('returns the file bytes from www.sec.gov with the SEC User-Agent', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(200, 'PK-bytes'));
+        const run = fetchSecFile(
+            '/files/data/fails-deliver-data/cnsfails202609b.zip'
+        );
+        await vi.runAllTimersAsync();
+        expect(new TextDecoder().decode((await run) as Uint8Array)).toBe(
+            'PK-bytes'
+        );
+        expect(fetchSpy).toHaveBeenCalledWith(
+            'https://www.sec.gov/files/data/fails-deliver-data/cnsfails202609b.zip',
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    'User-Agent': 'SigLens dev.y0ngha@gmail.com',
+                }),
+            })
+        );
+    });
+
+    it('refuses a path outside /files/ without making a request', () => {
+        expect(() => fetchSecFile('/Archives/edgar/x.txt')).toThrow(
+            'fetchSecFile only serves /files/ paths'
+        );
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null for a 404', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(404));
+        const run = fetchSecFile('/files/company_tickers.json');
+        await vi.runAllTimersAsync();
+        expect(await run).toBeNull();
+    });
+
+    it('treats an AccessDenied 403 as a BLOCK, not a missing file (only Archives is S3)', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(403, ACCESS_DENIED));
+        const run = fetchSecFile('/files/company_tickers.json');
+        const assertion = expect(run).rejects.toMatchObject({
+            name: 'SecHttpError',
+            status: 403,
+        });
+        await vi.runAllTimersAsync();
+        await assertion;
+    });
+
+    it('refuses a body larger than the file cap', async () => {
+        fetchSpy.mockResolvedValueOnce(
+            new Response(new Uint8Array(SEC_MAX_FILE_BYTES + 1), {
+                status: 200,
+            })
+        );
+        const run = fetchSecFile('/files/company_tickers.json');
+        const assertion = expect(run).rejects.toThrow(
+            `SEC document exceeds ${SEC_MAX_FILE_BYTES} bytes`
+        );
+        await vi.runAllTimersAsync();
+        await assertion;
+    });
+});
+
+describe('fetchFailsToDeliverListing', () => {
+    it('reads the FTD listing page HTML', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(200, '<a href="/files/x.zip">'));
+        const run = fetchFailsToDeliverListing();
+        await vi.runAllTimersAsync();
+        expect(await run).toBe('<a href="/files/x.zip">');
+        expect(fetchSpy).toHaveBeenCalledWith(
+            `https://www.sec.gov${SEC_FTD_LISTING_PATH}`,
+            expect.anything()
+        );
+    });
+
+    it('surfaces a 429 as a block', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(429));
+        const run = fetchFailsToDeliverListing();
+        const assertion = expect(run).rejects.toSatisfy(isSecBlockedError);
+        await vi.runAllTimersAsync();
+        await assertion;
+    });
+});
+
+describe('fetchFilingDocumentHead', () => {
+    it('returns only the first SEC_FILING_HEAD_MAX_BYTES and stops pulling the body', async () => {
+        let pulls = 0;
+        const chunk = new TextEncoder().encode('a'.repeat(64 * 1024));
+        const body = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                pulls += 1;
+                controller.enqueue(chunk);
+            },
+        });
+        fetchSpy.mockResolvedValueOnce(new Response(body, { status: 200 }));
+        const run = fetchFilingDocumentHead(
+            '0000002488',
+            '0001950047-26-010251',
+            '0001950047-26-010251.txt'
+        );
+        await vi.runAllTimersAsync();
+        const text = (await run) as string;
+        expect(text.length).toBe(SEC_FILING_HEAD_MAX_BYTES);
+        // a never-ending body: reading stopped after the head (a few chunks of read-ahead at most)
+        expect(pulls).toBeLessThan(
+            SEC_FILING_HEAD_MAX_BYTES / chunk.length + 4
+        );
+        expect(fetchSpy).toHaveBeenCalledWith(
+            'https://www.sec.gov/Archives/edgar/data/2488/000195004726010251/0001950047-26-010251.txt',
+            expect.anything()
+        );
+    });
+
+    it('returns the whole body when it is shorter than the head limit', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(200, '<TYPE>424B5'));
+        const run = fetchFilingDocumentHead(
+            '1',
+            '0000000001-26-000001',
+            'a.txt'
+        );
+        await vi.runAllTimersAsync();
+        expect(await run).toBe('<TYPE>424B5');
     });
 });

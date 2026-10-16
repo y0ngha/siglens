@@ -3,6 +3,7 @@ import {
     sec13fDirtyAggregates,
     sec13fFilers,
     sec13fFilings,
+    sec13fOptionPositions,
     sec13fPositions,
 } from '@/shared/db/schema';
 import {
@@ -30,6 +31,7 @@ const baseInput: ApplyFilingInput = {
         { cusip: ABBOTT, shares: 19357, valueUsd: 1912972 },
         { cusip: MSFT, shares: 6800, valueUsd: 3487841 },
     ],
+    optionRows: [],
     cusipIds: new Map([
         [ABBOTT, 11],
         [MSFT, 22],
@@ -58,6 +60,8 @@ describe('Drizzle13fRepository.applyFiling', () => {
             const { db, ops } = createFakeDb([
                 [], // execute: dirty <- positions
                 [], // delete
+                [], // execute: dirty <- option positions
+                [], // delete option positions
                 [{ cusipId: 11 }, { cusipId: 22 }], // insert positions returning
                 [], // dirty insert
             ]);
@@ -68,13 +72,16 @@ describe('Drizzle13fRepository.applyFiling', () => {
             expect(ops.map(op => op.kind)).toEqual([
                 'execute',
                 'delete',
+                'execute',
+                'delete',
                 'insert',
                 'insert',
                 'insert',
                 'insert',
             ]);
-            expect(targets(ops).slice(1)).toEqual([
+            expect([1, 3, 4, 5, 6, 7].map(i => ops[i]?.target)).toEqual([
                 sec13fPositions,
+                sec13fOptionPositions,
                 sec13fPositions,
                 sec13fDirtyAggregates,
                 sec13fFilers,
@@ -119,11 +126,156 @@ describe('Drizzle13fRepository.applyFiling', () => {
         });
 
         it('marks dirty with the period and the cusip ids that were written', async () => {
-            const { db, ops } = createFakeDb([[], [], [{ cusipId: 22 }]]);
+            const { db, ops } = createFakeDb([
+                [],
+                [],
+                [],
+                [],
+                [{ cusipId: 22 }],
+            ]);
             await new Drizzle13fRepository(db).applyFiling(baseInput);
             const dirty = ops.find(op => op.target === sec13fDirtyAggregates);
             const [[values]] = callsOf(dirty as never, 'values') as [[unknown]];
             expect(values).toEqual([{ period: '2026-09-30', cusipId: 22 }]);
+        });
+    });
+
+    describe('option rows', () => {
+        const withOptions: ApplyFilingInput = {
+            ...baseInput,
+            mode: 'merge',
+            rows: [],
+            optionRows: [
+                {
+                    cusip: MSFT,
+                    putCall: 'put',
+                    shares: 6795,
+                    valueUsd: 3485841,
+                },
+                { cusip: ABBOTT, putCall: 'call', shares: 10, valueUsd: 999 },
+                // a CUSIP outside the universe map is not stored
+                { cusip: 'ZZZZZZZZ9', putCall: 'call', shares: 1, valueUsd: 1 },
+            ],
+        };
+
+        it('upserts universe option rows with cik, cusip, period and put/call paired to their values', async () => {
+            const { db, ops } = createFakeDb([[{ cusip: MSFT }]]);
+            await new Drizzle13fRepository(db).applyFiling(withOptions);
+            const insert = ops.find(
+                op =>
+                    op.kind === 'insert' && op.target === sec13fOptionPositions
+            );
+            const [[values]] = callsOf(insert as never, 'values') as [
+                [unknown],
+            ];
+            expect(values).toEqual([
+                {
+                    cik: 2148692,
+                    cusip: MSFT,
+                    period: '2026-09-30',
+                    putCall: 'put',
+                    shares: 6795,
+                    valueUsd: 3485841,
+                },
+                {
+                    cik: 2148692,
+                    cusip: ABBOTT,
+                    period: '2026-09-30',
+                    putCall: 'call',
+                    shares: 10,
+                    valueUsd: 999,
+                },
+            ]);
+        });
+
+        it('marks the changed option CUSIPs dirty through their universe ids and reports them as written', async () => {
+            const { db, ops } = createFakeDb([[{ cusip: MSFT }], []]);
+            const touched = await new Drizzle13fRepository(db).applyFiling(
+                withOptions
+            );
+            const dirty = ops.find(op => op.target === sec13fDirtyAggregates);
+            const [[values]] = callsOf(dirty as never, 'values') as [[unknown]];
+            expect(values).toEqual([{ period: '2026-09-30', cusipId: 22 }]);
+            expect(touched).toEqual([MSFT]);
+        });
+
+        it('guards the option conflict update so unchanged rows are not rewritten', async () => {
+            const { db, ops } = createFakeDb([[]]);
+            await new Drizzle13fRepository(db).applyFiling(withOptions);
+            const insert = ops.find(op => op.target === sec13fOptionPositions);
+            const [[config]] = callsOf(
+                insert as never,
+                'onConflictDoUpdate'
+            ) as [[{ setWhere: Parameters<typeof renderSql>[0] }]];
+            const { text } = renderSql(config.setWhere);
+            expect(text).toContain('IS DISTINCT FROM excluded.shares');
+            expect(text).toContain('IS DISTINCT FROM excluded.value_usd');
+        });
+
+        it('a replace moves the removed option CUSIPs to the dirty queue through the CUSIP map, then deletes them', async () => {
+            const { db, ops } = createFakeDb();
+            await new Drizzle13fRepository(db).applyFiling({
+                ...withOptions,
+                mode: 'replace',
+            });
+            const copied = renderSql(ops[2]?.target as never);
+            expect(copied.text).toContain(
+                'SELECT o.period, m.id FROM sec_13f_option_positions o JOIN cusip_symbol_map m ON m.cusip = o.cusip WHERE o.cik = $1 AND o.period = $2::date'
+            );
+            expect(copied.params).toEqual([2148692, '2026-09-30']);
+            expect(ops[3]).toMatchObject({
+                kind: 'delete',
+                target: sec13fOptionPositions,
+            });
+        });
+
+        it('a skip writes no option rows', async () => {
+            const { db, ops } = createFakeDb();
+            await new Drizzle13fRepository(db).applyFiling({
+                ...withOptions,
+                mode: 'skip',
+            });
+            expect(ops.some(op => op.target === sec13fOptionPositions)).toBe(
+                false
+            );
+        });
+
+        it('re-applies a later amendment’s option rows after the replace', async () => {
+            const { db, ops } = createFakeDb();
+            await new Drizzle13fRepository(db).applyFiling({
+                ...withOptions,
+                mode: 'replace',
+                optionRows: [],
+                reapply: [
+                    {
+                        accession: '0001768130-26-000020',
+                        rows: [],
+                        optionRows: [
+                            {
+                                cusip: MSFT,
+                                putCall: 'call',
+                                shares: 3,
+                                valueUsd: 30,
+                            },
+                        ],
+                    },
+                ],
+            });
+            const inserts = ops.filter(
+                op =>
+                    op.kind === 'insert' && op.target === sec13fOptionPositions
+            );
+            expect(inserts).toHaveLength(1);
+            const [[values]] = callsOf(inserts[0] as never, 'values') as [
+                [unknown],
+            ];
+            expect(values).toEqual([
+                expect.objectContaining({
+                    cusip: MSFT,
+                    putCall: 'call',
+                    shares: 3,
+                }),
+            ]);
         });
     });
 
@@ -204,6 +356,8 @@ describe('Drizzle13fRepository.applyFiling', () => {
             const { db, ops } = createFakeDb([
                 [], // dirty <- removed positions
                 [], // delete
+                [], // dirty <- removed option positions
+                [], // delete option positions
                 [{ cusipId: 11 }], // restatement rows
                 [], // dirty
                 [{ cusipId: 22 }], // reapplied rows
@@ -216,6 +370,7 @@ describe('Drizzle13fRepository.applyFiling', () => {
                     {
                         accession: '0001768130-26-000020',
                         rows: [{ cusip: MSFT, shares: 9, valueUsd: 9_000 }],
+                        optionRows: [],
                     },
                 ],
             });
@@ -244,7 +399,13 @@ describe('Drizzle13fRepository.applyFiling', () => {
             const { db, ops } = createFakeDb();
             await new Drizzle13fRepository(db).applyFiling({
                 ...baseInput,
-                reapply: [{ accession: '0001768130-26-000020', rows: [] }],
+                reapply: [
+                    {
+                        accession: '0001768130-26-000020',
+                        rows: [],
+                        optionRows: [],
+                    },
+                ],
             });
             const ledgerValues = ops
                 .filter(op => op.target === sec13fFilings)
@@ -364,11 +525,39 @@ describe('Drizzle13fRepository.recomputeAggregates', () => {
             ['A', 'B'],
             'complete'
         );
-        expect(ops.map(op => op.kind)).toEqual(['execute', 'execute']);
+        expect(ops.map(op => op.kind)).toEqual([
+            'execute',
+            'execute',
+            'execute',
+            'execute',
+        ]);
         const upsert = renderSql(ops[0]?.target as never);
         expect(upsert.text).toContain('FULL OUTER JOIN');
         expect(upsert.params).toContain('2026-06-30'); // prior quarter
         expect(upsert.params).not.toContain('2026-08-14'); // no calendar cutoff: the per-CUSIP baseline comes from ingestion times
+    });
+
+    it('recomputes the option aggregates for the same chunk after the stock aggregates', async () => {
+        const { db, ops } = createFakeDb();
+        await new Drizzle13fRepository(db).recomputeAggregates(
+            '2026-09-30',
+            ['A', 'B'],
+            'none'
+        );
+        const optionUpsert = renderSql(ops[2]?.target as never);
+        const optionDelete = renderSql(ops[3]?.target as never);
+        expect(optionUpsert.text).toContain(
+            'INSERT INTO sec_13f_option_aggregates'
+        );
+        expect(optionUpsert.params).toEqual([
+            '2026-09-30',
+            '2026-09-30',
+            'A',
+            'B',
+        ]);
+        expect(optionDelete.text).toContain(
+            'DELETE FROM sec_13f_option_aggregates'
+        );
     });
 
     it('panel mode adds the panel filer filters', async () => {
@@ -580,10 +769,32 @@ describe('Drizzle13fRepository prune (no RETURNING, driver row counts)', () => {
         expect(ops).toHaveLength(1);
     });
 
+    it('option positions are pruned with the same floor once the stock positions are done', async () => {
+        const { db, ops } = createFakeDb([withCount(10), withCount(7)]);
+        const result = await new Drizzle13fRepository(db).prunePositionsBefore(
+            '2026-03-31',
+            () => false
+        );
+        expect(result).toEqual({ deleted: 17, done: true });
+        const { text, params } = renderSql(ops[1]?.target as never);
+        expect(text).toContain(
+            'DELETE FROM sec_13f_option_positions WHERE ctid IN ( SELECT ctid FROM sec_13f_option_positions WHERE period < $1::date LIMIT $2 )'
+        );
+        expect(params).toEqual(['2026-03-31', 50_000]);
+    });
+
     it('aggregates and filings return the driver count', async () => {
-        const { db } = createFakeDb([withCount(3), withCount(4)]);
+        const { db, ops } = createFakeDb([
+            withCount(3),
+            withCount(2),
+            withCount(4),
+        ]);
         const repo = new Drizzle13fRepository(db);
-        expect(await repo.pruneAggregatesBefore('2023-09-30')).toBe(3);
+        // stock aggregates + option aggregates
+        expect(await repo.pruneAggregatesBefore('2023-09-30')).toBe(5);
+        expect(renderSql(ops[1]?.target as never).text).toBe(
+            'DELETE FROM sec_13f_option_aggregates WHERE period < $1::date'
+        );
         expect(await repo.pruneFilingsBefore('2024-08-01')).toBe(4);
     });
 });
