@@ -47,11 +47,15 @@ import { cn } from '@/shared/lib/cn';
  * A2(감사): 모바일에서만 `aria-modal="true"`를 단다 — 모바일 패널은
  * `fixed inset-0` 백드롭 뒤에 포털된 실질적 모달 다이얼로그라 스크린리더
  * 사용자가 다이얼로그 밖(시각적으로는 백드롭에 가려진) 콘텐츠로 스와이프해
- * 나갈 수 있으면 안 된다(`IndicatorSettingsModal`과 동일 패턴). 데스크탑
+ * 나갈 수 있으면 안 된다. 데스크탑
  * 앵커드 팝오버는 진짜 모달이 아니므로(백드롭 없음, 페이지 나머지가 여전히
  * 상호작용 가능) `aria-modal`을 달지 않는다 — 이전 커밋(34358ab4)이 데스크탑
  * 경로에서 이를 의도적으로 제거한 판단은 유효하다. 이번 변경은 모바일
  * 경로에만 추가하는 것으로 그 판단을 뒤집지 않는다.
+ *
+ * 차트 헤더 띠 메뉴(`ChartOverlayMenu`·`IndicatorSettingsPopover`)는 이 표면을 쓰지 않는다 — 모바일에서도
+ * 중앙 모달이 아니라 트리거 아래에 열려야 해서, 같은 "body 포털" 아이디어를 `ChartPopoverPanel`(뷰포트 좌표 +
+ * clamp)로 따로 구현한다.
  */
 interface PopoverSurfaceProps {
     children: ReactNode;

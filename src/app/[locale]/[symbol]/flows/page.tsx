@@ -193,14 +193,18 @@ export default async function FlowsPage({ params }: Props) {
                     <InvestorFlowsEmpty />
                 ) : (
                     <>
+                        {/* AI 해석을 탭 맨 위에 둔다(제품 결정). 데이터 표를 읽기 전에 결론부터 보게 하려는
+                            것이다 — 다른 탭의 순서(의회 거래: AI 먼저, 펀더멘털: 프로필 → AI, 재무제표: 점수 → AI)와
+                            맞추려는 것이 아니다. 스트림이 도착하기 전에는 스켈레톤이 같은 자리를 잡고, 그 높이는
+                            도착한 결과와 비슷하게 `InvestorFlowsSummary`가 예약해(`SUMMARY_RESERVED_HEIGHT`) 아래 점수
+                            카드가 밀리지 않는다.
+                            데이터가 없는 종목은 AI를 부르지 않는다. */}
+                        <InvestorFlowsSummary symbol={upper} />
                         <InvestorFlowsContent
                             snapshot={snapshot}
                             scorecard={scorecard}
                             finraEnabled={finraEnabled}
                         />
-                        {/* AI 해석은 마지막이다 — 점수·표가 먼저 SSR로 그려지고, 클라이언트 스트림이 도착해도
-                            위쪽 콘텐츠는 움직이지 않는다. 데이터가 없는 종목은 AI를 부르지 않는다. */}
-                        <InvestorFlowsSummary symbol={upper} />
                     </>
                 )}
                 <CrossLinkCards symbol={upper} current="flows" />

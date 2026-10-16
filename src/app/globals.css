@@ -652,6 +652,18 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
 }
 
 /*
+ * 차트 헤더 팝오버(`ChartPopoverPanel`, `data-chart-popover`)가 열려 있는 동안 PWA 설치 배너와 Ask-AI FAB을
+ * 숨긴다.
+ *
+ * 팝오버는 뷰포트 아래 끝까지 내려올 수 있는데(375x667에서 하단 ~8px 여백) 배너(z-65)는 팝오버(z-60) 위,
+ * 화면 맨 아래 전폭이라 패널 아래쪽 항목을 가렸다. 팝오버는 닫히면 언마운트되어 `:has()`가 풀린다.
+ */
+body:has([data-chart-popover]) [data-ask-ai-fab],
+body:has([data-chart-popover]) [data-pwa-banner] {
+    display: none;
+}
+
+/*
  * 모바일 분석 시트가 PEEK 밖(HALF/FULL)으로 펼쳐지면 Ask-AI FAB과 PWA 설치 배너를 숨긴다.
  *
  * FAB(z-60)·배너(z-65)는 시트(z-50)보다 위라 펼친 시트 위로 떠서 분석 본문 아래쪽 글자를

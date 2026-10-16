@@ -182,6 +182,29 @@ describe('flows page 본문', () => {
         );
     });
 
+    it('AI 해석이 본문(점수 카드·표)보다 위, 크로스링크는 맨 아래다 — 다른 분석 탭과 같은 순서', async () => {
+        arrange({
+            snapshot: { asOf: 'x' },
+            scorecard: { composite: {} },
+            finraEnabled: true,
+        });
+        render(await FlowsPage({ params: params() }));
+        const order = ['summary', 'content', 'cross'].map(id =>
+            screen.getByTestId(id)
+        );
+        const [summary, content, cross] = order;
+        const before = Node.DOCUMENT_POSITION_FOLLOWING;
+        expect(summary!.compareDocumentPosition(content!) & before).toBe(
+            before
+        );
+        expect(content!.compareDocumentPosition(cross!) & before).toBe(before);
+        expect(
+            screen
+                .getByRole('heading', { level: 1 })
+                .compareDocumentPosition(summary!) & before
+        ).toBe(before);
+    });
+
     it('데이터 없음(정상)은 빈 상태 + 크로스링크이고 AI를 부르지 않는다', async () => {
         arrange({});
         render(await FlowsPage({ params: params() }));

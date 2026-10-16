@@ -21,6 +21,25 @@ vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
     createToolExecutor: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://example.test' }));
+const failure = vi.hoisted(() => ({ on: false }));
+vi.mock(
+    '@/entities/siglens-api-key/lib/buildSkillMarkdown',
+    async importOriginal => {
+        const actual =
+            await importOriginal<
+                typeof import('@/entities/siglens-api-key/lib/buildSkillMarkdown')
+            >();
+        return {
+            ...actual,
+            buildSkillMarkdown: (
+                ...args: Parameters<typeof actual.buildSkillMarkdown>
+            ) => {
+                if (failure.on) throw new Error('boom');
+                return actual.buildSkillMarkdown(...args);
+            },
+        };
+    }
+);
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
 import { GET } from '@/app/api/v1/skill/route';
@@ -40,6 +59,7 @@ describe('GET /api/v1/skill', () => {
             'text/markdown; charset=utf-8'
         );
         expect(response.headers.get('Cache-Control')).toBe('no-store');
+        expect(response.headers.get('X-Robots-Tag')).toBe('noindex');
     });
 
     it('노출 도구를 정확히 나열한다(스펙 순서 그대로)', async () => {
@@ -109,5 +129,24 @@ describe('GET /api/v1/skill', () => {
         expect(markdown).toContain(
             `${PUBLIC_API_RATE_LIMITS.ai.perMinute}/minute`
         );
+    });
+});
+
+describe('GET /api/v1/skill — generation failure', () => {
+    afterEach(() => {
+        failure.on = false;
+    });
+
+    it('answers the generic 500 envelope and still carries X-Robots-Tag: noindex', async () => {
+        failure.on = true;
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        const response = await GET();
+        errorSpy.mockRestore();
+        expect(response.status).toBe(500);
+        expect(response.headers.get('X-Robots-Tag')).toBe('noindex');
+        const body = (await response.json()) as { error: { code: string } };
+        expect(body.error.code).toBe('internal_error');
     });
 });

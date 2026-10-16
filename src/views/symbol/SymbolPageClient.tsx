@@ -267,7 +267,7 @@ export function SymbolPageClient({
                                     }
                                     fmpSymbol={assetInfo?.fmpSymbol}
                                     // 프리·애프터마켓 시세(표시 전용)는 차트 상단 띠 위 오버레이로
-                                    // 얹는다 — 제목 `h1` 행에 형제로 두면 칩이 나타날 때 h1 폭이
+                                    // 얹는다 — 제목 `h1` 행에 형제로 두면 캡션이 나타날 때 h1 폭이
                                     // 줄어 줄바꿈이 바뀐다. 호출은 사용자 입력이 있은 뒤에만 나간다
                                     // (`useExtendedHoursQuote`), 크롤러 렌더는 FMP를 건드리지 않는다.
                                     chartCornerSlot={

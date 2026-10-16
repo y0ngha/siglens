@@ -47,7 +47,7 @@ describe('PopoverSurface', () => {
         expect(backdrop).not.toBeNull();
     });
 
-    it('모바일 backdrop에 role="presentation"을 부여한다 — IndicatorSettingsModal 패턴과 동일', () => {
+    it('모바일 backdrop에 role="presentation"을 부여한다', () => {
         renderSurface(true);
 
         const backdrop = document.querySelector(

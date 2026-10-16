@@ -1,14 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('@/shared/hooks/useDialog', () => ({
-    useDialog: vi.fn(() => ({
-        isOpen: false,
-        open: vi.fn(),
-        close: vi.fn(),
-        dialogRef: { current: null },
-        triggerRef: { current: null },
-    })),
-}));
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) =>
         args
@@ -27,41 +18,16 @@ vi.mock('@/shared/lib/chartColors', () => ({
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { useDialog } from '@/shared/hooks/useDialog';
-import { IndicatorSettingsModal } from '../../ui/IndicatorSettingsModal';
+import { IndicatorSettingsPopover } from '../../ui/IndicatorSettingsPopover';
+import { CHART_POPOVER_PANEL } from '../../ui/chartPopoverStyles';
 import {
     INDICATOR_META,
     type IndicatorBinding,
 } from '../../model/indicatorRegistry';
 
-/**
- * useDialog를 mock한 테스트용 dialogRef.
- *
- * 네이티브 `<dialog>`는 열려 있지 않으면 children이 숨겨져(UA 스타일 display:none)
- * getByRole/getByText로 조회되지 않는다. 실제 훅은 effect에서 showModal()을 부르지만
- * mock에는 그 로직이 없으므로, React가 엘리먼트를 ref에 붙이는 순간 열어 준다.
- */
-function openedDialogRef(): { current: HTMLDialogElement | null } {
-    let node: HTMLDialogElement | null = null;
-    return {
-        get current() {
-            return node;
-        },
-        set current(next: HTMLDialogElement | null) {
-            node = next;
-            if (next !== null && !next.open) next.showModal();
-        },
-    };
-}
-
-function openDialog(): void {
-    vi.mocked(useDialog).mockReturnValue({
-        isOpen: true,
-        open: vi.fn(),
-        close: vi.fn(),
-        dialogRef: openedDialogRef(),
-        triggerRef: { current: null },
-    });
+/** 톱니바퀴를 눌러 팝오버를 연다 — 닫힌 동안에는 패널이 DOM에 없다. */
+function openPanel(): void {
+    fireEvent.click(screen.getByRole('button', { name: '보조지표 설정' }));
 }
 
 const rsiBinding = (
@@ -82,53 +48,64 @@ const maBinding = (over: Partial<IndicatorBinding> = {}): IndicatorBinding => ({
     ...over,
 });
 
-describe('IndicatorSettingsModal', () => {
-    beforeEach(() => {
-        vi.mocked(useDialog).mockReturnValue({
-            isOpen: false,
-            open: vi.fn(),
-            close: vi.fn(),
-            dialogRef: { current: null },
-            triggerRef: { current: null },
-        });
-    });
-
+describe('IndicatorSettingsPopover', () => {
     it('renders the gear trigger button', () => {
-        render(<IndicatorSettingsModal bindings={[rsiBinding()]} />);
+        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
         expect(
             screen.getByRole('button', { name: '보조지표 설정' })
         ).toBeInTheDocument();
     });
 
-    it('does not render the dialog when closed', () => {
-        render(<IndicatorSettingsModal bindings={[rsiBinding()]} />);
+    it('keeps the panel out of the DOM while closed and marks the trigger collapsed', () => {
+        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
+        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        expect(gear).toHaveAttribute('aria-expanded', 'false');
+        expect(
+            screen.queryByRole('group', { name: '보조지표 설정' })
+        ).not.toBeInTheDocument();
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('calls open when the gear trigger is clicked', () => {
-        const open = vi.fn();
-        vi.mocked(useDialog).mockReturnValue({
-            isOpen: false,
-            open,
-            close: vi.fn(),
-            dialogRef: { current: null },
-            triggerRef: { current: null },
-        });
-        render(<IndicatorSettingsModal bindings={[rsiBinding()]} />);
-        fireEvent.click(screen.getByRole('button', { name: '보조지표 설정' }));
-        expect(open).toHaveBeenCalledTimes(1);
+    it('opens an anchored popover (not a modal) under the trigger, with the same panel surface as the drawing menu', () => {
+        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
+        openPanel();
+        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        expect(gear).toHaveAttribute('aria-expanded', 'true');
+        const panel = screen.getByRole('group', { name: '보조지표 설정' });
+        expect(gear).toHaveAttribute('aria-controls', panel.id);
+        // 차트 열(overflow-hidden) 밖인 body로 포털하고 뷰포트 좌표(fixed)로 놓는다 — 잘리지 않고, 화면 중앙 모달도 아니다.
+        expect(panel.parentElement).toBe(document.body);
+        expect(panel).toHaveClass('fixed', 'z-60');
+        for (const shared of CHART_POPOVER_PANEL.split(' '))
+            expect(panel).toHaveClass(shared);
+        expect(panel.style.top).not.toBe('');
+        expect(panel.style.left).not.toBe('');
+        expect(document.querySelector('dialog')).toBeNull();
+    });
+
+    it('closes when the gear is clicked again, on Escape and on an outside click', () => {
+        render(<IndicatorSettingsPopover bindings={[rsiBinding()]} />);
+        const panelQuery = () =>
+            screen.queryByRole('group', { name: '보조지표 설정' });
+        openPanel();
+        openPanel();
+        expect(panelQuery()).toBeNull();
+        openPanel();
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(panelQuery()).toBeNull();
+        openPanel();
+        fireEvent.mouseDown(document.body);
+        fireEvent.pointerDown(document.body);
+        expect(panelQuery()).toBeNull();
     });
 
     it('renders category headings only for non-empty categories', () => {
-        openDialog();
         render(
-            <IndicatorSettingsModal bindings={[rsiBinding(), maBinding()]} />
+            <IndicatorSettingsPopover bindings={[rsiBinding(), maBinding()]} />
         );
-        // useDialog mock은 showModal()을 호출하지 않으므로 <dialog>에 open이 붙지 않는다
-        // (role="dialog" 조회 불가). 내용 렌더 여부로 검증한다 — 네이티브 open 동작은
-        // useDialog 테스트와 chartIndicatorFlow 통합 테스트가 담당한다.
+        openPanel();
         expect(
-            screen.getByRole('heading', { name: '보조지표 설정' })
+            screen.getByRole('group', { name: '보조지표 설정' })
         ).toBeInTheDocument();
         expect(screen.getByText('추세')).toBeInTheDocument();
         expect(screen.getByText('모멘텀')).toBeInTheDocument();
@@ -137,9 +114,8 @@ describe('IndicatorSettingsModal', () => {
     });
 
     it('orders category sections by CATEGORY_ORDER regardless of binding input order', () => {
-        openDialog();
         render(
-            <IndicatorSettingsModal
+            <IndicatorSettingsPopover
                 bindings={[
                     rsiBinding(), // momentum
                     maBinding(), // trend
@@ -151,6 +127,7 @@ describe('IndicatorSettingsModal', () => {
                 ]}
             />
         );
+        openPanel();
         const headings = screen
             .getAllByRole('heading', { level: 3 })
             .map(h => h.textContent);
@@ -158,11 +135,11 @@ describe('IndicatorSettingsModal', () => {
     });
 
     it('renders a checkbox for non-period indicators and calls onToggle', () => {
-        openDialog();
         const onToggle = vi.fn();
         render(
-            <IndicatorSettingsModal bindings={[rsiBinding({ onToggle })]} />
+            <IndicatorSettingsPopover bindings={[rsiBinding({ onToggle })]} />
         );
+        openPanel();
         const checkbox = screen.getByRole('checkbox', { name: /RSI/ });
         expect(checkbox).not.toBeChecked();
         fireEvent.click(checkbox);
@@ -170,21 +147,23 @@ describe('IndicatorSettingsModal', () => {
     });
 
     it('reflects active state on the checkbox', () => {
-        openDialog();
         render(
-            <IndicatorSettingsModal bindings={[rsiBinding({ active: true })]} />
+            <IndicatorSettingsPopover
+                bindings={[rsiBinding({ active: true })]}
+            />
         );
+        openPanel();
         expect(screen.getByRole('checkbox', { name: /RSI/ })).toBeChecked();
     });
 
     it('renders period chips (not a checkbox) for ma/ema and toggles a period', () => {
-        openDialog();
         const onTogglePeriod = vi.fn();
         render(
-            <IndicatorSettingsModal
+            <IndicatorSettingsPopover
                 bindings={[maBinding({ visiblePeriods: [20], onTogglePeriod })]}
             />
         );
+        openPanel();
         expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
         const chip20 = screen.getByRole('button', { name: /20/ });
         const chip60 = screen.getByRole('button', { name: /60/ });
@@ -194,38 +173,24 @@ describe('IndicatorSettingsModal', () => {
         expect(onTogglePeriod).toHaveBeenCalledWith(60);
     });
 
-    it('calls close when the close button is clicked', () => {
-        const close = vi.fn();
-        vi.mocked(useDialog).mockReturnValue({
-            isOpen: true,
-            open: vi.fn(),
-            close,
-            dialogRef: openedDialogRef(),
-            triggerRef: { current: null },
-        });
-        render(<IndicatorSettingsModal bindings={[rsiBinding()]} />);
-        fireEvent.click(screen.getByRole('button', { name: '닫기' }));
-        expect(close).toHaveBeenCalledTimes(1);
-    });
-
-    it('renders an empty dialog body without crashing when bindings is empty (worst case)', () => {
-        openDialog();
-        render(<IndicatorSettingsModal bindings={[]} />);
+    it('renders an empty panel body without crashing when bindings is empty (worst case)', () => {
+        render(<IndicatorSettingsPopover bindings={[]} />);
+        openPanel();
         expect(
-            screen.getByRole('heading', { name: '보조지표 설정' })
+            screen.getByRole('group', { name: '보조지표 설정' })
         ).toBeInTheDocument();
         expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     });
 
     it('handles a period indicator with no available periods (worst case)', () => {
-        openDialog();
         render(
-            <IndicatorSettingsModal
+            <IndicatorSettingsPopover
                 bindings={[
                     maBinding({ availablePeriods: [], visiblePeriods: [] }),
                 ]}
             />
         );
+        openPanel();
         expect(screen.getByText('MA')).toBeInTheDocument();
         expect(
             screen.queryByRole('button', { name: /20/ })
@@ -233,18 +198,18 @@ describe('IndicatorSettingsModal', () => {
     });
 
     it('renders indicator items in a 2-column grid container (layout regression)', () => {
-        openDialog();
         render(
-            <IndicatorSettingsModal bindings={[rsiBinding(), maBinding()]} />
+            <IndicatorSettingsPopover bindings={[rsiBinding(), maBinding()]} />
         );
+        openPanel();
         // 카테고리별 항목 컨테이너가 2열 그리드여야 모달 길이가 짧아져 모바일에서 안 가려진다.
         // rsi(momentum)+ma(trend) = 정확히 2개 카테고리 → 그리드 컨테이너 2개(결정적).
         expect(document.querySelectorAll('.grid.grid-cols-2').length).toBe(2);
     });
 
     it('wraps period rows with col-span-2 so chips span the full width', () => {
-        openDialog();
-        render(<IndicatorSettingsModal bindings={[maBinding()]} />);
+        render(<IndicatorSettingsPopover bindings={[maBinding()]} />);
+        openPanel();
         // period 행(MA/EMA)은 칩이 넓어 2열 그리드에서 전체폭(col-span-2)을 차지해야 한다.
         // ma 바인딩 1개 → col-span-2 래퍼 정확히 1개(결정적).
         expect(document.querySelectorAll('.col-span-2').length).toBe(1);

@@ -56,7 +56,7 @@ describe('buildPopularEntries', () => {
         expect(fearGreed?.priority).toBe(0.75);
     });
 
-    // 종합·펀더멘털·재무제표·옵션·의회거래·내위치 탭은 페이지가 항상 noindex다.
+    // 종합·펀더멘털·재무제표·옵션·의회거래·수급·내위치 탭은 페이지가 항상 noindex다.
     // noindex URL이 sitemap에 실리면 크롤 예산만 태우므로 한 건도 나가지 않는지
     // (한국 종목·ETF 포함) 고정한다.
     it.each([
@@ -65,6 +65,7 @@ describe('buildPopularEntries', () => {
         'financials',
         'options',
         'congress',
+        'flows',
         'position',
     ])('`/%s` 엔트리를 한 건도 내지 않는다', tab => {
         const entries = buildPopularEntries(NOW);

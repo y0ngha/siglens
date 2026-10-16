@@ -11,6 +11,7 @@ import { InvestorFlowsSummaryEmpty } from './InvestorFlowsSummaryEmpty';
 import { InvestorFlowsSummaryError } from './InvestorFlowsSummaryError';
 import { InvestorFlowsSummarySkeleton } from './InvestorFlowsSummarySkeleton';
 import { InvestorFlowsSummaryView } from './InvestorFlowsSummaryView';
+import { SUMMARY_RESERVED_HEIGHT } from './utils/summaryReservedHeight';
 
 interface InvestorFlowsSummaryProps {
     readonly symbol: string;
@@ -35,7 +36,15 @@ export function InvestorFlowsSummary({ symbol }: InvestorFlowsSummaryProps) {
         autoRunAllowed
     );
 
-    if (state.status === 'loading') return <InvestorFlowsSummarySkeleton />;
+    // 로딩 중(스켈레톤)에는 도착할 결과만큼 높이를 잡아 둔다 — AI 해석이 탭 맨 위라 스켈레톤 → 결과로 높이가
+    // 바뀌면 아래 SSR 점수 카드가 통째로 밀린다. 그 밖의 상태는 자기 높이다: "AI 분석 시작" 대기 카드는 사용자가
+    // 누르기 전의 작은 카드이고, 결과·오류·빈 결과는 이미 끝난 상태다.
+    if (state.status === 'loading')
+        return (
+            <div className={SUMMARY_RESERVED_HEIGHT}>
+                <InvestorFlowsSummarySkeleton />
+            </div>
+        );
 
     if (state.status === 'no_data') return <InvestorFlowsSummaryEmpty />;
 

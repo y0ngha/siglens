@@ -600,6 +600,7 @@ file or the rule it describes changes:
 - A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
+- A comment claiming parity with other components or tabs ("same order as the other tabs") or relying on platform behavior (a robots-blocked URL's headers being read) is checked against those components and that behavior; drop the claim if it does not hold.
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
 - After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 

@@ -77,7 +77,7 @@ import {
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { ToggleSetting } from './types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
-import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
+import { IndicatorSettingsPopover } from './ui/IndicatorSettingsPopover';
 import { ChartOverlayMenu } from './ui/ChartOverlayMenu';
 import { useChartOverlays } from './hooks/useChartOverlays';
 import {
@@ -1011,7 +1011,7 @@ export function StockChart({
                     }
                     extendedHours={extendedHours}
                 />
-                <IndicatorSettingsModal bindings={indicatorBindings} />
+                <IndicatorSettingsPopover bindings={indicatorBindings} />
             </div>
             <div ref={wrapperRef} className="relative min-h-0 w-full flex-1">
                 <div

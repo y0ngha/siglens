@@ -14,6 +14,9 @@ import { normalizeReactSsrText } from '../support/ssrText';
  */
 const PATH = '/developers';
 const API = '/api/v1';
+const GOOGLEBOT_UA =
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+const YETI_UA = 'Mozilla/5.0 (compatible; Yeti/1.1; +http://naver.me/spd)';
 
 interface OpenApiJson {
     openapi: string;
@@ -65,6 +68,42 @@ test.describe('developers page', () => {
         expect(html).toContain('"@type":"BreadcrumbList"');
         expect(html).toContain('"dateModified"');
         expect(html).not.toContain('"@type":"FAQPage"');
+    });
+
+    test('crawlers (Googlebot, Naver Yeti) get the same server-rendered body, not a skeleton', async ({
+        playwright,
+        baseURL,
+    }) => {
+        for (const userAgent of [GOOGLEBOT_UA, YETI_UA]) {
+            const context = await playwright.request.newContext({
+                baseURL,
+                extraHTTPHeaders: { 'User-Agent': userAgent },
+            });
+            const res = await context.get(PATH, { maxRedirects: 0 });
+            expect(res.status()).toBe(200);
+            const html = normalizeReactSsrText(await res.text());
+            // h1이 하나이고, 도구 카드의 사람용 요약이 접힌 원문과 함께 SSR에 있다.
+            expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
+            expect(html).toContain('시그렌즈 API 문서');
+            expect(html).toContain('회사 이름이나 심볼 일부로 종목을 찾아요.');
+            expect(html).toContain('에이전트용 원문 설명 보기');
+            expect(html).toContain('id="tool-get_investor_flows"');
+            expect(html).toMatch(
+                /<link rel="canonical" href="[^"]*\/developers"/
+            );
+            expect(html).not.toMatch(/data-technical-facts|hidden id="S:/);
+            await context.dispose();
+        }
+    });
+
+    test('robots.txt lets crawlers read /developers but keeps /api/ (including the OpenAPI files) out', async ({
+        request,
+    }) => {
+        const res = await request.get('/robots.txt');
+        expect(res.status()).toBe(200);
+        const robots = await res.text();
+        expect(robots).toContain('Disallow: /api/');
+        expect(robots).not.toMatch(/Disallow: \/developers/);
     });
 
     test('non-ko locale renders in its language but is not indexed', async ({
@@ -188,6 +227,8 @@ test.describe('public API documents', () => {
         expect(res.status()).toBe(200);
         expect(res.headers()['content-type']).toContain('application/json');
         expect(res.headers()['cache-control']).toMatch(/^public, /);
+        // 문서 파일은 검색 색인에 오르지 않는다 — 사람이 읽는 문서는 /developers다.
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
 
         const doc = (await res.json()) as OpenApiJson;
         expect(doc.openapi).toMatch(/^3\.1\./);
@@ -226,6 +267,7 @@ test.describe('public API documents', () => {
         const res = await request.get(`${API}/openapi.yaml`);
         expect(res.status()).toBe(200);
         expect(res.headers()['content-type']).toContain('application/yaml');
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
         const yaml = await res.text();
         expect(yaml.startsWith('openapi: "3.1.0"\n')).toBe(true);
         expect(yaml).toContain('"/tools/search_ticker":');
@@ -238,6 +280,7 @@ test.describe('public API documents', () => {
         const res = await request.get(`${API}/skill`);
         expect(res.status()).toBe(200);
         expect(res.headers()['content-type']).toContain('text/markdown');
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
         const markdown = await res.text();
         expect(markdown).toContain('### `search_ticker`');
         expect(markdown).not.toContain('### `web_search`');

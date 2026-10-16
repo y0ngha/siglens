@@ -66,6 +66,11 @@ describe('GET /api/v1/openapi.json', () => {
         expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
     });
 
+    it('keeps the file out of search indexes (the readable docs live at /developers)', async () => {
+        const response = await getJson();
+        expect(response.headers.get('X-Robots-Tag')).toBe('noindex');
+    });
+
     it('lists exactly the exposed tools (same source as SKILL.md and /tools)', async () => {
         const doc = (await (await getJson()).json()) as Json;
         const exposed = publicApiToolSpecs().map(spec => `/tools/${spec.name}`);
@@ -109,6 +114,7 @@ describe('GET /api/v1/openapi.yaml', () => {
         expect(response.headers.get('Cache-Control')).toBe(
             OPENAPI_CACHE_CONTROL
         );
+        expect(response.headers.get('X-Robots-Tag')).toBe('noindex');
     });
 
     it('is the same document as the JSON one: one path per exposed tool, top-level keys in order', async () => {
@@ -159,6 +165,7 @@ describe('openapi routes when generation fails', () => {
                 '*'
             );
             expect(response.headers.get('Cache-Control')).toBe('no-store');
+            expect(response.headers.get('X-Robots-Tag')).toBe('noindex');
             const body = (await response.json()) as {
                 error: { code: string; message: string };
             };

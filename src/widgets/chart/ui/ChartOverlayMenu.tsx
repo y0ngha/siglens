@@ -10,6 +10,8 @@ import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
 import type { ToggleSetting } from '../types';
+import { ChartPopoverPanel } from './ChartPopoverPanel';
+import { CHART_POPOVER_TRIGGER } from './chartPopoverStyles';
 import type {
     OverlayMenuGroupKind,
     OverlayMenuItem,
@@ -66,13 +68,13 @@ const ROW_CLASS =
     'flex min-h-8 w-full touch-manipulation items-center gap-2.5 rounded-lg px-2 text-left text-xs transition-colors hover:bg-secondary-800 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none pointer-coarse:min-h-11';
 
 /**
- * 패널 폭과 lg 이상에서의 오른쪽 오프셋은 함께 본다 — 오프셋(`lg:right-60`, 240px)은 가격
- * 축과 가장 긴 결과선 라벨("ヘッドアンドショルダー 無効化")을 비켜 가는 값이고, 패널(`w-60`)이
- * 그만큼 왼쪽으로 가도 lg 차트 안에 들어간다. 어느 한쪽을 바꾸면 다른 쪽이 여전히 맞는지
- * 확인한다. Tailwind가 클래스를 찾도록 리터럴로 둔다.
+ * 패널 폭과 lg 이상에서의 오른쪽 오프셋은 함께 본다 — 오프셋(240px)은 가격 축과 가장 긴 결과선
+ * 라벨("ヘッドアンドショルダー 無効化")을 비켜 가는 값이다. 두 값은 `ChartPopoverPanel`로 넘어가
+ * 뷰포트 안으로 clamp되므로 좁은 화면에서도 잘리지 않는다. 어느 한쪽을 바꾸면 다른 쪽이 여전히
+ * 맞는지 확인한다.
  */
-const PANEL_WIDTH_CLASS = 'w-60';
-const PANEL_AXIS_OFFSET_CLASS = 'lg:right-60';
+const PANEL_WIDTH_PX = 240;
+const PANEL_AXIS_INSET_PX = 240;
 
 type CheckState = boolean | 'mixed';
 
@@ -214,29 +216,21 @@ export function ChartOverlayMenu({
                 onClick={toggle}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                className="relative flex h-7 touch-manipulation items-center gap-1 rounded-lg px-2 text-xs text-secondary-400 transition-colors before:absolute before:-inset-2 before:content-[''] hover:bg-secondary-700/90 hover:text-white focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className={cn(CHART_POPOVER_TRIGGER, 'gap-1 px-2 text-xs')}
             >
                 <span>{triggerLabel}</span>
                 <span aria-hidden="true">▾</span>
             </button>
 
             {isOpen && (
-                <div
-                    ref={panelRef}
+                <ChartPopoverPanel
+                    triggerRef={triggerRef}
+                    panelRef={panelRef}
                     id={panelId}
-                    role="group"
                     // 개수 없는 고정 이름 — 항목을 켤 때마다 그룹 이름이 바뀌어 읽히지 않게 한다.
-                    aria-label={t('ChartOverlayMenu.5d0ffc')}
-                    tabIndex={-1}
-                    // lg 이상에서는 가격 축과 축 라벨 폭만큼 왼쪽에 연다 — 항목 hover로 띄운 무효화·목표
-                    // 축 라벨을 패널이 덮지 않게 한다. 라벨 폭은 언어마다 달라("ヘッドアンドショルダー
-                    // 無効化") 넉넉히 잡고, 차트가 좁은 lg 미만에서는 넘침을 피해 그대로 둔다.
-                    className={cn(
-                        'absolute top-full right-0 z-50 mt-1 max-h-[min(70vh,28rem)] max-w-[calc(100vw-1rem)] overflow-y-auto',
-                        PANEL_WIDTH_CLASS,
-                        PANEL_AXIS_OFFSET_CLASS,
-                        'flex flex-col rounded-lg border border-secondary-700 bg-secondary-900 p-1.5 shadow-2xl outline-none'
-                    )}
+                    label={t('ChartOverlayMenu.5d0ffc')}
+                    width={PANEL_WIDTH_PX}
+                    axisInset={PANEL_AXIS_INSET_PX}
                 >
                     {groups.map((group, index) => {
                         const keys = group.items.map(item => item.key);
@@ -370,7 +364,7 @@ export function ChartOverlayMenu({
                             )}
                         </div>
                     )}
-                </div>
+                </ChartPopoverPanel>
             )}
         </div>
     );
