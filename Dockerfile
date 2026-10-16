@@ -98,7 +98,8 @@ ENV NEXT_BUILD_DATE=$NEXT_BUILD_DATE
 # 새 디렉터리 경로로 바꾸면 USER node에서 읽히는지 다시 확인할 것.
 # ⚠️ AWS가 번들을 갱신하면 체크섬이 어긋나 이미지 빌드가 실패한다(의도된 fail-closed).
 # 그때는 새 파일을 내려받아 sha256을 확인한 뒤 이 값을 갱신한다.
-ADD --chmod=0644 --checksum=sha256:fe45bbebf92ad3e27a583bbb2ddd1553c521ed4d49af5514dc0a40372ea5395c \
+# 마지막 갱신 2026-10-17: 인증서 114개 전부 발급자 Amazon Web Services, ap-northeast-2 루트 3종 포함 확인.
+ADD --chmod=0644 --checksum=sha256:90a6f1a7978a1b1b096dca6c57511ca48d3b8cf052f8e704baf358f34ea2f21b \
     https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /etc/ssl/certs/rds-global-bundle.pem
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/rds-global-bundle.pem
 ENV NODE_ENV=production \
