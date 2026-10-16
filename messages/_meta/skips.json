@@ -1182,6 +1182,12 @@
         "text": "[PWA] SW 등록 실패"
     },
     {
+        "file": "src/shared/api/dart/dartClient.ts",
+        "line": 410,
+        "reason": "developer-diagnostic",
+        "text": "[dart] ip_not_allowed — DART returned 012; remove the IP restriction on the API "
+    },
+    {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
         "line": 338,
         "reason": "developer-diagnostic",

@@ -333,12 +333,9 @@ function requestUrl(
     key: string,
     params: Record<string, string>
 ): string {
-    const url = new URL(`${DART_API_BASE_URL}/${endpoint}`);
-    url.searchParams.set('crtfc_key', key);
-    for (const [name, value] of Object.entries(params)) {
-        url.searchParams.set(name, value);
-    }
-    return url.toString();
+    // 키가 든 URL이라 이 값은 로그·오류 메시지에 넣지 않는다(`requestBytes`는 엔드포인트 이름만 남긴다).
+    const query = new URLSearchParams({ crtfc_key: key, ...params });
+    return `${DART_API_BASE_URL}/${endpoint}?${query.toString()}`;
 }
 
 /**

@@ -55,12 +55,13 @@ export async function readBoundedBody(
         throw new BoundedBodyTooLargeError(maxBytes);
     }
     if (res.body === null) return new Uint8Array(0);
+    // 순차 스트림 누적(CONVENTIONS.md#CP-6 예외): 청크를 배열에 모아 끝에서 한 번 잇는다 — 청크마다 새 배열로 이어 붙이면
+    // O(N²) 복사가 되고, 상한 검사 덕에 모이는 바이트는 `maxBytes`로 묶인다.
     const chunks: Uint8Array[] = [];
     let total = 0;
     for await (const chunk of chunksOf(res.body)) {
         total += chunk.byteLength;
         if (total > maxBytes) throw new BoundedBodyTooLargeError(maxBytes);
-        // 상한 안의 청크만 모은다 — 상한을 넘기는 순간 위에서 끊으므로 메모리는 `maxBytes`로 묶인다.
         chunks.push(chunk);
     }
     return concatChunks(chunks, total);

@@ -218,23 +218,38 @@ function scanStart(
     return start < floor ? floor : start;
 }
 
+type ScanStatus = 'complete' | 'overflow' | 'stopped';
+
+/** 상세 유형 하나를 읽은 결과 — 유니버스 회사의 공시 행과, 어디서 멈췄는지. */
+interface DetailTypeScan {
+    detailType: DartDisclosureDetailType;
+    status: ScanStatus;
+    rows: DartDisclosureListRow[];
+}
+
 /**
- * 상세 유형 하나를 `from`~오늘 끝까지 페이지로 읽는다. 끝까지 읽었으면 true. 페이지 상한
- * (`INVESTOR_FLOWS_DART_MAX_LIST_PAGES`)을 넘는 창이면 `overflow`로 알린다(호출부가 대응한다).
+ * 상세 유형 하나를 `from`~오늘 끝까지 페이지로 읽어 유니버스 회사의 행을 돌려준다. 페이지 상한
+ * (`INVESTOR_FLOWS_DART_MAX_LIST_PAGES`)을 넘는 창이면 `overflow`로 알린다(호출부가 대응한다). 도중에 멈추면(`stopped`) 그때까지
+ * 읽은 행도 돌려준다.
  */
 async function scanDetailType(
     ctx: RunContext,
     detailType: DartDisclosureDetailType,
-    from: string,
-    onRows: (rows: readonly DartDisclosureListRow[]) => void
-): Promise<'complete' | 'overflow' | 'stopped'> {
+    from: string
+): Promise<DetailTypeScan> {
+    // 페이지 루프의 진행 기록(누적 행·페이지 번호) — 다음 페이지가 앞 페이지의 `total_page`에 달려 있어 순차 루프다.
+    const rows: DartDisclosureListRow[] = [];
     let pageNo = 1;
+    const done = (status: ScanStatus): DetailTypeScan => ({
+        detailType,
+        status,
+        rows,
+    });
     for (;;) {
-        if (!canCall(ctx, 1)) return 'stopped';
+        if (!canCall(ctx, 1)) return done('stopped');
         ctx.calls += 1;
         let page: DartListPage;
         try {
-            // 페이지는 차례로 — 다음 페이지 번호가 앞 페이지의 `total_page`에 달려 있다.
             page = await ctx.deps.dart.fetchDisclosureList({
                 beginDate: from,
                 endDate: ctx.today,
@@ -248,14 +263,17 @@ async function scanDetailType(
                     errorMessage(error)
                 );
             }
-            return 'stopped';
+            return done('stopped');
         }
         ctx.result.listPages += 1;
         const parsed = parseDisclosureListRows(page.rows);
         ctx.result.skippedRows += parsed.skipped;
-        onRows(parsed.rows.filter(row => ctx.universeCorps.has(row.corpCode)));
-        if (pageNo >= page.totalPage) return 'complete';
-        if (pageNo >= INVESTOR_FLOWS_DART_MAX_LIST_PAGES) return 'overflow';
+        rows.push(
+            ...parsed.rows.filter(row => ctx.universeCorps.has(row.corpCode))
+        );
+        if (pageNo >= page.totalPage) return done('complete');
+        if (pageNo >= INVESTOR_FLOWS_DART_MAX_LIST_PAGES)
+            return done('overflow');
         pageNo += 1;
     }
 }
@@ -271,44 +289,41 @@ async function scanDisclosures(
     ctx: RunContext,
     through: string | null
 ): Promise<ScanOutcome> {
-    const changedCorps = new Set<string>();
-    const plans: DartTradingPlanRow[] = [];
-    let complete = true;
+    // 유형은 차례로 — 호출 상한·데드라인을 같은 순서로 소비하고, 한 유형이 멈추면 뒤 유형은 읽지 않는다.
+    const scans: DetailTypeScan[] = [];
     for (const detailType of [...REFETCH_TRIGGER_TYPES, TRADING_PLAN_TYPE]) {
-        // 유형은 차례로 — 호출 상한·데드라인을 같은 순서로 소비한다.
-        const outcome = await scanDetailType(
+        const scan = await scanDetailType(
             ctx,
             detailType,
-            scanStart(through, detailType, ctx.today),
-            rows => {
-                for (const row of rows) {
-                    if (detailType === TRADING_PLAN_TYPE) {
-                        plans.push(toTradingPlanRow(row));
-                    } else {
-                        changedCorps.add(row.corpCode);
-                    }
-                }
-            }
+            scanStart(through, detailType, ctx.today)
         );
-        if (outcome === 'stopped') {
-            complete = false;
-            break;
-        }
-        if (outcome === 'overflow') {
+        scans.push(scan);
+        if (scan.status === 'stopped') break;
+        if (scan.status === 'overflow') {
             ctx.deps.log(
                 `[dart-filings] list ${detailType} exceeds ${INVESTOR_FLOWS_DART_MAX_LIST_PAGES} pages since ${scanStart(through, detailType, ctx.today)}` +
                     (detailType === TRADING_PLAN_TYPE
                         ? ' — storing the first pages only'
                         : ' — queueing the whole universe for a full refetch')
             );
-            if (detailType !== TRADING_PLAN_TYPE) {
-                for (const corpCode of ctx.universe.corpCodes) {
-                    changedCorps.add(corpCode);
-                }
-            }
         }
     }
-    return { complete, changedCorps, plans };
+    const refetchScans = scans.filter(
+        scan => scan.detailType !== TRADING_PLAN_TYPE
+    );
+    return {
+        complete: scans.every(scan => scan.status !== 'stopped'),
+        changedCorps: new Set(
+            refetchScans.flatMap(scan =>
+                scan.status === 'overflow'
+                    ? ctx.universe.corpCodes
+                    : scan.rows.map(row => row.corpCode)
+            )
+        ),
+        plans: scans
+            .filter(scan => scan.detailType === TRADING_PLAN_TYPE)
+            .flatMap(scan => scan.rows.map(toTradingPlanRow)),
+    };
 }
 
 type RefetchOutcome =
@@ -407,6 +422,7 @@ export async function runDartFilingsIngest(
     const listCursor = parseDartListCursor(
         await deps.repo.getState(INVESTOR_FLOWS_STATE_DART_LIST_CURSOR)
     );
+    // 백필 진행 위치 — 회사를 끝낼 때마다 앞으로 옮기고 `saveState`가 그때의 값을 저장한다.
     let backfillCursor = parseDartBackfillCursor(
         await deps.repo.getState(INVESTOR_FLOWS_STATE_DART_BACKFILL_CURSOR)
     );
@@ -448,6 +464,7 @@ export async function runDartFilingsIngest(
     // ── 2) 대기열 재조회 → 3) 최초 백필 ──
     const changed = new Set<string>();
     const handled = new Set<string>();
+    // 마지막 상태 저장 뒤 끝낸 회사 수 — `INVESTOR_FLOWS_DART_STATE_FLUSH_EVERY`마다 0으로 돌린다.
     let sinceFlush = 0;
     const flushIfDue = async (): Promise<void> => {
         sinceFlush += 1;
@@ -496,6 +513,7 @@ export async function runDartFilingsIngest(
                   backfillCursor.afterCorpCode === null ||
                   corpCode > backfillCursor.afterCorpCode
           );
+    // 백필이 유니버스 마지막 회사까지 닿았는가 — 루프가 마지막 항목을 끝냈을 때만 참이 된다(중간에 멈추면 거짓 그대로).
     let backfillReachedEnd = backfillTargets.length === 0;
     for (const [index, corpCode] of backfillTargets.entries()) {
         if (handled.has(corpCode) || pending.has(corpCode)) {
