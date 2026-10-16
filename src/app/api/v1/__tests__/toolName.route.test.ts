@@ -223,6 +223,107 @@ describe('POST /api/v1/tools/{name} — run_fresh_analysis', () => {
     });
 });
 
+describe('POST /api/v1/tools/{name} — get_chart_data', () => {
+    const base = { symbol: 'AAPL', timeframe: '1Day' };
+
+    it.each([
+        ['필수 인자만', base],
+        ['지표 일부', { ...base, indicators: ['rsi', 'macd', 'ma'] }],
+        ['all', { ...base, indicators: ['all'] }],
+        ['빈 배열', { ...base, indicators: [] }],
+        ['bars 하한', { ...base, bars: 1 }],
+        ['bars 상한', { ...base, bars: 500 }],
+    ])('%s는 통과하고 data 버킷을 소비한 뒤 실행한다', async (_label, body) => {
+        const response = await call('get_chart_data', body);
+        expect(response.status).toBe(200);
+        expect(mockConsume).toHaveBeenCalledWith('user-1', 'data');
+        expect(mockConsume).not.toHaveBeenCalledWith('user-1', 'ai');
+        expect(mockExecute).toHaveBeenCalledTimes(1);
+        const [spec, args] = mockExecute.mock.calls.find(
+            ([s]) => s.name === 'get_chart_data'
+        )!;
+        expect(spec.name).toBe('get_chart_data');
+        expect(args).toEqual(body);
+        const json = (await response.json()) as { meta: { tool: string } };
+        expect(json.meta.tool).toBe('get_chart_data');
+    });
+
+    it('모르는 지표 이름은 400 invalid_args이고 허용 이름을 알려 주며 한도를 소비하지 않는다', async () => {
+        const response = await call('get_chart_data', {
+            ...base,
+            indicators: ['rsi', 'bogus'],
+        });
+        expect(response.status).toBe(400);
+        const json = (await response.json()) as {
+            error: {
+                code: string;
+                details: { issues: Array<{ path: string; message: string }> };
+            };
+        };
+        expect(json.error.code).toBe('invalid_args');
+        const [issue] = json.error.details.issues;
+        expect(issue?.path).toBe('indicators[1]');
+        expect(issue?.message).toMatch(/^expected one of all\|rsi\|macd/);
+        expect(issue?.message).toContain('regression');
+        expect(mockConsume).not.toHaveBeenCalled();
+        expect(mockExecute).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['bars 0', { ...base, bars: 0 }, 'minimum 1'],
+        ['bars 501', { ...base, bars: 501 }, 'maximum 500'],
+        ['bars 소수', { ...base, bars: 10.5 }, 'expected integer'],
+        ['bars 문자열', { ...base, bars: '10' }, 'expected integer'],
+        ['모르는 timeframe', { ...base, timeframe: '2Day' }, 'expected one of'],
+        [
+            'indicators가 배열이 아님',
+            { ...base, indicators: 'rsi' },
+            'expected array',
+        ],
+    ])('%s는 400 invalid_args', async (_label, body, message) => {
+        const response = await call('get_chart_data', body);
+        expect(response.status).toBe(400);
+        const json = (await response.json()) as {
+            error: { details: { issues: Array<{ message: string }> } };
+        };
+        expect(json.error.details.issues[0]?.message).toContain(message);
+        expect(mockConsume).not.toHaveBeenCalled();
+    });
+
+    it('symbol·timeframe은 필수다', async () => {
+        const response = await call('get_chart_data', {});
+        expect(response.status).toBe(400);
+        const json = (await response.json()) as {
+            error: { details: { issues: Array<{ path: string }> } };
+        };
+        expect(json.error.details.issues.map(i => i.path)).toEqual([
+            'symbol',
+            'timeframe',
+        ]);
+    });
+
+    it('timeframe_not_allowed는 403과 details로 나간다', async () => {
+        mockExecute.mockResolvedValue({
+            ok: false,
+            status: 403,
+            code: 'timeframe_not_allowed',
+            message: 'This timeframe is not available for the account tier.',
+            details: { tier: 'free', allowedTimeframes: ['1Day'] },
+        });
+        const response = await call('get_chart_data', {
+            ...base,
+            timeframe: '5Min',
+        });
+        expect(response.status).toBe(403);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                code: 'timeframe_not_allowed',
+                details: { allowedTimeframes: ['1Day'] },
+            },
+        });
+    });
+});
+
 describe('POST /api/v1/tools/{name} — 스트리밍 응답(생성 시작 뒤)', () => {
     const body = { symbol: 'AAPL', kind: 'technical', model: 'claude-opus-5' };
 

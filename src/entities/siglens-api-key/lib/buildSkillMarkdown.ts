@@ -4,6 +4,8 @@ import {
     API_KEY_ENV_NAME,
     LOCALE_HEADER_DOC_NAME,
     PUBLIC_API_BASE_PATH,
+    PUBLIC_API_CHART_DATA,
+    PUBLIC_API_CHART_DATA_MEASURED_SIZES,
     PUBLIC_API_RATE_LIMITS,
     type PublicApiRateLimit,
 } from '@/shared/config/publicApi';
@@ -20,7 +22,7 @@ export interface BuildSkillMarkdownInput {
 export const FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
 
 const SKILL_DESCRIPTION =
-    "Query SigLens stock analysis (US/KR equities, crypto) — ticker search, quotes, bars with indicators, AI technical analysis, news, options, fundamentals, congress trades, macro. Use when the user asks about a stock's chart, signals or analysis.";
+    "Query SigLens stock analysis (US/KR equities, crypto) — ticker search, quotes, bars with indicators (one call returns bars plus any of the technical indicators as time-aligned series), AI technical analysis, news, options, fundamentals, congress trades, macro. Use when the user asks about a stock's chart, signals or analysis.";
 
 /** 인자 타입의 사람용 표기(`"1Day" | "1Hour"`, `integer (10..60)`). `/developers`의 인자 표도 같은 표기를 쓴다. */
 export function typeLabel(prop: JsonSchemaProperty): string {
@@ -78,6 +80,21 @@ export function renderFreshAnalysisNotes(): string[] {
 }
 
 /**
+ * `get_chart_data`가 노출될 때만 붙는 안내(OpenAPI 문서의 같은 도구 설명도 이 줄들을 쓴다). 크기 숫자는 합성
+ * 일봉 실측이고 응답마다 조금 다르다.
+ */
+export function renderChartDataNotes(): string[] {
+    const { tool, maxResponseChars } = PUBLIC_API_CHART_DATA;
+    const { shortBars, longBars, equity, lowPricedCrypto } =
+        PUBLIC_API_CHART_DATA_MEASURED_SIZES;
+    const chars = (n: number): string => n.toLocaleString('en-US');
+    return [
+        `- \`${tool}\` is not size-capped into a preview like the other tools. Asking for every indicator is large: about ${chars(equity.short)} characters at ${shortBars} bars and about ${chars(equity.long)} at ${longBars} bars (up to about ${chars(lowPricedCrypto.short)} and ${chars(lowPricedCrypto.long)} for very low-priced crypto, whose numbers are longer; measured on daily bars). Pass \`indicators\` with just the names you need and a small \`bars\` to keep it light. As a safety net a response over ${chars(maxResponseChars)} characters drops its oldest bars instead (\`data.meta.barsLimitedBySize: true\`; \`data.bars\` is the count returned).`,
+        `- \`${tool}\` errors: 400 \`invalid_args\` (an unknown indicator name lists the allowed names in \`error.details.issues\`), 403 \`timeframe_not_allowed\` (the timeframe is not open to your account tier, the same rule as the website chart), 404 \`bars_not_found\`.`,
+    ];
+}
+
+/**
  * 노출 도구 스펙에서 SKILL.md를 만든다. 도구 목록·설명·인자는 core의 `AGENT_TOOL_SPECS`를
  * 그대로 옮기고 이 파일은 말을 덧붙이지 않는다 — 스펙이 바뀌면 문서도 따라온다.
  */
@@ -87,12 +104,14 @@ export function buildSkillMarkdown({
 }: BuildSkillMarkdownInput): string {
     const endpoint = `${baseUrl}${PUBLIC_API_BASE_PATH}`;
     const hasFreshAnalysis = tools.some(t => t.name === FRESH_ANALYSIS_TOOL);
+    const hasChartData = tools.some(t => t.name === PUBLIC_API_CHART_DATA.tool);
     const notes = [
         '- Tool descriptions are written for an in-app assistant; ignore references to tools that are not listed here.',
         '- Results are size-capped per tool. When a result is cut, the response carries `meta.truncated: true` and `data` is `{ "truncated": true, "preview": "..." }`; narrow the request (fewer bars, a shorter list) and retry.',
         '- `get_news` returns only news SigLens has already stored; this API never triggers a fresh ingest or a server-side analysis.',
         '- Analyses returned by `get_cached_analysis` were generated on siglens.io; reading them costs nothing and never calls an LLM.',
         ...(hasFreshAnalysis ? renderFreshAnalysisNotes() : []),
+        ...(hasChartData ? renderChartDataNotes() : []),
         `- Rate limits are per account (all your keys share them): ${renderLimits(PUBLIC_API_RATE_LIMITS.data)}. Every call to \`/me\`, \`/tools\` and a tool counts. Over the limit you get HTTP 429 with \`Retry-After\`. Every metered response (success, tool error and 429) carries \`X-RateLimit-Limit\`, \`X-RateLimit-Remaining\` and \`X-RateLimit-Reset\` (epoch seconds); requests rejected before metering (401, 400, 404, 413) do not.`,
         '- Responses are `{ "data": ..., "meta": { "tool": "<name>" } }` on success (`run_fresh_analysis` adds `meta.source` and `meta.model`) and `{ "error": { "code": "...", "message": "..." } }` on failure (401 `invalid_api_key`, 400 `invalid_args`, 429 `rate_limited`, 503 `rate_limiter_unavailable`).',
         `- Send \`${LOCALE_HEADER_DOC_NAME}: ${LOCALES.join('|')}\` to choose the language of localized text (default \`${DEFAULT_LOCALE}\`, the same as siglens.io, so cached analyses written by the website are shared).`,

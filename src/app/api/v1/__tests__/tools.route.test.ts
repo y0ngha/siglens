@@ -67,6 +67,7 @@ describe('GET /api/v1/tools', () => {
             'get_quote',
             'run_fresh_analysis',
             'get_my_portfolio',
+            'get_chart_data',
         ]);
         for (const tool of body.data.tools) {
             expect(Object.keys(tool).toSorted()).toEqual([

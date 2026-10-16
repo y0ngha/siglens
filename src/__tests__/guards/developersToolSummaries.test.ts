@@ -43,7 +43,10 @@ vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { publicApiToolSpecs } from '@/app/api/v1/publicApiTools';
+import {
+    PUBLIC_API_ONLY_TOOL_SPECS,
+    publicApiToolSpecs,
+} from '@/app/api/v1/publicApiTools';
 import { LOCALES } from '@/shared/i18n/locales';
 import en from '../../../messages/en.json';
 import ja from '../../../messages/ja.json';
@@ -64,10 +67,13 @@ const catalogs = { ko, en, ja, zh } as const;
 const exposed = publicApiToolSpecs().map(spec => spec.name);
 
 describe('/developers 도구 요약', () => {
-    it('노출 도구가 하나 이상이고 모두 core 스펙에서 온다', () => {
+    it('노출 도구가 하나 이상이고 core 스펙이거나 공개 API 전용 스펙에서 온다', () => {
         expect(exposed.length).toBeGreaterThan(0);
-        const coreNames = AGENT_TOOL_SPECS.map(spec => spec.name);
-        for (const name of exposed) expect(coreNames).toContain(name);
+        const knownNames = [
+            ...AGENT_TOOL_SPECS,
+            ...PUBLIC_API_ONLY_TOOL_SPECS,
+        ].map(spec => spec.name);
+        for (const name of exposed) expect(knownNames).toContain(name);
     });
 
     it.each(LOCALES)(

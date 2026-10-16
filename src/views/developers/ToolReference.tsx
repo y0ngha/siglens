@@ -39,6 +39,7 @@ function ArgumentType({
     return (
         <>
             <span className={typeClass}>
+                {arg.array === true ? 'array of ' : ''}
                 {values
                     .slice(0, ENUM_PREVIEW_COUNT)
                     .map(value => `"${value}"`)

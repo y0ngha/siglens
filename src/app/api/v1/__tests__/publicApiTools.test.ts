@@ -43,9 +43,17 @@ vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
+import { CHART_DATA_INDICATOR_NAMES } from '@/entities/bars/lib/chartDataIndicators';
+import { renderChartDataNotes } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import {
+    PUBLIC_API_CHART_DATA,
+    PUBLIC_API_CHART_DATA_MEASURED_SIZES as MEASURED,
+} from '@/shared/config/publicApi';
 import {
     findPublicApiToolSpec,
+    isPublicApiOnlyTool,
     PUBLIC_API_EXCLUDED_TOOLS,
+    PUBLIC_API_ONLY_TOOL_SPECS,
     PUBLIC_API_FRESH_ANALYSIS_TOOL,
     publicApiToolNames,
     publicApiToolSpecs,
@@ -90,15 +98,19 @@ describe('publicApiToolNames', () => {
 });
 
 describe('publicApiToolSpecs', () => {
-    it('모든 노출 도구에 core 스펙이 있다(스펙 없는 실행기가 조용히 사라지지 않는다)', () => {
-        expect(publicApiToolSpecs()).toHaveLength(publicApiToolNames().size);
+    it('모든 노출 도구에 core 스펙이 있다(스펙 없는 실행기가 조용히 사라지지 않는다) — 공개 API 전용 도구는 그 뒤에 더해진다', () => {
+        expect(publicApiToolSpecs()).toHaveLength(
+            publicApiToolNames().size + PUBLIC_API_ONLY_TOOL_SPECS.length
+        );
     });
 
     it('run_fresh_analysis 외에는 core AGENT_TOOL_SPECS의 같은 객체이고 순서도 같다', () => {
         const expected = AGENT_TOOL_SPECS.filter(spec =>
             EXPECTED_TOOLS.includes(spec.name)
         );
-        const actual = publicApiToolSpecs();
+        const actual = publicApiToolSpecs().filter(
+            spec => !isPublicApiOnlyTool(spec.name)
+        );
         expect(actual.map(spec => spec.name)).toEqual(
             expected.map(spec => spec.name)
         );
@@ -160,5 +172,83 @@ describe('findPublicApiToolSpec', () => {
 
     it.each(['web_search', 'no_such_tool', ''])('%j는 undefined', name => {
         expect(findPublicApiToolSpec(name)).toBeUndefined();
+    });
+});
+
+describe('get_chart_data (공개 API 전용 도구)', () => {
+    const spec = findPublicApiToolSpec(PUBLIC_API_CHART_DATA.tool)!;
+
+    it('에이전트 실행기·core 스펙에는 없고 API 목록에만 있다', () => {
+        expect(publicApiToolNames().has(PUBLIC_API_CHART_DATA.tool)).toBe(
+            false
+        );
+        expect(
+            AGENT_TOOL_SPECS.some(s => s.name === PUBLIC_API_CHART_DATA.tool)
+        ).toBe(false);
+        expect(publicApiToolSpecs().map(s => s.name)).toContain(
+            PUBLIC_API_CHART_DATA.tool
+        );
+        expect(isPublicApiOnlyTool(PUBLIC_API_CHART_DATA.tool)).toBe(true);
+        expect(isPublicApiOnlyTool('get_quote')).toBe(false);
+    });
+
+    it('symbol·timeframe은 필수이고 indicators·bars는 선택, 추가 필드는 금지다', () => {
+        expect(spec.inputSchema.required).toEqual(['symbol', 'timeframe']);
+        expect(spec.inputSchema.additionalProperties).toBe(false);
+        expect(Object.keys(spec.inputSchema.properties).toSorted()).toEqual([
+            'bars',
+            'indicators',
+            'symbol',
+            'timeframe',
+        ]);
+    });
+
+    it('timeframe 열거값은 get_bars_indicators와 같다', () => {
+        const core = AGENT_TOOL_SPECS.find(
+            s => s.name === 'get_bars_indicators'
+        )!;
+        expect(spec.inputSchema.properties.timeframe.enum).toEqual(
+            core.inputSchema.properties.timeframe.enum
+        );
+    });
+
+    it('bars는 1..500 정수이고 설명에 기본값이 있다', () => {
+        const bars = spec.inputSchema.properties.bars;
+        expect(bars.type).toBe('integer');
+        expect(bars.minimum).toBe(1);
+        expect(bars.maximum).toBe(500);
+        expect(bars.description).toContain('default 100');
+    });
+
+    it('indicators 원소 열거값은 all과 지표 이름 전체다', () => {
+        const items = spec.inputSchema.properties.indicators.items;
+        expect(items?.enum).toEqual(['all', ...CHART_DATA_INDICATOR_NAMES]);
+    });
+
+    it('측정 크기는 기본/최대 봉 수에서 잰 값이고 모두 안전 상한 안이며, 문서 문구가 그 값을 그대로 쓴다', () => {
+        expect(MEASURED.shortBars).toBe(PUBLIC_API_CHART_DATA.defaultBars);
+        expect(MEASURED.longBars).toBe(PUBLIC_API_CHART_DATA.maxBars);
+        for (const size of [
+            MEASURED.equity.short,
+            MEASURED.equity.long,
+            MEASURED.lowPricedCrypto.short,
+            MEASURED.lowPricedCrypto.long,
+        ])
+            expect(size).toBeLessThan(PUBLIC_API_CHART_DATA.maxResponseChars);
+        const note = renderChartDataNotes().join('\n');
+        for (const size of [
+            MEASURED.equity.short,
+            MEASURED.equity.long,
+            MEASURED.lowPricedCrypto.short,
+            MEASURED.lowPricedCrypto.long,
+        ])
+            expect(note).toContain(size.toLocaleString('en-US'));
+        expect(note).toContain(`${MEASURED.shortBars} bars`);
+        expect(note).toContain(`${MEASURED.longBars} bars`);
+    });
+
+    it('설명이 smc 구간 앞 항목의 규칙(null 인덱스, startsBeforeWindow)을 말한다', () => {
+        expect(spec.description).toContain('startsBeforeWindow: true');
+        expect(spec.description).toContain('ALL fall before the window');
     });
 });

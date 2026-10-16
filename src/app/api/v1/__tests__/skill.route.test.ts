@@ -66,7 +66,7 @@ describe('GET /api/v1/skill', () => {
         const markdown = await (await GET()).text();
         const exposed = publicApiToolSpecs().map(spec => spec.name);
         expect(toolHeadings(markdown)).toEqual(exposed);
-        expect(exposed).toHaveLength(14);
+        expect(exposed).toHaveLength(15);
     });
 
     it('get_investor_flows(수급)를 나열하고, 서버 LLM 키를 쓰지 않는 데이터 도구로 설명한다', async () => {

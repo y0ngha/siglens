@@ -75,7 +75,7 @@ describe('GET /api/v1/openapi.json', () => {
         const doc = (await (await getJson()).json()) as Json;
         const exposed = publicApiToolSpecs().map(spec => `/tools/${spec.name}`);
         expect(toolPaths(doc)).toEqual(exposed);
-        expect(exposed).toHaveLength(14);
+        expect(exposed).toHaveLength(15);
     });
 
     it('exposes get_investor_flows as a data tool: symbol input, no model argument (no server LLM)', async () => {

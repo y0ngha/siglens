@@ -7,7 +7,10 @@ import {
 import { createToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
-import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
+import {
+    PUBLIC_API_CHART_DATA,
+    PUBLIC_API_RESULT_CAPS,
+} from '@/shared/config/publicApi';
 import {
     ANALYSIS_LOCALE_HEADER,
     DEFAULT_LOCALE,
@@ -21,7 +24,13 @@ import {
     type PublicToolOutcome,
     type PublicToolResult,
 } from './publicToolOutcome';
-import { PUBLIC_API_FRESH_ANALYSIS_TOOL } from './publicApiTools';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { safeErrorFields } from '@/app/api/ai/chat/tools/logToolDegrade';
+import { getChartDataTool } from './getChartData';
+import {
+    isPublicApiOnlyTool,
+    PUBLIC_API_FRESH_ANALYSIS_TOOL,
+} from './publicApiTools';
 import { runByokFreshAnalysis } from './runByokFreshAnalysis';
 import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 
@@ -68,6 +77,14 @@ const TOOL_ERROR_MAPPING: Readonly<Record<string, ErrorMapping>> = {
     aborted: {
         status: API_STATUS.gatewayTimeout,
         message: 'The request was aborted before the tool finished.',
+    },
+    timeframe_not_allowed: {
+        status: API_STATUS.forbidden,
+        message: 'This timeframe is not available for the account tier.',
+    },
+    bars_not_found: {
+        status: API_STATUS.notFound,
+        message: 'No price bars exist for this symbol and timeframe.',
     },
     tool_failed: {
         status: API_STATUS.internalError,
@@ -129,6 +146,30 @@ async function runViaExecutor(
 }
 
 /**
+ * 공개 API 전용 도구(`get_chart_data`)를 실행한다. 에이전트 실행기(`createToolExecutor`)를 거치지 않으므로
+ * 그쪽이 공통으로 하는 가드 — 중단 확인, 심볼 모양, 던진 오류를 `tool_failed`로 바꾸기 — 를 여기서 같게 한다.
+ * 크기 상한은 도구가 스스로 지킨다(`getChartDataTool`).
+ */
+async function runApiOnlyTool(
+    args: Record<string, unknown>,
+    ctx: ToolExecutionContext
+): Promise<PublicToolOutcome> {
+    if (ctx.signal.aborted) return toOutcome({ error: 'aborted' });
+    if (!isAdmissibleSymbolShape(String(args.symbol)))
+        return toOutcome({ error: 'invalid_symbol' });
+    try {
+        return toOutcome(await getChartDataTool(args, ctx));
+    } catch (error) {
+        console.error(
+            '[PublicApiTool]',
+            PUBLIC_API_CHART_DATA.tool,
+            safeErrorFields(error)
+        );
+        return toOutcome({ error: 'tool_failed' });
+    }
+}
+
+/**
  * 도구 하나를 키 소유자의 신원으로 실행한다.
  *
  * 서버 키로 LLM을 부르는 에이전트용 실행기(`runFreshAnalysisTool`)는 공개 API에서 **절대** 닿지 않는다 —
@@ -177,7 +218,9 @@ export async function executePublicTool(
     const work: Promise<PublicToolResult> = runWithoutServerLlm(() =>
         spec.name === PUBLIC_API_FRESH_ANALYSIS_TOOL
             ? runByokFreshAnalysis({ args, principal, locale, signal })
-            : runViaExecutor(spec, args, ctx)
+            : isPublicApiOnlyTool(spec.name)
+              ? runApiOnlyTool(args, ctx)
+              : runViaExecutor(spec, args, ctx)
     );
     const result = await Promise.race([work, abortedPromise]);
 
