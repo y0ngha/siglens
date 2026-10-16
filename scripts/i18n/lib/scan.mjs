@@ -33,6 +33,10 @@ const HASH_LENGTH = 6;
  *   `DEFAULT_TITLE_BY_LOCALE` 맵이 이미 전부 들고 있으므로 미번역 문자열이 아니다.
  * - `entities/llm-provider/api/agent/fake.ts`: E2E 전용 가짜 프로바이더의 고정 답변.
  *   `isE2E()`일 때만 쓰이며 운영 경로에서는 렌더되지 않는다.
+ * - `shared/api/dart/fakeDartClient.ts`: E2E·테스트 전용 가짜 DART의 응답 행(회사명·보고서명 등 원천 데이터).
+ *   `isE2E()`일 때만 cron이 쓰고, 화면은 DB에 저장된 값을 원문 그대로 보인다(번역 대상 아님).
+ * - `entities/investor-flows/lib/dartSourceTokens.ts`: OpenDART 응답 값과 맞대는 한국어 토큰(`일반`·`약식`·`등기`).
+ *   화면 문구가 아니라 매칭용 데이터라 번역하면 파싱이 깨진다.
  * - `src/shared/config/guideLinks.generated.ts`: 스킬 frontmatter의 한국어 `name`·탐지 id를
  *   가이드 경로로 잇는 생성 매핑(`yarn guide:links`). 키는 스킬 파일의 원문과 글자까지 같아야
  *   조회가 되는 **데이터**라 번역 대상이 아니고, 화면에 그대로 렌더되지도 않는다.
@@ -42,7 +46,7 @@ const HASH_LENGTH = 6;
  *   있다(spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`).
  */
 const EXCLUDE_RE =
-    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts|src\/shared\/config\/guideLinks\.generated\.ts)/;
+    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts|src\/shared\/api\/dart\/fakeDartClient\.ts|src\/entities\/investor-flows\/lib\/dartSourceTokens\.ts|src\/shared\/config\/guideLinks\.generated\.ts)/;
 
 /** 파일 경로 → 메시지 네임스페이스. */
 export function namespaceFor(relPath) {

@@ -317,3 +317,84 @@ export interface ThresholdStatusSummary {
     /** 판정 기준인 가장 최근 수집 거래일. 수집된 날이 없으면 null. */
     asOf: string | null;
 }
+
+// ── 한국 DART 지분공시(PR C — 수집만, 화면 연결은 후속 PR) ──────────────────────────────────────────────────
+
+/** `corpCode.xml`의 상장사 한 행 — 종목코드(6자리, 영문 섞일 수 있음) → DART 고유번호(8자리). */
+export interface DartCorpCodeRow {
+    stockCode: string;
+    corpCode: string;
+    corpName: string;
+}
+
+/** 대량보유 보고 형식 — `report_tp`의 `일반`·`약식`. */
+export type DartReportForm = 'detailed' | 'abbreviated';
+
+/** 저장되는 대량보유 상황보고(`majorstock.json`) 한 행. 비율은 %(예: `7.24`). 원천이 `-`·빈 값이면 null. */
+export interface DartMajorHoldingRow {
+    rceptNo: string;
+    corpCode: string;
+    /** 접수일 `YYYY-MM-DD`. */
+    receiptDate: string;
+    reporter: string;
+    reportForm: DartReportForm;
+    shares: number | null;
+    sharesChange: number | null;
+    ratioPct: number | null;
+    ratioChangePct: number | null;
+    reason: string | null;
+}
+
+/**
+ * 저장되는 임원·주요주주 소유보고(`elestock.json`) 한 행. `registered`는 등기임원 여부(원천 `-`면 null),
+ * `majorShareholder`는 원천의 주요주주 관계 문구(`10%이상주주` 등, `-`면 null — 스키마가 문구를 그대로 둔다).
+ */
+export interface DartInsiderReportRow {
+    rceptNo: string;
+    corpCode: string;
+    receiptDate: string;
+    reporter: string;
+    position: string | null;
+    registered: boolean | null;
+    majorShareholder: string | null;
+    shares: number | null;
+    sharesChange: number | null;
+    ratioPct: number | null;
+    ratioChangePct: number | null;
+}
+
+/** 저장되는 거래계획보고서(`list.json` D005) 한 행 — 목록 행 그대로(원문 링크는 `rceptNo`에서 만든다). */
+export interface DartTradingPlanRow {
+    rceptNo: string;
+    corpCode: string;
+    receiptDate: string;
+    reporter: string;
+    title: string;
+}
+
+/** 공시검색(`list.json`) 행 하나에서 수집기가 쓰는 부분. */
+export interface DartDisclosureListRow {
+    rceptNo: string;
+    corpCode: string;
+    /** 상장사 종목코드. 비상장(기타법인)이면 null. */
+    stockCode: string | null;
+    receiptDate: string;
+    /** 공시 제출인(`flr_nm`). */
+    filer: string;
+    /** 보고서명(`report_nm`). */
+    title: string;
+}
+
+/** 종목코드 → DART 고유번호 매핑 결과(`resolveDartCorp`). */
+export interface DartCorpMatch {
+    corpCode: string;
+    /** 실제로 `dart_corp_code`에서 찾은 종목코드 — 우선주면 보통주 코드다. */
+    matchedStockCode: string;
+    /** 우선주라 보통주 코드로 찾았는가. 화면이 "지분공시는 회사 단위라 보통주와 같다"는 안내에 쓴다. */
+    viaCommonShare: boolean;
+}
+
+/** `dart_corp_code` 읽기 결과(`resolveCorpCode`). */
+export interface DartCorpRecord extends DartCorpMatch {
+    corpName: string;
+}

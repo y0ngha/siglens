@@ -159,3 +159,51 @@ export const INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR = 'sec_filings_cursor';
 export const INVESTOR_FLOWS_STATE_REG_SHO_CURSOR = 'reg_sho_cursor';
 /** `investor_flows_state` 키 — `sec_cik_symbol_map`을 마지막으로 갱신한 날(`YYYY-MM-DD`, UTC). */
 export const INVESTOR_FLOWS_STATE_CIK_MAP_SYNCED = 'sec_cik_map_synced_on';
+
+// ── 한국 DART 지분공시(설계 §4) ───────────────────────────────────────────────────────────────────────
+
+/** 보존: 대량보유·임원 소유보고·거래계획보고서 2년. 회사 이력을 통째로 받아도 이보다 오래된 행은 저장하지 않는다. */
+export const INVESTOR_FLOWS_DART_RETENTION_DAYS = 730;
+
+/**
+ * `dart-filings` 실행당 DART 호출 상한(목록 페이지 + 회사별 2건). 한국 유니버스 ≈2,700사 × 2건 ≈ 5,400건의 최초 백필은
+ * 하루 2회 실행으로 ≈2일에 끝나고, 하루 합계(최대 3,000건)는 일일 한도 2만 건(`DART_DAILY_QUOTA`)의 15%다.
+ */
+export const INVESTOR_FLOWS_DART_MAX_CALLS_PER_RUN = 1_500;
+
+/**
+ * 공시검색(`list.json`)을 거슬러 볼 수 있는 최대 일수 — 고유번호 없이 검색하면 기간이 3개월로 제한된다(개발가이드 2019001).
+ * 커서가 이보다 오래됐으면(장기 중단) 이 창으로 자른다 — 그 앞의 변동은 회사별 전체 이력 재조회(백필)가 이미 담는다.
+ */
+export const INVESTOR_FLOWS_DART_LIST_MAX_LOOKBACK_DAYS = 89;
+
+/**
+ * 커서가 없을 때(첫 실행) 공시검색 시작일 — 대량보유·소유보고(D001·D002)는 최근 7일만 본다(그 앞 이력은 백필이 회사별로
+ * 받는다). 거래계획보고서(D005)는 목록 행만이 원천이라 검색 가능한 최대 창(`INVESTOR_FLOWS_DART_LIST_MAX_LOOKBACK_DAYS`)을 본다.
+ */
+export const INVESTOR_FLOWS_DART_LIST_INITIAL_LOOKBACK_DAYS = 7;
+
+/** 상세 유형 하나의 공시검색 페이지 상한(페이지당 100건) — 형식이 바뀌어 `total_page`가 터무니없을 때의 안전장치. */
+export const INVESTOR_FLOWS_DART_MAX_LIST_PAGES = 50;
+
+/** 회사 재조회가 일시 오류로 실패한 횟수 상한 — 넘으면 대기열에서 뺀다(다음 공시가 다시 넣는다, SERVER.md#CC-11). */
+export const INVESTOR_FLOWS_DART_MAX_ATTEMPTS = 3;
+
+/** 진행 상태를 이 회사 수마다 저장한다 — 실행이 도중에 죽어도 그만큼만 다시 받는다(멱등 upsert). */
+export const INVESTOR_FLOWS_DART_STATE_FLUSH_EVERY = 25;
+
+/**
+ * `corpCode.xml` 반영을 받아들이는 최소 상장사 행 수 — 유가·코스닥·코넥스 상장사는 ≈2,700곳이다. 형식이 바뀌어 행이 거의
+ * 없는 결과로 맵을 덮지 않게 한다.
+ */
+export const INVESTOR_FLOWS_DART_CORP_CODE_MIN_ROWS = 2_000;
+
+/** `investor_flows_state` 키 — 공시검색 커서와 재조회 대기열(JSON, `dartIngestState.ts`). */
+export const INVESTOR_FLOWS_STATE_DART_LIST_CURSOR = 'dart_list_cursor';
+/** `investor_flows_state` 키 — 최초 백필 진행(마지막으로 받은 고유번호, JSON). */
+export const INVESTOR_FLOWS_STATE_DART_BACKFILL_CURSOR = 'dart_backfill_cursor';
+/**
+ * `investor_flows_state` 키 — 최초 백필이 유니버스 끝까지 닿았을 때 한 번 기록하고 다시 지우지 않는다(set-once). KR 수급 탭의
+ * "수집 중" 안내가 이 표식을 본다(후속 PR, 설계 §4.5 — 13F 백필 표식 `INVESTOR_FLOWS_STATE_BACKFILL_DONE`과 같은 역할).
+ */
+export const INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE = 'dart_backfill_done';
