@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { InvestorFlowsSummary } from '../InvestorFlowsSummary';
 import { InvestorFlowsSummaryView } from '../InvestorFlowsSummaryView';
 import { InvestorFlowsSummarySkeleton } from '../InvestorFlowsSummarySkeleton';
+import { SUMMARY_RESERVED_HEIGHT } from '../utils/summaryReservedHeight';
 
 const { mockHook } = vi.hoisted(() => ({ mockHook: vi.fn() }));
 vi.mock('../hooks/useInvestorFlowsAnalysis', () => ({
@@ -118,5 +119,44 @@ describe('InvestorFlowsSummarySkeleton', () => {
     it('제목과 진행 문구를 낸다', () => {
         render(<InvestorFlowsSummarySkeleton />);
         expect(screen.getByText('AI 수급 해석 진행 중…')).toBeInTheDocument();
+    });
+
+    describe('결과 전 높이 예약(점수 카드가 밀리지 않게)', () => {
+        const reservedClasses = SUMMARY_RESERVED_HEIGHT.split(' ');
+
+        it('loading 스켈레톤은 예약 높이 래퍼 안에 있다', () => {
+            mockHook.mockReturnValue({ status: 'loading', trigger: vi.fn() });
+            const { container } = render(
+                <InvestorFlowsSummary symbol="AAPL" />
+            );
+            const wrapper = container.firstElementChild!;
+            for (const c of reservedClasses) expect(wrapper).toHaveClass(c);
+            expect(wrapper.querySelector('[aria-busy="true"]')).not.toBeNull();
+        });
+
+        it('awaiting_interaction 카드는 자기 높이로 그린다(예약하지 않는다)', () => {
+            mockHook.mockReturnValue({
+                status: 'awaiting_interaction',
+                trigger: vi.fn(),
+            });
+            const { container } = render(
+                <InvestorFlowsSummary symbol="AAPL" />
+            );
+            for (const c of reservedClasses)
+                expect(container.firstElementChild).not.toHaveClass(c);
+        });
+
+        it('결과(done)는 예약 래퍼 없이 자기 높이로 그린다', () => {
+            mockHook.mockReturnValue({
+                status: 'done',
+                result: RESULT,
+                trigger: vi.fn(),
+            });
+            const { container } = render(
+                <InvestorFlowsSummary symbol="AAPL" />
+            );
+            for (const c of reservedClasses)
+                expect(container.firstElementChild).not.toHaveClass(c);
+        });
     });
 });

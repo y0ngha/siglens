@@ -89,6 +89,7 @@
         "shared.ui.passwordRule",
         "shared.ui.period",
         "shared.ui.themeOption",
+        "views.developers.tools.summaries",
         "views.methodology.changelog",
         "views.symbol.AnalysisProvenanceNote.dataSource",
         "views.symbol.AnalysisProvenanceNote.dataSourcePrices",

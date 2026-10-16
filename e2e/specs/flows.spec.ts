@@ -160,15 +160,39 @@ test.describe('flows: happy path', () => {
         ).toBeVisible();
     });
 
-    test('AI 해석이 마지막 섹션으로 렌더된다', async ({ page }) => {
+    test('AI 해석이 첫 섹션이고 수급 점수 카드가 그 아래에 온다', async ({
+        page,
+    }) => {
         await page.goto('/AAPL/flows');
 
-        await expect(
-            page.getByRole('heading', { level: 2, name: 'AI 수급 해석' })
-        ).toBeVisible({ timeout: 10_000 });
+        const ai = page.getByRole('heading', {
+            level: 2,
+            name: 'AI 수급 해석',
+        });
+        await expect(ai).toBeVisible({ timeout: 10_000 });
         await expect(page.getByText(AI_SUMMARY)).toBeVisible({
             timeout: 10_000,
         });
+
+        // AI 해석을 탭 맨 위에 둔다(제품 결정) — 스트림이 도착한 뒤에도 점수 카드·기관·공매도 표는 그 아래다.
+        const scoreCard = page.getByRole('heading', {
+            level: 2,
+            name: /수급 점수/,
+        });
+        const aiBox = await ai.boundingBox();
+        const scoreBox = await scoreCard.boundingBox();
+        expect(aiBox).not.toBeNull();
+        expect(scoreBox).not.toBeNull();
+        expect(aiBox!.y).toBeLessThan(scoreBox!.y);
+
+        // DOM 순서도 같다(SSR 본문이 스켈레톤 뒤에 오지 않는다).
+        const headings = await page
+            .locator('main h2')
+            .evaluateAll(nodes => nodes.map(node => node.textContent ?? ''));
+        expect(headings[0]).toContain('AI 수급 해석');
+        expect(
+            headings.findIndex(text => /수급 점수/.test(text))
+        ).toBeGreaterThan(0);
     });
 
     test('항상 noindex이고 JSON-LD가 SSR에 있다', async ({ page }) => {

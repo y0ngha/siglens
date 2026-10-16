@@ -36,7 +36,7 @@ export const DEVELOPERS_PATH = '/developers';
  * 함께 올린다. 화면 하단 "마지막 업데이트", JSON-LD `dateModified`, 정적 sitemap `lastmod`가 이 값 하나를 읽는다
  * (배포 시각을 쓰면 본문을 안 고친 배포까지 "갱신됨"으로 나간다). 도구 목록은 코어에서 와서 따로 올릴 필요가 없다.
  */
-export const DEVELOPERS_UPDATED_AT = new Date('2026-10-15T00:00:00+09:00');
+export const DEVELOPERS_UPDATED_AT = new Date('2026-10-16T00:00:00+09:00');
 
 /** 키 원문 접두. 이 접두로 시작하지 않는 Bearer 값은 DB를 보기 전에 거절한다. */
 export const API_KEY_PREFIX = 'slk_';

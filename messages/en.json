@@ -2984,6 +2984,7 @@
                 "label": "Developer docs contents"
             },
             "tools": {
+                "agentDescriptionToggle": "Show original agent description",
                 "argsCaption": "Arguments of {name}",
                 "argsTitle": "Arguments",
                 "byokBadge": "BYOK",
@@ -2994,10 +2995,26 @@
                 "enumMore": "Show {count} more",
                 "indexLabel": "Jump to a tool",
                 "noArgs": "This tool takes no arguments. Send an empty body or an empty JSON object.",
-                "note": "Tool and argument descriptions are written in English for the AI agent, so they are shown as they are, untranslated. This list comes from the same source as GET /tools and the OpenAPI document, so it grows when tools are added. Ignore references to tools that are not listed here.",
+                "note": "The short description under each tool name is a plain-language summary. The original descriptions and argument descriptions are written in English for the AI agent, so they are shown as they are, untranslated. This list comes from the same source as GET /tools and the OpenAPI document, so it grows when tools are added. Ignore references to tools that are not listed here.",
                 "optional": "optional",
                 "required": "required",
                 "sub": "Each tool has its own path, and the body is the arguments as JSON.",
+                "summaries": {
+                    "get_bars_indicators": "Returns recent bars (open, high, low, close, volume) with the latest indicator values such as RSI, MACD and Bollinger Bands, detected signals, candlestick patterns and the trend state in one call. Use it for price action and chart setup.",
+                    "get_cached_analysis": "Reads the most recent SIGLENS AI analysis for a symbol and tab from cache. It is free. If nothing is found or the result is stale, use run_fresh_analysis to generate a new one.",
+                    "get_congress_trades": "Returns recent stock trades disclosed by members of the US Senate and House, with a buy/sell trend. US stocks only; trades by company executives or other insiders are not included.",
+                    "get_economy": "Returns US macro indicators such as the policy rate, inflation, employment and GDP, Treasury yields, upcoming economic events and the SIGLENS macro briefing. It takes no arguments.",
+                    "get_fundamentals": "Returns the company profile, valuation ratios, profitability, growth and financial health scores, analyst consensus and price targets, and the next earnings date. Stocks only (US and Korean); crypto is not supported.",
+                    "get_guide": "Explains a technical-analysis concept, such as a candlestick pattern, chart pattern, indicator or strategy, using the SIGLENS guide. Use it for \"what is this?\" questions without a symbol; the result includes the guide page URL.",
+                    "get_investor_flows": "Returns the investor flows of a US stock, meaning who is buying and selling it: a scorecard for institutions, insiders, 5% holders and short sellers, the largest institutional holders, insider transactions, large-holder filings and short-selling data. The data is filed with a delay, so every source comes with its as-of date.",
+                    "get_market_overview": "Returns the market-wide fear & greed index, major index and sector moves, the SIGLENS market briefing and the sector signal scan. Use it for \"how is the market today?\".",
+                    "get_my_portfolio": "Returns the signed-in user's own holdings with quantity, average price, profit/loss and weight. Use it only for questions about your own positions or profit and loss.",
+                    "get_news": "Returns news that SIGLENS has already collected for a symbol or a market category, with sentiment, summaries and counts. Use it for events and \"why did it move\" questions.",
+                    "get_options_summary": "Summarizes implied volatility, max pain, the put/call ratio, the strikes with the most open interest and the nearest expirations. Use it for volatility, expected move and positioning.",
+                    "get_quote": "Returns the latest price and day change for up to 3 symbols, along with how many minutes the quote is delayed. Use it when you need the current price.",
+                    "run_fresh_analysis": "Generates a new AI analysis (technical, overall, news or options) for a symbol right now. A shared cached analysis is returned for free; only when there is none is a new one generated with your own LLM key. Generation usually takes about a minute, so the response is streamed.",
+                    "search_ticker": "Finds tickers by company name or part of a symbol, in Korean or English. Use it first to confirm a symbol before calling other tools."
+                },
                 "title": "Tool reference"
             },
             "updatedAt": "Last updated {date}"
@@ -3474,8 +3491,7 @@
             "FearGreedHistoricalChart": {
                 "9b98f6": "Fear & Greed Index Trend Chart for the Last Year"
             },
-            "IndicatorSettingsModal": {
-                "94b7db": "Close",
+            "IndicatorSettingsPopover": {
                 "c6e1ca": "Indicator Settings"
             },
             "ShareCandlestickChart": {

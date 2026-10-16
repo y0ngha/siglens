@@ -375,8 +375,8 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
     useIndicatorVisibility: () => mockUseIndicatorVisibility(),
 }));
 
-vi.mock('@/widgets/chart/ui/IndicatorSettingsModal', () => ({
-    IndicatorSettingsModal: ({
+vi.mock('@/widgets/chart/ui/IndicatorSettingsPopover', () => ({
+    IndicatorSettingsPopover: ({
         bindings,
     }: {
         bindings: { meta: { key: string }; onToggle: () => void }[];
@@ -682,7 +682,7 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsModal with 34 indicator bindings', () => {
+    it('renders IndicatorSettingsPopover with 34 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
         expect(modal).toHaveAttribute('data-count', '34');
@@ -801,7 +801,7 @@ describe('StockChart', () => {
     });
 
     /**
-     * `IndicatorSettingsModal`에는 34개 지표 바인딩이 내려가는데, 각 바인딩의
+     * `IndicatorSettingsPopover`에는 34개 지표 바인딩이 내려가는데, 각 바인딩의
      * `onToggle`이 실제로 `toggle(key)`를 부르는지는 이전 테스트가 보지 않았다
      * (바인딩 개수·키 목록만 확인). 배선이 끊겨도(`onToggle: () => {}`로 잘못
      * 바뀌어도) 감지가 안 됐을 것 — 클릭까지 흘려서 확인한다.

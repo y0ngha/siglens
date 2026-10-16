@@ -452,6 +452,16 @@ describe('robots', () => {
             expect(isAllowedForGooglebot('/api/analysis/stream')).toBe(true);
             expect(isAllowedForGooglebot('/api/anything-else')).toBe(false);
         });
+
+        it('/developers 문서 페이지는 허용하고 공개 API 문서 파일(/api/v1/*)은 막는다', () => {
+            expect(isAllowedForGooglebot('/developers')).toBe(true);
+            expect(isAllowedForGooglebot('/en/developers')).toBe(true);
+            for (const file of ['openapi.json', 'openapi.yaml', 'skill'])
+                expect(isAllowedForGooglebot(`/api/v1/${file}`)).toBe(false);
+            expect(isAllowedForGooglebot('/api/v1/tools/get_quote')).toBe(
+                false
+            );
+        });
     });
 
     /**

@@ -1,6 +1,11 @@
 import { buildSkillMarkdown } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
 import { SITE_URL } from '@/shared/lib/seo';
-import { apiError, API_STATUS, withApiErrorBoundary } from '../apiResponse';
+import {
+    apiError,
+    API_STATUS,
+    PUBLIC_API_DOC_ROBOTS_HEADERS,
+    withApiErrorBoundary,
+} from '../apiResponse';
 import { publicApiToolSpecs } from '../publicApiTools';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +26,7 @@ export async function GET(): Promise<Response> {
                 headers: {
                     'Content-Type': 'text/markdown; charset=utf-8',
                     'Cache-Control': 'no-store',
+                    ...PUBLIC_API_DOC_ROBOTS_HEADERS,
                 },
             });
         } catch (error) {
@@ -28,7 +34,8 @@ export async function GET(): Promise<Response> {
             return apiError(
                 API_STATUS.internalError,
                 'internal_error',
-                'Could not generate the skill file.'
+                'Could not generate the skill file.',
+                { headers: PUBLIC_API_DOC_ROBOTS_HEADERS }
             );
         }
     });

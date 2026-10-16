@@ -1,4 +1,9 @@
-import { apiError, API_STATUS, withApiErrorBoundary } from '../apiResponse';
+import {
+    apiError,
+    API_STATUS,
+    PUBLIC_API_DOC_ROBOTS_HEADERS,
+    withApiErrorBoundary,
+} from '../apiResponse';
 import {
     buildPublicOpenApiDocument,
     OPENAPI_CACHE_CONTROL,
@@ -20,6 +25,7 @@ export async function GET(): Promise<Response> {
                 headers: {
                     'Cache-Control': OPENAPI_CACHE_CONTROL,
                     ...OPENAPI_CORS_HEADERS,
+                    ...PUBLIC_API_DOC_ROBOTS_HEADERS,
                 },
             });
         } catch (error) {
@@ -28,7 +34,12 @@ export async function GET(): Promise<Response> {
                 API_STATUS.internalError,
                 'internal_error',
                 'Could not generate the OpenAPI document.',
-                { headers: OPENAPI_CORS_HEADERS }
+                {
+                    headers: {
+                        ...OPENAPI_CORS_HEADERS,
+                        ...PUBLIC_API_DOC_ROBOTS_HEADERS,
+                    },
+                }
             );
         }
     });

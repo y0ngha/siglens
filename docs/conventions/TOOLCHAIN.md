@@ -168,7 +168,7 @@ JSON 설정(IAM 정책, 설정 파일 등)을 범용 직렬화기로 다시 쓰�
   `useSearchParams` CSR bailout이라 하이드레이션 불일치가 없다).
 - **채팅 메시지 key**: `ChatMessage`(core 소유 타입)에 id가 없어 표시 계층에서 `uiId`를
   부여하고 LLM 전송·저장 전에 제거한다. 인덱스 key 제거.
-- **모달 2종**(ContactDialog, IndicatorSettingsModal): 네이티브 `<dialog>` + `showModal()`.
+- **모달**(ContactDialog; 차트 지표 설정은 앵커드 팝오버로 바뀌어 제외): 네이티브 `<dialog>` + `showModal()`.
   포커스 트랩·Esc·비활성 배경을 브라우저에 위임하고 `useFocusTrap`/`useEscapeKey`/
   `useOnClickOutside` 조합을 걷어냈다. 배경 클릭 닫기는 `useDialog`가 dialog 엘리먼트에
   직접 리스너를 붙인다(소비자 JSX에 클릭 핸들러를 두면 a11y 룰에 걸린다).

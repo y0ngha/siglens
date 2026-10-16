@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { IndicatorSettingsModal } from '@/widgets/chart/ui/IndicatorSettingsModal';
+import { IndicatorSettingsPopover } from '@/widgets/chart/ui/IndicatorSettingsPopover';
 import {
     INDICATOR_META,
     type IndicatorBinding,
@@ -48,24 +48,32 @@ function makeCallbacks(): FlowCallbacks {
     };
 }
 
-describe('Chart Indicator Flow (settings modal, real useDialog)', () => {
-    it('shows the gear trigger and keeps the dialog closed initially', () => {
+describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
+    it('shows the gear trigger and keeps the popover closed initially', () => {
         render(
-            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+            <IndicatorSettingsPopover
+                bindings={makeBindings(makeCallbacks())}
+            />
         );
         expect(
             screen.getByRole('button', { name: '보조지표 설정' })
         ).toBeInTheDocument();
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('group', { name: '보조지표 설정' })
+        ).not.toBeInTheDocument();
     });
 
-    it('opens the dialog and groups indicators by category when the gear is clicked', async () => {
+    it('opens the popover and groups indicators by category when the gear is clicked', async () => {
         const user = userEvent.setup();
         render(
-            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+            <IndicatorSettingsPopover
+                bindings={makeBindings(makeCallbacks())}
+            />
         );
         await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(
+            screen.getByRole('group', { name: '보조지표 설정' })
+        ).toBeInTheDocument();
         expect(screen.getByText('추세')).toBeInTheDocument();
         expect(screen.getByText('모멘텀')).toBeInTheDocument();
         expect(screen.getByText('변동성')).toBeInTheDocument();
@@ -76,7 +84,7 @@ describe('Chart Indicator Flow (settings modal, real useDialog)', () => {
     it('calls the RSI toggle when its checkbox is clicked', async () => {
         const cb = makeCallbacks();
         const user = userEvent.setup();
-        render(<IndicatorSettingsModal bindings={makeBindings(cb)} />);
+        render(<IndicatorSettingsPopover bindings={makeBindings(cb)} />);
         await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
         await user.click(screen.getByRole('checkbox', { name: /RSI/ }));
         expect(cb.onToggleRsi).toHaveBeenCalledTimes(1);
@@ -85,36 +93,124 @@ describe('Chart Indicator Flow (settings modal, real useDialog)', () => {
     it('calls the MA period toggle when a period chip is clicked', async () => {
         const cb = makeCallbacks();
         const user = userEvent.setup();
-        render(<IndicatorSettingsModal bindings={makeBindings(cb)} />);
+        render(<IndicatorSettingsPopover bindings={makeBindings(cb)} />);
         await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
         await user.click(screen.getByRole('button', { name: /^20$/ }));
         expect(cb.onToggleMaPeriod).toHaveBeenCalledWith(20);
     });
 
-    it('closes the dialog when the close button is clicked', async () => {
+    it('closes the popover when the gear is clicked again', async () => {
         const user = userEvent.setup();
         render(
-            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+            <IndicatorSettingsPopover
+                bindings={makeBindings(makeCallbacks())}
+            />
         );
-        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-        await user.click(screen.getByRole('button', { name: '닫기' }));
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        await user.click(gear);
+        expect(
+            screen.getByRole('group', { name: '보조지표 설정' })
+        ).toBeInTheDocument();
+        await user.click(gear);
+        expect(
+            screen.queryByRole('group', { name: '보조지표 설정' })
+        ).not.toBeInTheDocument();
     });
 
-    it('closes the dialog when Escape is pressed (real useDialog)', async () => {
+    it('closes the popover on Escape and on an outside click', async () => {
         const user = userEvent.setup();
         render(
-            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+            <div>
+                <button type="button">outside</button>
+                <IndicatorSettingsPopover
+                    bindings={makeBindings(makeCallbacks())}
+                />
+            </div>
         );
-        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
-        // 네이티브 <dialog>는 showModal()이 effect에서 호출된 뒤에야 열린다. dialog가
-        // 접근성 트리에 뜰 때까지 기다린 다음 Escape를 발화한다 — 열리기 전에 쏘면
-        // CI(vmThreads)에서 이벤트 유실 flake가 난다(TESTING.md#TE-9).
-        // 포커스는 브라우저가 dialog 내부 첫 포커서블로 옮기므로 dialog 자신을
-        // 단언하지 않는다(jsdom 폴리필도 포커스를 옮기지 않는다).
-        await waitFor(() => expect(screen.getByRole('dialog')).toBeVisible());
+        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        const group = () =>
+            screen.queryByRole('group', { name: '보조지표 설정' });
+        await user.click(gear);
+        expect(group()).toBeInTheDocument();
         await user.keyboard('{Escape}');
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(group()).not.toBeInTheDocument();
+        await user.click(gear);
+        expect(group()).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'outside' }));
+        expect(group()).not.toBeInTheDocument();
+    });
+
+    describe('focus (real useFocusTrap)', () => {
+        it('moves focus into the panel when it opens', async () => {
+            const user = userEvent.setup();
+            render(
+                <IndicatorSettingsPopover
+                    bindings={makeBindings(makeCallbacks())}
+                />
+            );
+            await user.click(
+                screen.getByRole('button', { name: '보조지표 설정' })
+            );
+            const panel = screen.getByRole('group', { name: '보조지표 설정' });
+            expect(panel.contains(document.activeElement)).toBe(true);
+            expect(document.activeElement).not.toBe(document.body);
+        });
+
+        it('returns focus to the gear on Escape', async () => {
+            const user = userEvent.setup();
+            render(
+                <IndicatorSettingsPopover
+                    bindings={makeBindings(makeCallbacks())}
+                />
+            );
+            const gear = screen.getByRole('button', { name: '보조지표 설정' });
+            await user.click(gear);
+            await user.keyboard('{Escape}');
+            expect(
+                screen.queryByRole('group', { name: '보조지표 설정' })
+            ).not.toBeInTheDocument();
+            expect(gear).toHaveFocus();
+        });
+
+        it('lets an outside click close the panel without stealing focus back to the gear', async () => {
+            const user = userEvent.setup();
+            render(
+                <div>
+                    <button type="button">outside</button>
+                    <IndicatorSettingsPopover
+                        bindings={makeBindings(makeCallbacks())}
+                    />
+                </div>
+            );
+            const gear = screen.getByRole('button', { name: '보조지표 설정' });
+            const outside = screen.getByRole('button', { name: 'outside' });
+            await user.click(gear);
+            await user.click(outside);
+            expect(
+                screen.queryByRole('group', { name: '보조지표 설정' })
+            ).not.toBeInTheDocument();
+            expect(outside).toHaveFocus();
+            expect(gear).not.toHaveFocus();
+        });
+
+        it('wraps Tab from the last control back to the first inside the panel', async () => {
+            const user = userEvent.setup();
+            render(
+                <IndicatorSettingsPopover
+                    bindings={makeBindings(makeCallbacks())}
+                />
+            );
+            await user.click(
+                screen.getByRole('button', { name: '보조지표 설정' })
+            );
+            const panel = screen.getByRole('group', { name: '보조지표 설정' });
+            const controls = panel.querySelectorAll<HTMLElement>(
+                'button, input:not([disabled])'
+            );
+            const first = controls[0]!;
+            controls[controls.length - 1]!.focus();
+            await user.tab();
+            expect(first).toHaveFocus();
+        });
     });
 });

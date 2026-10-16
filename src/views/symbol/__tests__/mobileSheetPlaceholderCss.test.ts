@@ -76,3 +76,24 @@ describe('globals.css — 펼친 모바일 시트의 Ask-AI FAB·PWA 배너 규�
         expect(fab).toContain('data-ask-ai-fab');
     });
 });
+
+describe('globals.css — 차트 헤더 팝오버가 열린 동안 PWA 배너·FAB 숨김', () => {
+    const normalized = readFileSync(
+        join(process.cwd(), 'src/app/globals.css'),
+        'utf-8'
+    ).replace(/\s+/g, ' ');
+
+    it('data-chart-popover가 있으면 배너와 Ask-AI FAB을 숨기는 규칙이 있다', () => {
+        expect(normalized).toContain(
+            'body:has([data-chart-popover]) [data-ask-ai-fab], body:has([data-chart-popover]) [data-pwa-banner] { display: none; }'
+        );
+    });
+
+    it('규칙의 표식을 ChartPopoverPanel이 실제로 단다', () => {
+        const panel = readFileSync(
+            join(process.cwd(), 'src/widgets/chart/ui/ChartPopoverPanel.tsx'),
+            'utf-8'
+        );
+        expect(panel).toContain('data-chart-popover');
+    });
+});

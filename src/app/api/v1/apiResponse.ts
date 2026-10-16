@@ -67,6 +67,17 @@ export function apiOk(
     return apiJson(200, okBody(data, meta), headers);
 }
 
+/**
+ * 공개 문서 파일(`openapi.json`·`openapi.yaml`·`skill`)에 거는 `X-Robots-Tag: noindex`. **이중 방어다.**
+ * `robots.txt`가 `/api/`를 막으므로 규약을 지키는 크롤러는 이 응답을 받지 않는다 — 그쪽 차단은 그대로 둔다.
+ * 이 헤더는 robots.txt를 무시하고 URL을 직접 가져가는 fetcher·스크레이퍼가 받아 가 색인 대상으로 삼지
+ * 않게 하는 보조 신호일 뿐이다(사람이 읽는 문서는 `/developers`다). 응답을 읽는 쪽(브라우저·도구·사용자 요청
+ * fetcher)의 동작에는 영향이 없다. 오류 응답에도 같이 건다.
+ */
+export const PUBLIC_API_DOC_ROBOTS_HEADERS: Readonly<Record<string, string>> = {
+    'X-Robots-Tag': 'noindex',
+};
+
 /** 실패 본문 `{ error: { code, message, details? } }`. message는 외부 API라 영어 고정이다. */
 export function errorBody(
     code: ApiErrorCode,
