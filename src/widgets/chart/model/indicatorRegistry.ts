@@ -4,7 +4,7 @@
  * 새 지표 추가 = INDICATOR_REGISTRY에 한 줄. kind는 차트 렌더 훅 분기/문서화용이며
  * 팝오버 UI는 kind에 무관하다(체크박스 + 선택적 period 칩으로만 다룸). 따라서 향후
  * 'candle-paint'(elderImpulse)·'zone'(smc) 같은 kind나 'statistical' 카테고리가
- * 추가돼도 IndicatorSettingsPopover는 무수정이다. (스펙 §3.1 참조)
+ * 추가돼도 IndicatorMenu는 무수정이다. (스펙 §3.1 참조)
  */
 
 export type IndicatorCategory =

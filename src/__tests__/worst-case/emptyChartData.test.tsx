@@ -149,8 +149,8 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
         ),
     }),
 }));
-vi.mock('@/widgets/chart/ui/IndicatorSettingsPopover', () => ({
-    IndicatorSettingsPopover: () => null,
+vi.mock('@/widgets/chart/ui/IndicatorMenu', () => ({
+    IndicatorMenu: () => null,
 }));
 vi.mock('@/widgets/chart/utils/paneLabelUtils', () => ({
     buildPaneLabels: () => [],

@@ -3499,9 +3499,6 @@
             "FearGreedHistoricalChart": {
                 "9b98f6": "過去1年間の恐怖・強欲指数推移チャート"
             },
-            "IndicatorSettingsPopover": {
-                "c6e1ca": "補助指標設定"
-            },
             "ShareCandlestickChart": {
                 "1b2664": "チャートデータがありません",
                 "25e234": "スナップショット価格チャート"
@@ -3566,9 +3563,17 @@
                 "ac1149": "下降トレンドライン #{v0}",
                 "bdeea2": "チャートパターン",
                 "bfe4b6": "上昇トレンドライン #{v0}",
-                "c178bc": "一部オン",
+                "c178bc": "一部オン"
+            },
+            "IndicatorMenu": {
+                "panelLabel": "補助指標設定",
+                "trigger": "補助指標 · {v0}",
+                "triggerEmpty": "補助指標"
+            },
+            "ChartSettingsMenu": {
                 "extendedHours": "時間外取引(プレ・アフターマーケット)を表示",
-                "settingsTrigger": "チャート設定"
+                "extendedHoursUnavailable": "日足・韓国株・暗号資産には時間外取引がありません",
+                "label": "チャート設定"
             }
         },
         "ask-ai-fab": {

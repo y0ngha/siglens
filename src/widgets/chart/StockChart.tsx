@@ -4,7 +4,7 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
 
 import { useTranslations } from 'next-intl';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
     IChartApi,
@@ -77,8 +77,10 @@ import {
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { ToggleSetting } from './types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
-import { IndicatorSettingsPopover } from './ui/IndicatorSettingsPopover';
+import { useExclusiveChartMenu } from './hooks/useExclusiveChartMenu';
 import { ChartOverlayMenu } from './ui/ChartOverlayMenu';
+import { ChartSettingsMenu } from './ui/ChartSettingsMenu';
+import { IndicatorMenu } from './ui/IndicatorMenu';
 import { useChartOverlays } from './hooks/useChartOverlays';
 import {
     barTimesOf,
@@ -143,8 +145,13 @@ interface StockChartProps {
     isViewAdjusted?: () => boolean;
     /** 맞춤이 새로 일어나 조정 기록을 지울 때 부른다(`useChartSync.resetUserAdjustedView`). */
     onViewAdjustmentReset?: () => void;
-    /** 시간외 표시 토글. 넘기면 "차트 작도" 메뉴에 행이 생긴다(미국 주식 인트라데이만). */
+    /** 시간외 표시 토글. 넘기면 "차트 설정"(톱니바퀴) 메뉴의 행이 켜진다(미국 주식 인트라데이만). 생략하면 사유와 함께 비활성으로 보인다. */
     extendedHours?: ToggleSetting;
+    /**
+     * 헤더 띠 **왼쪽**에 놓을 내용(시간외 시세 한 줄). 메뉴 셋 앞의 `flex-1 min-w-0` 형제라 자리는 로케일별 실제
+     * 트리거 폭이 정하고 — 고정 inset 없이 메뉴와 겹치지 않는다. 폭이 모자라면 슬롯이 먼저 줄어든다.
+     */
+    headerStartSlot?: ReactNode;
     timeframe: Timeframe;
     indicators?: IndicatorResult;
     actionPrices?: ValidatedActionPrices;
@@ -193,6 +200,7 @@ export function StockChart({
     displayBars,
     extendedBars = NO_EXTENDED_BARS,
     extendedHours,
+    headerStartSlot,
     isViewAdjusted,
     onViewAdjustmentReset,
     timeframe,
@@ -949,6 +957,9 @@ export function StockChart({
         ]
     );
 
+    // 헤더 띠 메뉴 셋(보조지표·차트 작도·차트 설정)은 한 번에 하나만 열린다.
+    const chartMenus = useExclusiveChartMenu();
+
     const indicatorBindings = useMemo<IndicatorBinding[]>(
         () =>
             INDICATOR_REGISTRY.map(meta => {
@@ -991,11 +1002,20 @@ export function StockChart({
 
     return (
         <div className="flex h-full w-full flex-col">
-            {/* 톱니바퀴는 캔버스 밖 헤더 띠에 둔다(터미널 탭바의 `+` 자리). 캔버스
-                위에 얹었을 때는 드래그·줌 중에 캔들을 가렸고 가격 눈금·범례와
-                자리를 다퉜다. 띠 자체는 비워 둔다. */}
-            <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b border-secondary-700 px-1">
+            {/* 메뉴(보조지표 · 차트 작도 · 톱니바퀴 차트 설정)는 캔버스 밖 헤더 띠에 둔다(터미널
+                탭바의 `+` 자리). 캔버스 위에 얹었을 때는 드래그·줌 중에 캔들을 가렸고 가격
+                눈금·범례와 자리를 다퉜다. 띠의 왼쪽 칸은 `headerStartSlot`(시간외 시세 한 줄)이 쓴다. */}
+            <div className="flex h-8 shrink-0 items-center gap-0.5 border-b border-secondary-700 px-1 sm:gap-1">
+                {/* 컨테이너 쿼리 기준 — 슬롯 폭이 9rem 아래면 시세 캡션이 통째로 숨는다(`ExtendedHoursQuoteLine`). */}
+                <div className="@container flex min-w-0 flex-1 items-center pl-1">
+                    {headerStartSlot}
+                </div>
+                <IndicatorMenu
+                    bindings={indicatorBindings}
+                    menu={chartMenus.bind('indicators')}
+                />
                 <ChartOverlayMenu
+                    menu={chartMenus.bind('overlays')}
                     items={overlayItems}
                     hiddenKeys={hiddenOverlayKeys}
                     onSetVisible={onSetOverlayVisible}
@@ -1009,9 +1029,11 @@ export function StockChart({
                               }
                             : undefined
                     }
+                />
+                <ChartSettingsMenu
+                    menu={chartMenus.bind('settings')}
                     extendedHours={extendedHours}
                 />
-                <IndicatorSettingsPopover bindings={indicatorBindings} />
             </div>
             <div ref={wrapperRef} className="relative min-h-0 w-full flex-1">
                 <div

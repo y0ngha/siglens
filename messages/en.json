@@ -3499,9 +3499,6 @@
             "FearGreedHistoricalChart": {
                 "9b98f6": "Fear & Greed Index Trend Chart for the Last Year"
             },
-            "IndicatorSettingsPopover": {
-                "c6e1ca": "Indicator Settings"
-            },
             "ShareCandlestickChart": {
                 "1b2664": "No chart data available",
                 "25e234": "Snapshot Price Chart"
@@ -3566,9 +3563,17 @@
                 "ac1149": "Downtrend Trendline #{v0}",
                 "bdeea2": "Chart Pattern",
                 "bfe4b6": "Uptrend Trendline #{v0}",
-                "c178bc": "Partially On",
+                "c178bc": "Partially On"
+            },
+            "IndicatorMenu": {
+                "panelLabel": "Indicator Settings",
+                "trigger": "Indicators · {v0}",
+                "triggerEmpty": "Indicators"
+            },
+            "ChartSettingsMenu": {
                 "extendedHours": "Show extended hours (pre/after-market)",
-                "settingsTrigger": "Chart settings"
+                "extendedHoursUnavailable": "No extended hours on daily charts, Korean stocks or crypto",
+                "label": "Chart settings"
             }
         },
         "ask-ai-fab": {

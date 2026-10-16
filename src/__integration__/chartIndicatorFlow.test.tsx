@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { IndicatorSettingsPopover } from '@/widgets/chart/ui/IndicatorSettingsPopover';
+import type { ComponentProps } from 'react';
+import { useExclusiveChartMenu } from '@/widgets/chart/hooks/useExclusiveChartMenu';
+import { IndicatorMenu } from '@/widgets/chart/ui/IndicatorMenu';
 import {
     INDICATOR_META,
     type IndicatorBinding,
@@ -16,6 +18,13 @@ vi.mock('@/shared/lib/chartColors', () => ({
         text: '#a0a0b0',
     }),
 }));
+
+function IndicatorMenuHarness(
+    props: Omit<ComponentProps<typeof IndicatorMenu>, 'menu'>
+) {
+    const { bind } = useExclusiveChartMenu();
+    return <IndicatorMenu menu={bind('indicators')} {...props} />;
+}
 
 interface FlowCallbacks {
     onToggleRsi: ReturnType<typeof vi.fn<() => void>>;
@@ -51,12 +60,10 @@ function makeCallbacks(): FlowCallbacks {
 describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
     it('shows the gear trigger and keeps the popover closed initially', () => {
         render(
-            <IndicatorSettingsPopover
-                bindings={makeBindings(makeCallbacks())}
-            />
+            <IndicatorMenuHarness bindings={makeBindings(makeCallbacks())} />
         );
         expect(
-            screen.getByRole('button', { name: '보조지표 설정' })
+            screen.getByRole('button', { name: /^보조지표/ })
         ).toBeInTheDocument();
         expect(
             screen.queryByRole('group', { name: '보조지표 설정' })
@@ -66,11 +73,9 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
     it('opens the popover and groups indicators by category when the gear is clicked', async () => {
         const user = userEvent.setup();
         render(
-            <IndicatorSettingsPopover
-                bindings={makeBindings(makeCallbacks())}
-            />
+            <IndicatorMenuHarness bindings={makeBindings(makeCallbacks())} />
         );
-        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        await user.click(screen.getByRole('button', { name: /^보조지표/ }));
         expect(
             screen.getByRole('group', { name: '보조지표 설정' })
         ).toBeInTheDocument();
@@ -84,8 +89,8 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
     it('calls the RSI toggle when its checkbox is clicked', async () => {
         const cb = makeCallbacks();
         const user = userEvent.setup();
-        render(<IndicatorSettingsPopover bindings={makeBindings(cb)} />);
-        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        render(<IndicatorMenuHarness bindings={makeBindings(cb)} />);
+        await user.click(screen.getByRole('button', { name: /^보조지표/ }));
         await user.click(screen.getByRole('checkbox', { name: /RSI/ }));
         expect(cb.onToggleRsi).toHaveBeenCalledTimes(1);
     });
@@ -93,8 +98,8 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
     it('calls the MA period toggle when a period chip is clicked', async () => {
         const cb = makeCallbacks();
         const user = userEvent.setup();
-        render(<IndicatorSettingsPopover bindings={makeBindings(cb)} />);
-        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        render(<IndicatorMenuHarness bindings={makeBindings(cb)} />);
+        await user.click(screen.getByRole('button', { name: /^보조지표/ }));
         await user.click(screen.getByRole('button', { name: /^20$/ }));
         expect(cb.onToggleMaPeriod).toHaveBeenCalledWith(20);
     });
@@ -102,11 +107,9 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
     it('closes the popover when the gear is clicked again', async () => {
         const user = userEvent.setup();
         render(
-            <IndicatorSettingsPopover
-                bindings={makeBindings(makeCallbacks())}
-            />
+            <IndicatorMenuHarness bindings={makeBindings(makeCallbacks())} />
         );
-        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        const gear = screen.getByRole('button', { name: /^보조지표/ });
         await user.click(gear);
         expect(
             screen.getByRole('group', { name: '보조지표 설정' })
@@ -122,12 +125,12 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
         render(
             <div>
                 <button type="button">outside</button>
-                <IndicatorSettingsPopover
+                <IndicatorMenuHarness
                     bindings={makeBindings(makeCallbacks())}
                 />
             </div>
         );
-        const gear = screen.getByRole('button', { name: '보조지표 설정' });
+        const gear = screen.getByRole('button', { name: /^보조지표/ });
         const group = () =>
             screen.queryByRole('group', { name: '보조지표 설정' });
         await user.click(gear);
@@ -144,13 +147,11 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
         it('moves focus into the panel when it opens', async () => {
             const user = userEvent.setup();
             render(
-                <IndicatorSettingsPopover
+                <IndicatorMenuHarness
                     bindings={makeBindings(makeCallbacks())}
                 />
             );
-            await user.click(
-                screen.getByRole('button', { name: '보조지표 설정' })
-            );
+            await user.click(screen.getByRole('button', { name: /^보조지표/ }));
             const panel = screen.getByRole('group', { name: '보조지표 설정' });
             expect(panel.contains(document.activeElement)).toBe(true);
             expect(document.activeElement).not.toBe(document.body);
@@ -159,11 +160,11 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
         it('returns focus to the gear on Escape', async () => {
             const user = userEvent.setup();
             render(
-                <IndicatorSettingsPopover
+                <IndicatorMenuHarness
                     bindings={makeBindings(makeCallbacks())}
                 />
             );
-            const gear = screen.getByRole('button', { name: '보조지표 설정' });
+            const gear = screen.getByRole('button', { name: /^보조지표/ });
             await user.click(gear);
             await user.keyboard('{Escape}');
             expect(
@@ -177,12 +178,12 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
             render(
                 <div>
                     <button type="button">outside</button>
-                    <IndicatorSettingsPopover
+                    <IndicatorMenuHarness
                         bindings={makeBindings(makeCallbacks())}
                     />
                 </div>
             );
-            const gear = screen.getByRole('button', { name: '보조지표 설정' });
+            const gear = screen.getByRole('button', { name: /^보조지표/ });
             const outside = screen.getByRole('button', { name: 'outside' });
             await user.click(gear);
             await user.click(outside);
@@ -196,13 +197,11 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
         it('wraps Tab from the last control back to the first inside the panel', async () => {
             const user = userEvent.setup();
             render(
-                <IndicatorSettingsPopover
+                <IndicatorMenuHarness
                     bindings={makeBindings(makeCallbacks())}
                 />
             );
-            await user.click(
-                screen.getByRole('button', { name: '보조지표 설정' })
-            );
+            await user.click(screen.getByRole('button', { name: /^보조지표/ }));
             const panel = screen.getByRole('group', { name: '보조지표 설정' });
             const controls = panel.querySelectorAll<HTMLElement>(
                 'button, input:not([disabled])'
