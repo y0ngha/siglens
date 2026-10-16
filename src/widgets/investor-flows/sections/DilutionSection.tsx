@@ -4,6 +4,7 @@ import type {
     OfferingFiling,
     OfferingKind,
 } from '@y0ngha/siglens-core';
+import { FLOWS_DILUTION_SECTION_ID } from '@/entities/investor-flows/lib/flowsAnchors';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
@@ -19,7 +20,7 @@ import {
 } from '../utils/secFilings';
 import { CollectingNotice } from './CollectingNotice';
 
-const HEADING_ID = 'flows-dilution-heading';
+const HEADING_ID = FLOWS_DILUTION_SECTION_ID;
 
 const TONE_CLASS: Record<OfferingTone, string> = {
     issuance: 'bg-ui-warning/10 text-ui-warning-text',

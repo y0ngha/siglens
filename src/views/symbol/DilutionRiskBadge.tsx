@@ -1,9 +1,7 @@
 import { useTranslations } from 'next-intl';
+import { FLOWS_DILUTION_SECTION_ID } from '@/entities/investor-flows/lib/flowsAnchors';
 import type { RecentDilutionEvent } from '@/entities/investor-flows/lib/recentDilutionEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-
-/** 수급 탭 증자·희석 섹션의 제목 id(`widgets/investor-flows/sections/DilutionSection.tsx`) — 배지 링크의 앵커. */
-const FLOWS_DILUTION_ANCHOR = 'flows-dilution-heading';
 
 /** 한 페이지에 배지는 하나뿐이라(차트 탭 헤더) 고정 id로 설명을 잇는다 — 서버 렌더라 `useId`가 필요 없다. */
 const NOTE_ID = 'dilution-risk-badge-note';
@@ -36,7 +34,7 @@ export function DilutionRiskBadge({ symbol, event }: DilutionRiskBadgeProps) {
     return (
         <>
             <Link
-                href={`/${symbol}/flows#${FLOWS_DILUTION_ANCHOR}`}
+                href={`/${symbol}/flows#${FLOWS_DILUTION_SECTION_ID}`}
                 // 보조 배지라 뷰포트 진입만으로 수급 탭 페이로드를 당길 이유가 없다.
                 prefetch={false}
                 title={note}
