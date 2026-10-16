@@ -230,11 +230,34 @@ describe('runFtdIngest', () => {
         expect(calls.invalidated).toEqual([['AAPL', 'BRK.B']]);
     });
 
-    it('rethrows an error that is not a SEC block (the cron logs "run failed")', async () => {
-        const { deps } = build({
-            files: { cnsfails202609b: new Error('boom') },
+    it('counts a transient (non-block) file error as a rejection and keeps going, so stored files are still invalidated and pruned', async () => {
+        const { deps, calls } = build({
+            files: { cnsfails202609b: new Error('socket hang up') },
         });
-        await expect(runFtdIngest(deps)).rejects.toThrow('boom');
+        const result = await runFtdIngest(deps);
+        expect(result.stoppedBy).toBe('complete');
+        expect(calls.rejected).toEqual([
+            { fileKey: '202609b', error: 'socket hang up' },
+        ]);
+        expect(calls.stored.map(s => s.fileKey)).toEqual([
+            '202609a',
+            '202605b',
+            '202308b',
+        ]);
+        expect(calls.invalidated).toEqual([['AAPL', 'BRK.B']]);
+        expect(calls.prunes).toEqual([
+            addDays('2026-10-16', -INVESTOR_FLOWS_FTD_RETENTION_DAYS),
+        ]);
+        expect(calls.logs).toContain('[sec-ftd] file failed 202609b:');
+    });
+
+    it('still stops the whole run on a SEC block in the middle of a file', async () => {
+        const { deps, calls } = build({
+            files: { cnsfails202609b: new Error('blocked') },
+        });
+        expect((await runFtdIngest(deps)).stoppedBy).toBe('sec_blocked');
+        expect(calls.files).toHaveLength(1);
+        expect(calls.rejected).toEqual([]);
     });
 
     it('records a rejected file with its reason (attempts are counted by the store)', async () => {

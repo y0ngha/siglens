@@ -1,4 +1,5 @@
 import 'server-only';
+import { affectedRows } from './affectedRows';
 import { sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { secFtd, secFtdFiles } from '@/shared/db/schema';
@@ -10,11 +11,6 @@ import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from './investorFlowsState';
-
-/** drizzle `execute`(postgres-js)가 돌려주는 영향 행 수. */
-function affectedRows(result: unknown): number {
-    return (result as { count?: number }).count ?? 0;
-}
 
 /**
  * SEC fails-to-deliver 저장소. 반월 파일 하나의 행 저장과 "처리됨" 표시(`sec_ftd_files.processed_at`)는 **한 트랜잭션**이다 — 중간에
@@ -150,7 +146,7 @@ export class DrizzleInvestorFlowsFtdRepository {
         symbol: string,
         sinceDate: string
     ): Promise<FtdPointRecord[]> {
-        const rows = (await withRetry(
+        const rows = await withRetry(
             () =>
                 this.db.execute(sql`
                     SELECT settlement_date::text AS settlement_date,
@@ -161,13 +157,10 @@ export class DrizzleInvestorFlowsFtdRepository {
                     GROUP BY settlement_date
                     ORDER BY settlement_date`),
             DB_TRANSIENT_RETRY
-        )) as unknown as {
-            settlement_date: string;
-            fails_qty: string;
-            price: string | null;
-        }[];
+        );
+        // 열은 위 SELECT가 정한 세 개이고 모두 `::text`로 읽는다(bigint·numeric의 정밀도를 드라이버가 바꾸지 않게) — 여기서 숫자로 옮긴다.
         return rows.map(row => ({
-            settlementDate: row.settlement_date,
+            settlementDate: String(row.settlement_date),
             failsQty: Number(row.fails_qty),
             price: row.price === null ? null : Number(row.price),
         }));

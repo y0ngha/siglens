@@ -20,16 +20,17 @@ export function parseSecFormIndex(
     return text.split('\n').flatMap(line => {
         const match = INDEX_LINE.exec(line);
         if (match === null) return [];
-        const [, formType, companyName, cik, filed, accession] =
-            match as unknown as [
-                string,
-                string,
-                string,
-                string,
-                string,
-                string,
-            ];
-        if (!forms.has(formType)) return [];
+        const [, formType, companyName, cik, filed, accession] = match;
+        // 다섯 그룹은 선택적이지 않아 매치되면 모두 있다 — 타입(`string | undefined`)을 좁힐 뿐이다.
+        if (
+            formType === undefined ||
+            companyName === undefined ||
+            cik === undefined ||
+            filed === undefined ||
+            accession === undefined ||
+            !forms.has(formType)
+        )
+            return [];
         return [
             {
                 formType,

@@ -1,4 +1,5 @@
 import 'server-only';
+import { affectedRows } from './affectedRows';
 import { and, desc, eq, gte, inArray, sql, type SQL } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
@@ -12,12 +13,11 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import { cikToInt, cikToString } from '../lib/cik';
 import type { CikSymbolPair } from '../lib/companyTickers';
-import { secFilingIndexUrl } from '../lib/offeringIndex';
+import { isOfferingKind, secFilingIndexUrl } from '../lib/offeringIndex';
 import type {
     FilingRetry,
     Form144Row,
     OfferingFilingRow,
-    OfferingKind,
     OfferingRecord,
     ProposedSaleRecord,
 } from '../model';
@@ -32,11 +32,6 @@ function chunked<T>(items: readonly T[], size: number): T[][] {
     return Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
         items.slice(i * size, (i + 1) * size)
     );
-}
-
-/** drizzle `execute`(postgres-js)가 돌려주는 영향 행 수. */
-function affectedRows(result: unknown): number {
-    return (result as { count?: number }).count ?? 0;
 }
 
 /** 재시도 큐에 넣을 문서 하나(시도 횟수는 저장소가 센다). */
@@ -453,8 +448,11 @@ export class DrizzleSecFilingsRepository {
                     .limit(limit),
             DB_TRANSIENT_RETRY
         );
-        // `kind`는 이 저장소만 쓰는 열이고 `OfferingKind` 값만 기록한다(`upsertOfferings`의 입력 타입).
-        return rows.map(row => ({ ...row, kind: row.kind as OfferingKind }));
+        // `kind`는 `upsertOfferings`가 `OfferingKind` 값만 쓰지만 열은 varchar라 읽을 때 좁힌다(모르는 값은 `other`).
+        return rows.map(row => ({
+            ...row,
+            kind: isOfferingKind(row.kind) ? row.kind : 'other',
+        }));
     }
 
     /** 시도를 소진해 영구 실패로 남은 문서 수 — backlog 경고용(음성 표식 `skipped`는 실패가 아니라 빼고 센다). */

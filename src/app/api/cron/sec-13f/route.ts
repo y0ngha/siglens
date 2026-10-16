@@ -33,9 +33,11 @@ const SEC_13F_DEADLINE_MS = 10 * 60 * 1000;
 const SEC_13F_LEASE_TTL_SECONDS = 35 * 60;
 
 /**
- * SEC 13F 기관 보유 + Form 144·증자 공시 증분 수집 cron(`PATCH /api/cron/sec-13f`) — 설계 §3. 2시간마다 호출되며 일일 커서를
- * 따라 daily index를 읽고, 백필 기간(13F 최근 ~200일, 공시 최근 180일)을 소진할 때까지 여러 번에 나눠 처리한다. 13F가 먼저이고
- * 공시는 13F가 끝난 실행의 남은 시간에 돈다(`runSecIndexIngest`).
+ * SEC 13F 기관 보유 + Form 144·증자 공시 증분 수집 cron(`PATCH /api/cron/sec-13f`). 일일 커서를 따라 daily index를 읽고, 백필
+ * 기간(13F 최근 ~200일, 공시 최근 180일)을 여러 실행에 나눠 소진한다. 2시간마다 호출하는 이유는 처리량이다 — 한 실행이 마감
+ * 10분 동안 SEC 게이트(~4.5건/초, 제출 1건 = 요청 3건)로 받을 수 있는 제출은 ≈900건이라(600초 × 4.5 ÷ 3), 첫 백필이 하루 한 번
+ * 주기로는 몇 주, 2시간 주기로는 1.5~2일 걸린다(`infra/aws/18-investor-flows-crons.sh`의 스케줄 주석). 13F가 먼저이고 공시는
+ * 13F가 끝난 실행의 남은 시간에 돈다(`runSecIndexIngest`).
  *
  * **cusip-map이 전수 한 바퀴를 끝내기 전에는 아무것도 수집하지 않는다**(`stoppedBy: 'universe_incomplete'`) — 인프라 룰을
  * 한꺼번에 켜도 순서가 코드로 지켜진다. 이유와 표식은 `investorFlowsPolicy.ts`의 `INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE`.

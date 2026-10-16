@@ -167,7 +167,7 @@ const emptyPruned = (): FilingsPruneResult => ({
 
 /** 발행사 CIK의 대표 심볼(정렬 첫째) — Form 144 행의 `symbol`. 읽을 때는 CIK로 찾아 모든 클래스가 본다. */
 const representativeSymbol = (symbols: readonly string[]): string | undefined =>
-    [...symbols].sort()[0];
+    [...symbols].toSorted()[0];
 
 function form144Job(
     deps: IngestSecFilingsDeps,
@@ -273,16 +273,29 @@ async function runDocumentJobs(
         if (stop !== null) break;
         const wave = jobs.slice(i, i + SEC_FILINGS_DOCUMENT_CONCURRENCY);
         // 한 묶음은 함께 띄우고 묶음끼리는 직렬이다(SEC 게이트가 속도를 정한다).
+        // 작업마다 결과를 잡아 둔다(거부도 값으로) — 결과와 작업의 짝을 인덱스로 다시 맞추지 않는다.
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
-        const settled = await Promise.allSettled(
+        const settled = await Promise.all(
             wave.map(async job => {
                 state.attempted.add(job.target.accession);
                 state.result.documentsFetched += 1;
-                return job.run();
+                try {
+                    return {
+                        job,
+                        outcome: {
+                            status: 'fulfilled' as const,
+                            value: await job.run(),
+                        },
+                    };
+                } catch (reason) {
+                    return {
+                        job,
+                        outcome: { status: 'rejected' as const, reason },
+                    };
+                }
             })
         );
-        for (const [index, outcome] of settled.entries()) {
-            const job = wave[index] as DocumentJob;
+        for (const { job, outcome } of settled) {
             if (outcome.status === 'fulfilled') {
                 if (outcome.value.form144 !== undefined)
                     form144.push(outcome.value.form144);
@@ -341,7 +354,7 @@ async function persist(
 const failureTarget = (target: IndexTarget): FilingFailureTarget => ({
     accession: target.accession,
     // 문서를 받을 폴더 — 유니버스 발행사 CIK 중 첫째(같은 accession은 어느 등록인 폴더로도 열린다).
-    cik: [...target.issuers.keys()][0] as string,
+    cik: target.primaryCik,
     formType: target.formType,
     filingDate: target.filingDate,
 });
@@ -444,15 +457,13 @@ export async function runSecFilingsIngest(
     const cursor = await deps.repo.getState(
         INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR
     );
-    const startDate =
+    const overlapStart =
         cursor === null
             ? backfillStart
-            : ([
-                  backfillStart,
-                  addDays(cursor, -SEC_FILINGS_CURSOR_OVERLAP_DAYS),
-              ]
-                  .sort()
-                  .at(-1) as string);
+            : addDays(cursor, -SEC_FILINGS_CURSOR_OVERLAP_DAYS);
+    // ISO 날짜는 문자열 비교가 날짜 비교다 — 백필 창보다 이른 날로는 거슬러 가지 않는다.
+    const startDate =
+        overlapStart > backfillStart ? overlapStart : backfillStart;
     const state: RunState = {
         symbols: new Set(),
         attempted: new Set(),
@@ -539,7 +550,7 @@ export async function runSecFilingsIngest(
         }
     }
     const toInvalidate = [...state.symbols]
-        .sort()
+        .toSorted()
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
     if (toInvalidate.length > 0) {
         await deps.invalidateSymbols(toInvalidate);

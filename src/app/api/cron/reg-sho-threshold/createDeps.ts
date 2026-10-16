@@ -11,8 +11,8 @@ import { DrizzleInvestorFlowsRegShoRepository } from '@/entities/investor-flows/
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import type { IngestRegShoDeps } from '@/entities/investor-flows/server/ingestRegSho';
 
-const isRegShoMarket = (market: string): market is RegShoMarket =>
-    (REG_SHO_MARKETS as readonly string[]).includes(market);
+const toRegShoMarket = (market: string): RegShoMarket | undefined =>
+    REG_SHO_MARKETS.find(known => known === market);
 
 /** I/O 구성은 이 호출자에 둔다(EN-1). DB가 없으면 던진다. */
 export function createRegShoDeps(
@@ -26,10 +26,11 @@ export function createRegShoDeps(
         isEnabled: isRegShoThresholdDataEnabled,
         markets: REG_SHO_MARKETS,
         fetchList: (market, date) => {
-            if (!isRegShoMarket(market)) {
+            const known = toRegShoMarket(market);
+            if (known === undefined) {
                 throw new Error(`unknown Reg SHO market ${market}`);
             }
-            return fetchRegShoThresholdText(market, date);
+            return fetchRegShoThresholdText(known, date);
         },
         repo: new DrizzleInvestorFlowsRegShoRepository(client.db),
         loadUniverseSymbols: async () =>

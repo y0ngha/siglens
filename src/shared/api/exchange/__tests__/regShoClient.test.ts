@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     ExchangeHttpError,
     fetchRegShoThresholdText,
+    REG_SHO_MAX_BODY_BYTES,
     regShoThresholdUrl,
 } from '../regShoClient';
 
@@ -110,6 +111,61 @@ describe('regShoClient', () => {
             await expect(
                 fetchRegShoThresholdText('cboe_bzx', '2026-10-15')
             ).rejects.toBeInstanceOf(ExchangeHttpError);
+        });
+
+        it('refuses a body whose Content-Length exceeds the cap without reading it', async () => {
+            let pulled = false;
+            // highWaterMark 0: the stream pulls only when someone reads
+            const body = new ReadableStream<Uint8Array>(
+                {
+                    pull() {
+                        pulled = true;
+                    },
+                },
+                { highWaterMark: 0 }
+            );
+            fetchSpy.mockResolvedValueOnce(
+                new Response(body, {
+                    status: 200,
+                    headers: {
+                        'content-length': String(REG_SHO_MAX_BODY_BYTES + 1),
+                    },
+                })
+            );
+            await expect(
+                fetchRegShoThresholdText('nasdaq', '2026-10-15')
+            ).rejects.toThrow('exchange body too large');
+            expect(pulled).toBe(false);
+        });
+
+        it('stops reading an undeclared body once it passes the cap', async () => {
+            let pulls = 0;
+            const chunk = new Uint8Array(256 * 1024);
+            const body = new ReadableStream<Uint8Array>({
+                pull(controller) {
+                    pulls += 1;
+                    controller.enqueue(chunk);
+                },
+            });
+            fetchSpy.mockResolvedValueOnce(new Response(body, { status: 200 }));
+            await expect(
+                fetchRegShoThresholdText('nasdaq', '2026-10-15')
+            ).rejects.toThrow('exchange body too large');
+            // a never-ending body: reading stopped just past the cap (plus read-ahead)
+            expect(pulls).toBeLessThan(
+                REG_SHO_MAX_BODY_BYTES / chunk.length + 4
+            );
+        });
+
+        it('reads a body exactly at the cap', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                new Response('a'.repeat(REG_SHO_MAX_BODY_BYTES), {
+                    status: 200,
+                })
+            );
+            expect(
+                (await fetchRegShoThresholdText('nasdaq', '2026-10-15'))?.length
+            ).toBe(REG_SHO_MAX_BODY_BYTES);
         });
 
         it('retries a 5xx once', async () => {

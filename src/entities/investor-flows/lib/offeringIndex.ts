@@ -63,6 +63,8 @@ export interface IndexTarget {
     filingDate: string;
     /** 유니버스 발행사 CIK(10자리) → 우리 심볼들. 등장 순서를 지킨다. */
     issuers: ReadonlyMap<string, readonly string[]>;
+    /** `issuers`의 첫 CIK — 문서를 받을 제출 폴더(대상은 유니버스 CIK가 하나 이상일 때만 만들어진다). */
+    primaryCik: string;
 }
 
 /**
@@ -79,12 +81,7 @@ export function selectIndexTargets(
 ): IndexTarget[] {
     const byAccession = new Map<
         string,
-        {
-            accession: string;
-            formType: string;
-            filingDate: string;
-            issuers: Map<string, readonly string[]>;
-        }
+        IndexTarget & { issuers: Map<string, readonly string[]> }
     >();
     for (const entry of entries) {
         const symbols = cikSymbols.get(Number(entry.cik));
@@ -94,9 +91,26 @@ export function selectIndexTargets(
             formType: entry.formType,
             filingDate: entry.filingDate,
             issuers: new Map<string, readonly string[]>(),
+            primaryCik: entry.cik,
         };
         target.issuers.set(entry.cik, symbols);
         byAccession.set(entry.accession, target);
     }
     return [...byAccession.values()];
+}
+
+/** `OfferingKind`의 모든 값 — `Record`라 종류가 늘면 여기서 컴파일이 깨진다(TS-2). */
+const OFFERING_KIND_SET: Readonly<Record<OfferingKind, true>> = {
+    shelf: true,
+    registration: true,
+    prospectus: true,
+    atm: true,
+    underwritten: true,
+    best_efforts: true,
+    private_placement: true,
+    other: true,
+};
+
+export function isOfferingKind(value: string): value is OfferingKind {
+    return Object.hasOwn(OFFERING_KIND_SET, value);
 }

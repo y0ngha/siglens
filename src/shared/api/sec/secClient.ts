@@ -471,7 +471,8 @@ async function readBodyHead(res: Response, maxBytes: number): Promise<string> {
  * `www.sec.gov/files/...`의 정적 데이터 파일(FTD zip, `company_tickers.json`) 바이트. `path`는 `/files/`로 시작해야 한다
  * (다른 경로를 이 함수로 받지 않는다). 없으면 `null`, 403·429는 차단(`isSecBlockedError`). 크기 상한 `SEC_MAX_FILE_BYTES`.
  */
-export function fetchSecFile(path: string): Promise<Uint8Array | null> {
+export async function fetchSecFile(path: string): Promise<Uint8Array | null> {
+    // async라 잘못된 경로도 동기 throw가 아니라 거부된 promise다 — 호출부의 await/catch 하나로 다룬다(SA-10).
     if (!path.startsWith(SEC_FILES_PREFIX)) {
         throw new Error(`fetchSecFile only serves ${SEC_FILES_PREFIX} paths`);
     }

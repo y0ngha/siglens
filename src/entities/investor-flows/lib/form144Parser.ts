@@ -62,11 +62,11 @@ function readSaleBlock(block: XmlElement): SaleBlock | null {
 }
 
 const earliest = (dates: readonly (string | null)[]): string | null =>
-    dates.filter((d): d is string => d !== null).sort()[0] ?? null;
+    dates.filter((d): d is string => d !== null).toSorted()[0] ?? null;
 const latest = (dates: readonly (string | null)[]): string | null =>
     dates
         .filter((d): d is string => d !== null)
-        .sort()
+        .toSorted()
         .at(-1) ?? null;
 
 /**

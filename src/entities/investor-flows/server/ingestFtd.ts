@@ -110,13 +110,11 @@ function ftdUniverseOf(universe: InvestorFlowsUniverse): FtdUniverse {
     const symbolByCusip = new Map(
         [...universe.cusips].map(([cusip, { symbol }]) => [cusip, symbol])
     );
-    const cusipsBySymbol = new Map<string, string[]>();
-    for (const [cusip, symbol] of symbolByCusip) {
-        cusipsBySymbol.set(symbol, [
-            ...(cusipsBySymbol.get(symbol) ?? []),
-            cusip,
-        ]);
-    }
+    const cusipsBySymbol = [...symbolByCusip].reduce(
+        (bySymbol, [cusip, symbol]) =>
+            bySymbol.set(symbol, [...(bySymbol.get(symbol) ?? []), cusip]),
+        new Map<string, string[]>()
+    );
     return {
         symbolByCusip,
         cusipsBySymbol,
@@ -192,44 +190,56 @@ export async function runFtdIngest(
                 stoppedBy = 'deadline';
                 break;
             }
-            // 파일은 하나씩 받는다(각 ≈1.5MB, 풀면 ≈4MB) — 메모리와 SEC 부담을 묶는다.
-            // react-doctor-disable-next-line react-doctor/async-await-in-loop
-            const zip = await deps.sec.fetchSecFile(link.path);
-            if (zip === null) {
-                deps.log(`[sec-ftd] file missing ${link.path}`);
+            // 파일 하나의 실패(일시 오류·DB 오류 등)는 그 파일만 거부로 세고 다음 파일로 간다 — 이미 저장한 파일의 무효화·정리가
+            // 실행 끝에서 그대로 돈다. SEC 거절(403·429)만 실행 전체를 멈춘다(바깥 catch).
+            try {
+                // 파일은 하나씩 받는다(각 ≈1.5MB, 풀면 ≈4MB) — 메모리와 SEC 부담을 묶는다.
                 // react-doctor-disable-next-line react-doctor/async-await-in-loop
-                await reject(link.fileKey, `missing ${link.path}`);
-                continue;
-            }
-            const parsed = readFtdZip(zip);
-            if (parsed instanceof Error) {
-                deps.log(
-                    `[sec-ftd] unreadable zip ${link.fileKey}:`,
-                    parsed.message
-                );
+                const zip = await deps.sec.fetchSecFile(link.path);
+                if (zip === null) {
+                    deps.log(`[sec-ftd] file missing ${link.path}`);
+                    // react-doctor-disable-next-line react-doctor/async-await-in-loop
+                    await reject(link.fileKey, `missing ${link.path}`);
+                    continue;
+                }
+                const parsed = readFtdZip(zip);
+                if (parsed instanceof Error) {
+                    deps.log(
+                        `[sec-ftd] unreadable zip ${link.fileKey}:`,
+                        parsed.message
+                    );
+                    // react-doctor-disable-next-line react-doctor/async-await-in-loop
+                    await reject(link.fileKey, parsed.message.slice(0, 500));
+                    continue;
+                }
+                if (!ftdTrailerMatches(parsed)) {
+                    // 메트릭 필터 접두(`[sec-ftd] trailer mismatch`, infra/aws/19-*) — 형식 변경·잘린 파일. 저장하지 않고 시도만 센다:
+                    // 다음 실행은 건강한 파일 뒤에 다시 받고, `INVESTOR_FLOWS_FTD_MAX_ATTEMPTS`번 실패하면 더 받지 않는다.
+                    deps.log(`[sec-ftd] trailer mismatch ${link.fileKey}`, {
+                        trailer: parsed.trailer,
+                        dataLines: parsed.dataLines,
+                        malformedLines: parsed.malformedLines,
+                        parsedQuantity: parsed.parsedQuantity,
+                    });
+                    // react-doctor-disable-next-line react-doctor/async-await-in-loop
+                    await reject(link.fileKey, 'trailer mismatch');
+                    continue;
+                }
+                const rows = resolveFtdRows(parsed.rows, ftdUniverse);
                 // react-doctor-disable-next-line react-doctor/async-await-in-loop
-                await reject(link.fileKey, parsed.message.slice(0, 500));
-                continue;
-            }
-            if (!ftdTrailerMatches(parsed)) {
-                // 메트릭 필터 접두(`[sec-ftd] trailer mismatch`, infra/aws/19-*) — 형식 변경·잘린 파일. 저장하지 않고 시도만 센다:
-                // 다음 실행은 건강한 파일 뒤에 다시 받고, `INVESTOR_FLOWS_FTD_MAX_ATTEMPTS`번 실패하면 더 받지 않는다.
-                deps.log(`[sec-ftd] trailer mismatch ${link.fileKey}`, {
-                    trailer: parsed.trailer,
-                    dataLines: parsed.dataLines,
-                    malformedLines: parsed.malformedLines,
-                    parsedQuantity: parsed.parsedQuantity,
-                });
+                await deps.repo.storeFile(link.fileKey, rows);
+                result.filesStored += 1;
+                result.rowsStored += rows.length;
+                for (const row of rows) symbols.add(row.symbol);
+            } catch (error) {
+                if (deps.isSecBlockedError(error)) throw error;
+                const message = (
+                    error instanceof Error ? error.message : String(error)
+                ).slice(0, 500);
+                deps.log(`[sec-ftd] file failed ${link.fileKey}:`, message);
                 // react-doctor-disable-next-line react-doctor/async-await-in-loop
-                await reject(link.fileKey, 'trailer mismatch');
-                continue;
+                await reject(link.fileKey, message);
             }
-            const rows = resolveFtdRows(parsed.rows, ftdUniverse);
-            // react-doctor-disable-next-line react-doctor/async-await-in-loop
-            await deps.repo.storeFile(link.fileKey, rows);
-            result.filesStored += 1;
-            result.rowsStored += rows.length;
-            for (const row of rows) symbols.add(row.symbol);
         }
     } catch (error) {
         if (!deps.isSecBlockedError(error)) throw error;
@@ -242,7 +252,7 @@ export async function runFtdIngest(
         addDays(today, -INVESTOR_FLOWS_FTD_RETENTION_DAYS)
     );
     const toInvalidate = [...symbols]
-        .sort()
+        .toSorted()
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
     if (toInvalidate.length > 0) await deps.invalidateSymbols(toInvalidate);
     return {

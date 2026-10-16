@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     FORM_144_FORMS,
+    isOfferingKind,
     OFFERING_FORMS,
     offeringKindForForm,
     secFilingIndexUrl,
@@ -93,5 +94,18 @@ describe('selectIndexTargets', () => {
                 '0001601830-26-000126',
             ]);
         });
+    });
+});
+
+describe('isOfferingKind', () => {
+    it.each(['shelf', 'atm', 'private_placement', 'other'])(
+        'accepts %s',
+        kind => {
+            expect(isOfferingKind(kind)).toBe(true);
+        }
+    );
+
+    it.each(['ATM', 'toString', ''])('rejects %j', kind => {
+        expect(isOfferingKind(kind)).toBe(false);
     });
 });

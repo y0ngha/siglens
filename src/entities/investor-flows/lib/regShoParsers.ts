@@ -85,7 +85,7 @@ export function summarizeThresholdListings(
     listings: readonly ThresholdListingRecord[],
     ingestedTradeDates: readonly string[]
 ): ThresholdStatusSummary {
-    const dates = [...new Set(ingestedTradeDates)].sort().reverse();
+    const dates = [...new Set(ingestedTradeDates)].toSorted().toReversed();
     const byDate = new Map(listings.map(l => [l.tradeDate, l.markets]));
     const [asOf] = dates;
     if (asOf === undefined) {
@@ -103,7 +103,7 @@ export function summarizeThresholdListings(
         listed: streak.length > 0,
         consecutiveDays: streak.length,
         firstListedDate: streak.at(-1) ?? null,
-        markets: [...(byDate.get(asOf) ?? [])].sort(),
+        markets: [...(byDate.get(asOf) ?? [])].toSorted(),
         asOf,
     };
 }

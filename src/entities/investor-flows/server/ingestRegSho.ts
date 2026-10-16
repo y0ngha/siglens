@@ -238,7 +238,7 @@ export async function runRegShoIngest(
 
     result.pruned = await deps.repo.pruneBefore(retentionFloor);
     const toInvalidate = [...changed]
-        .sort()
+        .toSorted()
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
     if (toInvalidate.length > 0) await deps.invalidateSymbols(toInvalidate);
     result.invalidated = toInvalidate.length;

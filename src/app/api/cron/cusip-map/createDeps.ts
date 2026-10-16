@@ -42,9 +42,9 @@ export function createCusipMapDeps(
 /** `company_tickers.json`을 받아 JSON으로 읽는다. 없으면 null(깨진 JSON은 던진다 — `runCikSymbolMapSync`가 `failed`로 받는다). */
 async function fetchCompanyTickers(): Promise<unknown | null> {
     const bytes = await fetchSecFile(COMPANY_TICKERS_PATH);
-    return bytes === null
-        ? null
-        : (JSON.parse(new TextDecoder('utf-8').decode(bytes)) as unknown);
+    if (bytes === null) return null;
+    const parsed: unknown = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    return parsed;
 }
 
 /** `sec_cik_symbol_map` 주간 갱신의 의존(EN-1). DB가 없으면 던진다. */

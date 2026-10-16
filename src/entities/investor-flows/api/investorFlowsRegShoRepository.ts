@@ -1,4 +1,5 @@
 import 'server-only';
+import { affectedRows } from './affectedRows';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { regShoThreshold } from '@/shared/db/schema';
@@ -14,11 +15,6 @@ import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from './investorFlowsState';
-
-/** drizzle `execute`(postgres-js)가 돌려주는 영향 행 수. */
-function affectedRows(result: unknown): number {
-    return (result as { count?: number }).count ?? 0;
-}
 
 /**
  * Reg SHO 과열 목록 저장소(⚠ 거래소 데이터 비상업 라이선스 — `shared/api/exchange/regShoThresholdDataEnabled.ts`).

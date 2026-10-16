@@ -177,17 +177,19 @@ export function extractFtdFileLinks(html: string): FtdFileLink[] {
         /href="(\/files\/[^"]*?\/cnsfails(\d{4})(0[1-9]|1[0-2])([ab])(?:_\d+)?\.zip)"/gi;
     const byKey = new Map<string, FtdFileLink>();
     for (const match of html.matchAll(pattern)) {
-        const [, path, year, month, half] = match as unknown as [
-            string,
-            string,
-            string,
-            string,
-            string,
-        ];
+        const [, path, year, month, half] = match;
+        // 패턴의 네 그룹은 선택적이지 않아 매치되면 모두 있다 — 타입(`string | undefined`)을 좁힐 뿐이다.
+        if (
+            path === undefined ||
+            year === undefined ||
+            month === undefined ||
+            half === undefined
+        )
+            continue;
         const fileKey = `${year}${month}${half.toLowerCase()}`;
         if (!byKey.has(fileKey)) byKey.set(fileKey, { fileKey, path });
     }
-    return [...byKey.values()].sort((a, b) =>
+    return [...byKey.values()].toSorted((a, b) =>
         a.fileKey < b.fileKey ? 1 : a.fileKey > b.fileKey ? -1 : 0
     );
 }

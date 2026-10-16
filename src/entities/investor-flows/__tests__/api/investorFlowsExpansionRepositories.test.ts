@@ -285,6 +285,29 @@ describe('DrizzleSecFilingsRepository', () => {
         ]);
     });
 
+    it('reads an unknown stored kind as other', async () => {
+        const { db } = createFakeDb([
+            [
+                {
+                    accession: 'A',
+                    filingDate: '2026-10-15',
+                    formType: 'S-3',
+                    kind: 'mystery',
+                    url: 'u',
+                },
+            ],
+        ]);
+        expect(
+            (
+                await new DrizzleSecFilingsRepository(db).findOfferings(
+                    'NBRU',
+                    '2026-04-15',
+                    5
+                )
+            )[0]?.kind
+        ).toBe('other');
+    });
+
     it('counts exhausted failures, leaving out the negative markers', async () => {
         const { db, ops } = createFakeDb([[{ n: 51 }]]);
         expect(

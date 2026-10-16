@@ -25,10 +25,10 @@ export function parseRegShoCursor(raw: string | null): RegShoCursor {
         if (typeof value !== 'object' || value === null) {
             return EMPTY_REG_SHO_CURSOR;
         }
-        const { lastByMarket, ingestedDates } = value as {
-            lastByMarket?: unknown;
-            ingestedDates?: unknown;
-        };
+        const lastByMarket =
+            'lastByMarket' in value ? value.lastByMarket : undefined;
+        const ingestedDates =
+            'ingestedDates' in value ? value.ingestedDates : undefined;
         const markets =
             typeof lastByMarket === 'object' && lastByMarket !== null
                 ? Object.fromEntries(
@@ -59,6 +59,6 @@ export function serializeRegShoCursor(
         lastByMarket: cursor.lastByMarket,
         ingestedDates: [...new Set(cursor.ingestedDates)]
             .filter(date => date >= keepFrom)
-            .sort(),
+            .toSorted(),
     });
 }

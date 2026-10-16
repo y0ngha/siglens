@@ -17,12 +17,15 @@ export type RegShoMarket = (typeof REG_SHO_MARKETS)[number];
 export const REG_SHO_REQUEST_TIMEOUT_MS = 30_000;
 export const REG_SHO_MAX_RETRIES = 1;
 export const REG_SHO_RETRY_BASE_DELAY_MS = 1_000;
-/** 목록 파일 본문 상한 — 실측(2026-10-15) 파일은 많아야 수 KB다. */
-const REG_SHO_MAX_BODY_CHARS = 1024 * 1024;
+/** 목록 파일 본문 상한(바이트) — 실측(2026-10-15) 파일은 많아야 수 KB다. 읽기 전·읽는 중에 이 크기로 끊는다(SA-7). */
+export const REG_SHO_MAX_BODY_BYTES = 1024 * 1024;
 
 const HTTP_NOT_FOUND = 404;
 const HTTP_FORBIDDEN = 403;
-/** S3가 없는 객체에 주는 본문. Cboe CDN은 파일이 없는 날(휴장일·미게시·미래)에 404 대신 이 403을 준다. */
+/**
+ * S3가 없는 객체에 주는 본문. Cboe CDN은 파일이 없는 날(휴장일·미게시·미래)에 404 대신 이 403을 준다.
+ * 재확인: `curl -s -o /dev/null -w '%{http_code}\n' https://cdn.cboe.com/resources/us/equities/market-statistics/reg-sho-threshold/bzx_equities_reg_sho_threshold_20251127.txt`(휴장일 → 403)
+ */
 const ACCESS_DENIED_MARKER = '<Code>AccessDenied</Code>';
 const HTTP_REDIRECT_MIN = 300;
 const HTTP_REDIRECT_MAX = 399;
@@ -72,6 +75,42 @@ function isTransient(error: unknown): boolean {
 }
 
 /**
+ * 본문을 `maxBytes`까지만 읽는다 — `Content-Length`가 상한을 넘으면 읽기 전에, 선언 없이 길게 오면 상한에 닿는 순간 스트림을
+ * 끊고 던진다(본문 전체를 메모리에 올린 뒤 길이를 재지 않는다).
+ */
+async function readBoundedText(
+    res: Response,
+    maxBytes: number,
+    url: string
+): Promise<string> {
+    const declared = Number(res.headers.get('content-length'));
+    if (Number.isFinite(declared) && declared > maxBytes) {
+        await res.body?.cancel().catch(() => undefined);
+        throw new Error(`exchange body too large: ${url}`);
+    }
+    if (res.body === null) return '';
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let text = '';
+    let received = 0;
+    try {
+        for (;;) {
+            // 청크는 순서대로 하나씩 읽는다.
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop
+            const { done, value } = await reader.read();
+            if (done) return text + decoder.decode();
+            received += value.byteLength;
+            if (received > maxBytes) {
+                throw new Error(`exchange body too large: ${url}`);
+            }
+            text += decoder.decode(value, { stream: true });
+        }
+    } finally {
+        reader.cancel().catch(() => undefined);
+    }
+}
+
+/**
  * 그날 그 시장의 과열 목록 텍스트. 아직 없으면 `null`:
  *  - 404.
  *  - **3xx** — Nasdaq은 게시 전 날짜에 302로 HTML 안내 페이지로 보낸다(2026-10-16 실측). 리다이렉트를 따라가지 않는다.
@@ -105,11 +144,7 @@ export async function fetchRegShoThresholdText(
                 if (body.includes(ACCESS_DENIED_MARKER)) return null;
             }
             if (!res.ok) throw new ExchangeHttpError(url, res.status);
-            const text = await res.text();
-            if (text.length > REG_SHO_MAX_BODY_CHARS) {
-                throw new Error(`exchange body too large: ${url}`);
-            }
-            return text;
+            return readBoundedText(res, REG_SHO_MAX_BODY_BYTES, url);
         },
         {
             maxRetries: REG_SHO_MAX_RETRIES,

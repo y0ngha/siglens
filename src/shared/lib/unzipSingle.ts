@@ -40,12 +40,12 @@ export function unzipSingle(zip: Uint8Array, maxBytes: number): UnzippedEntry {
             return true;
         },
     });
-    if (names.length !== 1) {
+    const [name] = names;
+    if (names.length !== 1 || name === undefined) {
         throw new UnzipSingleError(
             `expected exactly one file in zip, found ${names.length}`
         );
     }
-    const [name] = names as [string];
     const data = files[name];
     if (data === undefined) {
         throw new UnzipSingleError(`zip entry ${name} was not extracted`);

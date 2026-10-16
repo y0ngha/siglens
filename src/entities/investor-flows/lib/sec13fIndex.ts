@@ -1,13 +1,14 @@
 import type { Sec13fIndexEntry } from '../model';
 import { parseSecFormIndex } from './secFormIndex';
 
-const SEC_13F_FORMS: ReadonlySet<Sec13fIndexEntry['formType']> = new Set([
+const SEC_13F_FORM_LIST: readonly Sec13fIndexEntry['formType'][] = [
     '13F-HR',
     '13F-HR/A',
-]);
+];
+const SEC_13F_FORMS: ReadonlySet<string> = new Set(SEC_13F_FORM_LIST);
 
 const isSec13fForm = (form: string): form is Sec13fIndexEntry['formType'] =>
-    (SEC_13F_FORMS as ReadonlySet<string>).has(form);
+    SEC_13F_FORM_LIST.some(known => known === form);
 
 /**
  * daily form index 텍스트에서 `13F-HR`·`13F-HR/A` 제출만 뽑는다. `13F-NT`(보유 없음 통지)·

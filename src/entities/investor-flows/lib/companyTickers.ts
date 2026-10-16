@@ -5,8 +5,22 @@ export interface CikSymbolPair {
 }
 
 interface CompanyTickerEntry {
-    cik_str?: unknown;
-    ticker?: unknown;
+    cik_str: number;
+    ticker: string;
+}
+
+/** `company_tickers.json`의 한 행 — CIK는 양의 정수, 티커는 문자열. 형식이 다른 행은 버린다. */
+function isCompanyTickerEntry(entry: unknown): entry is CompanyTickerEntry {
+    return (
+        typeof entry === 'object' &&
+        entry !== null &&
+        'cik_str' in entry &&
+        'ticker' in entry &&
+        typeof entry.cik_str === 'number' &&
+        Number.isInteger(entry.cik_str) &&
+        entry.cik_str > 0 &&
+        typeof entry.ticker === 'string'
+    );
 }
 
 /** 클래스 구분자 `.`와 `-`를 같은 것으로 본다(SEC는 `BRK-B`, 유니버스 일부는 `BF.B`). 다른 별칭은 쓰지 않는다. */
@@ -29,24 +43,13 @@ export function parseCompanyTickers(
         [...universeSymbols].map(symbol => [classKey(symbol), symbol])
     );
     const seen = new Set<string>();
-    return Object.values(json as Record<string, CompanyTickerEntry>).flatMap(
-        entry => {
-            const cik = entry?.cik_str;
-            const ticker = entry?.ticker;
-            if (
-                typeof cik !== 'number' ||
-                !Number.isInteger(cik) ||
-                cik <= 0 ||
-                typeof ticker !== 'string'
-            ) {
-                return [];
-            }
-            const symbol = universe.get(classKey(ticker));
-            if (symbol === undefined) return [];
-            const key = `${cik}|${symbol}`;
-            if (seen.has(key)) return [];
-            seen.add(key);
-            return [{ cik, symbol }];
-        }
-    );
+    const entries: unknown[] = Object.values(json);
+    return entries.filter(isCompanyTickerEntry).flatMap(entry => {
+        const symbol = universe.get(classKey(entry.ticker));
+        if (symbol === undefined) return [];
+        const key = `${entry.cik_str}|${symbol}`;
+        if (seen.has(key)) return [];
+        seen.add(key);
+        return [{ cik: entry.cik_str, symbol }];
+    });
 }

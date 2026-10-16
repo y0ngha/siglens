@@ -564,8 +564,12 @@ describe('fetchSecFile (www.sec.gov/files)', () => {
         );
     });
 
-    it('refuses a path outside /files/ without making a request', () => {
-        expect(() => fetchSecFile('/Archives/edgar/x.txt')).toThrow(
+    it('rejects (never throws synchronously) a path outside /files/, without making a request', async () => {
+        let result: Promise<unknown> | undefined;
+        expect(() => {
+            result = fetchSecFile('/Archives/edgar/x.txt');
+        }).not.toThrow();
+        await expect(result).rejects.toThrow(
             'fetchSecFile only serves /files/ paths'
         );
         expect(fetchSpy).not.toHaveBeenCalled();
