@@ -9,4 +9,5 @@ export const AXIS_TITLE_KEY: Record<InvestorFlowsAxisId, string> = {
     insider: 'insider',
     largeHolders: 'largeHolders',
     short: 'short',
+    dilution: 'dilution',
 };

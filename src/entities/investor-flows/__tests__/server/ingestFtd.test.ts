@@ -152,6 +152,48 @@ describe('runFtdIngest', () => {
         expect(result.pendingFiles).toBe(5);
     });
 
+    it('calls onFirstFileStored exactly once — on the run that stores the first file, never on later runs', async () => {
+        const onFirstFileStored = vi.fn();
+        const { deps } = build({}, { onFirstFileStored });
+        const first = await runFtdIngest(deps);
+        expect(first.firstFileStored).toBe(true);
+        expect(onFirstFileStored).toHaveBeenCalledTimes(1);
+        // the same (now non-empty) store: the next run backfills the remaining file but is not a transition
+        const second = await runFtdIngest(deps);
+        expect(second.filesStored).toBeGreaterThan(0);
+        expect(second.firstFileStored).toBe(false);
+        expect(onFirstFileStored).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not call onFirstFileStored when files were already stored before the run', async () => {
+        const onFirstFileStored = vi.fn();
+        const { deps } = build(
+            { processed: ['202609b'] },
+            { onFirstFileStored }
+        );
+        const result = await runFtdIngest(deps);
+        expect(result.filesStored).toBeGreaterThan(0);
+        expect(onFirstFileStored).not.toHaveBeenCalled();
+    });
+
+    it('does not call onFirstFileStored when an empty store stays empty (every file rejected)', async () => {
+        const onFirstFileStored = vi.fn();
+        const { deps } = build(
+            {
+                files: {
+                    cnsfails202609b: null,
+                    cnsfails202609a: null,
+                    cnsfails202605b: null,
+                    cnsfails202308b: null,
+                },
+            },
+            { onFirstFileStored }
+        );
+        const result = await runFtdIngest(deps);
+        expect(result.filesStored).toBe(0);
+        expect(onFirstFileStored).not.toHaveBeenCalled();
+    });
+
     it('skips files that are already stored', async () => {
         const { deps, calls } = build({
             processed: ['202609b', '202609a', '202605b', '202308b'],

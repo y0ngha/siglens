@@ -14,21 +14,29 @@ vi.mock('@/entities/investor-flows/server/getInvestorFlowsScorecard', () => ({
 }));
 
 import { getInvestorFlowsTool } from '@/app/api/ai/chat/tools/getInvestorFlows';
-import { AGGREGATE_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import { INVESTOR_FLOWS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 import {
     SUMMARY_MAX_INSIDER_TRANSACTIONS,
     SUMMARY_MAX_LARGE_HOLDERS,
+    SUMMARY_MAX_OFFERINGS,
+    SUMMARY_MAX_PROPOSED_SALES,
     SUMMARY_MAX_SIGNALS,
     SUMMARY_MAX_TOP_HOLDERS,
     type InvestorFlowsSummary,
 } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
 import {
     evaluate,
+    makeExpandedSnapshot,
     makeHolder,
     makeLargeHolder,
+    makeOffering,
+    makeProposedSale,
     makeSnapshot,
+    makeSqueezeContext,
+    makeThresholdList,
     makeTransaction,
 } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
+import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
 
 const ctx = {
     userId: 'u',
@@ -49,22 +57,34 @@ type ToolOutput = InvestorFlowsSummary & {
     noData: false;
 };
 
-const READY = { institutional: 'ready', short: 'ready' } as const;
+const READY: InvestorFlowsPipelineReadiness = {
+    institutional: 'ready',
+    short: 'ready',
+    failsToDeliver: 'ready',
+    filings: 'ready',
+    thresholdList: 'ready',
+};
 
+/** 테스트가 바꾸는 갈래만 주면 나머지는 `ready`다. */
 function arrange(
     snapshot: ReturnType<typeof makeSnapshot>,
     finra = true,
-    readiness: {
-        institutional: 'ready' | 'collecting' | 'unknown';
-        short: 'ready' | 'collecting' | 'unknown';
-    } = READY
+    readiness: Partial<InvestorFlowsPipelineReadiness> = {},
+    over: { regSho?: boolean; squeeze?: boolean } = {}
 ) {
+    const regSho = over.regSho ?? true;
     loadScorecard.mockResolvedValue({
         snapshot,
-        scorecard: evaluate(snapshot, finra),
+        scorecard: evaluate(snapshot, finra, {
+            includeExchangeLists: regSho,
+            ...(over.squeeze === true
+                ? { squeezeContext: makeSqueezeContext() }
+                : {}),
+        }),
         degraded: false,
         finraEnabled: finra,
-        readiness,
+        regShoEnabled: regSho,
+        readiness: { ...READY, ...readiness },
     });
 }
 
@@ -93,6 +113,7 @@ describe('getInvestorFlowsTool', () => {
             scorecard: null,
             degraded: true,
             finraEnabled: true,
+            regShoEnabled: true,
             readiness: READY,
         });
         expect(await getInvestorFlowsTool({ symbol: 'aapl' }, ctx, rt)).toEqual(
@@ -106,6 +127,7 @@ describe('getInvestorFlowsTool', () => {
             scorecard: null,
             degraded: false,
             finraEnabled: true,
+            regShoEnabled: true,
             readiness: READY,
         });
         const result = (await getInvestorFlowsTool(
@@ -220,6 +242,178 @@ describe('getInvestorFlowsTool', () => {
         expect(result.source).toContain('13F');
     });
 
+    describe('수급 확장 필드(SEC FTD·Form 144·증자 공시·13F 풋콜·과열 목록·숏스퀴즈)', () => {
+        it('최근 Form 144·증자 공시를 최신순으로 압축하고 10b5-1 여부를 불리언으로 싣는다', async () => {
+            arrange(makeExpandedSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.insider.proposedSales).toEqual([
+                {
+                    filingDate: '2026-10-12',
+                    filer: 'Fixture Officer F',
+                    relationships: 'Officer',
+                    shares: 30_000,
+                    valueUsd: 6_360_000,
+                    plan10b5_1: true,
+                },
+                {
+                    filingDate: '2026-09-28',
+                    filer: 'Fixture Director C',
+                    relationships: 'Director',
+                    shares: 5_000,
+                    valueUsd: 1_030_000,
+                    plan10b5_1: false,
+                },
+            ]);
+            expect(result.offerings).toEqual([
+                { filingDate: '2026-10-04', form: '424B5', kind: 'atm' },
+                { filingDate: '2026-07-10', form: 'S-3ASR', kind: 'shelf' },
+            ]);
+            expect(result.axes.dilution.sufficiency).toBe('sufficient');
+        });
+
+        it('FTD·풋콜은 점수표(core) 값을 옮기고 SEC 안내를 붙인다', async () => {
+            const snapshot = makeExpandedSnapshot();
+            arrange(snapshot);
+            const card = evaluate(snapshot);
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.failsToDeliver).toMatchObject({
+                latestDate: '2026-09-30',
+                latestQty: 1_880_000,
+                peakQty: card.short.metrics.failsToDeliverPeakQty,
+            });
+            expect(result.failsToDeliver?.note).toMatch(
+                /not evidence of naked short selling/
+            );
+            expect(result.institutional.putCall).toMatchObject({
+                period: '2026-06-30',
+                putCallValueRatio: 1.47,
+                priorPutCallValueRatio: 0.75,
+            });
+        });
+
+        it('과열 목록 상태와 숏스퀴즈 점수(상위 구성요소)를 싣는다', async () => {
+            arrange(
+                makeExpandedSnapshot({ thresholdList: makeThresholdList() }),
+                true,
+                {},
+                { squeeze: true }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.thresholdList).toEqual({
+                listed: true,
+                consecutiveDays: 15,
+                firstListedDate: '2026-09-24',
+                markets: ['Nasdaq'],
+                asOf: '2026-10-15',
+            });
+            expect(result.squeezeRisk?.score).toBeTypeOf('number');
+            expect(result.squeezeRisk?.topComponents.length).toBeGreaterThan(0);
+            expect(result.source).toContain('Reg SHO threshold lists');
+        });
+
+        it('가격 입력이 없으면 squeezeRisk는 null이다', async () => {
+            arrange(makeExpandedSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.squeezeRisk).toBeNull();
+        });
+
+        it('Reg SHO 플래그가 꺼지면 출처에서 거래소 목록을 빼고 thresholdList는 null이다', async () => {
+            arrange(
+                makeExpandedSnapshot({ thresholdList: null }),
+                true,
+                {},
+                { regSho: false }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.thresholdList).toBeNull();
+            expect(result.source).not.toContain('Reg SHO');
+        });
+
+        it('Reg SHO 플래그가 꺼지면 준비 상태가 수집 중이어도 dataStatus에 과열 목록을 싣지 않는다', async () => {
+            arrange(
+                makeSnapshot({ thresholdList: null }),
+                true,
+                { thresholdList: 'collecting' },
+                { regSho: false }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+            expect('dataStatus' in result).toBe(false);
+        });
+
+        it('Reg SHO 플래그가 켜져 있고 첫 목록 전이면 dataStatus.thresholdList가 collecting이다', async () => {
+            arrange(makeSnapshot({ thresholdList: null }), true, {
+                thresholdList: 'collecting',
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as { dataStatus: Record<string, string> };
+            expect(result.dataStatus.thresholdList).toBe('collecting');
+        });
+
+        it('Form 144·증자 공시 원천이 스냅샷에 없으면(조회 실패) null로 구분한다', async () => {
+            arrange(makeSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.insider.proposedSales).toBeNull();
+            expect(result.offerings).toBeNull();
+        });
+
+        it('SEC 갈래가 수집 중이고 비어 있으면 dataStatus에 그 갈래만 싣고, 요약은 "조회 불가"로 가린다', async () => {
+            arrange(
+                makeSnapshot({
+                    failsToDeliver: [],
+                    proposedSales: [],
+                    offerings: [],
+                }),
+                true,
+                { failsToDeliver: 'collecting', filings: 'collecting' }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput & { dataStatus: Record<string, string> };
+            expect(Object.keys(result.dataStatus).toSorted()).toEqual([
+                'failsToDeliver',
+                'note',
+                'offerings',
+                'proposedSales',
+            ]);
+            expect(result.failsToDeliver).toBeNull();
+            expect(result.insider.proposedSales).toBeNull();
+            expect(result.offerings).toBeNull();
+        });
+    });
+
     describe('크기 예산', () => {
         /** 실제 Fake(보유 기관 6·내부자 7·13D/G 2)보다 무거운 최악 입력: 상한을 넘는 개수, 긴 이름·직무, 전 축 신호. */
         function heavySnapshot() {
@@ -265,6 +459,37 @@ describe('getInvestorFlowsTool', () => {
                     avgDailyVolume: 380_000_000,
                     daysToCover: 5.5 + i * 0.3,
                 })),
+                failsToDeliver: Array.from({ length: 90 }, (_, i) => ({
+                    settlementDate: `2026-0${7 + Math.floor(i / 30)}-${String((i % 28) + 1).padStart(2, '0')}`,
+                    failsQty: 95_000_000 + i,
+                    price: 205.25,
+                })),
+                proposedSales: Array.from({ length: 60 }, (_, i) =>
+                    makeProposedSale({
+                        filingDate: `2026-09-${String((i % 28) + 1).padStart(2, '0')}`,
+                        filer: 'Proposed Seller With A Very Long Legal Name',
+                        relationships: ['Officer', 'Director', '10% Owner'],
+                        shares: 123_456_789,
+                        valueUsd: 98_765_432_100,
+                    })
+                ),
+                offerings: Array.from({ length: 40 }, (_, i) =>
+                    makeOffering({
+                        filingDate: `2026-0${(i % 9) + 1}-10`,
+                        form: '424B5',
+                        kind: 'best_efforts',
+                    })
+                ),
+                thresholdList: makeThresholdList({
+                    consecutiveDays: 120,
+                    markets: [
+                        'Nasdaq',
+                        'NYSE',
+                        'NYSE American',
+                        'NYSE Arca',
+                        'Cboe BZX',
+                    ],
+                }),
             });
         }
 
@@ -283,10 +508,14 @@ describe('getInvestorFlowsTool', () => {
             );
             expect(result.largeHolders).toHaveLength(SUMMARY_MAX_LARGE_HOLDERS);
             expect(result.signals).toHaveLength(SUMMARY_MAX_SIGNALS);
+            expect(result.insider.proposedSales).toHaveLength(
+                SUMMARY_MAX_PROPOSED_SALES
+            );
+            expect(result.offerings).toHaveLength(SUMMARY_MAX_OFFERINGS);
         });
 
-        it('봉투를 포함한 도구 출력 전체가 6,000자 상한 안에 여유(600자 이상)를 두고 들어간다', async () => {
-            arrange(heavySnapshot());
+        it('봉투를 포함한 도구 출력 전체가 8,000자 상한 안에 여유(600자 이상)를 두고 들어간다', async () => {
+            arrange(heavySnapshot(), true, {}, { squeeze: true });
             const result = await getInvestorFlowsTool(
                 { symbol: 'AAPL' },
                 ctx,
@@ -294,7 +523,7 @@ describe('getInvestorFlowsTool', () => {
             );
             const length = JSON.stringify(result).length;
             expect(length).toBeLessThanOrEqual(
-                AGGREGATE_RESULT_MAX_CHARS - 600
+                INVESTOR_FLOWS_RESULT_MAX_CHARS - 600
             );
         });
 
@@ -310,9 +539,20 @@ describe('getInvestorFlowsTool', () => {
                     },
                     shortInterest: [],
                     shortVolume: [],
+                    failsToDeliver: [],
+                    proposedSales: [],
+                    offerings: [],
+                    thresholdList: null,
                 },
                 true,
-                { institutional: 'collecting', short: 'collecting' }
+                {
+                    institutional: 'collecting',
+                    short: 'collecting',
+                    failsToDeliver: 'collecting',
+                    filings: 'collecting',
+                    thresholdList: 'collecting',
+                },
+                { squeeze: true }
             );
             const result = (await getInvestorFlowsTool(
                 { symbol: 'AAPL' },
@@ -321,7 +561,7 @@ describe('getInvestorFlowsTool', () => {
             )) as { dataStatus?: unknown };
             expect(result.dataStatus).toBeDefined();
             expect(JSON.stringify(result).length).toBeLessThanOrEqual(
-                AGGREGATE_RESULT_MAX_CHARS - 600
+                INVESTOR_FLOWS_RESULT_MAX_CHARS - 600
             );
         });
     });
@@ -442,7 +682,12 @@ describe('getInvestorFlowsTool', () => {
                 scorecard: null,
                 degraded: false,
                 finraEnabled: true,
-                readiness: { institutional: 'collecting', short: 'collecting' },
+                regShoEnabled: true,
+                readiness: {
+                    ...READY,
+                    institutional: 'collecting',
+                    short: 'collecting',
+                },
             });
             const result = (await getInvestorFlowsTool(
                 { symbol: 'ZZZZ' },

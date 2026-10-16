@@ -15,9 +15,10 @@ vi.mock(
     })
 );
 
-vi.mock('@/shared/api/finra/finraShortDataEnabled', () => ({
-    isFinraShortDataEnabled: vi.fn(() => true),
-}));
+vi.mock(
+    '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions',
+    () => ({ getInvestorFlowsEvaluationOptions: vi.fn() })
+);
 
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: vi.fn(() => false) }));
 
@@ -45,7 +46,7 @@ import {
     type RunInvestorFlowsAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
+import { getInvestorFlowsEvaluationOptions } from '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { investorFlowsCachedProvider } from '@/entities/investor-flows/server/getInvestorFlowsCachedProvider';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
@@ -57,9 +58,12 @@ const mockRun = runInvestorFlowsAnalysis as MockedFunction<
     typeof runInvestorFlowsAnalysis
 >;
 const mockIsE2E = isE2E as MockedFunction<typeof isE2E>;
-const mockFinra = isFinraShortDataEnabled as MockedFunction<
-    typeof isFinraShortDataEnabled
+const mockOptions = getInvestorFlowsEvaluationOptions as MockedFunction<
+    typeof getInvestorFlowsEvaluationOptions
 >;
+const SQUEEZE_CONTEXT = {
+    dailyBars: [{ date: '2026-10-15', close: 251.2, volume: 41_000_000 }],
+};
 const mockCookies = cookies as unknown as MockedFunction<
     () => Promise<{ get: (name: string) => unknown }>
 >;
@@ -96,7 +100,11 @@ describe('runInvestorFlowsAction', () => {
         mockRun.mockReset();
         mockRun.mockResolvedValue(CACHED);
         mockIsE2E.mockReturnValue(false);
-        mockFinra.mockReturnValue(true);
+        mockOptions.mockReset();
+        mockOptions.mockResolvedValue({
+            includeFinraData: true,
+            includeExchangeLists: true,
+        });
         mockGetCurrentUser.mockReset();
         mockGetCurrentUser.mockResolvedValue(null);
         mockResolveTierAndByok.mockReset();
@@ -121,24 +129,44 @@ describe('runInvestorFlowsAction', () => {
             );
         });
 
-        it('FINRA 플래그가 켜져 있으면 includeFinraData: true를 넘긴다', async () => {
-            mockFinra.mockReturnValue(true);
+        it('화면 점수표와 같은 평가 옵션(플래그·숏스퀴즈 일봉)을 그대로 넘긴다', async () => {
+            mockOptions.mockResolvedValue({
+                includeFinraData: true,
+                includeExchangeLists: true,
+                squeezeContext: SQUEEZE_CONTEXT,
+            });
 
             await runInvestorFlowsAction('AAPL', MODEL_ID, 'ko');
 
+            expect(mockOptions).toHaveBeenCalledWith('AAPL');
             expect(mockRun).toHaveBeenCalledWith(
-                expect.objectContaining({ includeFinraData: true })
+                expect.objectContaining({
+                    includeFinraData: true,
+                    includeExchangeLists: true,
+                    squeezeContext: SQUEEZE_CONTEXT,
+                })
             );
         });
 
-        it('FINRA 플래그가 꺼져 있으면 includeFinraData: false를 넘긴다(캐시 키가 갈린다)', async () => {
-            mockFinra.mockReturnValue(false);
+        it('플래그가 꺼져 있으면 includeFinraData·includeExchangeLists: false를 넘긴다(캐시 키가 갈린다)', async () => {
+            mockOptions.mockResolvedValue({
+                includeFinraData: false,
+                includeExchangeLists: false,
+            });
 
             await runInvestorFlowsAction('AAPL', MODEL_ID, 'ko');
 
             expect(mockRun).toHaveBeenCalledWith(
-                expect.objectContaining({ includeFinraData: false })
+                expect.objectContaining({
+                    includeFinraData: false,
+                    includeExchangeLists: false,
+                })
             );
+            expect(
+                mockRun.mock.calls.some(
+                    ([options]) => 'squeezeContext' in options
+                )
+            ).toBe(false);
         });
 
         it('abort signal을 그대로 넘긴다', async () => {

@@ -1598,6 +1598,7 @@
                 "widgets.investor-flows.filter",
                 "widgets.investor-flows.label",
                 "widgets.investor-flows.split",
+                "widgets.investor-flows.squeeze.component",
                 "widgets.investor-flows.status",
                 "widgets.investor-flows.tooltip",
                 "widgets.layout",

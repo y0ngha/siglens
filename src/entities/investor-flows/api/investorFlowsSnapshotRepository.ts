@@ -6,6 +6,7 @@ import {
     cusipSymbolMap,
     sec13fAggregates,
     sec13fFilers,
+    sec13fOptionAggregates,
     sec13fFilings,
     sec13fPositions,
 } from '@/shared/db/schema';
@@ -15,6 +16,7 @@ import type {
     AggregateRecord,
     HolderRecord,
 } from '../lib/investorFlowsSnapshot';
+import type { OptionAggregateRecord } from '../model';
 import { cikToString } from '../lib/cik';
 import { previousQuarterEnd } from '../lib/investorFlowsDates';
 
@@ -65,6 +67,34 @@ export class DrizzleInvestorFlowsSnapshotRepository {
             exited: row.exited,
             netShareChange: row.netShareChange,
         }));
+    }
+
+    /**
+     * 분기별 13F 옵션(풋·콜) 집계, 최신 분기부터 `limit`개. 주식 집계(`findAggregates`)와 같은 CUSIP·같은 재계산 주기다.
+     * `*Shares`는 기초자산 주식 수, `*ValueUsd`는 기초자산 명목금액(프리미엄이 아니다).
+     */
+    async findOptionAggregates(
+        cusip: string,
+        limit: number
+    ): Promise<OptionAggregateRecord[]> {
+        return withRetry(
+            () =>
+                this.db
+                    .select({
+                        period: sec13fOptionAggregates.period,
+                        putHolders: sec13fOptionAggregates.putHolders,
+                        putShares: sec13fOptionAggregates.putShares,
+                        putValueUsd: sec13fOptionAggregates.putValueUsd,
+                        callHolders: sec13fOptionAggregates.callHolders,
+                        callShares: sec13fOptionAggregates.callShares,
+                        callValueUsd: sec13fOptionAggregates.callValueUsd,
+                    })
+                    .from(sec13fOptionAggregates)
+                    .where(eq(sec13fOptionAggregates.cusip, cusip))
+                    .orderBy(desc(sec13fOptionAggregates.period))
+                    .limit(limit),
+            DB_TRANSIENT_RETRY
+        );
     }
 
     /** 이 종목 포지션이 남아 있는 가장 최근 분기. */

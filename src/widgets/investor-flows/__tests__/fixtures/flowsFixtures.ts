@@ -1,6 +1,13 @@
 import {
     evaluateInvestorFlows,
+    type EvaluateInvestorFlowsOptions,
+    type FailsToDeliverPoint,
     type InsiderTransaction,
+    type InstitutionalOptionsQuarter,
+    type OfferingFiling,
+    type ProposedSale,
+    type SqueezeRiskContext,
+    type ThresholdListStatus,
     type InstitutionalHolderChange,
     type InstitutionalQuarter,
     type InvestorFlowsScorecard,
@@ -219,12 +226,156 @@ export function makeSnapshot(
 
 export function evaluate(
     snapshot: InvestorFlowsSnapshot,
-    includeFinraData = true
+    includeFinraData = true,
+    options: Omit<
+        EvaluateInvestorFlowsOptions,
+        'asOf' | 'includeFinraData'
+    > = {}
 ): InvestorFlowsScorecard {
     return evaluateInvestorFlows(snapshot, {
         asOf: FLOWS_AS_OF,
         includeFinraData,
+        ...options,
     });
+}
+
+/** FTD — 기준일 전 2~7주의 실패일 몇 개(최근 2주는 SEC 게시 지연으로 비어 있다). */
+export function makeFailsToDeliver(qty = 1_400_000): FailsToDeliverPoint[] {
+    return [
+        '2026-08-28',
+        '2026-09-10',
+        '2026-09-18',
+        '2026-09-24',
+        '2026-09-30',
+    ].map((settlementDate, index) => ({
+        settlementDate,
+        failsQty: index === 3 ? qty * 3 : qty + index * 120_000,
+        price: index === 1 ? null : 205 + index,
+    }));
+}
+
+export function makeProposedSale(
+    overrides: Partial<ProposedSale> = {}
+): ProposedSale {
+    return {
+        filingDate: '2026-10-12',
+        filer: 'Fixture Officer F',
+        relationships: ['Officer'],
+        shares: 30_000,
+        valueUsd: 6_360_000,
+        approxSaleDate: '2026-10-13',
+        planAdoptionDate: '2026-06-01',
+        url: 'https://www.sec.gov/Archives/edgar/data/0/fixture-144-index.htm',
+        ...overrides,
+    };
+}
+
+export function makeOffering(
+    overrides: Partial<OfferingFiling> = {}
+): OfferingFiling {
+    return {
+        filingDate: '2026-10-04',
+        form: '424B5',
+        kind: 'atm',
+        url: 'https://www.sec.gov/Archives/edgar/data/0/fixture-424b5-index.htm',
+        ...overrides,
+    };
+}
+
+export function makeOptionsQuarter(
+    overrides: Partial<InstitutionalOptionsQuarter> = {}
+): InstitutionalOptionsQuarter {
+    return {
+        period: '2026-06-30',
+        complete: true,
+        putHolders: 640,
+        putShares: 280_000_000,
+        putValueUsd: 58_800_000_000,
+        callHolders: 700,
+        callShares: 190_000_000,
+        callValueUsd: 39_900_000_000,
+        ...overrides,
+    };
+}
+
+export function makeThresholdList(
+    overrides: Partial<ThresholdListStatus> = {}
+): ThresholdListStatus {
+    return {
+        listed: true,
+        consecutiveDays: 15,
+        firstListedDate: '2026-09-24',
+        markets: ['Nasdaq'],
+        asOf: '2026-10-15',
+        ...overrides,
+    };
+}
+
+/** 수급 확장 원천(13F 옵션·Form 144·증자 공시·FTD·과열 목록)을 모두 채운 스냅샷. */
+export function makeExpandedSnapshot(
+    overrides: Partial<InvestorFlowsSnapshot> = {}
+): InvestorFlowsSnapshot {
+    const base = makeSnapshot();
+    return makeSnapshot({
+        institutional: {
+            ...base.institutional,
+            options: [
+                makeOptionsQuarter({
+                    period: '2026-03-31',
+                    putValueUsd: 30_000_000_000,
+                    callValueUsd: 40_000_000_000,
+                }),
+                makeOptionsQuarter(),
+            ],
+        },
+        failsToDeliver: makeFailsToDeliver(),
+        proposedSales: [
+            makeProposedSale(),
+            makeProposedSale({
+                filingDate: '2026-09-28',
+                filer: 'Fixture Director C',
+                relationships: ['Director'],
+                planAdoptionDate: null,
+                shares: 5_000,
+                valueUsd: 1_030_000,
+            }),
+        ],
+        offerings: [
+            makeOffering(),
+            makeOffering({
+                filingDate: '2026-07-10',
+                form: 'S-3ASR',
+                kind: 'shelf',
+                url: 'https://www.sec.gov/Archives/edgar/data/0/fixture-s3-index.htm',
+            }),
+        ],
+        thresholdList: makeThresholdList({
+            listed: false,
+            consecutiveDays: 0,
+            firstListedDate: null,
+            markets: [],
+        }),
+        ...overrides,
+    });
+}
+
+/** 숏스퀴즈 가격 입력 — 기준일 전 30세션, 최근 20세션은 주가가 오르고 최근 5세션 거래량이 늘어난다. */
+export function makeSqueezeContext(): SqueezeRiskContext {
+    const sessions: string[] = [];
+    let cursor = new Date(`${FLOWS_AS_OF}T00:00:00Z`);
+    while (sessions.length < 30) {
+        cursor = new Date(cursor.getTime() - 86_400_000);
+        const weekday = cursor.getUTCDay();
+        if (weekday !== 0 && weekday !== 6)
+            sessions.unshift(cursor.toISOString().slice(0, 10));
+    }
+    return {
+        dailyBars: sessions.map((date, index) => ({
+            date,
+            close: 100 + Math.max(0, index - 9) * 2,
+            volume: index >= 25 ? 90_000_000 : 30_000_000,
+        })),
+    };
 }
 
 /** 어떤 구간에도 데이터가 없는 스냅샷(점수표는 전 축 `insufficient`). */

@@ -95,4 +95,11 @@ describe('createSec13fDeps', () => {
         createSec13fDeps(() => false).thirteenF.onBackfillCompleted?.();
         expect(mockRevalidateReadiness).toHaveBeenCalledTimes(1);
     });
+
+    it('wires the filings caught-up hook to the readiness-cache invalidation', () => {
+        mockClient.mockReturnValue({ db: {} });
+        mockRevalidateReadiness.mockReset();
+        createSec13fDeps(() => false).filings.onCaughtUp?.();
+        expect(mockRevalidateReadiness).toHaveBeenCalledTimes(1);
+    });
 });

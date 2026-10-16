@@ -9,6 +9,7 @@ import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     AGGREGATE_RESULT_MAX_CHARS,
+    INVESTOR_FLOWS_RESULT_MAX_CHARS,
     GUIDE_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
@@ -72,6 +73,8 @@ export interface ToolResultCaps {
     bars: number;
     /** `get_market_overview` / `get_economy`. */
     aggregate: number;
+    /** `get_investor_flows` (scorecard + capped holder, insider, Form 144 and offering lists). */
+    investorFlows: number;
     guide: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
@@ -84,6 +87,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     standard: TOOL_RESULT_MAX_CHARS,
     bars: BARS_RESULT_MAX_CHARS,
     aggregate: AGGREGATE_RESULT_MAX_CHARS,
+    investorFlows: INVESTOR_FLOWS_RESULT_MAX_CHARS,
     guide: GUIDE_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -228,15 +232,12 @@ export function createToolExecutor(
         // here would re-cut an already-fit 6,000-char result down to 4,000
         // and collapse it into a front-cut preview blob.
         if (name === 'get_bars_indicators') return resultCaps.bars;
-        // `get_investor_flows`는 점수표 + 상위 보유 기관·내부자 목록(`SUMMARY_MAX_*` 상한,
-        // `summarizeInvestorFlows.ts`)이라 기본 4,000자를 넘는다 —
-        // 이미 상한 안으로 자른 결과를 기본 한도로 다시 자르면 앞부분 미리보기 덩어리로 무너진다.
-        if (
-            name === 'get_market_overview' ||
-            name === 'get_economy' ||
-            name === 'get_investor_flows'
-        )
+        if (name === 'get_market_overview' || name === 'get_economy')
             return resultCaps.aggregate;
+        // `get_investor_flows`는 점수표 + 상위 보유 기관·내부자·Form 144·증자 공시 목록(`SUMMARY_MAX_*` 상한,
+        // `summarizeInvestorFlows.ts`)이라 종합 도구 상한(6,000자)도 넘는다 — 이미 상한 안으로 자른 결과를 더 작은 한도로
+        // 다시 자르면 앞부분 미리보기 덩어리로 무너진다.
+        if (name === 'get_investor_flows') return resultCaps.investorFlows;
         if (name === 'get_guide') return resultCaps.guide;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(

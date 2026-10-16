@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     INVESTOR_FLOWS_STATE_BACKFILL_DONE,
+    INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
 import {
     loadInvestorFlowsPipelineReadiness,
     type PipelineReadinessDeps,
 } from '../../server/loadInvestorFlowsPipelineReadiness';
+
+const NOW = new Date('2026-10-16T09:00:00Z');
 
 function build(
     markers: string[],
@@ -15,31 +18,75 @@ function build(
     return {
         getState: async key => (markers.includes(key) ? 'x' : null),
         hasAnyShortRow: async () => false,
+        hasAnyFtdFile: async () => false,
+        listThresholdTradeDates: async () => [],
         isFinraEnabled: () => true,
+        isRegShoEnabled: () => true,
+        now: () => NOW,
         ...over,
     };
 }
 
+/** 공시 커서를 `cursor`로 돌려주는 `getState`(나머지 표식은 `markers`). */
+function withCursor(markers: string[], cursor: string) {
+    return async (key: string): Promise<string | null> => {
+        if (key === INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR) return cursor;
+        return markers.includes(key) ? 'x' : null;
+    };
+}
+
+const ALL_13F = [
+    INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
+    INVESTOR_FLOWS_STATE_BACKFILL_DONE,
+];
+
 describe('loadInvestorFlowsPipelineReadiness', () => {
-    it('both 13F markers + a FINRA row -> everything ready', async () => {
+    it('every source loaded -> everything ready', async () => {
         expect(
             await loadInvestorFlowsPipelineReadiness(
-                build(
-                    [
-                        INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
-                        INVESTOR_FLOWS_STATE_BACKFILL_DONE,
-                    ],
-                    { hasAnyShortRow: async () => true }
-                )
+                build(ALL_13F, {
+                    getState: withCursor(ALL_13F, '2026-10-15'),
+                    hasAnyShortRow: async () => true,
+                    hasAnyFtdFile: async () => true,
+                    listThresholdTradeDates: async () => ['2026-10-15'],
+                })
             )
-        ).toEqual({ institutional: 'ready', short: 'ready' });
+        ).toEqual({
+            institutional: 'ready',
+            short: 'ready',
+            failsToDeliver: 'ready',
+            filings: 'ready',
+            thresholdList: 'ready',
+        });
     });
 
-    it('no markers and empty FINRA tables -> both collecting (the bootstrap period)', async () => {
+    it('nothing loaded yet -> every branch collecting (the bootstrap period)', async () => {
         expect(await loadInvestorFlowsPipelineReadiness(build([]))).toEqual({
             institutional: 'collecting',
             short: 'collecting',
+            failsToDeliver: 'collecting',
+            filings: 'collecting',
+            thresholdList: 'collecting',
         });
+    });
+
+    it('a filings cursor that still trails the backfill keeps filings collecting', async () => {
+        const result = await loadInvestorFlowsPipelineReadiness(
+            build([], { getState: withCursor([], '2026-06-01') })
+        );
+        expect(result.filings).toBe('collecting');
+    });
+
+    it('does not read the Reg SHO state while that flag is off, and reports it unknown', async () => {
+        const listThresholdTradeDates = vi.fn(async () => ['2026-10-15']);
+        const result = await loadInvestorFlowsPipelineReadiness(
+            build([], {
+                isRegShoEnabled: () => false,
+                listThresholdTradeDates,
+            })
+        );
+        expect(result.thresholdList).toBe('unknown');
+        expect(listThresholdTradeDates).not.toHaveBeenCalled();
     });
 
     it('cusip-map done but the 13F backfill not finished is still collecting', async () => {
@@ -59,7 +106,10 @@ describe('loadInvestorFlowsPipelineReadiness', () => {
                 { hasAnyShortRow: async () => false }
             )
         );
-        expect(result).toEqual({ institutional: 'ready', short: 'collecting' });
+        expect(result).toMatchObject({
+            institutional: 'ready',
+            short: 'collecting',
+        });
     });
 
     it('does not touch the FINRA tables while the flag is off, and reports short as unknown', async () => {

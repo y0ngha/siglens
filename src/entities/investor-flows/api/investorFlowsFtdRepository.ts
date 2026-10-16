@@ -1,6 +1,6 @@
 import 'server-only';
 import { affectedRows } from './affectedRows';
-import { sql } from 'drizzle-orm';
+import { isNotNull, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { secFtd, secFtdFiles } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -47,6 +47,20 @@ export class DrizzleInvestorFlowsFtdRepository {
                 { processed: row.processedAt !== null, attempts: row.attempts },
             ])
         );
+    }
+
+    /** 반월 파일이 하나라도 저장됐는가 — 수급 탭 "수집 중" 안내의 준비 상태(`loadInvestorFlowsPipelineReadiness`). */
+    async hasAnyProcessedFile(): Promise<boolean> {
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select({ fileKey: secFtdFiles.fileKey })
+                    .from(secFtdFiles)
+                    .where(isNotNull(secFtdFiles.processedAt))
+                    .limit(1),
+            DB_TRANSIENT_RETRY
+        );
+        return row !== undefined;
     }
 
     /** 저장하지 못한 파일을 기록하고 시도 횟수를 1 올린다(`processed_at`은 그대로 NULL). */

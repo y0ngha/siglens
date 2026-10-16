@@ -97,7 +97,8 @@ export const API_KEY_REVOKED_TOMBSTONE_TTL_SECONDS =
  * 단계가 쌓이는 LLM 컨텍스트를 지키려는 값이지만, API는 요청 하나가 도구 하나라 컨텍스트가
  * 자라지 않는다. 그래서 같은 형태의 결과를 덜 자르도록 올린다:
  * - `standard` 16,000: 에이전트 기본값의 4배. 잘리는 일을 드물게 하되 응답이 ~16KB를 넘지 않는다.
- * - `aggregate`/`guide` 24,000: 시장·경제 종합과 가이드 본문은 에이전트에서 6,000으로 접히던 값이다.
+ * - `aggregate`/`investorFlows`/`guide` 24,000: 시장·경제 종합·수급 요약과 가이드 본문은 에이전트에서 6,000~8,000으로 접히던
+ *   값이다.
  * - `cachedAnalysis` 32,000: 에이전트 상한(16,000)의 2배. 2026-09 실측 가장 큰 기술 분석
  *   (~8,300자)에 쉬운 말 재작성이 붙어도 여유가 있다. 예산도 같은 값(요청당 분석 도구 1회).
  * - `bars` 6,000: `get_bars_indicators`가 스스로 이 값에 맞춰 봉 수를 줄이므로 실행기 상한을
@@ -108,6 +109,7 @@ export const PUBLIC_API_RESULT_CAPS = {
     standard: 16_000,
     bars: 6_000,
     aggregate: 24_000,
+    investorFlows: 24_000,
     guide: 24_000,
     cachedAnalysis: 32_000,
     cachedAnalysisBudget: 32_000,

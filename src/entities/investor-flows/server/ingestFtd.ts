@@ -48,6 +48,11 @@ export interface IngestFtdDeps {
     now: () => Date;
     isDeadlineReached: () => boolean;
     invalidateSymbols: (symbols: readonly string[]) => void | Promise<void>;
+    /**
+     * 저장된 파일이 하나도 없던 상태에서 **처음** 파일이 저장된 실행이 한 번 부른다 — 수급 탭의 "결제 불이행 수집 중" 안내를 담은
+     * 준비 상태 캐시를 무효화한다(`runFinraIngest`의 `onFirstDataStored`와 같은 역할). 이후 실행은 부르지 않는다.
+     */
+    onFirstFileStored?: () => void | Promise<void>;
     log: (message: string, detail?: unknown) => void;
 }
 
@@ -70,6 +75,8 @@ export interface IngestFtdResult {
     rejectedFiles: string[];
     invalidated: number;
     pruned: number;
+    /** 이번 실행이 비어 있던 저장소에 처음으로 파일을 저장했는가(= 준비 상태가 `collecting` → `ready`로 바뀌었다). */
+    firstFileStored: boolean;
 }
 
 /**
@@ -140,6 +147,7 @@ export async function runFtdIngest(
         rejectedFiles: [],
         invalidated: 0,
         pruned: 0,
+        firstFileStored: false,
     };
     if (
         (await deps.repo.getState(INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE)) ===
@@ -158,6 +166,8 @@ export async function runFtdIngest(
 
     const symbols = new Set<string>();
     let stoppedBy: IngestFtdStop = 'complete';
+    // 실행 전에 저장된 파일이 있었는가 — 없었는데 이번에 저장했으면 준비 상태 전환이다. 목록 조회 전에 끝나면 판정하지 않는다.
+    let hadStoredFile = true;
     try {
         const html = await deps.sec.fetchFailsToDeliverListing();
         if (html === null) {
@@ -166,12 +176,14 @@ export async function runFtdIngest(
             );
             return { ...result, stoppedBy: 'listing_missing' };
         }
+        const states = await deps.repo.listFileStates();
+        hadStoredFile = [...states.values()].some(state => state.processed);
         const pending = pendingFiles(
             extractFtdFileLinks(html).slice(
                 0,
                 INVESTOR_FLOWS_FTD_BACKFILL_FILES
             ),
-            await deps.repo.listFileStates()
+            states
         );
         result.pendingFiles = pending.length;
         const reject = async (
@@ -255,10 +267,13 @@ export async function runFtdIngest(
         .toSorted()
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
     if (toInvalidate.length > 0) await deps.invalidateSymbols(toInvalidate);
+    const firstFileStored = !hadStoredFile && result.filesStored > 0;
+    if (firstFileStored) await deps.onFirstFileStored?.();
     return {
         ...result,
         stoppedBy,
         invalidated: toInvalidate.length,
         pruned,
+        firstFileStored,
     };
 }

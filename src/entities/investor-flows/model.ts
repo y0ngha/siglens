@@ -83,10 +83,19 @@ export interface PreviousSettlementChange {
  */
 export type PipelineStatus = 'ready' | 'collecting' | 'unknown';
 
-/** 종목과 무관한 수집 파이프라인 준비 상태 — 13F(기관)와 FINRA(공매도). 내부자·13D/G·유통주식은 FMP 라이브라 해당 없다. */
+/**
+ * 종목과 무관한 수집 파이프라인 준비 상태 — 13F(기관)·FINRA(공매도)·SEC FTD·SEC 공시(Form 144·증자)·Reg SHO 과열 목록.
+ * 내부자(Form 4)·13D/G·유통주식은 FMP 라이브라 해당 없다.
+ */
 export interface InvestorFlowsPipelineReadiness {
     readonly institutional: PipelineStatus;
     readonly short: PipelineStatus;
+    /** SEC 결제 불이행(FTD) 반월 파일 — 하나라도 저장됐으면 `ready`. */
+    readonly failsToDeliver: PipelineStatus;
+    /** SEC Form 144·증자 공시(`sec-13f` 실행 안의 공시 단계) — 커서가 최근 며칠까지 따라잡았으면 `ready`. */
+    readonly filings: PipelineStatus;
+    /** Reg SHO 과열 목록 — 플래그가 꺼져 있으면 `unknown`(해당 없음). */
+    readonly thresholdList: PipelineStatus;
 }
 
 // ── 수급 확장(SEC FTD·Form 144·증자 공시·13F 옵션·Reg SHO) — 수집·저장용 내부 타입 ────────────────────────
@@ -246,7 +255,7 @@ export interface RegShoThresholdRow {
     market: string;
 }
 
-// ── 읽기 모델(TA.10 — 화면 연결은 후속 PR) ─────────────────────────────────────────────────────────────
+// ── 읽기 모델(스냅샷 조립이 core 타입으로 옮긴다) ─────────────────────────────────────────────────────────────
 
 /** 심볼의 결제일별 FTD(여러 CUSIP은 합산). */
 export interface FtdPointRecord {

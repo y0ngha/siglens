@@ -70,6 +70,7 @@ export function createSec13fDeps(
             now,
             isDeadlineReached,
             invalidateSymbols: symbols => revalidateSymbols(symbols),
+            onCaughtUp: revalidateFlowsReadiness,
             log,
         },
     };

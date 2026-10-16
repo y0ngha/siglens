@@ -37,9 +37,36 @@ test.describe('flows: 수집 중 안내', () => {
         await expect(
             short.getByText('FINRA 공매도 데이터를 모으는 중이에요')
         ).toBeVisible();
+        await expect(
+            short.getByText('결제 불이행 데이터를 모으는 중이에요')
+        ).toBeVisible();
+        await expect(
+            short.getByText('과열 목록을 모으는 중이에요.')
+        ).toBeVisible();
     });
 
-    test('점수 카드는 기관·공매도 축을 "수집 중"으로 말하고 내부자는 그대로 점수를 낸다', async ({
+    test('Form 144·증자 공시 자리는 "공시 없음" 대신 SEC 공시를 모으는 중이라고 말한다', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL/flows');
+
+        await expect(
+            page
+                .getByTestId('flows-form144')
+                .getByText('SEC 공시를 모으는 중이에요')
+        ).toBeVisible();
+        const dilution = page.locator(
+            'section[aria-labelledby="flows-dilution-heading"]'
+        );
+        await expect(
+            dilution.getByText('SEC 공시를 모으는 중이에요')
+        ).toBeVisible();
+        await expect(
+            dilution.getByText('접수된 증자·희석 공시가 없어요.')
+        ).toHaveCount(0);
+    });
+
+    test('점수 카드는 기관·공매도·증자 희석 축을 "수집 중"으로 말하고 내부자는 그대로 점수를 낸다', async ({
         page,
     }) => {
         await page.goto('/AAPL/flows');
@@ -47,7 +74,7 @@ test.describe('flows: 수집 중 안내', () => {
         const scorecard = page.locator(
             'section[aria-labelledby="flows-scorecard-heading"]'
         );
-        await expect(scorecard.getByText('수집 중')).toHaveCount(2);
+        await expect(scorecard.getByText('수집 중')).toHaveCount(3);
         await expect(scorecard.getByText('데이터 부족')).toHaveCount(0);
         const insider = scorecard
             .getByRole('heading', { level: 3, name: /^내부자/ })

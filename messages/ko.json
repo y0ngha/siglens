@@ -2811,7 +2811,7 @@
                     "get_economy": "미국 정책금리·물가·고용·GDP 같은 거시 지표와 국채 금리, 앞으로의 주요 경제 일정, 시그렌즈 거시 브리핑을 줘요. 인자는 필요 없어요.",
                     "get_fundamentals": "기업 개요, 밸류에이션 지표, 수익성·성장·재무 건전성 점수, 애널리스트 컨센서스와 목표가, 다음 실적 발표일을 줘요. 미국·한국 주식 전용이고 암호화폐는 지원하지 않아요.",
                     "get_guide": "캔들 패턴·차트 패턴·보조지표·투자 이론 같은 기술적 분석 개념을 시그렌즈 가이드로 설명해 줘요. 종목 없이 \"이게 뭐예요?\"를 물을 때 쓰고, 가이드 페이지 주소도 함께 줘요.",
-                    "get_investor_flows": "미국 주식의 수급, 즉 누가 사고파는지를 줘요. 기관·내부자·5% 보유자·공매도 점수표와 상위 기관 보유, 내부자 거래, 대량보유 공시, 공매도 데이터를 담아요. 공시가 늦게 나오는 데이터라 항목마다 기준일도 함께 돌려줘요.",
+                    "get_investor_flows": "미국 주식의 수급, 즉 누가 사고파는지를 줘요. 기관·내부자·5% 보유자·공매도·증자 희석 점수표와 상위 기관 보유·13F 풋콜, 내부자 거래와 매도 예정 신고(Form 144), 대량보유·증자 공시, 공매도·결제 불이행·과열 목록 데이터, 숏스퀴즈 점수를 담아요. 공시가 늦게 나오는 데이터라 항목마다 기준일도 함께 돌려줘요.",
                     "get_market_overview": "시장 전체의 공포·탐욕 지수와 주요 지수·섹터 등락, 시그렌즈의 시장 브리핑, 섹터별 신호 스캔 결과를 줘요. \"오늘 시장 어때?\"를 물을 때 써요.",
                     "get_my_portfolio": "로그인한 사용자의 보유 종목을 수량·평균 단가·평가손익·비중과 함께 돌려줘요. 내 포지션이나 손익을 물을 때만 써요.",
                     "get_news": "시그렌즈가 모아 둔 종목 또는 시장 카테고리 뉴스를 감성과 요약, 건수 집계와 함께 돌려줘요. 소식이나 \"왜 움직였나\"를 알아볼 때 써요.",
@@ -4357,6 +4357,11 @@
             "asOf": {
                 "collecting": "수집 중",
                 "delay": "13F는 분기말 보유 현황을 분기가 끝나고 최대 45일 안에 제출해요. 그래서 이 화면의 기관 수치는 지금이 아니라 한두 달 이상 지난 시점의 모습이에요.",
+                "filingsNone": "데이터 없음",
+                "filingsWindow": "{from} ~ {to} (최근 {days}일)",
+                "ftdDate": "결제일 {date}",
+                "ftdDelay": "결제 불이행(FTD)은 SEC가 반월마다 약 2주 뒤에 공개해서, 가장 최근 2주 남짓은 아직 빠져 있어요.",
+                "ftdNone": "데이터 없음",
                 "insiderNone": "데이터 없음",
                 "insiderWindow": "{from} ~ {to} (최근 {days}일)",
                 "institutionalComplete": "{period} 분기말 · 제출 완료",
@@ -4366,16 +4371,23 @@
                 "shortInterestNone": "데이터 없음",
                 "shortVolumeDate": "마지막 거래일 {date}",
                 "shortVolumeNone": "데이터 없음",
-                "sources": "출처: 미국 SEC EDGAR의 13F(기관 보유), Form 4·13D/G(내부자·대량보유, FMP 제공).",
-                "sourcesWithFinra": "출처: 미국 SEC EDGAR의 13F(기관 보유), Form 4·13D/G(내부자·대량보유, FMP 제공), FINRA(공매도 잔고·장외 보고분 거래).",
+                "sources": "출처: 미국 SEC EDGAR의 13F(기관 보유·옵션), Form 144, 증자 공시, 결제 불이행(FTD), Form 4·13D/G(내부자·대량보유, FMP 제공).",
+                "sourcesWithExchange": "{sources} Reg SHO 과열 목록은 Nasdaq·NYSE·Cboe가 게시한 자료예요.",
+                "sourcesWithFinra": "출처: 미국 SEC EDGAR의 13F(기관 보유·옵션), Form 144, 증자 공시, 결제 불이행(FTD), Form 4·13D/G(내부자·대량보유, FMP 제공), FINRA(공매도 잔고·장외 보고분 거래).",
+                "termFilings": "Form 144·증자 공시",
+                "termFtd": "결제 불이행(FTD)",
                 "termInsider": "내부자 거래",
                 "termInstitutional": "기관 보유(13F)",
                 "termShortInterest": "공매도 잔고",
                 "termShortVolume": "일별 공매도 비중",
                 "termSnapshot": "조회 기준일",
+                "termThreshold": "Reg SHO 과열 목록",
+                "thresholdDate": "{date} 목록",
+                "thresholdNone": "데이터 없음",
                 "title": "기준 시점·출처"
             },
             "axis": {
+                "dilution": "증자·희석",
                 "insider": "내부자",
                 "institutional": "기관",
                 "largeHolders": "대량보유(5%)",
@@ -4387,6 +4399,14 @@
                     "bodyInstitutionalOnly": "기관 보유(13F) 데이터를 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
                     "title": "수급 데이터를 모으는 중이에요"
                 },
+                "failsToDeliver": {
+                    "body": "SEC가 공개하는 결제 불이행(FTD) 파일을 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
+                    "title": "결제 불이행 데이터를 모으는 중이에요"
+                },
+                "filings": {
+                    "body": "Form 144와 증자 관련 공시를 처음부터 모으고 있어요. 최근 공시까지 채워지면 이 자리에 자동으로 표시돼요.",
+                    "title": "SEC 공시를 모으는 중이에요"
+                },
                 "institutional": {
                     "body": "SEC 13F 공시를 처음 모으고 있어요. 며칠 안에 채워지면 이 자리에 자동으로 표시돼요.",
                     "title": "기관 보유 데이터를 모으는 중이에요"
@@ -4396,25 +4416,51 @@
                     "title": "FINRA 공매도 데이터를 모으는 중이에요"
                 }
             },
+            "dilution": {
+                "filing": "SEC 원문",
+                "kind": {
+                    "atm": "ATM",
+                    "bestEfforts": "모집 주선",
+                    "other": "기타",
+                    "privatePlacement": "사모",
+                    "prospectus": "투자설명서",
+                    "registration": "등록",
+                    "shelf": "선반 등록",
+                    "underwritten": "인수"
+                },
+                "none": "접수된 증자·희석 공시가 없어요.",
+                "omitted": "오래된 공시 {count}건은 목록에서 뺐어요.",
+                "source": "출처: 미국 SEC EDGAR(S-1·S-3·F-1·F-3·424B·Form D).",
+                "subtitle": "회사가 새 주식을 발행해 팔 수 있도록 SEC에 낸 공시예요. 실제로 팔면 기존 주주의 지분이 그만큼 묽어져요.",
+                "title": "증자·희석 공시",
+                "unavailable": "증자·희석 공시를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.",
+                "window": "점수는 최근 {days}일({from} ~ {to}) 공시로 매겨요."
+            },
             "empty": {
                 "body": "데이터 없음 — 이 종목은 기관 보유(13F)·내부자·공매도 데이터가 아직 없어요. 신규 상장이거나 거래 규모가 작은 종목에서 흔해요.",
                 "title": "수급 데이터"
             },
             "ev": {
                 "daysToCover": "상환일수 {days}일",
+                "dilutionFilings": "최근 {days}일 증자·등록 공시 {count}건",
+                "dilutionIssuance": "ATM {atm}건 · 공모 {marketed}건",
+                "ftdPct": "결제 불이행 최대 {pct} (발행주식 대비)",
                 "holders": "보유 기관 {count}곳 (직전 분기 대비 {change})",
                 "holdersOnly": "보유 기관 {count}곳",
                 "insiderCluster": "클러스터 매수: 서로 다른 내부자 {count}명",
                 "insiderCounts": "매수 {buys}건 · 매도 {sells}건",
                 "insiderNetBuy": "최근 {days}일 순매수 {amount}",
                 "insiderNetSell": "최근 {days}일 순매도 {amount}",
+                "insiderProposedSales": "매도 예정 신고(Form 144) {count}건 · {amount}",
                 "largeHolderCounts": "13D {d}건 · 13G {g}건 (최근 {days}일)",
                 "netSharesOutstanding": "기관 보유 주식 순변화 {pct} (발행주식 대비)",
                 "netSharesPrior": "기관 보유 주식 순변화 {pct} (직전 분기 보유량 대비)",
                 "newExited": "신규 진입 {added}곳 · 완전 청산 {exited}곳",
+                "putCallRatio": "13F 옵션 풋/콜 명목 비율 {ratio}",
                 "shortPct": "공매도 잔고 {pct} (유통주식 대비)",
                 "shortRatio": "장외 공매도 비중 {pct} (최근 거래일)",
-                "shortTrend": "잔고 변화 {pct} (최근 3회 결제일 기준)"
+                "shortTrend": "잔고 변화 {pct} (최근 3회 결제일 기준)",
+                "thresholdListed": "과열 목록 {days}거래일 연속 등재"
             },
             "filter": {
                 "all": "전체 {count}",
@@ -4428,6 +4474,36 @@
                 "out": "OUT",
                 "partial": "부분 집계",
                 "title": "분기별 기관 순매수(IN)·순매도(OUT)"
+            },
+            "form144": {
+                "caption": "임원·이사·대주주가 주식을 팔기 전에 내는 신고예요. 팔 계획을 알린 것이라 실제 매도는 나중에 Form 4로 따로 나와요.",
+                "colFiled": "신고일",
+                "colFiler": "신고자",
+                "colFiling": "공시",
+                "colSaleDate": "매도 예정일",
+                "colShares": "예정 수량",
+                "colValue": "예정 금액",
+                "filing": "공시 보기",
+                "none": "접수된 매도 예정 신고가 없어요.",
+                "omitted": "오래된 신고 {count}건은 목록에서 뺐어요.",
+                "planBadge": "10b5-1 계획",
+                "relationshipUnknown": "관계 미기재",
+                "title": "매도 예정 신고 (Form 144)",
+                "unavailable": "매도 예정 신고를 불러오지 못했어요. 잠시 후 다시 확인해 주세요."
+            },
+            "ftd": {
+                "basis": "가장 최근 기록은 결제일 {date}예요.",
+                "caveat": "결제 불이행은 무차입 공매도의 증거가 아니에요. 매매 결제가 제때 끝나지 않았다는 기록일 뿐이고, 원인은 여러 가지예요(SEC 안내).",
+                "chartAria": "결제 불이행이 있던 {count}개 결제일의 수량 막대 그래프",
+                "lag": "SEC는 매달 상·하반월 자료를 약 2주 뒤에 공개해요. 그래서 가장 최근 2주 남짓은 아직 비어 있어요.",
+                "latestQty": "최근 결제 불이행",
+                "multiple": "최근 최대치(평소 대비)",
+                "none": "최근 {days}일 동안 결제 불이행 기록이 없어요.",
+                "peakPct": "최근 최대치(발행주식 대비)",
+                "shares": "{shares}주",
+                "times": "{times}배",
+                "title": "결제 불이행 (SEC FTD)",
+                "unavailable": "결제 불이행 자료를 불러오지 못했어요. 잠시 후 다시 확인해 주세요."
             },
             "holders": {
                 "basis": "{period} 분기말 보유 기준이고, 변화는 직전 분기와 비교한 값이에요.",
@@ -4502,6 +4578,15 @@
                 "unavailable": "대량보유 공시를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.",
                 "unknownFiler": "제출자 미상"
             },
+            "options": {
+                "call": "콜",
+                "caveat": "13F에 보고된 옵션의 기초자산 금액이에요. 옵션 가격(프리미엄)이 아니고, 보유 주식을 지키려는 헤지일 때가 많아요.",
+                "put": "풋",
+                "ratio": "{period} 풋/콜 명목 비율 {ratio}",
+                "ratioWithPrior": "{period} 풋/콜 명목 비율 {ratio} (직전 분기 {prior})",
+                "title": "옵션 포지션 (풋·콜 명목)",
+                "value": "{amount} · {holders}곳"
+            },
             "scorecard": {
                 "axisCollecting": "데이터를 모으는 중이라 아직 점수에 반영하지 않았어요.",
                 "axisInsufficient": "데이터가 부족해 점수에 반영하지 않았어요.",
@@ -4533,7 +4618,7 @@
                 "qty": "공매도 잔고(주)",
                 "squeezeBadge": "숏스퀴즈 위험",
                 "squeezeNote": "공매도 잔고가 유통주식의 {pct}, 상환일수가 {days}일로 높은 편이에요. 주가가 오르면 되사려는 수요가 한꺼번에 몰릴 수 있어요.",
-                "subtitle": "주식을 빌려 팔고 아직 갚지 않은 물량과, 거래일마다의 장외 공매도 비중을 봐요.",
+                "subtitle": "주식을 빌려 팔고 아직 갚지 않은 물량, 거래일마다의 장외 공매도 비중, 결제 불이행을 봐요.",
                 "title": "공매도",
                 "trendFalling": "최근 흐름: 감소 추세",
                 "trendFlat": "최근 흐름: 보합",
@@ -4559,6 +4644,41 @@
                 "noPrevious": "비교할 직전 분기가 없어요",
                 "title": "직전 분기 대비 기관 움직임"
             },
+            "squeeze": {
+                "capped": "공매도 잔고 자료가 없어 결제 불이행과 가격만으로 계산했어요. 이럴 때는 '주의'보다 높게 보지 않아요.",
+                "component": {
+                    "days_to_cover": "상환일수",
+                    "fails_to_deliver_pct": "결제 불이행(발행주식 대비)",
+                    "off_exchange_short_ratio_z": "장외 공매도 비중 변화",
+                    "price_change_20d": "최근 20거래일 주가 변화",
+                    "short_interest_pct_float": "공매도 잔고(유통주식 대비)",
+                    "short_interest_trend": "잔고 증가세",
+                    "threshold_list_days": "과열 목록 연속 등재",
+                    "volume_ratio": "거래량(평소 대비)"
+                },
+                "insufficient": "공매도 쪽 데이터가 부족해 점수를 내지 않았어요.",
+                "level": {
+                    "elevated": "주의",
+                    "extreme": "매우 높음",
+                    "high": "높음",
+                    "low": "낮음"
+                },
+                "partial": "입력 {count}개가 없어 나머지 입력으로 비중을 다시 맞췄어요.",
+                "points": "+{points}점",
+                "score": "{score} / 100",
+                "sourceExchange": "거래소 과열 목록",
+                "sourceFinra": "FINRA 공매도",
+                "sourcePrice": "일봉 가격·거래량",
+                "sourceSec": "SEC 결제 불이행",
+                "sources": "반영한 자료: {sources}",
+                "sourcesWithPrice": "반영한 자료: {sources} (가격은 {date} 종가까지)",
+                "title": "숏스퀴즈 점수",
+                "unit": {
+                    "days": "{value}일",
+                    "multiple": "{value}배",
+                    "z": "z점수 {value}"
+                }
+            },
             "status": {
                 "decreased": "감소",
                 "exited": "청산",
@@ -4566,14 +4686,35 @@
                 "new": "신규",
                 "unchanged": "유지"
             },
+            "threshold": {
+                "collecting": "과열 목록을 모으는 중이에요.",
+                "listedBadge": "과열 목록 등재",
+                "listedDetail": "{days}거래일 연속 · {markets}",
+                "notListed": "지금은 과열 목록에 없어요.",
+                "source": "출처: Nasdaq·NYSE·Cboe",
+                "sourceWithDate": "출처: Nasdaq·NYSE·Cboe ({date} 목록 기준)",
+                "title": "Reg SHO 과열 목록"
+            },
             "tooltip": {
                 "daysToCover": [
                     "상환일수(Days to Cover)는 공매도 잔고를 평균 거래량으로 나눈 값으로, 공매도한 물량을 모두 되사는 데 며칠 걸리는지를 뜻해요.",
                     "숫자가 클수록 되사기가 어려워질 수 있어요."
                 ],
+                "dilution": [
+                    "증자는 회사가 새 주식을 발행해 파는 일이에요. 주식 수가 늘어 기존 주주의 지분 비율이 줄어드는 것을 희석이라고 해요.",
+                    "선반 등록은 앞으로 팔 수 있게 미리 등록만 해 둔 것이라 바로 주식이 풀리지는 않아요. ATM과 인수 공모는 실제 매도에 가까워요."
+                ],
+                "failsToDeliver": [
+                    "결제 불이행(FTD)은 주식을 판 쪽이 결제일까지 주식을 넘기지 못한 수량이에요. SEC가 반월마다 공개해요.",
+                    "결제가 늦어지는 이유는 여러 가지라, 이것만으로 무차입 공매도가 있었다고 볼 수는 없어요."
+                ],
                 "flowScore": [
-                    "기관·내부자·대량보유·공매도 흐름을 점수(-100~+100)로 합친 값이에요. 높을수록 강세 쪽 신호가 많다는 뜻이에요.",
+                    "기관·내부자·대량보유·공매도·증자 흐름을 점수(-100~+100)로 합친 값이에요. 높을수록 강세 쪽 신호가 많다는 뜻이에요.",
                     "과거 공시를 규칙으로 계산한 참고 지표이고, 앞으로의 주가를 알려 주지는 않아요."
+                ],
+                "form144": [
+                    "Form 144는 임원·이사·대주주 같은 계열인이 주식을 팔기 전에 SEC에 내는 매도 예정 신고예요.",
+                    "10b5-1 계획에 따른 매도는 미리 정해 둔 일정대로 파는 것이라, 그때그때 판단한 매도와는 성격이 달라요."
                 ],
                 "form4": [
                     "Form 4는 임원·이사·10% 이상 주주 같은 내부자가 자기 회사 주식을 사거나 팔면 2영업일 안에 내는 신고서예요.",
@@ -4607,6 +4748,10 @@
                     "그날 장외(TRF)에서 보고된 거래 중 공매도가 차지한 비율이에요.",
                     "거래소 안에서 체결된 공매도는 빠져 있어서 전체 공매도 비중보다 작게 보일 수 있어요."
                 ],
+                "optionsNotional": [
+                    "13F에 보고된 풋·콜 옵션의 기초자산 금액이에요. 옵션을 사는 데 쓴 돈(프리미엄)이 아니에요.",
+                    "기관은 갖고 있는 주식을 지키려고 풋을 사기도 해서, 풋이 많다고 하락에 걸었다고 볼 수는 없어요."
+                ],
                 "partialAggregation": [
                     "부분 집계는 아직 13F 제출 기한이 지나지 않아 일부 기관의 보고만 모인 상태예요.",
                     "수치가 작아 보여도 줄어든 게 아닐 수 있어서, 점수에는 제출이 끝난 분기만 써요."
@@ -4627,9 +4772,17 @@
                     "숏스퀴즈는 공매도한 쪽이 손실을 줄이려고 주식을 한꺼번에 되사면서 주가가 가파르게 오르는 현상이에요.",
                     "공매도 잔고 비중과 상환일수가 모두 높을 때 가능성이 커지지만, 반드시 일어나는 건 아니에요."
                 ],
+                "squeezeScore": [
+                    "숏스퀴즈 점수(0~100)는 공매도 잔고·상환일수·결제 불이행·과열 목록과 최근 주가·거래량을 규칙대로 합친 값이에요. 높을수록 공매도한 쪽이 한꺼번에 되사야 할 압력이 크다는 뜻이에요.",
+                    "빠진 자료는 남은 자료로 비중을 다시 맞춰요. 점수가 높다고 주가가 오른다는 보장은 없어요."
+                ],
                 "thirteenF": [
                     "13F는 운용 규모가 큰 기관이 분기마다 미국 SEC에 내는 보유 주식 보고서예요.",
                     "분기가 끝나고 최대 45일 뒤에 공개돼서, 지금이 아니라 지난 분기말 시점의 보유 현황이에요."
+                ],
+                "thresholdList": [
+                    "Reg SHO 과열 목록(threshold list)은 결제 불이행이 5결제일 연속으로 일정 규모를 넘은 종목을 거래소가 매일 올리는 목록이에요.",
+                    "목록에 13거래일 넘게 머물면 규정상 남은 결제 불이행을 정리해야 해요."
                 ]
             }
         },

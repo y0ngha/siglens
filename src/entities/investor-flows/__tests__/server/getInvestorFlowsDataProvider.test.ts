@@ -3,10 +3,11 @@ import { getInvestorFlowsDataProvider } from '../../server/getInvestorFlowsDataP
 
 vi.mock('server-only', () => ({}));
 
-const { mockClient, mockFmp, mockEnabled } = vi.hoisted(() => ({
+const { mockClient, mockFmp, mockEnabled, mockRegSho } = vi.hoisted(() => ({
     mockClient: vi.fn(),
     mockFmp: vi.fn(),
     mockEnabled: vi.fn(() => true),
+    mockRegSho: vi.fn(() => true),
 }));
 vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
 vi.mock('@/shared/api/fmp/getInvestorFlowsFmpProvider', () => ({
@@ -17,12 +18,45 @@ vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: mockE2E }));
 vi.mock('@/shared/api/finra/finraShortDataEnabled', () => ({
     isFinraShortDataEnabled: mockEnabled,
 }));
+vi.mock('@/shared/api/exchange/regShoThresholdDataEnabled', () => ({
+    isRegShoThresholdDataEnabled: mockRegSho,
+}));
+
+/** 모든 쿼리가 자기 select 열을 기록하고 빈 결과를 돌려주는 db. raw `execute`(FTD)도 빈 결과다. */
+function recordingDb(executed: string[]) {
+    const chain: unknown = new Proxy(() => undefined, {
+        get(_t, prop) {
+            if (prop === 'then')
+                return (resolve: (v: unknown) => unknown) => resolve([]);
+            return () => chain;
+        },
+        apply: () => chain,
+    });
+    return {
+        select: (cols: unknown) => {
+            executed.push(JSON.stringify(Object.keys((cols ?? {}) as object)));
+            return chain;
+        },
+        execute: async () => {
+            executed.push('execute');
+            return [];
+        },
+    };
+}
+
+const EMPTY_FMP = {
+    getInsiderTrades: async () => [],
+    getInsiderStatistics: async () => [],
+    getBeneficialOwnership: async () => [],
+    getSharesFloat: async () => null,
+};
 
 describe('getInvestorFlowsDataProvider', () => {
     beforeEach(() => {
         mockClient.mockReset();
         mockFmp.mockReset();
         mockEnabled.mockReturnValue(true);
+        mockRegSho.mockReturnValue(true);
         mockE2E.mockReturnValue(false);
     });
 
@@ -45,40 +79,33 @@ describe('getInvestorFlowsDataProvider', () => {
         ).toBeTypeOf('function');
     });
 
-    it('does not touch FINRA tables when the flag is off (end to end through the real reads wiring)', async () => {
+    it('does not touch FINRA or Reg SHO tables when both flags are off (end to end through the real reads wiring)', async () => {
         mockEnabled.mockReturnValue(false);
+        mockRegSho.mockReturnValue(false);
         const executed: string[] = [];
-        // A db whose every query records itself and returns no rows.
-        const chain: unknown = new Proxy(() => undefined, {
-            get(_t, prop) {
-                if (prop === 'then')
-                    return (resolve: (v: unknown) => unknown) => resolve([]);
-                return () => chain;
-            },
-            apply: () => chain,
-        });
-        mockClient.mockReturnValue({
-            db: {
-                select: (cols: unknown) => {
-                    executed.push(
-                        JSON.stringify(Object.keys((cols ?? {}) as object))
-                    );
-                    return chain;
-                },
-            },
-        });
-        mockFmp.mockReturnValue({
-            getInsiderTrades: async () => [],
-            getInsiderStatistics: async () => [],
-            getBeneficialOwnership: async () => [],
-            getSharesFloat: async () => null,
-        });
+        mockClient.mockReturnValue({ db: recordingDb(executed) });
+        mockFmp.mockReturnValue(EMPTY_FMP);
         const snapshot =
             await getInvestorFlowsDataProvider().getInvestorFlowsSnapshot(
                 'AAPL'
             );
         expect(snapshot).toBeNull();
-        // only the cusip lookup (`cusip`) ran; no settlementDate/tradeDate (FINRA) selects
-        expect(executed).toEqual(['["cusip"]']);
+        // FINRA(settlementDate·shortQty / tradeDate·shortVolume)와 Reg SHO(tradeDate·market, 상태 키) select가 없다.
+        expect(executed.some(cols => cols.includes('shortQty'))).toBe(false);
+        expect(executed.some(cols => cols.includes('tradeDate'))).toBe(false);
+        expect(executed.some(cols => cols.includes('value'))).toBe(false);
+        // cusip 조회·FTD(raw execute)·Form 144(전체 열)·증자 공시는 플래그와 무관하게 읽는다.
+        expect(executed).toContain('["cusip"]');
+        expect(executed).toContain('execute');
+    });
+
+    it('reads the Reg SHO listings and the ingested-dates state while that flag is on', async () => {
+        mockEnabled.mockReturnValue(false);
+        const executed: string[] = [];
+        mockClient.mockReturnValue({ db: recordingDb(executed) });
+        mockFmp.mockReturnValue(EMPTY_FMP);
+        await getInvestorFlowsDataProvider().getInvestorFlowsSnapshot('AAPL');
+        expect(executed).toContain('["tradeDate","market"]');
+        expect(executed).toContain('["value"]');
     });
 });

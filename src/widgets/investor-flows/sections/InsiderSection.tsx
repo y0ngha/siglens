@@ -3,6 +3,7 @@ import type {
     InsiderMetrics,
     InsiderTransaction,
     InvestorFlowsScorecard,
+    ProposedSale,
 } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
@@ -13,11 +14,16 @@ import { formatInteger } from '../utils/flowFormat';
 import { buildInsiderTable } from '../utils/insider';
 import { InsiderSummaryCards } from './InsiderSummaryCards';
 import { InsiderTradeList } from './InsiderTradeList';
+import { ProposedSalesBlock } from './ProposedSalesBlock';
 
 const HEADING_ID = 'flows-insider-heading';
 
 interface InsiderSectionProps {
     readonly transactions: readonly InsiderTransaction[];
+    /** Form 144. `undefined` = 이 원천이 스냅샷에 없다(조회 실패). */
+    readonly proposedSales: readonly ProposedSale[] | undefined;
+    /** Form 144 수집이 최근까지 따라잡지 못했다(구간이 비어 있을 때만 참). */
+    readonly proposedSalesCollecting: boolean;
     readonly scorecard: InvestorFlowsScorecard;
 }
 
@@ -53,11 +59,13 @@ function InsiderBody({ transactions, metrics, windowDays }: InsiderBodyProps) {
 }
 
 /**
- * 내부자 거래(Form 4) 섹션 — 최근 90일 순매수/순매도 요약, 클러스터 매수 배지, 거래 목록.
+ * 내부자 거래 섹션 — 최근 90일 순매수/순매도 요약, 클러스터 매수 배지, 거래 목록(Form 4), 그 아래 매도 예정 신고(Form 144).
  * 요약은 core 점수표(`insider.metrics`, 창 길이는 `freshness.insiderWindow`)를 그대로 쓴다. 데이터가 없으면 "데이터 없음".
  */
 export function InsiderSection({
     transactions,
+    proposedSales,
+    proposedSalesCollecting,
     scorecard,
 }: InsiderSectionProps) {
     const t = useTranslations('widgets.investor-flows');
@@ -90,6 +98,10 @@ export function InsiderSection({
                 transactions={transactions}
                 metrics={metrics}
                 windowDays={insiderWindow.days}
+            />
+            <ProposedSalesBlock
+                sales={proposedSales}
+                collecting={proposedSalesCollecting}
             />
         </section>
     );

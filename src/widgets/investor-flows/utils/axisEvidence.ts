@@ -69,6 +69,16 @@ function institutionalLines(
                       },
                   },
               ]),
+        ...(m.putCallValueRatio === null
+            ? []
+            : [
+                  {
+                      id: 'putCallRatio',
+                      values: {
+                          ratio: formatDecimal(m.putCallValueRatio, locale, 2),
+                      },
+                  },
+              ]),
     ];
 }
 
@@ -104,6 +114,20 @@ function insiderLines(
                   },
               ]
             : []),
+        ...(m.proposedSaleCount === 0
+            ? []
+            : [
+                  {
+                      id: 'insiderProposedSales',
+                      values: {
+                          count: formatInteger(m.proposedSaleCount, locale),
+                          amount: formatUsdCompact(
+                              m.proposedSaleValueUsd,
+                              locale
+                          ),
+                      },
+                  },
+              ]),
     ];
 }
 
@@ -183,6 +207,67 @@ function shortLines(
                       },
                   },
               ]),
+        ...(m.failsToDeliverPctOutstanding === null
+            ? []
+            : [
+                  {
+                      id: 'ftdPct',
+                      values: {
+                          pct: formatPercent(
+                              m.failsToDeliverPctOutstanding,
+                              locale,
+                              2
+                          ),
+                      },
+                  },
+              ]),
+        ...(m.thresholdListed === true && m.thresholdConsecutiveDays !== null
+            ? [
+                  {
+                      id: 'thresholdListed',
+                      values: {
+                          days: formatInteger(
+                              m.thresholdConsecutiveDays,
+                              locale
+                          ),
+                      },
+                  },
+              ]
+            : []),
+    ];
+}
+
+function dilutionLines(
+    scorecard: InvestorFlowsScorecard,
+    locale: Locale
+): AxisEvidenceLine[] {
+    const m = scorecard.dilution.metrics;
+    if (m === null) return [];
+    return [
+        {
+            id: 'dilutionFilings',
+            values: {
+                count: formatInteger(m.filingsInWindow, locale),
+                days: formatInteger(
+                    scorecard.freshness.dilutionWindow.days,
+                    locale
+                ),
+            },
+        },
+        ...(m.atmFilings + m.marketedOfferingFilings === 0
+            ? []
+            : [
+                  {
+                      id: 'dilutionIssuance',
+                      values: {
+                          atm: formatInteger(m.atmFilings, locale),
+                          marketed: formatInteger(
+                              m.marketedOfferingFilings,
+                              locale
+                          ),
+                      },
+                  },
+              ]),
     ];
 }
 
@@ -205,5 +290,7 @@ export function buildAxisEvidence(
             return largeHolderLines(scorecard, locale);
         case 'short':
             return shortLines(scorecard, locale);
+        case 'dilution':
+            return dilutionLines(scorecard, locale);
     }
 }

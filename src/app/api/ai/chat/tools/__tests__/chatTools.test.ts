@@ -602,6 +602,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         standard: 9_000,
         bars: BARS_RESULT_MAX_CHARS,
         aggregate: 9_000,
+        investorFlows: 9_000,
         guide: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,

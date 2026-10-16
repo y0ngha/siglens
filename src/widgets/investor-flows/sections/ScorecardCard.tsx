@@ -31,6 +31,7 @@ const AXIS_TERM = {
     insider: 'form4',
     largeHolders: 'largeHolder13dg',
     short: 'shortInterest',
+    dilution: 'dilution',
 } as const;
 
 function LabelBadge({
@@ -108,8 +109,6 @@ function AxisCard({
 
 interface ScorecardCardProps {
     readonly scorecard: InvestorFlowsScorecard;
-    /** 공매도 구간을 화면에 그릴 때만 true — 아니면 공매도 축 카드도 그리지 않는다(빈 카드 대신 생략). */
-    readonly showShort: boolean;
     /**
      * 초기 수집이 끝나지 않아 비어 있는 축. 이 축은 "데이터 부족" 대신 "수집 중"으로 표시한다. 데이터가 있어 점수가
      * 매겨진 축은 목록에 있어도 영향이 없다(`insufficient`일 때만 바뀐다).
@@ -118,7 +117,10 @@ interface ScorecardCardProps {
 }
 
 /**
- * 수급 점수 카드 — 종합 점수와 축별(기관·내부자·대량보유·공매도) 방향 라벨, 각 근거 수치.
+ * 수급 점수 카드 — 종합 점수와 축별(기관·내부자·대량보유·공매도·증자 희석) 방향 라벨, 각 근거 수치.
+ *
+ * 축 카드는 다섯 개 모두 그린다 — 공매도 축은 FINRA가 꺼져도 SEC 결제 불이행·과열 목록을 중립 맥락으로 담고, 데이터가 없으면
+ * "데이터 부족"이라고 말한다(빈 카드로 숨기지 않는다).
  *
  * 점수·라벨은 core의 `evaluateInvestorFlows` 결과를 그대로 옮긴다(화면이 다시 계산하지 않는다). 방향은
  * 색 + 기호(▲▼■) + 글자 라벨 세 겹으로 전하고, 데이터가 부족한 축은 "데이터 부족"이라고 말한다(중립이 아니다). 초기 수집이
@@ -126,16 +128,12 @@ interface ScorecardCardProps {
  */
 export function ScorecardCard({
     scorecard,
-    showShort,
     collectingAxes = [],
 }: ScorecardCardProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     const { composite } = scorecard;
     const collectingSet = new Set(collectingAxes);
-    const axes = INVESTOR_FLOWS_AXES.filter(
-        axis => showShort || axis !== 'short'
-    );
     return (
         <section
             aria-labelledby={HEADING_ID}
@@ -167,7 +165,7 @@ export function ScorecardCard({
                 )}
             </div>
             <ul className="grid gap-3 md:grid-cols-2">
-                {axes.map(axis => (
+                {INVESTOR_FLOWS_AXES.map(axis => (
                     <AxisCard
                         key={axis}
                         axis={axis}
