@@ -70,4 +70,42 @@ describe('SymbolPageClient 가시 h1', () => {
         expect(h1).toHaveTextContent('애플, Apple Inc. (AAPL) 차트 분석');
         expect(h1).not.toHaveClass('sr-only');
     });
+
+    it('headingBadge를 h1과 같은 행에 렌더한다(모바일에서 차트 높이를 한 줄 더 쓰지 않는다)', () => {
+        render(
+            <SymbolPageClient
+                symbol="aapl"
+                companyName="Apple Inc."
+                displayName="애플, Apple Inc. (AAPL)"
+                initialAnalysis={FALLBACK_ANALYSIS}
+                initialAnalysisFailed={true}
+                indicatorCount={13}
+                skillCount={30}
+                headingBadge={<span>희석 배지</span>}
+            />
+        );
+        const badge = screen.getByText('희석 배지');
+        const h1 = screen.getByRole('heading', { level: 1 });
+        // h1과 형제 — 세로 스택의 다른 행이 아니다.
+        expect(badge.parentElement).toBe(h1.parentElement);
+        // DOM 순서: h1 → 배지.
+        expect(
+            h1.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('headingBadge가 없으면 바에 아무것도 더하지 않는다', () => {
+        render(
+            <SymbolPageClient
+                symbol="aapl"
+                companyName="Apple Inc."
+                displayName="애플, Apple Inc. (AAPL)"
+                initialAnalysis={FALLBACK_ANALYSIS}
+                initialAnalysisFailed={true}
+                indicatorCount={13}
+                skillCount={30}
+            />
+        );
+        expect(screen.queryByText('희석 배지')).toBeNull();
+    });
 });

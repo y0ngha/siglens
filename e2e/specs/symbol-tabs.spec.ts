@@ -185,4 +185,35 @@ test.describe('@webkit symbol tabs', () => {
             staleBanner.or(maxPainCard).or(emptyState).first()
         ).toBeVisible({ timeout: 15_000 });
     });
+
+    /**
+     * 차트 헤더 증자·희석 배지. 가짜 수급 공급자(`FakeInvestorFlowsDataProvider`)의 기본 종목은 오늘 기준 12일 전
+     * ATM 424B5를 가진다 — 날짜는 상대값이라 `MM/DD` 형태로만 단언한다. 수집 중 모드 서버는 증자 공시가 비어 배지가 없다.
+     */
+    test('@webkit chart header shows the dilution badge and links to the flows dilution section', async ({
+        page,
+    }) => {
+        test.skip(
+            process.env.E2E_FLOWS_PIPELINE === 'collecting',
+            '수집 중 모드에서는 증자 공시가 비어 배지가 없다'
+        );
+        await page.goto('/AAPL');
+        await settlePwaBanner(page);
+
+        const badge = page.getByRole('link', {
+            name: /^증자·희석: 최근 ATM\(시장가 상시 발행\) 공시 · \d{2}\/\d{2}$/,
+        });
+        await expect(badge).toBeVisible({ timeout: 15_000 });
+        await expect(badge).toHaveAccessibleDescription(
+            '최근 SEC 공시 기준이며, 실제 매도 규모는 공시로 알 수 없어요.'
+        );
+
+        await badge.click();
+        await page.waitForURL(/\/AAPL\/flows#flows-dilution-heading$/, {
+            timeout: 15_000,
+        });
+        await expect(page.locator('#flows-dilution-heading')).toBeVisible({
+            timeout: 15_000,
+        });
+    });
 });

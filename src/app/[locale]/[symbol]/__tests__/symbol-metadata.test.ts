@@ -141,6 +141,11 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
 vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     // page.tsx 본문이 import(generateMetadata 경로에선 미사용)하므로 stub만 제공.
     buildAssetAboutNode: vi.fn(() => undefined),
+    classifyAsset: vi.fn(() => 'stock'),
+}));
+// 헤더 증자·희석 배지 로더(DB·캐시) — 기본은 사건 없음.
+vi.mock('@/entities/investor-flows/server/getRecentDilutionEvent', () => ({
+    getRecentDilutionEvent: vi.fn(async () => null),
 }));
 
 vi.mock(

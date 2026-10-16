@@ -3041,6 +3041,11 @@
                 "b2e4d7": "참고 사항",
                 "f7e3fb": "의회 거래 동향 요약"
             },
+            "DilutionRiskBadge": {
+                "atm": "증자·희석: 최근 ATM(시장가 상시 발행) 공시 · {date}",
+                "note": "최근 SEC 공시 기준이며, 실제 매도 규모는 공시로 알 수 없어요.",
+                "priced": "증자·희석: 최근 공모 발행 공시 · {date}"
+            },
             "FearGreedFactsSummary": {
                 "asOfClose": "({v0} 종가 기준)",
                 "fa167e": "현재 점수",

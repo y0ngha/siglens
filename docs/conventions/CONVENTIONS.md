@@ -634,6 +634,18 @@ same applies to JSX: when wrapping an element that has a preceding comment block
 
 The inverse also holds: when removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left above the next declaration.
 
+```typescript
+// ❌ the new helper splits the JSDoc from fetchBars
+/** Fetches bars for a symbol. */
+function normalizeSymbol() {}
+function fetchBars() {}
+
+// ✅ inserted above the existing `/**`
+function normalizeSymbol() {}
+/** Fetches bars for a symbol. */
+function fetchBars() {}
+```
+
 <a id="CM-5"></a>
 
 #### CM-5 — Re-wrap a comment you lengthened

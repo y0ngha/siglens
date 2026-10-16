@@ -22,7 +22,7 @@ import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { Spinner } from '@/shared/ui/Spinner';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -108,6 +108,12 @@ interface SymbolPageClientProps {
      * 끝날 때까지 `ChartSkeleton`만 그리고, 차트는 브라우저에서 처음 마운트한다.
      */
     hasBarsSeed?: boolean;
+    /**
+     * 타임프레임 바(h1 행)에 붙는 서버 렌더 배지 — 지금은 증자·희석 배지(`DilutionRiskBadge`)뿐이다. 페이지(RSC)가
+     * 데이터·대상 판정까지 끝내고 엘리먼트로 넘기므로 첫 HTML에 이미 있다(하이드레이션 뒤 나타나 밀리는 일이 없다).
+     * 없으면 자리도 잡지 않는다.
+     */
+    headingBadge?: ReactNode;
 }
 
 export function SymbolPageClient({
@@ -122,6 +128,7 @@ export function SymbolPageClient({
     marketProfile,
     seedHasFormingBarTrimmed,
     hasBarsSeed = true,
+    headingBadge,
 }: SymbolPageClientProps) {
     const t = useTranslations('views.symbol');
     const { tier, isTierHydrated } = useSymbolModel();
@@ -190,6 +197,11 @@ export function SymbolPageClient({
                                     v0: displayName,
                                 })}
                             </h1>
+                            {/* 증자·희석 배지는 h1과 **같은 행**에 둔다. 모바일은 첫 뷰포트 높이를 차트 행과
+                                나눠 쓰므로 따로 한 줄을 쓰면 차트가 그만큼 줄어든다. 대신 폭을 나눈다 — 배지는
+                                `min-w-0`·truncate로 줄어들고(모바일 최대 절반), 전체 문구는 링크의 접근 가능한
+                                이름과 `title`에 그대로 있다. h1은 원래대로 두 줄까지 감긴다. */}
+                            {headingBadge}
                             {/*
                              * 분석 시트를 여는 명시적 버튼(모바일 전용).
                              *

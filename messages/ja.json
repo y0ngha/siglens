@@ -2512,6 +2512,11 @@
                 "b2e4d7": "注意事項",
                 "f7e3fb": "議会取引動向要約"
             },
+            "DilutionRiskBadge": {
+                "atm": "増資・希薄化：最近のATM（市場での随時発行）届出 · {date}",
+                "note": "最近のSEC届出に基づく表示で、実際の売却規模は届出からはわかりません。",
+                "priced": "増資・希薄化：最近の公募発行届出 · {date}"
+            },
             "FearGreedFactsSummary": {
                 "asOfClose": "({v0} 終値基準)",
                 "fa167e": "現在のスコア",

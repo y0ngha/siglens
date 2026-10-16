@@ -2512,6 +2512,11 @@
                 "b2e4d7": "Notes",
                 "f7e3fb": "Congressional Trades Trends Summary"
             },
+            "DilutionRiskBadge": {
+                "atm": "Dilution: recent ATM (at-the-market) offering filing · {date}",
+                "note": "Based on recent SEC filings; the actual amount sold can't be known from the filings.",
+                "priced": "Dilution: recent priced offering filing · {date}"
+            },
             "FearGreedFactsSummary": {
                 "asOfClose": "(as of {v0} close)",
                 "fa167e": "Current Score",
