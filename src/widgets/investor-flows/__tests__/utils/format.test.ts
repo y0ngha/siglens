@@ -7,6 +7,7 @@ import {
     formatSignedCompact,
     formatSignedDecimal,
     formatSignedPercent,
+    formatSmallPercent,
     formatUsdCompact,
 } from '../../utils/flowFormat';
 import { buildLineGeometry, segmentToPath } from '../../utils/linePath';
@@ -28,6 +29,16 @@ describe('flowFormat', () => {
         expect(formatPercent(12.34, 'en')).toBe('12.3%');
         expect(formatSignedPercent(-0.44, 'en')).toBe('-0.4%');
         expect(formatSignedPercent(0, 'en')).toBe('0.0%');
+    });
+
+    it('formatSmallPercent: 0이 아닌데 반올림하면 0이 되는 값은 하한(<0.001%), 0은 0%, 나머지는 그대로', () => {
+        expect(formatSmallPercent(0.0003, 'en', 3)).toBe('<0.001%');
+        expect(formatSmallPercent(-0.0003, 'en', 3)).toBe('>-0.001%');
+        expect(formatSmallPercent(0, 'en', 3)).toBe('0%');
+        // 반올림해 0.001이 되는 값은 하한 표기가 아니다.
+        expect(formatSmallPercent(0.0005, 'en', 3)).toBe('0.001%');
+        expect(formatSmallPercent(0.0123, 'en', 3)).toBe('0.012%');
+        expect(formatSmallPercent(0.25, 'ko', 3)).toBe('0.250%');
     });
 
     it('formatSignedDecimal은 반올림해서 0이면 부호를 붙이지 않는다', () => {

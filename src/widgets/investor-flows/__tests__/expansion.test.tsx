@@ -86,6 +86,32 @@ describe('SqueezeScoreCard', () => {
         expect(within(card).getByText('+22.0%')).toBeInTheDocument();
     });
 
+    it('과열 목록 연속 등재는 정수 거래일로, 등재되지 않았으면(0) "없음"으로 보인다(0.0일이 아니다)', () => {
+        const thresholdComponent = (value: number) => ({
+            id: 'threshold_list_days' as const,
+            value,
+            normalized: value > 0 ? 0.5 : 0,
+            weight: 0.1,
+            contribution: value > 0 ? 5 : 0,
+        });
+        const { unmount } = render(
+            <SqueezeScoreCard
+                risk={squeezeRisk({ components: [thresholdComponent(15)] })}
+            />
+        );
+        expect(screen.getByText('15거래일')).toBeInTheDocument();
+        unmount();
+
+        render(
+            <SqueezeScoreCard
+                risk={squeezeRisk({ components: [thresholdComponent(0)] })}
+            />
+        );
+        const card = screen.getByTestId('flows-squeeze-card');
+        expect(within(card).getByText('없음')).toBeInTheDocument();
+        expect(within(card).queryByText(/0\.0일/)).toBeNull();
+    });
+
     it('names the sources that went in, and the last close the price inputs used', () => {
         render(<SqueezeScoreCard risk={squeezeRisk()} />);
         expect(
@@ -186,6 +212,18 @@ describe('FailsToDeliverBlock', () => {
         );
         expect(screen.getByText('0.0006%')).toBeInTheDocument();
         expect(screen.queryByText('0.00%')).toBeNull();
+    });
+
+    it('shows a lower bound instead of 0.0000% when the share rounds to zero even at four decimals', () => {
+        render(
+            <FailsToDeliverBlock
+                points={makeFailsToDeliver()}
+                metrics={{ ...metrics, failsToDeliverPctOutstanding: 0.00002 }}
+                collecting={false}
+            />
+        );
+        expect(screen.getByText('<0.0001%')).toBeInTheDocument();
+        expect(screen.queryByText('0.0000%')).toBeNull();
     });
 
     it('draws the bar chart, the latest date and the SEC caveat and lag note', () => {
@@ -340,6 +378,19 @@ describe('ProposedSalesBlock', () => {
 });
 
 describe('DilutionSection', () => {
+    it('차트 배지가 점프하는 제목은 sticky 헤더 아래로 띄운다(scroll-mt)', () => {
+        render(
+            <DilutionSection
+                filings={[makeOffering()]}
+                scoringWindow={WINDOW}
+                collecting={false}
+            />
+        );
+        const heading = document.getElementById('flows-dilution-heading');
+        expect(heading).not.toBeNull();
+        expect(heading).toHaveClass('scroll-mt-24');
+    });
+
     it('shows kind badges as text, the form, date, SEC link and the scoring window', () => {
         render(
             <DilutionSection

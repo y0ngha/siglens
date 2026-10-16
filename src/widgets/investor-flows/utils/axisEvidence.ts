@@ -8,6 +8,7 @@ import {
     formatInteger,
     formatPercent,
     formatSignedCompact,
+    formatSmallPercent,
     formatSignedPercent,
     formatUsdCompact,
 } from './flowFormat';
@@ -214,7 +215,9 @@ function insiderLines(
                             {
                                 id: 'insiderProposedSalePct',
                                 values: {
-                                    pct: formatPercent(
+                                    // 대형주는 Form 144 몇 건이 발행주식의 0.001%도 안 된다 — `0.000%`가 아니라
+                                    // `<0.001%`로 보인다.
+                                    pct: formatSmallPercent(
                                         m.proposedSalePctOutstanding,
                                         locale,
                                         PROPOSED_SALE_PCT_DIGITS

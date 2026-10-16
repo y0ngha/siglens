@@ -39,6 +39,8 @@ function ComponentRow({
         percent: value,
         signedPercent: value,
         days: t('squeeze.unit.days', { value }),
+        tradingDays: t('squeeze.unit.tradingDays', { value }),
+        notListed: t('squeeze.unit.notListed'),
         z: t('squeeze.unit.z', { value }),
         multiple: t('squeeze.unit.multiple', { value }),
     };

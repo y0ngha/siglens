@@ -861,6 +861,18 @@ rule (what is counted, per what unit). When the behavior changes, change the tex
 - ❌ "Existing rows are left untouched" above a path that replaces them.
 - ✅ State the replacement and the condition under which it happens.
 
+<a id="CS-17"></a>
+
+#### CS-17 — Displayed and tool-emitted numbers keep the source's meaningful precision
+
+A formatter or tool projection must not round a small non-zero value to zero or print a fractional count with a
+spurious decimal. Choose the digits from the value's magnitude (or show `<0.001%`), and render whole-valued counts
+(days, items) as integers. A test fixture that expects the collapsed output locks the bug in: derive expected strings
+from the real source value, not from the formatter's current output.
+
+- ❌ `0.0004` formatted as `0.000%`, or a day count shown as `0.0일`.
+- ✅ `<0.001%`, or the value at enough digits to stay non-zero; `0일` / `3일` for whole counts.
+
 ---
 
 ## Layer Dependency Rules

@@ -582,6 +582,39 @@ describe('getCachedAnalysisTool', () => {
         );
     });
 
+    it('overall: Redis 적중 결과에 수급·재무 요약을 싣고, 수급 요약이 없는 결과는 빈 배열로 준다', async () => {
+        const base = {
+            headlineKo: 'h',
+            technicalBulletsKo: [],
+            fundamentalBulletsKo: [],
+            newsBulletsKo: [],
+            optionsBulletsKo: [],
+            financialsBulletsKo: ['재무 요점'],
+            integratedConclusionKo: 'c',
+            scenarios: [],
+            riskFactorsKo: [],
+        };
+        peekOverall.mockResolvedValueOnce({
+            ...base,
+            investorFlowsBulletsKo: ['수급 요점'],
+        });
+        const withFlows = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'overall' },
+            ctx,
+            rt
+        )) as { analysis: Record<string, unknown> };
+        expect(withFlows.analysis.investorFlows).toEqual(['수급 요점']);
+        expect(withFlows.analysis.financials).toEqual(['재무 요점']);
+
+        peekOverall.mockResolvedValueOnce(base);
+        const withoutFlows = (await getCachedAnalysisTool(
+            { symbol: 'BTCUSD', tab: 'overall' },
+            ctx,
+            rt
+        )) as { analysis: Record<string, unknown> };
+        expect(withoutFlows.analysis.investorFlows).toEqual([]);
+    });
+
     it('fundamental 탭은 캐시·스냅샷 다 miss면 history 조회 없이 found:false + hint', async () => {
         const r = await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'fundamental' },

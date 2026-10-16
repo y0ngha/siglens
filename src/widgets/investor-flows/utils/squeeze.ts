@@ -5,6 +5,7 @@ import type {
 import type { Locale } from '@/shared/i18n/locales';
 import {
     formatDecimal,
+    formatInteger,
     formatPercent,
     formatSignedPercent,
 } from './flowFormat';
@@ -25,22 +26,36 @@ export const SQUEEZE_LEVEL_MARK: Record<SqueezeRiskLevel, string> = {
     extreme: '▮▮▮▮',
 };
 
-type ValueUnit = 'percent' | 'signedPercent' | 'days' | 'z' | 'multiple';
+/**
+ * `tradingDays`는 과열 목록 연속 등재일(정수 거래일). 등재되지 않았으면(0) 숫자 대신 `notListed`로 바꿔 `0.0일` 같은
+ * 표기를 피한다 — 과열 목록 배지의 "지금은 과열 목록에 없어요"와 같은 뜻이다.
+ */
+type ValueUnit =
+    | 'percent'
+    | 'signedPercent'
+    | 'days'
+    | 'tradingDays'
+    | 'notListed'
+    | 'z'
+    | 'multiple';
+
+/** 원값의 단위. `notListed`는 값에서 정해지는 표시 단위라 여기 없다. */
+type ComponentUnit = Exclude<ValueUnit, 'notListed'>;
 
 /** 구성요소 값의 단위(core `SqueezeRiskComponent.value`는 각 입력의 원래 단위다). */
-const COMPONENT_UNIT: Record<SqueezeRiskComponentId, ValueUnit> = {
+const COMPONENT_UNIT: Record<SqueezeRiskComponentId, ComponentUnit> = {
     short_interest_pct_float: 'percent',
     days_to_cover: 'days',
     short_interest_trend: 'signedPercent',
     off_exchange_short_ratio_z: 'z',
     fails_to_deliver_pct: 'percent',
-    threshold_list_days: 'days',
+    threshold_list_days: 'tradingDays',
     price_change_20d: 'signedPercent',
     volume_ratio: 'multiple',
 };
 
 export interface FormattedComponentValue {
-    /** 단위 — 퍼센트는 `value`에 `%`가 이미 붙고, 나머지는 화면이 로케일별 단위 글자를 붙인다. */
+    /** 단위 — 퍼센트는 `value`에 `%`가 이미 붙고, 나머지는 화면이 로케일별 단위 글자를 붙인다(`notListed`는 `value`가 빈 문자열). */
     unit: ValueUnit;
     value: string;
 }
@@ -57,6 +72,10 @@ export function formatComponentValue(
             return { unit, value: formatPercent(value, locale, 2) };
         case 'signedPercent':
             return { unit, value: formatSignedPercent(value, locale, 1) };
+        case 'tradingDays':
+            return value <= 0
+                ? { unit: 'notListed', value: '' }
+                : { unit, value: formatInteger(value, locale) };
         case 'days':
         case 'z':
         case 'multiple':

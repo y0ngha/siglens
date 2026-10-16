@@ -105,6 +105,10 @@ function projectOverall(a: OverallAnalysisResponse) {
         conclusion: a.integratedConclusionKo,
         scenarios: a.scenarios,
         risks: a.riskFactorsKo,
+        // 보조 요약은 맨 뒤 — 레지스트리 절단(뒤에서부터 잘림)이 결론·시나리오·리스크보다 이것을 먼저 덜어내게 한다.
+        financials: a.financialsBulletsKo,
+        // 수급 요약 — 종합 분석이 수급을 반영하지 않은 결과(암호화폐·수집 중 등)에는 없다.
+        investorFlows: a.investorFlowsBulletsKo ?? [],
     };
 }
 
@@ -265,6 +269,14 @@ export function unwrap(
                     fundamental: { kind: 'list', value: projected.fundamental },
                     news: { kind: 'list', value: projected.news },
                     options: { kind: 'list', value: projected.options },
+                    financials: {
+                        kind: 'list',
+                        value: projected.financials,
+                    },
+                    investorFlows: {
+                        kind: 'list',
+                        value: projected.investorFlows,
+                    },
                     risks: { kind: 'list', value: projected.risks },
                 },
                 cached,

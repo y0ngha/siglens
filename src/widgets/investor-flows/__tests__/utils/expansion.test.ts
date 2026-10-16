@@ -113,6 +113,8 @@ describe('formatComponentValue', () => {
         ['days_to_cover', 7.04, 'days', '7.0'],
         ['off_exchange_short_ratio_z', 2.46, 'z', '2.5'],
         ['volume_ratio', 3, 'multiple', '3.0'],
+        ['threshold_list_days', 15, 'tradingDays', '15'],
+        ['threshold_list_days', 0, 'notListed', ''],
     ] as const)(
         '%s keeps the core value in its own unit',
         (id, value, unit, text) => {

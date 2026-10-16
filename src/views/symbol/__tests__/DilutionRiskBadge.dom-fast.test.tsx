@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
 
@@ -21,6 +21,24 @@ describe('DilutionRiskBadge', () => {
         );
         expect(link).toHaveAttribute('title', NOTE);
         expect(link).toHaveAccessibleDescription(NOTE);
+    });
+
+    it('좁은 화면에서는 문구만 말줄임되고 신고일은 따로 그려 항상 보인다', () => {
+        render(
+            <DilutionRiskBadge
+                symbol="AAPL"
+                event={{ kind: 'atm', filingDate: '2026-10-04' }}
+            />
+        );
+        const link = screen.getByRole('link');
+        const label = within(link).getByText(
+            '증자·희석: 최근 ATM(시장가 상시 발행) 공시'
+        );
+        const date = within(link).getByText('· 10/04');
+        expect(label).toHaveClass('truncate');
+        expect(date).not.toHaveClass('truncate');
+        expect(date).toHaveClass('shrink-0');
+        expect(label).not.toContainElement(date);
     });
 
     it('가격이 정해진 공모: 공모 발행 문구', () => {

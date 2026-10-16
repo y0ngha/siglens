@@ -466,6 +466,11 @@ export const getCachedAnalysisTool: ToolExecutor = async (
                     conclusion: cached.integratedConclusionKo,
                     scenarios: cached.scenarios,
                     risks: cached.riskFactorsKo,
+                    // 보조 요약은 맨 뒤 — 이 경로는 문장 맞춤 없이 레지스트리 절단(뒤에서부터 잘림)에 맡기므로,
+                    // 넘치면 결론·시나리오·리스크보다 이것이 먼저 잘린다.
+                    financials: cached.financialsBulletsKo,
+                    // 수급 요약 — 종합 분석이 수급을 반영하지 않은 결과(암호화폐·수집 중 등)에는 없다.
+                    investorFlows: cached.investorFlowsBulletsKo ?? [],
                 },
             };
         }

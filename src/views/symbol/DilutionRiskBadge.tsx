@@ -28,8 +28,11 @@ export function DilutionRiskBadge({ symbol, event }: DilutionRiskBadgeProps) {
     const date = monthDay(event.filingDate);
     const label =
         event.kind === 'atm'
-            ? t('DilutionRiskBadge.atm', { date })
-            : t('DilutionRiskBadge.priced', { date });
+            ? t('DilutionRiskBadge.atm')
+            : t('DilutionRiskBadge.priced');
+    // 신고일은 문구와 따로 그린다 — 좁은 화면에서 문구만 말줄임되고 날짜는 항상 보인다(모바일에서 날짜가 먼저 잘리던 문제).
+    // 접근 가능한 이름은 `aria-label`로 문구 전체 + 날짜를 그대로 준다(보이는 글자가 이름의 앞부분이라 WCAG 2.5.3 충족).
+    const dateSuffix = ` · ${date}`;
     const note = t('DilutionRiskBadge.note');
     return (
         <>
@@ -38,10 +41,14 @@ export function DilutionRiskBadge({ symbol, event }: DilutionRiskBadgeProps) {
                 // 보조 배지라 뷰포트 진입만으로 수급 탭 페이로드를 당길 이유가 없다.
                 prefetch={false}
                 title={note}
+                aria-label={`${label}${dateSuffix}`}
                 aria-describedby={NOTE_ID}
                 className="tap-target inline-flex max-w-[50%] min-w-0 shrink items-center rounded bg-ui-warning/10 px-2 py-0.5 text-xs font-medium text-ui-warning-text transition-colors hover:bg-ui-warning/20 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:max-w-xs lg:max-w-md"
             >
-                <span className="truncate">{label}</span>
+                <span className="min-w-0 truncate">{label}</span>
+                <span className="shrink-0 whitespace-pre tabular-nums">
+                    {dateSuffix}
+                </span>
             </Link>
             {/* 설명은 링크 밖 `hidden` 노드에 둔다 — 링크 안에 두면 접근 가능한 이름에 섞이고, `hidden`이어도
                 `aria-describedby`는 그 텍스트를 읽는다. 화면에서는 `title` 툴팁이 같은 문장을 보인다. */}

@@ -140,7 +140,13 @@ export function DilutionSection(props: DilutionSectionProps) {
             className={cn(SURFACE_CARD, 'space-y-4 p-6')}
         >
             <div>
-                <h2 id={HEADING_ID} className={HEADING_SECTION}>
+                {/* 차트 화면 희석 배지가 이 제목으로 점프한다(`#flows-dilution-heading`). sticky 사이트 헤더
+                    (`--header-h` 3.5rem)와 카드 윗여백(p-6 = 1.5rem)을 넘겨 카드 위 테두리까지 보이게 띄운다
+                    — 앵커 제목의 사이트 관례(`scroll-mt-24`, 가이드·방법론 페이지)와 같은 값이다. */}
+                <h2
+                    id={HEADING_ID}
+                    className={cn(HEADING_SECTION, 'scroll-mt-24')}
+                >
                     {t('dilution.title')}
                     <FlowTooltip term="dilution" />
                 </h2>

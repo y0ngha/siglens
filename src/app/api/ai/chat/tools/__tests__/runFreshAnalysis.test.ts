@@ -192,7 +192,14 @@ const REALISTIC_OVERALL_RESULT = {
     optionsBulletsKo: Array.from({ length: 6 }, (_, i) =>
         `옵션 요점 ${i}: 풋콜 비율이 낙관적인 심리를 시사합니다. `.repeat(3)
     ),
-    financialsBulletsKo: [],
+    financialsBulletsKo: Array.from({ length: 4 }, (_, i) =>
+        `재무 요점 ${i}: 영업이익률이 개선되고 있습니다. `.repeat(3)
+    ),
+    investorFlowsBulletsKo: Array.from({ length: 120 }, (_, i) =>
+        `수급 요점 ${i}: 기관 보유 기관 수가 직전 분기 대비 늘었습니다. `.repeat(
+            3
+        )
+    ),
     integratedConclusionKo:
         '종합적으로 이 종목은 4개 축 모두에서 긍정적인 신호를 보이고 있으며, 단기 조정 이후 재상승이 예상됩니다. '.repeat(
             30
@@ -732,6 +739,37 @@ describe('runFreshAnalysisTool', () => {
                 REALISTIC_OVERALL_RESULT.technicalBulletsKo.includes(b)
             )
         ).toBe(true);
+        // 수급 요약도 맞춤 대상이다 — 20개 전부는 예산에 안 들어가 뒤쪽이 통째로 덜어지고(등록이 빠지면 20개가 그대로 남는다),
+        // 결론·리스크는 살아남는다.
+        const keptFlows = r.analysis.investorFlows as string[];
+        expect(keptFlows.length).toBeGreaterThan(0);
+        expect(keptFlows.length).toBeLessThan(
+            REALISTIC_OVERALL_RESULT.investorFlowsBulletsKo.length
+        );
+        expect(keptFlows).toEqual(
+            REALISTIC_OVERALL_RESULT.investorFlowsBulletsKo.slice(
+                0,
+                keptFlows.length
+            )
+        );
+        expect((r.analysis.risks as string[]).length).toBeGreaterThan(0);
+        expect(r.analysis.financials).toEqual(
+            expect.arrayContaining([
+                REALISTIC_OVERALL_RESULT.financialsBulletsKo[0],
+            ])
+        );
+    });
+
+    it('overall: 수급 요약이 없는 결과(수급 미반영)는 investorFlows를 빈 배열로 준다', async () => {
+        const { investorFlowsBulletsKo: _omit, ...withoutFlows } =
+            REALISTIC_OVERALL_RESULT;
+        m.overall.mockResolvedValue({ status: 'done', result: withoutFlows });
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'BTCUSD', kind: 'overall' },
+            ctx,
+            rt
+        )) as { analysis: Record<string, unknown> };
+        expect(r.analysis.investorFlows).toEqual([]);
     });
 
     it('options: 현실적인 크기의 결과(18개 만기)도 절단 없이 앞쪽 만기가 살아남는다', async () => {
