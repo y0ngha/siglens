@@ -45,6 +45,15 @@ export interface KoreanTickerEntry extends TickerBase {
     koreanName: string;
 }
 
+/** `korean_tickers` upsert input — only the KR listing sync knows the listed share count. */
+export interface KoreanTickerUpsertEntry extends KoreanTickerEntry {
+    /**
+     * Listed shares (data.go.kr stock price V2 `lstgStCnt`). Omitted or `null` when unknown — the upsert then keeps the
+     * stored value instead of clearing it.
+     */
+    listedShares?: number | null;
+}
+
 /** Ticker search hit; Korean translation may be missing for a brand-new symbol. */
 export interface TickerSearchResult extends TickerBase {
     /** Korean company name; absent when no translation is in the store yet. */

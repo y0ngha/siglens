@@ -707,6 +707,31 @@ describe('runCusipMapSync', () => {
             expect(result.errors).toBe(1);
         });
 
+        it('does not refetch a profile it mapped earlier in the same run, but marks that mapping checked', async () => {
+            const { deps, fetched, recheck } = build({
+                AAA: profile({ cusip: '594918104' }),
+            });
+            // The new row (checked_at NULL) comes back first, next to an older mapping.
+            recheck.candidates = [
+                candidate(9, 'AAA', '594918104'),
+                candidate(7, 'AAPL', '037833100'),
+            ];
+            const result = await runCusipMapSync(deps);
+            expect(fetched.filter(symbol => symbol === 'AAA')).toHaveLength(1);
+            expect(fetched).toContain('AAPL');
+            expect(recheck.checked.toSorted()).toEqual([7, 9]);
+            expect(result.rechecked).toBe(1);
+        });
+
+        it('still rechecks a mapping of the same symbol under a different CUSIP', async () => {
+            const { deps, fetched, recheck } = build({
+                AAA: profile({ cusip: '594918104' }),
+            });
+            recheck.candidates = [candidate(4, 'AAA', '037833100')];
+            await runCusipMapSync(deps);
+            expect(fetched.filter(symbol => symbol === 'AAA')).toHaveLength(2);
+        });
+
         it('asks for only a small batch per run (no mass re-processing)', async () => {
             const { deps } = build({});
             const spy = vi.spyOn(deps.repo, 'listRecheckCandidates');

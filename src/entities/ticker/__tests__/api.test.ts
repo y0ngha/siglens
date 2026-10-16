@@ -30,6 +30,8 @@ import {
     KOREAN_TICKER_UPSERT_BATCH_SIZE,
     KR_SYMBOL_LIKE_PATTERNS,
 } from '@/entities/ticker/api';
+import { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
@@ -306,6 +308,7 @@ describe('DrizzleKoreanTickerRepository', () => {
                 koreanName: expect.anything(),
                 exchange: expect.anything(),
                 exchangeFullName: expect.anything(),
+                listedShares: expect.anything(),
                 updatedAt: expect.anything(),
             },
         });
@@ -323,6 +326,34 @@ describe('DrizzleKoreanTickerRepository', () => {
         expect(JSON.stringify(set.exchange)).toContain('excluded.exchange"');
         expect(JSON.stringify(set.exchangeFullName)).toContain(
             'excluded.exchange_full_name'
+        );
+    });
+
+    it('upsertMany 는 상장주식수를 새 값이 있을 때만 바꾼다(null이 저장된 값을 지우지 않는다)', async () => {
+        const { db, values, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([
+            { ...apple, listedShares: 15_000_000_000 },
+            microsoft,
+        ]);
+        const passed = values.mock.calls[0][0] as {
+            symbol: string;
+            listedShares: number | null;
+        }[];
+        expect(passed.map(row => [row.symbol, row.listedShares])).toEqual([
+            ['AAPL', 15_000_000_000],
+            ['MSFT', null],
+        ]);
+        const set = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        const listedShares = set.listedShares;
+        if (!(listedShares instanceof SQL)) {
+            throw new Error('listedShares must be an SQL chunk');
+        }
+        expect(new PgDialect().sqlToQuery(listedShares).sql).toBe(
+            'coalesce(excluded.listed_shares, "korean_tickers"."listed_shares")'
         );
     });
 

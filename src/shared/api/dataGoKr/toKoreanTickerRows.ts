@@ -1,4 +1,4 @@
-import type { KoreanTickerEntry } from '@/shared/lib/types';
+import type { KoreanTickerUpsertEntry } from '@/shared/lib/types';
 import type { KrxListedItem } from './krxListedInfoClient';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 
@@ -48,8 +48,8 @@ const EXCHANGE_FULL_NAME: Record<
  */
 export function toKoreanTickerRows(
     items: readonly KrxListedItem[]
-): KoreanTickerEntry[] {
-    const bySymbol = new Map<string, KoreanTickerEntry>();
+): KoreanTickerUpsertEntry[] {
+    const bySymbol = new Map<string, KoreanTickerUpsertEntry>();
 
     for (const item of items) {
         // `suffix === null` 대신 `item.market`을 직접 검사한다 — 그래야 컴파일러가
@@ -66,6 +66,7 @@ export function toKoreanTickerRows(
             name: item.koreanName,
             exchange: item.market,
             exchangeFullName: EXCHANGE_FULL_NAME[item.market],
+            listedShares: item.listedShares,
         });
     }
 

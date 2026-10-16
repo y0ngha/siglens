@@ -13,7 +13,8 @@ import { getInvestorFlowsSnapshot } from './getInvestorFlowsSnapshot';
  * 그대로 던진다 — core가 `fetch_failed`로 바꾼다.
  *
  * 첫 수집이 끝나기 전의 빈 구간(FINRA 공매도·FTD·Form 144·증자 공시)은 "조회 불가"로 바꿔 건넨다(`maskUncollectedSections`) —
- * 빈 배열은 core 프롬프트에서 "공매도 활동 없음"·"증자 공시 없음"처럼 읽힐 수 있다. 화면 점수표(`getInvestorFlowsScorecard`)도
+ * 빈 배열은 core 프롬프트에서 "공매도 활동 없음"·"증자 공시 없음"처럼 읽힐 수 있다. 13F는 백필 중이면 행이 있어도 부분 집계라
+ * 빈 기관 구간으로 바꾼다("기관 순매도"로 읽히지 않게). 화면 점수표(`getInvestorFlowsScorecard`)도
  * 같은 마스킹을 거쳐 둘이 같은 점수를 본다. 준비 상태를 못 읽으면(`unknown`) 스냅샷을 그대로 준다.
  */
 export const investorFlowsCachedProvider: InvestorFlowsDataProvider = {

@@ -1,4 +1,7 @@
-import type { KoreanTickerEntry } from '@/shared/lib/types';
+import type {
+    KoreanTickerEntry,
+    KoreanTickerUpsertEntry,
+} from '@/shared/lib/types';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     mapCryptoListRow,
@@ -85,7 +88,7 @@ const koreanTickerColumns = {
 type KoreanTickerRow = Pick<
     KoreanTickerEntry,
     'symbol' | 'name' | 'koreanName' | 'exchange' | 'exchangeFullName'
->;
+> & { listedShares: number | null };
 
 const assetTranslationColumns = {
     symbol: assetTranslations.symbol,
@@ -126,7 +129,7 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     }
 
     async upsertMany(
-        entries: readonly KoreanTickerEntry[],
+        entries: readonly KoreanTickerUpsertEntry[],
         options?: KoreanTickerUpsertOptions
     ): Promise<void> {
         for (
@@ -145,7 +148,7 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     }
 
     private async upsertBatch(
-        entries: readonly KoreanTickerEntry[],
+        entries: readonly KoreanTickerUpsertEntry[],
         options?: KoreanTickerUpsertOptions
     ): Promise<void> {
         if (entries.length === 0) return;
@@ -174,6 +177,9 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
                             koreanName: sql`excluded.korean_name`,
                             exchange: sql`excluded.exchange`,
                             exchangeFullName: sql`excluded.exchange_full_name`,
+                            // 상장주식수는 한국 상장 동기화만 채운다 — 번역 경로·보충을 못 받은 날의 null이 저장된 값을
+                            // 지우지 않게 새 값이 있을 때만 바꾼다.
+                            listedShares: sql`coalesce(excluded.listed_shares, ${koreanTickers.listedShares})`,
                             updatedAt: sql`now()`,
                         },
                     }),
@@ -474,13 +480,14 @@ export async function isTabAllowedForSymbol(
 }
 
 /** Select DB row fields explicitly so future KoreanTickerEntry fields are not persisted accidentally. */
-function toKoreanTickerRow(entry: KoreanTickerEntry): KoreanTickerRow {
+function toKoreanTickerRow(entry: KoreanTickerUpsertEntry): KoreanTickerRow {
     return {
         symbol: entry.symbol,
         name: entry.name,
         koreanName: entry.koreanName,
         exchange: entry.exchange,
         exchangeFullName: entry.exchangeFullName,
+        listedShares: entry.listedShares ?? null,
     };
 }
 

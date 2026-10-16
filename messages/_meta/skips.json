@@ -1195,37 +1195,37 @@
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 338,
+        "line": 356,
         "reason": "developer-diagnostic",
         "text": "[krxListedInfo] DATA_GO_KR_SERVICE_KEY 미설정 — 빈 목록 반환"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 360,
+        "line": 378,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${date}까지 확인하고 중단`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 367,
+        "line": 385,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] 최근 ${MAX_DATE_LOOKBACK_DAYS}일 안에서 데이터를 찾지 못했다`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 418,
+        "line": 436,
         "reason": "developer-diagnostic",
         "text": "`${source.tag} 예산(${source.budgetMs}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 445,
+        "line": 463,
         "reason": "developer-diagnostic",
         "text": "`${source.tag} MAX_PAGES(${MAX_PAGES}) 도달 — 결과가 잘렸을 수 있다`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 452,
+        "line": 470,
         "reason": "developer-diagnostic",
         "text": "`${source.tag} ${basDt} 원본 ${rawCollected}건 < totalCount ${reportedTotal} — 중간 페"
     },

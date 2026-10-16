@@ -36,8 +36,8 @@ import type {
 } from '../api/investorFlowsFilingsRepository';
 
 /**
- * Form 144(매도 예정 신고)·증자/희석 공시 증분 수집 — `sec-13f` cron 실행 **안에서** 13F 다음에 남은 시간으로 돈다
- * (`runSecIndexIngest`). 같은 daily form index(`form.YYYYMMDD.idx`)를 읽고 같은 SEC 게이트·공유 락 아래라 cron 합계 SEC 속도가
+ * Form 144(매도 예정 신고)·증자/희석 공시 증분 수집 — `sec-13f` cron 실행 **안에서** 13F 다음에 자기 몫의 시간으로 돈다
+ * (`runSecIndexIngest` — 13F 백필 중에도 매 실행). 같은 daily form index(`form.YYYYMMDD.idx`)를 읽고 같은 SEC 게이트·공유 락 아래라 cron 합계 SEC 속도가
  * 늘지 않는다(`shared/config/investorFlows.ts`의 불변식).
  *
  * ── 커서는 13F와 따로다 ─────────────────────────────────────────────────────────────────────────────

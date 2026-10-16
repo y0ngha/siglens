@@ -10,6 +10,7 @@ import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsShortRepository } from '@/entities/investor-flows/api/investorFlowsShortRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import type { IngestFinraDeps } from '@/entities/investor-flows/server/ingestFinra';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 
 /** I/O 구성은 이 호출자에 둔다(EN-1). DB가 없으면 던진다. */
 export function createFinraShortDeps(
@@ -28,6 +29,6 @@ export function createFinraShortDeps(
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onFirstDataStored: revalidateFlowsReadiness,
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }

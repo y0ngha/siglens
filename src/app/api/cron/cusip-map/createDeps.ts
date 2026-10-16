@@ -12,6 +12,7 @@ import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/inves
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import type { SyncCikSymbolMapDeps } from '@/entities/investor-flows/server/syncCikSymbolMap';
 import type { SyncCusipMapDeps } from '@/entities/investor-flows/server/syncCusipMap';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 
 /** SEC CIK ↔ 티커 목록(`www.sec.gov/files/company_tickers.json`, ≈0.8MB). */
 export const COMPANY_TICKERS_PATH = '/files/company_tickers.json';
@@ -35,7 +36,7 @@ export function createCusipMapDeps(
             error instanceof OpenFigiRateLimitedError,
         isDeadlineReached,
         now: () => new Date(),
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }
 
@@ -59,6 +60,6 @@ export function createCikSymbolMapDeps(): SyncCikSymbolMapDeps {
             (await universeRepo.loadUniverse()).symbols,
         isSecBlockedError,
         now: () => new Date(),
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }

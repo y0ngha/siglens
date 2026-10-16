@@ -112,26 +112,55 @@ describe('PATCH /api/cron/sec-13f', () => {
         expect(options.leaseTtlSeconds * 1000).toBeGreaterThan(worstCaseMs);
     });
 
-    it('runs 13F first and the filings step after a complete 13F run, with deps built from the deadline callback', async () => {
+    it('runs 13F then the filings step, each with its own step deadline over the deps built from the deadline callback', async () => {
+        const filingsDeps = {
+            marker: 'filings',
+            repo: { getState: vi.fn(async () => '2026-10-15') },
+            now: () => new Date('2026-10-16T12:00:00Z'),
+            log: vi.fn(),
+        };
         mockCreateDeps.mockReturnValue({
             thirteenF: { marker: '13f' },
-            filings: { marker: 'filings' },
+            filings: filingsDeps,
         });
-        mockRun13f.mockResolvedValue({ stoppedBy: 'complete' });
-        mockRunFilings.mockResolvedValue({ stoppedBy: 'deadline' });
+        mockRun13f.mockResolvedValue({ stoppedBy: 'deadline' });
+        mockRunFilings.mockResolvedValue({ stoppedBy: 'complete' });
         const options = await capturedOptions();
         const isDeadlineReached = () => true;
         expect(await options.run({ isDeadlineReached })).toEqual({
-            thirteenF: { stoppedBy: 'complete' },
-            filings: { stoppedBy: 'deadline' },
+            thirteenF: { stoppedBy: 'deadline' },
+            filings: { stoppedBy: 'complete' },
         });
         expect(mockCreateDeps).toHaveBeenCalledWith(isDeadlineReached);
-        expect(mockRun13f).toHaveBeenCalledWith({ marker: '13f' });
-        expect(mockRunFilings).toHaveBeenCalledWith({ marker: 'filings' });
+        expect(mockRun13f).toHaveBeenCalledWith({
+            marker: '13f',
+            isDeadlineReached: expect.any(Function),
+        });
+        expect(mockRunFilings).toHaveBeenCalledWith({
+            ...filingsDeps,
+            isDeadlineReached: expect.any(Function),
+        });
+        // The step deadlines are fresh budgets, not the already-expired run callback.
+        const thirteenFDeps = (
+            mockRun13f.mock.calls as [
+                { marker?: string; isDeadlineReached: () => boolean },
+            ][]
+        ).find(([deps]) => deps.marker === '13f')?.[0];
+        expect(thirteenFDeps?.isDeadlineReached()).toBe(false);
+        expect(filingsDeps.repo.getState).toHaveBeenCalledWith(
+            'sec_filings_cursor'
+        );
     });
 
     it('skips the filings step when 13F stopped on a SEC block', async () => {
-        mockCreateDeps.mockReturnValue({ thirteenF: {}, filings: {} });
+        mockCreateDeps.mockReturnValue({
+            thirteenF: {},
+            filings: {
+                repo: { getState: async () => null },
+                now: () => new Date(),
+                log: () => {},
+            },
+        });
         mockRun13f.mockResolvedValue({ stoppedBy: 'sec_blocked' });
         const options = await capturedOptions();
         expect(await options.run({ isDeadlineReached: () => false })).toEqual({

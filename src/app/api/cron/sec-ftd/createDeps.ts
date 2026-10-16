@@ -10,6 +10,7 @@ import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsFtdRepository } from '@/entities/investor-flows/api/investorFlowsFtdRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import type { IngestFtdDeps } from '@/entities/investor-flows/server/ingestFtd';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 
 /** I/O 구성은 이 호출자에 둔다(EN-1). DB가 없으면 던진다. */
 export function createSecFtdDeps(
@@ -27,6 +28,6 @@ export function createSecFtdDeps(
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onFirstFileStored: revalidateFlowsReadiness,
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }

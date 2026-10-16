@@ -29,6 +29,8 @@ export interface KrInvestorFlowsSnapshotReads {
         corpCode: string,
         sinceDate: string
     ): Promise<DartTradingPlanRecord[]>;
+    /** 단축코드의 상장주식수(`korean_tickers.listed_shares`). 모르면 null. */
+    findListedShares(stockCode: string): Promise<number | null>;
 }
 
 export interface KrInvestorFlowsSnapshotDeps {
@@ -43,7 +45,9 @@ export interface KrInvestorFlowsSnapshotDeps {
  *
  * - 심볼 → 단축코드 → 고유번호(우선주는 보통주 코드로, `resolveCorpCode`). 매핑이 없으면 `null`("데이터 없음", 탭은 열림).
  * - 창은 보존 기간과 같은 2년(KST 달력). core는 그 안에서 90일 창으로 채점한다.
- * - 발행주식수는 DB에 한국 원천이 없어 `null`이다 — 소유보고의 순증감은 core가 보유비율 증감 합으로 잰다.
+ * - 발행주식수는 `korean_tickers.listed_shares`(공공데이터포털 주식시세 V2 상장주식수)다. 지분공시는 회사 단위라 **매칭된 보통주
+ *   코드**(`matchedStockCode`)의 주식수를 쓴다 — 우선주 페이지도 보고서의 주식 수는 보통주 기준이다. 없으면 `null`이고, 그때
+ *   소유보고의 순증감은 core가 보유비율 증감 합으로 잰다.
  *
  * 인프라 실패(DB 오류)는 그대로 던진다 — resilient 로더가 degrade로 바꾼다("데이터 없음"으로 위장하지 않는다).
  */
@@ -57,17 +61,19 @@ export async function loadKrInvestorFlowsSnapshot(
     if (corp === null) return null;
     const today = kstDateKey(deps.now());
     const since = addDays(today, -INVESTOR_FLOWS_DART_RETENTION_DAYS);
-    const [majorHoldings, insiderReports, tradingPlans] = await Promise.all([
-        deps.reads.findMajorHoldings(corp.corpCode, since),
-        deps.reads.findInsiderReports(corp.corpCode, since),
-        deps.reads.findTradingPlans(corp.corpCode, since),
-    ]);
+    const [majorHoldings, insiderReports, tradingPlans, sharesOutstanding] =
+        await Promise.all([
+            deps.reads.findMajorHoldings(corp.corpCode, since),
+            deps.reads.findInsiderReports(corp.corpCode, since),
+            deps.reads.findTradingPlans(corp.corpCode, since),
+            deps.reads.findListedShares(corp.matchedStockCode),
+        ]);
     const { snapshot, droppedRows } = assembleKrInvestorFlowsSnapshot({
         asOf: today,
         majorHoldings,
         insiderReports,
         tradingPlans,
-        sharesOutstanding: null,
+        sharesOutstanding,
     });
     if (droppedRows > 0) {
         deps.log(

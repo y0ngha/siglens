@@ -18,6 +18,7 @@ import { addDays } from '@/entities/investor-flows/lib/investorFlowsDates';
 import type { Ingest13fDeps } from '@/entities/investor-flows/server/ingest13f';
 import type { IngestSecFilingsDeps } from '@/entities/investor-flows/server/ingestSecFilings';
 import { rememberRecentIndexes } from '@/entities/investor-flows/server/runSecIndexIngest';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 
 /** 두 단계(13F·공시)가 함께 쓰도록 기억하는 최근 daily index 범위(일) — 평소 두 커서가 머무는 구간(겹침 3일 + 주말). */
 const SHARED_INDEX_DAYS = 7;
@@ -36,8 +37,7 @@ export function createSec13fDeps(
     if (client === null) throw new Error('[sec-13f] database unavailable');
     const universeRepo = new DrizzleInvestorFlowsUniverseRepository(client.db);
     const now = (): Date => new Date();
-    const log = (message: string, detail?: unknown): void =>
-        console.warn(message, detail);
+    const log = warnWithDetail;
     const sharedIndex = rememberRecentIndexes(
         fetchDailyFormIndex,
         addDays(toUtcIsoDate(now()), -SHARED_INDEX_DAYS)

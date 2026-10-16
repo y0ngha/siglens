@@ -15,7 +15,12 @@ import {
 import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
 import * as schema from '@/shared/db/schema';
 import { dartFatalReason } from '@/shared/api/dart/dartClient';
-import { createFakeDartClient } from '@/shared/api/dart/fakeDartClient';
+import {
+    buildFakeDartData,
+    createFakeDartClient,
+} from '@/shared/api/dart/fakeDartClient';
+import { INVESTOR_FLOWS_DART_MAX_LIST_PAGES } from '../../lib/investorFlowsPolicy';
+import { DrizzleKoreanTickerRepository } from '@/entities/ticker/api';
 import { DrizzleInvestorFlowsDartRepository } from '../../api/investorFlowsDartRepository';
 import { runDartFilingsIngest } from '../../server/ingestDartFilings';
 import type {
@@ -32,7 +37,7 @@ vi.mock('server-only', () => ({}));
  *   docker compose -p <name> -f docker-compose.e2e.yml up -d --pull never postgres
  *   TEST_DATABASE_URL=postgres://siglens:siglens@localhost:5433/siglens_e2e yarn test .db.test.ts
  * 접속 대상이 로컬이 아니면 거부하고, 임시 스키마에 실제 마이그레이션(`korean_tickers` 생성·`delisted_at` 추가, `0048`·`0049`)을
- * 적용한 뒤 끝나면 스키마를 지운다.
+ * 적용한 뒤 끝나면 스키마를 지운다. 상장주식수 열(`0051`)과 그 upsert(`DrizzleKoreanTickerRepository`)도 같은 테이블이라 여기서 본다.
  */
 const URL = process.env.TEST_DATABASE_URL;
 const SCHEMA = `investor_flows_dart_test_${process.pid}`;
@@ -44,7 +49,8 @@ const statements = (text: string): string[] =>
 /** 첫 마이그레이션 중 `korean_tickers` 생성문만(나머지 테이블은 이 테스트와 무관하다). */
 const KOREAN_TICKERS_DDL = statements(migration('0000_absent_kid_colt.sql'))
     .filter(statement => statement.includes('CREATE TABLE "korean_tickers"'))
-    .concat(statements(migration('0028_lush_wendell_vaughn.sql')));
+    .concat(statements(migration('0028_lush_wendell_vaughn.sql')))
+    .concat(statements(migration('0051_kr_listed_shares.sql')));
 const INVESTOR_FLOWS_DDL = [
     '0048_investor_flows_data.sql',
     '0049_investor_flows_expansion.sql',
@@ -419,6 +425,113 @@ describe.skipIf(!URL)('DART repository on a real Postgres', () => {
         );
         expect(invalidated).toEqual(['00088K.KS', '005930.KS', '005935.KS']);
         expect(await repo.getState('dart_backfill_done')).toBe('2026-10-16');
+    });
+
+    it('pipeline: drops rows of another report type and keeps the D005 resume date in the stored cursor on overflow', async () => {
+        const now = new Date('2026-10-16T01:00:00Z');
+        await repo.upsertCorpCodes([
+            { stockCode: '005930', corpCode: SAMSUNG, corpName: '삼성전자' },
+        ]);
+        await db.insert(schema.koreanTickers).values({
+            symbol: '005930.KS',
+            koreanName: '이름',
+            name: 'Name',
+            exchange: 'KSC',
+            exchangeFullName: 'KSE',
+        });
+        const base = buildFakeDartData(now);
+        const plansWithStray = [
+            ...(base.disclosures.D005 ?? []),
+            // A D002 title under D005 — what an ignored detail filter returns.
+            {
+                ...(base.disclosures.D005 ?? [])[0],
+                rcept_no: '20261014000999',
+                report_nm: '임원ㆍ주요주주특정증권등소유상황보고서',
+            },
+        ];
+        const fake = createFakeDartClient({
+            ...base,
+            disclosures: { ...base.disclosures, D005: plansWithStray },
+        });
+        const result = await runDartFilingsIngest({
+            dart: {
+                ...fake,
+                fetchDisclosureList: async query => {
+                    const page = await fake.fetchDisclosureList(query);
+                    return query.detailType === 'D005'
+                        ? {
+                              ...page,
+                              totalPage: INVESTOR_FLOWS_DART_MAX_LIST_PAGES + 1,
+                          }
+                        : page;
+                },
+            },
+            repo,
+            fatalReason: dartFatalReason,
+            now: () => now,
+            isDeadlineReached: () => false,
+            invalidateSymbols: () => {},
+            log: () => {},
+        });
+        expect(result).toMatchObject({
+            status: 'complete',
+            listComplete: false,
+            tradingPlansStored: 1,
+            mismatchedRows: 1,
+        });
+        expect(
+            (await repo.findTradingPlans(SAMSUNG, '2026-01-01')).map(
+                row => row.rceptNo
+            )
+        ).toEqual([String((base.disclosures.D005 ?? [])[0]?.rcept_no)]);
+        const cursor: unknown = JSON.parse(
+            (await repo.getState('dart_list_cursor')) ?? 'null'
+        );
+        expect(cursor).toMatchObject({
+            through: '2026-10-16',
+            tradingPlansFrom: '2026-10-14',
+        });
+    });
+
+    describe('listed shares', () => {
+        const ticker = {
+            symbol: '005930.KS',
+            koreanName: '삼성전자',
+            name: '삼성전자',
+            exchange: 'KOSPI',
+            exchangeFullName: 'Korea Exchange (KOSPI)',
+        };
+
+        it('reads the listed share count of a listed KR row and keeps it when a later upsert has none', async () => {
+            const tickers = new DrizzleKoreanTickerRepository(db as never);
+            await tickers.upsertMany([
+                { ...ticker, listedShares: 5_919_637_922 },
+            ]);
+            expect(await repo.findListedShares('005930')).toBe(5_919_637_922);
+            // The translation path upserts without the field; a sync day without the supplement passes null.
+            await tickers.upsertMany([ticker]);
+            await tickers.upsertMany([{ ...ticker, listedShares: null }]);
+            expect(await repo.findListedShares('005930')).toBe(5_919_637_922);
+            await tickers.upsertMany([
+                { ...ticker, listedShares: 5_969_782_550 },
+            ]);
+            expect(await repo.findListedShares('005930')).toBe(5_969_782_550);
+        });
+
+        it('is null for an unknown count, a delisted row and a missing code', async () => {
+            await db.insert(schema.koreanTickers).values([
+                { ...ticker, symbol: '000660.KS' },
+                {
+                    ...ticker,
+                    symbol: '035720.KS',
+                    listedShares: 441_000_000,
+                    delistedAt: new Date('2026-10-01T00:00:00Z'),
+                },
+            ]);
+            expect(await repo.findListedShares('000660')).toBeNull();
+            expect(await repo.findListedShares('035720')).toBeNull();
+            expect(await repo.findListedShares('999990')).toBeNull();
+        });
     });
 
     it('state: overwrites the cursor and keeps a set-once marker', async () => {

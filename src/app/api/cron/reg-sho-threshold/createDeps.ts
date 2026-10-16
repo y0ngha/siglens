@@ -11,6 +11,7 @@ import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsRegShoRepository } from '@/entities/investor-flows/api/investorFlowsRegShoRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import type { IngestRegShoDeps } from '@/entities/investor-flows/server/ingestRegSho';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 
 const toRegShoMarket = (market: string): RegShoMarket | undefined =>
     REG_SHO_MARKETS.find(known => known === market);
@@ -40,6 +41,6 @@ export function createRegShoDeps(
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onFirstListStored: revalidateFlowsReadiness,
-        log: (message, detail) => console.warn(message, detail),
+        log: warnWithDetail,
     };
 }

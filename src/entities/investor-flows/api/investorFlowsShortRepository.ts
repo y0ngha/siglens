@@ -1,5 +1,5 @@
 import 'server-only';
-import { desc, eq, gte, max, sql } from 'drizzle-orm';
+import { desc, eq, gte, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { finraShortInterest, finraShortVolume } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -88,15 +88,17 @@ export class DrizzleInvestorFlowsShortRepository {
         }
     }
 
-    async latestShortVolumeDate(): Promise<string | null> {
-        const [row] = await withRetry(
+    /** `since`(포함) 이후 저장된 일별 거래량 거래일 집합 — `finra_short_volume_trade_date_idx`로 읽는다. */
+    async listShortVolumeTradeDates(since: string): Promise<Set<string>> {
+        const rows = await withRetry(
             () =>
                 this.db
-                    .select({ latest: max(finraShortVolume.tradeDate) })
-                    .from(finraShortVolume),
+                    .selectDistinct({ tradeDate: finraShortVolume.tradeDate })
+                    .from(finraShortVolume)
+                    .where(gte(finraShortVolume.tradeDate, since)),
             DB_TRANSIENT_RETRY
         );
-        return row?.latest ?? null;
+        return new Set(rows.map(row => row.tradeDate));
     }
 
     /**

@@ -7,6 +7,7 @@ import {
     deriveInstitutionalStatus,
     deriveShortStatus,
     deriveThresholdListStatus,
+    isCollectingAggregate,
     isCollectingAndEmpty,
     isKrDisclosureCollecting,
     maskUncollectedSections,
@@ -16,6 +17,7 @@ import {
 import { INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS } from '../../lib/investorFlowsPolicy';
 import { addDays } from '../../lib/investorFlowsDates';
 import type { InvestorFlowsPipelineReadiness } from '../../model';
+import { makeSnapshot } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
 
 const BASE: InvestorFlowsSnapshot = {
     asOf: '2026-10-16T00:00:00.000Z',
@@ -171,7 +173,37 @@ describe('isCollectingAndEmpty', () => {
     });
 });
 
+describe('isCollectingAggregate', () => {
+    it.each([
+        ['collecting', true],
+        ['ready', false],
+        ['unknown', false],
+    ] as const)('%s → %s, regardless of rows', (status, expected) => {
+        expect(isCollectingAggregate(status)).toBe(expected);
+    });
+});
+
+/** A partially aggregated 13F section (quarters, top holders and options present). */
+const PARTIAL_INSTITUTIONAL = makeSnapshot().institutional;
+
 describe('maskUncollectedSections', () => {
+    it('empties a 13F section that already has (partial) rows while 13F is still collecting', () => {
+        const masked = maskUncollectedSections(
+            { ...BASE, institutional: PARTIAL_INSTITUTIONAL },
+            { ...READY, institutional: 'collecting' }
+        );
+        expect(masked.institutional).toEqual({
+            quarters: [],
+            topHolders: [],
+            topHoldersPeriod: null,
+        });
+    });
+
+    it('keeps the 13F rows once 13F is ready', () => {
+        const snapshot = { ...BASE, institutional: PARTIAL_INSTITUTIONAL };
+        expect(maskUncollectedSections(snapshot, READY)).toBe(snapshot);
+    });
+
     it('turns empty short arrays into null ("unavailable") while FINRA is still collecting', () => {
         const masked = maskUncollectedSections(BASE, {
             ...READY,
@@ -225,7 +257,12 @@ describe('maskUncollectedSections', () => {
             proposedSales: [SALE],
             offerings: [OFFERING],
         };
-        expect(maskUncollectedSections(full, collecting())).toBe(full);
+        expect(
+            maskUncollectedSections(
+                full,
+                collecting({ institutional: 'ready' })
+            )
+        ).toBe(full);
     });
 
     it('leaves a FINRA-off snapshot (null already) untouched in its short fields', () => {
@@ -258,7 +295,29 @@ describe('resolveCollectingArms', () => {
         });
     });
 
-    it('never marks a section that already has data', () => {
+    it('marks 13F collecting even when it already has (partial) rows', () => {
+        expect(
+            resolveCollectingArms({
+                readiness: { ...READY, institutional: 'collecting' },
+                snapshot: { ...BASE, institutional: PARTIAL_INSTITUTIONAL },
+                finraEnabled: true,
+                regShoEnabled: true,
+            }).institutional
+        ).toBe(true);
+    });
+
+    it('does not mark 13F collecting when its readiness is unknown', () => {
+        expect(
+            resolveCollectingArms({
+                readiness: UNKNOWN_PIPELINE_READINESS,
+                snapshot: BASE,
+                finraEnabled: true,
+                regShoEnabled: true,
+            }).institutional
+        ).toBe(false);
+    });
+
+    it('never marks a row-level section that already has data', () => {
         const arms = resolveCollectingArms({
             readiness: collecting(),
             snapshot: {

@@ -11,9 +11,11 @@ import {
     parseDartListCursor,
     serializeDartBackfillCursor,
     serializeDartListCursor,
+    type DartListCursor,
     type DartPendingCorp,
 } from '../lib/dartIngestState';
 import {
+    disclosureMatchesDetailType,
     parseDisclosureListRows,
     parseExecutiveStockRows,
     parseMajorStockRows,
@@ -103,7 +105,10 @@ export interface IngestDartFilingsResult {
     /** 이번 실행의 DART 호출 수(목록 페이지 + 회사별). */
     calls: number;
     listPages: number;
-    /** 공시검색 창을 끝까지 읽어 커서를 오늘로 옮겼는가. */
+    /**
+     * 공시검색 창을 세 유형 모두 끝까지 읽었는가. 거래계획보고서(D005)가 페이지 상한에 걸리면 거짓이다 — 그때 D005는 읽은
+     * 마지막 접수일(`tradingPlansFrom`)부터 다음 실행이 잇는다.
+     */
     listComplete: boolean;
     /** 새 D001·D002 공시가 있던 유니버스 회사 수. */
     changedCorps: number;
@@ -125,6 +130,8 @@ export interface IngestDartFilingsResult {
     insiderRowsStored: number;
     /** 형식이 맞지 않아 버린 응답 행 수. */
     skippedRows: number;
+    /** 요청한 상세 유형의 보고서가 아니어서 버린 공시검색 행 수(`disclosureMatchesDetailType`). 0이 아니면 필터가 무시되고 있다. */
+    mismatchedRows: number;
     /** 고유번호를 찾지 못한 한국 심볼 수(ETF·ETN 등). */
     unmappedSymbols: number;
     invalidated: number;
@@ -150,6 +157,7 @@ const emptyResult = (
     majorRowsStored: 0,
     insiderRowsStored: 0,
     skippedRows: 0,
+    mismatchedRows: 0,
     unmappedSymbols: 0,
     invalidated: 0,
     pruned: 0,
@@ -203,14 +211,17 @@ const errorMessage = (error: unknown): string =>
     (error instanceof Error ? error.message : String(error)).slice(0, 300);
 
 interface ScanOutcome {
+    /** 멈춤 없이 세 유형을 다 읽었다(넘침은 멈춤이 아니다). */
     complete: boolean;
     changedCorps: Set<string>;
     plans: DartTradingPlanRow[];
+    /** D005가 페이지 상한에 걸렸을 때 다음 실행이 D005를 다시 읽기 시작할 날짜. 끝까지 읽었으면 null. */
+    tradingPlansFrom: string | null;
 }
 
 /** 상세 유형 하나의 검색 시작일 — 커서가 없으면 유형별 첫 창, 있으면 그날부터(3개월 검색 한도로 자른다). */
 function scanStart(
-    through: string | null,
+    cursor: DartListCursor,
     detailType: DartDisclosureDetailType,
     today: string
 ): string {
@@ -219,7 +230,11 @@ function scanStart(
         detailType === TRADING_PLAN_TYPE
             ? floor
             : addDays(today, -INVESTOR_FLOWS_DART_LIST_INITIAL_LOOKBACK_DAYS);
-    const start = through ?? initial;
+    const resume =
+        detailType === TRADING_PLAN_TYPE
+            ? (cursor.tradingPlansFrom ?? cursor.through)
+            : cursor.through;
+    const start = resume ?? initial;
     return start < floor ? floor : start;
 }
 
@@ -230,6 +245,26 @@ interface DetailTypeScan {
     detailType: DartDisclosureDetailType;
     status: ScanStatus;
     rows: DartDisclosureListRow[];
+    /** 읽은 행(유니버스 밖 포함) 중 가장 늦은 접수일 — 넘쳤을 때 다음 실행의 재개 지점. 읽은 행이 없으면 null. */
+    lastReceiptDate: string | null;
+}
+
+/**
+ * 넘친 D005 창을 다음 실행이 다시 읽기 시작할 날짜. 오래된 순으로 읽으므로 마지막 접수일 이전은 끝까지 읽었고, 그날의 남은 행은 뒤
+ * 페이지에 있을 수 있어 **그날부터** 다시 읽는다(upsert라 겹쳐 읽어도 멱등). 상한만큼의 페이지가 모두 시작일 하루였다면 그날부터
+ * 다시 읽어도 같은 페이지만 받으므로 다음 날로 넘긴다 — 진행을 보장하는 대가로 그날의 나머지를 잃고, 로그로 남긴다.
+ */
+function overflowResumeDate(
+    ctx: RunContext,
+    scan: DetailTypeScan,
+    from: string
+): string {
+    const last = scan.lastReceiptDate ?? from;
+    if (last > from) return last;
+    ctx.deps.log(
+        `[dart-filings] list ${scan.detailType} fills ${INVESTOR_FLOWS_DART_MAX_LIST_PAGES} pages on ${from} alone — skipping the rest of that day`
+    );
+    return addDays(from, 1);
 }
 
 /**
@@ -245,10 +280,12 @@ async function scanDetailType(
     // 페이지 루프의 진행 기록(누적 행·페이지 번호) — 다음 페이지가 앞 페이지의 `total_page`에 달려 있어 순차 루프다.
     const rows: DartDisclosureListRow[] = [];
     let pageNo = 1;
+    let lastReceiptDate: string | null = null;
     const done = (status: ScanStatus): DetailTypeScan => ({
         detailType,
         status,
         rows,
+        lastReceiptDate,
     });
     for (;;) {
         if (!canCall(ctx, 1)) return done('stopped');
@@ -273,8 +310,26 @@ async function scanDetailType(
         ctx.result.listPages += 1;
         const parsed = parseDisclosureListRows(page.rows);
         ctx.result.skippedRows += parsed.skipped;
+        const matching = parsed.rows.filter(row =>
+            disclosureMatchesDetailType(detailType, row.title)
+        );
+        const mismatched = parsed.rows.length - matching.length;
+        if (mismatched > 0) {
+            ctx.result.mismatchedRows += mismatched;
+            ctx.deps.log(
+                `[dart-filings] list ${detailType} page ${pageNo} returned ${mismatched} rows of another report type — dropped (is the detail-type filter being ignored?)`
+            );
+        }
+        // 재개 지점은 버린 행까지 포함한 응답의 마지막 접수일 — 오래된 순 정렬이라 페이지 끝이 가장 늦다.
+        lastReceiptDate = parsed.rows.reduce<string | null>(
+            (latest, row) =>
+                latest === null || row.receiptDate > latest
+                    ? row.receiptDate
+                    : latest,
+            lastReceiptDate
+        );
         rows.push(
-            ...parsed.rows.filter(row => ctx.universeCorps.has(row.corpCode))
+            ...matching.filter(row => ctx.universeCorps.has(row.corpCode))
         );
         if (pageNo >= page.totalPage) return done('complete');
         if (pageNo >= INVESTOR_FLOWS_DART_MAX_LIST_PAGES)
@@ -288,27 +343,29 @@ async function scanDetailType(
  * `complete: false` — 커서를 옮기지 않아 다음 실행이 같은 창을 다시 읽는다(멱등).
  *
  * D001·D002 창이 페이지 상한을 넘으면(장기 중단 뒤) 목록으로 회사를 고르는 대신 **유니버스 전체**를 대기열에 넣는다 — 그 창의
- * 변동을 모두 담는 가장 싼 방법이 회사별 전체 이력 재조회다. D005가 넘치면 상한까지의 행만 저장하고 남긴다.
+ * 변동을 모두 담는 가장 싼 방법이 회사별 전체 이력 재조회다. D005가 넘치면 상한까지의 행을 저장하고, 읽은 마지막 접수일을
+ * `tradingPlansFrom`으로 돌려 다음 실행이 거기서 잇게 한다(커서를 오늘로 넘기면 그 사이 거래계획보고서를 잃는다).
  */
 async function scanDisclosures(
     ctx: RunContext,
-    through: string | null
+    cursor: DartListCursor
 ): Promise<ScanOutcome> {
     // 유형은 차례로 — 호출 상한·데드라인을 같은 순서로 소비하고, 한 유형이 멈추면 뒤 유형은 읽지 않는다.
     const scans: DetailTypeScan[] = [];
+    let tradingPlansFrom: string | null = null;
     for (const detailType of [...REFETCH_TRIGGER_TYPES, TRADING_PLAN_TYPE]) {
-        const scan = await scanDetailType(
-            ctx,
-            detailType,
-            scanStart(through, detailType, ctx.today)
-        );
+        const from = scanStart(cursor, detailType, ctx.today);
+        const scan = await scanDetailType(ctx, detailType, from);
         scans.push(scan);
         if (scan.status === 'stopped') break;
         if (scan.status === 'overflow') {
+            if (detailType === TRADING_PLAN_TYPE) {
+                tradingPlansFrom = overflowResumeDate(ctx, scan, from);
+            }
             ctx.deps.log(
-                `[dart-filings] list ${detailType} exceeds ${INVESTOR_FLOWS_DART_MAX_LIST_PAGES} pages since ${scanStart(through, detailType, ctx.today)}` +
+                `[dart-filings] list ${detailType} exceeds ${INVESTOR_FLOWS_DART_MAX_LIST_PAGES} pages since ${from}` +
                     (detailType === TRADING_PLAN_TYPE
-                        ? ' — storing the first pages only'
+                        ? ` — storing the first pages, next run resumes from ${tradingPlansFrom}`
                         : ' — queueing the whole universe for a full refetch')
             );
         }
@@ -328,6 +385,7 @@ async function scanDisclosures(
         plans: scans
             .filter(scan => scan.detailType === TRADING_PLAN_TYPE)
             .flatMap(scan => scan.rows.map(toTradingPlanRow)),
+        tradingPlansFrom,
     };
 }
 
@@ -436,15 +494,20 @@ export async function runDartFilingsIngest(
         null;
 
     // ── 1) 공시검색 ──
-    const scan = await scanDisclosures(ctx, listCursor.through);
+    const scan = await scanDisclosures(ctx, listCursor);
     const plans = scan.plans.filter(
         row => row.receiptDate >= ctx.retentionFloor
     );
     if (plans.length > 0) await deps.repo.upsertTradingPlans(plans);
     result.tradingPlansStored = plans.length;
     result.changedCorps = scan.changedCorps.size;
-    result.listComplete = scan.complete;
+    result.listComplete = scan.complete && scan.tradingPlansFrom === null;
+    // 멈췄으면 두 커서 모두 그대로(다음 실행이 같은 창을 다시 읽는다). 끝까지 읽었으면 `through`는 오늘로 가고, D005는 넘쳤을 때만
+    // 읽은 마지막 접수일에 남는다.
     const through = scan.complete ? today : listCursor.through;
+    const tradingPlansFrom = scan.complete
+        ? scan.tradingPlansFrom
+        : listCursor.tradingPlansFrom;
     // 대기열 = 이전 대기열 + 새 공시 회사(순서 유지). 유니버스에서 빠진 회사(상장폐지 등)는 버린다.
     const pending = new Map(
         mergePending(
@@ -457,7 +520,11 @@ export async function runDartFilingsIngest(
     const saveState = async (): Promise<void> => {
         await deps.repo.setState(
             INVESTOR_FLOWS_STATE_DART_LIST_CURSOR,
-            serializeDartListCursor({ through, pending: [...pending.values()] })
+            serializeDartListCursor({
+                through,
+                pending: [...pending.values()],
+                tradingPlansFrom,
+            })
         );
         await deps.repo.setState(
             INVESTOR_FLOWS_STATE_DART_BACKFILL_CURSOR,

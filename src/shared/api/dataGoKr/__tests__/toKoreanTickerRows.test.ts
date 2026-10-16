@@ -10,6 +10,7 @@ function item(overrides: Partial<KrxListedItem> = {}): KrxListedItem {
         isin: 'KR7005930003',
         corpName: '삼성전자주식회사',
         basDt: '20261014',
+        listedShares: null,
         ...overrides,
     };
 }
@@ -31,6 +32,7 @@ describe('toKoreanTickerRows', () => {
                 name: '삼성전자',
                 exchange: 'KOSPI',
                 exchangeFullName: 'Korea Exchange (KOSPI)',
+                listedShares: null,
             },
         ]);
     });
@@ -51,8 +53,17 @@ describe('toKoreanTickerRows', () => {
                 name: '에코프로비엠',
                 exchange: 'KOSDAQ',
                 exchangeFullName: 'KOSDAQ',
+                listedShares: null,
             },
         ]);
+    });
+
+    it('상장주식수를 행에 그대로 싣는다', () => {
+        const rows = toKoreanTickerRows([
+            item({ shortCode: '005930', listedShares: 5_919_637_922 }),
+        ]);
+
+        expect(rows[0]?.listedShares).toBe(5_919_637_922);
     });
 
     it('KONEX 종목은 결과에서 빠진다 — yahoo에 시세가 없어 죽은 링크가 된다', () => {
@@ -91,6 +102,7 @@ describe('toKoreanTickerRows', () => {
                 name: 'NAVER',
                 exchange: 'KOSPI',
                 exchangeFullName: 'Korea Exchange (KOSPI)',
+                listedShares: null,
             },
         ]);
     });

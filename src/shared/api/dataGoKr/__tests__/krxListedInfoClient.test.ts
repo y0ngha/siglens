@@ -54,6 +54,7 @@ describe('fetchKrxListedItems', () => {
                 isin: 'KR7005930003',
                 corpName: '삼성전자주식회사',
                 basDt: expect.stringMatching(/^\d{8}$/),
+                listedShares: null,
             },
         ]);
     });
@@ -377,6 +378,7 @@ describe('fetchStockPriceItems', () => {
         itmsNm: '현대차2우B',
         mrktCtg: 'KOSPI',
         clpr: '153700',
+        lstgStCnt: '36613865',
     };
 
     it('V2 엔드포인트를 주어진 기준일로 호출한다', async () => {
@@ -402,6 +404,7 @@ describe('fetchStockPriceItems', () => {
                     srtnCd: '00088K',
                     itmsNm: '한화3우B',
                     isinCd: '',
+                    lstgStCnt: '',
                 },
             ])
         );
@@ -417,6 +420,7 @@ describe('fetchStockPriceItems', () => {
                 isin: 'KR7005387006',
                 corpName: '현대차2우B',
                 basDt: '20261014',
+                listedShares: 36_613_865,
             },
             {
                 shortCode: '00088K',
@@ -425,8 +429,24 @@ describe('fetchStockPriceItems', () => {
                 isin: '',
                 corpName: '한화3우B',
                 basDt: '20261014',
+                listedShares: null,
             },
         ]);
+    });
+
+    it.each([
+        [5_919_637_922, 5_919_637_922],
+        ['5919637922', 5_919_637_922],
+        ['0', null],
+        ['1,000', null],
+        [12.5, null],
+        [undefined, null],
+    ])('상장주식수 lstgStCnt %j → %j', async (raw, expected) => {
+        fetchSpy.mockResolvedValue(page([{ ...HYUNDAI_PREF, lstgStCnt: raw }]));
+
+        const { items } = await fetchStockPriceItems('20261014');
+
+        expect(items[0]?.listedShares).toBe(expected);
     });
 
     it('예산이 닳아 멈추면 잘렸다고 알린다', async () => {

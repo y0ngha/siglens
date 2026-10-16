@@ -209,10 +209,29 @@ describe('InvestorFlowsContent — 수집 중 안내', () => {
         ).toBeInTheDocument();
     });
 
-    it('데이터가 있는 종목은 수집 중 표시여도 안내 없이 데이터를 그린다', () => {
+    it('행 단위 구간(공매도)은 데이터가 있으면 수집 중 표시여도 안내 없이 데이터를 그린다', () => {
         renderContent(COLLECTING, makeSnapshot());
-        expect(screen.queryByText(INSTITUTIONAL_TITLE)).toBeNull();
         expect(screen.queryByText(SHORT_TITLE)).toBeNull();
+    });
+
+    it('13F는 데이터가 있어도 수집 중이면 부분 집계 대신 안내만 낸다(차트·상위 보유 기관 표를 숨긴다)', () => {
+        renderContent(COLLECTING, makeSnapshot());
+        const section = within(institutionalSection());
+        expect(section.getByText(INSTITUTIONAL_TITLE)).toBeInTheDocument();
+        expect(
+            section.queryByRole('list', { name: /분기별 기관 순매수/ })
+        ).toBeNull();
+        expect(
+            section.queryByRole('heading', { name: /상위 보유 기관/ })
+        ).toBeNull();
+    });
+
+    it('13F가 준비되면 같은 데이터를 그대로 그린다', () => {
+        renderContent(
+            { ...COLLECTING, institutional: 'ready' },
+            makeSnapshot()
+        );
+        expect(screen.queryByText(INSTITUTIONAL_TITLE)).toBeNull();
         expect(
             screen.getByRole('list', { name: /분기별 기관 순매수/ })
         ).toBeInTheDocument();
@@ -309,7 +328,7 @@ describe('InvestorFlowsContent — 점수 카드 연동', () => {
 });
 
 describe('InstitutionalSection 단독', () => {
-    it('데이터가 있으면 collecting이어도 안내 대신 데이터를 그린다', () => {
+    it('collecting이면 데이터가 있어도(부분 집계) 안내만 그린다', () => {
         render(
             <InstitutionalSection
                 institutional={makeSnapshot().institutional}
@@ -317,7 +336,23 @@ describe('InstitutionalSection 단독', () => {
                 collecting
             />
         );
+        expect(screen.getByText(INSTITUTIONAL_TITLE)).toBeInTheDocument();
+        expect(
+            screen.queryByRole('heading', { name: /상위 보유 기관/ })
+        ).toBeNull();
+    });
+
+    it('collecting이 아니면 데이터를 그린다', () => {
+        render(
+            <InstitutionalSection
+                institutional={makeSnapshot().institutional}
+                metrics={evaluate(makeSnapshot()).institutional.metrics}
+            />
+        );
         expect(screen.queryByText(INSTITUTIONAL_TITLE)).toBeNull();
+        expect(
+            screen.getByRole('heading', { name: /상위 보유 기관/ })
+        ).toBeInTheDocument();
     });
 
     it('안내는 서버에서 그려지는 정적 텍스트다(role=note, 클라이언트 전용 브리지 없음)', () => {
@@ -457,6 +492,28 @@ describe('AsOfNotice — 수집 중 행', () => {
         expect(
             within(row('결제 불이행(FTD)')).getByText('데이터 없음')
         ).toBeVisible();
+    });
+});
+
+describe('AsOfNotice — 13F 부분 집계', () => {
+    it('점수표에 기준 분기가 있어도 13F가 수집 중이면 행은 "수집 중"이다', () => {
+        const snapshot = makeSnapshot();
+        const freshness = evaluate(snapshot).freshness;
+        expect(freshness.institutionalPeriod).not.toBeNull();
+        render(
+            <AsOfNotice
+                freshness={freshness}
+                snapshotAsOf={snapshot.asOf}
+                showFinra
+                regShoEnabled={false}
+                thresholdAsOf={null}
+                collecting={{ ...NO_ARMS, institutional: true }}
+            />
+        );
+        const row = screen
+            .getByText('기관 보유(13F)')
+            .closest('div') as HTMLElement;
+        expect(within(row).getByText('수집 중')).toBeVisible();
     });
 });
 

@@ -1,4 +1,4 @@
-import type { KoreanTickerEntry } from '@/shared/lib/types';
+import type { KoreanTickerUpsertEntry } from '@/shared/lib/types';
 import {
     fetchKrxListedItems,
     fetchStockPriceItems,
@@ -9,8 +9,11 @@ import { toKoreanTickerRows } from './toKoreanTickerRows';
 export interface KrTickerRowsResult {
     /** 마스터(KRX 상장종목정보) 원본 항목 — KONEX 제외·중복 병합 전. 수신량 로그용. */
     masterItems: readonly KrxListedItem[];
-    /** 마스터 행 + 보충 행. upsert와 상폐 판정의 입력이다. */
-    rows: KoreanTickerEntry[];
+    /**
+     * 마스터 행 + 보충 행. upsert와 상폐 판정의 입력이다. 상장주식수(`listedShares`)는 보충 소스에만 있어 마스터 행에도 같은
+     * 단축코드의 보충 값을 붙인다 — 보충을 받지 못했으면 비어 있고, upsert가 저장된 값을 지우지 않는다.
+     */
+    rows: KoreanTickerUpsertEntry[];
     /** 마스터에 없어 주식시세 V2에서 보충한 행 수(우선주 등). */
     supplemented: number;
     /**
@@ -37,17 +40,26 @@ export interface KrTickerRowsResult {
  */
 export async function fetchKrTickerRows(): Promise<KrTickerRowsResult> {
     const masterItems = await fetchKrxListedItems();
-    const masterRows = toKoreanTickerRows(masterItems);
     const supplementItems = await fetchSupplement(masterItems[0]?.basDt);
     if (supplementItems === null) {
         return {
             masterItems,
-            rows: masterRows,
+            rows: toKoreanTickerRows(masterItems),
             supplemented: 0,
             supplementUnavailable: true,
         };
     }
 
+    const sharesByCode = new Map(
+        supplementItems.map(item => [item.shortCode, item.listedShares])
+    );
+    const masterRows = toKoreanTickerRows(
+        masterItems.map(item => ({
+            ...item,
+            listedShares:
+                item.listedShares ?? sharesByCode.get(item.shortCode) ?? null,
+        }))
+    );
     const masterCodes = new Set(masterItems.map(item => item.shortCode));
     const supplementRows = toKoreanTickerRows(
         supplementItems.filter(item => !masterCodes.has(item.shortCode))

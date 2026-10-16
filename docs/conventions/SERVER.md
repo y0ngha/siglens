@@ -381,6 +381,17 @@ marker row), and add an alarm for the gate that never opens so a stalled prerequ
 - ❌ "Runs after the ingest cron" in a comment while the schedule says otherwise.
 - ✅ The dependent job refuses to run until the prerequisite's durable marker for that period exists; a staleness alarm covers a marker that stops advancing.
 
+<a id="CC-13"></a>
+
+#### CC-13 — No item or step may starve another in a shared run
+
+In a job that processes a backlog or chains several steps under one deadline, give each step its own reserved share
+of the budget, and track attempts so a permanently failing item rotates out of the front of the queue. Otherwise one
+slow step (a long backfill) or one poison item consumes the whole run and the rest never executes.
+
+- ❌ A 13F backfill consumes the shared deadline, so the filings step is skipped on every run; a failing newest item is retried first forever.
+- ✅ Each step gets a bounded slice (or runs first with a cap), and items record attempts so failures move to the back.
+
 ---
 
 ## Server Data Cache Rules (`unstable_cache` / `fetch`)

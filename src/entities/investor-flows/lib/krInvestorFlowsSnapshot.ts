@@ -98,7 +98,7 @@ export interface KrSnapshotInput {
     readonly majorHoldings: readonly DartMajorHoldingRecord[];
     readonly insiderReports: readonly DartInsiderReportRecord[];
     readonly tradingPlans: readonly DartTradingPlanRecord[];
-    /** 발행주식수. DB에 한국 발행주식수 원천이 없어 지금은 늘 `null`이다(core는 보유비율 증감 합으로 대신한다). */
+    /** 발행주식수 — 보통주의 상장주식수(`korean_tickers.listed_shares`). 모르면 `null`(core는 보유비율 증감 합으로 대신한다). */
     readonly sharesOutstanding: number | null;
 }
 

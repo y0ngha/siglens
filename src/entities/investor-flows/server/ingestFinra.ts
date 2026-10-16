@@ -13,7 +13,7 @@ import {
 import { addDays } from '../lib/investorFlowsDates';
 import type { ShortInterestRow, ShortVolumeRow } from '../model';
 
-/** 첫 실행(테이블이 비었을 때)에 거슬러 올라가는 일수 — 60일 z-score 창에 쓸 거래량을 채운다. */
+/** 일별 거래량을 채워 두는 창(일) — 60일 z-score 창에 쓸 거래량. 창 안에서 빠진 평일을 받는다. */
 export const SHORT_VOLUME_BACKFILL_DAYS = 90;
 /** 한 실행이 받는 일별 거래량 파일 상한(파일당 ~0.5MB). 나머지는 다음 실행이 이어 간다. */
 export const MAX_SHORT_VOLUME_FILES_PER_RUN = 45;
@@ -32,7 +32,8 @@ export interface IngestFinraDeps {
         fetchShortInterestText(settlementDate: string): Promise<string | null>;
     };
     repo: {
-        latestShortVolumeDate(): Promise<string | null>;
+        /** `since`(포함) 이후 저장된 일별 거래량 거래일 집합. */
+        listShortVolumeTradeDates(since: string): Promise<Set<string>>;
         listShortInterestSettlementDates(since: string): Promise<Set<string>>;
         upsertShortVolume(rows: readonly ShortVolumeRow[]): Promise<void>;
         upsertShortInterest(rows: readonly ShortInterestRow[]): Promise<void>;
@@ -103,12 +104,19 @@ export async function runFinraIngest(
     const changedSymbols = new Set<string>();
 
     // ── 일별 공매도 거래량 ──
-    const latestVolume = await deps.repo.latestShortVolumeDate();
+    // 창 안의 평일 중 저장되지 않은 날을 **최근 날부터** 받는다 — 첫 백필(≈63일 > 실행당 상한)의 첫 실행에 최신 거래량이 들어오고,
+    // 마지막 저장일 커서가 아니라 저장된 날짜 집합으로 고르므로 상한·마감에 걸려 남은 옛날 날은 다음 실행이 채운다(멱등 — upsert).
+    // 대가: 휴장일(파일 없음)과 유니버스 행이 하나도 없는 파일은 저장되지 않아 창을 벗어날 때까지 매 실행 다시 묻는다(창 90일에
+    // 휴장일 2~4일, 없는 파일 응답은 작다).
+    const volumeWindowStart = addDays(today, -SHORT_VOLUME_BACKFILL_DAYS - 1);
+    const haveVolume = await deps.repo.listShortVolumeTradeDates(
+        addDays(volumeWindowStart, 1)
+    );
     let interestWasEmpty = false;
-    const volumeDates = shortVolumeCandidateDates(
-        latestVolume ?? addDays(today, -SHORT_VOLUME_BACKFILL_DAYS - 1),
-        today
-    ).slice(0, MAX_SHORT_VOLUME_FILES_PER_RUN);
+    const volumeDates = shortVolumeCandidateDates(volumeWindowStart, today)
+        .filter(date => !haveVolume.has(date))
+        .toReversed()
+        .slice(0, MAX_SHORT_VOLUME_FILES_PER_RUN);
     for (const date of volumeDates) {
         if (deps.isDeadlineReached()) {
             status = 'deadline';
@@ -136,9 +144,11 @@ export async function runFinraIngest(
             have.size === 0
                 ? SHORT_INTEREST_BACKFILL_LOOKBACK_DAYS
                 : SHORT_INTEREST_LOOKBACK_DAYS;
-        const groups = shortInterestCandidateGroups(today, lookback).filter(
-            group => !group.some(variant => have.has(variant))
-        );
+        // 최근 결제일부터 — 첫 백필(1년 ≈24개 > 실행당 8개)의 첫 실행에 최신 잔고가 들어온다. 저장된 결제일 집합으로 고르므로 남은
+        // 옛 결제일은 다음 실행이 채운다.
+        const groups = shortInterestCandidateGroups(today, lookback)
+            .filter(group => !group.some(variant => have.has(variant)))
+            .toReversed();
         for (const group of groups.slice(0, MAX_SHORT_INTEREST_FILES_PER_RUN)) {
             if (deps.isDeadlineReached()) {
                 status = 'deadline';
@@ -170,9 +180,11 @@ export async function runFinraIngest(
         .sort()
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
     if (toInvalidate.length > 0) await deps.invalidateSymbols(toInvalidate);
-    // 잔고가 비어 있었는지는 잔고 단계에서만 알 수 있다(마감으로 건너뛰면 모른다 — 그땐 거래량 쪽만 본다).
+    // 잔고가 비어 있었는지는 잔고 단계에서만 알 수 있다(마감으로 건너뛰면 모른다 — 그땐 거래량 쪽만 본다). 거래량은 창(90일) 안이
+    // 비어 있었는지로 본다 — 90일 넘게 멈췄다 돌아오면 보존(120일) 행이 남아 있어도 참이 되지만, 그때 부르는 훅은 준비 상태 캐시
+    // 무효화뿐이라 해가 없다.
     const firstDataStored =
-        (volumeFiles > 0 && latestVolume === null) ||
+        (volumeFiles > 0 && haveVolume.size === 0) ||
         (interestFiles > 0 && interestWasEmpty);
     if (firstDataStored) await deps.onFirstDataStored?.();
 

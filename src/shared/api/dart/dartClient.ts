@@ -473,14 +473,19 @@ const toCount = (value: unknown): number => {
     return typeof n === 'number' && Number.isInteger(n) && n >= 0 ? n : 0;
 };
 
-/** 공시검색(`list.json`) 한 페이지 — 지분공시(`pblntf_ty=D`)의 상세 유형 하나. 데이터 없음(`013`)이면 빈 페이지. */
+/**
+ * 공시검색(`list.json`) 한 페이지 — 지분공시의 상세 유형 하나. 데이터 없음(`013`)이면 빈 페이지.
+ *
+ * `pblntf_detail_ty`만 보낸다(`pblntf_ty`는 보내지 않는다). 실 API에 `pblntf_ty=D`를 함께 보내면 상세 유형 필터가 무시돼
+ * D001·D002·D005가 모두 지분공시 전체(같은 행·같은 `total_count`)를 돌려줬고, 상세 유형만 보내면 그 유형의 보고서만 왔다
+ * (2026-10-17 실데이터 리허설 프로브). 상세 유형 코드(`D005` 등)가 대분류를 이미 담는다.
+ */
 export async function fetchDisclosureList(
     query: DartListQuery
 ): Promise<DartListPage> {
     const envelope = await fetchJsonList('list.json', {
         bgn_de: compactDate(query.beginDate),
         end_de: compactDate(query.endDate),
-        pblntf_ty: 'D',
         pblntf_detail_ty: query.detailType,
         page_no: String(query.pageNo),
         page_count: String(DART_LIST_PAGE_COUNT),
