@@ -24,6 +24,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { KR_SYMBOL_LIKE_PATTERNS } from '@/entities/ticker/api';
 import { commonShareCandidates, resolveDartCorp } from '../lib/dartSymbol';
+import { compositeKey } from '../lib/dedupeByKey';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import type {
     DartCorpCodeRow,
@@ -33,6 +34,7 @@ import type {
     DartTradingPlanRow,
 } from '../model';
 import { affectedRows } from './affectedRows';
+import { uniqueForUpsert } from './uniqueForUpsert';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
@@ -145,7 +147,12 @@ export class DrizzleInvestorFlowsDartRepository {
 
     /** 고유번호 맵 반영 — 바뀐 행만 갱신한다(`IS DISTINCT FROM`). 맵에서 사라진 종목코드는 지우지 않는다(상폐 종목 링크 유지). */
     async upsertCorpCodes(rows: readonly DartCorpCodeRow[]): Promise<void> {
-        await writeInChunks(rows, chunk =>
+        const unique = uniqueForUpsert(
+            'dart_corp_code',
+            rows,
+            row => row.stockCode
+        );
+        await writeInChunks(unique, chunk =>
             withRetry(
                 () =>
                     this.db
@@ -169,7 +176,10 @@ export class DrizzleInvestorFlowsDartRepository {
     async upsertMajorHoldings(
         rows: readonly DartMajorHoldingRow[]
     ): Promise<void> {
-        await writeInChunks(rows, chunk =>
+        const unique = uniqueForUpsert('dart_major_holdings', rows, row =>
+            compositeKey(row.rceptNo, row.reporter)
+        );
+        await writeInChunks(unique, chunk =>
             withRetry(
                 () =>
                     this.db
@@ -206,7 +216,10 @@ export class DrizzleInvestorFlowsDartRepository {
     async upsertInsiderReports(
         rows: readonly DartInsiderReportRow[]
     ): Promise<void> {
-        await writeInChunks(rows, chunk =>
+        const unique = uniqueForUpsert('dart_insider_reports', rows, row =>
+            compositeKey(row.rceptNo, row.reporter)
+        );
+        await writeInChunks(unique, chunk =>
             withRetry(
                 () =>
                     this.db
@@ -244,7 +257,13 @@ export class DrizzleInvestorFlowsDartRepository {
     async upsertTradingPlans(
         rows: readonly DartTradingPlanRow[]
     ): Promise<void> {
-        await writeInChunks(rows, chunk =>
+        // 공시검색 페이지끼리 같은 접수번호가 겹칠 수 있다(목록이 읽는 사이 바뀌면) — 생산자가 지우지 않는 유일한 DART 경로다.
+        const unique = uniqueForUpsert(
+            'dart_trading_plans',
+            rows,
+            row => row.rceptNo
+        );
+        await writeInChunks(unique, chunk =>
             withRetry(
                 () =>
                     this.db

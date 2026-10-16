@@ -20,6 +20,12 @@ export const MISS_TTL_SECONDS = {
     /** ISIN에서 낸 CUSIP을 OpenFIGI가 다른 티커로 해석했다. */
     figiMismatch: 30 * SECONDS_PER_DAY,
     /**
+     * 이 심볼의 CUSIP을 다른 심볼이 맵에서 쥐고 있다(같은 증권의 표기 변형, 또는 FMP가 파생 상장에 보통주 CUSIP을 돌려줌 —
+     * `resolveCusipMapConflicts`). 후보에 남겨 두면 매 실행 다시 조회되고 전수 한 바퀴가 끝나지 않는다. 맵 쪽이 상장 폐지되면
+     * 그 뒤 다시 시도해 이 심볼이 CUSIP을 넘겨받는다.
+     */
+    duplicateCusip: 30 * SECONDS_PER_DAY,
+    /**
      * 같은 심볼이 `INVESTOR_FLOWS_CUSIP_FAILURE_THRESHOLD`번 연속 인프라 오류(FMP 402·400·5xx, OpenFIGI 장애)로 실패했다.
      * 오류가 영구적일 수 있어 후보 목록에서 빼되(그래야 전수 한 바퀴가 끝난다), 일시 장애였을 수도 있으니 일주일 뒤 다시 본다.
      */

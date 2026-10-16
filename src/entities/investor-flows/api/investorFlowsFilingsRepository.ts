@@ -13,6 +13,7 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import { cikToInt, cikToString } from '../lib/cik';
 import type { CikSymbolPair } from '../lib/companyTickers';
+import { compositeKey } from '../lib/dedupeByKey';
 import { isOfferingKind, secFilingIndexUrl } from '../lib/offeringIndex';
 import type {
     FilingRetry,
@@ -25,6 +26,7 @@ import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from './investorFlowsState';
+import { uniqueForUpsert } from './uniqueForUpsert';
 
 const LOOKUP_CHUNK = 1_000;
 
@@ -99,11 +101,14 @@ export class DrizzleSecFilingsRepository {
     async replaceCikSymbolMap(
         pairs: readonly CikSymbolPair[]
     ): Promise<CikMapReplaceResult> {
+        const unique = uniqueForUpsert('sec_cik_symbol_map', pairs, pair =>
+            compositeKey(pair.cik, pair.symbol)
+        );
         return withRetry(
             () =>
                 this.db.transaction(async tx => {
                     for (const chunk of chunked(
-                        pairs,
+                        unique,
                         INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
                     )) {
                         // 한 트랜잭션 안이라 직렬이어야 한다.
@@ -123,7 +128,7 @@ export class DrizzleSecFilingsRepository {
                         sql`DELETE FROM sec_cik_symbol_map WHERE updated_at < now()`
                     );
                     return {
-                        upserted: pairs.length,
+                        upserted: unique.length,
                         deleted: affectedRows(deleted),
                     };
                 }),
@@ -234,11 +239,15 @@ export class DrizzleSecFilingsRepository {
     /** 증자 공시 행 upsert(+ 그 accession의 재시도 기록 삭제, 한 트랜잭션). */
     async upsertOfferings(rows: readonly OfferingFilingRow[]): Promise<void> {
         if (rows.length === 0) return;
+        // 한 심볼이 두 CIK에 걸려 있고(company_tickers의 `.`·`-` 표기 변형) 두 CIK가 같은 제출의 공동 등록인이면 (접수번호, 심볼)이 겹친다.
+        const unique = uniqueForUpsert('sec_offering_filings', rows, row =>
+            compositeKey(row.accession, row.symbol)
+        );
         await withRetry(
             () =>
                 this.db.transaction(async tx => {
                     for (const chunk of chunked(
-                        rows,
+                        unique,
                         INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
                     )) {
                         // react-doctor-disable-next-line react-doctor/async-await-in-loop
