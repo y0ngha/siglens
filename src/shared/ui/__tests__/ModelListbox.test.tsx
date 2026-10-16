@@ -138,6 +138,16 @@ describe('ModelListbox', () => {
         expect(opts[2]!.textContent).toContain('BYOK');
     });
 
+    it('hides every access badge when showAccessBadge is false', () => {
+        renderListbox('claude-sonnet-5-5' as ModelId, {
+            models: ['claude-sonnet-5-5', 'claude-opus-5'] as ModelId[],
+            showAccessBadge: false,
+        });
+        for (const option of screen.getAllByRole('option')) {
+            expect(option.textContent).not.toMatch(/MEMBER|BYOK/);
+        }
+    });
+
     describe('none option', () => {
         function renderWithNone(selected: ModelId | null) {
             const onSelectNone = vi.fn();

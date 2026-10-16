@@ -103,6 +103,8 @@ function ModelField({ initial, groups }: ModelFieldProps) {
                         }}
                         onClose={closeToTrigger}
                         ariaLabel={t('DefaultModelForm.selectLabel')}
+                        // API에서는 등급과 상관없이 모든 모델이 내 키로 돈다 — 등급 배지는 오해를 부른다.
+                        showAccessBadge={false}
                         className="top-full left-0 mt-1 w-full min-w-44"
                     />
                 )}

@@ -82,11 +82,21 @@ test.describe('developers page', () => {
             const res = await context.get(PATH, { maxRedirects: 0 });
             expect(res.status()).toBe(200);
             const html = normalizeReactSsrText(await res.text());
-            // h1이 하나이고, 도구 카드의 사람용 요약이 접힌 원문과 함께 SSR에 있다.
+            // h1이 하나이고, 도구 카드의 사람용 요약이 SSR에 있다. 영어 원문 설명은 OpenAPI 파일에만 있다.
             expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
             expect(html).toContain('시그렌즈 API 문서');
             expect(html).toContain('회사 이름이나 심볼 일부로 종목을 찾아요.');
-            expect(html).toContain('에이전트용 원문 설명 보기');
+            expect(html).not.toContain('에이전트용 원문 설명 보기');
+            // 영어 원문은 OpenAPI 파일에만 있다 — 같은 도구의 첫 줄이 페이지에 없어야 한다.
+            const spec = (await (
+                await context.get('/api/v1/openapi.json')
+            ).json()) as {
+                paths: Record<string, { post: { description: string } }>;
+            };
+            const original =
+                spec.paths['/tools/search_ticker']!.post.description;
+            expect(original.length).toBeGreaterThan(40);
+            expect(html).not.toContain(original.slice(0, 40));
             expect(html).toContain('id="tool-get_investor_flows"');
             expect(html).toMatch(
                 /<link rel="canonical" href="[^"]*\/developers"/

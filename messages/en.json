@@ -2992,7 +2992,6 @@
                 "label": "Developer docs contents"
             },
             "tools": {
-                "agentDescriptionToggle": "Show original agent description",
                 "argsCaption": "Arguments of {name}",
                 "argsTitle": "Arguments",
                 "byokBadge": "BYOK",
@@ -3003,7 +3002,7 @@
                 "enumMore": "Show {count} more",
                 "indexLabel": "Jump to a tool",
                 "noArgs": "This tool takes no arguments. Send an empty body or an empty JSON object.",
-                "note": "The short description under each tool name is a plain-language summary. The original descriptions and argument descriptions are written in English for the AI agent, so they are shown as they are, untranslated. This list comes from the same source as GET /tools and the OpenAPI document, so it grows when tools are added. Ignore references to tools that are not listed here.",
+                "note": "The short line under each tool name is a plain-language summary. Argument descriptions are shown in English as written. The full spec for each tool is in the OpenAPI JSON and YAML downloads. This list comes from the same source as GET /tools and the OpenAPI document, so it grows when tools are added.",
                 "optional": "optional",
                 "required": "required",
                 "sub": "Each tool has its own path, and the body is the arguments as JSON.",

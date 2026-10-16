@@ -109,6 +109,8 @@ describe('DefaultModelForm — 키가 있을 때', () => {
         expect(
             within(listbox).getByRole('group', { name: 'ChatGPT (OpenAI)' })
         ).toBeInTheDocument();
+        // API에서는 모든 모델이 내 키로 돌아 등급 배지를 보이지 않는다.
+        expect(listbox.textContent).not.toMatch(/MEMBER|BYOK/);
     });
 
     it('저장된 기본 모델이 트리거에 보이고 열면 그 항목이 선택돼 있다', async () => {

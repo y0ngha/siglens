@@ -2992,7 +2992,6 @@
                 "label": "开发者文档目录"
             },
             "tools": {
-                "agentDescriptionToggle": "查看面向智能体的原文说明",
                 "argsCaption": "{name} 的参数",
                 "argsTitle": "参数",
                 "byokBadge": "BYOK",
@@ -3003,7 +3002,7 @@
                 "enumMore": "显示其余 {count} 项",
                 "indexLabel": "跳转到工具",
                 "noArgs": "该工具没有参数。发送空正文或空的 JSON 对象即可。",
-                "note": "每个工具名称下方的简短说明是便于阅读的概述。面向 AI 智能体的原文说明和参数说明是英文，这里不翻译，按原样显示。此列表与 GET /tools 和 OpenAPI 文档来自同一数据源，新增工具时会一并增加。原文说明中提到、但不在此列表里的工具请忽略。",
+                "note": "每个工具名称下方的简短说明是便于阅读的概要。参数说明保持英文原样显示。各工具的详细规范包含在 OpenAPI 的 JSON 和 YAML 文件中。此列表与 GET /tools、OpenAPI 文档来自同一数据源，所以工具增加时会一同增加。",
                 "optional": "可选",
                 "required": "必填",
                 "sub": "每个工具都有独立的路径，请求正文是 JSON 格式的参数。",

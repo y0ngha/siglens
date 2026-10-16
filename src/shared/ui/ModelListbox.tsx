@@ -45,6 +45,11 @@ interface ModelListboxProps {
     ariaLabel: string;
     /** 패널 위치(방향·정렬·폭). 테두리·배경 같은 표면은 여기서 고정한다. */
     className: string;
+    /**
+     * `false`면 모델 옆 등급 배지(MEMBER·BYOK)를 숨긴다. 기본 `true`.
+     * 공개 API 기본 모델처럼 등급과 상관없이 모두 내 키로 도는 목록에서는 배지가 오해를 부른다.
+     */
+    showAccessBadge?: boolean;
 }
 
 /**
@@ -71,6 +76,7 @@ export function ModelListbox({
     onClose,
     ariaLabel,
     className,
+    showAccessBadge = true,
 }: ModelListboxProps) {
     const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
     const headingIdBase = useId();
@@ -191,7 +197,7 @@ export function ModelListbox({
                             {display.fullName}
                         </div>
                     </div>
-                    <ModelAccessBadge model={model} />
+                    {showAccessBadge && <ModelAccessBadge model={model} />}
                 </div>
             </div>
         );

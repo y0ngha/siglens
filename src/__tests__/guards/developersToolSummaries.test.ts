@@ -56,9 +56,9 @@ import zh from '../../../messages/zh.json';
 /**
  * **`/developers` 도구 레퍼런스의 사람용 요약 가드.**
  *
- * 카드는 코어가 에이전트에게 쓴 영어 설명(긴 단락)을 그대로 보여 주지 않고 카탈로그의 한두 문장 요약
- * (`views.developers.tools.summaries.<tool>`)을 먼저 보여 준다. 요약이 없는 도구는 카드가 영어 원문으로
- * 떨어지므로, API가 내보내는 도구 목록(`publicApiToolSpecs`)과 요약 키를 네 로케일 모두에서 대조한다 —
+ * 카드는 코어가 에이전트에게 쓴 영어 설명(긴 단락)을 싣지 않고 카탈로그의 한두 문장 요약
+ * (`views.developers.tools.summaries.<tool>`)만 보여 준다. 요약이 없는 도구는 카드에 사람이 읽을 설명이
+ * 하나도 없게 되므로, API가 내보내는 도구 목록(`publicApiToolSpecs`)과 요약 키를 네 로케일 모두에서 대조한다 —
  * 코어에 새 도구가 생기면 이 테스트가 먼저 실패한다.
  */
 
@@ -86,7 +86,7 @@ describe('/developers 도구 요약', () => {
             );
             expect(
                 missing,
-                `views.developers.tools.summaries에 요약이 없는 도구 (${locale}) — 카드가 영어 원문 단락으로 떨어진다`
+                `views.developers.tools.summaries에 요약이 없는 도구 (${locale}) — 카드에 사람이 읽을 설명이 없다`
             ).toEqual([]);
         }
     );

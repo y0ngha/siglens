@@ -98,6 +98,27 @@ describe('GET /api/v1/openapi.json', () => {
         expect(JSON.stringify(doc)).not.toContain('"operationId":"web_search"');
     });
 
+    it("keeps every tool's full agent description unchanged (the /developers page no longer shows it)", async () => {
+        const doc = (await (await getJson()).json()) as Json;
+        for (const spec of publicApiToolSpecs()) {
+            const operation = doc.paths[`/tools/${spec.name}`] as {
+                post: { description: string };
+            };
+            expect(
+                operation.post.description.startsWith(spec.description)
+            ).toBe(true);
+        }
+        const yamlDoc = parse(await (await getYaml()).text()) as Json;
+        for (const spec of publicApiToolSpecs()) {
+            const operation = yamlDoc.paths[`/tools/${spec.name}`] as {
+                post: { description: string };
+            };
+            expect(
+                operation.post.description.startsWith(spec.description)
+            ).toBe(true);
+        }
+    });
+
     it('takes the server URL from the site URL setting', async () => {
         const doc = (await (await getJson()).json()) as Json;
         expect(doc.servers[0]?.url).toBe('https://example.test/api/v1');
