@@ -1,4 +1,5 @@
 import { constants } from 'node:http2';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -128,6 +129,10 @@ export async function withApiErrorBoundary(
     label: string,
     handler: () => Promise<Response>
 ): Promise<Response> {
+    // 출시 플래그가 꺼져 있으면 인증·한도·DB보다 먼저 끊는다. 모든 v1 라우트가 이 경계를 거치므로
+    // 새 라우트도 우회하지 못한다(`publicApiLaunchFlag.route.test.ts`가 라우트 파일을 전수 검사한다).
+    if (!isPublicApiEnabled())
+        return apiError(API_STATUS.notFound, 'not_found', 'Not found.');
     try {
         return await handler();
     } catch (error) {

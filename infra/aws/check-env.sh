@@ -65,6 +65,8 @@ OPTIONAL_KEYS=(
   # Investor flows data crons: FINRA_SHORT_DATA_ENABLED unset = enabled (non-commercial phase),
   # OPENFIGI_API_KEY unset = anonymous OpenFIGI limits, SEC_USER_AGENT unset = built-in default.
   FINRA_SHORT_DATA_ENABLED
+  # Public Open API launch flag: unset = OFF (/developers and /api/v1/* return 404).
+  PUBLIC_API_ENABLED
   OPENFIGI_API_KEY
   SEC_USER_AGENT
 )

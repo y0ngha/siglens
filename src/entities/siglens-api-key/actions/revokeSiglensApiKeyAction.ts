@@ -6,9 +6,11 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import type {
     RevokeSiglensApiKeyState,
+    ReachableSiglensApiKeyErrorCode,
     SiglensApiKeyActionErrorCode,
 } from '@/entities/siglens-api-key/model';
 import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuth';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
 
 const UUID_PATTERN =
@@ -22,7 +24,7 @@ const ERROR_MESSAGE_KEY: Partial<Record<SiglensApiKeyActionErrorCode, string>> =
 const FALLBACK_MESSAGE_KEY = 'serverError';
 
 async function errorState(
-    code: SiglensApiKeyActionErrorCode
+    code: ReachableSiglensApiKeyErrorCode
 ): Promise<RevokeSiglensApiKeyState> {
     const t = await getTranslations('entities.siglens-api-key.action');
     return {
@@ -40,6 +42,14 @@ export async function revokeSiglensApiKeyAction(
     _prevState: RevokeSiglensApiKeyState,
     formData: FormData
 ): Promise<RevokeSiglensApiKeyState> {
+    // 서버 액션은 화면 밖에서도 직접 호출할 수 있다 — 출시 전에는 화면을 가리는 것만으로 부족하다.
+    if (!isPublicApiEnabled())
+        return {
+            status: 'error',
+            code: 'not_available',
+            // UI에서 도달하지 않는 직접 호출 전용 거절이라 번역 키를 두지 않는다.
+            message: 'API keys are not available.',
+        };
     try {
         const user = await getCurrentUser();
         if (user === null) return await errorState('unauthenticated');

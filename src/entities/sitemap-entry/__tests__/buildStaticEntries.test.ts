@@ -494,3 +494,15 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         );
     });
 });
+
+describe('buildStaticEntries - 공개 API 출시 플래그', () => {
+    it('꺼져 있으면 /developers가 sitemap에서 빠지고 나머지 정적 항목은 그대로다', () => {
+        const on = buildStaticEntries(NOW);
+        vi.stubEnv('PUBLIC_API_ENABLED', '');
+        const off = buildStaticEntries(NOW);
+        expect(off.some(e => e.url.endsWith('/developers'))).toBe(false);
+        expect(off.map(e => e.url)).toEqual(
+            on.map(e => e.url).filter(url => !url.endsWith('/developers'))
+        );
+    });
+});

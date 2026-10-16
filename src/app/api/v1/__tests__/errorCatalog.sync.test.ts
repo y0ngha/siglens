@@ -47,6 +47,12 @@ function emittedCodes(): Set<string> {
 
 const documented = new Set(API_ERROR_DOCS.map(doc => doc.code));
 
+/**
+ * 출시 플래그가 꺼졌을 때(`withApiErrorBoundary`)만 나가는 코드. 꺼진 동안은 OpenAPI 문서·`/developers`도
+ * 404라 공개 카탈로그에 올릴 독자가 없고, 켜진 뒤에는 나가지 않아 문서에 적으면 거짓이 된다.
+ */
+const LAUNCH_GATE_ONLY_CODES: ReadonlySet<string> = new Set(['not_found']);
+
 describe('apiErrorCatalog vs the codes src/app/api/v1 emits', () => {
     const emitted = emittedCodes();
 
@@ -57,11 +63,23 @@ describe('apiErrorCatalog vs the codes src/app/api/v1 emits', () => {
     });
 
     it('documents every code the routes and executors emit', () => {
-        expect([...emitted].filter(code => !documented.has(code))).toEqual([]);
+        expect(
+            [...emitted].filter(
+                code =>
+                    !documented.has(code) && !LAUNCH_GATE_ONLY_CODES.has(code)
+            )
+        ).toEqual([]);
     });
 
     it('has no catalog entry that nothing emits', () => {
         expect([...documented].filter(code => !emitted.has(code))).toEqual([]);
+    });
+
+    it('keeps the launch-gate-only codes out of the public catalog', () => {
+        for (const code of LAUNCH_GATE_ONLY_CODES) {
+            expect(emitted).toContain(code);
+            expect(documented).not.toContain(code);
+        }
     });
 
     it('lists each code once', () => {

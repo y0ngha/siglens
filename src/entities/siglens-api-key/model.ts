@@ -48,7 +48,9 @@ export type SiglensApiKeyActionErrorCode =
     | 'invalid_name'
     | 'limit_reached'
     | 'not_found'
-    | 'server_error';
+    | 'server_error'
+    /** 공개 API 출시 플래그가 꺼져 있다(`isPublicApiEnabled`). 직접 호출된 액션만 받는다. */
+    | 'not_available';
 
 /**
  * 키 발급 액션 상태. `created`의 `rawKey`는 이 응답에서만 존재한다 — 서버에는 해시만 남고
@@ -81,7 +83,21 @@ export type ApiDefaultModelErrorCode =
     | 'unauthenticated'
     | 'invalid_model'
     | 'provider_key_missing'
-    | 'server_error';
+    | 'server_error'
+    /** 공개 API 출시 플래그가 꺼져 있다(`isPublicApiEnabled`). 직접 호출된 액션만 받는다. */
+    | 'not_available';
+
+/** 화면에서 도달할 수 있는 키 액션 오류 코드 — 번역 키가 있는 코드만(`not_available`은 직접 호출 전용). */
+export type ReachableSiglensApiKeyErrorCode = Exclude<
+    SiglensApiKeyActionErrorCode,
+    'not_available'
+>;
+
+/** 화면에서 도달할 수 있는 API 기본 모델 오류 코드 — 번역 키가 있는 코드만. */
+export type ReachableApiDefaultModelErrorCode = Exclude<
+    ApiDefaultModelErrorCode,
+    'not_available'
+>;
 
 /**
  * API 기본 모델 저장 액션 상태. `saved.model`이 `null`이면 설정을 해제했다는 뜻이다.

@@ -26,6 +26,9 @@ if (typeof globalThis.TextEncoder === 'undefined') {
         TextEncoder;
 }
 
+// 공개 API 출시 플래그(`isPublicApiEnabled`)는 기본이 꺼짐이다. 기존 공개 API 테스트는 켜진 동작을
+// 검증하므로 기본으로 켜 두고, 꺼짐 동작은 해당 테스트가 `vi.stubEnv('PUBLIC_API_ENABLED', '')`로 덮는다.
+process.env.PUBLIC_API_ENABLED = 'true';
 process.env.AI_PROVIDER = 'claude';
 process.env.GEMINI_CHAT_API_KEY = 'test-gemini-key';
 process.env.ANTHROPIC_CHAT_API_KEY = 'test-anthropic-key';

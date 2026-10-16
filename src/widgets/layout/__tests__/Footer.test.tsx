@@ -141,6 +141,19 @@ describe('Footer', () => {
         expect(link).toHaveAccessibleName('개발자 API');
     });
 
+    it('공개 API 출시 플래그가 꺼져 있으면 개발자 API 링크를 내지 않는다', () => {
+        vi.stubEnv('PUBLIC_API_ENABLED', '');
+        render(<Footer />);
+
+        const info = screen.getByRole('navigation', { name: '사이트 정보' });
+        const hrefs = within(info)
+            .getAllByRole('link')
+            .map(a => a.getAttribute('href'));
+        expect(hrefs).not.toContain('/developers');
+        expect(screen.queryByText('개발자 API')).toBeNull();
+        expect(hrefs).toContain('/guide');
+    });
+
     /**
      * 종목 디렉터리 링크는 **크롤 구조물**이다. 2026-09-18 실측에서 sitemap 심볼
      * 416개 중 147개가 홈에서 3클릭 안에 닿지 않았고, 푸터는 전 라우트에 렌더되므로

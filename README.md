@@ -85,17 +85,6 @@ flowchart LR
 
 Signed-in members can also receive a regular email report on the symbols they follow. Guests can preview what it looks like on the [sample page](https://siglens.io/email-report/sample).
 
-## Open API and Agent Skill
-
-The data tools behind the AI agent are also available over HTTP. Create an API key in your account settings, then call them from a script or hand them to your own agent.
-
-- **API reference**: [siglens.io/developers](https://siglens.io/developers) covers authentication, rate limits, errors, and every tool with a curl example.
-- **OpenAPI 3.1**: [openapi.json](https://siglens.io/api/v1/openapi.json) and [openapi.yaml](https://siglens.io/api/v1/openapi.yaml), generated from the same tool list as the API.
-- **Agent Skill**: [SKILL.md](https://siglens.io/api/v1/skill) lets Claude Code or Claude.ai call the API on its own.
-- **Bars and indicators in one call**: `get_chart_data` (API only, not offered to the in-app agent) returns recent bars plus any number of SIGLENS's technical indicators (`indicators`, default all) as time-aligned series, for rebuilding a chart or running your own analysis. It uses the same data as the website chart, so no AI key is needed.
-
-AI analysis runs on your own LLM key (BYOK), so SIGLENS does not pay for it, and reading an analysis that is already cached costs nothing. Every model can generate a new analysis, but only on your own key for that model's provider: register a key first, and SIGLENS's own LLM key is never used. The website generates the lower models with its own key; the API does not.
-
 ## Supported markets
 
 Each symbol belongs to one market, and the market decides the currency, trading hours, available timeframes, and which tabs appear.

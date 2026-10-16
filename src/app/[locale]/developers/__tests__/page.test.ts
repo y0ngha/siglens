@@ -85,6 +85,24 @@ const renderRoute = (locale = 'ko') =>
 const metadataFor = (locale = 'ko') =>
     generateMetadata({ params: Promise.resolve({ locale }) });
 
+describe('Developers page - 공개 API 출시 플래그 (꺼짐)', () => {
+    beforeEach(() => {
+        vi.stubEnv('PUBLIC_API_ENABLED', '');
+    });
+
+    it('본문은 notFound()로 404를 던진다', async () => {
+        await expect(renderRoute()).rejects.toMatchObject({
+            digest: 'NEXT_HTTP_ERROR_FALLBACK;404',
+        });
+    });
+
+    it('메타데이터 단계에서도 404를 던져 색인 가능한 메타가 나가지 않는다', async () => {
+        await expect(metadataFor()).rejects.toMatchObject({
+            digest: 'NEXT_HTTP_ERROR_FALLBACK;404',
+        });
+    });
+});
+
 describe('Developers page', () => {
     it('revalidate는 하루(86400초) 리터럴이다', () => {
         expect(revalidate).toBe(86400);
