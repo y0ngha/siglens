@@ -200,6 +200,21 @@ describe('getChartDataTool — tier별 timeframe 게이트(웹과 같은 규칙)
     );
 });
 
+describe('getChartDataTool — 잘못된 timeframe', () => {
+    it.each(['2Day', '', undefined, 5, null])(
+        '%j는 데이터를 읽기 전에 invalid_args',
+        async timeframe => {
+            await expect(
+                getChartDataTool({ symbol: 'AAPL', timeframe }, { tier: 'pro' })
+            ).resolves.toMatchObject({
+                error: 'invalid_args',
+                issues: [{ path: 'timeframe' }],
+            });
+            expect(getCachedBars).not.toHaveBeenCalled();
+        }
+    );
+});
+
 describe('getChartDataTool — 데이터 없음', () => {
     it('봉이 없으면 bars_not_found', async () => {
         getCachedBars.mockResolvedValue({ bars: [], indicators });
@@ -227,7 +242,12 @@ describe('getChartDataTool — 응답 크기 안전망', () => {
         const fullLength = JSON.stringify(full).length;
         const limit = Math.floor(fullLength / 3);
         const limited = await run({ bars: 300 }, 'pro', limit);
-        expect(JSON.stringify(limited).length).toBeLessThanOrEqual(limit + 400);
+        // 라우트가 보내는 응답 전체({ data, meta: { tool } } 봉투 포함)가 상한 안이다.
+        const sent = JSON.stringify({
+            data: limited,
+            meta: { tool: 'get_chart_data' },
+        });
+        expect(sent.length).toBeLessThanOrEqual(limit);
         expect(limited.bars).toBeLessThan(300);
         expect(limited.bars).toBeGreaterThan(0);
         expect(limited.meta.barsLimitedBySize).toBe(true);

@@ -59,8 +59,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function transpose(rows: readonly Record<string, unknown>[]): {
     [field: string]: unknown[];
 } {
-    const fields = new Set<string>();
-    for (const row of rows) for (const key of Object.keys(row)) fields.add(key);
+    const fields = new Set(rows.flatMap(row => Object.keys(row)));
     return Object.fromEntries(
         [...fields].map(field => [
             field,
@@ -78,6 +77,9 @@ function sliceSeries(series: Series, size: number): unknown {
         : window;
 }
 
+const DROPPED = Symbol('dropped');
+const INDEX_FIELDS = ['index', 'startIndex', 'firstIndex', 'secondIndex'];
+
 /**
  * smc 스냅샷의 봉 인덱스를 반환 구간 기준으로 다시 맞춘다. core는 전체 룩백 봉 기준 인덱스를 돌려주는데,
  * 응답은 마지막 `count`개만 담아서 그대로 두면 `time[index]`가 엉뚱한 봉을 가리킨다.
@@ -88,9 +90,6 @@ function sliceSeries(series: Series, size: number): unknown {
  * - 일부만 구간 앞이면(예: 같은 가격대의 첫 번째 터치는 구간 앞, 두 번째는 구간 안) 구간 앞 인덱스를 `null`로 두고
  *   `startsBeforeWindow: true`를 붙여 유지한다.
  */
-const DROPPED = Symbol('dropped');
-const INDEX_FIELDS = ['index', 'startIndex', 'firstIndex', 'secondIndex'];
-
 function rebaseIndices(value: unknown, offset: number): unknown {
     if (Array.isArray(value)) {
         return value
@@ -98,21 +97,22 @@ function rebaseIndices(value: unknown, offset: number): unknown {
             .filter(item => item !== DROPPED);
     }
     if (!isRecord(value)) return value;
-    const indexKeys = Object.keys(value).filter(
-        key => INDEX_FIELDS.includes(key) && typeof value[key] === 'number'
+    const indexes = new Map(
+        Object.entries(value).flatMap(([key, item]): Array<[string, number]> =>
+            INDEX_FIELDS.includes(key) && typeof item === 'number'
+                ? [[key, item]]
+                : []
+        )
     );
-    const before = indexKeys.filter(key => (value[key] as number) < offset);
+    const before = [...indexes.values()].filter(index => index < offset);
     const live = value.isMitigated === false;
-    if (indexKeys.length > 0 && before.length === indexKeys.length && !live)
+    if (indexes.size > 0 && before.length === indexes.size && !live)
         return DROPPED;
     const rebased = Object.fromEntries(
         Object.entries(value).map(([key, item]) => {
-            if (!indexKeys.includes(key))
-                return [key, rebaseIndices(item, offset)];
-            return [
-                key,
-                before.includes(key) ? null : (item as number) - offset,
-            ];
+            const index = indexes.get(key);
+            if (index === undefined) return [key, rebaseIndices(item, offset)];
+            return [key, index < offset ? null : index - offset];
         })
     );
     return before.length > 0

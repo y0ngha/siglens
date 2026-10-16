@@ -117,7 +117,7 @@ export const PUBLIC_API_RESULT_CAPS = {
  * `get_chart_data`(봉 + 전 지표 시계열, 공개 API 전용)의 상수. 봉 수 한도는 스키마(`minimum`/`maximum`)와 SKILL.md가
  * 같은 값을 읽는다.
  *
- * `maxResponseChars`는 응답 JSON의 문자 수 안전 상한이다. 모든 지표를 요청했을 때의 실측 크기는 아래
+ * `maxResponseChars`는 응답 JSON 전체(라우트의 `{ data, meta }` 봉투와 `data.meta`까지)의 문자 수 안전 상한이다. 모든 지표를 요청했을 때의 실측 크기는 아래
  * `PUBLIC_API_CHART_DATA_MEASURED_SIZES`에 한 곳으로 모았고 모두 이 상한 안이라 정상 요청은 닿지 않는다 —
  * 예상 밖으로 숫자가 긴 자산을 위한 마지막 방어선이다.
  * 넘으면 최신 봉부터 남기고 오래된 봉을 줄이며 `data.meta.barsLimitedBySize`가 알린다.

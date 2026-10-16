@@ -2,23 +2,27 @@ import 'server-only';
 import {
     getAllowedTimeframes,
     isTimeframeAllowed,
-    type Timeframe,
     type ToolExecutionContext,
 } from '@y0ngha/siglens-core';
 import { resolveAssetInfoOrNull } from '@/app/api/ai/chat/tools/resolveAssetInfo';
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
 import { buildChartData } from '@/entities/bars/lib/buildChartData';
 import { resolveChartDataIndicators } from '@/entities/bars/lib/chartDataIndicators';
+import { shrinkToLimit } from '@/entities/bars/lib/shrinkToLimit';
 import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { MS_PER_SECOND } from '@/shared/config/time';
+import { isValidTimeframe } from '@/shared/config/market';
 import { PUBLIC_API_CHART_DATA } from '@/shared/config/publicApi';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 const { tool, defaultBars, minBars, maxBars, maxResponseChars } =
     PUBLIC_API_CHART_DATA;
+
+/** 라우트가 `data` 바깥에 붙이는 `{ data, meta: { tool } }` 봉투의 문자 수. */
+const ENVELOPE_CHARS = JSON.stringify({ data: null, meta: { tool } }).length;
 
 /** 응답 `data.meta.source`. `get_bars_indicators`와 같은 문구다. */
 export const CHART_DATA_SOURCE = 'SIGLENS bars + indicators';
@@ -44,7 +48,15 @@ export async function getChartDataTool(
     limit: number = maxResponseChars
 ): Promise<unknown> {
     const symbol = String(args.symbol).toUpperCase();
-    const timeframe = args.timeframe as Timeframe;
+    const timeframe = args.timeframe;
+    // 스키마 검증이 이미 열거값을 보장하지만, 이 함수는 단독으로도 안전해야 한다(`requestedBars`와 같다).
+    if (typeof timeframe !== 'string' || !isValidTimeframe(timeframe))
+        return {
+            error: 'invalid_args',
+            issues: [
+                { path: 'timeframe', message: 'expected a valid timeframe' },
+            ],
+        };
     if (!isTimeframeAllowed(ctx.tier, timeframe))
         return {
             error: 'timeframe_not_allowed',
@@ -74,15 +86,6 @@ export async function getChartDataTool(
     // 웹(`loadBarsData`)과 같은 반올림을 전체 구간에 적용한 뒤 자른다.
     const rounded = roundIndicators(indicators);
     const descriptor = getDescriptor(profile);
-    const build = (barCount: number) =>
-        buildChartData({
-            symbol,
-            timeframe,
-            bars,
-            indicators: rounded,
-            count: barCount,
-            selected,
-        });
     const meta = {
         source: CHART_DATA_SOURCE,
         asOf: new Date(lastBar.time * MS_PER_SECOND).toISOString(),
@@ -90,25 +93,28 @@ export async function getChartDataTool(
         currency: descriptor.priceFormat.currency,
         quoteDelayMinutes: descriptor.quoteDelayMinutes,
         delayed: descriptor.quoteDelayMinutes > 0,
+        barsRequested: count,
     };
-
-    let data = build(count);
-    let length = JSON.stringify(data).length;
-    let limited = false;
-    // 안전망: 숫자가 유난히 긴 자산에서 상한을 넘으면 오래된 봉부터 줄인다(최신 봉을 남긴다).
-    // 비례 추정이라 한 번에 안 맞을 수 있어 몇 번 더 줄인다.
-    for (
-        let attempt = 0;
-        length > limit && data.bars > 1 && attempt < 8;
-        attempt++
-    ) {
-        limited = true;
-        const next = Math.max(1, Math.floor((data.bars * limit) / length) - 1);
-        data = build(Math.min(next, data.bars - 1));
-        length = JSON.stringify(data).length;
-    }
-    return {
-        ...data,
-        meta: { ...meta, barsRequested: count, barsLimitedBySize: limited },
-    };
+    // 크기는 `data.meta`까지 포함해 잰다. `barsLimitedBySize`는 false로 재는데 true는 한 글자 짧아 보수적이다.
+    const build = (barCount: number) => ({
+        ...buildChartData({
+            symbol,
+            timeframe,
+            bars,
+            indicators: rounded,
+            count: barCount,
+            selected,
+        }),
+        meta: { ...meta, barsLimitedBySize: false },
+    });
+    // 안전망: 숫자가 유난히 긴 자산에서 상한을 넘으면 오래된 봉부터 줄인다(최신 봉을 남긴다). 상한은 라우트가
+    // 덧붙이는 봉투(`{"data":…,"meta":{"tool":…}}`)까지 합친 응답 전체 기준이라 그만큼 뺀다.
+    const { data, limited } = shrinkToLimit(
+        build,
+        count,
+        limit - ENVELOPE_CHARS
+    );
+    return limited
+        ? { ...data, meta: { ...data.meta, barsLimitedBySize: true } }
+        : data;
 }
