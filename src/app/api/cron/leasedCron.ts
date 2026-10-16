@@ -33,6 +33,12 @@ export const SEC_CRON_LEASE_NAME = 'sec';
  */
 export const SEC_13F_LEGACY_LEASE_NAME = 'sec-13f';
 
+/**
+ * DART를 부르는 cron(`dart-corp-code`·`dart-filings`)이 함께 잡는 락 이름. DART 속도 게이트(`shared/api/dart/dartClient.ts`의
+ * `DART_MIN_REQUEST_INTERVAL_MS`)도 프로세스 안 변수라, 이 락 하나로 동시에 한 DART cron만 돌게 해 인스턴스 합계 속도를 묶는다.
+ */
+export const DART_CRON_LEASE_NAME = 'dart';
+
 const leaseKey = (name: string): string => `investor-flows:cron-lock:${name}`;
 
 export interface LeasedCronOptions {

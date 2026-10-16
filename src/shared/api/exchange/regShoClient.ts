@@ -1,4 +1,8 @@
 import 'server-only';
+import {
+    BoundedBodyTooLargeError,
+    readBoundedBody,
+} from '@/shared/lib/readBoundedBody';
 import { withRetry } from '@/shared/lib/withRetry';
 
 /**
@@ -75,38 +79,23 @@ function isTransient(error: unknown): boolean {
 }
 
 /**
- * 본문을 `maxBytes`까지만 읽는다 — `Content-Length`가 상한을 넘으면 읽기 전에, 선언 없이 길게 오면 상한에 닿는 순간 스트림을
- * 끊고 던진다(본문 전체를 메모리에 올린 뒤 길이를 재지 않는다).
+ * 본문을 `maxBytes`까지만 읽어 텍스트로 — 상한 처리는 공용 `readBoundedBody`(`Content-Length` 선검사 + 읽는 중 차단)가 하고,
+ * 이 클라이언트의 오류 계약(`exchange body too large: <url>`)으로 바꿔 던진다. 이 URL에는 비밀값이 없다.
  */
 async function readBoundedText(
     res: Response,
     maxBytes: number,
     url: string
 ): Promise<string> {
-    const declared = Number(res.headers.get('content-length'));
-    if (Number.isFinite(declared) && declared > maxBytes) {
-        await res.body?.cancel().catch(() => undefined);
-        throw new Error(`exchange body too large: ${url}`);
-    }
-    if (res.body === null) return '';
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let text = '';
-    let received = 0;
     try {
-        for (;;) {
-            // 청크는 순서대로 하나씩 읽는다.
-            // react-doctor-disable-next-line react-doctor/async-await-in-loop
-            const { done, value } = await reader.read();
-            if (done) return text + decoder.decode();
-            received += value.byteLength;
-            if (received > maxBytes) {
-                throw new Error(`exchange body too large: ${url}`);
-            }
-            text += decoder.decode(value, { stream: true });
+        return new TextDecoder('utf-8').decode(
+            await readBoundedBody(res, maxBytes)
+        );
+    } catch (error) {
+        if (error instanceof BoundedBodyTooLargeError) {
+            throw new Error(`exchange body too large: ${url}`);
         }
-    } finally {
-        reader.cancel().catch(() => undefined);
+        throw error;
     }
 }
 

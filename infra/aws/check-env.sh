@@ -70,6 +70,8 @@ OPTIONAL_KEYS=(
   PUBLIC_API_ENABLED
   OPENFIGI_API_KEY
   SEC_USER_AGENT
+  # KR DART disclosure crons: unset = both crons end as `disabled` with zero requests.
+  DART_API_KEY
 )
 
 # 필수 키 수집: KEY=... 형태 라인에서 KEY만 추출(주석/빈 줄 스킵, EXCLUDE 제외).
