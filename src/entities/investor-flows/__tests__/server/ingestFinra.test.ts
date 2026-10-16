@@ -287,4 +287,75 @@ describe('runFinraIngest', () => {
             expect(calls.invalidated).toEqual([]);
         });
     });
+
+    describe('first data stored (drives the "collecting" notice)', () => {
+        it('tells the caller once when the first volume file lands in an empty store', async () => {
+            const onFirstDataStored = vi.fn();
+            const { deps } = build({
+                onFirstDataStored,
+                // The backfill walks the oldest days first, so serve the sample for whichever day is asked.
+                finra: {
+                    fetchCnmsShortVolumeText: async () => CNMS_SAMPLE,
+                    fetchShortInterestText: async () => null,
+                },
+            });
+            const result = await runFinraIngest(deps);
+            expect(result.firstDataStored).toBe(true);
+            expect(onFirstDataStored).toHaveBeenCalledTimes(1);
+        });
+
+        it('tells the caller when only the first short-interest file lands (volume already stored)', async () => {
+            const onFirstDataStored = vi.fn();
+            const { deps } = build(
+                {
+                    onFirstDataStored,
+                    finra: {
+                        fetchCnmsShortVolumeText: async () => null,
+                        fetchShortInterestText: async () =>
+                            SHORT_INTEREST_SAMPLE,
+                    },
+                },
+                { latestVolume: '2026-10-15' }
+            );
+            const result = await runFinraIngest(deps);
+            expect(result.interestFiles).toBeGreaterThan(0);
+            expect(result.firstDataStored).toBe(true);
+            expect(onFirstDataStored).toHaveBeenCalledTimes(1);
+        });
+
+        it('stays silent on a normal incremental run into a non-empty store', async () => {
+            const onFirstDataStored = vi.fn();
+            const { deps } = build(
+                { onFirstDataStored },
+                {
+                    latestVolume: '2026-10-13',
+                    haveInterest: [...STORED, '2026-10-15'],
+                    files: { 'v:2026-10-14': CNMS_SAMPLE },
+                }
+            );
+            const result = await runFinraIngest(deps);
+            expect(result.volumeFiles).toBe(1);
+            expect(result.firstDataStored).toBe(false);
+            expect(onFirstDataStored).not.toHaveBeenCalled();
+        });
+
+        it('stays silent when an empty store receives nothing (FINRA had no file yet)', async () => {
+            const onFirstDataStored = vi.fn();
+            const { deps } = build({ onFirstDataStored });
+            const result = await runFinraIngest(deps);
+            expect(result.firstDataStored).toBe(false);
+            expect(onFirstDataStored).not.toHaveBeenCalled();
+        });
+
+        it('stays silent when the flag is off', async () => {
+            const onFirstDataStored = vi.fn();
+            const { deps } = build({
+                isEnabled: () => false,
+                onFirstDataStored,
+            });
+            const result = await runFinraIngest(deps);
+            expect(result.firstDataStored).toBe(false);
+            expect(onFirstDataStored).not.toHaveBeenCalled();
+        });
+    });
 });

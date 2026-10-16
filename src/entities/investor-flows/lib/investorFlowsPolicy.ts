@@ -83,6 +83,14 @@ export const INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE =
     'cusip_map_full_pass_done';
 
 /**
+ * `investor_flows_state` 키 — sec-13f가 초기 백필 창(최근 `INVESTOR_FLOWS_13F_BACKFILL_DAYS`일)을 **끝까지** 읽어 오늘에
+ * 닿았을 때 한 번 기록하고 **다시 지우지 않는다**(set-once). 화면은 이 표식(+ `INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE`)이
+ * 서기 전까지 13F 구간에 "데이터 없음" 대신 "수집 중" 안내를 낸다 — 백필이 끝나기 전의 빈 구간은 "이 종목에 데이터가
+ * 없다"가 아니라 "아직 못 모았다"이기 때문이다.
+ */
+export const INVESTOR_FLOWS_STATE_BACKFILL_DONE = 'sec13f_backfill_done';
+
+/**
  * 전수 한 바퀴 완료로 인정하려면 맵에 최소 이만큼은 있어야 한다 — 티커 DB가 비어 있어 후보가 0건인 상태를 "완료"로
  * 오인하지 않는 안전장치다(미국 보통주 중 CUSIP이 확인되는 종목은 수천 개).
  */

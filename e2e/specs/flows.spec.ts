@@ -12,6 +12,13 @@ import { E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisS
  * - 미국 주식 전용 — 한국 종목·크립토는 404(탭이 없다).
  */
 
+// `E2E_FLOWS_PIPELINE=collecting`로 서버를 띄우면 13F·FINRA 파이프라인이 비어 있는 부트스트랩 모습이 된다
+// (`flows-collecting.spec.ts`). 이 파일의 본문 단언은 준비가 끝난 모습을 전제하므로 그 모드에서는 건너뛴다.
+test.skip(
+    process.env.E2E_FLOWS_PIPELINE === 'collecting',
+    '수집 중 모드 실행 — flows-collecting.spec.ts가 검증한다'
+);
+
 const AI_SUMMARY =
     'E2E 고정 수급 해석: 기관은 순매수, 내부자는 클러스터 매수가 보여요.';
 const AI_FETCH_FAILED = '데이터를 불러오지 못했습니다.';

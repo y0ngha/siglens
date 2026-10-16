@@ -179,7 +179,7 @@ export default async function FlowsPage({ params }: Props) {
         locale
     );
 
-    const { snapshot, scorecard, finraEnabled } = flows;
+    const { snapshot, scorecard, finraEnabled, readiness } = flows;
 
     return (
         <>
@@ -190,7 +190,12 @@ export default async function FlowsPage({ params }: Props) {
                     {t('flows.heading', { v0: displayName })}
                 </SymbolPageHeading>
                 {snapshot === null || scorecard === null ? (
-                    <InvestorFlowsEmpty />
+                    <InvestorFlowsEmpty
+                        collecting={readiness.institutional === 'collecting'}
+                        shortCollecting={
+                            finraEnabled && readiness.short === 'collecting'
+                        }
+                    />
                 ) : (
                     <>
                         {/* AI 해석을 탭 맨 위에 둔다(제품 결정). 데이터 표를 읽기 전에 결론부터 보게 하려는
@@ -204,6 +209,7 @@ export default async function FlowsPage({ params }: Props) {
                             snapshot={snapshot}
                             scorecard={scorecard}
                             finraEnabled={finraEnabled}
+                            readiness={readiness}
                         />
                     </>
                 )}

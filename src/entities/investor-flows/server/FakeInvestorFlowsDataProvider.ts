@@ -244,7 +244,14 @@ function buildShortVolume(today: string): ShortVolumePoint[] {
 }
 
 export class FakeInvestorFlowsDataProvider implements InvestorFlowsDataProvider {
-    constructor(private readonly isFinraEnabled: () => boolean) {}
+    /**
+     * @param collecting `true`면 13F·FINRA 파이프라인이 아직 비어 있는 모습을 흉내 낸다 — 기관 분기·상위 보유자와
+     *   공매도 행이 없고(진짜 DB가 비었을 때와 같다), 내부자·13D/G·유통주식은 FMP라 그대로 있다.
+     */
+    constructor(
+        private readonly isFinraEnabled: () => boolean,
+        private readonly collecting: boolean = false
+    ) {}
 
     async getInvestorFlowsSnapshot(
         symbol: string
@@ -262,17 +269,25 @@ export class FakeInvestorFlowsDataProvider implements InvestorFlowsDataProvider 
             asOf: now.toISOString(),
             sharesOutstanding: SHARES_OUTSTANDING,
             floatShares: FLOAT_SHARES,
-            institutional: {
-                quarters,
-                topHolders: buildTopHolders(),
-                topHoldersPeriod: latestComplete?.period ?? null,
-            },
+            institutional: this.collecting
+                ? { quarters: [], topHolders: [], topHoldersPeriod: null }
+                : {
+                      quarters,
+                      topHolders: buildTopHolders(),
+                      topHoldersPeriod: latestComplete?.period ?? null,
+                  },
             insider: { transactions: buildInsiderTransactions(today) },
             largeHolders: buildLargeHolders(today),
             shortInterest: finra
-                ? buildShortInterest(today, upper === 'SQUEEZX')
+                ? this.collecting
+                    ? []
+                    : buildShortInterest(today, upper === 'SQUEEZX')
                 : null,
-            shortVolume: finra ? buildShortVolume(today) : null,
+            shortVolume: finra
+                ? this.collecting
+                    ? []
+                    : buildShortVolume(today)
+                : null,
         };
     }
 }

@@ -5,6 +5,8 @@ import {
     type InvestorFlowsSnapshot,
 } from '@y0ngha/siglens-core';
 import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
+import type { InvestorFlowsPipelineReadiness } from '../model';
+import { getInvestorFlowsPipelineReadiness } from './getInvestorFlowsPipelineReadiness';
 import { getInvestorFlowsResilient } from './getInvestorFlowsResilient';
 
 export interface InvestorFlowsScorecardResult {
@@ -19,6 +21,11 @@ export interface InvestorFlowsScorecardResult {
      * 스냅샷의 `shortInterest`가 `null`이면 "플래그 꺼짐"이고 `[]`이면 "켜졌는데 데이터 없음"이다.
      */
     finraEnabled: boolean;
+    /**
+     * 13F·FINRA 수집 파이프라인 준비 상태(종목 무관). 화면·에이전트가 빈 구간을 "데이터 없음"과 "아직 수집 중"으로 가르는
+     * 근거다. 상태를 못 읽으면 두 갈래 모두 `unknown`이고, 이때는 예전 동작(빈 상태)을 그대로 쓴다.
+     */
+    readiness: InvestorFlowsPipelineReadiness;
 }
 
 /**
@@ -32,7 +39,10 @@ export async function getInvestorFlowsScorecard(
     symbol: string
 ): Promise<InvestorFlowsScorecardResult> {
     const finraEnabled = isFinraShortDataEnabled();
-    const { snapshot, degraded } = await getInvestorFlowsResilient(symbol);
+    const [{ snapshot, degraded }, readiness] = await Promise.all([
+        getInvestorFlowsResilient(symbol),
+        getInvestorFlowsPipelineReadiness(),
+    ]);
     return {
         snapshot,
         scorecard:
@@ -43,5 +53,6 @@ export async function getInvestorFlowsScorecard(
                   }),
         degraded,
         finraEnabled,
+        readiness,
     };
 }

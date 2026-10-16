@@ -870,6 +870,12 @@
         "text": "[guide] 카탈로그 조회 실패"
     },
     {
+        "file": "src/entities/investor-flows/server/getInvestorFlowsPipelineReadiness.ts",
+        "line": 69,
+        "reason": "developer-diagnostic",
+        "text": "[getInvestorFlowsPipelineReadiness] 상태 조회 실패, unknown:"
+    },
+    {
         "file": "src/entities/investor-flows/server/getInvestorFlowsResilient.ts",
         "line": 35,
         "reason": "developer-diagnostic",

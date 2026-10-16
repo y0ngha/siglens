@@ -99,6 +99,31 @@ export class DrizzleInvestorFlowsShortRepository {
         return row?.latest ?? null;
     }
 
+    /**
+     * 잔고·일별 거래량 중 어느 쪽이든 행이 하나라도 있는가 — 수급 탭의 "공매도 수집 중" 안내를 끄는 기준(FINRA 첫 수집이
+     * 끝났다는 뜻). `LIMIT 1` 두 번이라 테이블 크기와 무관하게 싸다.
+     */
+    async hasAnyRow(): Promise<boolean> {
+        const [volume] = await withRetry(
+            () =>
+                this.db
+                    .select({ symbol: finraShortVolume.symbol })
+                    .from(finraShortVolume)
+                    .limit(1),
+            DB_TRANSIENT_RETRY
+        );
+        if (volume !== undefined) return true;
+        const [interest] = await withRetry(
+            () =>
+                this.db
+                    .select({ symbol: finraShortInterest.symbol })
+                    .from(finraShortInterest)
+                    .limit(1),
+            DB_TRANSIENT_RETRY
+        );
+        return interest !== undefined;
+    }
+
     /** `since`(포함) 이후 저장된 결제일 집합. */
     async listShortInterestSettlementDates(
         since: string

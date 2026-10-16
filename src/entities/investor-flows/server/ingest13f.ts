@@ -8,6 +8,7 @@ import {
     INVESTOR_FLOWS_MAINTENANCE_BUDGET_MS,
     INVESTOR_FLOWS_MAX_REAPPLY,
     INVESTOR_FLOWS_REVALIDATE_CAP,
+    INVESTOR_FLOWS_STATE_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
     INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
 } from '../lib/investorFlowsPolicy';
@@ -157,6 +158,11 @@ export interface Ingest13fDeps {
     isDeadlineReached: () => boolean;
     /** 집계가 바뀐 심볼의 캐시 태그 무효화(실행당 상한 `INVESTOR_FLOWS_REVALIDATE_CAP`). */
     invalidateSymbols: (symbols: readonly string[]) => void | Promise<void>;
+    /**
+     * 초기 백필 완료 표식이 **이번 실행에서 처음** 섰을 때 한 번 부른다 — 수급 탭의 "13F 수집 중" 안내를 담은 준비 상태
+     * 캐시를 무효화한다. 생략하면 캐시 TTL(12시간)이 지나서야 안내가 사라진다.
+     */
+    onBackfillCompleted?: () => void | Promise<void>;
     log: (message: string, detail?: unknown) => void;
 }
 
@@ -180,6 +186,8 @@ export interface Ingest13fResult {
     aggregateChunks: number;
     invalidated: number;
     pruned: { positions: number; aggregates: number; filings: number };
+    /** 초기 백필 완료 표식(`INVESTOR_FLOWS_STATE_BACKFILL_DONE`)이 이번 실행에서 처음 섰는가. */
+    backfillCompleted: boolean;
 }
 
 type FilingTarget = Pick<
@@ -635,6 +643,7 @@ export async function run13fIngest(
             aggregateChunks: 0,
             invalidated: 0,
             pruned: { positions: 0, aggregates: 0, filings: 0 },
+            backfillCompleted: false,
         };
     }
     const last = await deps.repo.latestFilingDate();
@@ -662,6 +671,7 @@ export async function run13fIngest(
             aggregateChunks: 0,
             invalidated: 0,
             pruned: { positions: 0, aggregates: 0, filings: 0 },
+            backfillCompleted: false,
         },
     };
 
@@ -788,7 +798,36 @@ export async function run13fIngest(
         await deps.invalidateSymbols(toInvalidate);
         state.result.invalidated = toInvalidate.length;
     }
+    // 표식은 이번 실행이 **깔끔하게** 끝났을 때만 선다: 무효화 상한(500)에 잘려 낡은 심볼 캐시가 남지 않았고(`state.symbols`가
+    // 상한 이하), dirty 큐가 비었다(집계가 모두 반영됨). 아니면 다음 실행이 다시 판정한다 — 표식이 서는 순간 "수집 중" 안내가
+    // 걷히고 빈 구간은 "데이터 없음"이 되므로, 아직 안 채워진 종목이 있는 채로 서면 안 된다.
+    if (
+        state.result.stoppedBy === 'complete' &&
+        state.symbols.size <= INVESTOR_FLOWS_REVALIDATE_CAP
+    ) {
+        state.result.backfillCompleted = await markBackfillDone(deps);
+        if (state.result.backfillCompleted) await deps.onBackfillCompleted?.();
+    }
     return state.result;
+}
+
+/**
+ * 초기 백필 완료 표식을 세운다(set-once, 다시 지우지 않는다). 날짜 순회가 마감·차단 없이 **오늘까지** 끝났고(`complete`)
+ * 원장에 처리된 제출이 하나라도 있을 때만 선다 — SEC가 계속 빈 응답을 주는 환경에서 아무것도 모으지 못하고 "완료"가
+ * 되는 것을 막는다. dirty 큐가 비어 있어야 한다(`takeDirty` null). 커서가 항상 앞으로만 가므로(`max(filing_date)` − 겹침) 한 번 오늘에 닿은 실행은 백필 창 전체를
+ * 지난 것이다. 새로 세웠으면 `true`.
+ */
+async function markBackfillDone(deps: Ingest13fDeps): Promise<boolean> {
+    const { repo } = deps;
+    if ((await repo.getState(INVESTOR_FLOWS_STATE_BACKFILL_DONE)) !== null)
+        return false;
+    if ((await repo.latestFilingDate()) === null) return false;
+    // dirty 큐가 남아 있으면 일부 종목의 집계가 아직 반영 전이다. `takeDirty`는 실제 dirty 행을 점유하거나 지우지 않지만 순수한
+    // 읽기는 아니다 — cusip_symbol_map에 없는 id만 남은 고아 dirty 행은 정리(삭제)한다. 읽기 전용 트랜잭션으로 감싸지 말 것.
+    if ((await repo.takeDirty(1)) !== null) return false;
+    await repo.setState(INVESTOR_FLOWS_STATE_BACKFILL_DONE, 'done');
+    deps.log('[sec-13f] initial backfill complete');
+    return true;
 }
 
 /**

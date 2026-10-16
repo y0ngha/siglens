@@ -4,6 +4,7 @@ import {
     fetchShortInterestText,
 } from '@/shared/api/finra/finraClient';
 import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
+import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsShortRepository } from '@/entities/investor-flows/api/investorFlowsShortRepository';
@@ -26,6 +27,7 @@ export function createFinraShortDeps(
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
+        onFirstDataStored: revalidateFlowsReadiness,
         log: (message, detail) => console.warn(message, detail),
     };
 }

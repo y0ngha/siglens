@@ -4226,6 +4226,7 @@
                 "title": "AI Reading of Investor Flows"
             },
             "asOf": {
+                "collecting": "Collecting",
                 "delay": "A 13F reports quarter-end holdings and is filed up to 45 days after the quarter ends. So the institutional figures here show positions from a month or two ago or more, not today.",
                 "insiderNone": "No data",
                 "insiderWindow": "{from} to {to} (last {days} days)",
@@ -4250,6 +4251,21 @@
                 "institutional": "Institutions",
                 "largeHolders": "Large holders (5%)",
                 "short": "Short selling"
+            },
+            "collecting": {
+                "empty": {
+                    "body": "We are gathering institutional holdings (13F) and short-selling data for the first time. It will appear here automatically once it is ready.",
+                    "bodyInstitutionalOnly": "We are gathering institutional holdings (13F) data for the first time. It will appear here automatically once it is ready.",
+                    "title": "Collecting investor flow data"
+                },
+                "institutional": {
+                    "body": "We are gathering SEC 13F filings for the first time. Once it fills in within a few days, it will appear here automatically.",
+                    "title": "Collecting institutional holdings data"
+                },
+                "short": {
+                    "body": "We are gathering the short-selling data FINRA publishes for the first time. It will appear here automatically once it is ready.",
+                    "title": "Collecting FINRA short-selling data"
+                }
             },
             "empty": {
                 "body": "No data — this stock has no institutional (13F), insider or short-selling data yet. That is common for new listings and small, thinly traded stocks.",
@@ -4336,6 +4352,7 @@
             "label": {
                 "bearish": "Bearish",
                 "bullish": "Bullish",
+                "collecting": "Collecting",
                 "insufficient": "Not enough data",
                 "neutral": "Neutral",
                 "strongBearish": "Strongly bearish",
@@ -4357,6 +4374,7 @@
                 "unknownFiler": "Unknown filer"
             },
             "scorecard": {
+                "axisCollecting": "Data is still being collected, so this axis is not in the score yet.",
                 "axisInsufficient": "Not enough data, so this axis is left out of the score.",
                 "axisScore": "Score {score}",
                 "compositeCaption": "Overall score from {count} {count, plural, one {axis} other {axes}} (-100 to +100)",

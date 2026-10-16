@@ -17,6 +17,10 @@ interface AsOfNoticeProps {
     readonly snapshotAsOf: string;
     /** 공매도(FINRA) 구간을 화면에 그리는지 — 그릴 때만 FINRA 기준일·출처를 적는다. */
     readonly showShort: boolean;
+    /** 13F 초기 수집 중 — 기관 행이 "데이터 없음" 대신 "수집 중"이다(데이터가 없을 때만 의미가 있다). */
+    readonly institutionalCollecting?: boolean;
+    /** FINRA 첫 수집 중 — 공매도 행이 "데이터 없음" 대신 "수집 중"이다. */
+    readonly shortCollecting?: boolean;
 }
 
 function Row({
@@ -45,6 +49,8 @@ export function AsOfNotice({
     freshness,
     snapshotAsOf,
     showShort,
+    institutionalCollecting = false,
+    shortCollecting = false,
 }: AsOfNoticeProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
@@ -65,7 +71,11 @@ export function AsOfNotice({
             <dl className="space-y-2">
                 <Row term={t('asOf.termInstitutional')}>
                     {scored === null ? (
-                        t('asOf.institutionalNone')
+                        institutionalCollecting ? (
+                            t('asOf.collecting')
+                        ) : (
+                            t('asOf.institutionalNone')
+                        )
                     ) : (
                         <>
                             {t('asOf.institutionalComplete', {
@@ -99,14 +109,18 @@ export function AsOfNotice({
                     <>
                         <Row term={t('asOf.termShortInterest')}>
                             {freshness.shortInterestSettlementDate === null
-                                ? t('asOf.shortInterestNone')
+                                ? shortCollecting
+                                    ? t('asOf.collecting')
+                                    : t('asOf.shortInterestNone')
                                 : t('asOf.shortInterestDate', {
                                       date: freshness.shortInterestSettlementDate,
                                   })}
                         </Row>
                         <Row term={t('asOf.termShortVolume')}>
                             {freshness.shortVolumeLatestDate === null
-                                ? t('asOf.shortVolumeNone')
+                                ? shortCollecting
+                                    ? t('asOf.collecting')
+                                    : t('asOf.shortVolumeNone')
                                 : t('asOf.shortVolumeDate', {
                                       date: freshness.shortVolumeLatestDate,
                                   })}

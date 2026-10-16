@@ -229,7 +229,7 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
     'flows/page.tsx': [
         {
             token: 'getInvestorFlowsScorecard',
-            via: 'getInvestorFlowsResilient → getInvestorFlowsSnapshot (staticSymbolCache)',
+            via: 'getInvestorFlowsResilient → getInvestorFlowsSnapshot + getInvestorFlowsPipelineReadiness (staticSymbolCache 둘 다 12h)',
             revalidate: time.SECONDS_PER_HALF_DAY,
         },
         { token: 'getProfileResilient', revalidate: time.SECONDS_PER_DAY },

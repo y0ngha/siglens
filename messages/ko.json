@@ -4355,6 +4355,7 @@
                 "title": "AI 수급 해석"
             },
             "asOf": {
+                "collecting": "수집 중",
                 "delay": "13F는 분기말 보유 현황을 분기가 끝나고 최대 45일 안에 제출해요. 그래서 이 화면의 기관 수치는 지금이 아니라 한두 달 이상 지난 시점의 모습이에요.",
                 "insiderNone": "데이터 없음",
                 "insiderWindow": "{from} ~ {to} (최근 {days}일)",
@@ -4379,6 +4380,21 @@
                 "institutional": "기관",
                 "largeHolders": "대량보유(5%)",
                 "short": "공매도"
+            },
+            "collecting": {
+                "empty": {
+                    "body": "기관 보유(13F)와 공매도 데이터를 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
+                    "bodyInstitutionalOnly": "기관 보유(13F) 데이터를 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
+                    "title": "수급 데이터를 모으는 중이에요"
+                },
+                "institutional": {
+                    "body": "SEC 13F 공시를 처음 모으고 있어요. 며칠 안에 채워지면 이 자리에 자동으로 표시돼요.",
+                    "title": "기관 보유 데이터를 모으는 중이에요"
+                },
+                "short": {
+                    "body": "FINRA가 공개하는 공매도 자료를 처음 모으고 있어요. 채워지면 이 자리에 자동으로 표시돼요.",
+                    "title": "FINRA 공매도 데이터를 모으는 중이에요"
+                }
             },
             "empty": {
                 "body": "데이터 없음 — 이 종목은 기관 보유(13F)·내부자·공매도 데이터가 아직 없어요. 신규 상장이거나 거래 규모가 작은 종목에서 흔해요.",
@@ -4465,6 +4481,7 @@
             "label": {
                 "bearish": "약세 신호",
                 "bullish": "강세 신호",
+                "collecting": "수집 중",
                 "insufficient": "데이터 부족",
                 "neutral": "중립",
                 "strongBearish": "강한 약세 신호",
@@ -4486,6 +4503,7 @@
                 "unknownFiler": "제출자 미상"
             },
             "scorecard": {
+                "axisCollecting": "데이터를 모으는 중이라 아직 점수에 반영하지 않았어요.",
                 "axisInsufficient": "데이터가 부족해 점수에 반영하지 않았어요.",
                 "axisScore": "{score}점",
                 "compositeCaption": "{count}개 축 기준 종합 점수 (-100 ~ +100)",

@@ -20,6 +20,8 @@ import {
     makeTransaction,
 } from './fixtures/flowsFixtures';
 
+const READY_READINESS = { institutional: 'ready', short: 'ready' } as const;
+
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (
         <span data-testid="info-tooltip">{children}</span>
@@ -389,6 +391,7 @@ describe('InvestorFlowsContent', () => {
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot)}
                 finraEnabled
+                readiness={READY_READINESS}
             />
         );
         expect(
@@ -406,6 +409,7 @@ describe('InvestorFlowsContent', () => {
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot, false)}
                 finraEnabled={false}
+                readiness={READY_READINESS}
             />
         );
         expect(screen.queryByRole('heading', { name: /^공매도/ })).toBeNull();
@@ -419,6 +423,7 @@ describe('InvestorFlowsContent', () => {
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot)}
                 finraEnabled
+                readiness={READY_READINESS}
             />
         );
         expect(screen.queryByRole('heading', { name: /^공매도/ })).toBeNull();
@@ -431,6 +436,7 @@ describe('InvestorFlowsContent', () => {
                 snapshot={snapshot}
                 scorecard={evaluate(snapshot)}
                 finraEnabled
+                readiness={READY_READINESS}
             />
         );
         expect(
