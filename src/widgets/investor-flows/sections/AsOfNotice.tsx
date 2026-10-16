@@ -56,6 +56,17 @@ export function AsOfNotice({
     const locale = useResolvedLocale();
     const scored = freshness.institutionalPeriod;
     const latest = freshness.latestInstitutionalPeriod;
+    // "데이터 없음" 자리에 들어갈 문구 — 수집 중이면 세 행 모두 "수집 중"이다.
+    const collectingLabel = t('asOf.collecting');
+    const institutionalEmpty = institutionalCollecting
+        ? collectingLabel
+        : t('asOf.institutionalNone');
+    const shortInterestEmpty = shortCollecting
+        ? collectingLabel
+        : t('asOf.shortInterestNone');
+    const shortVolumeEmpty = shortCollecting
+        ? collectingLabel
+        : t('asOf.shortVolumeNone');
     const partialNewer =
         latest !== null &&
         freshness.latestInstitutionalPeriodComplete === false &&
@@ -71,11 +82,7 @@ export function AsOfNotice({
             <dl className="space-y-2">
                 <Row term={t('asOf.termInstitutional')}>
                     {scored === null ? (
-                        institutionalCollecting ? (
-                            t('asOf.collecting')
-                        ) : (
-                            t('asOf.institutionalNone')
-                        )
+                        institutionalEmpty
                     ) : (
                         <>
                             {t('asOf.institutionalComplete', {
@@ -109,18 +116,14 @@ export function AsOfNotice({
                     <>
                         <Row term={t('asOf.termShortInterest')}>
                             {freshness.shortInterestSettlementDate === null
-                                ? shortCollecting
-                                    ? t('asOf.collecting')
-                                    : t('asOf.shortInterestNone')
+                                ? shortInterestEmpty
                                 : t('asOf.shortInterestDate', {
                                       date: freshness.shortInterestSettlementDate,
                                   })}
                         </Row>
                         <Row term={t('asOf.termShortVolume')}>
                             {freshness.shortVolumeLatestDate === null
-                                ? shortCollecting
-                                    ? t('asOf.collecting')
-                                    : t('asOf.shortVolumeNone')
+                                ? shortVolumeEmpty
                                 : t('asOf.shortVolumeDate', {
                                       date: freshness.shortVolumeLatestDate,
                                   })}

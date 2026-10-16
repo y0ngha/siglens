@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { InstitutionalSnapshot } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -71,6 +72,18 @@ export function InstitutionalSection({
     const partialDirection =
         partialFlow === null ? '' : directionLabels[partialFlow];
 
+    // 데이터가 없을 때만 채워지는 자리 — 수집 중이면 안내, 아니면 "데이터 없음". 있으면 `null`이라 본문을 그린다.
+    let emptyState: ReactNode = null;
+    if (!hasData) {
+        emptyState = collecting ? (
+            <CollectingNotice variant="institutional" />
+        ) : (
+            <p className="text-sm text-secondary-300">
+                {t('institutional.noData')}
+            </p>
+        );
+    }
+
     return (
         <section
             aria-labelledby={HEADING_ID}
@@ -86,15 +99,7 @@ export function InstitutionalSection({
                 </p>
             </div>
 
-            {!hasData ? (
-                collecting ? (
-                    <CollectingNotice variant="institutional" />
-                ) : (
-                    <p className="text-sm text-secondary-300">
-                        {t('institutional.noData')}
-                    </p>
-                )
-            ) : (
+            {emptyState ?? (
                 <>
                     {bars.length > 0 && (
                         <div>

@@ -253,6 +253,12 @@ export class FakeInvestorFlowsDataProvider implements InvestorFlowsDataProvider 
         private readonly collecting: boolean = false
     ) {}
 
+    /** FINRA 꺼짐 → `null`, 수집 중 → 빈 배열(진짜 DB가 비었을 때와 같다), 아니면 합성 행. */
+    private shortRows<T>(finraEnabled: boolean, build: () => T[]): T[] | null {
+        if (!finraEnabled) return null;
+        return this.collecting ? [] : build();
+    }
+
     async getInvestorFlowsSnapshot(
         symbol: string
     ): Promise<InvestorFlowsSnapshot | null> {
@@ -278,16 +284,10 @@ export class FakeInvestorFlowsDataProvider implements InvestorFlowsDataProvider 
                   },
             insider: { transactions: buildInsiderTransactions(today) },
             largeHolders: buildLargeHolders(today),
-            shortInterest: finra
-                ? this.collecting
-                    ? []
-                    : buildShortInterest(today, upper === 'SQUEEZX')
-                : null,
-            shortVolume: finra
-                ? this.collecting
-                    ? []
-                    : buildShortVolume(today)
-                : null,
+            shortInterest: this.shortRows(finra, () =>
+                buildShortInterest(today, upper === 'SQUEEZX')
+            ),
+            shortVolume: this.shortRows(finra, () => buildShortVolume(today)),
         };
     }
 }

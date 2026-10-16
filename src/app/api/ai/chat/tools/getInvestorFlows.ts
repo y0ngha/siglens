@@ -23,11 +23,18 @@ const COLLECTING_NOTE =
  * 그 종목의 해당 구간이 실제로 비어 있는 갈래만 싣는다(화면과 같은 `resolveCollectingArms` 판정) — 데이터가 있으면
  * 수집 중 표시여도, `unknown`(상태를 못 읽음)·FINRA 꺼짐이어도 그 갈래의 키는 없다.
  */
+/** `institutional`·`short`는 수집 중인 갈래에만 있고, 값은 항상 `'collecting'` 리터럴이다. */
+interface InvestorFlowsDataStatus {
+    readonly institutional?: 'collecting';
+    readonly short?: 'collecting';
+    readonly note: string;
+}
+
 function buildDataStatus(
     snapshot: InvestorFlowsSnapshot | null,
     readiness: InvestorFlowsPipelineReadiness,
     finraEnabled: boolean
-) {
+): InvestorFlowsDataStatus | undefined {
     const arms = resolveCollectingArms({
         readiness,
         institutional: snapshot?.institutional ?? {

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type {
     InvestorFlowsScorecard,
     InvestorFlowsSnapshot,
@@ -52,6 +53,20 @@ export function InvestorFlowsContent({
         shortVolume: snapshot.shortVolume,
         finraEnabled,
     });
+    // 공매도 구간: 데이터가 있으면 본문, 비었는데 수집 중이면 안내, 아니면 생략.
+    let shortSection: ReactNode = null;
+    if (showShort) {
+        shortSection = (
+            <ShortSection
+                shortInterest={snapshot.shortInterest}
+                shortVolume={snapshot.shortVolume}
+                floatShares={snapshot.floatShares}
+                scorecard={scorecard}
+            />
+        );
+    } else if (collecting.short) {
+        shortSection = <ShortCollectingSection />;
+    }
     // 공매도·기관 IN/OUT이 이 탭의 핵심 정보라 기관 바로 아래(내부자·대량보유보다 앞)에 둔다 — 섹션 크기 순으로
     // 재정렬하지 않는다.
     return (
@@ -72,16 +87,7 @@ export function InvestorFlowsContent({
                 institutional={snapshot.institutional}
                 collecting={collecting.institutional}
             />
-            {showShort ? (
-                <ShortSection
-                    shortInterest={snapshot.shortInterest}
-                    shortVolume={snapshot.shortVolume}
-                    floatShares={snapshot.floatShares}
-                    scorecard={scorecard}
-                />
-            ) : (
-                collecting.short && <ShortCollectingSection />
-            )}
+            {shortSection}
             <InsiderSection
                 transactions={snapshot.insider.transactions}
                 scorecard={scorecard}

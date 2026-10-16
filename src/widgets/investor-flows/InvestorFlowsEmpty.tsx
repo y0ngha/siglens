@@ -19,21 +19,23 @@ export function InvestorFlowsEmpty({
     readonly shortCollecting?: boolean;
 }) {
     const t = useTranslations('widgets.investor-flows');
+    let title = t('empty.title');
+    let body = t('empty.body');
+    if (collecting) {
+        title = t('collecting.empty.title');
+        body = shortCollecting
+            ? t('collecting.empty.body')
+            : t('collecting.empty.bodyInstitutionalOnly');
+    }
     return (
         <section
             aria-labelledby={HEADING_ID}
             className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={cn('mb-2', HEADING_SECTION)}>
-                {collecting ? t('collecting.empty.title') : t('empty.title')}
+                {title}
             </h2>
-            <p className="text-sm text-secondary-300">
-                {collecting
-                    ? shortCollecting
-                        ? t('collecting.empty.body')
-                        : t('collecting.empty.bodyInstitutionalOnly')
-                    : t('empty.body')}
-            </p>
+            <p className="text-sm text-secondary-300">{body}</p>
         </section>
     );
 }
