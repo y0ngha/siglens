@@ -4,6 +4,7 @@ import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     type MarketProfileId,
     type AssetClass,
+    type MarketRegion,
 } from '@/shared/config/marketProfile/types';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { INDEXABLE_SYMBOL_TABS, type SymbolSeoTab } from '@/shared/lib/seo';
@@ -35,12 +36,23 @@ type PageKey = (typeof ALL_PAGES)[number];
  * `shared.crossLink`는 배열 조회라 추출기에는 동적이다 —
  * `manualKeys.preserve`에 등록돼 있어야 유지된다.
  */
-function descriptionKey(page: PageKey, assetClass: AssetClass): string {
+function descriptionKey(
+    page: PageKey,
+    assetClass: AssetClass,
+    region: MarketRegion
+): string {
     // overall 카피만 자산군을 탄다 — 크립토엔 실적·옵션 축이 없다.
     if (page === 'overall' && assetClass === 'crypto') {
         return 'descriptionOverallCrypto';
     }
+    // 한국 수급 탭은 DART 지분공시다 — 기관 매매·공매도 카피를 쓰지 않는다.
+    if (page === 'flows' && region === 'kr') return 'descriptionFlowsKr';
     return `description.${page}`;
+}
+
+function titleKey(page: PageKey, region: MarketRegion): string {
+    if (page === 'flows' && region === 'kr') return 'titleFlowsKr';
+    return `title.${page}`;
 }
 
 /** 카드 키 → 탭 SEO 키. 차트 탭만 이름이 갈린다(`chart` ↔ `technical`). */
@@ -87,18 +99,19 @@ interface CrossLinkCardsProps {
      *
      * The default is kept deliberately, not because it's safe in general, but
      * because it's *provably* safe for its only remaining implicit callers:
-     * `congress/page.tsx`, `congress/CongressDegraded.tsx`, `flows/page.tsx`, `flows/FlowsDegraded.tsx`, and
+     * `congress/page.tsx`, `congress/CongressDegraded.tsx`, and
      * `options/OptionsPageClient.tsx` render this component only after their
      * page already 404s any symbol whose tab set doesn't include
-     * `congress`/`flows`/`options` (`isTabAllowedForSymbol`) — and only `us-equity`
+     * `congress`/`options` (`isTabAllowedForSymbol`) — and only `us-equity`
      * carries those tabs (`US_EQUITY_DESCRIPTOR.tabs`). So `marketProfile`
      * is provably `'us-equity'` there, and the default is accurate rather than
-     * assumed.
+     * assumed. `flows` now opens for kr-equity too (DART ownership filings), so
+     * `flows/page.tsx` and `flows/FlowsDegraded.tsx` pass `marketProfile` explicitly.
      *
      * An audit (2026-08-18) found the opposite case: `fundamental`/`financials`
      * render for BOTH us-equity and kr-equity, so their call sites omitting
      * this prop silently fell back to `'us-equity'` and rendered live links to
-     * `/options` and `/congress` for Korean symbols (`/flows` is US-only for the same reason) — pages that
+     * `/options` and `/congress` for Korean symbols — pages that
      * `isTabAllowedForSymbol` then 404s (soft-404: `notFound()` inside a
      * Suspense boundary still returns HTTP 200, see
      * `e2e/specs/kr-equity-seo.spec.ts`). That fix passes `marketProfile`
@@ -157,7 +170,10 @@ export function CrossLinkCards({
             </h2>
             {visiblePages.map(p => {
                 const isCurrent = p === current;
-                const description = tCard(descriptionKey(p, assetClass));
+                const description = tCard(
+                    descriptionKey(p, assetClass, descriptor.region)
+                );
+                const title = tCard(titleKey(p, descriptor.region));
                 if (isCurrent) {
                     return (
                         <div
@@ -165,9 +181,7 @@ export function CrossLinkCards({
                             aria-current="page"
                             className="cursor-default rounded-lg border border-primary-500 bg-secondary-800/40 p-6 ring-1 ring-primary-500/30"
                         >
-                            <h3 className={HEADING_SUBSECTION}>
-                                {tCard(`title.${p}`)}
-                            </h3>
+                            <h3 className={HEADING_SUBSECTION}>{title}</h3>
                             <p className="mt-2 text-sm text-secondary-400">
                                 {description}
                             </p>
@@ -193,9 +207,7 @@ export function CrossLinkCards({
                         // 구분은 그쪽의 채움(`bg-secondary-800/40`)과 액센트가 맡는다.
                         className="rounded-lg border border-border-control p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        <h3 className={HEADING_SUBSECTION}>
-                            {tCard(`title.${p}`)}
-                        </h3>
+                        <h3 className={HEADING_SUBSECTION}>{title}</h3>
                         <p className="mt-2 text-sm text-secondary-400">
                             {description}
                         </p>

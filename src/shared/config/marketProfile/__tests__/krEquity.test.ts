@@ -26,16 +26,16 @@ describe('kr-equity market profile', () => {
             expect(d.searchSource).toBe('kr-store');
         });
 
-        it('excludes options and congress tabs', () => {
+        it('excludes options and congress tabs and opens flows (DART ownership filings)', () => {
             // 개별주식옵션은 국내 유동성이 없고, 공직자 백지신탁은 API가 존재하지 않는다.
             expect(d.tabs).not.toContain('options');
             expect(d.tabs).not.toContain('congress');
-            expect(d.tabs).not.toContain('flows');
             expect(d.tabs).toEqual([
                 'chart',
                 'news',
                 'fundamental',
                 'financials',
+                'flows',
                 'fear-greed',
                 'overall',
                 'position',

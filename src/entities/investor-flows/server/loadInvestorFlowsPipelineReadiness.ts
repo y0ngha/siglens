@@ -1,10 +1,12 @@
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import {
     INVESTOR_FLOWS_STATE_BACKFILL_DONE,
+    INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../lib/investorFlowsPolicy';
 import {
+    deriveDartStatus,
     deriveFilingsStatus,
     deriveFtdStatus,
     deriveInstitutionalStatus,
@@ -24,6 +26,8 @@ export interface PipelineReadinessDeps {
     listThresholdTradeDates(): Promise<string[]>;
     isFinraEnabled(): boolean;
     isRegShoEnabled(): boolean;
+    /** `DART_API_KEY`가 설정돼 있는가. 없으면 DART 표식을 읽지 않는다. */
+    isDartEnabled(): boolean;
     now(): Date;
 }
 
@@ -36,6 +40,7 @@ export interface PipelineReadinessDeps {
  * - FTD: 반월 파일이 하나라도 저장됐으면 `ready`.
  * - Form 144·증자 공시: 공시 커서(`sec_filings_cursor`)가 오늘에서 며칠 안까지 따라잡았으면 `ready`.
  * - 과열 목록: 플래그가 켜져 있고 목록을 받은 거래일이 하나라도 있으면 `ready`. 꺼져 있으면 읽지 않는다.
+ * - DART(한국): 키가 있고 초기 백필 표식(`dart_backfill_done`)이 있으면 `ready`. 키가 없으면 읽지 않고 `unknown`.
  *
  * 인프라 실패는 **그대로 던진다** — 호출부(`getInvestorFlowsPipelineReadiness`)가 `unknown`으로 바꾸므로, 장애가
  * "수집 중"으로 보이지도 TTL 동안 캐시에 굳지도 않는다.
@@ -45,6 +50,7 @@ export async function loadInvestorFlowsPipelineReadiness(
 ): Promise<InvestorFlowsPipelineReadiness> {
     const finraEnabled = deps.isFinraEnabled();
     const regShoEnabled = deps.isRegShoEnabled();
+    const dartEnabled = deps.isDartEnabled();
     const today = toUtcIsoDate(deps.now());
     const [
         universe,
@@ -53,6 +59,7 @@ export async function loadInvestorFlowsPipelineReadiness(
         hasAnyFtdFile,
         filingsCursor,
         thresholdDates,
+        dartBackfill,
     ] = await Promise.all([
         deps.getState(INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE),
         deps.getState(INVESTOR_FLOWS_STATE_BACKFILL_DONE),
@@ -60,6 +67,9 @@ export async function loadInvestorFlowsPipelineReadiness(
         deps.hasAnyFtdFile(),
         deps.getState(INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR),
         regShoEnabled ? deps.listThresholdTradeDates() : Promise.resolve([]),
+        dartEnabled
+            ? deps.getState(INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE)
+            : Promise.resolve(null),
     ]);
     return {
         institutional: deriveInstitutionalStatus({
@@ -72,6 +82,10 @@ export async function loadInvestorFlowsPipelineReadiness(
         thresholdList: deriveThresholdListStatus({
             regShoEnabled,
             hasIngestedDate: thresholdDates.length > 0,
+        }),
+        dart: deriveDartStatus({
+            dartEnabled,
+            backfillDone: dartBackfill !== null,
         }),
     };
 }

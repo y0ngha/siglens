@@ -5,6 +5,7 @@ import { createFakeDartClient } from '@/shared/api/dart/fakeDartClient';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsDartRepository } from '@/entities/investor-flows/api/investorFlowsDartRepository';
 import type { IngestDartFilingsDeps } from '@/entities/investor-flows/server/ingestDartFilings';
+import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 
 /**
@@ -23,6 +24,7 @@ export function createDartFilingsDeps(
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
+        onBackfillCompleted: revalidateFlowsReadiness,
         log: (message, detail) => console.warn(message, detail ?? ''),
     };
 }

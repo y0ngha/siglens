@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { isDartEnabled } from '@/shared/api/dart/dartClient';
 import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnabled';
 import { isRegShoThresholdDataEnabled } from '@/shared/api/exchange/regShoThresholdDataEnabled';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
@@ -28,6 +29,8 @@ function readE2EReadiness(): InvestorFlowsPipelineReadiness {
         failsToDeliver: status,
         filings: status,
         thresholdList: isRegShoThresholdDataEnabled() ? status : 'unknown',
+        // E2E의 가짜 DART는 키 없이도 켜져 있다(`createFakeDartClient`) — 수집 중 스위치를 그대로 따른다.
+        dart: status,
     };
 }
 
@@ -47,20 +50,22 @@ function loadFromDatabase(): Promise<InvestorFlowsPipelineReadiness> {
         listThresholdTradeDates: () => regShoRepo.listTradeDates(''),
         isFinraEnabled: isFinraShortDataEnabled,
         isRegShoEnabled: isRegShoThresholdDataEnabled,
+        isDartEnabled,
         now: () => new Date(),
     });
 }
 
 /**
  * 수급 탭이 "데이터 없음"과 "아직 수집 중"을 가르는 파이프라인 준비 상태(종목과 무관) — 13F·FINRA·FTD·Form 144·증자 공시·
- * 과열 목록.
+ * 과열 목록·DART(한국).
  *
  * 캐시 TTL은 수급 페이지·스냅샷과 같은 12시간이다 — `[symbol]` 탭이 읽는 `unstable_cache`는 페이지 선언값보다 짧을 수 없다
  * (`symbolTabRevalidateClamp` 가드: 짧으면 라우트 revalidate가 그 값으로 내려간다). 대신 갈래마다 한 번뿐인 전환(13F 백필 완료·
  * FINRA/FTD 첫 파일·Reg SHO 첫 목록·Form 144·증자 공시 커서 따라잡음)을 만든 cron이 `INVESTOR_FLOWS_READINESS_TAG`를
  * 무효화해(`revalidateFlowsReadiness`) 안내가 12시간을 기다리지 않고 걷힌다.
  *
- * 키에 FINRA·Reg SHO 플래그를 넣는다(SERVER.md#DC-1) — 공매도·과열 목록 갈래가 플래그에 따라 달라진다. 인프라 실패(DB 오류)는 캐시 **밖**에서
+ * 키에 FINRA·Reg SHO 플래그와 DART 키 설정 여부를 넣는다(SERVER.md#DC-1) — 공매도·과열 목록·DART 갈래가 그에 따라 달라진다
+ * (`-v3`: DART 갈래 추가). 인프라 실패(DB 오류)는 캐시 **밖**에서
  * `unknown`으로 바꾼다: 장애가 TTL 동안 캐시에 굳지 않고, 화면은 "수집 중"을 주장하지 않고 예전 동작(빈 상태)으로 돌아간다.
  * Next의 정적/ISR 제어 흐름 오류(`DYNAMIC_SERVER_USAGE`)는 인프라 실패가 아니므로 그대로 던진다.
  */
@@ -70,9 +75,10 @@ export const getInvestorFlowsPipelineReadiness = cache(
         try {
             return await staticSymbolCache<InvestorFlowsPipelineReadiness>(
                 [
-                    'investor-flows:pipeline-readiness-v2',
+                    'investor-flows:pipeline-readiness-v3',
                     isFinraShortDataEnabled() ? 'finra-on' : 'finra-off',
                     isRegShoThresholdDataEnabled() ? 'regsho-on' : 'regsho-off',
+                    isDartEnabled() ? 'dart-on' : 'dart-off',
                 ],
                 READINESS_CACHE_SCOPE,
                 loadFromDatabase,

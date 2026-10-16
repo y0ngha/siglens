@@ -356,7 +356,9 @@
             "flows": {
                 "degradedBody": "The data store is temporarily unresponsive. Please visit again shortly to see institutional, insider and short-selling flows.",
                 "degradedTitle": "Investor flows data is temporarily unavailable",
-                "heading": "{v0} Investor Flows"
+                "heading": "{v0} Investor Flows",
+                "krHeading": "{v0} Major Holder & Insider Filings",
+                "krDegradedBody": "The data store is temporarily unresponsive. Please visit again shortly to see major-holder and insider ownership filings."
             },
             "loading": {
                 "486c8b": "Loading data…",
@@ -1457,7 +1459,9 @@
                 "news": "News Analysis",
                 "options": "Options Analysis",
                 "overall": "AI Overall Analysis"
-            }
+            },
+            "titleFlowsKr": "Ownership Filings",
+            "descriptionFlowsKr": "5% major-holder and insider ownership filings with an AI reading"
         },
         "enumLabel": {
             "backtestRiskLevel": {
@@ -1996,7 +2000,10 @@
                 "flows": {
                     "description": "See institutional 13F holding changes, insider trades, 5% holder filings and short interest for {subject} in one place, with an AI reading of the flows.",
                     "titleCore": "Investor Flows",
-                    "titleTail": "13F, Insider & Short Interest"
+                    "titleTail": "13F, Insider & Short Interest",
+                    "krTitleCore": "Ownership Filings",
+                    "krTitleTail": "Major Holders & Insiders",
+                    "krDescription": "See 5% major-holder reports, executive and major-shareholder ownership changes and trading-plan reports for {subject} from DART in one place, with an AI reading of the ownership flows."
                 },
                 "fundamental": {
                     "description": "See {subject}'s company profile, PER/PSR/EPS valuation, ROE and margin profitability, and debt/cash-flow health on one page, plus analyst consensus and price targets.",
@@ -3014,7 +3021,7 @@
                     "get_economy": "Returns US macro indicators such as the policy rate, inflation, employment and GDP, Treasury yields, upcoming economic events and the SIGLENS macro briefing. It takes no arguments.",
                     "get_fundamentals": "Returns the company profile, valuation ratios, profitability, growth and financial health scores, analyst consensus and price targets, and the next earnings date. Stocks only (US and Korean); crypto is not supported.",
                     "get_guide": "Explains a technical-analysis concept, such as a candlestick pattern, chart pattern, indicator or strategy, using the SIGLENS guide. Use it for \"what is this?\" questions without a symbol; the result includes the guide page URL.",
-                    "get_investor_flows": "Returns the investor flows of a US stock, meaning who is buying and selling it: a scorecard for institutions, insiders, 5% holders, short sellers and dilution, the largest institutional holders and 13F puts and calls, insider transactions and Form 144 proposed sales, large-holder and offering filings, short-selling, fails-to-deliver and threshold-list data, and a short squeeze score. The data is filed with a delay, so every source comes with its as-of date.",
+                    "get_investor_flows": "Returns the investor flows of a US or Korean stock, meaning who is buying and selling it. For US stocks: a scorecard for institutions, insiders, 5% holders, short sellers and dilution, the largest institutional holders and 13F puts and calls, insider transactions and Form 144 proposed sales, large-holder and offering filings, short-selling, fails-to-deliver and threshold-list data, and a short squeeze score. For Korean stocks: DART major-holder (5%), executive and major-shareholder ownership and trading-plan reports with their scores; institutional and foreign net buying is not included. The data is filed with a delay, so every source comes with its as-of date.",
                     "get_market_overview": "Returns the market-wide fear & greed index, major index and sector moves, the SIGLENS market briefing and the sector signal scan. Use it for \"how is the market today?\".",
                     "get_my_portfolio": "Returns the signed-in user's own holdings with quantity, average price, profit/loss and weight. Use it only for questions about your own positions or profit and loss.",
                     "get_news": "Returns news that SIGLENS has already collected for a symbol or a market category, with sentiment, summaries and counts. Use it for events and \"why did it move\" questions.",
@@ -4262,7 +4269,8 @@
                 "insider": "Insiders",
                 "institutional": "Institutions",
                 "largeHolders": "Large holders (5%)",
-                "short": "Short selling"
+                "short": "Short selling",
+                "krInsider": "Executives & major shareholders"
             },
             "collecting": {
                 "empty": {
@@ -4285,6 +4293,10 @@
                 "short": {
                     "body": "We are gathering the short-selling data FINRA publishes for the first time. It will appear here automatically once it is ready.",
                     "title": "Collecting FINRA short-selling data"
+                },
+                "dart": {
+                    "title": "Collecting ownership filings",
+                    "body": "We are collecting major-holder and executive ownership filings from DART for the first time. They will appear here automatically once ready."
                 }
             },
             "dilution": {
@@ -4331,7 +4343,14 @@
                 "shortPct": "Short interest {pct} (of float)",
                 "shortRatio": "Off-exchange short ratio {pct} (latest trading day)",
                 "shortTrend": "Short interest change {pct} (last 3 settlement dates)",
-                "thresholdListed": "On the threshold list for {days} trading days in a row"
+                "thresholdListed": "On the threshold list for {days} trading days in a row",
+                "krMajorHolderReports": "{reports} major-holder reports from {reporters} reporters in the last {days} days",
+                "krMajorHolderDetailed": "{count} on the detailed form",
+                "krInsiderReports": "{reports} ownership reports from {reporters} reporters in the last {days} days",
+                "krInsiderNetShares": "Net change {shares} shares",
+                "krInsiderNetPct": "Net change in holding ratio {pct}",
+                "krTradingPlans": "{count} trading-plan reports",
+                "insiderProposedSalePct": "Shares to be sold {pct} (of shares outstanding)"
             },
             "filter": {
                 "all": "All {count}",
@@ -4374,7 +4393,9 @@
                 "shares": "{shares} shares",
                 "times": "{times}×",
                 "title": "Fails to deliver (SEC FTD)",
-                "unavailable": "Could not load the fails-to-deliver data. Please check again shortly."
+                "unavailable": "Could not load the fails-to-deliver data. Please check again shortly.",
+                "peakQty": "Recent peak",
+                "peakDate": "Settlement {date}"
             },
             "holders": {
                 "basis": "Holdings as of the end of the {period} quarter; changes are versus the prior quarter.",
@@ -4499,7 +4520,9 @@
                 "volumeAverage": "The dashed line is the {days}-trading-day average of {pct}.",
                 "volumeFootnote": "Based on off-exchange (TRF) reports only. Short sales executed on exchanges are not included.",
                 "volumeLatest": "{pct} on {date}",
-                "volumeTitle": "Daily Off-Exchange (TRF) Short Ratio"
+                "volumeTitle": "Daily Off-Exchange (TRF) Short Ratio",
+                "trendMixed": "Recent trend: mixed",
+                "recentChange": "{pct} from {from} to {to} settlement"
             },
             "split": {
                 "basis": "Based on the {period} quarter, compared with {previous}.",
@@ -4654,7 +4677,75 @@
                 "thresholdList": [
                     "The Reg SHO threshold list is a daily exchange list of stocks whose fails to deliver stayed above a set size for five settlement days in a row.",
                     "If a stock stays on the list for more than 13 trading days, the rule requires the remaining fails to be closed out."
+                ],
+                "krFlowScore": [
+                    "Combines the major-holder reports and the executive and major-shareholder ownership reports into one score (-100 to +100). Higher means more bullish signals.",
+                    "It is a reference figure calculated by rules from past filings and does not predict the share price."
+                ],
+                "krMajorHolder": [
+                    "A major-holder report is a filing to the Financial Supervisory Service by anyone holding more than 5% of a company. It is due within 5 business days of first crossing 5% or of a change of more than 1 percentage point.",
+                    "The detailed and abbreviated forms differ only in format, so an abbreviated report does not by itself mean a passive investment."
+                ],
+                "krInsider": [
+                    "An executive and major-shareholder ownership report is filed when an executive or a 10%+ shareholder changes their holding in the company.",
+                    "Open-market trades, gifts, inheritance and stock option exercises are all reported the same way, so the change alone does not tell you why the shares moved."
                 ]
+            },
+            "kr": {
+                "filing": "DART filing",
+                "filingLabel": "{reporter} DART filing",
+                "pointChange": "{value} pp",
+                "change": "Change {value}",
+                "colReceipt": "Filed",
+                "colReporter": "Reporter",
+                "colFiling": "Filing",
+                "omitted": "{count} older reports are left out of the list.",
+                "notProvided": "Institutional and foreign net buying is not provided.",
+                "source": "Source: Financial Supervisory Service, DART electronic disclosure system",
+                "preferredShare": "Ownership filings are made per company, so this shows the same filings as the {corpName} common share.",
+                "scorecardNote": "Korean stocks are scored only from major-holder and executive/major-shareholder reports. Institutional, short-selling and dilution scores are not provided.",
+                "majorHolders": {
+                    "title": "Major-holder reports (5% or more)",
+                    "caption": "Filed when a holder first crosses 5% or their ratio changes by more than 1 percentage point. The purpose of the holding is not part of this list.",
+                    "colForm": "Form",
+                    "colRatio": "Holding ratio",
+                    "colSharesChange": "Change in shares",
+                    "colReason": "Reason",
+                    "formDetailed": "Detailed",
+                    "formAbbreviated": "Abbreviated",
+                    "none": "No major-holder reports were filed in the last 2 years.",
+                    "reasonNone": "Reason not stated"
+                },
+                "insiders": {
+                    "title": "Executive & major-shareholder ownership reports",
+                    "caption": "Filed whenever an executive or a 10%+ shareholder changes their holding. The report does not say whether it was a market trade, a gift or an inheritance.",
+                    "colReporter": "Reporter & position",
+                    "colRegistered": "Registered",
+                    "colMajor": "Major shareholder",
+                    "colShares": "Shares held",
+                    "colRatio": "Ownership ratio",
+                    "registered": "Registered officer",
+                    "unregistered": "Not registered",
+                    "majorYes": "Yes",
+                    "majorNo": "No",
+                    "positionNone": "No position",
+                    "none": "No executive or major-shareholder ownership reports were filed in the last 2 years."
+                },
+                "tradingPlans": {
+                    "title": "Trading-plan reports",
+                    "caption": "An executive or major shareholder announcing a planned purchase or sale in advance. It does not mean the trade has happened.",
+                    "none": "No trading-plan reports were filed in the last 2 years."
+                },
+                "asOf": {
+                    "termLatest": "Latest filing date",
+                    "termWindow": "Scoring window",
+                    "latestNone": "No data",
+                    "delay": "Major-holder and executive/major-shareholder reports are filed within 5 business days of a change, so changes from the last few days may not show yet."
+                },
+                "empty": {
+                    "title": "Ownership filings",
+                    "body": "No data — we found no major-holder or executive ownership filings for this stock in the last 2 years."
+                }
             }
         },
         "layout": {

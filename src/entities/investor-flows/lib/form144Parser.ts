@@ -33,6 +33,29 @@ function firstChild(
     return element?.children.find(child => child.name === name);
 }
 
+/** EDGAR CIK — 1~10자리 숫자. 저장·비교는 10자리 0 패딩(`0002058648`)으로 맞춘다. */
+const CIK_RE = /^\d{1,10}$/;
+const CIK_LENGTH = 10;
+
+/**
+ * 신고자(매도 예정자) CIK — `headerData/filerInfo/filer/filerCredentials/cik`. 같은 사람이 이름 철자를 바꿔 신고해도
+ * (`MARK ROBINSON`/`Mark Haymond Robinson`) CIK는 같아 core가 신고자 수를 CIK로 센다. 없거나 형식이 다르면 null(이름으로 센다).
+ * 네임스페이스 접두사는 `streamXmlElements`가 떼므로 로컬 이름으로 찾는다.
+ */
+function readFilerCik(root: XmlElement): string | null {
+    const raw = xmlChildText(
+        root,
+        'headerData',
+        'filerInfo',
+        'filer',
+        'filerCredentials',
+        'cik'
+    )?.trim();
+    return raw !== undefined && CIK_RE.test(raw)
+        ? raw.padStart(CIK_LENGTH, '0')
+        : null;
+}
+
 const roundOrNull = (value: number | null): number | null =>
     value === null ? null : Math.round(value);
 
@@ -86,7 +109,7 @@ export function parseForm144(root: XmlElement): Form144Document | null {
         issuerInfo,
         'nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold'
     );
-    if (issuerCikRaw === null || !/^\d{1,10}$/.test(issuerCikRaw)) return null;
+    if (issuerCikRaw === null || !CIK_RE.test(issuerCikRaw)) return null;
     if (filerName === null) return null;
 
     const blocks = formData.children
@@ -110,9 +133,10 @@ export function parseForm144(root: XmlElement): Form144Document | null {
     ).map(parseUsSlashDate);
 
     return {
-        issuerCik: issuerCikRaw.padStart(10, '0'),
+        issuerCik: issuerCikRaw.padStart(CIK_LENGTH, '0'),
         issuerName: xmlChildText(issuerInfo, 'issuerName'),
         filerName,
+        filerCik: readFilerCik(root),
         relationships,
         securityClass: first.securityClass ?? '',
         shares: sales.reduce((sum, sale) => sum + sale.shares, 0),

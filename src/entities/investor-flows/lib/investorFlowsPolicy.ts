@@ -204,6 +204,6 @@ export const INVESTOR_FLOWS_STATE_DART_LIST_CURSOR = 'dart_list_cursor';
 export const INVESTOR_FLOWS_STATE_DART_BACKFILL_CURSOR = 'dart_backfill_cursor';
 /**
  * `investor_flows_state` 키 — 최초 백필이 유니버스 끝까지 닿았을 때 한 번 기록하고 다시 지우지 않는다(set-once). KR 수급 탭의
- * "수집 중" 안내가 이 표식을 본다(후속 PR, 설계 §4.5 — 13F 백필 표식 `INVESTOR_FLOWS_STATE_BACKFILL_DONE`과 같은 역할).
+ * "수집 중" 안내가 이 표식을 본다(준비 상태 `dart` 갈래, 설계 §4.5 — 13F 백필 표식 `INVESTOR_FLOWS_STATE_BACKFILL_DONE`과 같은 역할).
  */
 export const INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE = 'dart_backfill_done';

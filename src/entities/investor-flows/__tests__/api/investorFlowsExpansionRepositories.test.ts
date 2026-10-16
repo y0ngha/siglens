@@ -101,6 +101,7 @@ describe('DrizzleSecFilingsRepository', () => {
                 issuerCik: 2488,
                 symbol: 'AMD',
                 filerName: 'F',
+                filerCik: null,
                 relationships: ['Officer'],
                 securityClass: 'Common',
                 shares: 1,

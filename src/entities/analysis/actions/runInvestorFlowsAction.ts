@@ -24,7 +24,7 @@ export type RunInvestorFlowsActionResult =
  * Server Action: tier + BYOK gate, then run the investor-flows (수급) interpretation via
  * siglens-core. Returns `cached | done | no_data | miss_no_trigger | error`.
  *
- * 수급 데이터(13F·Form 4·13D/G·FINRA)는 공개 자료라 core에 사용량 한도 인자가 없다. 그래도 호출자는
+ * 수급 데이터(13F·Form 4·13D/G·FINRA·DART)는 공개 자료라 core에 사용량 한도 인자가 없다. 그래도 호출자는
  * 프리미엄 `modelId`를 고를 수 있어, `resolveTierAndByok`가 다른 축과 똑같이 게이트한다(무료·비회원 +
  * 프리미엄 모델 → 저장된 BYOK 키가 없으면 차단). 게이트·E2E 단락·봇 동등성·추론 토글 규칙·catch-all은
  * `runGatedAnalysis`가 fundamental/financials/congress와 공유한다.
@@ -32,8 +32,8 @@ export type RunInvestorFlowsActionResult =
  * 평가 옵션(`includeFinraData`·`includeExchangeLists`·`squeezeContext`)은 화면 점수표와 같은 함수
  * (`getInvestorFlowsEvaluationOptions`)에서 받는다 — 플래그는 core 캐시 키에 접히므로 끄면 그 데이터가 섞인 옛 해석이
  * 캐시에서 나오지 않고, 숏스퀴즈 일봉이 있으면 키에 `:squeeze=on`이 붙어 점수 블록이 든 해석을 따로 캐시한다. 스냅샷은
- * 페이지가 그리는 것과 같은 캐시 스냅샷을 쓴다(`investorFlowsCachedProvider`). 수급 탭은 미국 주식 전용이라 `market`은
- * core 기본값(`'us'`)이다.
+ * 페이지가 그리는 것과 같은 캐시 스냅샷을 쓴다(`investorFlowsCachedProvider`). `market`도 같은 옵션에서 온다 — 한국 종목은
+ * `'kr'`이라 core 캐시 키에 FINRA·Reg SHO·숏스퀴즈 접미사가 붙지 않고 DART 전용 프롬프트로 해석한다.
  */
 export async function runInvestorFlowsAction(
     symbol: string,

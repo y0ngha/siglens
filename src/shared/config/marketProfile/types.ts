@@ -30,7 +30,7 @@ export type MarketProfileId = 'us-equity' | 'crypto' | 'kr-equity';
 export type AssetClass = 'equity' | 'crypto';
 
 /** Market/region axis. Drives currency, session, language, data provider. */
-type MarketRegion = 'us' | 'global' | 'kr';
+export type MarketRegion = 'us' | 'global' | 'kr';
 
 /**
  * Interim session model (siglens-local). Each `MarketProfileDescriptor` carries

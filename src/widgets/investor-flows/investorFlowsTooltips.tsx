@@ -27,7 +27,10 @@ export type FlowTerm =
     | 'dilution'
     | 'failsToDeliver'
     | 'thresholdList'
-    | 'squeezeScore';
+    | 'squeezeScore'
+    | 'krFlowScore'
+    | 'krMajorHolder'
+    | 'krInsider';
 
 /** 용어 옆 (i) 풀이. 기존 `InfoTooltip` 패턴(펀더멘털·옵션 탭)을 그대로 쓴다. */
 export function FlowTooltip({ term }: { readonly term: FlowTerm }) {

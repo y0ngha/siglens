@@ -351,6 +351,13 @@
       "when": 1792142491026,
       "tag": "0049_investor_flows_expansion",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1792157289029,
+      "tag": "0050_form144_filer_cik",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,8 @@ export type CollectingVariant =
     | 'institutional'
     | 'short'
     | 'failsToDeliver'
-    | 'filings';
+    | 'filings'
+    | 'dart';
 
 interface CollectingNoticeProps {
     /** 어느 구간의 안내인지 — 문구가 다르다. */
@@ -39,6 +40,10 @@ export function CollectingNotice({ variant }: CollectingNoticeProps) {
         filings: {
             title: t('collecting.filings.title'),
             body: t('collecting.filings.body'),
+        },
+        dart: {
+            title: t('collecting.dart.title'),
+            body: t('collecting.dart.body'),
         },
     };
     const { title, body } = texts[variant];

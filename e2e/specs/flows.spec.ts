@@ -9,7 +9,7 @@ import { E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisS
  * - AI 해석은 클라이언트 훅이 `runInvestorFlowsAction`을 부르고, E2E에서는 고정 fixture
  *   (`e2e/fixtures/analysis.json`의 `investorFlows`)가 즉시 돌아온다.
  * - `EMPTYX`: 수급 데이터 없음(정상 빈 상태, degrade 아님).
- * - 미국 주식 전용 — 한국 종목·크립토는 404(탭이 없다).
+ * - 크립토는 404(탭이 없다). 한국 종목(DART 지분공시)은 `flows-kr.spec.ts`가 검증한다.
  */
 
 // `E2E_FLOWS_PIPELINE=collecting`로 서버를 띄우면 13F·FINRA 파이프라인이 비어 있는 부트스트랩 모습이 된다
@@ -416,26 +416,9 @@ test.describe('flows: resilience', () => {
     });
 });
 
-test.describe('flows: 미국 주식 전용', () => {
-    test('한국 종목은 404 + noindex다(탭이 없다)', async ({ page }) => {
-        const response = await page.request.get('/005930.KS/flows');
-        expect(response.status()).toBe(404);
-        expect(await response.text()).toMatch(
-            /<meta name="robots" content="noindex/
-        );
-    });
-
+test.describe('flows: 크립토 제외', () => {
     test('크립토는 404다', async ({ page }) => {
         const response = await page.request.get('/BTCUSD/flows');
         expect(response.status()).toBe(404);
-    });
-
-    test('한국 종목 탭 바에는 수급 탭이 없다', async ({ page }) => {
-        await page.goto('/005930.KS');
-        await expect(
-            page
-                .getByRole('navigation', { name: '분석 종류' })
-                .getByRole('link', { name: '수급', exact: true })
-        ).toHaveCount(0);
     });
 });

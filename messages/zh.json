@@ -356,7 +356,9 @@
             "flows": {
                 "degradedBody": "数据存储暂时无响应。请稍后再次访问，即可查看机构、内部人与做空的资金流向。",
                 "degradedTitle": "暂时无法加载资金流向数据",
-                "heading": "{v0} 机构资金与做空"
+                "heading": "{v0} 机构资金与做空",
+                "krHeading": "{v0} 大额持股与高管持股公告",
+                "krDegradedBody": "数据存储暂时无响应。请稍后再次访问，即可查看大额持股与高管持股公告。"
             },
             "loading": {
                 "486c8b": "数据加载中…",
@@ -1457,7 +1459,9 @@
                 "news": "新闻分析",
                 "options": "期权分析",
                 "overall": "AI综合分析"
-            }
+            },
+            "titleFlowsKr": "持股公告",
+            "descriptionFlowsKr": "5%大额持股与高管持股公告及AI解读"
         },
         "enumLabel": {
             "backtestRiskLevel": {
@@ -1996,7 +2000,10 @@
                 "flows": {
                     "description": "汇总查看{subject}的机构持仓变化(13F)、内部人交易、5%大额持股披露与卖空余额，并由AI解读资金流向。",
                     "titleCore": "机构资金与做空",
-                    "titleTail": "13F·内部人·做空"
+                    "titleTail": "13F·内部人·做空",
+                    "krTitleCore": "持股公告",
+                    "krTitleTail": "大额持股·高管持股",
+                    "krDescription": "汇总查看{subject}在韩国金融监督院电子公告(DART)上的5%大额持股报告、高管与主要股东持股变动和交易计划报告，并由AI解读持股动向。"
                 },
                 "fundamental": {
                     "description": "一页汇总{subject}的公司概况、PER/PSR/EPS估值、ROE与利润率、负债与现金流健康度,并附分析师一致预期与目标价。",
@@ -3014,7 +3021,7 @@
                     "get_economy": "返回美国政策利率、物价、就业、GDP 等宏观指标，国债收益率，即将到来的重要经济事件，以及 SIGLENS 的宏观简报。无需参数。",
                     "get_fundamentals": "返回公司概况、估值指标、盈利能力、成长性和财务健康评分、分析师共识与目标价，以及下一次财报日期。仅支持美国和韩国股票，不支持加密货币。",
                     "get_guide": "用 SIGLENS 指南讲解技术分析概念，例如 K线形态、图表形态、指标和投资理论。不涉及具体标的、只问“这是什么”时使用，并附带指南页面地址。",
-                    "get_investor_flows": "返回美国股票的资金流向，也就是谁在买入和卖出。包含机构、内部人士、5% 持有人、卖空和增发稀释的评分表，主要机构持仓与13F看跌/看涨期权，内部人士交易与拟出售申报(Form 144)，大额持股与增发申报，卖空、交收失败和门槛名单数据，以及轧空评分。这些数据披露有延迟，所以每项数据都附带截至日期。",
+                    "get_investor_flows": "返回美国和韩国股票的资金流向，也就是谁在买入和卖出。美国股票包含机构、内部人士、5% 持有人、卖空和增发稀释的评分表，主要机构持仓与13F看跌/看涨期权，内部人士交易与拟出售申报(Form 144)，大额持股与增发申报，卖空、交收失败和门槛名单数据，以及轧空评分。韩国股票包含DART的大额持股(5%)、高管与主要股东持股报告、交易计划报告及其评分，不含机构和外资净买入。这些数据披露有延迟，所以每项数据都附带截至日期。",
                     "get_market_overview": "返回整个市场的恐惧与贪婪指数、主要指数和板块涨跌、SIGLENS 的市场简报，以及各板块的信号扫描结果。询问“今天市场怎么样”时使用。",
                     "get_my_portfolio": "返回已登录用户自己的持仓，包括数量、平均成本、盈亏和占比。仅在询问自己的持仓或盈亏时使用。",
                     "get_news": "返回 SIGLENS 已收集的个股或市场分类新闻，附带情绪判断、摘要和数量统计。了解动态或“为什么涨跌”时使用。",
@@ -4262,7 +4269,8 @@
                 "insider": "内部人",
                 "institutional": "机构",
                 "largeHolders": "大额持股(5%)",
-                "short": "做空"
+                "short": "做空",
+                "krInsider": "高管与主要股东"
             },
             "collecting": {
                 "empty": {
@@ -4285,6 +4293,10 @@
                 "short": {
                     "body": "正在首次收集 FINRA 公布的卖空数据，准备好后会自动显示在这里。",
                     "title": "正在收集 FINRA 卖空数据"
+                },
+                "dart": {
+                    "title": "正在收集持股公告",
+                    "body": "正在首次从韩国金融监督院电子公告系统(DART)收集大额持股和高管持股公告。收集完成后会自动显示在这里。"
                 }
             },
             "dilution": {
@@ -4331,7 +4343,14 @@
                 "shortPct": "卖空余额 {pct}(占流通股)",
                 "shortRatio": "场外卖空占比 {pct}(最近交易日)",
                 "shortTrend": "余额变化 {pct}(最近3个结算日)",
-                "thresholdListed": "连续{days}个交易日列入门槛名单"
+                "thresholdListed": "连续{days}个交易日列入门槛名单",
+                "krMajorHolderReports": "最近{days}天大额持股报告{reports}份 · 报告人{reporters}名",
+                "krMajorHolderDetailed": "一般报告{count}份",
+                "krInsiderReports": "最近{days}天持股报告{reports}份 · 报告人{reporters}名",
+                "krInsiderNetShares": "净增减 {shares}股",
+                "krInsiderNetPct": "持股比例净增减 {pct}",
+                "krTradingPlans": "交易计划报告{count}份",
+                "insiderProposedSalePct": "拟出售股份 {pct}(占已发行股份)"
             },
             "filter": {
                 "all": "全部 {count}",
@@ -4374,7 +4393,9 @@
                 "shares": "{shares}股",
                 "times": "{times}倍",
                 "title": "交收失败(SEC FTD)",
-                "unavailable": "未能加载交收失败数据，请稍后再查看。"
+                "unavailable": "未能加载交收失败数据，请稍后再查看。",
+                "peakQty": "近期峰值",
+                "peakDate": "交收日{date}"
             },
             "holders": {
                 "basis": "以{period}季度末持仓为准，变化为与上季度相比。",
@@ -4499,7 +4520,9 @@
                 "volumeAverage": "虚线为最近{days}个交易日的平均值{pct}。",
                 "volumeFootnote": "仅基于场外(TRF)申报数据，不含在交易所内成交的卖空。",
                 "volumeLatest": "{date} {pct}",
-                "volumeTitle": "每日场外(TRF)卖空占比"
+                "volumeTitle": "每日场外(TRF)卖空占比",
+                "trendMixed": "近期走势:涨跌互现",
+                "recentChange": "交收日{from} → {to}: {pct}"
             },
             "split": {
                 "basis": "以{period}季度为准，与{previous}季度比较。",
@@ -4654,7 +4677,75 @@
                 "thresholdList": [
                     "Reg SHO门槛名单是交易所每天发布的名单，列出交收失败连续5个交收日超过一定规模的股票。",
                     "如果在名单上停留超过13个交易日，按规定必须了结剩余的交收失败。"
+                ],
+                "krFlowScore": [
+                    "把大额持股报告和高管、主要股东持股报告的动向合成一个分数(-100~+100)。分数越高，偏多的信号越多。",
+                    "这是按规则根据过往公告计算的参考指标，不能预测未来股价。"
+                ],
+                "krMajorHolder": [
+                    "大额持股报告是持有某公司5%以上股份的股东向韩国金融监督院提交的公告。首次超过5%或持股比例变动超过1个百分点时，须在5个工作日内提交。",
+                    "一般报告和简式报告只是格式不同，不能因为是简式报告就断定为单纯投资。"
+                ],
+                "krInsider": [
+                    "高管和主要股东持股报告，是公司高管或持股10%以上的股东持有本公司股票数量变动时提交的公告。",
+                    "场内买卖、赠与、继承和行使股票期权都用同样的格式报告，所以仅凭增减看不出买卖的原因。"
                 ]
+            },
+            "kr": {
+                "filing": "DART原文",
+                "filingLabel": "{reporter} DART原文",
+                "pointChange": "{value}个百分点",
+                "change": "增减 {value}",
+                "colReceipt": "接收日",
+                "colReporter": "报告人",
+                "colFiling": "公告",
+                "omitted": "较早的{count}份报告未列入列表。",
+                "notProvided": "不提供机构和外资的净买入数据。",
+                "source": "来源: 韩国金融监督院电子公告系统(DART)",
+                "preferredShare": "持股公告以公司为单位，因此内容与{corpName}普通股相同。",
+                "scorecardNote": "韩国股票只根据大额持股报告和高管、主要股东报告评分，不提供机构、做空和增发稀释的评分。",
+                "majorHolders": {
+                    "title": "大额持股报告(5%以上)",
+                    "caption": "持股超过5%的股东首次超过5%或持股比例变动超过1个百分点时提交的报告。此列表不含持股目的。",
+                    "colForm": "报告类型",
+                    "colRatio": "持股比例",
+                    "colSharesChange": "持股增减",
+                    "colReason": "事由",
+                    "formDetailed": "一般",
+                    "formAbbreviated": "简式",
+                    "none": "最近2年没有大额持股报告。",
+                    "reasonNone": "未注明事由"
+                },
+                "insiders": {
+                    "title": "高管与主要股东持股报告",
+                    "caption": "高管或持股10%以上的股东每次持股变动时提交的报告。报告中不说明是场内买卖还是赠与、继承。",
+                    "colReporter": "报告人·职位",
+                    "colRegistered": "是否登记",
+                    "colMajor": "主要股东",
+                    "colShares": "持有股数",
+                    "colRatio": "持股比例",
+                    "registered": "登记高管",
+                    "unregistered": "非登记",
+                    "majorYes": "是",
+                    "majorNo": "否",
+                    "positionNone": "无职位",
+                    "none": "最近2年没有高管或主要股东持股报告。"
+                },
+                "tradingPlans": {
+                    "title": "交易计划报告",
+                    "caption": "高管或主要股东事先公告的买卖计划，并不代表交易已经完成。",
+                    "none": "最近2年没有交易计划报告。"
+                },
+                "asOf": {
+                    "termLatest": "最近接收日",
+                    "termWindow": "评分期间",
+                    "latestNone": "无数据",
+                    "delay": "大额持股报告和高管、主要股东报告在变动后5个工作日内提交，因此最近几天的变动可能尚未显示。"
+                },
+                "empty": {
+                    "title": "持股公告数据",
+                    "body": "无数据 — 最近2年未找到该股票的大额持股或高管持股公告。"
+                }
             }
         },
         "layout": {

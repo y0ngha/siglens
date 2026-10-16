@@ -74,6 +74,75 @@ function StatCard({
     );
 }
 
+/**
+ * 잔고 변화 카드 — 직전 결제일 대비 증감(배지·주식 수), core 추세 라벨(증가·감소·보합·혼조), 최근 3회 결제 변화율과 그 양 끝 결제일.
+ */
+function ShortChangeCard({
+    metrics,
+    previousChange,
+}: {
+    readonly metrics: ShortMetrics;
+    readonly previousChange: PreviousSettlementChange | null;
+}) {
+    const t = useTranslations('widgets.investor-flows');
+    const locale = useResolvedLocale();
+    const trendLabels: Record<ShortInterestTrend, string> = {
+        rising: t('short.trendRising'),
+        falling: t('short.trendFalling'),
+        flat: t('short.trendFlat'),
+        mixed: t('short.trendMixed'),
+    };
+    // 최근 3회 결제 변화율(core `shortInterestChangePct`)은 양 끝 결제일과 함께만 보인다 — 날짜 없는 %는 기간을 알 수 없다.
+    const recentFrom = metrics.shortInterestChangeFromDate;
+    const recentTo = metrics.shortInterestChangeToDate;
+    const recentChange =
+        metrics.shortInterestChangePct === null ||
+        recentFrom === null ||
+        recentTo === null
+            ? null
+            : t('short.recentChange', {
+                  pct: formatSignedPercent(
+                      metrics.shortInterestChangePct,
+                      locale
+                  ),
+                  from: recentFrom,
+                  to: recentTo,
+              });
+    return (
+        <li className={cn(SURFACE_NESTED, 'p-3')}>
+            <p className="text-xs text-secondary-300">{t('short.change')}</p>
+            <p className="mt-1 text-sm font-medium text-secondary-100 tabular-nums">
+                {previousChange === null || previousChange.pct === null ? (
+                    t('short.noPreviousSettlement')
+                ) : (
+                    <ChangeBadge changePct={previousChange.pct} />
+                )}
+            </p>
+            {previousChange !== null && (
+                <p className="mt-1 text-xs text-secondary-400 tabular-nums">
+                    {t('short.changeVs', {
+                        date: previousChange.previousDate,
+                        shares: formatSignedCompact(
+                            previousChange.sharesChange,
+                            locale
+                        ),
+                    })}
+                </p>
+            )}
+            {metrics.shortInterestTrend !== null && (
+                <p className="mt-1 text-xs text-secondary-300">
+                    {trendLabels[metrics.shortInterestTrend]}
+                </p>
+            )}
+            {recentChange !== null && (
+                <p className="mt-1 text-xs text-secondary-400 tabular-nums">
+                    {recentChange}
+                </p>
+            )}
+        </li>
+    );
+}
+
 interface ShortInterestBlockProps {
     /** 결제일 오름차순, 비어 있지 않다(부모가 거른다). */
     readonly rows: readonly ShortInterestRow[];
@@ -91,11 +160,6 @@ export function ShortInterestBlock({
 }: ShortInterestBlockProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
-    const trendLabels: Record<ShortInterestTrend, string> = {
-        rising: t('short.trendRising'),
-        falling: t('short.trendFalling'),
-        flat: t('short.trendFlat'),
-    };
     const latest = rows[rows.length - 1];
     const hasFloat = latest.pctOfFloat !== null;
     const chartValues = rows.map(row =>
@@ -139,35 +203,10 @@ export function ShortInterestBlock({
                               ),
                           })}
                 </StatCard>
-                <li className={cn(SURFACE_NESTED, 'p-3')}>
-                    <p className="text-xs text-secondary-300">
-                        {t('short.change')}
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-secondary-100 tabular-nums">
-                        {previousChange === null ||
-                        previousChange.pct === null ? (
-                            t('short.noPreviousSettlement')
-                        ) : (
-                            <ChangeBadge changePct={previousChange.pct} />
-                        )}
-                    </p>
-                    {previousChange !== null && (
-                        <p className="mt-1 text-xs text-secondary-400 tabular-nums">
-                            {t('short.changeVs', {
-                                date: previousChange.previousDate,
-                                shares: formatSignedCompact(
-                                    previousChange.sharesChange,
-                                    locale
-                                ),
-                            })}
-                        </p>
-                    )}
-                    {metrics.shortInterestTrend !== null && (
-                        <p className="mt-1 text-xs text-secondary-300">
-                            {trendLabels[metrics.shortInterestTrend]}
-                        </p>
-                    )}
-                </li>
+                <ShortChangeCard
+                    metrics={metrics}
+                    previousChange={previousChange}
+                />
             </ul>
             {rows.length > 1 && finite.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">

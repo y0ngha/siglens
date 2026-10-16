@@ -409,6 +409,7 @@ export class DrizzleSecFilingsRepository {
             filingDate: row.filingDate,
             formType: row.formType,
             filer: row.filerName,
+            filerCik: row.filerCik,
             relationships: row.relationships,
             shares: row.shares,
             valueUsd: row.valueUsd,

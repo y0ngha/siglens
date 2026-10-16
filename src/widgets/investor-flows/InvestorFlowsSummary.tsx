@@ -5,6 +5,7 @@ import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModel
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { useInvestorFlowsAnalysis } from './hooks/useInvestorFlowsAnalysis';
 import { InvestorFlowsSummaryEmpty } from './InvestorFlowsSummaryEmpty';
@@ -67,5 +68,10 @@ export function InvestorFlowsSummary({ symbol }: InvestorFlowsSummaryProps) {
         );
     }
 
-    return <InvestorFlowsSummaryView result={state.result} />;
+    return (
+        <InvestorFlowsSummaryView
+            result={state.result}
+            market={isKrEquitySymbol(symbol) ? 'kr' : 'us'}
+        />
+    );
 }

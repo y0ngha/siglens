@@ -27,6 +27,7 @@ const SCHEMA = `investor_flows_expansion_test_${process.pid}`;
 const MIGRATIONS = [
     '0048_investor_flows_data.sql',
     '0049_investor_flows_expansion.sql',
+    '0050_form144_filer_cik.sql',
 ].map(file => path.join(process.cwd(), 'drizzle', file));
 
 const form144 = (over: Partial<Form144Row> = {}): Form144Row => ({
@@ -34,6 +35,7 @@ const form144 = (over: Partial<Form144Row> = {}): Form144Row => ({
     issuerCik: 1652044,
     symbol: 'GOOG',
     filerName: 'Insider One',
+    filerCik: '0001622864',
     relationships: ['Officer', 'Director'],
     securityClass: 'Class C Capital Stock',
     shares: 17262,
@@ -135,6 +137,7 @@ describe.skipIf(!URL)(
                         filingDate: '2026-10-15',
                         formType: '144',
                         filer: 'Insider One',
+                        filerCik: '0001622864',
                         relationships: ['Officer', 'Director'],
                         shares: 17262,
                         valueUsd: 9333573,

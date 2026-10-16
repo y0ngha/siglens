@@ -1,12 +1,15 @@
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsAnalysisResponse } from '@y0ngha/siglens-core';
+import type {
+    InvestorFlowsAnalysisResponse,
+    InvestorFlowsMarket,
+} from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { AXIS_TITLE_KEY } from './utils/axisKeys';
+import { axisTitleKey } from './utils/axisKeys';
 
 interface BulletBlockProps {
     readonly title: string;
@@ -37,6 +40,8 @@ function BulletBlock({ title, items }: BulletBlockProps) {
 
 interface InvestorFlowsSummaryViewProps {
     readonly result: InvestorFlowsAnalysisResponse;
+    /** 축 제목을 시장에 맞춘다(한국 내부자 슬롯은 "임원·주요주주"). 기본 `us`. */
+    readonly market?: InvestorFlowsMarket;
 }
 
 /**
@@ -45,6 +50,7 @@ interface InvestorFlowsSummaryViewProps {
  */
 export function InvestorFlowsSummaryView({
     result,
+    market = 'us',
 }: InvestorFlowsSummaryViewProps) {
     const t = useTranslations('widgets.investor-flows');
     const tAxis = useTranslations('widgets.investor-flows.axis');
@@ -76,7 +82,7 @@ export function InvestorFlowsSummaryView({
                                 className="rounded-lg bg-secondary-800/40 p-3"
                             >
                                 <p className="mb-1 text-sm font-medium text-secondary-200">
-                                    {tAxis(AXIS_TITLE_KEY[item.axis])}
+                                    {tAxis(axisTitleKey(item.axis, market))}
                                 </p>
                                 <p className="text-sm leading-relaxed text-secondary-400">
                                     {item.interpretationKo}

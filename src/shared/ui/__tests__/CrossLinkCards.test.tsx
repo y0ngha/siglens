@@ -207,19 +207,45 @@ describe('CrossLinkCards — crypto profile', () => {
             ).not.toBeNull();
         });
 
-        it.each(['kr-equity', 'crypto'] as const)(
-            '%s에는 없는 탭이라 카드를 내지 않는다',
-            marketProfile => {
-                const { container } = render(
-                    <CrossLinkCards
-                        symbol="X"
-                        current="chart"
-                        marketProfile={marketProfile}
-                    />
-                );
-                expect(container.querySelector('a[href$="/flows"]')).toBeNull();
-            }
-        );
+        it('kr-equity에서도 /flows 링크 카드를 낸다(DART 지분공시 탭)', () => {
+            const { container } = render(
+                <CrossLinkCards
+                    symbol="005930.KS"
+                    current="chart"
+                    marketProfile="kr-equity"
+                />
+            );
+            expect(
+                container.querySelector('a[href="/005930.KS/flows"]')
+            ).not.toBeNull();
+        });
+
+        it('kr-equity의 flows 카드는 DART 지분공시 제목·설명이다(기관·공매도 카피 아님)', () => {
+            const { container } = render(
+                <CrossLinkCards
+                    symbol="005930.KS"
+                    current="chart"
+                    marketProfile="kr-equity"
+                />
+            );
+            const card = container.querySelector(
+                'a[href="/005930.KS/flows"]'
+            ) as HTMLElement;
+            expect(card).toHaveTextContent('지분 공시 수급');
+            expect(card).toHaveTextContent('5% 대량보유·임원 소유 공시');
+            expect(card).not.toHaveTextContent('공매도');
+        });
+
+        it('crypto에는 없는 탭이라 카드를 내지 않는다', () => {
+            const { container } = render(
+                <CrossLinkCards
+                    symbol="X"
+                    current="chart"
+                    marketProfile="crypto"
+                />
+            );
+            expect(container.querySelector('a[href$="/flows"]')).toBeNull();
+        });
 
         it('색인되는 탭만 내는 모드(indexableOnly)에서는 noindex인 flows 카드를 뺀다', () => {
             const { container } = render(
