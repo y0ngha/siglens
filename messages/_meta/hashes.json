@@ -2334,7 +2334,6 @@
     "widgets.chart.ChartErrorFallback.c9a3b4": "c9a3b44a5d6a",
     "widgets.chart.ChartSkeleton.486c8b": "486c8b67c7e2",
     "widgets.chart.FearGreedHistoricalChart.9b98f6": "9b98f6939464",
-    "widgets.chart.IndicatorSettingsPopover.c6e1ca": "c6e1cae0a355",
     "widgets.chart.ShareCandlestickChart.1b2664": "1b2664374347",
     "widgets.chart.ShareCandlestickChart.25e234": "25e234c3ce76",
     "widgets.chart.StockChart.1b2664": "1b2664374347",
@@ -3631,8 +3630,6 @@
     "features.email-report-settings.EmailReportLinkCard.heading": "411c76ce246f",
     "features.email-report-settings.EmailReportLinkCard.description": "3434176bf0ca",
     "features.email-report-settings.EmailReportLinkCard.link": "8be32910f3bc",
-    "widgets.chart.ChartOverlayMenu.extendedHours": "7ff1ef1013fa",
-    "widgets.chart.ChartOverlayMenu.settingsTrigger": "8198910f75f4",
     "widgets.chart.StockChart.extendedHoursLegend": "8e76ad7a1a47",
     "views.symbol.ChartContent.extendedHoursNotice": "dedf14bfd3a6",
     "features.siglens-api-key-management.SiglensApiKeySection.docsLink": "c39b1e2084d3",
@@ -3752,5 +3749,11 @@
     "views.developers.tools.summaries.get_options_summary": "1cbd0441bb5e",
     "views.developers.tools.summaries.get_quote": "268cdbbd5e07",
     "views.developers.tools.summaries.run_fresh_analysis": "ec25ae7f56c4",
-    "views.developers.tools.summaries.search_ticker": "0e5d4017b52b"
+    "views.developers.tools.summaries.search_ticker": "0e5d4017b52b",
+    "widgets.chart.IndicatorMenu.panelLabel": "c6e1cae0a355",
+    "widgets.chart.IndicatorMenu.trigger": "8432cf4bca52",
+    "widgets.chart.IndicatorMenu.triggerEmpty": "2a1bedd82e73",
+    "widgets.chart.ChartSettingsMenu.extendedHours": "7ff1ef1013fa",
+    "widgets.chart.ChartSettingsMenu.extendedHoursUnavailable": "c2a071dd01b9",
+    "widgets.chart.ChartSettingsMenu.label": "8198910f75f4"
 }

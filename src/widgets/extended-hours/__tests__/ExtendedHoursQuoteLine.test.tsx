@@ -202,7 +202,7 @@ describe('ExtendedHoursQuoteLine', () => {
         });
     });
 
-    it('흐름을 밀지 않도록 글줄만 말줄임하고, ⓘ는 줄어들지 않는 형제이며, 캡션만 포인터를 받는다', () => {
+    it('흐름을 밀지 않도록 글줄만 말줄임하고, ⓘ는 줄어들지 않는 형제다', () => {
         mockedHook.mockReturnValue(PRE_UP);
 
         render(<ExtendedHoursQuoteLine symbol="AAPL" />);
@@ -210,7 +210,6 @@ describe('ExtendedHoursQuoteLine', () => {
         const line = screen.getByTestId('extended-hours-quote');
         expect(line).toHaveClass(
             'max-w-full',
-            'pointer-events-auto',
             'items-center',
             '@min-[9rem]:flex'
         );

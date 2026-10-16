@@ -5,19 +5,25 @@ import type { CSSProperties } from 'react';
 import { useId, useRef } from 'react';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { getPeriodColor } from '@/shared/lib/chartColors';
-import { GearIcon } from '@/shared/ui/GearIcon';
 import {
     groupBindingsByCategory,
     type IndicatorBinding,
 } from '../model/indicatorRegistry';
+import type { ChartMenuControl } from '../hooks/useExclusiveChartMenu';
 import { ChartPopoverPanel } from './ChartPopoverPanel';
-import { CHART_POPOVER_TRIGGER } from './chartPopoverStyles';
+import {
+    CHART_MENU_TRIGGER_LAYOUT,
+    CHART_POPOVER_TRIGGER,
+} from './chartPopoverStyles';
+import { MenuTriggerText } from './MenuTriggerText';
 
-interface IndicatorSettingsPopoverProps {
+interface IndicatorMenuProps {
     bindings: IndicatorBinding[];
+    /** 헤더 띠 메뉴 셋이 공유하는 열림 제어(한 번에 하나만 열린다). */
+    menu: ChartMenuControl;
 }
 
 interface IndicatorRowProps {
@@ -109,46 +115,47 @@ function ToggleRow({ binding }: IndicatorRowProps) {
 const POPOVER_WIDTH_PX = 352;
 
 /**
- * 톱니바퀴 "보조지표 설정" — 보조지표를 카테고리별로 켜고 끄는 **앵커드 팝오버**다. "차트 작도" 메뉴
- * (`ChartOverlayMenu`)와 같은 패널(`ChartPopoverPanel`: body 포털 + 뷰포트 clamp)·같은 훅(`usePopoverToggle` +
- * `useFocusTrap` + `useEscapeKey`)이라 트리거 바로 아래로 열린다. 예전에는 화면 중앙 네이티브 `<dialog>` 모달이라
- * 차트 한가운데를 가리고 헤더 띠의 다른 메뉴와 동작이 달랐다(사용자 제보). 켜 놓은 채로 차트를 보며 고르는
- * 설정이라 모달 배경도 필요 없다 — 바깥을 누르거나 Esc를 누르면 닫힌다.
+ * "보조지표" 드롭다운 — 보조지표를 카테고리별로 켜고 끄는 **앵커드 팝오버**다. "차트 작도" 메뉴
+ * (`ChartOverlayMenu`)와 같은 트리거 모양·같은 패널(`ChartPopoverPanel`: body 포털 + 뷰포트 clamp)·같은
+ * 훅이라 트리거 바로 아래로 열린다. 열림 상태는 헤더 띠의 다른 메뉴와 함께 `useExclusiveChartMenu`가 쥔다.
+ * 켜 놓은 채로 차트를 보며 고르는 설정이라 모달 배경도 필요 없다 — 바깥을 누르거나 Esc를 누르면 닫힌다.
  *
  * 폭(`POPOVER_WIDTH_PX`)은 "차트 작도" 패널보다 넓다 — 지표 체크박스를 두 열로 놓는다. 가격 축 오프셋(`axisInset`)은
  * 쓰지 않는다: 그 오프셋은 작도 항목 hover로 뜨는 가격 축 라벨을 비키려는 값이고, 지표 설정에는 그런 라벨이 없다.
  * `role="group"`인 이유는 `ChartOverlayMenu`와 같다(순수 토글 모음이지 ARIA menu가 아니다).
  */
-
-export function IndicatorSettingsPopover({
-    bindings,
-}: IndicatorSettingsPopoverProps) {
+export function IndicatorMenu({ bindings, menu }: IndicatorMenuProps) {
     const t = useTranslations('widgets.chart');
     const tCategory = useTranslations('widgets.chart.indicatorCategory');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     // 같은 페이지에 여러 차트가 렌더되어도 aria-controls id가 충돌하지 않도록 인스턴스별 고유 id를 쓴다.
     const panelId = useId();
-    const { isOpen, toggle, close } = usePopoverToggle([triggerRef, panelRef]);
+    const { isOpen, toggle, close } = menu;
+    useOnClickOutside([triggerRef, panelRef], close, { enabled: isOpen });
     useFocusTrap(panelRef, isOpen);
     useEscapeKey(close, isOpen);
     const groups = groupBindingsByCategory(bindings);
+    // 켜진 **지표 수**다(MA·EMA는 기간이 하나라도 켜져 있으면 1개).
+    const activeCount = bindings.filter(binding => binding.active).length;
+    const baseLabel = t('IndicatorMenu.triggerEmpty');
+    const countLabel =
+        activeCount > 0
+            ? t('IndicatorMenu.trigger', { v0: activeCount })
+            : null;
 
     return (
         <div className="relative">
-            {/* 보이는 크기는 32px 헤더 스트립에 맞춘 h-7 w-7을 유지하고,
-                ::before로 히트 영역만 44x44 터치 타겟까지 확장한다
-                (28 + 2*8 = 44px). */}
             <button
                 ref={triggerRef}
                 type="button"
                 onClick={toggle}
-                aria-label={t('IndicatorSettingsPopover.c6e1ca')}
+                aria-label={countLabel ?? baseLabel}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                className={cn(CHART_POPOVER_TRIGGER, 'w-7 justify-center')}
+                className={cn(CHART_POPOVER_TRIGGER, CHART_MENU_TRIGGER_LAYOUT)}
             >
-                <GearIcon className="h-4 w-4" />
+                <MenuTriggerText base={baseLabel} withCount={countLabel} />
             </button>
 
             {isOpen && (
@@ -156,7 +163,7 @@ export function IndicatorSettingsPopover({
                     triggerRef={triggerRef}
                     panelRef={panelRef}
                     id={panelId}
-                    label={t('IndicatorSettingsPopover.c6e1ca')}
+                    label={t('IndicatorMenu.panelLabel')}
                     width={POPOVER_WIDTH_PX}
                     className="gap-3 p-3"
                 >

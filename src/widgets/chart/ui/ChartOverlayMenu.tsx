@@ -6,33 +6,39 @@ import { useEffect, useId, useRef } from 'react';
 import type { OverlayKind } from '@y0ngha/siglens-core';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
-import { CheckIcon } from '@/shared/ui/StrokeIcons';
 import type { ToggleSetting } from '../types';
+import type { ChartMenuControl } from '../hooks/useExclusiveChartMenu';
+import {
+    CheckBox,
+    type CheckState,
+    MENU_ROW_CLASS,
+    SettingRow,
+} from './ChartMenuRow';
 import { ChartPopoverPanel } from './ChartPopoverPanel';
-import { CHART_POPOVER_TRIGGER } from './chartPopoverStyles';
+import {
+    CHART_MENU_TRIGGER_LAYOUT,
+    CHART_POPOVER_TRIGGER,
+} from './chartPopoverStyles';
+import { MenuTriggerText } from './MenuTriggerText';
 import type {
     OverlayMenuGroupKind,
     OverlayMenuItem,
 } from '../utils/overlayItems';
 
 interface ChartOverlayMenuProps {
+    /** 헤더 띠 메뉴 셋이 공유하는 열림 제어(한 번에 하나만 열린다). */
+    menu: ChartMenuControl;
     /** 켜고 끌 수 있는 항목 — `buildOverlayMenuItems`가 실제로 그려지는 작도만 담는다. */
     items: readonly OverlayMenuItem[];
     hiddenKeys: ReadonlySet<string>;
     onSetVisible: (keys: readonly string[], visible: boolean) => void;
     /**
-     * 수평 레벨 오른쪽 연장 설정(작도 항목이 아닌 표시 환경설정 — 트리거 개수에 세지 않는다).
-     * 연장할 레벨이 없으면 넘기지 않아 행을 숨긴다.
+     * 수평 레벨 오른쪽 연장 설정 — 작도선의 표시 옵션이라 "차트 작도" 메뉴에 둔다(트리거 개수에는 세지 않는다).
+     * 연장할 레벨이 없으면 넘기지 않아 행을 숨긴다. 작도 항목이 없어도 이 행 때문에 메뉴가 뜬다.
      */
     rightExtend?: ToggleSetting;
-    /**
-     * 프리·애프터마켓(시간외) 봉·음영 표시 설정 — 미국 주식 인트라데이에서만 넘긴다(그 밖에는 행이
-     * 없다). 작도 항목이 아니라 표시 환경설정이라 트리거 개수에 세지 않는다. 작도 항목이 하나도
-     * 없어도 이 행 때문에 메뉴가 뜬다.
-     */
-    extendedHours?: ToggleSetting;
     /** 항목 key → 차트에 그린 색. 있으면 항목 앞에 색 점을 찍어 선과 짝짓는다. */
     itemColors?: ReadonlyMap<string, string>;
     /** 항목 hover·focus로 그 작도를 강조한다(축 라벨이 가려질 때 고르는 수단). */
@@ -62,11 +68,6 @@ const GROUP_ORDER = Object.keys({
     fibonacci: true,
     elliott: true,
 } satisfies Record<OverlayMenuGroupKind, true>) as OverlayMenuGroupKind[];
-// 터치 기기(`pointer: coarse`)에서만 44px 행 — 스크롤되는 메뉴에서 인접 행을 잘못
-// 누르지 않게 한다(`ModelListbox` 행과 같은 규약). 마우스에서는 32px로 촘촘히 둔다.
-const ROW_CLASS =
-    'flex min-h-8 w-full touch-manipulation items-center gap-2.5 rounded-lg px-2 text-left text-xs transition-colors hover:bg-secondary-800 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none pointer-coarse:min-h-11';
-
 /**
  * 패널 폭과 lg 이상에서의 오른쪽 오프셋은 함께 본다 — 오프셋(240px)은 가격 축과 가장 긴 결과선
  * 라벨("ヘッドアンドショルダー 無効化")을 비켜 가는 값이다. 두 값은 `ChartPopoverPanel`로 넘어가
@@ -75,56 +76,6 @@ const ROW_CLASS =
  */
 const PANEL_WIDTH_PX = 240;
 const PANEL_AXIS_INSET_PX = 240;
-
-type CheckState = boolean | 'mixed';
-
-/**
- * 켜짐 표시 — 행 전체를 칠하지 않고 앞쪽 체크박스 하나로 말한다. 예전엔 켜진 행마다
- * 배경을 채워 블록이 겹겹이 쌓여 보였다(사용자 피드백). 상태 전달은 버튼의
- * `aria-pressed`가 맡고, 이 도형은 장식이다.
- */
-function CheckBox({ state }: { state: CheckState }) {
-    return (
-        <span
-            aria-hidden="true"
-            className={cn(
-                'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
-                state === false
-                    ? 'border-secondary-500'
-                    : 'border-primary-500 bg-primary-600 text-white'
-            )}
-        >
-            {state === true && <CheckIcon className="size-3" />}
-            {state === 'mixed' && (
-                <span className="h-0.5 w-2 rounded-full bg-current" />
-            )}
-        </span>
-    );
-}
-
-interface SettingRowProps {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-    label: string;
-}
-
-/** 표시 환경설정 한 줄 — 체크박스 + 라벨이 든 토글 버튼(`aria-pressed`). */
-function SettingRow({ checked, onChange, label }: SettingRowProps) {
-    return (
-        <button
-            type="button"
-            aria-pressed={checked}
-            onClick={() => onChange(!checked)}
-            className={cn(
-                ROW_CLASS,
-                checked ? 'text-secondary-100' : 'text-secondary-400'
-            )}
-        >
-            <CheckBox state={checked} />
-            <span>{label}</span>
-        </button>
-    );
-}
 
 /**
  * "차트 작도" 드롭다운 — 매매 가격선과 AI가 참조한 로직 작도(패턴·추세선·
@@ -139,16 +90,16 @@ function SettingRow({ checked, onChange, label }: SettingRowProps) {
  * 여기 항목은 하나의 값(불리언)을 고르는 순수 토글일 뿐 메뉴가 열어야 할
  * "명령 목록"이 아니다. `role="group"` + `aria-label` 컨테이너 안에 평범한
  * `<button aria-pressed>`를 두어, 스크린 리더가 각 항목을 독립된 토글 버튼으로
- * 읽고 Tab으로 순서대로 오갈 수 있게 한다. 앵커드 패널은 `usePopoverToggle` +
+ * 읽고 Tab으로 순서대로 오갈 수 있게 한다. 앵커드 패널은 `useOnClickOutside` +
  * `useFocusTrap` + `useEscapeKey`로 직접 그린다(`AnalysisSettingsMenu`와 동일) —
  * `PopoverSurface`는 패널에 `role="dialog"`를 강제해 이 그룹 시맨틱과 맞지 않는다.
  */
 export function ChartOverlayMenu({
+    menu,
     items,
     hiddenKeys,
     onSetVisible,
     rightExtend,
-    extendedHours,
     itemColors = NO_ITEM_COLORS,
     onHighlight,
 }: ChartOverlayMenuProps) {
@@ -156,7 +107,9 @@ export function ChartOverlayMenu({
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const panelId = useId();
-    const { isOpen, toggle, close } = usePopoverToggle([triggerRef, panelRef]);
+    const { isOpen, toggle, close } = menu;
+
+    useOnClickOutside([triggerRef, panelRef], close, { enabled: isOpen });
 
     useFocusTrap(panelRef, isOpen);
     useEscapeKey(close, isOpen);
@@ -181,7 +134,7 @@ export function ChartOverlayMenu({
         onHighlight?.(null);
     }, [isOpen, onHighlight]);
 
-    if (items.length === 0 && extendedHours === undefined) return null;
+    if (items.length === 0 && rightExtend === undefined) return null;
 
     const isOn = (key: string): boolean => !hiddenKeys.has(key);
     // 켜진 **항목 수**다(카테고리 수가 아니다).
@@ -202,10 +155,11 @@ export function ChartOverlayMenu({
         return item.label ?? t(KIND_LABEL_KEY[item.kind]);
     };
 
-    // 작도 항목 없이 환경설정 행만 있을 때는 "차트 작도 0"이 거짓 안내가 된다.
-    const triggerLabel =
+    // 작도 항목이 없고 "오른쪽 연장" 행만 있을 때는 "차트 작도 0"이 거짓 안내라 개수를 뺀 고정 이름을 쓴다.
+    const baseLabel = t('ChartOverlayMenu.5d0ffc');
+    const countLabel =
         items.length === 0
-            ? t('ChartOverlayMenu.settingsTrigger')
+            ? null
             : t('ChartOverlayMenu.4b1cdc', { v0: activeCount });
 
     return (
@@ -214,12 +168,12 @@ export function ChartOverlayMenu({
                 ref={triggerRef}
                 type="button"
                 onClick={toggle}
+                aria-label={countLabel ?? baseLabel}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                className={cn(CHART_POPOVER_TRIGGER, 'gap-1 px-2 text-xs')}
+                className={cn(CHART_POPOVER_TRIGGER, CHART_MENU_TRIGGER_LAYOUT)}
             >
-                <span>{triggerLabel}</span>
-                <span aria-hidden="true">▾</span>
+                <MenuTriggerText base={baseLabel} withCount={countLabel} />
             </button>
 
             {isOpen && (
@@ -250,7 +204,7 @@ export function ChartOverlayMenu({
                                         aria-pressed={on}
                                         onClick={() => onSetVisible(keys, !on)}
                                         className={cn(
-                                            ROW_CLASS,
+                                            MENU_ROW_CLASS,
                                             on
                                                 ? 'text-secondary-100'
                                                 : 'text-secondary-400'
@@ -281,7 +235,7 @@ export function ChartOverlayMenu({
                                     aria-pressed={pressed}
                                     onClick={() => onSetVisible(keys, !allOn)}
                                     className={cn(
-                                        ROW_CLASS,
+                                        MENU_ROW_CLASS,
                                         'text-[11px] font-semibold text-secondary-400'
                                     )}
                                 >
@@ -311,7 +265,7 @@ export function ChartOverlayMenu({
                                             onFocus={() => highlight(item.key)}
                                             onBlur={unhighlight}
                                             className={cn(
-                                                ROW_CLASS,
+                                                MENU_ROW_CLASS,
                                                 'pl-4',
                                                 on
                                                     ? 'text-secondary-100'
@@ -340,7 +294,7 @@ export function ChartOverlayMenu({
                             </div>
                         );
                     })}
-                    {(rightExtend || extendedHours) && (
+                    {rightExtend && (
                         <div
                             className={cn(
                                 'flex flex-col',
@@ -348,20 +302,11 @@ export function ChartOverlayMenu({
                                     'mt-1 border-t border-secondary-700/60 pt-1'
                             )}
                         >
-                            {rightExtend && (
-                                <SettingRow
-                                    checked={rightExtend.checked}
-                                    onChange={rightExtend.onChange}
-                                    label={t('ChartOverlayMenu.a57483')}
-                                />
-                            )}
-                            {extendedHours && (
-                                <SettingRow
-                                    checked={extendedHours.checked}
-                                    onChange={extendedHours.onChange}
-                                    label={t('ChartOverlayMenu.extendedHours')}
-                                />
-                            )}
+                            <SettingRow
+                                checked={rightExtend.checked}
+                                onChange={rightExtend.onChange}
+                                label={t('ChartOverlayMenu.a57483')}
+                            />
                         </div>
                     )}
                 </ChartPopoverPanel>

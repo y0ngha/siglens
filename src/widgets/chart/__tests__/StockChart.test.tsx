@@ -375,8 +375,8 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
     useIndicatorVisibility: () => mockUseIndicatorVisibility(),
 }));
 
-vi.mock('@/widgets/chart/ui/IndicatorSettingsPopover', () => ({
-    IndicatorSettingsPopover: ({
+vi.mock('@/widgets/chart/ui/IndicatorMenu', () => ({
+    IndicatorMenu: ({
         bindings,
     }: {
         bindings: { meta: { key: string }; onToggle: () => void }[];
@@ -682,7 +682,7 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsPopover with 34 indicator bindings', () => {
+    it('renders IndicatorMenu with 34 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
         expect(modal).toHaveAttribute('data-count', '34');
@@ -690,6 +690,29 @@ describe('StockChart', () => {
             'data-keys',
             'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel,supertrend,parabolicSar,chandelierExit,elderRay,squeezeMomentum,regression,elderImpulse,smc'
         );
+    });
+
+    it('headerStartSlot은 헤더 띠 안의 flex-1 min-w-0 칸에 메뉴 셋보다 앞서 놓인다(고정 inset·z-index 없음)', () => {
+        render(
+            <StockChart
+                bars={mockBars}
+                timeframe="1Day"
+                headerStartSlot={<span data-testid="start-slot">quote</span>}
+            />
+        );
+        const slot = screen.getByTestId('start-slot');
+        const cell = slot.parentElement!;
+        expect(cell).toHaveClass('@container', 'min-w-0', 'flex-1');
+        expect(cell.className).not.toMatch(/absolute|z-10|pointer-events/);
+        const strip = cell.parentElement!;
+        expect(strip.firstElementChild).toBe(cell);
+        // 메뉴(톱니바퀴 "차트 설정")는 칸 뒤 형제다.
+        const gear = screen.getByRole('button', { name: '차트 설정' });
+        expect(strip.contains(gear)).toBe(true);
+        expect(
+            slot.compareDocumentPosition(gear) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
     });
 
     it('renders the settings trigger in a header strip outside and above the chart canvas', () => {
@@ -801,7 +824,7 @@ describe('StockChart', () => {
     });
 
     /**
-     * `IndicatorSettingsPopover`에는 34개 지표 바인딩이 내려가는데, 각 바인딩의
+     * `IndicatorMenu`에는 34개 지표 바인딩이 내려가는데, 각 바인딩의
      * `onToggle`이 실제로 `toggle(key)`를 부르는지는 이전 테스트가 보지 않았다
      * (바인딩 개수·키 목록만 확인). 배선이 끊겨도(`onToggle: () => {}`로 잘못
      * 바뀌어도) 감지가 안 됐을 것 — 클릭까지 흘려서 확인한다.
@@ -1758,8 +1781,8 @@ describe('StockChart', () => {
             });
         });
 
-        describe('시간외 표시 토글(차트 작도 메뉴)', () => {
-            it('설정을 주면 메뉴가 뜨고 행을 누르면 반대 값으로 onChange를 부른다', () => {
+        describe('시간외 표시 토글(톱니바퀴 "차트 설정" 메뉴)', () => {
+            it('설정을 주면 톱니바퀴 메뉴에 켜진 행이 있고 누르면 반대 값으로 onChange를 부른다', () => {
                 const onChange = vi.fn();
                 render(
                     <StockChart
@@ -1768,9 +1791,8 @@ describe('StockChart', () => {
                         extendedHours={{ checked: true, onChange }}
                     />
                 );
-                // 작도 항목이 없어도 설정 행 때문에 메뉴가 뜬다 — 트리거는 "차트 설정"
                 fireEvent.click(
-                    screen.getByRole('button', { name: /차트 설정/ })
+                    screen.getByRole('button', { name: '차트 설정' })
                 );
                 const row = screen.getByRole('button', {
                     name: '시간외 거래(프리·애프터마켓) 표시',
@@ -1780,14 +1802,67 @@ describe('StockChart', () => {
                 expect(onChange).toHaveBeenCalledWith(false);
             });
 
-            it('설정을 주지 않으면(일봉·크립토·한국 주식) 행도 메뉴도 없다', () => {
+            it('시간외 행은 "차트 작도" 메뉴에 없다', () => {
+                render(
+                    <StockChart
+                        bars={regular}
+                        timeframe="5Min"
+                        overlayItems={[
+                            { key: 'p1', kind: 'pattern', label: 'Double Top' },
+                        ]}
+                        extendedHours={{ checked: true, onChange: vi.fn() }}
+                    />
+                );
+                fireEvent.click(
+                    screen.getByRole('button', { name: /^차트 작도/ })
+                );
+                expect(
+                    screen.queryByRole('button', {
+                        name: '시간외 거래(프리·애프터마켓) 표시',
+                    })
+                ).toBeNull();
+            });
+
+            it('설정을 주지 않으면(일봉·크립토·한국 주식) 톱니바퀴는 남고 행은 사유와 함께 비활성이다', () => {
                 render(<StockChart bars={regular} timeframe="1Day" />);
+                fireEvent.click(
+                    screen.getByRole('button', { name: '차트 설정' })
+                );
                 expect(
-                    screen.queryByRole('button', { name: /차트 설정/ })
+                    screen.getByRole('button', {
+                        name: /시간외 거래\(프리·애프터마켓\) 표시/,
+                    })
+                ).toHaveAttribute('aria-disabled', 'true');
+                expect(
+                    screen.getByText(
+                        '1일봉·한국 종목·코인에는 시간외 거래가 없어요'
+                    )
+                ).toBeInTheDocument();
+            });
+
+            it('톱니바퀴를 연 채 "차트 작도"를 열면 톱니바퀴 패널이 닫힌다', () => {
+                render(
+                    <StockChart
+                        bars={regular}
+                        timeframe="5Min"
+                        overlayItems={[
+                            { key: 'p1', kind: 'pattern', label: 'Double Top' },
+                        ]}
+                        extendedHours={{ checked: true, onChange: vi.fn() }}
+                    />
+                );
+                fireEvent.click(
+                    screen.getByRole('button', { name: '차트 설정' })
+                );
+                fireEvent.click(
+                    screen.getByRole('button', { name: /^차트 작도/ })
+                );
+                expect(
+                    screen.queryByRole('group', { name: '차트 설정' })
                 ).toBeNull();
                 expect(
-                    screen.queryByText('시간외 거래(프리·애프터마켓) 표시')
-                ).toBeNull();
+                    screen.getByRole('group', { name: '차트 작도' })
+                ).toBeInTheDocument();
             });
         });
     });

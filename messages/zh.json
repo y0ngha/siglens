@@ -3499,9 +3499,6 @@
             "FearGreedHistoricalChart": {
                 "9b98f6": "近一年恐惧与贪婪指数走势图"
             },
-            "IndicatorSettingsPopover": {
-                "c6e1ca": "辅助指标设置"
-            },
             "ShareCandlestickChart": {
                 "1b2664": "无图表数据",
                 "25e234": "快照价格图表"
@@ -3566,9 +3563,17 @@
                 "ac1149": "下降趋势线 #{v0}",
                 "bdeea2": "图表形态",
                 "bfe4b6": "上升趋势线 #{v0}",
-                "c178bc": "部分开启",
+                "c178bc": "部分开启"
+            },
+            "IndicatorMenu": {
+                "panelLabel": "辅助指标设置",
+                "trigger": "辅助指标 · {v0}",
+                "triggerEmpty": "辅助指标"
+            },
+            "ChartSettingsMenu": {
                 "extendedHours": "显示盘前盘后(延长交易时段)",
-                "settingsTrigger": "图表设置"
+                "extendedHoursUnavailable": "日线、韩国股票和加密货币没有延长交易时段",
+                "label": "图表设置"
             }
         },
         "ask-ai-fab": {
