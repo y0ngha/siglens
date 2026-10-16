@@ -5,6 +5,7 @@ import type {
     CusipMapRow,
     RecheckCandidate,
 } from '../../api/investorFlowsUniverseRepository';
+import { resolveCusipMapConflicts } from '../../lib/cusipMapConflicts';
 import {
     INVESTOR_FLOWS_CUSIP_FAILURE_THRESHOLD,
     INVESTOR_FLOWS_CUSIP_RECHECK_BATCH,
@@ -35,6 +36,8 @@ function newShared() {
         failCounts: new Map<string, number>(),
         failMarked: new Set<string>(),
         countedDays: new Set<string>(),
+        /** mapped symbols that are no longer live listings (the repo then lets another symbol take their CUSIP). */
+        delisted: new Set<string>(),
         /** days since 2026-10-16 — each test bumps it to simulate the next daily run. */
         day: 0,
     };
@@ -65,8 +68,20 @@ function build(
                         s => s > after && !written.some(w => w.symbol === s)
                     )
                     .slice(0, limit),
+            // Mirrors the real repository: the map's current symbol per CUSIP (last write wins) guards its CUSIP while it is
+            // still listed; the pure resolver is the real one.
             upsertCusipMap: async rows => {
-                written.push(...rows);
+                const live = new Map(
+                    written
+                        .filter(w => !shared.delisted.has(w.symbol))
+                        .map(w => [w.cusip, w.symbol])
+                );
+                const resolved = resolveCusipMapConflicts(rows, live);
+                written.push(...resolved.rows);
+                return {
+                    written: resolved.rows,
+                    conflicts: resolved.conflicts,
+                };
             },
             listRecheckCandidates: async () => recheck.candidates,
             markChecked: async ids => {
@@ -497,6 +512,157 @@ describe('runCusipMapSync', () => {
         });
     });
 
+    describe('a CUSIP claimed by more than one symbol (production 21000: one upsert chunk held the same CUSIP twice)', () => {
+        const SHARED = '084670702';
+
+        it('maps the CUSIP once, to the lexicographically smallest symbol of the chunk', async () => {
+            const { deps, written } = build({
+                BRKB: profile({ cusip: SHARED }),
+                'BRK-B': profile({ cusip: SHARED }),
+            });
+            await runCusipMapSync(deps);
+            expect(written).toEqual([
+                { cusip: SHARED, symbol: 'BRK-B', source: 'fmp' },
+            ]);
+        });
+
+        it('counts only the written row and reports the conflict in the result', async () => {
+            const { deps } = build({
+                BRKB: profile({ cusip: SHARED }),
+                'BRK-B': profile({ cusip: SHARED }),
+            });
+            const result = await runCusipMapSync(deps);
+            expect(result).toMatchObject({
+                fromProfile: 1,
+                duplicateCusips: 1,
+                status: 'complete',
+            });
+        });
+
+        it('marks the dropped symbol as a duplicateCusip miss so it leaves the candidate list', async () => {
+            const { deps, missRecords } = build({
+                BRKB: profile({ cusip: SHARED }),
+                'BRK-B': profile({ cusip: SHARED }),
+            });
+            await runCusipMapSync(deps);
+            expect(missRecords).toEqual([
+                {
+                    symbol: 'BRKB',
+                    ttlSeconds: MISS_TTL_SECONDS.duplicateCusip,
+                },
+            ]);
+        });
+
+        it('logs the conflicts once per run with the CUSIP, kept and dropped symbols', async () => {
+            const log = vi.fn();
+            const { deps } = build(
+                {
+                    BRKB: profile({ cusip: SHARED }),
+                    'BRK-B': profile({ cusip: SHARED }),
+                },
+                { log }
+            );
+            await runCusipMapSync(deps);
+            const lines = log.mock.calls.filter(([message]) =>
+                String(message).includes('claimed by more than one symbol')
+            );
+            expect(lines).toEqual([
+                [
+                    expect.stringContaining('1 CUSIP(s)'),
+                    [{ cusip: SHARED, kept: 'BRK-B', dropped: ['BRKB'] }],
+                ],
+            ]);
+        });
+
+        it('keeps the symbol already mapped on a later run: a second listing never flips the map', async () => {
+            const shared = newShared();
+            await runCusipMapSync(
+                build(
+                    { 'BRK-B': profile({ cusip: SHARED }) },
+                    {},
+                    {},
+                    [],
+                    shared
+                ).deps
+            );
+            shared.day += 1;
+            const second = build(
+                {
+                    'BRK-B': profile({ cusip: SHARED }),
+                    BRKB: profile({ cusip: SHARED }),
+                },
+                {},
+                {},
+                [],
+                shared
+            );
+            await runCusipMapSync(second.deps);
+            expect(shared.written).toEqual([
+                { cusip: SHARED, symbol: 'BRK-B', source: 'fmp' },
+            ]);
+            expect(second.missRecords).toEqual([
+                {
+                    symbol: 'BRKB',
+                    ttlSeconds: MISS_TTL_SECONDS.duplicateCusip,
+                },
+            ]);
+        });
+
+        it('lets a new symbol take the CUSIP when the mapped symbol is no longer listed (ticker change)', async () => {
+            const shared = newShared();
+            await runCusipMapSync(
+                build(
+                    { FB: profile({ cusip: '30303M102' }) },
+                    {},
+                    {},
+                    [],
+                    shared
+                ).deps
+            );
+            shared.delisted.add('FB');
+            shared.day += 1;
+            const second = build(
+                {
+                    FB: profile({ cusip: '30303M102' }),
+                    META: profile({ cusip: '30303M102' }),
+                },
+                {},
+                {},
+                [],
+                shared
+            );
+            const result = await runCusipMapSync(second.deps);
+            expect(shared.written.at(-1)).toEqual({
+                cusip: '30303M102',
+                symbol: 'META',
+                source: 'fmp',
+            });
+            expect(result.duplicateCusips).toBe(0);
+        });
+
+        it('applies the same rule to OpenFIGI-verified rows', async () => {
+            const { deps, written, missRecords } = build(
+                {
+                    'BRK-B': profile({ isin: 'US0846707026' }),
+                    'BRK.B': profile({ isin: 'US0846707026' }),
+                },
+                {},
+                { [SHARED]: ['BRK/B'] }
+            );
+            const result = await runCusipMapSync(deps);
+            expect(written).toEqual([
+                { cusip: SHARED, symbol: 'BRK-B', source: 'openfigi' },
+            ]);
+            expect(result.fromFigi).toBe(1);
+            expect(missRecords).toEqual([
+                {
+                    symbol: 'BRK.B',
+                    ttlSeconds: MISS_TTL_SECONDS.duplicateCusip,
+                },
+            ]);
+        });
+    });
+
     describe('ISIN fallback verified by OpenFIGI', () => {
         it('stores an ISIN-derived CUSIP as source openfigi only when FIGI resolves it to the same ticker', async () => {
             const { deps, written } = build(
@@ -681,6 +847,24 @@ describe('runCusipMapSync', () => {
             const result = await runCusipMapSync(deps);
             expect(written).toEqual([]);
             expect(result.cusipChanged).toBe(0);
+        });
+
+        it('records one new mapping when two re-checked symbols moved to the same new CUSIP, and marks no miss', async () => {
+            const { deps, written, recheck, missRecords } = build({});
+            recheck.candidates = [
+                candidate(7, 'XYZW', '111111111'),
+                candidate(8, 'XYZ', '222222222'),
+            ];
+            deps.fetchProfile = async () => profile({ cusip: '594918104' });
+            const result = await runCusipMapSync(deps);
+            expect(written).toEqual([
+                { cusip: '594918104', symbol: 'XYZ', source: 'fmp' },
+            ]);
+            expect(result).toMatchObject({
+                cusipChanged: 1,
+                duplicateCusips: 1,
+            });
+            expect(missRecords).toEqual([]);
         });
 
         it('ignores a profile without a usable CUSIP but still advances checked_at', async () => {

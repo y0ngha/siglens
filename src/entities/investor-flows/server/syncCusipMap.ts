@@ -1,4 +1,5 @@
 import type { FmpProfileIdentifiers } from '@/shared/api/fmp/profileIdentifiersClient';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import type { CusipMissStore } from '../api/cusipMissStore';
 import {
     INVESTOR_FLOWS_CUSIP_BLANKET_FAILURE_RATIO,
@@ -11,8 +12,10 @@ import {
 import { MISS_TTL_SECONDS } from '../api/cusipMissStore';
 import type {
     CusipMapRow,
+    CusipMapUpsertResult,
     RecheckCandidate,
 } from '../api/investorFlowsUniverseRepository';
+import type { CusipConflict } from '../lib/cusipMapConflicts';
 import {
     cusipFromIsin,
     figiTickersMatchSymbol,
@@ -24,6 +27,8 @@ export const MAX_SYMBOLS_PER_RUN = 1_500;
 /** FMP profile 동시 호출 수. 플랜 한도(분당 ~300) 안에서 호출당 ~0.8초 → 분당 ~220건. */
 export const PROFILE_CONCURRENCY = 3;
 const CANDIDATE_PAGE_SIZE = 500;
+/** 중복 CUSIP 로그에 싣는 예시 수 — 실행당 한 줄로 남긴다. */
+const CONFLICT_LOG_EXAMPLES = 5;
 
 export interface SyncCusipMapDeps {
     repo: {
@@ -31,7 +36,10 @@ export interface SyncCusipMapDeps {
             afterSymbol: string,
             limit: number
         ): Promise<string[]>;
-        upsertCusipMap(rows: readonly CusipMapRow[]): Promise<void>;
+        /** CUSIP당 한 행만 쓴다 — 쓴 행과 버린 중복(`conflicts`)을 돌려준다. */
+        upsertCusipMap(
+            rows: readonly CusipMapRow[]
+        ): Promise<CusipMapUpsertResult>;
         listRecheckCandidates(limit: number): Promise<RecheckCandidate[]>;
         markChecked(ids: readonly number[]): Promise<void>;
         /** `cusips` 중 이미 맵에 있는 것. */
@@ -64,6 +72,8 @@ export interface SyncCusipMapResult {
     /** 기존 매핑을 FMP와 다시 대조한 수 / 그중 CUSIP이 바뀌어 새 행을 만든 수. */
     rechecked: number;
     cusipChanged: number;
+    /** 한 CUSIP을 여러 심볼이 주장해 하나만 남긴 CUSIP 수(`resolveCusipMapConflicts`). */
+    duplicateCusips: number;
     /** 이번 실행에서 연속 실패 임계에 닿아 `persistentError` miss가 걸린 심볼 수. */
     failuresMarked: number;
     /** 시도의 거의 전부가 실패해(전면 장애) 이번 실행의 실패를 세지 않았는가. */
@@ -86,6 +96,8 @@ const mappingKey = (row: { cusip: string; symbol: string }): string =>
  *    **같은 티커**로 해석할 때만 source `openfigi`로 받아들인다. (OpenFIGI는 CUSIP→티커만 풀 수 있고
  *    티커→CUSIP은 못 푼다 — 그래서 "발견"이 아니라 "검증" 역할이다.)
  * 3. ETF·펀드·식별자 없음·프로필 없음은 Redis에 "최근 실패"로 표식해 다음 실행이 건너뛴다.
+ * 4. 한 CUSIP을 여러 심볼이 주장하면(표기 변형·파생 상장) 하나만 쓴다(`upsertCusipMap` → `resolveCusipMapConflicts`). 버린
+ *    심볼은 `duplicateCusip` miss로 표식해 후보에서 빼고, 실행 끝에 한 번 로그로 남긴다.
  *
  * FMP 호출은 `PROFILE_CONCURRENCY`씩 청크로 보내고 청크마다 DB에 쓴다. 속도 제한(429)이면 실행을 접는다.
  *
@@ -110,6 +122,7 @@ export async function runCusipMapSync(
         errors: 0,
         rechecked: 0,
         cusipChanged: 0,
+        duplicateCusips: 0,
         failuresMarked: 0,
         blanketOutage: false,
         universeCompleted: false,
@@ -148,6 +161,25 @@ export async function runCusipMapSync(
     const failedFigi: string[] = [];
     // 이번 실행이 FMP profile로 만든 매핑 — 재대조(아래 4)가 같은 profile을 다시 받지 않게 한다.
     const mappedFromProfile = new Set<string>();
+    // 한 CUSIP을 여러 심볼이 주장해 버린 건 — 실행 끝에 한 번 로그로 남긴다.
+    const conflicts: CusipConflict[] = [];
+    // 후보(맵에 없는 심볼) 쓰기의 공통 처리: 버린 심볼은 miss로 후보에서 뺀다 — 남겨 두면 매 실행 다시 조회되고(맵에는 끝내
+    // 못 들어간다) 후보가 0이 되지 않아 전수 한 바퀴 표식이 서지 않는다.
+    const upsertCandidates = async (
+        rows: readonly CusipMapRow[]
+    ): Promise<CusipMapRow[]> => {
+        const upserted = await deps.repo.upsertCusipMap(rows);
+        conflicts.push(...upserted.conflicts);
+        newMisses.push(
+            ...upserted.conflicts.flatMap(conflict =>
+                conflict.dropped.map(symbol => ({
+                    symbol,
+                    ttlSeconds: MISS_TTL_SECONDS.duplicateCusip,
+                }))
+            )
+        );
+        return upserted.written;
+    };
 
     // 2) FMP profile — 청크 단위, 청크마다 저장.
     for (let i = 0; i < candidates.length; i += PROFILE_CONCURRENCY) {
@@ -209,9 +241,9 @@ export async function runCusipMapSync(
         });
         if (rows.length > 0) {
             // react-doctor-disable-next-line react-doctor/async-await-in-loop
-            await deps.repo.upsertCusipMap(rows);
-            result.fromProfile += rows.length;
-            for (const row of rows) mappedFromProfile.add(mappingKey(row));
+            const written = await upsertCandidates(rows);
+            result.fromProfile += written.length;
+            for (const row of written) mappedFromProfile.add(mappingKey(row));
         }
         if (stop) {
             result.status = 'rate_limited';
@@ -240,8 +272,7 @@ export async function runCusipMapSync(
                 }
             }
             if (verified.length > 0) {
-                await deps.repo.upsertCusipMap(verified);
-                result.fromFigi += verified.length;
+                result.fromFigi += (await upsertCandidates(verified)).length;
             }
         } catch (error) {
             // 속도 제한은 다음 실행으로 미룬다(후보는 표식 없이 남는다). 그 밖의 장애는 후보별 연속 실패로 센다 —
@@ -304,7 +335,19 @@ export async function runCusipMapSync(
 
     // 4) 기존 매핑 재대조 — 작은 배치로 오래된 것부터(전수 재처리 금지).
     if (result.status === 'complete' || result.status === 'capped') {
-        await recheckExistingMappings(deps, result, mappedFromProfile);
+        await recheckExistingMappings(
+            deps,
+            result,
+            mappedFromProfile,
+            conflicts
+        );
+    }
+    result.duplicateCusips = conflicts.length;
+    if (conflicts.length > 0) {
+        deps.log(
+            `[cusip-map] ${conflicts.length} CUSIP(s) claimed by more than one symbol — kept one symbol each, dropped ${conflicts.reduce((n, c) => n + c.dropped.length, 0)} (unmapped ones are skipped for ${MISS_TTL_SECONDS.duplicateCusip / SECONDS_PER_DAY} days), e.g.:`,
+            conflicts.slice(0, CONFLICT_LOG_EXAMPLES)
+        );
     }
     return result;
 }
@@ -322,7 +365,8 @@ export async function runCusipMapSync(
 async function recheckExistingMappings(
     deps: SyncCusipMapDeps,
     result: SyncCusipMapResult,
-    mappedFromProfile: ReadonlySet<string>
+    mappedFromProfile: ReadonlySet<string>,
+    conflicts: CusipConflict[]
 ): Promise<void> {
     const listed = await deps.repo.listRecheckCandidates(
         INVESTOR_FLOWS_CUSIP_RECHECK_BATCH
@@ -363,13 +407,17 @@ async function recheckExistingMappings(
         );
         const created = proposed.filter(p => !existing.has(p.cusip));
         if (created.length > 0) {
+            // 두 심볼이 같은 새 CUSIP으로 바뀌었으면 하나만 쓴다 — 버린 쪽은 옛 매핑을 그대로 지닌다(miss 대상이 아니다).
             // react-doctor-disable-next-line react-doctor/async-await-in-loop
-            await deps.repo.upsertCusipMap(created);
-            result.cusipChanged += created.length;
-            deps.log(
-                '[cusip-map] CUSIP changed, recorded as new mapping:',
-                created
-            );
+            const upserted = await deps.repo.upsertCusipMap(created);
+            conflicts.push(...upserted.conflicts);
+            result.cusipChanged += upserted.written.length;
+            if (upserted.written.length > 0) {
+                deps.log(
+                    '[cusip-map] CUSIP changed, recorded as new mapping:',
+                    upserted.written
+                );
+            }
         }
         if (stop) break;
     }

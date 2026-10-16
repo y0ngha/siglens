@@ -7,6 +7,8 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import type { FtdFileState, FtdPointRecord, FtdRow } from '../model';
+import { compositeKey } from '../lib/dedupeByKey';
+import { uniqueForUpsert } from './uniqueForUpsert';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
@@ -83,15 +85,18 @@ export class DrizzleInvestorFlowsFtdRepository {
 
     /** 파일 하나의 유니버스 행을 upsert하고 파일을 처리됨으로 표시한다(한 트랜잭션). */
     async storeFile(fileKey: string, rows: readonly FtdRow[]): Promise<void> {
+        const unique = uniqueForUpsert('sec_ftd', rows, row =>
+            compositeKey(row.cusip, row.settlementDate)
+        );
         await withRetry(
             () =>
                 this.db.transaction(async tx => {
                     for (
                         let i = 0;
-                        i < rows.length;
+                        i < unique.length;
                         i += INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
                     ) {
-                        const chunk = rows.slice(
+                        const chunk = unique.slice(
                             i,
                             i + INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
                         );
@@ -123,13 +128,13 @@ export class DrizzleInvestorFlowsFtdRepository {
                         .insert(secFtdFiles)
                         .values({
                             fileKey,
-                            rowCount: rows.length,
+                            rowCount: unique.length,
                             processedAt: sql`now()`,
                         })
                         .onConflictDoUpdate({
                             target: secFtdFiles.fileKey,
                             set: {
-                                rowCount: rows.length,
+                                rowCount: unique.length,
                                 processedAt: sql`now()`,
                                 lastError: null,
                             },

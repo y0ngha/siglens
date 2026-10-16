@@ -30,6 +30,7 @@ import {
 } from '../lib/investorFlowsPolicy';
 import type { AmendmentFiling } from '../lib/amendmentPlan';
 import { cikToInt, cikToString } from '../lib/cik';
+import { compositeKey } from '../lib/dedupeByKey';
 import { nextQuarterEnd, previousQuarterEnd } from '../lib/investorFlowsDates';
 import type {
     AmendmentType,
@@ -47,6 +48,7 @@ import {
     buildResetChangesSql,
     type AggregateMode,
 } from './aggregateSql';
+import { uniqueForUpsert } from './uniqueForUpsert';
 
 const FILING_LOOKUP_CHUNK = 1_000;
 
@@ -404,12 +406,20 @@ export class Drizzle13fRepository {
                         const upsertRows = async (
                             source: readonly PositionRow[]
                         ): Promise<void> => {
-                            const rows = source.flatMap(row => {
-                                const cusipId = input.cusipIds.get(row.cusip);
-                                return cusipId === undefined
-                                    ? []
-                                    : [{ ...row, cusipId }];
-                            });
+                            // 생산자(`PositionAccumulator`)가 CUSIP별로 합산해 넘기므로 중복은 없어야 한다 — 그래도 한 문장의 중복
+                            // 키는 21000으로 트랜잭션 전체를 버리므로 저장소가 스스로 지킨다.
+                            const rows = uniqueForUpsert(
+                                'sec_13f_positions',
+                                source.flatMap(row => {
+                                    const cusipId = input.cusipIds.get(
+                                        row.cusip
+                                    );
+                                    return cusipId === undefined
+                                        ? []
+                                        : [{ ...row, cusipId }];
+                                }),
+                                row => String(row.cusipId)
+                            );
                             for (const chunk of chunked(
                                 rows,
                                 INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
@@ -454,8 +464,12 @@ export class Drizzle13fRepository {
                         const upsertOptionRows = async (
                             source: readonly OptionPositionRow[]
                         ): Promise<void> => {
-                            const rows = source.filter(row =>
-                                input.cusipIds.has(row.cusip)
+                            const rows = uniqueForUpsert(
+                                'sec_13f_option_positions',
+                                source.filter(row =>
+                                    input.cusipIds.has(row.cusip)
+                                ),
+                                row => compositeKey(row.cusip, row.putCall)
                             );
                             for (const chunk of chunked(
                                 rows,

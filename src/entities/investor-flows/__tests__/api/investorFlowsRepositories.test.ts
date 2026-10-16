@@ -8,6 +8,7 @@ import {
 import { DrizzleInvestorFlowsShortRepository } from '../../api/investorFlowsShortRepository';
 import { DrizzleInvestorFlowsSnapshotRepository } from '../../api/investorFlowsSnapshotRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '../../api/investorFlowsUniverseRepository';
+import { INVESTOR_FLOWS_US_EXCHANGES } from '../../lib/investorFlowsPolicy';
 import { callsOf, createFakeDb, renderSql } from '../fixtures/fakeDb';
 
 vi.mock('server-only', () => ({}));
@@ -117,14 +118,96 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
         await new DrizzleInvestorFlowsUniverseRepository(db).upsertCusipMap(
             rows
         );
-        expect(ops).toHaveLength(2);
-        expect(ops[0]?.target).toBe(cusipSymbolMap);
-        const [[config]] = callsOf(ops[0] as never, 'onConflictDoUpdate') as [
+        // one lookup of the existing mappings, then two insert chunks (no ticker lookup: nothing is contested)
+        expect(ops.map(op => op.kind)).toEqual(['select', 'insert', 'insert']);
+        expect(ops[1]?.target).toBe(cusipSymbolMap);
+        const [[config]] = callsOf(ops[1] as never, 'onConflictDoUpdate') as [
             [{ setWhere: never }],
         ];
         const { text } = renderSql(config.setWhere);
         expect(text).toContain('IS DISTINCT FROM excluded.symbol');
         expect(text).toContain('IS DISTINCT FROM excluded.source');
+    });
+
+    describe('upsertCusipMap with a CUSIP claimed by more than one symbol', () => {
+        const SHARED = '084670702';
+        const valuesOf = (op: unknown): unknown =>
+            (callsOf(op as never, 'values') as [[unknown]])[0]?.[0];
+
+        it('writes the CUSIP once (smallest symbol) when two input rows share it', async () => {
+            const { db, ops } = createFakeDb();
+            const result = await new DrizzleInvestorFlowsUniverseRepository(
+                db
+            ).upsertCusipMap([
+                { cusip: SHARED, symbol: 'BRKB', source: 'fmp' },
+                { cusip: SHARED, symbol: 'BRK-B', source: 'fmp' },
+            ]);
+            expect(valuesOf(ops[1])).toEqual([
+                { cusip: SHARED, symbol: 'BRK-B', source: 'fmp' },
+            ]);
+            expect(result.conflicts).toEqual([
+                { cusip: SHARED, kept: 'BRK-B', dropped: ['BRKB'] },
+            ]);
+        });
+
+        it('keeps the mapped symbol while it is still a live listing (nothing written for the newcomer)', async () => {
+            const { db, ops } = createFakeDb([
+                [{ cusip: SHARED, symbol: 'BRK-B' }],
+                [{ symbol: 'BRK-B' }],
+            ]);
+            const result = await new DrizzleInvestorFlowsUniverseRepository(
+                db
+            ).upsertCusipMap([
+                { cusip: SHARED, symbol: 'BRKB', source: 'fmp' },
+            ]);
+            expect(ops.map(op => op.kind)).toEqual(['select', 'select']);
+            expect(result).toEqual({
+                written: [],
+                conflicts: [
+                    { cusip: SHARED, kept: 'BRK-B', dropped: ['BRKB'] },
+                ],
+            });
+        });
+
+        it('lets the newcomer overwrite a mapped symbol that is no longer listed (ticker change)', async () => {
+            const { db, ops } = createFakeDb([
+                [{ cusip: '30303M102', symbol: 'FB' }],
+                [],
+            ]);
+            const result = await new DrizzleInvestorFlowsUniverseRepository(
+                db
+            ).upsertCusipMap([
+                { cusip: '30303M102', symbol: 'META', source: 'fmp' },
+            ]);
+            expect(valuesOf(ops[2])).toEqual([
+                { cusip: '30303M102', symbol: 'META', source: 'fmp' },
+            ]);
+            expect(result.conflicts).toEqual([]);
+        });
+
+        it('asks the ticker DB only about contested mapped symbols, with the live-listing filter', async () => {
+            const { db, ops } = createFakeDb([
+                [{ cusip: '30303M102', symbol: 'FB' }],
+                [],
+            ]);
+            await new DrizzleInvestorFlowsUniverseRepository(db).upsertCusipMap(
+                [{ cusip: '30303M102', symbol: 'META', source: 'fmp' }]
+            );
+            const [[where]] = callsOf(ops[1] as never, 'where') as [[never]];
+            const { text, params } = renderSql(where);
+            expect(text).toContain('"delisted_at" is null');
+            expect(params).toEqual(['FB', ...INVESTOR_FLOWS_US_EXCHANGES]);
+        });
+
+        it('does nothing for an empty input', async () => {
+            const { db, ops } = createFakeDb();
+            expect(
+                await new DrizzleInvestorFlowsUniverseRepository(
+                    db
+                ).upsertCusipMap([])
+            ).toEqual({ written: [], conflicts: [] });
+            expect(ops).toEqual([]);
+        });
     });
 
     it('lists unmapped candidates by symbol order after the cursor, excluding mapped symbols', async () => {

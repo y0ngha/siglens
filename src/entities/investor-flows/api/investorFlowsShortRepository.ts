@@ -9,6 +9,8 @@ import {
     INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
 } from '../lib/investorFlowsPolicy';
 import type { ShortInterestRow, ShortVolumeRow } from '../model';
+import { compositeKey } from '../lib/dedupeByKey';
+import { uniqueForUpsert } from './uniqueForUpsert';
 
 /**
  * FINRA 공매도 데이터 저장소(⚠ 비상업 라이선스 — `shared/api/finra/finraShortDataEnabled.ts`).
@@ -18,12 +20,15 @@ export class DrizzleInvestorFlowsShortRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     async upsertShortVolume(rows: readonly ShortVolumeRow[]): Promise<void> {
+        const unique = uniqueForUpsert('finra_short_volume', rows, row =>
+            compositeKey(row.symbol, row.tradeDate)
+        );
         for (
             let i = 0;
-            i < rows.length;
+            i < unique.length;
             i += INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
         ) {
-            const chunk = rows.slice(i, i + INVESTOR_FLOWS_UPSERT_CHUNK_SIZE);
+            const chunk = unique.slice(i, i + INVESTOR_FLOWS_UPSERT_CHUNK_SIZE);
             // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await withRetry(
                 () =>
@@ -49,12 +54,15 @@ export class DrizzleInvestorFlowsShortRepository {
     async upsertShortInterest(
         rows: readonly ShortInterestRow[]
     ): Promise<void> {
+        const unique = uniqueForUpsert('finra_short_interest', rows, row =>
+            compositeKey(row.symbol, row.settlementDate)
+        );
         for (
             let i = 0;
-            i < rows.length;
+            i < unique.length;
             i += INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
         ) {
-            const chunk = rows.slice(i, i + INVESTOR_FLOWS_UPSERT_CHUNK_SIZE);
+            const chunk = unique.slice(i, i + INVESTOR_FLOWS_UPSERT_CHUNK_SIZE);
             // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await withRetry(
                 () =>

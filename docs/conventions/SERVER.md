@@ -624,3 +624,16 @@ wall-clock rules are wrong for backfill and replays.
 
 - ❌ `isBaseline = now - createdAt < window` — a backfilled old row is misclassified.
 - ✅ Decide from the stored period or ingestion marker, so a replay yields the same answer.
+
+<a id="DB-9"></a>
+
+#### DB-9 — Dedupe batch upsert inputs by the conflict key before chunking
+
+A multi-row `INSERT ... ON CONFLICT DO UPDATE` fails the whole statement (Postgres `21000`, "cannot affect row a second time")
+when two input rows share the conflict-target key. Collapse the input by that key before chunking, with a deterministic
+keep rule (for example the latest period, then a stable tiebreaker), so the same input always writes the same row.
+Many-to-one mappings (two symbols resolving to one identifier) produce such duplicates only at production scale, so a
+small-universe rehearsal will not surface them. Cover it with a duplicate-key batch test against a real Postgres; mocks do not raise `21000`.
+
+- ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
+- ✅ `dedupeByKey(rows, keyOf, pickWinner)` first, then chunk and upsert.

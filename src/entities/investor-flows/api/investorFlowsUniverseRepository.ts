@@ -9,6 +9,10 @@ import {
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import {
+    type CusipConflict,
+    resolveCusipMapConflicts,
+} from '../lib/cusipMapConflicts';
+import {
     INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
     INVESTOR_FLOWS_US_EXCHANGES,
 } from '../lib/investorFlowsPolicy';
@@ -18,6 +22,12 @@ export interface CusipMapRow {
     cusip: string;
     symbol: string;
     source: 'fmp' | 'openfigi';
+}
+
+/** `upsertCusipMap`의 결과 — 실제로 쓴 행(CUSIP당 하나)과, 한 CUSIP을 여러 심볼이 주장해 버린 건. */
+export interface CusipMapUpsertResult {
+    written: CusipMapRow[];
+    conflicts: CusipConflict[];
 }
 
 /** 유니버스의 CUSIP 한 건 — 포지션이 저장하는 대리키 `id`와 심볼. */
@@ -165,13 +175,29 @@ export class DrizzleInvestorFlowsUniverseRepository {
         return rows.map(row => row.symbol);
     }
 
-    async upsertCusipMap(rows: readonly CusipMapRow[]): Promise<void> {
+    /**
+     * 매핑을 upsert한다. 쓰기 전에 **입력 전체**에서 CUSIP당 한 행만 남긴다(`resolveCusipMapConflicts`) — 같은 CUSIP이 한 문장에
+     * 두 번 들어가면 21000으로 실행 전체가 실패한다. 이미 맵에 있는 CUSIP을 다른 심볼이 주장하면, 맵의 심볼이 아직 상장된 미국
+     * 종목일 때 그 심볼을 지킨다(두 상장이 매 실행 맵을 번갈아 덮지 않게). 상장 폐지된 심볼이면 새 심볼이 덮는다(티커 변경).
+     * 버린 건은 `conflicts`로 돌려주어 호출부가 로그와 miss 표식을 맡는다.
+     */
+    async upsertCusipMap(
+        rows: readonly CusipMapRow[]
+    ): Promise<CusipMapUpsertResult> {
+        if (rows.length === 0) return { written: [], conflicts: [] };
+        const { rows: written, conflicts } = resolveCusipMapConflicts(
+            rows,
+            await this.findLiveMappedSymbolsInConflict(rows)
+        );
         for (
             let i = 0;
-            i < rows.length;
+            i < written.length;
             i += INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
         ) {
-            const chunk = rows.slice(i, i + INVESTOR_FLOWS_UPSERT_CHUNK_SIZE);
+            const chunk = written.slice(
+                i,
+                i + INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
+            );
             // react-doctor-disable-next-line react-doctor/async-await-in-loop
             await withRetry(
                 () =>
@@ -190,6 +216,63 @@ export class DrizzleInvestorFlowsUniverseRepository {
                 DB_TRANSIENT_RETRY
             );
         }
+        return { written, conflicts };
+    }
+
+    /**
+     * `rows`의 CUSIP 중 맵에 **다른 심볼**로 이미 있고 그 심볼이 아직 상장된 미국 종목(`listUnmappedUsSymbols`와 같은 거래소·상장
+     * 조건)인 것 → 그 심볼. 다른 심볼과 겹치는 CUSIP이 없으면 티커 DB는 읽지 않는다.
+     */
+    private async findLiveMappedSymbolsInConflict(
+        rows: readonly CusipMapRow[]
+    ): Promise<Map<string, string>> {
+        const mapped = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        cusip: cusipSymbolMap.cusip,
+                        symbol: cusipSymbolMap.symbol,
+                    })
+                    .from(cusipSymbolMap)
+                    .where(
+                        inArray(cusipSymbolMap.cusip, [
+                            ...new Set(rows.map(row => row.cusip)),
+                        ])
+                    ),
+            DB_TRANSIENT_RETRY
+        );
+        const contested = mapped.filter(existing =>
+            rows.some(
+                row =>
+                    row.cusip === existing.cusip &&
+                    row.symbol !== existing.symbol
+            )
+        );
+        if (contested.length === 0) return new Map();
+        const live = await withRetry(
+            () =>
+                this.db
+                    .select({ symbol: koreanTickers.symbol })
+                    .from(koreanTickers)
+                    .where(
+                        and(
+                            inArray(koreanTickers.symbol, [
+                                ...new Set(contested.map(m => m.symbol)),
+                            ]),
+                            isNull(koreanTickers.delistedAt),
+                            inArray(koreanTickers.exchange, [
+                                ...INVESTOR_FLOWS_US_EXCHANGES,
+                            ])
+                        )
+                    ),
+            DB_TRANSIENT_RETRY
+        );
+        const liveSymbols = new Set(live.map(row => row.symbol));
+        return new Map(
+            contested
+                .filter(m => liveSymbols.has(m.symbol))
+                .map(m => [m.cusip, m.symbol])
+        );
     }
 
     /** `fmp` 출처 매핑 중 가장 오래전에(또는 한 번도) 대조하지 않은 것부터 `limit`개. */
