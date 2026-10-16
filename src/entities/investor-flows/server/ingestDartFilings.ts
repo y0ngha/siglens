@@ -261,8 +261,9 @@ function overflowResumeDate(
 ): string {
     const last = scan.lastReceiptDate ?? from;
     if (last > from) return last;
+    // `DART_DAY_OVERFLOW`는 운영 로그 검색·알람용 고정 표식이다(그날 나머지 공시를 잃는 유일한 경로).
     ctx.deps.log(
-        `[dart-filings] list ${scan.detailType} fills ${INVESTOR_FLOWS_DART_MAX_LIST_PAGES} pages on ${from} alone — skipping the rest of that day`
+        `[dart-filings] DART_DAY_OVERFLOW list ${scan.detailType} fills ${INVESTOR_FLOWS_DART_MAX_LIST_PAGES} pages on ${from} alone — skipping the rest of that day`
     );
     return addDays(from, 1);
 }

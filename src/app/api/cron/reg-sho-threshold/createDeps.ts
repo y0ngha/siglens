@@ -5,13 +5,13 @@ import {
     type RegShoMarket,
 } from '@/shared/api/exchange/regShoClient';
 import { isRegShoThresholdDataEnabled } from '@/shared/api/exchange/regShoThresholdDataEnabled';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsRegShoRepository } from '@/entities/investor-flows/api/investorFlowsRegShoRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import type { IngestRegShoDeps } from '@/entities/investor-flows/server/ingestRegSho';
-import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 
 const toRegShoMarket = (market: string): RegShoMarket | undefined =>
     REG_SHO_MARKETS.find(known => known === market);
