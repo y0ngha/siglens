@@ -4,6 +4,7 @@ import {
     INVESTOR_FLOWS_MAX_REAPPLY,
     INVESTOR_FLOWS_FAILED_BACKLOG_ALERT,
     INVESTOR_FLOWS_REVALIDATE_CAP,
+    INVESTOR_FLOWS_STATE_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
 import type { AmendmentFiling } from '../../lib/amendmentPlan';
@@ -1370,6 +1371,167 @@ describe('run13fIngest', () => {
             await run13fIngest(deps);
             expect(calls.applied).toHaveLength(1);
             expect(calls.applied[0]?.universeStamp).toBe(UNIVERSE.loadedAt);
+        });
+    });
+
+    describe('initial backfill marker (drives the "collecting" notice)', () => {
+        it('sets the marker once a run reaches the present with nothing left, and tells the caller exactly once', async () => {
+            const onBackfillCompleted = vi.fn();
+            const { deps, store } = build(original(), { onBackfillCompleted });
+
+            const first = await run13fIngest(deps);
+
+            expect(first.stoppedBy).toBe('complete');
+            expect(first.backfillCompleted).toBe(true);
+            expect(store.state.get(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                'done'
+            );
+            expect(onBackfillCompleted).toHaveBeenCalledTimes(1);
+            expect(deps.log).toHaveBeenCalledWith(
+                '[sec-13f] initial backfill complete'
+            );
+
+            // Idempotent: a later complete run neither rewrites the marker nor re-notifies.
+            const again = build(original({ store }), { onBackfillCompleted });
+            const second = await run13fIngest(again.deps);
+            expect(second.backfillCompleted).toBe(false);
+            expect(onBackfillCompleted).toHaveBeenCalledTimes(1);
+            expect(store.state.get(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                'done'
+            );
+        });
+
+        it('does not set the marker when the run stops at the deadline (backfill still in progress)', async () => {
+            const onBackfillCompleted = vi.fn();
+            const { deps, store } = build(original(), {
+                onBackfillCompleted,
+                isDeadlineReached: () => true,
+            });
+
+            const result = await run13fIngest(deps);
+
+            expect(result.stoppedBy).toBe('deadline');
+            expect(result.backfillCompleted).toBe(false);
+            expect(store.state.has(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                false
+            );
+            expect(onBackfillCompleted).not.toHaveBeenCalled();
+        });
+
+        it('does not set the marker while the dirty queue still holds aggregates (a symbol would flip to "no data" before it is filled)', async () => {
+            const onBackfillCompleted = vi.fn();
+            const { deps, store } = build(original(), {
+                onBackfillCompleted,
+                // simulate leftovers the run could not flush: the queue never drains
+                isDeadlineReached: () => false,
+            });
+            const realTake = deps.repo.takeDirty.bind(deps.repo);
+            // The flush drains with a 500-row chunk; the marker's read-only probe asks for one row and still finds one.
+            deps.repo.takeDirty = async limit =>
+                limit === 1
+                    ? {
+                          period: '2026-09-30',
+                          entries: [{ id: 1, cusip: ABBOTT, symbol: 'ABT' }],
+                      }
+                    : realTake(limit);
+
+            const result = await run13fIngest(deps);
+
+            expect(result.stoppedBy).toBe('complete');
+            expect(result.backfillCompleted).toBe(false);
+            expect(store.state.has(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                false
+            );
+            expect(onBackfillCompleted).not.toHaveBeenCalled();
+        });
+
+        it('does not set the marker when the invalidation cap dropped symbols in this run', async () => {
+            const onBackfillCompleted = vi.fn();
+            const { deps, store } = build(original(), { onBackfillCompleted });
+            // more changed symbols than the cap can revalidate
+            const manySymbols = new Map(
+                Array.from(
+                    { length: INVESTOR_FLOWS_REVALIDATE_CAP + 1 },
+                    (_, i) =>
+                        [`C${i}`, { id: i + 10, symbol: `S${i}` }] as const
+                )
+            );
+            const result = await run13fIngest({
+                ...deps,
+                loadUniverse: async () => ({
+                    ...UNIVERSE,
+                    cusips: new Map([...UNIVERSE.cusips, ...manySymbols]),
+                }),
+                repo: {
+                    ...deps.repo,
+                    takeDirty: (() => {
+                        let given = false;
+                        return async () => {
+                            if (given) return null;
+                            given = true;
+                            return {
+                                period: '2026-09-30',
+                                entries: [...manySymbols].map(([cusip, v]) => ({
+                                    id: v.id,
+                                    cusip,
+                                    symbol: v.symbol,
+                                })),
+                            };
+                        };
+                    })(),
+                },
+            });
+
+            expect(result.invalidated).toBe(INVESTOR_FLOWS_REVALIDATE_CAP);
+            expect(result.backfillCompleted).toBe(false);
+            expect(store.state.has(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                false
+            );
+            expect(onBackfillCompleted).not.toHaveBeenCalled();
+        });
+
+        it('does not set the marker when SEC blocks the run', async () => {
+            const { deps, store } = build(original(), {
+                sec: {
+                    ...build().deps.sec,
+                    fetchDailyFormIndex: async () => {
+                        throw new Error('blocked');
+                    },
+                },
+            });
+
+            const result = await run13fIngest(deps);
+
+            expect(result.stoppedBy).toBe('sec_blocked');
+            expect(store.state.has(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                false
+            );
+        });
+
+        it('does not set the marker while cusip-map has not finished (universe_incomplete)', async () => {
+            const store = new FakeStore();
+            store.state.delete(INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE);
+            const { deps } = build(original({ store }));
+
+            const result = await run13fIngest(deps);
+
+            expect(result.stoppedBy).toBe('universe_incomplete');
+            expect(result.backfillCompleted).toBe(false);
+            expect(store.state.has(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                false
+            );
+        });
+
+        it('does not call a run "backfilled" when the ledger is still empty (SEC returned nothing at all)', async () => {
+            const { deps, store } = build({ days: {}, latestFilingDate: null });
+
+            const result = await run13fIngest(deps);
+
+            expect(result.stoppedBy).toBe('complete');
+            expect(result.backfillCompleted).toBe(false);
+            expect(store.state.has(INVESTOR_FLOWS_STATE_BACKFILL_DONE)).toBe(
+                false
+            );
         });
     });
 

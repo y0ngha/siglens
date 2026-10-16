@@ -4226,6 +4226,7 @@
                 "title": "AI资金流向解读"
             },
             "asOf": {
+                "collecting": "收集中",
                 "delay": "13F申报的是季度末持仓，并在季度结束后最多45天内提交。因此这里的机构数据反映的是一两个月甚至更早之前的状态，而不是当下。",
                 "insiderNone": "暂无数据",
                 "insiderWindow": "{from} ~ {to}(近{days}天)",
@@ -4250,6 +4251,21 @@
                 "institutional": "机构",
                 "largeHolders": "大额持股(5%)",
                 "short": "做空"
+            },
+            "collecting": {
+                "empty": {
+                    "body": "正在首次收集机构持仓(13F)和卖空数据，准备好后会自动显示在这里。",
+                    "bodyInstitutionalOnly": "正在首次收集机构持仓(13F)数据，准备好后会自动显示在这里。",
+                    "title": "正在收集资金流向数据"
+                },
+                "institutional": {
+                    "body": "正在首次收集 SEC 13F 披露文件，几天内补齐后会自动显示在这里。",
+                    "title": "正在收集机构持仓数据"
+                },
+                "short": {
+                    "body": "正在首次收集 FINRA 公布的卖空数据，准备好后会自动显示在这里。",
+                    "title": "正在收集 FINRA 卖空数据"
+                }
             },
             "empty": {
                 "body": "暂无数据 — 该股票还没有机构持仓(13F)、内部人或卖空数据。新上市或交易规模较小的股票经常出现这种情况。",
@@ -4336,6 +4352,7 @@
             "label": {
                 "bearish": "看跌",
                 "bullish": "看涨",
+                "collecting": "收集中",
                 "insufficient": "数据不足",
                 "neutral": "中性",
                 "strongBearish": "强烈看跌",
@@ -4357,6 +4374,7 @@
                 "unknownFiler": "提交人未知"
             },
             "scorecard": {
+                "axisCollecting": "数据收集中，暂未计入评分。",
                 "axisInsufficient": "数据不足，未计入评分。",
                 "axisScore": "{score}分",
                 "compositeCaption": "基于{count}个维度的综合评分(-100 ~ +100)",

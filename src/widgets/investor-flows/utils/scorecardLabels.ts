@@ -32,3 +32,6 @@ export const LABEL_CLASS: Record<InvestorFlowsLabel, string> = {
     strong_bearish: 'bg-ui-danger/10 text-ui-danger-text',
     insufficient: 'bg-secondary-700 text-secondary-300',
 };
+
+/** 초기 수집 중인 축의 기호 — 점수가 없는 `insufficient`(–)와 구분되도록 말줄임표를 쓴다. 색이 아니라 글자·기호로도 전한다. */
+export const COLLECTING_MARK = '…';

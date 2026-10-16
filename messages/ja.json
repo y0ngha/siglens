@@ -4226,6 +4226,7 @@
                 "title": "AIによる需給の解釈"
             },
             "asOf": {
+                "collecting": "収集中",
                 "delay": "13Fは四半期末の保有状況を、四半期終了後45日以内に提出します。そのため、この画面の機関の数値は現在ではなく、1~2か月以上前の状態です。",
                 "insiderNone": "データなし",
                 "insiderWindow": "{from} ~ {to}(直近{days}日)",
@@ -4250,6 +4251,21 @@
                 "institutional": "機関投資家",
                 "largeHolders": "大量保有(5%)",
                 "short": "空売り"
+            },
+            "collecting": {
+                "empty": {
+                    "body": "機関保有(13F)と空売りのデータを初めて集めています。準備ができるとこの場所に自動で表示されます。",
+                    "bodyInstitutionalOnly": "機関保有(13F)のデータを初めて集めています。準備ができるとこの場所に自動で表示されます。",
+                    "title": "需給データを収集中です"
+                },
+                "institutional": {
+                    "body": "SEC 13F開示を初めて集めています。数日以内に反映されると、この場所に自動で表示されます。",
+                    "title": "機関保有データを収集中です"
+                },
+                "short": {
+                    "body": "FINRAが公開する空売りデータを初めて集めています。準備ができるとこの場所に自動で表示されます。",
+                    "title": "FINRA空売りデータを収集中です"
+                }
             },
             "empty": {
                 "body": "データなし — この銘柄には機関保有(13F)・インサイダー・空売りのデータがまだありません。新規上場や取引規模の小さい銘柄ではよくあることです。",
@@ -4336,6 +4352,7 @@
             "label": {
                 "bearish": "弱気",
                 "bullish": "強気",
+                "collecting": "収集中",
                 "insufficient": "データ不足",
                 "neutral": "中立",
                 "strongBearish": "強い弱気",
@@ -4357,6 +4374,7 @@
                 "unknownFiler": "提出者不明"
             },
             "scorecard": {
+                "axisCollecting": "データを収集中のため、まだスコアに反映していません。",
                 "axisInsufficient": "データが足りないため、スコアには反映していません。",
                 "axisScore": "{score}点",
                 "compositeCaption": "{count}軸に基づく総合スコア(-100 ~ +100)",

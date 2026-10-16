@@ -49,12 +49,22 @@ type ToolOutput = InvestorFlowsSummary & {
     noData: false;
 };
 
-function arrange(snapshot: ReturnType<typeof makeSnapshot>, finra = true) {
+const READY = { institutional: 'ready', short: 'ready' } as const;
+
+function arrange(
+    snapshot: ReturnType<typeof makeSnapshot>,
+    finra = true,
+    readiness: {
+        institutional: 'ready' | 'collecting' | 'unknown';
+        short: 'ready' | 'collecting' | 'unknown';
+    } = READY
+) {
     loadScorecard.mockResolvedValue({
         snapshot,
         scorecard: evaluate(snapshot, finra),
         degraded: false,
         finraEnabled: finra,
+        readiness,
     });
 }
 
@@ -83,6 +93,7 @@ describe('getInvestorFlowsTool', () => {
             scorecard: null,
             degraded: true,
             finraEnabled: true,
+            readiness: READY,
         });
         expect(await getInvestorFlowsTool({ symbol: 'aapl' }, ctx, rt)).toEqual(
             { symbol: 'AAPL', available: false, reason: 'provider_failed' }
@@ -95,6 +106,7 @@ describe('getInvestorFlowsTool', () => {
             scorecard: null,
             degraded: false,
             finraEnabled: true,
+            readiness: READY,
         });
         const result = (await getInvestorFlowsTool(
             { symbol: 'ZZZZ' },
@@ -284,6 +296,161 @@ describe('getInvestorFlowsTool', () => {
             expect(length).toBeLessThanOrEqual(
                 AGGREGATE_RESULT_MAX_CHARS - 600
             );
+        });
+
+        it('수집 중 경로(dataStatus+안내 문구 포함)도 같은 600자 여유를 지킨다 — 비어 있는 갈래가 늘어난 만큼 본문이 줄어도 안내가 예산을 먹지 않는다', async () => {
+            const heavy = heavySnapshot();
+            arrange(
+                {
+                    ...heavy,
+                    institutional: {
+                        quarters: [],
+                        topHolders: [],
+                        topHoldersPeriod: null,
+                    },
+                    shortInterest: [],
+                    shortVolume: [],
+                },
+                true,
+                { institutional: 'collecting', short: 'collecting' }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as { dataStatus?: unknown };
+            expect(result.dataStatus).toBeDefined();
+            expect(JSON.stringify(result).length).toBeLessThanOrEqual(
+                AGGREGATE_RESULT_MAX_CHARS - 600
+            );
+        });
+    });
+
+    describe('수집 파이프라인 상태(dataStatus)', () => {
+        it('수집이 끝난 정상 상태에서는 dataStatus 키가 없다(응답 크기·예전 응답 불변)', async () => {
+            arrange(makeSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+            expect('dataStatus' in result).toBe(false);
+        });
+
+        it('수집 중이면 collecting과 "못 모은 것이지 활동 없음이 아니다"는 안내를 붙인다', async () => {
+            const snapshot = makeSnapshot({
+                institutional: {
+                    quarters: [],
+                    topHolders: [],
+                    topHoldersPeriod: null,
+                },
+                shortInterest: [],
+                shortVolume: [],
+            });
+            arrange(snapshot, true, {
+                institutional: 'collecting',
+                short: 'collecting',
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput & {
+                dataStatus: {
+                    institutional: string;
+                    short: string;
+                    note: string;
+                };
+            };
+            expect(result.dataStatus).toMatchObject({
+                institutional: 'collecting',
+                short: 'collecting',
+            });
+            expect(result.dataStatus.note).toMatch(/not collected yet/);
+            expect(result.axes.institutional.sufficiency).toBe('insufficient');
+        });
+
+        it('공매도 수집 중이면 빈 배열이 아니라 short:null("조회 불가")로 요약한다', async () => {
+            arrange(
+                makeSnapshot({ shortInterest: [], shortVolume: [] }),
+                true,
+                {
+                    institutional: 'ready',
+                    short: 'collecting',
+                }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.short).toBeNull();
+        });
+
+        it('공매도 데이터가 이미 있으면 수집 중 표시여도 가리지 않는다', async () => {
+            arrange(makeSnapshot(), true, {
+                institutional: 'ready',
+                short: 'collecting',
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput;
+            expect(result.short?.interest).not.toBeNull();
+            // the tool agrees with the UI: a populated arm is never labelled collecting
+            expect('dataStatus' in result).toBe(false);
+        });
+
+        it('비어 있는 갈래만 알린다: 13F는 데이터가 있고 공매도만 비었으면 short만 collecting이다(unknown 13F도 생략)', async () => {
+            arrange(
+                makeSnapshot({ shortInterest: [], shortVolume: [] }),
+                true,
+                {
+                    institutional: 'collecting',
+                    short: 'collecting',
+                }
+            );
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as ToolOutput & { dataStatus: Record<string, string> };
+            expect(Object.keys(result.dataStatus).toSorted()).toEqual([
+                'note',
+                'short',
+            ]);
+            expect(result.dataStatus.short).toBe('collecting');
+        });
+
+        it('상태를 전혀 못 읽었으면(unknown 둘) 예전 응답과 같다', async () => {
+            arrange(makeSnapshot(), true, {
+                institutional: 'unknown',
+                short: 'unknown',
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+            expect('dataStatus' in result).toBe(false);
+        });
+
+        it('데이터 없음 응답에도 dataStatus가 실린다(수집 중이면 "없음"이 아니라 "수집 중"임을 알 수 있다)', async () => {
+            loadScorecard.mockResolvedValue({
+                snapshot: null,
+                scorecard: null,
+                degraded: false,
+                finraEnabled: true,
+                readiness: { institutional: 'collecting', short: 'collecting' },
+            });
+            const result = (await getInvestorFlowsTool(
+                { symbol: 'ZZZZ' },
+                ctx,
+                rt
+            )) as { noData: boolean; dataStatus: { institutional: string } };
+            expect(result.noData).toBe(true);
+            expect(result.dataStatus.institutional).toBe('collecting');
         });
     });
 });

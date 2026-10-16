@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { investorFlowsTag } from '../../lib/investorFlowsTag';
+import {
+    INVESTOR_FLOWS_READINESS_TAG,
+    investorFlowsTag,
+} from '../../lib/investorFlowsTag';
 import { getInvestorFlowsSnapshot } from '../../server/getInvestorFlowsSnapshot';
 
 vi.mock('server-only', () => ({}));
@@ -37,7 +40,12 @@ describe('getInvestorFlowsSnapshot', () => {
         const [keyParts, symbol, , tags, revalidate] = mockStaticSymbolCache
             .mock.calls[0] as [string[], string, unknown, string[], number];
         expect(symbol).toBe('AAPL');
-        expect(tags).toEqual(['investor-flows:AAPL']);
+        // the readiness tag lets the 13F/FINRA bootstrap flip refresh every symbol's (possibly empty) snapshot — and the ISR
+        // pages that read it — in one revalidation
+        expect(tags).toEqual([
+            'investor-flows:AAPL',
+            INVESTOR_FLOWS_READINESS_TAG,
+        ]);
         expect(revalidate).toBe(43200);
         expect(keyParts).toContain('AAPL');
     });

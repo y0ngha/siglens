@@ -46,6 +46,11 @@ export interface IngestFinraDeps {
     isDeadlineReached: () => boolean;
     /** 새로 들어온 공매도 데이터의 심볼 캐시 태그 무효화(실행당 상한). */
     invalidateSymbols: (symbols: readonly string[]) => void | Promise<void>;
+    /**
+     * 테이블이 비어 있던 상태에서 **처음** 파일이 저장됐을 때 한 번 부른다 — 수급 탭의 "공매도 수집 중" 안내를 담은 준비 상태
+     * 캐시를 무효화한다. 생략하면 캐시 TTL(12시간)이 지나서야 안내가 사라진다.
+     */
+    onFirstDataStored?: () => void | Promise<void>;
     log: (message: string, detail?: unknown) => void;
 }
 
@@ -57,6 +62,8 @@ export interface IngestFinraResult {
     interestRows: number;
     invalidated: number;
     pruned: { shortVolume: number; shortInterest: number };
+    /** 이번 실행이 비어 있던 저장소에 처음으로 파일을 저장했는가(= 준비 상태가 `collecting` → `ready`로 바뀌었을 수 있다). */
+    firstDataStored: boolean;
 }
 
 const emptyResult = (
@@ -69,6 +76,7 @@ const emptyResult = (
     interestRows: 0,
     invalidated: 0,
     pruned: { shortVolume: 0, shortInterest: 0 },
+    firstDataStored: false,
 });
 
 /**
@@ -99,6 +107,7 @@ export async function runFinraIngest(
 
     // ── 일별 공매도 거래량 ──
     const latestVolume = await deps.repo.latestShortVolumeDate();
+    let interestWasEmpty = false;
     const volumeDates = shortVolumeCandidateDates(
         latestVolume ?? addDays(today, -SHORT_VOLUME_BACKFILL_DAYS - 1),
         today
@@ -125,6 +134,7 @@ export async function runFinraIngest(
         const have = await deps.repo.listShortInterestSettlementDates(
             addDays(today, -SHORT_INTEREST_BACKFILL_LOOKBACK_DAYS)
         );
+        interestWasEmpty = have.size === 0;
         const lookback =
             have.size === 0
                 ? SHORT_INTEREST_BACKFILL_LOOKBACK_DAYS
@@ -163,6 +173,11 @@ export async function runFinraIngest(
         .sort()
         .slice(0, INVESTOR_FLOWS_REVALIDATE_CAP);
     if (toInvalidate.length > 0) await deps.invalidateSymbols(toInvalidate);
+    // 잔고가 비어 있었는지는 잔고 단계에서만 알 수 있다(마감으로 건너뛰면 모른다 — 그땐 거래량 쪽만 본다).
+    const firstDataStored =
+        (volumeFiles > 0 && latestVolume === null) ||
+        (interestFiles > 0 && interestWasEmpty);
+    if (firstDataStored) await deps.onFirstDataStored?.();
 
     const pruned = {
         shortVolume: await deps.repo.pruneShortVolumeBefore(
@@ -180,5 +195,6 @@ export async function runFinraIngest(
         interestRows,
         invalidated: toInvalidate.length,
         pruned,
+        firstDataStored,
     };
 }

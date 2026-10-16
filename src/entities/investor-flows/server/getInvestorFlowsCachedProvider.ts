@@ -1,5 +1,7 @@
 import 'server-only';
 import type { InvestorFlowsDataProvider } from '@y0ngha/siglens-core';
+import { maskUncollectedShort } from '../lib/investorFlowsReadiness';
+import { getInvestorFlowsPipelineReadiness } from './getInvestorFlowsPipelineReadiness';
 import { getInvestorFlowsSnapshot } from './getInvestorFlowsSnapshot';
 
 /**
@@ -9,7 +11,18 @@ import { getInvestorFlowsSnapshot } from './getInvestorFlowsSnapshot';
  * 최대 12시간 어긋날 수 있고, 같은 심볼의 AI 요청마다 DB와 FMP를 다시 때린다. 캐시를 거치면 둘이 같은
  * 스냅샷을 보고(`staticSymbolCache`, FINRA 플래그가 키에 들어 있다) 비용도 한 번이다. 인프라 장애는
  * 그대로 던진다 — core가 `fetch_failed`로 바꾼다.
+ *
+ * FINRA 첫 수집이 끝나기 전에는 빈 공매도 배열을 `null`("조회 불가")로 바꿔 건넨다(`maskUncollectedShort`) — 빈 배열은
+ * core 프롬프트에서 "공매도 활동 없음"처럼 읽힐 수 있다. 준비 상태를 못 읽으면(`unknown`) 스냅샷을 그대로 준다.
  */
 export const investorFlowsCachedProvider: InvestorFlowsDataProvider = {
-    getInvestorFlowsSnapshot: symbol => getInvestorFlowsSnapshot(symbol),
+    getInvestorFlowsSnapshot: async symbol => {
+        const [snapshot, readiness] = await Promise.all([
+            getInvestorFlowsSnapshot(symbol),
+            getInvestorFlowsPipelineReadiness(),
+        ]);
+        return snapshot === null
+            ? null
+            : maskUncollectedShort(snapshot, readiness);
+    },
 };

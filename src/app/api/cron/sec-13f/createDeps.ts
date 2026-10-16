@@ -6,6 +6,7 @@ import {
     fetchFilingIndexJson,
     SecHttpError,
 } from '@/shared/api/sec/secClient';
+import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { Drizzle13fRepository } from '@/entities/investor-flows/api/investorFlows13fRepository';
@@ -47,6 +48,7 @@ export function createSec13fDeps(
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
+        onBackfillCompleted: revalidateFlowsReadiness,
         log: (message, detail) => console.warn(message, detail),
     };
 }

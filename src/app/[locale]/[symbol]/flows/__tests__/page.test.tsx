@@ -29,12 +29,35 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/widgets/investor-flows/InvestorFlowsContent', () => ({
-    InvestorFlowsContent: ({ finraEnabled }: { finraEnabled: boolean }) => (
-        <div data-testid="content" data-finra={String(finraEnabled)} />
+    InvestorFlowsContent: ({
+        finraEnabled,
+        readiness,
+    }: {
+        finraEnabled: boolean;
+        readiness: { institutional: string; short: string };
+    }) => (
+        <div
+            data-testid="content"
+            data-finra={String(finraEnabled)}
+            data-institutional={readiness.institutional}
+            data-short={readiness.short}
+        />
     ),
 }));
 vi.mock('@/widgets/investor-flows/InvestorFlowsEmpty', () => ({
-    InvestorFlowsEmpty: () => <div data-testid="empty" />,
+    InvestorFlowsEmpty: ({
+        collecting,
+        shortCollecting,
+    }: {
+        collecting?: boolean;
+        shortCollecting?: boolean;
+    }) => (
+        <div
+            data-testid="empty"
+            data-collecting={String(collecting)}
+            data-short={String(shortCollecting)}
+        />
+    ),
 }));
 vi.mock('@/widgets/investor-flows/InvestorFlowsSummary', () => ({
     InvestorFlowsSummary: ({ symbol }: { symbol: string }) => (
@@ -100,6 +123,7 @@ function arrange(flows: Record<string, unknown>) {
         scorecard: null,
         degraded: false,
         finraEnabled: true,
+        readiness: { institutional: 'ready', short: 'ready' },
         ...flows,
     } as never);
 }
@@ -212,6 +236,60 @@ describe('flows page 본문', () => {
         expect(screen.queryByTestId('summary')).toBeNull();
         expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
     });
+
+    it('준비 상태를 본문에 그대로 넘긴다(수집 중 안내의 근거)', async () => {
+        arrange({
+            snapshot: { asOf: 'x' },
+            scorecard: { composite: {} },
+            readiness: { institutional: 'collecting', short: 'ready' },
+        });
+        render(await FlowsPage({ params: params() }));
+        const content = screen.getByTestId('content');
+        expect(content).toHaveAttribute('data-institutional', 'collecting');
+        expect(content).toHaveAttribute('data-short', 'ready');
+    });
+
+    it('스냅샷이 없어도 13F가 수집 중이면 빈 상태가 "수집 중" 문구로 간다(AI는 여전히 부르지 않는다)', async () => {
+        arrange({
+            readiness: { institutional: 'collecting', short: 'collecting' },
+        });
+        render(await FlowsPage({ params: params() }));
+        expect(screen.getByTestId('empty')).toHaveAttribute(
+            'data-collecting',
+            'true'
+        );
+        expect(screen.getByTestId('empty')).toHaveAttribute(
+            'data-short',
+            'true'
+        );
+        expect(screen.queryByTestId('summary')).toBeNull();
+    });
+
+    it('FINRA가 꺼져 있으면 13F만 수집 중으로 넘긴다(본문이 공매도를 말하지 않는다)', async () => {
+        arrange({
+            finraEnabled: false,
+            readiness: { institutional: 'collecting', short: 'unknown' },
+        });
+        render(await FlowsPage({ params: params() }));
+        const empty = screen.getByTestId('empty');
+        expect(empty).toHaveAttribute('data-collecting', 'true');
+        expect(empty).toHaveAttribute('data-short', 'false');
+    });
+
+    it.each([
+        ['ready', 'ready'],
+        ['unknown', 'unknown'],
+    ])(
+        '13F가 %s이면 빈 상태는 예전 "데이터 없음"이다',
+        async (institutional, short) => {
+            arrange({ readiness: { institutional, short } });
+            render(await FlowsPage({ params: params() }));
+            expect(screen.getByTestId('empty')).toHaveAttribute(
+                'data-collecting',
+                'false'
+            );
+        }
+    );
 
     it('수급 인프라 장애는 degrade 화면이고 revalidate를 5분으로 낮춘다', async () => {
         arrange({ degraded: true });

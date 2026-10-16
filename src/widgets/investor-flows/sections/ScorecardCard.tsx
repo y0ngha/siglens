@@ -16,7 +16,12 @@ import { FlowTooltip } from '../investorFlowsTooltips';
 import { buildAxisEvidence } from '../utils/axisEvidence';
 import { AXIS_TITLE_KEY } from '../utils/axisKeys';
 import { formatSignedDecimal } from '../utils/flowFormat';
-import { LABEL_CLASS, LABEL_KEY, LABEL_MARK } from '../utils/scorecardLabels';
+import {
+    COLLECTING_MARK,
+    LABEL_CLASS,
+    LABEL_KEY,
+    LABEL_MARK,
+} from '../utils/scorecardLabels';
 
 const HEADING_ID = 'flows-scorecard-heading';
 
@@ -28,7 +33,14 @@ const AXIS_TERM = {
     short: 'shortInterest',
 } as const;
 
-function LabelBadge({ label }: { readonly label: InvestorFlowsLabel }) {
+function LabelBadge({
+    label,
+    collecting = false,
+}: {
+    readonly label: InvestorFlowsLabel;
+    /** 초기 수집 중인 축 — "데이터 부족" 대신 "수집 중"을 말한다(중립도, 부족도 아니다). */
+    readonly collecting?: boolean;
+}) {
     // 동적 키는 하위 네임스페이스 번역자로만 부른다 — 파일 전체 네임스페이스가 클라이언트에 실리지 않게.
     const tLabel = useTranslations('widgets.investor-flows.label');
     return (
@@ -38,8 +50,10 @@ function LabelBadge({ label }: { readonly label: InvestorFlowsLabel }) {
                 LABEL_CLASS[label]
             )}
         >
-            <span aria-hidden="true">{LABEL_MARK[label]}</span>
-            {tLabel(LABEL_KEY[label])}
+            <span aria-hidden="true">
+                {collecting ? COLLECTING_MARK : LABEL_MARK[label]}
+            </span>
+            {collecting ? tLabel('collecting') : tLabel(LABEL_KEY[label])}
         </span>
     );
 }
@@ -47,9 +61,11 @@ function LabelBadge({ label }: { readonly label: InvestorFlowsLabel }) {
 function AxisCard({
     axis,
     scorecard,
+    collecting,
 }: {
     readonly axis: InvestorFlowsAxisId;
     readonly scorecard: InvestorFlowsScorecard;
+    readonly collecting: boolean;
 }) {
     const t = useTranslations('widgets.investor-flows');
     const tAxis = useTranslations('widgets.investor-flows.axis');
@@ -64,7 +80,7 @@ function AxisCard({
                     {tAxis(AXIS_TITLE_KEY[axis])}
                     <FlowTooltip term={AXIS_TERM[axis]} />
                 </h3>
-                <LabelBadge label={data.label} />
+                <LabelBadge label={data.label} collecting={collecting} />
             </div>
             {data.score !== null && (
                 <p className="mt-2 text-sm text-secondary-200 tabular-nums">
@@ -75,7 +91,9 @@ function AxisCard({
             )}
             {data.sufficiency === 'insufficient' ? (
                 <p className="mt-2 text-sm text-secondary-400">
-                    {t('scorecard.axisInsufficient')}
+                    {collecting
+                        ? t('scorecard.axisCollecting')
+                        : t('scorecard.axisInsufficient')}
                 </p>
             ) : (
                 <ul className="mt-2 space-y-1 text-sm text-secondary-300">
@@ -92,18 +110,29 @@ interface ScorecardCardProps {
     readonly scorecard: InvestorFlowsScorecard;
     /** 공매도 구간을 화면에 그릴 때만 true — 아니면 공매도 축 카드도 그리지 않는다(빈 카드 대신 생략). */
     readonly showShort: boolean;
+    /**
+     * 초기 수집이 끝나지 않아 비어 있는 축. 이 축은 "데이터 부족" 대신 "수집 중"으로 표시한다. 데이터가 있어 점수가
+     * 매겨진 축은 목록에 있어도 영향이 없다(`insufficient`일 때만 바뀐다).
+     */
+    readonly collectingAxes?: readonly InvestorFlowsAxisId[];
 }
 
 /**
  * 수급 점수 카드 — 종합 점수와 축별(기관·내부자·대량보유·공매도) 방향 라벨, 각 근거 수치.
  *
  * 점수·라벨은 core의 `evaluateInvestorFlows` 결과를 그대로 옮긴다(화면이 다시 계산하지 않는다). 방향은
- * 색 + 기호(▲▼■) + 글자 라벨 세 겹으로 전하고, 데이터가 부족한 축은 "데이터 부족"이라고 말한다(중립이 아니다).
+ * 색 + 기호(▲▼■) + 글자 라벨 세 겹으로 전하고, 데이터가 부족한 축은 "데이터 부족"이라고 말한다(중립이 아니다). 초기 수집이
+ * 끝나지 않아 비어 있는 축(`collectingAxes`)은 "수집 중"이라고 말한다.
  */
-export function ScorecardCard({ scorecard, showShort }: ScorecardCardProps) {
+export function ScorecardCard({
+    scorecard,
+    showShort,
+    collectingAxes = [],
+}: ScorecardCardProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     const { composite } = scorecard;
+    const collectingSet = new Set(collectingAxes);
     const axes = INVESTOR_FLOWS_AXES.filter(
         axis => showShort || axis !== 'short'
     );
@@ -139,7 +168,15 @@ export function ScorecardCard({ scorecard, showShort }: ScorecardCardProps) {
             </div>
             <ul className="grid gap-3 md:grid-cols-2">
                 {axes.map(axis => (
-                    <AxisCard key={axis} axis={axis} scorecard={scorecard} />
+                    <AxisCard
+                        key={axis}
+                        axis={axis}
+                        scorecard={scorecard}
+                        collecting={
+                            collectingSet.has(axis) &&
+                            scorecard[axis].sufficiency === 'insufficient'
+                        }
+                    />
                 ))}
             </ul>
         </section>

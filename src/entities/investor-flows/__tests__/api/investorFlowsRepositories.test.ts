@@ -297,3 +297,35 @@ describe('DrizzleInvestorFlowsSnapshotRepository', () => {
         });
     });
 });
+
+describe('DrizzleInvestorFlowsShortRepository.hasAnyRow', () => {
+    it('is true as soon as the daily-volume table has a row, without touching the interest table', async () => {
+        const { db, ops } = createFakeDb([[{ symbol: 'AAPL' }]]);
+        expect(
+            await new DrizzleInvestorFlowsShortRepository(db).hasAnyRow()
+        ).toBe(true);
+        expect(ops).toHaveLength(1);
+        expect(callsOf(ops[0] as never, 'from')).toEqual([[finraShortVolume]]);
+        expect(callsOf(ops[0] as never, 'limit')).toEqual([[1]]);
+    });
+
+    it('falls back to the interest table when the volume table is empty', async () => {
+        const { db, ops } = createFakeDb([[], [{ symbol: 'AAPL' }]]);
+        expect(
+            await new DrizzleInvestorFlowsShortRepository(db).hasAnyRow()
+        ).toBe(true);
+        expect(ops).toHaveLength(2);
+        expect(callsOf(ops[1] as never, 'from')).toEqual([
+            [finraShortInterest],
+        ]);
+        expect(callsOf(ops[1] as never, 'limit')).toEqual([[1]]);
+    });
+
+    it('is false only when both tables are empty', async () => {
+        const { db, ops } = createFakeDb([[], []]);
+        expect(
+            await new DrizzleInvestorFlowsShortRepository(db).hasAnyRow()
+        ).toBe(false);
+        expect(ops).toHaveLength(2);
+    });
+});

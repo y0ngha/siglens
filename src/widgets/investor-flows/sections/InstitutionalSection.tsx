@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { InstitutionalSnapshot } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -24,12 +25,17 @@ import {
     type FlowDirection,
 } from '../utils/institutional';
 import { ChangeSplitCard } from './ChangeSplitCard';
+import { CollectingNotice } from './CollectingNotice';
 import { TopHoldersList } from './TopHoldersList';
 
 const HEADING_ID = 'flows-institutional-heading';
 
 interface InstitutionalSectionProps {
     readonly institutional: InstitutionalSnapshot;
+    /**
+     * 13F 초기 수집이 아직 안 끝났다. 데이터가 없을 때만 의미가 있고, 있으면 무시한다(있는 데이터를 가리지 않는다).
+     */
+    readonly collecting?: boolean;
 }
 
 /**
@@ -37,10 +43,12 @@ interface InstitutionalSectionProps {
  *
  * 분기별 순매수/순매도 막대 → 보유 기관 수 추이 → 4분할 카드(신규·증가·감소·청산) → 상위 보유 기관 표 순서다.
  * 4분할 카드와 기준 분기 문구는 **가장 최근 완결 분기**를 기준으로 하고, 그보다 새로 시작된 진행 중 분기는
- * 별도 안내 한 줄로 "부분 집계"임을 밝힌다. 데이터가 하나도 없으면 "데이터 없음"을 명시한다.
+ * 별도 안내 한 줄로 "부분 집계"임을 밝힌다. 데이터가 하나도 없으면 "데이터 없음"을 명시하되, 13F 초기 수집이 아직
+ * 끝나지 않았다면(`collecting`) "모으는 중" 안내로 바꾼다 — 그 시점의 빈 구간은 이 종목에 데이터가 없다는 뜻이 아니다.
  */
 export function InstitutionalSection({
     institutional,
+    collecting = false,
 }: InstitutionalSectionProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
@@ -64,6 +72,18 @@ export function InstitutionalSection({
     const partialDirection =
         partialFlow === null ? '' : directionLabels[partialFlow];
 
+    // 데이터가 없을 때만 채워지는 자리 — 수집 중이면 안내, 아니면 "데이터 없음". 있으면 `null`이라 본문을 그린다.
+    let emptyState: ReactNode = null;
+    if (!hasData) {
+        emptyState = collecting ? (
+            <CollectingNotice variant="institutional" />
+        ) : (
+            <p className="text-sm text-secondary-300">
+                {t('institutional.noData')}
+            </p>
+        );
+    }
+
     return (
         <section
             aria-labelledby={HEADING_ID}
@@ -79,11 +99,7 @@ export function InstitutionalSection({
                 </p>
             </div>
 
-            {!hasData ? (
-                <p className="text-sm text-secondary-300">
-                    {t('institutional.noData')}
-                </p>
-            ) : (
+            {emptyState ?? (
                 <>
                     {bars.length > 0 && (
                         <div>

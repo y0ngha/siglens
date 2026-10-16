@@ -6,6 +6,7 @@ import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsShortRepository } from '../api/investorFlowsShortRepository';
 import { DrizzleInvestorFlowsSnapshotRepository } from '../api/investorFlowsSnapshotRepository';
 import type { InvestorFlowsDataProvider } from '@y0ngha/siglens-core';
+import { isE2EFlowsPipelineCollecting } from './e2eFlowsPipeline';
 import { DbFmpInvestorFlowsDataProvider } from './loadInvestorFlowsSnapshot';
 
 /**
@@ -18,7 +19,10 @@ export function getInvestorFlowsDataProvider(): InvestorFlowsDataProvider {
         // (`getInvestorFlowsFmpProvider`와 같은 이유·같은 형태).
         const { FakeInvestorFlowsDataProvider } =
             require('./FakeInvestorFlowsDataProvider') as typeof import('./FakeInvestorFlowsDataProvider');
-        return new FakeInvestorFlowsDataProvider(isFinraShortDataEnabled);
+        return new FakeInvestorFlowsDataProvider(
+            isFinraShortDataEnabled,
+            isE2EFlowsPipelineCollecting()
+        );
     }
     const client = tryGetDatabaseClient();
     if (client === null)

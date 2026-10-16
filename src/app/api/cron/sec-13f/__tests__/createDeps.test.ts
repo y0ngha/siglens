@@ -1,9 +1,15 @@
-const { mockClient, mockRevalidate } = vi.hoisted(() => ({
-    mockClient: vi.fn(),
-    mockRevalidate: vi.fn(),
-}));
+const { mockClient, mockRevalidate, mockRevalidateReadiness } = vi.hoisted(
+    () => ({
+        mockClient: vi.fn(),
+        mockRevalidate: vi.fn(),
+        mockRevalidateReadiness: vi.fn(),
+    })
+);
 vi.mock('../../revalidateSymbols', () => ({
     revalidateSymbols: mockRevalidate,
+}));
+vi.mock('../../revalidateFlowsReadiness', () => ({
+    revalidateFlowsReadiness: mockRevalidateReadiness,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
@@ -55,5 +61,11 @@ describe('createSec13fDeps', () => {
         mockClient.mockReturnValue({ db: {} });
         createSec13fDeps(() => false).invalidateSymbols(['AAPL']);
         expect(mockRevalidate).toHaveBeenCalledWith(['AAPL']);
+    });
+
+    it('wires the backfill-completed hook to the readiness-cache invalidation', () => {
+        mockClient.mockReturnValue({ db: {} });
+        createSec13fDeps(() => false).onBackfillCompleted?.();
+        expect(mockRevalidateReadiness).toHaveBeenCalledTimes(1);
     });
 });

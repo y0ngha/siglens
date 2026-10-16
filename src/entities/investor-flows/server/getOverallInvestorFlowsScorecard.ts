@@ -10,6 +10,8 @@ import { getInvestorFlowsScorecard } from './getInvestorFlowsScorecard';
  *   인프라 장애일 때. core는 이 경우 프롬프트·스키마·캐시 키가 필드 도입 전과 **바이트 단위로 같다고**
  *   약속하므로, 장애가 "데이터 없음"으로 캐시에 굳지 않는다.
  * - `null`: 미국 주식인데 이 종목은 수급 데이터가 없다 — 프롬프트가 "데이터 없음"을 명시한다(중립이 아니다).
+ *   단 13F 수집이 아직 안 끝났으면(`readiness.institutional === 'collecting'`) 스냅샷이 없는 것은 "이 종목에 데이터가
+ *   없다"가 아니라 "아직 못 모았다"일 수 있어 `undefined`로 돌려 종합에 넣지 않는다(그래야 "데이터 없음"이 캐시에 굳지 않는다).
  * - 점수표: 가중치 안내와 기준일이 프롬프트에 들어간다.
  *
  * 웹 액션(`executeOverallAnalysis`), 공개 API, SEO 프리웜(`prewarmOverall`)이 모두 이 함수를 불러야
@@ -23,8 +25,11 @@ export async function getOverallInvestorFlowsScorecard(
 ): Promise<InvestorFlowsScorecard | null | undefined> {
     if (marketProfile !== 'us-equity') return undefined;
     try {
-        const { scorecard, degraded } = await getInvestorFlowsScorecard(symbol);
+        const { scorecard, degraded, readiness } =
+            await getInvestorFlowsScorecard(symbol);
         if (degraded) return undefined;
+        if (scorecard === null && readiness.institutional === 'collecting')
+            return undefined;
         return scorecard;
     } catch (error) {
         console.warn(
