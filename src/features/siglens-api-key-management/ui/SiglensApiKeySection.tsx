@@ -23,6 +23,10 @@ interface SiglensApiKeySectionProps {
     skillHref: string;
     /** 키 목록과 시작 가이드 사이에 들어갈 영역(API 기본 모델 선택). 서버 컴포넌트가 데이터를 채워 넘긴다. */
     defaultModelSlot?: ReactNode;
+    /** 등록한 BYOK LLM 키가 하나라도 있는가 — 없으면 발급 전에 안내 모달을 연다. */
+    hasByokKey: boolean;
+    /** "키 등록하러 가기"가 스크롤·포커스할 BYOK 섹션의 DOM id(`#` 없이). */
+    byokSectionId: string;
 }
 
 export function SiglensApiKeySection({
@@ -32,6 +36,8 @@ export function SiglensApiKeySection({
     apiBaseUrl,
     skillHref,
     defaultModelSlot,
+    hasByokKey,
+    byokSectionId,
 }: SiglensApiKeySectionProps) {
     const t = useTranslations('features.siglens-api-key-management');
     const { createState, createFormAction, revokeState, revokeFormAction } =
@@ -82,6 +88,8 @@ export function SiglensApiKeySection({
                 emailVerified={emailVerified}
                 limitReached={limitReached}
                 maxKeys={maxKeys}
+                hasByokKey={hasByokKey}
+                byokSectionId={byokSectionId}
             />
 
             {keys === null ? (

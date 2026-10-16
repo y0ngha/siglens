@@ -1,4 +1,4 @@
-import { getProviderForModel } from '@y0ngha/siglens-core';
+import { getProviderForModel, type ModelId } from '@y0ngha/siglens-core';
 import {
     API_MODEL_PROVIDERS,
     listApiSelectableModels,
@@ -8,7 +8,7 @@ import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 
 export interface ApiModelOption {
-    id: string;
+    id: ModelId;
     label: string;
 }
 

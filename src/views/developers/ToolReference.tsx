@@ -58,20 +58,8 @@ function ArgumentType({
     );
 }
 
-/** 코어가 영어로 쓴 에이전트용 원문. 번역하지 않고 `lang="en"`으로 그대로 보여 준다. */
-function AgentDescription({ description }: { readonly description: string }) {
-    return (
-        <p
-            lang="en"
-            className="mt-2 max-w-prose text-sm leading-6 text-secondary-400"
-        >
-            {description}
-        </p>
-    );
-}
-
 /**
- * 도구 하나의 레퍼런스 카드: 사람용 요약(카탈로그, `tools.summaries.<name>`), 접힌 에이전트용 원문(코어, 영어),
+ * 도구 하나의 레퍼런스 카드: 사람용 요약(카탈로그, `tools.summaries.<name>`),
  * 인자 표(`inputSchema`), curl 예시.
  *
  * 인자 표는 이름 칸에 타입과 필수 여부를 함께 담는다 — 열을 셋으로 나누면 열거형 타입이 긴 도구
@@ -100,24 +88,13 @@ export function ToolReference({ t, tool }: Props) {
             <p className="mt-1 font-mono text-xs break-all text-secondary-400">
                 POST {tool.path}
             </p>
-            {summary === null ? (
-                // 요약이 없는 도구(새 도구를 카탈로그에 올리기 전) — 페이지가 비지 않도록 원문을 그대로 보여 준다.
-                // `developersToolSummaries` 가드 테스트가 이 경로가 운영에 나가지 못하게 막는다.
-                <AgentDescription description={tool.description} />
-            ) : (
-                <>
-                    <p className="mt-3 max-w-prose text-[15px] leading-7 text-secondary-200">
-                        {summary}
-                    </p>
-                    {/* 코어가 영어로 쓴 에이전트용 원문 — 정확한 계약이 필요한 개발자를 위해 접어서 남긴다.
-                        네이티브 disclosure라 JS 없이도 본문이 DOM에 있어 크롤러가 읽는다. */}
-                    <details className="mt-2">
-                        <summary className="cursor-pointer text-xs text-secondary-300 underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
-                            {t('tools.agentDescriptionToggle')}
-                        </summary>
-                        <AgentDescription description={tool.description} />
-                    </details>
-                </>
+            {/* 에이전트용 영어 원문은 이 페이지에 싣지 않는다 — OpenAPI JSON·YAML과 SKILL.md에만 있다.
+                요약이 없는 도구는 `developersToolSummaries` 가드 테스트가 운영에 나가지 못하게 막으므로
+                여기서는 요약 문단만 생략한다(원문으로 대신 채우지 않는다). */}
+            {summary === null ? null : (
+                <p className="mt-3 max-w-prose text-[15px] leading-7 text-secondary-200">
+                    {summary}
+                </p>
             )}
             {tool.byok ? (
                 <p className="mt-3 rounded-lg border border-border-control px-3 py-2 text-sm leading-6 text-secondary-200">
