@@ -1010,6 +1010,13 @@
             }
         },
         "siglens-api-key-management": {
+            "ByokRequiredModal": {
+                "body": "API의 AI 분석은 내가 등록한 LLM 키(BYOK)로만 만들어져요. 키가 없으면 시세·차트·뉴스 같은 데이터 도구만 쓸 수 있어요.",
+                "close": "닫기",
+                "createAnyway": "데이터 도구만 쓸게요, 키 만들기",
+                "goToByok": "AI 모델 키 등록하러 가기",
+                "title": "AI 모델 키를 먼저 등록해 주세요"
+            },
             "DefaultModelForm": {
                 "cleared": "기본 모델 설정을 해제했어요.",
                 "description": "API로 새 분석을 만들 때 model을 생략하면 이 모델을 써요. 분석은 내가 등록한 BYOK 키로 만들어지고 비용도 내 키에 청구돼요.",
@@ -1025,6 +1032,7 @@
                 "unavailable": "저장된 기본 모델({v0})을 지금은 쓸 수 없어요. 해당 회사의 키를 다시 등록하거나 다른 모델을 골라 주세요."
             },
             "SiglensApiKeySection": {
+                "byokNotice": "등록된 AI 모델 키(BYOK)가 없어요. 지금 키를 만들면 시세·차트·뉴스 같은 데이터 도구만 쓸 수 있어요.",
                 "copied": "복사했어요",
                 "copy": "복사",
                 "copyFailed": "복사하지 못했어요. 키를 직접 선택해 복사해 주세요.",

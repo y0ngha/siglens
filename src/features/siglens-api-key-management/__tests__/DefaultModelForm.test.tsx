@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { DefaultModelForm } from '@/features/siglens-api-key-management/ui/DefaultModelForm';
 import {
     useApiDefaultModelForm,
@@ -66,44 +67,132 @@ beforeEach(() => {
     setForm();
 });
 
+const TRIGGER_NAME = '기본 모델';
+
+function getTrigger() {
+    return screen.getByRole('button', { name: new RegExp(TRIGGER_NAME) });
+}
+
+function getHiddenModelValue(container: HTMLElement): string | undefined {
+    return container.querySelector<HTMLInputElement>('input[name="model"]')
+        ?.value;
+}
+
 describe('DefaultModelForm — 키가 있을 때', () => {
-    it('등록한 provider의 모델만 provider 그룹으로 보여 주고 "설정 안 함"을 맨 앞에 둔다', () => {
+    it('열기 전에는 목록이 없고 트리거가 listbox를 연다고 알린다', () => {
         renderForm();
-        const select = screen.getByRole('combobox', { name: '기본 모델' });
-        const options = within(select).getAllByRole('option');
-        expect(options.map(option => option.textContent)).toEqual([
-            '설정 안 함 (요청마다 model 지정)',
-            'Claude Opus 5',
-            'Claude Opus 5.5',
-            'GPT-6 Astra',
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(getTrigger()).toHaveAttribute('aria-haspopup', 'listbox');
+        expect(getTrigger()).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('열면 "설정 안 함"이 맨 앞이고 등록한 provider의 모델만 provider 그룹으로 나온다', async () => {
+        const user = userEvent.setup();
+        renderForm();
+        await user.click(getTrigger());
+
+        const listbox = screen.getByRole('listbox', { name: '기본 모델' });
+        expect(
+            within(listbox)
+                .getAllByRole('option')
+                .map(option => option.textContent)
+        ).toEqual([
+            expect.stringContaining('설정 안 함 (요청마다 model 지정)'),
+            expect.stringContaining('Claude Opus 5'),
+            expect.stringContaining('Claude Opus 5.5'),
+            expect.stringContaining('GPT-6 Astra'),
         ]);
+        const anthropic = within(listbox).getByRole('group', {
+            name: 'Claude (Anthropic)',
+        });
+        expect(within(anthropic).getAllByRole('option')).toHaveLength(2);
         expect(
-            within(select).getByRole('group', { name: 'Claude (Anthropic)' })
+            within(listbox).getByRole('group', { name: 'ChatGPT (OpenAI)' })
         ).toBeInTheDocument();
+    });
+
+    it('저장된 기본 모델이 트리거에 보이고 열면 그 항목이 선택돼 있다', async () => {
+        const user = userEvent.setup();
+        const { container } = renderForm({ defaultModel: 'gpt-6-astra' });
+        expect(getTrigger()).toHaveTextContent('GPT-6 Astra');
+        expect(getHiddenModelValue(container)).toBe('gpt-6-astra');
+
+        await user.click(getTrigger());
         expect(
-            within(select).getByRole('group', { name: 'ChatGPT (OpenAI)' })
-        ).toBeInTheDocument();
+            screen.getByRole('option', { selected: true })
+        ).toHaveTextContent('GPT-6 Astra');
     });
 
-    it('저장된 기본 모델이 선택돼 있다', () => {
-        renderForm({ defaultModel: 'gpt-6-astra' });
-        expect(screen.getByRole('combobox', { name: '기본 모델' })).toHaveValue(
-            'gpt-6-astra'
+    it('저장된 값이 없으면 "설정 안 함"이 보이고 제출 값은 빈 문자열이다', () => {
+        const { container } = renderForm();
+        expect(getTrigger()).toHaveTextContent(
+            '설정 안 함 (요청마다 model 지정)'
         );
+        expect(getHiddenModelValue(container)).toBe('');
     });
 
-    it('저장된 값이 없으면 "설정 안 함"(빈 값)이 선택돼 있다', () => {
-        renderForm();
-        expect(screen.getByRole('combobox', { name: '기본 모델' })).toHaveValue(
-            ''
+    it('항목을 고르면 닫히고 포커스가 트리거로 돌아가며 제출 값이 바뀐다', async () => {
+        const user = userEvent.setup();
+        const { container } = renderForm();
+        await user.click(getTrigger());
+        await user.click(screen.getByRole('option', { name: /GPT-6 Astra/ }));
+
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(getTrigger()).toHaveFocus();
+        expect(getTrigger()).toHaveTextContent('GPT-6 Astra');
+        expect(getHiddenModelValue(container)).toBe('gpt-6-astra');
+    });
+
+    it('키보드로 고른다: 열면 선택 항목에 포커스, 방향키로 옮기고 Enter로 확정', async () => {
+        const user = userEvent.setup();
+        const { container } = renderForm({ defaultModel: 'claude-opus-5' });
+        await user.click(getTrigger());
+        expect(screen.getByRole('option', { selected: true })).toHaveFocus();
+
+        await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(getHiddenModelValue(container)).toBe('gpt-6-astra');
+        expect(getTrigger()).toHaveFocus();
+    });
+
+    it('"설정 안 함"을 고르면 제출 값이 빈 문자열로 돌아온다', async () => {
+        const user = userEvent.setup();
+        const { container } = renderForm({ defaultModel: 'claude-opus-5' });
+        await user.click(getTrigger());
+        await user.click(screen.getByRole('option', { name: /설정 안 함/ }));
+
+        expect(getHiddenModelValue(container)).toBe('');
+        expect(getTrigger()).toHaveTextContent('설정 안 함');
+    });
+
+    it('Escape는 선택을 바꾸지 않고 닫는다', async () => {
+        const user = userEvent.setup();
+        const { container } = renderForm({ defaultModel: 'claude-opus-5' });
+        await user.click(getTrigger());
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(getHiddenModelValue(container)).toBe('claude-opus-5');
+        expect(getTrigger()).toHaveFocus();
+    });
+
+    it('폼 제출 시 선택한 모델이 model 필드로 서버 액션에 실린다', async () => {
+        const user = userEvent.setup();
+        const form = setForm();
+        const { container } = renderForm();
+        await user.click(getTrigger());
+        await user.click(
+            screen.getByRole('option', { name: /Claude Opus 5.5/ })
         );
-    });
+        await user.click(screen.getByRole('button', { name: '저장' }));
 
-    it('select의 name은 model이다(서버 액션이 읽는 필드)', () => {
-        renderForm();
-        expect(
-            screen.getByRole('combobox', { name: '기본 모델' })
-        ).toHaveAttribute('name', 'model');
+        await waitFor(() => expect(form.formAction).toHaveBeenCalled());
+        const submitted = vi
+            .mocked(form.formAction)
+            .mock.calls.map(([data]) => data.get('model'));
+        expect(submitted).toContain('claude-opus-5-5');
+        expect(getHiddenModelValue(container)).toBe('claude-opus-5-5');
     });
 
     it('등급과 상관없이 모든 모델을 내 키로 만들 수 있다고 안내한다', () => {
@@ -151,13 +240,12 @@ describe('DefaultModelForm — 키가 있을 때', () => {
     });
 
     it('저장된 모델이 선택지에 없으면(키를 지운 뒤) 안내하고 "설정 안 함"으로 보여 준다', () => {
-        renderForm({
+        const { container } = renderForm({
             defaultModel: 'gemini-4-argon',
             defaultModelLabel: 'Gemini 4 Argon',
         });
-        expect(screen.getByRole('combobox', { name: '기본 모델' })).toHaveValue(
-            ''
-        );
+        expect(getHiddenModelValue(container)).toBe('');
+        expect(getTrigger()).toHaveTextContent('설정 안 함');
         expect(screen.getByRole('status')).toHaveTextContent(
             '저장된 기본 모델(Gemini 4 Argon)을 지금은 쓸 수 없어요.'
         );
@@ -170,7 +258,9 @@ describe('DefaultModelForm — 키가 없을 때', () => {
     });
 
     it('선택기 없이 BYOK 섹션으로 가는 링크를 보여 준다', () => {
-        expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('button', { name: new RegExp(TRIGGER_NAME) })
+        ).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: '저장' })).toBeNull();
         expect(
             screen.getByRole('link', { name: 'AI 모델 API 키 등록하러 가기' })

@@ -995,7 +995,15 @@
             }
         },
         "siglens-api-key-management": {
+            "ByokRequiredModal": {
+                "body": "API中的AI分析仅会使用您自己注册的LLM密钥(BYOK)生成。没有密钥时，只能使用行情、图表、新闻等数据工具。",
+                "close": "关闭",
+                "createAnyway": "我只使用数据工具，创建密钥",
+                "goToByok": "前往注册AI模型密钥",
+                "title": "请先注册AI模型密钥"
+            },
             "SiglensApiKeySection": {
+                "byokNotice": "您还没有注册AI模型密钥(BYOK)。现在创建的密钥只能使用行情、图表、新闻等数据工具。",
                 "copied": "已复制",
                 "copy": "复制",
                 "copyFailed": "复制失败，请手动选中密钥后复制。",

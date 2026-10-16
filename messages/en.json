@@ -995,7 +995,15 @@
             }
         },
         "siglens-api-key-management": {
+            "ByokRequiredModal": {
+                "body": "AI analysis through the API is generated only with the LLM key (BYOK) you register. Without one, you can only use data tools such as quotes, charts, and news.",
+                "close": "Close",
+                "createAnyway": "I'll use data tools only, create key",
+                "goToByok": "Go register an AI model key",
+                "title": "Register an AI model key first"
+            },
             "SiglensApiKeySection": {
+                "byokNotice": "You haven't registered an AI model key (BYOK). A key you create now can only use data tools such as quotes, charts, and news.",
                 "copied": "Copied",
                 "copy": "Copy",
                 "copyFailed": "Couldn't copy. Select the key and copy it manually.",

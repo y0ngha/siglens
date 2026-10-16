@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SiglensApiKeySection } from '@/features/siglens-api-key-management/ui/SiglensApiKeySection';
 import {
@@ -58,14 +64,20 @@ function renderSection(
     props: Partial<React.ComponentProps<typeof SiglensApiKeySection>> = {}
 ) {
     return render(
-        <SiglensApiKeySection
-            keys={[FIRST, SECOND]}
-            maxKeys={5}
-            emailVerified
-            apiBaseUrl="https://example.test/api/v1"
-            skillHref="/api/v1/skill"
-            {...props}
-        />
+        <>
+            {/* 계정 페이지의 BYOK 섹션 자리(안내 모달이 스크롤·포커스하는 대상). */}
+            <section id="byok-keys" tabIndex={-1} aria-label="byok" />
+            <SiglensApiKeySection
+                keys={[FIRST, SECOND]}
+                maxKeys={5}
+                emailVerified
+                hasByokKey
+                byokSectionId="byok-keys"
+                apiBaseUrl="https://example.test/api/v1"
+                skillHref="/api/v1/skill"
+                {...props}
+            />
+        </>
     );
 }
 
@@ -442,5 +454,160 @@ describe('SiglensApiKeySection — API 기본 모델 영역', () => {
     it('slot이 없으면 아무것도 더하지 않는다', () => {
         renderSection();
         expect(screen.queryByTestId('slot')).not.toBeInTheDocument();
+    });
+});
+
+describe('SiglensApiKeySection — BYOK 키가 없을 때 발급 확인', () => {
+    const scrollIntoView = vi.fn();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        formStatus.pending = false;
+        Element.prototype.scrollIntoView = scrollIntoView;
+    });
+
+    async function clickCreate(user: ReturnType<typeof userEvent.setup>) {
+        await user.type(screen.getByLabelText('키 이름'), '내 키');
+        await user.click(screen.getByRole('button', { name: '새 키 만들기' }));
+    }
+
+    function createdNames(form: SiglensApiKeyFormsReturn): unknown[] {
+        return vi
+            .mocked(form.createFormAction)
+            .mock.calls.map(([data]) => data.get('name'));
+    }
+
+    it('BYOK 키가 없으면 버튼 근처에 안내를 미리 보여 준다', () => {
+        setForms();
+        renderSection({ hasByokKey: false });
+        expect(
+            screen.getByText(/등록된 AI 모델 키\(BYOK\)가 없어요/)
+        ).toBeInTheDocument();
+    });
+
+    it('BYOK 키가 있으면 안내도 모달도 없다', async () => {
+        const user = userEvent.setup();
+        const form = setForms();
+        renderSection({ hasByokKey: true });
+        expect(
+            screen.queryByText(/등록된 AI 모델 키\(BYOK\)가 없어요/)
+        ).not.toBeInTheDocument();
+
+        await clickCreate(user);
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(createdNames(form)).toContain('내 키');
+    });
+
+    it('BYOK 키가 없으면 모달이 열리고 발급은 아직 일어나지 않는다', async () => {
+        const user = userEvent.setup();
+        const form = setForms();
+        renderSection({ hasByokKey: false });
+        await clickCreate(user);
+
+        const dialog = screen.getByRole('dialog', {
+            name: 'AI 모델 키를 먼저 등록해 주세요',
+        });
+        expect(dialog).toHaveAttribute('aria-modal', 'true');
+        expect(dialog).toHaveAccessibleDescription(
+            /내가 등록한 LLM 키\(BYOK\)로만 만들어져요/
+        );
+        expect(dialog).toHaveFocus();
+        expect(form.createFormAction).not.toHaveBeenCalled();
+    });
+
+    it('"AI 모델 키 등록하러 가기"는 모달을 닫고 BYOK 섹션으로 스크롤·포커스하며 발급하지 않는다', async () => {
+        const user = userEvent.setup();
+        const form = setForms();
+        renderSection({ hasByokKey: false });
+        await clickCreate(user);
+        await user.click(
+            screen.getByRole('button', { name: 'AI 모델 키 등록하러 가기' })
+        );
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(document.getElementById('byok-keys')).toHaveFocus();
+        expect(scrollIntoView).toHaveBeenCalled();
+        expect(form.createFormAction).not.toHaveBeenCalled();
+    });
+
+    it('"데이터 도구만 쓸게요, 키 만들기"는 입력한 이름으로 그대로 발급한다', async () => {
+        const user = userEvent.setup();
+        const form = setForms();
+        renderSection({ hasByokKey: false });
+        await clickCreate(user);
+        await user.click(
+            screen.getByRole('button', {
+                name: '데이터 도구만 쓸게요, 키 만들기',
+            })
+        );
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        await waitFor(() => expect(createdNames(form)).toEqual(['내 키']));
+    });
+
+    it('Escape는 발급 없이 취소하고 포커스를 발급 버튼으로 돌린다', async () => {
+        const user = userEvent.setup();
+        const form = setForms();
+        renderSection({ hasByokKey: false });
+        await clickCreate(user);
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(form.createFormAction).not.toHaveBeenCalled();
+        expect(
+            screen.getByRole('button', { name: '새 키 만들기' })
+        ).toHaveFocus();
+    });
+
+    it('닫기 버튼도 발급 없이 취소한다', async () => {
+        const user = userEvent.setup();
+        const form = setForms();
+        renderSection({ hasByokKey: false });
+        await clickCreate(user);
+        await user.click(screen.getByRole('button', { name: '닫기' }));
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(form.createFormAction).not.toHaveBeenCalled();
+    });
+
+    it('모달이 닫힌 뒤 다시 발급하면 모달이 다시 열린다(확인은 한 번만 통과)', async () => {
+        const user = userEvent.setup();
+        setForms();
+        renderSection({ hasByokKey: false });
+        await clickCreate(user);
+        await user.click(
+            screen.getByRole('button', {
+                name: '데이터 도구만 쓸게요, 키 만들기',
+            })
+        );
+        await user.click(screen.getByRole('button', { name: '새 키 만들기' }));
+
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('제출을 못 하면(requestSubmit 불발) 우회가 무장된 채 남지 않아 다음 발급은 다시 모달을 연다', async () => {
+        const user = userEvent.setup();
+        const form = setForms();
+        const { container } = renderSection({ hasByokKey: false });
+        await clickCreate(user);
+        // 인스턴스에 덮어써 이 폼의 프로그램 제출만 불발로 만든다(제출 이벤트가 일어나지 않는다).
+        const requestSubmit = vi.fn();
+        const formEl = container.querySelector('form')!;
+        formEl.requestSubmit = requestSubmit;
+        await user.click(
+            screen.getByRole('button', {
+                name: '데이터 도구만 쓸게요, 키 만들기',
+            })
+        );
+        await waitFor(() => expect(requestSubmit).toHaveBeenCalledTimes(1));
+        expect(form.createFormAction).not.toHaveBeenCalled();
+        // jsdom은 제출 버튼 클릭도 이 메서드를 거치므로, 다음 클릭 전에 원래 동작으로 되돌린다.
+        Reflect.deleteProperty(formEl, 'requestSubmit');
+
+        await user.click(screen.getByRole('button', { name: '새 키 만들기' }));
+
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(form.createFormAction).not.toHaveBeenCalled();
     });
 });

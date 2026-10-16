@@ -995,7 +995,15 @@
             }
         },
         "siglens-api-key-management": {
+            "ByokRequiredModal": {
+                "body": "APIでのAI分析は、ご自身で登録したLLMキー(BYOK)でのみ生成されます。キーがない場合は、株価・チャート・ニュースなどのデータツールのみ利用できます。",
+                "close": "閉じる",
+                "createAnyway": "データツールのみ使うので、キーを作成する",
+                "goToByok": "AIモデルキーを登録しに行く",
+                "title": "先にAIモデルキーを登録してください"
+            },
             "SiglensApiKeySection": {
+                "byokNotice": "登録済みのAIモデルキー(BYOK)がありません。今キーを作成すると、株価・チャート・ニュースなどのデータツールのみ利用できます。",
                 "copied": "コピーしました",
                 "copy": "コピー",
                 "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",

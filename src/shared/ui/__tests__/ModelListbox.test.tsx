@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ModelId } from '@y0ngha/siglens-core';
 import { ModelListbox } from '@/shared/ui/ModelListbox';
 
@@ -136,5 +136,98 @@ describe('ModelListbox', () => {
         expect(opts[0]!.textContent).not.toMatch(/MEMBER|BYOK/);
         expect(opts[1]!.textContent).toContain('MEMBER');
         expect(opts[2]!.textContent).toContain('BYOK');
+    });
+
+    describe('none option', () => {
+        function renderWithNone(selected: ModelId | null) {
+            const onSelectNone = vi.fn();
+            const result = renderListbox(selected as ModelId, {
+                selected,
+                none: { label: '설정 안 함', onSelect: onSelectNone },
+            });
+            return { ...result, onSelectNone };
+        }
+
+        it('puts the none option first and marks it selected when selected is null', () => {
+            renderWithNone(null);
+            const opts = screen.getAllByRole('option');
+
+            expect(opts.map(o => o.getAttribute('aria-selected'))).toEqual([
+                'true',
+                'false',
+                'false',
+                'false',
+            ]);
+            expect(opts[0]).toHaveTextContent('설정 안 함');
+            expect(opts[0]).toHaveFocus();
+        });
+
+        it('clicking none calls onSelect and closes without touching onChange', () => {
+            const { onChange, onClose, onSelectNone } = renderWithNone(
+                'gemini-3.6-flash' as ModelId
+            );
+            fireEvent.click(screen.getByRole('option', { name: /설정 안 함/ }));
+
+            expect(onSelectNone).toHaveBeenCalledTimes(1);
+            expect(onChange).not.toHaveBeenCalled();
+            expect(onClose).toHaveBeenCalledTimes(1);
+        });
+
+        it('ArrowUp from the first model lands on none', () => {
+            const first = renderWithNone('gemini-3.6-flash' as ModelId);
+            fireEvent.keyDown(first.listbox, { key: 'ArrowUp' });
+            expect(first.onSelectNone).toHaveBeenCalledTimes(1);
+            expect(screen.getAllByRole('option')[0]).toHaveFocus();
+        });
+
+        it('ArrowUp from none wraps to the last model', () => {
+            const { onChange, listbox } = renderWithNone(null);
+            fireEvent.keyDown(listbox, { key: 'ArrowUp' });
+            expect(onChange).toHaveBeenCalledWith('claude-opus-5');
+        });
+
+        it('Home selects none', () => {
+            const { onSelectNone, listbox } = renderWithNone(
+                'claude-opus-5' as ModelId
+            );
+            fireEvent.keyDown(listbox, { key: 'Home' });
+            expect(onSelectNone).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('groups', () => {
+        const GROUPS = [
+            { label: 'Claude (Anthropic)', models: MODELS.slice(1) },
+            { label: 'Gemini (Google)', models: MODELS.slice(0, 1) },
+        ];
+
+        it('renders each group under a labelled heading in the given order', () => {
+            renderListbox('claude-opus-5' as ModelId, { groups: GROUPS });
+
+            const claude = screen.getByRole('group', {
+                name: 'Claude (Anthropic)',
+            });
+            expect(
+                within(claude)
+                    .getAllByRole('option')
+                    .map(o => o.getAttribute('aria-selected'))
+            ).toEqual(['false', 'true']);
+            expect(
+                within(
+                    screen.getByRole('group', { name: 'Gemini (Google)' })
+                ).getAllByRole('option')
+            ).toHaveLength(1);
+        });
+
+        it('keyboard navigation follows group order across group boundaries', () => {
+            const { onChange, listbox } = renderListbox(
+                'claude-opus-5' as ModelId,
+                { groups: GROUPS }
+            );
+            fireEvent.keyDown(listbox, { key: 'ArrowDown' });
+
+            expect(onChange).toHaveBeenCalledWith('gemini-3.6-flash');
+            expect(screen.getAllByRole('option')[2]).toHaveFocus();
+        });
     });
 });
