@@ -84,7 +84,8 @@ describe('공개 API 출시 플래그 (꺼짐) - /api/v1 전수', () => {
                 }
                 expect(authSpy).not.toHaveBeenCalled();
                 expect(dbSpy).not.toHaveBeenCalled();
-            });
+                // 라우트 모듈을 처음 불러오는 비용(코어·DB 모듈 그래프)이 병렬 부하에서 기본 5초를 넘길 수 있다.
+            }, 30_000);
         }
     );
 });

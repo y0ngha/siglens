@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import type {
     RevokeSiglensApiKeyState,
+    ReachableSiglensApiKeyErrorCode,
     SiglensApiKeyActionErrorCode,
 } from '@/entities/siglens-api-key/model';
 import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuth';
@@ -23,7 +24,7 @@ const ERROR_MESSAGE_KEY: Partial<Record<SiglensApiKeyActionErrorCode, string>> =
 const FALLBACK_MESSAGE_KEY = 'serverError';
 
 async function errorState(
-    code: Exclude<SiglensApiKeyActionErrorCode, 'not_available'>
+    code: ReachableSiglensApiKeyErrorCode
 ): Promise<RevokeSiglensApiKeyState> {
     const t = await getTranslations('entities.siglens-api-key.action');
     return {
@@ -46,6 +47,7 @@ export async function revokeSiglensApiKeyAction(
         return {
             status: 'error',
             code: 'not_available',
+            // UI에서 도달하지 않는 직접 호출 전용 거절이라 번역 키를 두지 않는다.
             message: 'API keys are not available.',
         };
     try {

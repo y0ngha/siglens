@@ -8,7 +8,7 @@ import { generateApiKey } from '@/entities/siglens-api-key/lib/apiKeyToken';
 import { validateKeyName } from '@/entities/siglens-api-key/lib/validateKeyName';
 import type {
     CreateSiglensApiKeyState,
-    SiglensApiKeyActionErrorCode,
+    ReachableSiglensApiKeyErrorCode,
 } from '@/entities/siglens-api-key/model';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
@@ -18,10 +18,7 @@ import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
 
 /** 에러 코드 → `entities.siglens-api-key.action` 메시지 키. */
-const ERROR_MESSAGE_KEY: Record<
-    Exclude<SiglensApiKeyActionErrorCode, 'not_available'>,
-    string
-> = {
+const ERROR_MESSAGE_KEY: Record<ReachableSiglensApiKeyErrorCode, string> = {
     unauthenticated: 'unauthenticated',
     email_not_verified: 'emailNotVerified',
     invalid_name: 'invalidName',
@@ -32,17 +29,14 @@ const ERROR_MESSAGE_KEY: Record<
 
 /** ICU 인자(`{v0}`)로 넘기는 상한 — 카탈로그 문구에 숫자를 적지 않는다(CONVENTIONS.md#I18-6). */
 const ERROR_MESSAGE_VALUES: Partial<
-    Record<
-        Exclude<SiglensApiKeyActionErrorCode, 'not_available'>,
-        { v0: number }
-    >
+    Record<ReachableSiglensApiKeyErrorCode, { v0: number }>
 > = {
     invalid_name: { v0: API_KEY_NAME_MAX_LENGTH },
     limit_reached: { v0: API_KEY_MAX_ACTIVE_PER_USER },
 };
 
 async function errorState(
-    code: Exclude<SiglensApiKeyActionErrorCode, 'not_available'>
+    code: ReachableSiglensApiKeyErrorCode
 ): Promise<CreateSiglensApiKeyState> {
     const t = await getTranslations('entities.siglens-api-key.action');
     return {
@@ -67,6 +61,7 @@ export async function createSiglensApiKeyAction(
         return {
             status: 'error',
             code: 'not_available',
+            // UI에서 도달하지 않는 직접 호출 전용 거절이라 번역 키를 두지 않는다.
             message: 'API keys are not available.',
         };
     try {

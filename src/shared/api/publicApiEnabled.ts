@@ -1,3 +1,6 @@
+/** 플래그를 켜는 값. 그 밖의 값(빈 문자열 포함)과 미설정은 꺼짐이다. */
+const TRUTHY_FLAG_VALUES: readonly string[] = ['true', '1', 'on', 'yes'];
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * 공개 Open API 출시 플래그 — 기본값 꺼짐(OFF).
@@ -36,7 +39,7 @@
  *  2. 운영 런타임 env(SSM/`--env-file`)와 CI build-arg를 같은 값(`true` 또는 비움)으로 맞춘다.
  *  3. 새 이미지를 빌드해 재배포한다(ISR 캐시가 남아 있으면 `/developers`가 하루 늦게 바뀔 수 있으니
  *     배포 뒤 `/developers`·sitemap·푸터를 확인한다).
- *  4. 켤 때만: 아래 README 섹션을 복원한다.
+ *  4. 켤 때만: 아래 README 섹션을 복원한다. (추적: #1053)
  *
  * README 복원: 출시 전 단계라 `README.md`·`README.ko.md`에서 공개 API 섹션("Open API and Agent Skill" /
  * "오픈 API와 에이전트 스킬": /developers·openapi.json·openapi.yaml·SKILL.md 링크와 `get_chart_data` 설명)을 뺐다.
@@ -47,5 +50,5 @@
 export function isPublicApiEnabled(): boolean {
     const raw = process.env.PUBLIC_API_ENABLED?.trim().toLowerCase();
     if (raw === undefined) return false;
-    return ['true', '1', 'on', 'yes'].includes(raw);
+    return TRUTHY_FLAG_VALUES.includes(raw);
 }
