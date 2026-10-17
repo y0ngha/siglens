@@ -63,6 +63,23 @@ const GAP_MARK: Record<Exclude<AxisGap, null>, string> = {
     noRecentReports: LABEL_MARK.insufficient,
 };
 
+/**
+ * 사유별 배지 문구 — 사유가 늘면 타입이 누락을 잡게 Record로 모은다. 키를 리터럴 호출로 두는 것은 `yarn i18n:extract`가
+ * 동적 키를 못 읽어 메시지를 지우기 때문이다.
+ */
+const GAP_LABEL: Record<
+    Exclude<AxisGap, null>,
+    (
+        tLabel: (
+            key: 'collecting' | 'unavailable' | 'noRecentReports'
+        ) => string
+    ) => string
+> = {
+    collecting: tLabel => tLabel('collecting'),
+    unavailable: tLabel => tLabel('unavailable'),
+    noRecentReports: tLabel => tLabel('noRecentReports'),
+};
+
 function LabelBadge({
     label,
     gap = null,
@@ -83,10 +100,7 @@ function LabelBadge({
             <span aria-hidden="true">
                 {gap === null ? LABEL_MARK[label] : GAP_MARK[gap]}
             </span>
-            {gap === 'collecting' && tLabel('collecting')}
-            {gap === 'unavailable' && tLabel('unavailable')}
-            {gap === 'noRecentReports' && tLabel('noRecentReports')}
-            {gap === null && tLabel(LABEL_KEY[label])}
+            {gap === null ? tLabel(LABEL_KEY[label]) : GAP_LABEL[gap](tLabel)}
         </span>
     );
 }
