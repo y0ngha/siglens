@@ -4340,7 +4340,7 @@
                 "insiderNetBuy": "Net buying of {amount} in the last {days} days",
                 "insiderNetSell": "Net selling of {amount} in the last {days} days",
                 "insiderProposedSales": "Proposed sale notices (Form 144): {count} · {amount}",
-                "largeHolderCounts": "{d} Schedule 13D · {g} Schedule 13G filings (last {days} days)",
+                "largeHolderCounts": "13D positions {d} · filings {df} · 13G positions {g} · filings {gf} (last {days} days)",
                 "netSharesOutstanding": "Net change in institutional shares {pct} (of shares outstanding)",
                 "netSharesPrior": "Net change in institutional shares {pct} (vs prior-quarter holdings)",
                 "newExited": "{added} new positions · {exited} full exits",
@@ -4355,7 +4355,10 @@
                 "krInsiderNetShares": "Net change {shares} shares",
                 "krInsiderNetPct": "Net change in holding ratio {pct}",
                 "krTradingPlans": "{count} trading-plan reports",
-                "insiderProposedSalePct": "Shares to be sold {pct} (of shares outstanding)"
+                "insiderProposedSalePct": "Shares to be sold {pct} (of shares outstanding)",
+                "krMajorHolderNoChange": "No material change in holdings (largest change per reporter {pct} pp)",
+                "krInsiderNoChange": "No material change in holdings",
+                "dilutionNoneOnRecord": "No offering or registration filings on record"
             },
             "filter": {
                 "all": "All {count}",
@@ -4437,7 +4440,10 @@
                 "noData": "No data — no insider trades have been reported.",
                 "noRecent": "No insider buys or sells were reported in the last {days} days.",
                 "noTrades": "There are no buy or sell filings to list.",
+                "noTradesInWindow": "No buy or sell filings in the last {days} days.",
                 "omittedOther": "{count} other filings, such as gifts and option exercises, are left out of the table.",
+                "outsideWindowNote": "These trades are not counted in the summary above.",
+                "outsideWindowTitle": "Outside the scoring window (before {from})",
                 "sell": "Sell",
                 "sells": "Sells",
                 "summary": "{count} trades · {people} insiders · {amount}",
@@ -4458,7 +4464,9 @@
                 "insufficient": "Not enough data",
                 "neutral": "Neutral",
                 "strongBearish": "Strongly bearish",
-                "strongBullish": "Strongly bullish"
+                "strongBullish": "Strongly bullish",
+                "unavailable": "Temporarily unavailable",
+                "noRecentReports": "No recent reports"
             },
             "largeHolders": {
                 "colDate": "Filed",
@@ -4471,9 +4479,11 @@
                 "kindOther": "Other",
                 "noData": "No data — no 5% large-holder filings were found.",
                 "subtitle": "Recent filings by shareholders who own more than 5% of the company.",
+                "temporarilyUnavailable": "Large-holder filings could not be loaded right now. Please check again shortly.",
                 "title": "5%+ Large Holders (13D · 13G)",
                 "unavailable": "Could not load large-holder filings. Please check again shortly.",
-                "unknownFiler": "Unknown filer"
+                "unknownFiler": "Unknown filer",
+                "window": "The score counts only filings from the last {days} days ({from} to {to}). Older filings are listed too."
             },
             "options": {
                 "call": "Calls",
@@ -4488,9 +4498,11 @@
                 "axisCollecting": "Data is still being collected, so this axis is not in the score yet.",
                 "axisInsufficient": "Not enough data, so this axis is left out of the score.",
                 "axisScore": "Score {score}",
+                "axisUnavailable": "This data could not be loaded right now. Please check again shortly.",
                 "compositeCaption": "Overall score from {count} {count, plural, one {axis} other {axes}} (-100 to +100)",
                 "compositeInsufficient": "There is not enough data to calculate an overall score.",
-                "title": "Flow Score"
+                "title": "Flow Score",
+                "axisNoRecentReports": "No reports in the last {days} days (latest received {date})"
             },
             "short": {
                 "change": "Vs previous settlement",

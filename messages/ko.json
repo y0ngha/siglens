@@ -4461,6 +4461,7 @@
                 "daysToCover": "상환일수 {days}일",
                 "dilutionFilings": "최근 {days}일 증자·등록 공시 {count}건",
                 "dilutionIssuance": "ATM {atm}건 · 공모 {marketed}건",
+                "dilutionNoneOnRecord": "확인된 증자·등록 공시 없음",
                 "ftdPct": "결제 불이행 최대 {pct} (발행주식 대비)",
                 "holders": "보유 기관 {count}곳 (직전 분기 대비 {change})",
                 "holdersOnly": "보유 기관 {count}곳",
@@ -4472,11 +4473,13 @@
                 "insiderProposedSales": "매도 예정 신고(Form 144) {count}건 · {amount}",
                 "krInsiderNetPct": "보유 비율 순증감 {pct}",
                 "krInsiderNetShares": "순증감 {shares}주",
+                "krInsiderNoChange": "유의미한 보유 변동 없음",
                 "krInsiderReports": "최근 {days}일 소유 보고 {reports}건 · 보고자 {reporters}명",
                 "krMajorHolderDetailed": "일반 보고 {count}건",
+                "krMajorHolderNoChange": "유의미한 지분 변동 없음 (보고자별 최대 {pct}%p)",
                 "krMajorHolderReports": "최근 {days}일 대량보유 보고 {reports}건 · 보고자 {reporters}명",
                 "krTradingPlans": "거래계획 보고서 {count}건",
-                "largeHolderCounts": "13D {d}건 · 13G {g}건 (최근 {days}일)",
+                "largeHolderCounts": "13D 포지션 {d}건 · 신고 {df}회 · 13G 포지션 {g}건 · 신고 {gf}회 (최근 {days}일)",
                 "netSharesOutstanding": "기관 보유 주식 순변화 {pct} (발행주식 대비)",
                 "netSharesPrior": "기관 보유 주식 순변화 {pct} (직전 분기 보유량 대비)",
                 "newExited": "신규 진입 {added}곳 · 완전 청산 {exited}곳",
@@ -4566,7 +4569,10 @@
                 "noData": "데이터 없음 — 신고된 내부자 거래가 없어요.",
                 "noRecent": "최근 {days}일 동안 내부자 매수·매도 신고가 없어요.",
                 "noTrades": "표에 담을 매수·매도 신고가 없어요.",
+                "noTradesInWindow": "최근 {days}일 안의 매수·매도 신고는 없어요.",
                 "omittedOther": "증여·옵션 행사 등 기타 신고 {count}건은 표에서 뺐어요.",
+                "outsideWindowNote": "위 요약의 건수·금액에는 들어가지 않은 거래예요.",
+                "outsideWindowTitle": "집계 기간 밖 ({from} 이전)",
                 "sell": "매도",
                 "sells": "매도",
                 "summary": "{count}건 · {people}명 · {amount}",
@@ -4642,8 +4648,10 @@
                 "collecting": "수집 중",
                 "insufficient": "데이터 부족",
                 "neutral": "중립",
+                "noRecentReports": "최근 공시 없음",
                 "strongBearish": "강한 약세 신호",
-                "strongBullish": "강한 강세 신호"
+                "strongBullish": "강한 강세 신호",
+                "unavailable": "일시 조회 불가"
             },
             "largeHolders": {
                 "colDate": "공시일",
@@ -4656,9 +4664,11 @@
                 "kindOther": "기타",
                 "noData": "데이터 없음 — 접수된 5% 대량보유 공시가 없어요.",
                 "subtitle": "한 회사 지분을 5% 넘게 가진 주주가 낸 최근 공시예요.",
+                "temporarilyUnavailable": "대량보유 공시를 일시적으로 불러오지 못했어요. 잠시 후 다시 확인해 주세요.",
                 "title": "5% 이상 대량보유 (13D·13G)",
                 "unavailable": "대량보유 공시를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.",
-                "unknownFiler": "제출자 미상"
+                "unknownFiler": "제출자 미상",
+                "window": "점수는 최근 {days}일({from} ~ {to}) 공시만 반영해요. 그보다 오래된 공시도 목록에 함께 보여 줘요."
             },
             "options": {
                 "call": "콜",
@@ -4672,7 +4682,9 @@
             "scorecard": {
                 "axisCollecting": "데이터를 모으는 중이라 아직 점수에 반영하지 않았어요.",
                 "axisInsufficient": "데이터가 부족해 점수에 반영하지 않았어요.",
+                "axisNoRecentReports": "최근 {days}일 공시 없음 (최신 접수일 {date})",
                 "axisScore": "{score}점",
+                "axisUnavailable": "데이터를 일시적으로 불러오지 못했어요. 잠시 후 다시 확인해 주세요.",
                 "compositeCaption": "{count}개 축 기준 종합 점수 (-100 ~ +100)",
                 "compositeInsufficient": "데이터가 부족해 종합 점수를 계산하지 못했어요.",
                 "title": "수급 점수"

@@ -4340,7 +4340,7 @@
                 "insiderNetBuy": "近{days}天净买入 {amount}",
                 "insiderNetSell": "近{days}天净卖出 {amount}",
                 "insiderProposedSales": "拟出售申报(Form 144) {count}笔 · {amount}",
-                "largeHolderCounts": "13D {d}份 · 13G {g}份(近{days}天)",
+                "largeHolderCounts": "13D 持仓{d}个 · 申报{df}份 · 13G 持仓{g}个 · 申报{gf}份(近{days}天)",
                 "netSharesOutstanding": "机构持股净变化 {pct}(占总股本)",
                 "netSharesPrior": "机构持股净变化 {pct}(较上季度持仓量)",
                 "newExited": "新进 {added}家 · 清仓 {exited}家",
@@ -4355,7 +4355,10 @@
                 "krInsiderNetShares": "净增减 {shares}股",
                 "krInsiderNetPct": "持股比例净增减 {pct}",
                 "krTradingPlans": "交易计划报告{count}份",
-                "insiderProposedSalePct": "拟出售股份 {pct}(占已发行股份)"
+                "insiderProposedSalePct": "拟出售股份 {pct}(占已发行股份)",
+                "krMajorHolderNoChange": "持股无显著变化(单个报告人最大 {pct}个百分点)",
+                "krInsiderNoChange": "持股无显著变化",
+                "dilutionNoneOnRecord": "无已记录的增发或注册申报"
             },
             "filter": {
                 "all": "全部 {count}",
@@ -4437,7 +4440,10 @@
                 "noData": "暂无数据 — 没有内部人交易申报。",
                 "noRecent": "最近{days}天没有内部人买卖申报。",
                 "noTrades": "没有可列出的买卖申报。",
+                "noTradesInWindow": "最近{days}天内没有买卖申报。",
                 "omittedOther": "赠与、期权行权等其他申报{count}笔未列入表格。",
+                "outsideWindowNote": "这些交易不计入上方汇总的笔数和金额。",
+                "outsideWindowTitle": "统计期间外({from}之前)",
                 "sell": "卖出",
                 "sells": "卖出",
                 "summary": "{count}笔 · {people}人 · {amount}",
@@ -4458,7 +4464,9 @@
                 "insufficient": "数据不足",
                 "neutral": "中性",
                 "strongBearish": "强烈看跌",
-                "strongBullish": "强烈看涨"
+                "strongBullish": "强烈看涨",
+                "unavailable": "暂时无法获取",
+                "noRecentReports": "近期无报告"
             },
             "largeHolders": {
                 "colDate": "披露日",
@@ -4471,9 +4479,11 @@
                 "kindOther": "其他",
                 "noData": "暂无数据 — 没有5%大额持股披露。",
                 "subtitle": "持有公司5%以上股份的股东最近提交的披露。",
+                "temporarilyUnavailable": "暂时无法加载大额持股披露，请稍后再查看。",
                 "title": "5%以上大额持股(13D·13G)",
                 "unavailable": "无法加载大额持股披露，请稍后再查看。",
-                "unknownFiler": "提交人未知"
+                "unknownFiler": "提交人未知",
+                "window": "评分只计入近{days}天({from}至{to})的申报，更早的申报也一并列出。"
             },
             "options": {
                 "call": "看涨",
@@ -4488,9 +4498,11 @@
                 "axisCollecting": "数据收集中，暂未计入评分。",
                 "axisInsufficient": "数据不足，未计入评分。",
                 "axisScore": "{score}分",
+                "axisUnavailable": "暂时无法加载数据，请稍后再查看。",
                 "compositeCaption": "基于{count}个维度的综合评分(-100 ~ +100)",
                 "compositeInsufficient": "数据不足，无法计算综合评分。",
-                "title": "资金流向评分"
+                "title": "资金流向评分",
+                "axisNoRecentReports": "近{days}天无报告(最新受理日 {date})"
             },
             "short": {
                 "change": "较上一结算日",

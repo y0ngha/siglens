@@ -4340,7 +4340,7 @@
                 "insiderNetBuy": "直近{days}日の純買い {amount}",
                 "insiderNetSell": "直近{days}日の純売り {amount}",
                 "insiderProposedSales": "売却予定届(Form 144) {count}件 · {amount}",
-                "largeHolderCounts": "13D {d}件 · 13G {g}件(直近{days}日)",
+                "largeHolderCounts": "13D ポジション{d}件・届出{df}回 · 13G ポジション{g}件・届出{gf}回(直近{days}日)",
                 "netSharesOutstanding": "機関の保有株数の純増減 {pct}(発行済株式比)",
                 "netSharesPrior": "機関の保有株数の純増減 {pct}(前四半期の保有量比)",
                 "newExited": "新規 {added}社 · 全売却 {exited}社",
@@ -4355,7 +4355,10 @@
                 "krInsiderNetShares": "純増減 {shares}株",
                 "krInsiderNetPct": "保有比率の純増減 {pct}",
                 "krTradingPlans": "取引計画報告書{count}件",
-                "insiderProposedSalePct": "売却予定株式 {pct}(発行済株式比)"
+                "insiderProposedSalePct": "売却予定株式 {pct}(発行済株式比)",
+                "krMajorHolderNoChange": "有意な持分変動なし(報告者別の最大 {pct}%ポイント)",
+                "krInsiderNoChange": "有意な保有変動なし",
+                "dilutionNoneOnRecord": "確認された増資・登録届出なし"
             },
             "filter": {
                 "all": "すべて {count}",
@@ -4437,7 +4440,10 @@
                 "noData": "データなし — 届け出られたインサイダー取引はありません。",
                 "noRecent": "直近{days}日間に届け出られたインサイダーの売買はありません。",
                 "noTrades": "表に載せる売買の届け出がありません。",
+                "noTradesInWindow": "直近{days}日の売買の届け出はありません。",
                 "omittedOther": "贈与・オプション行使などのその他の届け出{count}件は表から除いています。",
+                "outsideWindowNote": "上の集計の件数・金額には含まれない取引です。",
+                "outsideWindowTitle": "集計期間外({from}より前)",
                 "sell": "売り",
                 "sells": "売り",
                 "summary": "{count}件 · {people}人 · {amount}",
@@ -4458,7 +4464,9 @@
                 "insufficient": "データ不足",
                 "neutral": "中立",
                 "strongBearish": "強い弱気",
-                "strongBullish": "強い強気"
+                "strongBullish": "強い強気",
+                "unavailable": "一時取得不可",
+                "noRecentReports": "直近の報告なし"
             },
             "largeHolders": {
                 "colDate": "提出日",
@@ -4471,9 +4479,11 @@
                 "kindOther": "その他",
                 "noData": "データなし — 提出された5%大量保有の開示はありません。",
                 "subtitle": "会社の株式を5%超保有する株主が提出した最近の開示です。",
+                "temporarilyUnavailable": "大量保有の開示を一時的に読み込めませんでした。しばらくしてからもう一度ご確認ください。",
                 "title": "5%以上の大量保有(13D・13G)",
                 "unavailable": "大量保有の開示を読み込めませんでした。しばらくしてからもう一度ご確認ください。",
-                "unknownFiler": "提出者不明"
+                "unknownFiler": "提出者不明",
+                "window": "スコアには直近{days}日({from}〜{to})の届出だけを反映します。それより古い届出も一覧に表示しています。"
             },
             "options": {
                 "call": "コール",
@@ -4488,9 +4498,11 @@
                 "axisCollecting": "データを収集中のため、まだスコアに反映していません。",
                 "axisInsufficient": "データが足りないため、スコアには反映していません。",
                 "axisScore": "{score}点",
+                "axisUnavailable": "データを一時的に読み込めませんでした。しばらくしてからもう一度ご確認ください。",
                 "compositeCaption": "{count}軸に基づく総合スコア(-100 ~ +100)",
                 "compositeInsufficient": "データが足りず、総合スコアを計算できませんでした。",
-                "title": "需給スコア"
+                "title": "需給スコア",
+                "axisNoRecentReports": "直近{days}日の報告なし(最新受付日 {date})"
             },
             "short": {
                 "change": "前回の決済日比",
