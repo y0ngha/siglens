@@ -11,7 +11,10 @@ import {
     resolveCollectingArms,
     type CollectingArms,
 } from '@/entities/investor-flows/lib/investorFlowsReadiness';
-import { collectingAxes } from '../utils/collecting';
+import {
+    collectingAxes,
+    temporarilyUnavailableAxes,
+} from '../utils/collecting';
 import {
     evaluate,
     makeEmptySnapshot,
@@ -102,6 +105,38 @@ const shortSection = (): HTMLElement =>
     screen
         .getByRole('heading', { level: 2, name: /^공매도/ })
         .closest('section') as HTMLElement;
+
+describe('temporarilyUnavailableAxes', () => {
+    it('maps degraded parts to the axes they starve (13D/G → large holders, float → short), without duplicates', () => {
+        expect(temporarilyUnavailableAxes(undefined, true)).toEqual([]);
+        expect(
+            temporarilyUnavailableAxes(['largeHolders', 'float'], true)
+        ).toEqual(['largeHolders', 'short']);
+    });
+
+    it('does not blame the float outage for a short axis that has no FINRA rows (FINRA off or empty for the symbol)', () => {
+        expect(
+            temporarilyUnavailableAxes(['largeHolders', 'float'], false)
+        ).toEqual(['largeHolders']);
+    });
+});
+
+describe('InvestorFlowsContent with a snapshot degraded by a transient FMP error', () => {
+    it('says "temporarily unavailable" on the large-holder axis and section instead of "no data"', () => {
+        const snapshot = {
+            ...makeSnapshot({ largeHolders: null }),
+            degraded: ['largeHolders'] as const,
+        };
+        renderContent(READY, snapshot);
+        const card = screen
+            .getByRole('heading', { level: 3, name: /대량보유/ })
+            .closest('li') as HTMLElement;
+        expect(within(card).getByText('일시 조회 불가')).toBeInTheDocument();
+        expect(
+            screen.getByText(/대량보유 공시를 일시적으로 불러오지 못했어요/)
+        ).toBeInTheDocument();
+    });
+});
 
 describe('collectingAxes', () => {
     it('수집 중인 축 이름만 낸다(증자 희석 축은 증자 공시 갈래를 따른다)', () => {

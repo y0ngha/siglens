@@ -14,7 +14,7 @@ import {
 } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip, type FlowTerm } from '../investorFlowsTooltips';
-import { buildAxisEvidence } from '../utils/axisEvidence';
+import { buildAxisEvidence, krNoReportsInWindow } from '../utils/axisEvidence';
 import { axisTitleKey } from '../utils/axisKeys';
 import { formatSignedDecimal } from '../utils/flowFormat';
 import {
@@ -50,13 +50,26 @@ function axisTerm(
     );
 }
 
+/**
+ * 점수가 없는 축을 "데이터 부족"과 달리 말할 사유 — 초기 수집 중, FMP 일시 오류로 이번에만 못 불러옴, 또는 (한국) 보고는
+ * 있는데 모두 채점 창 밖이라 최근 공시가 없음.
+ */
+type AxisGap = 'collecting' | 'unavailable' | 'noRecentReports' | null;
+
+/** 사유별 배지 기호 — 수집 중·일시 오류는 아직 모르는 상태라 말줄임표, 최근 공시 없음은 점수 없음(–) 그대로다. */
+const GAP_MARK: Record<Exclude<AxisGap, null>, string> = {
+    collecting: COLLECTING_MARK,
+    unavailable: COLLECTING_MARK,
+    noRecentReports: LABEL_MARK.insufficient,
+};
+
 function LabelBadge({
     label,
-    collecting = false,
+    gap = null,
 }: {
     readonly label: InvestorFlowsLabel;
-    /** 초기 수집 중인 축 — "데이터 부족" 대신 "수집 중"을 말한다(중립도, 부족도 아니다). */
-    readonly collecting?: boolean;
+    /** "데이터 부족" 대신 말할 사유(중립도, 부족도 아니다). */
+    readonly gap?: AxisGap;
 }) {
     // 동적 키는 하위 네임스페이스 번역자로만 부른다 — 파일 전체 네임스페이스가 클라이언트에 실리지 않게.
     const tLabel = useTranslations('widgets.investor-flows.label');
@@ -68,9 +81,12 @@ function LabelBadge({
             )}
         >
             <span aria-hidden="true">
-                {collecting ? COLLECTING_MARK : LABEL_MARK[label]}
+                {gap === null ? LABEL_MARK[label] : GAP_MARK[gap]}
             </span>
-            {collecting ? tLabel('collecting') : tLabel(LABEL_KEY[label])}
+            {gap === 'collecting' && tLabel('collecting')}
+            {gap === 'unavailable' && tLabel('unavailable')}
+            {gap === 'noRecentReports' && tLabel('noRecentReports')}
+            {gap === null && tLabel(LABEL_KEY[label])}
         </span>
     );
 }
@@ -78,11 +94,11 @@ function LabelBadge({
 function AxisCard({
     axis,
     scorecard,
-    collecting,
+    gap,
 }: {
     readonly axis: InvestorFlowsAxisId;
     readonly scorecard: InvestorFlowsScorecard;
-    readonly collecting: boolean;
+    readonly gap: AxisGap;
 }) {
     const t = useTranslations('widgets.investor-flows');
     const tAxis = useTranslations('widgets.investor-flows.axis');
@@ -90,6 +106,10 @@ function AxisCard({
     const locale = useResolvedLocale();
     const data = scorecard[axis];
     const lines = buildAxisEvidence(scorecard, axis, locale);
+    // 수집 중·일시 오류가 먼저다 — 그때는 창 밖 보고만 보인다는 것도 아직 확정이 아니다.
+    const noReports =
+        gap === null ? krNoReportsInWindow(scorecard, axis, locale) : null;
+    const shownGap: AxisGap = noReports === null ? gap : 'noRecentReports';
     return (
         <li className={cn(SURFACE_NESTED, 'p-4')}>
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -97,7 +117,7 @@ function AxisCard({
                     {tAxis(axisTitleKey(axis, scorecard.market))}
                     <FlowTooltip term={axisTerm(axis, scorecard.market)} />
                 </h3>
-                <LabelBadge label={data.label} collecting={collecting} />
+                <LabelBadge label={data.label} gap={shownGap} />
             </div>
             {data.score !== null && (
                 <p className="mt-2 text-sm text-secondary-200 tabular-nums">
@@ -108,9 +128,14 @@ function AxisCard({
             )}
             {data.sufficiency === 'insufficient' ? (
                 <p className="mt-2 text-sm text-secondary-400">
-                    {collecting
-                        ? t('scorecard.axisCollecting')
-                        : t('scorecard.axisInsufficient')}
+                    {gap === 'collecting' && t('scorecard.axisCollecting')}
+                    {gap === 'unavailable' && t('scorecard.axisUnavailable')}
+                    {noReports !== null &&
+                        t('scorecard.axisNoRecentReports', {
+                            days: noReports.days,
+                            date: noReports.latestReceiptDate,
+                        })}
+                    {shownGap === null && t('scorecard.axisInsufficient')}
                 </p>
             ) : (
                 <ul className="mt-2 space-y-1 text-sm text-secondary-300">
@@ -130,6 +155,11 @@ interface ScorecardCardProps {
      * 매겨진 축은 목록에 있어도 영향이 없다(`insufficient`일 때만 바뀐다).
      */
     readonly collectingAxes?: readonly InvestorFlowsAxisId[];
+    /**
+     * FMP 일시 오류로 이번에만 원천이 빈 축(`snapshot.degraded`). `insufficient`일 때만 "데이터 부족" 대신 "일시적으로 불러오지
+     * 못했어요"로 표시한다. 수집 중(`collectingAxes`)이 먼저다 — 그쪽은 이 종목의 원천 자체가 아직 비어 있다는 뜻이다.
+     */
+    readonly unavailableAxes?: readonly InvestorFlowsAxisId[];
     /** 그릴 축(순서대로). 기본은 다섯 축 전부 — 한국 점수표는 DART 원천이 있는 두 축만 넘긴다. */
     readonly axes?: readonly InvestorFlowsAxisId[];
     /** 축 목록 아래 안내 한 줄(한국: 제공하지 않는 축·기관·외국인 순매수 미제공). */
@@ -145,11 +175,13 @@ interface ScorecardCardProps {
  *
  * 점수·라벨은 core의 `evaluateInvestorFlows` 결과를 그대로 옮긴다(화면이 다시 계산하지 않는다). 방향은
  * 색 + 기호(▲▼■) + 글자 라벨 세 겹으로 전하고, 데이터가 부족한 축은 "데이터 부족"이라고 말한다(중립이 아니다). 초기 수집이
- * 끝나지 않아 비어 있는 축(`collectingAxes`)은 "수집 중"이라고 말한다.
+ * 끝나지 않아 비어 있는 축(`collectingAxes`)은 "수집 중"이라고 말한다. 한국 축이 보고는 있는데 모두 채점 창 밖이면(core
+ * `krMetrics.reports === 0`·`latestReceiptDate`) "데이터 부족"이 아니라 "최근 N일 공시 없음(최신 접수일 …)"이라고 말한다.
  */
 export function ScorecardCard({
     scorecard,
     collectingAxes = [],
+    unavailableAxes = [],
     axes = INVESTOR_FLOWS_AXES,
     note,
 }: ScorecardCardProps) {
@@ -157,6 +189,12 @@ export function ScorecardCard({
     const locale = useResolvedLocale();
     const { composite } = scorecard;
     const collectingSet = new Set(collectingAxes);
+    const unavailableSet = new Set(unavailableAxes);
+    const gapOf = (axis: InvestorFlowsAxisId): AxisGap => {
+        if (scorecard[axis].sufficiency !== 'insufficient') return null;
+        if (collectingSet.has(axis)) return 'collecting';
+        return unavailableSet.has(axis) ? 'unavailable' : null;
+    };
     return (
         <section
             aria-labelledby={HEADING_ID}
@@ -197,10 +235,7 @@ export function ScorecardCard({
                         key={axis}
                         axis={axis}
                         scorecard={scorecard}
-                        collecting={
-                            collectingSet.has(axis) &&
-                            scorecard[axis].sufficiency === 'insufficient'
-                        }
+                        gap={gapOf(axis)}
                     />
                 ))}
             </ul>

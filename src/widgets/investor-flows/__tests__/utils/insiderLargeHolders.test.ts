@@ -37,8 +37,41 @@ describe('buildInsiderTable', () => {
     it('빈 입력은 빈 표다', () => {
         expect(buildInsiderTable([])).toEqual({
             rows: [],
+            outsideWindowRows: [],
             omittedOtherCount: 0,
         });
+    });
+
+    it('점수 창 밖(창 시작 전)의 거래는 outsideWindowRows로 나눈다 — 창 양 끝은 안이다', () => {
+        const table = buildInsiderTable(
+            [
+                makeTransaction({ date: '2026-10-16' }),
+                makeTransaction({ date: '2026-07-18' }),
+                makeTransaction({ date: '2026-07-17' }),
+                makeTransaction({ date: '2026-04-15', type: 'sell' }),
+            ],
+            { days: 90, from: '2026-07-18', to: '2026-10-16' }
+        );
+        expect(table.rows.map(r => r.date)).toEqual([
+            '2026-10-16',
+            '2026-07-18',
+        ]);
+        expect(table.outsideWindowRows.map(r => r.date)).toEqual([
+            '2026-07-17',
+            '2026-04-15',
+        ]);
+    });
+
+    it('창을 모르면(null·끝 null) 나누지 않는다', () => {
+        const txs = [
+            makeTransaction({ date: '2026-10-16' }),
+            makeTransaction({ date: '2026-01-02' }),
+        ];
+        expect(buildInsiderTable(txs).outsideWindowRows).toEqual([]);
+        expect(
+            buildInsiderTable(txs, { days: 90, from: null, to: null })
+                .outsideWindowRows
+        ).toEqual([]);
     });
 });
 

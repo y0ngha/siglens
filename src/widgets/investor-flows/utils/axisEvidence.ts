@@ -1,6 +1,9 @@
 import type {
     InvestorFlowsAxisId,
     InvestorFlowsScorecard,
+    InvestorFlowsSignal,
+    KrInsiderMetrics,
+    KrMajorHolderMetrics,
 } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
 import {
@@ -20,6 +23,79 @@ const PROPOSED_SALE_PCT_DIGITS = 3;
 export interface AxisEvidenceLine {
     id: string;
     values: Record<string, string>;
+}
+
+/**
+ * 채점된(`sufficient`) 한국 축에 방향 신호가 하나도 없다 — core가 "보고는 창 안에 있는데 유의미한 변동이 없다"를 중립
+ * 측정값(score 0, `kr_*_no_material_change` 또는 일상적 대량 신고 노트)으로 준 경우다. 데이터 부족이 아니므로 "변동 없음"을
+ * 근거 줄로 밝힌다. 방향을 다시 판정하지 않고 core 신호의 `direction`만 읽는다.
+ */
+function isMeasuredNoChange(signals: readonly InvestorFlowsSignal[]): boolean {
+    return signals.every(signal => signal.direction === 'neutral');
+}
+
+/** 한국 축이 "창 안 보고 없음"으로 비었을 때 보여 줄 창 길이와 최신 접수일. */
+export interface NoReportsInWindow {
+    readonly days: string;
+    readonly latestReceiptDate: string;
+}
+
+/**
+ * 한국 대량보유·임원 축이 `insufficient`인데 core가 `krMetrics`를 `reports === 0`과 `latestReceiptDate`로 준 경우 — 쓸 수
+ * 있는 보고가 채점 창(최근 N일) 밖에만 있다. "데이터 부족"이 아니라 "최근 N일 공시 없음(최신 접수일 …)"으로 말해야 해서
+ * 창 길이와 접수일을 돌려준다. 그 밖의 경우(미국 점수표, 채점된 축, 보고가 아예 없는 축)는 `null`이다.
+ */
+export function krNoReportsInWindow(
+    scorecard: InvestorFlowsScorecard,
+    axis: InvestorFlowsAxisId,
+    locale: Locale
+): NoReportsInWindow | null {
+    if (scorecard.market !== 'kr') return null;
+    if (scorecard[axis].sufficiency !== 'insufficient') return null;
+    const krWindow = krAxisWindow(scorecard, axis);
+    const latestReceiptDate = krWindow?.metrics?.latestReceiptDate ?? null;
+    if (
+        krWindow === null ||
+        krWindow.metrics?.reports !== 0 ||
+        latestReceiptDate === null
+    ) {
+        return null;
+    }
+    return { days: formatInteger(krWindow.days, locale), latestReceiptDate };
+}
+
+/** DART 원천이 있는 한국 축의 `krMetrics`(창 안 보고 수·최신 접수일)와 채점 창 길이. */
+interface KrAxisWindow {
+    readonly metrics:
+        | Pick<
+              KrMajorHolderMetrics | KrInsiderMetrics,
+              'reports' | 'latestReceiptDate'
+          >
+        | undefined;
+    readonly days: number;
+}
+
+/** 한국 점수표에서 DART 원천이 있는 두 축만 창을 돌려준다. 그 밖의 축은 `null`이다. */
+function krAxisWindow(
+    scorecard: InvestorFlowsScorecard,
+    axis: InvestorFlowsAxisId
+): KrAxisWindow | null {
+    switch (axis) {
+        case 'largeHolders':
+            return {
+                metrics: scorecard.largeHolders.krMetrics,
+                days: scorecard.freshness.largeHolderWindow.days,
+            };
+        case 'insider':
+            return {
+                metrics: scorecard.insider.krMetrics,
+                days: scorecard.freshness.insiderWindow.days,
+            };
+        case 'institutional':
+        case 'short':
+        case 'dilution':
+            return null;
+    }
 }
 
 function institutionalLines(
@@ -104,6 +180,9 @@ function krInsiderLines(
                 reporters: formatInteger(m.reporters, locale),
             },
         },
+        ...(isMeasuredNoChange(scorecard.insider.signals)
+            ? [{ id: 'krInsiderNoChange', values: {} }]
+            : []),
         {
             id: 'krInsiderNetShares',
             values: { shares: formatSignedCompact(m.netSharesChange, locale) },
@@ -150,6 +229,17 @@ function krLargeHolderLines(
                 reporters: formatInteger(m.reporters, locale),
             },
         },
+        ...(isMeasuredNoChange(scorecard.largeHolders.signals) &&
+        m.maxAbsRatioChangePct !== null
+            ? [
+                  {
+                      id: 'krMajorHolderNoChange',
+                      values: {
+                          pct: formatDecimal(m.maxAbsRatioChangePct, locale, 2),
+                      },
+                  },
+              ]
+            : []),
         ...(m.detailedReports === 0
             ? []
             : [
@@ -236,12 +326,16 @@ function largeHolderLines(
     if (scorecard.market === 'kr') return krLargeHolderLines(scorecard, locale);
     const m = scorecard.largeHolders.metrics;
     if (m === null) return [];
+    // 포지션(`events*`: 신고인별 정정 접기·공동 신고 병합 후)과 신고(`filings*`: 원본·정정 건수)는 다르다 — 한 보유자의
+    // 13D/A 일곱 건은 포지션 1·신고 7이다. 신고 수를 보유자 수로 읽지 않게 둘을 함께 보인다.
     return [
         {
             id: 'largeHolderCounts',
             values: {
-                d: formatInteger(m.filings13d, locale),
-                g: formatInteger(m.filings13g, locale),
+                d: formatInteger(m.events13d, locale),
+                df: formatInteger(m.filings13d, locale),
+                g: formatInteger(m.events13g, locale),
+                gf: formatInteger(m.filings13g, locale),
                 days: formatInteger(
                     scorecard.freshness.largeHolderWindow.days,
                     locale
@@ -342,6 +436,10 @@ function dilutionLines(
 ): AxisEvidenceLine[] {
     const m = scorecard.dilution.metrics;
     if (m === null) return [];
+    // 조회 기간 전체에 공시가 하나도 없다(core `noFilingsOnRecord`) — 채점된 중립이다. "0건" 대신 "공시 없음"으로 말한다.
+    if (scorecard.dilution.noFilingsOnRecord) {
+        return [{ id: 'dilutionNoneOnRecord', values: {} }];
+    }
     return [
         {
             id: 'dilutionFilings',

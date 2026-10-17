@@ -3,6 +3,7 @@ import type {
     InsiderMetrics,
     InsiderTransaction,
     InvestorFlowsScorecard,
+    InvestorFlowsWindow,
     ProposedSale,
 } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -30,11 +31,15 @@ interface InsiderSectionProps {
 interface InsiderBodyProps {
     readonly transactions: readonly InsiderTransaction[];
     readonly metrics: InsiderMetrics | null;
-    readonly windowDays: number;
+    readonly scoringWindow: InvestorFlowsWindow;
 }
 
 /** 데이터 없음 → 최근 창 거래 없음 → 요약 카드 + 거래 목록 순으로 첫 해당 분기만 그린다. */
-function InsiderBody({ transactions, metrics, windowDays }: InsiderBodyProps) {
+function InsiderBody({
+    transactions,
+    metrics,
+    scoringWindow,
+}: InsiderBodyProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     if (transactions.length === 0) {
@@ -47,13 +52,16 @@ function InsiderBody({ transactions, metrics, windowDays }: InsiderBodyProps) {
             {metrics === null ? (
                 <p className="text-sm text-secondary-300">
                     {t('insider.noRecent', {
-                        days: formatInteger(windowDays, locale),
+                        days: formatInteger(scoringWindow.days, locale),
                     })}
                 </p>
             ) : (
                 <InsiderSummaryCards metrics={metrics} />
             )}
-            <InsiderTradeList table={buildInsiderTable(transactions)} />
+            <InsiderTradeList
+                table={buildInsiderTable(transactions, scoringWindow)}
+                scoringWindow={scoringWindow}
+            />
         </>
     );
 }
@@ -97,7 +105,7 @@ export function InsiderSection({
             <InsiderBody
                 transactions={transactions}
                 metrics={metrics}
-                windowDays={insiderWindow.days}
+                scoringWindow={insiderWindow}
             />
             <ProposedSalesBlock
                 sales={proposedSales}
