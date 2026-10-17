@@ -4,9 +4,10 @@ import { runCikSymbolMapSync } from '@/entities/investor-flows/server/syncCikSym
 import { runCusipMapSync } from '@/entities/investor-flows/server/syncCusipMap';
 
 /**
- * 마감 10분: 심볼 1,500개 ÷ 동시 3 × FMP ~0.8초 ≈ 7분 + OpenFIGI 검증(키 없으면 분당 25요청 × 10잡)
- * 여유. 락 TTL 15분 = 마감 + 마지막 청크(FMP 재시도 백오프 최악 ~60초) + 주간 CIK 맵 갱신(`company_tickers.json` 요청 최악
- * 75초 + 맵 교체 트랜잭션) 여유(SERVER.md#CC-7, `route.test.ts`가 실제 상수로 검증).
+ * 마감 10분: FMP는 분당 120건으로 페이싱된다(`CUSIP_MAP_FMP_CALLS_PER_MINUTE`, 청크 3건마다 1.5초) — 심볼 1,000개 ≈ 8.3분 +
+ * 재대조 100건 ≈ 50초 + OpenFIGI 검증(키 없으면 분당 25요청 × 10잡). 넘치면 마감이 끊고 다음 실행이 잇는다(재개 가능).
+ * 락 TTL 15분 = 마감 + 페이싱 대기 한 번(≤1.5초) + 마지막 청크(재시도 없이 시도 1회, timeout 10초) + 주간 CIK 맵 갱신
+ * (`company_tickers.json` 요청 최악 75초 + 맵 교체 트랜잭션) 여유(SERVER.md#CC-7, `route.test.ts`가 실제 상수로 검증).
  */
 const CUSIP_MAP_DEADLINE_MS = 10 * 60 * 1000;
 const CUSIP_MAP_LEASE_TTL_SECONDS = 15 * 60;

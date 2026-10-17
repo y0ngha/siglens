@@ -1,4 +1,5 @@
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { isFmpTransientError } from '@/shared/api/fmp/fmpRetry';
 import type {
     InvestorFlowsFmpProvider,
     RawSharesFloat,
@@ -7,11 +8,10 @@ import {
     INVESTOR_FLOWS_INSIDER_LOOKBACK_DAYS,
     INVESTOR_FLOWS_LARGE_HOLDER_FETCH_LIMIT,
 } from '@/shared/api/fmp/CachedInvestorFlowsFmpProvider';
+import type { InvestorFlowsDataProvider } from '@y0ngha/siglens-core';
 import type {
-    InvestorFlowsDataProvider,
-    InvestorFlowsSnapshot,
-} from '@y0ngha/siglens-core';
-import type {
+    InvestorFlowsDegradedPart,
+    InvestorFlowsSnapshotWithStatus,
     FtdPointRecord,
     OfferingRecord,
     OptionAggregateRecord,
@@ -215,15 +215,26 @@ async function loadThresholdSummary(
  * 인프라 실패(DB·FMP 던짐)는 그대로 던진다 — "던짐 = 장애, `null` = 이 종목은 데이터가 없다"를
  * resilient 로더가 구분한다. 유통주식수·13D/G(`largeHolders: null`)·내부자 통계(`[]`)와 확장 원천(FTD `null`, Form 144·증자·
  * 옵션은 필드 생략, 과열 목록 `null`)은 부가 정보라 실패해도 그 갈래만 degrade하고 계속한다.
+ *
+ * 13D/G·유통주식수가 FMP **일시 오류**(429·5xx·네트워크·timeout)로 비면 `degraded`에 적는다(`InvestorFlowsDegradedPart`) —
+ * 캐시가 그 스냅샷을 짧게만 두고(`getInvestorFlowsSnapshot`), 화면·도구가 "데이터 부족" 대신 "일시적으로 불러오지 못했다"고 말한다.
  */
 export async function loadInvestorFlowsSnapshot(
     rawSymbol: string,
     deps: InvestorFlowsSnapshotDeps
-): Promise<InvestorFlowsSnapshot | null> {
+): Promise<InvestorFlowsSnapshotWithStatus | null> {
     const symbol = rawSymbol.toUpperCase();
     const finraShortDataEnabled = deps.isFinraEnabled();
     const regShoEnabled = deps.isRegShoEnabled();
     const today = toUtcIsoDate(deps.now());
+    // 일시 오류로 비운 부분 — 각 catch가 자기 갈래만 적는다(서로 다른 갈래라 순서가 없다).
+    const degraded = new Set<InvestorFlowsDegradedPart>();
+    const markIfTransient = (
+        part: InvestorFlowsDegradedPart,
+        error: unknown
+    ): void => {
+        if (isFmpTransientError(error)) degraded.add(part);
+    };
 
     const [
         institutional,
@@ -256,6 +267,7 @@ export async function loadInvestorFlowsSnapshot(
                 INVESTOR_FLOWS_LARGE_HOLDER_FETCH_LIMIT
             )
             .catch((error: unknown): null => {
+                markIfTransient('largeHolders', error);
                 deps.log(
                     '[investor-flows] 13D/G fetch failed, largeHolders=null:',
                     error
@@ -265,6 +277,7 @@ export async function loadInvestorFlowsSnapshot(
         deps.fmp
             .getSharesFloat(symbol)
             .catch((error: unknown): RawSharesFloat | null => {
+                markIfTransient('float', error);
                 deps.log(
                     '[investor-flows] shares-float failed, continuing without it:',
                     error
@@ -319,7 +332,7 @@ export async function loadInvestorFlowsSnapshot(
             : Promise.resolve(null),
     ]);
 
-    return assembleInvestorFlowsSnapshot({
+    const snapshot = assembleInvestorFlowsSnapshot({
         now: deps.now(),
         aggregates: institutional.aggregates,
         topHolders: institutional.topHolders,
@@ -337,6 +350,12 @@ export async function loadInvestorFlowsSnapshot(
         optionAggregates: institutional.optionAggregates,
         thresholdList,
     });
+    if (snapshot === null || degraded.size === 0) return snapshot;
+    // 순서를 고정한다(캐시 값·테스트가 Promise 완료 순서에 흔들리지 않게).
+    const parts: readonly InvestorFlowsDegradedPart[] = (
+        ['largeHolders', 'float'] as const
+    ).filter(part => degraded.has(part));
+    return { ...snapshot, degraded: parts };
 }
 
 /** `InvestorFlowsDataProvider` 포트 구현 — 의존을 주입받는다. 실제 의존은 `getInvestorFlowsDataProvider`가 구성한다. */
@@ -345,7 +364,7 @@ export class DbFmpInvestorFlowsDataProvider implements InvestorFlowsDataProvider
 
     getInvestorFlowsSnapshot(
         symbol: string
-    ): Promise<InvestorFlowsSnapshot | null> {
+    ): Promise<InvestorFlowsSnapshotWithStatus | null> {
         return loadInvestorFlowsSnapshot(symbol, this.deps);
     }
 }

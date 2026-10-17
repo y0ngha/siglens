@@ -19,15 +19,16 @@ export function createSecFtdDeps(
     const client = tryGetDatabaseClient();
     if (client === null) throw new Error('[sec-ftd] database unavailable');
     const universeRepo = new DrizzleInvestorFlowsUniverseRepository(client.db);
+    const log = warnWithDetail;
     return {
         sec: { fetchFailsToDeliverListing, fetchSecFile },
-        repo: new DrizzleInvestorFlowsFtdRepository(client.db),
+        repo: new DrizzleInvestorFlowsFtdRepository(client.db, log),
         loadUniverse: () => universeRepo.loadUniverse(),
         isSecBlockedError,
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onFirstFileStored: revalidateFlowsReadiness,
-        log: warnWithDetail,
+        log,
     };
 }

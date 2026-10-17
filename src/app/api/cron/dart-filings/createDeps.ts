@@ -18,14 +18,15 @@ export function createDartFilingsDeps(
 ): IngestDartFilingsDeps {
     const client = tryGetDatabaseClient();
     if (client === null) throw new Error('[dart-filings] database unavailable');
+    const log = warnWithDetail;
     return {
         dart: isE2E() ? createFakeDartClient() : realDartClient,
-        repo: new DrizzleInvestorFlowsDartRepository(client.db),
+        repo: new DrizzleInvestorFlowsDartRepository(client.db, log),
         fatalReason: dartFatalReason,
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onBackfillCompleted: revalidateFlowsReadiness,
-        log: warnWithDetail,
+        log,
     };
 }

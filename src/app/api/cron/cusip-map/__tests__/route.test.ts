@@ -12,9 +12,15 @@ const {
     mockCreateCikDeps: vi.fn(),
 }));
 vi.mock('../../leasedCron', () => ({ handleLeasedCron: mockHandle }));
-vi.mock('@/entities/investor-flows/server/syncCusipMap', () => ({
-    runCusipMapSync: mockRun,
-}));
+vi.mock(
+    '@/entities/investor-flows/server/syncCusipMap',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/investor-flows/server/syncCusipMap')
+        >()),
+        runCusipMapSync: mockRun,
+    })
+);
 vi.mock('@/entities/investor-flows/server/syncCikSymbolMap', () => ({
     runCikSymbolMapSync: mockRunCikSync,
 }));
@@ -25,7 +31,6 @@ vi.mock('../createDeps', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FMP_TRANSIENT_RETRY } from '@/shared/api/fmp/fmpRetry';
 import {
     SEC_REQUEST_TIMEOUT_MS,
     SEC_RETRY_BACKOFF_BUDGET_MS,
@@ -34,6 +39,7 @@ import {
     LIMITS,
     OPENFIGI_TIMEOUT_MS,
 } from '@/shared/api/openfigi/openFigiClient';
+import { PROFILE_CHUNK_SPACING_MS } from '@/entities/investor-flows/server/syncCusipMap';
 import { PATCH } from '../route';
 
 /** FMP's non-render fetch timeout (`httpClient.ts`, not exported): one attempt. */
@@ -62,21 +68,22 @@ describe('PATCH /api/cron/cusip-map', () => {
             leaseTtlSeconds: 900,
             deadlineMs: 600_000,
         });
-        // CC-7: past the deadline at most ONE unit is still in flight — an FMP profile chunk (concurrent calls, each with
-        // its retries and the backoff budget) or one OpenFIGI batch (+ its spacing sleep). Every loop re-checks the
+        // CC-7: past the deadline at most ONE unit is still in flight — an FMP profile chunk (concurrent calls, one attempt
+        // each) or one OpenFIGI batch (+ its spacing sleep). Every loop re-checks the
         // deadline before starting the next unit.
-        const fmpCall =
-            (FMP_TRANSIENT_RETRY.maxRetries + 1) * FMP_FETCH_TIMEOUT_MS +
-            (FMP_TRANSIENT_RETRY.backoffBudgetMs ?? 0);
+        // cusip-map sends each profile as ONE attempt (`retryTransient: false` in createDeps) — no retry chain
+        const fmpCall = FMP_FETCH_TIMEOUT_MS;
         const figiBatch = OPENFIGI_TIMEOUT_MS + LIMITS.anonymous.minIntervalMs;
         // the weekly CIK map refresh runs after the CUSIP sync: one SEC request + the map-replace transaction
         const cikMapRefresh =
             2 * SEC_REQUEST_TIMEOUT_MS +
             SEC_RETRY_BACKOFF_BUDGET_MS +
             DB_ALLOWANCE_MS;
+        // a paced FMP chunk may first wait one chunk spacing after passing the deadline check
+        const fmpUnit = PROFILE_CHUNK_SPACING_MS + fmpCall;
         const worstCaseMs =
             options.deadlineMs +
-            Math.max(fmpCall, figiBatch) +
+            Math.max(fmpUnit, figiBatch) +
             DB_ALLOWANCE_MS +
             cikMapRefresh;
         expect(options.leaseTtlSeconds * 1000).toBeGreaterThan(worstCaseMs);

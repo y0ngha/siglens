@@ -48,7 +48,8 @@ import {
     buildResetChangesSql,
     type AggregateMode,
 } from './aggregateSql';
-import { uniqueForUpsert } from './uniqueForUpsert';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
+import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 const FILING_LOOKUP_CHUNK = 1_000;
 
@@ -143,7 +144,11 @@ function affectedRows(result: unknown): number {
  * accession이 다시 처리 대상이 되고, 커밋됐다면 dirty 행도 함께 남아 집계 재계산이 유실되지 않는다.
  */
 export class Drizzle13fRepository {
-    constructor(private readonly db: SiglensDatabase) {}
+    constructor(
+        private readonly db: SiglensDatabase,
+        /** 중복 키를 줄였을 때의 경고(`uniqueForUpsert`) — 수집 cron은 자기 `log`를 넘긴다. */
+        private readonly log: UpsertLog = warnWithDetail
+    ) {}
 
     /** 이미 기록된 accession들의 상태. 반영 완료(`processedAt`)와 실패(`attempts`)를 구분한다. */
     async findFilings(
@@ -418,7 +423,8 @@ export class Drizzle13fRepository {
                                         ? []
                                         : [{ ...row, cusipId }];
                                 }),
-                                row => String(row.cusipId)
+                                row => String(row.cusipId),
+                                this.log
                             );
                             for (const chunk of chunked(
                                 rows,
@@ -469,7 +475,8 @@ export class Drizzle13fRepository {
                                 source.filter(row =>
                                     input.cusipIds.has(row.cusip)
                                 ),
-                                row => compositeKey(row.cusip, row.putCall)
+                                row => compositeKey(row.cusip, row.putCall),
+                                this.log
                             );
                             for (const chunk of chunked(
                                 rows,

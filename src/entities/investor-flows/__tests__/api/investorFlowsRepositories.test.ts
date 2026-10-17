@@ -231,6 +231,27 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
 });
 
 describe('DrizzleInvestorFlowsShortRepository', () => {
+    it('reports dropped duplicate keys through the injected logger', async () => {
+        const { db } = createFakeDb();
+        const log = vi.fn();
+        const row = {
+            symbol: 'AAPL',
+            tradeDate: '2026-10-14',
+            shortVolume: 5,
+            totalVolume: 10,
+        };
+        await new DrizzleInvestorFlowsShortRepository(
+            db,
+            log
+        ).upsertShortVolume([row, { ...row, shortVolume: 6 }]);
+        expect(log).toHaveBeenCalledWith(
+            expect.stringContaining(
+                'finra_short_volume: dropped 1 duplicate-key row(s)'
+            ),
+            ['AAPL|2026-10-14']
+        );
+    });
+
     it('upserts short volume with a change guard', async () => {
         const { db, ops } = createFakeDb();
         await new DrizzleInvestorFlowsShortRepository(db).upsertShortVolume([

@@ -2,12 +2,12 @@ import 'server-only';
 import { cache } from 'react';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
+import type { InvestorFlowsSnapshotWithStatus } from '../model';
 import { getInvestorFlowsSnapshot } from './getInvestorFlowsSnapshot';
 
 export interface ResilientInvestorFlows {
-    /** 수급 데이터가 없는 종목(정상)이거나 인프라 장애면 `null`. */
-    snapshot: InvestorFlowsSnapshot | null;
+    /** 수급 데이터가 없는 종목(정상)이거나 인프라 장애면 `null`. 일부만 일시적으로 비었으면 `snapshot.degraded`에 적혀 있다. */
+    snapshot: InvestorFlowsSnapshotWithStatus | null;
     /**
      * true = 인프라 실패(`getInvestorFlowsSnapshot`이 던짐 — "데이터 없음"이 아니다). false = 정상, 데이터가
      * 없어 `snapshot`이 `null`인 경우 포함. 페이지의 degrade/noindex 판정의 유일한 근거다.

@@ -34,7 +34,8 @@ import type {
     DartTradingPlanRow,
 } from '../model';
 import { affectedRows } from './affectedRows';
-import { uniqueForUpsert } from './uniqueForUpsert';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
+import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
@@ -85,7 +86,11 @@ export type DartTradingPlanRecord = Omit<DartTradingPlanRow, 'corpCode'>;
  * 않게). 읽기 함수(`find*`·`resolveCorpCode`)는 한국 수급 스냅샷(`loadKrInvestorFlowsSnapshot`)과 종목 매핑 조회(`getKrDartCorp`)가 쓴다.
  */
 export class DrizzleInvestorFlowsDartRepository {
-    constructor(private readonly db: SiglensDatabase) {}
+    constructor(
+        private readonly db: SiglensDatabase,
+        /** 중복 키를 줄였을 때의 경고(`uniqueForUpsert`) — 수집 cron은 자기 `log`를 넘긴다. */
+        private readonly log: UpsertLog = warnWithDetail
+    ) {}
 
     getState(key: string): Promise<string | null> {
         return readInvestorFlowsState(this.db, key);
@@ -150,7 +155,8 @@ export class DrizzleInvestorFlowsDartRepository {
         const unique = uniqueForUpsert(
             'dart_corp_code',
             rows,
-            row => row.stockCode
+            row => row.stockCode,
+            this.log
         );
         await writeInChunks(unique, chunk =>
             withRetry(
@@ -176,8 +182,11 @@ export class DrizzleInvestorFlowsDartRepository {
     async upsertMajorHoldings(
         rows: readonly DartMajorHoldingRow[]
     ): Promise<void> {
-        const unique = uniqueForUpsert('dart_major_holdings', rows, row =>
-            compositeKey(row.rceptNo, row.reporter)
+        const unique = uniqueForUpsert(
+            'dart_major_holdings',
+            rows,
+            row => compositeKey(row.rceptNo, row.reporter),
+            this.log
         );
         await writeInChunks(unique, chunk =>
             withRetry(
@@ -216,8 +225,11 @@ export class DrizzleInvestorFlowsDartRepository {
     async upsertInsiderReports(
         rows: readonly DartInsiderReportRow[]
     ): Promise<void> {
-        const unique = uniqueForUpsert('dart_insider_reports', rows, row =>
-            compositeKey(row.rceptNo, row.reporter)
+        const unique = uniqueForUpsert(
+            'dart_insider_reports',
+            rows,
+            row => compositeKey(row.rceptNo, row.reporter),
+            this.log
         );
         await writeInChunks(unique, chunk =>
             withRetry(
@@ -261,7 +273,8 @@ export class DrizzleInvestorFlowsDartRepository {
         const unique = uniqueForUpsert(
             'dart_trading_plans',
             rows,
-            row => row.rceptNo
+            row => row.rceptNo,
+            this.log
         );
         await writeInChunks(unique, chunk =>
             withRetry(

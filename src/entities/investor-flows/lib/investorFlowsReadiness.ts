@@ -29,14 +29,21 @@ export function deriveInstitutionalStatus(markers: {
 
 /**
  * FINRA(공매도) 준비 상태. 플래그가 꺼져 있으면 화면이 공매도 구간을 아예 그리지 않으므로 `unknown`(해당 없음)이다.
- * 켜져 있으면 잔고·일별 거래량 둘 중 한 곳에라도 행이 하나 있어야 `ready`다.
+ * 켜져 있으면 잔고·일별 거래량 둘 중 한 곳에라도 행이 있고, **유니버스가 다 찼고**(cusip-map 전수 한 바퀴) 그 뒤의 1회 재수집
+ * (`finra_rebackfill_pending`)도 끝나야 `ready`다. finra-short는 수집 시점의 유니버스 심볼만 저장하므로, 그 전에는 테이블에 행이
+ * 있어도 나중에 매핑된 종목은 비어 있다 — 그 종목의 빈 공매도 구간은 "데이터 부족"이 아니라 "수집 중"이다. 행이 있는 종목은 이 상태와
+ * 무관하게 그대로 보인다(`isCollectingAndEmpty`는 비어 있을 때만 참).
  */
 export function deriveShortStatus(input: {
     readonly finraEnabled: boolean;
     readonly hasAnyRow: boolean;
+    readonly universeComplete: boolean;
+    readonly rebackfillPending: boolean;
 }): PipelineStatus {
     if (!input.finraEnabled) return 'unknown';
-    return input.hasAnyRow ? 'ready' : 'collecting';
+    return input.hasAnyRow && input.universeComplete && !input.rebackfillPending
+        ? 'ready'
+        : 'collecting';
 }
 
 /** SEC FTD 준비 상태 — 반월 파일이 하나라도 저장됐으면 `ready`. SEC 공공 정보라 플래그가 없다. */

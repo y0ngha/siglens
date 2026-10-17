@@ -6,15 +6,18 @@ import {
     INVESTOR_FLOWS_CUSIP_BLANKET_MIN_ATTEMPTS,
     INVESTOR_FLOWS_CUSIP_FAILURE_THRESHOLD,
     INVESTOR_FLOWS_CUSIP_RECHECK_BATCH,
+    INVESTOR_FLOWS_STATE_FINRA_REBACKFILL,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
     INVESTOR_FLOWS_UNIVERSE_MIN_MAPPED,
 } from '../lib/investorFlowsPolicy';
+import { initialFinraRebackfillValue } from '../lib/finraRebackfill';
 import { MISS_TTL_SECONDS } from '../api/cusipMissStore';
 import type {
     CusipMapRow,
     CusipMapUpsertResult,
     RecheckCandidate,
 } from '../api/investorFlowsUniverseRepository';
+import { type CallPacer, createCallPacer } from '../lib/callPacer';
 import type { CusipConflict } from '../lib/cusipMapConflicts';
 import {
     cusipFromIsin,
@@ -22,12 +25,35 @@ import {
     parseProfileCusip,
 } from '../lib/cusip';
 
-/** 한 실행이 시도하는 심볼 수 상한. 나머지는 다음 실행이 이어 간다(재개 가능). */
-export const MAX_SYMBOLS_PER_RUN = 1_500;
-/** FMP profile 동시 호출 수. 플랜 한도(분당 ~300) 안에서 호출당 ~0.8초 → 분당 ~220건. */
+/**
+ * cusip-map이 FMP에 보내는 **HTTP 시도** 속도 상한(분당, profile 조회 + 기존 매핑 재대조 합산). FMP 플랜 한도는 분당 300건이고
+ * 사이트 트래픽과 **함께** 쓴다 — 120으로 묶어 사이트 몫을 분당 180건 이상 남긴다. (운영 측정: 페이싱 전 03:00Z 실행이
+ * 5분에 profile ~1,600건 ≈ 분당 320건으로 한도를 넘었다.)
+ *
+ * 보장: 이 실행이 FMP에 보내는 요청은 어떤 60초 구간에서도 120건 + 묶음 하나(`PROFILE_CONCURRENCY`)를 넘지 않는다. 페이서가
+ * 묶음 시작마다 그 묶음의 호출 수만큼 간격을 벌리고, 호출 하나는 **HTTP 시도 하나**다 — `createDeps`가 `fmpGet`의 내부 일시 오류
+ * 재시도를 끈다(`retryTransient: false`). 실패한 심볼은 이번 실행에서 다시 보내지 않고 다음 실행이 재시도한다.
+ */
+export const CUSIP_MAP_FMP_CALLS_PER_MINUTE = 120;
+/** FMP profile 동시 호출 수 — 묶음 안에서는 동시에, 묶음 시작은 `CUSIP_MAP_FMP_CALLS_PER_MINUTE`로 벌린다. */
 export const PROFILE_CONCURRENCY = 3;
+/** 묶음 하나(동시 `PROFILE_CONCURRENCY`건) 뒤 다음 묶음까지의 간격 = 페이서가 한 번에 기다리는 최대 시간(1.5초). */
+export const PROFILE_CHUNK_SPACING_MS =
+    (PROFILE_CONCURRENCY * 60_000) / CUSIP_MAP_FMP_CALLS_PER_MINUTE;
+/**
+ * 한 실행이 시도하는 심볼 수 상한. 나머지는 다음 실행이 이어 간다(재개 가능). 분당 120건 페이싱에서 1,000건 ≈ 8.3분 +
+ * 재대조 `INVESTOR_FLOWS_CUSIP_RECHECK_BATCH`(100건 ≈ 50초) ≈ 실행당 FMP ~1,100건이 마감 10분 안에 든다. OpenFIGI 검증까지
+ * 길어지면 마감이 끊고 다음 실행이 잇는다(`cusip-map/route.ts`).
+ */
+export const MAX_SYMBOLS_PER_RUN = 1_000;
+/**
+ * 묶음의 호출이 **모두** 일시 오류(5xx·네트워크·timeout)로 실패한 묶음이 이만큼 연달아 나오면 FMP 장애로 보고 실행을 접는다
+ * (`transient_outage`) — 재시도 없이 한 번씩이라도 장애 중에 1,000건을 계속 두드리지 않게. 일부만 실패한 묶음은 세지 않는다
+ * (드문 단발 5xx로 부트스트랩이 끊기지 않게). 그 실행의 실패는 전면 장애와 같이 연속 실패일 수에 세지 않는다.
+ */
+export const CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS = 2;
 const CANDIDATE_PAGE_SIZE = 500;
-/** 중복 CUSIP 로그에 싣는 예시 수 — 실행당 한 줄로 남긴다. */
+/** 중복 CUSIP 로그에 싣는 예시 수 — 경로(후보·재대조)마다 실행당 한 줄로 남긴다. */
 const CONFLICT_LOG_EXAMPLES = 5;
 
 export interface SyncCusipMapDeps {
@@ -58,12 +84,22 @@ export interface SyncCusipMapDeps {
         shouldStop: () => boolean
     ) => Promise<Map<string, string[]>>;
     isRateLimitError: (error: unknown) => boolean;
+    /** FMP 일시 오류(5xx·네트워크·timeout — `isFmpTransientError`)인가. 장애 조기 종료(`CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS`)에 쓴다. */
+    isTransientError: (error: unknown) => boolean;
     isDeadlineReached: () => boolean;
+    /** FMP 페이싱 대기(`createCallPacer`) — 시계는 `now`다. 테스트는 가짜 시계를 미는 함수를 넣는다. */
+    sleep: (ms: number) => Promise<void>;
     log: (message: string, detail?: unknown) => void;
 }
 
 export interface SyncCusipMapResult {
-    status: 'complete' | 'capped' | 'deadline' | 'rate_limited';
+    status:
+        | 'complete'
+        | 'capped'
+        | 'deadline'
+        | 'rate_limited'
+        /** 연달아 모두 일시 오류로 실패한 묶음(`CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS`) — FMP 장애로 보고 접었다. */
+        | 'transient_outage';
     candidates: number;
     fromProfile: number;
     fromFigi: number;
@@ -99,7 +135,8 @@ const mappingKey = (row: { cusip: string; symbol: string }): string =>
  * 4. 한 CUSIP을 여러 심볼이 주장하면(표기 변형·파생 상장) 하나만 쓴다(`upsertCusipMap` → `resolveCusipMapConflicts`). 버린
  *    심볼은 `duplicateCusip` miss로 표식해 후보에서 빼고, 실행 끝에 한 번 로그로 남긴다.
  *
- * FMP 호출은 `PROFILE_CONCURRENCY`씩 청크로 보내고 청크마다 DB에 쓴다. 속도 제한(429)이면 실행을 접는다.
+ * FMP 호출은 `PROFILE_CONCURRENCY`씩 청크로 보내고(청크 시작은 분당 `CUSIP_MAP_FMP_CALLS_PER_MINUTE`건으로 벌린다 — 재대조와
+ * 합산) 청크마다 DB에 쓴다. 속도 제한(429)이면 실행을 접는다.
  *
  * **인프라 오류(FMP 402·400·5xx·타임아웃, OpenFIGI 장애)는 즉시 표식하지 않는다.** 그 심볼은 후보로 남아 다음 실행에
  * 재시도되고, 심볼별 **연속 실패일 수**를 센다(`CusipMissStore.recordFailures`):
@@ -159,9 +196,14 @@ export async function runCusipMapSync(
     const failedProfiles: string[] = [];
     let profileAttempts = 0;
     const failedFigi: string[] = [];
+    // FMP 호출 속도 상한 — profile 조회(2)와 재대조(4)가 하나를 함께 쓴다.
+    const paceFmp = createCallPacer(CUSIP_MAP_FMP_CALLS_PER_MINUTE, {
+        nowMs: () => deps.now().getTime(),
+        sleep: deps.sleep,
+    });
     // 이번 실행이 FMP profile로 만든 매핑 — 재대조(아래 4)가 같은 profile을 다시 받지 않게 한다.
     const mappedFromProfile = new Set<string>();
-    // 한 CUSIP을 여러 심볼이 주장해 버린 건 — 실행 끝에 한 번 로그로 남긴다.
+    // 후보 쓰기에서 한 CUSIP을 여러 심볼이 주장해 버린 건 — 실행 끝에 한 번 로그로 남긴다.
     const conflicts: CusipConflict[] = [];
     // 후보(맵에 없는 심볼) 쓰기의 공통 처리: 버린 심볼은 miss로 후보에서 뺀다 — 남겨 두면 매 실행 다시 조회되고(맵에는 끝내
     // 못 들어간다) 후보가 0이 되지 않아 전수 한 바퀴 표식이 서지 않는다.
@@ -182,12 +224,16 @@ export async function runCusipMapSync(
     };
 
     // 2) FMP profile — 청크 단위, 청크마다 저장.
+    let outageChunks = 0;
     for (let i = 0; i < candidates.length; i += PROFILE_CONCURRENCY) {
         if (deps.isDeadlineReached()) {
             result.status = 'deadline';
             break;
         }
         const chunk = candidates.slice(i, i + PROFILE_CONCURRENCY);
+        // 묶음 시작 간격은 앞 묶음에 의존해 직렬이다.
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
+        await paceFmp(chunk.length);
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
         const settled = await Promise.allSettled(
             chunk.map(symbol => deps.fetchProfile(symbol))
@@ -249,6 +295,14 @@ export async function runCusipMapSync(
             result.status = 'rate_limited';
             break;
         }
+        outageChunks = isTransientOutageChunk(settled, deps)
+            ? outageChunks + 1
+            : 0;
+        if (outageChunks >= CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS) {
+            result.status = 'transient_outage';
+            logTransientOutage(deps, 'profile');
+            break;
+        }
     }
 
     // 3) OpenFIGI 검증 — ISIN에서 낸 CUSIP이 같은 티커인지.
@@ -288,10 +342,10 @@ export async function runCusipMapSync(
     result.misses = newMisses.length;
     await deps.misses.recordMisses(newMisses);
     // 전면 장애(시도 대부분이 실패)는 심볼 고유의 문제가 아니므로 세지 않는다. 실행 단위로 FMP·OpenFIGI를 따로 본다.
-    const profileBlanket = isBlanketOutage(
-        profileAttempts,
-        failedProfiles.length
-    );
+    // 일시 오류로 조기 종료한 실행은 시도가 적어도(묶음 2개) 전면 장애다.
+    const profileBlanket =
+        result.status === 'transient_outage' ||
+        isBlanketOutage(profileAttempts, failedProfiles.length);
     const figiBlanket = isBlanketOutage(
         figiCandidates.length,
         failedFigi.length
@@ -334,22 +388,45 @@ export async function runCusipMapSync(
     }
 
     // 4) 기존 매핑 재대조 — 작은 배치로 오래된 것부터(전수 재처리 금지).
-    if (result.status === 'complete' || result.status === 'capped') {
-        await recheckExistingMappings(
-            deps,
-            result,
-            mappedFromProfile,
-            conflicts
-        );
-    }
-    result.duplicateCusips = conflicts.length;
-    if (conflicts.length > 0) {
-        deps.log(
-            `[cusip-map] ${conflicts.length} CUSIP(s) claimed by more than one symbol — kept one symbol each, dropped ${conflicts.reduce((n, c) => n + c.dropped.length, 0)} (unmapped ones are skipped for ${MISS_TTL_SECONDS.duplicateCusip / SECONDS_PER_DAY} days), e.g.:`,
-            conflicts.slice(0, CONFLICT_LOG_EXAMPLES)
-        );
-    }
+    const recheckConflicts =
+        result.status === 'complete' || result.status === 'capped'
+            ? await recheckExistingMappings(
+                  deps,
+                  result,
+                  mappedFromProfile,
+                  paceFmp
+              )
+            : [];
+    result.duplicateCusips = conflicts.length + recheckConflicts.length;
+    // 두 경로는 버린 심볼의 처리가 다르다 — 후보 쪽은 miss로 후보에서 빼고, 재대조 쪽은 옛 매핑을 그대로 지닌다(miss 없음).
+    logConflicts(
+        deps,
+        conflicts,
+        `dropped symbols are skipped for ${MISS_TTL_SECONDS.duplicateCusip / SECONDS_PER_DAY} days`
+    );
+    logConflicts(
+        deps,
+        recheckConflicts,
+        'on CUSIP re-check — dropped symbols keep their existing mapping, no miss recorded'
+    );
     return result;
+}
+
+/** 한 경로의 중복 CUSIP을 한 줄로 남긴다(없으면 남기지 않는다). `note`는 버린 심볼을 어떻게 다뤘는지다. */
+function logConflicts(
+    deps: SyncCusipMapDeps,
+    conflicts: readonly CusipConflict[],
+    note: string
+): void {
+    if (conflicts.length === 0) return;
+    const droppedSymbols = conflicts.reduce(
+        (total, conflict) => total + conflict.dropped.length,
+        0
+    );
+    deps.log(
+        `[cusip-map] ${conflicts.length} CUSIP(s) claimed by more than one symbol — kept one symbol each, dropped ${droppedSymbols} (${note}), e.g.:`,
+        conflicts.slice(0, CONFLICT_LOG_EXAMPLES)
+    );
 }
 
 /**
@@ -361,13 +438,15 @@ export async function runCusipMapSync(
  *
  * 같은 실행이 방금 profile로 만든 매핑(`mappedFromProfile`)은 `checked_at`이 비어 있어 맨 앞에 오지만, 그 profile을 막 읽었으므로
  * 다시 받지 않고 대조한 것으로 기록만 한다(FMP 호출이 두 번 나가던 것을 막는다).
+ *
+ * 두 심볼이 같은 새 CUSIP으로 바뀌어 하나만 쓴 건을 돌려준다 — 버린 심볼은 옛 매핑을 지니므로 miss를 걸지 않는다.
  */
 async function recheckExistingMappings(
     deps: SyncCusipMapDeps,
     result: SyncCusipMapResult,
     mappedFromProfile: ReadonlySet<string>,
-    conflicts: CusipConflict[]
-): Promise<void> {
+    paceFmp: CallPacer
+): Promise<CusipConflict[]> {
     const listed = await deps.repo.listRecheckCandidates(
         INVESTOR_FLOWS_CUSIP_RECHECK_BATCH
     );
@@ -376,9 +455,13 @@ async function recheckExistingMappings(
         c => !mappedFromProfile.has(mappingKey(c))
     );
     const checkedIds: number[] = justMapped.map(c => c.id);
+    const conflicts: CusipConflict[] = [];
+    let outageChunks = 0;
     for (let i = 0; i < candidates.length; i += PROFILE_CONCURRENCY) {
         if (deps.isDeadlineReached()) break;
         const chunk = candidates.slice(i, i + PROFILE_CONCURRENCY);
+        // react-doctor-disable-next-line react-doctor/async-await-in-loop
+        await paceFmp(chunk.length);
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
         const settled = await Promise.allSettled(
             chunk.map(c => deps.fetchProfile(c.symbol))
@@ -420,8 +503,17 @@ async function recheckExistingMappings(
             }
         }
         if (stop) break;
+        outageChunks = isTransientOutageChunk(settled, deps)
+            ? outageChunks + 1
+            : 0;
+        if (outageChunks >= CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS) {
+            result.status = 'transient_outage';
+            logTransientOutage(deps, 'recheck');
+            break;
+        }
     }
     await deps.repo.markChecked(checkedIds);
+    return conflicts;
 }
 
 /** 표식이 아직 없고 맵이 충분히 찼으면 세운다. 새로 세웠으면 true. */
@@ -435,11 +527,43 @@ async function markUniverseComplete(deps: SyncCusipMapDeps): Promise<boolean> {
         );
         return false;
     }
+    // FINRA 재수집 요청을 **먼저** 남긴다 — finra-short는 수집 시점의 유니버스 심볼만 저장해, 유니버스가 차기 전에 읽은 파일은
+    // 나중에 매핑된 심볼의 행을 영영 갖지 못한다. 완료 표식보다 먼저 써야 둘 사이에서 실행이 죽어도 다음 실행이 다시 남긴다
+    // (그때 두 번 남겨도 재수집이 한 번 더 돌 뿐이다 — upsert는 멱등).
+    await deps.repo.setStateIfAbsent(
+        INVESTOR_FLOWS_STATE_FINRA_REBACKFILL,
+        initialFinraRebackfillValue(deps.now())
+    );
     await deps.repo.setStateIfAbsent(key, deps.now().toISOString());
     deps.log(
-        `[cusip-map] full pass complete (${mapped} CUSIPs mapped) — sec-13f ingestion unlocked`
+        `[cusip-map] full pass complete (${mapped} CUSIPs mapped) — sec-13f ingestion unlocked, FINRA re-ingest requested`
     );
     return true;
+}
+
+/** 묶음의 호출이 모두 일시 오류(속도 제한 제외 — 그건 따로 접는다)로 실패했는가. */
+function isTransientOutageChunk(
+    settled: readonly PromiseSettledResult<unknown>[],
+    deps: Pick<SyncCusipMapDeps, 'isRateLimitError' | 'isTransientError'>
+): boolean {
+    return (
+        settled.length > 0 &&
+        settled.every(
+            outcome =>
+                outcome.status === 'rejected' &&
+                !deps.isRateLimitError(outcome.reason) &&
+                deps.isTransientError(outcome.reason)
+        )
+    );
+}
+
+function logTransientOutage(
+    deps: SyncCusipMapDeps,
+    phase: 'profile' | 'recheck'
+): void {
+    deps.log(
+        `[cusip-map] FMP transient outage: ${CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS} consecutive ${phase} chunks failed entirely — run stopped, failures not counted, next run retries`
+    );
 }
 
 /** 시도가 충분히 많고(`MIN_ATTEMPTS`) 그 거의 전부가 실패했다 — 심볼 고유 문제가 아니라 전면 장애다. */

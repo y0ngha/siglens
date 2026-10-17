@@ -1,4 +1,5 @@
 /** Investor Flows 데이터 계층의 내부 도메인 타입(수집·저장용). 화면·분석 계약은 `@y0ngha/siglens-core`. */
+import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 
 /** 13F 정정 종류. `13F-HR/A`의 `amendmentInfo/amendmentType`. */
 export type AmendmentType = 'RESTATEMENT' | 'NEW HOLDINGS';
@@ -103,6 +104,21 @@ export interface InvestorFlowsPipelineReadiness {
      */
     readonly dart: PipelineStatus;
 }
+
+/**
+ * 스냅샷에서 FMP **일시 오류**(429·5xx·네트워크·timeout)로 이번에만 비운 부분 — `largeHolders`(13D/G → `null`), `float`(유통주식수
+ * → `null`). "이 종목에 데이터가 없다"가 아니라 "지금 못 불러왔다"이므로 화면은 "일시적으로 불러오지 못했어요"라고, 도구는 "지금은
+ * 조회 불가"라고 말한다. 일시 오류가 아닌 실패(402 등)는 다시 해도 같으므로 여기 넣지 않는다.
+ */
+export type InvestorFlowsDegradedPart = 'largeHolders' | 'float';
+
+/**
+ * siglens가 읽는 수급 스냅샷 — core 계약(`InvestorFlowsSnapshot`)에 일시 degrade 표식을 더했다. core 함수에 그대로 넘겨도 된다
+ * (구조적 하위 타입). 표식이 없거나 비어 있으면 온전한 스냅샷이다.
+ */
+export type InvestorFlowsSnapshotWithStatus = InvestorFlowsSnapshot & {
+    readonly degraded?: readonly InvestorFlowsDegradedPart[];
+};
 
 // ── 수급 확장(SEC FTD·Form 144·증자 공시·13F 옵션·Reg SHO) — 수집·저장용 내부 타입 ────────────────────────
 // 화면·분석 계약(`FailsToDeliverPoint` 등)은 `@y0ngha/siglens-core`가 정의한다. 아래 읽기 모델(`…Record`)은 저장소가

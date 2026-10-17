@@ -13,10 +13,11 @@ export function createDartCorpCodeDeps(): IngestDartCorpCodeDeps {
     if (client === null) {
         throw new Error('[dart-corp-code] database unavailable');
     }
+    const log = warnWithDetail;
     return {
         dart: isE2E() ? createFakeDartClient() : realDartClient,
-        repo: new DrizzleInvestorFlowsDartRepository(client.db),
+        repo: new DrizzleInvestorFlowsDartRepository(client.db, log),
         fatalReason: dartFatalReason,
-        log: warnWithDetail,
+        log,
     };
 }

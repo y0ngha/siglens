@@ -8,7 +8,8 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import type { FtdFileState, FtdPointRecord, FtdRow } from '../model';
 import { compositeKey } from '../lib/dedupeByKey';
-import { uniqueForUpsert } from './uniqueForUpsert';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
+import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
@@ -20,7 +21,11 @@ import {
  * 시도 횟수만 남는다(`recordRejected`).
  */
 export class DrizzleInvestorFlowsFtdRepository {
-    constructor(private readonly db: SiglensDatabase) {}
+    constructor(
+        private readonly db: SiglensDatabase,
+        /** 중복 키를 줄였을 때의 경고(`uniqueForUpsert`) — 수집 cron은 자기 `log`를 넘긴다. */
+        private readonly log: UpsertLog = warnWithDetail
+    ) {}
 
     getState(key: string): Promise<string | null> {
         return readInvestorFlowsState(this.db, key);
@@ -85,8 +90,11 @@ export class DrizzleInvestorFlowsFtdRepository {
 
     /** 파일 하나의 유니버스 행을 upsert하고 파일을 처리됨으로 표시한다(한 트랜잭션). */
     async storeFile(fileKey: string, rows: readonly FtdRow[]): Promise<void> {
-        const unique = uniqueForUpsert('sec_ftd', rows, row =>
-            compositeKey(row.cusip, row.settlementDate)
+        const unique = uniqueForUpsert(
+            'sec_ftd',
+            rows,
+            row => compositeKey(row.cusip, row.settlementDate),
+            this.log
         );
         await withRetry(
             () =>

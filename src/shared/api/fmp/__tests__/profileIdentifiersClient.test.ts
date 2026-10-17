@@ -84,4 +84,12 @@ describe('fetchFmpProfileIdentifiers', () => {
             status: 402,
         });
     });
+
+    it('passes retryTransient: false through so a 5xx is a single HTTP attempt', async () => {
+        fetchSpy.mockResolvedValueOnce(new Response('', { status: 503 }));
+        await expect(
+            fetchFmpProfileIdentifiers('AAPL', { retryTransient: false })
+        ).rejects.toThrow();
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
 });
