@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.107.3](https://github.com/y0ngha/siglens/compare/v0.107.2...v0.107.3) (2026-10-17)
+
+### Bug Fixes
+
+* 수급 후속 — cusip-map FMP 페이싱, 공매도 수집 중 판정, FMP 일시 장애 스냅샷 단기 캐시, core 2.22.2 반영 ([#1064](https://github.com/y0ngha/siglens/issues/1064)) ([57f3107](https://github.com/y0ngha/siglens/commit/57f31079a8031a979315dc7f43f77ceab3debc04))
+
 ## [0.107.2](https://github.com/y0ngha/siglens/compare/v0.107.1...v0.107.2) (2026-10-16)
 
 ### Bug Fixes
