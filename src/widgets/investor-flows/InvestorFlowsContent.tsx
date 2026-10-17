@@ -1,8 +1,8 @@
+import type { InvestorFlowsScorecard } from '@y0ngha/siglens-core';
 import type {
-    InvestorFlowsScorecard,
-    InvestorFlowsSnapshot,
-} from '@y0ngha/siglens-core';
-import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
+    InvestorFlowsPipelineReadiness,
+    InvestorFlowsSnapshotWithStatus,
+} from '@/entities/investor-flows/model';
 import { AsOfNotice } from './sections/AsOfNotice';
 import { DilutionSection } from './sections/DilutionSection';
 import { InsiderSection } from './sections/InsiderSection';
@@ -11,11 +11,12 @@ import { LargeHoldersSection } from './sections/LargeHoldersSection';
 import { ScorecardCard } from './sections/ScorecardCard';
 import { ShortSection } from './sections/ShortSection';
 import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
-import { collectingAxes } from './utils/collecting';
+import { collectingAxes, temporarilyUnavailableAxes } from './utils/collecting';
 import { hasShortData } from './utils/short';
 
 interface InvestorFlowsContentProps {
-    readonly snapshot: InvestorFlowsSnapshot;
+    /** `degraded`가 있으면 그 부분은 FMP 일시 오류로 이번에만 비었다 — "데이터 부족" 대신 "일시적으로 불러오지 못했어요". */
+    readonly snapshot: InvestorFlowsSnapshotWithStatus;
     readonly scorecard: InvestorFlowsScorecard;
     /** `FINRA_SHORT_DATA_ENABLED`. 꺼져 있으면 FINRA 블록·FINRA 출처를 아예 그리지 않는다. */
     readonly finraEnabled: boolean;
@@ -62,6 +63,10 @@ export function InvestorFlowsContent({
             <ScorecardCard
                 scorecard={scorecard}
                 collectingAxes={collectingAxes(collecting)}
+                unavailableAxes={temporarilyUnavailableAxes(
+                    snapshot.degraded,
+                    showFinra
+                )}
             />
             <AsOfNotice
                 freshness={scorecard.freshness}
@@ -98,7 +103,13 @@ export function InvestorFlowsContent({
                 scoringWindow={scorecard.freshness.dilutionWindow}
                 collecting={collecting.offerings}
             />
-            <LargeHoldersSection filings={snapshot.largeHolders} />
+            <LargeHoldersSection
+                filings={snapshot.largeHolders}
+                scoringWindow={scorecard.freshness.largeHolderWindow}
+                temporarilyUnavailable={
+                    snapshot.degraded?.includes('largeHolders') ?? false
+                }
+            />
         </>
     );
 }

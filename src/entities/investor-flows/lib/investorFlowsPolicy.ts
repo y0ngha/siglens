@@ -83,6 +83,14 @@ export const INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE =
     'cusip_map_full_pass_done';
 
 /**
+ * `investor_flows_state` 키 — FINRA 공매도 **1회 재수집** 요청. cusip-map이 전수 한 바퀴 표식을 처음 세울 때 함께 남기고, finra-short가
+ * 창 안의 이미 저장된 파일(일별 거래량 창 전체, 잔고 1년치)을 최근 것부터 실행당 상한 안에서 다시 읽어 전체 유니버스로 채운 뒤
+ * 지운다. finra-short는 수집 시점의 유니버스 심볼만 저장하므로, 유니버스가 차기 전에 읽은 파일에는 나중에 매핑된 심볼의 행이
+ * 없다. 값은 진행 커서(JSON, `lib/finraRebackfill.ts`)다.
+ */
+export const INVESTOR_FLOWS_STATE_FINRA_REBACKFILL = 'finra_rebackfill_pending';
+
+/**
  * `investor_flows_state` 키 — sec-13f가 초기 백필 창(최근 `INVESTOR_FLOWS_13F_BACKFILL_DAYS`일)을 **끝까지** 읽어 오늘에
  * 닿았을 때 한 번 기록하고 **다시 지우지 않는다**(set-once). 화면은 이 표식(+ `INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE`)이
  * 서기 전까지 13F 구간에 "데이터 없음" 대신 "수집 중" 안내를 낸다 — 백필이 끝나기 전의 빈 구간은 "이 종목에 데이터가

@@ -13,7 +13,10 @@ import {
 import { summarizeInvestorFlows } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
 import { summarizeKrInvestorFlows } from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
-import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
+import type {
+    InvestorFlowsDegradedPart,
+    InvestorFlowsPipelineReadiness,
+} from '@/entities/investor-flows/model';
 import type { CollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 
@@ -29,6 +32,8 @@ const KR_PREFERRED_SHARE_NOTE =
     'This is a preferred share. DART ownership filings are company-level, so these are the same reports as the common share.';
 const KR_COLLECTING_NOTE =
     'The initial DART collection is still running. No reports here means not collected yet, not that there were no filings - say the data is still being collected.';
+const TEMPORARILY_UNAVAILABLE_NOTE =
+    'These parts could not be loaded right now because of a temporary data-provider error (largeHolders = 13D/13G filings, float = shares float, so short interest as % of float). They are unavailable at the moment, not absent - never say the stock has no such filings or no data; say they could not be loaded right now.';
 const COLLECTING_NOTE =
     'Initial collection is still running for the sources marked collecting. Empty or insufficient data there means not collected yet, not that the stock has no such activity - say the data is still being collected.';
 
@@ -84,6 +89,22 @@ function buildDataStatus(
         ),
         note: COLLECTING_NOTE,
     };
+}
+
+/**
+ * FMP 일시 오류로 이번에만 비운 부분(`snapshot.degraded`)을 모델에 알린다 — 13D/G가 `null`, 유통주식 대비 비율이 없는 것은
+ * "그런 공시가 없다"가 아니라 "지금 못 불러왔다"이다. degrade가 없으면 키를 생략한다(정상 응답은 예전과 같다).
+ */
+function buildTemporarilyUnavailable(
+    degraded: readonly InvestorFlowsDegradedPart[] | undefined
+):
+    | {
+          readonly parts: readonly InvestorFlowsDegradedPart[];
+          readonly note: string;
+      }
+    | undefined {
+    if (degraded === undefined || degraded.length === 0) return undefined;
+    return { parts: degraded, note: TEMPORARILY_UNAVAILABLE_NOTE };
 }
 
 function sourceLine(finraEnabled: boolean, regShoEnabled: boolean): string {
@@ -145,6 +166,9 @@ function krResult(
  *
  * FINRA·과열 목록은 플래그가 켜져 있을 때만 출처로 밝힌다(라이선스 — 꺼진 응답이 그 데이터를 쓴 것처럼 말하면 안 된다).
  *
+ * `temporarilyUnavailable`은 FMP 일시 오류로 일부(13D/G·유통주식수)만 이번에 못 불러왔을 때만 실린다 — 그 부분은 "없음"이 아니라
+ * "지금은 조회 불가"라고 말해야 한다.
+ *
  * `degraded:true`(인프라 장애)는 `available:false`로, 정상적인 "이 종목은 수급 데이터 없음"은
  * `available:true` + `noData:true`로 갈라 모델이 장애를 "데이터 없음"으로 말하지 않게 한다.
  */
@@ -176,6 +200,9 @@ export const getInvestorFlowsTool: ToolExecutor = async args => {
             ...(dataStatus === undefined ? {} : { dataStatus }),
         };
 
+    const temporarilyUnavailable = buildTemporarilyUnavailable(
+        snapshot.degraded
+    );
     return {
         asOf: snapshot.asOf,
         source,
@@ -183,6 +210,9 @@ export const getInvestorFlowsTool: ToolExecutor = async args => {
         available: true,
         noData: false,
         ...(dataStatus === undefined ? {} : { dataStatus }),
+        ...(temporarilyUnavailable === undefined
+            ? {}
+            : { temporarilyUnavailable }),
         ...summarizeInvestorFlows(
             maskUncollectedSections(snapshot, readiness),
             scorecard

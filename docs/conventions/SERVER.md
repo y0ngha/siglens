@@ -630,10 +630,13 @@ wall-clock rules are wrong for backfill and replays.
 #### DB-9 — Dedupe batch upsert inputs by the conflict key before chunking
 
 A multi-row `INSERT ... ON CONFLICT DO UPDATE` fails the whole statement (Postgres `21000`, "cannot affect row a second time")
-when two input rows share the conflict-target key. Collapse the input by that key before chunking, with a deterministic
-keep rule (for example the latest period, then a stable tiebreaker), so the same input always writes the same row.
+when two input rows share the conflict-target key. Collapse the whole input to one row per key before chunking, by a
+documented deterministic keep rule, so the same input always writes the same row. The generic helper keeps the last row per
+key, which is what sequential single-row upserts would have left. Where "last" means nothing (several symbols claiming one
+identifier), use a domain rule that ignores input order, such as keeping the already-mapped live symbol and otherwise the
+lexicographically smallest one, and return the dropped rows so the caller can log them.
 Many-to-one mappings (two symbols resolving to one identifier) produce such duplicates only at production scale, so a
 small-universe rehearsal will not surface them. Cover it with a duplicate-key batch test against a real Postgres; mocks do not raise `21000`.
 
 - ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
-- ✅ `dedupeByKey(rows, keyOf, pickWinner)` first, then chunk and upsert.
+- ✅ `uniqueForUpsert(table, rows, keyOf, log)` (last row per key, one warning when rows were dropped) or a domain resolver like `resolveCusipMapConflicts` first, then chunk and upsert.

@@ -73,12 +73,18 @@ export interface KrInvestorFlowsSummary {
         readonly latestReceiptDate: string | null;
     };
     readonly majorHolders: {
-        /** core 점수표 `largeHolders.krMetrics`(창 안 보고가 없으면 `null`). */
+        /**
+         * core 점수표 `largeHolders.krMetrics`. 쓸 수 있는 보고가 하나도 없으면 `null`, 창 밖에만 있으면 `reports: 0`과
+         * `latestReceiptDate`로 온다("최근 공시 없음" — 데이터 부족이 아니다).
+         */
         readonly metrics: KrMajorHolderMetrics | null;
         readonly recent: readonly KrSummaryMajorHolder[];
     };
     readonly insiders: {
-        /** core 점수표 `insider.krMetrics`(창 안 보고가 없으면 `null`). */
+        /**
+         * core 점수표 `insider.krMetrics`. 쓸 수 있는 보고도 창 안 거래계획도 없으면 `null`, 보고가 창 밖에만 있으면
+         * `reports: 0`과 `latestReceiptDate`로 온다.
+         */
         readonly metrics: KrInsiderMetrics | null;
         readonly recent: readonly KrSummaryInsider[];
     };

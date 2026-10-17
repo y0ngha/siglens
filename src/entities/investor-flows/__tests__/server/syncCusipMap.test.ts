@@ -9,11 +9,16 @@ import { resolveCusipMapConflicts } from '../../lib/cusipMapConflicts';
 import {
     INVESTOR_FLOWS_CUSIP_FAILURE_THRESHOLD,
     INVESTOR_FLOWS_CUSIP_RECHECK_BATCH,
+    INVESTOR_FLOWS_STATE_FINRA_REBACKFILL,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
     INVESTOR_FLOWS_UNIVERSE_MIN_MAPPED,
 } from '../../lib/investorFlowsPolicy';
+import { parseFinraRebackfillProgress } from '../../lib/finraRebackfill';
 import {
+    CUSIP_MAP_FMP_CALLS_PER_MINUTE,
+    CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS,
     MAX_SYMBOLS_PER_RUN,
+    PROFILE_CONCURRENCY,
     runCusipMapSync,
     type SyncCusipMapDeps,
 } from '../../server/syncCusipMap';
@@ -129,8 +134,11 @@ function build(
             new Map(cusips.map(c => [c, figi[c] ?? []])),
         isRateLimitError: error =>
             error instanceof Error && error.message === '429',
+        isTransientError: error =>
+            error instanceof Error && error.message === '503',
         isDeadlineReached: () => false,
         now: () => new Date(Date.UTC(2026, 9, 16 + shared.day, 3)),
+        sleep: async () => {},
         log: vi.fn(),
         ...over,
     };
@@ -147,6 +155,164 @@ function build(
 }
 
 describe('runCusipMapSync', () => {
+    describe('FMP pacing (plan limit 300/min is shared with site traffic)', () => {
+        /** A fake clock that only `sleep` moves — every FMP call is instant, so elapsed time is pure pacing. */
+        function pacedBuild(profileCount: number, recheckCount: number) {
+            const clock = { ms: Date.UTC(2026, 9, 16, 3) };
+            const profiles: Record<string, FmpProfileIdentifiers | null> = {};
+            for (let i = 0; i < profileCount; i += 1)
+                profiles[`S${String(i).padStart(5, '0')}`] = null;
+            const built = build(profiles, {
+                now: () => new Date(clock.ms),
+                sleep: async ms => {
+                    clock.ms += ms;
+                },
+            });
+            built.recheck.candidates = Array.from(
+                { length: recheckCount },
+                (_, i) => candidate(i + 1, `R${i}`, '037833100')
+            );
+            return { ...built, clock, startMs: clock.ms };
+        }
+        const candidate = (
+            id: number,
+            symbol: string,
+            cusip: string
+        ): RecheckCandidate => ({ id, symbol, cusip });
+
+        it('limits FMP calls to 120 per minute — leaves at least 180/min of the 300/min plan for the site', () => {
+            expect(CUSIP_MAP_FMP_CALLS_PER_MINUTE).toBe(120);
+            expect(300 - CUSIP_MAP_FMP_CALLS_PER_MINUTE).toBeGreaterThanOrEqual(
+                180
+            );
+        });
+
+        it('spaces chunk starts so N profile + recheck calls take at least the paced time', async () => {
+            const profileCount = 30;
+            const recheckCount = 9;
+            const { deps, fetched, clock, startMs } = pacedBuild(
+                profileCount,
+                recheckCount
+            );
+            await runCusipMapSync(deps);
+            const calls = profileCount + recheckCount;
+            expect(fetched).toHaveLength(calls);
+            // the last chunk starts immediately after its wait; everything before it is paced
+            const pacedMs =
+                ((calls - PROFILE_CONCURRENCY) * 60_000) /
+                CUSIP_MAP_FMP_CALLS_PER_MINUTE;
+            expect(clock.ms - startMs).toBeGreaterThanOrEqual(pacedMs);
+            expect(clock.ms - startMs).toBeLessThan(
+                pacedMs +
+                    (PROFILE_CONCURRENCY * 60_000) /
+                        CUSIP_MAP_FMP_CALLS_PER_MINUTE
+            );
+        });
+
+        /** Most fetches in any half-open 60s window of the fake clock. */
+        const maxPerMinute = (timestamps: readonly number[]): number =>
+            Math.max(
+                0,
+                ...timestamps.map(
+                    start =>
+                        timestamps.filter(t => t >= start && t < start + 60_000)
+                            .length
+                )
+            );
+
+        it('holds 120 HTTP attempts per minute through a 5xx storm (one attempt per call, no hidden retries)', async () => {
+            const clock = { ms: Date.UTC(2026, 9, 16, 3) };
+            const attempts: number[] = [];
+            const profiles: Record<string, FmpProfileIdentifiers | null> = {};
+            for (let i = 0; i < 300; i += 1)
+                profiles[`S${String(i).padStart(5, '0')}`] = null;
+            // every chunk has one success, so the storm never trips the early stop — the pacer alone must hold the rate
+            const { deps, fetched } = build(profiles, {
+                now: () => new Date(clock.ms),
+                sleep: async ms => {
+                    clock.ms += ms;
+                },
+                fetchProfile: async symbol => {
+                    attempts.push(clock.ms);
+                    fetched.push(symbol);
+                    if (attempts.length % PROFILE_CONCURRENCY === 0)
+                        return null;
+                    throw new Error('503');
+                },
+            });
+            const result = await runCusipMapSync(deps);
+            expect(result.status).toBe('complete');
+            expect(attempts).toHaveLength(300);
+            expect(maxPerMinute(attempts)).toBeLessThanOrEqual(
+                CUSIP_MAP_FMP_CALLS_PER_MINUTE
+            );
+        });
+
+        it(`stops the run after ${CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS} consecutive all-5xx chunks and does not count those failures`, async () => {
+            const profiles: Record<string, FmpProfileIdentifiers | Error> = {};
+            for (let i = 0; i < 300; i += 1)
+                profiles[`S${String(i).padStart(5, '0')}`] = new Error('503');
+            const { deps, fetched, recheck, shared } = build(profiles);
+            recheck.candidates = [candidate(1, 'AAPL', '037833100')];
+            const result = await runCusipMapSync(deps);
+            expect(result).toMatchObject({
+                status: 'transient_outage',
+                blanketOutage: true,
+                failuresMarked: 0,
+                universeCompleted: false,
+            });
+            expect(fetched).toHaveLength(
+                CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS * PROFILE_CONCURRENCY
+            );
+            // no consecutive-failure day was counted for the symbols hit by the outage
+            expect(shared.failCounts.size).toBe(0);
+            // the recheck phase does not start after an outage
+            expect(recheck.checked).toEqual([]);
+            expect(deps.log).toHaveBeenCalledWith(
+                expect.stringContaining('FMP transient outage')
+            );
+        });
+
+        it('does not stop on a chunk that only partly failed, nor on non-transient errors', async () => {
+            const profiles: Record<
+                string,
+                FmpProfileIdentifiers | Error | null
+            > = {};
+            for (let i = 0; i < 12; i += 1)
+                profiles[`S${String(i).padStart(5, '0')}`] =
+                    i % 3 === 0 ? null : new Error(i < 6 ? '503' : 'boom');
+            const { deps, fetched } = build(profiles);
+            const result = await runCusipMapSync(deps);
+            expect(result.status).toBe('complete');
+            expect(fetched).toHaveLength(12);
+        });
+
+        it('stops the recheck phase after consecutive all-5xx chunks too', async () => {
+            const { deps, fetched, recheck } = build({});
+            recheck.candidates = Array.from({ length: 30 }, (_, i) =>
+                candidate(i + 1, `R${i}`, '037833100')
+            );
+            deps.fetchProfile = async symbol => {
+                fetched.push(symbol);
+                throw new Error('503');
+            };
+            const result = await runCusipMapSync(deps);
+            expect(result.status).toBe('transient_outage');
+            expect(fetched).toHaveLength(
+                CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS * PROFILE_CONCURRENCY
+            );
+            expect(recheck.checked).toEqual([]);
+        });
+
+        it('fits a full run (MAX_SYMBOLS_PER_RUN + one recheck batch) under the 10-minute deadline', () => {
+            const calls =
+                MAX_SYMBOLS_PER_RUN + INVESTOR_FLOWS_CUSIP_RECHECK_BATCH;
+            expect(
+                (calls * 60_000) / CUSIP_MAP_FMP_CALLS_PER_MINUTE
+            ).toBeLessThan(10 * 60_000);
+        });
+    });
+
     describe('full-pass marker (unlocks sec-13f)', () => {
         const KEY = INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE;
 
@@ -159,6 +325,39 @@ describe('runCusipMapSync', () => {
                 universeCompleted: true,
             });
             expect(state.get(KEY)).toBe('2026-10-16T03:00:00.000Z');
+        });
+
+        it('requests the one-time FINRA re-ingest together with the marker, and only on that first transition', async () => {
+            const shared = newShared();
+            await runCusipMapSync(build({}, {}, {}, [], shared).deps);
+            expect(
+                parseFinraRebackfillProgress(
+                    shared.state.get(
+                        INVESTOR_FLOWS_STATE_FINRA_REBACKFILL
+                    ) as string
+                )
+            ).toEqual({
+                requestedAt: '2026-10-16T03:00:00.000Z',
+                volumeBefore: null,
+                interestBefore: null,
+            });
+            // finra-short finishes and clears the request; later full passes must not request it again
+            shared.state.delete(INVESTOR_FLOWS_STATE_FINRA_REBACKFILL);
+            shared.day += 1;
+            await runCusipMapSync(build({}, {}, {}, [], shared).deps);
+            expect(
+                shared.state.has(INVESTOR_FLOWS_STATE_FINRA_REBACKFILL)
+            ).toBe(false);
+        });
+
+        it('does not request the FINRA re-ingest while candidates remain', async () => {
+            const { deps, state } = build({
+                AAPL: profile({ cusip: '037833100' }),
+            });
+            await runCusipMapSync(deps);
+            expect(state.has(INVESTOR_FLOWS_STATE_FINRA_REBACKFILL)).toBe(
+                false
+            );
         });
 
         it('is NOT set while candidates remain (even if this run mapped some)', async () => {
@@ -301,13 +500,16 @@ describe('runCusipMapSync', () => {
             });
 
             describe('blanket-outage boundary: 20 attempts, ratio 0.9', () => {
-                /** 20 symbols, the first `failing` of them reject, the rest map fine. */
+                /**
+                 * 20 symbols, the first `failing` of them reject, the rest map fine. The failure is a non-transient infra error
+                 * (FMP 402) so the transient-outage early stop does not cut the run before the ratio is judged.
+                 */
                 const twenty = (failing: number) =>
                     Object.fromEntries(
                         Array.from({ length: 20 }, (_, i) => [
                             `B${String(i).padStart(2, '0')}`,
                             i < failing
-                                ? (new Error('503') as Error)
+                                ? (new Error('402') as Error)
                                 : profile({
                                       cusip: `1111111${String(i).padStart(2, '0')}`,
                                   }),
@@ -338,7 +540,7 @@ describe('runCusipMapSync', () => {
                     const nineteen = Object.fromEntries(
                         Array.from({ length: 19 }, (_, i) => [
                             `C${String(i).padStart(2, '0')}`,
-                            new Error('503') as Error,
+                            new Error('402') as Error,
                         ])
                     );
                     const { deps } = build(nineteen, {}, {}, [], shared);
@@ -572,6 +774,9 @@ describe('runCusipMapSync', () => {
                     [{ cusip: SHARED, kept: 'BRK-B', dropped: ['BRKB'] }],
                 ],
             ]);
+            expect(String(lines[0]?.[0])).toContain(
+                'dropped 1 (dropped symbols are skipped for 30 days)'
+            );
         });
 
         it('keeps the symbol already mapped on a later run: a second listing never flips the map', async () => {
@@ -865,6 +1070,29 @@ describe('runCusipMapSync', () => {
                 duplicateCusips: 1,
             });
             expect(missRecords).toEqual([]);
+        });
+
+        it('logs a re-check conflict as keeping the existing mapping, without the candidate-path miss wording', async () => {
+            const log = vi.fn();
+            const { deps, recheck } = build({}, { log });
+            recheck.candidates = [
+                candidate(7, 'XYZW', '111111111'),
+                candidate(8, 'XYZ', '222222222'),
+            ];
+            deps.fetchProfile = async () => profile({ cusip: '594918104' });
+            await runCusipMapSync(deps);
+            const lines = log.mock.calls.filter(([message]) =>
+                String(message).includes('claimed by more than one symbol')
+            );
+            expect(lines).toEqual([
+                [
+                    expect.stringContaining(
+                        'on CUSIP re-check — dropped symbols keep their existing mapping, no miss recorded'
+                    ),
+                    [{ cusip: '594918104', kept: 'XYZ', dropped: ['XYZW'] }],
+                ],
+            ]);
+            expect(String(lines[0]?.[0])).not.toContain('skipped for');
         });
 
         it('ignores a profile without a usable CUSIP but still advances checked_at', async () => {

@@ -26,7 +26,8 @@ import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from './investorFlowsState';
-import { uniqueForUpsert } from './uniqueForUpsert';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
+import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 const LOOKUP_CHUNK = 1_000;
 
@@ -63,7 +64,11 @@ export interface CikMapReplaceResult {
  * `sec_filings_failures` 재시도 큐 — 저장에 성공한 accession의 실패 기록은 같은 트랜잭션에서 지운다.
  */
 export class DrizzleSecFilingsRepository {
-    constructor(private readonly db: SiglensDatabase) {}
+    constructor(
+        private readonly db: SiglensDatabase,
+        /** 중복 키를 줄였을 때의 경고(`uniqueForUpsert`) — 수집 cron은 자기 `log`를 넘긴다. */
+        private readonly log: UpsertLog = warnWithDetail
+    ) {}
 
     getState(key: string): Promise<string | null> {
         return readInvestorFlowsState(this.db, key);
@@ -101,8 +106,11 @@ export class DrizzleSecFilingsRepository {
     async replaceCikSymbolMap(
         pairs: readonly CikSymbolPair[]
     ): Promise<CikMapReplaceResult> {
-        const unique = uniqueForUpsert('sec_cik_symbol_map', pairs, pair =>
-            compositeKey(pair.cik, pair.symbol)
+        const unique = uniqueForUpsert(
+            'sec_cik_symbol_map',
+            pairs,
+            pair => compositeKey(pair.cik, pair.symbol),
+            this.log
         );
         return withRetry(
             () =>
@@ -240,8 +248,11 @@ export class DrizzleSecFilingsRepository {
     async upsertOfferings(rows: readonly OfferingFilingRow[]): Promise<void> {
         if (rows.length === 0) return;
         // 한 심볼이 두 CIK에 걸려 있고(company_tickers의 `.`·`-` 표기 변형) 두 CIK가 같은 제출의 공동 등록인이면 (접수번호, 심볼)이 겹친다.
-        const unique = uniqueForUpsert('sec_offering_filings', rows, row =>
-            compositeKey(row.accession, row.symbol)
+        const unique = uniqueForUpsert(
+            'sec_offering_filings',
+            rows,
+            row => compositeKey(row.accession, row.symbol),
+            this.log
         );
         await withRetry(
             () =>

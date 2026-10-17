@@ -237,6 +237,33 @@ describe('getInvestorFlowsTool', () => {
         );
     });
 
+    it('FMP 일시 오류로 일부가 비면 temporarilyUnavailable로 "지금은 조회 불가"를 알린다', async () => {
+        const snapshot = {
+            ...makeSnapshot({ largeHolders: null }),
+            degraded: ['largeHolders', 'float'] as const,
+        };
+        arrange(snapshot);
+        const result = (await getInvestorFlowsTool(
+            { symbol: 'AAPL' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(result.temporarilyUnavailable).toEqual({
+            parts: ['largeHolders', 'float'],
+            note: expect.stringContaining('could not be loaded right now'),
+        });
+    });
+
+    it('온전한 스냅샷에는 temporarilyUnavailable 키가 없다', async () => {
+        arrange(makeSnapshot());
+        const result = (await getInvestorFlowsTool(
+            { symbol: 'AAPL' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(result).not.toHaveProperty('temporarilyUnavailable');
+    });
+
     it('FINRA 켜짐이면 출처에 FINRA를 밝힌다', async () => {
         arrange(makeSnapshot());
         const result = (await getInvestorFlowsTool(
@@ -853,6 +880,9 @@ describe('getInvestorFlowsTool', () => {
                 reports: 2,
                 reporters: 2,
                 detailedReports: 1,
+                // 신고자별 순 보유비율 변동의 최대 절댓값 — 픽스처자산운용의 신규 5.05%p(국민연금 -0.09%p보다 크다).
+                maxAbsRatioChangePct: 5.05,
+                latestReceiptDate: '2026-10-14',
             });
             expect(result.insiders.recent).toHaveLength(2);
             expect(result.insiders.metrics?.tradingPlans).toBe(1);

@@ -18,6 +18,10 @@ import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/m
 import {
     evaluate,
     makeEmptySnapshot,
+    makeExpandedSnapshot,
+    makeKrInsiderRecord,
+    makeKrMajorHoldingRecord,
+    makeKrSnapshot,
     makeLargeHolder,
     makeSnapshot,
     makeTransaction,
@@ -122,6 +126,40 @@ describe('ScorecardCard', () => {
         ).toBeInTheDocument();
     });
 
+    it('FMP 일시 오류로 빈 축(unavailableAxes)은 "데이터 부족" 대신 "일시 조회 불가"라고 말한다', () => {
+        const snapshot = makeSnapshot({ largeHolders: null });
+        render(
+            <ScorecardCard
+                scorecard={evaluate(snapshot)}
+                unavailableAxes={['largeHolders']}
+            />
+        );
+        const card = screen
+            .getByRole('heading', { level: 3, name: /대량보유/ })
+            .closest('li') as HTMLElement;
+        expect(within(card).getByText('일시 조회 불가')).toBeInTheDocument();
+        expect(
+            within(card).getByText(/일시적으로 불러오지 못했어요/)
+        ).toBeInTheDocument();
+        expect(within(card).queryByText('데이터 부족')).toBeNull();
+    });
+
+    it('수집 중 축 표시가 일시 조회 불가보다 먼저다', () => {
+        const snapshot = makeSnapshot({ shortInterest: [], shortVolume: [] });
+        render(
+            <ScorecardCard
+                scorecard={evaluate(snapshot)}
+                collectingAxes={['short']}
+                unavailableAxes={['short']}
+            />
+        );
+        const card = screen
+            .getByRole('heading', { level: 3, name: /공매도/ })
+            .closest('li') as HTMLElement;
+        expect(within(card).getByText('수집 중')).toBeInTheDocument();
+        expect(within(card).queryByText('일시 조회 불가')).toBeNull();
+    });
+
     it('데이터가 없는 축은 "데이터 부족"을 말하고 점수 숫자를 내지 않는다', () => {
         render(<ScorecardCard scorecard={evaluate(makeEmptySnapshot())} />);
         expect(screen.getAllByText('데이터 부족').length).toBeGreaterThan(0);
@@ -130,7 +168,131 @@ describe('ScorecardCard', () => {
         ).toBeInTheDocument();
         expect(screen.queryByText(/\d점$/)).toBeNull();
     });
+
+    it('대량보유 근거는 13D/13G 포지션과 신고 수를 따로 말한다', () => {
+        render(<ScorecardCard scorecard={evaluate(makeSnapshot())} />);
+        const card = axisCard(/대량보유/);
+        expect(
+            within(card).getByText(
+                /13D 포지션 1건 · 신고 1회 · 13G 포지션 0건 · 신고 0회 \(최근 \d+일\)/
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('증자 공시 목록이 비어 있으면 중립 축에 "공시 없음"을 말하고 "0건"·"데이터 부족"을 내지 않는다', () => {
+        render(
+            <ScorecardCard
+                scorecard={evaluate(makeExpandedSnapshot({ offerings: [] }))}
+            />
+        );
+        const card = axisCard(/증자·희석/);
+        expect(within(card).getByText('중립')).toBeInTheDocument();
+        expect(
+            within(card).getByText('확인된 증자·등록 공시 없음')
+        ).toBeInTheDocument();
+        expect(within(card).queryByText(/0건/)).toBeNull();
+        expect(within(card).queryByText('데이터 부족')).toBeNull();
+    });
 });
+
+describe('ScorecardCard — 한국(DART) 축', () => {
+    const KR_AXES = ['largeHolders', 'insider'] as const;
+    // 기준일(2026-10-16)에서 90일 창보다 오래된 접수일.
+    const OUTSIDE_WINDOW = '2026-05-04';
+
+    it('보고가 모두 채점 창 밖이면 "데이터 부족" 대신 최근 N일 공시 없음과 최신 접수일을 말한다', () => {
+        const scorecard = evaluate(
+            makeKrSnapshot({
+                majorHoldings: [
+                    makeKrMajorHoldingRecord({ receiptDate: OUTSIDE_WINDOW }),
+                ],
+            })
+        );
+        render(<ScorecardCard scorecard={scorecard} axes={KR_AXES} />);
+        const card = axisCard(/대량보유/);
+        expect(within(card).getByText('최근 공시 없음')).toBeInTheDocument();
+        expect(
+            within(card).getByText(
+                `최근 ${scorecard.freshness.largeHolderWindow.days}일 공시 없음 (최신 접수일 ${OUTSIDE_WINDOW})`
+            )
+        ).toBeInTheDocument();
+        expect(within(card).queryByText('데이터 부족')).toBeNull();
+        expect(within(card).queryByText(/데이터가 부족해/)).toBeNull();
+    });
+
+    it('쓸 수 있는 보고가 하나도 없으면 그대로 "데이터 부족"이다', () => {
+        render(
+            <ScorecardCard
+                scorecard={evaluate(makeKrSnapshot({ majorHoldings: [] }))}
+                axes={KR_AXES}
+            />
+        );
+        const card = axisCard(/대량보유/);
+        expect(within(card).getByText('데이터 부족')).toBeInTheDocument();
+        expect(within(card).queryByText('최근 공시 없음')).toBeNull();
+    });
+
+    it('수집 중이면 창 밖 보고만 있어도 "수집 중"이 먼저다', () => {
+        render(
+            <ScorecardCard
+                scorecard={evaluate(
+                    makeKrSnapshot({
+                        majorHoldings: [
+                            makeKrMajorHoldingRecord({
+                                receiptDate: OUTSIDE_WINDOW,
+                            }),
+                        ],
+                    })
+                )}
+                axes={KR_AXES}
+                collectingAxes={['largeHolders']}
+            />
+        );
+        const card = axisCard(/대량보유/);
+        expect(within(card).getByText('수집 중')).toBeInTheDocument();
+        expect(within(card).queryByText('최근 공시 없음')).toBeNull();
+    });
+
+    it('창 안 보고에 유의미한 변동이 없으면 중립 라벨과 변동 없음 근거를 낸다(데이터 부족 아님)', () => {
+        render(
+            <ScorecardCard
+                scorecard={evaluate(
+                    makeKrSnapshot({
+                        majorHoldings: [
+                            makeKrMajorHoldingRecord({
+                                reporter: '삼성물산',
+                                ratioPct: 19.69,
+                                ratioChangePct: 0,
+                                sharesChange: 0,
+                            }),
+                        ],
+                        insiderReports: [makeKrInsiderRecord()],
+                    })
+                )}
+                axes={KR_AXES}
+            />
+        );
+        const majorCard = axisCard(/대량보유/);
+        expect(within(majorCard).getByText('중립')).toBeInTheDocument();
+        expect(
+            within(majorCard).getByText(
+                '유의미한 지분 변동 없음 (보고자별 최대 0.00%p)'
+            )
+        ).toBeInTheDocument();
+        const insiderCard = axisCard(/임원·주요주주/);
+        expect(within(insiderCard).getByText('중립')).toBeInTheDocument();
+        expect(
+            within(insiderCard).getByText('유의미한 보유 변동 없음')
+        ).toBeInTheDocument();
+        expect(screen.queryByText('데이터 부족')).toBeNull();
+    });
+});
+
+function axisCard(name: RegExp): HTMLElement {
+    return screen
+        .getByRole('heading', { level: 3, name })
+        .closest('li') as HTMLElement;
+}
 
 describe('InstitutionalSection', () => {
     it('IN/OUT 막대 라벨과 부호를 글자로 낸다', () => {
@@ -322,6 +484,57 @@ describe('InsiderSection', () => {
         expect(screen.queryByRole('link', { name: '공시 보기' })).toBeNull();
     });
 
+    it('점수 창 밖의 거래는 "집계 기간 밖" 묶음으로 따로 그린다(요약 건수와 섞지 않는다)', () => {
+        const txs = [
+            makeTransaction({ date: '2026-10-10', name: 'Inside Buyer' }),
+            makeTransaction({
+                date: '2026-05-02',
+                name: 'Old Buyer',
+                url: 'https://www.sec.gov/old.htm',
+            }),
+        ];
+        render(
+            <InsiderSection
+                {...insiderProps(
+                    makeSnapshot({ insider: { transactions: txs } })
+                )}
+            />
+        );
+        const outsideHeading = screen.getByRole('heading', {
+            level: 4,
+            name: /집계 기간 밖/,
+        });
+        const outside = outsideHeading.parentElement as HTMLElement;
+        expect(
+            within(outside).getAllByText('Old Buyer').length
+        ).toBeGreaterThan(0);
+        expect(within(outside).queryByText('Inside Buyer')).toBeNull();
+        expect(
+            within(outside).getByText(
+                /위 요약의 건수·금액에는 들어가지 않은 거래예요/
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('창 안 거래가 없고 창 밖만 있으면 "최근 N일 안의 매수·매도 신고는 없어요"와 창 밖 묶음을 낸다', () => {
+        const txs = [
+            makeTransaction({ date: '2026-05-02', name: 'Old Buyer' }),
+        ];
+        render(
+            <InsiderSection
+                {...insiderProps(
+                    makeSnapshot({ insider: { transactions: txs } })
+                )}
+            />
+        );
+        expect(
+            screen.getByText(/최근 90일 안의 매수·매도 신고는 없어요/)
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { level: 4, name: /집계 기간 밖/ })
+        ).toBeInTheDocument();
+    });
+
     it('내부자 데이터가 없으면 "데이터 없음"이다', () => {
         render(<InsiderSection {...insiderProps(makeEmptySnapshot())} />);
         expect(screen.getByText(/데이터 없음/)).toBeInTheDocument();
@@ -343,6 +556,31 @@ describe('LargeHoldersSection', () => {
         );
         expect(screen.getByText('13D 행동주의')).toBeInTheDocument();
         expect(screen.getByText('13G 단순 투자')).toBeInTheDocument();
+    });
+
+    it('FMP 일시 오류(temporarilyUnavailable)면 "일시적으로 불러오지 못했어요"라고 말한다', () => {
+        render(<LargeHoldersSection filings={null} temporarilyUnavailable />);
+        expect(
+            screen.getByText(/대량보유 공시를 일시적으로 불러오지 못했어요/)
+        ).toBeInTheDocument();
+    });
+
+    it('점수 창(최근 90일 기준)을 밝힌다 — 목록에는 더 오래된 공시도 있다', () => {
+        render(
+            <LargeHoldersSection
+                filings={[makeLargeHolder()]}
+                scoringWindow={{
+                    days: 90,
+                    from: '2026-07-18',
+                    to: '2026-10-16',
+                }}
+            />
+        );
+        expect(
+            screen.getByText(
+                '점수는 최근 90일(2026-07-18 ~ 2026-10-16) 공시만 반영해요. 그보다 오래된 공시도 목록에 함께 보여 줘요.'
+            )
+        ).toBeInTheDocument();
     });
 
     it('빈 목록은 "데이터 없음", null은 불러오지 못함으로 갈라 말한다', () => {

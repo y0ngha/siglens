@@ -62,6 +62,23 @@ describe('dedupeByKey', () => {
             expect(exampleKeys).toEqual(['x']);
         });
 
+        it('orders example keys by first appearance, not by when the repeat was seen (A, B, B, A → [A, B])', () => {
+            const { rows, exampleKeys } = dedupeByKey(
+                [
+                    { key: 'A', value: 1 },
+                    { key: 'B', value: 2 },
+                    { key: 'B', value: 3 },
+                    { key: 'A', value: 4 },
+                ],
+                byKey
+            );
+            expect(exampleKeys).toEqual(['A', 'B']);
+            expect(rows).toEqual([
+                { key: 'A', value: 4 },
+                { key: 'B', value: 3 },
+            ]);
+        });
+
         it(`lists at most ${DEDUPE_EXAMPLE_LIMIT} example keys, in first-seen order`, () => {
             const keys = Array.from(
                 { length: DEDUPE_EXAMPLE_LIMIT + 2 },

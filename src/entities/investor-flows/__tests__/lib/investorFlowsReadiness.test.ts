@@ -94,22 +94,63 @@ describe('deriveInstitutionalStatus', () => {
 });
 
 describe('deriveShortStatus', () => {
+    const settled = { universeComplete: true, rebackfillPending: false };
+
     it('is unknown (not applicable) while the FINRA flag is off, whatever the tables hold', () => {
         expect(
-            deriveShortStatus({ finraEnabled: false, hasAnyRow: true })
+            deriveShortStatus({
+                finraEnabled: false,
+                hasAnyRow: true,
+                ...settled,
+            })
         ).toBe('unknown');
         expect(
-            deriveShortStatus({ finraEnabled: false, hasAnyRow: false })
+            deriveShortStatus({
+                finraEnabled: false,
+                hasAnyRow: false,
+                universeComplete: false,
+                rebackfillPending: true,
+            })
         ).toBe('unknown');
     });
 
-    it('is collecting while enabled but empty, ready once any row exists', () => {
+    it('is collecting while enabled but empty, ready once any row exists and the universe has settled', () => {
         expect(
-            deriveShortStatus({ finraEnabled: true, hasAnyRow: false })
+            deriveShortStatus({
+                finraEnabled: true,
+                hasAnyRow: false,
+                ...settled,
+            })
         ).toBe('collecting');
-        expect(deriveShortStatus({ finraEnabled: true, hasAnyRow: true })).toBe(
-            'ready'
-        );
+        expect(
+            deriveShortStatus({
+                finraEnabled: true,
+                hasAnyRow: true,
+                ...settled,
+            })
+        ).toBe('ready');
+    });
+
+    it('stays collecting while the CUSIP universe is incomplete, even with rows (symbols mapped later have none yet)', () => {
+        expect(
+            deriveShortStatus({
+                finraEnabled: true,
+                hasAnyRow: true,
+                universeComplete: false,
+                rebackfillPending: false,
+            })
+        ).toBe('collecting');
+    });
+
+    it('stays collecting until the one-time FINRA re-ingest has cleared its request', () => {
+        expect(
+            deriveShortStatus({
+                finraEnabled: true,
+                hasAnyRow: true,
+                universeComplete: true,
+                rebackfillPending: true,
+            })
+        ).toBe('collecting');
     });
 });
 

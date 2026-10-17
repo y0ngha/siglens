@@ -13,6 +13,7 @@ import { DrizzleSecFilingsRepository } from '../../api/investorFlowsFilingsRepos
 import { DrizzleInvestorFlowsFtdRepository } from '../../api/investorFlowsFtdRepository';
 import { DrizzleInvestorFlowsRegShoRepository } from '../../api/investorFlowsRegShoRepository';
 import {
+    deleteInvestorFlowsState,
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from '../../api/investorFlowsState';
@@ -38,6 +39,17 @@ describe('investorFlowsState helpers', () => {
             key: 'sec_filings_cursor',
             value: '2026-10-15',
         });
+    });
+
+    it('deletes only the given key', async () => {
+        const { db, ops } = createFakeDb();
+        await deleteInvestorFlowsState(db, 'finra_rebackfill_pending');
+        expect(ops[0]).toMatchObject({
+            kind: 'delete',
+            target: investorFlowsState,
+        });
+        const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
+        expect(renderSql(where).params).toEqual(['finra_rebackfill_pending']);
     });
 });
 

@@ -34,6 +34,15 @@ function parseRetryAfterSeconds(header: string | null): number | null {
     return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
 }
 
+/** `fmpGet` 호출 옵션. 생략하면 기존 동작(배치·렌더 재시도 정책)이다. */
+export interface FmpGetOptions {
+    /**
+     * `false`면 일시 오류(429·5xx·네트워크·timeout)도 **재시도하지 않고** 한 번만 보낸다 — 호출부가 HTTP 시도 수 자체를
+     * 페이싱으로 묶어야 할 때 쓴다(cusip-map: 내부 재시도는 페이서가 세지 못한 요청을 더 보낸다). 기본 `true`.
+     */
+    retryTransient?: boolean;
+}
+
 /**
  * GET FMP /stable/<path>; appends apikey automatically.
  *
@@ -42,7 +51,8 @@ function parseRetryAfterSeconds(header: string | null): number | null {
  * entered by the render cache wrappers such as `staticSymbolCache`) the short
  * `FMP_RENDER_RETRY` budget applies instead — 1 retry, 3s per attempt — so a
  * slow FMP degrades the page instead of stalling the ISR render for up to a
- * minute. Non-transient 4xx errors are thrown
+ * minute. `options.retryTransient: false` sends exactly one attempt (callers
+ * that pace their own HTTP attempts). Non-transient 4xx errors are thrown
  * immediately as `FmpHttpError`. `readFmpConfig()` and `URLSearchParams` run
  * once per call — only `fetch()` is inside the retry loop so each attempt gets
  * a fresh `AbortSignal` timeout.
@@ -67,7 +77,8 @@ function parseRetryAfterSeconds(header: string | null): number | null {
  */
 export async function fmpGet<T>(
     path: string,
-    query: Record<string, string> = {}
+    query: Record<string, string> = {},
+    options: FmpGetOptions = {}
 ): Promise<T> {
     assertOnline(OFFLINE_BUILD_SERVICE.FMP, path);
     assertFmpAvailableAtBuild(path);
@@ -119,6 +130,7 @@ export async function fmpGet<T>(
     };
 
     if (!isBuildPhase()) {
+        if (options.retryTransient === false) return fetchOnce();
         return withRetry(
             fetchOnce,
             inRender ? FMP_RENDER_RETRY : FMP_TRANSIENT_RETRY

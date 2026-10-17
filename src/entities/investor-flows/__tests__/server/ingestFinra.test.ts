@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+    MAX_SHORT_INTEREST_FILES_PER_RUN,
     MAX_SHORT_VOLUME_FILES_PER_RUN,
     runFinraIngest,
     SHORT_VOLUME_BACKFILL_DAYS,
@@ -11,6 +12,11 @@ import {
 } from '../fixtures/investorFlowsSamples';
 import { shortVolumeCandidateDates } from '../../lib/finraSchedule';
 import { addDays } from '../../lib/investorFlowsDates';
+import {
+    initialFinraRebackfillValue,
+    parseFinraRebackfillProgress,
+} from '../../lib/finraRebackfill';
+import { INVESTOR_FLOWS_STATE_FINRA_REBACKFILL } from '../../lib/investorFlowsPolicy';
 
 const NOW = new Date('2026-10-15T12:00:00Z');
 /** Settlements inside the 75-day lookback other than the 10-15 one (08-14, 08-31, 09-15, 09-30). */
@@ -33,8 +39,11 @@ function build(
         haveVolume?: string[];
         haveInterest?: string[];
         files?: Record<string, string>;
+        /** `investor_flows_state`, shared across runs when a test simulates several. */
+        flowsState?: Map<string, string>;
     } = {}
 ) {
+    const flowsState = state.flowsState ?? new Map<string, string>();
     const calls = {
         volumeFetched: [] as string[],
         interestFetched: [] as string[],
@@ -88,6 +97,15 @@ function build(
                 return 0;
             },
         },
+        state: {
+            getState: async key => flowsState.get(key) ?? null,
+            setState: async (key, value) => {
+                flowsState.set(key, value);
+            },
+            deleteState: async key => {
+                flowsState.delete(key);
+            },
+        },
         invalidateSymbols: symbols => {
             calls.invalidated.push([...symbols]);
         },
@@ -96,7 +114,7 @@ function build(
         log: vi.fn(),
         ...over,
     };
-    return { deps, calls };
+    return { deps, calls, flowsState };
 }
 
 describe('runFinraIngest', () => {
@@ -404,6 +422,169 @@ describe('runFinraIngest', () => {
             const result = await runFinraIngest(deps);
             expect(result.firstDataStored).toBe(false);
             expect(onFirstDataStored).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('one-time FINRA re-ingest requested by the first cusip-map full pass', () => {
+        const requested = (): Map<string, string> =>
+            new Map([
+                [
+                    INVESTOR_FLOWS_STATE_FINRA_REBACKFILL,
+                    initialFinraRebackfillValue(
+                        new Date('2026-10-15T03:00:00Z')
+                    ),
+                ],
+            ]);
+        const caughtUp = {
+            latestVolume: '2026-10-15',
+            haveInterest: [...STORED, '2026-10-15'],
+        };
+
+        it('does not re-read stored files and writes no state when nothing was requested', async () => {
+            const { deps, calls, flowsState } = build({}, caughtUp);
+            const result = await runFinraIngest(deps);
+            expect(calls.volumeFetched).toEqual([]);
+            expect(calls.interestFetched).toEqual([]);
+            expect(result.rebackfill).toEqual({
+                status: 'none',
+                volumeFiles: 0,
+                interestFiles: 0,
+            });
+            expect(flowsState.size).toBe(0);
+        });
+
+        it('re-reads stored volume days newest first within the per-run cap and every stored settlement, then keeps a cursor', async () => {
+            const { deps, calls, flowsState } = build(
+                {},
+                {
+                    ...caughtUp,
+                    flowsState: requested(),
+                    files: {
+                        'v:2026-10-15': CNMS_SAMPLE,
+                        'i:2026-09-30': SHORT_INTEREST_SAMPLE,
+                    },
+                }
+            );
+            const result = await runFinraIngest(deps);
+            const window = storedThrough('2026-10-15').toReversed();
+            const firstBatch = window.slice(0, MAX_SHORT_VOLUME_FILES_PER_RUN);
+            expect(calls.volumeFetched).toEqual(firstBatch);
+            expect(calls.interestFetched).toEqual(
+                [...STORED, '2026-10-15'].toReversed()
+            );
+            expect(result.rebackfill).toEqual({
+                status: 'in_progress',
+                volumeFiles: 1,
+                interestFiles: 1,
+            });
+            // the re-read files are written for the whole current universe
+            expect(
+                (calls.volumeRows[0] as { symbol: string }[])
+                    .map(r => r.symbol)
+                    .sort()
+            ).toEqual(['AAPL', 'BF.A', 'BF.B', 'MSFT']);
+            const progress = parseFinraRebackfillProgress(
+                flowsState.get(INVESTOR_FLOWS_STATE_FINRA_REBACKFILL) as string
+            );
+            expect(progress).toMatchObject({
+                requestedAt: '2026-10-15T03:00:00.000Z',
+                volumeBefore: firstBatch.at(-1),
+                interestBefore: STORED[0],
+            });
+        });
+
+        it('continues from the cursor on the next run and clears the request once both sides are done', async () => {
+            const flowsState = requested();
+            const window = storedThrough('2026-10-15').toReversed();
+            await runFinraIngest(build({}, { ...caughtUp, flowsState }).deps);
+            const onRebackfillCompleted = vi.fn();
+            const second = build(
+                { onRebackfillCompleted },
+                { ...caughtUp, flowsState }
+            );
+            const result = await runFinraIngest(second.deps);
+            // the short readiness flips collecting -> ready, so the readiness cache is invalidated once
+            expect(onRebackfillCompleted).toHaveBeenCalledTimes(1);
+            expect(second.calls.volumeFetched).toEqual(
+                window.slice(MAX_SHORT_VOLUME_FILES_PER_RUN)
+            );
+            expect(second.calls.interestFetched).toEqual([]);
+            expect(result.rebackfill.status).toBe('completed');
+            expect(flowsState.has(INVESTOR_FLOWS_STATE_FINRA_REBACKFILL)).toBe(
+                false
+            );
+            // a third run is back to the normal path: no re-reads
+            const third = build({}, { ...caughtUp, flowsState });
+            await runFinraIngest(third.deps);
+            expect(third.calls.volumeFetched).toEqual([]);
+        });
+
+        it('spends only what the normal path left of the per-run caps', async () => {
+            const window = storedThrough('2026-10-15');
+            // the newest 5 weekdays are missing: the normal path reads them first
+            const { deps, calls } = build(
+                {},
+                {
+                    haveVolume: window.slice(0, -5),
+                    haveInterest: STORED,
+                    flowsState: requested(),
+                }
+            );
+            await runFinraIngest(deps);
+            expect(calls.volumeFetched).toHaveLength(
+                MAX_SHORT_VOLUME_FILES_PER_RUN
+            );
+            expect(calls.volumeFetched.slice(0, 5)).toEqual(
+                window.slice(-5).toReversed()
+            );
+            expect(calls.interestFetched.length).toBeLessThanOrEqual(
+                MAX_SHORT_INTEREST_FILES_PER_RUN +
+                    // holiday variants of the one missing settlement
+                    4
+            );
+            expect(calls.interestFetched.slice(-STORED.length)).toEqual(
+                STORED.toReversed()
+            );
+        });
+
+        it('keeps the request and its progress when the deadline stops the run', async () => {
+            let fetches = 0;
+            const flowsState = requested();
+            const { deps } = build(
+                {
+                    isDeadlineReached: () => fetches >= 3,
+                    finra: {
+                        fetchCnmsShortVolumeText: async () => {
+                            fetches += 1;
+                            return null;
+                        },
+                        fetchShortInterestText: async () => null,
+                    },
+                },
+                { ...caughtUp, flowsState }
+            );
+            const result = await runFinraIngest(deps);
+            expect(result.status).toBe('deadline');
+            expect(result.rebackfill.status).toBe('in_progress');
+            const progress = parseFinraRebackfillProgress(
+                flowsState.get(INVESTOR_FLOWS_STATE_FINRA_REBACKFILL) as string
+            );
+            expect(progress.volumeBefore).toBe(
+                storedThrough('2026-10-15').toReversed()[2]
+            );
+            expect(progress.interestBefore).toBeNull();
+        });
+
+        it('leaves the request untouched while FINRA_SHORT_DATA_ENABLED is off', async () => {
+            const flowsState = requested();
+            const before = new Map(flowsState);
+            const { deps, calls } = build(
+                { isEnabled: () => false },
+                { ...caughtUp, flowsState }
+            );
+            await runFinraIngest(deps);
+            expect(calls.volumeFetched).toEqual([]);
+            expect(flowsState).toEqual(before);
         });
     });
 });

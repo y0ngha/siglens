@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { InvestorFlowsFmpProvider } from '@/shared/api/fmp/investorFlowsProvider.types';
+import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import {
     DbFmpInvestorFlowsDataProvider,
     loadInvestorFlowsSnapshot,
@@ -450,6 +451,51 @@ describe('loadInvestorFlowsSnapshot', () => {
             expect(snapshot?.largeHolders).toBeNull();
             expect(snapshot?.insider.transactions).toHaveLength(1);
             expect(deps.log).toHaveBeenCalled();
+        });
+
+        it('marks largeHolders and float as degraded when FMP fails transiently (429/5xx), in a fixed order', async () => {
+            const { deps } = build({
+                fmp: {
+                    getSharesFloat: async () => {
+                        throw new FmpHttpError(
+                            'shares-float',
+                            503,
+                            null,
+                            'AAPL'
+                        );
+                    },
+                    getBeneficialOwnership: async () => {
+                        throw new FmpHttpError('13dg', 429, null, 'AAPL');
+                    },
+                },
+            });
+            const snapshot = await loadInvestorFlowsSnapshot('AAPL', deps);
+            expect(snapshot?.largeHolders).toBeNull();
+            expect(snapshot?.floatShares).toBeNull();
+            expect(snapshot?.degraded).toEqual(['largeHolders', 'float']);
+        });
+
+        it('does not mark a permanent failure (402) or a non-HTTP error as degraded — retrying would not change it', async () => {
+            const { deps } = build({
+                fmp: {
+                    getBeneficialOwnership: async () => {
+                        throw new FmpHttpError('13dg', 402, null, 'AAPL');
+                    },
+                    getSharesFloat: async () => {
+                        throw new Error('float down');
+                    },
+                },
+            });
+            const snapshot = await loadInvestorFlowsSnapshot('AAPL', deps);
+            expect(snapshot?.largeHolders).toBeNull();
+            expect(snapshot).not.toHaveProperty('degraded');
+        });
+
+        it('leaves a fully loaded snapshot without the degraded field', async () => {
+            const { deps } = build();
+            expect(
+                await loadInvestorFlowsSnapshot('AAPL', deps)
+            ).not.toHaveProperty('degraded');
         });
 
         it('continues without shares-float when only that call fails', async () => {

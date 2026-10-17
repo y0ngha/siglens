@@ -4,6 +4,7 @@ vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: mockClient }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
+import { isFmpTransientError } from '@/shared/api/fmp/fmpRetry';
 import { OpenFigiRateLimitedError } from '@/shared/api/openfigi/openFigiClient';
 import { isSecBlockedError } from '@/shared/api/sec/secClient';
 import {
@@ -35,6 +36,35 @@ describe('createCusipMapDeps', () => {
             false
         );
         expect(isRateLimitError(new Error('429'))).toBe(false);
+    });
+
+    it('fetches each profile with a single HTTP attempt (no internal transient retry), so the pacer counts real requests', async () => {
+        const fetchSpy = vi.fn(
+            async (_input: unknown, _init?: RequestInit) =>
+                new Response('', { status: 503 })
+        );
+        vi.stubGlobal('fetch', fetchSpy);
+        vi.stubEnv('FMP_API_KEY', 'test-key');
+        try {
+            const { fetchProfile, isTransientError } = createCusipMapDeps(
+                () => false
+            );
+            const error = await fetchProfile('AAPL').catch(
+                (reason: unknown) => reason
+            );
+            expect(error).toBeInstanceOf(FmpHttpError);
+            expect(isTransientError(error)).toBe(true);
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.unstubAllGlobals();
+            vi.unstubAllEnvs();
+        }
+    });
+
+    it('classifies FMP transient errors with the shared FMP rule', () => {
+        expect(createCusipMapDeps(() => false).isTransientError).toBe(
+            isFmpTransientError
+        );
     });
 
     it('carries the deadline callback through', () => {

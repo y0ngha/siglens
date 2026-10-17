@@ -3,12 +3,12 @@ import {
     evaluateInvestorFlows,
     type InvestorFlowsMarket,
     type InvestorFlowsScorecard,
-    type InvestorFlowsSnapshot,
 } from '@y0ngha/siglens-core';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { maskUncollectedSections } from '../lib/investorFlowsReadiness';
 import type {
     InvestorFlowsPipelineReadiness,
+    InvestorFlowsSnapshotWithStatus,
     KrDisclosureCompany,
 } from '../model';
 import { getKrDartCorp } from './getKrDartCorp';
@@ -21,8 +21,8 @@ export interface InvestorFlowsScorecardResult {
     market: InvestorFlowsMarket;
     /** 한국 종목이고 DART 회사 매핑이 있을 때만 값이 있다(미국 종목·매핑 실패·조회 실패면 `null`). */
     krCompany: KrDisclosureCompany | null;
-    /** 데이터가 없는 종목이거나 인프라 장애면 `null`. */
-    snapshot: InvestorFlowsSnapshot | null;
+    /** 데이터가 없는 종목이거나 인프라 장애면 `null`. FMP 일시 오류로 일부가 비었으면 `snapshot.degraded`에 적혀 있다. */
+    snapshot: InvestorFlowsSnapshotWithStatus | null;
     /** `snapshot`이 있을 때만 값이 있다 — 스냅샷 없이 점수를 만들어 내지 않는다. */
     scorecard: InvestorFlowsScorecard | null;
     /** true = 인프라 실패("데이터 없음"과 다르다). 페이지의 degrade/noindex 판정 근거. */

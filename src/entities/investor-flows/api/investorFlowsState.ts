@@ -39,3 +39,17 @@ export async function writeInvestorFlowsState(
         DB_TRANSIENT_RETRY
     );
 }
+
+/** `investor_flows_state`의 키를 지운다(없으면 아무것도 하지 않는다) — 1회성 요청을 끝냈을 때 쓴다. */
+export async function deleteInvestorFlowsState(
+    db: SiglensDatabase,
+    key: string
+): Promise<void> {
+    await withRetry(
+        () =>
+            db
+                .delete(investorFlowsState)
+                .where(eq(investorFlowsState.key, key)),
+        DB_TRANSIENT_RETRY
+    );
+}

@@ -13,12 +13,16 @@
 # 세 라우트 모두 Redis 락 + 데드라인 + 202 패턴이라 겹쳐 호출돼도 안전하다(락을 못 잡으면 204).
 # 락 TTL/마감은 각 route.ts 머리 주석이 정본이다.
 #
-# 순서는 코드가 지킨다 — 세 Rule을 한꺼번에 켜도 된다. cusip-map은 하루 1,500종목씩 채우므로 ~8천 종목에 며칠이 걸리는데,
+# 순서는 코드가 지킨다 — 세 Rule을 한꺼번에 켜도 된다. cusip-map은 실행당 1,000종목씩(FMP 분당 120건 페이싱) 채우므로 ~8천 종목에 며칠이 걸리는데,
 # sec-13f는 cusip-map이 **전수 한 바퀴(후보 0건)**를 끝내 `investor_flows_state`에 표식(`cusip_map_full_pass_done`, 한 번 서면
 # 지워지지 않는다)을 남기기 전까지는 아무것도 수집하지 않고 `[sec-13f] universe_incomplete`만 남기고 끝난다(결과 `stoppedBy:
 # "universe_incomplete"`). 덜 찬 유니버스로 제출을 "처리됨" 처리하면 나중에 매핑된 CUSIP은 그 포지션을 영영 못 얻기 때문이다.
 # 표식이 선 뒤에 생긴 늦은 매핑(신규 상장 등)의 복구는 `yarn investor-flows:reingest-13f`(docs/reference/CRON.md).
 # 부트스트랩을 앞당기려면 cusip-map을 수동 invoke로 여러 번 부른다(락이 겹침을 막는다).
+# 초기 채우기 동안에는 cusip-map Rule을 임시로 `cron(0 0/4 * * ? *)`(4시간마다)로 바꿔 둘 수 있다 — 실행마다 FMP 호출을
+# 분당 120건으로 페이싱하므로(`CUSIP_MAP_FMP_CALLS_PER_MINUTE`, 실행당 ~1,100건) 사이트 몫을 잠식하지 않는다. 단
+# `investor_flows_state`에 `cusip_map_full_pass_done`이 생기면 **반드시 매일(`cron(0 3 * * ? *)`)로 되돌린다**. 이 스크립트는
+# 매일 스케줄을 정본으로 둔다(다시 돌리면 매일로 돌아간다).
 #
 # ⚠️ 이 스크립트는 수동 실행이다. deploy 파이프라인 어디서도 자동 호출하지 않는다. 마이그레이션
 #    0048(investor_flows_data) 적용과 SSM 키(필요 시 OPENFIGI_API_KEY) 확인 **뒤에** 돌릴 것.

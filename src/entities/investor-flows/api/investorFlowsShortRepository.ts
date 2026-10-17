@@ -10,18 +10,26 @@ import {
 } from '../lib/investorFlowsPolicy';
 import type { ShortInterestRow, ShortVolumeRow } from '../model';
 import { compositeKey } from '../lib/dedupeByKey';
-import { uniqueForUpsert } from './uniqueForUpsert';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
+import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 /**
  * FINRA 공매도 데이터 저장소(⚠ 비상업 라이선스 — `shared/api/finra/finraShortDataEnabled.ts`).
  * 쓰기는 청크 upsert, 값이 바뀐 행만 갱신한다.
  */
 export class DrizzleInvestorFlowsShortRepository {
-    constructor(private readonly db: SiglensDatabase) {}
+    constructor(
+        private readonly db: SiglensDatabase,
+        /** 중복 키를 줄였을 때의 경고(`uniqueForUpsert`) — 수집 cron은 자기 `log`를 넘긴다. */
+        private readonly log: UpsertLog = warnWithDetail
+    ) {}
 
     async upsertShortVolume(rows: readonly ShortVolumeRow[]): Promise<void> {
-        const unique = uniqueForUpsert('finra_short_volume', rows, row =>
-            compositeKey(row.symbol, row.tradeDate)
+        const unique = uniqueForUpsert(
+            'finra_short_volume',
+            rows,
+            row => compositeKey(row.symbol, row.tradeDate),
+            this.log
         );
         for (
             let i = 0;
@@ -54,8 +62,11 @@ export class DrizzleInvestorFlowsShortRepository {
     async upsertShortInterest(
         rows: readonly ShortInterestRow[]
     ): Promise<void> {
-        const unique = uniqueForUpsert('finra_short_interest', rows, row =>
-            compositeKey(row.symbol, row.settlementDate)
+        const unique = uniqueForUpsert(
+            'finra_short_interest',
+            rows,
+            row => compositeKey(row.symbol, row.settlementDate),
+            this.log
         );
         for (
             let i = 0;

@@ -9,6 +9,11 @@ import { revalidateFlowsReadiness } from '../revalidateFlowsReadiness';
 import { revalidateSymbols } from '../revalidateSymbols';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleInvestorFlowsShortRepository } from '@/entities/investor-flows/api/investorFlowsShortRepository';
+import {
+    deleteInvestorFlowsState,
+    readInvestorFlowsState,
+    writeInvestorFlowsState,
+} from '@/entities/investor-flows/api/investorFlowsState';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import type { IngestFinraDeps } from '@/entities/investor-flows/server/ingestFinra';
 
@@ -19,16 +24,24 @@ export function createFinraShortDeps(
     const client = tryGetDatabaseClient();
     if (client === null) throw new Error('[finra-short] database unavailable');
     const universeRepo = new DrizzleInvestorFlowsUniverseRepository(client.db);
+    const log = warnWithDetail;
     return {
         isEnabled: isFinraShortDataEnabled,
         loadUniverseSymbols: async () =>
             (await universeRepo.loadUniverse()).symbols,
         finra: { fetchCnmsShortVolumeText, fetchShortInterestText },
-        repo: new DrizzleInvestorFlowsShortRepository(client.db),
+        repo: new DrizzleInvestorFlowsShortRepository(client.db, log),
+        state: {
+            getState: key => readInvestorFlowsState(client.db, key),
+            setState: (key, value) =>
+                writeInvestorFlowsState(client.db, key, value),
+            deleteState: key => deleteInvestorFlowsState(client.db, key),
+        },
         now: () => new Date(),
         isDeadlineReached,
         invalidateSymbols: symbols => revalidateSymbols(symbols),
         onFirstDataStored: revalidateFlowsReadiness,
-        log: warnWithDetail,
+        onRebackfillCompleted: revalidateFlowsReadiness,
+        log,
     };
 }

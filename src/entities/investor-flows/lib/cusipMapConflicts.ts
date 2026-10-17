@@ -31,13 +31,12 @@ export function resolveCusipMapConflicts<
     rows: readonly T[],
     existingLiveSymbolByCusip: ReadonlyMap<string, string>
 ): CusipMapResolution<T> {
-    const byCusip = new Map<string, Map<string, T>>();
-    for (const row of rows) {
-        const group = byCusip.get(row.cusip) ?? new Map<string, T>();
-        group.set(row.symbol, row);
-        byCusip.set(row.cusip, group);
-    }
-    const resolved = [...byCusip].map(([cusip, group]) => {
+    // CUSIP별로 묶고, 그 안에서 심볼당 뒤 행이 이긴다(`Map` 생성자는 같은 키를 뒤 값으로 덮는다).
+    const byCusip = [...Map.groupBy(rows, row => row.cusip)].map(
+        ([cusip, group]) =>
+            [cusip, new Map(group.map(row => [row.symbol, row]))] as const
+    );
+    const resolved = byCusip.map(([cusip, group]) => {
         const symbols = [...group.keys()].toSorted();
         const kept = existingLiveSymbolByCusip.get(cusip) ?? symbols[0];
         const dropped = symbols.filter(symbol => symbol !== kept);
@@ -56,4 +55,30 @@ export function resolveCusipMapConflicts<
             conflict === null ? [] : [conflict]
         ),
     };
+}
+
+/**
+ * 맵에 이미 있는 매핑(`mapped`) 중 `rows`의 **다른 심볼**이 같은 CUSIP을 주장하는 것 — `upsertCusipMap`이 그 심볼의 상장 여부를
+ * 확인할 대상이다. CUSIP → 입력 심볼 집합을 한 번 만들어 매핑마다 바로 찾는다(입력 × 매핑 전수 대조를 피한다).
+ */
+export function findContestedMappings<
+    M extends { cusip: string; symbol: string },
+>(
+    rows: readonly { cusip: string; symbol: string }[],
+    mapped: readonly M[]
+): M[] {
+    const symbolsByCusip = new Map(
+        [...Map.groupBy(rows, row => row.cusip)].map(([cusip, group]) => [
+            cusip,
+            new Set(group.map(row => row.symbol)),
+        ])
+    );
+    return mapped.filter(existing => {
+        const claimed = symbolsByCusip.get(existing.cusip);
+        // 같은 CUSIP의 입력 심볼 중 맵의 심볼과 다른 것이 하나라도 있으면 다툼이다.
+        return (
+            claimed !== undefined &&
+            (claimed.size > 1 || !claimed.has(existing.symbol))
+        );
+    });
 }

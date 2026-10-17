@@ -167,6 +167,23 @@ describe('fmpGet 함수는', () => {
             expect(mockFetch).toHaveBeenCalledTimes(2);
         });
 
+        it('retryTransient: false면 5xx·429·네트워크 오류도 한 번만 보내고 바로 던진다', async () => {
+            mockError(503);
+            await expect(
+                fmpGet('profile', {}, { retryTransient: false })
+            ).rejects.toThrow(FmpHttpError);
+            mockError(429);
+            await expect(
+                fmpGet('profile', {}, { retryTransient: false })
+            ).rejects.toThrow(FmpHttpError);
+            mockFetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+            await expect(
+                fmpGet('profile', {}, { retryTransient: false })
+            ).rejects.toThrow(TypeError);
+            expect(mockFetch).toHaveBeenCalledTimes(3);
+            expect(sleepMock).not.toHaveBeenCalled();
+        });
+
         it('Retry-After 헤더가 있는 429 응답은 FmpHttpError.retryAfterSeconds를 설정한다', async () => {
             // Only 1 mock needed since we check the error shape; but withRetry
             // will throw after all retries exhaust — mock all 4 calls.

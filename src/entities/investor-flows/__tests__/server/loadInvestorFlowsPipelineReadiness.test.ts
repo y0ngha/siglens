@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     INVESTOR_FLOWS_STATE_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE,
+    INVESTOR_FLOWS_STATE_FINRA_REBACKFILL,
     INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
@@ -134,6 +135,45 @@ describe('loadInvestorFlowsPipelineReadiness', () => {
             institutional: 'ready',
             short: 'collecting',
         });
+    });
+
+    it('FINRA rows exist but the CUSIP universe is incomplete -> short stays collecting (later-mapped symbols have no rows)', async () => {
+        const result = await loadInvestorFlowsPipelineReadiness(
+            build([], { hasAnyShortRow: async () => true })
+        );
+        expect(result.short).toBe('collecting');
+    });
+
+    it('universe complete but the one-time FINRA re-ingest still pending -> short stays collecting', async () => {
+        const result = await loadInvestorFlowsPipelineReadiness(
+            build(
+                [
+                    INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
+                    INVESTOR_FLOWS_STATE_FINRA_REBACKFILL,
+                ],
+                { hasAnyShortRow: async () => true }
+            )
+        );
+        expect(result.short).toBe('collecting');
+    });
+
+    it('rows + universe complete + no re-ingest request -> short ready', async () => {
+        const result = await loadInvestorFlowsPipelineReadiness(
+            build([INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE], {
+                hasAnyShortRow: async () => true,
+            })
+        );
+        expect(result.short).toBe('ready');
+    });
+
+    it('does not read the FINRA re-ingest request while the flag is off', async () => {
+        const getState = vi.fn(async () => null);
+        await loadInvestorFlowsPipelineReadiness(
+            build([], { getState, isFinraEnabled: () => false })
+        );
+        expect(getState).not.toHaveBeenCalledWith(
+            INVESTOR_FLOWS_STATE_FINRA_REBACKFILL
+        );
     });
 
     it('does not touch the FINRA tables while the flag is off, and reports short as unknown', async () => {

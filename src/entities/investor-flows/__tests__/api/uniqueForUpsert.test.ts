@@ -50,4 +50,30 @@ describe('uniqueForUpsert', () => {
             );
         });
     });
+
+    describe('when a logger is injected', () => {
+        const rows = [
+            { symbol: 'BRK-B', tradeDate: '2026-10-16', shortVolume: 10 },
+            { symbol: 'BRK-B', tradeDate: '2026-10-16', shortVolume: 30 },
+        ];
+
+        it('warns through that logger instead of the console', () => {
+            const log = vi.fn();
+            uniqueForUpsert('finra_short_volume', rows, keyOf, log);
+            expect(log).toHaveBeenCalledTimes(1);
+            expect(log).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    'finra_short_volume: dropped 1 duplicate-key row(s)'
+                ),
+                ['BRK-B|2026-10-16']
+            );
+            expect(warn).not.toHaveBeenCalled();
+        });
+
+        it('does not call the logger when nothing is dropped', () => {
+            const log = vi.fn();
+            uniqueForUpsert('finra_short_volume', rows.slice(0, 1), keyOf, log);
+            expect(log).not.toHaveBeenCalled();
+        });
+    });
 });

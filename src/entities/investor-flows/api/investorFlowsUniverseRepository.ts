@@ -10,6 +10,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import {
     type CusipConflict,
+    findContestedMappings,
     resolveCusipMapConflicts,
 } from '../lib/cusipMapConflicts';
 import {
@@ -241,13 +242,7 @@ export class DrizzleInvestorFlowsUniverseRepository {
                     ),
             DB_TRANSIENT_RETRY
         );
-        const contested = mapped.filter(existing =>
-            rows.some(
-                row =>
-                    row.cusip === existing.cusip &&
-                    row.symbol !== existing.symbol
-            )
-        );
+        const contested = findContestedMappings(rows, mapped);
         if (contested.length === 0) return new Map();
         const live = await withRetry(
             () =>
