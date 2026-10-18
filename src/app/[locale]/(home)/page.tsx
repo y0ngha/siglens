@@ -21,6 +21,7 @@ import {
     buildOrganizationCoreJsonLd,
     ORGANIZATION_JSON_LD_ID,
     SITE_URL,
+    VELOG_URL,
     X_URL,
 } from '@/shared/lib/seo';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
@@ -248,10 +249,10 @@ export default async function Home({
         alternateName: SITE_NAME_KO,
         logo: `${SITE_URL}/icon512.png`,
         description: tSeo('root.description'),
-        // 조직의 외부 프로필만 싣는다 — 서비스 저장소와 서비스 X 계정. 운영자 개인
-        // GitHub·velog는 사람의 프로필이라 `founder.sameAs`에만 둔다. 개인 계정을 조직
+        // 조직의 외부 프로필만 싣는다 — 서비스 저장소, 서비스 X 계정, 서비스 velog. 운영자
+        // 개인 GitHub은 사람의 프로필이라 `founder.sameAs`에만 둔다. 개인 계정을 조직
         // 노드에 섞으면 파서가 조직과 운영자를 같은 주체로 읽는다(2026-10-05 감사).
-        sameAs: [GITHUB_URL, X_URL],
+        sameAs: [GITHUB_URL, X_URL, VELOG_URL],
         // 운영 주체를 그래프에 붙인다 — `/about`의 `Person` 노드와 같은 `@id`라
         // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
         founder: {
