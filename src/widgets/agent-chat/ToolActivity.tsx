@@ -114,11 +114,13 @@ export function ToolActivity({
     const totalMs = tools.reduce((sum, item) => sum + (item.ms ?? 0), 0);
     const fearGreedLabel = t('ToolActivity.toolBarsFearGreed');
     const barsLabel = t('ToolActivity.toolBars');
-    const allLabels = new Set(tools.map(item => labelOf(item)));
+    const allLabels = [...new Set(tools.map(item => labelOf(item)))];
     // The fear-greed chart label already says "chart & indicators", so an
     // intraday chart chip beside it adds nothing to the folded summary.
-    if (allLabels.has(fearGreedLabel)) allLabels.delete(barsLabel);
-    const distinct = [...allLabels];
+    const hasFearGreed = allLabels.includes(fearGreedLabel);
+    const distinct = allLabels.filter(
+        label => !(hasFearGreed && label === barsLabel)
+    );
     const summary = running
         ? [
               t('ToolActivity.checking', {
