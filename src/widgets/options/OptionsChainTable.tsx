@@ -15,7 +15,6 @@ import { OpenInterestTooltip } from './utils/optionsTooltips';
 import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
-import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
@@ -30,31 +29,32 @@ function formatIv(value: number | null): string {
 }
 
 /**
- * 옵션은 미국 상장 상품뿐이라 달러·`en-US` 구분자로 고정한다 — 행사가·호가가 1,000을
- * 넘는 고가 종목에서 `$1050`처럼 천 단위 구분자가 빠졌다. 로케일을 고정하므로 서버·브라우저
- * 출력이 같다(하이드레이션 안전).
+ * 옵션은 미국 상장 상품뿐이라 달러·`en-US` 구분자로 고정한다(행사가·호가가 1,000을 넘는
+ * 고가 종목도 `$1,050`). 로케일을 고정하므로 서버·브라우저 출력이 같다(하이드레이션 안전).
  */
-const USD_GROUPED = { style: 'currency', currency: 'USD' } as const;
+const quoteFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+/** 정수 행사가는 소수 없이(`$1,050`), 아니면 한 자리(`$102.5`). */
+const strikeFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+});
 
 function formatBidAsk(bid: number | null, ask: number | null): string {
     if (bid === null && ask === null) return '—';
-    const quote = cachedNumberFormat('en-US', {
-        ...USD_GROUPED,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-    const bidStr = bid !== null ? quote.format(bid) : '—';
-    const askStr = ask !== null ? quote.format(ask) : '—';
+    const bidStr = bid !== null ? quoteFormatter.format(bid) : '—';
+    const askStr = ask !== null ? quoteFormatter.format(ask) : '—';
     return `${bidStr}/${askStr}`;
 }
 
 function formatStrike(strike: number): string {
-    // 정수 행사가는 소수 없이(`$1,050`), 아니면 한 자리(`$102.5`).
-    return cachedNumberFormat('en-US', {
-        ...USD_GROUPED,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 1,
-    }).format(strike);
+    return strikeFormatter.format(strike);
 }
 
 interface OptionsChainTableProps {

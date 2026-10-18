@@ -25,8 +25,8 @@ import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
 import { chartPriceFormat } from './utils/chartPriceFormat';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
-import { profileIdForSymbol } from '@/shared/config/marketProfile/registry';
+import { dynamicDecimals } from '@/shared/lib/priceFormat';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 
 interface ShareCandlestickChartProps {
     bars: Bar[];
@@ -101,13 +101,13 @@ export function ShareCandlestickChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-            // 종목 시장의 자릿수(한국 종목 정수)와 페이지 로케일 구분자 — 예전엔 소수 둘째 자리
-            // 고정이라 원화가 `215500.00`으로 찍혔다. 스냅샷엔 티커 문자열뿐이라 형상으로 고른다.
+            // 스냅샷엔 티커 문자열뿐이라 시장을 형상으로 고른다: 한국 종목은 원 단위 정수,
+            // 그 밖은 종가 크기에 맞춘 자릿수 — 형상으로는 크립토를 미국 주식과 가를 수 없어
+            // (`profileIdForSymbol`), 고정 둘째 자리면 서브센트 토큰이 `0.00`으로 뭉개진다.
             priceFormat: chartPriceFormat(
-                resolvePriceDecimals(
-                    profileIdForSymbol(ticker ?? ''),
-                    snapshotBars.at(-1)?.close
-                ),
+                isKrEquitySymbol(ticker ?? '')
+                    ? 0
+                    : dynamicDecimals(snapshotBars.at(-1)?.close ?? 1),
                 locale
             ),
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
