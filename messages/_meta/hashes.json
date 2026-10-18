@@ -3903,6 +3903,7 @@
     "widgets.investor-flows.ev.krMajorHolderReports": "e747a9064ff4",
     "widgets.investor-flows.ev.krMajorHolderDetailed": "7be1affe7c16",
     "widgets.investor-flows.ev.krInsiderReports": "54902bfab622",
+    "widgets.investor-flows.ev.krInsiderReportsBatch": "c22d5d13bd9f",
     "widgets.investor-flows.ev.krInsiderNetShares": "b400b9771944",
     "widgets.investor-flows.ev.krInsiderNetPct": "4189137a36ad",
     "widgets.investor-flows.ev.krTradingPlans": "4012dfafbe71",

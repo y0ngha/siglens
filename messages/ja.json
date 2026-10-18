@@ -4353,6 +4353,7 @@
                 "krMajorHolderReports": "直近{days}日の大量保有報告{reports}件・報告者{reporters}名",
                 "krMajorHolderDetailed": "一般報告{count}件",
                 "krInsiderReports": "直近{days}日の所有報告{reports}件・報告者{reporters}名",
+                "krInsiderReportsBatch": "直近{days}日の所有報告{reports}件・報告者{reporters}名({date}の一括報告{batchCount}件を含む)",
                 "krInsiderNetShares": "純増減 {shares}株",
                 "krInsiderNetPct": "保有比率の純増減 {pct}",
                 "krTradingPlans": "取引計画報告書{count}件",

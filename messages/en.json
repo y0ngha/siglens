@@ -4353,6 +4353,7 @@
                 "krMajorHolderReports": "{reports} major-holder reports from {reporters} reporters in the last {days} days",
                 "krMajorHolderDetailed": "{count} on the detailed form",
                 "krInsiderReports": "{reports} ownership reports from {reporters} reporters in the last {days} days",
+                "krInsiderReportsBatch": "{reports} ownership reports from {reporters} reporters in the last {days} days (incl. {batchCount} filed in one batch on {date})",
                 "krInsiderNetShares": "Net change {shares} shares",
                 "krInsiderNetPct": "Net change in holding ratio {pct}",
                 "krTradingPlans": "{count} trading-plan reports",

@@ -4477,6 +4477,7 @@
                 "krInsiderNetShares": "순증감 {shares}주",
                 "krInsiderNoChange": "유의미한 보유 변동 없음",
                 "krInsiderReports": "최근 {days}일 소유 보고 {reports}건 · 보고자 {reporters}명",
+                "krInsiderReportsBatch": "최근 {days}일 소유 보고 {reports}건 · 보고자 {reporters}명 ({date} 일괄 보고 {batchCount}건 포함)",
                 "krMajorHolderDetailed": "일반 보고 {count}건",
                 "krMajorHolderNoChange": "유의미한 지분 변동 없음 (보고자별 최대 {pct}%p)",
                 "krMajorHolderReports": "최근 {days}일 대량보유 보고 {reports}건 · 보고자 {reporters}명",
