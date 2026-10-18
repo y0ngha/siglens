@@ -23,6 +23,10 @@ import {
 import type { Bar } from '@y0ngha/siglens-core';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
+import { chartPriceFormat } from './utils/chartPriceFormat';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
+import { profileIdForSymbol } from '@/shared/config/marketProfile/registry';
 
 interface ShareCandlestickChartProps {
     bars: Bar[];
@@ -41,6 +45,7 @@ export function ShareCandlestickChart({
 }: ShareCandlestickChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
+    const locale = useResolvedLocale();
     const containerRef = useRef<HTMLDivElement>(null);
     // Store chart and series refs for cleanup.
     const chartRef = useRef<IChartApi | null>(null);
@@ -96,7 +101,15 @@ export function ShareCandlestickChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-            priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
+            // 종목 시장의 자릿수(한국 종목 정수)와 페이지 로케일 구분자 — 예전엔 소수 둘째 자리
+            // 고정이라 원화가 `215500.00`으로 찍혔다. 스냅샷엔 티커 문자열뿐이라 형상으로 고른다.
+            priceFormat: chartPriceFormat(
+                resolvePriceDecimals(
+                    profileIdForSymbol(ticker ?? ''),
+                    snapshotBars.at(-1)?.close
+                ),
+                locale
+            ),
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
         // No Elder Impulse on the share chart — pass empty array and isActive=false.
@@ -111,7 +124,7 @@ export function ShareCandlestickChart({
             chartRef.current = null;
             seriesRef.current = null;
         };
-    }, [snapshotBars]);
+    }, [snapshotBars, ticker, locale]);
 
     const ariaLabel =
         ticker !== undefined && ticker !== ''

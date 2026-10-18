@@ -644,6 +644,20 @@ describe('StockChart', () => {
         );
     });
 
+    it('formats candlestick prices with thousands separators', () => {
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+        const candle = (mockAddSeries.mock.calls as unknown[][]).find(
+            call => call[0] === 'CandlestickSeries'
+        );
+        const format = (
+            candle?.[1] as {
+                priceFormat: { type: string; formatter: (p: number) => string };
+            }
+        ).priceFormat;
+        expect(format.type).toBe('custom');
+        expect(format.formatter(12_345.6)).toBe('12,345.60');
+    });
+
     it('sets bar data on the candlestick series', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
 

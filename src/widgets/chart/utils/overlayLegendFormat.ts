@@ -1,3 +1,4 @@
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import type { OverlayLegendItem } from '../types';
 
 export interface OverlayGroup {
@@ -55,7 +56,17 @@ export function groupOverlayItems(
     ).groups;
 }
 
+/**
+ * 범례 값(MA·EMA·볼린저 등) — 가격과 같은 자릿수에 천 단위 구분자(`228,000`, `1,234.56`).
+ * 예전엔 `toFixed`라 구분자가 없었다. 로케일을 넘기지 않고 `en-US`로 고정하는 이유: 지원
+ * 로케일 넷(ko·en·ja·zh)의 구분자가 모두 `,`·`.`라 출력이 같고, 범례 폭 계산
+ * (`overlayLegendLayout`)이 같은 문자열을 잰다 — 로케일을 받게 하면 순수 레이아웃 함수까지
+ * 로케일이 번진다.
+ */
 export function formatOverlayValue(value: number | null, decimals = 2): string {
     if (value === null) return '-';
-    return value.toFixed(decimals);
+    return cachedNumberFormat('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    }).format(value);
 }

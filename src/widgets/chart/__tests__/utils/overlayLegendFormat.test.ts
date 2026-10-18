@@ -13,6 +13,12 @@ describe('formatOverlayValue', () => {
         expect(formatOverlayValue(100.123)).toBe('100.12');
     });
 
+    it('groups thousands at the given precision (KRW whole won, USD cents)', () => {
+        expect(formatOverlayValue(228_000, 0)).toBe('228,000');
+        expect(formatOverlayValue(1_000, 0)).toBe('1,000');
+        expect(formatOverlayValue(64_192.456)).toBe('64,192.46');
+    });
+
     it('pads a whole number to 2 decimal places', () => {
         expect(formatOverlayValue(42)).toBe('42.00');
     });
