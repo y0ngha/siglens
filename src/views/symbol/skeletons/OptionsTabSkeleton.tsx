@@ -10,7 +10,8 @@ import { cn } from '@/shared/lib/cn';
 import { Spinner } from '@/shared/ui/Spinner';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
-// `mapExpirationsToSlots`가 산출하는 슬롯 최대 6종(1W/2W/1M/2M/3M/6M — 만기가 없으면 chip 생략)에 종합 chip을 더한 수.
+// `mapExpirationsToSlots`가 산출하는 슬롯 최대 6종(1W/2W/1M/2M/3M/6M — 만기가 없으면
+// chip 생략)에 종합 chip을 더한 수.
 const EXPIRATION_CHIP_SKELETON_COUNT = 7;
 // OptionsMetricsRow의 카드 4종(Max Pain, P/C Ratio, ATM IV, Implied Move).
 const METRIC_CARD_COUNT = 4;

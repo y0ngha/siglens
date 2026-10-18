@@ -4,6 +4,7 @@ import {
     DrizzleEarningsReportsRepository,
     EARNINGS_DATES_LOOKBACK_DAYS,
     listEarningsDates,
+    listEarningsDatesAfterRefresh,
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
 import { MS_PER_DAY } from '@/shared/config/time';
@@ -110,5 +111,50 @@ describe('listEarningsDates / resolveEarningsDates', () => {
         await expect(
             resolveEarningsDates('AAPL', fakeDb)
         ).resolves.toBeUndefined();
+    });
+});
+
+describe('listEarningsDatesAfterRefresh', () => {
+    beforeEach(() => {
+        vi.spyOn(Date, 'now').mockReturnValue(NOW);
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('갱신이 끝난 뒤에야 DB를 읽는다(순서 보장)', async () => {
+        const order: string[] = [];
+        vi.spyOn(
+            DrizzleEarningsReportsRepository.prototype,
+            'listDatesSince'
+        ).mockImplementation(async () => {
+            order.push('read');
+            return ['2026-07-30'];
+        });
+        const refresh = Promise.resolve().then(() => {
+            order.push('refresh');
+            return null;
+        });
+
+        await expect(
+            listEarningsDatesAfterRefresh(refresh, 'AAPL', fakeDb)
+        ).resolves.toEqual(['2026-07-30']);
+        expect(order).toEqual(['refresh', 'read']);
+    });
+
+    it('갱신이 거부돼도 던지지 않고 undefined이며 DB는 읽지 않는다', async () => {
+        const listSpy = vi.spyOn(
+            DrizzleEarningsReportsRepository.prototype,
+            'listDatesSince'
+        );
+
+        await expect(
+            listEarningsDatesAfterRefresh(
+                Promise.reject(new Error('fmp down')),
+                'AAPL',
+                fakeDb
+            )
+        ).resolves.toBeUndefined();
+        expect(listSpy).not.toHaveBeenCalled();
     });
 });

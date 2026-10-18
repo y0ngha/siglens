@@ -45,11 +45,24 @@ vi.mock('@/entities/news-article/api', () => ({
         };
     }),
 }));
-vi.mock('@/entities/earnings-report/api', () => ({
-    getNextEarningsReport: vi.fn(async () => null),
-    listEarningsDates: vi.fn(async () => undefined),
-    resolveEarningsDates: vi.fn(async () => undefined),
-}));
+vi.mock('@/entities/earnings-report/api', () => {
+    const listEarningsDatesMock = vi.fn(
+        async (..._args: unknown[]): Promise<readonly string[] | undefined> =>
+            undefined
+    );
+    return {
+        getNextEarningsReport: vi.fn(async () => null),
+        listEarningsDates: listEarningsDatesMock,
+        listEarningsDatesAfterRefresh: vi.fn(
+            (refresh: Promise<unknown>, ...rest: [string, unknown]) =>
+                refresh.then(
+                    () => listEarningsDatesMock(...rest),
+                    () => undefined
+                )
+        ),
+        resolveEarningsDates: vi.fn(async () => undefined),
+    };
+});
 vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     loadNewsMacroCalendar: vi.fn(async () => []),
 }));

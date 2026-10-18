@@ -30,7 +30,7 @@ import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookb
 import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
 import {
     getNextEarningsReport,
-    listEarningsDates,
+    listEarningsDatesAfterRefresh,
 } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveReasoning } from '@/shared/lib/byokGate';
@@ -215,9 +215,10 @@ export async function executeOverallAnalysis({
     // 실적 발표일은 같은 갱신(`getNextEarningsReport`) 뒤에 DB에서 읽는다 — 별도 갱신을
     // 또 돌리면 FMP 호출이 겹친다. 갱신이 실패해도 분석은 계속(`undefined` = 캘린더 모름).
     const nextEarningsPromise = getNextEarningsReport(symbol, db);
-    const earningsDatesPromise = nextEarningsPromise.then(
-        () => listEarningsDates(symbol, db),
-        () => undefined
+    const earningsDatesPromise = listEarningsDatesAfterRefresh(
+        nextEarningsPromise,
+        symbol,
+        db
     );
 
     const [

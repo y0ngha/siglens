@@ -429,6 +429,10 @@ export const EARNINGS_DATES_LOOKBACK_DAYS = 730;
  * core는 `undefined`·`[]`를 "캘린더 모름"(안전 쪽)으로 취급한다. 행이 없으면(크립토·KR 등
  * 실적 소스가 없는 심볼) 또는 DB가 실패하면 `undefined`를 돌려주고 던지지 않는다 — 이 값
  * 때문에 분석이 실패해선 안 된다.
+ *
+ * 이 값은 분석 캐시 키에 접히지 않는다. 모든 경로가 같은 DB 테이블을 읽고(프리웜·종합 경로만
+ * 읽기 전에 갱신한다), 그래서 방금 나온 실적 발표가 캐시된 본문에는 TTL까지 늦게 반영될 수
+ * 있어도 실적이 아닌 것을 회사의 실적으로 표기하는 경로는 없다.
  */
 export async function listEarningsDates(
     symbol: string,
@@ -463,4 +467,21 @@ export async function resolveEarningsDates(
         console.warn('[resolveEarningsDates] refresh failed:', err);
     }
     return listEarningsDates(symbol, db);
+}
+
+/**
+ * 이미 시작한 갱신(`getNextEarningsReport` promise)이 끝난 뒤 {@link listEarningsDates}로
+ * 읽는다. 갱신을 또 돌리면 FMP 호출이 겹치므로 호출자가 쥔 promise를 재사용한다. 갱신이
+ * 거부돼도(그 오류는 호출자가 자기 `Promise.all`에서 다룬다) 여기서는 던지지 않고
+ * `undefined`("캘린더 모름")로 끝낸다.
+ */
+export function listEarningsDatesAfterRefresh(
+    refresh: Promise<unknown>,
+    symbol: string,
+    db: SiglensDatabase
+): Promise<readonly string[] | undefined> {
+    return refresh.then(
+        () => listEarningsDates(symbol, db),
+        () => undefined
+    );
 }

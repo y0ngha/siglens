@@ -57,8 +57,6 @@ export function sentimentLabelText(
     return t(SENTIMENT_LABEL_KEY[label]);
 }
 
-const PERCENT_TO_FRACTION = 100;
-
 // Intl.NumberFormat instances are expensive to construct, so we cache one per
 // (locale, precision tier). 예전에는 `'ko-KR'` 고정 모듈 상수였다 — 로케일은
 // `INTL_LOCALE`에서만 정한다(`shared/i18n/locales.ts`).
@@ -91,6 +89,9 @@ function factorFormatter(
     return cachedNumberFormat(INTL_LOCALE[locale], FACTOR_FORMAT_OPTIONS[tier]);
 }
 
+/** `ma200DistancePct`는 퍼센트 단위(5.57 = 5.57%)라 퍼센트 서식에 넣으려면 100으로 나눈다. */
+const PERCENT_DIVISOR = 100;
+
 /**
  * Raw value 표시 포맷터 — UI는 이 함수로 raw 값을 출력한다.
  *
@@ -112,7 +113,7 @@ export function formatFactorRaw(
         Number.isFinite(ma200DistancePct)
     ) {
         return factorFormatter('percent2', locale).format(
-            ma200DistancePct / PERCENT_TO_FRACTION
+            ma200DistancePct / PERCENT_DIVISOR
         );
     }
     switch (key) {

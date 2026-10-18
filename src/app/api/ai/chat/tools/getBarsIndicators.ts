@@ -386,11 +386,25 @@ function pullbackSnapshot(
  * lit reading — the same lesson as the confluence rule states: the model cannot
  * mention a field it never gets. RSI(2) survives in `latest.rsi2`.
  */
+/**
+ * Whether the reading is lit (anything but `none`). One definition shared by the
+ * model-facing block and the caveat lookup gate so the two cannot drift apart.
+ */
+type LitPullbackSnapshot = PullbackSnapshot & {
+    reading: Exclude<PullbackReading, 'none'>;
+};
+
+function isPullbackLit(
+    snap: PullbackSnapshot | null
+): snap is LitPullbackSnapshot {
+    return snap !== null && snap.reading !== 'none';
+}
+
 function pullbackView(
     snap: PullbackSnapshot | null,
     caveat: string | null
 ): PullbackView | null {
-    if (snap === null || snap.reading === 'none') return null;
+    if (!isPullbackLit(snap)) return null;
     return {
         reading: snap.reading,
         williamsR: roundNumber(snap.williamsR),
@@ -845,10 +859,9 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
     // so the DB/earnings lookups overlap it instead of adding serial latency. It never
     // rejects (`loadPullbackCaveat` catches), so no unhandled-rejection guard is needed.
     const pullbackSnap = pullbackSnapshot(bars, timeframe);
-    const caveatPromise =
-        pullbackSnap !== null && pullbackSnap.reading !== 'none'
-            ? loadPullbackCaveat(symbol, session, bars)
-            : Promise.resolve(null);
+    const caveatPromise = isPullbackLit(pullbackSnap)
+        ? loadPullbackCaveat(symbol, session, bars)
+        : Promise.resolve(null);
     const htf = await loadHigherTimeframe(
         provider,
         symbol,
