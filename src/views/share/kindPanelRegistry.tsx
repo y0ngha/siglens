@@ -21,7 +21,7 @@ import {
     getDescriptor,
     profileIdForSymbol,
 } from '@/shared/config/marketProfile/registry';
-import type { Bar } from '@y0ngha/siglens-core';
+import type { Bar, KrxTickTable } from '@y0ngha/siglens-core';
 import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
 import dynamic from 'next/dynamic';
 
@@ -108,11 +108,13 @@ function ChartSharePanel({
     result,
     chartBars,
     symbol,
+    krxTickTable,
     plain,
 }: {
     result: SnapshotResultOf<'chart'>;
     chartBars?: Bar[];
     symbol: string;
+    krxTickTable?: KrxTickTable;
     plain?: string;
 }) {
     const themeVersion = useThemeVersion();
@@ -134,6 +136,7 @@ function ChartSharePanel({
                 (라이브 화면과 다른 동작이 된다). */}
             <AnalysisPanel
                 symbol={symbol}
+                krxTickTable={krxTickTable}
                 analysis={result}
                 keyLevels={clustered}
                 timeframe="1Day"
@@ -153,6 +156,8 @@ export interface SharePanelProps<K extends ShareableKind> {
     chartBars?: Bar[];
     assetClass?: AssetClass;
     symbol?: string;
+    /** 종목의 KRX 호가표(주식/ETF). 생략하면 'share'. */
+    krxTickTable?: KrxTickTable;
     /** 스냅샷에 저장된 쉽게보기 산문. 없으면 토글이 렌더되지 않는다. */
     plain?: string;
 }
@@ -177,11 +182,12 @@ function WithPlainSwitch({ plain, children }: WithPlainSwitchProps) {
 }
 
 export const SHARE_KIND_PANEL_REGISTRY = {
-    chart: ({ result, chartBars, symbol, plain }) => (
+    chart: ({ result, chartBars, symbol, krxTickTable, plain }) => (
         <ChartSharePanel
             result={result}
             chartBars={chartBars}
             symbol={symbol ?? ''}
+            krxTickTable={krxTickTable}
             plain={plain}
         />
     ),

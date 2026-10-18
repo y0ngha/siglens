@@ -392,6 +392,17 @@ slow step (a long backfill) or one poison item consumes the whole run and the re
 - ❌ A 13F backfill consumes the shared deadline, so the filings step is skipped on every run; a failing newest item is retried first forever.
 - ✅ Each step gets a bounded slice (or runs first with a cap), and items record attempts so failures move to the back.
 
+<a id="CC-14"></a>
+
+#### CC-14 — Give an early-started promise a no-op rejection handler at creation
+
+A promise started early and awaited only after other work (`await Promise.all(...)`) can reject while nothing is
+listening, which surfaces as an unhandled rejection. Right after creating it, attach `void p.catch(() => undefined)`,
+then still `await` the original so the error reaches the real handler.
+
+- ❌ `const p = load(); await Promise.all(others); await p;` (a rejection of `p` during `Promise.all` is unhandled).
+- ✅ `const p = load(); void p.catch(() => undefined); await Promise.all(others); await p;`
+
 ---
 
 ## Server Data Cache Rules (`unstable_cache` / `fetch`)

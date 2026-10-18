@@ -210,6 +210,28 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).not.toContain('224,565');
     });
 
+    it('ETF는 etp 호가표로 싣고, 표를 안 주면 주식 표로 깎는다', () => {
+        const level = {
+            price: 40_125,
+            reason: '20일선',
+            count: 1,
+            sources: [{ price: 40_125, reason: '20일선' }],
+        };
+        const build = (krxTickTable?: 'share' | 'etp') =>
+            buildExpertAnalysisReport({
+                tReport,
+                symbol: '360750.KS',
+                krxTickTable,
+                analysis: baseAnalysis,
+                keyLevels: { resistance: [], support: [level] },
+                t,
+            });
+
+        expect(build('etp')).toContain('40,125');
+        expect(build()).toContain('40,150');
+        expect(build()).not.toContain('40,125');
+    });
+
     it('riskReward 문장을 중간에서 자르지 않는다', () => {
         const analysisWithLongRiskReward: AnalysisResponse = {
             ...baseAnalysis,

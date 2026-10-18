@@ -28,6 +28,7 @@ import {
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { loadDilutionHeadingBadge } from '@/app/[locale]/[symbol]/dilutionHeadingBadge';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { resolveKrxTickTableForDisplay } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
@@ -238,6 +239,9 @@ export default async function SymbolPage({ params }: Props) {
         console.error('[SymbolPage] peekAnalysisStatic failed:', error);
         return null;
     });
+    // 분석 카드 가격의 호가표(주식/ETF). 실패는 내부에서 'share'로 접히고 던지지 않으며(캐시도 안 한다),
+    // 한국 종목이 아니면 I/O가 없다. 봉과 독립이라 먼저 시작해 아래 `Promise.all`에서 기다린다.
+    const krxTickTablePromise = resolveKrxTickTableForDisplay(ticker);
     // 헤더 증자·희석 배지(미국 개별 주식만 — 판정·실패 처리는 `loadDilutionHeadingBadge` JSDoc). 봉과 독립이라
     // peek과 함께 먼저 시작하고 렌더 직전 `Promise.all`에서 기다린다.
     //
@@ -353,9 +357,10 @@ export default async function SymbolPage({ params }: Props) {
         }
     }
 
-    const [cachedAnalysis, headingBadge] = await Promise.all([
+    const [cachedAnalysis, headingBadge, krxTickTable] = await Promise.all([
         cachedAnalysisPromise,
         headingBadgePromise,
+        krxTickTablePromise,
     ]);
     // 폴백 summary도 요청 로케일로 — 예전엔 한국어 상수라 `/en/AAPL`이 분석
     // 실패 시 영어 화면에 한국어 요약을 렌더했다.
@@ -423,6 +428,7 @@ export default async function SymbolPage({ params }: Props) {
                                 indicatorCount={skillCounts.indicators}
                                 skillCount={chartSkillTotal(skillCounts)}
                                 marketProfile={marketProfile}
+                                krxTickTable={krxTickTable}
                                 hasBarsSeed={hasBarsSeed}
                                 // 서버에서 판정·렌더를 끝낸 엘리먼트를 넘긴다 — 첫 HTML에 이미 있어 나중에 끼어들며
                                 // 헤더를 밀지 않는다. 사건이 없으면(대부분의 종목) 아무것도 그리지 않는다.

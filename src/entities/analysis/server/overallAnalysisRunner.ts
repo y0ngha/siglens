@@ -18,6 +18,7 @@ import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataP
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
@@ -195,6 +196,10 @@ export async function executeOverallAnalysis({
 
     // 시장 프로필은 아래에서도 쓴다 — 수급 점수표가 미국 주식에만 붙으므로 먼저 시작해 다른 fetch와 겹친다.
     const marketProfilePromise = resolveMarketProfile(symbol);
+    const krxTickTablePromise = resolveKrxTickTable(symbol);
+    // 일찍 시작해 아래 `Promise.all` 뒤에 기다린다 — 그사이 거부되면 처리기가 없어
+    // unhandled rejection이 된다. 처리기를 먼저 달아 두고, 아래 `await`가 원래 오류를 그대로 전한다.
+    void krxTickTablePromise.catch(() => undefined);
     /**
      * 수급(기관·내부자·공매도) 점수표. 미국 주식이 아니거나 장애면 `undefined`(= 종합에 넣지 않음),
      * 미국 주식인데 데이터가 없으면 `null`(= 프롬프트가 "데이터 없음"을 명시). 세 경로(웹·공개 API·프리웜)가
@@ -238,7 +243,10 @@ export async function executeOverallAnalysis({
     // to avoid a lossy assetClass→profileId round-trip at the sessionSpecFor call.
     // assetClass lets core treat absent fundamentals/options/earnings as intentional
     // for crypto (2-axis: technical + news) rather than missing stock data.
-    const marketProfile = await marketProfilePromise;
+    const [marketProfile, krxTickTable] = await Promise.all([
+        marketProfilePromise,
+        krxTickTablePromise,
+    ]);
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
     const session = sessionSpecFor(marketProfile);
@@ -294,6 +302,8 @@ export async function executeOverallAnalysis({
         assetClass,
         // core는 통화를 심볼에서 추론하지 않는다 — 시장 프로필이 소유한 값을 넘긴다.
         currency: descriptor.priceFormat.currency,
+        // technical 탭·프리웜과 같은 호가 표 — core 캐시 키에 접히지 않는다.
+        krxTickTable,
         optionsSnapshot: optionsSnapshot ?? undefined,
         optionsOiStale,
         financialsScorecard,
