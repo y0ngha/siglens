@@ -1,8 +1,8 @@
 import 'server-only';
+import { getTranslations } from 'next-intl/server';
 import {
     aggregateBarsToWeekly,
     calculateIndicators,
-    computeFearGreedIndex,
     fearGreedInputs,
     calculateMA,
     classifyMaStack,
@@ -24,6 +24,7 @@ import {
     type CandlePattern,
     type DMIResult,
     type FearGreedGroupName,
+    type FearGreedHistoryPoint,
     type FearGreedLabel,
     type FearGreedSnapshot,
     type IchimokuResult,
@@ -41,6 +42,7 @@ import {
     type TrendDirection,
     type TrendState,
 } from '@y0ngha/siglens-core';
+import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
 import {
     roundIndicators,
@@ -55,6 +57,14 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import type { Locale } from '@/shared/i18n/locales';
+import {
+    pointBefore,
+    scoredHistory,
+    THREE_MONTHS_TRADING_DAYS,
+    TRADING_DAYS,
+    yearScoreExtremes,
+} from '@/entities/bars/lib/fearGreedWindow';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
@@ -758,10 +768,32 @@ function computeDerived(
     };
 }
 
-/** One Flow/Trend group of {@link SymbolFearGreedView}. */
+/** One Flow/Trend group of {@link SymbolFearGreedView}. `label` is the name the symbol fear & greed page shows, in the reader's locale. */
 interface FearGreedGroupView {
     name: FearGreedGroupName;
+    label: string;
     score: number;
+}
+
+/** One dated reading of the symbol's own series. */
+interface FearGreedHistoryPointView {
+    date: string;
+    score: number;
+    label: FearGreedLabel;
+}
+
+/**
+ * Where the symbol's index stood earlier — the page's week / month / year
+ * comparison plus a three-month point, and the year's low and high. Every
+ * field is `null` when the scored series is too short to reach it.
+ */
+interface FearGreedHistoryView {
+    weekAgo: FearGreedHistoryPointView | null;
+    monthAgo: FearGreedHistoryPointView | null;
+    threeMonthsAgo: FearGreedHistoryPointView | null;
+    yearAgo: FearGreedHistoryPointView | null;
+    yearMin: { date: string; score: number } | null;
+    yearMax: { date: string; score: number } | null;
 }
 
 /**
@@ -775,11 +807,69 @@ interface SymbolFearGreedView {
     label: FearGreedLabel;
     confidence: FearGreedSnapshot['confidence'];
     groups: FearGreedGroupView[];
+    history: FearGreedHistoryView;
+}
+
+const GROUP_LABEL_KEY: Record<FearGreedGroupName, string> = {
+    Flow: 'groupFlow',
+    Trend: 'groupTrend',
+};
+
+const GROUP_LABEL_FALLBACK: Record<FearGreedGroupName, string> = {
+    Flow: 'Flow',
+    Trend: 'Trend',
+};
+
+/** Group names as the symbol fear & greed page words them (`views.symbol.fearGreedFacts`). Falls back to the English name so a catalog failure never costs the whole field. */
+async function groupLabels(
+    locale: Locale
+): Promise<Record<FearGreedGroupName, string>> {
+    try {
+        const t = await getTranslations({
+            locale,
+            namespace: 'views.symbol.fearGreedFacts',
+        });
+        return {
+            Flow: t(GROUP_LABEL_KEY.Flow),
+            Trend: t(GROUP_LABEL_KEY.Trend),
+        };
+    } catch (error) {
+        logToolDegrade('get_bars_indicators', 'group label translation', error);
+        return GROUP_LABEL_FALLBACK;
+    }
+}
+
+/**
+ * Week / month / three-month / year comparison points and the year's range
+ * from core's history. Built with the page's own helpers (`scoredHistory`,
+ * `pointBefore`, `yearScoreExtremes`) so offsets, window and tie rule cannot
+ * drift: warm-up points are dropped, extremes are picked on RAW scores, and
+ * only the output is rounded.
+ */
+export function buildFearGreedHistoryView(
+    history: readonly FearGreedHistoryPoint[]
+): FearGreedHistoryView {
+    const scored = scoredHistory(history);
+    const before = (back: number): FearGreedHistoryPointView | null => {
+        const p = pointBefore(scored, back);
+        return p === null ? null : { ...p, score: Math.round(p.score) };
+    };
+    const extremes = yearScoreExtremes(scored);
+    const out = (p: { date: string; score: number } | undefined) =>
+        p === undefined ? null : { date: p.date, score: Math.round(p.score) };
+    return {
+        weekAgo: before(TRADING_DAYS.week),
+        monthAgo: before(TRADING_DAYS.month),
+        threeMonthsAgo: before(THREE_MONTHS_TRADING_DAYS),
+        yearAgo: before(TRADING_DAYS.year),
+        yearMin: out(extremes?.min),
+        yearMax: out(extremes?.max),
+    };
 }
 
 /**
  * The symbol's own Fear & Greed reading — the same number `/{symbol}/fear-greed`
- * shows, from the same core function over the same input the page uses
+ * shows, from the same core functions over the same input the page uses
  * (`fearGreedInputs`: the 5-year daily `fearGreedBars` carried by the cached
  * bars data, falling back to the standard bars). Nothing extra is fetched —
  * the long series arrives with the same daily bars request.
@@ -792,32 +882,39 @@ interface SymbolFearGreedView {
  * `null` also when core abstains — the walk-forward sample is too short for
  * percentiles (a young listing, or a short loaded history).
  */
-function fearGreedView(
+async function fearGreedView(
     data: BarsData,
-    timeframe: Timeframe
-): SymbolFearGreedView | null {
+    timeframe: Timeframe,
+    locale: Locale
+): Promise<SymbolFearGreedView | null> {
     if (timeframe !== '1Day') return null;
     // 화면과 같은 입력 선택 — 5년 일봉(`fearGreedBars`)이 있으면 그것으로 계산한다. 2년 봉으로
-    // 계산하면 모델이 화면과 다른 점수를 말한다. 공용 입구(`entities/bars/lib/symbolFearGreed`)의
-    // `symbolFearGreedSnapshot`을 쓰지 않는 이유: 그 함수는 history까지 함께 계산하는데(종목당
-    // 100ms대) 여기는 스냅샷만 필요하고, route handler라 `React.cache` 메모도 없다. 입력 선택은
-    // 같은 core `fearGreedInputs`라 표면 간 점수는 갈리지 않는다.
+    // 계산하면 모델이 화면과 다른 점수를 말한다. 화면과 같은 공용 계산(`computeSymbolFearGreedSeries`)을
+    // 쓰므로 스냅샷과 history가 한 번에 나온다. history(5년 walk-forward)는 종목당 100ms대라
+    // 비싸지만 일봉에서만, 이미 불러온 봉으로 한 번만 계산한다(별도 fetch 없음). route handler라
+    // `React.cache` 메모는 없다 — 호출당 한 번이 곧 전부다.
     const { bars, buySellVolume: flow } = fearGreedInputs(data);
     // core는 `buySellVolume`을 봉과 **1:1로 나란한 배열**로 전제하고 인덱스로 읽는다.
     // 짧거나 없는 배열이 들어오면 거기서 throw가 나 도구 전체가 죽는다 — 공포·탐욕
     // 한 필드 때문에 시세·지표 답변을 통째로 잃을 이유는 없다.
     if (!Array.isArray(flow) || flow.length < bars.length) return null;
-    const snapshot = computeFearGreedIndex([...bars], flow);
+    const { snapshot, history } = computeSymbolFearGreedSeries([...bars], flow);
     if (!snapshot) return null;
+    const labels = await groupLabels(locale);
     return {
         score: snapshot.score,
         label: snapshot.label,
         confidence: snapshot.confidence,
-        groups: snapshot.groups.map(g => ({ name: g.name, score: g.score })),
+        groups: snapshot.groups.map(g => ({
+            name: g.name,
+            label: labels[g.name],
+            score: Math.round(g.score),
+        })),
+        history: buildFearGreedHistoryView(history),
     };
 }
 
-export const getBarsIndicatorsTool: ToolExecutor = async args => {
+export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     const symbol = String(args.symbol).toUpperCase();
     const timeframe = args.timeframe as Timeframe;
     const count = clampBars(args.bars);
@@ -886,7 +983,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         roundOrNull(pullbackSnap?.rsi2 ?? null)
     );
     const candlePatterns = latestCandlePatterns(bars, timeframe);
-    const fearGreed = fearGreedView(barsData, timeframe);
+    const fearGreed = await fearGreedView(barsData, timeframe, ctx.locale);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
 
     return fitBarsToBudget(

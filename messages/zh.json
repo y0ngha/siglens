@@ -5395,6 +5395,7 @@
                 "seconds": "{n} 秒",
                 "toolAnalysis": "SIGLENS 分析",
                 "toolBars": "图表与指标",
+                "toolBarsFearGreed": "图表·指标·恐惧与贪婪",
                 "toolCongressTrades": "国会交易",
                 "toolEconomy": "经济数据",
                 "toolFundamentals": "公司基本面",

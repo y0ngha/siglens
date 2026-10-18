@@ -2166,6 +2166,7 @@
     "widgets.agent-chat.ToolActivity.seconds": "66c3afdb2a82",
     "widgets.agent-chat.ToolActivity.toolAnalysis": "974d74c83bd1",
     "widgets.agent-chat.ToolActivity.toolBars": "4fd4601a0429",
+    "widgets.agent-chat.ToolActivity.toolBarsFearGreed": "e71a5903ed77",
     "widgets.agent-chat.ToolActivity.toolCongressTrades": "7b06acdbd0b0",
     "widgets.agent-chat.ToolActivity.toolEconomy": "71637b1495a8",
     "widgets.agent-chat.ToolActivity.toolFreshAnalysis": "ccfcc20f8e6f",

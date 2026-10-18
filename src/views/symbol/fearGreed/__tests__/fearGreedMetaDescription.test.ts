@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import {
-    buildFearGreedMetaFacts,
-    scoredHistory,
-} from '../utils/fearGreedFacts';
+import { buildFearGreedMetaFacts } from '../utils/fearGreedFacts';
+import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
 import { composeFearGreedDescription } from '../utils/fearGreedMetaDescription';
 import { createTranslator } from 'next-intl';
 import koMessages from '@/../messages/ko.json';

@@ -20,9 +20,9 @@ import {
     buildFearGreedTransitionLine,
     buildFearGreedMarketGapLine,
     buildExtremeZoneRecord,
-    scoredHistory,
     type FearGreedFactorTable,
 } from './utils/fearGreedFacts';
+import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
 import { FearGreedExtremeZoneRecord } from './FearGreedExtremeZoneRecord';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SampleFooterText } from '@/shared/ui/SampleFooterText';

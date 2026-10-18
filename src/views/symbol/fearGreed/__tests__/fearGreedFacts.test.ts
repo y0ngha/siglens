@@ -16,8 +16,8 @@ import {
     buildFearGreedMarketGapLine,
     buildExtremeZoneRecord,
     EXTREME_ZONE_RECORD_MAX_ROWS,
-    scoredHistory,
 } from '../utils/fearGreedFacts';
+import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 import koMessages from '@/../messages/ko.json';

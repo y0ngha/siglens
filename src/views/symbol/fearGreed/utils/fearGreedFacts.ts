@@ -19,6 +19,12 @@ import {
 } from '@/shared/lib/fearGreedLabels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { koWithParticle } from '@/shared/lib/koParticle';
+import {
+    pointBefore,
+    TRADING_DAYS,
+    type ScoredPoint,
+    scoreExtremes,
+} from '@/entities/bars/lib/fearGreedWindow';
 import type { Locale } from '@/shared/i18n/locales';
 import type { SeoTranslator } from '@/shared/lib/seo';
 
@@ -195,26 +201,6 @@ export function buildFearGreedFactorRankingLine(
 }
 
 /**
- * `computeFearGreedHistory`가 돌려준 시계열에서 warm-up(`score === null`)을 걷어낸다.
- * 아래 시계열 문장 3종이 공유하는 전처리다.
- */
-export type ScoredPoint = {
-    date: string;
-    score: number;
-    label: FearGreedLabel;
-};
-
-export function scoredHistory(
-    history: readonly FearGreedHistoryPoint[]
-): ScoredPoint[] {
-    return history.flatMap(p =>
-        p.score === null || p.label === null
-            ? []
-            : [{ date: p.date, score: p.score, label: p.label }]
-    );
-}
-
-/**
  * `2026-08-19` → `2026년 8월 19일`. `Date`를 거치지 않아 타임존 이동이 없다.
  *
  * core의 `FearGreedHistoryPoint.date`는 계약상 `YYYY-MM-DD`지만, 전체 ISO 타임스탬프가
@@ -233,17 +219,6 @@ function formatIsoDate(iso: string, t: SeoTranslator): string {
 function labelText(label: FearGreedLabel, t: EnumLabelTranslator): string {
     return sentimentLabelText(label, t);
 }
-
-/** 최신 봉에서 `back`개 앞선 지점. 시계열이 짧으면 `null`. */
-function pointBefore(
-    points: readonly ScoredPoint[],
-    back: number
-): ScoredPoint | null {
-    return points[points.length - 1 - back] ?? null;
-}
-
-/** 대략적인 거래일 환산 — `FearGreedComparisonGauges`가 쓰는 값과 같다. */
-const TRADING_DAYS = { week: 5, month: 21, year: 252 } as const;
 
 /**
  * 현재 점수를 1주/1개월/1년 전과 비교하는 문장(P1).
@@ -339,12 +314,7 @@ export function buildFearGreedYearRangeLine(
         return null;
     }
 
-    let min = window[0]!;
-    let max = window[0]!;
-    for (const p of window) {
-        if (p.score < min.score) min = p;
-        if (p.score > max.score) max = p;
-    }
+    const { min, max } = scoreExtremes(window)!;
 
     const sorted = window.map(p => p.score).toSorted((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
