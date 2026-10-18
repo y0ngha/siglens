@@ -24,10 +24,26 @@ describe('AnalysisPanel 숫자 포맷 로케일 고정', () => {
         );
     });
 
-    it('가격은 페이지 로케일 포매터로 낸다', () => {
-        expect(SOURCE).toMatch(
-            /formatFixed\(price, PRICE_FRACTION_DIGITS, locale\)/
+    it('가격은 페이지 로케일을 받는 shared 포매터로 낸다', () => {
+        // 가격 표기는 시장 규칙(한국 종목은 호가 단위 정수)까지 담은
+        // `formatAnalysisPrice` 한 곳으로 모였다 — 모든 호출이 페이지 로케일을 넘긴다.
+        const calls = [...SOURCE.matchAll(/formatAnalysisPrice\(([^)]*)\)/g)];
+        expect(calls.length).toBeGreaterThan(0);
+        for (const [, args] of calls)
+            expect(args).toMatch(/,\s*symbol,\s*locale\b/);
+        // 그 포매터는 페이지 로케일의 캐시 포매터로 숫자를 낸다.
+        const shared = readFileSync(
+            path.resolve(
+                __dirname,
+                '../../../shared/lib/analysisPriceFormat.ts'
+            ),
+            'utf8'
         );
-        expect(SOURCE).toMatch(/cachedNumberFormat\(INTL_LOCALE\[locale\]/);
+        const body = shared.slice(
+            shared.indexOf('export function formatAnalysisPrice(')
+        );
+        expect(body.slice(0, body.indexOf('\n}\n'))).toMatch(
+            /cachedNumberFormat\(INTL_LOCALE\[locale\]/
+        );
     });
 });

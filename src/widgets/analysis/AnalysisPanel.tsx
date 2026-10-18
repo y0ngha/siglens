@@ -66,41 +66,17 @@ import { GuideEntryLink } from './GuideEntryLink';
 import { GuideHintLink } from './GuideHintLink';
 import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { formatFixed } from '@/shared/lib/formatNum';
-import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
+import { formatAnalysisPrice } from '@/shared/lib/analysisPriceFormat';
 import {
     selectLockedCardBodyKind,
     type LockedCardBodyKind,
 } from './utils/lockedCardCopy';
-
-/** 패널이 가격을 내는 소수 자릿수. */
-const PRICE_FRACTION_DIGITS = 2;
 
 /**
  * 미터 문구의 "하루 N종목" 폴백. core 정책(`getMeteredRevealPolicy`)이 꺼져 값이 없을 때만
  * 쓴다 — 그때는 미터 상태 자체가 오지 않아 문구가 보이지 않지만, 타입상 숫자가 필요하다.
  */
 const FALLBACK_METER_DAILY_SYMBOLS = 1;
-
-/** 가격 소수 둘째 자리 고정(`12.30`). 로케일을 고정하는 이유는 `formatPriceUpTo2` JSDoc. */
-function formatPrice2(price: number, locale: Locale): string {
-    return formatFixed(price, PRICE_FRACTION_DIGITS, locale);
-}
-
-/**
- * 가격 소수 최대 둘째 자리(`12.3`).
- *
- * 로케일을 **페이지 로케일로 고정**한다 — 예전엔 실행 환경의 기본 로케일(`undefined`)을
- * 탔다. 이 패널은 이제 서버에서도 렌더되므로(차트 탭 SSR), 서버(Node ICU 기본 로케일)와
- * 브라우저(사용자 OS 로케일)의 구분자가 다르면 같은 가격이 `1,234.5` / `1.234,5`로 갈려
- * 하이드레이션 불일치(React #418)가 난다.
- */
-function formatPriceUpTo2(price: number, locale: Locale): string {
-    return cachedNumberFormat(INTL_LOCALE[locale], {
-        maximumFractionDigits: PRICE_FRACTION_DIGITS,
-    }).format(price);
-}
 
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
@@ -607,9 +583,10 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
 
 interface ConfluenceInfoProps {
     level: ClusteredKeyLevel;
+    symbol: string;
 }
 
-function ConfluenceInfo({ level }: ConfluenceInfoProps) {
+function ConfluenceInfo({ level, symbol }: ConfluenceInfoProps) {
     const locale = useResolvedLocale();
     if (level.count < 2) return null;
 
@@ -622,7 +599,7 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
                         className="flex items-baseline gap-2 whitespace-nowrap"
                     >
                         <span className="shrink-0 text-secondary-300">
-                            {formatPrice2(source.price, locale)}
+                            {formatAnalysisPrice(source.price, symbol, locale)}
                         </span>
                         <span className="text-secondary-400">
                             {source.reason}
@@ -656,12 +633,14 @@ interface PatternAccordionItemProps {
     showConfidence: boolean;
     /** 차트 작도 제어 — 이 항목에 그려지는 작도가 없으면 undefined(버튼 없음). */
     overlay?: OverlayCardControls;
+    symbol: string;
 }
 
 function PatternAccordionItem({
     pattern,
     showConfidence,
     overlay,
+    symbol,
 }: PatternAccordionItemProps) {
     const t = useTranslations('widgets.analysis');
     const skillLabel = useSkillLabel();
@@ -733,7 +712,11 @@ function PatternAccordionItem({
                                                 : kp.label}
                                         </span>
                                         <span className="text-xs font-medium text-secondary-200 tabular-nums">
-                                            {formatPrice2(kp.price, locale)}
+                                            {formatAnalysisPrice(
+                                                kp.price,
+                                                symbol,
+                                                locale
+                                            )}
                                         </span>
                                     </div>
                                 ))}
@@ -867,9 +850,10 @@ const TRENDLINE_FALLBACK_BG = 'bg-secondary-500';
 
 interface TrendlineItemProps {
     trendline: Trendline;
+    symbol: string;
 }
 
-function TrendlineItem({ trendline }: TrendlineItemProps) {
+function TrendlineItem({ trendline, symbol }: TrendlineItemProps) {
     const tTrendline = useTranslations('shared.lib.trendline');
     const locale = useResolvedLocale();
     const label = tTrendline(
@@ -887,9 +871,13 @@ function TrendlineItem({ trendline }: TrendlineItemProps) {
                 {label}
             </span>
             <span className="ml-auto text-xs text-secondary-500 tabular-nums">
-                {formatPriceUpTo2(trendline.start.price, locale)}
+                {formatAnalysisPrice(trendline.start.price, symbol, locale, {
+                    trimTrailingZeros: true,
+                })}
                 {' → '}
-                {formatPriceUpTo2(trendline.end.price, locale)}
+                {formatAnalysisPrice(trendline.end.price, symbol, locale, {
+                    trimTrailingZeros: true,
+                })}
             </span>
         </div>
     );
@@ -899,12 +887,14 @@ interface PriceScenarioSectionProps {
     label: string;
     scenario: PriceScenario | null;
     colorClass: string;
+    symbol: string;
 }
 
 function PriceScenarioSection({
     label,
     scenario,
     colorClass,
+    symbol,
 }: PriceScenarioSectionProps) {
     const locale = useResolvedLocale();
     if (!scenario || scenario.targets.length === 0) return null;
@@ -927,7 +917,7 @@ function PriceScenarioSection({
                             colorClass
                         )}
                     >
-                        {formatPrice2(target.price, locale)}
+                        {formatAnalysisPrice(target.price, symbol, locale)}
                     </span>
                     <MarkdownText className="text-xs text-secondary-500">
                         {target.basis}
@@ -1490,8 +1480,9 @@ export function AnalysisPanel({
                                                         className="flex flex-col"
                                                     >
                                                         <span className="text-sm font-medium text-ui-danger-text">
-                                                            {formatPrice2(
+                                                            {formatAnalysisPrice(
                                                                 level.price,
+                                                                symbol,
                                                                 locale
                                                             )}
                                                         </span>
@@ -1499,6 +1490,7 @@ export function AnalysisPanel({
                                                             {level.reason}
                                                             <ConfluenceInfo
                                                                 level={level}
+                                                                symbol={symbol}
                                                             />
                                                         </span>
                                                     </div>
@@ -1516,8 +1508,9 @@ export function AnalysisPanel({
                                                         className="flex flex-col"
                                                     >
                                                         <span className="text-sm font-medium text-ui-success-text">
-                                                            {formatPrice2(
+                                                            {formatAnalysisPrice(
                                                                 level.price,
+                                                                symbol,
                                                                 locale
                                                             )}
                                                         </span>
@@ -1525,6 +1518,7 @@ export function AnalysisPanel({
                                                             {level.reason}
                                                             <ConfluenceInfo
                                                                 level={level}
+                                                                symbol={symbol}
                                                             />
                                                         </span>
                                                     </div>
@@ -1538,8 +1532,9 @@ export function AnalysisPanel({
                                                 PoC
                                             </span>
                                             <span className="text-sm font-medium">
-                                                {formatPrice2(
+                                                {formatAnalysisPrice(
                                                     keyLevels.poc.price,
+                                                    symbol,
                                                     locale
                                                 )}
                                             </span>
@@ -1563,6 +1558,7 @@ export function AnalysisPanel({
                                             <TrendlineItem
                                                 key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
                                                 trendline={trendline}
+                                                symbol={symbol}
                                             />
                                         ))}
                                     </div>
@@ -1581,11 +1577,13 @@ export function AnalysisPanel({
                                             label={t('AnalysisPanel.3dc47b')}
                                             scenario={priceTargets.bullish}
                                             colorClass="text-ui-success-text"
+                                            symbol={symbol}
                                         />
                                         <PriceScenarioSection
                                             label={t('AnalysisPanel.79282c')}
                                             scenario={priceTargets.bearish}
                                             colorClass="text-ui-danger-text"
+                                            symbol={symbol}
                                         />
                                     </div>
                                 </div>
@@ -1628,6 +1626,7 @@ export function AnalysisPanel({
                                             <PatternAccordionItem
                                                 key={pattern.id}
                                                 pattern={pattern}
+                                                symbol={symbol}
                                                 showConfidence={
                                                     !hasLockedConfidence
                                                 }
