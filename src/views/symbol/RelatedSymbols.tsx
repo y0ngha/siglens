@@ -19,6 +19,20 @@ interface RelatedSymbolsProps {
     symbol: string;
 }
 
+/** 칩 이름 판정 — DB 이름 우선, 큐레이션 한글명 폴백은 ko에서만(아래 `resolveChipNames` JSDoc의 "로케일"). */
+function chipNameFor(
+    assetInfo: { name: string; koreanName?: string } | null,
+    item: RelatedSymbol,
+    locale: Locale
+): string | undefined {
+    // 큐레이션 이름은 DB가 비었을 때의 폴백이며 한글이라 ko에서만 쓴다.
+    const curated = locale === DEFAULT_LOCALE ? item.koreanName : undefined;
+    if (assetInfo === null) return curated;
+    if (locale === DEFAULT_LOCALE) return assetInfo.koreanName ?? curated;
+    const name = pickAssetName(assetInfo, item.symbol, locale);
+    return name === item.symbol ? curated : name;
+}
+
 /**
  * 칩에 쓸 한글명을 확정한다. 큐레이션 상수(무비용)를 기본으로 두고, DB에 이름이
  * 있으면 그쪽을 쓴다.
@@ -47,7 +61,7 @@ interface RelatedSymbolsProps {
  * 나오던 결함이다. 같은 이유로 비-ko에서는 DB가 비었을 때의 **큐레이션 한글명 폴백도 쓰지
  * 않는다**(티커만 남긴다). 이름이 티커와 같으면(`name === symbol`) 칩에 티커가 두 번
  * 찍히므로 이름으로 치지 않는다. 이 규칙 전체(DB 이름 → ko 한정 큐레이션 폴백)가 이
- * 함수 한 곳에 있다.
+ * 판정은 순수 함수 `chipNameFor` 한 곳에 있다.
  *
  * 인프라 실패는 삼킨다 — 이름 하나 없다고 내부링크가 사라지면 이 컴포넌트의 존재
  * 이유가 없어진다. 그 경우 큐레이션 이름(있으면)으로, 없으면 티커로 폴백한다.
@@ -58,27 +72,14 @@ async function resolveChipNames(
     items: readonly RelatedSymbol[],
     locale: Locale
 ): Promise<ReadonlyMap<string, string>> {
-    // 큐레이션 이름은 DB가 비었을 때의 폴백이며 한글이라 ko에서만 쓴다.
-    const curatedFallback = (item: RelatedSymbol): string | undefined =>
-        locale === DEFAULT_LOCALE ? item.koreanName : undefined;
     const resolved = await Promise.all(
         items.map(async item => {
             const { symbol } = item;
             try {
                 const { assetInfo } = await getAssetInfoResilient(symbol);
-                if (assetInfo === null || assetInfo === undefined) {
-                    return [symbol, curatedFallback(item)] as const;
-                }
-                if (locale === DEFAULT_LOCALE) {
-                    return [
-                        symbol,
-                        assetInfo.koreanName ?? curatedFallback(item),
-                    ] as const;
-                }
-                const name = pickAssetName(assetInfo, symbol, locale);
                 return [
                     symbol,
-                    name === symbol ? curatedFallback(item) : name,
+                    chipNameFor(assetInfo ?? null, item, locale),
                 ] as const;
             } catch (e: unknown) {
                 // `DYNAMIC_SERVER_USAGE`는 실패가 아니라 Next의 **제어 흐름
@@ -90,7 +91,7 @@ async function resolveChipNames(
                     `[RelatedSymbols] name lookup failed for ${symbol}:`,
                     e
                 );
-                return [symbol, curatedFallback(item)] as const;
+                return [symbol, chipNameFor(null, item, locale)] as const;
             }
         })
     );

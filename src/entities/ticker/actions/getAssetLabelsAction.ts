@@ -54,6 +54,7 @@ export async function getAssetLabelsAction(
     symbols: readonly string[],
     locale: Locale
 ): Promise<AssetLabelsResult> {
+    // 서버 액션 인자는 타입과 달리 클라이언트가 임의로 보낼 수 있어 다시 좁힌다.
     const resolvedLocale = resolveLocale(locale);
     const unique = [...new Set(symbols.map(s => s.trim().toUpperCase()))]
         .filter(Boolean)

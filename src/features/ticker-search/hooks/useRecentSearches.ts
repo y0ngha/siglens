@@ -1,6 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useSyncExternalStore,
+} from 'react';
 
 import type { RecentSearchEntry } from '@/entities/ticker/lib/recentSearches';
 import {
@@ -99,20 +104,9 @@ const requestedLabelSymbols = new Set<string>();
  */
 function useCompanyNameBackfill(entries: RecentSearchEntry[]): void {
     const locale = useResolvedLocale();
-    useEffect(() => {
-        const pending = entries
-            .filter(
-                entry =>
-                    entry.label === entry.symbol &&
-                    !requestedLabelSymbols.has(entry.symbol)
-            )
-            .map(entry => entry.symbol);
-        if (pending.length === 0) return;
-
-        // 요청 **전에** 표시한다. 응답을 기다리는 사이 다시 마운트되면 같은
-        // 조회가 두 번 나간다.
-        pending.forEach(symbol => requestedLabelSymbols.add(symbol));
-
+    // 로케일은 요청 시점 값만 읽는다 — 저장 라벨은 스냅샷이라(위 `requestedLabelSymbols`)
+    // 로케일 전환만으로 effect를 다시 돌릴 이유가 없다.
+    const requestLabels = useEffectEvent((pending: string[]): void => {
         // 언마운트 취소 플래그를 두지 않는다. 이 응답이 하는 일은 LocalStorage
         // 쓰기와 window 이벤트라 마운트 여부와 무관하게 안전하고, 오히려 도중에
         // 버리면 이미 "요청함"으로 표시된 심볼의 이름이 그 세션 동안 영영
@@ -132,7 +126,22 @@ function useCompanyNameBackfill(entries: RecentSearchEntry[]): void {
                 // 확인하지 못했으므로 전부 되돌린다.
                 pending.forEach(symbol => requestedLabelSymbols.delete(symbol));
             });
-    }, [entries, locale]);
+    });
+    useEffect(() => {
+        const pending = entries
+            .filter(
+                entry =>
+                    entry.label === entry.symbol &&
+                    !requestedLabelSymbols.has(entry.symbol)
+            )
+            .map(entry => entry.symbol);
+        if (pending.length === 0) return;
+
+        // 요청 **전에** 표시한다. 응답을 기다리는 사이 다시 마운트되면 같은
+        // 조회가 두 번 나간다.
+        pending.forEach(symbol => requestedLabelSymbols.add(symbol));
+        requestLabels(pending);
+    }, [entries]);
 }
 
 export function useRecentSearches(): UseRecentSearchesResult {

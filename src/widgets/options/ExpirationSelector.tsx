@@ -83,7 +83,8 @@ export function ExpirationSelector({
         () => [
             ...slots.map(({ slot, expirationDate }) => ({
                 key: slot.key,
-                // 모르는 키(core가 슬롯을 추가한 직후)는 core 라벨로 폴백한다.
+                // 런타임 버전 불일치 방어: 타입상 키는 늘 있지만, 설치된 core가 빌드
+                // 시점보다 새 슬롯 키를 내보내면 맵에 없을 수 있다 — 그때만 core 라벨로 폴백한다.
                 label: slotLabels[slot.key] ?? slot.label,
                 value: expirationDate,
                 sub: expirationDate.slice(5),
