@@ -67,6 +67,20 @@ describe('ShareCandlestickChart', () => {
         expect(mockAddSeries).not.toHaveBeenCalled();
     });
 
+    it('formats a Korean snapshot as grouped whole won, a US one with cents', () => {
+        const priceFormatOf = () =>
+            (
+                mockAddSeries.mock.calls.at(-1) as unknown as [
+                    string,
+                    { priceFormat: { formatter: (p: number) => string } },
+                ]
+            )[1].priceFormat;
+        render(<ShareCandlestickChart bars={mockBars} ticker="005930.KS" />);
+        expect(priceFormatOf().formatter(215_500)).toBe('215,500');
+        render(<ShareCandlestickChart bars={mockBars} ticker="AAPL" />);
+        expect(priceFormatOf().formatter(1_234.5)).toBe('1,234.50');
+    });
+
     it('creates a candlestick series with bull/bear colors', () => {
         render(<ShareCandlestickChart bars={mockBars} />);
 

@@ -95,6 +95,7 @@ import {
 } from './utils/overlayItems';
 import { type FibLevelTexts } from './utils/fibLevelLabel';
 import { levelTitleFor } from './utils/levelTitle';
+import { chartPriceFormat } from './utils/chartPriceFormat';
 import { isReachedTarget } from './utils/reachedLevel';
 import {
     createCanvasTextMeasurer,
@@ -324,6 +325,8 @@ export function StockChart({
     // effect에 priceDecimals를 deps로 추가하면 decimals 변경마다 차트가 재생성되므로 금지.
     // 초기값 2 (usEquity 고정 소수점과 일치); no-deps sync effect가 최신값으로 유지한다.
     const priceDecimalsRef = useRef<number>(2);
+    // 같은 이유로 mount-only effect가 가격 숫자 로케일(`chartPriceFormat`)을 ref로 읽는다.
+    const localeRef = useRef(locale);
 
     const { visible, toggle, paneIndices } = useIndicatorVisibility();
 
@@ -375,6 +378,7 @@ export function StockChart({
         isViewAdjustedRef.current = isViewAdjusted;
         onViewAdjustmentResetRef.current = onViewAdjustmentReset;
         priceDecimalsRef.current = priceDecimals;
+        localeRef.current = locale;
     });
 
     useEffect(() => {
@@ -418,11 +422,7 @@ export function StockChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-            priceFormat: {
-                type: 'price',
-                precision: decimals,
-                minMove: 10 ** -decimals,
-            },
+            priceFormat: chartPriceFormat(decimals, localeRef.current),
             // LWC addSeries() 반환 타입에 UTCTimestamp 제네릭이 없어 타입 가드 불가 — 라이브러리 타입 한계.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
@@ -511,18 +511,14 @@ export function StockChart({
     useExtendedSessionBand(seriesRef, extendedRanges);
 
     // 컴포넌트가 마운트된 채 클라이언트 사이드 심볼 탐색(예: 일반 주식 → 크립토)이 일어나면
-    // mount-only effect의 priceFormat이 구식이 된다. priceDecimals 변경 시 기존 시리즈에
+    // mount-only effect의 priceFormat이 구식이 된다. priceDecimals·로케일 변경 시 기존 시리즈에
     // applyOptions를 적용해 sub-cent 토큰이 망가진 가격으로 표시되는 것을 방지한다.
     useEffect(() => {
         if (!seriesRef.current) return;
         seriesRef.current.applyOptions({
-            priceFormat: {
-                type: 'price',
-                precision: priceDecimals,
-                minMove: 10 ** -priceDecimals,
-            },
+            priceFormat: chartPriceFormat(priceDecimals, locale),
         });
-    }, [priceDecimals]);
+    }, [priceDecimals, locale]);
 
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
         useMAOverlay(commonHookParams);

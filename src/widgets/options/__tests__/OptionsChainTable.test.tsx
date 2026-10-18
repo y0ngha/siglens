@@ -327,4 +327,53 @@ describe('OptionsChainTable', () => {
         const cells155 = within(row155).getAllByRole('cell');
         expect(cells155[1]).toHaveTextContent('$0.50/—');
     });
+
+    it('groups thousands in strikes and quotes of a high-priced underlying', async () => {
+        const user = userEvent.setup();
+        const contract = {
+            openInterest: 10,
+            volume: 1,
+            impliedVolatility: 0.3,
+            inTheMoney: true,
+        };
+        const chain: OptionsChain = {
+            expirationDate: '2025-06-20',
+            daysToExpiration: 30,
+            calls: [
+                {
+                    ...contract,
+                    strike: 1050,
+                    bid: 1234.5,
+                    ask: 1240,
+                    lastPrice: 1237,
+                    contractSymbol: 'C1050',
+                },
+            ],
+            puts: [
+                {
+                    ...contract,
+                    strike: 1050,
+                    bid: 2.1,
+                    ask: 2.3,
+                    lastPrice: 2.2,
+                    contractSymbol: 'P1050',
+                },
+            ],
+        };
+        render(
+            <OptionsChainTable
+                symbol="AVGO"
+                expirationDate="2025-06-20"
+                underlyingPrice={2280}
+                chain={chain}
+                metrics={METRICS}
+                nearestExpiry="2025-06-20"
+            />
+        );
+        await user.click(screen.getByRole('button'));
+        const row = screen.getByText('$1,050').closest('tr')!;
+        expect(within(row).getAllByRole('cell')[1]).toHaveTextContent(
+            '$1,234.50/$1,240.00'
+        );
+    });
 });

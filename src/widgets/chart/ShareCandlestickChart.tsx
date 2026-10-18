@@ -23,6 +23,10 @@ import {
 import type { Bar } from '@y0ngha/siglens-core';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
+import { chartPriceFormat } from './utils/chartPriceFormat';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { dynamicDecimals } from '@/shared/lib/priceFormat';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 
 interface ShareCandlestickChartProps {
     bars: Bar[];
@@ -41,6 +45,7 @@ export function ShareCandlestickChart({
 }: ShareCandlestickChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
+    const locale = useResolvedLocale();
     const containerRef = useRef<HTMLDivElement>(null);
     // Store chart and series refs for cleanup.
     const chartRef = useRef<IChartApi | null>(null);
@@ -96,7 +101,15 @@ export function ShareCandlestickChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-            priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
+            // 스냅샷엔 티커 문자열뿐이라 시장을 형상으로 고른다: 한국 종목은 원 단위 정수,
+            // 그 밖은 종가 크기에 맞춘 자릿수 — 형상으로는 크립토를 미국 주식과 가를 수 없어
+            // (`profileIdForSymbol`), 고정 둘째 자리면 서브센트 토큰이 `0.00`으로 뭉개진다.
+            priceFormat: chartPriceFormat(
+                isKrEquitySymbol(ticker ?? '')
+                    ? 0
+                    : dynamicDecimals(snapshotBars.at(-1)?.close ?? 1),
+                locale
+            ),
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
         // No Elder Impulse on the share chart — pass empty array and isActive=false.
@@ -111,7 +124,7 @@ export function ShareCandlestickChart({
             chartRef.current = null;
             seriesRef.current = null;
         };
-    }, [snapshotBars]);
+    }, [snapshotBars, ticker, locale]);
 
     const ariaLabel =
         ticker !== undefined && ticker !== ''
