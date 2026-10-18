@@ -96,9 +96,13 @@ test.describe('flows(한국): DART 지분공시', () => {
         const order = await page
             .locator('main h2')
             .evaluateAll(nodes => nodes.map(node => node.textContent ?? ''));
-        const index = (pattern: RegExp) =>
-            order.findIndex(text => pattern.test(text));
-        expect(index(/수급 점수/)).toBeLessThan(index(/대량보유 보고/));
+        // 못 찾으면 -1이 되어 "앞에 있다"가 항상 참이 된다 — 제목이 바뀌면 조용히 통과하지 않도록 먼저 실패시킨다.
+        const index = (pattern: RegExp) => {
+            const i = order.findIndex(text => pattern.test(text));
+            expect(i, `heading ${pattern} not found`).toBeGreaterThanOrEqual(0);
+            return i;
+        };
+        expect(index(/지분 공시 점수/)).toBeLessThan(index(/대량보유 보고/));
         expect(index(/대량보유 보고/)).toBeLessThan(
             index(/임원·주요주주 소유/)
         );
