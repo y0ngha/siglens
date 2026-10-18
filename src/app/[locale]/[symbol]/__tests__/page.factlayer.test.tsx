@@ -475,6 +475,7 @@ describe('SymbolPage — FactLayer SSR integration', () => {
                 {
                     symbol: 'AAPL',
                     tab: 'technical',
+                    locale: 'ko',
                     content: { summary: '단기 상승 모멘텀', trend: 'bullish' },
                     model: 'deepseek-v4.1-flash',
                     generatedAt: new Date('2026-07-24'),
@@ -491,6 +492,60 @@ describe('SymbolPage — FactLayer SSR integration', () => {
                 summary: '단기 상승 모멘텀',
                 trend: 'bullish',
             });
+        });
+
+        // 프리웜은 한국어로만 굽고 저장소가 en→ko로 폴백하므로, 영문 페이지가 ko 행을
+        // 받을 수 있다. 그 산문은 렌더하지 않는다(섹션 생략).
+        it('en 페이지에 ko 스냅샷만 있으면 산문 content를 넘기지 않는다', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                {
+                    symbol: 'AAPL',
+                    tab: 'technical',
+                    locale: 'ko',
+                    content: { summary: '단기 상승 모멘텀', trend: 'bullish' },
+                    plain: '쉬운 설명',
+                    model: 'deepseek-v4.1-flash',
+                    generatedAt: new Date('2026-07-24'),
+                },
+            ]);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'en', symbol: 'aapl' }),
+            });
+
+            const props = findElementByType(tree, TechnicalSnapshotProse)
+                ?.props as { content: unknown; plain: unknown };
+            expect(props.content).toBeUndefined();
+            expect(props.plain).toBeUndefined();
+        });
+
+        it('en 페이지에 en 스냅샷이 있으면 그 산문을 넘긴다', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                {
+                    symbol: 'AAPL',
+                    tab: 'technical',
+                    locale: 'en',
+                    content: {
+                        summary: 'Short-term momentum',
+                        trend: 'bullish',
+                    },
+                    plain: 'Plain words',
+                    model: 'deepseek-v4.1-flash',
+                    generatedAt: new Date('2026-07-24'),
+                },
+            ]);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'en', symbol: 'aapl' }),
+            });
+
+            const props = findElementByType(tree, TechnicalSnapshotProse)
+                ?.props as { content: unknown; plain: unknown };
+            expect(props.content).toEqual({
+                summary: 'Short-term momentum',
+                trend: 'bullish',
+            });
+            expect(props.plain).toBe('Plain words');
         });
 
         it('스냅샷 없으면(getSeoSnapshotsStatic → []) TechnicalSnapshotProse에 undefined content를 전달한다(렌더러가 자체적으로 null 반환)', async () => {
@@ -512,6 +567,7 @@ describe('SymbolPage — FactLayer SSR integration', () => {
                 {
                     symbol: 'AAPL',
                     tab: 'overall',
+                    locale: 'ko',
                     content: { headlineKo: '헤드라인' },
                     model: 'deepseek-v4.1-flash',
                     generatedAt: new Date('2026-07-24'),

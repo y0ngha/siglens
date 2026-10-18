@@ -148,6 +148,7 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'options',
+                locale: 'ko',
                 content: SNAPSHOT_CONTENT,
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
@@ -294,6 +295,7 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'options',
+                locale: 'ko',
                 content: SNAPSHOT_CONTENT,
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
@@ -348,6 +350,7 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'options',
+                locale: 'ko',
                 content: SNAPSHOT_CONTENT,
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),

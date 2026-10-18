@@ -31,6 +31,9 @@ vi.mock('@/entities/ticker/lib/recentSearches', () => ({
  * 픽스처(`{ symbol: 'AAPL', label: 'AAPL' }`)마다 실제 액션이 유닛 테스트에서
  * 호출된다 — 실패가 `.catch`에 삼켜져 초록으로 통과하므로 신호도 남지 않는다.
  */
+vi.mock('@/shared/i18n/useResolvedLocale', () => ({
+    useResolvedLocale: () => 'ko',
+}));
 vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
     getAssetLabelsAction: vi.fn().mockResolvedValue({ labels: {}, failed: [] }),
 }));

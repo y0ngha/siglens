@@ -4967,7 +4967,14 @@
                 "88dc87": "The date when the option contract expires.",
                 "c94421": "Closer expiration dates lead to faster price changes. Options expire after their expiration date.",
                 "ef6fe0": "Expiration",
-                "f7c86d": "Overall"
+                "f7c86d": "Overall",
+                "slot0D": "This week",
+                "slot1M": "1 month",
+                "slot1W": "1 week",
+                "slot2M": "2 months",
+                "slot2W": "2 weeks",
+                "slot3M": "3 months",
+                "slot6M": "6 months"
             },
             "OpenInterestChart": {
                 "0f1ff5": "No OI data for this expiration.",

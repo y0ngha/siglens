@@ -5,6 +5,8 @@ import { useMemo, useRef } from 'react';
 import { getAssetLabelsAction } from '@/entities/ticker/actions/getAssetLabelsAction';
 import { MAX_RECENT_SEARCHES } from '@/entities/ticker/lib/recentSearches';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { Locale } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 /**
  * `getAssetLabelsAction` 한 번에 물을 수 있는 심볼 수. 액션이 이 수에서 잘라 버리므로
@@ -17,7 +19,8 @@ type KnownLabels = Map<string, string | null>;
 
 async function fetchMissingLabels(
     symbols: readonly string[],
-    known: KnownLabels
+    known: KnownLabels,
+    locale: Locale
 ): Promise<Record<string, string>> {
     const missing = symbols.filter(symbol => !known.has(symbol));
     // 서버 액션은 클라이언트에서 어차피 직렬화된다 — 순서대로 묻는다.
@@ -25,7 +28,7 @@ async function fetchMissingLabels(
         const batch = missing.slice(i, i + LABELS_PER_CALL);
         // 위 주석대로 서버 액션이 직렬화되므로 배치를 병렬로 던져도 이득이 없다.
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
-        const { labels, failed } = await getAssetLabelsAction(batch);
+        const { labels, failed } = await getAssetLabelsAction(batch, locale);
         const failedSet = new Set(failed);
         for (const symbol of batch) {
             // 조회 자체가 실패한 심볼은 기억하지 않는다 — 다음 갱신 때 다시 묻는다.
@@ -42,8 +45,9 @@ async function fetchMissingLabels(
 }
 
 /**
- * Display names for the symbols under the answers (`005930.KS` → `삼성전자`),
- * with the same Korean-name-first rule as search results.
+ * Display names for the symbols under the answers (`005930.KS` → `삼성전자`
+ * on ko, `Samsung Electronics` on en), picked per locale by `pickAssetName`
+ * — the same rule as search results. The query key carries the locale.
  *
  * **대화 전체에 한 번** 부른다(`MessageList`). 예전에는 답변마다 이 훅을 불러, 긴 대화를
  * 열면 답변 수만큼 서버 액션 POST가 줄을 섰다(서버 액션은 클라이언트에서 직렬화된다).
@@ -54,13 +58,20 @@ async function fetchMissingLabels(
 export function useSymbolLabels(
     symbols: readonly string[]
 ): Readonly<Record<string, string>> {
-    const knownRef = useRef<KnownLabels>(new Map());
+    const locale = useResolvedLocale();
+    // 이미 받은 답은 로케일별로 따로 기억한다 — 이름 언어가 로케일마다 달라서, 한 맵을 공유하면
+    // 로케일을 바꾼 뒤에도 이전 언어의 이름이 "이미 안다"로 재사용된다.
+    const knownRef = useRef<Map<Locale, KnownLabels>>(new Map());
     // 입력 배열이 그대로면(호출부가 memo한 경우) 정렬도 다시 하지 않는다. 키는 값으로
     // 비교되므로 프레임마다 새 배열이어도 쿼리는 다시 돌지 않는다.
     const unique = useMemo(() => [...new Set(symbols)].toSorted(), [symbols]);
     const { data } = useQuery({
-        queryKey: QUERY_KEYS.assetLabels(unique),
-        queryFn: () => fetchMissingLabels(unique, knownRef.current),
+        queryKey: QUERY_KEYS.assetLabels(unique, locale),
+        queryFn: () => {
+            const known = knownRef.current.get(locale) ?? new Map();
+            knownRef.current.set(locale, known);
+            return fetchMissingLabels(unique, known, locale);
+        },
         enabled: unique.length > 0,
         staleTime: Infinity,
         gcTime: Infinity,

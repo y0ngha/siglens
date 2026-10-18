@@ -8,6 +8,12 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 }));
 
 const mockSegment = vi.hoisted(() => ({ current: null as string | null }));
+const mockLocale = vi.hoisted(() => ({ current: 'ko' }));
+
+vi.mock('next-intl/server', async importOriginal => ({
+    ...(await importOriginal<typeof import('next-intl/server')>()),
+    getLocale: async () => mockLocale.current,
+}));
 
 vi.mock('next/navigation', async importOriginal => ({
     ...(await importOriginal<typeof import('next/navigation')>()),
@@ -32,6 +38,7 @@ describe('RelatedSymbols', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockSegment.current = null;
+        mockLocale.current = 'ko';
         // 기본은 "DB에 이름 없음" — 큐레이션 폴백 경로를 밟는다.
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: null,
@@ -130,6 +137,76 @@ describe('RelatedSymbols', () => {
             name: new RegExp(`${first.displayTicker}$`),
         });
         expect(link).toHaveTextContent(`한글-${first.symbol}`);
+    });
+
+    describe('로케일별 칩 이름', () => {
+        const stubAssets = () =>
+            mockGetAssetInfoResilient.mockImplementation((async (
+                symbol: string
+            ) => ({
+                assetInfo: {
+                    symbol,
+                    name: `${symbol} Corp.`,
+                    koreanName: `한글-${symbol}`,
+                },
+                degraded: false,
+            })) as never);
+
+        it('en: 영문명을 쓰고 한글명은 노출하지 않는다', async () => {
+            mockLocale.current = 'en';
+            stubAssets();
+
+            const { container } = await renderRelated('NVDA');
+            const first = relatedSymbolsFor('NVDA')[0];
+            const link = screen.getByRole('link', {
+                name: new RegExp(`${first.displayTicker}$`),
+            });
+            expect(link).toHaveTextContent(`${first.symbol} Corp.`);
+            expect(container.textContent).not.toContain('한글-');
+        });
+
+        it('en: 영문명이 없으면(name이 티커와 같음) 한글명으로 폴백한다', async () => {
+            mockLocale.current = 'en';
+            mockGetAssetInfoResilient.mockImplementation((async (
+                symbol: string
+            ) => ({
+                assetInfo: {
+                    symbol,
+                    name: symbol,
+                    koreanName: `한글-${symbol}`,
+                },
+                degraded: false,
+            })) as never);
+
+            await renderRelated('NVDA');
+            const first = relatedSymbolsFor('NVDA')[0];
+            expect(
+                screen.getByRole('link', {
+                    name: new RegExp(`${first.displayTicker}$`),
+                })
+            ).toHaveTextContent(`한글-${first.symbol}`);
+        });
+
+        it('en: DB 이름이 없으면 큐레이션 한글명을 쓰지 않고 티커만 남긴다', async () => {
+            mockLocale.current = 'en';
+
+            await renderRelated('MSFT');
+            const link = screen.getByRole('link', { name: /NVDA/ });
+            expect(link).not.toHaveTextContent('엔비디아');
+            expect(link).toHaveTextContent('NVDA');
+        });
+
+        it('ko: 한글명을 쓴다', async () => {
+            stubAssets();
+
+            await renderRelated('NVDA');
+            const first = relatedSymbolsFor('NVDA')[0];
+            expect(
+                screen.getByRole('link', {
+                    name: new RegExp(`${first.displayTicker}$`),
+                })
+            ).toHaveTextContent(`한글-${first.symbol}`);
+        });
     });
 
     /**

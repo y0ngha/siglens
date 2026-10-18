@@ -76,9 +76,13 @@ export const QUERY_KEYS = {
         ['extended-quote', upper(symbol)] as const,
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
-    /** Order-insensitive: the same symbols in any order share one lookup. */
-    assetLabels: (symbols: readonly string[]) =>
-        ['asset-labels', ...symbols.map(upper).toSorted()] as const,
+    /**
+     * Order-insensitive: the same symbols in any order share one lookup. 로케일이 키에
+     * 들어간다 — 표시명 언어가 로케일별로 갈리므로(`getAssetLabelsAction`), 빠지면 ko에서
+     * 받은 "엔비디아"가 en 화면에 재사용된다.
+     */
+    assetLabels: (symbols: readonly string[], locale: Locale) =>
+        ['asset-labels', locale, ...symbols.map(upper).toSorted()] as const,
     /**
      * 시장별로 키를 가른다. `/market`과 `/market/kr`은 같은 클라이언트 캐시를
      * 공유하므로, scope가 키에 없으면 한 페이지에서 다른 페이지로 이동했을 때

@@ -45,6 +45,21 @@ describe('loadTabSnapshotMeta', () => {
         );
     });
 
+    it('en 페이지는 en→ko 폴백으로 받은 ko 행을 쓰지 않는다(템플릿 설명으로 폴백)', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([overallRow]);
+        const { snap, description } = await loadTabSnapshotMeta({
+            symbol: 'AAPL',
+            tab: 'overall',
+            revalidate: 43200,
+            locale: 'en',
+            subject: 'Apple',
+            assetClass: 'equity',
+            tSeo,
+        });
+        expect(snap).toBeUndefined();
+        expect(description).toBeNull();
+    });
+
     it('description은 기존 인라인 계산과 같다 (preferPlain이면 평이화 산문 우선)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([overallRow]);
         const input = {

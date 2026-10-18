@@ -1,6 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useSyncExternalStore,
+} from 'react';
 
 import type { RecentSearchEntry } from '@/entities/ticker/lib/recentSearches';
 import {
@@ -13,6 +18,7 @@ import {
 } from '@/entities/ticker/lib/recentSearches';
 import { getAssetLabelsAction } from '@/entities/ticker/actions/getAssetLabelsAction';
 import { trackAdsConversion } from '@/shared/lib/googleAds';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 interface UseRecentSearchesResult {
     recentSearches: RecentSearchEntry[];
@@ -74,6 +80,10 @@ function notify(): void {
  * 이 기록이 없으면 마운트할 때마다 같은 조회를 되풀이한다 — 오버레이는 열 때마다
  * 마운트된다.
  *
+ * 키에 로케일이 없는 이유: 백필 대상은 라벨이 심볼과 같은 항목뿐이라, 한 번 이름이
+ * 채워진 항목은 로케일이 바뀌어도 다시 대상이 되지 않는다. 저장된 라벨은 **저장
+ * 당시 로케일의 스냅샷**으로 취급한다(로케일 전환으로 다시 고쳐 쓰지 않는다).
+ *
  * 반대로 **조회가 실패한** 심볼은 여기서 빼야 한다. 실패는 그 종목에 이름이
  * 없다는 뜻이 아니라 이번에 못 물어봤다는 뜻이라, 남겨 두면 일시적 장애가
  * 세션 내내 백필을 막는다.
@@ -93,25 +103,15 @@ const requestedLabelSymbols = new Set<string>();
  * 삼키면서 재시도까지 막으면 일시적 장애가 영구 결함이 된다.
  */
 function useCompanyNameBackfill(entries: RecentSearchEntry[]): void {
-    useEffect(() => {
-        const pending = entries
-            .filter(
-                entry =>
-                    entry.label === entry.symbol &&
-                    !requestedLabelSymbols.has(entry.symbol)
-            )
-            .map(entry => entry.symbol);
-        if (pending.length === 0) return;
-
-        // 요청 **전에** 표시한다. 응답을 기다리는 사이 다시 마운트되면 같은
-        // 조회가 두 번 나간다.
-        pending.forEach(symbol => requestedLabelSymbols.add(symbol));
-
+    const locale = useResolvedLocale();
+    // 로케일은 요청 시점 값만 읽는다 — 저장 라벨은 스냅샷이라(위 `requestedLabelSymbols`)
+    // 로케일 전환만으로 effect를 다시 돌릴 이유가 없다.
+    const requestLabels = useEffectEvent((pending: string[]): void => {
         // 언마운트 취소 플래그를 두지 않는다. 이 응답이 하는 일은 LocalStorage
         // 쓰기와 window 이벤트라 마운트 여부와 무관하게 안전하고, 오히려 도중에
         // 버리면 이미 "요청함"으로 표시된 심볼의 이름이 그 세션 동안 영영
         // 채워지지 않는다(오버레이는 닫힐 때마다 언마운트된다).
-        void getAssetLabelsAction(pending)
+        void getAssetLabelsAction(pending, locale)
             .then(({ labels, failed }) => {
                 // 실패한 심볼만 되돌린다. 이름 없이 성공한 심볼은 표시된 채로
                 // 둔다 — 그 종목엔 채울 이름이 없으므로 다시 물어봐야 무의미한
@@ -126,6 +126,21 @@ function useCompanyNameBackfill(entries: RecentSearchEntry[]): void {
                 // 확인하지 못했으므로 전부 되돌린다.
                 pending.forEach(symbol => requestedLabelSymbols.delete(symbol));
             });
+    });
+    useEffect(() => {
+        const pending = entries
+            .filter(
+                entry =>
+                    entry.label === entry.symbol &&
+                    !requestedLabelSymbols.has(entry.symbol)
+            )
+            .map(entry => entry.symbol);
+        if (pending.length === 0) return;
+
+        // 요청 **전에** 표시한다. 응답을 기다리는 사이 다시 마운트되면 같은
+        // 조회가 두 번 나간다.
+        pending.forEach(symbol => requestedLabelSymbols.add(symbol));
+        requestLabels(pending);
     }, [entries]);
 }
 
