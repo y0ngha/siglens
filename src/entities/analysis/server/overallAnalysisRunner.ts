@@ -243,8 +243,10 @@ export async function executeOverallAnalysis({
     // to avoid a lossy assetClass→profileId round-trip at the sessionSpecFor call.
     // assetClass lets core treat absent fundamentals/options/earnings as intentional
     // for crypto (2-axis: technical + news) rather than missing stock data.
-    const marketProfile = await marketProfilePromise;
-    const krxTickTable = await krxTickTablePromise;
+    const [marketProfile, krxTickTable] = await Promise.all([
+        marketProfilePromise,
+        krxTickTablePromise,
+    ]);
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
     const session = sessionSpecFor(marketProfile);

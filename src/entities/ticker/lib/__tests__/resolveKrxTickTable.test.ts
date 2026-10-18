@@ -14,6 +14,7 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
         _ttl: number,
         fetcher: () => Promise<T>
     ): Promise<T> => {
+        // 이 맵에는 같은 키로 이 fetcher가 돌려준 `T`만 저장된다(아래 `store.set`) — 키가 타입을 정한다.
         if (store.has(key)) return store.get(key) as T;
         const value = await fetcher();
         store.set(key, value);

@@ -387,8 +387,10 @@ export async function prewarmOverall(
         !isEtRegularSessionOpen(new Date()) &&
         isOpenInterestSnapshotStale(optionsSnapshot);
 
-    const marketProfile = await marketProfilePromise;
-    const krxTickTable = await krxTickTablePromise;
+    const [marketProfile, krxTickTable] = await Promise.all([
+        marketProfilePromise,
+        krxTickTablePromise,
+    ]);
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
     const session = sessionSpecFor(marketProfile);
