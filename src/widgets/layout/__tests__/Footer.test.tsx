@@ -43,7 +43,7 @@ import {
 } from '@/shared/config/assetClassNav';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
-import { GITHUB_URL, X_URL } from '@/shared/lib/seo';
+import { GITHUB_URL, VELOG_URL, X_URL } from '@/shared/lib/seo';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
@@ -319,6 +319,30 @@ describe('Footer', () => {
                 SITE_NAME_KO
             )
         );
+    });
+
+    /** 서비스 velog 링크 — X 링크와 같은 아이콘 전용 링크라 이름·새 탭·터치 영역 규칙이 같다. */
+    it('velog 블로그 링크는 새 탭으로 열고 opener를 끊으며 이름이 있다', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /velog 블로그/ });
+        expect(link).toHaveAttribute('href', VELOG_URL);
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link.getAttribute('rel')?.split(' ').toSorted()).toEqual([
+            'noopener',
+            'noreferrer',
+        ]);
+        expect(link).toHaveAccessibleName(
+            koMessage('widgets.layout.velogBlogAria').replace(
+                '{v0}',
+                SITE_NAME_KO
+            )
+        );
+        expect(link.querySelector('svg')).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+        expect(link).toHaveClass('size-11');
     });
 
     it('X 아이콘은 장식이고 링크 상자가 44px 터치 영역이다', () => {

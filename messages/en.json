@@ -4819,6 +4819,7 @@
                 "current": "Language: {v0}",
                 "label": "Select Language"
             },
+            "velogBlogAria": "{v0} velog blog (opens in a new tab)",
             "xAccountAria": "{v0} X (Twitter) Account (opens in new tab)"
         },
         "legal": {

@@ -4819,6 +4819,7 @@
                 "current": "语言：{v0}",
                 "label": "选择语言"
             },
+            "velogBlogAria": "{v0} velog 博客（在新标签页中打开）",
             "xAccountAria": "{v0} X (Twitter) 账户（在新标签页中打开）"
         },
         "legal": {

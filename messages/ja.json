@@ -4819,6 +4819,7 @@
                 "current": "言語: {v0}",
                 "label": "言語を選択"
             },
+            "velogBlogAria": "{v0} velog ブログ（新しいタブで開く）",
             "xAccountAria": "{v0} X(Twitter) アカウント (新しいタブで開く)"
         },
         "legal": {
