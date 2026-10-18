@@ -180,7 +180,7 @@ export function buildOrganizationCoreJsonLd(): OrganizationCoreJsonLd {
  *
  * 상수로 두는 이유는 재사용이 아니라 **위치**다. 사이트를 가리키는 다른 URL이
  * 전부 여기 있으므로, JSON-LD `sameAs`에 싣는 소셜 프로필(`X_URL`)도 이 파일
- * 안에서 함께 다룬다. 푸터 JSX나 JSON-LD 안에 문자열로 박아두면 두 번째 사본이
+ * 안에서 함께 다룬다(`X_URL`·`VELOG_URL`). 푸터 JSX나 JSON-LD 안에 문자열로 박아두면 두 번째 사본이
  * 생긴다.
  */
 export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
@@ -189,6 +189,13 @@ export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
  * 서비스 공식 X(트위터) 계정. 홈 `Organization.sameAs`와 푸터 아이콘 링크가 소비한다.
  */
 export const X_URL = 'https://x.com/siglens_io';
+
+/**
+ * 서비스 공식 velog 블로그. 홈 `Organization.sameAs`와 푸터 아이콘 링크가 소비한다 — 서비스 계정이라 조직
+ * 노드에 싣는다(운영자 개인 프로필은 `OPERATOR_SAME_AS`, 2026-10-18 사용자 결정으로 개인
+ * velog는 뺐다).
+ */
+export const VELOG_URL = 'https://velog.io/@siglens';
 
 /**
  * 종목은 살아 있지만 **탭 자체를 색인하지 않기로 정한** 페이지의 robots.

@@ -4948,6 +4948,7 @@
                 "current": "언어: {v0}",
                 "label": "언어 선택"
             },
+            "velogBlogAria": "{v0} velog 블로그 (새 탭에서 열림)",
             "xAccountAria": "{v0} X(트위터) 계정 (새 탭에서 열림)"
         },
         "legal": {

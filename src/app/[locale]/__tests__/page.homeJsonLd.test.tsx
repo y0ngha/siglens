@@ -74,6 +74,7 @@ import {
     GITHUB_URL,
     SEO_TITLE_MAX_WIDTH,
     seoTitleWidth,
+    VELOG_URL,
     X_URL,
 } from '@/shared/lib/seo';
 import { SITE_NAME_KO } from '@/shared/config/brand';
@@ -209,11 +210,11 @@ describe('홈 Organization 노드', () => {
     });
 
     /**
-     * `Organization.sameAs`는 **조직**의 외부 프로필(서비스 저장소·서비스 X 계정)만 싣는다.
-     * 운영자 개인 GitHub·velog는 사람의 프로필이라 `founder.sameAs`에만 둔다 — 개인 계정이
+     * `Organization.sameAs`는 **조직**의 외부 프로필(서비스 저장소·서비스 X·서비스 velog)만
+     * 싣는다. 운영자 개인 GitHub은 사람의 프로필이라 `founder.sameAs`에만 둔다 — 개인 계정이
      * 조직 노드에 섞이면 파서가 조직과 운영자를 같은 주체로 읽는다(2026-10-05 감사).
      */
-    it('sameAs는 서비스 저장소와 서비스 X 계정뿐이다(개인 GitHub·velog 제외)', async () => {
+    it('sameAs는 서비스 저장소·X·velog뿐이다(개인 GitHub 제외)', async () => {
         const organization = collectJsonLdData(await renderHome()).find(
             d => d['@type'] === 'Organization'
         ) as { sameAs: string[] } | undefined;
@@ -221,20 +222,19 @@ describe('홈 Organization 노드', () => {
         expect(organization?.sameAs).toEqual([
             'https://github.com/y0ngha/siglens',
             'https://x.com/siglens_io',
+            'https://velog.io/@siglens',
         ]);
-        expect(organization?.sameAs).toEqual([GITHUB_URL, X_URL]);
+        expect(organization?.sameAs).toEqual([GITHUB_URL, X_URL, VELOG_URL]);
         expect(organization?.sameAs).not.toContain(SITE_OPERATOR.githubUrl);
-        expect(organization?.sameAs).not.toContain(SITE_OPERATOR.velogUrl);
     });
 
-    it('founder.sameAs는 운영자 프로필 두 곳(GitHub·velog)이다', async () => {
+    it('founder.sameAs는 운영자 개인 GitHub 하나다', async () => {
         const organization = collectJsonLdData(await renderHome()).find(
             d => d['@type'] === 'Organization'
         ) as { founder: { sameAs: string[] } } | undefined;
 
         expect(organization?.founder.sameAs).toEqual([
             'https://github.com/y0ngha',
-            'https://velog.io/@y0ngha',
         ]);
         expect(organization?.founder.sameAs).toEqual([...OPERATOR_SAME_AS]);
     });

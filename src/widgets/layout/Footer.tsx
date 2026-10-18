@@ -10,6 +10,7 @@ import {
 } from '@/shared/config/assetClassNav';
 import { GithubIcon } from '@/shared/ui/GithubIcon';
 import { XIcon } from '@/shared/ui/XIcon';
+import { VelogIcon } from '@/shared/ui/VelogIcon';
 import {
     ABOUT_PATH,
     aboutTitle,
@@ -24,7 +25,7 @@ import {
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { GITHUB_URL, SYMBOLS_PATH, X_URL } from '@/shared/lib/seo';
+import { GITHUB_URL, SYMBOLS_PATH, VELOG_URL, X_URL } from '@/shared/lib/seo';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { brandName } from '@/shared/lib/brandName';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -201,6 +202,19 @@ export function Footer() {
                             className="-m-3 inline-flex size-11 items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             <XIcon className="h-5 w-5" />
+                        </a>
+                        <a
+                            href={VELOG_URL}
+                            target="_blank"
+                            // GitHub·X 링크와 같다 — 외부 탭은 opener를 끊고, 44px 터치 영역에
+                            // 음수 마진으로 레이아웃 몫은 20px(근거는 X 링크 주석).
+                            rel="noopener noreferrer"
+                            aria-label={t('velogBlogAria', {
+                                v0: brandName(locale),
+                            })}
+                            className="-m-3 inline-flex size-11 items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                            <VelogIcon className="h-5 w-5" />
                         </a>
                         <nav
                             aria-label={t('Footer.5f5d12')}
