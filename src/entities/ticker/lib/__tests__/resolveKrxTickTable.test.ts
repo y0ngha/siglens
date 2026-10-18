@@ -1,5 +1,22 @@
 const getQuoteTypeOrThrow = vi.fn();
 
+// 렌더 경로의 Next data cache 래퍼는 호출을 기록하고 그대로 통과시킨다(peekAnalysisStaticCache.test와 같은 방식).
+const unstableCache = vi.fn();
+// 설정되면 래퍼 자체가 이 오류로 거부한다 — 사고 경로(렌더 중 캐시 계층이 DSE를 던짐)를 재현한다.
+let unstableCacheError: Error | null = null;
+vi.mock('next/cache', () => ({
+    unstable_cache: (
+        fn: () => unknown,
+        keyParts: string[],
+        options: unknown
+    ) => {
+        unstableCache(keyParts, options);
+        return unstableCacheError === null
+            ? fn
+            : () => Promise.reject(unstableCacheError);
+    },
+}));
+
 vi.mock('@/shared/api/yahoo/YahooMarketProvider', () => ({
     YahooMarketProvider: class {
         getQuoteTypeOrThrow = getQuoteTypeOrThrow;
@@ -100,6 +117,37 @@ describe('resolveKrxTickTable', () => {
         getQuoteTypeOrThrow.mockReset();
         getQuoteTypeOrThrow.mockResolvedValue('ETF');
         expect(await resolveKrxTickTableForDisplay('360750.KS')).toBe('etp');
+    });
+
+    it('the display variant goes through the Next data cache for KR symbols only', async () => {
+        getQuoteTypeOrThrow.mockResolvedValue('ETF');
+        unstableCache.mockClear();
+        expect(await resolveKrxTickTableForDisplay('360750.ks')).toBe('etp');
+        expect(unstableCache).toHaveBeenCalledWith(
+            ['krx-tick-table-static-v1', '360750.KS'],
+            expect.objectContaining({ tags: ['symbol:360750.KS'] })
+        );
+
+        unstableCache.mockClear();
+        expect(await resolveKrxTickTableForDisplay('AAPL')).toBe('share');
+        expect(unstableCache).not.toHaveBeenCalled();
+    });
+
+    it('the display variant rethrows DYNAMIC_SERVER_USAGE from the cache layer instead of falling back', async () => {
+        const dse = Object.assign(
+            new Error('Dynamic server usage: Route /[locale]/[symbol]'),
+            { digest: 'DYNAMIC_SERVER_USAGE' }
+        );
+        unstableCacheError = dse;
+        try {
+            await expect(
+                resolveKrxTickTableForDisplay('360750.KS')
+            ).rejects.toBe(dse);
+            // 'share' 폴백 경로(경고 로그)를 타지 않았다.
+            expect(console.warn).not.toHaveBeenCalled();
+        } finally {
+            unstableCacheError = null;
+        }
     });
 
     it('serves a cached value without calling yahoo again', async () => {
