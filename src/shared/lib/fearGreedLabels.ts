@@ -89,12 +89,33 @@ function factorFormatter(
     return cachedNumberFormat(INTL_LOCALE[locale], FACTOR_FORMAT_OPTIONS[tier]);
 }
 
-/** Raw value 표시 포맷터 — UI는 이 함수로 raw 값을 출력한다. */
+/** `ma200DistancePct`는 퍼센트 단위(5.57 = 5.57%)라 퍼센트 서식에 넣으려면 100으로 나눈다. */
+const PERCENT_DIVISOR = 100;
+
+/**
+ * Raw value 표시 포맷터 — UI는 이 함수로 raw 값을 출력한다.
+ *
+ * `ma200DistancePct`(core 스냅샷의 표시용 값, **퍼센트 단위** — 5.57 = 5.57%)가 있으면
+ * `ma200_distance` 행은 점수 팩터 raw 값 대신 그 값을 보여 준다. 팩터는 look-ahead를 피하려고
+ * 최신 봉을 뺀 200봉 평균을 쓰지만, 차트·분석이 보여 주는 값은 최신 봉을 포함한 SMA200이라
+ * 같은 화면에서 두 숫자가 어긋난다. 값이 없거나(`undefined`·`null`) 유한하지 않으면 팩터 raw로
+ * 되돌아간다. 점수에는 영향이 없다.
+ */
 export function formatFactorRaw(
     key: FearGreedFactorKey,
     rawValue: number,
-    locale: Locale
+    locale: Locale,
+    ma200DistancePct?: number | null
 ): string {
+    if (
+        key === 'ma200_distance' &&
+        typeof ma200DistancePct === 'number' &&
+        Number.isFinite(ma200DistancePct)
+    ) {
+        return factorFormatter('percent2', locale).format(
+            ma200DistancePct / PERCENT_DIVISOR
+        );
+    }
     switch (key) {
         case 'volume_z':
             return factorFormatter('volumeZ', locale).format(rawValue);

@@ -280,6 +280,27 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         expect(sanitizeOptionsChain).toHaveBeenCalledTimes(2);
     });
 
+    it('수집 시점의 슬롯 매핑을 전체 Yahoo 만기 목록으로 만들어 스냅샷에 싣는다(null 슬롯은 제외)', async () => {
+        mockOptionsMethod.mockResolvedValue(FULL_FIXTURE);
+        const mapping = {
+            slot: { key: '1W', label: '1주', targetDays: 7 },
+            expirationDate: '2026-05-15',
+        };
+        (mapExpirationsToSlots as Mock).mockReturnValue([mapping, null]);
+
+        const snapshot = await makeAdapter().fetchSnapshot('AAPL');
+
+        // 렌더가 아니라 수집 시점에 한 번 계산한다 — 전체 만기 목록과 수집 시각이 입력이다.
+        expect(mapExpirationsToSlots).toHaveBeenCalledTimes(1);
+        const [expirations, now] = (mapExpirationsToSlots as Mock).mock
+            .calls[0]!;
+        expect(expirations).toEqual(
+            FULL_FIXTURE.expirationDates.map(d => d.toISOString().slice(0, 10))
+        );
+        expect(now).toBeInstanceOf(Date);
+        expect(snapshot?.slots).toEqual([mapping]);
+    });
+
     it('초기 응답에 없는 슬롯 만기는 병렬로 추가 fetch 후 병합한다', async () => {
         // mapExpirationsToSlots → 2026-07-18(2M)이 슬롯에 매핑됐다고 가정.
         // 초기 응답에는 2026-05-15만 있으므로 2026-07-18은 추가 fetch 대상이다.

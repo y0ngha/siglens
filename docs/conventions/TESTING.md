@@ -483,7 +483,7 @@ Typecheck, lint and Vitest never execute Playwright specs. When a source trigger
 
 #### TE-49 — Keep unit, integration and e2e layers in sync
 
-When behavior or a constant changes, update every layer in the same change; scoped `yarn test` runs skip e2e, so a mismatch only surfaces in CI. Import constants into e2e specs instead of restating the literal, and assert current catalog strings rather than old copy.
+When behavior or a constant changes, update every layer in the same change; scoped `yarn test` runs skip e2e, so a mismatch only surfaces in CI. Import constants into e2e specs instead of restating the literal, and assert current catalog strings rather than old copy. When user-visible catalog text (ko or any locale) changes, grep `e2e/` and the unit tests for the old literal in the same change (`getByText`, `getByRole` names, `findIndex` regexes) and update every hit; an e2e matcher on the old copy fails CI, and an index lookup that returns -1 can keep passing silently.
 
 <a id="TE-50"></a>
 

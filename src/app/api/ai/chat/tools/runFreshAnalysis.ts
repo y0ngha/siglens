@@ -408,17 +408,22 @@ export const runFreshAnalysisTool: ToolExecutor = async (
             case 'technical': {
                 // Task S5 — history/events/positionBucket wiring shared with the
                 // SSE route and `get_cached_analysis` (see `freshAnalysisInputs`).
-                const { session, priorAnalyses, marketEvents, positionBucket } =
-                    await loadTechnicalAnalysisInputs({
-                        symbol,
-                        timeframe,
-                        profile,
-                        fmpSymbol: asset?.fmpSymbol,
-                        userId: ctx.userId,
-                        tier: ctx.tier,
-                        positionBucketLogTag:
-                            '[AgentTool] run_fresh_analysis position bucket resolution failed, degrading to no-bucket:',
-                    });
+                const {
+                    session,
+                    priorAnalyses,
+                    marketEvents,
+                    earningsDates,
+                    positionBucket,
+                } = await loadTechnicalAnalysisInputs({
+                    symbol,
+                    timeframe,
+                    profile,
+                    fmpSymbol: asset?.fmpSymbol,
+                    userId: ctx.userId,
+                    tier: ctx.tier,
+                    positionBucketLogTag:
+                        '[AgentTool] run_fresh_analysis position bucket resolution failed, degrading to no-bucket:',
+                });
                 const options: SubmitAnalysisOptions = {
                     modelId: runtime.analysisModel,
                     marketDataProvider: getCachedMarketDataProvider(session),
@@ -435,6 +440,7 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                     providerFallback: true,
                     priorAnalyses,
                     marketEvents,
+                    earningsDates,
                     positionBucket,
                 };
                 return unwrap(

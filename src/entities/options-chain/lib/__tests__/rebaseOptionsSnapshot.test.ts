@@ -49,6 +49,22 @@ describe('rebaseOptionsSnapshot', () => {
         expect(result?.chains.map(c => c.daysToExpiration)).toEqual([0, 4]);
     });
 
+    it('수집 시점의 슬롯 매핑(slots)을 그대로 이어 간다', () => {
+        const slots = [
+            {
+                slot: { key: '1W' as const, label: '1주', targetDays: 7 },
+                expirationDate: '2026-10-09',
+            },
+        ];
+
+        const result = rebaseOptionsSnapshot(
+            { ...snapshot([chain('2026-10-09', 7)]), slots },
+            MONDAY_NOON_ET
+        );
+
+        expect(result?.slots).toEqual(slots);
+    });
+
     it('capturedAt·underlyingPrice는 저장 당시 값을 유지한다', () => {
         const result = rebaseOptionsSnapshot(
             snapshot([chain('2026-10-09', 7)]),

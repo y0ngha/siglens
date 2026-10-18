@@ -13,12 +13,12 @@ import {
     sanitizeOptionsChain,
 } from '@y0ngha/siglens-core';
 import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
-import type {
-    OptionsChain,
-    OptionsDataProvider,
-    OptionsSnapshot,
-    SlotMapping,
-} from '@y0ngha/siglens-core';
+import type { OptionsChain } from '@y0ngha/siglens-core';
+import {
+    isSlotMapping,
+    type SlottedOptionsDataProvider,
+    type SlottedOptionsSnapshot,
+} from './optionsSlots';
 import {
     normalizeYahooSnapshot,
     type YahooOption,
@@ -56,7 +56,7 @@ function isYahooValidationError(err: unknown): boolean {
     return err instanceof Error && err.name === 'FailedYahooValidationError';
 }
 
-export class YahooOptionsAdapter implements OptionsDataProvider {
+export class YahooOptionsAdapter implements SlottedOptionsDataProvider {
     /**
      * Fetch the options snapshot for a symbol, covering the canonical
      * expiration slots (1W / 2W / 1M / 2M / 3M / 6M) plus the nearest chain.
@@ -75,7 +75,9 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
      * Chains rejected by sanitization (null return) are filtered out.
      * If no chains remain, returns null.
      */
-    async fetchSnapshot(symbol: string): Promise<OptionsSnapshot | null> {
+    async fetchSnapshot(
+        symbol: string
+    ): Promise<SlottedOptionsSnapshot | null> {
         try {
             const yahooSymbol = toYahooSymbol(symbol);
             const initial = await yahooFinance.options(yahooSymbol);
@@ -91,9 +93,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             );
             const slotMappings = mapExpirationsToSlots(allExpirationIsos, now);
             const targetIsos = new Set<string>(
-                slotMappings
-                    .filter((m): m is SlotMapping => m !== null)
-                    .map(m => m.expirationDate)
+                slotMappings.filter(isSlotMapping).map(m => m.expirationDate)
             );
 
             // Cast through unknown: yahoo-finance2의 `OptionsResult.options`는
@@ -172,7 +172,14 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
                 return null;
             }
 
-            return { ...raw, chains: sanitizedChains };
+            // 수집 시점의 슬롯 매핑을 함께 싣는다 — 전체 Yahoo 만기 목록으로 만든 값이라
+            // 렌더가 묵은 스냅샷을 `new Date()`로 다시 매핑할 때 생기는 어긋남이 없다
+            // (`SlottedOptionsSnapshot` JSDoc).
+            return {
+                ...raw,
+                chains: sanitizedChains,
+                slots: slotMappings.filter(isSlotMapping),
+            };
         } catch (err) {
             // 스키마 검증 실패는 "옵션 없음"이지 장애가 아니다 —
             // `isYahooValidationError` JSDoc 참고.

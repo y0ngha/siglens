@@ -28,6 +28,7 @@ import {
     getDescriptor,
 } from '@/shared/config/marketProfile/registry';
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
+import { listEarningsDates } from '@/entities/earnings-report/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     buildGateError,
@@ -1287,22 +1288,26 @@ export async function POST(request: Request): Promise<Response> {
                 // 건너뛰면 같은 캐시 키에 프롬프트 입력만 다른 두 벌의 본문이
                 // 생긴다(파일 상단 불변식 위반).
                 const technicalDb = getDatabaseClient().db;
-                const [priorAnalyses, marketEvents] = await Promise.all([
-                    new DrizzleAnalysisHistoryRepository(
-                        technicalDb
-                    ).findRecentForPrompt({
-                        symbol,
-                        timeframe,
-                        tab: 'technical',
-                        // core에 넘기는 것과 같은 세션 — 이력 경계가 core 캐시 키 경계와 맞는다.
-                        session,
-                    }),
-                    findMarketEventsForPrompt(technicalDb, {
-                        symbol,
-                        // core에 넘기는 것과 같은 세션 — 1Day 창이 core 만료 경계와 맞는다.
-                        ...marketEventsLookback(timeframe, session),
-                    }),
-                ]);
+                const [priorAnalyses, marketEvents, earningsDates] =
+                    await Promise.all([
+                        new DrizzleAnalysisHistoryRepository(
+                            technicalDb
+                        ).findRecentForPrompt({
+                            symbol,
+                            timeframe,
+                            tab: 'technical',
+                            // core에 넘기는 것과 같은 세션 — 이력 경계가 core 캐시 키 경계와 맞는다.
+                            session,
+                        }),
+                        findMarketEventsForPrompt(technicalDb, {
+                            symbol,
+                            // core에 넘기는 것과 같은 세션 — 1Day 창이 core 만료 경계와 맞는다.
+                            ...marketEventsLookback(timeframe, session),
+                        }),
+                        // 이 회사의 실적 발표일 — 실패하면 `undefined`(캘린더 모름, 안전 쪽).
+                        // 캐시 키에는 접히지 않는다.
+                        listEarningsDates(symbol, technicalDb),
+                    ]);
 
                 return runAnalysis(
                     symbol,
@@ -1314,6 +1319,7 @@ export async function POST(request: Request): Promise<Response> {
                         ...options,
                         priorAnalyses,
                         marketEvents,
+                        earningsDates,
                         /*
                          * **`locale`을 core에 그대로 넘긴다.** 나머지 일곱
                          * 축이 이미 이렇게 배선돼 있다 — core가 대상 언어로

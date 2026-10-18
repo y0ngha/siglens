@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import type {
     EarningsReportComparisonItem,
@@ -10,7 +10,7 @@ import { earningsReports } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_DAY, SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { isEarningsReportStale } from './lib/isEarningsReportStale';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
@@ -142,6 +142,22 @@ export class DrizzleEarningsReportsRepository {
             revenueEstimated: toNumberOrNull(row.revenueEstimated),
             lastUpdated: row.lastUpdated,
         };
+    }
+
+    /** `fromDate`(ISO date) 이후 `symbol`의 실적 발표일(과거·예정 모두), 오름차순. */
+    async listDatesSince(symbol: string, fromDate: string): Promise<string[]> {
+        const rows = await this.db
+            .select({ earningsDate: earningsReports.earningsDate })
+            .from(earningsReports)
+            .where(
+                and(
+                    eq(earningsReports.symbol, symbol),
+                    gte(earningsReports.earningsDate, fromDate)
+                )
+            )
+            .orderBy(asc(earningsReports.earningsDate));
+
+        return rows.map(row => row.earningsDate);
     }
 
     async getLatestFetchedAt(symbol: string): Promise<Date | null> {
@@ -400,4 +416,72 @@ export async function getNextEarningsReport(
     }
 
     return repo.getNextForSymbol(symbol, kstDateKey(new Date()));
+}
+
+/** 분석에 넘길 실적 발표일 조회 범위 — 최근 2년이면 눌림 해석 윈도우에 충분하다. */
+export const EARNINGS_DATES_LOOKBACK_DAYS = 730;
+
+/**
+ * 분석 프롬프트·눌림 caveat에 넘길 이 회사의 실적 발표일(`YYYY-MM-DD`, 최근 2년 + 예정)을
+ * DB에서 읽는다. 갱신(FMP)은 하지 않는다 — 이미 `getNextEarningsReport`를 부르는 호출자가
+ * 그 뒤에 이어 붙이는 용도다.
+ *
+ * core는 `undefined`·`[]`를 "캘린더 모름"(안전 쪽)으로 취급한다. 행이 없으면(크립토·KR 등
+ * 실적 소스가 없는 심볼) 또는 DB가 실패하면 `undefined`를 돌려주고 던지지 않는다 — 이 값
+ * 때문에 분석이 실패해선 안 된다.
+ *
+ * 이 값은 분석 캐시 키에 접히지 않는다. 모든 경로가 같은 DB 테이블을 읽고(프리웜·종합 경로만
+ * 읽기 전에 갱신한다), 그래서 방금 나온 실적 발표가 캐시된 본문에는 TTL까지 늦게 반영될 수
+ * 있어도 실적이 아닌 것을 회사의 실적으로 표기하는 경로는 없다.
+ */
+export async function listEarningsDates(
+    symbol: string,
+    db: SiglensDatabase
+): Promise<readonly string[] | undefined> {
+    try {
+        const from = new Date(
+            Date.now() - EARNINGS_DATES_LOOKBACK_DAYS * MS_PER_DAY
+        );
+        const dates = await new DrizzleEarningsReportsRepository(
+            db
+        ).listDatesSince(symbol, kstDateKey(from));
+        return dates.length > 0 ? dates : undefined;
+    } catch (err) {
+        console.warn('[listEarningsDates] lookup failed:', err);
+        return undefined;
+    }
+}
+
+/**
+ * `getNextEarningsReport`(신선도 판정·FMP 갱신·빈 응답 마커 재사용 → 새 Redis 호출 없음)로
+ * DB를 최신으로 만든 뒤 {@link listEarningsDates}로 읽는다. 어떤 단계가 실패해도 던지지 않고
+ * `undefined`를 돌려준다.
+ */
+export async function resolveEarningsDates(
+    symbol: string,
+    db: SiglensDatabase
+): Promise<readonly string[] | undefined> {
+    try {
+        await getNextEarningsReport(symbol, db);
+    } catch (err) {
+        console.warn('[resolveEarningsDates] refresh failed:', err);
+    }
+    return listEarningsDates(symbol, db);
+}
+
+/**
+ * 이미 시작한 갱신(`getNextEarningsReport` promise)이 끝난 뒤 {@link listEarningsDates}로
+ * 읽는다. 갱신을 또 돌리면 FMP 호출이 겹치므로 호출자가 쥔 promise를 재사용한다. 갱신이
+ * 거부돼도(그 오류는 호출자가 자기 `Promise.all`에서 다룬다) 여기서는 던지지 않고
+ * `undefined`("캘린더 모름")로 끝낸다.
+ */
+export function listEarningsDatesAfterRefresh(
+    refresh: Promise<unknown>,
+    symbol: string,
+    db: SiglensDatabase
+): Promise<readonly string[] | undefined> {
+    return refresh.then(
+        () => listEarningsDates(symbol, db),
+        () => undefined
+    );
 }

@@ -16,6 +16,10 @@ const {
     getDetectionBars,
     computeFearGreed,
     evaluateConfluenceSpy,
+    findEvents,
+    resolveEarnings,
+    lookback,
+    caveatSpy,
 } = vi.hoisted(() => ({
     profile: vi.fn(),
     assetInfo: vi.fn(),
@@ -27,6 +31,10 @@ const {
     getDetectionBars: vi.fn(),
     computeFearGreed: vi.fn(),
     evaluateConfluenceSpy: vi.fn(),
+    findEvents: vi.fn(),
+    resolveEarnings: vi.fn(),
+    lookback: vi.fn(),
+    caveatSpy: vi.fn(),
 }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
@@ -37,6 +45,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     computeFearGreed.mockImplementation(actual.computeFearGreedIndex);
     // Real implementation, observed only to check which htfBars the tool passes.
     evaluateConfluenceSpy.mockImplementation(actual.evaluateConfluence);
+    caveatSpy.mockImplementation(actual.pullbackEventCaveat);
     return {
         ...actual,
         classifyTrend: classify,
@@ -45,8 +54,21 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         getDetectionBars,
         computeFearGreedIndex: computeFearGreed,
         evaluateConfluence: evaluateConfluenceSpy,
+        pullbackEventCaveat: caveatSpy,
     };
 });
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: () => ({ db: { tag: 'db' } }),
+}));
+vi.mock('@/entities/news-article/marketEventsRepository', () => ({
+    findMarketEventsForPrompt: findEvents,
+}));
+vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
+    marketEventsLookback: lookback,
+}));
+vi.mock('@/entities/earnings-report/api', () => ({
+    listEarningsDates: resolveEarnings,
+}));
 vi.mock('@/entities/bars/lib/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
 }));
@@ -129,6 +151,9 @@ describe('getBarsIndicatorsTool', () => {
             bars.slice(-15)
         );
         detectCandlePatternEntries.mockReturnValue([]);
+        findEvents.mockResolvedValue([]);
+        resolveEarnings.mockResolvedValue(undefined);
+        lookback.mockReturnValue({ lookbackDays: 60 });
     });
 
     it('1Day에서는 종목 자체 공포·탐욕 지수를 함께 내고, 다른 타임프레임·짧은 흐름 데이터에서는 null', async () => {
@@ -1132,6 +1157,7 @@ describe('getBarsIndicatorsTool', () => {
             closeVsMa200Pct: number;
             ma5: number | null;
             measured: string;
+            caveat: string | null;
         }
         // 판독 경계값(-90/-80)과 MA200 기권 규칙은 core pullback 테스트가 소유한다.
         // 여기서는 일봉 게이트, 필드 이름·반올림, 기저율 문장 매핑만 고정한다.
@@ -1178,6 +1204,7 @@ describe('getBarsIndicatorsTool', () => {
                 closeVsMa200Pct: pctVs(400, meanOfLast(bars, 200)),
                 ma5: roundNumber(meanOfLast(bars, 5)),
                 measured: PULLBACK_BASE_RATES.washoutInUptrend,
+                caveat: null,
             });
             // 하루 급락 뒤의 RSI(2)는 trader 규칙(< 10)의 과매도 영역이다.
             expect(r!.rsi2!).toBeLessThan(10);
@@ -1227,6 +1254,80 @@ describe('getBarsIndicatorsTool', () => {
             // Below 200 daily bars core abstains, and rsi2 must follow it.
             const short = await run(trendBars(150, 0.5), '1Day');
             expect(short.latest.rsi2).toBeNull();
+        });
+
+        describe('caveat (core pullbackEventCaveat)', () => {
+            const washoutBars = () => endingAt(trendBars(260, 0.5), 400);
+            // 마지막 봉 직후에 발행된 악재 가이던스 — 뉴스 주도 급락이라 기저율이 적용되지 않는다.
+            const guidanceEvent = (bars: ReturnType<typeof trendBars>) => ({
+                publishedAt: new Date((bars.at(-1)!.time + 3_600) * 1000),
+                category: 'guidance' as const,
+                sentiment: 'bearish' as const,
+                impact: 'high' as const,
+            });
+
+            it('불 켜진 판독에는 시장 이벤트·실적일·일봉을 core에 넘겨 얻은 caveat을 싣는다', async () => {
+                const bars = washoutBars();
+                const events = [guidanceEvent(bars)];
+                findEvents.mockResolvedValue(events);
+                resolveEarnings.mockResolvedValue(['2024-01-02']);
+                spec.mockReturnValueOnce({ tag: 'session' });
+
+                const r = await pullbackFor(bars);
+
+                expect(caveatSpy).toHaveBeenCalledTimes(1);
+                expect(caveatSpy).toHaveBeenCalledWith({
+                    events,
+                    earningsDates: ['2024-01-02'],
+                    bars,
+                });
+                // 이벤트 창은 분석 경로와 같은 1Day 룩백 + 같은 세션이다.
+                expect(lookback).toHaveBeenCalledWith('1Day', {
+                    tag: 'session',
+                });
+                expect(findEvents).toHaveBeenCalledWith(
+                    { tag: 'db' },
+                    expect.objectContaining({
+                        symbol: 'AAPL',
+                        lookbackDays: 60,
+                    })
+                );
+                expect(resolveEarnings).toHaveBeenCalledWith('AAPL', {
+                    tag: 'db',
+                });
+                const expected = caveatSpy.mock.results[0]!.value as
+                    | string
+                    | null;
+                expect(expected).toEqual(expect.any(String));
+                expect(r?.caveat).toBe(expected);
+            });
+
+            it('이벤트가 없으면 caveat은 null이다', async () => {
+                const r = await pullbackFor(washoutBars());
+                expect(r?.caveat).toBeNull();
+            });
+
+            it('이벤트 조회가 실패해도 도구는 판독을 유지하고 caveat만 null이다', async () => {
+                const errorSpy = vi
+                    .spyOn(console, 'error')
+                    .mockImplementation(() => undefined);
+                findEvents.mockRejectedValue(new Error('db down'));
+
+                const r = await pullbackFor(washoutBars());
+
+                expect(r?.reading).toBe('washoutInUptrend');
+                expect(r?.caveat).toBeNull();
+                expect(caveatSpy).not.toHaveBeenCalled();
+                expect(errorSpy).toHaveBeenCalled();
+                errorSpy.mockRestore();
+            });
+
+            it('판독이 none이거나 일봉이 아니면 조회 자체를 하지 않는다', async () => {
+                await pullbackFor(trendBars(260, 0.5));
+                await pullbackFor(washoutBars(), '1Hour');
+                expect(findEvents).not.toHaveBeenCalled();
+                expect(resolveEarnings).not.toHaveBeenCalled();
+            });
         });
 
         it('일봉이 아니거나 core가 기권하면(200봉 미만) null이다', async () => {

@@ -1,11 +1,11 @@
-import type { OptionsDataProvider } from '@y0ngha/siglens-core';
+import type { SlottedOptionsDataProvider } from './optionsSlots';
 import { YahooOptionsAdapter } from './YahooOptionsAdapter';
 import { isE2E } from '@/shared/api/e2eEnv';
 
-let cached: OptionsDataProvider | null = null;
+let cached: SlottedOptionsDataProvider | null = null;
 
 /** Returns the app's options data provider (Yahoo in prod, fake under E2E_TEST). */
-export function getOptionsProvider(): OptionsDataProvider {
+export function getOptionsProvider(): SlottedOptionsDataProvider {
     if (cached !== null) return cached;
     if (isE2E()) {
         // Sync factory — no dynamic import possible here, so the fake loads via a

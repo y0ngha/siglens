@@ -109,6 +109,41 @@ describe('buildFearGreedFactorTable', () => {
         expect(volumeLabel).not.toMatch(/\bz\b/);
     });
 
+    it('ma200_distance 행은 스냅샷의 ma200DistancePct가 있으면 그 값을, 없으면 팩터 raw를 보여 준다', () => {
+        const snapshot: FearGreedSnapshot = {
+            ...buildSnapshot(50),
+            groups: [
+                {
+                    name: 'Trend',
+                    score: 50,
+                    factors: [
+                        {
+                            key: 'ma200_distance',
+                            rawValue: 0.055,
+                            percentile: 50,
+                        },
+                    ],
+                },
+            ],
+        };
+
+        const withDisplay = buildFearGreedFactorTable(
+            { ...snapshot, ma200DistancePct: 5.57 },
+            tFactor,
+            'ko'
+        );
+        const fallback = buildFearGreedFactorTable(snapshot, tFactor, 'ko');
+        const nullDisplay = buildFearGreedFactorTable(
+            { ...snapshot, ma200DistancePct: null },
+            tFactor,
+            'ko'
+        );
+
+        expect(withDisplay.rows[0]?.value).toBe('5.57%');
+        expect(fallback.rows[0]?.value).toBe('5.50%');
+        expect(nullDisplay.rows[0]?.value).toBe('5.50%');
+    });
+
     it.each([
         [10, 'low'],
         [24, 'low'],

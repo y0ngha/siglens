@@ -223,6 +223,34 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
         });
     });
 
+    it('OptionsPageClient의 만기 chip은 수집 시점에 저장한 슬롯 매핑을 쓴다(현재 시각으로 다시 매핑하지 않는다)', async () => {
+        mockHasOptionsMarket.mockResolvedValue(true);
+        // 저장 매핑은 먼 만기 하나뿐이다 — 현재 시각으로 다시 매핑하면 가까운 2026-08-01이
+        // 다른 슬롯에 걸리므로 두 경로를 가려낸다. 매핑이 없는 슬롯은 chip이 없다.
+        const storedSlot = {
+            slot: { key: '6M', label: '6개월', targetDays: 180 },
+            expirationDate: '2027-01-29',
+        };
+        mockFetchOptionsSnapshot.mockResolvedValue({
+            ...OPTIONS_SNAPSHOT,
+            chains: [
+                { expirationDate: '2026-08-01', calls: [], puts: [] },
+                { expirationDate: '2027-01-29', calls: [], puts: [] },
+            ],
+            slots: [storedSlot],
+        } as unknown as Awaited<ReturnType<typeof fetchOptionsSnapshot>>);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const tree = await OptionsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const client = findElementByType(tree, OptionsPageClient);
+        expect((client?.props as { slots: unknown }).slots).toEqual([
+            storedSlot,
+        ]);
+    });
+
     /**
      * 회귀 가드: FAQPage 마크업과 화면 Q&A는 배열 하나에서 나와야 한다. 이 탭은
      * 오랫동안 마크업만 내보내고 화면에는 Q&A가 없었다 — 구글은 대응하는 내용이

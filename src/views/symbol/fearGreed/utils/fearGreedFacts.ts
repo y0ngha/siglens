@@ -85,7 +85,12 @@ export function buildFearGreedFactorTable(
         label: tFactor(`symbolLabel.${factor.key}`, {
             v0: POC_WINDOW_DEFAULT,
         }),
-        value: formatFactorRaw(factor.key, factor.rawValue, locale),
+        value: formatFactorRaw(
+            factor.key,
+            factor.rawValue,
+            locale,
+            snapshot.ma200DistancePct
+        ),
         percentile: Math.round(factor.percentile),
     }));
     // 해석 대상은 평소 범위(25~75 퍼센타일) 밖 지표뿐이다. 행과 같은 순서(Flow → Trend).

@@ -15,6 +15,9 @@ const m = vi.hoisted(() => ({
         async (_input: { axis?: string }): Promise<unknown[]> => []
     ),
     findMarketEventsForPrompt: vi.fn(async (): Promise<unknown[]> => []),
+    listEarningsDates: vi.fn(
+        async (): Promise<readonly string[] | undefined> => undefined
+    ),
     resolveHoldingPositionBucket: vi.fn(
         async (): Promise<string | undefined> => undefined
     ),
@@ -60,6 +63,9 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     DrizzleAnalysisHistoryRepository: vi.fn(function () {
         return { findRecentForPrompt: m.findRecentForPrompt };
     }),
+}));
+vi.mock('@/entities/earnings-report/api', () => ({
+    listEarningsDates: m.listEarningsDates,
 }));
 vi.mock('@/entities/news-article/marketEventsRepository', () => ({
     findMarketEventsForPrompt: m.findMarketEventsForPrompt,
@@ -329,6 +335,42 @@ describe('runFreshAnalysisTool', () => {
             marketEvents: events,
             positionBucket: 'above_avg_10_25',
         });
+    });
+
+    it('technical: 이 회사의 실적 발표일을 조회해 runAnalysis 옵션 earningsDates로 넘긴다', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: { summary: 's', trend: 'bullish' },
+        });
+        const dates = ['2026-07-30', '2026-10-29'];
+        m.listEarningsDates.mockResolvedValue(dates);
+
+        await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        );
+
+        expect(m.listEarningsDates).toHaveBeenCalledWith('AAPL', {});
+        const [, , , , , options] = m.runAnalysis.mock.calls[0]!;
+        expect(options).toMatchObject({ earningsDates: dates });
+    });
+
+    it('technical: 실적 발표일을 못 구해도(undefined) 분석은 진행되고 earningsDates는 비어 있다', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: { summary: 's', trend: 'bullish' },
+        });
+        m.listEarningsDates.mockResolvedValue(undefined);
+
+        await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        );
+
+        const [, , , , , options] = m.runAnalysis.mock.calls[0]!;
+        expect(options.earningsDates).toBeUndefined();
     });
 
     /**

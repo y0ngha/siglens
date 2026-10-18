@@ -12,6 +12,7 @@ import {
     detectSignals,
     evaluateConfluence,
     evaluatePullback,
+    pullbackEventCaveat,
     getDetectionBars,
     PULLBACK_BASE_RATES,
     rsiZone,
@@ -27,6 +28,7 @@ import {
     type FearGreedSnapshot,
     type IchimokuResult,
     type IndicatorResult,
+    type MarketSessionSpec,
     type MaStackDirection,
     type MACDResult,
     type MultiCandlePattern,
@@ -44,6 +46,10 @@ import {
     roundIndicators,
     roundNumber,
 } from '@/entities/bars/lib/roundIndicators';
+import { listEarningsDates } from '@/entities/earnings-report/api';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
+import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { getDatabaseClient } from '@/shared/db/client';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -342,6 +348,13 @@ interface PullbackView {
      * check flags numbers no tool returned.
      */
     measured: string;
+    /**
+     * Event-driven caveat from core's `pullbackEventCaveat` (a sell-off that follows the
+     * company's own earnings or a news-driven washout reads differently from a plain
+     * pullback), or `null` when none applies — and also when the events/earnings lookup
+     * failed (the reading is still valid, just without the caveat).
+     */
+    caveat: string | null;
 }
 
 /**
@@ -373,8 +386,25 @@ function pullbackSnapshot(
  * lit reading — the same lesson as the confluence rule states: the model cannot
  * mention a field it never gets. RSI(2) survives in `latest.rsi2`.
  */
-function pullbackView(snap: PullbackSnapshot | null): PullbackView | null {
-    if (snap === null || snap.reading === 'none') return null;
+/**
+ * Whether the reading is lit (anything but `none`). One definition shared by the
+ * model-facing block and the caveat lookup gate so the two cannot drift apart.
+ */
+type LitPullbackSnapshot = PullbackSnapshot & {
+    reading: Exclude<PullbackReading, 'none'>;
+};
+
+function isPullbackLit(
+    snap: PullbackSnapshot | null
+): snap is LitPullbackSnapshot {
+    return snap !== null && snap.reading !== 'none';
+}
+
+function pullbackView(
+    snap: PullbackSnapshot | null,
+    caveat: string | null
+): PullbackView | null {
+    if (!isPullbackLit(snap)) return null;
     return {
         reading: snap.reading,
         williamsR: roundNumber(snap.williamsR),
@@ -382,7 +412,35 @@ function pullbackView(snap: PullbackSnapshot | null): PullbackView | null {
         closeVsMa200Pct: roundNumber(snap.closeVsMa200Pct),
         ma5: roundOrNull(snap.ma5),
         measured: PULLBACK_BASE_RATES[snap.reading],
+        caveat,
     };
+}
+
+/**
+ * Resolves `pullbackEventCaveat` for a lit 1Day reading. Uses the same market-event
+ * lookback the analysis path passes to core (`marketEventsLookback`) plus the company's
+ * earnings dates. Never throws: a failed lookup must not fail the tool, so it degrades
+ * to `null` (no caveat) with a warning.
+ */
+async function loadPullbackCaveat(
+    symbol: string,
+    session: MarketSessionSpec,
+    bars: readonly Bar[]
+): Promise<string | null> {
+    try {
+        const { db } = getDatabaseClient();
+        const [events, earningsDates] = await Promise.all([
+            findMarketEventsForPrompt(db, {
+                symbol,
+                ...marketEventsLookback('1Day', session),
+            }),
+            listEarningsDates(symbol, db),
+        ]);
+        return pullbackEventCaveat({ events, earningsDates, bars });
+    } catch (error) {
+        logToolDegrade('get_bars_indicators', 'pullback caveat', error);
+        return null;
+    }
 }
 
 /** `Timeframe` → the next larger INTRADAY timeframe `get_bars_indicators` loads for `higherTimeframe` (spec §3.1). `1Day`'s higher timeframe is weekly, aggregated from the already-loaded daily bars instead (see `loadHigherTimeframe` below) — no entry here. */
@@ -797,6 +855,13 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         direction: s.direction,
         phase: s.phase,
     }));
+    // Daily-only and only when a reading is lit — started before the higher-timeframe load
+    // so the DB/earnings lookups overlap it instead of adding serial latency. It never
+    // rejects (`loadPullbackCaveat` catches), so no unhandled-rejection guard is needed.
+    const pullbackSnap = pullbackSnapshot(bars, timeframe);
+    const caveatPromise = isPullbackLit(pullbackSnap)
+        ? loadPullbackCaveat(symbol, session, bars)
+        : Promise.resolve(null);
     const htf = await loadHigherTimeframe(
         provider,
         symbol,
@@ -812,8 +877,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         htf?.timeframe ?? null
     );
     const higherTimeframe = higherTimeframeView(htf);
-    const pullbackSnap = pullbackSnapshot(bars, timeframe);
-    const pullback = pullbackView(pullbackSnap);
+    const pullback = pullbackView(pullbackSnap, await caveatPromise);
     const derived = computeDerived(bars, indicators, timeframe);
     // Client-serialization-boundary rounding only, same as
     // `getBarsAction.ts` — the cache still holds full-precision values.

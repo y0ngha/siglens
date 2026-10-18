@@ -8,12 +8,20 @@ import { FearGreedScoreBar } from '@/shared/ui/FearGreedScoreBar';
 
 interface FearGreedGroupBarProps {
     group: FearGreedGroup;
+    /**
+     * 스냅샷의 표시용 200일선 이격(퍼센트). 있으면 `ma200_distance` 행이 차트·분석과 같은
+     * 숫자를 보여 준다(`formatFactorRaw` JSDoc).
+     */
+    ma200DistancePct?: number | null;
 }
 
 const EXTREME_PERCENTILE_LOW = 10;
 const EXTREME_PERCENTILE_HIGH = 90;
 
-export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
+export function FearGreedGroupBar({
+    group,
+    ma200DistancePct,
+}: FearGreedGroupBarProps) {
     const t = useTranslations('widgets.fear-greed');
     const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const score = Math.round(group.score);
@@ -59,7 +67,12 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                                 })}
                             </span>
                             <span className="font-mono">
-                                {formatFactorRaw(f.key, f.rawValue, locale)}
+                                {formatFactorRaw(
+                                    f.key,
+                                    f.rawValue,
+                                    locale,
+                                    ma200DistancePct
+                                )}
                                 <span
                                     className={cn(
                                         'ml-2',

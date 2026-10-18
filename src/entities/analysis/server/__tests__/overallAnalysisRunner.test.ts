@@ -15,9 +15,24 @@ vi.mock('@/entities/news-article/api', () => ({
         return { listBySymbol: vi.fn(async () => []) };
     }),
 }));
-vi.mock('@/entities/earnings-report/api', () => ({
-    getNextEarningsReport: vi.fn(async () => null),
-}));
+vi.mock('@/entities/earnings-report/api', () => {
+    const listEarningsDatesMock = vi.fn(
+        async (..._args: unknown[]): Promise<readonly string[] | undefined> =>
+            undefined
+    );
+    return {
+        getNextEarningsReport: vi.fn(async () => null),
+        listEarningsDates: listEarningsDatesMock,
+        listEarningsDatesAfterRefresh: vi.fn(
+            (refresh: Promise<unknown>, ...rest: [string, unknown]) =>
+                refresh.then(
+                    () => listEarningsDatesMock(...rest),
+                    () => undefined
+                )
+        ),
+        resolveEarningsDates: vi.fn(async () => undefined),
+    };
+});
 vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     loadNewsMacroCalendar: vi.fn(async () => []),
 }));
@@ -67,6 +82,10 @@ import { executeOverallAnalysis } from '@/entities/analysis/server/overallAnalys
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import {
+    getNextEarningsReport,
+    listEarningsDates,
+} from '@/entities/earnings-report/api';
 
 const mockRun = vi.mocked(runOverallAnalysis);
 const BYOK_MODEL = 'claude-opus-5' as ModelId;
@@ -92,6 +111,47 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockRun.mockResolvedValue({ status: 'done', result: {} } as never);
     mockFlowsScorecard.mockResolvedValue(undefined);
+    vi.mocked(listEarningsDates).mockResolvedValue(undefined);
+});
+
+describe('executeOverallAnalysis — 실적 발표일(earningsDates) 주입', () => {
+    it('실적 갱신 뒤 DB에서 읽은 발표일을 technical 축 earningsDates로 넘긴다', async () => {
+        const dates = ['2026-07-30', '2026-10-29'];
+        vi.mocked(listEarningsDates).mockResolvedValue(dates);
+        const order: string[] = [];
+        vi.mocked(getNextEarningsReport).mockImplementationOnce(async () => {
+            order.push('refresh');
+            return null;
+        });
+        vi.mocked(listEarningsDates).mockImplementationOnce(async () => {
+            order.push('read');
+            return dates;
+        });
+
+        await executeOverallAnalysis({
+            ...base,
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+
+        expect(order).toEqual(['refresh', 'read']);
+        expect(callFor(BYOK_MODEL)?.technical?.earningsDates).toBe(dates);
+    });
+
+    it('발표일을 못 구하면(undefined) technical 축에 필드를 싣지 않고 분석은 진행된다', async () => {
+        vi.mocked(listEarningsDates).mockResolvedValue(undefined);
+
+        await executeOverallAnalysis({
+            ...base,
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+
+        expect(callFor(BYOK_MODEL)).toBeDefined();
+        expect(callFor(BYOK_MODEL)?.technical).not.toHaveProperty(
+            'earningsDates'
+        );
+    });
 });
 
 describe('executeOverallAnalysis — 수급 점수표(investorFlowsScorecard) 주입', () => {
