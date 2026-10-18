@@ -179,9 +179,9 @@ export function buildOrganizationCoreJsonLd(): OrganizationCoreJsonLd {
  * 공개 소스 저장소. 푸터와 홈 `Organization.sameAs`가 소비자다.
  *
  * 상수로 두는 이유는 재사용이 아니라 **위치**다. 사이트를 가리키는 다른 URL이
- * 전부 여기 있으므로, JSON-LD `sameAs`에 싣는 소셜 프로필(`X_URL`)도 이 파일
- * 안에서 함께 다룬다(`X_URL`·`VELOG_URL`). 푸터 JSX나 JSON-LD 안에 문자열로 박아두면 두 번째 사본이
- * 생긴다.
+ * 전부 여기 있으므로, JSON-LD `sameAs`에 싣는 소셜 프로필(`X_URL`·`VELOG_URL`)도
+ * 이 파일 안에서 함께 다룬다. 푸터 JSX나 JSON-LD 안에 문자열로 박아두면 두 번째
+ * 사본이 생긴다.
  */
 export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
 
