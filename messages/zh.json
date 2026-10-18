@@ -4353,6 +4353,7 @@
                 "krMajorHolderReports": "最近{days}天大额持股报告{reports}份 · 报告人{reporters}名",
                 "krMajorHolderDetailed": "一般报告{count}份",
                 "krInsiderReports": "最近{days}天持股报告{reports}份 · 报告人{reporters}名",
+                "krInsiderReportsBatch": "最近{days}天持股报告{reports}份 · 报告人{reporters}名(含{date}一次性集中报告{batchCount}份)",
                 "krInsiderNetShares": "净增减 {shares}股",
                 "krInsiderNetPct": "持股比例净增减 {pct}",
                 "krTradingPlans": "交易计划报告{count}份",
