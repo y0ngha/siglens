@@ -8,7 +8,10 @@ import {
  * 종목의 KRX 호가표(주식/ETF) 캐시 수명. 종목 유형은 상장 기간 내내 바뀌지 않아 길게 잡아도
  * 오답이 되지 않는다 — 판정 규칙이 바뀔 때만 키 버전으로 무효화한다(`buildKrxTickTableCacheKey`).
  */
-export const KRX_TICK_TABLE_CACHE_TTL = 30 * SECONDS_PER_DAY;
+export const KRX_TICK_TABLE_CACHE_DAYS = 30;
+/** {@link KRX_TICK_TABLE_CACHE_DAYS}를 초로. */
+export const KRX_TICK_TABLE_CACHE_TTL =
+    KRX_TICK_TABLE_CACHE_DAYS * SECONDS_PER_DAY;
 
 /** 종목의 KRX 호가표 캐시 키(`resolveKrxTickTable`). */
 export function buildKrxTickTableCacheKey(symbol: string): string {

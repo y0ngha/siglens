@@ -239,6 +239,9 @@ export default async function SymbolPage({ params }: Props) {
         console.error('[SymbolPage] peekAnalysisStatic failed:', error);
         return null;
     });
+    // 분석 카드 가격의 호가표(주식/ETF). 실패는 내부에서 'share'로 접히고 던지지 않으며(캐시도 안 한다),
+    // 한국 종목이 아니면 I/O가 없다. 봉과 독립이라 먼저 시작해 아래 `Promise.all`에서 기다린다.
+    const krxTickTablePromise = resolveKrxTickTableForDisplay(ticker);
     // 헤더 증자·희석 배지(미국 개별 주식만 — 판정·실패 처리는 `loadDilutionHeadingBadge` JSDoc). 봉과 독립이라
     // peek과 함께 먼저 시작하고 렌더 직전 `Promise.all`에서 기다린다.
     //
@@ -246,9 +249,6 @@ export default async function SymbolPage({ params }: Props) {
     // (`DYNAMIC_SERVER_USAGE`)뿐이다 — 그건 삼키면 안 되고 렌더를 끊어야 한다. 그래서 `.catch(→ null)`로 바꾸지
     // 않고, 빈 핸들러만 미리 달아 봉을 기다리는 사이 reject가 "처리되지 않은 rejection"으로 잡히지 않게 한다.
     // 아래에서 **원래 promise**를 await하므로 그 오류는 그대로 전파된다.
-    // 분석 카드 가격의 호가표(주식/ETF). 실패는 내부에서 'share'로 접히고 던지지 않으며(캐시도 안 한다),
-    // 한국 종목이 아니면 I/O가 없다. 봉과 독립이라 먼저 시작해 아래 `Promise.all`에서 기다린다.
-    const krxTickTablePromise = resolveKrxTickTableForDisplay(ticker);
     const headingBadgePromise = loadDilutionHeadingBadge(ticker, assetInfo);
     void headingBadgePromise.catch(() => undefined);
     const quantizedFactBars = await getQuantizedBarsStatic(

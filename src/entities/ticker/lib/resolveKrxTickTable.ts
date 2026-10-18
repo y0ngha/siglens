@@ -1,8 +1,16 @@
 import 'server-only';
+/**
+ * `lib/`의 순수 함수 규칙(`src/entities/CLAUDE.md#EN-1`)의 예외다 — yahoo 조회와 캐시를 직접
+ * 한다. 같은 디렉터리의 `resolveMarketProfile.ts`·`krEquityQuoteName.ts`와 같은 이유다: 이 판정은
+ * 다른 entity(`entities/analysis`)와 app 라우트가 함께 쓰는데, server-only `api.ts`는 같은 entity나
+ * app 레이어에서만 import할 수 있어 거기 둘 수 없다.
+ */
 import type { KrxTickTable } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { loadYahooProvider } from '@/shared/api/yahoo/lazyYahooProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { withRetry } from '@/shared/lib/withRetry';
 import {
     buildKrxTickTableCacheKey,
     KRX_TICK_TABLE_CACHE_TTL,
@@ -11,41 +19,26 @@ import {
 /** yahoo가 ETF/ETN을 어떤 `quoteType`으로 부르든 상장지수상품 호가표('etp')를 쓴다. */
 const ETP_QUOTE_TYPES: ReadonlySet<string> = new Set(['ETF', 'ETN']);
 
-let providerPromise: Promise<{
-    getQuoteTypeOrThrow(symbol: string): Promise<string | null>;
-}> | null = null;
-
 /**
- * provider 인스턴스를 모듈 레벨에서 1회만 만든다. 동적 import인 이유는
- * `krEquityQuoteName.ts`와 같다 — `YahooMarketProvider`는 server-only이고 Node 전용
- * 모듈(`yahoo-finance2`)을 끌고 온다.
+ * 일시 오류 한 번으로 실패를 확정하지 않는다 — 한 번 더 시도한 뒤에도 실패하면 던진다
+ * (`resolveKrxTickTable`).
  */
-function getQuoteType(symbol: string): Promise<string | null> {
-    providerPromise ??= import('@/shared/api/yahoo/YahooMarketProvider').then(
-        m => new m.YahooMarketProvider()
-    );
-    return providerPromise.then(p => p.getQuoteTypeOrThrow(symbol));
-}
+const QUOTE_TYPE_RETRY = {
+    maxRetries: 1,
+    baseDelayMs: 200,
+    isRetryable: () => true,
+} as const;
 
-/** yahoo 조회 시도 횟수 — 일시 오류 한 번으로 실패를 확정하지 않는다. */
-const QUOTE_TYPE_ATTEMPTS = 2;
-
-async function fetchKrxTickTable(symbol: string): Promise<KrxTickTable> {
-    let lastError: unknown;
-    for (let attempt = 0; attempt < QUOTE_TYPE_ATTEMPTS; attempt++) {
-        try {
-            const quoteType = await getQuoteType(symbol);
-            if (quoteType === null) {
-                throw new Error('yahoo returned no quoteType');
-            }
-            return ETP_QUOTE_TYPES.has(quoteType.toUpperCase())
-                ? 'etp'
-                : 'share';
-        } catch (error) {
-            lastError = error;
+function fetchKrxTickTable(symbol: string): Promise<KrxTickTable> {
+    return withRetry(async () => {
+        const quoteType = await loadYahooProvider().then(p =>
+            p.getQuoteTypeOrThrow(symbol)
+        );
+        if (quoteType === null) {
+            throw new Error('yahoo returned no quoteType');
         }
-    }
-    throw lastError;
+        return ETP_QUOTE_TYPES.has(quoteType.toUpperCase()) ? 'etp' : 'share';
+    }, QUOTE_TYPE_RETRY);
 }
 
 /**
@@ -58,7 +51,7 @@ async function fetchKrxTickTable(symbol: string): Promise<KrxTickTable> {
  * 심볼 하나뿐이고, 이름 휴리스틱(`classifyAsset`)은 쓰지 않는다 — yahoo 영문명과 한글
  * 큐레이션명이 경로마다 달라 판정이 갈린다.
  *
- * **판정하지 못하면 던진다.** yahoo를 두 번 불러도 실패하면 'share'로 추측하지 않고
+ * **판정하지 못하면 던진다.** yahoo를 한 번 더 불러도 실패하면 'share'로 추측하지 않고
  * 오류를 낸다 — 추측한 'share'로 ETF 분석을 만들면 그 결과가 공유 캐시 키에 TTL 내내
  * 남는다. 한국 종목은 봉도 yahoo에서 받으므로 yahoo가 안 될 때는 어차피 분석이 실패한다.
  * 실패는 캐시하지 않는다(`getOrSetCache`는 성공한 결과만 저장). 캐시에 쓰지 않는 화면

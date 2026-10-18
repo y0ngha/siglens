@@ -1002,7 +1002,11 @@ export async function POST(request: Request): Promise<Response> {
             // --- 2d. Market profile (2e와 병렬) ---
             // --- 2e. Tier + BYOK gate ---
             // 둘은 서로의 결과를 쓰지 않는다(심볼 vs userId) — 함께 기다려 DB 왕복 한 단을
-            // 줄인다(감사 L5). 게이트가 막히면 프로필 결과는 버려진다(읽기 전용 조회라 부작용 없음).
+            // 줄인다(감사 L5). 게이트가 막히면 프로필·호가표 결과는 버려진다(읽기 전용 조회라 부작용
+            // 없음). 호가표는 판정하지 못하면 던지므로 yahoo 장애 때 한국 종목 요청은 게이트 결과보다
+            // 먼저 실패한다 — 의도된 동작이다: 한국 종목은 봉도 yahoo라 어차피 분석할 수 없고, 추측한
+            // 표로 분석을 만들면 공유 캐시 키에 남는다(`resolveKrxTickTable`). 30일 캐시라 게이트가
+            // 막힌 요청의 추가 조회는 대부분 캐시 적중이다.
             const [marketProfile, krxTickTable, gate] = await Promise.all([
                 resolveMarketProfile(symbol),
                 resolveKrxTickTable(symbol),

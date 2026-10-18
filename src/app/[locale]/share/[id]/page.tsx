@@ -1,3 +1,4 @@
+import type { KrxTickTable } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -65,10 +66,15 @@ export default async function SharePage({ params }: Props) {
     const { snapshot, createdAt } = lookup;
     const ticker = snapshot.symbol.toUpperCase();
     const asOf = formatKoreanDateTime(resolveAsOf(snapshot, createdAt), locale);
-    const tLabel = await getTranslations('shared.enumLabel');
-    const tLegal = await getTranslations('shared.lib.legal');
     // 공유 화면의 가격도 분석을 만든 쪽과 같은 호가표로 보여야 한다(ETF 40,125가 40,150으로 깎이지 않게).
-    const krxTickTable = await resolveKrxTickTableForDisplay(ticker);
+    // 가격 카드는 차트 종류에만 있어 그때만 조회하고, 번역 로드와 함께 기다린다.
+    const [tLabel, tLegal, krxTickTable] = await Promise.all([
+        getTranslations('shared.enumLabel'),
+        getTranslations('shared.lib.legal'),
+        snapshot.kind === 'chart'
+            ? resolveKrxTickTableForDisplay(ticker)
+            : Promise.resolve<KrxTickTable>('share'),
+    ]);
     const label = tLabel(kindLabelKey(snapshot.kind));
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
