@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.108.1](https://github.com/y0ngha/siglens/compare/v0.108.0...v0.108.1) (2026-10-18)
+
+### Bug Fixes
+
+* 데이터보다 과장된 화면 용어 정리, 공포·탐욕 차트 x축 눈금 ([#1076](https://github.com/y0ngha/siglens/issues/1076)) ([9d479cd](https://github.com/y0ngha/siglens/commit/9d479cde153684c2aab89137495a3bb71f983b6d))
+* 종목·공유 페이지 정적 렌더에서 호가표 판정이 Redis를 직접 부르던 문제 ([#1075](https://github.com/y0ngha/siglens/issues/1075)) ([903808e](https://github.com/y0ngha/siglens/commit/903808e8fb7e9ebe69b3fed477ac397feaeeaec6))
+* core 2.23.2 반영 — 분석에 실제 실적일 전달, AI 챗 눌림 단서, 옵션 만기 칩 고정, 공포·탐욕 200일선 표시 ([#1077](https://github.com/y0ngha/siglens/issues/1077)) ([e60f8fe](https://github.com/y0ngha/siglens/commit/e60f8fe27149f6957cdc328e1a63fe2d711d8029))
+
 # [0.108.0](https://github.com/y0ngha/siglens/compare/v0.107.3...v0.108.0) (2026-10-18)
 
 ### Bug Fixes
