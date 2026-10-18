@@ -53,7 +53,9 @@ test.describe('flows(한국): DART 지분공시', () => {
             asOf.getByText('출처: 금융감독원 전자공시시스템(DART)')
         ).toBeVisible();
         await expect(
-            asOf.getByText('기관·외국인 순매수는 제공하지 않아요.')
+            asOf.getByText(
+                '기관·외국인 매매 동향(순매수)은 이 화면에 없어요. 점수는 지분 공시로만 매겨요.'
+            )
         ).toBeVisible();
         await expect(page.getByTestId('flows-kr-preferred-note')).toHaveCount(
             0
