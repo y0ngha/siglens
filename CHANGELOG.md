@@ -1,5 +1,22 @@
 # Changelog
 
+# [0.108.0](https://github.com/y0ngha/siglens/compare/v0.107.3...v0.108.0) (2026-10-18)
+
+### Bug Fixes
+
+* '차트 작도' 팝오버를 다른 헤더 메뉴처럼 버튼 바로 아래로 ([#1067](https://github.com/y0ngha/siglens/issues/1067)) ([50de2b2](https://github.com/y0ngha/siglens/commit/50de2b2d533e6fd8141ea0685eee286615720b13))
+* 공포·탐욕 차트를 최근 1년만 표시 ([#1072](https://github.com/y0ngha/siglens/issues/1072)) ([ea638ac](https://github.com/y0ngha/siglens/commit/ea638ac558b57dcc9e83140f5abbd348500c9be2))
+* 서비스 velog([@siglens](https://github.com/siglens))를 Organization sameAs·푸터에 추가, 운영자 개인 velog 제거 ([#1069](https://github.com/y0ngha/siglens/issues/1069)) ([44250af](https://github.com/y0ngha/siglens/commit/44250af622999eb342c9e614e39324330ee463d3))
+* 영어 페이지의 한국어 누수 — 이전 분석 본문, 관련 종목명, 챗 종목 버튼, 옵션 만기 칩 ([#1073](https://github.com/y0ngha/siglens/issues/1073)) ([7948574](https://github.com/y0ngha/siglens/commit/7948574298babb8347fbe53bf4b6b4ce699f6c2b))
+* 지나간 목표선은 흐리게 '도달' 표기, 끝난 엘리어트 카운트 수평선 제거 ([#1066](https://github.com/y0ngha/siglens/issues/1066)) ([bcc45d7](https://github.com/y0ngha/siglens/commit/bcc45d78a8b91cc09bd9ec8498d4fb72da6c6f38))
+* 차트·범례·옵션 체인 가격에 천 단위 구분자(원화·달러) ([#1068](https://github.com/y0ngha/siglens/issues/1068)) ([4c2231f](https://github.com/y0ngha/siglens/commit/4c2231f93dd09028ba37af25f48bac3b64056a28))
+* 한국 종목 분석 가격을 호가 단위 정수로 표시, core 2.22.3 반영 ([#1065](https://github.com/y0ngha/siglens/issues/1065)) ([03122ab](https://github.com/y0ngha/siglens/commit/03122ab568ff12fe0d67dbb36a03c9f8fcbe66ac))
+* AI 챗 옵션·RSI 문장 오류 — core 2.23.1 반영, 도구 결과에 rsiZone·센트 단위 프리미엄 ([#1074](https://github.com/y0ngha/siglens/issues/1074)) ([6fe06a1](https://github.com/y0ngha/siglens/commit/6fe06a1fab72fa9bb07440833a4b253b5a528b9f))
+
+### Features
+
+* 국내 ETF·ETN 호가표(etp) 반영 — core 2.23.0, 종목별 호가표 판정을 모든 분석 경로·표시에 공유 ([#1071](https://github.com/y0ngha/siglens/issues/1071)) ([f5149c2](https://github.com/y0ngha/siglens/commit/f5149c25e0eeeb543fa31b1621dc3b7136cd4885))
+
 ## [0.107.3](https://github.com/y0ngha/siglens/compare/v0.107.2...v0.107.3) (2026-10-17)
 
 ### Bug Fixes
