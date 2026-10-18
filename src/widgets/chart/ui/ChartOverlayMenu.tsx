@@ -68,14 +68,8 @@ const GROUP_ORDER = Object.keys({
     fibonacci: true,
     elliott: true,
 } satisfies Record<OverlayMenuGroupKind, true>) as OverlayMenuGroupKind[];
-/**
- * 패널 폭과 lg 이상에서의 오른쪽 오프셋은 함께 본다 — 오프셋(240px)은 가격 축과 가장 긴 결과선
- * 라벨("ヘッドアンドショルダー 無効化")을 비켜 가는 값이다. 두 값은 `ChartPopoverPanel`로 넘어가
- * 뷰포트 안으로 clamp되므로 좁은 화면에서도 잘리지 않는다. 어느 한쪽을 바꾸면 다른 쪽이 여전히
- * 맞는지 확인한다.
- */
+/** 패널 폭(px) — `ChartPopoverPanel`이 뷰포트 안으로 clamp해 좁은 화면에서도 잘리지 않는다. */
 const PANEL_WIDTH_PX = 240;
-const PANEL_AXIS_INSET_PX = 240;
 
 /**
  * "차트 작도" 드롭다운 — 매매 가격선과 AI가 참조한 로직 작도(패턴·추세선·
@@ -184,7 +178,6 @@ export function ChartOverlayMenu({
                     // 개수 없는 고정 이름 — 항목을 켤 때마다 그룹 이름이 바뀌어 읽히지 않게 한다.
                     label={t('ChartOverlayMenu.5d0ffc')}
                     width={PANEL_WIDTH_PX}
-                    axisInset={PANEL_AXIS_INSET_PX}
                 >
                     {groups.map((group, index) => {
                         const keys = group.items.map(item => item.key);

@@ -81,21 +81,13 @@ describe('computePopoverPlacement', () => {
         expect(p.maxHeight).toBe(0);
     });
 
-    it('axisInset은 lg(1024) 이상에서만 적용한다', () => {
-        const base = {
+    it('넓은 화면에서도 오른쪽 끝을 트리거에 맞춰 버튼 바로 아래로 연다', () => {
+        const p = computePopoverPlacement({
             trigger: { right: 1000, bottom: 200 },
-            width: 240,
-            axisInset: 240,
-        };
-        const wide = computePopoverPlacement({
-            ...base,
             viewport: { width: 1280, height: 900 },
+            width: 240,
         });
-        expect(wide.left + wide.width).toBe(1000 - 240);
-        const narrow = computePopoverPlacement({
-            ...base,
-            viewport: { width: 1023, height: 900 },
-        });
-        expect(narrow.left + narrow.width).toBe(1000);
+        expect(p.left + p.width).toBe(1000);
+        expect(p.top).toBe(204);
     });
 });

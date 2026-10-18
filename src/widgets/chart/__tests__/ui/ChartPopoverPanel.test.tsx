@@ -6,7 +6,7 @@ import { ChartPopoverPanel } from '../../ui/ChartPopoverPanel';
 /** 트리거 rect를 테스트가 바꿀 수 있게 잡아 두는 하네스. */
 const rect = { right: 300, bottom: 100 };
 
-function Harness({ axisInset }: { axisInset?: number }) {
+function Harness() {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     return (
@@ -31,7 +31,6 @@ function Harness({ axisInset }: { axisInset?: number }) {
                 id="p"
                 label="패널"
                 width={240}
-                axisInset={axisInset}
             >
                 <span>content</span>
             </ChartPopoverPanel>
