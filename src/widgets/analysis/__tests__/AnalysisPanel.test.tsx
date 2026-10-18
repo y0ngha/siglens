@@ -955,6 +955,55 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('저항 돌파 시')).toBeInTheDocument();
     });
 
+    it('한국 종목은 레벨·목표가·추세선 가격을 호가 단위 정수로 표시한다', () => {
+        // 2026-10-18 스크린샷: `240,300.00`, `271,192.31`, `205,325.00`처럼
+        // 소수점과 호가 단위가 아닌 값이 찍혔다.
+        render(
+            <AnalysisPanel
+                symbol="005930.KS"
+                analysis={makeAnalysis({
+                    trendlines: [
+                        {
+                            direction: 'descending',
+                            start: { time: 1000, price: 363_000 },
+                            end: { time: 2000, price: 271_192.31 },
+                        },
+                    ],
+                    priceTargets: {
+                        bullish: {
+                            condition: '회복 시',
+                            targets: [{ price: 240_300, basis: '유동성 풀' }],
+                        },
+                        bearish: {
+                            condition: '이탈 시',
+                            targets: [{ price: 205_325, basis: '카마릴라 S3' }],
+                        },
+                    },
+                })}
+                keyLevels={{
+                    support: [
+                        {
+                            price: 202_500,
+                            reason: '스탠다드 피봇 S1',
+                            count: 1,
+                            sources: [{ price: 202_500, reason: 'S1' }],
+                        },
+                    ],
+                    resistance: [],
+                    poc: { price: 56_663, reason: '거래량 중심' },
+                }}
+                timeframe="1Day"
+            />
+        );
+
+        expect(screen.getByText('363,000 → 271,000')).toBeInTheDocument();
+        expect(screen.getByText('240,500')).toBeInTheDocument();
+        expect(screen.getByText('205,500')).toBeInTheDocument();
+        expect(screen.getByText('202,500')).toBeInTheDocument();
+        expect(screen.getByText('56,700')).toBeInTheDocument();
+        expect(document.body.textContent).not.toMatch(/\d{3}\.\d{2}/);
+    });
+
     it('renders price targets when bearish targets exist', () => {
         render(
             <AnalysisPanel

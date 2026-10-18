@@ -11,6 +11,9 @@ import {
     type EffectiveActionLevels,
 } from '@/entities/analysis/lib/effectiveActionLevels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
+import { currencyFractionDigits } from '@/shared/lib/priceFormat';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 
 interface BuildExpertAnalysisReportInput {
     symbol: string;
@@ -65,26 +68,37 @@ function normalizeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
 }
 
-// 통화 기호 없는 2자리 숫자 — shared `formatPrice(value, spec)`(통화 표기)와 다르다.
-// `undefined` 로케일은 기존 표기를 그대로 둔 것이다(런타임 기본 로케일을 따른다).
-function formatReportPrice(price: number): string {
-    return price.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
+/** 리포트 한 줄에 들어가는 가격 한 개의 표기. */
+type ReportPriceFormatter = (price: number) => string;
+
+// 통화 기호 없는 숫자 — shared `formatPrice(value, spec)`(통화 표기)와 다르다. 한국
+// 종목은 호가 단위로 반올림한 정수, 그 밖은 소수 둘째 자리다(패널의
+// `formatAnalysisPrice`와 같은 규칙). `undefined` 로케일은 기존 표기를 그대로 둔
+// 것이다(런타임 기본 로케일을 따른다).
+function reportPriceFormatter(symbol: string): ReportPriceFormatter {
+    const digits = currencyFractionDigits(currencyForSymbol(symbol));
+    return price =>
+        quotedPriceForSymbol(price, symbol).toLocaleString(undefined, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+        });
 }
 
-function formatPriceList(prices: number[]): string {
-    return prices.map(formatReportPrice).join(', ');
+function formatPriceList(
+    prices: number[],
+    formatPrice: ReportPriceFormatter
+): string {
+    return prices.map(formatPrice).join(', ');
 }
 
 function formatLevelWithReason(
     level: ClusteredKeyLevel,
-    tReport: ReportTranslator
+    tReport: ReportTranslator,
+    formatPrice: ReportPriceFormatter
 ): string {
     const confluence =
         level.count > 1 ? tReport('levelConvergence', { v0: level.count }) : '';
-    return `${formatReportPrice(level.price)} (${level.reason}${confluence})`;
+    return `${formatPrice(level.price)} (${level.reason}${confluence})`;
 }
 
 function buildTitle(symbol: string, tReport: ReportTranslator): string {
@@ -96,7 +110,8 @@ function buildInterpretation(
     supportLevels: ClusteredKeyLevel[],
     resistanceLevels: ClusteredKeyLevel[],
     t: EnumLabelTranslator,
-    tReport: ReportTranslator
+    tReport: ReportTranslator,
+    formatPrice: ReportPriceFormatter
 ): string {
     const parts = [
         tReport('trendSummary', {
@@ -110,7 +125,10 @@ function buildInterpretation(
     if (resistanceLevels.length > 0) {
         parts.push(
             tReport('resistanceNote', {
-                v0: formatPriceList(resistanceLevels.map(level => level.price)),
+                v0: formatPriceList(
+                    resistanceLevels.map(level => level.price),
+                    formatPrice
+                ),
             })
         );
     }
@@ -118,7 +136,10 @@ function buildInterpretation(
     if (supportLevels.length > 0) {
         parts.push(
             tReport('supportNote', {
-                v0: formatPriceList(supportLevels.map(level => level.price)),
+                v0: formatPriceList(
+                    supportLevels.map(level => level.price),
+                    formatPrice
+                ),
             })
         );
     }
@@ -129,7 +150,8 @@ function buildInterpretation(
 function buildKeyLevelsBlock(
     keyLevels: ClusteredKeyLevels,
     effectiveLevels: EffectiveActionLevels,
-    tReport: ReportTranslator
+    tReport: ReportTranslator,
+    formatPrice: ReportPriceFormatter
 ): string | null {
     const lines: string[] = [];
 
@@ -137,7 +159,9 @@ function buildKeyLevelsBlock(
         lines.push(
             tReport('levelsResistance', {
                 v0: keyLevels.resistance
-                    .map(level => formatLevelWithReason(level, tReport))
+                    .map(level =>
+                        formatLevelWithReason(level, tReport, formatPrice)
+                    )
                     .join(', '),
             })
         );
@@ -147,7 +171,9 @@ function buildKeyLevelsBlock(
         lines.push(
             tReport('levelsSupport', {
                 v0: keyLevels.support
-                    .map(level => formatLevelWithReason(level, tReport))
+                    .map(level =>
+                        formatLevelWithReason(level, tReport, formatPrice)
+                    )
                     .join(', '),
             })
         );
@@ -155,7 +181,7 @@ function buildKeyLevelsBlock(
 
     if (keyLevels.poc !== undefined) {
         lines.push(
-            `- PoC: ${formatReportPrice(keyLevels.poc.price)} (${keyLevels.poc.reason})`
+            `- PoC: ${formatPrice(keyLevels.poc.price)} (${keyLevels.poc.reason})`
         );
     }
 
@@ -163,21 +189,21 @@ function buildKeyLevelsBlock(
     if (entryPrices?.length) {
         lines.push(
             tReport('entryZone', {
-                v0: formatPriceList(entryPrices),
+                v0: formatPriceList(entryPrices, formatPrice),
             })
         );
     }
     if (stopLoss !== undefined) {
         lines.push(
             tReport('invalidation', {
-                v0: formatReportPrice(stopLoss),
+                v0: formatPrice(stopLoss),
             })
         );
     }
     if (takeProfitPrices?.length) {
         lines.push(
             tReport('targetZone', {
-                v0: formatPriceList(takeProfitPrices),
+                v0: formatPriceList(takeProfitPrices, formatPrice),
             })
         );
     }
@@ -227,7 +253,8 @@ function buildEvidenceBlock(
 
 function buildScenarioBlock(
     analysis: AnalysisResponse,
-    tReport: ReportTranslator
+    tReport: ReportTranslator,
+    formatPrice: ReportPriceFormatter
 ): string | null {
     const lines: string[] = [];
     // priceTargets는 부분 응답에서 누락될 수 있으므로 방어적으로 기본값을 둔다.
@@ -241,7 +268,8 @@ function buildScenarioBlock(
             tReport('upside', {
                 v0: normalizeWhitespace(priceTargets.bullish.condition),
                 v1: formatPriceList(
-                    priceTargets.bullish.targets.map(target => target.price)
+                    priceTargets.bullish.targets.map(target => target.price),
+                    formatPrice
                 ),
             })
         );
@@ -252,7 +280,8 @@ function buildScenarioBlock(
             tReport('downside', {
                 v0: normalizeWhitespace(priceTargets.bearish.condition),
                 v1: formatPriceList(
-                    priceTargets.bearish.targets.map(target => target.price)
+                    priceTargets.bearish.targets.map(target => target.price),
+                    formatPrice
                 ),
             })
         );
@@ -267,7 +296,8 @@ function buildResponseStance(
     keyLevels: ClusteredKeyLevels,
     effectiveLevels: EffectiveActionLevels,
     t: EnumLabelTranslator,
-    tReport: ReportTranslator
+    tReport: ReportTranslator,
+    formatPrice: ReportPriceFormatter
 ): string {
     const { actionRecommendation } = analysis;
 
@@ -277,13 +307,13 @@ function buildResponseStance(
         );
         const entryAnchor = effectiveLevels.entryPrices?.length
             ? tReport('entryAnchor', {
-                  v0: formatPriceList(effectiveLevels.entryPrices),
+                  v0: formatPriceList(effectiveLevels.entryPrices, formatPrice),
               })
             : '';
         const invalidation =
             effectiveLevels.stopLoss !== undefined
                 ? tReport('invalidationNote', {
-                      v0: formatReportPrice(effectiveLevels.stopLoss),
+                      v0: formatPrice(effectiveLevels.stopLoss),
                   })
                 : '';
 
@@ -292,13 +322,13 @@ function buildResponseStance(
 
     if (analysis.trend === 'bullish' && keyLevels.support.length > 0) {
         return tReport('stanceBullish', {
-            v0: formatReportPrice(keyLevels.support[0].price),
+            v0: formatPrice(keyLevels.support[0].price),
         });
     }
 
     if (analysis.trend === 'bearish' && keyLevels.resistance.length > 0) {
         return tReport('stanceBearish', {
-            v0: formatReportPrice(keyLevels.resistance[0].price),
+            v0: formatPrice(keyLevels.resistance[0].price),
         });
     }
 
@@ -356,6 +386,8 @@ export function buildExpertAnalysisReport({
         analysis.actionRecommendation
     );
 
+    const formatPrice = reportPriceFormatter(symbol);
+
     const sections = [
         buildTitle(symbol, tReport),
         buildInterpretation(
@@ -363,13 +395,19 @@ export function buildExpertAnalysisReport({
             supportLevels,
             resistanceLevels,
             t,
-            tReport
+            tReport,
+            formatPrice
         ),
-        buildKeyLevelsBlock(safeKeyLevels, effectiveLevels, tReport),
+        buildKeyLevelsBlock(
+            safeKeyLevels,
+            effectiveLevels,
+            tReport,
+            formatPrice
+        ),
         buildEvidenceBlock(analysis, tReport),
-        buildScenarioBlock(analysis, tReport),
+        buildScenarioBlock(analysis, tReport, formatPrice),
         `${tReport('responseStance')}
-${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, t, tReport)}`,
+${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, t, tReport, formatPrice)}`,
         `${tReport('riskLabel')}
 ${buildRiskNote(analysis, tReport)}`,
         tReport('source', { v0: symbol }),

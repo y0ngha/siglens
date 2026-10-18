@@ -94,6 +94,7 @@ oxlint는 자체 파서라 무관하고, 저장소 전체 린트가 1초대에 �
 
 포맷터·린터를 건드렸거나 문서·설정을 손으로 고쳤다면 푸시 전에 `yarn format:check`를 통과시키고, 위반은 같은 커밋에서
 `yarn format:write`로 해소한다. 푸시 뒤 CI에서 발견하면 라운드가 하나 늘어난다.
+포맷터는 oxfmt뿐이다. `prettier`를 직접 돌리면 무관한 파일까지 다시 쓰이므로 항상 `yarn format:check`·`yarn format:write`를 쓴다.
 
 <a id="TC-4"></a>
 

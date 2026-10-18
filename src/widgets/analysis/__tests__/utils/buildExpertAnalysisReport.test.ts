@@ -166,6 +166,50 @@ describe('buildExpertAnalysisReport', () => {
         );
     });
 
+    it('한국 종목은 가격을 호가 단위 정수로 싣는다(소수점 없음)', () => {
+        const krLevel = (price: number, reason: string) => ({
+            price,
+            reason,
+            count: 1,
+            sources: [{ price, reason }],
+        });
+        const result = buildExpertAnalysisReport({
+            tReport,
+            symbol: '005930.KS',
+            analysis: {
+                ...baseAnalysis,
+                priceTargets: {
+                    bullish: {
+                        targets: [{ price: 240_300, basis: '유동성 풀' }],
+                        condition: '회복',
+                    },
+                    bearish: null,
+                },
+                actionRecommendation: {
+                    ...baseAnalysis.actionRecommendation!,
+                    entryPrices: [210_000, 215_120],
+                    stopLoss: 204_480,
+                    takeProfitPrices: [224_565],
+                },
+            },
+            keyLevels: {
+                resistance: [krLevel(224_565, '켈트너 하단')],
+                support: [krLevel(205_325, '카마릴라 S3')],
+                poc: { price: 56_663, reason: 'POC' },
+            },
+            t,
+        });
+
+        // 200,000–500,000원은 500원, 50,000–200,000원은 100원 단위.
+        expect(result).toContain('224,500');
+        expect(result).toContain('205,500');
+        expect(result).toContain('240,500');
+        expect(result).toContain('215,000');
+        expect(result).toContain('56,700');
+        expect(result).not.toMatch(/\d,\d{3}\.\d/);
+        expect(result).not.toContain('224,565');
+    });
+
     it('riskReward 문장을 중간에서 자르지 않는다', () => {
         const analysisWithLongRiskReward: AnalysisResponse = {
             ...baseAnalysis,
