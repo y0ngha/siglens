@@ -5,11 +5,13 @@ import 'server-only';
  * 다른 entity(`entities/analysis`)와 app 라우트가 함께 쓰는데, server-only `api.ts`는 같은 entity나
  * app 레이어에서만 import할 수 있어 거기 둘 수 없다.
  */
+import { unstable_cache } from 'next/cache';
 import type { KrxTickTable } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { loadYahooProvider } from '@/shared/api/yahoo/lazyYahooProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { withRetry } from '@/shared/lib/withRetry';
 import {
     buildKrxTickTableCacheKey,
@@ -72,16 +74,48 @@ export async function resolveKrxTickTable(
 }
 
 /**
+ * 렌더(정적·ISR) 경로용 — {@link resolveKrxTickTable}을 Next data cache로 감싼다.
+ *
+ * 종목·공유 페이지는 정적 생성/ISR로 렌더된다. 그 렌더 안에서 `getOrSetCache`가 Upstash에
+ * no-store fetch를 보내면 Next가 `DYNAMIC_SERVER_USAGE`를 던지고, `getOrSetCache`는 그것을
+ * Redis 장애로 오인해 `get/set failed`를 찍는다(v0.108.0 배포 직후 KR 종목 재생성 20건이
+ * P2 알람을 울렸다). `peekAnalysisStatic`과 같은 해법으로 데이터 호출 자체를 `unstable_cache`로
+ * 정적화한다. 실패(throw)는 Next가 저장하지 않으므로 "판정 못 하면 캐시하지 않는다" 계약은
+ * 그대로다.
+ *
+ * 한국 종목이 아니거나 E2E면 엔트리를 만들지 않고 바로 'share'다(미국 종목마다 데이터 캐시
+ * 항목이 생기지 않게). revalidate는 Redis TTL과 같은 30일 — 차트 라우트의 선언 revalidate(6h)보다
+ * 길어 라우트 TTL을 줄이지 않는다.
+ *
+ * `unstable_cache`는 콜백 소스(`fn.toString()`)도 키에 섞는다. 이 키는 콜백이 이 한 곳이라는
+ * 전제로 성립하므로, 다른 모양의 콜백으로 같은 키를 쓰는 호출부를 추가하지 않는다(엔트리가 갈라진다).
+ */
+function resolveKrxTickTableStatic(symbol: string): Promise<KrxTickTable> {
+    if (!isKrEquitySymbol(symbol) || isE2E()) return Promise.resolve('share');
+    const upper = symbol.toUpperCase();
+    return unstable_cache(
+        () => resolveKrxTickTable(upper),
+        ['krx-tick-table-static-v1', upper],
+        { revalidate: KRX_TICK_TABLE_CACHE_TTL, tags: [`symbol:${upper}`] }
+    )();
+}
+
+/**
  * 화면 표시용 — 판정에 실패하면 주식 표('share')로 떨어진다. 분석 결과를 만들거나 캐시하지
  * 않는 곳(종목·공유 페이지의 가격 반올림 표시)에서만 쓴다. 틀려도 그 렌더의 표시 자릿수만
- * 어긋나고, 분석 캐시는 건드리지 않는다.
+ * 어긋나고, 분석 캐시는 건드리지 않는다. 렌더 경로에서 부르므로
+ * {@link resolveKrxTickTableStatic}을 거친다.
+ *
+ * **`DYNAMIC_SERVER_USAGE`는 되던진다** — 실패가 아니라 Next의 제어 흐름 신호라, 'share'로
+ * 삼키면 의도한 bail-out을 막고 틀린 표를 정적 HTML에 굳힌다(`isDynamicServerError` JSDoc).
  */
 export async function resolveKrxTickTableForDisplay(
     symbol: string
 ): Promise<KrxTickTable> {
     try {
-        return await resolveKrxTickTable(symbol);
+        return await resolveKrxTickTableStatic(symbol);
     } catch (error) {
+        if (isDynamicServerError(error)) throw error;
         console.warn(
             '[resolveKrxTickTable] quoteType lookup failed, displaying with the share table:',
             symbol,
