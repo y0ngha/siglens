@@ -245,6 +245,7 @@ describe('OverallPage — FactLayer SSR integration', () => {
         const OVERALL_SNAPSHOT_ROW = {
             symbol: 'AAPL',
             tab: 'overall',
+            locale: 'ko',
             content: {
                 headlineKo: '강세 우위 스냅샷',
                 integratedConclusionKo: '스냅샷 종합 결론',
@@ -336,6 +337,7 @@ describe('OverallPage — FactLayer SSR integration', () => {
                 {
                     symbol: 'AAPL',
                     tab: 'technical',
+                    locale: 'ko',
                     content: { summary: '기술적 요약' },
                     model: 'deepseek-v4.1-flash',
                     generatedAt: new Date('2026-07-24'),

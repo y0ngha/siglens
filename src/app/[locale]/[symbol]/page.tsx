@@ -12,6 +12,7 @@ import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
@@ -184,8 +185,10 @@ export default async function SymbolPage({ params }: Props) {
             getSeoSnapshotsStatic(ticker, revalidate, locale),
         ]
     );
-    const technicalSnapshot = (snapshots ?? []).find(
-        s => s.tab === 'technical'
+    const technicalSnapshot = findSnapshotForLocale(
+        snapshots,
+        'technical',
+        locale
     );
     // 확장된 게이트(SYMBOL_EDGE_RE)는 crypto 심볼을 수용하기 위해 이전 VALID_TICKER_RE보다
     // 넓다. 정상 조건에서 crypto 심볼은 crypto_assets DB에서 직접 해결된다(degrade 없음).

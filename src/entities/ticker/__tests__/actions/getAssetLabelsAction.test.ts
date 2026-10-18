@@ -28,7 +28,7 @@ describe('getAssetLabelsAction 함수는', () => {
             info({ symbol: 'AAPL', name: 'Apple Inc.' })
         );
 
-        const result = await getAssetLabelsAction([' aapl ']);
+        const result = await getAssetLabelsAction([' aapl '], 'ko');
 
         expect(mockGetAssetInfo).toHaveBeenCalledWith('AAPL');
         expect(result.labels).toEqual({ AAPL: 'Apple Inc.' });
@@ -39,7 +39,7 @@ describe('getAssetLabelsAction 함수는', () => {
             info({ symbol: 'AAPL', name: 'Apple Inc.' })
         );
 
-        await getAssetLabelsAction(['AAPL', 'aapl', 'AAPL']);
+        await getAssetLabelsAction(['AAPL', 'aapl', 'AAPL'], 'ko');
 
         expect(mockGetAssetInfo).toHaveBeenCalledTimes(1);
     });
@@ -53,7 +53,7 @@ describe('getAssetLabelsAction 함수는', () => {
             (_, i) => `SYM${i}`
         );
 
-        await getAssetLabelsAction(symbols);
+        await getAssetLabelsAction(symbols, 'ko');
 
         expect(mockGetAssetInfo).toHaveBeenCalledTimes(MAX_RECENT_SEARCHES);
     });
@@ -67,9 +67,47 @@ describe('getAssetLabelsAction 함수는', () => {
             })
         );
 
-        const result = await getAssetLabelsAction(['005930.KS']);
+        const result = await getAssetLabelsAction(['005930.KS'], 'ko');
 
         expect(result.labels).toEqual({ '005930.KS': '삼성전자' });
+    });
+
+    it('en이면 영문명을 한글명보다 우선한다', async () => {
+        mockGetAssetInfo.mockResolvedValue(
+            info({
+                symbol: 'NVDA',
+                name: 'NVIDIA Corporation',
+                koreanName: '엔비디아',
+            })
+        );
+
+        const result = await getAssetLabelsAction(['NVDA'], 'en');
+
+        expect(result.labels).toEqual({ NVDA: 'NVIDIA Corporation' });
+    });
+
+    it('en이어도 영문명이 없으면(이름이 티커와 같음) 한글명으로 폴백한다', async () => {
+        mockGetAssetInfo.mockResolvedValue(
+            info({ symbol: '005930.KS', koreanName: '삼성전자' })
+        );
+
+        const result = await getAssetLabelsAction(['005930.KS'], 'en');
+
+        expect(result.labels).toEqual({ '005930.KS': '삼성전자' });
+    });
+
+    it('ko면 같은 종목을 한글명으로 돌려준다', async () => {
+        mockGetAssetInfo.mockResolvedValue(
+            info({
+                symbol: 'NVDA',
+                name: 'NVIDIA Corporation',
+                koreanName: '엔비디아',
+            })
+        );
+
+        const result = await getAssetLabelsAction(['NVDA'], 'ko');
+
+        expect(result.labels).toEqual({ NVDA: '엔비디아' });
     });
 
     it('이름이 심볼과 같으면 라벨로 쓰지 않는다', async () => {
@@ -77,7 +115,7 @@ describe('getAssetLabelsAction 함수는', () => {
         // 화면에는 여전히 티커가 보인다.
         mockGetAssetInfo.mockResolvedValue(info({ symbol: 'LAES' }));
 
-        const result = await getAssetLabelsAction(['LAES']);
+        const result = await getAssetLabelsAction(['LAES'], 'ko');
 
         expect(result.labels).toEqual({});
         expect(result.failed).toEqual([]);
@@ -88,7 +126,7 @@ describe('getAssetLabelsAction 함수는', () => {
             info({ symbol: 'IONQ', name: '   ' })
         );
 
-        const result = await getAssetLabelsAction(['IONQ']);
+        const result = await getAssetLabelsAction(['IONQ'], 'ko');
 
         expect(result.labels).toEqual({});
     });
@@ -97,7 +135,7 @@ describe('getAssetLabelsAction 함수는', () => {
         // 실패로 치면 호출부가 매 마운트 재조회한다 — 결과가 바뀌지 않는데도.
         mockGetAssetInfo.mockResolvedValue(null);
 
-        const result = await getAssetLabelsAction(['NOPE']);
+        const result = await getAssetLabelsAction(['NOPE'], 'ko');
 
         expect(result.labels).toEqual({});
         expect(result.failed).toEqual([]);
@@ -111,7 +149,10 @@ describe('getAssetLabelsAction 함수는', () => {
             return info({ symbol, name: `${symbol} Inc.` });
         });
 
-        const result = await getAssetLabelsAction(['AAPL', 'BOOM', 'TSLA']);
+        const result = await getAssetLabelsAction(
+            ['AAPL', 'BOOM', 'TSLA'],
+            'ko'
+        );
 
         expect(result.labels).toEqual({
             AAPL: 'AAPL Inc.',
@@ -121,7 +162,7 @@ describe('getAssetLabelsAction 함수는', () => {
     });
 
     it('빈 문자열 심볼은 걸러낸다', async () => {
-        const result = await getAssetLabelsAction(['', '   ']);
+        const result = await getAssetLabelsAction(['', '   '], 'ko');
 
         expect(mockGetAssetInfo).not.toHaveBeenCalled();
         expect(result).toEqual({ labels: {}, failed: [] });

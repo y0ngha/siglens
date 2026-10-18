@@ -276,6 +276,7 @@ describe('Symbol page', () => {
                 {
                     symbol: 'AAPL',
                     tab: 'technical',
+                    locale: 'ko',
                     content: {
                         summary: 'AAPL은 200일선 위에서 상승 추세입니다.',
                     },

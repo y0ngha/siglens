@@ -21,11 +21,11 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
 
 const MOCK_SLOTS: SlotMapping[] = [
     {
-        slot: { key: 'near', label: '근월' },
+        slot: { key: '1W', label: '근월' },
         expirationDate: '2025-01-17',
     },
     {
-        slot: { key: 'mid', label: '차월' },
+        slot: { key: '1M', label: '차월' },
         expirationDate: '2025-02-21',
     },
 ] as unknown as SlotMapping[];
@@ -39,8 +39,8 @@ describe('Options Page Flow', () => {
                 onChange={vi.fn()}
             />
         );
-        expect(screen.getByText('근월')).toBeInTheDocument();
-        expect(screen.getByText('차월')).toBeInTheDocument();
+        expect(screen.getByText('1주')).toBeInTheDocument();
+        expect(screen.getByText('1개월')).toBeInTheDocument();
         expect(screen.getByText('종합')).toBeInTheDocument();
     });
 
@@ -54,7 +54,7 @@ describe('Options Page Flow', () => {
             />
         );
         const user = userEvent.setup();
-        await user.click(screen.getByText('차월'));
+        await user.click(screen.getByText('1개월'));
         expect(onChange).toHaveBeenCalledWith('2025-02-21');
     });
 
@@ -66,7 +66,7 @@ describe('Options Page Flow', () => {
                 onChange={vi.fn()}
             />
         );
-        const selectedTab = screen.getByRole('tab', { name: /근월/ });
+        const selectedTab = screen.getByRole('tab', { name: /1주/ });
         expect(selectedTab).toHaveAttribute('aria-selected', 'true');
     });
 

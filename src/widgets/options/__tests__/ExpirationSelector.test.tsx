@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ExpirationSelector } from '@/widgets/options/ExpirationSelector';
 import type { SlotMapping } from '@y0ngha/siglens-core';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (
@@ -75,6 +76,88 @@ describe('ExpirationSelector', () => {
         );
         expect(screen.getByText('06-20')).toBeInTheDocument();
         expect(screen.getByText('07-18')).toBeInTheDocument();
+    });
+
+    // core의 `slot.label`은 한국어로 하드코딩돼 있다. 칩은 `slot.key`로 카탈로그를 찾아야 한다.
+    describe('slot labels by locale', () => {
+        const ALL_SLOTS = (
+            ['0D', '1W', '2W', '1M', '2M', '3M', '6M'] as const
+        ).map((key, i) => ({
+            slot: { key, label: `코어-${key}`, targetDays: i },
+            expirationDate: `2025-07-${String(10 + i)}`,
+        })) as unknown as SlotMapping[];
+
+        it('en: shows English chip labels, not core Korean labels', () => {
+            renderWithIntl(
+                <ExpirationSelector
+                    slots={ALL_SLOTS}
+                    value="2025-07-10"
+                    onChange={vi.fn()}
+                />,
+                { locale: 'en' }
+            );
+            expect(
+                screen.getAllByRole('tab').map(tab => tab.textContent)
+            ).toEqual([
+                'This week07-10',
+                '1 week07-11',
+                '2 weeks07-12',
+                '1 month07-13',
+                '2 months07-14',
+                '3 months07-15',
+                '6 months07-16',
+                'Overall',
+            ]);
+            expect(screen.queryByText(/코어-/)).toBeNull();
+        });
+
+        it('ko: shows Korean chip labels', () => {
+            renderWithIntl(
+                <ExpirationSelector
+                    slots={ALL_SLOTS}
+                    value="2025-07-10"
+                    onChange={vi.fn()}
+                />,
+                { locale: 'ko' }
+            );
+            expect(
+                screen
+                    .getAllByRole('tab')
+                    .slice(0, 7)
+                    .map(tab => tab.textContent)
+            ).toEqual([
+                '이번 주07-10',
+                '1주07-11',
+                '2주07-12',
+                '1개월07-13',
+                '2개월07-14',
+                '3개월07-15',
+                '6개월07-16',
+            ]);
+        });
+
+        it('falls back to the core label for an unknown slot key', () => {
+            renderWithIntl(
+                <ExpirationSelector
+                    slots={
+                        [
+                            {
+                                slot: {
+                                    key: '9Y',
+                                    label: '9년',
+                                    targetDays: 1,
+                                },
+                                expirationDate: '2025-07-10',
+                            },
+                        ] as unknown as SlotMapping[]
+                    }
+                    value="2025-07-10"
+                    onChange={vi.fn()}
+                />,
+                { locale: 'en' }
+            );
+            expect(screen.getByText('9년')).toBeInTheDocument();
+        });
     });
 
     it('provides tablist with aria-label', () => {

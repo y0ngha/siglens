@@ -35,6 +35,7 @@ import { SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
@@ -415,8 +416,10 @@ export default async function FundamentalPage({ params }: Props) {
         getAssetInfoResilient(upper),
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
-    const fundamentalSnapshot = (snapshots ?? []).find(
-        s => s.tab === 'fundamental'
+    const fundamentalSnapshot = findSnapshotForLocale(
+        snapshots,
+        'fundamental',
+        locale
     );
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFundamentalProse)
     // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
