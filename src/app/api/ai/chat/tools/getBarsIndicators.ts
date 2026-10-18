@@ -14,6 +14,7 @@ import {
     evaluatePullback,
     getDetectionBars,
     PULLBACK_BASE_RATES,
+    rsiZone,
     scoreConfluence,
     selectLastCandlePatternEntries,
     type Bar,
@@ -31,6 +32,7 @@ import {
     type MultiCandlePattern,
     type PullbackReading,
     type PullbackSnapshot,
+    type RsiZone,
     type SqueezeMomentumResult,
     type StochasticResult,
     type Timeframe,
@@ -137,6 +139,13 @@ function lastPick<T, K extends keyof T>(
 /** Return shape of `latestIndicators` — compact last-value view of every indicator core computes for the series. */
 interface LatestIndicatorsView {
     rsi: number | null;
+    /**
+     * Computed RSI zone (overbought ≥ 70, oversold ≤ 30, else neutral; `null`
+     * without an RSI) — the same core `rsiZone` the chart tab and the analysis
+     * prompt use. Without it the model labelled e.g. RSI 37.5 "near oversold"
+     * while the chart tab called it neutral.
+     */
+    rsiZone: RsiZone | null;
     macd: MACDResult | null;
     bollinger: BollingerResult | null;
     atr: number | null;
@@ -175,8 +184,10 @@ function latestIndicators(
 ): LatestIndicatorsView {
     const supertrend = last(ind.supertrend);
     const parabolicSar = last(ind.parabolicSar);
+    const rsi = last(ind.rsi);
     return {
-        rsi: last(ind.rsi),
+        rsi,
+        rsiZone: rsi !== null && Number.isFinite(rsi) ? rsiZone(rsi) : null,
         macd: last(ind.macd),
         bollinger: last(ind.bollinger),
         atr: last(ind.atr),

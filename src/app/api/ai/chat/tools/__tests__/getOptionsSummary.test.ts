@@ -87,6 +87,71 @@ describe('getOptionsSummaryTool', () => {
         expect(r.metrics.topOiBidAskSummary[0]!.strike).toBe(220);
     });
 
+    it('rounds option premiums to the cent so no sub-cent price reaches the model', async () => {
+        hasMarket.mockResolvedValue(true);
+        fetchSnapshot.mockResolvedValue({
+            capturedAt: '2026-10-16T20:00:00Z',
+            underlyingPrice: 214.13,
+            chains: [{ expirationDate: '2026-10-19', daysToExpiration: 3 }],
+        });
+        summarize.mockReturnValue({
+            topOiBidAskSummary: [
+                {
+                    strike: 250,
+                    callMidPrice: 0.005,
+                    callSpread: 0.01,
+                    putMidPrice: 13.325,
+                    putSpread: 0.15,
+                    callSpreadPct: 200,
+                    putSpreadPct: 1.1257,
+                },
+                {
+                    strike: 260,
+                    callMidPrice: 0.004,
+                    callSpread: 0.008,
+                    putMidPrice: 45.5,
+                    putSpread: Number.NaN,
+                    callSpreadPct: 200,
+                    putSpreadPct: null,
+                },
+                {
+                    strike: 220,
+                    callMidPrice: null,
+                    callSpread: null,
+                    putMidPrice: 0.095,
+                    putSpread: 0.01,
+                    callSpreadPct: null,
+                    putSpreadPct: 10.5263,
+                },
+            ],
+        });
+        const r = (await getOptionsSummaryTool(
+            { symbol: 'NVDA' },
+            ctx,
+            rt
+        )) as {
+            metrics: {
+                topOiBidAskSummary: {
+                    callMidPrice: number | null;
+                    putMidPrice: number | null;
+                    putSpread: number | null;
+                    putSpreadPct: number | null;
+                }[];
+            };
+        };
+        const [far, tiny, near] = r.metrics.topOiBidAskSummary;
+        // 반 센트 미만은 0, 이미 센트 단위인 값은 그대로, 유한하지 않은 값은 null.
+        expect(tiny!.callMidPrice).toBe(0);
+        expect(tiny!.putMidPrice).toBe(45.5);
+        expect(tiny!.putSpread).toBeNull();
+        expect(far!.callMidPrice).toBe(0.01);
+        expect(far!.putMidPrice).toBe(13.33);
+        expect(near!.callMidPrice).toBeNull();
+        expect(near!.putMidPrice).toBe(0.1);
+        // 스프레드 %는 원 호가로 계산된 값을 유지한다(유효숫자 트림만).
+        expect(near!.putSpreadPct).toBe(10.5263);
+    });
+
     it('옵션 시장이 없으면 available:false', async () => {
         hasMarket.mockResolvedValue(false);
         expect(
@@ -109,7 +174,7 @@ describe('getOptionsSummaryTool', () => {
                 { expirationDate: '2026-10-08', daysToExpiration: 28 },
             ],
         });
-        summarize.mockReturnValue({ maxPain: 195 });
+        summarize.mockReturnValue({ maxPain: 195, topOiBidAskSummary: [] });
         const r = (await getOptionsSummaryTool(
             { symbol: 'AAPL' },
             ctx,
@@ -120,7 +185,7 @@ describe('getOptionsSummaryTool', () => {
             otherExpirations: string[];
         };
         expect(r.available).toBe(true);
-        expect(r.metrics).toEqual({ maxPain: 195 });
+        expect(r.metrics).toEqual({ maxPain: 195, topOiBidAskSummary: [] });
         expect(r.otherExpirations).toEqual(['2026-10-08']);
     });
 
@@ -144,7 +209,7 @@ describe('getOptionsSummaryTool', () => {
                 { expirationDate: '2026-10-15', daysToExpiration: 35 },
             ],
         });
-        summarize.mockReturnValue({ maxPain: 195 });
+        summarize.mockReturnValue({ maxPain: 195, topOiBidAskSummary: [] });
         const r = (await getOptionsSummaryTool(
             { symbol: 'AAPL' },
             ctx,
@@ -175,7 +240,7 @@ describe('getOptionsSummaryTool', () => {
             capturedAt: '2026-09-10T00:00:00.000Z',
             chains: [{ expirationDate: '2026-09-10', daysToExpiration: 0 }],
         });
-        summarize.mockReturnValue({ maxPain: 195 });
+        summarize.mockReturnValue({ maxPain: 195, topOiBidAskSummary: [] });
         const r = (await getOptionsSummaryTool(
             { symbol: 'AAPL' },
             ctx,

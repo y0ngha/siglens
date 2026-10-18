@@ -8,6 +8,35 @@ import {
 import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 
+/**
+ * Option premiums trade in whole cents — the tool hands the model nothing
+ * finer. A non-finite value (no real quote) becomes `null`, matching core's
+ * "null = no two-sided quote"; a mid under half a cent rounds to `0`.
+ */
+const toCents = (v: number | null): number | null =>
+    v === null || !Number.isFinite(v) ? null : Math.round(v * 100) / 100;
+
+/**
+ * Rounds the bid/ask summary's mid prices and spreads to the cent. The
+ * significant-digit trim keeps `0.005` or `13.325`, and the model quoted
+ * them verbatim ("half a cent", "9.5 cents") even when told to write
+ * cents. Spread % stays as computed from the raw quote.
+ */
+function withCentPremiums(
+    metrics: ReturnType<typeof summarizeChainForLlm>
+): ReturnType<typeof summarizeChainForLlm> {
+    return {
+        ...metrics,
+        topOiBidAskSummary: metrics.topOiBidAskSummary.map(q => ({
+            ...q,
+            callMidPrice: toCents(q.callMidPrice),
+            callSpread: toCents(q.callSpread),
+            putMidPrice: toCents(q.putMidPrice),
+            putSpread: toCents(q.putSpread),
+        })),
+    };
+}
+
 export const getOptionsSummaryTool: ToolExecutor = async args => {
     const symbol = String(args.symbol).toUpperCase();
     // Tab-policy gate BEFORE the Yahoo options-market probe — crypto/KR
@@ -37,9 +66,12 @@ export const getOptionsSummaryTool: ToolExecutor = async args => {
         expiration: chain.expirationDate,
         daysToExpiration: chain.daysToExpiration,
         // Core returns raw floats (implied move range, spreads, IV); trim them
-        // to significant digits like the options analysis prompt does.
-        metrics: roundNumbersDeep(
-            summarizeChainForLlm(chain, snapshot.underlyingPrice)
+        // to significant digits like the options analysis prompt does, then
+        // round premiums to the cent.
+        metrics: withCentPremiums(
+            roundNumbersDeep(
+                summarizeChainForLlm(chain, snapshot.underlyingPrice)
+            )
         ),
         otherExpirations: snapshot.chains
             .filter((_, i) => i !== chainIndex)
