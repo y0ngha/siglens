@@ -16,11 +16,11 @@ import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
 } from '@/entities/options-chain/lib/optionsDataCache';
+import { resolveSnapshotSlots } from '@/entities/options-chain/lib/optionsSlots';
 import { toClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
@@ -250,8 +250,9 @@ export default async function OptionsPage({ params }: Props) {
         );
     }
 
-    const expirations = snapshot.chains.map(c => c.expirationDate);
-    const slots = mapExpirationsToSlots(expirations, new Date());
+    // 수집 시점에 확정한 슬롯 매핑을 쓴다 — 묵은 스냅샷을 `new Date()`로 다시 매핑하면
+    // 날짜가 밀려 chip이 바뀌거나 사라진다. 매핑이 없는 슬롯은 chip을 그리지 않는다.
+    const slots = resolveSnapshotSlots(snapshot, new Date());
 
     // 클라이언트가 읽는 계약 필드만 보낸다(`toClientOptionsSnapshot` JSDoc). 예전에는 같은
     // 스냅샷이 prop과 `HydrationBoundary`(읽는 쿼리 없음)로 두 번 실렸다.

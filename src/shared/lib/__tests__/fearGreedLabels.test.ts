@@ -31,6 +31,35 @@ describe('formatFactorRaw', () => {
     });
 });
 
+describe('formatFactorRaw — ma200DistancePct(표시용 200일선 이격)', () => {
+    it('ma200_distance 행은 퍼센트 단위 표시값을 소수 둘째 자리로 보여 준다(팩터 raw 대신)', () => {
+        // 팩터 raw 0.0550(5.50%)과 차트·분석의 SMA200 이격 5.57%가 다르다.
+        expect(formatFactorRaw('ma200_distance', 0.055, 'ko', 5.57)).toBe(
+            '5.57%'
+        );
+        expect(formatFactorRaw('ma200_distance', 0.055, 'ko', -3.14159)).toBe(
+            '-3.14%'
+        );
+    });
+
+    it.each([undefined, null, Number.NaN, Number.POSITIVE_INFINITY])(
+        '표시값이 %s이면 팩터 raw 값으로 되돌아간다',
+        pct => {
+            expect(formatFactorRaw('ma200_distance', 0.055, 'ko', pct)).toBe(
+                '5.50%'
+            );
+        }
+    );
+
+    it.each([
+        ['volume_z' as const, 1.2345, '1.23'],
+        ['poc_distance' as const, 0.0512, '5.12%'],
+        ['range_position' as const, 0.876, '87.6%'],
+    ])('%s 행은 표시값이 있어도 영향받지 않는다', (key, raw, expected) => {
+        expect(formatFactorRaw(key, raw, 'ko', 9.99)).toBe(expected);
+    });
+});
+
 describe('sample-size footer catalog', () => {
     it.each(['ko', 'en', 'ja', 'zh'] as const)(
         '%s: 정상·제한 두 문장과 헤더 칩 라벨이 카탈로그에 다 있다',

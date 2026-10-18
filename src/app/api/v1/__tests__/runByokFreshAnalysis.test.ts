@@ -10,6 +10,9 @@ const m = vi.hoisted(() => ({
     consume: vi.fn(),
     findRecentForPrompt: vi.fn(async (): Promise<unknown[]> => []),
     findMarketEventsForPrompt: vi.fn(async (): Promise<unknown[]> => []),
+    listEarningsDates: vi.fn(
+        async (): Promise<readonly string[] | undefined> => undefined
+    ),
     resolveHoldingPositionBucket: vi.fn(
         async (): Promise<string | undefined> => undefined
     ),
@@ -24,6 +27,8 @@ interface CoreCall {
     userApiKey: string | undefined;
     /** core가 LLM에 실제로 쓸 키. 서버 키를 골랐다면 env 값. 캐시 확인만 한 호출은 `null`. */
     keyUsedForLlm: string | null;
+    /** core `runAnalysis`가 받은 이 회사의 실적 발표일. */
+    earningsDates: readonly string[] | undefined;
 }
 const serverKeys = vi.hoisted(() => ({ getServerPrimaryKey: vi.fn() }));
 const core = vi.hoisted(() => ({
@@ -69,6 +74,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
                 keyPolicy?: string;
                 providerFallback?: unknown;
                 signal?: AbortSignal;
+                earningsDates?: readonly string[];
             }
         ) => {
             if (options.signal !== undefined) core.signals.push(options.signal);
@@ -88,6 +94,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
                 keyPolicy: options.keyPolicy,
                 userApiKey: options.userApiKey,
                 keyUsedForLlm: null,
+                earningsDates: options.earningsDates,
             };
             core.calls.push(record);
             const keyMissing =
@@ -199,6 +206,9 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     DrizzleAnalysisHistoryRepository: vi.fn(function () {
         return { findRecentForPrompt: m.findRecentForPrompt };
     }),
+}));
+vi.mock('@/entities/earnings-report/api', () => ({
+    listEarningsDates: m.listEarningsDates,
 }));
 vi.mock('@/entities/news-article/marketEventsRepository', () => ({
     findMarketEventsForPrompt: m.findMarketEventsForPrompt,
@@ -615,6 +625,21 @@ describe('캐시 미스', () => {
             const generation = core.calls.find(call => !call.cacheOnly);
             expect(generation?.keyUsedForLlm).toBe(USER_ANTHROPIC_KEY);
             expect(generation?.userApiKey).toBe(USER_ANTHROPIC_KEY);
+        });
+
+        it('이 회사의 실적 발표일을 조회해 core 기술 분석에 넘긴다', async () => {
+            m.listEarningsDates.mockResolvedValue(['2026-07-30']);
+
+            await run({ model: BYOK_MODEL });
+
+            expect(m.listEarningsDates).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.anything()
+            );
+            expect(
+                core.calls.every(c => c.earningsDates?.[0] === '2026-07-30')
+            ).toBe(true);
+            expect(core.calls.length).toBeGreaterThan(0);
         });
 
         it('서버 키 env가 전부 있어도 어떤 core 호출도 그 값을 쓰지 않는다', async () => {

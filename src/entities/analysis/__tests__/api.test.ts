@@ -124,6 +124,8 @@ vi.mock(
 
 vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsReport: vi.fn(),
+    listEarningsDates: vi.fn(async () => undefined),
+    resolveEarningsDates: vi.fn(async () => undefined),
 }));
 
 // 매크로 캘린더 헬퍼 — 호출처가 결과를 그대로 `macroCalendar`로 넘기는지 확인한다.
@@ -199,7 +201,11 @@ import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesPro
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import {
+    getNextEarningsReport,
+    listEarningsDates,
+    resolveEarningsDates,
+} from '@/entities/earnings-report/api';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import {
@@ -311,6 +317,22 @@ describe('prewarmTechnical', () => {
                 onPromptAssembled: expect.any(Function),
             }
         );
+    });
+
+    it('passes the company earnings dates to runAnalysis as earningsDates', async () => {
+        const dates = ['2026-07-30', '2026-10-29'];
+        vi.mocked(resolveEarningsDates).mockResolvedValueOnce(dates);
+
+        await prewarmTechnical('AAPL', 'Apple Inc.', undefined, false);
+
+        expect(resolveEarningsDates).toHaveBeenCalledWith(
+            'AAPL',
+            expect.anything()
+        );
+        const options = mockRunAnalysis.mock.calls.at(-1)![5] as {
+            earningsDates?: readonly string[];
+        };
+        expect(options.earningsDates).toBe(dates);
     });
 
     it('threads force=true as the 4th positional arg', async () => {
@@ -749,6 +771,7 @@ describe('prewarmOverall', () => {
             undefined as unknown as FinancialsScorecard
         );
         mockGetNextEarningsReport.mockResolvedValue(null);
+        vi.mocked(listEarningsDates).mockResolvedValue(undefined);
 
         mockListBySymbol = vi.fn().mockResolvedValue([]);
         MockNewsRepository.mockImplementation(function () {
@@ -758,6 +781,34 @@ describe('prewarmOverall', () => {
         // persistence. The dedicated describe block below overrides these.
         mockFindRecentForPrompt.mockResolvedValue([]);
         mockSaveAnalysisHistory.mockResolvedValue(undefined);
+    });
+
+    it('이 회사의 실적 발표일을 갱신 뒤 DB에서 읽어 technical 축 earningsDates로 넘긴다', async () => {
+        const dates = ['2026-07-30', '2026-10-29'];
+        vi.mocked(listEarningsDates).mockResolvedValue(dates);
+
+        await prewarmOverall('AAPL', 'Apple', false);
+
+        expect(mockGetNextEarningsReport).toHaveBeenCalledTimes(1);
+        expect(listEarningsDates).toHaveBeenCalledWith(
+            'AAPL',
+            expect.anything()
+        );
+        const call = mockRunOverallAnalysis.mock.calls.find(
+            c => c[0].symbol === 'AAPL'
+        );
+        expect(call![0].technical?.earningsDates).toBe(dates);
+    });
+
+    it('실적 발표일을 못 구하면(undefined) 종합 분석은 그대로 진행되고 technical 축 earningsDates는 비어 있다', async () => {
+        vi.mocked(listEarningsDates).mockResolvedValue(undefined);
+
+        await prewarmOverall('AAPL', 'Apple', false);
+
+        expect(mockRunOverallAnalysis).toHaveBeenCalledTimes(1);
+        expect(
+            mockRunOverallAnalysis.mock.calls[0]![0].technical?.earningsDates
+        ).toBeUndefined();
     });
 
     it.each([

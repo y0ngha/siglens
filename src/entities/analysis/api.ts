@@ -36,7 +36,11 @@ import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/serv
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import {
+    getNextEarningsReport,
+    listEarningsDates,
+    resolveEarningsDates,
+} from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { fetchQuotePriceForAnalysis } from './lib/fetchQuotePriceForAnalysis';
 // Cross-entity: overall이 options-chain 스냅샷을 조합한다. submitOverallAnalysisAction과
@@ -171,7 +175,7 @@ export async function prewarmTechnical(
     // 서로 다른 이벤트 집합을 core에 넘기고, core가 그것을 캐시 키에 접으므로
     // pre-warm이 채운 캐시를 방문자가 맞히지 못한다.
     const prewarmDb = getDatabaseClient().db;
-    const [priorAnalyses, marketEvents] = await Promise.all([
+    const [priorAnalyses, marketEvents, earningsDates] = await Promise.all([
         new DrizzleAnalysisHistoryRepository(prewarmDb).findRecentForPrompt({
             symbol,
             timeframe,
@@ -183,6 +187,9 @@ export async function prewarmTechnical(
             symbol,
             ...marketEventsLookback(timeframe, session),
         }),
+        // 이 회사의 실적 발표일 — 뉴스 이벤트가 회사 본인 실적인지 가리는 데 쓴다.
+        // 실패하면 `undefined`(캘린더 모름, 안전 쪽)이고 캐시 키에는 접히지 않는다.
+        resolveEarningsDates(symbol, prewarmDb),
     ]);
 
     // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
@@ -214,6 +221,7 @@ export async function prewarmTechnical(
             positionBucket: undefined,
             priorAnalyses,
             marketEvents,
+            earningsDates,
             onPromptAssembled: record => {
                 capturedPrompt = record;
             },
@@ -364,18 +372,28 @@ export async function prewarmOverall(
         getOverallInvestorFlowsScorecard(symbol, profile)
     );
 
+    // 실적 발표일은 같은 갱신(`getNextEarningsReport`) 뒤에 DB에서 읽는다 — 별도 갱신을
+    // 또 돌리면 FMP 호출이 겹친다. 갱신이 실패해도 분석은 계속(`undefined` = 캘린더 모름).
+    const nextEarningsPromise = getNextEarningsReport(symbol, db);
+    const earningsDatesPromise = nextEarningsPromise.then(
+        () => listEarningsDates(symbol, db),
+        () => undefined
+    );
+
     const [
         rows,
         next,
         optionsSnapshot,
         financialsScorecard,
         investorFlowsScorecard,
+        earningsDates,
     ] = await Promise.all([
         newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-        getNextEarningsReport(symbol, db),
+        nextEarningsPromise,
         optionsSnapshotPromise,
         financialsScorecardPromise,
         investorFlowsScorecardPromise,
+        earningsDatesPromise,
     ]);
 
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
@@ -465,6 +483,7 @@ export async function prewarmOverall(
             tierContext: { userId: null, tier: 'free' },
             priorAnalyses: technicalPriorAnalyses,
             marketEvents,
+            earningsDates,
             // provider와 같은 세션 — technical 축 캐시 만료를 해당 시장의 다음 마감에 맞춘다.
             session,
         },

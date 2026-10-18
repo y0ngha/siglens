@@ -46,6 +46,8 @@ vi.mock('@/entities/news-article/api', async () => {
 
 vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsReport: vi.fn(),
+    listEarningsDates: vi.fn(async () => undefined),
+    resolveEarningsDates: vi.fn(async () => undefined),
 }));
 
 // 매크로 캘린더 헬퍼 — 호출처가 결과를 그대로 `macroCalendar`로 넘기는지 확인한다.

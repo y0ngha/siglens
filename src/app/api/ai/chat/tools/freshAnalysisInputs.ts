@@ -5,6 +5,7 @@ import type {
     MarketSessionSpec,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import { listEarningsDates } from '@/entities/earnings-report/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
@@ -53,6 +54,8 @@ export interface TechnicalAnalysisInputs {
     readonly session: MarketSessionSpec;
     readonly priorAnalyses: readonly PriorAnalysis[];
     readonly marketEvents: readonly MarketEvent[];
+    /** 이 회사의 실적 발표일. `undefined` = 캘린더 모름(안전 쪽) — 조회 실패 포함. */
+    readonly earningsDates: readonly string[] | undefined;
     readonly positionBucket: Awaited<
         ReturnType<typeof resolveHoldingPositionBucket>
     >;
@@ -80,27 +83,38 @@ export async function loadTechnicalAnalysisInputs(input: {
     const { symbol, timeframe, profile } = input;
     const historyDb = getDatabaseClient().db;
     const session = sessionSpecFor(profile);
-    const [priorAnalyses, marketEvents, positionBucket] = await Promise.all([
-        new DrizzleAnalysisHistoryRepository(historyDb).findRecentForPrompt({
-            symbol,
-            timeframe,
-            tab: 'technical',
-            session,
-        }),
-        findMarketEventsForPrompt(historyDb, {
-            symbol,
-            ...marketEventsLookback(timeframe, session),
-        }),
-        freshRunPositionBucket(
-            input.userId,
-            input.tier,
-            symbol,
-            input.fmpSymbol,
-            profile,
-            input.positionBucketLogTag
-        ),
-    ]);
-    return { session, priorAnalyses, marketEvents, positionBucket };
+    const [priorAnalyses, marketEvents, earningsDates, positionBucket] =
+        await Promise.all([
+            new DrizzleAnalysisHistoryRepository(historyDb).findRecentForPrompt(
+                {
+                    symbol,
+                    timeframe,
+                    tab: 'technical',
+                    session,
+                }
+            ),
+            findMarketEventsForPrompt(historyDb, {
+                symbol,
+                ...marketEventsLookback(timeframe, session),
+            }),
+            // 사용자 대면 경로라 DB만 읽는다(FMP 갱신 없음) — 실적 테이블은 종합·프리웜 경로가 갱신한다.
+            listEarningsDates(symbol, historyDb),
+            freshRunPositionBucket(
+                input.userId,
+                input.tier,
+                symbol,
+                input.fmpSymbol,
+                profile,
+                input.positionBucketLogTag
+            ),
+        ]);
+    return {
+        session,
+        priorAnalyses,
+        marketEvents,
+        earningsDates,
+        positionBucket,
+    };
 }
 
 export interface OverallHistoryInputs {

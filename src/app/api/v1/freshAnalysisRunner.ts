@@ -123,6 +123,7 @@ export async function prepareRunner(input: RunnerInput): Promise<Runner> {
                     // 이를 끈다). 사용자가 고른 모델이므로 실패는 그대로 드러나야 한다.
                     priorAnalyses: inputs.priorAnalyses,
                     marketEvents: inputs.marketEvents,
+                    earningsDates: inputs.earningsDates,
                     positionBucket: inputs.positionBucket,
                     ...resolveCallerKeyOptions(caller, cacheOnly),
                 };

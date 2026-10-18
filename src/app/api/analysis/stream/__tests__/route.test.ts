@@ -128,6 +128,7 @@ const {
     mockGetQuote,
     mockFindRecentForPrompt,
     mockFindMarketEventsForPrompt,
+    mockListEarningsDates,
     mockSaveAnalysisHistory,
     mockAfter,
 } = vi.hoisted(() => ({
@@ -137,6 +138,7 @@ const {
     // core로의 전달을 단언하기 위해 호이스팅한다.
     mockFindRecentForPrompt: vi.fn(),
     mockFindMarketEventsForPrompt: vi.fn(),
+    mockListEarningsDates: vi.fn(),
     // Audit finding #3 — write-path coverage. `saveAnalysisHistory` and the
     // `after()` callback it runs inside are both hoisted so individual
     // tests can capture the callback `after()` was scheduled with and
@@ -174,6 +176,10 @@ vi.mock('@/entities/portfolio/api', () => ({
     DrizzlePortfolioRepository: vi.fn().mockImplementation(function () {
         return { findByUserAndSymbol: mockFindByUserAndSymbol };
     }),
+}));
+
+vi.mock('@/entities/earnings-report/api', () => ({
+    listEarningsDates: mockListEarningsDates,
 }));
 
 vi.mock('@/entities/news-article/marketEventsRepository', () => ({
@@ -418,6 +424,8 @@ describe('POST /api/analysis/stream', () => {
         // 기본값: 홀딩 없음, 시세 없음 — 기존 테스트는 tier='free'라 이 경로를 거치지 않는다.
         mockFindByUserAndSymbol.mockResolvedValue(null);
         mockGetQuote.mockResolvedValue(null);
+        // 실적 발표일 — 기본은 "캘린더 모름". 전용 테스트가 오버라이드한다.
+        mockListEarningsDates.mockResolvedValue(undefined);
         // Task S3 (prior-analysis-context) — 기본값은 빈 히스토리. 전용 describe에서
         // 개별 테스트가 오버라이드한다.
         mockFindRecentForPrompt.mockResolvedValue([]);
@@ -1976,6 +1984,36 @@ describe('POST /api/analysis/stream', () => {
                 unknown
             >;
             expect(opts?.marketEvents).toBe(events);
+        });
+
+        it('technical → 이 회사의 실적 발표일을 조회해 runAnalysis.earningsDates로 전달한다', async () => {
+            const dates = ['2026-07-30', '2026-10-29'];
+            mockListEarningsDates.mockResolvedValue(dates);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockListEarningsDates).toHaveBeenCalledWith(
+                'AAPL',
+                expect.anything()
+            );
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.earningsDates).toBe(dates);
+        });
+
+        it('technical, 실적 발표일을 못 구하면(undefined) 분석은 그대로 진행되고 earningsDates는 undefined다', async () => {
+            mockListEarningsDates.mockResolvedValue(undefined);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(vi.mocked(runAnalysis)).toHaveBeenCalled();
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.earningsDates).toBeUndefined();
         });
 
         it('technical, 봇이어도 뉴스 이벤트를 조회하고 marketEvents로 전달한다', async () => {

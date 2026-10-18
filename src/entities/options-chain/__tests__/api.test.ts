@@ -139,6 +139,31 @@ describe('prewarmOptions', () => {
         );
     });
 
+    it('uses the slot mapping stored at capture time instead of remapping against now', async () => {
+        // 수집 시점에 확정한 첫 슬롯은 먼 만기다. 현재 시각(NOW)으로 다시 매핑하면 가까운
+        // 2026-07-31이 첫 슬롯이 되므로, 저장 값을 쓰는지 가려낸다.
+        const stored = '2027-01-29';
+        mockFetchOptionsSnapshot.mockResolvedValueOnce({
+            ...makeSnapshot([makeChain('2026-07-31'), makeChain(stored)]),
+            slots: [
+                {
+                    slot: {
+                        key: '6M',
+                        label: '6개월',
+                        targetDays: 180,
+                    },
+                    expirationDate: stored,
+                },
+            ],
+        });
+
+        await prewarmOptions('AAPL', 'Apple Inc.', false);
+
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ expirationDate: stored })
+        );
+    });
+
     it("falls back to 'all' when no expiration maps to a slot", async () => {
         // A snapshot whose only expiration is in the past never maps to any slot
         // (mapExpirationsToSlots filters out negative day-deltas).

@@ -186,7 +186,11 @@ function FearGreedPageBody({
                 <section className="flex flex-col gap-3">
                     <h2 className="sr-only">{t('FearGreedPage.0506ae')}</h2>
                     {snapshot.groups.map(group => (
-                        <FearGreedGroupBar key={group.name} group={group} />
+                        <FearGreedGroupBar
+                            key={group.name}
+                            group={group}
+                            ma200DistancePct={snapshot.ma200DistancePct}
+                        />
                     ))}
                 </section>
             </div>

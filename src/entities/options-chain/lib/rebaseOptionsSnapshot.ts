@@ -1,11 +1,11 @@
 import {
     REGULAR_CLOSE_MINUTE,
     usMarketCloseMinute,
-    type OptionsSnapshot,
 } from '@y0ngha/siglens-core';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import { MINUTES_PER_HOUR } from '@/shared/config/time';
+import type { SlottedOptionsSnapshot } from './optionsSlots';
 import { ET_TIME_ZONE } from './etTimeZone';
 import { daysToExpirationFrom } from './yahooNormalize';
 
@@ -40,12 +40,13 @@ function isAtOrAfterCloseEt(now: Date): boolean {
  * - `daysToExpiration`을 Yahoo 정규화와 같은 계산(`daysToExpirationFrom`)으로 다시 센다.
  *
  * `capturedAt`은 **그대로 둔다** — 화면이 "언제 수집한 값인가"를 정직하게 밝히는 근거다.
+ * `slots`(수집 시점 슬롯 매핑)는 그대로 이어진다 — 사라진 만기의 chip은 렌더(`resolveSnapshotSlots`)가 거른다.
  * 남은 만기가 하나도 없으면 `null`(되살릴 데이터가 없다).
  */
 export function rebaseOptionsSnapshot(
-    snapshot: OptionsSnapshot,
+    snapshot: SlottedOptionsSnapshot,
     now: Date
-): OptionsSnapshot | null {
+): SlottedOptionsSnapshot | null {
     const todayEt = zonedDate(now, ET_TIME_ZONE);
     const expiryDayIsOver = isAtOrAfterCloseEt(now);
     const chains = snapshot.chains

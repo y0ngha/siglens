@@ -21,7 +21,7 @@ import {
 } from './optionsCacheLife';
 import { rebaseOptionsSnapshot } from './rebaseOptionsSnapshot';
 import { secondsUntilNextRegularOpen } from './secondsUntilNextRegularOpen';
-import type { OptionsSnapshot } from '@y0ngha/siglens-core';
+import type { SlottedOptionsSnapshot } from './optionsSlots';
 
 const adapter = getOptionsProvider();
 
@@ -113,7 +113,7 @@ function buildLastGoodCapturedAtKey(symbol: string): string {
 async function writeLastGoodSnapshot(
     redis: NonNullable<ReturnType<typeof getRedisClient>>,
     symbol: string,
-    snapshot: OptionsSnapshot
+    snapshot: SlottedOptionsSnapshot
 ): Promise<boolean> {
     const key = buildLastGoodSnapshotKey(symbol);
     try {
@@ -175,7 +175,7 @@ type LastGoodUnavailableReason =
     | 'read_error';
 
 type LastGoodRead =
-    | { snapshot: OptionsSnapshot }
+    | { snapshot: SlottedOptionsSnapshot }
     | { reason: LastGoodUnavailableReason };
 
 /**
@@ -193,7 +193,7 @@ async function readLastGoodSnapshot(
         // `as` 근거: 이 키에는 `writeLastGoodSnapshot`만 쓰며, 그 값은 언제나 `OptionsSnapshot`이다.
         const stored = (await decodeCacheValue(
             await redis.get<unknown>(key)
-        )) as OptionsSnapshot | null;
+        )) as SlottedOptionsSnapshot | null;
         if (stored === null) return { reason: 'absent' };
         const rebased = rebaseOptionsSnapshot(stored, now);
         if (rebased === null) return { reason: 'no_expiry_after_rebase' };
@@ -208,7 +208,7 @@ async function readLastGoodSnapshot(
 }
 
 interface ResolvedSnapshot {
-    snapshot: OptionsSnapshot;
+    snapshot: SlottedOptionsSnapshot;
     /** last-good으로 대체했는지 — 일반 캐시 키의 TTL 상한을 정하는 근거. */
     substituted: boolean;
 }
@@ -224,7 +224,7 @@ interface ResolvedSnapshot {
 async function resolveWithLastGood(
     redis: NonNullable<ReturnType<typeof getRedisClient>>,
     symbol: string,
-    fresh: OptionsSnapshot,
+    fresh: SlottedOptionsSnapshot,
     now: Date
 ): Promise<ResolvedSnapshot> {
     if (!isOpenInterestSnapshotStale(fresh)) {
@@ -335,7 +335,7 @@ export const hasOptionsMarket = cache(
  * cache가 안전하지만, snapshot은 전체 chain을 다루므로 더 보수적으로 동작한다.
  */
 export const fetchOptionsSnapshot = cache(
-    async (symbol: string): Promise<OptionsSnapshot | null> => {
+    async (symbol: string): Promise<SlottedOptionsSnapshot | null> => {
         const resolved = await getOrSetCache<ResolvedSnapshot | null>(
             buildSnapshotKey(symbol),
             value => snapshotCacheTtlSeconds(value, new Date()),
@@ -438,7 +438,7 @@ export async function refreshLastGoodSnapshot(
     const redis = getRedisClient();
     if (redis === null) return 'none';
 
-    let fresh: OptionsSnapshot | null;
+    let fresh: SlottedOptionsSnapshot | null;
     try {
         fresh = await adapter.fetchSnapshot(symbol);
     } catch (error) {

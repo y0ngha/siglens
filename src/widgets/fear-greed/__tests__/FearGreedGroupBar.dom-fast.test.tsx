@@ -101,6 +101,31 @@ describe('FearGreedGroupBar', () => {
         });
     });
 
+    describe('ma200DistancePct', () => {
+        const trendGroup: FearGreedGroup = {
+            name: 'Trend',
+            score: 70,
+            factors: [
+                { key: 'ma200_distance', rawValue: 0.055, percentile: 75 },
+            ],
+        };
+
+        it('스냅샷의 표시용 200일선 이격이 있으면 팩터 raw 대신 그 값을 보여 준다', () => {
+            const { container } = render(
+                <FearGreedGroupBar group={trendGroup} ma200DistancePct={5.57} />
+            );
+            expect(container.textContent).toContain('5.57%');
+            expect(container.textContent).not.toContain('5.50%');
+        });
+
+        it('없으면 팩터 raw 값을 그대로 보여 준다', () => {
+            const { container } = render(
+                <FearGreedGroupBar group={trendGroup} />
+            );
+            expect(container.textContent).toContain('5.50%');
+        });
+    });
+
     describe('score-color fill', () => {
         it('uses bg-ui-danger for fearful score (15)', () => {
             const fearful = { ...flowGroup, score: 15 };

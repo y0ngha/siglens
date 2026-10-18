@@ -28,7 +28,10 @@ import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/serv
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import {
+    getNextEarningsReport,
+    listEarningsDates,
+} from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveReasoning } from '@/shared/lib/byokGate';
 // Cross-entity(options-chain): overall은 옵션 스냅샷까지 조합하는 multi-entity
@@ -209,6 +212,14 @@ export async function executeOverallAnalysis({
         getOverallInvestorFlowsScorecard(symbol, profile)
     );
 
+    // 실적 발표일은 같은 갱신(`getNextEarningsReport`) 뒤에 DB에서 읽는다 — 별도 갱신을
+    // 또 돌리면 FMP 호출이 겹친다. 갱신이 실패해도 분석은 계속(`undefined` = 캘린더 모름).
+    const nextEarningsPromise = getNextEarningsReport(symbol, db);
+    const earningsDatesPromise = nextEarningsPromise.then(
+        () => listEarningsDates(symbol, db),
+        () => undefined
+    );
+
     const [
         rows,
         next,
@@ -216,13 +227,15 @@ export async function executeOverallAnalysis({
         financialsScorecard,
         investorFlowsScorecard,
         macroCalendar,
+        earningsDates,
     ] = await Promise.all([
         newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-        getNextEarningsReport(symbol, db),
+        nextEarningsPromise,
         optionsSnapshotPromise,
         financialsScorecardPromise,
         investorFlowsScorecardPromise,
         loadNewsMacroCalendar(),
+        earningsDatesPromise,
     ]);
 
     // Overall news axis는 core 안에서 동일한 `runNewsAnalysis`를 호출한다
@@ -291,6 +304,9 @@ export async function executeOverallAnalysis({
             ...(options.marketEvents !== undefined
                 ? { marketEvents: options.marketEvents }
                 : {}),
+            // 이 회사의 실적 발표일 — 캐시 키에 접히지 않고 프롬프트의 이벤트 라벨만 바꾼다.
+            // `undefined`는 "캘린더 모름"(안전 쪽)이라 생략과 같다.
+            ...(earningsDates !== undefined ? { earningsDates } : {}),
             ...(positionBucket !== undefined ? { positionBucket } : {}),
         },
         tier: caller.tier,

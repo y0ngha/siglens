@@ -1,15 +1,12 @@
 import 'server-only';
 import {
     runOptionsAnalysis,
-    mapExpirationsToSlots,
     DEEPSEEK_V4_1_FLASH_MODEL,
     type RunOptionsAnalysisResult,
-    type SlotMapping,
 } from '@y0ngha/siglens-core';
+import { resolveSnapshotSlots } from './lib/optionsSlots';
 import { fetchOptionsSnapshot } from './lib/optionsDataCache';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
-
-const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
 
 /**
  * SEO pre-warm 전용 options submit (spec 2026-07-24 §4 seam, Task 7).
@@ -42,9 +39,10 @@ export async function prewarmOptions(
     // 옵션 데이터가 없으면(NoChains) 스냅샷 생성 대상이 아니다 — submit 자체를 스킵한다.
     if (snapshot === null) return null;
 
-    const expirations = snapshot.chains.map(c => c.expirationDate);
-    const slots = mapExpirationsToSlots(expirations, new Date());
-    const expirationDate = slots.find(isSlotMapping)?.expirationDate ?? 'all';
+    // 수집 시점에 확정한 슬롯 매핑을 쓴다(`SlottedOptionsSnapshot`) — 페이지가 그리는 첫 chip과
+    // 같은 만기여야 방문자의 초기 마운트가 만드는 캐시 키와 맞는다.
+    const expirationDate =
+        resolveSnapshotSlots(snapshot, new Date())[0]?.expirationDate ?? 'all';
 
     return runOptionsAnalysis({
         symbol,
