@@ -86,6 +86,9 @@ export async function resolveKrxTickTable(
  * 한국 종목이 아니거나 E2E면 엔트리를 만들지 않고 바로 'share'다(미국 종목마다 데이터 캐시
  * 항목이 생기지 않게). revalidate는 Redis TTL과 같은 30일 — 차트 라우트의 선언 revalidate(6h)보다
  * 길어 라우트 TTL을 줄이지 않는다.
+ *
+ * `unstable_cache`는 콜백 소스(`fn.toString()`)도 키에 섞는다. 이 키는 콜백이 이 한 곳이라는
+ * 전제로 성립하므로, 다른 모양의 콜백으로 같은 키를 쓰는 호출부를 추가하지 않는다(엔트리가 갈라진다).
  */
 function resolveKrxTickTableStatic(symbol: string): Promise<KrxTickTable> {
     if (!isKrEquitySymbol(symbol) || isE2E()) return Promise.resolve('share');
