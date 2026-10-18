@@ -3380,6 +3380,7 @@
                 "seconds": "{n}초",
                 "toolAnalysis": "시그렌즈 분석",
                 "toolBars": "차트·지표",
+                "toolBarsFearGreed": "차트·지표·공포탐욕",
                 "toolCongressTrades": "의회 거래",
                 "toolEconomy": "경제 지표",
                 "toolFreshAnalysis": "새 분석 생성",

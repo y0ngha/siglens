@@ -5395,6 +5395,7 @@
                 "seconds": "{n}s",
                 "toolAnalysis": "SIGLENS analysis",
                 "toolBars": "Chart & indicators",
+                "toolBarsFearGreed": "Chart, indicators & fear-greed",
                 "toolCongressTrades": "Congressional Trades",
                 "toolEconomy": "Economic data",
                 "toolFundamentals": "Company fundamentals",

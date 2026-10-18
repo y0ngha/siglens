@@ -44,6 +44,89 @@ describe('ToolActivity', () => {
         expect(screen.queryByText('{"price":1}')).toBeNull();
     });
 
+    it('labels get_bars_indicators with fear-greed only on the 1Day timeframe', () => {
+        const bars = (id: string, args: Record<string, unknown>) => ({
+            id,
+            name: 'get_bars_indicators',
+            args,
+            status: 'ok' as const,
+            ms: 1000,
+        });
+        const daily = wrap(
+            <ToolActivity
+                tools={[bars('d', { symbol: 'AAPL', timeframe: '1Day' })]}
+            />
+        );
+        expect(screen.getByRole('button')).toHaveTextContent(
+            '차트·지표·공포탐욕 확인'
+        );
+        daily.unmount();
+        for (const args of [
+            { symbol: 'AAPL', timeframe: '4Hour' },
+            { symbol: 'AAPL' },
+        ]) {
+            const view = wrap(<ToolActivity tools={[bars('x', args)]} />);
+            const text = screen.getByRole('button').textContent ?? '';
+            expect(text).toContain('차트·지표 확인');
+            expect(text).not.toContain('공포탐욕');
+            view.unmount();
+        }
+    });
+
+    it('folds daily and intraday chart lookups into the fear-greed entry in the summary but keeps one row per call', () => {
+        wrap(
+            <ToolActivity
+                tools={[
+                    {
+                        id: '1',
+                        name: 'get_bars_indicators',
+                        args: { symbol: 'AAPL', timeframe: '1Day' },
+                        status: 'ok',
+                        ms: 1000,
+                    },
+                    {
+                        id: '2',
+                        name: 'get_bars_indicators',
+                        args: { symbol: 'AAPL', timeframe: '1Hour' },
+                        status: 'ok',
+                        ms: 1000,
+                    },
+                    {
+                        id: '3',
+                        name: 'get_bars_indicators',
+                        args: { symbol: 'MSFT', timeframe: '1Day' },
+                        status: 'ok',
+                        ms: 1000,
+                    },
+                ]}
+            />
+        );
+        const summary = screen.getByRole('button');
+        expect(summary).toHaveTextContent('차트·지표·공포탐욕 확인');
+        expect(summary.textContent).not.toContain('차트·지표 확인');
+        fireEvent.click(summary);
+        const list = screen.getByRole('list', { name: '사용한 도구' });
+        expect(list.querySelectorAll('li')).toHaveLength(3);
+    });
+
+    it('shows the fear-greed label while a daily chart lookup is running', () => {
+        wrap(
+            <ToolActivity
+                tools={[
+                    {
+                        id: 'r',
+                        name: 'get_bars_indicators',
+                        args: { symbol: 'AAPL', timeframe: '1Day' },
+                        status: 'running',
+                    },
+                ]}
+            />
+        );
+        expect(screen.getByRole('button')).toHaveTextContent(
+            '차트·지표·공포탐욕 AAPL'
+        );
+    });
+
     it('shows the running lookup, its subject and the estimate while a call is in flight', () => {
         wrap(
             <ToolActivity

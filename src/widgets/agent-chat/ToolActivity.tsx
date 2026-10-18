@@ -97,8 +97,12 @@ export function ToolActivity({
         get_investor_flows: t('ToolActivity.toolInvestorFlows'),
         get_guide: t('ToolActivity.toolGuide'),
     };
-    const labelOf = (name: string): string =>
-        labels[name] ?? t('ToolActivity.toolOther');
+    // Daily bars also carry the symbol's own fear & greed reading, so the
+    // step says so; other timeframes get the plain chart label.
+    const labelOf = (item: ToolActivityItem): string =>
+        item.name === 'get_bars_indicators' && item.args.timeframe === '1Day'
+            ? t('ToolActivity.toolBarsFearGreed')
+            : (labels[item.name] ?? t('ToolActivity.toolOther'));
     const seconds = (ms: number): string =>
         t('ToolActivity.seconds', { n: (ms / 1000).toFixed(1) });
 
@@ -108,11 +112,17 @@ export function ToolActivity({
     );
     const loginNeeded = tools.some(needsLogin);
     const totalMs = tools.reduce((sum, item) => sum + (item.ms ?? 0), 0);
-    const distinct = [...new Set(tools.map(item => labelOf(item.name)))];
+    const fearGreedLabel = t('ToolActivity.toolBarsFearGreed');
+    const barsLabel = t('ToolActivity.toolBars');
+    const allLabels = new Set(tools.map(item => labelOf(item)));
+    // The fear-greed chart label already says "chart & indicators", so an
+    // intraday chart chip beside it adds nothing to the folded summary.
+    if (allLabels.has(fearGreedLabel)) allLabels.delete(barsLabel);
+    const distinct = [...allLabels];
     const summary = running
         ? [
               t('ToolActivity.checking', {
-                  label: [labelOf(running.name), subject(running)]
+                  label: [labelOf(running), subject(running)]
                       .filter(Boolean)
                       .join(' '),
               }),
@@ -176,7 +186,7 @@ export function ToolActivity({
                             >
                                 <Glyph className="size-3.5 shrink-0 text-secondary-400" />
                                 <span className="shrink-0 font-medium text-secondary-200">
-                                    {labelOf(item.name)}
+                                    {labelOf(item)}
                                 </span>
                                 <span className="min-w-0 truncate text-secondary-400">
                                     {subject(item)}

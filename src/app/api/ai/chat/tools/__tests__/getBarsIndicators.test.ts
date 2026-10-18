@@ -57,6 +57,19 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         pullbackEventCaveat: caveatSpy,
     };
 });
+vi.mock('next-intl/server', async () => {
+    const { catalogTranslator } =
+        await import('@/shared/test-utils/catalogTranslator');
+    return {
+        getTranslations: async ({
+            namespace,
+            locale,
+        }: {
+            namespace: string;
+            locale: string;
+        }) => catalogTranslator(namespace, locale),
+    };
+});
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: { tag: 'db' } }),
 }));
@@ -97,9 +110,15 @@ import {
     scoreConfluence,
 } from '@y0ngha/siglens-core';
 import {
+    buildFearGreedHistoryView,
     getBarsIndicatorsTool,
     MA50_PERIOD,
 } from '@/app/api/ai/chat/tools/getBarsIndicators';
+import {
+    buildFearGreedPeriodComparisonLine,
+    buildFearGreedYearRangeLine,
+} from '@/views/symbol/fearGreed/utils/fearGreedFacts';
+import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
 import { pctVs } from '@/app/api/ai/chat/tools/percent';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
@@ -1631,5 +1650,162 @@ describe('getBarsIndicatorsTool', () => {
         expect(raw.derived.lastClose).not.toBeNull();
         expect(raw.higherTimeframe).not.toBeNull();
         expect(raw.higherTimeframe!.timeframe).toBe('1Day');
+    });
+
+    describe('fearGreed groups and history', () => {
+        const longBars = Array.from({ length: 400 }, (_, i) => {
+            const close = 100 + Math.sin(i / 7) * 12 + i * 0.05;
+            return {
+                time: 1_600_000_000 + i * 86_400,
+                open: close - 0.5,
+                high: close + 1,
+                low: close - 1,
+                close,
+                volume: 100 + ((i * 37) % 50),
+            };
+        });
+        type View = {
+            fearGreed: {
+                groups: { name: string; label: string; score: number }[];
+                history: Record<string, { date: string } | null>;
+            };
+        };
+        const run = async (locale: 'ko' | 'en' | 'ja' | 'zh') => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({
+                bars: longBars,
+                indicators: {
+                    ...indicators,
+                    buySellVolume: longBars.map((_, i) => ({
+                        buyVolume: 60 + ((i * 13) % 20),
+                        sellVolume: 40 + ((i * 7) % 20),
+                    })),
+                },
+            });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                { ...ctx, locale },
+                rt
+            )) as View;
+        };
+
+        it.each([
+            ['ko', '수급', '추세'],
+            ['en', 'Flow', 'Trend'],
+            ['ja', '需給', 'トレンド'],
+            ['zh', '资金流', '趋势'],
+        ] as const)(
+            '%s 로케일은 화면과 같은 그룹명을 붙이고 점수는 정수다',
+            async (locale, flow, trend) => {
+                const r = await run(locale);
+                const byName = Object.fromEntries(
+                    r.fearGreed.groups.map(g => [g.name, g])
+                );
+                expect(byName.Flow?.label).toBe(flow);
+                expect(byName.Trend?.label).toBe(trend);
+                for (const g of r.fearGreed.groups)
+                    expect(Number.isInteger(g.score)).toBe(true);
+            }
+        );
+
+        it('history는 일봉 날짜(YYYY-MM-DD)로 나온다', async () => {
+            const r = await run('ko');
+            const dates = Object.values(r.fearGreed.history).flatMap(p =>
+                p ? [p.date] : []
+            );
+            expect(dates.length).toBeGreaterThan(0);
+            for (const d of dates) expect(d).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        });
+    });
+
+    describe('buildFearGreedHistoryView', () => {
+        const series = (n: number, withWarmup = 0) => [
+            ...Array.from({ length: withWarmup }, (_, i) => ({
+                date: `w${i}`,
+                score: null,
+                label: null,
+            })),
+            ...Array.from({ length: n }, (_, i) => ({
+                date: `d${i}`,
+                score: i + 0.4,
+                label: 'NEUTRAL' as const,
+            })),
+        ];
+
+        it('거래일 오프셋(5/21/63/252)으로 점수가 있는 점만 센다', () => {
+            const v = buildFearGreedHistoryView(series(300, 10));
+            expect(v.weekAgo).toEqual({
+                date: 'd294',
+                score: 294,
+                label: 'NEUTRAL',
+            });
+            expect(v.monthAgo?.date).toBe('d278');
+            expect(v.threeMonthsAgo?.date).toBe('d236');
+            expect(v.yearAgo?.date).toBe('d47');
+        });
+
+        it('연간 최저/최고는 페이지처럼 최근 252점 안에서 고른다', () => {
+            const v = buildFearGreedHistoryView(series(300));
+            expect(v.yearMin).toEqual({ date: 'd48', score: 48 });
+            expect(v.yearMax).toEqual({ date: 'd299', score: 299 });
+        });
+
+        it('시계열이 짧으면 닿지 않는 지점은 null', () => {
+            const v = buildFearGreedHistoryView(series(30));
+            expect(v.weekAgo).not.toBeNull();
+            expect(v.monthAgo).not.toBeNull();
+            expect(v.threeMonthsAgo).toBeNull();
+            expect(v.yearAgo).toBeNull();
+            expect(v.yearMin).not.toBeNull();
+        });
+
+        it('동률은 먼저 나온 지점을 유지하고 비교는 원점수로 한다(페이지와 동일)', () => {
+            const mk = (scores: number[]) =>
+                scores.map((score, i) => ({
+                    date: `t${i}`,
+                    score,
+                    label: 'NEUTRAL' as const,
+                }));
+            // raw 10.4 < 10.6 though both round to 10/11 apart; 20 ties twice.
+            const v = buildFearGreedHistoryView(mk([20, 10.6, 10.4, 20, 15]));
+            expect(v.yearMin).toEqual({ date: 't2', score: 10 });
+            expect(v.yearMax).toEqual({ date: 't0', score: 20 });
+        });
+
+        it('페이지의 연간 범위·기간 비교 문장과 같은 지점을 가리킨다', () => {
+            const history = series(300, 10);
+            const v = buildFearGreedHistoryView(history);
+            const points = scoredHistory(history);
+            const echo = (key: string, values?: Record<string, unknown>) =>
+                JSON.stringify([key, values]);
+            const range = JSON.parse(
+                buildFearGreedYearRangeLine(points, echo as never)!
+            )[1];
+            expect(range.v1).toBe(v.yearMin?.score);
+            expect(range.v2).toBe(v.yearMin?.date);
+            expect(range.v3).toBe(v.yearMax?.score);
+            expect(range.v4).toBe(v.yearMax?.date);
+            // 주/월/년 전 점수는 페이지 문장이 쓰는 `pointBefore`와 같은 값.
+            const periods = buildFearGreedPeriodComparisonLine(
+                points,
+                echo as never,
+                echo as never
+            );
+            for (const p of [v.weekAgo, v.monthAgo, v.yearAgo])
+                expect(periods).toContain(String(p?.score));
+        });
+
+        it('점수 있는 점이 없으면 전부 null', () => {
+            expect(buildFearGreedHistoryView(series(0, 5))).toEqual({
+                weekAgo: null,
+                monthAgo: null,
+                threeMonthsAgo: null,
+                yearAgo: null,
+                yearMin: null,
+                yearMax: null,
+            });
+        });
     });
 });
