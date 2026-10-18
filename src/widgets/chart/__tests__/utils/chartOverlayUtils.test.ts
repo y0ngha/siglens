@@ -245,6 +245,43 @@ describe('buildOverlayLineSpecs', () => {
         expect(specsWithoutMapper[1].title).toBe('breakout');
     });
 
+    it('a reached level is drawn at half opacity, titled as reached, and yields its label slot', () => {
+        const specs = buildOverlayLineSpecs([overlay({})], {
+            ...base,
+            barTimes: BAR_TIMES,
+            levelLabelFor: (label, _owner, reached) =>
+                reached ? `${label} reached` : label,
+            isReachedLevel: () => true,
+        });
+        expect(specs[1]).toMatchObject({
+            opacity: 0.5,
+            title: 'breakout reached',
+        });
+        const live = buildOverlayLineSpecs([overlay({})], {
+            ...base,
+            barTimes: BAR_TIMES,
+            isReachedLevel: () => false,
+        });
+        expect(live[1].opacity).toBe(1);
+        // A reached target ranks under a live level (the breakout line keeps
+        // its own rank either way).
+        const target = overlay({
+            levels: [{ price: 11, fromTime: 1, label: 'target' }],
+        });
+        const [reachedTarget] = buildOverlayLineSpecs([target], {
+            ...base,
+            barTimes: BAR_TIMES,
+            isReachedLevel: () => true,
+        }).slice(1);
+        const [liveTarget] = buildOverlayLineSpecs([target], {
+            ...base,
+            barTimes: BAR_TIMES,
+        }).slice(1);
+        expect(reachedTarget.labelPriority).toBeLessThan(
+            liveTarget.labelPriority
+        );
+    });
+
     it('levelLabelFor receives the overlay that owns the level', () => {
         const a = overlay({ id: 'a', sourceRef: 'a' });
         const b = overlay({ id: 'b', sourceRef: 'b' });

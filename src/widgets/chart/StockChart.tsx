@@ -95,6 +95,7 @@ import {
 } from './utils/overlayItems';
 import { type FibLevelTexts } from './utils/fibLevelLabel';
 import { levelTitleFor } from './utils/levelTitle';
+import { isReachedTarget } from './utils/reachedLevel';
 import {
     createCanvasTextMeasurer,
     LEVEL_TITLE_FONT,
@@ -295,6 +296,10 @@ export function StockChart({
                 combination: t('StockChart.a8aa4c'),
             },
         }),
+        [t]
+    );
+    const reachedTitle = useCallback(
+        (title: string) => t('StockChart.reachedLevel', { v0: title }),
         [t]
     );
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -714,6 +719,8 @@ export function StockChart({
 
     const barTimes = useMemo(() => barTimesOf(bars), [bars]);
     const lastBarTime = bars[bars.length - 1]?.time ?? 0;
+    // 지나간 목표선 판정의 기준 — 마지막 봉의 종가(장중이면 진행 중인 봉).
+    const lastClose = bars.at(-1)?.close ?? null;
 
     const hasExtendableLevels = useMemo(
         () =>
@@ -745,13 +752,21 @@ export function StockChart({
                         overlayColors,
                         CHART_OVERLAY_COLORS
                     ),
-                levelLabelFor: (label, overlay) =>
-                    levelTitleFor(label, overlay, {
-                        cardName: patternLabels.get(overlay.sourceRef),
-                        breakoutTitle,
-                        outcomeTexts: outcomeLevelTexts,
-                        fibTexts: fibLevelTexts,
-                    }),
+                levelLabelFor: (label, overlay, reached) =>
+                    levelTitleFor(
+                        label,
+                        overlay,
+                        {
+                            cardName: patternLabels.get(overlay.sourceRef),
+                            breakoutTitle,
+                            outcomeTexts: outcomeLevelTexts,
+                            fibTexts: fibLevelTexts,
+                            reachedTitle,
+                        },
+                        reached
+                    ),
+                isReachedLevel: (level, overlay) =>
+                    isReachedTarget(level, overlay, lastClose),
                 extendLevelsRight: levelRightExtend,
             }),
         [
@@ -766,6 +781,8 @@ export function StockChart({
             patternLabels,
             fibLevelTexts,
             outcomeLevelTexts,
+            reachedTitle,
+            lastClose,
             patternPalette,
             levelRightExtend,
         ]

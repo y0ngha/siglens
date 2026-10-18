@@ -12,6 +12,7 @@ import type { OverlayMenuItem } from '@/widgets/chart/utils/overlayItems';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
 import { LINE_PANE_SPECS } from '@/widgets/chart/model/linePaneSpecs';
+import { LABEL_PRIORITY } from '@/widgets/chart/utils/levelLabelCulling';
 
 const INACTIVE_PANES = Object.fromEntries(
     [
@@ -1113,7 +1114,11 @@ describe('StockChart', () => {
                     '패턴p2 무효화',
                     '패턴p3 무효화',
                 ]);
-                expect(outcomePriorities()).toEqual([1, 1, 1]);
+                expect(outcomePriorities()).toEqual([
+                    LABEL_PRIORITY.level,
+                    LABEL_PRIORITY.level,
+                    LABEL_PRIORITY.level,
+                ]);
                 rerender(
                     <StockChart
                         bars={mockBars}
@@ -1128,7 +1133,11 @@ describe('StockChart', () => {
                     '패턴p2 무효화',
                     '패턴p3 무효화',
                 ]);
-                expect(outcomePriorities()).toEqual([1, 3, 1]);
+                expect(outcomePriorities()).toEqual([
+                    LABEL_PRIORITY.level,
+                    LABEL_PRIORITY.highlighted,
+                    LABEL_PRIORITY.level,
+                ]);
             });
 
             it('패턴이 둘 이상이면 팔레트 색, 하나면 스킬 색을 쓴다', () => {

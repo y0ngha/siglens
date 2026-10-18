@@ -3961,5 +3961,6 @@
     "widgets.investor-flows.ev.krInsiderNoChange": "c56607cfc653",
     "widgets.investor-flows.ev.dilutionNoneOnRecord": "9215fd192ca3",
     "widgets.investor-flows.label.noRecentReports": "20aa616b744d",
-    "widgets.investor-flows.scorecard.axisNoRecentReports": "2de84927f2c2"
+    "widgets.investor-flows.scorecard.axisNoRecentReports": "2de84927f2c2",
+    "widgets.chart.StockChart.reachedLevel": "e3fb11f50945"
 }
