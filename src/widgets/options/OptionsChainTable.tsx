@@ -28,16 +28,33 @@ function formatIv(value: number | null): string {
     return `${(value * 100).toFixed(1)}%`;
 }
 
+/**
+ * 옵션은 미국 상장 상품뿐이라 달러·`en-US` 구분자로 고정한다(행사가·호가가 1,000을 넘는
+ * 고가 종목도 `$1,050`). 로케일을 고정하므로 서버·브라우저 출력이 같다(하이드레이션 안전).
+ */
+const quoteFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+/** 정수 행사가는 소수 없이(`$1,050`), 아니면 한 자리(`$102.5`). */
+const strikeFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+});
+
 function formatBidAsk(bid: number | null, ask: number | null): string {
     if (bid === null && ask === null) return '—';
-    const bidStr = bid !== null ? `$${bid.toFixed(2)}` : '—';
-    const askStr = ask !== null ? `$${ask.toFixed(2)}` : '—';
+    const bidStr = bid !== null ? quoteFormatter.format(bid) : '—';
+    const askStr = ask !== null ? quoteFormatter.format(ask) : '—';
     return `${bidStr}/${askStr}`;
 }
 
 function formatStrike(strike: number): string {
-    const isInteger = Number.isInteger(strike);
-    return `$${isInteger ? strike.toString() : strike.toFixed(1)}`;
+    return strikeFormatter.format(strike);
 }
 
 interface OptionsChainTableProps {
