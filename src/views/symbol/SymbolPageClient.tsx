@@ -18,7 +18,11 @@ import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import type { MobileAnalysisSheet as MobileAnalysisSheetComponent } from './MobileAnalysisSheet';
-import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
+import type {
+    AnalysisResponse,
+    KrxTickTable,
+    TierInfoDepth,
+} from '@y0ngha/siglens-core';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import dynamic from 'next/dynamic';
@@ -93,6 +97,8 @@ interface SymbolPageClientProps {
      * Defaults to 'us-equity' when omitted (backward compat).
      */
     marketProfile?: MarketProfileId;
+    /** 종목의 KRX 호가표(주식/ETF) — 서버에서 해석해 `ChartContent`→`AnalysisPanel`로 내려간다. 생략하면 'share'. */
+    krxTickTable?: KrxTickTable;
     /**
      * 서버가 seed를 만든 시점에 정규장이 열려 있었는가(`hasFormingBar` — 세션 기준이며 quantize가
      * 실제로 봉을 뗐는지가 아니다). 장중 생성 seed는 그날 봉이 빠졌을 수 있어 `ChartContent`가
@@ -126,6 +132,7 @@ export function SymbolPageClient({
     indicatorCount,
     skillCount,
     marketProfile,
+    krxTickTable,
     seedHasFormingBarTrimmed,
     hasBarsSeed = true,
     headingBadge,
@@ -295,6 +302,7 @@ export function SymbolPageClient({
                                             ? marketProfileOf(assetInfo)
                                             : undefined)
                                     }
+                                    krxTickTable={krxTickTable}
                                 />
                             ) : (
                                 <ChartSkeleton />

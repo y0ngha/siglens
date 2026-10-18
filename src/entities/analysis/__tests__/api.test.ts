@@ -56,6 +56,10 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
+vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+    resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
+}));
+
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
     getAssetInfo: vi.fn().mockResolvedValue(null),
 }));
@@ -187,6 +191,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
@@ -225,6 +230,7 @@ const mockIsRegularSession = vi.mocked(isEtRegularSessionOpen);
 const mockComputeFinancialsScorecard = vi.mocked(computeFinancialsScorecard);
 const mockGetCachedMarketDataProvider = vi.mocked(getCachedMarketDataProvider);
 const mockResolveMarketProfile = vi.mocked(resolveMarketProfile);
+const mockResolveKrxTickTable = vi.mocked(resolveKrxTickTable);
 const mockGetAssetInfo = vi.mocked(getAssetInfo);
 const mockGetFundamentalDataProvider = vi.mocked(getFundamentalDataProvider);
 const mockGetFinancialStatementsProvider = vi.mocked(
@@ -287,6 +293,7 @@ describe('prewarmTechnical', () => {
                 session: MOCK_EQUITY_SESSION,
                 assetClass: 'equity',
                 currency: 'USD',
+                krxTickTable: 'share',
                 tierContext: { userId: null, tier: 'free' },
                 reasoning: false,
                 // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.
@@ -312,6 +319,24 @@ describe('prewarmTechnical', () => {
         const lastCall = mockRunAnalysis.mock.calls.at(-1);
         expect(lastCall).toBeDefined();
         expect(lastCall![3]).toBe(true);
+    });
+
+    it('forwards the resolved KRX tick table to core', async () => {
+        mockResolveKrxTickTable.mockResolvedValueOnce('etp');
+
+        await prewarmTechnical(
+            '360750.KS',
+            'TIGER 미국S&P500',
+            undefined,
+            false
+        );
+
+        const options = mockRunAnalysis.mock.calls.find(
+            c => c[0] === '360750.KS'
+        )?.[5];
+        expect(options).toEqual(
+            expect.objectContaining({ krxTickTable: 'etp' })
+        );
     });
 
     it('forwards fmpSymbol through to submitAnalysis', async () => {
@@ -800,6 +825,27 @@ describe('prewarmOverall', () => {
                 currency: 'USD',
             })
         );
+    });
+
+    it('forwards the resolved KRX tick table (same table as the technical axis)', async () => {
+        mockResolveKrxTickTable.mockResolvedValueOnce('etp');
+
+        await prewarmOverall('360750.KS', 'TIGER 미국S&P500', false);
+
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ krxTickTable: 'etp' })
+        );
+    });
+
+    it('rejects with the tick-table error and never calls core when the table cannot be resolved', async () => {
+        // The lookup starts early and is awaited after the other I/O — its
+        // rejection must surface here, not as an unhandled rejection.
+        mockResolveKrxTickTable.mockRejectedValueOnce(new Error('yahoo down'));
+
+        await expect(
+            prewarmOverall('360750.KS', 'TIGER 미국S&P500', false)
+        ).rejects.toThrow('yahoo down');
+        expect(mockRunOverallAnalysis).not.toHaveBeenCalled();
     });
 
     it('forwards currency: "KRW" when resolveMarketProfile resolves to kr-equity', async () => {

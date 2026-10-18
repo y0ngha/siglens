@@ -42,6 +42,9 @@ vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
+vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+    resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
+}));
 const { mockFlowsScorecard } = vi.hoisted(() => ({
     mockFlowsScorecard: vi.fn(async () => undefined as unknown),
 }));
@@ -63,6 +66,7 @@ import { runOverallAnalysis, type ModelId } from '@y0ngha/siglens-core';
 import { executeOverallAnalysis } from '@/entities/analysis/server/overallAnalysisRunner';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 
 const mockRun = vi.mocked(runOverallAnalysis);
 const BYOK_MODEL = 'claude-opus-5' as ModelId;
@@ -126,6 +130,20 @@ describe('executeOverallAnalysis — 수급 점수표(investorFlowsScorecard) �
             modelId: BYOK_MODEL,
         });
         expect(callFor(BYOK_MODEL)?.investorFlowsScorecard).toBeUndefined();
+    });
+});
+
+describe('executeOverallAnalysis — KRX 호가표 주입', () => {
+    it('해석된 호가표를 core에 그대로 넘긴다', async () => {
+        vi.mocked(resolveKrxTickTable).mockResolvedValueOnce('etp');
+
+        await executeOverallAnalysis({
+            ...base,
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+
+        expect(callFor(BYOK_MODEL)).toMatchObject({ krxTickTable: 'etp' });
     });
 });
 

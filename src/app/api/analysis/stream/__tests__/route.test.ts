@@ -79,6 +79,10 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
+vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+    resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
+}));
+
 /**
  * 디스크립터는 **실물 상수**를 쓴다. 손으로 채운 부분 객체를 `as never`로
  * 통과시키면 타입 검사가 무력화돼, 라우트가 필드를 하나 더 읽기 시작한 순간
@@ -333,6 +337,7 @@ import {
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
@@ -443,6 +448,7 @@ describe('POST /api/analysis/stream', () => {
         // 마켓 프로필 관련 mock은 개별 테스트에서 오버라이드한 뒤 clearAllMocks만으론
         // 복원되지 않는다 — 명시적으로 기본값을 재설정한다.
         vi.mocked(resolveMarketProfile).mockResolvedValue('us-equity' as never);
+        vi.mocked(resolveKrxTickTable).mockResolvedValue('share');
         vi.mocked(getDescriptor).mockReturnValue(US_EQUITY);
         vi.mocked(sessionSpecFor).mockReturnValue({} as never);
         vi.mocked(getCachedMarketDataProvider).mockReturnValue({
@@ -2462,6 +2468,33 @@ describe('POST /api/analysis/stream', () => {
             await collectSseEvents(response);
 
             expect(currencyOfCallFor('005930.KS')).toBe('KRW');
+        });
+
+        it('해석된 KRX 호가표를 krxTickTable로 runAnalysis에 넘긴다', async () => {
+            vi.mocked(resolveMarketProfile).mockResolvedValue(
+                'kr-equity' as never
+            );
+            vi.mocked(getDescriptor).mockReturnValue(KR_EQUITY);
+            vi.mocked(resolveKrxTickTable).mockResolvedValue('etp');
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: '360750.KS',
+                    companyName: 'TIGER 미국S&P500',
+                    timeframe: '1Day',
+                },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(c => c[0] === '360750.KS');
+            expect((call?.[5] as Record<string, unknown>).krxTickTable).toBe(
+                'etp'
+            );
         });
 
         it('us-equity 프로필 → currency: "USD"로 runAnalysis를 호출한다', async () => {

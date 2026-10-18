@@ -12,6 +12,7 @@ import { computePositionStatus } from '@/widgets/portfolio-position/lib/position
 import { PositionStatusSummary } from '@/widgets/portfolio-position/ui/PositionStatusSummary';
 import {
     type AnalysisResponse,
+    type KrxTickTable,
     type TierInfoDepth,
     type Timeframe,
 } from '@y0ngha/siglens-core';
@@ -139,6 +140,11 @@ interface ChartContentProps {
      */
     marketProfile?: MarketProfileId;
     /**
+     * 종목의 KRX 호가표(주식/ETF) — 서버가 `resolveKrxTickTable`로 한 번 해석해 내려준다.
+     * `AnalysisPanel`의 가격 표기에만 쓰인다. 생략하면 'share'.
+     */
+    krxTickTable?: KrxTickTable;
+    /**
      * 서버가 seed를 만든 시점에 정규장이 열려 있었는가(세션 기준). 참이면 입력을 기다리지 않고 seed
      * 복원 재조회를 연다(`shouldRefetchBarsSeed`). 생략하면 참 — 옛 동작(항상 연다)을 유지한다.
      */
@@ -163,6 +169,7 @@ export function ChartContent({
     onMobileSheetContent,
     fmpSymbol,
     marketProfile = 'us-equity',
+    krxTickTable,
     seedHasFormingBarTrimmed = true,
     chartHeaderStartSlot,
 }: ChartContentProps) {
@@ -506,6 +513,7 @@ export function ChartContent({
                 />
                 <AnalysisPanel
                     symbol={symbol}
+                    krxTickTable={krxTickTable}
                     analysis={analysis}
                     keyLevels={clusteredKeyLevels}
                     timeframe={timeframe}
@@ -570,6 +578,7 @@ export function ChartContent({
         actionPricesVisible,
         setActionPricesVisible,
         marketProfile,
+        krxTickTable,
         indicatorCount,
         skillCount,
         lockedInfoDepth,

@@ -174,6 +174,9 @@ vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn(async () => 'us-equity'),
 }));
+vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+    resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
+}));
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
     getAssetInfo: vi.fn(async () => ({ name: 'Apple', fmpSymbol: 'AAPL' })),
 }));
