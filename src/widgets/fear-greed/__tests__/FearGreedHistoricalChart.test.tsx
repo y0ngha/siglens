@@ -3,6 +3,7 @@ import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
 import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
 const {
@@ -37,9 +38,24 @@ const {
 // `virtual: true` is required because lightweight-charts is ESM-only
 // (`"type": "module"`, no CJS export). Jest's CJS resolver can't find it
 // from this test file, even though we never call the real module.
+const mockLocale = vi.hoisted(() => ({
+    value: 'ko' as 'ko' | 'en' | 'ja' | 'zh',
+}));
+vi.mock('@/shared/i18n/useResolvedLocale', () => ({
+    useResolvedLocale: () => mockLocale.value,
+}));
+
 vi.mock('lightweight-charts', () => ({
     createChart: vi.fn(() => mockChart),
     LineSeries: 'LineSeries',
+    // 실제 enum 값과 같게 둔다(Year 0, Month 1, DayOfMonth 2, Time 3, TimeWithSeconds 4).
+    TickMarkType: {
+        Year: 0,
+        Month: 1,
+        DayOfMonth: 2,
+        Time: 3,
+        TimeWithSeconds: 4,
+    },
 }));
 
 const history: FearGreedHistoryPoint[] = [
@@ -56,6 +72,34 @@ describe('FearGreedHistoricalChart', () => {
         mockAddSeries.mockClear();
         mockRemove.mockClear();
         mockApplyOptions.mockClear();
+    });
+
+    const lastChartOptions = async () => {
+        const { createChart } = await import('lightweight-charts');
+        return vi.mocked(createChart).mock.calls.at(-1)?.[1] as {
+            localization: { locale: string };
+            timeScale: {
+                tickMarkFormatter: (t: unknown, type: number) => string | null;
+            };
+        };
+    };
+
+    it('일(day) 눈금만 지우고 월·연 눈금은 기본 포맷에 맡긴다', async () => {
+        const { TickMarkType } = await import('lightweight-charts');
+        render(<FearGreedHistoricalChart history={history} />);
+        const fmt = (await lastChartOptions()).timeScale.tickMarkFormatter;
+        expect(fmt('2026-10-05', TickMarkType.DayOfMonth)).toBe('');
+        expect(fmt('2026-10-01', TickMarkType.Month)).toBeNull();
+        expect(fmt('2026-01-01', TickMarkType.Year)).toBeNull();
+    });
+
+    it('눈금 언어는 브라우저가 아니라 페이지 로케일(INTL_LOCALE)이다', async () => {
+        mockLocale.value = 'ja';
+        render(<FearGreedHistoricalChart history={history} />);
+        expect((await lastChartOptions()).localization.locale).toBe(
+            INTL_LOCALE.ja
+        );
+        mockLocale.value = 'ko';
     });
 
     it('creates a line series and sets data filtered to non-null scores', () => {

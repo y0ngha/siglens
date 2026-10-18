@@ -50,7 +50,7 @@ describe('KrInvestorFlowsContent', () => {
     it('draws only the two DART axes and says the US-only scores are not provided', () => {
         renderContent();
         const card = screen
-            .getByRole('heading', { level: 2, name: /수급 점수/ })
+            .getByRole('heading', { level: 2, name: /지분 공시 점수/ })
             .closest('section') as HTMLElement;
         const axes = within(card)
             .getAllByRole('heading', { level: 3 })
@@ -83,7 +83,9 @@ describe('KrInvestorFlowsContent', () => {
             within(asOf).getByText('출처: 금융감독원 전자공시시스템(DART)')
         ).toBeInTheDocument();
         expect(
-            within(asOf).getByText('기관·외국인 순매수는 제공하지 않아요.')
+            within(asOf).getByText(
+                '기관·외국인 매매 동향(순매수)은 이 화면에 없어요. 점수는 지분 공시로만 매겨요.'
+            )
         ).toBeInTheDocument();
         expect(within(asOf).getByText('2026-10-14')).toBeInTheDocument();
     });

@@ -347,7 +347,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
                         하드코딩이 맞았지만, 지금은 한국 종목 페이지가
                         "미국 증시 전반"을 참조하게 된다. */}
-                    {t.rich('page.4e7e6f', {
+                    {t.rich('page.ddc932', {
                         v0: t(marketFearGreedLink.marketLabelKey),
                         v1: t(marketFearGreedLink.labelKey),
                         v2: displayName,

@@ -873,6 +873,18 @@ from the real source value, not from the formatter's current output.
 - ❌ `0.0004` formatted as `0.000%`, or a day count shown as `0.0일`.
 - ✅ `<0.001%`, or the value at enough digits to stay non-zero; `0일` / `3일` for whole counts.
 
+<a id="CS-18"></a>
+
+#### CS-18 — A displayed label or score states what the data measures and carries its basis
+
+A user-facing label, score or chart title names only what the underlying data proves. A score computed from a
+partial source (filings only, daily candles, an estimate) says so in its name or caption, and an estimated split is
+not labelled with the real-world quantity it approximates. When the data cannot support the stronger term, use the
+weaker one or show the basis next to the value.
+
+- ❌ "Order flow" computed from daily candles; "buy/sell volume" for a close-location estimate.
+- ✅ "Estimated volume split (from daily candles)"; a flow score captioned with the filings it is built from.
+
 ---
 
 ## Layer Dependency Rules
