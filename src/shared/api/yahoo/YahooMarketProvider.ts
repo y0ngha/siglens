@@ -211,6 +211,20 @@ export class YahooMarketProvider implements SiglensMarketProvider {
     }
 
     /**
+     * yahoo `quoteType`('EQUITY'·'ETF' 등)을 그대로 돌려준다. core `MarketQuote`에는 이 필드가
+     * 없어 {@link getQuoteOrThrow}로는 종목/ETF 구분을 못 한다 — KRX 호가 단위 표 선택
+     * (`resolveKrxTickTable`)이 유일한 소비자다.
+     *
+     * `getQuoteOrThrow`와 같은 계약이다: 인프라 실패는 던지고, 시세가 없는 종목(`undefined`)이나
+     * `quoteType` 부재는 `null`이다. 호출부가 "모름"을 캐시하지 않도록 둘을 구분할 수 있어야 한다.
+     */
+    async getQuoteTypeOrThrow(symbol: string): Promise<string | null> {
+        const q = await yahooFinance.quote(symbol);
+        if (!hasQuotedPrice(q)) return null;
+        return q.quoteType ?? null;
+    }
+
+    /**
      * `getQuoteSnapshot`에 위임하지 않는다 — 시세 조회의 원형은 {@link getQuoteOrThrow}이고
      * (인프라 실패를 던져야 하는 호출부가 있다), 이 메서드는 그 실패를 `null`로 접는 얇은
      * 래퍼다. 캐시 계층(`CachedMarketDataProvider`)은 이 메서드가 아니라 스냅샷을 부르므로

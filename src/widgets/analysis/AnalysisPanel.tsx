@@ -36,6 +36,7 @@ import type {
 import {
     getMeteredRevealPolicy,
     HIGH_CONFIDENCE_WEIGHT,
+    type KrxTickTable,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
@@ -584,9 +585,10 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
 interface ConfluenceInfoProps {
     level: ClusteredKeyLevel;
     symbol: string;
+    krxTickTable: KrxTickTable;
 }
 
-function ConfluenceInfo({ level, symbol }: ConfluenceInfoProps) {
+function ConfluenceInfo({ level, symbol, krxTickTable }: ConfluenceInfoProps) {
     const locale = useResolvedLocale();
     if (level.count < 2) return null;
 
@@ -599,7 +601,9 @@ function ConfluenceInfo({ level, symbol }: ConfluenceInfoProps) {
                         className="flex items-baseline gap-2 whitespace-nowrap"
                     >
                         <span className="shrink-0 text-secondary-300">
-                            {formatAnalysisPrice(source.price, symbol, locale)}
+                            {formatAnalysisPrice(source.price, symbol, locale, {
+                                krxTickTable,
+                            })}
                         </span>
                         <span className="text-secondary-400">
                             {source.reason}
@@ -634,6 +638,7 @@ interface PatternAccordionItemProps {
     /** 차트 작도 제어 — 이 항목에 그려지는 작도가 없으면 undefined(버튼 없음). */
     overlay?: OverlayCardControls;
     symbol: string;
+    krxTickTable: KrxTickTable;
 }
 
 function PatternAccordionItem({
@@ -641,6 +646,7 @@ function PatternAccordionItem({
     showConfidence,
     overlay,
     symbol,
+    krxTickTable,
 }: PatternAccordionItemProps) {
     const t = useTranslations('widgets.analysis');
     const skillLabel = useSkillLabel();
@@ -715,7 +721,8 @@ function PatternAccordionItem({
                                             {formatAnalysisPrice(
                                                 kp.price,
                                                 symbol,
-                                                locale
+                                                locale,
+                                                { krxTickTable }
                                             )}
                                         </span>
                                     </div>
@@ -851,9 +858,14 @@ const TRENDLINE_FALLBACK_BG = 'bg-secondary-500';
 interface TrendlineItemProps {
     trendline: Trendline;
     symbol: string;
+    krxTickTable: KrxTickTable;
 }
 
-function TrendlineItem({ trendline, symbol }: TrendlineItemProps) {
+function TrendlineItem({
+    trendline,
+    symbol,
+    krxTickTable,
+}: TrendlineItemProps) {
     const tTrendline = useTranslations('shared.lib.trendline');
     const locale = useResolvedLocale();
     const label = tTrendline(
@@ -873,10 +885,12 @@ function TrendlineItem({ trendline, symbol }: TrendlineItemProps) {
             <span className="ml-auto text-xs text-secondary-500 tabular-nums">
                 {formatAnalysisPrice(trendline.start.price, symbol, locale, {
                     trimTrailingZeros: true,
+                    krxTickTable,
                 })}
                 {' → '}
                 {formatAnalysisPrice(trendline.end.price, symbol, locale, {
                     trimTrailingZeros: true,
+                    krxTickTable,
                 })}
             </span>
         </div>
@@ -888,6 +902,7 @@ interface PriceScenarioSectionProps {
     scenario: PriceScenario | null;
     colorClass: string;
     symbol: string;
+    krxTickTable: KrxTickTable;
 }
 
 function PriceScenarioSection({
@@ -895,6 +910,7 @@ function PriceScenarioSection({
     scenario,
     colorClass,
     symbol,
+    krxTickTable,
 }: PriceScenarioSectionProps) {
     const locale = useResolvedLocale();
     if (!scenario || scenario.targets.length === 0) return null;
@@ -917,7 +933,9 @@ function PriceScenarioSection({
                             colorClass
                         )}
                     >
-                        {formatAnalysisPrice(target.price, symbol, locale)}
+                        {formatAnalysisPrice(target.price, symbol, locale, {
+                            krxTickTable,
+                        })}
                     </span>
                     <MarkdownText className="text-xs text-secondary-500">
                         {target.basis}
@@ -976,6 +994,11 @@ function ReanalyzeButton({
 
 interface AnalysisPanelProps {
     symbol: string;
+    /**
+     * 이 종목의 KRX 호가 단위 표(`resolveKrxTickTable`을 서버에서 한 번 해석해 내려받는다).
+     * ETF는 'etp' — 'share'로 반올림하면 `40,125`가 `40,150`으로 깎인다. 생략하면 'share'.
+     */
+    krxTickTable?: KrxTickTable;
     analysis: AnalysisResponse;
     keyLevels: ClusteredKeyLevels;
     /** 분석 대상 타임프레임. stale 판정 임계값 산정에 사용된다. */
@@ -1061,6 +1084,7 @@ interface AnalysisPanelProps {
 
 export function AnalysisPanel({
     symbol,
+    krxTickTable = 'share',
     analysis,
     keyLevels,
     timeframe,
@@ -1161,6 +1185,7 @@ export function AnalysisPanel({
             buildExpertAnalysisReport({
                 tReport,
                 symbol,
+                krxTickTable,
                 analysis,
                 keyLevels,
                 // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접
@@ -1483,7 +1508,8 @@ export function AnalysisPanel({
                                                             {formatAnalysisPrice(
                                                                 level.price,
                                                                 symbol,
-                                                                locale
+                                                                locale,
+                                                                { krxTickTable }
                                                             )}
                                                         </span>
                                                         <span className="inline-flex items-center text-xs text-secondary-500">
@@ -1491,6 +1517,9 @@ export function AnalysisPanel({
                                                             <ConfluenceInfo
                                                                 level={level}
                                                                 symbol={symbol}
+                                                                krxTickTable={
+                                                                    krxTickTable
+                                                                }
                                                             />
                                                         </span>
                                                     </div>
@@ -1511,7 +1540,8 @@ export function AnalysisPanel({
                                                             {formatAnalysisPrice(
                                                                 level.price,
                                                                 symbol,
-                                                                locale
+                                                                locale,
+                                                                { krxTickTable }
                                                             )}
                                                         </span>
                                                         <span className="inline-flex items-center text-xs text-secondary-500">
@@ -1519,6 +1549,9 @@ export function AnalysisPanel({
                                                             <ConfluenceInfo
                                                                 level={level}
                                                                 symbol={symbol}
+                                                                krxTickTable={
+                                                                    krxTickTable
+                                                                }
                                                             />
                                                         </span>
                                                     </div>
@@ -1535,7 +1568,8 @@ export function AnalysisPanel({
                                                 {formatAnalysisPrice(
                                                     keyLevels.poc.price,
                                                     symbol,
-                                                    locale
+                                                    locale,
+                                                    { krxTickTable }
                                                 )}
                                             </span>
                                             <span className="text-xs text-secondary-500">
@@ -1559,6 +1593,7 @@ export function AnalysisPanel({
                                                 key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
                                                 trendline={trendline}
                                                 symbol={symbol}
+                                                krxTickTable={krxTickTable}
                                             />
                                         ))}
                                     </div>
@@ -1578,12 +1613,14 @@ export function AnalysisPanel({
                                             scenario={priceTargets.bullish}
                                             colorClass="text-ui-success-text"
                                             symbol={symbol}
+                                            krxTickTable={krxTickTable}
                                         />
                                         <PriceScenarioSection
                                             label={t('AnalysisPanel.79282c')}
                                             scenario={priceTargets.bearish}
                                             colorClass="text-ui-danger-text"
                                             symbol={symbol}
+                                            krxTickTable={krxTickTable}
                                         />
                                     </div>
                                 </div>
@@ -1627,6 +1664,7 @@ export function AnalysisPanel({
                                                 key={pattern.id}
                                                 pattern={pattern}
                                                 symbol={symbol}
+                                                krxTickTable={krxTickTable}
                                                 showConfidence={
                                                     !hasLockedConfidence
                                                 }

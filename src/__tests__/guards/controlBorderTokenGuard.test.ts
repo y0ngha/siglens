@@ -222,7 +222,7 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 1277 (1233에서 +44): 하루 무료 공개 미터의 노출 훅·잠금 카드 문구 선택·공개 띠가 위에 늘었다.
     // 1301 (1277에서 +24): 차트 가이드 "뜻 보기" 링크(import, 신호·패턴·전략 카드의 가이드 경로 계산과 링크)가 위에 늘었다.
     // 1292 (1302에서 −10): 패널 전용 가격 포매터 두 개를 shared `formatAnalysisPrice`(한국 종목 호가 단위)로 옮겼다.
-    'widgets/analysis/AnalysisPanel.tsx:1292',
+    'widgets/analysis/AnalysisPanel.tsx:1317',
 
     // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
     // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.

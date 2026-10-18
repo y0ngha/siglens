@@ -52,6 +52,9 @@ vi.mock('@/shared/lib/byokGate', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
+vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+    resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
+}));
 /**
  * 실물 디스크립터를 쓴다 — 손으로 채운 부분 객체는 라우트가 필드를 하나 더
  * 읽는 순간 조용히 런타임에서 터진다(route.test.ts의 같은 주석 참고).

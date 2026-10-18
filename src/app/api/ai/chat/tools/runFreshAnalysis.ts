@@ -11,6 +11,7 @@ import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverall
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
@@ -396,9 +397,10 @@ export const runFreshAnalysisTool: ToolExecutor = async (
         }
         const timeframe =
             (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
-        const [profile, asset] = await Promise.all([
+        const [profile, asset, krxTickTable] = await Promise.all([
             resolveMarketProfile(symbol),
             resolveAssetInfoOrNull(symbol, 'run_fresh_analysis'),
+            resolveKrxTickTable(symbol),
         ]);
         const companyName = asset?.name ?? symbol;
         const descriptor = getDescriptor(profile);
@@ -424,6 +426,7 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                     session,
                     assetClass: descriptor.assetClass,
                     currency: descriptor.priceFormat.currency,
+                    krxTickTable,
                     tierContext: { userId: ctx.userId, tier: ctx.tier },
                     reasoning: false,
                     locale: ctx.locale,

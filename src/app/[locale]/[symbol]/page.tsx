@@ -28,6 +28,7 @@ import {
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { loadDilutionHeadingBadge } from '@/app/[locale]/[symbol]/dilutionHeadingBadge';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { resolveKrxTickTableForDisplay } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
@@ -245,6 +246,9 @@ export default async function SymbolPage({ params }: Props) {
     // (`DYNAMIC_SERVER_USAGE`)뿐이다 — 그건 삼키면 안 되고 렌더를 끊어야 한다. 그래서 `.catch(→ null)`로 바꾸지
     // 않고, 빈 핸들러만 미리 달아 봉을 기다리는 사이 reject가 "처리되지 않은 rejection"으로 잡히지 않게 한다.
     // 아래에서 **원래 promise**를 await하므로 그 오류는 그대로 전파된다.
+    // 분석 카드 가격의 호가표(주식/ETF). 실패는 내부에서 'share'로 접히고 던지지 않으며(캐시도 안 한다),
+    // 한국 종목이 아니면 I/O가 없다. 봉과 독립이라 먼저 시작해 아래 `Promise.all`에서 기다린다.
+    const krxTickTablePromise = resolveKrxTickTableForDisplay(ticker);
     const headingBadgePromise = loadDilutionHeadingBadge(ticker, assetInfo);
     void headingBadgePromise.catch(() => undefined);
     const quantizedFactBars = await getQuantizedBarsStatic(
@@ -353,9 +357,10 @@ export default async function SymbolPage({ params }: Props) {
         }
     }
 
-    const [cachedAnalysis, headingBadge] = await Promise.all([
+    const [cachedAnalysis, headingBadge, krxTickTable] = await Promise.all([
         cachedAnalysisPromise,
         headingBadgePromise,
+        krxTickTablePromise,
     ]);
     // 폴백 summary도 요청 로케일로 — 예전엔 한국어 상수라 `/en/AAPL`이 분석
     // 실패 시 영어 화면에 한국어 요약을 렌더했다.
@@ -423,6 +428,7 @@ export default async function SymbolPage({ params }: Props) {
                                 indicatorCount={skillCounts.indicators}
                                 skillCount={chartSkillTotal(skillCounts)}
                                 marketProfile={marketProfile}
+                                krxTickTable={krxTickTable}
                                 hasBarsSeed={hasBarsSeed}
                                 // 서버에서 판정·렌더를 끝낸 엘리먼트를 넘긴다 — 첫 HTML에 이미 있어 나중에 끼어들며
                                 // 헤더를 밀지 않는다. 사건이 없으면(대부분의 종목) 아무것도 그리지 않는다.

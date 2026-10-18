@@ -180,6 +180,39 @@ describe('YahooMarketProvider', () => {
         });
     });
 
+    describe('getQuoteTypeOrThrow', () => {
+        it('returns the raw yahoo quoteType', async () => {
+            quote.mockResolvedValue({
+                regularMarketPrice: 40125,
+                quoteType: 'ETF',
+            });
+            expect(
+                await new YahooMarketProvider().getQuoteTypeOrThrow('360750.KS')
+            ).toBe('ETF');
+        });
+
+        it('resolves null when the symbol has no quote', async () => {
+            quote.mockResolvedValue(undefined);
+            expect(
+                await new YahooMarketProvider().getQuoteTypeOrThrow('999999.KS')
+            ).toBeNull();
+        });
+
+        it('resolves null when quoteType is missing', async () => {
+            quote.mockResolvedValue({ regularMarketPrice: 1 });
+            expect(
+                await new YahooMarketProvider().getQuoteTypeOrThrow('005930.KS')
+            ).toBeNull();
+        });
+
+        it('rejects on yahoo fetch failure', async () => {
+            quote.mockRejectedValue(new Error('network'));
+            await expect(
+                new YahooMarketProvider().getQuoteTypeOrThrow('005930.KS')
+            ).rejects.toThrow('network');
+        });
+    });
+
     describe('getQuote', () => {
         it('maps a yahoo quote to MarketQuote', async () => {
             quote.mockResolvedValue({

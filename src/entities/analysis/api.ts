@@ -22,6 +22,7 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import {
     currencyForSymbol,
     getDescriptor,
@@ -145,7 +146,10 @@ export async function prewarmTechnical(
     fmpSymbol: string | undefined,
     force: boolean
 ): Promise<RunAnalysisResult> {
-    const marketProfile = await resolveMarketProfile(symbol);
+    const [marketProfile, krxTickTable] = await Promise.all([
+        resolveMarketProfile(symbol),
+        resolveKrxTickTable(symbol),
+    ]);
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
     const session = sessionSpecFor(marketProfile);
@@ -202,6 +206,8 @@ export async function prewarmTechnical(
             // 스트림 경로와 같은 5축 정합을 유지한다 — 통화가 빠지면 prewarm이 쓴
             // 캐시와 방문자 요청의 산출 텍스트가 갈린다.
             currency: descriptor.priceFormat.currency,
+            // 방문자 경로와 같은 호가 표 — core 캐시 키에 접히지 않아 어긋나면 틀린 표가 TTL까지 남는다.
+            krxTickTable,
             tierContext: { userId: null, tier: 'free' },
             reasoning: false,
             providerFallback: PREWARM_PROVIDER_FALLBACK,
@@ -350,6 +356,10 @@ export async function prewarmOverall(
     // 웹·공개 API 경로(`executeOverallAnalysis`)와 같은 함수 — 프리웜이 데운 캐시를 사용자가 맞히려면
     // inputHash에 접히는 수급 입력이 두 경로에서 같아야 한다.
     const marketProfilePromise = resolveMarketProfile(symbol);
+    const krxTickTablePromise = resolveKrxTickTable(symbol);
+    // 일찍 시작해 아래 `Promise.all` 뒤에 기다린다 — 그사이 거부되면 처리기가 없어
+    // unhandled rejection이 된다. 처리기를 먼저 달아 두고, 아래 `await`가 원래 오류를 그대로 전한다.
+    void krxTickTablePromise.catch(() => undefined);
     const investorFlowsScorecardPromise = marketProfilePromise.then(profile =>
         getOverallInvestorFlowsScorecard(symbol, profile)
     );
@@ -378,6 +388,7 @@ export async function prewarmOverall(
         isOpenInterestSnapshotStale(optionsSnapshot);
 
     const marketProfile = await marketProfilePromise;
+    const krxTickTable = await krxTickTablePromise;
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
     const session = sessionSpecFor(marketProfile);
@@ -461,6 +472,8 @@ export async function prewarmOverall(
         skipEnqueueIfMiss: false,
         assetClass,
         currency: descriptor.priceFormat.currency,
+        // 방문자 경로와 같은 호가 표 — core 캐시 키에 접히지 않는다.
+        krxTickTable,
         optionsSnapshot: optionsSnapshot ?? undefined,
         optionsOiStale,
         financialsScorecard,

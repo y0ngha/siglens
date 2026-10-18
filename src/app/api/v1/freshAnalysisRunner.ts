@@ -16,6 +16,7 @@ import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysis
 import { executeOptionsAnalysis } from '@/entities/options-chain/server/optionsAnalysisRunner';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import type { Locale } from '@/shared/i18n/locales';
@@ -52,9 +53,10 @@ export interface Runner {
  */
 export async function prepareRunner(input: RunnerInput): Promise<Runner> {
     const { symbol, kind, timeframe, model, locale, principal } = input;
-    const [profile, asset] = await Promise.all([
+    const [profile, asset, krxTickTable] = await Promise.all([
         resolveMarketProfile(symbol),
         resolveAssetInfoOrNull(symbol, 'run_fresh_analysis'),
+        resolveKrxTickTable(symbol),
     ]);
     const companyName = asset?.name ?? symbol;
 
@@ -108,6 +110,7 @@ export async function prepareRunner(input: RunnerInput): Promise<Runner> {
                     session: inputs.session,
                     assetClass: descriptor.assetClass,
                     currency: descriptor.priceFormat.currency,
+                    krxTickTable,
                     tierContext: {
                         userId: principal.userId,
                         tier: caller.tier,

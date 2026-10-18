@@ -14,6 +14,7 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
 import { logActionError } from '@/shared/lib/logActionError';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
@@ -1002,8 +1003,9 @@ export async function POST(request: Request): Promise<Response> {
             // --- 2e. Tier + BYOK gate ---
             // 둘은 서로의 결과를 쓰지 않는다(심볼 vs userId) — 함께 기다려 DB 왕복 한 단을
             // 줄인다(감사 L5). 게이트가 막히면 프로필 결과는 버려진다(읽기 전용 조회라 부작용 없음).
-            const [marketProfile, gate] = await Promise.all([
+            const [marketProfile, krxTickTable, gate] = await Promise.all([
                 resolveMarketProfile(symbol),
+                resolveKrxTickTable(symbol),
                 modelId === undefined
                     ? resolveTierOnly(userId).then((tier): ByokOutcome => ({
                           kind: 'allowed',
@@ -1127,6 +1129,8 @@ export async function POST(request: Request): Promise<Response> {
                 // `$121980.70`처럼 달러 기호와 있지도 않은 소수 정밀도를 달고
                 // 나온다(코퍼스 실측: 원화 종목 20건 중 19건).
                 currency: descriptor.priceFormat.currency,
+                // 표는 core 캐시 키에 접히지 않는다 — 모든 진입점이 같은 값을 넘겨야 한다.
+                krxTickTable,
                 tierContext: { userId, tier },
                 reasoning: resolveReasoning(tier, reasoning),
                 positionBucket,

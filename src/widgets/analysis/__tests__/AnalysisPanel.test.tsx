@@ -955,6 +955,40 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('저항 돌파 시')).toBeInTheDocument();
     });
 
+    it('ETF는 etp 호가표로 40,125를 그대로, 표를 안 주면 주식 표로 40,150을 표시한다', () => {
+        const analysis = makeAnalysis({
+            priceTargets: {
+                bullish: {
+                    condition: '회복 시',
+                    targets: [{ price: 40_125, basis: '확장 목표' }],
+                },
+                bearish: null,
+            },
+        });
+        const { unmount } = render(
+            <AnalysisPanel
+                symbol="360750.KS"
+                analysis={analysis}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                krxTickTable="etp"
+            />
+        );
+        expect(screen.getByText('40,125')).toBeInTheDocument();
+        unmount();
+
+        render(
+            <AnalysisPanel
+                symbol="360750.KS"
+                analysis={analysis}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />
+        );
+        expect(screen.getByText('40,150')).toBeInTheDocument();
+        expect(screen.queryByText('40,125')).not.toBeInTheDocument();
+    });
+
     it('한국 종목은 레벨·목표가·추세선 가격을 호가 단위 정수로 표시한다', () => {
         // 2026-10-18 스크린샷: `240,300.00`, `271,192.31`, `205,325.00`처럼
         // 소수점과 호가 단위가 아닌 값이 찍혔다.

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
+import { resolveKrxTickTableForDisplay } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
 import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
@@ -66,6 +67,8 @@ export default async function SharePage({ params }: Props) {
     const asOf = formatKoreanDateTime(resolveAsOf(snapshot, createdAt), locale);
     const tLabel = await getTranslations('shared.enumLabel');
     const tLegal = await getTranslations('shared.lib.legal');
+    // 공유 화면의 가격도 분석을 만든 쪽과 같은 호가표로 보여야 한다(ETF 40,125가 40,150으로 깎이지 않게).
+    const krxTickTable = await resolveKrxTickTableForDisplay(ticker);
     const label = tLabel(kindLabelKey(snapshot.kind));
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
@@ -102,6 +105,7 @@ export default async function SharePage({ params }: Props) {
                         : 'equity'
                 }
                 symbol={ticker}
+                krxTickTable={krxTickTable}
                 plain={snapshot.plain}
             />
 

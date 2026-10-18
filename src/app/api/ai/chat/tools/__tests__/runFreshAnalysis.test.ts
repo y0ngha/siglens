@@ -35,6 +35,9 @@ vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: m.profile,
 }));
+vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+    resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
+}));
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
     getAssetInfo: m.assetInfo,
 }));
