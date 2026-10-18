@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.108.2](https://github.com/y0ngha/siglens/compare/v0.108.1...v0.108.2) (2026-10-18)
+
+### Bug Fixes
+
+* AI 챗 공포·탐욕 — 단계 표시, 화면과 같은 그룹 이름, 과거 기록 전달 ([#1078](https://github.com/y0ngha/siglens/issues/1078)) ([dfa65aa](https://github.com/y0ngha/siglens/commit/dfa65aaf0c2c06f18912ba8184b8ec239799cff5))
+* core 2.23.3 반영, 한국 종목 소유 보고 건수에 하루 일괄 보고 안내 ([#1079](https://github.com/y0ngha/siglens/issues/1079)) ([1aca90c](https://github.com/y0ngha/siglens/commit/1aca90c91b215fa94b59f104c17fd78bf41fd417))
+
 ## [0.108.1](https://github.com/y0ngha/siglens/compare/v0.108.0...v0.108.1) (2026-10-18)
 
 ### Bug Fixes
