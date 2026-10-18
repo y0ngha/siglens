@@ -142,7 +142,10 @@ describe('VolumeChart', () => {
         );
 
         const { labels } = vi.mocked(usePaneLabels).mock.calls.at(-1)![0];
-        expect(labels[0].subLabels.map(l => l.name)).toEqual(['매수', '매도']);
+        expect(labels[0].subLabels.map(l => l.name)).toEqual([
+            '매수 추정',
+            '매도 추정',
+        ]);
     });
 
     describe('프리·애프터마켓', () => {

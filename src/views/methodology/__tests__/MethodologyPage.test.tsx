@@ -240,7 +240,7 @@ describe('MethodologyPage', () => {
 
             const body = m.fearGreed.symbolBody;
             expect(body).toContain('거래량');
-            expect(body).toContain('매수와 매도 거래량');
+            expect(body).toContain('매수·매도 거래량의 불균형');
             expect(body).toContain(`최근 ${POC_WINDOW_DEFAULT}개 봉`);
             expect(body).toContain('200개 봉 평균');
             expect(body).toContain('252개 봉');

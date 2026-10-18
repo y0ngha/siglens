@@ -215,7 +215,9 @@ export function ScorecardCard({
             className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={cn('mb-4', HEADING_SECTION)}>
-                {t('scorecard.title')}
+                {scorecard.market === 'kr'
+                    ? t('scorecard.krTitle')
+                    : t('scorecard.title')}
                 <FlowTooltip
                     term={
                         scorecard.market === 'kr' ? 'krFlowScore' : 'flowScore'

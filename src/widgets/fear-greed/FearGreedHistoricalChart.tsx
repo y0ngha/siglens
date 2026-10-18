@@ -9,9 +9,12 @@ import {
     type ISeriesApi,
     type LineData,
     type Time,
+    TickMarkType,
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
 
 interface FearGreedHistoricalChartProps {
@@ -20,6 +23,17 @@ interface FearGreedHistoricalChartProps {
 
 const CHART_HEIGHT = 240;
 const LINE_WIDTH = 1;
+
+/**
+ * 1년 시계열이라 월 단위 눈금만 쓴다. 기본 포매터는 월 눈금이 앞 눈금과 붙으면 그것을
+ * 건너뛰고 그 오른쪽 일(day) 눈금을 남겨, 마지막 눈금이 "10월" 대신 "5일"로 찍혔다.
+ * 일 눈금은 빈 문자열로 지우고, 나머지는 `null`로 기본 포맷(월·연)에 맡긴다.
+ * 고정된 1년 화면 전제다 — 그래서 차트 옵션에서 확대(`handleScale: false`)를 막는다. 확대를
+ * 허용하게 되면 일 눈금이 전부 사라지므로 이 포매터를 다시 본다.
+ */
+function monthTickFormatter(_time: Time, type: TickMarkType): string | null {
+    return type === TickMarkType.DayOfMonth ? '' : null;
+}
 
 /**
  * 1-year fearGreed score line chart (the last `TRADING_DAYS_1Y` points). Warm-up entries (`score === null`) are
@@ -34,6 +48,11 @@ export function FearGreedHistoricalChart({
     history,
 }: FearGreedHistoricalChartProps) {
     const t = useTranslations('widgets.chart');
+    // 차트는 마운트 때 한 번 만든다 — 로케일은 그때 값으로 충분하다. 로케일은 URL 세그먼트
+    // (`app/[locale]/layout.tsx`)라 전환은 다른 경로로의 이동이고, 이 컴포넌트가 새로
+    // 마운트된다. effect 의존성에 넣지 않도록 ref로 읽는다.
+    const locale = useResolvedLocale();
+    const intlLocaleRef = useRef(INTL_LOCALE[locale]);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
 
@@ -58,7 +77,14 @@ export function FearGreedHistoricalChart({
                 vertLines: { color: chrome.grid },
                 horzLines: { color: chrome.grid },
             },
-            timeScale: { borderVisible: false },
+            // 눈금 언어를 브라우저(`navigator.language`)가 아니라 페이지 로케일에 맞춘다.
+            localization: { locale: intlLocaleRef.current },
+            timeScale: {
+                borderVisible: false,
+                tickMarkFormatter: monthTickFormatter,
+            },
+            // 1년 고정 화면 — 일 눈금을 지우는 `monthTickFormatter`의 전제다.
+            handleScale: false,
             rightPriceScale: {
                 borderVisible: false,
                 scaleMargins: { top: 0.1, bottom: 0.1 },
