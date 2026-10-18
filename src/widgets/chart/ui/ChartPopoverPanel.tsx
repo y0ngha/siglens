@@ -15,8 +15,6 @@ interface ChartPopoverPanelProps {
     readonly label: string;
     /** 원하는 폭(px). 뷰포트가 좁으면 줄어든다. */
     readonly width: number;
-    /** lg 이상에서 트리거 오른쪽 끝에서 왼쪽으로 미는 거리(px). */
-    readonly axisInset?: number;
     readonly className?: string;
     readonly children: ReactNode;
 }
@@ -37,7 +35,6 @@ export function ChartPopoverPanel({
     id,
     label,
     width,
-    axisInset,
     className,
     children,
 }: ChartPopoverPanelProps) {
@@ -54,7 +51,6 @@ export function ChartPopoverPanel({
                     height: window.innerHeight,
                 },
                 width,
-                axisInset,
             });
             panel.style.top = `${placement.top}px`;
             panel.style.left = `${placement.left}px`;
@@ -70,7 +66,7 @@ export function ChartPopoverPanel({
             window.removeEventListener('resize', place);
             window.removeEventListener('scroll', place, true);
         };
-    }, [panelRef, triggerRef, width, axisInset]);
+    }, [panelRef, triggerRef, width]);
 
     // SSR 가드 — 호출부가 `isOpen &&`로 열렸을 때만 마운트하지만, 그 불변식을 이 파일에서도 강제한다.
     if (typeof document === 'undefined') return null;

@@ -5,6 +5,10 @@
  * 모바일에서는 아래가 잘리거나 AI 시트 아래에 깔린다. 그래서 패널을 `document.body`로 포털해 뷰포트
  * 좌표로 놓는다 — 트리거 바로 아래에서 시작하고, 오른쪽 끝을 트리거에 맞추되 **뷰포트 안으로 밀어 넣고**,
  * 높이는 뷰포트 아래 끝까지로 제한한다(넘치면 패널 안에서 스크롤).
+ *
+ * 헤더 띠의 모든 메뉴(보조지표·차트 작도·차트 설정)가 같은 자리, 버튼 바로 아래로 열린다. "차트 작도"만
+ * 가격 축 라벨을 비키려고 lg 이상에서 240px 왼쪽으로 밀던 오프셋은 뺐다 — 헤더 메뉴 재배치(#1051) 뒤로는
+ * 패널이 버튼에서 떨어져 떠 보였다(2026-10-18 사용자 결정: 버튼 바로 아래, 다른 메뉴와 같게).
  */
 
 /** 뷰포트 가장자리와 패널 사이의 최소 여백(px). */
@@ -13,8 +17,6 @@ export const POPOVER_VIEWPORT_MARGIN = 8;
 export const POPOVER_TRIGGER_GAP = 4;
 /** 패널 높이 상한(px) — 예전 `max-h-[28rem]`. */
 export const POPOVER_MAX_HEIGHT = 448;
-/** 이 폭 이상(= Tailwind `lg`)에서만 `axisInset`을 적용한다. */
-export const POPOVER_AXIS_INSET_MIN_VIEWPORT = 1024;
 
 export interface PopoverPlacementInput {
     /** 트리거의 `getBoundingClientRect()` 중 쓰는 값. */
@@ -22,8 +24,6 @@ export interface PopoverPlacementInput {
     readonly viewport: { readonly width: number; readonly height: number };
     /** 원하는 패널 폭(px). 뷰포트가 좁으면 줄어든다. */
     readonly width: number;
-    /** lg 이상에서 오른쪽 끝을 트리거에서 이만큼 왼쪽으로 민다(가격 축 라벨 회피). */
-    readonly axisInset?: number;
 }
 
 export interface PopoverPlacement {
@@ -37,14 +37,11 @@ export function computePopoverPlacement({
     trigger,
     viewport,
     width,
-    axisInset = 0,
 }: PopoverPlacementInput): PopoverPlacement {
     const margin = POPOVER_VIEWPORT_MARGIN;
     const panelWidth = Math.min(width, viewport.width - margin * 2);
-    const inset =
-        viewport.width >= POPOVER_AXIS_INSET_MIN_VIEWPORT ? axisInset : 0;
     const left = Math.min(
-        Math.max(trigger.right - inset - panelWidth, margin),
+        Math.max(trigger.right - panelWidth, margin),
         viewport.width - panelWidth - margin
     );
     const top = trigger.bottom + POPOVER_TRIGGER_GAP;

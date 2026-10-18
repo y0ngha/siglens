@@ -120,8 +120,7 @@ const POPOVER_WIDTH_PX = 352;
  * 훅이라 트리거 바로 아래로 열린다. 열림 상태는 헤더 띠의 다른 메뉴와 함께 `useExclusiveChartMenu`가 쥔다.
  * 켜 놓은 채로 차트를 보며 고르는 설정이라 모달 배경도 필요 없다 — 바깥을 누르거나 Esc를 누르면 닫힌다.
  *
- * 폭(`POPOVER_WIDTH_PX`)은 "차트 작도" 패널보다 넓다 — 지표 체크박스를 두 열로 놓는다. 가격 축 오프셋(`axisInset`)은
- * 쓰지 않는다: 그 오프셋은 작도 항목 hover로 뜨는 가격 축 라벨을 비키려는 값이고, 지표 설정에는 그런 라벨이 없다.
+ * 폭(`POPOVER_WIDTH_PX`)은 "차트 작도" 패널보다 넓다 — 지표 체크박스를 두 열로 놓는다.
  * `role="group"`인 이유는 `ChartOverlayMenu`와 같다(순수 토글 모음이지 ARIA menu가 아니다).
  */
 export function IndicatorMenu({ bindings, menu }: IndicatorMenuProps) {
