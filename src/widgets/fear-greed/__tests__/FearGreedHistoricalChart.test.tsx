@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
 import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
 const {
@@ -76,7 +77,7 @@ describe('FearGreedHistoricalChart', () => {
         const twoYears: FearGreedHistoryPoint[] = Array.from(
             { length: 504 },
             (_, i) => ({
-                date: new Date(start + i * 86_400_000)
+                date: new Date(start + i * MS_PER_DAY)
                     .toISOString()
                     .slice(0, 10),
                 score: 50,
