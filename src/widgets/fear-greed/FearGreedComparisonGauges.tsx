@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { scoreToLabel, type FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
+import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
 
 interface FearGreedComparisonGaugesProps {
     history: FearGreedHistoryPoint[];
@@ -17,7 +18,6 @@ interface PeriodDef {
 
 const TRADING_DAYS_1W = 5;
 const TRADING_DAYS_1M = 21;
-const TRADING_DAYS_1Y = 252;
 
 /** `label`은 `shared.ui.period` **키**다 — 표시는 렌더 쪽에서 `t()`로. */
 const PERIODS: ReadonlyArray<PeriodDef> = [

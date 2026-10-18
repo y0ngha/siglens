@@ -12,6 +12,7 @@ import {
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
 
 interface FearGreedHistoricalChartProps {
     history: FearGreedHistoryPoint[];
@@ -21,7 +22,7 @@ const CHART_HEIGHT = 240;
 const LINE_WIDTH = 1;
 
 /**
- * 1-year fearGreed score line chart. Warm-up entries (`score === null`) are
+ * 1-year fearGreed score line chart (the last `TRADING_DAYS_1Y` points). Warm-up entries (`score === null`) are
  * filtered out — the time series will naturally show gaps where the algorithm
  * is below confidence threshold.
  *
@@ -85,7 +86,9 @@ export function FearGreedHistoricalChart({
     useEffect(() => {
         const series = seriesRef.current;
         if (!series) return;
+        // 서버는 "1년 전" 비교 게이지 때문에 약 2년을 보낸다 — 차트 제목("최근 1년")에 맞춰 마지막 1년만 그린다.
         const data: LineData[] = history
+            .slice(-TRADING_DAYS_1Y)
             .filter(
                 (p): p is FearGreedHistoryPoint & { score: number } =>
                     p.score !== null
