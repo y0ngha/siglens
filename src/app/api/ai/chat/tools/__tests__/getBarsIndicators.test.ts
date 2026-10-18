@@ -308,7 +308,7 @@ describe('getBarsIndicatorsTool', () => {
             bars: unknown[];
             trend: string;
             signals: Array<{ type: string }>;
-            latest: { rsi: number | null };
+            latest: { rsi: number | null; rsiZone: string | null };
         };
         expect(r.bars).toHaveLength(10);
         expect(r.trend).toBe('uptrend');
@@ -316,6 +316,8 @@ describe('getBarsIndicatorsTool', () => {
             { type: 'golden_cross', direction: 'bullish', phase: 'confirmed' },
         ]);
         expect(r.latest.rsi).toBe(2);
+        // 차트 탭·분석 프롬프트와 같은 core 구간 판정(≤ 30 → oversold)을 싣는다.
+        expect(r.latest.rsiZone).toBe('oversold');
         expect(getCachedBars).toHaveBeenCalledWith(
             {},
             'BRK.A',
@@ -323,6 +325,30 @@ describe('getBarsIndicatorsTool', () => {
             'BRK-A',
             undefined
         );
+    });
+
+    it.each([
+        // NVDA 보고 사례: 37.5는 차트 탭과 같이 neutral이어야 한다.
+        { rsi: [40, 37.5], zone: 'neutral' },
+        { rsi: [60, 70], zone: 'overbought' },
+        // RSI가 없거나 유한하지 않으면 구간을 지어내지 않는다.
+        { rsi: [50, null], zone: null },
+        { rsi: [50, Number.NaN], zone: null },
+    ])('latest.rsiZone은 마지막 RSI $rsi → $zone', async ({ rsi, zone }) => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: 50 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({
+            bars,
+            indicators: { ...indicators, rsi },
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day', bars: 10 },
+            ctx,
+            rt
+        )) as { latest: { rsiZone: string | null } };
+        expect(r.latest.rsiZone).toBe(zone);
     });
 
     it('getAssetInfo가 throw해도 fmpSymbol 없이 진행된다', async () => {
