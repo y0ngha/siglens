@@ -351,6 +351,7 @@ describe('NewsPage — aiArticleJsonLd headline/description isEquity branch', ()
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
             {
                 tab: 'news',
+                locale: 'ko',
                 content: { currentDriverKo: '테스트용 뉴스 동인' },
                 generatedAt: new Date('2026-09-01'),
             },
@@ -492,6 +493,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
     const PROSE_SNAPSHOT = [
         {
             tab: 'news',
+            locale: 'ko',
             content: { currentDriverKo: '실적 기대가 가격을 끌고 있다.' },
             generatedAt: new Date('2026-09-01T03:04:05.000Z'),
         },

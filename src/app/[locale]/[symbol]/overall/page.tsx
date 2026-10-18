@@ -38,6 +38,7 @@ import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
@@ -234,7 +235,7 @@ export default async function OverallPage({ params }: Props) {
     // 섹션이 통째로 비어버리는(오늘 baseline보다 더 나쁜) 회귀가 생긴다.
     // hasOverallProse는 OverallSnapshotProse 내부와 동일한 narrowOverallContent를
     // 재사용하므로 두 판단이 어긋날 수 없다.
-    const overallSnapshot = (snapshots ?? []).find(s => s.tab === 'overall');
+    const overallSnapshot = findSnapshotForLocale(snapshots, 'overall', locale);
     const showSnapshotProse = hasOverallProse(overallSnapshot?.content);
 
     const displayName = buildDisplayName(assetInfo, upper, locale);

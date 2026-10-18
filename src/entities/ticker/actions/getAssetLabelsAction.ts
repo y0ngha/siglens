@@ -2,6 +2,8 @@
 
 import { getAssetInfo } from '../lib/getAssetInfo';
 import { MAX_RECENT_SEARCHES } from '../lib/recentSearches';
+import { pickAssetName } from '../lib/ticker';
+import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 
 export interface AssetLabelsResult {
     /** 이름을 찾은 심볼만. 이름이 없는 심볼은 여기서 빠진다. */
@@ -24,6 +26,13 @@ export interface AssetLabelsResult {
  * 심볼마다 `getAssetInfoAction`을 부르면 최대 7번 줄을 서지만, 여기서 묶으면
  * 왕복 한 번에 서버 안에서 병렬로 끝난다.
  *
+ * ## 로케일
+ *
+ * `locale`로 표시명 언어를 고른다(`pickAssetName` — ko는 한글명 우선, 그 외는 영문명 우선).
+ * 예전에는 항상 `koreanName ?? name`이라 영문 화면에서 답변 아래 링크가 "엔비디아"로,
+ * 최근 검색 칩이 한글로 나왔다. 서버 액션 인자는 신뢰할 수 없는 입력이라 `resolveLocale`로
+ * 좁힌다(카탈로그에 없는 값은 기본 로케일로 떨어진다).
+ *
  * ## `Promise.allSettled`인 이유 (`Promise.all` 금지)
  *
  * `getAssetInfo`는 캐시·DB·크립토·국내 어디에도 없는 심볼에서
@@ -42,8 +51,10 @@ export interface AssetLabelsResult {
  * 분할 이득이 없다.
  */
 export async function getAssetLabelsAction(
-    symbols: readonly string[]
+    symbols: readonly string[],
+    locale: Locale
 ): Promise<AssetLabelsResult> {
+    const resolvedLocale = resolveLocale(locale);
     const unique = [...new Set(symbols.map(s => s.trim().toUpperCase()))]
         .filter(Boolean)
         .slice(0, MAX_RECENT_SEARCHES);
@@ -56,12 +67,12 @@ export async function getAssetLabelsAction(
         unique.flatMap((symbol, index) => {
             const result = settled[index];
             if (result.status !== 'fulfilled' || !result.value) return [];
-            // 한글명 우선 — 검색 결과 행(`resultDisplayNames`)과 같은 규칙이어야
-            // 같은 종목이 검색 목록과 최근 검색 칩에서 다른 이름으로 뜨지 않는다.
-            const label = (
-                result.value.koreanName ??
-                result.value.name ??
-                ''
+            // 로케일별 이름 규칙(`pickAssetName`) — 검색 결과 행·페이지 제목과 같은
+            // 규칙이어야 같은 종목이 화면마다 다른 이름으로 뜨지 않는다.
+            const label = pickAssetName(
+                result.value,
+                symbol,
+                resolvedLocale
             ).trim();
             if (!label || label.toUpperCase() === symbol) return [];
             return [[symbol, label] as const];

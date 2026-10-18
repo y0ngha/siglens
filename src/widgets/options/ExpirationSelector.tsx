@@ -5,7 +5,7 @@ import { useMemo, useRef } from 'react';
 import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
-import type { SlotMapping } from '@y0ngha/siglens-core';
+import type { ExpirationSlotKey, SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
@@ -58,13 +58,33 @@ export function ExpirationSelector({
     onChange,
 }: ExpirationSelectorProps) {
     const t = useTranslations('widgets.options');
+    // 슬롯 칩 라벨. core의 `slot.label`은 한국어로 하드코딩돼 있어(`1개월`) 영문 화면에
+    // 그대로 나왔다 — 안정 식별자인 `slot.key`로 카탈로그를 찾는다.
+    //
+    // 키를 변수로 조립하지 않고 리터럴 호출을 정적 맵에 펼쳐 둔다. 동적 키는 추출기가
+    // 네임스페이스를 통째로 넓히거나(클라이언트 페이로드 부풀림) 키를 빠뜨려 전 로케일이
+    // 한국어로 렌더되게 한다(`shared/i18n/assetLabel.ts` 주석). `Record<ExpirationSlotKey, …>`라
+    // core가 슬롯을 추가하면 컴파일이 막는다.
+    const slotLabels = useMemo<Record<ExpirationSlotKey, string>>(
+        () => ({
+            '0D': t('ExpirationSelector.slot0D'),
+            '1W': t('ExpirationSelector.slot1W'),
+            '2W': t('ExpirationSelector.slot2W'),
+            '1M': t('ExpirationSelector.slot1M'),
+            '2M': t('ExpirationSelector.slot2M'),
+            '3M': t('ExpirationSelector.slot3M'),
+            '6M': t('ExpirationSelector.slot6M'),
+        }),
+        [t]
+    );
     const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
     const tabs = useMemo<TabDescriptor[]>(
         () => [
             ...slots.map(({ slot, expirationDate }) => ({
                 key: slot.key,
-                label: slot.label,
+                // 모르는 키(core가 슬롯을 추가한 직후)는 core 라벨로 폴백한다.
+                label: slotLabels[slot.key] ?? slot.label,
                 value: expirationDate,
                 sub: expirationDate.slice(5),
             })),
@@ -74,7 +94,7 @@ export function ExpirationSelector({
                 value: 'all' as const,
             },
         ],
-        [slots, t]
+        [slots, t, slotLabels]
     );
 
     const activeIndex = useMemo(

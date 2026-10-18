@@ -12,8 +12,15 @@ const mockAddRecentSearch = vi.fn();
 const mockRemoveRecentSearch = vi.fn();
 const mockClearRecentSearches = vi.fn();
 const mockRelabelRecentSearches = vi.fn();
+const mockLocale = vi.hoisted(() => ({ current: 'ko' as 'ko' | 'en' }));
+vi.mock('@/shared/i18n/useResolvedLocale', () => ({
+    useResolvedLocale: () => mockLocale.current,
+}));
 const mockGetAssetLabelsAction = vi.fn<
-    (symbols: string[]) => Promise<{
+    (
+        symbols: string[],
+        locale: string
+    ) => Promise<{
         labels: Record<string, string>;
         failed: string[];
     }>
@@ -45,12 +52,13 @@ vi.mock('@/shared/lib/googleAds', () => ({
  */
 vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
     getAssetLabelsAction: (...args: unknown[]) =>
-        mockGetAssetLabelsAction(...(args as [string[]])),
+        mockGetAssetLabelsAction(...(args as [string[], string])),
 }));
 
 describe('useRecentSearches', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockLocale.current = 'ko';
         mockGetRecentSearches.mockReturnValue([]);
         mockGetAssetLabelsAction.mockResolvedValue({ labels: {}, failed: [] });
     });
@@ -171,7 +179,21 @@ describe('useRecentSearches', () => {
 describe('useRecentSearches — 회사명 백필', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockLocale.current = 'ko';
         mockGetAssetLabelsAction.mockResolvedValue({ labels: {}, failed: [] });
+    });
+
+    it('현재 로케일을 액션에 넘긴다 (영문 화면에서 한글 칩이 나오지 않게)', async () => {
+        mockLocale.current = 'en';
+        mockGetRecentSearches.mockReturnValue([
+            { symbol: 'BFLOC', label: 'BFLOC' },
+        ]);
+
+        await act(async () => {
+            renderHook(() => useRecentSearches());
+        });
+
+        expect(mockGetAssetLabelsAction).toHaveBeenCalledWith(['BFLOC'], 'en');
     });
 
     it('라벨이 심볼과 같은 항목만 조회한다', async () => {
@@ -184,7 +206,7 @@ describe('useRecentSearches — 회사명 백필', () => {
             renderHook(() => useRecentSearches());
         });
 
-        expect(mockGetAssetLabelsAction).toHaveBeenCalledWith(['BF1']);
+        expect(mockGetAssetLabelsAction).toHaveBeenCalledWith(['BF1'], 'ko');
     });
 
     it('받은 이름을 relabelRecentSearches에 넘긴다', async () => {

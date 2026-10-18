@@ -1,4 +1,4 @@
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { RelatedSymbolLink } from '@/views/symbol/RelatedSymbolLink';
 import {
     relatedSymbolsFor,
@@ -7,6 +7,12 @@ import {
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { pickAssetName } from '@/entities/ticker/lib/ticker';
+import {
+    DEFAULT_LOCALE,
+    resolveLocale,
+    type Locale,
+} from '@/shared/i18n/locales';
 
 interface RelatedSymbolsProps {
     /** 현재 심볼(대문자). 자기 자신은 목록에서 제외된다. */
@@ -34,19 +40,46 @@ interface RelatedSymbolsProps {
  * 페이지 렌더가 이미 채워 둔 것을 공유하며, (c) 번역이 나중에 채워져도 자동으로
  * 따라온다. `Promise.all`이라 왕복은 한 번이다.
  *
+ * ## 로케일
+ *
+ * ko는 한글명만 칩에 쓴다(한글명이 없으면 티커만). 그 외 로케일은 `pickAssetName`으로
+ * 영문명을 쓰고, 영문명이 없을 때만 한글명으로 떨어진다 — 영문 페이지에 "애플 AAPL"이
+ * 나오던 결함이다. 같은 이유로 비-ko에서는 DB가 비었을 때의 **큐레이션 한글명 폴백도 쓰지
+ * 않는다**(티커만 남긴다). 이름이 티커와 같으면(`name === symbol`) 칩에 티커가 두 번
+ * 찍히므로 이름으로 치지 않는다. 이 규칙 전체(DB 이름 → ko 한정 큐레이션 폴백)가 이
+ * 함수 한 곳에 있다.
+ *
  * 인프라 실패는 삼킨다 — 이름 하나 없다고 내부링크가 사라지면 이 컴포넌트의 존재
  * 이유가 없어진다. 그 경우 큐레이션 이름(있으면)으로, 없으면 티커로 폴백한다.
  * **단 `DYNAMIC_SERVER_USAGE`는 예외로 되던진다** — 실패가 아니라 Next의 제어 흐름
  * 신호이기 때문이다(아래 catch 주석).
  */
-async function resolveKoreanNames(
-    symbols: readonly string[]
+async function resolveChipNames(
+    items: readonly RelatedSymbol[],
+    locale: Locale
 ): Promise<ReadonlyMap<string, string>> {
+    // 큐레이션 이름은 DB가 비었을 때의 폴백이며 한글이라 ko에서만 쓴다.
+    const curatedFallback = (item: RelatedSymbol): string | undefined =>
+        locale === DEFAULT_LOCALE ? item.koreanName : undefined;
     const resolved = await Promise.all(
-        symbols.map(async symbol => {
+        items.map(async item => {
+            const { symbol } = item;
             try {
                 const { assetInfo } = await getAssetInfoResilient(symbol);
-                return [symbol, assetInfo?.koreanName] as const;
+                if (assetInfo === null || assetInfo === undefined) {
+                    return [symbol, curatedFallback(item)] as const;
+                }
+                if (locale === DEFAULT_LOCALE) {
+                    return [
+                        symbol,
+                        assetInfo.koreanName ?? curatedFallback(item),
+                    ] as const;
+                }
+                const name = pickAssetName(assetInfo, symbol, locale);
+                return [
+                    symbol,
+                    name === symbol ? curatedFallback(item) : name,
+                ] as const;
             } catch (e: unknown) {
                 // `DYNAMIC_SERVER_USAGE`는 실패가 아니라 Next의 **제어 흐름
                 // 신호**다 — 정적 생성 중 동적 API가 쓰였으니 이 렌더를 포기하라는
@@ -54,10 +87,10 @@ async function resolveKoreanNames(
                 // 굳힌다(#545 인시던트). 형제 resilient 래퍼들과 동일하게 되던진다.
                 if (isDynamicServerError(e)) throw e;
                 console.error(
-                    `[RelatedSymbols] koreanName lookup failed for ${symbol}:`,
+                    `[RelatedSymbols] name lookup failed for ${symbol}:`,
                     e
                 );
-                return [symbol, undefined] as const;
+                return [symbol, curatedFallback(item)] as const;
             }
         })
     );
@@ -113,7 +146,8 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
     const tRoot = await getTranslations();
     const related = relatedSymbolsFor(symbol);
     if (related.length === 0) return null;
-    const koreanNames = await resolveKoreanNames(related.map(r => r.symbol));
+    const locale = resolveLocale(await getLocale());
+    const names = await resolveChipNames(related, locale);
 
     // 선정 순서(테마 → 링)를 유지한 채 캡션별로 묶는다 — `Map`이 삽입 순서를
     // 지키므로 관련성이 높은 그룹이 먼저 온다.
@@ -138,9 +172,8 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
                     <ul className="mt-1.5 flex flex-wrap gap-2">
                         {items.map(item => {
                             // DB 이름이 우선 — 링크 대상 페이지의 제목과 같은 소스다.
-                            // 큐레이션 이름은 DB가 비었을 때의 폴백.
-                            const koreanName =
-                                koreanNames.get(item.symbol) ?? item.koreanName;
+                            // 폴백 규칙은 `resolveChipNames`가 모두 처리한다.
+                            const chipName = names.get(item.symbol);
                             return (
                                 <li key={item.symbol}>
                                     {/* href는 현재 탭에 맞춘다(뉴스·공포탐욕 탭이면
@@ -149,8 +182,8 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
                                         symbol={item.symbol}
                                         className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
-                                        {koreanName !== undefined && (
-                                            <span>{koreanName}</span>
+                                        {chipName !== undefined && (
+                                            <span>{chipName}</span>
                                         )}
                                         {/* 표기는 접미사를 뗀 `displayTicker` — 국내 종목의
                                             `.KS`/`.KQ`는 검색량이 0이고 사이트의 title

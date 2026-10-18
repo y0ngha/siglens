@@ -1205,4 +1205,22 @@ text.replace(/Siglens/g, brand);
 const next = mapStringValues(JSON.parse(text), v => v.replace(/siglens/gi, brand));
 ```
 
+<a id="I18-13"></a>
+
+#### I18-13 — Locale-dependent data takes a required locale and is resolved in one place
+
+Stored or fetched text that exists per language (SEO snapshot prose, asset/ticker names, chip labels) and every helper
+that picks between variants take a required `locale`; a missing argument must fail typecheck, never fall back to Korean
+on a non-ko page. The fallback order (preferred locale, then the default) lives in one helper that all callers use. Hook
+JSDoc, dedup sets and cache keys built from such data are rechecked when the result becomes locale-dependent (key by
+locale or document the snapshot as intentional).
+
+```typescript
+// ❌ optional locale silently yields Korean on /en
+const label = (item: Item, locale?: Locale) => item.names[locale ?? 'ko'];
+
+// ✅ required locale, one shared fallback helper
+const label = (item: Item, locale: Locale) => pickLocalized(item.names, locale);
+```
+
 ---

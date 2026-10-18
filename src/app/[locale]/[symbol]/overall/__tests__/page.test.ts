@@ -175,6 +175,7 @@ describe('generateMetadata', () => {
             {
                 symbol: 'AAPL',
                 tab: 'overall',
+                locale: 'ko',
                 content: { headlineKo: 'valid headline' },
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date(),
@@ -407,6 +408,7 @@ describe('Overall page snapshot prose placement (FIX 1 / FIX 1b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'overall',
+                locale: 'ko',
                 content: { headlineKo: 'valid headline' },
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date(),
@@ -429,6 +431,7 @@ describe('Overall page snapshot prose placement (FIX 1 / FIX 1b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'overall',
+                locale: 'ko',
                 // Malformed: none of the fields narrowOverallContent recognizes
                 // are present, so hasOverallProse(content) === false.
                 content: { unrelatedField: 'nope' },

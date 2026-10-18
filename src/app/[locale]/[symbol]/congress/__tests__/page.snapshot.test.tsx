@@ -135,6 +135,7 @@ describe('CongressPage — SEO snapshot prose (Task 7b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'congress',
+                locale: 'ko',
                 content: SNAPSHOT_CONTENT,
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
@@ -234,6 +235,7 @@ describe('CongressPage — SEO snapshot prose (Task 7b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'congress',
+                locale: 'ko',
                 content: SNAPSHOT_CONTENT,
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
@@ -259,6 +261,7 @@ describe('CongressPage — SEO snapshot prose (Task 7b)', () => {
             {
                 symbol: 'AAPL',
                 tab: 'congress',
+                locale: 'ko',
                 content: SNAPSHOT_CONTENT,
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),

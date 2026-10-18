@@ -14,6 +14,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { type SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
@@ -128,7 +129,11 @@ export default async function CongressPage({ params }: Props) {
         assetPromise,
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
-    const congressSnapshot = (snapshots ?? []).find(s => s.tab === 'congress');
+    const congressSnapshot = findSnapshotForLocale(
+        snapshots,
+        'congress',
+        locale
+    );
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasCongressProse)
     // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
     // 위젯을 아예 렌더하지 않으면 `useRegisterShareable`이 돌지 않아 헤더 공유

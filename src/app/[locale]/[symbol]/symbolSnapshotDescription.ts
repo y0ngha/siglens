@@ -1,3 +1,4 @@
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import type {
     SeoAnalysisSnapshot,
@@ -59,9 +60,13 @@ export async function loadTabSnapshotMeta({
 }: TabSnapshotInput): Promise<TabSnapshotMeta> {
     // `null`(읽기 실패)은 "스냅샷 없음"과 같게 템플릿 설명으로 떨어진다 — 설명 문구는
     // 색인 여부와 무관하다(색인 판정은 `getBlockedSymbolMetadata`가 `unknown`으로 구분한다).
-    const snap = (
-        (await getSeoSnapshotsStatic(symbol, revalidate, locale)) ?? []
-    ).find(s => s.tab === tab);
+    // 다른 언어로 구워진 행(en→ko 폴백)은 쓰지 않는다 — 영문 페이지 description에
+    // 한국어 문장이 들어가지 않도록 템플릿 설명으로 떨어진다.
+    const snap = findSnapshotForLocale(
+        await getSeoSnapshotsStatic(symbol, revalidate, locale),
+        tab,
+        locale
+    );
     const description = snap
         ? buildSnapshotMetaDescription(
               tab,

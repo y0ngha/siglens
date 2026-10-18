@@ -13,6 +13,7 @@ import {
 } from 'vitest';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import ko from '../../../../messages/ko.json';
+import en from '../../../../messages/en.json';
 
 const { labels } = vi.hoisted(() => ({
     labels: vi.fn(async (symbols: readonly string[]) => ({
@@ -48,7 +49,7 @@ vi.mock(
 
 import { MessageList } from '@/widgets/agent-chat/MessageList';
 
-const wrap = (ui: React.ReactElement) =>
+const wrap = (ui: React.ReactElement, locale: 'ko' | 'en' = 'ko') =>
     render(
         <QueryClientProvider
             client={
@@ -57,7 +58,10 @@ const wrap = (ui: React.ReactElement) =>
                 })
             }
         >
-            <NextIntlClientProvider locale="ko" messages={ko}>
+            <NextIntlClientProvider
+                locale={locale}
+                messages={locale === 'en' ? en : ko}
+            >
                 {ui}
             </NextIntlClientProvider>
         </QueryClientProvider>
@@ -160,7 +164,47 @@ describe('MessageList', () => {
                 name: /시그렌즈에서 삼성전자 보기/,
             })
         ).toHaveAttribute('href', 'https://siglens.io/005930.KS/overall');
-        expect(labels).toHaveBeenCalledWith(['005930.KS']);
+        expect(labels).toHaveBeenCalledWith(['005930.KS'], 'ko');
+    });
+
+    it('en 로케일이면 액션에 en을 넘기고 영문 이름을 링크에 쓴다', async () => {
+        labels.mockResolvedValueOnce({
+            labels: { '005930.KS': 'Samsung Electronics' },
+            failed: [],
+        });
+        wrap(
+            <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix="/en"
+                messages={[
+                    {
+                        id: '2',
+                        role: 'assistant',
+                        content: 'a',
+                        tools: [
+                            {
+                                id: 't',
+                                name: 'get_cached_analysis',
+                                args: { symbol: '005930.KS', tab: 'overall' },
+                                status: 'ok',
+                            },
+                        ],
+                        status: 'complete',
+                    },
+                ]}
+                streaming={false}
+                onRegenerate={vi.fn()}
+                onEdit={vi.fn()}
+                onSend={vi.fn()}
+            />,
+            'en'
+        );
+        expect(
+            await screen.findByRole('link', {
+                name: /View Samsung Electronics on SIGLENS/,
+            })
+        ).toBeInTheDocument();
+        expect(labels).toHaveBeenCalledWith(['005930.KS'], 'en');
     });
 
     it('shows an abandoned draft dimmed with a note while the rewritten answer has not started', () => {
@@ -1390,7 +1434,7 @@ describe('MessageList', () => {
                 })
             ).toHaveLength(2);
             expect(labels).toHaveBeenCalledTimes(1);
-            expect(labels).toHaveBeenCalledWith(['005930.KS', 'AAPL']);
+            expect(labels).toHaveBeenCalledWith(['005930.KS', 'AAPL'], 'ko');
         });
 
         it('액션 상한(7개)을 넘으면 나눠 묻는다', async () => {
