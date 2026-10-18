@@ -7,14 +7,16 @@ import {
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { roundMoney } from '@/app/api/ai/chat/tools/roundMoney';
 
 /**
  * Option premiums trade in whole cents — the tool hands the model nothing
  * finer. A non-finite value (no real quote) becomes `null`, matching core's
- * "null = no two-sided quote"; a mid under half a cent rounds to `0`.
+ * "null = no two-sided quote"; a mid under half a cent rounds to `0`. Uses
+ * `roundMoney` for the half-cent float bias and `-0` normalization.
  */
 const toCents = (v: number | null): number | null =>
-    v === null || !Number.isFinite(v) ? null : Math.round(v * 100) / 100;
+    v === null || !Number.isFinite(v) ? null : roundMoney(v, 'USD');
 
 /**
  * Rounds the bid/ask summary's mid prices and spreads to the cent. The

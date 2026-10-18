@@ -87,7 +87,7 @@ describe('getOptionsSummaryTool', () => {
         expect(r.metrics.topOiBidAskSummary[0]!.strike).toBe(220);
     });
 
-    it('rounds option premiums to the cent so no sub-cent price reaches the model', async () => {
+    it('옵션 프리미엄은 센트 단위로 반올림해 센트 미만 가격이 모델에 가지 않는다', async () => {
         hasMarket.mockResolvedValue(true);
         fetchSnapshot.mockResolvedValue({
             capturedAt: '2026-10-16T20:00:00Z',

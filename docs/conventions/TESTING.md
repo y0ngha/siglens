@@ -135,6 +135,15 @@ An overstated name hides incomplete coverage. Rename the test or add assertions 
 - ❌ `it('uses 32_768 for remaining Gemini models', () => hardcodedGeminiList.forEach(...))` — misses new additions.
 - ✅ `it('default budget for unclassified Gemini models', () => derived.forEach(...))`.
 
+<a id="TE-56"></a>
+
+#### TE-56 — describe/it text uses the language of the sibling tests
+
+A new `describe`/`it` name uses the same language as the other tests in that file (and its directory siblings). Mixed languages make the suite hard to scan and search; when adding a case to an existing file, match it, and rename on sight if a name drifted.
+
+- ❌ `it('rounds half a cent up')` added to a file whose other cases are Korean.
+- ✅ `it('반 센트는 올림한다')` in the same file.
+
 ## Required Test Cases
 
 <a id="TE-21"></a>
