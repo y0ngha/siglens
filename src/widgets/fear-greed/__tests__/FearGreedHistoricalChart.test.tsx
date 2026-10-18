@@ -72,12 +72,15 @@ describe('FearGreedHistoricalChart', () => {
         mockAddSeries.mockClear();
         mockRemove.mockClear();
         mockApplyOptions.mockClear();
+        // 로케일을 바꾸는 테스트가 단언 도중 실패해도 다음 테스트에 새지 않게 매번 되돌린다.
+        mockLocale.value = 'ko';
     });
 
     const lastChartOptions = async () => {
         const { createChart } = await import('lightweight-charts');
         return vi.mocked(createChart).mock.calls.at(-1)?.[1] as {
             localization: { locale: string };
+            handleScale: boolean;
             timeScale: {
                 tickMarkFormatter: (t: unknown, type: number) => string | null;
             };
@@ -93,13 +96,17 @@ describe('FearGreedHistoricalChart', () => {
         expect(fmt('2026-01-01', TickMarkType.Year)).toBeNull();
     });
 
+    it('일 눈금을 지우는 전제대로 확대를 막는다', async () => {
+        render(<FearGreedHistoricalChart history={history} />);
+        expect((await lastChartOptions()).handleScale).toBe(false);
+    });
+
     it('눈금 언어는 브라우저가 아니라 페이지 로케일(INTL_LOCALE)이다', async () => {
         mockLocale.value = 'ja';
         render(<FearGreedHistoricalChart history={history} />);
         expect((await lastChartOptions()).localization.locale).toBe(
             INTL_LOCALE.ja
         );
-        mockLocale.value = 'ko';
     });
 
     it('creates a line series and sets data filtered to non-null scores', () => {
