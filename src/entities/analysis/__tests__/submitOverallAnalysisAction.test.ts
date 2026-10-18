@@ -102,6 +102,10 @@ vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: mockResolveHoldingPositionBucket,
 }));
 
+// 종목 호가표 조회는 yahoo를 탄다 — 테스트는 네트워크 없이 주식 표로 고정한다.
+vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+    resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
+}));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));

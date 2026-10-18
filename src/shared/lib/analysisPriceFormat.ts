@@ -1,4 +1,4 @@
-import { roundToKrxTick } from '@y0ngha/siglens-core';
+import { roundToKrxTick, type KrxTickTable } from '@y0ngha/siglens-core';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
@@ -15,14 +15,26 @@ import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
  * 반올림하기 전에 캐시된 분석이나 core가 일부러 반올림하지 않는 작도 좌표(추세선
  * 끝값 `271,192.31`)도 화면에서는 호가 단위(`271,000`)로 보인다. 다른 시장은
  * 값을 바꾸지 않는다.
+ *
+ * `krxTickTable`은 종목이 주식('share')인지 ETF/ETN('etp')인지에 따른 호가표다. ETF는
+ * 2,000원 미만 1원·이상 5원 단위라, 주식 표로 깎으면 올바른 값(`40,125`)이 `40,150`으로
+ * 망가진다. 분석을 만든 쪽(`resolveKrxTickTable`)과 같은 표여야 하며, 기본값은 'share'.
  */
-export function quotedPriceForSymbol(price: number, symbol: string): number {
-    return currencyForSymbol(symbol) === 'KRW' ? roundToKrxTick(price) : price;
+export function quotedPriceForSymbol(
+    price: number,
+    symbol: string,
+    krxTickTable: KrxTickTable = 'share'
+): number {
+    return currencyForSymbol(symbol) === 'KRW'
+        ? roundToKrxTick(price, krxTickTable)
+        : price;
 }
 
 interface AnalysisPriceFormatOptions {
     /** 끝자리 0을 줄인다(`12.30` → `12.3`). 한국 종목은 원래 정수라 영향이 없다. */
     trimTrailingZeros?: boolean;
+    /** KRX 호가표(주식/ETF). 한국 종목에만 의미가 있다. 기본 'share'. */
+    krxTickTable?: KrxTickTable;
 }
 
 /**
@@ -37,11 +49,14 @@ export function formatAnalysisPrice(
     price: number,
     symbol: string,
     locale: Locale,
-    { trimTrailingZeros = false }: AnalysisPriceFormatOptions = {}
+    {
+        trimTrailingZeros = false,
+        krxTickTable = 'share',
+    }: AnalysisPriceFormatOptions = {}
 ): string {
     const digits = currencyFractionDigits(currencyForSymbol(symbol));
     return cachedNumberFormat(INTL_LOCALE[locale], {
         minimumFractionDigits: trimTrailingZeros ? 0 : digits,
         maximumFractionDigits: digits,
-    }).format(quotedPriceForSymbol(price, symbol));
+    }).format(quotedPriceForSymbol(price, symbol, krxTickTable));
 }

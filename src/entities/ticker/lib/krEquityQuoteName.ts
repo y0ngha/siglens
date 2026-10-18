@@ -1,5 +1,5 @@
-import type { MarketQuote } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { loadYahooProvider } from '@/shared/api/yahoo/lazyYahooProvider';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 
 /**
@@ -36,18 +36,8 @@ export async function fetchKrEquityQuoteName(
     }
 
     // try/catch를 두지 않는다 — 위 doc-comment의 "인프라 실패는 던진다" 계약.
-    const quote = await getYahooQuote(symbol);
-    return quote?.name ?? null;
-}
-
-let providerPromise: Promise<{
-    getQuoteOrThrow(symbol: string): Promise<MarketQuote | null>;
-}> | null = null;
-
-/** provider 인스턴스를 모듈 레벨에서 1회만 만든다(호출마다 동적 import + new 방지). */
-function getYahooQuote(symbol: string): Promise<MarketQuote | null> {
-    providerPromise ??= import('@/shared/api/yahoo/YahooMarketProvider').then(
-        m => new m.YahooMarketProvider()
+    const quote = await loadYahooProvider().then(p =>
+        p.getQuoteOrThrow(symbol)
     );
-    return providerPromise.then(p => p.getQuoteOrThrow(symbol));
+    return quote?.name ?? null;
 }

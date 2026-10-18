@@ -11,12 +11,15 @@ import {
     type EffectiveActionLevels,
 } from '@/entities/analysis/lib/effectiveActionLevels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import type { KrxTickTable } from '@y0ngha/siglens-core';
 import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 
 interface BuildExpertAnalysisReportInput {
     symbol: string;
+    /** 종목의 KRX 호가표(주식/ETF) — 패널 표기와 같아야 복사본 가격이 화면과 어긋나지 않는다. 기본 'share'. */
+    krxTickTable?: KrxTickTable;
     analysis: AnalysisResponse;
     keyLevels: ClusteredKeyLevels;
     /**
@@ -75,13 +78,19 @@ type ReportPriceFormatter = (price: number) => string;
 // 종목은 호가 단위로 반올림한 정수, 그 밖은 소수 둘째 자리다(패널의
 // `formatAnalysisPrice`와 같은 규칙). `undefined` 로케일은 기존 표기를 그대로 둔
 // 것이다(런타임 기본 로케일을 따른다).
-function reportPriceFormatter(symbol: string): ReportPriceFormatter {
+function reportPriceFormatter(
+    symbol: string,
+    krxTickTable: KrxTickTable
+): ReportPriceFormatter {
     const digits = currencyFractionDigits(currencyForSymbol(symbol));
     return price =>
-        quotedPriceForSymbol(price, symbol).toLocaleString(undefined, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
+        quotedPriceForSymbol(price, symbol, krxTickTable).toLocaleString(
+            undefined,
+            {
+                minimumFractionDigits: digits,
+                maximumFractionDigits: digits,
+            }
+        );
 }
 
 function formatPriceList(
@@ -357,6 +366,7 @@ function buildRiskNote(
 
 export function buildExpertAnalysisReport({
     symbol,
+    krxTickTable = 'share',
     analysis,
     keyLevels,
     t,
@@ -386,7 +396,7 @@ export function buildExpertAnalysisReport({
         analysis.actionRecommendation
     );
 
-    const formatPrice = reportPriceFormatter(symbol);
+    const formatPrice = reportPriceFormatter(symbol, krxTickTable);
 
     const sections = [
         buildTitle(symbol, tReport),

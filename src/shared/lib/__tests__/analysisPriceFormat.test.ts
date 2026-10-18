@@ -14,6 +14,19 @@ describe('quotedPriceForSymbol', () => {
         expect(quotedPriceForSymbol(205.325, 'AAPL')).toBe(205.325);
         expect(quotedPriceForSymbol(64_192.5, 'BTCUSD')).toBe(64_192.5);
     });
+
+    it('rounds an ETF with the etp table so a valid 5-won quote survives', () => {
+        // 주식 표(2만~5만원 50원 단위)로 깎으면 올바른 ETF 호가가 망가진다.
+        expect(quotedPriceForSymbol(40_125, '360750.KS')).toBe(40_150);
+        expect(quotedPriceForSymbol(40_125, '360750.KS', 'share')).toBe(40_150);
+        expect(quotedPriceForSymbol(40_125, '360750.KS', 'etp')).toBe(40_125);
+        // 2,000원 미만은 1원 단위.
+        expect(quotedPriceForSymbol(1_234, '069500.KS', 'etp')).toBe(1_234);
+    });
+
+    it('ignores the table for non-KRW listings', () => {
+        expect(quotedPriceForSymbol(205.325, 'AAPL', 'etp')).toBe(205.325);
+    });
 });
 
 describe('formatAnalysisPrice', () => {
@@ -25,6 +38,21 @@ describe('formatAnalysisPrice', () => {
                 trimTrailingZeros: true,
             })
         ).toBe('271,000');
+    });
+
+    it('prints an ETF price unchanged with the etp table', () => {
+        expect(formatAnalysisPrice(40_125, '360750.KS', 'ko')).toBe('40,150');
+        expect(
+            formatAnalysisPrice(40_125, '360750.KS', 'ko', {
+                krxTickTable: 'etp',
+            })
+        ).toBe('40,125');
+        expect(
+            formatAnalysisPrice(40_125, '360750.KS', 'ko', {
+                trimTrailingZeros: true,
+                krxTickTable: 'etp',
+            })
+        ).toBe('40,125');
     });
 
     it('keeps two decimals elsewhere, or up to two when trimming', () => {

@@ -24,7 +24,7 @@ import type { ReactNode } from 'react';
 import type { ShareableKind } from '@/shared/db/constants';
 import type { SnapshotResultOf } from '@/entities/shared-analysis/types';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
-import type { Bar } from '@y0ngha/siglens-core';
+import type { Bar, KrxTickTable } from '@y0ngha/siglens-core';
 import { SHARE_KIND_PANEL_REGISTRY } from './kindPanelRegistry';
 import type { SharePanelProps } from './kindPanelRegistry';
 
@@ -49,6 +49,8 @@ interface ShareKindPanelProps<K extends ShareableKind> {
      * instead of an empty string.
      */
     symbol?: string;
+    /** 종목의 KRX 호가표(주식/ETF). 차트 패널의 가격 표기에 쓰인다. 생략하면 'share'. */
+    krxTickTable?: KrxTickTable;
     /**
      * 스냅샷에 저장된 쉽게보기 산문. 공유 시점에 공유자 화면에 있던 값이다.
      * 없으면(이 필드 이전 스냅샷·평이화 실패) 패널이 원문만 렌더한다.
@@ -66,6 +68,7 @@ export function ShareKindPanel<K extends ShareableKind>({
     chartBars,
     assetClass,
     symbol,
+    krxTickTable,
     plain,
 }: ShareKindPanelProps<K>) {
     // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
@@ -82,6 +85,7 @@ export function ShareKindPanel<K extends ShareableKind>({
             chartBars={chartBars}
             assetClass={assetClass}
             symbol={symbol}
+            krxTickTable={krxTickTable}
             plain={plain}
         />
     );
