@@ -7,7 +7,12 @@ import { parseFibLevelLabel } from './fibLevelLabel';
 import { elliottStructureOf } from './outcomeLevelLabel';
 
 const TARGET_PREFIX = `${OVERLAY_LEVEL_LABELS.target} `;
-/** core 엘리어트 작도의 A파 선분 역할 — A–B–C의 C 목표와 삼각형 thrust 방향을 정한다. */
+/**
+ * core 엘리어트 작도의 A파 선분 역할 — A–B–C의 C 목표와 삼각형 thrust 방향을 정한다.
+ * core는 이 역할을 상수로 내보내지 않는다. 출처: `@y0ngha/siglens-core`
+ * `domain/overlays/elliottCandidates.ts`·`elliottAbc.ts`·`elliottTriangle.ts`가
+ * `legSegments`에 넘기는 `wave_${label}` 역할(A 다리 = `wave_A`).
+ */
 const WAVE_A_ROLE = 'wave_A';
 
 const opposite = (d: SegmentDirection): SegmentDirection =>
