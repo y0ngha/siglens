@@ -12,15 +12,28 @@ export interface LevelTitleContext {
     breakoutTitle: (cardName: string | undefined) => string;
     outcomeTexts: OutcomeLevelTexts;
     fibTexts: FibLevelTexts;
+    /** 현재가가 이미 지나간 목표선의 제목 — 원래 제목에 "도달"을 붙인다(`isReachedTarget`). */
+    reachedTitle: (title: string) => string;
 }
 
 /**
- * 레벨선 제목 결정: 돌파선 → 결과선(무효화·목표) → 피보나치 → 원문.
+ * 레벨선 제목 결정: 돌파선 → 결과선(무효화·목표) → 피보나치 → 원문. `reached`(현재가가
+ * 이미 지나간 목표)면 그 제목에 "도달"을 붙인다.
  *
  * 라벨끼리 겹칠 때 무엇을 숨길지는 여기서 정하지 않는다 — 겹침은 지금 화면의 좌표로만
  * 알 수 있어 `useChartOverlays`가 그릴 때 판정한다(`visibleLevelLabels`).
  */
 export function levelTitleFor(
+    label: string,
+    overlay: ChartOverlay,
+    ctx: LevelTitleContext,
+    reached = false
+): string {
+    const title = baseLevelTitle(label, overlay, ctx);
+    return reached ? ctx.reachedTitle(title) : title;
+}
+
+function baseLevelTitle(
     label: string,
     overlay: ChartOverlay,
     ctx: LevelTitleContext

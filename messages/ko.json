@@ -3696,7 +3696,8 @@
                 "b7de20": "무효화",
                 "c70cbe": "{v0} 무효화",
                 "extendedHoursLegend": "음영: 시간외(프리·애프터마켓)",
-                "fd8510": "ABC 하락 목표 {v0}"
+                "fd8510": "ABC 하락 목표 {v0}",
+                "reachedLevel": "{v0} 도달"
             },
             "TimeframeSelector": {
                 "a4632e": "회원 전용 시간 프레임입니다.",

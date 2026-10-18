@@ -57,6 +57,7 @@ const ctx: LevelTitleContext = {
             up: p => `ABC 상승 목표 ${p}`,
         },
     },
+    reachedTitle: title => `${title} 도달`,
 };
 
 describe('levelTitleFor', () => {
@@ -82,5 +83,14 @@ describe('levelTitleFor', () => {
 
     it('모르는 라벨은 그대로 돌려준다', () => {
         expect(levelTitleFor('neckline', pattern, ctx)).toBe('neckline');
+    });
+});
+
+describe('levelTitleFor — reached targets', () => {
+    it('appends the reached wording to whatever title the level resolves to', () => {
+        expect(levelTitleFor('ext 127.2%', fib, ctx, true)).toBe(
+            '상승 목표 127.2% 도달'
+        );
+        expect(levelTitleFor('ext 127.2%', fib, ctx)).toBe('상승 목표 127.2%');
     });
 });

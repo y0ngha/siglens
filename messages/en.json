@@ -3536,7 +3536,8 @@
                 "216f1f": "Impulse",
                 "6e96f3": "Triangle",
                 "2751c7": "Diagonal",
-                "a8aa4c": "Combination"
+                "a8aa4c": "Combination",
+                "reachedLevel": "{v0} reached"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",

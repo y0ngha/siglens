@@ -12,6 +12,7 @@ import type { OverlayMenuItem } from '@/widgets/chart/utils/overlayItems';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
 import { LINE_PANE_SPECS } from '@/widgets/chart/model/linePaneSpecs';
+import { LABEL_PRIORITY } from '@/widgets/chart/utils/levelLabelCulling';
 
 const INACTIVE_PANES = Object.fromEntries(
     [
@@ -1052,6 +1053,47 @@ describe('StockChart', () => {
                 expect(lastSpecs()?.[0].title).toBe('원형 바닥 돌파');
             });
 
+            it('현재가가 이미 지난 피보 확장선은 "도달"로, 아직 앞의 확장선은 목표로 이름 붙인다', () => {
+                // 상승 다리 9 → 20, 마지막 종가 18: ext 100%(15)는 지났고 ext 127.2%(22)는 위에 있다.
+                const fibLeg: ChartOverlay = {
+                    id: 'fib:short:300',
+                    kind: 'fibonacci',
+                    skill: 'fibonacci-retracement',
+                    sourceRef: 'f1',
+                    variant: 'primary',
+                    segments: [
+                        {
+                            from: { time: 100, price: 9 },
+                            to: { time: 200, price: 20 },
+                            role: 'anchor',
+                            style: 'dashed',
+                            pane: 'price',
+                        },
+                    ],
+                    levels: [
+                        { price: 15, fromTime: 200, label: 'ext 100%' },
+                        { price: 22, fromTime: 200, label: 'ext 127.2%' },
+                    ],
+                    labels: [],
+                };
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[fibLeg]}
+                        overlayItems={[
+                            { key: 'f1', kind: 'fibonacci', label: '피보나치' },
+                        ]}
+                    />
+                );
+                const byPrice = (price: number) =>
+                    lastSpecs()?.find(spec => spec.points[0].value === price);
+                expect(byPrice(15)?.title).toBe('상승 목표 100% 도달');
+                expect(byPrice(15)?.opacity).toBe(0.5);
+                expect(byPrice(22)?.title).toBe('상승 목표 127.2%');
+                expect(byPrice(22)?.opacity).toBe(1);
+            });
+
             const outcomePattern = (sourceRef: string): ChartOverlay => ({
                 id: `pattern:double_top:${sourceRef}`,
                 kind: 'pattern',
@@ -1113,7 +1155,11 @@ describe('StockChart', () => {
                     '패턴p2 무효화',
                     '패턴p3 무효화',
                 ]);
-                expect(outcomePriorities()).toEqual([1, 1, 1]);
+                expect(outcomePriorities()).toEqual([
+                    LABEL_PRIORITY.level,
+                    LABEL_PRIORITY.level,
+                    LABEL_PRIORITY.level,
+                ]);
                 rerender(
                     <StockChart
                         bars={mockBars}
@@ -1128,7 +1174,11 @@ describe('StockChart', () => {
                     '패턴p2 무효화',
                     '패턴p3 무효화',
                 ]);
-                expect(outcomePriorities()).toEqual([1, 3, 1]);
+                expect(outcomePriorities()).toEqual([
+                    LABEL_PRIORITY.level,
+                    LABEL_PRIORITY.highlighted,
+                    LABEL_PRIORITY.level,
+                ]);
             });
 
             it('패턴이 둘 이상이면 팔레트 색, 하나면 스킬 색을 쓴다', () => {

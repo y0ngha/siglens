@@ -4,6 +4,7 @@ import {
     BREAKOUT_LEVEL_LABEL,
     DIMMED_OVERLAY_OPACITY,
     HIGHLIGHT_LINE_WIDTH_MULT,
+    REACHED_LEVEL_OPACITY,
     type OverlayColorTable,
 } from '../model/chartOverlayCategories';
 import { LABEL_PRIORITY } from './levelLabelCulling';
@@ -58,8 +59,23 @@ export interface OverlayLineSpecOptions {
     colorFor: (overlay: ChartOverlay, role: string) => string;
     /** 수평 레벨을 가격축 앞까지 연장 — 사용자 설정(기본 켜짐). */
     extendLevelsRight: boolean;
-    /** core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로. */
-    levelLabelFor?: (label: string, overlay: ChartOverlay) => string;
+    /**
+     * core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로.
+     * `reached`는 `isReachedLevel`이 참인 선 — 문구에 "도달"을 붙이는 데 쓴다.
+     */
+    levelLabelFor?: (
+        label: string,
+        overlay: ChartOverlay,
+        reached: boolean
+    ) => string;
+    /**
+     * 현재가가 이미 지나간 목표선인가(`isReachedTarget`). 참이면 선을
+     * `REACHED_LEVEL_OPACITY`만큼 흐리게, 라벨 우선순위를 낮게 그린다. 없으면 모두 거짓.
+     */
+    isReachedLevel?: (
+        level: ChartOverlay['levels'][number],
+        overlay: ChartOverlay
+    ) => boolean;
 }
 
 /**
@@ -169,11 +185,14 @@ const toMarker = (l: OverlayLabel): OverlayMarker => ({
     price: l.at.price,
 });
 
-function levelLabelPriority(label: string, highlighted: boolean): number {
+function levelLabelPriority(
+    label: string,
+    highlighted: boolean,
+    reached: boolean
+): number {
     if (highlighted) return LABEL_PRIORITY.highlighted;
-    return label === BREAKOUT_LEVEL_LABEL
-        ? LABEL_PRIORITY.breakout
-        : LABEL_PRIORITY.level;
+    if (label === BREAKOUT_LEVEL_LABEL) return LABEL_PRIORITY.breakout;
+    return reached ? LABEL_PRIORITY.reached : LABEL_PRIORITY.level;
 }
 
 export function buildOverlayLineSpecs(
@@ -226,32 +245,35 @@ export function buildOverlayLineSpecs(
                 ];
             }
         );
-        const levelSpecs = overlay.levels.flatMap((l): OverlayLineSpec[] =>
-            l.fromTime >= opts.lastBarTime
-                ? []
-                : [
-                      {
-                          paneIndex: PRICE_PANE_INDEX,
-                          points: [
-                              { time: l.fromTime, value: l.price },
-                              { time: opts.lastBarTime, value: l.price },
-                          ],
-                          color: opts.colorFor(overlay, 'level'),
-                          dashed: true,
-                          opacity,
-                          lineWidthMult,
-                          title: opts.levelLabelFor
-                              ? opts.levelLabelFor(l.label, overlay)
-                              : l.label,
-                          labelPriority: levelLabelPriority(
-                              l.label,
-                              highlighted
-                          ),
-                          markers: [],
-                          extendRight: opts.extendLevelsRight,
-                      },
-                  ]
-        );
+        const levelSpecs = overlay.levels.flatMap((l): OverlayLineSpec[] => {
+            if (l.fromTime >= opts.lastBarTime) return [];
+            const reached = opts.isReachedLevel?.(l, overlay) ?? false;
+            return [
+                {
+                    paneIndex: PRICE_PANE_INDEX,
+                    points: [
+                        { time: l.fromTime, value: l.price },
+                        { time: opts.lastBarTime, value: l.price },
+                    ],
+                    color: opts.colorFor(overlay, 'level'),
+                    dashed: true,
+                    opacity: reached
+                        ? opacity * REACHED_LEVEL_OPACITY
+                        : opacity,
+                    lineWidthMult,
+                    title: opts.levelLabelFor
+                        ? opts.levelLabelFor(l.label, overlay, reached)
+                        : l.label,
+                    labelPriority: levelLabelPriority(
+                        l.label,
+                        highlighted,
+                        reached
+                    ),
+                    markers: [],
+                    extendRight: opts.extendLevelsRight,
+                },
+            ];
+        });
         const specs = [...segmentSpecs, ...levelSpecs];
         // 라벨은 가격 좌표라 가격 패인 스펙에만 붙인다 — core의 segments 순서에
         // 기대지 않는다(다이버전스는 price·rsi 선분이 한 오버레이에 섞인다).

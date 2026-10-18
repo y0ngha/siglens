@@ -756,6 +756,7 @@
                 "widgets.chart.StockChart.c70cbe",
                 "widgets.chart.StockChart.extendedHoursLegend",
                 "widgets.chart.StockChart.fd8510",
+                "widgets.chart.StockChart.reachedLevel",
                 "widgets.chart.TimeframeSelector.a4632e",
                 "widgets.chart.TimeframeSelector.fd0418",
                 "widgets.chart.VolumeChart.1ae051",
