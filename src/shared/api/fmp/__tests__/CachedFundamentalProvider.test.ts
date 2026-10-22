@@ -413,6 +413,45 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
         expect(peers[2].per).toBe(20);
         expect(peers[2].psr).toBe(5);
     });
+
+    it('peerKeyMetrics를 주면 peer per/psr을 그 출처에서 받고 inner는 부르지 않는다', async () => {
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                {
+                    symbol: 'GM',
+                    companyName: 'General Motors',
+                    marketCap: 5e10,
+                },
+                {
+                    symbol: '005380.KS',
+                    companyName: 'Hyundai Motor',
+                    marketCap: 4e10,
+                },
+            ]),
+        });
+        const peerKeyMetrics = vi.fn(async (s: string) => ({
+            peRatioTTM: s === '005380.KS' ? 5 : 7,
+            priceToSalesRatioTTM: s === '005380.KS' ? 0.3 : 0.4,
+            pbRatioTTM: null,
+            pegRatioTTM: null,
+            enterpriseValueOverEBITDATTM: null,
+            epsTTM: null,
+        }));
+        const provider = new CachedFundamentalProvider(
+            inner,
+            null,
+            peerKeyMetrics
+        );
+
+        const peers = await provider.getStockPeers('F');
+
+        expect(peers.map(p => [p.symbol, p.per, p.psr])).toEqual([
+            ['GM', 7, 0.4],
+            ['005380.KS', 5, 0.3],
+        ]);
+        expect(peerKeyMetrics).toHaveBeenCalledWith('005380.KS');
+        expect(inner.getKeyMetricsTtm).not.toHaveBeenCalled();
+    });
 });
 
 describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
