@@ -1,8 +1,12 @@
+import type { IncomeStatementRow } from '@y0ngha/siglens-core';
+
 /** FMP /income-statement raw row (subset consumed by the adapter). */
 export interface RawFmpIncomeStatement {
     fiscalYear?: string;
     period?: string;
     date?: string;
+    /** SEC filing date (`YYYY-MM-DD`) of the 10-Q/10-K the row comes from. */
+    filingDate?: string;
     /** ISO currency the filer reports in — an ADR's is not its USD listing (TSM: TWD). */
     reportedCurrency?: string | null;
     revenue?: number;
@@ -12,6 +16,17 @@ export interface RawFmpIncomeStatement {
     ebitda?: number;
     eps?: number;
     epsDiluted?: number;
+}
+
+/**
+ * The FMP adapter's income row: core's `IncomeStatementRow` plus the filing
+ * date, which core's type does not carry. It rides along in the cached rows
+ * (the Redis layer stores the adapter's JSON as-is), so a consumer behind the
+ * core `FinancialStatementsProvider` port reads it with an `in` check rather
+ * than a cast. Yahoo (KR) rows never have it.
+ */
+export interface IncomeStatementRowWithFiling extends IncomeStatementRow {
+    filingDate: string | null;
 }
 
 /** FMP /balance-sheet-statement raw row (subset consumed by the adapter). */

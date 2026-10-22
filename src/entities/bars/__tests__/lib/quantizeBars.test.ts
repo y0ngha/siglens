@@ -15,6 +15,7 @@ import {
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     hasFormingBar,
+    lastBarIsForming,
     quantizeBarsDataToLastClosed,
 } from '@/entities/bars/lib/quantizeBars';
 
@@ -536,5 +537,30 @@ describe('quantizeBarsDataToLastClosed — 마지막 봉이 현재 세션 봉일
         expect(quantizeBarsDataToLastClosed(data, now, US_EQUITY_SESSION)).toBe(
             data
         );
+    });
+});
+
+describe('lastBarIsForming', () => {
+    it('정규장 중이고 마지막 봉이 오늘 세션 봉이면 true', () => {
+        mockOpen.mockReturnValue(true);
+        expect(
+            lastBarIsForming([bar(1), bar(2), bar(3)], US_EQUITY_SESSION, now)
+        ).toBe(true);
+    });
+
+    it('정규장 중이어도 마지막 봉이 이전 세션 봉이면(오늘 봉 없음) false', () => {
+        mockOpen.mockReturnValue(true);
+        expect(lastBarIsForming([bar(1), bar(2)], US_EQUITY_SESSION, now)).toBe(
+            false
+        );
+    });
+
+    it('정규장이 닫혀 있으면 오늘 봉도 확정 봉이라 false, 빈 시리즈도 false', () => {
+        mockOpen.mockReturnValue(false);
+        expect(
+            lastBarIsForming([bar(1), bar(2), bar(3)], US_EQUITY_SESSION, now)
+        ).toBe(false);
+        mockOpen.mockReturnValue(true);
+        expect(lastBarIsForming([], US_EQUITY_SESSION, now)).toBe(false);
     });
 });

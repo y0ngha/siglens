@@ -100,6 +100,40 @@ export function daysToExpirationFrom(
     );
 }
 
+/**
+ * Lowest annualized implied volatility (as a fraction) read as a real value.
+ * In the one chain inspected (below), Yahoo returned `0.00001` and `0.0039…`
+ * for contracts it had no quote for — values no listed US equity's ATM option
+ * trades at.
+ */
+export const MIN_PLAUSIBLE_IMPLIED_VOLATILITY = 0.01;
+
+const hasQuote = (price: number | undefined): boolean =>
+    typeof price === 'number' && Number.isFinite(price) && price > 0;
+
+/**
+ * Yahoo's IV, or `null` when it is not a market reading (dev-2026-10-22 A9).
+ *
+ * Observed once: the MSI 2026-11-20 chain fetched pre-market on 2026-10-22
+ * (09:11 ET). Every contract near the $467.50 spot had bid = ask = 0 and an IV
+ * between 0.00001 and 0.031. Core's `pickAtmIv` takes the nearest strike with
+ * any non-null IV, so the 470 call's 0.0039 became the ATM IV and the agent
+ * quoted a ±0.11% implied move (466.98–468.02) for a 29-day expiry. An IV
+ * with neither a bid nor an ask behind it is therefore dropped, as is one
+ * under {@link MIN_PLAUSIBLE_IMPLIED_VOLATILITY}; core then skips the contract.
+ *
+ * Consequence, accepted: a chain fetched while Yahoo shows no quotes (outside
+ * the session, for a symbol with no warmed last-good snapshot) reports a
+ * `null` ATM IV and implied move — an honest "unknown" instead of a fake one.
+ */
+function marketImpliedVolatility(c: YahooCallOrPut): number | null {
+    const iv = c.impliedVolatility;
+    if (typeof iv !== 'number' || !Number.isFinite(iv)) return null;
+    if (iv < MIN_PLAUSIBLE_IMPLIED_VOLATILITY) return null;
+    if (!hasQuote(c.bid) && !hasQuote(c.ask)) return null;
+    return iv;
+}
+
 /** Normalize a single call or put contract from yahoo-finance2 into an OptionsContract. */
 export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {
     return {
@@ -110,7 +144,7 @@ export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {
         ask: c.ask ?? null,
         volume: c.volume ?? 0,
         openInterest: c.openInterest ?? 0,
-        impliedVolatility: c.impliedVolatility ?? null,
+        impliedVolatility: marketImpliedVolatility(c),
         inTheMoney: c.inTheMoney,
     };
 }

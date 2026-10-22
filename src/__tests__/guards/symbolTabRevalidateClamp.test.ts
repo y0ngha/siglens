@@ -247,7 +247,10 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
     ],
     'options/page.tsx': [
         { token: "'options:has'", revalidate: time.SECONDS_PER_HALF_DAY },
-        { token: "'options:snapshot'", revalidate: time.SECONDS_PER_HALF_DAY },
+        {
+            token: "'options:snapshot-v2'",
+            revalidate: time.SECONDS_PER_HALF_DAY,
+        },
         {
             token: 'isTabAllowedForSymbol',
             via: 'isCryptoSymbolStatic',

@@ -859,6 +859,11 @@ describe('getBarsIndicatorsTool', () => {
     });
 
     describe('derived (spec §3.1, B1)', () => {
+        /** The `1Day` date the tool prints for a bar time. */
+        const day = (t: number) =>
+            new Date(t * 1000).toISOString().slice(0, 10);
+        /** The intraday instant the tool prints for a bar time. */
+        const instant = (t: number) => new Date(t * 1000).toISOString();
         const barV = (time: number, close: number, volume = 100) => ({
             time,
             open: close,
@@ -897,10 +902,13 @@ describe('getBarsIndicatorsTool', () => {
                 '5bars': roundNumber(((159 - 154) / 154) * 100),
                 '20bars': roundNumber(((159 - 139) / 139) * 100),
                 '60bars': null, // exactly 60 bars — not `bars.length > 60`
+                '252bars': null,
             });
             expect(r.derived.range).toEqual({
                 high: 160,
+                highDate: day(bars[59]!.time),
                 low: 99,
+                lowDate: day(bars[0]!.time),
                 fromHighPct: roundNumber(((159 - 160) / 160) * 100),
                 fromLowPct: roundNumber(((159 - 99) / 99) * 100),
                 bars: 60,
@@ -922,13 +930,17 @@ describe('getBarsIndicatorsTool', () => {
             expect(r.derived.ranges).toEqual({
                 '20bars': {
                     high: 160,
+                    highDate: day(bars[59]!.time),
                     low: 139,
+                    lowDate: day(bars[40]!.time),
                     fromHighPct: roundNumber(((159 - 160) / 160) * 100),
                     fromLowPct: roundNumber(((159 - 139) / 139) * 100),
                 },
                 '60bars': {
                     high: 160,
+                    highDate: day(bars[59]!.time),
                     low: 99,
+                    lowDate: day(bars[0]!.time),
                     fromHighPct: roundNumber(((159 - 160) / 160) * 100),
                     fromLowPct: roundNumber(((159 - 99) / 99) * 100),
                 },
@@ -1008,7 +1020,9 @@ describe('getBarsIndicatorsTool', () => {
             };
             expect(r.derived.range).toEqual({
                 high: null,
+                highDate: null,
                 low: null,
+                lowDate: null,
                 fromHighPct: null,
                 fromLowPct: null,
                 bars: 2,
@@ -1129,7 +1143,9 @@ describe('getBarsIndicatorsTool', () => {
             expect(r.derived.ranges).toEqual({
                 '20bars': {
                     high: 145,
+                    highDate: instant(bars[44]!.time),
                     low: 124,
+                    lowDate: instant(bars[25]!.time),
                     fromHighPct: roundNumber(((144 - 145) / 145) * 100),
                     fromLowPct: roundNumber(((144 - 124) / 124) * 100),
                 },
@@ -1161,6 +1177,214 @@ describe('getBarsIndicatorsTool', () => {
             // Without the finite filter, Math.max(...highs) would be NaN —
             // the next-highest finite high (bar 18's 119) must survive instead.
             expect(r.derived.ranges['20bars'].high).toBe(119);
+        });
+
+        it('range/ranges dates: a tie resolves to the most recent bar', async () => {
+            profile.mockResolvedValue('us-equity');
+            // Flat 100 closes; highs peak at 120 on bars 3 and 10, lows bottom
+            // at 80 on bars 5 and 15.
+            const bars = Array.from({ length: 20 }, (_, i) => ({
+                ...barV(1_700_000_000 + i * 86_400, 100),
+                high: i === 3 || i === 10 ? 120 : 101,
+                low: i === 5 || i === 15 ? 80 : 99,
+            }));
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: {
+                    range: { highDate: string | null; lowDate: string | null };
+                    ranges: {
+                        '20bars': {
+                            highDate: string | null;
+                            lowDate: string | null;
+                        };
+                    };
+                };
+            };
+            expect(r.derived.range.highDate).toBe(day(bars[10]!.time));
+            expect(r.derived.range.lowDate).toBe(day(bars[15]!.time));
+            expect(r.derived.ranges['20bars'].highDate).toBe(
+                day(bars[10]!.time)
+            );
+        });
+
+        describe('maCross50_200 (dev-2026-10-22 A5)', () => {
+            const DAY = 86_400;
+            const start = Date.parse('2024-10-21T00:00:00Z') / 1000;
+            const series = (closes: number[]) =>
+                closes.map((c, i) => barV(start + i * DAY, c));
+            const run = async (
+                bars: ReturnType<typeof barV>[],
+                timeframe: '1Day' | '1Hour' = '1Day'
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    derived: {
+                        maCross50_200: { date: string; kind: string }[] | null;
+                    };
+                    barsReturned: number;
+                };
+            };
+            /** Plain trailing mean, independent of core. */
+            const sma = (closes: number[], end: number, n: number) =>
+                closes.slice(end - n + 1, end + 1).reduce((a, b) => a + b, 0) /
+                n;
+
+            it('lists the dead cross on the bar an independent SMA check finds, from the full history (not the returned bars)', async () => {
+                // 360 rising closes, then a slide: MA50 starts above MA200 and
+                // falls through it once inside the last 252 bars.
+                const closes = Array.from({ length: 500 }, (_, i) =>
+                    i < 360 ? 100 + i * 0.5 : 280 - (i - 360) * 1.5
+                );
+                const bars = series(closes);
+                let crossIndex = -1;
+                for (let i = 248; i < closes.length; i++) {
+                    if (
+                        sma(closes, i - 1, 50) > sma(closes, i - 1, 200) &&
+                        sma(closes, i, 50) < sma(closes, i, 200)
+                    ) {
+                        crossIndex = i;
+                        break;
+                    }
+                }
+                expect(crossIndex).toBeGreaterThan(closes.length - 252);
+
+                const r = await run(bars);
+
+                expect(r.derived.maCross50_200).toEqual([
+                    { date: day(bars[crossIndex]!.time), kind: 'dead' },
+                ]);
+                // The cross is far older than the 30 bars returned.
+                expect(crossIndex).toBeLessThan(closes.length - r.barsReturned);
+            });
+
+            it('a fully checked year with no crossing is [] (a real "none")', async () => {
+                const r = await run(
+                    series(Array.from({ length: 500 }, (_, i) => 100 + i))
+                );
+                expect(r.derived.maCross50_200).toEqual([]);
+            });
+
+            it('history too short to check the whole window is null, not []', async () => {
+                // 252 + 200 bars are needed; 451 is one short.
+                const r = await run(
+                    series(Array.from({ length: 451 }, (_, i) => 100 + i))
+                );
+                expect(r.derived.maCross50_200).toBeNull();
+            });
+
+            it('is null on intraday timeframes', async () => {
+                const bars = Array.from({ length: 500 }, (_, i) =>
+                    barV(1_700_000_000 + i * 3_600, 100 + i)
+                );
+                const r = await run(bars, '1Hour');
+                expect(r.derived.maCross50_200).toBeNull();
+            });
+        });
+
+        describe('252bars and calendarChange (dev-2026-10-22 A4·A10)', () => {
+            /** Weekday-only daily bars (UTC midnight) from `from` through `to`, close = 100 + index. */
+            const weekdayBars = (from: string, to: string) => {
+                const out: ReturnType<typeof barV>[] = [];
+                for (
+                    let t = Date.parse(`${from}T00:00:00Z`);
+                    t <= Date.parse(`${to}T00:00:00Z`);
+                    t += 86_400_000
+                ) {
+                    const dow = new Date(t).getUTCDay();
+                    if (dow === 0 || dow === 6) continue;
+                    out.push(barV(t / 1000, 100 + out.length));
+                }
+                return out;
+            };
+            const run = async (
+                bars: ReturnType<typeof barV>[],
+                timeframe: '1Day' | '1Hour' = '1Day'
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    derived: {
+                        changePct: Record<string, number | null>;
+                        calendarChange: Record<
+                            string,
+                            {
+                                baseDate: string;
+                                baseClose: number;
+                                pct: number | null;
+                            } | null
+                        > | null;
+                    };
+                };
+            };
+            const closeOn = (bars: ReturnType<typeof barV>[], date: string) =>
+                bars.find(b => day(b.time) === date)!.close;
+
+            it('changePct.252bars compares with the close 252 bars back', async () => {
+                const bars = weekdayBars('2025-01-01', '2026-10-19');
+                const r = await run(bars);
+                const lastClose = bars.at(-1)!.close;
+                expect(r.derived.changePct['252bars']).toBe(
+                    pctVs(lastClose, bars[bars.length - 1 - 252]!.close)
+                );
+            });
+
+            it('calendarChange: base is the last session on or before the date 1/3/12 calendar months back', async () => {
+                // Last session Mon 2026-10-19 → targets Sat 09-19, Sun 07-19 and
+                // Sun 2025-10-19, so each base is the Friday before.
+                const bars = weekdayBars('2025-01-01', '2026-10-19');
+                const r = await run(bars);
+                const lastClose = bars.at(-1)!.close;
+                const expected = (baseDate: string) => ({
+                    baseDate,
+                    baseClose: closeOn(bars, baseDate),
+                    pct: pctVs(lastClose, closeOn(bars, baseDate)),
+                });
+                expect(r.derived.calendarChange).toEqual({
+                    '1month': expected('2026-09-18'),
+                    '3months': expected('2026-07-17'),
+                    '1year': expected('2025-10-17'),
+                });
+                // A calendar month is not 20 bars: the two returns differ here.
+                expect(r.derived.calendarChange!['1month']!.pct).not.toBe(
+                    r.derived.changePct['20bars']
+                );
+            });
+
+            it('calendarChange: a period the loaded series does not reach is null', async () => {
+                const bars = weekdayBars('2026-08-01', '2026-10-19');
+                const r = await run(bars);
+                expect(r.derived.calendarChange!['1month']).not.toBeNull();
+                expect(r.derived.calendarChange!['3months']).toBeNull();
+                expect(r.derived.calendarChange!['1year']).toBeNull();
+                expect(r.derived.changePct['252bars']).toBeNull();
+            });
+
+            it('calendarChange is null on intraday timeframes', async () => {
+                const bars = Array.from({ length: 30 }, (_, i) =>
+                    barV(1_700_000_000 + i * 3_600, 100 + i)
+                );
+                const r = await run(bars, '1Hour');
+                expect(r.derived.calendarChange).toBeNull();
+            });
         });
 
         it('priceVsMa.ma50Pct: core calculateMA로 직접 계산되어 기간보다 1봉 모자라면 null, intraday에서도 채워진다', async () => {
@@ -1685,6 +1909,69 @@ describe('getBarsIndicatorsTool', () => {
                 consoleErrorSpy.mockRestore();
             }
         });
+    });
+
+    it('기본 요청(30봉, 1Day)은 운영 규모 일봉(500봉·실제 지표·공포탐욕)에서도 봉이 잘리지 않는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        // 운영과 같은 모양: 500 거래일, 소수 둘째 자리 가격, 백만 단위 거래량.
+        const DAY = 86_400;
+        const start = Date.parse('2024-10-21T00:00:00Z') / 1000;
+        const realistic = Array.from({ length: 500 }, (_, i) => {
+            const close =
+                Math.round((420 + Math.sin(i / 9) * 35 + i * 0.09) * 100) / 100;
+            return {
+                time: start + i * DAY,
+                open: Math.round((close - 1.37) * 100) / 100,
+                high: Math.round((close + 3.21) * 100) / 100,
+                low: Math.round((close - 4.08) * 100) / 100,
+                close,
+                volume: 1_000_000 + ((i * 7_919) % 2_345_678),
+            };
+        });
+        const computed = calculateIndicators(realistic);
+        getCachedBars.mockResolvedValue({
+            bars: realistic,
+            indicators: {
+                ...computed,
+                buySellVolume: realistic.map((b, i) => ({
+                    buyVolume: b.volume * (0.45 + ((i * 13) % 10) / 100),
+                    sellVolume: b.volume * (0.45 + ((i * 7) % 10) / 100),
+                })),
+            },
+        });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([
+            {
+                type: 'golden_cross',
+                direction: 'bullish',
+                phase: 'confirmed',
+                detectedAt: 0,
+            },
+            {
+                type: 'rsi_bullish_divergence',
+                direction: 'bullish',
+                phase: 'expected',
+                detectedAt: 0,
+            },
+            {
+                type: 'bollinger_squeeze',
+                direction: 'neutral',
+                phase: 'confirmed',
+                detectedAt: 0,
+            },
+        ]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { barsReturned: number; barsTrimmed: number };
+
+        expect(r.barsTrimmed).toBe(0);
+        expect(r.barsReturned).toBe(30);
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            BARS_RESULT_MAX_CHARS
+        );
     });
 
     it('budget 절단 후에도 derived/higherTimeframe은 trim 대상 밖이라 그대로 남는다', async () => {

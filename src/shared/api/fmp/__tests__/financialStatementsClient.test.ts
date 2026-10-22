@@ -59,6 +59,7 @@ describe('FmpFinancialStatementsClient', () => {
                     eps: 6.11,
                     epsDiluted: 6.08,
                     reportedCurrency: 'TWD',
+                    filingDate: '2024-11-01',
                 },
             ]);
             const client = new FmpFinancialStatementsClient();
@@ -72,6 +73,7 @@ describe('FmpFinancialStatementsClient', () => {
                 fiscalYear: '2024',
                 period: 'FY',
                 date: '2024-09-28',
+                filingDate: '2024-11-01',
                 revenue: 391_035_000_000,
                 grossProfit: 170_782_000_000,
                 operatingIncome: 123_216_000_000,
@@ -116,6 +118,8 @@ describe('FmpFinancialStatementsClient', () => {
             );
             expect(result[0]?.revenue).toBeNull();
             expect(result[0]?.eps).toBeNull();
+            // No filing date (or an empty one) is null, never `''`.
+            expect(result[0]?.filingDate).toBeNull();
         });
 
         it('maps NaN to null', async () => {

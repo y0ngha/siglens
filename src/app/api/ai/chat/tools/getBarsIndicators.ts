@@ -12,6 +12,7 @@ import {
     detectSignals,
     evaluateConfluence,
     evaluatePullback,
+    findMaCrosses,
     pullbackEventCaveat,
     getDetectionBars,
     PULLBACK_BASE_RATES,
@@ -66,6 +67,7 @@ import {
     yearScoreExtremes,
 } from '@/entities/bars/lib/fearGreedWindow';
 import { logToolDegrade } from './logToolDegrade';
+import { calendarChangeView, type CalendarChangeView } from './calendarChange';
 import { staleKrListingDate } from './freshness';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { pctVs, ratioPct } from './percent';
@@ -81,6 +83,12 @@ import { BARS_RESULT_MAX_CHARS } from './truncate';
  * 4,000) — `fitBarsToBudget`'s trim loop already guarantees that ceiling
  * for any `bars` the model requests, so the default no longer needs to
  * shrink just to keep the common (unbudgeted) case comfortably under 4,000.
+ *
+ * Measured 2026-10-22 after `derived` gained `252bars`, `calendarChange`,
+ * the range dates and `maCross50_200`: the default 30-bar 1Day request on a
+ * production-sized series (500 bars, real indicators, fear & greed, three
+ * signals, no MA cross) serializes to ~5,280 chars, untrimmed — pinned by the
+ * "기본 요청(30봉, 1Day)" test. Each listed cross adds ~35 chars.
  */
 const DEFAULT_BARS = 30;
 /**
@@ -583,10 +591,22 @@ function higherTimeframeView(
     };
 }
 
-/** High/low over a window and the last close's distance from each — shared shape for `range` (which also carries `bars`, the window size actually used) and every entry of `ranges`. */
+/**
+ * High/low over a window, the bar each was set on, and the last close's
+ * distance from each — shared shape for `range` (which also carries `bars`,
+ * the window size actually used) and every entry of `ranges`.
+ *
+ * `highDate`/`lowDate` (dev-2026-10-22 A4): without them a "when was the
+ * 52-week low" question had no answer once the low fell outside the returned
+ * raw `bars`, and the model borrowed a fear & greed date instead. Same format
+ * as the bar timestamps (`YYYY-MM-DD` on 1Day, ISO instant intraday); a tie
+ * resolves to the MOST RECENT bar.
+ */
 interface RangeWindow {
     high: number | null;
+    highDate: string | null;
     low: number | null;
+    lowDate: string | null;
     fromHighPct: number | null;
     fromLowPct: number | null;
 }
@@ -598,7 +618,15 @@ interface DerivedView {
         '5bars': number | null;
         '20bars': number | null;
         '60bars': number | null;
+        '252bars': number | null;
     };
+    /**
+     * Calendar-period returns (1 month / 3 months / 1 year back from the last
+     * session's date, base = last session on or before that date), 1Day only —
+     * `null` on other timeframes. See `CalendarChangeView` for why these are
+     * separate from the bar-count `changePct` keys.
+     */
+    calendarChange: CalendarChangeView | null;
     range: RangeWindow & { bars: number };
     /**
      * Fixed 20/60-bar high/low windows for ANY timeframe — added after a
@@ -615,6 +643,45 @@ interface DerivedView {
     atrPct: number | null;
     priceVsMa: Record<string, number | null>;
     maStack: MaStackDirection | null;
+    /**
+     * 50/200-bar SMA crossings over the last year of daily bars
+     * (dev-2026-10-22 A5), oldest first — `[]` when the whole window was
+     * checked and none happened. `null` on other timeframes AND when the
+     * loaded history is too short to check the whole window (core's
+     * `complete: false`): an empty list there would read as "no cross in a
+     * year" when the data simply does not reach back that far — the model
+     * asserted exactly that for IDXX before this field existed.
+     */
+    maCross50_200: MaCrossView[] | null;
+}
+
+/** One crossing in `derived.maCross50_200`. `kind`: `golden` = MA50 crosses above MA200, `dead` = below. */
+interface MaCrossView {
+    date: string;
+    kind: 'golden' | 'dead';
+}
+
+/** SMA periods and window behind `maCross50_200` — the key name is the contract. */
+const MA_CROSS_FAST_PERIOD = 50;
+const MA_CROSS_SLOW_PERIOD = 200;
+const MA_CROSS_LOOKBACK_BARS = 252;
+
+/**
+ * Detection is core's (`findMaCrosses`); this only adapts it to the tool
+ * shape. Runs on the full cached series, never the trimmed output `bars`.
+ */
+function maCross50_200View(bars: readonly Bar[]): MaCrossView[] | null {
+    const scan = findMaCrosses(
+        bars.slice(),
+        MA_CROSS_FAST_PERIOD,
+        MA_CROSS_SLOW_PERIOD,
+        MA_CROSS_LOOKBACK_BARS
+    );
+    if (!scan.complete) return null;
+    return scan.crosses.map(c => ({
+        date: isoTimestamp(c.time, '1Day'),
+        kind: c.kind,
+    }));
 }
 
 /**
@@ -622,13 +689,16 @@ interface DerivedView {
  * day count, for every timeframe (spec §3.1). Named `NbarS` (not `Nd`) —
  * a 1Hour "1d" key previously read as a calendar day when it was actually
  * a 1-BAR change; renamed to avoid that misreading (core's tool description
- * mirrors this contract).
+ * mirrors this contract). `252bars` (dev-2026-10-22 A4) is the 1-year bar
+ * count on 1Day; it is `null` unless more than 252 bars are loaded. Calendar
+ * periods ("1개월", "작년 이맘때") read `calendarChange`, never these keys.
  */
 const CHANGE_PCT_BARS_BACK: Record<keyof DerivedView['changePct'], number> = {
     '1bar': 1,
     '5bars': 5,
     '20bars': 20,
     '60bars': 60,
+    '252bars': 252,
 };
 
 /** Max daily bars `range` looks back over; intraday uses every loaded bar instead (spec §3.1). */
@@ -651,23 +721,38 @@ const RANGES_BARS_BACK: Record<keyof DerivedView['ranges'], number> = {
 export const MA50_PERIOD = 50;
 
 /**
- * High/low over `window` and the last close's distance from each. Only
- * finite highs/lows count — a single bad bar (NaN/Infinity from an upstream
- * data glitch) must not poison the whole window's max/min. Shared by `range`
- * (the 252-bar-on-1Day / all-loaded-intraday window) and `ranges` (fixed
- * 20/60-bar windows) so this filtering logic lives once.
+ * High/low over `window`, the bar each was set on, and the last close's
+ * distance from each. Only finite highs/lows count — a single bad bar
+ * (NaN/Infinity from an upstream data glitch) must not poison the whole
+ * window's max/min. `>=`/`<=` let a later bar win a tie, so the date is the
+ * most recent touch. Shared by `range` (the 252-bar-on-1Day /
+ * all-loaded-intraday window) and `ranges` (fixed 20/60-bar windows) so this
+ * filtering logic lives once.
  */
 function computeRangeWindow(
     window: readonly Bar[],
-    lastClose: number | null
+    lastClose: number | null,
+    timeframe: Timeframe
 ): RangeWindow {
-    const finiteHighs = window.map(b => b.high).filter(Number.isFinite);
-    const finiteLows = window.map(b => b.low).filter(Number.isFinite);
-    const high = finiteHighs.length > 0 ? Math.max(...finiteHighs) : null;
-    const low = finiteLows.length > 0 ? Math.min(...finiteLows) : null;
+    // One pass finds both extremes and the bar (date) each was set on; ties keep the latest bar.
+    let highBar: Bar | null = null;
+    let lowBar: Bar | null = null;
+    for (const b of window) {
+        if (
+            Number.isFinite(b.high) &&
+            (highBar === null || b.high >= highBar.high)
+        )
+            highBar = b;
+        if (Number.isFinite(b.low) && (lowBar === null || b.low <= lowBar.low))
+            lowBar = b;
+    }
+    const high = highBar?.high ?? null;
+    const low = lowBar?.low ?? null;
     return {
         high,
+        highDate: highBar ? isoTimestamp(highBar.time, timeframe) : null,
         low,
+        lowDate: lowBar ? isoTimestamp(lowBar.time, timeframe) : null,
         fromHighPct: pctVs(lastClose, high),
         fromLowPct: pctVs(lastClose, low),
     };
@@ -701,7 +786,7 @@ function computeDerived(
     const rangeWindow =
         timeframe === '1Day' ? bars.slice(-RANGE_MAX_DAILY_BARS) : bars;
     const range = {
-        ...computeRangeWindow(rangeWindow, lastClose),
+        ...computeRangeWindow(rangeWindow, lastClose, timeframe),
         bars: rangeWindow.length,
     };
 
@@ -709,7 +794,7 @@ function computeDerived(
         Object.entries(RANGES_BARS_BACK).map(([key, n]) => [
             key,
             bars.length >= n
-                ? computeRangeWindow(bars.slice(-n), lastClose)
+                ? computeRangeWindow(bars.slice(-n), lastClose, timeframe)
                 : null,
         ])
     ) as DerivedView['ranges'];
@@ -764,12 +849,14 @@ function computeDerived(
     return {
         lastClose,
         changePct,
+        calendarChange: timeframe === '1Day' ? calendarChangeView(bars) : null,
         range,
         ranges,
         volumeVsAvg20,
         atrPct,
         priceVsMa,
         maStack,
+        maCross50_200: timeframe === '1Day' ? maCross50_200View(bars) : null,
     };
 }
 

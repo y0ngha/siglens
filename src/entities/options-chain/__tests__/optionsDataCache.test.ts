@@ -307,7 +307,7 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
         });
         const result = await mod.fetchOptionsSnapshot('AAPL');
 
-        expect(mockRedisGet).toHaveBeenCalledWith('options:snapshot:v2:AAPL');
+        expect(mockRedisGet).toHaveBeenCalledWith('options:snapshot:v3:AAPL');
         expect(mockFetchSnapshot).not.toHaveBeenCalled();
         expect(mockRedisSet).not.toHaveBeenCalled();
         expect(result).toEqual(sampleSnapshot);
@@ -327,7 +327,7 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
         // beforeEach 위에서 getOptionsCacheLifeProfile mock이 'options-market-open' 반환
         // getOrSetCache 포맷: { data } envelope(1KB 미만이라 압축 없이 그대로).
         expect(mockRedisSet).toHaveBeenCalledWith(
-            'options:snapshot:v2:AAPL',
+            'options:snapshot:v3:AAPL',
             { data: { snapshot: sampleSnapshot, substituted: false } },
             { ex: OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-open'] }
         );
@@ -346,6 +346,28 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
         await mod.fetchOptionsSnapshot('AAPL');
 
         expect(mockRedisGet).not.toHaveBeenCalledWith('options:snapshot:AAPL');
+        expect(mockFetchSnapshot).toHaveBeenCalledTimes(1);
+    });
+
+    it('IV 정규화 이전 키(v2 스냅샷·버전 없는 last-good)는 읽지 않는다 — 가짜 IV가 배포 뒤에 나가지 않게', async () => {
+        const preGateKeys = [
+            'options:snapshot:v2:AAPL',
+            'options:snapshot:last-good:AAPL',
+            'options:snapshot:last-good-at:AAPL',
+        ];
+        mockRedisGet.mockImplementation(async (key: string) =>
+            preGateKeys.includes(key) ? sampleSnapshot : null
+        );
+        mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
+
+        const mod = await loadWithEnv({
+            url: 'https://example.upstash.io',
+            token: 'tok',
+        });
+        await mod.fetchOptionsSnapshot('AAPL');
+
+        for (const key of preGateKeys)
+            expect(mockRedisGet).not.toHaveBeenCalledWith(key);
         expect(mockFetchSnapshot).toHaveBeenCalledTimes(1);
     });
 
@@ -429,8 +451,8 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
 
 describe('fetchOptionsSnapshot — last-good fallback', () => {
     const REDIS_ENV = { url: 'https://example.upstash.io', token: 'tok' };
-    const LAST_GOOD_KEY = 'options:snapshot:last-good:AAPL';
-    const MAIN_KEY = 'options:snapshot:v2:AAPL';
+    const LAST_GOOD_KEY = 'options:snapshot:last-good:v2:AAPL';
+    const MAIN_KEY = 'options:snapshot:v3:AAPL';
 
     // 2026-10-05(월) 05:00 UTC = 14:00 KST = 01:00 ET → 미국 정규장 밖.
     const SESSION_CLOSED_NOW = new Date('2026-10-05T05:00:00.000Z');
@@ -533,7 +555,7 @@ describe('fetchOptionsSnapshot — last-good fallback', () => {
     });
 
     describe('장중 last-good 재기록 간격(30분)', () => {
-        const CAPTURED_AT_KEY = 'options:snapshot:last-good-at:AAPL';
+        const CAPTURED_AT_KEY = 'options:snapshot:last-good-at:v2:AAPL';
 
         it('저장된 last-good이 30분 안이면 장중 miss가 다시 쓰지 않는다', async () => {
             vi.setSystemTime(SESSION_OPEN_NOW);
@@ -927,8 +949,8 @@ describe('fetchOptionsSnapshot — last-good fallback', () => {
 
 describe('refreshLastGoodSnapshot', () => {
     const REDIS_ENV = { url: 'https://example.upstash.io', token: 'tok' };
-    const LAST_GOOD_KEY = 'options:snapshot:last-good:AAPL';
-    const MAIN_KEY = 'options:snapshot:v2:AAPL';
+    const LAST_GOOD_KEY = 'options:snapshot:last-good:v2:AAPL';
+    const MAIN_KEY = 'options:snapshot:v3:AAPL';
     // 2026-10-05(월) 20:30 UTC = 16:30 EDT — 마감 직후, Yahoo가 아직 OI를 들고 있는 구간.
     const WARM_NOW = new Date('2026-10-05T20:30:00.000Z');
 
@@ -1013,9 +1035,9 @@ describe('refreshLastGoodSnapshot', () => {
         const mod = await loadWithEnv(REDIS_ENV);
         await mod.refreshLastGoodSnapshot('AAPL', WARM_NOW);
 
-        expect(setCallsFor('options:snapshot:last-good-at:AAPL')).toEqual([
+        expect(setCallsFor('options:snapshot:last-good-at:v2:AAPL')).toEqual([
             [
-                'options:snapshot:last-good-at:AAPL',
+                'options:snapshot:last-good-at:v2:AAPL',
                 healthy.capturedAt,
                 { ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS },
             ],
@@ -1026,7 +1048,7 @@ describe('refreshLastGoodSnapshot', () => {
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockFetchSnapshot.mockResolvedValue(healthy);
         mockRedisSet.mockImplementation(async (key: string) => {
-            if (key === 'options:snapshot:last-good-at:AAPL') {
+            if (key === 'options:snapshot:last-good-at:v2:AAPL') {
                 throw new Error('redis write fail');
             }
             return 'OK';
@@ -1046,9 +1068,9 @@ describe('refreshLastGoodSnapshot', () => {
         const mod = await loadWithEnv(REDIS_ENV);
         await mod.refreshLastGoodSnapshot('AAPL', WARM_NOW);
 
-        expect(setCallsFor('options:snapshot:last-good-at:AAPL')).toHaveLength(
-            0
-        );
+        expect(
+            setCallsFor('options:snapshot:last-good-at:v2:AAPL')
+        ).toHaveLength(0);
     });
 
     it('일반 캐시에 값이 있어도 hit 경로를 우회해 Yahoo를 직접 친다', async () => {
@@ -1165,9 +1187,9 @@ describe('readLastGoodCapturedAtBatch', () => {
 
         expect(mockRedisMget).toHaveBeenCalledTimes(1);
         expect(mockRedisMget).toHaveBeenCalledWith(
-            'options:snapshot:last-good-at:AAPL',
-            'options:snapshot:last-good-at:MSFT',
-            'options:snapshot:last-good-at:NVDA'
+            'options:snapshot:last-good-at:v2:AAPL',
+            'options:snapshot:last-good-at:v2:MSFT',
+            'options:snapshot:last-good-at:v2:NVDA'
         );
         expect(Object.fromEntries(result)).toEqual({
             AAPL: '2026-10-05T20:30:00.000Z',

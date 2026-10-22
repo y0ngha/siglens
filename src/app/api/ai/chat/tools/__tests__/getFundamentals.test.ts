@@ -1,5 +1,6 @@
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TOOL_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const {
     isTabAllowed,
@@ -9,6 +10,9 @@ const {
     getQuote,
     assetInfo,
     sessionSpecFor,
+    getIncomeStatements,
+    getCachedBars,
+    listReportedEarningsDates,
 } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
@@ -17,6 +21,9 @@ const {
     getQuote: vi.fn(),
     assetInfo: vi.fn(),
     sessionSpecFor: vi.fn(),
+    getIncomeStatements: vi.fn(),
+    getCachedBars: vi.fn(),
+    listReportedEarningsDates: vi.fn(),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
@@ -50,6 +57,13 @@ vi.mock('@/shared/api/market/sessionSpecFor', () => ({
 }));
 vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsSchedule,
+    listReportedEarningsDates,
+}));
+vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
+    getFinancialStatementsProvider: () => ({ getIncomeStatements }),
+}));
+vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+    getCachedBarsWithIndicators: getCachedBars,
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
@@ -142,6 +156,9 @@ describe('getFundamentalsTool', () => {
         getNextEarningsSchedule.mockResolvedValue(null);
         getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
         assetInfo.mockResolvedValue(null);
+        getIncomeStatements.mockResolvedValue([]);
+        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        listReportedEarningsDates.mockResolvedValue([]);
         sessionSpecFor.mockReturnValue({
             kind: 'scheduled',
             timeZone: 'America/New_York',
@@ -562,6 +579,278 @@ describe('getFundamentalsTool', () => {
         expect(r.available).toBe(true);
         expect(r.analyst.nextEarningsDate).toBeNull();
         expect(r.analyst.consensus).not.toBeNull();
+    });
+
+    describe('recentQuarters (dev-2026-10-22 A6)', () => {
+        const incomeRow = (
+            date: string,
+            period: string,
+            extra: Record<string, unknown> = {}
+        ) => ({
+            fiscalYear: '2026',
+            period,
+            date,
+            reportedCurrency: 'USD',
+            revenue: 2_440_000_000,
+            grossProfit: null,
+            operatingIncome: null,
+            netIncome: null,
+            ebitda: null,
+            eps: 5.7,
+            epsDiluted: 5.58,
+            grossMargin: null,
+            operatingMargin: null,
+            netMargin: null,
+            ...extra,
+        });
+
+        it("reads the financials tab's cached quarterly income rows, newest first", async () => {
+            getProvider.mockReturnValue(fakeProvider());
+            getIncomeStatements.mockResolvedValue([
+                incomeRow('2026-04-03', 'Q3', { filingDate: '2026-04-29' }),
+                incomeRow('2026-07-03', 'Q4', { filingDate: '2026-08-01' }),
+            ]);
+            const r = (await getFundamentalsTool(
+                { symbol: 'STX' },
+                ctx,
+                rt
+            )) as {
+                recentQuarters: unknown[] | null;
+            };
+            expect(getIncomeStatements).toHaveBeenCalledWith(
+                'STX',
+                'quarter',
+                5
+            );
+            expect(r.recentQuarters).toEqual([
+                {
+                    periodEnd: '2026-07-03',
+                    fiscalYear: '2026',
+                    period: 'Q4',
+                    filingDate: '2026-08-01',
+                    epsDiluted: 5.58,
+                    revenue: 2_440_000_000,
+                    currency: 'USD',
+                },
+                {
+                    periodEnd: '2026-04-03',
+                    fiscalYear: '2026',
+                    period: 'Q3',
+                    filingDate: '2026-04-29',
+                    epsDiluted: 5.58,
+                    revenue: 2_440_000_000,
+                    currency: 'USD',
+                },
+            ]);
+        });
+
+        it('no quarterly rows (or a failed read) → null, other sections intact', async () => {
+            getProvider.mockReturnValue(fakeProvider());
+            getIncomeStatements.mockRejectedValue(new Error('fmp down'));
+            const r = (await getFundamentalsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as {
+                recentQuarters: unknown;
+                valuation: unknown;
+            };
+            expect(r.recentQuarters).toBeNull();
+            expect(r.valuation).not.toBeNull();
+        });
+    });
+
+    describe('earningsReactions (dev-2026-10-22 A12)', () => {
+        const bar = (date: string, close: number) => ({
+            time: Date.parse(`${date}T00:00:00Z`) / 1000,
+            open: close,
+            high: close,
+            low: close,
+            close,
+            volume: 1,
+        });
+
+        it('measures each reported date from the daily bars, after the earnings refresh settles', async () => {
+            getProvider.mockReturnValue(fakeProvider());
+            assetInfo.mockResolvedValue({ symbol: 'MSI', fmpSymbol: 'MSI' });
+            const order: string[] = [];
+            getNextEarningsSchedule.mockImplementation(async () => {
+                order.push('refresh');
+                return null;
+            });
+            listReportedEarningsDates.mockImplementation(async () => {
+                order.push('read');
+                return ['2026-07-30', '2026-04-30'];
+            });
+            getCachedBars.mockResolvedValue({
+                bars: [
+                    bar('2026-04-29', 400),
+                    bar('2026-04-30', 380),
+                    bar('2026-05-01', 420),
+                    bar('2026-07-29', 450),
+                    bar('2026-07-30', 455),
+                    bar('2026-07-31', 441),
+                ],
+                indicators: {},
+            });
+            const r = (await getFundamentalsTool(
+                { symbol: 'MSI' },
+                ctx,
+                rt
+            )) as {
+                earningsReactions: unknown;
+            };
+            expect(r.earningsReactions).toEqual([
+                { date: '2026-07-30', movePct: -2 },
+                { date: '2026-04-30', movePct: 5 },
+            ]);
+            expect(order).toEqual(['refresh', 'read']);
+            expect(listReportedEarningsDates).toHaveBeenCalledWith(
+                'MSI',
+                'fake-db'
+            );
+            const [, symbol, timeframe, fmpSymbol] =
+                getCachedBars.mock.calls.find(c => c[2] === '1Day')!;
+            expect([symbol, timeframe, fmpSymbol]).toEqual([
+                'MSI',
+                '1Day',
+                'MSI',
+            ]);
+        });
+
+        it("skips a report whose next session is today's live bar, and keeps it once that session closed", async () => {
+            const { US_EQUITY_SESSION } = await vi.importActual<
+                typeof import('@y0ngha/siglens-core')
+            >('@y0ngha/siglens-core');
+            sessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
+            getProvider.mockReturnValue(fakeProvider());
+            // After-close report on Mon 08-03; Tue 08-04 is the live bar mid-session.
+            listReportedEarningsDates.mockResolvedValue([
+                '2026-08-03',
+                '2026-07-31',
+            ]);
+            getCachedBars.mockResolvedValue({
+                bars: [
+                    bar('2026-07-30', 90),
+                    bar('2026-07-31', 100),
+                    bar('2026-08-03', 110),
+                    bar('2026-08-04', 130),
+                ],
+                indicators: {},
+            });
+            vi.useFakeTimers({ toFake: ['Date'] });
+            try {
+                vi.setSystemTime(new Date('2026-08-04T15:00:00Z')); // 11:00 ET
+                const open = (await getFundamentalsTool(
+                    { symbol: 'MSI' },
+                    ctx,
+                    rt
+                )) as { earningsReactions: unknown };
+                expect(open.earningsReactions).toEqual([
+                    { date: '2026-07-31', movePct: 22.2222 },
+                ]);
+
+                vi.setSystemTime(new Date('2026-08-04T21:00:00Z')); // 17:00 ET
+                const closed = (await getFundamentalsTool(
+                    { symbol: 'MSI' },
+                    ctx,
+                    rt
+                )) as { earningsReactions: unknown };
+                expect(closed.earningsReactions).toEqual([
+                    { date: '2026-08-03', movePct: 30 },
+                    { date: '2026-07-31', movePct: 22.2222 },
+                ]);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('a failed bars load degrades to null without failing the tool', async () => {
+            getProvider.mockReturnValue(fakeProvider());
+            listReportedEarningsDates.mockResolvedValue(['2026-07-30']);
+            getCachedBars.mockRejectedValue(new Error('bars down'));
+            const r = (await getFundamentalsTool(
+                { symbol: 'MSI' },
+                ctx,
+                rt
+            )) as {
+                available: boolean;
+                earningsReactions: unknown;
+            };
+            expect(r.available).toBe(true);
+            expect(r.earningsReactions).toBeNull();
+        });
+
+        it('a failed refresh still reads the reported dates already in the DB', async () => {
+            getProvider.mockReturnValue(fakeProvider());
+            getNextEarningsSchedule.mockRejectedValue(new Error('fmp down'));
+            listReportedEarningsDates.mockResolvedValue(['2026-07-30']);
+            getCachedBars.mockResolvedValue({
+                bars: [
+                    bar('2026-07-29', 100),
+                    bar('2026-07-30', 90),
+                    bar('2026-07-31', 110),
+                ],
+                indicators: {},
+            });
+            const r = (await getFundamentalsTool(
+                { symbol: 'MSI' },
+                ctx,
+                rt
+            )) as {
+                earningsReactions: unknown;
+            };
+            expect(r.earningsReactions).toEqual([
+                { date: '2026-07-30', movePct: 10 },
+            ]);
+        });
+    });
+
+    it('with 5 quarters and 8 reactions the result still fits the shared tool budget', async () => {
+        getProvider.mockReturnValue(fakeProvider());
+        getIncomeStatements.mockResolvedValue(
+            Array.from({ length: 8 }, (_, i) => ({
+                fiscalYear: '2026',
+                period: `Q${(i % 4) + 1}`,
+                date: `2026-0${(i % 9) + 1}-28`,
+                filingDate: '2026-10-01',
+                reportedCurrency: 'USD',
+                revenue: 123_456_789_012,
+                grossProfit: null,
+                operatingIncome: null,
+                netIncome: null,
+                ebitda: null,
+                eps: 12.3456,
+                epsDiluted: 12.3456,
+                grossMargin: null,
+                operatingMargin: null,
+                netMargin: null,
+            }))
+        );
+        const days = Array.from({ length: 400 }, (_, i) =>
+            new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10)
+        );
+        getCachedBars.mockResolvedValue({
+            bars: days.map((d, i) => ({
+                time: Date.parse(`${d}T00:00:00Z`) / 1000,
+                open: 1,
+                high: 1,
+                low: 1,
+                close: 100 + i * 1.2345,
+                volume: 1,
+            })),
+            indicators: {},
+        });
+        listReportedEarningsDates.mockResolvedValue(
+            days.filter((_, i) => i % 40 === 20)
+        );
+        const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+            recentQuarters: unknown[];
+            earningsReactions: unknown[];
+        };
+        expect(r.recentQuarters).toHaveLength(5);
+        expect(r.earningsReactions).toHaveLength(8);
+        expect(JSON.stringify(r).length).toBeLessThan(TOOL_RESULT_MAX_CHARS);
     });
 
     it('한국 종목은 KRW 통화로 투영된다', async () => {

@@ -1,4 +1,15 @@
-import { and, asc, desc, eq, gte, isNull, notInArray, sql } from 'drizzle-orm';
+import {
+    and,
+    asc,
+    desc,
+    eq,
+    gte,
+    isNotNull,
+    isNull,
+    notInArray,
+    or,
+    sql,
+} from 'drizzle-orm';
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import type {
     EarningsReportComparisonItem,
@@ -15,7 +26,13 @@ import { getRedisClient } from '@/shared/cache/redisClient';
 import { isEarningsReportStale } from './lib/isEarningsReportStale';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
-export const EARNINGS_REPORT_FMP_LIMIT = 5;
+/**
+ * FMP/yahoo 실적 행 조회 개수(최신순, 예정 1~2행 포함). 5 → 12(2026-10-22, dev 결함 A12):
+ * 에이전트 `get_fundamentals`가 최근 8회 실적 반응을 내려면 DB에 지난 8회 발표일이 있어야
+ * 하는데, 5행 창으로는 과거 3~4회만 들어왔다. 같은 엔드포인트·같은 호출 횟수(심볼당 24h 1회)에
+ * 행 수만 늘어난다.
+ */
+export const EARNINGS_REPORT_FMP_LIMIT = 12;
 
 /**
  * 빈 earnings 응답 마커 TTL. staleness gate(24h)와 동일하게 두어 데이터 유무와 무관하게
@@ -287,6 +304,32 @@ export class DrizzleEarningsReportsRepository {
                 and(
                     eq(earningsReports.symbol, symbol),
                     gte(earningsReports.earningsDate, fromDate)
+                )
+            )
+            .orderBy(asc(earningsReports.earningsDate));
+
+        return rows.map(row => row.earningsDate);
+    }
+
+    /**
+     * `fromDate`(ISO date) 이후 실적치(EPS 또는 매출)가 들어온 — 실제로 발표된 — 실적일,
+     * 오름차순. 예정일이 옮겨져 실적치 없이 남은 옛 행은 빠진다(그 날짜에는 발표가 없었다).
+     */
+    async listReportedDatesSince(
+        symbol: string,
+        fromDate: string
+    ): Promise<string[]> {
+        const rows = await this.db
+            .select({ earningsDate: earningsReports.earningsDate })
+            .from(earningsReports)
+            .where(
+                and(
+                    eq(earningsReports.symbol, symbol),
+                    gte(earningsReports.earningsDate, fromDate),
+                    or(
+                        isNotNull(earningsReports.epsActual),
+                        isNotNull(earningsReports.revenueActual)
+                    )
                 )
             )
             .orderBy(asc(earningsReports.earningsDate));
@@ -611,6 +654,24 @@ export async function listEarningsDates(
         console.warn('[listEarningsDates] lookup failed:', err);
         return undefined;
     }
+}
+
+/**
+ * 최근 2년(`EARNINGS_DATES_LOOKBACK_DAYS`) 안에 **실제로 발표된** 실적일(`YYYY-MM-DD`, 오름차순).
+ * {@link listEarningsDates}와 달리 예정일·실적치 없는 옛 행을 빼므로 "지난 실적 때 주가가 어떻게
+ * 움직였나"의 기준일로 쓸 수 있다. DB 오류는 호출자에게 던진다(호출자가 degrade를 정한다).
+ */
+export async function listReportedEarningsDates(
+    symbol: string,
+    db: SiglensDatabase
+): Promise<string[]> {
+    const from = new Date(
+        Date.now() - EARNINGS_DATES_LOOKBACK_DAYS * MS_PER_DAY
+    );
+    return new DrizzleEarningsReportsRepository(db).listReportedDatesSince(
+        symbol,
+        kstDateKey(from)
+    );
 }
 
 /**

@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleEarningsReportsRepository,
     EARNINGS_DATES_LOOKBACK_DAYS,
     listEarningsDates,
     listEarningsDatesAfterRefresh,
+    listReportedEarningsDates,
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
 import { MS_PER_DAY } from '@/shared/config/time';
@@ -156,5 +159,68 @@ describe('listEarningsDatesAfterRefresh', () => {
             )
         ).resolves.toBeUndefined();
         expect(listSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('listReportedEarningsDates (실제로 발표된 실적일만)', () => {
+    beforeEach(() => {
+        vi.spyOn(Date, 'now').mockReturnValue(NOW);
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('최근 2년 하한으로 저장소를 부르고 DB 오류는 호출자에게 던진다', async () => {
+        const listSpy = vi
+            .spyOn(
+                DrizzleEarningsReportsRepository.prototype,
+                'listReportedDatesSince'
+            )
+            .mockResolvedValue(['2026-07-30']);
+        await expect(
+            listReportedEarningsDates('AAPL', fakeDb)
+        ).resolves.toEqual(['2026-07-30']);
+        const expectedFrom = new Date(
+            NOW - EARNINGS_DATES_LOOKBACK_DAYS * MS_PER_DAY
+        )
+            .toISOString()
+            .slice(0, 10);
+        expect(listSpy).toHaveBeenCalledWith('AAPL', expectedFrom);
+
+        listSpy.mockRejectedValue(new Error('db down'));
+        await expect(listReportedEarningsDates('AAPL', fakeDb)).rejects.toThrow(
+            'db down'
+        );
+    });
+
+    it('예정일이 옮겨져 실적치 없이 남은 행은 WHERE에서 빠진다(EPS 또는 매출 실적치가 있어야 한다)', async () => {
+        let whereArg: SQL | undefined;
+        const orderBy = vi
+            .fn()
+            .mockResolvedValue([
+                { earningsDate: '2026-04-30' },
+                { earningsDate: '2026-07-30' },
+            ]);
+        const db = {
+            select: () => ({
+                from: () => ({
+                    where: (w: SQL) => {
+                        whereArg = w;
+                        return { orderBy };
+                    },
+                }),
+            }),
+        } as unknown as SiglensDatabase;
+
+        const dates = await new DrizzleEarningsReportsRepository(
+            db
+        ).listReportedDatesSince('AAPL', '2024-10-18');
+
+        expect(dates).toEqual(['2026-04-30', '2026-07-30']);
+        const { sql, params } = new PgDialect().sqlToQuery(whereArg!);
+        expect(sql).toContain(
+            '("earnings_reports"."eps_actual" is not null or "earnings_reports"."revenue_actual" is not null)'
+        );
+        expect(params).toEqual(['AAPL', '2024-10-18']);
     });
 });

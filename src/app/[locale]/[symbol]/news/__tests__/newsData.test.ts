@@ -162,7 +162,10 @@ describe('getEarningsReportComparison 함수는', () => {
                 getEarningsReportComparison('AAPL', '2026-05-10')
             ).resolves.toEqual([COMPARISON_ITEM]);
 
-            expect(mockGetEarningsReports).toHaveBeenCalledWith('AAPL', 5);
+            expect(mockGetEarningsReports).toHaveBeenCalledWith(
+                'AAPL',
+                EARNINGS_REPORT_FMP_LIMIT
+            );
             expect(mockUpsertMany).toHaveBeenCalledWith([
                 EARNINGS_UPSERT_INPUT,
             ]);
