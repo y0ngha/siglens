@@ -5287,6 +5287,7 @@
             "ChatShell": {
                 "548fe0": "再試行",
                 "9a7569": "会話一覧",
+                "closeConversations": "会話一覧を閉じる",
                 "errorAborted": "中断されました。",
                 "errorBot": "リクエストを処理できませんでした。",
                 "errorConversationFull": "この会話は上限に達しました。新しい会話を始めてください。",

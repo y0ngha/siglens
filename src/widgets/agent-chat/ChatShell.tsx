@@ -280,6 +280,9 @@ export function ChatShell({
                     onOpenChange={setDrawerOpen}
                     contentRef={drawerRef}
                     title={t('ChatShell.9a7569')}
+                    homeHref={`${siteUrl}${localePrefix}/`}
+                    homeLabel={t('Sidebar.backToSiglens')}
+                    closeLabel={t('ChatShell.closeConversations')}
                 >
                     {sidebar}
                 </SidebarDrawer>
@@ -315,12 +318,14 @@ export function ChatShell({
                             drawerOpen ? 'agent-chat-sidebar-drawer' : undefined
                         }
                         aria-expanded={drawerOpen}
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-sm text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        // `shrink-0 whitespace-nowrap`: 긴 대화 제목이 옆에 오면 이 버튼까지 줄어들어
+                        // "대화 목록"이 두 줄로 꺾였다. 줄어드는 쪽은 제목(`min-w-0 truncate`)이다.
+                        className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded px-2 text-sm whitespace-nowrap text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         <MenuIcon className="size-4" />
                         {t('ChatShell.openConversations')}
                     </button>
-                    <span className="truncate text-sm text-secondary-300">
+                    <span className="min-w-0 flex-1 truncate text-sm text-secondary-300">
                         {activeTitle}
                     </span>
                 </div>

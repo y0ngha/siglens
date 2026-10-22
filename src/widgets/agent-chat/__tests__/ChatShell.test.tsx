@@ -404,6 +404,23 @@ describe('ChatShell chrome', () => {
         ); // mobile-bar button label + drawer title
     });
 
+    /** 서랍은 화면 전체 높이라 사이트 헤더를 가린다 — 맨 위에서 홈으로 가거나 닫을 수 있어야 한다. */
+    it('서랍 맨 위에 시그렌즈 홈 링크와 닫기 버튼이 있다', async () => {
+        renderShell();
+        const trigger = screen.getByRole('button', { name: '대화 목록' });
+        fireEvent.click(trigger);
+        const drawer = await findDrawer();
+        // 맨 아래 레일 푸터에도 같은 링크가 있다 — 서랍의 첫 링크가 머리 쪽이어야 한다.
+        const [firstLink] = within(drawer).getAllByRole('link');
+        expect(firstLink).toHaveAccessibleName('시그렌즈 홈으로');
+        expect(firstLink).toHaveAttribute('href', 'https://siglens.io/');
+
+        fireEvent.click(
+            within(drawer).getByRole('button', { name: '대화 목록 닫기' })
+        );
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+
     it('데스크톱(lg 이상)에서는 vaul 서랍을 불러오지도 그리지도 않는다', async () => {
         stubBelowLg(false);
         renderShell();
