@@ -5,7 +5,9 @@
  * locally using the exported structural interfaces from yahooNormalize.ts.
  */
 
+import { summarizeChainForLlm } from '@y0ngha/siglens-core';
 import {
+    MIN_PLAUSIBLE_IMPLIED_VOLATILITY,
     normalizeYahooContract,
     normalizeYahooExpiration,
     normalizeYahooSnapshot,
@@ -334,5 +336,114 @@ describe('normalizeYahooSnapshot', () => {
         const response = makeResponse({ options: [] });
         const result = normalizeYahooSnapshot(response, NOW);
         expect(result.chains).toHaveLength(0);
+    });
+});
+
+describe('implied volatility that is not a market reading (dev-2026-10-22 A9)', () => {
+    // Live Yahoo MSI 2026-11-20 chain, 2026-10-22 09:11 ET (pre-market): spot
+    // 467.50, every near-ATM contract with bid = ask = 0 and solver-floor IVs.
+    const NOW = new Date('2026-10-22T13:11:00Z');
+    const msiContract = (
+        strike: number,
+        impliedVolatility: number,
+        lastPrice: number
+    ) =>
+        makeYahooContract(strike, {
+            contractSymbol: `MSI261120C${strike}`,
+            impliedVolatility,
+            lastPrice,
+            bid: 0,
+            ask: 0,
+            expiration: new Date('2026-11-20T00:00:00.000Z'),
+        });
+    const msiChain = (): YahooOptionsResult => ({
+        underlyingSymbol: 'MSI',
+        expirationDates: [new Date('2026-11-20T00:00:00.000Z')],
+        strikes: [450, 460, 470, 480],
+        hasMiniOptions: false,
+        quote: { regularMarketPrice: 467.5 },
+        options: [
+            makeYahooExpiration(
+                new Date('2026-11-20T00:00:00.000Z'),
+                [
+                    msiContract(450, 0.00001, 24.11),
+                    msiContract(460, 0.00001, 22.4),
+                    msiContract(470, 0.0039162109375, 16.8),
+                    msiContract(480, 0.015634843750000002, 11.15),
+                ],
+                [
+                    msiContract(450, 0.0312596875, 10.96),
+                    msiContract(460, 0.015634843750000002, 14.6),
+                    msiContract(470, 0.00001, 19.5),
+                ]
+            ),
+        ],
+    });
+
+    it('no bid and no ask → IV is null (Yahoo backs it out of a stale last price)', () => {
+        const raw = makeYahooContract(470, {
+            impliedVolatility: 0.25,
+            bid: 0,
+            ask: 0,
+        });
+        expect(normalizeYahooContract(raw).impliedVolatility).toBeNull();
+        // Absent quotes behave the same as zero quotes.
+        expect(
+            normalizeYahooContract(
+                makeYahooContract(470, { bid: undefined, ask: undefined })
+            ).impliedVolatility
+        ).toBeNull();
+    });
+
+    it('a one-sided quote keeps the IV (far strikes often have an ask but no bid)', () => {
+        const raw = makeYahooContract(470, {
+            impliedVolatility: 0.42,
+            bid: 0,
+            ask: 0.15,
+        });
+        expect(normalizeYahooContract(raw).impliedVolatility).toBe(0.42);
+    });
+
+    it('a solver-floor IV below the plausible minimum is null even with quotes', () => {
+        const raw = makeYahooContract(470, { impliedVolatility: 0.00001 });
+        expect(normalizeYahooContract(raw).impliedVolatility).toBeNull();
+        expect(
+            normalizeYahooContract(
+                makeYahooContract(470, {
+                    impliedVolatility: MIN_PLAUSIBLE_IMPLIED_VOLATILITY,
+                })
+            ).impliedVolatility
+        ).toBe(MIN_PLAUSIBLE_IMPLIED_VOLATILITY);
+    });
+
+    it('MSI regression: the implied move is unknown (null), not ±0.11% (466.98–468.02)', () => {
+        const snapshot = normalizeYahooSnapshot(msiChain(), NOW);
+        const chain = snapshot.chains[0]!;
+        expect(chain.daysToExpiration).toBe(29);
+
+        const metrics = summarizeChainForLlm(chain, snapshot.underlyingPrice);
+
+        expect(metrics.atmImpliedVolatility).toBeNull();
+        expect(metrics.impliedMovePercent).toBeNull();
+        expect(metrics.impliedMoveRange).toBeNull();
+    });
+
+    it('MSI with one quoted near-ATM contract: the implied move comes from that contract', () => {
+        const response = msiChain();
+        const quoted = response.options[0]!.calls.find(c => c.strike === 470)!;
+        Object.assign(quoted, { bid: 16.5, ask: 17.1, impliedVolatility: 0.2 });
+
+        const snapshot = normalizeYahooSnapshot(response, NOW);
+        const metrics = summarizeChainForLlm(
+            snapshot.chains[0]!,
+            snapshot.underlyingPrice
+        );
+
+        expect(metrics.atmImpliedVolatility).toBe(0.2);
+        // 0.2 × √(29/365) × 100 ≈ 5.64%.
+        expect(metrics.impliedMovePercent).toBeCloseTo(
+            0.2 * Math.sqrt(29 / 365) * 100,
+            6
+        );
     });
 });

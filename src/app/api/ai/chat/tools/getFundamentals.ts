@@ -1,5 +1,9 @@
 import 'server-only';
+import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
+import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
 import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
     SECONDS_PER_HOUR,
@@ -18,11 +22,22 @@ import {
     getDescriptor,
     isKrEquitySymbol,
 } from '@/shared/config/marketProfile/registry';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import {
+    getNextEarningsReport,
+    listReportedEarningsDates,
+} from '@/entities/earnings-report/api';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import {
+    earningsReactions,
+    RECENT_QUARTERS_COUNT,
+    recentQuarterRows,
+    type EarningsReactionView,
+} from './earningsHistory';
+import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
@@ -57,6 +72,40 @@ export function daysUntil(
         Date.parse(`${targetDate}T00:00:00Z`) -
         Date.parse(`${nowDate}T00:00:00Z`);
     return Math.round(diffMs / MS_PER_DAY);
+}
+
+/**
+ * Price reaction to the last reported earnings (`earningsReactions`). Waits for
+ * the `getNextEarningsReport` refresh already in flight (it upserts the FMP/yahoo
+ * rows) so a stale DB is read after the refresh, never racing it; a failed
+ * refresh still reads what the DB has. Daily bars come from the same in-memory
+ * cache `get_bars_indicators` fills, so a turn that calls both loads them once.
+ * Never throws: `null` (logged) when either input fails or no reaction can be
+ * measured.
+ */
+async function loadEarningsReactions(
+    symbol: string,
+    db: SiglensDatabase,
+    session: MarketSessionSpec,
+    refresh: Promise<unknown>,
+    loadDailyBars: () => Promise<readonly Bar[]>
+): Promise<EarningsReactionView[] | null> {
+    try {
+        const readDates = () => listReportedEarningsDates(symbol, db);
+        const [dates, bars] = await Promise.all([
+            refresh.then(readDates, readDates),
+            loadDailyBars(),
+        ]);
+        const reactions = earningsReactions(
+            bars,
+            dates,
+            lastBarIsForming(bars, session, new Date())
+        );
+        return reactions.length > 0 ? reactions : null;
+    } catch (error) {
+        logToolDegrade('get_fundamentals', 'earnings reactions', error);
+        return null;
+    }
 }
 
 /**
@@ -117,6 +166,9 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         resolveAssetInfoOrNull(symbol, 'get_fundamentals'),
     ]);
     const session = sessionSpecFor(marketProfile);
+    const marketData = getCachedMarketDataProvider(session);
+    const { db } = getDatabaseClient();
+    const earningsRefresh = getNextEarningsReport(symbol, db);
     const [
         profileR,
         keyMetricsR,
@@ -129,6 +181,8 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         estimatesR,
         earningsR,
         quoteR,
+        quartersR,
+        reactionsR,
     ] = await Promise.allSettled([
         provider.getProfile(symbol),
         provider.getKeyMetricsTtm(symbol),
@@ -139,16 +193,37 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         provider.getGradesConsensus(symbol),
         provider.getPriceTargetConsensus(symbol),
         provider.getAnalystEstimates(symbol),
-        getNextEarningsReport(symbol, getDatabaseClient().db),
+        earningsRefresh,
         // Same symbol→fmpSymbol mapping `get_quote`/`get_bars_indicators`
         // use. Bounded by `quoteWithTimeout` like the other quotes that are
         // only enrichment (`get_my_portfolio`, `get_cached_analysis`);
         // `get_quote` calls getQuote directly because the quote IS its output.
         // Here the price is an extra (`price`, `targetUpsidePct`), so a slow
         // quote must not stall the whole tool.
-        quoteWithTimeout(
-            getCachedMarketDataProvider(session),
-            asset?.fmpSymbol ?? symbol
+        quoteWithTimeout(marketData, asset?.fmpSymbol ?? symbol),
+        // The financials tab's own cached quarterly income rows (Redis
+        // `financials:income:<SYM>:quarter`, one FMP call per symbol per day
+        // shared with that tab) — no extra endpoint.
+        getFinancialStatementsProvider(symbol).getIncomeStatements(
+            symbol,
+            'quarter',
+            RECENT_QUARTERS_COUNT
+        ),
+        loadEarningsReactions(
+            symbol,
+            db,
+            session,
+            earningsRefresh,
+            async () => {
+                const { bars } = await getCachedBarsWithIndicators(
+                    marketData,
+                    symbol,
+                    '1Day',
+                    asset?.fmpSymbol,
+                    session
+                );
+                return bars;
+            }
         ),
     ]);
 
@@ -168,6 +243,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
     const estimates = settledOrNull(estimatesR);
     const earnings = settledOrNull(earningsR);
     const quote = settledOrNull(quoteR);
+    const quarters = recentQuarterRows(settledOrNull(quartersR) ?? []);
     // A failed lookup is `null` (rejections are settled to `null` above);
     // `price > 0` also rejects bad upstream data (a zero or negative price),
     // so either reads as "unknown", never as a real price.
@@ -264,6 +340,10 @@ export const getFundamentalsTool: ToolExecutor = async args => {
                     ? null
                     : roundNumber(growth.growthEPS * 100),
         },
+        // Newest first; `null` when the quarterly rows are unavailable.
+        recentQuarters: quarters.length > 0 ? quarters : null,
+        // Newest first; `null` when no reaction could be measured.
+        earningsReactions: settledOrNull(reactionsR),
         health: {
             altmanZScore: scores?.altmanZScore ?? null,
             piotroskiScore: scores?.piotroskiScore ?? null,

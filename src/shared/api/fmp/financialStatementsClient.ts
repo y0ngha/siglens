@@ -8,7 +8,6 @@ import type {
     FinancialGrowthRow,
     FinancialStatementsProvider,
     IncomeGrowthRow,
-    IncomeStatementRow,
     StatementPeriod,
 } from '@y0ngha/siglens-core';
 import type {
@@ -18,6 +17,7 @@ import type {
     RawFmpFinancialGrowth,
     RawFmpIncomeGrowth,
     RawFmpIncomeStatement,
+    IncomeStatementRowWithFiling,
 } from './financialStatements.types';
 
 /** toFiniteNumber의 단항 별칭 — undefined 입력을 허용하는 로컬 쇼트핸드. */
@@ -42,7 +42,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
         symbol: string,
         period: StatementPeriod,
         limit: number
-    ): Promise<IncomeStatementRow[]> {
+    ): Promise<IncomeStatementRowWithFiling[]> {
         const arr = await fmpGet<RawFmpIncomeStatement[]>('income-statement', {
             symbol,
             period,
@@ -52,6 +52,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
             fiscalYear: r.fiscalYear ?? '',
             period: r.period ?? '',
             date: r.date ?? '',
+            filingDate: r.filingDate || null,
             reportedCurrency: normalizeReportedCurrency(r.reportedCurrency),
             revenue: num(r.revenue),
             grossProfit: num(r.grossProfit),

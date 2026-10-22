@@ -117,6 +117,24 @@ function lastBarIsCurrentSession(
 }
 
 /**
+ * 마지막 봉이 아직 끝나지 않은(forming) 봉인가 — 정규장이 열려 있고 그 봉이 현재 세션의 봉일 때.
+ * {@link quantizeBarsDataToLastClosed}가 떼어 내는 봉과 같은 판정이다. 장중 60초 시세 스냅샷이
+ * 오늘 봉으로 붙으므로, 그 봉의 종가는 "현재가"이지 종가가 아니다.
+ */
+export function lastBarIsForming(
+    bars: readonly { time: number }[],
+    session: MarketSessionSpec,
+    now: Date
+): boolean {
+    const lastBar = bars.at(-1);
+    return (
+        lastBar !== undefined &&
+        hasFormingBar(session, now) &&
+        lastBarIsCurrentSession(lastBar.time, session, now)
+    );
+}
+
+/**
  * SSR 직렬화 전용: 정규장 중에는 진행 중(forming) 당일 봉을 bars와 indicators 양쪽에서
  * lockstep으로 제외해 SSR 출력이 장 마감 시 하루 1회만 변경되게 한다(ISR write churn 제거).
  *
@@ -139,9 +157,7 @@ export function quantizeBarsDataToLastClosed(
     now: Date,
     session: MarketSessionSpec = US_EQUITY_SESSION
 ): BarsData {
-    const lastBar = data.bars.at(-1);
-    if (lastBar === undefined || !hasFormingBar(session, now)) return data;
-    if (!lastBarIsCurrentSession(lastBar.time, session, now)) return data;
+    if (!lastBarIsForming(data.bars, session, now)) return data;
     return {
         ...data,
         bars: data.bars.slice(0, -1),

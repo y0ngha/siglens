@@ -21,8 +21,11 @@ export const BARS_RESULT_MAX_CHARS = 6_000;
  * their list lengths by construction (`topSignals`/`upcomingCalendar`), so
  * this ceiling is headroom against the JSON envelope, not a rescue for an
  * unbounded list. `get_fundamentals` and `get_congress_trades` fit
- * comfortably under the shared `TOOL_RESULT_MAX_CHARS` default (~830 and
- * ~2,500 chars respectively) and do not need their own ceiling.
+ * comfortably under the shared `TOOL_RESULT_MAX_CHARS` default and do not
+ * need their own ceiling: `get_fundamentals` measures ~2,090 chars with every
+ * section filled plus 5 `recentQuarters` rows and 8 `earningsReactions`
+ * (~1,030 without those two lists; fixture in `getFundamentals.test.ts`,
+ * 2026-10-22), `get_congress_trades` ~2,500.
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
 

@@ -216,7 +216,8 @@ export default async function OptionsPage({ params }: Props) {
     // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
     // null로 degrade → 이미 존재하는 null 분기(OptionsEmptyState)로 자연스럽게 빠진다.
     const snapshot = await staticSymbolCache(
-        ['options:snapshot', upper],
+        // -v2: IV is null for quote-less / near-zero chains (yahooNormalize) — old entries carry fake IVs
+        ['options:snapshot-v2', upper],
         upper,
         () => fetchOptionsSnapshot(upper),
         [],

@@ -80,15 +80,28 @@ function buildHasOptionsKey(symbol: string): string {
  * zstd 압축)으로 저장한다. 키를 올린 이유는 롤링 배포다 — 옛 빌드는 이 키의 값을 곧바로
  * `OptionsSnapshot`으로 쓰므로, 같은 키에 envelope·압축 문자열을 쓰면 옛 인스턴스의 옵션
  * 페이지가 깨진다. 옛 `options:snapshot:SYM` 키는 TTL(최대 4h)로 사라진다.
+ *
+ * v3(2026-10-22): `normalizeYahooContract`가 시장 값이 아닌 IV(호가 없음·solver 하한)를
+ * `null`로 바꾸기 시작했다. 옛 키에 남은 스냅샷은 그 전에 정규화돼 ±0.1% 같은 가짜 내재
+ * 변동폭을 낳는 IV를 들고 있으므로, 배포 직후에도 내보내지 않도록 키를 올린다(SERVER.md#DC-1).
  */
-const SNAPSHOT_CACHE_VERSION = 'v2';
+const SNAPSHOT_CACHE_VERSION = 'v3';
+
+/**
+ * last-good 키(본체·`capturedAt` 보조 키)의 포맷 버전. 위 v3와 같은 이유로 2026-10-22에 올렸다.
+ * 대가: 배포 뒤 첫 워밍 구간(그날 정규장 마감 후)까지는 last-good이 없어, 정규장 밖에 처음
+ * 조회된 종목은 Yahoo의 장외 값(호가 없음 → IV `null`, 내재 변동폭 `null`)을 받는다. 가짜
+ * 수치 대신 "모름"이 나가는 것이라 감수한다. 보조 키도 함께 올려야 한다 — 옛 보조 키가 남으면
+ * 워밍이 "이미 확보됨"으로 보고 새 last-good을 쓰지 않는다.
+ */
+const LAST_GOOD_CACHE_VERSION = 'v2';
 
 function buildSnapshotKey(symbol: string): string {
     return `options:snapshot:${SNAPSHOT_CACHE_VERSION}:${symbol.toUpperCase()}`;
 }
 
 function buildLastGoodSnapshotKey(symbol: string): string {
-    return `options:snapshot:last-good:${symbol.toUpperCase()}`;
+    return `options:snapshot:last-good:${LAST_GOOD_CACHE_VERSION}:${symbol.toUpperCase()}`;
 }
 
 /**
@@ -97,7 +110,7 @@ function buildLastGoodSnapshotKey(symbol: string): string {
  * last-good과 같은 TTL로 함께 쓴다.
  */
 function buildLastGoodCapturedAtKey(symbol: string): string {
-    return `options:snapshot:last-good-at:${symbol.toUpperCase()}`;
+    return `options:snapshot:last-good-at:${LAST_GOOD_CACHE_VERSION}:${symbol.toUpperCase()}`;
 }
 
 /**
@@ -105,9 +118,10 @@ function buildLastGoodCapturedAtKey(symbol: string): string {
  * 저장 실패는 흡수한다(없어도 기존 동작과 같다). 저장됐는지를 돌려줘 워밍이 결과를
  * 정직하게 보고하게 한다.
  *
- * 값은 `encodeCacheValue`로 압축해 쓴다(스냅샷은 수백 KB라 zstd로 크게 준다). 키는 그대로
- * 둔다 — 5일짜리 값이라 키를 바꾸면 배포 직후 한국 낮 방문자가 last-good 없이 stale을
- * 받는다. 읽기(`readLastGoodSnapshot`)는 압축 전 값도 그대로 읽고, 옛 빌드가 압축 값을
+ * 값은 `encodeCacheValue`로 압축해 쓴다(스냅샷은 수백 KB라 zstd로 크게 준다). 압축 도입 때는
+ * 키를 그대로 뒀다 — 5일짜리 값이라 키를 바꾸면 배포 직후 한국 낮 방문자가 last-good 없이
+ * stale을 받는다. IV 정규화 때는 키를 올렸다 — 그 이유와 대가는 `LAST_GOOD_CACHE_VERSION` 참고.
+ * 읽기(`readLastGoodSnapshot`)는 압축 전 값도 그대로 읽고, 옛 빌드가 압축 값을
  * 읽으면 `rebaseOptionsSnapshot`이 문자열에서 throw → `read_error`로 흡수된다.
  */
 async function writeLastGoodSnapshot(
@@ -417,7 +431,7 @@ export async function readLastGoodCapturedAtBatch(
 }
 
 /**
- * 일반 캐시(`options:snapshot:v2:SYM`)의 hit 경로를 **우회**해 Yahoo를 직접 치고, OI가 채워진
+ * 일반 캐시(`options:snapshot:v3:SYM`)의 hit 경로를 **우회**해 Yahoo를 직접 치고, OI가 채워진
  * (stale 아님) 스냅샷이면 last-good과 일반 캐시 키를 함께 갱신한다.
  *
  * `fetchOptionsSnapshot`은 캐시 hit 시 last-good을 갱신하지 않고, miss 때도 Yahoo가 OI를
