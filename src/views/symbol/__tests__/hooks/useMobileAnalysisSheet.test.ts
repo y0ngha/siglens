@@ -49,6 +49,8 @@ describe('useMobileAnalysisSheet', () => {
             vi.advanceTimersByTime(1);
         });
         expect(result.current.isOpen).toBe(true);
+        // 프레임 콜백에 기대면 프레임이 안 오는 환경에서 다시 터치 전까지 막힌다.
+        expect(requestAnimationFrameSpy).not.toHaveBeenCalled();
     });
 
     it('reopens at peek snap when vaul attempts to close the persistent sheet', () => {
