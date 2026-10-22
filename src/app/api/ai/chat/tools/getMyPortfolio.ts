@@ -5,11 +5,8 @@ import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { MS_PER_SECOND } from '@/shared/config/time';
-import {
-    assessFreshness,
-    type FreshnessView,
-    QUOTE_MAX_AGE_MS,
-} from './freshness';
+import { assessFreshness, type FreshnessView } from './freshness';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';

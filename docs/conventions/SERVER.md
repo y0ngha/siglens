@@ -115,7 +115,9 @@ Cleanup code follows the same rule: do not call an unguarded cleanup step in fro
 An unexpected error that is turned into an error result, an empty value or a fallback must be logged first
 (`console.error('[moduleName] operation failed:', err)`), otherwise the root cause is invisible. The same applies
 when an optional cost-saving store (DB-backed cache, memo layer) is unavailable: log once per process, so a
-misconfiguration that makes every request pay the full provider cost shows up in the logs. Do not leave debug
+misconfiguration that makes every request pay the full provider cost shows up in the logs. A bare `catch { return null }` or
+`catch { return [] }` in a tool executor or loader is the same violation: the model or caller sees "no data" and the
+cause is lost. Do not leave debug
 `console.log` calls in actions, API modules or adapters; logging belongs at the boundary that handles the failure.
 
 ```typescript
@@ -432,6 +434,18 @@ unstable_cache(load, ['bars-static-v3', ticker, timeframe], { revalidate, tags }
 // ❌ shape changed but key kept → old/new builds share incompatible entries
 unstable_cache(load, ['bars-static-v2', ticker, timeframe], { revalidate, tags });
 ```
+
+**The rule covers every layer that stores the value, not just the one you edited.** A single payload is often
+cached in several places: the Redis snapshot or `getOrSetCache` key, the `unstable_cache` keyParts of each page or
+loader that reads it, and auxiliary keys such as last-good, stale-fallback or per-section copies. When a cached
+value's shape **or meaning** changes (a field's unit, what a ratio is computed from, which period a figure
+represents), grep for every key that holds it and bump each one in the same PR; bumping the producer's key while a
+page-level `keyParts` or a last-good key keeps the old version serves the old meaning through the surviving layer.
+
+- ❌ Snapshot key bumped to `v3`, but the page's `unstable_cache(load, ['flows-page', symbol])` and the last-good key
+  stay unversioned, so deploys keep serving old-shape values from them.
+- ✅ `rg` the payload's builder and consumers, and bump the snapshot key, every consumer's keyParts and the
+  auxiliary keys together.
 
 **`staticSymbolCache` / `cacheNonEmpty*` keys** are keyParts only: the wrapper passes a fixed
 callback and prepends `STATIC_SYMBOL_CACHE_VERSION` (`'ssc-v1'`), so two call sites with the same

@@ -121,6 +121,13 @@ export const API_ERROR_DOCS: readonly ApiErrorDoc[] = [
             'get_chart_data only: no price bars exist for this symbol and timeframe.',
     },
     {
+        code: 'stale_listing',
+        status: 404,
+        scope: 'tools',
+        summary:
+            'A Korean listing has not traded for more than about 10 trading days (often the wrong .KS/.KQ suffix), so no current price is served. error.details.lastTradeDate is the last trade date; check the symbol with search_ticker.',
+    },
+    {
         code: 'tool_timeout',
         status: 504,
         scope: 'tools',

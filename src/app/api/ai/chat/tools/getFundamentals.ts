@@ -23,10 +23,11 @@ import {
     isKrEquitySymbol,
 } from '@/shared/config/marketProfile/registry';
 import {
-    getNextEarningsReport,
+    getNextEarningsSchedule,
     listReportedEarningsDates,
+    type NextEarningsSchedule,
 } from '@/entities/earnings-report/api';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
@@ -39,6 +40,7 @@ import {
 } from './earningsHistory';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
+import { staleKrListingDate } from './freshness';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 function settledOrNull<T>(r: PromiseSettledResult<T>): T | null {
@@ -76,7 +78,7 @@ export function daysUntil(
 
 /**
  * Price reaction to the last reported earnings (`earningsReactions`). Waits for
- * the `getNextEarningsReport` refresh already in flight (it upserts the FMP/yahoo
+ * the `getNextEarningsSchedule` refresh already in flight (it upserts the FMP/yahoo
  * rows) so a stale DB is read after the refresh, never racing it; a failed
  * refresh still reads what the DB has. Daily bars come from the same in-memory
  * cache `get_bars_indicators` fills, so a turn that calls both loads them once.
@@ -109,6 +111,48 @@ async function loadEarningsReactions(
 }
 
 /**
+ * How certain `nextEarningsDate` is, stated in the tool output rather than
+ * implied. Neither provider gives a pre/after-market session time: FMP
+ * `/stable/earnings` has no `time` field and no confirmation flag, and the
+ * Yahoo path (KR) only says whether the date is Yahoo's own estimate
+ * (`isEarningsDateEstimate`). So `earningsDateConfirmed` is a boolean only for
+ * Yahoo rows and `null` (unknown) otherwise, and the note always says the
+ * session timing is not provided — a real turn answered a moved COP date with
+ * no hedge because nothing in the output said it could be a schedule estimate.
+ * No date → no certainty fields to add.
+ */
+interface EarningsDateCertainty {
+    earningsDateConfirmed: boolean | null;
+    earningsDateNote: string;
+}
+
+const SESSION_TIMING_NOT_PROVIDED =
+    'Session timing (before/after market) is not provided.';
+
+/** 확정 여부 3상태(`true`·`false`·모름) → 모델에게 보여 줄 안내 문장. */
+export function earningsDateNoteFor(confirmed: boolean | null): string {
+    switch (confirmed) {
+        case true:
+            return `Date confirmed by the provider. ${SESSION_TIMING_NOT_PROVIDED}`;
+        case false:
+            return `Provider marks this date as an estimate; it may move. ${SESSION_TIMING_NOT_PROVIDED}`;
+        case null:
+            return `Provider gives no confirmation flag, so treat this as a scheduled date that may move. ${SESSION_TIMING_NOT_PROVIDED}`;
+    }
+}
+
+export function earningsDateCertainty(
+    earnings: Pick<NextEarningsSchedule, 'dateConfirmed'> | null
+): Partial<EarningsDateCertainty> {
+    if (earnings === null) return {};
+    const confirmed = earnings.dateConfirmed ?? null;
+    return {
+        earningsDateConfirmed: confirmed,
+        earningsDateNote: earningsDateNoteFor(confirmed),
+    };
+}
+
+/**
  * Compact valuation/profitability/growth/health/analyst snapshot for stocks
  * (US and Korean — crypto has no fundamental tab, gated the same way
  * `getOptionsSummaryTool` gates options). One `Promise.allSettled` fan-out so
@@ -121,7 +165,8 @@ async function loadEarningsReactions(
  * too: the model-facing shape is numbers for valuation/health questions,
  * not the page's full content.
  *
- * `nextEarningsDate` goes through `getNextEarningsReport` — the same
+ * `nextEarningsDate` goes through `getNextEarningsSchedule` (the same
+ * refresh as `getNextEarningsReport`, plus the provider's confirmation flag) — the same
  * DB-backed, 24h-staleness-gated loader the news/analysis paths already use
  * (`entities/earnings-report`) — rather than the provider's own
  * `getEarningsReport` (a separate Redis key, `fundamental:earnings-next:<SYM>`,
@@ -168,7 +213,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
     const session = sessionSpecFor(marketProfile);
     const marketData = getCachedMarketDataProvider(session);
     const { db } = getDatabaseClient();
-    const earningsRefresh = getNextEarningsReport(symbol, db);
+    const earningsRefresh = getNextEarningsSchedule(symbol, db);
     const [
         profileR,
         keyMetricsR,
@@ -243,6 +288,24 @@ export const getFundamentalsTool: ToolExecutor = async args => {
     const estimates = settledOrNull(estimatesR);
     const earnings = settledOrNull(earningsR);
     const quote = settledOrNull(quoteR);
+    // 한국의 죽은 리스팅(잘못된 접미사 등): yahoo가 2년 묵은 가격과 빈 펀더멘털을 그대로 준다.
+    // `asOf`가 조회 시각이라 그 가격이 "오늘"로 읽히므로, 섹션을 내지 않고 데이터 오류로 돌린다.
+    const lastTradeDate = staleKrListingDate(
+        marketProfile,
+        quote?.timestamp === undefined
+            ? undefined
+            : quote.timestamp * MS_PER_SECOND,
+        Date.now()
+    );
+    // `error` 코드로 낸다(형제 도구 `get_bars_indicators`·`get_quote`와 같은 형태) — 공개 API가 이 코드를
+    // 404로 매핑한다(`executePublicTool` `TOOL_ERROR_MAPPING`). `reason`으로 내면 200으로 나간다.
+    if (lastTradeDate !== null)
+        return {
+            symbol,
+            available: false,
+            error: 'stale_listing',
+            lastTradeDate,
+        };
     const quarters = recentQuarterRows(settledOrNull(quartersR) ?? []);
     // A failed lookup is `null` (rejections are settled to `null` above);
     // `price > 0` also rejects bad upstream data (a zero or negative price),
@@ -369,6 +432,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
                     : ('current_fiscal_year' as const),
             },
             nextEarningsDate: earnings?.earningsDate ?? null,
+            ...earningsDateCertainty(earnings),
             daysToEarnings: daysUntil(
                 earnings?.earningsDate ?? null,
                 new Date(),

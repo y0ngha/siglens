@@ -180,6 +180,37 @@ describe('YahooMarketProvider', () => {
         });
     });
 
+    describe('getListingOrThrow', () => {
+        it('이름·quoteType·마지막 거래 시각을 quote 한 번으로 돌려준다', async () => {
+            const lastTrade = new Date('2024-07-19T06:30:00Z');
+            quote.mockResolvedValue({
+                regularMarketPrice: 40100,
+                longName: 'Studio Dragon Corporation',
+                quoteType: 'MUTUALFUND',
+                regularMarketTime: lastTrade,
+            });
+            expect(
+                await new YahooMarketProvider().getListingOrThrow('253450.KS')
+            ).toEqual({
+                name: 'Studio Dragon Corporation',
+                quoteType: 'MUTUALFUND',
+                lastTradeMs: lastTrade.getTime(),
+            });
+            expect(quote).toHaveBeenCalledTimes(1);
+        });
+
+        it('시세가 없으면 null, 인프라 실패는 던진다', async () => {
+            quote.mockResolvedValueOnce(undefined);
+            expect(
+                await new YahooMarketProvider().getListingOrThrow('999999.KS')
+            ).toBeNull();
+            quote.mockRejectedValueOnce(new Error('network'));
+            await expect(
+                new YahooMarketProvider().getListingOrThrow('005930.KS')
+            ).rejects.toThrow('network');
+        });
+    });
+
     describe('getQuoteTypeOrThrow', () => {
         it('returns the raw yahoo quoteType', async () => {
             quote.mockResolvedValue({

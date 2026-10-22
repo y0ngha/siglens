@@ -316,6 +316,44 @@ describe('getBarsIndicatorsTool', () => {
         expect(r.trend).toBe('uptrend');
     });
 
+    it('한국 종목의 마지막 봉이 14일 넘게 묵으면(죽은 리스팅) stale_listing 오류로 돌린다', async () => {
+        profile.mockResolvedValue('kr-equity');
+        const lastTrade = Math.floor(Date.UTC(2024, 6, 19) / 1000);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(lastTrade - 86_400, 40000), bar(lastTrade, 40100)],
+            indicators,
+        });
+        const r = await getBarsIndicatorsTool(
+            { symbol: '253450.KS', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({
+            symbol: '253450.KS',
+            timeframe: '1Day',
+            found: false,
+            error: 'stale_listing',
+            lastTradeDate: '2024-07-19',
+        });
+    });
+
+    it('같은 나이의 봉이라도 미국 종목은 거부하지 않는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const lastTrade = Math.floor(Date.UTC(2024, 6, 19) / 1000);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(lastTrade - 86_400, 100), bar(lastTrade, 101)],
+            indicators,
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { error?: string };
+        expect(r.error).toBeUndefined();
+    });
+
     it('봉이 없으면 found:false', async () => {
         profile.mockResolvedValue('us-equity');
         getCachedBars.mockResolvedValue({ bars: [], indicators });
@@ -369,6 +407,33 @@ describe('getBarsIndicatorsTool', () => {
             'BRK-A',
             undefined
         );
+    });
+
+    it('해석된 종목명과 공급자 심볼을 결과에 실어 다른 종목으로 해석된 사실이 보이게 한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        assetInfo.mockResolvedValue({
+            symbol: 'VIX',
+            name: 'VIX',
+            fmpSymbol: '^VIX',
+        });
+        getCachedBars.mockResolvedValue({
+            bars: [bar(1_700_000_000, 16.68)],
+            indicators,
+        });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = await getBarsIndicatorsTool(
+            { symbol: 'VIX', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+
+        expect(r).toMatchObject({
+            symbol: 'VIX',
+            resolvedName: 'VIX',
+            resolvedSymbol: '^VIX',
+        });
     });
 
     it.each([
@@ -1146,6 +1211,87 @@ describe('getBarsIndicatorsTool', () => {
             expect(r.derived.ranges['20bars'].highDate).toBe(
                 day(bars[10]!.time)
             );
+        });
+
+        describe('maCross50_200 (dev-2026-10-22 A5)', () => {
+            const DAY = 86_400;
+            const start = Date.parse('2024-10-21T00:00:00Z') / 1000;
+            const series = (closes: number[]) =>
+                closes.map((c, i) => barV(start + i * DAY, c));
+            const run = async (
+                bars: ReturnType<typeof barV>[],
+                timeframe: '1Day' | '1Hour' = '1Day'
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    derived: {
+                        maCross50_200: { date: string; kind: string }[] | null;
+                    };
+                    barsReturned: number;
+                };
+            };
+            /** Plain trailing mean, independent of core. */
+            const sma = (closes: number[], end: number, n: number) =>
+                closes.slice(end - n + 1, end + 1).reduce((a, b) => a + b, 0) /
+                n;
+
+            it('lists the dead cross on the bar an independent SMA check finds, from the full history (not the returned bars)', async () => {
+                // 360 rising closes, then a slide: MA50 starts above MA200 and
+                // falls through it once inside the last 252 bars.
+                const closes = Array.from({ length: 500 }, (_, i) =>
+                    i < 360 ? 100 + i * 0.5 : 280 - (i - 360) * 1.5
+                );
+                const bars = series(closes);
+                let crossIndex = -1;
+                for (let i = 248; i < closes.length; i++) {
+                    if (
+                        sma(closes, i - 1, 50) > sma(closes, i - 1, 200) &&
+                        sma(closes, i, 50) < sma(closes, i, 200)
+                    ) {
+                        crossIndex = i;
+                        break;
+                    }
+                }
+                expect(crossIndex).toBeGreaterThan(closes.length - 252);
+
+                const r = await run(bars);
+
+                expect(r.derived.maCross50_200).toEqual([
+                    { date: day(bars[crossIndex]!.time), kind: 'dead' },
+                ]);
+                // The cross is far older than the 30 bars returned.
+                expect(crossIndex).toBeLessThan(closes.length - r.barsReturned);
+            });
+
+            it('a fully checked year with no crossing is [] (a real "none")', async () => {
+                const r = await run(
+                    series(Array.from({ length: 500 }, (_, i) => 100 + i))
+                );
+                expect(r.derived.maCross50_200).toEqual([]);
+            });
+
+            it('history too short to check the whole window is null, not []', async () => {
+                // 252 + 200 bars are needed; 451 is one short.
+                const r = await run(
+                    series(Array.from({ length: 451 }, (_, i) => 100 + i))
+                );
+                expect(r.derived.maCross50_200).toBeNull();
+            });
+
+            it('is null on intraday timeframes', async () => {
+                const bars = Array.from({ length: 500 }, (_, i) =>
+                    barV(1_700_000_000 + i * 3_600, 100 + i)
+                );
+                const r = await run(bars, '1Hour');
+                expect(r.derived.maCross50_200).toBeNull();
+            });
         });
 
         describe('252bars and calendarChange (dev-2026-10-22 A4·A10)', () => {

@@ -49,7 +49,7 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({ getQuote: async () => null }),
 }));
 vi.mock('@/entities/earnings-report/api', () => ({
-    getNextEarningsReport: async () => null,
+    getNextEarningsSchedule: async () => null,
     listReportedEarningsDates: async () => [],
 }));
 vi.mock('@/entities/bars/lib/barsDataCache', () => ({

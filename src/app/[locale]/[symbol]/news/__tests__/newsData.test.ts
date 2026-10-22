@@ -11,6 +11,7 @@ const {
     mockGetLatestFetchedAt,
     mockGetComparisonItems,
     mockUpsertMany,
+    mockPruneSupersededUpcoming,
     mockGetEarningsReports,
     mockGetGrades,
 } = vi.hoisted(() => ({
@@ -18,6 +19,7 @@ const {
     mockGetLatestFetchedAt: vi.fn(),
     mockGetComparisonItems: vi.fn(),
     mockUpsertMany: vi.fn(),
+    mockPruneSupersededUpcoming: vi.fn(),
     mockGetEarningsReports: vi.fn(),
     mockGetGrades: vi.fn(),
 }));
@@ -35,6 +37,7 @@ vi.mock('@/entities/earnings-report/api', async importOriginal => ({
             getLatestFetchedAt: mockGetLatestFetchedAt,
             getComparisonItems: mockGetComparisonItems,
             upsertMany: mockUpsertMany,
+            pruneSupersededUpcoming: mockPruneSupersededUpcoming,
         };
     }),
 }));
@@ -115,6 +118,7 @@ describe('getEarningsReportComparison 함수는', () => {
         mockGetComparisonItems.mockResolvedValue([COMPARISON_ITEM]);
         mockGetEarningsReports.mockResolvedValue([EARNINGS_UPSERT_INPUT]);
         mockUpsertMany.mockResolvedValue(undefined);
+        mockPruneSupersededUpcoming.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -165,6 +169,12 @@ describe('getEarningsReportComparison 함수는', () => {
             expect(mockUpsertMany).toHaveBeenCalledWith([
                 EARNINGS_UPSERT_INPUT,
             ]);
+            // 옮겨진 예정일의 옛 행 정리 — 같은 응답·같은 기준일로 부른다.
+            expect(mockPruneSupersededUpcoming).toHaveBeenCalledWith(
+                'AAPL',
+                [EARNINGS_UPSERT_INPUT],
+                '2026-05-10'
+            );
             expect(mockGetComparisonItems).toHaveBeenCalledTimes(2);
         });
     });

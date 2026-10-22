@@ -3,7 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { getAssetInfo } = vi.hoisted(() => ({ getAssetInfo: vi.fn() }));
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({ getAssetInfo }));
 
-import { resolveAssetInfoOrNull } from '@/app/api/ai/chat/tools/resolveAssetInfo';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from '@/app/api/ai/chat/tools/resolveAssetInfo';
 
 describe('resolveAssetInfoOrNull', () => {
     beforeEach(() => {
@@ -63,5 +66,34 @@ describe('resolveAssetInfoOrNull', () => {
             'getAssetInfo failed, degrading',
             { errorName: 'unknown' }
         );
+    });
+});
+
+describe('resolvedInstrumentFields', () => {
+    it('해석된 종목명과, 요청 심볼과 다른 공급자 심볼을 싣는다', () => {
+        expect(
+            resolvedInstrumentFields({
+                symbol: 'VIX',
+                name: 'VIX',
+                fmpSymbol: '^VIX',
+            })
+        ).toEqual({ resolvedName: 'VIX', resolvedSymbol: '^VIX' });
+    });
+
+    it('공급자 심볼이 같거나 없으면 이름만 싣는다', () => {
+        expect(
+            resolvedInstrumentFields({
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                fmpSymbol: 'AAPL',
+            })
+        ).toEqual({ resolvedName: 'Apple Inc.' });
+        expect(
+            resolvedInstrumentFields({ symbol: 'AAPL', name: 'Apple Inc.' })
+        ).toEqual({ resolvedName: 'Apple Inc.' });
+    });
+
+    it('조회가 저하됐으면(null) 아무것도 싣지 않는다', () => {
+        expect(resolvedInstrumentFields(null)).toEqual({});
     });
 });

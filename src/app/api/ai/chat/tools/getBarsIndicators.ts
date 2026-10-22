@@ -12,6 +12,7 @@ import {
     detectSignals,
     evaluateConfluence,
     evaluatePullback,
+    findMaCrosses,
     pullbackEventCaveat,
     getDetectionBars,
     PULLBACK_BASE_RATES,
@@ -67,8 +68,13 @@ import {
 } from '@/entities/bars/lib/fearGreedWindow';
 import { logToolDegrade } from './logToolDegrade';
 import { calendarChangeView, type CalendarChangeView } from './calendarChange';
+import { staleKrListingDate } from './freshness';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { pctVs, ratioPct } from './percent';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from './resolveAssetInfo';
 import { BARS_RESULT_MAX_CHARS } from './truncate';
 
 /**
@@ -78,10 +84,11 @@ import { BARS_RESULT_MAX_CHARS } from './truncate';
  * for any `bars` the model requests, so the default no longer needs to
  * shrink just to keep the common (unbudgeted) case comfortably under 4,000.
  *
- * Measured 2026-10-22 after `derived` gained `252bars`, `calendarChange` and
- * the range dates: the default 30-bar 1Day request on a production-sized
- * series (500 bars, real indicators, fear & greed, three signals) serializes
- * to ~5,240 chars, untrimmed — pinned by the "기본 요청(30봉, 1Day)" test.
+ * Measured 2026-10-22 after `derived` gained `252bars`, `calendarChange`,
+ * the range dates and `maCross50_200`: the default 30-bar 1Day request on a
+ * production-sized series (500 bars, real indicators, fear & greed, three
+ * signals, no MA cross) serializes to ~5,280 chars, untrimmed — pinned by the
+ * "기본 요청(30봉, 1Day)" test. Each listed cross adds ~35 chars.
  */
 const DEFAULT_BARS = 30;
 /**
@@ -636,6 +643,45 @@ interface DerivedView {
     atrPct: number | null;
     priceVsMa: Record<string, number | null>;
     maStack: MaStackDirection | null;
+    /**
+     * 50/200-bar SMA crossings over the last year of daily bars
+     * (dev-2026-10-22 A5), oldest first — `[]` when the whole window was
+     * checked and none happened. `null` on other timeframes AND when the
+     * loaded history is too short to check the whole window (core's
+     * `complete: false`): an empty list there would read as "no cross in a
+     * year" when the data simply does not reach back that far — the model
+     * asserted exactly that for IDXX before this field existed.
+     */
+    maCross50_200: MaCrossView[] | null;
+}
+
+/** One crossing in `derived.maCross50_200`. `kind`: `golden` = MA50 crosses above MA200, `dead` = below. */
+interface MaCrossView {
+    date: string;
+    kind: 'golden' | 'dead';
+}
+
+/** SMA periods and window behind `maCross50_200` — the key name is the contract. */
+const MA_CROSS_FAST_PERIOD = 50;
+const MA_CROSS_SLOW_PERIOD = 200;
+const MA_CROSS_LOOKBACK_BARS = 252;
+
+/**
+ * Detection is core's (`findMaCrosses`); this only adapts it to the tool
+ * shape. Runs on the full cached series, never the trimmed output `bars`.
+ */
+function maCross50_200View(bars: readonly Bar[]): MaCrossView[] | null {
+    const scan = findMaCrosses(
+        bars.slice(),
+        MA_CROSS_FAST_PERIOD,
+        MA_CROSS_SLOW_PERIOD,
+        MA_CROSS_LOOKBACK_BARS
+    );
+    if (!scan.complete) return null;
+    return scan.crosses.map(c => ({
+        date: isoTimestamp(c.time, '1Day'),
+        kind: c.kind,
+    }));
 }
 
 /**
@@ -809,6 +855,7 @@ function computeDerived(
         atrPct,
         priceVsMa,
         maStack,
+        maCross50_200: timeframe === '1Day' ? maCross50_200View(bars) : null,
     };
 }
 
@@ -981,6 +1028,20 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     );
     const { bars, indicators } = barsData;
     if (bars.length === 0) return { symbol, timeframe, found: false };
+    // 한국의 죽은 리스팅(잘못된 접미사 등)은 묵은 봉을 "현재"로 내보내지 않고 데이터 오류로 돌린다.
+    const lastTradeDate = staleKrListingDate(
+        profile,
+        bars[bars.length - 1]!.time * MS_PER_SECOND,
+        Date.now()
+    );
+    if (lastTradeDate !== null)
+        return {
+            symbol,
+            timeframe,
+            found: false,
+            error: 'stale_listing',
+            lastTradeDate,
+        };
     const requestedBars: BarPoint[] = bars.slice(-count).map(b => ({
         t: isoTimestamp(b.time, timeframe),
         o: b.open,
@@ -1035,6 +1096,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
             asOf,
             source: 'SIGLENS bars + indicators',
             symbol,
+            ...resolvedInstrumentFields(asset),
             timeframe,
             currency,
             trend,

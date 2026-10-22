@@ -47,6 +47,8 @@ export async function getEarningsReportComparison(
                 symbol
             ).getEarningsReports(symbol, EARNINGS_REPORT_FMP_LIMIT);
             await repo.upsertMany(reports);
+            // 옮겨진 예정일의 옛 행을 지운다 — 남기면 비교 카드의 "다음 실적"이 옛 날짜를 고른다.
+            await repo.pruneSupersededUpcoming(symbol, reports, today);
             // FMP가 빈 응답(데이터 없는 심볼)을 주면 TTL 동안 재호출을 막고(#567),
             // upsert로 DB가 바뀌지 않았으므로 재조회 없이 기존 비교 데이터를 반환한다.
             if (reports.length === 0) {

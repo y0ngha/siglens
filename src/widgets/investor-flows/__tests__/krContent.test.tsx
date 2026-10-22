@@ -144,6 +144,41 @@ describe('KrMajorHoldersSection', () => {
         expect(within(table).getByText('약식')).toBeInTheDocument();
     });
 
+    it('hides the change on an initial report (DART puts the whole holding there) and shows the change vs the previous report when there is one', () => {
+        const { unmount } = render(
+            <KrMajorHoldersSection reports={reports} collecting={false} />
+        );
+        const newHolder = within(screen.getByRole('table'))
+            .getByRole('rowheader', { name: '픽스처자산운용' })
+            .closest('tr') as HTMLElement;
+        expect(within(newHolder).getByText('5.05%')).toBeInTheDocument();
+        expect(within(newHolder).queryByText('+5.05%p')).toBeNull();
+        unmount();
+
+        const withPrevious = makeKrSnapshot({
+            majorHoldings: [
+                makeKrMajorHoldingRecord({
+                    ratioPct: 5.12,
+                    ratioChangePct: 5.12,
+                }),
+                makeKrMajorHoldingRecord({
+                    rceptNo: '20260601000001',
+                    receiptDate: '2026-06-01',
+                    ratioPct: 4.93,
+                    ratioChangePct: -0.4,
+                }),
+            ],
+        }).kr!.majorHolders;
+        render(
+            <KrMajorHoldersSection reports={withPrevious} collecting={false} />
+        );
+        const latest = within(screen.getByRole('table'))
+            .getByText('5.12%')
+            .closest('tr') as HTMLElement;
+        expect(within(latest).getByText('+0.19%p')).toBeInTheDocument();
+        expect(within(latest).queryByText('+5.12%p')).toBeNull();
+    });
+
     it('lists the newest receipt first', () => {
         render(<KrMajorHoldersSection reports={reports} collecting={false} />);
         const headers = within(screen.getByRole('table'))

@@ -872,7 +872,8 @@ describe('getInvestorFlowsTool', () => {
                 reporter: '픽스처자산운용',
                 form: 'abbreviated',
                 ratioPct: 5.05,
-                ratioChangePct: 5.05,
+                // 최초 보고 — DART는 보유비율 전체(5.05)를 증감으로 적는다. 직전 보고가 없어 계산할 수 없으므로 비운다.
+                ratioChangePct: null,
                 sharesChange: 301_500_000,
                 reason: '신규 보고',
             });

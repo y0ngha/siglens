@@ -3,6 +3,7 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { fetchKrEquityQuoteName } from './krEquityQuoteName';
 import { krExchangeOf } from './krExchange';
+import { resolveIndexAlias } from './indexAlias';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import { DrizzleAssetTranslationRepository } from '../api';
 import { getCryptoAsset } from './cryptoAssetStore';
@@ -389,7 +390,8 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
 /**
  * 심볼 하나의 AssetInfo를 해석한다. 정본 덮어쓰기는 호출자(`getAssetInfo`)가 한다.
  *
- * 해석 순서: `crypto_assets` DB → FMP 크립토 목록 → `asset_translations` DB →
+ * 해석 순서: `crypto_assets` DB → FMP 크립토 목록 → 미국 지수 별칭(`MARKET_INDICES`) →
+ * `asset_translations` DB →
  * Redis 임시 항목(12시간) → (서버 키 LLM을 못 쓰는 공개 API 흐름만) API 전용 번역 없는 항목(1시간) →
  * 한국 종목(yahoo) → FMP 검색.
  *
@@ -455,6 +457,11 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
             marketProfile: 'crypto',
         };
     }
+
+    // 미국 지수 별칭(VIX→^VIX 등)은 DB보다 먼저 — 예전 폴백이 저장한 `VIX→VIXM` 같은
+    // 잘못된 행이 남아 있어도 지수가 이긴다(`resolveIndexAlias` JSDoc).
+    const indexAlias = resolveIndexAlias(upper);
+    if (indexAlias) return indexAlias;
 
     const fromDb = await readFromDatabase(upper);
     if (fromDb) return fromDb;

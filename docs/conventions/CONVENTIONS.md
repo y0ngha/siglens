@@ -684,10 +684,14 @@ functions that tests or other modules legitimately import.
 
 Comments, JSDoc, tests and tracked docs must not point at gitignored or local-only material (design specs, plans,
 scratch logs, runbooks, production logs): a reader of the repository cannot open it, and the pointer cannot be checked
-for staleness. State the fact or the reason inline, and cite only tracked files or rule IDs.
+for staleness. State the fact or the reason inline, and cite only tracked files or rule IDs. Identifiers from local
+benchmark, audit or eval sheets (`B-12`, "case 7 of the prompt eval") are local-only references too: write the
+measured fact instead of the case ID.
 
 ```typescript
 // ❌ see docs/superpowers/specs/funnel.md §4 for why member prompts are excluded
+// ❌ regression guard for benchmark case B-12
+// ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
 // ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
 ```
 
@@ -757,8 +761,9 @@ existing loaders for it.
 
 #### CS-7 — Register new items in every guard list in the same change
 
-A new route, agent, i18n surface, feature flag or external service must be added to every allowlist or enumeration
-that covers its siblings (`RESERVED_FIRST_SEGMENTS`, `SURFACES`, `KNOWN_AGENTS`, ...) in the same commit, with a test
+A new route, agent, i18n surface, feature flag, external service or tool error code must be added to every allowlist
+or enumeration that covers its siblings (`RESERVED_FIRST_SEGMENTS`, `SURFACES`, `KNOWN_AGENTS`, the public API's
+error-code mapping and catalog, ...) in the same commit, with a test
 that fails when it is removed. Allowlists stay explicit and fixed; do not widen one with a dynamically built union.
 
 <a id="CS-8"></a>
