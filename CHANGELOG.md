@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.109.0](https://github.com/y0ngha/siglens/compare/v0.108.2...v0.109.0) (2026-10-22)
+
+### Bug Fixes
+
+* 모바일 분석 시트가 터치 전까지 안 뜨는 문제, 가이드 차트 제목 태그 중복, AI 챗 모바일 대화 목록 개선 ([#1080](https://github.com/y0ngha/siglens/issues/1080)) ([e2f00d9](https://github.com/y0ngha/siglens/commit/e2f00d9298f9307787842b8b4cf801622844b10a))
+* 미국 종목 동종 업체 중 한국 종목 PER·PSR을 yahoo로 조회 ([#1082](https://github.com/y0ngha/siglens/issues/1082)) ([ca2af71](https://github.com/y0ngha/siglens/commit/ca2af71564454899ee9cc6acfb335448a8c5b381))
+* 시그렌즈 AI — 회원 분석이 없으면 비회원 공용 분석 대신 회원 분석을 새로 만든다 ([#1081](https://github.com/y0ngha/siglens/issues/1081)) ([4b250c8](https://github.com/y0ngha/siglens/commit/4b250c8ed38896d97962cc7137b03ef6dc1005b2))
+* SiglensAI 데이터 정확성 — VIX 등 잘못된 종목 매핑, 낡은 실적 예정일, 국채 신선도, 한국 PER·접미사, 대량보유 증감 ([#1084](https://github.com/y0ngha/siglens/issues/1084)) ([3cdcef5](https://github.com/y0ngha/siglens/commit/3cdcef505e0fb563f82eef6778709fbb27071def))
+* SiglensAI 도구 출력 — 1년·달력 기간 변화, 고저점 날짜, 50/200 교차, 분기 실적·실적 반응, 옵션 IV 정규화, core 2.25.1 ([#1085](https://github.com/y0ngha/siglens/issues/1085)) ([99d5120](https://github.com/y0ngha/siglens/commit/99d51206e89bc3ccaf077ca0527efdb223d3be5f))
+
+### Features
+
+* SiglensAI 공용 웹 검색 예산을 환경변수로 덮어쓰기(측정 창 전용), core 2.24.0 ([#1083](https://github.com/y0ngha/siglens/issues/1083)) ([8409083](https://github.com/y0ngha/siglens/commit/84090831af423672459eab7e5efa028591712b73))
+
 ## [0.108.2](https://github.com/y0ngha/siglens/compare/v0.108.1...v0.108.2) (2026-10-18)
 
 ### Bug Fixes
