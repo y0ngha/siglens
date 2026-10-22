@@ -249,10 +249,14 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         // The financials tab's own cached quarterly income rows (Redis
         // `financials:income:<SYM>:quarter`, one FMP call per symbol per day
         // shared with that tab) — no extra endpoint.
-        getFinancialStatementsProvider(symbol).getIncomeStatements(
-            symbol,
-            'quarter',
-            RECENT_QUARTERS_COUNT
+        // Wrapped so a synchronous throw (provider construction) is isolated by allSettled
+        // like a rejection — these rows are enrichment, never a reason to fail the tool.
+        Promise.resolve().then(() =>
+            getFinancialStatementsProvider(symbol).getIncomeStatements(
+                symbol,
+                'quarter',
+                RECENT_QUARTERS_COUNT
+            )
         ),
         loadEarningsReactions(
             symbol,

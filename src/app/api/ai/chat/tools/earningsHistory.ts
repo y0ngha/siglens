@@ -104,19 +104,25 @@ export function earningsReactions(
     const newestFirst = [...new Set(reportedDates)].toSorted((a, b) =>
         b.localeCompare(a)
     );
-    const out: EarningsReactionView[] = [];
-    for (const date of newestFirst) {
-        if (out.length >= EARNINGS_REACTIONS_COUNT) break;
-        const afterIndex = dates.findIndex(d => d > date);
-        // -1: no session after the report yet; 0: the series starts after it.
-        if (afterIndex <= 0) continue;
-        const beforeIndex =
-            dates[afterIndex - 1] === date ? afterIndex - 2 : afterIndex - 1;
-        if (beforeIndex < 0) continue;
-        out.push({
-            date,
-            movePct: pctVs(bars[afterIndex]!.close, bars[beforeIndex]!.close),
-        });
-    }
-    return out;
+    return newestFirst
+        .flatMap((date): EarningsReactionView[] => {
+            const afterIndex = dates.findIndex(d => d > date);
+            // -1: no session after the report yet; 0: the series starts after it.
+            if (afterIndex <= 0) return [];
+            const beforeIndex =
+                dates[afterIndex - 1] === date
+                    ? afterIndex - 2
+                    : afterIndex - 1;
+            if (beforeIndex < 0) return [];
+            return [
+                {
+                    date,
+                    movePct: pctVs(
+                        bars[afterIndex]!.close,
+                        bars[beforeIndex]!.close
+                    ),
+                },
+            ];
+        })
+        .slice(0, EARNINGS_REACTIONS_COUNT);
 }

@@ -734,6 +734,7 @@ function computeRangeWindow(
     lastClose: number | null,
     timeframe: Timeframe
 ): RangeWindow {
+    // One pass finds both extremes and the bar (date) each was set on; ties keep the latest bar.
     let highBar: Bar | null = null;
     let lowBar: Bar | null = null;
     for (const b of window) {
