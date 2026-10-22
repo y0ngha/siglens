@@ -14,6 +14,7 @@ import {
     formatSignedCompact,
     formatSignedDecimal,
 } from '../utils/flowFormat';
+import { majorHolderRatioChange } from '@/entities/investor-flows/lib/krMajorHolderRatioChange';
 import { krDisclosureKey, newestKrRows } from '../utils/krDisclosures';
 import { CollectingNotice } from './CollectingNotice';
 import { DartFilingLink } from './DartFilingLink';
@@ -36,27 +37,38 @@ function FormBadge({ form }: { readonly form: KrMajorHolderReportForm }) {
     );
 }
 
-function useRowText(row: KrMajorHolderReport) {
+interface MajorHolderRowProps {
+    readonly row: KrMajorHolderReport;
+    /** 같은 보고자의 직전 보고 대비 증감(%p). 최초 보고라 계산할 수 없으면 `null` — 증감을 표시하지 않는다. */
+    readonly ratioChangePct: number | null;
+}
+
+function useRowText({ row, ratioChangePct }: MajorHolderRowProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     return {
         ratio: formatPercent(row.ratioPct, locale, RATIO_DIGITS),
-        ratioChange: t('kr.pointChange', {
-            value: formatSignedDecimal(
-                row.ratioChangePct,
-                locale,
-                RATIO_DIGITS
-            ),
-        }),
+        // DART 증감(`stkrt_irds`)은 최초 보고에서 보유비율 전체라 그대로 쓰면 "+5.12%p"처럼 틀린다.
+        ratioChange:
+            ratioChangePct === null
+                ? null
+                : t('kr.pointChange', {
+                      value: formatSignedDecimal(
+                          ratioChangePct,
+                          locale,
+                          RATIO_DIGITS
+                      ),
+                  }),
         sharesChange: formatSignedCompact(row.sharesChange, locale),
         reason:
             row.reason === '' ? t('kr.majorHolders.reasonNone') : row.reason,
     };
 }
 
-function MajorHolderCard({ row }: { readonly row: KrMajorHolderReport }) {
+function MajorHolderCard(props: MajorHolderRowProps) {
+    const { row } = props;
     const t = useTranslations('widgets.investor-flows');
-    const text = useRowText(row);
+    const text = useRowText(props);
     return (
         <li className={cn(SURFACE_NESTED, 'p-3')}>
             <div className="flex items-start justify-between gap-2">
@@ -74,10 +86,13 @@ function MajorHolderCard({ row }: { readonly row: KrMajorHolderReport }) {
                     {t('kr.majorHolders.colRatio')}
                 </dt>
                 <dd className="text-right text-secondary-200 tabular-nums">
-                    {text.ratio}{' '}
-                    <span className="text-secondary-400">
-                        ({text.ratioChange})
-                    </span>
+                    {text.ratio}
+                    {text.ratioChange !== null && (
+                        <span className="text-secondary-400">
+                            {' '}
+                            ({text.ratioChange})
+                        </span>
+                    )}
                 </dd>
                 <dt className="text-secondary-400">
                     {t('kr.majorHolders.colSharesChange')}
@@ -96,8 +111,9 @@ function MajorHolderCard({ row }: { readonly row: KrMajorHolderReport }) {
     );
 }
 
-function MajorHolderTableRow({ row }: { readonly row: KrMajorHolderReport }) {
-    const text = useRowText(row);
+function MajorHolderTableRow(props: MajorHolderRowProps) {
+    const { row } = props;
+    const text = useRowText(props);
     return (
         <tr className="border-b border-secondary-700 last:border-b-0">
             <td className="py-2.5 pr-3 font-mono whitespace-nowrap tabular-nums">
@@ -114,9 +130,11 @@ function MajorHolderTableRow({ row }: { readonly row: KrMajorHolderReport }) {
             </td>
             <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
                 {text.ratio}
-                <span className="block text-xs text-secondary-400">
-                    {text.ratioChange}
-                </span>
+                {text.ratioChange !== null && (
+                    <span className="block text-xs text-secondary-400">
+                        {text.ratioChange}
+                    </span>
+                )}
             </td>
             <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
                 {text.sharesChange}
@@ -153,7 +171,11 @@ function MajorHoldersBody({ reports, collecting }: KrMajorHoldersSectionProps) {
         <>
             <ul className="space-y-2 md:hidden">
                 {rows.map(row => (
-                    <MajorHolderCard key={krDisclosureKey(row)} row={row} />
+                    <MajorHolderCard
+                        key={krDisclosureKey(row)}
+                        row={row}
+                        ratioChangePct={majorHolderRatioChange(row, reports)}
+                    />
                 ))}
             </ul>
             <div className="hidden md:block">
@@ -212,6 +234,10 @@ function MajorHoldersBody({ reports, collecting }: KrMajorHoldersSectionProps) {
                             <MajorHolderTableRow
                                 key={krDisclosureKey(row)}
                                 row={row}
+                                ratioChangePct={majorHolderRatioChange(
+                                    row,
+                                    reports
+                                )}
                             />
                         ))}
                     </tbody>

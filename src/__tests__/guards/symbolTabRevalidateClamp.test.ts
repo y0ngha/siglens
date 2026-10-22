@@ -202,7 +202,7 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
     ],
     'fundamental/page.tsx': [
         { token: "'fundamental:profile'", revalidate: time.SECONDS_PER_DAY },
-        { token: "'fundamental:metrics'", revalidate: time.SECONDS_PER_DAY },
+        { token: "'fundamental:metrics-v2'", revalidate: time.SECONDS_PER_DAY },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
     ],
     'financials/page.tsx': [
@@ -235,7 +235,7 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
     'flows/page.tsx': [
         {
             token: 'getInvestorFlowsScorecard',
-            via: 'getInvestorFlowsResilient → getInvestorFlowsSnapshot + getInvestorFlowsPipelineReadiness (staticSymbolCache 둘 다 12h; FMP 일시 오류로 degrade된 스냅샷만 별도 키 investor-flows:snapshot-degraded-v1 600s로 읽혀 그 렌더를 10분으로 의도적으로 하향 — INVESTOR_FLOWS_DEGRADED_SNAPSHOT_TTL_SECONDS), getInvestorFlowsEvaluationOptions → getSessionBarsStatic (세션 키 24h)',
+            via: 'getInvestorFlowsResilient → getInvestorFlowsSnapshot + getInvestorFlowsPipelineReadiness (staticSymbolCache 둘 다 12h; FMP 일시 오류로 degrade된 스냅샷만 별도 키 investor-flows:snapshot-degraded-v2 600s로 읽혀 그 렌더를 10분으로 의도적으로 하향 — INVESTOR_FLOWS_DEGRADED_SNAPSHOT_TTL_SECONDS), getInvestorFlowsEvaluationOptions → getSessionBarsStatic (세션 키 24h)',
             revalidate: time.SECONDS_PER_HALF_DAY,
         },
         { token: 'getProfileResilient', revalidate: time.SECONDS_PER_DAY },

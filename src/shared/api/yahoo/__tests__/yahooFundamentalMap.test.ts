@@ -7,6 +7,7 @@ import {
     mapIncomeGrowth,
     mapPriceTargetConsensus,
     mapGradesConsensus,
+    quarterlyTtmNetIncome,
 } from '../yahooFundamentalMap';
 import type {
     YahooFundamentals,
@@ -20,6 +21,7 @@ function build(over: Partial<YahooFundamentals> = {}): YahooFundamentals {
         balance: [],
         cashFlow: [],
         quarterlyBalance: [],
+        quarterlyIncome: [],
         ...over,
     };
 }
@@ -273,6 +275,170 @@ describe('mapKeyMetrics', () => {
 
     it('returns null when the summary is absent', () => {
         expect(mapKeyMetrics(build())).toBeNull();
+    });
+});
+
+/**
+ * 피노(033790.KQ) 실측(2026-10-22): yahoo 요약 통계가 2022 회계연도에 멈춰 `netIncomeToCommon`이
+ * 4,978만 원이었고, 그 값으로 PER 12,249.5배가 나갔다. 최근 4분기 순이익 합(약 49.3억 원)으로는
+ * 약 124배(네이버 112.77배)다.
+ */
+describe('mapKeyMetrics — 멈춘 요약 통계와 4분기 TTM', () => {
+    const MARKET_CAP = 609_869_824_000;
+    const quarter = (iso: string, netIncomeCommonStockholders: number) => ({
+        date: new Date(`${iso}T00:00:00Z`),
+        netIncomeCommonStockholders,
+    });
+    /** 최신순 4분기, 합 4,930,000,000원. */
+    const quarterlyIncome = [
+        quarter('2026-06-30', 1_400_000_000),
+        quarter('2026-03-31', 1_300_000_000),
+        quarter('2025-12-31', 1_130_000_000),
+        quarter('2025-09-30', 1_100_000_000),
+    ];
+    const TTM = 4_930_000_000;
+    const summaryWith = (
+        lastFiscalYearEnd: string,
+        netIncomeToCommon: number
+    ) => ({
+        price: { regularMarketPrice: 18_000 },
+        summaryDetail: {
+            marketCap: MARKET_CAP,
+            priceToSalesTrailing12Months: 61.9,
+        },
+        defaultKeyStatistics: {
+            netIncomeToCommon,
+            lastFiscalYearEnd: new Date(`${lastFiscalYearEnd}T00:00:00Z`),
+            enterpriseToEbitda: 900,
+            pegRatio: 4,
+        },
+        financialData: {
+            returnOnEquity: 0.00218,
+            returnOnAssets: 0.001,
+            operatingMargins: 0.01,
+            profitMargins: 0.00505,
+            currentRatio: 2.1,
+            totalDebt: 1_000,
+        },
+    });
+    const STALE = summaryWith('2022-12-31', 49_787_500);
+
+    it('요약이 멈췄으면 최근 4분기 합으로 PER·EPS를 낸다(12,249배가 아니다)', () => {
+        const result = mapKeyMetrics(
+            build({ summary: STALE, quarterlyIncome } as never)
+        )!;
+        expect(result.peRatioTTM).toBeCloseTo(MARKET_CAP / TTM, 6);
+        expect(result.peRatioTTM).toBeLessThan(200);
+        expect(result.epsTTM).toBeCloseTo(TTM / (MARKET_CAP / 18_000), 6);
+    });
+
+    it('요약이 멈췄고 4분기가 없으면 PER·EPS를 비운다(재무제표 기간으로만 멈춤을 판정)', () => {
+        const result = mapKeyMetrics(
+            build({
+                summary: STALE,
+                quarterlyBalance: [
+                    {
+                        date: new Date('2026-06-30T00:00:00Z'),
+                        stockholdersEquity: 1,
+                    },
+                ],
+            } as never)
+        )!;
+        expect(result.peRatioTTM).toBeNull();
+        expect(result.epsTTM).toBeNull();
+    });
+
+    it('요약이 멈췄으면 요약 통계가 계산한 P/S·EV/EBITDA·PEG도 비운다', () => {
+        const result = mapKeyMetrics(
+            build({ summary: STALE, quarterlyIncome } as never)
+        )!;
+        expect(result.priceToSalesRatioTTM).toBeNull();
+        expect(result.enterpriseValueOverEBITDATTM).toBeNull();
+        expect(result.pegRatioTTM).toBeNull();
+    });
+
+    it('요약이 신선하고 4분기 합과 3배 안에서 맞으면 4분기 합을 쓴다', () => {
+        const result = mapKeyMetrics(
+            build({
+                summary: summaryWith('2025-12-31', 4_500_000_000),
+                quarterlyIncome,
+            } as never)
+        )!;
+        expect(result.peRatioTTM).toBeCloseTo(MARKET_CAP / TTM, 6);
+        expect(result.priceToSalesRatioTTM).toBe(61.9);
+    });
+
+    it('요약이 신선해도 4분기 합과 3배 넘게 어긋나면 PER·EPS를 비운다', () => {
+        const result = mapKeyMetrics(
+            build({
+                summary: summaryWith('2025-12-31', 49_787_500),
+                quarterlyIncome,
+            } as never)
+        )!;
+        expect(result.peRatioTTM).toBeNull();
+        expect(result.epsTTM).toBeNull();
+    });
+
+    it('4분기 기간이 1년 안에 모이지 않으면(중간 분기 결측) TTM으로 보지 않고 신선한 요약 값을 쓴다', () => {
+        const gapped = [
+            quarter('2026-06-30', 1),
+            quarter('2026-03-31', 1),
+            quarter('2025-09-30', 1),
+            quarter('2025-06-30', 1),
+        ];
+        expect(quarterlyTtmNetIncome(gapped)).toBeUndefined();
+        const result = mapKeyMetrics(
+            build({
+                summary: summaryWith('2025-12-31', 4_500_000_000),
+                quarterlyIncome: gapped,
+            } as never)
+        )!;
+        expect(result.peRatioTTM).toBeCloseTo(MARKET_CAP / 4_500_000_000, 6);
+    });
+
+    it('지배주주 순이익이 없으면 분기 순이익으로 떨어지고, 한 분기라도 비면 TTM을 내지 않는다', () => {
+        expect(
+            quarterlyTtmNetIncome([
+                { date: new Date('2026-06-30T00:00:00Z'), netIncome: 1 },
+                quarter('2026-03-31', 2),
+                quarter('2025-12-31', 3),
+                quarter('2025-09-30', 4),
+            ])
+        ).toBe(10);
+        expect(
+            quarterlyTtmNetIncome([
+                { date: new Date('2026-06-30T00:00:00Z') },
+                quarter('2026-03-31', 2),
+                quarter('2025-12-31', 3),
+                quarter('2025-09-30', 4),
+            ])
+        ).toBeUndefined();
+        expect(
+            quarterlyTtmNetIncome(quarterlyIncome.slice(0, 3))
+        ).toBeUndefined();
+    });
+
+    it('요약이 멈췄으면 mapRatios의 수익성 비율을 비우고 재무상태표 기반 값은 남긴다', () => {
+        const result = mapRatios(
+            build({ summary: STALE, quarterlyIncome } as never)
+        )!;
+        expect(result).toMatchObject({
+            returnOnEquityTTM: null,
+            returnOnAssetsTTM: null,
+            operatingProfitMarginTTM: null,
+            netProfitMarginTTM: null,
+            currentRatioTTM: 2.1,
+        });
+    });
+
+    it('요약이 신선하면 mapRatios는 그대로 통과시킨다', () => {
+        const result = mapRatios(
+            build({
+                summary: summaryWith('2025-12-31', 4_500_000_000),
+                quarterlyIncome,
+            } as never)
+        )!;
+        expect(result.returnOnEquityTTM).toBe(0.00218);
     });
 });
 

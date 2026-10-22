@@ -9,6 +9,7 @@ function data(summary: unknown): YahooFundamentals {
         balance: [],
         cashFlow: [],
         quarterlyBalance: [],
+        quarterlyIncome: [],
     };
 }
 
@@ -117,6 +118,19 @@ describe('mapEarningsReports', () => {
             revenueEstimated: 208_971_462_890_000,
             isEstimatedDate: true,
         });
+    });
+
+    it('leaves isEstimatedDate undefined when yahoo omits the flag (unknown, not confirmed)', () => {
+        const { isEarningsDateEstimate: _omitted, ...earnings } =
+            summary.calendarEvents.earnings;
+        const [upcoming] = mapEarningsReports(
+            '005930.KS',
+            data({ ...summary, calendarEvents: { earnings } }),
+            10
+        );
+
+        expect(upcoming?.earningsDate).toBe('2026-10-28');
+        expect(upcoming?.isEstimatedDate).toBeUndefined();
     });
 
     it('carries actual vs estimate for past quarters', () => {

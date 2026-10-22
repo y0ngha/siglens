@@ -125,16 +125,32 @@ describe('getYahooFundamentals dedup', () => {
         expect(statements.cashFlow[0]).toMatchObject({ freeCashFlow: 3 });
     });
 
-    it('fetches only the quarterly balance sheet, not all three statements', async () => {
-        // PBR·부채비율 분모만 필요한데 전체 제표를 받으면 손익·현금흐름 2개 모듈이
-        // 그대로 버려진다. fundamental 탭만 여는 가장 흔한 경로에서 매번 낭비된다.
+    it('fetches the quarterly balance sheet and income statement, not cash flow', async () => {
+        // 분기는 PBR·부채비율 분모(재무상태표)와 PER·EPS 분자 TTM(손익)만 필요하다.
+        // 전체 제표를 받으면 현금흐름 모듈이 그대로 버려진다 — fundamental 탭만 여는
+        // 가장 흔한 경로에서 매번 낭비된다.
         await getYahooFundamentals('005930.KS');
 
-        const quarterCalls = fundamentalsTimeSeries.mock.calls.filter(
-            c => (c[1] as { type?: string })?.type === 'quarterly'
+        const quarterModules = fundamentalsTimeSeries.mock.calls
+            .filter(c => (c[1] as { type?: string })?.type === 'quarterly')
+            .map(c => (c[1] as { module?: string }).module)
+            .toSorted();
+        expect(quarterModules).toEqual(['balance-sheet', 'financials']);
+    });
+
+    it('puts the quarterly income statement into quarterlyIncome', async () => {
+        fundamentalsTimeSeries.mockImplementation(
+            (_symbol: string, opts: { module?: string; type?: string }) =>
+                Promise.resolve(
+                    opts.type === 'quarterly' && opts.module === 'financials'
+                        ? [{ netIncomeCommonStockholders: 7 }]
+                        : []
+                )
         );
-        expect(quarterCalls).toHaveLength(1);
-        expect(quarterCalls[0]![1]).toMatchObject({ module: 'balance-sheet' });
+        const result = await getYahooFundamentals('005930.KS');
+        expect(result.quarterlyIncome[0]).toMatchObject({
+            netIncomeCommonStockholders: 7,
+        });
     });
 
     it('fetches quarterly balance so PBR uses the latest reported equity', async () => {

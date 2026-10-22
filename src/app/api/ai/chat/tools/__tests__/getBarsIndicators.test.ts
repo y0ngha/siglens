@@ -316,6 +316,44 @@ describe('getBarsIndicatorsTool', () => {
         expect(r.trend).toBe('uptrend');
     });
 
+    it('한국 종목의 마지막 봉이 14일 넘게 묵으면(죽은 리스팅) stale_listing 오류로 돌린다', async () => {
+        profile.mockResolvedValue('kr-equity');
+        const lastTrade = Math.floor(Date.UTC(2024, 6, 19) / 1000);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(lastTrade - 86_400, 40000), bar(lastTrade, 40100)],
+            indicators,
+        });
+        const r = await getBarsIndicatorsTool(
+            { symbol: '253450.KS', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({
+            symbol: '253450.KS',
+            timeframe: '1Day',
+            found: false,
+            error: 'stale_listing',
+            lastTradeDate: '2024-07-19',
+        });
+    });
+
+    it('같은 나이의 봉이라도 미국 종목은 거부하지 않는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const lastTrade = Math.floor(Date.UTC(2024, 6, 19) / 1000);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(lastTrade - 86_400, 100), bar(lastTrade, 101)],
+            indicators,
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { error?: string };
+        expect(r.error).toBeUndefined();
+    });
+
     it('봉이 없으면 found:false', async () => {
         profile.mockResolvedValue('us-equity');
         getCachedBars.mockResolvedValue({ bars: [], indicators });
@@ -369,6 +407,33 @@ describe('getBarsIndicatorsTool', () => {
             'BRK-A',
             undefined
         );
+    });
+
+    it('해석된 종목명과 공급자 심볼을 결과에 실어 다른 종목으로 해석된 사실이 보이게 한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        assetInfo.mockResolvedValue({
+            symbol: 'VIX',
+            name: 'VIX',
+            fmpSymbol: '^VIX',
+        });
+        getCachedBars.mockResolvedValue({
+            bars: [bar(1_700_000_000, 16.68)],
+            indicators,
+        });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = await getBarsIndicatorsTool(
+            { symbol: 'VIX', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+
+        expect(r).toMatchObject({
+            symbol: 'VIX',
+            resolvedName: 'VIX',
+            resolvedSymbol: '^VIX',
+        });
     });
 
     it.each([

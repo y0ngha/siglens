@@ -1,6 +1,7 @@
 import { isE2E } from '@/shared/api/e2eEnv';
 import { loadYahooProvider } from '@/shared/api/yahoo/lazyYahooProvider';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 
 /**
  * 한국 상장 종목의 표시명을 yahoo quote로 조회한다. `fetchCryptoQuoteName`의 대응물.
@@ -36,8 +37,30 @@ export async function fetchKrEquityQuoteName(
     }
 
     // try/catch를 두지 않는다 — 위 doc-comment의 "인프라 실패는 던진다" 계약.
-    const quote = await loadYahooProvider().then(p =>
-        p.getQuoteOrThrow(symbol)
+    const listing = await loadYahooProvider().then(p =>
+        p.getListingOrThrow(symbol)
     );
-    return quote?.name ?? null;
+    if (listing === null || isDeadFundListing(listing, Date.now())) return null;
+    return listing.name;
+}
+
+/**
+ * 거래가 멈춘 펀드 리스팅이면 "그런 종목이 없다"로 본다 — 같은 코드의 다른 시장 접미사에 남은 죽은
+ * 리스팅이다. 실측(2026-10-22): `253450.KS`는 2024-07-19에 멈춘 `MUTUALFUND`이고 실제 종목은
+ * `253450.KQ`다. 이 함수가 이름을 주면 `getAssetInfo`가 그 리스팅을 종목으로 굳힌다.
+ *
+ * **두 조건을 함께 본다.** `quoteType`만 보면 yahoo가 펀드로 분류한 살아 있는 상품까지 404가 되고,
+ * 나이만 보면 장기 거래정지 종목이 첫 방문에 404가 된다. 둘이 겹치는 경우만 죽은 리스팅이다.
+ * 문턱은 에이전트 도구와 같은 {@link QUOTE_MAX_AGE_MS}(14일, KRX 연휴 클러스터는 약 8일)를 공유한다 —
+ * 도구가 시세를 `stale_listing`으로 거부하는 리스팅과 여기서 미상장으로 보는 리스팅의 경계가 같아야 한다.
+ */
+function isDeadFundListing(
+    listing: { quoteType: string | null; lastTradeMs: number | null },
+    nowMs: number
+): boolean {
+    return (
+        listing.quoteType === 'MUTUALFUND' &&
+        listing.lastTradeMs !== null &&
+        nowMs - listing.lastTradeMs > QUOTE_MAX_AGE_MS
+    );
 }

@@ -192,7 +192,8 @@ export async function ValuationSection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: getKeyMetricsTtm(FMP)가 throw하면 null 로 degrade →
     // ValuationCard(null)가 기존 empty-state UI를 렌더한다.
     const metrics = await staticSymbolCache(
-        ['fundamental:metrics', symbol],
+        // `-v2`: 한국 종목 PER·EPS·요약 파생값의 산출 기준이 바뀌었다(`CachedFundamentalProvider` 키 주석).
+        ['fundamental:metrics-v2', symbol],
         symbol,
         () => getKeyMetricsTtm(symbol),
         [],
@@ -211,7 +212,8 @@ export async function PeersSection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: getStockPeers(FMP)가 throw하면 [] 로 degrade →
     // PeersTable([])가 기존 empty-state UI를 렌더한다.
     const peers = await staticSymbolCache(
-        ['fundamental:peers', symbol],
+        // `-v2`: peer PER이 key-metrics와 같은 기준 변경을 따른다.
+        ['fundamental:peers-v2', symbol],
         symbol,
         () => getStockPeers(symbol),
         [],
@@ -230,7 +232,7 @@ export async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: getRatiosTtm(FMP)가 throw하면 null 로 degrade →
     // ProfitabilityCard(null)가 기존 empty-state UI를 렌더한다.
     const ratios = await staticSymbolCache(
-        ['fundamental:ratios', symbol],
+        ['fundamental:ratios-v2', symbol],
         symbol,
         () => getRatiosTtm(symbol),
         [],
@@ -269,7 +271,7 @@ export async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     // FinancialHealthCard(null, null, null)가 기존 empty-state UI를 렌더한다.
     const [ratios, scores, cashFlow] = await Promise.all([
         staticSymbolCache(
-            ['fundamental:ratios', symbol],
+            ['fundamental:ratios-v2', symbol],
             symbol,
             () => getRatiosTtm(symbol),
             [],

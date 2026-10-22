@@ -5,7 +5,7 @@ const {
     isTabAllowed,
     getProvider,
     resolveMarketProfile,
-    getNextEarningsReport,
+    getNextEarningsSchedule,
     getQuote,
     assetInfo,
     sessionSpecFor,
@@ -13,7 +13,7 @@ const {
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
     resolveMarketProfile: vi.fn(),
-    getNextEarningsReport: vi.fn(),
+    getNextEarningsSchedule: vi.fn(),
     getQuote: vi.fn(),
     assetInfo: vi.fn(),
     sessionSpecFor: vi.fn(),
@@ -49,7 +49,7 @@ vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor,
 }));
 vi.mock('@/entities/earnings-report/api', () => ({
-    getNextEarningsReport,
+    getNextEarningsSchedule,
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
@@ -138,7 +138,7 @@ describe('getFundamentalsTool', () => {
         vi.clearAllMocks();
         isTabAllowed.mockResolvedValue(true);
         resolveMarketProfile.mockResolvedValue('us-equity');
-        getNextEarningsReport.mockResolvedValue(null);
+        getNextEarningsSchedule.mockResolvedValue(null);
         getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
         assetInfo.mockResolvedValue(null);
         sessionSpecFor.mockReturnValue({
@@ -172,6 +172,40 @@ describe('getFundamentalsTool', () => {
             available: false,
             reason: 'no_profile',
         });
+    });
+
+    it('한국 종목의 죽은 리스팅(시세가 14일 넘게 멈춤)은 묵은 가격 대신 stale_listing으로 돌린다', async () => {
+        resolveMarketProfile.mockResolvedValue('kr-equity');
+        getProvider.mockReturnValue(fakeProvider());
+        getQuote.mockResolvedValue({
+            price: 40100,
+            changesPercentage: 0,
+            timestamp: Math.floor(Date.UTC(2024, 6, 19, 6, 30) / 1000),
+        });
+        const r = await getFundamentalsTool({ symbol: '253450.KS' }, ctx, rt);
+        expect(r).toEqual({
+            symbol: '253450.KS',
+            available: false,
+            reason: 'stale_listing',
+            lastTradeDate: '2024-07-19',
+        });
+    });
+
+    it('한국 종목이라도 최근 시세면 정상 투영한다', async () => {
+        resolveMarketProfile.mockResolvedValue('kr-equity');
+        getProvider.mockReturnValue(fakeProvider());
+        getQuote.mockResolvedValue({
+            price: 23550,
+            changesPercentage: 0,
+            timestamp: Math.floor(Date.now() / 1000),
+        });
+        const r = (await getFundamentalsTool(
+            { symbol: '253450.KQ' },
+            ctx,
+            rt
+        )) as { available: boolean; price: number };
+        expect(r.available).toBe(true);
+        expect(r.price).toBe(23550);
     });
 
     it('전 섹션이 채워지면 통화·밸류에이션·헬스·애널리스트를 투영한다', async () => {
@@ -231,7 +265,7 @@ describe('getFundamentalsTool', () => {
     it('targetUpsidePct/analystBuySharePct/daysToEarnings을 계산하고, epsEstimateVsTtmPct는 존재하지 않는다 (spec §3.4, B6 — period 불일치로 제거됨)', async () => {
         getProvider.mockReturnValue(fakeProvider());
         getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
-        getNextEarningsReport.mockResolvedValue({
+        getNextEarningsSchedule.mockResolvedValue({
             symbol: 'AAPL',
             earningsDate: '2026-10-30',
             epsActual: null,
@@ -340,7 +374,7 @@ describe('getFundamentalsTool', () => {
             });
             getProvider.mockReturnValue(fakeProvider());
             getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
-            getNextEarningsReport.mockResolvedValue({
+            getNextEarningsSchedule.mockResolvedValue({
                 symbol: '005930.KS',
                 earningsDate: '2026-09-19',
                 epsActual: null,
@@ -446,7 +480,7 @@ describe('getFundamentalsTool', () => {
 
     it('다음 실적일이 있으면 analyst.nextEarningsDate에 실린다 — DB 캐시 로더를 심볼·db로 호출', async () => {
         getProvider.mockReturnValue(fakeProvider());
-        getNextEarningsReport.mockResolvedValue({
+        getNextEarningsSchedule.mockResolvedValue({
             symbol: 'AAPL',
             earningsDate: '2026-10-30',
             epsActual: null,
@@ -462,12 +496,64 @@ describe('getFundamentalsTool', () => {
         // Reuses the shared DB-backed cached loader (entities/earnings-report)
         // rather than an uncached provider call — this is the assertion that
         // fails if the caching wrapper is dropped.
-        expect(getNextEarningsReport).toHaveBeenCalledWith('AAPL', 'fake-db');
+        expect(getNextEarningsSchedule).toHaveBeenCalledWith('AAPL', 'fake-db');
+    });
+
+    it.each([
+        [
+            true,
+            'Date confirmed by the provider. Session timing (before/after market) is not provided.',
+        ],
+        [
+            false,
+            'Provider marks this date as an estimate; it may move. Session timing (before/after market) is not provided.',
+        ],
+        [
+            null,
+            'Provider gives no confirmation flag, so treat this as a scheduled date that may move. Session timing (before/after market) is not provided.',
+        ],
+    ])(
+        '실적일 확정 여부(%s)와 발표 시각 미제공을 출력에 명시한다 — 예정일을 확정처럼 읽지 않게',
+        async (dateConfirmed, note) => {
+            getProvider.mockReturnValue(fakeProvider());
+            getNextEarningsSchedule.mockResolvedValue({
+                symbol: 'COP',
+                earningsDate: '2026-11-05',
+                epsActual: null,
+                epsEstimated: 1.4,
+                revenueActual: null,
+                revenueEstimated: null,
+                lastUpdated: '2026-10-21',
+                dateConfirmed,
+            });
+            const r = (await getFundamentalsTool(
+                { symbol: 'COP' },
+                ctx,
+                rt
+            )) as {
+                analyst: {
+                    earningsDateConfirmed: boolean | null;
+                    earningsDateNote: string;
+                };
+            };
+            expect(r.analyst.earningsDateConfirmed).toBe(dateConfirmed);
+            expect(r.analyst.earningsDateNote).toBe(note);
+        }
+    );
+
+    it('다음 실적일이 없으면 확정 여부·안내 필드를 싣지 않는다', async () => {
+        getProvider.mockReturnValue(fakeProvider());
+        getNextEarningsSchedule.mockResolvedValue(null);
+        const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+            analyst: Record<string, unknown>;
+        };
+        expect(r.analyst).not.toHaveProperty('earningsDateConfirmed');
+        expect(r.analyst).not.toHaveProperty('earningsDateNote');
     });
 
     it('실적일 조회가 실패해도(allSettled) 나머지 섹션은 살아남고 nextEarningsDate는 null', async () => {
         getProvider.mockReturnValue(fakeProvider());
-        getNextEarningsReport.mockRejectedValue(new Error('db down'));
+        getNextEarningsSchedule.mockRejectedValue(new Error('db down'));
         const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
             available: boolean;
             analyst: { nextEarningsDate: string | null; consensus: unknown };

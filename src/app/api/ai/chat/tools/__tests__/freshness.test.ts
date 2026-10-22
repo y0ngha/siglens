@@ -1,4 +1,5 @@
-import { assessFreshness } from '../freshness';
+import { assessFreshness, staleKrListingDate } from '../freshness';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
 
 const NOW = Date.UTC(2026, 8, 21, 12, 0, 0);
@@ -78,5 +79,36 @@ describe('assessFreshness 함수는', () => {
                 nowMs: NOW,
             }).stale
         ).toBe(false);
+    });
+});
+
+describe('staleKrListingDate 함수는', () => {
+    it('14일을 넘긴 한국 리스팅은 마지막 거래일을 돌려준다', () => {
+        const lastTrade = Date.UTC(2024, 6, 19, 6, 30);
+        expect(staleKrListingDate('kr-equity', lastTrade, NOW)).toBe(
+            '2024-07-19'
+        );
+    });
+
+    it('KRX 연휴 클러스터(약 8일)는 죽은 리스팅으로 보지 않는다', () => {
+        expect(
+            staleKrListingDate('kr-equity', NOW - 8 * MS_PER_DAY, NOW)
+        ).toBeNull();
+    });
+
+    it('문턱 경계: 정확히 14일은 통과, 그보다 1ms 더 묵으면 거부', () => {
+        expect(
+            staleKrListingDate('kr-equity', NOW - QUOTE_MAX_AGE_MS, NOW)
+        ).toBeNull();
+        expect(
+            staleKrListingDate('kr-equity', NOW - QUOTE_MAX_AGE_MS - 1, NOW)
+        ).not.toBeNull();
+    });
+
+    it('한국 종목이 아니거나 기준 시각이 없으면 판정하지 않는다', () => {
+        const old = Date.UTC(2024, 6, 19);
+        expect(staleKrListingDate('us-equity', old, NOW)).toBeNull();
+        expect(staleKrListingDate('kr-equity', undefined, NOW)).toBeNull();
+        expect(staleKrListingDate('kr-equity', Number.NaN, NOW)).toBeNull();
     });
 });

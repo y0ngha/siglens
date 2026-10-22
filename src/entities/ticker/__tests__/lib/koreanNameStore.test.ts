@@ -47,6 +47,7 @@ vi.mock('../../api', () => ({
 
 import {
     __resetKoreanSearchSnapshotForTests,
+    correctKrSymbolSuffix,
     getKoreanNames,
     getTickerDisplayNames,
     invalidateKoreanTickerCache,
@@ -747,5 +748,57 @@ describe('invalidateKoreanTickerCache', () => {
         expect(mockCache.delete).not.toHaveBeenCalled();
         expect(mockCache.get).not.toHaveBeenCalled();
         expect(mockCache.set).not.toHaveBeenCalled();
+    });
+});
+
+describe('correctKrSymbolSuffix — korean_tickers 마스터로 .KS/.KQ 교정', () => {
+    const studioDragon: KoreanTickerEntry = {
+        symbol: '253450.KQ',
+        name: '스튜디오드래곤',
+        koreanName: '스튜디오드래곤',
+        exchange: 'KOSDAQ',
+        exchangeFullName: 'KOSDAQ',
+    };
+
+    beforeEach(resetMocks);
+
+    it('요청 심볼의 행이 없고 다른 접미사의 행이 있으면 그쪽으로 바꾼다', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([studioDragon]);
+        await expect(correctKrSymbolSuffix('253450.ks')).resolves.toBe(
+            '253450.KQ'
+        );
+        expect(mockRepository.findBySymbols).toHaveBeenCalledWith([
+            '253450.KS',
+            '253450.KQ',
+        ]);
+    });
+
+    it('요청 심볼의 행이 있으면 그대로 둔다(두 행이 다 있어도)', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([
+            samsung,
+            { ...samsung, symbol: '005930.KQ' },
+        ]);
+        await expect(correctKrSymbolSuffix('005930.KS')).resolves.toBe(
+            '005930.KS'
+        );
+    });
+
+    it('두 접미사 모두 행이 없으면 그대로 둔다', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([]);
+        await expect(correctKrSymbolSuffix('999999.KQ')).resolves.toBe(
+            '999999.KQ'
+        );
+    });
+
+    it('DB 조회 실패는 교정 없이 원래 심볼로 degrade한다', async () => {
+        mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
+        await expect(correctKrSymbolSuffix('253450.KS')).resolves.toBe(
+            '253450.KS'
+        );
+    });
+
+    it('한국 종목이 아니면 DB를 읽지 않는다', async () => {
+        await expect(correctKrSymbolSuffix('AAPL')).resolves.toBe('AAPL');
+        expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
     });
 });

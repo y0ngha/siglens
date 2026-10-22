@@ -33,6 +33,7 @@ import { getCongressTradesTool } from './getCongressTrades';
 import { getInvestorFlowsTool } from './getInvestorFlows';
 import { getGuideTool } from './getGuide';
 import { safeErrorFields } from './logToolDegrade';
+import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
 import { ensureSymbolNewsFresh } from '@/entities/news-article/lib/ensureSymbolNewsFresh';
 
@@ -254,8 +255,13 @@ export function createToolExecutor(
         if (symbolsIn(args).some(s => !isAdmissibleSymbolShape(s)))
             return { error: 'invalid_symbol' };
         try {
+            // 한국 종목 접미사(.KS/.KQ)를 마스터로 교정한다 — 잘못된 접미사는 yahoo의 죽은
+            // 리스팅으로 해석된다(`correctKrSymbolSuffix` JSDoc). 교정 기록은 잘리기 전에 싣는다.
+            const corrected = await correctKrSymbolArgs(args, name);
             const result = truncateToolResult(
-                await executor(args, ctx, toolRuntime),
+                corrected.annotate(
+                    await executor(corrected.args, ctx, toolRuntime)
+                ),
                 ceilingFor(name)
             );
             if (isAnalysis(name))

@@ -321,9 +321,15 @@ describe('findExactUsMatch', () => {
         expect(findExactUsMatch(results, 'AAPL')?.symbol).toBe('AAPL');
     });
 
-    it('정확 일치가 없으면 첫 US row로 폴백한다', () => {
-        const results = [row('ZZZ'), row('YYY')];
-        expect(findExactUsMatch(results, 'HEI.A')?.symbol).toBe('ZZZ');
+    it('정확 일치가 없으면 첫 US row로 폴백하지 않고 undefined를 돌려준다', () => {
+        // 실측 오매핑: VIX → VIXM ETF, APPL → APPLX 펀드. 첫 row는 다른 종목이다.
+        expect(
+            findExactUsMatch([row('VIXM'), row('VIXY')], 'VIX')
+        ).toBeUndefined();
+        expect(findExactUsMatch([row('APPLX')], 'APPL')).toBeUndefined();
+        expect(
+            findExactUsMatch([row('ZZZ'), row('YYY')], 'HEI.A')
+        ).toBeUndefined();
     });
 
     it('빈 결과는 undefined', () => {

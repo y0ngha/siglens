@@ -144,7 +144,7 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
         // decorator catches the throw and returns graceful null
         expect(await provider.getKeyMetricsTtm('ERR')).toBeNull();
         // the failure is NOT cached
-        expect(store.has('fundamental:key-metrics:ERR')).toBe(false);
+        expect(store.has('fundamental:key-metrics-v2:ERR')).toBe(false);
         // 2nd call re-invokes inner (no poisoned null served from cache)
         expect(await provider.getKeyMetricsTtm('ERR')).toBeNull();
         expect(boom).toHaveBeenCalledTimes(2);
@@ -158,7 +158,7 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
         const provider = new CachedFundamentalProvider(inner);
 
         expect(await provider.getRatiosTtm('ERR')).toBeNull();
-        expect(store.has('fundamental:ratios:ERR')).toBe(false);
+        expect(store.has('fundamental:ratios-v2:ERR')).toBe(false);
         expect(await provider.getRatiosTtm('ERR')).toBeNull();
         expect(boom).toHaveBeenCalledTimes(2);
     });
@@ -186,8 +186,8 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
         await provider.getPriceTargetConsensus('aapl');
         await provider.getPriceTargetSummary('aapl');
 
-        expect(store.has('fundamental:key-metrics:AAPL')).toBe(true);
-        expect(store.has('fundamental:ratios:AAPL')).toBe(true);
+        expect(store.has('fundamental:key-metrics-v2:AAPL')).toBe(true);
+        expect(store.has('fundamental:ratios-v2:AAPL')).toBe(true);
         expect(store.has('fundamental:growth:AAPL')).toBe(true);
         expect(store.has('fundamental:estimates:v2:AAPL')).toBe(true);
         expect(store.has('fundamental:grades-consensus:AAPL')).toBe(true);
@@ -279,7 +279,7 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
 
         // the ENRICHED list (incl. per/psr) is what's cached under the peers key,
         // not the raw peer list — the cached envelope carries per/psr.
-        const cached = store.get('fundamental:peers:AAPL') as {
+        const cached = store.get('fundamental:peers-v2:AAPL') as {
             data: typeof peers;
         };
         expect(cached.data).toEqual(peers);
@@ -485,7 +485,7 @@ describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
         const provider = new CachedFundamentalProvider(inner);
 
         expect(await provider.getKeyMetricsTtm('aapl')).toEqual(metrics);
-        expect(store.has('fundamental:ratios:AAPL')).toBe(true);
+        expect(store.has('fundamental:ratios-v2:AAPL')).toBe(true);
 
         expect(await provider.getRatiosTtm('aapl')).toEqual(ratios);
         expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(1);
@@ -497,7 +497,7 @@ describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
         const provider = new CachedFundamentalProvider(inner);
 
         expect(await provider.getRatiosTtm('aapl')).toEqual(ratios);
-        expect(store.has('fundamental:key-metrics:AAPL')).toBe(true);
+        expect(store.has('fundamental:key-metrics-v2:AAPL')).toBe(true);
 
         expect(await provider.getKeyMetricsTtm('aapl')).toEqual(metrics);
         expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(1);
@@ -513,8 +513,8 @@ describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
         const provider = new CachedFundamentalProvider(inner);
 
         expect(await provider.getKeyMetricsTtm('aapl')).toEqual(metrics);
-        expect(store.has('fundamental:key-metrics:AAPL')).toBe(true);
-        expect(store.has('fundamental:ratios:AAPL')).toBe(false);
+        expect(store.has('fundamental:key-metrics-v2:AAPL')).toBe(true);
+        expect(store.has('fundamental:ratios-v2:AAPL')).toBe(false);
     });
 
     it('caches a legit null pair for both keys', async () => {
@@ -526,8 +526,8 @@ describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
 
         expect(await provider.getKeyMetricsTtm('NODATA')).toBeNull();
         expect(await provider.getRatiosTtm('NODATA')).toBeNull();
-        expect(store.has('fundamental:key-metrics:NODATA')).toBe(true);
-        expect(store.has('fundamental:ratios:NODATA')).toBe(true);
+        expect(store.has('fundamental:key-metrics-v2:NODATA')).toBe(true);
+        expect(store.has('fundamental:ratios-v2:NODATA')).toBe(true);
         expect(inner.getRatiosTtm).toHaveBeenCalledTimes(1);
     });
 
@@ -549,13 +549,13 @@ describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
             spy.mockRestore();
         }
 
-        expect(store.has('fundamental:key-metrics:ERR')).toBe(false);
-        expect(store.has('fundamental:ratios:ERR')).toBe(false);
+        expect(store.has('fundamental:key-metrics-v2:ERR')).toBe(false);
+        expect(store.has('fundamental:ratios-v2:ERR')).toBe(false);
         expect(logged.some(args => args[1] === error)).toBe(true);
         expect(logged.length).toBe(2);
     });
 
-    it('peer enrichment also fills fundamental:ratios:<PEER>', async () => {
+    it('peer enrichment also fills fundamental:ratios-v2:<PEER>', async () => {
         const inner = makePairInner({
             getStockPeers: vi.fn(async () => [
                 { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
@@ -566,8 +566,8 @@ describe('CachedFundamentalProvider — key-metrics/ratios pair', () => {
 
         await provider.getStockPeers('AAPL');
 
-        expect(store.has('fundamental:ratios:MSFT')).toBe(true);
-        expect(store.has('fundamental:ratios:GOOG')).toBe(true);
+        expect(store.has('fundamental:ratios-v2:MSFT')).toBe(true);
+        expect(store.has('fundamental:ratios-v2:GOOG')).toBe(true);
         expect(await provider.getRatiosTtm('MSFT')).toEqual(ratios);
         expect(inner.getRatiosTtm).toHaveBeenCalledTimes(2);
     });
@@ -643,7 +643,7 @@ describe('CachedFundamentalProvider — getStockPeersRaw', () => {
 
         expect(enriched.map(p => p.symbol)).toEqual(['MSFT']);
         expect(inner.getStockPeers).toHaveBeenCalledTimes(1);
-        expect(store.has('fundamental:peers:AAPL')).toBe(true);
+        expect(store.has('fundamental:peers-v2:AAPL')).toBe(true);
     });
 
     it('getStockPeersRaw caps result at PEER_LIMIT (no getKeyMetricsTtm calls)', async () => {

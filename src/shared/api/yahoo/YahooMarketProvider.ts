@@ -211,6 +211,30 @@ export class YahooMarketProvider implements SiglensMarketProvider {
     }
 
     /**
+     * 리스팅 판정용 시세 — 표시명과 함께 `quoteType`과 마지막 거래 시각(ms)을 **한 번의** `quote`로 준다.
+     *
+     * 한국 종목 이름 해석(`fetchKrEquityQuoteName`)이 죽은 리스팅(예: 2024-07에 멈춘 `253450.KS`
+     * MUTUALFUND)을 걸러야 하는데, core `MarketQuote`에는 `quoteType`이 없다. 따로 부르면 yahoo 호출이
+     * 두 번이 된다. 계약은 {@link getQuoteOrThrow}와 같다: 인프라 실패는 던지고, 시세가 없으면 `null`.
+     */
+    async getListingOrThrow(symbol: string): Promise<{
+        name: string;
+        quoteType: string | null;
+        lastTradeMs: number | null;
+    } | null> {
+        const q = await yahooFinance.quote(symbol);
+        if (!hasQuotedPrice(q)) return null;
+        return {
+            name: pickYahooDisplayName(symbol, q.longName, q.shortName),
+            quoteType: q.quoteType ?? null,
+            lastTradeMs:
+                q.regularMarketTime instanceof Date
+                    ? q.regularMarketTime.getTime()
+                    : null,
+        };
+    }
+
+    /**
      * yahoo `quoteType`('EQUITY'·'ETF' 등)을 그대로 돌려준다. core `MarketQuote`에는 이 필드가
      * 없어 {@link getQuoteOrThrow}로는 종목/ETF 구분을 못 한다 — KRX 호가 단위 표 선택
      * (`resolveKrxTickTable`)이 유일한 소비자다.

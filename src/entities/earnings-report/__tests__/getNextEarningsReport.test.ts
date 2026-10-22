@@ -5,6 +5,7 @@ import {
     DrizzleEarningsReportsRepository,
     EARNINGS_REPORT_FMP_LIMIT,
     getNextEarningsReport,
+    getNextEarningsSchedule,
 } from '@/entities/earnings-report/api';
 import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
 import { MS_PER_HOUR } from '@/shared/config/time';
@@ -63,6 +64,7 @@ describe('getNextEarningsReport', () => {
     let getLatestFetchedAt: ReturnType<typeof vi.spyOn>;
     let upsertMany: ReturnType<typeof vi.spyOn>;
     let getNextForSymbol: ReturnType<typeof vi.spyOn>;
+    let pruneSupersededUpcoming: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
         store.clear();
@@ -80,6 +82,12 @@ describe('getNextEarningsReport', () => {
             DrizzleEarningsReportsRepository.prototype,
             'getNextForSymbol'
         );
+        pruneSupersededUpcoming = vi
+            .spyOn(
+                DrizzleEarningsReportsRepository.prototype,
+                'pruneSupersededUpcoming'
+            )
+            .mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -133,6 +141,14 @@ describe('getNextEarningsReport', () => {
                 }),
             ])
         );
+        // 옮겨진 예정일의 옛 행을 같은 응답·같은 기준일(KST 오늘)로 정리한다.
+        expect(pruneSupersededUpcoming).toHaveBeenCalledWith(
+            'AAPL',
+            expect.arrayContaining([
+                expect.objectContaining({ earningsDate: '2026-07-30' }),
+            ]),
+            '2026-05-25'
+        );
     });
 
     it('null fetchedAt is treated as stale and triggers FMP fetch', async () => {
@@ -158,6 +174,8 @@ describe('getNextEarningsReport', () => {
 
         expect(result).toEqual(nextEarnings);
         expect(upsertMany).not.toHaveBeenCalled();
+        // 갱신이 실패하면 아무것도 지우지 않는다.
+        expect(pruneSupersededUpcoming).not.toHaveBeenCalled();
         expect(console.warn).toHaveBeenCalledWith(
             '[getNextEarningsReport] FMP refresh failed:',
             expect.any(Error)
@@ -227,5 +245,37 @@ describe('getNextEarningsReport', () => {
         await getNextEarningsReport('AAPL', fakeDb);
 
         expect(store.has('earnings:empty:AAPL')).toBe(false);
+    });
+});
+
+describe('getNextEarningsSchedule', () => {
+    beforeEach(() => {
+        store.clear();
+        vi.clearAllMocks();
+        vi.spyOn(Date, 'now').mockReturnValue(NOW);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('신선하면 갱신 없이 확정 여부를 붙인 일정을 KST 오늘 기준으로 읽는다', async () => {
+        vi.spyOn(
+            DrizzleEarningsReportsRepository.prototype,
+            'getLatestFetchedAt'
+        ).mockResolvedValue(new Date(NOW - 1000));
+        const getSchedule = vi
+            .spyOn(
+                DrizzleEarningsReportsRepository.prototype,
+                'getNextScheduleForSymbol'
+            )
+            .mockResolvedValue({ ...nextEarnings, dateConfirmed: null });
+
+        await expect(getNextEarningsSchedule('AAPL', fakeDb)).resolves.toEqual({
+            ...nextEarnings,
+            dateConfirmed: null,
+        });
+        expect(getSchedule).toHaveBeenCalledWith('AAPL', '2026-05-25');
+        expect(mockGetEarningsReports).not.toHaveBeenCalled();
     });
 });

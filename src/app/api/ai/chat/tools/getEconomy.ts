@@ -4,6 +4,10 @@ import {
     type TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
+import {
+    type FreshTreasuryRates,
+    getFreshTreasuryRates,
+} from '@/entities/economy/api/treasuryRatesCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
@@ -26,9 +30,39 @@ function directionOf(
     return 'unchanged';
 }
 
-/** `treasury` + the 2s10s spread/inversion flag (spec §3.6, audit B8) — `computeYieldSpread` is core's own rule, reused rather than reimplemented. */
-function treasuryView(treasury: TreasuryRateSnapshot | null) {
-    if (!treasury) return null;
+/**
+ * Picks the treasury reading to report: the separately cached same-day read
+ * (`getFreshTreasuryRates`, 3h TTL keyed by the ET date) when it is available and
+ * not older than the snapshot's, else the snapshot's copy. The snapshot sits behind
+ * two stacked 24h caches and served a 10y yield ~48h old.
+ */
+function pickTreasury(
+    snapshotTreasury: TreasuryRateSnapshot | null,
+    fresh: FreshTreasuryRates | null
+): { treasury: TreasuryRateSnapshot; fetchedAt: string | null } | null {
+    if (
+        fresh &&
+        (!snapshotTreasury || fresh.treasury.date >= snapshotTreasury.date)
+    ) {
+        return { treasury: fresh.treasury, fetchedAt: fresh.fetchedAt };
+    }
+    return snapshotTreasury
+        ? { treasury: snapshotTreasury, fetchedAt: null }
+        : null;
+}
+
+/**
+ * `treasury` + the 2s10s spread/inversion flag (spec §3.6, audit B8) — `computeYieldSpread` is core's own rule, reused rather than reimplemented.
+ *
+ * `date` is the rate's as-of date (the provider's row date). `fetchedAt` is when
+ * the same-day read hit the provider; `null` means the value came from the
+ * day-cached economy snapshot and may be up to ~48h old, which `cache` states.
+ */
+function treasuryView(
+    picked: { treasury: TreasuryRateSnapshot; fetchedAt: string | null } | null
+) {
+    if (!picked) return null;
+    const { treasury, fetchedAt } = picked;
     const rawSpread = computeYieldSpread(treasury);
     // `10y − 2y` in binary floats reads 0.39999999999999947; round like every
     // other number the agent quotes.
@@ -37,6 +71,11 @@ function treasuryView(treasury: TreasuryRateSnapshot | null) {
         ...treasury,
         spread2s10s,
         curveInverted: spread2s10s === null ? null : spread2s10s < 0,
+        fetchedAt,
+        cache:
+            fetchedAt === null
+                ? 'economy snapshot (up to ~48h old)'
+                : 'treasury rates (3h cache)',
     };
 }
 
@@ -54,7 +93,11 @@ function treasuryView(treasury: TreasuryRateSnapshot | null) {
  * zone marker; see its JSDoc) so core can localize them to the user's zone.
  */
 export const getEconomyTool: ToolExecutor = async () => {
-    const snapshot = await getEconomySnapshotStatic().catch(() => null);
+    // `getFreshTreasuryRates` never rejects (degrades to `null`).
+    const [snapshot, freshTreasury] = await Promise.all([
+        getEconomySnapshotStatic().catch(() => null),
+        getFreshTreasuryRates(),
+    ]);
     if (!snapshot) return { available: false, reason: 'snapshot_unavailable' };
 
     const briefing = await peekMacroBriefingStatic(
@@ -82,7 +125,7 @@ export const getEconomyTool: ToolExecutor = async () => {
 
     return {
         asOf: new Date().toISOString(),
-        source: 'economy snapshot (24h cache)',
+        source: 'economy snapshot (indicators/calendar: day cache, up to ~48h); treasury: see treasury.cache',
         available: true,
         indicators: snapshot.indicators.map(i => {
             const change = ppDelta(
@@ -108,7 +151,7 @@ export const getEconomyTool: ToolExecutor = async () => {
                 direction: directionOf(change),
             };
         }),
-        treasury: treasuryView(snapshot.treasury),
+        treasury: treasuryView(pickTreasury(snapshot.treasury, freshTreasury)),
         upcomingCalendar,
         briefing: briefing && {
             summary: briefing.summary,

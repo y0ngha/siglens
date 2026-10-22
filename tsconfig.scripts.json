@@ -34,6 +34,10 @@
         "scripts/lib/rebuildInvestorFlowsAggregates.ts",
         "scripts/reingest-investor-flows-13f.ts",
         "scripts/lib/reingestInvestorFlows13f.ts",
+        "scripts/cleanup-asset-translation-mismatches.ts",
+        "scripts/lib/assetTranslationMismatch.ts",
+        "scripts/prune-stale-earnings-schedules.ts",
+        "scripts/lib/staleEarningsSchedules.ts",
         "scripts/seed-kr-listed-names.ts",
         "scripts/seedEconomicEventAnalysis.ts",
         "scripts/skills-digest.ts",
@@ -52,7 +56,9 @@
         "scripts/lib/__tests__/normalizeIndicatorBaseName.test.ts",
         "scripts/lib/__tests__/visitCandidates.test.ts",
         "scripts/lib/__tests__/visitSources.test.ts",
-        "scripts/lib/__tests__/funnelReport.test.ts"
+        "scripts/lib/__tests__/funnelReport.test.ts",
+        "scripts/lib/__tests__/assetTranslationMismatch.test.ts",
+        "scripts/lib/__tests__/staleEarningsSchedules.test.ts"
     ],
     "include": [],
     "exclude": []

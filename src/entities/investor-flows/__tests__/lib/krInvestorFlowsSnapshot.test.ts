@@ -171,6 +171,40 @@ describe('assembleKrInvestorFlowsSnapshot', () => {
         expect(scorecard.institutional.sufficiency).toBe('insufficient');
     });
 
+    it("feeds core the change vs the same filer's previous report, so the 5% crossing evidence is +0.19, not the whole holding", () => {
+        const { snapshot } = assembleKrInvestorFlowsSnapshot({
+            ...BASE,
+            majorHoldings: [
+                { ...MAJOR, ratioPct: 5.12, ratioChangePct: 5.12 },
+                // 직전 보고(창 밖) — 같은 보고자, 4.93%.
+                {
+                    ...MAJOR,
+                    rceptNo: '20260501000001',
+                    receiptDate: '2026-05-01',
+                    ratioPct: 4.93,
+                    ratioChangePct: -0.4,
+                },
+            ],
+        });
+        const latest = snapshot!.kr!.majorHolders.find(
+            r => r.receiptDate === '2026-10-15'
+        );
+        expect(latest?.ratioChangePct).toBe(0.19);
+        const signal = evaluateInvestorFlows(
+            snapshot!
+        ).largeHolders.signals.find(s => s.id === 'kr_major_holder_new');
+        expect(signal?.evidence).toMatchObject({
+            ratioPct: 5.12,
+            priorRatioPct: 4.93,
+            ratioChangePct: 0.19,
+        });
+    });
+
+    it('keeps the DART change on an initial report with no previous report so core still sees the 5% crossing', () => {
+        const { snapshot } = assembleKrInvestorFlowsSnapshot(BASE);
+        expect(snapshot!.kr!.majorHolders[0]?.ratioChangePct).toBe(5.05);
+    });
+
     it('counts rows left out for missing quantities', () => {
         const { snapshot, droppedRows } = assembleKrInvestorFlowsSnapshot({
             ...BASE,

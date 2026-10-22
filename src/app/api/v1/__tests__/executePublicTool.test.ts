@@ -169,6 +169,22 @@ describe('executePublicTool — 실행기 오류 → HTTP', () => {
         });
     });
 
+    it('stale_listing(거래가 멈춘 한국 리스팅)은 500이 아니라 404이고 마지막 거래일을 details로 싣는다', async () => {
+        mockExecute.mockResolvedValue({
+            symbol: '253450.KS',
+            timeframe: '1Day',
+            found: false,
+            error: 'stale_listing',
+            lastTradeDate: '2024-07-19',
+        });
+        await expect(run()).resolves.toMatchObject({
+            ok: false,
+            status: 404,
+            code: 'stale_listing',
+            details: { lastTradeDate: '2024-07-19' },
+        });
+    });
+
     it('모르는 오류 코드는 500으로 두되 코드는 그대로 싣는다', async () => {
         mockExecute.mockResolvedValue({ error: 'busy', retryAfterSeconds: 60 });
         await expect(run()).resolves.toMatchObject({

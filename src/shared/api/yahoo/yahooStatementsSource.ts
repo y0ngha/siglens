@@ -24,6 +24,8 @@ export interface YahooStatementRaw {
     grossProfit?: number;
     operatingIncome?: number;
     netIncome?: number;
+    /** 지배주주 순이익 — 한국 PER의 분자(`mapKeyMetrics`). 없으면 `netIncome`으로 떨어진다. */
+    netIncomeCommonStockholders?: number;
     EBITDA?: number;
     basicEPS?: number;
     dilutedEPS?: number;
@@ -161,18 +163,47 @@ export function getYahooBalanceSheet(
     symbol: string,
     period: StatementPeriod
 ): Promise<YahooStatementRaw[]> {
+    return getSingleStatement(symbol, period, 'balance-sheet', 'balance');
+}
+
+/**
+ * 손익계산서 한 장만 가져온다 — {@link getYahooBalanceSheet}의 손익 대응물.
+ *
+ * 한국 PER·EPS의 분자를 최근 4분기 순이익 합(TTM)으로 계산하려고 분기 손익만 필요한 호출부
+ * (`yahooFundamentalSource`)를 위한 경로다. yahoo 요약 통계의 `netIncomeToCommon`은 회계연도
+ * 갱신이 멈춘 종목이 있다(실측 2026-10-22: 피노 033790.KQ가 2022년 값이라 PER 12,249배).
+ * 캐시 공유 규칙은 {@link getYahooBalanceSheet}와 같다.
+ */
+export function getYahooIncomeStatement(
+    symbol: string,
+    period: StatementPeriod
+): Promise<YahooStatementRaw[]> {
+    return getSingleStatement(symbol, period, 'financials', 'income');
+}
+
+function getSingleStatement(
+    symbol: string,
+    period: StatementPeriod,
+    module: 'financials' | 'balance-sheet',
+    field: 'income' | 'balance'
+): Promise<YahooStatementRaw[]> {
     const key = statementsCacheKey(symbol, period);
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < DEDUP_WINDOW_MS) {
-        return hit.value.then(s => s.balance);
+        return hit.value.then(s => s[field]);
     }
 
     // 부분 결과를 공유 캐시에 넣지 않는다 — 넣으면 뒤이어 전체 제표를 요구하는
     // 호출부가 빈 income/cashFlow를 캐시 히트로 받아 재무 탭이 통째로 비어 버린다.
     // 그 사고를 막는 대신 이 경로가 캐시를 채우지 못하는 비용을 감수한다.
-    return fetchModule(symbol.toUpperCase(), 'balance-sheet', period).catch(
+    return fetchModule(symbol.toUpperCase(), module, period).catch(
         (e: unknown) => {
-            console.warn('[yahooStatements] balance-only fetch failed', key, e);
+            console.warn(
+                '[yahooStatements] single-module fetch failed',
+                key,
+                module,
+                e
+            );
             return [];
         }
     );

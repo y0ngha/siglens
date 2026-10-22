@@ -18,12 +18,16 @@ import {
     getDescriptor,
     isKrEquitySymbol,
 } from '@/shared/config/marketProfile/registry';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
-import { MS_PER_DAY } from '@/shared/config/time';
+import {
+    getNextEarningsSchedule,
+    type NextEarningsSchedule,
+} from '@/entities/earnings-report/api';
+import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { pctVs, ratioPct } from './percent';
+import { staleKrListingDate } from './freshness';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 function settledOrNull<T>(r: PromiseSettledResult<T>): T | null {
@@ -60,6 +64,38 @@ export function daysUntil(
 }
 
 /**
+ * How certain `nextEarningsDate` is, stated in the tool output rather than
+ * implied. Neither provider gives a pre/after-market session time: FMP
+ * `/stable/earnings` has no `time` field and no confirmation flag, and the
+ * Yahoo path (KR) only says whether the date is Yahoo's own estimate
+ * (`isEarningsDateEstimate`). So `earningsDateConfirmed` is a boolean only for
+ * Yahoo rows and `null` (unknown) otherwise, and the note always says the
+ * session timing is not provided — a real turn answered a moved COP date with
+ * no hedge because nothing in the output said it could be a schedule estimate.
+ * No date → no certainty fields to add.
+ */
+interface EarningsDateCertainty {
+    earningsDateConfirmed: boolean | null;
+    earningsDateNote: string;
+}
+
+export function earningsDateCertainty(
+    earnings: Pick<NextEarningsSchedule, 'dateConfirmed'> | null
+): Partial<EarningsDateCertainty> {
+    if (earnings === null) return {};
+    const confirmed = earnings.dateConfirmed ?? null;
+    return {
+        earningsDateConfirmed: confirmed,
+        earningsDateNote:
+            confirmed === true
+                ? 'Date confirmed by the provider. Session timing (before/after market) is not provided.'
+                : confirmed === false
+                  ? 'Provider marks this date as an estimate; it may move. Session timing (before/after market) is not provided.'
+                  : 'Provider gives no confirmation flag, so treat this as a scheduled date that may move. Session timing (before/after market) is not provided.',
+    };
+}
+
+/**
  * Compact valuation/profitability/growth/health/analyst snapshot for stocks
  * (US and Korean — crypto has no fundamental tab, gated the same way
  * `getOptionsSummaryTool` gates options). One `Promise.allSettled` fan-out so
@@ -72,7 +108,8 @@ export function daysUntil(
  * too: the model-facing shape is numbers for valuation/health questions,
  * not the page's full content.
  *
- * `nextEarningsDate` goes through `getNextEarningsReport` — the same
+ * `nextEarningsDate` goes through `getNextEarningsSchedule` (the same
+ * refresh as `getNextEarningsReport`, plus the provider's confirmation flag) — the same
  * DB-backed, 24h-staleness-gated loader the news/analysis paths already use
  * (`entities/earnings-report`) — rather than the provider's own
  * `getEarningsReport` (a separate Redis key, `fundamental:earnings-next:<SYM>`,
@@ -139,7 +176,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         provider.getGradesConsensus(symbol),
         provider.getPriceTargetConsensus(symbol),
         provider.getAnalystEstimates(symbol),
-        getNextEarningsReport(symbol, getDatabaseClient().db),
+        getNextEarningsSchedule(symbol, getDatabaseClient().db),
         // Same symbol→fmpSymbol mapping `get_quote`/`get_bars_indicators`
         // use. Bounded by `quoteWithTimeout` like the other quotes that are
         // only enrichment (`get_my_portfolio`, `get_cached_analysis`);
@@ -168,6 +205,22 @@ export const getFundamentalsTool: ToolExecutor = async args => {
     const estimates = settledOrNull(estimatesR);
     const earnings = settledOrNull(earningsR);
     const quote = settledOrNull(quoteR);
+    // 한국의 죽은 리스팅(잘못된 접미사 등): yahoo가 2년 묵은 가격과 빈 펀더멘털을 그대로 준다.
+    // `asOf`가 조회 시각이라 그 가격이 "오늘"로 읽히므로, 섹션을 내지 않고 데이터 오류로 돌린다.
+    const lastTradeDate = staleKrListingDate(
+        marketProfile,
+        quote?.timestamp === undefined
+            ? undefined
+            : quote.timestamp * MS_PER_SECOND,
+        Date.now()
+    );
+    if (lastTradeDate !== null)
+        return {
+            symbol,
+            available: false,
+            reason: 'stale_listing',
+            lastTradeDate,
+        };
     // A failed lookup is `null` (rejections are settled to `null` above);
     // `price > 0` also rejects bad upstream data (a zero or negative price),
     // so either reads as "unknown", never as a real price.
@@ -289,6 +342,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
                     : ('current_fiscal_year' as const),
             },
             nextEarningsDate: earnings?.earningsDate ?? null,
+            ...earningsDateCertainty(earnings),
             daysToEarnings: daysUntil(
                 earnings?.earningsDate ?? null,
                 new Date(),

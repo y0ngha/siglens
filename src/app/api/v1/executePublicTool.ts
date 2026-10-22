@@ -86,6 +86,13 @@ const TOOL_ERROR_MAPPING: Readonly<Record<string, ErrorMapping>> = {
         status: API_STATUS.notFound,
         message: 'No price bars exist for this symbol and timeframe.',
     },
+    // 한국 종목의 거래가 멈춘 리스팅(잘못된 `.KS`/`.KQ` 접미사 등) — 묵은 봉을 현재 시세로 내지 않는다.
+    // 데이터가 없는 경우와 같은 404다(`bars_not_found`). `details.lastTradeDate`에 마지막 거래일이 실린다.
+    stale_listing: {
+        status: API_STATUS.notFound,
+        message:
+            'The listing has not traded recently (often a wrong exchange suffix); no current data is served.',
+    },
     tool_failed: {
         status: API_STATUS.internalError,
         message: 'The tool failed to produce a result.',

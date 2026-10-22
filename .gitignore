@@ -144,6 +144,10 @@ next-env.d.ts
 !/scripts/funnel-report.ts
 # IndexNow 1회성 백필(색인에서 빠진 URL 재크롤 요청) — 순수 helper는 scripts/lib에 있다.
 !/scripts/indexnow-backfill.ts
+# 1회성 DB 정리(기본 dry-run, --apply만 삭제). package.json `db:cleanup:asset-translations`·
+# `db:prune:stale-earnings`가 실행한다. 순수 판정부는 scripts/lib에 있다.
+!/scripts/cleanup-asset-translation-mismatches.ts
+!/scripts/prune-stale-earnings-schedules.ts
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/

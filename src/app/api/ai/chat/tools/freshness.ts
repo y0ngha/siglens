@@ -1,4 +1,6 @@
-import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
+import { MS_PER_MINUTE } from '@/shared/config/time';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 /**
  * 챗 툴 결과에 붙는 신선도 봉투.
@@ -64,28 +66,25 @@ export function assessFreshness({
 }
 
 /**
- * 시세가 "마지막 값에 동결됐다"고 볼 나이.
+ * 한국 종목 리스팅이 **죽은 리스팅**이면 마지막 거래일(`YYYY-MM-DD`, UTC)을, 아니면 `null`을 돌려준다.
  *
- * 두 경우를 가른다. **정상 휴장은 절대 걸리면 안 되고**(금요일 종가를 연휴 뒤에
- * 물어도 정상), 상장폐지·티커 개명으로 **갱신이 멈춘** 시세는 걸려야 한다.
+ * yahoo는 거래가 멈춘 리스팅을 지우지 않는다. 실측(2026-10-22): `253450.KS`는 2024-07-19에 멈춘
+ * MUTUALFUND 리스팅인데 시세를 그대로 돌려줬고, 실제 종목은 `253450.KQ`다. 접미사를 잘못 고른
+ * 호출이 2년 묵은 가격을 "오늘 시세"로 내보냈다. 미국 경로는 같은 나이의 시세에 `stale` 표시만
+ * 붙이고 값을 살리지만(`assessFreshness`), 한국은 그런 값이 거의 항상 **다른 리스팅**이라 가격으로
+ * 쓰지 않고 데이터 오류로 돌린다.
  *
- * 실측 사례(2026-09-21): `SQ`는 2025-02-13에 `XYZ`로 개명됐는데 FMP `quote`가
- * 그 시점의 값(83.46달러)을 19개월째 그대로 돌려줬다. 우리는 그걸 통과시켜
- * "현재가 83.46달러, 전일 대비 +0.57%"로 제시했다 — 그날 실제 XYZ는 76.28달러로
- * 8.6% 차이였다.
- *
- * **14일인 이유는 KRX다.** 처음엔 7일로 잡았는데, 한국 연휴 클러스터가 그걸
- * 넘는다: 2025년 추석·개천절·한글날이 겹쳐 KRX가 10/3·6·7·8·9 휴장했고, 양쪽
- * 주말까지 더하면 마지막 체결(10/2 15:30 KST)과 다음 개장(10/10) 사이가 약
- * 7일 17시간이다. KR 시세도 `timestamp`를 싣는다(`YahooMarketProvider`의
- * `regularMarketTime`).
- *
- * 자산군별로 나누지 않는다. 크립토는 24시간 거래라 훨씬 짧게 잡을 수도 있지만,
- * 이 값의 목적은 "장이 쉬었다"가 아니라 "이 심볼은 더 이상 갱신되지 않는다"를
- * 잡는 것이고 그건 자산군과 무관하다.
- *
- * **시세를 싣는 모든 툴이 이 상수를 공유한다** — `get_quote`와
- * `get_my_portfolio`. 툴마다 따로 두면 한쪽만 조정돼 같은 심볼이 도구에 따라
- * 다르게 판정된다. 테스트는 이 상수를 직접 import해 양쪽 경계를 고정한다.
+ * 문턱은 {@link QUOTE_MAX_AGE_MS}(14일, 약 10거래일)를 공유한다 — KRX 연휴 클러스터(최대 약 8일)는
+ * 걸리지 않는다. 한국 종목(`kr-equity`)에만 적용한다 — 기준 시각이 없으면 판정하지 않는다.
  */
-export const QUOTE_MAX_AGE_MS = 14 * MS_PER_DAY;
+export function staleKrListingDate(
+    profile: MarketProfileId,
+    asOfMs: number | undefined,
+    nowMs: number
+): string | null {
+    if (profile !== 'kr-equity') return null;
+    if (asOfMs === undefined || !Number.isFinite(asOfMs)) return null;
+    return nowMs - asOfMs > QUOTE_MAX_AGE_MS
+        ? new Date(asOfMs).toISOString().slice(0, 10)
+        : null;
+}

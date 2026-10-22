@@ -9,6 +9,7 @@ import type {
     DartMajorHoldingRecord,
     DartTradingPlanRecord,
 } from '../api/investorFlowsDartRepository';
+import { withPreviousReportRatioChanges } from './krMajorHolderRatioChange';
 
 /**
  * 한국(DART) 수급 스냅샷 조립(순수, 설계 §4.4). 저장소 행(`dart_*` 테이블)을 core `Kr*` 계약으로 옮긴다.
@@ -112,9 +113,13 @@ export interface KrSnapshotAssembly {
 export function assembleKrInvestorFlowsSnapshot(
     input: KrSnapshotInput
 ): KrSnapshotAssembly {
-    const majorHolders = input.majorHoldings
-        .map(toKrMajorHolderReport)
-        .filter(row => row !== null);
+    // 증감은 같은 보고자의 직전 보고 대비로 바꿔 넘긴다 — DART 증감은 최초 보고에서 보유비율 전체다
+    // (`withPreviousReportRatioChanges` JSDoc).
+    const majorHolders = withPreviousReportRatioChanges(
+        input.majorHoldings
+            .map(toKrMajorHolderReport)
+            .filter(row => row !== null)
+    );
     const insiders = input.insiderReports
         .map(toKrInsiderReport)
         .filter(row => row !== null);
