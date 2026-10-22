@@ -22,7 +22,9 @@ const getFmpProvider: () => FundamentalProviderWithRawPeers =
                 new FmpFundamentalClient(),
                 new CachedFinancialStatementsProvider(
                     new FmpFinancialStatementsClient()
-                )
+                ),
+                // peer 목록에 섞여 오는 한국 종목은 yahoo 경로로 per/psr을 받는다(FMP는 402).
+                peer => getFundamentalDataProvider(peer).getKeyMetricsTtm(peer)
             ),
         () => {
             // Sync factory — no dynamic import possible here, so the fake loads via a

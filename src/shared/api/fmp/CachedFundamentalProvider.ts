@@ -98,15 +98,26 @@ export interface LatestAnnualStatementsSource {
     ): Promise<IncomeGrowthRow | null>;
 }
 
+/** peer 한 종목의 TTM 밸류에이션을 돌려주는 함수 — 실패는 throw하지 않고 `null`이어야 한다(`getKeyMetricsTtm`과 같은 계약). */
+export type PeerKeyMetricsSource = (
+    symbol: string
+) => Promise<FundamentalValuationMetrics | null>;
+
 export class CachedFundamentalProvider implements FundamentalProviderWithRawPeers {
     /**
      * @param annualStatements 주면 `getCashFlowStatement`·`getIncomeStatementGrowth`를 여기서
      *   꺼낸다. yahoo 경로는 두 값이 이미 다른 펀더멘털과 한 응답(`getYahooFundamentals`)에서
      *   나오므로 주지 않고, 종전처럼 inner + 자체 키를 쓴다.
+     * @param peerKeyMetrics `getStockPeers`가 peer마다 per/psr을 꺼내는 출처. 생략하면 이
+     *   provider 자신(`getKeyMetricsTtm`)을 쓴다. FMP 경로는 시장별로 고르는 함수를 준다 —
+     *   FMP peer 목록에는 한국 상장(현대차·기아 등)이 섞여 오는데, FMP 플랜은 한국 종목의
+     *   key-metrics-ttm에 402를 돌려줘 그 peer의 per/psr이 비기 때문이다(2026-10-21 운영 로그
+     *   `FMP key-metrics-ttm 402 (005380.KS)` 등 14건 — 로그에서 `cost exception`과 `.KS)`로 다시 확인할 수 있다).
      */
     constructor(
         private readonly inner: FundamentalProvider,
-        private readonly annualStatements: LatestAnnualStatementsSource | null = null
+        private readonly annualStatements: LatestAnnualStatementsSource | null = null,
+        private readonly peerKeyMetrics: PeerKeyMetricsSource | null = null
     ) {}
 
     getProfile = cache((symbol: string): Promise<FundamentalProfile | null> =>
@@ -300,7 +311,8 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * peer 목록을 fetch→top-N cap→per/psr enrich한 결과 전체를 `fundamental:peers:<SYM>`에
      * 캐싱한다. enrich를 캐시 fetcher 안에 두므로 warm 호출은 enriched 목록을 단일 Redis
      * GET으로 돌려받고(peer당 round-trip 0), cold 호출만 enrich한다. per/psr은 캐싱된
-     * getKeyMetricsTtm(`fundamental:key-metrics:<peer>`)에서 가져오며, 그 메서드는 FMP
+     * getKeyMetricsTtm(`fundamental:key-metrics:<peer>`, `peerKeyMetrics`를 줬으면 그 출처 —
+     * FMP 경로에선 한국 peer가 yahoo로 간다)에서 가져오며, 그 메서드는 FMP
      * 장애 시 throw하지 않고 null을 돌려주므로(catch→null) 한 peer 실패가 전체를 중단시키지
      * 않는다. cold 캐시 시 peer당 동시 FMP 폭증(rate-limit)을 피해 순차 enrich하고(await된
      * accumulator를 잇는 async reduce — 다음 peer fetch는 직전 peer 완료 후에만 시작), 비정상
@@ -325,7 +337,9 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
                         async symbol =>
                             [
                                 symbol,
-                                await this.getKeyMetricsTtm(symbol),
+                                await (
+                                    this.peerKeyMetrics ?? this.getKeyMetricsTtm
+                                )(symbol),
                             ] as const
                     )
                 )
