@@ -10,6 +10,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 
 import { AGENT_GLOBAL_LIMITS, agentLimit } from '@y0ngha/siglens-core';
 import {
+    __resetWarnedMalformedLimitsForTests,
     agentGlobalLimitsFromEnv,
     createAgentCounters,
     createGuestIpBackstopCounter,
@@ -86,17 +87,18 @@ describe('agentGlobalLimitsFromEnv', () => {
         ).toEqual({ webSearchPerDay: 500, webSearchPerMonth: 6000 });
     });
 
-    it('잘못된 값은 경고 후 무시한다(음수·소수·문자는 검색을 풀거나 막지 않는다)', () => {
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        for (const bad of ['-1', '1.5', 'abc', 'Infinity']) {
+    it.each(['-1', '1.5', 'abc', 'Infinity'])(
+        '잘못된 값(%s)은 경고 후 무시하고, 같은 값은 다시 경고하지 않는다',
+        bad => {
+            __resetWarnedMalformedLimitsForTests();
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
             expect(
                 agentGlobalLimitsFromEnv({ AGENT_WEB_SEARCH_PER_DAY: bad })
             ).toBeUndefined();
+            // the env is read every turn; the same bad value warns only once
+            agentGlobalLimitsFromEnv({ AGENT_WEB_SEARCH_PER_DAY: bad });
+            expect(warn).toHaveBeenCalledTimes(1);
+            warn.mockRestore();
         }
-        expect(warn).toHaveBeenCalledTimes(4);
-        // the env is read every turn; the same bad value warns only once
-        agentGlobalLimitsFromEnv({ AGENT_WEB_SEARCH_PER_DAY: '-1' });
-        expect(warn).toHaveBeenCalledTimes(4);
-        warn.mockRestore();
-    });
+    );
 });

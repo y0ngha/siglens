@@ -74,15 +74,21 @@ export function agentGlobalLimitsFromEnv(
 /** `name=value` pairs already warned about — the env is read every turn, the warning is not. */
 const warnedMalformedLimits = new Set<string>();
 
+/** Test-only: forget which malformed values were already warned about. */
+export function __resetWarnedMalformedLimitsForTests(): void {
+    warnedMalformedLimits.clear();
+}
+
 function parseLimit(raw: string | undefined, name: string): number | undefined {
     if (raw === undefined || raw.trim() === '') return undefined;
     if (!/^\d+$/.test(raw.trim())) {
         const key = `${name}=${raw}`;
         if (!warnedMalformedLimits.has(key)) {
             warnedMalformedLimits.add(key);
-            console.warn('[agent] ignoring malformed web search limit', {
-                name,
-            });
+            console.warn(
+                '[agent] ignoring malformed web search limit (non-negative integer only)',
+                { name }
+            );
         }
         return undefined;
     }
