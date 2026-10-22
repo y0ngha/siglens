@@ -8,8 +8,10 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     createCounterStore: mockCreate,
 }));
 
-import { agentLimit } from '@y0ngha/siglens-core';
+import { AGENT_GLOBAL_LIMITS, agentLimit } from '@y0ngha/siglens-core';
 import {
+    __resetWarnedMalformedLimitsForTests,
+    agentGlobalLimitsFromEnv,
     createAgentCounters,
     createGuestIpBackstopCounter,
     GUEST_IP_TURNS_PER_DAY,
@@ -60,4 +62,43 @@ describe('GUEST_IP_TURNS_PER_DAY', () => {
             10 * agentLimit('free', 'turnsPerDay')
         );
     });
+});
+
+describe('agentGlobalLimitsFromEnv', () => {
+    it('둘 다 없으면 undefined(core 기본 예산 사용)', () => {
+        expect(agentGlobalLimitsFromEnv({})).toBeUndefined();
+        expect(
+            agentGlobalLimitsFromEnv({ AGENT_WEB_SEARCH_PER_DAY: ' ' })
+        ).toBeUndefined();
+    });
+
+    it('설정한 값만 바꾸고 나머지는 core 기본값을 쓴다', () => {
+        expect(
+            agentGlobalLimitsFromEnv({ AGENT_WEB_SEARCH_PER_DAY: '500' })
+        ).toEqual({
+            webSearchPerDay: 500,
+            webSearchPerMonth: AGENT_GLOBAL_LIMITS.webSearchPerMonth,
+        });
+        expect(
+            agentGlobalLimitsFromEnv({
+                AGENT_WEB_SEARCH_PER_DAY: '500',
+                AGENT_WEB_SEARCH_PER_MONTH: '6000',
+            })
+        ).toEqual({ webSearchPerDay: 500, webSearchPerMonth: 6000 });
+    });
+
+    it.each(['-1', '1.5', 'abc', 'Infinity'])(
+        '잘못된 값(%s)은 경고 후 무시하고, 같은 값은 다시 경고하지 않는다',
+        bad => {
+            __resetWarnedMalformedLimitsForTests();
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            expect(
+                agentGlobalLimitsFromEnv({ AGENT_WEB_SEARCH_PER_DAY: bad })
+            ).toBeUndefined();
+            // the env is read every turn; the same bad value warns only once
+            agentGlobalLimitsFromEnv({ AGENT_WEB_SEARCH_PER_DAY: bad });
+            expect(warn).toHaveBeenCalledTimes(1);
+            warn.mockRestore();
+        }
+    );
 });

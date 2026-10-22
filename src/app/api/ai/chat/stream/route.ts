@@ -34,6 +34,7 @@ import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { AgentTurnError, agentEventStream } from '../agentEventStream';
 import {
+    agentGlobalLimitsFromEnv,
     createAgentCounters,
     createGuestIpBackstopCounter,
     GUEST_IP_TURNS_PER_DAY,
@@ -569,6 +570,7 @@ export async function POST(request: Request): Promise<Response> {
                             callAgentProvider: getAgentProvider(providerState),
                             executeTool,
                             counters: createAgentCounters(),
+                            globalLimits: agentGlobalLimitsFromEnv(),
                             maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
                             onEvent: event => {
                                 if (event.type === 'tool_end')

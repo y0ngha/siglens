@@ -62,6 +62,10 @@ OPTIONAL_KEYS=(
   NAVER_AI_CLIENT_ID
   NAVER_AI_CLIENT_SECRET
   AGENT_CHAT_DISABLED
+  # Shared web_search budget override (core AGENT_GLOBAL_LIMITS 33/day, 1,000/month when unset).
+  # Set only while extra Brave capacity is bought, e.g. a benchmark measurement window.
+  AGENT_WEB_SEARCH_PER_DAY
+  AGENT_WEB_SEARCH_PER_MONTH
   # Investor flows data crons: FINRA_SHORT_DATA_ENABLED / REG_SHO_THRESHOLD_DATA_ENABLED unset = enabled
   # (non-commercial phase), OPENFIGI_API_KEY unset = anonymous OpenFIGI limits, SEC_USER_AGENT unset = built-in default.
   FINRA_SHORT_DATA_ENABLED
