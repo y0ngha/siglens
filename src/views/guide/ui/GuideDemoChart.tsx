@@ -177,7 +177,6 @@ function TextLabel({
  */
 export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
     const uid = useId();
-    const titleId = `${uid}-title`;
     const descId = `${uid}-desc`;
     const clipId = `${uid}-clip`;
     const panes = demo.panes ?? [];
@@ -646,13 +645,18 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                 'mx-auto w-full max-w-xl overflow-hidden'
             )}
         >
+            {/*
+             * 접근 가능한 이름은 `<title>` 요소가 아니라 `aria-label`로 단다. 본문 SVG의
+             * `<title>`도 SEO 검사기는 문서 제목으로 세어
+             * "title 태그 2개"로 잡는다 — 스크린리더가 읽는 이름·설명은 그대로다.
+             */}
             <svg
-                aria-labelledby={`${titleId} ${descId}`}
+                aria-describedby={descId}
+                aria-label={title}
                 className="block h-auto w-full"
                 role="img"
                 viewBox={`0 0 ${WIDTH} ${totalHeight}`}
             >
-                <title id={titleId}>{title}</title>
                 <desc id={descId}>{caption ?? describe(demo)}</desc>
                 <defs>
                     <clipPath id={clipId}>

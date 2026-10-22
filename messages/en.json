@@ -5287,6 +5287,7 @@
             "ChatShell": {
                 "548fe0": "Retry",
                 "9a7569": "Conversation list",
+                "closeConversations": "Close conversations",
                 "errorAborted": "Stopped.",
                 "errorBot": "Couldn't process the request.",
                 "errorConversationFull": "This conversation is full. Please start a new one.",

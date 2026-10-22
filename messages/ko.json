@@ -3271,6 +3271,7 @@
             "ChatShell": {
                 "548fe0": "재시도",
                 "9a7569": "대화 목록",
+                "closeConversations": "대화 목록 닫기",
                 "errorAborted": "중단되었습니다.",
                 "errorBot": "요청을 처리할 수 없습니다.",
                 "errorConversationFull": "이 대화가 가득 찼습니다. 새 대화를 시작해 주세요.",

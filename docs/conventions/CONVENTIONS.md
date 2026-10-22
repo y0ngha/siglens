@@ -885,6 +885,18 @@ weaker one or show the basis next to the value.
 - ❌ "Order flow" computed from daily candles; "buy/sell volume" for a close-location estimate.
 - ✅ "Estimated volume split (from daily candles)"; a flow score captioned with the filings it is built from.
 
+<a id="CS-19"></a>
+
+#### CS-19 — Values from an incomplete period are not presented as directional or final
+
+A figure aggregated over a period that is still in progress (a running quarter, a partially reported window) is not a
+final number. Do not label it with a direction (net buy / net sell, up / down) or rank it against complete periods.
+Detect "still collecting" from the period's completeness, not only from empty data, so a partial aggregate never looks
+complete. Show it as in-progress or leave it out.
+
+- ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
+- ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
+
 ---
 
 ## Layer Dependency Rules

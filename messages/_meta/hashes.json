@@ -2070,6 +2070,7 @@
     "views.symbol.technicalFacts.closeSummaryFlat": "7bd6d4557bcf",
     "widgets.agent-chat.ChatShell.548fe0": "548fe005815e",
     "widgets.agent-chat.ChatShell.9a7569": "9a7569f26dc2",
+    "widgets.agent-chat.ChatShell.closeConversations": "93c08d85a0d5",
     "widgets.agent-chat.ChatShell.errorAborted": "f3a7706ab8af",
     "widgets.agent-chat.ChatShell.errorBot": "efb9cd7e71b5",
     "widgets.agent-chat.ChatShell.errorConversationFull": "2f391cf6472d",

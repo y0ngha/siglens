@@ -15,27 +15,21 @@ describe('useMobileAnalysisSheet', () => {
     let requestAnimationFrameSpy: MockInstance<
         (callback: FrameRequestCallback) => number
     >;
-    let cancelAnimationFrameSpy: MockInstance<(frameId: number) => void>;
 
     beforeEach(() => {
         vi.useFakeTimers();
+        // 프레임이 오지 않는 브라우저(일부 인앱 웹뷰) — 시트는 그래도 열려야 한다.
         requestAnimationFrameSpy = vi
             .spyOn(window, 'requestAnimationFrame')
-            .mockImplementation(callback =>
-                window.setTimeout(() => callback(performance.now()), 16)
-            );
-        cancelAnimationFrameSpy = vi
-            .spyOn(window, 'cancelAnimationFrame')
-            .mockImplementation(frameId => window.clearTimeout(frameId));
+            .mockImplementation(() => 0);
     });
 
     afterEach(() => {
         requestAnimationFrameSpy.mockRestore();
-        cancelAnimationFrameSpy.mockRestore();
         vi.useRealTimers();
     });
 
-    it('delays opening until after the first animation frame and hydration buffer', () => {
+    it('opens after the hydration buffer even when animation frames never fire', () => {
         const onActiveSnapChange = vi.fn();
         const { result } = renderHook(() =>
             useMobileAnalysisSheet({
@@ -47,14 +41,16 @@ describe('useMobileAnalysisSheet', () => {
         expect(result.current.isOpen).toBe(false);
 
         act(() => {
-            vi.advanceTimersByTime(16);
+            vi.advanceTimersByTime(MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS - 1);
         });
         expect(result.current.isOpen).toBe(false);
 
         act(() => {
-            vi.advanceTimersByTime(MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS);
+            vi.advanceTimersByTime(1);
         });
         expect(result.current.isOpen).toBe(true);
+        // 프레임 콜백에 기대면 프레임이 안 오는 환경에서 다시 터치 전까지 막힌다.
+        expect(requestAnimationFrameSpy).not.toHaveBeenCalled();
     });
 
     it('reopens at peek snap when vaul attempts to close the persistent sheet', () => {

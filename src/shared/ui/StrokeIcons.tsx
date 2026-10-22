@@ -63,6 +63,11 @@ export const TrashIcon = (p: IconProps) => (
         <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
     </Icon>
 );
+export const HomeIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5" />
+    </Icon>
+);
 export const ArrowUpRightIcon = (p: IconProps) => (
     <Icon {...p}>
         <path d="M7 17L17 7M9 7h8v8" />

@@ -5287,6 +5287,7 @@
             "ChatShell": {
                 "548fe0": "重试",
                 "9a7569": "对话列表",
+                "closeConversations": "关闭对话列表",
                 "errorAborted": "已中断。",
                 "errorBot": "无法处理请求。",
                 "errorConversationFull": "此对话已满，请开始新对话。",
