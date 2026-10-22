@@ -5,7 +5,12 @@ vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
     correctKrSymbolSuffix,
 }));
 
-import { correctKrSymbolArgs } from '@/app/api/ai/chat/tools/krSymbolCorrection';
+import {
+    applyKrSymbolCorrections,
+    correctKrSymbolArgs,
+    singleSymbolCorrection,
+    symbolListCorrection,
+} from '@/app/api/ai/chat/tools/krSymbolCorrection';
 
 const MASTER: Record<string, string> = {
     '253450.KS': '253450.KQ',
@@ -94,5 +99,63 @@ describe('correctKrSymbolArgs', () => {
             'get_quote'
         );
         expect(annotate(['x'])).toEqual(['x']);
+    });
+});
+
+describe('singleSymbolCorrection', () => {
+    it('마스터가 다른 접미사를 고르면 교정 한 건', () => {
+        expect(singleSymbolCorrection('253450.KS', '253450.KQ')).toEqual({
+            from: '253450.KS',
+            to: '253450.KQ',
+        });
+    });
+    it('같거나 대소문자만 다르면 null', () => {
+        expect(singleSymbolCorrection('005930.KS', '005930.KS')).toBeNull();
+        expect(singleSymbolCorrection('005930.ks', '005930.KS')).toBeNull();
+    });
+});
+
+describe('symbolListCorrection', () => {
+    it('바뀐 항목만 기록하고 교정된 전체 목록을 돌려준다', () => {
+        expect(
+            symbolListCorrection(
+                ['AAPL', '033790.KS', '005930.KS'],
+                ['AAPL', '033790.KQ', '005930.KS']
+            )
+        ).toEqual({
+            symbols: ['AAPL', '033790.KQ', '005930.KS'],
+            corrections: [{ from: '033790.KS', to: '033790.KQ' }],
+        });
+    });
+    it('바뀐 항목이 없으면 null (문자열이 아닌 항목은 무시)', () => {
+        expect(
+            symbolListCorrection(['005930.KS', 7], ['005930.KS', 7])
+        ).toBeNull();
+    });
+});
+
+describe('applyKrSymbolCorrections', () => {
+    it('교정이 없으면 입력 인자 객체와 결과를 그대로 둔다', () => {
+        const input = { symbol: '005930.KS' };
+        const { args, annotate } = applyKrSymbolCorrections(input, null, null);
+        expect(args).toBe(input);
+        expect(annotate({ ok: true })).toEqual({ ok: true });
+    });
+    it('단일·목록 교정을 인자와 결과 기록에 함께 싣는다', () => {
+        const { args, annotate } = applyKrSymbolCorrections(
+            { symbol: '253450.KS', symbols: ['033790.KS'] },
+            { from: '253450.KS', to: '253450.KQ' },
+            {
+                symbols: ['033790.KQ'],
+                corrections: [{ from: '033790.KS', to: '033790.KQ' }],
+            }
+        );
+        expect(args).toEqual({ symbol: '253450.KQ', symbols: ['033790.KQ'] });
+        expect(annotate({ found: true })).toEqual({
+            symbolCorrectedFrom: '253450.KS',
+            symbolCorrections: [{ from: '033790.KS', to: '033790.KQ' }],
+            found: true,
+        });
+        expect(annotate('text')).toBe('text');
     });
 });

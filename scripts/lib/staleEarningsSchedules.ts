@@ -54,7 +54,7 @@ export function selectStaleSchedules(
     };
 }
 
-/** 한 번의 DELETE에 묶는 키 수 — 다른 DB 스크립트의 청크 크기(500)와 같다. */
+/** 한 번의 DELETE에 묶는 키 수 — `db/scripts/backfillContentLocale.ts`의 `CHUNK_SIZE`(500)와 같은 값이다. */
 export const STALE_SCHEDULE_DELETE_CHUNK_SIZE = 500;
 
 export function chunkRows<T>(rows: readonly T[], size: number): T[][] {

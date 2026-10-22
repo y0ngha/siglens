@@ -53,6 +53,7 @@ export async function getFreshTreasuryRates(
         );
     } catch (error) {
         // Log the name only (no payload), then degrade to the snapshot's treasury in get_economy.
+        // `logToolDegrade`(app 레이어 도구 헬퍼)는 entities에서 import할 수 없어 같은 규칙(오류 이름만)을 직접 쓴다.
         console.warn('[economy] treasury fresh read failed', {
             error: error instanceof Error ? error.name : typeof error,
         });

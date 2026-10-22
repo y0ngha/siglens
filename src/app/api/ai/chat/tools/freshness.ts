@@ -75,8 +75,8 @@ export function assessFreshness({
  * 붙이고 값을 살리지만(`assessFreshness`), 한국은 그런 값이 거의 항상 **다른 리스팅**이라 가격으로
  * 쓰지 않고 데이터 오류로 돌린다.
  *
- * 문턱은 {@link QUOTE_MAX_AGE_MS}(14일, 약 10거래일)를 공유한다 — KRX 연휴 클러스터(최대 약 8일)는
- * 걸리지 않는다. 한국 종목(`kr-equity`)에만 적용한다 — 기준 시각이 없으면 판정하지 않는다.
+ * 문턱은 {@link QUOTE_MAX_AGE_MS}를 공유한다(값과 KRX 연휴를 넘지 않는 근거는 그 상수의 JSDoc).
+ * 한국 종목(`kr-equity`)에만 적용한다 — 기준 시각이 없으면 판정하지 않는다.
  */
 export function staleKrListingDate(
     profile: MarketProfileId,

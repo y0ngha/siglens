@@ -26,6 +26,95 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function isKrSymbolString(value: unknown): value is string {
+    return typeof value === 'string' && isKrEquitySymbol(value);
+}
+
+/** 단일 `symbol` 인자의 교정 한 건. */
+export interface SingleSymbolCorrection {
+    from: string;
+    to: string;
+}
+
+/** 목록 `symbols` 인자의 교정 — 교정된 전체 목록과 바뀐 항목만. */
+export interface SymbolListCorrection {
+    symbols: unknown[];
+    corrections: { from: string; to: string }[];
+}
+
+/** 원래 심볼과 마스터가 고른 심볼 → 바뀌었으면 교정 한 건, 대소문자만 다르거나 같으면 `null`. */
+export function singleSymbolCorrection(
+    from: string,
+    to: string
+): SingleSymbolCorrection | null {
+    return to === from.toUpperCase() ? null : { from, to };
+}
+
+/** 원래 목록과 교정된 목록(같은 길이·순서) → 바뀐 항목이 있으면 교정, 없으면 `null`. */
+export function symbolListCorrection(
+    from: readonly unknown[],
+    to: readonly unknown[]
+): SymbolListCorrection | null {
+    const corrections = from.flatMap((original, i) => {
+        const corrected = to[i];
+        return typeof original === 'string' &&
+            typeof corrected === 'string' &&
+            corrected !== original.toUpperCase()
+            ? [{ from: original, to: corrected }]
+            : [];
+    });
+    return corrections.length === 0 ? null : { symbols: [...to], corrections };
+}
+
+/** 교정 결과를 인자·결과 기록으로 접는다. 교정이 없으면 입력 인자 객체를 그대로 돌려준다. */
+export function applyKrSymbolCorrections(
+    args: Record<string, unknown>,
+    single: SingleSymbolCorrection | null,
+    list: SymbolListCorrection | null
+): KrSymbolCorrectionResult {
+    if (single === null && list === null) {
+        return { args, annotate: result => result };
+    }
+    return {
+        args: {
+            ...args,
+            ...(single ? { symbol: single.to } : {}),
+            ...(list ? { symbols: list.symbols } : {}),
+        },
+        annotate: result =>
+            isPlainObject(result)
+                ? {
+                      ...(single ? { symbolCorrectedFrom: single.from } : {}),
+                      ...(list ? { symbolCorrections: list.corrections } : {}),
+                      ...result,
+                  }
+                : result,
+    };
+}
+
+async function correctSingleArg(
+    args: Record<string, unknown>,
+    toolName: string
+): Promise<SingleSymbolCorrection | null> {
+    const symbol = args.symbol;
+    if (!isKrSymbolString(symbol)) return null;
+    return singleSymbolCorrection(symbol, await correctOne(symbol, toolName));
+}
+
+async function correctListArg(
+    args: Record<string, unknown>,
+    toolName: string
+): Promise<SymbolListCorrection | null> {
+    const list = args.symbols;
+    if (!Array.isArray(list) || !list.some(isKrSymbolString)) return null;
+    const corrected = await Promise.all(
+        list.map(s =>
+            isKrSymbolString(s) ? correctOne(s, toolName) : Promise.resolve(s)
+        )
+    );
+    return symbolListCorrection(list, corrected);
+}
+
 /**
  * 도구 인자의 한국 종목 심볼(`symbol`, `symbols[]`) 접미사를 `korean_tickers` 마스터로 교정한다.
  *
@@ -39,65 +128,9 @@ export async function correctKrSymbolArgs(
     args: Record<string, unknown>,
     toolName: string
 ): Promise<KrSymbolCorrectionResult> {
-    const single =
-        typeof args.symbol === 'string' && isKrEquitySymbol(args.symbol)
-            ? args.symbol
-            : null;
-    const list = Array.isArray(args.symbols) ? args.symbols : null;
-    const listHasKr =
-        list?.some(s => typeof s === 'string' && isKrEquitySymbol(s)) ?? false;
-    if (single === null && !listHasKr) {
-        return { args, annotate: result => result };
-    }
-
-    const [correctedSingle, correctedList] = await Promise.all([
-        single === null ? Promise.resolve(null) : correctOne(single, toolName),
-        list === null || !listHasKr
-            ? Promise.resolve(null)
-            : Promise.all(
-                  list.map(s =>
-                      typeof s === 'string' && isKrEquitySymbol(s)
-                          ? correctOne(s, toolName)
-                          : Promise.resolve(s)
-                  )
-              ),
+    const [single, list] = await Promise.all([
+        correctSingleArg(args, toolName),
+        correctListArg(args, toolName),
     ]);
-
-    const singleChanged =
-        single !== null &&
-        correctedSingle !== null &&
-        correctedSingle !== single.toUpperCase();
-    const listCorrections =
-        list !== null && correctedList !== null
-            ? list.flatMap((from, i) => {
-                  const to = correctedList[i];
-                  return typeof from === 'string' &&
-                      typeof to === 'string' &&
-                      to !== from.toUpperCase()
-                      ? [{ from, to }]
-                      : [];
-              })
-            : [];
-    if (!singleChanged && listCorrections.length === 0) {
-        return { args, annotate: result => result };
-    }
-
-    const nextArgs: Record<string, unknown> = {
-        ...args,
-        ...(singleChanged ? { symbol: correctedSingle } : {}),
-        ...(listCorrections.length > 0 ? { symbols: correctedList } : {}),
-    };
-    return {
-        args: nextArgs,
-        annotate: result =>
-            isPlainObject(result)
-                ? {
-                      ...(singleChanged ? { symbolCorrectedFrom: single } : {}),
-                      ...(listCorrections.length > 0
-                          ? { symbolCorrections: listCorrections }
-                          : {}),
-                      ...result,
-                  }
-                : result,
-    };
+    return applyKrSymbolCorrections(args, single, list);
 }

@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { and, eq, inArray, ne } from 'drizzle-orm';
+import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import { assetTranslations, koreanTickers } from '../src/shared/db/schema';
 import {
     describeTarget,
@@ -98,24 +98,25 @@ async function run(): Promise<void> {
                 .delete(assetTranslations)
                 .where(inArray(assetTranslations.symbol, plan.mismatched))
                 .returning({ symbol: assetTranslations.symbol });
-            // 조회와 삭제 사이에 다른 경로가 이름을 다시 썼으면 지우지 않도록 영문명을 다시 건다.
-            let tickers = 0;
-            for (const symbol of korean.orphaned) {
-                const removed = await tx
-                    .delete(koreanTickers)
-                    .where(
-                        and(
-                            eq(koreanTickers.symbol, symbol),
-                            eq(
-                                koreanTickers.name,
-                                badNameBySymbol.get(symbol) ?? ''
-                            )
-                        )
-                    )
-                    .returning({ symbol: koreanTickers.symbol });
-                tickers += removed.length;
-            }
-            return { translations: translations.length, tickers };
+            // 조회와 삭제 사이에 다른 경로가 이름을 다시 썼으면 지우지 않도록 (심볼, 잘못된 영문명) 쌍을
+            // 다시 건다. 쌍 전체를 한 DELETE 문의 OR로 묶어 루프·순차 await가 없다.
+            const orphanPairs = korean.orphaned.map(symbol =>
+                and(
+                    eq(koreanTickers.symbol, symbol),
+                    eq(koreanTickers.name, badNameBySymbol.get(symbol) ?? '')
+                )
+            );
+            const tickers =
+                orphanPairs.length === 0
+                    ? []
+                    : await tx
+                          .delete(koreanTickers)
+                          .where(or(...orphanPairs))
+                          .returning({ symbol: koreanTickers.symbol });
+            return {
+                translations: translations.length,
+                tickers: tickers.length,
+            };
         });
         console.log(
             JSON.stringify({

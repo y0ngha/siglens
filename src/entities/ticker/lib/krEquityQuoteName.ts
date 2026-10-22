@@ -52,7 +52,7 @@ export async function fetchKrEquityQuoteName(
  *
  * **두 조건을 함께 본다.** `quoteType`만 보면 yahoo가 펀드로 분류한 살아 있는 상품까지 404가 되고,
  * 나이만 보면 장기 거래정지 종목이 첫 방문에 404가 된다. 둘이 겹치는 경우만 죽은 리스팅이다.
- * 문턱은 에이전트 도구와 같은 {@link QUOTE_MAX_AGE_MS}(14일, KRX 연휴 클러스터는 약 8일)를 공유한다 —
+ * 문턱은 에이전트 도구와 같은 {@link QUOTE_MAX_AGE_MS}를 공유한다(값의 근거는 그 상수의 JSDoc) —
  * 도구가 시세를 `stale_listing`으로 거부하는 리스팅과 여기서 미상장으로 보는 리스팅의 경계가 같아야 한다.
  */
 function isDeadFundListing(

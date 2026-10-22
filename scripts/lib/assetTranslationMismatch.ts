@@ -1,7 +1,5 @@
-import { toFmpSearchSymbol, toFmpSymbol } from '../../src/shared/lib/fmpSymbol';
-
 /**
- * `asset_translations`의 `symbol ↔ fmp_symbol` 매핑을 분류한다 — 정리 스크립트
+ * `asset_translations`의 `symbol ↔ fmp_symbol` 매핑 분류 — 정리 스크립트
  * (`scripts/cleanup-asset-translation-mismatches.ts`)의 순수 판정부.
  *
  * 왜 필요한가: `findExactUsMatch`가 예전에는 정확 일치가 없을 때 첫 US 검색 행으로
@@ -16,14 +14,24 @@ import { toFmpSearchSymbol, toFmpSymbol } from '../../src/shared/lib/fmpSymbol';
  *     `toFmpSearchSymbol`, 데이터 경로의 `toFmpSymbol` 중 하나와 같으면 정당하다.
  *   - `index`: `^`로 시작하는 공급자 심볼(`SPX→^SPX`). 지수 행은 `filterUsExchanges`가
  *     거르므로 옛 폴백이 만들 수 없는 모양이다 — 사람이 넣었거나 별칭 경로가 만든 행이다.
- * 나머지 차이는 전부 `mismatch`(삭제 대상)다.
+ * 나머지 차이는 전부 `mismatch`(삭제 대상)다. 판정은 {@link classifyFmpSymbolMapping}.
  */
+import { toFmpSearchSymbol, toFmpSymbol } from '../../src/shared/lib/fmpSymbol';
+
+/** {@link classifyFmpSymbolMapping}의 판정 결과. `mismatch`만 삭제 대상이다. */
 export type FmpSymbolMappingKind =
     | 'same'
     | 'class-share'
     | 'index'
     | 'mismatch';
 
+/**
+ * 저장된 `symbol → fmp_symbol` 매핑 한 건을 분류한다.
+ *
+ * 같으면 `same`, `^`로 시작하면 `index`, 클래스 주식 정규화(`toFmpSearchSymbol`·`toFmpSymbol` 중 하나의
+ * 결과와 같음)면 `class-share`, 그 밖의 차이는 옛 폴백이 다른 종목에 묶은 `mismatch`다. 순서가 의미를 가진다 —
+ * `^` 검사가 정규화보다 먼저라 지수 매핑이 정규화 비교로 새지 않는다.
+ */
 export function classifyFmpSymbolMapping(
     symbol: string,
     fmpSymbol: string

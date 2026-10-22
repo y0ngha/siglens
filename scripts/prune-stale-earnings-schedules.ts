@@ -1,7 +1,7 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { sql } from 'drizzle-orm';
-import * as schema from '../src/shared/db/schema';
+import { and, eq, gte, isNull, or } from 'drizzle-orm';
+import { earningsReports } from '../src/shared/db/schema';
 import { kstDateKey } from '../src/shared/lib/etTimeUtils';
 import { guardRemoteWrite, readDatabaseUrl } from '../db/scripts/lib/dbTarget';
 import {
@@ -28,6 +28,15 @@ import {
  * 삭제 문은 키 `(symbol, earnings_date)`에 더해 "실적 미발표" 조건을 다시 건다 — 조회와
  * 삭제 사이에 실적이 채워진 행은 지우지 않는다.
  */
+/** 기준일 이후·실적 미발표 행. 조회와 삭제가 같은 조건을 건다(삭제 직전에 실적이 채워진 행은 남는다). */
+function unreportedFrom(today: string) {
+    return and(
+        gte(earningsReports.earningsDate, today),
+        isNull(earningsReports.epsActual),
+        isNull(earningsReports.revenueActual)
+    );
+}
+
 const apply = process.argv.includes('--apply');
 const { databaseUrl } = readDatabaseUrl();
 
@@ -40,23 +49,18 @@ async function run(): Promise<void> {
 
     const client = postgres(databaseUrl, { max: 1 });
     try {
-        const db = drizzle(client, { schema });
+        const db = drizzle(client);
         const today = kstDateKey(new Date());
-        const raw = (await db.execute(sql`
-            SELECT symbol, earnings_date::text AS earnings_date, fetched_at
-            FROM earnings_reports
-            WHERE earnings_date >= ${today}::date
-              AND eps_actual IS NULL
-              AND revenue_actual IS NULL`)) as unknown as {
-            symbol: string;
-            earnings_date: string;
-            fetched_at: Date | string;
-        }[];
-        const rows: UpcomingEarningsRow[] = raw.map(r => ({
-            symbol: r.symbol,
-            earningsDate: r.earnings_date,
-            fetchedAt: new Date(r.fetched_at),
-        }));
+        // 쿼리 빌더로 읽어 열 타입(`earnings_date`는 date 문자열 모드, `fetched_at`은 Date)이 스키마에서
+        // 나온다 — 원시 SQL 결과를 단언할 필요가 없다.
+        const rows: UpcomingEarningsRow[] = await db
+            .select({
+                symbol: earningsReports.symbol,
+                earningsDate: earningsReports.earningsDate,
+                fetchedAt: earningsReports.fetchedAt,
+            })
+            .from(earningsReports)
+            .where(unreportedFrom(today));
 
         const selection = selectStaleSchedules(rows);
         console.log(
@@ -70,22 +74,37 @@ async function run(): Promise<void> {
         );
         if (!apply || selection.stale.length === 0) return;
 
-        let deleted = 0;
-        for (const chunk of chunkRows(
-            selection.stale,
-            STALE_SCHEDULE_DELETE_CHUNK_SIZE
-        )) {
-            const keys = sql.join(
-                chunk.map(r => sql`(${r.symbol}, ${r.earningsDate}::date)`),
-                sql`, `
-            );
-            const result = await db.execute(sql`
-                DELETE FROM earnings_reports
-                WHERE (symbol, earnings_date) IN (${keys})
-                  AND eps_actual IS NULL
-                  AND revenue_actual IS NULL`);
-            deleted += (result as unknown as { count?: number }).count ?? 0;
-        }
+        // 청크마다 DELETE 한 문. `max: 1` 커넥션이라 postgres-js가 문을 차례로 보낸다 — `Promise.all`은
+        // 동시 실행이 아니라 대기열이다. `.returning`으로 실제로 지운 행을 세므로 "0건"과 "알 수 없음"이
+        // 섞이지 않는다(드라이버의 `count` 필드에 기대지 않는다).
+        const removed = await Promise.all(
+            chunkRows(selection.stale, STALE_SCHEDULE_DELETE_CHUNK_SIZE).map(
+                chunk =>
+                    db
+                        .delete(earningsReports)
+                        .where(
+                            and(
+                                or(
+                                    ...chunk.map(r =>
+                                        and(
+                                            eq(
+                                                earningsReports.symbol,
+                                                r.symbol
+                                            ),
+                                            eq(
+                                                earningsReports.earningsDate,
+                                                r.earningsDate
+                                            )
+                                        )
+                                    )
+                                ),
+                                unreportedFrom(today)
+                            )
+                        )
+                        .returning({ symbol: earningsReports.symbol })
+            )
+        );
+        const deleted = removed.reduce((sum, rows) => sum + rows.length, 0);
         console.log(JSON.stringify({ deletedRows: deleted }));
     } finally {
         await client.end();
