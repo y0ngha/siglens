@@ -4,7 +4,8 @@
  *
  * 왜 생기나: 실적 행의 키는 `(symbol, earnings_date)`이고 upsert는 행을 지우지 않는다.
  * 회사가 예정일을 옮기면(COP: 10-29 → 11-05) 새 날짜 행이 추가되고 옛 날짜 행이 실적
- * 미발표 상태로 남는다. 2026-10 실측에서 1,172개 심볼이 미래 미발표 행을 2개 이상 가졌다.
+ * 미발표 상태로 남는다. 2026-10 실측에서 1,172개 심볼이 미래 미발표 행을 2개 이상 가졌다(다시 세려면
+ * `yarn db:prune:stale-earnings` dry-run의 `symbolsWithMultiple`).
  * 수집 경로는 이제 갱신 때 정리하지만(`pruneSupersededUpcoming`), 이미 쌓인 행은 이
  * 스크립트로 한 번 치운다.
  *
@@ -35,26 +36,21 @@ export interface StaleScheduleSelection {
 export function selectStaleSchedules(
     rows: readonly UpcomingEarningsRow[]
 ): StaleScheduleSelection {
-    const bySymbol = Map.groupBy(rows, row => row.symbol);
-    const stale: UpcomingEarningsRow[] = [];
-    let symbolsWithMultiple = 0;
-    let symbolsAffected = 0;
-
-    for (const group of bySymbol.values()) {
-        if (group.length < 2) continue;
-        symbolsWithMultiple += 1;
-        const latest = Math.max(...group.map(r => r.fetchedAt.getTime()));
-        const superseded = group.filter(r => r.fetchedAt.getTime() < latest);
-        if (superseded.length === 0) continue;
-        symbolsAffected += 1;
-        stale.push(...superseded);
-    }
+    const multiGroups = [
+        ...Map.groupBy(rows, row => row.symbol).values(),
+    ].filter(group => group.length >= 2);
+    const supersededGroups = multiGroups
+        .map(group => {
+            const latest = Math.max(...group.map(r => r.fetchedAt.getTime()));
+            return group.filter(r => r.fetchedAt.getTime() < latest);
+        })
+        .filter(superseded => superseded.length > 0);
 
     return {
         scannedRows: rows.length,
-        symbolsWithMultiple,
-        symbolsAffected,
-        stale,
+        symbolsWithMultiple: multiGroups.length,
+        symbolsAffected: supersededGroups.length,
+        stale: supersededGroups.flat(),
     };
 }
 
@@ -62,9 +58,7 @@ export function selectStaleSchedules(
 export const STALE_SCHEDULE_DELETE_CHUNK_SIZE = 500;
 
 export function chunkRows<T>(rows: readonly T[], size: number): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < rows.length; i += size) {
-        chunks.push(rows.slice(i, i + size));
-    }
-    return chunks;
+    return Array.from({ length: Math.ceil(rows.length / size) }, (_, i) =>
+        rows.slice(i * size, (i + 1) * size)
+    );
 }

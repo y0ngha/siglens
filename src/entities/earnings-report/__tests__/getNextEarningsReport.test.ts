@@ -94,6 +94,31 @@ describe('getNextEarningsReport', () => {
         vi.restoreAllMocks();
     });
 
+    it('한국 종목에 추정 실적일(yahoo isEstimate)만 있으면 분석 경로는 다음 실적일 없음(null)으로 받고, 에이전트 경로는 추정 표시와 함께 받는다', async () => {
+        getLatestFetchedAt.mockResolvedValue(new Date(Date.now() - 1000));
+        const estimated = {
+            symbol: '005930.KS',
+            earningsDate: '2026-07-30',
+            epsActual: null,
+            epsEstimated: null,
+            revenueActual: null,
+            revenueEstimated: null,
+            lastUpdated: '2026-05-25',
+            dateConfirmed: false,
+        };
+        vi.spyOn(
+            DrizzleEarningsReportsRepository.prototype,
+            'getNextScheduleForSymbol'
+        ).mockResolvedValue(estimated);
+
+        await expect(
+            getNextEarningsReport('005930.KS', fakeDb)
+        ).resolves.toBeNull();
+        await expect(
+            getNextEarningsSchedule('005930.KS', fakeDb)
+        ).resolves.toEqual(estimated);
+    });
+
     it('fresh data skips FMP call and returns next earnings from DB', async () => {
         // fetchedAt within 24 hours → not stale
         getLatestFetchedAt.mockResolvedValue(new Date(Date.now() - 1000));

@@ -79,6 +79,21 @@ interface EarningsDateCertainty {
     earningsDateNote: string;
 }
 
+const SESSION_TIMING_NOT_PROVIDED =
+    'Session timing (before/after market) is not provided.';
+
+/** 확정 여부 3상태(`true`·`false`·모름) → 모델에게 보여 줄 안내 문장. */
+export function earningsDateNoteFor(confirmed: boolean | null): string {
+    switch (confirmed) {
+        case true:
+            return `Date confirmed by the provider. ${SESSION_TIMING_NOT_PROVIDED}`;
+        case false:
+            return `Provider marks this date as an estimate; it may move. ${SESSION_TIMING_NOT_PROVIDED}`;
+        case null:
+            return `Provider gives no confirmation flag, so treat this as a scheduled date that may move. ${SESSION_TIMING_NOT_PROVIDED}`;
+    }
+}
+
 export function earningsDateCertainty(
     earnings: Pick<NextEarningsSchedule, 'dateConfirmed'> | null
 ): Partial<EarningsDateCertainty> {
@@ -86,12 +101,7 @@ export function earningsDateCertainty(
     const confirmed = earnings.dateConfirmed ?? null;
     return {
         earningsDateConfirmed: confirmed,
-        earningsDateNote:
-            confirmed === true
-                ? 'Date confirmed by the provider. Session timing (before/after market) is not provided.'
-                : confirmed === false
-                  ? 'Provider marks this date as an estimate; it may move. Session timing (before/after market) is not provided.'
-                  : 'Provider gives no confirmation flag, so treat this as a scheduled date that may move. Session timing (before/after market) is not provided.',
+        earningsDateNote: earningsDateNoteFor(confirmed),
     };
 }
 
@@ -214,11 +224,13 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             : quote.timestamp * MS_PER_SECOND,
         Date.now()
     );
+    // `error` 코드로 낸다(형제 도구 `get_bars_indicators`·`get_quote`와 같은 형태) — 공개 API가 이 코드를
+    // 404로 매핑한다(`executePublicTool` `TOOL_ERROR_MAPPING`). `reason`으로 내면 200으로 나간다.
     if (lastTradeDate !== null)
         return {
             symbol,
             available: false,
-            reason: 'stale_listing',
+            error: 'stale_listing',
             lastTradeDate,
         };
     // A failed lookup is `null` (rejections are settled to `null` above);

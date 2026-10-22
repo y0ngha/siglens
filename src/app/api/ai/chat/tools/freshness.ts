@@ -1,3 +1,4 @@
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
@@ -66,11 +67,11 @@ export function assessFreshness({
 }
 
 /**
- * 한국 종목 리스팅이 **죽은 리스팅**이면 마지막 거래일(`YYYY-MM-DD`, UTC)을, 아니면 `null`을 돌려준다.
+ * 한국 종목 리스팅이 **죽은 리스팅**이면 마지막 거래일(`YYYY-MM-DD`, KST)을, 아니면 `null`을 돌려준다.
  *
  * yahoo는 거래가 멈춘 리스팅을 지우지 않는다. 실측(2026-10-22): `253450.KS`는 2024-07-19에 멈춘
  * MUTUALFUND 리스팅인데 시세를 그대로 돌려줬고, 실제 종목은 `253450.KQ`다. 접미사를 잘못 고른
- * 호출이 2년 묵은 가격을 "오늘 시세"로 내보냈다. 미국 경로는 같은 나이의 시세에 `stale` 표시만
+ * 호출이 2년 묵은 가격을 "오늘 시세"로 내보냈다(다시 보려면 yahoo `quote('253450.KS')`의 `regularMarketTime`). 미국 경로는 같은 나이의 시세에 `stale` 표시만
  * 붙이고 값을 살리지만(`assessFreshness`), 한국은 그런 값이 거의 항상 **다른 리스팅**이라 가격으로
  * 쓰지 않고 데이터 오류로 돌린다.
  *
@@ -84,7 +85,9 @@ export function staleKrListingDate(
 ): string | null {
     if (profile !== 'kr-equity') return null;
     if (asOfMs === undefined || !Number.isFinite(asOfMs)) return null;
+    // KST 달력 날짜로 낸다. yahoo 한국 일봉은 UTC 자정(= 09:00 KST)에 찍혀 UTC 날짜와 같지만, KST 자정
+    // (= 전날 15:00 UTC)으로 찍힌 시각이 들어와도 하루 이른 날짜가 나가지 않게 한다.
     return nowMs - asOfMs > QUOTE_MAX_AGE_MS
-        ? new Date(asOfMs).toISOString().slice(0, 10)
+        ? kstDateKey(new Date(asOfMs))
         : null;
 }

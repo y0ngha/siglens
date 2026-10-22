@@ -171,17 +171,19 @@ export function quarterlyTtmNetIncome(
 ): number | undefined {
     const recent = rows.slice(0, 4);
     if (recent.length < 4) return undefined;
-    const values = recent.map(quarterNetIncome);
-    if (values.some(v => v === undefined || !Number.isFinite(v))) {
-        return undefined;
-    }
+    // 유한한 값만 모아 개수로 비교한다 — 한 분기라도 비면 4분기 합이 아니다.
+    const values = recent.flatMap(row => {
+        const v = quarterNetIncome(row);
+        return v !== undefined && Number.isFinite(v) ? [v] : [];
+    });
+    if (values.length < recent.length) return undefined;
     const newest = recent[0]!.date;
     const oldest = recent[3]!.date;
     if (newest instanceof Date && oldest instanceof Date) {
         const spanDays = (newest.getTime() - oldest.getTime()) / MS_PER_DAY;
         if (spanDays > TTM_QUARTER_SPAN_MAX_DAYS) return undefined;
     }
-    return (values as number[]).reduce((sum, v) => sum + v, 0);
+    return values.reduce((sum, v) => sum + v, 0);
 }
 
 /** 재무제표(연간 손익·분기 손익·분기 재무상태표) 중 가장 최근 기간 말. */
@@ -201,6 +203,8 @@ function latestStatementDate(data: YahooFundamentals): number | undefined {
  * (4,978만 원)·`totalRevenue`·`profitMargins`·ROE가 전부 2022년 값이었다. 그 순이익으로 PER이
  * 12,249배가 나왔다(최근 4분기 합으로는 약 124배, 네이버 112.77배). 같은 시점의 재무제표는 최신
  * 분기까지 있으므로 둘의 차이로 판정한다. 둘 중 하나라도 없으면 판정하지 않는다(멈추지 않은 것으로 본다).
+ * (다시 보려면 yahoo `quoteSummary('033790.KQ')`의 `defaultKeyStatistics.lastFiscalYearEnd`·`netIncomeToCommon`을
+ * `fundamentalsTimeSeries`의 분기 `netIncomeCommonStockholders` 최근 4개 합과 비교한다.)
  */
 export function isSummaryStale(data: YahooFundamentals): boolean {
     const fiscalYearEnd = data.summary?.defaultKeyStatistics?.lastFiscalYearEnd;

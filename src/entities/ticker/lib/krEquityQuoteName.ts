@@ -47,7 +47,8 @@ export async function fetchKrEquityQuoteName(
 /**
  * 거래가 멈춘 펀드 리스팅이면 "그런 종목이 없다"로 본다 — 같은 코드의 다른 시장 접미사에 남은 죽은
  * 리스팅이다. 실측(2026-10-22): `253450.KS`는 2024-07-19에 멈춘 `MUTUALFUND`이고 실제 종목은
- * `253450.KQ`다. 이 함수가 이름을 주면 `getAssetInfo`가 그 리스팅을 종목으로 굳힌다.
+ * `253450.KQ`다(다시 보려면 yahoo `quote('253450.KS')`의 `quoteType`·`regularMarketTime`). 이 함수가 이름을
+ * 주면 `getAssetInfo`가 그 리스팅을 종목으로 굳힌다.
  *
  * **두 조건을 함께 본다.** `quoteType`만 보면 yahoo가 펀드로 분류한 살아 있는 상품까지 404가 되고,
  * 나이만 보면 장기 거래정지 종목이 첫 방문에 404가 된다. 둘이 겹치는 경우만 죽은 리스팅이다.

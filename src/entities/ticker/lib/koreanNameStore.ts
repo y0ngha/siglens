@@ -393,7 +393,8 @@ export async function lookupTickerDisplayNames(
  *
  * yahoo는 다른 시장의 같은 코드에 죽은 리스팅을 남겨 둔다. 실측(2026-10-22): `253450.KS`는
  * 2024-07-19에 멈춘 MUTUALFUND 리스팅이고 실제 종목(스튜디오드래곤)은 `253450.KQ`다. 모델이 접미사를
- * 잘못 고르면 그 리스팅의 2년 묵은 가격이 "오늘 시세"로 나갔다.
+ * 잘못 고르면 그 리스팅의 2년 묵은 가격이 "오늘 시세"로 나갔다. (다시 보려면 yahoo `quote('253450.KS')`의
+ * `quoteType`·`regularMarketTime`을 `253450.KQ`와 비교한다.)
  *
  * 마스터는 공공데이터포털 시드(KOSPI→`.KS`, KOSDAQ→`.KQ`, `toKoreanTickerRows`)다. 요청 심볼의 행이
  * **없고** 다른 접미사의 행이 있을 때만 바꾼다 — 요청 심볼의 행이 있으면(상폐 표시가 있어도) 그대로

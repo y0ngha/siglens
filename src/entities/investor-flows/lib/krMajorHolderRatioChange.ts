@@ -17,8 +17,13 @@ function roundRatio(value: number): number {
 function receiptOrder(a: KrMajorHolderReport, b: KrMajorHolderReport): number {
     return (
         compareIsoDate(a.receiptDate, b.receiptDate) ||
-        (a.url < b.url ? -1 : a.url > b.url ? 1 : 0)
+        compareCodeUnits(a.url, b.url)
     );
+}
+
+/** 코드 단위 사전순 비교(-1/0/1). `localeCompare`는 로케일마다 순서가 달라 접수번호 정렬에 쓰지 않는다. */
+function compareCodeUnits(a: string, b: string): number {
+    return Number(a > b) - Number(a < b);
 }
 
 /** core `krMajorHolderAxis`와 같은 보고자 동일성 규칙(trim + 소문자). */

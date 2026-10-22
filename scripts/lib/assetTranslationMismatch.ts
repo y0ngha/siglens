@@ -6,7 +6,8 @@ import { toFmpSearchSymbol, toFmpSymbol } from '../../src/shared/lib/fmpSymbol';
  *
  * 왜 필요한가: `findExactUsMatch`가 예전에는 정확 일치가 없을 때 첫 US 검색 행으로
  * 폴백했고, 그 매핑이 영구 저장됐다(2026-10 실측: `VIX→VIXM`, `APPL→APPLX`,
- * `AST→ASTI` 등 `symbol <> fmp_symbol` 약 184행). 폴백은 고쳤지만 저장된 행은 읽기
+ * `AST→ASTI` 등 `symbol <> fmp_symbol` 약 184행 — 다시 세려면
+ * `yarn db:cleanup:asset-translations` dry-run의 `differing`·`mismatched`). 폴백은 고쳤지만 저장된 행은 읽기
  * 경로가 DB를 먼저 보므로 스스로 고쳐지지 않는다. 잘못된 행을 지우면 다음 방문 때
  * 새 규칙(정확 일치만)으로 다시 해석된다.
  *
@@ -55,20 +56,18 @@ export interface AssetTranslationCleanupPlan {
 export function planAssetTranslationCleanup(
     rows: readonly AssetTranslationMappingRow[]
 ): AssetTranslationCleanupPlan {
-    let classShare = 0;
-    let index = 0;
-    const mismatched: string[] = [];
-    for (const row of rows) {
-        const kind = classifyFmpSymbolMapping(row.symbol, row.fmpSymbol);
-        if (kind === 'class-share') classShare += 1;
-        else if (kind === 'index') index += 1;
-        else if (kind === 'mismatch') mismatched.push(row.symbol);
-    }
+    const kinds = rows.map(row => ({
+        symbol: row.symbol,
+        kind: classifyFmpSymbolMapping(row.symbol, row.fmpSymbol),
+    }));
     return {
         scanned: rows.length,
-        classShare,
-        index,
-        mismatched: mismatched.sort(),
+        classShare: kinds.filter(k => k.kind === 'class-share').length,
+        index: kinds.filter(k => k.kind === 'index').length,
+        mismatched: kinds
+            .filter(k => k.kind === 'mismatch')
+            .map(k => k.symbol)
+            .toSorted(),
     };
 }
 
@@ -100,13 +99,14 @@ export function planOrphanedKoreanTickers(
     const badNameBySymbol = new Map(
         mismatchedTranslations.map(row => [row.symbol, row.name])
     );
-    const orphaned: string[] = [];
-    let keptDifferentName = 0;
-    for (const row of koreanTickerRows) {
-        const badName = badNameBySymbol.get(row.symbol);
-        if (badName === undefined) continue;
-        if (row.name === badName) orphaned.push(row.symbol);
-        else keptDifferentName += 1;
-    }
-    return { orphaned: orphaned.sort(), keptDifferentName };
+    const candidates = koreanTickerRows.filter(row =>
+        badNameBySymbol.has(row.symbol)
+    );
+    const orphaned = candidates.filter(
+        row => row.name === badNameBySymbol.get(row.symbol)
+    );
+    return {
+        orphaned: orphaned.map(row => row.symbol).toSorted(),
+        keptDifferentName: candidates.length - orphaned.length,
+    };
 }

@@ -83,6 +83,18 @@ describe('assessFreshness 함수는', () => {
 });
 
 describe('staleKrListingDate 함수는', () => {
+    it('마지막 거래일은 KST 달력 날짜다 — KST 자정(전날 15:00 UTC)에 찍힌 봉도 하루 이르게 나가지 않는다', () => {
+        // 2024-07-19 00:00 KST = 2024-07-18T15:00Z
+        const kstMidnight = Date.UTC(2024, 6, 18, 15, 0);
+        expect(staleKrListingDate('kr-equity', kstMidnight, NOW)).toBe(
+            '2024-07-19'
+        );
+        // yahoo 한국 일봉의 실제 찍힘(UTC 자정 = 09:00 KST)도 같은 날짜다.
+        expect(
+            staleKrListingDate('kr-equity', Date.UTC(2024, 6, 19), NOW)
+        ).toBe('2024-07-19');
+    });
+
     it('14일을 넘긴 한국 리스팅은 마지막 거래일을 돌려준다', () => {
         const lastTrade = Date.UTC(2024, 6, 19, 6, 30);
         expect(staleKrListingDate('kr-equity', lastTrade, NOW)).toBe(

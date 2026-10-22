@@ -57,6 +57,7 @@ vi.mock('@/shared/db/client', () => ({
 
 import {
     daysUntil,
+    earningsDateNoteFor,
     getFundamentalsTool,
 } from '@/app/api/ai/chat/tools/getFundamentals';
 import {
@@ -186,7 +187,7 @@ describe('getFundamentalsTool', () => {
         expect(r).toEqual({
             symbol: '253450.KS',
             available: false,
-            reason: 'stale_listing',
+            error: 'stale_listing',
             lastTradeDate: '2024-07-19',
         });
     });
@@ -599,5 +600,23 @@ describe('펀더멘털 나이 표기', () => {
         expect(r.cachedSectionsMaxAgeHours).toBe(
             FMP_FUNDAMENTAL_CACHE_TTL_SECONDS / SECONDS_PER_HOUR
         );
+    });
+});
+
+describe('earningsDateNoteFor', () => {
+    it('확정이면 확정이라고 말한다', () => {
+        expect(earningsDateNoteFor(true)).toMatch(/^Date confirmed/);
+    });
+    it('추정이면 바뀔 수 있다고 말한다', () => {
+        expect(earningsDateNoteFor(false)).toMatch(/estimate; it may move/);
+    });
+    it('확정 여부를 모르면 예정일로 다루라고 말한다', () => {
+        expect(earningsDateNoteFor(null)).toMatch(/no confirmation flag/);
+    });
+    it('세 경우 모두 발표 시각이 없다고 밝힌다', () => {
+        for (const confirmed of [true, false, null])
+            expect(earningsDateNoteFor(confirmed)).toContain(
+                'Session timing (before/after market) is not provided.'
+            );
     });
 });

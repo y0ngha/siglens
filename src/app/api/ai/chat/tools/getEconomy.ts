@@ -15,6 +15,7 @@ import { fmpCalendarDateTimeToIso } from '@/shared/lib/etTimeUtils';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { ppDelta } from './percent';
+import { logToolDegrade } from './logToolDegrade';
 
 const CALENDAR_WINDOW_DAYS = 7;
 /** Defensive cap — bounds the payload even if an unusually event-dense week slips past the 7-day filter. */
@@ -52,7 +53,7 @@ function pickTreasury(
 }
 
 /**
- * `treasury` + the 2s10s spread/inversion flag (spec §3.6, audit B8) — `computeYieldSpread` is core's own rule, reused rather than reimplemented.
+ * `treasury` + the 2s10s spread and an inversion flag, so the model reads the curve shape instead of subtracting yields itself — `computeYieldSpread` is core's own rule, reused rather than reimplemented.
  *
  * `date` is the rate's as-of date (the provider's row date). `fetchedAt` is when
  * the same-day read hit the provider; `null` means the value came from the
@@ -95,7 +96,10 @@ function treasuryView(
 export const getEconomyTool: ToolExecutor = async () => {
     // `getFreshTreasuryRates` never rejects (degrades to `null`).
     const [snapshot, freshTreasury] = await Promise.all([
-        getEconomySnapshotStatic().catch(() => null),
+        getEconomySnapshotStatic().catch((error: unknown) => {
+            logToolDegrade('get_economy', 'economy snapshot', error);
+            return null;
+        }),
         getFreshTreasuryRates(),
     ]);
     if (!snapshot) return { available: false, reason: 'snapshot_unavailable' };
@@ -105,7 +109,10 @@ export const getEconomyTool: ToolExecutor = async () => {
         macroBriefingDayKey()
     )
         .then(entry => entry?.briefing ?? null)
-        .catch(() => null);
+        .catch((error: unknown) => {
+            logToolDegrade('get_economy', 'macro briefing', error);
+            return null;
+        });
 
     const now = Date.now();
     const windowEnd = now + CALENDAR_WINDOW_DAYS * MS_PER_DAY;

@@ -111,9 +111,30 @@ export function upcomingUnreportedDates(
 
 /** yahoo 어댑터가 남긴 `rawPayload.isEstimate`를 확정 여부로 바꾼다. 플래그가 없으면 `null`(모름). */
 export function dateConfirmedFromPayload(rawPayload: unknown): boolean | null {
-    if (rawPayload === null || typeof rawPayload !== 'object') return null;
-    const flag = (rawPayload as Record<string, unknown>).isEstimate;
+    if (
+        rawPayload === null ||
+        typeof rawPayload !== 'object' ||
+        !('isEstimate' in rawPayload)
+    ) {
+        return null;
+    }
+    const flag = rawPayload.isEstimate;
     return typeof flag === 'boolean' ? !flag : null;
+}
+
+/** core에 넘기는 `EarningsCalendarItem` 필드만 고른다 — 확정 여부(`dateConfirmed`)는 core 계약에 없다. */
+export function toCalendarItem(
+    schedule: NextEarningsSchedule
+): EarningsCalendarItem {
+    return {
+        symbol: schedule.symbol,
+        earningsDate: schedule.earningsDate,
+        epsActual: schedule.epsActual,
+        epsEstimated: schedule.epsEstimated,
+        revenueActual: schedule.revenueActual,
+        revenueEstimated: schedule.revenueEstimated,
+        lastUpdated: schedule.lastUpdated,
+    };
 }
 
 export class DrizzleEarningsReportsRepository {
@@ -198,8 +219,7 @@ export class DrizzleEarningsReportsRepository {
     ): Promise<EarningsCalendarItem | null> {
         const schedule = await this.getNextScheduleForSymbol(symbol, fromDate);
         if (schedule === null || schedule.dateConfirmed === false) return null;
-        const { dateConfirmed: _dateConfirmed, ...item } = schedule;
-        return item;
+        return toCalendarItem(schedule);
     }
 
     /**

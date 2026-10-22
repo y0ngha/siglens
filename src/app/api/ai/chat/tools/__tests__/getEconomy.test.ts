@@ -41,9 +41,20 @@ describe('getEconomyTool', () => {
         vi.useRealTimers();
     });
 
-    it('스냅샷이 없으면 available:false', async () => {
-        snapshot.mockRejectedValue(new Error('redis down'));
+    it('스냅샷이 없으면 available:false, 실패는 오류 이름만 남긴다', async () => {
+        const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const error = new Error('redis down: secret detail');
+        error.name = 'UpstashError';
+        snapshot.mockRejectedValue(error);
         const r = await getEconomyTool({}, ctx, rt);
+        expect(logged).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_economy',
+            'economy snapshot failed, degrading',
+            { errorName: 'UpstashError', code: undefined }
+        );
+        expect(JSON.stringify(logged.mock.calls)).not.toContain('secret');
+        logged.mockRestore();
         expect(r).toEqual({
             available: false,
             reason: 'snapshot_unavailable',
@@ -192,15 +203,23 @@ describe('getEconomyTool', () => {
             calendar: [],
         });
         briefing.mockRejectedValue(new Error('cache miss'));
+        const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
         const r = (await getEconomyTool({}, ctx, rt)) as {
             available: boolean;
             briefing: unknown;
         };
         expect(r.available).toBe(true);
         expect(r.briefing).toBeNull();
+        expect(logged).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_economy',
+            'macro briefing failed, degrading',
+            expect.objectContaining({ errorName: 'Error' })
+        );
+        logged.mockRestore();
     });
 
-    describe('indicator change/direction, treasury spread, calendar hoursUntil (spec §3.6, B8)', () => {
+    describe('indicator change/direction, treasury spread, calendar hoursUntil', () => {
         it('latest-previous로 change/direction을 계산한다', async () => {
             snapshot.mockResolvedValue({
                 indicators: [
