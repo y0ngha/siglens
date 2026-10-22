@@ -17,8 +17,6 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { AGENT_BUSY_LOG } from '../busyLog';
-import { isMemberCaller, loadPublicAnalysis } from './getCachedAnalysis';
-import { logToolDegrade } from './logToolDegrade';
 import { fitProse, type ProseSpec } from './fitProse';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
@@ -30,6 +28,8 @@ import {
     loadOverallHistoryInputs,
     loadTechnicalAnalysisInputs,
 } from './freshAnalysisInputs';
+import { isMemberCaller, loadPublicAnalysis } from './getCachedAnalysis';
+import { logToolDegrade } from './logToolDegrade';
 
 /**
  * Per-instance concurrency cap — distinct from core's per-turn cap. Each run
@@ -588,18 +588,39 @@ export const runFreshAnalysisTool: ToolExecutor = async (
         thrown = error;
         failureCode = 'thrown';
     }
+    // 끝난 요청이면 대신 답할 사람이 없다 — 공개 분석 조회 없이 원래 결과대로 끝낸다.
+    const abandon = (): unknown => {
+        if (failureCode === 'thrown') throw thrown;
+        return result;
+    };
     if (failureCode === undefined) return result;
-    const symbol = String(args.symbol).toUpperCase();
+    if (ctx.signal.aborted) return abandon();
+    const symbol =
+        typeof args.symbol === 'string' ? args.symbol.toUpperCase() : '';
+    if (!isAdmissibleSymbolShape(symbol)) return abandon();
     const timeframe =
         (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
-    const asset = await resolveAssetInfoOrNull(symbol, 'run_fresh_analysis');
-    const publicHit = await loadPublicAnalysis({
-        symbol,
-        tab: kind,
-        timeframe,
-        locale: ctx.locale,
-        fmpSymbol: asset?.fmpSymbol,
-    });
+    let publicHit: Awaited<ReturnType<typeof loadPublicAnalysis>> = null;
+    try {
+        const asset = await resolveAssetInfoOrNull(
+            symbol,
+            'run_fresh_analysis'
+        );
+        publicHit = await loadPublicAnalysis({
+            symbol,
+            tab: kind,
+            timeframe,
+            locale: ctx.locale,
+            fmpSymbol: asset?.fmpSymbol,
+        });
+    } catch (error) {
+        // 폴백 조회 실패가 원래 오류(busy·한도 초과·예외)를 덮지 않게 한다.
+        logToolDegrade(
+            'run_fresh_analysis',
+            'public analysis fallback lookup',
+            error
+        );
+    }
     if (publicHit === null) {
         if (failureCode === 'thrown') throw thrown;
         return result;

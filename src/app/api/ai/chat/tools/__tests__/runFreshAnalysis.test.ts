@@ -1221,6 +1221,39 @@ describe('runFreshAnalysisTool — 회원 실패 시 공개 분석 폴백', () =
         ).rejects.toThrow('provider exploded');
     });
 
+    it('회원 + 폴백 조회가 throw → 원래 오류 결과를 그대로 돌려준다', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const limit = {
+            status: 'error',
+            error: { code: 'analysis_limit_exceeded', message: 'limit' },
+        };
+        m.runAnalysis.mockResolvedValue(limit);
+        m.findBySymbol.mockRejectedValue(new Error('db down'));
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r.fallback).toBeUndefined();
+        expect(r).toMatchObject({ error: 'analysis_failed' });
+    });
+
+    it('회원 + 중단된 요청은 폴백 조회 없이 원래 예외를 던진다', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        const controller = new AbortController();
+        controller.abort();
+        m.runAnalysis.mockRejectedValue(new Error('aborted run'));
+        await expect(
+            runFreshAnalysisTool(
+                { symbol: 'AAPL', kind: 'technical' },
+                { ...ctx, signal: controller.signal },
+                rt
+            )
+        ).rejects.toThrow('aborted run');
+        expect(m.findBySymbol).not.toHaveBeenCalled();
+    });
+
     it('free 호출자 throw는 잡지 않고 그대로 던진다', async () => {
         m.runAnalysis.mockRejectedValue(new Error('provider exploded'));
         await expect(
