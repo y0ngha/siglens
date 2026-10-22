@@ -22,15 +22,13 @@ describe('GuideDemoChart', () => {
         );
         const svg = container.querySelector('svg');
         expect(svg?.getAttribute('role')).toBe('img');
-        const labelledBy =
-            svg?.getAttribute('aria-labelledby')?.split(' ') ?? [];
-        expect(labelledBy).toHaveLength(2);
+        expect(svg?.getAttribute('aria-label')).toBe('망치형');
+        const describedBy = svg?.getAttribute('aria-describedby') ?? '';
         expect(
-            container.querySelector(`[id="${labelledBy[0]}"]`)?.textContent
-        ).toBe('망치형');
-        expect(
-            container.querySelector(`[id="${labelledBy[1]}"]`)?.textContent
+            container.querySelector(`[id="${describedBy}"]`)?.textContent
         ).toBe('설명용 캡션');
+        // 본문 SVG의 `<title>`은 SEO 검사기가 문서 제목으로 센다 — 문서당 `<title>`은 하나여야 한다.
+        expect(container.querySelector('title')).toBeNull();
         expect(container.querySelector('figcaption')?.textContent).toBe(
             '설명용 캡션'
         );
