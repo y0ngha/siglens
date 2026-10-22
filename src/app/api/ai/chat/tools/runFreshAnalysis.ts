@@ -17,6 +17,8 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { AGENT_BUSY_LOG } from '../busyLog';
+import { isMemberCaller, loadPublicAnalysis } from './getCachedAnalysis';
+import { logToolDegrade } from './logToolDegrade';
 import { fitProse, type ProseSpec } from './fitProse';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
@@ -331,11 +333,7 @@ export function unwrap(
  * with `registerActiveStream()` so a deploy drain waits for it like any
  * other in-flight analysis stream.
  */
-export const runFreshAnalysisTool: ToolExecutor = async (
-    args,
-    ctx,
-    runtime
-) => {
+const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
     const symbol =
         typeof args.symbol === 'string' ? args.symbol.toUpperCase() : '';
     const kind = typeof args.kind === 'string' ? args.kind : '';
@@ -523,4 +521,93 @@ export const runFreshAnalysisTool: ToolExecutor = async (
     } finally {
         release();
     }
+};
+
+/**
+ * 회원 호출자의 일시적 실패에 공개 분석으로 폴백할 코드. `unwrap`이 만드는
+ * `analysis_failed.code`는 `error.code` → 최상위 `code` → `status` 순이므로 `error.code`가 먼저
+ * 보인다. technical/overall에서 실제로 도달 가능한 코드만 둔다(core·siglens 소스로 확인):
+ *
+ * - `analysis_limit_exceeded` — core `application/usage/limits.js`의 일일 분석 한도. technical은
+ *   `{status:'error', error:{code}}`, overall은 `{status:'limit_error', code:'usage_limit_exceeded',
+ *   error:{code}}`로 오는데 `error.code`가 우선이라 둘 다 이 값으로 표면화된다(최상위
+ *   `usage_limit_exceeded`는 overall에서 가려져 도달하지 않는다).
+ * - `ai_server_unstable` / `unexpected_error` — `runOverallAnalysisAction`의 catch가
+ *   `caughtAnalysisErrorCode`로 만든 게이트 오류(provider 5xx·429·정지 / 그 외 예외).
+ *
+ * `timeframe_not_allowed`·`user_api_key_required`·`tier_premium_blocked`처럼 재시도해도 같은
+ * 결과인 코드는 일부러 뺐다. technical의 provider 실패는 코드가 아니라 throw로 온다(아래 catch).
+ */
+const PUBLIC_FALLBACK_CODES: ReadonlySet<string> = new Set([
+    'analysis_limit_exceeded',
+    'ai_server_unstable',
+    'unexpected_error',
+]);
+
+/** 폴백 후보인 실패 결과면 원래 오류 코드를, 아니면 `undefined`. `invalid_args`는 절대 해당하지 않는다. */
+function transientFailureCode(result: unknown): string | undefined {
+    if (typeof result !== 'object' || result === null) return undefined;
+    const { error, code } = result as { error?: unknown; code?: unknown };
+    if (error === 'busy') return 'busy';
+    if (
+        error === 'analysis_failed' &&
+        typeof code === 'string' &&
+        PUBLIC_FALLBACK_CODES.has(code)
+    )
+        return code;
+    return undefined;
+}
+
+/**
+ * technical/overall에서 회원 분석을 만들지 못했을 때(바쁨·한도·제공자 오류·예외), 답을 아예 못
+ * 주는 대신 공개(비회원 등급) 분석을 `fallback: 'public'`으로 표시해 돌려준다. 공개 분석도 없으면
+ * 원래 오류 결과를 돌려주고, 던져진 예외였다면 다시 던진다(코어 툴 러너의 기존 동작 보존).
+ * core `runAnalysis`는 LLM/provider 실패를 코드가 아니라 throw로 알리므로 회원 호출자에 한해 잡는다.
+ */
+export const runFreshAnalysisTool: ToolExecutor = async (
+    args,
+    ctx,
+    runtime
+) => {
+    const kind = args.kind;
+    if ((kind !== 'technical' && kind !== 'overall') || !isMemberCaller(ctx))
+        return runFreshAnalysisOnce(args, ctx, runtime);
+
+    let result: unknown;
+    let failureCode: string | undefined;
+    let thrown: unknown;
+    try {
+        result = await runFreshAnalysisOnce(args, ctx, runtime);
+        failureCode = transientFailureCode(result);
+    } catch (error) {
+        logToolDegrade(
+            'run_fresh_analysis',
+            'member analysis run (public fallback next)',
+            error
+        );
+        thrown = error;
+        failureCode = 'thrown';
+    }
+    if (failureCode === undefined) return result;
+    const symbol = String(args.symbol).toUpperCase();
+    const timeframe =
+        (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
+    const asset = await resolveAssetInfoOrNull(symbol, 'run_fresh_analysis');
+    const publicHit = await loadPublicAnalysis({
+        symbol,
+        tab: kind,
+        timeframe,
+        locale: ctx.locale,
+        fmpSymbol: asset?.fmpSymbol,
+    });
+    if (publicHit === null) {
+        if (failureCode === 'thrown') throw thrown;
+        return result;
+    }
+    return {
+        ...publicHit,
+        fallback: 'public',
+        fallbackReason: failureCode,
+        note: `Non-member public analysis (member analysis could not be generated: ${failureCode}). Tell the user this is the general analysis, not their member analysis.`,
+    };
 };

@@ -94,6 +94,9 @@ const ctx = {
     locale: 'ko' as const,
     signal: new AbortController().signal,
 };
+// free/게스트는 프리웜 스냅샷(free 등급 생성)과 등급이 같아 공개 폴백을 그대로 받는다.
+const freeCtx = { ...ctx, tier: 'free' as const };
+const guestCtx = { ...ctx, userId: 'guest:abc', tier: 'free' as const };
 const rt = {
     analysisModel: 'deepseek-v4.1-flash' as const,
     ensureSymbolData: async (): Promise<void> => {},
@@ -433,7 +436,7 @@ describe('getCachedAnalysisTool', () => {
         ]);
         const r = (await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'technical' },
-            ctx,
+            freeCtx,
             rt
         )) as {
             found: boolean;
@@ -483,7 +486,7 @@ describe('getCachedAnalysisTool', () => {
         });
         const r = (await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'technical' },
-            ctx,
+            freeCtx,
             rt
         )) as { found: boolean; source: string; stale: boolean };
         expect(r.source).toBe('snapshot');
@@ -640,7 +643,7 @@ describe('getCachedAnalysisTool', () => {
         ]);
         const r = (await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'technical' },
-            ctx,
+            freeCtx,
             rt
         )) as {
             found: boolean;
@@ -689,7 +692,7 @@ describe('getCachedAnalysisTool', () => {
         });
         const r = (await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'technical' },
-            ctx,
+            freeCtx,
             rt
         )) as { source: string; stale: boolean };
         expect(r.source).toBe('history');
@@ -700,7 +703,7 @@ describe('getCachedAnalysisTool', () => {
     it('전부 miss면 found:false + hint, quote/bars 조회는 전혀 일어나지 않는다', async () => {
         const r = await getCachedAnalysisTool(
             { symbol: 'AAPL', tab: 'technical' },
-            ctx,
+            freeCtx,
             rt
         );
         expect(r).toEqual({
@@ -1409,5 +1412,211 @@ describe('getCachedAnalysisTool', () => {
             );
             expect(assetInfo).not.toHaveBeenCalled();
         });
+    });
+});
+
+describe('getCachedAnalysisTool — 회원 호출자 (공개 분석으로 대체하지 않는다)', () => {
+    const analysisAt = (analyzedAt: string, summary: string) => ({
+        result: {
+            summary,
+            trend: 'bullish',
+            riskLevel: 'low',
+            keyLevels: {},
+            priceTargets: {},
+            analyzedAt,
+        },
+        lockedInfoDepth: [],
+    });
+    const snapshotRow = {
+        tab: 'technical',
+        generatedAt: new Date('2026-10-19T00:00:00.000Z'),
+        model: 'm',
+        plain: 'p',
+        content: { x: 1 },
+    };
+    // 판별 인자(reasoning = 5번째)로 호출을 찾는다 — 인덱스 단언 금지.
+    const peekCallWithReasoning = (reasoning: boolean) =>
+        peekAnalysis.mock.calls.find(c => c[4] === reasoning);
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        findByUserAndSymbol.mockResolvedValue(null);
+        findBySymbol.mockResolvedValue([]);
+        findRecentForPrompt.mockResolvedValue([]);
+        peekAnalysis.mockResolvedValue(null);
+        peekOverall.mockResolvedValue(null);
+        profile.mockResolvedValue('us-equity');
+        mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
+        getQuote.mockResolvedValue(undefined);
+        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        assetInfo.mockResolvedValue(null);
+    });
+
+    it('technical miss → no_member_analysis, 스냅샷·이력 본문은 돌려주지 않고 publicAnalysisAt만 싣는다', async () => {
+        findBySymbol.mockResolvedValue([snapshotRow]);
+        findRecentForPrompt.mockResolvedValue([
+            { generatedAt: new Date('2026-08-01'), trend: 'bullish' },
+        ]);
+        const r = await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'technical' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({
+            found: false,
+            tab: 'technical',
+            symbol: 'LAES',
+            reason: 'no_member_analysis',
+            hint: 'call run_fresh_analysis',
+            publicAnalysisAt: '2026-10-19T00:00:00.000Z',
+        });
+        expect(findRecentForPrompt).not.toHaveBeenCalled();
+    });
+
+    it('overall miss → no_member_analysis (스냅샷이 없으면 publicAnalysisAt 생략)', async () => {
+        const r = await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'overall' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({
+            found: false,
+            tab: 'overall',
+            symbol: 'LAES',
+            reason: 'no_member_analysis',
+            hint: 'call run_fresh_analysis',
+        });
+    });
+
+    it('스냅샷 조회가 실패해도 miss 응답은 유지된다', async () => {
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        findBySymbol.mockRejectedValue(new Error('db down'));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'technical' },
+            ctx,
+            rt
+        );
+        expect(r).toMatchObject({
+            found: false,
+            reason: 'no_member_analysis',
+        });
+    });
+
+    it('technical: reasoning on 분석만 있어도 찾고 reasoning:true를 싣는다', async () => {
+        peekAnalysis.mockImplementation(async (...a: unknown[]) =>
+            a[4] === true ? analysisAt('2026-10-20T00:00:00Z', 'on') : null
+        );
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'technical' },
+            ctx,
+            rt
+        )) as {
+            found: boolean;
+            reasoning: boolean;
+            analysis: { summary: string };
+        };
+        expect(r.found).toBe(true);
+        expect(r.reasoning).toBe(true);
+        expect(r.analysis.summary).toBe('on');
+        expect(peekCallWithReasoning(false)).toBeDefined();
+        expect(peekCallWithReasoning(true)).toBeDefined();
+    });
+
+    it('technical: 둘 다 있으면 analyzedAt이 늦은 쪽을 고른다', async () => {
+        peekAnalysis.mockImplementation(async (...a: unknown[]) =>
+            a[4] === true
+                ? analysisAt('2026-10-20T00:00:00Z', 'on-older')
+                : analysisAt('2026-10-21T00:00:00Z', 'off-newer')
+        );
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'technical' },
+            ctx,
+            rt
+        )) as { reasoning: boolean; analysis: { summary: string } };
+        expect(r.analysis.summary).toBe('off-newer');
+        expect(r.reasoning).toBe(false);
+
+        peekAnalysis.mockImplementation(async (...a: unknown[]) =>
+            a[4] === true
+                ? analysisAt('2026-10-22T00:00:00Z', 'on-newer')
+                : analysisAt('2026-10-21T00:00:00Z', 'off-older')
+        );
+        const r2 = (await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'technical' },
+            ctx,
+            rt
+        )) as { reasoning: boolean; analysis: { summary: string } };
+        expect(r2.analysis.summary).toBe('on-newer');
+        expect(r2.reasoning).toBe(true);
+    });
+
+    it('overall: reasoning on 분석만 있어도 찾고, 둘 다 있으면 늦은 쪽을 고른다', async () => {
+        const overall = (analyzedAt: string, headlineKo: string) => ({
+            headlineKo,
+            technicalBulletsKo: [],
+            fundamentalBulletsKo: [],
+            newsBulletsKo: [],
+            optionsBulletsKo: [],
+            integratedConclusionKo: 'c',
+            scenarios: [],
+            riskFactorsKo: [],
+            financialsBulletsKo: [],
+            analyzedAt,
+        });
+        peekOverall.mockImplementation(async (...a: unknown[]) =>
+            a[4] === true ? overall('2026-10-20T00:00:00Z', 'on') : null
+        );
+        const only = (await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'overall' },
+            ctx,
+            rt
+        )) as {
+            found: boolean;
+            reasoning: boolean;
+            analysis: { headline: string };
+        };
+        expect(only).toMatchObject({ found: true, reasoning: true });
+        expect(only.analysis.headline).toBe('on');
+
+        peekOverall.mockImplementation(async (...a: unknown[]) =>
+            a[4] === true
+                ? overall('2026-10-20T00:00:00Z', 'on-older')
+                : overall('2026-10-21T00:00:00Z', 'off-newer')
+        );
+        const both = (await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'overall' },
+            ctx,
+            rt
+        )) as { reasoning: boolean; analysis: { headline: string } };
+        expect(both.analysis.headline).toBe('off-newer');
+        expect(both.reasoning).toBe(false);
+    });
+
+    it.each([
+        ['free', freeCtx],
+        ['guest', guestCtx],
+    ])(
+        '%s 호출자: miss면 기존대로 스냅샷을 돌려주고 reasoning은 한 번만(off) peek한다',
+        async (_n, c) => {
+            findBySymbol.mockResolvedValue([snapshotRow]);
+            const r = (await getCachedAnalysisTool(
+                { symbol: 'LAES', tab: 'technical' },
+                c,
+                rt
+            )) as { found: boolean; source: string };
+            expect(r).toMatchObject({ found: true, source: 'snapshot' });
+            expect(peekCallWithReasoning(true)).toBeUndefined();
+            expect(peekCallWithReasoning(false)).toBeDefined();
+        }
+    );
+
+    it('회원이어도 technical/overall 외 탭은 스냅샷 폴백 그대로', async () => {
+        findBySymbol.mockResolvedValue([{ ...snapshotRow, tab: 'news' }]);
+        const r = await getCachedAnalysisTool(
+            { symbol: 'LAES', tab: 'news' },
+            ctx,
+            rt
+        );
+        expect(r).toMatchObject({ found: true, source: 'snapshot' });
     });
 });

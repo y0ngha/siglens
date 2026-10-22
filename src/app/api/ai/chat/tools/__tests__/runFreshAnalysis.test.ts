@@ -15,6 +15,8 @@ const m = vi.hoisted(() => ({
         async (_input: { axis?: string }): Promise<unknown[]> => []
     ),
     findMarketEventsForPrompt: vi.fn(async (): Promise<unknown[]> => []),
+    // 회원 실패 폴백이 읽는 공개 스냅샷(기본: 없음).
+    findBySymbol: vi.fn(async (..._a: unknown[]): Promise<unknown[]> => []),
     listEarningsDates: vi.fn(
         async (): Promise<readonly string[] | undefined> => undefined
     ),
@@ -62,6 +64,11 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     DrizzleAnalysisHistoryRepository: vi.fn(function () {
         return { findRecentForPrompt: m.findRecentForPrompt };
+    }),
+}));
+vi.mock('@/entities/seo-snapshot/api', () => ({
+    DrizzleSeoSnapshotRepository: vi.fn(function () {
+        return { findBySymbol: m.findBySymbol };
     }),
 }));
 vi.mock('@/entities/earnings-report/api', () => ({
@@ -257,6 +264,8 @@ describe('runFreshAnalysisTool', () => {
         vi.clearAllMocks();
         m.profile.mockResolvedValue('us-equity');
         m.assetInfo.mockResolvedValue({ name: 'Apple', fmpSymbol: 'AAPL' });
+        m.findBySymbol.mockResolvedValue([]);
+        m.findRecentForPrompt.mockResolvedValue([]);
         __resetFreshSemaphoreForTests();
         __resetActiveStreamsForTests();
     });
@@ -1079,5 +1088,219 @@ describe('cached generatedAt은 kind마다 신뢰도가 다르다', () => {
 
         expect(r.source).toBe('cached');
         expect(r.generatedAt).toBeNull();
+    });
+});
+
+describe('runFreshAnalysisTool — 회원 실패 시 공개 분석 폴백', () => {
+    const freeCtx = { ...ctx, tier: 'free' as const };
+    const snapshotRow = {
+        tab: 'technical',
+        generatedAt: new Date('2026-10-19T00:00:00.000Z'),
+        model: 'm',
+        locale: 'ko',
+        plain: 'p',
+        content: { summary: '공개 분석' },
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        m.profile.mockResolvedValue('us-equity');
+        m.assetInfo.mockResolvedValue({ name: 'Apple', fmpSymbol: 'AAPL' });
+        m.findBySymbol.mockResolvedValue([snapshotRow]);
+        m.findRecentForPrompt.mockResolvedValue([]);
+        __resetFreshSemaphoreForTests();
+        __resetActiveStreamsForTests();
+    });
+
+    it('회원 + 슬롯 포화(busy) → 공개 스냅샷을 fallback:public으로 돌려준다', async () => {
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const resolvers: ((v: unknown) => void)[] = [];
+        m.runAnalysis.mockImplementation(
+            () => new Promise(resolve => resolvers.push(resolve))
+        );
+        const inFlight = Array.from({ length: 10 }, (_, i) =>
+            runFreshAnalysisTool(
+                { symbol: `S${i}`, kind: 'technical' },
+                ctx,
+                rt
+            )
+        );
+        await vi.waitFor(() => expect(resolvers).toHaveLength(10));
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'OVER', kind: 'technical' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r).toMatchObject({
+            found: true,
+            source: 'snapshot',
+            fallback: 'public',
+            fallbackReason: 'busy',
+        });
+        for (const resolve of resolvers)
+            resolve({ status: 'done', result: TECHNICAL_FIXTURE });
+        await Promise.all(inFlight);
+    });
+
+    it('회원 + 한도 초과 → fallback:public과 원래 오류 코드를 싣는다', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'error',
+            error: { code: 'analysis_limit_exceeded', message: 'limit' },
+        });
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r).toMatchObject({
+            found: true,
+            source: 'snapshot',
+            analysis: { summary: '공개 분석' },
+            fallback: 'public',
+            fallbackReason: 'analysis_limit_exceeded',
+            note: expect.stringContaining('Non-member public analysis'),
+        });
+    });
+
+    it('회원 + overall 제공자 오류(ai_server_unstable) → 폴백한다', async () => {
+        m.findBySymbol.mockResolvedValue([{ ...snapshotRow, tab: 'overall' }]);
+        m.overall.mockResolvedValue({
+            status: 'error',
+            error: { code: 'ai_server_unstable', message: 'm' },
+        });
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r).toMatchObject({
+            fallback: 'public',
+            fallbackReason: 'ai_server_unstable',
+        });
+    });
+
+    it('회원 + overall limit_error(최상위 usage_limit_exceeded, error.code analysis_limit_exceeded) → error.code로 폴백', async () => {
+        m.findBySymbol.mockResolvedValue([{ ...snapshotRow, tab: 'overall' }]);
+        m.overall.mockResolvedValue({
+            status: 'limit_error',
+            code: 'usage_limit_exceeded',
+            error: { code: 'analysis_limit_exceeded', message: 'limit' },
+        });
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r).toMatchObject({
+            fallback: 'public',
+            fallbackReason: 'analysis_limit_exceeded',
+        });
+    });
+
+    it('회원 + technical runAnalysis가 throw → 공개 분석으로 폴백(thrown)', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        m.runAnalysis.mockRejectedValue(new Error('provider exploded'));
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r).toMatchObject({
+            found: true,
+            fallback: 'public',
+            fallbackReason: 'thrown',
+        });
+    });
+
+    it('회원 + throw + 공개 분석 없음 → 다시 던진다', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        m.findBySymbol.mockResolvedValue([]);
+        m.runAnalysis.mockRejectedValue(new Error('provider exploded'));
+        await expect(
+            runFreshAnalysisTool({ symbol: 'AAPL', kind: 'technical' }, ctx, rt)
+        ).rejects.toThrow('provider exploded');
+    });
+
+    it('free 호출자 throw는 잡지 않고 그대로 던진다', async () => {
+        m.runAnalysis.mockRejectedValue(new Error('provider exploded'));
+        await expect(
+            runFreshAnalysisTool(
+                { symbol: 'AAPL', kind: 'technical' },
+                freeCtx,
+                rt
+            )
+        ).rejects.toThrow('provider exploded');
+        expect(m.findBySymbol).not.toHaveBeenCalled();
+    });
+
+    it('invalid_args는 폴백하지 않는다', async () => {
+        const r = await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'bogus' },
+            ctx,
+            rt
+        );
+        expect(r).toMatchObject({ error: 'invalid_args' });
+        expect(m.findBySymbol).not.toHaveBeenCalled();
+    });
+
+    it('재시도해도 같은 코드(timeframe_not_allowed)는 폴백하지 않는다', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'error',
+            error: { code: 'timeframe_not_allowed' },
+        });
+        expect(
+            await runFreshAnalysisTool(
+                { symbol: 'AAPL', kind: 'technical' },
+                ctx,
+                rt
+            )
+        ).toEqual({ error: 'analysis_failed', code: 'timeframe_not_allowed' });
+    });
+
+    it('공개 분석도 없으면 원래 오류를 그대로 돌려준다', async () => {
+        m.findBySymbol.mockResolvedValue([]);
+        m.runAnalysis.mockResolvedValue({
+            status: 'error',
+            error: { code: 'analysis_limit_exceeded' },
+        });
+        expect(
+            await runFreshAnalysisTool(
+                { symbol: 'AAPL', kind: 'technical' },
+                ctx,
+                rt
+            )
+        ).toEqual({
+            error: 'analysis_failed',
+            code: 'analysis_limit_exceeded',
+        });
+    });
+
+    it('free 호출자 실패는 기존 동작 그대로(폴백 없음, 스냅샷 조회 없음)', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'error',
+            error: { code: 'analysis_limit_exceeded' },
+        });
+        expect(
+            await runFreshAnalysisTool(
+                { symbol: 'AAPL', kind: 'technical' },
+                freeCtx,
+                rt
+            )
+        ).toEqual({
+            error: 'analysis_failed',
+            code: 'analysis_limit_exceeded',
+        });
+        expect(m.findBySymbol).not.toHaveBeenCalled();
+    });
+
+    it('news/options 실패는 폴백 대상이 아니다', async () => {
+        m.news.mockResolvedValue({ status: 'error', error: 'x' });
+        const r = await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'news' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({ error: 'analysis_failed', code: 'error' });
+        expect(m.findBySymbol).not.toHaveBeenCalled();
     });
 });
