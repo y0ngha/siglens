@@ -14,6 +14,9 @@ describe('getFundamentalDataProvider (prod)', () => {
     }, MODULE_LOAD_TIMEOUT_MS);
 
     afterEach(() => {
+        // doMock을 쓰는 케이스가 단언 도중 실패해도 목이 다음 케이스로 새지 않게 여기서 푼다.
+        vi.doUnmock('@/shared/api/fmp/httpClient');
+        vi.doUnmock('@/shared/cache/redisClient');
         vi.resetModules();
     });
 
@@ -108,8 +111,6 @@ describe('getFundamentalDataProvider (prod)', () => {
                 ([, params]) => params.symbol === '005380.KS'
             )
         ).toEqual([]);
-        vi.doUnmock('@/shared/api/fmp/httpClient');
-        vi.doUnmock('@/shared/cache/redisClient');
     });
 
     it.each(['005930.KS', '247540.KQ', '005930.ks'])(

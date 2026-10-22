@@ -111,7 +111,8 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * @param peerKeyMetrics `getStockPeers`가 peer마다 per/psr을 꺼내는 출처. 생략하면 이
      *   provider 자신(`getKeyMetricsTtm`)을 쓴다. FMP 경로는 시장별로 고르는 함수를 준다 —
      *   FMP peer 목록에는 한국 상장(현대차·기아 등)이 섞여 오는데, FMP 플랜은 한국 종목의
-     *   key-metrics-ttm에 402를 돌려줘 그 peer의 per/psr이 비기 때문이다.
+     *   key-metrics-ttm에 402를 돌려줘 그 peer의 per/psr이 비기 때문이다(2026-10-21 운영 로그
+     *   `FMP key-metrics-ttm 402 (005380.KS)` 등 14건 — 로그에서 `cost exception`과 `.KS)`로 다시 확인할 수 있다).
      */
     constructor(
         private readonly inner: FundamentalProvider,
