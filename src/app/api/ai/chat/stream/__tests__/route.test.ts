@@ -7,6 +7,9 @@ const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
         tier: vi.fn(async () => 'member'),
         lock: vi.fn(),
         runTurn: vi.fn(),
+        globalLimits: undefined as
+            | { webSearchPerDay: number; webSearchPerMonth: number }
+            | undefined,
         canAccept: vi.fn(() => true),
         guestId: vi.fn(async (): Promise<string | null> => 'g-uuid-1'),
         guestIpConsume: vi.fn(async () => true),
@@ -48,6 +51,7 @@ vi.mock('@/app/api/ai/chat/resolveAgentTier', () => ({
 }));
 vi.mock('@/app/api/ai/chat/turnLock', () => ({ acquireTurnLock: m.lock }));
 vi.mock('@/app/api/ai/chat/counters', () => ({
+    agentGlobalLimitsFromEnv: () => m.globalLimits,
     createAgentCounters: () => ({}),
     createGuestIpBackstopCounter: () => ({
         consume: m.guestIpConsume,
@@ -565,6 +569,21 @@ describe('POST /api/ai/chat/stream', () => {
             maxOutputTokens: 8_192,
         });
         expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('환경변수로 정한 공용 웹 검색 예산을 core에 넘기고, 없으면 undefined(core 기본값)', async () => {
+        await POST(post({ message: 'x' }));
+        expect(m.runTurn.mock.lastCall![1].globalLimits).toBeUndefined();
+        m.globalLimits = { webSearchPerDay: 500, webSearchPerMonth: 5000 };
+        try {
+            await POST(post({ message: 'y' }));
+            expect(m.runTurn.mock.lastCall![1].globalLimits).toEqual({
+                webSearchPerDay: 500,
+                webSearchPerMonth: 5000,
+            });
+        } finally {
+            m.globalLimits = undefined;
+        }
     });
 
     it('브라우저 시간대 헤더를 core에 그대로 넘긴다(검증은 core 몫), 없으면 undefined', async () => {
