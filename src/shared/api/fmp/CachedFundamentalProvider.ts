@@ -37,11 +37,17 @@ import type {
 const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
 export const PEER_LIMIT = 10;
 
-/** key-metrics·ratios 키. 한 쌍을 함께 쓰는 `fetchValuationPair`와 읽는 쪽이 같은 함수를 쓴다. */
+/**
+ * key-metrics·ratios 키. 한 쌍을 함께 쓰는 `fetchValuationPair`와 읽는 쪽이 같은 함수를 쓴다.
+ *
+ * `-v2`: 한국 종목(yahoo)의 PER·EPS를 최근 4분기 순이익 합으로 바꾸고, 요약 통계가 멈춘 종목의
+ * 요약 파생값(P/S·마진·ROE 등)과 어긋나는 PER을 `null`로 비우면서 값의 **의미**가 바뀌었다.
+ * 옛 키를 그대로 읽으면 배포 뒤에도 TTL 동안 옛 PER이 나간다(SERVER.md 키 버전 표).
+ */
 const keyMetricsKey = (symbol: string): string =>
-    `fundamental:key-metrics:${sym(symbol)}`;
+    `fundamental:key-metrics-v2:${sym(symbol)}`;
 const ratiosKey = (symbol: string): string =>
-    `fundamental:ratios:${sym(symbol)}`;
+    `fundamental:ratios-v2:${sym(symbol)}`;
 
 /**
  * `FundamentalProvider`를 감싸 메서드별 Redis 캐싱을 주입하는 데코레이터.
@@ -308,10 +314,10 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
     );
 
     /**
-     * peer 목록을 fetch→top-N cap→per/psr enrich한 결과 전체를 `fundamental:peers:<SYM>`에
+     * peer 목록을 fetch→top-N cap→per/psr enrich한 결과 전체를 `fundamental:peers-v2:<SYM>`에
      * 캐싱한다. enrich를 캐시 fetcher 안에 두므로 warm 호출은 enriched 목록을 단일 Redis
      * GET으로 돌려받고(peer당 round-trip 0), cold 호출만 enrich한다. per/psr은 캐싱된
-     * getKeyMetricsTtm(`fundamental:key-metrics:<peer>`, `peerKeyMetrics`를 줬으면 그 출처 —
+     * getKeyMetricsTtm(`fundamental:key-metrics-v2:<peer>`, `peerKeyMetrics`를 줬으면 그 출처 —
      * FMP 경로에선 한국 peer가 yahoo로 간다)에서 가져오며, 그 메서드는 FMP
      * 장애 시 throw하지 않고 null을 돌려주므로(catch→null) 한 peer 실패가 전체를 중단시키지
      * 않는다. cold 캐시 시 peer당 동시 FMP 폭증(rate-limit)을 피해 순차 enrich하고(await된
@@ -323,7 +329,8 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * 키가 따로 받아 오지 않는다.
      */
     getStockPeers = cache((symbol: string): Promise<FundamentalPeerInput[]> =>
-        getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
+        // `-v2`: enrich한 per가 key-metrics와 같은 기준 변경(위 `keyMetricsKey` 주석)을 따른다.
+        getOrSetCache(`fundamental:peers-v2:${sym(symbol)}`, TTL, async () => {
             const peers = await this.getStockPeersRaw(symbol);
             // 이전에는 async reduce로 peer를 한 건씩 직렬 조회해 지연이 PEER_LIMIT배로
             // 누적됐다. 심볼 단위로 dedupe한 뒤 병렬 조회한다 — 직렬 루프가 보장했던

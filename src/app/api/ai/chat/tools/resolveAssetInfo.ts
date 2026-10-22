@@ -34,3 +34,32 @@ export async function resolveAssetInfoOrNull(
         return null;
     }
 }
+
+/** Fields that tell the model which instrument a symbol actually resolved to. */
+export interface ResolvedInstrumentFields {
+    /** Name of the instrument whose data is in this result (e.g. `ProShares VIX Mid-Term Futures ETF`). */
+    resolvedName?: string;
+    /** Provider-side symbol when it differs from the requested one (e.g. `^VIX`, `BRK-B`). */
+    resolvedSymbol?: string;
+}
+
+/**
+ * Surfaces the resolved instrument's name (and provider symbol, when it differs) in a
+ * tool result, so a symbol that maps to a different instrument is visible to the model
+ * instead of being presented under the requested ticker. Before the exact-match fix in
+ * `findExactUsMatch`, `VIX` resolved to the VIXM ETF and the tool output said only
+ * `symbol: "VIX"` — the model reported the ETF's close as the index level.
+ *
+ * Empty when the lookup degraded (`null`) — absence means "unknown", not "same".
+ */
+export function resolvedInstrumentFields(
+    asset: AssetInfo | null
+): ResolvedInstrumentFields {
+    if (asset === null) return {};
+    return {
+        ...(asset.name ? { resolvedName: asset.name } : {}),
+        ...(asset.fmpSymbol && asset.fmpSymbol !== asset.symbol
+            ? { resolvedSymbol: asset.fmpSymbol }
+            : {}),
+    };
+}

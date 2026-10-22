@@ -96,10 +96,10 @@ describe('getInvestorFlowsSnapshot', () => {
                 number,
             ][];
             const main = calls.find(([key]) =>
-                key.includes('investor-flows:snapshot-v3')
+                key.includes('investor-flows:snapshot-v4')
             );
             const short = calls.find(([key]) =>
-                key.includes('investor-flows:snapshot-degraded-v1')
+                key.includes('investor-flows:snapshot-degraded-v2')
             );
             if (main === undefined || short === undefined)
                 throw new Error('expected both cache entries to be read');

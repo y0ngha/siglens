@@ -20,7 +20,7 @@ const { YahooFundamentalProvider } =
 const SYMBOL = '005930.KS';
 
 /** 예정 실적 1건만 담은 최소 yahoo 응답. */
-function fundamentalsWithUpcoming(options: { estimated: boolean }) {
+function fundamentalsWithUpcoming(options: { estimated: boolean | undefined }) {
     return {
         summary: {
             calendarEvents: {
@@ -41,6 +41,7 @@ const EMPTY_FUNDAMENTALS = {
     income: [],
     balance: [],
     quarterlyBalance: [],
+    quarterlyIncome: [],
     cashFlow: [],
 };
 
@@ -73,6 +74,7 @@ const FULL_FUNDAMENTALS = {
     ],
     balance: [],
     quarterlyBalance: [],
+    quarterlyIncome: [],
     cashFlow: [{ operatingCashFlow: 500 }],
 };
 
@@ -269,8 +271,9 @@ describe('YahooFundamentalProvider — 실적 일정', () => {
         });
     });
 
-    it('확정 공시일이면 isEstimate를 붙이지 않는다', async () => {
-        // 추정일을 확정처럼 렌더하면 안 된다 — 상위가 이 필드로 구분한다.
+    it('확정 공시일이면 isEstimate=false를 명시한다 (플래그 없음 = 확정 여부 모름과 구별)', async () => {
+        // 추정일을 확정처럼 렌더하면 안 되고, 확정일을 "모름"으로 읽혀서도 안 된다 —
+        // 상위(`dateConfirmedFromPayload`)가 boolean 여부로 구분한다.
         getYahooFundamentals.mockResolvedValue(
             fundamentalsWithUpcoming({ estimated: false })
         );
@@ -279,6 +282,25 @@ describe('YahooFundamentalProvider — 실적 일정', () => {
             SYMBOL
         );
 
-        expect(item!.rawPayload).not.toHaveProperty('isEstimate');
+        expect(item!.rawPayload).toEqual({
+            symbol: SYMBOL,
+            earningsDate: '2026-10-08',
+            isEstimate: false,
+        });
+    });
+
+    it('yahoo가 추정 플래그를 주지 않으면 isEstimate를 싣지 않는다 (확정으로 읽히지 않고 "모름"이 된다)', async () => {
+        getYahooFundamentals.mockResolvedValue(
+            fundamentalsWithUpcoming({ estimated: undefined })
+        );
+
+        const [item] = await new YahooFundamentalProvider().getEarningsReports(
+            SYMBOL
+        );
+
+        expect(item!.rawPayload).toEqual({
+            symbol: SYMBOL,
+            earningsDate: '2026-10-08',
+        });
     });
 });

@@ -158,7 +158,15 @@ async function fetchFmpEndpoint(
 }
 
 /**
- * `search-symbol` 응답에서 앱 심볼에 해당하는 row를 고른다 — 없으면 첫 US row로 폴백.
+ * `search-symbol` 응답에서 앱 심볼에 해당하는 row를 고른다 — 정확 일치가 없으면 `undefined`.
+ *
+ * ⚠️ **첫 US row로 폴백하지 않는다.** 예전에는 `?? usResults[0]`로 폴백했는데,
+ * `search-symbol`은 접두·유사 일치를 섞어 돌려주므로 정확 일치가 없을 때의 첫 row는
+ * 거의 항상 **다른 종목**이다(2026-10 실측: `VIX`→VIXM ETF, `APPL`→APPLX 펀드,
+ * `AST`→ASTI). 그 매핑이 `asset_translations.fmp_symbol`에 영구 저장돼 차트·분석·
+ * AI 도구가 다른 종목의 시세를 원래 심볼 이름으로 내보냈다. 허용하는 차이는
+ * 클래스 주식 정규화(`BRK.B`→`BRK-B`, {@link toFmpSearchSymbol})뿐이다. 남은 잘못된 행은
+ * `yarn db:cleanup:asset-translations --list`(dry-run)로 다시 셀 수 있다.
  *
  * 정확 일치 비교는 반드시 **FMP 표기** 기준이어야 한다. `searchBySymbol`이 질의를
  * 정규화해 보내므로(`HEI.A` → `HEI-A`) 응답 row의 symbol도 하이픈 형태로 돌아온다.
@@ -173,7 +181,7 @@ export function findExactUsMatch(
     appSymbol: string
 ): FmpSearchResult | undefined {
     const fmpQuery = toFmpSearchSymbol(appSymbol);
-    return usResults.find(r => r.symbol === fmpQuery) ?? usResults[0];
+    return usResults.find(r => r.symbol === fmpQuery);
 }
 
 export async function searchBySymbol(

@@ -57,6 +57,12 @@ vi.mock('@/shared/api/naver/naverSearch', () => ({
     toIsoPublishedAt: () => null,
 }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => e2eState.on }));
+const correctKrSymbolSuffix = vi.hoisted(() =>
+    vi.fn(async (s: string) => s.toUpperCase())
+);
+vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+    correctKrSymbolSuffix,
+}));
 
 import {
     availableToolNames,
@@ -147,6 +153,35 @@ describe('tool registry', () => {
             )
         ).toEqual({ error: 'invalid_symbol' });
         expect(getOptionsSummary).not.toHaveBeenCalled();
+    });
+
+    it('한국 종목 접미사를 마스터로 교정해 실행하고 결과에 원래 심볼을 남긴다', async () => {
+        correctKrSymbolSuffix.mockImplementation(async (s: string) =>
+            s.toUpperCase() === '253450.KS' ? '253450.KQ' : s.toUpperCase()
+        );
+        getBarsIndicators.mockResolvedValue({ symbol: '253450.KQ', bars: [] });
+        try {
+            const result = await createToolExecutor({
+                analysisModel: 'deepseek-v4.1-flash',
+            })(
+                'get_bars_indicators',
+                { symbol: '253450.KS', timeframe: '1Day' },
+                makeCtx()
+            );
+            expect(getBarsIndicators).toHaveBeenCalledWith(
+                { symbol: '253450.KQ', timeframe: '1Day' },
+                expect.anything(),
+                expect.anything()
+            );
+            expect(result).toMatchObject({
+                symbolCorrectedFrom: '253450.KS',
+                symbol: '253450.KQ',
+            });
+        } finally {
+            correctKrSymbolSuffix.mockImplementation(async (s: string) =>
+                s.toUpperCase()
+            );
+        }
     });
 
     it('게스트의 get_my_portfolio → login_required, 실행기 미호출', async () => {

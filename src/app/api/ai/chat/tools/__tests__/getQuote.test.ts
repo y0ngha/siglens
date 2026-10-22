@@ -24,7 +24,7 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
 }));
 
 import { getQuoteTool } from '@/app/api/ai/chat/tools/getQuote';
-import { QUOTE_MAX_AGE_MS } from '@/app/api/ai/chat/tools/freshness';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 
 const ctx = {
@@ -82,6 +82,24 @@ describe('getQuoteTool', () => {
         expect(getQuote).toHaveBeenCalledWith('^GSPC');
     });
 
+    it('해석된 종목명·공급자 심볼을 시세 행에 싣는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        assetInfo.mockResolvedValue({
+            symbol: 'VIX',
+            name: 'VIX',
+            fmpSymbol: '^VIX',
+        });
+        getQuote.mockResolvedValue({ price: 16.68, changesPercentage: 1 });
+        const r = (await getQuoteTool({ symbols: ['VIX'] }, ctx, rt)) as {
+            quotes: unknown[];
+        };
+        expect(r.quotes[0]).toMatchObject({
+            symbol: 'VIX',
+            resolvedName: 'VIX',
+            resolvedSymbol: '^VIX',
+        });
+    });
+
     it('getAssetInfo가 throw해도 canonical 심볼로 조회를 진행한다', async () => {
         profile.mockResolvedValue('us-equity');
         assetInfo.mockRejectedValue(new Error('db down'));
@@ -91,6 +109,24 @@ describe('getQuoteTool', () => {
         };
         expect(getQuote).toHaveBeenCalledWith('AAPL');
         expect(r.quotes[0]).toMatchObject({ found: true });
+    });
+
+    it('한국 종목의 죽은 리스팅(14일 넘게 거래 없음)은 가격 대신 stale_listing 오류로 돌린다', async () => {
+        profile.mockResolvedValue('kr-equity');
+        getQuote.mockResolvedValue({
+            price: 40100,
+            changesPercentage: 0,
+            timestamp: Math.floor(Date.UTC(2024, 6, 19, 6, 30) / 1000),
+        });
+        const r = (await getQuoteTool({ symbols: ['253450.KS'] }, ctx, rt)) as {
+            quotes: unknown[];
+        };
+        expect(r.quotes[0]).toEqual({
+            symbol: '253450.KS',
+            found: false,
+            error: 'stale_listing',
+            lastTradeDate: '2024-07-19',
+        });
     });
 
     it('provider가 null을 돌려주면 found:false', async () => {

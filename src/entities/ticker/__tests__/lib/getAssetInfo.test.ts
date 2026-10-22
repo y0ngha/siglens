@@ -731,27 +731,32 @@ describe('getAssetInfo', () => {
     });
 
     it('번역 완료 후 DB upsert가 실패하면 번역된 한글명 임시 항목이 최초 응답과 같은 형태로 남는다', async () => {
-        searchBySymbolMock.mockResolvedValue([{ ...apple, symbol: 'AAPL.MX' }]);
+        // 클래스 주식(BRK.B → FMP BRK-B)이라 canonical과 fmpSymbol이 갈린다.
+        searchBySymbolMock.mockResolvedValue([
+            { ...apple, symbol: 'BRK-B', name: 'Berkshire Hathaway Inc.' },
+        ]);
         getTickerDisplayNamesMock.mockResolvedValue({});
-        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+        translateCompanyNamesMock.mockResolvedValue({
+            'BRK.B': '버크셔 해서웨이',
+        });
         mockRepository.upsert.mockRejectedValue(new Error('db down'));
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-        await getAssetInfo('AAPL');
+        await getAssetInfo('BRK.B');
         await new Promise(resolve => setImmediate(resolve));
         await new Promise(resolve => setImmediate(resolve));
 
         // 미번역 응답 직후 쓴 영문 임시 항목에 이어 한글명 항목이 덮어쓴다.
         const koreanWrite = mockCache.set.mock.calls.find(
             ([key, value]) =>
-                key === 'asset-info:provisional:AAPL' &&
-                (value as AssetInfo).koreanName === '애플'
+                key === 'asset-info:provisional:BRK.B' &&
+                (value as AssetInfo).koreanName === '버크셔 해서웨이'
         );
         expect(koreanWrite?.[1]).toEqual({
-            symbol: 'AAPL',
-            name: 'Apple Inc.',
-            koreanName: '애플',
-            fmpSymbol: 'AAPL.MX',
+            symbol: 'BRK.B',
+            name: 'Berkshire Hathaway Inc.',
+            koreanName: '버크셔 해서웨이',
+            fmpSymbol: 'BRK-B',
         });
         warnSpy.mockRestore();
     });
@@ -801,16 +806,43 @@ describe('getAssetInfo', () => {
         expect(mockCache.set).not.toHaveBeenCalled();
     });
 
-    it('FMP 결과 중 정확히 일치하지 않으면 첫 번째 결과와 FMP symbol 을 사용', async () => {
+    it('VIX는 DB에 옛 폴백 매핑(VIXM)이 남아 있어도 대시보드와 같은 ^VIX 지수로 해석한다', async () => {
+        mockRepository.findBySymbol.mockResolvedValue({
+            symbol: 'VIX',
+            name: 'ProShares VIX Mid-Term Futures ETF',
+            koreanName: '프로셰어즈 VIX 중기 선물',
+            fmpSymbol: 'VIXM',
+        });
+
+        const result = await getAssetInfo('VIX');
+
+        expect(result).toMatchObject({ symbol: 'VIX', fmpSymbol: '^VIX' });
+        expect(mockRepository.findBySymbol).not.toHaveBeenCalled();
+        expect(searchBySymbolMock).not.toHaveBeenCalled();
+        expect(mockRepository.upsert).not.toHaveBeenCalled();
+    });
+
+    it('FMP 결과 중 정확히 일치하는 행이 없으면 다른 종목으로 묶지 않고 null — 저장·번역도 하지 않는다', async () => {
+        // 실측 오매핑: VIX 검색의 첫 US 행이 VIXM ETF였고, 그 매핑이
+        // asset_translations에 영구 저장돼 AI 도구가 VIXM 시세를 VIX로 내보냈다.
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
-        searchBySymbolMock.mockResolvedValue([{ ...apple, symbol: 'AAPL.MX' }]);
-        const result = await getAssetInfo('AAPL');
-        expect(result).toEqual({
-            symbol: 'AAPL',
-            name: 'Apple Inc.',
-            fmpSymbol: 'AAPL.MX',
+        searchBySymbolMock.mockResolvedValue([
+            {
+                ...apple,
+                symbol: 'APPLX',
+                name: 'Apple Hospitality Fund',
+            },
+        ]);
+        getTickerDisplayNamesMock.mockResolvedValue({
+            APPL: { koreanName: '애플', name: 'Apple Inc.' },
         });
+
+        await expect(getAssetInfo('APPL')).resolves.toBeNull();
+        await new Promise(resolve => setImmediate(resolve));
+        expect(mockRepository.upsert).not.toHaveBeenCalled();
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
     });
 
     it('동일 symbol 에 대한 동시 호출은 single-flight 로 묶여 Gemini 번역기를 정확히 1회만 호출한다', async () => {
@@ -841,28 +873,37 @@ describe('getAssetInfo', () => {
         await new Promise(resolve => setImmediate(resolve));
     });
 
-    it('번역 저장 시 canonical symbol 과 FMP symbol 을 함께 보존한다', async () => {
+    it('번역 저장 시 canonical symbol 과 FMP symbol 을 함께 보존한다 (클래스 주식 정규화)', async () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
-        searchBySymbolMock.mockResolvedValue([{ ...apple, symbol: 'AAPL.MX' }]);
+        const berkshire = {
+            ...apple,
+            symbol: 'BRK-B',
+            name: 'Berkshire Hathaway Inc.',
+            exchange: 'NYSE',
+        };
+        searchBySymbolMock.mockResolvedValue([berkshire]);
         getTickerDisplayNamesMock.mockResolvedValue({
-            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+            'BRK.B': {
+                koreanName: '버크셔 해서웨이',
+                name: 'Berkshire Hathaway Inc.',
+            },
         });
 
-        const result = await getAssetInfo('AAPL');
-        expect(result).toEqual({
-            symbol: 'AAPL',
-            name: 'Apple Inc.',
-            koreanName: '애플',
-            fmpSymbol: 'AAPL.MX',
+        const result = await getAssetInfo('BRK.B');
+        expect(result).toMatchObject({
+            symbol: 'BRK.B',
+            name: 'Berkshire Hathaway Inc.',
+            fmpSymbol: 'BRK-B',
         });
         await new Promise(resolve => setImmediate(resolve));
-        expect(mockRepository.upsert).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            name: 'Apple Inc.',
-            koreanName: '애플',
-            fmpSymbol: 'AAPL.MX',
-        });
+        expect(mockRepository.upsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'BRK.B',
+                name: 'Berkshire Hathaway Inc.',
+                fmpSymbol: 'BRK-B',
+            })
+        );
     });
 
     it('DB read 에서 직접 AbortError 발생 시 FMP 폴백', async () => {

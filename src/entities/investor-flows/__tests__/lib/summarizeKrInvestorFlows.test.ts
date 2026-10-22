@@ -108,6 +108,61 @@ describe('summarizeKrInvestorFlows', () => {
         ]);
     });
 
+    describe('major holder ratio change (DART stkrt_irds on an initial report is the whole holding)', () => {
+        const recentOf = (
+            majorHoldings: ReturnType<typeof makeKrMajorHoldingRecord>[]
+        ) => {
+            const snapshot = makeKrSnapshot({ majorHoldings });
+            return summarizeKrInvestorFlows(snapshot, evaluate(snapshot))
+                .majorHolders.recent;
+        };
+
+        it("computes the change against the same filer's previous report instead of the reported +5.12", () => {
+            const recent = recentOf([
+                makeKrMajorHoldingRecord({
+                    rceptNo: '20261014000124',
+                    receiptDate: '2026-10-14',
+                    reporter: '에스원운용',
+                    ratioPct: 5.12,
+                    ratioChangePct: 5.12,
+                }),
+                makeKrMajorHoldingRecord({
+                    rceptNo: '20260601000001',
+                    receiptDate: '2026-06-01',
+                    reporter: ' 에스원운용 ',
+                    ratioPct: 4.93,
+                    ratioChangePct: -0.4,
+                }),
+            ]);
+            expect(recent[0]).toMatchObject({
+                ratioPct: 5.12,
+                ratioChangePct: 0.19,
+            });
+        });
+
+        it('omits the change (null) for an initial report with no previous report', () => {
+            const [row] = recentOf([
+                makeKrMajorHoldingRecord({
+                    ratioPct: 5.12,
+                    ratioChangePct: 5.12,
+                }),
+            ]);
+            expect(row?.ratioChangePct).toBeNull();
+        });
+
+        it('keeps the DART change for a regular change report whose previous report is out of range', () => {
+            const [row] = recentOf([
+                makeKrMajorHoldingRecord({
+                    reporter: '국민연금공단',
+                    ratioPct: 7.24,
+                    ratioChangePct: -0.09,
+                    reason: '보유주식등의 수 변동',
+                }),
+            ]);
+            expect(row?.ratioChangePct).toBe(-0.09);
+        });
+    });
+
     it('treats a snapshot without the kr block as empty lists', () => {
         const snapshot = { ...makeKrSnapshot(), kr: undefined };
         const summary = summarizeKrInvestorFlows(snapshot, evaluate(snapshot));

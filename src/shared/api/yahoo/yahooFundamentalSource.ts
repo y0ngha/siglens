@@ -3,6 +3,7 @@ import { getYahooClient } from './createYahooClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     getYahooBalanceSheet,
+    getYahooIncomeStatement,
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
@@ -58,6 +59,11 @@ export interface YahooSummary {
         enterpriseToEbitda?: number;
         netIncomeToCommon?: number;
         sharesOutstanding?: number;
+        /**
+         * 요약 통계가 기준으로 삼은 회계연도 말. 갱신이 멈춘 종목은 이 값이 몇 년 전에 머물고
+         * `netIncomeToCommon`·마진·ROE도 같이 멈춘다(`mapKeyMetrics`의 신선도 판정).
+         */
+        lastFiscalYearEnd?: Date;
     };
     financialData?: {
         /** 재무제표 보고 통화(ISO). KRX 상장사는 `KRW`. */
@@ -140,6 +146,11 @@ export interface YahooFundamentals {
      * 성장률 계산에는 연간(`balance`)을 그대로 쓴다 — 그쪽은 YoY 비교라 기간이 맞아야 한다.
      */
     quarterlyBalance: YahooStatementRow[];
+    /**
+     * 분기 손익계산서(최신순). 한국 PER·EPS 분자(최근 4분기 순이익 합)와 요약 통계 신선도 판정에 쓴다 —
+     * 요약 통계 `netIncomeToCommon`은 갱신이 멈춘 종목이 있다(`mapKeyMetrics` 주석).
+     */
+    quarterlyIncome: YahooStatementRow[];
 }
 
 const EMPTY: YahooFundamentals = {
@@ -148,6 +159,7 @@ const EMPTY: YahooFundamentals = {
     balance: [],
     cashFlow: [],
     quarterlyBalance: [],
+    quarterlyIncome: [],
 };
 
 interface CacheEntry {
@@ -178,7 +190,7 @@ async function fetchAll(symbol: string): Promise<YahooFundamentals> {
     // **가장 최근 보고 시점**을 써야 한다. 연간 값만 쓰면 결산 이후 분기 실적이
     // 반영되지 않아, 자본이 빠르게 느는 기업에서 지표가 크게 과대해진다
     // (실측: SK하이닉스 PBR 9.69 → 7.11, 36% 과대).
-    const [summary, annual, quarterly] = await Promise.all([
+    const [summary, annual, quarterly, quarterlyIncome] = await Promise.all([
         yahooFinance
             .quoteSummary(
                 symbol,
@@ -206,11 +218,16 @@ async function fetchAll(symbol: string): Promise<YahooFundamentals> {
                 return null;
             }),
         getYahooStatements(symbol, 'annual'),
-        // 분기는 재무상태표만 필요하다(PBR·부채비율 분모). 전체 제표를 받으면
-        // 손익·현금흐름 2개 모듈이 그대로 버려져 호출이 낭비된다.
+        // 분기는 재무상태표(PBR·부채비율 분모)와 손익계산서(PER·EPS 분자 TTM)만 필요하다.
+        // 전체 제표를 받으면 현금흐름 모듈이 그대로 버려져 호출이 낭비된다.
         getYahooBalanceSheet(symbol, 'quarter'),
+        getYahooIncomeStatement(symbol, 'quarter'),
     ]);
-    const statements = { ...annual, quarterlyBalance: quarterly };
+    const statements = {
+        ...annual,
+        quarterlyBalance: quarterly,
+        quarterlyIncome,
+    };
 
     return {
         // Safe cast: `quoteSummary`의 반환 타입은 요청한 모듈 조합에 따라 라이브러리가

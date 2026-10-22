@@ -8,10 +8,14 @@ import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     assessFreshness,
     type FreshnessView,
-    QUOTE_MAX_AGE_MS,
+    staleKrListingDate,
 } from './freshness';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from './resolveAssetInfo';
 
 const MAX_SYMBOLS = 3;
 
@@ -65,9 +69,25 @@ export const getQuoteTool: ToolExecutor = async args => {
                 sessionSpecFor(profile)
             ).getQuote(asset?.fmpSymbol ?? symbol);
             if (quote === null) return { symbol, found: false };
+            // 한국의 죽은 리스팅(잘못된 접미사 등)은 가격이 아니라 데이터 오류로 돌린다.
+            const lastTradeDate = staleKrListingDate(
+                profile,
+                quote.timestamp === undefined
+                    ? undefined
+                    : quote.timestamp * MS_PER_SECOND,
+                Date.now()
+            );
+            if (lastTradeDate !== null)
+                return {
+                    symbol,
+                    found: false,
+                    error: 'stale_listing' as const,
+                    lastTradeDate,
+                };
             const descriptor = getDescriptor(profile);
             return {
                 symbol,
+                ...resolvedInstrumentFields(asset),
                 found: true,
                 price: quote.price,
                 changesPercentage: quote.changesPercentage,

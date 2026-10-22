@@ -11,6 +11,7 @@ import type {
     KrTradingPlan,
 } from '@y0ngha/siglens-core';
 import { compareIsoDate } from './investorFlowsDates';
+import { majorHolderRatioChange } from './krMajorHolderRatioChange';
 import {
     clipSummaryText,
     pickSummarySignals,
@@ -37,7 +38,11 @@ export interface KrSummaryMajorHolder {
     readonly reporter: string;
     readonly form: KrMajorHolderReportForm;
     readonly ratioPct: number;
-    readonly ratioChangePct: number;
+    /**
+     * 같은 보고자의 직전 보고 대비 보유비율 증감(%p). `null`이면 계산할 수 없다는 뜻이다 — 최초(신규) 보고인데
+     * 직전 보고가 데이터에 없을 때. {@link majorHolderRatioChange} 참고.
+     */
+    readonly ratioChangePct: number | null;
     readonly sharesChange: number;
     readonly reason: string;
 }
@@ -100,13 +105,16 @@ function newestFirst<T extends { readonly receiptDate: string }>(
         .slice(0, max);
 }
 
-function summarizeMajorHolder(row: KrMajorHolderReport): KrSummaryMajorHolder {
+function summarizeMajorHolder(
+    row: KrMajorHolderReport,
+    rows: readonly KrMajorHolderReport[]
+): KrSummaryMajorHolder {
     return {
         receiptDate: row.receiptDate,
         reporter: clipSummaryText(row.reporter, SUMMARY_NAME_MAX_CHARS),
         form: row.reportForm,
         ratioPct: row.ratioPct,
-        ratioChangePct: row.ratioChangePct,
+        ratioChangePct: majorHolderRatioChange(row, rows),
         sharesChange: row.sharesChange,
         reason: clipSummaryText(row.reason, KR_SUMMARY_TEXT_MAX_CHARS),
     };
@@ -171,7 +179,7 @@ export function summarizeKrInvestorFlows(
             recent: newestFirst(
                 kr.majorHolders,
                 KR_SUMMARY_MAX_MAJOR_HOLDERS
-            ).map(summarizeMajorHolder),
+            ).map(row => summarizeMajorHolder(row, kr.majorHolders)),
         },
         insiders: {
             metrics: scorecard.insider.krMetrics ?? null,

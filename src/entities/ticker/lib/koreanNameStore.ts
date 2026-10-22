@@ -388,6 +388,32 @@ export async function lookupTickerDisplayNames(
     ) as Record<string, TickerDisplayName>;
 }
 
+/**
+ * 한국 종목 심볼의 거래소 접미사(`.KS`/`.KQ`)를 `korean_tickers` 마스터로 바로잡는다.
+ *
+ * yahoo는 다른 시장의 같은 코드에 죽은 리스팅을 남겨 둔다. 실측(2026-10-22): `253450.KS`는
+ * 2024-07-19에 멈춘 MUTUALFUND 리스팅이고 실제 종목(스튜디오드래곤)은 `253450.KQ`다. 모델이 접미사를
+ * 잘못 고르면 그 리스팅의 2년 묵은 가격이 "오늘 시세"로 나갔다. (다시 보려면 yahoo `quote('253450.KS')`의
+ * `quoteType`·`regularMarketTime`을 `253450.KQ`와 비교한다.)
+ *
+ * 마스터는 공공데이터포털 시드(KOSPI→`.KS`, KOSDAQ→`.KQ`, `toKoreanTickerRows`)다. 요청 심볼의 행이
+ * **없고** 다른 접미사의 행이 있을 때만 바꾼다 — 요청 심볼의 행이 있으면(상폐 표시가 있어도) 그대로
+ * 둔다. 시장을 옮긴 종목처럼 두 행이 모두 있는 경우를 마스터가 판정하지 않기 때문이다.
+ *
+ * 조회 실패·DB 미구성·행 없음은 전부 원래 심볼을 돌려준다(교정은 보조 장치라 실패가 호출을 막으면
+ * 안 된다). PK `IN` 조회 한 번이다.
+ */
+export async function correctKrSymbolSuffix(symbol: string): Promise<string> {
+    const upper = symbol.toUpperCase();
+    if (!isKrEquitySymbol(upper)) return upper;
+    const code = upper.slice(0, -'.KS'.length);
+    const sibling = upper.endsWith('.KS') ? `${code}.KQ` : `${code}.KS`;
+    const entries = await loadEntriesBySymbols([upper, sibling]);
+    if (entries === null) return upper;
+    const found = new Set(entries.map(e => e.symbol));
+    return !found.has(upper) && found.has(sibling) ? sibling : upper;
+}
+
 /** Resolve Korean names for a list of canonical ticker symbols. */
 export async function getKoreanNames(
     symbols: string[]

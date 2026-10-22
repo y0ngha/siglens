@@ -15,6 +15,7 @@ import type {
 } from './yahooFundamentalSource';
 import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 /**
  * 0이나 음수 분모로 나눗셈을 막는다.
@@ -93,9 +94,12 @@ export function mapProfile(
  * 밸류에이션 지표. yahoo는 KRX 종목에 `trailingPE`/`priceToBook`/`trailingEps`/`bookValue`를
  * 하나도 주지 않으므로(2026-08-17 실측, 5종목 전부 `n/a`) 확보한 값들로 파생 계산한다.
  *
- *   PER = marketCap / netIncomeToCommon(TTM 지배주주 순이익)
+ *   PER = marketCap / TTM 지배주주 순이익(`trustedTtmNetIncome`)
  *   PBR = marketCap / stockholdersEquity(**최신 분기** 자기자본)
- *   EPS = netIncomeToCommon / 내재주식수(marketCap / price)
+ *   EPS = TTM 지배주주 순이익 / 내재주식수(marketCap / price)
+ *
+ * TTM 순이익은 최근 4분기 손익 합을 우선하고, 없을 때만 요약 통계 `netIncomeToCommon`을 쓴다.
+ * 요약 통계가 회계연도 갱신을 멈춘 종목이 있어서다 — 판정 규칙은 `trustedTtmNetIncome` 참조.
  *
  * **주식수를 시가총액에서 역산하는 이유**: yahoo가 주는 `sharesOutstanding`은 KRX
  * 종목에서 시가총액의 산출 기준과 어긋난다. 삼성전자 실측 —
@@ -118,7 +122,9 @@ export function mapKeyMetrics(
     if (!summary) return null;
 
     const marketCap = summary.summaryDetail?.marketCap;
-    const netIncome = summary.defaultKeyStatistics?.netIncomeToCommon;
+    // 멈춤 판정은 한 번만 하고 PER 분자 판정과 요약 파생값 비우기가 같은 값을 쓴다(CONVENTIONS.md#CP-2).
+    const stale = isSummaryStale(data);
+    const netIncome = trustedTtmNetIncome(data, stale);
     // 분기 자본이 없는 종목(신규 상장 등)은 연간으로 폴백한다 — 없는 것보다 낫다.
     const equity =
         latest(data.quarterlyBalance)?.stockholdersEquity ??
@@ -126,16 +132,122 @@ export function mapKeyMetrics(
 
     return {
         peRatioTTM: safeRatio(marketCap, netIncome),
-        priceToSalesRatioTTM: toNullable(
-            summary.summaryDetail?.priceToSalesTrailing12Months
-        ),
+        // 아래 둘은 요약 통계가 직접 계산한 값이라 요약이 멈췄으면 같은 해에 멈춰 있다.
+        priceToSalesRatioTTM: stale
+            ? null
+            : toNullable(summary.summaryDetail?.priceToSalesTrailing12Months),
         pbRatioTTM: safeRatio(marketCap, equity),
-        pegRatioTTM: toNullable(summary.defaultKeyStatistics?.pegRatio),
-        enterpriseValueOverEBITDATTM: toNullable(
-            summary.defaultKeyStatistics?.enterpriseToEbitda
-        ),
+        pegRatioTTM: stale
+            ? null
+            : toNullable(summary.defaultKeyStatistics?.pegRatio),
+        enterpriseValueOverEBITDATTM: stale
+            ? null
+            : toNullable(summary.defaultKeyStatistics?.enterpriseToEbitda),
         epsTTM: safeRatio(netIncome, impliedShareCount(summary)),
     };
+}
+
+/** 4분기 합을 TTM으로 인정하는 최대 기간 폭(최신 분기 말 − 4번째 분기 말). 정상은 약 273일. */
+const TTM_QUARTER_SPAN_MAX_DAYS = 300;
+/**
+ * 요약 통계의 `lastFiscalYearEnd`가 최신 재무제표 기간보다 이만큼 넘게 뒤처지면 멈춘 것으로 본다.
+ * 정상 종목도 결산 뒤 사업보고서가 반영되기 전까지 약 12개월 뒤처지므로(12월 결산, 이듬해 2~3월
+ * 공시) 여유를 둔 15개월이다.
+ */
+const SUMMARY_STALE_MAX_DAYS = 456;
+/** 두 순이익 소스가 이 배수를 넘게 어긋나면 어느 쪽도 믿지 않는다. */
+const NET_INCOME_DISAGREEMENT_MAX_RATIO = 3;
+
+function quarterNetIncome(row: YahooStatementRow): number | undefined {
+    return row.netIncomeCommonStockholders ?? row.netIncome;
+}
+
+/**
+ * 최근 4분기 지배주주 순이익 합(TTM). 4분기가 다 있고 기간이 1년 안에 모일 때만 낸다 —
+ * 중간 분기가 빠진 4행을 더하면 15개월치가 TTM으로 둔갑한다.
+ */
+export function quarterlyTtmNetIncome(
+    rows: readonly YahooStatementRow[]
+): number | undefined {
+    const recent = rows.slice(0, 4);
+    if (recent.length < 4) return undefined;
+    // 유한한 값만 모아 개수로 비교한다 — 한 분기라도 비면 4분기 합이 아니다.
+    const values = recent.flatMap(row => {
+        const v = quarterNetIncome(row);
+        return v !== undefined && Number.isFinite(v) ? [v] : [];
+    });
+    if (values.length < recent.length) return undefined;
+    const newest = recent[0]!.date;
+    const oldest = recent[3]!.date;
+    if (newest instanceof Date && oldest instanceof Date) {
+        const spanDays = (newest.getTime() - oldest.getTime()) / MS_PER_DAY;
+        if (spanDays > TTM_QUARTER_SPAN_MAX_DAYS) return undefined;
+    }
+    return values.reduce((sum, v) => sum + v, 0);
+}
+
+/** 재무제표(연간 손익·분기 손익·분기 재무상태표) 중 가장 최근 기간 말. */
+function latestStatementDate(data: YahooFundamentals): number | undefined {
+    const dates = [
+        latest(data.income)?.date,
+        latest(data.quarterlyIncome)?.date,
+        latest(data.quarterlyBalance)?.date,
+    ].flatMap(d => (d instanceof Date ? [d.getTime()] : []));
+    return dates.length === 0 ? undefined : Math.max(...dates);
+}
+
+/**
+ * yahoo 요약 통계(`defaultKeyStatistics`·`financialData`)가 갱신을 멈췄는가.
+ *
+ * 실측(2026-10-22, 피노 033790.KQ): `lastFiscalYearEnd`가 2022-12-31에 머물렀고 `netIncomeToCommon`
+ * (4,978만 원)·`totalRevenue`·`profitMargins`·ROE가 전부 2022년 값이었다. 그 순이익으로 PER이
+ * 12,249배가 나왔다(최근 4분기 합으로는 약 124배, 네이버 112.77배). 같은 시점의 재무제표는 최신
+ * 분기까지 있으므로 둘의 차이로 판정한다. 둘 중 하나라도 없으면 판정하지 않는다(멈추지 않은 것으로 본다).
+ * (다시 보려면 yahoo `quoteSummary('033790.KQ')`의 `defaultKeyStatistics.lastFiscalYearEnd`·`netIncomeToCommon`을
+ * `fundamentalsTimeSeries`의 분기 `netIncomeCommonStockholders` 최근 4개 합과 비교한다.)
+ */
+export function isSummaryStale(data: YahooFundamentals): boolean {
+    const fiscalYearEnd = data.summary?.defaultKeyStatistics?.lastFiscalYearEnd;
+    if (!(fiscalYearEnd instanceof Date)) return false;
+    const statementDate = latestStatementDate(data);
+    if (statementDate === undefined) return false;
+    return (
+        (statementDate - fiscalYearEnd.getTime()) / MS_PER_DAY >
+        SUMMARY_STALE_MAX_DAYS
+    );
+}
+
+function disagrees(a: number, b: number): boolean {
+    if (a === 0 || b === 0) return a !== b;
+    if (Math.sign(a) !== Math.sign(b)) return true;
+    const ratio = Math.abs(a) / Math.abs(b);
+    return (
+        ratio > NET_INCOME_DISAGREEMENT_MAX_RATIO ||
+        ratio < 1 / NET_INCOME_DISAGREEMENT_MAX_RATIO
+    );
+}
+
+/**
+ * PER·EPS 분자 — **믿을 수 있을 때만** 순이익을 돌려주고, 아니면 `undefined`(→ PER·EPS `null`).
+ *
+ * 우선순위: 최근 4분기 합(분기 제표, 기간이 확인됨) > 요약 통계 `netIncomeToCommon`(기간 표시 없음).
+ * - 요약이 멈췄으면(`isSummaryStale`) 요약 값은 쓰지 않는다. 4분기 합이 있으면 그것만 쓴다.
+ * - 둘 다 있고 요약이 멈추지 않았는데 3배 넘게 어긋나면 어느 쪽이 맞는지 모르므로 비운다 —
+ *   틀린 PER을 내보내는 것보다 "없음"이 낫다(모델이 12,249배를 그대로 읽은 사고).
+ */
+function trustedTtmNetIncome(
+    data: YahooFundamentals,
+    stale: boolean
+): number | undefined {
+    const ttm = quarterlyTtmNetIncome(data.quarterlyIncome);
+    const summaryValue = stale
+        ? undefined
+        : data.summary?.defaultKeyStatistics?.netIncomeToCommon;
+    if (ttm === undefined) return summaryValue;
+    if (summaryValue !== undefined && disagrees(ttm, summaryValue)) {
+        return undefined;
+    }
+    return ttm;
 }
 
 /**
@@ -159,12 +271,17 @@ export function mapRatios(
 ): FundamentalRatiosInput | null {
     const fd = data.summary?.financialData;
     if (!fd) return null;
+    // 수익성 비율은 요약 통계의 손익에서 나온다 — 요약이 멈췄으면 같은 해 값이라 비운다
+    // (`isSummaryStale`, 피노 실측 순이익률 0.5%·ROE 0.2%가 2022년 값이었다).
+    const stale = isSummaryStale(data);
 
     return {
-        returnOnEquityTTM: toNullable(fd.returnOnEquity),
-        returnOnAssetsTTM: toNullable(fd.returnOnAssets),
-        operatingProfitMarginTTM: toNullable(fd.operatingMargins),
-        netProfitMarginTTM: toNullable(fd.profitMargins),
+        returnOnEquityTTM: stale ? null : toNullable(fd.returnOnEquity),
+        returnOnAssetsTTM: stale ? null : toNullable(fd.returnOnAssets),
+        operatingProfitMarginTTM: stale
+            ? null
+            : toNullable(fd.operatingMargins),
+        netProfitMarginTTM: stale ? null : toNullable(fd.profitMargins),
         // yahoo는 부채비율을 자기자본 대비(`debtToEquity`, 백분율)로만 준다.
         // 도메인이 기대하는 debtRatio는 총자산 대비이므로 재무제표에서 직접 계산한다.
         // 분자 `totalDebt`가 TTM 시점 값이므로 분모도 최신 분기 총자산을 쓴다 —
@@ -290,7 +407,11 @@ export function mapEarningsReports(
             revenueActual: null,
             revenueEstimated: toNullable(upcoming?.revenueAverage),
             lastUpdated: null,
-            isEstimatedDate: upcoming?.isEarningsDateEstimate === true,
+            // 플래그가 없으면 `undefined`로 둔다 — `false`(확정)로 읽으면 근거 없이 확정이라고 말한다.
+            isEstimatedDate:
+                typeof upcoming?.isEarningsDateEstimate === 'boolean'
+                    ? upcoming.isEarningsDateEstimate
+                    : undefined,
         });
     }
 
@@ -323,8 +444,11 @@ export interface YahooEarningsItem {
     revenueActual: number | null;
     revenueEstimated: number | null;
     lastUpdated: string | null;
-    /** yahoo가 추정한 예정일(확정 공시 아님). */
-    isEstimatedDate: boolean;
+    /**
+     * yahoo가 추정한 예정일이면 `true`, 확정일이면 `false`. yahoo가 플래그를 주지 않았으면
+     * `undefined`(확정 여부 모름) — 상위는 `rawPayload.isEstimate`를 싣지 않아 `null`로 읽는다.
+     */
+    isEstimatedDate: boolean | undefined;
 }
 
 /** yahoo `recommendationTrend.trend`의 첫 항목(`period: '0m'`)이 현재 컨센서스다. */

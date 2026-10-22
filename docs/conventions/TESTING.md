@@ -512,6 +512,7 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
 - ✅ Render the condition to SQL plus params and assert both.
 - ❌ A last-line defensive guard (a security or invariant check that "cannot happen" behind an earlier check) has no test, so deleting it still passes. ✅ Drive the input past the earlier check and assert the guard rejects it.
+- ❌ A test for "compare against the latest previous report" uses a fixture where the latest and the oldest previous report give the same result, so selecting the wrong one still passes. ✅ Give each candidate a distinct value and assert the one the rule picks.
 - ❌ After renaming a cache key, a negative assertion still checks the old key (`store.has('old:KEY') === false`), which passes on any implementation. ✅ Point it at the key the code now writes, and add a test that flips when a deliberately changed guard (for example, caching a partial result) is reverted.
 
 <a id="TE-54"></a>

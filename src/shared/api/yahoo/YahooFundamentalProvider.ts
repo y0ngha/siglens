@@ -41,6 +41,10 @@ const DEFAULT_EARNINGS_LIMIT = 8;
  * `rawPayload`는 FMP 원본 응답을 담는 필드라 yahoo에는 대응물이 없다. `symbol`과
  * `earningsDate`만 채우고, 예정일이 yahoo 추정인지(`isEstimate`)를 함께 실어 상위가
  * "예정(추정)"으로 구분해 렌더할 수 있게 한다 — 확정 공시일처럼 보이면 안 된다.
+ *
+ * `isEstimate`는 yahoo가 플래그를 줬을 때 확정일에도 `false`로 싣는다 — 추정일에만 붙이면
+ * yahoo 확정일을 확정이라고 말할 근거가 사라진다. 플래그가 **없으면** 싣지 않는다: 그 행은
+ * FMP 행처럼 "확정 여부 모름"(`dateConfirmedFromPayload` → `null`)으로 읽혀야 한다.
  */
 function toFmpShape(item: YahooEarningsItem): FmpEarningsReportItem {
     const { isEstimatedDate, ...rest } = item;
@@ -49,7 +53,9 @@ function toFmpShape(item: YahooEarningsItem): FmpEarningsReportItem {
         rawPayload: {
             symbol: item.symbol,
             earningsDate: item.earningsDate,
-            ...(isEstimatedDate ? { isEstimate: true } : {}),
+            ...(isEstimatedDate === undefined
+                ? {}
+                : { isEstimate: isEstimatedDate }),
         } as FmpEarningsReportItem['rawPayload'],
     };
 }

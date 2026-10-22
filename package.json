@@ -32,6 +32,7 @@
         "db:seed:crypto-korean": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-korean-names.ts",
         "db:seed:kr-names": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-kr-listed-names.ts",
         "db:backfill:calendar": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/backfillEconomicCalendar.ts",
+        "db:prune:stale-earnings": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/prune-stale-earnings-schedules.ts",
         "db:seed:calendar-analysis": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seedEconomicEventAnalysis.ts",
         "metrics": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/metrics.ts",
         "funnel:report": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/funnel-report.ts",
@@ -73,6 +74,7 @@
         "db:verify:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/verifyContentLocale.ts",
         "investor-flows:reingest-13f": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/reingest-investor-flows-13f.ts",
         "investor-flows:rebuild-aggregates": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/rebuild-investor-flows-aggregates.ts",
+        "db:cleanup:asset-translations": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/cleanup-asset-translation-mismatches.ts",
         "db:translate:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/translateContentLocale.ts"
     },
     "dependencies": {

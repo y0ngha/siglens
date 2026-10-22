@@ -66,8 +66,13 @@ import {
     yearScoreExtremes,
 } from '@/entities/bars/lib/fearGreedWindow';
 import { logToolDegrade } from './logToolDegrade';
+import { staleKrListingDate } from './freshness';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { pctVs, ratioPct } from './percent';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from './resolveAssetInfo';
 import { BARS_RESULT_MAX_CHARS } from './truncate';
 
 /**
@@ -937,6 +942,20 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     );
     const { bars, indicators } = barsData;
     if (bars.length === 0) return { symbol, timeframe, found: false };
+    // 한국의 죽은 리스팅(잘못된 접미사 등)은 묵은 봉을 "현재"로 내보내지 않고 데이터 오류로 돌린다.
+    const lastTradeDate = staleKrListingDate(
+        profile,
+        bars[bars.length - 1]!.time * MS_PER_SECOND,
+        Date.now()
+    );
+    if (lastTradeDate !== null)
+        return {
+            symbol,
+            timeframe,
+            found: false,
+            error: 'stale_listing',
+            lastTradeDate,
+        };
     const requestedBars: BarPoint[] = bars.slice(-count).map(b => ({
         t: isoTimestamp(b.time, timeframe),
         o: b.open,
@@ -991,6 +1010,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
             asOf,
             source: 'SIGLENS bars + indicators',
             symbol,
+            ...resolvedInstrumentFields(asset),
             timeframe,
             currency,
             trend,

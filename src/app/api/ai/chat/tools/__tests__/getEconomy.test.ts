@@ -1,8 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { snapshot, briefing } = vi.hoisted(() => ({
+const { snapshot, briefing, freshTreasury } = vi.hoisted(() => ({
     snapshot: vi.fn(),
     briefing: vi.fn(),
+    freshTreasury: vi.fn(),
+}));
+// 국채 단독 읽기는 Redis/FMP로 나간다 — 기본값 null(스냅샷 값 사용)로 막아 둔다.
+vi.mock('@/entities/economy/api/treasuryRatesCache', () => ({
+    getFreshTreasuryRates: freshTreasury,
 }));
 vi.mock('@/entities/economy/api/economySnapshotStaticCache', () => ({
     getEconomySnapshotStatic: snapshot,
@@ -28,6 +33,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 describe('getEconomyTool', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        freshTreasury.mockResolvedValue(null);
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-09-14T00:00:00.000Z'));
     });
@@ -35,9 +41,20 @@ describe('getEconomyTool', () => {
         vi.useRealTimers();
     });
 
-    it('스냅샷이 없으면 available:false', async () => {
-        snapshot.mockRejectedValue(new Error('redis down'));
+    it('스냅샷이 없으면 available:false, 실패는 오류 이름만 남긴다', async () => {
+        const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const error = new Error('redis down: secret detail');
+        error.name = 'UpstashError';
+        snapshot.mockRejectedValue(error);
         const r = await getEconomyTool({}, ctx, rt);
+        expect(logged).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_economy',
+            'economy snapshot failed, degrading',
+            { errorName: 'UpstashError', code: undefined }
+        );
+        expect(JSON.stringify(logged.mock.calls)).not.toContain('secret');
+        logged.mockRestore();
         expect(r).toEqual({
             available: false,
             reason: 'snapshot_unavailable',
@@ -186,15 +203,23 @@ describe('getEconomyTool', () => {
             calendar: [],
         });
         briefing.mockRejectedValue(new Error('cache miss'));
+        const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
         const r = (await getEconomyTool({}, ctx, rt)) as {
             available: boolean;
             briefing: unknown;
         };
         expect(r.available).toBe(true);
         expect(r.briefing).toBeNull();
+        expect(logged).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_economy',
+            'macro briefing failed, degrading',
+            expect.objectContaining({ errorName: 'Error' })
+        );
+        logged.mockRestore();
     });
 
-    describe('indicator change/direction, treasury spread, calendar hoursUntil (spec §3.6, B8)', () => {
+    describe('indicator change/direction, treasury spread, calendar hoursUntil', () => {
         it('latest-previous로 change/direction을 계산한다', async () => {
             snapshot.mockResolvedValue({
                 indicators: [
@@ -297,6 +322,68 @@ describe('getEconomyTool', () => {
                 treasury: { spread2s10s: number | null };
             };
             expect(r.treasury.spread2s10s).toBe(0.4);
+        });
+
+        it('국채는 스냅샷(최대 ~48h)보다 따로 읽은 당일 값(짧은 TTL)을 쓰고, 기준일·읽은 시각을 싣는다', async () => {
+            // 실측: 스냅샷은 10/19 값인데 10/21 공표가 이미 나와 있었다.
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: { date: '2026-10-19', year2: 3.6, year10: 5.15 },
+                calendar: [],
+            });
+            freshTreasury.mockResolvedValue({
+                treasury: { date: '2026-10-21', year2: 3.62, year10: 5.13 },
+                fetchedAt: '2026-10-22T12:00:00.000Z',
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                treasury: Record<string, unknown>;
+            };
+            expect(r.treasury).toMatchObject({
+                date: '2026-10-21',
+                year10: 5.13,
+                fetchedAt: '2026-10-22T12:00:00.000Z',
+                cache: 'treasury rates (3h cache)',
+            });
+        });
+
+        it('당일 읽기가 실패하면 스냅샷 값으로 물러나고, 묵었을 수 있다고 표시한다', async () => {
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: { date: '2026-10-19', year2: 3.6, year10: 5.15 },
+                calendar: [],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                treasury: Record<string, unknown>;
+            };
+            expect(r.treasury).toMatchObject({
+                date: '2026-10-19',
+                fetchedAt: null,
+                cache: 'economy snapshot (up to ~48h old)',
+            });
+        });
+
+        it('따로 읽은 값이 스냅샷보다 오래됐으면 스냅샷 값을 쓰고 fetchedAt은 null', async () => {
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: { date: '2026-10-21', year2: 3.62, year10: 5.13 },
+                calendar: [],
+            });
+            freshTreasury.mockResolvedValue({
+                treasury: { date: '2026-10-19', year2: 3.6, year10: 5.15 },
+                fetchedAt: '2026-10-22T12:00:00.000Z',
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                treasury: Record<string, unknown>;
+            };
+            expect(r.treasury).toMatchObject({
+                date: '2026-10-21',
+                year10: 5.13,
+                fetchedAt: null,
+                cache: 'economy snapshot (up to ~48h old)',
+            });
         });
 
         it('treasury가 null이면 그대로 null', async () => {
