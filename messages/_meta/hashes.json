@@ -2107,7 +2107,7 @@
     "widgets.agent-chat.EmptyState.capQuotes": "50ad02a1baaf",
     "widgets.agent-chat.EmptyState.capWeb": "86d2d09cef62",
     "widgets.agent-chat.EmptyState.capabilitiesLabel": "824e6038e803",
-    "widgets.agent-chat.EmptyState.description": "c4c19517f4f9",
+    "widgets.agent-chat.EmptyState.description": "258ba44f9207",
     "widgets.agent-chat.EmptyState.examplesLabel": "db5a3fd84aa7",
     "widgets.agent-chat.EmptyState.guestNote": "0fe682090009",
     "widgets.agent-chat.EmptyState.headlineAccent": "371e3c16f0e6",
@@ -3976,5 +3976,5 @@
     "widgets.investor-flows.scorecard.krTitle": "48fd07276727",
     "app.symbol.page.ddc932": "ddc932a97b95",
     "app.ai.manifest.name": "c97d304540d0",
-    "app.ai.manifest.description": "67e47eab9ee6"
+    "app.ai.manifest.description": "7d1a5460a740"
 }

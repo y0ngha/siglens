@@ -28,7 +28,7 @@
                 "9401e4": "SIGLENS AI 正在维护中，请稍后再试。"
             },
             "manifest": {
-                "description": "向 AI 询问任何股票或加密货币。它会查找实时行情、图表指标和最新新闻，并附上来源作答。",
+                "description": "向 AI 询问任何股票或加密货币。它会分析 SIGLENS 自行计算的行情、指标与新闻数据后作答。",
                 "name": "{v0} — 股票与加密货币 AI 聊天"
             },
             "not-found": {
@@ -5332,7 +5332,7 @@
                 "capQuotes": "最新行情",
                 "capWeb": "网络搜索",
                 "capabilitiesLabel": "SIGLENS AI 查询的数据",
-                "description": "自己查询行情、图表和新闻，并展示每个回答依据的来源。",
+                "description": "基于 SIGLENS 自行计算并积累的行情、指标与新闻数据，经自有分析逻辑解读后作答。",
                 "examplesLabel": "可以回答这样的问题",
                 "guestNote": "无需登录即可直接提问。分析我的持仓和保存对话需要登录。",
                 "headlineAccent": "股票与加密货币 AI 聊天助手 SIGLENS AI",

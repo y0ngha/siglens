@@ -28,7 +28,7 @@
                 "9401e4": "SIGLENS AI is under maintenance right now. Please try again shortly."
             },
             "manifest": {
-                "description": "Ask AI about any stock or coin. It looks up live quotes, chart indicators and the latest news, and answers with sources.",
+                "description": "Ask AI about any stock or coin. It answers by analyzing the quotes, indicators and news data SIGLENS computes itself.",
                 "name": "{v0} — AI Stock & Crypto Chat"
             },
             "not-found": {
@@ -5332,7 +5332,7 @@
                 "capQuotes": "Latest quotes",
                 "capWeb": "Web search",
                 "capabilitiesLabel": "Data SIGLENS AI looks up",
-                "description": "It looks up quotes, charts and news itself and shows the sources behind every answer.",
+                "description": "It answers from the quotes, indicators and news data SIGLENS computes and keeps itself, interpreted by its own analysis logic.",
                 "examplesLabel": "Questions it can answer",
                 "guestNote": "Ask right away, no login needed. Analysis of your own holdings and saved conversations need a login.",
                 "headlineAccent": "SIGLENS AI, a chatbot for stocks & crypto",
