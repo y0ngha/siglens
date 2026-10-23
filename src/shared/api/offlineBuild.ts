@@ -1,9 +1,9 @@
 /**
- * pre-push 로컬 빌드가 프로덕션 FMP/Neon/Upstash/Yahoo에 닿지 않도록 막는 게이트.
+ * pre-push 로컬 빌드가 프로덕션 FMP/Neon/Upstash/Yahoo와 미 재무부(treasury.gov)에 닿지 않도록 막는 게이트.
  *
  * WHY: 로컬 `yarn build`는 `.env.local`(프로덕션 자격증명)을 그대로 로드한 채
  * `/economy`, `/market`(us/kr), `/fear-greed`(us/kr), `news/[category]`, 법적 페이지,
- * 홈을 prerender하며 실제 FMP/Neon/Upstash/Yahoo를 호출한다. 이 출력은 버려지므로
+ * 홈을 prerender하며 실제 FMP/Neon/Upstash/Yahoo/treasury.gov를 호출한다. 이 출력은 버려지므로
  * degrade된 결과라도 무해하다 — 문제는 프로덕션 서비스에 불필요한 부하/비용을 주는
  * 쪽이다. Yahoo는 API 키가 없어 FMP처럼 자격증명 부재로 자연히 막히지 않으므로
  * (한국 market/fear-greed 라우트가 `marketDataProviderFor('kr')`로 타는 경로),
@@ -13,7 +13,7 @@
  * ISR S3 캐시가 GIT_SHA별이라 반대로 실데이터가 반드시 필요하므로 이 플래그를
  * 절대 켜면 안 된다(`Dockerfile` / `.github/workflows/deploy.yml`에 추가 금지).
  *
- * 각 호출부(FMP/Neon/Upstash/Yahoo 어댑터)는 이 서비스들이 unreachable일 때 이미
+ * 각 호출부(FMP/Neon/Upstash/Yahoo/treasury.gov 어댑터)는 이 서비스들이 unreachable일 때 이미
  * graceful하게 degrade하도록 되어 있으므로(캐시 미스/빈 배열/null 반환), 여기서는
  * 네트워크 호출 자체를 사전에 막기만 하면 된다.
  *
@@ -42,6 +42,7 @@ export const OFFLINE_BUILD_SERVICE = {
     DATABASE: 'Database',
     UPSTASH: 'Upstash',
     YAHOO: 'Yahoo',
+    TREASURY: 'Treasury',
 } as const;
 
 export type OfflineBuildService =

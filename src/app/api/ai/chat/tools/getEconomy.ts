@@ -7,10 +7,17 @@ import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshot
 import {
     type FreshTreasuryRates,
     getFreshTreasuryRates,
+    TREASURY_CACHE_TTL_SECONDS,
+    TREASURY_FALLBACK_TTL_SECONDS,
 } from '@/entities/economy/api/treasuryRatesCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
-import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
+import {
+    MS_PER_DAY,
+    MS_PER_HOUR,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { fmpCalendarDateTimeToIso } from '@/shared/lib/etTimeUtils';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
@@ -31,6 +38,20 @@ function directionOf(
     return 'unchanged';
 }
 
+interface PickedTreasury {
+    treasury: TreasuryRateSnapshot;
+    fetchedAt: string | null;
+    /** 같은 날 읽기의 출처. 스냅샷 값은 출처를 기록하지 않아 `null`. */
+    source: FreshTreasuryRates['source'] | null;
+    /** 같은 날 읽기가 재무부를 못 읽어 FMP로 물러난 값인가(짧게만 캐시된다). */
+    fallback: boolean;
+}
+
+const TREASURY_SOURCE_LABEL = {
+    'us-treasury': 'US Treasury',
+    fmp: 'FMP',
+} as const;
+
 /**
  * Picks the treasury reading to report: the separately cached same-day read
  * (`getFreshTreasuryRates`, 3h TTL keyed by the ET date) when it is available and
@@ -40,15 +61,25 @@ function directionOf(
 function pickTreasury(
     snapshotTreasury: TreasuryRateSnapshot | null,
     fresh: FreshTreasuryRates | null
-): { treasury: TreasuryRateSnapshot; fetchedAt: string | null } | null {
+): PickedTreasury | null {
     if (
         fresh &&
         (!snapshotTreasury || fresh.treasury.date >= snapshotTreasury.date)
     ) {
-        return { treasury: fresh.treasury, fetchedAt: fresh.fetchedAt };
+        return {
+            treasury: fresh.treasury,
+            fetchedAt: fresh.fetchedAt,
+            source: fresh.source,
+            fallback: !fresh.officialAvailable,
+        };
     }
     return snapshotTreasury
-        ? { treasury: snapshotTreasury, fetchedAt: null }
+        ? {
+              treasury: snapshotTreasury,
+              fetchedAt: null,
+              source: null,
+              fallback: false,
+          }
         : null;
 }
 
@@ -59,11 +90,9 @@ function pickTreasury(
  * the same-day read hit the provider; `null` means the value came from the
  * day-cached economy snapshot and may be up to ~48h old, which `cache` states.
  */
-function treasuryView(
-    picked: { treasury: TreasuryRateSnapshot; fetchedAt: string | null } | null
-) {
+function treasuryView(picked: PickedTreasury | null) {
     if (!picked) return null;
-    const { treasury, fetchedAt } = picked;
+    const { treasury, fetchedAt, source, fallback } = picked;
     const rawSpread = computeYieldSpread(treasury);
     // `10y − 2y` in binary floats reads 0.39999999999999947; round like every
     // other number the agent quotes.
@@ -73,10 +102,13 @@ function treasuryView(
         spread2s10s,
         curveInverted: spread2s10s === null ? null : spread2s10s < 0,
         fetchedAt,
+        ...(source === null ? {} : { provider: TREASURY_SOURCE_LABEL[source] }),
         cache:
             fetchedAt === null
                 ? 'economy snapshot (up to ~48h old)'
-                : 'treasury rates (3h cache)',
+                : fallback
+                  ? `FMP fallback (US Treasury unavailable; ${TREASURY_FALLBACK_TTL_SECONDS / SECONDS_PER_MINUTE}-min cache; FMP can lag the Treasury by ~2 days)`
+                  : `treasury rates (${TREASURY_CACHE_TTL_SECONDS / SECONDS_PER_HOUR}h cache)`,
     };
 }
 

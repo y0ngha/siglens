@@ -1808,7 +1808,7 @@
                     "faq1q": "Where can I see FOMC announcements?",
                     "faq2a": "The Consumer Price Index is released monthly, around mid-month, by the US Bureau of Labor Statistics (BLS).",
                     "faq2q": "How often is CPI released?",
-                    "faq3a": "It is collected from the Financial Modeling Prep (FMP) API and refreshed every {v0} hours.",
+                    "faq3a": "Indicators and the calendar come from the Financial Modeling Prep (FMP) API. For Treasury yields we use whichever is more recent: the U.S. Treasury's official daily yield curve or FMP. The data is refreshed every {v0} hours.",
                     "faq3q": "Where does this data come from?",
                     "title": "US Economy — Indicators & Calendar at a Glance"
                 }
