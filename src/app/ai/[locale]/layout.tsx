@@ -25,7 +25,11 @@ import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
+import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
+import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
+import { ServiceWorkerRegistrar } from '@/features/pwa-install/ui/ServiceWorkerRegistrar';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
+import { aiManifestPath } from './aiManifest';
 import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
@@ -48,13 +52,19 @@ export async function generateMetadata({
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
     const { locale: raw } = await params;
-    const productName = brandAiName(resolveLocale(raw));
+    const locale = resolveLocale(raw);
+    const productName = brandAiName(locale);
     return {
         ...AI_LAYOUT_METADATA,
         title: {
             default: productName,
             template: `%s | ${productName}`,
         },
+        // ai 호스트 전용 매니페스트. 없으면 `app/manifest.ts`가 자동으로 걸려 ai 호스트에서
+        // 설치한 앱이 메인 사이트 이름("시그렌즈")·바로가기(`/market`)를 달았다.
+        manifest: aiManifestPath(locale),
+        // iOS 홈 화면 이름은 이 값(없으면 문서 제목)을 쓴다 — 제목은 SEO 문구라 길다.
+        appleWebApp: { title: productName },
     };
 }
 
@@ -96,6 +106,15 @@ export default async function AiRootLayout({
             suppressHydrationWarning
         >
             <body className="flex min-h-full flex-col bg-secondary-900">
+                {/* 하이드레이션 전의 첫 탭·키를 기억한다 — 설치 배너가 effect보다 먼저 온 입력을
+                    놓치지 않게. `next/script`가 아니라 인라인이어야 파싱 즉시 실행된다(근거는
+                    `features/pwa-install/lib/firstInputProbe.ts`). 루트 레이아웃은 클라이언트에서
+                    다시 그려지지 않으므로 "클라이언트 렌더 시 스크립트 미실행" 경고 대상이 아니다. */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: FIRST_INPUT_PROBE_SCRIPT,
+                    }}
+                />
                 {/* 컴포넌트 트리에서 `<script>`를 렌더하면 클라이언트 내비게이션 때
                     실행되지 않고 React가 경고한다. `next/script`의 beforeInteractive는
                     루트 레이아웃에서만 허용되고(이 파일이 ai 서브트리의 루트),
@@ -125,7 +144,25 @@ export default async function AiRootLayout({
                                 {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
                                 렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
                                 <FunnelSignupPing />
-                                <AuthSessionHeaderClient authReturn="ai" />
+                                {/* 설치 배너 + 서비스 워커 등록. 하단은 입력창 자리라 위에 띄우고,
+                                    스트리밍 중인 답변이 끊기지 않게 SW 교체 때 새로고침하지 않는다.
+                                    점검 중(`disabled`)에는 점검 안내만 여는 앱을 권하지 않도록 배너는 띄우지 않되,
+                                    오프라인 페이지 프리캐시가 빠지지 않게 서비스 워커는 등록한다. */}
+                                {disabled ? (
+                                    <ServiceWorkerRegistrar
+                                        reloadOnUpdate={false}
+                                    />
+                                ) : (
+                                    <PwaBanner
+                                        placement="top"
+                                        reloadOnServiceWorkerUpdate={false}
+                                    />
+                                )}
+                                <AuthSessionHeaderClient
+                                    authReturn="ai"
+                                    softEdge
+                                    hideOnScrollDown
+                                />
                                 {disabled ? (
                                     <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
                                         {t('layout.9401e4')}

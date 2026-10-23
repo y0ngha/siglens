@@ -1,0 +1,22 @@
+import { getTranslations } from 'next-intl/server';
+import { LOCALES, resolveLocale } from '@/shared/i18n/locales';
+import { buildAiManifest } from '../aiManifest';
+
+/** 로케일별 매니페스트는 정적으로 굽는다 — 요청마다 만들 이유가 없다. */
+export function generateStaticParams() {
+    return LOCALES.map(locale => ({ locale }));
+}
+
+export const dynamic = 'force-static';
+
+export async function GET(
+    _request: Request,
+    { params }: { params: Promise<{ locale: string }> }
+) {
+    const { locale: raw } = await params;
+    const locale = resolveLocale(raw);
+    const t = await getTranslations({ locale, namespace: 'app.ai.manifest' });
+    return Response.json(buildAiManifest(locale, t), {
+        headers: { 'content-type': 'application/manifest+json' },
+    });
+}

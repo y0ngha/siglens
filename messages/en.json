@@ -27,6 +27,10 @@
             "layout": {
                 "9401e4": "SIGLENS AI is under maintenance right now. Please try again shortly."
             },
+            "manifest": {
+                "description": "Ask AI about any stock or coin. It answers by analyzing the quotes, indicators and news data SIGLENS computes itself.",
+                "name": "{v0} — AI Stock & Crypto Chat"
+            },
             "not-found": {
                 "04598e": "Start a new chat",
                 "047c35": "Conversation not found",
@@ -34,7 +38,7 @@
             },
             "seo": {
                 "title": "AI Stock & Crypto Chatbot — Ask About Quotes, Charts & News | SIGLENS AI",
-                "description": "Ask an AI about Samsung, Apple, Bitcoin and more. It looks up live quotes, chart indicators and the latest news and answers with sources. US stocks, Korean stocks and crypto, no login needed to start.",
+                "description": "Ask an AI about Samsung, Apple, Bitcoin and more. It analyzes the quotes, chart indicators and news data SIGLENS computes itself. US stocks, Korean stocks and crypto, no login needed to start.",
                 "ogLabel": "Ask AI about stocks & crypto · Beta"
             }
         },
@@ -2781,16 +2785,16 @@
                 "quote": "Quotes",
                 "quoteBody": "Checks the current price and how much it's up or down today. Every price in an answer comes from here.",
                 "quoteScope": "US stocks, Korean stocks, crypto",
-                "title": "What it looks up before answering"
+                "title": "The data it analyzes to answer"
             },
-            "disclaimer": "SIGLENS AI finds and explains information. Investment decisions are yours to make.",
+            "disclaimer": "SIGLENS AI analyzes and explains data. Investment decisions are yours to make.",
             "end": {
                 "body": "You can start without signing up.",
                 "button": "Open SIGLENS AI",
                 "title": "Ask right now"
             },
             "faq": {
-                "adviceA": "No. It only finds and explains the data; it never tells you to buy or sell. Investment decisions are yours to make.",
+                "adviceA": "No. It only analyzes and explains the data; it never tells you to buy or sell. Investment decisions are yours to make.",
                 "adviceQ": "Does it give investment advice?",
                 "beginnerA": "Yes. Ask casually and it answers in plain words. If a word you don't know comes up, just ask \"What does that mean?\" And if you ask in technical terms, it answers at that level.",
                 "beginnerQ": "Can I use it if I don't know much about stocks?",
@@ -2810,7 +2814,7 @@
             },
             "hero": {
                 "button": "Ask SIGLENS AI",
-                "lede": "SIGLENS AI looks up the latest prices, charts and news itself, analyzes them like a pro, and explains in plain words.",
+                "lede": "SIGLENS AI interprets the price, indicator and news data SIGLENS computes and keeps itself through its analysis logic, and explains it in plain words.",
                 "title": "Curious about a stock? Ask now"
             },
             "market": {
@@ -2889,9 +2893,9 @@
                 "searchSubject": "Samsung Electronics → 005930"
             },
             "seo": {
-                "description": "See how SIGLENS AI looks up the latest prices, chart indicators, analysis reports and news for every question and answers in plain words, with example conversations. Ask right away, no sign-in needed.",
+                "description": "See how SIGLENS AI analyzes the prices, chart indicators, analysis reports and news data SIGLENS computes itself and answers in plain words, with example conversations. Ask right away, no sign-in needed.",
                 "ogLabel": "About SIGLENS AI",
-                "title": "About SIGLENS AI: the stock AI that looks up prices and charts before it answers"
+                "title": "About SIGLENS AI: the stock AI that answers by analyzing its own price and indicator data"
             },
             "tool": {
                 "analysis": "SIGLENS analysis",
@@ -5327,8 +5331,8 @@
                 "capNews": "News",
                 "capQuotes": "Latest quotes",
                 "capWeb": "Web search",
-                "capabilitiesLabel": "Data SIGLENS AI looks up",
-                "description": "It looks up quotes, charts and news itself and shows the sources behind every answer.",
+                "capabilitiesLabel": "Data SIGLENS AI analyzes",
+                "description": "It answers from the quotes, indicators and news data SIGLENS computes and keeps itself, interpreted by its own analysis logic.",
                 "examplesLabel": "Questions it can answer",
                 "guestNote": "Ask right away, no login needed. Analysis of your own holdings and saved conversations need a login.",
                 "headlineAccent": "SIGLENS AI, a chatbot for stocks & crypto",

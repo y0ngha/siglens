@@ -460,6 +460,15 @@
     color-scheme: dark;
 
     /*
+     * SIGLENS AI 화면의 헤더 아래 띠 높이 — 대화 목록 띠(`ChatShell`)와 `/about`의 "지금 물어보기"
+     * 띠(`AboutCtaBar`). 사이트 헤더 높이(`--header-h`, `@theme`)와 함께 컴포넌트의 높이·sticky
+     * 위치와 상단 PWA 배너 위치(`--pwa-banner-top`)가 **같은 값**을 읽는다. 한쪽만 숫자로 바꾸면
+     * 배너가 크롬에 겹친다(`CONVENTIONS.md#CS-2`).
+     */
+    --agent-chat-bar-h: 2.75rem;
+    --ai-about-cta-h: 3.5rem;
+
+    /*
      * 차트 블록(캔들 + 거래량)의 높이. 첫 뷰포트에서 site header · PWA 배너 ·
      * `/[symbol]` 크롬을 뺀 잔여다.
      *
@@ -652,6 +661,60 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
 }
 
 /*
+ * 상단 배치 PWA 배너(`PwaBanner placement="top"`, ai 호스트)의 세로 위치.
+ *
+ * 배너는 크롬(사이트 헤더 + 그 아래 띠) **아래**에 떠야 헤더 로그인·메뉴, "대화 목록" 버튼,
+ * `/about`의 "지금 물어보기" 띠를 가리지 않는다. 크롬 구성은 화면·스크롤 상태마다 달라 배너
+ * 컴포넌트가 아니라 여기서 정한다. 간격은 0.5rem.
+ *
+ * - `--pwa-banner-top`(화면마다 고정): 기본은 사이트 헤더 아래(not-found 등), 대화 화면(lg 미만,
+ *   lg 이상은 띠가 `lg:hidden`)은 대화 목록 띠 아래, `/about`은 "지금 물어보기" 띠 아래.
+ * - 아래로 스크롤해 크롬이 올라가면(헤더 `inert`, lg 미만에서만) `--pwa-banner-hidden-top`으로
+ *   옮긴다 — 기본은 화면 위 가장자리(0.75rem), `/about`은 위로 붙은 "지금 물어보기" 띠 아래.
+ *
+ * 옮길 때는 `top`이 아니라 **`translate`**를 쓴다. 보이는 고정 요소의 `top`을 바꾸면 레이아웃
+ * 이동으로 잡히고 스크롤은 "최근 입력"이 아니라 CLS에 쌓인다(헤더·띠도 `transform`으로 움직인다).
+ * 같은 200ms·같은 곡선(Tailwind `transition-transform` 기본값)이라 크롬과 함께 움직여 겹치지 않는다.
+ *
+ * 조건 규칙은 `:where()`로 명시도를 같게 맞추고 **순서**로 우선한다 — 크롬 숨김 규칙이 화면별
+ * 규칙보다 뒤에 있어 이긴다. 아래쪽 숨김 규칙(`display: none`)보다 명시도가 낮아야 stylelint
+ * `no-descending-specificity`도 통과한다.
+ */
+[data-pwa-banner] {
+    --pwa-banner-top: calc(var(--header-h) + 0.5rem);
+    --pwa-banner-hidden-top: 0.75rem;
+    --pwa-banner-shift: 0px;
+
+    translate: 0 var(--pwa-banner-shift);
+    transition: translate 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-pwa-banner] {
+        transition: none;
+    }
+}
+
+@media (width < 64rem) {
+    body:has(:where([data-agent-chat-bar])) [data-pwa-banner] {
+        --pwa-banner-top: calc(
+            var(--header-h) + var(--agent-chat-bar-h) + 0.5rem
+        );
+    }
+}
+
+body:has(:where([data-ai-about-cta])) [data-pwa-banner] {
+    --pwa-banner-top: calc(var(--header-h) + var(--ai-about-cta-h) + 0.5rem);
+    --pwa-banner-hidden-top: calc(var(--ai-about-cta-h) + 0.5rem);
+}
+
+body:has(:where(header[data-scroll-chrome][inert])) [data-pwa-banner] {
+    --pwa-banner-shift: calc(
+        var(--pwa-banner-hidden-top) - var(--pwa-banner-top)
+    );
+}
+
+/*
  * 차트 헤더 팝오버(`ChartPopoverPanel`, `data-chart-popover`)가 열려 있는 동안 PWA 설치 배너와 Ask-AI FAB을
  * 숨긴다.
  *
@@ -687,6 +750,16 @@ body:has([data-vaul-drawer][data-sheet-expanded]) [data-pwa-banner] {
  */
 body:has([data-vaul-drawer][data-modal-sheet]) [data-ask-ai-fab],
 body:has([data-vaul-drawer][data-modal-sheet]) [data-pwa-banner] {
+    display: none;
+}
+
+/*
+ * SIGLENS AI 모바일 대화 목록 드로어(`SidebarDrawer`)가 열려 있으면 PWA 설치 배너를 숨긴다.
+ *
+ * ai 호스트의 배너는 상단(`placement="top"`, z-65)에 떠서 드로어(z-60, 전체 높이)의 첫 줄 —
+ * 홈 링크와 닫기 버튼 — 을 덮는다. 드로어는 닫히면 vaul이 언마운트해 `:has()`가 풀린다.
+ */
+body:has(#agent-chat-sidebar-drawer) [data-pwa-banner] {
     display: none;
 }
 
@@ -774,5 +847,230 @@ body:has([data-route-pending]) [data-vaul-drawer] {
 
     100% {
         transform: translateX(300%);
+    }
+}
+
+/*
+ * SIGLENS AI 표면 — 선 대신 **면의 밝기와 빛**으로 층을 나눈다.
+ *
+ * ai 호스트는 헤더·사이드바·카드·입력창이 전부 1px 선으로 갈라져 표 같은 인상이었다
+ * (2026-10 사용자 피드백: "엑셀 같다"). 그래서 장식 경계를 지우고 아래 클래스로 바꾼다.
+ *
+ * - `.ai-raised` — 떠 있는 표면(질문 카드·입력창·말풍선·보조 버튼).
+ * - `.ai-raised-hover` — 포인터를 올리면 면이 한 단계 밝아진다.
+ * - `.ai-accent` — 주 액션 채움 버튼의 브랜드 그라데이션.
+ * - `.ai-rail` / `.ai-bar` — 사이드바·상단 띠. 장식 선 대신 옅은 빛 한 줄(다크)·가장자리 그림자(라이트)로 나눈다.
+ * - `.ai-well` — 코드 블록처럼 **파인** 자리.
+ *
+ * ## 테마마다 재료가 다르다
+ *
+ * - **다크(기본)**: 단색 면 + 윗변 하이라이트(inset 1px) + 아주 얕은 접지 그림자(1~2px)만 쓴다.
+ *   거의 검은 페이지 위에서는 큰 낙하 그림자가 보이지 않고, 검정에 가까운 두 색의 그라데이션은
+ *   탁하게 번져 보였다(2026-10 실측·사용자 피드백). 다크의 높이는 "위에 있을수록 밝다"로 표현한다.
+ *   사이드바·헤더·띠·코드 우물은 톤 차이가 보이지 않으므로 옅은 빛 한 줄(흰색 5%)로 나눈다.
+ * - **라이트**: 위가 밝은 세로 그라데이션 + 낙하 그림자. 흰 면이 그림자로 떠 보이는
+ *   라이트 UI의 관례다.
+ *
+ * 그림자는 `box-shadow`를 직접 덮지 않고 Tailwind의 `--tw-shadow`/`--tw-inset-shadow`에
+ * 싣는다. `focus-visible:ring-2` 같은 링 유틸리티는 `--tw-ring-shadow`만 바꾸고 같은
+ * 조합식으로 `box-shadow`를 다시 쓰므로 포커스 링이 떠도 하이라이트가 남는다. 반대로
+ * `shadow-*`·`inset-shadow-*` 유틸리티는 이 변수를 덮어쓰므로 `ai-*` 클래스와 함께 쓰지 않는다.
+ *
+ * 조작 요소의 식별(WCAG 1.4.11): 텍스트·아이콘이 있는 버튼은 라벨 자체가 식별 수단이라
+ * 경계가 필요 없다. 경계가 유일한 식별 수단인 일반 입력(사이드바 검색 등)은 여전히
+ * `border-control`을 쓴다(`docs/conventions/DESIGN.md` §경계 예외).
+ *
+ * 면 색은 `@property`로 색 등록해 호버 전환이 보간되게 한다. 무채색끼리 섞으므로
+ * `srgb`로 섞는다 — `oklch` 혼합은 색상각이 틀어져 다크 면에 붉은 기가 돌았다.
+ */
+@property --ai-raised-top {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: transparent;
+}
+
+@property --ai-raised-bottom {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: transparent;
+}
+
+@layer components {
+    .ai-raised,
+    .ai-accent,
+    .ai-rail,
+    .ai-bar,
+    .ai-well {
+        box-shadow:
+            var(--tw-inset-shadow, 0 0 #0000),
+            var(--tw-inset-ring-shadow, 0 0 #0000),
+            var(--tw-ring-offset-shadow, 0 0 #0000),
+            var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
+    }
+
+    /* 다크: 페이지(900)보다 한 단계 밝은 단색 면. top = bottom이라 그라데이션이 없다. */
+    .ai-raised {
+        --ai-raised-top: color-mix(
+            in srgb,
+            var(--color-secondary-700) 40%,
+            var(--color-secondary-800)
+        );
+        --ai-raised-bottom: var(--ai-raised-top);
+        --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 7%);
+        --tw-shadow: 0 1px 2px rgb(0 0 0 / 35%);
+
+        background-color: var(--ai-raised-bottom);
+        background-image: linear-gradient(
+            180deg,
+            var(--ai-raised-top),
+            var(--ai-raised-bottom)
+        );
+
+        /* 투명 경계(입력창)가 있어도 그라데이션이 경계 밑으로 반복돼 윗변에 1px 선이 비치지 않게 한다. */
+        background-origin: border-box;
+
+        /* 호출부에 `transition-*` 유틸리티를 함께 쓰지 않는다 — 유틸리티 레이어가 이겨 면 색
+           전환이 빠진다(버튼 상수의 `transition-colors`도 마찬가지). */
+        transition-duration: 150ms;
+        transition-property:
+            color, background-color, box-shadow, --ai-raised-top,
+            --ai-raised-bottom;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ai-raised {
+            transition: none;
+        }
+    }
+
+    /* 터치 기기는 호버가 눌린 채 남으므로 실제 포인터가 있을 때만 건다. */
+    @media (hover: hover) {
+        .ai-raised-hover:hover {
+            --ai-raised-top: color-mix(
+                in srgb,
+                var(--color-secondary-700) 70%,
+                var(--color-secondary-800)
+            );
+            --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 10%);
+        }
+    }
+
+    .ai-accent {
+        --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 18%);
+        --tw-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+
+        background-image: linear-gradient(
+            180deg,
+            var(--color-primary-600),
+            var(--color-primary-700)
+        );
+    }
+
+    /* 흰 글자 대비가 떨어지지 않게 호버는 **어두워지는** 쪽이다(`BUTTON_PRIMARY`와 같은 원칙).
+       터치 기기에서 눌린 채 남지 않게 실제 포인터가 있을 때만 건다. */
+    @media (hover: hover) {
+        .ai-accent:hover {
+            background-image: linear-gradient(
+                180deg,
+                var(--color-primary-700),
+                color-mix(in oklch, var(--color-primary-700) 82%, black)
+            );
+        }
+    }
+
+    /* 누르는 순간은 한 단계 더 어둡다 — 그라데이션이 `active:bg-*` 채움을 덮으므로 여기서 준다. */
+    .ai-accent:active {
+        background-image: linear-gradient(
+            180deg,
+            color-mix(in oklch, var(--color-primary-700) 82%, black),
+            color-mix(in oklch, var(--color-primary-700) 70%, black)
+        );
+    }
+
+    /* 비활성은 회색 채움(`disabled:bg-secondary-700`)만 남긴다 — 그라데이션이 덮으면
+       눌러도 안 되는 버튼이 활성처럼 보인다. */
+    .ai-accent:disabled,
+    :root[data-theme='light'] .ai-accent:disabled {
+        --tw-inset-shadow: 0 0 #0000;
+        --tw-shadow: 0 0 #0000;
+
+        background-image: none;
+    }
+
+    /* 다크: 사이드바(`bg-secondary-950`)와 페이지(900)의 톤 차이는 1.03:1이라 보이지 않는다 —
+       특히 스크림 없는 모바일 드로어는 대화 위에 경계 없이 겹쳤다. 헤더와 같은 옅은 빛 한 줄
+       (흰색 5%)과 짧은 그늘로 오른쪽 가장자리를 남긴다. */
+    .ai-rail {
+        --tw-shadow:
+            1px 0 0 0 rgb(255 255 255 / 5%), 12px 0 24px -16px rgb(0 0 0 / 80%);
+    }
+
+    /* 다크: 헤더·띠와 본문은 같은 900 톤이라 톤으로는 갈리지 않는다. 장식 선(secondary-700)
+       대신 아주 옅은 빛 한 줄(흰색 5%)과 짧은 그늘로 가장자리만 남긴다. */
+    .ai-bar {
+        --tw-shadow:
+            0 1px 0 0 rgb(255 255 255 / 5%), 0 8px 16px -12px rgb(0 0 0 / 80%);
+    }
+
+    /* 다크: 검은 안쪽 그림자는 950 우물 위에서 보이지 않으므로 옅은 빛 테두리로 윤곽을 준다. */
+    .ai-well {
+        --tw-inset-shadow: inset 0 1px 2px rgb(0 0 0 / 40%);
+        --tw-shadow: 0 0 0 1px rgb(255 255 255 / 5%);
+    }
+}
+
+/* 라이트: 그라데이션 + 낙하 그림자. 흰 면이 그림자로 떠 보인다. */
+@layer components {
+    :root[data-theme='light'] .ai-raised {
+        --ai-raised-top: var(--color-secondary-800);
+        --ai-raised-bottom: color-mix(
+            in srgb,
+            var(--color-secondary-900) 70%,
+            var(--color-secondary-800)
+        );
+        --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 100%);
+        --tw-shadow:
+            0 0 0 1px rgb(15 23 42 / 5%), 0 1px 2px rgb(15 23 42 / 6%),
+            0 10px 24px -14px rgb(15 23 42 / 20%);
+    }
+
+    @media (hover: hover) {
+        :root[data-theme='light'] .ai-raised-hover:hover {
+            --ai-raised-top: var(--color-secondary-800);
+            --ai-raised-bottom: var(--color-secondary-800);
+            --tw-shadow:
+                0 0 0 1px rgb(15 23 42 / 6%), 0 2px 4px rgb(15 23 42 / 8%),
+                0 14px 28px -14px rgb(15 23 42 / 26%);
+        }
+    }
+
+    :root[data-theme='light'] .ai-accent {
+        --tw-shadow:
+            0 1px 2px rgb(15 23 42 / 15%),
+            0 8px 20px -10px
+                color-mix(in oklch, var(--color-primary-600) 45%, transparent);
+    }
+
+    :root[data-theme='light'] .ai-rail {
+        --tw-shadow: 10px 0 28px -20px rgb(15 23 42 / 25%);
+
+        background-image: linear-gradient(
+            90deg,
+            var(--color-secondary-950),
+            color-mix(
+                in srgb,
+                var(--color-secondary-950) 55%,
+                var(--color-secondary-800)
+            )
+        );
+    }
+
+    :root[data-theme='light'] .ai-bar {
+        --tw-shadow: 0 8px 20px -16px rgb(15 23 42 / 30%);
+    }
+
+    :root[data-theme='light'] .ai-well {
+        --tw-inset-shadow: inset 0 1px 3px rgb(15 23 42 / 8%);
+        --tw-shadow: 0 0 0 1px rgb(15 23 42 / 5%);
     }
 }

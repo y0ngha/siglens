@@ -30,6 +30,7 @@ import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
+import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { brandIntroName, ROOT_KEYWORDS, SITE_URL } from '@/shared/lib/seo';
@@ -196,6 +197,15 @@ export default async function RootLayout({
             {/* overflow-x-hidden on both html and body prevents fixed/transformed elements (mobile drawer)
                 from extending the document scrollWidth past the viewport edge. */}
             <body className="flex min-h-full flex-col overflow-x-hidden">
+                {/* 하이드레이션 전의 첫 탭·키를 기억한다 — 설치 배너가 effect보다 먼저 온 입력을
+                    놓치지 않게. `next/script`가 아니라 인라인이어야 파싱 즉시 실행된다(근거는
+                    `features/pwa-install/lib/firstInputProbe.ts`). 루트 레이아웃은 클라이언트에서
+                    다시 그려지지 않으므로 "클라이언트 렌더 시 스크립트 미실행" 경고 대상이 아니다. */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: FIRST_INPUT_PROBE_SCRIPT,
+                    }}
+                />
                 {/* 헤더가 테마 토글을 렌더하는데 이 호스트에만 부트스트랩이 없어서, 라이트를
                     고른 사용자도 새로고침마다 다크로 돌아왔다(ai·lp·not-found 레이아웃은
                     이미 같은 스크립트를 싣는다). `next/script`의 beforeInteractive는

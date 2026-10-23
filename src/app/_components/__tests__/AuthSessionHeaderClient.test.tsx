@@ -56,6 +56,7 @@ interface CapturedHeaderProps {
     currentUser: unknown;
     loadingUserMenu?: boolean;
     hiddenOnMobile?: boolean;
+    softEdge?: boolean;
 }
 
 function lastHeaderProps(): CapturedHeaderProps {
@@ -90,8 +91,11 @@ describe('AuthSessionHeaderClient', () => {
         });
     });
 
-    /** ai 호스트에서만 스크롤 방향에 따라 헤더를 숨긴다 — 메인 호스트 헤더는 항상 고정. */
-    it('ai 호스트에서 아래로 스크롤하면 hiddenOnMobile을 켜고, 메인 호스트는 끄지 않는다', () => {
+    /**
+     * `hideOnScrollDown`을 넘긴 레이아웃(ai 호스트)만 스크롤 방향에 따라 헤더를 숨긴다 — 메인
+     * 호스트 헤더는 항상 고정. 인증 복귀 설정(`authReturn`)만으로는 숨기지 않는다.
+     */
+    it('hideOnScrollDown이면 아래로 스크롤할 때 hiddenOnMobile을 켜고, authReturn만으로는 켜지 않는다', () => {
         vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
             cb(0);
             return 1;
@@ -130,7 +134,13 @@ describe('AuthSessionHeaderClient', () => {
         main.unmount();
 
         scroll(0);
-        render(<AuthSessionHeaderClient authReturn="ai" />);
+        const authOnly = render(<AuthSessionHeaderClient authReturn="ai" />);
+        scroll(400);
+        expect(lastHeaderProps().hiddenOnMobile).toBe(false);
+        authOnly.unmount();
+
+        scroll(0);
+        render(<AuthSessionHeaderClient authReturn="ai" hideOnScrollDown />);
         scroll(400);
         expect(lastHeaderProps().hiddenOnMobile).toBe(true);
         vi.restoreAllMocks();
@@ -175,6 +185,27 @@ describe('AuthSessionHeaderClient', () => {
         render(<AuthSessionHeaderClient />);
         expect(lastHeaderProps().authNext).toBeUndefined();
     });
+
+    it.each([
+        ['resolved', false, { data: null, isPending: false }],
+        ['loading', true, { data: undefined, isPending: true }],
+    ] as const)(
+        'softEdge는 넘겼을 때만 켜진다 (%s 셸)',
+        (_label, hint, query) => {
+            mockAuthHint.mockReturnValue(hint);
+            mockPathname.mockReturnValue('/');
+            mockCurrentUser.mockReturnValue(query as never);
+            const main = render(<AuthSessionHeaderClient />);
+            expect(lastHeaderProps().softEdge).toBe(false);
+            main.unmount();
+            const aiOnly = render(<AuthSessionHeaderClient authReturn="ai" />);
+            // 인증 복귀 설정(authReturn)이 헤더 모양을 정하지 않는다 — 명시한 softEdge만 따른다.
+            expect(lastHeaderProps().softEdge).toBe(false);
+            aiOnly.unmount();
+            render(<AuthSessionHeaderClient authReturn="ai" softEdge />);
+            expect(lastHeaderProps().softEdge).toBe(true);
+        }
+    );
 
     it('Happy: 게스트(쿼리 resolved null, hint 없음) → currentUser=null', () => {
         mockAuthHint.mockReturnValue(false);

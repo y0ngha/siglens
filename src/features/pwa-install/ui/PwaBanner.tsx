@@ -8,6 +8,16 @@ import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
 
+interface PwaBannerProps {
+    /** 배너가 뜨는 가장자리. 기본은 하단, 하단 입력창이 있는 화면은 `top`. */
+    readonly placement?: 'bottom' | 'top';
+    /**
+     * 새 서비스 워커가 페이지를 넘겨받을 때 새로고침할지(기본 `true`). 스트리밍 중인
+     * 채팅처럼 새로고침이 상태를 날리는 화면은 `false` — `registerServiceWorker` JSDoc.
+     */
+    readonly reloadOnServiceWorkerUpdate?: boolean;
+}
+
 /**
  * PWA 설치 배너 — 화면 **하단에 떠 있는** 오버레이.
  *
@@ -32,8 +42,20 @@ import { CloseIcon } from '@/shared/ui/StrokeIcons';
  * - 검색 오버레이·모바일 메뉴(z-70), 진행 바(z-80), 공지·모달(z-9999)은 배너 위다.
  *
  * 하단 safe-area(홈 인디케이터)만큼 띄운다 — 앱은 `viewportFit: 'cover'`다.
+ *
+ * ## `placement="top"` (SIGLENS AI)
+ *
+ * ai 호스트는 화면 하단에 채팅 입력창(`Composer`)이 붙어 있어 하단 배너가 입력창을
+ * 가린다. 그래서 위에 띄우되 **크롬 아래**에 둔다. 크롬 높이는 화면마다 다르므로(사이트
+ * 헤더만 있는 화면, 대화 목록 띠가 더 있는 대화 화면, 스크롤로 크롬이 올라간 상태) 이
+ * 컴포넌트가 숫자를 갖지 않고 `--pwa-banner-top`을 읽는다 — 값은 크롬을 아는 `globals.css`가
+ * 정한다. 헤더에 겹쳐 두면 배너가 떠 있는 동안 헤더 로그인·메뉴 버튼이 가려진다.
+ * 상단 safe-area(노치)만큼 더 내린다.
  */
-export function PwaBanner() {
+export function PwaBanner({
+    placement = 'bottom',
+    reloadOnServiceWorkerUpdate = true,
+}: PwaBannerProps) {
     const t = useTranslations('features.pwa-install');
     const {
         showBanner,
@@ -42,7 +64,7 @@ export function PwaBanner() {
         handleInstall,
         handleDismiss,
         handleModalClose,
-    } = usePwaInstall();
+    } = usePwaInstall({ reloadOnServiceWorkerUpdate });
 
     if (!showBanner) {
         return null;
@@ -59,7 +81,10 @@ export function PwaBanner() {
                 aria-label={t('PwaBanner.31ff7b')}
                 className={cn(
                     SURFACE_CARD,
-                    'fixed right-[max(0.75rem,env(safe-area-inset-right))] bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] z-65 flex h-12 items-center gap-2 pr-1.5 pl-3 shadow-lg sm:right-auto sm:left-4 sm:w-96'
+                    'fixed right-[max(0.75rem,env(safe-area-inset-right))] left-[max(0.75rem,env(safe-area-inset-left))] z-65 flex h-12 items-center gap-2 pr-1.5 pl-3 shadow-lg sm:right-auto sm:left-4 sm:w-96',
+                    placement === 'top'
+                        ? 'top-[calc(var(--pwa-banner-top)+env(safe-area-inset-top))]'
+                        : 'bottom-[calc(0.75rem+env(safe-area-inset-bottom))]'
                 )}
             >
                 <span className="text-base" aria-hidden="true">

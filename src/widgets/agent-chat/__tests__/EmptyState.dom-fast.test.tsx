@@ -141,7 +141,7 @@ describe('EmptyState', () => {
         );
         expect(screen.getByText('Beta')).toHaveAttribute('translate', 'no');
         expect(
-            screen.getByRole('list', { name: '시그렌즈 AI가 찾아보는 데이터' })
+            screen.getByRole('list', { name: '시그렌즈 AI가 분석하는 데이터' })
         ).toHaveTextContent('최신 시세');
     });
 

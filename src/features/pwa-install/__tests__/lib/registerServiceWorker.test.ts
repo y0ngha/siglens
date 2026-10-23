@@ -50,6 +50,24 @@ describe('registerServiceWorker', () => {
         expect(container.addEventListener).not.toHaveBeenCalled();
     });
 
+    /**
+     * SIGLENS AI는 SSE로 답변을 받는 중일 수 있어 SW 교체 때 새로고침하면 답이 끊긴다.
+     * 등록은 그대로 하되 controllerchange 리스너를 달지 않는다.
+     */
+    it('reloadOnUpdate=false면 등록만 하고 SW 교체 때 새로고침하지 않는다', () => {
+        const container = createFakeContainer({} as ServiceWorker);
+        const reload = vi.fn();
+        registerServiceWorker({
+            serviceWorker: container as unknown as ServiceWorkerContainer,
+            reload,
+            reloadOnUpdate: false,
+        });
+        container.fire('controllerchange');
+        expect(container.register).toHaveBeenCalledWith('/sw.js');
+        expect(container.addEventListener).not.toHaveBeenCalled();
+        expect(reload).not.toHaveBeenCalled();
+    });
+
     it('reloads the page on controllerchange when a previous SW was already in control', () => {
         const previousController = {} as ServiceWorker;
         const container = createFakeContainer(previousController);

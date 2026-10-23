@@ -30,5 +30,6 @@ export const AI_CLIENT_PATHS: readonly string[] = [
     ...CHROME_CLIENT_PATHS,
     'widgets.agent-chat',
     'features.agent-chat',
+    'features.pwa-install',
     'app.ai',
 ];

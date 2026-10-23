@@ -12,7 +12,6 @@ import {
 import type { RelatedSymbolPage } from '@/features/agent-chat/lib/relatedSymbolPages';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { useRelatedPages } from './hooks/useRelatedPages';
@@ -20,6 +19,7 @@ import { AgentMarkdown } from './AgentMarkdown';
 import { ArrowDownIcon, ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
 import { ToolActivity } from './ToolActivity';
+import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 /**
  * "Near the bottom" cutoff (px) for the scroll-to-bottom button (spec §3.9).
@@ -82,13 +82,14 @@ const COPIED_RESET_MS = 1_500;
 const EDIT_ACTION_SIZE = 'min-h-9 px-3 text-sm';
 
 /**
- * Quiet suggestion chip for a follow-up question. Same surface as the empty
- * state's `SuggestionCards` card, but shorter (`min-h-11` — the finger-target
- * floor) because it sits under an answer rather than being the screen's focus.
+ * Quiet suggestion chip for a follow-up question. Same raised surface as the
+ * empty state's `SuggestionCards` card, but shorter (`min-h-11` — the
+ * finger-target floor) because it sits under an answer rather than being the
+ * screen's focus.
  */
 const FOLLOW_UP_CHIP = cn(
-    SURFACE_CARD,
-    'group inline-flex min-h-11 max-w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm leading-5 text-secondary-200 transition-colors hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none'
+    AI_RAISED_CONTROL,
+    'group inline-flex min-h-11 max-w-full items-center justify-between gap-3 rounded-lg px-3.5 py-2 text-left text-sm leading-5 text-secondary-200 hover:text-secondary-100'
 );
 
 interface FollowUpsProps {
@@ -162,7 +163,10 @@ function RelatedPages({
                 <a
                     key={page.symbol}
                     href={`${siteUrl}${localePrefix}/${encodeURIComponent(page.symbol)}${page.tab ? `/${page.tab}` : ''}`}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-full border border-border-control px-2.5 text-xs text-secondary-300 hover:border-primary-400 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className={cn(
+                        AI_RAISED_CONTROL,
+                        'inline-flex min-h-8 items-center gap-1 rounded-full px-2.5 text-xs text-secondary-300 hover:text-primary-400'
+                    )}
                 >
                     {t('MessageList.openOnSiglens', {
                         symbol: labels[page.symbol] ?? page.symbol,
@@ -536,7 +540,7 @@ export function MessageList({
                                             onEdit(editing.seq, editing.text);
                                             setEditing(null);
                                         }}
-                                        className="flex w-full max-w-[80%] flex-col gap-2 rounded-lg border border-border-control bg-secondary-800 p-2 focus-within:ring-2 focus-within:ring-primary-500"
+                                        className="ai-raised flex w-full max-w-[80%] flex-col gap-2 rounded-lg p-2 focus-within:ring-2 focus-within:ring-primary-500"
                                     >
                                         <textarea
                                             value={editing.text}
@@ -585,7 +589,7 @@ export function MessageList({
                                     style={activeTurnStyle}
                                     className="group flex flex-col items-end"
                                 >
-                                    <div className="max-w-[80%] rounded-lg bg-secondary-800 px-4 py-2.5 text-[15px] leading-6 break-words whitespace-pre-wrap text-secondary-100">
+                                    <div className="ai-raised max-w-[80%] rounded-lg px-4 py-2.5 text-[15px] leading-6 break-words whitespace-pre-wrap text-secondary-100">
                                         {m.content}
                                     </div>
                                     {actions}
@@ -696,7 +700,10 @@ export function MessageList({
                     aria-label={t('MessageList.scrollToBottom')}
                     // 44px-ish touch target, matching the Composer's send/stop
                     // button (`size-11`, see Composer.tsx's `ACTION_SIZE`).
-                    className="absolute bottom-4 left-1/2 z-10 flex size-11 -translate-x-1/2 items-center justify-center rounded-full border border-border-control bg-secondary-800 text-secondary-200 shadow-lg hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className={cn(
+                        AI_RAISED_CONTROL,
+                        'absolute bottom-4 left-1/2 z-10 flex size-11 -translate-x-1/2 items-center justify-center rounded-full text-secondary-200 hover:text-secondary-100'
+                    )}
                 >
                     <ArrowDownIcon className="size-5" />
                 </button>

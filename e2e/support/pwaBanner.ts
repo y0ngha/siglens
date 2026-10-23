@@ -14,7 +14,8 @@ const MOBILE_PROJECTS = new Set(['webkit', 'authed-mobile']);
 /**
  * 첫 사용자 입력을 일부러 소비하고 PWA 설치 배너를 닫는다.
  *
- * `usePwaInstall`은 배너를 **첫 `pointerdown`/`keydown`**에 띄운다. 배너는 하단
+ * `usePwaInstall`은 배너를 **첫 입력이 끝난 뒤**(`click`·`keydown`, 또는 `click` 없는
+ * `pointerup` 뒤 잠시 후)에 띄운다. 배너는 하단
  * 고정 오버레이라 레이아웃을 밀지는 않지만, 모바일 스펙이 아무 준비 없이 첫
  * `.tap()`을 하면 **그 탭이** 방아쇠가 되고 이후 화면 아래쪽 요소(FAB·시트 띠·
  * 푸터 링크)를 향한 탭이 배너에 가로막힐 수 있다.

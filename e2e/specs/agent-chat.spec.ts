@@ -264,7 +264,7 @@ test.describe('SIGLENS AI SEO', () => {
         expect(html).toMatch(/<h1[^>]*>/);
         // The example conversation is in the server HTML, not only after JS runs.
         expect(html).toContain('삼성전자 요즘 흐름 어때?');
-        expect(html).toContain('답하기 전에 이런 걸 찾아봐요');
+        expect(html).toContain('답할 때 이런 데이터를 분석해요');
     });
 
     test('robots.txt 는 대화를 막고 sitemap 은 홈과 /about 만 싣는다, 대화 URL 은 noindex 헤더', async ({

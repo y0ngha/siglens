@@ -55,11 +55,17 @@ describe('buildManifest — 로케일별', () => {
     it.each(LOCALES)('%s: 진입 경로가 로케일을 유지한다', locale => {
         const result = buildManifest(locale, catalogTranslator(NS, locale));
         const prefix = locale === 'ko' ? '' : `/${locale}`;
+        // 정본 홈(끝 슬래시 없음) — Next가 `/en/`을 `/en`으로 308 보내므로 `/en/` 스코프면
+        // 설치 앱이 열자마자 스코프 밖에 떨어진다(`manifestHome`).
+        const home = prefix || '/';
 
-        expect(result.start_url).toBe(`${prefix}/`);
-        expect(result.scope).toBe(`${prefix}/`);
+        expect(result.start_url).toBe(home);
+        expect(result.scope).toBe(home);
+        // `id`는 설치 앱의 정체성이라 예전 값(끝 슬래시)을 유지한다 — 바뀌면 기존 설치본이
+        // 다른 앱으로 취급된다(`manifestId`).
+        expect(result.id).toBe(`${prefix}/`);
         expect(result.shortcuts![0].url).toBe(`${prefix}/market`);
-        expect(result.shortcuts![1].url).toBe(`${prefix}/?focus=search`);
+        expect(result.shortcuts![1].url).toBe(`${home}?focus=search`);
     });
 
     it.each(['en', 'ja', 'zh'] as const)(

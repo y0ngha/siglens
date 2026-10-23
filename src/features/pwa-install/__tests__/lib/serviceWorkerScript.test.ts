@@ -281,17 +281,20 @@ describe('public/sw.js', () => {
     });
 
     describe('activate', () => {
-        it('현재 버전이 아닌 캐시(siglens-v1 등)를 지우고 navigation preload를 켠다', async () => {
+        it('현재 버전이 아닌 캐시(siglens-v1·옛 프리캐시 v2 등)를 지우고 navigation preload를 켠다', async () => {
             const harness = loadServiceWorker([
                 'siglens-v1',
+                // 프리캐시만 버전이 오른 배포(v3)에서는 옛 프리캐시만 정리되고 해시 자산
+                // 캐시(static-v2)는 그대로 남아야 한다 — 청크를 전부 다시 받지 않는다.
                 'siglens-precache-v2',
+                'siglens-precache-v3',
                 'siglens-static-v2',
             ]);
             const event = createEvent(new Request(ORIGIN));
             harness.listeners.get('activate')?.(event);
             await settleWaitUntil(event);
             expect([...harness.cacheStore.keys()]).toEqual([
-                'siglens-precache-v2',
+                'siglens-precache-v3',
                 'siglens-static-v2',
             ]);
             expect(harness.enablePreload).toHaveBeenCalledTimes(1);

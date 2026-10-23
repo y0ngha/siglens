@@ -54,10 +54,10 @@ export function SidebarDrawer({
                 <Drawer.Content
                     ref={contentRef}
                     id="agent-chat-sidebar-drawer"
-                    className="fixed inset-y-0 left-0 z-[60] flex w-72 flex-col border-r border-secondary-700 bg-secondary-950"
+                    className="ai-rail fixed inset-y-0 left-0 z-[60] flex w-72 flex-col bg-secondary-950"
                 >
                     <Drawer.Title className="sr-only">{title}</Drawer.Title>
-                    <div className="flex h-11 shrink-0 items-center justify-between border-b border-secondary-700 px-2">
+                    <div className="flex h-11 shrink-0 items-center justify-between px-2">
                         <a href={homeHref} className={HEADER_ACTION}>
                             <HomeIcon className="size-4" />
                             {homeLabel}

@@ -3,8 +3,9 @@
 import { useTranslations } from 'next-intl';
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
+import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 const MAX = 4_000;
 /** The counter stays hidden until the message is long enough that the cap is a real concern. */
@@ -82,13 +83,14 @@ export function Composer({
             <div
                 className={cn(
                     // Documented exception to "input boundary = border-control"
-                    // (docs/conventions/DESIGN.md §사용처): the chat composer is
+                    // (docs/conventions/DESIGN.md §경계 예외): the chat composer is
                     // identified by its fixed bottom position, placeholder, filled
-                    // send button and shadow, so its resting edge is one step above
-                    // the decorative card border; focus draws the brand ring. The
-                    // 3.5:1 control edge read as a detached white box on the dark
-                    // page (2026-09-13 사용자 제보).
-                    'mx-auto flex w-full max-w-3xl items-end gap-1 rounded-lg border border-secondary-600 bg-secondary-800 p-1.5 shadow-lg shadow-secondary-950/40',
+                    // send button and its raised surface (`ai-raised`: solid face +
+                    // top highlight in dark, gradient + shadow in light), so it
+                    // draws no edge line; focus draws the brand ring. The 3.5:1 control edge read as a detached white box on
+                    // the dark page (2026-09-13 사용자 제보). The transparent border
+                    // keeps the box size fixed when the over-limit red edge appears.
+                    'ai-raised mx-auto flex w-full max-w-3xl items-end gap-1 rounded-lg border border-transparent p-1.5',
                     'focus-within:ring-2 focus-within:ring-primary-500',
                     overLimit && 'border-ui-danger'
                 )}
@@ -118,12 +120,14 @@ export function Composer({
                         type="button"
                         onClick={onStop}
                         aria-label={t('Composer.d2e7e7')}
-                        // The composer surface is secondary-800 — BUTTON_OUTLINE's own
-                        // hover fill — so lift the hover one step to stay visible.
+                        // A raised button inside the raised composer — its icon labels
+                        // it, so it needs no outline (the outline was the last line left
+                        // in the composer). AI_RAISED_CONTROL, not a BUTTON_* tone: see
+                        // aiSurfaceStyles.ts.
                         className={cn(
-                            BUTTON_OUTLINE,
+                            AI_RAISED_CONTROL,
                             ACTION_SIZE,
-                            'hover:bg-secondary-700'
+                            'inline-flex touch-manipulation items-center justify-center rounded-lg text-secondary-200'
                         )}
                     >
                         <StopIcon />
@@ -134,7 +138,7 @@ export function Composer({
                         onClick={submit}
                         disabled={!canSend}
                         aria-label={t('Composer.4077ce')}
-                        className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
+                        className={cn(BUTTON_PRIMARY, ACTION_SIZE, 'ai-accent')}
                     >
                         <ArrowUpIcon className="size-5" />
                     </button>

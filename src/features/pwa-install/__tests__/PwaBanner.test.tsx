@@ -37,6 +37,63 @@ describe('PwaBanner', () => {
         ).toBeInTheDocument();
     });
 
+    /**
+     * ai 호스트는 하단에 채팅 입력창이 붙어 있어 배너가 상단(헤더·대화 목록 띠 아래)에 뜬다.
+     * 헤더 위에 겹치면 배너를 띄운 첫 탭이 헤더 대신 배너를 누르게 된다.
+     * 하단 클래스가 같이 남으면 두 앵커가 겹쳐 배너가 화면 전체 높이로 늘어난다.
+     */
+    it('placement="top"이면 상단 safe-area에 붙고 하단 앵커는 없다', () => {
+        mockUsePwaInstall.mockReturnValue({
+            showBanner: true,
+            showIosModal: false,
+            isIos: false,
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
+        });
+        render(<PwaBanner placement="top" />);
+        const shell = screen.getByTestId('pwa-banner-shell');
+        expect(shell.className).toContain(
+            'top-[calc(var(--pwa-banner-top)+env(safe-area-inset-top))]'
+        );
+        expect(shell.className).not.toContain('bottom-[');
+    });
+
+    it('reloadOnServiceWorkerUpdate를 훅에 넘긴다(기본 true)', () => {
+        mockUsePwaInstall.mockReturnValue({
+            showBanner: false,
+            showIosModal: false,
+            isIos: false,
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
+        });
+        const { unmount } = render(<PwaBanner />);
+        expect(mockUsePwaInstall).toHaveBeenLastCalledWith({
+            reloadOnServiceWorkerUpdate: true,
+        });
+        unmount();
+        render(<PwaBanner reloadOnServiceWorkerUpdate={false} />);
+        expect(mockUsePwaInstall).toHaveBeenLastCalledWith({
+            reloadOnServiceWorkerUpdate: false,
+        });
+    });
+
+    it('기본 배치는 하단이고 상단 앵커는 없다', () => {
+        mockUsePwaInstall.mockReturnValue({
+            showBanner: true,
+            showIosModal: false,
+            isIos: false,
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
+        });
+        render(<PwaBanner />);
+        expect(screen.getByTestId('pwa-banner-shell').className).not.toContain(
+            'top-['
+        );
+    });
+
     it('닫기 버튼 클릭 → handleDismiss 호출', () => {
         const handleDismiss = vi.fn();
         mockUsePwaInstall.mockReturnValue({

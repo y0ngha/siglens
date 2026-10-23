@@ -14,21 +14,26 @@ interface Props {
  * The "ask now" bar pinned under the site header on `/about`, so the way into
  * the chat is always one tap away.
  *
- * It sits at `top-14`, right below the sticky header. On phones the ai host
+ * It sits right below the sticky header (`--header-h`). On phones the ai host
  * slides that header away while scrolling down (`useHideOnScrollDown`, one
- * shared store), so the bar slides up by the same 56px on the same curve and
+ * shared store), so the bar slides up by the same height on the same curve and
  * the two never leave a gap or overlap.
+ *
+ * Like the rest of the ai host it is separated by `ai-bar` (light, not a 1px
+ * line). Its height and `data-ai-about-cta` are read by globals.css to place the
+ * top install banner below it (`--ai-about-cta-h`).
  */
 export function AboutCtaBar({ title, cta, href }: Props) {
     const headerHidden = useHideOnScrollDown({ enabled: true });
     return (
         <div
+            data-ai-about-cta=""
             className={cn(
-                'sticky top-14 z-40 border-b border-secondary-700 bg-secondary-800/95 shadow-lg shadow-secondary-950/40 backdrop-blur-md transition-transform duration-200 motion-reduce:transition-none',
-                headerHidden && 'max-lg:-translate-y-14'
+                'ai-bar sticky top-(--header-h) z-40 bg-secondary-800/95 backdrop-blur-md transition-transform duration-200 motion-reduce:transition-none',
+                headerHidden && 'max-lg:-translate-y-[var(--header-h)]'
             )}
         >
-            <div className="mx-auto flex min-h-14 max-w-4xl items-center justify-between gap-3 px-4">
+            <div className="mx-auto flex h-(--ai-about-cta-h) max-w-4xl items-center justify-between gap-3 px-4">
                 <p className="min-w-0 truncate text-sm font-semibold text-secondary-100">
                     {title}
                 </p>

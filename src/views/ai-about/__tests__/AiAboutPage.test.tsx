@@ -51,7 +51,7 @@ describe('AiAboutPage', () => {
             .map(h => h.textContent);
         expect(h2s).toEqual([
             '이런 점이 답답했다면',
-            '답하기 전에 이런 걸 찾아봐요',
+            '답할 때 이런 데이터를 분석해요',
             '자주 묻는 질문',
             '시그렌즈에서 더 보기',
             '지금 바로 물어보세요',
