@@ -33,14 +33,14 @@ jobs:
     seed:
         runs-on: ubuntu-latest
         # 미러가 멈춰도 기본 360분을 태우지 않게 한다(정상 다운로드는 1~2분). 설치 최악
-        # (420+15)+20+(60+10)+(420+15) = 960초에 체크아웃·yarn install을 더해도 들어가는 값이다.
+        # (420+15)+20+(60+10)+(120+10)+(420+15) = 1,090초에 체크아웃·yarn install을 더해도 들어가는 값이다.
         timeout-minutes: 30
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Cache key
-              id: key
+            - name: Cache key (version check)
+              id: pre
               uses: ./.github/actions/e2e-apt-cache-key
 
             - name: Check existing cache
@@ -48,7 +48,7 @@ jobs:
               uses: actions/cache/restore@v4
               with:
                   path: ~/apt-debs
-                  key: ${{ steps.key.outputs.key }}
+                  key: ${{ steps.pre.outputs.key }}
                   lookup-only: true
 
             # e2e.yml과 같은 설치 경로(Corepack → yarn install)로 같은 Playwright CLI를 쓴다.
@@ -69,27 +69,33 @@ jobs:
                   SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
               run: yarn install --immutable
 
+            # node_modules가 생긴 뒤 다시 읽어 CLI 경로까지 받는다(키는 같다).
+            - name: Cache key
+              id: key
+              if: steps.hit.outputs.cache-hit != 'true'
+              uses: ./.github/actions/e2e-apt-cache-key
+
             # 빈 아카이브에서 설치해 이번에 받은 .deb만 모은다. root로 돈 `timeout`이 프로세스 그룹 전체
             # (playwright → apt-get → dpkg)를 끊는다. 한 번 더 시도한다.
             - name: Download Playwright system dependencies
               if: steps.hit.outputs.cache-hit != 'true'
               run: |
-                  # `yarn playwright`가 실행하는 @playwright/test의 bin(cli.js) — 호이스팅과 무관하게 키의 버전과 같다.
-                  cli="$(node -p "require('path').join(require('path').dirname(require.resolve('@playwright/test/package.json')), 'cli.js')")"
+                  cli="${{ steps.key.outputs.cli }}"
                   sudo apt-get clean
                   for attempt in 1 2; do
-                      sudo timeout -k 15 420 "$(command -v node)" "$cli" install-deps chromium webkit && break
+                      sudo timeout -k 15 420 "$(command -v node)" "$cli" install-deps ${{ steps.key.outputs.browsers }} && break
                       [ "$attempt" = 2 ] && exit 1
                       sleep 20
                       sudo timeout -k 10 60 dpkg --configure -a || true
+                      sudo timeout -k 10 120 apt-get -f install -y || true
                   done
                   mkdir -p ~/apt-debs
                   find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp {} ~/apt-debs/ \;
                   n="$(find ~/apt-debs -name '*.deb' | wc -l)"
                   echo "cached .deb files: ${n}, $(du -sh ~/apt-debs | cut -f1)"
                   # 비거나 거의 빈 캐시가 정확한 키를 차지하면 다음 실행이 lookup-only로 건너뛰어 고쳐지지 않는다.
-                  # 정상은 약 180개(2026-10-23 webkit+chromium); 50개 미만이면 저장하지 않고 실패한다.
-                  if [ "$n" -lt 50 ]; then
+                  # 정상은 약 180개(2026-10-23 webkit+chromium); 20개 미만이면 저장하지 않고 실패한다.
+                  if [ "$n" -lt 20 ]; then
                       echo "::error::only ${n} .deb files collected; refusing to save the cache"
                       exit 1
                   fi
