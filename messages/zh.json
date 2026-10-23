@@ -2785,16 +2785,16 @@
                 "quote": "行情",
                 "quoteBody": "查看当前价格以及今天涨跌了多少。回答中的价格全部来自这里。",
                 "quoteScope": "美股、韩股、加密货币",
-                "title": "回答之前，会查这些"
+                "title": "回答时会分析这些数据"
             },
-            "disclaimer": "SIGLENS AI 是查找并解释信息的服务，投资决定请自行做出。",
+            "disclaimer": "SIGLENS AI 是分析并解释数据的服务，投资决定请自行做出。",
             "end": {
                 "body": "无需注册即可使用。",
                 "button": "打开 SIGLENS AI",
                 "title": "现在就问吧"
             },
             "faq": {
-                "adviceA": "不会。它只负责查找和解释数据，不会建议你买入或卖出。投资决定需要你自己来做。",
+                "adviceA": "不会。它只负责分析和解释数据，不会建议你买入或卖出。投资决定需要你自己来做。",
                 "adviceQ": "会给投资建议吗？",
                 "beginnerA": "可以。随便问，它就用通俗的话回答。遇到不懂的词，再问一句“那是什么意思？”就行。反过来，如果用专业术语提问，它也会按那个水平回答。",
                 "beginnerQ": "不太懂股票也能用吗？",
@@ -2814,7 +2814,7 @@
             },
             "hero": {
                 "button": "向 SIGLENS AI 提问",
-                "lede": "SIGLENS AI 会亲自查询最新行情、图表和新闻，进行专业分析，再用通俗的语言告诉你。",
+                "lede": "SIGLENS AI 用分析逻辑解读 SIGLENS 自行计算并积累的行情、指标和新闻数据，再用通俗的语言告诉你。",
                 "title": "想了解的股票，现在就问"
             },
             "market": {
@@ -2893,9 +2893,9 @@
                 "searchSubject": "三星电子 → 005930"
             },
             "seo": {
-                "description": "通过对话示例介绍 SIGLENS AI 如何针对每个问题查询最新行情、图表指标、分析报告和新闻，并用通俗的语言回答。无需登录即可提问。",
+                "description": "通过对话示例介绍 SIGLENS AI 如何分析 SIGLENS 自行计算的行情、图表指标、分析报告和新闻数据，并用通俗的语言回答。无需登录即可提问。",
                 "ogLabel": "关于 SIGLENS AI",
-                "title": "关于 SIGLENS AI：先查行情和图表再回答的股票 AI"
+                "title": "关于 SIGLENS AI：分析自有行情与指标数据作答的股票 AI"
             },
             "tool": {
                 "analysis": "SIGLENS 分析",
@@ -5331,7 +5331,7 @@
                 "capNews": "新闻",
                 "capQuotes": "最新行情",
                 "capWeb": "网络搜索",
-                "capabilitiesLabel": "SIGLENS AI 查询的数据",
+                "capabilitiesLabel": "SIGLENS AI 分析的数据",
                 "description": "基于 SIGLENS 自行计算并积累的行情、指标与新闻数据，经自有分析逻辑解读后作答。",
                 "examplesLabel": "可以回答这样的问题",
                 "guestNote": "无需登录即可直接提问。分析我的持仓和保存对话需要登录。",
