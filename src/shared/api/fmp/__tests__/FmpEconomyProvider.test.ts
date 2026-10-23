@@ -183,6 +183,42 @@ describe('FmpEconomyProvider', () => {
         ).rejects.toThrow('non-array');
     });
 
+    it('getCalendarsByCountry: 한 번 읽어 국가별로 나누고 원본 행 수를 함께 준다', async () => {
+        mockFmpGet.mockResolvedValueOnce([
+            {
+                country: 'US',
+                date: '2026-10-28 18:00:00',
+                event: 'Fed Interest Rate Decision',
+                impact: 'High',
+            },
+            {
+                country: 'KR',
+                date: '2026-11-27 01:00:00',
+                event: 'Interest Rate Decision',
+                impact: 'High',
+            },
+            {
+                country: 'JP',
+                date: '2026-10-30 03:00:00',
+                event: 'BoJ Interest Rate Decision',
+                impact: 'High',
+            },
+        ] as unknown[]);
+        const r = await new FmpEconomyProvider().getCalendarsByCountry(
+            '2026-10-23',
+            '2026-12-31',
+            ['US', 'KR']
+        );
+        expect(mockFmpGet).toHaveBeenCalledTimes(1);
+        expect(r.sourceRows).toBe(3);
+        expect(r.byCountry.US.map(e => e.event)).toEqual([
+            'Fed Interest Rate Decision',
+        ]);
+        expect(r.byCountry.KR.map(e => e.event)).toEqual([
+            'Interest Rate Decision',
+        ]);
+    });
+
     it('FMP throw는 그대로 전파(상위 캐시가 graceful 처리)', async () => {
         mockFmpGet.mockRejectedValueOnce(new Error('FMP boom'));
         await expect(new FmpEconomyProvider().getTreasury()).rejects.toThrow(

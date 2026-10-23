@@ -278,6 +278,15 @@ the whole TTL, and a swallowed chunk makes a partial result look complete.
 - ✅ A malformed chunk throws; an empty result for a non-empty window is returned uncached (or with a short TTL) so the
   next call retries.
 
+The same holds one step later: a read that degraded to empty (a DB error caught and turned into `[]`/`null`) must not
+reach the consumer as a plain empty result. When the consumer is an LLM tool result, carry an explicit
+`unavailable` marker (or an error result) for that field, otherwise the model reads the outage as "there is no data"
+and states it as fact.
+
+- ❌ `catch { return [] }` in a tool's data read, so the model reports "no indicators this period".
+- ✅ The catch returns `{ unavailable: true }` (or the field is flagged), and the tool result says the data could not
+  be loaded.
+
 ---
 
 ## Concurrency, Batching & Background Work

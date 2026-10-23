@@ -37,4 +37,23 @@ export interface EconomyProvider {
      * core가 country==='US' 필터 + 날짜 오름차순 정규화를 적용한다.
      */
     getCalendar(from: string, to: string): Promise<EconomicCalendarEvent[]>;
+    /**
+     * 한 번의 읽기로 여러 국가의 경제 캘린더(`from`~`to`)를 국가별로 나눠 돌려준다. FMP는 한 응답에
+     * 전 국가를 담으므로(~1MB/90일) 국가마다 따로 읽으면 같은 응답을 여러 번 받는다. `'US'`는 core
+     * 정규화, 다른 국가는 siglens 국가 필터를 거친다.
+     *
+     * `sourceRows`는 거르기 전 원본 행 수다 — 한 국가가 비어도 원본에 행이 있었으면 "그 국가에 일정이
+     * 없다"는 진짜 결과이고, 원본까지 비었으면 장애일 수 있다(SERVER.md#SA-18).
+     */
+    getCalendarsByCountry(
+        from: string,
+        to: string,
+        countries: readonly string[]
+    ): Promise<CountryCalendars>;
+}
+
+/** {@link EconomyProvider.getCalendarsByCountry}의 결과. */
+export interface CountryCalendars {
+    byCountry: Record<string, EconomicCalendarEvent[]>;
+    sourceRows: number;
 }

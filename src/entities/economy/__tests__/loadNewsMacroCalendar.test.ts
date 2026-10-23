@@ -35,6 +35,7 @@ function providerWith(
         getIndicator: vi.fn(),
         getTreasury: vi.fn(),
         getCalendar: vi.fn(getCalendar),
+        getCalendarsByCountry: vi.fn(),
     };
 }
 

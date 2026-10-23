@@ -37,6 +37,10 @@ function fakeProvider(
             year10: 4.47,
         })),
         getCalendar: vi.fn(async () => []),
+        getCalendarsByCountry: vi.fn(async () => ({
+            byCountry: {},
+            sourceRows: 0,
+        })),
         ...overrides,
     };
 }

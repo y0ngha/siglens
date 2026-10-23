@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { snapshot, briefing, freshTreasury, calendarRange } = vi.hoisted(() => ({
-    snapshot: vi.fn(),
-    briefing: vi.fn(),
-    freshTreasury: vi.fn(),
-    calendarRange: vi.fn(),
-}));
+const { snapshot, briefing, freshTreasury, calendarRange, krCards, krDb } =
+    vi.hoisted(() => ({
+        snapshot: vi.fn(),
+        briefing: vi.fn(),
+        freshTreasury: vi.fn(),
+        calendarRange: vi.fn(),
+        krCards: vi.fn(),
+        krDb: vi.fn(),
+    }));
 // 국채 단독 읽기는 Redis/FMP로 나간다 — 기본값 null(스냅샷 값 사용)로 막아 둔다.
 vi.mock('@/entities/economy/api/treasuryRatesCache', async importOriginal => ({
     ...(await importOriginal<
@@ -22,6 +25,12 @@ vi.mock('@/entities/economy/api/macroBriefingStaticCache', () => ({
 // 범위 캘린더도 Redis/FMP로 나간다 — 테스트마다 행을 정한다(기본 []).
 vi.mock('@/entities/economy/api/economicCalendarRangeCache', () => ({
     getEconomicCalendarRange: calendarRange,
+}));
+vi.mock('@/entities/economy/api/getKrIndicatorCards', () => ({
+    getKrIndicatorCards: krCards,
+}));
+vi.mock('@/entities/economy/api/getCalendarFromDb', () => ({
+    getCalendarFromDb: krDb,
 }));
 
 import { getEconomyTool } from '@/app/api/ai/chat/tools/getEconomy';
@@ -74,6 +83,8 @@ describe('getEconomyTool', () => {
         vi.clearAllMocks();
         freshTreasury.mockResolvedValue(null);
         calendarRange.mockResolvedValue([]);
+        krCards.mockResolvedValue([]);
+        krDb.mockResolvedValue([]);
         vi.useFakeTimers();
         // 2026-09-13 20:00 ET — ET 날짜가 UTC 날짜보다 하루 이르다.
         vi.setSystemTime(new Date('2026-09-14T00:00:00.000Z'));
@@ -154,7 +165,11 @@ describe('getEconomyTool', () => {
             briefing: { regime: string };
         };
         // 요청 창을 앞뒤 하루씩 넓혀 읽는다 — FMP는 UTC 날짜로 거른다.
-        expect(calendarRange).toHaveBeenCalledWith('2026-09-12', '2026-11-23');
+        expect(calendarRange).toHaveBeenCalledWith(
+            'US',
+            '2026-09-12',
+            '2026-11-23'
+        );
         expect(ECONOMY_CALENDAR_DEFAULT_DAYS).toBe(70);
         expect(r.available).toBe(true);
         expect(r.calendar.coverage).toEqual({
@@ -318,6 +333,7 @@ describe('getEconomyTool', () => {
                 rt
             )) as Record<string, unknown> & { calendar: CalendarResult };
             expect(calendarRange).toHaveBeenCalledWith(
+                'US',
                 '2026-08-31',
                 '2026-11-28'
             );
@@ -326,6 +342,7 @@ describe('getEconomyTool', () => {
                 'asOf',
                 'available',
                 'calendar',
+                'country',
                 'source',
             ]);
             expect(r.calendar.coverage).toEqual({
@@ -366,6 +383,8 @@ describe('getEconomyTool', () => {
             [{ from: '2026-01-01', to: '2026-03-31' }, ['to']],
             // 오늘(2026-09-13 ET)에서 2년 넘게 과거, 1년 넘게 미래
             [{ from: '2024-09-12', to: '2024-10-01' }, ['from']],
+            // FMP는 1년쯤 지난 날짜를 402로 거절한다 — 361일 전은 막는다.
+            [{ from: '2025-09-17', to: '2025-10-01' }, ['from']],
             [{ from: '2027-09-01', to: '2027-09-14' }, ['to']],
         ])(
             '잘못된 인자 %o는 FMP를 부르지 않고 invalid_args',
@@ -388,6 +407,7 @@ describe('getEconomyTool', () => {
             )) as { available?: boolean };
             expect(r.available).toBe(true);
             expect(calendarRange).toHaveBeenCalledWith(
+                'US',
                 '2025-12-31',
                 '2026-03-31'
             );
@@ -396,20 +416,21 @@ describe('getEconomyTool', () => {
         it('KST 날짜로 물어도 그날 새벽의 FOMC(UTC 전날 18:00)가 잡힌다', async () => {
             // 2026-10-29 03:00 KST = 2026-10-28 18:00 UTC. FMP는 UTC 날짜로 거르므로
             // from=to=10-29만 읽으면 빠진다.
-            calendarRange.mockImplementation(async (from: string) =>
-                from <= '2026-10-28'
-                    ? [
-                          {
-                              date: '2026-10-28 18:00:00',
-                              event: 'Fed Interest Rate Decision',
-                              impact: 'High',
-                              actual: null,
-                              estimate: null,
-                              previous: null,
-                              unit: '%',
-                          },
-                      ]
-                    : []
+            calendarRange.mockImplementation(
+                async (_country: string, from: string) =>
+                    from <= '2026-10-28'
+                        ? [
+                              {
+                                  date: '2026-10-28 18:00:00',
+                                  event: 'Fed Interest Rate Decision',
+                                  impact: 'High',
+                                  actual: null,
+                                  estimate: null,
+                                  previous: null,
+                                  unit: '%',
+                              },
+                          ]
+                        : []
             );
             const r = (await getEconomyTool(
                 { from: '2026-10-29', to: '2026-10-29' },
@@ -440,6 +461,200 @@ describe('getEconomyTool', () => {
                 rt
             )) as { calendar: CalendarResult };
             expect(r.calendar.events.map(e => e.event)).toEqual(['CPI YoY']);
+        });
+    });
+
+    describe('한국 경제(country: kr)', () => {
+        const baseRateCard = {
+            meta: {
+                event: 'Interest Rate Decision',
+                category: 'rates',
+                label: '한국 기준금리',
+                unit: '%',
+                precision: 2,
+                tooltip: '',
+            },
+            latest: 2.5,
+            latestDate: '2026-08-28',
+            // 두 발표의 원시 차이 — 부동소수 잡음이 그대로 들어온다.
+            changeFromPrevious: -0.25000000000000022,
+        };
+
+        it('한국 지표 카드와 한국 일정을 돌려주고, 미국 스냅샷·국채·브리핑은 읽지 않는다', async () => {
+            krCards.mockResolvedValue([baseRateCard]);
+            calendarRange.mockResolvedValue([
+                calendarEvent(20 * 24, 'Interest Rate Decision', 'High'),
+            ]);
+            const r = (await getEconomyTool(
+                { country: 'kr' },
+                ctx,
+                rt
+            )) as Record<string, unknown> & {
+                indicators: unknown[];
+                calendar: CalendarResult;
+            };
+
+            expect(krCards).toHaveBeenCalledWith('2026-09-13');
+            expect(calendarRange).toHaveBeenCalledWith(
+                'KR',
+                '2026-09-12',
+                '2026-11-23'
+            );
+            expect(snapshot).not.toHaveBeenCalled();
+            expect(freshTreasury).not.toHaveBeenCalled();
+            expect(briefing).not.toHaveBeenCalled();
+            expect(r.country).toBe('kr');
+            expect(r).not.toHaveProperty('treasury');
+            expect(r).not.toHaveProperty('briefing');
+            expect(r.indicators).toEqual([
+                {
+                    name: 'Interest Rate Decision',
+                    label: '한국 기준금리',
+                    unit: '%',
+                    latest: { date: '2026-08-28', value: 2.5 },
+                    change: -0.25,
+                    changeUnit: 'pp',
+                    direction: 'down',
+                },
+            ]);
+            expect(r.note).toContain('KST calendar date');
+            expect(r.calendar.events.map(e => e.event)).toEqual([
+                'Interest Rate Decision',
+            ]);
+        });
+
+        it('한국 기간 조회는 그 기간의 한국 일정만 돌려준다', async () => {
+            calendarRange.mockResolvedValue([
+                calendarEvent(40 * 24, 'Interest Rate Decision', 'High'),
+            ]);
+            const r = (await getEconomyTool(
+                { country: 'kr', from: '2026-10-01', to: '2026-11-30' },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+
+            expect(calendarRange).toHaveBeenCalledWith(
+                'KR',
+                '2026-09-30',
+                '2026-12-01'
+            );
+            expect(krCards).not.toHaveBeenCalled();
+            expect(r.country).toBe('kr');
+            expect(Object.keys(r).sort()).toEqual([
+                'asOf',
+                'available',
+                'calendar',
+                'country',
+                'source',
+            ]);
+        });
+
+        it('범위 일정을 못 읽으면 DB에 쌓인 한국 일정으로 물러나고 출처를 밝힌다', async () => {
+            const logged = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            krCards.mockResolvedValue([baseRateCard]);
+            calendarRange.mockRejectedValue(new Error('fmp down'));
+            krDb.mockResolvedValue([
+                {
+                    ...calendarEvent(3 * 24, 'Interest Rate Decision', 'High'),
+                    sentiment: null,
+                    summaryKo: '요약',
+                    interpretationKo: null,
+                    analyzedAt: null,
+                },
+            ]);
+            const r = (await getEconomyTool({ country: 'kr' }, ctx, rt)) as {
+                calendar: CalendarResult & { fallback: string };
+            };
+            logged.mockRestore();
+            expect(krDb).toHaveBeenCalledWith('2026-09-13', 'KR');
+            expect(r.calendar.fallback).toContain('ingested Korean calendar');
+            expect(r.calendar.coverage).toEqual({
+                from: '2026-09-13',
+                to: '2026-09-26',
+            });
+            // 분석 컬럼은 싣지 않는다 — 캘린더 행만.
+            expect(r.calendar.events[0]).not.toHaveProperty('summaryKo');
+        });
+
+        it('지표 카드가 비면 indicatorsUnavailable을 붙인다 — "한국 금리 데이터 없음"으로 읽히지 않게', async () => {
+            calendarRange.mockResolvedValue([
+                calendarEvent(20 * 24, 'Interest Rate Decision', 'High'),
+            ]);
+            const r = (await getEconomyTool({ country: 'kr' }, ctx, rt)) as {
+                available: boolean;
+                indicators: unknown[];
+                indicatorsUnavailable?: boolean;
+            };
+            expect(r.available).toBe(true);
+            expect(r.indicators).toEqual([]);
+            expect(r.indicatorsUnavailable).toBe(true);
+        });
+
+        it('지표 카드가 있으면 indicatorsUnavailable을 붙이지 않는다', async () => {
+            krCards.mockResolvedValue([baseRateCard]);
+            const r = (await getEconomyTool(
+                { country: 'kr' },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+            expect(r).not.toHaveProperty('indicatorsUnavailable');
+        });
+
+        it('카드도 일정도 없으면 kr_economy_unavailable', async () => {
+            const logged = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            calendarRange.mockRejectedValue(new Error('fmp down'));
+            const r = await getEconomyTool({ country: 'kr' }, ctx, rt);
+            logged.mockRestore();
+            expect(r).toEqual({
+                available: false,
+                reason: 'kr_economy_unavailable',
+            });
+        });
+
+        it('범위·DB 일정을 모두 못 읽어도 카드가 있으면 calendar: null과 calendarUnavailable을 돌려준다', async () => {
+            const logged = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            krCards.mockResolvedValue([baseRateCard]);
+            calendarRange.mockRejectedValue(new Error('fmp down'));
+            const r = (await getEconomyTool({ country: 'kr' }, ctx, rt)) as {
+                available: boolean;
+                indicators: unknown[];
+                calendar: unknown;
+                calendarUnavailable?: boolean;
+            };
+            logged.mockRestore();
+            expect(r.available).toBe(true);
+            expect(r.indicators).toHaveLength(1);
+            expect(r.calendar).toBeNull();
+            // 비어 있는 일정이 아니라 못 읽은 것이라고 모델이 알 수 있게 한다.
+            expect(r.calendarUnavailable).toBe(true);
+        });
+
+        it.each(['KR', 'jp', 1, 'constructor', '__proto__', 'toString'])(
+            '알 수 없는 country %o는 invalid_args',
+            async country => {
+                const r = (await getEconomyTool({ country }, ctx, rt)) as {
+                    error: string;
+                    issues: Array<{ path: string }>;
+                };
+                expect(r.error).toBe('invalid_args');
+                expect(r.issues.map(i => i.path)).toEqual(['country']);
+                expect(calendarRange).not.toHaveBeenCalled();
+            }
+        );
+
+        it('미국 결과도 country를 밝힌다 — 국가를 빠뜨린 재조회가 한국 결과로 오인되지 않게', async () => {
+            snapshot.mockResolvedValue(EMPTY_SNAPSHOT);
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                country: string;
+            };
+            expect(r.country).toBe('us');
         });
     });
 

@@ -9,7 +9,10 @@ import {
 
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { normalizeCalendarForCountry } from './normalizeCalendarForCountry';
-import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
+import type {
+    CountryCalendars,
+    EconomyProvider,
+} from '@/shared/api/economy/EconomyProvider';
 import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
@@ -106,9 +109,10 @@ export class FmpEconomyProvider implements EconomyProvider {
      *
      * FMP는 한 번의 호출로 전 국가를 돌려주고 우리가 국가로 거른다.
      *
-     * **두 국가가 같은 왕복을 공유하지는 않는다.** `fmpGet`에 데이터 캐시가 없어서
-     * 같은 범위라도 국가마다 따로 읽는다. 매시간 수집이 매번 FMP를 새로 읽어야 발표된
-     * `actual`이 바로 들어온다(`fmpGet` JSDoc의 데이터 캐시 제거 경위 참고).
+     * **이 메서드는 부를 때마다 FMP를 새로 읽는다.** `fmpGet`에 데이터 캐시가 없어서, 같은 범위를
+     * 국가마다 부르면 같은 전 국가 응답을 국가 수만큼 받는다(매시간 수집이 그렇게 쓴다 — 발표된
+     * `actual`이 바로 들어와야 한다, `fmpGet` JSDoc 참고). 여러 국가를 한 번에 읽으려면
+     * {@link FmpEconomyProvider.getCalendarsByCountry}를 쓴다.
      *
      * {@link FMP_CALENDAR_MAX_SPAN_DAYS}일보다 긴 범위는 나눠 읽는다. 한때 한국의 210일
      * 창을 한 번에 읽어 앞쪽 약 120일이 조용히 빠졌다(2026-08-19 실측 "KR 94건"이 그 절단이었다).
@@ -122,5 +126,24 @@ export class FmpEconomyProvider implements EconomyProvider {
             await fetchEconomicCalendar(from, to),
             country
         );
+    }
+
+    async getCalendarsByCountry(
+        from: string,
+        to: string,
+        countries: readonly string[]
+    ): Promise<CountryCalendars> {
+        const raw = await fetchEconomicCalendar(from, to);
+        return {
+            byCountry: Object.fromEntries(
+                countries.map(country => [
+                    country,
+                    country === 'US'
+                        ? normalizeEconomicCalendar(raw)
+                        : normalizeCalendarForCountry(raw, country),
+                ])
+            ),
+            sourceRows: raw.length,
+        };
     }
 }
