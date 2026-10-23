@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
 import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
@@ -85,12 +86,13 @@ export function Composer({
                     // Documented exception to "input boundary = border-control"
                     // (docs/conventions/DESIGN.md §경계 예외): the chat composer is
                     // identified by its fixed bottom position, placeholder, filled
-                    // send button and its raised surface (`ai-raised`: solid face +
+                    // send button and its raised surface (`surface-raised`: solid face +
                     // top highlight in dark, gradient + shadow in light), so it
                     // draws no edge line; focus draws the brand ring. The 3.5:1 control edge read as a detached white box on
                     // the dark page (2026-09-13 사용자 제보). The transparent border
                     // keeps the box size fixed when the over-limit red edge appears.
-                    'ai-raised mx-auto flex w-full max-w-3xl items-end gap-1 rounded-lg border border-transparent p-1.5',
+                    SURFACE_CARD,
+                    'mx-auto flex w-full max-w-3xl items-end gap-1 p-1.5',
                     'focus-within:ring-2 focus-within:ring-primary-500',
                     overLimit && 'border-ui-danger'
                 )}
@@ -138,7 +140,11 @@ export function Composer({
                         onClick={submit}
                         disabled={!canSend}
                         aria-label={t('Composer.4077ce')}
-                        className={cn(BUTTON_PRIMARY, ACTION_SIZE, 'ai-accent')}
+                        className={cn(
+                            BUTTON_PRIMARY,
+                            ACTION_SIZE,
+                            'surface-accent'
+                        )}
                     >
                         <ArrowUpIcon className="size-5" />
                     </button>

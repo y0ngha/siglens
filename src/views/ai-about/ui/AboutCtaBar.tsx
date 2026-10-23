@@ -19,7 +19,7 @@ interface Props {
  * shared store), so the bar slides up by the same height on the same curve and
  * the two never leave a gap or overlap.
  *
- * Like the rest of the ai host it is separated by `ai-bar` (light, not a 1px
+ * Like the rest of the ai host it is separated by `surface-bar` (light, not a 1px
  * line). Its height and `data-ai-about-cta` are read by globals.css to place the
  * top install banner below it (`--ai-about-cta-h`).
  */
@@ -29,7 +29,7 @@ export function AboutCtaBar({ title, cta, href }: Props) {
         <div
             data-ai-about-cta=""
             className={cn(
-                'ai-bar sticky top-(--header-h) z-40 bg-secondary-800/95 backdrop-blur-md transition-transform duration-200 motion-reduce:transition-none',
+                'surface-bar sticky top-(--header-h) z-40 bg-secondary-800/95 backdrop-blur-md transition-transform duration-200 motion-reduce:transition-none',
                 headerHidden && 'max-lg:-translate-y-[var(--header-h)]'
             )}
         >

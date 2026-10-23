@@ -57,7 +57,7 @@ export function NotFoundLayout({
     return (
         <>
             <title>{documentTitle}</title>
-            <header className="border-b border-secondary-700 bg-secondary-900">
+            <header className="surface-bar bg-secondary-900">
                 <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
                     <a
                         href={homeHref}

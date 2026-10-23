@@ -195,15 +195,11 @@ function decorativeIn(tokens: string[], file?: string): string[] {
  * 항목을 추가하려면 그 컨트롤이 보더 없이 무엇으로 식별되는지 함께 적을 것.
  */
 const ALLOWED_CONSTANTS: ReadonlySet<string> = new Set([
-    // 카드용 공용 클래스(IndexCard·SignalStockCard). 소비처가 전부 **카드 표면**이고,
-    // 카드의 장식 보더는 globals.css 정책상 1.4.11 대상이 아니다. 그 호버
-    // (`hover:border-secondary-600`)도 같은 이유로 대상이 아니다.
-    //
-    // 이 항목은 상수에 담긴 호버를 처음 잡았을 때 나왔다 — 그 전까지 호버는
-    // 인라인 스캐너 하나만 봤고, 클래스를 상수로 옮기는 순간 감시가 꺼졌다.
-    'shared/lib/cardStyles.ts::CARD_LINK_CLASSES',
+    // (카드용 공용 클래스 `cardStyles.ts::CARD_LINK_CLASSES`는 호버가 경계선 대신
+    // `surface-raised-hover` 면 밝기라 더는 보더 토큰이 없다. 상수에 담긴 호버도
+    // 이 스캐너가 본다 — 클래스를 상수로 옮겨도 감시가 꺼지지 않는다.)
     // (SIGLENS AI 첫 화면의 질문 카드 `EmptyState.tsx::CARD`는 이제 경계가 아예
-    // 없다 — `ai-raised` 표면으로 뜨며, 근거는 그 파일의 `CARD` 주석과
+    // 없다 — `surface-raised` 표면으로 뜨며, 근거는 그 파일의 `CARD` 주석과
     // DESIGN.md §경계 예외에 있다.)
 ]);
 
@@ -217,13 +213,14 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 그랬다 — 평상시 기본 상태인 `idle`이 장식 보더인 채로 그 주석 뒤에 숨었다.
     // 이 자리에 분기를 추가할 때는 이 예외가 그것까지 덮는다는 걸 확인할 것.
     // 줄 번호 키라 이 파일이 위에서 길어지면 함께 옮겨야 한다 —
-    // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025 → 1055 → 1066 → 1187 → 1140 → 1143 → 1142 → 1201 → 1204 → 1217 → 1232 → 1233 → 1277 → 1301 → 1292 → 1317).
+    // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025 → 1055 → 1066 → 1187 → 1140 → 1143 → 1142 → 1201 → 1204 → 1217 → 1232 → 1233 → 1277 → 1301 → 1292 → 1317 → 1320).
     // 1233 (1232에서 +1, 퍼널 import 추가): 차트 탭 SSR로 가격 표기를 페이지 로케일에 고정하며 포맷 헬퍼·훅 호출이 위에 늘었다.
     // 1277 (1233에서 +44): 하루 무료 공개 미터의 노출 훅·잠금 카드 문구 선택·공개 띠가 위에 늘었다.
     // 1301 (1277에서 +24): 차트 가이드 "뜻 보기" 링크(import, 신호·패턴·전략 카드의 가이드 경로 계산과 링크)가 위에 늘었다.
     // 1292 (1302에서 −10): 패널 전용 가격 포매터 두 개를 shared `formatAnalysisPrice`(한국 종목 호가 단위)로 옮겼다.
     // 1317 (1292에서 +25): 국내 ETF 호가표(`krxTickTable`) prop을 패널과 하위 카드에 전달했다.
-    'widgets/analysis/AnalysisPanel.tsx:1317',
+    // 1320 (1317에서 +3): 위쪽 선 카드 리터럴을 `SURFACE_NESTED`/`SURFACE_CARD`로 옮기며 줄이 늘었다.
+    'widgets/analysis/AnalysisPanel.tsx:1320',
 
     // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
     // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.
@@ -237,11 +234,9 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 넣으면서 147에서 밀렸다).
     'widgets/layout/HeaderNavMenu.tsx:154',
 
-    // 카드 표면. 링크이지만 제목·설명·시세 블록을 담은 면이고, 보더는 그 면의
-    // 장식이지 컨트롤의 경계가 아니다(globals.css 정책의 "카드·패널 장식 보더
-    // 제외"). 칩(rounded-full, 텍스트 한 줄)은 보더가 곧 경계라 이 예외에 들지
-    // 않는다 — RelatedSymbols·CategoryCardGrid의 칩은 경계 토큰으로 고쳤다.
-    'widgets/dashboard/SignalStockCard.tsx:77',
+    // (SignalStockCard의 링크 카드는 이제 `SURFACE_CARD` 면이라 장식 보더가 없다.
+    // 칩(rounded-full, 텍스트 한 줄)은 보더가 곧 경계라 카드와 다르다 —
+    // RelatedSymbols·CategoryCardGrid의 칩은 경계 토큰으로 고쳤다.)
 ]);
 
 const CLASSNAME_RE = /className="([^"]*)"/;

@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     regionsOf,
     type NavRegionId,
@@ -56,7 +57,8 @@ export function RegionTabs({
         <nav
             aria-label={t('RegionTabs.1eafbd')}
             className={cn(
-                'flex flex-wrap items-center gap-1 rounded-lg border border-secondary-700 bg-secondary-800/30 p-1',
+                SURFACE_CARD,
+                'flex flex-wrap items-center gap-1 p-1',
                 className
             )}
         >
@@ -82,7 +84,7 @@ export function RegionTabs({
                         prefetch={false}
                         className={cn(
                             baseClass,
-                            'hover:bg-secondary-800 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                            'hover:bg-secondary-700/40 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
                             // 카테고리 페이지에서 자기 지역 허브 탭은 링크로 남되
                             // 어느 지역에 있는지는 계속 보여야 한다.
                             region.region === active

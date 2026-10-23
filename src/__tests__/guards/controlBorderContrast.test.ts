@@ -203,6 +203,63 @@ describe('control border contrast', () => {
     });
 
     /**
+     * 카드 면(`.surface-raised`)은 램프 토큰이 아니라 **섞은 색**이다(globals.css 표면 블록).
+     * 다크는 700을 40% 섞은 단색, 라이트는 위 800(흰색)에서 아래 900 70% 혼합으로 옅어지는
+     * 그라데이션 — 라이트는 더 낮은 아랫변을 잰다. 카드 안의 입력·보조 버튼 경계가 이 면 위에
+     * 앉으므로 램프와 같은 3:1을 요구한다.
+     *
+     * 호버 면(`surface-raised-hover`, 다크 700 70%)은 재지 않는다 — 링크 카드에만 걸리고
+     * 링크 카드는 안에 컨트롤을 두지 않는다(카드 전체가 하나의 링크다). 다크 호버 면 위의
+     * `border-control`은 2.96:1이라, 컨트롤을 품은 카드에 호버 면을 주면 이 전제가 깨진다.
+     */
+    it('border-control은 카드 면(.surface-raised) 위에서도 3:1을 넘는다', () => {
+        const themes = readThemes();
+        const mix = (a: string, b: string, weightA: number): string => {
+            const channels = (hex: string) =>
+                [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+            const [ca, cb] = [channels(a), channels(b)];
+            return `#${ca
+                .map((v, i) =>
+                    Math.round(v * weightA + cb[i] * (1 - weightA))
+                        .toString(16)
+                        .padStart(2, '0')
+                )
+                .join('')}`;
+        };
+        const hex = (value: string | undefined): string => {
+            expect(value).toMatch(/^#[0-9a-f]{6}$/i);
+            return value as string;
+        };
+        const full = (value: string | undefined): string => {
+            const v = value === '#fff' ? '#ffffff' : value;
+            return hex(v);
+        };
+        const dark = themes.dark;
+        const light = themes.light;
+        const faces = {
+            dark: mix(
+                full(dark.get('--color-secondary-700')),
+                full(dark.get('--color-secondary-800')),
+                0.4
+            ),
+            light: mix(
+                full(light.get('--color-secondary-900')),
+                full(light.get('--color-secondary-800')),
+                0.7
+            ),
+        };
+        const failures: string[] = [];
+        for (const theme of ['dark', 'light'] as const) {
+            const border = full(themes[theme].get('--color-border-control'));
+            const ratio = contrast(border, faces[theme]);
+            if (ratio < MIN_RATIO) {
+                failures.push(`${theme} raised ${ratio.toFixed(2)}:1`);
+            }
+        }
+        expect(failures).toEqual([]);
+    });
+
+    /**
      * 토글 스위치는 램프 밖 표면 위에 앉는 유일한 `border-control` 사용처다 —
      * 썸이 **트랙** 위에 놓이고, 트랙은 상태마다 `secondary-700`(off) /
      * `primary-600`(on) / `secondary-800`(locked)으로 바뀐다. `secondary-700`은

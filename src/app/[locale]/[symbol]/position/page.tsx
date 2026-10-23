@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getTranslations } from 'next-intl/server';
 import type { PositionTranslator } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
 import {
@@ -363,7 +365,7 @@ export default async function PositionPage({ params }: Props) {
                 {range && currentPricePosition && (
                     <section
                         aria-labelledby="position-guide-heading"
-                        className="space-y-3 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
+                        className={cn(SURFACE_CARD, 'space-y-3 p-5')}
                     >
                         <h2
                             id="position-guide-heading"

@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
@@ -22,7 +24,10 @@ export function MarketSummaryPanelSkeleton({
                     {scope.indices.map(idx => (
                         <div
                             key={idx.symbol}
-                            className="h-[80px] animate-pulse rounded-lg border border-secondary-700 bg-secondary-800/50"
+                            className={cn(
+                                SURFACE_CARD,
+                                'h-[80px] animate-pulse'
+                            )}
                         />
                     ))}
                 </div>
@@ -36,14 +41,17 @@ export function MarketSummaryPanelSkeleton({
                                 {group.symbols.map(sym => (
                                     <div
                                         key={sym}
-                                        className="h-[80px] animate-pulse rounded-lg border border-secondary-700 bg-secondary-800/50"
+                                        className={cn(
+                                            SURFACE_CARD,
+                                            'h-[80px] animate-pulse'
+                                        )}
                                     />
                                 ))}
                             </div>
                         </div>
                     ))}
                 </div>
-                <div className="h-[68px] animate-pulse rounded-lg border border-secondary-700 bg-secondary-800/50" />
+                <div className={cn(SURFACE_CARD, 'h-[68px] animate-pulse')} />
             </div>
         </section>
     );

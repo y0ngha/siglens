@@ -8,7 +8,7 @@ import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
 import type { ThemePreference } from '@/shared/lib/theme';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 
 /**
  * 테마 선택 메뉴 — 설정 따라가기 / 라이트 / 다크.
@@ -146,7 +146,7 @@ export function ThemeToggle() {
                     role="radiogroup"
                     aria-label={t('ThemeToggle.f36b6a')}
                     className={cn(
-                        SURFACE_CARD,
+                        SURFACE_FLOATING,
                         'absolute right-0 z-10 mt-1 w-max min-w-44 p-1 shadow-lg'
                     )}
                 >

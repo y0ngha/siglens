@@ -8,7 +8,7 @@ import { marketBadgeSpec, resultDisplayNames } from '../lib/resultDisplay';
 import { MarketBadge } from './MarketBadge';
 import { cn } from '@/shared/lib/cn';
 import type { TickerSearchResult } from '@/shared/lib/types';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 
 const LISTBOX_ID = 'ticker-autocomplete-listbox';
 const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;
@@ -154,7 +154,7 @@ export function TickerAutocomplete({
                         id={LISTBOX_ID}
                         role="listbox"
                         className={cn(
-                            SURFACE_CARD,
+                            SURFACE_FLOATING,
                             'absolute top-full left-0 z-50 mt-1 w-full overflow-hidden shadow-lg'
                         )}
                     >

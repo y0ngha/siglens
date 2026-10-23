@@ -305,7 +305,7 @@ export async function MethodologyPage({
                             rows={cryptoRows}
                         />
                     </ul>
-                    <div className="mt-4 rounded-lg border border-secondary-700 px-4 py-4 sm:px-5">
+                    <div className={cn(SURFACE_CARD, 'mt-4 px-4 py-4 sm:px-5')}>
                         <h3 className="text-sm font-semibold text-secondary-100">
                             {t('data.freshTitle')}
                         </h3>

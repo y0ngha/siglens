@@ -1,3 +1,4 @@
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { LegalBreadcrumb } from './LegalBreadcrumb';
@@ -54,7 +55,8 @@ export function LegalPageShell({
                     <nav
                         aria-label={t('LegalPageShell.7474d0')}
                         className={cn(
-                            'border-secondary-700 bg-secondary-900/40 mb-8 rounded-lg border p-5',
+                            SURFACE_CARD,
+                            'mb-8 p-5',
                             topNotice ? undefined : 'mt-8'
                         )}
                     >

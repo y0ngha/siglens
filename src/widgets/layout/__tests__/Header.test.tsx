@@ -75,22 +75,12 @@ describe('Header', () => {
         expect(logo).toHaveAttribute('data-loading', 'eager');
     });
 
-    /**
-     * ai 호스트는 선 대신 그림자로 층을 나눈다(`.ai-bar`, globals.css). 메인 사이트는
-     * 기존 하단 선을 그대로 쓴다 — 한쪽 값이 다른 호스트로 새면 안 된다.
-     */
-    it('softEdge면 하단 선 대신 ai-bar 그림자를 쓴다', () => {
-        render(<Header currentUser={null} softEdge />);
-        const header = screen.getByRole('banner');
-        expect(header).toHaveClass('ai-bar');
-        expect(header).not.toHaveClass('border-b');
-    });
-
-    it('기본(메인 호스트)은 하단 선을 쓰고 ai-bar가 없다', () => {
+    /** 본문과는 1px 선 대신 옅은 빛·그늘로 나눈다(`.surface-bar`, globals.css) — 메인·ai 호스트 공통. */
+    it('하단 선 대신 surface-bar로 본문과 나눈다', () => {
         render(<Header currentUser={null} />);
         const header = screen.getByRole('banner');
-        expect(header).toHaveClass('border-b', 'border-secondary-700');
-        expect(header).not.toHaveClass('ai-bar');
+        expect(header).toHaveClass('surface-bar');
+        expect(header).not.toHaveClass('border-b');
     });
 
     it('renders the home link', () => {

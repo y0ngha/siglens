@@ -163,7 +163,10 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-error-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
+            className={cn(
+                SURFACE_CARD,
+                'w-full max-w-full min-w-0 overflow-hidden border-ui-danger/30 p-6'
+            )}
         >
             <h2
                 id="market-news-digest-error-heading"

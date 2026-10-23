@@ -1,3 +1,4 @@
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
@@ -99,7 +100,8 @@ function RiskBadge({ level }: RiskBadgeProps) {
 }
 
 const winClasses = {
-    article: 'border-secondary-700',
+    // 이긴 사례는 기본 카드 면 그대로(투명 경계), 진 사례만 색 경계로 구분한다.
+    article: '',
     badge: 'bg-secondary-700 text-primary-400',
     returnText: 'text-ui-success-text',
     aiSummary: 'border-chart-bullish',
@@ -129,10 +131,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
     return (
         <article
             aria-label={`${c.ticker} ${c.entryDate} ${isWin ? t('BacktestCaseCard.bd6b14') : t('BacktestCaseCard.b19f09')} ${returnLabel}`}
-            className={cn(
-                'bg-secondary-800/50 rounded-lg border p-3',
-                v.article
-            )}
+            className={cn(SURFACE_CARD, 'p-3', v.article)}
         >
             <div className="mb-2 flex items-center gap-2">
                 {/*

@@ -31,12 +31,6 @@ interface HeaderProps {
      * Desktop keeps it pinned — there is room for it there.
      */
     readonly hiddenOnMobile?: boolean;
-    /**
-     * Separates the header from the page with a soft drop shadow instead of
-     * the 1px bottom line (ai host — its surfaces are layered by light and
-     * shadow, not lines; see `.ai-bar` in globals.css).
-     */
-    readonly softEdge?: boolean;
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
@@ -46,7 +40,6 @@ export function Header({
     loadingUserMenu,
     authNext,
     hiddenOnMobile = false,
-    softEdge = false,
 }: HeaderProps) {
     return (
         <header
@@ -61,8 +54,8 @@ export function Header({
             // the CSS is still pinning fully in view.
             inert={hiddenOnMobile}
             className={cn(
-                'sticky top-0 z-50 bg-secondary-900/90 backdrop-blur-md transition-transform duration-200 supports-backdrop-filter:bg-secondary-900/75 motion-reduce:transition-none',
-                softEdge ? 'ai-bar' : 'border-b border-secondary-700',
+                // 본문과는 1px 선 대신 옅은 빛 한 줄·짧은 그늘로 나눈다(`.surface-bar`, globals.css).
+                'surface-bar sticky top-0 z-50 bg-secondary-900/90 backdrop-blur-md transition-transform duration-200 supports-backdrop-filter:bg-secondary-900/75 motion-reduce:transition-none',
                 hiddenOnMobile && 'max-lg:-translate-y-full'
             )}
         >

@@ -28,7 +28,7 @@ import { redirect } from 'next/navigation';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { Suspense } from 'react';
 import { enterLocale } from '@/shared/lib/enterLocale';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
@@ -169,7 +169,12 @@ async function AccountContent({ locale }: { locale: Locale }) {
                 aria-label={t('page.1987ac')}
                 className="space-y-4 rounded-lg border border-ui-danger/30 bg-ui-danger/5 p-6"
             >
-                <div className="flex flex-col gap-3 rounded-lg border border-secondary-700 bg-secondary-900/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                    className={cn(
+                        SURFACE_NESTED,
+                        'flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between'
+                    )}
+                >
                     <div>
                         <h3 className="text-sm font-semibold text-secondary-100">
                             {t('page.3a0c2b')}

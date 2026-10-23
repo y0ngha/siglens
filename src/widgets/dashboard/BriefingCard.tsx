@@ -1,3 +1,5 @@
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 import { useTranslations } from 'next-intl';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -81,7 +83,7 @@ export function BriefingCard({
             : null;
 
     return (
-        <div className="flex flex-col gap-3 rounded-lg border border-secondary-700/50 p-4">
+        <div className={cn(SURFACE_CARD, 'flex flex-col gap-3 p-4')}>
             {summary && (
                 <p className="text-sm leading-relaxed text-secondary-300">
                     {summary}
@@ -213,7 +215,7 @@ export function BriefingLoadingCard() {
         <div
             role="status"
             aria-live="polite"
-            className="min-h-64 rounded-lg border border-secondary-700/50 p-4"
+            className={cn(SURFACE_CARD, 'min-h-64 p-4')}
         >
             <div className="flex items-center gap-2">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-secondary-700/50" />
@@ -228,10 +230,7 @@ export function BriefingLoadingCard() {
 export function BriefingErrorCard() {
     const t = useTranslations('widgets.dashboard');
     return (
-        <div
-            role="alert"
-            className="rounded-lg border border-secondary-700/50 p-4"
-        >
+        <div role="alert" className={cn(SURFACE_CARD, 'p-4')}>
             <p className="text-sm text-ui-danger-text">
                 {t('BriefingCard.8b256d')}
             </p>

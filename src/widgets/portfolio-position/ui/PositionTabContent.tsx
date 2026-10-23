@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
@@ -38,7 +40,7 @@ function PositionAuthSkeleton() {
             aria-busy="true"
             aria-live="polite"
             data-testid="position-auth-loading"
-            className="h-40 animate-pulse rounded-lg border border-secondary-700 bg-secondary-800/40"
+            className={cn(SURFACE_CARD, 'h-40 animate-pulse')}
         >
             <span className="sr-only">{t('PositionTabContent.0b16bc')}</span>
         </div>

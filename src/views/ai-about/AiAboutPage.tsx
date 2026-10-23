@@ -251,7 +251,12 @@ export async function AiAboutPage({
                         </h2>
                         <p className={SECTION_SUB}>{t('data.body')}</p>
                         <div className="mt-8 flex flex-col items-center gap-3">
-                            <p className="max-w-sm rounded-lg border border-secondary-700 bg-secondary-900 px-4 py-2.5 text-sm text-secondary-100">
+                            <p
+                                className={cn(
+                                    SURFACE_CARD,
+                                    'max-w-sm px-4 py-2.5 text-sm text-secondary-100'
+                                )}
+                            >
                                 {t('data.exampleQ')}
                             </p>
                             <Arrow />

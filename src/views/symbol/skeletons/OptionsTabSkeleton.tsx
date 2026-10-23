@@ -8,7 +8,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { Spinner } from '@/shared/ui/Spinner';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 
 // `mapExpirationsToSlots`가 산출하는 슬롯 최대 6종(1W/2W/1M/2M/3M/6M — 만기가 없으면
 // chip 생략)에 종합 chip을 더한 수.
@@ -75,12 +75,10 @@ export function OptionsTabSkeleton() {
                 <ul className="space-y-3">
                     {Array.from({ length: AI_PER_EXPIRATION_ITEM_COUNT }).map(
                         (_, i) => (
-                            <li
-                                key={i}
-                                className="rounded-lg border border-secondary-700 p-3"
-                            >
-                                <div className="mb-2 h-3 w-24 animate-pulse rounded bg-secondary-700" />
-                                <div className="h-3 w-full animate-pulse rounded bg-secondary-700" />
+                            <li key={i} className={cn(SURFACE_NESTED, 'p-3')}>
+                                {/* 중첩 블록이 이미 700 틴트라 700 막대는 묻힌다 — 한 단계 진한 600. */}
+                                <div className="mb-2 h-3 w-24 animate-pulse rounded bg-secondary-600" />
+                                <div className="h-3 w-full animate-pulse rounded bg-secondary-600" />
                             </li>
                         )
                     )}

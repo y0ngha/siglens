@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getTranslations } from 'next-intl/server';
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
@@ -102,7 +104,7 @@ async function PrivacyContent({ locale, terms }: PrivacyContentProps) {
                 <div
                     role="note"
                     aria-label={tSeo('a11y.investmentDisclaimer')}
-                    className="mt-12 rounded-lg border border-secondary-700 bg-secondary-900/40 p-5"
+                    className={cn(SURFACE_CARD, 'mt-12 p-5')}
                 >
                     <p className="text-xs leading-relaxed text-secondary-400 sm:text-sm">
                         {tLegal(INVESTMENT_DISCLAIMER_KEY)}{' '}

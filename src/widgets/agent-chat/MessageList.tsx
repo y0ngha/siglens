@@ -540,7 +540,7 @@ export function MessageList({
                                             onEdit(editing.seq, editing.text);
                                             setEditing(null);
                                         }}
-                                        className="ai-raised flex w-full max-w-[80%] flex-col gap-2 rounded-lg p-2 focus-within:ring-2 focus-within:ring-primary-500"
+                                        className="surface-raised flex w-full max-w-[80%] flex-col gap-2 rounded-lg p-2 focus-within:ring-2 focus-within:ring-primary-500"
                                     >
                                         <textarea
                                             value={editing.text}
@@ -589,7 +589,7 @@ export function MessageList({
                                     style={activeTurnStyle}
                                     className="group flex flex-col items-end"
                                 >
-                                    <div className="ai-raised max-w-[80%] rounded-lg px-4 py-2.5 text-[15px] leading-6 break-words whitespace-pre-wrap text-secondary-100">
+                                    <div className="surface-raised max-w-[80%] rounded-lg px-4 py-2.5 text-[15px] leading-6 break-words whitespace-pre-wrap text-secondary-100">
                                         {m.content}
                                     </div>
                                     {actions}

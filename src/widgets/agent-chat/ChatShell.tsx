@@ -272,7 +272,7 @@ export function ChatShell({
             {/* Pinned under the sticky site header at viewport height: a long
                 conversation list scrolls inside the rail instead of stretching
                 the page (which pushed the landing hero below the fold). */}
-            <aside className="ai-rail sticky top-(--header-h) hidden h-[calc(100dvh-var(--header-h))] w-64 shrink-0 self-start bg-secondary-950 lg:block">
+            <aside className="surface-rail sticky top-(--header-h) hidden h-[calc(100dvh-var(--header-h))] w-64 shrink-0 self-start bg-secondary-950 lg:block">
                 {sidebar}
             </aside>
             {isBelowLg ? (
@@ -308,7 +308,7 @@ export function ChatShell({
                         // reachable mid-conversation; slides up with the header while
                         // scrolling down (header + bar height clears both). Heights are
                         // the shared globals.css chrome variables the PWA banner reads too.
-                        'ai-bar sticky top-(--header-h) z-40 flex h-(--agent-chat-bar-h) items-center gap-2 bg-secondary-900 px-2 transition-transform duration-200 motion-reduce:transition-none lg:hidden',
+                        'surface-bar sticky top-(--header-h) z-40 flex h-(--agent-chat-bar-h) items-center gap-2 bg-secondary-900 px-2 transition-transform duration-200 motion-reduce:transition-none lg:hidden',
                         chromeHidden &&
                             '-translate-y-[calc(var(--header-h)+var(--agent-chat-bar-h))]'
                     )}
@@ -380,7 +380,7 @@ export function ChatShell({
                             {offerLogin ? (
                                 <a
                                     href={login}
-                                    className="ai-accent inline-flex min-h-9 shrink-0 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    className="surface-accent inline-flex min-h-9 shrink-0 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {t('ChatShell.loginCta')}
                                 </a>

@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { GuideEntry, GuideEntrySummary } from '@/entities/guide/types';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
+import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
 import {
     GUIDE_PATH,
@@ -41,8 +42,7 @@ interface GuideEntryPageProps {
 const RELATED_HEADING_ID = 'guide-related-heading';
 const CTA_HEADING_ID = 'guide-cta-heading';
 
-const PAGER_LINK =
-    'group block h-full rounded-lg border border-border-control p-4 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none';
+const PAGER_LINK = cn(CARD_LINK_CLASSES, 'group h-full p-4');
 
 interface PagerLinkProps {
     readonly direction: 'previous' | 'next';

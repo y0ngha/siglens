@@ -1,5 +1,6 @@
 'use client';
 
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import {
@@ -239,7 +240,9 @@ function ReconciledLevelsBlock({
 }: ReconciledLevelsBlockProps) {
     const t = useTranslations('widgets.analysis');
     return (
-        <section className="mt-1 flex flex-col gap-1 rounded-lg border border-secondary-700 bg-secondary-800/40 px-3 py-2">
+        <section
+            className={cn(SURFACE_NESTED, 'mt-1 flex flex-col gap-1 px-3 py-2')}
+        >
             <header className="flex items-center">
                 <span className={LABEL_KO}>{t('AnalysisPanel.b3df82')}</span>
                 <InfoTooltip>
@@ -664,10 +667,10 @@ function PatternAccordionItem({
 
     return (
         <div
-            className="overflow-hidden rounded-lg border border-secondary-700"
+            className={cn(SURFACE_NESTED, 'overflow-hidden')}
             {...overlayHoverHandlers(overlay, pattern.id)}
         >
-            <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
+            <div className="flex w-full items-center transition-colors hover:bg-secondary-700/50">
                 <button
                     type="button"
                     aria-expanded={isOpen}
@@ -786,10 +789,10 @@ function StrategyAccordionItem({
 
     return (
         <div
-            className="overflow-hidden rounded-lg border border-secondary-700"
+            className={cn(SURFACE_NESTED, 'overflow-hidden')}
             {...overlayHoverHandlers(overlay, strategy.id)}
         >
-            <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
+            <div className="flex w-full items-center transition-colors hover:bg-secondary-700/50">
                 <button
                     type="button"
                     aria-expanded={isOpen}
@@ -1723,7 +1726,10 @@ export function AnalysisPanel({
                                             ? setMeterNode
                                             : undefined
                                     }
-                                    className="flex flex-col items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-5 text-center"
+                                    className={cn(
+                                        SURFACE_NESTED,
+                                        'flex flex-col items-center gap-3 p-5 text-center'
+                                    )}
                                 >
                                     <div className="flex flex-col gap-1.5">
                                         <p className="text-sm font-semibold text-balance text-secondary-100">

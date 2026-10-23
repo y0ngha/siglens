@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import {
     ECONOMY_CATEGORY_LABEL_KEY,
@@ -89,7 +91,7 @@ function IndicatorCard({ card }: IndicatorCardProps) {
     const locale = useResolvedLocale();
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
-        <article className="rounded-lg border border-secondary-700 bg-secondary-800/30 p-4">
+        <article className={cn(SURFACE_CARD, 'p-4')}>
             <div className="flex items-center gap-1.5">
                 <h4 className="text-sm text-secondary-400">
                     {ECONOMY_INDICATOR_LABEL_KEY[meta.label]

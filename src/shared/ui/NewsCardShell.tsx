@@ -124,7 +124,7 @@ export function NewsCardShell({
         <article
             className={cn(
                 SURFACE_CARD,
-                'hover:border-primary-500/50 relative w-full max-w-full min-w-0 overflow-hidden p-4 transition-[colors,transform] hover:-translate-y-px',
+                'hover:border-primary-500/50 relative w-full max-w-full min-w-0 overflow-hidden p-4 transition-[border-color,translate] hover:-translate-y-px',
                 // content가 3px 바에 붙지 않도록 pl-5로 패딩을 보정한다.
                 isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
             )}

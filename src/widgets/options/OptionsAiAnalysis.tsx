@@ -1,5 +1,6 @@
 'use client';
 
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import type {
     ModelId,
@@ -197,7 +198,7 @@ export function OptionsAiAnalysisView({
                         {result.perExpiration.map(item => (
                             <li
                                 key={item.expirationDate}
-                                className="rounded-lg border border-secondary-700 p-3"
+                                className={cn(SURFACE_NESTED, 'p-3')}
                             >
                                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
                                     <span className="text-xs font-medium text-secondary-200 tabular-nums">

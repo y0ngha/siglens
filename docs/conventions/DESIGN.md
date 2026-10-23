@@ -16,6 +16,7 @@
 | DS-14 | 라이트 테마 짝 정의·양 테마 측정 |
 | DS-15 | 방향 색에 좋고 나쁨을 싣지 않는다 |
 | DS-16 | 표면 토큰을 경계로 쓰지 않는다 |
+| DS-17 | 카드 면 위에 카드 면을 겹치지 않는다 |
 
 ## 컬러 철학
 
@@ -63,13 +64,17 @@ WCAG **AA(4.5:1)는 하한선이고 목표는 AAA(7:1)**다. 본문·헤딩·보
 
 | 상수 | 파일 | 쓰는 자리 |
 |---|---|---|
-| `SURFACE_CARD` · `SURFACE_NESTED` | `shared/lib/surfaceStyles.ts` | 카드·패널, 그 안의 중첩 블록 |
+| `SURFACE_CARD` · `SURFACE_NESTED` · `SURFACE_FLOATING` | `shared/lib/surfaceStyles.ts` | 카드·패널, 그 안의 중첩 블록(카드 안에 카드 면을 겹치지 않는다), 다른 카드를 덮는 메뉴·다이얼로그(경계선 유지) |
 | `PLACEHOLDER_ON_CARD` · `PLACEHOLDER_ON_INSET` | `shared/lib/surfaceStyles.ts` | 로딩 자리표시자 — **어느 표면 위인지** 보고 고른다 |
 | `HEADING_SECTION` · `HEADING_SUBSECTION` · `LABEL_KO` · `LABEL_GROUP` | `shared/lib/typographyStyles.ts` | h2 · h3 · 한글 라벨 · 목록 묶음 이름표(헤딩 아님 — 헤딩 요소에는 쓰지 않는다) |
-| `CARD_LINK_CLASSES` | `shared/lib/cardStyles.ts` | `Link`로 감싼 카드의 hover·focus |
-| `BUTTON_PRIMARY` · `BUTTON_DANGER` · `BUTTON_OUTLINE` · `BUTTON_OUTLINE_DANGER` · `BUTTON_GHOST` | `shared/lib/buttonStyles.ts` | 버튼·링크 버튼의 **톤**. 높이·패딩·글자 크기는 호출부가 `cn()`으로 덧붙인다. `BUTTON_OUTLINE`의 hover 면이 `secondary-800`이라 같은 색 패널 위에서는 호출부가 `hover:bg-secondary-700`으로 한 단계 올린다 |
+| `CARD_LINK_CLASSES` | `shared/lib/cardStyles.ts` | 링크 카드 전체 — 카드 면(`SURFACE_CARD` 포함) + hover(면이 밝아짐·1px 들림)·focus. 면과 호버가 같은 요소여야 해서 한 상수로 묶었다(`SURFACE_CARD`를 따로 겹치지 않는다) |
+| `BUTTON_PRIMARY` · `BUTTON_DANGER` · `BUTTON_OUTLINE` · `BUTTON_OUTLINE_DANGER` · `BUTTON_GHOST` | `shared/lib/buttonStyles.ts` | 버튼·링크 버튼의 **톤**. 높이·패딩·글자 크기는 호출부가 `cn()`으로 덧붙인다. `BUTTON_OUTLINE`의 hover 면은 반투명 `secondary-700/50`이라 페이지 위·카드 위 어디서나 한 단계 밝아진다 — 카드 위라고 호출부가 hover를 덧대지 않는다 |
 
-`SURFACE_CARD`의 네 토큰을 한 리터럴에 손으로 적으면 `surfaceCardConstantGuard`가 막는다.
+`SURFACE_CARD`의 네 토큰(`surface-raised rounded-lg border border-transparent`)을 한 리터럴에
+손으로 적으면 `surfaceCardConstantGuard`가 막는다. 경계선 시절 카드 묶음(`rounded-lg border
+border-secondary-700` + `bg-secondary-800/900` 채움, 알파 포함)도 같은 가드가 막는다 — 옛 선 카드가 되살아나지 않게 한다.
+`shadow-*`가 붙은 떠 있는 메뉴는 대상이 아니다.
+카드 위에 `bg-*`를 덧대 면 색을 바꾸지 않는다 — 라이트의 그라데이션(`background-image`)이 그 위에 그려진다.
 
 컴포넌트가 아니라 **문자열 상수**인 이유: 83곳을 컴포넌트로 감싸면 DOM 구조가 바뀌어
 E2E 로케이터와 SEO 텍스트 위치에 회귀 위험이 생긴다. 클래스만 바꾸면 구조는 그대로다.
@@ -137,26 +142,29 @@ E2E 로케이터와 SEO 텍스트 위치에 회귀 위험이 생긴다. 클래�
 **사용처**
 ```
 페이지 배경            bg-secondary-900
-카드/패널 배경         bg-secondary-800   (카드 전체는 SURFACE_CARD)
+카드/패널 표면         SURFACE_CARD       (.surface-raised — 선 대신 면 밝기·빛)
+떠 있는 메뉴·팝오버    SURFACE_FLOATING + shadow-* (또는 bg-secondary-900 + border-secondary-700 + shadow-*)
 차트 배경              CHART_COLORS.background
 보조 텍스트            text-secondary-400
-구분선                 border-secondary-700
+구분선(표 행·목록 항목) border-secondary-700
 입력·컨트롤 경계       border-border-control
 비활성 컨트롤          disabled:bg-secondary-700 disabled:text-secondary-500
 ```
 
 **경계 예외 (근거와 함께만 추가)**
-- **SIGLENS AI(ai 호스트)는 장식 선을 쓰지 않는다.** 층은 `globals.css`의 `ai-*` 클래스로 나눈다 —
-  `ai-raised`(떠 있는 표면: 질문 카드·후속 질문 칩·말풍선·입력창·보조 버튼), `ai-raised-hover`(호버 시 면이 밝아짐),
-  `ai-accent`(주 액션 브랜드 그라데이션), `ai-rail`·`ai-bar`(사이드바·상단 띠), `ai-well`(코드 블록 같은 파인 자리).
+- **카드·패널·상단 띠는 장식 선을 쓰지 않는다(메인·ai 호스트 공통).** 층은 `globals.css`의 `surface-*` 클래스로 나눈다 —
+  `surface-raised`(떠 있는 표면: 카드·패널(`SURFACE_CARD`)·질문 카드·후속 질문 칩·말풍선·입력창·보조 버튼), `surface-raised-hover`(호버 시 면이 밝아짐),
+  `surface-accent`(주 액션 브랜드 그라데이션), `surface-rail`·`surface-bar`(사이드바·상단 띠), `surface-well`(코드 블록 같은 파인 자리).
   재료는 테마마다 다르다. **다크**는 단색 면(페이지보다 한 단계 밝음) + 윗변 하이라이트(inset 1px) + 1~2px
   접지 그림자만 쓰고, 톤 차이가 보이지 않는 사이드바·헤더·상단 띠·코드 우물은 옅은 빛 한 줄(흰색 5%)로 나눈다 — 거의 검은
   페이지에서는 큰 낙하 그림자가 보이지 않고 그라데이션이 탁하게 번졌다. **라이트**는 위가 밝은 세로 그라데이션 + 낙하 그림자, 사이드바·상단 띠는 가장자리 그림자로 나눈다.
   그림자는 `--tw-shadow`에 실어 포커스 링과 함께 남는다(그래서 `shadow-*` 유틸리티와 섞지 않는다). 1px 선으로
   갈린 화면이 표처럼 딱딱하다는 사용자 피드백(2026-10)에서 나왔다. 라벨(텍스트·아이콘)이 있는 버튼은 WCAG
-  1.4.11상 경계가 필요 없으므로 선 없이 `ai-raised`만 쓴다. **경계가 유일한 식별 수단인 일반 입력(사이드바
-  검색·이름 바꾸기)은 그대로 `border-control`이다.**
-- SIGLENS AI 입력창(`widgets/agent-chat/Composer.tsx`)·메시지 편집 폼 — 선 없음(`ai-raised`), 포커스 시 `ring-primary-500`.
+  1.4.11상 경계가 필요 없으므로 선 없이 `surface-raised`만 쓴다. **경계가 유일한 식별 수단인 일반 입력(사이드바
+  검색·이름 바꾸기·폼 입력)은 그대로 `border-control`이다.** 선이 정보를 나르는 자리도 남긴다 — 표의 행 구분선,
+  탭 활성 밑줄, 빈 자리(`border-dashed`), 차트 프레임, 강조 카드의 색 경계(`border-ui-danger/30` 등, `SURFACE_CARD`의
+  투명 경계 위에 색만 덮는다). 떠 있는 메뉴·팝오버·토스트는 큰 그림자와 함께 기존 경계를 유지한다.
+- SIGLENS AI 입력창(`widgets/agent-chat/Composer.tsx`)·메시지 편집 폼 — 선 없음(`surface-raised`), 포커스 시 `ring-primary-500`.
   화면 하단 고정 위치·플레이스홀더·채워진 전송 버튼·떠 있는 표면으로 식별되는 채팅 컴포저라서
   컨트롤 경계(3.5:1)를 쓰지 않는다(3.5:1 경계가 밝은 상자처럼 떠 보인다는 2026-09-13 제보). 길이 초과 시에만
   `border-ui-danger`를 그리며, 평소에는 같은 두께의 투명 경계로 크기를 고정한다. 일반 폼 입력에는 적용하지 않는다.
@@ -564,6 +572,18 @@ className="text-[#1a2b3c]"
 
 `border-secondary-800`은 카드 위에서 **1.00:1**이다 — 경계를 선언하고 아무것도 그리지 않는다. 장식 경계는
 `secondary-700`, 컨트롤 경계는 `border-control`을 쓴다. `surfaceAsBorderGuard`가 정적으로 막는다.
+
+<a id="DS-17"></a>
+
+#### DS-17 — 카드 면 위에 카드 면을 겹치지 않는다
+
+`.surface-raised` 요소 안에 같은 면(`SURFACE_CARD`)을 다시 깔면 면 색이 같아 안쪽 블록이 사라진다. 카드·패널 안의 블록
+(말풍선, 업셀 카드 등)은 `SURFACE_NESTED`를 쓴다. 테두리 없는 면은 경계가 없으므로 면 색 차이가 유일한 구분이다.
+
+```
+❌ <div className={SURFACE_CARD}><div className={SURFACE_CARD}>…</div></div>
+✅ <div className={SURFACE_CARD}><div className={SURFACE_NESTED}>…</div></div>
+```
 
 <a id="DS-4"></a>
 

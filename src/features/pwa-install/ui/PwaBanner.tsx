@@ -5,7 +5,7 @@ import { usePwaInstall } from '../hooks/usePwaInstall';
 import { IosInstallModal } from './IosInstallModal';
 import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
 
 interface PwaBannerProps {
@@ -80,7 +80,7 @@ export function PwaBanner({
                 role="region"
                 aria-label={t('PwaBanner.31ff7b')}
                 className={cn(
-                    SURFACE_CARD,
+                    SURFACE_FLOATING,
                     'fixed right-[max(0.75rem,env(safe-area-inset-right))] left-[max(0.75rem,env(safe-area-inset-left))] z-65 flex h-12 items-center gap-2 pr-1.5 pl-3 shadow-lg sm:right-auto sm:left-4 sm:w-96',
                     placement === 'top'
                         ? 'top-[calc(var(--pwa-banner-top)+env(safe-area-inset-top))]'
