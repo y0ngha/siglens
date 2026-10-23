@@ -2360,6 +2360,163 @@
         }
     },
     "views": {
+        "benchmark": {
+            "breakdown": {
+                "byLevel": "按级别的客观得分(答错 −{lambda, number} 分)",
+                "byMarket": "按市场的客观得分(答错 −{lambda, number} 分)",
+                "bySubset": "按子集的客观得分(答错 −{lambda, number} 分)",
+                "counts": "各对象的判定数量",
+                "judged": "L4 解读与 L5 诚实与安全(中立评审,0~1 分)",
+                "rowLevel": "级别",
+                "rowMarket": "市场",
+                "rowSubset": "子集",
+                "sub": "按题目类别拆分同一套得分。每行最高分以粗体显示。",
+                "title": "详细得分"
+            },
+            "counts": {
+                "correct": "正确",
+                "excluded": "已排除",
+                "incorrect": "错误",
+                "not_attempted": "未作答",
+                "pending": "待评分"
+            },
+            "downloads": {
+                "disclaimer": "本页为基准测试记录,不构成投资建议或个股推荐。",
+                "harness": "测量与评分代码(GitHub)",
+                "license": "数据以 <link>CC BY 4.0</link> 发布,测量与评分代码采用 MIT 许可。",
+                "sources": "标准答案来源: Nasdaq、KRX(公共数据门户)、美国财政部、Cboe、SEC EDGAR、FINRA、DART。各模型的回答原文是该服务的输出,并记录了模型与调用时间。",
+                "sub": "可下载全部原始数据以及测量和评分代码。",
+                "title": "下载",
+                "zip": "完整原始数据(zip)"
+            },
+            "explorer": {
+                "count": "显示 {shown, number} / 共 {total, number} 道",
+                "detail": {
+                    "answer": "回答原文",
+                    "error": "无法加载回答原文。",
+                    "extracted": "提取的数值",
+                    "judges": "中立评审",
+                    "loading": "正在加载回答原文。",
+                    "noRecord": "该对象没有记录。",
+                    "part": "项目",
+                    "reason": "依据",
+                    "retry": "重试",
+                    "round": "第 {round, number} 轮",
+                    "value": "数值",
+                    "verdict": "判定"
+                },
+                "empty": "没有符合条件的题目。",
+                "filter": {
+                    "all": "全部",
+                    "level": "级别",
+                    "market": "市场",
+                    "pool": "题库",
+                    "reset": "重置筛选",
+                    "target": "对象",
+                    "template": "类型",
+                    "verdict": "判定"
+                },
+                "label": {
+                    "correct": "正确",
+                    "excluded": "已排除",
+                    "incorrect": "错误",
+                    "not_attempted": "未作答",
+                    "pending": "待评分"
+                },
+                "market": {
+                    "kr": "韩国",
+                    "us": "美国"
+                },
+                "results": "各对象的判定",
+                "truth": "标准答案"
+            },
+            "headline": {
+                "baselines": "与基线的比较(同一底层模型,不使用工具)",
+                "ci": "95% 置信区间",
+                "competitors": "与竞争模型的比较",
+                "diff": "{subject} 得分 − 对象得分",
+                "n": "题目数",
+                "note": "只有当置信区间不包含 0 且 Holm 校正 p 值小于 {alpha} 时,才判定为领先或落后。基线不参与检验,因此没有 p 值。",
+                "p": "Holm 校正 p",
+                "reading": "解读",
+                "sub": "客观题按部分评分:答对 +1 分,未作答 0 分,答错 −{lambda, number} 分,再取平均。差异通过对题目重新抽样得到的 95% 置信区间和 Holm 校正 p 值来判断。",
+                "summary": "将 {subject} 的客观得分与 {count, number} 个竞争模型比较:显著领先的有 {ahead, number} 个,无法确定差异的有 {tie, number} 个,落后的有 {behind, number} 个。",
+                "target": "对象",
+                "title": "核心结果:与其他模型的得分差",
+                "verdict": {
+                    "ahead": "显著领先",
+                    "behind": "显著落后",
+                    "tie": "无法确定差异",
+                    "untested": "未检验"
+                }
+            },
+            "hero": {
+                "eyebrow": "公开基准测试",
+                "lede": "我们用同样的 {items, number} 个美国和韩国股票问题分别询问 {brand} 与通用 AI 模型,并与由官方数据生成的标准答案对照。测量日期为 {measuredAt},评分于 {scoredAt} 确定。题目、标准答案、回答原文和评分结果全部公开。",
+                "title": "{brand} 基准测试结果"
+            },
+            "items": {
+                "sub": "可查看每道题的问题、标准答案和各对象的判定。展开题目会加载回答原文和评分依据。",
+                "title": "按题目浏览"
+            },
+            "koreanNote": "题目和回答原文均为韩语。测量是以韩语进行的,因此本页的问题、标准答案摘要和回答均未翻译,按原文显示。",
+            "levels": {
+                "L4": "L4 解读",
+                "L5": "L5 诚实与安全"
+            },
+            "limits": {
+                "judge": "评审由 LLM 完成,结果可能与人工评审不同。",
+                "once": "测量只进行了一次,每道题重复提问 {rounds, number} 次。",
+                "sameVendor": "{brand} 使用的部分数据与标准答案来源属于同一系列(FMP、Yahoo)。",
+                "sandbox": "通用模型的代码沙箱无法访问互联网,Gemini 也没有 user_location 设置。",
+                "sources": "标准答案最初由 Yahoo 临时数值生成,后用官方数值重新计算。两者不一致的题目数量已在标准答案来源中说明。",
+                "sourcesPlain": "标准答案最初由 Yahoo 临时数值生成,后用官方数值重新计算。",
+                "split": "开发题与测试题涉及的股票互不重叠,缺陷修复只参考了开发题。",
+                "title": "局限"
+            },
+            "market": {
+                "kr": "韩国",
+                "us": "美国"
+            },
+            "method": {
+                "aiAbout": "AI 服务介绍",
+                "designDoc": "基准测试设计文档",
+                "items": "共 {total, number} 道题,各题库题目数为 {pools}。",
+                "itemsTitle": "题目构成",
+                "judges": "L4 和 L5 由 LLM 评审评分,核心结果只采用中立评审的分数。",
+                "judgesTitle": "评审与中立性",
+                "levels": "L1 至 L3 是答案固定的客观题,自动评分。L4 考查解读,L5 考查诚实与安全,由中立评审打 0 到 1 分。",
+                "schedule": "每道题重复提问 {rounds, number} 次,测量日期为 {measuredAt}。",
+                "scheduleTitle": "时间安排",
+                "scoring": "答案包含多个部分时,每个部分答对 +1 分、未作答 0 分、答错 −{lambda, number} 分。只有两个提取器从回答中提取的值一致时才做出判定,所有判定记录均公开。",
+                "scoringTitle": "评分",
+                "siteMethodology": "分析方法页面",
+                "sub": "详细设计见下方链接的文档。",
+                "title": "方法概述",
+                "truth": "标准答案在美国使用 Nasdaq 官方数值,在韩国使用 KRX 官方数值。题目最初依据 Yahoo 的临时数值生成,之后用官方数值重新计算。标准答案的数值和来源 URL 都包含在原始数据中。",
+                "truthTitle": "标准答案来源",
+                "vendorMismatch": "临时数值与官方数值不一致的题目有 {count, number} 道。"
+            },
+            "prereg": {
+                "gist": "公开 gist",
+                "hash": "manifest 哈希(SHA-256)",
+                "ots": "OpenTimestamps 证明",
+                "otsLink": "下载证明文件(.ots)",
+                "sub": "测量之前,我们已将题目、代码和设计文档的哈希公开记录。可通过下列数值确认事后没有被改动。",
+                "title": "预先注册",
+                "verify": "验证方法:对原始数据 manifest.json 中列出的文件重新计算哈希并与上面的数值比对,再用 OpenTimestamps 验证 .ots 文件即可确认登记时间。"
+            },
+            "seo": {
+                "description": "用 {items, number} 道美国和韩国股票题,将 {brand} 与 {count, number} 个通用 AI 模型比较:显著领先 {ahead, number} 个,无法确定差异 {tie, number} 个,落后 {behind, number} 个。题目、标准答案和回答原文全部公开。",
+                "descriptionPlain": "用 {items, number} 道美国和韩国股票题对比 {brand} 与通用 AI 模型的基准测试结果及逐题原始数据。",
+                "ogLabel": "{brand} 基准测试结果",
+                "title": "{brand} 基准测试结果 — 与通用 AI 模型的逐题对比"
+            },
+            "subset": {
+                "heldOut": "设计时未使用的题目(H)",
+                "noTool": "无专用工具(×)"
+            }
+        },
         "methodology": {
             "ai": {
                 "check": "简明视图文本在发布前会经过检查。如果其中包含原始分析和计算值中没有的价格或过大的数字，我们会要求其重写一次；如果仍存在，则删除该句子。如果删除句子后仍无法整理，则只显示原始视图，不显示简明视图。",
@@ -3504,6 +3661,21 @@
                 "universe": "仅覆盖AAPL、NVDA、TSLA等固定的10只大盘股，且为事后选定，可能存在选择偏差。",
                 "dataSource": "价格数据来源：Financial Modeling Prep（FMP）。"
             }
+        },
+        "benchmark-summary": {
+            "ci": "95% 置信区间 {ci}",
+            "l5": "诚实与安全(L5)",
+            "l5Note": "中立评审平均分,0~1 分",
+            "more": "查看完整基准测试结果",
+            "sub": "这是在相同的 {items, number} 道题上得到的客观得分差。正数表示 {subject} 得分更高。",
+            "title": "基准测试结果",
+            "verdict": {
+                "ahead": "显著领先",
+                "behind": "显著落后",
+                "tie": "无法确定差异",
+                "untested": "未检验"
+            },
+            "versus": "相对 {competitor}"
         },
         "chart": {
             "ChartErrorFallback": {
@@ -4786,6 +4958,7 @@
                 "531f6a": "联系我们",
                 "5f5d12": "网站信息",
                 "693b62": "投资免责声明",
+                "benchmarkLink": "基准测试",
                 "developersLink": "开发者 API",
                 "guideLink": "图表指南",
                 "symbolsLink": "热门标的"

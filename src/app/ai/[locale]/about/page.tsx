@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import { buildFaqJsonLd, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
 import { AiAboutPage } from '@/views/ai-about/AiAboutPage';
 import {
     getAboutFaq,
@@ -39,6 +40,7 @@ export default async function AiAboutRoute({
                 siteUrl={SITE_URL}
                 localePrefix={localePath(locale, '').replace(/\/$/, '')}
                 faq={faq}
+                benchmark={getPublishedBenchmarkRelease()}
             />
         </>
     );

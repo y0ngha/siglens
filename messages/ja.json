@@ -2360,6 +2360,163 @@
         }
     },
     "views": {
+        "benchmark": {
+            "breakdown": {
+                "byLevel": "レベル別の客観スコア(誤答−{lambda, number}点)",
+                "byMarket": "市場別の客観スコア(誤答−{lambda, number}点)",
+                "bySubset": "部分集合別の客観スコア(誤答−{lambda, number}点)",
+                "counts": "対象別の判定件数",
+                "judged": "L4 解釈とL5 誠実性・安全性(中立の審査員、0~1点)",
+                "rowLevel": "レベル",
+                "rowMarket": "市場",
+                "rowSubset": "部分集合",
+                "sub": "同じスコアを問題の区分ごとに分けて示します。各行で最も高いスコアは太字です。",
+                "title": "詳細スコア"
+            },
+            "counts": {
+                "correct": "正解",
+                "excluded": "除外",
+                "incorrect": "誤答",
+                "not_attempted": "未回答",
+                "pending": "採点前"
+            },
+            "downloads": {
+                "disclaimer": "ベンチマークの測定記録であり、投資勧誘や銘柄推奨ではありません。",
+                "harness": "測定・採点コード(GitHub)",
+                "license": "データは<link>CC BY 4.0</link>、測定・採点コードはMITライセンスで公開しています。",
+                "sources": "正解値の出典: Nasdaq、KRX(公共データポータル)、米財務省、Cboe、SEC EDGAR、FINRA、DART。各モデルの回答原文はそのサービスの出力で、モデルと呼び出し時刻を併記しています。",
+                "sub": "原データの全体と、測定・採点のコードをダウンロードできます。",
+                "title": "ダウンロード",
+                "zip": "原データ一式(zip)"
+            },
+            "explorer": {
+                "count": "{total, number}件中{shown, number}件を表示",
+                "detail": {
+                    "answer": "回答の原文",
+                    "error": "回答の原文を読み込めませんでした。",
+                    "extracted": "抽出した値",
+                    "judges": "中立の審査",
+                    "loading": "回答の原文を読み込んでいます。",
+                    "noRecord": "この対象の記録はありません。",
+                    "part": "項目",
+                    "reason": "根拠",
+                    "retry": "再試行",
+                    "round": "{round, number}回目",
+                    "value": "値",
+                    "verdict": "判定"
+                },
+                "empty": "条件に合う問題がありません。",
+                "filter": {
+                    "all": "すべて",
+                    "level": "レベル",
+                    "market": "市場",
+                    "pool": "プール",
+                    "reset": "フィルターをリセット",
+                    "target": "対象",
+                    "template": "タイプ",
+                    "verdict": "判定"
+                },
+                "label": {
+                    "correct": "正解",
+                    "excluded": "除外",
+                    "incorrect": "誤答",
+                    "not_attempted": "未回答",
+                    "pending": "採点前"
+                },
+                "market": {
+                    "kr": "韓国",
+                    "us": "米国"
+                },
+                "results": "対象別の判定",
+                "truth": "正解"
+            },
+            "headline": {
+                "baselines": "ベースラインとの比較(同じ内部モデル、ツールなし)",
+                "ci": "95%信頼区間",
+                "competitors": "競合モデルとの比較",
+                "diff": "{subject}のスコア − 対象のスコア",
+                "n": "問題数",
+                "note": "信頼区間が0を含まず、Holm補正後のp値が{alpha}未満のときだけ、上回る・下回ると読みます。ベースラインは検定の対象ではないため、p値はありません。",
+                "p": "Holm補正p",
+                "reading": "解釈",
+                "sub": "客観問題は部分ごとに、正解は+1点、未回答は0点、誤答は−{lambda, number}点として採点し、平均しています。差は、問題を再抽出して求めた95%信頼区間とHolm補正後のp値で読みます。",
+                "summary": "{subject}の客観スコアを競合モデル{count, number}種と比べると、有意に上回ったモデルが{ahead, number}種、差を確定できなかったモデルが{tie, number}種、下回ったモデルが{behind, number}種です。",
+                "target": "対象",
+                "title": "ヘッドライン:競合モデルとのスコア差",
+                "verdict": {
+                    "ahead": "有意に上回る",
+                    "behind": "有意に下回る",
+                    "tie": "差を確定できず",
+                    "untested": "検定していない"
+                }
+            },
+            "hero": {
+                "eyebrow": "公開ベンチマーク",
+                "lede": "米国と韓国の株式に関する{items, number}問を、{brand}と汎用AIモデルに同じ条件で質問し、公式データから作った正解と照合しました。{measuredAt}に測定し、{scoredAt}に採点を確定しました。質問、正解、回答の原文、採点結果をすべて公開しています。",
+                "title": "{brand} ベンチマーク結果"
+            },
+            "items": {
+                "sub": "問題ごとに質問、正解、対象別の判定を確認できます。問題を開くと、回答の原文と採点の根拠を読み込みます。",
+                "title": "問題別の閲覧"
+            },
+            "koreanNote": "質問と回答の原文は韓国語です。測定を韓国語で行ったため、このページの質問、正解の要約、回答は翻訳せずそのまま表示しています。",
+            "levels": {
+                "L4": "L4 解釈",
+                "L5": "L5 誠実性・安全性"
+            },
+            "limits": {
+                "judge": "審査はLLMが行うため、人による審査の結果と異なることがあります。",
+                "once": "測定は1回で、同じ問題を{rounds, number}回繰り返して質問しました。",
+                "sameVendor": "{brand}が使うデータの一部は、正解の出典と同じ系列(FMP、Yahoo)です。",
+                "sandbox": "汎用モデルのコード実行環境はインターネットに接続できず、Geminiにはuser_locationの設定がありませんでした。",
+                "sources": "正解は最初にYahooの暫定値で作り、公式値で計算し直しました。両者が異なる問題数は、正解の出典に記載しています。",
+                "sourcesPlain": "正解は最初にYahooの暫定値で作り、公式値で計算し直しました。",
+                "split": "開発用の問題と測定用の問題では銘柄が重ならず、不具合の修正は開発用の問題だけを見て行いました。",
+                "title": "限界"
+            },
+            "market": {
+                "kr": "韓国",
+                "us": "米国"
+            },
+            "method": {
+                "aiAbout": "AIサービスの紹介",
+                "designDoc": "ベンチマーク設計文書",
+                "items": "全{total, number}問で、プールごとの問題数は{pools}です。",
+                "itemsTitle": "問題の構成",
+                "judges": "L4とL5はLLMの審査員が採点し、ヘッドラインには中立の審査員のスコアだけを使います。",
+                "judgesTitle": "審査員と中立性",
+                "levels": "L1~L3は正解が決まっている客観問題で、自動で採点します。L4は解釈、L5は誠実性と安全性を見る問題で、中立の審査員が0~1点で採点します。",
+                "schedule": "同じ問題を{rounds, number}回繰り返して質問し、{measuredAt}に測定しました。",
+                "scheduleTitle": "日程",
+                "scoring": "正解が複数の部分からなる場合は、部分ごとに正解+1点、未回答0点、誤答−{lambda, number}点とします。回答から値を取り出す2つの抽出器の結果が一致したときだけ判定し、判定の記録はすべて公開しています。",
+                "scoringTitle": "採点",
+                "siteMethodology": "分析方法のページ",
+                "sub": "詳しい設計は下のリンク先の文書にあります。",
+                "title": "方法の概要",
+                "truth": "正解は、米国はNasdaqの公式値、韓国はKRXの公式値で計算しました。最初はYahooの暫定値で問題を作り、公式値で計算し直しています。正解の数値と出典URLはすべて原データに含まれています。",
+                "truthTitle": "正解の出典",
+                "vendorMismatch": "暫定値と公式値が異なっていた問題は{count, number}問です。"
+            },
+            "prereg": {
+                "gist": "公開gist",
+                "hash": "manifestのハッシュ(SHA-256)",
+                "ots": "OpenTimestamps 証明",
+                "otsLink": "証明ファイル(.ots)をダウンロード",
+                "sub": "測定の前に、問題・コード・設計文書のハッシュを公開記録として残しました。下の値で、事後に変更されていないことを確認できます。",
+                "title": "事前登録",
+                "verify": "確認方法:原データのmanifest.jsonに記載のファイルを再度ハッシュして上の値と照合し、.otsファイルをOpenTimestampsで検証すると、登録時刻を確認できます。"
+            },
+            "seo": {
+                "description": "米国・韓国株の質問{items, number}問で、{brand}と汎用AIモデル{count, number}種を比較しました。有意に上回ったのは{ahead, number}種、差を確定できなかったのは{tie, number}種、下回ったのは{behind, number}種。問題・正解・回答の原文を公開しています。",
+                "descriptionPlain": "米国・韓国株の質問{items, number}問で{brand}と汎用AIモデルを比較したベンチマークの結果と、問題別の原データです。",
+                "ogLabel": "{brand} ベンチマーク結果",
+                "title": "{brand} ベンチマーク結果 — 汎用AIモデルとの問題別比較"
+            },
+            "subset": {
+                "heldOut": "設計時に見ていない問題(H)",
+                "noTool": "専用ツールなし(×)"
+            }
+        },
         "methodology": {
             "ai": {
                 "check": "簡易表示の文章は、画面に表示される前に検査を受けます。元の分析と計算された値にない価格や大きな数字が含まれている場合、一度書き直しをさせ、それでも残る場合はその文章を削除します。文章を削除しても整理されない場合は、簡易表示なしで元の表示のみを表示します。",
@@ -3504,6 +3661,21 @@
                 "universe": "AAPL・NVDA・TSLAなど固定された10銘柄の大型株のみを対象としており、事後的に選ばれた銘柄のため生存バイアスが生じる可能性があります。",
                 "dataSource": "価格データの出典: Financial Modeling Prep（FMP）。"
             }
+        },
+        "benchmark-summary": {
+            "ci": "95%信頼区間 {ci}",
+            "l5": "誠実性・安全性(L5)",
+            "l5Note": "中立の審査員の平均、0~1点",
+            "more": "ベンチマーク結果の詳細を見る",
+            "sub": "同じ{items, number}問で測った客観スコアの差です。正の値は{subject}の方が高いことを表します。",
+            "title": "ベンチマーク結果",
+            "verdict": {
+                "ahead": "有意に上回る",
+                "behind": "有意に下回る",
+                "tie": "差を確定できず",
+                "untested": "検定していない"
+            },
+            "versus": "{competitor}との比較"
         },
         "chart": {
             "ChartErrorFallback": {
@@ -4786,6 +4958,7 @@
                 "531f6a": "お問い合わせ",
                 "5f5d12": "サイト情報",
                 "693b62": "投資免責事項",
+                "benchmarkLink": "ベンチマーク",
                 "developersLink": "開発者API",
                 "guideLink": "チャートガイド",
                 "symbolsLink": "よく見られる銘柄"

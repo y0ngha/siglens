@@ -22,6 +22,9 @@ import { brandAiName } from '@/shared/lib/brandName';
 import { buildScenarios } from './lib/aboutContent';
 import { AboutCtaBar } from './ui/AboutCtaBar';
 import { ChatReplay } from '@/widgets/replay/ChatReplay';
+import { BenchmarkResultSummary } from '@/widgets/benchmark-summary/BenchmarkResultSummary';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import type { BenchmarkRelease } from '@/entities/benchmark/types';
 
 interface Props {
     readonly locale: Locale;
@@ -34,6 +37,8 @@ interface Props {
      * `FAQPage` JSON-LD, so the visible answers and the markup are one array.
      */
     readonly faq: readonly FaqItem[];
+    /** 공개된 벤치마크 결과. 공개 전(게이트 꺼짐)이면 null이고 요약 섹션을 그리지 않는다. */
+    readonly benchmark?: BenchmarkRelease | null;
 }
 
 const PRIMARY_BUTTON = cn(
@@ -76,6 +81,7 @@ export async function AiAboutPage({
     siteUrl,
     localePrefix,
     faq,
+    benchmark = null,
 }: Props) {
     const t = await getTranslations({ locale, namespace: 'views.ai-about' });
     const chatHref = localePath(locale, '/');
@@ -309,6 +315,15 @@ export async function AiAboutPage({
                             </div>
                         </div>
                     </section>
+
+                    {benchmark ? (
+                        <BenchmarkResultSummary
+                            release={benchmark}
+                            locale={locale}
+                            aiSiteUrl={AI_SITE_URL}
+                            centered
+                        />
+                    ) : null}
 
                     <section aria-labelledby="about-faq" className="mt-20">
                         <h2
