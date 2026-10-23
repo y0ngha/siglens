@@ -6,9 +6,9 @@ name: E2E apt cache
 # 자체를 없앤다. 이 워크플로가 기본 브랜치에서 .deb를 받아 캐시에 저장하고, e2e 잡이 복원한다.
 # 기본 브랜치에서 만든 캐시는 모든 PR이 읽을 수 있다 — PR 실행이 만든 캐시는 그 PR에서만 읽힌다.
 #
-# 키(`.github/actions/e2e-apt-cache-key`): 러너 이미지 버전 + Playwright 버전. 이미지가 바뀌면(대개 주 1회)
-# 주간 실행·master push가 새 키를 만들고, 그 사이 e2e는 이전 이미지 키를 restore-keys로 받는다
-# (달라진 패키지만 미러에서 받는다).
+# 키(`.github/actions/e2e-apt-cache-key`): 러너 이미지 버전 + Playwright 버전. 새 키는 월요일 주간 실행이나,
+# 아래 경로(의존성·이 워크플로)를 바꾼 master push에서 만든다. 이미지가 그 사이에 바뀌면 다음 실행까지 e2e는
+# 이전 이미지 키를 restore-keys로 받는다(달라진 패키지만 미러에서 받는다). 급하면 수동 실행한다.
 on:
     push:
         branches: [master]
@@ -32,8 +32,9 @@ concurrency:
 jobs:
     seed:
         runs-on: ubuntu-latest
-        # 미러가 멈춰도 기본 360분을 태우지 않게 한다(정상 다운로드는 1~2분).
-        timeout-minutes: 20
+        # 미러가 멈춰도 기본 360분을 태우지 않게 한다(정상 다운로드는 1~2분). 설치 최악
+        # (420+15)+20+(60+10)+(420+15) = 960초에 체크아웃·yarn install을 더해도 들어가는 값이다.
+        timeout-minutes: 30
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -73,17 +74,25 @@ jobs:
             - name: Download Playwright system dependencies
               if: steps.hit.outputs.cache-hit != 'true'
               run: |
-                  cli="$PWD/node_modules/playwright/cli.js"
+                  # `yarn playwright`가 실행하는 @playwright/test의 bin(cli.js) — 호이스팅과 무관하게 키의 버전과 같다.
+                  cli="$(node -p "require('path').join(require('path').dirname(require.resolve('@playwright/test/package.json')), 'cli.js')")"
                   sudo apt-get clean
                   for attempt in 1 2; do
-                      sudo timeout -k 15 600 "$(command -v node)" "$cli" install-deps chromium webkit && break
+                      sudo timeout -k 15 420 "$(command -v node)" "$cli" install-deps chromium webkit && break
                       [ "$attempt" = 2 ] && exit 1
                       sleep 20
-                      sudo timeout 60 dpkg --configure -a || true
+                      sudo timeout -k 10 60 dpkg --configure -a || true
                   done
                   mkdir -p ~/apt-debs
                   find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp {} ~/apt-debs/ \;
-                  echo "cached .deb files: $(find ~/apt-debs -name '*.deb' | wc -l), $(du -sh ~/apt-debs | cut -f1)"
+                  n="$(find ~/apt-debs -name '*.deb' | wc -l)"
+                  echo "cached .deb files: ${n}, $(du -sh ~/apt-debs | cut -f1)"
+                  # 비거나 거의 빈 캐시가 정확한 키를 차지하면 다음 실행이 lookup-only로 건너뛰어 고쳐지지 않는다.
+                  # 정상은 약 180개(2026-10-23 webkit+chromium); 50개 미만이면 저장하지 않고 실패한다.
+                  if [ "$n" -lt 50 ]; then
+                      echo "::error::only ${n} .deb files collected; refusing to save the cache"
+                      exit 1
+                  fi
 
             - name: Save cache
               if: steps.hit.outputs.cache-hit != 'true'
