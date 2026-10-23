@@ -26,6 +26,7 @@ import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
+import { ServiceWorkerRegistrar } from '@/features/pwa-install/ui/ServiceWorkerRegistrar';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
 import { aiManifestPath } from './aiManifest';
 import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
@@ -134,12 +135,24 @@ export default async function AiRootLayout({
                                 렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
                                 <FunnelSignupPing />
                                 {/* 설치 배너 + 서비스 워커 등록. 하단은 입력창 자리라 위에 띄우고,
-                                    스트리밍 중인 답변이 끊기지 않게 SW 교체 때 새로고침하지 않는다. */}
-                                <PwaBanner
-                                    placement="top"
-                                    reloadOnServiceWorkerUpdate={false}
+                                    스트리밍 중인 답변이 끊기지 않게 SW 교체 때 새로고침하지 않는다.
+                                    점검 중(`disabled`)에는 점검 안내만 여는 앱을 권하지 않도록 배너는 띄우지 않되,
+                                    오프라인 페이지 프리캐시가 빠지지 않게 서비스 워커는 등록한다. */}
+                                {disabled ? (
+                                    <ServiceWorkerRegistrar
+                                        reloadOnUpdate={false}
+                                    />
+                                ) : (
+                                    <PwaBanner
+                                        placement="top"
+                                        reloadOnServiceWorkerUpdate={false}
+                                    />
+                                )}
+                                <AuthSessionHeaderClient
+                                    authReturn="ai"
+                                    softEdge
+                                    hideOnScrollDown
                                 />
-                                <AuthSessionHeaderClient authReturn="ai" />
                                 {disabled ? (
                                     <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
                                         {t('layout.9401e4')}

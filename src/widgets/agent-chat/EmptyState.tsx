@@ -12,6 +12,8 @@ import {
 import { SiglensMark } from './SiglensMark';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { brandAiName } from '@/shared/lib/brandName';
+import { cn } from '@/shared/lib/cn';
+import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 /** Member suggestions still being generated; resolves to null when there are none. */
 export type PendingSuggestions = Promise<readonly string[] | null>;
@@ -123,8 +125,10 @@ interface CapabilityItem {
  * `secondary-700` edge that replaced it still read as a spreadsheet grid
  * (2026-10 사용자 피드백).
  */
-const CARD =
-    'group ai-raised ai-raised-hover flex min-h-14 w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left text-sm leading-5 text-secondary-200 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+const CARD = cn(
+    AI_RAISED_CONTROL,
+    'group flex min-h-14 w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left text-sm leading-5 text-secondary-200 hover:text-secondary-100'
+);
 
 /**
  * First screen of a new conversation, and the landing page crawlers index.

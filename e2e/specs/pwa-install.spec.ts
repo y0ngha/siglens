@@ -5,7 +5,8 @@ import { test, expect } from '../support/fixtures';
  *
  * The install banner is MOBILE-ONLY: usePwaInstall renders it only when
  * `isMobile && !isStandalone && !isInAppBrowser`, and it now waits for the
- * FIRST user input (`pointerdown`/`keydown`) instead of a post-mount timer —
+ * FIRST completed user input (`click`/`keydown`, or a bare `pointerup` after a
+ * short grace) instead of a post-mount timer —
  * inserting it on a timer shifted the page well outside the CLS input-exclusion
  * window (2026-09-18 mobile measurement: 0.0605 on symbol pages). So the test
  * has to produce a real input event first; `keyboard.press('Tab')` is used

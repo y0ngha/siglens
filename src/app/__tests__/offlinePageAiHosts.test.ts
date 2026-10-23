@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
+import { brandAiName } from '@/shared/lib/brandName';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const offline = readFileSync(path.join(ROOT, 'public/offline.html'), 'utf8');
@@ -25,6 +26,16 @@ describe('offline.html — 손으로 적은 목록이 원본과 같다', () => {
         expect(quotedList(offline, /var AI_HOSTS = \[([^\]]*)\]/)).toEqual(
             quotedList(aiHostSource, /const AI_HOSTS[^[]*\[([^\]]*)\]/)
         );
+    });
+
+    it('제품명이 brandAiName과 같다(기본 로케일·그 외)', () => {
+        const names = offline.match(/\? '([^']+)' : '([^']+)'/);
+        expect(names?.[1]).toBe(brandAiName('en'));
+        expect(names?.[2]).toBe(brandAiName(DEFAULT_LOCALE));
+        // 접두사 로케일은 모두 같은 표기여야 이 파일의 2갈래 분기가 맞다.
+        for (const locale of LOCALES.filter(l => l !== DEFAULT_LOCALE)) {
+            expect(brandAiName(locale)).toBe(brandAiName('en'));
+        }
     });
 
     it('접두사 로케일 목록이 기본 로케일을 뺀 LOCALES와 같다', () => {

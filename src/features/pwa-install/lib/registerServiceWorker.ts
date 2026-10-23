@@ -15,9 +15,15 @@ export interface RegisterServiceWorkerOptions {
      * `false` for pages that hold live state a reload would destroy — the
      * SIGLENS AI chat streams an answer over SSE and keeps an unsent draft in
      * the composer, so a mid-stream `controllerchange` reload cut the answer.
-     * Skipping is safe there: `sw.js` never caches HTML (navigations go to the
-     * network), and hashed `/_next/static/` assets are immutable per URL, so a
-     * page kept on the old controller still loads matching chunks.
+     * What skipping leaves: `sw.js` calls `skipWaiting()` + `clients.claim()`,
+     * so the new SW still takes the page over (and its activate may drop old
+     * caches); the page just keeps running the code it loaded. That is the
+     * same position as a tab open across a deploy with no service worker at
+     * all — HTML was never cached, so nothing stale is served, but a lazy
+     * chunk of the previous build can 404 if it is no longer on the origin.
+     * There is no chunk-error recovery for that today; the next navigation
+     * loads the new build. Losing a streaming answer on every SW update was
+     * judged worse than that rare case.
      */
     readonly reloadOnUpdate?: boolean;
 }

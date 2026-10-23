@@ -73,7 +73,7 @@ export function Header({
                 본문보다 바깥에서 시작하는데, 크롬은 전폭·본문은 읽기 폭이라는
                 규약을 고른 결과다(`docs/conventions/DESIGN.md` §폭 규약).
                 푸터도 같은 규약을 쓴다. */}
-            <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
+            <div className="flex h-(--header-h) items-center gap-2 px-4 sm:gap-4">
                 <LogoLockup />
                 {/*
                     Desktop nav. Suspense로 감싸지 않는다 — 예전에는 PPR 정적 셸용으로

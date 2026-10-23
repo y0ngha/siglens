@@ -38,7 +38,8 @@ describe('PwaBanner', () => {
     });
 
     /**
-     * ai 호스트는 하단에 채팅 입력창이 붙어 있어 배너가 헤더 자리(상단)에 뜬다.
+     * ai 호스트는 하단에 채팅 입력창이 붙어 있어 배너가 상단(헤더·대화 목록 띠 아래)에 뜬다.
+     * 헤더 위에 겹치면 배너를 띄운 첫 탭이 헤더 대신 배너를 누르게 된다.
      * 하단 클래스가 같이 남으면 두 앵커가 겹쳐 배너가 화면 전체 높이로 늘어난다.
      */
     it('placement="top"이면 상단 safe-area에 붙고 하단 앵커는 없다', () => {
@@ -53,7 +54,7 @@ describe('PwaBanner', () => {
         render(<PwaBanner placement="top" />);
         const shell = screen.getByTestId('pwa-banner-shell');
         expect(shell.className).toContain(
-            'top-[calc(0.25rem+env(safe-area-inset-top))]'
+            'top-[calc(var(--pwa-banner-top)+env(safe-area-inset-top))]'
         );
         expect(shell.className).not.toContain('bottom-[');
     });

@@ -3,8 +3,9 @@
 import { useTranslations } from 'next-intl';
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
+import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 const MAX = 4_000;
 /** The counter stays hidden until the message is long enough that the cap is a real concern. */
@@ -121,11 +122,12 @@ export function Composer({
                         aria-label={t('Composer.d2e7e7')}
                         // A raised button inside the raised composer — its icon labels
                         // it, so it needs no outline (the outline was the last line left
-                        // in the composer).
+                        // in the composer). AI_RAISED_CONTROL, not a BUTTON_* tone: see
+                        // aiSurfaceStyles.ts.
                         className={cn(
-                            BUTTON_GHOST,
+                            AI_RAISED_CONTROL,
                             ACTION_SIZE,
-                            'ai-raised ai-raised-hover text-secondary-200'
+                            'inline-flex touch-manipulation items-center justify-center rounded-lg text-secondary-200'
                         )}
                     >
                         <StopIcon />

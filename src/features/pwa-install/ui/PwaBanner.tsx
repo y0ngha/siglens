@@ -46,8 +46,11 @@ interface PwaBannerProps {
  * ## `placement="top"` (SIGLENS AI)
  *
  * ai 호스트는 화면 하단에 채팅 입력창(`Composer`)이 붙어 있어 하단 배너가 입력창을
- * 가린다. 그래서 헤더(h-14) 자리에 겹쳐 띄운다 — 잠깐 떠 있는 권유가 가리는 대상은
- * 본문이나 입력창이 아니라 헤더다. 상단 safe-area(노치)만큼 내린다.
+ * 가린다. 그래서 위에 띄우되 **크롬 아래**에 둔다. 크롬 높이는 화면마다 다르므로(사이트
+ * 헤더만 있는 화면, 대화 목록 띠가 더 있는 대화 화면, 스크롤로 크롬이 올라간 상태) 이
+ * 컴포넌트가 숫자를 갖지 않고 `--pwa-banner-top`을 읽는다 — 값은 크롬을 아는 `globals.css`가
+ * 정한다. 헤더에 겹쳐 두면 배너가 떠 있는 동안 헤더 로그인·메뉴 버튼이 가려진다.
+ * 상단 safe-area(노치)만큼 더 내린다.
  */
 export function PwaBanner({
     placement = 'bottom',
@@ -80,7 +83,7 @@ export function PwaBanner({
                     SURFACE_CARD,
                     'fixed right-[max(0.75rem,env(safe-area-inset-right))] left-[max(0.75rem,env(safe-area-inset-left))] z-65 flex h-12 items-center gap-2 pr-1.5 pl-3 shadow-lg sm:right-auto sm:left-4 sm:w-96',
                     placement === 'top'
-                        ? 'top-[calc(0.25rem+env(safe-area-inset-top))]'
+                        ? 'top-[calc(var(--pwa-banner-top)+env(safe-area-inset-top))]'
                         : 'bottom-[calc(0.75rem+env(safe-area-inset-bottom))]'
                 )}
             >

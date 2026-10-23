@@ -30,6 +30,8 @@ import { setAuthHintAttribute } from '@/shared/lib/auth/authHintAttribute';
  */
 export function AuthSessionHeaderClient({
     authReturn,
+    softEdge = false,
+    hideOnScrollDown = false,
 }: {
     /**
      * SSO handoff query forwarded to every `Header` this component renders.
@@ -44,17 +46,30 @@ export function AuthSessionHeaderClient({
      * see it.
      */
     readonly authReturn?: 'ai';
+    /**
+     * Forwarded to every `Header` this component renders (both the loading
+     * shell and the resolved header) — see `Header`'s `softEdge`. A styling
+     * choice of the mounting layout, kept separate from `authReturn` so an
+     * auth-redirect setting does not decide how the header looks.
+     */
+    readonly softEdge?: boolean;
+    /**
+     * Slide the header away below `lg` while scrolling down (see `Header`'s
+     * `hiddenOnMobile`). Set by the ai host, where the conversation needs the
+     * height; a layout choice, kept separate from `authReturn` like `softEdge`.
+     */
+    readonly hideOnScrollDown?: boolean;
 } = {}) {
     const syncedPathRef = useRef<string | null>(null);
     const hasHint = useAuthHint();
     const { data: user, isPending, isError } = useCurrentUser();
     const queryClient = useQueryClient();
     const pathname = usePathname();
-    // ai host only: on a phone the conversation needs the height, so the header
+    // ai host: on a phone the conversation needs the height, so the header
     // leaves while scrolling down and returns on the way up. ChatShell's own
     // mobile bar follows the same hook so both move together.
     const hiddenOnMobile = useHideOnScrollDown({
-        enabled: authReturn === 'ai',
+        enabled: hideOnScrollDown,
     });
     const authNext =
         authReturn === 'ai'
@@ -102,7 +117,7 @@ export function AuthSessionHeaderClient({
                 loadingUserMenu={hasHint}
                 authNext={authNext}
                 hiddenOnMobile={hiddenOnMobile}
-                softEdge={authReturn === 'ai'}
+                softEdge={softEdge}
             />
         );
     }
@@ -120,7 +135,7 @@ export function AuthSessionHeaderClient({
             currentUser={currentUser}
             authNext={authNext}
             hiddenOnMobile={hiddenOnMobile}
-            softEdge={authReturn === 'ai'}
+            softEdge={softEdge}
         />
     );
 }

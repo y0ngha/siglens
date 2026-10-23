@@ -36,13 +36,15 @@
     // import할 수 없다 — `src/app/__tests__/offlinePageAiHosts.test.ts`가 둘을 맞춘다).
     // 이 페이지는 이동 요청에 대한 응답이라 주소는 원래 가려던 URL이고, 그 로케일
     // 접두사로 제품명 표기를 고른다(ko는 접두사 없음 → 시그렌즈 AI, 그 외 SIGLENS AI).
-    var AI_HOSTS = ['ai.siglens.io', 'ai.localhost'];
-    if (AI_HOSTS.indexOf(location.hostname) !== -1) {
+    // 함수로 감싼다 — 최상위 `var name`은 실제 `window.name`(탭에 남는 값)을 덮어쓴다.
+    (function () {
+      var AI_HOSTS = ['ai.siglens.io', 'ai.localhost'];
+      if (AI_HOSTS.indexOf(location.hostname) === -1) return;
       var seg = location.pathname.split('/')[1];
-      var name = ['en', 'ja', 'zh'].indexOf(seg) !== -1 ? 'SIGLENS AI' : '시그렌즈 AI';
-      document.title = '오프라인 | ' + name;
-      document.querySelector('img').alt = name;
-    }
+      var productName = ['en', 'ja', 'zh'].indexOf(seg) !== -1 ? 'SIGLENS AI' : '시그렌즈 AI';
+      document.title = '오프라인 | ' + productName;
+      document.querySelector('img').alt = productName;
+    })();
   </script>
 </body>
 </html>

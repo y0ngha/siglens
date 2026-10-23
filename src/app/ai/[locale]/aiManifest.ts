@@ -1,13 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { brandAiName } from '@/shared/lib/brandName';
-import { buildManifestBase } from '@/shared/lib/buildManifest';
+import {
+    buildManifestBase,
+    type ManifestTranslator,
+} from '@/shared/lib/buildManifest';
 import type { Locale } from '@/shared/i18n/locales';
-
-/** `app.ai.manifest` 번역자. */
-type AiManifestTranslator = (
-    key: string,
-    values?: Record<string, string>
-) => string;
 
 /**
  * ai 호스트 문서가 `<link rel="manifest">`로 가리키는 경로.
@@ -32,7 +29,7 @@ export function aiManifestPath(locale: Locale): string {
  */
 export function buildAiManifest(
     locale: Locale,
-    t: AiManifestTranslator
+    t: ManifestTranslator
 ): MetadataRoute.Manifest {
     return buildManifestBase(locale, {
         name: t('name', { v0: brandAiName(locale) }),

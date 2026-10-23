@@ -1,6 +1,6 @@
 'use client';
 
-import { registerServiceWorker } from '../lib/registerServiceWorker';
+import { useRegisterServiceWorker } from './useRegisterServiceWorker';
 import { type PwaEnvironment } from '@/shared/lib/types';
 import { detectPwaEnvironment } from '../lib/detectPwaEnvironment';
 import {
@@ -38,10 +38,24 @@ export interface UsePwaInstallReturn {
  * 구글 모바일 인터스티셜 판정(진입 직후 본문을 가리는 오버레이) 양쪽에 낫다.
  * `scroll`은 입력 이벤트가 아니라 넣지 않는다.
  *
+ * 포인터 방아쇠는 `pointerdown`이 아니라 **탭이 끝난 뒤**다. `pointerdown`에서 띄우면 손가락이
+ * 아직 닿아 있는 동안 배너가 커밋돼, 그 자리에 배너가 뜨는 경우(하단 입력창·상단 크롬 아래
+ * 첫 카드) `pointerup`·`click`이 배너로 떨어져 사용자가 누르려던 것이 눌리지 않았다.
+ * - `click`: 바로 띄운다. `window`의 버블 단계라 대상 요소의 처리가 이미 끝났다.
+ * - `pointerup`: `POINTERUP_REVEAL_DELAY_MS` 뒤에 띄운다(그 사이 `click`이 오면 그때 바로).
+ *   iOS Safari는 글자·빈 곳처럼 클릭할 수 없는 요소를 탭하면 `click`을 `window`까지 보내지
+ *   않는다 — `click`만 기다리면 컨트롤을 누르지 않는 iPhone 사용자에게 배너가 영영 뜨지
+ *   않는다. 지연은 그 탭의 (늦게 올 수도 있는) `click`이 먼저 끝나게 하는 여유다.
+ * 스크롤 제스처는 브라우저가 `pointercancel`로 끝내 `pointerup`·`click`이 없으므로 배너는 첫
+ * 실제 탭까지 기다린다.
+ *
  * 분석 완료(`siglens:pwa-trigger`)는 방아쇠가 아니다. 그 경로는 입력과 무관하게
  * 열린다 — 회원은 마운트 시 분석이 자동으로 돌아 입력 없이 배너가 떴다.
  */
-const BANNER_TRIGGER_EVENTS = ['pointerdown', 'keydown'] as const;
+const BANNER_TRIGGER_EVENTS = ['click', 'keydown'] as const;
+
+/** `pointerup`만 온 탭(iOS의 클릭 불가 요소)에서 배너를 띄우기까지의 여유. */
+const POINTERUP_REVEAL_DELAY_MS = 500;
 
 const EMPTY_ENV: PwaEnvironment = {
     isMobile: false,
@@ -104,10 +118,7 @@ export function usePwaInstall({
 
     const handleModalClose = () => setShowIosModal(false);
 
-    useEffect(() => {
-        // 등록은 모듈 플래그로 한 번만 일어난다(idempotent) — 값이 바뀌어 다시 불려도 무해하다.
-        registerServiceWorker({ reloadOnUpdate: reloadOnServiceWorkerUpdate });
-    }, [reloadOnServiceWorkerUpdate]);
+    useRegisterServiceWorker(reloadOnServiceWorkerUpdate);
 
     useEffect(() => {
         const canShow =
@@ -120,10 +131,27 @@ export function usePwaInstall({
             deferredPromptRef.current = e as BeforeInstallPromptEvent;
         };
 
+        let pointerUpTimer: ReturnType<typeof setTimeout> | undefined;
+
+        // 캡처 단계로 듣는다 — 버블 단계면 `stopPropagation()`하는 컨트롤(팝오버 트리거·메뉴
+        // 항목)을 누른 탭이 `window`까지 오지 않아 방아쇠를 놓친다. 캡처 단계에서 상태를 바꿔도
+        // 그 탭의 `click`은 이미 정해진 대상에 그대로 전달된다(대상은 디스패치 시작 때 고정).
+        const listenerOptions = { passive: true, capture: true } as const;
+
         const detachTriggers = () => {
             for (const type of BANNER_TRIGGER_EVENTS) {
-                window.removeEventListener(type, handleTrigger);
+                window.removeEventListener(
+                    type,
+                    handleTrigger,
+                    listenerOptions
+                );
             }
+            window.removeEventListener(
+                'pointerup',
+                handlePointerUp,
+                listenerOptions
+            );
+            clearTimeout(pointerUpTimer);
         };
 
         // 방아쇠는 합쳐서 한 번만 발화한다. 이벤트별 `once`만 걸면 한쪽이 배너를
@@ -133,10 +161,18 @@ export function usePwaInstall({
             setShowBanner(true);
         }
 
+        function handlePointerUp() {
+            pointerUpTimer ??= setTimeout(
+                handleTrigger,
+                POINTERUP_REVEAL_DELAY_MS
+            );
+        }
+
         window.addEventListener('beforeinstallprompt', handlePrompt);
         for (const type of BANNER_TRIGGER_EVENTS) {
-            window.addEventListener(type, handleTrigger, { passive: true });
+            window.addEventListener(type, handleTrigger, listenerOptions);
         }
+        window.addEventListener('pointerup', handlePointerUp, listenerOptions);
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handlePrompt);

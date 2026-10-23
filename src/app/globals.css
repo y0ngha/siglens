@@ -460,6 +460,15 @@
     color-scheme: dark;
 
     /*
+     * SIGLENS AI 화면의 헤더 아래 띠 높이 — 대화 목록 띠(`ChatShell`)와 `/about`의 "지금 물어보기"
+     * 띠(`AboutCtaBar`). 사이트 헤더 높이(`--header-h`, `@theme`)와 함께 컴포넌트의 높이·sticky
+     * 위치와 상단 PWA 배너 위치(`--pwa-banner-top`)가 **같은 값**을 읽는다. 한쪽만 숫자로 바꾸면
+     * 배너가 크롬에 겹친다(`CONVENTIONS.md#CS-2`).
+     */
+    --agent-chat-bar-h: 2.75rem;
+    --ai-about-cta-h: 3.5rem;
+
+    /*
      * 차트 블록(캔들 + 거래량)의 높이. 첫 뷰포트에서 site header · PWA 배너 ·
      * `/[symbol]` 크롬을 뺀 잔여다.
      *
@@ -652,6 +661,60 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
 }
 
 /*
+ * 상단 배치 PWA 배너(`PwaBanner placement="top"`, ai 호스트)의 세로 위치.
+ *
+ * 배너는 크롬(사이트 헤더 + 그 아래 띠) **아래**에 떠야 헤더 로그인·메뉴, "대화 목록" 버튼,
+ * `/about`의 "지금 물어보기" 띠를 가리지 않는다. 크롬 구성은 화면·스크롤 상태마다 달라 배너
+ * 컴포넌트가 아니라 여기서 정한다. 간격은 0.5rem.
+ *
+ * - `--pwa-banner-top`(화면마다 고정): 기본은 사이트 헤더 아래(not-found 등), 대화 화면(lg 미만,
+ *   lg 이상은 띠가 `lg:hidden`)은 대화 목록 띠 아래, `/about`은 "지금 물어보기" 띠 아래.
+ * - 아래로 스크롤해 크롬이 올라가면(헤더 `inert`, lg 미만에서만) `--pwa-banner-hidden-top`으로
+ *   옮긴다 — 기본은 화면 위 가장자리(0.75rem), `/about`은 위로 붙은 "지금 물어보기" 띠 아래.
+ *
+ * 옮길 때는 `top`이 아니라 **`translate`**를 쓴다. 보이는 고정 요소의 `top`을 바꾸면 레이아웃
+ * 이동으로 잡히고 스크롤은 "최근 입력"이 아니라 CLS에 쌓인다(헤더·띠도 `transform`으로 움직인다).
+ * 같은 200ms·같은 곡선(Tailwind `transition-transform` 기본값)이라 크롬과 함께 움직여 겹치지 않는다.
+ *
+ * 조건 규칙은 `:where()`로 명시도를 같게 맞추고 **순서**로 우선한다 — 크롬 숨김 규칙이 화면별
+ * 규칙보다 뒤에 있어 이긴다. 아래쪽 숨김 규칙(`display: none`)보다 명시도가 낮아야 stylelint
+ * `no-descending-specificity`도 통과한다.
+ */
+[data-pwa-banner] {
+    --pwa-banner-top: calc(var(--header-h) + 0.5rem);
+    --pwa-banner-hidden-top: 0.75rem;
+    --pwa-banner-shift: 0px;
+
+    translate: 0 var(--pwa-banner-shift);
+    transition: translate 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-pwa-banner] {
+        transition: none;
+    }
+}
+
+@media (width < 64rem) {
+    body:has(:where([data-agent-chat-bar])) [data-pwa-banner] {
+        --pwa-banner-top: calc(
+            var(--header-h) + var(--agent-chat-bar-h) + 0.5rem
+        );
+    }
+}
+
+body:has(:where([data-ai-about-cta])) [data-pwa-banner] {
+    --pwa-banner-top: calc(var(--header-h) + var(--ai-about-cta-h) + 0.5rem);
+    --pwa-banner-hidden-top: calc(var(--ai-about-cta-h) + 0.5rem);
+}
+
+body:has(:where(header[data-scroll-chrome][inert])) [data-pwa-banner] {
+    --pwa-banner-shift: calc(
+        var(--pwa-banner-hidden-top) - var(--pwa-banner-top)
+    );
+}
+
+/*
  * 차트 헤더 팝오버(`ChartPopoverPanel`, `data-chart-popover`)가 열려 있는 동안 PWA 설치 배너와 Ask-AI FAB을
  * 숨긴다.
  *
@@ -796,7 +859,7 @@ body:has([data-route-pending]) [data-vaul-drawer] {
  * - `.ai-raised` — 떠 있는 표면(질문 카드·입력창·말풍선·보조 버튼).
  * - `.ai-raised-hover` — 포인터를 올리면 면이 한 단계 밝아진다.
  * - `.ai-accent` — 주 액션 채움 버튼의 브랜드 그라데이션.
- * - `.ai-rail` / `.ai-bar` — 사이드바·상단 띠. 장식 선 대신 톤·옅은 빛(다크)·가장자리 그림자(라이트)로 나눈다.
+ * - `.ai-rail` / `.ai-bar` — 사이드바·상단 띠. 장식 선 대신 옅은 빛 한 줄(다크)·가장자리 그림자(라이트)로 나눈다.
  * - `.ai-well` — 코드 블록처럼 **파인** 자리.
  *
  * ## 테마마다 재료가 다르다
@@ -804,7 +867,7 @@ body:has([data-route-pending]) [data-vaul-drawer] {
  * - **다크(기본)**: 단색 면 + 윗변 하이라이트(inset 1px) + 아주 얕은 접지 그림자(1~2px)만 쓴다.
  *   거의 검은 페이지 위에서는 큰 낙하 그림자가 보이지 않고, 검정에 가까운 두 색의 그라데이션은
  *   탁하게 번져 보였다(2026-10 실측·사용자 피드백). 다크의 높이는 "위에 있을수록 밝다"로 표현한다.
- *   사이드바는 톤 차이로, 헤더·띠는 같은 톤이라 옅은 빛 한 줄(흰색 5%)로 나눈다.
+ *   사이드바·헤더·띠·코드 우물은 톤 차이가 보이지 않으므로 옅은 빛 한 줄(흰색 5%)로 나눈다.
  * - **라이트**: 위가 밝은 세로 그라데이션 + 낙하 그림자. 흰 면이 그림자로 떠 보이는
  *   라이트 UI의 관례다.
  *
@@ -865,6 +928,9 @@ body:has([data-route-pending]) [data-vaul-drawer] {
 
         /* 투명 경계(입력창)가 있어도 그라데이션이 경계 밑으로 반복돼 윗변에 1px 선이 비치지 않게 한다. */
         background-origin: border-box;
+
+        /* 호출부에 `transition-*` 유틸리티를 함께 쓰지 않는다 — 유틸리티 레이어가 이겨 면 색
+           전환이 빠진다(버튼 상수의 `transition-colors`도 마찬가지). */
         transition-duration: 150ms;
         transition-property:
             color, background-color, box-shadow, --ai-raised-top,
@@ -931,9 +997,12 @@ body:has([data-route-pending]) [data-vaul-drawer] {
         background-image: none;
     }
 
-    /* 다크: 사이드바는 페이지보다 어두운 인셋 톤(호출부의 `bg-secondary-950`)만으로 나뉜다. */
+    /* 다크: 사이드바(`bg-secondary-950`)와 페이지(900)의 톤 차이는 1.03:1이라 보이지 않는다 —
+       특히 스크림 없는 모바일 드로어는 대화 위에 경계 없이 겹쳤다. 헤더와 같은 옅은 빛 한 줄
+       (흰색 5%)과 짧은 그늘로 오른쪽 가장자리를 남긴다. */
     .ai-rail {
-        --tw-shadow: 0 0 #0000;
+        --tw-shadow:
+            1px 0 0 0 rgb(255 255 255 / 5%), 12px 0 24px -16px rgb(0 0 0 / 80%);
     }
 
     /* 다크: 헤더·띠와 본문은 같은 900 톤이라 톤으로는 갈리지 않는다. 장식 선(secondary-700)
@@ -943,8 +1012,10 @@ body:has([data-route-pending]) [data-vaul-drawer] {
             0 1px 0 0 rgb(255 255 255 / 5%), 0 8px 16px -12px rgb(0 0 0 / 80%);
     }
 
+    /* 다크: 검은 안쪽 그림자는 950 우물 위에서 보이지 않으므로 옅은 빛 테두리로 윤곽을 준다. */
     .ai-well {
         --tw-inset-shadow: inset 0 1px 2px rgb(0 0 0 / 40%);
+        --tw-shadow: 0 0 0 1px rgb(255 255 255 / 5%);
     }
 }
 

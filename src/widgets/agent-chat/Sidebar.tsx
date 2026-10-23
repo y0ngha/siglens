@@ -28,6 +28,7 @@ import {
     PlusIcon,
     TrashIcon,
 } from '@/shared/ui/StrokeIcons';
+import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 interface Props {
     readonly items: ConversationListItem[];
@@ -250,7 +251,10 @@ export function Sidebar({
                 href={`${localePrefix}/`}
                 onClick={e => navigate(e, `${localePrefix}/`)}
                 aria-busy={isPending(`${localePrefix}/`) || undefined}
-                className="ai-raised ai-raised-hover inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
+                className={cn(
+                    AI_RAISED_CONTROL,
+                    'inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-secondary-100 aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400'
+                )}
             >
                 <PlusIcon className="size-4 text-primary-400" />
                 {t('Sidebar.newChat')}

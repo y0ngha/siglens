@@ -84,10 +84,10 @@ describe('usePwaInstall', () => {
         expect(result.current.showIosModal).toBe(false);
     });
 
-    it('첫 pointerdown → iPhone이면 showBanner=true', () => {
+    it('첫 click → iPhone이면 showBanner=true', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
         expect(result.current.showBanner).toBe(true);
     });
@@ -95,7 +95,7 @@ describe('usePwaInstall', () => {
     it('handleDismiss → showBanner=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
         expect(result.current.showBanner).toBe(true);
         act(() => {
@@ -107,7 +107,7 @@ describe('usePwaInstall', () => {
     it('iOS에서 handleInstall → showIosModal=true', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
         act(() => {
             void result.current.handleInstall();
@@ -118,7 +118,7 @@ describe('usePwaInstall', () => {
     it('handleModalClose → showIosModal=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
         act(() => {
             void result.current.handleInstall();
@@ -130,14 +130,14 @@ describe('usePwaInstall', () => {
         expect(result.current.showIosModal).toBe(false);
     });
 
-    it('데스크탑 UA → pointerdown 이후에도 showBanner=false', () => {
+    it('데스크탑 UA → click 이후에도 showBanner=false', () => {
         Object.defineProperty(navigator, 'userAgent', {
             value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
             configurable: true,
         });
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
         expect(result.current.showBanner).toBe(false);
     });
@@ -190,7 +190,7 @@ describe('usePwaInstall', () => {
             window.dispatchEvent(promptEvent);
         });
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
 
         await act(async () => {
@@ -202,11 +202,91 @@ describe('usePwaInstall', () => {
     });
 
     /**
+     * `stopPropagation()`하는 컨트롤(팝오버 트리거 등)을 누른 첫 탭도 방아쇠가 돼야 한다 —
+     * 캡처 단계로 들어 대상의 처리와 무관하게 받는다.
+     */
+    it('대상이 전파를 막아도 첫 click에 배너를 띄운다', () => {
+        const { result } = renderHook(() => usePwaInstall());
+        const button = document.createElement('button');
+        button.addEventListener('click', e => e.stopPropagation());
+        document.body.append(button);
+        act(() => {
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        });
+        expect(result.current.showBanner).toBe(true);
+        button.remove();
+    });
+
+    /**
+     * iOS Safari는 클릭할 수 없는 요소(글자·빈 곳)를 탭하면 `click`을 `window`까지 보내지 않는다.
+     * `pointerup`만 온 탭에서도 짧은 여유 뒤에 띄워야 컨트롤을 안 누르는 사용자에게도 뜬다.
+     */
+    it('click 없이 pointerup만 오면 잠시 뒤에 배너를 띄운다', () => {
+        vi.useFakeTimers();
+        const { result } = renderHook(() => usePwaInstall());
+        act(() => {
+            window.dispatchEvent(new Event('pointerup'));
+        });
+        act(() => {
+            vi.advanceTimersByTime(499);
+        });
+        expect(result.current.showBanner).toBe(false);
+        act(() => {
+            vi.advanceTimersByTime(1);
+        });
+        expect(result.current.showBanner).toBe(true);
+    });
+
+    it('pointerup 뒤 click이 오면 기다리지 않고 바로 띄우고, 남은 타이머는 다시 띄우지 않는다', () => {
+        vi.useFakeTimers();
+        const { result } = renderHook(() => usePwaInstall());
+        act(() => {
+            window.dispatchEvent(new Event('pointerup'));
+            window.dispatchEvent(new Event('click'));
+        });
+        expect(result.current.showBanner).toBe(true);
+        act(() => {
+            result.current.handleDismiss();
+        });
+        act(() => {
+            vi.advanceTimersByTime(1_000);
+        });
+        expect(result.current.showBanner).toBe(false);
+    });
+
+    it('언마운트하면 대기 중인 pointerup 타이머를 정리한다', () => {
+        vi.useFakeTimers();
+        const { result, unmount } = renderHook(() => usePwaInstall());
+        act(() => {
+            window.dispatchEvent(new Event('pointerup'));
+        });
+        unmount();
+        expect(vi.getTimerCount()).toBe(0);
+        expect(result.current.showBanner).toBe(false);
+    });
+
+    /**
+     * 손가락이 닿는 순간(`pointerdown`)에는 띄우지 않는다 — 그 자리에 배너가 뜨면 같은 탭의
+     * `click`이 배너로 떨어져 사용자가 누르려던 카드·버튼이 눌리지 않는다.
+     */
+    it('pointerdown만으로는 배너를 띄우지 않는다(탭이 끝난 click에서 띄운다)', () => {
+        const { result } = renderHook(() => usePwaInstall());
+        act(() => {
+            window.dispatchEvent(new Event('pointerdown'));
+        });
+        expect(result.current.showBanner).toBe(false);
+        act(() => {
+            window.dispatchEvent(new Event('click'));
+        });
+        expect(result.current.showBanner).toBe(true);
+    });
+
+    /**
      * 타이머가 아니라 첫 입력이 방아쇠다 — 하이드레이션 직후 타이머로 띄우면
      * 배너 삽입이 그대로 CLS가 된다(2026-09-18 모바일 실측 0.0605). 입력 500ms
-     * 안의 이동은 CLS에서 제외되므로 첫 `pointerdown`까지 기다린다.
+     * 안의 이동은 CLS에서 제외되므로 첫 입력(`click`)까지 기다린다.
      */
-    it('첫 pointerdown 전에는 배너를 띄우지 않는다', () => {
+    it('첫 click 전에는 배너를 띄우지 않는다', () => {
         vi.useFakeTimers();
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
@@ -227,14 +307,14 @@ describe('usePwaInstall', () => {
     });
 
     /**
-     * 회귀: 방아쇠 두 개(`pointerdown`, `keydown`)가 각자 `once`로 걸려 있으면
+     * 회귀: 방아쇠 두 개(`click`, `keydown`)가 각자 `once`로 걸려 있으면
      * 한쪽이 배너를 띄우고 사용자가 닫은 뒤에도 다른 쪽이 남아 배너를 다시 띄웠다.
      * 어느 쪽이든 먼저 발화하면 모든 방아쇠를 해제해야 한다.
      */
-    it('pointerdown으로 뜬 배너를 닫은 뒤 keydown이 배너를 다시 띄우지 않는다', () => {
+    it('click으로 뜬 배너를 닫은 뒤 keydown이 배너를 다시 띄우지 않는다', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
         expect(result.current.showBanner).toBe(true);
         act(() => {
@@ -246,7 +326,7 @@ describe('usePwaInstall', () => {
         expect(result.current.showBanner).toBe(false);
     });
 
-    it('keydown으로 뜬 배너를 닫은 뒤 pointerdown이 배너를 다시 띄우지 않는다', () => {
+    it('keydown으로 뜬 배너를 닫은 뒤 click이 배너를 다시 띄우지 않는다', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
             window.dispatchEvent(new Event('keydown'));
@@ -255,7 +335,7 @@ describe('usePwaInstall', () => {
             result.current.handleDismiss();
         });
         act(() => {
-            window.dispatchEvent(new Event('pointerdown'));
+            window.dispatchEvent(new Event('click'));
         });
         expect(result.current.showBanner).toBe(false);
     });
@@ -264,7 +344,7 @@ describe('usePwaInstall', () => {
         it('닫으면 저장소에 남기고, 다음 마운트에서는 첫 입력에도 배너를 띄우지 않는다', () => {
             const first = renderHook(() => usePwaInstall());
             act(() => {
-                window.dispatchEvent(new Event('pointerdown'));
+                window.dispatchEvent(new Event('click'));
             });
             act(() => {
                 first.result.current.handleDismiss();
@@ -276,7 +356,7 @@ describe('usePwaInstall', () => {
 
             const second = renderHook(() => usePwaInstall());
             act(() => {
-                window.dispatchEvent(new Event('pointerdown'));
+                window.dispatchEvent(new Event('click'));
             });
             expect(second.result.current.showBanner).toBe(false);
         });
@@ -294,7 +374,7 @@ describe('usePwaInstall', () => {
                 });
             const { result } = renderHook(() => usePwaInstall());
             act(() => {
-                window.dispatchEvent(new Event('pointerdown'));
+                window.dispatchEvent(new Event('click'));
             });
             expect(result.current.showBanner).toBe(true);
             act(() => {

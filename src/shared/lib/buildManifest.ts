@@ -6,8 +6,8 @@ import {
     type Locale,
 } from '@/shared/i18n/locales';
 
-/** `shared.seo.manifest` 번역자. */
-type ManifestTranslator = (
+/** 매니페스트 카탈로그 번역자(`shared.seo.manifest`, `app.ai.manifest`). */
+export type ManifestTranslator = (
     key: string,
     values?: Record<string, string>
 ) => string;
@@ -31,7 +31,7 @@ export interface ManifestIdentity {
  * 앱 홈이 늘 스코프 밖인 것보다 작은 문제라 받아들였다. 막으려면 `/en/`이 리다이렉트되지 않는
  * 홈이어야 하므로 매니페스트가 아니라 라우팅 변경이다.
  */
-export function manifestHome(locale: Locale): string {
+function manifestHome(locale: Locale): string {
     return localePath(locale, '/');
 }
 
@@ -41,7 +41,7 @@ export function manifestHome(locale: Locale): string {
  * 그래서 `start_url`을 정본 홈으로 고칠 때도 `id`는 예전 값(로케일 홈 + 끝 슬래시, ko `/`)을
  * 유지한다. `id`는 식별자일 뿐 실제로 열리는 URL일 필요가 없다.
  */
-export function manifestId(locale: Locale): string {
+function manifestId(locale: Locale): string {
     return `${localePath(locale, '/')}/`.replace(/\/{2,}$/, '/');
 }
 
@@ -120,7 +120,7 @@ export function buildManifest(
             },
             {
                 name: t('shortcutSearch'),
-                url: `${base.start_url}?focus=search`,
+                url: `${manifestHome(locale)}?focus=search`,
                 icons: shortcutIcons,
             },
         ],

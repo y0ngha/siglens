@@ -21,6 +21,7 @@ import { loginHref } from './loginHref';
 import { withoutSsoParam } from './utils/withoutSsoParam';
 import { ConversationSkeleton } from './ConversationSkeleton';
 import { Sidebar } from './Sidebar';
+import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 /** `MessageList`의 바깥 상자와 같은 크기 — 청크가 오는 동안 Composer가 튀지 않게 자리를 잡는다. */
 const MESSAGE_LIST_SLOT = 'relative min-h-0 flex-1';
@@ -267,11 +268,11 @@ export function ChatShell({
         conversationItems.find(c => c.id === stream.conversationId)?.title ??
         '';
     return (
-        <div className="flex min-h-[calc(100dvh-3.5rem)]">
+        <div className="flex min-h-[calc(100dvh-var(--header-h))]">
             {/* Pinned under the sticky site header at viewport height: a long
                 conversation list scrolls inside the rail instead of stretching
                 the page (which pushed the landing hero below the fold). */}
-            <aside className="ai-rail sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start bg-secondary-950 lg:block">
+            <aside className="ai-rail sticky top-(--header-h) hidden h-[calc(100dvh-var(--header-h))] w-64 shrink-0 self-start bg-secondary-950 lg:block">
                 {sidebar}
             </aside>
             {isBelowLg ? (
@@ -294,6 +295,8 @@ export function ChatShell({
                     drawer trigger + the active conversation's title. */}
                 <div
                     data-scroll-chrome=""
+                    // globals.css reads this to drop the top install banner below the bar.
+                    data-agent-chat-bar=""
                     // `chromeHidden` only ever comes back `true` below `lg`
                     // (`useHideOnScrollDown`'s own media-query gate), so
                     // `inert` here never fires on a desktop viewport — this
@@ -301,11 +304,13 @@ export function ChatShell({
                     // same pattern on the site header.
                     inert={chromeHidden}
                     className={cn(
-                        // Sticky under the site header (h-14) so the drawer trigger stays
+                        // Sticky under the site header so the drawer trigger stays
                         // reachable mid-conversation; slides up with the header while
-                        // scrolling down (11 + 14 = 6.25rem clears both).
-                        'ai-bar sticky top-14 z-40 flex h-11 items-center gap-2 bg-secondary-900 px-2 transition-transform duration-200 motion-reduce:transition-none lg:hidden',
-                        chromeHidden && '-translate-y-[6.25rem]'
+                        // scrolling down (header + bar height clears both). Heights are
+                        // the shared globals.css chrome variables the PWA banner reads too.
+                        'ai-bar sticky top-(--header-h) z-40 flex h-(--agent-chat-bar-h) items-center gap-2 bg-secondary-900 px-2 transition-transform duration-200 motion-reduce:transition-none lg:hidden',
+                        chromeHidden &&
+                            '-translate-y-[calc(var(--header-h)+var(--agent-chat-bar-h))]'
                     )}
                 >
                     <button
@@ -383,7 +388,10 @@ export function ChatShell({
                                 <button
                                     type="button"
                                     onClick={() => void stream.retry()}
-                                    className="ai-raised ai-raised-hover inline-flex min-h-9 shrink-0 items-center rounded-lg px-3 text-xs font-medium text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    className={cn(
+                                        AI_RAISED_CONTROL,
+                                        'inline-flex min-h-9 shrink-0 items-center rounded-lg px-3 text-xs font-medium text-secondary-100'
+                                    )}
                                 >
                                     {t('ChatShell.548fe0')}
                                 </button>

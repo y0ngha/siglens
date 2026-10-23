@@ -25,7 +25,7 @@ describe('AboutCtaBar', () => {
             <AboutCtaBar title="Ask now" cta="Ask" href="/en" />
         );
         expect(container.firstElementChild).toHaveClass(
-            'max-lg:-translate-y-14'
+            'max-lg:-translate-y-[var(--header-h)]'
         );
     });
 
@@ -35,7 +35,7 @@ describe('AboutCtaBar', () => {
             <AboutCtaBar title="Ask now" cta="Ask" href="/en" />
         );
         expect(container.firstElementChild).not.toHaveClass(
-            'max-lg:-translate-y-14'
+            'max-lg:-translate-y-[var(--header-h)]'
         );
     });
 });
