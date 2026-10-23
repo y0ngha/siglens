@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
     etDateOf,
-    addEtDays,
     pastWindowStart,
     futureWindowEnd,
     PAST_WINDOW_DAYS,
     FUTURE_WINDOW_DAYS,
 } from '@/entities/economy/lib/calendarWindow';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 
 // 경제 캘린더 페이지는 KST "오늘" 키를 `kstDateKey`로 만든다 — 이 경계 케이스들이 그 계약이다.
 describe('kstDateKey (economy KST today key)', () => {
@@ -50,27 +50,15 @@ describe('etDateOf', () => {
     });
 });
 
-describe('addEtDays', () => {
-    it('adds days to a YYYY-MM-DD string', () => {
-        expect(addEtDays('2026-01-31', 1)).toBe('2026-02-01');
-    });
-    it('subtracts days with a negative delta', () => {
-        expect(addEtDays('2026-03-01', -1)).toBe('2026-02-28');
-    });
-    it('crosses a year boundary', () => {
-        expect(addEtDays('2025-12-31', 1)).toBe('2026-01-01');
-    });
-});
-
 describe('window bounds', () => {
     it('pastWindowStart is PAST_WINDOW_DAYS before the anchor', () => {
         expect(pastWindowStart('2026-06-20')).toBe(
-            addEtDays('2026-06-20', -PAST_WINDOW_DAYS)
+            addUtcIsoDays('2026-06-20', -PAST_WINDOW_DAYS)
         );
     });
     it('futureWindowEnd is FUTURE_WINDOW_DAYS after the anchor', () => {
         expect(futureWindowEnd('2026-06-20')).toBe(
-            addEtDays('2026-06-20', FUTURE_WINDOW_DAYS)
+            addUtcIsoDays('2026-06-20', FUTURE_WINDOW_DAYS)
         );
     });
     // spec: 과거 윈도는 최소 2주 — 현재 PAST_WINDOW_DAYS = 14

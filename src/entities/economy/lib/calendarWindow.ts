@@ -36,17 +36,12 @@ export function etDateOf(instant: Date): string {
     return zonedDate(instant, ET_TIME_ZONE);
 }
 
-/** 'YYYY-MM-DD'에 일수를 더한 'YYYY-MM-DD' (UTC 산술 — TZ 비의존). 산술은 shared `addUtcIsoDays` 하나다. */
-export function addEtDays(dateEt: string, delta: number): string {
-    return addUtcIsoDays(dateEt, delta);
-}
-
 /** 앵커일(포함) 기준 과거 윈도 시작일. */
 export function pastWindowStart(anchorEt: string): string {
-    return addEtDays(anchorEt, -PAST_WINDOW_DAYS);
+    return addUtcIsoDays(anchorEt, -PAST_WINDOW_DAYS);
 }
 
 /** 앵커일(포함) 기준 미래 윈도 종료일. */
 export function futureWindowEnd(anchorEt: string): string {
-    return addEtDays(anchorEt, FUTURE_WINDOW_DAYS);
+    return addUtcIsoDays(anchorEt, FUTURE_WINDOW_DAYS);
 }

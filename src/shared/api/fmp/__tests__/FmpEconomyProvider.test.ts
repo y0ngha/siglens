@@ -129,7 +129,15 @@ describe('FmpEconomyProvider', () => {
                         impact: 'High',
                     },
                 ];
-            if (from === '2026-07-25') return { error: 'not an array' };
+            if (from === '2026-07-25')
+                return [
+                    {
+                        country: 'KR',
+                        date: '2026-08-24 02:30:00',
+                        event: 'Mid',
+                        impact: 'High',
+                    },
+                ];
             return [
                 {
                     country: 'KR',
@@ -157,8 +165,22 @@ describe('FmpEconomyProvider', () => {
             from: '2026-10-23',
             to: '2026-11-22',
         });
-        // 배열이 아닌 조각은 빈 것으로 보고 나머지는 남긴다.
-        expect(events.map(e => e.event)).toEqual(['Old', 'New']);
+        expect(events.map(e => e.event)).toEqual(['Old', 'Mid', 'New']);
+    });
+
+    it('getCalendarForCountry: 한 조각이라도 배열이 아니면 던진다 — 90일이 빠진 결과를 성공으로 넘기지 않는다', async () => {
+        // FMP는 한도·오류도 200 객체로 준다. 빈 조각으로 넘기면 백필이 끝난 것으로 기록된다.
+        mockFmpGet.mockImplementation(async (_path, params) => {
+            const { from } = params as { from: string; to: string };
+            return from === '2026-07-25' ? { error: 'limit' } : [];
+        });
+        await expect(
+            new FmpEconomyProvider().getCalendarForCountry(
+                '2026-04-26',
+                '2026-11-22',
+                'KR'
+            )
+        ).rejects.toThrow('non-array');
     });
 
     it('FMP throw는 그대로 전파(상위 캐시가 graceful 처리)', async () => {

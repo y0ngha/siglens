@@ -265,6 +265,19 @@ Work triggered per client-supplied value (DNS lookups, Redis calls) needs a per-
 memory-only rejection path once the cap is hit; otherwise one spoofed value can hold every slot and starve the
 rest. Test the capacity bound, negative lookups (NODATA/NXDOMAIN) and mapped address forms, not only the happy path.
 
+<a id="SA-18"></a>
+
+#### SA-18 — An empty or malformed upstream result is not "no data"
+
+An upstream body of the wrong shape (a non-array where a list is expected, a missing field) or an empty `200 []` for a
+range that should have rows is a failure signal, not a successful empty answer. Throw or return the error result so
+the caller degrades, and never cache it or let it set a completion flag: `[]` stored as "no events" hides the gap for
+the whole TTL, and a swallowed chunk makes a partial result look complete.
+
+- ❌ `Array.isArray(body) ? body : []` per chunk, then the merged result is cached or marks the day as done.
+- ✅ A malformed chunk throws; an empty result for a non-empty window is returned uncached (or with a short TTL) so the
+  next call retries.
+
 ---
 
 ## Concurrency, Batching & Background Work

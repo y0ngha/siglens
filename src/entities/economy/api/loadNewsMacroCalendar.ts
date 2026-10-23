@@ -6,7 +6,7 @@ import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { ISO_DATE_LENGTH, SECONDS_PER_HOUR } from '@/shared/config/time';
 
-import { addEtDays } from '../lib/calendarWindow';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 
 /** 뉴스 분석 매크로 캘린더 창 — 오늘(UTC) 기준 과거 2일 ~ 미래 14일. */
 const NEWS_MACRO_PAST_DAYS = 2;
@@ -27,8 +27,8 @@ const NEWS_MACRO_FUTURE_DAYS = 14;
 export const loadNewsMacroCalendar = cache(
     async (): Promise<readonly EconomicCalendarEvent[]> => {
         const today = new Date().toISOString().slice(0, ISO_DATE_LENGTH);
-        const from = addEtDays(today, -NEWS_MACRO_PAST_DAYS);
-        const to = addEtDays(today, NEWS_MACRO_FUTURE_DAYS);
+        const from = addUtcIsoDays(today, -NEWS_MACRO_PAST_DAYS);
+        const to = addUtcIsoDays(today, NEWS_MACRO_FUTURE_DAYS);
         try {
             return await getOrSetCache(
                 `economy:news-macro-calendar:${from}:${to}`,

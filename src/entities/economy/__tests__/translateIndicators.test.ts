@@ -42,12 +42,12 @@ import {
 } from '@/entities/economy/api/translateIndicators';
 import { INDICATOR_TRANSLATION_CACHE_TAG } from '@/entities/economy/lib/indicatorTranslationConstants';
 import {
-    addEtDays,
     futureWindowEnd,
     pastWindowStart,
     etDateOf,
 } from '@/entities/economy/lib/calendarWindow';
 import { MS_PER_MINUTE } from '@/shared/config/time';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 
 const UNKNOWN = 'Totally Unknown Thing';
 
@@ -344,7 +344,7 @@ describe('isTranslatableCalendarIndicator (public action whitelist)', () => {
         await isTranslatableCalendarIndicator(US_ONLY);
 
         const anchor = etDateOf(NOW);
-        const from = addEtDays(
+        const from = addUtcIsoDays(
             pastWindowStart(anchor),
             -WHITELIST_PAST_PADDING_DAYS
         );
@@ -360,7 +360,7 @@ describe('isTranslatableCalendarIndicator (public action whitelist)', () => {
         );
         // 서버 창보다 정확히 패딩 일수만큼 이르다 — 묵은 화면의 창을 덮는다.
         expect(from).toBe(
-            addEtDays(pastWindowStart(anchor), -WHITELIST_PAST_PADDING_DAYS)
+            addUtcIsoDays(pastWindowStart(anchor), -WHITELIST_PAST_PADDING_DAYS)
         );
         expect(from < pastWindowStart(anchor)).toBe(true);
     });

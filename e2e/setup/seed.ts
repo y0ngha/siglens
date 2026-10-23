@@ -1,7 +1,8 @@
 import { like } from 'drizzle-orm';
 import { bcryptPasswordHasher } from '@/entities/auth/lib/bcrypt';
 import { economicCalendarId } from '@/entities/economy/lib/economicCalendarId';
-import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import { getDatabaseClient } from '@/shared/db/client';
 import { seedGuide } from '../../db/scripts/seedGuide';
 import {
@@ -235,15 +236,15 @@ async function seed(): Promise<void> {
     // Events mirror FakeEconomyProvider.getCalendar() by name/impact/values, but
     // dateEt is computed relative to today-ET so the rows never fall out of window.
     const todayEt = etDateOf(new Date());
-    const todayMinus1 = addEtDays(todayEt, -1);
-    const todayPlus1 = addEtDays(todayEt, 1);
+    const todayMinus1 = addUtcIsoDays(todayEt, -1);
+    const todayPlus1 = addUtcIsoDays(todayEt, 1);
 
     // todayMinus2: ±14d 윈도 내에 있고 과거 날짜이므로 actual 채움이 자연스럽다.
     // 분석 결과(sentiment/summaryKo/interpretationKo/analyzedAt)를 포함해
     // SP-B(한국어 레이블)·SP-C(필터)·SP-D(sentiment 배지) e2e 검증에 사용된다.
-    const todayMinus2 = addEtDays(todayEt, -2);
+    const todayMinus2 = addUtcIsoDays(todayEt, -2);
     // Low impact 이벤트 — 기본 필터(High+Med) OFF 상태. 낮음 칩 토글 테스트에 사용.
-    const todayPlus2 = addEtDays(todayEt, 2);
+    const todayPlus2 = addUtcIsoDays(todayEt, 2);
 
     const calendarRows = [
         {

@@ -31,7 +31,10 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-import { ingestEconomicCalendar } from '@/entities/economy/api/ingestEconomicCalendar';
+import {
+    __resetBackfillMemoForTests,
+    ingestEconomicCalendar,
+} from '@/entities/economy/api/ingestEconomicCalendar';
 import { economyCalendarCacheTag } from '@/entities/economy/lib/economyCalendarConstants';
 
 const event = (name: string): EconomicCalendarEvent => ({
@@ -47,6 +50,7 @@ const event = (name: string): EconomicCalendarEvent => ({
 describe('ingestEconomicCalendar', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        __resetBackfillMemoForTests();
         mocks.isCalendarRecentlyFetched.mockResolvedValue(false);
         mocks.markCalendarFetched.mockResolvedValue(undefined);
         mocks.isCalendarBackfillFresh.mockResolvedValue(false);
@@ -283,6 +287,72 @@ describe('ingestEconomicCalendar', () => {
             expect(mocks.upsertEvent).not.toHaveBeenCalled();
             expect(mocks.markCalendarBackfilled).not.toHaveBeenCalled();
             errorSpy.mockRestore();
+        });
+
+        it('앞쪽 과거 쓰기가 일부라도 실패하면 플래그를 세우지 않는다(과반이 아니어도)', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            mocks.getCalendarForCountry.mockImplementation(
+                async (from: string) =>
+                    from === '2026-04-26'
+                        ? [event('Old1'), event('Old2')]
+                        : [event('New1'), event('New2'), event('New3')]
+            );
+            mocks.upsertEvent.mockImplementation(
+                async (_country: string, e: EconomicCalendarEvent) => {
+                    if (e.event === 'Old2') throw new Error('db');
+                    return true;
+                }
+            );
+
+            await expect(ingestEconomicCalendar('KR', 't')).resolves.toEqual({
+                status: 'ok',
+                changed: 4,
+            });
+            expect(mocks.markCalendarBackfilled).not.toHaveBeenCalled();
+            errorSpy.mockRestore();
+        });
+
+        it('최근 구간 쓰기가 과반 실패하면 앞쪽 과거가 다 써져도 write-failed다', async () => {
+            // 합쳐서 세면 앞쪽 행이 분모를 키워 최근 구간의 전면 실패가 'ok'로 묻힌다.
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            mocks.getCalendarForCountry.mockImplementation(
+                async (from: string) =>
+                    from === '2026-04-26'
+                        ? [
+                              event('Old1'),
+                              event('Old2'),
+                              event('Old3'),
+                              event('Old4'),
+                          ]
+                        : [event('New1'), event('New2')]
+            );
+            mocks.upsertEvent.mockImplementation(
+                async (_country: string, e: EconomicCalendarEvent) => {
+                    if (e.event.startsWith('New')) throw new Error('db');
+                    return true;
+                }
+            );
+
+            await expect(ingestEconomicCalendar('KR', 't')).resolves.toEqual({
+                status: 'write-failed',
+            });
+            errorSpy.mockRestore();
+        });
+
+        it('Redis가 백필 플래그를 못 지켜도 같은 프로세스에서는 하루 안에 앞쪽 과거를 다시 읽지 않는다', async () => {
+            // Redis 장애 때 isSet은 늘 false다.
+            mocks.isCalendarBackfillFresh.mockResolvedValue(false);
+            await ingestEconomicCalendar('KR', 't');
+            mocks.getCalendarForCountry.mockClear();
+
+            await ingestEconomicCalendar('KR', 't');
+
+            expect(mocks.getCalendarForCountry).toHaveBeenCalledTimes(1);
+            expect(callFor('2026-04-26')).toBeUndefined();
         });
 
         it('쓰기가 과반 실패하면 백필 플래그를 세우지 않는다', async () => {
