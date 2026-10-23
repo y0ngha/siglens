@@ -183,16 +183,18 @@ describe('getBarsIndicatorsTool', () => {
 
     describe('진행 중인 마지막 봉', () => {
         const day = Math.floor(Date.UTC(2026, 9, 22) / 1000);
-        const load = async (timeframe: string) => {
+        const twoBars = [bar(day - 86_400, 16.68), bar(day, 18.35)];
+        const load = async (
+            timeframe: string,
+            bars: ReturnType<typeof bar>[] = twoBars,
+            count?: number
+        ) => {
             profile.mockResolvedValue('us-equity');
             classify.mockReturnValue('uptrend');
             detect.mockReturnValue([]);
-            getCachedBars.mockResolvedValue({
-                bars: [bar(day - 86_400, 16.68), bar(day, 18.35)],
-                indicators,
-            });
+            getCachedBars.mockResolvedValue({ bars, indicators });
             return (await getBarsIndicatorsTool(
-                { symbol: 'VIX', timeframe },
+                { symbol: 'VIX', timeframe, bars: count },
                 ctx,
                 rt
             )) as Record<string, unknown>;
@@ -219,7 +221,7 @@ describe('getBarsIndicatorsTool', () => {
             spec.mockReturnValueOnce(SESSION);
             await load('1Day');
             expect(forming).toHaveBeenCalledWith(
-                [bar(day - 86_400, 16.68), bar(day, 18.35)],
+                twoBars,
                 SESSION,
                 expect.any(Date)
             );
@@ -227,36 +229,17 @@ describe('getBarsIndicatorsTool', () => {
 
         it('진행 중인 봉 하나뿐이면 직전 종가 없이 진행 중 표시만 싣는다', async () => {
             forming.mockReturnValue(true);
-            profile.mockResolvedValue('us-equity');
-            classify.mockReturnValue('uptrend');
-            detect.mockReturnValue([]);
-            getCachedBars.mockResolvedValue({
-                bars: [bar(day, 18.35)],
-                indicators,
-            });
-            const r = (await getBarsIndicatorsTool(
-                { symbol: 'VIX', timeframe: '1Day' },
-                ctx,
-                rt
-            )) as Record<string, unknown>;
+            const r = await load('1Day', [bar(day, 18.35)]);
             expect(r.lastBarInProgress).toBe(true);
             expect(r).not.toHaveProperty('lastCompletedClose');
         });
 
         it('예산 절단으로 봉이 잘려도 두 필드는 남는다', async () => {
             forming.mockReturnValue(true);
-            profile.mockResolvedValue('us-equity');
-            classify.mockReturnValue('uptrend');
-            detect.mockReturnValue([]);
             const many = Array.from({ length: 250 }, (_, i) =>
                 bar(day - (249 - i) * 86_400, 100 + i)
             );
-            getCachedBars.mockResolvedValue({ bars: many, indicators });
-            const r = (await getBarsIndicatorsTool(
-                { symbol: 'VIX', timeframe: '1Day', bars: 200 },
-                ctx,
-                rt
-            )) as Record<string, unknown>;
+            const r = await load('1Day', many, 200);
             expect(r.barsTrimmed).toBeGreaterThan(0);
             expect(r.lastBarInProgress).toBe(true);
             expect(r.lastCompletedClose).toEqual({

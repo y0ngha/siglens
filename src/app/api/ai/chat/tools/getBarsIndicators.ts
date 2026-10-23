@@ -91,7 +91,8 @@ import { BARS_RESULT_MAX_CHARS } from './truncate';
  * signals, no MA cross) serializes to ~5,280 chars, untrimmed. During the
  * regular session `lastBarInProgress` + `lastCompletedClose` bring it to
  * ~5,365 (measured 2026-10-23) — the "기본 요청(30봉, 1Day)" test pins that
- * larger live-session shape. Each listed cross adds ~35 chars.
+ * larger live-session shape. Re-measure (serialize that test's result) when a
+ * top-level or `derived` field is added. Each listed cross adds ~35 chars.
  */
 const DEFAULT_BARS = 30;
 /**
@@ -1011,11 +1012,14 @@ async function fearGreedView(
 
 /**
  * 정규장 중에는 캐시된 봉 끝에 60초 시세 스냅샷으로 만든 오늘 봉이 붙는다. 그 봉의 종가는
- * 현재가지 종가가 아닌데, 출력에 표시가 없으면 모델이 `asOf` 날짜와 함께 "그날 종가"로 읽는다
- * (장중 VIX 18.35를 "10월 22일 세션 마감 기준 종가"라고 답함). 진행 중이라는 사실과, 일봉이면
- * 직전 완료 세션의 종가·날짜를 함께 실어 "가장 최근 종가" 질문이 그 값을 쓰게 한다.
+ * 현재가일 뿐 종가가 아닌데, 출력에 표시가 없으면 모델이 `asOf` 날짜와 함께 "그날 종가"로 읽는다
+ * (2026-10-23 운영, 미국 장중 "VIX 가장 최근 종가" 질문에 진행 중 봉 18.35를 "10월 22일 세션
+ * 마감 기준 종가"라고 답함 — 실제 최근 종가는 10/21 16.68). 진행 중이라는 사실과, 일봉이면 직전
+ * 완료 세션의 종가·날짜를 함께 실어 "가장 최근 종가" 질문이 그 값을 쓰게 한다. 모델이 두 필드를
+ * 읽는 규칙은 core(2.25.2+)의 `get_bars_indicators` 도구 설명에 있다. 동작은 테스트
+ * "진행 중인 마지막 봉" 블록이 고정한다.
  */
-function lastBarSession(
+function lastBarProgress(
     bars: readonly Bar[],
     timeframe: Timeframe,
     session: MarketSessionSpec
@@ -1121,7 +1125,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     const candlePatterns = latestCandlePatterns(bars, timeframe);
     const fearGreed = await fearGreedView(barsData, timeframe, ctx.locale);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
-    const lastBarState = lastBarSession(bars, timeframe, session);
+    const lastBarState = lastBarProgress(bars, timeframe, session);
 
     return fitBarsToBudget(
         (barsForOutput, barsTrimmed) => ({
