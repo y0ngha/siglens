@@ -87,6 +87,20 @@ describe('assertOnline', () => {
         warnSpy.mockRestore();
     });
 
+    it('treasury.gov도 같은 메시지로 차단한다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        expect(() =>
+            assertOnline(OFFLINE_BUILD_SERVICE.TREASURY, 'treasury.gov')
+        ).toThrow('[offline-build] blocked Treasury request to treasury.gov');
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[offline-build] blocking Treasury request'
+        );
+
+        warnSpy.mockRestore();
+    });
+
     it('같은 서비스로 여러 번 불려도 경고는 한 번만 남긴다', () => {
         vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});

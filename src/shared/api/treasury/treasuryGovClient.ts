@@ -79,21 +79,20 @@ export function parseTreasuryGovCsv(csv: string): TreasuryRateSnapshot | null {
     const i2 = cols.indexOf(COLUMN_2Y);
     const i10 = cols.indexOf(COLUMN_10Y);
     if (iDate < 0 || i10 < 0) return null;
-    let best: TreasuryRateSnapshot | null = null;
-    for (const line of lines) {
+    const rows = lines.flatMap((line): TreasuryRateSnapshot[] => {
         const cells = line.split(',');
         const date = isoDate(cells[iDate] ?? '');
         const year10 = yieldOrNull(cells[i10]);
-        if (date === null || year10 === null) continue;
-        if (best === null || date > best.date) {
-            best = {
-                date,
-                year2: i2 < 0 ? null : yieldOrNull(cells[i2]),
-                year10,
-            };
-        }
-    }
-    return best;
+        if (date === null || year10 === null) return [];
+        return [
+            { date, year2: i2 < 0 ? null : yieldOrNull(cells[i2]), year10 },
+        ];
+    });
+    return rows.reduce<TreasuryRateSnapshot | null>(
+        (latest, row) =>
+            latest === null || row.date > latest.date ? row : latest,
+        null
+    );
 }
 
 function isTransient(error: unknown): boolean {
@@ -143,8 +142,12 @@ async function fetchYearCsv(year: number): Promise<string> {
 export async function fetchTreasuryGovSnapshot(
     year: number
 ): Promise<TreasuryRateSnapshot | null> {
-    return (
+    const snapshot =
         parseTreasuryGovCsv(await fetchYearCsv(year)) ??
-        parseTreasuryGovCsv(await fetchYearCsv(year - 1))
-    );
+        parseTreasuryGovCsv(await fetchYearCsv(year - 1));
+    if (snapshot !== null && snapshot.year2 === null) {
+        // 10년물은 있는데 2년물이 비었다 — 열 이름이 바뀌면 장단기 스프레드가 조용히 사라진다.
+        console.warn('[economy] treasury.gov row has no 2Y yield');
+    }
+    return snapshot;
 }

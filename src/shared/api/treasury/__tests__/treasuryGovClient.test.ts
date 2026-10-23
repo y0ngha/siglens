@@ -164,6 +164,22 @@ describe('fetchTreasuryGovSnapshot', () => {
         ).toBe(true);
     });
 
+    it('2년물이 비어 있으면 값은 내되 경고를 남긴다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        fetchSpy.mockResolvedValueOnce(
+            new Response('Date,"10 Yr"\n10/22/2026,4.96', { status: 200 })
+        );
+        expect(await fetchTreasuryGovSnapshot(2026)).toEqual({
+            date: '2026-10-22',
+            year2: null,
+            year10: 4.96,
+        });
+        expect(warn).toHaveBeenCalledWith(
+            '[economy] treasury.gov row has no 2Y yield'
+        );
+        warn.mockRestore();
+    });
+
     it('4xx는 재시도 없이 던진다', async () => {
         fetchSpy.mockResolvedValue(new Response('no', { status: 403 }));
         await expect(fetchTreasuryGovSnapshot(2026)).rejects.toBeInstanceOf(

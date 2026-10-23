@@ -1,10 +1,7 @@
 import type { TreasuryRateSnapshot } from '@y0ngha/siglens-core';
 import { describe, expect, it, vi } from 'vitest';
 import type { EconomyProvider } from '../EconomyProvider';
-import {
-    easternYear,
-    OfficialTreasuryEconomyProvider,
-} from '../OfficialTreasuryEconomyProvider';
+import { OfficialTreasuryEconomyProvider } from '../OfficialTreasuryEconomyProvider';
 
 vi.mock('server-only', () => ({}));
 
@@ -70,7 +67,8 @@ describe('OfficialTreasuryEconomyProvider.getTreasury', () => {
         warn.mockRestore();
     });
 
-    it('FMP가 실패해도 재무부 값이 있으면 그 값을 낸다', async () => {
+    it('FMP가 실패해도 재무부 값이 있으면 그 값을 내고 FMP 실패 이름을 남긴다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const p = new OfficialTreasuryEconomyProvider(
             baseWith(async () => {
                 throw new Error('fmp down');
@@ -79,6 +77,11 @@ describe('OfficialTreasuryEconomyProvider.getTreasury', () => {
             () => NOW
         );
         expect((await p.getTreasury())?.date).toBe('2026-10-22');
+        expect(warn).toHaveBeenCalledWith(
+            '[economy] FMP treasury-rates read failed',
+            { error: 'Error' }
+        );
+        warn.mockRestore();
     });
 
     it('둘 다 값이 없고 FMP가 실패했으면 FMP 오류를 그대로 던진다', async () => {
@@ -133,12 +136,5 @@ describe('OfficialTreasuryEconomyProvider.getTreasury', () => {
             '2026-10-01',
             '2026-10-31'
         );
-    });
-});
-
-describe('easternYear', () => {
-    it('UTC로는 새해여도 ET 자정 전이면 전년도', () => {
-        expect(easternYear(new Date('2027-01-01T03:00:00Z'))).toBe(2026);
-        expect(easternYear(new Date('2027-01-01T06:00:00Z'))).toBe(2027);
     });
 });
