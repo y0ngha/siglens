@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.109.1](https://github.com/y0ngha/siglens/compare/v0.109.0...v0.109.1) (2026-10-23)
+
+### Bug Fixes
+
+* SiglensAI 봉 도구 — 장중 진행 봉 표시(lastBarInProgress)와 직전 확정 종가(lastCompletedClose), core 2.25.2 ([#1086](https://github.com/y0ngha/siglens/issues/1086)) ([014ef8e](https://github.com/y0ngha/siglens/commit/014ef8ea9c34a291dd7060854f6615417238e322))
+
 # [0.109.0](https://github.com/y0ngha/siglens/compare/v0.108.2...v0.109.0) (2026-10-22)
 
 ### Bug Fixes
