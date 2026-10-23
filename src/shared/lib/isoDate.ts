@@ -10,3 +10,9 @@ import { ISO_DATE_LENGTH } from '@/shared/config/time';
 export function toUtcIsoDate(date: Date): string {
     return date.toISOString().slice(0, ISO_DATE_LENGTH);
 }
+
+/** `YYYY-MM-DD`에 `days`일을 더한 `YYYY-MM-DD` — UTC 산술이라 서버 타임존과 무관하다. */
+export function addUtcIsoDays(isoDate: string, days: number): string {
+    const [y, m, d] = isoDate.split('-').map(Number);
+    return toUtcIsoDate(new Date(Date.UTC(y, m - 1, d + days)));
+}

@@ -18,7 +18,8 @@ import {
 } from '@/entities/economy/api/treasuryRatesCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
-import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import {
     ECONOMY_CALENDAR_DEFAULT_DAYS,
     ECONOMY_CALENDAR_FETCH_PAD_DAYS,
@@ -75,7 +76,7 @@ function isDateArg(value: unknown): value is string {
     return (
         typeof value === 'string' &&
         DATE_ARG.test(value) &&
-        addEtDays(value, 0) === value
+        addUtcIsoDays(value, 0) === value
     );
 }
 
@@ -103,7 +104,7 @@ function parseRangeArgs(
             ok: false,
             issues: [{ path: 'to', message: 'must not be before from' }],
         };
-    if (addEtDays(range.from, ECONOMY_CALENDAR_MAX_RANGE_DAYS) < range.to)
+    if (addUtcIsoDays(range.from, ECONOMY_CALENDAR_MAX_RANGE_DAYS) < range.to)
         return {
             ok: false,
             issues: [
@@ -113,7 +114,7 @@ function parseRangeArgs(
                 },
             ],
         };
-    if (range.from < addEtDays(today, -RANGE_MAX_PAST_DAYS))
+    if (range.from < addUtcIsoDays(today, -RANGE_MAX_PAST_DAYS))
         return {
             ok: false,
             issues: [
@@ -123,7 +124,7 @@ function parseRangeArgs(
                 },
             ],
         };
-    if (range.to > addEtDays(today, RANGE_MAX_FUTURE_DAYS))
+    if (range.to > addUtcIsoDays(today, RANGE_MAX_FUTURE_DAYS))
         return {
             ok: false,
             issues: [
@@ -180,10 +181,13 @@ function readCalendar(
     now: number,
     notBefore?: Date
 ): Promise<CalendarBlock | null> {
-    const fetchFrom = addEtDays(range.from, -ECONOMY_CALENDAR_FETCH_PAD_DAYS);
+    const fetchFrom = addUtcIsoDays(
+        range.from,
+        -ECONOMY_CALENDAR_FETCH_PAD_DAYS
+    );
     return getEconomicCalendarRange(
         fetchFrom,
-        addEtDays(range.to, ECONOMY_CALENDAR_FETCH_PAD_DAYS)
+        addUtcIsoDays(range.to, ECONOMY_CALENDAR_FETCH_PAD_DAYS)
     )
         .then(rows =>
             calendarBlock(
@@ -304,7 +308,7 @@ function snapshotCalendarBlock(
             snapshot.calendar,
             {
                 from: today,
-                to: addEtDays(
+                to: addUtcIsoDays(
                     today,
                     SNAPSHOT_CALENDAR_WINDOW_DAYS - SNAPSHOT_MAX_STALE_DAYS
                 ),
@@ -354,7 +358,7 @@ export const getEconomyTool: ToolExecutor = async args => {
 
     const defaultRange = {
         from: today,
-        to: addEtDays(today, ECONOMY_CALENDAR_DEFAULT_DAYS),
+        to: addUtcIsoDays(today, ECONOMY_CALENDAR_DEFAULT_DAYS),
     };
     // `getFreshTreasuryRates` never rejects (degrades to `null`).
     const [snapshot, freshTreasury, calendar] = await Promise.all([

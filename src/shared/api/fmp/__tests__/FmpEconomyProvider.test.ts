@@ -1,7 +1,10 @@
 vi.mock('@/shared/api/fmp/httpClient');
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
+import {
+    FmpEconomyProvider,
+    splitCalendarRange,
+} from '@/shared/api/fmp/FmpEconomyProvider';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 
 const mockFmpGet = vi.mocked(fmpGet);
@@ -113,10 +116,101 @@ describe('FmpEconomyProvider', () => {
         });
     });
 
+    it('getCalendarForCountry: 90일보다 긴 범위는 나눠 읽고 행을 이어 붙인다', async () => {
+        // FMP는 `to`로 끝나는 90일만 돌려준다 — 한 번에 읽으면 앞쪽이 조용히 빠진다.
+        mockFmpGet.mockImplementation(async (_path, params) => {
+            const { from } = params as { from: string; to: string };
+            if (from === '2026-04-26')
+                return [
+                    {
+                        country: 'KR',
+                        date: '2026-04-27 21:00:00',
+                        event: 'Old',
+                        impact: 'High',
+                    },
+                ];
+            if (from === '2026-07-25')
+                return [
+                    {
+                        country: 'KR',
+                        date: '2026-08-24 02:30:00',
+                        event: 'Mid',
+                        impact: 'High',
+                    },
+                ];
+            return [
+                {
+                    country: 'KR',
+                    date: '2026-10-26 02:30:00',
+                    event: 'New',
+                    impact: 'High',
+                },
+            ];
+        });
+        const events = await new FmpEconomyProvider().getCalendarForCountry(
+            '2026-04-26',
+            '2026-11-22',
+            'KR'
+        );
+        expect(mockFmpGet).toHaveBeenCalledTimes(3);
+        expect(mockFmpGet).toHaveBeenCalledWith('economic-calendar', {
+            from: '2026-04-26',
+            to: '2026-07-24',
+        });
+        expect(mockFmpGet).toHaveBeenCalledWith('economic-calendar', {
+            from: '2026-07-25',
+            to: '2026-10-22',
+        });
+        expect(mockFmpGet).toHaveBeenCalledWith('economic-calendar', {
+            from: '2026-10-23',
+            to: '2026-11-22',
+        });
+        expect(events.map(e => e.event)).toEqual(['Old', 'Mid', 'New']);
+    });
+
+    it('getCalendarForCountry: 한 조각이라도 배열이 아니면 던진다 — 90일이 빠진 결과를 성공으로 넘기지 않는다', async () => {
+        // FMP는 한도·오류도 200 객체로 준다. 빈 조각으로 넘기면 백필이 끝난 것으로 기록된다.
+        mockFmpGet.mockImplementation(async (_path, params) => {
+            const { from } = params as { from: string; to: string };
+            return from === '2026-07-25' ? { error: 'limit' } : [];
+        });
+        await expect(
+            new FmpEconomyProvider().getCalendarForCountry(
+                '2026-04-26',
+                '2026-11-22',
+                'KR'
+            )
+        ).rejects.toThrow('non-array');
+    });
+
     it('FMP throw는 그대로 전파(상위 캐시가 graceful 처리)', async () => {
         mockFmpGet.mockRejectedValueOnce(new Error('FMP boom'));
         await expect(new FmpEconomyProvider().getTreasury()).rejects.toThrow(
             'FMP boom'
         );
+    });
+});
+
+describe('splitCalendarRange', () => {
+    it('90일 이하는 한 조각 그대로', () => {
+        expect(splitCalendarRange('2026-10-23', '2027-01-20')).toEqual([
+            { from: '2026-10-23', to: '2027-01-20' },
+        ]);
+    });
+
+    it('91일이면 90일 + 1일 두 조각, 경계 날짜가 겹치지 않는다', () => {
+        expect(splitCalendarRange('2026-10-23', '2027-01-21')).toEqual([
+            { from: '2026-10-23', to: '2027-01-20' },
+            { from: '2027-01-21', to: '2027-01-21' },
+        ]);
+    });
+
+    it('하루짜리와 거꾸로 된 범위는 그대로 한 조각', () => {
+        expect(splitCalendarRange('2026-10-23', '2026-10-23')).toEqual([
+            { from: '2026-10-23', to: '2026-10-23' },
+        ]);
+        expect(splitCalendarRange('2026-10-24', '2026-10-23')).toEqual([
+            { from: '2026-10-24', to: '2026-10-23' },
+        ]);
     });
 });

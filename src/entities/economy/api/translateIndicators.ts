@@ -18,7 +18,6 @@ import {
     markIndicatorTranslationPending,
 } from './indicatorTranslationFlag';
 import {
-    addEtDays,
     etDateOf,
     futureWindowEnd,
     pastWindowStart,
@@ -33,6 +32,7 @@ import {
     normalizeIndicatorName,
 } from '../lib/indicatorNameKo';
 import { INDICATOR_TRANSLATION_CACHE_TAG } from '../lib/indicatorTranslationConstants';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 
 export type TranslateIndicatorResult =
     | 'dictionary'
@@ -103,7 +103,7 @@ async function listCalendarIndicatorBases(
     pastPaddingDays = 0
 ): Promise<ReadonlySet<string>> {
     const events = await new DrizzleEconomicCalendarRepository(db).listInRange(
-        addEtDays(pastWindowStart(anchorEt), -pastPaddingDays),
+        addUtcIsoDays(pastWindowStart(anchorEt), -pastPaddingDays),
         futureWindowEnd(anchorEt),
         country
     );

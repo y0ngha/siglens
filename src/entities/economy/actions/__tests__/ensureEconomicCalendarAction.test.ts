@@ -34,7 +34,8 @@ import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { DrizzleEconomicCalendarRepository } from '@/entities/economy/api/economicCalendarRepository';
 import { ensureEconomicCalendarAction } from '@/entities/economy/actions/ensureEconomicCalendarAction';
 import { CALENDAR_INGESTION_WINDOW_DAYS } from '@/entities/economy/lib/economyCalendarConstants';
-import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 
 const EVENT: EconomicCalendarEvent = {
     date: '2026-06-13 08:30:00',
@@ -103,8 +104,8 @@ describe('ensureEconomicCalendarAction', () => {
         // B3: assert FMP was called with the computed window
         const day = etDateOf(new Date('2026-06-20T12:00:00Z'));
         expect(getCalendarForCountry).toHaveBeenCalledWith(
-            addEtDays(day, -CALENDAR_INGESTION_WINDOW_DAYS),
-            addEtDays(day, CALENDAR_INGESTION_WINDOW_DAYS),
+            addUtcIsoDays(day, -CALENDAR_INGESTION_WINDOW_DAYS),
+            addUtcIsoDays(day, CALENDAR_INGESTION_WINDOW_DAYS),
             'US'
         );
 

@@ -1,6 +1,7 @@
 import 'server-only';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import {
+    CALENDAR_BACKFILL_FLAG_TTL_SECONDS,
     CALENDAR_REFRESH_FLAG_KEY,
     CALENDAR_REFRESH_FLAG_TTL_SECONDS,
     type CalendarCountry,
@@ -21,3 +22,15 @@ export const isCalendarRecentlyFetched = ingestionFlag.isSet;
 
 /** "최근 fetch함" 마킹 — Redis 실패 시 noop. */
 export const markCalendarFetched = ingestionFlag.mark;
+
+const backfillFlag = createRedisFlag<CalendarCountry>(
+    country => `${CALENDAR_REFRESH_FLAG_KEY}:backfill:${country.toLowerCase()}`,
+    CALENDAR_BACKFILL_FLAG_TTL_SECONDS,
+    '[calendarRefreshFlag]'
+);
+
+/** 오래된 과거 구간을 하루 안에 다시 읽었는지 — Redis 실패 시 false(매번 다시 읽음). */
+export const isCalendarBackfillFresh = backfillFlag.isSet;
+
+/** 오래된 과거 구간을 읽었다고 마킹 — 읽기에 성공한 뒤에만 부른다(실패하면 다음 수집이 다시 시도). */
+export const markCalendarBackfilled = backfillFlag.mark;

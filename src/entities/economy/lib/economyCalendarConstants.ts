@@ -32,12 +32,21 @@ export const CALENDAR_INGESTION_WINDOW_DAYS = 30;
  * **한국은 다르다.** 지표 카드가 캘린더 발표 이력(`actual`)에서 파생되므로
  * (`getKrIndicatorCards`), 30일만 받으면 월간 지표가 각 1포인트뿐이라
  * `changeFromPrevious`가 영원히 `null`이고 분기 지표(GDP)는 아예 안 뜬다.
- * FMP 플랜 상한(과거 ~180일, 365일은 402)까지 당겨 첫 배포부터 이력이 있게 한다.
+ * 180일을 받는다. FMP는 한 번에 `to`로 끝나는 90일만 주므로 제공자가 나눠 읽고
+ * (`splitCalendarRange`), 앞쪽은 하루 한 번만 다시 읽는다({@link CALENDAR_RECENT_PAST_DAYS}).
  */
 export const CALENDAR_PAST_WINDOW_DAYS: Record<CalendarCountry, number> = {
     US: CALENDAR_INGESTION_WINDOW_DAYS,
     KR: 180,
 };
+
+/**
+ * 매시간 다시 읽는 과거 일수. 발표 직후 붙는 `actual`과 고쳐지는 예상치는 이 안에서만 바뀐다.
+ * {@link CALENDAR_PAST_WINDOW_DAYS}가 이보다 긴 국가(한국)는 그 앞쪽을 하루 한 번만 다시 읽는다
+ * ({@link CALENDAR_BACKFILL_FLAG_TTL_SECONDS}). 한 번에 210일을 매시간 읽으면 FMP 90일 상한 때문에
+ * 세 번 나눠 읽어야 하고, 전 국가 응답(조각당 ~1MB)이 시간마다 세 배가 된다.
+ */
+export const CALENDAR_RECENT_PAST_DAYS = 30;
 
 /**
  * 캘린더를 수집·표시하는 국가 코드.
@@ -46,10 +55,10 @@ export const CALENDAR_PAST_WINDOW_DAYS: Record<CalendarCountry, number> = {
  * `country` 컬럼으로 나눠 쓴다. FMP는 한 번의 호출로 전 국가를 돌려주고 우리가
  * 국가로 거른다.
  *
- * **왕복은 국가별로 따로 난다.** 조회 창이 다르기 때문이다
- * ({@link CALENDAR_PAST_WINDOW_DAYS} — US 30일 / KR 180일). `from`이 다르면 URL이
- * 달라 FMP 호출이 따로 나간다. 창을 통일하면 한 번으로 줄일 수 있지만,
- * 그러려면 미국이 쓰지 않는 180일치를 항상 받아야 해서 지금은 나누는 쪽이 싸다.
+ * **왕복은 국가별로 따로 난다.** 매시간 창({@link CALENDAR_RECENT_PAST_DAYS} ~ 미래
+ * {@link CALENDAR_INGESTION_WINDOW_DAYS}일)은 두 국가가 같지만 `fmpGet`에 데이터 캐시가 없어
+ * 같은 전 국가 응답(~1MB)을 국가마다 한 번씩 받는다. 범위로 캐시해 두 국가가 나눠 쓰면 시간당
+ * 한 번으로 줄일 수 있다(아직 하지 않았다). 한국만 쓰는 앞쪽 과거는 하루 한 번 따로 읽는다.
  */
 export type CalendarCountry = 'US' | 'KR';
 
@@ -117,6 +126,9 @@ const CALENDAR_REFRESH_FLAG_TTL_MINUTES = 60;
  */
 export const CALENDAR_REFRESH_FLAG_TTL_SECONDS =
     CALENDAR_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;
+
+/** 오래된 과거 구간(최근 {@link CALENDAR_RECENT_PAST_DAYS}일 앞쪽)을 다시 읽는 주기 — 이미 발표된 값이라 하루면 충분하다. */
+export const CALENDAR_BACKFILL_FLAG_TTL_SECONDS = SECONDS_PER_DAY;
 
 /**
  * Redis refresh-flag 키의 **접두사**. 실제 키는 `calendarRefreshFlag`가 국가를 붙여

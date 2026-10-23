@@ -12,7 +12,7 @@ import {
 } from '@/shared/config/economyIndicatorsKr';
 
 import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
-import { addEtDays } from '../lib/calendarWindow';
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import {
     CALENDAR_COUNTRY_KR,
     economyCalendarCacheTag,
@@ -72,7 +72,7 @@ const fetchKrIndicatorCards = unstable_cache(
         const repo = new DrizzleEconomicCalendarRepository(db);
         const rows = await repo.listAnnouncedSince(
             CALENDAR_COUNTRY_KR,
-            addEtDays(anchorEt, -KR_INDICATOR_HISTORY_DAYS)
+            addUtcIsoDays(anchorEt, -KR_INDICATOR_HISTORY_DAYS)
         );
 
         // 이벤트명(기간 괄호 제거) → 발표 이력. repo가 dateEt 오름차순으로 주므로
