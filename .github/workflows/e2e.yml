@@ -93,19 +93,46 @@ jobs:
             # 종료 코드에 반영되지 않는다. 회수 스텝이 이 파일로 성공·실패를 판정한다.
             #
             # apt 미러(azure.archive.ubuntu.com)가 패키지 하나를 받다 멈추는 일이 잦다
-            # (2026-10-23 하루에 샤드 5번이 다운로드 도중 5분 제한에 걸림). 멈춘 연결이 기본
-            # 120초를 다 기다리지 않게 연결 제한을 20초로 줄이고 apt가 5번까지 다시 받게 한다.
-            # 그래도 설치가 실패하면 한 번 더 통째로 시도한다.
+            # (2026-10-23 하루에 샤드 5번이 다운로드 도중 5분 제한에 걸림). 세 겹으로 막는다.
+            #   1. 받은 .deb를 캐시해(아래 cache 스텝, Playwright 버전 키) 다음 실행부터는 미러에서
+            #      125MB를 다시 받지 않는다. apt는 캐시에 없는(버전이 바뀐) 패키지만 받는다.
+            #   2. 멈춘 연결은 20초에 끊고 apt가 5번까지 다시 받는다. 기본값 확인:
+            #      `apt-config dump | grep -iE 'Acquire::(Retries|https?::Timeout)'`(noble apt 2.7은
+            #      Retries 3, Timeout 미설정 시 120초). 파일명을 99-zz로 둬 이미지 설정보다 나중에 읽힌다.
+            #      적용된 값은 이 스텝 로그에 찍는다.
+            #   3. 설치 시도마다 240초 제한을 걸고, 실패·시간 초과면 20초 뒤 한 번 더 시도한다.
+            #      최악 240 + 20 + 240 = 500초로 회수 스텝의 대기(600초) 안에 끝난다.
+            # 종료 코드는 임시 파일에 쓴 뒤 mv로 바꿔, 회수 스텝이 빈 파일을 읽는 틈을 없앤다.
+            - name: Read Playwright version
+              id: pwv
+              run: echo "v=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+            - name: Restore apt package cache
+              uses: actions/cache@v4
+              with:
+                  path: ~/apt-archives
+                  key: e2e-apt-${{ runner.os }}-pw${{ steps.pwv.outputs.v }}
+                  restore-keys: e2e-apt-${{ runner.os }}-
+
             - name: Install Playwright browsers (background)
               run: |
-                  printf 'Acquire::Retries "5";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' \
-                      | sudo tee /etc/apt/apt.conf.d/80-ci-retries > /dev/null
+                  mkdir -p "$HOME/apt-archives/partial"
+                  printf 'Acquire::Retries "5";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\nDir::Cache::Archives "%s/apt-archives/";\nAPT::Keep-Downloaded-Packages "true";\nBinary::apt::APT::Keep-Downloaded-Packages "true";\n' "$HOME" \
+                      | sudo tee /etc/apt/apt.conf.d/99-zz-ci-retries > /dev/null
+                  apt-config dump | grep -iE '^(Acquire::(Retries|https?::Timeout)|Dir::Cache::Archives) '
+                  echo "cached .deb files: $(find "$HOME/apt-archives" -maxdepth 1 -name '*.deb' | wc -l)"
                   nohup sh -c '
+                      rc=1
                       for attempt in 1 2; do
+                          [ "$attempt" = 2 ] && sleep 20
                           echo "== playwright install attempt $attempt"
-                          yarn playwright install --with-deps chromium webkit && { echo 0 > "$RUNNER_TEMP/playwright-install.exit"; exit 0; }
+                          timeout 240 yarn playwright install --with-deps chromium webkit
+                          rc=$?
+                          [ "$rc" = 0 ] && break
+                          echo "== attempt $attempt exited with $rc"
                       done
-                      echo 1 > "$RUNNER_TEMP/playwright-install.exit"
+                      echo "$rc" > "$RUNNER_TEMP/playwright-install.exit.tmp"
+                      mv "$RUNNER_TEMP/playwright-install.exit.tmp" "$RUNNER_TEMP/playwright-install.exit"
                   ' > "$RUNNER_TEMP/playwright-install.log" 2>&1 &
 
             # Start the Docker backend with Compose (NOT GitHub `services:`).
@@ -170,7 +197,8 @@ jobs:
                   CI: '1'
 
             # 정상이면 설치가 앞 스텝(백엔드 기동·build)과 겹쳐 끝나 있어 여기서는 거의 기다리지
-            # 않는다. 10분은 apt 재시도와 설치 2회차까지 끝날 시간이다.
+            # 않는다. 600초는 설치 스텝의 최악(500초, 위 주석)보다 길다.
+            # 성공하면 apt가 root로 남긴 캐시 파일을 읽을 수 있게 열어, 잡 끝의 cache 저장이 담게 한다.
             - name: Wait for Playwright browsers
               run: |
                   for i in $(seq 1 300); do
@@ -178,6 +206,10 @@ jobs:
                           code="$(cat "$RUNNER_TEMP/playwright-install.exit")"
                           cat "$RUNNER_TEMP/playwright-install.log"
                           echo "playwright install exited with $code"
+                          if [ "$code" = 0 ]; then
+                              sudo rm -rf "$HOME/apt-archives/partial" "$HOME/apt-archives/lock"
+                              sudo chmod -R a+rX "$HOME/apt-archives"
+                          fi
                           exit "$code"
                       fi
                       sleep 2
