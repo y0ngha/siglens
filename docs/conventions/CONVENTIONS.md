@@ -1160,8 +1160,9 @@ products to `shared/`.
 
 #### I18-6 — Inject core or config numbers as ICU arguments
 
-A number owned by core or config (a re-entry gap, a limit) is passed into the message as an ICU argument from the
-exported constant, never typed into the catalog strings, where it silently drifts.
+A number owned by core or config (a re-entry gap, a limit, a default window, a maximum range) is passed into the
+message as an ICU argument from the exported constant, never typed into the catalog strings, where it silently drifts.
+This covers every string that quotes the number, including tool descriptions and summaries, not only UI labels.
 
 <a id="I18-7"></a>
 

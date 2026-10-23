@@ -32,7 +32,7 @@ export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
 /**
  * `get_economy` ceiling. Until 2026-10 it shared `AGGREGATE_RESULT_MAX_CHARS`
  * with a 10-event, 7-day calendar (~3,670 chars). The default call now carries
- * up to 80 events of the next `DEFAULT_CALENDAR_DAYS` (`getEconomy.ts`): the
+ * up to 80 events of the next `ECONOMY_CALENDAR_DEFAULT_DAYS` (`shared/config/economyCalendar.ts`): the
  * live 70-day calendar block measured ~12,920 chars (2026-10-23, 80 picked of
  * 646 rows, ~160 per event), plus ~2,100 for 9 indicators, the treasury block
  * and a two-paragraph Korean briefing — ~15,000 in all. A heavier-than-real

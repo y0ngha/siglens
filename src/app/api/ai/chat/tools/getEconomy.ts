@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+    type CalendarImpact,
     computeYieldSpread,
     type EconomicCalendarEvent,
     type EconomySnapshot,
@@ -19,6 +20,11 @@ import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingSta
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
 import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 import {
+    ECONOMY_CALENDAR_DEFAULT_DAYS,
+    ECONOMY_CALENDAR_FETCH_PAD_DAYS,
+    ECONOMY_CALENDAR_MAX_RANGE_DAYS,
+} from '@/shared/config/economyCalendar';
+import {
     MS_PER_HOUR,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -37,32 +43,6 @@ import { logToolDegrade } from './logToolDegrade';
  */
 const CALENDAR_MAX_EVENTS = 80;
 
-/**
- * Default calendar window, in days from today (ET). The longest gap between
- * FOMC meetings is 8 weeks (56 days, 2023-07-26 → 09-20), so the next rate
- * decision is always inside it; a ranged call (`from`/`to`) reaches further.
- * The developer docs state this window and `MAX_CALENDAR_RANGE_DAYS`
- * (`views.developers.tools.summaries.get_economy` in `messages/*.json`).
- */
-export const DEFAULT_CALENDAR_DAYS = 70;
-
-/**
- * FMP filters `from`/`to` by UTC date, but a user's day spans two UTC dates
- * (a 03:00 KST FOMC decision is 18:00 UTC the day before). The read is widened
- * by this many days on each side so the asked dates are covered in any zone.
- */
-const FETCH_PAD_DAYS = 1;
-
-/**
- * Longest `from`→`to` span a ranged call may ask for. FMP's economic calendar
- * silently keeps only the 90 days ending at `to`: a longer range comes back
- * 200 with its earlier dates missing (measured 2026-10-23 — `to=2027-03-31`
- * started at 2026-12-31 for every `from`), which would read as "no events" for
- * the dropped stretch. 88 days plus `FETCH_PAD_DAYS` on each side stays within
- * those 90.
- */
-export const MAX_CALENDAR_RANGE_DAYS = 90 - 2 * FETCH_PAD_DAYS;
-
 /** How far back and ahead of today a ranged call may reach: FMP lists major events only ~5 months out, and each distinct range is its own FMP read. */
 const RANGE_MAX_PAST_DAYS = 730;
 const RANGE_MAX_FUTURE_DAYS = 365;
@@ -77,6 +57,17 @@ interface CalendarRange {
 interface ArgIssue {
     path: 'from' | 'to';
     message: string;
+}
+
+type CalendarEventView = EconomicCalendarEvent & { hoursUntil: number };
+
+/** The `calendar` block of a `get_economy` result. */
+interface CalendarBlock {
+    coverage: CalendarRange;
+    events: CalendarEventView[];
+    omitted: Record<CalendarImpact, number>;
+    /** Set when the block came from the snapshot instead of the range read. */
+    fallback?: string;
 }
 
 /** A real calendar date in `YYYY-MM-DD` (`2026-02-30` fails the round trip). */
@@ -98,25 +89,27 @@ function parseRangeArgs(
     const { from, to } = args;
     if (from === undefined && to === undefined)
         return { ok: true, range: null };
-    const issues: ArgIssue[] = [];
-    if (!isDateArg(from))
-        issues.push({ path: 'from', message: 'expected YYYY-MM-DD' });
-    if (!isDateArg(to))
-        issues.push({ path: 'to', message: 'expected YYYY-MM-DD' });
-    if (issues.length > 0) return { ok: false, issues };
-    const range = { from: from as string, to: to as string };
+    if (!isDateArg(from) || !isDateArg(to)) {
+        const issues: ArgIssue[] = [];
+        if (!isDateArg(from))
+            issues.push({ path: 'from', message: 'expected YYYY-MM-DD' });
+        if (!isDateArg(to))
+            issues.push({ path: 'to', message: 'expected YYYY-MM-DD' });
+        return { ok: false, issues };
+    }
+    const range: CalendarRange = { from, to };
     if (range.from > range.to)
         return {
             ok: false,
             issues: [{ path: 'to', message: 'must not be before from' }],
         };
-    if (addEtDays(range.from, MAX_CALENDAR_RANGE_DAYS) < range.to)
+    if (addEtDays(range.from, ECONOMY_CALENDAR_MAX_RANGE_DAYS) < range.to)
         return {
             ok: false,
             issues: [
                 {
                     path: 'to',
-                    message: `at most ${MAX_CALENDAR_RANGE_DAYS} days after from`,
+                    message: `at most ${ECONOMY_CALENDAR_MAX_RANGE_DAYS} days after from`,
                 },
             ],
         };
@@ -156,7 +149,7 @@ function calendarBlock(
     coverage: CalendarRange,
     now: number,
     notBefore: Date
-) {
+): CalendarBlock {
     const { events, omitted } = selectCalendarEvents(rows, {
         max: CALENDAR_MAX_EVENTS,
         notBefore,
@@ -178,15 +171,19 @@ function calendarBlock(
 }
 
 /**
- * Reads `range` widened by `FETCH_PAD_DAYS`; `null` (logged) on failure.
+ * Reads `range` widened by `ECONOMY_CALENDAR_FETCH_PAD_DAYS`; `null` (logged) on failure.
  * `notBefore` defaults to the start of the widened read — it also drops a row
  * whose date cannot be parsed.
  */
-function readCalendar(range: CalendarRange, now: number, notBefore?: Date) {
-    const fetchFrom = addEtDays(range.from, -FETCH_PAD_DAYS);
+function readCalendar(
+    range: CalendarRange,
+    now: number,
+    notBefore?: Date
+): Promise<CalendarBlock | null> {
+    const fetchFrom = addEtDays(range.from, -ECONOMY_CALENDAR_FETCH_PAD_DAYS);
     return getEconomicCalendarRange(
         fetchFrom,
-        addEtDays(range.to, FETCH_PAD_DAYS)
+        addEtDays(range.to, ECONOMY_CALENDAR_FETCH_PAD_DAYS)
     )
         .then(rows =>
             calendarBlock(
@@ -288,23 +285,29 @@ function treasuryView(picked: PickedTreasury | null) {
 
 const CALENDAR_SOURCE = 'economic calendar: 3h cache';
 
+/** The economy snapshot sits behind two stacked 24h caches, so it can be this many days old. */
+const SNAPSHOT_MAX_STALE_DAYS = 2;
+
 /**
  * Default-call fallback when the calendar read fails: the snapshot's own
  * calendar, run through the same selection. Its window is
- * `SNAPSHOT_CALENDAR_WINDOW_DAYS` from when it was built, and the snapshot can
- * be ~48h old, so `coverage` claims two days less than that window.
+ * `SNAPSHOT_CALENDAR_WINDOW_DAYS` from when it was built, so `coverage` claims
+ * `SNAPSHOT_MAX_STALE_DAYS` less than that window.
  */
 function snapshotCalendarBlock(
     snapshot: EconomySnapshot,
     today: string,
     now: number
-) {
+): CalendarBlock {
     return {
         ...calendarBlock(
             snapshot.calendar,
             {
                 from: today,
-                to: addEtDays(today, SNAPSHOT_CALENDAR_WINDOW_DAYS - 2),
+                to: addEtDays(
+                    today,
+                    SNAPSHOT_CALENDAR_WINDOW_DAYS - SNAPSHOT_MAX_STALE_DAYS
+                ),
             },
             now,
             new Date(now)
@@ -315,7 +318,7 @@ function snapshotCalendarBlock(
 
 /**
  * US macro snapshot: indicators, treasury yields, the economic calendar of the
- * next {@link DEFAULT_CALENDAR_DAYS} days (from now on, picked by core's
+ * next {@link ECONOMY_CALENDAR_DEFAULT_DAYS} days (from now on, picked by core's
  * `selectCalendarEvents`), and the cached macro briefing headline when
  * available. With `from`/`to` it returns only that period's calendar, past
  * releases included — a narrower result for a follow-up lookup in the same turn.
@@ -351,7 +354,7 @@ export const getEconomyTool: ToolExecutor = async args => {
 
     const defaultRange = {
         from: today,
-        to: addEtDays(today, DEFAULT_CALENDAR_DAYS),
+        to: addEtDays(today, ECONOMY_CALENDAR_DEFAULT_DAYS),
     };
     // `getFreshTreasuryRates` never rejects (degrades to `null`).
     const [snapshot, freshTreasury, calendar] = await Promise.all([

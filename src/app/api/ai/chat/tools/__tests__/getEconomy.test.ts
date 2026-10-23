@@ -24,10 +24,8 @@ vi.mock('@/entities/economy/api/economicCalendarRangeCache', () => ({
     getEconomicCalendarRange: calendarRange,
 }));
 
-import {
-    DEFAULT_CALENDAR_DAYS,
-    getEconomyTool,
-} from '@/app/api/ai/chat/tools/getEconomy';
+import { getEconomyTool } from '@/app/api/ai/chat/tools/getEconomy';
+import { ECONOMY_CALENDAR_DEFAULT_DAYS } from '@/shared/config/economyCalendar';
 import { ECONOMY_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const ctx = {
@@ -157,7 +155,7 @@ describe('getEconomyTool', () => {
         };
         // 요청 창을 앞뒤 하루씩 넓혀 읽는다 — FMP는 UTC 날짜로 거른다.
         expect(calendarRange).toHaveBeenCalledWith('2026-09-12', '2026-11-23');
-        expect(DEFAULT_CALENDAR_DAYS).toBe(70);
+        expect(ECONOMY_CALENDAR_DEFAULT_DAYS).toBe(70);
         expect(r.available).toBe(true);
         expect(r.calendar.coverage).toEqual({
             from: '2026-09-13',
