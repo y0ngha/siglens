@@ -1,6 +1,6 @@
-// Next 16.3.8 IncrementalCache의 판정 규칙에 핸들러가 맞춰야 하는 지점을 한곳에 모은다.
+// Next 16.4.2 IncrementalCache의 판정 규칙에 핸들러가 맞춰야 하는 지점을 한곳에 모은다.
 //
-// 단수 `cacheHandler`의 get()은 `{ lastModified, value }`만 돌려줄 수 있고, "stale인가"는
+// 단수 `cacheHandler`의 get()은 `{ lastModified, value }`(16.4부터 `cacheControl`도)만 돌려줄 수 있고, "stale인가"는
 // Next의 IncrementalCache.get이 lastModified와 라우트의 cacheControl로 **스스로** 계산한다
 // (핸들러에 isStale을 직접 돌려줄 통로가 없다). 그래서 태그 무효화를 SWR(stale 서빙 +
 // 백그라운드 재생성)로 표현하려면 "Next가 stale로 계산할 lastModified"를 돌려줘야 하고,
@@ -24,17 +24,23 @@ const STALE_MARGIN_MS = 1_000;
 // `/route-cache/<kind>/<sha256(sourceRoute)>/$<normalizePagePath(pathname)>`
 // (next/dist/server/lib/route-cache-key.js:61-75)를 넘기고, 공유 맵도 **같은 키**로 쓴다:
 //   - set: `this.cacheControls.set(storageKey, ctx.cacheControl)` 직후
-//     `cacheHandler.set(storageKey, …)`(incremental-cache/index.js:557-559)
-//   - get: `cacheHandler.get(storageKey, …)`(index.js:366) 다음
+//     `cacheHandler.set(storageKey, …)`(incremental-cache/index.js:547-549)
+//   - get: `cacheHandler.get(storageKey, …)`(index.js:361) 다음
 //     `this.cacheControls.get(cacheKey, ctx.route)`가 정적 Map을
 //     `getRouteCacheKey(cacheKey, owner)` = 같은 storageKey로 조회한다
-//     (index.js:439 → shared-cache-controls.external.js:39).
+//     (index.js:426 → shared-cache-controls.external.js:39).
+//     16.4부터는 핸들러 get()이 `cacheControl`을 함께 돌려주면 그 값이 맵 값을 이기고 맵도 그 값으로
+//     덮인다(index.js:427-433) — "엔트리를 다른 인스턴스가 다른 수명으로 다시 썼을 수 있다".
+//     그래서 핸들러는 엔트리에 영속한 cacheControl을 함께 돌려주고(`entryCacheControl`),
+//     `staleLastModified`도 같은 우선순위로 엔트리 값을 먼저 본다. 아래 `seedCacheControl`은
+//     set() 때 `ctx.cacheControl`이 없어 영속 값이 없는 엔트리에서만 의미가 있다(S3 데이터 스코프에
+//     Next 버전이 들어가므로 16.3.x가 쓴 엔트리를 16.4가 읽는 일은 없다).
 // 그래서 핸들러는 받은 키를 **그대로** 맵 키로 쓴다. 16.3.6까지 있던 `toRoute` 정규화는
 // 이제 Next 쪽에서도 쓰지 않는다 — 정규화하면 `/index` 계열 키가 Next가 읽는 키와 어긋난다.
 //
 // `SharedCacheControls#get(route, owner)`는 owner(소스 라우트)가 없으면 InvariantError를
 // 던진다(route-cache-key.js:62-64). 핸들러는 owner를 받지 못하므로(IncrementalCache가
-// handlerContext에서 `route`를 떼어 낸다 — index.js:362-364) 인스턴스 메서드가 아니라
+// handlerContext에서 `route`를 떼어 낸다 — index.js:357-359) 인스턴스 메서드가 아니라
 // 정적 Map을 직접 본다. 매니페스트 폴백은 Next 쪽 인스턴스가 한다.
 
 let sharedCacheControls;
@@ -89,17 +95,28 @@ function isCacheControl(value) {
 }
 
 /**
+ * 엔트리에 영속한 라우트 cacheControl. 형태가 맞지 않으면 undefined.
+ *
+ * 페이지 계열 get()의 반환값에 실어 Next 16.4의 "엔트리 수명 우선" 규칙(index.js:427-433)을
+ * 탄다 — 다른 인스턴스가 짧아진 revalidate(예: `buildDegradedRevalidate`)로 다시 쓴 엔트리를
+ * 이 인스턴스가 메모리에 남은 옛 수명으로 판정하지 않게 한다.
+ */
+export function entryCacheControl(entry) {
+    return isCacheControl(entry?.cacheControl) ? entry.cacheControl : undefined;
+}
+
+/**
  * 재시작 후 Next 메모리에서 사라진 라우트 cacheControl을 S3에 영속한 값으로 되살린다.
  *
  * Next는 라우트별 revalidate/expire를 **메모리에만** 둔다 — set 때
- * `this.cacheControls.set(storageKey, ctx.cacheControl)`(index.js:557).
+ * `this.cacheControls.set(storageKey, ctx.cacheControl)`(index.js:547).
  * 이 키가 핸들러가 받는 `cacheKey`다(파일 상단 "라우트 cacheControl 맵의 키").
  * 프리렌더 매니페스트에 없는 on-demand ISR 라우트(`/[symbol]` 계열)는 재시작 직후 이 값이
  * 없어서, IncrementalCache.get이 cacheControl `undefined` + 기본 revalidate 1초로 판정한다
- * (index.js:153-159): 첫 히트가 STALE이 되고 응답에 Cache-Control이 빠진다(app-page
+ * (index.js:152-158): 첫 히트가 STALE이 되고 응답에 Cache-Control이 빠진다(app-page
  * 템플릿이 `cacheEntry.cacheControl`로 헤더를 만든다 — build/templates/app-page-runtime.js
- * :1091-1110). 핸들러 get()은 IncrementalCache가 cacheControls를 읽기 **전에** 불리므로
- * (index.js:366 → 439) 여기서 채우면 같은 요청부터 올바른 판정·헤더가 나간다.
+ * :1281-1296). 핸들러 get()은 IncrementalCache가 cacheControls를 읽기 **전에** 불리므로
+ * (index.js:361 → 426) 여기서 채우면 같은 요청부터 올바른 판정·헤더가 나간다.
  *
  * 이미 값이 있으면 건드리지 않는다 — 이 프로세스가 더 최근에 쓴 값이 우선이다.
  * 같은 빌드(S3 prefix가 GIT_SHA)에서 같은 라우트가 쓴 값이라 매니페스트 값을 덮어도
@@ -116,23 +133,25 @@ export function seedCacheControl(cacheKey, cacheControl) {
  * 태그 stale(SWR) 무효화된 엔트리를 Next가 **stale이지만 아직 만료 전**으로 판정하게 할
  * lastModified. 표현할 수 없으면 null(호출부가 miss로 돌려 블로킹 재생성 — 예전 동작).
  *
- * FETCH (incremental-cache/index.js:413-415):
+ * FETCH (incremental-cache/index.js:404-406):
  *     revalidate = ctx.revalidate || cacheData.value.revalidate
  *     isStale = (now - lastModified) / 1000 > revalidate
  *   unstable_cache는 revalidate:false를 1년으로 저장하고(unstable-cache.js:28), fetch는
- *   false를 INFINITE_CACHE로 정규화하므로(patch-fetch.js:56-59) 실사용 값은 항상 유한 숫자다.
- *   isStale이면 요청 렌더는 stale 값을 쓰고 백그라운드로 갱신하며(patch-fetch.js:804-818,
- *   unstable-cache.js:183-214), ISR 재생성(isStaticGeneration) 중에는 포그라운드로
- *   새로 받아 재생성된 페이지에 반영한다.
+ *   false를 INFINITE_CACHE로 정규화하므로(patch-fetch.js:84-87) 실사용 값은 항상 유한 숫자다.
+ *   isStale이면 요청 렌더는 stale 값을 쓰고 백그라운드로 갱신하며(patch-fetch.js:813-827,
+ *   unstable-cache.js:175-212), 결과를 서버 캐시에 남길 소비자(ISR 재생성 같은 prerender,
+ *   바깥 캐시 스코프 — `willConsumerServerCache`, 16.4에서 `isStaticGeneration` 대신 쓴다)일 때는
+ *   포그라운드로 새로 받아 재생성된 페이지에 반영한다(patch-fetch.js:810, unstable-cache.js:199).
  *
- * APP_PAGE / APP_ROUTE / PAGES (index.js:439-472):
+ * APP_PAGE / APP_ROUTE / PAGES (index.js:426-470):
  *     revalidateAfter = cacheControl.revalidate * 1000 + lastModified   (없으면 1초)
  *     expireAfter     = cacheControl.expire * 1000 + lastModified
  *     expireAfter < now → isStale = -1 (블로킹), revalidateAfter < now → isStale = true (SWR)
  *   ResponseCache는 isStale === true면 이전 엔트리로 먼저 응답하고 재생성한다
- *   (response-cache/index.js:210-216). 그래서 `now - revalidate - 여유`를 돌려주되,
+ *   (response-cache/index.js:217-223). 그래서 `now - revalidate - 여유`를 돌려주되,
  *   그 값이 expire 경계를 넘으면 null이다. revalidate:false면 시간으로 stale을 표현할 수 없다.
- *   cacheControl은 Next 공유 맵(시드 후)을 먼저 보고, 없으면 엔트리에 영속한 값을 쓴다.
+ *   cacheControl은 Next 16.4와 같은 순서로 엔트리에 영속한 값을 먼저 보고, 없으면 Next 공유
+ *   맵(시드 후)을 쓴다 — 핸들러가 get()에 실어 보낸 값이 그대로 Next의 판정 값이 되기 때문이다.
  */
 export function staleLastModified({ cacheKey, kind, entry, ctx, now }) {
     if (kind === 'FETCH') {
@@ -148,7 +167,7 @@ export function staleLastModified({ cacheKey, kind, entry, ctx, now }) {
     }
 
     const cacheControl =
-        getSharedCacheControls()?.get(cacheKey) ?? entry.cacheControl;
+        entryCacheControl(entry) ?? getSharedCacheControls()?.get(cacheKey);
     if (!isCacheControl(cacheControl)) return null;
     const { revalidate, expire } = cacheControl;
     if (typeof revalidate !== 'number') return null;
