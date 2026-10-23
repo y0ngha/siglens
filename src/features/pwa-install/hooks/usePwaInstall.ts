@@ -86,6 +86,10 @@ export function usePwaInstall({
     reloadOnServiceWorkerUpdate = true,
 }: UsePwaInstallOptions = {}): UsePwaInstallReturn {
     const [showBanner, setShowBanner] = useState(false);
+    /** 첫 입력 방아쇠가 이미 발화했는가 — 배너를 닫은 뒤 다른 방아쇠가 다시 띄우지 않게. */
+    const [triggered, setTriggered] = useState(false);
+    /** `click` 없는 `pointerup`이 왔다 — 지연 후 띄울 차례. */
+    const [revealPending, setRevealPending] = useState(false);
     const [showIosModal, setShowIosModal] = useState(false);
     // Lazy initializer: SSR prerender returns EMPTY_ENV (window undefined); client mount re-runs with real window
     const [env] = useState<PwaEnvironment>(resolveEnv);
@@ -120,25 +124,42 @@ export function usePwaInstall({
 
     useRegisterServiceWorker(reloadOnServiceWorkerUpdate);
 
-    useEffect(() => {
-        const canShow =
-            env.isMobile && !env.isStandalone && !env.isInAppBrowser;
-        if (!canShow || readBannerDismissed()) return;
+    const canShow = env.isMobile && !env.isStandalone && !env.isInAppBrowser;
 
+    // 설치 프롬프트는 방아쇠와 무관하게 받아 둔다 — 첫 탭 뒤에 와도 설치 버튼이 써야 한다.
+    useEffect(() => {
+        if (!canShow || readBannerDismissed()) return;
         const handlePrompt = (e: Event) => {
             e.preventDefault();
             // beforeinstallprompt 이벤트는 항상 BeforeInstallPromptEvent임이 보장됨
             deferredPromptRef.current = e as BeforeInstallPromptEvent;
         };
+        window.addEventListener('beforeinstallprompt', handlePrompt);
+        return () =>
+            window.removeEventListener('beforeinstallprompt', handlePrompt);
+    }, [canShow]);
 
-        let pointerUpTimer: ReturnType<typeof setTimeout> | undefined;
+    // 방아쇠는 합쳐서 한 번만 발화한다(`triggered`). 이벤트별 `once`만 걸면 한쪽이 배너를
+    // 띄우고 사용자가 닫은 뒤, 남아 있던 다른 쪽이 배너를 다시 띄운다. `triggered`가 서면
+    // 이 effect가 다시 돌며 리스너를 모두 걷는다.
+    useEffect(() => {
+        if (triggered || !canShow || readBannerDismissed()) return;
 
         // 캡처 단계로 듣는다 — 버블 단계면 `stopPropagation()`하는 컨트롤(팝오버 트리거·메뉴
         // 항목)을 누른 탭이 `window`까지 오지 않아 방아쇠를 놓친다. 캡처 단계에서 상태를 바꿔도
         // 그 탭의 `click`은 이미 정해진 대상에 그대로 전달된다(대상은 디스패치 시작 때 고정).
         const listenerOptions = { passive: true, capture: true } as const;
+        const handleTrigger = () => {
+            setTriggered(true);
+            setShowBanner(true);
+        };
+        const handlePointerUp = () => setRevealPending(true);
 
-        const detachTriggers = () => {
+        for (const type of BANNER_TRIGGER_EVENTS) {
+            window.addEventListener(type, handleTrigger, listenerOptions);
+        }
+        window.addEventListener('pointerup', handlePointerUp, listenerOptions);
+        return () => {
             for (const type of BANNER_TRIGGER_EVENTS) {
                 window.removeEventListener(
                     type,
@@ -151,34 +172,19 @@ export function usePwaInstall({
                 handlePointerUp,
                 listenerOptions
             );
-            clearTimeout(pointerUpTimer);
         };
+    }, [canShow, triggered]);
 
-        // 방아쇠는 합쳐서 한 번만 발화한다. 이벤트별 `once`만 걸면 한쪽이 배너를
-        // 띄우고 사용자가 닫은 뒤, 남아 있던 다른 쪽이 배너를 다시 띄운다.
-        function handleTrigger() {
-            detachTriggers();
+    // `click` 없이 `pointerup`만 온 탭(iOS의 클릭 불가 요소): 잠시 뒤에 띄운다. 그 사이 `click`이
+    // 와서 `triggered`가 서면 타이머는 정리된다.
+    useEffect(() => {
+        if (!revealPending || triggered) return;
+        const timer = setTimeout(() => {
+            setTriggered(true);
             setShowBanner(true);
-        }
-
-        function handlePointerUp() {
-            pointerUpTimer ??= setTimeout(
-                handleTrigger,
-                POINTERUP_REVEAL_DELAY_MS
-            );
-        }
-
-        window.addEventListener('beforeinstallprompt', handlePrompt);
-        for (const type of BANNER_TRIGGER_EVENTS) {
-            window.addEventListener(type, handleTrigger, listenerOptions);
-        }
-        window.addEventListener('pointerup', handlePointerUp, listenerOptions);
-
-        return () => {
-            window.removeEventListener('beforeinstallprompt', handlePrompt);
-            detachTriggers();
-        };
-    }, [env.isMobile, env.isStandalone, env.isInAppBrowser]);
+        }, POINTERUP_REVEAL_DELAY_MS);
+        return () => clearTimeout(timer);
+    }, [revealPending, triggered]);
 
     return {
         showBanner,
