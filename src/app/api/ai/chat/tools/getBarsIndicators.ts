@@ -44,6 +44,7 @@ import {
     type TrendState,
 } from '@y0ngha/siglens-core';
 import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
+import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
 import {
     roundIndicators,
@@ -87,8 +88,11 @@ import { BARS_RESULT_MAX_CHARS } from './truncate';
  * Measured 2026-10-22 after `derived` gained `252bars`, `calendarChange`,
  * the range dates and `maCross50_200`: the default 30-bar 1Day request on a
  * production-sized series (500 bars, real indicators, fear & greed, three
- * signals, no MA cross) serializes to ~5,280 chars, untrimmed — pinned by the
- * "기본 요청(30봉, 1Day)" test. Each listed cross adds ~35 chars.
+ * signals, no MA cross) serializes to ~5,280 chars, untrimmed. During the
+ * regular session `lastBarInProgress` + `lastCompletedClose` bring it to
+ * ~5,365 (measured 2026-10-23) — the "기본 요청(30봉, 1Day)" test pins that
+ * larger live-session shape. Re-measure (serialize that test's result) when a
+ * top-level or `derived` field is added. Each listed cross adds ~35 chars.
  */
 const DEFAULT_BARS = 30;
 /**
@@ -1006,6 +1010,36 @@ async function fearGreedView(
     };
 }
 
+/**
+ * 정규장 중에는 캐시된 봉 끝에 60초 시세 스냅샷으로 만든 오늘 봉이 붙는다. 그 봉의 종가는
+ * 현재가일 뿐 종가가 아닌데, 출력에 표시가 없으면 모델이 `asOf` 날짜와 함께 "그날 종가"로 읽는다
+ * (2026-10-23 운영, 미국 장중 "VIX 가장 최근 종가" 질문에 진행 중 봉 18.35를 "10월 22일 세션
+ * 마감 기준 종가"라고 답함 — 실제 최근 종가는 10/21 16.68). 진행 중이라는 사실과, 일봉이면 직전
+ * 완료 세션의 종가·날짜를 함께 실어 "가장 최근 종가" 질문이 그 값을 쓰게 한다. 모델이 두 필드를
+ * 읽는 규칙은 core(2.25.2+)의 `get_bars_indicators` 도구 설명에 있다. 동작은 테스트
+ * "진행 중인 마지막 봉" 블록이 고정한다.
+ */
+function lastBarProgress(
+    bars: readonly Bar[],
+    timeframe: Timeframe,
+    session: MarketSessionSpec
+): {
+    lastBarInProgress: boolean;
+    lastCompletedClose?: { date: string; close: number };
+} {
+    const inProgress = lastBarIsForming(bars, session, new Date());
+    const previous = bars.at(-2);
+    if (!inProgress || timeframe !== '1Day' || previous === undefined)
+        return { lastBarInProgress: inProgress };
+    return {
+        lastBarInProgress: true,
+        lastCompletedClose: {
+            date: isoTimestamp(previous.time, timeframe),
+            close: previous.close,
+        },
+    };
+}
+
 export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     const symbol = String(args.symbol).toUpperCase();
     const timeframe = args.timeframe as Timeframe;
@@ -1091,10 +1125,12 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     const candlePatterns = latestCandlePatterns(bars, timeframe);
     const fearGreed = await fearGreedView(barsData, timeframe, ctx.locale);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
+    const lastBarState = lastBarProgress(bars, timeframe, session);
 
     return fitBarsToBudget(
         (barsForOutput, barsTrimmed) => ({
             asOf,
+            ...lastBarState,
             source: 'SIGLENS bars + indicators',
             symbol,
             ...resolvedInstrumentFields(asset),

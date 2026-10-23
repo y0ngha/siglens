@@ -20,6 +20,7 @@ const {
     resolveEarnings,
     lookback,
     caveatSpy,
+    forming,
 } = vi.hoisted(() => ({
     profile: vi.fn(),
     assetInfo: vi.fn(),
@@ -35,6 +36,7 @@ const {
     resolveEarnings: vi.fn(),
     lookback: vi.fn(),
     caveatSpy: vi.fn(),
+    forming: vi.fn(),
 }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
@@ -95,6 +97,9 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({ sessionSpecFor: spec }));
+vi.mock('@/entities/bars/lib/quantizeBars', () => ({
+    lastBarIsForming: forming,
+}));
 vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
 }));
@@ -173,6 +178,82 @@ describe('getBarsIndicatorsTool', () => {
         findEvents.mockResolvedValue([]);
         resolveEarnings.mockResolvedValue(undefined);
         lookback.mockReturnValue({ lookbackDays: 60 });
+        forming.mockReturnValue(false);
+    });
+
+    describe('진행 중인 마지막 봉', () => {
+        const day = Math.floor(Date.UTC(2026, 9, 22) / 1000);
+        const twoBars = [bar(day - 86_400, 16.68), bar(day, 18.35)];
+        const load = async (
+            timeframe: string,
+            bars: ReturnType<typeof bar>[] = twoBars,
+            count?: number
+        ) => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'VIX', timeframe, bars: count },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+        };
+
+        it('정규장 중 일봉이면 진행 중 표시와 직전 완료 세션의 종가·날짜를 싣는다', async () => {
+            forming.mockReturnValue(true);
+            const r = await load('1Day');
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r.lastCompletedClose).toEqual({
+                date: '2026-10-21',
+                close: 16.68,
+            });
+        });
+
+        it('장 마감 뒤에는 진행 중이 아니고 직전 종가 필드를 싣지 않는다', async () => {
+            const r = await load('1Day');
+            expect(r.lastBarInProgress).toBe(false);
+            expect(r).not.toHaveProperty('lastCompletedClose');
+        });
+
+        it('캐시된 전체 봉과 그 종목의 세션 규격으로 판정한다', async () => {
+            const SESSION = { id: 'session-sentinel' };
+            spec.mockReturnValueOnce(SESSION);
+            await load('1Day');
+            expect(forming).toHaveBeenCalledWith(
+                twoBars,
+                SESSION,
+                expect.any(Date)
+            );
+        });
+
+        it('진행 중인 봉 하나뿐이면 직전 종가 없이 진행 중 표시만 싣는다', async () => {
+            forming.mockReturnValue(true);
+            const r = await load('1Day', [bar(day, 18.35)]);
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r).not.toHaveProperty('lastCompletedClose');
+        });
+
+        it('예산 절단으로 봉이 잘려도 두 필드는 남는다', async () => {
+            forming.mockReturnValue(true);
+            const many = Array.from({ length: 250 }, (_, i) =>
+                bar(day - (249 - i) * 86_400, 100 + i)
+            );
+            const r = await load('1Day', many, 200);
+            expect(r.barsTrimmed).toBeGreaterThan(0);
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r.lastCompletedClose).toEqual({
+                date: '2026-10-21',
+                close: 348,
+            });
+        });
+
+        it('분봉은 진행 중 표시만 싣는다(직전 봉은 세션 종가가 아니다)', async () => {
+            forming.mockReturnValue(true);
+            const r = await load('5Min');
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r).not.toHaveProperty('lastCompletedClose');
+        });
     });
 
     it('1Day에서는 종목 자체 공포·탐욕 지수를 함께 내고, 다른 타임프레임·짧은 흐름 데이터에서는 null', async () => {
@@ -1913,6 +1994,8 @@ describe('getBarsIndicatorsTool', () => {
 
     it('기본 요청(30봉, 1Day)은 운영 규모 일봉(500봉·실제 지표·공포탐욕)에서도 봉이 잘리지 않는다', async () => {
         profile.mockResolvedValue('us-equity');
+        // 장중 페이로드(진행 중 표시 + 직전 완료 종가)가 더 크므로 그쪽으로 고정한다.
+        forming.mockReturnValue(true);
         // 운영과 같은 모양: 500 거래일, 소수 둘째 자리 가격, 백만 단위 거래량.
         const DAY = 86_400;
         const start = Date.parse('2024-10-21T00:00:00Z') / 1000;
