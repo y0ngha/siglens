@@ -22,6 +22,23 @@ import { afterEach, vi } from 'vitest';
  * (2026-10-04 실측: 167개 중 94개 파일).
  */
 /*
+ * 파일마다 모듈 레지스트리를 비운다(#1095). vitest 5.0.5(#1090에서 5.0.1 → 5.0.5)부터 같은 워커에 어떤 파일이
+ * 먼저 배정되느냐에 따라 dom-fast 파일들이 "NextIntlClientProvider 컨텍스트 없음"으로 깨졌다. pre-commit의
+ * `vitest related`가 매번 다른 파일로 막혔고, 레인 전체 실행도 가끔 깨졌다. 2026-10-24 실측: 단일 워커
+ * 12개 파일에서 5.0.1은 0건, 5.0.5는 110건 실패, 이 리셋을 넣으면 0건.
+ *
+ * 추정 원인(인스턴스를 직접 비교해 확인하지는 않았다): 격리를 끈 워커가 다음 파일에서 캐시된 모듈 일부만
+ * 다시 평가해, 인라인 처리한 `next-intl`(`server.deps.inline`)이 두 벌이 된다. 그러면 렌더를 감싸는
+ * 프로바이더(`vitest.setup.dom.ts`의 `@testing-library/react` 목)와 컴포넌트의 `useTranslations`가 다른 벌을 본다.
+ *
+ * 리셋은 vitest가 변환해 실행한(인라인) 모듈만 비운다. `@testing-library/react`·`react-dom`처럼 외부로 둔
+ * 의존은 그대로 한 벌이라 위에서 import한 `cleanup`은 계속 같은 렌더러를 가리킨다. 목 레지스트리도
+ * 비우지 않으므로 프로바이더 래퍼는 그대로 걸린다. 비용은 작다: 이 레인 시간의 대부분은 환경 준비라
+ * 전체 레인이 2.5~3.0초에서 3.3초가 됐다. vitest를 올릴 때 리셋 없이 다시 재 보고 필요 없으면 뺀다.
+ */
+vi.resetModules();
+
+/*
  * `matchMedia`는 테스트가 `Object.defineProperty(window, 'matchMedia', ...)`로 갈아
  * 끼우는 전역이다(`shared/test-utils/matchMedia.ts`의 `stubPrefersColorScheme` 등).
  * `vi.unstubAllGlobals()`는 `vi.stubGlobal`로 건 것만, `vi.restoreAllMocks()`는
