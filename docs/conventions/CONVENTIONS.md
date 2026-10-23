@@ -602,6 +602,10 @@ file or the rule it describes changes:
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A comment claiming parity with other components or tabs ("same order as the other tabs") or relying on platform behavior (a robots-blocked URL's headers being read) is checked against those components and that behavior; drop the claim if it does not hold.
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
+- When a setup file, config or helper changes what a lane, module or option does (for example module-cache reuse
+  becoming a per-test reset), re-read the config or JSDoc that describes the old behavior (`vitest.config.ts` lane
+  docs, header comments) in the same edit; grep the old wording repo-wide, and its concept and paraphrases too ("module cache" also hides as "evaluated module"), not only the exact phrase. Re-read the header doc of every file you
+  touched, including the file that holds the change itself, not only the config that points at it.
 - After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 
 <a id="CM-3"></a>
@@ -633,6 +637,10 @@ never between the JSDoc and its declaration. If the line above your insertion po
 same applies to JSX: when wrapping an element that has a preceding comment block, put the wrapper above the comment.
 
 The inverse also holds: when removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left above the next declaration.
+
+The same holds for any comment, not only JSDoc: a new constant, setup block or statement never goes between a
+comment and the code it describes (a header JSDoc and its declaration, a `// matchMedia ...` note and the line it
+explains). Insert above the comment, or give the new code its own comment.
 
 ```typescript
 // ❌ the new helper splits the JSDoc from fetchBars
