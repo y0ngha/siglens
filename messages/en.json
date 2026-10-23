@@ -27,6 +27,10 @@
             "layout": {
                 "9401e4": "SIGLENS AI is under maintenance right now. Please try again shortly."
             },
+            "manifest": {
+                "description": "Ask AI about any stock or coin. It looks up live quotes, chart indicators and the latest news, and answers with sources.",
+                "name": "{v0} — AI Stock & Crypto Chat"
+            },
             "not-found": {
                 "04598e": "Start a new chat",
                 "047c35": "Conversation not found",

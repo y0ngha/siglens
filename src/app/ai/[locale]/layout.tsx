@@ -25,7 +25,9 @@ import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
+import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
+import { aiManifestPath } from './aiManifest';
 import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
@@ -48,13 +50,19 @@ export async function generateMetadata({
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
     const { locale: raw } = await params;
-    const productName = brandAiName(resolveLocale(raw));
+    const locale = resolveLocale(raw);
+    const productName = brandAiName(locale);
     return {
         ...AI_LAYOUT_METADATA,
         title: {
             default: productName,
             template: `%s | ${productName}`,
         },
+        // ai 호스트 전용 매니페스트. 없으면 `app/manifest.ts`가 자동으로 걸려 ai 호스트에서
+        // 설치한 앱이 메인 사이트 이름("시그렌즈")·바로가기(`/market`)를 달았다.
+        manifest: aiManifestPath(locale),
+        // iOS 홈 화면 이름은 이 값(없으면 문서 제목)을 쓴다 — 제목은 SEO 문구라 길다.
+        appleWebApp: { title: productName },
     };
 }
 
@@ -125,6 +133,12 @@ export default async function AiRootLayout({
                                 {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
                                 렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
                                 <FunnelSignupPing />
+                                {/* 설치 배너 + 서비스 워커 등록. 하단은 입력창 자리라 위에 띄우고,
+                                    스트리밍 중인 답변이 끊기지 않게 SW 교체 때 새로고침하지 않는다. */}
+                                <PwaBanner
+                                    placement="top"
+                                    reloadOnServiceWorkerUpdate={false}
+                                />
                                 <AuthSessionHeaderClient authReturn="ai" />
                                 {disabled ? (
                                     <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">

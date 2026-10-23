@@ -63,7 +63,14 @@ function resolveEnv(): PwaEnvironment {
     );
 }
 
-export function usePwaInstall(): UsePwaInstallReturn {
+export interface UsePwaInstallOptions {
+    /** Passed to `registerServiceWorker` — see its `reloadOnUpdate`. */
+    readonly reloadOnServiceWorkerUpdate?: boolean;
+}
+
+export function usePwaInstall({
+    reloadOnServiceWorkerUpdate = true,
+}: UsePwaInstallOptions = {}): UsePwaInstallReturn {
     const [showBanner, setShowBanner] = useState(false);
     const [showIosModal, setShowIosModal] = useState(false);
     // Lazy initializer: SSR prerender returns EMPTY_ENV (window undefined); client mount re-runs with real window
@@ -98,8 +105,9 @@ export function usePwaInstall(): UsePwaInstallReturn {
     const handleModalClose = () => setShowIosModal(false);
 
     useEffect(() => {
-        registerServiceWorker();
-    }, []);
+        // 등록은 모듈 플래그로 한 번만 일어난다(idempotent) — 값이 바뀌어 다시 불려도 무해하다.
+        registerServiceWorker({ reloadOnUpdate: reloadOnServiceWorkerUpdate });
+    }, [reloadOnServiceWorkerUpdate]);
 
     useEffect(() => {
         const canShow =

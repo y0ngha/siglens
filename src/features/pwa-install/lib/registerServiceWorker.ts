@@ -9,6 +9,17 @@ export interface RegisterServiceWorkerOptions {
     readonly reload?: () => void;
     /** Override the navigator. Tests inject a mocked container. */
     readonly serviceWorker?: ServiceWorkerContainer;
+    /**
+     * Reload the page when a new SW takes control (default `true`).
+     *
+     * `false` for pages that hold live state a reload would destroy — the
+     * SIGLENS AI chat streams an answer over SSE and keeps an unsent draft in
+     * the composer, so a mid-stream `controllerchange` reload cut the answer.
+     * Skipping is safe there: `sw.js` never caches HTML (navigations go to the
+     * network), and hashed `/_next/static/` assets are immutable per URL, so a
+     * page kept on the old controller still loads matching chunks.
+     */
+    readonly reloadOnUpdate?: boolean;
 }
 
 /** Service Worker 등록 + 신규 SW 인계 시 페이지 소프트 리로드 (idempotent). */
@@ -33,6 +44,7 @@ export function registerServiceWorker(
     // Skip the very first controllerchange triggered when the SW is
     // installed for the first time (no previous controller existed).
     if (container.controller === null) return;
+    if (options.reloadOnUpdate === false) return;
     container.addEventListener('controllerchange', () => {
         const reload = options.reload ?? pageReload;
         reload();

@@ -3974,5 +3974,7 @@
     "widgets.chart.StockChart.reachedLevel": "e3fb11f50945",
     "widgets.layout.velogBlogAria": "a08781393af1",
     "widgets.investor-flows.scorecard.krTitle": "48fd07276727",
-    "app.symbol.page.ddc932": "ddc932a97b95"
+    "app.symbol.page.ddc932": "ddc932a97b95",
+    "app.ai.manifest.name": "c97d304540d0",
+    "app.ai.manifest.description": "67e47eab9ee6"
 }

@@ -18,6 +18,8 @@ describe('AI_CLIENT_PATHS', () => {
         const files = [
             ...walk(join(process.cwd(), 'src/widgets/agent-chat')),
             ...walk(join(process.cwd(), 'src/features/agent-chat')),
+            // ai 레이아웃이 설치 배너(`PwaBanner`)를 렌더한다.
+            ...walk(join(process.cwd(), 'src/features/pwa-install')),
             ...walk(join(process.cwd(), 'src/app/ai')),
         ].filter(f => !f.includes('__tests__'));
         const used = new Set<string>();

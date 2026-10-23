@@ -40,6 +40,44 @@ describe('usePwaInstall', () => {
         });
     });
 
+    it('reloadOnServiceWorkerUpdate=false면 SW 교체 리스너를 달지 않는다', () => {
+        const sw = navigator.serviceWorker as unknown as {
+            addEventListener: ReturnType<typeof vi.fn>;
+            controller: ServiceWorker | null;
+        };
+        sw.addEventListener.mockClear();
+        sw.controller = {} as ServiceWorker;
+        try {
+            renderHook(() =>
+                usePwaInstall({ reloadOnServiceWorkerUpdate: false })
+            );
+            expect(sw.addEventListener).not.toHaveBeenCalledWith(
+                'controllerchange',
+                expect.any(Function)
+            );
+        } finally {
+            sw.controller = null;
+        }
+    });
+
+    it('기본값은 SW 교체 때 새로고침 리스너를 단다', () => {
+        const sw = navigator.serviceWorker as unknown as {
+            addEventListener: ReturnType<typeof vi.fn>;
+            controller: ServiceWorker | null;
+        };
+        sw.addEventListener.mockClear();
+        sw.controller = {} as ServiceWorker;
+        try {
+            renderHook(() => usePwaInstall());
+            expect(sw.addEventListener).toHaveBeenCalledWith(
+                'controllerchange',
+                expect.any(Function)
+            );
+        } finally {
+            sw.controller = null;
+        }
+    });
+
     it('초기 상태: showBanner=false, showIosModal=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         expect(result.current.showBanner).toBe(false);
