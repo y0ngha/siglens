@@ -18,6 +18,10 @@ function baseWith(getTreasury: EconomyProvider['getTreasury']) {
     return {
         getIndicator: vi.fn(async () => ({ name: 'x', points: [] }) as never),
         getCalendar: vi.fn(async () => []),
+        getCalendarsByCountry: vi.fn(async () => ({
+            byCountry: {},
+            sourceRows: 0,
+        })),
         getTreasury: vi.fn(getTreasury),
     } satisfies EconomyProvider;
 }
@@ -162,6 +166,17 @@ describe('OfficialTreasuryEconomyProvider.getTreasuryReading', () => {
         expect(base.getCalendar).toHaveBeenCalledWith(
             '2026-10-01',
             '2026-10-31'
+        );
+    });
+
+    it('getCalendarsByCountry는 기반 공급자에 그대로 넘긴다', async () => {
+        const base = baseWith(async () => null);
+        const p = new OfficialTreasuryEconomyProvider(base, async () => null);
+        await p.getCalendarsByCountry('2026-10-01', '2026-10-31', ['US', 'KR']);
+        expect(base.getCalendarsByCountry).toHaveBeenCalledWith(
+            '2026-10-01',
+            '2026-10-31',
+            ['US', 'KR']
         );
     });
 });

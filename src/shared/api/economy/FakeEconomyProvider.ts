@@ -4,7 +4,11 @@ import type {
     TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
 
-import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
+import type {
+    CountryCalendars,
+    EconomyProvider,
+} from '@/shared/api/economy/EconomyProvider';
+import { MS_PER_DAY } from '@/shared/config/time';
 import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
@@ -98,6 +102,9 @@ export function buildSeries(
     };
 }
 
+/** 한국 픽스처 일정의 날짜 — 지금부터 이만큼 뒤(기본 창 안). */
+const KR_FIXTURE_DAYS_AHEAD = 5;
+
 /** E2E·테스트용 in-memory provider. 모든 메서드가 즉시 resolve. */
 export class FakeEconomyProvider implements EconomyProvider {
     async getIndicator(name: string): Promise<EconomicIndicatorSeries> {
@@ -142,6 +149,40 @@ export class FakeEconomyProvider implements EconomyProvider {
             },
         ];
     }
+
+    async getCalendarsByCountry(
+        from: string,
+        to: string,
+        countries: readonly string[]
+    ): Promise<CountryCalendars> {
+        const us = await this.getCalendar(from, to);
+        // 한국 픽스처는 지금부터 닷새 뒤 — 고정 날짜면 기본 창(지금 이후)에서 걸러져 E2E가 빈 일정만 본다.
+        const kr: EconomicCalendarEvent[] = [
+            {
+                date: new Date(Date.now() + KR_FIXTURE_DAYS_AHEAD * MS_PER_DAY)
+                    .toISOString()
+                    .replace('T', ' ')
+                    .slice(0, 19),
+                event: 'Interest Rate Decision',
+                impact: 'High',
+                actual: null,
+                estimate: 2.5,
+                previous: 2.5,
+                unit: '%',
+            },
+        ];
+        // 'US'·'KR'은 entities `CALENDAR_COUNTRY`·`CALENDAR_COUNTRY_KR`의 미러다(shared는 entities를 import하지 못한다).
+        const fixtures: Record<string, EconomicCalendarEvent[]> = {
+            US: us,
+            KR: kr,
+        };
+        return {
+            byCountry: Object.fromEntries(
+                countries.map(c => [c, fixtures[c] ?? []])
+            ),
+            sourceRows: us.length + kr.length,
+        };
+    }
 }
 
 /**
@@ -168,5 +209,16 @@ export class EmptyEconomyProvider implements EconomyProvider {
         _to: string
     ): Promise<EconomicCalendarEvent[]> {
         return [];
+    }
+
+    async getCalendarsByCountry(
+        _from: string,
+        _to: string,
+        countries: readonly string[]
+    ): Promise<CountryCalendars> {
+        return {
+            byCountry: Object.fromEntries(countries.map(c => [c, []])),
+            sourceRows: 0,
+        };
     }
 }

@@ -5,7 +5,11 @@ import type {
     TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
 import { fetchTreasuryGovSnapshot } from '@/shared/api/treasury/treasuryGovClient';
-import type { EconomyProvider, TreasuryReading } from './EconomyProvider';
+import type {
+    CountryCalendars,
+    EconomyProvider,
+    TreasuryReading,
+} from './EconomyProvider';
 
 /** 로그용 오류 요약 — 이름과, HTTP 오류면 상태 코드(비밀값 없음). 403 차단과 5xx를 구분하려는 것이다. */
 function errorSummary(reason: unknown): { error: string; status?: number } {
@@ -82,6 +86,14 @@ export class OfficialTreasuryEconomyProvider implements EconomyProvider {
 
     getCalendar(from: string, to: string): Promise<EconomicCalendarEvent[]> {
         return this.base.getCalendar(from, to);
+    }
+
+    getCalendarsByCountry(
+        from: string,
+        to: string,
+        countries: readonly string[]
+    ): Promise<CountryCalendars> {
+        return this.base.getCalendarsByCountry(from, to, countries);
     }
 
     async getTreasury(): Promise<TreasuryRateSnapshot | null> {

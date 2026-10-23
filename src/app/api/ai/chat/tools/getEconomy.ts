@@ -18,7 +18,17 @@ import {
 } from '@/entities/economy/api/treasuryRatesCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
-import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards';
+import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
+import {
+    CALENDAR_COUNTRY,
+    CALENDAR_COUNTRY_KR,
+    type CalendarCountry,
+} from '@/entities/economy/lib/economyCalendarConstants';
+import {
+    etDateOf,
+    futureWindowEnd,
+} from '@/entities/economy/lib/calendarWindow';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import {
     ECONOMY_CALENDAR_DEFAULT_DAYS,
@@ -44,8 +54,15 @@ import { logToolDegrade } from './logToolDegrade';
  */
 const CALENDAR_MAX_EVENTS = 80;
 
-/** How far back and ahead of today a ranged call may reach: FMP lists major events only ~5 months out, and each distinct range is its own FMP read. */
-const RANGE_MAX_PAST_DAYS = 730;
+/**
+ * How far back and ahead of today a ranged call may reach. Back: FMP answers
+ * 402 ("Premium Query Parameter") once `from` or `to` is more than about a
+ * year old (measured 2026-10-24 KST: 2025-10-25 served, 2025-10-24 refused), so
+ * 360 days leaves room for the one-day read padding and the ET/UTC date gap.
+ * Ahead: FMP lists major events only ~5 months out, and each distinct range is
+ * its own FMP read.
+ */
+const RANGE_MAX_PAST_DAYS = 360;
 const RANGE_MAX_FUTURE_DAYS = 365;
 
 const DATE_ARG = /^\d{4}-\d{2}-\d{2}$/;
@@ -56,8 +73,38 @@ interface CalendarRange {
 }
 
 interface ArgIssue {
-    path: 'from' | 'to';
+    path: 'country' | 'from' | 'to';
     message: string;
+}
+
+/** `country` argument → calendar country code. Absent means the US (the spec's default). */
+const COUNTRY_ARG = {
+    us: CALENDAR_COUNTRY,
+    kr: CALENDAR_COUNTRY_KR,
+} as const satisfies Record<string, CalendarCountry>;
+
+type CountryLabel = keyof typeof COUNTRY_ARG;
+
+function isCountryLabel(value: unknown): value is CountryLabel {
+    // `Object.hasOwn`, not `in`/indexing: 'constructor' or '__proto__' would
+    // otherwise pass as a country.
+    return typeof value === 'string' && Object.hasOwn(COUNTRY_ARG, value);
+}
+
+/** The chosen country and its label; every result names the label it answered for. */
+function parseCountryArg(
+    value: unknown
+):
+    | { ok: true; country: CalendarCountry; label: CountryLabel }
+    | { ok: false; issue: ArgIssue } {
+    if (value === undefined)
+        return { ok: true, country: CALENDAR_COUNTRY, label: 'us' };
+    if (!isCountryLabel(value))
+        return {
+            ok: false,
+            issue: { path: 'country', message: "expected 'us' or 'kr'" },
+        };
+    return { ok: true, country: COUNTRY_ARG[value], label: value };
 }
 
 type CalendarEventView = EconomicCalendarEvent & { hoursUntil: number };
@@ -67,7 +114,7 @@ interface CalendarBlock {
     coverage: CalendarRange;
     events: CalendarEventView[];
     omitted: Record<CalendarImpact, number>;
-    /** Set when the block came from the snapshot instead of the range read. */
+    /** Set when the block came from a fallback instead of the range read. */
     fallback?: string;
 }
 
@@ -177,6 +224,7 @@ function calendarBlock(
  * whose date cannot be parsed.
  */
 function readCalendar(
+    country: CalendarCountry,
     range: CalendarRange,
     now: number,
     notBefore?: Date
@@ -186,6 +234,7 @@ function readCalendar(
         -ECONOMY_CALENDAR_FETCH_PAD_DAYS
     );
     return getEconomicCalendarRange(
+        country,
         fetchFrom,
         addUtcIsoDays(range.to, ECONOMY_CALENDAR_FETCH_PAD_DAYS)
     )
@@ -320,8 +369,112 @@ function snapshotCalendarBlock(
     };
 }
 
+const KR_INDICATOR_SOURCE =
+    'Korean indicators: rebuilt from calendar release history (DB, day cache)';
+
+/** Said next to the Korean indicators: their dates and the calendar's are on different clocks. */
+const KR_DATE_NOTE =
+    'indicators[].latest.date is the KST calendar date of the release; calendar event dates are UTC instants';
+
 /**
- * US macro snapshot: indicators, treasury yields, the economic calendar of the
+ * Korean calendar fallback when the range read fails: the DB rows the hourly
+ * ingestion keeps (`getCalendarFromDb`, today ± its 14-day window), through the
+ * same selection. The window ends a day short at worst (ET anchor vs UTC
+ * dates, `calendarWindow.ts`), so `coverage` claims one day less. `null` when
+ * the DB has nothing either — an empty fallback would read as "nothing
+ * scheduled" (SERVER.md#SA-18).
+ */
+async function koreanCalendarFromDb(
+    today: string,
+    now: number
+): Promise<CalendarBlock | null> {
+    // `getCalendarFromDb` never rejects: it catches its own DB error and returns `[]`.
+    const rows = await getCalendarFromDb(today, CALENDAR_COUNTRY_KR);
+    if (rows.length === 0) return null;
+    const events: EconomicCalendarEvent[] = rows.map(row => ({
+        date: row.date,
+        event: row.event,
+        impact: row.impact,
+        actual: row.actual,
+        estimate: row.estimate,
+        previous: row.previous,
+        unit: row.unit,
+    }));
+    return {
+        ...calendarBlock(
+            events,
+            { from: today, to: addUtcIsoDays(futureWindowEnd(today), -1) },
+            now,
+            new Date(now)
+        ),
+        fallback: 'ingested Korean calendar (calendar read failed)',
+    };
+}
+
+/**
+ * `country: 'kr'` default call: Korean indicator cards (`getKrIndicatorCards`,
+ * rebuilt from calendar `actual` values — FMP has no Korean indicator series)
+ * and the Korean calendar of the next {@link ECONOMY_CALENDAR_DEFAULT_DAYS}
+ * days. There is no Korean treasury curve or macro briefing, so those fields
+ * are absent rather than filled from US data.
+ */
+async function koreanEconomy(
+    range: CalendarRange,
+    now: number,
+    label: CountryLabel
+): Promise<Record<string, unknown>> {
+    // `getKrIndicatorCards` logs and degrades a DB failure to `[]` itself.
+    const [cards, read] = await Promise.all([
+        getKrIndicatorCards(range.from),
+        readCalendar(CALENDAR_COUNTRY_KR, range, now, new Date(now)),
+    ]);
+    const calendar = read ?? (await koreanCalendarFromDb(range.from, now));
+    if (cards.length === 0 && calendar === null)
+        return {
+            available: false,
+            country: label,
+            reason: 'kr_economy_unavailable',
+        };
+    return {
+        asOf: new Date(now).toISOString(),
+        country: label,
+        source: `${KR_INDICATOR_SOURCE}; ${CALENDAR_SOURCE}`,
+        available: true,
+        note: KR_DATE_NOTE,
+        indicators: cards.map(card => {
+            // `changeFromPrevious` is a raw subtraction of two releases — round
+            // it like the US deltas so float noise never reaches the answer.
+            const change =
+                card.changeFromPrevious === null
+                    ? null
+                    : roundNumber(card.changeFromPrevious);
+            return {
+                name: card.meta.event,
+                label: card.meta.label,
+                unit: card.meta.unit,
+                latest: { date: card.latestDate, value: card.latest },
+                change,
+                // Same meaning as the US field: a '%' series moves in
+                // percentage points, anything else in its own unit.
+                changeUnit: card.meta.unit === '%' ? 'pp' : 'level',
+                direction: directionOf(change),
+            };
+        }),
+        // `getKrIndicatorCards` turns a DB failure into `[]`, and the registry
+        // always has releases in its window, so an empty list is a failed read
+        // — mark it so the model does not report "no Korean rate data".
+        ...(cards.length === 0 ? { indicatorsUnavailable: true } : {}),
+        // `null` only when both the read and the ingested fallback failed —
+        // the marker keeps that from reading as an empty calendar.
+        ...(calendar === null
+            ? { calendar: null, calendarUnavailable: true }
+            : { calendar }),
+    };
+}
+
+/**
+ * Macro data for one economy (`country`: US default, or South Korea — see
+ * `koreanEconomy`). US: indicators, treasury yields, the economic calendar of the
  * next {@link ECONOMY_CALENDAR_DEFAULT_DAYS} days (from now on, picked by core's
  * `selectCalendarEvents`), and the cached macro briefing headline when
  * available. With `from`/`to` it returns only that period's calendar, past
@@ -341,15 +494,28 @@ function snapshotCalendarBlock(
 export const getEconomyTool: ToolExecutor = async args => {
     const now = Date.now();
     const today = etDateOf(new Date(now));
+    const countryArg = parseCountryArg(args.country);
     const parsed = parseRangeArgs(args, today);
-    if (!parsed.ok) return { error: 'invalid_args', issues: parsed.issues };
+    const issues = [
+        ...(countryArg.ok ? [] : [countryArg.issue]),
+        ...(parsed.ok ? [] : parsed.issues),
+    ];
+    if (!countryArg.ok || !parsed.ok) return { error: 'invalid_args', issues };
+    // Every result names its country, so a ranged retry that dropped
+    // `country` shows up as a US calendar instead of passing for a Korean one.
+    const { country, label: countryLabel } = countryArg;
 
     if (parsed.range !== null) {
-        const calendar = await readCalendar(parsed.range, now);
+        const calendar = await readCalendar(country, parsed.range, now);
         if (!calendar)
-            return { available: false, reason: 'calendar_unavailable' };
+            return {
+                available: false,
+                country: countryLabel,
+                reason: 'calendar_unavailable',
+            };
         return {
             asOf: new Date(now).toISOString(),
+            country: countryLabel,
             source: CALENDAR_SOURCE,
             available: true,
             calendar,
@@ -360,6 +526,8 @@ export const getEconomyTool: ToolExecutor = async args => {
         from: today,
         to: addUtcIsoDays(today, ECONOMY_CALENDAR_DEFAULT_DAYS),
     };
+    if (country === CALENDAR_COUNTRY_KR)
+        return koreanEconomy(defaultRange, now, countryLabel);
     // `getFreshTreasuryRates` never rejects (degrades to `null`).
     const [snapshot, freshTreasury, calendar] = await Promise.all([
         getEconomySnapshotStatic().catch((error: unknown) => {
@@ -367,7 +535,7 @@ export const getEconomyTool: ToolExecutor = async args => {
             return null;
         }),
         getFreshTreasuryRates(),
-        readCalendar(defaultRange, now, new Date(now)),
+        readCalendar(CALENDAR_COUNTRY, defaultRange, now, new Date(now)),
     ]);
     // The calendar no longer comes from the snapshot, so a snapshot outage
     // still answers "when is the next FOMC?".
@@ -390,6 +558,7 @@ export const getEconomyTool: ToolExecutor = async args => {
 
     return {
         asOf: new Date(now).toISOString(),
+        country: countryLabel,
         source: `economy snapshot (indicators: day cache, up to ~48h); treasury: see treasury.cache; ${CALENDAR_SOURCE}`,
         available: true,
         indicators: snapshot.indicators.map(i => {
