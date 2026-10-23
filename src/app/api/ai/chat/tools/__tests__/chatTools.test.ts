@@ -7,6 +7,7 @@ const {
     getCachedAnalysis,
     getBarsIndicators,
     getNews,
+    getEconomy,
     ensureSymbolNewsFresh,
 } = vi.hoisted(() => ({
     search: vi.fn(),
@@ -14,6 +15,7 @@ const {
     getCachedAnalysis: vi.fn(),
     getBarsIndicators: vi.fn(),
     getNews: vi.fn(),
+    getEconomy: vi.fn(),
     ensureSymbolNewsFresh: vi.fn(),
 }));
 vi.mock('@/entities/news-article/lib/ensureSymbolNewsFresh', () => ({
@@ -30,6 +32,9 @@ vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: getCachedAnalysis,
 }));
 vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: getNews }));
+vi.mock('@/app/api/ai/chat/tools/getEconomy', () => ({
+    getEconomyTool: getEconomy,
+}));
 vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
     getOptionsSummaryTool: getOptionsSummary,
 }));
@@ -637,6 +642,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         standard: 9_000,
         bars: BARS_RESULT_MAX_CHARS,
         aggregate: 9_000,
+        economy: 9_000,
         investorFlows: 9_000,
         guide: 9_000,
         cachedAnalysis: 20_000,
@@ -701,5 +707,17 @@ describe('결과 상한 옵션(resultCaps)', () => {
             makeCtx()
         );
         expect(result).toEqual(big(15_000));
+    });
+
+    it('get_economy는 aggregate가 아니라 economy 상한을 쓴다', async () => {
+        // 60일·최대 80건 캘린더가 종합 도구 상한(aggregate)에 잘리면 앞부분
+        // 미리보기 덩어리로 무너진다.
+        getEconomy.mockResolvedValue(big(12_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, aggregate: 9_000, economy: 15_000 } }
+        );
+        const result = await exec('get_economy', {}, makeCtx());
+        expect(result).toEqual(big(12_000));
     });
 });

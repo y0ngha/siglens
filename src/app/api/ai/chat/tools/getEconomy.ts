@@ -1,6 +1,8 @@
 import 'server-only';
 import {
+    type CalendarImpact,
     computeYieldSpread,
+    type EconomicCalendarEvent,
     type TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
@@ -13,7 +15,6 @@ import {
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
 import {
-    MS_PER_DAY,
     MS_PER_HOUR,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -24,9 +25,47 @@ import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { ppDelta } from './percent';
 import { logToolDegrade } from './logToolDegrade';
 
-const CALENDAR_WINDOW_DAYS = 7;
-/** Defensive cap — bounds the payload even if an unusually event-dense week slips past the 7-day filter. */
-const CALENDAR_MAX_EVENTS = 10;
+/**
+ * Upcoming-calendar cap. Picked by impact first (`IMPACT_PRIORITY`), so it
+ * holds every High event of the snapshot's 60-day window (61 measured on
+ * 2026-10-23) with Medium filling the rest. A cap below the High count would
+ * drop the farthest Highs — the next FOMC decision among them. Size:
+ * `ECONOMY_RESULT_MAX_CHARS` (`truncate.ts`).
+ */
+const CALENDAR_MAX_EVENTS = 80;
+
+/**
+ * Selection order for the cap. Until 2026-10 the tool took the first 10 events
+ * by date, and on an ordinary week Low-impact rows (rig count, CFTC positions)
+ * filled every slot — an FOMC decision 5 days out never reached the model.
+ */
+const IMPACT_PRIORITY: Record<CalendarImpact, number> = {
+    High: 0,
+    Medium: 1,
+    Low: 2,
+};
+
+const timeOf = (e: EconomicCalendarEvent): number => new Date(e.date).getTime();
+
+/**
+ * Future events, at most `CALENDAR_MAX_EVENTS`: High first, then Medium, then
+ * Low, each nearest-first; the pick is returned date-ascending. Expects ISO
+ * dates (`fmpCalendarDateTimeToIso` already applied).
+ */
+function pickUpcomingEvents(
+    events: readonly EconomicCalendarEvent[],
+    now: number
+): EconomicCalendarEvent[] {
+    return events
+        .filter(e => timeOf(e) >= now)
+        .toSorted(
+            (a, b) =>
+                IMPACT_PRIORITY[a.impact] - IMPACT_PRIORITY[b.impact] ||
+                timeOf(a) - timeOf(b)
+        )
+        .slice(0, CALENDAR_MAX_EVENTS)
+        .toSorted((a, b) => timeOf(a) - timeOf(b));
+}
 
 /** `'up' | 'down' | 'unchanged'`, or `null` when `change` itself is `null` (spec §0 null rule). */
 function directionOf(
@@ -113,9 +152,9 @@ function treasuryView(picked: PickedTreasury | null) {
 }
 
 /**
- * US macro snapshot: indicators, treasury yields, upcoming calendar (next 7
- * days out of the cached snapshot's 14-day window), and the cached macro
- * briefing headline when available.
+ * US macro snapshot: indicators, treasury yields, upcoming calendar (the
+ * whole remaining 60-day snapshot window, picked by impact — see
+ * `pickUpcomingEvents`), and the cached macro briefing headline when available.
  *
  * `peekMacroBriefingStatic` requires the snapshot as input, so it cannot run
  * concurrently with the snapshot fetch (no `Promise.allSettled` fan-out here
@@ -147,20 +186,16 @@ export const getEconomyTool: ToolExecutor = async () => {
         });
 
     const now = Date.now();
-    const windowEnd = now + CALENDAR_WINDOW_DAYS * MS_PER_DAY;
-    const upcomingCalendar = snapshot.calendar
-        .map(e => ({ ...e, date: fmpCalendarDateTimeToIso(e.date) }))
-        .filter(e => {
-            const t = new Date(e.date).getTime();
-            return t >= now && t <= windowEnd;
-        })
-        .slice(0, CALENDAR_MAX_EVENTS)
-        .map(e => ({
+    const upcomingCalendar = pickUpcomingEvents(
+        snapshot.calendar.map(e => ({
             ...e,
-            hoursUntil: Math.round(
-                (new Date(e.date).getTime() - now) / MS_PER_HOUR
-            ),
-        }));
+            date: fmpCalendarDateTimeToIso(e.date),
+        })),
+        now
+    ).map(e => ({
+        ...e,
+        hoursUntil: Math.round((timeOf(e) - now) / MS_PER_HOUR),
+    }));
 
     return {
         asOf: new Date().toISOString(),

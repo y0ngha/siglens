@@ -16,6 +16,16 @@ import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 import { etDateOf } from '../lib/calendarWindow';
 
 /**
+ * 캘린더 윈도(앞으로 60일) 일수.
+ *
+ * 이 스냅샷의 캘린더를 읽는 곳은 SiglensAI `get_economy`뿐이다(경제 페이지는 DB
+ * 캘린더를 쓴다). "다음 금리 결정은 언제?"에 늘 답할 수 있게 FOMC 회의 간격의
+ * 최장값(8주 = 56일, 2023-07-26 → 09-20)보다 길게 잡는다 — 14일 창에서는 다음
+ * 회의가 창 밖이면 일정이 아예 없었다. FMP 조회 범위 상한(365일은 402)보다 충분히 짧다.
+ */
+const CALENDAR_WINDOW_DAYS = 60;
+
+/**
  * 레지스트리 fingerprint — 지표 목록이 바뀌면 캐시 키도 자동 무효화된다.
  * static/runtime 캐시 양 계층이 import해 동일 fingerprint를 공유(드리프트 방지).
  */
@@ -24,17 +34,17 @@ export const ECONOMY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
     // carry `unit: '%'` for pp formatting), so it is part of the fingerprint:
     // otherwise a snapshot cached before the change keeps serving unit-less
     // series for up to a day after deploy.
+    // The calendar window is in it too: a widened window must not keep serving
+    // the cached shorter-window calendar for up to a day after deploy.
     JSON.stringify({
         indicators: ECONOMY_INDICATORS.map(i => ({
             name: i.name,
             unit: i.unit === '%' ? '%' : null,
         })),
+        calendarWindowDays: CALENDAR_WINDOW_DAYS,
     })
 );
 const CACHE_KEY = `economy:snapshot:${ECONOMY_CONFIG_FINGERPRINT}`;
-
-/** 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(CONVENTIONS.md#NC-1). */
-const CALENDAR_WINDOW_DAYS = 14;
 
 /** core EconomicIndicatorSeries의 빈 placeholder — Provider 실패 시 fallback. */
 function emptyIndicator(name: string): EconomicIndicatorSeries {

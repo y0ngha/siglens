@@ -20,6 +20,7 @@ vi.mock('@/entities/economy/api/macroBriefingStaticCache', () => ({
 }));
 
 import { getEconomyTool } from '@/app/api/ai/chat/tools/getEconomy';
+import { ECONOMY_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const ctx = {
     userId: 'u',
@@ -32,6 +33,23 @@ const rt = {
     ensureSymbolData: async (): Promise<void> => {},
 };
 const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+
+function calendarEvent(
+    hoursAhead: number,
+    event: string,
+    impact: 'High' | 'Medium' | 'Low'
+) {
+    return {
+        date: new Date(Date.now() + hoursAhead * HOUR_MS).toISOString(),
+        event,
+        impact,
+        actual: null,
+        estimate: null,
+        previous: null,
+        unit: '%',
+    };
+}
 
 describe('getEconomyTool', () => {
     beforeEach(() => {
@@ -65,9 +83,10 @@ describe('getEconomyTool', () => {
         expect(briefing).not.toHaveBeenCalled();
     });
 
-    it('캘린더는 향후 7일 창으로만 필터링되고 브리핑을 함께 반환한다', async () => {
+    it('캘린더는 지난 일정만 빼고 스냅샷 창 전체를 넘기며 브리핑을 함께 반환한다', async () => {
         const inWindow = new Date(Date.now() + 3 * DAY_MS).toISOString();
-        const tooFar = new Date(Date.now() + 10 * DAY_MS).toISOString();
+        // 예전 7일 창 밖 — 다음 FOMC가 일주일 넘게 남았을 때 일정이 사라졌다.
+        const nextFomc = new Date(Date.now() + 45 * DAY_MS).toISOString();
         const past = new Date(Date.now() - DAY_MS).toISOString();
         snapshot.mockResolvedValue({
             indicators: [
@@ -90,7 +109,7 @@ describe('getEconomyTool', () => {
                     unit: '%',
                 },
                 {
-                    date: tooFar,
+                    date: nextFomc,
                     event: 'FOMC',
                     impact: 'High',
                     actual: null,
@@ -124,8 +143,10 @@ describe('getEconomyTool', () => {
             briefing: { regime: string };
         };
         expect(r.available).toBe(true);
-        expect(r.upcomingCalendar).toHaveLength(1);
-        expect(r.upcomingCalendar[0]!.event).toBe('CPI YoY');
+        expect(r.upcomingCalendar.map(e => e.event)).toEqual([
+            'CPI YoY',
+            'FOMC',
+        ]);
         expect(r.briefing.regime).toBe('expansion');
         // 시스템 시각 2026-09-14T00:00Z → core와 같은 UTC 날짜 버킷.
         expect(briefing).toHaveBeenCalledWith(expect.anything(), '2026-09-14');
@@ -220,6 +241,100 @@ describe('getEconomyTool', () => {
             expect.objectContaining({ errorName: 'Error' })
         );
         logged.mockRestore();
+    });
+
+    describe('캘린더 선별(중요도 우선 상한)', () => {
+        it('앞선 Low 일정이 많아도 High가 먼저 들어가고 결과는 날짜순이다', async () => {
+            // 2026-10-23 운영 사례: 오늘 남은 시추기 수·CFTC 포지션만으로 앞 10칸이
+            // 차서 5일 뒤 금리 결정이 모델에 닿지 않았다.
+            const lows = Array.from({ length: 100 }, (_, i) =>
+                calendarEvent(1 + i, `CFTC position ${i}`, 'Low')
+            );
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: null,
+                calendar: [
+                    ...lows,
+                    calendarEvent(5 * 24, 'Fed Interest Rate Decision', 'High'),
+                    calendarEvent(6 * 24, 'GDP Growth Rate QoQ', 'Medium'),
+                ],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                upcomingCalendar: Array<{
+                    date: string;
+                    event: string;
+                    impact: string;
+                }>;
+            };
+            const events = r.upcomingCalendar;
+            expect(events).toHaveLength(80);
+            expect(events.map(e => e.event)).toContain(
+                'Fed Interest Rate Decision'
+            );
+            expect(events.map(e => e.event)).toContain('GDP Growth Rate QoQ');
+            // 남는 자리는 Low가 가까운 순으로 채운다.
+            expect(events.filter(e => e.impact === 'Low')).toHaveLength(78);
+            expect(events.map(e => e.event)).toContain('CFTC position 0');
+            expect(events.map(e => e.event)).not.toContain('CFTC position 78');
+            const times = events.map(e => Date.parse(e.date));
+            expect(times).toEqual([...times].sort((a, b) => a - b));
+        });
+
+        it('High가 상한보다 많으면 가까운 High부터 남는다', async () => {
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: null,
+                calendar: [
+                    calendarEvent(1, 'Nearest medium', 'Medium'),
+                    ...Array.from({ length: 90 }, (_, i) =>
+                        calendarEvent(2 + i, `High ${i}`, 'High')
+                    ),
+                ],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                upcomingCalendar: Array<{ event: string }>;
+            };
+            const names = r.upcomingCalendar.map(e => e.event);
+            expect(names).toHaveLength(80);
+            expect(names[0]).toBe('High 0');
+            expect(names.at(-1)).toBe('High 79');
+            expect(names).not.toContain('Nearest medium');
+        });
+
+        it('상한까지 채운 결과가 get_economy 전용 응답 상한 안에 들어간다', async () => {
+            // 실측보다 긴 이벤트명·숫자로 만든 최악 픽스처(실측 ~160자/건).
+            const longName = 'Durable Goods Orders Ex Defense MoM (Sep) — Rev.';
+            snapshot.mockResolvedValue({
+                indicators: Array.from({ length: 9 }, (_, i) => ({
+                    name: `indicator${i}`,
+                    unit: '%',
+                    latest: { date: '2026-09-01', value: 1234.56 },
+                    previous: { date: '2026-08-01', value: 1230.12 },
+                    trend: [],
+                })),
+                treasury: { date: '2026-09-12', year2: 3.91, year10: 4.12 },
+                calendar: Array.from({ length: 80 }, (_, i) => ({
+                    ...calendarEvent(1 + i * 10, `${longName} ${i}`, 'High'),
+                    actual: -12345.67,
+                    estimate: -12345.67,
+                    previous: -12345.67,
+                })),
+            });
+            briefing.mockResolvedValue({
+                briefing: {
+                    summary: '가'.repeat(600),
+                    highlights: [],
+                    regime: 'expansion',
+                },
+                generatedAt: '2026-09-13T10:00:00.000Z',
+            });
+            const r = await getEconomyTool({}, ctx, rt);
+            expect(JSON.stringify(r).length).toBeLessThan(
+                ECONOMY_RESULT_MAX_CHARS
+            );
+        });
     });
 
     describe('indicator change/direction, treasury spread, calendar hoursUntil', () => {
