@@ -151,8 +151,8 @@ const DOM_TEST_PATTERNS = [
  * 따라 i18n 프로바이더가 깨졌다(#1095). 목 레지스트리는 비우지 않으므로 아래 `vi.mock` 조건은 그대로다.
  *
  * 들어올 수 있는 조건:
- * - `vi.mock`·`vi.doMock`·`vi.hoisted`를 쓰지 않는다. 격리를 끄면 mock 레지스트리와
- *   평가된 모듈이 워커 안에서 공유돼, 한 파일의 모듈 목이 다음 파일로 샌다.
+ * - `vi.mock`·`vi.doMock`·`vi.hoisted`를 쓰지 않는다. 격리를 끄면 mock 레지스트리가
+ *   워커 안에서 공유돼(셋업의 리셋은 모듈 캐시만 비운다), 한 파일의 모듈 목이 다음 파일로 샌다.
  * - 파일·`beforeAll` 스코프에 건 스파이·전역 스텁·가짜 타이머에 기대지 않는다 —
  *   `vitest.setup.dom-fast.ts`가 매 테스트 뒤에 되돌린다.
  * - 환경 주석(`@vitest-environment`)이 없다. 이 레인은 happy-dom 고정이다.

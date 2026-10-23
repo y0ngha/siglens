@@ -604,7 +604,7 @@ file or the rule it describes changes:
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
 - When a setup file, config or helper changes what a lane, module or option does (for example module-cache reuse
   becoming a per-test reset), re-read the config or JSDoc that describes the old behavior (`vitest.config.ts` lane
-  docs, header comments) in the same edit; grep the old wording repo-wide. Re-read the header doc of every file you
+  docs, header comments) in the same edit; grep the old wording repo-wide, and its concept and paraphrases too ("module cache" also hides as "evaluated module"), not only the exact phrase. Re-read the header doc of every file you
   touched, including the file that holds the change itself, not only the config that points at it.
 - After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 
