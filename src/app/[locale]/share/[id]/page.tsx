@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -94,7 +96,12 @@ export default async function SharePage({ params }: Props) {
                 </span>
             </h1>
 
-            <div className="mb-6 rounded-lg border border-secondary-700 bg-secondary-800/50 px-3 py-2 text-xs text-secondary-400">
+            <div
+                className={cn(
+                    SURFACE_CARD,
+                    'mb-6 px-3 py-2 text-xs text-secondary-400'
+                )}
+            >
                 {t('page.de8fc6', { v0: asOf })}
             </div>
 

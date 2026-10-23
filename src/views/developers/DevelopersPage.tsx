@@ -456,7 +456,12 @@ export async function DevelopersPage({
                                 <li>{t('authentication.cookies')}</li>
                                 <li>{t('authentication.revoke')}</li>
                             </ul>
-                            <div className="mt-6 rounded-lg border border-secondary-700 px-4 py-4 sm:px-5">
+                            <div
+                                className={cn(
+                                    SURFACE_CARD,
+                                    'mt-6 px-4 py-4 sm:px-5'
+                                )}
+                            >
                                 <h3 className="text-sm font-semibold text-secondary-100">
                                     {t('authentication.byokTitle')}
                                 </h3>

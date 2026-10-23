@@ -851,16 +851,18 @@ body:has([data-route-pending]) [data-vaul-drawer] {
 }
 
 /*
- * SIGLENS AI 표면 — 선 대신 **면의 밝기와 빛**으로 층을 나눈다.
+ * 표면 — 선 대신 **면의 밝기와 빛**으로 층을 나눈다.
  *
- * ai 호스트는 헤더·사이드바·카드·입력창이 전부 1px 선으로 갈라져 표 같은 인상이었다
+ * 헤더·사이드바·카드·입력창이 전부 1px 선으로 갈라져 표 같은 인상이었다
  * (2026-10 사용자 피드백: "엑셀 같다"). 그래서 장식 경계를 지우고 아래 클래스로 바꾼다.
+ * SIGLENS AI에서 먼저 쓰고 메인 사이트로 넓혔다 — 메인의 카드는 `SURFACE_CARD`
+ * (`shared/lib/surfaceStyles.ts`)를 거쳐 `.surface-raised`를 쓴다.
  *
- * - `.ai-raised` — 떠 있는 표면(질문 카드·입력창·말풍선·보조 버튼).
- * - `.ai-raised-hover` — 포인터를 올리면 면이 한 단계 밝아진다.
- * - `.ai-accent` — 주 액션 채움 버튼의 브랜드 그라데이션.
- * - `.ai-rail` / `.ai-bar` — 사이드바·상단 띠. 장식 선 대신 옅은 빛 한 줄(다크)·가장자리 그림자(라이트)로 나눈다.
- * - `.ai-well` — 코드 블록처럼 **파인** 자리.
+ * - `.surface-raised` — 떠 있는 표면(카드·패널·질문 카드·입력창·말풍선·보조 버튼).
+ * - `.surface-raised-hover` — 포인터를 올리면 면이 한 단계 밝아진다.
+ * - `.surface-accent` — 주 액션 채움 버튼의 브랜드 그라데이션.
+ * - `.surface-rail` / `.surface-bar` — 사이드바·상단 띠. 장식 선 대신 옅은 빛 한 줄(다크)·가장자리 그림자(라이트)로 나눈다.
+ * - `.surface-well` — 코드 블록처럼 **파인** 자리.
  *
  * ## 테마마다 재료가 다르다
  *
@@ -874,7 +876,7 @@ body:has([data-route-pending]) [data-vaul-drawer] {
  * 그림자는 `box-shadow`를 직접 덮지 않고 Tailwind의 `--tw-shadow`/`--tw-inset-shadow`에
  * 싣는다. `focus-visible:ring-2` 같은 링 유틸리티는 `--tw-ring-shadow`만 바꾸고 같은
  * 조합식으로 `box-shadow`를 다시 쓰므로 포커스 링이 떠도 하이라이트가 남는다. 반대로
- * `shadow-*`·`inset-shadow-*` 유틸리티는 이 변수를 덮어쓰므로 `ai-*` 클래스와 함께 쓰지 않는다.
+ * `shadow-*`·`inset-shadow-*` 유틸리티는 이 변수를 덮어쓰므로 `surface-*` 클래스와 함께 쓰지 않는다.
  *
  * 조작 요소의 식별(WCAG 1.4.11): 텍스트·아이콘이 있는 버튼은 라벨 자체가 식별 수단이라
  * 경계가 필요 없다. 경계가 유일한 식별 수단인 일반 입력(사이드바 검색 등)은 여전히
@@ -883,24 +885,24 @@ body:has([data-route-pending]) [data-vaul-drawer] {
  * 면 색은 `@property`로 색 등록해 호버 전환이 보간되게 한다. 무채색끼리 섞으므로
  * `srgb`로 섞는다 — `oklch` 혼합은 색상각이 틀어져 다크 면에 붉은 기가 돌았다.
  */
-@property --ai-raised-top {
+@property --surface-raised-top {
     syntax: '<color>';
     inherits: false;
     initial-value: transparent;
 }
 
-@property --ai-raised-bottom {
+@property --surface-raised-bottom {
     syntax: '<color>';
     inherits: false;
     initial-value: transparent;
 }
 
 @layer components {
-    .ai-raised,
-    .ai-accent,
-    .ai-rail,
-    .ai-bar,
-    .ai-well {
+    .surface-raised,
+    .surface-accent,
+    .surface-rail,
+    .surface-bar,
+    .surface-well {
         box-shadow:
             var(--tw-inset-shadow, 0 0 #0000),
             var(--tw-inset-ring-shadow, 0 0 #0000),
@@ -909,21 +911,21 @@ body:has([data-route-pending]) [data-vaul-drawer] {
     }
 
     /* 다크: 페이지(900)보다 한 단계 밝은 단색 면. top = bottom이라 그라데이션이 없다. */
-    .ai-raised {
-        --ai-raised-top: color-mix(
+    .surface-raised {
+        --surface-raised-top: color-mix(
             in srgb,
             var(--color-secondary-700) 40%,
             var(--color-secondary-800)
         );
-        --ai-raised-bottom: var(--ai-raised-top);
+        --surface-raised-bottom: var(--surface-raised-top);
         --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 7%);
         --tw-shadow: 0 1px 2px rgb(0 0 0 / 35%);
 
-        background-color: var(--ai-raised-bottom);
+        background-color: var(--surface-raised-bottom);
         background-image: linear-gradient(
             180deg,
-            var(--ai-raised-top),
-            var(--ai-raised-bottom)
+            var(--surface-raised-top),
+            var(--surface-raised-bottom)
         );
 
         /* 투명 경계(입력창)가 있어도 그라데이션이 경계 밑으로 반복돼 윗변에 1px 선이 비치지 않게 한다. */
@@ -933,20 +935,20 @@ body:has([data-route-pending]) [data-vaul-drawer] {
            전환이 빠진다(버튼 상수의 `transition-colors`도 마찬가지). */
         transition-duration: 150ms;
         transition-property:
-            color, background-color, box-shadow, --ai-raised-top,
-            --ai-raised-bottom;
+            color, background-color, box-shadow, --surface-raised-top,
+            --surface-raised-bottom;
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .ai-raised {
+        .surface-raised {
             transition: none;
         }
     }
 
     /* 터치 기기는 호버가 눌린 채 남으므로 실제 포인터가 있을 때만 건다. */
     @media (hover: hover) {
-        .ai-raised-hover:hover {
-            --ai-raised-top: color-mix(
+        .surface-raised-hover:hover {
+            --surface-raised-top: color-mix(
                 in srgb,
                 var(--color-secondary-700) 70%,
                 var(--color-secondary-800)
@@ -955,7 +957,7 @@ body:has([data-route-pending]) [data-vaul-drawer] {
         }
     }
 
-    .ai-accent {
+    .surface-accent {
         --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 18%);
         --tw-shadow: 0 1px 2px rgb(0 0 0 / 30%);
 
@@ -969,7 +971,7 @@ body:has([data-route-pending]) [data-vaul-drawer] {
     /* 흰 글자 대비가 떨어지지 않게 호버는 **어두워지는** 쪽이다(`BUTTON_PRIMARY`와 같은 원칙).
        터치 기기에서 눌린 채 남지 않게 실제 포인터가 있을 때만 건다. */
     @media (hover: hover) {
-        .ai-accent:hover {
+        .surface-accent:hover {
             background-image: linear-gradient(
                 180deg,
                 var(--color-primary-700),
@@ -979,7 +981,7 @@ body:has([data-route-pending]) [data-vaul-drawer] {
     }
 
     /* 누르는 순간은 한 단계 더 어둡다 — 그라데이션이 `active:bg-*` 채움을 덮으므로 여기서 준다. */
-    .ai-accent:active {
+    .surface-accent:active {
         background-image: linear-gradient(
             180deg,
             color-mix(in oklch, var(--color-primary-700) 82%, black),
@@ -989,8 +991,8 @@ body:has([data-route-pending]) [data-vaul-drawer] {
 
     /* 비활성은 회색 채움(`disabled:bg-secondary-700`)만 남긴다 — 그라데이션이 덮으면
        눌러도 안 되는 버튼이 활성처럼 보인다. */
-    .ai-accent:disabled,
-    :root[data-theme='light'] .ai-accent:disabled {
+    .surface-accent:disabled,
+    :root[data-theme='light'] .surface-accent:disabled {
         --tw-inset-shadow: 0 0 #0000;
         --tw-shadow: 0 0 #0000;
 
@@ -1000,20 +1002,20 @@ body:has([data-route-pending]) [data-vaul-drawer] {
     /* 다크: 사이드바(`bg-secondary-950`)와 페이지(900)의 톤 차이는 1.03:1이라 보이지 않는다 —
        특히 스크림 없는 모바일 드로어는 대화 위에 경계 없이 겹쳤다. 헤더와 같은 옅은 빛 한 줄
        (흰색 5%)과 짧은 그늘로 오른쪽 가장자리를 남긴다. */
-    .ai-rail {
+    .surface-rail {
         --tw-shadow:
             1px 0 0 0 rgb(255 255 255 / 5%), 12px 0 24px -16px rgb(0 0 0 / 80%);
     }
 
     /* 다크: 헤더·띠와 본문은 같은 900 톤이라 톤으로는 갈리지 않는다. 장식 선(secondary-700)
        대신 아주 옅은 빛 한 줄(흰색 5%)과 짧은 그늘로 가장자리만 남긴다. */
-    .ai-bar {
+    .surface-bar {
         --tw-shadow:
             0 1px 0 0 rgb(255 255 255 / 5%), 0 8px 16px -12px rgb(0 0 0 / 80%);
     }
 
     /* 다크: 검은 안쪽 그림자는 950 우물 위에서 보이지 않으므로 옅은 빛 테두리로 윤곽을 준다. */
-    .ai-well {
+    .surface-well {
         --tw-inset-shadow: inset 0 1px 2px rgb(0 0 0 / 40%);
         --tw-shadow: 0 0 0 1px rgb(255 255 255 / 5%);
     }
@@ -1021,9 +1023,9 @@ body:has([data-route-pending]) [data-vaul-drawer] {
 
 /* 라이트: 그라데이션 + 낙하 그림자. 흰 면이 그림자로 떠 보인다. */
 @layer components {
-    :root[data-theme='light'] .ai-raised {
-        --ai-raised-top: var(--color-secondary-800);
-        --ai-raised-bottom: color-mix(
+    :root[data-theme='light'] .surface-raised {
+        --surface-raised-top: var(--color-secondary-800);
+        --surface-raised-bottom: color-mix(
             in srgb,
             var(--color-secondary-900) 70%,
             var(--color-secondary-800)
@@ -1035,23 +1037,23 @@ body:has([data-route-pending]) [data-vaul-drawer] {
     }
 
     @media (hover: hover) {
-        :root[data-theme='light'] .ai-raised-hover:hover {
-            --ai-raised-top: var(--color-secondary-800);
-            --ai-raised-bottom: var(--color-secondary-800);
+        :root[data-theme='light'] .surface-raised-hover:hover {
+            --surface-raised-top: var(--color-secondary-800);
+            --surface-raised-bottom: var(--color-secondary-800);
             --tw-shadow:
                 0 0 0 1px rgb(15 23 42 / 6%), 0 2px 4px rgb(15 23 42 / 8%),
                 0 14px 28px -14px rgb(15 23 42 / 26%);
         }
     }
 
-    :root[data-theme='light'] .ai-accent {
+    :root[data-theme='light'] .surface-accent {
         --tw-shadow:
             0 1px 2px rgb(15 23 42 / 15%),
             0 8px 20px -10px
                 color-mix(in oklch, var(--color-primary-600) 45%, transparent);
     }
 
-    :root[data-theme='light'] .ai-rail {
+    :root[data-theme='light'] .surface-rail {
         --tw-shadow: 10px 0 28px -20px rgb(15 23 42 / 25%);
 
         background-image: linear-gradient(
@@ -1065,11 +1067,11 @@ body:has([data-route-pending]) [data-vaul-drawer] {
         );
     }
 
-    :root[data-theme='light'] .ai-bar {
+    :root[data-theme='light'] .surface-bar {
         --tw-shadow: 0 8px 20px -16px rgb(15 23 42 / 30%);
     }
 
-    :root[data-theme='light'] .ai-well {
+    :root[data-theme='light'] .surface-well {
         --tw-inset-shadow: inset 0 1px 3px rgb(15 23 42 / 8%);
         --tw-shadow: 0 0 0 1px rgb(15 23 42 / 5%);
     }

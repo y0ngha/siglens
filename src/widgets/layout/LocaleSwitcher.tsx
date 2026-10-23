@@ -12,7 +12,7 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { CheckIcon, GlobeIcon } from '@/shared/ui/StrokeIcons';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 
 interface LocaleSwitcherProps {
     readonly className?: string;
@@ -174,7 +174,7 @@ export function LocaleSwitcher({
                     role="radiogroup"
                     aria-label={t('localeSwitcher.label')}
                     className={cn(
-                        SURFACE_CARD,
+                        SURFACE_FLOATING,
                         'absolute top-full z-10 mt-1 w-max min-w-44 p-1 shadow-lg',
                         align === 'start' ? 'left-0' : 'right-0'
                     )}

@@ -124,7 +124,7 @@ function ContactEmailFieldSkeleton() {
             </span>
             <div
                 aria-hidden
-                className="h-12 w-full animate-pulse rounded-lg border border-secondary-700 bg-secondary-900/60"
+                className="h-12 w-full animate-pulse rounded-lg border border-border-control bg-secondary-950"
             />
         </div>
     );

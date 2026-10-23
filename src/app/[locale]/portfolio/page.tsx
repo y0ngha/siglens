@@ -157,7 +157,7 @@ export function PortfolioEmptyState() {
     return (
         <section
             data-testid="portfolio-empty-state"
-            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
+            className={cn(SURFACE_CARD, 'flex flex-col items-start gap-3 p-6')}
         >
             <p className="text-sm font-semibold text-secondary-100">
                 {t('page.ac9263')}
@@ -177,7 +177,7 @@ export function PortfolioErrorState() {
     return (
         <section
             data-testid="portfolio-error-state"
-            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
+            className={cn(SURFACE_CARD, 'flex flex-col items-start gap-3 p-6')}
         >
             <p className="text-sm font-semibold text-secondary-100">
                 {t('page.90a081')}

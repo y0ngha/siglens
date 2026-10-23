@@ -100,7 +100,7 @@ function IncludedSymbolsNote() {
     return (
         <section
             aria-labelledby={REPORT_SYMBOLS_HEADING_ID}
-            className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
+            className={cn(SURFACE_CARD, 'space-y-4 p-6')}
         >
             <h2
                 id={REPORT_SYMBOLS_HEADING_ID}

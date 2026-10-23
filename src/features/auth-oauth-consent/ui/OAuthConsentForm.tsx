@@ -1,5 +1,6 @@
 'use client';
 
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import Image from 'next/image';
@@ -49,7 +50,7 @@ export function OAuthConsentForm({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-900/40 p-4">
+            <div className={cn(SURFACE_NESTED, 'flex items-center gap-3 p-4')}>
                 {avatarUrl ? (
                     <Image
                         src={avatarUrl}

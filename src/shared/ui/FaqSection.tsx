@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import type { FaqItem } from '@/shared/lib/seo';
 import { splitSitePaths } from '@/shared/lib/splitSitePaths';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -68,7 +70,7 @@ export function FaqSection({
     return (
         <section
             aria-labelledby={FAQ_HEADING_ID}
-            className="space-y-3 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
+            className={cn(SURFACE_CARD, 'space-y-3 p-5')}
         >
             <h2 id={FAQ_HEADING_ID} className={HEADING_SECTION}>
                 {heading}

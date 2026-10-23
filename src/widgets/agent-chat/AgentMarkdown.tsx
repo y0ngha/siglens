@@ -105,12 +105,12 @@ const AGENT_COMPONENTS: Components = {
         </code>
     ),
     pre: ({ children }) => (
-        <pre className="ai-well my-3 overflow-x-auto rounded-lg bg-secondary-950 p-3 font-mono text-[13px] leading-6 text-secondary-200 [&_code]:bg-transparent [&_code]:p-0">
+        <pre className="surface-well my-3 overflow-x-auto rounded-lg bg-secondary-950 p-3 font-mono text-[13px] leading-6 text-secondary-200 [&_code]:bg-transparent [&_code]:p-0">
             {children}
         </pre>
     ),
     table: ({ children }) => (
-        <div className="ai-raised my-3 overflow-x-auto rounded-lg">
+        <div className="surface-raised my-3 overflow-x-auto rounded-lg">
             <table className="w-full border-collapse text-left text-sm">
                 {children}
             </table>

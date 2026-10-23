@@ -13,7 +13,7 @@ import {
     ReplaySources,
     ReplaySteps,
 } from '@/shared/ui/ReplayParts';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
@@ -105,7 +105,13 @@ export function ChatReplay({
                 className="flex h-[520px] flex-col gap-4 overflow-hidden p-4 sm:h-[420px]"
             >
                 {frame.typed > 0 ? (
-                    <div className="max-w-[85%] self-end rounded-lg border border-secondary-700 bg-secondary-900 px-4 py-2.5 text-[15px] leading-6 break-words text-secondary-100">
+                    <div
+                        className={cn(
+                            // 리플레이 틀(SURFACE_CARD) 안이라 같은 면을 겹치면 말풍선이 묻힌다.
+                            SURFACE_NESTED,
+                            'max-w-[85%] self-end px-4 py-2.5 text-[15px] leading-6 break-words text-secondary-100'
+                        )}
+                    >
                         {scenario.question.slice(0, frame.typed)}
                         {typing ? <ReplayCaret /> : null}
                     </div>

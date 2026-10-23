@@ -129,7 +129,10 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-cta-poll-error-heading"
                 role="alert"
-                className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6 text-center"
+                className={cn(
+                    SURFACE_CARD,
+                    'border-ui-danger/30 p-6 text-center'
+                )}
             >
                 <h2
                     id="overall-cta-poll-error-heading"
@@ -212,7 +215,7 @@ export function OverallContent({
         return (
             <section
                 aria-labelledby="overall-error-heading"
-                className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'border-ui-danger/30 p-6')}
             >
                 <h2
                     id="overall-error-heading"

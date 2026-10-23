@@ -1,5 +1,6 @@
 'use client';
 
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
@@ -109,7 +110,7 @@ export function PositionCta({
     return (
         <section
             data-testid="position-cta"
-            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
+            className={cn(SURFACE_CARD, 'flex flex-col items-start gap-3 p-6')}
         >
             {/* 평단 없이 현재가만 그린 건물 — 회원 건물과 같은 컴포넌트·같은 aria
                 의미(role="img" + 요약 label)다. ★평단 자리는 아래 문구가 안내한다. */}

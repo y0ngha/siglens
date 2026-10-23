@@ -14,7 +14,7 @@ interface AuthFormSkeletonProps {
  * 이 스켈레톤은 `AuthCardShell`의 **카드 위**에 놓인다. 한때 `bg-secondary-800`
  * 이었는데 그 값이 곧 카드 표면이라 1.00:1로 아무것도 안 보였다 — 로그인·가입·
  * 비밀번호 재설정의 로딩 화면이 통째로 빈 카드였다. 표면에 맞는 자리표시자
- * 토큰을 쓴다(카드 위 1.336:1 다크 / 1.227:1 라이트).
+ * 토큰을 쓴다(카드 면 위 1.218:1 다크 / 1.175:1 라이트 — `surfaceStyles.ts` 표).
  */
 export function AuthFormSkeleton({ rows = 2 }: AuthFormSkeletonProps) {
     return (

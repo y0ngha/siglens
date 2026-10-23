@@ -12,8 +12,8 @@ import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
  * post-hoc universe). Hiding that behind a toggle would recreate the same
  * "numbers without context" problem this widget exists to fix.
  *
- * Reuses the hero's card tone (`border-secondary-700`/`bg-secondary-800`) —
- * no new visual language for this page.
+ * Reuses the hero's card surface (`SURFACE_CARD`) — no new visual language
+ * for this page.
  */
 export function BacktestMethodology() {
     const t = useTranslations('widgets.backtesting.methodology');

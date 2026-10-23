@@ -1,3 +1,4 @@
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import type { WatchlistSource } from '@/entities/watchlist/model';
 import { WatchlistPillToggle } from '@/features/watchlist/ui/WatchlistPillToggle';
@@ -66,7 +67,8 @@ export function CategoryCardGrid({
                         key={card.id}
                         id={card.id}
                         className={cn(
-                            'border-secondary-700 bg-secondary-800/50 scroll-mt-20 rounded-lg border p-5',
+                            SURFACE_CARD,
+                            'scroll-mt-20 p-5',
                             'border-l-2',
                             card.borderColor
                         )}

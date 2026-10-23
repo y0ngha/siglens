@@ -7,7 +7,7 @@ import { applyStoredTheme } from '@/shared/lib/theme';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 
 const TRIGGER_BASE_CLASS =
     'rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
@@ -65,7 +65,7 @@ export function ContactDialog({
                 aria-labelledby="contact-dialog-title"
                 onClose={close}
                 className={cn(
-                    SURFACE_CARD,
+                    SURFACE_FLOATING,
                     'max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm'
                 )}
             >

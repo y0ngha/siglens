@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -6,6 +8,8 @@ import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import { QuoteHeader } from './QuoteHeader';
 
 type IndexCardData = MarketIndexData | MarketSectorData;
+
+const CARD_LAYOUT = 'flex flex-col gap-1 p-3';
 
 interface IndexCardProps {
     data: IndexCardData;
@@ -25,19 +29,17 @@ export function IndexCard({
     const t = useTranslations('widgets.dashboard');
     const assetLabel = useAssetLabel();
 
-    const inner = (
-        <div className="flex flex-col gap-1 rounded-lg border border-secondary-700 bg-secondary-800/50 p-3">
-            <QuoteHeader
-                data={{
-                    symbol: data.symbol,
-                    displayName: assetLabel(data.symbol, data.koreanName),
-                    price: data.price,
-                    changePercent: data.changesPercentage,
-                }}
-                currencySymbol={currencySymbol}
-                tickerIsReadable={tickerIsReadable}
-            />
-        </div>
+    const header = (
+        <QuoteHeader
+            data={{
+                symbol: data.symbol,
+                displayName: assetLabel(data.symbol, data.koreanName),
+                price: data.price,
+                changePercent: data.changesPercentage,
+            }}
+            currencySymbol={currencySymbol}
+            tickerIsReadable={tickerIsReadable}
+        />
     );
 
     if (href) {
@@ -52,12 +54,13 @@ export function IndexCard({
                 })}
                 // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
                 prefetch={false}
-                className={CARD_LINK_CLASSES}
+                // 면과 호버가 한 상수(`CARD_LINK_CLASSES`)라 링크 자신이 카드 면이다.
+                className={cn(CARD_LINK_CLASSES, CARD_LAYOUT)}
             >
-                {inner}
+                {header}
             </Link>
         );
     }
 
-    return inner;
+    return <div className={cn(SURFACE_CARD, CARD_LAYOUT)}>{header}</div>;
 }

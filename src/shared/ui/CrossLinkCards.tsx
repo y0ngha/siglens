@@ -6,6 +6,9 @@ import {
     type AssetClass,
     type MarketRegion,
 } from '@/shared/config/marketProfile/types';
+import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { INDEXABLE_SYMBOL_TABS, type SymbolSeoTab } from '@/shared/lib/seo';
 
@@ -179,7 +182,10 @@ export function CrossLinkCards({
                         <div
                             key={p}
                             aria-current="page"
-                            className="cursor-default rounded-lg border border-primary-500 bg-secondary-800/40 p-6 ring-1 ring-primary-500/30"
+                            className={cn(
+                                SURFACE_CARD,
+                                'cursor-default border-primary-500 p-6 ring-1 ring-primary-500/30'
+                            )}
                         >
                             <h3 className={HEADING_SUBSECTION}>{title}</h3>
                             <p className="mt-2 text-sm text-secondary-400">
@@ -199,13 +205,15 @@ export function CrossLinkCards({
                         // 섹션이다. prefetch를 켜두면 같은 페이로드를 탭에 이어 두 번째로
                         // 예약하게 되므로 끈다 (docs/architecture/CDN_CACHING.md §1).
                         prefetch={false}
-                        // 이 카드는 형제들과 달리 **채움이 없다** — 보더가 배경과
-                        // 구분되는 유일한 단서다. 장식 토큰(`secondary-700`)일 때
-                        // 다크 1.40:1 / 라이트 1.15:1로 사실상 안 보였고, 이는
-                        // master(1.72:1)보다도 낮았다. 경계 토큰으로 올려
-                        // 다크 3.74 / 라이트 3.58을 확보한다. 현재 탭 카드와의
-                        // 구분은 그쪽의 채움(`bg-secondary-800/40`)과 액센트가 맡는다.
-                        className="rounded-lg border border-border-control p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        // 예전에는 채움 없이 보더(`border-control`)만으로 배경과 갈렸다.
+                        // 이제 다른 카드처럼 떠 있는 면(`SURFACE_CARD`)이 카드를 드러내고,
+                        // 제목·설명 텍스트가 링크의 식별 수단이라 경계선이 필요 없다
+                        // (DESIGN.md §경계 예외). 현재 탭 카드와의 구분은 그쪽의
+                        // 브랜드 경계·링이 맡는다.
+                        className={cn(
+                            CARD_LINK_CLASSES,
+                            'p-6 focus-visible:ring-offset-2'
+                        )}
                     >
                         <h3 className={HEADING_SUBSECTION}>{title}</h3>
                         <p className="mt-2 text-sm text-secondary-400">

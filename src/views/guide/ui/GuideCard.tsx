@@ -2,7 +2,6 @@ import type { GuideEntrySummary } from '@/entities/guide/types';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SUBSECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
@@ -28,11 +27,7 @@ export function GuideCard({ entry, categoryLabel }: GuideCardProps) {
             <LocaleLink
                 href={guideEntryPath(entry.category, entry.slug)}
                 prefetch={false}
-                className={cn(
-                    SURFACE_CARD,
-                    CARD_LINK_CLASSES,
-                    'group w-full p-5'
-                )}
+                className={cn(CARD_LINK_CLASSES, 'group w-full p-5')}
             >
                 {categoryLabel === undefined ? null : (
                     <span className={cn(LABEL_KO, 'block')}>

@@ -93,7 +93,7 @@ interface SuggestionCardsSkeletonProps {
 
 /**
  * Same footprint as six cards, so the page does not jump when they land.
- * It wears `CARD`'s resting surface (`ai-raised`) rather than a
+ * It wears `CARD`'s resting surface (`surface-raised`) rather than a
  * `PLACEHOLDER_ON_*` token from `surfaceStyles.ts`: this skeleton mirrors the
  * real card surface it stands in for, and it sits on the page background
  * (`secondary-900`), not on a card or inset, so those tokens do not apply here.
@@ -104,7 +104,7 @@ function SuggestionCardsSkeleton({ count }: SuggestionCardsSkeletonProps) {
             {Array.from({ length: count }, (_, i) => (
                 <li
                     key={i}
-                    className="ai-raised min-h-14 animate-pulse rounded-lg motion-reduce:animate-none"
+                    className="surface-raised min-h-14 animate-pulse rounded-lg motion-reduce:animate-none"
                 />
             ))}
         </ul>
@@ -117,7 +117,7 @@ interface CapabilityItem {
 }
 
 /**
- * Suggestion card: a raised surface (`ai-raised`, globals.css) that catches
+ * Suggestion card: a raised surface (`surface-raised`, globals.css) that catches
  * more light on hover — content, not a filter chip. No edge line at all: the
  * question text and the arrow already say "press me" (WCAG 1.4.11 asks for no
  * boundary on a labelled button). A 3.5:1 control edge made six cards read as

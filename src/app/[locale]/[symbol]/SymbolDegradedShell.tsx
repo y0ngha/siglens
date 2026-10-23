@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import type { ComponentProps, ReactNode } from 'react';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
@@ -32,7 +34,7 @@ export function SymbolDegradedShell({
         <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>{heading}</SymbolPageHeading>
             {children}
-            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
+            <section className={cn(SURFACE_CARD, 'px-5 py-8 text-center')}>
                 <p className="text-sm font-medium text-secondary-200">
                     {noticeTitle}
                 </p>

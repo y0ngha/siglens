@@ -1,10 +1,12 @@
 'use client';
 
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { useSkillDescription } from '@/shared/i18n/skillDescription';
 import React, { useId, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_LIFT_TRANSITION } from '@/shared/lib/cardStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
@@ -226,11 +228,13 @@ export function SkillCard({
     return (
         <div
             className={cn(
-                'bg-secondary-800/50 border-secondary-700 rounded-lg border',
-                'transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out motion-reduce:transition-none',
-                // 호버 lift는 마우스(hover 지원) 기기 + 펼침 가능 카드에만.
+                SURFACE_CARD,
+                SURFACE_LIFT_TRANSITION,
+                'duration-200 ease-out motion-reduce:transition-none',
+                // 호버 lift는 마우스(hover 지원) 기기 + 펼침 가능 카드에만. 경계선 대신 면이
+                // 밝아진다(`surface-raised-hover`는 스스로 `(hover: hover)`에서만 걸린다).
                 canExpand &&
-                    '[@media(hover:hover)]:hover:border-secondary-600 [@media(hover:hover)]:hover:bg-secondary-800/70 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:scale-[1.015] [@media(hover:hover)]:hover:shadow-lg'
+                    'surface-raised-hover [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:scale-[1.015]'
             )}
         >
             <div

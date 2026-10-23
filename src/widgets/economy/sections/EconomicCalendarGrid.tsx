@@ -1,5 +1,6 @@
 'use client';
 
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
@@ -379,7 +380,7 @@ function DayDetailPanel({
                         <li
                             key={`${ev.iso}:${ev.original.event}:${ev.original.actual ?? ''}`}
                             hidden={!activeImpacts.has(ev.original.impact)}
-                            className="rounded-lg border border-secondary-700 bg-secondary-800/50 p-3"
+                            className={cn(SURFACE_CARD, 'p-3')}
                         >
                             <div className="flex flex-wrap items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
@@ -1029,7 +1030,7 @@ export function EconomicCalendarGrid({
                 <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
             </div>
 
-            <div className="flex flex-col gap-6 rounded-lg border border-secondary-700 p-3 sm:p-4">
+            <div className={cn(SURFACE_CARD, 'flex flex-col gap-6 p-3 sm:p-4')}>
                 {hasPastWeeks && (
                     <button
                         type="button"

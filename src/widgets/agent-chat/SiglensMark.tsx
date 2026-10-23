@@ -17,7 +17,7 @@ export function SiglensMark({ size = 'sm', className }: SiglensMarkProps) {
         <span
             aria-hidden="true"
             className={cn(
-                'ai-raised flex shrink-0 items-center justify-center rounded-lg select-none',
+                'surface-raised flex shrink-0 items-center justify-center rounded-lg select-none',
                 size === 'lg' ? 'size-12' : 'size-7',
                 className
             )}

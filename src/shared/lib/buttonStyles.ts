@@ -24,10 +24,16 @@ export const BUTTON_DANGER = cn(
     'bg-ui-danger-fill font-semibold text-white hover:bg-ui-danger-fill-hover focus-visible:ring-ui-danger active:bg-ui-danger-fill-active disabled:bg-secondary-700 disabled:text-secondary-500'
 );
 
-/** 보조 액션. 경계가 유일한 식별 수단이라 컨트롤 경계 토큰을 쓴다. */
+/**
+ * 보조 액션. 경계가 유일한 식별 수단이라 컨트롤 경계 토큰을 쓴다.
+ *
+ * 호버 면은 반투명(`secondary-700/50`)이라 페이지(900) 위에서도 카드(`.surface-raised`) 위에서도
+ * 한 단계 밝아진다. 불투명 `secondary-800`이었을 때는 다크 카드 면(800보다 밝다) 위에서
+ * 오히려 어두워졌고, 라이트 카드(윗변 흰색) 위에서는 보이지 않았다.
+ */
 export const BUTTON_OUTLINE = cn(
     BUTTON_BASE,
-    'border border-border-control font-medium text-secondary-200 hover:bg-secondary-800 focus-visible:ring-primary-500 disabled:text-secondary-500'
+    'border border-border-control font-medium text-secondary-200 hover:bg-secondary-700/50 focus-visible:ring-primary-500 disabled:text-secondary-500'
 );
 
 /** 삭제 같은 파괴적 보조 액션. */

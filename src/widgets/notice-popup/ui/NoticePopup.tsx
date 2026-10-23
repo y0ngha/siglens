@@ -9,7 +9,7 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { formatNoticeDate } from '@/entities/notice/lib/formatNoticeDate';
 import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 import {
     BUTTON_GHOST,
     BUTTON_OUTLINE,
@@ -95,11 +95,12 @@ export function NoticePopup() {
                 aria-labelledby={MODAL_TITLE_ID}
                 // 바텀시트 토큰은 `MobileAnalysisSheet`과 맞춘다(상단 라운드,
                 // secondary-700 보더, safe-area 여백). sm 이상에서 중앙 카드로 돌아간다.
-                // SURFACE_CARD가 모든 모서리를 lg로 둥글리므로, 모바일 바텀시트는
+                // 페이지의 카드를 덮는 다이얼로그라 경계선을 유지하는 `SURFACE_FLOATING`이다.
+                // 표면이 모든 모서리를 lg로 둥글리므로, 모바일 바텀시트는
                 // 하단만 명시적으로 되돌린다(`rounded-b-none`) — sm 이상에서
                 // `sm:rounded-b-lg`로 다시 카드 모양을 완성한다.
                 className={cn(
-                    SURFACE_CARD,
+                    SURFACE_FLOATING,
                     'flex max-h-[85dvh] w-full flex-col rounded-b-none p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:max-w-md sm:rounded-b-lg sm:pb-5'
                 )}
             >
@@ -170,11 +171,7 @@ export function NoticePopup() {
                     </button>
                     <button
                         onClick={advance}
-                        // 패널이 secondary-800이라 BUTTON_OUTLINE의 hover 면(800)이 보이지 않는다.
-                        className={cn(
-                            BUTTON_OUTLINE,
-                            'px-4 py-2 text-sm hover:bg-secondary-700'
-                        )}
+                        className={cn(BUTTON_OUTLINE, 'px-4 py-2 text-sm')}
                     >
                         {t('NoticePopup.94b7db')}
                     </button>

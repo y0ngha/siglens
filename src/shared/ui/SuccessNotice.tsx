@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useEffect, useRef } from 'react';
 
 interface SuccessNoticeProps {
@@ -32,7 +34,10 @@ export function SuccessNotice({ show, title, messages }: SuccessNoticeProps) {
                 <div
                     ref={panelRef}
                     tabIndex={-1}
-                    className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-900/60 p-4 text-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className={cn(
+                        SURFACE_NESTED,
+                        'space-y-2 p-4 text-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
+                    )}
                 >
                     <p className="font-semibold text-secondary-100">{title}</p>
                     {messages.map(message => (

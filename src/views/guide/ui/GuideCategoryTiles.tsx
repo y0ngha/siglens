@@ -3,7 +3,6 @@ import type { GuideCategory } from '@/entities/guide/types';
 import { guideCategoryPath } from '@/shared/lib/guidePaths';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     CandlesIcon,
     GaugeIcon,
@@ -46,7 +45,6 @@ export function GuideCategoryTiles({ label, tiles }: GuideCategoryTilesProps) {
                                 href={guideCategoryPath(category)}
                                 prefetch={false}
                                 className={cn(
-                                    SURFACE_CARD,
                                     CARD_LINK_CLASSES,
                                     'group w-full p-4'
                                 )}

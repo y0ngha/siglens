@@ -1,3 +1,4 @@
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -67,11 +68,7 @@ export function SignalStockCard({
     // 큐레이션 밖 종목은 링크 없는 카드다 — 그 페이지는 noindex 롱테일이라 링크는 크롤 예산만
     // 쓴다(`isCuratedSymbol`, 2026-10-05 크롤 감사). 같은 시각 틀을 유지해 그리드가 흔들리지 않는다.
     if (!isCuratedSymbol(data.symbol)) {
-        return (
-            <div className="block rounded-lg border border-secondary-700 bg-secondary-800/50 p-3">
-                {content}
-            </div>
-        );
+        return <div className={cn(SURFACE_CARD, 'block p-3')}>{content}</div>;
     }
     return (
         <Link
@@ -79,10 +76,7 @@ export function SignalStockCard({
             title={t('SignalStockCard.analyzeTitle', { v0: data.symbol })}
             // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
             prefetch={false}
-            className={cn(
-                'border-secondary-700 bg-secondary-800/50 border p-3',
-                CARD_LINK_CLASSES
-            )}
+            className={cn(CARD_LINK_CLASSES, 'p-3')}
         >
             {content}
         </Link>

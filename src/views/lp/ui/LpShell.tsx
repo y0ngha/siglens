@@ -1,3 +1,4 @@
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { LP_PRIMARY_BUTTON } from './lpPrimaryButton';
@@ -25,7 +26,7 @@ interface LpShellProps {
 export function LpShell({ selfHref, cta, ctaHref, children }: LpShellProps) {
     return (
         <>
-            <header className="sticky top-0 z-10 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur">
+            <header className="surface-bar sticky top-0 z-10 bg-secondary-900/90 backdrop-blur">
                 <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4">
                     <a
                         href={selfHref}
@@ -71,7 +72,10 @@ export function LpDisclaimer() {
     return (
         <section
             aria-label="투자 유의사항"
-            className="mt-16 rounded-lg border border-secondary-700 px-5 py-4 text-sm leading-6 text-secondary-400"
+            className={cn(
+                SURFACE_CARD,
+                'mt-16 px-5 py-4 text-sm leading-6 text-secondary-400'
+            )}
         >
             시그렌즈가 보여주는 분석과 답변은 공개 데이터를 정리한 참고 자료이며
             특정 종목의 매수나 매도를 권유하지 않습니다. 투자 판단과 그 결과는

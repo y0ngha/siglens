@@ -222,7 +222,7 @@ export function Sidebar({
                 aria-label={t('Sidebar.9a7569')}
                 className="flex h-full flex-col gap-3 p-3"
             >
-                <div className="ai-raised rounded-lg p-4">
+                <div className="surface-raised rounded-lg p-4">
                     <p className="text-sm font-medium text-secondary-100">
                         {t('Sidebar.guestTitle')}
                     </p>
@@ -231,7 +231,7 @@ export function Sidebar({
                     </p>
                     <a
                         href={loginHref}
-                        className="ai-accent mt-3 inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="surface-accent mt-3 inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         {t('Sidebar.guestCta')}
                     </a>

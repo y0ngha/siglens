@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import { computePosition } from '../lib/positionGeometry';
@@ -24,7 +26,10 @@ function PositionSkeleton() {
             aria-busy="true"
             aria-live="polite"
             data-testid="position-loading"
-            className="flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
+            className={cn(
+                SURFACE_CARD,
+                'flex min-h-[280px] flex-col items-center justify-center gap-2 p-6'
+            )}
         >
             <span className="sr-only">
                 {t('PositionTabMemberContent.0b16bc')}

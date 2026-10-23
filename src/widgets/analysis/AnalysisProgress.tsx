@@ -1,5 +1,6 @@
 'use client';
 
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { ANALYSIS_PHASE_COUNT } from './hooks/useAnalysisProgress';
@@ -41,7 +42,10 @@ export function AnalysisProgress({
     const t = useTranslations('widgets.analysis');
     return (
         <div
-            className="relative flex flex-col gap-4 overflow-hidden rounded-lg border border-secondary-700/60 bg-secondary-900/40 p-4"
+            className={cn(
+                SURFACE_NESTED,
+                'relative flex flex-col gap-4 overflow-hidden p-4'
+            )}
             role="status"
             aria-live="polite"
             aria-label={t('AnalysisProgress.784c44')}

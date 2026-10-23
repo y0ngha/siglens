@@ -298,7 +298,7 @@ interface LimitsCardProps {
 
 function LimitsCard({ limits, disclaimer, termsLabel }: LimitsCardProps) {
     return (
-        <div className="mt-7 rounded-lg border border-secondary-700 px-4 py-4 sm:px-5">
+        <div className={cn(SURFACE_CARD, 'mt-7 px-4 py-4 sm:px-5')}>
             <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm leading-6 text-secondary-300 marker:text-secondary-500">
                 {limits.map(line => (
                     <li key={line}>{line}</li>
@@ -552,7 +552,7 @@ export async function AboutPage({
                             />
                         ))}
                     </ol>
-                    <div className="mt-4 rounded-lg border border-secondary-700 px-4 py-4 sm:px-5">
+                    <div className={cn(SURFACE_CARD, 'mt-4 px-4 py-4 sm:px-5')}>
                         <h3 className="text-sm font-semibold text-secondary-100">
                             {t('method.freshTitle')}
                         </h3>

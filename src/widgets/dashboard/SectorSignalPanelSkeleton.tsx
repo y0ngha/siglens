@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
@@ -49,7 +51,10 @@ export function SectorSignalPanelSkeleton({
                             {[0, 1, 2, 3].map(j => (
                                 <div
                                     key={j}
-                                    className="h-[120px] animate-pulse rounded-lg border border-secondary-700 bg-secondary-800/50"
+                                    className={cn(
+                                        SURFACE_CARD,
+                                        'h-[120px] animate-pulse'
+                                    )}
                                 />
                             ))}
                         </div>

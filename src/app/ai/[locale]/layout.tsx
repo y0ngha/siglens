@@ -160,7 +160,6 @@ export default async function AiRootLayout({
                                 )}
                                 <AuthSessionHeaderClient
                                     authReturn="ai"
-                                    softEdge
                                     hideOnScrollDown
                                 />
                                 {disabled ? (
