@@ -91,12 +91,78 @@ jobs:
             #
             # 종료 코드를 파일로 남기는 이유: 백그라운드 프로세스의 실패는 이 스텝의
             # 종료 코드에 반영되지 않는다. 회수 스텝이 이 파일로 성공·실패를 판정한다.
+            #
+            # apt 미러(azure.archive.ubuntu.com)가 연결은 유지한 채 아주 느리게 보내며 멈추는 일이 잦다
+            # (2026-10-23 하루에 샤드 5번이 다운로드 도중 5분 제한에 걸림). 이미지의 apt 설정
+            # (Retries 1, http/https Timeout 15 — 이 러너에서 `apt-config dump`로 확인)이 있어도 무응답이
+            # 아니라 느린 전송이라 끊기지 않았다. 그래서 두 가지로 막는다.
+            #   1. .deb 캐시: `e2e-apt-cache.yml`이 기본 브랜치에서 받아 둔 .deb를 복원해 apt 아카이브에
+            #      넣는다. 미러에서는 패키지 목록과, 캐시 이후 바뀐 패키지만 받는다.
+            #   2. 시스템 의존과 브라우저를 나눠 **병렬로** 설치하고, 각각 시간 제한을 걸어 실패하면 한 번 더 한다.
+            #      - 시스템 의존(`install-deps`, apt): `timeout`을 **root로** 돌린다. GNU timeout은 명령의
+            #        자식까지 끊으므로(`--foreground` 아님) node → apt-get → dpkg가 함께 끝나 잠금이 남지
+            #        않는다. Playwright는 apt 종료 코드를 1로 바꿔 내므로 코드로 가르지 않고 실패면 재시도하고,
+            #        재시도 전에 끊긴 설치를 마무리한다(`dpkg --configure -a` 최대 60+10초, 반쯤 풀린 패키지는
+            #        `apt-get -f install` 최대 120+10초).
+            #      - 브라우저(`install`, CDN): 일반 사용자로 시간 제한·재시도. apt와 무관해 기다리지 않는다.
+            #      최악: 의존 (270+15)+20+(60+10)+(120+10)+(270+15) = 790초, 브라우저 (120+15)+20+(120+15) = 290초,
+            #      병렬이라 790초로 회수 스텝 대기(840초) 안에 끝난다.
+            #   CLI 경로·브라우저 목록·캐시 키는 `.github/actions/e2e-apt-cache-key` 한 곳에서 나온다(캐시 잡과 공유).
+            # 종료 코드는 임시 파일에 쓴 뒤 mv로 바꿔, 회수 스텝이 빈 파일을 읽는 틈을 없앤다.
+            - name: Apt cache key
+              id: aptkey
+              uses: ./.github/actions/e2e-apt-cache-key
+
+            - name: Restore apt .deb cache (seeded on master)
+              if: steps.aptkey.outputs.key != ''
+              uses: actions/cache/restore@v4
+              with:
+                  path: ~/apt-debs
+                  key: ${{ steps.aptkey.outputs.key }}
+                  restore-keys: ${{ steps.aptkey.outputs.prefix }}
+
             - name: Install Playwright browsers (background)
               run: |
+                  NODE="$(command -v node)"
+                  CLI="${{ steps.aptkey.outputs.cli }}"
+                  BROWSERS="${{ steps.aptkey.outputs.browsers }}"
+                  export NODE CLI BROWSERS
                   nohup sh -c '
-                      yarn playwright install --with-deps chromium webkit > "$RUNNER_TEMP/playwright-install.log" 2>&1
-                      echo $? > "$RUNNER_TEMP/playwright-install.exit"
-                  ' > /dev/null 2>&1 &
+                      if ls "$HOME"/apt-debs/*.deb > /dev/null 2>&1; then
+                          echo "seeded $(ls "$HOME"/apt-debs/*.deb | wc -l) cached .deb files"
+                          sudo mv "$HOME"/apt-debs/*.deb /var/cache/apt/archives/
+                      else
+                          echo "no apt .deb cache; downloading every package from the mirror"
+                      fi
+                      run_with_retry() {
+                          label="$1"; shift
+                          for attempt in 1 2; do
+                              echo "== $label attempt $attempt"
+                              "$@" && return 0
+                              rc=$?
+                              echo "== $label attempt $attempt exited with $rc"
+                              [ "$attempt" = 2 ] && return "$rc"
+                              sleep 20
+                              if [ "$label" = deps ]; then
+                                  sudo timeout -k 10 60 dpkg --configure -a || true
+                                  sudo timeout -k 10 120 apt-get -f install -y || true
+                              fi
+                          done
+                      }
+                      run_with_retry browsers timeout -k 15 120 "$NODE" "$CLI" install $BROWSERS \
+                          > "$RUNNER_TEMP/playwright-browsers.log" 2>&1 &
+                      browsers=$!
+                      run_with_retry deps sudo timeout -k 15 270 "$NODE" "$CLI" install-deps $BROWSERS
+                      deps_rc=$?
+                      wait "$browsers"
+                      browsers_rc=$?
+                      cat "$RUNNER_TEMP/playwright-browsers.log"
+                      rc=$deps_rc
+                      [ "$rc" = 0 ] && rc=$browsers_rc
+                      echo "== deps exited with $deps_rc, browsers with $browsers_rc"
+                      echo "$rc" > "$RUNNER_TEMP/playwright-install.exit.tmp"
+                      mv "$RUNNER_TEMP/playwright-install.exit.tmp" "$RUNNER_TEMP/playwright-install.exit"
+                  ' > "$RUNNER_TEMP/playwright-install.log" 2>&1 &
 
             # Start the Docker backend with Compose (NOT GitHub `services:`).
             # global-setup.ts runs migrate/seed via `docker compose exec`, which
@@ -159,9 +225,11 @@ jobs:
               env:
                   CI: '1'
 
+            # 정상이면 설치가 앞 스텝(백엔드 기동·build)과 겹쳐 끝나 있어 여기서는 거의 기다리지
+            # 않는다. 840초는 설치 스텝의 최악(790초, 위 주석)보다 길다.
             - name: Wait for Playwright browsers
               run: |
-                  for i in $(seq 1 150); do
+                  for i in $(seq 1 420); do
                       if [ -f "$RUNNER_TEMP/playwright-install.exit" ]; then
                           code="$(cat "$RUNNER_TEMP/playwright-install.exit")"
                           cat "$RUNNER_TEMP/playwright-install.log"
@@ -170,8 +238,10 @@ jobs:
                       fi
                       sleep 2
                   done
-                  echo "Playwright install did not finish within 5 minutes. Log so far:"
+                  echo "Playwright install did not finish within 14 minutes. Log so far:"
                   cat "$RUNNER_TEMP/playwright-install.log" || true
+                  echo "--- browsers log so far:"
+                  cat "$RUNNER_TEMP/playwright-browsers.log" || true
                   exit 1
 
             # CI=1 → reuseExistingServer is false and retries: 2. globalSetup runs

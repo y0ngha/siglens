@@ -1,0 +1,45 @@
+name: E2E apt cache key
+description: >-
+    Shared inputs for the Playwright system-dependency .deb cache, used by both e2e.yml (restore +
+    install) and e2e-apt-cache.yml (seed on the default branch) so the two can never drift apart:
+    the cache key, the browser list and the Playwright CLI path.
+outputs:
+    key:
+        description: >-
+            Exact key — schema version + runner OS/release + runner image version + Playwright version
+            (yarn.lock) + browser list. Empty when the Playwright version cannot be read (callers then
+            run without the cache).
+        value: ${{ steps.k.outputs.key }}
+    prefix:
+        description: restore-keys prefix (same schema, OS release and browsers; any image or Playwright version).
+        value: ${{ steps.k.outputs.prefix }}
+    browsers:
+        description: Space-separated browsers to install deps and binaries for.
+        value: ${{ steps.k.outputs.browsers }}
+    cli:
+        description: Absolute path of the Playwright CLI that `yarn playwright` runs (@playwright/test's bin).
+        value: ${{ steps.k.outputs.cli }}
+runs:
+    using: composite
+    steps:
+        - id: k
+          shell: bash
+          run: |
+              # Bump SCHEMA when the way .debs are collected changes, so the seed re-runs instead of
+              # finding the old entry under the same key.
+              SCHEMA=v1
+              browsers="chromium webkit"
+              echo "browsers=${browsers}" >> "$GITHUB_OUTPUT"
+              if [ -d node_modules/@playwright/test ]; then
+                  echo "cli=$(node -p "require('path').join(require('path').dirname(require.resolve('@playwright/test/package.json')), 'cli.js')")" >> "$GITHUB_OUTPUT"
+              fi
+              prefix="e2e-apt-${SCHEMA}-${RUNNER_OS}-${ImageOS:-unknown}-${browsers// /+}-"
+              echo "prefix=${prefix}" >> "$GITHUB_OUTPUT"
+              pw="$(sed -n '/^"@playwright\/test@/,/^$/s/^  version: //p' yarn.lock | head -1)"
+              if [ -z "$pw" ]; then
+                  # A cache-only optimization must never fail the job: run without the cache.
+                  echo "::warning::@playwright/test version not found in yarn.lock; skipping the apt cache"
+                  echo "key=" >> "$GITHUB_OUTPUT"
+              else
+                  echo "key=${prefix}${ImageVersion:-unknown}-pw${pw}" >> "$GITHUB_OUTPUT"
+              fi
