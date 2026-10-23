@@ -31,14 +31,16 @@ export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
 
 /**
  * `get_economy` ceiling. Until 2026-10 it shared `AGGREGATE_RESULT_MAX_CHARS`
- * with a 10-event, 7-day calendar (~3,670 chars). The calendar now covers the
- * snapshot's 60-day window up to 80 events (`getEconomy.ts`): 80 events from
- * the live FMP calendar measured ~12,660 chars (2026-10-23, ~160 per event),
- * plus ~2,100 for 9 indicators, the treasury block and a two-paragraph Korean
- * briefing — ~14,800 in all. A heavier-than-real worst case (80 events with
- * ~50-char names and three 9-char numbers each, a 600-char briefing) measures
- * ~18,820 (`getEconomy.test.ts` asserts it stays under this ceiling), so the
- * ceiling is 20,000 and a full result is never cut into a preview blob.
+ * with a 10-event, 7-day calendar (~3,670 chars). The default call now carries
+ * up to 80 events of the next `DEFAULT_CALENDAR_DAYS` (`getEconomy.ts`): the
+ * live 70-day calendar block measured ~12,920 chars (2026-10-23, 80 picked of
+ * 646 rows, ~160 per event), plus ~2,100 for 9 indicators, the treasury block
+ * and a two-paragraph Korean briefing — ~15,000 in all. A heavier-than-real
+ * worst case (80 events with ~50-char names and three 9-char numbers each, a
+ * 600-char briefing) measures ~18,940; `getEconomy.test.ts` asserts it stays
+ * under this ceiling, so a full result is never cut into a preview blob. A
+ * ranged call (`from`/`to`) returns the calendar block alone, so a follow-up
+ * lookup in the same turn adds at most ~13,000.
  */
 export const ECONOMY_RESULT_MAX_CHARS = 20_000;
 

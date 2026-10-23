@@ -710,8 +710,8 @@ describe('결과 상한 옵션(resultCaps)', () => {
     });
 
     it('get_economy는 aggregate가 아니라 economy 상한을 쓴다', async () => {
-        // 60일·최대 80건 캘린더가 종합 도구 상한(aggregate)에 잘리면 앞부분
-        // 미리보기 덩어리로 무너진다.
+        // 지표에 최대 80건 캘린더까지 실린 결과가 종합 도구 상한(aggregate)에
+        // 잘리면 앞부분 미리보기 덩어리로 무너진다.
         getEconomy.mockResolvedValue(big(12_000));
         const exec = createToolExecutor(
             { analysisModel: 'm' as never },

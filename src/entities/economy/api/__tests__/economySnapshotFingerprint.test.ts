@@ -16,16 +16,4 @@ describe('ECONOMY_CONFIG_FINGERPRINT', () => {
         expect(ECONOMY_INDICATORS.some(i => i.unit === '%')).toBe(true);
         expect(ECONOMY_CONFIG_FINGERPRINT).not.toBe(nameOnly);
     });
-
-    it('includes the calendar window, so a widened window does not reuse the shorter cached calendar after deploy', () => {
-        const withoutWindow = createCacheConfigFingerprint(
-            JSON.stringify({
-                indicators: ECONOMY_INDICATORS.map(i => ({
-                    name: i.name,
-                    unit: i.unit === '%' ? '%' : null,
-                })),
-            })
-        );
-        expect(ECONOMY_CONFIG_FINGERPRINT).not.toBe(withoutWindow);
-    });
 });

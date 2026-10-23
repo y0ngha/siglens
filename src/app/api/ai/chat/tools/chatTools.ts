@@ -75,7 +75,7 @@ export interface ToolResultCaps {
     bars: number;
     /** `get_market_overview`. */
     aggregate: number;
-    /** `get_economy` (indicators + a 60-day, up-to-80-event calendar). */
+    /** `get_economy` (indicators + an up-to-80-event calendar). */
     economy: number;
     /** `get_investor_flows` (scorecard + capped holder, insider, Form 144 and offering lists). */
     investorFlows: number;
