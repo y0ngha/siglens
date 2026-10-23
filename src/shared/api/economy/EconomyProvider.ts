@@ -9,6 +9,7 @@ import type {
  *
  * 구현체:
  * - `FmpEconomyProvider` — 실 FMP fetch + core normalize.
+ * - `OfficialTreasuryEconomyProvider` — prod에서 위를 감싼다. 국채 금리만 재무부 공식값과 비교해 더 최근 값을 낸다.
  * - `FakeEconomyProvider` — E2E·테스트용 결정적 fixture.
  *
  * 실패 의미론: 상위 캐시 레이어가 `Promise.all` 분기별 `.catch(() => …)`로

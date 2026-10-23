@@ -1,5 +1,3 @@
-import { MS_PER_HOUR } from '@/shared/config/time';
-
 // EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
 // month은 JS Date 0-indexed 기준 (0 = January)
@@ -56,11 +54,4 @@ export function getEasternOffsetHours(utcDate: Date): -4 | -5 {
     const timeMs = utcDate.getTime();
     const isEDT = timeMs >= dstStartMs && timeMs < dstEndMs;
     return isEDT ? EDT_OFFSET_HOURS : EST_OFFSET_HOURS;
-}
-
-/** ET 기준 연도 — UTC로는 1월 1일이어도 ET 자정 전이면 아직 전년도다. */
-export function easternYear(utcDate: Date): number {
-    return new Date(
-        utcDate.getTime() + getEasternOffsetHours(utcDate) * MS_PER_HOUR
-    ).getUTCFullYear();
 }

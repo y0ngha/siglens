@@ -1,8 +1,4 @@
-import {
-    easternYear,
-    getEasternOffsetHours,
-    nthSundayDay,
-} from '@/shared/lib/eastern';
+import { getEasternOffsetHours, nthSundayDay } from '@/shared/lib/eastern';
 
 describe('eastern', () => {
     describe('getEasternOffsetHours', () => {
@@ -145,12 +141,5 @@ describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
                 getEasternOffsetHours(new Date('2024-07-01T12:00:00Z'))
             ).toBe(-4);
         });
-    });
-});
-
-describe('easternYear', () => {
-    it('UTC로는 새해여도 ET 자정 전이면 전년도', () => {
-        expect(easternYear(new Date('2027-01-01T03:00:00Z'))).toBe(2026);
-        expect(easternYear(new Date('2027-01-01T06:00:00Z'))).toBe(2027);
     });
 });

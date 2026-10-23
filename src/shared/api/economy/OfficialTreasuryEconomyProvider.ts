@@ -5,11 +5,62 @@ import type {
     TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
 import { fetchTreasuryGovSnapshot } from '@/shared/api/treasury/treasuryGovClient';
-import { easternYear } from '@/shared/lib/eastern';
 import type { EconomyProvider } from './EconomyProvider';
 
-const errorName = (reason: unknown): string =>
-    reason instanceof Error ? reason.name : typeof reason;
+/**
+ * 재무부 값을 기다리는 최대 시간. 이 시간이 지나면 FMP 값으로 답한다 — `get_economy` 도구 제한(30초)과
+ * /economy ISR 재생성이 재무부 지연에 끌려가지 않게 한다(재무부 응답은 실측 1초 안팎).
+ */
+export const OFFICIAL_TREASURY_WAIT_MS = 6_000;
+
+class OfficialTreasuryTimeoutError extends Error {
+    constructor() {
+        super('treasury.gov wait exceeded');
+        this.name = 'OfficialTreasuryTimeoutError';
+    }
+}
+
+function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+            () => reject(new OfficialTreasuryTimeoutError()),
+            ms
+        );
+    });
+    return Promise.race([work, deadline]).finally(() => clearTimeout(timer));
+}
+
+/** 로그용 오류 요약 — 이름과, HTTP 오류면 상태 코드(비밀값 없음). 403 차단과 5xx를 구분하려는 것이다. */
+function errorSummary(reason: unknown): { error: string; status?: number } {
+    const error = reason instanceof Error ? reason.name : typeof reason;
+    const status =
+        typeof reason === 'object' && reason !== null && 'status' in reason
+            ? Number((reason as { status: unknown }).status)
+            : undefined;
+    return status === undefined || Number.isNaN(status)
+        ? { error }
+        : { error, status };
+}
+
+/**
+ * 두 출처 중 고른다. 10년물이 있는 쪽끼리만 날짜를 비교하고(10년물이 빈 더 새 행이 완전한 행을 이기지
+ * 않게), 같은 날이면 재무부를 쓰되 빈 2년물은 같은 날 FMP 값으로 채운다.
+ */
+export function pickTreasury(
+    official: TreasuryRateSnapshot | null,
+    vendor: TreasuryRateSnapshot | null
+): TreasuryRateSnapshot | null {
+    const usable = [official, vendor].filter(
+        (s): s is TreasuryRateSnapshot => s !== null && s.year10 !== null
+    );
+    if (usable.length === 0) return official ?? vendor;
+    const newest = usable.reduce((a, b) => (b.date > a.date ? b : a));
+    const sameDay = usable.find(s => s !== newest && s.date === newest.date);
+    return newest.year2 === null && sameDay?.year2 != null
+        ? { ...newest, year2: sameDay.year2 }
+        : newest;
+}
 
 /**
  * 지표·캘린더는 그대로 넘기고, 국채 금리만 재무부 공식값과 FMP 값 중 **기준일이 더 최근인 쪽**을 낸다.
@@ -22,9 +73,10 @@ export class OfficialTreasuryEconomyProvider implements EconomyProvider {
     constructor(
         private readonly base: EconomyProvider,
         private readonly fetchOfficial: (
-            year: number
+            now: Date
         ) => Promise<TreasuryRateSnapshot | null> = fetchTreasuryGovSnapshot,
-        private readonly now: () => Date = () => new Date()
+        private readonly now: () => Date = () => new Date(),
+        private readonly officialWaitMs: number = OFFICIAL_TREASURY_WAIT_MS
     ) {}
 
     getIndicator(name: string): Promise<EconomicIndicatorSeries> {
@@ -37,7 +89,7 @@ export class OfficialTreasuryEconomyProvider implements EconomyProvider {
 
     async getTreasury(): Promise<TreasuryRateSnapshot | null> {
         const [official, vendor] = await Promise.allSettled([
-            this.fetchOfficial(easternYear(this.now())),
+            withDeadline(this.fetchOfficial(this.now()), this.officialWaitMs),
             this.base.getTreasury(),
         ]);
         const officialSnapshot =
@@ -46,23 +98,21 @@ export class OfficialTreasuryEconomyProvider implements EconomyProvider {
             vendor.status === 'fulfilled' ? vendor.value : null;
         // 실패는 이름만 남긴다(URL·본문 없음). 다른 쪽 값이 있으면 그대로 답이 나간다.
         if (official.status === 'rejected') {
-            console.warn('[economy] treasury.gov read failed', {
-                error: errorName(official.reason),
-            });
+            console.warn(
+                '[economy] treasury.gov read failed',
+                errorSummary(official.reason)
+            );
         } else if (officialSnapshot === null) {
             // 200인데 쓸 행이 없다 — 열 이름·날짜 형식이 바뀌면 조용히 늦은 FMP 값으로 돌아간다.
             console.warn('[economy] treasury.gov returned no usable row');
         }
         if (vendor.status === 'rejected') {
             if (officialSnapshot === null) throw vendor.reason;
-            console.warn('[economy] FMP treasury-rates read failed', {
-                error: errorName(vendor.reason),
-            });
+            console.warn(
+                '[economy] FMP treasury-rates read failed',
+                errorSummary(vendor.reason)
+            );
         }
-        if (officialSnapshot === null) return vendorSnapshot;
-        if (vendorSnapshot === null) return officialSnapshot;
-        return vendorSnapshot.date > officialSnapshot.date
-            ? vendorSnapshot
-            : officialSnapshot;
+        return pickTreasury(officialSnapshot, vendorSnapshot);
     }
 }

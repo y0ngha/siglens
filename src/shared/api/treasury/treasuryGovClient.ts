@@ -1,9 +1,8 @@
 import 'server-only';
 import type { TreasuryRateSnapshot } from '@y0ngha/siglens-core';
-import {
-    BoundedBodyTooLargeError,
-    readBoundedBody,
-} from '@/shared/lib/readBoundedBody';
+import { readBoundedBody } from '@/shared/lib/readBoundedBody';
+import { getEasternOffsetHours } from '@/shared/lib/eastern';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { withRetry } from '@/shared/lib/withRetry';
 import { isRenderBudgetActive } from '@/shared/lib/renderBudget';
 import {
@@ -20,11 +19,11 @@ import {
  * "가장 최근 10년물"로 나갔다. 재무부는 같은 날 저녁(ET)에 공표하므로 이쪽을 우선한다.
  * 재확인: `curl -s 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve&field_tdr_date_value=2026&page&_format=csv' | head -2`
  */
-export const TREASURY_GOV_REQUEST_TIMEOUT_MS = 15_000;
+/** 시도 1회 제한. 응답은 실측 1초 안팎이다. 호출부(`OfficialTreasuryEconomyProvider`)가 전체 대기에 따로 상한을 둔다. */
+export const TREASURY_GOV_REQUEST_TIMEOUT_MS = 5_000;
 /**
- * 페이지 렌더(`runWithRenderBudget`)·`next build` 중에는 한 번만, 짧게 시도한다. /economy 스냅샷은
- * FMP와 이 값을 함께 기다리므로(`Promise.allSettled`) 여기가 느리면 렌더 시간이 그만큼 늘고,
- * prerender 제한(60초)에 닿을 수 있다. FMP의 렌더 예산(`fmpGet`)과 같은 원칙이다(SA-14).
+ * 렌더 예산(`runWithRenderBudget`)·`next build` 중에는 한 번만, 더 짧게 시도한다. FMP의 렌더
+ * 예산(`fmpGet`)과 같은 원칙이다(SA-14).
  */
 export const TREASURY_GOV_RENDER_TIMEOUT_MS = 3_000;
 export const TREASURY_GOV_MAX_RETRIES = 1;
@@ -116,16 +115,10 @@ async function fetchYearCsv(year: number): Promise<string> {
                 signal: AbortSignal.timeout(timeoutMs),
             });
             if (!res.ok) throw new TreasuryGovHttpError(res.status);
-            try {
-                return new TextDecoder('utf-8').decode(
-                    await readBoundedBody(res, TREASURY_GOV_MAX_BODY_BYTES)
-                );
-            } catch (error) {
-                if (error instanceof BoundedBodyTooLargeError) {
-                    throw new Error('treasury.gov body too large');
-                }
-                throw error;
-            }
+            // 상한 초과는 `BoundedBodyTooLargeError` 그대로 올린다(메시지에 URL이 없고, 이름으로 원인이 남는다).
+            return new TextDecoder('utf-8').decode(
+                await readBoundedBody(res, TREASURY_GOV_MAX_BODY_BYTES)
+            );
         },
         {
             maxRetries: constrained ? 0 : TREASURY_GOV_MAX_RETRIES,
@@ -135,16 +128,49 @@ async function fetchYearCsv(year: number): Promise<string> {
     );
 }
 
+const JANUARY = 0;
+const HTTP_NOT_FOUND = 404;
+
+/** ET 기준 날짜의 연·월 — UTC로는 1월 1일이어도 ET 자정 전이면 아직 전년도 12월이다. */
+function easternYearMonth(now: Date): { year: number; month: number } {
+    const et = new Date(
+        now.getTime() + getEasternOffsetHours(now) * MS_PER_HOUR
+    );
+    return { year: et.getUTCFullYear(), month: et.getUTCMonth() };
+}
+
+/** 그해 CSV의 최신 행. 연초에는 아직 행이 없거나(헤더만) 404일 수 있다 — 둘 다 "없음"(`null`). */
+async function latestOfYear(
+    year: number,
+    allowMissing: boolean
+): Promise<TreasuryRateSnapshot | null> {
+    try {
+        return parseTreasuryGovCsv(await fetchYearCsv(year));
+    } catch (error) {
+        if (
+            allowMissing &&
+            error instanceof TreasuryGovHttpError &&
+            error.status === HTTP_NOT_FOUND
+        ) {
+            return null;
+        }
+        throw error;
+    }
+}
+
 /**
- * 가장 최근 공표 행. `year`(ET 기준 올해)의 CSV에 행이 없으면(연초 첫 공표 전) 전년도 CSV를 본다.
- * HTTP·네트워크 오류는 던진다 — 호출부가 FMP 값으로 물러난다.
+ * 가장 최근 공표 행. 1월에 한해, 올해 CSV에 행이 없으면(첫 공표 전) 전년도 CSV를 본다 — 다른 달에
+ * 올해 행이 없으면 형식이 바뀐 것이라 전년도 값으로 가리지 않는다. HTTP·네트워크 오류는 던진다 —
+ * 호출부가 FMP 값으로 물러난다.
  */
 export async function fetchTreasuryGovSnapshot(
-    year: number
+    now: Date
 ): Promise<TreasuryRateSnapshot | null> {
+    const { year, month } = easternYearMonth(now);
+    const january = month === JANUARY;
     const snapshot =
-        parseTreasuryGovCsv(await fetchYearCsv(year)) ??
-        parseTreasuryGovCsv(await fetchYearCsv(year - 1));
+        (await latestOfYear(year, january)) ??
+        (january ? await latestOfYear(year - 1, false) : null);
     if (snapshot !== null && snapshot.year2 === null) {
         // 10년물은 있는데 2년물이 비었다 — 열 이름이 바뀌면 장단기 스프레드가 조용히 사라진다.
         console.warn('[economy] treasury.gov row has no 2Y yield');

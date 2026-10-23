@@ -1,7 +1,10 @@
 import type { TreasuryRateSnapshot } from '@y0ngha/siglens-core';
 import { describe, expect, it, vi } from 'vitest';
 import type { EconomyProvider } from '../EconomyProvider';
-import { OfficialTreasuryEconomyProvider } from '../OfficialTreasuryEconomyProvider';
+import {
+    OfficialTreasuryEconomyProvider,
+    pickTreasury,
+} from '../OfficialTreasuryEconomyProvider';
 
 vi.mock('server-only', () => ({}));
 
@@ -30,7 +33,7 @@ describe('OfficialTreasuryEconomyProvider.getTreasury', () => {
             () => NOW
         );
         expect(await p.getTreasury()).toEqual(snap('2026-10-22', 4.96));
-        expect(official).toHaveBeenCalledWith(2026);
+        expect(official).toHaveBeenCalledWith(NOW);
     });
 
     it('FMP가 더 최근이면 FMP, 같은 날이면 재무부', async () => {
@@ -84,6 +87,28 @@ describe('OfficialTreasuryEconomyProvider.getTreasury', () => {
         warn.mockRestore();
     });
 
+    it('재무부가 상한 시간 안에 답하지 않으면 기다리지 않고 FMP 값을 낸다', async () => {
+        vi.useFakeTimers();
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const p = new OfficialTreasuryEconomyProvider(
+            baseWith(async () => snap('2026-10-20', 5.12)),
+            () => new Promise(() => {}), // never settles
+            () => NOW,
+            6_000
+        );
+        const pending = p.getTreasury();
+        await vi.advanceTimersByTimeAsync(6_000);
+        expect(await pending).toEqual(snap('2026-10-20', 5.12));
+        expect(warn).toHaveBeenCalledWith(
+            '[economy] treasury.gov read failed',
+            {
+                error: 'OfficialTreasuryTimeoutError',
+            }
+        );
+        vi.useRealTimers();
+        warn.mockRestore();
+    });
+
     it('둘 다 값이 없고 FMP가 실패했으면 FMP 오류를 그대로 던진다', async () => {
         const boom = new Error('fmp down');
         const p = new OfficialTreasuryEconomyProvider(
@@ -126,6 +151,30 @@ describe('OfficialTreasuryEconomyProvider.getTreasury', () => {
         warn.mockRestore();
     });
 
+    it('HTTP 오류는 상태 코드를 함께 남긴다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const err = Object.assign(new Error('treasury.gov 403'), {
+            name: 'TreasuryGovHttpError',
+            status: 403,
+        });
+        const p = new OfficialTreasuryEconomyProvider(
+            baseWith(async () => snap('2026-10-20', 5.12)),
+            async () => {
+                throw err;
+            },
+            () => NOW
+        );
+        await p.getTreasury();
+        expect(warn).toHaveBeenCalledWith(
+            '[economy] treasury.gov read failed',
+            {
+                error: 'TreasuryGovHttpError',
+                status: 403,
+            }
+        );
+        warn.mockRestore();
+    });
+
     it('지표·캘린더는 그대로 위임한다', async () => {
         const base = baseWith(async () => null);
         const p = new OfficialTreasuryEconomyProvider(base, async () => null);
@@ -136,5 +185,37 @@ describe('OfficialTreasuryEconomyProvider.getTreasury', () => {
             '2026-10-01',
             '2026-10-31'
         );
+    });
+});
+
+describe('pickTreasury', () => {
+    it('10년물이 빈 더 새 행은 완전한 행을 이기지 않는다', () => {
+        const official = snap('2026-10-22', 4.96);
+        const vendor = { date: '2026-10-23', year2: 4.6, year10: null };
+        expect(pickTreasury(official, vendor)).toEqual(official);
+    });
+
+    it('같은 날이면 재무부를 쓰되 빈 2년물은 FMP 값으로 채운다', () => {
+        expect(
+            pickTreasury(
+                { date: '2026-10-22', year2: null, year10: 4.96 },
+                { date: '2026-10-22', year2: 4.65, year10: 4.97 }
+            )
+        ).toEqual({ date: '2026-10-22', year2: 4.65, year10: 4.96 });
+    });
+
+    it('날짜가 다르면 2년물을 다른 날 값으로 채우지 않는다', () => {
+        expect(
+            pickTreasury(
+                { date: '2026-10-22', year2: null, year10: 4.96 },
+                { date: '2026-10-20', year2: 4.79, year10: 5.12 }
+            )
+        ).toEqual({ date: '2026-10-22', year2: null, year10: 4.96 });
+    });
+
+    it('둘 다 10년물이 없으면 있는 쪽을 그대로 낸다', () => {
+        const partial = { date: '2026-10-22', year2: 4.6, year10: null };
+        expect(pickTreasury(null, partial)).toEqual(partial);
+        expect(pickTreasury(null, null)).toBeNull();
     });
 });
