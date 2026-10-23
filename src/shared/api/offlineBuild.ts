@@ -42,6 +42,7 @@ export const OFFLINE_BUILD_SERVICE = {
     DATABASE: 'Database',
     UPSTASH: 'Upstash',
     YAHOO: 'Yahoo',
+    TREASURY: 'Treasury',
 } as const;
 
 export type OfflineBuildService =

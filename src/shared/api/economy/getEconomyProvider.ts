@@ -1,11 +1,12 @@
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { EconomyProvider } from './EconomyProvider';
+import { OfficialTreasuryEconomyProvider } from './OfficialTreasuryEconomyProvider';
 
 let cached: EconomyProvider | null = null;
 
 /**
- * /economy용 EconomyProvider — prod에선 FMP, E2E_TEST에선 결정적 Fake.
+ * /economy용 EconomyProvider — prod에선 FMP(국채 금리만 재무부 공식값과 비교해 최신 쪽), E2E_TEST에선 결정적 Fake.
  *
  * E2E degrade 시나리오: `E2E_ECONOMY_FORCE_EMPTY=1`이면 `EmptyEconomyProvider`를
  * 반환해 전 축 null 스냅샷 → `isEmptyEconomySnapshot=true` → `EconomyDegraded` UI
@@ -29,6 +30,6 @@ export function getEconomyProvider(): EconomyProvider {
         cached = new FakeEconomyProvider();
         return cached;
     }
-    cached = new FmpEconomyProvider();
+    cached = new OfficialTreasuryEconomyProvider(new FmpEconomyProvider());
     return cached;
 }

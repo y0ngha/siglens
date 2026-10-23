@@ -19,11 +19,12 @@ const mockIsE2E = vi.mocked(isE2E);
  */
 async function freshFactory() {
     vi.resetModules();
-    const [{ getEconomyProvider }, { FmpEconomyProvider }] = await Promise.all([
-        import('@/shared/api/economy/getEconomyProvider'),
-        import('@/shared/api/fmp/FmpEconomyProvider'),
-    ]);
-    return { getEconomyProvider, FmpEconomyProvider };
+    const [{ getEconomyProvider }, { OfficialTreasuryEconomyProvider }] =
+        await Promise.all([
+            import('@/shared/api/economy/getEconomyProvider'),
+            import('@/shared/api/economy/OfficialTreasuryEconomyProvider'),
+        ]);
+    return { getEconomyProvider, OfficialTreasuryEconomyProvider };
 }
 
 describe('getEconomyProvider', () => {
@@ -32,7 +33,7 @@ describe('getEconomyProvider', () => {
     beforeAll(async () => {
         await Promise.all([
             import('@/shared/api/economy/getEconomyProvider'),
-            import('@/shared/api/fmp/FmpEconomyProvider'),
+            import('@/shared/api/economy/OfficialTreasuryEconomyProvider'),
         ]);
     }, MODULE_LOAD_TIMEOUT_MS);
 
@@ -40,10 +41,13 @@ describe('getEconomyProvider', () => {
         vi.clearAllMocks();
     });
 
-    it('prod 환경(isE2E=false)일 때 FmpEconomyProvider 인스턴스 반환', async () => {
+    it('prod 환경(isE2E=false)일 때 국채 금리를 재무부와 비교하는 FMP 래퍼를 반환', async () => {
         mockIsE2E.mockReturnValue(false);
-        const { getEconomyProvider, FmpEconomyProvider } = await freshFactory();
-        expect(getEconomyProvider()).toBeInstanceOf(FmpEconomyProvider);
+        const { getEconomyProvider, OfficialTreasuryEconomyProvider } =
+            await freshFactory();
+        expect(getEconomyProvider()).toBeInstanceOf(
+            OfficialTreasuryEconomyProvider
+        );
     });
 
     it('동일 모듈 인스턴스에서 두 번째 호출은 캐시된 동일 객체 반환 (요청 dedup)', async () => {

@@ -8,8 +8,9 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { etDateOf } from '../lib/calendarWindow';
 
 /**
- * 국채 금리 단독 캐시 TTL(3시간). FMP `treasury-rates`는 하루 한 번 새 행이 붙으므로
- * 3시간이면 공표 뒤 늦어도 몇 시간 안에 새 값이 나가고, FMP 호출은 하루 몇 번에 그친다.
+ * 국채 금리 단독 캐시 TTL(3시간). 공급자는 재무부 공식 CSV와 FMP `treasury-rates` 중 기준일이 더 최근인 쪽을
+ * 낸다(`OfficialTreasuryEconomyProvider`). 재무부는 그날 저녁(ET)에, FMP는 이틀쯤 늦게 새 행이 붙으므로
+ * 3시간이면 공표 뒤 늦어도 몇 시간 안에 새 값이 나가고, 외부 호출은 하루 몇 번에 그친다.
  */
 export const TREASURY_CACHE_TTL_SECONDS = 3 * SECONDS_PER_HOUR;
 
