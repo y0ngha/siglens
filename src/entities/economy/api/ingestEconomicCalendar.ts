@@ -6,7 +6,9 @@ import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 
 import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 import {
+    isCalendarBackfillFresh,
     isCalendarRecentlyFetched,
+    markCalendarBackfilled,
     markCalendarFetched,
 } from './calendarRefreshFlag';
 import { addEtDays, etDateOf } from '../lib/calendarWindow';
@@ -15,6 +17,7 @@ import {
     CALENDAR_MAJORITY_FAILURE_DIVISOR,
     CALENDAR_INGESTION_WINDOW_DAYS,
     CALENDAR_PAST_WINDOW_DAYS,
+    CALENDAR_RECENT_PAST_DAYS,
     economyCalendarCacheTag,
     type CalendarCountry,
 } from '../lib/economyCalendarConstants';
@@ -26,8 +29,10 @@ export type IngestEconomicCalendarResult =
     | { readonly status: 'ok'; readonly changed: number };
 
 /**
- * ±1개월 윈도의 FMP economic-calendar를 fetch해 `economic_calendar`에 upsert하고,
- * ≥1행이 실제로 변경되면 국가별 `economyCalendarCacheTag(country)` 태그를 무효화한다.
+ * 최근 ±1개월(`CALENDAR_RECENT_PAST_DAYS` ~ 미래 `CALENDAR_INGESTION_WINDOW_DAYS`)의 FMP
+ * economic-calendar를 fetch해 `economic_calendar`에 upsert하고, ≥1행이 실제로 변경되면 국가별
+ * `economyCalendarCacheTag(country)` 태그를 무효화한다. 과거 창이 그보다 긴 국가(한국 180일)는 그 앞쪽을
+ * 하루 한 번(`isCalendarBackfillFresh`) 함께 읽는다 — 실패해도 최근 구간은 그대로 쓴다.
  *
  * 방문자 경로(`ensureEconomicCalendarAction`)와 허브 프리웜 크론
  * (`app/api/cron/seo-prewarm/hubs.ts`)이 공유한다. 예전에는 방문자 브라우저가
@@ -50,7 +55,11 @@ export async function ingestEconomicCalendar(
     await markCalendarFetched(country);
 
     const today = etDateOf(new Date());
-    const from = addEtDays(today, -CALENDAR_PAST_WINDOW_DAYS[country]);
+    const pastDays = CALENDAR_PAST_WINDOW_DAYS[country];
+    const from = addEtDays(
+        today,
+        -Math.min(pastDays, CALENDAR_RECENT_PAST_DAYS)
+    );
     // `to`는 ET 날짜 앵커에서 계산되지만 저장된 `date`는 UTC 벽시계 문자열이다
     // (calendarWindow.ts의 "경계 오차" 문서 참조) — 같은 비대칭이 여기 fetch
     // 윈도에도 적용돼 `to`가 UTC 기준보다 최대 하루 좁을 수 있다. 60분
@@ -59,15 +68,44 @@ export async function ingestEconomicCalendar(
     // 영구 드롭 아님, 의도적으로 미수정.
     const to = addEtDays(today, CALENDAR_INGESTION_WINDOW_DAYS);
 
+    // 최근 구간보다 앞의 과거(한국 180일 창의 앞쪽)는 하루 한 번만 다시 읽는다 — 이미 발표된 값이다.
+    const backfill =
+        pastDays > CALENDAR_RECENT_PAST_DAYS &&
+        !(await isCalendarBackfillFresh(country))
+            ? { from: addEtDays(today, -pastDays), to: addEtDays(from, -1) }
+            : null;
+
     const provider = new FmpEconomyProvider();
-    const fresh = await provider
-        .getCalendarForCountry(from, to, country)
-        .catch((err: unknown) => {
-            console.error(`[${logLabel}] FMP fetch failed:`, err);
-            return null;
-        });
-    if (fresh === null) return { status: 'fetch-failed' };
-    if (fresh.length === 0) return { status: 'ok', changed: 0 };
+    const [recent, older] = await Promise.all([
+        provider
+            .getCalendarForCountry(from, to, country)
+            .catch((err: unknown) => {
+                console.error(`[${logLabel}] FMP fetch failed:`, err);
+                return null;
+            }),
+        backfill === null
+            ? null
+            : provider
+                  .getCalendarForCountry(backfill.from, backfill.to, country)
+                  .catch((err: unknown) => {
+                      // 플래그를 세우지 않으므로 다음 수집이 다시 시도한다.
+                      console.error(
+                          `[${logLabel}] FMP backfill fetch failed:`,
+                          err
+                      );
+                      return null;
+                  }),
+    ]);
+    if (recent === null) return { status: 'fetch-failed' };
+    const fresh = [...(older ?? []), ...recent];
+    // 앞쪽 과거를 쓰기까지 마친 뒤에만 하루짜리 플래그를 세운다 — 쓰기가 무너졌는데 세우면 하루를 잃는다.
+    const markBackfillDone = async (): Promise<void> => {
+        if (older !== null) await markCalendarBackfilled(country);
+    };
+    if (fresh.length === 0) {
+        await markBackfillDone();
+        return { status: 'ok', changed: 0 };
+    }
 
     const { db } = getDatabaseClient();
     const repo = new DrizzleEconomicCalendarRepository(db);
@@ -102,6 +140,7 @@ export async function ingestEconomicCalendar(
         return { status: 'write-failed' };
     }
 
+    await markBackfillDone();
     const changedCount = settled.filter(
         r => r.status === 'fulfilled' && r.value === true
     ).length;

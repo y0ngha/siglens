@@ -1,4 +1,4 @@
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 
 describe('toUtcIsoDate', () => {
     it('UTC 기준 달력 날짜를 YYYY-MM-DD로 반환한다', () => {
@@ -18,5 +18,14 @@ describe('toUtcIsoDate', () => {
 
     it('유효하지 않은 Date는 RangeError를 던진다', () => {
         expect(() => toUtcIsoDate(new Date(Number.NaN))).toThrow(RangeError);
+    });
+});
+
+describe('addUtcIsoDays', () => {
+    it('월·연 경계를 넘겨 더하고 뺀다', () => {
+        expect(addUtcIsoDays('2026-01-31', 1)).toBe('2026-02-01');
+        expect(addUtcIsoDays('2026-12-31', 1)).toBe('2027-01-01');
+        expect(addUtcIsoDays('2026-03-01', -1)).toBe('2026-02-28');
+        expect(addUtcIsoDays('2026-04-26', 89)).toBe('2026-07-24');
     });
 });

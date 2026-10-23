@@ -1,3 +1,4 @@
+import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 
 /**
@@ -35,14 +36,9 @@ export function etDateOf(instant: Date): string {
     return zonedDate(instant, ET_TIME_ZONE);
 }
 
-/** 'YYYY-MM-DD'에 일수를 더한 'YYYY-MM-DD' (UTC 산술 — TZ 비의존). */
+/** 'YYYY-MM-DD'에 일수를 더한 'YYYY-MM-DD' (UTC 산술 — TZ 비의존). 산술은 shared `addUtcIsoDays` 하나다. */
 export function addEtDays(dateEt: string, delta: number): string {
-    const [y, m, d] = dateEt.split('-').map(Number);
-    const shifted = new Date(Date.UTC(y, m - 1, d + delta));
-    const yy = shifted.getUTCFullYear();
-    const mm = String(shifted.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(shifted.getUTCDate()).padStart(2, '0');
-    return `${yy}-${mm}-${dd}`;
+    return addUtcIsoDays(dateEt, delta);
 }
 
 /** 앵커일(포함) 기준 과거 윈도 시작일. */

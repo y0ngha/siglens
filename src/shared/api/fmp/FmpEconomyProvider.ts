@@ -14,7 +14,59 @@ import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
 } from '@/shared/config/economyIndicators';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
+import { MS_PER_DAY } from '@/shared/config/time';
+
+/**
+ * FMP `/stable/economic-calendar`는 `from`과 무관하게 `to`로 끝나는 이 일수만 돌려준다. 더 긴 범위도
+ * 200으로 응답하면서 앞쪽 날짜를 조용히 버린다. 2026-10-23 실측: `to=2027-03-31`은 어떤 `from`이든
+ * 2026-12-31부터, 210일 한국 수집(`from=2026-04-26`)은 KR 행이 2026-08-24부터 왔다(나눠 받으면 04-27부터).
+ */
+export const FMP_ECONOMIC_CALENDAR_MAX_SPAN_DAYS = 90;
+
+interface DateRange {
+    from: string;
+    to: string;
+}
+
+/**
+ * `from`~`to`(양끝 포함)를 FMP 한 번에 온전히 오는 조각으로 나눈다. 각 조각은
+ * {@link FMP_ECONOMIC_CALENDAR_MAX_SPAN_DAYS}일 이하이고 날짜가 겹치지 않는다(FMP가 UTC 날짜로 거르므로
+ * 조각 경계의 행이 두 번 오지 않는다).
+ */
+export function splitCalendarRange(from: string, to: string): DateRange[] {
+    const spanDays =
+        Math.round((Date.parse(to) - Date.parse(from)) / MS_PER_DAY) + 1;
+    if (!(spanDays > 0)) return [{ from, to }];
+    const count = Math.ceil(spanDays / FMP_ECONOMIC_CALENDAR_MAX_SPAN_DAYS);
+    return Array.from({ length: count }, (_, i) => {
+        const start = addUtcIsoDays(
+            from,
+            i * FMP_ECONOMIC_CALENDAR_MAX_SPAN_DAYS
+        );
+        const end = addUtcIsoDays(
+            start,
+            FMP_ECONOMIC_CALENDAR_MAX_SPAN_DAYS - 1
+        );
+        return { from: start, to: end < to ? end : to };
+    });
+}
+
+/**
+ * 범위를 {@link splitCalendarRange}로 나눠 읽고 행을 이어 붙인다. 배열이 아닌 응답은 한 번에 읽을 때처럼
+ * 그 조각만 빈 것으로 본다(정규화가 그렇게 다룬다).
+ */
+async function fetchEconomicCalendar(
+    from: string,
+    to: string
+): Promise<unknown[]> {
+    const parts = await Promise.all(
+        splitCalendarRange(from, to).map(range =>
+            fmpGet<unknown>('economic-calendar', { ...range })
+        )
+    );
+    return parts.flatMap(part => (Array.isArray(part) ? part : []));
+}
 
 /** FMP `/stable/*` 어댑터 — core 정규화에 위임. */
 export class FmpEconomyProvider implements EconomyProvider {
@@ -51,8 +103,7 @@ export class FmpEconomyProvider implements EconomyProvider {
         from: string,
         to: string
     ): Promise<EconomicCalendarEvent[]> {
-        const raw = await fmpGet<unknown>('economic-calendar', { from, to });
-        return normalizeEconomicCalendar(raw);
+        return normalizeEconomicCalendar(await fetchEconomicCalendar(from, to));
     }
 
     /**
@@ -62,20 +113,21 @@ export class FmpEconomyProvider implements EconomyProvider {
      *
      * FMP는 한 번의 호출로 전 국가를 돌려주고 우리가 국가로 거른다.
      *
-     * **두 국가가 같은 왕복을 공유하지는 않는다.** 조회 창이 다르기 때문이다
-     * (`CALENDAR_PAST_WINDOW_DAYS` — US 30일 / KR 180일). `from`이 다르면 URL이
-     * 달라 FMP 호출도 따로 나간다. 매시간 수집이 매번 FMP를 새로 읽어야 발표된
+     * **두 국가가 같은 왕복을 공유하지는 않는다.** `fmpGet`에 데이터 캐시가 없어서
+     * 같은 범위라도 국가마다 따로 읽는다. 매시간 수집이 매번 FMP를 새로 읽어야 발표된
      * `actual`이 바로 들어온다(`fmpGet` JSDoc의 데이터 캐시 제거 경위 참고).
      *
-     * KR 창은 210일(과거 180 + 미래 30)이다 — 플랜 상한(365일은 402) 안이고,
-     * 2026-08-19 실측으로 200 + KR 94건을 확인했다.
+     * {@link FMP_ECONOMIC_CALENDAR_MAX_SPAN_DAYS}일보다 긴 범위는 나눠 읽는다. 한때 한국의 210일
+     * 창을 한 번에 읽어 앞쪽 약 120일이 조용히 빠졌다(2026-08-19 실측 "KR 94건"이 그 절단이었다).
      */
     async getCalendarForCountry(
         from: string,
         to: string,
         country: string
     ): Promise<EconomicCalendarEvent[]> {
-        const raw = await fmpGet<unknown>('economic-calendar', { from, to });
-        return normalizeCalendarForCountry(raw, country);
+        return normalizeCalendarForCountry(
+            await fetchEconomicCalendar(from, to),
+            country
+        );
     }
 }

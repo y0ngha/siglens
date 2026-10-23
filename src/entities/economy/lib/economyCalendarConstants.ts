@@ -40,6 +40,14 @@ export const CALENDAR_PAST_WINDOW_DAYS: Record<CalendarCountry, number> = {
 };
 
 /**
+ * 매시간 다시 읽는 과거 일수. 발표 직후 붙는 `actual`과 고쳐지는 예상치는 이 안에서만 바뀐다.
+ * {@link CALENDAR_PAST_WINDOW_DAYS}가 이보다 긴 국가(한국)는 그 앞쪽을 하루 한 번만 다시 읽는다
+ * ({@link CALENDAR_BACKFILL_FLAG_TTL_SECONDS}). 한 번에 210일을 매시간 읽으면 FMP 90일 상한 때문에
+ * 세 번 나눠 읽어야 하고, 전 국가 응답(조각당 ~1MB)이 시간마다 세 배가 된다.
+ */
+export const CALENDAR_RECENT_PAST_DAYS = 30;
+
+/**
  * 캘린더를 수집·표시하는 국가 코드.
  *
  * `/economy`(미국)와 `/economy/kr`(한국)이 같은 `economic_calendar` 테이블을
@@ -117,6 +125,9 @@ const CALENDAR_REFRESH_FLAG_TTL_MINUTES = 60;
  */
 export const CALENDAR_REFRESH_FLAG_TTL_SECONDS =
     CALENDAR_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;
+
+/** 오래된 과거 구간(최근 {@link CALENDAR_RECENT_PAST_DAYS}일 앞쪽)을 다시 읽는 주기 — 이미 발표된 값이라 하루면 충분하다. */
+export const CALENDAR_BACKFILL_FLAG_TTL_SECONDS = SECONDS_PER_DAY;
 
 /**
  * Redis refresh-flag 키의 **접두사**. 실제 키는 `calendarRefreshFlag`가 국가를 붙여
