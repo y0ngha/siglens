@@ -91,12 +91,22 @@ jobs:
             #
             # 종료 코드를 파일로 남기는 이유: 백그라운드 프로세스의 실패는 이 스텝의
             # 종료 코드에 반영되지 않는다. 회수 스텝이 이 파일로 성공·실패를 판정한다.
+            #
+            # apt 미러(azure.archive.ubuntu.com)가 패키지 하나를 받다 멈추는 일이 잦다
+            # (2026-10-23 하루에 샤드 5번이 다운로드 도중 5분 제한에 걸림). 멈춘 연결이 기본
+            # 120초를 다 기다리지 않게 연결 제한을 20초로 줄이고 apt가 5번까지 다시 받게 한다.
+            # 그래도 설치가 실패하면 한 번 더 통째로 시도한다.
             - name: Install Playwright browsers (background)
               run: |
+                  printf 'Acquire::Retries "5";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' \
+                      | sudo tee /etc/apt/apt.conf.d/80-ci-retries > /dev/null
                   nohup sh -c '
-                      yarn playwright install --with-deps chromium webkit > "$RUNNER_TEMP/playwright-install.log" 2>&1
-                      echo $? > "$RUNNER_TEMP/playwright-install.exit"
-                  ' > /dev/null 2>&1 &
+                      for attempt in 1 2; do
+                          echo "== playwright install attempt $attempt"
+                          yarn playwright install --with-deps chromium webkit && { echo 0 > "$RUNNER_TEMP/playwright-install.exit"; exit 0; }
+                      done
+                      echo 1 > "$RUNNER_TEMP/playwright-install.exit"
+                  ' > "$RUNNER_TEMP/playwright-install.log" 2>&1 &
 
             # Start the Docker backend with Compose (NOT GitHub `services:`).
             # global-setup.ts runs migrate/seed via `docker compose exec`, which
@@ -159,9 +169,11 @@ jobs:
               env:
                   CI: '1'
 
+            # 정상이면 설치가 앞 스텝(백엔드 기동·build)과 겹쳐 끝나 있어 여기서는 거의 기다리지
+            # 않는다. 10분은 apt 재시도와 설치 2회차까지 끝날 시간이다.
             - name: Wait for Playwright browsers
               run: |
-                  for i in $(seq 1 150); do
+                  for i in $(seq 1 300); do
                       if [ -f "$RUNNER_TEMP/playwright-install.exit" ]; then
                           code="$(cat "$RUNNER_TEMP/playwright-install.exit")"
                           cat "$RUNNER_TEMP/playwright-install.log"
@@ -170,7 +182,7 @@ jobs:
                       fi
                       sleep 2
                   done
-                  echo "Playwright install did not finish within 5 minutes. Log so far:"
+                  echo "Playwright install did not finish within 10 minutes. Log so far:"
                   cat "$RUNNER_TEMP/playwright-install.log" || true
                   exit 1
 
