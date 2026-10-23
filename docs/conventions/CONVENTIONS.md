@@ -703,6 +703,24 @@ measured fact instead of the case ID.
 // ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
 ```
 
+<a id="CM-10"></a>
+
+#### CM-10 — A measured-figure comment says only what its test asserts, and the test runs on the measured shape
+
+A comment that says a test "pins" or "guards" a measured figure (payload size, count, width) must match the assertion:
+a test that only checks a ceiling does not pin the figure. When the measured input changes (new fields, a larger
+window, a live-only shape), re-measure, update the figure, and make the test exercise the same shape the figure was
+measured on; a pin test fed the smaller fixture passes while the real payload drifts.
+The same applies when the design changes rather than the input (a field dropped, a read moved to another source, a
+window redefined): re-read every measured-figure comment in the touched module and its tests before finishing, because
+the figure and the "pinned" wording outlive the design they described. Grep the touched files for the figure's unit
+(`KB`, `bytes`, `pins`, `guards`) as part of that pass.
+
+```typescript
+// ❌ Pinned by sizeTest: ~4.2KB.   (the test only asserts size < 8KB, on a non-live fixture)
+// ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
+```
+
 ---
 
 ## Change Synchronization
@@ -1150,8 +1168,9 @@ products to `shared/`.
 
 #### I18-6 — Inject core or config numbers as ICU arguments
 
-A number owned by core or config (a re-entry gap, a limit) is passed into the message as an ICU argument from the
-exported constant, never typed into the catalog strings, where it silently drifts.
+A number owned by core or config (a re-entry gap, a limit, a default window, a maximum range) is passed into the
+message as an ICU argument from the exported constant, never typed into the catalog strings, where it silently drifts.
+This covers every string that quotes the number, including tool descriptions and summaries, not only UI labels.
 
 <a id="I18-7"></a>
 

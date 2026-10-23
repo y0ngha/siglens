@@ -13,21 +13,36 @@ export const TOOL_RESULT_MAX_CHARS = 4_000;
 export const BARS_RESULT_MAX_CHARS = 6_000;
 
 /**
- * `get_market_overview` / `get_economy` ceiling. Measured on representative
- * worst-case fixtures (2026-09-14): a full US signal scan (15 sectors, 10
- * capped top signals, long tickers/labels) serializes to ~3,460 chars;
- * a dense macro week (9 indicators, 10 capped calendar events, a two-
- * paragraph Korean briefing) serializes to ~3,670 chars. Both already cap
- * their list lengths by construction (`topSignals`/`upcomingCalendar`), so
- * this ceiling is headroom against the JSON envelope, not a rescue for an
- * unbounded list. `get_fundamentals` and `get_congress_trades` fit
- * comfortably under the shared `TOOL_RESULT_MAX_CHARS` default and do not
- * need their own ceiling: `get_fundamentals` measures ~2,090 chars with every
- * section filled plus 5 `recentQuarters` rows and 8 `earningsReactions`
- * (~1,030 without those two lists; fixture in `getFundamentals.test.ts`,
- * 2026-10-22), `get_congress_trades` ~2,500.
+ * `get_market_overview` ceiling. Measured on a representative worst-case
+ * fixture (2026-09-14): a full US signal scan (15 sectors, 10 capped top
+ * signals, long tickers/labels) serializes to ~3,460 chars. It caps its list
+ * by construction (`topSignals`), so this ceiling is headroom against the JSON
+ * envelope, not a rescue for an unbounded list. `get_economy` has its own
+ * ceiling (`ECONOMY_RESULT_MAX_CHARS`).
+ *
+ * `get_fundamentals` and `get_congress_trades` fit comfortably under the
+ * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
+ * `get_fundamentals` measures ~2,090 chars with every section filled plus 5
+ * `recentQuarters` rows and 8 `earningsReactions` (~1,030 without those two
+ * lists; fixture in `getFundamentals.test.ts`, 2026-10-22),
+ * `get_congress_trades` ~2,500.
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
+
+/**
+ * `get_economy` ceiling. Until 2026-10 it shared `AGGREGATE_RESULT_MAX_CHARS`
+ * with a 10-event, 7-day calendar (~3,670 chars). The default call now carries
+ * up to 80 events of the next `ECONOMY_CALENDAR_DEFAULT_DAYS` (`shared/config/economyCalendar.ts`): the
+ * live 70-day calendar block measured ~12,920 chars (2026-10-23, 80 picked of
+ * 646 rows, ~160 per event), plus ~2,100 for 9 indicators, the treasury block
+ * and a two-paragraph Korean briefing — ~15,000 in all. A heavier-than-real
+ * worst case (80 events with ~50-char names and three 9-char numbers each, a
+ * 600-char briefing) measures ~18,940; `getEconomy.test.ts` asserts it stays
+ * under this ceiling, so a full result is never cut into a preview blob. A
+ * ranged call (`from`/`to`) returns the calendar block alone, so a follow-up
+ * lookup in the same turn adds at most ~13,000.
+ */
+export const ECONOMY_RESULT_MAX_CHARS = 20_000;
 
 /**
  * `get_investor_flows` ceiling. Until 2026-10-16 the tool shared
