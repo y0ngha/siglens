@@ -31,17 +31,13 @@ function directionOf(
     return 'unchanged';
 }
 
-/**
- * Picks the treasury reading to report: the separately cached same-day read
- * (`getFreshTreasuryRates`, 3h TTL keyed by the ET date) when it is available and
- * not older than the snapshot's, else the snapshot's copy. The snapshot sits behind
- * two stacked 24h caches and served a 10y yield ~48h old.
- */
 interface PickedTreasury {
     treasury: TreasuryRateSnapshot;
     fetchedAt: string | null;
     /** 같은 날 읽기의 출처. 스냅샷 값은 출처를 기록하지 않아 `null`. */
     source: FreshTreasuryRates['source'] | null;
+    /** 같은 날 읽기가 재무부를 못 읽어 FMP로 물러난 값인가(짧게만 캐시된다). */
+    fallback: boolean;
 }
 
 const TREASURY_SOURCE_LABEL = {
@@ -49,6 +45,12 @@ const TREASURY_SOURCE_LABEL = {
     fmp: 'FMP',
 } as const;
 
+/**
+ * Picks the treasury reading to report: the separately cached same-day read
+ * (`getFreshTreasuryRates`, 3h TTL keyed by the ET date) when it is available and
+ * not older than the snapshot's, else the snapshot's copy. The snapshot sits behind
+ * two stacked 24h caches and served a 10y yield ~48h old.
+ */
 function pickTreasury(
     snapshotTreasury: TreasuryRateSnapshot | null,
     fresh: FreshTreasuryRates | null
@@ -61,10 +63,16 @@ function pickTreasury(
             treasury: fresh.treasury,
             fetchedAt: fresh.fetchedAt,
             source: fresh.source,
+            fallback: !fresh.officialAvailable,
         };
     }
     return snapshotTreasury
-        ? { treasury: snapshotTreasury, fetchedAt: null, source: null }
+        ? {
+              treasury: snapshotTreasury,
+              fetchedAt: null,
+              source: null,
+              fallback: false,
+          }
         : null;
 }
 
@@ -77,7 +85,7 @@ function pickTreasury(
  */
 function treasuryView(picked: PickedTreasury | null) {
     if (!picked) return null;
-    const { treasury, fetchedAt, source } = picked;
+    const { treasury, fetchedAt, source, fallback } = picked;
     const rawSpread = computeYieldSpread(treasury);
     // `10y − 2y` in binary floats reads 0.39999999999999947; round like every
     // other number the agent quotes.
@@ -91,7 +99,9 @@ function treasuryView(picked: PickedTreasury | null) {
         cache:
             fetchedAt === null
                 ? 'economy snapshot (up to ~48h old)'
-                : 'treasury rates (3h cache)',
+                : fallback
+                  ? 'FMP fallback (US Treasury unavailable; 15-min cache; FMP can lag the Treasury by ~2 days)'
+                  : 'treasury rates (3h cache)',
     };
 }
 

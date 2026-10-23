@@ -350,6 +350,29 @@ describe('getEconomyTool', () => {
             });
         });
 
+        it('당일 읽기가 재무부를 못 읽어 FMP로 물러난 값이면 그렇다고 표시한다', async () => {
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: { date: '2026-10-19', year2: 3.6, year10: 5.15 },
+                calendar: [],
+            });
+            freshTreasury.mockResolvedValue({
+                treasury: { date: '2026-10-20', year2: 4.79, year10: 5.12 },
+                fetchedAt: '2026-10-22T12:00:00.000Z',
+                source: 'fmp',
+                officialAvailable: false,
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                treasury: Record<string, unknown>;
+            };
+            expect(r.treasury).toMatchObject({
+                date: '2026-10-20',
+                provider: 'FMP',
+                cache: expect.stringContaining('FMP fallback'),
+            });
+        });
+
         it('당일 읽기가 실패하면 스냅샷 값으로 물러나고, 묵었을 수 있다고 표시한다', async () => {
             snapshot.mockResolvedValue({
                 indicators: [],

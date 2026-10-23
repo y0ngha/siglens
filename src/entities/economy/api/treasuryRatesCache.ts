@@ -4,7 +4,7 @@ import type { TreasuryRateSnapshot } from '@y0ngha/siglens-core';
 import type { TreasuryReading } from '@/shared/api/economy/EconomyProvider';
 import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 import { etDateOf } from '../lib/calendarWindow';
 
@@ -14,6 +14,11 @@ import { etDateOf } from '../lib/calendarWindow';
  * 붙으므로 3시간이면 공표 뒤 늦어도 몇 시간 안에 새 값이 나가고, 외부 호출은 하루 몇 번에 그친다.
  */
 export const TREASURY_CACHE_TTL_SECONDS = 3 * SECONDS_PER_HOUR;
+/**
+ * 재무부를 못 읽어 FMP로 물러난 값의 TTL(15분). 3시간 동안 늦은 값으로 굳지는 않게, 재무부 장애가 이어지는
+ * 동안 호출마다 두 출처를 다시 읽지도 않게 짧게 둔다.
+ */
+export const TREASURY_FALLBACK_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
 
 /** 국채 금리 + 이 값을 공급자에서 읽은 시각. */
 export interface FreshTreasuryRates {
@@ -49,8 +54,9 @@ async function readTreasury(): Promise<TreasuryReading | null> {
  * "현재 금리"로 나갔다(2026-10-22 실측: 10/21 공표가 있는데 10/19 값). AI 에이전트의
  * `get_economy`는 route handler라 정적화가 필요 없으므로 Redis만 거쳐 직접 읽는다.
  *
- * 실패는 `null`로 내려 호출부가 스냅샷 값으로 물러나게 한다. `null` 결과와, 재무부를 못 읽어 FMP로
- * 물러난 결과는 캐시하지 않는다(일시 장애가 3시간 동안 늦은 값으로 굳지 않게 — 다음 호출이 재무부를 다시 본다).
+ * 실패는 `null`로 내려 호출부가 스냅샷 값으로 물러나게 한다. `null` 결과는 캐시하지 않는다. 재무부를 못 읽어
+ * FMP로 물러난 결과는 {@link TREASURY_FALLBACK_TTL_SECONDS}만 캐시한다(일시 장애가 3시간 동안 늦은 값으로
+ * 굳지 않게, 장애 중 호출마다 다시 읽지도 않게).
  */
 export async function getFreshTreasuryRates(
     now: Date = new Date()
@@ -58,14 +64,17 @@ export async function getFreshTreasuryRates(
     try {
         return await getOrSetCache<FreshTreasuryRates | null>(
             buildTreasuryCacheKey(now),
-            TREASURY_CACHE_TTL_SECONDS,
+            value =>
+                value?.officialAvailable === false
+                    ? TREASURY_FALLBACK_TTL_SECONDS
+                    : TREASURY_CACHE_TTL_SECONDS,
             async () => {
                 const reading = await readTreasury();
                 return reading === null
                     ? null
                     : { ...reading, fetchedAt: new Date().toISOString() };
             },
-            value => value !== null && value.officialAvailable
+            value => value !== null
         );
     } catch (error) {
         // Log the name only (no payload), then degrade to the snapshot's treasury in get_economy.

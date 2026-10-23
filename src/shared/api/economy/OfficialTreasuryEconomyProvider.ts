@@ -4,14 +4,19 @@ import type {
     EconomicIndicatorSeries,
     TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
-import { fetchTreasuryGovSnapshot } from '@/shared/api/treasury/treasuryGovClient';
+import {
+    fetchTreasuryGovSnapshot,
+    TREASURY_GOV_REQUEST_TIMEOUT_MS,
+} from '@/shared/api/treasury/treasuryGovClient';
 import type { EconomyProvider, TreasuryReading } from './EconomyProvider';
 
 /**
  * 재무부 값을 기다리는 최대 시간. 이 시간이 지나면 요청을 끊고 FMP 값으로 답한다 — `get_economy` 도구
  * 제한(30초)과 /economy ISR 재생성이 재무부 지연에 끌려가지 않게 한다(재무부 응답은 실측 1초 안팎).
+ * 1월의 올해 → 전년도 순차 요청 두 번이 들어가도록 "시도 제한 × 2 + 1초"로 둔다.
  */
-export const OFFICIAL_TREASURY_WAIT_MS = 6_000;
+export const OFFICIAL_TREASURY_WAIT_MS =
+    2 * TREASURY_GOV_REQUEST_TIMEOUT_MS + 1_000;
 
 /** 로그용 오류 요약 — 이름과, HTTP 오류면 상태 코드(비밀값 없음). 403 차단과 5xx를 구분하려는 것이다. */
 function errorSummary(reason: unknown): { error: string; status?: number } {

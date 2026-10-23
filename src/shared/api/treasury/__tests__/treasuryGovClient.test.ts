@@ -155,6 +155,16 @@ describe('fetchTreasuryGovSnapshot', () => {
         );
     });
 
+    it('오류 응답은 본문을 취소해 연결을 놓는다', async () => {
+        const res = new Response('blocked', { status: 403 });
+        const cancel = vi.spyOn(res.body!, 'cancel');
+        fetchSpy.mockResolvedValueOnce(res);
+        await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
+            TreasuryGovHttpError
+        );
+        expect(cancel).toHaveBeenCalled();
+    });
+
     it('5xx·네트워크 오류는 재시도하지 않고 던진다(호출부가 FMP로 물러난다)', async () => {
         fetchSpy.mockResolvedValueOnce(new Response('down', { status: 503 }));
         await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(

@@ -107,7 +107,11 @@ async function fetchYearCsv(
         cache: 'no-store',
         signal: signal ? AbortSignal.any([timeout, signal]) : timeout,
     });
-    if (!res.ok) throw new TreasuryGovHttpError(res.status);
+    if (!res.ok) {
+        // 읽지 않은 본문이 keep-alive 소켓을 붙잡지 않게 놓는다.
+        await res.body?.cancel().catch(() => undefined);
+        throw new TreasuryGovHttpError(res.status);
+    }
     // 상한 초과는 `BoundedBodyTooLargeError` 그대로 올린다(메시지에 URL이 없고, 이름으로 원인이 남는다).
     return new TextDecoder('utf-8').decode(
         await readBoundedBody(res, TREASURY_GOV_MAX_BODY_BYTES)

@@ -25,6 +25,7 @@ import {
     buildTreasuryCacheKey,
     getFreshTreasuryRates,
     TREASURY_CACHE_TTL_SECONDS,
+    TREASURY_FALLBACK_TTL_SECONDS,
 } from '../treasuryRatesCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
@@ -66,12 +67,11 @@ describe('treasuryRatesCache', () => {
 
         const result = await getFreshTreasuryRates();
 
-        expect(mockGetOrSetCache).toHaveBeenCalledWith(
-            'economy:treasury:v2:2026-10-22',
-            TREASURY_CACHE_TTL_SECONDS,
-            expect.any(Function),
-            expect.any(Function)
-        );
+        const call = mockGetOrSetCache.mock.calls.find(
+            ([key]) => key === 'economy:treasury:v2:2026-10-22'
+        )!;
+        const ttl = call[1] as (v: unknown) => number;
+        expect(ttl(result)).toBe(TREASURY_CACHE_TTL_SECONDS);
         // 출처를 알리지 않는 공급자(FMP 단독·Fake)는 FMP 출처, 캐시 가능
         expect(result).toEqual({
             treasury: { date: '2026-10-21', year2: 3.6, year10: 5.13 },
@@ -81,7 +81,7 @@ describe('treasuryRatesCache', () => {
         });
     });
 
-    it('출처를 알리는 공급자는 그 출처를 싣고, 재무부를 못 읽어 FMP로 물러난 값은 캐시하지 않는다', async () => {
+    it('출처를 알리는 공급자는 그 출처를 싣고, 재무부를 못 읽어 FMP로 물러난 값은 짧게만 캐시한다', async () => {
         mockGetOrSetCache.mockImplementation(
             async (_key, _ttl, fetcher: () => Promise<unknown>) => fetcher()
         );
@@ -96,17 +96,17 @@ describe('treasuryRatesCache', () => {
             officialAvailable: false,
         });
         expect(mockGetTreasury).not.toHaveBeenCalled();
-        const shouldCache = mockGetOrSetCache.mock.calls.find(
+        const call = mockGetOrSetCache.mock.calls.find(
             ([key]) => key === 'economy:treasury:v2:2026-10-22'
-        )![3] as (v: unknown) => boolean;
-        expect(shouldCache(result)).toBe(false);
+        )!;
+        const ttl = call[1] as (v: unknown) => number;
+        expect(ttl(result)).toBe(TREASURY_FALLBACK_TTL_SECONDS);
+        expect(TREASURY_FALLBACK_TTL_SECONDS).toBeLessThan(
+            TREASURY_CACHE_TTL_SECONDS
+        );
         expect(
-            shouldCache({
-                ...result!,
-                source: 'us-treasury',
-                officialAvailable: true,
-            })
-        ).toBe(true);
+            ttl({ ...result!, source: 'us-treasury', officialAvailable: true })
+        ).toBe(TREASURY_CACHE_TTL_SECONDS);
     });
 
     it('공급자가 null이면 null이고, null은 캐시하지 않는다', async () => {
