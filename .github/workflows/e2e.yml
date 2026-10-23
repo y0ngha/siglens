@@ -92,35 +92,59 @@ jobs:
             # 종료 코드를 파일로 남기는 이유: 백그라운드 프로세스의 실패는 이 스텝의
             # 종료 코드에 반영되지 않는다. 회수 스텝이 이 파일로 성공·실패를 판정한다.
             #
-            # apt 미러(azure.archive.ubuntu.com)가 패키지 하나를 받다 멈추는 일이 잦다
-            # (2026-10-23 하루에 샤드 5번이 다운로드 도중 5분 제한에 걸림). 두 겹으로 막는다.
-            #   1. 멈춘 연결은 20초에 끊고 apt가 5번까지 다시 받는다. 기본값 확인:
-            #      `apt-config dump | grep -iE 'Acquire::(Retries|https?::Timeout)'`(noble apt 2.7은
-            #      Retries 3, Timeout 미설정 시 120초). 파일명을 99-zz로 둬 이미지 설정보다 나중에 읽힌다.
-            #      적용된 값은 이 스텝 로그에 찍는다.
-            #   2. 설치 시도마다 240초 제한(SIGTERM에도 안 끝나면 15초 뒤 SIGKILL)을 걸고, 실패·시간 초과면
-            #      끊긴 dpkg를 마무리한 뒤 20초 뒤 한 번 더 시도한다. dpkg 잠금은 60초까지 기다린다.
-            #      최악 (240+15) + 20 + (240+15) = 530초로 회수 스텝의 대기(600초) 안에 끝난다.
-            # .deb 캐시는 쓰지 않는다: e2e는 pull_request에서만 돌고 Actions 캐시는 PR 범위라, 실패가
-            # 실제로 나는 새 PR의 첫 실행에는 캐시가 맞지 않는다.
+            # apt 미러(azure.archive.ubuntu.com)가 연결은 유지한 채 아주 느리게 보내며 멈추는 일이 잦다
+            # (2026-10-23 하루에 샤드 5번이 다운로드 도중 5분 제한에 걸림). 이미지의 apt 설정
+            # (Retries 1, http/https Timeout 15 — 이 러너에서 `apt-config dump`로 확인)이 있어도 무응답이
+            # 아니라 느린 전송이라 끊기지 않았다. 그래서 두 가지로 막는다.
+            #   1. .deb 캐시: `e2e-apt-cache.yml`이 기본 브랜치에서 받아 둔 .deb를 복원해 apt 아카이브에
+            #      넣는다. 미러에서는 패키지 목록과, 캐시 이후 바뀐 패키지만 받는다.
+            #   2. 시간 제한 + 재시도: 시도마다 270초(SIGTERM에도 안 끝나면 15초 뒤 SIGKILL). 시간 초과·apt
+            #      오류(124/137/100)면 20초 쉬고, sudo 아래 살아남은 apt-get·dpkg를 끝내고 잠금이 풀리기를
+            #      (최대 60초) 기다린 뒤, 끊긴 설치를 마무리(`dpkg --configure -a`, 최대 60초)하고 한 번 더 한다.
+            #      최악 (270+15) + 20 + 60 + 60 + (270+15) = 710초로 회수 스텝 대기(780초) 안에 끝난다.
             # 종료 코드는 임시 파일에 쓴 뒤 mv로 바꿔, 회수 스텝이 빈 파일을 읽는 틈을 없앤다.
+            #
+            # 아래 키 스텝은 e2e-apt-cache.yml의 같은 이름 스텝과 같은 식이어야 한다. 바꾸면 두 곳을 함께 바꾼다.
+            - name: Cache key inputs
+              id: key
+              run: |
+                  echo "pw=$(sed -n '/^"@playwright\/test@/,/^$/s/^  version: //p' yarn.lock | head -1)" >> "$GITHUB_OUTPUT"
+                  echo "image=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+            - name: Restore apt .deb cache (seeded on master)
+              uses: actions/cache/restore@v4
+              with:
+                  path: ~/apt-debs
+                  key: e2e-apt-${{ runner.os }}-${{ steps.key.outputs.image }}-pw${{ steps.key.outputs.pw }}
+                  restore-keys: e2e-apt-${{ runner.os }}-
+
             - name: Install Playwright browsers (background)
               run: |
-                  printf 'Acquire::Retries "5";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\nDPkg::Lock::Timeout "60";\n' \
-                      | sudo tee /etc/apt/apt.conf.d/99-zz-ci-retries > /dev/null
-                  apt-config dump | grep -iE '^(Acquire::(Retries|https?::Timeout)|DPkg::Lock::Timeout) '
+                  if ls "$HOME"/apt-debs/*.deb > /dev/null 2>&1; then
+                      sudo cp "$HOME"/apt-debs/*.deb /var/cache/apt/archives/
+                      echo "seeded $(ls "$HOME"/apt-debs/*.deb | wc -l) cached .deb files"
+                  else
+                      echo "no apt .deb cache; downloading every package from the mirror"
+                  fi
                   nohup sh -c '
                       rc=1
                       for attempt in 1 2; do
                           if [ "$attempt" = 2 ]; then
                               sleep 20
-                              sudo dpkg --configure -a || true
+                              sudo pkill -x apt-get || true
+                              sudo pkill -x dpkg || true
+                              for i in $(seq 1 30); do
+                                  sudo fuser /var/lib/dpkg/lock-frontend /var/cache/apt/archives/lock > /dev/null 2>&1 || break
+                                  sleep 2
+                              done
+                              sudo timeout 60 dpkg --configure -a || true
                           fi
                           echo "== playwright install attempt $attempt"
-                          timeout -k 15 240 yarn playwright install --with-deps chromium webkit
+                          timeout -k 15 270 yarn playwright install --with-deps chromium webkit
                           rc=$?
                           [ "$rc" = 0 ] && break
                           echo "== attempt $attempt exited with $rc"
+                          case "$rc" in 124|137|100) ;; *) break ;; esac
                       done
                       echo "$rc" > "$RUNNER_TEMP/playwright-install.exit.tmp"
                       mv "$RUNNER_TEMP/playwright-install.exit.tmp" "$RUNNER_TEMP/playwright-install.exit"
@@ -188,10 +212,10 @@ jobs:
                   CI: '1'
 
             # 정상이면 설치가 앞 스텝(백엔드 기동·build)과 겹쳐 끝나 있어 여기서는 거의 기다리지
-            # 않는다. 600초는 설치 스텝의 최악(530초, 위 주석)보다 길다.
+            # 않는다. 780초는 설치 스텝의 최악(710초, 위 주석)보다 길다.
             - name: Wait for Playwright browsers
               run: |
-                  for i in $(seq 1 300); do
+                  for i in $(seq 1 390); do
                       if [ -f "$RUNNER_TEMP/playwright-install.exit" ]; then
                           code="$(cat "$RUNNER_TEMP/playwright-install.exit")"
                           cat "$RUNNER_TEMP/playwright-install.log"
@@ -200,7 +224,7 @@ jobs:
                       fi
                       sleep 2
                   done
-                  echo "Playwright install did not finish within 10 minutes. Log so far:"
+                  echo "Playwright install did not finish within 13 minutes. Log so far:"
                   cat "$RUNNER_TEMP/playwright-install.log" || true
                   exit 1
 

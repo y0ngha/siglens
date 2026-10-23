@@ -1,0 +1,67 @@
+name: E2E apt cache
+
+# e2e 잡의 `playwright install --with-deps`는 webkit·chromium용 apt 패키지(약 181개, 125MB)를
+# 매 샤드마다 azure.archive.ubuntu.com에서 받는다. 그 미러가 연결은 유지한 채 아주 느리게 보내며 멈추는
+# 일이 잦아(2026-10-23 하루에 샤드 5번이 5분 제한에 걸림, apt의 15초 무응답 제한도 안 걸림) 다운로드
+# 자체를 없앤다. 이 워크플로가 기본 브랜치에서 .deb를 받아 캐시에 저장하고, e2e 잡이 복원한다.
+# 기본 브랜치에서 만든 캐시는 모든 PR이 읽을 수 있다 — PR 실행이 만든 캐시는 그 PR에서만 읽힌다.
+#
+# 키: 러너 이미지 버전 + Playwright 버전. 이미지가 바뀌면(대개 주 1회) 다음 주간 실행·master push가
+# 새 키를 만들고, 그 사이 e2e는 이전 이미지 키를 restore-keys로 받는다(달라진 패키지만 미러에서 받는다).
+on:
+    push:
+        branches: [master]
+        paths:
+            - package.json
+            - yarn.lock
+            - .github/workflows/e2e.yml
+            - .github/workflows/e2e-apt-cache.yml
+    schedule:
+        - cron: '17 3 * * 1'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: e2e-apt-cache
+    cancel-in-progress: false
+
+jobs:
+    seed:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            # e2e.yml의 같은 이름 스텝과 같은 식이어야 키가 맞는다. 바꾸면 두 곳을 함께 바꾼다.
+            - name: Cache key inputs
+              id: key
+              run: |
+                  echo "pw=$(sed -n '/^"@playwright\/test@/,/^$/s/^  version: //p' yarn.lock | head -1)" >> "$GITHUB_OUTPUT"
+                  echo "image=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+            - name: Check existing cache
+              id: hit
+              uses: actions/cache/restore@v4
+              with:
+                  path: ~/apt-debs
+                  key: e2e-apt-${{ runner.os }}-${{ steps.key.outputs.image }}-pw${{ steps.key.outputs.pw }}
+                  lookup-only: true
+
+            # 빈 아카이브에서 설치해 이번에 받은 .deb만 모은다. `apt-get`은 받은 패키지를 지우지 않는다.
+            - name: Download Playwright system dependencies
+              if: steps.hit.outputs.cache-hit != 'true'
+              run: |
+                  sudo apt-get clean
+                  npx -y "playwright@${{ steps.key.outputs.pw }}" install-deps chromium webkit
+                  mkdir -p ~/apt-debs
+                  cp /var/cache/apt/archives/*.deb ~/apt-debs/
+                  echo "cached .deb files: $(ls ~/apt-debs/*.deb | wc -l), $(du -sh ~/apt-debs | cut -f1)"
+
+            - name: Save cache
+              if: steps.hit.outputs.cache-hit != 'true'
+              uses: actions/cache/save@v4
+              with:
+                  path: ~/apt-debs
+                  key: e2e-apt-${{ runner.os }}-${{ steps.key.outputs.image }}-pw${{ steps.key.outputs.pw }}
