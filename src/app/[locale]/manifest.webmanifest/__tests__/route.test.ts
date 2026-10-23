@@ -36,7 +36,7 @@ describe('GET /{locale}/manifest.webmanifest', () => {
         );
         const body = await response.json();
         expect(body.lang).toBe('en');
-        expect(body.start_url).toBe('/en/');
+        expect(body.start_url).toBe('/en');
         expect(typeof body.name).toBe('string');
         expect(body.name.length).toBeGreaterThan(0);
     });

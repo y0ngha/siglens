@@ -27,6 +27,8 @@ describe('buildAiManifest', () => {
 
         expect(result.start_url).toBe(home);
         expect(result.scope).toBe(home);
+        // 정체성(`id`)은 메인과 같은 규칙(끝 슬래시)으로 고정한다 — 바뀌면 다른 앱이 된다.
+        expect(result.id).toBe(locale === 'ko' ? '/' : `/${locale}/`);
         expect(result.lang).toBe(LOCALE_HREFLANG[locale]);
     });
 

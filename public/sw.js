@@ -15,7 +15,13 @@
 // 이 값을 올리면 옛 캐시가 정리된다. 해시 자산은 **용량 상한**(MAX_STATIC_ENTRIES)
 // 이 따로 막으므로 평범한 배포마다 올릴 필요는 없다.
 const CACHE_VERSION = 'v2';
-const PRECACHE_NAME = `siglens-precache-${CACHE_VERSION}`;
+// 프리캐시(오프라인 페이지)만 바뀐 배포에서 해시 자산 캐시까지 지우지 않도록 따로 센다.
+// 오프라인 페이지 **내용**만 바꿀 때는 엄밀히는 이 파일의 바이트가 바뀌기만 하면 된다 —
+// install이 다시 돌고 `cache.addAll`이 `/offline.html`을 덮어쓴다. 이 값을 올리는 것이 그
+// 바이트 변경을 의도적으로, 그리고 옛 프리캐시 정리까지 함께 하는 방법이다.
+// v3: ai 호스트에서 제목을 바꾸는 오프라인 페이지(2026-10).
+const PRECACHE_VERSION = 'v3';
+const PRECACHE_NAME = `siglens-precache-${PRECACHE_VERSION}`;
 const STATIC_CACHE_NAME = `siglens-static-${CACHE_VERSION}`;
 const KEEP_CACHES = [PRECACHE_NAME, STATIC_CACHE_NAME];
 
