@@ -16,8 +16,8 @@ import { loadMessages } from './loadMessages';
  */
 export default getRequestConfig(async ({ requestLocale }) => {
     // `requestLocale`은 next-intl 4.13에서 deprecated이고 대체제인 `next/root-params`는
-    // Next 16.3+ 기능이다. 이 레포는 16.2.12에 고정돼 있고(커스텀 cache-handler 계약과
-    // yarn patch가 걸려 있어 Next 업그레이드는 별도 PR이어야 한다) 그때까지 이 경로를 쓴다.
+    // Next 16.3+ 기능이다. 지금 버전에서는 쓸 수 있지만 옮기는 일은 별도 작업으로 남겨 두고,
+    // 그때까지 이 경로를 쓴다.
     const requested = await requestLocale;
     const locale = hasLocale(routing.locales, requested)
         ? requested

@@ -14,10 +14,10 @@ vi.mock('@/shared/lib/byokGate', () => ({
 
 import { resolveCallerTier } from '../lib/resolveCallerTier';
 
-/** ISR/prerender에서 `getCurrentUser()`가 `cookies()`를 읽을 때 Next가 던지는 실제 메시지. */
+/** ISR/prerender에서 `getCurrentUser()`가 `cookies()`를 읽을 때 Next 16.4가 던지는 실제 메시지. */
 const CACHE_SCOPE_ERROR = new Error(
-    'Route /[symbol] used `cookies()` inside a function cached with `unstable_cache()`. ' +
-        'Accessing Dynamic data sources inside a cache scope is not supported.'
+    'Route "/[symbol]": `cookies()` can\'t be read inside `unstable_cache()`. ' +
+        'Read it outside the cached function and pass what you need as an argument.'
 );
 
 beforeEach(() => {
@@ -69,7 +69,7 @@ describe('resolveCallerTier', () => {
         expect(console.error).not.toHaveBeenCalled();
     });
 
-    // 판별을 Next 메시지의 고정 부분("inside a function cached with")으로만 좁힌
+    // 판별을 Next 메시지의 고정 부분("can't be read inside `unstable_cache()`" 등)으로만 좁힌
     // 이유(감사 F7): 매칭이 헐거우면 무관한 진짜 실패가 우연히 걸려 조용히 삼켜진다.
     // "cache scope"라는 말만 들어간 일반 오류는 반드시 로그로 남아야 한다.
     it('"cache scope" 문구만 든 무관한 오류는 삼키지 않고 로그로 남긴다', async () => {

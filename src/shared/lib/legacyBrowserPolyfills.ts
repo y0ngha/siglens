@@ -14,7 +14,7 @@
  *
  * `instrumentation-client.ts`가 가장 먼저 부른다 — Next는 그 파일을 하이드레이션과 라우트
  * 청크의 모듈 평가보다 먼저 실행한다(Next 16.3.8의 `next/dist/client/app-next.js`에서
- * `require-instrumentation-client`가 `app-index`·hydrate보다 앞선다, 2026-10-09 확인). 이 순서는
+ * `require-instrumentation-client`가 `app-index`·hydrate보다 앞선다, 2026-10-09 확인. 16.4.2도 같은 파일). 이 순서는
  * e2e `legacy-browser.spec.ts`가 매번 검증한다 — 메서드를 지운 페이지가 오류 없이 하이드레이션되는지
  * 본다(폴리필을 연결하지 않은 커밋에서는 `/AAPL`이 `findLast is not a function`으로 실패했다).
  * Next를 올린 뒤 그 spec이 실패하면 이 전제부터 다시 본다. 이미 있는 메서드는
