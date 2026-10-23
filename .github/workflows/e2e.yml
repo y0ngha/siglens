@@ -98,25 +98,25 @@ jobs:
             # 아니라 느린 전송이라 끊기지 않았다. 그래서 두 가지로 막는다.
             #   1. .deb 캐시: `e2e-apt-cache.yml`이 기본 브랜치에서 받아 둔 .deb를 복원해 apt 아카이브에
             #      넣는다. 미러에서는 패키지 목록과, 캐시 이후 바뀐 패키지만 받는다.
-            #   2. 시간 제한 + 재시도: 시도마다 270초(SIGTERM에도 안 끝나면 15초 뒤 SIGKILL). 시간 초과·apt
-            #      오류(124/137/100)면 20초 쉬고, sudo 아래 살아남은 apt-get·dpkg를 끝내고 잠금이 풀리기를
-            #      (최대 60초) 기다린 뒤, 끊긴 설치를 마무리(`dpkg --configure -a`, 최대 60초)하고 한 번 더 한다.
-            #      최악 (270+15) + 20 + 60 + 60 + (270+15) = 710초로 회수 스텝 대기(780초) 안에 끝난다.
+            #   2. 시스템 의존과 브라우저를 나눠, 각각 시간 제한을 걸고 실패하면 한 번 더 시도한다.
+            #      - 시스템 의존(`install-deps`, apt): `timeout`을 **root로** 돌린다. GNU timeout은 명령의
+            #        자식까지 끊으므로(`--foreground` 아님) node → apt-get → dpkg가 함께 끝나 잠금이 남지
+            #        않는다. Playwright는 apt 종료 코드를 1로 바꿔 내므로 코드로 가르지 않고 실패면 재시도하고,
+            #        재시도 전에 끊긴 설치를 마무리한다(`dpkg --configure -a`, 최대 60초).
+            #      - 브라우저(`install`, CDN): 일반 사용자로 시간 제한·재시도.
+            #      최악: 의존 (270+15)+20+60+(270+15) = 650초, 브라우저 (120+15)+20+(120+15) = 290초,
+            #      합 940초로 회수 스텝 대기(1,020초) 안에 끝난다.
             # 종료 코드는 임시 파일에 쓴 뒤 mv로 바꿔, 회수 스텝이 빈 파일을 읽는 틈을 없앤다.
-            #
-            # 아래 키 스텝은 e2e-apt-cache.yml의 같은 이름 스텝과 같은 식이어야 한다. 바꾸면 두 곳을 함께 바꾼다.
-            - name: Cache key inputs
-              id: key
-              run: |
-                  echo "pw=$(sed -n '/^"@playwright\/test@/,/^$/s/^  version: //p' yarn.lock | head -1)" >> "$GITHUB_OUTPUT"
-                  echo "image=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+            - name: Apt cache key
+              id: aptkey
+              uses: ./.github/actions/e2e-apt-cache-key
 
             - name: Restore apt .deb cache (seeded on master)
               uses: actions/cache/restore@v4
               with:
                   path: ~/apt-debs
-                  key: e2e-apt-${{ runner.os }}-${{ steps.key.outputs.image }}-pw${{ steps.key.outputs.pw }}
-                  restore-keys: e2e-apt-${{ runner.os }}-
+                  key: ${{ steps.aptkey.outputs.key }}
+                  restore-keys: ${{ steps.aptkey.outputs.prefix }}
 
             - name: Install Playwright browsers (background)
               run: |
@@ -126,27 +126,22 @@ jobs:
                   else
                       echo "no apt .deb cache; downloading every package from the mirror"
                   fi
-                  nohup sh -c '
-                      rc=1
-                      for attempt in 1 2; do
-                          if [ "$attempt" = 2 ]; then
+                  NODE="$(command -v node)" CLI="$PWD/node_modules/playwright/cli.js" nohup sh -c '
+                      run_with_retry() {
+                          label="$1"; shift
+                          for attempt in 1 2; do
+                              echo "== $label attempt $attempt"
+                              "$@" && return 0
+                              rc=$?
+                              echo "== $label attempt $attempt exited with $rc"
+                              [ "$attempt" = 2 ] && return "$rc"
                               sleep 20
-                              sudo pkill -x apt-get || true
-                              sudo pkill -x dpkg || true
-                              for i in $(seq 1 30); do
-                                  sudo fuser /var/lib/dpkg/lock-frontend /var/cache/apt/archives/lock > /dev/null 2>&1 || break
-                                  sleep 2
-                              done
-                              sudo timeout 60 dpkg --configure -a || true
-                          fi
-                          echo "== playwright install attempt $attempt"
-                          timeout -k 15 270 yarn playwright install --with-deps chromium webkit
-                          rc=$?
-                          [ "$rc" = 0 ] && break
-                          echo "== attempt $attempt exited with $rc"
-                          case "$rc" in 124|137|100) ;; *) break ;; esac
-                      done
-                      echo "$rc" > "$RUNNER_TEMP/playwright-install.exit.tmp"
+                              [ "$label" = deps ] && { sudo timeout 60 dpkg --configure -a || true; }
+                          done
+                      }
+                      run_with_retry deps sudo timeout -k 15 270 "$NODE" "$CLI" install-deps chromium webkit \
+                          && run_with_retry browsers timeout -k 15 120 "$NODE" "$CLI" install chromium webkit
+                      echo "$?" > "$RUNNER_TEMP/playwright-install.exit.tmp"
                       mv "$RUNNER_TEMP/playwright-install.exit.tmp" "$RUNNER_TEMP/playwright-install.exit"
                   ' > "$RUNNER_TEMP/playwright-install.log" 2>&1 &
 
@@ -212,10 +207,10 @@ jobs:
                   CI: '1'
 
             # 정상이면 설치가 앞 스텝(백엔드 기동·build)과 겹쳐 끝나 있어 여기서는 거의 기다리지
-            # 않는다. 780초는 설치 스텝의 최악(710초, 위 주석)보다 길다.
+            # 않는다. 1,020초는 설치 스텝의 최악(940초, 위 주석)보다 길다.
             - name: Wait for Playwright browsers
               run: |
-                  for i in $(seq 1 390); do
+                  for i in $(seq 1 510); do
                       if [ -f "$RUNNER_TEMP/playwright-install.exit" ]; then
                           code="$(cat "$RUNNER_TEMP/playwright-install.exit")"
                           cat "$RUNNER_TEMP/playwright-install.log"
@@ -224,7 +219,7 @@ jobs:
                       fi
                       sleep 2
                   done
-                  echo "Playwright install did not finish within 13 minutes. Log so far:"
+                  echo "Playwright install did not finish within 17 minutes. Log so far:"
                   cat "$RUNNER_TEMP/playwright-install.log" || true
                   exit 1
 

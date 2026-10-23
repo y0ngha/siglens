@@ -1,0 +1,25 @@
+name: E2E apt cache key
+description: >-
+    Cache key for the Playwright system-dependency .deb files. Used by both e2e.yml (restore) and
+    e2e-apt-cache.yml (seed on the default branch) so the two can never drift apart.
+outputs:
+    key:
+        description: Exact key — runner OS + runner image version + Playwright version (from yarn.lock).
+        value: ${{ steps.k.outputs.key }}
+    prefix:
+        description: restore-keys prefix (any image version for this OS).
+        value: ${{ steps.k.outputs.prefix }}
+runs:
+    using: composite
+    steps:
+        - id: k
+          shell: bash
+          run: |
+              pw="$(sed -n '/^"@playwright\/test@/,/^$/s/^  version: //p' yarn.lock | head -1)"
+              if [ -z "$pw" ]; then
+                  echo "::error::@playwright/test version not found in yarn.lock"
+                  exit 1
+              fi
+              prefix="e2e-apt-${RUNNER_OS}-"
+              echo "prefix=${prefix}" >> "$GITHUB_OUTPUT"
+              echo "key=${prefix}${ImageVersion:-unknown}-pw${pw}" >> "$GITHUB_OUTPUT"
