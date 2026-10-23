@@ -8,6 +8,7 @@ import {
     TREASURY_GOV_RENDER_TIMEOUT_MS,
     TREASURY_GOV_REQUEST_TIMEOUT_MS,
     TreasuryGovHttpError,
+    TreasuryGovNotCsvError,
     treasuryGovCsvUrl,
 } from '../treasuryGovClient';
 
@@ -21,6 +22,7 @@ const fetchSpy = vi.fn(
 );
 
 // 2026-10-23 실측 CSV의 앞 세 줄(열 이름·순서 그대로)
+const CSV_HEADERS = { 'content-type': 'text/csv; charset=UTF-8' };
 const OCT = new Date('2026-10-23T01:38:00Z');
 const JAN_2027 = new Date('2027-01-02T15:00:00Z');
 
@@ -94,7 +96,9 @@ describe('fetchTreasuryGovSnapshot', () => {
 
     it('그 해 CSV를 캐시 없이, 시간 제한을 걸어 읽는다', async () => {
         const timeout = vi.spyOn(AbortSignal, 'timeout');
-        fetchSpy.mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
+        fetchSpy.mockResolvedValueOnce(
+            new Response(CSV_2026, { status: 200, headers: CSV_HEADERS })
+        );
         expect((await fetchTreasuryGovSnapshot(OCT))?.year10).toBe(4.96);
         expect(fetchSpy).toHaveBeenCalledWith(
             treasuryGovCsvUrl(2026),
@@ -108,7 +112,9 @@ describe('fetchTreasuryGovSnapshot', () => {
 
     it('페이지 렌더 중에는 짧은 시간 제한을 쓴다', async () => {
         const timeout = vi.spyOn(AbortSignal, 'timeout');
-        fetchSpy.mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
+        fetchSpy.mockResolvedValueOnce(
+            new Response(CSV_2026, { status: 200, headers: CSV_HEADERS })
+        );
         await runWithRenderBudget(() => fetchTreasuryGovSnapshot(OCT));
         expect(timeout).toHaveBeenCalledWith(TREASURY_GOV_RENDER_TIMEOUT_MS);
     });
@@ -116,7 +122,9 @@ describe('fetchTreasuryGovSnapshot', () => {
     it('next build 중에도 짧은 시간 제한을 쓴다', async () => {
         vi.stubEnv('NEXT_PHASE', 'phase-production-build');
         const timeout = vi.spyOn(AbortSignal, 'timeout');
-        fetchSpy.mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
+        fetchSpy.mockResolvedValueOnce(
+            new Response(CSV_2026, { status: 200, headers: CSV_HEADERS })
+        );
         await fetchTreasuryGovSnapshot(OCT);
         expect(timeout).toHaveBeenCalledWith(TREASURY_GOV_RENDER_TIMEOUT_MS);
     });
@@ -133,11 +141,25 @@ describe('fetchTreasuryGovSnapshot', () => {
         fetchSpy.mockResolvedValueOnce(
             new Response('x'.repeat(TREASURY_GOV_MAX_BODY_BYTES + 1), {
                 status: 200,
+                headers: CSV_HEADERS,
             })
         );
         await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
             BoundedBodyTooLargeError
         );
+    });
+
+    it('200이어도 CSV가 아니면(안내·차단 HTML) 던지고, 1월에도 전년도로 넘어가지 않는다', async () => {
+        fetchSpy.mockResolvedValueOnce(
+            new Response('<html>maintenance</html>', {
+                status: 200,
+                headers: { 'content-type': 'text/html' },
+            })
+        );
+        await expect(fetchTreasuryGovSnapshot(JAN_2027)).rejects.toBeInstanceOf(
+            TreasuryGovNotCsvError
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
     it('오류 응답은 본문을 취소해 연결을 놓는다', async () => {
@@ -164,9 +186,14 @@ describe('fetchTreasuryGovSnapshot', () => {
 
     it('1월에 올해 CSV에 행이 없으면 전년도 CSV를 본다', async () => {
         fetchSpy
-            .mockResolvedValueOnce(new Response(HEADER, { status: 200 }))
             .mockResolvedValueOnce(
-                new Response(PRIOR_YEAR_CSV, { status: 200 })
+                new Response(HEADER, { status: 200, headers: CSV_HEADERS })
+            )
+            .mockResolvedValueOnce(
+                new Response(PRIOR_YEAR_CSV, {
+                    status: 200,
+                    headers: CSV_HEADERS,
+                })
             );
         expect((await fetchTreasuryGovSnapshot(JAN_2027))?.date).toBe(
             '2026-12-31'
@@ -180,7 +207,10 @@ describe('fetchTreasuryGovSnapshot', () => {
         fetchSpy
             .mockResolvedValueOnce(new Response('nf', { status: 404 }))
             .mockResolvedValueOnce(
-                new Response(PRIOR_YEAR_CSV, { status: 200 })
+                new Response(PRIOR_YEAR_CSV, {
+                    status: 200,
+                    headers: CSV_HEADERS,
+                })
             );
         expect((await fetchTreasuryGovSnapshot(JAN_2027))?.date).toBe(
             '2026-12-31'
@@ -188,7 +218,9 @@ describe('fetchTreasuryGovSnapshot', () => {
     });
 
     it('1월이 아니면 올해 CSV가 비어도 전년도 값으로 가리지 않고, 404는 던진다', async () => {
-        fetchSpy.mockResolvedValueOnce(new Response(HEADER, { status: 200 }));
+        fetchSpy.mockResolvedValueOnce(
+            new Response(HEADER, { status: 200, headers: CSV_HEADERS })
+        );
         expect(await fetchTreasuryGovSnapshot(OCT)).toBeNull();
         fetchSpy.mockResolvedValueOnce(new Response('nf', { status: 404 }));
         await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
@@ -198,7 +230,9 @@ describe('fetchTreasuryGovSnapshot', () => {
     });
 
     it('ET 기준으로 연도를 정한다(UTC 1월 1일 새벽은 아직 전년도 12월)', async () => {
-        fetchSpy.mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
+        fetchSpy.mockResolvedValueOnce(
+            new Response(CSV_2026, { status: 200, headers: CSV_HEADERS })
+        );
         await fetchTreasuryGovSnapshot(new Date('2027-01-01T03:00:00Z'));
         expect(fetchSpy).toHaveBeenCalledWith(
             treasuryGovCsvUrl(2026),
@@ -208,7 +242,10 @@ describe('fetchTreasuryGovSnapshot', () => {
 
     it('2년물이 비어 있으면 값은 내되 경고를 남긴다', async () => {
         fetchSpy.mockResolvedValueOnce(
-            new Response('Date,"10 Yr"\n10/22/2026,4.96', { status: 200 })
+            new Response('Date,"10 Yr"\n10/22/2026,4.96', {
+                status: 200,
+                headers: CSV_HEADERS,
+            })
         );
         expect(await fetchTreasuryGovSnapshot(OCT)).toEqual({
             date: '2026-10-22',

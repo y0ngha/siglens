@@ -45,6 +45,13 @@ export class TreasuryGovHttpError extends Error {
     }
 }
 
+export class TreasuryGovNotCsvError extends Error {
+    constructor() {
+        super('treasury.gov returned a non-CSV body');
+        this.name = 'TreasuryGovNotCsvError';
+    }
+}
+
 /** 그 해(`YYYY`)의 일간 수익률 CSV URL. 비밀값이 없다. */
 export function treasuryGovCsvUrl(year: number): string {
     return `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_yield_curve&field_tdr_date_value=${year}&page&_format=csv`;
@@ -107,6 +114,12 @@ async function fetchYearCsv(year: number): Promise<string> {
         // 읽지 않은 본문이 keep-alive 소켓을 붙잡지 않게 놓는다.
         await res.body?.cancel().catch(() => undefined);
         throw new TreasuryGovHttpError(res.status);
+    }
+    // 200이어도 CSV가 아니면(점검·차단 안내 HTML) 오류다 — "아직 공표 전"으로 읽어 1월 전년도 폴백이
+    // 작년 값을 공식값으로 내지 않게 한다.
+    if (!(res.headers.get('content-type') ?? '').includes('csv')) {
+        await res.body?.cancel().catch(() => undefined);
+        throw new TreasuryGovNotCsvError();
     }
     // 상한 초과는 `BoundedBodyTooLargeError` 그대로 올린다(메시지에 URL이 없고, 이름으로 원인이 남는다).
     return new TextDecoder('utf-8').decode(
