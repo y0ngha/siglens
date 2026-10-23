@@ -87,7 +87,7 @@ const { SharedCacheControls } = createRequire(import.meta.url)(
 );
 const sharedControls = SharedCacheControls.cacheControls;
 
-// 'max' 프로필이 Next에서 핸들러로 넘어오는 모양(revalidation-utils.js:119-123).
+// 'max' 프로필이 Next에서 핸들러로 넘어오는 모양(revalidation-utils.js:121-125).
 const MAX_DURATIONS = { expire: 31536000 };
 const PAGE_CACHE_CONTROL = { revalidate: 3600, expire: 31536000 };
 const EXPIRED = tag => `\u0000expired:${tag}`;
@@ -666,9 +666,9 @@ describe('CacheHandler.get — stale(SWR) 무효화', () => {
         const after = Date.now();
 
         expect(result.value).toBe(PAGE.value);
-        // incremental-cache/index.js:441-451 — revalidate*1000 + lastModified < now 이면 stale.
+        // incremental-cache/index.js:440-452 — revalidate*1000 + lastModified < now 이면 stale.
         expect(result.lastModified + 3600 * 1000).toBeLessThan(before);
-        // expire 경계(:446-448)는 넘지 않는다 — 넘으면 isStale=-1로 다시 블로킹이 된다.
+        // expire 경계(:447-449)는 넘지 않는다 — 넘으면 isStale=-1로 다시 블로킹이 된다.
         expect(result.lastModified + 31536000 * 1000).toBeGreaterThan(after);
     });
 
@@ -677,11 +677,17 @@ describe('CacheHandler.get — stale(SWR) 무효화', () => {
         getEntry.mockResolvedValueOnce(PAGE);
         expect(
             await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
-        ).toEqual({ lastModified: PAGE.lastModified, value: PAGE.value });
+        ).toEqual({
+            lastModified: PAGE.lastModified,
+            value: PAGE.value,
+            cacheControl: PAGE_CACHE_CONTROL,
+        });
     });
 
-    it('Next 공유 맵의 cacheControl이 엔트리 값보다 우선한다(Next가 실제로 쓰는 값)', async () => {
-        sharedControls.set('/AAPL', { revalidate: 7200, expire: 31536000 });
+    // Next 16.4는 get()이 돌려준 cacheControl을 자기 맵보다 우선한다(index.js:427-433).
+    // stale lastModified도 같은 값으로 계산해야 Next 판정과 어긋나지 않는다.
+    it('엔트리에 영속한 cacheControl이 Next 공유 맵 값보다 우선한다(Next 16.4가 쓰는 값)', async () => {
+        sharedControls.set('/AAPL', { revalidate: 60, expire: 31536000 });
         markRevalidated('seo-snapshot:AAPL', NOW - 1_000);
         getEntry.mockResolvedValueOnce(PAGE);
 
@@ -689,6 +695,24 @@ describe('CacheHandler.get — stale(SWR) 무효화', () => {
         const result = await new CacheHandler({}).get('/AAPL', {
             kind: 'APP_PAGE',
         });
+        expect(result.cacheControl).toEqual(PAGE_CACHE_CONTROL);
+        expect(
+            result.lastModified + PAGE_CACHE_CONTROL.revalidate * 1000
+        ).toBeLessThan(before);
+    });
+
+    it('영속 값이 없는 엔트리는 Next 공유 맵의 cacheControl로 판정한다', async () => {
+        sharedControls.set('/AAPL', { revalidate: 7200, expire: 31536000 });
+        markRevalidated('seo-snapshot:AAPL', NOW - 1_000);
+        const legacy = { ...PAGE };
+        delete legacy.cacheControl;
+        getEntry.mockResolvedValueOnce(legacy);
+
+        const before = Date.now();
+        const result = await new CacheHandler({}).get('/AAPL', {
+            kind: 'APP_PAGE',
+        });
+        expect(result.cacheControl).toBeUndefined();
         expect(result.lastModified + 7200 * 1000).toBeLessThan(before);
     });
 
@@ -724,7 +748,7 @@ describe('CacheHandler.get — stale(SWR) 무효화', () => {
         ).toBeNull();
     });
 
-    it('FETCH는 ctx.revalidate 기준으로 stale lastModified를 돌려준다(index.js:406-408)', async () => {
+    it('FETCH는 ctx.revalidate 기준으로 stale lastModified를 돌려준다(index.js:404-406)', async () => {
         markRevalidated('news:AAPL', NOW - 1_000);
         memGetEntry.mockReturnValueOnce({
             value: { kind: 'FETCH', data: {}, revalidate: 43200 },
@@ -805,7 +829,7 @@ describe('라우트 cacheControl 영속·재시드', () => {
             tags: [],
             cacheControl: PAGE_CACHE_CONTROL,
         });
-        // 16.3.8의 루트 페이지 키 모양. IncrementalCache는 핸들러에 넘긴 키 그대로 맵을 읽는다
+        // 16.3.8부터의 루트 페이지 키 모양. IncrementalCache는 핸들러에 넘긴 키 그대로 맵을 읽는다
         // (정규화하지 않는다 — nextInternals.mjs 상단 "라우트 cacheControl 맵의 키").
         const key = `/route-cache/APP_PAGE/${'a'.repeat(64)}/$/index`;
         await new CacheHandler({}).get(key, { kind: 'APP_PAGE' });

@@ -17,7 +17,11 @@ import {
     maxRevalidatedAt,
     publishRevalidated,
 } from './tagStore.mjs';
-import { seedCacheControl, staleLastModified } from './nextInternals.mjs';
+import {
+    entryCacheControl,
+    seedCacheControl,
+    staleLastModified,
+} from './nextInternals.mjs';
 import { config } from './config.mjs';
 
 // Next 16.2가 set()에 넘기는 페이지 태그 헤더 키.
@@ -40,6 +44,15 @@ const NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags';
 // ensureTagsFresh + maxExpiredAt / maxRevalidatedAt 판정을 똑같이 거친다.
 function isFetchKind(kind) {
     return kind === 'FETCH';
+}
+
+// 페이지 계열이면 엔트리에 영속한 cacheControl을 get() 결과에 싣는다. Next 16.4는 이 값을 자기
+// 메모리의 라우트 수명보다 우선하고 그 값으로 맵도 갱신한다(nextInternals.mjs `entryCacheControl`).
+// FETCH는 IncrementalCache가 이 필드를 보지 않으므로 싣지 않는다.
+function withCacheControl(kind, entry, result) {
+    if (isFetchKind(kind)) return result;
+    const cacheControl = entryCacheControl(entry);
+    return cacheControl ? { ...result, cacheControl } : result;
 }
 
 // FETCH의 S3 404 네거티브 캐시.
@@ -93,10 +106,10 @@ async function readPageEntry(cacheKey, kind) {
 }
 
 // Next 기본 FileSystemCache.revalidateTag와 같은 판정
-// (next/dist/server/lib/incremental-cache/file-system-cache.js:54-73):
+// (next/dist/server/lib/incremental-cache/file-system-cache.js:71-104):
 // durations가 없으면 즉시 만료, 있으면 stale 표시. `revalidateTag(tag, 'max')`는
-// `{ expire: 31536000 }`을 넘긴다(next/dist/server/revalidation-utils.js:119-123),
-// `updateTag`·단일 인자 `revalidateTag`는 durations 없이 부른다(같은 파일 :125-135).
+// `{ expire: 31536000 }`을 넘긴다(next/dist/server/revalidation-utils.js:121-125),
+// `updateTag`·단일 인자 `revalidateTag`는 durations 없이 부른다(같은 파일 :127-137).
 // expire가 0 이하면 FileSystemCache도 `expired = now`가 되므로 즉시 만료로 본다.
 // 양수 expire의 미래 만료는 stale로 근사한다 — tagStore.mjs "미래 시점 expire는 근사한다".
 export function isImmediateExpiry(durations) {
@@ -106,15 +119,15 @@ export function isImmediateExpiry(durations) {
 
 // set()의 모든 실태그 소스를 union한다.
 //
-// Next 16.2 source 검증(node_modules/next/dist/...):
-//   - FETCH 엔트리: set context(SetIncrementalFetchCacheContext, response-cache/types.d.ts:177)는
-//     `tags`만 갖는다. softTags는 GET context에만 있으나(types.d.ts:164) 멀티인스턴스/방어 목적으로
-//     ctx.softTags도 union한다(없으면 무해). 추가로 CachedFetchValue.tags(types.d.ts:47)가 값 자체에
-//     실린다 — file-system-cache.get이 data.value.tags를 신뢰하는 부분(file-system-cache.js:122).
+// Next 16.2 source 검증(node_modules/next/dist/..., 줄 번호는 16.4.2 기준으로 재확인):
+//   - FETCH 엔트리: set context(SetIncrementalFetchCacheContext, response-cache/types.d.ts:184)는
+//     `tags`만 갖는다. softTags는 GET context에만 있으나(types.d.ts:167) 멀티인스턴스/방어 목적으로
+//     ctx.softTags도 union한다(없으면 무해). 추가로 CachedFetchValue.tags(types.d.ts:49)가 값 자체에
+//     실린다 — file-system-cache.get이 data.value.tags를 신뢰하는 부분(file-system-cache.js:183).
 //   - APP_PAGE / APP_ROUTE / PAGES 엔트리: set context에 `tags` 필드가 없다
-//     (SetIncrementalResponseCacheContext, types.d.ts:184). Next는 페이지 태그를 캐시 값의 헤더
+//     (SetIncrementalResponseCacheContext, types.d.ts:203). Next는 페이지 태그를 캐시 값의 헤더
 //     `x-next-cache-tags`에서 읽는다 — file-system-cache.get의
-//     data.value.headers?.[NEXT_CACHE_TAGS_HEADER] (file-system-cache.js:214-216).
+//     data.value.headers?.[NEXT_CACHE_TAGS_HEADER] (file-system-cache.js:277).
 //     커스텀 cacheHandler.set(key, data, ctx)에서 data는 그 value 객체 자체이므로
 //     헤더는 data.headers[NEXT_CACHE_TAGS_HEADER]에 위치한다(set 경로의 `headers: data.headers`,
 //     file-system-cache.js set 블록과 동일 shape).
@@ -174,7 +187,7 @@ export default class CacheHandler {
         await ensureTagsFresh();
         const tags = entry.tags || [];
         // 즉시 만료(updateTag 등): miss → Next가 블로킹 재생성. FileSystemCache가
-        // areTagsExpired면 null을 돌려주는 것과 같다(file-system-cache.js:222-228, 242-246).
+        // areTagsExpired면 null을 돌려주는 것과 같다(file-system-cache.js:283-290, 306-310).
         if (maxExpiredAt(tags) > entry.lastModified) return null;
         // stale 무효화('max'): 엔트리를 버리지 않고 Next가 stale로 판정할 lastModified를
         // 돌려준다 → stale 서빙 + 백그라운드 재생성. 표현할 수 없는 경우(revalidate:false,
@@ -189,10 +202,16 @@ export default class CacheHandler {
             });
             return lastModified === null
                 ? null
-                : { lastModified, value: entry.value };
+                : withCacheControl(kind, entry, {
+                      lastModified,
+                      value: entry.value,
+                  });
         }
         // Next 16 계약: get()은 CacheHandlerValue 래퍼 { lastModified, value }를 반환해야 한다.
-        return { lastModified: entry.lastModified, value: entry.value };
+        return withCacheControl(kind, entry, {
+            lastModified: entry.lastModified,
+            value: entry.value,
+        });
     }
 
     async set(cacheKey, data, ctx) {
@@ -212,7 +231,7 @@ export default class CacheHandler {
         )
             return;
         // APP_ROUTE 엔트리(route handler 응답)는 html이 아니라 data.body(Buffer)+data.status를
-        // 쓰므로 위 가드를 우회한다(CachedRouteValue, response-cache/types.d.ts:70 — body:Buffer,
+        // 쓰므로 위 가드를 우회한다(CachedRouteValue, response-cache/types.d.ts:72 — body:Buffer,
         // status:number). 현재 캐시되는 APP_ROUTE는 순수 함수 og/twitter 이미지뿐이라 안전하나,
         // 미래에 에러를 반환하는 cached route handler가 4xx/5xx나 빈 body를 영속화하지 못하도록
         // 방어한다(#657 빈/실패 응답 동결 방지와 동일 취지).
@@ -237,7 +256,7 @@ export default class CacheHandler {
             fetchS3Writes += 1;
         } else {
             // 라우트 revalidate/expire를 엔트리와 함께 영속한다 — Next는 이 값을 메모리에만
-            // 두므로(incremental-cache/index.js:557) 재시작 후 get()이 되살린다.
+            // 두므로(incremental-cache/index.js:547) 재시작 후 get()이 되살린다.
             const cacheControl = ctx?.cacheControl;
             if (cacheControl && typeof cacheControl === 'object') {
                 entry.cacheControl = {

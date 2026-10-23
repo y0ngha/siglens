@@ -54,7 +54,7 @@ describe('loadBarsData 실패 경로', () => {
         mockGetCachedBarsWithIndicators.mockRejectedValue(fmpError);
         mockGetTranslations.mockRejectedValue(
             new Error(
-                'Route /[locale]/[symbol]/fear-greed used `headers()` inside a function cached with `unstable_cache()`.'
+                'Route "/[locale]/[symbol]/fear-greed": `headers()` can\'t be read inside `unstable_cache()`.'
             )
         );
 

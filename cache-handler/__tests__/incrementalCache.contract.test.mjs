@@ -1,4 +1,4 @@
-// 핸들러를 **실제 Next 16.3.8 IncrementalCache**에 꽂아 판정 결과를 확인하는 계약 테스트.
+// 핸들러를 **실제 Next 16.4.2 IncrementalCache**에 꽂아 판정 결과를 확인하는 계약 테스트.
 //
 // 핸들러의 stale 표현(nextInternals.mjs `staleLastModified`)과 cacheControl 재시드는 Next
 // 내부 계산과 정확히 맞물려야만 의미가 있다. 핸들러만 단위 테스트하면 "핸들러가 의도한 값을
@@ -57,7 +57,7 @@ const {
 } = require('next/dist/server/lib/incremental-cache/shared-cache-controls.external.js');
 const { CACHE_ONE_YEAR_SECONDS } = require('next/dist/lib/constants.js');
 
-// revalidateTag(tag, 'max')가 핸들러에 넘기는 durations(revalidation-utils.js:119-123).
+// revalidateTag(tag, 'max')가 핸들러에 넘기는 durations(revalidation-utils.js:121-125).
 const MAX_DURATIONS = { expire: 31536000 };
 const ROUTE_CACHE_CONTROL = { revalidate: 3600, expire: 31536000 };
 
@@ -74,13 +74,15 @@ function newIncrementalCache(prerenderRoutes = {}) {
         minimalMode: false,
         requestHeaders: {},
         maxMemoryCacheSize: 0,
-        getPrerenderManifest: () => ({
+        // 16.4부터 매니페스트 getter 대신 객체를 받고, preview 식별자는 `previewProps`로 따로 받는다.
+        prerenderManifest: {
             version: 4,
             routes: prerenderRoutes,
             dynamicRoutes: {},
             notFoundRoutes: [],
             preview: { previewModeId: 'test' },
-        }),
+        },
+        previewProps: { previewModeId: 'test' },
         fetchCacheKeyPrefix: '',
         CurCacheHandler: CacheHandler,
         allowedRevalidateHeaderKeys: [],
@@ -148,7 +150,7 @@ describe('APP_PAGE × 실제 IncrementalCache', () => {
             route: SYMBOL_OWNER,
         });
         // ResponseCache는 isStale === true면 이 값으로 먼저 응답하고 백그라운드로
-        // 재생성한다(response-cache/index.js:210-216). -1이면 블로킹이다.
+        // 재생성한다(response-cache/index.js:217-223). -1이면 블로킹이다.
         expect(entry.isStale).toBe(true);
         expect(entry.value.html).toBe(PAGE_VALUE.html);
         expect(entry.cacheControl).toEqual(ROUTE_CACHE_CONTROL);
@@ -179,6 +181,38 @@ describe('APP_PAGE × 실제 IncrementalCache', () => {
         expect(entry.cacheControl).toEqual(ROUTE_CACHE_CONTROL);
     });
 
+    // 멀티 인스턴스: 다른 인스턴스가 짧아진 수명(예: buildDegradedRevalidate)으로 다시 쓴 엔트리를
+    // 이 인스턴스가 메모리에 남은 옛 수명으로 판정하면 낮춘 revalidate가 무시된다. 16.4는 핸들러가
+    // 돌려준 cacheControl을 우선한다(index.js:427-433) — 핸들러가 그 값을 실어야 탄다.
+    it('다른 인스턴스가 더 짧은 수명으로 다시 쓴 엔트리는 그 수명으로 판정한다', async () => {
+        await seedPage();
+        const [storageKey] = [...SharedCacheControls.cacheControls.keys()];
+        const shortLived = { revalidate: 1, expire: 31536000 };
+        await newIncrementalCache().set('/AAPL', PAGE_VALUE, {
+            cacheControl: shortLived,
+            route: SYMBOL_OWNER,
+        });
+        expect(await drainUploads(1_000)).toBe(0);
+        // 이 인스턴스의 메모리에는 처음 쓴 긴 수명이 남아 있는 상태를 만든다(맵은 프로세스 공유라
+        // 위 set이 덮었으므로 되돌린다).
+        SharedCacheControls.cacheControls.set(storageKey, ROUTE_CACHE_CONTROL);
+        // Next는 `performance.timeOrigin + performance.now()`로 나이를 잰다 — 그 시계만 1.1초
+        // 앞당겨 짧은 수명(1초)이 지난 상태를 만든다(TESTING.md#TE-7, 실시간 대기 금지).
+        vi.useFakeTimers({ toFake: ['performance'] });
+        try {
+            vi.advanceTimersByTime(1_100);
+            const entry = await newIncrementalCache().get('/AAPL', {
+                kind: 'APP_PAGE',
+                isFallback: false,
+                route: SYMBOL_OWNER,
+            });
+            expect(entry.isStale).toBe(true);
+            expect(entry.cacheControl).toEqual(shortLived);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('재시작 후 stale 무효화도 isStale === true', async () => {
         await seedPage();
         simulateRestart();
@@ -199,7 +233,7 @@ describe('APP_PAGE × 실제 IncrementalCache', () => {
         await seedPage();
         simulateRestart();
         const routes = {
-            // 16.3.8은 매니페스트 값도 소유 라우트가 맞을 때만 쓴다
+            // 16.3.8부터 매니페스트 값도 소유 라우트가 맞을 때만 쓴다
             // (route-cache-key.js `isRouteCacheOwner` — dataRoute 확장자로 kind, srcRoute로 소유자).
             '/AAPL': {
                 initialRevalidateSeconds: 3600,
