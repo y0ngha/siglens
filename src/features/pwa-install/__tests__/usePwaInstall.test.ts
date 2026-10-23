@@ -218,6 +218,26 @@ describe('usePwaInstall', () => {
     });
 
     /**
+     * 하이드레이션 전에 누른 첫 입력은 effect가 붙인 리스너보다 먼저 지나간다. 루트 레이아웃의
+     * 프로브가 남긴 플래그를 보고 마운트 직후 띄워야 그 입력을 놓치지 않는다.
+     */
+    it('하이드레이션 전 첫 입력이 기록돼 있으면 마운트 직후 배너를 띄운다', () => {
+        vi.useFakeTimers();
+        (window as unknown as Record<string, unknown>).__siglensPwaFirstInput =
+            true;
+        try {
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                vi.advanceTimersByTime(0);
+            });
+            expect(result.current.showBanner).toBe(true);
+        } finally {
+            delete (window as unknown as Record<string, unknown>)
+                .__siglensPwaFirstInput;
+        }
+    });
+
+    /**
      * iOS Safari는 클릭할 수 없는 요소(글자·빈 곳)를 탭하면 `click`을 `window`까지 보내지 않는다.
      * `pointerup`만 온 탭에서도 짧은 여유 뒤에 띄워야 컨트롤을 안 누르는 사용자에게도 뜬다.
      */

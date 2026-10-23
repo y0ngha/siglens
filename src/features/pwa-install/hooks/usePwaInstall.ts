@@ -1,6 +1,7 @@
 'use client';
 
 import { useRegisterServiceWorker } from './useRegisterServiceWorker';
+import { hadFirstInputBeforeHydration } from '../lib/firstInputProbe';
 import { type PwaEnvironment } from '@/shared/lib/types';
 import { detectPwaEnvironment } from '../lib/detectPwaEnvironment';
 import {
@@ -144,6 +145,16 @@ export function usePwaInstall({
     // 이 effect가 다시 돌며 리스너를 모두 걷는다.
     useEffect(() => {
         if (triggered || !canShow || readBannerDismissed()) return;
+
+        // 하이드레이션 전에 이미 첫 입력이 있었다(`firstInputProbe`) — 그 입력은 아래 리스너가
+        // 붙기 전에 지나갔으므로 기다리지 않고 띄운다. 이미 끝난 탭이라 가로챌 것이 없다.
+        if (hadFirstInputBeforeHydration()) {
+            const timer = setTimeout(() => {
+                setTriggered(true);
+                setShowBanner(true);
+            }, 0);
+            return () => clearTimeout(timer);
+        }
 
         // 캡처 단계로 듣는다 — 버블 단계면 `stopPropagation()`하는 컨트롤(팝오버 트리거·메뉴
         // 항목)을 누른 탭이 `window`까지 오지 않아 방아쇠를 놓친다. 캡처 단계에서 상태를 바꿔도

@@ -25,6 +25,7 @@ import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
+import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
 import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { ServiceWorkerRegistrar } from '@/features/pwa-install/ui/ServiceWorkerRegistrar';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
@@ -105,6 +106,15 @@ export default async function AiRootLayout({
             suppressHydrationWarning
         >
             <body className="flex min-h-full flex-col bg-secondary-900">
+                {/* 하이드레이션 전의 첫 탭·키를 기억한다 — 설치 배너가 effect보다 먼저 온 입력을
+                    놓치지 않게. `next/script`가 아니라 인라인이어야 파싱 즉시 실행된다(근거는
+                    `features/pwa-install/lib/firstInputProbe.ts`). 루트 레이아웃은 클라이언트에서
+                    다시 그려지지 않으므로 "클라이언트 렌더 시 스크립트 미실행" 경고 대상이 아니다. */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: FIRST_INPUT_PROBE_SCRIPT,
+                    }}
+                />
                 {/* 컴포넌트 트리에서 `<script>`를 렌더하면 클라이언트 내비게이션 때
                     실행되지 않고 React가 경고한다. `next/script`의 beforeInteractive는
                     루트 레이아웃에서만 허용되고(이 파일이 ai 서브트리의 루트),
