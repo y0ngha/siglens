@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.109.2](https://github.com/y0ngha/siglens/compare/v0.109.1...v0.109.2) (2026-10-23)
+
+### Bug Fixes
+
+* 국채 금리 — 재무부 공식 CSV를 FMP와 비교해 최신 값 사용 (FMP 이틀 지연) ([#1087](https://github.com/y0ngha/siglens/issues/1087)) ([3233cc5](https://github.com/y0ngha/siglens/commit/3233cc5461a02b4b4b5a90949f8a540d15d053c3))
+
 ## [0.109.1](https://github.com/y0ngha/siglens/compare/v0.109.0...v0.109.1) (2026-10-23)
 
 ### Bug Fixes
