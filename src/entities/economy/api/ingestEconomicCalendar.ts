@@ -158,10 +158,11 @@ export async function ingestEconomicCalendar(
         ([id]) => !recentIds.has(id)
     );
     const rows = [...recentRows, ...olderRows];
-    if (rows.length === 0) {
-        if (older !== null) await markBackfillDone(country);
-        return { status: 'ok', changed: 0 };
-    }
+    // 앞쪽 과거가 비어 오면 플래그를 세우지 않는다(SERVER.md#SA-18). 한국 180~31일 전 구간은 늘 발표가
+    // 있다 — FMP는 장애 때도 200 `[]`를 줄 수 있고, 거기에 하루짜리 플래그를 세우면 하루 동안 재시도가 막힌다.
+    const backfillComplete = (written: boolean): boolean =>
+        older !== null && older.length > 0 && written;
+    if (rows.length === 0) return { status: 'ok', changed: 0 };
 
     const { db } = getDatabaseClient();
     const repo = new DrizzleEconomicCalendarRepository(db);
@@ -190,7 +191,7 @@ export async function ingestEconomicCalendar(
 
     // 앞쪽 과거가 한 행도 빠짐없이 써졌을 때만 하루짜리 플래그를 세운다. 일부라도 실패하면 다음 수집이
     // 다시 읽는다(최근 구간 플래그 TTL 60분 뒤).
-    if (older !== null && olderSettled.every(r => r.status === 'fulfilled'))
+    if (backfillComplete(olderSettled.every(r => r.status === 'fulfilled')))
         await markBackfillDone(country);
     const changedCount = settled.filter(
         r => r.status === 'fulfilled' && r.value === true

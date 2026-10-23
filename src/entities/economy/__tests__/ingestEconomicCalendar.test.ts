@@ -355,6 +355,29 @@ describe('ingestEconomicCalendar', () => {
             expect(callFor('2026-04-26')).toBeUndefined();
         });
 
+        it('앞쪽 과거가 비어 오면 플래그를 세우지 않아 다음 수집이 다시 읽는다(SA-18)', async () => {
+            mocks.getCalendarForCountry.mockImplementation(
+                async (from: string) =>
+                    from === '2026-04-26' ? [] : [event('New')]
+            );
+
+            await expect(ingestEconomicCalendar('KR', 't')).resolves.toEqual({
+                status: 'ok',
+                changed: 1,
+            });
+            expect(mocks.markCalendarBackfilled).not.toHaveBeenCalled();
+        });
+
+        it('두 구간이 모두 비어도 플래그를 세우지 않는다', async () => {
+            mocks.getCalendarForCountry.mockResolvedValue([]);
+
+            await expect(ingestEconomicCalendar('KR', 't')).resolves.toEqual({
+                status: 'ok',
+                changed: 0,
+            });
+            expect(mocks.markCalendarBackfilled).not.toHaveBeenCalled();
+        });
+
         it('쓰기가 과반 실패하면 백필 플래그를 세우지 않는다', async () => {
             const errorSpy = vi
                 .spyOn(console, 'error')
