@@ -45,7 +45,7 @@ describe('OfficialTreasuryEconomyProvider.getTreasuryReading', () => {
             source: 'us-treasury',
             officialAvailable: true,
         });
-        expect(official).toHaveBeenCalledWith(NOW, expect.any(AbortSignal));
+        expect(official).toHaveBeenCalledWith(NOW);
         expect(await p.getTreasury()).toEqual(snap('2026-10-22', 4.96));
     });
 
@@ -90,22 +90,15 @@ describe('OfficialTreasuryEconomyProvider.getTreasuryReading', () => {
         );
     });
 
-    it('재무부가 상한 시간 안에 답하지 않으면 요청을 끊고 FMP 값을 낸다', async () => {
-        let aborted = false;
+    it('재무부 요청이 시간 초과로 끝나면 FMP 값을 낸다', async () => {
         const p = new OfficialTreasuryEconomyProvider(
             baseWith(async () => snap('2026-10-20', 5.12)),
-            (_now, signal) =>
-                new Promise((_, reject) => {
-                    signal.addEventListener('abort', () => {
-                        aborted = true;
-                        reject(signal.reason);
-                    });
-                }),
-            () => NOW,
-            20
+            async () => {
+                throw new DOMException('timed out', 'TimeoutError');
+            },
+            () => NOW
         );
         expect((await p.getTreasuryReading())?.officialAvailable).toBe(false);
-        expect(aborted).toBe(true);
         expect(warn).toHaveBeenCalledWith(
             '[economy] treasury.gov read failed',
             {

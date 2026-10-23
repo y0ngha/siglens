@@ -7,10 +7,17 @@ import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshot
 import {
     type FreshTreasuryRates,
     getFreshTreasuryRates,
+    TREASURY_CACHE_TTL_SECONDS,
+    TREASURY_FALLBACK_TTL_SECONDS,
 } from '@/entities/economy/api/treasuryRatesCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
-import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
+import {
+    MS_PER_DAY,
+    MS_PER_HOUR,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { fmpCalendarDateTimeToIso } from '@/shared/lib/etTimeUtils';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
@@ -100,8 +107,8 @@ function treasuryView(picked: PickedTreasury | null) {
             fetchedAt === null
                 ? 'economy snapshot (up to ~48h old)'
                 : fallback
-                  ? 'FMP fallback (US Treasury unavailable; 15-min cache; FMP can lag the Treasury by ~2 days)'
-                  : 'treasury rates (3h cache)',
+                  ? `FMP fallback (US Treasury unavailable; ${TREASURY_FALLBACK_TTL_SECONDS / SECONDS_PER_MINUTE}-min cache; FMP can lag the Treasury by ~2 days)`
+                  : `treasury rates (${TREASURY_CACHE_TTL_SECONDS / SECONDS_PER_HOUR}h cache)`,
     };
 }
 

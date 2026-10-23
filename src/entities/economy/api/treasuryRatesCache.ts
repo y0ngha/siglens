@@ -27,7 +27,7 @@ export interface FreshTreasuryRates {
     fetchedAt: string;
     /** 값을 낸 출처. 출처를 알리지 않는 공급자(FMP 단독·E2E Fake)는 `fmp`. */
     source: TreasuryReading['source'];
-    /** 재무부 읽기가 값을 냈는가. `false`(FMP로 물러난 값)는 캐시하지 않는다. */
+    /** 재무부 읽기가 값을 냈는가. `false`(FMP로 물러난 값)는 {@link TREASURY_FALLBACK_TTL_SECONDS}만 캐시한다. */
     officialAvailable: boolean;
 }
 

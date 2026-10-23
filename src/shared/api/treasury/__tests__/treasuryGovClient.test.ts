@@ -121,21 +121,6 @@ describe('fetchTreasuryGovSnapshot', () => {
         expect(timeout).toHaveBeenCalledWith(TREASURY_GOV_RENDER_TIMEOUT_MS);
     });
 
-    it('호출부 신호가 끊기면 요청도 끊긴다', async () => {
-        const outer = new AbortController();
-        fetchSpy.mockImplementationOnce(
-            (_url, init) =>
-                new Promise((_, reject) => {
-                    init?.signal?.addEventListener('abort', () =>
-                        reject(init.signal?.reason)
-                    );
-                })
-        );
-        const pending = fetchTreasuryGovSnapshot(OCT, outer.signal);
-        outer.abort(new DOMException('deadline', 'TimeoutError'));
-        await expect(pending).rejects.toMatchObject({ name: 'TimeoutError' });
-    });
-
     it('오프라인 빌드(SIGLENS_OFFLINE_BUILD=1)에서는 요청하지 않고 던진다', async () => {
         vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
         await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toThrow(

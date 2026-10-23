@@ -6,7 +6,10 @@ const { snapshot, briefing, freshTreasury } = vi.hoisted(() => ({
     freshTreasury: vi.fn(),
 }));
 // 국채 단독 읽기는 Redis/FMP로 나간다 — 기본값 null(스냅샷 값 사용)로 막아 둔다.
-vi.mock('@/entities/economy/api/treasuryRatesCache', () => ({
+vi.mock('@/entities/economy/api/treasuryRatesCache', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/economy/api/treasuryRatesCache')
+    >()),
     getFreshTreasuryRates: freshTreasury,
 }));
 vi.mock('@/entities/economy/api/economySnapshotStaticCache', () => ({
@@ -369,7 +372,9 @@ describe('getEconomyTool', () => {
             expect(r.treasury).toMatchObject({
                 date: '2026-10-20',
                 provider: 'FMP',
-                cache: expect.stringContaining('FMP fallback'),
+                cache: expect.stringContaining(
+                    'FMP fallback (US Treasury unavailable; 15-min cache'
+                ),
             });
         });
 

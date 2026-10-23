@@ -4,19 +4,8 @@ import type {
     EconomicIndicatorSeries,
     TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
-import {
-    fetchTreasuryGovSnapshot,
-    TREASURY_GOV_REQUEST_TIMEOUT_MS,
-} from '@/shared/api/treasury/treasuryGovClient';
+import { fetchTreasuryGovSnapshot } from '@/shared/api/treasury/treasuryGovClient';
 import type { EconomyProvider, TreasuryReading } from './EconomyProvider';
-
-/**
- * 재무부 값을 기다리는 최대 시간. 이 시간이 지나면 요청을 끊고 FMP 값으로 답한다 — `get_economy` 도구
- * 제한(30초)과 /economy ISR 재생성이 재무부 지연에 끌려가지 않게 한다(재무부 응답은 실측 1초 안팎).
- * 1월의 올해 → 전년도 순차 요청 두 번이 들어가도록 "시도 제한 × 2 + 1초"로 둔다.
- */
-export const OFFICIAL_TREASURY_WAIT_MS =
-    2 * TREASURY_GOV_REQUEST_TIMEOUT_MS + 1_000;
 
 /** 로그용 오류 요약 — 이름과, HTTP 오류면 상태 코드(비밀값 없음). 403 차단과 5xx를 구분하려는 것이다. */
 function errorSummary(reason: unknown): { error: string; status?: number } {
@@ -82,11 +71,9 @@ export class OfficialTreasuryEconomyProvider implements EconomyProvider {
     constructor(
         private readonly base: EconomyProvider,
         private readonly fetchOfficial: (
-            now: Date,
-            signal: AbortSignal
+            now: Date
         ) => Promise<TreasuryRateSnapshot | null> = fetchTreasuryGovSnapshot,
-        private readonly now: () => Date = () => new Date(),
-        private readonly officialWaitMs: number = OFFICIAL_TREASURY_WAIT_MS
+        private readonly now: () => Date = () => new Date()
     ) {}
 
     getIndicator(name: string): Promise<EconomicIndicatorSeries> {
@@ -102,10 +89,9 @@ export class OfficialTreasuryEconomyProvider implements EconomyProvider {
     }
 
     async getTreasuryReading(): Promise<TreasuryReading | null> {
-        // 상한이 지나면 재무부 요청 자체를 끊는다(버려진 요청이 소켓을 잡고 남지 않게).
-        const deadline = AbortSignal.timeout(this.officialWaitMs);
+        // 재무부 쪽 대기는 클라이언트의 시도당 제한(5초, 1월 순차 두 번이면 10초)이 묶는다.
         const [official, vendor] = await Promise.allSettled([
-            this.fetchOfficial(this.now(), deadline),
+            this.fetchOfficial(this.now()),
             this.base.getTreasury(),
         ]);
         const officialSnapshot =
