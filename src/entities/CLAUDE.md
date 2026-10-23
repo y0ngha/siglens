@@ -28,7 +28,7 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 
 ### EN-1 — `entities/{slice}/lib/`는 순수 함수만 둔다
 
-- `lib/`에는 부수효과(외부 I/O, `localStorage`, `Date.now()`)가 없는 순수 도메인 로직만 둔다.
+- `lib/`에는 부수효과(외부 I/O — `fetch` 포함, `localStorage`, `Date.now()`)가 없는 순수 도메인 로직만 둔다.
   부수효과는 `api.ts`·`actions/`(entity) 또는 `shared/db`·`shared/api`(횡단)로 간다. 위젯 전용 부수효과(예: 팝업
   dismiss 저장)는 그 위젯의 `utils/`에 둔다.
 - 도메인과 무관한 범용 유틸(React·도메인 의존 없음, 예: URL 프로토콜 검증)은 `widgets/*/utils`나 entity `lib/`가

@@ -24,6 +24,9 @@ import {
 } from '@/shared/lib/legal';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
+import { localePath } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { GITHUB_URL, SYMBOLS_PATH, VELOG_URL, X_URL } from '@/shared/lib/seo';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
@@ -239,6 +242,16 @@ export function Footer() {
                             >
                                 {methodologyTitle(tSeo)}
                             </Link>
+                            {/* 벤치마크 결과 — 공개 전(`BENCHMARK_PUBLISHED` 꺼짐)에는 페이지가 404라
+                                링크도 내지 않는다. 정본이 ai 호스트에 있어 절대 URL의 일반 앵커다. */}
+                            {BENCHMARK_PUBLISHED && (
+                                <a
+                                    href={`${AI_SITE_URL}${localePath(locale, BENCHMARK_PATH)}`}
+                                    className={LINK_CLASSES}
+                                >
+                                    {t('Footer.benchmarkLink')}
+                                </a>
+                            )}
                             {/* 차트 가이드 — 방법론 바로 뒤. 용어 설명 90개 항목의 전역 진입 앵커. */}
                             <Link
                                 href={GUIDE_PATH}

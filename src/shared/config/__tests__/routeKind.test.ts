@@ -20,6 +20,7 @@ describe('routeKindOf', () => {
         ['/about', 'article'],
         ['/methodology', 'article'],
         ['/developers', 'article'],
+        ['/benchmark', 'article'],
         ['/guide', 'article'],
         ['/guide/indicators', 'article'],
         ['/guide/indicators/rsi', 'article'],

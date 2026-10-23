@@ -31,6 +31,23 @@ describe('proxy matcher', () => {
         expect(matchesProxy('/AAPL/news')).toBe(true);
     });
 
+    /**
+     * 벤치마크 원자료 zip(`public/benchmark/<round>/*.zip`)은 정적 파일이다. 프록시를 타면 로케일
+     * 접두·티커 정규화가 붙어 다운로드가 깨진다. 확장자 제외 목록에서 `zip`이 빠지는 순간을 잡는다.
+     */
+    it('벤치마크 zip 다운로드는 프록시를 타지 않는다', () => {
+        expect(matchesProxy('/benchmark/2026-10/benchmark-2026-10.zip')).toBe(
+            false
+        );
+        expect(matchesProxy('/benchmark')).toBe(true);
+    });
+
+    it('벤치마크 OpenTimestamps 증명(.ots)은 프록시를 타지 않는다', () => {
+        expect(matchesProxy('/benchmark/2026-10/manifest.sha256.ots')).toBe(
+            false
+        );
+    });
+
     it('robots.txt·sitemap.xml은 명시 항목 때문에 프록시를 탄다', () => {
         expect(matchesProxy('/robots.txt')).toBe(true);
         expect(matchesProxy('/sitemap.xml')).toBe(true);

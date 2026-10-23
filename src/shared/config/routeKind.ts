@@ -36,6 +36,8 @@ const KIND_BY_FIRST_SEGMENT: Readonly<Record<string, RouteKind>> = {
     // 개발자 포털도 읽을거리 골격(제목 + 목차 + 긴 본문)이다.
     developers: 'article',
     guide: 'article',
+    // 결과 요약 + 표 + 방법론 산문이라 읽을거리 골격이다.
+    benchmark: 'article',
     privacy: 'legal',
     terms: 'legal',
     login: 'auth',

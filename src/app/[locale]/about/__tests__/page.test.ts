@@ -8,6 +8,10 @@ vi.mock('@/views/about/AboutPage', async importOriginal => ({
     ...(await importOriginal<typeof import('@/views/about/AboutPage')>()),
     AboutPage: () => null,
 }));
+const benchmarkState = vi.hoisted(() => ({ release: null as unknown }));
+vi.mock('@/entities/benchmark/release', () => ({
+    getPublishedBenchmarkRelease: () => benchmarkState.release,
+}));
 vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_WIDTH: 1200,
     OG_IMAGE_HEIGHT: 630,
@@ -60,6 +64,7 @@ import {
 } from '@/app/[locale]/about/page';
 import { isValidElement, type ReactNode } from 'react';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
+import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import {
     ABOUT_UPDATED_AT,
     OPERATOR_PERSON_JSON_LD_ID,
@@ -68,6 +73,7 @@ import {
 import { ORGANIZATION_JSON_LD_ID } from '@/shared/lib/seo';
 
 interface ViewProps {
+    readonly benchmark?: unknown;
     readonly counts: { indicators: number };
     readonly faq: readonly { question: string; answer: string }[];
     readonly updatedAt: string;
@@ -155,6 +161,19 @@ describe('About page', () => {
         expect(view?.counts.indicators).toBe(13);
         expect(view?.title).toBe('SIGLENS 소개');
         expect(view?.updatedAt).toBe('2026년 9월 11일');
+    });
+
+    it('벤치마크 공개 전에는 결과 요약 데이터를 뷰에 넘기지 않는다', async () => {
+        benchmarkState.release = null;
+        const props = findViewProps(await renderRoute());
+        expect(props?.benchmark).toBeNull();
+    });
+
+    it('벤치마크가 공개되면 결과 요약 데이터를 뷰에 넘긴다', async () => {
+        benchmarkState.release = BENCHMARK_FIXTURE;
+        const props = findViewProps(await renderRoute());
+        expect(props?.benchmark).toBe(BENCHMARK_FIXTURE);
+        benchmarkState.release = null;
     });
 
     it('countSkillFiles가 실패해도 0 카운트로 렌더한다', async () => {

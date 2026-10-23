@@ -2356,6 +2356,163 @@
         }
     },
     "views": {
+        "benchmark": {
+            "breakdown": {
+                "byLevel": "Objective score by level (incorrect −{lambda, number})",
+                "byMarket": "Objective score by market (incorrect −{lambda, number})",
+                "bySubset": "Objective score by subset (incorrect −{lambda, number})",
+                "counts": "Verdict counts by target",
+                "judged": "L4 interpretation and L5 honesty and safety (neutral judges, 0 to 1)",
+                "rowLevel": "Level",
+                "rowMarket": "Market",
+                "rowSubset": "Subset",
+                "sub": "The same scores split by question group. The highest score in each row is in bold.",
+                "title": "Score breakdown"
+            },
+            "counts": {
+                "correct": "Correct",
+                "excluded": "Excluded",
+                "incorrect": "Incorrect",
+                "not_attempted": "Not attempted",
+                "pending": "Pending"
+            },
+            "downloads": {
+                "disclaimer": "This is a benchmark record, not investment advice or a stock recommendation.",
+                "harness": "Measurement and scoring code (GitHub)",
+                "license": "The data is published under <link>CC BY 4.0</link> and the measurement and scoring code under the MIT licence.",
+                "sources": "Ground-truth sources: Nasdaq, KRX (data.go.kr), U.S. Treasury, Cboe, SEC EDGAR, FINRA, DART. Each model answer is that service's output, recorded with the model and call time.",
+                "sub": "Download the full raw data and the measurement and scoring code.",
+                "title": "Downloads",
+                "zip": "Full raw data (zip)"
+            },
+            "explorer": {
+                "count": "Showing {shown, number} of {total, number}",
+                "detail": {
+                    "answer": "Raw answer",
+                    "error": "Could not load the raw answers.",
+                    "extracted": "Extracted values",
+                    "judges": "Neutral judging",
+                    "loading": "Loading the raw answers.",
+                    "noRecord": "No record for this target.",
+                    "part": "Part",
+                    "reason": "Reason",
+                    "retry": "Try again",
+                    "round": "Round {round, number}",
+                    "value": "Value",
+                    "verdict": "Verdict"
+                },
+                "empty": "No questions match these filters.",
+                "filter": {
+                    "all": "All",
+                    "level": "Level",
+                    "market": "Market",
+                    "pool": "Pool",
+                    "reset": "Reset filters",
+                    "target": "Target",
+                    "template": "Type",
+                    "verdict": "Verdict"
+                },
+                "label": {
+                    "correct": "Correct",
+                    "excluded": "Excluded",
+                    "incorrect": "Incorrect",
+                    "not_attempted": "Not attempted",
+                    "pending": "Pending"
+                },
+                "market": {
+                    "kr": "Korea",
+                    "us": "US"
+                },
+                "results": "Verdict by target",
+                "truth": "Ground truth"
+            },
+            "headline": {
+                "baselines": "Against the baseline (same underlying model, no tools)",
+                "ci": "95% CI",
+                "competitors": "Against competing models",
+                "diff": "{subject} score − target score",
+                "n": "Questions",
+                "note": "A comparison counts as ahead or behind only when the confidence interval excludes 0 and the Holm-adjusted p-value is below {alpha}. The baseline is not tested, so it has no p-value.",
+                "p": "Holm-adjusted p",
+                "reading": "Reading",
+                "sub": "Objective questions are scored per part: +1 for correct, 0 for not attempted, −{lambda, number} for incorrect, then averaged. Differences are read through a 95% confidence interval from resampling questions and a Holm-adjusted p-value.",
+                "summary": "Comparing {subject}'s objective score with {count, plural, one {# competing model} other {# competing models}}: clearly ahead of {ahead, number}, no firm difference with {tie, number}, behind {behind, number}.",
+                "target": "Target",
+                "title": "Headline: score gap against other models",
+                "verdict": {
+                    "ahead": "Clearly ahead",
+                    "behind": "Clearly behind",
+                    "tie": "No firm difference",
+                    "untested": "Not tested"
+                }
+            },
+            "hero": {
+                "eyebrow": "Public benchmark",
+                "lede": "We asked {brand} and general-purpose AI models the same {items, number} questions about US and Korean stocks and compared the answers with ground truth built from official data. Measured on {measuredAt}; scoring finalized on {scoredAt}. Every question, ground truth, raw answer and verdict is public.",
+                "title": "{brand} benchmark results"
+            },
+            "items": {
+                "sub": "See the question, ground truth and each target's verdict. Expanding a question loads the raw answers and the grading rationale.",
+                "title": "Browse by question"
+            },
+            "koreanNote": "The questions and raw answers are in Korean. The measurement was run in Korean, so the questions, ground-truth summaries and answers on this page are shown untranslated.",
+            "levels": {
+                "L4": "L4 interpretation",
+                "L5": "L5 honesty and safety"
+            },
+            "limits": {
+                "judge": "Judging is done by LLMs, so results can differ from what human judges would give.",
+                "once": "The measurement was run once, asking each question {rounds, plural, one {# time} other {# times}}.",
+                "sameVendor": "Some of the data {brand} uses comes from the same vendors as the ground-truth sources (FMP, Yahoo).",
+                "sandbox": "The general-purpose models' code sandboxes had no internet access, and Gemini had no user_location setting.",
+                "sources": "Ground truth started from provisional Yahoo values and was recalculated from official ones. The number of questions where the two differ is stated under ground-truth sources.",
+                "sourcesPlain": "Ground truth started from provisional Yahoo values and was recalculated from official ones.",
+                "split": "Development and test questions use different tickers, and defects were fixed by looking at development questions only.",
+                "title": "Limitations"
+            },
+            "market": {
+                "kr": "Korea",
+                "us": "US"
+            },
+            "method": {
+                "aiAbout": "About the AI service",
+                "designDoc": "Benchmark design documents",
+                "items": "{total, number} questions in total; questions per pool: {pools}.",
+                "itemsTitle": "Question set",
+                "judges": "L4 and L5 are scored by LLM judges, and only neutral judges count toward the headline.",
+                "judgesTitle": "Judges and neutrality",
+                "levels": "L1 to L3 are objective questions with a fixed answer and are scored automatically. L4 tests interpretation and L5 tests honesty and safety; neutral judges score them from 0 to 1.",
+                "schedule": "Each question was asked {rounds, plural, one {# time} other {# times}}, measured on {measuredAt}.",
+                "scheduleTitle": "Schedule",
+                "scoring": "When an answer has several parts, each part earns +1 if correct, 0 if not attempted and −{lambda, number} if incorrect. A verdict is issued only when two extractors agree on the value pulled from the answer, and every verdict record is public.",
+                "scoringTitle": "Scoring",
+                "siteMethodology": "How analysis works",
+                "sub": "The full design is in the documents linked below.",
+                "title": "Method summary",
+                "truth": "Ground truth uses official Nasdaq values for the US and official KRX values for Korea. Questions were first generated from provisional Yahoo values and then recalculated from the official ones. The ground-truth figures and source URLs are all in the raw data.",
+                "truthTitle": "Ground-truth sources",
+                "vendorMismatch": "{count, plural, one {# question} other {# questions}} had a provisional value that differed from the official one."
+            },
+            "prereg": {
+                "gist": "Public gist",
+                "hash": "Manifest hash (SHA-256)",
+                "ots": "OpenTimestamps proof",
+                "otsLink": "Download the proof file (.ots)",
+                "sub": "Before measuring, we published hashes of the questions, code and design documents. The values below let you check that nothing changed afterwards.",
+                "title": "Pre-registration",
+                "verify": "To verify: re-hash the files listed in manifest.json from the raw data and compare with the value above, then check the .ots file with OpenTimestamps to confirm the registration time."
+            },
+            "seo": {
+                "description": "We compared {brand} with {count, plural, one {# general AI model} other {# general AI models}} on {items, number} US and Korean stock questions: clearly ahead of {ahead, number}, no firm difference with {tie, number}, behind {behind, number}. Questions, ground truth and raw answers are public.",
+                "descriptionPlain": "Results and per-question raw data from a benchmark comparing {brand} with general AI models on {items, number} US and Korean stock questions.",
+                "ogLabel": "{brand} benchmark results",
+                "title": "{brand} benchmark results — question-by-question comparison with general AI models"
+            },
+            "subset": {
+                "heldOut": "Held-out questions (H)",
+                "noTool": "No dedicated tool (×)"
+            }
+        },
         "methodology": {
             "ai": {
                 "check": "Easy-to-understand texts are checked before being displayed. If prices or large numbers not present in the original analysis or calculated values are included, the text is rewritten once. If they remain, the sentence is removed. If the text is still not clear after removing sentences, only the original view is shown without the easy-to-understand version.",
@@ -3500,6 +3657,21 @@
                 "universe": "Limited to a fixed set of 10 large-cap tickers (AAPL, NVDA, TSLA, and others) chosen after the fact — results may reflect selection bias.",
                 "dataSource": "Price data source: Financial Modeling Prep (FMP)."
             }
+        },
+        "benchmark-summary": {
+            "ci": "95% CI {ci}",
+            "l5": "Honesty and safety (L5)",
+            "l5Note": "Neutral judges, average on a 0 to 1 scale",
+            "more": "See the full benchmark results",
+            "sub": "Objective score gaps on the same {items, number} questions. A positive number means {subject} scored higher.",
+            "title": "Benchmark results",
+            "verdict": {
+                "ahead": "Clearly ahead",
+                "behind": "Clearly behind",
+                "tie": "No firm difference",
+                "untested": "Not tested"
+            },
+            "versus": "Versus {competitor}"
         },
         "chart": {
             "ChartErrorFallback": {
@@ -4782,6 +4954,7 @@
                 "531f6a": "Contact Us",
                 "5f5d12": "Site Information",
                 "693b62": "Investment Disclaimer",
+                "benchmarkLink": "Benchmark",
                 "developersLink": "Developer API",
                 "guideLink": "Chart Guide",
                 "symbolsLink": "Most-viewed symbols"

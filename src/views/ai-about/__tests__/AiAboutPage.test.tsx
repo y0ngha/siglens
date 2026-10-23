@@ -1,6 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { createTranslator } from 'next-intl';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
+import type { BenchmarkRelease } from '@/entities/benchmark/types';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import ko from '../../../../messages/ko.json';
 
 vi.mock('next-intl/server', () => ({
@@ -13,15 +18,22 @@ vi.mock('next-intl/server', () => ({
 import { AiAboutPage } from '../AiAboutPage';
 import { getAboutFaq } from '../lib/aboutContent';
 
-async function renderPage(localePrefix = '') {
+async function renderPage(
+    localePrefix = '',
+    benchmark: BenchmarkRelease | null = null
+) {
     const locale = localePrefix === '/en' ? 'en' : 'ko';
+    // 요약 위젯이 async 서버 컴포넌트라 트리를 먼저 풀어 준다.
     render(
-        await AiAboutPage({
-            locale,
-            siteUrl: 'https://siglens.io',
-            localePrefix,
-            faq: await getAboutFaq(locale),
-        })
+        (await resolveAsyncServerTree(
+            await AiAboutPage({
+                locale,
+                siteUrl: 'https://siglens.io',
+                localePrefix,
+                faq: await getAboutFaq(locale),
+                benchmark,
+            })
+        )) as ReactElement
     );
 }
 
@@ -125,5 +137,32 @@ describe('AiAboutPage', () => {
         expect(
             within(more).getByRole('link', { name: '한국 주식 시장 분석' })
         ).toHaveAttribute('href', 'https://siglens.io/en/market/kr');
+    });
+});
+
+describe('AiAboutPage benchmark summary', () => {
+    it('renders no benchmark section or link while the gate is shut', async () => {
+        await renderPage('', null);
+        expect(
+            screen.queryByRole('heading', {
+                name: ko.widgets['benchmark-summary'].title,
+            })
+        ).not.toBeInTheDocument();
+    });
+
+    it('renders the centered result summary with an absolute link once published', async () => {
+        await renderPage('', BENCHMARK_FIXTURE);
+        expect(
+            screen.getByRole('heading', {
+                name: ko.widgets['benchmark-summary'].title,
+            })
+        ).toBeInTheDocument();
+        expect(
+            screen
+                .getByRole('link', {
+                    name: ko.widgets['benchmark-summary'].more,
+                })
+                .getAttribute('href')
+        ).toBe(`${AI_SITE_URL}/benchmark`);
     });
 });
