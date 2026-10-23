@@ -57,7 +57,7 @@ const CALENDAR_MAX_EVENTS = 80;
 /**
  * How far back and ahead of today a ranged call may reach. Back: FMP answers
  * 402 ("Premium Query Parameter") once `from` or `to` is more than about a
- * year old (2026-10-24 measured: 2025-10-25 served, 2025-10-24 refused), so
+ * year old (measured 2026-10-24 KST: 2025-10-25 served, 2025-10-24 refused), so
  * 360 days leaves room for the one-day read padding and the ET/UTC date gap.
  * Ahead: FMP lists major events only ~5 months out, and each distinct range is
  * its own FMP read.
@@ -388,6 +388,7 @@ async function koreanCalendarFromDb(
     today: string,
     now: number
 ): Promise<CalendarBlock | null> {
+    // `getCalendarFromDb` never rejects: it catches its own DB error and returns `[]`.
     const rows = await getCalendarFromDb(today, CALENDAR_COUNTRY_KR);
     if (rows.length === 0) return null;
     const events: EconomicCalendarEvent[] = rows.map(row => ({
@@ -429,7 +430,11 @@ async function koreanEconomy(
     ]);
     const calendar = read ?? (await koreanCalendarFromDb(range.from, now));
     if (cards.length === 0 && calendar === null)
-        return { available: false, reason: 'kr_economy_unavailable' };
+        return {
+            available: false,
+            country: label,
+            reason: 'kr_economy_unavailable',
+        };
     return {
         asOf: new Date(now).toISOString(),
         country: label,
@@ -503,7 +508,11 @@ export const getEconomyTool: ToolExecutor = async args => {
     if (parsed.range !== null) {
         const calendar = await readCalendar(country, parsed.range, now);
         if (!calendar)
-            return { available: false, reason: 'calendar_unavailable' };
+            return {
+                available: false,
+                country: countryLabel,
+                reason: 'calendar_unavailable',
+            };
         return {
             asOf: new Date(now).toISOString(),
             country: countryLabel,

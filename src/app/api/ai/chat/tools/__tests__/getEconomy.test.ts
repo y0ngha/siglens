@@ -369,6 +369,7 @@ describe('getEconomyTool', () => {
             logged.mockRestore();
             expect(r).toEqual({
                 available: false,
+                country: 'us',
                 reason: 'calendar_unavailable',
             });
         });
@@ -611,6 +612,7 @@ describe('getEconomyTool', () => {
             logged.mockRestore();
             expect(r).toEqual({
                 available: false,
+                country: 'kr',
                 reason: 'kr_economy_unavailable',
             });
         });

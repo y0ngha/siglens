@@ -138,6 +138,7 @@ export class FmpEconomyProvider implements EconomyProvider {
             byCountry: Object.fromEntries(
                 countries.map(country => [
                     country,
+                    // 'US'는 entities `CALENDAR_COUNTRY`의 미러 — core 정규화가 미국만 받는다.
                     country === 'US'
                         ? normalizeEconomicCalendar(raw)
                         : normalizeCalendarForCountry(raw, country),
