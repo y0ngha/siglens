@@ -1,9 +1,15 @@
 import 'server-only';
 import {
+    type CalendarImpact,
     computeYieldSpread,
+    type EconomicCalendarEvent,
+    type EconomySnapshot,
+    selectCalendarEvents,
     type TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
+import { getEconomicCalendarRange } from '@/entities/economy/api/economicCalendarRangeCache';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
+import { SNAPSHOT_CALENDAR_WINDOW_DAYS } from '@/entities/economy/api/economySnapshotCache';
 import {
     type FreshTreasuryRates,
     getFreshTreasuryRates,
@@ -12,8 +18,13 @@ import {
 } from '@/entities/economy/api/treasuryRatesCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
+import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 import {
-    MS_PER_DAY,
+    ECONOMY_CALENDAR_DEFAULT_DAYS,
+    ECONOMY_CALENDAR_FETCH_PAD_DAYS,
+    ECONOMY_CALENDAR_MAX_RANGE_DAYS,
+} from '@/shared/config/economyCalendar';
+import {
     MS_PER_HOUR,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -24,9 +35,169 @@ import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { ppDelta } from './percent';
 import { logToolDegrade } from './logToolDegrade';
 
-const CALENDAR_WINDOW_DAYS = 7;
-/** Defensive cap — bounds the payload even if an unusually event-dense week slips past the 7-day filter. */
-const CALENDAR_MAX_EVENTS = 10;
+/**
+ * Calendar cap. `selectCalendarEvents` (core) keeps every rate decision, then
+ * fills by impact, so the cap only decides how many Medium/Low rows survive:
+ * the 70-day default window held ~70 High events on 2026-10-23. Size:
+ * `ECONOMY_RESULT_MAX_CHARS` (`truncate.ts`).
+ */
+const CALENDAR_MAX_EVENTS = 80;
+
+/** How far back and ahead of today a ranged call may reach: FMP lists major events only ~5 months out, and each distinct range is its own FMP read. */
+const RANGE_MAX_PAST_DAYS = 730;
+const RANGE_MAX_FUTURE_DAYS = 365;
+
+const DATE_ARG = /^\d{4}-\d{2}-\d{2}$/;
+
+interface CalendarRange {
+    from: string;
+    to: string;
+}
+
+interface ArgIssue {
+    path: 'from' | 'to';
+    message: string;
+}
+
+type CalendarEventView = EconomicCalendarEvent & { hoursUntil: number };
+
+/** The `calendar` block of a `get_economy` result. */
+interface CalendarBlock {
+    coverage: CalendarRange;
+    events: CalendarEventView[];
+    omitted: Record<CalendarImpact, number>;
+    /** Set when the block came from the snapshot instead of the range read. */
+    fallback?: string;
+}
+
+/** A real calendar date in `YYYY-MM-DD` (`2026-02-30` fails the round trip). */
+function isDateArg(value: unknown): value is string {
+    return (
+        typeof value === 'string' &&
+        DATE_ARG.test(value) &&
+        addEtDays(value, 0) === value
+    );
+}
+
+/** `null` range = the default window; `from` and `to` come as a pair. */
+function parseRangeArgs(
+    args: Record<string, unknown>,
+    today: string
+):
+    | { ok: true; range: CalendarRange | null }
+    | { ok: false; issues: ArgIssue[] } {
+    const { from, to } = args;
+    if (from === undefined && to === undefined)
+        return { ok: true, range: null };
+    if (!isDateArg(from) || !isDateArg(to)) {
+        const issues: ArgIssue[] = [];
+        if (!isDateArg(from))
+            issues.push({ path: 'from', message: 'expected YYYY-MM-DD' });
+        if (!isDateArg(to))
+            issues.push({ path: 'to', message: 'expected YYYY-MM-DD' });
+        return { ok: false, issues };
+    }
+    const range: CalendarRange = { from, to };
+    if (range.from > range.to)
+        return {
+            ok: false,
+            issues: [{ path: 'to', message: 'must not be before from' }],
+        };
+    if (addEtDays(range.from, ECONOMY_CALENDAR_MAX_RANGE_DAYS) < range.to)
+        return {
+            ok: false,
+            issues: [
+                {
+                    path: 'to',
+                    message: `at most ${ECONOMY_CALENDAR_MAX_RANGE_DAYS} days after from`,
+                },
+            ],
+        };
+    if (range.from < addEtDays(today, -RANGE_MAX_PAST_DAYS))
+        return {
+            ok: false,
+            issues: [
+                {
+                    path: 'from',
+                    message: `at most ${RANGE_MAX_PAST_DAYS} days before today`,
+                },
+            ],
+        };
+    if (range.to > addEtDays(today, RANGE_MAX_FUTURE_DAYS))
+        return {
+            ok: false,
+            issues: [
+                {
+                    path: 'to',
+                    message: `at most ${RANGE_MAX_FUTURE_DAYS} days after today`,
+                },
+            ],
+        };
+    return { ok: true, range };
+}
+
+/**
+ * The calendar block: `coverage` (the dates read), the picked events with ISO
+ * dates and `hoursUntil` (negative = already released), and `omitted` per
+ * impact so the model can tell "not listed" from "nothing scheduled".
+ *
+ * Dates go through `fmpCalendarDateTimeToIso` (FMP sends UTC with no zone
+ * marker; see its JSDoc) so core can localize them to the user's zone.
+ */
+function calendarBlock(
+    rows: readonly EconomicCalendarEvent[],
+    coverage: CalendarRange,
+    now: number,
+    notBefore: Date
+): CalendarBlock {
+    const { events, omitted } = selectCalendarEvents(rows, {
+        max: CALENDAR_MAX_EVENTS,
+        notBefore,
+    });
+    return {
+        coverage,
+        events: events.map(e => {
+            const date = fmpCalendarDateTimeToIso(e.date);
+            return {
+                ...e,
+                date,
+                hoursUntil: Math.round(
+                    (new Date(date).getTime() - now) / MS_PER_HOUR
+                ),
+            };
+        }),
+        omitted,
+    };
+}
+
+/**
+ * Reads `range` widened by `ECONOMY_CALENDAR_FETCH_PAD_DAYS`; `null` (logged) on failure.
+ * `notBefore` defaults to the start of the widened read — it also drops a row
+ * whose date cannot be parsed.
+ */
+function readCalendar(
+    range: CalendarRange,
+    now: number,
+    notBefore?: Date
+): Promise<CalendarBlock | null> {
+    const fetchFrom = addEtDays(range.from, -ECONOMY_CALENDAR_FETCH_PAD_DAYS);
+    return getEconomicCalendarRange(
+        fetchFrom,
+        addEtDays(range.to, ECONOMY_CALENDAR_FETCH_PAD_DAYS)
+    )
+        .then(rows =>
+            calendarBlock(
+                rows,
+                range,
+                now,
+                notBefore ?? new Date(`${fetchFrom}T00:00:00Z`)
+            )
+        )
+        .catch((error: unknown) => {
+            logToolDegrade('get_economy', 'economic calendar', error);
+            return null;
+        });
+}
 
 /** `'up' | 'down' | 'unchanged'`, or `null` when `change` itself is `null` (spec §0 null rule). */
 function directionOf(
@@ -112,29 +283,96 @@ function treasuryView(picked: PickedTreasury | null) {
     };
 }
 
+const CALENDAR_SOURCE = 'economic calendar: 3h cache';
+
+/** The economy snapshot sits behind two stacked 24h caches, so it can be this many days old. */
+const SNAPSHOT_MAX_STALE_DAYS = 2;
+
 /**
- * US macro snapshot: indicators, treasury yields, upcoming calendar (next 7
- * days out of the cached snapshot's 14-day window), and the cached macro
- * briefing headline when available.
+ * Default-call fallback when the calendar read fails: the snapshot's own
+ * calendar, run through the same selection. Its window is
+ * `SNAPSHOT_CALENDAR_WINDOW_DAYS` from when it was built, so `coverage` claims
+ * `SNAPSHOT_MAX_STALE_DAYS` less than that window.
+ */
+function snapshotCalendarBlock(
+    snapshot: EconomySnapshot,
+    today: string,
+    now: number
+): CalendarBlock {
+    return {
+        ...calendarBlock(
+            snapshot.calendar,
+            {
+                from: today,
+                to: addEtDays(
+                    today,
+                    SNAPSHOT_CALENDAR_WINDOW_DAYS - SNAPSHOT_MAX_STALE_DAYS
+                ),
+            },
+            now,
+            new Date(now)
+        ),
+        fallback: 'economy snapshot (calendar read failed)',
+    };
+}
+
+/**
+ * US macro snapshot: indicators, treasury yields, the economic calendar of the
+ * next {@link ECONOMY_CALENDAR_DEFAULT_DAYS} days (from now on, picked by core's
+ * `selectCalendarEvents`), and the cached macro briefing headline when
+ * available. With `from`/`to` it returns only that period's calendar, past
+ * releases included — a narrower result for a follow-up lookup in the same turn.
+ *
+ * Ranged calls have no per-turn cap of their own, by choice: the product
+ * decision is to give the agent as much calendar as a question needs, and
+ * core's `AGENT_TURN_CAPS` (`maxSteps`, `maxToolCalls`) already bound how many
+ * calls one turn makes. A repeated range is a Redis hit for 3h, so FMP sees
+ * at most one read per distinct range per window.
  *
  * `peekMacroBriefingStatic` requires the snapshot as input, so it cannot run
  * concurrently with the snapshot fetch (no `Promise.allSettled` fan-out here
  * — the sections are sequentially dependent, not independent). Its own
  * failure still degrades gracefully via `.catch`.
- *
- * Calendar dates go through `fmpCalendarDateTimeToIso` (FMP sends UTC with no
- * zone marker; see its JSDoc) so core can localize them to the user's zone.
  */
-export const getEconomyTool: ToolExecutor = async () => {
+export const getEconomyTool: ToolExecutor = async args => {
+    const now = Date.now();
+    const today = etDateOf(new Date(now));
+    const parsed = parseRangeArgs(args, today);
+    if (!parsed.ok) return { error: 'invalid_args', issues: parsed.issues };
+
+    if (parsed.range !== null) {
+        const calendar = await readCalendar(parsed.range, now);
+        if (!calendar)
+            return { available: false, reason: 'calendar_unavailable' };
+        return {
+            asOf: new Date(now).toISOString(),
+            source: CALENDAR_SOURCE,
+            available: true,
+            calendar,
+        };
+    }
+
+    const defaultRange = {
+        from: today,
+        to: addEtDays(today, ECONOMY_CALENDAR_DEFAULT_DAYS),
+    };
     // `getFreshTreasuryRates` never rejects (degrades to `null`).
-    const [snapshot, freshTreasury] = await Promise.all([
+    const [snapshot, freshTreasury, calendar] = await Promise.all([
         getEconomySnapshotStatic().catch((error: unknown) => {
             logToolDegrade('get_economy', 'economy snapshot', error);
             return null;
         }),
         getFreshTreasuryRates(),
+        readCalendar(defaultRange, now, new Date(now)),
     ]);
-    if (!snapshot) return { available: false, reason: 'snapshot_unavailable' };
+    // The calendar no longer comes from the snapshot, so a snapshot outage
+    // still answers "when is the next FOMC?".
+    if (!snapshot)
+        return {
+            available: false,
+            reason: 'snapshot_unavailable',
+            ...(calendar ? { calendar } : {}),
+        };
 
     const briefing = await peekMacroBriefingStatic(
         snapshot,
@@ -146,25 +384,9 @@ export const getEconomyTool: ToolExecutor = async () => {
             return null;
         });
 
-    const now = Date.now();
-    const windowEnd = now + CALENDAR_WINDOW_DAYS * MS_PER_DAY;
-    const upcomingCalendar = snapshot.calendar
-        .map(e => ({ ...e, date: fmpCalendarDateTimeToIso(e.date) }))
-        .filter(e => {
-            const t = new Date(e.date).getTime();
-            return t >= now && t <= windowEnd;
-        })
-        .slice(0, CALENDAR_MAX_EVENTS)
-        .map(e => ({
-            ...e,
-            hoursUntil: Math.round(
-                (new Date(e.date).getTime() - now) / MS_PER_HOUR
-            ),
-        }));
-
     return {
-        asOf: new Date().toISOString(),
-        source: 'economy snapshot (indicators/calendar: day cache, up to ~48h); treasury: see treasury.cache',
+        asOf: new Date(now).toISOString(),
+        source: `economy snapshot (indicators: day cache, up to ~48h); treasury: see treasury.cache; ${CALENDAR_SOURCE}`,
         available: true,
         indicators: snapshot.indicators.map(i => {
             const change = ppDelta(
@@ -191,7 +413,7 @@ export const getEconomyTool: ToolExecutor = async () => {
             };
         }),
         treasury: treasuryView(pickTreasury(snapshot.treasury, freshTreasury)),
-        upcomingCalendar,
+        calendar: calendar ?? snapshotCalendarBlock(snapshot, today, now),
         briefing: briefing && {
             summary: briefing.summary,
             regime: briefing.regime,

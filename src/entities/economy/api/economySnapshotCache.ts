@@ -33,8 +33,11 @@ export const ECONOMY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
 );
 const CACHE_KEY = `economy:snapshot:${ECONOMY_CONFIG_FINGERPRINT}`;
 
-/** 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(CONVENTIONS.md#NC-1). */
-const CALENDAR_WINDOW_DAYS = 14;
+/**
+ * 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(CONVENTIONS.md#NC-1).
+ * SiglensAI `get_economy`가 범위 캘린더를 못 읽었을 때 이 창으로 물러난다.
+ */
+export const SNAPSHOT_CALENDAR_WINDOW_DAYS = 14;
 
 /** core EconomicIndicatorSeries의 빈 placeholder — Provider 실패 시 fallback. */
 function emptyIndicator(name: string): EconomicIndicatorSeries {
@@ -61,7 +64,9 @@ async function fetchSnapshot(
     provider: EconomyProvider
 ): Promise<EconomySnapshot> {
     const today = new Date();
-    const to = new Date(today.getTime() + CALENDAR_WINDOW_DAYS * MS_PER_DAY);
+    const to = new Date(
+        today.getTime() + SNAPSHOT_CALENDAR_WINDOW_DAYS * MS_PER_DAY
+    );
 
     const [indicators, treasury, calendar] = await Promise.all([
         Promise.all(

@@ -2,6 +2,10 @@ import { screen, within } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
 import type { AgentToolSpec } from '@y0ngha/siglens-core';
 import { describe, expect, it, vi } from 'vitest';
+import {
+    ECONOMY_CALENDAR_DEFAULT_DAYS,
+    ECONOMY_CALENDAR_MAX_RANGE_DAYS,
+} from '@/shared/config/economyCalendar';
 import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
 import { buildApiToolReferences } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
@@ -313,6 +317,19 @@ describe('DevelopersPage', () => {
         expect(card).not.toHaveTextContent(quote.description);
         expect(document.body).not.toHaveTextContent(quote.description);
         expect(card.querySelector('details')).toBeNull();
+    });
+
+    it('fills numbers in a summary from the constants the tool uses (ICU arguments)', async () => {
+        await renderPage();
+        const card = screen.getByRole('article', { name: /get_economy/ });
+        // 문구에 숫자를 직접 적으면 상수를 바꿀 때 문서만 옛 값으로 남는다.
+        expect(card).toHaveTextContent(
+            `앞으로 ${ECONOMY_CALENDAR_DEFAULT_DAYS / 7}주의 경제 일정`
+        );
+        expect(card).toHaveTextContent(
+            `최대 ${ECONOMY_CALENDAR_MAX_RANGE_DAYS}일`
+        );
+        expect(card).not.toHaveTextContent('{weeks}');
     });
 
     it('localizes the summary for the page language', async () => {

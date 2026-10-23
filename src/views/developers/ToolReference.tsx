@@ -7,6 +7,7 @@ import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { CodeBlock } from '@/shared/ui/CodeBlock';
+import { TOOL_SUMMARY_VALUES } from './lib/developersContent';
 
 /** 페이지가 `views.developers` 네임스페이스로 만든 번역기. 카드는 비동기 컴포넌트가 아니라 번역기를 받는다. */
 export type DevelopersTranslator = Awaited<ReturnType<typeof getTranslations>>;
@@ -68,7 +69,9 @@ function ArgumentType({
 export function ToolReference({ t, tool }: Props) {
     const id = toolAnchor(tool.name);
     const summaryKey = `tools.summaries.${tool.name}`;
-    const summary = t.has(summaryKey) ? t(summaryKey) : null;
+    const summary = t.has(summaryKey)
+        ? t(summaryKey, TOOL_SUMMARY_VALUES[tool.name])
+        : null;
     return (
         <article
             aria-labelledby={id}

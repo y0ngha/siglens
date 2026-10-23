@@ -4,6 +4,26 @@
  * 빌더에서 읽으므로 여기에 따로 적지 않는다.
  */
 
+import {
+    ECONOMY_CALENDAR_DEFAULT_DAYS,
+    ECONOMY_CALENDAR_MAX_RANGE_DAYS,
+} from '@/shared/config/economyCalendar';
+
+const DAYS_PER_WEEK = 7;
+
+/**
+ * 도구 요약 문구(`tools.summaries.<name>`)에 넣는 ICU 인자. 숫자는 도구가 쓰는 상수에서 읽는다 —
+ * 문구에 직접 적으면 상수를 바꿀 때 문서만 옛 값으로 남는다(CONVENTIONS.md#I18-6).
+ */
+export const TOOL_SUMMARY_VALUES: Readonly<
+    Record<string, Readonly<Record<string, number>>>
+> = {
+    get_economy: {
+        weeks: ECONOMY_CALENDAR_DEFAULT_DAYS / DAYS_PER_WEEK,
+        maxDays: ECONOMY_CALENDAR_MAX_RANGE_DAYS,
+    },
+};
+
 /** 섹션 id 순서가 곧 목차 순서다. */
 export const DEVELOPER_SECTION_IDS = [
     'quickstart',
