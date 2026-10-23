@@ -10,7 +10,12 @@ import {
     SITE_OPERATOR,
     TERMS_PATH,
 } from '@/shared/lib/legal';
-import { GITHUB_URL, SITE_HOST, type FaqItem } from '@/shared/lib/seo';
+import {
+    CORE_GITHUB_URL,
+    GITHUB_URL,
+    SITE_HOST,
+    type FaqItem,
+} from '@/shared/lib/seo';
 import { brandName } from '@/shared/lib/brandName';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -211,6 +216,7 @@ interface OperatorLabels {
     readonly email: string;
     readonly github: string;
     readonly repo: string;
+    readonly coreRepo: string;
 }
 
 interface OperatorCardProps {
@@ -265,6 +271,18 @@ function OperatorCard({ labels }: OperatorCardProps) {
                         )}
                     >
                         {labels.repo}
+                    </a>
+                </li>
+                <li>
+                    <a
+                        href={CORE_GITHUB_URL}
+                        rel="noopener"
+                        className={cn(
+                            TEXT_LINK,
+                            'inline-flex min-h-10 items-center'
+                        )}
+                    >
+                        {labels.coreRepo}
                     </a>
                 </li>
             </ul>
@@ -576,6 +594,7 @@ export async function AboutPage({
                             email: t('operator.email'),
                             github: t('operator.github'),
                             repo: t('operator.repo'),
+                            coreRepo: t('operator.coreRepo'),
                         }}
                     />
                 </AboutSection>

@@ -3220,7 +3220,8 @@
                 "role": "开发·运营",
                 "email": "发邮件咨询",
                 "github": "GitHub主页",
-                "repo": "公开的源代码"
+                "repo": "公开的源代码",
+                "coreRepo": "分析引擎源代码（MIT）"
             },
             "limits": {
                 "title": "需要了解的局限",

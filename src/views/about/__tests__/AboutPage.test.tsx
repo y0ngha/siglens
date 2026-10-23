@@ -99,6 +99,9 @@ describe('AboutPage', () => {
             screen.getByRole('link', { name: ko.views.about.operator.github })
         ).toHaveAttribute('href', 'https://github.com/y0ngha');
         expect(
+            screen.getByRole('link', { name: ko.views.about.operator.coreRepo })
+        ).toHaveAttribute('href', 'https://github.com/y0ngha/siglens-core');
+        expect(
             screen.getByText(ko.views.about.method.freshQuote)
         ).toBeInTheDocument();
         expect(

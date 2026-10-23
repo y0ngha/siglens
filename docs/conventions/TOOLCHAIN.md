@@ -152,8 +152,8 @@ JSON 설정(IAM 정책, 설정 파일 등)을 범용 직렬화기로 다시 쓰�
 - **카테고리 가중치가 크게 다르다.** Maintainability는 134건이 있어도 1점 남짓이고
   (수동 메모화 109건을 전부 지워도 점수 변화 0), Security는 6건이 8점을 물었다.
 - `.github/**`를 스캔에서 제외한 이유: `build-pipeline-secret-boundary`가
-  "시크릿이 있는 잡에서 install이 돈다"를 지적하는데, GitHub Packages(프라이빗)에서
-  `@y0ngha/siglens-core`를 받으려면 install 시점 토큰이 필수라 구조적으로 해소가
+  "시크릿이 있는 잡에서 install이 돈다"를 지적하는데, GitHub Packages는 공개
+  패키지도 인증을 요구해 `@y0ngha/siglens-core`를 받으려면 install 시점 토큰이 필수라 구조적으로 해소가
   불가능하다. 실제 가능한 완화는 코드에 반영했다 — 토큰을 job 전역 env에서 install
   스텝으로 좁혔고, 순수 JS 체크 잡은 `--mode=skip-build`로 시크릿이 있는 동안
   패키지 lifecycle 코드를 실행하지 않는다.

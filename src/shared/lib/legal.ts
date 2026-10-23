@@ -40,7 +40,7 @@ export const OPERATOR_SAME_AS: readonly string[] = [SITE_OPERATOR.githubUrl];
  * `/about` 본문 마지막 갱신일 — 본문(`messages/*.json`의 `views.about`)을 고치면
  * 함께 올린다. 화면 하단 "마지막 업데이트"와 `AboutPage.dateModified`가 읽는다.
  */
-export const ABOUT_UPDATED_AT = new Date('2026-10-04T00:00:00+09:00');
+export const ABOUT_UPDATED_AT = new Date('2026-10-23T00:00:00+09:00');
 
 /**
  * `/methodology` 본문 마지막 갱신일 — 본문(`messages/*.json`의 `views.methodology`)이나

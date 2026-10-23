@@ -185,6 +185,9 @@ export function buildOrganizationCoreJsonLd(): OrganizationCoreJsonLd {
  */
 export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
 
+/** 지표·패턴·신호 계산과 AI 프롬프트를 담은 분석 엔진(`@y0ngha/siglens-core`, MIT) 레포. */
+export const CORE_GITHUB_URL = 'https://github.com/y0ngha/siglens-core';
+
 /**
  * 서비스 공식 X(트위터) 계정. 홈 `Organization.sameAs`와 푸터 아이콘 링크가 소비한다.
  */

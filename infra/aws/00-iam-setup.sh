@@ -166,7 +166,7 @@ cat <<EOF
 ==================== 완료 — 다음 단계 ====================
 1) GitHub repo secret 등록 (Settings → Secrets and variables → Actions):
      AWS_DEPLOY_ROLE_ARN = $CI_ARN
-     SIGLENS_GITHUB_TOKEN = (없으면, core 비공개 패키지용 기존 토큰)
+     SIGLENS_GITHUB_TOKEN = (없으면, GitHub Packages 설치용 read:packages 토큰)
 2) 프로파일 검증:
      aws --profile siglens sts get-caller-identity
    → siglens-deployer 사용자가 나오면 성공.

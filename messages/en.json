@@ -3220,7 +3220,8 @@
                 "role": "Development & operations",
                 "email": "Email",
                 "github": "GitHub profile",
-                "repo": "Public source code"
+                "repo": "Public source code",
+                "coreRepo": "Analysis engine source (MIT)"
             },
             "limits": {
                 "title": "Limits you should know",
