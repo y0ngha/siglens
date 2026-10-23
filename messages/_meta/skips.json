@@ -1177,13 +1177,13 @@
     },
     {
         "file": "src/features/pwa-install/hooks/usePwaInstall.ts",
-        "line": 88,
+        "line": 113,
         "reason": "developer-diagnostic",
         "text": "[PWA] prompt 실패"
     },
     {
         "file": "src/features/pwa-install/lib/registerServiceWorker.ts",
-        "line": 29,
+        "line": 46,
         "reason": "developer-diagnostic",
         "text": "[PWA] SW 등록 실패"
     },
