@@ -56,6 +56,7 @@ interface CapturedHeaderProps {
     currentUser: unknown;
     loadingUserMenu?: boolean;
     hiddenOnMobile?: boolean;
+    softEdge?: boolean;
 }
 
 function lastHeaderProps(): CapturedHeaderProps {
@@ -175,6 +176,23 @@ describe('AuthSessionHeaderClient', () => {
         render(<AuthSessionHeaderClient />);
         expect(lastHeaderProps().authNext).toBeUndefined();
     });
+
+    it.each([
+        ['resolved', false, { data: null, isPending: false }],
+        ['loading', true, { data: undefined, isPending: true }],
+    ] as const)(
+        'softEdge는 ai 호스트에서만 켜진다 (%s 셸)',
+        (_label, hint, query) => {
+            mockAuthHint.mockReturnValue(hint);
+            mockPathname.mockReturnValue('/');
+            mockCurrentUser.mockReturnValue(query as never);
+            const main = render(<AuthSessionHeaderClient />);
+            expect(lastHeaderProps().softEdge).toBe(false);
+            main.unmount();
+            render(<AuthSessionHeaderClient authReturn="ai" />);
+            expect(lastHeaderProps().softEdge).toBe(true);
+        }
+    );
 
     it('Happy: 게스트(쿼리 resolved null, hint 없음) → currentUser=null', () => {
         mockAuthHint.mockReturnValue(false);

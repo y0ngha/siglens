@@ -28,7 +28,6 @@ import {
     PlusIcon,
     TrashIcon,
 } from '@/shared/ui/StrokeIcons';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface Props {
     readonly items: ConversationListItem[];
@@ -65,7 +64,7 @@ function RailFooter({ siteUrl, localePrefix }: RailFooterProps) {
     const link =
         'rounded px-1 py-1 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
     return (
-        <div className="border-t border-secondary-700 px-1 pt-3 text-xs text-secondary-400">
+        <div className="px-1 pt-3 text-xs text-secondary-400">
             <a
                 href={`${siteUrl}${localePrefix}/`}
                 className={cn(link, 'inline-flex items-center gap-1')}
@@ -222,7 +221,7 @@ export function Sidebar({
                 aria-label={t('Sidebar.9a7569')}
                 className="flex h-full flex-col gap-3 p-3"
             >
-                <div className={cn(SURFACE_CARD, 'p-4')}>
+                <div className="ai-raised rounded-lg p-4">
                     <p className="text-sm font-medium text-secondary-100">
                         {t('Sidebar.guestTitle')}
                     </p>
@@ -231,7 +230,7 @@ export function Sidebar({
                     </p>
                     <a
                         href={loginHref}
-                        className="mt-3 inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="ai-accent mt-3 inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         {t('Sidebar.guestCta')}
                     </a>
@@ -251,7 +250,7 @@ export function Sidebar({
                 href={`${localePrefix}/`}
                 onClick={e => navigate(e, `${localePrefix}/`)}
                 aria-busy={isPending(`${localePrefix}/`) || undefined}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
+                className="ai-raised ai-raised-hover inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
             >
                 <PlusIcon className="size-4 text-primary-400" />
                 {t('Sidebar.newChat')}

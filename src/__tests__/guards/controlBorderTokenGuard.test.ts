@@ -202,9 +202,9 @@ const ALLOWED_CONSTANTS: ReadonlySet<string> = new Set([
     // 이 항목은 상수에 담긴 호버를 처음 잡았을 때 나왔다 — 그 전까지 호버는
     // 인라인 스캐너 하나만 봤고, 클래스를 상수로 옮기는 순간 감시가 꺼졌다.
     'shared/lib/cardStyles.ts::CARD_LINK_CLASSES',
-    // (SIGLENS AI 첫 화면의 질문 카드 `EmptyState.tsx::CARD`는 이제 경계를
-    // `SURFACE_CARD` 상수로 받아 이 스캐너의 리터럴 판정에 걸리지 않는다. 장식
-    // 경계를 쓰는 근거는 그 파일의 `CARD` 주석에 옮겨 두었다.)
+    // (SIGLENS AI 첫 화면의 질문 카드 `EmptyState.tsx::CARD`는 이제 경계가 아예
+    // 없다 — `ai-raised` 표면으로 뜨며, 근거는 그 파일의 `CARD` 주석과
+    // DESIGN.md §경계 예외에 있다.)
 ]);
 
 /** 요소 스캐너의 예외. `파일:줄` 단위이며 근거를 함께 적는다. */

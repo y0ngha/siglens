@@ -10,10 +10,8 @@ import {
     SparkIcon,
 } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { brandAiName } from '@/shared/lib/brandName';
-import { cn } from '@/shared/lib/cn';
 
 /** Member suggestions still being generated; resolves to null when there are none. */
 export type PendingSuggestions = Promise<readonly string[] | null>;
@@ -93,11 +91,10 @@ interface SuggestionCardsSkeletonProps {
 
 /**
  * Same footprint as six cards, so the page does not jump when they land.
- * Colours are hardcoded to `CARD`'s resting `secondary-700`/`secondary-800`
- * rather than a `PLACEHOLDER_ON_*` token from `surfaceStyles.ts`: this
- * skeleton mirrors the real card surface it stands in for, and it sits on
- * the page background (`secondary-900`), not on a card or inset, so those
- * tokens do not apply here.
+ * It wears `CARD`'s resting surface (`ai-raised`) rather than a
+ * `PLACEHOLDER_ON_*` token from `surfaceStyles.ts`: this skeleton mirrors the
+ * real card surface it stands in for, and it sits on the page background
+ * (`secondary-900`), not on a card or inset, so those tokens do not apply here.
  */
 function SuggestionCardsSkeleton({ count }: SuggestionCardsSkeletonProps) {
     return (
@@ -105,10 +102,7 @@ function SuggestionCardsSkeleton({ count }: SuggestionCardsSkeletonProps) {
             {Array.from({ length: count }, (_, i) => (
                 <li
                     key={i}
-                    className={cn(
-                        SURFACE_CARD,
-                        'min-h-14 animate-pulse motion-reduce:animate-none'
-                    )}
+                    className="ai-raised min-h-14 animate-pulse rounded-lg motion-reduce:animate-none"
                 />
             ))}
         </ul>
@@ -121,16 +115,16 @@ interface CapabilityItem {
 }
 
 /**
- * Suggestion card: a quiet surface that lifts to the brand colour on hover —
- * content, not a filter chip. The resting edge is the decorative card border
- * (`secondary-700`), not the control border: the question text and the arrow
- * already say "press me", and the 3.5:1 control edge made six cards read as a
- * grid of bright boxes detached from the dark page (2026-09-13 사용자 제보).
+ * Suggestion card: a raised surface (`ai-raised`, globals.css) that catches
+ * more light on hover — content, not a filter chip. No edge line at all: the
+ * question text and the arrow already say "press me" (WCAG 1.4.11 asks for no
+ * boundary on a labelled button). A 3.5:1 control edge made six cards read as
+ * a grid of bright boxes (2026-09-13 사용자 제보), and the decorative
+ * `secondary-700` edge that replaced it still read as a spreadsheet grid
+ * (2026-10 사용자 피드백).
  */
-const CARD = cn(
-    SURFACE_CARD,
-    'group flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm leading-5 text-secondary-200 transition-colors hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none'
-);
+const CARD =
+    'group ai-raised ai-raised-hover flex min-h-14 w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left text-sm leading-5 text-secondary-200 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 /**
  * First screen of a new conversation, and the landing page crawlers index.

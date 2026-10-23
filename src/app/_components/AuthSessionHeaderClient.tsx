@@ -102,6 +102,7 @@ export function AuthSessionHeaderClient({
                 loadingUserMenu={hasHint}
                 authNext={authNext}
                 hiddenOnMobile={hiddenOnMobile}
+                softEdge={authReturn === 'ai'}
             />
         );
     }
@@ -119,6 +120,7 @@ export function AuthSessionHeaderClient({
             currentUser={currentUser}
             authNext={authNext}
             hiddenOnMobile={hiddenOnMobile}
+            softEdge={authReturn === 'ai'}
         />
     );
 }

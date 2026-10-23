@@ -271,7 +271,7 @@ export function ChatShell({
             {/* Pinned under the sticky site header at viewport height: a long
                 conversation list scrolls inside the rail instead of stretching
                 the page (which pushed the landing hero below the fold). */}
-            <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start border-r border-secondary-700 bg-secondary-950 lg:block">
+            <aside className="ai-rail sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start bg-secondary-950 lg:block">
                 {sidebar}
             </aside>
             {isBelowLg ? (
@@ -304,7 +304,7 @@ export function ChatShell({
                         // Sticky under the site header (h-14) so the drawer trigger stays
                         // reachable mid-conversation; slides up with the header while
                         // scrolling down (11 + 14 = 6.25rem clears both).
-                        'sticky top-14 z-40 flex h-11 items-center gap-2 border-b border-secondary-700 bg-secondary-900 px-2 transition-transform duration-200 motion-reduce:transition-none lg:hidden',
+                        'ai-bar sticky top-14 z-40 flex h-11 items-center gap-2 bg-secondary-900 px-2 transition-transform duration-200 motion-reduce:transition-none lg:hidden',
                         chromeHidden && '-translate-y-[6.25rem]'
                     )}
                 >
@@ -375,7 +375,7 @@ export function ChatShell({
                             {offerLogin ? (
                                 <a
                                     href={login}
-                                    className="inline-flex min-h-9 shrink-0 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    className="ai-accent inline-flex min-h-9 shrink-0 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {t('ChatShell.loginCta')}
                                 </a>
@@ -383,7 +383,7 @@ export function ChatShell({
                                 <button
                                     type="button"
                                     onClick={() => void stream.retry()}
-                                    className="inline-flex min-h-9 shrink-0 items-center rounded-lg border border-border-control px-3 text-xs font-medium text-secondary-100 hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    className="ai-raised ai-raised-hover inline-flex min-h-9 shrink-0 items-center rounded-lg px-3 text-xs font-medium text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {t('ChatShell.548fe0')}
                                 </button>
