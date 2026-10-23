@@ -18,12 +18,14 @@ export const BARS_RESULT_MAX_CHARS = 6_000;
  * signals, long tickers/labels) serializes to ~3,460 chars. It caps its list
  * by construction (`topSignals`), so this ceiling is headroom against the JSON
  * envelope, not a rescue for an unbounded list. `get_economy` has its own
- * ceiling (`ECONOMY_RESULT_MAX_CHARS`). `get_fundamentals` and `get_congress_trades` fit
- * comfortably under the shared `TOOL_RESULT_MAX_CHARS` default and do not
- * need their own ceiling: `get_fundamentals` measures ~2,090 chars with every
- * section filled plus 5 `recentQuarters` rows and 8 `earningsReactions`
- * (~1,030 without those two lists; fixture in `getFundamentals.test.ts`,
- * 2026-10-22), `get_congress_trades` ~2,500.
+ * ceiling (`ECONOMY_RESULT_MAX_CHARS`).
+ *
+ * `get_fundamentals` and `get_congress_trades` fit comfortably under the
+ * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
+ * `get_fundamentals` measures ~2,090 chars with every section filled plus 5
+ * `recentQuarters` rows and 8 `earningsReactions` (~1,030 without those two
+ * lists; fixture in `getFundamentals.test.ts`, 2026-10-22),
+ * `get_congress_trades` ~2,500.
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
 
