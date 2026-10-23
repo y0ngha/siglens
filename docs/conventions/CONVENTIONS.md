@@ -695,6 +695,20 @@ measured fact instead of the case ID.
 // ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
 ```
 
+<a id="CM-10"></a>
+
+#### CM-10 — A measured-figure comment says only what its test asserts, and the test runs on the measured shape
+
+A comment that says a test "pins" or "guards" a measured figure (payload size, count, width) must match the assertion:
+a test that only checks a ceiling does not pin the figure. When the measured input changes (new fields, a larger
+window, a live-only shape), re-measure, update the figure, and make the test exercise the same shape the figure was
+measured on; a pin test fed the smaller fixture passes while the real payload drifts.
+
+```typescript
+// ❌ Pinned by sizeTest: ~4.2KB.   (the test only asserts size < 8KB, on a non-live fixture)
+// ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
+```
+
 ---
 
 ## Change Synchronization
