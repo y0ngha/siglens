@@ -7,6 +7,11 @@ import {
     type MockedFunction,
 } from 'vitest';
 
+// 벤치마크 게이트를 명시적으로 닫는다 — 공개 PR이 실제 상수를 올려도 이 스위트는 그대로 통과한다.
+vi.mock('@/shared/config/benchmark', () => ({
+    BENCHMARK_PUBLISHED: false,
+    BENCHMARK_PATH: '/benchmark',
+}));
 vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     GUEST_ID_COOKIE_NAME: 'siglens_guest',
@@ -300,6 +305,20 @@ describe('proxy — ai host', () => {
         expect(res.body).toContain('<loc>https://ai.siglens.io/about</loc>');
         expect(res.body).not.toContain('/c/');
         expect(mockRewrite).not.toHaveBeenCalled();
+    });
+    it('sitemap.xml — 벤치마크 공개 전에는 /benchmark 항목이 없다', async () => {
+        const res = (await proxy(
+            makeRequest('ai.siglens.io', '/sitemap.xml')
+        )) as unknown as { body: string };
+        expect(res.body).not.toContain('/benchmark');
+    });
+    it('/benchmark는 ai 라우트로 rewrite된다 — 티커로 오인해 301하지 않는다', async () => {
+        await proxy(makeRequest('ai.siglens.io', '/benchmark'));
+        expect(mockRedirect).not.toHaveBeenCalled();
+        const rewrittenPaths = mockRewrite.mock.calls.map(
+            ([url]) => (url as URL).pathname
+        );
+        expect(rewrittenPaths).toEqual(['/ai/ko/benchmark']);
     });
     it('메인 호스트 sitemap.xml은 next() — ai 전용 응답이 새지 않는다', async () => {
         await proxy(makeRequest('siglens.io', '/sitemap.xml'));

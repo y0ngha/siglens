@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+    aiUrl,
     buildAiAboutMetadata,
+    buildAiBenchmarkMetadata,
     buildAiHomeJsonLd,
     buildAiHomeMetadata,
 } from '@/app/ai/[locale]/aiSeo';
@@ -86,5 +88,30 @@ describe('buildAiHomeJsonLd', () => {
         expect(ld.alternateName).toBe('시그렌즈 AI');
         expect(ld).not.toHaveProperty('releaseNotes');
         expect(ld.applicationCategory).toBe('FinanceApplication');
+    });
+});
+
+describe('buildAiBenchmarkMetadata', () => {
+    it('is the canonical copy: own canonical and OG url on the ai host', () => {
+        const m = buildAiBenchmarkMetadata('ko', copy);
+        expect(m.title).toEqual({ absolute: copy.title });
+        expect(m.description).toBe(copy.description);
+        expect(m.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/benchmark`);
+        expect(m.openGraph).toMatchObject({
+            url: `${AI_SITE_URL}/benchmark`,
+        });
+    });
+
+    it('keeps the locale prefix in the canonical of a non-default locale', () => {
+        const m = buildAiBenchmarkMetadata('en', copy);
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en/benchmark`);
+    });
+});
+
+describe('aiUrl', () => {
+    it('joins the ai origin and the localized path', () => {
+        expect(aiUrl('ko', '/benchmark')).toBe(`${AI_SITE_URL}/benchmark`);
+        expect(aiUrl('ja', '/benchmark')).toBe(`${AI_SITE_URL}/ja/benchmark`);
     });
 });

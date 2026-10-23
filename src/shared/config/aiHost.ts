@@ -1,3 +1,5 @@
+import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from './benchmark';
+
 /** Hosts served by the SIGLENS AI subtree. Port-suffixed dev host is stripped before matching. */
 const AI_HOSTS: ReadonlySet<string> = new Set([
     'ai.siglens.io',
@@ -8,9 +10,14 @@ const AI_HOSTS: ReadonlySet<string> = new Set([
  * page metadata (`app/ai/[locale]/aiSeo.ts`) both read this list, so a page
  * cannot be indexable without being in the sitemap or the other way round.
  * Conversations (`/c/*`) are never here.
+ *
+ * `/benchmark` is listed only while `BENCHMARK_PUBLISHED` — before that the route is a
+ * 404, so it must not be in the sitemap. The type always names it so metadata code
+ * type-checks either way.
  */
-export const AI_INDEXABLE_PATHS = ['/', '/about'] as const;
-export type AiIndexablePath = (typeof AI_INDEXABLE_PATHS)[number];
+export type AiIndexablePath = '/' | '/about' | typeof BENCHMARK_PATH;
+export const AI_INDEXABLE_PATHS: readonly AiIndexablePath[] =
+    BENCHMARK_PUBLISHED ? ['/', '/about', BENCHMARK_PATH] : ['/', '/about'];
 
 export const AI_SITE_URL =
     process.env.NEXT_PUBLIC_AI_SITE_URL || 'https://ai.siglens.io';
