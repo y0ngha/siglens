@@ -37,18 +37,34 @@ function directionOf(
  * not older than the snapshot's, else the snapshot's copy. The snapshot sits behind
  * two stacked 24h caches and served a 10y yield ~48h old.
  */
+interface PickedTreasury {
+    treasury: TreasuryRateSnapshot;
+    fetchedAt: string | null;
+    /** 같은 날 읽기의 출처. 스냅샷 값은 출처를 기록하지 않아 `null`. */
+    source: FreshTreasuryRates['source'] | null;
+}
+
+const TREASURY_SOURCE_LABEL = {
+    'us-treasury': 'US Treasury',
+    fmp: 'FMP',
+} as const;
+
 function pickTreasury(
     snapshotTreasury: TreasuryRateSnapshot | null,
     fresh: FreshTreasuryRates | null
-): { treasury: TreasuryRateSnapshot; fetchedAt: string | null } | null {
+): PickedTreasury | null {
     if (
         fresh &&
         (!snapshotTreasury || fresh.treasury.date >= snapshotTreasury.date)
     ) {
-        return { treasury: fresh.treasury, fetchedAt: fresh.fetchedAt };
+        return {
+            treasury: fresh.treasury,
+            fetchedAt: fresh.fetchedAt,
+            source: fresh.source,
+        };
     }
     return snapshotTreasury
-        ? { treasury: snapshotTreasury, fetchedAt: null }
+        ? { treasury: snapshotTreasury, fetchedAt: null, source: null }
         : null;
 }
 
@@ -59,11 +75,9 @@ function pickTreasury(
  * the same-day read hit the provider; `null` means the value came from the
  * day-cached economy snapshot and may be up to ~48h old, which `cache` states.
  */
-function treasuryView(
-    picked: { treasury: TreasuryRateSnapshot; fetchedAt: string | null } | null
-) {
+function treasuryView(picked: PickedTreasury | null) {
     if (!picked) return null;
-    const { treasury, fetchedAt } = picked;
+    const { treasury, fetchedAt, source } = picked;
     const rawSpread = computeYieldSpread(treasury);
     // `10y − 2y` in binary floats reads 0.39999999999999947; round like every
     // other number the agent quotes.
@@ -73,6 +87,7 @@ function treasuryView(
         spread2s10s,
         curveInverted: spread2s10s === null ? null : spread2s10s < 0,
         fetchedAt,
+        ...(source === null ? {} : { provider: TREASURY_SOURCE_LABEL[source] }),
         cache:
             fetchedAt === null
                 ? 'economy snapshot (up to ~48h old)'

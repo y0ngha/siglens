@@ -1808,7 +1808,7 @@
                     "faq1q": "在哪里查看 FOMC 公告？",
                     "faq2a": "CPI（消费者物价指数）由美国劳工统计局（BLS）每月发布一次，通常在月中。",
                     "faq2q": "CPI 多久发布一次？",
-                    "faq3a": "数据基于 Financial Modeling Prep（FMP）API 采集，每 {v0} 小时更新一次。",
+                    "faq3a": "经济指标和日历来自 Financial Modeling Prep（FMP）API，美国国债收益率来自美国财政部官方每日收益率（无法获取财政部数据时使用 FMP 数据），每 {v0} 小时更新一次。",
                     "faq3q": "这些数据来自哪里？",
                     "title": "美国经济 — 一览指标与日历"
                 }

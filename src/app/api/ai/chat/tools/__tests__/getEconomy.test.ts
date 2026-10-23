@@ -334,6 +334,8 @@ describe('getEconomyTool', () => {
             freshTreasury.mockResolvedValue({
                 treasury: { date: '2026-10-21', year2: 3.62, year10: 5.13 },
                 fetchedAt: '2026-10-22T12:00:00.000Z',
+                source: 'us-treasury',
+                officialAvailable: true,
             });
             briefing.mockResolvedValue(null);
             const r = (await getEconomyTool({}, ctx, rt)) as {
@@ -343,6 +345,7 @@ describe('getEconomyTool', () => {
                 date: '2026-10-21',
                 year10: 5.13,
                 fetchedAt: '2026-10-22T12:00:00.000Z',
+                provider: 'US Treasury',
                 cache: 'treasury rates (3h cache)',
             });
         });
@@ -373,6 +376,8 @@ describe('getEconomyTool', () => {
             freshTreasury.mockResolvedValue({
                 treasury: { date: '2026-10-19', year2: 3.6, year10: 5.15 },
                 fetchedAt: '2026-10-22T12:00:00.000Z',
+                source: 'fmp',
+                officialAvailable: true,
             });
             briefing.mockResolvedValue(null);
             const r = (await getEconomyTool({}, ctx, rt)) as {

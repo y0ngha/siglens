@@ -1,6 +1,7 @@
 import 'server-only';
 import type { TreasuryRateSnapshot } from '@y0ngha/siglens-core';
 
+import type { TreasuryReading } from '@/shared/api/economy/EconomyProvider';
 import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
@@ -19,11 +20,25 @@ export interface FreshTreasuryRates {
     treasury: TreasuryRateSnapshot;
     /** 공급자에서 읽은 시각(ISO). `treasury.date`(금리 기준일)와 다르다. */
     fetchedAt: string;
+    /** 값을 낸 출처. 출처를 알리지 않는 공급자(FMP 단독·E2E Fake)는 `fmp`. */
+    source: TreasuryReading['source'];
+    /** 재무부 읽기가 값을 냈는가. `false`(FMP로 물러난 값)는 캐시하지 않는다. */
+    officialAvailable: boolean;
 }
 
-/** 캐시 키 — ET 날짜를 넣어 날짜가 바뀌면 전날 값을 절대 다시 쓰지 않는다. */
+/** 캐시 키 — ET 날짜를 넣어 날짜가 바뀌면 전날 값을 절대 다시 쓰지 않는다. v2: `source` 필드 추가. */
 export function buildTreasuryCacheKey(now: Date): string {
-    return `economy:treasury:${etDateOf(now)}`;
+    return `economy:treasury:v2:${etDateOf(now)}`;
+}
+
+/** 출처가 붙은 값. `getTreasuryReading`이 없는 공급자는 `getTreasury` 값을 FMP 출처로 본다. */
+async function readTreasury(): Promise<TreasuryReading | null> {
+    const provider = getEconomyProvider();
+    if (provider.getTreasuryReading) return provider.getTreasuryReading();
+    const treasury = await provider.getTreasury();
+    return treasury === null
+        ? null
+        : { treasury, source: 'fmp', officialAvailable: true };
 }
 
 /**
@@ -34,8 +49,8 @@ export function buildTreasuryCacheKey(now: Date): string {
  * "현재 금리"로 나갔다(2026-10-22 실측: 10/21 공표가 있는데 10/19 값). AI 에이전트의
  * `get_economy`는 route handler라 정적화가 필요 없으므로 Redis만 거쳐 직접 읽는다.
  *
- * 실패는 `null`로 내려 호출부가 스냅샷 값으로 물러나게 한다. `null` 결과는 캐시하지 않는다
- * (일시 장애가 3시간 동안 굳지 않게).
+ * 실패는 `null`로 내려 호출부가 스냅샷 값으로 물러나게 한다. `null` 결과와, 재무부를 못 읽어 FMP로
+ * 물러난 결과는 캐시하지 않는다(일시 장애가 3시간 동안 늦은 값으로 굳지 않게 — 다음 호출이 재무부를 다시 본다).
  */
 export async function getFreshTreasuryRates(
     now: Date = new Date()
@@ -45,12 +60,12 @@ export async function getFreshTreasuryRates(
             buildTreasuryCacheKey(now),
             TREASURY_CACHE_TTL_SECONDS,
             async () => {
-                const treasury = await getEconomyProvider().getTreasury();
-                return treasury === null
+                const reading = await readTreasury();
+                return reading === null
                     ? null
-                    : { treasury, fetchedAt: new Date().toISOString() };
+                    : { ...reading, fetchedAt: new Date().toISOString() };
             },
-            value => value !== null
+            value => value !== null && value.officialAvailable
         );
     } catch (error) {
         // Log the name only (no payload), then degrade to the snapshot's treasury in get_economy.

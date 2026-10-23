@@ -12,7 +12,6 @@ import {
 } from '../treasuryGovClient';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/shared/lib/sleep', () => ({ sleep: async () => undefined }));
 
 /** Deny-by-default fetch: any request not stubbed by the test fails it. */
 const fetchSpy = vi.fn(
@@ -79,13 +78,19 @@ describe('parseTreasuryGovCsv', () => {
 });
 
 describe('fetchTreasuryGovSnapshot', () => {
+    let warn: ReturnType<typeof vi.spyOn>;
     beforeEach(() => {
         fetchSpy.mockClear();
         vi.stubGlobal('fetch', fetchSpy);
+        warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
     afterEach(() => {
         vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
+        vi.restoreAllMocks();
     });
+
+    const PRIOR_YEAR_CSV = `${HEADER}\n12/31/2026,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.2,4.3,4.4,4.5,4.6,4.9,4.8`;
 
     it('그 해 CSV를 캐시 없이, 시간 제한을 걸어 읽는다', async () => {
         const timeout = vi.spyOn(AbortSignal, 'timeout');
@@ -99,42 +104,47 @@ describe('fetchTreasuryGovSnapshot', () => {
             })
         );
         expect(timeout).toHaveBeenCalledWith(TREASURY_GOV_REQUEST_TIMEOUT_MS);
-        timeout.mockRestore();
     });
 
-    it('페이지 렌더 중에는 짧은 시간 제한으로 한 번만 시도한다', async () => {
+    it('페이지 렌더 중에는 짧은 시간 제한을 쓴다', async () => {
         const timeout = vi.spyOn(AbortSignal, 'timeout');
-        fetchSpy.mockResolvedValue(new Response('down', { status: 503 }));
-        await expect(
-            runWithRenderBudget(() => fetchTreasuryGovSnapshot(OCT))
-        ).rejects.toBeInstanceOf(TreasuryGovHttpError);
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        fetchSpy.mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
+        await runWithRenderBudget(() => fetchTreasuryGovSnapshot(OCT));
         expect(timeout).toHaveBeenCalledWith(TREASURY_GOV_RENDER_TIMEOUT_MS);
-        timeout.mockRestore();
     });
 
-    it('next build 중에도 재시도하지 않는다', async () => {
+    it('next build 중에도 짧은 시간 제한을 쓴다', async () => {
         vi.stubEnv('NEXT_PHASE', 'phase-production-build');
-        fetchSpy.mockResolvedValue(new Response('down', { status: 503 }));
-        await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
-            TreasuryGovHttpError
+        const timeout = vi.spyOn(AbortSignal, 'timeout');
+        fetchSpy.mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
+        await fetchTreasuryGovSnapshot(OCT);
+        expect(timeout).toHaveBeenCalledWith(TREASURY_GOV_RENDER_TIMEOUT_MS);
+    });
+
+    it('호출부 신호가 끊기면 요청도 끊긴다', async () => {
+        const outer = new AbortController();
+        fetchSpy.mockImplementationOnce(
+            (_url, init) =>
+                new Promise((_, reject) => {
+                    init?.signal?.addEventListener('abort', () =>
+                        reject(init.signal?.reason)
+                    );
+                })
         );
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-        vi.unstubAllEnvs();
+        const pending = fetchTreasuryGovSnapshot(OCT, outer.signal);
+        outer.abort(new DOMException('deadline', 'TimeoutError'));
+        await expect(pending).rejects.toMatchObject({ name: 'TimeoutError' });
     });
 
     it('오프라인 빌드(SIGLENS_OFFLINE_BUILD=1)에서는 요청하지 않고 던진다', async () => {
         vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toThrow(
             '[offline-build] blocked Treasury request'
         );
         expect(fetchSpy).not.toHaveBeenCalled();
-        warn.mockRestore();
-        vi.unstubAllEnvs();
     });
 
-    it('본문이 상한을 넘으면 읽기를 끊고 던진다', async () => {
+    it('본문이 상한을 넘으면 읽기를 끊고 BoundedBodyTooLargeError를 그대로 던진다', async () => {
         fetchSpy.mockResolvedValueOnce(
             new Response('x'.repeat(TREASURY_GOV_MAX_BODY_BYTES + 1), {
                 status: 200,
@@ -145,11 +155,15 @@ describe('fetchTreasuryGovSnapshot', () => {
         );
     });
 
-    it('네트워크 오류(TypeError)는 한 번 재시도한다', async () => {
-        fetchSpy
-            .mockRejectedValueOnce(new TypeError('fetch failed'))
-            .mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
-        expect((await fetchTreasuryGovSnapshot(OCT))?.date).toBe('2026-10-22');
+    it('5xx·네트워크 오류는 재시도하지 않고 던진다(호출부가 FMP로 물러난다)', async () => {
+        fetchSpy.mockResolvedValueOnce(new Response('down', { status: 503 }));
+        await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
+            TreasuryGovHttpError
+        );
+        fetchSpy.mockRejectedValueOnce(new TypeError('fetch failed'));
+        await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
+            TypeError
+        );
         expect(fetchSpy).toHaveBeenCalledTimes(2);
     });
 
@@ -157,10 +171,7 @@ describe('fetchTreasuryGovSnapshot', () => {
         fetchSpy
             .mockResolvedValueOnce(new Response(HEADER, { status: 200 }))
             .mockResolvedValueOnce(
-                new Response(
-                    `${HEADER}\n12/31/2026,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.2,4.3,4.4,4.5,4.6,4.9,4.8`,
-                    { status: 200 }
-                )
+                new Response(PRIOR_YEAR_CSV, { status: 200 })
             );
         expect((await fetchTreasuryGovSnapshot(JAN_2027))?.date).toBe(
             '2026-12-31'
@@ -170,40 +181,25 @@ describe('fetchTreasuryGovSnapshot', () => {
         ).toBe(true);
     });
 
-    it('2년물이 비어 있으면 값은 내되 경고를 남긴다', async () => {
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        fetchSpy.mockResolvedValueOnce(
-            new Response('Date,"10 Yr"\n10/22/2026,4.96', { status: 200 })
-        );
-        expect(await fetchTreasuryGovSnapshot(OCT)).toEqual({
-            date: '2026-10-22',
-            year2: null,
-            year10: 4.96,
-        });
-        expect(warn).toHaveBeenCalledWith(
-            '[economy] treasury.gov row has no 2Y yield'
-        );
-        warn.mockRestore();
-    });
-
     it('1월에는 올해 CSV가 404여도 전년도 CSV를 본다', async () => {
         fetchSpy
             .mockResolvedValueOnce(new Response('nf', { status: 404 }))
             .mockResolvedValueOnce(
-                new Response(
-                    `${HEADER}\n12/31/2026,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.2,4.3,4.4,4.5,4.6,4.9,4.8`,
-                    { status: 200 }
-                )
+                new Response(PRIOR_YEAR_CSV, { status: 200 })
             );
         expect((await fetchTreasuryGovSnapshot(JAN_2027))?.date).toBe(
             '2026-12-31'
         );
     });
 
-    it('1월이 아니면 올해 CSV가 비어도 전년도 값으로 가리지 않는다', async () => {
+    it('1월이 아니면 올해 CSV가 비어도 전년도 값으로 가리지 않고, 404는 던진다', async () => {
         fetchSpy.mockResolvedValueOnce(new Response(HEADER, { status: 200 }));
         expect(await fetchTreasuryGovSnapshot(OCT)).toBeNull();
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        fetchSpy.mockResolvedValueOnce(new Response('nf', { status: 404 }));
+        await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
+            TreasuryGovHttpError
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
     });
 
     it('ET 기준으로 연도를 정한다(UTC 1월 1일 새벽은 아직 전년도 12월)', async () => {
@@ -215,19 +211,17 @@ describe('fetchTreasuryGovSnapshot', () => {
         );
     });
 
-    it('4xx는 재시도 없이 던진다', async () => {
-        fetchSpy.mockResolvedValue(new Response('no', { status: 403 }));
-        await expect(fetchTreasuryGovSnapshot(OCT)).rejects.toBeInstanceOf(
-            TreasuryGovHttpError
+    it('2년물이 비어 있으면 값은 내되 경고를 남긴다', async () => {
+        fetchSpy.mockResolvedValueOnce(
+            new Response('Date,"10 Yr"\n10/22/2026,4.96', { status: 200 })
         );
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('5xx는 한 번 재시도한다', async () => {
-        fetchSpy
-            .mockResolvedValueOnce(new Response('down', { status: 503 }))
-            .mockResolvedValueOnce(new Response(CSV_2026, { status: 200 }));
-        expect((await fetchTreasuryGovSnapshot(OCT))?.date).toBe('2026-10-22');
-        expect(fetchSpy).toHaveBeenCalledTimes(2);
+        expect(await fetchTreasuryGovSnapshot(OCT)).toEqual({
+            date: '2026-10-22',
+            year2: null,
+            year10: 4.96,
+        });
+        expect(warn).toHaveBeenCalledWith(
+            '[economy] treasury.gov row has no 2Y yield'
+        );
     });
 });
