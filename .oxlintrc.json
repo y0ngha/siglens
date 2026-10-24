@@ -40,7 +40,8 @@
     ],
 
     "rules": {
-        // eslint-config-next 패리티: exhaustive-deps는 warn(에러로 올리면 기존 코드가 막힌다).
+        // eslint-config-next 패리티로 warn에 둔다. 다만 `yarn lint`가 `--deny-warnings`로
+        // 돌므로 CI·pre-push에서는 warn도 실패다 — warn은 에디터 표시 구분일 뿐, 허용이 아니다.
         "react/exhaustive-deps": "warn",
 
         // 훅 6곳(검색 오버레이·테마·백테스트 필터)을 전부 정리했다 — 강제한다.

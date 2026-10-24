@@ -1,7 +1,6 @@
 import type {
     FearGreedFactor,
     FearGreedGroupName,
-    FearGreedHistoryPoint,
     FearGreedLabel,
     FearGreedSnapshot,
 } from '@y0ngha/siglens-core';

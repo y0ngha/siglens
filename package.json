@@ -14,7 +14,7 @@
         "build": "yarn prebuild && rm -rf .next && NEXT_BUILD_DATE=${NEXT_BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')} next build",
         "analyze": "ANALYZE=true yarn build",
         "start": "next start",
-        "lint": "oxlint",
+        "lint": "oxlint --deny-warnings",
         "lint:fix": "oxlint --fix",
         "lint:staged": "oxlint --fix",
         "lint:style": "stylelint --allow-empty-input '**/*.{css,scss}'",
