@@ -16,10 +16,9 @@ import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /*
- * 종목 탭 페이지의 `Metadata` 조립. `seo.ts`에 있었는데, 이 함수 하나 때문에 `seo.ts`가
- * `seoAlternates`를 import하고 `seoAlternates`는 `SITE_URL` 때문에 `seo.ts`를 import해서
- * 런타임 순환이 됐다(`src/__tests__/guards/importCycles.test.ts`). 두 모듈을 모두 쓰는
- * 조립 함수(`symbolMetadataFromSeo`·`noindexSymbolMetadata`)를 위에 따로 둬서 의존이 한 방향으로만 흐르게 한다.
+ * 종목 탭 페이지의 `Metadata` 조립. `seo.ts`(카피·URL)와 `seoAlternates.ts`(로케일 대체 URL)를
+ * 둘 다 쓰므로 그 위에 따로 둔다. `seoAlternates`가 `seo`를 쓰기 때문에, 이 조립을 `seo.ts`에
+ * 두면 런타임 순환이 된다(`src/__tests__/guards/importCycles.test.ts`).
  */
 
 /**

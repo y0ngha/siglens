@@ -65,6 +65,19 @@ const RESOLVE_SUFFIXES = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'];
  */
 const NON_CODE_SPECIFIER = /\.(json|css|scss|svg|png|jpe?g|webp|md)([?#].*)?$/;
 
+/** `@/`·상대경로를 `src/` 기준 경로로 바꾼다. 외부 패키지면 `undefined`. */
+const internalBase = (
+    specifier: string,
+    fromRel: string
+): string | undefined =>
+    specifier.startsWith('@/')
+        ? specifier.slice(2)
+        : specifier.startsWith('.')
+          ? path.posix.normalize(
+                path.posix.join(path.posix.dirname(fromRel), specifier)
+            )
+          : undefined;
+
 /**
  * 내부 지정자를 `src/` 기준 파일 경로로 바꾼다. 외부 패키지·비코드 자원이면
  * `undefined`, 내부 코드인데 파일을 찾지 못하면 `null`.
@@ -75,53 +88,105 @@ function resolveSpecifier(
     fileSet: ReadonlySet<string>
 ): string | null | undefined {
     if (NON_CODE_SPECIFIER.test(specifier)) return undefined;
-    let base: string;
-    if (specifier.startsWith('@/')) base = specifier.slice(2);
-    else if (specifier.startsWith('.'))
-        base = path.posix.normalize(
-            path.posix.join(path.posix.dirname(fromRel), specifier)
-        );
-    else return undefined;
+    const raw = internalBase(specifier, fromRel);
+    if (raw === undefined) return undefined;
     // 쿼리 접미사(`?raw` 등)와 ESM식 `.js` 표기를 벗긴다.
-    base = base.replace(/[?#].*$/, '').replace(/\.js$/, '');
-    for (const suffix of RESOLVE_SUFFIXES)
-        if (fileSet.has(base + suffix)) return base + suffix;
-    return null;
-}
-
-interface SpecifierLike {
-    type: string;
-    importKind?: string | null;
-    exportKind?: string | null;
-}
-
-/** 지정자가 하나 이상이고 전부 `type`이면 런타임에 사라진다(`import { type A }`). */
-const allSpecifiersAreTypes = (specifiers: SpecifierLike[]): boolean =>
-    specifiers.length > 0 &&
-    specifiers.every(
-        s =>
-            (s.type === 'ImportSpecifier' || s.type === 'ExportSpecifier') &&
-            (s.importKind === 'type' || s.exportKind === 'type')
+    const base = raw.replace(/[?#].*$/, '').replace(/\.js$/, '');
+    return (
+        RESOLVE_SUFFIXES.map(suffix => base + suffix).find(candidate =>
+            fileSet.has(candidate)
+        ) ?? null
     );
+}
 
 type AstNode = { type: string; [key: string]: unknown };
 
 const isNode = (value: unknown): value is AstNode =>
     typeof value === 'object' &&
     value !== null &&
-    typeof (value as { type?: unknown }).type === 'string';
+    'type' in value &&
+    typeof value.type === 'string';
 
-function stringSource(node: unknown): string | null {
-    return isNode(node) && node.type === 'StringLiteral'
-        ? (node.value as string)
+const stringSource = (node: unknown): string | null =>
+    isNode(node) &&
+    node.type === 'StringLiteral' &&
+    typeof node.value === 'string'
+        ? node.value
         : null;
-}
+
+/** 지정자가 하나 이상이고 전부 `type`이면 런타임에 사라진다(`import { type A }`). */
+const allSpecifiersAreTypes = (specifiers: unknown): boolean =>
+    Array.isArray(specifiers) &&
+    specifiers.length > 0 &&
+    specifiers.every(
+        s =>
+            isNode(s) &&
+            (s.type === 'ImportSpecifier' || s.type === 'ExportSpecifier') &&
+            (s.importKind === 'type' || s.exportKind === 'type')
+    );
+
+const isLazyLoadCallee = (callee: unknown): boolean =>
+    isNode(callee) &&
+    (callee.type === 'Import' ||
+        (callee.type === 'Identifier' && callee.name === 'require'));
 
 export interface ImportRecord {
     specifier: string;
     typeOnly: boolean;
     dynamic: boolean;
 }
+
+/** 노드 하나가 만드는 import 기록(없으면 빈 배열). */
+function recordOf(node: AstNode): ImportRecord[] {
+    const record = (
+        specifier: string | null,
+        typeOnly: boolean,
+        dynamic: boolean
+    ): ImportRecord[] => (specifier ? [{ specifier, typeOnly, dynamic }] : []);
+    switch (node.type) {
+        case 'ImportDeclaration':
+            return record(
+                stringSource(node.source),
+                node.importKind === 'type' ||
+                    allSpecifiersAreTypes(node.specifiers),
+                false
+            );
+        case 'ExportNamedDeclaration':
+        case 'ExportAllDeclaration':
+            return record(
+                stringSource(node.source),
+                node.exportKind === 'type' ||
+                    allSpecifiersAreTypes(node.specifiers),
+                false
+            );
+        case 'ImportExpression':
+            return record(stringSource(node.source), false, true);
+        case 'CallExpression':
+            return isLazyLoadCallee(node.callee) &&
+                Array.isArray(node.arguments)
+                ? record(stringSource(node.arguments[0]), false, true)
+                : [];
+        default:
+            return [];
+    }
+}
+
+const POSITION_KEYS = new Set(['loc', 'start', 'end']);
+
+const childrenOf = (node: AstNode): unknown[] =>
+    Object.entries(node)
+        .filter(
+            ([key, value]) =>
+                !POSITION_KEYS.has(key) &&
+                typeof value === 'object' &&
+                value !== null
+        )
+        .flatMap(([, value]) => (Array.isArray(value) ? value : [value]));
+
+const collectRecords = (node: unknown): ImportRecord[] =>
+    isNode(node)
+        ? [...recordOf(node), ...childrenOf(node).flatMap(collectRecords)]
+        : [];
 
 /** 파일 하나의 import 지정자 목록과 파싱 오류. */
 export function extractImports(
@@ -134,64 +199,10 @@ export function extractImports(
         attachComment: false,
         plugins: rel.endsWith('.tsx') ? ['typescript', 'jsx'] : ['typescript'],
     });
-    const found: ImportRecord[] = [];
-    const walk = (node: unknown): void => {
-        if (Array.isArray(node)) {
-            node.forEach(walk);
-            return;
-        }
-        if (!isNode(node)) return;
-        if (node.type === 'ImportDeclaration') {
-            const specifier = stringSource(node.source);
-            if (specifier)
-                found.push({
-                    specifier,
-                    typeOnly:
-                        node.importKind === 'type' ||
-                        allSpecifiersAreTypes(
-                            node.specifiers as SpecifierLike[]
-                        ),
-                    dynamic: false,
-                });
-        } else if (
-            node.type === 'ExportNamedDeclaration' ||
-            node.type === 'ExportAllDeclaration'
-        ) {
-            const specifier = stringSource(node.source);
-            if (specifier)
-                found.push({
-                    specifier,
-                    typeOnly:
-                        node.exportKind === 'type' ||
-                        allSpecifiersAreTypes(
-                            (node.specifiers as SpecifierLike[] | undefined) ??
-                                []
-                        ),
-                    dynamic: false,
-                });
-        } else if (node.type === 'ImportExpression') {
-            const specifier = stringSource(node.source);
-            if (specifier)
-                found.push({ specifier, typeOnly: false, dynamic: true });
-        } else if (
-            node.type === 'CallExpression' &&
-            isNode(node.callee) &&
-            (node.callee.type === 'Import' ||
-                (node.callee.type === 'Identifier' &&
-                    node.callee.name === 'require'))
-        ) {
-            const specifier = stringSource((node.arguments as unknown[])[0]);
-            if (specifier)
-                found.push({ specifier, typeOnly: false, dynamic: true });
-        }
-        for (const [key, value] of Object.entries(node)) {
-            if (key === 'loc' || key === 'start' || key === 'end') continue;
-            if (typeof value === 'object' && value !== null) walk(value);
-        }
+    return {
+        records: collectRecords(ast.program),
+        errors: (ast.errors ?? []).map(error => error.message),
     };
-    walk(ast.program);
-    const errors = (ast.errors ?? []).map(error => error.message);
-    return { records: found, errors };
 }
 
 let cached: ImportGraph | null = null;
@@ -204,24 +215,38 @@ export function buildImportGraph(): ImportGraph {
         .filter(isProductionSource)
         .sort();
     const fileSet = new Set(files);
-    const edges: ImportEdge[] = [];
-    const unresolved: string[] = [];
-    const parseErrors: string[] = [];
-    for (const rel of files) {
-        const source = readFileSync(path.join(SRC, rel), 'utf8');
-        const { records, errors } = extractImports(rel, source);
-        parseErrors.push(...errors.map(message => `${rel}: ${message}`));
-        for (const { specifier, typeOnly, dynamic } of records) {
-            const to = resolveSpecifier(specifier, rel, fileSet);
-            if (to === undefined) continue;
-            if (to === null) {
-                unresolved.push(`${rel} → ${specifier}`);
-                continue;
-            }
-            if (to !== rel) edges.push({ from: rel, to, typeOnly, dynamic });
-        }
-    }
-    cached = { files, edges, unresolved, parseErrors };
+    const parsed = files.map(rel => ({
+        rel,
+        ...extractImports(rel, readFileSync(path.join(SRC, rel), 'utf8')),
+    }));
+    const resolved = parsed.flatMap(({ rel, records }) =>
+        records.map(record => ({
+            rel,
+            record,
+            to: resolveSpecifier(record.specifier, rel, fileSet),
+        }))
+    );
+    cached = {
+        files,
+        edges: resolved.flatMap(({ rel, record, to }) =>
+            typeof to === 'string' && to !== rel
+                ? [
+                      {
+                          from: rel,
+                          to,
+                          typeOnly: record.typeOnly,
+                          dynamic: record.dynamic,
+                      },
+                  ]
+                : []
+        ),
+        unresolved: resolved
+            .filter(({ to }) => to === null)
+            .map(({ rel, record }) => `${rel} → ${record.specifier}`),
+        parseErrors: parsed.flatMap(({ rel, errors }) =>
+            errors.map(message => `${rel}: ${message}`)
+        ),
+    };
     return cached;
 }
 
@@ -233,6 +258,8 @@ export function buildImportGraph(): ImportGraph {
 export function stronglyConnectedComponents(
     adjacency: ReadonlyMap<string, readonly string[]>
 ): string[][] {
+    // CONVENTIONS.md#CP-6 예외: Tarjan은 탐색 상태(번호·low-link·스택)를 한 번의 순회로
+    // 갱신하는 O(V+E) 상태 기계다. 불변 형태로 쓰면 단계마다 상태를 복사해 O(V·E)가 된다.
     const nodes = new Set<string>();
     for (const [from, targets] of adjacency) {
         nodes.add(from);
@@ -312,28 +339,33 @@ export function cycleEdges(
     edges: readonly ImportEdge[],
     keyOf: (file: string) => string | null
 ): string[] {
-    const adjacency = new Map<string, string[]>();
-    const seen = new Set<string>();
-    for (const edge of edges) {
-        const from = keyOf(edge.from);
-        const to = keyOf(edge.to);
-        if (from === null || to === null || from === to) continue;
-        const key = `${from} -> ${to}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const targets = adjacency.get(from) ?? [];
-        targets.push(to);
-        adjacency.set(from, targets);
-    }
-    const componentOf = new Map<string, number>();
-    stronglyConnectedComponents(adjacency).forEach((component, index) =>
-        component.forEach(node => componentOf.set(node, index))
+    const pairs = new Map(
+        edges.flatMap((edge): [string, [string, string]][] => {
+            const from = keyOf(edge.from);
+            const to = keyOf(edge.to);
+            return from === null || to === null || from === to
+                ? []
+                : [[`${from} -> ${to}`, [from, to]]];
+        })
     );
-    return [...seen]
-        .filter(key => {
-            const [from, to] = key.split(' -> ') as [string, string];
+    // CONVENTIONS.md#CP-6 예외: 출발 노드별로 묶는 일을 filter로 하면 노드마다 엣지 전체를
+    // 다시 훑어 O(V·E)다. 한 번 훑으며 목록에 붙인다.
+    const adjacency = new Map<string, string[]>();
+    for (const [from, to] of pairs.values()) {
+        const targets = adjacency.get(from);
+        if (targets) targets.push(to);
+        else adjacency.set(from, [to]);
+    }
+    const componentOf = new Map(
+        stronglyConnectedComponents(adjacency).flatMap((component, index) =>
+            component.map((node): [string, number] => [node, index])
+        )
+    );
+    return [...pairs]
+        .filter(([, [from, to]]) => {
             const component = componentOf.get(from);
             return component !== undefined && component === componentOf.get(to);
         })
+        .map(([key]) => key)
         .sort();
 }

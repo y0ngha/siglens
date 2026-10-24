@@ -15,11 +15,8 @@ import {
 /*
  * 크립토 자산 유니버스의 I/O(FMP 목록 조회, `crypto_assets` 테이블 조회).
  *
- * `api.ts`에 있었는데, `lib/cryptoAssetStore`·`lib/fmpCryptoMembership`이 이것을 쓰려고
- * `api.ts`를 import하고 `api.ts`는 `isTabAllowedForSymbol` 때문에
- * `lib/isCryptoSymbolStatic` → `lib/cryptoAssetStore`를 import해서 런타임 순환이 됐다
- * (`src/__tests__/guards/importCycles.test.ts`). 크립토 판정 경로가 `api.ts`를 거치지
- * 않도록 따로 둔다.
+ * `api.ts`와 따로 둔다. 크립토 판정(`lib/cryptoAssetStore` 등)이 이것을 쓰고 `api.ts`는 크립토
+ * 판정을 쓰므로, 한 파일에 두면 런타임 순환이 된다(`src/__tests__/guards/importCycles.test.ts`).
  */
 
 /**
