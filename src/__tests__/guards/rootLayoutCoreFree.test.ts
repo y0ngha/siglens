@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { findCoreInClientGraph, SRC } from './support/coreClientGraph';
+import { findCoreInClientGraph } from './support/coreClientGraph';
+import { SRC } from './support/importGraph';
 
 /**
  * 루트 레이아웃이 모든 페이지에 싣는 클라이언트 JS에 `@y0ngha/siglens-core`가 들어가지 않는다.

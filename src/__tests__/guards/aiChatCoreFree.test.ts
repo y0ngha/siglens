@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { findCoreInClientGraph, SRC } from './support/coreClientGraph';
+import { findCoreInClientGraph } from './support/coreClientGraph';
+import { SRC } from './support/importGraph';
 
 /**
  * ai 호스트(`ai.siglens.io`) 채팅 화면의 클라이언트 JS에 `@y0ngha/siglens-core`가
