@@ -2,13 +2,13 @@ vi.mock('@/shared/api/fmp/httpClient');
 
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 
 import {
     DrizzleCryptoAssetRepository,
     fetchCryptoAssetList,
 } from '@/entities/ticker/cryptoAssetApi';
-import { PgDialect } from 'drizzle-orm/pg-core';
-import type { SQL } from 'drizzle-orm';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import type { CryptoAssetRecord, SiglensDatabase } from '@/shared/db/types';
 
