@@ -2,6 +2,7 @@ import 'server-only';
 import type { Bar, IncomeStatementRow } from '@y0ngha/siglens-core';
 import { barDate } from './calendarChange';
 import { pctVs, roundPct2 } from './percent';
+import { findSecQuarter, type SecForm, type SecQuarter } from './secQuarters';
 
 /** Fiscal quarters in a year — the look-back to a quarter's year-ago row. */
 const QUARTERS_PER_YEAR = 4;
@@ -25,9 +26,11 @@ export const EARNINGS_REACTIONS_COUNT = 8;
  * these the agent answered "the latest 10-Q EPS" from a web search and took a
  * fiscal Q4 figure — which sits in the annual 10-K — for a 10-Q.
  *
- * `form` is DERIVED from the fiscal quarter label, not read from the data (the
- * provider rows carry no form type): Q4 → `10-K`, Q1–Q3 → `10-Q`, anything
- * else (`FY`, unknown) → `null`. It applies only to US domestic SEC filers;
+ * `form` is the filing's ACTUAL form when the quarter matched an SEC XBRL
+ * quarter (`sec` below; may also be `10-Q/A`/`10-K/A`). Without a match it is
+ * DERIVED from the fiscal quarter label (the provider rows carry no form
+ * type): Q4 → `10-K`, Q1–Q3 → `10-Q`, anything else (`FY`, unknown) → `null`.
+ * It applies only to US domestic SEC filers;
  * it is `null` for Korean stocks (no SEC filing at all) and for foreign
  * issuers (20-F/6-K, no 10-Q/10-K). The profile carries no country/exchange
  * field, so a foreign issuer is detected only by its rows' reporting currency
@@ -37,7 +40,17 @@ export const EARNINGS_REACTIONS_COUNT = 8;
  *
  * `revenueYoYPct` compares with the SAME fiscal quarter one fiscal year
  * earlier, looked up in the full row set (not just the five newest shown, or
- * the newest quarters would never find their year-ago row).
+ * the newest quarters would never find their year-ago row) — unless the SEC
+ * figure exists: then `revenueYoYPct` is `sec.revenueYoYPct`, computed against
+ * the prior-year comparative printed in the SAME filing (restated, so it
+ * matches what the filer reports; FMP's year-ago row can predate a restatement).
+ *
+ * `sec` (US domestic filers, `null` otherwise — Korean stocks, foreign issuers,
+ * no CIK, SEC unreachable, or no matching quarter) carries the figures AS FILED
+ * from the SEC XBRL API: `epsDiluted`/`revenue` can differ from the FMP fields
+ * beside it (e.g. TPR FY2026-Q3 EPS 1.65 filed vs 1.66 at FMP) and the SEC
+ * ones are authoritative. Fiscal Q4 `revenue` is derived FY − (Q1+Q2+Q3) and
+ * its `epsDiluted` is `null` (the 10-K has no 3-month EPS and EPS does not add).
  */
 export interface RecentQuarterView {
     /** Fiscal period end date (`YYYY-MM-DD`). */
@@ -46,7 +59,7 @@ export interface RecentQuarterView {
     /** `Q1`…`Q4` as the filer labels its fiscal quarters. */
     period: string;
     /** Filing form implied by `period` (see above); `null` when the label is not a fiscal quarter. */
-    form: '10-Q' | '10-K' | null;
+    form: SecForm | null;
     /** SEC filing date of the row's report, when the provider gives one. */
     filingDate: string | null;
     epsDiluted: number | null;
@@ -55,7 +68,12 @@ export interface RecentQuarterView {
     revenueYoYPct: number | null;
     /** The currency the amounts are reported in (an ADR's is not its USD listing). */
     currency: string | null;
+    /** As-filed SEC figures (see above); `null` when unavailable. */
+    sec: SecQuarterView | null;
 }
+
+/** The per-quarter SEC figures the model reads: a {@link SecQuarter} minus the period end its row already carries. */
+export type SecQuarterView = Omit<SecQuarter, 'periodEnd'>;
 
 /**
  * The FMP adapter adds `filingDate` to its rows (`IncomeStatementRowWithFiling`),
@@ -71,12 +89,20 @@ function filingDateOf(row: IncomeStatementRow): string | null {
         : null;
 }
 
+/** Korean stocks and non-USD reporters (ADRs file 20-F/6-K) have no 10-Q/10-K. */
+function isUsdDomesticFiler(
+    row: IncomeStatementRow,
+    isKrEquity: boolean
+): boolean {
+    const currency = row.reportedCurrency ?? null;
+    return !isKrEquity && (currency === null || currency === 'USD');
+}
+
 function filingFormOf(
     row: IncomeStatementRow,
     isKrEquity: boolean
 ): RecentQuarterView['form'] {
-    const currency = row.reportedCurrency ?? null;
-    if (isKrEquity || (currency !== null && currency !== 'USD')) return null;
+    if (!isUsdDomesticFiler(row, isKrEquity)) return null;
     const period = row.period;
     if (period === 'Q4') return '10-K';
     return period === 'Q1' || period === 'Q2' || period === 'Q3'
@@ -104,25 +130,44 @@ function yearAgoRevenue(
  */
 export function recentQuarterRows(
     rows: readonly IncomeStatementRow[],
-    isKrEquity = false
+    isKrEquity = false,
+    secQuarters: readonly SecQuarter[] | null = null
 ): RecentQuarterView[] {
     return rows
         .filter(row => row.date !== '')
         .toSorted((a, b) => b.date.localeCompare(a.date))
         .slice(0, RECENT_QUARTERS_COUNT)
-        .map(row => ({
-            periodEnd: row.date,
-            fiscalYear: row.fiscalYear,
-            period: row.period,
-            form: filingFormOf(row, isKrEquity),
-            filingDate: filingDateOf(row),
-            epsDiluted: row.epsDiluted,
-            revenue: row.revenue,
-            revenueYoYPct: roundPct2(
-                pctVs(row.revenue, yearAgoRevenue(rows, row))
-            ),
-            currency: row.reportedCurrency ?? null,
-        }));
+        .map(row => {
+            const match =
+                secQuarters !== null && isUsdDomesticFiler(row, isKrEquity)
+                    ? findSecQuarter(secQuarters, row.date)
+                    : null;
+            const sec: SecQuarterView | null =
+                match === null
+                    ? null
+                    : {
+                          form: match.form,
+                          epsDiluted: match.epsDiluted,
+                          revenue: match.revenue,
+                          revenueYoYPct: match.revenueYoYPct,
+                          filed: match.filed,
+                          accn: match.accn,
+                      };
+            return {
+                periodEnd: row.date,
+                fiscalYear: row.fiscalYear,
+                period: row.period,
+                form: sec?.form ?? filingFormOf(row, isKrEquity),
+                filingDate: filingDateOf(row),
+                epsDiluted: row.epsDiluted,
+                revenue: row.revenue,
+                revenueYoYPct:
+                    sec?.revenueYoYPct ??
+                    roundPct2(pctVs(row.revenue, yearAgoRevenue(rows, row))),
+                currency: row.reportedCurrency ?? null,
+                sec,
+            };
+        });
 }
 
 /** One past earnings report and how the stock moved across it (dev-2026-10-22 A12). */

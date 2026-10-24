@@ -53,6 +53,7 @@ import {
 import { loadIndexMemberships } from './indexMembership';
 import { fetchKrAnnualDividend } from './krAnnualDividend';
 import { krListedBasis } from './krListedBasis';
+import { loadSecQuarters } from './loadSecQuarters';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { staleKrListingDate } from './freshness';
@@ -293,6 +294,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         dividendSourceR,
         membershipsR,
         krAnnualDividendR,
+        secQuartersR,
     ] = await Promise.allSettled([
         provider.getProfile(symbol),
         provider.getKeyMetricsTtm(symbol),
@@ -346,6 +348,12 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         }),
         // KR only: the official DART annual-report DPS (never throws; cached per corp+FY).
         isKr ? fetchKrAnnualDividend(symbol) : Promise.resolve(null),
+        // As-filed quarterly EPS/revenue from the SEC XBRL API, US filers only
+        // (a Korean stock has no CIK). Enrichment: a failure is logged below and
+        // `recentQuarters` keeps the FMP figures.
+        isKr
+            ? Promise.resolve(null)
+            : Promise.resolve().then(() => loadSecQuarters(symbol, db)),
     ]);
 
     const profile = settledOrNull(profileR);
@@ -382,9 +390,16 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             error: 'stale_listing',
             lastTradeDate,
         };
+    if (secQuartersR.status === 'rejected')
+        logToolDegrade(
+            'get_fundamentals',
+            'sec xbrl quarters',
+            secQuartersR.reason
+        );
     const quarters = recentQuarterRows(
         settledOrNull(quartersR) ?? [],
-        isKrEquitySymbol(symbol)
+        isKrEquitySymbol(symbol),
+        settledOrNull(secQuartersR)
     );
     // A failed lookup is `null` (rejections are settled to `null` above);
     // `price > 0` also rejects bad upstream data (a zero or negative price),

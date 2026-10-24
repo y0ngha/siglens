@@ -7,6 +7,7 @@ import {
     recentQuarterRows,
 } from '@/app/api/ai/chat/tools/earningsHistory';
 import { pctVs } from '@/app/api/ai/chat/tools/percent';
+import type { SecQuarter } from '@/app/api/ai/chat/tools/secQuarters';
 
 const bar = (date: string, close: number) => ({
     time: Date.parse(`${date}T00:00:00Z`) / 1000,
@@ -127,6 +128,7 @@ describe('recentQuarterRows', () => {
             revenue: 1_000,
             revenueYoYPct: 0, // 2025 Q4 row exists with the same revenue
             currency: 'USD',
+            sec: null,
         });
         expect(r.map(q => [q.periodEnd, q.filingDate])).toEqual([
             ['2026-07-03', '2026-08-01'],
@@ -211,6 +213,116 @@ describe('recentQuarterRows', () => {
     it('carries the reporting currency (an ADR reports in its home currency)', () => {
         const twd = row('2026-06-30', 'Q2', { reportedCurrency: 'TWD' });
         expect(recentQuarterRows([twd])[0]!.currency).toBe('TWD');
+    });
+
+    describe('with SEC XBRL quarters', () => {
+        const secQuarter = (
+            overrides: Partial<SecQuarter> = {}
+        ): SecQuarter => ({
+            periodEnd: '2026-03-28',
+            form: '10-Q',
+            accn: '0001116132-26-000011',
+            filed: '2026-05-07',
+            epsDiluted: 1.65,
+            revenue: 1_920_600_000,
+            revenueYoYPct: 21.2,
+            ...overrides,
+        });
+        // FMP says 1.66 and compares with a different year-ago row.
+        const fmpRow = (extra: Partial<IncomeStatementRow> = {}) =>
+            row('2026-03-28', 'Q3', {
+                epsDiluted: 1.66,
+                revenue: 1_900_000_000,
+                ...extra,
+            });
+
+        it('adds the as-filed figures, keeps the FMP fields and takes the actual form', () => {
+            const [q] = recentQuarterRows([fmpRow()], false, [secQuarter()]);
+            expect(q).toMatchObject({
+                form: '10-Q',
+                epsDiluted: 1.66,
+                revenue: 1_900_000_000,
+                sec: {
+                    form: '10-Q',
+                    epsDiluted: 1.65,
+                    revenue: 1_920_600_000,
+                    revenueYoYPct: 21.2,
+                    filed: '2026-05-07',
+                    accn: '0001116132-26-000011',
+                },
+            });
+        });
+
+        it('the form comes from the filing, not the label (a 10-K/A for a Q4 label, a 10-Q/A for Q2)', () => {
+            const amended = secQuarter({ form: '10-K/A' });
+            expect(
+                recentQuarterRows([fmpRow({ period: 'Q4' })], false, [
+                    amended,
+                ])[0]!.form
+            ).toBe('10-K/A');
+            expect(
+                recentQuarterRows([fmpRow({ period: 'Q2' })], false, [
+                    secQuarter({ form: '10-Q/A' }),
+                ])[0]!.form
+            ).toBe('10-Q/A');
+        });
+
+        it('revenueYoYPct prefers the SEC-derived value over the row-based one', () => {
+            const rows = [
+                fmpRow({ revenue: 1_000 }),
+                row('2025-03-29', 'Q3', { revenue: 2_000 }), // would give -50
+            ];
+            expect(recentQuarterRows(rows)[0]!.revenueYoYPct).toBe(-50);
+            expect(
+                recentQuarterRows(rows, false, [secQuarter()])[0]!.revenueYoYPct
+            ).toBe(21.2);
+        });
+
+        it('a null SEC YoY falls back to the row-based value', () => {
+            const rows = [
+                fmpRow({ revenue: 1_500 }),
+                row('2025-03-29', 'Q3', { revenue: 1_000 }),
+            ];
+            const [q] = recentQuarterRows(rows, false, [
+                secQuarter({ revenueYoYPct: null }),
+            ]);
+            expect(q!.revenueYoYPct).toBe(50);
+            expect(q!.sec?.revenueYoYPct).toBeNull();
+        });
+
+        it('a quarter with no matching SEC period keeps the label-derived form and sec null', () => {
+            const [q] = recentQuarterRows([fmpRow()], false, [
+                secQuarter({ periodEnd: '2025-12-27' }),
+            ]);
+            expect(q).toMatchObject({ form: '10-Q', sec: null });
+        });
+
+        it('Korean stocks are unchanged even when SEC quarters are passed', () => {
+            const [q] = recentQuarterRows([fmpRow()], true, [secQuarter()]);
+            expect(q).toMatchObject({
+                form: null,
+                sec: null,
+                revenueYoYPct: null,
+            });
+        });
+
+        it('foreign (non-USD) reporters are unchanged', () => {
+            const [q] = recentQuarterRows(
+                [fmpRow({ reportedCurrency: 'TWD' })],
+                false,
+                [secQuarter()]
+            );
+            expect(q).toMatchObject({ form: null, sec: null });
+        });
+
+        it('null SEC quarters (no CIK, SEC down) leave the FMP-based view', () => {
+            expect(recentQuarterRows([fmpRow()], false, null)[0]).toMatchObject(
+                {
+                    form: '10-Q',
+                    sec: null,
+                }
+            );
+        });
     });
 
     it('drops rows without a period end date', () => {
