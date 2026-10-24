@@ -2509,21 +2509,81 @@
     },
     {
         "file": "src/shared/config/korean-search-aliases.ts",
-        "line": 24,
+        "line": 27,
         "reason": "search-alias-data",
         "text": "실에스큐"
     },
     {
         "file": "src/shared/config/korean-search-aliases.ts",
-        "line": 26,
+        "line": 29,
         "reason": "search-alias-data",
         "text": "쉐브론"
     },
     {
         "file": "src/shared/config/korean-search-aliases.ts",
-        "line": 28,
+        "line": 31,
         "reason": "search-alias-data",
         "text": "엑손모빌"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 38,
+        "reason": "search-alias-data",
+        "text": "엔솔"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 38,
+        "reason": "search-alias-data",
+        "text": "엘지엔솔"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 39,
+        "reason": "search-alias-data",
+        "text": "삼전"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 40,
+        "reason": "search-alias-data",
+        "text": "하닉"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 41,
+        "reason": "search-alias-data",
+        "text": "현차"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 42,
+        "reason": "search-alias-data",
+        "text": "포홀"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 43,
+        "reason": "search-alias-data",
+        "text": "셀트"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 44,
+        "reason": "search-alias-data",
+        "text": "카뱅"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 45,
+        "reason": "search-alias-data",
+        "text": "엘전"
+    },
+    {
+        "file": "src/shared/config/korean-search-aliases.ts",
+        "line": 46,
+        "reason": "search-alias-data",
+        "text": "삼바"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
