@@ -2,7 +2,6 @@ import { afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-    DB_TUNNEL_PORT,
     assertRemoteWriteAllowed,
     describeTarget,
     formatTarget,
