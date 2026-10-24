@@ -16,6 +16,7 @@ const {
     findListedShares,
     fetchDividendSource,
     loadIndexMemberships,
+    fetchKrAnnualDividend,
 } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
@@ -30,6 +31,7 @@ const {
     findListedShares: vi.fn(),
     fetchDividendSource: vi.fn(),
     loadIndexMemberships: vi.fn(),
+    fetchKrAnnualDividend: vi.fn(),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
@@ -77,6 +79,9 @@ vi.mock('@/app/api/ai/chat/tools/dividends', async importOriginal => ({
         typeof import('@/app/api/ai/chat/tools/dividends')
     >()),
     fetchDividendSource,
+}));
+vi.mock('@/app/api/ai/chat/tools/krAnnualDividend', () => ({
+    fetchKrAnnualDividend,
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
@@ -178,6 +183,7 @@ describe('getFundamentalsTool', () => {
         findListedShares.mockResolvedValue(null);
         fetchDividendSource.mockResolvedValue(null);
         loadIndexMemberships.mockResolvedValue(null);
+        fetchKrAnnualDividend.mockResolvedValue(null);
         sessionSpecFor.mockReturnValue({
             kind: 'scheduled',
             timeZone: 'America/New_York',
@@ -1198,6 +1204,7 @@ describe('getFundamentalsTool dividends wiring', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         fetchDividendSource.mockResolvedValue(null);
+        fetchKrAnnualDividend.mockResolvedValue(null);
         isTabAllowed.mockResolvedValue(true);
         resolveMarketProfile.mockResolvedValue('us-equity');
         getNextEarningsSchedule.mockResolvedValue(null);
@@ -1225,6 +1232,7 @@ describe('getFundamentalsTool dividends wiring', () => {
             dividends: unknown;
         };
         expect(fetchDividendSource).toHaveBeenCalledWith('AAPL', false);
+        expect(fetchKrAnnualDividend).not.toHaveBeenCalled();
         expect(r.dividends).toMatchObject({
             latestExDate: '2026-08-10',
             currency: 'USD',
@@ -1254,6 +1262,47 @@ describe('getFundamentalsTool dividends wiring', () => {
         )) as { dividends: unknown };
         expect(fetchDividendSource).toHaveBeenCalledWith('005930.KS', true);
         expect(r.dividends).toBeNull();
+    });
+
+    it('한국 심볼: DART 확정 배당을 현재가로 환산해 annualReported에 붙인다', async () => {
+        resolveMarketProfile.mockResolvedValue('kr-equity');
+        getQuote.mockResolvedValue({
+            price: 189400,
+            changesPercentage: 0,
+            timestamp: Math.floor(Date.now() / 1000),
+        });
+        sessionSpecFor.mockReturnValue({
+            kind: 'scheduled',
+            timeZone: 'Asia/Seoul',
+            openMinute: 540,
+            closeMinute: 930,
+            weekendDays: [0, 6],
+        });
+        fetchDividendSource.mockResolvedValue({
+            kind: 'yahoo',
+            data: {
+                history: [{ exDate: '2025-12-29', amount: 3000 }],
+                summary: null,
+            },
+        });
+        fetchKrAnnualDividend.mockResolvedValue({
+            fiscalYear: 2025,
+            dpsCommon: 6000,
+            dartYieldPct: 4.1,
+        });
+        const r = (await getFundamentalsTool(
+            { symbol: '033780.KS' },
+            ctx,
+            rt
+        )) as { dividends: { annualReported?: unknown } };
+        expect(fetchKrAnnualDividend).toHaveBeenCalledWith('033780.KS');
+        expect(r.dividends.annualReported).toEqual({
+            fiscalYear: 2025,
+            dpsCommon: 6000,
+            dartYieldPct: 4.1,
+            yieldOnLastClosePct: 3.17,
+            source: 'DART',
+        });
     });
 });
 

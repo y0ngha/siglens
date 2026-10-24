@@ -54,6 +54,7 @@ import {
     dartFatalReason,
     fetchCorpCodeZip,
     fetchDisclosureList,
+    fetchAlotMatter,
     fetchExecutiveStock,
     fetchMajorStock,
     isDartEnabled,
@@ -226,6 +227,41 @@ describe('dartClient', () => {
             expect(
                 requestTo('/api/elestock.json').searchParams.get('corp_code')
             ).toBe('00126380');
+        });
+    });
+
+    describe('alotMatter', () => {
+        it('asks alotMatter.json for the corp, fiscal year and annual report code', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                json({
+                    status: '000',
+                    message: '정상',
+                    list: [{ se: '주당 현금배당금(원)', thstrm: '6,000' }],
+                })
+            );
+            expect(await fetchAlotMatter('00244455', 2025)).toEqual([
+                { se: '주당 현금배당금(원)', thstrm: '6,000' },
+            ]);
+            const params = requestTo('/api/alotMatter.json').searchParams;
+            expect(params.get('corp_code')).toBe('00244455');
+            expect(params.get('bsns_year')).toBe('2025');
+            expect(params.get('reprt_code')).toBe('11011');
+        });
+
+        it('returns null (not an empty list) for 013 so the caller can try an earlier year', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                json({ status: '013', message: '조회된 데이타가 없습니다.' })
+            );
+            expect(await fetchAlotMatter('00435297', 2025)).toBeNull();
+        });
+
+        it('throws for other DART statuses', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                json({ status: '100', message: '필드의 부적절한 값' })
+            );
+            await expect(
+                fetchAlotMatter('00244455', 2025)
+            ).rejects.toBeInstanceOf(DartApiError);
         });
     });
 
