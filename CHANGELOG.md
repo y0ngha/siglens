@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.110.0](https://github.com/y0ngha/siglens/compare/v0.109.2...v0.110.0) (2026-10-24)
+
+### Bug Fixes
+
+* [Bug] 한국 경제 캘린더 수집이 FMP 90일 제한으로 과거 이력을 약 60일만 받는다 ([#1097](https://github.com/y0ngha/siglens/issues/1097)) ([5d07a99](https://github.com/y0ngha/siglens/commit/5d07a990e3d4d049df7f323b94df78126eb99cc9))
+* 크립토 검색어의 LIKE 와일드카드를 이스케이프 ([#1109](https://github.com/y0ngha/siglens/issues/1109)) ([892be36](https://github.com/y0ngha/siglens/commit/892be367ef7c9c0caa4a7fe97e8cfc085d418443))
+* dom-fast 레인 파일마다 모듈 캐시 리셋 (vitest 5.0.5 flaky) ([#1096](https://github.com/y0ngha/siglens/issues/1096)) ([80e8d3c](https://github.com/y0ngha/siglens/commit/80e8d3cae86b358e1b461d739600d77f06d12fd1))
+* get_economy 다음 FOMC 누락 수정 — 중요도 선별과 기간 조회 ([#1093](https://github.com/y0ngha/siglens/issues/1093)) ([674096e](https://github.com/y0ngha/siglens/commit/674096efef4b863f3964a6dd5dba242cf6d05d4a))
+* SiglensAI 데이터 정확도 — 한국 시가총액·PER·PBR KRX 상장주식수 기준, 지수 공식 종가, 한국 종목 줄임말 ([#1102](https://github.com/y0ngha/siglens/issues/1102)) ([699762b](https://github.com/y0ngha/siglens/commit/699762b5a5056da4177cb978d384ea6889db40a9))
+
+### Features
+
+* 메인 사이트 카드·헤더를 테두리 없는 표면으로 전환 ([#1092](https://github.com/y0ngha/siglens/issues/1092)) ([7544740](https://github.com/y0ngha/siglens/commit/7544740c34037bafad1eb41e3e273dad288fb81c))
+* 시그렌즈 AI PWA 및 테두리 없는 표면 디자인 ([#1091](https://github.com/y0ngha/siglens/issues/1091)) ([2aeb56c](https://github.com/y0ngha/siglens/commit/2aeb56ce33c830eed386292460312f5b349aad7b))
+* 최근 분기 — SEC XBRL 원문 EPS·매출·제출 양식(sec) ([#1105](https://github.com/y0ngha/siglens/issues/1105)) ([4a5e815](https://github.com/y0ngha/siglens/commit/4a5e8150447b4042b3ab495b04dd9d1006c8cf69))
+* 한국 배당 — DART 사업보고서 연간 배당수익률(annualReported) ([#1104](https://github.com/y0ngha/siglens/issues/1104)) ([e76c383](https://github.com/y0ngha/siglens/commit/e76c383dbdced9a58fbfd14e015b5870a2af6c62))
+* SiglensAI 도구에 계산값 제공 — 연속 상승·하락일, 종가 기준 고저점, Form 144 기간 건수, 10-Q 구분·분기 매출 YoY ([#1100](https://github.com/y0ngha/siglens/issues/1100)) ([778c20b](https://github.com/y0ngha/siglens/commit/778c20bfd7f6b123aa2cd61b051f66d5b3163162))
+* SiglensAI 배당 데이터 제공 (미국 FMP, 한국 Yahoo) ([#1101](https://github.com/y0ngha/siglens/issues/1101)) ([0899b6a](https://github.com/y0ngha/siglens/commit/0899b6ab883ca7926b9d427d07bf362718e2e9df))
+* SiglensAI 지수 편입 여부 — 위키백과 구성종목(S&P 500·나스닥100·다우) ([#1103](https://github.com/y0ngha/siglens/issues/1103)) ([dc93e41](https://github.com/y0ngha/siglens/commit/dc93e416c6cf3de5e833279ddbfa952f5a631017))
+* SiglensAI get_economy 한국 경제 지원 — country 'kr' 실행기 ([#1099](https://github.com/y0ngha/siglens/issues/1099)) ([7e9cab0](https://github.com/y0ngha/siglens/commit/7e9cab0aa5e9a6bfb788951fff77c1c3f791d421)), closes [#1098](https://github.com/y0ngha/siglens/issues/1098)
+
 ## [0.109.2](https://github.com/y0ngha/siglens/compare/v0.109.1...v0.109.2) (2026-10-23)
 
 ### Bug Fixes
