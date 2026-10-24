@@ -16,6 +16,7 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     hasFormingBar,
     lastBarIsForming,
+    lastCompletedDailyClose,
     quantizeBarsDataToLastClosed,
 } from '@/entities/bars/lib/quantizeBars';
 
@@ -562,5 +563,47 @@ describe('lastBarIsForming', () => {
         ).toBe(false);
         mockOpen.mockReturnValue(true);
         expect(lastBarIsForming([], US_EQUITY_SESSION, now)).toBe(false);
+    });
+});
+
+describe('lastCompletedDailyClose', () => {
+    it('마지막 봉이 진행 중이면 직전 봉의 종가와 날짜를 돌려준다', () => {
+        mockOpen.mockReturnValue(true);
+        expect(
+            lastCompletedDailyClose(
+                [bar(1), bar(2), bar(3)],
+                US_EQUITY_SESSION,
+                now
+            )
+        ).toEqual({ close: 2, date: '2026-06-04' });
+    });
+
+    it('정규장이 닫혀 있으면 마지막 봉이 완료 봉이다', () => {
+        mockOpen.mockReturnValue(false);
+        expect(
+            lastCompletedDailyClose(
+                [bar(1), bar(2), bar(3)],
+                US_EQUITY_SESSION,
+                now
+            )
+        ).toEqual({ close: 3, date: '2026-06-05' });
+    });
+
+    it('빈 시리즈, 봉이 하나뿐인 진행 중 시리즈, 0·음수·비유한 종가는 null', () => {
+        mockOpen.mockReturnValue(true);
+        expect(lastCompletedDailyClose([], US_EQUITY_SESSION, now)).toBeNull();
+        expect(
+            lastCompletedDailyClose([bar(3)], US_EQUITY_SESSION, now)
+        ).toBeNull();
+        mockOpen.mockReturnValue(false);
+        for (const close of [0, -1, Number.NaN]) {
+            expect(
+                lastCompletedDailyClose(
+                    [{ ...bar(3), close }],
+                    US_EQUITY_SESSION,
+                    now
+                )
+            ).toBeNull();
+        }
     });
 });
