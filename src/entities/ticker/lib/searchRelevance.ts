@@ -1,5 +1,7 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { KOREAN_SEARCH_ALIASES } from '@/shared/config/korean-search-aliases';
+import { koreanSearchKey } from './koreanSearchKey';
 
 export interface ScorableResult {
     symbol: string;
@@ -82,17 +84,35 @@ export interface RelevanceMatch {
 export function matchSearchRelevance(
     result: ScorableResult,
     query: string,
-    isPopular: boolean
+    isPopular: boolean,
+    queryKey: string = koreanSearchKey(query)
 ): RelevanceMatch {
     const q = query.toLowerCase().trim();
     const fields = [result.koreanName, result.symbol, result.name].filter(
         (f): f is string => Boolean(f)
     );
 
-    const scored = fields.map(field => ({
-        length: field.length,
-        score: fieldScore(field, q),
-    }));
+    // 검색 별칭(`엔솔` → LG에너지솔루션)은 후보를 넓힐 뿐 아니라 순위에도 반영돼야 한다.
+    // 안 그러면 별칭으로 정확히 찾은 종목이 이름 속에 그 글자를 품은 다른 종목(`케이엔솔`,
+    // 부분 일치 40점)에게 밀린다. **정확 일치만** 점수에 넣는다 — 별칭은 줄임말이라 접두·부분
+    // 일치를 인정하면 `삼`이 `삼전`에 걸려 기존 순위가 바뀐다. 매칭 규칙(`koreanSearchKey`)과 같은
+    // 키로 비교하며, 질의 키는 `rankByRelevance`가 질의당 한 번만 만들어 넘긴다.
+    const aliasScored = (KOREAN_SEARCH_ALIASES.get(result.symbol) ?? []).map(
+        alias => ({
+            length: alias.length,
+            score:
+                queryKey !== '' && koreanSearchKey(alias) === queryKey
+                    ? EXACT_MATCH_SCORE
+                    : 0,
+        })
+    );
+    const scored = [
+        ...fields.map(field => ({
+            length: field.length,
+            score: fieldScore(field, q),
+        })),
+        ...aliasScored,
+    ];
     const base = Math.max(FALLBACK_SCORE, ...scored.map(f => f.score));
 
     // 폴백(base가 어느 필드 점수와도 같지 않은 경우)에는 일치한 필드가 없다.
@@ -137,6 +157,7 @@ export function rankByRelevance<T extends ScorableResult>(
     results: T[],
     query: string
 ): T[] {
+    const queryKey = koreanSearchKey(query);
     return results
         .map((result, index) => ({
             result,
@@ -145,7 +166,8 @@ export function rankByRelevance<T extends ScorableResult>(
             ...matchSearchRelevance(
                 result,
                 query,
-                isPopularSymbol(result.symbol)
+                isPopularSymbol(result.symbol),
+                queryKey
             ),
         }))
         .toSorted(
