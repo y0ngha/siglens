@@ -8,6 +8,7 @@ import {
 } from '@/shared/api/wikipedia/indexConstituents';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { ET_TIME_ZONE } from '@/entities/options-chain/lib/etTimeZone';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 
 export interface IndexMemberships {
@@ -25,6 +26,8 @@ const INDEX_CACHE_TTL_SECONDS = SECONDS_PER_DAY;
  * 재시도 폭풍을 만들거나 도구 응답을 늦추지 않게 한다. 짧아서 복구는 곧 반영된다.
  */
 export const INDEX_FAILURE_CACHE_TTL_SECONDS = 90;
+// 캐시 키 버전 규칙: 파서 규칙이나 저장 값 형태(string[] | null)가 바뀌어 목록 의미가 달라지면 같은
+// PR에서 `v1`을 올린다. 안 올리면 옛 형태가 TTL(하루) 동안 남는다.
 const indexCacheKey = (index: IndexId): string =>
     `index-constituents:v1:${index}`;
 
@@ -62,21 +65,24 @@ export async function loadIndexMemberships(
     now: Date = new Date()
 ): Promise<IndexMemberships | null> {
     if (isKrEquitySymbol(symbol)) return null;
-    const loaded = await Promise.all(INDEX_IDS.map(loadConstituents));
-    const lists = loaded.map(list => {
-        if (list === null) throw new Error('index constituents unavailable');
-        return list;
-    });
-    const target = normalizeIndexSymbol(symbol);
-    const [sp500, nasdaq100, dowJones] = lists.map(list =>
-        list.includes(target)
+    const lists = new Map(
+        await Promise.all(
+            INDEX_IDS.map(async id => [id, await loadConstituents(id)] as const)
+        )
     );
+    const target = normalizeIndexSymbol(symbol);
+    // 지수 id로 조회한다(INDEX_IDS 순서에 기대지 않음). 목록 하나라도 없으면 부분 false가 아니라 전체를 던진다.
+    const isMember = (id: IndexId): boolean => {
+        const list = lists.get(id);
+        if (list === null || list === undefined)
+            throw new Error('index constituents unavailable');
+        return list.includes(target);
+    };
     return {
-        sp500: sp500 ?? false,
-        nasdaq100: nasdaq100 ?? false,
-        dowJones: dowJones ?? false,
-        // 미국 시장 기준일(ET). shared에는 공용 ET 상수가 없고 shared→entities import는 금지라 리터럴을 둔다.
-        asOf: zonedDate(now, 'America/New_York'),
+        sp500: isMember('sp500'),
+        nasdaq100: isMember('nasdaq100'),
+        dowJones: isMember('dowJones'),
+        asOf: zonedDate(now, ET_TIME_ZONE),
         source: 'wikipedia',
     };
 }

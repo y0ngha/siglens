@@ -13,7 +13,9 @@ import { readBoundedBody } from '@/shared/lib/readBoundedBody';
  * (표가 늘거나 순서가 바뀌어도 맞게). 구조가 바뀌어 표를 못 찾거나 개수가 범위를 벗어나면 던진다 —
  * 호출부가 그 값을 캐시하지 않는다.
  *
- * 재확인: `curl -s -A 'SiglensBot/1.0 (https://siglens.io)' https://en.wikipedia.org/wiki/List_of_NASDAQ-100_companies | grep -c '<tr'`
+ * 재확인(행 수 = 종목 수 + 머리글 1행): `curl -s -A 'SiglensBot/1.0 (https://siglens.io)' <url> | grep -c '<tr'`
+ * (2026-10-24 실측: S&P 500 503종목, Nasdaq-100 101종목, Dow 30종목). 표가 여럿인 문서는 이 수가 더 크게
+ * 나오므로 정확한 종목 수는 `parseConstituentSymbols`의 결과 길이로 본다. 허용 범위는 이 실측에 여유를 둔 값이다.
  */
 
 export const INDEX_IDS = ['sp500', 'nasdaq100', 'dowJones'] as const;
@@ -56,7 +58,10 @@ export const WIKIPEDIA_USER_AGENT =
     'SiglensBot/1.0 (https://siglens.io; contact via site)';
 /** 선택적 보강용이라 도구의 임계 경로를 늘리지 않게 짧게 둔다. */
 export const WIKIPEDIA_REQUEST_TIMEOUT_MS = 3_000;
-/** 가장 큰 문서(S&P 500)가 2026-10-24 실측 91,089바이트(약 89KB)다. 상한 2MiB는 그 약 23배다. */
+/**
+ * 가장 큰 문서(S&P 500)가 2026-10-24 실측 91,089바이트(약 89KB)다. 상한 2MiB는 그 약 23배다.
+ * 재측정: `curl -s -A 'SiglensBot/1.0 (https://siglens.io)' https://en.wikipedia.org/wiki/List_of_S%26P_500_companies | wc -c`
+ */
 export const WIKIPEDIA_MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 export class IndexConstituentsError extends Error {
