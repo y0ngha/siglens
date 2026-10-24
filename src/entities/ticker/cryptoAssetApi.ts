@@ -1,5 +1,6 @@
 import { desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { escapeLikePattern } from '@/shared/db/likePattern';
 import { cryptoAssets } from '@/shared/db/schema';
 import type {
     CryptoAssetRecord,
@@ -68,8 +69,10 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
     }
 
     async search(query: string, limit: number): Promise<CryptoAssetRecord[]> {
-        const like = `%${query}%`;
-        const exactOrPrefix = `${query}%`;
+        // 검색어의 `%`·`_`가 와일드카드로 해석되지 않게 한다(`_` 한 글자가 전 행에 매칭됐다).
+        const literal = escapeLikePattern(query);
+        const like = `%${literal}%`;
+        const exactOrPrefix = `${literal}%`;
         return this.db
             .select()
             .from(cryptoAssets)

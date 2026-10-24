@@ -7,6 +7,8 @@ import {
     DrizzleCryptoAssetRepository,
     fetchCryptoAssetList,
 } from '@/entities/ticker/cryptoAssetApi';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import type { CryptoAssetRecord, SiglensDatabase } from '@/shared/db/types';
 
@@ -137,6 +139,25 @@ describe('DrizzleCryptoAssetRepository', () => {
     });
 
     describe('search', () => {
+        it('검색어의 와일드카드를 글자 그대로 넘긴다 (where)', async () => {
+            const { db, where } = makeCryptoSearchDb([]);
+            await new DrizzleCryptoAssetRepository(db).search('_', 10);
+            const { params } = new PgDialect().sqlToQuery(
+                where.mock.calls[0][0] as SQL
+            );
+            expect(params).toEqual(['%\\_%', '%\\_%', '%\\_%']);
+        });
+
+        it('검색어의 와일드카드를 글자 그대로 넘긴다 (정렬 CASE의 prefix)', async () => {
+            const { db, orderBy } = makeCryptoSearchDb([]);
+            await new DrizzleCryptoAssetRepository(db).search('5%', 10);
+            const { params } = new PgDialect().sqlToQuery(
+                orderBy.mock.calls[0][0] as SQL
+            );
+            expect(params).toContain('5\\%%');
+            expect(params).not.toContain('5%%');
+        });
+
         it('매칭되는 row 배열을 반환한다', async () => {
             const { db } = makeCryptoSearchDb([btcRecord]);
             const repo = new DrizzleCryptoAssetRepository(db);
