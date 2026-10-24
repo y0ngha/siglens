@@ -1,8 +1,37 @@
 import 'server-only';
+import { getYahooClient } from './createYahooClient';
 import { getYahooFundamentals } from './yahooFundamentalSource';
 import { sym } from '@/shared/api/fmp/symKey';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
+import {
+    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+    MS_PER_DAY,
+} from '@/shared/config/time';
+
+const yahooFinance = getYahooClient();
+
+/**
+ * 배당 이력 조회 창. 트레일링 12개월 + "직전 배당" 탐색에 충분한 3년이다. 월봉(`1mo`)으로 받는 이유:
+ * 배당 이벤트 날짜는 interval과 무관한데(실측 032640.KS: 일봉·월봉 모두 같은 ex-date) 일봉은 3년치
+ * 시세 행을 불필요하게 싣는다.
+ */
+const HISTORY_LOOKBACK_DAYS = 3 * 366;
+
+/** yahoo chart `events=div` 한 건. 날짜는 배당락일(`YYYY-MM-DD`)이고 금액은 상장 통화(KRW) 주당이다. */
+export interface YahooDividendEvent {
+    exDate: string;
+    amount: number;
+}
+
+/**
+ * 한국 종목 배당 원자료. `history`가 1순위(트레일링 합을 직접 계산할 수 있다)이고, `summary`는
+ * 이력을 못 받았을 때만 쓰는 2순위다 — 실측상 KRX 종목은 `summaryDetail`의 trailingAnnual* 필드가
+ * 비어 있는 경우가 많다(032640.KS·088980.KS). `history: null`은 조회 실패, `[]`는 이벤트 없음이다.
+ */
+export interface YahooDividendData {
+    history: YahooDividendEvent[] | null;
+    summary: YahooDividendSummary | null;
+}
 
 /**
  * yahoo `summaryDetail`/`defaultKeyStatistics`에서 꺼낸 배당 필드. 수익률은 yahoo 원값(소수, 0.018 = 1.8%)이다.
@@ -42,41 +71,105 @@ function isoDateOrNull(value: unknown): string | null {
 }
 
 /**
- * 한국 종목의 배당 요약. `null`은 yahoo가 요약 자체를 못 준 경우(장애·미지원)이고, 요약은 왔지만
- * 배당 필드가 전부 비어 있으면 모든 필드가 null인 객체다 — 호출부가 "모름"으로 읽는다.
- * 키 `dividends:yahoo:<SYM>` — 24h. `null`(장애)은 캐시하지 않도록 throw로 바꿔 `getOrSetCache`의
- * 쓰기를 건너뛴다.
+ * chart `events=div`로 배당 이력을 읽는다(최신 배당락일 순). 실패는 삼키고 `null`(이력 모름)이다 —
+ * 호출부가 `summaryDetail`로 degrade하고, 이 결과는 캐시하지 않는다.
  */
-export async function getYahooDividendSummary(
+async function fetchDividendHistory(
     symbol: string
-): Promise<YahooDividendSummary | null> {
+): Promise<YahooDividendEvent[] | null> {
+    try {
+        const result = await yahooFinance.chart(
+            symbol,
+            {
+                period1: new Date(
+                    Date.now() - HISTORY_LOOKBACK_DAYS * MS_PER_DAY
+                ),
+                period2: new Date(),
+                interval: '1mo',
+                events: 'div',
+            },
+            { validateResult: false }
+        );
+        // Safe cast: 라이브러리 반환 유니온이 interval마다 달라 `events`가 구조적으로 좁혀지지 않는다.
+        // 모든 필드를 unknown으로 받아 아래에서 검사하므로 형상이 달라도 런타임에서 흡수된다.
+        const raw = (
+            result as unknown as {
+                events?: { dividends?: { date?: unknown; amount?: unknown }[] };
+            }
+        ).events?.dividends;
+        if (raw === undefined) return [];
+        const events: YahooDividendEvent[] = [];
+        for (const item of raw) {
+            const exDate = isoDateOrNull(item?.date);
+            const amount = numberOrNull(item?.amount);
+            if (exDate !== null && amount !== null)
+                events.push({ exDate, amount });
+        }
+        return events.sort((a, b) => b.exDate.localeCompare(a.exDate));
+    } catch (error) {
+        console.warn('[yahooDividend] history failed', symbol, error);
+        return null;
+    }
+}
+
+function summaryFrom(
+    summary: NonNullable<
+        Awaited<ReturnType<typeof getYahooFundamentals>>['summary']
+    >
+): YahooDividendSummary {
+    const detail = summary.summaryDetail;
+    const stats = summary.defaultKeyStatistics;
+    return {
+        dividendRate: numberOrNull(detail?.dividendRate),
+        trailingAnnualDividendRate: numberOrNull(
+            detail?.trailingAnnualDividendRate
+        ),
+        dividendYield: numberOrNull(detail?.dividendYield),
+        trailingAnnualDividendYield: numberOrNull(
+            detail?.trailingAnnualDividendYield
+        ),
+        exDividendDate: isoDateOrNull(detail?.exDividendDate),
+        lastDividendValue: numberOrNull(stats?.lastDividendValue),
+        lastDividendDate: isoDateOrNull(stats?.lastDividendDate),
+    };
+}
+
+/**
+ * 한국 종목의 배당 원자료(이력 + 요약). 둘 다 못 얻으면 `null`(모름)이다.
+ *
+ * 키 `dividends:yahoo:v2:<SYM>` — 24h. `v2`는 값 형상이 요약 단독에서 `{history, summary}`로 바뀐 표시다
+ * (옛 키를 새 형상으로 읽는 것을 막는다).
+ *
+ * 캐시 규칙(`shouldCache`): **이력이 확정됐을 때만**(`history !== null`) 캐시한다. 이력 조회가 실패해 요약만
+ * 있는 결과는 캐시하지 않아, 일시 장애가 하루 동안 "트레일링 모름"으로 굳지 않는다. 반대로 이력이 확정(`[]`
+ * 포함)이면 요약 조회가 실패해 `summary: null`이어도 그대로 24h 캐시한다 — 그 경우 이력이 비어 있으면
+ * "모름"이 하루 유지된다. 이력도 요약도 못 얻으면 fetcher가 throw해 캐시 쓰기를 건너뛴다.
+ */
+export async function getYahooDividendData(
+    symbol: string
+): Promise<YahooDividendData | null> {
     const upper = sym(symbol);
     try {
-        return await getOrSetCache(
-            `dividends:yahoo:${upper}`,
+        return await getOrSetCache<YahooDividendData>(
+            `dividends:yahoo:v2:${upper}`,
             FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
             async () => {
-                const { summary } = await getYahooFundamentals(upper);
-                if (summary === null) throw new Error('yahoo summary missing');
-                const detail = summary.summaryDetail;
-                const stats = summary.defaultKeyStatistics;
-                return {
-                    dividendRate: numberOrNull(detail?.dividendRate),
-                    trailingAnnualDividendRate: numberOrNull(
-                        detail?.trailingAnnualDividendRate
-                    ),
-                    dividendYield: numberOrNull(detail?.dividendYield),
-                    trailingAnnualDividendYield: numberOrNull(
-                        detail?.trailingAnnualDividendYield
-                    ),
-                    exDividendDate: isoDateOrNull(detail?.exDividendDate),
-                    lastDividendValue: numberOrNull(stats?.lastDividendValue),
-                    lastDividendDate: isoDateOrNull(stats?.lastDividendDate),
-                } satisfies YahooDividendSummary;
-            }
+                const [history, fundamentals] = await Promise.all([
+                    fetchDividendHistory(upper),
+                    getYahooFundamentals(upper),
+                ]);
+                const summary =
+                    fundamentals.summary === null
+                        ? null
+                        : summaryFrom(fundamentals.summary);
+                if (history === null && summary === null)
+                    throw new Error('yahoo dividend data missing');
+                return { history, summary };
+            },
+            value => value.history !== null
         );
     } catch (error) {
-        console.warn('[yahooDividend] summary unavailable', upper, error);
+        console.warn('[yahooDividend] data unavailable', upper, error);
         return null;
     }
 }

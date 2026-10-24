@@ -4,7 +4,8 @@ import {
     type FmpDividendRow,
 } from '@/shared/api/fmp/dividendsClient';
 import {
-    getYahooDividendSummary,
+    getYahooDividendData,
+    type YahooDividendData,
     type YahooDividendSummary,
 } from '@/shared/api/yahoo/yahooDividendSource';
 import { MS_PER_DAY } from '@/shared/config/time';
@@ -35,6 +36,7 @@ export interface DividendsView {
 
 export const FMP_DIVIDENDS_SOURCE = 'FMP dividends history';
 export const YAHOO_DIVIDENDS_SOURCE = 'Yahoo Finance summaryDetail';
+export const YAHOO_HISTORY_SOURCE = 'Yahoo Finance dividend history';
 
 const TRAILING_WINDOW_DAYS = 365;
 const AMOUNT_DECIMALS = 1e4;
@@ -61,7 +63,8 @@ export function buildFmpDividends(
     price: number | null,
     currency: string,
     now: Date,
-    timeZone: string
+    timeZone: string,
+    source: string = FMP_DIVIDENDS_SOURCE
 ): DividendsView {
     const today = zonedDate(now, timeZone);
     const windowStart = zonedDate(
@@ -87,19 +90,51 @@ export function buildFmpDividends(
         payDate: latest?.payDate ?? null,
         trailing12mAmount: trailing,
         trailingYieldPct: yieldPct(trailing, price),
-        source: FMP_DIVIDENDS_SOURCE,
+        source,
     };
 }
 
 /**
- * 한국: yahoo `summaryDetail`의 **트레일링** 필드로만 만든다. 전방 `dividendRate`/`dividendYield`는
+ * 한국: 배당 **이력**(chart `events=div`)이 있으면 FMP와 같은 방식으로 트레일링 365일 합·직전 배당·
+ * 수익률을 직접 계산한다(`summaryDetail`의 trailingAnnual* 필드는 KRX 종목에서 자주 비어 있어, 한 번의
+ * 지급만 보고 수익률을 추정하던 오답의 원인이었다). 이력이 없거나 비어 있으면 `buildYahooSummaryDividends`로
+ * 내려간다.
+ */
+export function buildYahooDividends(
+    data: YahooDividendData,
+    price: number | null,
+    currency: string,
+    now: Date,
+    timeZone: string
+): DividendsView | null {
+    if (data.history !== null && data.history.length > 0)
+        return buildFmpDividends(
+            data.history.map(event => ({ ...event, payDate: null })),
+            price,
+            currency,
+            now,
+            timeZone,
+            YAHOO_HISTORY_SOURCE
+        );
+    return data.summary === null
+        ? null
+        : buildYahooSummaryDividends(
+              data.summary,
+              price,
+              currency,
+              zonedDate(now, timeZone)
+          );
+}
+
+/**
+ * 이력을 못 받았을 때의 2순위: yahoo `summaryDetail`의 **트레일링** 필드로만 만든다. 전방 `dividendRate`/`dividendYield`는
  * 올해 예상치라 "최근 12개월" 필드에 섞으면 거짓이 되므로 쓰지 않는다(배당 지급 신호로만 본다).
  * 직전 1회 금액은 `lastDividendValue`가 있을 때만 채우고, 지급일은 yahoo가 주지 않아 항상 null이다.
  * `latestExDate`는 `today`(KST) 이하인 날짜만 쓴다 — 미래 배당락일은 "직전"이 아니다.
  * 모든 배당 필드가 비어 있으면 무배당과 구분할 수 없으므로 `null`(모름)이다 —
  * `trailingAnnualDividendRate`가 명시적으로 0이고 양수 배당 신호가 없을 때만 확인된 무배당이다.
  */
-export function buildYahooDividends(
+export function buildYahooSummaryDividends(
     summary: YahooDividendSummary,
     price: number | null,
     currency: string,
@@ -150,7 +185,7 @@ export function buildYahooDividends(
 /** 공급자에서 읽은 원자료. 가격·날짜에 의존하는 계산은 `buildDividends`가 나중에 한다. */
 export type DividendSource =
     | { kind: 'fmp'; rows: FmpDividendRow[] }
-    | { kind: 'yahoo'; summary: YahooDividendSummary };
+    | { kind: 'yahoo'; data: YahooDividendData };
 
 /**
  * 시장에 맞는 공급자에서 원자료만 읽는다(가격이 필요 없어 도구의 병렬 fan-out에 넣을 수 있다).
@@ -162,8 +197,8 @@ export async function fetchDividendSource(
 ): Promise<DividendSource | null> {
     try {
         if (isKr) {
-            const summary = await getYahooDividendSummary(symbol);
-            return summary === null ? null : { kind: 'yahoo', summary };
+            const data = await getYahooDividendData(symbol);
+            return data === null ? null : { kind: 'yahoo', data };
         }
         return { kind: 'fmp', rows: await getFmpDividendHistory(symbol) };
     } catch (error) {
@@ -187,10 +222,5 @@ export function buildDividends(
     if (source === null) return null;
     return source.kind === 'fmp'
         ? buildFmpDividends(source.rows, price, currency, now, timeZone)
-        : buildYahooDividends(
-              source.summary,
-              price,
-              currency,
-              zonedDate(now, timeZone)
-          );
+        : buildYahooDividends(source.data, price, currency, now, timeZone);
 }

@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getFmpDividendHistory, getYahooDividendSummary } = vi.hoisted(() => ({
+const { getFmpDividendHistory, getYahooDividendData } = vi.hoisted(() => ({
     getFmpDividendHistory: vi.fn(),
-    getYahooDividendSummary: vi.fn(),
+    getYahooDividendData: vi.fn(),
 }));
 vi.mock('@/shared/api/fmp/dividendsClient', () => ({ getFmpDividendHistory }));
 vi.mock('@/shared/api/yahoo/yahooDividendSource', () => ({
-    getYahooDividendSummary,
+    getYahooDividendData,
 }));
 
 import {
     buildDividends,
     buildFmpDividends,
     buildYahooDividends,
+    buildYahooSummaryDividends,
     fetchDividendSource,
 } from '@/app/api/ai/chat/tools/dividends';
 import type { YahooDividendSummary } from '@/shared/api/yahoo/yahooDividendSource';
@@ -133,9 +134,9 @@ const summary = (
     ...over,
 });
 
-describe('buildYahooDividends', () => {
+describe('buildYahooSummaryDividends', () => {
     it('트레일링 연 배당금과 현재가로 수익률을 계산하고 직전 1회 금액이 없으면 null이다', () => {
-        const r = buildYahooDividends(
+        const r = buildYahooSummaryDividends(
             summary({
                 trailingAnnualDividendRate: 1444,
                 exDividendDate: '2026-09-29',
@@ -156,7 +157,7 @@ describe('buildYahooDividends', () => {
     });
 
     it('현재가가 없으면 트레일링 수익률(소수)을 퍼센트로 바꿔 쓴다', () => {
-        const r = buildYahooDividends(
+        const r = buildYahooSummaryDividends(
             summary({
                 trailingAnnualDividendRate: 500,
                 trailingAnnualDividendYield: 0.0182,
@@ -170,7 +171,7 @@ describe('buildYahooDividends', () => {
     });
 
     it('전방 dividendRate/dividendYield는 트레일링 필드에 쓰지 않는다', () => {
-        const r = buildYahooDividends(
+        const r = buildYahooSummaryDividends(
             summary({ dividendRate: 500, dividendYield: 0.0182 }),
             1000,
             'KRW',
@@ -182,7 +183,7 @@ describe('buildYahooDividends', () => {
     });
 
     it('미래 배당락일은 직전 배당락일로 보고하지 않는다', () => {
-        const future = buildYahooDividends(
+        const future = buildYahooSummaryDividends(
             summary({
                 trailingAnnualDividendRate: 100,
                 exDividendDate: '2026-12-29',
@@ -192,7 +193,7 @@ describe('buildYahooDividends', () => {
             TODAY
         );
         expect(future?.latestExDate).toBeNull();
-        const fallback = buildYahooDividends(
+        const fallback = buildYahooSummaryDividends(
             summary({
                 trailingAnnualDividendRate: 100,
                 exDividendDate: '2026-12-29',
@@ -206,7 +207,7 @@ describe('buildYahooDividends', () => {
     });
 
     it('trailingAnnualDividendRate가 명시적으로 0이면 확정 무배당이다', () => {
-        const r = buildYahooDividends(
+        const r = buildYahooSummaryDividends(
             summary({ trailingAnnualDividendRate: 0 }),
             1000,
             'KRW',
@@ -218,11 +219,13 @@ describe('buildYahooDividends', () => {
     });
 
     it('배당 필드가 전부 비면 모름(null)이다', () => {
-        expect(buildYahooDividends(summary(), 1000, 'KRW', TODAY)).toBeNull();
+        expect(
+            buildYahooSummaryDividends(summary(), 1000, 'KRW', TODAY)
+        ).toBeNull();
     });
 
     it('직전 1회 금액·일자가 있으면 싣는다', () => {
-        const r = buildYahooDividends(
+        const r = buildYahooSummaryDividends(
             summary({ lastDividendValue: 361, lastDividendDate: '2026-06-29' }),
             null,
             'KRW',
@@ -231,6 +234,112 @@ describe('buildYahooDividends', () => {
         expect(r?.latestAmount).toBe(361);
         expect(r?.latestExDate).toBe('2026-06-29');
         expect(r?.trailing12mAmount).toBeNull();
+    });
+});
+
+describe('buildYahooDividends (history first)', () => {
+    const ev = (exDate: string, amount: number) => ({ exDate, amount });
+
+    it('LG유플러스형: 12개월 안의 두 번 지급을 합해 수익률을 낸다(한 번만 보지 않는다)', () => {
+        const r = buildYahooDividends(
+            {
+                history: [
+                    ev('2026-08-12', 270),
+                    ev('2026-03-30', 410),
+                    ev('2025-08-04', 250),
+                    ev('2025-03-28', 400),
+                ],
+                summary: summary({ trailingAnnualDividendRate: 270 }),
+            },
+            14160,
+            'KRW',
+            new Date('2026-10-24T03:00:00Z'),
+            'Asia/Seoul'
+        );
+        expect(r).toEqual({
+            latestExDate: '2026-08-12',
+            latestAmount: 270,
+            currency: 'KRW',
+            payDate: null,
+            trailing12mAmount: 680,
+            trailingYieldPct: 4.8,
+            source: 'Yahoo Finance dividend history',
+        });
+    });
+
+    it('미래 배당락일은 직전·합계에서 뺀다', () => {
+        const r = buildYahooDividends(
+            {
+                history: [ev('2026-12-29', 380), ev('2026-06-29', 350)],
+                summary: null,
+            },
+            9720,
+            'KRW',
+            new Date('2026-10-24T03:00:00Z'),
+            'Asia/Seoul'
+        );
+        expect(r?.latestExDate).toBe('2026-06-29');
+        expect(r?.trailing12mAmount).toBe(350);
+    });
+
+    it.each([
+        ['이력 조회 실패(null)', null],
+        ['이력 이벤트 없음([])', []],
+    ])('%s이면 summaryDetail 규칙으로 내려간다', (_name, history) => {
+        const r = buildYahooDividends(
+            {
+                history,
+                summary: summary({ trailingAnnualDividendRate: 0 }),
+            },
+            1000,
+            'KRW',
+            NOW,
+            'Asia/Seoul'
+        );
+        expect(r?.source).toBe('Yahoo Finance summaryDetail');
+        expect(r?.trailing12mAmount).toBe(0);
+    });
+
+    it('이력도 요약도 없으면 모름(null)이다', () => {
+        expect(
+            buildYahooDividends(
+                { history: null, summary: null },
+                1000,
+                'KRW',
+                NOW,
+                'Asia/Seoul'
+            )
+        ).toBeNull();
+    });
+});
+
+describe('buildYahooDividends KST boundaries', () => {
+    // 2026-10-24T20:00Z = 2026-10-25 05:00 KST, 같은 순간 UTC 날짜는 10-24.
+    const KST_NOW = new Date('2026-10-24T20:00:00Z');
+    const build = (exDate: string) =>
+        buildYahooDividends(
+            { history: [{ exDate, amount: 100 }], summary: null },
+            1000,
+            'KRW',
+            KST_NOW,
+            'Asia/Seoul'
+        );
+
+    it('365일 창은 KST 오늘 기준: 2025-10-25는 제외, 2025-10-26은 포함', () => {
+        expect(build('2025-10-25')?.trailing12mAmount).toBe(0);
+        expect(build('2025-10-26')?.trailing12mAmount).toBe(100);
+    });
+
+    it('KST 오늘(10-25) 배당락일은 과거로 센다(UTC였다면 미래)', () => {
+        const r = build('2026-10-25');
+        expect(r?.latestExDate).toBe('2026-10-25');
+        expect(r?.trailing12mAmount).toBe(100);
+    });
+
+    it('KST 내일(10-26) 배당락일은 미래라 뺀다', () => {
+        const r = build('2026-10-26');
+        expect(r?.latestExDate).toBeNull();
+        expect(r?.trailing12mAmount).toBe(0);
     });
 });
 
@@ -243,7 +352,7 @@ describe('fetchDividendSource / buildDividends', () => {
         ]);
         const source = await fetchDividendSource('FER', false);
         expect(getFmpDividendHistory).toHaveBeenCalledWith('FER');
-        expect(getYahooDividendSummary).not.toHaveBeenCalled();
+        expect(getYahooDividendData).not.toHaveBeenCalled();
         const r = buildDividends(source, {
             price: 50,
             currency: 'USD',
@@ -255,7 +364,7 @@ describe('fetchDividendSource / buildDividends', () => {
     });
 
     it('한국은 yahoo 요약을 읽고 요약이 없으면 null이다', async () => {
-        getYahooDividendSummary.mockResolvedValue(null);
+        getYahooDividendData.mockResolvedValue(null);
         expect(await fetchDividendSource('005930.KS', true)).toBeNull();
         expect(getFmpDividendHistory).not.toHaveBeenCalled();
         expect(
@@ -263,13 +372,14 @@ describe('fetchDividendSource / buildDividends', () => {
         ).toBeNull();
     });
 
-    it('한국 원자료는 시장 시간대의 오늘로 미래 배당락일을 거른다', async () => {
-        getYahooDividendSummary.mockResolvedValue(
-            summary({
+    it('이력이 없어 요약으로 내려가도 시장 시간대(KST)의 오늘로 미래 배당락일을 거른다', async () => {
+        getYahooDividendData.mockResolvedValue({
+            history: null,
+            summary: summary({
                 trailingAnnualDividendRate: 100,
                 exDividendDate: '2026-10-26',
-            })
-        );
+            }),
+        });
         const source = await fetchDividendSource('005930.KS', true);
         const r = buildDividends(source, {
             price: 1000,
