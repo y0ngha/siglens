@@ -97,16 +97,18 @@ async function fetchDividendHistory(
                 events?: { dividends?: { date?: unknown; amount?: unknown }[] };
             }
         ).events?.dividends;
-        if (raw === undefined) return [];
-        const events: YahooDividendEvent[] = [];
-        for (const item of raw) {
-            const exDate = isoDateOrNull(item?.date);
-            const amount = numberOrNull(item?.amount);
-            if (exDate !== null && amount !== null)
-                events.push({ exDate, amount });
-        }
-        return events.sort((a, b) => b.exDate.localeCompare(a.exDate));
+        return (raw ?? [])
+            .map(item => ({
+                exDate: isoDateOrNull(item?.date),
+                amount: numberOrNull(item?.amount),
+            }))
+            .filter(
+                (event): event is YahooDividendEvent =>
+                    event.exDate !== null && event.amount !== null
+            )
+            .toSorted((a, b) => b.exDate.localeCompare(a.exDate));
     } catch (error) {
+        // 부분 degrade(요약으로 대체)라 호출부에는 에러로 전달되지 않는다 — 이 지점이 유일한 로그다.
         console.warn('[yahooDividend] history failed', symbol, error);
         return null;
     }
@@ -135,7 +137,8 @@ function summaryFrom(
 }
 
 /**
- * 한국 종목의 배당 원자료(이력 + 요약). 둘 다 못 얻으면 `null`(모름)이다.
+ * 한국 종목의 배당 원자료(이력 + 요약). 둘 다 못 얻으면 throw한다 — 로그는 호출부(`fetchDividendSource`)가
+ * 한 번만 남기고 "모름"(`null`)으로 degrade한다.
  *
  * 키 `dividends:yahoo:v2:<SYM>` — 24h. `v2`는 값 형상이 요약 단독에서 `{history, summary}`로 바뀐 표시다
  * (옛 키를 새 형상으로 읽는 것을 막는다).
@@ -147,29 +150,24 @@ function summaryFrom(
  */
 export async function getYahooDividendData(
     symbol: string
-): Promise<YahooDividendData | null> {
+): Promise<YahooDividendData> {
     const upper = sym(symbol);
-    try {
-        return await getOrSetCache<YahooDividendData>(
-            `dividends:yahoo:v2:${upper}`,
-            FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
-            async () => {
-                const [history, fundamentals] = await Promise.all([
-                    fetchDividendHistory(upper),
-                    getYahooFundamentals(upper),
-                ]);
-                const summary =
-                    fundamentals.summary === null
-                        ? null
-                        : summaryFrom(fundamentals.summary);
-                if (history === null && summary === null)
-                    throw new Error('yahoo dividend data missing');
-                return { history, summary };
-            },
-            value => value.history !== null
-        );
-    } catch (error) {
-        console.warn('[yahooDividend] data unavailable', upper, error);
-        return null;
-    }
+    return getOrSetCache<YahooDividendData>(
+        `dividends:yahoo:v2:${upper}`,
+        FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+        async () => {
+            const [history, fundamentals] = await Promise.all([
+                fetchDividendHistory(upper),
+                getYahooFundamentals(upper),
+            ]);
+            const summary =
+                fundamentals.summary === null
+                    ? null
+                    : summaryFrom(fundamentals.summary);
+            if (history === null && summary === null)
+                throw new Error('yahoo dividend data missing');
+            return { history, summary };
+        },
+        value => value.history !== null
+    );
 }

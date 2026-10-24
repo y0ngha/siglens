@@ -15,16 +15,22 @@ export interface FmpDividendRow {
     amount: number;
 }
 
-interface FmpDividendWire {
-    date?: unknown;
-    paymentDate?: unknown;
-    dividend?: unknown;
-}
-
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function isoDateOrNull(value: unknown): string | null {
     return typeof value === 'string' && ISO_DATE.test(value) ? value : null;
+}
+
+/** 와이어 한 행을 정규화한다. 배당락일이나 금액이 깨졌으면 null. */
+function toRow(item: unknown): FmpDividendRow | null {
+    if (typeof item !== 'object' || item === null) return null;
+    // 객체임을 위에서 확인했고 모든 필드를 unknown으로 읽어 아래 검사기가 값을 직접 검증한다.
+    const wire = item as Record<string, unknown>;
+    const exDate = isoDateOrNull(wire.date);
+    const amount = toFiniteNumber(wire.dividend);
+    return exDate === null || amount === null
+        ? null
+        : { exDate, payDate: isoDateOrNull(wire.paymentDate), amount };
 }
 
 /**
@@ -38,20 +44,14 @@ function isoDateOrNull(value: unknown): string | null {
 export function normalizeDividendRows(raw: unknown): FmpDividendRow[] {
     if (!Array.isArray(raw))
         throw new Error('FMP dividends: response is not an array');
-    const rows: FmpDividendRow[] = [];
-    for (const item of raw as FmpDividendWire[]) {
-        const exDate = isoDateOrNull(item?.date);
-        const amount = toFiniteNumber(item?.dividend);
-        if (exDate === null || amount === null) continue;
-        rows.push({
-            exDate,
-            payDate: isoDateOrNull(item.paymentDate),
-            amount,
-        });
-    }
-    if (raw.length > 0 && rows.length === 0)
+    // `Array.isArray`가 `any[]`로 좁히므로 `unknown[]`로 받아 항목을 `toRow`가 직접 검사한다.
+    const items: unknown[] = raw;
+    const rows = items
+        .map(toRow)
+        .filter((row): row is FmpDividendRow => row !== null);
+    if (items.length > 0 && rows.length === 0)
         throw new Error('FMP dividends: every row is malformed');
-    return rows.sort((a, b) => b.exDate.localeCompare(a.exDate));
+    return rows.toSorted((a, b) => b.exDate.localeCompare(a.exDate));
 }
 
 /**

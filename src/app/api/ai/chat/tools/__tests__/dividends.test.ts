@@ -363,9 +363,12 @@ describe('fetchDividendSource / buildDividends', () => {
         expect(r?.currency).toBe('USD');
     });
 
-    it('한국은 yahoo 요약을 읽고 요약이 없으면 null이다', async () => {
-        getYahooDividendData.mockResolvedValue(null);
+    it('한국은 yahoo 원자료를 읽고, 원자료가 없어 throw하면 로그 후 null이다', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        getYahooDividendData.mockRejectedValue(new Error('missing'));
         expect(await fetchDividendSource('005930.KS', true)).toBeNull();
+        expect(spy).toHaveBeenCalledTimes(1);
+        spy.mockRestore();
         expect(getFmpDividendHistory).not.toHaveBeenCalled();
         expect(
             buildDividends(null, { price: 1, currency: 'KRW', timeZone: TZ })

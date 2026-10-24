@@ -39,15 +39,17 @@ export const YAHOO_DIVIDENDS_SOURCE = 'Yahoo Finance summaryDetail';
 export const YAHOO_HISTORY_SOURCE = 'Yahoo Finance dividend history';
 
 const TRAILING_WINDOW_DAYS = 365;
-const AMOUNT_DECIMALS = 1e4;
-const PCT_DECIMALS = 1e2;
+const AMOUNT_ROUND_SCALE = 1e4;
+const PCT_ROUND_SCALE = 1e2;
 
 function round(value: number, scale: number): number {
     return Math.round(value * scale) / scale;
 }
 
 function yieldPct(amount: number, price: number | null): number | null {
-    return price === null ? null : round((amount / price) * 100, PCT_DECIMALS);
+    return price === null
+        ? null
+        : round((amount / price) * 100, PCT_ROUND_SCALE);
 }
 
 /**
@@ -73,14 +75,15 @@ export function buildFmpDividends(
         ),
         'UTC'
     );
+    // `exDate <= today`: 오늘이 배당락일이면 이미 배당락이 반영된 것으로 보고 "직전 배당"에 넣는다.
     const past = rows
         .filter(row => row.exDate <= today)
-        .sort((a, b) => b.exDate.localeCompare(a.exDate));
+        .toSorted((a, b) => b.exDate.localeCompare(a.exDate));
     const trailing = round(
         past
             .filter(row => row.exDate > windowStart)
             .reduce((sum, row) => sum + row.amount, 0),
-        AMOUNT_DECIMALS
+        AMOUNT_ROUND_SCALE
     );
     const latest = past[0];
     return {
@@ -172,12 +175,12 @@ export function buildYahooSummaryDividends(
         currency,
         payDate: null,
         trailing12mAmount:
-            annual === null ? null : round(annual, AMOUNT_DECIMALS),
+            annual === null ? null : round(annual, AMOUNT_ROUND_SCALE),
         trailingYieldPct:
             computedYield ??
             (yahooYield === null
                 ? null
-                : round(yahooYield * 100, PCT_DECIMALS)),
+                : round(yahooYield * 100, PCT_ROUND_SCALE)),
         source: YAHOO_DIVIDENDS_SOURCE,
     };
 }
@@ -197,8 +200,7 @@ export async function fetchDividendSource(
 ): Promise<DividendSource | null> {
     try {
         if (isKr) {
-            const data = await getYahooDividendData(symbol);
-            return data === null ? null : { kind: 'yahoo', data };
+            return { kind: 'yahoo', data: await getYahooDividendData(symbol) };
         }
         return { kind: 'fmp', rows: await getFmpDividendHistory(symbol) };
     } catch (error) {

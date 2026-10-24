@@ -853,10 +853,19 @@ describe('getFundamentalsTool', () => {
         listReportedEarningsDates.mockResolvedValue(
             days.filter((_, i) => i % 40 === 20)
         );
+        fetchDividendSource.mockResolvedValue({
+            kind: 'fmp',
+            rows: [
+                { exDate: '2026-08-10', amount: 0.27, payDate: '2026-08-13' },
+                { exDate: '2026-05-11', amount: 0.26, payDate: '2026-05-14' },
+            ],
+        });
         const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
             recentQuarters: unknown[];
             earningsReactions: unknown[];
+            dividends: unknown;
         };
+        expect(r.dividends).not.toBeNull();
         expect(r.recentQuarters).toHaveLength(5);
         expect(r.earningsReactions).toHaveLength(8);
         expect(JSON.stringify(r).length).toBeLessThan(TOOL_RESULT_MAX_CHARS);

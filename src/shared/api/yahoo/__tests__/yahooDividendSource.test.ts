@@ -114,7 +114,7 @@ describe('getYahooDividendData', () => {
         warn.mockRestore();
     });
 
-    it('이력도 요약도 없으면 fetcher가 reject해 캐시 쓰기를 건너뛰고 결과는 null이다', async () => {
+    it('이력도 요약도 없으면 fetcher가 reject해 캐시 쓰기를 건너뛰고 호출부로 전파된다', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         chart.mockRejectedValue(new Error('down'));
         getYahooFundamentals.mockResolvedValue({ summary: null });
@@ -125,7 +125,7 @@ describe('getYahooDividendData', () => {
                 return fetcher();
             }
         );
-        expect(await getYahooDividendData('032640.KS')).toBeNull();
+        await expect(getYahooDividendData('032640.KS')).rejects.toThrow();
         await expect(captured?.()).rejects.toThrow();
         warn.mockRestore();
     });
