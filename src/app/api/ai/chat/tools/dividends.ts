@@ -60,13 +60,13 @@ function yieldPct(amount: number, price: number | null): number | null {
  * 아닐 수 있다. 이력이 비어 있으면 무배당으로 본다(공급자가 심볼을 알고 있고 프로필이 있는
  * 종목에서만 호출된다).
  */
-export function buildFmpDividends(
+export function buildHistoryDividends(
     rows: readonly FmpDividendRow[],
     price: number | null,
     currency: string,
     now: Date,
     timeZone: string,
-    source: string = FMP_DIVIDENDS_SOURCE
+    source: string
 ): DividendsView {
     const today = zonedDate(now, timeZone);
     const windowStart = zonedDate(
@@ -111,7 +111,7 @@ export function buildYahooDividends(
     timeZone: string
 ): DividendsView | null {
     if (data.history !== null && data.history.length > 0)
-        return buildFmpDividends(
+        return buildHistoryDividends(
             data.history.map(event => ({ ...event, payDate: null })),
             price,
             currency,
@@ -223,6 +223,13 @@ export function buildDividends(
 ): DividendsView | null {
     if (source === null) return null;
     return source.kind === 'fmp'
-        ? buildFmpDividends(source.rows, price, currency, now, timeZone)
+        ? buildHistoryDividends(
+              source.rows,
+              price,
+              currency,
+              now,
+              timeZone,
+              FMP_DIVIDENDS_SOURCE
+          )
         : buildYahooDividends(source.data, price, currency, now, timeZone);
 }

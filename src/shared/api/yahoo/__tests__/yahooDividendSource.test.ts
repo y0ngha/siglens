@@ -68,6 +68,17 @@ describe('getYahooDividendData', () => {
         ]);
     });
 
+    it('UTC 자정 epoch 이벤트는 서울 날짜와 같은 ex-date로 읽는다(실측 032640.KS 1786492800)', async () => {
+        chart.mockResolvedValue({
+            events: {
+                dividends: [{ date: new Date(1786492800 * 1000), amount: 270 }],
+            },
+        });
+        expect((await getYahooDividendData('032640.KS')).history).toEqual([
+            { exDate: '2026-08-12', amount: 270 },
+        ]);
+    });
+
     it('events가 없으면 이력은 빈 배열이다', async () => {
         chart.mockResolvedValue({ quotes: [] });
         expect((await getYahooDividendData('X.KS'))?.history).toEqual([]);

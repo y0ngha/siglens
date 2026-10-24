@@ -56,8 +56,11 @@ function numberOrNull(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-/** yahoo는 날짜를 `Date`(또는 캐시를 거친 ISO 문자열·epoch 초)로 준다. 해석이 안 되면 null. */
-function isoDateOrNull(value: unknown): string | null {
+/**
+ * 실측(2026-10-24, 032640.KS·033780.KS): chart 배당 이벤트 `date`는 UTC 자정 `Date`(예: epoch 1786492800 =
+ * 2026-08-12T00:00:00Z = 서울 날짜 2026-08-12)라 UTC로 잘라도 KST 날짜와 같다 — 시간대 보정이 필요 없다.
+ * yahoo는 날짜를 `Date`(또는 캐시를 거친 ISO 문자열·epoch 초)로 준다. 해석이 안 되면 null. */
+function toIsoDateOrNull(value: unknown): string | null {
     if (value === null || value === undefined) return null;
     const date =
         value instanceof Date
@@ -99,7 +102,7 @@ async function fetchDividendHistory(
         ).events?.dividends;
         return (raw ?? [])
             .map(item => ({
-                exDate: isoDateOrNull(item?.date),
+                exDate: toIsoDateOrNull(item?.date),
                 amount: numberOrNull(item?.amount),
             }))
             .filter(
@@ -130,9 +133,9 @@ function summaryFrom(
         trailingAnnualDividendYield: numberOrNull(
             detail?.trailingAnnualDividendYield
         ),
-        exDividendDate: isoDateOrNull(detail?.exDividendDate),
+        exDividendDate: toIsoDateOrNull(detail?.exDividendDate),
         lastDividendValue: numberOrNull(stats?.lastDividendValue),
-        lastDividendDate: isoDateOrNull(stats?.lastDividendDate),
+        lastDividendDate: toIsoDateOrNull(stats?.lastDividendDate),
     };
 }
 

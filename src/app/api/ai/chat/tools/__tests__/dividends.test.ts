@@ -11,7 +11,7 @@ vi.mock('@/shared/api/yahoo/yahooDividendSource', () => ({
 
 import {
     buildDividends,
-    buildFmpDividends,
+    buildHistoryDividends,
     buildYahooDividends,
     buildYahooSummaryDividends,
     fetchDividendSource,
@@ -32,9 +32,9 @@ const row = (
     payDate,
 });
 
-describe('buildFmpDividends', () => {
+describe('buildHistoryDividends', () => {
     it('직전 배당과 365일 트레일링 합·수익률을 계산한다', () => {
-        const r = buildFmpDividends(
+        const r = buildHistoryDividends(
             [
                 row('2026-08-10', 0.27, '2026-08-13'),
                 row('2026-05-11', 0.26),
@@ -46,7 +46,8 @@ describe('buildFmpDividends', () => {
             200,
             'USD',
             NOW,
-            TZ
+            TZ,
+            'FMP dividends history'
         );
         expect(r).toEqual({
             latestExDate: '2026-08-10',
@@ -60,7 +61,7 @@ describe('buildFmpDividends', () => {
     });
 
     it('입력 순서와 무관하게 최신 배당락일을 고르고 미래 배당락일은 뺀다', () => {
-        const r = buildFmpDividends(
+        const r = buildHistoryDividends(
             [
                 row('2026-05-11', 0.26),
                 row('2026-11-10', 0.3),
@@ -69,7 +70,8 @@ describe('buildFmpDividends', () => {
             null,
             'USD',
             NOW,
-            TZ
+            TZ,
+            'FMP dividends history'
         );
         expect(r.latestExDate).toBe('2026-08-10');
         expect(r.trailing12mAmount).toBe(0.53);
@@ -77,7 +79,16 @@ describe('buildFmpDividends', () => {
     });
 
     it('이력이 비면 확정 무배당(0)이다', () => {
-        expect(buildFmpDividends([], 100, 'USD', NOW, TZ)).toEqual({
+        expect(
+            buildHistoryDividends(
+                [],
+                100,
+                'USD',
+                NOW,
+                TZ,
+                'FMP dividends history'
+            )
+        ).toEqual({
             latestExDate: null,
             latestAmount: null,
             currency: 'USD',
@@ -89,12 +100,13 @@ describe('buildFmpDividends', () => {
     });
 
     it('창 안에 배당이 없으면 직전 배당은 남기고 트레일링은 0이다', () => {
-        const r = buildFmpDividends(
+        const r = buildHistoryDividends(
             [row('2024-01-10', 1)],
             100,
             'USD',
             NOW,
-            TZ
+            TZ,
+            'FMP dividends history'
         );
         expect(r.latestExDate).toBe('2024-01-10');
         expect(r.trailing12mAmount).toBe(0);
@@ -102,20 +114,22 @@ describe('buildFmpDividends', () => {
     });
 
     it('365일 경계: 정확히 365일 전 배당락일은 창 밖이다', () => {
-        const r = buildFmpDividends(
+        const r = buildHistoryDividends(
             [row('2025-10-24', 1)],
             100,
             'USD',
             NOW,
-            TZ
+            TZ,
+            'FMP dividends history'
         );
         expect(r.trailing12mAmount).toBe(0);
-        const inside = buildFmpDividends(
+        const inside = buildHistoryDividends(
             [row('2025-10-25', 1)],
             100,
             'USD',
             NOW,
-            TZ
+            TZ,
+            'FMP dividends history'
         );
         expect(inside.trailing12mAmount).toBe(1);
     });
