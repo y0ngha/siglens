@@ -27,7 +27,7 @@ const EXCHANGE_LIST_SOURCE = 'Nasdaq/NYSE/Cboe Reg SHO threshold lists';
 const KR_SOURCE =
     'DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports';
 const KR_NOT_PROVIDED =
-    'Institutional and foreign net buying, short selling and offering filings are not provided for Korean stocks - say so and never estimate them.';
+    'SIGLENS tools do not carry Korean investor-type net buying (institutional, foreign, individual). If web_search is available, you may use it for this - cite the publisher and date; otherwise say SIGLENS does not carry it. Never estimate.';
 const KR_PREFERRED_SHARE_NOTE =
     'This is a preferred share. DART ownership filings are company-level, so these are the same reports as the common share.';
 const KR_COLLECTING_NOTE =

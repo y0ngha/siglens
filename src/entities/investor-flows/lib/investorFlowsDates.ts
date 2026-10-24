@@ -29,6 +29,16 @@ export function isWeekend(isoDate: string): boolean {
     return day === 0 || day === 6;
 }
 
+/**
+ * `isoDate`(포함) 이전의 가장 가까운 평일. 휴장일은 모른다 — EDGAR가 주말만 접수하지 않는다는 사실만 쓴다.
+ * 토·일에 만든 스냅샷의 "마지막 거래일"을 금요일로 맞추는 용도다.
+ */
+export function latestWeekdayOnOrBefore(isoDate: string): string {
+    let d = isoDate;
+    while (isWeekend(d)) d = addDays(d, -1);
+    return d;
+}
+
 const QUARTER_ENDS = ['03-31', '06-30', '09-30', '12-31'] as const;
 
 /** 분기말(03-31·06-30·09-30·12-31)인지. 13F `periodOfReport`는 항상 분기말이어야 한다. */

@@ -27,8 +27,10 @@ import type {
     SqueezeRiskSufficiency,
     ThresholdListStatus,
 } from '@y0ngha/siglens-core';
+import { ISO_DATE_LENGTH } from '@/shared/config/time';
 import { compareIsoDate } from './investorFlowsDates';
-import type { PreviousSettlementChange } from '../model';
+import { proposedSaleCountWindows } from './investorFlowsSnapshot';
+import type { PreviousSettlementChange, ProposedSaleFormType } from '../model';
 import { computePreviousSettlementChange } from './shortInterestChange';
 
 /**
@@ -153,6 +155,8 @@ export interface SummaryPutCall {
 }
 
 export interface SummaryProposedSale {
+    /** `144` 원본 / `144/A` 정정 — 건수에는 원본만 센다. */
+    readonly formType: ProposedSaleFormType;
     readonly filingDate: string;
     readonly filer: string;
     readonly relationships: string;
@@ -160,6 +164,20 @@ export interface SummaryProposedSale {
     readonly valueUsd: number;
     /** Rule 10b5-1 계획에 따른 매도 예정이면 true. */
     readonly plan10b5_1: boolean;
+}
+
+/**
+ * Form 144 **원본**(`144/A` 제외) 신고 건수 — `proposedSales`는 최근 5건만 보여 주므로 "최근 N일 몇 건" 질문은 이 값을 읽는다.
+ * 창은 달력일이고 `windowTo`를 포함한다: `last30dFrom` = `windowTo` − 29일, `last90dFrom` = `windowTo` − 89일.
+ */
+export interface SummaryProposedSaleCounts {
+    readonly last30d: number;
+    readonly last90d: number;
+    readonly windowTo: string;
+    readonly last30dFrom: string;
+    readonly last90dFrom: string;
+    /** `false` = 일부 행에 양식 정보가 없어(옛 캐시 스냅샷) 정정을 못 걸러냈을 수 있다. */
+    readonly excludesAmendments: boolean;
 }
 
 export interface SummaryOffering {
@@ -236,6 +254,8 @@ export interface InvestorFlowsSummary {
         readonly recentTransactions: readonly SummaryTransaction[];
         /** Form 144 매도 예정 신고 최근 건. `null` = 이 원천이 스냅샷에 없다(조회 실패·수집 중). */
         readonly proposedSales: readonly SummaryProposedSale[] | null;
+        /** `proposedSales`와 같은 원천이 없으면 `null`. */
+        readonly proposedSalesCounts: SummaryProposedSaleCounts | null;
     };
     /** `null` = 13D/13G 조회 실패(없음 `[]`과 다르다). */
     readonly largeHolders: readonly SummaryLargeHolder[] | null;
@@ -468,8 +488,52 @@ function summarizePutCall(
     };
 }
 
+/** 옛 캐시 스냅샷에는 양식 필드가 없다 — 정정이라는 증거가 없으면 원본으로 센다. */
+function proposedSaleForm(sale: ProposedSale): ProposedSaleFormType {
+    return 'formType' in sale && sale.formType === '144/A' ? '144/A' : '144';
+}
+
+function hasFormType(sale: ProposedSale): boolean {
+    return (
+        'formType' in sale &&
+        (sale.formType === '144' || sale.formType === '144/A')
+    );
+}
+
+/**
+ * 스냅샷의 전체 Form 144 행(상한 5건으로 자르기 전)에서 원본 신고만 세어 창별 건수를 만든다.
+ *
+ * `windowTo`는 스냅샷 기준일(`asOf`, UTC 날짜)이 주말이면 직전 금요일로 당긴 날짜다 — 가장 최근 거래일을 포함하는 창이
+ * 되도록 하기 위함이며, 미국 휴장일은 모른다(공휴일 다음 날이면 휴장일이 `windowTo`가 될 수 있다).
+ */
+export function countProposedSales(
+    sales: readonly ProposedSale[],
+    asOf: string
+): SummaryProposedSaleCounts {
+    const { windowTo, last30dFrom, last90dFrom } = proposedSaleCountWindows(
+        asOf.slice(0, ISO_DATE_LENGTH)
+    );
+    const originals = sales.filter(sale => proposedSaleForm(sale) === '144');
+    const countFrom = (from: string): number =>
+        originals.filter(
+            sale =>
+                compareIsoDate(sale.filingDate, from) >= 0 &&
+                compareIsoDate(sale.filingDate, windowTo) <= 0
+        ).length;
+    return {
+        last30d: countFrom(last30dFrom),
+        last90d: countFrom(last90dFrom),
+        windowTo,
+        last30dFrom,
+        last90dFrom,
+        // 양식 필드가 없는 행(옛 캐시 스냅샷)은 정정 여부를 알 수 없어 원본으로 셌다 — 그땐 정정 제외를 약속하지 않는다.
+        excludesAmendments: sales.every(hasFormType),
+    };
+}
+
 function summarizeProposedSale(sale: ProposedSale): SummaryProposedSale {
     return {
+        formType: proposedSaleForm(sale),
         filingDate: sale.filingDate,
         filer: clipSummaryText(sale.filer, SUMMARY_NAME_MAX_CHARS),
         relationships: clipSummaryText(
@@ -608,6 +672,10 @@ export function summarizeInvestorFlows(
                           )
                           .slice(0, SUMMARY_MAX_PROPOSED_SALES)
                           .map(summarizeProposedSale),
+            proposedSalesCounts:
+                snapshot.proposedSales === undefined
+                    ? null
+                    : countProposedSales(snapshot.proposedSales, snapshot.asOf),
         },
         largeHolders:
             snapshot.largeHolders === null

@@ -620,25 +620,29 @@ describe('getFundamentalsTool', () => {
             expect(getIncomeStatements).toHaveBeenCalledWith(
                 'STX',
                 'quarter',
-                5
+                9
             );
             expect(r.recentQuarters).toEqual([
                 {
                     periodEnd: '2026-07-03',
                     fiscalYear: '2026',
                     period: 'Q4',
+                    form: '10-K',
                     filingDate: '2026-08-01',
                     epsDiluted: 5.58,
                     revenue: 2_440_000_000,
+                    revenueYoYPct: null,
                     currency: 'USD',
                 },
                 {
                     periodEnd: '2026-04-03',
                     fiscalYear: '2026',
                     period: 'Q3',
+                    form: '10-Q',
                     filingDate: '2026-04-29',
                     epsDiluted: 5.58,
                     revenue: 2_440_000_000,
+                    revenueYoYPct: null,
                     currency: 'USD',
                 },
             ]);

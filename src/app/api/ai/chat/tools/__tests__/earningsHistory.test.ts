@@ -121,9 +121,11 @@ describe('recentQuarterRows', () => {
             periodEnd: '2026-07-03',
             fiscalYear: '2026',
             period: 'Q4',
+            form: '10-K',
             filingDate: '2026-08-01',
             epsDiluted: 1,
             revenue: 1_000,
+            revenueYoYPct: 0, // 2025 Q4 row exists with the same revenue
             currency: 'USD',
         });
         expect(r.map(q => [q.periodEnd, q.filingDate])).toEqual([
@@ -132,6 +134,52 @@ describe('recentQuarterRows', () => {
             ['2026-01-02', null],
             ['2025-10-03', null],
             ['2025-06-27', null],
+        ]);
+    });
+
+    it('form follows the fiscal quarter label: Q4 is the 10-K, Q1-Q3 the 10-Q, anything else unknown', () => {
+        const forms = ['Q1', 'Q2', 'Q3', 'Q4', 'FY'].map(
+            p => recentQuarterRows([row('2026-06-30', p)])[0]!.form
+        );
+        expect(forms).toEqual(['10-Q', '10-Q', '10-Q', '10-K', null]);
+    });
+
+    it('revenueYoYPct compares with the same fiscal quarter a year earlier, found beyond the five rows shown', () => {
+        const rows = [
+            row('2026-09-30', 'Q3', { revenue: 1_250 }),
+            row('2026-06-30', 'Q2', { revenue: 1_000 }),
+            row('2026-03-31', 'Q1', { revenue: 900 }),
+            row('2025-12-31', 'Q4', { revenue: 800 }),
+            row('2025-09-30', 'Q3', { revenue: 1_000 }),
+            row('2025-06-30', 'Q2', { revenue: 800 }),
+            row('2025-03-31', 'Q1', { revenue: 1_200 }),
+        ];
+        const r = recentQuarterRows(rows);
+        expect(r).toHaveLength(RECENT_QUARTERS_COUNT);
+        expect(r.map(q => q.revenueYoYPct)).toEqual([
+            25, // 1250 / 1000
+            25, // 1000 / 800
+            -25, // 900 / 1200
+            null, // no 2024 Q4 row
+            null, // no 2024 Q3 row
+        ]);
+    });
+
+    it('revenueYoYPct is rounded to 2 decimals and null on a missing or non-positive base or a missing revenue', () => {
+        const rows = [
+            row('2026-09-30', 'Q3', { revenue: 1_000 }),
+            row('2026-06-30', 'Q2', { revenue: 500 }),
+            row('2026-03-31', 'Q1', { revenue: null }),
+            row('2025-09-30', 'Q3', { revenue: 3_000 }),
+            row('2025-06-30', 'Q2', { revenue: 0 }),
+            row('2025-03-31', 'Q1', { revenue: 100 }),
+        ];
+        expect(recentQuarterRows(rows).map(q => q.revenueYoYPct)).toEqual([
+            -66.67,
+            null,
+            null,
+            null,
+            null,
         ]);
     });
 

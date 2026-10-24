@@ -605,6 +605,11 @@ function higherTimeframeView(
  * raw `bars`, and the model borrowed a fear & greed date instead. Same format
  * as the bar timestamps (`YYYY-MM-DD` on 1Day, ISO instant intraday); a tie
  * resolves to the MOST RECENT bar.
+ *
+ * `high`/`low` are INTRADAY extremes (the bars' high/low). The `*Close`
+ * fields are the same window's CLOSING-price extremes ("종가 기준 최고가/최저가")
+ * with the same date format, tie rule and distance-from-last-close semantics:
+ * a "highest close in 52 weeks" question must read `highClose`, never `high`.
  */
 interface RangeWindow {
     high: number | null;
@@ -613,6 +618,32 @@ interface RangeWindow {
     lowDate: string | null;
     fromHighPct: number | null;
     fromLowPct: number | null;
+    highClose: number | null;
+    highCloseDate: string | null;
+    fromHighClosePct: number | null;
+    lowClose: number | null;
+    lowCloseDate: string | null;
+    fromLowClosePct: number | null;
+}
+
+/**
+ * Consecutive-close streak ending at the last COMPLETED daily bar, so "며칠
+ * 연속 하락" questions need no hand counting. `days` counts consecutive closes
+ * moving in `direction` (closes 10,9,8 → down, 2; a single down day after an up
+ * day → down, 1). `flat` = the last close equals the previous one; `days` is
+ * then the run of unchanged closes. `sinceDate` is the date of the first bar of
+ * the streak (the first down day for a down streak).
+ *
+ * `truncated` is true when the streak runs back to the FIRST loaded bar
+ * without a direction change: the real streak may be longer than `days` (and
+ * `sinceDate` is only the earliest loaded date), so it must be reported as
+ * "at least N days".
+ */
+interface CloseStreakView {
+    direction: 'up' | 'down' | 'flat';
+    days: number;
+    sinceDate: string;
+    truncated: boolean;
 }
 
 interface DerivedView {
@@ -657,6 +688,8 @@ interface DerivedView {
      * asserted exactly that for IDXX before this field existed.
      */
     maCross50_200: MaCrossView[] | null;
+    /** See {@link CloseStreakView}. `null` off 1Day, with <2 completed bars, or on a non-finite close. */
+    closeStreak: CloseStreakView | null;
 }
 
 /** One crossing in `derived.maCross50_200`. `kind`: `golden` = MA50 crosses above MA200, `dead` = below. */
@@ -752,6 +785,17 @@ function computeRangeWindow(
     }
     const high = highBar?.high ?? null;
     const low = lowBar?.low ?? null;
+    let highCloseBar: Bar | null = null;
+    let lowCloseBar: Bar | null = null;
+    for (const b of window) {
+        if (!Number.isFinite(b.close)) continue;
+        if (highCloseBar === null || b.close >= highCloseBar.close)
+            highCloseBar = b;
+        if (lowCloseBar === null || b.close <= lowCloseBar.close)
+            lowCloseBar = b;
+    }
+    const highClose = highCloseBar?.close ?? null;
+    const lowClose = lowCloseBar?.close ?? null;
     return {
         high,
         highDate: highBar ? isoTimestamp(highBar.time, timeframe) : null,
@@ -759,6 +803,57 @@ function computeRangeWindow(
         lowDate: lowBar ? isoTimestamp(lowBar.time, timeframe) : null,
         fromHighPct: pctVs(lastClose, high),
         fromLowPct: pctVs(lastClose, low),
+        highClose,
+        highCloseDate: highCloseBar
+            ? isoTimestamp(highCloseBar.time, timeframe)
+            : null,
+        fromHighClosePct: pctVs(lastClose, highClose),
+        lowClose,
+        lowCloseDate: lowCloseBar
+            ? isoTimestamp(lowCloseBar.time, timeframe)
+            : null,
+        fromLowClosePct: pctVs(lastClose, lowClose),
+    };
+}
+
+/**
+ * Streak of same-direction closes ending at the last completed daily bar.
+ * `lastBarInProgress` drops the forming bar (its "close" is the live price).
+ * Scans only the loaded bars; any non-finite close inside the walked run makes
+ * the result `null` rather than a silently shortened streak.
+ */
+function computeCloseStreak(
+    bars: readonly Bar[],
+    timeframe: Timeframe,
+    lastBarInProgress: boolean
+): CloseStreakView | null {
+    if (timeframe !== '1Day') return null;
+    const completed = lastBarInProgress ? bars.slice(0, -1) : bars;
+    if (completed.length < 2) return null;
+    const sign = (i: number): number => {
+        const diff = completed[i]!.close - completed[i - 1]!.close;
+        return Number.isFinite(diff) ? Math.sign(diff) : Number.NaN;
+    };
+    const lastIdx = completed.length - 1;
+    const lastSign = sign(lastIdx);
+    if (Number.isNaN(lastSign)) return null;
+    // `start` = index of the first bar whose close began the streak.
+    let start = lastIdx - 1;
+    let truncated = true;
+    while (start >= 1) {
+        const s = sign(start);
+        if (Number.isNaN(s)) return null;
+        if (s !== lastSign) {
+            truncated = false;
+            break;
+        }
+        start -= 1;
+    }
+    return {
+        direction: lastSign > 0 ? 'up' : lastSign < 0 ? 'down' : 'flat',
+        days: lastIdx - start,
+        sinceDate: isoTimestamp(completed[start + 1]!.time, timeframe),
+        truncated,
     };
 }
 
@@ -774,7 +869,8 @@ function computeRangeWindow(
 function computeDerived(
     bars: readonly Bar[],
     indicators: IndicatorResult,
-    timeframe: Timeframe
+    timeframe: Timeframe,
+    lastBarInProgress: boolean
 ): DerivedView {
     const lastClose = last(bars.map(b => b.close));
     const changePct = Object.fromEntries(
@@ -861,6 +957,7 @@ function computeDerived(
         priceVsMa,
         maStack,
         maCross50_200: timeframe === '1Day' ? maCross50_200View(bars) : null,
+        closeStreak: computeCloseStreak(bars, timeframe, lastBarInProgress),
     };
 }
 
@@ -1115,7 +1212,13 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     );
     const higherTimeframe = higherTimeframeView(htf);
     const pullback = pullbackView(pullbackSnap, await caveatPromise);
-    const derived = computeDerived(bars, indicators, timeframe);
+    const lastBarState = lastBarProgress(bars, timeframe, session);
+    const derived = computeDerived(
+        bars,
+        indicators,
+        timeframe,
+        lastBarState.lastBarInProgress
+    );
     // Client-serialization-boundary rounding only, same as
     // `getBarsAction.ts` — the cache still holds full-precision values.
     const latest = latestIndicators(
@@ -1125,7 +1228,6 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     const candlePatterns = latestCandlePatterns(bars, timeframe);
     const fearGreed = await fearGreedView(barsData, timeframe, ctx.locale);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
-    const lastBarState = lastBarProgress(bars, timeframe, session);
 
     return fitBarsToBudget(
         (barsForOutput, barsTrimmed) => ({

@@ -300,6 +300,7 @@ describe('getInvestorFlowsTool', () => {
             )) as ToolOutput;
             expect(result.insider.proposedSales).toEqual([
                 {
+                    formType: '144',
                     filingDate: '2026-10-12',
                     filer: 'Fixture Officer F',
                     relationships: 'Officer',
@@ -308,6 +309,7 @@ describe('getInvestorFlowsTool', () => {
                     plan10b5_1: true,
                 },
                 {
+                    formType: '144',
                     filingDate: '2026-09-28',
                     filer: 'Fixture Director C',
                     relationships: 'Director',
@@ -316,6 +318,15 @@ describe('getInvestorFlowsTool', () => {
                     plan10b5_1: false,
                 },
             ]);
+            expect(result.insider.proposedSalesCounts).toEqual({
+                last30d: 2,
+                last90d: 2,
+                windowTo: '2026-10-16',
+                last30dFrom: '2026-09-17',
+                last90dFrom: '2026-07-19',
+                // The fixture rows carry no form type (old-cache shape), so amendments cannot be ruled out.
+                excludesAmendments: false,
+            });
             expect(result.offerings).toEqual([
                 { filingDate: '2026-10-04', form: '424B5', kind: 'atm' },
                 { filingDate: '2026-07-10', form: 'S-3ASR', kind: 'shelf' },
@@ -860,9 +871,8 @@ describe('getInvestorFlowsTool', () => {
             });
             expect(result.source).toContain('DART');
             expect(result.source).not.toContain('13F');
-            expect(result.notProvided).toContain(
-                'Institutional and foreign net buying'
-            );
+            expect(result.notProvided).toContain('If web_search is available');
+            expect(result.notProvided).toContain('Never estimate');
             expect(result.majorHolders.recent.map(r => r.reporter)).toEqual([
                 '픽스처자산운용',
                 '국민연금공단',

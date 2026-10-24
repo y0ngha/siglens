@@ -648,7 +648,7 @@ describe('SEC expansion builders', () => {
                     }
                 )
         );
-        const sales = buildProposedSales(rows);
+        const sales = buildProposedSales(rows, '2026-10-15');
         expect(sales).toHaveLength(SNAPSHOT_MAX_PROPOSED_SALES);
         expect(sales[0].filingDate >= sales[1].filingDate).toBe(true);
         expect(Object.keys(sales[0]).sort()).toEqual(
@@ -657,6 +657,7 @@ describe('SEC expansion builders', () => {
                 'filer',
                 'filerCik',
                 'filingDate',
+                'formType',
                 'planAdoptionDate',
                 'relationships',
                 'shares',
@@ -668,10 +669,44 @@ describe('SEC expansion builders', () => {
 
     it('buildProposedSales carries the 10b5-1 plan date', () => {
         expect(
-            buildProposedSales([
-                sale('2026-10-01', { planAdoptionDate: '2026-05-02' }),
-            ])[0].planAdoptionDate
+            buildProposedSales(
+                [sale('2026-10-01', { planAdoptionDate: '2026-05-02' })],
+                '2026-10-15'
+            )[0].planAdoptionDate
         ).toBe('2026-05-02');
+    });
+
+    it('buildProposedSales exempts the same 90-day window the counts use when the snapshot day is a weekend', () => {
+        // 2026-10-17 is a Saturday: windowTo = Fri 10-16, 90d window starts 07-19 (not 07-20).
+        const recent = Array.from(
+            { length: SNAPSHOT_MAX_PROPOSED_SALES },
+            (_, i) => sale('2026-10-10', { accession: `r${i}` })
+        );
+        const edge = sale('2026-07-19', { accession: 'edge' });
+        const before = sale('2026-07-18', { accession: 'before' });
+        const sales = buildProposedSales(
+            [...recent, edge, before],
+            '2026-10-17'
+        );
+        expect(sales).toHaveLength(SNAPSHOT_MAX_PROPOSED_SALES + 1);
+        expect(sales.at(-1)?.filingDate).toBe('2026-07-19');
+    });
+
+    it('buildProposedSales carries the form type and keeps every row inside the 90-day count window past the cap', () => {
+        const recent = Array.from(
+            { length: SNAPSHOT_MAX_PROPOSED_SALES + 5 },
+            (_, i) => sale('2026-10-10', { accession: `r${i}` })
+        );
+        const old = sale('2026-01-02', {
+            accession: 'old',
+            formType: '144/A',
+        });
+        const sales = buildProposedSales([...recent, old], '2026-10-15');
+        expect(sales).toHaveLength(SNAPSHOT_MAX_PROPOSED_SALES + 5);
+        expect(sales.every(s => s.formType === '144')).toBe(true);
+        expect(buildProposedSales([old], '2026-10-15')[0].formType).toBe(
+            '144/A'
+        );
     });
 
     it('buildOfferings renames formType to form, keeps the kind and caps newest first', () => {

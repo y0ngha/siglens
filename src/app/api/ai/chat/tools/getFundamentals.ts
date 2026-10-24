@@ -34,7 +34,7 @@ import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     earningsReactions,
-    RECENT_QUARTERS_COUNT,
+    QUARTERS_FETCH_COUNT,
     recentQuarterRows,
     type EarningsReactionView,
 } from './earningsHistory';
@@ -255,7 +255,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             getFinancialStatementsProvider(symbol).getIncomeStatements(
                 symbol,
                 'quarter',
-                RECENT_QUARTERS_COUNT
+                QUARTERS_FETCH_COUNT
             )
         ),
         loadEarningsReactions(
