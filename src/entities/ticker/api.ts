@@ -4,9 +4,7 @@ import type {
 } from '@/shared/lib/types';
 import {
     and,
-    desc,
     eq,
-    ilike,
     inArray,
     isNotNull,
     isNull,

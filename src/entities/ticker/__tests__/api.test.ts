@@ -2,7 +2,6 @@
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/shared/api/fmp/httpClient');
 // `cryptoAssetStore` is still mocked because `isCryptoSymbolStatic` imports `isCryptoSymbol`
 // from it — vitest needs a mock so the import resolves without touching the DB.
 vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
@@ -30,7 +29,6 @@ import {
 } from '@/entities/ticker/api';
 import { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
 

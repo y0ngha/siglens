@@ -26,7 +26,11 @@ export interface ImportEdge {
     to: string;
     /** `import type`, 또는 지정자 전부가 `type`인 import·재노출. 런타임에 사라진다. */
     typeOnly: boolean;
-    /** `import('…')`. 모듈 평가 시점에 로드하지 않으므로 초기화 순환을 만들지 않는다. */
+    /**
+     * `import('…')` 또는 `require('…')`. 이 저장소의 `require`는 프로바이더 선택처럼
+     * 함수 안에서만 쓰여(`shared/api/{market,economy,fmp}/get…Provider.ts`), 둘 다 모듈 평가 시점이 아니라
+     * 호출 시점에 로드한다. 그래서 초기화 순환은 만들지 않지만 슬라이스 결합에는 센다.
+     */
     dynamic: boolean;
 }
 
@@ -39,6 +43,11 @@ export interface ImportGraph {
      * 목록으로 드러낸다.
      */
     unresolved: string[];
+    /**
+     * babel이 오류를 복구하며 파싱한 파일. 복구된 AST에서는 노드가 빠질 수 있어 그
+     * 파일의 import 엣지가 조용히 사라진다 — `unresolved`와 같은 이유로 드러낸다.
+     */
+    parseErrors: string[];
 }
 
 const isProductionSource = (rel: string): boolean =>
@@ -108,19 +117,24 @@ function stringSource(node: unknown): string | null {
         : null;
 }
 
-/** 파일 하나의 import 지정자 목록. */
-function extractImports(
+export interface ImportRecord {
+    specifier: string;
+    typeOnly: boolean;
+    dynamic: boolean;
+}
+
+/** 파일 하나의 import 지정자 목록과 파싱 오류. */
+export function extractImports(
     rel: string,
     source: string
-): { specifier: string; typeOnly: boolean; dynamic: boolean }[] {
+): { records: ImportRecord[]; errors: string[] } {
     const ast = parse(source, {
         sourceType: 'module',
         errorRecovery: true,
         attachComment: false,
         plugins: rel.endsWith('.tsx') ? ['typescript', 'jsx'] : ['typescript'],
     });
-    const found: { specifier: string; typeOnly: boolean; dynamic: boolean }[] =
-        [];
+    const found: ImportRecord[] = [];
     const walk = (node: unknown): void => {
         if (Array.isArray(node)) {
             node.forEach(walk);
@@ -162,7 +176,9 @@ function extractImports(
         } else if (
             node.type === 'CallExpression' &&
             isNode(node.callee) &&
-            node.callee.type === 'Import'
+            (node.callee.type === 'Import' ||
+                (node.callee.type === 'Identifier' &&
+                    node.callee.name === 'require'))
         ) {
             const specifier = stringSource((node.arguments as unknown[])[0]);
             if (specifier)
@@ -174,7 +190,8 @@ function extractImports(
         }
     };
     walk(ast.program);
-    return found;
+    const errors = (ast.errors ?? []).map(error => error.message);
+    return { records: found, errors };
 }
 
 let cached: ImportGraph | null = null;
@@ -189,12 +206,12 @@ export function buildImportGraph(): ImportGraph {
     const fileSet = new Set(files);
     const edges: ImportEdge[] = [];
     const unresolved: string[] = [];
+    const parseErrors: string[] = [];
     for (const rel of files) {
         const source = readFileSync(path.join(SRC, rel), 'utf8');
-        for (const { specifier, typeOnly, dynamic } of extractImports(
-            rel,
-            source
-        )) {
+        const { records, errors } = extractImports(rel, source);
+        parseErrors.push(...errors.map(message => `${rel}: ${message}`));
+        for (const { specifier, typeOnly, dynamic } of records) {
             const to = resolveSpecifier(specifier, rel, fileSet);
             if (to === undefined) continue;
             if (to === null) {
@@ -204,7 +221,7 @@ export function buildImportGraph(): ImportGraph {
             if (to !== rel) edges.push({ from: rel, to, typeOnly, dynamic });
         }
     }
-    cached = { files, edges, unresolved };
+    cached = { files, edges, unresolved, parseErrors };
     return cached;
 }
 

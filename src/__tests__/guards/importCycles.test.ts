@@ -4,6 +4,7 @@ import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import {
     buildImportGraph,
     cycleEdges,
+    extractImports,
     type ImportEdge,
     stronglyConnectedComponents,
 } from './support/importGraph';
@@ -22,6 +23,8 @@ import {
  *   평가 순서가 꼬여 TDZ·`undefined` import가 날 수 있는 순환이다.
  * - **슬라이스 단위 순환**(entities·features): 파일로는 순환이 아니어도 슬라이스끼리
  *   서로를 참조하면 둘을 따로 고치거나 옮길 수 없다. `import type`만 뺀다.
+ *   cross-import를 허용하는 두 레이어만 본다. `shared`는 내부 슬라이스 간 import가
+ *   허용되고 `shared → entities`는 문서화된 예외라(src/shared/CLAUDE.md) 여기서 다루지 않는다.
  *
  * 둘 다 **0건**이어야 통과한다. 허용 목록을 두지 않는다 — 순환이 생기면 그
  * 자리에서 끊는다(공용 코드를 아래 레이어나 별도 파일로 내리는 것이 보통의 해법이다).
@@ -56,6 +59,15 @@ describe('순환 import', () => {
     );
 
     it(
+        '모든 파일이 오류 없이 파싱된다',
+        () => {
+            // 오류를 복구한 AST에서는 import 노드가 빠질 수 있다.
+            expect(buildImportGraph().parseErrors).toEqual([]);
+        },
+        SCAN_TIMEOUT_MS
+    );
+
+    it(
         '파일 단위 런타임 순환이 없다',
         () => {
             const current = cycleEdges(
@@ -81,6 +93,18 @@ describe('순환 import', () => {
 });
 
 describe('순환 검출기', () => {
+    it('require()를 지연 엣지로 센다', () => {
+        expect(
+            extractImports('a.ts', "const x = () => require('./fake');").records
+        ).toEqual([{ specifier: './fake', typeOnly: false, dynamic: true }]);
+    });
+
+    it('복구한 파싱 오류를 돌려준다', () => {
+        expect(
+            extractImports('a.ts', 'let a = 1;\nlet a = 2;').errors
+        ).not.toEqual([]);
+    });
+
     const edge = (
         from: string,
         to: string,
