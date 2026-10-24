@@ -38,6 +38,7 @@ import {
     recentQuarterRows,
     type EarningsReactionView,
 } from './earningsHistory';
+import { loadIndexMemberships } from './indexMembership';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { staleKrListingDate } from './freshness';
@@ -228,6 +229,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         quoteR,
         quartersR,
         reactionsR,
+        membershipsR,
     ] = await Promise.allSettled([
         provider.getProfile(symbol),
         provider.getKeyMetricsTtm(symbol),
@@ -274,6 +276,10 @@ export const getFundamentalsTool: ToolExecutor = async args => {
                 return bars;
             }
         ),
+        loadIndexMemberships(symbol).catch((error: unknown) => {
+            logToolDegrade('get_fundamentals', 'index memberships', error);
+            return null;
+        }),
     ]);
 
     const profile = settledOrNull(profileR);
@@ -411,6 +417,8 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         recentQuarters: quarters.length > 0 ? quarters : null,
         // Newest first; `null` when no reaction could be measured.
         earningsReactions: settledOrNull(reactionsR),
+        // S&P 500 / Nasdaq-100 / Dow membership; `null` for KR or when the lists are unavailable.
+        indexMemberships: settledOrNull(membershipsR),
         health: {
             altmanZScore: scores?.altmanZScore ?? null,
             piotroskiScore: scores?.piotroskiScore ?? null,

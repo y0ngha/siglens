@@ -14,6 +14,10 @@ const { getOrSetCache, fmpGet } = vi.hoisted(() => ({
 }));
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet }));
+// 지수 편입 목록은 Wikipedia를 읽으므로 이 테스트의 관심사(분기 캐시)와 분리한다.
+vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
+    loadIndexMemberships: async () => null,
+}));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: async () => true,
 }));
