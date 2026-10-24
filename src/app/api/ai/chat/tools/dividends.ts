@@ -56,11 +56,10 @@ export interface KrAnnualReportedDividend {
     source: typeof DART_ANNUAL_DIVIDEND_SOURCE;
 }
 
-export const DART_ANNUAL_DIVIDEND_SOURCE = 'DART';
-
 export const FMP_DIVIDENDS_SOURCE = 'FMP dividends history';
 export const YAHOO_DIVIDENDS_SOURCE = 'Yahoo Finance summaryDetail';
 export const YAHOO_HISTORY_SOURCE = 'Yahoo Finance dividend history';
+export const DART_ANNUAL_DIVIDEND_SOURCE = 'DART';
 
 const TRAILING_WINDOW_DAYS = 365;
 const AMOUNT_ROUND_SCALE = 1e4;

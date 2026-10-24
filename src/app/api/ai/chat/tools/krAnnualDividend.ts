@@ -6,8 +6,8 @@ import {
 } from '@/shared/api/dart/dartClient';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { getKrDartCorp } from '@/entities/investor-flows/server/getKrDartCorp';
 import { logToolDegrade } from './logToolDegrade';
 
@@ -44,6 +44,9 @@ const KIND_UNSPLIT = '-';
 const alotMatterKey = (corpCode: string, fiscalYear: number): string =>
     `dart:alot-matter:v1:${corpCode}:${fiscalYear}`;
 
+/** 현재 KST 달력 연도 — 사업연도는 UTC가 아니라 한국 날짜를 따른다. */
+const kstYear = (now: Date): number => Number(kstDateKey(now).split('-')[0]);
+
 /** `'6,000'`·`'4.30'` → 숫자. `'-'`·빈 값·숫자 아님 → null. */
 function parseDartNumber(value: unknown): number | null {
     if (typeof value !== 'string') return null;
@@ -57,14 +60,15 @@ function parseDartNumber(value: unknown): number | null {
  */
 function pickCommon(rows: readonly DartRecord[], se: string): number | null {
     const matching = rows.filter(row => row.se === se);
-    for (const kind of [KIND_COMMON, KIND_UNSPLIT]) {
-        for (const row of matching) {
-            if (row.stock_knd !== kind) continue;
-            const value = parseDartNumber(row.thstrm);
-            if (value !== null) return value;
-        }
-    }
-    return null;
+    return (
+        [KIND_COMMON, KIND_UNSPLIT]
+            .flatMap(kind =>
+                matching
+                    .filter(row => row.stock_knd === kind)
+                    .map(row => parseDartNumber(row.thstrm))
+            )
+            .find(value => value !== null) ?? null
+    );
 }
 
 /** 사업보고서 배당 행들 → 보통주 DPS·보고 수익률. 행이 없으면 null(= 그 연도 보고서 없음). */
@@ -111,7 +115,7 @@ export async function fetchKrAnnualDividend(
         if (!isDartEnabled()) return null;
         const corp = await getKrDartCorp(symbol);
         if (corp === null || corp.viaCommonShare) return null;
-        const currentYear = Number(zonedDate(now, 'Asia/Seoul').slice(0, 4));
+        const currentYear = kstYear(now);
         for (const lookback of FISCAL_YEAR_LOOKBACKS) {
             const found = await loadFiscalYear(
                 corp.corpCode,

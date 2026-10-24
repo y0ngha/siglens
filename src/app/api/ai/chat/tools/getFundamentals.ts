@@ -204,9 +204,9 @@ export function earningsDateCertainty(
  * `dividends` comes from its own adapters (FMP `/stable/dividends` for US/ETF,
  * yahoo dividend history for KR with `summaryDetail` as the fallback —
  * `FundamentalValuationMetrics` carries no such field) and is `null` when the
- * provider fails, never a guessed zero. For KR,
- * `dividends.annualReported` comes from DART `alotMatter` (사업보고서), cached
- * per corp+FY; it is absent for preferred shares or when no report exists. Index membership (S&P 500 /
+ * provider fails, never a guessed zero. For KR, `dividends.annualReported`
+ * comes from DART `alotMatter` (사업보고서), cached per corp+FY; it is absent
+ * for preferred shares or when no report exists. Index membership (S&P 500 /
  * Nasdaq-100 / Dow) comes from the Wikipedia constituent tables
  * (`indexMembership.ts`) because the FMP plan returns 402 for the constituent
  * endpoints (checked 2026-10-24). Peers and the long-form profile description are omitted
@@ -339,15 +339,13 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             : Promise.resolve(null),
         // Price-independent raw history, so it rides this fan-out (no serial
         // round trip on a cold cache); the yield is computed once `price` is known.
-        fetchDividendSource(symbol, isKrEquitySymbol(symbol)),
+        fetchDividendSource(symbol, isKr),
         loadIndexMemberships(symbol).catch((error: unknown) => {
             logToolDegrade('get_fundamentals', 'index memberships', error);
             return null;
         }),
         // KR only: the official DART annual-report DPS (never throws; cached per corp+FY).
-        isKrEquitySymbol(symbol)
-            ? fetchKrAnnualDividend(symbol)
-            : Promise.resolve(null),
+        isKr ? fetchKrAnnualDividend(symbol) : Promise.resolve(null),
     ]);
 
     const profile = settledOrNull(profileR);
