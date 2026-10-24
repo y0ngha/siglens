@@ -46,8 +46,8 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
-    symbolMetadataFromSeo,
 } from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';

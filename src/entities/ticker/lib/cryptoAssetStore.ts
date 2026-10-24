@@ -1,5 +1,5 @@
 import { tryGetDatabaseClient } from '@/shared/db/client';
-import { DrizzleCryptoAssetRepository } from '../api';
+import { DrizzleCryptoAssetRepository } from '../cryptoAssetApi';
 import { fmpCryptoMembership } from './fmpCryptoMembership';
 import type {
     CryptoAssetRecord,

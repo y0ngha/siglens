@@ -22,11 +22,11 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 // Match the import path in cryptoAssetStore.ts so vitest intercepts the import.
-// cryptoAssetStore.ts imports from '../api' (relative), which resolves to
-// entities/ticker/api. From this test file (lib/__tests__/), the same module
-// is reachable as '../../api'. Vitest resolves both to the same module, so
-// mocking '../../api' correctly intercepts the source's '../api' import.
-vi.mock('../../api', () => ({
+// cryptoAssetStore.ts imports from '../cryptoAssetApi' (relative), which resolves to
+// entities/ticker/cryptoAssetApi. From this test file (lib/__tests__/), the same
+// module is reachable as '../../cryptoAssetApi'. Vitest resolves both to the same
+// module, so mocking '../../cryptoAssetApi' correctly intercepts the source's import.
+vi.mock('../../cryptoAssetApi', () => ({
     DrizzleCryptoAssetRepository: class MockRepo {
         findBySymbol(...args: unknown[]) {
             return mockFindBySymbol(...args);

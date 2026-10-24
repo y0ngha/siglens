@@ -21,6 +21,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
 
 vi.mock('@/entities/ticker/api', () => ({
     DrizzleAssetTranslationRepository: vi.fn(),
+}));
+
+vi.mock('@/entities/ticker/cryptoAssetApi', () => ({
     fetchCryptoAssetList: vi.fn().mockResolvedValue([]),
 }));
 

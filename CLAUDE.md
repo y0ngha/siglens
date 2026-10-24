@@ -193,6 +193,7 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
   - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). ESLint `{ from: 'shared', allow: ['shared'] }` 규칙으로 강제.
   - **예외**: entities 간 cross-import 허용 (analysis → news-article, earnings-report 등 도메인 조합 필요).
   - **예외**: features 간 cross-import 허용 (auth-signup → auth-email-verification 등).
+  - cross-import를 허용하는 곳에서도 **순환은 금지**다. 파일 단위 런타임 순환과 entities·features 슬라이스 순환은 0건이어야 한다 (`src/__tests__/guards/importCycles.test.ts`).
   - widgets 간 import는 예외 없이 금지 — 공용 코드는 `shared/`·`entities/`로 내린다 (`src/__tests__/guards/noCrossWidgetImports.test.ts`).
 - barrel 금지. `index.ts`든 `actions.ts` 같은 re-export 전용 파일이든 두지 않는다. 심볼은 정의 파일에서 직접 import한다(테스트·`vi.mock` 포함).
 

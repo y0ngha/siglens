@@ -36,6 +36,8 @@ vi.mock('../../api', () => ({
             return repositoryFactoryMock(db) as unknown as object;
         }
     },
+}));
+vi.mock('../../cryptoAssetApi', () => ({
     fetchCryptoAssetList: fetchCryptoAssetListMock,
 }));
 vi.mock('../../lib/cryptoAssetStore', () => ({

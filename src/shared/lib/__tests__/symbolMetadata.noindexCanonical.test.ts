@@ -8,10 +8,10 @@
 import { getTranslations } from 'next-intl/server';
 import {
     NOINDEX_SYMBOL_METADATA,
-    noindexSymbolMetadata,
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { noindexSymbolMetadata } from '@/shared/lib/symbolMetadata';
 
 let t: SeoTranslator;
 beforeAll(async () => {

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import { useOpenTickerSearch } from '../hooks/useOpenTickerSearch';
+import { useOpenTickerSearch } from '@/features/watchlist/hooks/useOpenTickerSearch';
 import {
     usePickUntilPopstate,
     useUrlSearchParam,
@@ -10,7 +10,7 @@ import {
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { NativeSelect } from '@/shared/ui/NativeSelect';
-import { useWatchlist } from '../hooks/useWatchlist';
+import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import {
     DEFAULT_WATCHLIST_TAB,
     tabFromParam,
@@ -18,11 +18,14 @@ import {
     watchlistPanelId,
     watchlistTabId,
     type WatchlistPreviewTab,
-} from '../lib/watchlistTabs';
-import { isWatchlistSort, type WatchlistSort } from '../lib/sortWatchlist';
-import { RecentSymbolsList } from './RecentSymbolsList';
+} from '@/features/watchlist/lib/watchlistTabs';
+import {
+    isWatchlistSort,
+    type WatchlistSort,
+} from '@/features/watchlist/lib/sortWatchlist';
+import { RecentSymbolsList } from '@/features/watchlist/ui/RecentSymbolsList';
 import { WatchlistSection } from './WatchlistSection';
-import { WatchlistTabs } from './WatchlistTabs';
+import { WatchlistTabs } from '@/features/watchlist/ui/WatchlistTabs';
 
 /** 탭을 URL에 남긴다(새로고침·공유에 유지). 관심 탭은 기본값이라 파라미터를 지운다. */
 function writeTabToUrl(tab: WatchlistPreviewTab): void {

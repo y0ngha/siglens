@@ -45,8 +45,8 @@ import {
     buildBreadcrumbJsonLd,
     buildTitleSubject,
     resolveSymbolSeoContent,
-    symbolMetadataFromSeo,
 } from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import {
     dehydrate,
     HydrationBoundary,

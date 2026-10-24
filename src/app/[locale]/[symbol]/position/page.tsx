@@ -37,8 +37,8 @@ import {
     buildSymbolPositionSeoContent,
     buildSymbolSeoContent,
     NOINDEX_SYMBOL_METADATA,
-    symbolMetadataFromSeo,
 } from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Metadata } from 'next';

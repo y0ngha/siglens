@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { WatchlistPageContent } from '@/features/watchlist/ui/WatchlistPageContent';
+import { WatchlistPageContent } from '@/views/watchlist/WatchlistPageContent';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';

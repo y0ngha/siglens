@@ -27,8 +27,8 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
-    symbolMetadataFromSeo,
 } from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
