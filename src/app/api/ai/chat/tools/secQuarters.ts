@@ -210,11 +210,7 @@ function isLaterFiling(
 function groupByAccn(
     facts: readonly SecConceptFact[]
 ): Map<string, SecConceptFact[]> {
-    const groups = new Map<string, SecConceptFact[]>();
-    for (const fact of facts) {
-        groups.set(fact.accn, [...(groups.get(fact.accn) ?? []), fact]);
-    }
-    return groups;
+    return Map.groupBy(facts, f => f.accn);
 }
 
 /**
@@ -264,6 +260,17 @@ function currentPeriodFacts(facts: readonly SecConceptFact[]): {
     return { quarters, years };
 }
 
+/** The quarter that ends right before `next` starts (the XBRL `start` is the day after the previous end). */
+function quarterEndingBefore(
+    quarters: ReadonlyMap<string, SeriesEntry>,
+    next: SeriesEntry | undefined
+): SeriesEntry | undefined {
+    if (next === undefined) return undefined;
+    return [...quarters.values()].find(
+        q => Math.abs(daysBetween(next.start, q.end)) <= ADJACENT_DAYS
+    );
+}
+
 /**
  * Fiscal Q4 revenue = FY − (Q1+Q2+Q3), for each fiscal year end that has no
  * 3-month fact of its own. Only when the three quarters are consecutive,
@@ -283,13 +290,8 @@ function deriveFourthQuarters(
             const gap = daysBetween(year.end, q.end);
             return gap >= QUARTER_DAYS_MIN && gap <= QUARTER_DAYS_MAX;
         });
-        const endingBefore = (next: SeriesEntry | undefined) =>
-            next &&
-            [...quarters.values()].find(
-                q => Math.abs(daysBetween(next.start, q.end)) <= ADJACENT_DAYS
-            );
-        const q2 = endingBefore(q3);
-        const q1 = endingBefore(q2);
+        const q2 = quarterEndingBefore(quarters, q3);
+        const q1 = quarterEndingBefore(quarters, q2);
         if (!q1 || !q2 || !q3) return [];
         if (
             Math.abs(daysBetween(q1.start, year.start)) >
@@ -377,6 +379,11 @@ export function buildSecQuarters(
  * The SEC quarter for a provider row's period end: the nearest one within
  * {@link SEC_PERIOD_MATCH_DAYS} days (providers and filers occasionally
  * disagree by a few days on a 52/53-week calendar), `null` when none is close.
+ *
+ * Two adjacent quarters can never both be in range: consecutive quarter ends
+ * are at least `QUARTER_DAYS_MIN` days apart (the duration floor an SEC
+ * quarter must pass), far more than 2 × 7, so the nearest match is the only
+ * candidate and is never the wrong neighbour. Pinned by a test.
  */
 export function findSecQuarter(
     quarters: readonly SecQuarter[],

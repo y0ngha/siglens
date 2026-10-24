@@ -456,6 +456,13 @@ describe('findSecQuarter', () => {
         expect(findSecQuarter(quarters, '2026-03-31')?.accn).toBe('2026-03-28');
     });
 
+    it('adjacent quarters never compete: a 52/53-week shift picks the right one, the gap between them matches none', () => {
+        // Q2 ends 2025-12-27, Q3 2026-03-28 (91 days apart).
+        expect(findSecQuarter(quarters, '2025-12-31')?.accn).toBe('2025-12-27');
+        expect(findSecQuarter(quarters, '2026-03-24')?.accn).toBe('2026-03-28');
+        expect(findSecQuarter(quarters, '2026-02-10')).toBeNull();
+    });
+
     it('does not match a quarter more than a week away', () => {
         expect(findSecQuarter(quarters, '2026-04-30')).toBeNull();
         expect(findSecQuarter([], '2026-03-28')).toBeNull();

@@ -83,10 +83,12 @@ async function fetchAndBuild(cik: number): Promise<SecQuarter[]> {
  * As-filed quarterly EPS and revenue for a US domestic SEC filer, from the
  * official XBRL API. `null` when the symbol has no CIK in `sec_cik_symbol_map`
  * (outside the investor-flows universe, Korean, crypto…). An empty array means
- * the filer has no 10-Q/10-K quarter facts (a foreign issuer). Cached per CIK
- * for a day — the extracted rows, not the raw JSON. A rejected fetch is not
- * cached as data; it leaves a short failure marker instead, and the wait is
- * capped at {@link SEC_QUARTERS_BUDGET_MS}. Throws on SEC/DB failure; the caller degrades to the FMP rows.
+ * the filer has no 10-Q/10-K quarter facts (a foreign issuer).
+ *
+ * Cached per CIK for a day — the extracted rows, not the raw JSON. A rejected
+ * fetch is not cached as data; it leaves a short failure marker instead, and
+ * the wait is capped at {@link SEC_QUARTERS_BUDGET_MS}. Throws on SEC/DB
+ * failure or timeout; the caller degrades to the FMP rows.
  */
 export async function loadSecQuarters(
     symbol: string,
@@ -103,17 +105,19 @@ export async function loadSecQuarters(
     );
     // The losing promise is left running (it may still fill the cache); its
     // late rejection must not surface as unhandled.
-    load.catch(() => undefined);
+    void load.catch(() => undefined);
     return withBudget(load, SEC_QUARTERS_BUDGET_MS);
 }
 
-function withBudget<T>(work: Promise<T>, ms: number): Promise<T> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const deadline = new Promise<never>((_, reject) => {
-        timer = setTimeout(
-            () => reject(new Error('SEC quarters budget exceeded')),
-            ms
-        );
-    });
-    return Promise.race([work, deadline]).finally(() => clearTimeout(timer));
+async function withBudget<T>(work: Promise<T>, ms: number): Promise<T> {
+    const deadline = Promise.withResolvers<never>();
+    const timer = setTimeout(
+        () => deadline.reject(new Error('SEC quarters budget exceeded')),
+        ms
+    );
+    try {
+        return await Promise.race([work, deadline.promise]);
+    } finally {
+        clearTimeout(timer);
+    }
 }

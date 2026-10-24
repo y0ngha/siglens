@@ -420,6 +420,9 @@ export function fetchSubmissionsJson(
     );
 }
 
+/** `res.json()` is typed `any`; typing the reader's return as `unknown` makes callers validate it. */
+const readJson = (res: Response): Promise<unknown> => res.json();
+
 /**
  * `data.sec.gov/api/xbrl/companyconcept/CIK##########/us-gaap/<concept>.json` — 한 회사의 한 XBRL 개념(예: `EarningsPerShareDiluted`)이
  * 제출 건마다 보고된 모든 팩트. 같은 전역 게이트·User-Agent를 쓴다. 그 회사가 그 개념을 쓴 적이 없으면 `null`(404).
@@ -438,7 +441,7 @@ export async function fetchCompanyConceptJson(
     }
     return secGetDocument(
         `https://data.sec.gov/api/xbrl/companyconcept/CIK${String(cik).padStart(10, '0')}/us-gaap/${concept}.json`,
-        res => res.json() as Promise<unknown>,
+        readJson,
         {
             maxRetries: 0,
             timeoutMs: SEC_COMPANY_CONCEPT_BUDGET_MS,
