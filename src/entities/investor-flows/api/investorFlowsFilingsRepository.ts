@@ -99,6 +99,24 @@ export class DrizzleSecFilingsRepository {
     }
 
     /**
+     * 심볼의 SEC CIK(`sec_cik_symbol_map`). 맵에 없으면(유니버스 밖·비SEC 종목) `null`. 한 심볼에 CIK가 여럿일 일은 없지만
+     * (한 티커 = 한 발행인) 결정적이도록 가장 작은 CIK를 고른다.
+     */
+    async findCikBySymbol(symbol: string): Promise<number | null> {
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select({ cik: secCikSymbolMap.cik })
+                    .from(secCikSymbolMap)
+                    .where(eq(secCikSymbolMap.symbol, symbol))
+                    .orderBy(secCikSymbolMap.cik)
+                    .limit(1),
+            DB_TRANSIENT_RETRY
+        );
+        return row?.cik ?? null;
+    }
+
+    /**
      * `sec_cik_symbol_map`을 `pairs`로 **교체**한다(한 트랜잭션). 모든 쌍을 `updated_at = now()`로 upsert한 뒤 그보다 오래된 행
      * (= 이번 목록에 없는 쌍: 상장 폐지·티커 변경)을 지운다 — 트랜잭션 안의 `now()`는 하나라 비교가 정확하다.
      * 빈 목록으로 맵을 비우지 않도록 하는 최소 규모 검사는 호출부(`syncCikSymbolMap`)가 한다.

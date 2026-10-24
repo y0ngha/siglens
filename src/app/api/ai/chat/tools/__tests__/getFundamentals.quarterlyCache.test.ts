@@ -59,6 +59,9 @@ vi.mock('@/entities/earnings-report/api', () => ({
 vi.mock('@/entities/bars/lib/barsDataCache', () => ({
     getCachedBarsWithIndicators: async () => ({ bars: [], indicators: {} }),
 }));
+vi.mock('@/app/api/ai/chat/tools/loadSecQuarters', () => ({
+    loadSecQuarters: async () => null,
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
 }));

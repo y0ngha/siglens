@@ -7,6 +7,7 @@ import {
     fetchFilingDocumentHead,
     fetchFilingDocumentStream,
     fetchFilingDocumentText,
+    fetchCompanyConceptJson,
     fetchFilingIndexJson,
     fetchSecFile,
     fetchSubmissionsJson,
@@ -314,6 +315,46 @@ describe('submissions', () => {
         const run = fetchSubmissionsJson('CIK0000000001.json');
         await vi.runAllTimersAsync();
         expect(await run).toBeNull();
+    });
+});
+
+describe('fetchCompanyConceptJson', () => {
+    it('requests the zero-padded companyconcept URL with the SEC User-Agent', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(200, { tag: 'Revenues' }));
+        const run = fetchCompanyConceptJson(1116132, 'EarningsPerShareDiluted');
+        await vi.runAllTimersAsync();
+        expect(await run).toEqual({ tag: 'Revenues' });
+        expect(fetchSpy.mock.calls[0]?.[0]).toBe(
+            'https://data.sec.gov/api/xbrl/companyconcept/CIK0001116132/us-gaap/EarningsPerShareDiluted.json'
+        );
+        const init = fetchSpy.mock.calls[0]?.[1] as RequestInit;
+        expect((init.headers as Record<string, string>)['User-Agent']).toBe(
+            'SigLens dev.y0ngha@gmail.com'
+        );
+    });
+
+    it('returns null when the company never used the concept (404)', async () => {
+        fetchSpy.mockResolvedValueOnce(respond(404, '<Error/>'));
+        const run = fetchCompanyConceptJson(728535, 'Revenues');
+        await vi.runAllTimersAsync();
+        expect(await run).toBeNull();
+    });
+
+    it('does not retry a 5xx', async () => {
+        fetchSpy.mockImplementation(async () => respond(503, 'busy'));
+        const run = fetchCompanyConceptJson(1, 'Revenues');
+        const assertion = expect(run).rejects.toBeInstanceOf(SecHttpError);
+        await vi.runAllTimersAsync();
+        await assertion;
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects an invalid cik or concept without a request', async () => {
+        await expect(fetchCompanyConceptJson(0, 'Revenues')).rejects.toThrow();
+        await expect(
+            fetchCompanyConceptJson(1, '../submissions')
+        ).rejects.toThrow();
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 });
 

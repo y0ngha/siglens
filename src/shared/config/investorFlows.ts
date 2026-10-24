@@ -56,6 +56,12 @@ export const SEC_RETRY_AFTER_CAP_MS = 10_000;
 /** 렌더 경로 submissions 조회의 **전체**(슬롯 대기 + 요청 + 본문) 예산. 넘으면 URL 추정으로 degrade. */
 export const SEC_SUBMISSIONS_BUDGET_MS = 8_000;
 
+/**
+ * 렌더 경로 `data.sec.gov/api/xbrl/companyconcept` 조회의 **전체** 예산. 실측(2026-10-24): 응답 2~4KB(분기 팩트 ≈100~350개 —
+ * 큰 `companyfacts`와 달리 한 개념뿐). 넘으면 호출부가 degrade한다.
+ */
+export const SEC_COMPANY_CONCEPT_BUDGET_MS = 8_000;
+
 /** information table 본문 크기 상한(바이트). 초대형 필러(수십만 행)도 이 안에 든다. */
 export const SEC_MAX_INFO_TABLE_BYTES = 200 * 1024 * 1024;
 

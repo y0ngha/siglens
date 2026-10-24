@@ -2,6 +2,7 @@ import 'server-only';
 import {
     SEC_ARCHIVES_BASE_URL,
     SEC_BODY_IDLE_TIMEOUT_MS,
+    SEC_COMPANY_CONCEPT_BUDGET_MS,
     SEC_FILING_HEAD_MAX_BYTES,
     SEC_HEADER_TIMEOUT_MS,
     SEC_INFO_TABLE_BODY_BUDGET_MS,
@@ -414,6 +415,34 @@ export function fetchSubmissionsJson(
             maxRetries: 0,
             timeoutMs: SEC_SUBMISSIONS_BUDGET_MS,
             totalBudgetMs: SEC_SUBMISSIONS_BUDGET_MS,
+            accessDeniedMeansMissing: true,
+        }
+    );
+}
+
+/**
+ * `data.sec.gov/api/xbrl/companyconcept/CIK##########/us-gaap/<concept>.json` — 한 회사의 한 XBRL 개념(예: `EarningsPerShareDiluted`)이
+ * 제출 건마다 보고된 모든 팩트. 같은 전역 게이트·User-Agent를 쓴다. 그 회사가 그 개념을 쓴 적이 없으면 `null`(404).
+ * `concept`은 영문자 태그명만 받는다(경로에 들어가므로 다른 문자는 거절).
+ *
+ * 렌더 경로에서 불리므로 `fetchSubmissionsJson`처럼 슬롯 대기 + 요청 + 본문 전체가 `SEC_COMPANY_CONCEPT_BUDGET_MS` 안이다
+ * (재시도 없음, SERVER.md#SA-14).
+ */
+export async function fetchCompanyConceptJson(
+    cik: number,
+    concept: string
+): Promise<unknown | null> {
+    // async라 잘못된 인자도 동기 throw가 아니라 거부된 promise다(SA-10).
+    if (!Number.isInteger(cik) || cik <= 0 || !/^[A-Za-z]+$/.test(concept)) {
+        throw new Error('fetchCompanyConceptJson: invalid cik or concept');
+    }
+    return secGetDocument(
+        `https://data.sec.gov/api/xbrl/companyconcept/CIK${String(cik).padStart(10, '0')}/us-gaap/${concept}.json`,
+        res => res.json() as Promise<unknown>,
+        {
+            maxRetries: 0,
+            timeoutMs: SEC_COMPANY_CONCEPT_BUDGET_MS,
+            totalBudgetMs: SEC_COMPANY_CONCEPT_BUDGET_MS,
             accessDeniedMeansMissing: true,
         }
     );

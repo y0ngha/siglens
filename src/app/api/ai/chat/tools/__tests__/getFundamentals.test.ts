@@ -16,6 +16,7 @@ const {
     findListedShares,
     fetchDividendSource,
     loadIndexMemberships,
+    loadSecQuarters,
 } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
@@ -30,6 +31,7 @@ const {
     findListedShares: vi.fn(),
     fetchDividendSource: vi.fn(),
     loadIndexMemberships: vi.fn(),
+    loadSecQuarters: vi.fn(),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
@@ -77,6 +79,9 @@ vi.mock('@/app/api/ai/chat/tools/dividends', async importOriginal => ({
         typeof import('@/app/api/ai/chat/tools/dividends')
     >()),
     fetchDividendSource,
+}));
+vi.mock('@/app/api/ai/chat/tools/loadSecQuarters', () => ({
+    loadSecQuarters,
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
@@ -178,6 +183,7 @@ describe('getFundamentalsTool', () => {
         findListedShares.mockResolvedValue(null);
         fetchDividendSource.mockResolvedValue(null);
         loadIndexMemberships.mockResolvedValue(null);
+        loadSecQuarters.mockResolvedValue(null);
         sessionSpecFor.mockReturnValue({
             kind: 'scheduled',
             timeZone: 'America/New_York',
@@ -883,6 +889,7 @@ describe('getFundamentalsTool', () => {
                     revenue: 2_440_000_000,
                     revenueYoYPct: null,
                     currency: 'USD',
+                    sec: null,
                 },
                 {
                     periodEnd: '2026-04-03',
@@ -894,6 +901,7 @@ describe('getFundamentalsTool', () => {
                     revenue: 2_440_000_000,
                     revenueYoYPct: null,
                     currency: 'USD',
+                    sec: null,
                 },
             ]);
         });
@@ -928,6 +936,104 @@ describe('getFundamentalsTool', () => {
                 rt
             )) as { recentQuarters: { form: unknown }[] | null };
             expect(r.recentQuarters?.[0]?.form).toBe('10-Q');
+        });
+
+        describe('SEC XBRL quarters', () => {
+            const secQuarter = {
+                periodEnd: '2026-06-30',
+                form: '10-Q' as const,
+                accn: '0000051434-26-000123',
+                filed: '2026-08-05',
+                epsDiluted: 0.5,
+                revenue: 6_004_000_000,
+                revenueYoYPct: -2.25,
+            };
+            type Quarters = {
+                recentQuarters:
+                    | {
+                          form: unknown;
+                          revenueYoYPct: unknown;
+                          epsDiluted: unknown;
+                          sec: unknown;
+                      }[]
+                    | null;
+            };
+
+            it('adds the as-filed figures to a matching quarter and prefers the SEC YoY, keeping the FMP fields', async () => {
+                getProvider.mockReturnValue(fakeProvider());
+                getIncomeStatements.mockResolvedValue([
+                    incomeRow('2026-06-30', 'Q2'),
+                ]);
+                loadSecQuarters.mockResolvedValue([secQuarter]);
+                const r = (await getFundamentalsTool(
+                    { symbol: 'IP' },
+                    ctx,
+                    rt
+                )) as Quarters;
+                expect(loadSecQuarters).toHaveBeenCalledWith('IP', 'fake-db');
+                expect(r.recentQuarters?.[0]).toMatchObject({
+                    form: '10-Q',
+                    epsDiluted: 5.58,
+                    revenueYoYPct: -2.25,
+                    sec: {
+                        form: '10-Q',
+                        epsDiluted: 0.5,
+                        revenue: 6_004_000_000,
+                        revenueYoYPct: -2.25,
+                        filed: '2026-08-05',
+                        accn: '0000051434-26-000123',
+                    },
+                });
+            });
+
+            it('a Korean stock never asks the SEC', async () => {
+                getProvider.mockReturnValue(fakeProvider());
+                getIncomeStatements.mockResolvedValue([
+                    incomeRow('2026-06-30', 'Q2'),
+                ]);
+                const r = (await getFundamentalsTool(
+                    { symbol: '005930.KS' },
+                    ctx,
+                    rt
+                )) as Quarters;
+                expect(loadSecQuarters).not.toHaveBeenCalled();
+                expect(r.recentQuarters?.[0]).toMatchObject({
+                    form: null,
+                    sec: null,
+                });
+            });
+
+            it('an SEC failure degrades to the FMP-based rows with a logged, message-free diagnostic', async () => {
+                const logged = vi
+                    .spyOn(console, 'error')
+                    .mockImplementation(() => undefined);
+                try {
+                    getProvider.mockReturnValue(fakeProvider());
+                    getIncomeStatements.mockResolvedValue([
+                        incomeRow('2026-06-30', 'Q2'),
+                    ]);
+                    loadSecQuarters.mockRejectedValue(
+                        new Error('SEC 503 secret-detail')
+                    );
+                    const r = (await getFundamentalsTool(
+                        { symbol: 'IP' },
+                        ctx,
+                        rt
+                    )) as Quarters;
+                    expect(r.recentQuarters?.[0]).toMatchObject({
+                        form: '10-Q',
+                        epsDiluted: 5.58,
+                        sec: null,
+                    });
+                    const call = logged.mock.calls.find(
+                        c => c[2] === 'sec xbrl quarters failed, degrading'
+                    );
+                    expect(call).toBeDefined();
+                    expect(JSON.stringify(call)).not.toContain('secret-detail');
+                } finally {
+                    logged.mockRestore();
+                }
+            });
         });
 
         it('no quarterly rows (or a failed read) → null, other sections intact', async () => {
@@ -1144,12 +1250,25 @@ describe('getFundamentalsTool', () => {
                 { exDate: '2026-05-11', amount: 0.26, payDate: '2026-05-14' },
             ],
         });
+        // Worst case: every shown quarter also carries its full `sec` block.
+        loadSecQuarters.mockResolvedValue(
+            Array.from({ length: 8 }, (_, i) => ({
+                periodEnd: `2026-0${(i % 9) + 1}-28`,
+                form: '10-Q' as const,
+                accn: '0001234567-26-000123',
+                filed: '2026-10-01',
+                epsDiluted: 12.3456,
+                revenue: 123_456_789_012,
+                revenueYoYPct: -12.34,
+            }))
+        );
         const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
-            recentQuarters: unknown[];
+            recentQuarters: { sec: unknown }[];
             earningsReactions: unknown[];
             dividends: unknown;
         };
         expect(r.dividends).not.toBeNull();
+        expect(r.recentQuarters.every(q => q.sec !== null)).toBe(true);
         expect(r.recentQuarters).toHaveLength(5);
         expect(r.earningsReactions).toHaveLength(8);
         expect(JSON.stringify(r).length).toBeLessThan(TOOL_RESULT_MAX_CHARS);

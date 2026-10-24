@@ -70,6 +70,15 @@ describe('DrizzleSecFilingsRepository', () => {
         ]);
     });
 
+    it('finds the CIK of a symbol, null when the map has none', async () => {
+        const { db, ops } = createFakeDb([[{ cik: 1116132 }], []]);
+        const repo = new DrizzleSecFilingsRepository(db);
+        expect(await repo.findCikBySymbol('TPR')).toBe(1116132);
+        expect(await repo.findCikBySymbol('NOPE')).toBeNull();
+        const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
+        expect(renderSql(where).params).toEqual(['TPR']);
+    });
+
     it('replaces the CIK map: upserts every pair then deletes the rows not refreshed in this transaction', async () => {
         const { db, ops } = createFakeDb([[], withCount(4)]);
         const result = await new DrizzleSecFilingsRepository(
