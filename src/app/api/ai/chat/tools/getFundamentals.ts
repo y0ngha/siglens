@@ -45,6 +45,7 @@ import {
     recentQuarterRows,
     type EarningsReactionView,
 } from './earningsHistory';
+import { buildDividends, fetchDividendSource } from './dividends';
 import { krListedBasis } from './krListedBasis';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
@@ -156,8 +157,13 @@ interface EarningsDateCertainty {
     earningsDateNote: string;
 }
 
+/**
+ * 실측(2026-10-24): FMP `earnings-calendar` 행은 `symbol,date,epsActual,epsEstimated,revenueActual,
+ * revenueEstimated,lastUpdated`뿐이라 bmo/amc 같은 시간대 필드가 없다. 그래서 도구는 시간대를 내지
+ * 않고, 모델이 `web_search`로 회사가 공지한 시간대를 찾아 출처와 함께 말하도록 안내한다.
+ */
 const SESSION_TIMING_NOT_PROVIDED =
-    'Session timing (before/after market) is not provided.';
+    'Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.';
 
 /** 확정 여부 3상태(`true`·`false`·모름) → 모델에게 보여 줄 안내 문장. */
 export function earningsDateNoteFor(confirmed: boolean | null): string {
@@ -189,9 +195,11 @@ export function earningsDateCertainty(
  * a single failing FMP/yahoo endpoint only drops its own section instead of
  * the whole tool result.
  *
- * Dividend yield is not in the provider's exposed shapes
- * (`FundamentalValuationMetrics` carries no such field) — omitted rather
- * than guessed. Peers and the long-form profile description are omitted
+ * `dividends` comes from its own adapters (FMP `/stable/dividends` for US/ETF,
+ * yahoo `summaryDetail` for KR — `FundamentalValuationMetrics` carries no such
+ * field) and is `null` when the provider fails, never a guessed zero. Index
+ * membership (S&P 500 / Nasdaq-100 / Dow) is deliberately absent: the FMP plan
+ * returns 402 for the constituent endpoints (checked 2026-10-24). Peers and the long-form profile description are omitted
  * too: the model-facing shape is numbers for valuation/health questions,
  * not the page's full content.
  *
@@ -272,6 +280,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         reactionsR,
         listedSharesR,
         lastCloseR,
+        dividendSourceR,
     ] = await Promise.allSettled([
         provider.getProfile(symbol),
         provider.getKeyMetricsTtm(symbol),
@@ -316,6 +325,9 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         isKr
             ? loadLastCompletedClose(loadDailyBars, session)
             : Promise.resolve(null),
+        // Price-independent raw history, so it rides this fan-out (no serial
+        // round trip on a cold cache); the yield is computed once `price` is known.
+        fetchDividendSource(symbol, isKrEquitySymbol(symbol)),
     ]);
 
     const profile = settledOrNull(profileR);
@@ -381,6 +393,11 @@ export const getFundamentalsTool: ToolExecutor = async args => {
               lastClose: settledOrNull(lastCloseR),
           })
         : null;
+    const dividends = buildDividends(settledOrNull(dividendSourceR), {
+        price,
+        currency,
+        timeZone: earningsTimeZone,
+    });
 
     const gradeTotal = grades
         ? grades.strongBuy +
@@ -482,6 +499,9 @@ export const getFundamentalsTool: ToolExecutor = async args => {
                     ? null
                     : roundNumber(growth.growthEPS * 100),
         },
+        // `null` = unknown (provider failure / no data); a confirmed non-payer is an
+        // object with `trailing12mAmount: 0`.
+        dividends,
         // Newest first; `null` when the quarterly rows are unavailable.
         recentQuarters: quarters.length > 0 ? quarters : null,
         // Newest first; `null` when no reaction could be measured.

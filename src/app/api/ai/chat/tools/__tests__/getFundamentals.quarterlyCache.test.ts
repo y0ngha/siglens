@@ -96,9 +96,11 @@ describe('get_fundamentals recentQuarters source', () => {
             operatingMargin: null,
             netMargin: null,
         };
-        getOrSetCache.mockImplementation(async (key: string) =>
-            key === 'financials:income:STX:quarter' ? [cachedRow] : null
-        );
+        getOrSetCache.mockImplementation(async (key: string) => {
+            if (key === 'financials:income:STX:quarter') return [cachedRow];
+            // Dividend history is its own Redis key; an empty list = non-payer.
+            return key === 'dividends:STX' ? [] : null;
+        });
 
         const r = (await getFundamentalsTool({ symbol: 'STX' }, ctx, rt)) as {
             recentQuarters: Array<{ periodEnd: string; filingDate: string }>;

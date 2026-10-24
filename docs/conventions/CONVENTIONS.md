@@ -742,6 +742,13 @@ files, one page's metadata and JSON-LD, coupled layout values such as a panel wi
 on it), extract it to one shared source and import it everywhere. If a duplicate is unavoidable, see CS-3. Where a
 second site is meant to import rather than redeclare a list, pin that with a source guard.
 
+The same applies to derived logic, not only literals: one window boundary (for example a weekend roll-back) or one
+"last completed daily close" rule computed in two places drifts apart. Keep one function in the lowest layer that
+needs it and have the other callers delegate to it.
+
+- ❌ Two helpers each re-derive "the previous trading day" with their own weekend handling.
+- ✅ One exported helper owns the boundary; both callers import it, and one test pins its edge cases.
+
 <a id="CS-3"></a>
 
 #### CS-3 — Mirrored constants are documented and parity-tested
