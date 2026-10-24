@@ -12,6 +12,10 @@ import {
 } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import { summarizeInvestorFlows } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
 import { summarizeKrInvestorFlows } from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
+import {
+    loadKrInvestorTrend,
+    type KrInvestorTrendView,
+} from '@/app/api/ai/chat/tools/krInvestorTrend';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import type {
     InvestorFlowsDegradedPart,
@@ -27,7 +31,9 @@ const EXCHANGE_LIST_SOURCE = 'Nasdaq/NYSE/Cboe Reg SHO threshold lists';
 const KR_SOURCE =
     'DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports';
 const KR_NOT_PROVIDED =
-    'Institutional and foreign net buying, short selling and offering filings are not provided for Korean stocks - say so and never estimate them.';
+    'SIGLENS tools do not carry Korean investor-type net buying (institutional, foreign, individual) right now. If web_search is available, you may use it for this - cite the publisher and date; otherwise say it could not be confirmed. Never estimate.';
+const KR_TREND_NOTE =
+    'krInvestorTrend is 네이버 금융 (Naver Finance) data: net buying by foreign / institution / individual investors in shares, newest first. Cite the source as 네이버 금융 and the asOf date; the latest session appears only after the close.';
 const KR_PREFERRED_SHARE_NOTE =
     'This is a preferred share. DART ownership filings are company-level, so these are the same reports as the common share.';
 const KR_COLLECTING_NOTE =
@@ -119,18 +125,26 @@ function sourceLine(finraEnabled: boolean, regShoEnabled: boolean): string {
  * 한국 종목(DART) 결과. 미국 갈래(13F·FINRA·SEC)의 수집 상태는 보지 않는다 — DART 백필이 끝나지 않았고 이 종목 목록이 비어 있을 때만
  * `dataStatus.dart: 'collecting'`이다. 우선주는 지분공시가 보통주와 같다는 안내를 붙인다. 기관·외국인 순매수 미제공은 항상 밝힌다.
  */
-function krResult(
+async function krResult(
     symbol: string,
-    result: InvestorFlowsScorecardResult
-): Record<string, unknown> {
+    result: InvestorFlowsScorecardResult,
+    krTrendPending: Promise<KrInvestorTrendView | null> | null
+): Promise<Record<string, unknown>> {
     const { snapshot, scorecard, readiness, krCompany } = result;
+    // `null` 약속 = 비공식 소스 비허용(공개 API): 네이버를 읽지 않고, `krInvestorTrend`·`trendNote` 키 자체를 싣지 않는다.
+    const krInvestorTrend =
+        krTrendPending === null ? null : await krTrendPending;
     const collecting = isKrDisclosureCollecting(readiness, snapshot);
     const envelope = {
         source: KR_SOURCE,
         symbol,
         market: 'kr' as const,
         available: true,
-        notProvided: KR_NOT_PROVIDED,
+        // 값이 있으면 출처 안내(`trendNote`), 없으면 "미제공/확인 불가" 안내(`notProvided`)다.
+        ...(krInvestorTrend === null
+            ? { notProvided: KR_NOT_PROVIDED }
+            : { trendNote: KR_TREND_NOTE }),
+        ...(krTrendPending === null ? {} : { krInvestorTrend }),
         ...(krCompany?.viaCommonShare === true
             ? { shareClassNote: KR_PREFERRED_SHARE_NOTE }
             : {}),
@@ -172,15 +186,22 @@ function krResult(
  * `degraded:true`(인프라 장애)는 `available:false`로, 정상적인 "이 종목은 수급 데이터 없음"은
  * `available:true` + `noData:true`로 갈라 모델이 장애를 "데이터 없음"으로 말하지 않게 한다.
  */
-export const getInvestorFlowsTool: ToolExecutor = async args => {
+export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
     const symbol = String(args.symbol).toUpperCase();
     if (!(await isTabAllowedForSymbol(symbol, 'flows')))
         return { symbol, available: false, reason: 'tab_not_available' };
 
+    // 네이버 호출(타임아웃 8초)이 스코어카드 뒤에 직렬로 붙지 않도록 먼저 시작한다. 로더는 던지지 않고(`null`로 낮춤),
+    // 한국 심볼이 아니면 요청 없이 곧바로 `null`이다.
+    const krTrendPending =
+        rt.allowUnofficialSources === false
+            ? null
+            : loadKrInvestorTrend(symbol);
     const result = await getInvestorFlowsScorecard(symbol);
     if (result.degraded)
         return { symbol, available: false, reason: 'provider_failed' };
-    if (result.market === 'kr') return krResult(symbol, result);
+    if (result.market === 'kr')
+        return await krResult(symbol, result, krTrendPending);
 
     const { snapshot, scorecard, finraEnabled, regShoEnabled, readiness } =
         result;

@@ -81,7 +81,11 @@ describe('executePublicTool — 실행 문맥', () => {
         await run();
         expect(mockCreateExecutor).toHaveBeenCalledWith(
             { analysisModel: 'agent-model-for-test' },
-            { refreshSymbolData: false, resultCaps: PUBLIC_API_RESULT_CAPS }
+            {
+                refreshSymbolData: false,
+                resultCaps: PUBLIC_API_RESULT_CAPS,
+                allowUnofficialSources: false,
+            }
         );
     });
 

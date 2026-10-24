@@ -459,7 +459,7 @@ describe('tool registry', () => {
         );
     });
 
-    it('get_bars_indicators만 BARS_RESULT_MAX_CHARS 한도 — 4,000자 초과·6,000자 이내는 온전히, 6,000자 초과는 절단된다', async () => {
+    it('get_bars_indicators만 BARS_RESULT_MAX_CHARS 한도 — 4,000자 초과·6,500자 이내는 온전히, 6,500자 초과는 절단된다', async () => {
         const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
         const exec = createToolExecutor({
             analysisModel: 'deepseek-v4.1-flash',
@@ -468,7 +468,7 @@ describe('tool registry', () => {
             exec('get_bars_indicators', { symbol: 'AAPL' }, makeCtx());
         // Regression guard for `ceilingFor` ignoring the bars ceiling: a
         // result strictly between TOOL_RESULT_MAX_CHARS (4,000) and
-        // BARS_RESULT_MAX_CHARS (6,000) would be collapsed into a
+        // BARS_RESULT_MAX_CHARS (6,500) would be collapsed into a
         // `{truncated, preview}` blob by the shared 4,000 default.
         const midSize = Math.floor(
             (TOOL_RESULT_MAX_CHARS + BARS_RESULT_MAX_CHARS) / 2
@@ -548,6 +548,25 @@ describe('tool registry', () => {
             await exec('search_ticker', { query: 'a' }, makeCtx());
 
             expect(typeof runtimes[0]!.ensureSymbolData).toBe('function');
+        });
+
+        it('allowUnofficialSources는 에이전트 기본이 true이고 옵션 false가 runtime에 실린다', async () => {
+            const { exec, runtimes } = capture();
+            await exec('search_ticker', { query: 'a' }, makeCtx());
+            expect(runtimes[0]!.allowUnofficialSources).toBe(true);
+
+            const strict: ToolRuntime[] = [];
+            search.mockImplementation(
+                async (_args: unknown, _ctx: unknown, runtime: ToolRuntime) => {
+                    strict.push(runtime);
+                    return { ok: true };
+                }
+            );
+            await createToolExecutor(
+                { analysisModel: 'm' as never },
+                { allowUnofficialSources: false }
+            )('search_ticker', { query: 'a' }, makeCtx());
+            expect(strict[0]!.allowUnofficialSources).toBe(false);
         });
 
         it('refreshSymbolData: false면 ensureSymbolData가 아무것도 부르지 않는 no-op이다', async () => {

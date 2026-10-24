@@ -40,7 +40,11 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.
  * - 시세·봉·재무·옵션·의회 거래·수급(`get_investor_flows`: DB의 13F·FINRA·DART + FMP 내부자·13D/G를 읽어 코드가 계산한
- *   점수표를 압축할 뿐 LLM을 부르지 않는다)·경제 지표는 서버의 **시장 데이터 키**(FMP/Yahoo)를 쓴다. LLM이 아니고
+ *   점수표를 압축할 뿐 LLM을 부르지 않는다)·경제 지표는 서버의 **시장 데이터 키**(FMP/Yahoo)를 쓴다.
+ *   예외 처리: 한국 종목 `get_investor_flows`의 `krInvestorTrend`(2026-10-24)는 키 없이 네이버 증권의 비공식 모바일 JSON
+ *   (`m.stock.naver.com`)을 읽는다. 공식 API·약관이 없는 소스를 제3자 개발자에게 재배포하는 것은 라이선스 위험이 커서
+ *   **공개 API에서는 제외**한다 — 실행기를 `allowUnofficialSources: false`로 만들어(`executePublicTool`) 도구가 네이버를
+ *   부르지도 않고 `krInvestorTrend`·`trendNote` 키도 응답에서 빠진다. SiglensAI 에이전트에서만 쓴다. LLM이 아니고
  *   공유 캐시를 거치며, 회원 단위 분당/일 한도(`PUBLIC_API_RATE_LIMITS.data`)가 호출 수를 묶는다.
  * - `get_guide`·`get_my_portfolio`·`get_news`(저장분)는 DB(와 보유종목 시세 캐시)만 읽는다.
  *

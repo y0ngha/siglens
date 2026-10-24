@@ -9,8 +9,15 @@ export const TOOL_RESULT_MAX_CHARS = 4_000;
  * tool to this constant — otherwise the registry's generic
  * `truncateToolResult(..., TOOL_RESULT_MAX_CHARS)` re-cuts the already-fit
  * result down to 4,000 and collapses it into a front-cut preview blob.
+ *
+ * Raised 6,000 → 6,500 (2026-10-24): after `derived.closeStreak` and the six
+ * `*Close` fields on every `RangeWindow`, the default 30-bar 1Day request
+ * measures 5,835 chars untrimmed and 5,892 in the live regular-session shape
+ * (`lastBarInProgress` + `lastCompletedClose`) — only ~108 under 6,000, so a few
+ * MA crosses would have tipped the DEFAULT request into `fitBarsToBudget`
+ * trimming bars. 6,500 restores ~600 chars of headroom for that live shape.
  */
-export const BARS_RESULT_MAX_CHARS = 6_000;
+export const BARS_RESULT_MAX_CHARS = 6_500;
 
 /**
  * `get_market_overview` ceiling. Measured on a representative worst-case
@@ -22,10 +29,11 @@ export const BARS_RESULT_MAX_CHARS = 6_000;
  *
  * `get_fundamentals` and `get_congress_trades` fit comfortably under the
  * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
- * `get_fundamentals` measures ~2,275 chars with every section filled plus 5
- * `recentQuarters` rows, 8 `earningsReactions` and the ~170-char `dividends`
- * block (~1,200 without the two lists; fixture in `getFundamentals.test.ts`,
- * 2026-10-24),
+ * `get_fundamentals` measures ~2,450 chars with every section filled plus 5
+ * `recentQuarters` rows (each with `form` and `revenueYoYPct`), 8
+ * `earningsReactions` and the ~170-char `dividends` block (summed from two
+ * 2026-10-24 measurements of the fixture in `getFundamentals.test.ts`: ~2,275
+ * with dividends, +~180 for the per-quarter `form`/`revenueYoYPct`),
  * `get_congress_trades` ~2,500.
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;

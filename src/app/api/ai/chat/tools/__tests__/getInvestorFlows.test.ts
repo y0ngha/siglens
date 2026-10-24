@@ -2,10 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { isTabAllowed, loadScorecard } = vi.hoisted(() => ({
+const { isTabAllowed, loadScorecard, loadKrTrend } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     loadScorecard: vi.fn(),
+    loadKrTrend: vi.fn(),
 }));
+vi.mock('@/app/api/ai/chat/tools/krInvestorTrend', () => ({
+    loadKrInvestorTrend: loadKrTrend,
+}));
+// 실제 로더 위에서 "네이버 실패 → 도구는 그대로 응답"을 보기 위한 목: 네이버 호출과 Redis만 막는다.
+const { naverFetch } = vi.hoisted(() => ({ naverFetch: vi.fn() }));
+vi.mock('@/shared/api/naver/naverInvestorTrend', () => ({
+    fetchNaverInvestorTrend: naverFetch,
+}));
+vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: () => null }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
 }));
@@ -300,6 +310,7 @@ describe('getInvestorFlowsTool', () => {
             )) as ToolOutput;
             expect(result.insider.proposedSales).toEqual([
                 {
+                    formType: '144',
                     filingDate: '2026-10-12',
                     filer: 'Fixture Officer F',
                     relationships: 'Officer',
@@ -308,6 +319,7 @@ describe('getInvestorFlowsTool', () => {
                     plan10b5_1: true,
                 },
                 {
+                    formType: '144',
                     filingDate: '2026-09-28',
                     filer: 'Fixture Director C',
                     relationships: 'Director',
@@ -316,6 +328,15 @@ describe('getInvestorFlowsTool', () => {
                     plan10b5_1: false,
                 },
             ]);
+            expect(result.insider.proposedSalesCounts).toEqual({
+                last30d: 2,
+                last90d: 2,
+                windowTo: '2026-10-16',
+                last30dFrom: '2026-09-17',
+                last90dFrom: '2026-07-19',
+                // The fixture rows carry no form type (old-cache shape), so amendments cannot be ruled out.
+                excludesAmendments: false,
+            });
             expect(result.offerings).toEqual([
                 { filingDate: '2026-10-04', form: '424B5', kind: 'atm' },
                 { filingDate: '2026-07-10', form: 'S-3ASR', kind: 'shelf' },
@@ -817,10 +838,94 @@ describe('getInvestorFlowsTool', () => {
             market: 'kr';
             available: true;
             noData: false;
-            notProvided: string;
+            notProvided?: string;
+            trendNote?: string;
+            krInvestorTrend: unknown;
             shareClassNote?: string;
             dataStatus?: { dart: 'collecting'; note: string };
         };
+
+        beforeEach(() => {
+            loadKrTrend.mockResolvedValue(null);
+        });
+
+        it('with krInvestorTrend present: carries it and cites 네이버 금융 instead of the not-provided note', async () => {
+            const trend = {
+                asOf: '2026-10-23',
+                rows: [],
+                sum5d: { foreignNet: 1, institutionNet: 2, individualNet: 3 },
+                sum20d: null,
+                unit: 'shares',
+                source: 'naver',
+            };
+            loadKrTrend.mockResolvedValue(trend);
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                rt
+            )) as KrOutput;
+            expect(loadKrTrend).toHaveBeenCalledWith('005930.KS');
+            expect(result.krInvestorTrend).toEqual(trend);
+            expect(result).not.toHaveProperty('notProvided');
+            expect(result.trendNote).toContain('네이버 금융');
+        });
+
+        it('Naver failure through the real loader: the tool still answers with notProvided (no throw)', async () => {
+            const actual = await vi.importActual<
+                typeof import('@/app/api/ai/chat/tools/krInvestorTrend')
+            >('@/app/api/ai/chat/tools/krInvestorTrend');
+            loadKrTrend.mockImplementation(actual.loadKrInvestorTrend);
+            naverFetch.mockRejectedValue(new Error('naver trend: HTTP 503'));
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                rt
+            )) as KrOutput;
+            expect(result.krInvestorTrend).toBeNull();
+            expect(result.notProvided).toContain('If web_search is available');
+            expect(result.majorHolders).toBeDefined();
+        });
+
+        it('public API (allowUnofficialSources: false): no Naver read, and no krInvestorTrend / trendNote keys', async () => {
+            loadKrTrend.mockResolvedValue({ asOf: '2026-10-23' });
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                { ...rt, allowUnofficialSources: false }
+            )) as KrOutput;
+            expect(loadKrTrend).not.toHaveBeenCalled();
+            expect(result).not.toHaveProperty('krInvestorTrend');
+            expect(result).not.toHaveProperty('trendNote');
+            expect(result.notProvided).toContain('could not be confirmed');
+        });
+
+        it('the agent default (flag unset) still loads and carries krInvestorTrend', async () => {
+            loadKrTrend.mockResolvedValue({ asOf: '2026-10-23' });
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                { ...rt, allowUnofficialSources: true }
+            )) as KrOutput;
+            expect(loadKrTrend).toHaveBeenCalledWith('005930.KS');
+            expect(result.krInvestorTrend).toEqual({ asOf: '2026-10-23' });
+        });
+
+        it('with krInvestorTrend null: keeps the conditional web_search note', async () => {
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                rt
+            )) as KrOutput;
+            expect(result.krInvestorTrend).toBeNull();
+            expect(result.notProvided).toContain('If web_search is available');
+            expect(result).not.toHaveProperty('trendNote');
+        });
 
         function arrangeKr(
             snapshot: ReturnType<typeof makeKrSnapshot> | null,
@@ -860,9 +965,8 @@ describe('getInvestorFlowsTool', () => {
             });
             expect(result.source).toContain('DART');
             expect(result.source).not.toContain('13F');
-            expect(result.notProvided).toContain(
-                'Institutional and foreign net buying'
-            );
+            expect(result.notProvided!).toContain('If web_search is available');
+            expect(result.notProvided!).toContain('Never estimate');
             expect(result.majorHolders.recent.map(r => r.reporter)).toEqual([
                 '픽스처자산운용',
                 '국민연금공단',
@@ -973,6 +1077,27 @@ describe('getInvestorFlowsTool', () => {
                         title: long('바'),
                     })
                 ),
+            });
+            // 네이버 20거래일 추세(최악: 큰 수량·긴 자릿수)가 함께 실려도 상한 안에 들어가야 한다.
+            const row = {
+                date: '2026-10-23',
+                foreignNet: -123_456_789,
+                institutionNet: -123_456_789,
+                individualNet: -123_456_789,
+                close: 1_234_500,
+            };
+            const sum = {
+                foreignNet: -1_234_567_890,
+                institutionNet: -1_234_567_890,
+                individualNet: -1_234_567_890,
+            };
+            loadKrTrend.mockResolvedValue({
+                asOf: '2026-10-23',
+                rows: Array.from({ length: 10 }, () => row),
+                sum5d: sum,
+                sum20d: sum,
+                unit: 'shares',
+                source: 'naver',
             });
             arrangeKr(snapshot, {
                 viaCommonShare: true,

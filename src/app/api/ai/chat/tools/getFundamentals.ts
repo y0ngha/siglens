@@ -41,7 +41,7 @@ import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     earningsReactions,
-    RECENT_QUARTERS_COUNT,
+    QUARTERS_FETCH_COUNT,
     recentQuarterRows,
     type EarningsReactionView,
 } from './earningsHistory';
@@ -308,7 +308,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             getFinancialStatementsProvider(symbol).getIncomeStatements(
                 symbol,
                 'quarter',
-                RECENT_QUARTERS_COUNT
+                QUARTERS_FETCH_COUNT
             )
         ),
         loadEarningsReactions(
@@ -364,7 +364,10 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             error: 'stale_listing',
             lastTradeDate,
         };
-    const quarters = recentQuarterRows(settledOrNull(quartersR) ?? []);
+    const quarters = recentQuarterRows(
+        settledOrNull(quartersR) ?? [],
+        isKrEquitySymbol(symbol)
+    );
     // A failed lookup is `null` (rejections are settled to `null` above);
     // `price > 0` also rejects bad upstream data (a zero or negative price),
     // so either reads as "unknown", never as a real price.
