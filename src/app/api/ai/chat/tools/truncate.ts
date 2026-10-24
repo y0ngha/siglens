@@ -22,9 +22,11 @@ export const BARS_RESULT_MAX_CHARS = 6_000;
  *
  * `get_fundamentals` and `get_congress_trades` fit comfortably under the
  * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
- * `get_fundamentals` measures ~2,090 chars with every section filled plus 5
- * `recentQuarters` rows and 8 `earningsReactions` (~1,030 without those two
- * lists; fixture in `getFundamentals.test.ts`, 2026-10-22),
+ * `get_fundamentals` measures ~2,200 chars with every section filled plus 5
+ * `recentQuarters` rows, 8 `earningsReactions` and `indexMemberships`
+ * (~2,090 before `indexMemberships` was added; ~1,030 without the two lists;
+ * fixture in `getFundamentals.test.ts`, 2026-10-24) — about 1,800 chars under
+ * `TOOL_RESULT_MAX_CHARS` (4,000),
  * `get_congress_trades` ~2,500.
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;

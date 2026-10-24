@@ -144,6 +144,11 @@ function symbolsOfTable(
     return Array.from(new Set(symbols));
 }
 
+interface TableResult {
+    symbols: string[] | null;
+    error: IndexConstituentsError | null;
+}
+
 /**
  * HTML에서 심볼 열 머리글을 가진 표들 중 심볼이 가장 많은 표의 심볼을 뽑는다(정규화·중복 제거, 등장
  * 순서 유지). `Selected changes`처럼 같은 머리글을 쓰는 작은 변동 표가 구성종목 표 앞에 있어도 본표를
@@ -155,18 +160,18 @@ export function parseConstituentSymbols(
     symbolHeaders: readonly string[]
 ): string[] {
     const wanted = symbolHeaders.map(h => h.toLowerCase());
-    const failures: IndexConstituentsError[] = [];
-    const candidates: string[][] = [];
-    for (const table of html.match(TABLE_RE) ?? []) {
+    const results = (html.match(TABLE_RE) ?? []).map((table): TableResult => {
         try {
-            const symbols = symbolsOfTable(table, wanted);
-            if (symbols !== null && symbols.length > 0)
-                candidates.push(symbols);
+            return { symbols: symbolsOfTable(table, wanted), error: null };
         } catch (error) {
             if (!(error instanceof IndexConstituentsError)) throw error;
-            failures.push(error);
+            return { symbols: null, error };
         }
-    }
+    });
+    const failures = results.flatMap(r => (r.error === null ? [] : [r.error]));
+    const candidates = results.flatMap(r =>
+        r.symbols !== null && r.symbols.length > 0 ? [r.symbols] : []
+    );
     const best = candidates.reduce<string[] | null>(
         (top, c) => (top === null || c.length > top.length ? c : top),
         null

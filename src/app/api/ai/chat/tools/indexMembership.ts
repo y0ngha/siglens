@@ -39,7 +39,17 @@ function loadConstituents(index: IndexId): Promise<string[] | null> {
             list === null
                 ? INDEX_FAILURE_CACHE_TTL_SECONDS
                 : INDEX_CACHE_TTL_SECONDS,
-        () => fetchIndexConstituents(index).catch(() => null)
+        () =>
+            fetchIndexConstituents(index).catch((error: unknown) => {
+                // 원인(429·표 구조 변경·개수 이상·타임아웃)을 지수 id와 함께 남긴다. 호출부 로그는
+                // 일반 메시지뿐이라 이 줄이 없으면 어느 지수가 왜 실패했는지 볼 수 없다.
+                console.error(
+                    '[indexMembership] constituents fetch failed:',
+                    index,
+                    error instanceof Error ? error.name : 'unknown'
+                );
+                return null;
+            })
     );
 }
 
@@ -65,6 +75,7 @@ export async function loadIndexMemberships(
         sp500: sp500 ?? false,
         nasdaq100: nasdaq100 ?? false,
         dowJones: dowJones ?? false,
+        // 미국 시장 기준일(ET). shared에는 공용 ET 상수가 없고 shared→entities import는 금지라 리터럴을 둔다.
         asOf: zonedDate(now, 'America/New_York'),
         source: 'wikipedia',
     };

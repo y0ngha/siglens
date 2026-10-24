@@ -847,6 +847,13 @@ describe('getFundamentalsTool', () => {
 
     it('with 5 quarters and 8 reactions the result still fits the shared tool budget', async () => {
         getProvider.mockReturnValue(fakeProvider());
+        loadIndexMemberships.mockResolvedValue({
+            sp500: true,
+            nasdaq100: true,
+            dowJones: true,
+            asOf: '2026-10-24',
+            source: 'wikipedia',
+        });
         getIncomeStatements.mockResolvedValue(
             Array.from({ length: 8 }, (_, i) => ({
                 fiscalYear: '2026',
