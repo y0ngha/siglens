@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { pctVs, ppDelta, ratioPct } from '@/app/api/ai/chat/tools/percent';
+import {
+    pctVs,
+    ppDelta,
+    ratioPct,
+    roundPct2,
+} from '@/app/api/ai/chat/tools/percent';
 
 describe('pctVs', () => {
     it('normal: (current-base)/base*100', () => {
@@ -38,6 +43,16 @@ describe('ppDelta', () => {
     });
     it('null input → null', () => {
         expect(ppDelta(null, 1)).toBeNull();
+    });
+});
+
+describe('roundPct2', () => {
+    it('rounds to exactly 2 decimals', () => {
+        expect(roundPct2(-66.6667)).toBe(-66.67);
+        expect(roundPct2(25)).toBe(25);
+    });
+    it('null passes through', () => {
+        expect(roundPct2(null)).toBeNull();
     });
 });
 

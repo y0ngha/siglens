@@ -96,7 +96,7 @@ describe('getInvestorFlowsSnapshot', () => {
                 number,
             ][];
             const main = calls.find(([key]) =>
-                key.includes('investor-flows:snapshot-v4')
+                key.includes('investor-flows:snapshot-v5')
             );
             const short = calls.find(([key]) =>
                 key.includes('investor-flows:snapshot-degraded-v2')

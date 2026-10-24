@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateInvestorFlows } from '@y0ngha/siglens-core';
+import type { ProposedSaleFormType, ProposedSaleWithForm } from '../../model';
 import {
+    countProposedSales,
     summarizeInvestorFlows,
     SUMMARY_MAX_INSIDER_TRANSACTIONS,
     SUMMARY_MAX_PROPOSED_SALES,
@@ -298,6 +300,110 @@ describe('summarizeInvestorFlows', () => {
         expect(card.insider.metrics?.proposedSaleFilerCount).toBe(1);
         expect(out.insider.metrics?.proposedSaleFilerCount).toBe(1);
         expect(out.insider.proposedSales).toHaveLength(2);
+    });
+
+    describe('Form 144 건수(proposedSalesCounts)', () => {
+        const form144 = (
+            filingDate: string,
+            formType: ProposedSaleFormType = '144'
+        ): ProposedSaleWithForm => ({
+            ...makeProposedSale({ filingDate }),
+            formType,
+        });
+        const AS_OF = '2026-10-15T03:00:00.000Z'; // 목요일
+
+        it('창 경계: 시작일은 포함, 하루 전은 제외하고 windowTo 당일은 포함한다', () => {
+            const counts = countProposedSales(
+                [
+                    form144('2026-10-15'),
+                    form144('2026-09-16'), // 30일 창의 첫날(포함)
+                    form144('2026-09-15'), // 하루 전(제외, 90일 창엔 포함)
+                    form144('2026-07-18'), // 90일 창의 첫날(포함)
+                    form144('2026-07-17'), // 하루 전(제외)
+                ],
+                AS_OF
+            );
+            expect(counts).toEqual({
+                last30d: 2,
+                last90d: 4,
+                windowTo: '2026-10-15',
+                last30dFrom: '2026-09-16',
+                last90dFrom: '2026-07-18',
+                excludesAmendments: true,
+            });
+        });
+
+        it('정정(144/A)은 건수에서 뺀다', () => {
+            const counts = countProposedSales(
+                [
+                    form144('2026-10-14'),
+                    form144('2026-10-13', '144/A'),
+                    form144('2026-10-12', '144/A'),
+                ],
+                AS_OF
+            );
+            expect(counts.last30d).toBe(1);
+            expect(counts.last90d).toBe(1);
+        });
+
+        it('양식 필드가 없는 옛 스냅샷 행은 원본으로 세되 정정 제외를 약속하지 않는다', () => {
+            const counts = countProposedSales(
+                [makeProposedSale({ filingDate: '2026-10-14' })],
+                AS_OF
+            );
+            expect(counts.last30d).toBe(1);
+            expect(counts.excludesAmendments).toBe(false);
+            expect(
+                countProposedSales([form144('2026-10-14')], AS_OF)
+                    .excludesAmendments
+            ).toBe(true);
+        });
+
+        it('기준일이 주말이면 windowTo를 직전 금요일로 당긴다', () => {
+            const counts = countProposedSales(
+                [form144('2026-10-16'), form144('2026-09-18')],
+                '2026-10-17T10:00:00.000Z' // 토요일
+            );
+            expect(counts.windowTo).toBe('2026-10-16');
+            expect(counts.last30dFrom).toBe('2026-09-17');
+            expect(counts.last30d).toBe(2);
+        });
+
+        it('일요일 기준일도 직전 금요일로 당긴다', () => {
+            expect(
+                countProposedSales([], '2026-10-18T10:00:00.000Z').windowTo
+            ).toBe('2026-10-16');
+        });
+
+        it('windowTo 이후 날짜의 행은 세지 않는다', () => {
+            expect(
+                countProposedSales([form144('2026-10-16')], AS_OF).last30d
+            ).toBe(0);
+        });
+
+        it('최근 5건 상한과 무관하게 전체 행으로 세고, 행마다 formType을 싣는다', () => {
+            const snapshot = makeExpandedSnapshot({
+                proposedSales: [
+                    ...Array.from({ length: 8 }, (_, i) =>
+                        form144(`2026-10-${String(i + 1).padStart(2, '0')}`)
+                    ),
+                    form144('2026-10-09', '144/A'),
+                ],
+            });
+            const out = summarizeInvestorFlows(snapshot, evaluate(snapshot));
+            expect(out.insider.proposedSales).toHaveLength(
+                SUMMARY_MAX_PROPOSED_SALES
+            );
+            expect(out.insider.proposedSales?.[0]?.formType).toBe('144/A');
+            expect(out.insider.proposedSalesCounts?.last30d).toBe(8);
+        });
+
+        it('Form 144 원천이 스냅샷에 없으면 null', () => {
+            const snapshot = makeExpandedSnapshot();
+            const { proposedSales: _omit, ...rest } = snapshot;
+            const out = summarizeInvestorFlows(rest, evaluate(rest));
+            expect(out.insider.proposedSalesCounts).toBeNull();
+        });
     });
 
     describe('숏스퀴즈 점수의 근거(basis)', () => {

@@ -35,7 +35,9 @@ class DegradedSnapshotError extends Error {
  * 키에 **FINRA·Reg SHO 플래그 상태를 넣는다**(SERVER.md#DC-1): 스냅샷의 공매도·과열 목록 필드가 플래그에 따라 달라지는데
  * 키가 같으면 플래그를 꺼도 TTL 동안 옛(그 데이터 포함) 스냅샷이 남는다 — 라이선스 때문에 끄는 스위치가
  * 즉시 듣지 않는 것은 허용할 수 없다. 반환 형태가 바뀌면 버전을 올린다(`-v2`: FTD·Form 144·증자 공시·13F 옵션·과열 목록 추가,
- * `-v3`: `degraded` 표식, `-v4`: 한국 대량보유 `ratioChangePct`를 같은 보고자의 직전 보고 대비 값으로).
+ * `-v3`: `degraded` 표식, `-v4`: 한국 대량보유 `ratioChangePct`를 같은 보고자의 직전 보고 대비 값으로,
+ * `-v5`: Form 144 행에 `formType`을 싣고 90일 집계 창 안의 행은 60행 상한에서 빼서 `proposedSalesCounts`가 정확해지도록).
+ * degrade 키는 올리지 않았다 — 10분 수명이라 옛 조립 결과가 곧 사라진다.
  *
  * **일시 degrade는 12시간 캐시에 넣지 않는다.** FMP 429·5xx로 13D/G·유통주식수가 빈 스냅샷(`degraded`)을 12시간 두면 그동안
  * 화면이 "데이터 부족"을 거짓으로 말한다. 그래서 조립 결과가 degrade면 12시간 엔트리를 만들지 않고(던져서 저장을 막는다) 별도
@@ -61,7 +63,7 @@ export async function getInvestorFlowsSnapshot(
     const tags = [investorFlowsTag(upper), INVESTOR_FLOWS_READINESS_TAG];
     try {
         return await staticSymbolCache<InvestorFlowsSnapshotWithStatus | null>(
-            ['investor-flows:snapshot-v4', ...flags, upper],
+            ['investor-flows:snapshot-v5', ...flags, upper],
             upper,
             async () => {
                 const snapshot: InvestorFlowsSnapshotWithStatus | null =

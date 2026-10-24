@@ -1,5 +1,5 @@
 /** Investor Flows 데이터 계층의 내부 도메인 타입(수집·저장용). 화면·분석 계약은 `@y0ngha/siglens-core`. */
-import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
+import type { InvestorFlowsSnapshot, ProposedSale } from '@y0ngha/siglens-core';
 
 /** 13F 정정 종류. `13F-HR/A`의 `amendmentInfo/amendmentType`. */
 export type AmendmentType = 'RESTATEMENT' | 'NEW HOLDINGS';
@@ -286,6 +286,16 @@ export interface FtdPointRecord {
     settlementDate: string;
     failsQty: number;
     price: number | null;
+}
+
+/**
+ * 스냅샷에 담기는 Form 144 한 건 — core `ProposedSale`에 양식(`144` 원본 / `144/A` 정정)을 더한 것.
+ * core는 이 필드를 모르지만 구조적으로 호환되므로 그대로 넘긴다. 옛 캐시 스냅샷에는 없을 수 있다.
+ */
+export type ProposedSaleFormType = '144' | '144/A';
+
+export interface ProposedSaleWithForm extends ProposedSale {
+    readonly formType: ProposedSaleFormType;
 }
 
 /** 심볼 발행사의 Form 144 한 건. */

@@ -755,10 +755,10 @@ describe('getBarsIndicatorsTool', () => {
             rt
         );
         // `fitBarsToBudget` itself must target `BARS_RESULT_MAX_CHARS`
-        // (6,000), not the shared `TOOL_RESULT_MAX_CHARS` (4,000) — the raw
+        // (6,500), not the shared `TOOL_RESULT_MAX_CHARS` (4,000) — the raw
         // (pre-registry) result should already sit close to the LARGER
         // ceiling, strictly above the smaller one, proving the fit ran
-        // against 6,000 rather than silently trimming to 4,000.
+        // against 6,500 rather than silently trimming to 4,000.
         const rawSerializedLength = JSON.stringify(raw).length;
         expect(rawSerializedLength).toBeLessThanOrEqual(BARS_RESULT_MAX_CHARS);
         expect(rawSerializedLength).toBeGreaterThan(TOOL_RESULT_MAX_CHARS);
@@ -992,6 +992,12 @@ describe('getBarsIndicatorsTool', () => {
                 lowDate: day(bars[0]!.time),
                 fromHighPct: roundNumber(((159 - 160) / 160) * 100),
                 fromLowPct: roundNumber(((159 - 99) / 99) * 100),
+                highClose: 159,
+                highCloseDate: day(bars[59]!.time),
+                fromHighClosePct: 0,
+                lowClose: 100,
+                lowCloseDate: day(bars[0]!.time),
+                fromLowClosePct: roundNumber(((159 - 100) / 100) * 100),
                 bars: 60,
             });
             expect(r.derived.volumeVsAvg20).toBe(roundNumber(300 / 100));
@@ -1016,6 +1022,12 @@ describe('getBarsIndicatorsTool', () => {
                     lowDate: day(bars[40]!.time),
                     fromHighPct: roundNumber(((159 - 160) / 160) * 100),
                     fromLowPct: roundNumber(((159 - 139) / 139) * 100),
+                    highClose: 159,
+                    highCloseDate: day(bars[59]!.time),
+                    fromHighClosePct: 0,
+                    lowClose: 140,
+                    lowCloseDate: day(bars[40]!.time),
+                    fromLowClosePct: roundNumber(((159 - 140) / 140) * 100),
                 },
                 '60bars': {
                     high: 160,
@@ -1024,6 +1036,12 @@ describe('getBarsIndicatorsTool', () => {
                     lowDate: day(bars[0]!.time),
                     fromHighPct: roundNumber(((159 - 160) / 160) * 100),
                     fromLowPct: roundNumber(((159 - 99) / 99) * 100),
+                    highClose: 159,
+                    highCloseDate: day(bars[59]!.time),
+                    fromHighClosePct: 0,
+                    lowClose: 100,
+                    lowCloseDate: day(bars[0]!.time),
+                    fromLowClosePct: roundNumber(((159 - 100) / 100) * 100),
                 },
             });
         });
@@ -1106,6 +1124,13 @@ describe('getBarsIndicatorsTool', () => {
                 lowDate: null,
                 fromHighPct: null,
                 fromLowPct: null,
+                // Closes are finite even though every high/low is not.
+                highClose: 101,
+                highCloseDate: day(1_700_086_400),
+                fromHighClosePct: 0,
+                lowClose: 100,
+                lowCloseDate: day(1_700_000_000),
+                fromLowClosePct: 1,
                 bars: 2,
             });
         });
@@ -1229,6 +1254,12 @@ describe('getBarsIndicatorsTool', () => {
                     lowDate: instant(bars[25]!.time),
                     fromHighPct: roundNumber(((144 - 145) / 145) * 100),
                     fromLowPct: roundNumber(((144 - 124) / 124) * 100),
+                    highClose: 144,
+                    highCloseDate: instant(bars[44]!.time),
+                    fromHighClosePct: 0,
+                    lowClose: 125,
+                    lowCloseDate: instant(bars[25]!.time),
+                    fromLowClosePct: roundNumber(((144 - 125) / 125) * 100),
                 },
                 '60bars': null, // only 45 bars loaded
             });
@@ -1292,6 +1323,161 @@ describe('getBarsIndicatorsTool', () => {
             expect(r.derived.ranges['20bars'].highDate).toBe(
                 day(bars[10]!.time)
             );
+        });
+
+        describe('highClose/lowClose (종가 기준 극값)', () => {
+            const run = async (closes: number[], intraday = false) => {
+                profile.mockResolvedValue('us-equity');
+                // high/low deliberately differ from close so the two families cannot be confused.
+                const bars = closes.map((c, i) => ({
+                    time: 1_700_000_000 + i * 86_400,
+                    open: c,
+                    high: c + 10,
+                    low: c - 10,
+                    close: c,
+                    volume: 100,
+                }));
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                const r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: intraday ? '1Hour' : '1Day' },
+                    ctx,
+                    rt
+                )) as {
+                    derived: {
+                        range: Record<string, number | string | null>;
+                    };
+                };
+                return { bars, range: r.derived.range };
+            };
+
+            it('종가 최고/최저와 날짜, 마지막 종가 대비 거리를 intraday high/low와 따로 낸다', async () => {
+                const { bars, range } = await run([100, 120, 90, 110]);
+                expect(range.high).toBe(130);
+                expect(range.highClose).toBe(120);
+                expect(range.highCloseDate).toBe(day(bars[1]!.time));
+                expect(range.fromHighClosePct).toBe(
+                    roundNumber(((110 - 120) / 120) * 100)
+                );
+                expect(range.low).toBe(80);
+                expect(range.lowClose).toBe(90);
+                expect(range.lowCloseDate).toBe(day(bars[2]!.time));
+                expect(range.fromLowClosePct).toBe(
+                    roundNumber(((110 - 90) / 90) * 100)
+                );
+            });
+
+            it('같은 종가가 여럿이면 가장 최근 봉의 날짜를 쓴다', async () => {
+                const { bars, range } = await run([120, 100, 120, 100, 110]);
+                expect(range.highCloseDate).toBe(day(bars[2]!.time));
+                expect(range.lowCloseDate).toBe(day(bars[3]!.time));
+            });
+
+            it('분봉에서는 날짜 자리에 ISO 시각을 쓴다', async () => {
+                const { bars, range } = await run([100, 120, 110], true);
+                expect(range.highCloseDate).toBe(instant(bars[1]!.time));
+            });
+        });
+
+        describe('closeStreak (연속 종가 방향)', () => {
+            const T0 = Math.floor(Date.UTC(2026, 9, 5) / 1000);
+            const run = async (
+                closes: number[],
+                opts: { timeframe?: string; inProgress?: boolean } = {}
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                forming.mockReturnValue(opts.inProgress ?? false);
+                const bars = closes.map((c, i) => bar(T0 + i * 86_400, c));
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                const r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: opts.timeframe ?? '1Day' },
+                    ctx,
+                    rt
+                )) as { derived: { closeStreak: unknown } };
+                return { bars, streak: r.derived.closeStreak };
+            };
+
+            it('연속 하락: 10,9,8 → down 2일, 시작일은 첫 하락일', async () => {
+                const { bars, streak } = await run([10, 9, 8]);
+                expect(streak).toEqual({
+                    direction: 'down',
+                    days: 2,
+                    sinceDate: day(bars[1]!.time),
+                    truncated: true,
+                });
+            });
+
+            it('연속 상승을 센다', async () => {
+                const { bars, streak } = await run([5, 4, 5, 6, 7]);
+                expect(streak).toEqual({
+                    direction: 'up',
+                    days: 3,
+                    sinceDate: day(bars[2]!.time),
+                    truncated: false,
+                });
+            });
+
+            it('상승 뒤 하루 하락이면 down 1일이다(스트릭 없음이 아니다)', async () => {
+                const { bars, streak } = await run([8, 9, 10, 9]);
+                expect(streak).toEqual({
+                    direction: 'down',
+                    days: 1,
+                    sinceDate: day(bars[3]!.time),
+                    truncated: false,
+                });
+            });
+
+            it('종가가 같으면 flat이고 days는 연속 보합 횟수다', async () => {
+                const { bars, streak } = await run([9, 10, 10, 10]);
+                expect(streak).toEqual({
+                    direction: 'flat',
+                    days: 2,
+                    sinceDate: day(bars[2]!.time),
+                    truncated: false,
+                });
+            });
+
+            it('진행 중인 마지막 봉은 제외한다', async () => {
+                const { bars, streak } = await run([10, 9, 8, 50], {
+                    inProgress: true,
+                });
+                expect(streak).toEqual({
+                    direction: 'down',
+                    days: 2,
+                    sinceDate: day(bars[1]!.time),
+                    truncated: true,
+                });
+            });
+
+            it('연속이 로드된 첫 봉까지 이어지면 truncated, 방향이 바뀐 봉을 만나면 아니다', async () => {
+                expect((await run([10, 9, 8])).streak).toMatchObject({
+                    truncated: true,
+                });
+                expect((await run([9, 10, 9, 8])).streak).toMatchObject({
+                    days: 2,
+                    truncated: false,
+                });
+            });
+
+            it('완료된 봉이 2개 미만이면 null', async () => {
+                expect((await run([10])).streak).toBeNull();
+                expect(
+                    (await run([10, 9], { inProgress: true })).streak
+                ).toBeNull();
+            });
+
+            it('일봉이 아니면 null', async () => {
+                expect(
+                    (await run([10, 9, 8], { timeframe: '1Hour' })).streak
+                ).toBeNull();
+            });
+
+            it('비유한 종가가 걸리면 null', async () => {
+                expect((await run([10, Number.NaN, 8])).streak).toBeNull();
+            });
         });
 
         describe('maCross50_200 (dev-2026-10-22 A5)', () => {

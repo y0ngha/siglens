@@ -145,9 +145,15 @@ async function runViaExecutor(
     // `refreshSymbolData: false` — 에이전트의 `get_news`는 심볼 뉴스를 FMP로 적재하고 서버 키
     // LLM으로 뉴스 카드를 분석한다. 공개 API는 서버 비용을 쓰지 않으므로(BYOK 원칙) 그 갱신을
     // 끄고, 이미 저장된 것만 돌려준다. 결과 상한은 API 전용 값이다(PUBLIC_API_RESULT_CAPS).
+    // `allowUnofficialSources: false` — 비공식 외부 소스를 읽는 필드(`get_investor_flows`의 `krInvestorTrend`)는 공개 응답에서 빠진다.
     const execute = createToolExecutor(
         { analysisModel: AGENT_MODEL },
-        { refreshSymbolData: false, resultCaps: PUBLIC_API_RESULT_CAPS }
+        {
+            refreshSymbolData: false,
+            resultCaps: PUBLIC_API_RESULT_CAPS,
+            // 비공식 소스(네이버 증권 모바일 JSON 등)는 제3자 개발자에게 재배포하지 않는다.
+            allowUnofficialSources: false,
+        }
     );
     return toOutcome(await execute(spec.name, args, ctx));
 }
