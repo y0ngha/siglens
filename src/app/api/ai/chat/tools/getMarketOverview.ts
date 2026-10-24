@@ -1,5 +1,9 @@
 import 'server-only';
-import type { MarketSectorData, StockSignalResult } from '@y0ngha/siglens-core';
+import type {
+    MarketIndexData,
+    MarketSectorData,
+    StockSignalResult,
+} from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
@@ -13,6 +17,10 @@ import {
     isDashboardScopeId,
     type DashboardScopeId,
 } from '@/shared/config/dashboardScope';
+import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { lastCompletedDailyClose } from '@/entities/bars/lib/quantizeBars';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
@@ -89,6 +97,54 @@ async function sectorDisplayNames(
         return Object.fromEntries(
             sectors.map(s => [s.symbol, s.koreanName] as const)
         );
+    }
+}
+
+/** An index's last COMPLETED daily close — the official settlement value, not a live quote. */
+interface IndexLastClose {
+    lastClose: number | null;
+    lastCloseDate: string | null;
+}
+
+const NO_LAST_CLOSE: IndexLastClose = { lastClose: null, lastCloseDate: null };
+
+/**
+ * Last completed daily close of one index, from the same cached daily bars
+ * `get_bars_indicators` reads (in-memory LRU over the provider's Redis-cached
+ * history, so a repeat turn costs no extra upstream call; at most one provider
+ * load per index, which keeps the whole overview far below FMP's 300/min).
+ *
+ * The summary's `price` is a `/quote` last-trade snapshot cached for an hour:
+ * during a session it is a live print, and even after the close it can differ
+ * from the official settlement (VIX answered 19.64 vs Cboe's 19.45). When the
+ * last bar is still forming (regular session open) it is the live print, so
+ * the previous bar is the last completed close; otherwise the last bar is it.
+ * Never throws — a failed or empty load degrades to nulls (logged).
+ */
+async function loadIndexLastClose(
+    index: MarketIndexData,
+    scopeId: DashboardScopeId
+): Promise<IndexLastClose> {
+    try {
+        const session = sessionSpecForDashboardScope(scopeId);
+        const { bars } = await getCachedBarsWithIndicators(
+            getCachedMarketDataProvider(session),
+            index.symbol,
+            '1Day',
+            index.fmpSymbol,
+            session
+        );
+        const close = lastCompletedDailyClose(bars, session, new Date());
+        return close === null
+            ? NO_LAST_CLOSE
+            : { lastClose: close.close, lastCloseDate: close.date };
+    } catch (error) {
+        logToolDegrade(
+            'get_market_overview',
+            `index last close ${index.symbol}`,
+            error
+        );
+        return NO_LAST_CLOSE;
     }
 }
 
@@ -221,26 +277,33 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
     const fg = fearGreedView?.snapshot ?? null;
     const rawSectors = summary?.sectors ?? [];
     const rankableSectors = rawSectors.filter(isRankableSector);
-    const names = await sectorDisplayNames(ctx.locale, rawSectors);
-    const rankedSectors = rankSectors(rawSectors, names);
+    const rawIndices = summary?.indices ?? [];
     // 시장 브리핑은 `/market`·`/market/kr`이 이미 화면에 그리는 AI 요약이고,
     // peek은 **캐시 읽기 전용**이라 LLM 비용이 0이다(`get_economy`가 거시 브리핑을
-    // 같은 방식으로 붙인다). 요약이 먼저 필요해 `allSettled`에 넣지 못한다 —
+    // 같은 방식으로 붙인다). 요약이 먼저 필요해 위 `allSettled`에 넣지 못한다 —
     // core 캐시 키가 그 시세에서 파생된다. `hasHubPage`가 false인 scope는
     // 아예 조회하지 않는다 — 프리웜(`seo-prewarm/hubs.ts`)이 그 시장의 브리핑을
     // 굽지 않으므로 **확정 미스**이고, 호출해 봤자 Redis 왕복만 버린다. 도구를
     // 위해 굽게 만드는 쪽은 더 나쁘다(아무도 읽지 않는 LLM 호출이 매일 밤 추가된다).
-    const briefing =
+    //
+    // 셋 모두 요약에만 의존하고 서로는 독립이라 한 번에 돌린다(직렬이면 지연이 합이 된다).
+    // 지수 일봉은 요청당 지수 수만큼(미국 몇 개)만 읽고, 인스턴스 메모리 LRU
+    // (`getCachedBarsWithIndicators`)가 같은 키를 다른 도구·요청과 공유해 재호출은 provider를 안 친다.
+    const [names, briefing, indexCloses] = await Promise.all([
+        sectorDisplayNames(ctx.locale, rawSectors),
         summary === null || !scope.hasHubPage
-            ? null
-            : await peekBriefingStatic(
+            ? Promise.resolve(null)
+            : peekBriefingStatic(
                   summary,
                   new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END),
                   scope
               ).catch(error => {
                   logToolDegrade('get_market_overview', 'briefing peek', error);
                   return null;
-              });
+              }),
+        Promise.all(rawIndices.map(i => loadIndexLastClose(i, market))),
+    ]);
+    const rankedSectors = rankSectors(rawSectors, names);
 
     return {
         asOf: new Date().toISOString(),
@@ -257,12 +320,17 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
             // 탐욕이 심해졌나" 류 질문에 오늘 점수 하나로만 답하게 된다.
             comparisons: fearGreedView?.comparisons ?? [],
         },
-        indices:
-            summary?.indices.map(i => ({
-                symbol: i.symbol,
-                price: i.price,
-                changesPercentage: i.changesPercentage,
-            })) ?? [],
+        // `price` is a live/last-trade quote (FMP `/quote`, hourly cache; the
+        // quote carries no timestamp, so there is no `priceAsOf`) — it can
+        // differ from the official close. For "the close" or a settlement
+        // value (e.g. VIX) answer from `lastClose`/`lastCloseDate`, the last
+        // completed daily bar; `null` when the daily bars could not be loaded.
+        indices: rawIndices.map((i, n) => ({
+            symbol: i.symbol,
+            price: i.price,
+            changesPercentage: i.changesPercentage,
+            ...(indexCloses[n] ?? NO_LAST_CLOSE),
+        })),
         sectors: rankedSectors,
         // Named `sectorBreadth`, not `breadth` — the counts are the ~11
         // sector ETFs up/down/flat, not market-wide advancers/decliners
