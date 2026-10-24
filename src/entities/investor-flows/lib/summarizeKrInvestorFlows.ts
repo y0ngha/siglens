@@ -23,9 +23,10 @@ import {
 } from './summarizeInvestorFlows';
 
 /**
- * 한국 종목 `get_investor_flows` 결과의 상한. 미국 요약보다 목록이 셋뿐이라 도구 상한(`INVESTOR_FLOWS_RESULT_MAX_CHARS`, 8,500자)
- * 안에 넉넉히 들어간다 — 최악 입력(긴 보고자명·사유·제목, 목록마다 상한 초과)으로 잰 전체 출력 길이를
- * `getInvestorFlows.test.ts`가 고정한다.
+ * 한국 종목 `get_investor_flows` 결과의 상한. 도구 상한(`INVESTOR_FLOWS_RESULT_MAX_CHARS`, 8,500자) 안에 600자 이상의 여유를
+ * 두고 들어가야 하며, 같은 출력에 네이버 투자자별 추세(`krInvestorTrend`)가 함께 실린다. DART 목록 세 개는 이 상수들로, 추세는
+ * 행 수를 최신 10거래일로 잘라(`KR_TREND_ROWS_SHOWN`; 5·20일 합은 가져온 20행 전체로 계산) 예산을 맞춘다. 최악 입력(긴 보고자명·사유·제목,
+ * 목록마다 상한 초과, 가득 찬 추세)으로 잰 전체 출력 길이를 `getInvestorFlows.test.ts`가 고정한다. 상수를 올리면 그 테스트가 먼저 깨진다.
  */
 export const KR_SUMMARY_MAX_MAJOR_HOLDERS = 5;
 export const KR_SUMMARY_MAX_INSIDERS = 6;

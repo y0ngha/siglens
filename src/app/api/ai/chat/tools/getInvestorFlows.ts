@@ -12,6 +12,7 @@ import {
 } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import { summarizeInvestorFlows } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
 import { summarizeKrInvestorFlows } from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
+import { loadKrInvestorTrend } from '@/app/api/ai/chat/tools/krInvestorTrend';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import type {
     InvestorFlowsDegradedPart,
@@ -27,7 +28,9 @@ const EXCHANGE_LIST_SOURCE = 'Nasdaq/NYSE/Cboe Reg SHO threshold lists';
 const KR_SOURCE =
     'DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports';
 const KR_NOT_PROVIDED =
-    'SIGLENS tools do not carry Korean investor-type net buying (institutional, foreign, individual). If web_search is available, you may use it for this - cite the publisher and date; otherwise say SIGLENS does not carry it. Never estimate.';
+    'SIGLENS tools do not carry Korean investor-type net buying (institutional, foreign, individual) right now. If web_search is available, you may use it for this - cite the publisher and date; otherwise say it could not be confirmed. Never estimate.';
+const KR_TREND_NOTE =
+    'krInvestorTrend is 네이버 금융 (Naver Finance) data: net buying by foreign / institution / individual investors in shares, newest first. Cite the source as 네이버 금융 and the asOf date; the latest session appears only after the close.';
 const KR_PREFERRED_SHARE_NOTE =
     'This is a preferred share. DART ownership filings are company-level, so these are the same reports as the common share.';
 const KR_COLLECTING_NOTE =
@@ -119,18 +122,23 @@ function sourceLine(finraEnabled: boolean, regShoEnabled: boolean): string {
  * 한국 종목(DART) 결과. 미국 갈래(13F·FINRA·SEC)의 수집 상태는 보지 않는다 — DART 백필이 끝나지 않았고 이 종목 목록이 비어 있을 때만
  * `dataStatus.dart: 'collecting'`이다. 우선주는 지분공시가 보통주와 같다는 안내를 붙인다. 기관·외국인 순매수 미제공은 항상 밝힌다.
  */
-function krResult(
+async function krResult(
     symbol: string,
     result: InvestorFlowsScorecardResult
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
     const { snapshot, scorecard, readiness, krCompany } = result;
+    const krInvestorTrend = await loadKrInvestorTrend(symbol);
     const collecting = isKrDisclosureCollecting(readiness, snapshot);
     const envelope = {
         source: KR_SOURCE,
         symbol,
         market: 'kr' as const,
         available: true,
-        notProvided: KR_NOT_PROVIDED,
+        // 값이 있으면 출처 안내(`trendNote`), 없으면 "미제공/확인 불가" 안내(`notProvided`)다.
+        ...(krInvestorTrend === null
+            ? { notProvided: KR_NOT_PROVIDED }
+            : { trendNote: KR_TREND_NOTE }),
+        krInvestorTrend,
         ...(krCompany?.viaCommonShare === true
             ? { shareClassNote: KR_PREFERRED_SHARE_NOTE }
             : {}),
@@ -180,7 +188,7 @@ export const getInvestorFlowsTool: ToolExecutor = async args => {
     const result = await getInvestorFlowsScorecard(symbol);
     if (result.degraded)
         return { symbol, available: false, reason: 'provider_failed' };
-    if (result.market === 'kr') return krResult(symbol, result);
+    if (result.market === 'kr') return await krResult(symbol, result);
 
     const { snapshot, scorecard, finraEnabled, regShoEnabled, readiness } =
         result;
