@@ -3,13 +3,20 @@ import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
-import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
+import {
+    lastBarIsForming,
+    lastCompletedDailyClose,
+    type CompletedDailyClose,
+} from '@/entities/bars/lib/quantizeBars';
 import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
 
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import {
+    findKrListedShares,
+    isTabAllowedForSymbol,
+} from '@/entities/ticker/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import {
     roundNumber,
@@ -38,6 +45,8 @@ import {
     recentQuarterRows,
     type EarningsReactionView,
 } from './earningsHistory';
+import { buildDividends, fetchDividendSource } from './dividends';
+import { krListedBasis } from './krListedBasis';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { staleKrListingDate } from './freshness';
@@ -111,6 +120,28 @@ async function loadEarningsReactions(
 }
 
 /**
+ * Last completed regular-session daily close (see `lastCompletedDailyClose`) — the price a
+ * KRX-listed-share market cap is multiplied by. Reads the same cached daily bars
+ * `loadEarningsReactions` and `get_bars_indicators` use (one load per turn).
+ * Never throws: `null` (logged) on failure.
+ */
+async function loadLastCompletedClose(
+    loadDailyBars: () => Promise<readonly Bar[]>,
+    session: MarketSessionSpec
+): Promise<CompletedDailyClose | null> {
+    try {
+        return lastCompletedDailyClose(
+            await loadDailyBars(),
+            session,
+            new Date()
+        );
+    } catch (error) {
+        logToolDegrade('get_fundamentals', 'last completed close', error);
+        return null;
+    }
+}
+
+/**
  * How certain `nextEarningsDate` is, stated in the tool output rather than
  * implied. Neither provider gives a pre/after-market session time: FMP
  * `/stable/earnings` has no `time` field and no confirmation flag, and the
@@ -126,8 +157,13 @@ interface EarningsDateCertainty {
     earningsDateNote: string;
 }
 
+/**
+ * 실측(2026-10-24): FMP `earnings-calendar` 행은 `symbol,date,epsActual,epsEstimated,revenueActual,
+ * revenueEstimated,lastUpdated`뿐이라 bmo/amc 같은 시간대 필드가 없다. 그래서 도구는 시간대를 내지
+ * 않고, 모델이 `web_search`로 회사가 공지한 시간대를 찾아 출처와 함께 말하도록 안내한다.
+ */
 const SESSION_TIMING_NOT_PROVIDED =
-    'Session timing (before/after market) is not provided.';
+    'Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.';
 
 /** 확정 여부 3상태(`true`·`false`·모름) → 모델에게 보여 줄 안내 문장. */
 export function earningsDateNoteFor(confirmed: boolean | null): string {
@@ -159,9 +195,11 @@ export function earningsDateCertainty(
  * a single failing FMP/yahoo endpoint only drops its own section instead of
  * the whole tool result.
  *
- * Dividend yield is not in the provider's exposed shapes
- * (`FundamentalValuationMetrics` carries no such field) — omitted rather
- * than guessed. Peers and the long-form profile description are omitted
+ * `dividends` comes from its own adapters (FMP `/stable/dividends` for US/ETF,
+ * yahoo `summaryDetail` for KR — `FundamentalValuationMetrics` carries no such
+ * field) and is `null` when the provider fails, never a guessed zero. Index
+ * membership (S&P 500 / Nasdaq-100 / Dow) is deliberately absent: the FMP plan
+ * returns 402 for the constituent endpoints (checked 2026-10-24). Peers and the long-form profile description are omitted
  * too: the model-facing shape is numbers for valuation/health questions,
  * not the page's full content.
  *
@@ -214,6 +252,18 @@ export const getFundamentalsTool: ToolExecutor = async args => {
     const marketData = getCachedMarketDataProvider(session);
     const { db } = getDatabaseClient();
     const earningsRefresh = getNextEarningsSchedule(symbol, db);
+    const loadDailyBars = async () => {
+        const { bars } = await getCachedBarsWithIndicators(
+            marketData,
+            symbol,
+            '1Day',
+            asset?.fmpSymbol,
+            session
+        );
+        return bars;
+    };
+    // KRX 상장주식수 기준 시총·PER·PBR은 한국 종목에만 필요하다(`krListedBasis`).
+    const isKr = isKrEquitySymbol(symbol);
     const [
         profileR,
         keyMetricsR,
@@ -228,6 +278,9 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         quoteR,
         quartersR,
         reactionsR,
+        listedSharesR,
+        lastCloseR,
+        dividendSourceR,
     ] = await Promise.allSettled([
         provider.getProfile(symbol),
         provider.getKeyMetricsTtm(symbol),
@@ -263,17 +316,18 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             db,
             session,
             earningsRefresh,
-            async () => {
-                const { bars } = await getCachedBarsWithIndicators(
-                    marketData,
-                    symbol,
-                    '1Day',
-                    asset?.fmpSymbol,
-                    session
-                );
-                return bars;
-            }
+            loadDailyBars
         ),
+        // Enrichment only: a failed lookup falls back to the provider's market cap.
+        isKr
+            ? Promise.resolve().then(() => findKrListedShares(symbol, db))
+            : Promise.resolve(null),
+        isKr
+            ? loadLastCompletedClose(loadDailyBars, session)
+            : Promise.resolve(null),
+        // Price-independent raw history, so it rides this fan-out (no serial
+        // round trip on a cold cache); the yield is computed once `price` is known.
+        fetchDividendSource(symbol, isKrEquitySymbol(symbol)),
     ]);
 
     const profile = settledOrNull(profileR);
@@ -321,6 +375,32 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         quote && Number.isFinite(quote.price) && quote.price > 0
             ? quote.price
             : null;
+
+    // KR: yahoo's own share count skews market cap (and PER/PBR, which divide it) —
+    // recompute on KRX listed shares × last completed close. See `krListedBasis`.
+    if (listedSharesR.status === 'rejected')
+        logToolDegrade(
+            'get_fundamentals',
+            'krx listed shares',
+            listedSharesR.reason
+        );
+    const krBasis = isKr
+        ? krListedBasis({
+              providerMarketCap: profile.marketCap,
+              providerPe: keyMetrics?.peRatioTTM ?? null,
+              providerPb: keyMetrics?.pbRatioTTM ?? null,
+              providerPs: keyMetrics?.priceToSalesRatioTTM ?? null,
+              providerEvToEbitda:
+                  keyMetrics?.enterpriseValueOverEBITDATTM ?? null,
+              listedShares: settledOrNull(listedSharesR),
+              lastClose: settledOrNull(lastCloseR),
+          })
+        : null;
+    const dividends = buildDividends(settledOrNull(dividendSourceR), {
+        price,
+        currency,
+        timeZone: earningsTimeZone,
+    });
 
     const gradeTotal = grades
         ? grades.strongBuy +
@@ -373,14 +453,26 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             name: profile.companyName,
             sector: profile.sector,
             industry: profile.industry,
-            marketCap: profile.marketCap,
+            marketCap: krBasis?.marketCap ?? profile.marketCap,
             currency,
+            // KR only. `krx_listed`: marketCap = KRX listed shares ×
+            // `marketCapCloseDate`'s close, and valuation.pe/pb use it too.
+            // `provider`: yahoo's own market cap (listed shares or close missing).
+            ...(krBasis && {
+                sharesBasis: krBasis.sharesBasis,
+                sharesOutstanding: krBasis.sharesOutstanding,
+                marketCapCloseDate: krBasis.marketCapCloseDate,
+            }),
         },
         valuation: keyMetrics && {
-            pe: keyMetrics.peRatioTTM,
-            pb: keyMetrics.pbRatioTTM,
-            ps: keyMetrics.priceToSalesRatioTTM,
-            evToEbitda: keyMetrics.enterpriseValueOverEBITDATTM,
+            pe: krBasis ? krBasis.pe : keyMetrics.peRatioTTM,
+            pb: krBasis ? krBasis.pb : keyMetrics.pbRatioTTM,
+            // KR on the `krx_listed` basis: ps is rescaled with the market cap, evToEbitda
+            // is null (EV includes net debt we cannot recompute) — see `krListedBasis`.
+            ps: krBasis ? krBasis.ps : keyMetrics.priceToSalesRatioTTM,
+            evToEbitda: krBasis
+                ? krBasis.evToEbitda
+                : keyMetrics.enterpriseValueOverEBITDATTM,
         },
         profitability: ratios && {
             roePct:
@@ -410,6 +502,9 @@ export const getFundamentalsTool: ToolExecutor = async args => {
                     ? null
                     : roundNumber(growth.growthEPS * 100),
         },
+        // `null` = unknown (provider failure / no data); a confirmed non-payer is an
+        // object with `trailing12mAmount: 0`.
+        dividends,
         // Newest first; `null` when the quarterly rows are unavailable.
         recentQuarters: quarters.length > 0 ? quarters : null,
         // Newest first; `null` when no reaction could be measured.

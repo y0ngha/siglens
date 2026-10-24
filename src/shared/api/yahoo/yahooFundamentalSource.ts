@@ -53,12 +53,21 @@ export interface YahooSummary {
     summaryDetail?: {
         marketCap?: number;
         priceToSalesTrailing12Months?: number;
+        /** 배당 필드 — `yahooDividendSource`가 읽는다. 수익률은 소수(0.018 = 1.8%). */
+        dividendRate?: number;
+        dividendYield?: number;
+        trailingAnnualDividendRate?: number;
+        trailingAnnualDividendYield?: number;
+        exDividendDate?: Date;
     };
     defaultKeyStatistics?: {
         pegRatio?: number;
         enterpriseToEbitda?: number;
         netIncomeToCommon?: number;
         sharesOutstanding?: number;
+        /** 마지막 1회 배당금(주당)과 그 일자 — `yahooDividendSource`가 읽는다. */
+        lastDividendValue?: number;
+        lastDividendDate?: Date;
         /**
          * 요약 통계가 기준으로 삼은 회계연도 말. 갱신이 멈춘 종목은 이 값이 몇 년 전에 머물고
          * `netIncomeToCommon`·마진·ROE도 같이 멈춘다(`mapKeyMetrics`의 신선도 판정).

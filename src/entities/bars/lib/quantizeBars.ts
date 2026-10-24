@@ -4,7 +4,7 @@ import type {
     MarketSessionSpec,
 } from '@y0ngha/siglens-core';
 import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
-import { MS_PER_SECOND } from '@/shared/config/time';
+import { ISO_DATE_LENGTH, MS_PER_SECOND } from '@/shared/config/time';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
@@ -132,6 +132,35 @@ export function lastBarIsForming(
         hasFormingBar(session, now) &&
         lastBarIsCurrentSession(lastBar.time, session, now)
     );
+}
+
+/** {@link lastCompletedDailyClose}의 결과: 종가와 그 봉의 날짜(`YYYY-MM-DD`). */
+export interface CompletedDailyClose {
+    close: number;
+    date: string;
+}
+
+/**
+ * 일봉 시리즈의 **마지막으로 완료된** 종가. 정규장 중이라 마지막 봉이 라이브(forming)면 직전 봉,
+ * 아니면 마지막 봉이다({@link lastBarIsForming}과 같은 판정). 봉이 없거나 종가가 유한한 양수가
+ * 아니면(업스트림이 0을 주는 경우) `null` — 가짜 종가를 내보내지 않는다.
+ */
+export function lastCompletedDailyClose(
+    bars: readonly { time: number; close: number }[],
+    session: MarketSessionSpec,
+    now: Date
+): CompletedDailyClose | null {
+    const bar = lastBarIsForming(bars, session, now)
+        ? bars.at(-2)
+        : bars.at(-1);
+    if (bar === undefined || !Number.isFinite(bar.close) || bar.close <= 0)
+        return null;
+    return {
+        close: bar.close,
+        date: new Date(bar.time * MS_PER_SECOND)
+            .toISOString()
+            .slice(0, ISO_DATE_LENGTH),
+    };
 }
 
 /**

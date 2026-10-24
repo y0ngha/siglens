@@ -138,6 +138,28 @@ describe('searchByKoreanName', () => {
         });
     });
 
+    it('별명 별칭으로 후보에 들어온다 (`엔솔` → LG에너지솔루션, 케이엔솔도 부분 일치로 함께)', async () => {
+        const lgEnergy: KoreanTickerEntry = {
+            symbol: '373220.KS',
+            name: 'LG Energy Solution',
+            koreanName: 'LG에너지솔루션',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+        };
+        const kEnsol: KoreanTickerEntry = {
+            symbol: '053080.KQ',
+            name: 'K ENSOL',
+            koreanName: '케이엔솔',
+            exchange: 'KOE',
+            exchangeFullName: 'KOSDAQ',
+        };
+        mockRepository.findAll.mockResolvedValue([kEnsol, lgEnergy]);
+
+        expect(
+            (await searchByKoreanName('엔솔')).map(r => r.symbol).toSorted()
+        ).toEqual(['053080.KQ', '373220.KS']);
+    });
+
     it('공백을 무시하고 맞춘다 (`퀀텀컴퓨팅` → `퀀텀 컴퓨팅`)', async () => {
         const qubt: KoreanTickerEntry = {
             symbol: 'QUBT',

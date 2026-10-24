@@ -29,10 +29,11 @@ export const BARS_RESULT_MAX_CHARS = 6_500;
  *
  * `get_fundamentals` and `get_congress_trades` fit comfortably under the
  * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
- * `get_fundamentals` measures ~2,270 chars with every section filled plus 5
- * `recentQuarters` rows (each with `form` and `revenueYoYPct`) and 8
- * `earningsReactions` (~1,030 without those two lists; fixture in
- * `getFundamentals.test.ts`, re-measured 2026-10-24),
+ * `get_fundamentals` measures ~2,450 chars with every section filled plus 5
+ * `recentQuarters` rows (each with `form` and `revenueYoYPct`), 8
+ * `earningsReactions` and the ~170-char `dividends` block (summed from two
+ * 2026-10-24 measurements of the fixture in `getFundamentals.test.ts`: ~2,275
+ * with dividends, +~180 for the per-quarter `form`/`revenueYoYPct`),
  * `get_congress_trades` ~2,500.
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;

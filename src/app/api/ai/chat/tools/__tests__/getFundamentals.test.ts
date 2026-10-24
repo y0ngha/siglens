@@ -13,6 +13,8 @@ const {
     getIncomeStatements,
     getCachedBars,
     listReportedEarningsDates,
+    findListedShares,
+    fetchDividendSource,
 } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
@@ -24,9 +26,12 @@ const {
     getIncomeStatements: vi.fn(),
     getCachedBars: vi.fn(),
     listReportedEarningsDates: vi.fn(),
+    findListedShares: vi.fn(),
+    fetchDividendSource: vi.fn(),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
+    findKrListedShares: findListedShares,
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile,
@@ -64,6 +69,12 @@ vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
 }));
 vi.mock('@/entities/bars/lib/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
+}));
+vi.mock('@/app/api/ai/chat/tools/dividends', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/app/api/ai/chat/tools/dividends')
+    >()),
+    fetchDividendSource,
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
@@ -159,6 +170,8 @@ describe('getFundamentalsTool', () => {
         getIncomeStatements.mockResolvedValue([]);
         getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
         listReportedEarningsDates.mockResolvedValue([]);
+        findListedShares.mockResolvedValue(null);
+        fetchDividendSource.mockResolvedValue(null);
         sessionSpecFor.mockReturnValue({
             kind: 'scheduled',
             timeZone: 'America/New_York',
@@ -224,6 +237,204 @@ describe('getFundamentalsTool', () => {
         )) as { available: boolean; price: number };
         expect(r.available).toBe(true);
         expect(r.price).toBe(23550);
+    });
+
+    describe('한국 종목 시총·PER·PBR (KRX 상장주식수 기준)', () => {
+        const dayBar = (iso: string, close: number) => ({
+            time: Date.parse(`${iso}T00:00:00Z`) / 1000,
+            open: close,
+            high: close,
+            low: close,
+            close,
+            volume: 1,
+        });
+        const krProvider = () =>
+            fakeProvider({
+                getProfile: vi.fn().mockResolvedValue({
+                    symbol: '010140.KS',
+                    companyName: 'Samsung Heavy Industries',
+                    sector: 'Industrials',
+                    industry: 'Shipbuilding',
+                    // yahoo 시총 14.375조 (≈ 8.54억 주 기준)
+                    marketCap: 14_375_000_000_000,
+                    ceo: null,
+                    website: null,
+                    description: null,
+                }),
+                getKeyMetricsTtm: vi.fn().mockResolvedValue({
+                    peRatioTTM: 20,
+                    priceToSalesRatioTTM: 1,
+                    pbRatioTTM: 4,
+                    pegRatioTTM: null,
+                    enterpriseValueOverEBITDATTM: 9,
+                    epsTTM: 800,
+                }),
+            });
+        type KrResult = {
+            profile: {
+                marketCap: number;
+                sharesBasis: string;
+                sharesOutstanding: number | null;
+                marketCapCloseDate: string | null;
+            };
+            valuation: {
+                pe: number;
+                pb: number;
+                ps: number;
+                evToEbitda: number | null;
+            };
+        };
+
+        beforeEach(() => {
+            resolveMarketProfile.mockResolvedValue('kr-equity');
+            getProvider.mockReturnValue(krProvider());
+            getQuote.mockResolvedValue({
+                price: 16830,
+                changesPercentage: 0,
+                timestamp: Math.floor(Date.now() / 1000),
+            });
+            getCachedBars.mockResolvedValue({
+                bars: [
+                    dayBar('2026-10-22', 16500),
+                    dayBar('2026-10-23', 16830),
+                ],
+                indicators: {},
+            });
+        });
+
+        it('상장주식수 × 직전 완료 종가로 시총을 내고 PER·PBR을 같은 비율로 맞춘다', async () => {
+            findListedShares.mockResolvedValue(880_000_000);
+            const r = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as KrResult;
+            expect(findListedShares).toHaveBeenCalledWith(
+                '010140.KS',
+                'fake-db'
+            );
+            expect(r.profile).toMatchObject({
+                marketCap: 14_810_400_000_000,
+                sharesBasis: 'krx_listed',
+                sharesOutstanding: 880_000_000,
+                marketCapCloseDate: '2026-10-23',
+            });
+            const scale = 14_810_400_000_000 / 14_375_000_000_000;
+            expect(r.valuation.pe).toBeCloseTo(20 * scale, 4);
+            expect(r.valuation.pb).toBeCloseTo(4 * scale, 4);
+            expect(r.valuation.ps).toBeCloseTo(1 * scale, 4);
+            // EV includes net debt; not recomputable from market cap alone.
+            expect(r.valuation.evToEbitda).toBeNull();
+        });
+
+        it('정규장이 열려 마지막 봉이 진행 중이면 직전 완료 봉의 종가를 쓴다', async () => {
+            vi.useFakeTimers();
+            // 2026-10-23 10:00 KST — 정규장 중, 마지막 봉은 오늘 봉(라이브).
+            vi.setSystemTime(new Date('2026-10-23T01:00:00.000Z'));
+            try {
+                sessionSpecFor.mockReturnValue({
+                    kind: 'scheduled',
+                    timeZone: 'Asia/Seoul',
+                    openMinute: 540,
+                    closeMinute: 930,
+                    weekendDays: [0, 6],
+                });
+                findListedShares.mockResolvedValue(880_000_000);
+                getCachedBars.mockResolvedValue({
+                    bars: [
+                        dayBar('2026-10-22', 16500),
+                        dayBar('2026-10-23', 99999),
+                    ],
+                    indicators: {},
+                });
+                const r = (await getFundamentalsTool(
+                    { symbol: '010140.KS' },
+                    ctx,
+                    rt
+                )) as KrResult;
+                expect(r.profile.marketCap).toBe(880_000_000 * 16500);
+                expect(r.profile.marketCapCloseDate).toBe('2026-10-22');
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('상장주식수가 없으면 프로바이더 값 그대로 두고 provider로 표시한다', async () => {
+            findListedShares.mockResolvedValue(null);
+            const r = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as KrResult;
+            expect(r.profile).toMatchObject({
+                marketCap: 14_375_000_000_000,
+                sharesBasis: 'provider',
+                sharesOutstanding: null,
+                marketCapCloseDate: null,
+            });
+            expect(r.valuation).toMatchObject({
+                pe: 20,
+                pb: 4,
+                ps: 1,
+                evToEbitda: 9,
+            });
+        });
+
+        it('상장주식수 조회가 던져도 도구는 provider 기준으로 계속된다', async () => {
+            const consoleErrorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const consoleWarnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            try {
+                findListedShares.mockRejectedValue(new Error('db down'));
+                const r = (await getFundamentalsTool(
+                    { symbol: '010140.KS' },
+                    ctx,
+                    rt
+                )) as KrResult;
+                expect(r.profile.sharesBasis).toBe('provider');
+                expect(r.profile.marketCap).toBe(14_375_000_000_000);
+            } finally {
+                consoleErrorSpy.mockRestore();
+                consoleWarnSpy.mockRestore();
+            }
+        });
+
+        it('일봉 로드가 실패하면 provider로 폴백한다', async () => {
+            const consoleErrorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const consoleWarnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            try {
+                findListedShares.mockResolvedValue(880_000_000);
+                getCachedBars.mockRejectedValue(new Error('yahoo down'));
+                const r = (await getFundamentalsTool(
+                    { symbol: '010140.KS' },
+                    ctx,
+                    rt
+                )) as KrResult;
+                expect(r.profile.sharesBasis).toBe('provider');
+            } finally {
+                consoleErrorSpy.mockRestore();
+                consoleWarnSpy.mockRestore();
+            }
+        });
+
+        it('미국 종목은 상장주식수 조회도 새 필드도 없다', async () => {
+            resolveMarketProfile.mockResolvedValue('us-equity');
+            getProvider.mockReturnValue(fakeProvider());
+            const r = (await getFundamentalsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as { profile: Record<string, unknown> };
+            expect(findListedShares).not.toHaveBeenCalled();
+            expect(r.profile).not.toHaveProperty('sharesBasis');
+        });
     });
 
     it('전 섹션이 채워지면 통화·밸류에이션·헬스·애널리스트를 투영한다', async () => {
@@ -520,15 +731,15 @@ describe('getFundamentalsTool', () => {
     it.each([
         [
             true,
-            'Date confirmed by the provider. Session timing (before/after market) is not provided.',
+            'Date confirmed by the provider. Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.',
         ],
         [
             false,
-            'Provider marks this date as an estimate; it may move. Session timing (before/after market) is not provided.',
+            'Provider marks this date as an estimate; it may move. Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.',
         ],
         [
             null,
-            'Provider gives no confirmation flag, so treat this as a scheduled date that may move. Session timing (before/after market) is not provided.',
+            'Provider gives no confirmation flag, so treat this as a scheduled date that may move. Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.',
         ],
     ])(
         '실적일 확정 여부(%s)와 발표 시각 미제공을 출력에 명시한다 — 예정일을 확정처럼 읽지 않게',
@@ -880,10 +1091,19 @@ describe('getFundamentalsTool', () => {
         listReportedEarningsDates.mockResolvedValue(
             days.filter((_, i) => i % 40 === 20)
         );
+        fetchDividendSource.mockResolvedValue({
+            kind: 'fmp',
+            rows: [
+                { exDate: '2026-08-10', amount: 0.27, payDate: '2026-08-13' },
+                { exDate: '2026-05-11', amount: 0.26, payDate: '2026-05-14' },
+            ],
+        });
         const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
             recentQuarters: unknown[];
             earningsReactions: unknown[];
+            dividends: unknown;
         };
+        expect(r.dividends).not.toBeNull();
         expect(r.recentQuarters).toHaveLength(5);
         expect(r.earningsReactions).toHaveLength(8);
         expect(JSON.stringify(r).length).toBeLessThan(TOOL_RESULT_MAX_CHARS);
@@ -928,6 +1148,69 @@ describe('펀더멘털 나이 표기', () => {
     });
 });
 
+describe('getFundamentalsTool dividends wiring', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        fetchDividendSource.mockResolvedValue(null);
+        isTabAllowed.mockResolvedValue(true);
+        resolveMarketProfile.mockResolvedValue('us-equity');
+        getNextEarningsSchedule.mockResolvedValue(null);
+        getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
+        assetInfo.mockResolvedValue(null);
+        getIncomeStatements.mockResolvedValue([]);
+        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        listReportedEarningsDates.mockResolvedValue([]);
+        sessionSpecFor.mockReturnValue({
+            kind: 'scheduled',
+            timeZone: 'America/New_York',
+            openMinute: 570,
+            closeMinute: 960,
+            weekendDays: [0, 6],
+        });
+        getProvider.mockReturnValue(fakeProvider());
+    });
+
+    it('미국 심볼: 원자료는 fan-out에서 읽고 현재가·USD로 수익률을 계산한다', async () => {
+        fetchDividendSource.mockResolvedValue({
+            kind: 'fmp',
+            rows: [{ exDate: '2026-08-10', amount: 1, payDate: '2026-08-13' }],
+        });
+        const r = (await getFundamentalsTool({ symbol: 'aapl' }, ctx, rt)) as {
+            dividends: unknown;
+        };
+        expect(fetchDividendSource).toHaveBeenCalledWith('AAPL', false);
+        expect(r.dividends).toMatchObject({
+            latestExDate: '2026-08-10',
+            currency: 'USD',
+            trailing12mAmount: 1,
+            trailingYieldPct: 0.5,
+        });
+    });
+
+    it('한국 심볼: isKr로 부르고, 원자료가 null이면 dividends는 null이다', async () => {
+        resolveMarketProfile.mockResolvedValue('kr-equity');
+        getQuote.mockResolvedValue({
+            price: 70000,
+            changesPercentage: 0,
+            timestamp: Math.floor(Date.now() / 1000),
+        });
+        sessionSpecFor.mockReturnValue({
+            kind: 'scheduled',
+            timeZone: 'Asia/Seoul',
+            openMinute: 540,
+            closeMinute: 930,
+            weekendDays: [0, 6],
+        });
+        const r = (await getFundamentalsTool(
+            { symbol: '005930.KS' },
+            ctx,
+            rt
+        )) as { dividends: unknown };
+        expect(fetchDividendSource).toHaveBeenCalledWith('005930.KS', true);
+        expect(r.dividends).toBeNull();
+    });
+});
+
 describe('earningsDateNoteFor', () => {
     it('확정이면 확정이라고 말한다', () => {
         expect(earningsDateNoteFor(true)).toMatch(/^Date confirmed/);
@@ -941,7 +1224,7 @@ describe('earningsDateNoteFor', () => {
     it('세 경우 모두 발표 시각이 없다고 밝힌다', () => {
         for (const confirmed of [true, false, null])
             expect(earningsDateNoteFor(confirmed)).toContain(
-                'Session timing (before/after market) is not provided.'
+                'Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.'
             );
     });
 });
