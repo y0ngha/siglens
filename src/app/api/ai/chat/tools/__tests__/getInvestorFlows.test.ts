@@ -889,6 +889,32 @@ describe('getInvestorFlowsTool', () => {
             expect(result.majorHolders).toBeDefined();
         });
 
+        it('public API (allowUnofficialSources: false): no Naver read, and no krInvestorTrend / trendNote keys', async () => {
+            loadKrTrend.mockResolvedValue({ asOf: '2026-10-23' });
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                { ...rt, allowUnofficialSources: false }
+            )) as KrOutput;
+            expect(loadKrTrend).not.toHaveBeenCalled();
+            expect(result).not.toHaveProperty('krInvestorTrend');
+            expect(result).not.toHaveProperty('trendNote');
+            expect(result.notProvided).toContain('could not be confirmed');
+        });
+
+        it('the agent default (flag unset) still loads and carries krInvestorTrend', async () => {
+            loadKrTrend.mockResolvedValue({ asOf: '2026-10-23' });
+            arrangeKr(makeKrSnapshot());
+            const result = (await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                { ...rt, allowUnofficialSources: true }
+            )) as KrOutput;
+            expect(loadKrTrend).toHaveBeenCalledWith('005930.KS');
+            expect(result.krInvestorTrend).toEqual({ asOf: '2026-10-23' });
+        });
+
         it('with krInvestorTrend null: keeps the conditional web_search note', async () => {
             arrangeKr(makeKrSnapshot());
             const result = (await getInvestorFlowsTool(

@@ -12,7 +12,10 @@ import {
 } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import { summarizeInvestorFlows } from '@/entities/investor-flows/lib/summarizeInvestorFlows';
 import { summarizeKrInvestorFlows } from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
-import { loadKrInvestorTrend } from '@/app/api/ai/chat/tools/krInvestorTrend';
+import {
+    loadKrInvestorTrend,
+    type KrInvestorTrendView,
+} from '@/app/api/ai/chat/tools/krInvestorTrend';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import type {
     InvestorFlowsDegradedPart,
@@ -124,10 +127,13 @@ function sourceLine(finraEnabled: boolean, regShoEnabled: boolean): string {
  */
 async function krResult(
     symbol: string,
-    result: InvestorFlowsScorecardResult
+    result: InvestorFlowsScorecardResult,
+    krTrendPending: Promise<KrInvestorTrendView | null> | null
 ): Promise<Record<string, unknown>> {
     const { snapshot, scorecard, readiness, krCompany } = result;
-    const krInvestorTrend = await loadKrInvestorTrend(symbol);
+    // `null` 약속 = 비공식 소스 비허용(공개 API): 네이버를 읽지 않고, `krInvestorTrend`·`trendNote` 키 자체를 싣지 않는다.
+    const krInvestorTrend =
+        krTrendPending === null ? null : await krTrendPending;
     const collecting = isKrDisclosureCollecting(readiness, snapshot);
     const envelope = {
         source: KR_SOURCE,
@@ -138,7 +144,7 @@ async function krResult(
         ...(krInvestorTrend === null
             ? { notProvided: KR_NOT_PROVIDED }
             : { trendNote: KR_TREND_NOTE }),
-        krInvestorTrend,
+        ...(krTrendPending === null ? {} : { krInvestorTrend }),
         ...(krCompany?.viaCommonShare === true
             ? { shareClassNote: KR_PREFERRED_SHARE_NOTE }
             : {}),
@@ -180,15 +186,22 @@ async function krResult(
  * `degraded:true`(인프라 장애)는 `available:false`로, 정상적인 "이 종목은 수급 데이터 없음"은
  * `available:true` + `noData:true`로 갈라 모델이 장애를 "데이터 없음"으로 말하지 않게 한다.
  */
-export const getInvestorFlowsTool: ToolExecutor = async args => {
+export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
     const symbol = String(args.symbol).toUpperCase();
     if (!(await isTabAllowedForSymbol(symbol, 'flows')))
         return { symbol, available: false, reason: 'tab_not_available' };
 
+    // 네이버 호출(타임아웃 8초)이 스코어카드 뒤에 직렬로 붙지 않도록 먼저 시작한다. 로더는 던지지 않고(`null`로 낮춤),
+    // 한국 심볼이 아니면 요청 없이 곧바로 `null`이다.
+    const krTrendPending =
+        rt.allowUnofficialSources === false
+            ? null
+            : loadKrInvestorTrend(symbol);
     const result = await getInvestorFlowsScorecard(symbol);
     if (result.degraded)
         return { symbol, available: false, reason: 'provider_failed' };
-    if (result.market === 'kr') return await krResult(symbol, result);
+    if (result.market === 'kr')
+        return await krResult(symbol, result, krTrendPending);
 
     const { snapshot, scorecard, finraEnabled, regShoEnabled, readiness } =
         result;

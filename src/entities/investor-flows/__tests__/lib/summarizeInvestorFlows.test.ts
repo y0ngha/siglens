@@ -369,6 +369,12 @@ describe('summarizeInvestorFlows', () => {
             expect(counts.last30d).toBe(2);
         });
 
+        it('일요일 기준일도 직전 금요일로 당긴다', () => {
+            expect(
+                countProposedSales([], '2026-10-18T10:00:00.000Z').windowTo
+            ).toBe('2026-10-16');
+        });
+
         it('windowTo 이후 날짜의 행은 세지 않는다', () => {
             expect(
                 countProposedSales([form144('2026-10-16')], AS_OF).last30d

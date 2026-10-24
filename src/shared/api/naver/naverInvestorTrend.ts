@@ -43,8 +43,13 @@ function formatBizdate(raw: unknown): string | null {
     return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function parseRow(item: unknown): NaverInvestorTrendRow | null {
-    const r = (item ?? {}) as Record<string, unknown>;
+    if (!isRecord(item)) return null;
+    const r = item;
     const date = formatBizdate(r.bizdate);
     const foreignNet = parseNaverNumber(r.foreignerPureBuyQuant);
     const institutionNet = parseNaverNumber(r.organPureBuyQuant);
@@ -75,9 +80,8 @@ export function parseNaverInvestorTrend(
     const dropped = body.length - rows.length;
     if (dropped > 0)
         console.error(`[NaverTrend] dropped ${dropped} unreadable row(s)`);
-    return rows.toSorted((a, b) =>
-        a.date < b.date ? 1 : a.date > b.date ? -1 : 0
-    );
+    // ISO 날짜라 사전순이 곧 시간순이다 — 최신이 앞.
+    return rows.toSorted((a, b) => b.date.localeCompare(a.date));
 }
 
 /** 종목코드(접미사 없음)의 최근 20거래일 투자자별 순매수. 실패(네트워크·비정상 응답·형태 불일치)는 던진다. */

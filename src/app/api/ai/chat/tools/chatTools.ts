@@ -60,12 +60,20 @@ export interface ToolRuntime {
      * 자체를 죽이면 안 된다.
      */
     ensureSymbolData: (symbol: string) => Promise<void>;
+    /**
+     * `false`면 도구는 비공식 외부 소스(공식 API·약관이 없는 엔드포인트, 현재는 네이버 증권 모바일 JSON)를 읽지 않는다.
+     * 생략하면 허용(에이전트). 공개 API는 제3자 개발자에게 재배포하는 경로라 `false`다(`createToolExecutor` 옵션이 채운다).
+     */
+    allowUnofficialSources?: boolean;
 }
 /**
  * `createToolExecutor`에 넘기는 입력. `ensureSymbolData`는 턴 메모가 필요해
- * **실행부가 직접 만들므로** 호출자가 넘기지 않는다.
+ * **실행부가 직접 만들고**, `allowUnofficialSources`는 실행기 옵션으로만 정하므로 호출자가 넘기지 않는다.
  */
-export type ToolRuntimeInput = Omit<ToolRuntime, 'ensureSymbolData'>;
+export type ToolRuntimeInput = Omit<
+    ToolRuntime,
+    'ensureSymbolData' | 'allowUnofficialSources'
+>;
 
 /** Result-size ceilings (chars) the executor applies per tool class. */
 export interface ToolResultCaps {
@@ -107,6 +115,11 @@ export interface ToolExecutorOptions {
     refreshSymbolData?: boolean;
     /** Defaults to {@link AGENT_RESULT_CAPS}. */
     resultCaps?: ToolResultCaps;
+    /**
+     * `false` keeps tools off unofficial external sources (see `ToolRuntime.allowUnofficialSources`).
+     * Default `true` (the agent). The public API passes `false` — it redistributes tool output to third parties.
+     */
+    allowUnofficialSources?: boolean;
 }
 
 export type ToolExecutor = (
@@ -193,8 +206,11 @@ export function createToolExecutor(
     runtime: ToolRuntimeInput,
     options: ToolExecutorOptions = {}
 ): ExecuteTool {
-    const { refreshSymbolData = true, resultCaps = AGENT_RESULT_CAPS } =
-        options;
+    const {
+        refreshSymbolData = true,
+        resultCaps = AGENT_RESULT_CAPS,
+        allowUnofficialSources = true,
+    } = options;
     /**
      * 턴당 심볼별 1회. 한 대화에서 같은 심볼로 여러 툴이 불리는 게 정상이고
      * (뉴스 → 분석), 그때마다 수급을 돌리면 Redis TTL에 기대더라도 왕복이 툴
@@ -220,7 +236,11 @@ export function createToolExecutor(
         refreshed.set(symbol, pending);
         return pending;
     };
-    const toolRuntime: ToolRuntime = { ...runtime, ensureSymbolData };
+    const toolRuntime: ToolRuntime = {
+        ...runtime,
+        ensureSymbolData,
+        allowUnofficialSources,
+    };
 
     // One executor per turn (`stream/route.ts`), so this closure is the turn's
     // allowance for oversized stored analyses — see `CACHED_ANALYSIS_MAX_CHARS`.

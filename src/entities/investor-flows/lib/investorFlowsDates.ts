@@ -29,14 +29,16 @@ export function isWeekend(isoDate: string): boolean {
     return day === 0 || day === 6;
 }
 
+/** 요일(UTC, 0=일) → 직전 금요일까지 되돌릴 일수. 일요일은 이틀, 토요일은 하루. 평일은 키가 없다. */
+const WEEKEND_SHIFT_DAYS: Readonly<Record<number, number>> = { 0: -2, 6: -1 };
+
 /**
  * `isoDate`(포함) 이전의 가장 가까운 평일. 휴장일은 모른다 — EDGAR가 주말만 접수하지 않는다는 사실만 쓴다.
  * 토·일에 만든 스냅샷의 "마지막 거래일"을 금요일로 맞추는 용도다.
  */
 export function latestWeekdayOnOrBefore(isoDate: string): string {
-    let d = isoDate;
-    while (isWeekend(d)) d = addDays(d, -1);
-    return d;
+    const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+    return addDays(isoDate, WEEKEND_SHIFT_DAYS[day] ?? 0);
 }
 
 const QUARTER_ENDS = ['03-31', '06-30', '09-30', '12-31'] as const;

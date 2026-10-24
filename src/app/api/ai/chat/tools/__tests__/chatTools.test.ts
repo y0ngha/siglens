@@ -550,6 +550,25 @@ describe('tool registry', () => {
             expect(typeof runtimes[0]!.ensureSymbolData).toBe('function');
         });
 
+        it('allowUnofficialSources는 에이전트 기본이 true이고 옵션 false가 runtime에 실린다', async () => {
+            const { exec, runtimes } = capture();
+            await exec('search_ticker', { query: 'a' }, makeCtx());
+            expect(runtimes[0]!.allowUnofficialSources).toBe(true);
+
+            const strict: ToolRuntime[] = [];
+            search.mockImplementation(
+                async (_args: unknown, _ctx: unknown, runtime: ToolRuntime) => {
+                    strict.push(runtime);
+                    return { ok: true };
+                }
+            );
+            await createToolExecutor(
+                { analysisModel: 'm' as never },
+                { allowUnofficialSources: false }
+            )('search_ticker', { query: 'a' }, makeCtx());
+            expect(strict[0]!.allowUnofficialSources).toBe(false);
+        });
+
         it('refreshSymbolData: false면 ensureSymbolData가 아무것도 부르지 않는 no-op이다', async () => {
             const runtimes: ToolRuntime[] = [];
             search.mockImplementation(

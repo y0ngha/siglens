@@ -28,6 +28,16 @@ export function pctVs(
     return roundNumber(((current - base) / base) * 100);
 }
 
+/** Decimals-to-factor for {@link roundPct2} (2 decimals); `pctVs` itself keeps 4 significant digits. */
+const PCT_ROUND_FACTOR = 10 ** 2;
+
+/** A percent rounded to exactly 2 decimals (for fields contracted as such); `null` passes through. */
+export function roundPct2(pct: number | null): number | null {
+    return pct === null
+        ? null
+        : Math.round(pct * PCT_ROUND_FACTOR) / PCT_ROUND_FACTOR;
+}
+
 /**
  * `a - b`, rounded — a percentage-POINT delta between two values that are
  * ALREADY percentages (margin change YoY, RSI vs previous, ...). Named

@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Bar, IncomeStatementRow } from '@y0ngha/siglens-core';
 import { barDate } from './calendarChange';
-import { pctVs } from './percent';
+import { pctVs, roundPct2 } from './percent';
 
 /** Fiscal quarters in a year — the look-back to a quarter's year-ago row. */
 const QUARTERS_PER_YEAR = 4;
@@ -71,16 +71,6 @@ function filingDateOf(row: IncomeStatementRow): string | null {
         : null;
 }
 
-/** `revenueYoYPct` is contracted at 2 decimals (`pctVs` itself keeps 4). */
-const PCT_ROUND_FACTOR = 10 ** 2;
-
-/** `pctVs` keeps 4 decimals; this field is contracted at 2. */
-function round2(pct: number | null): number | null {
-    return pct === null
-        ? null
-        : Math.round(pct * PCT_ROUND_FACTOR) / PCT_ROUND_FACTOR;
-}
-
 function filingFormOf(
     row: IncomeStatementRow,
     isKrEquity: boolean
@@ -128,7 +118,7 @@ export function recentQuarterRows(
             filingDate: filingDateOf(row),
             epsDiluted: row.epsDiluted,
             revenue: row.revenue,
-            revenueYoYPct: round2(
+            revenueYoYPct: roundPct2(
                 pctVs(row.revenue, yearAgoRevenue(rows, row))
             ),
             currency: row.reportedCurrency ?? null,

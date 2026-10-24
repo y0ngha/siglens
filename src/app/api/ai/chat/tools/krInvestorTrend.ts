@@ -1,4 +1,5 @@
 import 'server-only';
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     fetchNaverInvestorTrend,
@@ -8,11 +9,11 @@ import { krSymbolToStockCode } from '@/entities/investor-flows/lib/dartSymbol';
 import { logToolDegrade } from '@/app/api/ai/chat/tools/logToolDegrade';
 
 /** 최신 거래일이 장 마감 뒤에야 올라오고 값이 하루 단위라 짧게만 캐시한다(30분). */
-const KR_TREND_TTL_SECONDS = 30 * 60;
+const KR_TREND_TTL_SECONDS = 30 * SECONDS_PER_MINUTE;
 /** HTTP 200 `[]`(네이버에 이 종목 추세가 없음) — 정상 결과라 길게 캐시한다. */
-export const KR_TREND_NO_DATA_TTL_SECONDS = 6 * 60 * 60;
+export const KR_TREND_NO_DATA_TTL_SECONDS = 6 * SECONDS_PER_HOUR;
 /** 던진 실패(비공식 엔드포인트 장애·형태 변경)의 음성 캐시 — 매 호출마다 두드리지 않도록 짧게만. */
-export const KR_TREND_FAILURE_TTL_SECONDS = 5 * 60;
+export const KR_TREND_FAILURE_TTL_SECONDS = 5 * SECONDS_PER_MINUTE;
 export const KR_TREND_SHORT_WINDOW = 5;
 export const KR_TREND_LONG_WINDOW = 20;
 /** 출력에 싣는 행 수 — 도구 출력 예산(`summarizeKrInvestorFlows.ts` 주석) 때문에 합산 창(20)보다 작다. */
@@ -76,11 +77,15 @@ type TrendCacheEntry =
     | { kind: 'none' }
     | { kind: 'failed' };
 
+/** kind별 TTL — `Record`라 새 kind가 생기면 여기서 컴파일 오류가 난다(조용히 정상 TTL로 떨어지지 않는다). */
+const TTL_BY_KIND: Readonly<Record<TrendCacheEntry['kind'], number>> = {
+    ok: KR_TREND_TTL_SECONDS,
+    none: KR_TREND_NO_DATA_TTL_SECONDS,
+    failed: KR_TREND_FAILURE_TTL_SECONDS,
+};
+
 function ttlFor(entry: TrendCacheEntry): number {
-    if (entry.kind === 'failed') return KR_TREND_FAILURE_TTL_SECONDS;
-    return entry.kind === 'none'
-        ? KR_TREND_NO_DATA_TTL_SECONDS
-        : KR_TREND_TTL_SECONDS;
+    return TTL_BY_KIND[entry.kind];
 }
 
 async function fetchEntry(code: string): Promise<TrendCacheEntry> {
