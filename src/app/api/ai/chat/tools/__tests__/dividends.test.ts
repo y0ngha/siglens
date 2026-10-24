@@ -15,6 +15,7 @@ import {
     buildYahooDividends,
     buildYahooSummaryDividends,
     fetchDividendSource,
+    withAnnualReported,
 } from '@/app/api/ai/chat/tools/dividends';
 import type { YahooDividendSummary } from '@/shared/api/yahoo/yahooDividendSource';
 
@@ -413,5 +414,53 @@ describe('fetchDividendSource / buildDividends', () => {
         expect(await fetchDividendSource('AAPL', false)).toBeNull();
         expect(spy).toHaveBeenCalled();
         spy.mockRestore();
+    });
+});
+
+describe('withAnnualReported', () => {
+    const view = {
+        latestExDate: '2025-12-29',
+        latestAmount: 3000,
+        currency: 'KRW',
+        payDate: null,
+        trailing12mAmount: 6000,
+        trailingYieldPct: 3.17,
+        source: 'Yahoo Finance dividend history',
+    };
+    const annual = { fiscalYear: 2025, dpsCommon: 6000, dartYieldPct: 4.1 };
+
+    it('DPS를 현재가로 나눠 소수 둘째 자리까지 반올림하고 DART 보고값은 그대로 둔다', () => {
+        expect(withAnnualReported(view, annual, 189400)).toEqual({
+            ...view,
+            annualReported: {
+                fiscalYear: 2025,
+                dpsCommon: 6000,
+                dartYieldPct: 4.1,
+                yieldOnLastClosePct: 3.17,
+                source: 'DART',
+            },
+        });
+    });
+
+    it('기존 트레일링 필드는 바꾸지 않는다', () => {
+        expect(withAnnualReported(view, annual, 100000)).toMatchObject(view);
+    });
+
+    it('현재가나 DPS가 없으면 현재가 기준 수익률만 null이다', () => {
+        expect(
+            withAnnualReported(view, annual, null)?.annualReported
+        ).toMatchObject({ dpsCommon: 6000, yieldOnLastClosePct: null });
+        expect(
+            withAnnualReported(view, { ...annual, dpsCommon: null }, 100)
+                ?.annualReported?.yieldOnLastClosePct
+        ).toBeNull();
+    });
+
+    it('DART 값이 없으면 필드를 만들지 않고, 뷰가 없으면 null이다', () => {
+        expect(withAnnualReported(view, null, 100)).toBe(view);
+        expect(
+            'annualReported' in (withAnnualReported(view, null, 1) ?? {})
+        ).toBe(false);
+        expect(withAnnualReported(null, annual, 100)).toBeNull();
     });
 });

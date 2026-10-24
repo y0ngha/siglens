@@ -85,7 +85,8 @@ export type DartEndpoint =
     | 'corpCode.xml'
     | 'list.json'
     | 'majorstock.json'
-    | 'elestock.json';
+    | 'elestock.json'
+    | 'alotMatter.json';
 
 /** `list.json` 지분공시 상세 유형 — D001 대량보유, D002 임원·주요주주 소유, D005 임원·주요주주 거래계획. */
 export type DartDisclosureDetailType = 'D001' | 'D002' | 'D005';
@@ -521,6 +522,25 @@ export async function fetchExecutiveStock(
         (await fetchJsonList('elestock.json', { corp_code: corpCode }))?.list ??
         []
     );
+}
+
+/** 정기보고서 보고서 코드 — 사업보고서(연간). */
+export const DART_ANNUAL_REPORT_CODE = '11011';
+
+/**
+ * 정기보고서 주요정보 "배당에 관한 사항"(`alotMatter.json`) — 한 회사·한 사업연도의 사업보고서 행들. 해당 연도 보고서가 없으면
+ * (`013`) null — 빈 목록과 구분한다(호출부가 "그 연도는 아직/없음"으로 다음 연도를 시도한다).
+ */
+export async function fetchAlotMatter(
+    corpCode: string,
+    fiscalYear: number
+): Promise<DartRecord[] | null> {
+    const envelope = await fetchJsonList('alotMatter.json', {
+        corp_code: corpCode,
+        bsns_year: String(fiscalYear),
+        reprt_code: DART_ANNUAL_REPORT_CODE,
+    });
+    return envelope === null ? null : envelope.list;
 }
 
 const isZip = (bytes: Uint8Array): boolean =>
