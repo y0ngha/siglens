@@ -3,6 +3,9 @@ import type { Bar, IncomeStatementRow } from '@y0ngha/siglens-core';
 import { barDate } from './calendarChange';
 import { pctVs } from './percent';
 
+/** Fiscal quarters in a year — the look-back to a quarter's year-ago row. */
+const QUARTERS_PER_YEAR = 4;
+
 /** How many of the newest quarterly income rows `get_fundamentals` carries. */
 export const RECENT_QUARTERS_COUNT = 5;
 
@@ -12,7 +15,7 @@ export const RECENT_QUARTERS_COUNT = 5;
  * `revenueYoYPct`. The provider applies `limit` as a slice of one cached list,
  * so asking for more costs no extra FMP call.
  */
-export const QUARTERS_FETCH_COUNT = RECENT_QUARTERS_COUNT + 4;
+export const QUARTERS_FETCH_COUNT = RECENT_QUARTERS_COUNT + QUARTERS_PER_YEAR;
 
 /** How many of the newest reported earnings dates get a price reaction. */
 export const EARNINGS_REACTIONS_COUNT = 8;
@@ -68,9 +71,14 @@ function filingDateOf(row: IncomeStatementRow): string | null {
         : null;
 }
 
+/** `revenueYoYPct` is contracted at 2 decimals (`pctVs` itself keeps 4). */
+const PCT_ROUND_FACTOR = 10 ** 2;
+
 /** `pctVs` keeps 4 decimals; this field is contracted at 2. */
 function round2(pct: number | null): number | null {
-    return pct === null ? null : Math.round(pct * 100) / 100;
+    return pct === null
+        ? null
+        : Math.round(pct * PCT_ROUND_FACTOR) / PCT_ROUND_FACTOR;
 }
 
 function filingFormOf(

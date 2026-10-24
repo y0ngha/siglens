@@ -30,7 +30,11 @@ import type {
 import { ISO_DATE_LENGTH } from '@/shared/config/time';
 import { compareIsoDate } from './investorFlowsDates';
 import { proposedSaleCountWindows } from './investorFlowsSnapshot';
-import type { PreviousSettlementChange, ProposedSaleFormType } from '../model';
+import type {
+    PreviousSettlementChange,
+    ProposedSaleFormType,
+    ProposedSaleWithForm,
+} from '../model';
 import { computePreviousSettlementChange } from './shortInterestChange';
 
 /**
@@ -490,10 +494,11 @@ function summarizePutCall(
 
 /** 옛 캐시 스냅샷에는 양식 필드가 없다 — 정정이라는 증거가 없으면 원본으로 센다. */
 function proposedSaleForm(sale: ProposedSale): ProposedSaleFormType {
-    return 'formType' in sale && sale.formType === '144/A' ? '144/A' : '144';
+    return hasFormType(sale) && sale.formType === '144/A' ? '144/A' : '144';
 }
 
-function hasFormType(sale: ProposedSale): boolean {
+/** 양식 필드를 가진(= 새 스냅샷의) 행인가. 옛 캐시 스냅샷의 행은 아니다. */
+function hasFormType(sale: ProposedSale): sale is ProposedSaleWithForm {
     return (
         'formType' in sale &&
         (sale.formType === '144' || sale.formType === '144/A')

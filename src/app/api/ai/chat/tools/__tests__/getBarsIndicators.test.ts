@@ -755,10 +755,10 @@ describe('getBarsIndicatorsTool', () => {
             rt
         );
         // `fitBarsToBudget` itself must target `BARS_RESULT_MAX_CHARS`
-        // (6,000), not the shared `TOOL_RESULT_MAX_CHARS` (4,000) — the raw
+        // (6,500), not the shared `TOOL_RESULT_MAX_CHARS` (4,000) — the raw
         // (pre-registry) result should already sit close to the LARGER
         // ceiling, strictly above the smaller one, proving the fit ran
-        // against 6,000 rather than silently trimming to 4,000.
+        // against 6,500 rather than silently trimming to 4,000.
         const rawSerializedLength = JSON.stringify(raw).length;
         expect(rawSerializedLength).toBeLessThanOrEqual(BARS_RESULT_MAX_CHARS);
         expect(rawSerializedLength).toBeGreaterThan(TOOL_RESULT_MAX_CHARS);

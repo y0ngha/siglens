@@ -234,7 +234,7 @@ export function createToolExecutor(
         // `get_bars_indicators` already fits itself against
         // `BARS_RESULT_MAX_CHARS` (`getBarsIndicators.ts`'s
         // `fitBarsToBudget`) — routing it through the shared 4,000 default
-        // here would re-cut an already-fit 6,000-char result down to 4,000
+        // here would re-cut an already-fit 6,500-char result down to 4,000
         // and collapse it into a front-cut preview blob.
         if (name === 'get_bars_indicators') return resultCaps.bars;
         if (name === 'get_market_overview') return resultCaps.aggregate;
