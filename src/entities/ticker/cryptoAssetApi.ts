@@ -1,5 +1,6 @@
 import { desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { escapeLikePattern } from '@/shared/db/likePattern';
 import { cryptoAssets } from '@/shared/db/schema';
 import type {
     CryptoAssetRecord,
@@ -68,8 +69,9 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
     }
 
     async search(query: string, limit: number): Promise<CryptoAssetRecord[]> {
-        const like = `%${query}%`;
-        const exactOrPrefix = `${query}%`;
+        const literal = escapeLikePattern(query);
+        const like = `%${literal}%`;
+        const exactOrPrefix = `${literal}%`;
         return this.db
             .select()
             .from(cryptoAssets)
