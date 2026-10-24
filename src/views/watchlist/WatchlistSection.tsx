@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useOpenTickerSearch } from '../hooks/useOpenTickerSearch';
+import { useOpenTickerSearch } from '@/features/watchlist/hooks/useOpenTickerSearch';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type {
     RawHoldingInput,
@@ -28,12 +28,15 @@ import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { symbolLabel } from '@/shared/lib/symbolLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useToast } from '@/shared/ui/ToastProvider';
-import { useWatchlist } from '../hooks/useWatchlist';
-import { useWatchlistChanges } from '../hooks/useWatchlistChanges';
-import { useWatchlistQuote } from '../hooks/useWatchlistQuote';
-import { WATCHLIST_ROW_CHROME } from '../lib/watchlistStyles';
-import { sortWatchlistItems, type WatchlistSort } from '../lib/sortWatchlist';
-import { MiniTrend } from './MiniQuoteRow';
+import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
+import { useWatchlistChanges } from '@/features/watchlist/hooks/useWatchlistChanges';
+import { useWatchlistQuote } from '@/features/watchlist/hooks/useWatchlistQuote';
+import { WATCHLIST_ROW_CHROME } from '@/features/watchlist/lib/watchlistStyles';
+import {
+    sortWatchlistItems,
+    type WatchlistSort,
+} from '@/features/watchlist/lib/sortWatchlist';
+import { MiniTrend } from '@/features/watchlist/ui/MiniQuoteRow';
 
 const ACTION_BUTTON = cn(BUTTON_OUTLINE, 'px-3 py-1.5 text-xs');
 const DANGER_BUTTON = cn(BUTTON_OUTLINE_DANGER, 'px-3 py-1.5 text-xs');

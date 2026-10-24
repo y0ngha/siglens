@@ -31,7 +31,7 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import userEvent from '@testing-library/user-event';
-import { WatchlistSection } from '@/features/watchlist/ui/WatchlistSection';
+import { WatchlistSection } from '@/views/watchlist/WatchlistSection';
 import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import { useWatchlistQuote } from '@/features/watchlist/hooks/useWatchlistQuote';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';

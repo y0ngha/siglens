@@ -18,7 +18,7 @@ vi.mock('@/shared/config/time', async importOriginal => ({
     SECONDS_PER_YEAR: 31536000,
     MS_PER_HOUR: 3600000,
 }));
-vi.mock('../../api', () => ({
+vi.mock('../../cryptoAssetApi', () => ({
     fetchCryptoAssetList: fetchCryptoAssetListMock,
 }));
 

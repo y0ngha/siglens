@@ -1,7 +1,7 @@
 import 'server-only';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { MS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
-import { fetchCryptoAssetList } from '../api';
+import { fetchCryptoAssetList } from '../cryptoAssetApi';
 import { CRYPTO_FMP_LIST_CACHE_KEY } from './cacheKeys';
 import type { CryptoAssetRow } from './fmpCryptoListClient';
 

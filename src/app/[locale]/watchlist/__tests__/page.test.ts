@@ -1,4 +1,4 @@
-vi.mock('@/features/watchlist/ui/WatchlistPageContent', () => ({
+vi.mock('@/views/watchlist/WatchlistPageContent', () => ({
     WatchlistPageContent: function WatchlistPageContent() {
         return null;
     },

@@ -41,8 +41,8 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
     resolveSymbolFearGreedSeoContent,
-    symbolMetadataFromSeo,
 } from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     dehydrate,

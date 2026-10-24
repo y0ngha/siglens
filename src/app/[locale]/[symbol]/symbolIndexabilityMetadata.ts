@@ -9,7 +9,8 @@ import {
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import type { SnapshotProseState } from '@/entities/symbol-indexability/model';
 import { hasProseForTab } from '@/entities/seo-snapshot/lib/hasProseForTab';
-import { noindexSymbolMetadata, type SymbolSeoTab } from '@/shared/lib/seo';
+import { type SymbolSeoTab } from '@/shared/lib/seo';
+import { noindexSymbolMetadata } from '@/shared/lib/symbolMetadata';
 import { buildDisplayName } from '@/entities/ticker/lib/ticker';
 import {
     getDescriptor,

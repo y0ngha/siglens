@@ -18,7 +18,7 @@ const {
 vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
-vi.mock('../../api', () => ({
+vi.mock('../../cryptoAssetApi', () => ({
     DrizzleCryptoAssetRepository: class {
         findBySymbol = repositoryFindBySymbolMock;
         search = vi.fn().mockResolvedValue([]);

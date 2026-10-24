@@ -50,9 +50,9 @@ import {
     localizedAbsoluteUrl,
     ORGANIZATION_JSON_LD_ID,
     resolveSymbolNewsSeoContent,
-    symbolMetadataFromSeo,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { SITE_NAME } from '@/shared/config/brand';
 import { ABOUT_PATH } from '@/shared/lib/legal';
 import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';

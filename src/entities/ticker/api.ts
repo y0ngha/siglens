@@ -2,12 +2,6 @@ import type {
     KoreanTickerEntry,
     KoreanTickerUpsertEntry,
 } from '@/shared/lib/types';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-import {
-    mapCryptoListRow,
-    type CryptoAssetRow,
-    type FmpCryptoListRaw,
-} from './lib/fmpCryptoListClient';
 import {
     and,
     desc,
@@ -24,7 +18,6 @@ import {
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     assetTranslations,
-    cryptoAssets,
     koreanTickers,
     profileDescriptionTranslations,
 } from '@/shared/db/schema';
@@ -32,8 +25,6 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
-    CryptoAssetRecord,
-    CryptoAssetRepository,
     KoreanTickerRepository,
     KoreanTickerUpsertOptions,
     KrTickerListingRow,
@@ -48,18 +39,6 @@ import {
     DEFAULT_MARKET_PROFILE,
 } from '@/shared/config/marketProfile/registry';
 import { type TabKey } from '@/shared/config/marketProfile/types';
-
-/**
- * DB-side ORDER BY priority buckets for crypto search (lower = ranked first).
- * These ORDINALS mirror the relevance TIERS in `searchRelevance.ts`
- * (EXACT > PREFIX > rest, i.e. its 100 > 70 > 40/10 scores): the DB pre-sort only
- * needs each tier's rank so exact/prefix matches survive the LIMIT cut, while the
- * app-side scorer assigns the actual numeric scores after the fetch. Keep the two
- * systems aligned — if a tier is added to `searchRelevance`, add a bucket here.
- */
-const DB_SORT_EXACT = 0;
-const DB_SORT_PREFIX = 1;
-const DB_SORT_OTHER = 2;
 
 /**
  * `korean_tickers`에 대한 한 INSERT/UPDATE 문에 담을 최대 행 수. 전 종목 동기화는
@@ -419,24 +398,6 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
     }
 }
 
-/** Fetch the full FMP cryptocurrency universe and map to crypto_assets rows. */
-export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
-    try {
-        const raw = await fmpGet<FmpCryptoListRaw[]>('cryptocurrency-list', {});
-        return raw
-            .map(mapCryptoListRow)
-            .filter((r): r is CryptoAssetRow => r !== null);
-    } catch (e) {
-        // Boundary I/O logging; re-throw so the seed script fails loudly
-        // (a silent [] fallback would mask a failed crypto_assets sync).
-        console.error(
-            '[fetchCryptoAssetList] FMP cryptocurrency-list fetch failed:',
-            e
-        );
-        throw e;
-    }
-}
-
 /**
  * ISR cold-gen-safe tab guard predicate: returns `true` if `tab` is allowed
  * for the given `symbol`'s market profile.
@@ -517,49 +478,4 @@ function toKoreanTickerRow(entry: KoreanTickerUpsertEntry): KoreanTickerRow {
         exchangeFullName: entry.exchangeFullName,
         listedShares: entry.listedShares ?? null,
     };
-}
-
-/**
- * Drizzle ORM implementation of {@link CryptoAssetRepository} backed by PostgreSQL
- * PostgreSQL. Reads the `crypto_assets` table (written by the seed script).
- *
- * @param db - Drizzle-wrapped database client; obtain via `createDatabaseClient`.
- */
-export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
-    constructor(private readonly db: SiglensDatabase) {}
-
-    async findBySymbol(symbol: string): Promise<CryptoAssetRecord | null> {
-        const rows = await this.db
-            .select()
-            .from(cryptoAssets)
-            .where(eq(cryptoAssets.symbol, symbol))
-            .limit(1);
-        return rows[0] ?? null;
-    }
-
-    async search(query: string, limit: number): Promise<CryptoAssetRecord[]> {
-        const like = `%${query}%`;
-        const exactOrPrefix = `${query}%`;
-        return this.db
-            .select()
-            .from(cryptoAssets)
-            .where(
-                or(
-                    ilike(cryptoAssets.symbol, like),
-                    ilike(cryptoAssets.name, like),
-                    ilike(cryptoAssets.koreanName, like)
-                )
-            )
-            .orderBy(
-                // Mirror searchRelevance's scored fields (koreanName/symbol/name) so
-                // exact/prefix matches in ANY of them are fetched within the limit
-                // before app-side re-ranking.
-                sql`CASE
-                  WHEN lower(${cryptoAssets.koreanName}) = lower(${query}) OR lower(${cryptoAssets.symbol}) = lower(${query}) OR lower(${cryptoAssets.name}) = lower(${query}) THEN ${DB_SORT_EXACT}
-                  WHEN ${cryptoAssets.koreanName} ILIKE ${exactOrPrefix} OR ${cryptoAssets.symbol} ILIKE ${exactOrPrefix} OR ${cryptoAssets.name} ILIKE ${exactOrPrefix} THEN ${DB_SORT_PREFIX}
-                  ELSE ${DB_SORT_OTHER} END`,
-                desc(cryptoAssets.circulatingSupply)
-            )
-            .limit(limit);
-    }
 }

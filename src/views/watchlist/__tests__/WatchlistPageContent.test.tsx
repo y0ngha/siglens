@@ -1,5 +1,5 @@
 vi.mock('@/features/watchlist/hooks/useWatchlist');
-vi.mock('@/features/watchlist/ui/WatchlistSection', () => ({
+vi.mock('@/views/watchlist/WatchlistSection', () => ({
     WatchlistSection: ({ sort }: { sort: string }) => (
         <div data-testid="watchlist-section">{sort}</div>
     ),
@@ -15,7 +15,7 @@ vi.mock('@/features/watchlist/hooks/useOpenTickerSearch', () => ({
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
-import { WatchlistPageContent } from '@/features/watchlist/ui/WatchlistPageContent';
+import { WatchlistPageContent } from '@/views/watchlist/WatchlistPageContent';
 
 describe('WatchlistPageContent', () => {
     beforeEach(() => {
