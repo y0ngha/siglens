@@ -46,6 +46,7 @@ import {
     type EarningsReactionView,
 } from './earningsHistory';
 import { buildDividends, fetchDividendSource } from './dividends';
+import { loadIndexMemberships } from './indexMembership';
 import { krListedBasis } from './krListedBasis';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
@@ -196,10 +197,12 @@ export function earningsDateCertainty(
  * the whole tool result.
  *
  * `dividends` comes from its own adapters (FMP `/stable/dividends` for US/ETF,
- * yahoo `summaryDetail` for KR — `FundamentalValuationMetrics` carries no such
- * field) and is `null` when the provider fails, never a guessed zero. Index
- * membership (S&P 500 / Nasdaq-100 / Dow) is deliberately absent: the FMP plan
- * returns 402 for the constituent endpoints (checked 2026-10-24). Peers and the long-form profile description are omitted
+ * yahoo dividend history for KR with `summaryDetail` as the fallback —
+ * `FundamentalValuationMetrics` carries no such field) and is `null` when the
+ * provider fails, never a guessed zero. Index membership (S&P 500 /
+ * Nasdaq-100 / Dow) comes from the Wikipedia constituent tables
+ * (`indexMembership.ts`) because the FMP plan returns 402 for the constituent
+ * endpoints (checked 2026-10-24). Peers and the long-form profile description are omitted
  * too: the model-facing shape is numbers for valuation/health questions,
  * not the page's full content.
  *
@@ -281,6 +284,7 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         listedSharesR,
         lastCloseR,
         dividendSourceR,
+        membershipsR,
     ] = await Promise.allSettled([
         provider.getProfile(symbol),
         provider.getKeyMetricsTtm(symbol),
@@ -328,6 +332,10 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         // Price-independent raw history, so it rides this fan-out (no serial
         // round trip on a cold cache); the yield is computed once `price` is known.
         fetchDividendSource(symbol, isKrEquitySymbol(symbol)),
+        loadIndexMemberships(symbol).catch((error: unknown) => {
+            logToolDegrade('get_fundamentals', 'index memberships', error);
+            return null;
+        }),
     ]);
 
     const profile = settledOrNull(profileR);
@@ -509,6 +517,8 @@ export const getFundamentalsTool: ToolExecutor = async args => {
         recentQuarters: quarters.length > 0 ? quarters : null,
         // Newest first; `null` when no reaction could be measured.
         earningsReactions: settledOrNull(reactionsR),
+        // S&P 500 / Nasdaq-100 / Dow membership; `null` for KR or when the lists are unavailable.
+        indexMemberships: settledOrNull(membershipsR),
         health: {
             altmanZScore: scores?.altmanZScore ?? null,
             piotroskiScore: scores?.piotroskiScore ?? null,

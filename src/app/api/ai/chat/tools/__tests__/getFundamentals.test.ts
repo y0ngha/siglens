@@ -15,6 +15,7 @@ const {
     listReportedEarningsDates,
     findListedShares,
     fetchDividendSource,
+    loadIndexMemberships,
 } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
@@ -28,6 +29,7 @@ const {
     listReportedEarningsDates: vi.fn(),
     findListedShares: vi.fn(),
     fetchDividendSource: vi.fn(),
+    loadIndexMemberships: vi.fn(),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
@@ -78,6 +80,9 @@ vi.mock('@/app/api/ai/chat/tools/dividends', async importOriginal => ({
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
+}));
+vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
+    loadIndexMemberships,
 }));
 
 import {
@@ -172,6 +177,7 @@ describe('getFundamentalsTool', () => {
         listReportedEarningsDates.mockResolvedValue([]);
         findListedShares.mockResolvedValue(null);
         fetchDividendSource.mockResolvedValue(null);
+        loadIndexMemberships.mockResolvedValue(null);
         sessionSpecFor.mockReturnValue({
             kind: 'scheduled',
             timeZone: 'America/New_York',
@@ -529,6 +535,39 @@ describe('getFundamentalsTool', () => {
         });
         expect(r.analyst).not.toHaveProperty('nextQuarterEstimate');
         expect(r.analyst).not.toHaveProperty('epsEstimateVsTtmPct');
+    });
+
+    describe('indexMemberships', () => {
+        it('편입 정보를 그대로 싣고 심볼을 넘긴다', async () => {
+            const memberships = {
+                sp500: true,
+                nasdaq100: true,
+                dowJones: false,
+                asOf: '2026-10-24',
+                source: 'wikipedia' as const,
+            };
+            loadIndexMemberships.mockResolvedValue(memberships);
+            getProvider.mockReturnValue(fakeProvider());
+            const r = (await getFundamentalsTool(
+                { symbol: 'exc' },
+                ctx,
+                rt
+            )) as { indexMemberships: unknown };
+            expect(r.indexMemberships).toEqual(memberships);
+            expect(loadIndexMemberships).toHaveBeenCalledWith('EXC');
+        });
+
+        it('목록을 못 읽어 던지면 null로 degrade하고 나머지 섹션은 살린다', async () => {
+            loadIndexMemberships.mockRejectedValue(new Error('wikipedia down'));
+            getProvider.mockReturnValue(fakeProvider());
+            const r = (await getFundamentalsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as { available: boolean; indexMemberships: unknown };
+            expect(r.available).toBe(true);
+            expect(r.indexMemberships).toBeNull();
+        });
     });
 
     describe('daysUntil (spec §0 null rule, market-timezone calendar-day diff)', () => {
@@ -1055,6 +1094,13 @@ describe('getFundamentalsTool', () => {
 
     it('with 5 quarters and 8 reactions the result still fits the shared tool budget', async () => {
         getProvider.mockReturnValue(fakeProvider());
+        loadIndexMemberships.mockResolvedValue({
+            sp500: true,
+            nasdaq100: true,
+            dowJones: true,
+            asOf: '2026-10-24',
+            source: 'wikipedia',
+        });
         getIncomeStatements.mockResolvedValue(
             Array.from({ length: 8 }, (_, i) => ({
                 fiscalYear: '2026',
