@@ -14,6 +14,7 @@ import {
     eq,
     ilike,
     inArray,
+    isNotNull,
     isNull,
     like,
     notLike,
@@ -477,6 +478,33 @@ export async function isTabAllowedForSymbol(
         ? 'crypto'
         : DEFAULT_MARKET_PROFILE;
     return getDescriptor(profile).tabs.includes(tab);
+}
+
+/**
+ * 한국 종목의 KRX 상장주식수(`korean_tickers.listed_shares`, `kr-tickers` cron이 채운다).
+ * 상장 중인 행에 값이 있을 때만 숫자, 아니면 null(주식수 모름 — 호출부가 프로바이더 값으로 폴백한다).
+ * 일시 DB 오류는 재시도하고, 그래도 실패하면 던진다(호출부가 격리한다).
+ */
+export async function findKrListedShares(
+    symbol: string,
+    db: SiglensDatabase
+): Promise<number | null> {
+    const rows = await withRetry(
+        () =>
+            db
+                .select({ listedShares: koreanTickers.listedShares })
+                .from(koreanTickers)
+                .where(
+                    and(
+                        eq(koreanTickers.symbol, symbol),
+                        isNull(koreanTickers.delistedAt),
+                        isNotNull(koreanTickers.listedShares)
+                    )
+                )
+                .limit(1),
+        DB_TRANSIENT_RETRY
+    );
+    return rows[0]?.listedShares ?? null;
 }
 
 /** Select DB row fields explicitly so future KoreanTickerEntry fields are not persisted accidentally. */

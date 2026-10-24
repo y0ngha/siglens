@@ -323,3 +323,77 @@ describe('isPopularSymbol', () => {
         expect(isPopularSymbol('VIDTUSD')).toBe(false);
     });
 });
+
+describe('검색 별칭(KOREAN_SEARCH_ALIASES) 순위', () => {
+    const lgEnergy = makeResult(
+        '373220.KS',
+        'LG Energy Solution',
+        'LG에너지솔루션'
+    );
+    const kEnsol = makeResult('053080.KQ', 'K ENSOL', '케이엔솔');
+
+    it('엔솔 → LG에너지솔루션(373220)이 케이엔솔(053080)보다 앞선다', () => {
+        // 후보 순서를 뒤집어도 결과가 같아야 한다 — 입력 순서에 기대지 않는다.
+        for (const input of [
+            [kEnsol, lgEnergy],
+            [lgEnergy, kEnsol],
+        ]) {
+            expect(rankByRelevance(input, '엔솔').map(r => r.symbol)).toEqual([
+                '373220.KS',
+                '053080.KQ',
+            ]);
+        }
+    });
+
+    it('정확히 일치한 별칭은 EXACT 점수를 받는다', () => {
+        expect(matchSearchRelevance(lgEnergy, '엔솔', false).score).toBe(
+            EXACT_MATCH_SCORE
+        );
+        expect(matchSearchRelevance(kEnsol, '엔솔', false).score).toBe(
+            SUBSTRING_MATCH_SCORE
+        );
+    });
+
+    it('별칭이 없는 종목에는 영향이 없다', () => {
+        expect(matchSearchRelevance(kEnsol, '케이엔솔', false).score).toBe(
+            EXACT_MATCH_SCORE
+        );
+        expect(matchSearchRelevance(kEnsol, '', false).score).toBe(
+            FALLBACK_SCORE
+        );
+    });
+
+    it('별칭도 검색 키로 접어서 비교한다 (삼전)', () => {
+        const samsung = makeResult(
+            '005930.KS',
+            'Samsung Electronics',
+            '삼성전자'
+        );
+        expect(matchSearchRelevance(samsung, '삼전', false).score).toBe(
+            EXACT_MATCH_SCORE
+        );
+    });
+
+    it('별칭은 정확 일치만 인정한다 — 접두 질의(`삼`)의 기존 순위는 그대로다', () => {
+        const samsung = makeResult(
+            '005930.KS',
+            'Samsung Electronics',
+            '삼성전자'
+        );
+        const samsungSdi = makeResult('006400.KS', 'Samsung SDI', '삼성SDI');
+        // `삼`은 별칭 `삼전`의 접두지만 별칭 점수는 받지 않는다 → 두 종목 모두 접두 70.
+        expect(matchSearchRelevance(samsung, '삼', false).score).toBe(
+            PREFIX_MATCH_SCORE
+        );
+        // 동점이면 짧은 이름이 먼저(삼성전자 4자 < 삼성SDI 5자)이고 입력 순서와 무관하다.
+        for (const input of [
+            [samsungSdi, samsung],
+            [samsung, samsungSdi],
+        ]) {
+            expect(rankByRelevance(input, '삼').map(r => r.symbol)).toEqual([
+                '005930.KS',
+                '006400.KS',
+            ]);
+        }
+    });
+});

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
     fgUs,
@@ -7,7 +7,9 @@ const {
     sectorSignals,
     peekBriefing,
     getTranslationsMock,
+    cachedBars,
 } = vi.hoisted(() => ({
+    cachedBars: vi.fn(),
     fgUs: vi.fn(),
     fgKr: vi.fn(),
     summary: vi.fn(),
@@ -22,6 +24,12 @@ vi.mock(
     '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache',
     () => ({ getMarketFearGreedKrStatic: fgKr })
 );
+vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+    getCachedBarsWithIndicators: cachedBars,
+}));
+vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
+    getCachedMarketDataProvider: () => ({}),
+}));
 vi.mock('@/entities/market-summary/api/marketSummaryStaticCache', () => ({
     getMarketSummaryStatic: summary,
 }));
@@ -57,6 +65,7 @@ describe('getMarketOverviewTool', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         peekBriefing.mockResolvedValue(null);
+        cachedBars.mockResolvedValue({ bars: [] });
         getTranslationsMock.mockImplementation(
             async ({
                 namespace,
@@ -273,6 +282,145 @@ describe('getMarketOverviewTool', () => {
         expect(r.fearGreed.score).toBe(50);
     });
 
+    describe('indices lastClose', () => {
+        const DAY = 86_400;
+        // 2026-10-22, 2026-10-23 (UTC midnight) — 일봉 시각 규약.
+        const T22 = Date.UTC(2026, 9, 22) / 1000;
+        const T23 = T22 + DAY;
+        const bar = (time: number, close: number) => ({
+            time,
+            open: close,
+            high: close,
+            low: close,
+            close,
+            volume: 0,
+        });
+        // 2026-10-23 10:00 KST(= 01:00Z): KRX 정규장 중. 같은 순간 NYSE는 전날 21:00 ET로 닫혀 있다.
+        const KR_OPEN_NYSE_CLOSED = '2026-10-23T01:00:00.000Z';
+        // 2026-10-23 11:00 ET(= 15:00Z): NYSE 정규장 중.
+        const NYSE_OPEN = '2026-10-23T15:00:00.000Z';
+        // 2026-10-23 18:00 ET(= 22:00Z): NYSE 마감 후.
+        const NYSE_CLOSED = '2026-10-23T22:00:00.000Z';
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            fgKr.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            summary.mockResolvedValue({
+                indices: [
+                    {
+                        symbol: 'VIX',
+                        fmpSymbol: '^VIX',
+                        price: 19.64,
+                        changesPercentage: -1,
+                    },
+                ],
+                sectors: [],
+            });
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        const run = async (market: 'us' | 'kr' = 'us') =>
+            (await getMarketOverviewTool({ market }, ctx, rt)) as {
+                indices: {
+                    price: number;
+                    lastClose: number | null;
+                    lastCloseDate: string | null;
+                }[];
+            };
+
+        it('장 마감 후에는 마지막 봉의 종가와 날짜를 싣고, price(라이브 시세)는 그대로 둔다', async () => {
+            vi.setSystemTime(new Date(NYSE_CLOSED));
+            cachedBars.mockResolvedValue({
+                bars: [bar(T22, 19.1), bar(T23, 19.45)],
+            });
+            const r = await run();
+            expect(cachedBars).toHaveBeenCalledWith(
+                expect.anything(),
+                'VIX',
+                '1Day',
+                '^VIX',
+                expect.objectContaining({ timeZone: 'America/New_York' })
+            );
+            expect(r.indices[0]).toMatchObject({
+                price: 19.64,
+                lastClose: 19.45,
+                lastCloseDate: '2026-10-23',
+            });
+        });
+
+        it('마지막 봉이 진행 중이면 직전 완료 봉을 쓴다', async () => {
+            vi.setSystemTime(new Date(NYSE_OPEN));
+            cachedBars.mockResolvedValue({
+                bars: [bar(T22, 19.1), bar(T23, 19.64)],
+            });
+            const r = await run();
+            expect(r.indices[0]).toMatchObject({
+                lastClose: 19.1,
+                lastCloseDate: '2026-10-22',
+            });
+        });
+
+        it('세션은 scope를 따른다 — 같은 순간 KR은 장중(직전 봉), US는 마감(마지막 봉)', async () => {
+            vi.setSystemTime(new Date(KR_OPEN_NYSE_CLOSED));
+            cachedBars.mockResolvedValue({
+                bars: [bar(T22, 2500), bar(T23, 2600)],
+            });
+            const kr = await run('kr');
+            expect(cachedBars).toHaveBeenLastCalledWith(
+                expect.anything(),
+                'VIX',
+                '1Day',
+                '^VIX',
+                expect.objectContaining({ timeZone: 'Asia/Seoul' })
+            );
+            expect(kr.indices[0]).toMatchObject({
+                lastClose: 2500,
+                lastCloseDate: '2026-10-22',
+            });
+            const us = await run('us');
+            expect(us.indices[0]).toMatchObject({
+                lastClose: 2600,
+                lastCloseDate: '2026-10-23',
+            });
+        });
+
+        it('봉 로드가 실패하면 null로 degrade하고 나머지 필드는 살아남는다', async () => {
+            vi.setSystemTime(new Date(NYSE_CLOSED));
+            const consoleErrorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const consoleWarnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            try {
+                cachedBars.mockRejectedValue(new Error('fmp 429'));
+                const r = await run();
+                expect(r.indices[0]).toMatchObject({
+                    price: 19.64,
+                    lastClose: null,
+                    lastCloseDate: null,
+                });
+            } finally {
+                consoleErrorSpy.mockRestore();
+                consoleWarnSpy.mockRestore();
+            }
+        });
+
+        it('봉이 비어 있으면 null이다', async () => {
+            vi.setSystemTime(new Date(NYSE_CLOSED));
+            cachedBars.mockResolvedValue({ bars: [] });
+            const r = await run();
+            expect(r.indices[0]).toMatchObject({
+                lastClose: null,
+                lastCloseDate: null,
+            });
+        });
+    });
+
     it('fear-greed 조회가 실패해도(allSettled) 지수·섹터 데이터는 살아남는다', async () => {
         fgUs.mockRejectedValue(new Error('redis down'));
         sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
@@ -282,7 +430,13 @@ describe('getMarketOverviewTool', () => {
         };
         expect(r.fearGreed).toBeNull();
         expect(r.indices).toEqual([
-            { symbol: 'SPY', price: 500, changesPercentage: 0.5 },
+            {
+                symbol: 'SPY',
+                price: 500,
+                changesPercentage: 0.5,
+                lastClose: null,
+                lastCloseDate: null,
+            },
         ]);
     });
 
