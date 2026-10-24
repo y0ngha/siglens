@@ -523,7 +523,11 @@ export interface CryptoAssetRecord {
 /** Read/search access to the crypto_assets universe. */
 export interface CryptoAssetRepository {
     findBySymbol(symbol: string): Promise<CryptoAssetRecord | null>;
-    /** Prefix/substring match over symbol + name, ordered by circulatingSupply desc, capped. */
+    /**
+     * Case-insensitive substring match over symbol, name and koreanName. `%`·`_` in
+     * `query` match literally. Exact matches rank first, then prefix matches, then
+     * the rest by circulatingSupply desc; capped at `limit`.
+     */
     search(query: string, limit: number): Promise<CryptoAssetRecord[]>;
 }
 

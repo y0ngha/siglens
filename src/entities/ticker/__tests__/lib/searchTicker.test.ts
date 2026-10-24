@@ -457,7 +457,7 @@ describe('searchTicker', () => {
             },
         ]);
         expect(mockCache.set).toHaveBeenCalledWith(
-            'ticker:search:v3:aapl',
+            'ticker:search:v4:aapl',
             result,
             expect.any(Number)
         );
@@ -517,10 +517,10 @@ describe('searchTicker', () => {
             buildApiTickerSearchCacheKey('x')
         );
         expect(buildApiTickerSearchCacheKey('x')).toMatch(
-            /^ticker:search:api-untranslated:v3:/
+            /^ticker:search:api-untranslated:v4:/
         );
-        // 웹 키는 어떤 입력이든 `ticker:search:v3:`로 시작해 API 접두와 겹치지 않는다.
-        expect(buildTickerSearchCacheKey('api-untranslated:v3:x')).not.toBe(
+        // 웹 키는 어떤 입력이든 `ticker:search:v4:`로 시작해 API 접두와 겹치지 않는다.
+        expect(buildTickerSearchCacheKey('api-untranslated:v4:x')).not.toBe(
             buildApiTickerSearchCacheKey('x')
         );
     });
