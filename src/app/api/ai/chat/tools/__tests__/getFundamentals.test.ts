@@ -648,6 +648,38 @@ describe('getFundamentalsTool', () => {
             ]);
         });
 
+        it.each([
+            ['USD', { reportedCurrency: 'USD' }],
+            ['absent', { reportedCurrency: undefined }],
+        ])(
+            'a Korean stock gets form: null even when the row currency is %s (only the KR-symbol wiring can cause it)',
+            async (_label, extra) => {
+                getProvider.mockReturnValue(fakeProvider());
+                getIncomeStatements.mockResolvedValue([
+                    incomeRow('2026-06-30', 'Q2', extra),
+                ]);
+                const r = (await getFundamentalsTool(
+                    { symbol: '005930.KS' },
+                    ctx,
+                    rt
+                )) as { recentQuarters: { form: unknown }[] | null };
+                expect(r.recentQuarters?.[0]?.form).toBeNull();
+            }
+        );
+
+        it('the same USD row for a US symbol keeps the derived form (control)', async () => {
+            getProvider.mockReturnValue(fakeProvider());
+            getIncomeStatements.mockResolvedValue([
+                incomeRow('2026-06-30', 'Q2', { reportedCurrency: 'USD' }),
+            ]);
+            const r = (await getFundamentalsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as { recentQuarters: { form: unknown }[] | null };
+            expect(r.recentQuarters?.[0]?.form).toBe('10-Q');
+        });
+
         it('no quarterly rows (or a failed read) → null, other sections intact', async () => {
             getProvider.mockReturnValue(fakeProvider());
             getIncomeStatements.mockRejectedValue(new Error('fmp down'));

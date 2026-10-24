@@ -144,6 +144,31 @@ describe('recentQuarterRows', () => {
         expect(forms).toEqual(['10-Q', '10-Q', '10-Q', '10-K', null]);
     });
 
+    it('form is derived for a USD reporter', () => {
+        expect(recentQuarterRows([row('2026-06-30', 'Q2')])[0]!.form).toBe(
+            '10-Q'
+        );
+    });
+
+    it('form is null for a Korean stock even when the rows report in USD', () => {
+        expect(
+            recentQuarterRows([row('2026-06-30', 'Q2')], true)[0]!.form
+        ).toBeNull();
+    });
+
+    it('form is null for a non-USD (foreign/ADR) reporter', () => {
+        const adr = row('2026-06-30', 'Q2', { reportedCurrency: 'TWD' });
+        expect(recentQuarterRows([adr])[0]!.form).toBeNull();
+    });
+
+    it.each([null, undefined])(
+        'a row with reportedCurrency %s still gets the derived form (documented limitation)',
+        reportedCurrency => {
+            const r = row('2026-12-31', 'Q4', { reportedCurrency });
+            expect(recentQuarterRows([r])[0]!.form).toBe('10-K');
+        }
+    );
+
     it('revenueYoYPct compares with the same fiscal quarter a year earlier, found beyond the five rows shown', () => {
         const rows = [
             row('2026-09-30', 'Q3', { revenue: 1_250 }),

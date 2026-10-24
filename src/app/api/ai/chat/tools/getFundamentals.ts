@@ -310,7 +310,10 @@ export const getFundamentalsTool: ToolExecutor = async args => {
             error: 'stale_listing',
             lastTradeDate,
         };
-    const quarters = recentQuarterRows(settledOrNull(quartersR) ?? []);
+    const quarters = recentQuarterRows(
+        settledOrNull(quartersR) ?? [],
+        isKrEquitySymbol(symbol)
+    );
     // A failed lookup is `null` (rejections are settled to `null` above);
     // `price > 0` also rejects bad upstream data (a zero or negative price),
     // so either reads as "unknown", never as a real price.

@@ -24,8 +24,13 @@ export const EARNINGS_REACTIONS_COUNT = 8;
  *
  * `form` is DERIVED from the fiscal quarter label, not read from the data (the
  * provider rows carry no form type): Q4 → `10-K`, Q1–Q3 → `10-Q`, anything
- * else (`FY`, unknown) → `null`. That is the US-filer rule; a foreign filer
- * (20-F/6-K) has no 10-Q/10-K, which the tool description tells the model.
+ * else (`FY`, unknown) → `null`. It applies only to US domestic SEC filers;
+ * it is `null` for Korean stocks (no SEC filing at all) and for foreign
+ * issuers (20-F/6-K, no 10-Q/10-K). The profile carries no country/exchange
+ * field, so a foreign issuer is detected only by its rows' reporting currency
+ * being a non-USD one (an ADR reports in its home currency, e.g. TSM in TWD).
+ * LIMITATION: a foreign filer that reports in USD, or rows with no currency,
+ * are not detectable and still get the derived form.
  *
  * `revenueYoYPct` compares with the SAME fiscal quarter one fiscal year
  * earlier, looked up in the full row set (not just the five newest shown, or
@@ -68,7 +73,13 @@ function round2(pct: number | null): number | null {
     return pct === null ? null : Math.round(pct * 100) / 100;
 }
 
-function filingFormOf(period: string): RecentQuarterView['form'] {
+function filingFormOf(
+    row: IncomeStatementRow,
+    isKrEquity: boolean
+): RecentQuarterView['form'] {
+    const currency = row.reportedCurrency ?? null;
+    if (isKrEquity || (currency !== null && currency !== 'USD')) return null;
+    const period = row.period;
     if (period === 'Q4') return '10-K';
     return period === 'Q1' || period === 'Q2' || period === 'Q3'
         ? '10-Q'
@@ -94,7 +105,8 @@ function yearAgoRevenue(
  * are dropped (they cannot be placed in time).
  */
 export function recentQuarterRows(
-    rows: readonly IncomeStatementRow[]
+    rows: readonly IncomeStatementRow[],
+    isKrEquity = false
 ): RecentQuarterView[] {
     return rows
         .filter(row => row.date !== '')
@@ -104,7 +116,7 @@ export function recentQuarterRows(
             periodEnd: row.date,
             fiscalYear: row.fiscalYear,
             period: row.period,
-            form: filingFormOf(row.period),
+            form: filingFormOf(row, isKrEquity),
             filingDate: filingDateOf(row),
             epsDiluted: row.epsDiluted,
             revenue: row.revenue,
