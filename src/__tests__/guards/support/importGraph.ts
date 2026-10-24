@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { parse } from '@babel/parser';
@@ -32,9 +32,10 @@ export interface ImportEdge {
     /** `import type`, 또는 지정자 전부가 `type`인 import·재노출. 런타임에 사라진다. */
     typeOnly: boolean;
     /**
-     * `import('…')` 또는 `require('…')`. 이 저장소의 `require`는 프로바이더 선택처럼
-     * 함수 안에서만 쓰여(`shared/api/{market,economy,fmp}/get…Provider.ts`), 둘 다 모듈 평가 시점이 아니라
-     * 호출 시점에 로드한다. 그래서 초기화 순환은 만들지 않지만 슬라이스 결합에는 센다.
+     * 모듈 평가 시점이 아니라 호출 시점에 로드된다: `import('…')` 또는 `require('…')`.
+     * 이 저장소의 `require`는 프로바이더 선택처럼 함수 안에서만 쓰인다
+     * (`shared/api/{market,economy,fmp}/get…Provider.ts`). 초기화 순환은 만들지 않지만
+     * 슬라이스 결합에는 센다.
      */
     dynamic: boolean;
 }
@@ -81,8 +82,38 @@ const internalBase = (
           ? path.resolve(path.dirname(fromFile), specifier)
           : undefined;
 
-const isSourceFile = (candidate: string): boolean =>
-    /\.tsx?$/.test(candidate) && existsSync(candidate);
+const directoryEntries = new Map<string, ReadonlySet<string> | null>();
+
+/** 디렉터리의 실제 항목 이름(대소문자 그대로). 없는 디렉터리면 `null`. 실행 중 캐시한다. */
+function entriesOf(directory: string): ReadonlySet<string> | null {
+    const hit = directoryEntries.get(directory);
+    if (hit !== undefined) return hit;
+    let entries: ReadonlySet<string> | null;
+    try {
+        entries = new Set(readdirSync(directory));
+    } catch {
+        entries = null;
+    }
+    directoryEntries.set(directory, entries);
+    return entries;
+}
+
+/**
+ * 경로의 **모든 구간**이 대소문자까지 실제와 같은 소스 파일인가. `existsSync`는 macOS처럼
+ * 대소문자를 가리지 않는 파일시스템에서 `./Foo`를 `foo.ts`로 통과시켜, 리눅스 CI에서야
+ * 깨지는 import가 로컬에서 해석 성공으로 보였다. 디렉터리 목록은 캐시해 syscall도 줄인다.
+ */
+function isSourceFile(candidate: string): boolean {
+    if (!/\.tsx?$/.test(candidate)) return false;
+    const anchor = path.parse(candidate).root;
+    const segments = path.relative(anchor, candidate).split(path.sep);
+    return segments.every(
+        (segment, index) =>
+            entriesOf(path.join(anchor, ...segments.slice(0, index)))?.has(
+                segment
+            ) === true
+    );
+}
 
 /**
  * `fromFile`(절대 경로)의 지정자가 가리키는 소스 파일의 절대 경로. 외부 패키지·비코드
@@ -131,15 +162,26 @@ const allSpecifiersAreTypes = (specifiers: unknown): boolean =>
             (s.importKind === 'type' || s.exportKind === 'type')
     );
 
-const isLazyLoadCallee = (callee: unknown): boolean =>
-    isNode(callee) &&
-    (callee.type === 'Import' ||
-        (callee.type === 'Identifier' && callee.name === 'require'));
+/** 호출식이 모듈을 불러오는 형태면 그 종류, 아니면 `null`. */
+const loadCallKind = (callee: unknown): 'import()' | 'require' | null =>
+    !isNode(callee)
+        ? null
+        : callee.type === 'Import'
+          ? 'import()'
+          : callee.type === 'Identifier' && callee.name === 'require'
+            ? 'require'
+            : null;
 
 export interface ImportRecord {
     specifier: string;
     typeOnly: boolean;
+    /** 평가 시점이 늦다(`import()`·`require()`). {@link ImportEdge.dynamic}과 같다. */
     dynamic: boolean;
+    /**
+     * 번들러가 별도 청크로 떼어 내는가(`import()`만). 동기 `require()`는 평가는 늦어도
+     * 같은 청크에 실린다 — 번들 구성을 보는 가드는 `dynamic`이 아니라 이것을 본다.
+     */
+    lazyChunk: boolean;
 }
 
 /** 노드 하나가 만드는 import 기록(없으면 빈 배열). */
@@ -147,15 +189,25 @@ function recordOf(node: AstNode): ImportRecord[] {
     const record = (
         specifier: string | null,
         typeOnly: boolean,
-        dynamic: boolean
-    ): ImportRecord[] => (specifier ? [{ specifier, typeOnly, dynamic }] : []);
+        kind: 'static' | 'import()' | 'require'
+    ): ImportRecord[] =>
+        specifier
+            ? [
+                  {
+                      specifier,
+                      typeOnly,
+                      dynamic: kind !== 'static',
+                      lazyChunk: kind === 'import()',
+                  },
+              ]
+            : [];
     switch (node.type) {
         case 'ImportDeclaration':
             return record(
                 stringSource(node.source),
                 node.importKind === 'type' ||
                     allSpecifiersAreTypes(node.specifiers),
-                false
+                'static'
             );
         case 'ExportNamedDeclaration':
         case 'ExportAllDeclaration':
@@ -163,15 +215,16 @@ function recordOf(node: AstNode): ImportRecord[] {
                 stringSource(node.source),
                 node.exportKind === 'type' ||
                     allSpecifiersAreTypes(node.specifiers),
-                false
+                'static'
             );
         case 'ImportExpression':
-            return record(stringSource(node.source), false, true);
-        case 'CallExpression':
-            return isLazyLoadCallee(node.callee) &&
-                Array.isArray(node.arguments)
-                ? record(stringSource(node.arguments[0]), false, true)
+            return record(stringSource(node.source), false, 'import()');
+        case 'CallExpression': {
+            const kind = loadCallKind(node.callee);
+            return kind && Array.isArray(node.arguments)
+                ? record(stringSource(node.arguments[0]), false, kind)
                 : [];
+        }
         default:
             return [];
     }
@@ -278,8 +331,6 @@ export function buildImportGraph(): ImportGraph {
         path.relative(SRC, absolute).split(path.sep).join('/');
     cached = {
         files,
-        // 프로덕션 파일 사이의 엣지만 남긴다. `.d.ts`·스토리 같은 그래프 밖 파일로 가는
-        // import는 해석은 됐으므로 실패가 아니다.
         edges: parsed.flatMap(({ rel, imports }) =>
             imports.flatMap(({ resolved, typeOnly, dynamic }) =>
                 typeof resolved === 'string' &&
@@ -289,10 +340,17 @@ export function buildImportGraph(): ImportGraph {
                     : []
             )
         ),
+        // 해석 실패와 함께, 프로덕션 코드가 테스트·스토리 같은 그래프 밖 파일을 import하는
+        // 경우도 드러낸다 — 그 엣지는 그래프에서 빠지고 그 파일을 거치는 순환도 사라진다.
         unresolved: parsed.flatMap(({ rel, imports }) =>
-            imports
-                .filter(({ resolved }) => resolved === null)
-                .map(({ specifier }) => `${rel} → ${specifier}`)
+            imports.flatMap(({ specifier, resolved }) =>
+                resolved === null
+                    ? [`${rel} → ${specifier}`]
+                    : typeof resolved === 'string' &&
+                        !fileSet.has(toRel(resolved))
+                      ? [`${rel} → ${specifier} (프로덕션 밖 파일)`]
+                      : []
+            )
         ),
         parseErrors: parsed.flatMap(({ rel, errors }) =>
             errors.map(message => `${rel}: ${message}`)

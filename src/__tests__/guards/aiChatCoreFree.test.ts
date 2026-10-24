@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { findCoreInClientGraph } from './support/coreClientGraph';
+import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import { SRC } from './support/importGraph';
 
 /**
@@ -35,7 +36,8 @@ describe('ai 채팅 클라이언트 번들', () => {
                 offenders.map(o => o.chain.join(' → ')),
                 '클라이언트에서 core가 필요한 계산은 서버(라우트·Server Component·toMessageView)로 옮겨 결과만 넘겨야 한다'
             ).toEqual([]);
-        }
+        },
+        SCAN_TIMEOUT_MS
     );
 
     describe('검출기가 실제로 잡는다', () => {

@@ -43,9 +43,10 @@ export function findCoreInClientGraph(
         const { directive, imports } = fileImports(file);
         if (directive === 'use server') return;
         const client = inClient || directive === 'use client';
+        // 동기 `require()`는 같은 청크에 실리므로 따라간다. 별도 청크는 `import()`뿐이다.
         const followed = imports.filter(
-            ({ typeOnly, dynamic }) =>
-                !typeOnly && (options.followDynamicImports || !dynamic)
+            ({ typeOnly, lazyChunk }) =>
+                !typeOnly && (options.followDynamicImports || !lazyChunk)
         );
         for (const { specifier, resolved } of followed) {
             if (specifier === '@y0ngha/siglens-core') {

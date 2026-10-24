@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { findCoreInClientGraph } from './support/coreClientGraph';
+import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import { SRC } from './support/importGraph';
 
 /**
@@ -18,20 +19,28 @@ import { SRC } from './support/importGraph';
 const ROOT_LAYOUT = path.join(SRC, 'app/[locale]/layout.tsx');
 
 describe('루트 레이아웃 클라이언트 번들', () => {
-    it('@y0ngha/siglens-core를 정적으로 끌어오지 않는다', () => {
-        const offenders = findCoreInClientGraph(ROOT_LAYOUT);
-        expect(
-            offenders.map(o => o.chain.join(' → ')),
-            '이 경로의 core 값 import를 지연 로드(next/dynamic)하거나 파일을 나눠 루트 레이아웃 그래프 밖으로 빼야 한다'
-        ).toEqual([]);
-    });
+    it(
+        '@y0ngha/siglens-core를 정적으로 끌어오지 않는다',
+        () => {
+            const offenders = findCoreInClientGraph(ROOT_LAYOUT);
+            expect(
+                offenders.map(o => o.chain.join(' → ')),
+                '이 경로의 core 값 import를 지연 로드(next/dynamic)하거나 파일을 나눠 루트 레이아웃 그래프 밖으로 빼야 한다'
+            ).toEqual([]);
+        },
+        SCAN_TIMEOUT_MS
+    );
 
-    it('검출기가 실제로 잡는다 — 분리 전 경로라면 걸린다', () => {
-        // jail과 프로바이더가 한 파일이던 때의 경로를 그대로 재현한다.
-        const providers = path.join(
-            SRC,
-            'app/[locale]/[symbol]/SymbolLayoutClient.tsx'
-        );
-        expect(findCoreInClientGraph(providers).length).toBeGreaterThan(0);
-    });
+    it(
+        '검출기가 실제로 잡는다 — 분리 전 경로라면 걸린다',
+        () => {
+            // jail과 프로바이더가 한 파일이던 때의 경로를 그대로 재현한다.
+            const providers = path.join(
+                SRC,
+                'app/[locale]/[symbol]/SymbolLayoutClient.tsx'
+            );
+            expect(findCoreInClientGraph(providers).length).toBeGreaterThan(0);
+        },
+        SCAN_TIMEOUT_MS
+    );
 });

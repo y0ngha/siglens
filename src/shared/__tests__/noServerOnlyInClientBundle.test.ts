@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { sourceFiles } from '@/__tests__/guards/support/controlUsage';
+import {
+    SCAN_TIMEOUT_MS,
+    sourceFiles,
+} from '@/__tests__/guards/support/controlUsage';
 import { fileImports, SRC } from '@/__tests__/guards/support/importGraph';
 
 /**
@@ -48,24 +51,22 @@ function serverOnlyPath(entry: string): string[] | null {
         if (seen.has(current)) continue;
         seen.add(current);
         const { directive, imports } = fileImports(current);
-        if (trail.length > 1) {
-            /**
-             * `'use server'`는 **번들 경계**다 — 그 아래 그래프는 클라이언트로
-             * 넘어가지 않고 RPC 스텁만 남는다. 여기서 멈추지 않으면 서버 액션을
-             * 부르는 모든 클라이언트 컴포넌트가 오탐으로 잡힌다.
-             */
-            if (directive === 'use server') continue;
-            /**
-             * `import 'server-only'`는 경계가 **아니라 표지**다 — 클라이언트
-             * 그래프에 들어가면 빌드가 깨진다. 그래서 여기 도달했다는 것 자체가
-             * 위반이다.
-             *
-             * (처음엔 이걸 경계로 오해해 `continue`했고, 그 탓에 실제 결함을
-             * 재현한 변이가 통과했다.)
-             */
-            if (isServerOnly(current))
-                return trail.map(file => path.relative(SRC, file));
-        }
+        /**
+         * `'use server'`는 **번들 경계**다 — 그 아래 그래프는 클라이언트로 넘어가지 않고
+         * RPC 스텁만 남는다. 여기서 멈추지 않으면 서버 액션을 부르는 모든 클라이언트
+         * 컴포넌트가 오탐으로 잡힌다. 진입 파일은 `'use client'`라 해당하지 않는다.
+         */
+        if (trail.length > 1 && directive === 'use server') continue;
+        /**
+         * `import 'server-only'`는 경계가 **아니라 표지**다 — 클라이언트 그래프에 들어가면
+         * 빌드가 깨진다. 그래서 여기 도달했다는 것 자체가 위반이다. 진입 파일 자신도
+         * 마찬가지다(예전 가드는 진입 파일을 건너뛰어 가장 직접적인 위반을 놓쳤다).
+         *
+         * (처음엔 이걸 경계로 오해해 `continue`했고, 그 탓에 실제 결함을 재현한 변이가
+         * 통과했다.)
+         */
+        if (isServerOnly(current))
+            return trail.map(file => path.relative(SRC, file));
         for (const { resolved, typeOnly } of imports)
             if (!typeOnly && typeof resolved === 'string')
                 stack.push([resolved, [...trail, resolved]]);
@@ -74,20 +75,26 @@ function serverOnlyPath(entry: string): string[] | null {
 }
 
 describe("'use client' 파일은 서버 전용 모듈을 끌고 오지 않는다", () => {
-    it('위반이 없다', () => {
-        const clientFiles = sourceFiles(SRC)
-            .filter(file => !file.includes(`${path.sep}__tests__${path.sep}`))
-            .filter(file => fileImports(file).directive === 'use client');
-        // 스캔이 헛돌지 않는지 — 클라이언트 파일이 0건이면 이 가드가 무의미하다.
-        expect(clientFiles.length).toBeGreaterThan(20);
+    it(
+        '위반이 없다',
+        () => {
+            const clientFiles = sourceFiles(SRC)
+                .filter(
+                    file => !file.includes(`${path.sep}__tests__${path.sep}`)
+                )
+                .filter(file => fileImports(file).directive === 'use client');
+            // 스캔이 헛돌지 않는지 — 클라이언트 파일이 0건이면 이 가드가 무의미하다.
+            expect(clientFiles.length).toBeGreaterThan(20);
 
-        const offenders = clientFiles.flatMap(file => {
-            const trail = serverOnlyPath(file);
-            return trail === null ? [] : [trail.join(' → ')];
-        });
+            const offenders = clientFiles.flatMap(file => {
+                const trail = serverOnlyPath(file);
+                return trail === null ? [] : [trail.join(' → ')];
+            });
 
-        expect(offenders).toEqual([]);
-    });
+            expect(offenders).toEqual([]);
+        },
+        SCAN_TIMEOUT_MS
+    );
 
     describe('검출기', () => {
         let dir: string;
@@ -112,6 +119,14 @@ describe("'use client' 파일은 서버 전용 모듈을 끌고 오지 않는다
                 "import type { Hash } from 'node:crypto';\nexport type H = Hash;\n"
             );
             write(
+                'typeInside.ts',
+                "import type { Hash } from 'node:crypto';\nexport const value = 1;\nexport type H = Hash;\n"
+            );
+            write(
+                'fsp.ts',
+                "import { readFile } from 'fs/promises';\nexport const read = readFile;\n"
+            );
+            write(
                 'action.ts',
                 "'use server';\nimport { id } from './crypto';\nexport async function run() { return id(); }\n"
             );
@@ -130,6 +145,16 @@ describe("'use client' 파일은 서버 전용 모듈을 끌고 오지 않는다
                 "import { secret } from './marker';",
             ],
             [
+                'Node 전용 모듈의 하위 경로(fs/promises)를 import하는 파일',
+                'SubPath.tsx',
+                "import { read } from './fsp';",
+            ],
+            [
+                '진입 파일 자신이 Node 전용 모듈을 import하는 경우',
+                'SelfCrypto.tsx',
+                "import { randomUUID } from 'node:crypto';\nexport const id = randomUUID;",
+            ],
+            [
                 '동적 import로 닿는 서버 전용 파일',
                 'DynamicCrypto.tsx',
                 "export const load = () => import('./crypto');",
@@ -137,6 +162,14 @@ describe("'use client' 파일은 서버 전용 모듈을 끌고 오지 않는다
         ])('%s 까지의 경로를 잡는다', (_label, name, line) => {
             const entry = write(name, `'use client';\n${line}\n`);
             expect(serverOnlyPath(entry)).not.toBeNull();
+        });
+
+        it('값으로 닿은 파일이 Node 전용 모듈을 타입으로만 쓰면 넘어간다', () => {
+            const entry = write(
+                'ValueToTypeInside.tsx',
+                "'use client';\nimport { value } from './typeInside';\n"
+            );
+            expect(serverOnlyPath(entry)).toBeNull();
         });
 
         it('타입만 가져오는 경로는 넘어간다', () => {

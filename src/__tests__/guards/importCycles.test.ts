@@ -96,7 +96,14 @@ describe('순환 검출기', () => {
     it('require()를 지연 엣지로 센다', () => {
         expect(
             extractImports('a.ts', "const x = () => require('./fake');").records
-        ).toEqual([{ specifier: './fake', typeOnly: false, dynamic: true }]);
+        ).toEqual([
+            {
+                specifier: './fake',
+                typeOnly: false,
+                dynamic: true,
+                lazyChunk: false,
+            },
+        ]);
     });
 
     it('복구한 파싱 오류를 돌려준다', () => {
