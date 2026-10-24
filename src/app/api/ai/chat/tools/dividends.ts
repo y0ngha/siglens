@@ -10,6 +10,7 @@ import {
 } from '@/shared/api/yahoo/yahooDividendSource';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
+import type { KrAnnualDividendRaw } from './krAnnualDividend';
 import { logToolDegrade } from './logToolDegrade';
 
 /**
@@ -32,11 +33,33 @@ export interface DividendsView {
     trailing12mAmount: number | null;
     trailingYieldPct: number | null;
     source: string;
+    /** 한국 종목 전용, 사업보고서가 있을 때만 존재한다. 위 트레일링 값과 별개의 "확정 연간 배당" 관점이다. */
+    annualReported?: KrAnnualReportedDividend;
+}
+
+/**
+ * 한국에서 흔히 말하는 "배당수익률"(네이버·FnGuide)에 해당하는 값 — DART 사업보고서의 확정 연간 현금배당.
+ * `trailing12mAmount`(최근 365일에 실제 배당락된 금액 합)와 달리 **한 사업연도의 확정 배당금**이라, 결산배당이 다음 해에
+ * 지급·배당락되는 종목은 두 값이 다를 수 있다.
+ *
+ * - `fiscalYear`: 사업연도(최신 공시된 연도, 보통 작년).
+ * - `dpsCommon`: **보통주** 1주당 연간 현금배당금(원). 보통주 현금배당이 없으면 null.
+ * - `dartYieldPct`: 보고서가 적은 현금배당수익률(%) — 분모는 배당 기준일 전후 주가이며 현재가가 아니다.
+ * - `yieldOnLastClosePct`: `dpsCommon ÷ 현재가 × 100`(소수 둘째 자리). 현재가 기준이라 네이버·FnGuide 값과 맞먹는다.
+ *   현재가나 DPS가 없으면 null. 우선주 종목에는 이 필드 자체가 붙지 않는다.
+ */
+export interface KrAnnualReportedDividend {
+    fiscalYear: number;
+    dpsCommon: number | null;
+    dartYieldPct: number | null;
+    yieldOnLastClosePct: number | null;
+    source: typeof DART_ANNUAL_DIVIDEND_SOURCE;
 }
 
 export const FMP_DIVIDENDS_SOURCE = 'FMP dividends history';
 export const YAHOO_DIVIDENDS_SOURCE = 'Yahoo Finance summaryDetail';
 export const YAHOO_HISTORY_SOURCE = 'Yahoo Finance dividend history';
+export const DART_ANNUAL_DIVIDEND_SOURCE = 'DART';
 
 const TRAILING_WINDOW_DAYS = 365;
 const AMOUNT_ROUND_SCALE = 1e4;
@@ -182,6 +205,30 @@ export function buildYahooSummaryDividends(
                 ? null
                 : round(yahooYield * 100, PCT_ROUND_SCALE)),
         source: YAHOO_DIVIDENDS_SOURCE,
+    };
+}
+
+/**
+ * 배당 뷰에 DART 확정 연간 배당을 붙인다. 뷰나 DART 값이 없으면 뷰를 그대로 돌려준다(필드를 만들지 않는다).
+ */
+export function withAnnualReported(
+    dividends: DividendsView | null,
+    annual: KrAnnualDividendRaw | null,
+    price: number | null
+): DividendsView | null {
+    if (dividends === null || annual === null) return dividends;
+    return {
+        ...dividends,
+        annualReported: {
+            fiscalYear: annual.fiscalYear,
+            dpsCommon: annual.dpsCommon,
+            dartYieldPct: annual.dartYieldPct,
+            yieldOnLastClosePct:
+                annual.dpsCommon === null
+                    ? null
+                    : yieldPct(annual.dpsCommon, price),
+            source: DART_ANNUAL_DIVIDEND_SOURCE,
+        },
     };
 }
 

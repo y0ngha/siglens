@@ -29,14 +29,17 @@ export const BARS_RESULT_MAX_CHARS = 6_500;
  *
  * `get_fundamentals` and `get_congress_trades` fit comfortably under the
  * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
- * `get_fundamentals` measures ~3,270 chars with every section filled plus 5
+ * `get_fundamentals` measures ~3,385 chars with every section filled plus 5
  * `recentQuarters` rows (each with `form`, `revenueYoYPct` and a full `sec`
- * as-filed block), 8 `earningsReactions`, the ~170-char `dividends` block and
- * `indexMemberships` (summed from 2026-10-24 hand measurements of the fixture in
- * `getFundamentals.test.ts`: ~2,275 with dividends, +~180 for the per-quarter
- * `form`/`revenueYoYPct`, +~110 for `indexMemberships`, +~710 for the `sec`
- * blocks — ~140 chars per quarter, worst case with 12-digit revenue and a
- * 22-char accession; the test only asserts `< TOOL_RESULT_MAX_CHARS`),
+ * as-filed block), 8 `earningsReactions`, the ~170-char `dividends` block
+ * (+ the KR-only `annualReported`) and `indexMemberships` (summed from
+ * 2026-10-24 hand measurements of the fixture in `getFundamentals.test.ts`:
+ * ~2,275 with dividends, +~180 for the per-quarter `form`/`revenueYoYPct`,
+ * +~110 for `indexMemberships`, +~710 for the `sec` blocks — ~140 chars per
+ * quarter, worst case with 12-digit revenue and a 22-char accession — and
+ * +~115 for `annualReported`, which is KR-only while `sec` is US-only, so a real
+ * result carries at most one of the two; the test only asserts
+ * `< TOOL_RESULT_MAX_CHARS`),
  * `get_congress_trades` ~2,500.
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
