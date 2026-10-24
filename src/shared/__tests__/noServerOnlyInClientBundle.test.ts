@@ -1,8 +1,13 @@
-import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-const ROOT = process.cwd();
+import {
+    SCAN_TIMEOUT_MS,
+    sourceFiles,
+} from '@/__tests__/guards/support/controlUsage';
+import { fileImports, SRC } from '@/__tests__/guards/support/importGraph';
 
 /**
  * **`'use client'` 파일의 import 그래프에 서버 전용 모듈이 들어가지 않는다.**
@@ -19,120 +24,168 @@ const ROOT = process.cwd();
  * 직접 import로도 같은 그래프는 만들어질 수 있다.
  *
  * 이 가드는 그걸 **빌드 전에** 잡는다. 빌드는 4분, 이 테스트는 1초다.
+ *
+ * import 추출·해석·지시문 판정은 순환 가드와 같은 `importGraph.ts`를 쓴다(파서 기반이라
+ * 주석 속 경로나 `import type`을 의존으로 세지 않는다). 정적 import·재노출·side-effect
+ * import·동적 `import()`를 모두 따라간다 — 동적 청크도 클라이언트 번들에 들어간다.
  */
-describe("'use client' 파일은 서버 전용 모듈을 끌고 오지 않는다", () => {
-    const sources = execSync(
-        `find ${JSON.stringify(`${ROOT}/src`)} -name '*.ts' -o -name '*.tsx'`,
-        { encoding: 'utf8', maxBuffer: 1 << 28 }
-    )
-        .trim()
-        .split('\n')
-        .filter(Boolean)
-        .map(f => f.replace(`${ROOT}/`, ''))
-        .filter(rel => !rel.includes('__tests__'));
 
-    /** Node 전용 API를 쓰는 모듈. 이게 클라이언트 그래프에 들어가면 안 된다. */
-    const SERVER_ONLY =
-        /from '(?:node:)?(?:crypto|fs|path|net|dns|child_process)'/;
+/** Node 전용 API 모듈. 하위 경로(`fs/promises`)도 같다. */
+const SERVER_ONLY_MODULE =
+    /^(?:node:)?(?:crypto|fs|path|net|dns|child_process)(?:\/|$)/;
 
-    const readCode = (rel: string) => readFileSync(`${ROOT}/${rel}`, 'utf8');
+/** `file`(절대 경로)이 서버 전용인가 — `server-only` 표지나 Node 전용 모듈의 값 import. */
+const isServerOnly = (file: string): boolean =>
+    fileImports(file).imports.some(
+        ({ specifier, typeOnly }) =>
+            !typeOnly &&
+            (specifier === 'server-only' || SERVER_ONLY_MODULE.test(specifier))
+    );
 
-    /** 모듈 그래프(상대·별칭 import만). */
-    const graph = new Map<string, string[]>();
-    for (const rel of sources) {
+/** `entry`에서 도달 가능한 서버 전용 모듈의 첫 경로(`src/` 기준). 없으면 `null`. */
+function serverOnlyPath(entry: string): string[] | null {
+    const seen = new Set<string>();
+    const stack: Array<[string, string[]]> = [[entry, [entry]]];
+    while (stack.length > 0) {
+        const [current, trail] = stack.pop()!;
+        if (seen.has(current)) continue;
+        seen.add(current);
+        const { directive, imports } = fileImports(current);
         /**
-         * `import type`은 컴파일 시 지워지므로 번들 그래프에 남지 않는다.
-         * 포함하면 타입 전용 모듈(`shared/db/types.ts` 등)이 전부 오탐이 된다.
+         * `'use server'`는 **번들 경계**다 — 그 아래 그래프는 클라이언트로 넘어가지 않고
+         * RPC 스텁만 남는다. 여기서 멈추지 않으면 서버 액션을 부르는 모든 클라이언트
+         * 컴포넌트가 오탐으로 잡힌다. 진입 파일은 `'use client'`라 해당하지 않는다.
          */
-        const code = readCode(rel)
-            // 주석부터 지운다 — "Do NOT import anything from './api'" 같은
-            // **주석 속 경로**를 import로 오인하면 존재하지 않는 간선이 생겨
-            // 오탐이 난다.
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/^\s*\/\/.*$/gm, '')
-            // 여러 줄에 걸친 `import type { … } from '…'`도 지운다 — 한 줄
-            // 가정만 두면 그 형태가 그래프에 남아 오탐이 된다.
-            .replace(/^import type [\s\S]*?from '[^']+';$/gm, '')
-            // `export type { … } from '…'`도 컴파일 시 지워진다 — 타입만
-            // 재수출하는 모듈(`entities/auth/lib/types.ts` 등)이 오탐이 된다.
-            .replace(/^export type \{[\s\S]*?\} from '[^']+';$/gm, '');
-        graph.set(
-            rel,
-            [...code.matchAll(/(?<!import type )from\s+'([^']+)'/g)].map(
-                m => m[1]!
-            )
-        );
+        if (trail.length > 1 && directive === 'use server') continue;
+        /**
+         * `import 'server-only'`는 경계가 **아니라 표지**다 — 클라이언트 그래프에 들어가면
+         * 빌드가 깨진다. 그래서 여기 도달했다는 것 자체가 위반이다. 진입 파일 자신도
+         * 마찬가지다(예전 가드는 진입 파일을 건너뛰어 가장 직접적인 위반을 놓쳤다).
+         *
+         * (처음엔 이걸 경계로 오해해 `continue`했고, 그 탓에 실제 결함을 재현한 변이가
+         * 통과했다.)
+         */
+        if (isServerOnly(current))
+            return trail.map(file => path.relative(SRC, file));
+        for (const { resolved, typeOnly } of imports)
+            if (!typeOnly && typeof resolved === 'string')
+                stack.push([resolved, [...trail, resolved]]);
     }
+    return null;
+}
 
-    const resolve = (from: string, spec: string): string | null => {
-        let base: string;
-        if (spec.startsWith('@/')) {
-            base = `src/${spec.slice(2)}`;
-        } else if (spec.startsWith('.')) {
-            const dir = from.slice(0, from.lastIndexOf('/'));
-            const parts: string[] = [];
-            for (const seg of `${dir}/${spec}`.split('/')) {
-                if (seg === '.' || seg === '') continue;
-                if (seg === '..') parts.pop();
-                else parts.push(seg);
-            }
-            base = parts.join('/');
-        } else {
-            return null;
-        }
-        for (const ext of ['.ts', '.tsx']) {
-            if (graph.has(base + ext)) return base + ext;
-        }
-        return graph.has(base) ? base : null;
-    };
+describe("'use client' 파일은 서버 전용 모듈을 끌고 오지 않는다", () => {
+    it(
+        '위반이 없다',
+        () => {
+            const clientFiles = sourceFiles(SRC)
+                .filter(
+                    file => !file.includes(`${path.sep}__tests__${path.sep}`)
+                )
+                .filter(file => fileImports(file).directive === 'use client');
+            // 스캔이 헛돌지 않는지 — 클라이언트 파일이 0건이면 이 가드가 무의미하다.
+            expect(clientFiles.length).toBeGreaterThan(20);
 
-    /** `rel`에서 도달 가능한 서버 전용 모듈의 첫 경로. */
-    const serverOnlyPath = (rel: string): string[] | null => {
-        const seen = new Set<string>();
-        const stack: Array<[string, string[]]> = [[rel, [rel]]];
-        while (stack.length > 0) {
-            const [cur, path] = stack.pop()!;
-            if (seen.has(cur)) continue;
-            seen.add(cur);
-            const code = readCode(cur);
-            /**
-             * `'use server'`는 **번들 경계**다 — 그 아래 그래프는 클라이언트로
-             * 넘어가지 않고 RPC 스텁만 남는다. 여기서 멈추지 않으면 서버 액션을
-             * 부르는 모든 클라이언트 컴포넌트가 오탐으로 잡힌다.
-             */
-            if (path.length > 1 && code.startsWith("'use server'")) continue;
-            /**
-             * `import 'server-only'`는 경계가 **아니라 표지**다 — 클라이언트
-             * 그래프에 들어가면 빌드가 깨진다. 그래서 여기 도달했다는 것 자체가
-             * 위반이고, `node:crypto` 여부와 무관하게 잡아야 한다.
-             *
-             * (처음엔 이걸 경계로 오해해 `continue`했고, 그 탓에 실제 결함을
-             * 재현한 변이가 통과했다.)
-             */
-            if (path.length > 1 && /import 'server-only'/.test(code)) {
-                return path;
-            }
-            if (path.length > 1 && SERVER_ONLY.test(code)) return path;
-            for (const spec of graph.get(cur) ?? []) {
-                const next = resolve(cur, spec);
-                if (next) stack.push([next, [...path, next]]);
-            }
-        }
-        return null;
-    };
+            const offenders = clientFiles.flatMap(file => {
+                const trail = serverOnlyPath(file);
+                return trail === null ? [] : [trail.join(' → ')];
+            });
 
-    it('위반이 없다', () => {
-        const clientFiles = sources.filter(rel =>
-            readCode(rel).startsWith("'use client'")
-        );
-        // 스캔이 헛돌지 않는지 — 클라이언트 파일이 0건이면 이 가드가 무의미하다.
-        expect(clientFiles.length).toBeGreaterThan(20);
+            expect(offenders).toEqual([]);
+        },
+        SCAN_TIMEOUT_MS
+    );
 
-        const offenders = clientFiles.flatMap(rel => {
-            const path = serverOnlyPath(rel);
-            return path === null ? [] : [path.join(' → ')];
+    describe('검출기', () => {
+        let dir: string;
+        const write = (name: string, source: string): string => {
+            const file = path.join(dir, name);
+            writeFileSync(file, source);
+            return file;
+        };
+
+        beforeAll(() => {
+            dir = mkdtempSync(path.join(tmpdir(), 'server-only-guard-'));
+            write(
+                'crypto.ts',
+                "import { randomUUID } from 'node:crypto';\nexport const id = randomUUID;\n"
+            );
+            write(
+                'marker.ts',
+                "import 'server-only';\nexport const secret = 1;\n"
+            );
+            write(
+                'types.ts',
+                "import type { Hash } from 'node:crypto';\nexport type H = Hash;\n"
+            );
+            write(
+                'typeInside.ts',
+                "import type { Hash } from 'node:crypto';\nexport const value = 1;\nexport type H = Hash;\n"
+            );
+            write(
+                'fsp.ts',
+                "import { readFile } from 'fs/promises';\nexport const read = readFile;\n"
+            );
+            write(
+                'action.ts',
+                "'use server';\nimport { id } from './crypto';\nexport async function run() { return id(); }\n"
+            );
+        });
+        afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+        it.each([
+            [
+                'Node 전용 모듈을 값으로 import하는 파일',
+                'StaticCrypto.tsx',
+                "import { id } from './crypto';",
+            ],
+            [
+                "'server-only' 표지가 있는 파일",
+                'Marker.tsx',
+                "import { secret } from './marker';",
+            ],
+            [
+                'Node 전용 모듈의 하위 경로(fs/promises)를 import하는 파일',
+                'SubPath.tsx',
+                "import { read } from './fsp';",
+            ],
+            [
+                '진입 파일 자신이 Node 전용 모듈을 import하는 경우',
+                'SelfCrypto.tsx',
+                "import { randomUUID } from 'node:crypto';\nexport const id = randomUUID;",
+            ],
+            [
+                '동적 import로 닿는 서버 전용 파일',
+                'DynamicCrypto.tsx',
+                "export const load = () => import('./crypto');",
+            ],
+        ])('%s 까지의 경로를 잡는다', (_label, name, line) => {
+            const entry = write(name, `'use client';\n${line}\n`);
+            expect(serverOnlyPath(entry)).not.toBeNull();
         });
 
-        expect(offenders).toEqual([]);
+        it('값으로 닿은 파일이 Node 전용 모듈을 타입으로만 쓰면 넘어간다', () => {
+            const entry = write(
+                'ValueToTypeInside.tsx',
+                "'use client';\nimport { value } from './typeInside';\n"
+            );
+            expect(serverOnlyPath(entry)).toBeNull();
+        });
+
+        it('타입만 가져오는 경로는 넘어간다', () => {
+            const entry = write(
+                'TypeOnly.tsx',
+                "'use client';\nimport type { H } from './types';\n"
+            );
+            expect(serverOnlyPath(entry)).toBeNull();
+        });
+
+        it("'use server' 파일에서 멈춘다", () => {
+            const entry = write(
+                'CallsAction.tsx',
+                "'use client';\nimport { run } from './action';\n"
+            );
+            expect(serverOnlyPath(entry)).toBeNull();
+        });
     });
 });
