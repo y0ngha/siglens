@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.112.0](https://github.com/y0ngha/siglens/compare/v0.111.0...v0.112.0) (2026-10-25)
+
+### Bug Fixes
+
+* 벤치마크 문항 판정을 점수 기준으로 바로잡고 전체 점수 행 추가 ([#1114](https://github.com/y0ngha/siglens/issues/1114)) ([55fa028](https://github.com/y0ngha/siglens/commit/55fa028d185104f864045f83ee8c0dbd82507112))
+* 종합 분석 누락 시 같은 주기 기술적 분석으로 대체 ([#1115](https://github.com/y0ngha/siglens/issues/1115)) ([473a98b](https://github.com/y0ngha/siglens/commit/473a98b2f35139a74b9069e5172c1db89ba223a9))
+
+### Features
+
+* 가이드 실전 가이드 후속 — 종목명 표시·패턴 라벨·본문 기준 ([#1117](https://github.com/y0ngha/siglens/issues/1117)) ([8f13ccb](https://github.com/y0ngha/siglens/commit/8f13ccbefbdbdd90b191cb5d042f16b5b4e00e43))
+* 가이드 howto 카테고리와 라이브 종목 모듈 ([#1116](https://github.com/y0ngha/siglens/issues/1116)) ([3cd0846](https://github.com/y0ngha/siglens/commit/3cd0846d2365226975513abb580b97a5ba33c10c))
+
 # [0.111.0](https://github.com/y0ngha/siglens/compare/v0.110.0...v0.111.0) (2026-10-25)
 
 ### Bug Fixes
