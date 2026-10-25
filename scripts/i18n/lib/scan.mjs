@@ -40,7 +40,7 @@ const HASH_LENGTH = 6;
  * - `src/shared/config/guideLinks.generated.ts`: 스킬 frontmatter의 한국어 `name`·탐지 id를
  *   가이드 경로로 잇는 생성 매핑(`yarn guide:links`). 키는 스킬 파일의 원문과 글자까지 같아야
  *   조회가 되는 **데이터**라 번역 대상이 아니고, 화면에 그대로 렌더되지도 않는다.
- * - `src/views/guide/lib/splitMarkdown.ts`: howto 본문을 나누는 앵커 제목(`## 시그렌즈에서 확인하는 법`).
+ * - `src/shared/config/guideLive.ts`: howto 본문을 나누는 앵커 제목(`## 시그렌즈에서 확인하는 법`).
  *   시드 마크다운의 제목과 글자까지 맞대는 **매칭용 데이터**라 번역하면 분할이 깨진다(howto는 ko 전용).
  * - `src/app/lp/`, `src/views/lp/`: 한국어 Google Ads 전용 랜딩(noindex).
  *   로케일 세그먼트도 카탈로그도 없이 한국어를 하드코딩하는 것이 설계다 — 다른
@@ -48,7 +48,7 @@ const HASH_LENGTH = 6;
  *   있다(spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`).
  */
 const EXCLUDE_RE =
-    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts|src\/shared\/api\/dart\/fakeDartClient\.ts|src\/entities\/investor-flows\/lib\/dartSourceTokens\.ts|src\/shared\/config\/guideLinks\.generated\.ts|src\/views\/guide\/lib\/splitMarkdown\.ts)/;
+    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/app\/lp\/|src\/views\/lp\/|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts|src\/shared\/api\/dart\/fakeDartClient\.ts|src\/entities\/investor-flows\/lib\/dartSourceTokens\.ts|src\/shared\/config\/guideLinks\.generated\.ts|src\/shared\/config\/guideLive\.ts)/;
 
 /** 파일 경로 → 메시지 네임스페이스. */
 export function namespaceFor(relPath) {

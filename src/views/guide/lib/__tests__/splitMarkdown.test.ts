@@ -1,7 +1,5 @@
-import {
-    LIVE_ANCHOR_HEADING,
-    splitMarkdownAtHeading,
-} from '@/views/guide/lib/splitMarkdown';
+import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
+import { splitMarkdownAtHeading } from '@/views/guide/lib/splitMarkdown';
 
 const DOC = [
     '## 이렇게 봐요',
