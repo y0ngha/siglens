@@ -223,7 +223,7 @@
     },
     {
         "file": "src/app/[locale]/guide/_lib/loadGuideLiveSymbols.ts",
-        "line": 88,
+        "line": 129,
         "reason": "developer-diagnostic",
         "text": "`[guide-live] ${source} 조회 실패 — 비운 채로 진행한다`"
     },

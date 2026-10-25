@@ -296,7 +296,9 @@ export class DrizzleSeoSnapshotRepository {
             readonly limit: number;
             readonly market: 'us' | 'kr';
         }
-    ): Promise<{ symbol: string; generatedAt: Date }[]> {
+    ): Promise<
+        { symbol: string; generatedAt: Date; detectedPatterns: string[] }[]
+    > {
         if (patternNames.length === 0) return [];
         const krMatch = sql`${seoAnalysisSnapshots.symbol} ~* ${KR_SYMBOL_RE.source}`;
         const marketCondition =
@@ -307,10 +309,16 @@ export class DrizzleSeoSnapshotRepository {
                     [{ patternName: name, detected: true }]
                 )}::jsonb`
         );
-        return this.db
+        const rows = await this.db
             .select({
                 symbol: seoAnalysisSnapshots.symbol,
                 generatedAt: seoAnalysisSnapshots.generatedAt,
+                detectedPatterns: sql<unknown>`(
+                    select coalesce(jsonb_agg(elem->>'patternName'), '[]'::jsonb)
+                    from jsonb_array_elements(${seoAnalysisSnapshots.content}->'patternSummaries') as elem
+                    where elem->>'detected' = 'true'
+                    and elem->>'patternName' in (select jsonb_array_elements_text(${JSON.stringify(patternNames)}::jsonb))
+                )`,
             })
             .from(seoAnalysisSnapshots)
             .where(
@@ -330,7 +338,30 @@ export class DrizzleSeoSnapshotRepository {
                 asc(seoAnalysisSnapshots.symbol)
             )
             .limit(options.limit);
+        return rows.map(row => ({
+            symbol: row.symbol,
+            generatedAt: row.generatedAt,
+            detectedPatterns: detectedAmong(
+                patternNames,
+                parseProjected(row.detectedPatterns)
+            ),
+        }));
     }
+}
+
+/**
+ * SQL이 이미 "탐지된 요청 패턴 이름"만 jsonb 배열로 투영해 오므로, 여기서는 문자열만 남기고 요청 순서로 정렬한다.
+ * (jsonb 배열 안의 순서는 스냅샷 저장 순서라 호출부가 기대하는 대상 패턴 순서와 다를 수 있다.)
+ */
+function detectedAmong(
+    requested: readonly string[],
+    projected: unknown
+): string[] {
+    if (!Array.isArray(projected)) return [];
+    const detected = new Set(
+        projected.filter((name): name is string => typeof name === 'string')
+    );
+    return requested.filter(name => detected.has(name));
 }
 
 /** 드라이버가 jsonb 식 결과를 문자열로 줘도 같은 판정이 되도록 한 번 푼다. */

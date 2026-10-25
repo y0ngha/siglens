@@ -2,6 +2,12 @@ import { getTranslations } from 'next-intl/server';
 import type { GuideCategory } from '@/entities/guide/types';
 import type { Locale } from '@/shared/i18n/locales';
 
+/**
+ * 실전 가이드 수를 문구에 적기 시작하는 최소 편수. 이보다 적은 수("3가지")를 적으면 얇은 페이지로 읽혀
+ * 검색 스니펫에서 손해라, 그 아래에서는 수를 뺀 문구를 쓰고 이 편수부터 수가 들어간 문구로 바꾼다.
+ */
+export const HOWTO_COUNT_DISPLAY_MIN = 20;
+
 /** 분류마다 달라지는 문구 한 벌. 모든 분류 키가 항상 채워져 있다. */
 export interface GuideCategoryCopy {
     /** 칩·브레드크럼·제목에 쓰는 표시명. */
@@ -85,14 +91,19 @@ export async function loadGuideHubSeoCopy(
     return {
         hubTitle: t('hubTitle'),
         hubSeoTitle: t('hubSeoTitle'),
-        // 실전 가이드가 아직 없으면(시드 전) "0편"을 적지 않는 문구로 돌아간다.
+        // 실전 가이드가 아직 없으면(시드 전) "0편"을 적지 않는 문구로 돌아가고,
+        // `HOWTO_COUNT_DISPLAY_MIN` 미만이면 편수를 뺀 문구를 쓴다.
         hubSeoDescription:
-            counts.howto > 0
+            counts.howto >= HOWTO_COUNT_DISPLAY_MIN
                 ? t('hubSeoDescriptionWithHowto', {
                       terms: counts.terms,
                       howto: counts.howto,
                   })
-                : t('hubSeoDescription', { terms: counts.terms }),
+                : counts.howto > 0
+                  ? t('hubSeoDescriptionWithHowtoNoCount', {
+                        terms: counts.terms,
+                    })
+                  : t('hubSeoDescription', { terms: counts.terms }),
         hubSeoKeywords: t('hubSeoKeywords')
             .split(',')
             .map(keyword => keyword.trim())
@@ -101,7 +112,9 @@ export async function loadGuideHubSeoCopy(
         categoryDescription: (category, count) => {
             switch (category) {
                 case 'howto':
-                    return t('categorySeoDescriptionHowto', { count });
+                    return count >= HOWTO_COUNT_DISPLAY_MIN
+                        ? t('categorySeoDescriptionHowto', { count })
+                        : t('categorySeoDescriptionHowtoNoCount');
                 case 'candlesticks':
                     return t('categorySeoDescriptionCandlesticks', { count });
                 case 'chart-patterns':

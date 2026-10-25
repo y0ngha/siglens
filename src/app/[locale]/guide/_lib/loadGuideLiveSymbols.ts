@@ -6,10 +6,15 @@ import { GUIDE_CACHE_TAG } from '@/entities/guide/api';
 import type { GuideEntry } from '@/entities/guide/types';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
+import { lookupTickerDisplayNames } from '@/entities/ticker/lib/koreanNameStore';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { dashboardScopeOf } from '@/shared/config/dashboardScope';
-import { MS_PER_HOUR, SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    MS_PER_HOUR,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     resolveLiveTargets,
@@ -18,6 +23,7 @@ import {
     type LiveSymbolGroup,
     type ScannerInput,
     type SnapshotPatternHit,
+    withDisplayNames,
 } from '@/views/guide/lib/liveSymbols';
 
 /** 데이터원 하나의 결과. 실패하면 `value`는 대신 넣은 빈 값이고 `failed`가 참이다. */
@@ -38,6 +44,14 @@ const SCANNER_MARKETS: readonly LiveMarket[] = ['us', 'kr'];
  * 걸러 내므로 시장당 상한 `LIMIT_PER_MARKET`을 채울 수 있도록 여유를 둔다.
  */
 const SNAPSHOT_HEADROOM_FACTOR = 2;
+
+/**
+ * 스냅샷 캐시 키 접두. 캐시 값의 모양(`SnapshotPatternHit`)이 바뀌면 버전을 올려 옛 모양 항목이 서빙되지 않게 한다.
+ * v2: `detectedPatterns` 추가.
+ */
+const SNAPSHOT_CACHE_KEY_PARTS = ['guide-live', 'patterns', 'v2'] as const;
+/** 한국어 이름은 거의 안 바뀌어 하루 창을 쓴다. */
+const NAMES_REVALIDATE_SECONDS = SECONDS_PER_DAY;
 
 /**
  * 스냅샷 DB 읽기는 ISR 정적 렌더 안이라 반드시 `unstable_cache` 안에서 한다(`src/app/CLAUDE.md` 축 1).
@@ -65,10 +79,37 @@ function loadSnapshotHits(
             return perMarket.flat().map(hit => ({
                 symbol: hit.symbol,
                 generatedAt: hit.generatedAt.toISOString(),
+                detectedPatterns: hit.detectedPatterns,
             }));
         },
-        ['guide-live', 'patterns', key],
+        [...SNAPSHOT_CACHE_KEY_PARTS, key],
         { revalidate: SECONDS_PER_HOUR, tags: [GUIDE_CACHE_TAG] }
+    )();
+}
+
+/**
+ * 보여 줄 심볼들의 한국어 이름(정본 오버라이드 포함). `korean_tickers` 읽기는 ISR 정적 렌더 안이라 `unstable_cache` 안에서 한다.
+ * 키는 정렬한 심볼 목록이다. 심볼 집합은 스캐너 결과에 따라 바뀌어 항목이 늘 수 있으나, 시장당 상한(`LIMIT_PER_MARKET`)이 있어
+ * 조합 수가 유한하다. 이름은 거의 안 바뀌므로 창을 하루로 늘리고, 가이드 재검증 태그를 달아 가이드를 갱신할 때 함께 새로고친다.
+ * 조회 실패(`null`)는 던져서 캐시에 남지 않게 한다 — 던진 실패는 호출부 `settle`이 잡아
+ * 이름 없이(코드 표기로) 렌더한다.
+ */
+function loadDisplayNames(
+    symbols: readonly string[]
+): Promise<Record<string, string>> {
+    const sorted = [...new Set(symbols)].toSorted();
+    return unstable_cache(
+        async () => {
+            const found = await lookupTickerDisplayNames(sorted);
+            if (found === null) throw new Error('korean_tickers lookup failed');
+            return Object.fromEntries(
+                Object.entries(found).flatMap(([symbol, { koreanName }]) =>
+                    koreanName === null ? [] : [[symbol, koreanName]]
+                )
+            );
+        },
+        ['guide-live', 'names', sorted.join(',')],
+        { revalidate: NAMES_REVALIDATE_SECONDS, tags: [GUIDE_CACHE_TAG] }
     )();
 }
 
@@ -151,5 +192,11 @@ export async function loadGuideLiveSymbols(
         snapshotHits: snapshot.value,
         limitPerMarket: LIMIT_PER_MARKET,
     });
-    return groups.length === 0 ? null : groups;
+    if (groups.length === 0) return null;
+    const names = await settle<Record<string, string>>(
+        'names',
+        () => loadDisplayNames(groups.flatMap(g => g.rows.map(r => r.symbol))),
+        {}
+    );
+    return withDisplayNames(groups, names.value);
 }

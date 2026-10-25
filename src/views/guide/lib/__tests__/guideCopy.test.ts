@@ -28,6 +28,7 @@ vi.mock('next-intl/server', () => ({
 }));
 
 import {
+    HOWTO_COUNT_DISPLAY_MIN,
     countGuideHubEntries,
     loadGuideCategoryCopy,
     loadGuideHubSeoCopy,
@@ -104,16 +105,37 @@ describe('loadGuideHubSeoCopy', () => {
         expect(copy.hubSeoDescription).toContain('42');
     });
 
-    it('실전 가이드가 있으면 용어 수와 가이드 수를 따로 적는다', async () => {
-        const copy = await loadGuideHubSeoCopy('ko', { terms: 90, howto: 3 });
+    it('실전 가이드가 기준 편수 이상이면 용어 수와 가이드 수를 따로 적는다', async () => {
+        const copy = await loadGuideHubSeoCopy('ko', {
+            terms: 90,
+            howto: HOWTO_COUNT_DISPLAY_MIN,
+        });
 
         expect(copy.hubSeoDescription).toBe(
             ko.views.guide.hubSeoDescriptionWithHowto
                 .replace('{terms}', '90')
-                .replace('{howto}', '3')
+                .replace('{howto}', String(HOWTO_COUNT_DISPLAY_MIN))
         );
         expect(copy.hubSeoDescription).toContain('90');
-        expect(copy.hubSeoDescription).toContain('3편');
+        expect(copy.hubSeoDescription).toContain(
+            `${HOWTO_COUNT_DISPLAY_MIN}편`
+        );
+    });
+
+    it('실전 가이드가 기준 편수 미만이면 가이드 수를 빼고 용어 수만 적는다', async () => {
+        const copy = await loadGuideHubSeoCopy('ko', {
+            terms: 90,
+            howto: HOWTO_COUNT_DISPLAY_MIN - 1,
+        });
+
+        expect(copy.hubSeoDescription).toBe(
+            ko.views.guide.hubSeoDescriptionWithHowtoNoCount.replace(
+                '{terms}',
+                '90'
+            )
+        );
+        expect(copy.hubSeoDescription).toContain('실전 가이드');
+        expect(copy.hubSeoDescription).not.toMatch(/\d+편/);
     });
 
     it('실전 가이드가 없으면 "0편"을 적지 않는다', async () => {
@@ -137,11 +159,12 @@ describe('loadGuideHubSeoCopy', () => {
 
     it('categoryDescription은 count를 치환하고 분류마다 다른 문장이다', async () => {
         const copy = await loadGuideHubSeoCopy('ko', { terms: 1, howto: 0 });
+        const count = HOWTO_COUNT_DISPLAY_MIN + 17;
         const texts = GUIDE_CATEGORIES.map(category =>
-            copy.categoryDescription(category, 17)
+            copy.categoryDescription(category, count)
         );
 
-        expect(texts.every(text => text.includes('17'))).toBe(true);
+        expect(texts.every(text => text.includes(String(count)))).toBe(true);
         expect(texts.some(text => text.includes('{'))).toBe(false);
         expect(new Set(texts).size).toBe(GUIDE_CATEGORIES.length);
     });
@@ -164,13 +187,36 @@ describe('loadGuideHubSeoCopy', () => {
         }
     );
 
-    it('howto SEO 설명은 count를 치환해 ko 카탈로그에서 읽는다', async () => {
+    it('howto SEO 설명은 기준 편수 이상이면 count를 치환해 ko 카탈로그에서 읽는다', async () => {
         const copy = await loadGuideHubSeoCopy('ko', { terms: 3, howto: 0 });
 
-        expect(copy.categoryDescription('howto', 3)).toBe(
-            ko.views.guide.categorySeoDescriptionHowto.replace('{count}', '3')
+        expect(copy.categoryDescription('howto', HOWTO_COUNT_DISPLAY_MIN)).toBe(
+            ko.views.guide.categorySeoDescriptionHowto.replace(
+                '{count}',
+                String(HOWTO_COUNT_DISPLAY_MIN)
+            )
         );
     });
+
+    it.each(['ko', 'en'] as const)(
+        '%s howto SEO 설명은 기준 편수 미만이면 수를 적지 않는다',
+        async locale => {
+            const copy = await loadGuideHubSeoCopy(locale, {
+                terms: 3,
+                howto: 0,
+            });
+            const text = copy.categoryDescription(
+                'howto',
+                HOWTO_COUNT_DISPLAY_MIN - 1
+            );
+
+            expect(text).toBe(
+                catalogs[locale].views.guide.categorySeoDescriptionHowtoNoCount
+            );
+            expect(text).not.toMatch(/\d/);
+            expect(text).not.toContain('{');
+        }
+    );
 
     it('en은 영어 카탈로그를 읽는다', async () => {
         const copy = await loadGuideHubSeoCopy('en', { terms: 3, howto: 0 });
