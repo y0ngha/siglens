@@ -1,5 +1,6 @@
 import path from 'path';
 import {
+    bodyCharCount,
     buildGuideSeed,
     computeContentHash,
     planGuideUpsert,
@@ -341,10 +342,13 @@ describe('planGuideUpsert', () => {
     });
 });
 
+/** 공백 제외 1,500자 이상이 되도록 채운 본문 조각. */
+const LONG_PARAGRAPH = `${'가나다라마바사 '.repeat(250)}\n`;
+
 function howto(
     slug: string,
     data: Record<string, unknown> = {},
-    body = `## 이렇게 봐요\n\n본문\n\n${LIVE_ANCHOR_HEADING}\n\n본문`
+    body = `## 이렇게 봐요\n\n${LONG_PARAGRAPH}\n${LIVE_ANCHOR_HEADING}\n\n본문`
 ): ParsedGuideFile {
     return {
         slug,
@@ -499,6 +503,48 @@ describe('howto 규칙', () => {
         expect(() =>
             buildGuideSeed([ko('rsi', {}, '70을 넘으면 매도하세요.')])
         ).not.toThrow();
+    });
+
+    it('howto 본문은 공백 제외 1,500자 이상이어야 한다', () => {
+        const anchored = (paragraph: string) =>
+            `## 이렇게 봐요\n\n${paragraph}\n\n${LIVE_ANCHOR_HEADING}\n\n본문`;
+        const chars = (n: number) => '가'.repeat(n);
+        // 앵커 절 제목·"본문"·"이렇게 봐요"도 글자 수에 들어가므로 빈 본문의 기준선을 잰다.
+        const baseline = bodyCharCount(anchored(''));
+        const need = 1500 - baseline;
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', {}, anchored(chars(need - 1))),
+            ])
+        ).toThrow(/1500자 이상/);
+        expect(() =>
+            buildGuideSeed([ko('rsi'), howto('x', {}, anchored(chars(need)))])
+        ).not.toThrow();
+        // 공백·줄바꿈은 세지 않는다.
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', {}, anchored(`${chars(need - 1)}\n\n   \n`)),
+            ])
+        ).toThrow(/1500자 이상/);
+        // 용어 항목에는 적용하지 않는다.
+        expect(() => buildGuideSeed([ko('rsi')])).not.toThrow();
+    });
+
+    it('bodyCharCount는 마크다운 문법을 빼고 읽히는 글자만 센다', () => {
+        const body = [
+            '## 제목',
+            '',
+            '- **강조** 항목',
+            '1. _기울임_ `코드`',
+            '> 인용',
+            '[링크문구](/guide/indicators/adx) 끝',
+        ].join('\n');
+        // 제목+강조+항목+기울임+코드+인용+링크문구+끝
+        expect(bodyCharCount(body)).toBe(
+            [...'제목강조항목기울임코드인용링크문구끝'].length
+        );
     });
 
     it('howto 본문에 라이브 모듈 앵커 절이 없으면 에러다', () => {

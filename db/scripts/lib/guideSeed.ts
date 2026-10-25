@@ -33,6 +33,12 @@ const HOWTO_CATEGORY = 'howto' as const satisfies GuideCategory;
 /** 네이버 웹문서 제목 절단 기준(한글). howto만 적용 — 기존 용어 항목은 소급하지 않는다. */
 const HOWTO_TITLE_MAX_CHARS = 30;
 
+/**
+ * howto 본문 최소 분량(공백 제외 글자 수). 이보다 짧은 글은 질문에 답하는 페이지가 아니라 얇은 페이지로 읽혀
+ * 검색 노출에서 손해라, 시드 단계에서 막는다.
+ */
+const HOWTO_BODY_MIN_CHARS = 1500;
+
 const anchorTitle = parseHeadingLine(LIVE_ANCHOR_HEADING)?.title;
 
 const LocalizedFrontmatterSchema = z.object({
@@ -177,6 +183,22 @@ export function parseGuideFile(filePath: string): ParsedGuideFile {
     };
 }
 
+/**
+ * 읽히는 본문 글자 수. 마크다운 문법(링크 URL·제목 `#`·강조·인라인 코드·목록/인용 표식)은 세지 않고
+ * 공백(줄바꿈 포함)도 뺀다.
+ */
+export function bodyCharCount(body: string): number {
+    const prose = body
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(
+            /^[ \t]*(?:#{1,6}[ \t]+|>[ \t]?|[-*+][ \t]+|\d+\.[ \t]+)/gm,
+            ''
+        )
+        .replace(/[*_`]/g, '')
+        .replace(/\s+/g, '');
+    return [...prose].length;
+}
+
 /** h2·h3 제목은 코드 펜스 밖에서 github-slugger id 기준으로 유일해야 한다. 본문이 두 `GuideMarkdown`으로 나뉘어 렌더되면 slugger가 리셋되므로 id 충돌을 막으려 유일해야 한다. */
 function duplicateHeadingErrors(file: ParsedGuideFile): string[] {
     // rehype-slug가 id를 만드는 것과 같은 알고리즘으로 비교한다 — `RSI?`와 `RSI`는 같은 id다.
@@ -298,6 +320,11 @@ function buildEntry(
               ...(seoTitleWidth(meta.seoTitle) > SEO_TITLE_MAX_WIDTH
                   ? [
                         `${ko.sourceFile}: seoTitle 폭이 ${SEO_TITLE_MAX_WIDTH}를 넘는다`,
+                    ]
+                  : []),
+              ...(bodyCharCount(ko.body) < HOWTO_BODY_MIN_CHARS
+                  ? [
+                        `${ko.sourceFile}: howto 본문은 공백 제외 ${HOWTO_BODY_MIN_CHARS}자 이상이어야 한다(현재 ${bodyCharCount(ko.body)}자)`,
                     ]
                   : []),
               ...(hasLiveAnchor
