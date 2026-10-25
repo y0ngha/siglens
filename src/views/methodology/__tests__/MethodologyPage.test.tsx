@@ -14,6 +14,7 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { CRYPTO_DESCRIPTOR } from '@/shared/config/marketProfile/crypto';
 import { KR_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/krEquity';
 import { US_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/usEquity';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_OPERATOR } from '@/shared/lib/legal';
 import ko from '../../../../messages/ko.json';
 
@@ -312,6 +313,16 @@ describe('MethodologyPage', () => {
             expect(screen.getByText(m.ai.check)).toBeInTheDocument();
             expect(screen.getByText(m.ai.dont3)).toBeInTheDocument();
             expect(screen.getByText(m.ai.levels)).toBeInTheDocument();
+        });
+    });
+
+    describe('benchmark', () => {
+        it('links the benchmark page on the ai host', async () => {
+            await renderPage();
+            expect(screen.getByText(m.ai.benchmark)).toBeInTheDocument();
+            expect(
+                screen.getByRole('link', { name: m.ai.benchmarkLink })
+            ).toHaveAttribute('href', `${AI_SITE_URL}/benchmark`);
         });
     });
 

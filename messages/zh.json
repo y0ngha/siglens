@@ -2360,6 +2360,156 @@
         }
     },
     "views": {
+        "benchmark": {
+            "breakdown": {
+                "byLevel": "按级别的客观得分(答错 −{lambda, number} 分)",
+                "byMarket": "按市场的客观得分(答错 −{lambda, number} 分)",
+                "bySubset": "按子集的客观得分(答错 −{lambda, number} 分)",
+                "counts": "各对象的判定数量",
+                "judged": "L4 解读与 L5 诚实与安全(中立评审,0~1 分)",
+                "rowLevel": "级别",
+                "rowMarket": "市场",
+                "rowSubset": "子集",
+                "sub": "按题目类别拆分同一套得分。每行最高分以粗体显示。",
+                "title": "详细得分"
+            },
+            "counts": {
+                "correct": "正确",
+                "excluded": "已排除",
+                "incorrect": "错误",
+                "not_attempted": "未作答",
+                "pending": "待评分"
+            },
+            "downloads": {
+                "disclaimer": "本页为基准测试记录,不构成投资建议或个股推荐。",
+                "license": "数据以 <link>CC BY 4.0</link> 发布。",
+                "sources": "答案来源：Nasdaq、Yahoo、KRX（公共数据门户）、美国财政部、Cboe、SEC EDGAR、FINRA、DART。各模型的回答原文为相应服务的输出，并记录了模型和调用时间。",
+                "sub": "可将题目、标准答案、回答原文和评分结果打包为一个 zip 文件下载。",
+                "title": "下载",
+                "zip": "完整原始数据(zip)"
+            },
+            "explorer": {
+                "count": "显示 {shown, number} / 共 {total, number} 道",
+                "detail": {
+                    "answer": "回答原文",
+                    "error": "无法加载回答原文。",
+                    "extracted": "提取的数值",
+                    "judges": "中立评审",
+                    "loading": "正在加载回答原文。",
+                    "noRecord": "该对象没有记录。",
+                    "part": "项目",
+                    "reason": "依据",
+                    "retry": "重试",
+                    "round": "第 {round, number} 轮",
+                    "value": "数值",
+                    "verdict": "判定"
+                },
+                "empty": "没有符合条件的题目。",
+                "filter": {
+                    "all": "全部",
+                    "level": "级别",
+                    "market": "市场",
+                    "pool": "题库",
+                    "reset": "重置筛选",
+                    "target": "对象",
+                    "template": "类型",
+                    "verdict": "判定"
+                },
+                "label": {
+                    "correct": "正确",
+                    "excluded": "已排除",
+                    "incorrect": "错误",
+                    "not_attempted": "未作答",
+                    "pending": "待评分"
+                },
+                "market": {
+                    "kr": "韩国",
+                    "us": "美国"
+                },
+                "results": "各对象的判定",
+                "truth": "标准答案"
+            },
+            "headline": {
+                "baselines": "与基线的比较(同一底层模型,不使用工具)",
+                "ci": "95% 置信区间",
+                "competitors": "与竞争模型的比较",
+                "diff": "{subject} 得分 − 对象得分",
+                "n": "题目数",
+                "note": "只有当置信区间不包含 0 且 Holm 校正 p 值小于 {alpha} 时,才判定为领先或落后。基线不参与检验,因此没有 p 值。",
+                "p": "Holm 校正 p",
+                "reading": "解读",
+                "sub": "客观题按部分评分:答对 +1 分,未作答 0 分,答错 −{lambda, number} 分,再取平均。差异通过对题目重新抽样得到的 95% 置信区间和 Holm 校正 p 值来判断。",
+                "summary": "将 {subject} 的客观得分与 {count, number} 个竞争模型比较:显著领先的有 {ahead, number} 个,无法确定差异的有 {tie, number} 个,落后的有 {behind, number} 个。",
+                "target": "对象",
+                "title": "与其他模型的得分差",
+                "verdict": {
+                    "ahead": "显著领先",
+                    "behind": "显著落后",
+                    "tie": "无法确定差异",
+                    "untested": "未检验"
+                }
+            },
+            "hero": {
+                "eyebrow": "公开基准测试",
+                "lede": "我们向 {brand} 和通用 AI 模型提出了同样的 {items, number} 道美股与韩股问题，并与基于行情和公告数据制作的标准答案进行比较。{sameDay, select, yes {于 {measuredAt} 测量并评分。} other {于 {measuredAt} 测量，{scoredAt} 确定评分。}}题目、答案、回答原文和评分结果全部公开。",
+                "title": "{brand} 基准测试结果"
+            },
+            "items": {
+                "sub": "可查看每道题的问题、标准答案和各对象的判定。展开题目会加载回答原文和评分依据。",
+                "title": "按题目浏览"
+            },
+            "koreanNote": "题目和回答原文均为韩语。测量是以韩语进行的,因此本页的问题、标准答案摘要和回答均未翻译,按原文显示。",
+            "levels": {
+                "L4": "L4 解读",
+                "L5": "L5 诚实与安全"
+            },
+            "market": {
+                "kr": "韩国",
+                "us": "美国"
+            },
+            "method": {
+                "aiAbout": "AI 服务介绍",
+                "designDoc": "基准测试文档(BENCHMARK.md)",
+                "items": "共 {total, number} 道题,各题库题目数为 {pools}。",
+                "itemsTitle": "题目构成",
+                "judges": "L4 和 L5 由 LLM 评审评分，模型之间的比较只采用非比较当事方的中立评审的分数。",
+                "judgesTitle": "评审与中立性",
+                "levels": "L1 至 L3 是答案固定的客观题,自动评分。L4 考查解读,L5 考查诚实与安全,由中立评审打 0 到 1 分。",
+                "schedule": "于 {measuredAt} 对每道题{rounds, plural, one {提问一次} other {提问 # 次}}。",
+                "scheduleTitle": "时间安排",
+                "scoring": "若答案包含多个部分，每部分答对 +1 分、未作答 0 分、答错 −{lambda, number} 分。两个提取器从回答中读取数值，读数一致则直接判定，不一致则由人工判定。所有判定记录均公开。",
+                "scoringTitle": "评分",
+                "siteMethodology": "分析方法页面",
+                "sub": "详细设计见下方链接的文档。",
+                "title": "方法概述",
+                "truth": "美股日线类答案先用 Yahoo 暂定值制作，再用 Nasdaq 官方数据复核。韩股答案直接使用 Yahoo 数值。所有答案数值和来源 URL 均包含在原始数据中。",
+                "truthTitle": "标准答案来源",
+                "vendorMismatch": "在用官方数据复核的美股题目中，与暂定值不同的有 {count, number} 题。"
+            },
+            "prereg": {
+                "gist": "公开 gist",
+                "hash": "manifest 哈希(SHA-256)",
+                "ots": "OpenTimestamps 证明",
+                "otsLink": "下载证明文件(.ots)",
+                "sub": "测量前,我们公开记录了题目生成代码、评分代码和设计文档的哈希。可用下面的数值和证明文件确认该记录早于测量。",
+                "title": "预先注册",
+                "verify": "验证方法:确认原始数据中 prereg/manifest.sha256 的值与上面的哈希一致,再用 OpenTimestamps 验证 .ots 文件即可得知记录时间。"
+            },
+            "seo": {
+                "datasetName": "{brand} 股票问答基准测试 {round} — 题目、标准答案和回答原文",
+                "description": "用 {items, number} 道美国和韩国股票题同样提问 {brand} 与 {models},并以行情和公告数据评分。公开分数差、置信区间和逐题回答原文。",
+                "descriptionPlain": "用 {items, number} 道美国和韩国股票题对比 {brand} 与通用 AI 模型的基准测试结果及逐题原始数据。",
+                "modelSeparator": "、",
+                "ogLabel": "{brand} 基准测试结果",
+                "title": "股票 AI 准确度基准测试 — {brand} vs {models}",
+                "titlePlain": "{brand} 基准测试结果 — 与通用 AI 模型的逐题对比",
+                "variableMeasured": "股票问答客观得分(正确 +1、未作答 0、错误 −1),解读与诚实性评审得分"
+            },
+            "subset": {
+                "heldOut": "设计时未使用的题目(H)",
+                "noTool": "无专用工具(×)"
+            }
+        },
         "methodology": {
             "ai": {
                 "check": "简明视图文本在发布前会经过检查。如果其中包含原始分析和计算值中没有的价格或过大的数字，我们会要求其重写一次；如果仍存在，则删除该句子。如果删除句子后仍无法整理，则只显示原始视图，不显示简明视图。",
@@ -2377,7 +2527,10 @@
                 "levels": "分析中出现的入场、止损、目标价格区间，是AI读取图表结构后提出的数值。代码会检查其中的止损价和第一个目标价从波动率(ATR)来看是否在合理范围内，如果超出，会一并显示根据波动率计算的修正值。图表形态所指向的目标价由代码根据形态的形状计算。这些并不是交易指令。",
                 "levelsTitle": "价格区间为参考数值",
                 "sub": "AI 的职责是撰写文本来解释计算值。",
-                "title": "AI 的职责与不承担的职责"
+                "title": "AI 的职责与不承担的职责",
+                "benchmarkTitle": "我们这样衡量 SIGLENS AI 的回答准确度",
+                "benchmark": "我们向 SIGLENS AI 智能体和通用 AI 模型提出相同的美国和韩国股票问题,并与基于行情和公告数据的标准答案比较。题目、回答原文和评分结果全部公开。",
+                "benchmarkLink": "查看基准测试结果"
             },
             "backtesting": {
                 "body": "回测页面是将 SIGLENS 的 AI 分析应用于过去时点的数据，并事后验证实际结果的页面。对象是预先选定的一部分大型股，计算方式为：入场后，如果在最多 10 个交易日内首先触及止损价或目标价，则在该点结束；如果未触及，则在第 10 个交易日的收盘价结束。",
@@ -3504,6 +3657,21 @@
                 "universe": "仅覆盖AAPL、NVDA、TSLA等固定的10只大盘股，且为事后选定，可能存在选择偏差。",
                 "dataSource": "价格数据来源：Financial Modeling Prep（FMP）。"
             }
+        },
+        "benchmark-summary": {
+            "ci": "95% 置信区间 {ci}",
+            "l5": "诚实与安全(L5)",
+            "l5Note": "中立评审平均分,0~1 分",
+            "more": "查看完整基准测试结果",
+            "sub": "这是在相同的 {items, number} 道题上得到的客观得分差。正数表示 {subject} 得分更高。",
+            "title": "基准测试结果",
+            "verdict": {
+                "ahead": "显著领先",
+                "behind": "显著落后",
+                "tie": "无法确定差异",
+                "untested": "未检验"
+            },
+            "versus": "相对 {competitor}"
         },
         "chart": {
             "ChartErrorFallback": {
@@ -4786,6 +4954,7 @@
                 "531f6a": "联系我们",
                 "5f5d12": "网站信息",
                 "693b62": "投资免责声明",
+                "benchmarkLink": "基准测试",
                 "developersLink": "开发者 API",
                 "guideLink": "图表指南",
                 "symbolsLink": "热门标的"
@@ -5345,7 +5514,8 @@
                 "suggestionSamsung": "总结一下三星电子的最新分析",
                 "suggestionsLabel": "你可以这样提问",
                 "aboutLink": "看看 SIGLENS AI 如何回答",
-                "suggestionKospi": "今天 KOSPI 的市场氛围怎么样？"
+                "suggestionKospi": "今天 KOSPI 的市场氛围怎么样？",
+                "benchmarkLink": "查看基准测试结果"
             },
             "MessageList": {
                 "259976": "回答被截断了，请继续提问。",

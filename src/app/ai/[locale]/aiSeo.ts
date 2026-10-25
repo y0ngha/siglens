@@ -29,7 +29,7 @@ export const AI_PRODUCT_NAME = 'SIGLENS AI';
 export type { AiSeoCopy };
 
 /** Absolute ai-host URL of `path` in `locale` (`/` is the chat home). */
-function aiUrl(locale: Locale, path: string): string {
+export function aiUrl(locale: Locale, path: string): string {
     return `${AI_SITE_URL}${localePath(locale, path)}`;
 }
 
@@ -39,7 +39,7 @@ function aiHomeUrl(locale: Locale): string {
 
 /**
  * Metadata for the SIGLENS AI landing (`/`, per locale) — one of the ai host's
- * public, indexable pages (`AI_INDEXABLE_PATHS`: `/` and `/about`). Uses the same locale gate as the main
+ * public, indexable pages (`AI_INDEXABLE_PATHS`: `/` and `/about`, plus the gated `/benchmark` once published). Uses the same locale gate as the main
  * site's static pages, so an un-gated locale is `noindex` and gets no hreflang
  * cluster (a cluster of one is not a cluster).
  *
@@ -62,6 +62,23 @@ export function buildAiAboutMetadata(
     return buildAiPageMetadata(locale, '/about', copy);
 }
 
+/**
+ * Same as the landing, for `/benchmark` (spec
+ * `docs/superpowers/specs/2026-10-23-benchmark-publication-design.md`). This is the
+ * canonical copy: the main site's `/benchmark` points its canonical here.
+ */
+export function buildAiBenchmarkMetadata(
+    locale: Locale,
+    copy: AiSeoCopy
+): Metadata {
+    return buildAiPageMetadata(locale, '/benchmark', copy);
+}
+
+/** ai 호스트의 로케일별 OG 이미지. 경로 세그먼트 + `.png` — 정적화·엣지 캐시되는 형태(`api/ai/og/[file]/route.tsx`). */
+export function aiOgImageUrl(locale: Locale): string {
+    return `${AI_SITE_URL}/api/ai/og/${locale}.png`;
+}
+
 function buildAiPageMetadata(
     locale: Locale,
     path: AiIndexablePath,
@@ -76,8 +93,7 @@ function buildAiPageMetadata(
         languages['x-default'] = aiUrl(DEFAULT_LOCALE, path);
     }
     const image = {
-        // 경로 세그먼트 + `.png` — 정적화·엣지 캐시되는 형태(`api/ai/og/[file]/route.tsx`).
-        url: `${AI_SITE_URL}/api/ai/og/${locale}.png`,
+        url: aiOgImageUrl(locale),
         width: OG_IMAGE_WIDTH,
         height: OG_IMAGE_HEIGHT,
         alt: copy.ogLabel,

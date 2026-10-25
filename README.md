@@ -83,6 +83,8 @@ flowchart LR
     style ANALYSIS fill:#f5f3ff,stroke:#a78bfa,color:#1e293b
 ```
 
+How accurate is it? We asked the agent and three general AI models (GPT, Gemini, Claude) the same 185 US and Korean stock questions and graded the answers against market and filing data. The results, every question, and every raw answer are on the [benchmark page](https://ai.siglens.io/benchmark). The method is in [BENCHMARK.md](BENCHMARK.md).
+
 Signed-in members can also receive a regular email report on the symbols they follow. Guests can preview what it looks like on the [sample page](https://siglens.io/email-report/sample).
 
 ## Supported markets

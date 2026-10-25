@@ -54,10 +54,22 @@ const SERVER_PAGES = PAGES.filter(page => {
     return !head.includes("'use client'") && !head.includes('"use client"');
 });
 
+/**
+ * ai 호스트 정본의 사본이라 canonical이 ai URL을 가리키는 페이지. 언어 군집(hreflang)은 정본(ai 호스트)이
+ * 가진다 — 사본이 자기 호스트의 hreflang을 내면 검색엔진이 두 군집을 받아 canonical을 무시할 수 있다.
+ * 그래서 아래 hreflang 가드 두 개(`HREFLANG_PAGES`)에서만 빼고, 대신 canonical이 ai URL인지 따로 단언한다.
+ */
+const CROSS_HOST_CANONICAL_PAGES: readonly string[] = ['/benchmark/page.tsx'];
+
 const INDEXABLE_PAGES = PAGES.filter(page => {
     if (NOINDEX_BY_BUILDER.some(suffix => page.endsWith(suffix))) return false;
     return !isAlwaysNoindex(readFileSync(page, 'utf8'));
 });
+
+/** hreflang 가드 전용 목록 — 호스트 간 사본은 빼되, 나머지 가드(`INDEXABLE_PAGES`)는 그대로 덮는다. */
+const HREFLANG_PAGES = INDEXABLE_PAGES.filter(
+    page => !CROSS_HOST_CANONICAL_PAGES.some(suffix => page.endsWith(suffix))
+);
 
 /**
  * 로케일 커버리지 회귀 가드.
@@ -68,9 +80,30 @@ const INDEXABLE_PAGES = PAGES.filter(page => {
  * 유지되지 않는다.
  */
 describe('로케일 커버리지', () => {
+    it.each(CROSS_HOST_CANONICAL_PAGES)(
+        '%s: 호스트 간 사본은 canonical만 ai URL로 둔다(hreflang 없음)',
+        suffix => {
+            const page = PAGES.find(p => p.endsWith(suffix));
+            expect(page).toBeDefined();
+            const source = readFileSync(page!, 'utf8');
+            expect(source).toMatch(/alternates:\s*\{\s*canonical\s*\}/);
+            expect(source).toMatch(/const url = aiUrl\(locale, /);
+            expect(source).toMatch(
+                /canonical = isNoindex\(robots\) \? null : url/
+            );
+            expect(source).not.toMatch(/languages|localeAlternatesFrom/);
+        }
+    );
+
     it('페이지 목록이 비어 있지 않다 — 비면 아래 가드가 통째로 무력화된다', () => {
         expect(PAGES.length).toBeGreaterThanOrEqual(30);
         expect(INDEXABLE_PAGES.length).toBeGreaterThanOrEqual(15);
+        // 예외 목록의 페이지도 나머지 가드(INDEXABLE_PAGES)에는 남아 있어야 한다.
+        for (const suffix of CROSS_HOST_CANONICAL_PAGES) {
+            expect(INDEXABLE_PAGES.some(page => page.endsWith(suffix))).toBe(
+                true
+            );
+        }
     });
 
     /**
@@ -78,7 +111,7 @@ describe('로케일 커버리지', () => {
      * `alternates`를 직접 리터럴로 선언하면 그 순간 hreflang이 사라진다 —
      * 빌드도 타입체크도 통과하고 HTML에서만 조용히 빠진다(실측).
      */
-    it.each(INDEXABLE_PAGES)(
+    it.each(HREFLANG_PAGES)(
         '%s: alternates를 리터럴로 선언하지 않는다',
         page => {
             const source = readFileSync(page, 'utf8');
@@ -96,7 +129,7 @@ describe('로케일 커버리지', () => {
     );
 
     /** 로케일을 읽지 않는 페이지는 어떤 로케일에서도 ko 메타데이터를 낸다. */
-    it.each(INDEXABLE_PAGES)('%s: 메타데이터가 로케일을 반영한다', page => {
+    it.each(HREFLANG_PAGES)('%s: 메타데이터가 로케일을 반영한다', page => {
         const source = readFileSync(page, 'utf8');
         const declaresMetadata =
             source.includes('export const metadata') ||

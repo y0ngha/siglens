@@ -31,6 +31,7 @@ import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
 import { AboutPage } from '@/views/about/AboutPage';
 import {
     EMPTY_SKILL_COUNTS,
@@ -179,6 +180,7 @@ export default async function AboutRoute({
                 counts={counts}
                 faq={faq}
                 updatedAt={formatKoreanDate(ABOUT_UPDATED_AT, locale)}
+                benchmark={getPublishedBenchmarkRelease()}
             />
         </>
     );

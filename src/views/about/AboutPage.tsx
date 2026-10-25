@@ -36,6 +36,8 @@ import {
 } from '@/shared/ui/StrokeIcons';
 import { buildReportScenarios } from './lib/aboutContent';
 import { ReportReplay } from '@/widgets/replay/ReportReplay';
+import { BenchmarkResultSummary } from '@/widgets/benchmark-summary/BenchmarkResultSummary';
+import type { BenchmarkRelease } from '@/entities/benchmark/types';
 
 interface Props {
     readonly locale: Locale;
@@ -49,6 +51,8 @@ interface Props {
     readonly faq: readonly FaqItem[];
     /** `ABOUT_UPDATED_AT`, already formatted for the locale. */
     readonly updatedAt: string;
+    /** 공개된 벤치마크 결과. 공개 전(게이트 꺼짐)이면 null이고 요약 섹션을 그리지 않는다. */
+    readonly benchmark?: BenchmarkRelease | null;
 }
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -416,6 +420,7 @@ export async function AboutPage({
     counts,
     faq,
     updatedAt,
+    benchmark = null,
 }: Props) {
     const t = await getTranslations({ locale, namespace: 'views.about' });
     const skillCounts: SkillCountValues = {
@@ -583,6 +588,14 @@ export async function AboutPage({
                         </div>
                     </div>
                 </AboutSection>
+
+                {benchmark ? (
+                    <BenchmarkResultSummary
+                        release={benchmark}
+                        locale={locale}
+                        aiSiteUrl={AI_SITE_URL}
+                    />
+                ) : null}
 
                 <AboutSection id="about-operator" title={t('operator.title')}>
                     <OperatorCard

@@ -54,6 +54,9 @@ export const RESERVED_FIRST_SEGMENTS: ReadonlySet<string> = new Set([
     // 개발자 포털(`/developers`). `isAdmissibleSymbolShape('developers')`가 참이라 여기 없으면
     // `/DEVELOPERS`로 301되어 푸터·계정 화면·README가 거는 링크 전부가 깨진다.
     'developers',
+    // 벤치마크 결과 페이지(`/benchmark`). `isAdmissibleSymbolShape('benchmark')`가 참이라 여기
+    // 없으면 `/BENCHMARK`로 301되어 푸터·about 요약이 거는 링크 전부가 깨진다.
+    'benchmark',
     // 광고 랜딩(`src/app/lp/`, `[locale]` 밖의 별도 루트라 스캐너 테스트가 못 본다).
     // 여기 없으면 `/ko/lp/stock-analysis`가 `/LP/stock-analysis`로 301된다.
     'lp',
