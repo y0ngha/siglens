@@ -172,6 +172,10 @@ function singlePatternPath(patternNames: readonly string[]): string | null {
     return paths.length === 1 ? paths[0] : null;
 }
 
+/**
+ * 주식 두 시장만 가른다. 크립토는 여기 오지 않는다 — 스캐너는 `SCANNER_MARKETS`(us·kr)만 읽고,
+ * 스냅샷 조회는 `POPULAR_CRYPTOS`를 WHERE에서 뺀다(가이드 본문이 주식 전제라서).
+ */
 function marketOf(symbol: string): LiveMarket {
     return isKrEquitySymbol(symbol) ? 'kr' : 'us';
 }

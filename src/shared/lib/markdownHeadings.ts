@@ -30,33 +30,27 @@ interface ScanState {
  * 마크다운을 줄 단위로 훑어 코드 펜스 안팎과 h2/h3 제목을 한 번에 판정한다.
  * 가이드 시드 린트(`guideSeed`)와 본문 분할(`splitMarkdown`)이 같은 판정을 쓰도록 한 곳에 둔다.
  */
-export function scanMarkdownLines(markdown: string): MarkdownLine[] {
-    return markdown
-        .split('\n')
-        .reduce<ScanState>(
-            ({ open, lines }, text) => {
-                if (FENCE_LINE.test(text)) {
-                    return {
-                        open: !open,
-                        lines: [
-                            ...lines,
-                            { text, inFence: true, heading: null },
-                        ],
-                    };
-                }
+export function scanMarkdownLines(markdown: string): readonly MarkdownLine[] {
+    return markdown.split('\n').reduce<ScanState>(
+        ({ open, lines }, text) => {
+            if (FENCE_LINE.test(text)) {
                 return {
-                    open,
-                    lines: [
-                        ...lines,
-                        {
-                            text,
-                            inFence: open,
-                            heading: open ? null : parseHeadingLine(text),
-                        },
-                    ],
+                    open: !open,
+                    lines: [...lines, { text, inFence: true, heading: null }],
                 };
-            },
-            { open: false, lines: [] }
-        )
-        .lines.slice();
+            }
+            return {
+                open,
+                lines: [
+                    ...lines,
+                    {
+                        text,
+                        inFence: open,
+                        heading: open ? null : parseHeadingLine(text),
+                    },
+                ],
+            };
+        },
+        { open: false, lines: [] }
+    ).lines;
 }

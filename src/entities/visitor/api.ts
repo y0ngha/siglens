@@ -15,7 +15,11 @@ import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { LOCALES } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
-import type { DailyActiveUsers, UserAgentTally } from './types';
+import type {
+    DailyActiveUsers,
+    DailyLandingCount,
+    UserAgentTally,
+} from './types';
 
 /**
  * `recordVisit`이 남기는 한 행.
@@ -65,7 +69,7 @@ interface VisitorRepository {
     landingSectionCounts(
         fromDate: string,
         section: string
-    ): Promise<DailyActiveUsers[]>;
+    ): Promise<DailyLandingCount[]>;
 }
 
 /**
@@ -160,7 +164,7 @@ export class DrizzleVisitorRepository implements VisitorRepository {
     async landingSectionCounts(
         fromDate: string,
         section: string
-    ): Promise<DailyActiveUsers[]> {
+    ): Promise<DailyLandingCount[]> {
         return this.db
             .select({ date: visitorDays.date, count: count() })
             .from(visitorDays)

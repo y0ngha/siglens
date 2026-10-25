@@ -20,6 +20,12 @@ import {
     type SnapshotPatternHit,
 } from '@/views/guide/lib/liveSymbols';
 
+/** 데이터원 하나의 결과. 실패하면 `value`는 대신 넣은 빈 값이고 `failed`가 참이다. */
+interface Settled<T> {
+    readonly value: T;
+    readonly failed: boolean;
+}
+
 /** 시장당 보여 줄 최대 행 수. */
 const LIMIT_PER_MARKET = 5;
 /** 스냅샷은 야간에 한 번 구워지므로 이틀 창이면 직전 거래일이 반드시 들어온다. */
@@ -66,8 +72,6 @@ function loadSnapshotHits(
     )();
 }
 
-type SnapshotSettled = Awaited<ReturnType<typeof settle<SnapshotPatternHit[]>>>;
-
 /**
  * 한 데이터원의 실패가 다른 데이터원을 죽이지 않게 개별로 잡는다(`loadMarketSignals`가
  * `getSectorSignalsStatic` 호출마다 catch하는 것과 같다). 실패하면 경고를 남기고 `fallback`으로 대신한다.
@@ -76,7 +80,7 @@ async function settle<T>(
     source: string,
     run: () => Promise<T>,
     fallback: T
-): Promise<{ readonly value: T; readonly failed: boolean }> {
+): Promise<Settled<T>> {
     try {
         return { value: await run(), failed: false };
     } catch (error) {
@@ -125,7 +129,10 @@ export async function loadGuideLiveSymbols(
                   () => loadSnapshotHits(targets.patternNames),
                   []
               )
-            : Promise.resolve<SnapshotSettled>({ value: [], failed: false }),
+            : Promise.resolve<Settled<SnapshotPatternHit[]>>({
+                  value: [],
+                  failed: false,
+              }),
     ]);
 
     const failures = [
