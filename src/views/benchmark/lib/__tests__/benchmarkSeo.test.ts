@@ -32,11 +32,20 @@ import {
 } from '../benchmarkSeo';
 
 describe('getBenchmarkSeoCopy', () => {
-    it('writes the description from the headline counts', async () => {
+    it('names the compared models in the title and description', async () => {
         const copy = await getBenchmarkSeoCopy('ko', BENCHMARK_FIXTURE);
-        expect(copy.description).toBe(
-            '미국·한국 주식 질문 4개로 시그렌즈 AI와 범용 AI 모델 2종을 비교했습니다. 유의하게 앞선 모델 1종, 차이를 확정하지 못한 모델 1종, 뒤처짐 0종. 문항·정답·답변 원문 공개.'
+        expect(copy.title).toBe(
+            '주식 AI 정확도 벤치마크 — 시그렌즈 AI vs BetaGPT·GammaGem'
         );
+        expect(copy.description).toBe(
+            '미국·한국 주식 질문 4개를 시그렌즈 AI와 BetaGPT·GammaGem에 똑같이 묻고 시세·공시로 만든 정답과 비교했습니다. 점수 차와 신뢰구간, 문항별 답변 원문을 공개합니다.'
+        );
+    });
+
+    it('leaves the baseline out of the compared models', async () => {
+        const copy = await getBenchmarkSeoCopy('en', BENCHMARK_FIXTURE);
+        expect(copy.title).not.toContain('DeltaBase');
+        expect(copy.description).not.toContain('DeltaBase');
     });
 
     it.each([
@@ -61,12 +70,15 @@ describe('getBenchmarkSeoCopy', () => {
         }
     );
 
-    it('follows the locale for the brand in the title', async () => {
+    it('follows the locale for the brand and the model separator', async () => {
         const copy = await getBenchmarkSeoCopy('en', BENCHMARK_FIXTURE);
         expect(copy.title).toBe(
-            'SIGLENS AI benchmark results — question-by-question comparison with general AI models'
+            'Stock AI accuracy benchmark — SIGLENS AI vs BetaGPT, GammaGem'
         );
         expect(copy.ogLabel).toBe('SIGLENS AI benchmark results');
+        expect(copy.datasetName).toBe(
+            'SIGLENS AI stock question benchmark 2099-01 — questions, ground truth and raw answers'
+        );
     });
 
     it('falls back to a plain description when there is no subject to compare', async () => {
@@ -75,12 +87,20 @@ describe('getBenchmarkSeoCopy', () => {
             targets: BENCHMARK_FIXTURE.targets.filter(t => t.id !== 'siglens'),
         });
         expect(copy.description).toContain('4개');
-        expect(copy.description).not.toContain('유의하게');
+        expect(copy.title).toBe(
+            '시그렌즈 AI 벤치마크 결과 — 범용 AI 모델과의 문항별 비교'
+        );
     });
 });
 
 describe('buildBenchmarkDatasetJsonLd', () => {
-    const copy = { title: 'T', description: 'D', ogLabel: 'O' };
+    const copy = {
+        title: 'T',
+        description: 'D',
+        ogLabel: 'O',
+        datasetName: 'N',
+        variableMeasured: 'V',
+    };
     const input = {
         release: BENCHMARK_FIXTURE,
         copy,
@@ -98,10 +118,12 @@ describe('buildBenchmarkDatasetJsonLd', () => {
         });
     });
 
-    it('takes name and description from the shared copy', () => {
+    it('names the dataset itself, not the page, and versions it by round', () => {
         expect(buildBenchmarkDatasetJsonLd(input)).toMatchObject({
-            name: 'T',
+            name: 'N',
             description: 'D',
+            variableMeasured: 'V',
+            version: '2099-01',
         });
     });
 
@@ -116,6 +138,7 @@ describe('buildBenchmarkDatasetJsonLd', () => {
         expect(buildBenchmarkDatasetJsonLd(input)).toMatchObject({
             distribution: [
                 {
+                    name: 'benchmark-2099-01.zip',
                     contentUrl:
                         'https://ai.test/benchmark/2099-01/benchmark-2099-01.zip',
                 },

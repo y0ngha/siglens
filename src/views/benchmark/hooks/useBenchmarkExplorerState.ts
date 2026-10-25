@@ -6,7 +6,6 @@ import {
 } from '@/shared/hooks/useUrlSearchParam';
 import type { BenchmarkItem } from '@/entities/benchmark/types';
 import {
-    applyBenchmarkFilterChange,
     BENCHMARK_FILTER_INITIAL,
     BENCHMARK_PARAMS,
     parseBenchmarkFilter,
@@ -81,7 +80,7 @@ export function useBenchmarkExplorerState(
         setFilter: (key, value) =>
             commit({
                 ...current,
-                filter: applyBenchmarkFilterChange(current.filter, key, value),
+                filter: { ...current.filter, [key]: value },
             }),
         resetFilter: () =>
             commit({ filter: BENCHMARK_FILTER_INITIAL, open: current.open }),

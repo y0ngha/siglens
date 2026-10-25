@@ -2382,10 +2382,9 @@
             },
             "downloads": {
                 "disclaimer": "ベンチマークの測定記録であり、投資勧誘や銘柄推奨ではありません。",
-                "harness": "測定・採点コード(GitHub)",
-                "license": "データは<link>CC BY 4.0</link>、測定・採点コードはMITライセンスで公開しています。",
-                "sources": "正解値の出典: Nasdaq、KRX(公共データポータル)、米財務省、Cboe、SEC EDGAR、FINRA、DART。各モデルの回答原文はそのサービスの出力で、モデルと呼び出し時刻を併記しています。",
-                "sub": "原データの全体と、測定・採点のコードをダウンロードできます。",
+                "license": "データは<link>CC BY 4.0</link>で公開しています。",
+                "sources": "正解の出典: Nasdaq、Yahoo、KRX(公共データポータル)、米国財務省、Cboe、SEC EDGAR、FINRA、DART。各モデルの回答原文は各サービスの出力で、モデルと呼び出し時刻を併せて記録しています。",
+                "sub": "問題、正解、回答原文、採点結果を1つのzipファイルでダウンロードできます。",
                 "title": "ダウンロード",
                 "zip": "原データ一式(zip)"
             },
@@ -2442,7 +2441,7 @@
                 "sub": "客観問題は部分ごとに、正解は+1点、未回答は0点、誤答は−{lambda, number}点として採点し、平均しています。差は、問題を再抽出して求めた95%信頼区間とHolm補正後のp値で読みます。",
                 "summary": "{subject}の客観スコアを競合モデル{count, number}種と比べると、有意に上回ったモデルが{ahead, number}種、差を確定できなかったモデルが{tie, number}種、下回ったモデルが{behind, number}種です。",
                 "target": "対象",
-                "title": "ヘッドライン:競合モデルとのスコア差",
+                "title": "競合モデルとのスコア差",
                 "verdict": {
                     "ahead": "有意に上回る",
                     "behind": "有意に下回る",
@@ -2452,7 +2451,7 @@
             },
             "hero": {
                 "eyebrow": "公開ベンチマーク",
-                "lede": "米国と韓国の株式に関する{items, number}問を、{brand}と汎用AIモデルに同じ条件で質問し、公式データから作った正解と照合しました。{measuredAt}に測定し、{scoredAt}に採点を確定しました。質問、正解、回答の原文、採点結果をすべて公開しています。",
+                "lede": "米国・韓国株に関する{items, number}問を{brand}と汎用AIモデルに同じように尋ね、相場・開示データで作った正解と比べました。{sameDay, select, yes {{measuredAt}に測定・採点しました。} other {{measuredAt}に測定し、{scoredAt}に採点を確定しました。}}問題、正解、回答原文、採点結果をすべて公開しています。",
                 "title": "{brand} ベンチマーク結果"
             },
             "items": {
@@ -2464,53 +2463,47 @@
                 "L4": "L4 解釈",
                 "L5": "L5 誠実性・安全性"
             },
-            "limits": {
-                "judge": "審査はLLMが行うため、人による審査の結果と異なることがあります。",
-                "once": "測定は1回で、同じ問題を{rounds, number}回繰り返して質問しました。",
-                "sameVendor": "{brand}が使うデータの一部は、正解の出典と同じ系列(FMP、Yahoo)です。",
-                "sandbox": "汎用モデルのコード実行環境はインターネットに接続できず、Geminiにはuser_locationの設定がありませんでした。",
-                "sources": "正解は最初にYahooの暫定値で作り、公式値で計算し直しました。両者が異なる問題数は、正解の出典に記載しています。",
-                "sourcesPlain": "正解は最初にYahooの暫定値で作り、公式値で計算し直しました。",
-                "split": "開発用の問題と測定用の問題では銘柄が重ならず、不具合の修正は開発用の問題だけを見て行いました。",
-                "title": "限界"
-            },
             "market": {
                 "kr": "韓国",
                 "us": "米国"
             },
             "method": {
                 "aiAbout": "AIサービスの紹介",
-                "designDoc": "ベンチマーク設計文書",
+                "designDoc": "ベンチマーク文書(BENCHMARK.md)",
                 "items": "全{total, number}問で、プールごとの問題数は{pools}です。",
                 "itemsTitle": "問題の構成",
-                "judges": "L4とL5はLLMの審査員が採点し、ヘッドラインには中立の審査員のスコアだけを使います。",
+                "judges": "L4とL5はLLMの審査員が採点し、モデル間の比較には比較の当事者ではない中立の審査員のスコアだけを使います。",
                 "judgesTitle": "審査員と中立性",
                 "levels": "L1~L3は正解が決まっている客観問題で、自動で採点します。L4は解釈、L5は誠実性と安全性を見る問題で、中立の審査員が0~1点で採点します。",
-                "schedule": "同じ問題を{rounds, number}回繰り返して質問し、{measuredAt}に測定しました。",
+                "schedule": "{measuredAt}に各問題を{rounds, plural, other {#回ずつ}}尋ねました。",
                 "scheduleTitle": "日程",
-                "scoring": "正解が複数の部分からなる場合は、部分ごとに正解+1点、未回答0点、誤答−{lambda, number}点とします。回答から値を取り出す2つの抽出器の結果が一致したときだけ判定し、判定の記録はすべて公開しています。",
+                "scoring": "正解が複数の部分からなる場合、部分ごとに正解+1点、未回答0点、誤答−{lambda, number}点を与えます。回答から値を抜き出す抽出器2つが同じ値を読めばそのまま判定し、異なる値を読めば人が判定します。判定記録はすべて公開します。",
                 "scoringTitle": "採点",
                 "siteMethodology": "分析方法のページ",
                 "sub": "詳しい設計は下のリンク先の文書にあります。",
                 "title": "方法の概要",
-                "truth": "正解は、米国はNasdaqの公式値、韓国はKRXの公式値で計算しました。最初はYahooの暫定値で問題を作り、公式値で計算し直しています。正解の数値と出典URLはすべて原データに含まれています。",
+                "truth": "米国の日足系の正解はYahooの暫定値で作成した後、Nasdaqの公式値で再確認しました。韓国の正解はYahooの値をそのまま使いました。正解の数値と出典URLはすべて原データに含まれています。",
                 "truthTitle": "正解の出典",
-                "vendorMismatch": "暫定値と公式値が異なっていた問題は{count, number}問です。"
+                "vendorMismatch": "公式値で再確認した米国の問題のうち、暫定値と異なった問題は{count, number}件です。"
             },
             "prereg": {
                 "gist": "公開gist",
                 "hash": "manifestのハッシュ(SHA-256)",
                 "ots": "OpenTimestamps 証明",
                 "otsLink": "証明ファイル(.ots)をダウンロード",
-                "sub": "測定の前に、問題・コード・設計文書のハッシュを公開記録として残しました。下の値で、事後に変更されていないことを確認できます。",
+                "sub": "測定前に、問題生成・採点コードと設計文書のハッシュを公開記録として残しました。下の値と証明ファイルで、この記録が測定前に作られたことを確認できます。",
                 "title": "事前登録",
-                "verify": "確認方法:原データのmanifest.jsonに記載のファイルを再度ハッシュして上の値と照合し、.otsファイルをOpenTimestampsで検証すると、登録時刻を確認できます。"
+                "verify": "確認方法:原データのprereg/manifest.sha256の値が上のハッシュと同じかを確かめ、.otsファイルをOpenTimestampsで検証すると記録時刻がわかります。"
             },
             "seo": {
-                "description": "米国・韓国株の質問{items, number}問で、{brand}と汎用AIモデル{count, number}種を比較しました。有意に上回ったのは{ahead, number}種、差を確定できなかったのは{tie, number}種、下回ったのは{behind, number}種。問題・正解・回答の原文を公開しています。",
+                "datasetName": "{brand} 株式質問ベンチマーク {round} — 問題・正解・回答原文",
+                "description": "米国・韓国株の質問{items, number}問を{brand}と{models}に同じように尋ね、相場・開示データの正解で採点しました。点差と信頼区間、問題別の回答原文を公開しています。",
                 "descriptionPlain": "米国・韓国株の質問{items, number}問で{brand}と汎用AIモデルを比較したベンチマークの結果と、問題別の原データです。",
+                "modelSeparator": "・",
                 "ogLabel": "{brand} ベンチマーク結果",
-                "title": "{brand} ベンチマーク結果 — 汎用AIモデルとの問題別比較"
+                "title": "株式AIの正確さベンチマーク — {brand} vs {models}",
+                "titlePlain": "{brand} ベンチマーク結果 — 汎用AIモデルとの問題別比較",
+                "variableMeasured": "株式質問の客観スコア(正解 +1、未回答 0、誤答 −1)、解釈・誠実さの審査スコア"
             },
             "subset": {
                 "heldOut": "設計時に見ていない問題(H)",

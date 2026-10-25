@@ -15,7 +15,7 @@ import {
     buildBenchmarkDatasetJsonLd,
     getBenchmarkSeoCopy,
 } from '@/views/benchmark/lib/benchmarkSeo';
-import { aiUrl } from '@/app/ai/[locale]/aiSeo';
+import { aiOgImageUrl, aiUrl } from '@/app/ai/[locale]/aiSeo';
 
 // 결과 데이터는 배포 때 고정된다(릴리스 JSON이 번들에 들어간다) — 배포 자체가 갱신이라
 // 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).
@@ -34,7 +34,8 @@ function isNoindex(robots: ReturnType<typeof localePageRobots>): boolean {
  * 문서를 두 호스트가 경쟁해 광고하게 된다. 발견 경로는 푸터 링크와 about 요약이다.
  *
  * 메타데이터는 `alternates`에 canonical만 둔다(hreflang 없음) — 사본의 언어 군집은
- * 정본 쪽이 선언한다. `og:url`·Dataset `@id`·`url`도 정본 URL이다. 색인 게이트가 닫힌
+ * 정본 쪽이 선언한다. `og:url`·OG 이미지·Dataset `@id`·`url`도 정본과 같다 — 어느 호스트
+ * 링크를 공유해도 같은 카드가 뜬다. 색인 게이트가 닫힌
  * 로케일(`localePageRobots`가 noindex)은 canonical을 `null`로 둔다 — noindex와 다른 호스트
  * canonical을 섞으면 신호가 충돌한다.
  */
@@ -49,6 +50,7 @@ export async function generateMetadata({
     const copy = await getBenchmarkSeoCopy(locale, release);
     const url = aiUrl(locale, '/benchmark');
     const robots = localePageRobots(locale);
+    const image = aiOgImageUrl(locale);
     const canonical = isNoindex(robots) ? null : url;
     return {
         title: { absolute: copy.title },
@@ -56,7 +58,7 @@ export async function generateMetadata({
         robots,
         alternates: { canonical },
         openGraph: {
-            type: 'article',
+            type: 'website',
             siteName: brandName(locale),
             title: copy.title,
             description: copy.description,
@@ -64,7 +66,7 @@ export async function generateMetadata({
             locale: LOCALE_OG[locale],
             images: [
                 {
-                    url: '/og-image.png',
+                    url: image,
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
                     alt: copy.ogLabel,
@@ -72,10 +74,9 @@ export async function generateMetadata({
             ],
         },
         twitter: buildTwitterMetadata({
-            card: 'summary',
             title: copy.title,
             description: copy.description,
-            images: ['/og-image.png'],
+            images: [image],
         }),
     };
 }

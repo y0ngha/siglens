@@ -103,8 +103,11 @@ export function BenchmarkItemExplorer({
     const { filter, open, setFilter, resetFilter, toggleOpen } =
         useBenchmarkExplorerState(items, options);
     const visible = filterBenchmarkItems(items, filter);
-    const targetLabel = (id: string): string =>
-        targets.find(target => target.id === id)?.label ?? id;
+    // 대상을 고르면 목록의 판정 칩도 그 대상 것만 보인다.
+    const shownTargets =
+        filter.target === BENCHMARK_FILTER_ALL
+            ? targets
+            : targets.filter(target => target.id === filter.target);
     const allText = t('filter.all');
     const set =
         <K extends keyof BenchmarkFilterState>(key: K) =>
@@ -159,8 +162,6 @@ export function BenchmarkItemExplorer({
                         label={t('filter.target')}
                         value={filter.target}
                         onChange={set('target')}
-                        // 대상은 결과 필터의 범위라, 결과를 고르기 전에는 아무것도 거르지 않는다.
-                        disabled={filter.verdict === BENCHMARK_FILTER_ALL}
                         allText={allText}
                         options={targets.map(target => ({
                             value: target.id,
@@ -255,7 +256,7 @@ export function BenchmarkItemExplorer({
                                         aria-label={t('results')}
                                         className="mt-2 flex flex-wrap gap-1.5"
                                     >
-                                        {targets.map(target => {
+                                        {shownTargets.map(target => {
                                             const result =
                                                 item.results[target.id];
                                             return result ? (
@@ -267,9 +268,7 @@ export function BenchmarkItemExplorer({
                                                                 result.label
                                                             ]
                                                         }
-                                                        target={targetLabel(
-                                                            target.id
-                                                        )}
+                                                        target={target.label}
                                                     />
                                                 </li>
                                             ) : null;

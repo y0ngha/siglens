@@ -74,6 +74,11 @@ export function buildAiBenchmarkMetadata(
     return buildAiPageMetadata(locale, '/benchmark', copy);
 }
 
+/** ai 호스트의 로케일별 OG 이미지. 경로 세그먼트 + `.png` — 정적화·엣지 캐시되는 형태(`api/ai/og/[file]/route.tsx`). */
+export function aiOgImageUrl(locale: Locale): string {
+    return `${AI_SITE_URL}/api/ai/og/${locale}.png`;
+}
+
 function buildAiPageMetadata(
     locale: Locale,
     path: AiIndexablePath,
@@ -88,8 +93,7 @@ function buildAiPageMetadata(
         languages['x-default'] = aiUrl(DEFAULT_LOCALE, path);
     }
     const image = {
-        // 경로 세그먼트 + `.png` — 정적화·엣지 캐시되는 형태(`api/ai/og/[file]/route.tsx`).
-        url: `${AI_SITE_URL}/api/ai/og/${locale}.png`,
+        url: aiOgImageUrl(locale),
         width: OG_IMAGE_WIDTH,
         height: OG_IMAGE_HEIGHT,
         alt: copy.ogLabel,

@@ -7,7 +7,7 @@
  * 있는데 링크·sitemap이 없는 상태가 되므로 `entities/benchmark/__tests__/release.test.ts`가
  * `BENCHMARK_PUBLISHED === (BENCHMARK_RELEASE !== null)`을 고정한다.
  */
-export const BENCHMARK_PUBLISHED: boolean = false;
+export const BENCHMARK_PUBLISHED: boolean = true;
 
 /** 사이트 경로(로케일 접두사 없음). */
 export const BENCHMARK_PATH = '/benchmark';

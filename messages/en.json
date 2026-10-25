@@ -2382,10 +2382,9 @@
             },
             "downloads": {
                 "disclaimer": "This is a benchmark record, not investment advice or a stock recommendation.",
-                "harness": "Measurement and scoring code (GitHub)",
-                "license": "The data is published under <link>CC BY 4.0</link> and the measurement and scoring code under the MIT licence.",
-                "sources": "Ground-truth sources: Nasdaq, KRX (data.go.kr), U.S. Treasury, Cboe, SEC EDGAR, FINRA, DART. Each model answer is that service's output, recorded with the model and call time.",
-                "sub": "Download the full raw data and the measurement and scoring code.",
+                "license": "The data is published under <link>CC BY 4.0</link>.",
+                "sources": "Answer sources: Nasdaq, Yahoo, KRX (data.go.kr), US Treasury, Cboe, SEC EDGAR, FINRA, DART. Each model's raw answer is that service's output, recorded with the model and call time.",
+                "sub": "Download the questions, ground truth, raw answers and scores as a single zip file.",
                 "title": "Downloads",
                 "zip": "Full raw data (zip)"
             },
@@ -2442,7 +2441,7 @@
                 "sub": "Objective questions are scored per part: +1 for correct, 0 for not attempted, −{lambda, number} for incorrect, then averaged. Differences are read through a 95% confidence interval from resampling questions and a Holm-adjusted p-value.",
                 "summary": "Comparing {subject}'s objective score with {count, plural, one {# competing model} other {# competing models}}: clearly ahead of {ahead, number}, no firm difference with {tie, number}, behind {behind, number}.",
                 "target": "Target",
-                "title": "Headline: score gap against other models",
+                "title": "Score gap against other models",
                 "verdict": {
                     "ahead": "Clearly ahead",
                     "behind": "Clearly behind",
@@ -2452,7 +2451,7 @@
             },
             "hero": {
                 "eyebrow": "Public benchmark",
-                "lede": "We asked {brand} and general-purpose AI models the same {items, number} questions about US and Korean stocks and compared the answers with ground truth built from official data. Measured on {measuredAt}; scoring finalized on {scoredAt}. Every question, ground truth, raw answer and verdict is public.",
+                "lede": "We asked {brand} and general-purpose AI models the same {items, number} questions about US and Korean stocks and compared their answers with answer keys built from market and filing data. {sameDay, select, yes {Measured and graded on {measuredAt}.} other {Measured on {measuredAt}; grading finalized on {scoredAt}.}} Every question, answer key, raw answer and grading result is published.",
                 "title": "{brand} benchmark results"
             },
             "items": {
@@ -2464,53 +2463,47 @@
                 "L4": "L4 interpretation",
                 "L5": "L5 honesty and safety"
             },
-            "limits": {
-                "judge": "Judging is done by LLMs, so results can differ from what human judges would give.",
-                "once": "The measurement was run once, asking each question {rounds, plural, one {# time} other {# times}}.",
-                "sameVendor": "Some of the data {brand} uses comes from the same vendors as the ground-truth sources (FMP, Yahoo).",
-                "sandbox": "The general-purpose models' code sandboxes had no internet access, and Gemini had no user_location setting.",
-                "sources": "Ground truth started from provisional Yahoo values and was recalculated from official ones. The number of questions where the two differ is stated under ground-truth sources.",
-                "sourcesPlain": "Ground truth started from provisional Yahoo values and was recalculated from official ones.",
-                "split": "Development and test questions use different tickers, and defects were fixed by looking at development questions only.",
-                "title": "Limitations"
-            },
             "market": {
                 "kr": "Korea",
                 "us": "US"
             },
             "method": {
                 "aiAbout": "About the AI service",
-                "designDoc": "Benchmark design documents",
+                "designDoc": "Benchmark document (BENCHMARK.md)",
                 "items": "{total, number} questions in total; questions per pool: {pools}.",
                 "itemsTitle": "Question set",
-                "judges": "L4 and L5 are scored by LLM judges, and only neutral judges count toward the headline.",
+                "judges": "L4 and L5 are scored by LLM judges, and comparisons between models use only neutral judges that are not part of the comparison.",
                 "judgesTitle": "Judges and neutrality",
                 "levels": "L1 to L3 are objective questions with a fixed answer and are scored automatically. L4 tests interpretation and L5 tests honesty and safety; neutral judges score them from 0 to 1.",
-                "schedule": "Each question was asked {rounds, plural, one {# time} other {# times}}, measured on {measuredAt}.",
+                "schedule": "Each item was asked {rounds, plural, one {once} other {# times}}, on {measuredAt}.",
                 "scheduleTitle": "Schedule",
-                "scoring": "When an answer has several parts, each part earns +1 if correct, 0 if not attempted and −{lambda, number} if incorrect. A verdict is issued only when two extractors agree on the value pulled from the answer, and every verdict record is public.",
+                "scoring": "When an answer has several parts, each part scores +1 if correct, 0 if not attempted and −{lambda, number} if wrong. Two extractors read the value from each answer; when they agree, that value is graded, and when they disagree, a person decides. Every decision is published.",
                 "scoringTitle": "Scoring",
                 "siteMethodology": "How analysis works",
                 "sub": "The full design is in the documents linked below.",
                 "title": "Method summary",
-                "truth": "Ground truth uses official Nasdaq values for the US and official KRX values for Korea. Questions were first generated from provisional Yahoo values and then recalculated from the official ones. The ground-truth figures and source URLs are all in the raw data.",
+                "truth": "US daily-bar answers were built from provisional Yahoo values and re-checked against official Nasdaq data. Korean answers use Yahoo values as is. Every answer value and source URL is in the raw data.",
                 "truthTitle": "Ground-truth sources",
-                "vendorMismatch": "{count, plural, one {# question} other {# questions}} had a provisional value that differed from the official one."
+                "vendorMismatch": "Among the US items re-checked against official data, {count, number} differed from the provisional value."
             },
             "prereg": {
                 "gist": "Public gist",
                 "hash": "Manifest hash (SHA-256)",
                 "ots": "OpenTimestamps proof",
                 "otsLink": "Download the proof file (.ots)",
-                "sub": "Before measuring, we published hashes of the questions, code and design documents. The values below let you check that nothing changed afterwards.",
+                "sub": "Before measuring, we published the hash of the question generator, the scoring code and the design documents. The value and proof file below show that this record existed before the measurement.",
                 "title": "Pre-registration",
-                "verify": "To verify: re-hash the files listed in manifest.json from the raw data and compare with the value above, then check the .ots file with OpenTimestamps to confirm the registration time."
+                "verify": "To verify: check that prereg/manifest.sha256 in the raw data matches the hash above, then verify the .ots file with OpenTimestamps to see when it was recorded."
             },
             "seo": {
-                "description": "We compared {brand} with {count, plural, one {# general AI model} other {# general AI models}} on {items, number} US and Korean stock questions: clearly ahead of {ahead, number}, no firm difference with {tie, number}, behind {behind, number}. Questions, ground truth and raw answers are public.",
+                "datasetName": "{brand} stock question benchmark {round} — questions, ground truth and raw answers",
+                "description": "{brand} vs {models} on {items, number} US and Korean stock questions, graded against market data. Score gaps and every raw answer.",
                 "descriptionPlain": "Results and per-question raw data from a benchmark comparing {brand} with general AI models on {items, number} US and Korean stock questions.",
+                "modelSeparator": ", ",
                 "ogLabel": "{brand} benchmark results",
-                "title": "{brand} benchmark results — question-by-question comparison with general AI models"
+                "title": "Stock AI accuracy benchmark — {brand} vs {models}",
+                "titlePlain": "{brand} benchmark results — question-by-question comparison with general AI models",
+                "variableMeasured": "Objective score on stock questions (correct +1, not attempted 0, wrong −1), judged interpretation and honesty scores"
             },
             "subset": {
                 "heldOut": "Held-out questions (H)",

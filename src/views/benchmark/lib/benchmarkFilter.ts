@@ -27,7 +27,10 @@ export interface BenchmarkFilterState {
     readonly market: BenchmarkMarket | All;
     readonly template: string | All;
     readonly pool: string | All;
-    /** 결과 필터가 볼 대상. `all`이면 어느 대상이든. */
+    /**
+     * 볼 대상. 고르면 그 대상이 답한(제외가 아닌) 문항만 남고, 결과 필터도 그 대상의 판정만 본다.
+     * `all`이면 결과 필터는 어느 대상이든 본다.
+     */
     readonly target: string | All;
     readonly verdict: BenchmarkLabel | All;
 }
@@ -85,11 +88,7 @@ export function parseBenchmarkFilter(
         market: pick(read(BENCHMARK_PARAMS.market), options.markets),
         template: pick(read(BENCHMARK_PARAMS.template), options.templates),
         pool: pick(read(BENCHMARK_PARAMS.pool), options.pools),
-        // 대상은 결과 필터의 범위일 뿐이다 — 결과 없이 대상만 있는 링크는 아무것도 거르지 않으므로 버린다.
-        target:
-            verdict === BENCHMARK_FILTER_ALL
-                ? BENCHMARK_FILTER_ALL
-                : pick(read(BENCHMARK_PARAMS.target), options.targets),
+        target: pick(read(BENCHMARK_PARAMS.target), options.targets),
         verdict,
     };
 }
@@ -123,43 +122,27 @@ export function toBenchmarkSearchString(
     return params.toString();
 }
 
-/**
- * 필터가 하나라도 걸렸는가. `target`은 `verdict`의 범위를 좁힐 뿐 혼자서는 목록을 거르지
- * 않으므로 세지 않는다(대상만 고른 상태에서 "초기화"가 뜨면 눌러도 달라지는 게 없다).
- */
+/** 필터가 하나라도 걸렸는가. */
 export function isBenchmarkFilterActive(state: BenchmarkFilterState): boolean {
-    const { target: _target, ...rest } = state;
-    return Object.values(rest).some(value => value !== BENCHMARK_FILTER_ALL);
+    return Object.values(state).some(value => value !== BENCHMARK_FILTER_ALL);
 }
 
 /**
- * 필터 하나를 바꾼 다음 상태. 결과(`verdict`)를 지우면 그 범위인 대상(`target`)도 함께
- * 지운다 — 남겨 두면 보이지 않는 대상 값이 URL에 실려 다음 결과 선택에 끼어든다.
+ * 대상·결과 필터. 대상을 골랐으면 그 대상의 기록만 본다 — 결과가 `all`이면 기록이 있는(제외가
+ * 아닌) 문항, 결과를 골랐으면 그 대상의 판정이 같은 문항. 대상이 `all`이면 어느 한 대상이라도
+ * 그 판정이면 통과.
  */
-export function applyBenchmarkFilterChange<
-    K extends keyof BenchmarkFilterState,
->(
-    state: BenchmarkFilterState,
-    key: K,
-    value: BenchmarkFilterState[K]
-): BenchmarkFilterState {
-    const next = { ...state, [key]: value };
-    return key === 'verdict' && value === BENCHMARK_FILTER_ALL
-        ? { ...next, target: BENCHMARK_FILTER_ALL }
-        : next;
-}
-
-/**
- * 결과 필터: 대상을 골랐으면 그 대상의 판정이, 아니면 어느 한 대상이라도 그 판정이면 통과.
- */
-function matchesVerdict(
+function matchesTargetAndVerdict(
     item: BenchmarkItem,
     state: BenchmarkFilterState
 ): boolean {
-    if (state.verdict === BENCHMARK_FILTER_ALL) return true;
     if (state.target !== BENCHMARK_FILTER_ALL) {
-        return item.results[state.target]?.label === state.verdict;
+        const label = item.results[state.target]?.label;
+        return state.verdict === BENCHMARK_FILTER_ALL
+            ? label !== undefined && label !== 'excluded'
+            : label === state.verdict;
     }
+    if (state.verdict === BENCHMARK_FILTER_ALL) return true;
     return Object.values(item.results).some(r => r.label === state.verdict);
 }
 
@@ -176,6 +159,6 @@ export function filterBenchmarkItems(
             (state.template === BENCHMARK_FILTER_ALL ||
                 item.template === state.template) &&
             (state.pool === BENCHMARK_FILTER_ALL || item.pool === state.pool) &&
-            matchesVerdict(item, state)
+            matchesTargetAndVerdict(item, state)
     );
 }

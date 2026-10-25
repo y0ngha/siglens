@@ -45,9 +45,6 @@ interface Props {
 const TEXT_LINK =
     'inline-flex min-h-11 items-center rounded text-secondary-300 underline underline-offset-2 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
-const BULLETS =
-    'flex max-w-2xl list-disc flex-col gap-1.5 pl-5 text-sm leading-6 text-secondary-300 marker:text-secondary-500';
-
 const TH =
     'px-3 py-2 text-xs font-semibold text-secondary-400 whitespace-nowrap';
 
@@ -65,7 +62,7 @@ function Section({ id, title, sub, children }: SectionProps) {
                 {title}
             </h2>
             {sub ? (
-                <p className="mt-2 max-w-2xl text-[15px] leading-6 text-secondary-400">
+                <p className="mt-2 text-[15px] leading-6 text-secondary-400">
                     {sub}
                 </p>
             ) : null}
@@ -142,19 +139,23 @@ export async function BenchmarkPage({
     return (
         <main className="relative isolate flex-1 pb-16">
             <div className="mx-auto w-full max-w-5xl px-4 pt-6 sm:pt-8">
-                <header className="pb-10">
+                <header>
                     <p className="text-sm font-medium text-secondary-400">
                         {t('hero.eyebrow')}
                     </p>
                     <h1 className="mt-2 text-3xl font-semibold tracking-tight text-balance text-secondary-50 sm:text-[42px] sm:leading-tight">
                         {t('hero.title', { brand })}
                     </h1>
-                    <p className="mt-4 max-w-2xl text-base leading-7 text-pretty text-secondary-300">
+                    <p className="mt-4 text-base leading-7 text-pretty text-secondary-300">
                         {t('hero.lede', {
                             brand,
                             items: totalItems,
                             measuredAt: formatBenchmarkDate(release.measuredAt),
                             scoredAt: formatBenchmarkDate(release.scoredAt),
+                            sameDay:
+                                release.measuredAt === release.scoredAt
+                                    ? 'yes'
+                                    : 'no',
                         })}
                     </p>
                     {locale !== DEFAULT_LOCALE ? (
@@ -162,7 +163,7 @@ export async function BenchmarkPage({
                             role="note"
                             className={cn(
                                 SURFACE_CARD,
-                                'mt-4 max-w-2xl px-4 py-3 text-sm leading-6 text-secondary-200'
+                                'mt-4 px-4 py-3 text-sm leading-6 text-secondary-200'
                             )}
                         >
                             {t('koreanNote')}
@@ -177,7 +178,7 @@ export async function BenchmarkPage({
                 >
                     {headline ? (
                         <>
-                            <p className="max-w-2xl text-lg leading-8 text-secondary-100">
+                            <p className="text-lg leading-8 text-secondary-100">
                                 {t('headline.summary', {
                                     subject: headline.subject.label,
                                     count: headline.competitors.length,
@@ -315,7 +316,7 @@ export async function BenchmarkPage({
                                         </BenchmarkTableShell>
                                     ))}
                             </div>
-                            <p className="mt-3 max-w-2xl text-xs leading-5 text-secondary-400">
+                            <p className="mt-3 text-xs leading-5 text-secondary-400">
                                 {t('headline.note', {
                                     alpha: BENCHMARK_SIGNIFICANCE_LEVEL,
                                 })}
@@ -495,24 +496,7 @@ export async function BenchmarkPage({
                             </p>
                         </div>
                     </div>
-                    <h3 className={cn(HEADING_SUBSECTION, 'mt-8')}>
-                        {t('limits.title')}
-                    </h3>
-                    <ul className={cn(BULLETS, 'mt-3')}>
-                        <li>{t('limits.split')}</li>
-                        <li>
-                            {methodology.vendorMismatchCount !== null
-                                ? t('limits.sources')
-                                : t('limits.sourcesPlain')}
-                        </li>
-                        <li>{t('limits.sameVendor', { brand })}</li>
-                        <li>{t('limits.sandbox')}</li>
-                        <li>{t('limits.judge')}</li>
-                        <li>
-                            {t('limits.once', { rounds: methodology.rounds })}
-                        </li>
-                    </ul>
-                    <ul className="mt-4 flex flex-wrap gap-x-5">
+                    <ul className="mt-6 flex flex-wrap gap-x-5">
                         <li>
                             <a href={methodologyHref} className={TEXT_LINK}>
                                 {t('method.siteMethodology')}
@@ -525,7 +509,7 @@ export async function BenchmarkPage({
                         </li>
                         <li>
                             <a
-                                href={`${GITHUB_URL}/tree/master/benchmark/design`}
+                                href={`${GITHUB_URL}/blob/master/BENCHMARK.md`}
                                 rel="noopener"
                                 className={TEXT_LINK}
                             >
@@ -574,7 +558,7 @@ export async function BenchmarkPage({
                             </dd>
                         </div>
                     </dl>
-                    <p className="mt-3 max-w-2xl text-sm leading-6 text-secondary-300">
+                    <p className="mt-3 text-sm leading-6 text-secondary-300">
                         {t('prereg.verify')}
                     </p>
                 </Section>
@@ -592,15 +576,6 @@ export async function BenchmarkPage({
                                 className={TEXT_LINK}
                             >
                                 {t('downloads.zip')}
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href={`${GITHUB_URL}/tree/master/benchmark`}
-                                rel="noopener"
-                                className={TEXT_LINK}
-                            >
-                                {t('downloads.harness')}
                             </a>
                         </li>
                     </ul>

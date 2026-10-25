@@ -159,49 +159,49 @@ describe('BenchmarkItemExplorer', () => {
             expect(window.location.search).toBe('?who=gpt&res=incorrect');
         });
 
-        it('disables the target select until a verdict is chosen', async () => {
+        it('filters by target alone and shows only that target in each row', async () => {
             const user = userEvent.setup();
             renderExplorer();
-            const target = screen.getByLabelText(
-                e.filter.target
-            ) as HTMLSelectElement;
-            expect(target.disabled).toBe(true);
             await user.selectOptions(
-                screen.getByLabelText(e.filter.verdict),
-                'incorrect'
+                screen.getByLabelText(e.filter.target),
+                'gemini'
             );
-            expect(target.disabled).toBe(false);
+            // q-003은 gemini 기록이 제외라 빠진다.
+            expect(questionButtons()).toHaveLength(3);
+            expect(window.location.search).toBe('?who=gemini');
+            for (const list of screen.getAllByRole('list', {
+                name: e.results,
+            })) {
+                expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+            }
         });
 
-        it('clears the target and its URL param when the verdict is cleared', async () => {
+        it('keeps the target when the verdict is cleared', async () => {
             const user = userEvent.setup();
             renderExplorer();
-            await user.selectOptions(
-                screen.getByLabelText(e.filter.verdict),
-                'incorrect'
-            );
             await user.selectOptions(
                 screen.getByLabelText(e.filter.target),
                 'gpt'
             );
             await user.selectOptions(
                 screen.getByLabelText(e.filter.verdict),
+                'incorrect'
+            );
+            await user.selectOptions(
+                screen.getByLabelText(e.filter.verdict),
                 'all'
             );
-            expect(
-                (screen.getByLabelText(e.filter.target) as HTMLSelectElement)
-                    .value
-            ).toBe('all');
-            expect(window.location.search).toBe('');
+            expect(window.location.search).toBe('?who=gpt');
             expect(questionButtons()).toHaveLength(4);
         });
 
-        it('ignores a target-only URL and offers no reset for it', () => {
-            window.history.replaceState(null, '', '/?who=gpt');
+        it('applies a target-only URL and offers a reset for it', () => {
+            window.history.replaceState(null, '', '/?who=gemini');
             renderExplorer();
+            expect(questionButtons()).toHaveLength(3);
             expect(
-                screen.queryByRole('button', { name: e.filter.reset })
-            ).toBeNull();
+                screen.getByRole('button', { name: e.filter.reset })
+            ).toBeTruthy();
         });
 
         it('filters by market, type and pool', async () => {

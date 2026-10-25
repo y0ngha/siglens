@@ -66,6 +66,27 @@ describe('BenchmarkPage', () => {
         ]);
     });
 
+    describe('hero', () => {
+        it('names both dates when grading was finalized later', async () => {
+            await renderPage();
+            expect(
+                screen.getByText(
+                    /2099-01-10에 측정하고 2099-01-12에 채점을 확정했습니다\./
+                )
+            ).toBeTruthy();
+        });
+
+        it('names the date once when measured and graded on the same day', async () => {
+            await renderPage({
+                release: { ...BENCHMARK_FIXTURE, scoredAt: '2099-01-10' },
+            });
+            expect(
+                screen.getByText(/2099-01-10에 측정하고 채점했습니다\./)
+            ).toBeTruthy();
+            expect(screen.queryByText(/채점을 확정했습니다/)).toBeNull();
+        });
+    });
+
     describe('headline', () => {
         it('builds the summary sentence from the data', async () => {
             await renderPage();
@@ -201,7 +222,9 @@ describe('BenchmarkPage', () => {
             await renderPage();
             expect(screen.getByText(/A 3 · B 1/)).toBeTruthy();
             expect(
-                screen.getByText('잠정값과 공식값이 달랐던 문항은 2개입니다.')
+                screen.getByText(
+                    '공식값으로 다시 확인한 미국 문항 중 잠정값과 달랐던 문항은 2개입니다.'
+                )
             ).toBeTruthy();
         });
 
@@ -215,15 +238,7 @@ describe('BenchmarkPage', () => {
                     },
                 },
             });
-            expect(screen.queryByText(/잠정값과 공식값이 달랐던/)).toBeNull();
-            expect(screen.getByText(p.limits.sourcesPlain)).toBeTruthy();
-            expect(screen.queryByText(p.limits.sources)).toBeNull();
-        });
-
-        it('claims the mismatch count is shown only when it is shown', async () => {
-            await renderPage();
-            expect(screen.getByText(p.limits.sources)).toBeTruthy();
-            expect(screen.queryByText(p.limits.sourcesPlain)).toBeNull();
+            expect(screen.queryByText(/잠정값과 달랐던 문항/)).toBeNull();
         });
 
         it('renders no breadcrumb on the shared view', async () => {
@@ -231,23 +246,30 @@ describe('BenchmarkPage', () => {
             expect(screen.queryByRole('navigation')).toBeNull();
         });
 
-        it('injects lambda and rounds as arguments', async () => {
+        it('states how many times each item was asked from the data', async () => {
+            await renderPage({
+                release: {
+                    ...BENCHMARK_FIXTURE,
+                    methodology: {
+                        ...BENCHMARK_FIXTURE.methodology,
+                        rounds: 2,
+                    },
+                },
+            });
+            expect(screen.getByText(/문항마다 2번씩 물었습니다/)).toBeTruthy();
+        });
+
+        it('injects lambda as an argument', async () => {
             await renderPage({
                 release: {
                     ...BENCHMARK_FIXTURE,
                     methodology: {
                         ...BENCHMARK_FIXTURE.methodology,
                         lambda: 2,
-                        rounds: 5,
                     },
                 },
             });
             expect(screen.getByText(/오답 −2점을 줍니다/)).toBeTruthy();
-            expect(
-                screen.getByText(
-                    '측정은 1회이며, 같은 문항을 5번 반복해 물었습니다.'
-                )
-            ).toBeTruthy();
         });
 
         it('builds main-site and ai-site links from the props', async () => {
@@ -277,16 +299,29 @@ describe('BenchmarkPage', () => {
     });
 
     describe('pre-registration and downloads', () => {
-        it('links the data licence (CC BY 4.0) and states the code licence and the disclaimer', async () => {
+        it('links the data licence (CC BY 4.0) and states the disclaimer', async () => {
             await renderPage();
             const licence = screen.getByRole('link', { name: 'CC BY 4.0' });
             expect(licence.getAttribute('href')).toBe(
                 'https://creativecommons.org/licenses/by/4.0/'
             );
             expect(licence.getAttribute('rel')).toContain('license');
-            // 한 문장(한 메시지) 안에 링크와 코드 라이선스가 함께 있다.
-            expect(licence.closest('p')?.textContent).toContain('MIT');
             expect(screen.getByText(p.downloads.disclaimer)).toBeTruthy();
+        });
+
+        it('links BENCHMARK.md and no unpublished code directory', async () => {
+            await renderPage();
+            expect(
+                screen
+                    .getByRole('link', { name: p.method.designDoc })
+                    .getAttribute('href')
+            ).toMatch(/\/blob\/master\/BENCHMARK\.md$/);
+            const hrefs = screen
+                .getAllByRole('link')
+                .map(link => link.getAttribute('href') ?? '');
+            expect(
+                hrefs.some(href => href.includes('/tree/master/benchmark'))
+            ).toBe(false);
         });
 
         it('shows the hash, gist and proof file from the data', async () => {

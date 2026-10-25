@@ -109,7 +109,12 @@ describe('siglens.io/benchmark route', () => {
             const metadata = await generateMetadata(params());
             expect(metadata.openGraph).toMatchObject({
                 url: `${AI_SITE_URL}/benchmark`,
-                type: 'article',
+                type: 'website',
+                images: [
+                    expect.objectContaining({
+                        url: `${AI_SITE_URL}/api/ai/og/ko.png`,
+                    }),
+                ],
             });
         });
 
@@ -135,7 +140,7 @@ describe('siglens.io/benchmark route', () => {
         it('builds the description from the data', async () => {
             const metadata = await generateMetadata(params());
             expect(metadata.description).toContain('4개');
-            expect(metadata.description).toContain('2종');
+            expect(metadata.description).toContain('BetaGPT·GammaGem');
         });
 
         it('hands the same props to the view as the ai route', async () => {
@@ -169,7 +174,9 @@ describe('siglens.io/benchmark route', () => {
                 ],
             });
             expect((dataset as { name: string }).name).toBe(
-                ko.views.benchmark.seo.title.replace('{brand}', '시그렌즈 AI')
+                ko.views.benchmark.seo.datasetName
+                    .replace('{brand}', '시그렌즈 AI')
+                    .replace('{round}', BENCHMARK_FIXTURE.round)
             );
         });
 

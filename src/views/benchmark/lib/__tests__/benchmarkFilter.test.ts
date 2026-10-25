@@ -5,7 +5,6 @@ import {
     BENCHMARK_FILTER_INITIAL,
     collectBenchmarkFilterOptions,
     filterBenchmarkItems,
-    applyBenchmarkFilterChange,
     isBenchmarkFilterActive,
     parseBenchmarkFilter,
     parseBenchmarkOpen,
@@ -88,7 +87,8 @@ describe('filterBenchmarkItems', () => {
         ]);
     });
 
-    it('does not filter when only a target is chosen', () => {
+    it('keeps only the items the chosen target has a record for', () => {
+        expect(qids({ target: 'gemini' })).toEqual(['q-001', 'q-002', 'q-004']);
         expect(qids({ target: 'gpt' })).toHaveLength(4);
     });
 
@@ -180,56 +180,21 @@ describe('toBenchmarkSearchString', () => {
 });
 
 describe('target without a verdict', () => {
-    it('is dropped when parsed from the URL', () => {
+    it('is kept when parsed from the URL', () => {
         expect(parseBenchmarkFilter(readFrom('who=gpt'), OPTIONS).target).toBe(
-            BENCHMARK_FILTER_ALL
+            'gpt'
         );
-    });
-
-    it('is kept when a verdict comes with it', () => {
-        expect(
-            parseBenchmarkFilter(readFrom('who=gpt&res=correct'), OPTIONS)
-                .target
-        ).toBe('gpt');
-    });
-});
-
-describe('applyBenchmarkFilterChange', () => {
-    const scoped: BenchmarkFilterState = {
-        ...BENCHMARK_FILTER_INITIAL,
-        target: 'gpt',
-        verdict: 'incorrect',
-    };
-
-    it('resets the target when the verdict is cleared', () => {
-        expect(
-            applyBenchmarkFilterChange(scoped, 'verdict', BENCHMARK_FILTER_ALL)
-        ).toEqual(BENCHMARK_FILTER_INITIAL);
-    });
-
-    it('keeps the target when the verdict only changes', () => {
-        expect(
-            applyBenchmarkFilterChange(scoped, 'verdict', 'correct')
-        ).toMatchObject({ target: 'gpt', verdict: 'correct' });
-    });
-
-    it('leaves other fields alone', () => {
-        expect(applyBenchmarkFilterChange(scoped, 'pool', 'A')).toMatchObject({
-            pool: 'A',
-            target: 'gpt',
-            verdict: 'incorrect',
-        });
     });
 });
 
 describe('isBenchmarkFilterActive', () => {
-    it('does not count a target-only state as active', () => {
+    it('counts a target-only state as active', () => {
         expect(
             isBenchmarkFilterActive({
                 ...BENCHMARK_FILTER_INITIAL,
                 target: 'gpt',
             })
-        ).toBe(false);
+        ).toBe(true);
     });
 
     it('is false for the initial state and true once anything is set', () => {
