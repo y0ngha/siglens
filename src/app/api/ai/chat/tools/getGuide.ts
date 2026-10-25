@@ -1,6 +1,7 @@
 import 'server-only';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import type { GuideEntry } from '@/entities/guide/types';
+import { termsFirst } from '@/entities/guide/lib/termsFirst';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
@@ -44,6 +45,28 @@ export function cutAtParagraph(
     return { text: midPair ? cut.slice(0, -1) : cut, truncated: true };
 }
 
+/** 한국어 how-to 꼬리("RSI 보는 법", "골든크로스를 확인하는법"). */
+const KO_HOWTO_SUFFIX_RE =
+    /\s*(?:[을를]\s*)?(?:어떻게\s*)?(?:보는|확인하는|읽는|쓰는|활용하는|사용하는|해석하는|찾는)\s*법\s*$/u;
+/** 영어 how-to 머리("how to read RSI"). */
+const EN_HOWTO_PREFIX_RE =
+    /^how\s+to\s+(?:read|use|check|confirm|spot|find|interpret)\s+/i;
+
+/**
+ * how-to 질의에서 주제어만 남긴다. 꼬리·머리가 없으면 `null`.
+ *
+ * 에이전트는 "어떻게 봐?" 질문을 "거래량 보는 법"처럼 how-to 제목 꼴로 검색한다. 그 주제의 질문형
+ * 글이 아직 없으면 이름 일치가 하나도 없어 용어 항목("거래량")조차 못 찾으므로, 첫 검색이 비었을 때만
+ * 주제어로 한 번 더 찾는다. 질문형 글이 있으면 첫 검색의 완전 일치가 그 글을 고른다.
+ */
+export function howtoTopic(query: string): string | null {
+    const topic = query
+        .replace(KO_HOWTO_SUFFIX_RE, '')
+        .replace(EN_HOWTO_PREFIX_RE, '')
+        .trim();
+    return topic === '' || topic === query.trim() ? null : topic;
+}
+
 function guideUrl(entry: GuideEntry, locale: Locale): string {
     return `${SITE_URL}${localePath(locale, guideEntryPath(entry.category, entry.slug))}`;
 }
@@ -71,7 +94,13 @@ export const getGuideTool: ToolExecutor = async (args, ctx) => {
     const catalog = await loadGuideCatalog(ctx.locale);
     if (catalog === null) return { found: false, reason: 'guide_unavailable' };
 
-    const matches = searchGuide(catalog.entries, query, GUIDE_MATCH_LIMIT);
+    const searchable = termsFirst(catalog.entries);
+    const direct = searchGuide(searchable, query, GUIDE_MATCH_LIMIT);
+    const topic = direct.length === 0 ? howtoTopic(query) : null;
+    const matches =
+        topic === null
+            ? direct
+            : searchGuide(searchable, topic, GUIDE_MATCH_LIMIT);
     const [best, ...others] = matches;
     const asOf = new Date().toISOString();
 

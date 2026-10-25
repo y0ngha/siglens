@@ -8,6 +8,7 @@ import {
     GUIDE_BODY_MAX_CHARS,
     cutAtParagraph,
     getGuideTool,
+    howtoTopic,
 } from '@/app/api/ai/chat/tools/getGuide';
 
 const rt = {
@@ -76,6 +77,43 @@ describe('getGuideTool', () => {
         expect(result).toMatchObject({
             source: 'siglens-guide',
             found: false,
+            others: [],
+        });
+    });
+
+    it('how-to 꼴 질의가 비면 주제어로 다시 찾아 용어 항목을 준다', async () => {
+        const volume = entry({
+            slug: 'buy-sell-volume',
+            title: '거래량',
+            aliases: [],
+            summary: '사고판 양',
+        });
+        loadGuideCatalog.mockResolvedValue({ entries: [volume] });
+        const result = await getGuideTool(
+            { query: '거래량 보는 법' },
+            ctx(),
+            rt
+        );
+        expect(result).toMatchObject({
+            found: true,
+            best: { title: '거래량' },
+        });
+    });
+
+    it('질문형 글이 있으면 첫 검색의 완전 일치가 그 글을 고른다', async () => {
+        const term = entry({ slug: 'rsi', title: 'RSI' });
+        const howto = entry({
+            slug: 'rsi-how-to-read',
+            category: 'howto',
+            title: 'RSI 보는 법',
+            aliases: [],
+            summary: '순서',
+        });
+        loadGuideCatalog.mockResolvedValue({ entries: [howto, term] });
+        const result = await getGuideTool({ query: 'RSI 보는 법' }, ctx(), rt);
+        expect(result).toMatchObject({
+            found: true,
+            best: { title: 'RSI 보는 법' },
             others: [],
         });
     });
@@ -206,5 +244,22 @@ describe('cutAtParagraph', () => {
     it('서로게이트 쌍 중간에서 끊지 않는다', () => {
         const result = cutAtParagraph('😀'.repeat(10), 3);
         expect(result.text).toBe('😀');
+    });
+});
+
+describe('howtoTopic', () => {
+    it.each([
+        ['거래량 보는 법', '거래량'],
+        ['골든크로스 확인하는 법', '골든크로스'],
+        ['골든크로스를 확인하는법', '골든크로스'],
+        ['RSI 어떻게 보는 법', 'RSI'],
+        ['how to read RSI', 'RSI'],
+    ])('%s → %s', (query, topic) => {
+        expect(howtoTopic(query)).toBe(topic);
+    });
+
+    it('꼬리가 없거나 주제어가 비면 null', () => {
+        expect(howtoTopic('이중바닥')).toBeNull();
+        expect(howtoTopic('보는 법')).toBeNull();
     });
 });
