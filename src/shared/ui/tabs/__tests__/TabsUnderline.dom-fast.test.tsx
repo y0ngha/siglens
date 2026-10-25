@@ -157,7 +157,9 @@ describe('TabsUnderline — 활성 탭 스크롤', () => {
         Object.defineProperty(tablist, 'scrollLeft', {
             configurable: true,
             get: () => 0,
-            set: (v: number) => writes.push(v),
+            set: (v: number) => {
+                writes.push(v);
+            },
         });
         return { view, tablist, writes };
     }

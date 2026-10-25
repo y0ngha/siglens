@@ -688,7 +688,7 @@ describe('캐시 미스', () => {
             Object.defineProperty(core, 'cache', {
                 configurable: true,
                 get: () => (probes++ === 0 ? null : { summary: 'raced' }),
-                set: () => undefined,
+                set: () => {},
             });
             try {
                 const result = await run({ model: BYOK_MODEL });

@@ -1,12 +1,31 @@
 'use client';
 
+import { useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 import {
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
 } from '@/shared/lib/options/marketHoursDisplay';
 import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
-import { useHydrated } from '@/shared/hooks/useHydrated';
+
+/**
+ * 구독할 변화가 없다 — EDT/EST는 계절 단위로만 바뀐다. 화면이 열린 채 경계를 넘으면
+ * 다른 이유로 컴포넌트가 다시 렌더될 때 스냅샷이 새 값을 읽는다(경계만으로는 다시
+ * 렌더하지 않는다 — 예전 `useHydrated` 게이트와 같은 동작).
+ */
+function subscribeNoop(): () => void {
+    return () => {};
+}
+
+/** 지금 미 동부가 서머타임(EDT)인지. 원시값이라 같은 구간 안에서는 스냅샷이 안정적이다. */
+function getInEdtSnapshot(): boolean {
+    return getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
+}
+
+/** 서버·하이드레이션 렌더에는 시각을 쓰지 않는다 — DST 문장을 생략한다. */
+function getServerInEdtSnapshot(): null {
+    return null;
+}
 
 /**
  * 마지막 정상 스냅샷이 없을 때만 뜬다(`fetchOptionsSnapshot`이 정규장 밖 stale을
@@ -35,17 +54,18 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
  * cacheComponents 비활성 상태라 RSC로 두면 빌드/요청 시점에 한 번만
  * 평가되어 DST 경계를 가로질러 사용자가 보는 페이지가 잘못 안내될 수 있다.
  *
- * "지금은 {DST} 기간이니, {KST창}에 확인해 주세요" 문장은 `useHydrated()`로
- * 게이팅한다. SSR과 첫 클라이언트 렌더 모두 해당 `<p>`를 생략해 일치시키고
- * 마운트 이후에만 실제 DST 값을 채운다 — React 하이드레이션 불일치(#418) 방지.
+ * "지금은 {DST} 기간이니, {KST창}에 확인해 주세요" 문장은 현재 시각을 렌더 밖
+ * (`useSyncExternalStore`의 스냅샷)에서 읽어 채운다. 서버 렌더와 하이드레이션 렌더는
+ * 서버 스냅샷(`null`)으로 해당 `<p>`를 생략해 일치시키고, 하이드레이션 직후 실제 DST
+ * 값으로 다시 그린다 — React 하이드레이션 불일치(#418) 방지.
  */
 export function OptionsStaleDataBanner() {
     const t = useTranslations('widgets.options');
-    const isHydrated = useHydrated();
-    // DST 판정은 마운트 후에만 수행 — SSR·첫 CSR 렌더에서 new Date()가 다르면
-    // 하이드레이션 불일치(React #418)가 발생하므로 isHydrated로 게이팅한다.
-    const inEdt =
-        isHydrated && getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
+    const inEdt = useSyncExternalStore(
+        subscribeNoop,
+        getInEdtSnapshot,
+        getServerInEdtSnapshot
+    );
     const currentKstWindow = inEdt
         ? KST_EDT_HOURS_DISPLAY
         : KST_EST_HOURS_DISPLAY;
@@ -63,7 +83,7 @@ export function OptionsStaleDataBanner() {
             </p>
             <div className="mt-1 space-y-1">
                 <p>{t('OptionsStaleDataBanner.baed2a')}</p>
-                {isHydrated && (
+                {inEdt !== null && (
                     <p>
                         {t('OptionsStaleDataBanner.6bdf35', {
                             v0: currentDstLabel,
