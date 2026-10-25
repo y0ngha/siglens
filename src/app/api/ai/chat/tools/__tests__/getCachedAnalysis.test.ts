@@ -1695,7 +1695,9 @@ describe('getCachedAnalysisTool — overall이 새 생성으로 이어질 때 �
         expect(r).not.toHaveProperty('reason');
         expect(r).not.toHaveProperty('overallGeneratedAt');
         expect(r).toMatchObject({
-            hint: expect.stringContaining('No SIGLENS overall analysis'),
+            hint: expect.stringContaining(
+                'No SIGLENS overall analysis is available for this user'
+            ),
         });
     });
 

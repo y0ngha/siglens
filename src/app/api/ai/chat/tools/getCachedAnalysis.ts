@@ -582,12 +582,19 @@ type OverallStatus = 'missing' | 'stale';
  * 대체 응답의 hint. core의 `run_fresh_analysis` 설명은 "found:false 또는 stale:true일 때만 부르라"고 하므로, 명시적인
  * 종합 분석 요청에서는 이 결과를 overall 기준 found:false로 보라고 직접 적는다 — 그래야 found:true인 대체 응답이
  * 그 규칙과 충돌하지 않는다.
+ *
+ * `missing`은 "이 호출자가 쓸 수 있는 overall이 없다"이다 — 회원은 공개(비회원 등급) 분석이 있어도 쓰지 않으므로
+ * (`no_member_analysis`) 그 경우도 여기에 든다. 그래서 "아예 존재하지 않는다"고 쓰지 않는다. 낡은 overall의 생성 시각은
+ * 알 때만(`overallGeneratedAt`) 가리킨다.
  */
-function overallSubstituteHint(status: OverallStatus): string {
+function overallSubstituteHint(
+    status: OverallStatus,
+    hasGeneratedAt: boolean
+): string {
     const head =
         status === 'missing'
-            ? 'No SIGLENS overall analysis exists yet for this timeframe'
-            : 'The SIGLENS overall analysis for this timeframe is out of date (generated at overallGeneratedAt)';
+            ? 'No SIGLENS overall analysis is available for this user and timeframe yet'
+            : `The SIGLENS overall analysis for this timeframe is out of date${hasGeneratedAt ? ' (generated at overallGeneratedAt)' : ''}`;
     return `${head}; this is the fresh technical analysis instead. Answer from it together with the other tools. Only if the user explicitly asked for an overall / comprehensive analysis (종합 분석), treat this as found:false for overall and call run_fresh_analysis with kind overall.`;
 }
 
@@ -610,6 +617,10 @@ async function freshTechnicalInsteadOfOverall(
     // 모델은 낡은 결과를 받으면 어차피 새로 돌렸고, 두 분석을 함께 실으면 턴의 분석 예산을 두 배로 쓴다).
     const overallStatus: OverallStatus =
         overall.found === false ? 'missing' : 'stale';
+    const overallGeneratedAt =
+        overallStatus === 'stale' && typeof overall.generatedAt === 'string'
+            ? overall.generatedAt
+            : undefined;
     try {
         const hit = await peekTechnicalResult(
             symbol,
@@ -620,11 +631,13 @@ async function freshTechnicalInsteadOfOverall(
             {
                 requestedTab: 'overall',
                 overallStatus,
-                ...(overallStatus === 'stale' &&
-                typeof overall.generatedAt === 'string'
-                    ? { overallGeneratedAt: overall.generatedAt }
+                ...(overallGeneratedAt !== undefined
+                    ? { overallGeneratedAt }
                     : {}),
-                hint: overallSubstituteHint(overallStatus),
+                hint: overallSubstituteHint(
+                    overallStatus,
+                    overallGeneratedAt !== undefined
+                ),
             }
         );
         return hit !== null && hit.stale === false ? hit : null;
