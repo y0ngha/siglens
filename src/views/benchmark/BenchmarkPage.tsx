@@ -488,9 +488,14 @@ export async function BenchmarkPage({
                             </h3>
                             <p className="mt-2 text-sm leading-6 text-secondary-300">
                                 {t('method.schedule', {
+                                    brand,
                                     rounds: methodology.rounds,
                                     measuredAt: formatBenchmarkDate(
                                         release.measuredAt
+                                    ),
+                                    subjectVersion: methodology.subjectVersion,
+                                    subjectMeasuredAt: formatBenchmarkDate(
+                                        methodology.subjectMeasuredAt
                                     ),
                                 })}
                             </p>
@@ -522,7 +527,7 @@ export async function BenchmarkPage({
                 <Section
                     id="benchmark-prereg"
                     title={t('prereg.title')}
-                    sub={t('prereg.sub')}
+                    sub={t('prereg.sub', { brand })}
                 >
                     <dl className={cn(SURFACE_CARD, 'grid gap-3 p-4 sm:p-5')}>
                         <div className="grid gap-x-4 gap-y-1 sm:grid-cols-[9rem_minmax(0,1fr)]">

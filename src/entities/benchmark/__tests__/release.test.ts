@@ -52,6 +52,24 @@ describe('assertBenchmarkRelease', () => {
         );
     });
 
+    it('rejects a subject version that is not a release tag', () => {
+        const input = mutated(d => {
+            d.methodology.subjectVersion = 'latest';
+        });
+        expect(() => assertBenchmarkRelease(input)).toThrow(
+            'methodology.subjectVersion'
+        );
+    });
+
+    it('rejects a subject measurement date that is not ISO', () => {
+        const input = mutated(d => {
+            d.methodology.subjectMeasuredAt = '10/25';
+        });
+        expect(() => assertBenchmarkRelease(input)).toThrow(
+            'methodology.subjectMeasuredAt'
+        );
+    });
+
     it('rejects an inverted confidence interval', () => {
         const input = mutated(d => {
             d.headline[0].ci95 = [0.5, 0.1];

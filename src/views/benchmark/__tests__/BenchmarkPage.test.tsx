@@ -71,7 +71,7 @@ describe('BenchmarkPage', () => {
             await renderPage();
             expect(
                 screen.getByText(
-                    /2099-01-10에 측정하고 2099-01-12에 채점을 확정했습니다\./
+                    /2099-01-10~2099-01-12에 측정하고 채점했습니다\./
                 )
             ).toBeTruthy();
         });
@@ -83,7 +83,7 @@ describe('BenchmarkPage', () => {
             expect(
                 screen.getByText(/2099-01-10에 측정하고 채점했습니다\./)
             ).toBeTruthy();
-            expect(screen.queryByText(/채점을 확정했습니다/)).toBeNull();
+            expect(screen.queryByText(/~2099-01-10/)).toBeNull();
         });
     });
 
@@ -256,7 +256,32 @@ describe('BenchmarkPage', () => {
                     },
                 },
             });
-            expect(screen.getByText(/문항마다 2번씩 물었습니다/)).toBeTruthy();
+            expect(
+                screen.getByText(/문항마다 대상별로 2번씩 물었습니다/)
+            ).toBeTruthy();
+        });
+
+        it('names the measured SiglensAI version and its date apart from the others', async () => {
+            await renderPage({
+                release: {
+                    ...BENCHMARK_FIXTURE,
+                    methodology: {
+                        ...BENCHMARK_FIXTURE.methodology,
+                        rounds: 1,
+                    },
+                },
+            });
+            expect(
+                screen.getByText(/문항마다 대상별로 한 번씩 물었습니다/)
+            ).toBeTruthy();
+            expect(
+                screen.getByText(
+                    /다른 모델은 2099-01-10에, 시그렌즈 AI는 v9\.9\.9 버전을 2099-01-11에 측정했습니다\./
+                )
+            ).toBeTruthy();
+            expect(
+                screen.getByText(/이전에 측정한 결과를 본 뒤 고친 버전입니다/)
+            ).toBeTruthy();
         });
 
         it('injects lambda as an argument', async () => {

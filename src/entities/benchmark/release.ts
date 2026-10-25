@@ -77,6 +77,7 @@ function isoDate(value: unknown, path: string): string {
 }
 
 const ROUND_PATTERN = /^[0-9a-z][0-9a-z-]*$/;
+const RELEASE_TAG_PATTERN = /^v\d+\.\d+\.\d+$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 
 function matching(
@@ -293,6 +294,13 @@ export function assertBenchmarkRelease(value: unknown): BenchmarkRelease {
         methodology.vendorMismatchCount,
         'methodology.vendorMismatchCount'
     );
+    matching(
+        methodology.subjectVersion,
+        RELEASE_TAG_PATTERN,
+        'methodology.subjectVersion',
+        'a release tag like v1.2.3'
+    );
+    isoDate(methodology.subjectMeasuredAt, 'methodology.subjectMeasuredAt');
     const prereg = rec(release.prereg, 'prereg');
     matching(
         prereg.combinedSha256,

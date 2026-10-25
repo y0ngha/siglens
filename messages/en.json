@@ -2451,7 +2451,7 @@
             },
             "hero": {
                 "eyebrow": "Public benchmark",
-                "lede": "We asked {brand} and general-purpose AI models the same {items, number} questions about US and Korean stocks and compared their answers with answer keys built from market and filing data. {sameDay, select, yes {Measured and graded on {measuredAt}.} other {Measured on {measuredAt}; grading finalized on {scoredAt}.}} Every question, answer key, raw answer and grading result is published.",
+                "lede": "We asked {brand} and general-purpose AI models the same {items, number} questions about US and Korean stocks and compared their answers with answer keys built from market and filing data. {sameDay, select, yes {Measured and graded on {measuredAt}.} other {Measured and graded {measuredAt} to {scoredAt}.}} Every question, answer key, raw answer and grading result is published.",
                 "title": "{brand} benchmark results"
             },
             "items": {
@@ -2475,7 +2475,7 @@
                 "judges": "L4 and L5 are scored by LLM judges, and comparisons between models use only neutral judges that are not part of the comparison.",
                 "judgesTitle": "Judges and neutrality",
                 "levels": "L1 to L3 are objective questions with a fixed answer and are scored automatically. L4 tests interpretation and L5 tests honesty and safety; neutral judges score them from 0 to 1.",
-                "schedule": "Each item was asked {rounds, plural, one {once} other {# times}}, on {measuredAt}.",
+                "schedule": "Each item was asked {rounds, plural, one {once} other {# times}} per model. The other models were measured on {measuredAt}, and {brand} {subjectVersion} on {subjectMeasuredAt}. This {brand} version was fixed after seeing an earlier measurement on the same items.",
                 "scheduleTitle": "Schedule",
                 "scoring": "When an answer has several parts, each part scores +1 if correct, 0 if not attempted and −{lambda, number} if wrong. Two extractors read the value from each answer; when they agree, that value is graded, and when they disagree, a person decides. Every decision is published.",
                 "scoringTitle": "Scoring",
@@ -2491,7 +2491,7 @@
                 "hash": "Manifest hash (SHA-256)",
                 "ots": "OpenTimestamps proof",
                 "otsLink": "Download the proof file (.ots)",
-                "sub": "Before measuring, we published the hash of the question generator, the scoring code and the design documents. The value and proof file below show that this record existed before the measurement.",
+                "sub": "Before measuring {brand}, we recorded the hash of the questions, the scoring code and the product version under test and submitted it to OpenTimestamps. The proof file below shows that this record existed before the Bitcoin block that carries it.",
                 "title": "Pre-registration",
                 "verify": "To verify: check that prereg/manifest.sha256 in the raw data matches the hash above, then verify the .ots file with OpenTimestamps to see when it was recorded."
             },

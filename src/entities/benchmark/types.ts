@@ -105,6 +105,10 @@ export interface BenchmarkMethodology {
     readonly lambda: number;
     /** 정답 출처의 잠정값과 공식값이 달라 재계산한 문항 수. 모르면 null. */
     readonly vendorMismatchCount: number | null;
+    /** 측정한 SiglensAI 릴리스(예: `v0.110.0`). */
+    readonly subjectVersion: string;
+    /** SiglensAI를 측정한 날(YYYY-MM-DD). 다른 대상은 `measuredAt`에 측정했다. */
+    readonly subjectMeasuredAt: string;
 }
 
 export interface BenchmarkPrereg {

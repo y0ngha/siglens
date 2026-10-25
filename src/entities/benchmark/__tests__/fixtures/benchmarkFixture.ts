@@ -107,6 +107,8 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
         rounds: 2,
         lambda: 1,
         vendorMismatchCount: 2,
+        subjectVersion: 'v9.9.9',
+        subjectMeasuredAt: '2099-01-11',
     },
     prereg: {
         combinedSha256: 'a'.repeat(64),

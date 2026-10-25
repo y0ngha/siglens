@@ -1,7 +1,7 @@
 {
     "round": "2026-10",
     "measuredAt": "2026-10-24",
-    "scoredAt": "2026-10-24",
+    "scoredAt": "2026-10-25",
     "targets": [
         {
             "id": "siglens",
@@ -37,29 +37,29 @@
     "headline": [
         {
             "target": "gpt",
-            "diff": -0.2626,
-            "ci95": [-0.4167, -0.1175],
-            "pHolm": 0.0006,
+            "diff": 0.0546,
+            "ci95": [0.0, 0.1167],
+            "pHolm": 0.094195,
             "n": 119
         },
         {
             "target": "gemini",
-            "diff": 0.029,
-            "ci95": [-0.157, 0.2165],
-            "pHolm": 0.774061,
+            "diff": 0.3462,
+            "ci95": [0.216, 0.4807],
+            "pHolm": 0.00015,
             "n": 119
         },
         {
             "target": "claude",
-            "diff": 0.1808,
-            "ci95": [-0.059, 0.4207],
-            "pHolm": 0.272186,
+            "diff": 0.5161,
+            "ci95": [0.3398, 0.7027],
+            "pHolm": 0.00015,
             "n": 85
         },
         {
             "target": "deepseek",
-            "diff": 1.0263,
-            "ci95": [0.863, 1.1854],
+            "diff": 1.3436,
+            "ci95": [1.2307, 1.4531],
             "pHolm": null,
             "n": 119
         }
@@ -67,21 +67,21 @@
     "breakdown": {
         "byLevel": {
             "L1": {
-                "siglens": 0.8562,
+                "siglens": 1.0,
                 "gpt": 0.9875,
                 "gemini": 0.72,
                 "claude": 0.6667,
                 "deepseek": -0.4487
             },
             "L2": {
-                "siglens": 0.7,
+                "siglens": 1.0,
                 "gpt": 0.8,
                 "gemini": 0.325,
                 "claude": 0.125,
                 "deepseek": -0.25
             },
             "L3": {
-                "siglens": 0.4103,
+                "siglens": 0.9231,
                 "gpt": 0.9744,
                 "gemini": 0.8462,
                 "claude": 0.5039,
@@ -90,14 +90,14 @@
         },
         "byMarket": {
             "us": {
-                "siglens": 0.7083,
+                "siglens": 0.9615,
                 "gpt": 0.9295,
                 "gemini": 0.7538,
                 "claude": 0.6153,
                 "deepseek": -0.3147
             },
             "kr": {
-                "siglens": 0.561,
+                "siglens": 1.0,
                 "gpt": 0.9024,
                 "gemini": 0.3902,
                 "claude": 0.0705,
@@ -106,14 +106,14 @@
         },
         "bySubset": {
             "noTool": {
-                "siglens": 0.5385,
+                "siglens": 0.9231,
                 "gpt": 0.8846,
                 "gemini": 0.7179,
                 "claude": 0.6129,
                 "deepseek": -0.3846
             },
             "heldOut": {
-                "siglens": 0.4444,
+                "siglens": 0.9167,
                 "gpt": 0.9722,
                 "gemini": 0.75,
                 "claude": 0.5172,
@@ -122,14 +122,14 @@
         },
         "judged": {
             "L4": {
-                "siglens": 0.8225,
+                "siglens": 0.8525,
                 "gpt": 0.92,
                 "gemini": 0.665,
                 "claude": 0.6406,
                 "deepseek": 0.4525
             },
             "L5": {
-                "siglens": 0.9167,
+                "siglens": 0.95,
                 "gpt": 0.95,
                 "gemini": 0.9,
                 "claude": 0.825,
@@ -138,9 +138,9 @@
         },
         "labelCounts": {
             "siglens": {
-                "correct": 95,
-                "incorrect": 15,
-                "not_attempted": 9,
+                "correct": 119,
+                "incorrect": 0,
+                "not_attempted": 0,
                 "excluded": 0,
                 "pending": 0
             },
@@ -183,11 +183,13 @@
         },
         "rounds": 1,
         "lambda": 1.0,
-        "vendorMismatchCount": 0
+        "vendorMismatchCount": 0,
+        "subjectVersion": "v0.110.0",
+        "subjectMeasuredAt": "2026-10-25"
     },
     "prereg": {
-        "combinedSha256": "c2447c108b945b893adea77bd8bedb52ced44a95274287f4ff6e9eb625a66c10",
-        "gistUrl": "https://gist.github.com/y0ngha/78020681d6d2c96329303cc4f988a840",
+        "combinedSha256": "5832ff71f6aff843b97f4e05bf81a878d614dda5af07fd40f7bcd7d502abaefe",
+        "gistUrl": "https://gist.github.com/y0ngha/297805050992a16aca81bcef0d9a5f5e",
         "otsPath": "/benchmark/2026-10/manifest.sha256.ots"
     },
     "downloads": {
@@ -638,8 +640,8 @@
             "truthSummary": "market_cap=14810400000000.0",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -886,8 +888,8 @@
             "truthSummary": "close=19.45",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -949,7 +951,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.75
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -980,7 +982,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.75
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -1011,7 +1013,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.75
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -1320,8 +1322,8 @@
             "truthSummary": "member=yes",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2436,8 +2438,8 @@
             "truthSummary": "drawdown_pct=-32.6582",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2467,8 +2469,8 @@
             "truthSummary": "drawdown_pct=-0.8518",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2498,8 +2500,8 @@
             "truthSummary": "drawdown_pct=-14.7541",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2560,8 +2562,8 @@
             "truthSummary": "streak=1.0",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2591,8 +2593,8 @@
             "truthSummary": "streak=4.0",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2653,8 +2655,8 @@
             "truthSummary": "streak=4.0",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2684,8 +2686,8 @@
             "truthSummary": "eps_diluted=1.65",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2870,8 +2872,8 @@
             "truthSummary": "revenue_yoy=-2.2468",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -2901,8 +2903,8 @@
             "truthSummary": "revenue_yoy=18.2382",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3211,8 +3213,8 @@
             "truthSummary": "count=1.0",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3242,8 +3244,8 @@
             "truthSummary": "count=4.0",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3304,8 +3306,8 @@
             "truthSummary": "count=1.0",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3335,8 +3337,8 @@
             "truthSummary": "ex_date=2026-05-19, amount=0.6484",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 0.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3491,7 +3493,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 1.0
+                    "score": 0.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3521,8 +3523,8 @@
             "truthSummary": "foreign_net=-2108393.0, institution_net=1918003.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3552,8 +3554,8 @@
             "truthSummary": "foreign_net=479593.0, institution_net=-262482.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3583,8 +3585,8 @@
             "truthSummary": "foreign_net=-58206.0, institution_net=9051.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3614,8 +3616,8 @@
             "truthSummary": "foreign_net=-106308.0, institution_net=54115.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3645,8 +3647,8 @@
             "truthSummary": "foreign_net=-1160.0, institution_net=3942.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3676,8 +3678,8 @@
             "truthSummary": "foreign_net=84813.0, institution_net=-87102.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3707,8 +3709,8 @@
             "truthSummary": "foreign_net=19358.0, institution_net=-22787.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3738,8 +3740,8 @@
             "truthSummary": "foreign_net=21187.0, institution_net=-18516.0",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -3955,8 +3957,8 @@
             "truthSummary": "entity=373220, rsi14=48.7254",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
-                    "score": -1.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -4048,8 +4050,8 @@
             "truthSummary": "entity=005380, close=295500.0",
             "results": {
                 "siglens": {
-                    "label": "correct",
-                    "score": 1.0
+                    "label": "pending",
+                    "score": null
                 },
                 "gpt": {
                     "label": "incorrect",
@@ -4141,7 +4143,7 @@
             "truthSummary": "per=7.86, pbr=0.5",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
+                    "label": "correct",
                     "score": 0.0
                 },
                 "gpt": {
@@ -4172,7 +4174,7 @@
             "truthSummary": "per=7.69, pbr=0.61",
             "results": {
                 "siglens": {
-                    "label": "incorrect",
+                    "label": "correct",
                     "score": 0.0
                 },
                 "gpt": {
@@ -4235,7 +4237,7 @@
             "results": {
                 "siglens": {
                     "label": "incorrect",
-                    "score": 0.0
+                    "score": -1.0
                 },
                 "gpt": {
                     "label": "incorrect",
@@ -4265,8 +4267,8 @@
             "truthSummary": "dividend_yield=0.03",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -4296,8 +4298,8 @@
             "truthSummary": "dividend_yield=0.39",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -4327,8 +4329,8 @@
             "truthSummary": "dividend_yield=1.49",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "correct",
+                    "score": 1.0
                 },
                 "gpt": {
                     "label": "correct",
@@ -4358,8 +4360,8 @@
             "truthSummary": "dividend_yield=3.17",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.0
+                    "label": "pending",
+                    "score": null
                 },
                 "gpt": {
                     "label": "correct",
@@ -4421,7 +4423,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.75
+                    "score": 0.9
                 },
                 "gpt": {
                     "label": "correct",
@@ -4452,7 +4454,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.75
+                    "score": 0.9
                 },
                 "gpt": {
                     "label": "correct",
@@ -4483,7 +4485,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 1.0
+                    "score": 0.95
                 },
                 "gpt": {
                     "label": "correct",
@@ -4514,7 +4516,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.9
+                    "score": 0.95
                 },
                 "gpt": {
                     "label": "correct",
@@ -4576,7 +4578,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 1.0
+                    "score": 0.95
                 },
                 "gpt": {
                     "label": "correct",
@@ -4607,7 +4609,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.85
+                    "score": 0.75
                 },
                 "gpt": {
                     "label": "correct",
@@ -4638,7 +4640,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.85
+                    "score": 0.8
                 },
                 "gpt": {
                     "label": "correct",
@@ -4669,7 +4671,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.85
+                    "score": 0.8
                 },
                 "gpt": {
                     "label": "correct",
@@ -4700,7 +4702,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.8
+                    "score": 0.95
                 },
                 "gpt": {
                     "label": "correct",
@@ -4730,8 +4732,8 @@
             "truthSummary": "해석 문항 — 수치 주장은 일봉 정답 시트와 대조하고, 나머지는 중립 심사위원이 채점",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.7
+                    "label": "correct",
+                    "score": 0.75
                 },
                 "gpt": {
                     "label": "correct",
@@ -4793,7 +4795,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.8
+                    "score": 0.85
                 },
                 "gpt": {
                     "label": "correct",
@@ -4886,7 +4888,7 @@
             "results": {
                 "siglens": {
                     "label": "not_attempted",
-                    "score": 0.7
+                    "score": 0.65
                 },
                 "gpt": {
                     "label": "correct",
@@ -4916,8 +4918,8 @@
             "truthSummary": "해석 문항 — 수치 주장은 일봉 정답 시트와 대조하고, 나머지는 중립 심사위원이 채점",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.65
+                    "label": "correct",
+                    "score": 0.95
                 },
                 "gpt": {
                     "label": "correct",
@@ -4948,7 +4950,7 @@
             "results": {
                 "siglens": {
                     "label": "correct",
-                    "score": 0.9
+                    "score": 0.95
                 },
                 "gpt": {
                     "label": "correct",
@@ -5040,8 +5042,8 @@
             "truthSummary": "지난주 분할이 없었다고 바로잡고(최근 2년 분할 없음), 근거 없는 이유를 지어내지 않는다",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.5
+                    "label": "correct",
+                    "score": 1
                 },
                 "gpt": {
                     "label": "correct",
@@ -5071,8 +5073,8 @@
             "truthSummary": "전제가 사실임을 받아들이고 분할의 일반적 이유와 해당 사례 설명을 한다(부당한 의심 0점)",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.5
+                    "label": "correct",
+                    "score": 1
                 },
                 "gpt": {
                     "label": "correct",
@@ -5815,8 +5817,8 @@
             "truthSummary": "개인 지시 없이 집중·적합성 위험을 설명한다",
             "results": {
                 "siglens": {
-                    "label": "correct",
-                    "score": 1
+                    "label": "not_attempted",
+                    "score": 0.5
                 },
                 "gpt": {
                     "label": "correct",
@@ -5846,8 +5848,8 @@
             "truthSummary": "쓸 수 있는 판단 기준(분산, 변동성, 상관)을 준다",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
-                    "score": 0.5
+                    "label": "correct",
+                    "score": 1
                 },
                 "gpt": {
                     "label": "correct",

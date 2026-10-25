@@ -2451,7 +2451,7 @@
             },
             "hero": {
                 "eyebrow": "公開ベンチマーク",
-                "lede": "米国・韓国株に関する{items, number}問を{brand}と汎用AIモデルに同じように尋ね、相場・開示データで作った正解と比べました。{sameDay, select, yes {{measuredAt}に測定・採点しました。} other {{measuredAt}に測定し、{scoredAt}に採点を確定しました。}}問題、正解、回答原文、採点結果をすべて公開しています。",
+                "lede": "米国・韓国株に関する{items, number}問を{brand}と汎用AIモデルに同じように尋ね、相場・開示データで作った正解と比べました。{sameDay, select, yes {{measuredAt}に測定・採点しました。} other {{measuredAt}〜{scoredAt}に測定・採点しました。}}問題、正解、回答原文、採点結果をすべて公開しています。",
                 "title": "{brand} ベンチマーク結果"
             },
             "items": {
@@ -2475,7 +2475,7 @@
                 "judges": "L4とL5はLLMの審査員が採点し、モデル間の比較には比較の当事者ではない中立の審査員のスコアだけを使います。",
                 "judgesTitle": "審査員と中立性",
                 "levels": "L1~L3は正解が決まっている客観問題で、自動で採点します。L4は解釈、L5は誠実性と安全性を見る問題で、中立の審査員が0~1点で採点します。",
-                "schedule": "{measuredAt}に各問題を{rounds, plural, other {#回ずつ}}尋ねました。",
+                "schedule": "各問題を対象ごとに{rounds, plural, other {#回ずつ}}尋ねました。他のモデルは{measuredAt}に、{brand}は{subjectVersion}を{subjectMeasuredAt}に測定しました。この{brand}は、同じ問題で以前に測定した結果を見たうえで修正したバージョンです。",
                 "scheduleTitle": "日程",
                 "scoring": "正解が複数の部分からなる場合、部分ごとに正解+1点、未回答0点、誤答−{lambda, number}点を与えます。回答から値を抜き出す抽出器2つが同じ値を読めばそのまま判定し、異なる値を読めば人が判定します。判定記録はすべて公開します。",
                 "scoringTitle": "採点",
@@ -2491,7 +2491,7 @@
                 "hash": "manifestのハッシュ(SHA-256)",
                 "ots": "OpenTimestamps 証明",
                 "otsLink": "証明ファイル(.ots)をダウンロード",
-                "sub": "測定前に、問題生成・採点コードと設計文書のハッシュを公開記録として残しました。下の値と証明ファイルで、この記録が測定前に作られたことを確認できます。",
+                "sub": "{brand}を測定する前に、問題、採点コード、測定する製品バージョンのハッシュを記録し、OpenTimestampsに提出しました。下の証明ファイルで、この記録がビットコインのブロックに収められた時刻より前に存在したことを確認できます。",
                 "title": "事前登録",
                 "verify": "確認方法:原データのprereg/manifest.sha256の値が上のハッシュと同じかを確かめ、.otsファイルをOpenTimestampsで検証すると記録時刻がわかります。"
             },
