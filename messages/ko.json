@@ -2703,6 +2703,156 @@
                 "web": "웹 검색"
             }
         },
+        "benchmark": {
+            "breakdown": {
+                "byLevel": "레벨별 객관 점수 (오답 −{lambda, number}점)",
+                "byMarket": "시장별 객관 점수 (오답 −{lambda, number}점)",
+                "bySubset": "부분집합별 객관 점수 (오답 −{lambda, number}점)",
+                "counts": "대상별 판정 개수",
+                "judged": "L4 해석·L5 정직성과 안전 (중립 심사위원, 0~1점)",
+                "rowLevel": "레벨",
+                "rowMarket": "시장",
+                "rowSubset": "부분집합",
+                "sub": "같은 점수를 문항 구분별로 나눠 봅니다. 행마다 가장 높은 점수는 굵게 표시했습니다.",
+                "title": "세부 점수"
+            },
+            "counts": {
+                "correct": "정답",
+                "excluded": "제외",
+                "incorrect": "오답",
+                "not_attempted": "미시도",
+                "pending": "채점 전"
+            },
+            "downloads": {
+                "disclaimer": "벤치마크 측정 기록이며 투자 권유나 종목 추천이 아닙니다.",
+                "license": "데이터는 <link>CC BY 4.0</link>으로 공개합니다.",
+                "sources": "정답 수치 출처: Nasdaq, Yahoo, KRX(공공데이터포털), 미국 재무부, Cboe, SEC EDGAR, FINRA, DART. 각 모델의 답변 원문은 해당 서비스의 출력물이며 모델과 호출 시각을 함께 기록했습니다.",
+                "sub": "문항, 정답, 답변 원문, 채점 결과를 zip 파일 하나로 내려받을 수 있습니다.",
+                "title": "다운로드",
+                "zip": "전체 원자료 (zip)"
+            },
+            "explorer": {
+                "count": "{shown, number}개 표시 / 전체 {total, number}개",
+                "detail": {
+                    "answer": "답변 원문",
+                    "error": "답변 원문을 불러오지 못했습니다.",
+                    "extracted": "추출한 값",
+                    "judges": "중립 심사",
+                    "loading": "답변 원문을 불러오는 중입니다.",
+                    "noRecord": "이 대상의 기록이 없습니다.",
+                    "part": "항목",
+                    "reason": "근거",
+                    "retry": "다시 시도",
+                    "round": "{round, number}회차",
+                    "value": "값",
+                    "verdict": "판정"
+                },
+                "empty": "조건에 맞는 문항이 없습니다.",
+                "filter": {
+                    "all": "전체",
+                    "level": "레벨",
+                    "market": "시장",
+                    "pool": "문항 풀",
+                    "reset": "필터 초기화",
+                    "target": "대상",
+                    "template": "유형",
+                    "verdict": "판정"
+                },
+                "label": {
+                    "correct": "정답",
+                    "excluded": "제외",
+                    "incorrect": "오답",
+                    "not_attempted": "미시도",
+                    "pending": "채점 전"
+                },
+                "market": {
+                    "kr": "한국",
+                    "us": "미국"
+                },
+                "results": "대상별 판정",
+                "truth": "정답"
+            },
+            "headline": {
+                "baselines": "기준선과의 비교 (같은 내부 모델, 도구 없음)",
+                "ci": "95% 신뢰구간",
+                "competitors": "경쟁 모델과의 비교",
+                "diff": "{subject} 점수 − 대상 점수",
+                "n": "문항 수",
+                "note": "신뢰구간이 0을 포함하지 않고 Holm 보정 p값이 {alpha} 미만일 때만 앞섬이나 뒤처짐으로 읽습니다. 기준선은 검정 대상이 아니라서 p값이 없습니다.",
+                "p": "Holm 보정 p",
+                "reading": "해석",
+                "sub": "객관 문항은 부분마다 정답 +1점, 미시도 0점, 오답 −{lambda, number}점으로 채점해 평균했습니다. 차이는 문항을 다시 뽑아 구한 95% 신뢰구간과 Holm 보정 p값으로 읽습니다.",
+                "summary": "{subject}의 객관 점수를 경쟁 모델 {count, number}종과 비교하면, 유의하게 앞선 모델이 {ahead, number}종, 차이를 확정하지 못한 모델이 {tie, number}종, 뒤처진 모델이 {behind, number}종입니다.",
+                "target": "대상",
+                "title": "경쟁 모델과의 점수 차",
+                "verdict": {
+                    "ahead": "유의하게 앞섬",
+                    "behind": "유의하게 뒤처짐",
+                    "tie": "차이 확정 못 함",
+                    "untested": "검정하지 않음"
+                }
+            },
+            "hero": {
+                "eyebrow": "공개 벤치마크",
+                "lede": "미국·한국 주식 질문 {items, number}개를 {brand}와 범용 AI 모델에 똑같이 묻고, 시세·공시 데이터로 만든 정답과 비교했습니다. {sameDay, select, yes {{measuredAt}에 측정하고 채점했습니다.} other {{measuredAt}~{scoredAt}에 측정하고 채점했습니다.}} 문항, 정답, 답변 원문과 채점 결과를 모두 공개합니다.",
+                "title": "{brand} 벤치마크 결과"
+            },
+            "items": {
+                "sub": "문항마다 질문, 정답, 대상별 판정을 볼 수 있습니다. 문항을 펼치면 답변 원문과 채점 근거를 불러옵니다.",
+                "title": "문항별 탐색"
+            },
+            "koreanNote": "문항과 답변 원문은 한국어입니다. 측정을 한국어로 했기 때문에 이 페이지의 질문, 정답 요약, 답변은 번역하지 않고 그대로 보여 드립니다.",
+            "levels": {
+                "L4": "L4 해석",
+                "L5": "L5 정직성·안전"
+            },
+            "market": {
+                "kr": "한국",
+                "us": "미국"
+            },
+            "method": {
+                "aiAbout": "AI 서비스 소개",
+                "designDoc": "벤치마크 문서 (BENCHMARK.md)",
+                "items": "전체 {total, number}문항이며 풀별 문항 수는 {pools}입니다.",
+                "itemsTitle": "문항 구성",
+                "judges": "L4와 L5는 LLM 심사위원이 채점하며, 모델 간 비교에는 비교 당사자가 아닌 중립 심사위원의 점수만 씁니다.",
+                "judgesTitle": "심사위원과 중립성",
+                "levels": "L1~L3은 정답이 정해진 객관 문항이라 자동으로 채점합니다. L4는 해석, L5는 정직성과 안전을 보는 문항이며 LLM 심사위원이 0~1점으로 채점합니다.",
+                "schedule": "문항마다 대상별로 {rounds, plural, =1 {한 번씩} other {#번씩}} 물었습니다. 다른 모델은 {measuredAt}에, {brand}는 {subjectVersion} 버전을 {subjectMeasuredAt}에 측정했습니다. {brand}는 같은 문항을 이전에 측정한 결과를 본 뒤 고친 버전입니다.",
+                "scheduleTitle": "일정",
+                "scoring": "정답이 여러 부분이면 부분마다 정답 +1점, 미시도 0점, 오답 −{lambda, number}점을 줍니다. 답변에서 값을 뽑는 추출기 두 개가 같은 값을 읽으면 그대로 판정하고, 다르게 읽으면 사람이 판정합니다. 판정 기록은 모두 공개합니다.",
+                "scoringTitle": "채점",
+                "siteMethodology": "분석 방법 페이지",
+                "sub": "자세한 설계는 아래 링크의 문서에 있습니다.",
+                "title": "방법론 요약",
+                "truth": "미국 일봉형 정답은 Yahoo 잠정값으로 만든 뒤 Nasdaq 공식값으로 다시 확인했습니다. 한국 정답은 Yahoo 값을 그대로 썼습니다. 정답 수치와 출처 URL은 원자료에 모두 들어 있습니다.",
+                "truthTitle": "정답 출처",
+                "vendorMismatch": "공식값으로 다시 확인한 미국 문항 중 잠정값과 달랐던 문항은 {count, number}개입니다."
+            },
+            "prereg": {
+                "gist": "공개 gist",
+                "hash": "manifest 해시 (SHA-256)",
+                "ots": "OpenTimestamps 증명",
+                "otsLink": "증명 파일 (.ots) 받기",
+                "sub": "{brand}를 측정하기 전에 문항, 채점 코드, 측정할 제품 버전의 해시를 기록하고 OpenTimestamps에 제출했습니다. 아래 증명 파일로 이 기록이 비트코인 블록에 담긴 시각보다 먼저 있었음을 확인할 수 있습니다.",
+                "title": "사전 등록",
+                "verify": "확인 방법: 원자료의 prereg/manifest.sha256 값이 위 해시와 같은지 보고, .ots 파일을 OpenTimestamps로 검증하면 기록 시각을 알 수 있습니다."
+            },
+            "seo": {
+                "datasetName": "{brand} 주식 질문 벤치마크 {round} — 문항·정답·답변 원문",
+                "description": "미국·한국 주식 질문 {items, number}개를 {brand}와 {models}에 똑같이 묻고 시세·공시로 만든 정답과 비교했습니다. 점수 차와 신뢰구간, 문항별 답변 원문을 공개합니다.",
+                "descriptionPlain": "미국·한국 주식 질문 {items, number}개로 {brand}와 범용 AI 모델을 비교한 벤치마크의 결과와 문항별 원자료입니다.",
+                "modelSeparator": "·",
+                "ogLabel": "{brand} 벤치마크 결과",
+                "title": "주식 AI 정확도 벤치마크 — {brand} vs {models}",
+                "titlePlain": "{brand} 벤치마크 결과 — 범용 AI 모델과의 문항별 비교",
+                "variableMeasured": "주식 질문 객관 점수(정답 +1, 미시도 0, 오답 −1), 해석·정직성 심사 점수"
+            },
+            "subset": {
+                "heldOut": "설계 때 보지 않은 문항 (H)",
+                "noTool": "전용 도구 없음 (×)"
+            }
+        },
         "developers": {
             "authentication": {
                 "byokBody": "run_fresh_analysis는 공유 캐시에 분석이 있으면 비용 없이 돌려주고, 없을 때만 계정에 등록한 내 LLM 키로 새로 만들어요. 새로 만들 때는 어떤 모델이든 그 모델을 만든 회사의 키를 등록해 두어야 하고, 모델은 계정 설정에서 고르거나 요청의 model 인자로 정해요. 시그렌즈의 서버 AI 키는 쓰지 않아요.",
@@ -2892,6 +3042,9 @@
         },
         "methodology": {
             "ai": {
+                "benchmark": "시그렌즈 AI 에이전트에 미국·한국 주식 질문을 하고, 같은 질문을 범용 AI 모델에도 똑같이 물어 시세·공시로 만든 정답과 비교했어요. 문항과 답변 원문, 채점 결과를 모두 공개해요.",
+                "benchmarkLink": "벤치마크 결과 보기",
+                "benchmarkTitle": "시그렌즈 AI 답변 정확도는 이렇게 쟀어요",
                 "check": "쉽게 보기 글은 화면에 나가기 전에 검사를 거쳐요. 원본 분석과 계산된 값에 없는 가격이나 큰 수가 들어 있으면 한 번 다시 쓰게 하고, 그래도 남으면 그 문장을 빼요. 문장을 빼도 정리되지 않으면 쉽게 보기 없이 원본 보기만 보여줘요.",
                 "checkTitle": "쉽게 보기 글은 이렇게 검사해요",
                 "do1": "OpenAI, Anthropic, Google, DeepSeek의 모델이 계산된 값을 받아 설명하는 글을 써요.",
@@ -3311,6 +3464,7 @@
             "EmptyState": {
                 "a00741": "시그렌즈 계정으로 로그인",
                 "aboutLink": "시그렌즈 AI가 어떻게 답하는지 보기",
+                "benchmarkLink": "벤치마크 결과 보기",
                 "capAnalysis": "종목 AI 분석 리포트",
                 "capIndicators": "차트·보조지표",
                 "capNews": "뉴스",
@@ -3642,6 +3796,21 @@
                 "universe": "AAPL·NVDA·TSLA 등 고정된 10개 대형주만 대상으로 하며, 이후 시점에 선정된 종목이라 생존 편향이 있을 수 있습니다.",
                 "winDefinition": "승리 기준: 청산 시점 수익률이 0% 이상이면 승리로 집계합니다."
             }
+        },
+        "benchmark-summary": {
+            "ci": "95% 신뢰구간 {ci}",
+            "l5": "정직성·안전 (L5)",
+            "l5Note": "중립 심사위원 평균, 0~1점",
+            "more": "벤치마크 결과 자세히 보기",
+            "sub": "같은 질문 {items, number}개로 잰 객관 점수 차이입니다. 양수면 {subject} 쪽이 높습니다.",
+            "title": "벤치마크 결과",
+            "verdict": {
+                "ahead": "유의하게 앞섬",
+                "behind": "유의하게 뒤처짐",
+                "tie": "차이 확정 못 함",
+                "untested": "검정하지 않음"
+            },
+            "versus": "{competitor} 대비"
         },
         "chart": {
             "ChartErrorFallback": {
@@ -4917,6 +5086,7 @@
                 "531f6a": "문의하기",
                 "5f5d12": "사이트 정보",
                 "693b62": "투자 면책 고지",
+                "benchmarkLink": "벤치마크",
                 "developersLink": "개발자 API",
                 "guideLink": "차트 가이드",
                 "symbolsLink": "많이 찾는 종목"

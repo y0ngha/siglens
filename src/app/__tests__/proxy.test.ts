@@ -342,6 +342,7 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
         '/about',
         '/methodology',
         '/developers',
+        '/benchmark',
         '/guide',
         '/guide/indicators',
         '/guide/indicators/rsi',

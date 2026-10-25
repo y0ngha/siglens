@@ -18,6 +18,11 @@ vi.mock('../ContactDialog', () => ({
         <button type="button">{triggerLabel}</button>
     ),
 }));
+// 벤치마크 게이트를 명시적으로 닫는다 — 공개 PR이 실제 상수를 올려도 이 스위트는 그대로 통과한다.
+vi.mock('@/shared/config/benchmark', () => ({
+    BENCHMARK_PUBLISHED: false,
+    BENCHMARK_PATH: '/benchmark',
+}));
 vi.mock('../CurrentYear', () => ({
     CurrentYear: () => <>2026</>,
 }));
@@ -503,5 +508,14 @@ describe('푸터의 분석 방법·X 계정 카탈로그', () => {
             expect(title).not.toMatch(/[가-힣]/);
             expect(aria).not.toMatch(/[가-힣]/);
         }
+    });
+
+    it('벤치마크 공개 전에는 벤치마크 링크를 내지 않는다', () => {
+        render(<Footer />);
+        expect(
+            screen.queryByRole('link', {
+                name: ko.widgets.layout.Footer.benchmarkLink,
+            })
+        ).toBeNull();
     });
 });

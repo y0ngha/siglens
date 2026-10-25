@@ -1,7 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import type { ReactElement } from 'react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
+import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import ko from '../../../../messages/ko.json';
 
 vi.mock('next-intl/server', () => ({
@@ -163,5 +167,55 @@ describe('AboutPage', () => {
         expect(
             screen.getByRole('link', { name: ko.views.about.more.ai })
         ).toHaveAttribute('href', 'https://ai.siglens.io/about');
+    });
+});
+
+describe('AboutPage benchmark summary', () => {
+    async function renderWithBenchmark(
+        benchmark: Parameters<typeof AboutPage>[0]['benchmark']
+    ) {
+        // 요약 위젯이 async 서버 컴포넌트라 트리를 먼저 풀어 준다.
+        renderWithIntl(
+            (await resolveAsyncServerTree(
+                await AboutPage({
+                    locale: 'ko',
+                    title: 'SIGLENS 소개',
+                    counts: COUNTS,
+                    faq: await getAboutFaq('ko'),
+                    updatedAt: '2026년 9월 24일',
+                    benchmark,
+                })
+            )) as ReactElement
+        );
+    }
+
+    it('renders no benchmark section or link while the gate is shut', async () => {
+        await renderWithBenchmark(null);
+        expect(
+            screen.queryByRole('heading', {
+                name: ko.widgets['benchmark-summary'].title,
+            })
+        ).toBeNull();
+        expect(
+            screen.queryByRole('link', {
+                name: ko.widgets['benchmark-summary'].more,
+            })
+        ).toBeNull();
+    });
+
+    it('renders the result summary linking to the ai host once published', async () => {
+        await renderWithBenchmark(BENCHMARK_FIXTURE);
+        expect(
+            screen.getByRole('heading', {
+                name: ko.widgets['benchmark-summary'].title,
+            })
+        ).toBeTruthy();
+        expect(
+            screen
+                .getByRole('link', {
+                    name: ko.widgets['benchmark-summary'].more,
+                })
+                .getAttribute('href')
+        ).toBe(`${AI_SITE_URL}/benchmark`);
     });
 });

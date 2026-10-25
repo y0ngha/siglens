@@ -4,7 +4,9 @@ import {
 } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import type { Locale } from '@/shared/i18n/locales';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
+import { localePath, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import {
     ABOUT_PATH,
@@ -441,6 +443,23 @@ export async function MethodologyPage({
                         {t('ai.levelsTitle')}
                     </h3>
                     <p className={cn(BODY, 'mt-2')}>{t('ai.levels')}</p>
+                    {/* 정본이 ai 호스트에 있어 절대 URL의 일반 앵커다. 공개 전에는 404라 내지 않는다. */}
+                    {BENCHMARK_PUBLISHED ? (
+                        <>
+                            <h3 className={cn(HEADING_SUBSECTION, 'mt-6')}>
+                                {t('ai.benchmarkTitle')}
+                            </h3>
+                            <p className={cn(BODY, 'mt-2')}>
+                                {t('ai.benchmark')}
+                            </p>
+                            <a
+                                href={`${AI_SITE_URL}${localePath(locale, BENCHMARK_PATH)}`}
+                                className={cn(TEXT_LINK, 'mt-2 text-sm')}
+                            >
+                                {t('ai.benchmarkLink')}
+                            </a>
+                        </>
+                    ) : null}
                 </Section>
 
                 <Section id="backtesting" title={t('backtesting.title')}>

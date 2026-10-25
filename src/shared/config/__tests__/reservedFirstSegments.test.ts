@@ -18,6 +18,7 @@ describe('symbolOfAppPath', () => {
             expect(symbolOfAppPath('/symbols')).toBeNull();
             expect(symbolOfAppPath('/methodology')).toBeNull();
             expect(symbolOfAppPath('/developers')).toBeNull();
+            expect(symbolOfAppPath('/benchmark')).toBeNull();
             expect(symbolOfAppPath('/watchlist')).toBeNull();
             expect(symbolOfAppPath('/guide')).toBeNull();
             expect(symbolOfAppPath('/guide/indicators/rsi')).toBeNull();

@@ -2360,6 +2360,156 @@
         }
     },
     "views": {
+        "benchmark": {
+            "breakdown": {
+                "byLevel": "Objective score by level (incorrect −{lambda, number})",
+                "byMarket": "Objective score by market (incorrect −{lambda, number})",
+                "bySubset": "Objective score by subset (incorrect −{lambda, number})",
+                "counts": "Verdict counts by target",
+                "judged": "L4 interpretation and L5 honesty and safety (neutral judges, 0 to 1)",
+                "rowLevel": "Level",
+                "rowMarket": "Market",
+                "rowSubset": "Subset",
+                "sub": "The same scores split by question group. The highest score in each row is in bold.",
+                "title": "Score breakdown"
+            },
+            "counts": {
+                "correct": "Correct",
+                "excluded": "Excluded",
+                "incorrect": "Incorrect",
+                "not_attempted": "Not attempted",
+                "pending": "Pending"
+            },
+            "downloads": {
+                "disclaimer": "This is a benchmark record, not investment advice or a stock recommendation.",
+                "license": "The data is published under <link>CC BY 4.0</link>.",
+                "sources": "Answer sources: Nasdaq, Yahoo, KRX (data.go.kr), US Treasury, Cboe, SEC EDGAR, FINRA, DART. Each model's raw answer is that service's output, recorded with the model and call time.",
+                "sub": "Download the questions, ground truth, raw answers and scores as a single zip file.",
+                "title": "Downloads",
+                "zip": "Full raw data (zip)"
+            },
+            "explorer": {
+                "count": "Showing {shown, number} of {total, number}",
+                "detail": {
+                    "answer": "Raw answer",
+                    "error": "Could not load the raw answers.",
+                    "extracted": "Extracted values",
+                    "judges": "Neutral judging",
+                    "loading": "Loading the raw answers.",
+                    "noRecord": "No record for this target.",
+                    "part": "Part",
+                    "reason": "Reason",
+                    "retry": "Try again",
+                    "round": "Round {round, number}",
+                    "value": "Value",
+                    "verdict": "Verdict"
+                },
+                "empty": "No questions match these filters.",
+                "filter": {
+                    "all": "All",
+                    "level": "Level",
+                    "market": "Market",
+                    "pool": "Pool",
+                    "reset": "Reset filters",
+                    "target": "Target",
+                    "template": "Type",
+                    "verdict": "Verdict"
+                },
+                "label": {
+                    "correct": "Correct",
+                    "excluded": "Excluded",
+                    "incorrect": "Incorrect",
+                    "not_attempted": "Not attempted",
+                    "pending": "Pending"
+                },
+                "market": {
+                    "kr": "Korea",
+                    "us": "US"
+                },
+                "results": "Verdict by target",
+                "truth": "Ground truth"
+            },
+            "headline": {
+                "baselines": "Against the baseline (same underlying model, no tools)",
+                "ci": "95% CI",
+                "competitors": "Against competing models",
+                "diff": "{subject} score − target score",
+                "n": "Questions",
+                "note": "A comparison counts as ahead or behind only when the confidence interval excludes 0 and the Holm-adjusted p-value is below {alpha}. The baseline is not tested, so it has no p-value.",
+                "p": "Holm-adjusted p",
+                "reading": "Reading",
+                "sub": "Objective questions are scored per part: +1 for correct, 0 for not attempted, −{lambda, number} for incorrect, then averaged. Differences are read through a 95% confidence interval from resampling questions and a Holm-adjusted p-value.",
+                "summary": "Comparing {subject}'s objective score with {count, plural, one {# competing model} other {# competing models}}: clearly ahead of {ahead, number}, no firm difference with {tie, number}, behind {behind, number}.",
+                "target": "Target",
+                "title": "Score gap against other models",
+                "verdict": {
+                    "ahead": "Clearly ahead",
+                    "behind": "Clearly behind",
+                    "tie": "No firm difference",
+                    "untested": "Not tested"
+                }
+            },
+            "hero": {
+                "eyebrow": "Public benchmark",
+                "lede": "We asked {brand} and general-purpose AI models the same {items, number} questions about US and Korean stocks and compared their answers with answer keys built from market and filing data. {sameDay, select, yes {Measured and graded on {measuredAt}.} other {Measured and graded {measuredAt} to {scoredAt}.}} Every question, answer key, raw answer and grading result is published.",
+                "title": "{brand} benchmark results"
+            },
+            "items": {
+                "sub": "See the question, ground truth and each target's verdict. Expanding a question loads the raw answers and the grading rationale.",
+                "title": "Browse by question"
+            },
+            "koreanNote": "The questions and raw answers are in Korean. The measurement was run in Korean, so the questions, ground-truth summaries and answers on this page are shown untranslated.",
+            "levels": {
+                "L4": "L4 interpretation",
+                "L5": "L5 honesty and safety"
+            },
+            "market": {
+                "kr": "Korea",
+                "us": "US"
+            },
+            "method": {
+                "aiAbout": "About the AI service",
+                "designDoc": "Benchmark document (BENCHMARK.md)",
+                "items": "{total, number} questions in total; questions per pool: {pools}.",
+                "itemsTitle": "Question set",
+                "judges": "L4 and L5 are scored by LLM judges, and comparisons between models use only neutral judges that are not part of the comparison.",
+                "judgesTitle": "Judges and neutrality",
+                "levels": "L1 to L3 are objective questions with a fixed answer and are scored automatically. L4 tests interpretation and L5 tests honesty and safety; neutral judges score them from 0 to 1.",
+                "schedule": "Each item was asked {rounds, plural, one {once} other {# times}} per model. The other models were measured on {measuredAt}, and {brand} {subjectVersion} on {subjectMeasuredAt}. This {brand} version was fixed after seeing an earlier measurement on the same items.",
+                "scheduleTitle": "Schedule",
+                "scoring": "When an answer has several parts, each part scores +1 if correct, 0 if not attempted and −{lambda, number} if wrong. Two extractors read the value from each answer; when they agree, that value is graded, and when they disagree, a person decides. Every decision is published.",
+                "scoringTitle": "Scoring",
+                "siteMethodology": "How analysis works",
+                "sub": "The full design is in the documents linked below.",
+                "title": "Method summary",
+                "truth": "US daily-bar answers were built from provisional Yahoo values and re-checked against official Nasdaq data. Korean answers use Yahoo values as is. Every answer value and source URL is in the raw data.",
+                "truthTitle": "Ground-truth sources",
+                "vendorMismatch": "Among the US items re-checked against official data, {count, number} differed from the provisional value."
+            },
+            "prereg": {
+                "gist": "Public gist",
+                "hash": "Manifest hash (SHA-256)",
+                "ots": "OpenTimestamps proof",
+                "otsLink": "Download the proof file (.ots)",
+                "sub": "Before measuring {brand}, we recorded the hash of the questions, the scoring code and the product version under test and submitted it to OpenTimestamps. The proof file below shows that this record existed before the Bitcoin block that carries it.",
+                "title": "Pre-registration",
+                "verify": "To verify: check that prereg/manifest.sha256 in the raw data matches the hash above, then verify the .ots file with OpenTimestamps to see when it was recorded."
+            },
+            "seo": {
+                "datasetName": "{brand} stock question benchmark {round} — questions, ground truth and raw answers",
+                "description": "{brand} vs {models} on {items, number} US and Korean stock questions, graded against market data. Score gaps and every raw answer.",
+                "descriptionPlain": "Results and per-question raw data from a benchmark comparing {brand} with general AI models on {items, number} US and Korean stock questions.",
+                "modelSeparator": ", ",
+                "ogLabel": "{brand} benchmark results",
+                "title": "Stock AI accuracy benchmark — {brand} vs {models}",
+                "titlePlain": "{brand} benchmark results — question-by-question comparison with general AI models",
+                "variableMeasured": "Objective score on stock questions (correct +1, not attempted 0, wrong −1), judged interpretation and honesty scores"
+            },
+            "subset": {
+                "heldOut": "Held-out questions (H)",
+                "noTool": "No dedicated tool (×)"
+            }
+        },
         "methodology": {
             "ai": {
                 "check": "Easy-to-understand texts are checked before being displayed. If prices or large numbers not present in the original analysis or calculated values are included, the text is rewritten once. If they remain, the sentence is removed. If the text is still not clear after removing sentences, only the original view is shown without the easy-to-understand version.",
@@ -2377,7 +2527,10 @@
                 "levels": "The entry, stop loss, and target levels in an analysis are values the AI proposes after reading the chart structure. The code checks whether the stop loss and the first target fall within a reasonable range given volatility (ATR), and if they do not, it also shows a correction calculated from volatility. Targets implied by a chart pattern are calculated by the code from the pattern's shape. These are not trading instructions.",
                 "levelsTitle": "Price Ranges Are Reference Figures",
                 "sub": "AI explains calculated values in text.",
-                "title": "What AI Does and Does Not Do"
+                "title": "What AI Does and Does Not Do",
+                "benchmarkTitle": "How we measured SIGLENS AI's accuracy",
+                "benchmark": "We asked the SIGLENS AI agent and general AI models the same US and Korean stock questions and compared the answers with ground truth built from market and filing data. Every question, raw answer and score is public.",
+                "benchmarkLink": "See the benchmark results"
             },
             "backtesting": {
                 "body": "The Backtesting page shows the results of applying SIGLENS' AI analysis to data as of past dates and subsequently verifying what actually happened. The targets are a selection of pre-determined large-cap stocks. If the Stop Loss or Take Profit price is reached first within a maximum of 10 trading days after entry, the trade is considered closed there; otherwise, it's closed at the closing price on the 10th trading day.",
@@ -3504,6 +3657,21 @@
                 "universe": "Limited to a fixed set of 10 large-cap tickers (AAPL, NVDA, TSLA, and others) chosen after the fact — results may reflect selection bias.",
                 "dataSource": "Price data source: Financial Modeling Prep (FMP)."
             }
+        },
+        "benchmark-summary": {
+            "ci": "95% CI {ci}",
+            "l5": "Honesty and safety (L5)",
+            "l5Note": "Neutral judges, average on a 0 to 1 scale",
+            "more": "See the full benchmark results",
+            "sub": "Objective score gaps on the same {items, number} questions. A positive number means {subject} scored higher.",
+            "title": "Benchmark results",
+            "verdict": {
+                "ahead": "Clearly ahead",
+                "behind": "Clearly behind",
+                "tie": "No firm difference",
+                "untested": "Not tested"
+            },
+            "versus": "Versus {competitor}"
         },
         "chart": {
             "ChartErrorFallback": {
@@ -4786,6 +4954,7 @@
                 "531f6a": "Contact Us",
                 "5f5d12": "Site Information",
                 "693b62": "Investment Disclaimer",
+                "benchmarkLink": "Benchmark",
                 "developersLink": "Developer API",
                 "guideLink": "Chart Guide",
                 "symbolsLink": "Most-viewed symbols"
@@ -5345,7 +5514,8 @@
                 "suggestionSamsung": "Summarize the latest analysis for Samsung Electronics",
                 "suggestionsLabel": "Things you can ask",
                 "aboutLink": "See how SIGLENS AI answers",
-                "suggestionKospi": "How's the KOSPI mood today?"
+                "suggestionKospi": "How's the KOSPI mood today?",
+                "benchmarkLink": "See the benchmark results"
             },
             "MessageList": {
                 "259976": "The response was cut off. Please ask a follow-up question.",
