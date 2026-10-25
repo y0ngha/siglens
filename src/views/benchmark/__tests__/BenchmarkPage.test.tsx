@@ -185,11 +185,24 @@ describe('BenchmarkPage', () => {
             expect(within(byLevel).getByText('0.910')).toBeTruthy();
         });
 
+        it('leads the level table with the overall primary score', async () => {
+            await renderPage();
+            const first = screen
+                .getByRole('table', { name: /레벨별/ })
+                .querySelector('tbody tr')!;
+            expect(first.querySelector('th')!.textContent).toBe(
+                p.breakdown.rowOverall
+            );
+            expect(
+                [...first.querySelectorAll('td')].map(td => td.textContent)
+            ).toEqual(['0.640', '0.500', '0.580', '0.230']);
+        });
+
         it('shows an empty cell for a missing score and bolds the best one', async () => {
             await renderPage();
             const l3 = screen
                 .getByRole('table', { name: /레벨별/ })
-                .querySelectorAll('tbody tr')[2]!;
+                .querySelectorAll('tbody tr')[3]!;
             const cells = [...l3.querySelectorAll('td')];
             expect(cells[2]!.textContent).toBe('—');
             expect(cells[0]!.className).toContain('font-semibold');
@@ -204,7 +217,7 @@ describe('BenchmarkPage', () => {
             const gpt = within(counts).getByText('BetaGPT').closest('tr')!;
             expect(
                 [...gpt.querySelectorAll('td')].map(td => td.textContent)
-            ).toEqual(['1', '2', '1', '0', '0']);
+            ).toEqual(['1', '1', '2', '1', '0', '0']);
         });
 
         it('names the judged levels', async () => {

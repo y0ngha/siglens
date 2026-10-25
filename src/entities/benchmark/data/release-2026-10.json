@@ -65,6 +65,13 @@
         }
     ],
     "breakdown": {
+        "overall": {
+            "siglens": 0.9748,
+            "gpt": 0.9202,
+            "gemini": 0.6286,
+            "claude": 0.4486,
+            "deepseek": -0.3688
+        },
         "byLevel": {
             "L1": {
                 "siglens": 1.0,
@@ -138,37 +145,42 @@
         },
         "labelCounts": {
             "siglens": {
-                "correct": 119,
+                "correct": 116,
+                "partial": 3,
                 "incorrect": 0,
                 "not_attempted": 0,
                 "excluded": 0,
                 "pending": 0
             },
             "gpt": {
-                "correct": 114,
+                "correct": 110,
+                "partial": 4,
                 "incorrect": 1,
                 "not_attempted": 4,
                 "excluded": 0,
                 "pending": 0
             },
             "gemini": {
-                "correct": 93,
-                "incorrect": 18,
+                "correct": 91,
+                "partial": 4,
+                "incorrect": 16,
                 "not_attempted": 8,
                 "excluded": 0,
                 "pending": 0
             },
             "claude": {
-                "correct": 56,
-                "incorrect": 18,
-                "not_attempted": 11,
+                "correct": 54,
+                "partial": 6,
+                "incorrect": 15,
+                "not_attempted": 10,
                 "excluded": 34,
                 "pending": 0
             },
             "deepseek": {
-                "correct": 7,
-                "incorrect": 61,
-                "not_attempted": 51,
+                "correct": 6,
+                "partial": 18,
+                "incorrect": 45,
+                "not_attempted": 50,
                 "excluded": 0,
                 "pending": 0
             }
@@ -222,7 +234,7 @@
                     "score": -1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -253,7 +265,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -284,7 +296,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -315,7 +327,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -346,7 +358,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -435,7 +447,7 @@
                     "score": -1.0
                 },
                 "claude": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "deepseek": {
@@ -524,7 +536,7 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "claude": {
@@ -842,7 +854,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.6
                 }
             }
@@ -873,7 +885,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.6
                 }
             }
@@ -997,7 +1009,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.25
                 }
             }
@@ -1028,7 +1040,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -1078,7 +1090,7 @@
                     "score": 1.0
                 },
                 "gpt": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "gemini": {
@@ -1640,7 +1652,7 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "claude": {
@@ -1710,7 +1722,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": 0.0
                 }
             }
@@ -2163,11 +2175,11 @@
                     "score": 1.0
                 },
                 "gpt": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gemini": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "claude": {
@@ -2225,11 +2237,11 @@
                     "score": 1.0
                 },
                 "gpt": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gemini": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "claude": {
@@ -2357,7 +2369,7 @@
                     "score": 0.0
                 },
                 "claude": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 },
                 "deepseek": {
@@ -2419,7 +2431,7 @@
                     "score": 1.0
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": -0.5
                 },
                 "deepseek": {
@@ -2950,7 +2962,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 }
             }
@@ -3008,7 +3020,7 @@
                     "score": 1.0
                 },
                 "claude": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "deepseek": {
@@ -3043,7 +3055,7 @@
                     "score": 0.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 }
             }
@@ -3074,7 +3086,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 }
             }
@@ -3132,7 +3144,7 @@
                     "score": 1.0
                 },
                 "claude": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.3333
                 },
                 "deepseek": {
@@ -3167,7 +3179,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.3333
                 }
             }
@@ -3337,11 +3349,11 @@
             "truthSummary": "ex_date=2026-05-19, amount=0.6484",
             "results": {
                 "siglens": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gpt": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gemini": {
@@ -3349,7 +3361,7 @@
                     "score": -1.0
                 },
                 "claude": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "deepseek": {
@@ -3384,7 +3396,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": 0.0
                 }
             }
@@ -3415,7 +3427,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 }
             }
@@ -3461,7 +3473,7 @@
             "truthSummary": "ex_date=2026-09-16, amount=1.014",
             "results": {
                 "siglens": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gpt": {
@@ -3477,7 +3489,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": 0.0
                 }
             }
@@ -3492,7 +3504,7 @@
             "truthSummary": "ex_date=2026-09-08, amount=0.445",
             "results": {
                 "siglens": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gpt": {
@@ -3508,7 +3520,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": 0.0
                 }
             }
@@ -3899,11 +3911,11 @@
                     "score": 1.0
                 },
                 "gpt": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "gemini": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "claude": {
@@ -3911,7 +3923,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -3930,19 +3942,19 @@
                     "score": 1.0
                 },
                 "gpt": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "gemini": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -3965,15 +3977,15 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": -0.4
                 }
             }
@@ -3996,7 +4008,7 @@
                     "score": 0.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 },
                 "claude": {
@@ -4031,11 +4043,11 @@
                     "score": 1.0
                 },
                 "claude": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 }
             }
@@ -4054,7 +4066,7 @@
                     "score": null
                 },
                 "gpt": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "gemini": {
@@ -4062,11 +4074,11 @@
                     "score": 1.0
                 },
                 "claude": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.2
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4097,7 +4109,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4124,11 +4136,11 @@
                     "score": 1.0
                 },
                 "claude": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.2
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4143,19 +4155,19 @@
             "truthSummary": "per=7.86, pbr=0.5",
             "results": {
                 "siglens": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gpt": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": -0.5
                 },
                 "claude": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "deepseek": {
@@ -4174,7 +4186,7 @@
             "truthSummary": "per=7.69, pbr=0.61",
             "results": {
                 "siglens": {
-                    "label": "correct",
+                    "label": "partial",
                     "score": 0.0
                 },
                 "gpt": {
@@ -4190,7 +4202,7 @@
                     "score": -1.0
                 },
                 "deepseek": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -4217,7 +4229,7 @@
                     "score": -1.0
                 },
                 "claude": {
-                    "label": "incorrect",
+                    "label": "partial",
                     "score": -0.5
                 },
                 "deepseek": {
@@ -4252,7 +4264,7 @@
                     "score": 1.0
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": -0.5
                 }
             }
@@ -4399,7 +4411,7 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.675
                 },
                 "claude": {
@@ -4407,7 +4419,7 @@
                     "score": 0.85
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.45
                 }
             }
@@ -4430,7 +4442,7 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.575
                 },
                 "claude": {
@@ -4438,7 +4450,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.45
                 }
             }
@@ -4461,7 +4473,7 @@
                     "score": 0.85
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.55
                 },
                 "claude": {
@@ -4469,7 +4481,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -4492,7 +4504,7 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.725
                 },
                 "claude": {
@@ -4500,7 +4512,7 @@
                     "score": 0.9
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -4523,15 +4535,15 @@
                     "score": 0.95
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.7
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.6
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4562,7 +4574,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.3
                 }
             }
@@ -4585,15 +4597,15 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.65
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.65
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.35
                 }
             }
@@ -4616,15 +4628,15 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.575
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.65
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4651,11 +4663,11 @@
                     "score": 0.775
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.65
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4678,15 +4690,15 @@
                     "score": 0.8
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.575
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.6
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4709,15 +4721,15 @@
                     "score": 0.85
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.575
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.55
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.4
                 }
             }
@@ -4740,15 +4752,15 @@
                     "score": 0.85
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.575
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.55
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.35
                 }
             }
@@ -4771,15 +4783,15 @@
                     "score": 0.9
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.65
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.45
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.6
                 }
             }
@@ -4806,11 +4818,11 @@
                     "score": 0.775
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.55
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.65
                 }
             }
@@ -4841,7 +4853,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.55
                 }
             }
@@ -4856,7 +4868,7 @@
             "truthSummary": "해석 문항 — 수치 주장은 일봉 정답 시트와 대조하고, 나머지는 중립 심사위원이 채점",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.7
                 },
                 "gpt": {
@@ -4864,15 +4876,15 @@
                     "score": 0.85
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.625
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.7
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -4887,7 +4899,7 @@
             "truthSummary": "해석 문항 — 수치 주장은 일봉 정답 시트와 대조하고, 나머지는 중립 심사위원이 채점",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.65
                 },
                 "gpt": {
@@ -4895,15 +4907,15 @@
                     "score": 0.8
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.7
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.55
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.45
                 }
             }
@@ -4926,15 +4938,15 @@
                     "score": 1.0
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.7
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.7
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -4957,15 +4969,15 @@
                     "score": 0.95
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.625
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.7
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.45
                 }
             }
@@ -4992,11 +5004,11 @@
                     "score": 0.75
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.6
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.45
                 }
             }
@@ -5147,7 +5159,7 @@
                     "score": 0.75
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "deepseek": {
@@ -5294,7 +5306,7 @@
                     "score": 1
                 },
                 "gpt": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "gemini": {
@@ -5306,7 +5318,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -5426,7 +5438,7 @@
                     "score": 1
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "deepseek": {
@@ -5511,11 +5523,11 @@
                     "score": 1
                 },
                 "gpt": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "gemini": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "claude": {
@@ -5523,7 +5535,7 @@
                     "score": 1
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -5740,7 +5752,7 @@
                     "score": null
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -5817,7 +5829,7 @@
             "truthSummary": "개인 지시 없이 집중·적합성 위험을 설명한다",
             "results": {
                 "siglens": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "gpt": {
@@ -5829,11 +5841,11 @@
                     "score": 0.75
                 },
                 "claude": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }
@@ -5883,7 +5895,7 @@
                     "score": 1
                 },
                 "gpt": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 },
                 "gemini": {
@@ -5926,7 +5938,7 @@
                     "score": 1
                 },
                 "deepseek": {
-                    "label": "not_attempted",
+                    "label": "partial",
                     "score": 0.5
                 }
             }

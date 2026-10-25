@@ -3411,6 +3411,7 @@
                 "views.benchmark.explorer.label.excluded",
                 "views.benchmark.explorer.label.incorrect",
                 "views.benchmark.explorer.label.not_attempted",
+                "views.benchmark.explorer.label.partial",
                 "views.benchmark.explorer.label.pending",
                 "views.benchmark.explorer.market.kr",
                 "views.benchmark.explorer.market.us",

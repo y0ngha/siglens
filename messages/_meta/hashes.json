@@ -4002,7 +4002,7 @@
     "views.benchmark.breakdown.byMarket": "12c1b7b52d9e",
     "views.benchmark.breakdown.bySubset": "d6481a28c567",
     "views.benchmark.breakdown.judged": "6385188d0507",
-    "views.benchmark.breakdown.counts": "e09019d5786f",
+    "views.benchmark.breakdown.counts": "97cb813f8d1b",
     "views.benchmark.breakdown.rowLevel": "453d0d2df594",
     "views.benchmark.breakdown.rowMarket": "7f59141000a4",
     "views.benchmark.breakdown.rowSubset": "79cfbdf383b0",
@@ -4104,5 +4104,9 @@
     "views.methodology.ai.benchmark": "dd79fb615cb0",
     "views.methodology.ai.benchmarkLink": "580f2632b6d2",
     "views.methodology.ai.benchmarkTitle": "00bf225a6510",
-    "widgets.agent-chat.EmptyState.benchmarkLink": "580f2632b6d2"
+    "widgets.agent-chat.EmptyState.benchmarkLink": "580f2632b6d2",
+    "views.benchmark.breakdown.rowOverall": "934dd25ec5f7",
+    "views.benchmark.counts.partial": "a4f2b6b494f0",
+    "views.benchmark.explorer.label.partial": "a4f2b6b494f0",
+    "views.benchmark.breakdown.overallNote": "6496c2919e72"
 }

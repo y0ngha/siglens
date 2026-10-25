@@ -28,9 +28,14 @@ export const BENCHMARK_SUBSETS = ['noTool', 'heldOut'] as const;
 /** noTool = 전용 도구가 없는 문항(×), heldOut = 설계 때 보지 않은 문항(H). */
 export type BenchmarkSubset = (typeof BENCHMARK_SUBSETS)[number];
 
-/** 문항 하나에 대한 대상 하나의 판정. */
+/**
+ * 문항 하나에 대한 대상 하나의 판정. 객관 문항은 점수에서 정한다 — 모든 부분을 맞히면
+ * `correct`, 모두 틀리면 `incorrect`, 모두 답하지 않으면 `not_attempted`, 그 밖(일부만
+ * 맞힘·부분 점수)은 `partial`. L4·L5는 0~1 심사 점수 구간에서 정한다.
+ */
 export const BENCHMARK_LABELS = [
     'correct',
+    'partial',
     'incorrect',
     'not_attempted',
     'excluded',
@@ -90,7 +95,13 @@ export interface BenchmarkBreakdown {
     readonly judged: Readonly<
         Record<BenchmarkJudgedLevel, BenchmarkScoreByTarget>
     >;
-    /** 대상별 판정 개수. */
+    /**
+     * primary 객관 문항 전체의 평균 점수(λ=1). 대상마다 답이 기록된 문항만 평균하므로
+     * 제외 문항이 있는 대상은 분모가 다르다. 헤드라인 점수 차는 두 대상이 모두 답한 문항으로
+     * 따로 계산하므로, 이 값끼리의 차와 같지 않을 수 있다.
+     */
+    readonly overall: BenchmarkScoreByTarget;
+    /** primary 객관 문항의 대상별 판정 개수(문항 단위). */
     readonly labelCounts: Readonly<
         Record<string, Readonly<Record<BenchmarkLabel, number>>>
     >;

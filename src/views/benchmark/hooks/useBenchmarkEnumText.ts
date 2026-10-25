@@ -20,6 +20,7 @@ export function useBenchmarkEnumText(): BenchmarkEnumText {
     return {
         label: {
             correct: t('label.correct'),
+            partial: t('label.partial'),
             incorrect: t('label.incorrect'),
             not_attempted: t('label.not_attempted'),
             excluded: t('label.excluded'),
