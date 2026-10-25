@@ -6,6 +6,7 @@ import type {
     BenchmarkTarget,
 } from '@/entities/benchmark/types';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { useBenchmarkEnumText } from '../hooks/useBenchmarkEnumText';
 import { useBenchmarkItemDetail } from '../hooks/useBenchmarkItemDetail';
@@ -164,7 +165,10 @@ function DetailBody({ detail, targets }: BodyProps) {
                                 {judgements.map(judgement => (
                                     <li
                                         key={`${judgement.target}-${judgement.level}-${judgement.judge}-${judgement.round}`}
-                                        className="rounded-lg border border-secondary-700 p-3 text-sm"
+                                        className={cn(
+                                            SURFACE_NESTED,
+                                            'p-3 text-sm'
+                                        )}
                                     >
                                         <p className="text-xs font-semibold text-secondary-400">
                                             {judgement.level} ·{' '}
