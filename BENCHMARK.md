@@ -5,7 +5,7 @@
 - 결과 페이지: https://ai.siglens.io/benchmark
 - 측정: 2026-10-24(토) KST, 기준 거래일 D = 2026-10-23(금, 미국·한국 공통)
 - 대상 제품: SiglensAI 운영 배포 v0.109.2
-- 원자료: [benchmark-2026-10.zip](https://siglens.io/benchmark/2026-10/benchmark-2026-10.zip) (문항, 정답, 답변 원문, 추출값, 판정, 심사 결과)
+- 원자료: [benchmark-2026-10.zip](https://siglens.io/benchmark/2026-10/benchmark-2026-10.zip) (문항, 정답, 답변 원문, 추출값, 판정, 심사 결과). 파일 구성과 점수 읽는 법은 zip 안의 `README.md`에 있습니다.
 
 ## 결과 요약
 
