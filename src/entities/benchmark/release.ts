@@ -240,22 +240,31 @@ function checkBreakdown(raw: unknown, targetIds: ReadonlySet<string>): void {
 }
 
 /**
- * 객관 문항의 판정은 점수에서 정해진다(`BENCHMARK_LABELS` JSDoc). export가 첫 부분의 판정을
- * 문항 판정으로 옮겨 "부분만 맞힌 문항이 정답"으로 나간 적이 있어, 둘이 어긋나면 거부한다.
+ * 판정은 점수에서 정해진다(`BENCHMARK_LABELS` JSDoc). export가 첫 부분의 판정을 문항 판정으로
+ * 옮겨 "부분만 맞힌 문항이 정답"으로 나간 적이 있어, 둘이 어긋나면 거부한다. 객관 문항은 점수
+ * 값 자체로, L4·L5는 0~1 심사 점수 구간으로 본다.
  */
-function checkObjectiveLabel(
+function checkLabelScore(
     label: string,
     score: number | null,
+    objective: boolean,
     lambda: number,
     path: string
 ): void {
-    const expected: Readonly<Record<string, (s: number) => boolean>> = {
-        correct: s => s === 1,
-        incorrect: s => s === -lambda,
-        not_attempted: s => s === 0,
-        partial: s => s !== 1 && s !== -lambda,
-    };
+    const expected: Readonly<Record<string, (s: number) => boolean>> = objective
+        ? {
+              correct: s => s === 1,
+              incorrect: s => s === -lambda,
+              not_attempted: s => s === 0,
+              partial: s => s !== 1 && s !== -lambda,
+          }
+        : {
+              correct: s => s >= 0.75,
+              incorrect: s => s <= 0.25,
+              partial: s => s > 0.25 && s < 0.75,
+          };
     const fits = expected[label];
+    // excluded·pending은 답이 없거나 채점 전이라 맞춰 볼 점수가 없다(score는 null).
     if (fits === undefined) return;
     if (score === null || !fits(score)) {
         fail(`${path}.label`, `a label consistent with score ${score}`);
@@ -292,18 +301,15 @@ function checkItems(
                 result.score,
                 `${path}.results.${id}.score`
             );
-            if (
+            checkLabelScore(
+                label,
+                score,
                 (BENCHMARK_OBJECTIVE_LEVELS as readonly string[]).includes(
                     level
-                )
-            ) {
-                checkObjectiveLabel(
-                    label,
-                    score,
-                    lambda,
-                    `${path}.results.${id}`
-                );
-            }
+                ),
+                lambda,
+                `${path}.results.${id}`
+            );
         }
     });
 }

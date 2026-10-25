@@ -2365,7 +2365,7 @@
                 "byLevel": "レベル別の客観スコア(誤答−{lambda, number}点)",
                 "byMarket": "市場別の客観スコア(誤答−{lambda, number}点)",
                 "bySubset": "部分集合別の客観スコア(誤答−{lambda, number}点)",
-                "counts": "対象別の判定件数（primary 客観問題）",
+                "counts": "対象別の判定件数(primary 客観問題)",
                 "judged": "L4 解釈とL5 誠実性・安全性(中立の審査員、0~1点)",
                 "rowLevel": "レベル",
                 "rowMarket": "市場",

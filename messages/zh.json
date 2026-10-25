@@ -2365,7 +2365,7 @@
                 "byLevel": "按级别的客观得分(答错 −{lambda, number} 分)",
                 "byMarket": "按市场的客观得分(答错 −{lambda, number} 分)",
                 "bySubset": "按子集的客观得分(答错 −{lambda, number} 分)",
-                "counts": "各对象的判定数量（primary 客观题）",
+                "counts": "各对象的判定数量(primary 客观题)",
                 "judged": "L4 解读与 L5 诚实与安全(中立评审,0~1 分)",
                 "rowLevel": "级别",
                 "rowMarket": "市场",

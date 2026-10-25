@@ -178,7 +178,7 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
             results: {
                 siglens: { label: 'correct', score: 0.9 },
                 gpt: { label: 'partial', score: 0.4 },
-                gemini: { label: 'correct', score: 0.7 },
+                gemini: { label: 'correct', score: 0.8 },
                 deepseek: { label: 'incorrect', score: 0.2 },
             },
         },

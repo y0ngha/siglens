@@ -120,6 +120,15 @@ describe('assertBenchmarkRelease', () => {
         expect(() => assertBenchmarkRelease(input)).not.toThrow();
     });
 
+    it('rejects a judged item whose label is outside its score band', () => {
+        const input = mutated(d => {
+            d.items[3].results.gpt = { label: 'correct', score: 0.4 };
+        });
+        expect(() => assertBenchmarkRelease(input)).toThrow(
+            'items[3].results.gpt.label'
+        );
+    });
+
     it('rejects an unknown verdict label on an item', () => {
         const input = mutated(d => {
             d.items[0].results.gpt.label = 'maybe';
