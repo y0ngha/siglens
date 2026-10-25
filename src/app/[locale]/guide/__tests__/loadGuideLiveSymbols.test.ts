@@ -3,9 +3,13 @@ import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
 const getSectorSignalsStatic = vi.fn();
 const listSymbolsWithDetectedPatterns = vi.fn();
 const isOfflineBuild = vi.fn(() => false);
+const lookupTickerDisplayNames = vi.fn();
+
+const unstableCache = vi.fn((fn: () => unknown, ..._rest: unknown[]) => fn);
 
 vi.mock('next/cache', () => ({
-    unstable_cache: (fn: () => unknown) => fn,
+    unstable_cache: (fn: () => unknown, ...rest: unknown[]) =>
+        unstableCache(fn, ...rest),
 }));
 vi.mock('@/shared/api/offlineBuild', () => ({
     isOfflineBuild: () => isOfflineBuild(),
@@ -16,6 +20,10 @@ vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
+}));
+vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+    lookupTickerDisplayNames: (...args: unknown[]) =>
+        lookupTickerDisplayNames(...args),
 }));
 vi.mock('@/entities/seo-snapshot/api', () => ({
     DrizzleSeoSnapshotRepository: class {
@@ -60,6 +68,9 @@ describe('loadGuideLiveSymbols', () => {
     beforeEach(() => {
         getSectorSignalsStatic.mockReset();
         listSymbolsWithDetectedPatterns.mockReset();
+        lookupTickerDisplayNames.mockReset();
+        unstableCache.mockClear();
+        lookupTickerDisplayNames.mockResolvedValue({});
         isOfflineBuild.mockReturnValue(false);
     });
 
@@ -87,6 +98,7 @@ describe('loadGuideLiveSymbols', () => {
             {
                 symbol: 'TSLA',
                 generatedAt: new Date('2026-10-24T21:00:00.000Z'),
+                detectedPatterns: ['double_bottom'],
             },
         ]);
         const groups = await loadGuideLiveSymbols(doubleBottom, catalog);
@@ -95,6 +107,130 @@ describe('loadGuideLiveSymbols', () => {
             symbol: 'TSLA',
             basis: 'snapshot',
             detectedOn: '2026-10-24T21:00:00.000Z',
+        });
+    });
+
+    it('스냅샷 캐시 키는 값 모양 버전(v2)을 담고, 이름 캐시는 하루 창과 가이드 태그를 쓴다', async () => {
+        listSymbolsWithDetectedPatterns.mockResolvedValue([
+            {
+                symbol: 'TSLA',
+                generatedAt: new Date('2026-10-24T21:00:00.000Z'),
+                detectedPatterns: ['double_bottom'],
+            },
+        ]);
+        await loadGuideLiveSymbols(doubleBottom, catalog);
+        expect(unstableCache).toHaveBeenCalledWith(
+            expect.any(Function),
+            ['guide-live', 'patterns', 'v2', 'double_bottom'],
+            expect.objectContaining({ tags: ['guide'] })
+        );
+        expect(unstableCache).toHaveBeenCalledWith(
+            expect.any(Function),
+            ['guide-live', 'names', 'TSLA'],
+            { revalidate: 86400, tags: ['guide'] }
+        );
+    });
+
+    it('고른 행의 한국어 이름을 심볼별로 한 번에 조회해 입힌다(정본 이름이 스캐너 이름보다 앞선다)', async () => {
+        getSectorSignalsStatic.mockImplementation((scope: { id: string }) =>
+            Promise.resolve(scan(scope.id === 'kr' ? '005930.KS' : 'AAPL'))
+        );
+        lookupTickerDisplayNames.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+            '005930.KS': { koreanName: '삼성전자', name: null },
+        });
+        const groups = await loadGuideLiveSymbols(rsi, catalog);
+        expect(lookupTickerDisplayNames).toHaveBeenCalledWith([
+            '005930.KS',
+            'AAPL',
+        ]);
+        expect(groups?.map(g => g.rows[0]!.name)).toEqual(['애플', '삼성전자']);
+    });
+
+    it('이름 조회가 던지거나 null을 돌려줘도 모듈은 렌더되고 이름은 스캐너 값/null로 남는다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        getSectorSignalsStatic.mockImplementation((scope: { id: string }) =>
+            Promise.resolve(scan(scope.id === 'kr' ? '005930.KS' : 'AAPL'))
+        );
+        lookupTickerDisplayNames.mockRejectedValueOnce(new Error('db down'));
+        const thrown = await loadGuideLiveSymbols(rsi, catalog);
+        expect(thrown?.map(g => [g.rows[0]!.symbol, g.rows[0]!.name])).toEqual([
+            ['AAPL', 'AAPL'],
+            ['005930.KS', '005930.KS'],
+        ]);
+
+        lookupTickerDisplayNames.mockResolvedValueOnce(null);
+        const failed = await loadGuideLiveSymbols(rsi, catalog);
+        expect(failed?.map(g => [g.rows[0]!.symbol, g.rows[0]!.name])).toEqual([
+            ['AAPL', 'AAPL'],
+            ['005930.KS', '005930.KS'],
+        ]);
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('names'),
+            expect.any(Error)
+        );
+
+        listSymbolsWithDetectedPatterns.mockResolvedValue([
+            {
+                symbol: 'TSLA',
+                generatedAt: new Date('2026-10-24T21:00:00.000Z'),
+                detectedPatterns: ['double_bottom'],
+            },
+        ]);
+        lookupTickerDisplayNames.mockRejectedValueOnce(new Error('db down'));
+        const snapshotOnly = await loadGuideLiveSymbols(doubleBottom, catalog);
+        expect(snapshotOnly?.[0]?.rows[0]).toMatchObject({
+            symbol: 'TSLA',
+            name: null,
+        });
+        warn.mockRestore();
+    });
+
+    it('스냅샷 행은 적중한 패턴 id를 그대로 받아 자기 패턴의 가이드로 라벨링된다', async () => {
+        const at = new Date('2026-10-24T21:00:00.000Z');
+        const both = guideEntry({
+            slug: 'double-patterns',
+            category: 'howto',
+            about: ['double-bottom', 'double-top'],
+        });
+        const doubleTop = guideEntry({
+            slug: 'double-top',
+            category: 'chart-patterns',
+        });
+        listSymbolsWithDetectedPatterns.mockImplementation(
+            (_names: string[], { market }: { market: string }) =>
+                Promise.resolve(
+                    market === 'us'
+                        ? [
+                              {
+                                  symbol: 'TSLA',
+                                  generatedAt: at,
+                                  detectedPatterns: ['double_top'],
+                              },
+                              {
+                                  symbol: 'AMD',
+                                  generatedAt: at,
+                                  detectedPatterns: ['double_bottom'],
+                              },
+                          ]
+                        : []
+                )
+        );
+        const groups = await loadGuideLiveSymbols(both, [
+            both,
+            doubleBottom,
+            doubleTop,
+        ]);
+        const match = Object.fromEntries(
+            groups![0]!.rows.map(row => [row.symbol, row.match])
+        );
+        expect(match.TSLA).toEqual({
+            kind: 'pattern',
+            guidePath: '/guide/chart-patterns/double-top',
+        });
+        expect(match.AMD).toEqual({
+            kind: 'pattern',
+            guidePath: '/guide/chart-patterns/double-bottom',
         });
     });
 
@@ -143,7 +279,11 @@ describe('loadGuideLiveSymbols', () => {
     it('스캐너가 던져도 패턴 항목의 스냅샷 행은 영향받지 않는다', async () => {
         const at = new Date('2026-10-24T21:00:00.000Z');
         listSymbolsWithDetectedPatterns.mockResolvedValue([
-            { symbol: 'TSLA', generatedAt: at },
+            {
+                symbol: 'TSLA',
+                generatedAt: at,
+                detectedPatterns: ['double_bottom'],
+            },
         ]);
         const both = guideEntry({
             slug: 'double-bottom',
@@ -203,8 +343,15 @@ describe('loadGuideLiveSymbols', () => {
                         ? Array.from({ length: 10 }, (_, i) => ({
                               symbol: `US${i}`,
                               generatedAt: at,
+                              detectedPatterns: ['double_bottom'],
                           }))
-                        : [{ symbol: '005930.KS', generatedAt: at }]
+                        : [
+                              {
+                                  symbol: '005930.KS',
+                                  generatedAt: at,
+                                  detectedPatterns: ['double_bottom'],
+                              },
+                          ]
                 )
         );
         const groups = await loadGuideLiveSymbols(doubleBottom, catalog);

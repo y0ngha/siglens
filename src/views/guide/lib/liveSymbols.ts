@@ -25,14 +25,14 @@ export type LiveMatch =
 
 export interface LiveSymbolRow {
     readonly symbol: string;
-    /** 스캐너 행은 한국어 이름, 스냅샷 행은 이름을 모른다(null). */
+    /** 한국어 이름. 스캐너 행은 스캐너가 준 이름, 스냅샷 행은 이름을 모른다(null) — 로더가 {@link withDisplayNames}로 채운다. */
     readonly name: string | null;
     /** 스캐너 행만 안다. */
     readonly changePercent: number | null;
     readonly basis: 'scanner' | 'snapshot';
     /** ISO 8601 — 스캐너는 `computedAt`, 스냅샷은 `generatedAt`. */
     readonly detectedOn: string;
-    /** 무엇에 맞아 뽑혔는지. 패턴 대상이 여럿이라 하나로 특정할 수 없는 스냅샷 행은 null. */
+    /** 무엇에 맞아 뽑혔는지. 스냅샷 행은 자기가 적중한 패턴의 가이드로 라벨링한다(가이드가 없는 패턴뿐이면 null). */
     readonly match: LiveMatch | null;
 }
 
@@ -50,6 +50,8 @@ export interface LiveTargets {
 export interface SnapshotPatternHit {
     readonly symbol: string;
     readonly generatedAt: string;
+    /** 요청한 패턴 id 중 이 스냅샷에서 탐지된 것. */
+    readonly detectedPatterns: readonly string[];
 }
 
 export interface ScannerInput {
@@ -164,12 +166,48 @@ function scannerRows(
     });
 }
 
-/** 대상 패턴들이 가리키는 가이드 경로가 하나일 때만 그 경로를 돌려준다(여럿이면 어느 패턴인지 모른다). */
-function singlePatternPath(patternNames: readonly string[]): string | null {
-    const paths = unique(
-        patternNames.flatMap(name => GUIDE_PATH_BY_TRIGGER[name] ?? [])
-    );
-    return paths.length === 1 ? paths[0] : null;
+/**
+ * 스냅샷 행이 적중한 패턴 중 가이드 경로가 있는 첫 번째를 돌려준다. 순서는 대상 패턴 순서(`targets.patternNames`)를
+ * 따라 같은 입력이면 같은 라벨이 나온다.
+ */
+function hitPatternPath(
+    targetPatterns: readonly string[],
+    hit: SnapshotPatternHit
+): string | null {
+    const detected = new Set(hit.detectedPatterns);
+    for (const name of targetPatterns) {
+        const guidePath = detected.has(name)
+            ? GUIDE_PATH_BY_TRIGGER[name]
+            : undefined;
+        if (guidePath !== undefined) return guidePath;
+    }
+    return null;
+}
+
+function patternMatch(
+    targetPatterns: readonly string[],
+    hit: SnapshotPatternHit
+): LiveMatch | null {
+    const guidePath = hitPatternPath(targetPatterns, hit);
+    return guidePath === null ? null : { kind: 'pattern', guidePath };
+}
+
+/**
+ * 고른 행에 이름을 입힌다. `names`(심볼 → 한국어 이름)에 있으면 그것을, 없으면 행이 이미 가진 이름을 둔다.
+ * 스캐너 행의 이름보다 `names`를 앞세우는 이유: 정본 한글명 오버라이드가 한 곳(`getKoreanNames` 계열)에서만 적용되어
+ * 화면마다 이름이 갈리지 않는다.
+ */
+export function withDisplayNames(
+    groups: readonly LiveSymbolGroup[],
+    names: Readonly<Record<string, string>>
+): LiveSymbolGroup[] {
+    return groups.map(group => ({
+        ...group,
+        rows: group.rows.map(row => ({
+            ...row,
+            name: names[row.symbol] ?? row.name,
+        })),
+    }));
 }
 
 /**
@@ -195,7 +233,6 @@ export function selectLiveSymbols({
     const signalTypes = new Set(targets.signalTypes);
     const patternFirst = targets.patternNames.length > 0;
     const rank = phaseRank(patternFirst);
-    const patternPath = singlePatternPath(targets.patternNames);
     const scannerRanked = scanner.flatMap(input =>
         scannerRows(input, signalTypes)
     );
@@ -210,13 +247,7 @@ export function selectLiveSymbols({
                       changePercent: null,
                       basis: 'snapshot' as const,
                       detectedOn: hit.generatedAt,
-                      match:
-                          patternPath === null
-                              ? null
-                              : {
-                                    kind: 'pattern' as const,
-                                    guidePath: patternPath,
-                                },
+                      match: patternMatch(targets.patternNames, hit),
                   },
               }))
             : []),
@@ -242,7 +273,7 @@ export function selectLiveSymbols({
             const known = scannerBySymbol.get(row.symbol);
             return known === undefined || known === row
                 ? row
-                : { ...known, match: row.match };
+                : { ...known, match: row.match ?? known.match };
         });
 
     const markets: readonly LiveMarket[] = ['us', 'kr'];

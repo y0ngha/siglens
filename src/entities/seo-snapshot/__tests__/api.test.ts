@@ -429,12 +429,13 @@ function makeListPatternsDb(rows: unknown[]) {
     const orderBy = vi.fn((..._args: unknown[]) => ({ limit }));
     const where = vi.fn((_condition: unknown) => ({ orderBy }));
     const from = vi.fn(() => ({ where }));
-    const select = vi.fn(() => ({ from }));
+    const select = vi.fn((_projection: unknown) => ({ from }));
     return {
         db: { select } as unknown as SiglensDatabase,
         where,
         orderBy,
         limit,
+        select,
     };
 }
 
@@ -458,18 +459,83 @@ describe('DrizzleSeoSnapshotRepository.listSymbolsWithDetectedPatterns', () => {
 
     it('행을 그대로 돌려주고 limit을 그대로 적용한다', async () => {
         const g1 = new Date('2026-10-24T21:00:00.000Z');
-        const rows = [
-            { symbol: 'TSLA', generatedAt: g1 },
-            { symbol: 'AAPL', generatedAt: g1 },
-        ];
-        const { db, limit } = makeListPatternsDb(rows);
+        const summaries = ['double_bottom'];
+        const { db, limit } = makeListPatternsDb([
+            { symbol: 'TSLA', generatedAt: g1, detectedPatterns: summaries },
+            { symbol: 'AAPL', generatedAt: g1, detectedPatterns: summaries },
+        ]);
         const repo = new DrizzleSeoSnapshotRepository(db);
         const hits = await repo.listSymbolsWithDetectedPatterns(
             ['double_bottom'],
             { since, limit: 2, market: 'us' }
         );
-        expect(hits).toEqual(rows);
+        expect(hits).toEqual([
+            {
+                symbol: 'TSLA',
+                generatedAt: g1,
+                detectedPatterns: ['double_bottom'],
+            },
+            {
+                symbol: 'AAPL',
+                generatedAt: g1,
+                detectedPatterns: ['double_bottom'],
+            },
+        ]);
         expect(limit).toHaveBeenCalledWith(2);
+    });
+
+    it('행마다 SQL이 투영한 탐지 이름을 요청 순서대로 돌려준다', async () => {
+        const g = new Date('2026-10-24T21:00:00.000Z');
+        const { db } = makeListPatternsDb([
+            {
+                symbol: 'A',
+                generatedAt: g,
+                // 저장 순서가 요청 순서와 달라도 요청 순서로 돌려준다.
+                detectedPatterns: ['cup_and_handle', 'double_bottom'],
+            },
+            {
+                symbol: 'B',
+                generatedAt: g,
+                // 드라이버가 jsonb를 문자열로 줘도 같은 판정이 된다.
+                detectedPatterns: JSON.stringify(['double_top']),
+            },
+            { symbol: 'C', generatedAt: g, detectedPatterns: null },
+        ]);
+        const hits = await new DrizzleSeoSnapshotRepository(
+            db
+        ).listSymbolsWithDetectedPatterns(
+            ['double_bottom', 'double_top', 'cup_and_handle'],
+            { since, limit: 5, market: 'us' }
+        );
+        expect(hits.map(h => [h.symbol, h.detectedPatterns])).toEqual([
+            ['A', ['double_bottom', 'cup_and_handle']],
+            ['B', ['double_top']],
+            ['C', []],
+        ]);
+    });
+
+    it('탐지된 요청 패턴 이름만 SQL에서 투영하고 이름은 바인드 파라미터로 넘긴다', async () => {
+        const { db, select } = makeListPatternsDb([]);
+        await new DrizzleSeoSnapshotRepository(
+            db
+        ).listSymbolsWithDetectedPatterns(['double_bottom', 'cup_and_handle'], {
+            since,
+            limit: 5,
+            market: 'us',
+        });
+        const projection = (
+            select.mock.calls[0] as unknown as [Record<string, unknown>]
+        )[0];
+        expect(Object.keys(projection)).toContain('detectedPatterns');
+        expect(Object.keys(projection)).not.toContain('patternSummaries');
+        const query = toQuery(projection.detectedPatterns);
+        expect(query.sql).toContain(`->'patternSummaries'`);
+        expect(query.sql).toContain('jsonb_array_elements(');
+        expect(query.sql).toContain(`elem->>'detected' = 'true'`);
+        expect(query.sql).toContain('jsonb_array_elements_text(');
+        expect(query.params).toEqual([
+            JSON.stringify(['double_bottom', 'cup_and_handle']),
+        ]);
     });
 
     it('where 절이 technical·ko·since·크립토 제외·패턴 containment를 담는다', async () => {

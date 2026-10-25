@@ -72,12 +72,12 @@ describe('GuideLiveSymbols', () => {
             screen.getByRole('heading', { level: 3, name: g.liveMarketKr })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: '엔비디아(NVDA) 차트 보기' })
+            screen.getByRole('link', { name: '엔비디아 차트 보기' })
         ).toHaveAttribute('href', '/NVDA');
         const down = screen.getByText('-2.3%');
         expect(down).toHaveClass('text-ui-danger-text');
         expect(screen.getByText('+0.5%')).toHaveClass('text-ui-success-text');
-        // 이름을 모르는 스냅샷 행은 심볼로 대신한다
+        // 이름을 모르는 스냅샷 행은 코드로 대신한다
         expect(
             screen.getByRole('link', { name: 'TSLA 차트 보기' })
         ).toHaveAttribute('href', '/TSLA');
@@ -87,7 +87,29 @@ describe('GuideLiveSymbols', () => {
         expect(screen.getByText(/장 마감 스냅샷 ·/)).toBeInTheDocument();
     });
 
-    it('한국 종목은 접미사를 뗀 코드로 표기하고 링크는 심볼 그대로 둔다', async () => {
+    it('ko는 코드를 병기하지 않고 한국어 이름만 적는다', async () => {
+        await renderLive([
+            {
+                market: 'us',
+                rows: [
+                    {
+                        symbol: 'AAPL',
+                        name: '애플',
+                        changePercent: 1,
+                        basis: 'scanner',
+                        detectedOn: '2026-10-25T00:00:00.000Z',
+                        match: null,
+                    },
+                ],
+            },
+        ]);
+
+        const link = screen.getByRole('link', { name: '애플 차트 보기' });
+        expect(link).toHaveAttribute('href', '/AAPL');
+        expect(link).not.toHaveTextContent('AAPL');
+    });
+
+    it('한국 종목은 이름만 적고 이름이 없으면 접미사를 뗀 코드로 대신하며 링크는 심볼 그대로 둔다', async () => {
         await renderLive([
             {
                 market: 'kr',
@@ -113,7 +135,7 @@ describe('GuideLiveSymbols', () => {
         ]);
 
         expect(
-            screen.getByRole('link', { name: '삼성전자(005930) 차트 보기' })
+            screen.getByRole('link', { name: '삼성전자 차트 보기' })
         ).toHaveAttribute('href', '/005930.KS');
         expect(
             screen.getByRole('link', { name: '247540 차트 보기' })
@@ -176,6 +198,7 @@ describe('GuideLiveSymbols', () => {
 
             const link = screen.getByRole('link', { name: /AAPL/ });
             expect(link).toHaveAttribute('href', `/${locale}/AAPL`);
+            expect(link.textContent).not.toMatch(/[가-힣]/);
             expect(link).not.toHaveTextContent('애플');
         }
     );

@@ -3,6 +3,7 @@ import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
 import {
     resolveLiveTargets,
     selectLiveSymbols,
+    withDisplayNames,
 } from '@/views/guide/lib/liveSymbols';
 
 const doubleBottom = guideEntry({
@@ -100,8 +101,16 @@ describe('selectLiveSymbols', () => {
                 },
             ],
             snapshotHits: [
-                { symbol: 'TSLA', generatedAt: '2026-10-24T21:00:00.000Z' },
-                { symbol: 'NVDA', generatedAt: '2026-10-24T21:00:00.000Z' },
+                {
+                    symbol: 'TSLA',
+                    generatedAt: '2026-10-24T21:00:00.000Z',
+                    detectedPatterns: ['double_bottom'],
+                },
+                {
+                    symbol: 'NVDA',
+                    generatedAt: '2026-10-24T21:00:00.000Z',
+                    detectedPatterns: ['double_bottom'],
+                },
             ],
             limitPerMarket: 5,
         });
@@ -154,7 +163,11 @@ describe('selectLiveSymbols', () => {
                 },
             ],
             snapshotHits: [
-                { symbol: 'TSLA', generatedAt: '2026-10-24T21:00:00.000Z' },
+                {
+                    symbol: 'TSLA',
+                    generatedAt: '2026-10-24T21:00:00.000Z',
+                    detectedPatterns: ['double_bottom'],
+                },
             ],
             limitPerMarket: 5,
         });
@@ -194,7 +207,11 @@ describe('selectLiveSymbols', () => {
                 },
             ],
             snapshotHits: [
-                { symbol: 'NVDA', generatedAt: '2026-10-24T21:00:00.000Z' },
+                {
+                    symbol: 'NVDA',
+                    generatedAt: '2026-10-24T21:00:00.000Z',
+                    detectedPatterns: ['double_bottom'],
+                },
             ],
             limitPerMarket: 5,
         });
@@ -210,7 +227,35 @@ describe('selectLiveSymbols', () => {
         });
     });
 
-    it('대상 패턴이 서로 다른 가이드를 가리키면 스냅샷 행의 match는 null이다', () => {
+    it('스냅샷 행의 match가 null이어도 스캐너 행의 match를 지우지 않는다', () => {
+        const groups = selectLiveSymbols({
+            targets: {
+                signalTypes: ['rsi_oversold'],
+                patternNames: ['double_bottom'],
+            },
+            scanner: [
+                {
+                    market: 'us',
+                    result: scanner([
+                        stock('NVDA', 'rsi_oversold', 'confirmed', -2),
+                    ]),
+                },
+            ],
+            snapshotHits: [
+                {
+                    symbol: 'NVDA',
+                    generatedAt: '2026-10-24T21:00:00.000Z',
+                    detectedPatterns: ['no_such_pattern'],
+                },
+            ],
+            limitPerMarket: 5,
+        });
+        expect(groups[0].rows).toHaveLength(1);
+        expect(groups[0].rows[0].match).not.toBeNull();
+    });
+
+    it('대상 패턴이 여럿이면 스냅샷 행마다 자기가 적중한 패턴의 가이드로 라벨링한다', () => {
+        const at = '2026-10-24T21:00:00.000Z';
         const groups = selectLiveSymbols({
             targets: {
                 signalTypes: [],
@@ -218,7 +263,52 @@ describe('selectLiveSymbols', () => {
             },
             scanner: [],
             snapshotHits: [
-                { symbol: 'TSLA', generatedAt: '2026-10-24T21:00:00.000Z' },
+                {
+                    symbol: 'TSLA',
+                    generatedAt: at,
+                    detectedPatterns: ['double_top'],
+                },
+                {
+                    symbol: 'AMD',
+                    generatedAt: at,
+                    detectedPatterns: ['double_bottom'],
+                },
+                {
+                    symbol: 'MSFT',
+                    generatedAt: at,
+                    detectedPatterns: ['double_top', 'double_bottom'],
+                },
+            ],
+            limitPerMarket: 5,
+        });
+        const bySymbol = Object.fromEntries(
+            groups[0].rows.map(row => [row.symbol, row.match])
+        );
+        expect(bySymbol.TSLA).toEqual({
+            kind: 'pattern',
+            guidePath: '/guide/chart-patterns/double-top',
+        });
+        expect(bySymbol.AMD).toEqual({
+            kind: 'pattern',
+            guidePath: '/guide/chart-patterns/double-bottom',
+        });
+        // 둘 다 적중하면 대상 패턴 순서(double_bottom 먼저)로 하나를 고른다.
+        expect(bySymbol.MSFT).toEqual({
+            kind: 'pattern',
+            guidePath: '/guide/chart-patterns/double-bottom',
+        });
+    });
+
+    it('적중한 패턴에 가이드가 없으면 스냅샷 행의 match는 null이다', () => {
+        const groups = selectLiveSymbols({
+            targets: { signalTypes: [], patternNames: ['double_bottom'] },
+            scanner: [],
+            snapshotHits: [
+                {
+                    symbol: 'TSLA',
+                    generatedAt: '2026-10-24T21:00:00.000Z',
+                    detectedPatterns: ['no_such_pattern'],
+                },
             ],
             limitPerMarket: 5,
         });
@@ -281,7 +371,11 @@ describe('selectLiveSymbols', () => {
                 targets: { signalTypes: ['rsi_oversold'], patternNames: [] },
                 scanner: [],
                 snapshotHits: [
-                    { symbol: 'TSLA', generatedAt: '2026-10-24T21:00:00.000Z' },
+                    {
+                        symbol: 'TSLA',
+                        generatedAt: '2026-10-24T21:00:00.000Z',
+                        detectedPatterns: ['double_bottom'],
+                    },
                 ],
                 limitPerMarket: 5,
             })
@@ -333,5 +427,40 @@ describe('selectLiveSymbols', () => {
                 limitPerMarket: 5,
             })
         ).toEqual([]);
+    });
+});
+
+describe('withDisplayNames', () => {
+    const group = (name: string | null) => [
+        {
+            market: 'us' as const,
+            rows: [
+                {
+                    symbol: 'AAPL',
+                    name,
+                    changePercent: null,
+                    basis: 'snapshot' as const,
+                    detectedOn: '2026-10-24T21:00:00.000Z',
+                    match: null,
+                },
+            ],
+        },
+    ];
+
+    it('names에 있는 심볼은 그 이름으로 채우고 스캐너가 준 이름보다 앞세운다', () => {
+        expect(
+            withDisplayNames(group(null), { AAPL: '애플' })[0].rows[0].name
+        ).toBe('애플');
+        expect(
+            withDisplayNames(group('Apple Inc'), { AAPL: '애플' })[0].rows[0]
+                .name
+        ).toBe('애플');
+    });
+
+    it('names에 없으면 행이 가진 이름을 그대로 둔다', () => {
+        expect(withDisplayNames(group('애플'), {})[0].rows[0].name).toBe(
+            '애플'
+        );
+        expect(withDisplayNames(group(null), {})[0].rows[0].name).toBeNull();
     });
 });
