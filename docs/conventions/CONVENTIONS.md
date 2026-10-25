@@ -895,6 +895,13 @@ guarantee is weaker, name the weaker fact or add the missing check.
 - ❌ `const close = bar.close` after verifying only that `bar.date` matches the session date.
 - ✅ Verify the bar is final, or name it for what is known (`lastBarClose`).
 
+The same holds for a status flag or marker field (`missing`, `exact`, `fresh`, `complete`): set it only for the case
+the code actually established. A flag that covers several cases (absent vs. stale, exact vs. legacy data that cannot
+prove exactness) is split per case or set from the narrower check.
+
+- ❌ A substitute result flagged `overallMissing` although a stale overall existed.
+- ✅ Flag "missing" only when none was found; mark the stale case separately.
+
 <a id="CS-16"></a>
 
 #### CS-16 — Comments, logs and operator messages describe what the code path actually does
