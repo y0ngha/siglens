@@ -10,10 +10,15 @@ const g = ko.views.guide;
 
 async function renderLive(
     groups: Parameters<typeof GuideLiveSymbols>[0]['groups'],
-    locale: Locale = 'ko'
+    locale: Locale = 'ko',
+    patternTitles: Record<string, string> = {}
 ) {
     const tree = await resolveAsyncServerTree(
-        <GuideLiveSymbols locale={locale} groups={groups} />
+        <GuideLiveSymbols
+            locale={locale}
+            groups={groups}
+            patternTitles={patternTitles}
+        />
     );
     return renderWithIntl(tree as ReactElement, { locale });
 }
@@ -30,6 +35,7 @@ describe('GuideLiveSymbols', () => {
                         changePercent: -2.345,
                         basis: 'scanner',
                         detectedOn: '2026-10-25T00:00:00.000Z',
+                        match: null,
                     },
                     {
                         symbol: 'TSLA',
@@ -37,6 +43,7 @@ describe('GuideLiveSymbols', () => {
                         changePercent: null,
                         basis: 'snapshot',
                         detectedOn: '2026-10-24T21:00:00.000Z',
+                        match: null,
                     },
                 ],
             },
@@ -49,6 +56,7 @@ describe('GuideLiveSymbols', () => {
                         changePercent: 0.5,
                         basis: 'scanner',
                         detectedOn: '2026-10-25T00:00:00.000Z',
+                        match: null,
                     },
                 ],
             },
@@ -90,6 +98,7 @@ describe('GuideLiveSymbols', () => {
                         changePercent: 0.5,
                         basis: 'scanner',
                         detectedOn: '2026-10-25T00:00:00.000Z',
+                        match: null,
                     },
                     {
                         symbol: '247540.KQ',
@@ -97,6 +106,7 @@ describe('GuideLiveSymbols', () => {
                         changePercent: null,
                         basis: 'snapshot',
                         detectedOn: '2026-10-24T21:00:00.000Z',
+                        match: null,
                     },
                 ],
             },
@@ -122,6 +132,7 @@ describe('GuideLiveSymbols', () => {
                         changePercent: 1,
                         basis: 'scanner',
                         detectedOn: '2026-10-25T23:00:00+09:00',
+                        match: null,
                     },
                     {
                         symbol: 'BBB',
@@ -129,6 +140,7 @@ describe('GuideLiveSymbols', () => {
                         changePercent: 1,
                         basis: 'scanner',
                         detectedOn: '2026-10-25T20:00:00.000Z',
+                        match: null,
                     },
                 ],
             },
@@ -154,6 +166,7 @@ describe('GuideLiveSymbols', () => {
                                 changePercent: 1,
                                 basis: 'scanner',
                                 detectedOn: '2026-10-25T00:00:00.000Z',
+                                match: null,
                             },
                         ],
                     },
@@ -166,6 +179,97 @@ describe('GuideLiveSymbols', () => {
             expect(link).not.toHaveTextContent('애플');
         }
     );
+
+    it('스캐너 행은 맞은 신호 라벨을, 예상 신호는 "(예상)"을 덧붙여 적는다', async () => {
+        await renderLive([
+            {
+                market: 'us',
+                rows: [
+                    {
+                        symbol: 'NVDA',
+                        name: '엔비디아',
+                        changePercent: 1,
+                        basis: 'scanner',
+                        detectedOn: '2026-10-25T00:00:00.000Z',
+                        match: {
+                            kind: 'signal',
+                            signalType: 'rsi_oversold',
+                            expected: false,
+                        },
+                    },
+                    {
+                        symbol: 'AAPL',
+                        name: '애플',
+                        changePercent: 2,
+                        basis: 'scanner',
+                        detectedOn: '2026-10-25T00:00:00.000Z',
+                        match: {
+                            kind: 'signal',
+                            signalType: 'rsi_bullish_divergence',
+                            expected: true,
+                        },
+                    },
+                ],
+            },
+        ]);
+
+        const confirmed = screen.getByText(
+            ko.shared.enumLabel.signalType.rsi_oversold
+        );
+        expect(confirmed.parentElement).not.toHaveTextContent(
+            g.liveExpectedTag
+        );
+        const expected = screen.getByText(
+            ko.shared.enumLabel.signalType.rsi_bullish_divergence
+        );
+        expect(expected.parentElement).toHaveTextContent(
+            `${ko.shared.enumLabel.signalType.rsi_bullish_divergence}${g.liveExpectedTag}`
+        );
+        expect(g.liveExpectedTag).toBe('(예상)');
+    });
+
+    it('스냅샷 행은 맞은 패턴의 가이드 제목을 적고, 제목을 모르면 아무것도 적지 않는다', async () => {
+        await renderLive(
+            [
+                {
+                    market: 'us',
+                    rows: [
+                        {
+                            symbol: 'TSLA',
+                            name: null,
+                            changePercent: null,
+                            basis: 'snapshot',
+                            detectedOn: '2026-10-24T21:00:00.000Z',
+                            match: {
+                                kind: 'pattern',
+                                guidePath:
+                                    '/guide/chart-patterns/double-bottom',
+                            },
+                        },
+                        {
+                            symbol: 'AMD',
+                            name: null,
+                            changePercent: null,
+                            basis: 'snapshot',
+                            detectedOn: '2026-10-24T21:00:00.000Z',
+                            match: {
+                                kind: 'pattern',
+                                guidePath: '/guide/chart-patterns/unknown',
+                            },
+                        },
+                    ],
+                },
+            ],
+            'ko',
+            { '/guide/chart-patterns/double-bottom': '이중바닥' }
+        );
+
+        expect(screen.getByText('이중바닥')).toBeInTheDocument();
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        expect(screen.getAllByRole('listitem')[1]).toHaveTextContent(
+            /^AMD 차트 보기/
+        );
+    });
 
     it('그룹이 비면 아무것도 그리지 않는다', async () => {
         const { container } = await renderLive([]);

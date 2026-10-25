@@ -284,7 +284,10 @@ export class DrizzleSeoSnapshotRepository {
      * (대소문자 무시 `~*`는 그 함수의 `toUpperCase()`와 같은 판정). 미국은 그 부정이다.
      *
      * JSONB containment(`@>`)는 free 티어 스냅샷에도 남는 필드(`patternName`·`detected`)만 본다
-     * (`filterAnalysisResult`는 `confidenceWeight`만 0으로 바꾼다). 377행 안팎이라 인덱스는 두지 않는다.
+     * (`filterAnalysisResult`는 `confidenceWeight`만 0으로 바꾼다). 스냅샷은 프리웜 대상 종목마다 한 행(심볼·탭·로케일 유니크)이라
+     * 행 수가 프리웜 대상 수를 넘지 않아 인덱스는 두지 않는다.
+     * 대상이 크게 늘면 `SELECT count(*) FROM seo_analysis_snapshots WHERE tab='technical' AND locale='ko'`로
+     * 다시 재고 `content` GIN 인덱스를 검토한다.
      */
     async listSymbolsWithDetectedPatterns(
         patternNames: readonly string[],

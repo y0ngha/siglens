@@ -116,6 +116,28 @@ describe('/guide', () => {
         expect(metadata.description).toContain(String(CATALOG.entries.length));
     });
 
+    it('실전 가이드가 있으면 설명에 용어 수와 가이드 수를 따로 적는다', async () => {
+        setCatalog({
+            entries: [
+                ...CATALOG.entries,
+                guideEntry({
+                    slug: 'rsi-how-to-read',
+                    category: 'howto',
+                    title: 'RSI 보는 법',
+                }),
+            ],
+        });
+        const metadata = await hubMetadata(hubParams());
+        expect(metadata.description).toBe(
+            ko.views.guide.hubSeoDescriptionWithHowto
+                .replace('{terms}', String(CATALOG.entries.length))
+                .replace('{howto}', '1')
+        );
+        const nodes = collectJsonLdData(await GuideHubRoute(hubParams()));
+        const collection = nodes.find(n => n['@type'] === 'CollectionPage');
+        expect(collection?.description).toBe(metadata.description);
+    });
+
     it('canonical은 자기 자신이다', async () => {
         const metadata = await hubMetadata(hubParams());
         expect(metadata.alternates?.canonical).toBe(`${SITE_URL}/guide`);
@@ -176,7 +198,35 @@ describe('/guide/[category]', () => {
         );
     });
 
+    it('항목이 없는 분류는 404다(메타데이터·본문 모두) — 카탈로그를 못 읽은 경우와 다르다', async () => {
+        await expect(
+            GuideCategoryRoute(categoryParams('howto'))
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+        await expect(categoryMetadata(categoryParams('howto'))).rejects.toThrow(
+            'NEXT_NOT_FOUND'
+        );
+        setCatalog(null);
+        await expect(
+            categoryMetadata(categoryParams('howto'))
+        ).resolves.toBeDefined();
+    });
+
     it('분류마다 설명이 다르다', async () => {
+        setCatalog({
+            entries: [
+                ...CATALOG.entries,
+                guideEntry({
+                    slug: 'breakout',
+                    category: 'strategies',
+                    title: '브레이크아웃',
+                }),
+                guideEntry({
+                    slug: 'double-bottom',
+                    category: 'chart-patterns',
+                    title: '이중바닥',
+                }),
+            ],
+        });
         const descriptions = await Promise.all(
             ['candlesticks', 'chart-patterns', 'indicators', 'strategies'].map(
                 async category =>

@@ -145,7 +145,7 @@ seoTitle: RSI 보는 법
 seoDescription: 설명
 ---
 
-## 본문
+## 시그렌즈에서 확인하는 법
 `
         );
         const { db, inserted, conflictSets } = fakeDb();

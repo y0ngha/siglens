@@ -84,11 +84,14 @@ export function GuideBrowser({
             label: t('filterAll'),
             count: entries.length,
         },
-        ...GUIDE_CATEGORIES.map(category => ({
-            value: category,
-            label: categoryLabels[category],
-            count: counts[category],
-        })),
+        // 항목이 없는 분류는 "0" 칩을 만들지 않는다(그 분류 허브는 404다).
+        ...GUIDE_CATEGORIES.filter(category => counts[category] > 0).map(
+            category => ({
+                value: category,
+                label: categoryLabels[category],
+                count: counts[category],
+            })
+        ),
     ];
 
     return (

@@ -8,6 +8,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { GuideEntryPage } from '@/views/guide/GuideEntryPage';
 import {
     loadGuideCategoryCopy,
+    countGuideHubEntries,
     loadGuideHubSeoCopy,
 } from '@/views/guide/lib/guideCopy';
 import {
@@ -48,7 +49,7 @@ export async function generateMetadata({
     const catalog = await loadGuideCatalog(locale);
     if (catalog === null) {
         // 본문을 못 읽은 렌더 — 안내문과 같은 술어로 noindex. 항목 제목을 모르니 허브 제목을 쓴다.
-        const seo = await loadGuideHubSeoCopy(locale, 0);
+        const seo = await loadGuideHubSeoCopy(locale, { terms: 0, howto: 0 });
         return buildHubMetadata({
             params,
             locale,
@@ -77,7 +78,7 @@ export default async function GuideEntryRoute({
 
     const [copy, seo, liveSymbols] = await Promise.all([
         loadGuideCategoryCopy(locale),
-        loadGuideHubSeoCopy(locale, catalog.entries.length),
+        loadGuideHubSeoCopy(locale, countGuideHubEntries(catalog.entries)),
         loadGuideLiveSymbols(entry, catalog.entries),
     ]);
     const faqJsonLd = buildGuideFaqJsonLd(entry.faq);

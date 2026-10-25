@@ -20,11 +20,11 @@ import {
     type SnapshotPatternHit,
 } from '@/views/guide/lib/liveSymbols';
 
-/** 시장당 보여 줄 최대 행 수(스펙 §2.3). */
+/** 시장당 보여 줄 최대 행 수. */
 const LIMIT_PER_MARKET = 5;
 /** 스냅샷은 야간에 한 번 구워지므로 이틀 창이면 직전 거래일이 반드시 들어온다. */
 const SNAPSHOT_WINDOW_MS = 48 * MS_PER_HOUR;
-/** 스캐너가 보는 시장. 크립토는 가이드 본문이 주식 전제라 뺀다(§2.2). */
+/** 스캐너가 보는 시장. 크립토는 가이드 본문이 주식 전제라 뺀다. */
 const SCANNER_MARKETS: readonly LiveMarket[] = ['us', 'kr'];
 /**
  * 시장별 스냅샷 읽기 한도 배수. 스냅샷은 시장마다 따로 읽어(저장소가 심볼 형상으로 시장을 가른다)
@@ -66,6 +66,8 @@ function loadSnapshotHits(
     )();
 }
 
+type SnapshotSettled = Awaited<ReturnType<typeof settle<SnapshotPatternHit[]>>>;
+
 /**
  * 한 데이터원의 실패가 다른 데이터원을 죽이지 않게 개별로 잡는다(`loadMarketSignals`가
  * `getSectorSignalsStatic` 호출마다 catch하는 것과 같다). 실패하면 경고를 남기고 `fallback`으로 대신한다.
@@ -88,7 +90,7 @@ async function settle<T>(
 
 /**
  * 항목 페이지의 "지금 이 신호가 나온 종목" 데이터. 대상이 없거나(모듈 생략), 오프라인 빌드거나,
- * 모든 데이터원이 실패했거나, 고른 결과가 비면 `null` — 페이지는 모듈 없이 정상 렌더한다(500 금지, §2.4).
+ * 모든 데이터원이 실패했거나, 고른 결과가 비면 `null` — 페이지는 모듈 없이 정상 렌더한다(500 금지).
  * 데이터원(us 스캐너·kr 스캐너·스냅샷)은 개별로 실패를 잡으므로 하나가 죽어도 나머지 행은 남는다.
  */
 export async function loadGuideLiveSymbols(
@@ -123,10 +125,7 @@ export async function loadGuideLiveSymbols(
                   () => loadSnapshotHits(targets.patternNames),
                   []
               )
-            : Promise.resolve({
-                  value: [] as SnapshotPatternHit[],
-                  failed: false,
-              }),
+            : Promise.resolve<SnapshotSettled>({ value: [], failed: false }),
     ]);
 
     const failures = [

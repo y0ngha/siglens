@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GUIDE_CATEGORIES, type GuideCategory } from '@/entities/guide/types';
 import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
+import ja from '../../../../../messages/ja.json';
+import zh from '../../../../../messages/zh.json';
+import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seo';
 
 const catalogs = { ko, en } as const;
 
@@ -24,7 +27,11 @@ vi.mock('next-intl/server', () => ({
     ),
 }));
 
-import { loadGuideCategoryCopy, loadGuideHubSeoCopy } from '../guideCopy';
+import {
+    countGuideHubEntries,
+    loadGuideCategoryCopy,
+    loadGuideHubSeoCopy,
+} from '../guideCopy';
 
 const CATEGORY_KEYS = {
     howto: 'Howto',
@@ -86,19 +93,38 @@ describe('loadGuideCategoryCopy', () => {
 });
 
 describe('loadGuideHubSeoCopy', () => {
-    it('ko: 제목·설명(count 치환)·키워드를 카탈로그에서 읽는다', async () => {
-        const copy = await loadGuideHubSeoCopy('ko', 42);
+    it('ko: 제목·설명(용어 수 치환)·키워드를 카탈로그에서 읽는다', async () => {
+        const copy = await loadGuideHubSeoCopy('ko', { terms: 42, howto: 0 });
 
         expect(copy.hubTitle).toBe(ko.views.guide.hubTitle);
         expect(copy.hubSeoTitle).toBe(ko.views.guide.hubSeoTitle);
         expect(copy.hubSeoDescription).toBe(
-            ko.views.guide.hubSeoDescription.replace('{count}', '42')
+            ko.views.guide.hubSeoDescription.replace('{terms}', '42')
         );
         expect(copy.hubSeoDescription).toContain('42');
     });
 
+    it('실전 가이드가 있으면 용어 수와 가이드 수를 따로 적는다', async () => {
+        const copy = await loadGuideHubSeoCopy('ko', { terms: 90, howto: 3 });
+
+        expect(copy.hubSeoDescription).toBe(
+            ko.views.guide.hubSeoDescriptionWithHowto
+                .replace('{terms}', '90')
+                .replace('{howto}', '3')
+        );
+        expect(copy.hubSeoDescription).toContain('90');
+        expect(copy.hubSeoDescription).toContain('3편');
+    });
+
+    it('실전 가이드가 없으면 "0편"을 적지 않는다', async () => {
+        const copy = await loadGuideHubSeoCopy('ko', { terms: 90, howto: 0 });
+
+        expect(copy.hubSeoDescription).not.toContain('0편');
+        expect(copy.hubSeoDescription).not.toContain('실전 가이드');
+    });
+
     it('키워드는 쉼표로 나눠 앞뒤 공백을 자른다', async () => {
-        const copy = await loadGuideHubSeoCopy('ko', 1);
+        const copy = await loadGuideHubSeoCopy('ko', { terms: 1, howto: 0 });
 
         expect(copy.hubSeoKeywords).toEqual(
             ko.views.guide.hubSeoKeywords.split(',').map(k => k.trim())
@@ -110,7 +136,7 @@ describe('loadGuideHubSeoCopy', () => {
     });
 
     it('categoryDescription은 count를 치환하고 분류마다 다른 문장이다', async () => {
-        const copy = await loadGuideHubSeoCopy('ko', 1);
+        const copy = await loadGuideHubSeoCopy('ko', { terms: 1, howto: 0 });
         const texts = GUIDE_CATEGORIES.map(category =>
             copy.categoryDescription(category, 17)
         );
@@ -121,7 +147,7 @@ describe('loadGuideHubSeoCopy', () => {
     });
 
     it('categoryDescription은 모르는 분류를 조용히 undefined로 넘기지 않고 던진다', async () => {
-        const copy = await loadGuideHubSeoCopy('ko', 1);
+        const copy = await loadGuideHubSeoCopy('ko', { terms: 1, howto: 0 });
 
         expect(() =>
             copy.categoryDescription('unknown' as GuideCategory, 1)
@@ -139,7 +165,7 @@ describe('loadGuideHubSeoCopy', () => {
     );
 
     it('howto SEO 설명은 count를 치환해 ko 카탈로그에서 읽는다', async () => {
-        const copy = await loadGuideHubSeoCopy('ko', 3);
+        const copy = await loadGuideHubSeoCopy('ko', { terms: 3, howto: 0 });
 
         expect(copy.categoryDescription('howto', 3)).toBe(
             ko.views.guide.categorySeoDescriptionHowto.replace('{count}', '3')
@@ -147,9 +173,44 @@ describe('loadGuideHubSeoCopy', () => {
     });
 
     it('en은 영어 카탈로그를 읽는다', async () => {
-        const copy = await loadGuideHubSeoCopy('en', 3);
+        const copy = await loadGuideHubSeoCopy('en', { terms: 3, howto: 0 });
 
         expect(copy.hubTitle).toBe(en.views.guide.hubTitle);
         expect(copy.hubTitle).not.toBe(ko.views.guide.hubTitle);
+    });
+});
+
+describe('countGuideHubEntries', () => {
+    it('howto가 아닌 항목은 용어로, howto는 따로 센다', () => {
+        expect(
+            countGuideHubEntries([
+                { category: 'indicators' },
+                { category: 'chart-patterns' },
+                { category: 'howto' },
+                { category: 'candlesticks' },
+                { category: 'howto' },
+            ])
+        ).toEqual({ terms: 3, howto: 2 });
+        expect(countGuideHubEntries([])).toEqual({ terms: 0, howto: 0 });
+    });
+});
+
+describe('howto 분류 SEO 제목', () => {
+    it.each([
+        ['ko', ko],
+        ['en', en],
+        ['ja', ja],
+        ['zh', zh],
+    ] as const)(
+        '%s 폭이 SEO_TITLE_MAX_WIDTH를 넘지 않는다',
+        (_locale, messages) => {
+            expect(
+                seoTitleWidth(messages.views.guide.categorySeoTitleHowto)
+            ).toBeLessThanOrEqual(SEO_TITLE_MAX_WIDTH);
+        }
+    );
+
+    it('항목 "주식 차트 보는 법"과 같은 검색어를 제목에 쓰지 않는다', () => {
+        expect(ko.views.guide.categorySeoTitleHowto).not.toContain('보는 법');
     });
 });

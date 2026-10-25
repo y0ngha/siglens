@@ -115,6 +115,7 @@ const LIVE: readonly LiveSymbolGroup[] = [
                 changePercent: 1,
                 basis: 'scanner',
                 detectedOn: '2026-10-25T00:00:00.000Z',
+                match: null,
             },
         ],
     },
@@ -174,6 +175,56 @@ describe('GuideEntryPage', () => {
         expect(time).toHaveAttribute('datetime', RSI.updatedAt);
         expect(time).toHaveTextContent('October 10, 2026');
         expect(time).not.toHaveTextContent('2026년');
+    });
+
+    it('howto는 다른 이름(검색 전용 별칭)을 화면에 그리지 않는다', async () => {
+        const howtoWithAliases = guideEntry({
+            ...HOWTO,
+            aliases: ['RSI 지표 보는법', 'RSI 활용법'],
+        });
+        await renderEntry(howtoWithAliases, 'ko', [
+            howtoWithAliases,
+            RSI,
+            MACD,
+        ]);
+
+        expect(screen.queryByText(g.aliasesLabel)).toBeNull();
+        expect(screen.queryByText('RSI 지표 보는법')).toBeNull();
+    });
+
+    it('스냅샷 행에는 맞은 차트 패턴의 가이드 제목을 적는다', async () => {
+        const doubleBottom = guideEntry({
+            slug: 'double-bottom',
+            category: 'chart-patterns',
+            title: '이중바닥',
+        });
+        await renderEntry(
+            HOWTO,
+            'ko',
+            [HOWTO, RSI, doubleBottom],
+            [
+                {
+                    market: 'us',
+                    rows: [
+                        {
+                            symbol: 'TSLA',
+                            name: null,
+                            changePercent: null,
+                            basis: 'snapshot',
+                            detectedOn: '2026-10-24T21:00:00.000Z',
+                            match: {
+                                kind: 'pattern',
+                                guidePath:
+                                    '/guide/chart-patterns/double-bottom',
+                            },
+                        },
+                    ],
+                },
+            ]
+        );
+
+        const live = screen.getByRole('region', { name: g.liveHeading });
+        expect(within(live).getByText('이중바닥')).toBeInTheDocument();
     });
 
     it('다른 이름이 없으면 그 줄을 그리지 않는다', async () => {

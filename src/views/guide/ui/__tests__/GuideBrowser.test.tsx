@@ -143,6 +143,21 @@ describe('GuideBrowser — 필터가 없을 때', () => {
     });
 });
 
+describe('GuideBrowser — 빈 분류 칩', () => {
+    it('항목이 없는 분류는 칩을 만들지 않는다', () => {
+        renderBrowser();
+
+        expect(
+            screen.queryByRole('button', { name: new RegExp(g.categoryHowto) })
+        ).toBeNull();
+        expect(
+            screen.getByRole('button', {
+                name: new RegExp(g.categoryIndicators),
+            })
+        ).toBeInTheDocument();
+    });
+});
+
 describe('GuideBrowser — 서버 렌더', () => {
     it('URL에 필터가 있어도 첫 HTML은 전체 목록이다(ISR 정적 HTML 유지)', () => {
         window.history.replaceState(null, '', '/guide?q=rsi&c=indicators');

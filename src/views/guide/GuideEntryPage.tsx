@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { GuideEntry, GuideEntrySummary } from '@/entities/guide/types';
+import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
@@ -29,10 +30,7 @@ import {
 } from './lib/guideBrowse';
 import { loadGuideCategoryCopy } from './lib/guideCopy';
 import type { LiveSymbolGroup } from './lib/liveSymbols';
-import {
-    LIVE_ANCHOR_HEADING,
-    splitMarkdownAtHeading,
-} from './lib/splitMarkdown';
+import { splitMarkdownAtHeading } from './lib/splitMarkdown';
 import { GuideCard } from './ui/GuideCard';
 import { GuideDemoChart } from './ui/GuideDemoChart';
 import { GuideFaq } from './ui/GuideFaq';
@@ -117,6 +115,11 @@ export async function GuideEntryPage({
     const answeredBy = resolveAnsweredBy(catalog, entry);
     const body = splitMarkdownAtHeading(entry.bodyMd, LIVE_ANCHOR_HEADING);
     const toc = extractToc(entry.bodyMd);
+    const patternTitles = Object.fromEntries(
+        catalog
+            .filter(item => item.category === 'chart-patterns')
+            .map(item => [guideEntryPath(item.category, item.slug), item.title])
+    );
     const related = resolveRelated(catalog, entry);
     const { previous, next } = guideNeighbors(catalog, entry);
     // 이름과 달리 로케일을 따른다(`INTL_LOCALE[locale]`). 타임존만 KST로 고정해 `updatedAt`의
@@ -152,7 +155,9 @@ export async function GuideEntryPage({
                         <h1 className="mt-2 text-3xl font-bold tracking-tight text-secondary-50 sm:text-4xl">
                             {entry.title}
                         </h1>
-                        {entry.aliases.length > 0 ? (
+                        {/* howto의 별칭은 검색 전용이다 — 노출하면 용어 항목과 같은 검색어를 화면에 또 적게 된다. */}
+                        {entry.category !== 'howto' &&
+                        entry.aliases.length > 0 ? (
                             <dl className="mt-4 flex flex-wrap items-center gap-2">
                                 <dt className={LABEL_KO}>
                                     {t('aliasesLabel')}
@@ -194,6 +199,7 @@ export async function GuideEntryPage({
                         <GuideLiveSymbols
                             locale={locale}
                             groups={liveSymbols}
+                            patternTitles={patternTitles}
                         />
                     )}
                     {body.after === null ? null : (

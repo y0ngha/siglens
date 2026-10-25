@@ -11,8 +11,13 @@ import {
     type GuideFaqItem,
 } from '@/entities/guide/types';
 import { findAdvicePhrases } from '@/entities/analysis-plain/lib/guardPlainText';
+import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
 import { isSignalType } from '@/shared/config/signalTypes';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
+import {
+    parseHeadingLine,
+    scanMarkdownLines,
+} from '@/shared/lib/markdownHeadings';
 import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seo';
 import type { SignalType } from '@y0ngha/siglens-core';
 
@@ -27,6 +32,8 @@ import type { SignalType } from '@y0ngha/siglens-core';
 const HOWTO_CATEGORY = 'howto' as const satisfies GuideCategory;
 /** 네이버 웹문서 제목 절단 기준(한글). howto만 적용 — 기존 용어 항목은 소급하지 않는다. */
 const HOWTO_TITLE_MAX_CHARS = 30;
+
+const anchorTitle = parseHeadingLine(LIVE_ANCHOR_HEADING)?.title;
 
 const LocalizedFrontmatterSchema = z.object({
     title: z.string().min(1),
@@ -170,26 +177,18 @@ export function parseGuideFile(filePath: string): ParsedGuideFile {
     };
 }
 
-/** h2·h3 제목(코드 펜스 밖, github-slugger id 기준으로 유일해야 한다). 본문이 두 `GuideMarkdown`으로 나뉘어 렌더되면 slugger가 리셋되므로 id 충돌을 막으려 유일해야 한다. */
-const SECTION_HEADING = /^#{2,3}\s+(.+?)\s*#*\s*$/;
-
+/** h2·h3 제목은 코드 펜스 밖에서 github-slugger id 기준으로 유일해야 한다. 본문이 두 `GuideMarkdown`으로 나뉘어 렌더되면 slugger가 리셋되므로 id 충돌을 막으려 유일해야 한다. */
 function duplicateHeadingErrors(file: ParsedGuideFile): string[] {
-    const seen = new Set<string>();
-    const duplicated = new Set<string>();
-    let inFence = false;
-    for (const line of file.body.split('\n')) {
-        if (/^\s*(```|~~~)/.test(line)) {
-            inFence = !inFence;
-            continue;
-        }
-        const title = inFence ? undefined : SECTION_HEADING.exec(line)?.[1];
-        if (title === undefined) continue;
-        // rehype-slug가 id를 만드는 것과 같은 알고리즘으로 비교한다 — `RSI?`와 `RSI`는 같은 id다.
-        const id = githubSlug(title);
-        if (seen.has(id)) duplicated.add(title);
-        seen.add(id);
-    }
-    return [...duplicated].map(
+    // rehype-slug가 id를 만드는 것과 같은 알고리즘으로 비교한다 — `RSI?`와 `RSI`는 같은 id다.
+    const titles = scanMarkdownLines(file.body).flatMap(line =>
+        line.heading === null ? [] : [line.heading.title]
+    );
+    const duplicated = titles.filter(
+        (title, index) =>
+            titles.findIndex(other => githubSlug(other) === githubSlug(title)) <
+            index
+    );
+    return [...new Set(duplicated)].map(
         title =>
             `${file.sourceFile}: h2/h3 제목 "${title}"이 한 본문에 두 번 나온다(heading id 충돌)`
     );
@@ -267,10 +266,20 @@ function buildEntry(
     const isHowto = meta.category === HOWTO_CATEGORY;
     const badSignals = meta.signals.filter(signal => !isSignalType(signal));
     const advice = isHowto
-        ? [ko.body, ...meta.faq.flatMap(item => [item.q, item.a])].flatMap(
-              text => findAdvicePhrases(text, 'ko')
-          )
+        ? [
+              ko.body,
+              meta.title,
+              ...meta.aliases,
+              meta.summary,
+              meta.seoTitle,
+              meta.seoDescription,
+              ...(meta.demoCaption == null ? [] : [meta.demoCaption]),
+              ...meta.faq.flatMap(item => [item.q, item.a]),
+          ].flatMap(text => findAdvicePhrases(text, 'ko'))
         : [];
+    const hasLiveAnchor = scanMarkdownLines(ko.body).some(
+        line => line.heading?.level === 2 && line.heading.title === anchorTitle
+    );
     const howtoErrors = isHowto
         ? [
               ...(meta.skills === undefined || meta.skills.length > 0
@@ -291,6 +300,11 @@ function buildEntry(
                         `${ko.sourceFile}: seoTitle 폭이 ${SEO_TITLE_MAX_WIDTH}를 넘는다`,
                     ]
                   : []),
+              ...(hasLiveAnchor
+                  ? []
+                  : [
+                        `${ko.sourceFile}: howto 본문에 라이브 모듈 앵커 "${LIVE_ANCHOR_HEADING}" 절이 있어야 한다`,
+                    ]),
               ...(advice.length > 0
                   ? [
                         `${ko.sourceFile}: 매매 지시 표현이 있다 — ${[...new Set(advice)].join(', ')}`,
@@ -361,6 +375,31 @@ function relatedErrors(entries: readonly GuideSeedEntry[]): string[] {
     );
 }
 
+/**
+ * howto 제목이 자기 `about` 항목의 seoTitle 안에 들어 있으면 두 페이지가 같은 검색어를 두고 겹친다(카니발라이제이션).
+ * 용어 쪽 seoTitle을 정의·계산 같은 다른 의도로 돌려야 한다.
+ */
+function cannibalizationErrors(entries: readonly GuideSeedEntry[]): string[] {
+    const bySlug = new Map(entries.map(entry => [entry.slug, entry]));
+    const koContent = (entry: GuideSeedEntry) =>
+        entry.contents.find(content => content.locale === DEFAULT_LOCALE);
+    return entries
+        .filter(entry => entry.category === HOWTO_CATEGORY)
+        .flatMap(entry => {
+            const title = koContent(entry)?.title;
+            if (title === undefined) return [];
+            return entry.about.flatMap(slug => {
+                const target = bySlug.get(slug);
+                const seoTitle = target && koContent(target)?.seoTitle;
+                return seoTitle?.includes(title)
+                    ? [
+                          `${entry.slug}: howto 제목 "${title}"이 about(${slug})의 seoTitle "${seoTitle}"에 들어 있다(검색어 겹침)`,
+                      ]
+                    : [];
+            });
+        });
+}
+
 /** `about`은 존재하는 비-howto slug만, `demoFrom`은 `about` 안의 slug만 허용한다. */
 function aboutErrors(entries: readonly GuideSeedEntry[]): string[] {
     const bySlug = new Map(entries.map(entry => [entry.slug, entry]));
@@ -406,6 +445,7 @@ export function buildGuideSeed(files: readonly ParsedGuideFile[]): GuideSeed {
         ...builds.flatMap(build => build.errors),
         ...relatedErrors(entries),
         ...aboutErrors(entries),
+        ...cannibalizationErrors(entries),
     ];
 
     if (errors.length > 0) {

@@ -7,7 +7,7 @@ about: [candle-basics, ma, buy-sell-volume, pivot-points]
 signals: [golden_cross, death_cross, support_proximity_bullish, resistance_proximity_bearish]
 demoFrom: candle-basics
 title: 주식 차트 보는 법
-aliases: [주식 차트 보는법, 차트 읽는 법 초보, 캔들 차트 보는법, 주식 차트 기초, 봉차트 보는법]
+aliases: [주식 차트 보는법, 차트 읽는 법 초보, 주식 차트 기초, 봉차트 보는법]
 summary: 캔들 하나 읽기, 거래량 막대, 이동평균선, 지지선과 저항선 네 가지만 순서대로 보면 처음 보는 차트도 읽을 수 있어요.
 seoTitle: 주식 차트 보는 법, 처음 보는 네 가지
 seoDescription: 주식 차트는 캔들, 거래량, 이동평균선, 지지·저항선 네 가지를 순서대로 보면 돼요. 각각 무엇을 뜻하는지, 어디서 자주 틀리는지를 초보 기준으로 정리하고 시그렌즈에서 확인하는 법까지 담았어요.

@@ -76,7 +76,7 @@ describe('selectLiveSymbols', () => {
         ],
     });
 
-    it('신호가 맞는 종목만, confirmed → expected → 스냅샷 순, 시장별로 묶는다', () => {
+    it('신호가 맞는 종목만, 패턴 대상이면 스냅샷 → confirmed → expected 순, 시장별로 묶는다', () => {
         const groups = selectLiveSymbols({
             targets: {
                 signalTypes: ['rsi_oversold'],
@@ -89,6 +89,7 @@ describe('selectLiveSymbols', () => {
                         stock('AAPL', 'rsi_oversold', 'expected', 1),
                         stock('MSFT', 'golden_cross', 'confirmed', 5),
                         stock('NVDA', 'rsi_oversold', 'confirmed', -2),
+                        stock('AMD', 'rsi_oversold', 'confirmed', 3),
                     ]),
                 },
                 {
@@ -106,16 +107,156 @@ describe('selectLiveSymbols', () => {
         });
         expect(groups.map(g => g.market)).toEqual(['us', 'kr']);
         expect(groups[0].rows.map(r => [r.symbol, r.basis])).toEqual([
-            ['NVDA', 'scanner'],
-            ['AAPL', 'scanner'],
             ['TSLA', 'snapshot'],
+            ['NVDA', 'scanner'],
+            ['AMD', 'scanner'],
+            ['AAPL', 'scanner'],
         ]);
-        expect(groups[0].rows[2]).toMatchObject({
+        expect(groups[0].rows[0]).toMatchObject({
             name: null,
             changePercent: null,
             detectedOn: '2026-10-24T21:00:00.000Z',
         });
         expect(groups[1].rows.map(r => r.symbol)).toEqual(['005930.KS']);
+    });
+
+    it('패턴 대상이 없으면 confirmed → expected 순이다', () => {
+        const groups = selectLiveSymbols({
+            targets: { signalTypes: ['rsi_oversold'], patternNames: [] },
+            scanner: [
+                {
+                    market: 'us',
+                    result: scanner([
+                        stock('AAPL', 'rsi_oversold', 'expected', 9),
+                        stock('NVDA', 'rsi_oversold', 'confirmed', -2),
+                    ]),
+                },
+            ],
+            snapshotHits: [],
+            limitPerMarket: 5,
+        });
+        expect(groups[0].rows.map(r => r.symbol)).toEqual(['NVDA', 'AAPL']);
+    });
+
+    it('스캐너 행은 맞은 신호와 예상 여부를, 스냅샷 행은 패턴 가이드 경로를 match로 갖는다', () => {
+        const groups = selectLiveSymbols({
+            targets: {
+                signalTypes: ['rsi_oversold'],
+                patternNames: ['double_bottom'],
+            },
+            scanner: [
+                {
+                    market: 'us',
+                    result: scanner([
+                        stock('AAPL', 'rsi_oversold', 'expected', 1),
+                        stock('NVDA', 'rsi_oversold', 'confirmed', -2),
+                    ]),
+                },
+            ],
+            snapshotHits: [
+                { symbol: 'TSLA', generatedAt: '2026-10-24T21:00:00.000Z' },
+            ],
+            limitPerMarket: 5,
+        });
+        const bySymbol = Object.fromEntries(
+            groups[0].rows.map(row => [row.symbol, row.match])
+        );
+        expect(bySymbol).toEqual({
+            TSLA: {
+                kind: 'pattern',
+                guidePath: '/guide/chart-patterns/double-bottom',
+            },
+            NVDA: {
+                kind: 'signal',
+                signalType: 'rsi_oversold',
+                expected: false,
+            },
+            AAPL: {
+                kind: 'signal',
+                signalType: 'rsi_oversold',
+                expected: true,
+            },
+        });
+    });
+
+    it('스캐너와 스냅샷에 모두 있는 종목은 한 행으로 접고, 패턴 대상이면 패턴 match와 스캐너 데이터를 쓴다', () => {
+        const groups = selectLiveSymbols({
+            targets: {
+                signalTypes: ['rsi_oversold'],
+                patternNames: ['double_bottom'],
+            },
+            scanner: [
+                {
+                    market: 'us',
+                    result: scanner([
+                        stock('NVDA', 'rsi_oversold', 'confirmed', -2),
+                    ]),
+                },
+            ],
+            snapshotHits: [
+                { symbol: 'NVDA', generatedAt: '2026-10-24T21:00:00.000Z' },
+            ],
+            limitPerMarket: 5,
+        });
+        expect(groups[0].rows).toHaveLength(1);
+        expect(groups[0].rows[0]).toMatchObject({
+            symbol: 'NVDA',
+            basis: 'scanner',
+            changePercent: -2,
+            match: {
+                kind: 'pattern',
+                guidePath: '/guide/chart-patterns/double-bottom',
+            },
+        });
+    });
+
+    it('대상 패턴이 서로 다른 가이드를 가리키면 스냅샷 행의 match는 null이다', () => {
+        const groups = selectLiveSymbols({
+            targets: {
+                signalTypes: [],
+                patternNames: ['double_bottom', 'double_top'],
+            },
+            scanner: [],
+            snapshotHits: [
+                { symbol: 'TSLA', generatedAt: '2026-10-24T21:00:00.000Z' },
+            ],
+            limitPerMarket: 5,
+        });
+        expect(groups[0].rows[0].match).toBeNull();
+    });
+
+    it('한 종목에 확정과 예상 대상 신호가 함께 있으면 확정 신호를 match로 보여 준다', () => {
+        const both = {
+            ...stock('BOTH', 'rsi_oversold', 'expected', 1),
+            signals: [
+                {
+                    type: 'rsi_oversold' as const,
+                    direction: 'bullish' as const,
+                    phase: 'expected' as const,
+                    detectedAt: 10,
+                },
+                {
+                    type: 'rsi_bullish_divergence' as const,
+                    direction: 'bullish' as const,
+                    phase: 'confirmed' as const,
+                    detectedAt: 10,
+                },
+            ],
+        };
+        const groups = selectLiveSymbols({
+            targets: {
+                signalTypes: ['rsi_oversold', 'rsi_bullish_divergence'],
+                patternNames: [],
+            },
+            scanner: [{ market: 'us', result: scanner([both]) }],
+            snapshotHits: [],
+            limitPerMarket: 5,
+        });
+        expect(groups[0].rows[0].match).toEqual({
+            kind: 'signal',
+            signalType: 'rsi_bullish_divergence',
+            expected: false,
+        });
     });
 
     it('시장당 limit을 넘기지 않고, 비면 그룹을 내지 않는다', () => {

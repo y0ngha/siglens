@@ -6,6 +6,7 @@ import {
     parseGuideFile,
     type ParsedGuideFile,
 } from '@/../db/scripts/lib/guideSeed';
+import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 
@@ -343,7 +344,7 @@ describe('planGuideUpsert', () => {
 function howto(
     slug: string,
     data: Record<string, unknown> = {},
-    body = '## 이렇게 봐요\n\n본문'
+    body = `## 이렇게 봐요\n\n본문\n\n${LIVE_ANCHOR_HEADING}\n\n본문`
 ): ParsedGuideFile {
     return {
         slug,
@@ -359,7 +360,7 @@ function howto(
             title: 'RSI 보는 법',
             aliases: ['RSI 지표 보는법'],
             summary: '요약',
-            seoTitle: 'RSI 보는 법: 70·30보다 먼저 볼 것',
+            seoTitle: 'RSI 보는 법: 50선·추세 순서',
             seoDescription: 'seo 설명',
             faq: [{ q: '질문', a: '답' }],
             ...data,
@@ -467,9 +468,73 @@ describe('howto 규칙', () => {
                 howto('x', { faq: [{ q: '지금 사세요?', a: '답' }] }),
             ])
         ).toThrow(/매매 지시 표현/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', { title: '지금 사세요 가이드' }),
+            ])
+        ).toThrow(/매매 지시 표현/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', { seoDescription: '지금 사세요.' }),
+            ])
+        ).toThrow(/매매 지시 표현/);
+        expect(() =>
+            buildGuideSeed([ko('rsi'), howto('x', { aliases: ['매도하세요'] })])
+        ).toThrow(/매매 지시 표현/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', { summary: '70을 넘으면 매도하세요.' }),
+            ])
+        ).toThrow(/매매 지시 표현/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', { demoCaption: '지금 사세요.' }),
+            ])
+        ).toThrow(/매매 지시 표현/);
         // 용어 항목(기존 90편)은 이 린트를 적용하지 않는다 — 소급 실패를 막는다.
         expect(() =>
             buildGuideSeed([ko('rsi', {}, '70을 넘으면 매도하세요.')])
+        ).not.toThrow();
+    });
+
+    it('howto 본문에 라이브 모듈 앵커 절이 없으면 에러다', () => {
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', {}, '## 이렇게 봐요\n\n본문'),
+            ])
+        ).toThrow(/라이브 모듈 앵커/);
+        // 코드 펜스 안의 제목은 앵커가 아니다.
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto(
+                    'x',
+                    {},
+                    `## 이렇게 봐요\n\n\`\`\`\n${LIVE_ANCHOR_HEADING}\n\`\`\``
+                ),
+            ])
+        ).toThrow(/라이브 모듈 앵커/);
+        // 용어 항목은 앵커가 없어도 된다.
+        expect(() => buildGuideSeed([ko('rsi')])).not.toThrow();
+    });
+
+    it('howto 제목이 about 항목의 seoTitle 안에 있으면 에러다', () => {
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi', { seoTitle: 'RSI 보는 법과 70·30' }),
+                howto('x'),
+            ])
+        ).toThrow(/RSI 보는 법.*seoTitle/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi', { seoTitle: 'RSI 뜻과 계산법' }),
+                howto('x'),
+            ])
         ).not.toThrow();
     });
 
