@@ -27,6 +27,7 @@ vi.mock('next-intl/server', () => ({
 import { loadGuideCategoryCopy, loadGuideHubSeoCopy } from '../guideCopy';
 
 const CATEGORY_KEYS = {
+    howto: 'Howto',
     candlesticks: 'Candlesticks',
     'chart-patterns': 'ChartPatterns',
     indicators: 'Indicators',
@@ -136,6 +137,14 @@ describe('loadGuideHubSeoCopy', () => {
             );
         }
     );
+
+    it('howto SEO 설명은 count를 치환해 ko 카탈로그에서 읽는다', async () => {
+        const copy = await loadGuideHubSeoCopy('ko', 3);
+
+        expect(copy.categoryDescription('howto', 3)).toBe(
+            ko.views.guide.categorySeoDescriptionHowto.replace('{count}', '3')
+        );
+    });
 
     it('en은 영어 카탈로그를 읽는다', async () => {
         const copy = await loadGuideHubSeoCopy('en', 3);

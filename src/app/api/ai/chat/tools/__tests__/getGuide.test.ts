@@ -33,6 +33,9 @@ function entry(overrides: Partial<GuideEntry>): GuideEntry {
         aliases: ['상대강도지수'],
         summary: '과열을 재는 지표',
         updatedAt: '2026-10-01T00:00:00.000Z',
+        about: [],
+        signals: [],
+        demoFrom: null,
         seoTitle: 'RSI 뜻',
         seoDescription: '설명',
         demoCaption: null,
@@ -121,6 +124,44 @@ describe('getGuideTool', () => {
         expect(result.best.url).toBe(
             'https://siglens.io/en/guide/indicators/rsi'
         );
+    });
+
+    it('번역이 없어 ko 본문을 대신 싣는 항목에만 language: ko를 단다', async () => {
+        loadGuideCatalog.mockResolvedValue({
+            entries: [
+                entry({ slug: 'rsi', title: 'RSI', isFallback: true }),
+                entry({
+                    slug: 'stochastic-rsi',
+                    title: 'Stochastic RSI',
+                    isFallback: true,
+                }),
+                entry({ slug: 'rsi-2', title: 'RSI 2', isFallback: false }),
+            ],
+        });
+        const result = (await getGuideTool(
+            { query: 'rsi' },
+            ctx('en'),
+            rt
+        )) as {
+            best: Record<string, unknown>;
+            others: Record<string, unknown>[];
+        };
+
+        expect(result.best).toHaveProperty('language', 'ko');
+        const bySlug = new Map(
+            result.others.map(other => [String(other.title), other])
+        );
+        expect(bySlug.get('Stochastic RSI')).toHaveProperty('language', 'ko');
+        expect(bySlug.get('RSI 2')).not.toHaveProperty('language');
+    });
+
+    it('번역된 최상위 항목에는 language 키가 없다', async () => {
+        loadGuideCatalog.mockResolvedValue({ entries: [entry({})] });
+        const result = (await getGuideTool({ query: 'RSI' }, ctx(), rt)) as {
+            best: Record<string, unknown>;
+        };
+
+        expect(result.best).not.toHaveProperty('language');
     });
 
     it('긴 본문은 문단 경계에서 3,500자 이내로 자른다', async () => {

@@ -49,7 +49,15 @@ function guideUrl(entry: GuideEntry, locale: Locale): string {
 }
 
 /**
- * `get_guide` — SIGLENS 차트 가이드(캔들·차트 패턴·보조지표·전략) 검색.
+ * 요청 로케일 번역이 없어 ko 본문을 대신 싣는 항목만 `language: 'ko'`를 달아, 모델이 비-ko
+ * 사용자에게 인용할 때 원문 언어를 밝히게 한다. 번역된 항목에는 키 자체를 넣지 않는다.
+ */
+function fallbackLanguage(entry: GuideEntry): { language?: 'ko' } {
+    return entry.isFallback ? { language: 'ko' as const } : {};
+}
+
+/**
+ * `get_guide` — SIGLENS 차트 가이드(캔들·차트 패턴·보조지표·전략 용어 항목과 질문형 실전 가이드) 검색.
  *
  * 허브 검색 UI와 같은 `searchGuide`를 쓴다. 최상위 1건만 본문을 싣고 나머지 최대 2건은
  * 제목·요약·url만 — 도구 결과 상한 안에서 모델이 근거를 인용하고 링크를 걸 수 있게 한다.
@@ -83,12 +91,14 @@ export const getGuideTool: ToolExecutor = async (args, ctx) => {
             body: body.text,
             bodyTruncated: body.truncated,
             url: guideUrl(best, ctx.locale),
+            ...fallbackLanguage(best),
         },
         others: others.map(entry => ({
             title: entry.title,
             category: entry.category,
             summary: entry.summary,
             url: guideUrl(entry, ctx.locale),
+            ...fallbackLanguage(entry),
         })),
     };
 };

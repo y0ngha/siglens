@@ -25,18 +25,21 @@ export async function loadGuideCategoryCopy(
     const t = await getTranslations({ locale, namespace: 'views.guide' });
     return {
         label: {
+            howto: t('categoryHowto'),
             candlesticks: t('categoryCandlesticks'),
             'chart-patterns': t('categoryChartPatterns'),
             indicators: t('categoryIndicators'),
             strategies: t('categoryStrategies'),
         },
         intro: {
+            howto: t('categoryIntroHowto'),
             candlesticks: t('categoryIntroCandlesticks'),
             'chart-patterns': t('categoryIntroChartPatterns'),
             indicators: t('categoryIntroIndicators'),
             strategies: t('categoryIntroStrategies'),
         },
         seoTitle: {
+            howto: t('categorySeoTitleHowto'),
             candlesticks: t('categorySeoTitleCandlesticks'),
             'chart-patterns': t('categorySeoTitleChartPatterns'),
             indicators: t('categorySeoTitleIndicators'),
@@ -77,6 +80,8 @@ export async function loadGuideHubSeoCopy(
         // 정적 리터럴 키 — 동적 조회는 i18n 추출기가 못 센다(위 `loadGuideCategoryCopy` 참고).
         categoryDescription: (category, count) => {
             switch (category) {
+                case 'howto':
+                    return t('categorySeoDescriptionHowto', { count });
                 case 'candlesticks':
                     return t('categorySeoDescriptionCandlesticks', { count });
                 case 'chart-patterns':

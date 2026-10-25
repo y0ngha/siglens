@@ -7,6 +7,7 @@ import {
     groupGuideByCategory,
     guideNeighbors,
     parseGuideBrowseState,
+    resolveAnsweredBy,
     resolveRelated,
     toGuideSearchString,
     toGuideSummary,
@@ -20,6 +21,9 @@ function entry(overrides: Partial<GuideEntry> & { slug: string }): GuideEntry {
         aliases: [],
         summary: '',
         updatedAt: '2026-10-10T00:00:00.000Z',
+        about: [],
+        signals: [],
+        demoFrom: null,
         seoTitle: '',
         seoDescription: '',
         demoCaption: null,
@@ -145,6 +149,7 @@ describe('groupGuideByCategory', () => {
 describe('countByCategory', () => {
     it('분류별 개수를 센다', () => {
         expect(countByCategory(ALL)).toEqual({
+            howto: 0,
             candlesticks: 2,
             'chart-patterns': 0,
             indicators: 2,
@@ -176,6 +181,33 @@ describe('guideNeighbors', () => {
 describe('resolveRelated', () => {
     it('없는 slug와 자기 자신을 빼고 적힌 순서를 지킨다', () => {
         expect(resolveRelated(ALL, RSI)).toEqual([MACD]);
+    });
+});
+
+describe('resolveRelated / resolveAnsweredBy', () => {
+    const rsi = entry({ slug: 'rsi' });
+    const macd = entry({ slug: 'macd' });
+    const howto = entry({
+        slug: 'rsi-how-to-read',
+        category: 'howto',
+        about: ['rsi'],
+        related: ['macd', 'rsi'],
+    });
+    const catalog = [howto, rsi, macd];
+
+    it('about을 related보다 앞에 두고 중복은 한 번만 낸다', () => {
+        expect(resolveRelated(catalog, howto).map(e => e.slug)).toEqual([
+            'rsi',
+            'macd',
+        ]);
+    });
+
+    it('용어 항목에서 자기를 about으로 가리키는 howto를 찾는다', () => {
+        expect(resolveAnsweredBy(catalog, rsi).map(e => e.slug)).toEqual([
+            'rsi-how-to-read',
+        ]);
+        expect(resolveAnsweredBy(catalog, macd)).toEqual([]);
+        expect(resolveAnsweredBy(catalog, howto)).toEqual([]);
     });
 });
 

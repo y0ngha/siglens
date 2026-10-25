@@ -23,13 +23,20 @@ import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
 import { getGuideDemo } from './demos/registry';
 import {
     guideNeighbors,
+    resolveAnsweredBy,
     resolveRelated,
     toGuideSummary,
 } from './lib/guideBrowse';
 import { loadGuideCategoryCopy } from './lib/guideCopy';
+import type { LiveSymbolGroup } from './lib/liveSymbols';
+import {
+    LIVE_ANCHOR_HEADING,
+    splitMarkdownAtHeading,
+} from './lib/splitMarkdown';
 import { GuideCard } from './ui/GuideCard';
 import { GuideDemoChart } from './ui/GuideDemoChart';
 import { GuideFaq } from './ui/GuideFaq';
+import { GuideLiveSymbols } from './ui/GuideLiveSymbols';
 import { GuideMarkdown } from './ui/GuideMarkdown';
 
 interface GuideEntryPageProps {
@@ -37,8 +44,11 @@ interface GuideEntryPageProps {
     readonly entry: GuideEntry;
     /** 같은 로케일의 카탈로그 전체 — 이전·다음과 관련 항목을 찾는 데 쓴다. */
     readonly catalog: readonly GuideEntry[];
+    /** 라우트 로더(`loadGuideLiveSymbols`)의 결과. null이면 모듈을 그리지 않는다. */
+    readonly liveSymbols: readonly LiveSymbolGroup[] | null;
 }
 
+const ANSWERED_BY_HEADING_ID = 'guide-answered-by-heading';
 const RELATED_HEADING_ID = 'guide-related-heading';
 const CTA_HEADING_ID = 'guide-cta-heading';
 
@@ -80,8 +90,8 @@ function PagerLink({ direction, label, target }: PagerLinkProps) {
 /**
  * `/guide/[category]/[slug]` — 항목 한 편.
  *
- * 구성: 브레드크럼 → 제목·다른 이름·요약 → 데모 차트 → 본문 → FAQ → 관련 항목·이전/다음 → 종목 검색
- * 안내 → 투자 고지. 넓은 화면에서는 오른쪽에 본문 차례가 따라온다.
+ * 구성: 브레드크럼 → 제목·다른 이름·요약 → 데모 차트 → 본문(앵커 절) → 라이브 종목 → 본문 나머지 →
+ * FAQ → 답하는 질문 → 관련 항목·이전/다음 → 종목 검색 안내 → 투자 고지. 넓은 화면에서는 오른쪽에 본문 차례가 따라온다.
  *
  * 마크업은 크롤러가 읽는 순서 그대로다(h1 하나, 본문 h2, FAQ·관련 h2). JSON-LD는 라우트가 만든다.
  */
@@ -89,6 +99,7 @@ export async function GuideEntryPage({
     locale,
     entry,
     catalog,
+    liveSymbols,
 }: GuideEntryPageProps) {
     const [t, tFab, tLegal, copy] = await Promise.all([
         getTranslations({ locale, namespace: 'views.guide' }),
@@ -97,7 +108,14 @@ export async function GuideEntryPage({
         loadGuideCategoryCopy(locale),
     ]);
     const categoryLabel = copy.label[entry.category];
-    const demo = getGuideDemo(entry.category, entry.slug);
+    // howto는 자기 데모가 없다 — `demoFrom`이 가리키는 용어 항목의 데모를 빌린다(캡션은 자기 것).
+    const demoSource =
+        entry.demoFrom === null
+            ? entry
+            : (catalog.find(item => item.slug === entry.demoFrom) ?? entry);
+    const demo = getGuideDemo(demoSource.category, demoSource.slug);
+    const answeredBy = resolveAnsweredBy(catalog, entry);
+    const body = splitMarkdownAtHeading(entry.bodyMd, LIVE_ANCHOR_HEADING);
     const toc = extractToc(entry.bodyMd);
     const related = resolveRelated(catalog, entry);
     const { previous, next } = guideNeighbors(catalog, entry);
@@ -170,10 +188,49 @@ export async function GuideEntryPage({
                     )}
 
                     <div className="mt-10">
-                        <GuideMarkdown markdown={entry.bodyMd} />
+                        <GuideMarkdown markdown={body.before} />
                     </div>
+                    {liveSymbols === null ? null : (
+                        <GuideLiveSymbols
+                            locale={locale}
+                            groups={liveSymbols}
+                        />
+                    )}
+                    {body.after === null ? null : (
+                        // GuideMarkdown은 첫 자식의 위 여백을 지운다(`[&>:first-child]:mt-0`).
+                        // 둘째 조각의 첫 h2는 분할 전엔 첫 자식이 아니었으니 h2 기본 여백
+                        // (`mt-12`, GuideMarkdown)을 이 래퍼가 되돌려 준다.
+                        <div className="mt-12">
+                            <GuideMarkdown markdown={body.after} />
+                        </div>
+                    )}
 
                     <GuideFaq heading={t('faqHeading')} items={entry.faq} />
+
+                    {answeredBy.length > 0 ? (
+                        <section
+                            aria-labelledby={ANSWERED_BY_HEADING_ID}
+                            className="mt-14"
+                        >
+                            <h2
+                                id={ANSWERED_BY_HEADING_ID}
+                                className={HEADING_SECTION}
+                            >
+                                {t('answeredByHeading')}
+                            </h2>
+                            <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {answeredBy.map(item => (
+                                    <GuideCard
+                                        key={item.slug}
+                                        entry={toGuideSummary(item)}
+                                        categoryLabel={
+                                            copy.label[item.category]
+                                        }
+                                    />
+                                ))}
+                            </ul>
+                        </section>
+                    ) : null}
 
                     {related.length > 0 ? (
                         <section

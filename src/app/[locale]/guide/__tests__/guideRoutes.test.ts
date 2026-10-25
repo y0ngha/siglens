@@ -11,6 +11,9 @@ vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_WIDTH: 1200,
     OG_IMAGE_HEIGHT: 630,
 }));
+vi.mock('../_lib/loadGuideLiveSymbols', () => ({
+    loadGuideLiveSymbols: vi.fn(async () => null),
+}));
 /** 뷰는 `views/guide` 스위트가 검사한다. 여기서는 라우트가 넘기는 props만 본다. */
 vi.mock('@/views/guide/GuideHubPage', () => ({ GuideHubPage: () => null }));
 vi.mock('@/views/guide/GuideCategoryPage', () => ({
@@ -26,6 +29,7 @@ vi.mock('@/views/guide/GuideUnavailablePage', () => ({
 import { isValidElement, type ReactNode } from 'react';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import type { GuideCatalog } from '@/entities/guide/types';
+import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
 import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { SITE_URL } from '@/shared/lib/seo';
@@ -84,9 +88,9 @@ function findProps(
 }
 
 describe('ISR 설정', () => {
-    it('세 라우트 모두 revalidate는 하루(86400) 리터럴이다', () => {
+    it('허브·분류는 하루(86400), 항목은 1시간(3600) 리터럴이다', () => {
         expect([hubRevalidate, categoryRevalidate, entryRevalidate]).toEqual([
-            86400, 86400, 86400,
+            86400, 86400, 3600,
         ]);
     });
 
@@ -355,6 +359,27 @@ describe('/guide/[category]/[slug]', () => {
         expect(props?.entry).toBe(RSI);
         expect(props?.catalog).toBe(CATALOG.entries);
         expect(mockLoad).toHaveBeenCalledWith('ko');
+    });
+
+    it('라이브 종목 로더 결과를 뷰에 그대로 넘긴다', async () => {
+        const groups = [{ market: 'us' as const, rows: [] }];
+        vi.mocked(loadGuideLiveSymbols).mockResolvedValueOnce(groups);
+        const { GuideEntryPage } = await import('@/views/guide/GuideEntryPage');
+        const props = findProps(
+            await GuideEntryRoute(entryParams('indicators', 'rsi')),
+            GuideEntryPage
+        );
+        expect(loadGuideLiveSymbols).toHaveBeenCalledWith(RSI, CATALOG.entries);
+        expect(props?.liveSymbols).toBe(groups);
+    });
+
+    it('로더가 null(오프라인·실패)이면 liveSymbols는 null이다', async () => {
+        const { GuideEntryPage } = await import('@/views/guide/GuideEntryPage');
+        const props = findProps(
+            await GuideEntryRoute(entryParams('indicators', 'rsi')),
+            GuideEntryPage
+        );
+        expect(props?.liveSymbols).toBeNull();
     });
 
     describe('카탈로그를 못 읽으면', () => {

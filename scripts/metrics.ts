@@ -26,13 +26,17 @@ async function main(): Promise<void> {
     const { db } = getDatabaseClient();
     const repo = new DrizzleVisitorRepository(db);
 
-    const [daily, mau, total, userAgents] = await Promise.all([
+    const [daily, mau, total, userAgents, guideLandings] = await Promise.all([
         repo.dailyActiveUsers(kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS)),
         repo.monthlyActiveUsers(kstDateKeyDaysBefore(today, MAU_WINDOW_DAYS)),
         repo.totalRows(),
         repo.topUserAgents(
             kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS),
             USER_AGENT_SAMPLE_ROWS
+        ),
+        repo.landingSectionCounts(
+            kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS),
+            'guide'
         ),
     ]);
 
@@ -42,6 +46,14 @@ async function main(): Promise<void> {
     }
     if (daily.length === 0) {
         console.log('(행 없음 — VISITOR_HASH_PEPPER 설정을 먼저 확인한다)');
+    }
+
+    console.log('');
+    console.log(
+        '가이드 진입(landing_path /guide, /guide/*, 로케일 접두사 포함)'
+    );
+    for (const row of guideLandings) {
+        console.log(`${row.date}   ${row.count.toLocaleString('ko-KR')}`);
     }
 
     console.log('');

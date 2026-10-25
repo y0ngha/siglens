@@ -13,6 +13,7 @@ import {
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { LOCALES } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
 import type { DailyActiveUsers, UserAgentTally } from './types';
 
@@ -56,6 +57,23 @@ interface VisitorRepository {
      * 섞였는지는 UA를 직접 눈으로 보는 것 말고 방법이 없다.
      */
     topUserAgents(fromDate: string, limit: number): Promise<UserAgentTally[]>;
+    /**
+     * 최상위 `section`(예: `guide`) 아래로 진입한 방문의 날짜별 수 — 가이드 유입 추세용.
+     * `landing_path`는 Referer의 pathname이라 로케일 접두사(`/en/guide/...`)가 붙을 수 있고
+     * 허브(`/guide`)도 있으므로, 단순 접두사 비교가 아니라 로케일 접두사를 허용하는 정규식으로 센다.
+     */
+    landingSectionCounts(
+        fromDate: string,
+        section: string
+    ): Promise<DailyActiveUsers[]>;
+}
+
+/**
+ * `^(/(ko|en|ja|zh))?/{section}(/|$)` — 선택적 로케일 접두사 + 허브·하위 경로. 로케일 목록은 i18n 설정에서 온다.
+ * `section`은 호출부 상수(영숫자·하이픈)만 받는다.
+ */
+function landingSectionPattern(section: string): string {
+    return `^(/(${LOCALES.join('|')}))?/${section}(/|$)`;
 }
 
 /** Drizzle ORM-backed implementation. */
@@ -137,5 +155,22 @@ export class DrizzleVisitorRepository implements VisitorRepository {
             .groupBy(visitorDays.userAgent, visitorDays.country)
             .orderBy(desc(tally))
             .limit(limit);
+    }
+
+    async landingSectionCounts(
+        fromDate: string,
+        section: string
+    ): Promise<DailyActiveUsers[]> {
+        return this.db
+            .select({ date: visitorDays.date, count: count() })
+            .from(visitorDays)
+            .where(
+                and(
+                    gte(visitorDays.date, fromDate),
+                    sql`${visitorDays.landingPath} ~ ${landingSectionPattern(section)}`
+                )
+            )
+            .groupBy(visitorDays.date)
+            .orderBy(desc(visitorDays.date));
     }
 }

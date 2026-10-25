@@ -254,6 +254,9 @@ describe('planGuideUpsert', () => {
         sortOrder: e.order,
         related: e.related,
         skills: e.skills,
+        about: e.about,
+        signals: e.signals,
+        demoFrom: e.demoFrom,
     }));
     const existingContents = seed.entries.flatMap(e =>
         e.contents.map(c => ({
@@ -322,6 +325,9 @@ describe('planGuideUpsert', () => {
                     sortOrder: 1,
                     related: [],
                     skills: [],
+                    about: [],
+                    signals: [],
+                    demoFrom: null,
                 },
             ],
             [
@@ -331,5 +337,206 @@ describe('planGuideUpsert', () => {
         );
 
         expect(plan.orphans).toEqual(['entry gone', 'content rsi:en']);
+    });
+});
+
+function howto(
+    slug: string,
+    data: Record<string, unknown> = {},
+    body = '## 이렇게 봐요\n\n본문'
+): ParsedGuideFile {
+    return {
+        slug,
+        dirCategory: 'howto',
+        locale: 'ko',
+        data: {
+            category: 'howto',
+            order: 10,
+            related: [],
+            skills: [],
+            about: ['rsi'],
+            signals: ['rsi_oversold'],
+            title: 'RSI 보는 법',
+            aliases: ['RSI 지표 보는법'],
+            summary: '요약',
+            seoTitle: 'RSI 보는 법: 70·30보다 먼저 볼 것',
+            seoDescription: 'seo 설명',
+            faq: [{ q: '질문', a: '답' }],
+            ...data,
+        },
+        body,
+        sourceFile: `${slug}/ko.md`,
+    };
+}
+
+describe('howto 규칙', () => {
+    const base = [ko('rsi'), howto('rsi-how-to-read')];
+
+    it('about·signals·demoFrom·skills를 항목에 싣는다', () => {
+        const seed = buildGuideSeed([
+            ko('rsi'),
+            howto('rsi-how-to-read', { demoFrom: 'rsi' }),
+        ]);
+        const entry = seed.entries.find(e => e.slug === 'rsi-how-to-read')!;
+        expect(entry.about).toEqual(['rsi']);
+        expect(entry.signals).toEqual(['rsi_oversold']);
+        expect(entry.demoFrom).toBe('rsi');
+        expect(entry.skills).toEqual([]);
+        const term = seed.entries.find(e => e.slug === 'rsi')!;
+        expect(term.about).toEqual([]);
+        expect(term.signals).toEqual([]);
+        expect(term.demoFrom).toBeNull();
+        expect(term.skills).toEqual(['rsi']);
+    });
+
+    it('howto는 skills: []를 명시해야 한다', () => {
+        expect(() =>
+            buildGuideSeed([ko('rsi'), howto('x', { skills: undefined })])
+        ).toThrow(/skills: \[\]/);
+        expect(() =>
+            buildGuideSeed([ko('rsi'), howto('x', { skills: ['rsi'] })])
+        ).toThrow(/skills: \[\]/);
+    });
+
+    it('howto는 about이 1개 이상이고 존재하는 비-howto slug여야 한다', () => {
+        expect(() =>
+            buildGuideSeed([ko('rsi'), howto('x', { about: [] })])
+        ).toThrow(/about/);
+        expect(() =>
+            buildGuideSeed([ko('rsi'), howto('x', { about: ['nope'] })])
+        ).toThrow(/about\(nope\)/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x'),
+                howto('y', { about: ['x'] }),
+            ])
+        ).toThrow(/about\(x\).*howto/);
+    });
+
+    it('signals는 SignalType 집합 안이어야 한다(모든 카테고리)', () => {
+        expect(() =>
+            buildGuideSeed([ko('rsi', { signals: ['not_a_signal'] })])
+        ).toThrow(/signals\(not_a_signal\)/);
+    });
+
+    it('용어(비-howto) 항목은 about을 쓸 수 없다', () => {
+        expect(() =>
+            buildGuideSeed([ko('rsi'), ko('macd', { about: ['rsi'] })])
+        ).toThrow(/macd: 용어 항목은 about을 쓰지 않는다/);
+    });
+
+    it('demoFrom은 about 안의 slug여야 한다', () => {
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                ko('macd'),
+                howto('x', { demoFrom: 'macd' }),
+            ])
+        ).toThrow(/demoFrom\(macd\)/);
+    });
+
+    it('howto 제목은 30자 이하, seoTitle 폭은 55 이하다', () => {
+        expect(() =>
+            buildGuideSeed([ko('rsi'), howto('x', { title: '가'.repeat(31) })])
+        ).toThrow(/title.*30/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', { seoTitle: '가'.repeat(28) }),
+            ])
+        ).toThrow(/seoTitle.*55/);
+    });
+
+    it('howto 본문·FAQ에 매매 지시 표현이 있으면 에러다', () => {
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', {}, '## 이렇게 봐요\n\n70을 넘으면 매도하세요.'),
+            ])
+        ).toThrow(/매매 지시 표현/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', { faq: [{ q: 'q', a: '지금 사세요.' }] }),
+            ])
+        ).toThrow(/매매 지시 표현/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi'),
+                howto('x', { faq: [{ q: '지금 사세요?', a: '답' }] }),
+            ])
+        ).toThrow(/매매 지시 표현/);
+        // 용어 항목(기존 90편)은 이 린트를 적용하지 않는다 — 소급 실패를 막는다.
+        expect(() =>
+            buildGuideSeed([ko('rsi', {}, '70을 넘으면 매도하세요.')])
+        ).not.toThrow();
+    });
+
+    it('planGuideUpsert가 about·signals·demoFrom 변경을 감지한다', () => {
+        const seed = buildGuideSeed(base);
+        const existing = seed.entries.map(e => ({
+            slug: e.slug,
+            category: e.category,
+            sortOrder: e.order,
+            related: e.related,
+            skills: e.skills,
+            about: e.about,
+            signals: e.signals,
+            demoFrom: e.demoFrom,
+        }));
+        expect(planGuideUpsert(seed, existing, []).entries).toEqual([]);
+        const changed = existing.map(e =>
+            e.slug === 'rsi-how-to-read' ? { ...e, signals: [] } : e
+        );
+        expect(
+            planGuideUpsert(seed, changed, []).entries.map(e => e.slug)
+        ).toEqual(['rsi-how-to-read']);
+        const changedAbout = existing.map(e =>
+            e.slug === 'rsi-how-to-read' ? { ...e, about: [] } : e
+        );
+        expect(
+            planGuideUpsert(seed, changedAbout, []).entries.map(e => e.slug)
+        ).toEqual(['rsi-how-to-read']);
+        const changedDemoFrom = existing.map(e =>
+            e.slug === 'rsi-how-to-read' ? { ...e, demoFrom: 'rsi' } : e
+        );
+        expect(
+            planGuideUpsert(seed, changedDemoFrom, []).entries.map(e => e.slug)
+        ).toEqual(['rsi-how-to-read']);
+    });
+});
+
+describe('중복 제목 린트', () => {
+    it('한 본문에 같은 h2/h3 제목이 두 번 나오면 에러다(모든 카테고리)', () => {
+        expect(() =>
+            buildGuideSeed([ko('rsi', {}, '## 가\n\n본문\n\n## 가\n\n또')])
+        ).toThrow(/제목 "가".*두 번/);
+        expect(() =>
+            buildGuideSeed([
+                ko('rsi', {}, '## 가\n\n### 나\n\n본문\n\n### 나 ##\n'),
+            ])
+        ).toThrow(/제목 "나"/);
+    });
+
+    it('github-slugger가 같은 id로 만드는 제목(구두점·대소문자 차이)은 충돌이다', () => {
+        expect(() =>
+            buildGuideSeed([ko('rsi', {}, '## RSI\n\n본문\n\n### RSI?\n\n또')])
+        ).toThrow(/제목 "RSI\?".*두 번/);
+        expect(() =>
+            buildGuideSeed([ko('rsi', {}, '## Rsi\n\n본문\n\n### RSI\n')])
+        ).toThrow(/두 번/);
+    });
+
+    it('서로 다른 제목과 코드 펜스 안의 # 줄은 통과한다', () => {
+        expect(() =>
+            buildGuideSeed([
+                ko(
+                    'rsi',
+                    {},
+                    '## 가\n\n```\n## 가\n```\n\n## 나\n\n### 다\n\n### 라'
+                ),
+            ])
+        ).not.toThrow();
     });
 });

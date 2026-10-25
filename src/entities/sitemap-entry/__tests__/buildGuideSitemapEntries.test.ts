@@ -15,6 +15,9 @@ function summary(
         aliases: [],
         summary: '요약',
         updatedAt: '2026-10-01T00:00:00.000Z',
+        about: [],
+        signals: [],
+        demoFrom: null,
         ...overrides,
     };
 }

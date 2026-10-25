@@ -41,6 +41,9 @@ export async function seedGuide(
             sortOrder: guideEntries.sortOrder,
             related: guideEntries.related,
             skills: guideEntries.skills,
+            about: guideEntries.about,
+            signals: guideEntries.signals,
+            demoFrom: guideEntries.demoFrom,
         })
         .from(guideEntries);
     const existingContents: ExistingGuideContent[] = await db
@@ -69,6 +72,9 @@ export async function seedGuide(
                     sortOrder: entry.order,
                     related: [...entry.related],
                     skills: [...entry.skills],
+                    about: [...entry.about],
+                    signals: [...entry.signals],
+                    demoFrom: entry.demoFrom,
                 }))
             )
             .onConflictDoUpdate({
@@ -78,6 +84,9 @@ export async function seedGuide(
                     sortOrder: sql`excluded.sort_order`,
                     related: sql`excluded.related`,
                     skills: sql`excluded.skills`,
+                    about: sql`excluded.about`,
+                    signals: sql`excluded.signals`,
+                    demoFrom: sql`excluded.demo_from`,
                     updatedAt: sql`now()`,
                 },
             });

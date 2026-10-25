@@ -61,6 +61,45 @@ test.describe('guide (crawler-facing)', () => {
         expect(jsonLdBlocks(html).length).toBeGreaterThan(0);
         expect(robotsMeta(html) ?? '').not.toContain('noindex');
     });
+
+    // E2E에는 FMP 키가 없고 스냅샷 테이블이 비어 라이브 종목 모듈은 생략된다 — 모듈 존재는
+    // 단언하지 않는다(의도).
+    test('howto 항목이 H1·확인하는 법 절·FAQ·JSON-LD를 서버에서 그리고 색인 가능하다', async ({
+        page,
+    }) => {
+        const response = await page.request.get('/guide/howto/rsi-how-to-read');
+        expect(response.status()).toBe(200);
+        const html = await response.text();
+
+        expect((html.match(/<h1[\s>]/g) ?? []).length).toBe(1);
+        expect(html).toMatch(/<h1[^>]*>RSI 보는 법</);
+        expect(html).toContain('시그렌즈에서 확인하는 법');
+        expect(html).toContain('자주 묻는 질문');
+        expect(
+            jsonLdBlocks(html).some(block => block['@type'] === 'TechArticle')
+        ).toBe(true);
+        expect(robotsMeta(html) ?? '').not.toContain('noindex');
+    });
+
+    test('용어 항목이 howto 역참조 링크를 서버에서 그린다', async ({
+        page,
+    }) => {
+        const html = await (
+            await page.request.get('/guide/indicators/rsi')
+        ).text();
+
+        expect(html).toContain('이 항목으로 답하는 질문');
+        expect(html).toContain('href="/guide/howto/rsi-how-to-read"');
+    });
+
+    test('howto 분류 허브가 200이고 색인 가능하다', async ({ page }) => {
+        const response = await page.request.get('/guide/howto');
+        expect(response.status()).toBe(200);
+        const html = await response.text();
+
+        expect(html).toContain('실전 가이드');
+        expect(robotsMeta(html) ?? '').not.toContain('noindex');
+    });
 });
 
 test.describe('guide (browser)', () => {

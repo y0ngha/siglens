@@ -126,7 +126,7 @@ describe('GuideCategoryPage', () => {
         ).toEqual(['RSI', 'MACD']);
     });
 
-    it('다른 분류 세 곳으로 가는 타일을 보여 준다(자기 자신은 뺀다)', async () => {
+    it('다른 분류 네 곳으로 가는 타일을 보여 준다(자기 자신은 뺀다)', async () => {
         await renderCategory();
 
         const nav = screen.getByRole('navigation', { name: g.otherCategories });
@@ -135,6 +135,7 @@ describe('GuideCategoryPage', () => {
                 .getAllByRole('link')
                 .map(a => a.getAttribute('href'))
         ).toEqual([
+            '/guide/howto',
             '/guide/candlesticks',
             '/guide/chart-patterns',
             '/guide/strategies',

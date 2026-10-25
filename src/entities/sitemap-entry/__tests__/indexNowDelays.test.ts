@@ -76,7 +76,7 @@ describe('STATIC_PAGE_PATHS — 감시 대상 정적 페이지', () => {
         }
     );
 
-    it('소개·방법론·방침·약관·백테스팅과 가이드 허브·카테고리 4개다', () => {
+    it('소개·방법론·방침·약관·백테스팅과 가이드 허브·카테고리 5개다', () => {
         expect([...STATIC_PAGE_PATHS]).toEqual([
             '/about',
             '/methodology',
@@ -84,6 +84,7 @@ describe('STATIC_PAGE_PATHS — 감시 대상 정적 페이지', () => {
             '/terms',
             '/backtesting',
             '/guide',
+            '/guide/howto',
             '/guide/candlesticks',
             '/guide/chart-patterns',
             '/guide/indicators',

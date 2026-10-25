@@ -1,6 +1,19 @@
 import 'server-only';
 
-import { and, eq, gte, inArray, sql, type SQL } from 'drizzle-orm';
+import {
+    and,
+    asc,
+    desc,
+    eq,
+    gte,
+    inArray,
+    notInArray,
+    or,
+    sql,
+    type SQL,
+} from 'drizzle-orm';
+import { KR_SYMBOL_RE } from '@/shared/config/ticker';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type {
@@ -259,6 +272,61 @@ export class DrizzleSeoSnapshotRepository {
         return new Map(
             rows.map(row => [`${row.symbol}:${row.tab}`, row.generatedAt])
         );
+    }
+
+    /**
+     * 가이드 라이브 모듈용: `since` 이후 구운 ko technical 스냅샷 중 `patternNames`의 차트 패턴이
+     * `detected: true`인 종목. 최근 생성 순 `limit`개. (symbol, tab, locale) 유니크라 심볼이 겹치지 않는다.
+     * 크립토(`POPULAR_CRYPTOS`)는 가이드 본문이 주식 전제라 뺀다.
+     *
+     * `market`으로 한국/미국 심볼만 걸러 읽는다 — 한 시장이 최신 행을 독식해 다른 시장이 limit에서
+     * 밀려나는 일을 읽기 단계에서 막는다. 한국 판정은 `isKrEquitySymbol`과 같은 `KR_SYMBOL_RE`를 쓴다
+     * (대소문자 무시 `~*`는 그 함수의 `toUpperCase()`와 같은 판정). 미국은 그 부정이다.
+     *
+     * JSONB containment(`@>`)는 free 티어 스냅샷에도 남는 필드(`patternName`·`detected`)만 본다
+     * (`filterAnalysisResult`는 `confidenceWeight`만 0으로 바꾼다). 377행 안팎이라 인덱스는 두지 않는다.
+     */
+    async listSymbolsWithDetectedPatterns(
+        patternNames: readonly string[],
+        options: {
+            readonly since: Date;
+            readonly limit: number;
+            readonly market: 'us' | 'kr';
+        }
+    ): Promise<{ symbol: string; generatedAt: Date }[]> {
+        if (patternNames.length === 0) return [];
+        const krMatch = sql`${seoAnalysisSnapshots.symbol} ~* ${KR_SYMBOL_RE.source}`;
+        const marketCondition =
+            options.market === 'kr' ? krMatch : sql`NOT (${krMatch})`;
+        const containment = patternNames.map(
+            name =>
+                sql`${seoAnalysisSnapshots.content}->'patternSummaries' @> ${JSON.stringify(
+                    [{ patternName: name, detected: true }]
+                )}::jsonb`
+        );
+        return this.db
+            .select({
+                symbol: seoAnalysisSnapshots.symbol,
+                generatedAt: seoAnalysisSnapshots.generatedAt,
+            })
+            .from(seoAnalysisSnapshots)
+            .where(
+                and(
+                    eq(seoAnalysisSnapshots.tab, 'technical'),
+                    eq(seoAnalysisSnapshots.locale, DEFAULT_LOCALE),
+                    gte(seoAnalysisSnapshots.generatedAt, options.since),
+                    notInArray(seoAnalysisSnapshots.symbol, [
+                        ...POPULAR_CRYPTOS,
+                    ]),
+                    marketCondition,
+                    or(...containment)
+                )
+            )
+            .orderBy(
+                desc(seoAnalysisSnapshots.generatedAt),
+                asc(seoAnalysisSnapshots.symbol)
+            )
+            .limit(options.limit);
     }
 }
 

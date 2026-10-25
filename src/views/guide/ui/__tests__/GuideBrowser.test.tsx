@@ -20,6 +20,9 @@ function summary(
         aliases: [],
         summary: `${overrides.slug} 요약`,
         updatedAt: '2026-10-10T00:00:00.000Z',
+        about: [],
+        signals: [],
+        demoFrom: null,
         ...overrides,
     };
 }
@@ -52,6 +55,7 @@ const ENTRIES: GuideEntrySummary[] = [
 ];
 
 const LABELS = {
+    howto: g.categoryHowto,
     candlesticks: g.categoryCandlesticks,
     'chart-patterns': g.categoryChartPatterns,
     indicators: g.categoryIndicators,

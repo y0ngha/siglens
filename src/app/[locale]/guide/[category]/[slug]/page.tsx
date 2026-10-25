@@ -21,9 +21,10 @@ import {
     requireCategory,
     requireEntry,
 } from '../../_lib/guideRoute';
+import { loadGuideLiveSymbols } from '../../_lib/loadGuideLiveSymbols';
 
-// `/guide`와 같은 근거(AP-1: 리터럴).
-export const revalidate = 86400;
+// 라이브 종목 모듈이 1시간 캐시(섹터 신호)를 읽으므로 그 주기에 맞춘다. 허브·카테고리는 86400 유지(AP-1: 리터럴).
+export const revalidate = 3600; // 1h
 
 // 빈 배열 = on-demand ISR. 항목 90개를 빌드에서 미리 굽지 않는다 — 빌드는 DB가 없을 수 있다(AP-1).
 export async function generateStaticParams() {
@@ -74,9 +75,10 @@ export default async function GuideEntryRoute({
     if (catalog === null) return renderGuideUnavailable(locale);
     const entry = requireEntry(catalog, category, slug);
 
-    const [copy, seo] = await Promise.all([
+    const [copy, seo, liveSymbols] = await Promise.all([
         loadGuideCategoryCopy(locale),
         loadGuideHubSeoCopy(locale, catalog.entries.length),
+        loadGuideLiveSymbols(entry, catalog.entries),
     ]);
     const faqJsonLd = buildGuideFaqJsonLd(entry.faq);
     return (
@@ -96,6 +98,7 @@ export default async function GuideEntryRoute({
                 locale={locale}
                 entry={entry}
                 catalog={catalog.entries}
+                liveSymbols={liveSymbols}
             />
         </>
     );
