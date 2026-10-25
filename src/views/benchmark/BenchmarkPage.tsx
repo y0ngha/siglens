@@ -99,6 +99,7 @@ export async function BenchmarkPage({
     } as const;
     const labelText = {
         correct: t('counts.correct'),
+        partial: t('counts.partial'),
         incorrect: t('counts.incorrect'),
         not_attempted: t('counts.not_attempted'),
         excluded: t('counts.excluded'),
@@ -337,12 +338,22 @@ export async function BenchmarkPage({
                             })}
                             rowHeader={t('breakdown.rowLevel')}
                             targets={targets}
-                            rows={scoreRows(
-                                BENCHMARK_OBJECTIVE_LEVELS,
-                                breakdown.byLevel,
-                                levelText
-                            )}
+                            rows={[
+                                {
+                                    key: 'overall',
+                                    label: t('breakdown.rowOverall'),
+                                    scores: breakdown.overall,
+                                },
+                                ...scoreRows(
+                                    BENCHMARK_OBJECTIVE_LEVELS,
+                                    breakdown.byLevel,
+                                    levelText
+                                ),
+                            ]}
                         />
+                        <p className="-mt-2 text-xs leading-5 text-secondary-400">
+                            {t('breakdown.overallNote')}
+                        </p>
                         <BenchmarkScoreTable
                             caption={t('breakdown.byMarket', {
                                 lambda: methodology.lambda,

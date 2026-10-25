@@ -2365,10 +2365,12 @@
                 "byLevel": "按级别的客观得分(答错 −{lambda, number} 分)",
                 "byMarket": "按市场的客观得分(答错 −{lambda, number} 分)",
                 "bySubset": "按子集的客观得分(答错 −{lambda, number} 分)",
-                "counts": "各对象的判定数量",
+                "counts": "各对象的判定数量（primary 客观题）",
                 "judged": "L4 解读与 L5 诚实与安全(中立评审,0~1 分)",
                 "rowLevel": "级别",
                 "rowMarket": "市场",
+                "overallNote": "“总计”行是各对象有作答记录的 primary 题目的平均分。标题中的分差只用两个对象都作答的题目另行计算，因此对于有排除题目的对象（Claude），可能与这些数值之间的差不同。",
+                "rowOverall": "总计",
                 "rowSubset": "子集",
                 "sub": "按题目类别拆分同一套得分。每行最高分以粗体显示。",
                 "title": "详细得分"
@@ -2378,6 +2380,7 @@
                 "excluded": "已排除",
                 "incorrect": "错误",
                 "not_attempted": "未作答",
+                "partial": "部分正确",
                 "pending": "待评分"
             },
             "downloads": {
@@ -2420,6 +2423,7 @@
                     "excluded": "已排除",
                     "incorrect": "错误",
                     "not_attempted": "未作答",
+                    "partial": "部分正确",
                     "pending": "待评分"
                 },
                 "market": {

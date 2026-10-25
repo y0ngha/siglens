@@ -54,6 +54,7 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
         },
     ],
     breakdown: {
+        overall: { siglens: 0.64, gpt: 0.5, gemini: 0.58, deepseek: 0.23 },
         byLevel: {
             L1: { siglens: 0.91, gpt: 0.72, gemini: 0.75, deepseek: 0.4 },
             L2: { siglens: 0.62, gpt: 0.51, gemini: 0.6, deepseek: 0.2 },
@@ -74,6 +75,7 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
         labelCounts: {
             siglens: {
                 correct: 3,
+                partial: 0,
                 incorrect: 1,
                 not_attempted: 0,
                 excluded: 0,
@@ -81,6 +83,7 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
             },
             gpt: {
                 correct: 1,
+                partial: 1,
                 incorrect: 2,
                 not_attempted: 1,
                 excluded: 0,
@@ -88,6 +91,7 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
             },
             gemini: {
                 correct: 2,
+                partial: 0,
                 incorrect: 1,
                 not_attempted: 0,
                 excluded: 1,
@@ -95,6 +99,7 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
             },
             deepseek: {
                 correct: 0,
+                partial: 0,
                 incorrect: 3,
                 not_attempted: 1,
                 excluded: 0,
@@ -172,7 +177,7 @@ export const BENCHMARK_FIXTURE: BenchmarkRelease = {
             truthSummary: '답할 수 없다고 말해야 한다',
             results: {
                 siglens: { label: 'correct', score: 0.9 },
-                gpt: { label: 'not_attempted', score: 0.4 },
+                gpt: { label: 'partial', score: 0.4 },
                 gemini: { label: 'correct', score: 0.7 },
                 deepseek: { label: 'incorrect', score: 0.2 },
             },

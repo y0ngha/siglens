@@ -202,6 +202,10 @@ function checkHeadline(raw: unknown, baselineById: BaselineById): void {
 
 function checkBreakdown(raw: unknown, targetIds: ReadonlySet<string>): void {
     const breakdown = rec(raw, 'breakdown');
+    const overall = rec(breakdown.overall, 'breakdown.overall');
+    for (const id of targetIds) {
+        numOrNull(overall[id], `breakdown.overall.${id}`);
+    }
     keyedScoreMaps(
         breakdown.byLevel,
         BENCHMARK_OBJECTIVE_LEVELS,
@@ -235,7 +239,34 @@ function checkBreakdown(raw: unknown, targetIds: ReadonlySet<string>): void {
     }
 }
 
-function checkItems(raw: unknown, targetIds: ReadonlySet<string>): void {
+/**
+ * 객관 문항의 판정은 점수에서 정해진다(`BENCHMARK_LABELS` JSDoc). export가 첫 부분의 판정을
+ * 문항 판정으로 옮겨 "부분만 맞힌 문항이 정답"으로 나간 적이 있어, 둘이 어긋나면 거부한다.
+ */
+function checkObjectiveLabel(
+    label: string,
+    score: number | null,
+    lambda: number,
+    path: string
+): void {
+    const expected: Readonly<Record<string, (s: number) => boolean>> = {
+        correct: s => s === 1,
+        incorrect: s => s === -lambda,
+        not_attempted: s => s === 0,
+        partial: s => s !== 1 && s !== -lambda,
+    };
+    const fits = expected[label];
+    if (fits === undefined) return;
+    if (score === null || !fits(score)) {
+        fail(`${path}.label`, `a label consistent with score ${score}`);
+    }
+}
+
+function checkItems(
+    raw: unknown,
+    targetIds: ReadonlySet<string>,
+    lambda: number
+): void {
     const qids = new Set<string>();
     arr(raw, 'items').forEach((entry, i) => {
         const path = `items[${i}]`;
@@ -244,7 +275,7 @@ function checkItems(raw: unknown, targetIds: ReadonlySet<string>): void {
         if (qids.has(qid)) fail(`${path}.qid`, 'unique qid');
         qids.add(qid);
         filterId(item.pool, `${path}.pool`);
-        oneOf(item.level, BENCHMARK_LEVELS, `${path}.level`);
+        const level = oneOf(item.level, BENCHMARK_LEVELS, `${path}.level`);
         oneOf(item.market, BENCHMARK_MARKETS, `${path}.market`);
         filterId(item.template, `${path}.template`);
         str(item.question, `${path}.question`);
@@ -252,12 +283,27 @@ function checkItems(raw: unknown, targetIds: ReadonlySet<string>): void {
         const results = rec(item.results, `${path}.results`);
         for (const id of targetIds) {
             const result = rec(results[id], `${path}.results.${id}`);
-            oneOf(
+            const label = oneOf(
                 result.label,
                 BENCHMARK_LABELS,
                 `${path}.results.${id}.label`
             );
-            numOrNull(result.score, `${path}.results.${id}.score`);
+            const score = numOrNull(
+                result.score,
+                `${path}.results.${id}.score`
+            );
+            if (
+                (BENCHMARK_OBJECTIVE_LEVELS as readonly string[]).includes(
+                    level
+                )
+            ) {
+                checkObjectiveLabel(
+                    label,
+                    score,
+                    lambda,
+                    `${path}.results.${id}`
+                );
+            }
         }
     });
 }
@@ -289,7 +335,7 @@ export function assertBenchmarkRelease(value: unknown): BenchmarkRelease {
         num(size, `methodology.poolSizes.${pool}`);
     }
     num(methodology.rounds, 'methodology.rounds');
-    num(methodology.lambda, 'methodology.lambda');
+    const lambda = num(methodology.lambda, 'methodology.lambda');
     numOrNull(
         methodology.vendorMismatchCount,
         'methodology.vendorMismatchCount'
@@ -315,7 +361,7 @@ export function assertBenchmarkRelease(value: unknown): BenchmarkRelease {
         round,
         'downloads.zipPath'
     );
-    checkItems(release.items, targetIds);
+    checkItems(release.items, targetIds, lambda);
     // 위 검사가 BenchmarkRelease의 모든 필드(대상·헤드라인·세부 점수·방법론·사전 등록·다운로드·문항)를
     // 확인했으므로 단언은 안전하다. 타입에 필드를 더하면 여기 검사도 함께 늘린다.
     return value as BenchmarkRelease;

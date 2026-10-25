@@ -749,6 +749,13 @@ needs it and have the other callers delegate to it.
 - ❌ Two helpers each re-derive "the previous trading day" with their own weekend handling.
 - ✅ One exported helper owns the boundary; both callers import it, and one test pins its edge cases.
 
+A summary label follows the same rule: derive it from the aggregate it summarizes, never copy it from one component.
+Validate label/aggregate consistency where the data enters, and regenerate bundled copies (an archive of the same data)
+in the same change.
+
+- ❌ An item's verdict copied from its first part, so a half-right item is published as "correct".
+- ✅ The verdict is computed from the item's total score, and the validator rejects a label that disagrees with it.
+
 <a id="CS-3"></a>
 
 #### CS-3 — Mirrored constants are documented and parity-tested

@@ -86,6 +86,40 @@ describe('assertBenchmarkRelease', () => {
         );
     });
 
+    it('rejects a release without the overall score row', () => {
+        const input = mutated(d => {
+            delete d.breakdown.overall;
+        });
+        expect(() => assertBenchmarkRelease(input)).toThrow(
+            'breakdown.overall'
+        );
+    });
+
+    it('rejects a missing partial count', () => {
+        const input = mutated(d => {
+            delete d.breakdown.labelCounts.gpt.partial;
+        });
+        expect(() => assertBenchmarkRelease(input)).toThrow(
+            'breakdown.labelCounts.gpt.partial'
+        );
+    });
+
+    it('rejects an objective item labeled correct without full marks', () => {
+        const input = mutated(d => {
+            d.items[0].results.siglens = { label: 'correct', score: 0 };
+        });
+        expect(() => assertBenchmarkRelease(input)).toThrow(
+            'items[0].results.siglens.label'
+        );
+    });
+
+    it('accepts a partial objective item with a mixed score', () => {
+        const input = mutated(d => {
+            d.items[0].results.siglens = { label: 'partial', score: 0 };
+        });
+        expect(() => assertBenchmarkRelease(input)).not.toThrow();
+    });
+
     it('rejects an unknown verdict label on an item', () => {
         const input = mutated(d => {
             d.items[0].results.gpt.label = 'maybe';
