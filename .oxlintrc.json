@@ -367,6 +367,26 @@
                 "import/namespace": "off",
                 "react/exhaustive-deps": "off"
             }
+        },
+        {
+            // `react/purity`(oxlint 1.89부터 correctness)는 렌더 중 `new Date()` 같은 비순수
+            // 호출을 잡는다. 전제는 "같은 컴포넌트가 다시 렌더되면 값이 흔들린다"인데, 아래는
+            // 전부 `'use client'` 경계 밖의 서버 컴포넌트라(가져다 쓰는 쪽도 서버 —
+            // CurrentYear는 Footer → layout) 요청마다 한 번 렌더되고 클라이언트에서 다시
+            // 평가되지 않는다. 요청 시각을 읽는 것 자체가 목적이라 렌더 밖으로 옮길 곳도 없다.
+            // 클라이언트 컴포넌트는 여기에 넣지 말고 시각을 `useSyncExternalStore` 스냅샷으로
+            // 읽는다(OptionsStaleDataBanner). 파일을 클라이언트로 바꾸면 이 목록에서 뺀다.
+            "files": [
+                "src/app/[[]locale]/[[]symbol]/page.tsx",
+                "src/app/[[]locale]/[[]symbol]/news/page.tsx",
+                "src/app/[[]locale]/[[]symbol]/options/page.tsx",
+                "src/app/[[]locale]/economy/page.tsx",
+                "src/app/[[]locale]/market/MarketRouteBody.tsx",
+                "src/widgets/layout/CurrentYear.tsx"
+            ],
+            "rules": {
+                "react/purity": "off"
+            }
         }
     ]
 }
