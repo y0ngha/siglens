@@ -7,6 +7,6 @@ describe('db/seeds/guide (real files)', () => {
             path.resolve(process.cwd(), 'db/seeds/guide')
         );
 
-        expect(seed.entries).toHaveLength(93);
+        expect(seed.entries).toHaveLength(107);
     });
 });
