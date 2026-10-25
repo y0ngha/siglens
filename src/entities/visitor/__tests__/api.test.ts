@@ -150,4 +150,38 @@ describe('DrizzleVisitorRepository', () => {
             rows
         );
     });
+
+    it('landingSectionCounts는 허브·항목·로케일 접두사 경로를 날짜별로 센다', async () => {
+        const rows = [{ date: '2026-10-25', count: 3 }];
+        const orderBy = vi.fn().mockResolvedValue(rows);
+        const groupBy = vi.fn(() => ({ orderBy }));
+        const where = vi.fn(() => ({ groupBy }));
+        const from = vi.fn(() => ({ where }));
+        const db = {
+            select: vi.fn(() => ({ from })),
+        } as unknown as SiglensDatabase;
+
+        const repo = new DrizzleVisitorRepository(db);
+        await expect(
+            repo.landingSectionCounts('2026-10-01', 'guide')
+        ).resolves.toEqual(rows);
+
+        const rendered = new PgDialect().sqlToQuery(
+            (where.mock.calls[0] as unknown[])[0] as never
+        );
+        expect(rendered.sql).toContain('"landing_path" ~ ');
+        expect(rendered.sql).toContain('"date" >= ');
+        expect(rendered.params).toEqual([
+            '2026-10-01',
+            '^(/(ko|en|ja|zh))?/guide(/|$)',
+        ]);
+        // 정규식이 허브·항목·로케일 접두사를 잡고 /guidebook 같은 이웃은 거른다
+        const pattern = new RegExp(rendered.params[1] as string);
+        expect(pattern.test('/guide')).toBe(true);
+        expect(pattern.test('/guide/howto/rsi')).toBe(true);
+        expect(pattern.test('/en/guide/howto/rsi')).toBe(true);
+        expect(pattern.test('/ja/guide')).toBe(true);
+        expect(pattern.test('/guidebook')).toBe(false);
+        expect(pattern.test('/AAPL')).toBe(false);
+    });
 });

@@ -6,6 +6,9 @@ function row(overrides: Partial<GuideRow> = {}): GuideRow {
         category: 'indicators',
         sortOrder: 270,
         related: ['macd'],
+        about: [],
+        signals: [],
+        demoFrom: null,
         locale: 'ko',
         title: 'RSI',
         aliases: ['상대강도지수'],
@@ -22,6 +25,33 @@ function row(overrides: Partial<GuideRow> = {}): GuideRow {
 }
 
 describe('mapGuideRows', () => {
+    it('about·signals·demoFrom을 싣고, SignalType이 아닌 signals 값은 버린다', () => {
+        const rows = [
+            row({
+                slug: 'rsi-how-to-read',
+                category: 'howto',
+                about: ['rsi'],
+                signals: ['rsi_oversold', 'bogus'],
+                demoFrom: 'rsi',
+            }),
+        ];
+        const [entry] = mapGuideRows(rows, 'ko').entries;
+        expect(entry!.about).toEqual(['rsi']);
+        expect(entry!.signals).toEqual(['rsi_oversold']);
+        expect(entry!.demoFrom).toBe('rsi');
+    });
+
+    it('howto가 카탈로그 맨 앞에 온다', () => {
+        const rows = [
+            row({ slug: 'rsi', category: 'indicators' }),
+            row({ slug: 'rsi-how-to-read', category: 'howto' }),
+        ];
+        expect(mapGuideRows(rows, 'ko').entries.map(e => e.slug)).toEqual([
+            'rsi-how-to-read',
+            'rsi',
+        ]);
+    });
+
     it('요청 로케일 행이 있으면 그것을 쓰고 폴백이 아니다', () => {
         const catalog = mapGuideRows(
             [

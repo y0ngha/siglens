@@ -11,6 +11,9 @@ vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_WIDTH: 1200,
     OG_IMAGE_HEIGHT: 630,
 }));
+vi.mock('../_lib/loadGuideLiveSymbols', () => ({
+    loadGuideLiveSymbols: vi.fn(async () => null),
+}));
 /** 뷰는 `views/guide` 스위트가 검사한다. 여기서는 라우트가 넘기는 props만 본다. */
 vi.mock('@/views/guide/GuideHubPage', () => ({ GuideHubPage: () => null }));
 vi.mock('@/views/guide/GuideCategoryPage', () => ({
@@ -26,6 +29,7 @@ vi.mock('@/views/guide/GuideUnavailablePage', () => ({
 import { isValidElement, type ReactNode } from 'react';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import type { GuideCatalog } from '@/entities/guide/types';
+import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
 import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { SITE_URL } from '@/shared/lib/seo';
@@ -84,9 +88,9 @@ function findProps(
 }
 
 describe('ISR 설정', () => {
-    it('세 라우트 모두 revalidate는 하루(86400) 리터럴이다', () => {
+    it('허브·분류는 하루(86400), 항목은 1시간(3600) 리터럴이다', () => {
         expect([hubRevalidate, categoryRevalidate, entryRevalidate]).toEqual([
-            86400, 86400, 86400,
+            86400, 86400, 3600,
         ]);
     });
 
@@ -110,6 +114,28 @@ describe('/guide', () => {
         const metadata = await hubMetadata(hubParams());
         expect(metadata.title).toBe(ko.views.guide.hubSeoTitle);
         expect(metadata.description).toContain(String(CATALOG.entries.length));
+    });
+
+    it('실전 가이드가 있으면 설명에 용어 수와 가이드 수를 따로 적는다', async () => {
+        setCatalog({
+            entries: [
+                ...CATALOG.entries,
+                guideEntry({
+                    slug: 'rsi-how-to-read',
+                    category: 'howto',
+                    title: 'RSI 보는 법',
+                }),
+            ],
+        });
+        const metadata = await hubMetadata(hubParams());
+        expect(metadata.description).toBe(
+            ko.views.guide.hubSeoDescriptionWithHowto
+                .replace('{terms}', String(CATALOG.entries.length))
+                .replace('{howto}', '1')
+        );
+        const nodes = collectJsonLdData(await GuideHubRoute(hubParams()));
+        const collection = nodes.find(n => n['@type'] === 'CollectionPage');
+        expect(collection?.description).toBe(metadata.description);
     });
 
     it('canonical은 자기 자신이다', async () => {
@@ -172,7 +198,35 @@ describe('/guide/[category]', () => {
         );
     });
 
+    it('항목이 없는 분류는 404다(메타데이터·본문 모두) — 카탈로그를 못 읽은 경우와 다르다', async () => {
+        await expect(
+            GuideCategoryRoute(categoryParams('howto'))
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+        await expect(categoryMetadata(categoryParams('howto'))).rejects.toThrow(
+            'NEXT_NOT_FOUND'
+        );
+        setCatalog(null);
+        await expect(
+            categoryMetadata(categoryParams('howto'))
+        ).resolves.toBeDefined();
+    });
+
     it('분류마다 설명이 다르다', async () => {
+        setCatalog({
+            entries: [
+                ...CATALOG.entries,
+                guideEntry({
+                    slug: 'breakout',
+                    category: 'strategies',
+                    title: '브레이크아웃',
+                }),
+                guideEntry({
+                    slug: 'double-bottom',
+                    category: 'chart-patterns',
+                    title: '이중바닥',
+                }),
+            ],
+        });
         const descriptions = await Promise.all(
             ['candlesticks', 'chart-patterns', 'indicators', 'strategies'].map(
                 async category =>
@@ -355,6 +409,27 @@ describe('/guide/[category]/[slug]', () => {
         expect(props?.entry).toBe(RSI);
         expect(props?.catalog).toBe(CATALOG.entries);
         expect(mockLoad).toHaveBeenCalledWith('ko');
+    });
+
+    it('라이브 종목 로더 결과를 뷰에 그대로 넘긴다', async () => {
+        const groups = [{ market: 'us' as const, rows: [] }];
+        vi.mocked(loadGuideLiveSymbols).mockResolvedValueOnce(groups);
+        const { GuideEntryPage } = await import('@/views/guide/GuideEntryPage');
+        const props = findProps(
+            await GuideEntryRoute(entryParams('indicators', 'rsi')),
+            GuideEntryPage
+        );
+        expect(loadGuideLiveSymbols).toHaveBeenCalledWith(RSI, CATALOG.entries);
+        expect(props?.liveSymbols).toBe(groups);
+    });
+
+    it('로더가 null(오프라인·실패)이면 liveSymbols는 null이다', async () => {
+        const { GuideEntryPage } = await import('@/views/guide/GuideEntryPage');
+        const props = findProps(
+            await GuideEntryRoute(entryParams('indicators', 'rsi')),
+            GuideEntryPage
+        );
+        expect(props?.liveSymbols).toBeNull();
     });
 
     describe('카탈로그를 못 읽으면', () => {

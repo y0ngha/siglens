@@ -31,12 +31,15 @@ ${extra}---
 interface FakeDb {
     readonly db: SiglensDatabase;
     readonly inserted: { table: unknown; rows: Record<string, unknown>[] }[];
+    /** `onConflictDoUpdate`에 넘어온 `set` 인자(insert 호출 순서). */
+    readonly conflictSets: Record<string, unknown>[];
 }
 
 function fakeDb(
     existing: { entries?: unknown[]; contents?: unknown[] } = {}
 ): FakeDb {
     const inserted: FakeDb['inserted'] = [];
+    const conflictSets: Record<string, unknown>[] = [];
     const db = {
         select: () => ({
             from: (table: unknown) =>
@@ -49,11 +52,25 @@ function fakeDb(
         insert: (table: unknown) => ({
             values: (rows: Record<string, unknown>[]) => {
                 inserted.push({ table, rows });
-                return { onConflictDoUpdate: () => Promise.resolve() };
+                return {
+                    onConflictDoUpdate: (config: {
+                        set: Record<string, unknown>;
+                    }) => {
+                        conflictSets.push(config.set);
+                        return Promise.resolve();
+                    },
+                };
             },
         }),
     } as unknown as SiglensDatabase;
-    return { db, inserted };
+    return { db, inserted, conflictSets };
+}
+
+/** drizzle `sql` 템플릿의 리터럴 조각만 이어 붙여 `excluded.xxx` 참조를 확인한다. */
+function sqlText(value: unknown): string {
+    const chunks = (value as { queryChunks: { value?: string[] }[] })
+        .queryChunks;
+    return chunks.flatMap(chunk => chunk.value ?? []).join('');
 }
 
 describe('seedGuide', () => {
@@ -93,6 +110,60 @@ describe('seedGuide', () => {
         });
     });
 
+    it('항목 행에 about·signals·demoFrom 기본값을 싣는다', async () => {
+        const { db, inserted } = fakeDb();
+
+        await seedGuide(db, seedRoot());
+
+        expect(inserted[0]!.rows[0]).toEqual(
+            expect.objectContaining({
+                about: [],
+                signals: [],
+                demoFrom: null,
+            })
+        );
+    });
+
+    it('howto 항목의 about·signals·demoFrom을 행에 싣고 충돌 시 갱신한다', async () => {
+        const root = seedRoot();
+        const dir = path.join(root, 'howto', 'rsi-how-to-read');
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(
+            path.join(dir, 'ko.md'),
+            `---
+category: howto
+order: 1
+related: []
+skills: []
+about: [rsi]
+signals: [rsi_oversold]
+demoFrom: rsi
+title: RSI 보는 법
+aliases: []
+summary: 요약
+seoTitle: RSI 보는 법
+seoDescription: 설명
+---
+
+## 시그렌즈에서 확인하는 법
+`
+        );
+        const { db, inserted, conflictSets } = fakeDb();
+
+        await seedGuide(db, root);
+
+        const row = inserted[0]!.rows.find(r => r.slug === 'rsi-how-to-read');
+        expect(row).toMatchObject({
+            about: ['rsi'],
+            signals: ['rsi_oversold'],
+            demoFrom: 'rsi',
+        });
+        const set = conflictSets[0]!;
+        expect(sqlText(set.about)).toBe('excluded.about');
+        expect(sqlText(set.signals)).toBe('excluded.signals');
+        expect(sqlText(set.demoFrom)).toBe('excluded.demo_from');
+    });
+
     it('이미 같은 DB에는 아무것도 쓰지 않는다', async () => {
         const root = seedRoot();
         const first = fakeDb();
@@ -122,6 +193,9 @@ describe('seedGuide', () => {
                     sortOrder: 1,
                     related: [],
                     skills: [],
+                    about: [],
+                    signals: [],
+                    demoFrom: null,
                 },
             ],
         });

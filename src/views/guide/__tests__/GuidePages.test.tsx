@@ -126,8 +126,26 @@ describe('GuideCategoryPage', () => {
         ).toEqual(['RSI', 'MACD']);
     });
 
-    it('다른 분류 세 곳으로 가는 타일을 보여 준다(자기 자신은 뺀다)', async () => {
-        await renderCategory();
+    it('다른 분류 네 곳으로 가는 타일을 보여 준다(자기 자신은 뺀다)', async () => {
+        await renderServer(
+            GuideCategoryPage({
+                locale: 'ko',
+                category: 'indicators',
+                entries: [
+                    ...ENTRIES,
+                    guideEntry({
+                        slug: 'rsi-how-to-read',
+                        category: 'howto',
+                        title: 'RSI 보는 법',
+                    }),
+                    guideEntry({
+                        slug: 'double-bottom',
+                        category: 'chart-patterns',
+                        title: '이중바닥',
+                    }),
+                ],
+            })
+        );
 
         const nav = screen.getByRole('navigation', { name: g.otherCategories });
         expect(
@@ -135,6 +153,7 @@ describe('GuideCategoryPage', () => {
                 .getAllByRole('link')
                 .map(a => a.getAttribute('href'))
         ).toEqual([
+            '/guide/howto',
             '/guide/candlesticks',
             '/guide/chart-patterns',
             '/guide/strategies',
@@ -142,6 +161,18 @@ describe('GuideCategoryPage', () => {
         expect(
             within(nav).getByRole('link', { name: /전략·이론/ })
         ).toHaveTextContent('1개 항목');
+    });
+
+    it('항목이 없는 분류는 "0개" 타일로 보이지 않게 뺀다', async () => {
+        await renderCategory();
+
+        const nav = screen.getByRole('navigation', { name: g.otherCategories });
+        expect(
+            within(nav)
+                .getAllByRole('link')
+                .map(a => a.getAttribute('href'))
+        ).toEqual(['/guide/candlesticks', '/guide/strategies']);
+        expect(nav).not.toHaveTextContent('0개');
     });
 });
 

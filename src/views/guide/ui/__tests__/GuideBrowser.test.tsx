@@ -20,6 +20,9 @@ function summary(
         aliases: [],
         summary: `${overrides.slug} 요약`,
         updatedAt: '2026-10-10T00:00:00.000Z',
+        about: [],
+        signals: [],
+        demoFrom: null,
         ...overrides,
     };
 }
@@ -52,6 +55,7 @@ const ENTRIES: GuideEntrySummary[] = [
 ];
 
 const LABELS = {
+    howto: g.categoryHowto,
     candlesticks: g.categoryCandlesticks,
     'chart-patterns': g.categoryChartPatterns,
     indicators: g.categoryIndicators,
@@ -136,6 +140,21 @@ describe('GuideBrowser — 필터가 없을 때', () => {
                 name: new RegExp(g.categoryIndicators),
             })
         ).toHaveTextContent('2');
+    });
+});
+
+describe('GuideBrowser — 빈 분류 칩', () => {
+    it('항목이 없는 분류는 칩을 만들지 않는다', () => {
+        renderBrowser();
+
+        expect(
+            screen.queryByRole('button', { name: new RegExp(g.categoryHowto) })
+        ).toBeNull();
+        expect(
+            screen.getByRole('button', {
+                name: new RegExp(g.categoryIndicators),
+            })
+        ).toBeInTheDocument();
     });
 });
 

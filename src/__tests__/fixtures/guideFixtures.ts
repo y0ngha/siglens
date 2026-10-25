@@ -16,6 +16,9 @@ export function guideEntry(
         bodyMd: '## 어떻게 계산하나\n\n본문이에요.',
         faq: [],
         related: [],
+        about: [],
+        signals: [],
+        demoFrom: null,
         isFallback: false,
         ...overrides,
     };

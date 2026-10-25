@@ -6,7 +6,10 @@ import { GUIDE_PATH } from '@/shared/lib/guidePaths';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { GuideHubPage } from '@/views/guide/GuideHubPage';
-import { loadGuideHubSeoCopy } from '@/views/guide/lib/guideCopy';
+import {
+    countGuideHubEntries,
+    loadGuideHubSeoCopy,
+} from '@/views/guide/lib/guideCopy';
 import {
     buildGuideBreadcrumbJsonLd,
     buildGuideCollectionJsonLd,
@@ -30,7 +33,10 @@ export async function generateMetadata({
     const { locale: rawLocale } = await params;
     const locale = resolveLocale(rawLocale);
     const catalog = await loadGuideCatalog(locale);
-    const seo = await loadGuideHubSeoCopy(locale, catalog?.entries.length ?? 0);
+    const seo = await loadGuideHubSeoCopy(
+        locale,
+        countGuideHubEntries(catalog?.entries ?? [])
+    );
     return buildHubMetadata({
         params,
         locale,
@@ -49,7 +55,10 @@ export default async function GuideHubRoute({ params }: GuideHubRouteProps) {
     const catalog = await loadGuideCatalog(locale);
     if (catalog === null) return renderGuideUnavailable(locale);
 
-    const seo = await loadGuideHubSeoCopy(locale, catalog.entries.length);
+    const seo = await loadGuideHubSeoCopy(
+        locale,
+        countGuideHubEntries(catalog.entries)
+    );
     return (
         <>
             <JsonLd

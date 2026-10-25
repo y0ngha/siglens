@@ -35,13 +35,14 @@ export async function GuideCategoryPage({
         loadGuideCategoryCopy(locale),
     ]);
     const counts = countByCategory(entries);
-    const others = GUIDE_CATEGORIES.filter(other => other !== category).map(
-        other => ({
-            category: other,
-            label: copy.label[other],
-            count: t('entryCount', { count: counts[other] }),
-        })
-    );
+    // 항목이 없는 분류(시드 전의 howto)는 "0개" 타일로 보이지 않게 뺀다 — 그 분류 허브는 404다.
+    const others = GUIDE_CATEGORIES.filter(
+        other => other !== category && counts[other] > 0
+    ).map(other => ({
+        category: other,
+        label: copy.label[other],
+        count: t('entryCount', { count: counts[other] }),
+    }));
 
     return (
         <main className="page-container flex flex-1 flex-col py-8 sm:py-12">

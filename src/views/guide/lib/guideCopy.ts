@@ -25,18 +25,21 @@ export async function loadGuideCategoryCopy(
     const t = await getTranslations({ locale, namespace: 'views.guide' });
     return {
         label: {
+            howto: t('categoryHowto'),
             candlesticks: t('categoryCandlesticks'),
             'chart-patterns': t('categoryChartPatterns'),
             indicators: t('categoryIndicators'),
             strategies: t('categoryStrategies'),
         },
         intro: {
+            howto: t('categoryIntroHowto'),
             candlesticks: t('categoryIntroCandlesticks'),
             'chart-patterns': t('categoryIntroChartPatterns'),
             indicators: t('categoryIntroIndicators'),
             strategies: t('categoryIntroStrategies'),
         },
         seoTitle: {
+            howto: t('categorySeoTitleHowto'),
             candlesticks: t('categorySeoTitleCandlesticks'),
             'chart-patterns': t('categorySeoTitleChartPatterns'),
             indicators: t('categorySeoTitleIndicators'),
@@ -61,15 +64,35 @@ export interface GuideHubSeoCopy {
     ) => string;
 }
 
+/** 허브 문구에 들어가는 항목 수. 용어(howto가 아닌 항목)와 실전 가이드(howto)를 따로 센다. */
+export interface GuideHubCounts {
+    readonly terms: number;
+    readonly howto: number;
+}
+
+export function countGuideHubEntries(
+    entries: readonly { readonly category: GuideCategory }[]
+): GuideHubCounts {
+    const howto = entries.filter(entry => entry.category === 'howto').length;
+    return { terms: entries.length - howto, howto };
+}
+
 export async function loadGuideHubSeoCopy(
     locale: Locale,
-    entryCount: number
+    counts: GuideHubCounts
 ): Promise<GuideHubSeoCopy> {
     const t = await getTranslations({ locale, namespace: 'views.guide' });
     return {
         hubTitle: t('hubTitle'),
         hubSeoTitle: t('hubSeoTitle'),
-        hubSeoDescription: t('hubSeoDescription', { count: entryCount }),
+        // 실전 가이드가 아직 없으면(시드 전) "0편"을 적지 않는 문구로 돌아간다.
+        hubSeoDescription:
+            counts.howto > 0
+                ? t('hubSeoDescriptionWithHowto', {
+                      terms: counts.terms,
+                      howto: counts.howto,
+                  })
+                : t('hubSeoDescription', { terms: counts.terms }),
         hubSeoKeywords: t('hubSeoKeywords')
             .split(',')
             .map(keyword => keyword.trim())
@@ -77,6 +100,8 @@ export async function loadGuideHubSeoCopy(
         // 정적 리터럴 키 — 동적 조회는 i18n 추출기가 못 센다(위 `loadGuideCategoryCopy` 참고).
         categoryDescription: (category, count) => {
             switch (category) {
+                case 'howto':
+                    return t('categorySeoDescriptionHowto', { count });
                 case 'candlesticks':
                     return t('categorySeoDescriptionCandlesticks', { count });
                 case 'chart-patterns':

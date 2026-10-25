@@ -1,6 +1,7 @@
 import path from 'path';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
+import { slug as githubSlug } from 'github-slugger';
 import { glob } from 'glob';
 import matter from 'gray-matter';
 import { z } from 'zod';
@@ -9,7 +10,16 @@ import {
     type GuideCategory,
     type GuideFaqItem,
 } from '@/entities/guide/types';
+import { findAdvicePhrases } from '@/entities/analysis-plain/lib/guardPlainText';
+import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
+import { isSignalType } from '@/shared/config/signalTypes';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
+import {
+    parseHeadingLine,
+    scanMarkdownLines,
+} from '@/shared/lib/markdownHeadings';
+import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seo';
+import type { SignalType } from '@y0ngha/siglens-core';
 
 /**
  * `db/seeds/guide/{category}/{slug}/{locale}.md`를 읽어 검증하는 **순수 파서/검증기**.
@@ -17,6 +27,13 @@ import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
  * DB에는 닿지 않는다(적재는 `seedGuide.ts`). 규칙: ko 원문은 필수이고, 번역이 없으면
  * 에러가 아니라 경고다(읽기 경로가 요청 로케일 행이 없을 때 ko로 폴백한다).
  */
+
+/** 실전 가이드 카테고리 — 탐지기 매핑이 없고 `about`으로 용어 항목을 가리킨다. */
+const HOWTO_CATEGORY = 'howto' as const satisfies GuideCategory;
+/** 네이버 웹문서 제목 절단 기준(한글). howto만 적용 — 기존 용어 항목은 소급하지 않는다. */
+const HOWTO_TITLE_MAX_CHARS = 30;
+
+const anchorTitle = parseHeadingLine(LIVE_ANCHOR_HEADING)?.title;
 
 const LocalizedFrontmatterSchema = z.object({
     title: z.string().min(1),
@@ -37,6 +54,12 @@ const KoFrontmatterSchema = LocalizedFrontmatterSchema.extend({
     related: z.array(z.string().min(1)).default([]),
     /** 이 항목이 설명하는 스킬 파일 basename. 생략하면 `[slug]`. */
     skills: z.array(z.string().min(1)).optional(),
+    /** howto: 다루는 용어 항목 slug(비-howto). 용어 항목은 생략(= []). */
+    about: z.array(z.string().min(1)).default([]),
+    /** 라이브 종목 모듈이 섹터 스캐너에서 고를 신호 타입. */
+    signals: z.array(z.string().min(1)).default([]),
+    /** 데모 차트를 빌려 올 항목 slug(`about` 중 하나). */
+    demoFrom: z.string().min(1).nullish(),
 });
 
 export interface ParsedGuideFile {
@@ -69,6 +92,9 @@ export interface GuideSeedEntry {
     readonly order: number;
     readonly related: readonly string[];
     readonly skills: readonly string[];
+    readonly about: readonly string[];
+    readonly signals: readonly SignalType[];
+    readonly demoFrom: string | null;
     readonly contents: readonly GuideSeedContent[];
 }
 
@@ -151,6 +177,23 @@ export function parseGuideFile(filePath: string): ParsedGuideFile {
     };
 }
 
+/** h2·h3 제목은 코드 펜스 밖에서 github-slugger id 기준으로 유일해야 한다. 본문이 두 `GuideMarkdown`으로 나뉘어 렌더되면 slugger가 리셋되므로 id 충돌을 막으려 유일해야 한다. */
+function duplicateHeadingErrors(file: ParsedGuideFile): string[] {
+    // rehype-slug가 id를 만드는 것과 같은 알고리즘으로 비교한다 — `RSI?`와 `RSI`는 같은 id다.
+    const titles = scanMarkdownLines(file.body).flatMap(line =>
+        line.heading === null ? [] : [line.heading.title]
+    );
+    const duplicated = titles.filter(
+        (title, index) =>
+            titles.findIndex(other => githubSlug(other) === githubSlug(title)) <
+            index
+    );
+    return [...new Set(duplicated)].map(
+        title =>
+            `${file.sourceFile}: h2/h3 제목 "${title}"이 한 본문에 두 번 나온다(heading id 충돌)`
+    );
+}
+
 function formatIssues(error: z.ZodError): string {
     return error.issues
         .map(i => `${i.path.join('.')}: ${i.message}`)
@@ -220,6 +263,66 @@ function buildEntry(
         );
     }
 
+    const isHowto = meta.category === HOWTO_CATEGORY;
+    const badSignals = meta.signals.filter(signal => !isSignalType(signal));
+    const advice = isHowto
+        ? [
+              ko.body,
+              meta.title,
+              ...meta.aliases,
+              meta.summary,
+              meta.seoTitle,
+              meta.seoDescription,
+              ...(meta.demoCaption == null ? [] : [meta.demoCaption]),
+              ...meta.faq.flatMap(item => [item.q, item.a]),
+          ].flatMap(text => findAdvicePhrases(text, 'ko'))
+        : [];
+    const hasLiveAnchor = scanMarkdownLines(ko.body).some(
+        line => line.heading?.level === 2 && line.heading.title === anchorTitle
+    );
+    const howtoErrors = isHowto
+        ? [
+              ...(meta.skills === undefined || meta.skills.length > 0
+                  ? [
+                        `${ko.sourceFile}: howto는 skills: []를 명시한다(탐지기 매핑이 없다)`,
+                    ]
+                  : []),
+              ...(meta.about.length === 0
+                  ? [`${ko.sourceFile}: howto는 about이 1개 이상이어야 한다`]
+                  : []),
+              ...([...meta.title].length > HOWTO_TITLE_MAX_CHARS
+                  ? [
+                        `${ko.sourceFile}: title은 ${HOWTO_TITLE_MAX_CHARS}자 이하여야 한다(네이버 제목 절단)`,
+                    ]
+                  : []),
+              ...(seoTitleWidth(meta.seoTitle) > SEO_TITLE_MAX_WIDTH
+                  ? [
+                        `${ko.sourceFile}: seoTitle 폭이 ${SEO_TITLE_MAX_WIDTH}를 넘는다`,
+                    ]
+                  : []),
+              ...(hasLiveAnchor
+                  ? []
+                  : [
+                        `${ko.sourceFile}: howto 본문에 라이브 모듈 앵커 "${LIVE_ANCHOR_HEADING}" 절이 있어야 한다`,
+                    ]),
+              ...(advice.length > 0
+                  ? [
+                        `${ko.sourceFile}: 매매 지시 표현이 있다 — ${[...new Set(advice)].join(', ')}`,
+                    ]
+                  : []),
+          ]
+        : [];
+    const ruleErrors = [
+        ...howtoErrors,
+        ...group.flatMap(duplicateHeadingErrors),
+        ...(badSignals.length > 0
+            ? [
+                  `${ko.sourceFile}: signals(${badSignals.join(', ')})가 SignalType이 아니다`,
+              ]
+            : []),
+    ];
+    if (ruleErrors.length > 0) return failedEntry(...ruleErrors);
+
     const builds = group.map(file =>
         buildContent(
             slug,
@@ -240,7 +343,10 @@ function buildEntry(
             category: meta.category,
             order: meta.order,
             related: meta.related,
-            skills: meta.skills ?? [slug],
+            skills: meta.skills ?? (isHowto ? [] : [slug]),
+            about: meta.about,
+            signals: meta.signals.filter(isSignalType),
+            demoFrom: meta.demoFrom ?? null,
             contents: builds.flatMap(build =>
                 'content' in build ? [build.content] : []
             ),
@@ -270,6 +376,59 @@ function relatedErrors(entries: readonly GuideSeedEntry[]): string[] {
 }
 
 /**
+ * howto 제목이 자기 `about` 항목의 seoTitle 안에 들어 있으면 두 페이지가 같은 검색어를 두고 겹친다(카니발라이제이션).
+ * 용어 쪽 seoTitle을 정의·계산 같은 다른 의도로 돌려야 한다.
+ */
+function cannibalizationErrors(entries: readonly GuideSeedEntry[]): string[] {
+    const bySlug = new Map(entries.map(entry => [entry.slug, entry]));
+    const koContent = (entry: GuideSeedEntry) =>
+        entry.contents.find(content => content.locale === DEFAULT_LOCALE);
+    return entries
+        .filter(entry => entry.category === HOWTO_CATEGORY)
+        .flatMap(entry => {
+            const title = koContent(entry)?.title;
+            if (title === undefined) return [];
+            return entry.about.flatMap(slug => {
+                const target = bySlug.get(slug);
+                const seoTitle = target && koContent(target)?.seoTitle;
+                return seoTitle?.includes(title)
+                    ? [
+                          `${entry.slug}: howto 제목 "${title}"이 about(${slug})의 seoTitle "${seoTitle}"에 들어 있다(검색어 겹침)`,
+                      ]
+                    : [];
+            });
+        });
+}
+
+/** `about`은 존재하는 비-howto slug만, `demoFrom`은 `about` 안의 slug만 허용한다. */
+function aboutErrors(entries: readonly GuideSeedEntry[]): string[] {
+    const bySlug = new Map(entries.map(entry => [entry.slug, entry]));
+    return entries.flatMap(entry => {
+        const aboutProblems = entry.about.flatMap(slug => {
+            const target = bySlug.get(slug);
+            if (target === undefined) {
+                return [`${entry.slug}: about(${slug})가 존재하지 않는 slug다`];
+            }
+            if (target.category === HOWTO_CATEGORY) {
+                return [
+                    `${entry.slug}: about(${slug})가 howto다 — 용어 항목만 가리킨다`,
+                ];
+            }
+            return [];
+        });
+        const termAboutProblems =
+            entry.category !== HOWTO_CATEGORY && entry.about.length > 0
+                ? [`${entry.slug}: 용어 항목은 about을 쓰지 않는다`]
+                : [];
+        const demoProblems =
+            entry.demoFrom !== null && !entry.about.includes(entry.demoFrom)
+                ? [`${entry.slug}: demoFrom(${entry.demoFrom})이 about에 없다`]
+                : [];
+        return [...termAboutProblems, ...aboutProblems, ...demoProblems];
+    });
+}
+
+/**
  * 파싱된 파일 묶음을 항목 단위로 검증·조립한다. 에러는 모아서 한 번에 던진다.
  *
  * 에러: 카테고리 불일치, 알 수 없는 related, ko 누락, frontmatter 스키마 위반.
@@ -285,6 +444,8 @@ export function buildGuideSeed(files: readonly ParsedGuideFile[]): GuideSeed {
     const errors = [
         ...builds.flatMap(build => build.errors),
         ...relatedErrors(entries),
+        ...aboutErrors(entries),
+        ...cannibalizationErrors(entries),
     ];
 
     if (errors.length > 0) {
@@ -312,6 +473,9 @@ export interface ExistingGuideEntry {
     readonly sortOrder: number;
     readonly related: readonly string[];
     readonly skills: readonly string[];
+    readonly about: readonly string[];
+    readonly signals: readonly string[];
+    readonly demoFrom: string | null;
 }
 
 export interface ExistingGuideContent {
@@ -349,7 +513,10 @@ export function planGuideUpsert(
             existing.category !== entry.category ||
             existing.sortOrder !== entry.order ||
             !sameList(existing.related, entry.related) ||
-            !sameList(existing.skills, entry.skills)
+            !sameList(existing.skills, entry.skills) ||
+            !sameList(existing.about, entry.about) ||
+            !sameList(existing.signals, entry.signals) ||
+            existing.demoFrom !== entry.demoFrom
         );
     });
 

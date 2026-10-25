@@ -1,5 +1,7 @@
 import { and, eq, gte, inArray } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
+import { KR_SYMBOL_RE } from '@/shared/config/ticker';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -419,5 +421,140 @@ describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
             'AAPL:news',
             'AAPL:technical',
         ]);
+    });
+});
+
+function makeListPatternsDb(rows: unknown[]) {
+    const limit = vi.fn().mockResolvedValue(rows);
+    const orderBy = vi.fn((..._args: unknown[]) => ({ limit }));
+    const where = vi.fn((_condition: unknown) => ({ orderBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    return {
+        db: { select } as unknown as SiglensDatabase,
+        where,
+        orderBy,
+        limit,
+    };
+}
+
+describe('DrizzleSeoSnapshotRepository.listSymbolsWithDetectedPatterns', () => {
+    const since = new Date('2026-10-23T00:00:00.000Z');
+    const toQuery = (fragment: unknown) =>
+        new PgDialect().sqlToQuery(fragment as never);
+
+    it('패턴이 없으면 DB를 치지 않는다', async () => {
+        const { db, where } = makeListPatternsDb([]);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+        await expect(
+            repo.listSymbolsWithDetectedPatterns([], {
+                since,
+                limit: 5,
+                market: 'us',
+            })
+        ).resolves.toEqual([]);
+        expect(where).not.toHaveBeenCalled();
+    });
+
+    it('행을 그대로 돌려주고 limit을 그대로 적용한다', async () => {
+        const g1 = new Date('2026-10-24T21:00:00.000Z');
+        const rows = [
+            { symbol: 'TSLA', generatedAt: g1 },
+            { symbol: 'AAPL', generatedAt: g1 },
+        ];
+        const { db, limit } = makeListPatternsDb(rows);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+        const hits = await repo.listSymbolsWithDetectedPatterns(
+            ['double_bottom'],
+            { since, limit: 2, market: 'us' }
+        );
+        expect(hits).toEqual(rows);
+        expect(limit).toHaveBeenCalledWith(2);
+    });
+
+    it('where 절이 technical·ko·since·크립토 제외·패턴 containment를 담는다', async () => {
+        const { db, where } = makeListPatternsDb([]);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+        await repo.listSymbolsWithDetectedPatterns(
+            ['double_bottom', 'cup_and_handle'],
+            { since, limit: 5, market: 'us' }
+        );
+        const query = toQuery(where.mock.calls[0]![0]);
+        expect(query.sql).toContain('"tab" = ');
+        expect(query.sql).toContain('"locale" = ');
+        expect(query.sql).toContain('"generated_at" >= ');
+        expect(query.sql).toContain('"symbol" not in (');
+        expect(query.sql).toContain(`->'patternSummaries' @>`);
+        // 두 containment는 OR로 묶인다.
+        expect(query.sql).toMatch(/::jsonb or .*->'patternSummaries' @>/);
+        expect(query.params).toEqual(
+            expect.arrayContaining([
+                'technical',
+                'ko',
+                since.toISOString(),
+                JSON.stringify([
+                    { patternName: 'double_bottom', detected: true },
+                ]),
+                JSON.stringify([
+                    { patternName: 'cup_and_handle', detected: true },
+                ]),
+            ])
+        );
+    });
+
+    it('크립토 심볼을 제외 목록으로 넘긴다', async () => {
+        const { db, where } = makeListPatternsDb([]);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+        await repo.listSymbolsWithDetectedPatterns(['double_bottom'], {
+            since,
+            limit: 5,
+            market: 'us',
+        });
+        const { params } = toQuery(where.mock.calls[0]![0]);
+        expect(params).toEqual(expect.arrayContaining([...POPULAR_CRYPTOS]));
+    });
+
+    it('generated_at 내림차순, symbol 오름차순으로 정렬한다', async () => {
+        const { db, orderBy } = makeListPatternsDb([]);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+        await repo.listSymbolsWithDetectedPatterns(['double_bottom'], {
+            since,
+            limit: 5,
+            market: 'us',
+        });
+        const sqls = orderBy.mock.calls[0]!.map(arg => toQuery(arg).sql);
+        expect(sqls).toEqual([
+            '"seo_analysis_snapshots"."generated_at" desc',
+            '"seo_analysis_snapshots"."symbol" asc',
+        ]);
+    });
+
+    it('kr은 KR_SYMBOL_RE 패턴을 대소문자 무시 매칭으로, us는 그 부정으로 건다', async () => {
+        const kr = makeListPatternsDb([]);
+        await new DrizzleSeoSnapshotRepository(
+            kr.db
+        ).listSymbolsWithDetectedPatterns(['double_bottom'], {
+            since,
+            limit: 5,
+            market: 'kr',
+        });
+        const krQuery = toQuery(kr.where.mock.calls[0]![0]);
+        expect(krQuery.sql).toContain('"symbol" ~* ');
+        expect(krQuery.sql).not.toContain('NOT (');
+        expect(krQuery.params).toContain(KR_SYMBOL_RE.source);
+
+        const us = makeListPatternsDb([]);
+        await new DrizzleSeoSnapshotRepository(
+            us.db
+        ).listSymbolsWithDetectedPatterns(['double_bottom'], {
+            since,
+            limit: 5,
+            market: 'us',
+        });
+        const usQuery = toQuery(us.where.mock.calls[0]![0]);
+        expect(usQuery.sql).toContain(
+            'NOT ("seo_analysis_snapshots"."symbol" ~* '
+        );
+        expect(usQuery.params).toContain(KR_SYMBOL_RE.source);
     });
 });

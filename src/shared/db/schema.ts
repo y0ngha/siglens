@@ -1241,6 +1241,18 @@ export const guideEntries = pgTable('guide_entries', {
         .array()
         .notNull()
         .default(sql`ARRAY[]::text[]`),
+    /** howto 글이 다루는 용어 항목 slug. 용어 항목은 빈 배열. */
+    about: text('about')
+        .array()
+        .notNull()
+        .default(sql`ARRAY[]::text[]`),
+    /** 라이브 종목 모듈이 섹터 스캐너에서 고를 `SignalType`. */
+    signals: text('signals')
+        .array()
+        .notNull()
+        .default(sql`ARRAY[]::text[]`),
+    /** 데모 차트를 빌려 올 항목 slug. 없으면 null. */
+    demoFrom: text('demo_from'),
     updatedAt: timestamp('updated_at', { withTimezone: true })
         .notNull()
         .defaultNow(),

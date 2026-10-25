@@ -1,3 +1,4 @@
+import { isSignalType } from '@/shared/config/signalTypes';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import {
     GUIDE_CATEGORIES,
@@ -13,6 +14,9 @@ export interface GuideRow {
     readonly category: string;
     readonly sortOrder: number;
     readonly related: readonly string[];
+    readonly about: readonly string[];
+    readonly signals: readonly string[];
+    readonly demoFrom: string | null;
     readonly locale: string;
     readonly title: string;
     readonly aliases: readonly string[];
@@ -90,6 +94,9 @@ export function mapGuideRows(
                 bodyMd: row.bodyMd,
                 faq: toFaq(row.faq),
                 related: row.related,
+                about: row.about,
+                signals: row.signals.filter(isSignalType),
+                demoFrom: row.demoFrom,
                 isFallback: row.locale !== locale,
             };
         })

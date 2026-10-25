@@ -5,6 +5,7 @@ import {
     type GuideEntry,
     type GuideEntrySummary,
 } from '@/entities/guide/types';
+import { termsFirst } from '@/entities/guide/lib/termsFirst';
 import { searchGuide } from '@/shared/lib/guideSearch';
 
 /** 분류 칩의 "전체". 카테고리 값이 아니라 필터 해제를 뜻한다. */
@@ -59,12 +60,16 @@ export function toGuideSummary(entry: GuideEntrySummary): GuideEntrySummary {
         aliases: entry.aliases,
         summary: entry.summary,
         updatedAt: entry.updatedAt,
+        about: entry.about,
+        signals: entry.signals,
+        demoFrom: entry.demoFrom,
     };
 }
 
 /**
  * 분류 → 질의 순으로 거른다. 질의가 비어 있으면 카탈로그 순서를 지키고, 있으면
- * `searchGuide`의 순위(이름 일치 > 요약 일치)로 정렬한다.
+ * `searchGuide`의 순위(이름 일치 > 요약 일치)로 정렬한다. 같은 순위에서는 용어 항목이
+ * 질문형 글보다 앞이다(`termsFirst`).
  */
 export function filterGuideEntries<T extends GuideEntrySummary>(
     entries: readonly T[],
@@ -76,7 +81,7 @@ export function filterGuideEntries<T extends GuideEntrySummary>(
             : entries.filter(entry => entry.category === category);
     return query.trim() === ''
         ? inCategory
-        : searchGuide(inCategory, query, inCategory.length);
+        : searchGuide(termsFirst(inCategory), query, inCategory.length);
 }
 
 export interface GuideCategoryGroup<T extends GuideEntrySummary> {
@@ -124,16 +129,34 @@ export function guideNeighbors(
     };
 }
 
-/** `related` slug 목록 → 존재하는 항목만, 적힌 순서대로. 자기 자신은 뺀다. */
+/**
+ * "같이 보면 좋은 항목" — `about`(howto가 다루는 용어 항목)을 먼저, 그다음 `related`.
+ * 존재하는 항목만, 적힌 순서대로, 중복·자기 자신은 뺀다.
+ */
 export function resolveRelated(
     entries: readonly GuideEntry[],
     entry: GuideEntry
 ): GuideEntry[] {
     const bySlug = new Map(entries.map(e => [e.slug, e]));
-    return entry.related.flatMap(slug => {
+    const seen = new Set<string>([entry.slug]);
+    return [...entry.about, ...entry.related].flatMap(slug => {
         const related = bySlug.get(slug);
-        return related !== undefined && related.slug !== entry.slug
-            ? [related]
-            : [];
+        if (related === undefined || seen.has(slug)) return [];
+        seen.add(slug);
+        return [related];
     });
+}
+
+/**
+ * 용어 항목 → 그 항목을 `about`으로 가리키는 howto 글(카탈로그 순서). howto 자신에게는 빈 배열.
+ * 역참조라 DB 조회가 없다 — 카탈로그는 이미 메모리에 있다.
+ */
+export function resolveAnsweredBy(
+    entries: readonly GuideEntry[],
+    entry: GuideEntry
+): GuideEntry[] {
+    if (entry.category === 'howto') return [];
+    return entries.filter(
+        e => e.category === 'howto' && e.about.includes(entry.slug)
+    );
 }

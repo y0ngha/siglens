@@ -8,6 +8,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { GuideEntryPage } from '@/views/guide/GuideEntryPage';
 import {
     loadGuideCategoryCopy,
+    countGuideHubEntries,
     loadGuideHubSeoCopy,
 } from '@/views/guide/lib/guideCopy';
 import {
@@ -21,9 +22,10 @@ import {
     requireCategory,
     requireEntry,
 } from '../../_lib/guideRoute';
+import { loadGuideLiveSymbols } from '../../_lib/loadGuideLiveSymbols';
 
-// `/guide`와 같은 근거(AP-1: 리터럴).
-export const revalidate = 86400;
+// 라이브 종목 모듈이 1시간 캐시(섹터 신호)를 읽으므로 그 주기에 맞춘다. 허브·카테고리는 86400 유지(AP-1: 리터럴).
+export const revalidate = 3600; // 1h
 
 // 빈 배열 = on-demand ISR. 항목 90개를 빌드에서 미리 굽지 않는다 — 빌드는 DB가 없을 수 있다(AP-1).
 export async function generateStaticParams() {
@@ -47,7 +49,7 @@ export async function generateMetadata({
     const catalog = await loadGuideCatalog(locale);
     if (catalog === null) {
         // 본문을 못 읽은 렌더 — 안내문과 같은 술어로 noindex. 항목 제목을 모르니 허브 제목을 쓴다.
-        const seo = await loadGuideHubSeoCopy(locale, 0);
+        const seo = await loadGuideHubSeoCopy(locale, { terms: 0, howto: 0 });
         return buildHubMetadata({
             params,
             locale,
@@ -74,9 +76,10 @@ export default async function GuideEntryRoute({
     if (catalog === null) return renderGuideUnavailable(locale);
     const entry = requireEntry(catalog, category, slug);
 
-    const [copy, seo] = await Promise.all([
+    const [copy, seo, liveSymbols] = await Promise.all([
         loadGuideCategoryCopy(locale),
-        loadGuideHubSeoCopy(locale, catalog.entries.length),
+        loadGuideHubSeoCopy(locale, countGuideHubEntries(catalog.entries)),
+        loadGuideLiveSymbols(entry, catalog.entries),
     ]);
     const faqJsonLd = buildGuideFaqJsonLd(entry.faq);
     return (
@@ -96,6 +99,7 @@ export default async function GuideEntryRoute({
                 locale={locale}
                 entry={entry}
                 catalog={catalog.entries}
+                liveSymbols={liveSymbols}
             />
         </>
     );

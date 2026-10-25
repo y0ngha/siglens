@@ -4,6 +4,7 @@ import { guideCategoryPath } from '@/shared/lib/guidePaths';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
 import {
+    BookIcon,
     CandlesIcon,
     GaugeIcon,
     LayersIcon,
@@ -14,6 +15,7 @@ import { LocaleLink } from '@/shared/ui/LocaleLink';
 type IconComponent = ComponentType<{ className?: string }>;
 
 const CATEGORY_ICON: Readonly<Record<GuideCategory, IconComponent>> = {
+    howto: BookIcon,
     candlesticks: CandlesIcon,
     'chart-patterns': QuoteIcon,
     indicators: GaugeIcon,

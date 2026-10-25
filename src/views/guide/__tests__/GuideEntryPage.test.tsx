@@ -26,6 +26,7 @@ import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTr
 import { aiAskUrl } from '@/shared/config/aiHost';
 import type { Locale } from '@/shared/i18n/locales';
 import type { GuideEntry } from '@/entities/guide/types';
+import type { LiveSymbolGroup } from '../lib/liveSymbols';
 import ko from '../../../../messages/ko.json';
 import en from '../../../../messages/en.json';
 import { GuideEntryPage } from '../GuideEntryPage';
@@ -73,14 +74,53 @@ const CATALOG = [DOJI, ADX, RSI, MACD];
 async function renderEntry(
     entry: GuideEntry = RSI,
     locale: Locale = 'ko',
-    catalog: readonly GuideEntry[] = CATALOG
+    catalog: readonly GuideEntry[] = CATALOG,
+    liveSymbols: readonly LiveSymbolGroup[] | null = null
 ) {
-    const tree = await GuideEntryPage({ locale, entry, catalog });
+    const tree = await GuideEntryPage({ locale, entry, catalog, liveSymbols });
     return renderWithIntl(
         (await resolveAsyncServerTree(tree)) as ReactElement,
         { locale }
     );
 }
+
+const HOWTO = guideEntry({
+    slug: 'rsi-how-to-read',
+    category: 'howto',
+    title: 'RSI 보는 법',
+    about: ['rsi'],
+    signals: ['rsi_oversold'],
+    demoFrom: 'rsi',
+    bodyMd: [
+        '## 이렇게 봐요',
+        '',
+        '첫째.',
+        '',
+        '## 시그렌즈에서 확인하는 법',
+        '',
+        '차트 탭.',
+        '',
+        '## 자주 틀리는 경우',
+        '',
+        '추세장.',
+    ].join('\n'),
+});
+const LIVE: readonly LiveSymbolGroup[] = [
+    {
+        market: 'us',
+        rows: [
+            {
+                symbol: 'NVDA',
+                name: '엔비디아',
+                changePercent: 1,
+                basis: 'scanner',
+                detectedOn: '2026-10-25T00:00:00.000Z',
+                match: null,
+            },
+        ],
+    },
+];
+const HOWTO_CATALOG = [HOWTO, RSI, MACD];
 
 describe('GuideEntryPage', () => {
     it('h1은 하나이고 항목 제목이다', async () => {
@@ -135,6 +175,56 @@ describe('GuideEntryPage', () => {
         expect(time).toHaveAttribute('datetime', RSI.updatedAt);
         expect(time).toHaveTextContent('October 10, 2026');
         expect(time).not.toHaveTextContent('2026년');
+    });
+
+    it('howto는 다른 이름(검색 전용 별칭)을 화면에 그리지 않는다', async () => {
+        const howtoWithAliases = guideEntry({
+            ...HOWTO,
+            aliases: ['RSI 지표 보는법', 'RSI 활용법'],
+        });
+        await renderEntry(howtoWithAliases, 'ko', [
+            howtoWithAliases,
+            RSI,
+            MACD,
+        ]);
+
+        expect(screen.queryByText(g.aliasesLabel)).toBeNull();
+        expect(screen.queryByText('RSI 지표 보는법')).toBeNull();
+    });
+
+    it('스냅샷 행에는 맞은 차트 패턴의 가이드 제목을 적는다', async () => {
+        const doubleBottom = guideEntry({
+            slug: 'double-bottom',
+            category: 'chart-patterns',
+            title: '이중바닥',
+        });
+        await renderEntry(
+            HOWTO,
+            'ko',
+            [HOWTO, RSI, doubleBottom],
+            [
+                {
+                    market: 'us',
+                    rows: [
+                        {
+                            symbol: 'TSLA',
+                            name: null,
+                            changePercent: null,
+                            basis: 'snapshot',
+                            detectedOn: '2026-10-24T21:00:00.000Z',
+                            match: {
+                                kind: 'pattern',
+                                guidePath:
+                                    '/guide/chart-patterns/double-bottom',
+                            },
+                        },
+                    ],
+                },
+            ]
+        );
+
+        const live = screen.getByRole('region', { name: g.liveHeading });
+        expect(within(live).getByText('이중바닥')).toBeInTheDocument();
     });
 
     it('다른 이름이 없으면 그 줄을 그리지 않는다', async () => {
@@ -273,6 +363,135 @@ describe('GuideEntryPage', () => {
                     level: 2,
                     name: g.relatedHeading,
                 })
+            ).toBeNull();
+        });
+    });
+
+    describe('howto·라이브 종목·역참조', () => {
+        it('howto는 demoFrom 항목의 데모를 빌려 쓰고, 라이브 모듈을 앵커 절 아래에 둔다', async () => {
+            await renderEntry(HOWTO, 'ko', HOWTO_CATALOG, LIVE);
+
+            expect(screen.getByTestId('demo-chart')).toBeInTheDocument();
+            const headings = screen
+                .getAllByRole('heading', { level: 2 })
+                .map(h => h.textContent);
+            const anchor = headings.indexOf('시그렌즈에서 확인하는 법');
+            const live = headings.indexOf(g.liveHeading);
+            const next = headings.indexOf('자주 틀리는 경우');
+            expect(anchor).toBeGreaterThan(-1);
+            expect(live).toBe(anchor + 1);
+            expect(next).toBe(live + 1);
+        });
+
+        it('분할된 본문에서도 차례의 모든 #id가 정확히 한 요소로 풀린다', async () => {
+            const { container } = await renderEntry(
+                HOWTO,
+                'ko',
+                HOWTO_CATALOG,
+                LIVE
+            );
+
+            const hrefs = Array.from(
+                container.querySelectorAll('aside nav a[href^="#"]')
+            ).map(a => (a.getAttribute('href') ?? '').slice(1));
+            expect(hrefs).toHaveLength(3);
+            for (const id of hrefs) {
+                expect(
+                    container.ownerDocument.querySelectorAll(`[id="${id}"]`)
+                ).toHaveLength(1);
+            }
+        });
+
+        it('둘째 조각은 h2 위 여백을 되돌려 주는 래퍼 안에 있다', async () => {
+            await renderEntry(HOWTO, 'ko', HOWTO_CATALOG, LIVE);
+
+            const wrapper = screen
+                .getByRole('heading', { level: 2, name: '자주 틀리는 경우' })
+                .closest('div.mt-12');
+            expect(wrapper).not.toBeNull();
+        });
+
+        it('빌린 데모에도 howto 자신의 캡션을 쓴다', async () => {
+            const withCaption = guideEntry({
+                ...HOWTO,
+                demoCaption: 'howto가 직접 쓴 캡션이에요.',
+            });
+            await renderEntry(
+                withCaption,
+                'ko',
+                [withCaption, RSI, MACD],
+                null
+            );
+
+            expect(screen.getByTestId('demo-chart')).toHaveTextContent(
+                'howto가 직접 쓴 캡션이에요.'
+            );
+            expect(screen.getByTestId('demo-chart')).not.toHaveTextContent(
+                RSI.demoCaption ?? ''
+            );
+        });
+
+        it('"답하는 질문" 섹션이 "관련 항목" 섹션보다 DOM에서 앞선다', async () => {
+            const rsiWithRelated = guideEntry({ ...RSI, related: ['macd'] });
+            await renderEntry(
+                rsiWithRelated,
+                'ko',
+                [HOWTO, rsiWithRelated, MACD],
+                null
+            );
+
+            const answered = screen.getByRole('heading', {
+                level: 2,
+                name: g.answeredByHeading,
+            });
+            const related = screen.getByRole('heading', {
+                level: 2,
+                name: g.relatedHeading,
+            });
+            expect(
+                answered.compareDocumentPosition(related) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('앵커 절이 없는 용어 항목은 라이브 모듈을 본문 뒤·FAQ 앞에 둔다', async () => {
+            await renderEntry(RSI, 'ko', HOWTO_CATALOG, LIVE);
+
+            const headings = screen
+                .getAllByRole('heading', { level: 2 })
+                .map(h => h.textContent);
+            expect(headings.indexOf(g.liveHeading)).toBeGreaterThan(
+                headings.indexOf('무엇을 말해 주나')
+            );
+            expect(headings.indexOf(g.liveHeading)).toBeLessThan(
+                headings.indexOf(g.faqHeading)
+            );
+        });
+
+        it('용어 항목에 "이 항목으로 답하는 질문" 섹션이 howto 링크와 함께 나온다', async () => {
+            await renderEntry(RSI, 'ko', HOWTO_CATALOG, null);
+
+            const section = screen.getByRole('region', {
+                name: g.answeredByHeading,
+            });
+            expect(
+                within(section).getByRole('link', { name: /RSI 보는 법/ })
+            ).toHaveAttribute('href', '/guide/howto/rsi-how-to-read');
+        });
+
+        it('답하는 질문이 없는 항목에는 그 섹션이 없다', async () => {
+            await renderEntry(MACD, 'ko', HOWTO_CATALOG, null);
+
+            expect(
+                screen.queryByRole('heading', { name: g.answeredByHeading })
+            ).toBeNull();
+        });
+
+        it('liveSymbols가 null이면 모듈 헤딩이 없다', async () => {
+            await renderEntry(MACD, 'ko', HOWTO_CATALOG, null);
+
+            expect(
+                screen.queryByRole('heading', { name: g.liveHeading })
             ).toBeNull();
         });
     });

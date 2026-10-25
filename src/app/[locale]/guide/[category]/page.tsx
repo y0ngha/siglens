@@ -6,7 +6,9 @@ import { guideCategoryPath } from '@/shared/lib/guidePaths';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { GuideCategoryPage } from '@/views/guide/GuideCategoryPage';
+import { notFound } from 'next/navigation';
 import {
+    countGuideHubEntries,
     loadGuideCategoryCopy,
     loadGuideHubSeoCopy,
 } from '@/views/guide/lib/guideCopy';
@@ -38,9 +40,14 @@ export async function generateMetadata({
     const count =
         catalog?.entries.filter(entry => entry.category === category).length ??
         0;
+    // 항목이 없는 분류(시드 전의 howto 등)는 빈 목록 페이지를 색인시키지 않는다. 카탈로그를 못 읽은 경우(null)는 안내가 맡는다.
+    if (catalog !== null && count === 0) notFound();
     const [copy, seo] = await Promise.all([
         loadGuideCategoryCopy(locale),
-        loadGuideHubSeoCopy(locale, count),
+        loadGuideHubSeoCopy(
+            locale,
+            countGuideHubEntries(catalog?.entries ?? [])
+        ),
     ]);
     return buildHubMetadata({
         params,
@@ -65,9 +72,11 @@ export default async function GuideCategoryRoute({
     const inCategory = catalog.entries.filter(
         entry => entry.category === category
     );
+    // 항목이 없는 분류는 404다 — 빈 목록이 soft 404로 색인되지 않게 한다.
+    if (inCategory.length === 0) notFound();
     const [copy, seo] = await Promise.all([
         loadGuideCategoryCopy(locale),
-        loadGuideHubSeoCopy(locale, inCategory.length),
+        loadGuideHubSeoCopy(locale, countGuideHubEntries(catalog.entries)),
     ]);
     const path = guideCategoryPath(category);
     return (
