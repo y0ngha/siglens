@@ -43,7 +43,8 @@ export function GuideCard({ entry, categoryLabel }: GuideCardProps) {
                     <h3 className={HEADING_SUBSECTION}>{entry.title}</h3>
                     <ArrowUpRightIcon className="mt-1 size-4 shrink-0 text-secondary-500 transition-colors group-hover:text-primary-400 motion-reduce:transition-none" />
                 </div>
-                {entry.aliases.length > 0 ? (
+                {/* howto의 별칭은 검색 전용이다 — 항목 페이지처럼 카드에도 싣지 않는다. */}
+                {entry.category !== 'howto' && entry.aliases.length > 0 ? (
                     <p className="mt-1 line-clamp-1 text-xs text-secondary-400">
                         {entry.aliases
                             .slice(0, GUIDE_CARD_ALIAS_LIMIT)
