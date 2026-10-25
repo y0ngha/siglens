@@ -308,6 +308,8 @@ export function assertBenchmarkRelease(value: unknown): BenchmarkRelease {
         'downloads.zipPath'
     );
     checkItems(release.items, targetIds);
+    // 위 검사가 BenchmarkRelease의 모든 필드(대상·헤드라인·세부 점수·방법론·사전 등록·다운로드·문항)를
+    // 확인했으므로 단언은 안전하다. 타입에 필드를 더하면 여기 검사도 함께 늘린다.
     return value as BenchmarkRelease;
 }
 
