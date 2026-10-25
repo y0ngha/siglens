@@ -175,13 +175,12 @@ function hitPatternPath(
     hit: SnapshotPatternHit
 ): string | null {
     const detected = new Set(hit.detectedPatterns);
-    for (const name of targetPatterns) {
-        const guidePath = detected.has(name)
-            ? GUIDE_PATH_BY_TRIGGER[name]
-            : undefined;
-        if (guidePath !== undefined) return guidePath;
-    }
-    return null;
+    return (
+        targetPatterns
+            .filter(name => detected.has(name))
+            .map(name => GUIDE_PATH_BY_TRIGGER[name])
+            .find(guidePath => guidePath !== undefined) ?? null
+    );
 }
 
 function patternMatch(
