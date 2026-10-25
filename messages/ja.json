@@ -2365,10 +2365,12 @@
                 "byLevel": "レベル別の客観スコア(誤答−{lambda, number}点)",
                 "byMarket": "市場別の客観スコア(誤答−{lambda, number}点)",
                 "bySubset": "部分集合別の客観スコア(誤答−{lambda, number}点)",
-                "counts": "対象別の判定件数",
+                "counts": "対象別の判定件数(primary 客観問題)",
                 "judged": "L4 解釈とL5 誠実性・安全性(中立の審査員、0~1点)",
                 "rowLevel": "レベル",
                 "rowMarket": "市場",
+                "overallNote": "「全体」行は、対象ごとに回答が記録された primary 問題の平均です。見出しのスコア差は両対象が回答した問題だけで別に計算するため、除外問題がある対象（Claude）ではこの値同士の差と一致しないことがあります。",
+                "rowOverall": "全体",
                 "rowSubset": "部分集合",
                 "sub": "同じスコアを問題の区分ごとに分けて示します。各行で最も高いスコアは太字です。",
                 "title": "詳細スコア"
@@ -2378,6 +2380,7 @@
                 "excluded": "除外",
                 "incorrect": "誤答",
                 "not_attempted": "未回答",
+                "partial": "部分正解",
                 "pending": "採点前"
             },
             "downloads": {
@@ -2420,6 +2423,7 @@
                     "excluded": "除外",
                     "incorrect": "誤答",
                     "not_attempted": "未回答",
+                    "partial": "部分正解",
                     "pending": "採点前"
                 },
                 "market": {

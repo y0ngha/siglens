@@ -65,6 +65,12 @@ export interface ToolRuntime {
      * 생략하면 허용(에이전트). 공개 API는 제3자 개발자에게 재배포하는 경로라 `false`다(`createToolExecutor` 옵션이 채운다).
      */
     allowUnofficialSources?: boolean;
+    /**
+     * `get_cached_analysis(tab: 'overall')`이 새 생성으로 이어질 결과(found:false·stale:true)일 때 같은 타임프레임의
+     * 신선한 technical 분석으로 대체할지. 생략하면 대체한다(에이전트). 공개 API는 `tab`을 계약으로 받는 제3자 클라이언트라
+     * 요청과 다른 탭을 돌려주면 안 되므로 `false`다(`createToolExecutor` 옵션이 채운다).
+     */
+    substituteFreshTechnicalForOverall?: boolean;
 }
 /**
  * `createToolExecutor`에 넘기는 입력. `ensureSymbolData`는 턴 메모가 필요해
@@ -72,7 +78,9 @@ export interface ToolRuntime {
  */
 export type ToolRuntimeInput = Omit<
     ToolRuntime,
-    'ensureSymbolData' | 'allowUnofficialSources'
+    | 'ensureSymbolData'
+    | 'allowUnofficialSources'
+    | 'substituteFreshTechnicalForOverall'
 >;
 
 /** Result-size ceilings (chars) the executor applies per tool class. */
@@ -120,6 +128,11 @@ export interface ToolExecutorOptions {
      * Default `true` (the agent). The public API passes `false` — it redistributes tool output to third parties.
      */
     allowUnofficialSources?: boolean;
+    /**
+     * `false` keeps `get_cached_analysis` from answering an `overall` request with a fresh technical analysis
+     * (see `ToolRuntime.substituteFreshTechnicalForOverall`). Default `true` (the agent). The public API passes `false`.
+     */
+    substituteFreshTechnicalForOverall?: boolean;
 }
 
 export type ToolExecutor = (
@@ -210,6 +223,7 @@ export function createToolExecutor(
         refreshSymbolData = true,
         resultCaps = AGENT_RESULT_CAPS,
         allowUnofficialSources = true,
+        substituteFreshTechnicalForOverall = true,
     } = options;
     /**
      * 턴당 심볼별 1회. 한 대화에서 같은 심볼로 여러 툴이 불리는 게 정상이고
@@ -240,6 +254,7 @@ export function createToolExecutor(
         ...runtime,
         ensureSymbolData,
         allowUnofficialSources,
+        substituteFreshTechnicalForOverall,
     };
 
     // One executor per turn (`stream/route.ts`), so this closure is the turn's

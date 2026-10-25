@@ -85,6 +85,7 @@ describe('executePublicTool — 실행 문맥', () => {
                 refreshSymbolData: false,
                 resultCaps: PUBLIC_API_RESULT_CAPS,
                 allowUnofficialSources: false,
+                substituteFreshTechnicalForOverall: false,
             }
         );
     });

@@ -2365,10 +2365,12 @@
                 "byLevel": "Objective score by level (incorrect −{lambda, number})",
                 "byMarket": "Objective score by market (incorrect −{lambda, number})",
                 "bySubset": "Objective score by subset (incorrect −{lambda, number})",
-                "counts": "Verdict counts by target",
+                "counts": "Verdict counts by target (primary objective questions)",
                 "judged": "L4 interpretation and L5 honesty and safety (neutral judges, 0 to 1)",
                 "rowLevel": "Level",
                 "rowMarket": "Market",
+                "overallNote": "The Overall row averages the primary questions each target has a recorded answer for. Headline score gaps are computed separately on the questions both targets answered, so for a target with excluded questions (Claude) they can differ from the gap between these values.",
+                "rowOverall": "Overall",
                 "rowSubset": "Subset",
                 "sub": "The same scores split by question group. The highest score in each row is in bold.",
                 "title": "Score breakdown"
@@ -2378,6 +2380,7 @@
                 "excluded": "Excluded",
                 "incorrect": "Incorrect",
                 "not_attempted": "Not attempted",
+                "partial": "Partly correct",
                 "pending": "Pending"
             },
             "downloads": {
@@ -2420,6 +2423,7 @@
                     "excluded": "Excluded",
                     "incorrect": "Incorrect",
                     "not_attempted": "Not attempted",
+                    "partial": "Partly correct",
                     "pending": "Pending"
                 },
                 "market": {

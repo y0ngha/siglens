@@ -2708,10 +2708,12 @@
                 "byLevel": "레벨별 객관 점수 (오답 −{lambda, number}점)",
                 "byMarket": "시장별 객관 점수 (오답 −{lambda, number}점)",
                 "bySubset": "부분집합별 객관 점수 (오답 −{lambda, number}점)",
-                "counts": "대상별 판정 개수",
+                "counts": "대상별 판정 개수 (primary 객관 문항)",
                 "judged": "L4 해석·L5 정직성과 안전 (중립 심사위원, 0~1점)",
+                "overallNote": "전체 행은 대상마다 답이 기록된 primary 문항의 평균입니다. 헤드라인 점수 차는 두 대상이 모두 답한 문항으로 따로 계산하므로, 제외 문항이 있는 대상(Claude)은 이 값끼리의 차와 다를 수 있습니다.",
                 "rowLevel": "레벨",
                 "rowMarket": "시장",
+                "rowOverall": "전체",
                 "rowSubset": "부분집합",
                 "sub": "같은 점수를 문항 구분별로 나눠 봅니다. 행마다 가장 높은 점수는 굵게 표시했습니다.",
                 "title": "세부 점수"
@@ -2721,6 +2723,7 @@
                 "excluded": "제외",
                 "incorrect": "오답",
                 "not_attempted": "미시도",
+                "partial": "부분 정답",
                 "pending": "채점 전"
             },
             "downloads": {
@@ -2763,6 +2766,7 @@
                     "excluded": "제외",
                     "incorrect": "오답",
                     "not_attempted": "미시도",
+                    "partial": "부분 정답",
                     "pending": "채점 전"
                 },
                 "market": {

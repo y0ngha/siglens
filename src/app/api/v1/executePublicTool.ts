@@ -153,6 +153,8 @@ async function runViaExecutor(
             resultCaps: PUBLIC_API_RESULT_CAPS,
             // 비공식 소스(네이버 증권 모바일 JSON 등)는 제3자 개발자에게 재배포하지 않는다.
             allowUnofficialSources: false,
+            // `tab: 'overall'` 요청에 technical을 대신 돌려주는 대체는 에이전트 전용이다 — API 클라이언트는 요청한 탭을 계약으로 받는다.
+            substituteFreshTechnicalForOverall: false,
         }
     );
     return toOutcome(await execute(spec.name, args, ctx));

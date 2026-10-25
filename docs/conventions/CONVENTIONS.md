@@ -749,6 +749,13 @@ needs it and have the other callers delegate to it.
 - ❌ Two helpers each re-derive "the previous trading day" with their own weekend handling.
 - ✅ One exported helper owns the boundary; both callers import it, and one test pins its edge cases.
 
+A summary label follows the same rule: derive it from the aggregate it summarizes, never copy it from one component.
+Validate label/aggregate consistency where the data enters, and regenerate bundled copies (an archive of the same data)
+in the same change.
+
+- ❌ An item's verdict copied from its first part, so a half-right item is published as "correct".
+- ✅ The verdict is computed from the item's total score, and the validator rejects a label that disagrees with it.
+
 <a id="CS-3"></a>
 
 #### CS-3 — Mirrored constants are documented and parity-tested
@@ -887,6 +894,15 @@ guarantee is weaker, name the weaker fact or add the missing check.
 
 - ❌ `const close = bar.close` after verifying only that `bar.date` matches the session date.
 - ✅ Verify the bar is final, or name it for what is known (`lastBarClose`).
+
+The same holds for a status flag or marker field (`missing`, `exact`, `fresh`, `complete`): set it only for the case
+the code actually established. A flag that covers several cases (absent vs. stale, exact vs. legacy data that cannot
+prove exactness) is split per case or set from the narrower check. Explanatory text attached to such a result (a hint
+or note read by a user or a model) follows the same limit: it states only the case the code distinguished ("none usable
+for this caller", not "none exists") and names only fields or tools that are present in that response.
+
+- ❌ A substitute result flagged `overallMissing` although a stale overall existed.
+- ✅ Flag "missing" only when none was found; mark the stale case separately.
 
 <a id="CS-16"></a>
 

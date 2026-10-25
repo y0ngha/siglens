@@ -1620,3 +1620,235 @@ describe('getCachedAnalysisTool — 회원 호출자 (공개 분석으로 대체
         expect(r).toMatchObject({ found: true, source: 'snapshot' });
     });
 });
+
+describe('getCachedAnalysisTool — overall이 새 생성으로 이어질 때 신선한 technical로 대체', () => {
+    const HOUR_MS = 60 * 60 * 1000;
+    const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+    // 봉이 빈 배열이면 `isStaleByBars`가 나이 규칙(technical/overall 1일)으로 떨어진다 — 1시간 전 = 신선, 3일 전 = 낡음.
+    const technicalAt = (analyzedAt: string) => ({
+        result: {
+            summary: 'tech',
+            trend: 'bullish',
+            riskLevel: 'low',
+            keyLevels: {},
+            priceTargets: {},
+            analyzedAt,
+        },
+        lockedInfoDepth: [],
+    });
+    const overallAt = (analyzedAt?: string) => ({
+        headlineKo: 'h',
+        technicalBulletsKo: [],
+        fundamentalBulletsKo: [],
+        newsBulletsKo: [],
+        optionsBulletsKo: [],
+        integratedConclusionKo: 'c',
+        scenarios: [],
+        riskFactorsKo: [],
+        ...(analyzedAt ? { analyzedAt } : {}),
+    });
+    const overallSnapshot = (generatedAt: string) => ({
+        tab: 'overall',
+        generatedAt: new Date(generatedAt),
+        model: 'm',
+        plain: 'p',
+        locale: 'ko',
+        content: { x: 1 },
+    });
+    const expectSubstituted = (
+        r: unknown,
+        overallStatus: 'missing' | 'stale' = 'missing'
+    ) =>
+        expect(r).toMatchObject({
+            found: true,
+            source: 'redis',
+            tab: 'technical',
+            requestedTab: 'overall',
+            overallStatus,
+            stale: false,
+            hint: expect.stringContaining('run_fresh_analysis'),
+            analysis: { summary: 'tech' },
+        });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        findByUserAndSymbol.mockResolvedValue(null);
+        findBySymbol.mockResolvedValue([]);
+        findRecentForPrompt.mockResolvedValue([]);
+        peekAnalysis.mockResolvedValue(null);
+        peekOverall.mockResolvedValue(null);
+        profile.mockResolvedValue('us-equity');
+        mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
+        getQuote.mockResolvedValue(undefined);
+        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        assetInfo.mockResolvedValue(null);
+    });
+
+    it('회원: overall miss + 같은 타임프레임 technical이 신선하면 technical로 답한다', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(HOUR_MS)));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            ctx,
+            rt
+        );
+        expectSubstituted(r);
+        expect(r).not.toHaveProperty('reason');
+        expect(r).not.toHaveProperty('overallGeneratedAt');
+        expect(r).toMatchObject({
+            hint: expect.stringContaining(
+                'No SIGLENS overall analysis is available for this user'
+            ),
+        });
+    });
+
+    it('회원: technical이 낡았으면 no_member_analysis 그대로', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(3 * 24 * HOUR_MS)));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            ctx,
+            rt
+        );
+        expect(r).toMatchObject({
+            found: false,
+            tab: 'overall',
+            reason: 'no_member_analysis',
+        });
+    });
+
+    it('비회원: 전부 miss + technical 신선 → 대체', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(HOUR_MS)));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            freeCtx,
+            rt
+        );
+        expectSubstituted(r);
+    });
+
+    it('비회원: 공개 스냅샷 overall이 낡았으면 대체, 신선하면 스냅샷을 유지하고 technical은 조회하지 않는다', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(HOUR_MS)));
+        const staleAt = ago(3 * 24 * HOUR_MS);
+        findBySymbol.mockResolvedValue([overallSnapshot(staleAt)]);
+        const substituted = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            freeCtx,
+            rt
+        );
+        expectSubstituted(substituted, 'stale');
+        expect(substituted).toMatchObject({
+            overallGeneratedAt: staleAt,
+            hint: expect.stringContaining('out of date'),
+        });
+
+        peekAnalysis.mockClear();
+        findBySymbol.mockResolvedValue([overallSnapshot(ago(HOUR_MS))]);
+        const kept = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            freeCtx,
+            rt
+        );
+        expect(kept).toMatchObject({
+            found: true,
+            source: 'snapshot',
+            tab: 'overall',
+            stale: false,
+        });
+        expect(peekAnalysis).not.toHaveBeenCalled();
+    });
+
+    it('비회원: 스냅샷 없이 이력 digest overall이 낡았으면 대체', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(HOUR_MS)));
+        const staleAt = ago(3 * 24 * HOUR_MS);
+        findRecentForPrompt.mockResolvedValue([
+            { generatedAt: new Date(staleAt), trend: 'bullish' },
+        ]);
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            freeCtx,
+            rt
+        );
+        expectSubstituted(r, 'stale');
+        expect(r).toMatchObject({ overallGeneratedAt: staleAt });
+    });
+
+    it('redis overall이 낡았으면(stale:true) 대체, 신선도 불명(stale:null)이면 overall 유지', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(HOUR_MS)));
+        const staleAt = ago(3 * 24 * HOUR_MS);
+        peekOverall.mockResolvedValue(overallAt(staleAt));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            ctx,
+            rt
+        );
+        expectSubstituted(r, 'stale');
+        expect(r).toMatchObject({ overallGeneratedAt: staleAt });
+
+        peekOverall.mockResolvedValue(overallAt());
+        const kept = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            ctx,
+            rt
+        );
+        expect(kept).toMatchObject({
+            found: true,
+            source: 'redis',
+            tab: 'overall',
+            stale: null,
+        });
+        expect(kept).not.toHaveProperty('overallStatus');
+    });
+
+    it('요청한 타임프레임 그대로 technical을 찾는다 — 1Hour 질문에 다른 타임프레임 분석을 섞지 않는다', async () => {
+        await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall', timeframe: '1Hour' },
+            ctx,
+            rt
+        );
+        expect(peekAnalysis).toHaveBeenCalled();
+        expect(peekAnalysis.mock.calls.every(c => c[1] === '1Hour')).toBe(true);
+    });
+
+    it('substituteFreshTechnicalForOverall: false(공개 API)면 대체하지 않고 technical도 조회하지 않는다', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(HOUR_MS)));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            ctx,
+            { ...rt, substituteFreshTechnicalForOverall: false }
+        );
+        expect(r).toMatchObject({
+            found: false,
+            reason: 'no_member_analysis',
+        });
+        expect(peekAnalysis).not.toHaveBeenCalled();
+    });
+
+    it('technical 조회가 실패하면 원래 결과를 돌려준다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        peekAnalysis.mockRejectedValue(new Error('redis down'));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'overall' },
+            ctx,
+            rt
+        );
+        expect(r).toMatchObject({
+            found: false,
+            reason: 'no_member_analysis',
+        });
+        warn.mockRestore();
+    });
+
+    it('overall 외 탭은 대체 대상이 아니다', async () => {
+        peekAnalysis.mockResolvedValue(technicalAt(ago(HOUR_MS)));
+        const r = await getCachedAnalysisTool(
+            { symbol: 'NVDA', tab: 'news' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({
+            found: false,
+            tab: 'news',
+            symbol: 'NVDA',
+            hint: 'call run_fresh_analysis',
+        });
+    });
+});
