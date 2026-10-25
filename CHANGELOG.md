@@ -1,5 +1,15 @@
 # Changelog
 
+# [0.111.0](https://github.com/y0ngha/siglens/compare/v0.110.0...v0.111.0) (2026-10-25)
+
+### Bug Fixes
+
+* 보안 취약점 해소 및 의존성 업데이트 ([#1113](https://github.com/y0ngha/siglens/issues/1113)) ([a556c53](https://github.com/y0ngha/siglens/commit/a556c53fe69669eba77f51656221cb6d0783ff37))
+
+### Features
+
+* SiglensAI 벤치마크 결과 공개 ([#1112](https://github.com/y0ngha/siglens/issues/1112)) ([1809deb](https://github.com/y0ngha/siglens/commit/1809deb6e128e03eb100a1d37c905a644b65f50d))
+
 # [0.110.0](https://github.com/y0ngha/siglens/compare/v0.109.2...v0.110.0) (2026-10-24)
 
 ### Bug Fixes
