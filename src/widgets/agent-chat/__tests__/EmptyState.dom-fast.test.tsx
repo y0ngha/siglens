@@ -159,6 +159,9 @@ describe('EmptyState', () => {
                 name: /시그렌즈 AI가 어떻게 답하는지 보기/,
             })
         ).toHaveAttribute('href', '/en/about');
+        expect(
+            screen.getByRole('link', { name: /벤치마크 결과 보기/ })
+        ).toHaveAttribute('href', '/en/benchmark');
         for (const name of ['답변은 어디서 오나요', '자주 묻는 질문'])
             expect(
                 screen.queryByRole('heading', { level: 2, name })

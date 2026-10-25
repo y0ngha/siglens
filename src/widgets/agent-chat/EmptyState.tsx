@@ -12,11 +12,16 @@ import {
 import { SiglensMark } from './SiglensMark';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { brandAiName } from '@/shared/lib/brandName';
+import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
 import { cn } from '@/shared/lib/cn';
 import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 /** Member suggestions still being generated; resolves to null when there are none. */
 export type PendingSuggestions = Promise<readonly string[] | null>;
+
+const FOOT_LINK =
+    'group inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm text-secondary-300 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+const FOOT_LINK_ICON = 'size-4 text-secondary-400 group-hover:text-primary-400';
 
 interface Props {
     readonly localePrefix: string;
@@ -257,15 +262,22 @@ export function EmptyState({
                 )}
                 {/* How it works, the data it reads and the FAQ live on `/about`
                     (spec 2026-09-19-ai-about-page-design): this screen stays a
-                    place to start typing. Same host, so a plain relative link. */}
-                <p className="mt-10 text-center">
-                    <a
-                        href={`${localePrefix}/about`}
-                        className="group inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm text-secondary-300 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                    >
+                    place to start typing. Same host, so plain relative links.
+                    The benchmark link only appears once the page is public. */}
+                <p className="mt-10 flex flex-wrap justify-center gap-x-2">
+                    <a href={`${localePrefix}/about`} className={FOOT_LINK}>
                         {t('EmptyState.aboutLink')}
-                        <ArrowUpRightIcon className="size-4 text-secondary-400 group-hover:text-primary-400" />
+                        <ArrowUpRightIcon className={FOOT_LINK_ICON} />
                     </a>
+                    {BENCHMARK_PUBLISHED ? (
+                        <a
+                            href={`${localePrefix}${BENCHMARK_PATH}`}
+                            className={FOOT_LINK}
+                        >
+                            {t('EmptyState.benchmarkLink')}
+                            <ArrowUpRightIcon className={FOOT_LINK_ICON} />
+                        </a>
+                    ) : null}
                 </p>
             </div>
         </div>

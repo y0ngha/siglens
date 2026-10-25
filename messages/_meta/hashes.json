@@ -4100,5 +4100,9 @@
     "views.benchmark.seo.datasetName": "27d1e6f38b0a",
     "views.benchmark.seo.modelSeparator": "1fdf0d90c37a",
     "views.benchmark.seo.titlePlain": "c1cc54736be0",
-    "views.benchmark.seo.variableMeasured": "e5ebcb1d5ee5"
+    "views.benchmark.seo.variableMeasured": "e5ebcb1d5ee5",
+    "views.methodology.ai.benchmark": "dd79fb615cb0",
+    "views.methodology.ai.benchmarkLink": "580f2632b6d2",
+    "views.methodology.ai.benchmarkTitle": "00bf225a6510",
+    "widgets.agent-chat.EmptyState.benchmarkLink": "580f2632b6d2"
 }
