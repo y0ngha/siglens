@@ -897,7 +897,9 @@ guarantee is weaker, name the weaker fact or add the missing check.
 
 The same holds for a status flag or marker field (`missing`, `exact`, `fresh`, `complete`): set it only for the case
 the code actually established. A flag that covers several cases (absent vs. stale, exact vs. legacy data that cannot
-prove exactness) is split per case or set from the narrower check.
+prove exactness) is split per case or set from the narrower check. Explanatory text attached to such a result (a hint
+or note read by a user or a model) follows the same limit: it states only the case the code distinguished ("none usable
+for this caller", not "none exists") and names only fields or tools that are present in that response.
 
 - ❌ A substitute result flagged `overallMissing` although a stale overall existed.
 - ✅ Flag "missing" only when none was found; mark the stale case separately.
