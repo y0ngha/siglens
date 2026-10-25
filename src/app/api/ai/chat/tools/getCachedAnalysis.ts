@@ -493,86 +493,187 @@ export async function loadPublicAnalysis({
     return null;
 }
 
-/** Redis peek (technical/overall) → SEO snapshot (all tabs) → history digest (technical/overall). */
-export const getCachedAnalysisTool: ToolExecutor = async (
-    args,
-    ctx,
-    runtime
-) => {
-    const symbol = String(args.symbol).toUpperCase();
-    const tab = String(args.tab);
-    const timeframe =
-        (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
-    // Same symbol→fmpSymbol path `get_bars_indicators`/`get_quote` use — a
-    // canonical symbol that differs from what the provider expects (e.g.
-    // indices) must resolve the same fmpSymbol here too, for both the bars
-    // read (staleness) and the quote read (`sinceAnalysis`'s `priceNow`).
-    // Only technical/overall need it — skip the extra DB round-trip for
-    // every other tab (fundamental/news/snapshot/history fallbacks).
+/**
+ * technical redis peek(회원은 reasoning off/on 중 늦은 쪽) → 적중이면 예산 맞춘 payload, 아니면 `null`.
+ * technical 탭과 overall 대체(`freshTechnicalInsteadOfOverall`)가 함께 쓴다.
+ *
+ * `extra`는 fit **전에** envelope에 합친다 — `fitProse`가 envelope 전체 길이로 맞추므로, fit 뒤에 필드를 붙이면
+ * 레지스트리 상한을 넘어 결과 전체가 앞부분 미리보기로 무너질 수 있다.
+ */
+async function peekTechnicalResult(
+    symbol: string,
+    timeframe: Timeframe,
+    fmpSymbol: string | undefined,
+    ctx: CallerCtx,
+    runtime: Parameters<ToolExecutor>[2],
+    extra: Record<string, unknown> = {}
+): Promise<Record<string, unknown> | null> {
     const memberCaller = isMemberCaller(ctx);
-    const fmpSymbol =
-        tab === 'technical' || tab === 'overall'
-            ? (await resolveAssetInfoOrNull(symbol, 'get_cached_analysis'))
-                  ?.fmpSymbol
-            : undefined;
+    const tab = 'technical';
+    // A guest holds nothing, and its subject is not a user id the holdings
+    // table could even compare against (uuid column).
+    const positionBucket = isGuestSubject(ctx.userId)
+        ? undefined
+        : await positionBucketFor(ctx.userId, ctx.tier, symbol, fmpSymbol);
+    const peekTechnical = (reasoning: boolean) =>
+        peekAnalysisCache(
+            symbol,
+            timeframe,
+            undefined,
+            runtime.analysisModel,
+            reasoning,
+            ctx.tier,
+            TIER_CONFIG,
+            positionBucket,
+            ctx.locale
+        );
+    const { hit: cached, reasoning } = memberCaller
+        ? await peekMemberLatest(peekTechnical, c => c.result.analyzedAt)
+        : { hit: await peekTechnical(false), reasoning: false };
+    if (cached) {
+        const a = cached.result;
+        const generatedAt = a.analyzedAt ? new Date(a.analyzedAt) : new Date();
+        // Both started only NOW (a confirmed cache hit) — on a miss,
+        // nothing below this `if` ever fires, so starting either eagerly
+        // (as `priceNowFor` used to, in parallel with
+        // `positionBucketFor` above) paid for a quote/bars lookup on
+        // every miss for no reason. Run in parallel with each other
+        // instead, since both are independent lookups with their own
+        // bounded timeout.
+        const [isStale, priceNow] = await Promise.all([
+            isStaleByBars(tab, timeframe, generatedAt, symbol, fmpSymbol),
+            priceNowFor(symbol, fmpSymbol),
+        ]);
+        const sinceAnalysis = sinceAnalysisFrom(a, priceNow);
+        // Budget-fit via the SAME shared helper `run_fresh_analysis`
+        // uses (`fitTechnicalAnalysis`) — without it, an oversized
+        // `patterns`/`candlePatterns`/`strategies` slice would fall
+        // through to the registry-level `truncateToolResult`, which
+        // collapses the WHOLE payload into a front-cut preview blob
+        // (losing `keyLevels`/`priceTargets` too).
+        return fitTechnicalAnalysis({
+            ...extra,
+            found: true,
+            source: 'redis',
+            tab,
+            timeframe,
+            generatedAt: generatedAt.toISOString(),
+            stale: isStale,
+            personalized: positionBucket !== undefined,
+            ...(memberCaller ? { reasoning } : {}),
+            analysis: projectTechnicalAnalysis(a),
+            ...(sinceAnalysis ? { sinceAnalysis } : {}),
+        });
+    }
+    return null;
+}
 
+/**
+ * 모델이 이 결과를 받고 `run_fresh_analysis`로 넘어갈지. core의 규칙(에이전트 시스템 프롬프트와 `run_fresh_analysis`
+ * 도구 설명의 "found:false 또는 stale:true일 때만")을 그대로 옮긴 판정이라, core가 그 규칙을 바꾸면 여기도 함께 바꾼다.
+ */
+function needsFreshRun(result: Record<string, unknown>): boolean {
+    return result.found === false || result.stale === true;
+}
+
+type OverallStatus = 'missing' | 'stale';
+
+/**
+ * 대체 응답의 hint. core의 `run_fresh_analysis` 설명은 "found:false 또는 stale:true일 때만 부르라"고 하므로, 명시적인
+ * 종합 분석 요청에서는 이 결과를 overall 기준 found:false로 보라고 직접 적는다 — 그래야 found:true인 대체 응답이
+ * 그 규칙과 충돌하지 않는다.
+ *
+ * `missing`은 "이 호출자가 쓸 수 있는 overall이 없다"이다 — 회원은 공개(비회원 등급) 분석이 있어도 쓰지 않으므로
+ * (`no_member_analysis`) 그 경우도 여기에 든다. 그래서 "아예 존재하지 않는다"고 쓰지 않는다. 낡은 overall의 생성 시각은
+ * 알 때만(`overallGeneratedAt`) 가리킨다.
+ */
+function overallSubstituteHint(
+    status: OverallStatus,
+    hasGeneratedAt: boolean
+): string {
+    const head =
+        status === 'missing'
+            ? 'No SIGLENS overall analysis is available for this user and timeframe yet'
+            : `The SIGLENS overall analysis for this timeframe is out of date${hasGeneratedAt ? ' (generated at overallGeneratedAt)' : ''}`;
+    return `${head}; this is the fresh technical analysis instead. Answer from it together with the other tools. Only if the user explicitly asked for an overall / comprehensive analysis (종합 분석), treat this as found:false for overall and call run_fresh_analysis with kind overall.`;
+}
+
+/**
+ * overall이 새 생성으로 이어질 때(없음·낡음) 같은 타임프레임의 **신선한** technical redis 분석으로 대신 답한다 —
+ * 종목 페이지에서 방금 만든 기술적 분석을 두고 "지금 어때?"가 30~250초짜리 종합 분석을 새로 돌리지 않게 한다.
+ * 같은 `timeframe`으로 peek하므로 일봉 질문에 시간봉 분석이 섞이지 않고, 신선도는 `isStaleByBars`(타임프레임별 새 봉 수)가
+ * 정한다. 스냅샷·이력 technical은 후보가 아니다(회원에게 공개 분석을 주지 않는 원칙 + "방금 만든 분석 재사용"이 목적).
+ * 대체 불가·조회 실패는 `null` — 호출자는 원래 결과를 그대로 돌려준다.
+ */
+async function freshTechnicalInsteadOfOverall(
+    symbol: string,
+    timeframe: Timeframe,
+    fmpSymbol: string | undefined,
+    ctx: CallerCtx,
+    runtime: Parameters<ToolExecutor>[2],
+    overall: Record<string, unknown>
+): Promise<Record<string, unknown> | null> {
+    // 낡은 overall이 있으면 "없다"고 말하지 않는다 — 언제 것인지와 함께 낡았다고 알린다(본문은 싣지 않는다:
+    // 모델은 낡은 결과를 받으면 어차피 새로 돌렸고, 두 분석을 함께 실으면 턴의 분석 예산을 두 배로 쓴다).
+    const overallStatus: OverallStatus =
+        overall.found === false ? 'missing' : 'stale';
+    const overallGeneratedAt =
+        overallStatus === 'stale' && typeof overall.generatedAt === 'string'
+            ? overall.generatedAt
+            : undefined;
+    try {
+        const hit = await peekTechnicalResult(
+            symbol,
+            timeframe,
+            fmpSymbol,
+            ctx,
+            runtime,
+            {
+                requestedTab: 'overall',
+                overallStatus,
+                ...(overallGeneratedAt !== undefined
+                    ? { overallGeneratedAt }
+                    : {}),
+                hint: overallSubstituteHint(
+                    overallStatus,
+                    overallGeneratedAt !== undefined
+                ),
+            }
+        );
+        return hit !== null && hit.stale === false ? hit : null;
+    } catch (error) {
+        logToolDegrade(
+            'get_cached_analysis',
+            'overall → technical substitute',
+            error
+        );
+        return null;
+    }
+}
+
+interface CachedAnalysisRequest {
+    symbol: string;
+    tab: string;
+    timeframe: Timeframe;
+    fmpSymbol: string | undefined;
+}
+
+/** Redis peek (technical/overall) → SEO snapshot (all tabs) → history digest (technical/overall). */
+async function resolveCachedAnalysis(
+    { symbol, tab, timeframe, fmpSymbol }: CachedAnalysisRequest,
+    ctx: CallerCtx,
+    runtime: Parameters<ToolExecutor>[2]
+): Promise<Record<string, unknown>> {
+    const memberCaller = isMemberCaller(ctx);
     if (tab === 'technical') {
-        // A guest holds nothing, and its subject is not a user id the holdings
-        // table could even compare against (uuid column).
-        const positionBucket = isGuestSubject(ctx.userId)
-            ? undefined
-            : await positionBucketFor(ctx.userId, ctx.tier, symbol, fmpSymbol);
-        const peekTechnical = (reasoning: boolean) =>
-            peekAnalysisCache(
-                symbol,
-                timeframe,
-                undefined,
-                runtime.analysisModel,
-                reasoning,
-                ctx.tier,
-                TIER_CONFIG,
-                positionBucket,
-                ctx.locale
-            );
-        const { hit: cached, reasoning } = memberCaller
-            ? await peekMemberLatest(peekTechnical, c => c.result.analyzedAt)
-            : { hit: await peekTechnical(false), reasoning: false };
-        if (cached) {
-            const a = cached.result;
-            const generatedAt = a.analyzedAt
-                ? new Date(a.analyzedAt)
-                : new Date();
-            // Both started only NOW (a confirmed cache hit) — on a miss,
-            // nothing below this `if` ever fires, so starting either eagerly
-            // (as `priceNowFor` used to, in parallel with
-            // `positionBucketFor` above) paid for a quote/bars lookup on
-            // every miss for no reason. Run in parallel with each other
-            // instead, since both are independent lookups with their own
-            // bounded timeout.
-            const [isStale, priceNow] = await Promise.all([
-                isStaleByBars(tab, timeframe, generatedAt, symbol, fmpSymbol),
-                priceNowFor(symbol, fmpSymbol),
-            ]);
-            const sinceAnalysis = sinceAnalysisFrom(a, priceNow);
-            // Budget-fit via the SAME shared helper `run_fresh_analysis`
-            // uses (`fitTechnicalAnalysis`) — without it, an oversized
-            // `patterns`/`candlePatterns`/`strategies` slice would fall
-            // through to the registry-level `truncateToolResult`, which
-            // collapses the WHOLE payload into a front-cut preview blob
-            // (losing `keyLevels`/`priceTargets` too).
-            return fitTechnicalAnalysis({
-                found: true,
-                source: 'redis',
-                tab,
-                timeframe,
-                generatedAt: generatedAt.toISOString(),
-                stale: isStale,
-                personalized: positionBucket !== undefined,
-                ...(memberCaller ? { reasoning } : {}),
-                analysis: projectTechnicalAnalysis(a),
-                ...(sinceAnalysis ? { sinceAnalysis } : {}),
-            });
-        }
+        const hit = await peekTechnicalResult(
+            symbol,
+            timeframe,
+            fmpSymbol,
+            ctx,
+            runtime
+        );
+        if (hit) return hit;
     }
     if (tab === 'overall') {
         // 한계: core의 overall peek 키(`buildOverallPeekCacheKey`)에는 tier 세그먼트가 없어,
@@ -647,8 +748,10 @@ export const getCachedAnalysisTool: ToolExecutor = async (
         // 달라(프롬프트 13.6k vs 21.4k 토큰) 회원에게 더 얇은 분석을 내주게 된다.
         // 모델이 run_fresh_analysis로 회원 분석을 만들게 한다.
         // publicAnalysisAt은 스냅샷 한 번 조회로만 채운다(이력 행은 보지 않는다):
-        // 이 경로는 곧 30~250초짜리 분석으로 이어지므로 DB 왕복 한 번은 무시할 만하지만,
-        // 두 번째 조회까지 얹을 가치는 없다.
+        // 이 경로는 대개 30~250초짜리 분석으로 이어지므로 DB 왕복 한 번은 무시할 만하지만,
+        // 두 번째 조회까지 얹을 가치는 없다. 에이전트의 overall은 이 결과 대신 신선한 technical로
+        // 답할 수도 있는데(`freshTechnicalInsteadOfOverall`), 그때는 이 조회가 버려진다 — technical을
+        // 미리 병렬로 peek하면 흔한 경로(overall 적중)마다 보유종목·peek I/O가 붙어 그쪽을 택하지 않았다.
         const publicAnalysisAt = await findPublicSnapshotGeneratedAt(
             symbol,
             tab,
@@ -672,4 +775,52 @@ export const getCachedAnalysisTool: ToolExecutor = async (
     });
     if (publicHit) return publicHit;
     return { found: false, tab, symbol, hint: 'call run_fresh_analysis' };
+}
+
+/**
+ * Redis peek → SEO snapshot → history digest. `overall`이 새 생성으로 이어질 결과면(에이전트만) 같은 타임프레임의
+ * 신선한 technical로 대신 답한다(`freshTechnicalInsteadOfOverall`).
+ */
+export const getCachedAnalysisTool: ToolExecutor = async (
+    args,
+    ctx,
+    runtime
+) => {
+    const symbol = String(args.symbol).toUpperCase();
+    const tab = String(args.tab);
+    const timeframe =
+        (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
+    // Same symbol→fmpSymbol path `get_bars_indicators`/`get_quote` use — a
+    // canonical symbol that differs from what the provider expects (e.g.
+    // indices) must resolve the same fmpSymbol here too, for both the bars
+    // read (staleness) and the quote read (`sinceAnalysis`'s `priceNow`).
+    // Only technical/overall need it — skip the extra DB round-trip for
+    // every other tab (fundamental/news/snapshot/history fallbacks).
+    const fmpSymbol =
+        tab === 'technical' || tab === 'overall'
+            ? (await resolveAssetInfoOrNull(symbol, 'get_cached_analysis'))
+                  ?.fmpSymbol
+            : undefined;
+
+    const result = await resolveCachedAnalysis(
+        { symbol, tab, timeframe, fmpSymbol },
+        ctx,
+        runtime
+    );
+    if (
+        tab !== 'overall' ||
+        runtime.substituteFreshTechnicalForOverall === false ||
+        !needsFreshRun(result)
+    )
+        return result;
+    return (
+        (await freshTechnicalInsteadOfOverall(
+            symbol,
+            timeframe,
+            fmpSymbol,
+            ctx,
+            runtime,
+            result
+        )) ?? result
+    );
 };
