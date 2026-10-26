@@ -8,6 +8,11 @@ import {
     type AnalysisRateLimitPayload,
 } from '@/shared/lib/sse/analysisRateLimit';
 import { publishAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
+import {
+    omitAnalysisModelFallback,
+    publishAnalysisModelFallback,
+    readAnalysisModelFallback,
+} from '@/shared/lib/sse/analysisModelFallback';
 
 /**
  * 분석 SSE 스트림 소비 헬퍼.
@@ -204,7 +209,14 @@ export async function runAnalysisStream<T>({
             buffer = rest;
             for (const frame of frames) {
                 const parsed = parseFrame<T>(frame, messages);
-                if (parsed.kind === 'done') return parsed.result;
+                if (parsed.kind === 'done') {
+                    // 서버가 꺼진 서버 키 모델을 기본 모델로 바꿔 돌렸으면 화면에 알리고
+                    // (`ModelFallbackNoticeHost`가 구독한다), 표시는 결과에서 뗀다.
+                    const fallback = readAnalysisModelFallback(parsed.result);
+                    if (fallback === null) return parsed.result;
+                    publishAnalysisModelFallback(fallback);
+                    return omitAnalysisModelFallback(parsed.result);
+                }
                 if (parsed.kind === 'error') throw new Error(parsed.message);
                 if (parsed.kind === 'rate_limited') {
                     publishAnalysisRateLimited(parsed.payload);

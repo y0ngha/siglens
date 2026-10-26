@@ -1074,6 +1074,10 @@
                 "title": "시그렌즈 API"
             }
         },
+        "symbol-model": {
+            "fallbackDetail": "기본 모델({fallback})로 분석해요.",
+            "fallbackTitle": "{model} 모델을 잠시 쓸 수 없어요"
+        },
         "ticker-search": {
             "SymbolSearchPanel": {
                 "9d0d41": "모두 지우기",
@@ -3637,7 +3641,8 @@
             },
             "ModelSelector": {
                 "1db1df": "AI 분석 모델 선택",
-                "7c0e87": "AI 분석 모델 목록"
+                "7c0e87": "AI 분석 모델 목록",
+                "unavailable": "일시 중단"
             },
             "PlanCheckBlock": {
                 "0f23de": "위 매매 전략의 손익비는 AI가 제안한 진입가를\n                            기준으로 쓴 것이에요.",

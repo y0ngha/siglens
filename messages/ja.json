@@ -1191,6 +1191,10 @@
             "signup": "会員登録して受け取る",
             "subtitle": "会員登録すると、選んだ曜日と時刻に保有銘柄とウォッチリスト銘柄の情報をこのようなメールでお届けします。",
             "title": "こんなメールが届きます"
+        },
+        "symbol-model": {
+            "fallbackDetail": "既定のモデル（{fallback}）で分析します。",
+            "fallbackTitle": "{model} は一時的に利用できません"
         }
     },
     "shared": {
@@ -3500,7 +3504,8 @@
             },
             "ModelSelector": {
                 "1db1df": "AI分析モデル選択",
-                "7c0e87": "AI分析モデルリスト"
+                "7c0e87": "AI分析モデルリスト",
+                "unavailable": "一時停止中"
             },
             "PlanCheckBlock": {
                 "0f23de": "上の売買戦略のリスクリワードは、AI が提案したエントリー価格を基準にしたものです。",

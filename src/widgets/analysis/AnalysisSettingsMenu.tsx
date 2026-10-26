@@ -18,6 +18,8 @@ import { ModelSelector } from './ModelSelector';
 interface AnalysisSettingsMenuProps {
     modelId: ModelId;
     allowedModels: readonly ModelId[];
+    /** 목록에 남기되 고를 수 없는 모델(`ModelSelector` 참고). */
+    unavailableModels?: readonly ModelId[];
     handleModelChange: (model: ModelId) => void;
     reasoning: boolean;
     setReasoning: (value: boolean) => void;
@@ -42,6 +44,7 @@ interface AnalysisSettingsMenuProps {
 export function AnalysisSettingsMenu({
     modelId,
     allowedModels,
+    unavailableModels,
     handleModelChange,
     reasoning,
     setReasoning,
@@ -135,6 +138,7 @@ export function AnalysisSettingsMenu({
                         selectedModel={modelId}
                         onModelChange={handleModelChange}
                         allowedModels={allowedModels}
+                        unavailableModels={unavailableModels}
                         className="w-full"
                     />
                     <ReasoningToggle

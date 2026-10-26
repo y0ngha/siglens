@@ -8,14 +8,30 @@ import {
     useRef,
     useState,
 } from 'react';
-import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
+import { getModelAccess, type ModelId } from '@y0ngha/siglens-core';
+import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
 import {
     migrateLegacyAnalysisModel,
     migrateRetiredAnalysisModel,
 } from '../lib/migrateAnalysisModel';
 
-const DEFAULT_MODEL: ModelId = DEEPSEEK_V4_1_FLASH_MODEL;
+const DEFAULT_MODEL: ModelId = DEFAULT_ANALYSIS_MODEL;
+
+/**
+ * 고를 수 있는 목록에서 대신 쓸 모델. 기본 모델이 있으면 그것, 없으면(운영자가 DeepSeek를
+ * 꺼 둔 경우) 서버가 대납하는 첫 free 모델이다. 목록 첫 항목을 그냥 고르면 BYOK 모델이
+ * 걸릴 수 있다 — 등급 제한이 꺼진 동안 `getAllowedModels`는 BYOK까지 정렬해 돌려주고,
+ * 키 없는 방문자의 분석이 전부 막힌다.
+ */
+export function pickFallbackModel(allowedModels: readonly ModelId[]): ModelId {
+    if (allowedModels.includes(DEFAULT_MODEL)) return DEFAULT_MODEL;
+    return (
+        allowedModels.find(model => getModelAccess(model) === 'free') ??
+        allowedModels[0] ??
+        DEFAULT_MODEL
+    );
+}
 
 /**
  * 저장된 모델을 읽는다. 저장소 접근이 막힌 브라우저(시크릿 모드·Safari 사생활 보호
@@ -23,7 +39,7 @@ const DEFAULT_MODEL: ModelId = DEEPSEEK_V4_1_FLASH_MODEL;
  * (`migrateLegacyAnalysisModel`)처럼 삼키고 "저장값 없음"으로 취급한다. 던지게 두면
  * 마운트 effect에서 트리가 죽는다.
  */
-function readStoredModel(): ModelId | null {
+export function readStoredModel(): ModelId | null {
     try {
         return localStorage.getItem(
             LOCAL_STORAGE_ANALYSIS_MODEL_KEY
@@ -77,7 +93,7 @@ export function useSelectedModel(
         const resolved =
             stored !== null && allowedModels.includes(stored)
                 ? stored
-                : DEFAULT_MODEL;
+                : pickFallbackModel(allowedModels);
         startTransition(() => {
             setSelectedModelState(resolved);
             setIsHydrated(true);
@@ -101,9 +117,7 @@ export function useSelectedModel(
             // react-doctor-disable-next-line react-doctor/no-pass-live-state-to-parent
             !allowedModels.includes(selectedModel)
         ) {
-            const fallback = allowedModels.includes(DEFAULT_MODEL)
-                ? DEFAULT_MODEL
-                : (allowedModels[0] ?? DEFAULT_MODEL);
+            const fallback = pickFallbackModel(allowedModels);
             startTransition(() => setSelectedModelState(fallback));
         }
     }, [allowedModels, selectedModel, isTierHydrated]);

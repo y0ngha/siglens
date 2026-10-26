@@ -1191,6 +1191,10 @@
             "signup": "Sign up to get it",
             "subtitle": "Sign up and we'll send your holdings and watchlist updates in an email like this, on the days and time you choose.",
             "title": "Here's the email you'll get"
+        },
+        "symbol-model": {
+            "fallbackDetail": "Analyzing with the default model ({fallback}).",
+            "fallbackTitle": "{model} is temporarily unavailable"
         }
     },
     "shared": {
@@ -3500,7 +3504,8 @@
             },
             "ModelSelector": {
                 "1db1df": "Select AI Analysis Model",
-                "7c0e87": "AI Analysis Model List"
+                "7c0e87": "AI Analysis Model List",
+                "unavailable": "Paused"
             },
             "PlanCheckBlock": {
                 "0f23de": "The risk-reward ratio in the trade plan above uses the entry price the AI suggested.",

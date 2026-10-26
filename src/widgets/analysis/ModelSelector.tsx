@@ -12,6 +12,8 @@ interface ModelSelectorProps {
     selectedModel: ModelId;
     onModelChange: (model: ModelId) => void;
     allowedModels: readonly ModelId[];
+    /** 운영자가 꺼 둔 서버 키 모델. 목록에 "일시 중단"으로 남고 고를 수 없다. */
+    unavailableModels?: readonly ModelId[];
     disabled?: boolean;
     /** Outer wrapper className. Defaults to `"mb-4"` when omitted. */
     className?: string;
@@ -25,6 +27,7 @@ export function ModelSelector({
     selectedModel,
     onModelChange,
     allowedModels,
+    unavailableModels,
     disabled = false,
     className = 'mb-4',
     showLabel = true,
@@ -89,6 +92,8 @@ export function ModelSelector({
                     <ModelListbox
                         ref={dropdownRef}
                         models={allowedModels}
+                        unavailableModels={unavailableModels}
+                        unavailableLabel={t('ModelSelector.unavailable')}
                         selected={selectedModel}
                         onChange={onModelChange}
                         onClose={closeToTrigger}

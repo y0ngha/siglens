@@ -13,12 +13,13 @@ import {
     type ModelId,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { useSelectedModel } from '../hooks/useSelectedModel';
+import { pickFallbackModel, useSelectedModel } from '../hooks/useSelectedModel';
 import {
     useModelGate,
     type ModelGateState,
 } from '@/features/premium-gate/hooks/useModelGate';
 import { useUserTier } from '../hooks/useUserTier';
+import { useDisabledServerKeyModels } from '../hooks/useDisabledServerKeyModels';
 import { useReasoningToggle } from '@/features/reasoning-toggle/hooks/useReasoningToggle';
 import { isReasoningToggleable } from '@y0ngha/siglens-core';
 import {
@@ -29,7 +30,18 @@ import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 
 interface SymbolModelContextValue {
     modelId: ModelId;
+    /** 이 등급이 목록에서 보는 모델 전부. 일시 중단된 모델도 들어 있다(`unavailableModels`). */
     allowedModels: readonly ModelId[];
+    /**
+     * `allowedModels` 중 운영자가 꺼 둔 서버 키 모델(`SERVER_KEY_DISABLED_PROVIDERS`).
+     * 목록에서 "일시 중단"으로 비활성 표시하고, 저장된 선택이 이 안에 있으면 기본 모델로 강등한다.
+     */
+    unavailableModels: readonly ModelId[];
+    /**
+     * 저장된 선택을 고를 수 없을 때 떨어지는 모델 — `useSelectedModel`이 강등에 쓰는 것과 같은
+     * 규칙(`pickFallbackModel`)을 고를 수 있는 모델(허용 − 일시 중단)에 적용한 값이다.
+     */
+    fallbackModel: ModelId;
     isHydrated: boolean;
     tier: Tier;
     isTierHydrated: boolean;
@@ -123,11 +135,34 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     );
 
     const { tier, isLoading: isTierLoading } = useUserTier();
+    const { models: disabledModels, isSettled: isAvailabilitySettled } =
+        useDisabledServerKeyModels();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
+    const unavailableModels = useMemo(
+        () => allowedModels.filter(model => disabledModels.includes(model)),
+        [allowedModels, disabledModels]
+    );
+    // 선택 검증은 고를 수 있는 모델로만 한다 — 꺼진 모델 저장값은 기본 모델로 떨어진다.
+    // 저장값(localStorage)은 지우지 않으므로 스위치를 다시 켜면 다음 로드에 되살아난다.
+    const selectableModels = useMemo(
+        () =>
+            unavailableModels.length === 0
+                ? allowedModels
+                : allowedModels.filter(
+                      model => !unavailableModels.includes(model)
+                  ),
+        [allowedModels, unavailableModels]
+    );
+    const fallbackModel = useMemo(
+        () => pickFallbackModel(selectableModels),
+        [selectableModels]
+    );
     const isTierHydrated = !isTierLoading;
+    // 저장된 선택은 등급과 꺼진 모델 목록이 **둘 다** 확정된 뒤에 읽는다. 목록보다 먼저
+    // 읽으면 꺼진 모델로 첫 분석이 나간 뒤 강등돼 같은 분석이 한 번 더 나간다.
     const [modelId, setModelId, isHydrated] = useSelectedModel(
-        allowedModels,
-        isTierHydrated
+        selectableModels,
+        isTierHydrated && isAvailabilitySettled
     );
     const { gateModal, dismissGate, handleModelChange } = useModelGate({
         onAllow: setModelId,
@@ -164,6 +199,8 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
         () => ({
             modelId,
             allowedModels,
+            unavailableModels,
+            fallbackModel,
             isHydrated,
             tier,
             isTierHydrated,
@@ -182,6 +219,8 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
         [
             modelId,
             allowedModels,
+            unavailableModels,
+            fallbackModel,
             isHydrated,
             tier,
             isTierHydrated,

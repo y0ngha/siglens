@@ -55,6 +55,13 @@ export const LOCAL_STORAGE_MEMBER_EMAIL_REPORT_NUDGE_KEY =
 export const SESSION_STORAGE_NUDGE_SHOWN_KEY = 'siglens_nudge_shown_session';
 
 /**
+ * "이 탭에서 '고른 모델이 일시 중단돼 기본 모델로 분석한다' 안내를 이미 띄웠다" 플래그
+ * (sessionStorage). 종목을 옮길 때마다 같은 토스트가 뜨지 않게 한다.
+ */
+export const SESSION_STORAGE_MODEL_FALLBACK_NOTICE_KEY =
+    'siglens:model-fallback-notice:v1';
+
+/**
  * 비회원이 마지막으로 누른 게이트·넛지 종류(`FunnelLastGate`). 가입 완료 퍼널 이벤트에
  * `lastGate`로 붙인 뒤 지운다(`shared/lib/funnel/lastGate.ts`). 소프트 측정이라 조작
  * 가능성은 받아들인다 — 넛지 카운터(`anonAnalysisCount`)와 같은 입장.

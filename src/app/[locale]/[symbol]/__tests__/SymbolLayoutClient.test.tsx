@@ -3,6 +3,10 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         <div data-testid="model-provider">{children}</div>
     ),
 }));
+// 안내 호스트는 토스트·쿼리 컨텍스트가 필요하다. 이 테스트는 프로바이더 배치만 본다.
+vi.mock('@/features/symbol-model/ui/ModelFallbackNoticeHost', () => ({
+    ModelFallbackNoticeHost: () => <div data-testid="model-fallback-host" />,
+}));
 import { render, screen } from '@testing-library/react';
 import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
@@ -17,6 +21,12 @@ describe('SymbolLayoutProviders', () => {
 
         expect(screen.getByTestId('model-provider')).toBeInTheDocument();
         expect(screen.getByTestId('child')).toBeInTheDocument();
+        // 안내 호스트는 모델 컨텍스트 안에 있어야 한다(`useSymbolModel`을 읽는다).
+        expect(
+            screen
+                .getByTestId('model-provider')
+                .contains(screen.getByTestId('model-fallback-host'))
+        ).toBe(true);
     });
 });
 

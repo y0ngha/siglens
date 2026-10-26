@@ -4669,4 +4669,201 @@ describe('POST /api/analysis/stream', () => {
             expect(mockRelease).toHaveBeenCalled();
         });
     });
+
+    /**
+     * 꺼진 서버 키 모델(`SERVER_KEY_DISABLED_PROVIDERS`)은 게이트 전에 기본 모델로 바뀌고,
+     * 결과에 `modelFallback`이 실린다. 실물 `serverKeyKillSwitch`를 env로 구동한다.
+     */
+    describe('꺼진 서버 키 모델 대체', () => {
+        const SONNET = 'claude-sonnet-5-5';
+        const HAIKU = 'claude-haiku-5-5';
+        const FALLBACK = 'deepseek-v4.1-flash';
+
+        function technicalBody(modelId: string): string {
+            return JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId,
+                },
+            });
+        }
+
+        function doneResult(events: string[]): Record<string, unknown> {
+            const frame = events
+                .join('')
+                .split('\n\n')
+                .find(chunk => chunk.startsWith('event: done'));
+            const data = frame
+                ?.split('\n')
+                .find(line => line.startsWith('data: '));
+            return (
+                JSON.parse(data!.slice('data: '.length)) as {
+                    result: Record<string, unknown>;
+                }
+            ).result;
+        }
+
+        beforeEach(() => {
+            // 앞선 describe가 동시성 상한을 채운 채 끝날 수 있다 — 503으로 새지 않게 비운다.
+            __resetActiveStreamsForTests();
+            vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u7' } as never);
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member',
+            } as never);
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: {},
+            } as never);
+        });
+
+        it('technical: 꺼진 모델을 기본 모델로 바꿔 게이트·분석에 넘기고 결과에 대체 표시를 싣는다', async () => {
+            vi.stubEnv('SERVER_KEY_DISABLED_PROVIDERS', 'anthropic');
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const error = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            const response = await POST(
+                makeRequest(undefined, technicalBody(SONNET))
+            );
+            const events = await collectSseEvents(response);
+
+            expect(vi.mocked(resolveTierAndByok)).toHaveBeenCalledWith(
+                'u7',
+                FALLBACK,
+                'ko'
+            );
+            // 호출 순서가 아니라 인자로 찾는다 — 앞 테스트의 늦은 호출이 [0]을 차지할 수 있다.
+            expect(
+                vi
+                    .mocked(runAnalysis)
+                    .mock.calls.some(
+                        call =>
+                            (call[5] as { modelId?: string } | undefined)
+                                ?.modelId === FALLBACK
+                    )
+            ).toBe(true);
+            expect(doneResult(events).modelFallback).toEqual({
+                from: SONNET,
+                to: FALLBACK,
+            });
+            expect(
+                warn.mock.calls.some(
+                    call => call[0] === '[analysis-stream] model-fallback:'
+                )
+            ).toBe(true);
+            // 운영자가 끈 결과라 P1 알람 마커는 찍히지 않는다.
+            expect(
+                error.mock.calls.some(call =>
+                    String(call[0]).includes('[analysis-stream] failed')
+                )
+            ).toBe(false);
+        });
+
+        it('technical: 스위치가 비어 있으면 요청 모델 그대로이고 대체 표시가 없다', async () => {
+            vi.stubEnv('SERVER_KEY_DISABLED_PROVIDERS', undefined);
+
+            const response = await POST(
+                makeRequest(undefined, technicalBody(SONNET))
+            );
+            const events = await collectSseEvents(response);
+
+            expect(vi.mocked(resolveTierAndByok)).toHaveBeenCalledWith(
+                'u7',
+                SONNET,
+                'ko'
+            );
+            expect(doneResult(events)).not.toHaveProperty('modelFallback');
+        });
+
+        it('technical: BYOK Claude 모델은 사용자 키라 바꾸지 않는다', async () => {
+            vi.stubEnv('SERVER_KEY_DISABLED_PROVIDERS', 'anthropic');
+
+            const response = await POST(
+                makeRequest(undefined, technicalBody('claude-opus-5-5'))
+            );
+            const events = await collectSseEvents(response);
+
+            expect(vi.mocked(resolveTierAndByok)).toHaveBeenCalledWith(
+                'u7',
+                'claude-opus-5-5',
+                'ko'
+            );
+            expect(doneResult(events)).not.toHaveProperty('modelFallback');
+        });
+
+        it('technical: 캐시 전용 요청은 바꾸지 않는다(provider를 부르지 않는다)', async () => {
+            vi.stubEnv('SERVER_KEY_DISABLED_PROVIDERS', 'anthropic');
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: SONNET,
+                    cacheOnly: true,
+                },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+            const events = await collectSseEvents(response);
+
+            expect(vi.mocked(resolveTierAndByok)).toHaveBeenCalledWith(
+                'u7',
+                SONNET,
+                'ko'
+            );
+            expect(doneResult(events)).not.toHaveProperty('modelFallback');
+        });
+
+        it('technical: 결과를 내지 않은 상태(miss_no_trigger)에는 대체 표시를 싣지 않는다', async () => {
+            vi.stubEnv('SERVER_KEY_DISABLED_PROVIDERS', 'anthropic');
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+
+            const response = await POST(
+                makeRequest(undefined, technicalBody(SONNET))
+            );
+            const events = await collectSseEvents(response);
+
+            expect(doneResult(events)).not.toHaveProperty('modelFallback');
+        });
+
+        it('DISPATCH(fundamental): 액션에 기본 모델을 넘기고 결과에 대체 표시를 싣는다', async () => {
+            vi.stubEnv('SERVER_KEY_DISABLED_PROVIDERS', 'anthropic');
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.mocked(runFundamentalAnalysisAction).mockResolvedValue({
+                status: 'cached',
+                result: {},
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'fundamental',
+                params: { symbol: 'AAPL', modelId: HAIKU },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            const events = await collectSseEvents(response);
+
+            expect(
+                vi.mocked(runFundamentalAnalysisAction)
+            ).toHaveBeenCalledWith(
+                'AAPL',
+                FALLBACK,
+                'ko',
+                undefined,
+                expect.any(AbortSignal),
+                false
+            );
+            expect(doneResult(events).modelFallback).toEqual({
+                from: HAIKU,
+                to: FALLBACK,
+            });
+        });
+    });
 });

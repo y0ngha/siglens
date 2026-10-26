@@ -1,6 +1,9 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { ModelId } from '@y0ngha/siglens-core';
-import { useSelectedModel } from '@/features/symbol-model/hooks/useSelectedModel';
+import {
+    pickFallbackModel,
+    useSelectedModel,
+} from '@/features/symbol-model/hooks/useSelectedModel';
 import {
     LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
     LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
@@ -244,5 +247,29 @@ describe('useSelectedModel', () => {
             });
             expect(result.current[0]).toBe(PREMIUM_MODEL);
         });
+    });
+});
+
+describe('pickFallbackModel', () => {
+    it('기본 모델이 목록에 있으면 기본 모델', () => {
+        expect(
+            pickFallbackModel([PREMIUM_MODEL, DEFAULT_MODEL] as ModelId[])
+        ).toBe(DEFAULT_MODEL);
+    });
+
+    it('기본 모델이 빠졌으면(DeepSeek를 끈 경우) BYOK가 아닌 첫 free 모델', () => {
+        expect(
+            pickFallbackModel([
+                'claude-opus-5',
+                'gemini-3.6-flash',
+            ] as ModelId[])
+        ).toBe('gemini-3.6-flash');
+    });
+
+    it('free 모델이 없으면 첫 항목, 목록이 비면 기본 모델', () => {
+        expect(pickFallbackModel(['claude-opus-5'] as ModelId[])).toBe(
+            'claude-opus-5'
+        );
+        expect(pickFallbackModel([])).toBe(DEFAULT_MODEL);
     });
 });
