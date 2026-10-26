@@ -20,7 +20,11 @@ import { getExtendedHoursQuoteAction } from '@/entities/extended-hours/actions/g
 import { useExtendedHoursQuote } from '@/entities/extended-hours/hooks/useExtendedHoursQuote';
 import type { ExtendedHoursQuote } from '@/entities/extended-hours/model';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
-import { EXTENDED_QUOTE_REFETCH_MS } from '@/shared/config/queryConfig';
+import {
+    EXTENDED_QUOTE_REFETCH_MS,
+    QUERY_KEYS,
+} from '@/shared/config/queryConfig';
+import { skipsVersionSkewReload } from '@/shared/lib/reloadOnVersionSkew';
 
 const mockedAction = vi.mocked(getExtendedHoursQuoteAction);
 const mockedHuman = vi.mocked(useHumanInteracted);
@@ -191,6 +195,21 @@ describe('useExtendedHoursQuote', () => {
         await advance(1);
 
         expect(result.current).toBeNull();
+    });
+
+    it('조회 실패가 전역 버전 스큐 새로고침을 일으키지 않도록 meta로 빠진다', async () => {
+        vi.setSystemTime(new Date(PRE_MARKET));
+
+        renderHook(() => useExtendedHoursQuote('AAPL'), {
+            wrapper: wrapper(),
+        });
+        await advance(1);
+
+        const query = clients
+            .at(-1)
+            ?.getQueryCache()
+            .find({ queryKey: QUERY_KEYS.extendedQuote('AAPL') });
+        expect(skipsVersionSkewReload(query?.meta)).toBe(true);
     });
 
     it('액션이 거부돼도 던지지 않고 재시도 없이 null이다', async () => {

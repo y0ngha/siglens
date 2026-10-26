@@ -14,6 +14,7 @@ import {
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
 import { MS_PER_MINUTE } from '@/shared/config/time';
+import { SKIP_VERSION_SKEW_RELOAD_META } from '@/shared/lib/reloadOnVersionSkew';
 
 /** 분 경계 판정이면 충분하다 — 세션 전환을 늦어도 1분 안에 따라간다. */
 function subscribeToMinuteClock(onChange: () => void): () => void {
@@ -67,6 +68,11 @@ export function useExtendedHoursQuote(
         refetchIntervalInBackground: false,
         // 표시 보조 값이다 — 실패를 재시도로 증폭하지 않고 다음 주기를 기다린다.
         retry: false,
+        // 첫 조회는 사람 입력 직후 나가는데, 그 입력이 다른 탭으로 가는 클릭이면 조회가 다음 탭
+        // URL로 POST된다. 이 액션은 차트 탭 워커에만 있어 Next가 "action not found"를 내고,
+        // 전역 버전 스큐 새로고침이 사용자가 시작한 탭 이동을 취소한다. 이 값은 없어도 되는 보조
+        // 표시이므로 그 새로고침에서 뺀다(진짜 스큐는 같은 페이지의 다른 액션이 잡는다).
+        meta: SKIP_VERSION_SKEW_RELOAD_META,
     });
     return sessionKind !== null && data?.session === sessionKind ? data : null;
 }

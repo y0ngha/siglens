@@ -14,6 +14,7 @@ import {
 import {
     isVersionSkewError,
     reloadOnVersionSkew,
+    skipsVersionSkewReload,
 } from '@/shared/lib/reloadOnVersionSkew';
 
 interface ReactQueryProviderProps {
@@ -28,7 +29,8 @@ export function ReactQueryProvider({ children }: ReactQueryProviderProps) {
                 // tab still on the old build gets "action not found" for all of them —
                 // reload once instead of rendering a logged-out, half-empty page.
                 queryCache: new QueryCache({
-                    onError: error => {
+                    onError: (error, query) => {
+                        if (skipsVersionSkewReload(query.meta)) return;
                         reloadOnVersionSkew(error);
                     },
                 }),
