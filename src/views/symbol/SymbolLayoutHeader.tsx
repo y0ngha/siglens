@@ -116,6 +116,7 @@ export function SymbolLayoutHeader({
     const {
         modelId,
         allowedModels,
+        unavailableModels,
         handleModelChange,
         gateModal,
         dismissGate,
@@ -331,6 +332,7 @@ export function SymbolLayoutHeader({
                         <AnalysisSettingsMenu
                             modelId={modelId}
                             allowedModels={allowedModels}
+                            unavailableModels={unavailableModels}
                             handleModelChange={handleModelChange}
                             reasoning={reasoning}
                             setReasoning={setReasoning}

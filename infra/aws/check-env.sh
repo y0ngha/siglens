@@ -62,6 +62,8 @@ OPTIONAL_KEYS=(
   NAVER_AI_CLIENT_ID
   NAVER_AI_CLIENT_SECRET
   AGENT_CHAT_DISABLED
+  # Analysis kill switch: comma list of providers whose server-paid models are paused. Unset = all on.
+  SERVER_KEY_DISABLED_PROVIDERS
   # Shared web_search budget override (core AGENT_GLOBAL_LIMITS 33/day, 1,000/month when unset).
   # Set only while extra Brave capacity is bought, e.g. a benchmark measurement window.
   AGENT_WEB_SEARCH_PER_DAY

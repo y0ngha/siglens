@@ -50,7 +50,16 @@ interface ModelListboxProps {
      * 공개 API 기본 모델처럼 등급과 상관없이 모두 내 키로 도는 목록에서는 배지가 오해를 부른다.
      */
     showAccessBadge?: boolean;
+    /**
+     * 목록에는 남기되 고를 수 없는 모델(운영자가 꺼 둔 서버 키 모델). 회색으로 그리고
+     * `unavailableLabel`을 배지 자리에 붙인다. 클릭·Enter는 무시하고 방향키·Home/End는 건너뛴다.
+     */
+    unavailableModels?: readonly ModelId[];
+    /** `unavailableModels` 항목에 붙일 짧은 라벨(예: "일시 중단"). */
+    unavailableLabel?: string;
 }
+
+const NO_MODELS: readonly ModelId[] = [];
 
 /**
  * AI 모델 listbox 패널 — 분석 설정의 `ModelSelector`와 챗 패널의 `ModelSelect`가
@@ -77,6 +86,8 @@ export function ModelListbox({
     ariaLabel,
     className,
     showAccessBadge = true,
+    unavailableModels = NO_MODELS,
+    unavailableLabel,
 }: ModelListboxProps) {
     const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
     const headingIdBase = useId();
@@ -93,11 +104,15 @@ export function ModelListbox({
           }))
         : [{ key: '', label: null, models: models ?? [] }];
 
-    // 키보드 순서 = 화면 순서: (있으면) 모델 아님 항목, 그다음 그룹 순서대로 모델.
+    // 화면 순서: (있으면) 모델 아님 항목, 그다음 그룹 순서대로 모델. `optionRefs`도 이 순서다.
     const entries: readonly (ModelId | null)[] = [
         ...(none ? [null] : []),
         ...sections.flatMap(section => section.models),
     ];
+    const isUnavailable = (entry: ModelId | null): boolean =>
+        entry !== null && unavailableModels.includes(entry);
+    // 키보드 순서 = 화면 순서에서 고를 수 없는 항목을 뺀 것.
+    const navigable = entries.filter(entry => !isUnavailable(entry));
 
     // 열릴 때(마운트) 한 번만 — 이후 포커스는 키 핸들러가 옮긴다.
     const focusSelected = useEffectEvent(() => {
@@ -113,8 +128,10 @@ export function ModelListbox({
     };
 
     const moveTo = (index: number): void => {
-        select(entries[index]!);
-        optionRefs.current[index]?.focus();
+        const entry = navigable[index];
+        if (entry === undefined) return;
+        select(entry);
+        optionRefs.current[entries.indexOf(entry)]?.focus();
     };
 
     const choose = (entry: ModelId | null): void => {
@@ -123,8 +140,8 @@ export function ModelListbox({
     };
 
     const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
-        const current = entries.indexOf(selected);
-        const count = entries.length;
+        const current = navigable.indexOf(selected);
+        const count = navigable.length;
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
@@ -175,17 +192,27 @@ export function ModelListbox({
         };
     };
 
+    const unavailableProps = {
+        role: 'option' as const,
+        tabIndex: -1,
+        'aria-selected': false,
+        'aria-disabled': true,
+        className:
+            'flex min-h-11 w-full cursor-not-allowed items-center gap-2 px-3 text-secondary-500',
+    };
+
     const renderModel = (model: ModelId) => {
         const display = getModelDisplay(model);
         const index = entries.indexOf(model);
-        const isSelected = model === selected;
+        const unavailable = isUnavailable(model);
+        const isSelected = !unavailable && model === selected;
         return (
             <div
                 key={model}
                 ref={el => {
                     optionRefs.current[index] = el;
                 }}
-                {...optionProps(model)}
+                {...(unavailable ? unavailableProps : optionProps(model))}
             >
                 <span className="w-3 text-[10px]">{isSelected && '✓'}</span>
                 <div className="flex flex-1 items-center justify-between gap-2">
@@ -197,7 +224,13 @@ export function ModelListbox({
                             {display.fullName}
                         </div>
                     </div>
-                    {showAccessBadge && <ModelAccessBadge model={model} />}
+                    {unavailable ? (
+                        <span className="shrink-0 text-[10px] font-medium text-secondary-400">
+                            {unavailableLabel}
+                        </span>
+                    ) : (
+                        showAccessBadge && <ModelAccessBadge model={model} />
+                    )}
                 </div>
             </div>
         );

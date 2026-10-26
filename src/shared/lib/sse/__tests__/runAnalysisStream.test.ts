@@ -5,6 +5,7 @@ import {
     runAnalysisStream,
 } from '@/shared/lib/sse/runAnalysisStream';
 import { subscribeAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
+import { subscribeAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';
 
 /**
  * SSE 프레임을 임의의 청크 경계로 쪼개 흘려보내는 가짜 Response.
@@ -37,6 +38,47 @@ afterEach(() => {
 });
 
 describe('runAnalysisStream', () => {
+    it('done 결과에 modelFallback이 있으면 신호를 발행하고 결과는 그대로 돌려준다', async () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAnalysisModelFallback(listener);
+        fetchMock.mockResolvedValue(
+            sseResponse([
+                'event: done\ndata: {"result":{"status":"done","modelFallback":{"from":"claude-sonnet-5-5","to":"deepseek-v4.1-flash"}}}\n\n',
+            ])
+        );
+
+        const result = await runAnalysisStream({
+            type: 'technical',
+            params: { symbol: 'AAPL' },
+            messages: TEST_STREAM_MESSAGES,
+        });
+        unsubscribe();
+
+        expect(listener).toHaveBeenCalledWith({
+            from: 'claude-sonnet-5-5',
+            to: 'deepseek-v4.1-flash',
+        });
+        // 표시는 안내용 신호라 결과(탭 캐시·공유 스냅샷)에는 남기지 않는다.
+        expect(result).toEqual({ status: 'done' });
+    });
+
+    it('modelFallback이 없으면 신호를 발행하지 않는다', async () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeAnalysisModelFallback(listener);
+        fetchMock.mockResolvedValue(
+            sseResponse(['event: done\ndata: {"result":{"status":"done"}}\n\n'])
+        );
+
+        await runAnalysisStream({
+            type: 'technical',
+            params: { symbol: 'AAPL' },
+            messages: TEST_STREAM_MESSAGES,
+        });
+        unsubscribe();
+
+        expect(listener).not.toHaveBeenCalled();
+    });
+
     it('done 이벤트의 result를 반환한다', async () => {
         fetchMock.mockResolvedValue(
             sseResponse([

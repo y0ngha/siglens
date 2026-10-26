@@ -240,4 +240,48 @@ describe('ModelListbox', () => {
             expect(screen.getAllByRole('option')[2]).toHaveFocus();
         });
     });
+
+    describe('unavailableModels', () => {
+        const PAUSED = 'claude-sonnet-5-5' as ModelId;
+
+        it('목록에 남기되 aria-disabled로 그리고 배지 대신 라벨을 붙인다', () => {
+            renderListbox('gemini-3.6-flash' as ModelId, {
+                unavailableModels: [PAUSED],
+                unavailableLabel: '일시 중단',
+            });
+            const paused = screen.getAllByRole('option')[1]!;
+
+            expect(paused).toHaveAttribute('aria-disabled', 'true');
+            expect(paused).toHaveAttribute('aria-selected', 'false');
+            expect(paused.tabIndex).toBe(-1);
+            expect(within(paused).getByText('일시 중단')).toBeInTheDocument();
+            expect(within(paused).queryByText('MEMBER')).toBeNull();
+        });
+
+        it('클릭과 Enter로 고를 수 없다', () => {
+            const { onChange, onClose } = renderListbox(
+                'gemini-3.6-flash' as ModelId,
+                { unavailableModels: [PAUSED], unavailableLabel: '일시 중단' }
+            );
+            const paused = screen.getAllByRole('option')[1]!;
+
+            fireEvent.click(paused);
+            fireEvent.keyDown(paused, { key: 'Enter' });
+
+            expect(onChange).not.toHaveBeenCalled();
+            expect(onClose).not.toHaveBeenCalled();
+        });
+
+        it('방향키는 고를 수 없는 항목을 건너뛴다', () => {
+            const { onChange, listbox } = renderListbox(
+                'gemini-3.6-flash' as ModelId,
+                { unavailableModels: [PAUSED], unavailableLabel: '일시 중단' }
+            );
+
+            fireEvent.keyDown(listbox, { key: 'ArrowDown' });
+
+            expect(onChange).toHaveBeenCalledWith('claude-opus-5');
+            expect(screen.getAllByRole('option')[2]).toHaveFocus();
+        });
+    });
 });

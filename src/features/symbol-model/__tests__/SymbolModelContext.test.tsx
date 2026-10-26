@@ -2,10 +2,12 @@ import { render, screen, renderHook, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { ModelId } from '@y0ngha/siglens-core';
+import { getAllowedModels } from '@y0ngha/siglens-core';
 import {
     SymbolModelProvider,
     useSymbolModel,
 } from '@/features/symbol-model/model/SymbolModelContext';
+import { useSelectedModel } from '@/features/symbol-model/hooks/useSelectedModel';
 
 // The provider renders the ONE shared signup-nudge modal. Mock it to a simple
 // testid dialog so these tests can assert single-instance open/close behavior
@@ -62,9 +64,18 @@ vi.mock('@/features/premium-gate/hooks/useModelGate', () => ({
     })),
 }));
 
-const { mockUseUserTier, mockUseReasoningToggle } = vi.hoisted(() => ({
-    mockUseUserTier: vi.fn(() => ({ tier: 'free', isLoading: false })),
-    mockUseReasoningToggle: vi.fn(() => [false, vi.fn()]),
+const { mockUseUserTier, mockUseReasoningToggle, mockUseDisabledModels } =
+    vi.hoisted(() => ({
+        mockUseUserTier: vi.fn(() => ({ tier: 'free', isLoading: false })),
+        mockUseReasoningToggle: vi.fn(() => [false, vi.fn()]),
+        mockUseDisabledModels: vi.fn(() => ({
+            models: [] as readonly string[],
+            isSettled: true,
+        })),
+    }));
+
+vi.mock('@/features/symbol-model/hooks/useDisabledServerKeyModels', () => ({
+    useDisabledServerKeyModels: mockUseDisabledModels,
 }));
 
 vi.mock('@/features/symbol-model/hooks/useUserTier', () => ({
@@ -95,6 +106,7 @@ describe('SymbolModelContext', () => {
     beforeEach(() => {
         mockUseUserTier.mockReturnValue({ tier: 'free', isLoading: false });
         mockUseReasoningToggle.mockReturnValue([false, vi.fn(), true]);
+        mockUseDisabledModels.mockReturnValue({ models: [], isSettled: true });
     });
 
     afterEach(() => {
@@ -334,6 +346,62 @@ describe('SymbolModelContext', () => {
             );
 
             expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
+        });
+    });
+
+    describe('일시 중단된 서버 키 모델', () => {
+        it('목록에는 남기고 unavailableModels로 표시하며, 선택 검증에서는 뺀다', () => {
+            vi.mocked(getAllowedModels).mockReturnValueOnce([
+                'gemini-3.5-flash-lite',
+                'claude-haiku-5-5',
+            ] as ModelId[]);
+            mockUseDisabledModels.mockReturnValue({
+                models: ['claude-haiku-5-5', 'claude-sonnet-5-5'],
+                isSettled: true,
+            });
+
+            const { result } = renderHook(() => useSymbolModel(), {
+                wrapper: makeWrapper(),
+            });
+
+            expect(result.current.allowedModels).toEqual([
+                'gemini-3.5-flash-lite',
+                'claude-haiku-5-5',
+            ]);
+            // 이 등급 목록에 없는 sonnet은 표시 대상이 아니다.
+            expect(result.current.unavailableModels).toEqual([
+                'claude-haiku-5-5',
+            ]);
+            expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
+                ['gemini-3.5-flash-lite'],
+                true
+            );
+        });
+
+        it('꺼진 목록 조회가 끝나기 전에는 저장된 선택을 읽지 않는다(이중 분석 방지)', () => {
+            mockUseDisabledModels.mockReturnValue({
+                models: [],
+                isSettled: false,
+            });
+
+            renderHook(() => useSymbolModel(), { wrapper: makeWrapper() });
+
+            expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
+                ['gemini-3.5-flash-lite'],
+                false
+            );
+        });
+
+        it('꺼진 모델이 없으면 등급 목록 그대로 선택을 검증한다', () => {
+            const { result } = renderHook(() => useSymbolModel(), {
+                wrapper: makeWrapper(),
+            });
+
+            expect(result.current.unavailableModels).toEqual([]);
+            expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
+                ['gemini-3.5-flash-lite'],
+                true
+            );
         });
     });
 });

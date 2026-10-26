@@ -1191,6 +1191,10 @@
             "signup": "注册并接收",
             "subtitle": "注册后，我们会在你选定的日期和时间，把持仓和自选股的动态以这样的邮件发给你。",
             "title": "你会收到这样的邮件"
+        },
+        "symbol-model": {
+            "fallbackDetail": "将使用默认模型（{fallback}）进行分析。",
+            "fallbackTitle": "{model} 暂时无法使用"
         }
     },
     "shared": {
@@ -3500,7 +3504,8 @@
             },
             "ModelSelector": {
                 "1db1df": "选择AI分析模型",
-                "7c0e87": "AI分析模型列表"
+                "7c0e87": "AI分析模型列表",
+                "unavailable": "暂停使用"
             },
             "PlanCheckBlock": {
                 "0f23de": "上方交易策略的盈亏比以 AI 建议的进场价为基准。",

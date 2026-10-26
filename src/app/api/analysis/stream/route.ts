@@ -65,6 +65,7 @@ import {
     type GenerationGate,
 } from './generationQuota';
 import { meterPayload, resolveMeterGate } from './meteredRevealGate';
+import { attachModelFallback, resolveRequestModel } from './modelFallback';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
@@ -915,7 +916,7 @@ export async function POST(request: Request): Promise<Response> {
             companyName,
             timeframe,
             fmpSymbol,
-            modelId,
+            modelId: requestedModelId,
             reasoning,
             reanalyze,
             cacheOnly,
@@ -999,6 +1000,14 @@ export async function POST(request: Request): Promise<Response> {
                     { headers: SSE_HEADERS }
                 );
             }
+
+            // --- 2c'. 꺼진 서버 키 모델 대체 ---
+            // 게이트보다 먼저 바꿔야 한다 — 꺼진 모델 그대로면 provider가 400으로 실패해
+            // P1 알람 마커가 찍힌다(`resolveRequestModel` JSDoc).
+            const { modelId, fallback: modelFallback } = resolveRequestModel(
+                requestedModelId,
+                { cacheOnly: cacheOnly === true }
+            );
 
             // --- 2d. Market profile (2e와 병렬) ---
             // --- 2e. Tier + BYOK gate ---
@@ -1418,11 +1427,14 @@ export async function POST(request: Request): Promise<Response> {
 
             return new Response(
                 heartbeatStream(
-                    withReaderViews(
-                        clientWork,
-                        requestLocale,
-                        'technical',
-                        body.params.symbol
+                    attachModelFallback(
+                        withReaderViews(
+                            clientWork,
+                            requestLocale,
+                            'technical',
+                            body.params.symbol
+                        ),
+                        modelFallback
                     ),
                     {
                         genericErrorMessage: t('generic'),
@@ -1479,7 +1491,16 @@ export async function POST(request: Request): Promise<Response> {
     const t = await streamMessages(locale);
 
     // 생성 한도 예약도 동시성 검사 **이전**이다 — 같은 원자성 이유.
-    const params = body.params;
+    // 꺼진 서버 키 모델은 위임 전에 기본 모델로 바꾼다 — 각 액션의 게이트는 넘겨받은
+    // 모델을 그대로 믿는다(`resolveRequestModel` JSDoc).
+    const { modelId: servedModelId, fallback: modelFallback } =
+        resolveRequestModel(body.params.modelId, {
+            cacheOnly: body.params.cacheOnly === true,
+        });
+    const params =
+        modelFallback === null
+            ? body.params
+            : { ...body.params, modelId: servedModelId };
     const clientCacheOnly = params.cacheOnly === true;
     const quota: GenerationGate = QUOTA_EXEMPT_TYPES.has(body.type)
         ? { kind: 'exempt' }
@@ -1529,7 +1550,15 @@ export async function POST(request: Request): Promise<Response> {
         );
         return new Response(
             heartbeatStream(
-                withReaderViews(work, locale, body.type, body.params.symbol),
+                attachModelFallback(
+                    withReaderViews(
+                        work,
+                        locale,
+                        body.type,
+                        body.params.symbol
+                    ),
+                    modelFallback
+                ),
                 { genericErrorMessage: t('generic') }
             ),
             { headers: SSE_HEADERS }

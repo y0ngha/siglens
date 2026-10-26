@@ -118,6 +118,9 @@ export const QUERY_KEYS = {
     currentUser: () => ['current-user'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
+    /** 운영자가 꺼 둔 서버 키 모델(`/api/analysis/model-availability`). 사용자와 무관한 전역 값이다. */
+    disabledServerKeyModels: () =>
+        ['llm', 'disabled-server-key-models'] as const,
     portfolioHoldings: () => ['portfolio-holdings'] as const,
     watchlist: () => ['watchlist'] as const,
     emailReportSettings: () => ['email-report-settings'] as const,
