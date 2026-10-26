@@ -6,7 +6,7 @@ describe('buildSampleReportEmail', () => {
     it('한국어 카탈로그로 실제 메일 문구와 샘플 산문을 그린다', async () => {
         const { html, subject } = await buildSampleReportEmail('ko');
 
-        expect(subject).toContain('보유·관심종목 리포트');
+        expect(subject).toContain('보유종목과 관심종목 리포트');
         expect(html).toContain('<html lang="ko">');
         expect(html).toContain('최근 넉 달 동안 꾸준히 올라');
         // 신호 라벨은 대시보드와 같은 `shared.enumLabel.signalType` 사전에서 온다.

@@ -169,7 +169,7 @@ describe('FinancialsAiSummary', () => {
         render(<FinancialsAiSummary symbol="AAPL" />);
 
         expect(screen.getByText('성장성')).toBeInTheDocument();
-        expect(screen.getByText('수익성·질')).toBeInTheDocument();
+        expect(screen.getByText('수익성과 질')).toBeInTheDocument();
         expect(screen.getByText('안정성')).toBeInTheDocument();
         expect(screen.getByText('현금창출력')).toBeInTheDocument();
         expect(screen.getByText('성장성 설명')).toBeInTheDocument();

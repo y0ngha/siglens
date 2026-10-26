@@ -116,7 +116,7 @@ describe('SqueezeScoreCard', () => {
         render(<SqueezeScoreCard risk={squeezeRisk()} />);
         expect(
             screen.getByText(
-                '반영한 자료: FINRA 공매도 · 일봉 가격·거래량 (가격은 2026-10-15 종가까지)'
+                '반영한 자료: FINRA 공매도, 일봉 가격과 거래량 (가격은 2026-10-15 종가까지)'
             )
         ).toBeInTheDocument();
     });
@@ -141,7 +141,7 @@ describe('SqueezeScoreCard', () => {
             />
         );
         expect(
-            screen.getByText('반영한 자료: SEC 결제 불이행 · 거래소 과열 목록')
+            screen.getByText('반영한 자료: SEC 결제 불이행, 거래소 과열 목록')
         ).toBeInTheDocument();
     });
 
@@ -287,9 +287,9 @@ describe('ThresholdListBadge', () => {
     it('shows a listed badge with the streak, markets and dated exchange source', () => {
         render(<ThresholdListBadge status={makeThresholdList()} />);
         expect(screen.getByText('과열 목록 등재')).toBeInTheDocument();
-        expect(screen.getByText('15거래일 연속 · Nasdaq')).toBeInTheDocument();
+        expect(screen.getByText('15거래일 연속, Nasdaq')).toBeInTheDocument();
         expect(
-            screen.getByText('출처: Nasdaq·NYSE·Cboe (2026-10-15 목록 기준)')
+            screen.getByText('출처: Nasdaq, NYSE, Cboe (2026-10-15 목록 기준)')
         ).toBeInTheDocument();
     });
 
@@ -414,7 +414,7 @@ describe('DilutionSection', () => {
             />
         );
         const section = screen
-            .getByRole('heading', { level: 2, name: /증자·희석 공시/ })
+            .getByRole('heading', { level: 2, name: /증자 희석 공시/ })
             .closest('section') as HTMLElement;
         for (const label of ['ATM', '선반 등록', '사모']) {
             expect(within(section).getByText(label)).toBeInTheDocument();
@@ -442,7 +442,7 @@ describe('DilutionSection', () => {
             />
         );
         expect(
-            screen.getByText('접수된 증자·희석 공시가 없어요.')
+            screen.getByText('접수된 증자 희석 공시가 없어요.')
         ).toBeInTheDocument();
         rerender(
             <DilutionSection
@@ -452,7 +452,7 @@ describe('DilutionSection', () => {
             />
         );
         expect(
-            screen.getByText(/증자·희석 공시를 불러오지 못했어요/)
+            screen.getByText(/증자 희석 공시를 불러오지 못했어요/)
         ).toBeInTheDocument();
         rerender(
             <DilutionSection filings={[]} scoringWindow={WINDOW} collecting />

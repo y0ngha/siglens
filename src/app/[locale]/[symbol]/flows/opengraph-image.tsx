@@ -15,7 +15,7 @@ export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 // `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지 본문은 아래에서 로케일별로
 // 그린다). 네 로케일이 한 값을 공유해야 하므로 영어로 둔다.
-export const alt = 'SIGLENS — investor flows';
+export const alt = 'SIGLENS investor flows';
 
 export default function Image({ params }: SymbolTabOgImageProps) {
     return renderSymbolTabOgImage(params, t => t('opengraph-image.flows'));

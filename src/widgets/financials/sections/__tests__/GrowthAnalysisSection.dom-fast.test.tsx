@@ -83,10 +83,10 @@ describe('GrowthAnalysisSection', () => {
         expect(screen.getAllByText(/%/)).toHaveLength(9);
     });
 
-    it('renders em-dash for null growth values', () => {
+    it('renders the "-" placeholder for null growth values', () => {
         render(<GrowthAnalysisSection rows={SAMPLE_ROWS} />);
-        // null FCF growth (2023) + null 10Y per-share → 2 em-dashes
-        expect(screen.getAllByText('—')).toHaveLength(2);
+        // null FCF growth (2023) + null 10Y per-share → 2 "-" placeholders
+        expect(screen.getAllByText('-')).toHaveLength(2);
     });
 
     it('renders fiscal year columns', () => {

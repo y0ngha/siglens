@@ -56,7 +56,7 @@ describe('EmailReportNudgeModal', () => {
         watchlist.add.mockResolvedValue('added');
     });
 
-    it('설정 권유는 보유·관심 종목 수를 알리고 넛지 출처를 달아 설정 페이지로 보낸다', () => {
+    it('설정 권유는 보유종목과 관심종목 수를 알리고 넛지 출처를 달아 설정 페이지로 보낸다', () => {
         render(
             <EmailReportNudgeModal
                 nudge={{ kind: 'setup', symbolCount: 4 }}
@@ -66,10 +66,12 @@ describe('EmailReportNudgeModal', () => {
 
         expect(
             screen.getByRole('heading', {
-                name: '보유·관심종목 리포트를 메일로 받아보세요',
+                name: '보유종목과 관심종목 리포트를 메일로 받아보세요',
             })
         ).toBeInTheDocument();
-        expect(screen.getByText(/보유·관심종목 4개의/)).toBeInTheDocument();
+        expect(
+            screen.getByText(/보유종목과 관심종목 4개의/)
+        ).toBeInTheDocument();
         expect(
             screen.getByRole('link', { name: '메일 리포트 설정하기' })
         ).toHaveAttribute('href', '/email-report?from=nudge');
@@ -107,7 +109,7 @@ describe('EmailReportNudgeModal', () => {
         );
 
         expect(screen.getByRole('status')).toHaveTextContent(
-            '담았어요 — 다음 리포트부터 포함돼요'
+            '담았어요. 다음 리포트부터 포함돼요'
         );
         expect(
             screen.queryByRole('button', { name: ADD_CTA })

@@ -14,7 +14,7 @@ describe('financialsTooltips', () => {
             screen.getByText(/설비투자\(CapEx\)를 빼고/)
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/배당·자사주·빚 상환의 재원/)
+            screen.getByText(/배당, 자사주, 빚 상환의 재원/)
         ).toBeInTheDocument();
     });
 
@@ -29,7 +29,7 @@ describe('financialsTooltips', () => {
     it('CapExTooltip renders capital expenditure explanation text', () => {
         render(<div>{CapExTooltip}</div>);
         expect(
-            screen.getByText(/공장·설비처럼 미래를 위해 투자한 돈/)
+            screen.getByText(/공장이나 설비처럼 미래를 위해 투자한 돈/)
         ).toBeInTheDocument();
         expect(screen.getByText(/성장 투자로 봐요/)).toBeInTheDocument();
     });

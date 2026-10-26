@@ -236,7 +236,7 @@ describe('/fear-greed page', () => {
                 .map(s => JSON.parse(s.textContent ?? '{}'))
                 .find(d => d['@type'] === 'BreadcrumbList');
             expect(breadcrumb.itemListElement.at(-1).name).toBe(
-                '미국 공포·탐욕 지수'
+                '미국 공포 탐욕 지수'
             );
         });
 

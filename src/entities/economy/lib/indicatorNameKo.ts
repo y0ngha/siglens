@@ -62,7 +62,7 @@ export const INDICATOR_NAME_KO: Record<string, string> = {
     '2-Year KTB Auction': '국고채 2년 입찰',
     'M2 Money Supply': 'M2 통화량',
     'M3 Money Supply': 'M3 통화량',
-    'M2/M3 Money Supply': 'M2·M3 통화량',
+    'M2/M3 Money Supply': 'M2, M3 통화량',
     'Consumer Confidence': '소비자심리지수',
     'Business Confidence': '기업경기실사지수',
 };

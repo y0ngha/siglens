@@ -29,8 +29,8 @@ describe('ProfitabilityCard', () => {
             returnOnAssetsTTM: null,
         } as unknown as FundamentalRatiosInput;
         render(<ProfitabilityCard ratios={ratiosWithNull} />);
-        // Null values render as em-dash "—"
-        const dashes = screen.getAllByText('—');
+        // Null values render as the "-" placeholder
+        const dashes = screen.getAllByText('-');
         expect(dashes.length).toBeGreaterThanOrEqual(2);
     });
 

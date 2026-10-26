@@ -159,10 +159,10 @@ describe('AnalysisSettingsMenu', () => {
 
         const gear = gearButton();
         expect(gear.getAttribute('aria-label')).toBe(
-            '분석 설정 · 현재 모델: DeepSeek Flash'
+            '분석 설정, 현재 모델: DeepSeek Flash'
         );
         expect(gear.getAttribute('title')).toBe(
-            '분석 설정 · 현재 모델: DeepSeek Flash'
+            '분석 설정, 현재 모델: DeepSeek Flash'
         );
         expect(gear.querySelector('.bg-primary-500')).toBeNull();
     });
@@ -172,7 +172,7 @@ describe('AnalysisSettingsMenu', () => {
 
         const gear = gearButton();
         expect(gear.getAttribute('aria-label')).toBe(
-            '분석 설정 · 현재 모델: DeepSeek Flash (변경됨)'
+            '분석 설정, 현재 모델: DeepSeek Flash (변경됨)'
         );
         expect(gear.querySelector('.bg-primary-500')).not.toBeNull();
     });
@@ -182,7 +182,7 @@ describe('AnalysisSettingsMenu', () => {
 
         const gear = gearButton();
         expect(gear.getAttribute('aria-label')).toBe(
-            '분석 설정 · 현재 모델: Flash 3.6 (변경됨)'
+            '분석 설정, 현재 모델: Flash 3.6 (변경됨)'
         );
         expect(gear.querySelector('.bg-primary-500')).not.toBeNull();
     });

@@ -302,7 +302,7 @@ describe('TickerAutocomplete', () => {
         });
         render(<TickerAutocomplete />);
         expect(
-            screen.getByText('검색 결과 없음 — 티커(예: AAPL)로 검색해 보세요')
+            screen.getByText('검색 결과 없음. 티커(예: AAPL)로 검색해 보세요')
         ).toBeInTheDocument();
     });
 

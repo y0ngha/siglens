@@ -121,7 +121,7 @@ export function BriefingCard({
                                     .map(sector =>
                                         assetLabel(sector.symbol, sector.name)
                                     )
-                                    .join('·')}
+                                    .join(', ')}
                             </span>
                         </p>
                     )}
@@ -135,7 +135,7 @@ export function BriefingCard({
                                     .map(sector =>
                                         assetLabel(sector.symbol, sector.name)
                                     )
-                                    .join('·')}
+                                    .join(', ')}
                             </span>
                         </p>
                     )}

@@ -927,10 +927,10 @@ describe('EconomicCalendarGrid — 월 그리드 UX', () => {
             expect(screen.queryByText(/예상/)).not.toBeInTheDocument();
         });
 
-        it('둘 다 있으면 가운뎃점으로 이어 붙인다', () => {
+        it('둘 다 있으면 세로선(|)으로 이어 붙인다', () => {
             renderOne({ estimate: 2.5, previous: 2.3, actual: 2.4 });
             expect(
-                screen.getByText('예상 2.5% · 이전 2.3% · 실제 2.4%')
+                screen.getByText('예상 2.5% | 이전 2.3% | 실제 2.4%')
             ).toBeInTheDocument();
         });
 
@@ -951,7 +951,7 @@ describe('EconomicCalendarGrid — 월 그리드 UX', () => {
 
         it('예상이 있으면 실제 0도 진짜 값이라 보여 준다', () => {
             renderOne({ estimate: 0.1, previous: null, actual: 0 });
-            expect(screen.getByText('예상 0.1% · 실제 0%')).toBeInTheDocument();
+            expect(screen.getByText('예상 0.1% | 실제 0%')).toBeInTheDocument();
         });
     });
 });

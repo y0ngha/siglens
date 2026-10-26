@@ -78,7 +78,7 @@ function formatShortDate(dateStr: string, locale: Locale): string {
 }
 
 function formatCurrency(value: number | null, symbol: string): string {
-    if (value === null) return '—';
+    if (value === null) return '-';
     return MONEY_FORMATTERS[currencyForSymbol(symbol)].format(value);
 }
 
@@ -87,7 +87,7 @@ function formatRevenue(
     symbol: string,
     locale: Locale
 ): string {
-    if (value === null) return '—';
+    if (value === null) return '-';
     // 예전에는 KRW도 `en-US` 포매터를 써서 ko 사용자에게 `₩333T`가 나갔다 —
     // `numberFormat.ts`가 "읽히지 않는다"고 문서화해 둔 바로 그 케이스다.
     return formatCompactAmount(

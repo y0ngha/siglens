@@ -22,7 +22,7 @@ vi.mock('@/shared/lib/tooltipPosition', () => ({
 
 const TOOLTIP_LINES = [
     'AI가 답을 내기 전에 여러 단계로 더 깊이 추론하는 기능이에요.',
-    '켜면 지표·뉴스·시나리오를 더 꼼꼼히 따져 상세한 분석을 드려요.',
+    '켜면 지표, 뉴스, 시나리오를 더 꼼꼼히 따져 상세한 분석을 드려요.',
     '대신 분석에 시간이 조금 더 걸릴 수 있어요.',
 ];
 
@@ -80,7 +80,7 @@ describe('ReasoningToggle', () => {
             />
         );
         expect(screen.getByRole('switch').getAttribute('aria-label')).toBe(
-            `${REASONING_FEATURE_LABEL} — 회원가입하면 사용할 수 있어요`
+            `${REASONING_FEATURE_LABEL}: 회원가입하면 사용할 수 있어요`
         );
     });
 

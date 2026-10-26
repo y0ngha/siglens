@@ -13,9 +13,9 @@ const AI_SENTENCE =
 describe('AnalysisProvenanceNote', () => {
     describe('variant="ai" (default)', () => {
         it.each([
-            ['us-equity', '시세·뉴스 Financial Modeling Prep'],
+            ['us-equity', '시세와 뉴스 Financial Modeling Prep'],
             ['kr-equity', '시세 Yahoo Finance, 뉴스 네이버 뉴스 검색'],
-            ['crypto', '시세·뉴스 Financial Modeling Prep'],
+            ['crypto', '시세와 뉴스 Financial Modeling Prep'],
         ] as const satisfies readonly (readonly [MarketProfileId, string])[])(
             '%s: names the data source the market really uses',
             (profile, source) => {

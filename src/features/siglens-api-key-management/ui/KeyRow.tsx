@@ -70,8 +70,8 @@ export function KeyRow({ apiKey, revokeFormAction }: KeyRowProps) {
             <p className="text-xs text-secondary-400" suppressHydrationWarning>
                 {t('SiglensApiKeySection.createdAt', {
                     v0: formatDay(apiKey.createdAt, locale),
-                })}
-                {' · '}
+                })}{' '}
+                <span aria-hidden="true">|</span>{' '}
                 {apiKey.lastUsedAt === null
                     ? t('SiglensApiKeySection.neverUsed')
                     : t('SiglensApiKeySection.lastUsedAt', {

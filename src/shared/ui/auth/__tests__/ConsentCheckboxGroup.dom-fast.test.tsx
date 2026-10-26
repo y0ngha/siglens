@@ -42,7 +42,9 @@ describe('ConsentCheckboxGroup', () => {
         render(<Renderer />);
         const master = screen.getByLabelText('모두 동의');
         await user.click(master);
-        expect(screen.getByLabelText(/개인정보 수집·이용 동의/)).toBeChecked();
+        expect(
+            screen.getByLabelText(/개인정보 수집 및 이용 동의/)
+        ).toBeChecked();
         expect(screen.getByLabelText(/서비스 이용약관 동의/)).toBeChecked();
     });
 
@@ -52,7 +54,7 @@ describe('ConsentCheckboxGroup', () => {
         const master = screen.getByLabelText('모두 동의');
         await user.click(master);
         expect(
-            screen.getByLabelText(/개인정보 수집·이용 동의/)
+            screen.getByLabelText(/개인정보 수집 및 이용 동의/)
         ).not.toBeChecked();
         expect(screen.getByLabelText(/서비스 이용약관 동의/)).not.toBeChecked();
     });
@@ -60,8 +62,10 @@ describe('ConsentCheckboxGroup', () => {
     it('individual checkbox toggle does not affect the other', async () => {
         const user = userEvent.setup();
         render(<Renderer />);
-        await user.click(screen.getByLabelText(/개인정보 수집·이용 동의/));
-        expect(screen.getByLabelText(/개인정보 수집·이용 동의/)).toBeChecked();
+        await user.click(screen.getByLabelText(/개인정보 수집 및 이용 동의/));
+        expect(
+            screen.getByLabelText(/개인정보 수집 및 이용 동의/)
+        ).toBeChecked();
         expect(screen.getByLabelText(/서비스 이용약관 동의/)).not.toBeChecked();
     });
 
@@ -98,7 +102,7 @@ describe('ConsentCheckboxGroup', () => {
     it('individual checkboxes are required and aria-required', () => {
         render(<Renderer />);
         const privacy = screen.getByLabelText(
-            /개인정보 수집·이용 동의/
+            /개인정보 수집 및 이용 동의/
         ) as HTMLInputElement;
         expect(privacy).toBeRequired();
         expect(privacy).toHaveAttribute('aria-required', 'true');
@@ -115,7 +119,7 @@ describe('ConsentCheckboxGroup', () => {
 
     it('error marks only unchecked rows as invalid via aria-invalid', () => {
         render(<Renderer initialPrivacy={false} initialTos error="에러" />);
-        const privacy = screen.getByLabelText(/개인정보 수집·이용 동의/);
+        const privacy = screen.getByLabelText(/개인정보 수집 및 이용 동의/);
         const tos = screen.getByLabelText(/서비스 이용약관 동의/);
         expect(privacy).toHaveAttribute('aria-invalid', 'true');
         expect(tos).not.toHaveAttribute('aria-invalid');
@@ -123,7 +127,7 @@ describe('ConsentCheckboxGroup', () => {
 
     it('error does not mark checked rows as invalid', () => {
         render(<Renderer initialPrivacy initialTos error="에러" />);
-        const privacy = screen.getByLabelText(/개인정보 수집·이용 동의/);
+        const privacy = screen.getByLabelText(/개인정보 수집 및 이용 동의/);
         const tos = screen.getByLabelText(/서비스 이용약관 동의/);
         expect(privacy).not.toHaveAttribute('aria-invalid');
         expect(tos).not.toHaveAttribute('aria-invalid');

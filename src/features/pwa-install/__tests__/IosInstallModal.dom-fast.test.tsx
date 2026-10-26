@@ -11,7 +11,7 @@ describe('IosInstallModal', () => {
             screen.getByText("'홈 화면에 추가'를 선택하세요")
         ).toBeInTheDocument();
         expect(
-            screen.getByText("우측 상단 '추가'를 탭하면 완료!")
+            screen.getByText("우측 상단 '추가'를 탭하면 완료")
         ).toBeInTheDocument();
     });
 

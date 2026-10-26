@@ -83,8 +83,8 @@ describe('GuideLiveSymbols', () => {
         ).toHaveAttribute('href', '/TSLA');
         expect(screen.getByText(/탐지$/)).toBeInTheDocument();
         // 기준 시각 두 줄(스캐너·스냅샷)
-        expect(screen.getByText(/신호 스캐너 ·/)).toBeInTheDocument();
-        expect(screen.getByText(/장 마감 스냅샷 ·/)).toBeInTheDocument();
+        expect(screen.getByText(/신호 스캐너 \(/)).toBeInTheDocument();
+        expect(screen.getByText(/장 마감 스냅샷 \(/)).toBeInTheDocument();
     });
 
     it('ko는 코드를 병기하지 않고 한국어 이름만 적는다', async () => {
@@ -169,7 +169,7 @@ describe('GuideLiveSymbols', () => {
         ]);
 
         // 20:00Z = 26일 05시 00분 KST(정답), 14:00Z = 25일 23시 00분 KST(사전순 오답)
-        expect(screen.getByText(/신호 스캐너 ·/)).toHaveTextContent(
+        expect(screen.getByText(/신호 스캐너 \(/)).toHaveTextContent(
             '26일 05시 00분'
         );
     });

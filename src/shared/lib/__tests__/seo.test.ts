@@ -768,7 +768,7 @@ describe('buildSnapshotMetaDescription', () => {
                     'ko',
                     TAB_LABEL
                 )
-            ).toBe(clampSeoDescription(`AAPL ${TAB_LABEL} — ${prose}`));
+            ).toBe(clampSeoDescription(`AAPL ${TAB_LABEL}: ${prose}`));
         }
     );
 
@@ -787,7 +787,7 @@ describe('buildSnapshotMetaDescription', () => {
                 TAB_LABEL
             )
         ).toBe(
-            `AAPL ${TAB_LABEL} — 첫 번째 문단입니다. 두 번째 문단입니다. 세 번째 문단입니다.`
+            `AAPL ${TAB_LABEL}: 첫 번째 문단입니다. 두 번째 문단입니다. 세 번째 문단입니다.`
         );
     });
 
@@ -806,7 +806,7 @@ describe('buildSnapshotMetaDescription', () => {
             TAB_LABEL
         );
         expect(
-            result?.startsWith(`애플, Apple Inc. (AAPL) ${TAB_LABEL} — `)
+            result?.startsWith(`애플, Apple Inc. (AAPL) ${TAB_LABEL}: `)
         ).toBe(true);
     });
 
@@ -828,7 +828,7 @@ describe('buildSnapshotMetaDescription', () => {
         expect([...(result as string)].length).toBeLessThanOrEqual(
             SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH
         );
-        expect(result?.startsWith(`AAPL ${TAB_LABEL} — `)).toBe(true);
+        expect(result?.startsWith(`AAPL ${TAB_LABEL}: `)).toBe(true);
         // A sentence boundary exists well within the search window (every
         // ~8 chars) — the clamp must land on it, not fall back to a
         // mid-sentence ellipsis cut.
@@ -1494,7 +1494,7 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
  * 그대로 둔다.
  */
 describe('buildSnapshotMetaDescription — 원문 경로의 라벨·소제목 제거', () => {
-    const PREFIX = `AAPL ${TAB_LABEL} — `;
+    const PREFIX = `AAPL ${TAB_LABEL}: `;
     const describeRaw = (summary: string): string | null =>
         buildSnapshotMetaDescription(
             'technical',

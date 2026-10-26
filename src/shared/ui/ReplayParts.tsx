@@ -167,7 +167,13 @@ export function ReplaySources({
                 </span>
             ))}
             <span className="tabular-nums">
-                {separator ? <>· {asOf}</> : asOf}
+                {separator ? (
+                    <>
+                        <span aria-hidden="true">|</span> {asOf}
+                    </>
+                ) : (
+                    asOf
+                )}
             </span>
         </p>
     );

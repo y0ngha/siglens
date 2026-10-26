@@ -134,7 +134,7 @@ export function FinancialHealthCard({
 
     const ocf = cashFlow?.operatingCashFlow ?? null;
     const formattedOcf =
-        ocf !== null ? formatCompactCurrency(ocf, symbol, locale) : '—';
+        ocf !== null ? formatCompactCurrency(ocf, symbol, locale) : '-';
 
     return (
         <section
@@ -151,7 +151,7 @@ export function FinancialHealthCard({
                         ratios?.debtRatioTTM !== null &&
                         ratios?.debtRatioTTM !== undefined
                             ? ratios.debtRatioTTM.toFixed(2)
-                            : '—'
+                            : '-'
                     }
                     hint="Debt Ratio (TTM)"
                     tooltip={
@@ -168,7 +168,7 @@ export function FinancialHealthCard({
                         ratios?.currentRatioTTM !== null &&
                         ratios?.currentRatioTTM !== undefined
                             ? ratios.currentRatioTTM.toFixed(2)
-                            : '—'
+                            : '-'
                     }
                     hint="Current Ratio (TTM)"
                     tooltip={
@@ -197,7 +197,7 @@ export function FinancialHealthCard({
                         scores?.altmanZScore !== null &&
                         scores?.altmanZScore !== undefined
                             ? scores.altmanZScore.toFixed(2)
-                            : '—'
+                            : '-'
                     }
                     hint={t('FinancialHealthCard.869609')}
                     badge={altmanBadge(scores?.altmanZScore ?? null, tLabel)}
@@ -215,7 +215,7 @@ export function FinancialHealthCard({
                         scores?.piotroskiScore !== null &&
                         scores?.piotroskiScore !== undefined
                             ? String(scores.piotroskiScore)
-                            : '—'
+                            : '-'
                     }
                     hint={t('FinancialHealthCard.e5bd4a')}
                     badge={piotroskiBadge(

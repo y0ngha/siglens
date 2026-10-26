@@ -16,7 +16,7 @@ faq:
 
 ## 计算方法
 
-由切斯特·肯特纳在1960年代提出，琳达·布拉德福德·拉施克做了现代化改进。共有三条线。
+由肯特纳（Chester Keltner）在1960年代提出，拉施克（Linda Bradford Raschke）做了现代化改进。共有三条线。
 
 - 中轴：20日[指数移动平均线](/guide/indicators/ema)
 - 上轨：中轴 + 10日[ATR](/guide/indicators/atr)的2倍

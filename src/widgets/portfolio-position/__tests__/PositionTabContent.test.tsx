@@ -242,7 +242,7 @@ describe('PositionTabContent', () => {
         fireEvent.mouseEnter(floors[0]);
         const tooltip = await screen.findByTestId('floor-tooltip');
         expect(
-            within(tooltip).getByText('$100–$120 · 거주율 10%')
+            within(tooltip).getByText('$100–$120, 거주율 10%')
         ).toBeInTheDocument();
     });
 });

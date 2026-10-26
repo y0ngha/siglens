@@ -47,7 +47,7 @@ export function SignalStockCard({
                                     className="text-secondary-500"
                                     aria-hidden="true"
                                 >
-                                    ·
+                                    |
                                 </span>
                             )}
                             <SignalBadge type={s.type} />

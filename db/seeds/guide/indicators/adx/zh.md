@@ -16,7 +16,7 @@ faq:
 
 ## 计算方法
 
-ADX（Average Directional Index）由J. 威尔斯·威尔德于1978年与[DMI](/guide/indicators/dmi)一同提出。DMI分别衡量上涨一侧的力量（+DI）和下跌一侧的力量（-DI），ADX则是按比例算出+DI与-DI拉开了多少，再取平均。一侧的力量越明显压过另一侧，数值越大，取值范围为0到100，默认周期是14根K线。
+ADX（Average Directional Index）由威尔德（J. Welles Wilder）于1978年与[DMI](/guide/indicators/dmi)一同提出。DMI分别衡量上涨一侧的力量（+DI）和下跌一侧的力量（-DI），ADX则是按比例算出+DI与-DI拉开了多少，再取平均。一侧的力量越明显压过另一侧，数值越大，取值范围为0到100，默认周期是14根K线。
 
 求平均时使用威尔德平滑，这是一种新值只计入1/N、慢慢跟随的平均，所以比普通的[EMA](/guide/indicators/ema)反应更慢，趋势开始后要过几根K线才会体现在数值上。
 

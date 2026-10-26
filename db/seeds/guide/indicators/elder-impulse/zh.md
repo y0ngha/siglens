@@ -16,7 +16,7 @@ faq:
 
 ## 计算方法
 
-艾尔德脉冲系统由亚历山大·艾尔德在《Come Into My Trading Room》（2002年）中提出。它把趋势与动量（推动价格运动的力量）合在一起，给每根K线涂上颜色。
+艾尔德脉冲系统由艾尔德在《Come Into My Trading Room》（2002年）中提出。它把趋势与动量（推动价格运动的力量）合在一起，给每根K线涂上颜色。
 
 - 绿色：13根K线[EMA](/guide/indicators/ema)比前一根上升，且[MACD](/guide/indicators/macd)柱状图也比前一根上升的K线
 - 红色：两者都比前一根下降的K线

@@ -51,7 +51,7 @@ describe('GrowthChart', () => {
             growthEPS: null,
         } as unknown as FundamentalGrowthInput;
         render(<GrowthChart growth={nullGrowth} />);
-        const dashes = screen.getAllByText('—');
+        const dashes = screen.getAllByText('-');
         expect(dashes.length).toBe(2);
     });
 

@@ -41,8 +41,8 @@ describe('뉴스 탭 SERP 문구', () => {
         locale: 'ko',
     });
 
-    it('title 꼬리는 짧은 "주요 이슈·목표주가"이고 잘리지 않는다', () => {
-        expect(news.title).toBe('애플(AAPL) 뉴스 — 주요 이슈·목표주가');
+    it('title 꼬리는 짧은 "주요 이슈와 목표주가"이고 잘리지 않는다', () => {
+        expect(news.title).toBe('애플(AAPL) 뉴스: 주요 이슈와 목표주가');
         expect(seoTitleWidth(news.title)).toBeLessThanOrEqual(
             SEO_TITLE_MAX_WIDTH
         );
@@ -70,7 +70,7 @@ describe('뉴스 탭 SERP 문구', () => {
     });
 });
 
-describe('공포·탐욕 탭 SERP 문구', () => {
+describe('공포 탐욕 지수 탭 SERP 문구', () => {
     const fg = buildSymbolFearGreedSeoContent('AAPL', tKo, {
         displayName: '애플, Apple Inc. (AAPL)',
         koreanName: '애플',
@@ -79,7 +79,7 @@ describe('공포·탐욕 탭 SERP 문구', () => {
 
     it('title 꼬리는 "0~100 점수와 최근 흐름"이고 55폭 안에 들어온다(길면 꼬리를 먼저 버린다)', () => {
         expect(fg.title).toBe(
-            '애플(AAPL) 공포 탐욕 지수 — 0~100 점수와 최근 흐름'
+            '애플(AAPL) 공포 탐욕 지수: 0~100 점수와 최근 흐름'
         );
         expect(seoTitleWidth(fg.title)).toBeLessThanOrEqual(
             SEO_TITLE_MAX_WIDTH
@@ -88,10 +88,10 @@ describe('공포·탐욕 탭 SERP 문구', () => {
 
     it('H1과 크로스링크 라벨에서 매매 신호 어휘를 뺐다(4개 로케일 카탈로그 포함)', () => {
         expect(koMessages.app.symbol.page['6cd32e']).toBe(
-            '{v0} 공포 탐욕 지수 — 0~100 점수와 최근 흐름'
+            '{v0} 공포 탐욕 지수: 0~100 점수와 최근 흐름'
         );
         expect(koMessages.shared.crossLink.description['fear-greed']).toBe(
-            '거래량·가격 위치로 본 0~100 점수'
+            '거래량과 가격 위치로 본 0~100 점수'
         );
         for (const messages of [
             koMessages,

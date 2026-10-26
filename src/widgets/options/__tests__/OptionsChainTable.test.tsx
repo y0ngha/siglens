@@ -27,7 +27,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         // Union of call+put strikes, matching the real aggregateOpenInterest
         // contract — a strike that only has a put quote (or vice versa) must
         // still surface as a row so OptionsChainTable's null-fallback cells
-        // ('—') are exercised on both sides.
+        // ('-') are exercised on both sides.
         aggregateOpenInterest: (chain: {
             calls: Array<{ strike: number; openInterest: number }>;
             puts: Array<{ strike: number; openInterest: number }>;
@@ -201,7 +201,7 @@ describe('OptionsChainTable', () => {
         expect(screen.getByText(/전체 만기 합산/)).toBeInTheDocument();
     });
 
-    it('shows "—" placeholders for a strike missing a call or put side', async () => {
+    it('shows "-" placeholders for a strike missing a call or put side', async () => {
         const user = userEvent.setup();
         const chainWithMismatchedStrikes: OptionsChain = {
             expirationDate: '2025-06-20',
@@ -298,34 +298,34 @@ describe('OptionsChainTable', () => {
         await user.click(screen.getByRole('button'));
 
         // Strike 160 only has a call side — the put cells for that row must
-        // fall back to the em-dash placeholder instead of throwing or
+        // fall back to the "-" placeholder instead of throwing or
         // rendering "undefined".
         const row160 = screen.getByText('$160').closest('tr')!;
         const cells160 = within(row160).getAllByRole('cell');
         // [strike, call bid/ask, call OI, call IV, put bid/ask, put OI, put IV]
-        expect(cells160[4]).toHaveTextContent('—');
-        expect(cells160[5]).toHaveTextContent('—');
-        expect(cells160[6]).toHaveTextContent('—');
+        expect(cells160[4]).toHaveTextContent(/^-$/);
+        expect(cells160[5]).toHaveTextContent(/^-$/);
+        expect(cells160[6]).toHaveTextContent(/^-$/);
 
         // Strike 140 only has a put side — the call cells fall back too.
         const row140 = screen.getByText('$140').closest('tr')!;
         const cells140 = within(row140).getAllByRole('cell');
-        expect(cells140[1]).toHaveTextContent('—');
-        expect(cells140[2]).toHaveTextContent('—');
-        expect(cells140[3]).toHaveTextContent('—');
+        expect(cells140[1]).toHaveTextContent(/^-$/);
+        expect(cells140[2]).toHaveTextContent(/^-$/);
+        expect(cells140[3]).toHaveTextContent(/^-$/);
 
         // Strike 152.5 is a non-integer strike with no bid/ask quote posted
         // and no IV — its price/IV cells collapse to the placeholder.
         const row1525 = screen.getByText('$152.5').closest('tr')!;
         const cells1525 = within(row1525).getAllByRole('cell');
-        expect(cells1525[1]).toHaveTextContent('—');
-        expect(cells1525[3]).toHaveTextContent('—');
+        expect(cells1525[1]).toHaveTextContent(/^-$/);
+        expect(cells1525[3]).toHaveTextContent(/^-$/);
 
         // Strike 155 has a bid but no ask — the per-side (not both-null)
-        // fallback renders "$0.50/—" rather than collapsing the whole cell.
+        // fallback renders "$0.50/-" rather than collapsing the whole cell.
         const row155 = screen.getByText('$155').closest('tr')!;
         const cells155 = within(row155).getAllByRole('cell');
-        expect(cells155[1]).toHaveTextContent('$0.50/—');
+        expect(cells155[1]).toHaveTextContent('$0.50/-');
     });
 
     it('groups thousands in strikes and quotes of a high-priced underlying', async () => {

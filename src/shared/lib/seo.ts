@@ -646,7 +646,7 @@ export function composeSymbolTitle(args: ComposeSymbolTitleArgs): string {
             ? args.koreanName
             : args.englishName;
     const withTail = (subject: string) =>
-        tail ? `${subject} ${core} — ${tail}` : `${subject} ${core}`;
+        tail ? `${subject} ${core}: ${tail}` : `${subject} ${core}`;
     const fits = (t: string) => seoTitleWidth(t) <= SEO_TITLE_MAX_WIDTH;
 
     const subject = buildTitleSubject(ticker, titleName);
@@ -966,7 +966,7 @@ export function buildSnapshotMetaDescription(
     if (field === undefined) return null;
     if (typeof content !== 'object' || content === null) return null;
 
-    const prefix = `${subject} ${label} — `;
+    const prefix = `${subject} ${label}: `;
     const budget = SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH - [...prefix].length;
 
     if (typeof plain === 'string' && plain.trim().length > 0) {

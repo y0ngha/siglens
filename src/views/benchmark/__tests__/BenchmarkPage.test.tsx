@@ -204,7 +204,7 @@ describe('BenchmarkPage', () => {
                 .getByRole('table', { name: /레벨별/ })
                 .querySelectorAll('tbody tr')[3]!;
             const cells = [...l3.querySelectorAll('td')];
-            expect(cells[2]!.textContent).toBe('—');
+            expect(cells[2]!.textContent).toBe('-');
             expect(cells[0]!.className).toContain('font-semibold');
             expect(cells[1]!.className).not.toContain('font-semibold');
         });
@@ -233,7 +233,7 @@ describe('BenchmarkPage', () => {
     describe('methodology', () => {
         it('reports pool sizes and the vendor mismatch count from the data', async () => {
             await renderPage();
-            expect(screen.getByText(/A 3 · B 1/)).toBeTruthy();
+            expect(screen.getByText(/A 3, B 1/)).toBeTruthy();
             expect(
                 screen.getByText(
                     '공식값으로 다시 확인한 미국 문항 중 잠정값과 달랐던 문항은 2개입니다.'

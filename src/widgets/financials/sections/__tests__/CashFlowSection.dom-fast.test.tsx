@@ -77,10 +77,10 @@ describe('CashFlowSection', () => {
         expect(screen.getByText('배당')).toBeInTheDocument();
     });
 
-    it('renders em-dash for null dividendsPaid', () => {
+    it('renders the "-" placeholder for null dividendsPaid', () => {
         render(<CashFlowSection rows={SAMPLE_ROWS} />);
-        // null dividendsPaid (2022) + null fcfMargin (2023) → 2 em-dashes
-        expect(screen.getAllByText('—')).toHaveLength(2);
+        // null dividendsPaid (2022) + null fcfMargin (2023) → 2 "-" placeholders
+        expect(screen.getAllByText('-')).toHaveLength(2);
     });
 
     it('renders trend chart SVG', () => {

@@ -56,7 +56,7 @@ describe('SHARE_KIND_OG_BUILDERS.fear-greed', () => {
             expect(text).not.toContain('NaN');
             expect(text).not.toContain('지수 0');
             expect(text).not.toContain('Infinity');
-            expect(text).toContain('공포·탐욕 지수');
+            expect(text).toContain('공포 탐욕 지수');
         }
     });
 });
@@ -72,15 +72,15 @@ describe('SHARE_KIND_OG_BUILDERS — 방향 라벨 번역', () => {
         ['en', 'EXTREME_GREED', 'Extreme Greed'],
         ['ja', 'FEAR', '恐怖'],
         ['zh', 'NEUTRAL', '中性'],
-    ] as const)('%s 공포·탐욕 %s → %s', (locale, label, expected) => {
+    ] as const)('%s 공포 탐욕 %s → %s', (locale, label, expected) => {
         const t = catalogTranslator('entities.shared-analysis.og', locale);
         const out = SHARE_KIND_OG_BUILDERS['fear-greed'](
             { label, score: 20 },
             'AAPL',
             t
         );
-        expect(out.description.startsWith(`${expected} · `)).toBe(true);
-        expect(out.tweet).toContain(` ${expected} — `);
+        expect(out.description.startsWith(`${expected}: `)).toBe(true);
+        expect(out.tweet).toContain(` ${expected}: `);
         expect(JSON.stringify(out)).not.toContain(label);
     });
 
@@ -96,6 +96,6 @@ describe('SHARE_KIND_OG_BUILDERS — 방향 라벨 번역', () => {
             'AAPL',
             t
         );
-        expect(out.description).toBe(`${expected} · s`);
+        expect(out.description).toBe(`${expected}: s`);
     });
 });

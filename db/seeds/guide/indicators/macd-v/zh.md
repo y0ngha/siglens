@@ -24,7 +24,7 @@ ATR是最近几根K线的平均波动幅度。把动量（推动价格运动的�
 
 类似的做法还有PPO，它把MACD除以价格换算成百分比。PPO只解决同一只股票不同时期之间的比较；MACD-V还能在不同市场之间比较。原论文称，同样的±150标准在标普、德国国债（Bund）和天然气上都成立。
 
-它由亚历克斯·斯皮罗格鲁在2022年的论文《MACD-V: Volatility Normalised Momentum》（SSRN 4099617）中提出。
+它由斯皮罗格鲁（Alex Spiroglou）在2022年的论文《MACD-V: Volatility Normalised Momentum》（SSRN 4099617）中提出。
 
 ## 说明了什么
 

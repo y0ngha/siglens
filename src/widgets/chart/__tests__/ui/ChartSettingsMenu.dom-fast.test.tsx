@@ -4,8 +4,8 @@ import type { ComponentProps } from 'react';
 import { useExclusiveChartMenu } from '../../hooks/useExclusiveChartMenu';
 import { ChartSettingsMenu } from '../../ui/ChartSettingsMenu';
 
-const EXTENDED_LABEL = '시간외 거래(프리·애프터마켓) 표시';
-const UNAVAILABLE_REASON = '1일봉·한국 종목·코인에는 시간외 거래가 없어요';
+const EXTENDED_LABEL = '시간외 거래(프리마켓, 애프터마켓) 표시';
+const UNAVAILABLE_REASON = '1일봉, 한국 종목, 코인에는 시간외 거래가 없어요';
 
 function Harness(
     props: Omit<ComponentProps<typeof ChartSettingsMenu>, 'menu'>

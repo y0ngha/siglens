@@ -42,7 +42,9 @@ describe('PlanCheckBlock', () => {
                 })}
             />
         );
-        expect(screen.getByText(/계획 진입가 기준 2\.75/)).toBeInTheDocument();
+        expect(
+            screen.getByText(/계획 진입가 기준\) 2\.75/)
+        ).toBeInTheDocument();
         expect(screen.getByText(/현재가 기준 0\.50/)).toBeInTheDocument();
     });
 

@@ -134,7 +134,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         setHoldings({ holdings: [AAPL_HOLDING] });
         render(<PortfolioChipMounted symbol="AAPL" />);
         expect(
-            screen.getByRole('button', { name: '평단 $150.5 · 10주' })
+            screen.getByRole('button', { name: '평단 $150.5, 10주' })
         ).toBeInTheDocument();
     });
 
@@ -143,7 +143,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         setHoldings({ holdings: [KR_HOLDING] });
         render(<PortfolioChipMounted symbol="005930.KS" />);
         expect(
-            screen.getByRole('button', { name: '평단 ₩274500 · 10주' })
+            screen.getByRole('button', { name: '평단 ₩274500, 10주' })
         ).toBeInTheDocument();
         expect(
             screen.queryByRole('button', { name: /\$/ })
@@ -242,7 +242,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         render(<PortfolioChipMounted symbol="AAPL" />);
 
         await user.click(
-            screen.getByRole('button', { name: '평단 $150.5 · 10주' })
+            screen.getByRole('button', { name: '평단 $150.5, 10주' })
         );
 
         expect(await screen.findByLabelText('수량')).toHaveValue('10');

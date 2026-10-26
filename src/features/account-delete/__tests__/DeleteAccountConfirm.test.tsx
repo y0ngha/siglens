@@ -145,7 +145,7 @@ describe('DeleteAccountConfirm', () => {
     it('renders warning list items', () => {
         render(<DeleteAccountConfirm userEmail={USER_EMAIL} />);
         expect(
-            screen.getByText(/이메일·닉네임·프로필 사진이 즉시 영구 삭제/)
+            screen.getByText(/이메일, 닉네임, 프로필 사진이 즉시 영구 삭제/)
         ).toBeInTheDocument();
     });
 

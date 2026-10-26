@@ -17,7 +17,10 @@ const { SKEW, reloadOnVersionSkew, isVersionSkewError } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/shared/lib/reloadOnVersionSkew', () => ({
+vi.mock('@/shared/lib/reloadOnVersionSkew', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/lib/reloadOnVersionSkew')
+    >()),
     reloadOnVersionSkew,
     isVersionSkewError,
 }));
@@ -61,6 +64,16 @@ describe('ReactQueryProvider', () => {
         client.getQueryCache().config.onError?.(SKEW, {} as never);
 
         expect(reloadOnVersionSkew).toHaveBeenCalledWith(SKEW);
+    });
+
+    it('does not reload for a query that opts out via meta', () => {
+        const client = renderProviderClient();
+
+        client.getQueryCache().config.onError?.(SKEW, {
+            meta: { skipVersionSkewReload: true },
+        } as never);
+
+        expect(reloadOnVersionSkew).not.toHaveBeenCalled();
     });
 
     it('calls reloadOnVersionSkew when a mutation fails', () => {

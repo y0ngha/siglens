@@ -132,7 +132,7 @@ export async function BenchmarkPage({
         }));
     const poolSummary = Object.entries(methodology.poolSizes)
         .map(([pool, size]) => `${pool} ${size}`)
-        .join(' · ');
+        .join(', ');
     const totalItems = release.items.length;
     const methodologyHref = `${siteUrl}${localePath(locale, '/methodology')}`;
     const aiAboutHref = `${aiSiteUrl}${localePath(locale, '/about')}`;

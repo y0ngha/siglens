@@ -162,15 +162,15 @@ describe('PositionBuilding', () => {
         );
     });
 
-    it('avg·current 둘 다 범위 안이면(clamped=null) current out-of-range 안내는 없지만, ★평단은 층 안내를 보여준다(avgPos 0.5 → 3층 · 중층)', () => {
+    it('avg·current 둘 다 범위 안이면(clamped=null) current out-of-range 안내는 없지만, ★평단은 층 안내를 보여준다(avgPos 0.5 → 3층, 중층)', () => {
         const { getByTestId, queryByTestId } = renderBuilding({
             low52w: 100,
             high52w: 200,
-            avg: 150, // avgPos 0.5 → floorIndex 2 (of 5) → 3층 · 중층
+            avg: 150, // avgPos 0.5 → floorIndex 2 (of 5) → 3층, 중층
             current: 180,
         });
         expect(queryByTestId('current-out-of-range-note')).toBeNull();
-        expect(getByTestId('avg-floor-note').textContent).toBe('3층 · 중층');
+        expect(getByTestId('avg-floor-note').textContent).toBe('3층, 중층');
     });
 
     it('avg≈current(임계값 미만 차이)면 마커를 좌우로 dodge한다', () => {
@@ -304,7 +304,7 @@ describe('PositionBuilding', () => {
         expect(label).toContain('$180');
         expect(label).toContain('수익률 +20.0%');
         expect(label).toContain('최근 범위의 50% 지점');
-        expect(label).toContain('3층 · 중층');
+        expect(label).toContain('3층, 중층');
     });
 
     it('aria-label의 ★평단 층 안내는 avgClamped가 above/below일 때 옥상 위/지하 문구로 바뀐다', () => {
@@ -396,7 +396,7 @@ describe('PositionBuilding', () => {
             fireEvent.mouseEnter(floors[2]); // band index 2 → [140,160)
             const tooltip = screen.getByTestId('floor-tooltip');
             expect(
-                within(tooltip).getByText('₩140–₩160 · 거주율 30%')
+                within(tooltip).getByText('₩140–₩160, 거주율 30%')
             ).toBeInTheDocument();
         });
     });
@@ -464,7 +464,7 @@ describe('PositionBuilding', () => {
             });
             // 렌더된 시각 노트 텍스트(prefix + phrase)의 보수적 추정 폭이 end-anchored
             // 여유 폭 이내여야 좌측(메타포 phrase)이 잘리지 않는다. 설명 절까지 붙었던
-            // 이전 문구(예: "☁ 옥상 위 · 최근 고점보다 높은 곳" ≈ 153px)는 이 한계를
+            // 이전 문구(예: "☁ 옥상 위, 최근 고점보다 높은 곳" ≈ 153px)는 이 한계를
             // 넘겨 phrase가 잘렸다 — 시각 노트를 phrase만으로 축약해 회귀를 막는다.
             const noteText = getByTestId('avg-floor-note').textContent ?? '';
             expect(noteText.startsWith(prefix)).toBe(true);
@@ -505,11 +505,11 @@ describe('PositionBuilding', () => {
         // 문구("거주율 N% (최근 52주 거래량 기준)")를 테스트에서 재계산하지 않고
         // 이 배열 하나로 못박아 소스와 동일하게 유지한다.
         const EXPECTED = [
-            '$100–$120 · 거주율 10% (최근 52주 거래량 기준)',
-            '$120–$140 · 거주율 20% (최근 52주 거래량 기준)',
-            '$140–$160 · 거주율 30% (최근 52주 거래량 기준)',
-            '$160–$180 · 거주율 25% (최근 52주 거래량 기준)',
-            '$180–$200 · 거주율 15% (최근 52주 거래량 기준)',
+            '$100–$120, 거주율 10% (최근 52주 거래량 기준)',
+            '$120–$140, 거주율 20% (최근 52주 거래량 기준)',
+            '$140–$160, 거주율 30% (최근 52주 거래량 기준)',
+            '$160–$180, 거주율 25% (최근 52주 거래량 기준)',
+            '$180–$200, 거주율 15% (최근 52주 거래량 기준)',
         ];
 
         it('without volumeByBand, floors are non-interactive (no tabIndex/aria-label/role/onClick) and no tooltip infra renders — DOM unchanged', () => {
@@ -593,7 +593,7 @@ describe('PositionBuilding', () => {
             expect(tooltip.hasAttribute('role')).toBe(false);
             expect(tooltip.getAttribute('aria-hidden')).toBe('true');
             expect(
-                within(tooltip).getByText('$140–$160 · 거주율 30%')
+                within(tooltip).getByText('$140–$160, 거주율 30%')
             ).toBeInTheDocument();
             expect(
                 within(tooltip).getByText('최근 52주 거래량 기준')
@@ -625,7 +625,7 @@ describe('PositionBuilding', () => {
             fireEvent.click(floors[3]); // band index 3 → [160,180), 25%
             expect(
                 within(screen.getByTestId('floor-tooltip')).getByText(
-                    '$160–$180 · 거주율 25%'
+                    '$160–$180, 거주율 25%'
                 )
             ).toBeInTheDocument();
 
@@ -667,7 +667,7 @@ describe('PositionBuilding', () => {
             fireEvent.click(floors[3]); // band index 3 → [160,180), 25%
             expect(
                 within(screen.getByTestId('floor-tooltip')).getByText(
-                    '$160–$180 · 거주율 25%'
+                    '$160–$180, 거주율 25%'
                 )
             ).toBeInTheDocument();
 
@@ -789,7 +789,7 @@ describe('PositionBuilding — avg=null(현재가 전용)', () => {
                 .querySelector('svg[role="img"]')
                 ?.getAttribute('aria-label') ?? '';
         expect(label).toBe(
-            'AAPL 현재가 위치: 현재가 $180, 최근 범위의 80% 지점, 5층 · 펜트하우스'
+            'AAPL 현재가 위치: 현재가 $180, 최근 범위의 80% 지점, 5층, 펜트하우스'
         );
     });
 
@@ -800,7 +800,7 @@ describe('PositionBuilding — avg=null(현재가 전용)', () => {
             container
                 .querySelector('svg[role="img"]')
                 ?.getAttribute('aria-label') ?? '';
-        expect(label).toContain('옥상 위 · 최근 고점보다 높은 곳');
+        expect(label).toContain('옥상 위, 최근 고점보다 높은 곳');
         expect(
             container.querySelector('[data-testid="current-out-of-range-note"]')
         ).not.toBeNull();
@@ -810,32 +810,32 @@ describe('PositionBuilding — avg=null(현재가 전용)', () => {
 describe('describeFloor', () => {
     it('avgClamped=below면 지하 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
         expect(describeFloor(0, 'below', BAND_COUNT, tPos)).toBe(
-            '지하 세대 · 최근 저점보다 낮은 곳'
+            '지하 세대, 최근 저점보다 낮은 곳'
         );
         expect(describeFloor(0.99, 'below', BAND_COUNT, tPos)).toBe(
-            '지하 세대 · 최근 저점보다 낮은 곳'
+            '지하 세대, 최근 저점보다 낮은 곳'
         );
     });
 
     it('avgClamped=above면 옥상 위 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
         expect(describeFloor(0, 'above', BAND_COUNT, tPos)).toBe(
-            '옥상 위 · 최근 고점보다 높은 곳'
+            '옥상 위, 최근 고점보다 높은 곳'
         );
         expect(describeFloor(1, 'above', BAND_COUNT, tPos)).toBe(
-            '옥상 위 · 최근 고점보다 높은 곳'
+            '옥상 위, 최근 고점보다 높은 곳'
         );
     });
 
     it.each([
         // avgPos, expected — BAND_COUNT=5: floorIndex = clamp(floor(avgPos*5), 0, 4)
-        { avgPos: 0, expected: '1층 · 저층' }, // 경계: 정확히 0
-        { avgPos: 0.05, expected: '1층 · 저층' },
-        { avgPos: 0.2, expected: '2층 · 중층' }, // floorIndex 1
-        { avgPos: 0.4, expected: '3층 · 중층' }, // floorIndex 2
-        { avgPos: 0.59, expected: '3층 · 중층' }, // 스펙 예시: 59% → 3층/중층
-        { avgPos: 0.6, expected: '4층 · 고층' }, // floorIndex 3
-        { avgPos: 0.8, expected: '5층 · 펜트하우스' }, // floorIndex 4 (최상층)
-        { avgPos: 1, expected: '5층 · 펜트하우스' }, // 경계: 정확히 1
+        { avgPos: 0, expected: '1층, 저층' }, // 경계: 정확히 0
+        { avgPos: 0.05, expected: '1층, 저층' },
+        { avgPos: 0.2, expected: '2층, 중층' }, // floorIndex 1
+        { avgPos: 0.4, expected: '3층, 중층' }, // floorIndex 2
+        { avgPos: 0.59, expected: '3층, 중층' }, // 스펙 예시: 59% → 3층/중층
+        { avgPos: 0.6, expected: '4층, 고층' }, // floorIndex 3
+        { avgPos: 0.8, expected: '5층, 펜트하우스' }, // floorIndex 4 (최상층)
+        { avgPos: 1, expected: '5층, 펜트하우스' }, // 경계: 정확히 1
     ])(
         'avgClamped=null, avgPos=$avgPos → $expected',
         ({ avgPos, expected }) => {
@@ -846,8 +846,8 @@ describe('describeFloor', () => {
     );
 
     it('bandCount이 달라져도(테스트용 임의 값) 최하층=저층, 최상층=펜트하우스 경계를 지킨다', () => {
-        expect(describeFloor(0, null, 3, tPos)).toBe('1층 · 저층');
-        expect(describeFloor(1, null, 3, tPos)).toBe('3층 · 펜트하우스');
-        expect(describeFloor(0.5, null, 3, tPos)).toBe('2층 · 중층');
+        expect(describeFloor(0, null, 3, tPos)).toBe('1층, 저층');
+        expect(describeFloor(1, null, 3, tPos)).toBe('3층, 펜트하우스');
+        expect(describeFloor(0.5, null, 3, tPos)).toBe('2층, 중층');
     });
 });

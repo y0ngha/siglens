@@ -480,7 +480,7 @@ describe('SymbolFearGreedPage — 시장 지수 링크', () => {
         );
 
         const link = screen.getByRole('link', {
-            name: '시장 전체 공포·탐욕 지수',
+            name: '시장 전체 공포 탐욕 지수',
         });
         expect(link.getAttribute('href')).toMatch(/\/fear-greed$/);
     });

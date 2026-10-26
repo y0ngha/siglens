@@ -171,9 +171,9 @@ export function SqueezeScoreCard({ risk }: SqueezeScoreCardProps) {
             )}
             <p className="text-xs text-secondary-400">
                 {risk.lastBarDate === null
-                    ? t('squeeze.sources', { sources: sources.join(' · ') })
+                    ? t('squeeze.sources', { sources: sources.join(', ') })
                     : t('squeeze.sourcesWithPrice', {
-                          sources: sources.join(' · '),
+                          sources: sources.join(', '),
                           date: risk.lastBarDate,
                       })}
             </p>

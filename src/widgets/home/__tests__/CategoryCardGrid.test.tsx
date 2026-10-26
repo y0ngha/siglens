@@ -113,7 +113,7 @@ describe('CategoryCardGrid 카테고리 설명', () => {
         );
 
         const description = screen.getByText(
-            /시가총액 상위 암호화폐 — 시장 전체 흐름의 기준이 됩니다\./
+            /시가총액 상위 암호화폐입니다\. 시장 전체 흐름의 기준이 됩니다\./
         );
         expect(description.tagName).toBe('P');
         expect(

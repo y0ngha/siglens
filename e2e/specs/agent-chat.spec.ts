@@ -234,7 +234,7 @@ test.describe('SIGLENS AI SEO', () => {
         const html = await res.text();
         expect(html).not.toContain('http-equiv="refresh"');
         expect(html).toMatch(
-            /<title>주식·코인 AI 챗봇[^<]+\| 시그렌즈 AI<\/title>/
+            /<title>주식, 코인 AI 챗봇[^<]+\| 시그렌즈 AI<\/title>/
         );
         expect(html).toMatch(/<meta name="description" content="[^"]{40,}"/);
         expect(html).toContain('<meta name="robots" content="index, follow"/>');

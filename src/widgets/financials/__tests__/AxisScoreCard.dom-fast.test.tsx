@@ -87,13 +87,13 @@ describe('AxisScoreCard', () => {
         expect(screen.getByText('85')).toBeInTheDocument();
     });
 
-    it('renders null metric value as em-dash', () => {
+    it('renders null metric value as a dash placeholder', () => {
         render(
             <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
         );
         expect(screen.getByText('데이터 없는 지표')).toBeInTheDocument();
-        // SAMPLE_AXIS has exactly one metric with a null value → one em-dash
-        expect(screen.getAllByText('—')).toHaveLength(1);
+        // SAMPLE_AXIS has exactly one metric with a null value → one dash placeholder
+        expect(screen.getAllByText('-')).toHaveLength(1);
     });
 
     it('renders no signal chips when signals array is empty', () => {
@@ -103,7 +103,7 @@ describe('AxisScoreCard', () => {
         };
         render(
             <AxisScoreCard
-                title="수익성·질"
+                title="수익성과 질"
                 axisKey="quality"
                 axis={emptySignalsAxis}
             />

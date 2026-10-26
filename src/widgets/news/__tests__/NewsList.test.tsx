@@ -144,9 +144,9 @@ describe('NewsList', () => {
             expect(container.textContent).not.toContain('regulation');
         });
 
-        it('m_and_a → "인수·합병"', () => {
+        it('m_and_a → "인수합병"', () => {
             const { container } = renderWithCategory('m_and_a');
-            expect(screen.getByText('인수·합병')).toBeInTheDocument();
+            expect(screen.getByText('인수합병')).toBeInTheDocument();
             expect(container.textContent).not.toContain('m_and_a');
         });
 

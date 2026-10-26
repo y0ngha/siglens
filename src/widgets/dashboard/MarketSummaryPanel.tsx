@@ -15,6 +15,10 @@ import { MarketDataErrorNotice } from './MarketDataErrorNotice';
 import { useMarketSummary } from './hooks/useMarketSummary';
 import { useMarketBriefing } from './hooks/useMarketBriefing';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
+import {
+    KR_CYCLICAL_DEFENSIVE_GROUP_LABEL,
+    KR_GROWTH_TECH_GROUP_LABEL,
+} from '@/shared/config/dashboard-tickers-kr';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import type {
     MarketBriefingResponse,
@@ -75,8 +79,8 @@ const SECTOR_GROUP_LABEL_KEY: Record<string, string> = {
     성장: 'sectorGroup.growth',
     경기민감: 'sectorGroup.cyclical',
     방어: 'sectorGroup.defensive',
-    성장·기술: 'sectorGroup.growthTech',
-    경기·방어: 'sectorGroup.cyclicalDefensive',
+    [KR_GROWTH_TECH_GROUP_LABEL]: 'sectorGroup.growthTech',
+    [KR_CYCLICAL_DEFENSIVE_GROUP_LABEL]: 'sectorGroup.cyclicalDefensive',
 };
 
 export function MarketSummaryPanel({

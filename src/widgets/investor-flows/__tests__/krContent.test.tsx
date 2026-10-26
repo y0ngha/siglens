@@ -57,10 +57,10 @@ describe('KrInvestorFlowsContent', () => {
             .map(h => h.textContent);
         expect(axes).toHaveLength(2);
         expect(axes[0]).toContain('대량보유(5%)');
-        expect(axes[1]).toContain('임원·주요주주');
+        expect(axes[1]).toContain('임원/주요주주');
         expect(
             within(card).getByText(
-                /기관·공매도·증자 희석 점수는 제공하지 않아요/
+                /기관, 공매도, 증자 희석 점수는 제공하지 않아요/
             )
         ).toBeInTheDocument();
         // 13F·FINRA·SEC 섹션은 없다.
@@ -71,7 +71,7 @@ describe('KrInvestorFlowsContent', () => {
     it('shows the DART evidence lines from the core krMetrics', () => {
         renderContent();
         expect(
-            screen.getByText(/대량보유 보고 2건 · 보고자 2명/)
+            screen.getByText(/대량보유 보고 2건, 보고자 2명/)
         ).toBeInTheDocument();
         expect(screen.getByText(/거래계획 보고서 1건/)).toBeInTheDocument();
     });
@@ -84,7 +84,7 @@ describe('KrInvestorFlowsContent', () => {
         ).toBeInTheDocument();
         expect(
             within(asOf).getByText(
-                '기관·외국인 매매 동향(순매수)은 이 화면에 없어요. 점수는 지분 공시로만 매겨요.'
+                '기관과 외국인 매매 동향(순매수)은 이 화면에 없어요. 점수는 지분 공시로만 매겨요.'
             )
         ).toBeInTheDocument();
         expect(within(asOf).getByText('2026-10-14')).toBeInTheDocument();
@@ -246,7 +246,7 @@ describe('KrInsiderSection', () => {
         render(<KrInsiderSection reports={[]} collecting={false} />);
         expect(
             screen.getByText(
-                '최근 2년 동안 접수된 임원·주요주주 소유 보고가 없어요.'
+                '최근 2년 동안 접수된 임원과 주요주주의 소유 보고가 없어요.'
             )
         ).toBeInTheDocument();
     });
@@ -298,7 +298,9 @@ describe('InvestorFlowsEmpty — Korean listing', () => {
     it('says "no data" in DART terms with the source and the not-provided note', () => {
         render(<InvestorFlowsEmpty market="kr" />);
         expect(
-            screen.getByText(/최근 2년 동안 이 종목의 대량보유·임원 소유 공시/)
+            screen.getByText(
+                /최근 2년 동안 이 종목의 대량보유 공시와 임원 소유 공시/
+            )
         ).toBeInTheDocument();
         expect(
             screen.getByText('출처: 금융감독원 전자공시시스템(DART)')
@@ -316,7 +318,7 @@ describe('InvestorFlowsEmpty — Korean listing', () => {
 });
 
 describe('InvestorFlowsSummaryView — Korean listing', () => {
-    it('names the insider axis 임원·주요주주 for a Korean result', () => {
+    it('names the insider axis 임원/주요주주 for a Korean result', () => {
         render(
             <InvestorFlowsSummaryView
                 market="kr"
@@ -331,6 +333,6 @@ describe('InvestorFlowsSummaryView — Korean listing', () => {
                 }}
             />
         );
-        expect(screen.getByText('임원·주요주주')).toBeInTheDocument();
+        expect(screen.getByText('임원/주요주주')).toBeInTheDocument();
     });
 });

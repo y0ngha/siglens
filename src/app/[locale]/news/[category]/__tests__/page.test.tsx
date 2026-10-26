@@ -183,7 +183,7 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
         );
         expect(
             screen.getByText(
-                '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.'
+                '비트코인, 이더리움 등 주요 암호화폐 시장 동향을 모았습니다.'
             )
         ).toBeInTheDocument();
     });

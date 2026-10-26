@@ -73,7 +73,7 @@ describe('FearGreedFactsSummary', () => {
         expect(getByRole('table')).toBeInTheDocument();
         for (const label of [
             /평소 대비 거래량 이탈/,
-            /매수·매도 거래량 불균형/,
+            /매수\/매도 거래량 불균형/,
             /매물대 중심과의 거리/,
             /200일 이동평균과의 거리/,
             /최근 252봉 위치/,
@@ -345,14 +345,14 @@ describe('FearGreedFactsSummary', () => {
                 getByText(/최근 구간 전환은 .+ → .+입니다\./)
             ).toBeInTheDocument();
             expect(
-                getByText(/미국 증시 공포·탐욕 지수 \d+점보다 10점 높습니다/)
+                getByText(/미국 증시 공포 탐욕 지수 \d+점보다 10점 높습니다/)
             ).toBeInTheDocument();
             const block = getByRole('group', {
                 name: '극단 구간 기록',
             });
             expect(block).toHaveTextContent('집계 기간:');
             expect(block).toHaveTextContent(
-                '앞으로의 가격을 예측하거나 매수·매도를 권하지 않아요'
+                '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않아요'
             );
         });
 

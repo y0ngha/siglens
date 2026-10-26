@@ -100,7 +100,7 @@ describe('ScorecardCard', () => {
             '내부자',
             '대량보유(5%)',
             '공매도',
-            '증자·희석',
+            '증자 희석',
         ]) {
             expect(
                 screen.getByRole('heading', {
@@ -174,7 +174,7 @@ describe('ScorecardCard', () => {
         const card = axisCard(/대량보유/);
         expect(
             within(card).getByText(
-                /13D 포지션 1건 · 신고 1회 · 13G 포지션 0건 · 신고 0회 \(최근 \d+일\)/
+                /13D 포지션 1건, 신고 1회, 13G 포지션 0건, 신고 0회 \(최근 \d+일\)/
             )
         ).toBeInTheDocument();
     });
@@ -185,10 +185,10 @@ describe('ScorecardCard', () => {
                 scorecard={evaluate(makeExpandedSnapshot({ offerings: [] }))}
             />
         );
-        const card = axisCard(/증자·희석/);
+        const card = axisCard(/증자 희석/);
         expect(within(card).getByText('중립')).toBeInTheDocument();
         expect(
-            within(card).getByText('확인된 증자·등록 공시 없음')
+            within(card).getByText('확인된 증자/등록 공시 없음')
         ).toBeInTheDocument();
         expect(within(card).queryByText(/0건/)).toBeNull();
         expect(within(card).queryByText('데이터 부족')).toBeNull();
@@ -279,7 +279,7 @@ describe('ScorecardCard — 한국(DART) 축', () => {
                 '유의미한 지분 변동 없음 (보고자별 최대 0.00%p)'
             )
         ).toBeInTheDocument();
-        const insiderCard = axisCard(/임원·주요주주/);
+        const insiderCard = axisCard(/임원\/주요주주/);
         expect(within(insiderCard).getByText('중립')).toBeInTheDocument();
         expect(
             within(insiderCard).getByText('유의미한 보유 변동 없음')
@@ -452,7 +452,7 @@ describe('InsiderSection', () => {
         render(<InsiderSection {...insiderProps(snapshot)} />);
         expect(screen.getByText(/^순매수 \S+/)).toBeInTheDocument();
         expect(
-            screen.getByText(/클러스터 매수 · 내부자 4명/)
+            screen.getByText(/클러스터 매수 \(내부자 4명\)/)
         ).toBeInTheDocument();
     });
 
@@ -511,12 +511,12 @@ describe('InsiderSection', () => {
         expect(within(outside).queryByText('Inside Buyer')).toBeNull();
         expect(
             within(outside).getByText(
-                /위 요약의 건수·금액에는 들어가지 않은 거래예요/
+                /위 요약의 건수와 금액에는 들어가지 않은 거래예요/
             )
         ).toBeInTheDocument();
     });
 
-    it('창 안 거래가 없고 창 밖만 있으면 "최근 N일 안의 매수·매도 신고는 없어요"와 창 밖 묶음을 낸다', () => {
+    it('창 안 거래가 없고 창 밖만 있으면 "최근 N일 안의 매매 신고는 없어요"와 창 밖 묶음을 낸다', () => {
         const txs = [
             makeTransaction({ date: '2026-05-02', name: 'Old Buyer' }),
         ];
@@ -528,7 +528,7 @@ describe('InsiderSection', () => {
             />
         );
         expect(
-            screen.getByText(/최근 90일 안의 매수·매도 신고는 없어요/)
+            screen.getByText(/최근 90일 안의 매매 신고는 없어요/)
         ).toBeInTheDocument();
         expect(
             screen.getByRole('heading', { level: 4, name: /집계 기간 밖/ })
@@ -596,7 +596,7 @@ describe('AsOfNotice', () => {
         const snapshot = makeSnapshot();
         render(<AsOfNotice {...asOfProps(snapshot, true)} />);
         expect(
-            screen.getByText('2026-06-30 분기말 · 제출 완료')
+            screen.getByText('2026-06-30 분기말, 제출 완료')
         ).toBeInTheDocument();
         expect(
             screen.getByText(/2026-09-30 분기는 일부만 제출된 부분 집계/)
@@ -693,7 +693,7 @@ describe('InvestorFlowsContent', () => {
             />
         );
         expect(
-            screen.getByRole('heading', { level: 2, name: /기관 매수·매도/ })
+            screen.getByRole('heading', { level: 2, name: /기관 매매/ })
         ).toBeInTheDocument();
         expect(
             screen.getByText(/신고된 내부자 거래가 없어요/)

@@ -238,7 +238,7 @@ describe('ChartContent', () => {
             expect(
                 screen.getByTestId('position-status-summary')
             ).toBeInTheDocument();
-            expect(screen.getByText('$100 · 10주')).toBeInTheDocument();
+            expect(screen.getByText('$100, 10주')).toBeInTheDocument();
         });
 
         it('홀딩이 없으면(비회원 또는 미등록) "내 포지션" 요약을 렌더하지 않는다', () => {
@@ -325,8 +325,8 @@ describe('ChartContent', () => {
                 />
             );
 
-            expect(screen.getByText('₩100 · 10주')).toBeInTheDocument();
-            expect(screen.queryByText('$100 · 10주')).not.toBeInTheDocument();
+            expect(screen.getByText('₩100, 10주')).toBeInTheDocument();
+            expect(screen.queryByText('$100, 10주')).not.toBeInTheDocument();
         });
 
         it('홀딩이 있고 resolve됐어도 분석이 서사 없는 FALLBACK이면 "내 포지션" 요약을 렌더하지 않는다 — narrative 게이트', () => {

@@ -136,7 +136,7 @@ function SideBadge({ side }: SideBadgeProps) {
     // 판정하면 가드가 죽고 raw 키가 그대로 배지에 찍힌다.
     const sideKey = SIDE_LABEL[side];
     if (!sideKey) {
-        return <span className={cn('text-xs', SIDE_CLASS[side])}>—</span>;
+        return <span className={cn('text-xs', SIDE_CLASS[side])}>-</span>;
     }
     const label = tLabel(sideKey);
     return (
@@ -445,7 +445,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                         />
                                     ) : (
                                         <span className="text-xs text-secondary-400">
-                                            —
+                                            -
                                         </span>
                                     )}
                                 </td>

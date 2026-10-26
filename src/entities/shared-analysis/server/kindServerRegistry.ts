@@ -77,11 +77,11 @@ function buildOgParts(
     const key = DIRECTION_KEY[direction];
     const dir = key ? t(key) : direction;
     const description = truncateWithEllipsis(
-        summary ? `${dir} · ${summary}` : dir,
+        summary ? `${dir}: ${summary}` : dir,
         200
     );
     const tweet = truncateWithEllipsis(
-        `${symbol} ${dir} — ${summary}`,
+        `${symbol} ${dir}: ${summary}`,
         TWEET_TEXT_MAX
     );
     return { description, tweet };

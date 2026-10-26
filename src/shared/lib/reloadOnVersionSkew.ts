@@ -15,6 +15,26 @@ import { pageReload } from '@/shared/lib/pageReload';
 const RELOAD_MARK_KEY = 'siglens:version-skew-reload-at';
 const RELOAD_WINDOW_MS = 60_000;
 
+/**
+ * Query `meta` that opts a query out of the version-skew reload.
+ *
+ * An "action not found" is not always a build mismatch. A page-scoped action
+ * (registered only on one route's worker) that fires while the user is leaving
+ * that route is POSTed to the next route's URL, whose worker does not know it.
+ * Reloading then cancels the navigation the user just started. A display-only
+ * query whose failure costs nothing sets this; a real skew is still caught by the
+ * page's other actions.
+ */
+export const SKIP_VERSION_SKEW_RELOAD_META = {
+    skipVersionSkewReload: true,
+} as const;
+
+export function skipsVersionSkewReload(
+    meta: Readonly<Record<string, unknown>> | undefined
+): boolean {
+    return meta?.skipVersionSkewReload === true;
+}
+
 export function isVersionSkewError(error: unknown): boolean {
     return unstable_isUnrecognizedActionError(error);
 }

@@ -135,7 +135,7 @@ function fmt(
     currency: StatementCurrency,
     locale: Locale
 ): string {
-    return value === null ? '—' : formatCompactAmount(value, currency, locale);
+    return value === null ? '-' : formatCompactAmount(value, currency, locale);
 }
 
 interface HoverState extends TooltipPosition {

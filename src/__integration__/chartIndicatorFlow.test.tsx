@@ -82,7 +82,7 @@ describe('Chart Indicator Flow (settings popover, real popover hooks)', () => {
         expect(screen.getByText('추세')).toBeInTheDocument();
         expect(screen.getByText('모멘텀')).toBeInTheDocument();
         expect(screen.getByText('변동성')).toBeInTheDocument();
-        expect(screen.getByText('볼륨')).toBeInTheDocument();
+        expect(screen.getByText('거래량')).toBeInTheDocument();
         expect(screen.queryByText('SMC')).not.toBeInTheDocument();
     });
 

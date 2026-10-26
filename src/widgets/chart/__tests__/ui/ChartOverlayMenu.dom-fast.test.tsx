@@ -73,7 +73,7 @@ describe('ChartOverlayMenu', () => {
         // pattern 1개 + divergence 1개(꺼짐) = 2개 항목 중 1개만 켜짐.
         renderMenu([patternItem, divergenceItem], new Set(['d1']));
         expect(
-            screen.getByRole('button', { name: /차트 작도 · 1/ })
+            screen.getByRole('button', { name: /차트 작도 \(1\)/ })
         ).toBeInTheDocument();
     });
 
@@ -176,14 +176,14 @@ describe('ChartOverlayMenu', () => {
         expect(onSetVisible).toHaveBeenCalledWith(['p1'], false);
     });
 
-    it('the action group renders a single row without a header, labeled 진입·청산·손절 가격선', async () => {
+    it('the action group renders a single row without a header, labeled 진입, 청산, 손절 가격선', async () => {
         const user = userEvent.setup();
         const { onSetVisible } = renderMenu([actionItem, patternItem]);
         await user.click(screen.getByRole('button', { name: /차트 작도/ }));
         const panel = getPanel();
 
         const actionButton = within(panel).getByRole('button', {
-            name: '진입·청산·손절 가격선',
+            name: '진입, 청산, 손절 가격선',
         });
         expect(actionButton).toHaveAttribute('aria-pressed', 'true');
 
@@ -255,7 +255,7 @@ describe('ChartOverlayMenu — level right-extend toggle', () => {
             />
         );
         expect(
-            screen.getByRole('button', { name: /차트 작도 · 1/ })
+            screen.getByRole('button', { name: /차트 작도 \(1\)/ })
         ).toBeInTheDocument();
         await user.click(screen.getByRole('button', { name: /차트 작도/ }));
         const toggle = within(getPanel()).getByRole('button', {
@@ -338,7 +338,7 @@ describe('ChartOverlayMenu — 항목 색·강조', () => {
 
 describe('ChartOverlayMenu — 오른쪽 연장 행과 트리거 이름', () => {
     const EXTEND_LABEL = '레벨선 오른쪽 연장';
-    const EXTENDED_LABEL = '시간외 거래(프리·애프터마켓) 표시';
+    const EXTENDED_LABEL = '시간외 거래(프리마켓, 애프터마켓) 표시';
 
     function renderWithExtend(
         items: readonly OverlayMenuItem[],
@@ -375,7 +375,9 @@ describe('ChartOverlayMenu — 오른쪽 연장 행과 트리거 이름', () => 
     it('작도 항목이 있으면 트리거는 개수가 든 "차트 작도"이고 오른쪽 연장 행 위에 구분선을 그린다', async () => {
         const user = userEvent.setup();
         renderWithExtend([patternItem], { checked: true, onChange: vi.fn() });
-        await user.click(screen.getByRole('button', { name: /차트 작도 · 1/ }));
+        await user.click(
+            screen.getByRole('button', { name: /차트 작도 \(1\)/ })
+        );
         expect(
             within(getPanel()).getByRole('button', { name: EXTEND_LABEL })
                 .parentElement

@@ -77,7 +77,7 @@ const TABS = [
         label: '공포 탐욕 지수',
         path: '/AAPL/fear-greed',
         urlRe: /\/AAPL\/fear-greed$/,
-        heading: /공포 탐욕 지수 — 0~100 점수와 최근 흐름/,
+        heading: /공포 탐욕 지수: 0~100 점수와 최근 흐름/,
     },
     {
         key: 'overall',
@@ -201,7 +201,7 @@ test.describe('@webkit symbol tabs', () => {
         await settlePwaBanner(page);
 
         const badge = page.getByRole('link', {
-            name: /^증자·희석: 최근 ATM\(시장가 상시 발행\) 공시 · \d{2}\/\d{2}$/,
+            name: /^증자\/희석: 최근 ATM\(시장가 상시 발행\) 공시 \| \d{2}\/\d{2}$/,
         });
         await expect(badge).toBeVisible({ timeout: 15_000 });
         await expect(badge).toHaveAccessibleDescription(

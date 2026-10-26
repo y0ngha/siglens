@@ -98,7 +98,7 @@ function renderContent(
 /** 기관 구간(`h2`)의 `section` — 기준 시점 카드의 "데이터 없음"과 섞이지 않게 범위를 좁힌다. */
 const institutionalSection = (): HTMLElement =>
     screen
-        .getByRole('heading', { level: 2, name: /기관 매수·매도/ })
+        .getByRole('heading', { level: 2, name: /기관 매매/ })
         .closest('section') as HTMLElement;
 
 const shortSection = (): HTMLElement =>
@@ -195,13 +195,13 @@ describe('InvestorFlowsContent — 수집 중 안내', () => {
         ).toBeInTheDocument();
     });
 
-    it('수집 중에는 Form 144·증자 공시 자리에 SEC 공시 안내가 나온다', () => {
+    it('수집 중에는 Form 144와 증자 공시 자리에 SEC 공시 안내가 나온다', () => {
         renderContent(COLLECTING);
         expect(
             within(screen.getByTestId('flows-form144')).getByText(FILINGS_TITLE)
         ).toBeInTheDocument();
         const dilution = screen
-            .getByRole('heading', { level: 2, name: /^증자·희석 공시/ })
+            .getByRole('heading', { level: 2, name: /^증자 희석 공시/ })
             .closest('section') as HTMLElement;
         expect(within(dilution).getByText(FILINGS_TITLE)).toBeInTheDocument();
     });
@@ -477,7 +477,7 @@ describe('AsOfNotice — 수집 중 행', () => {
             '공매도 잔고',
             '일별 공매도 비중',
             '결제 불이행(FTD)',
-            'Form 144·증자 공시',
+            'Form 144와 증자 공시',
         ]) {
             expect(within(row(term)).getByText('수집 중')).toBeVisible();
         }

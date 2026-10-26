@@ -68,7 +68,7 @@ describe('buildSkillMarkdown', () => {
         expect(md).toContain('### `get_quote`');
         expect(md).toContain('Latest price for up to 3 symbols.');
         expect(md).toContain(
-            '- `symbols` (array of string, required) — Up to 3 symbols'
+            '- `symbols` (array of string, required): Up to 3 symbols'
         );
         expect(md).toContain('- `timeframe` ("1Hour" | "1Day", required)');
         expect(md).toContain('- `bars` (integer (10..60), optional)');

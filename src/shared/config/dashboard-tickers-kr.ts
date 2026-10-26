@@ -57,19 +57,29 @@ export const KR_MARKET_INDICES: IndexTicker[] = [
 export const KR_SECTOR_ETFS: SectorEtf[] = [
     { symbol: '091160.KS', sectorName: 'Semiconductor', koreanName: '반도체' },
     { symbol: '305720.KS', sectorName: 'Battery', koreanName: '2차전지' },
-    { symbol: '266360.KS', sectorName: 'IT Software', koreanName: '인터넷·SW' },
+    { symbol: '266360.KS', sectorName: 'IT Software', koreanName: '인터넷/SW' },
     { symbol: '091180.KS', sectorName: 'Autos', koreanName: '자동차' },
     { symbol: '091170.KS', sectorName: 'Banks', koreanName: '은행' },
     { symbol: '244580.KS', sectorName: 'Biotech', koreanName: '바이오' },
 ];
+
+/** 섹터 묶음 라벨. 화면 번역 키는 `MarketSummaryPanel`이 이 값으로 찾는다. */
+export const KR_GROWTH_TECH_GROUP_LABEL = '성장/기술';
+export const KR_CYCLICAL_DEFENSIVE_GROUP_LABEL = '경기/방어';
 
 /**
  * 섹터 묶음. 3+3으로 나눈 것은 표시 때문이기도 하다 — `MarketSummaryPanel`이
  * 그룹 크기 3이면 `grid-cols-3`, 아니면 `grid-cols-4`를 쓰므로 3/3이 가장 고르게 찬다.
  */
 export const KR_SECTOR_GROUPS: readonly SectorGroupDef[] = [
-    { label: '성장·기술', symbols: ['091160.KS', '305720.KS', '266360.KS'] },
-    { label: '경기·방어', symbols: ['091180.KS', '091170.KS', '244580.KS'] },
+    {
+        label: KR_GROWTH_TECH_GROUP_LABEL,
+        symbols: ['091160.KS', '305720.KS', '266360.KS'],
+    },
+    {
+        label: KR_CYCLICAL_DEFENSIVE_GROUP_LABEL,
+        symbols: ['091180.KS', '091170.KS', '244580.KS'],
+    },
 ];
 
 /**
@@ -81,7 +91,7 @@ export const KR_SECTOR_GROUPS: readonly SectorGroupDef[] = [
  * 파생 작업이다. 섹터당 2~5종으로 얇지만 정직하다 — 확장은 후속 과제.
  *
  * `sectorSymbol`은 **실제 업종**으로 맞춘다. 홈 그리드의 카테고리(`kr-semiconductor`
- * 등)와 1:1로 두지 않은 이유: 삼성SDI는 `반도체·IT` 카테고리에 있지만 배터리 회사라,
+ * 등)와 1:1로 두지 않은 이유: 삼성SDI는 `반도체/IT` 카테고리에 있지만 배터리 회사라,
  * 카테고리를 그대로 옮기면 `KODEX 반도체` 탭에 배터리주가 섞인다.
  */
 export const KR_SECTOR_STOCKS: readonly SectorStock[] = [
@@ -108,7 +118,7 @@ export const KR_SECTOR_STOCKS: readonly SectorStock[] = [
         koreanName: '에코프로비엠',
         sectorSymbol: '305720.KS',
     },
-    // 인터넷·SW (266360.KS) — 2
+    // 인터넷/SW (266360.KS) — 2
     { symbol: '035420.KS', koreanName: '네이버', sectorSymbol: '266360.KS' },
     { symbol: '035720.KS', koreanName: '카카오', sectorSymbol: '266360.KS' },
     // 자동차 (091180.KS) — 3

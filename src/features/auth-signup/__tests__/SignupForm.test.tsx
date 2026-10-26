@@ -342,7 +342,7 @@ describe('SignupForm', () => {
             const { rerender, container } = render(<SignupForm />);
             rerender(<SignupForm />);
             const privacyCheckbox = screen.getByLabelText(
-                /개인정보 수집·이용 동의/
+                /개인정보 수집 및 이용 동의/
             );
             await user.click(privacyCheckbox);
             const hiddenInput = container.querySelector(

@@ -8,7 +8,7 @@ import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from '@/shared/lib/theme';
 
 /**
  * 테마 선택은 **두 축**을 갖는다 — 사용자가 무엇을 골랐는가(`preference`)와
- * 실제로 무엇이 칠해지는가(`<html data-theme>`). 둘은 같지 않다: `설정 따라가기`를
+ * 실제로 무엇이 칠해지는가(`<html data-theme>`). 둘은 같지 않다: `시스템 설정`를
  * 고른 사용자와 `다크`를 고른 사용자는 OS가 다크일 때 화면이 **완전히 동일**하다.
  *
  * 그래서 이 테스트는 화면 색이 아니라 **선택 표시**와 **저장 형태**를 본다.
@@ -32,15 +32,15 @@ describe('ThemeToggle', () => {
 
         expect(
             screen.getAllByRole('radio').map(r => r.textContent?.trim())
-        ).toEqual(['설정 따라가기', '라이트', '다크']);
+        ).toEqual(['시스템 설정', '라이트', '다크']);
     });
 
-    it('저장값이 없으면 설정 따라가기가 선택돼 있다', () => {
+    it('저장값이 없으면 시스템 설정가 선택돼 있다', () => {
         renderWithIntl(<ThemeToggle />);
         openMenu();
 
         expect(
-            screen.getByRole('radio', { name: /설정 따라가기/ })
+            screen.getByRole('radio', { name: /시스템 설정/ })
         ).toHaveAttribute('aria-checked', 'true');
     });
 
@@ -54,11 +54,11 @@ describe('ThemeToggle', () => {
             'true'
         );
         expect(
-            screen.getByRole('radio', { name: /설정 따라가기/ })
+            screen.getByRole('radio', { name: /시스템 설정/ })
         ).toHaveAttribute('aria-checked', 'false');
     });
 
-    it('명시적 선택은 저장하고, 설정 따라가기는 키를 지운다', () => {
+    it('명시적 선택은 저장하고, 시스템 설정는 키를 지운다', () => {
         renderWithIntl(<ThemeToggle />);
 
         openMenu();
@@ -66,18 +66,18 @@ describe('ThemeToggle', () => {
         expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
 
         openMenu();
-        fireEvent.click(screen.getByRole('radio', { name: /설정 따라가기/ }));
+        fireEvent.click(screen.getByRole('radio', { name: /시스템 설정/ }));
         // `system`은 값으로 저장하지 않는다 — 키의 부재가 곧 그 선택이다.
         expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
     });
 
-    it('설정 따라가기를 고르면 시스템 선호도가 화면에 적용된다', () => {
+    it('시스템 설정를 고르면 시스템 선호도가 화면에 적용된다', () => {
         stubPrefersColorScheme(true); // OS = light
         localStorage.setItem(THEME_STORAGE_KEY, 'dark');
         renderWithIntl(<ThemeToggle />);
 
         openMenu();
-        fireEvent.click(screen.getByRole('radio', { name: /설정 따라가기/ }));
+        fireEvent.click(screen.getByRole('radio', { name: /시스템 설정/ }));
 
         expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
             'light'
@@ -149,13 +149,13 @@ describe('ThemeToggle', () => {
         expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
     });
 
-    it('알 수 없는 저장값이면 설정 따라가기(첫 옵션)로 대체한다', () => {
+    it('알 수 없는 저장값이면 시스템 설정(첫 옵션)로 대체한다', () => {
         localStorage.setItem(THEME_STORAGE_KEY, 'not-a-real-theme');
         renderWithIntl(<ThemeToggle />);
         openMenu();
 
         expect(
-            screen.getByRole('radio', { name: /설정 따라가기/ })
+            screen.getByRole('radio', { name: /시스템 설정/ })
         ).toHaveAttribute('aria-checked', 'true');
     });
 

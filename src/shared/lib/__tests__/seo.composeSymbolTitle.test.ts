@@ -15,9 +15,9 @@ describe('composeSymbolTitle', () => {
                 ticker: 'AAPL',
                 koreanName: '애플',
                 core: '주가 전망',
-                tail: '차트·매매 신호',
+                tail: '차트와 매매 신호',
             })
-        ).toBe('애플(AAPL) 주가 전망 — 차트·매매 신호');
+        ).toBe('애플(AAPL) 주가 전망: 차트와 매매 신호');
     });
 
     it('예산이 모자라면 tail을 먼저 버린다', () => {
@@ -49,9 +49,9 @@ describe('composeSymbolTitle', () => {
             composeSymbolTitle({
                 ticker: 'AAPL',
                 core: '주가 전망',
-                tail: '차트·매매 신호',
+                tail: '차트와 매매 신호',
             })
-        ).toBe('AAPL 주가 전망 — 차트·매매 신호');
+        ).toBe('AAPL 주가 전망: 차트와 매매 신호');
     });
 
     it('tail이 없으면 core만 붙인다', () => {

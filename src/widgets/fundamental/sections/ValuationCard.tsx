@@ -41,7 +41,7 @@ function MetricRow({
 }: MetricRowProps) {
     const locale = useResolvedLocale();
     const formatted =
-        value !== null ? formatDecimal(value, digits, locale) : '—';
+        value !== null ? formatDecimal(value, digits, locale) : '-';
 
     return (
         <div className="flex items-baseline justify-between gap-4 border-b border-secondary-700 py-2.5 last:border-b-0">
