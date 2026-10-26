@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.114.0](https://github.com/y0ngha/siglens/compare/v0.113.0...v0.114.0) (2026-10-26)
+
+### Features
+
+* 서버 키 provider 킬스위치와 꺼진 모델의 기본 모델 대체 ([#1120](https://github.com/y0ngha/siglens/issues/1120)) ([8bb6e7a](https://github.com/y0ngha/siglens/commit/8bb6e7a4472509a4e3b469d18b3c297bfbdf5a50))
+
 # [0.113.0](https://github.com/y0ngha/siglens/compare/v0.112.0...v0.113.0) (2026-10-26)
 
 ### Bug Fixes
