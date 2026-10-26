@@ -8,28 +8,9 @@ import {
     QUERY_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import {
-    isRosterModelId,
-    MODEL_AVAILABILITY_PATH,
-} from '@/shared/lib/modelAvailability';
+import { fetchDisabledServerKeyModels } from '../lib/fetchDisabledServerKeyModels';
 
 const NONE: readonly ModelId[] = [];
-
-async function fetchDisabledModels(): Promise<readonly ModelId[]> {
-    const response = await fetch(MODEL_AVAILABILITY_PATH);
-    if (!response.ok) throw new Error(`model availability ${response.status}`);
-    // 응답 모양을 믿지 않고 좁힌다 — 모르는 값은 버린다(배포 중 로스터가 엇갈린 경우).
-    const body: unknown = await response.json();
-    if (
-        typeof body !== 'object' ||
-        body === null ||
-        !('disabledModels' in body) ||
-        !Array.isArray(body.disabledModels)
-    ) {
-        return NONE;
-    }
-    return body.disabledModels.filter(isRosterModelId);
-}
 
 export interface DisabledServerKeyModels {
     /** 운영자가 꺼 둔 서버 키 모델. 받기 전·실패 시에는 빈 목록이다. */
@@ -52,7 +33,7 @@ export function useDisabledServerKeyModels(): DisabledServerKeyModels {
     const isHydrated = useHydrated();
     const { data, isPending } = useQuery({
         queryKey: QUERY_KEYS.disabledServerKeyModels(),
-        queryFn: fetchDisabledModels,
+        queryFn: fetchDisabledServerKeyModels,
         enabled: isHydrated,
         staleTime: QUERY_STALE_TIME_MS,
         gcTime: QUERY_GC_TIME_MS,

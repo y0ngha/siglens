@@ -8,6 +8,7 @@ import {
     type ModelId,
 } from '@y0ngha/siglens-core';
 import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
+import { isRosterModelId } from '@/shared/lib/modelAvailability';
 
 const KNOWN_PROVIDERS: readonly LlmProvider[] = [
     'anthropic',
@@ -91,7 +92,7 @@ export function resolveServableModelId(modelId: ModelId): ServableModel {
     const disabled = readDisabledServerKeyProviders();
     if (
         disabled.size === 0 ||
-        !getAllowedModels('pro').includes(modelId) ||
+        !isRosterModelId(modelId) ||
         !isServerKeyModelDisabled(modelId, disabled) ||
         isServerKeyModelDisabled(fallbackModel, disabled)
     ) {
