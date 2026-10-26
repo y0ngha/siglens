@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState, type ComponentType } from 'react';
+import { Fragment, useState, type ComponentType } from 'react';
 import type { ToolActivityItem } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -165,7 +165,17 @@ export function ToolActivity({
                     )}
                 />
                 <span className="truncate">
-                    {summary.filter(Boolean).join(' | ')}
+                    {summary.filter(Boolean).map((part, i) => (
+                        <Fragment key={part}>
+                            {i > 0 && (
+                                <>
+                                    {' '}
+                                    <span aria-hidden="true">|</span>{' '}
+                                </>
+                            )}
+                            {part}
+                        </Fragment>
+                    ))}
                 </span>
                 <ChevronDownIcon
                     className={cn(

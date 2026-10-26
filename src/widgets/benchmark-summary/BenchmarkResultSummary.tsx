@@ -90,7 +90,8 @@ export async function BenchmarkResultSummary({
                             {entry.diffText}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-secondary-300 tabular-nums">
-                            {t('ci', { ci: entry.ciText })} |{' '}
+                            {t('ci', { ci: entry.ciText })}{' '}
+                            <span aria-hidden="true">|</span>{' '}
                             {verdictText[entry.verdict]}
                         </p>
                     </li>

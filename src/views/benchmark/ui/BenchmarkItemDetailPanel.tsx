@@ -171,15 +171,16 @@ function DetailBody({ detail, targets }: BodyProps) {
                                         )}
                                     >
                                         <p className="text-xs font-semibold text-secondary-400">
-                                            {judgement.level} |{' '}
+                                            {judgement.level}{' '}
+                                            <span aria-hidden="true">|</span>{' '}
                                             <span translate="no">
                                                 {judgement.judge}
                                             </span>{' '}
-                                            |{' '}
+                                            <span aria-hidden="true">|</span>{' '}
                                             {t('round', {
                                                 round: judgement.round,
                                             })}{' '}
-                                            |{' '}
+                                            <span aria-hidden="true">|</span>{' '}
                                             <span className="tabular-nums">
                                                 {formatBenchmarkScore(
                                                     judgement.score
