@@ -29,7 +29,7 @@ test.describe('flows(한국): DART 지분공시', () => {
         await expect(
             page.getByRole('heading', {
                 level: 1,
-                name: /대량보유·임원 지분 공시/,
+                name: /대량보유와 임원 지분 공시/,
             })
         ).toBeVisible();
         await expect(
@@ -45,7 +45,9 @@ test.describe('flows(한국): DART 지분공시', () => {
             2
         );
         await expect(
-            scorecard.getByText(/기관·공매도·증자 희석 점수는 제공하지 않아요/)
+            scorecard.getByText(
+                /기관, 공매도, 증자 희석 점수는 제공하지 않아요/
+            )
         ).toBeVisible();
 
         const asOf = page.getByTestId('flows-kr-asof');
@@ -54,7 +56,7 @@ test.describe('flows(한국): DART 지분공시', () => {
         ).toBeVisible();
         await expect(
             asOf.getByText(
-                '기관·외국인 매매 동향(순매수)은 이 화면에 없어요. 점수는 지분 공시로만 매겨요.'
+                '기관과 외국인 매매 동향(순매수)은 이 화면에 없어요. 점수는 지분 공시로만 매겨요.'
             )
         ).toBeVisible();
         await expect(page.getByTestId('flows-kr-preferred-note')).toHaveCount(
@@ -106,9 +108,9 @@ test.describe('flows(한국): DART 지분공시', () => {
         };
         expect(index(/지분 공시 점수/)).toBeLessThan(index(/대량보유 보고/));
         expect(index(/대량보유 보고/)).toBeLessThan(
-            index(/임원·주요주주 소유/)
+            index(/임원\/주요주주 소유/)
         );
-        expect(index(/임원·주요주주 소유/)).toBeLessThan(
+        expect(index(/임원\/주요주주 소유/)).toBeLessThan(
             index(/거래계획 보고서/)
         );
 
@@ -191,7 +193,9 @@ test.describe('flows(한국): 데이터 없음', () => {
         const response = await page.goto(`/${KR_WITHOUT_FILINGS}/flows`);
         expect(response?.status()).toBe(200);
         await expect(
-            page.getByText(/최근 2년 동안 이 종목의 대량보유·임원 소유 공시/)
+            page.getByText(
+                /최근 2년 동안 이 종목의 대량보유 공시와 임원 소유 공시/
+            )
         ).toBeVisible();
         await expect(
             page.getByRole('heading', { name: 'AI 수급 해석' })

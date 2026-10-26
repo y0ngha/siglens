@@ -108,7 +108,7 @@ test.describe('market fear & greed', () => {
         expect(score as number).toBeLessThanOrEqual(100);
     });
 
-    test('헤더 "공포·탐욕 지수 > 미국" 링크 클릭으로 /fear-greed에 도달한다', async ({
+    test('헤더 "공포 탐욕 지수 > 미국" 링크 클릭으로 /fear-greed에 도달한다', async ({
         page,
     }) => {
         // 헤더 nav 링크는 lg(1024px) 이상에서만 표시된다 — 그 아래는 햄버거다.
@@ -116,8 +116,8 @@ test.describe('market fear & greed', () => {
         await page.goto('/');
 
         // 2026-08 동선 재편: 헤더가 버티컬 드롭다운이 되면서 지역 라벨이 짧아졌다
-        // (`미국 공포·탐욕 지수` → `공포·탐욕 지수` 패널 안의 `미국`).
-        await clickHeaderNavRegion(page, '공포·탐욕 지수', '미국');
+        // (`미국 공포 탐욕 지수` → `공포 탐욕 지수` 패널 안의 `미국`).
+        await clickHeaderNavRegion(page, '공포 탐욕 지수', '미국');
 
         await page.waitForURL('**/fear-greed');
 

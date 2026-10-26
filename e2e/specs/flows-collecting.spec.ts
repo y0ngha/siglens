@@ -62,7 +62,7 @@ test.describe('flows: 수집 중 안내', () => {
             dilution.getByText('SEC 공시를 모으는 중이에요')
         ).toBeVisible();
         await expect(
-            dilution.getByText('접수된 증자·희석 공시가 없어요.')
+            dilution.getByText('접수된 증자 희석 공시가 없어요.')
         ).toHaveCount(0);
     });
 

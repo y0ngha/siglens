@@ -111,7 +111,7 @@ test.describe('financials: happy path', () => {
         // All 4 axis titles from AxisScoreCard
         await expect(page.getByText('성장성', { exact: true })).toBeVisible();
         await expect(
-            page.getByText('수익성·질', { exact: true })
+            page.getByText('수익성과 질', { exact: true })
         ).toBeVisible();
         await expect(page.getByText('안정성', { exact: true })).toBeVisible();
         await expect(

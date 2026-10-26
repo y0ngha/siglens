@@ -15,7 +15,7 @@ test.describe('backtesting showcase', () => {
         await expect(
             page.getByRole('heading', {
                 level: 1,
-                name: '백테스트 — 과거 데이터 사후 검증',
+                name: '백테스트: 과거 데이터 사후 검증',
             })
         ).toBeVisible();
     });

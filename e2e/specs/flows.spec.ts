@@ -31,7 +31,7 @@ test.describe('flows: happy path', () => {
         await expect(
             page.getByRole('heading', {
                 level: 1,
-                name: /AAPL.*기관·공매도 수급/,
+                name: /AAPL.*기관과 공매도 수급/,
             })
         ).toBeVisible();
         await expect(
@@ -60,7 +60,7 @@ test.describe('flows: happy path', () => {
         await expect(asOf).toContainText('최대 45일 안에 제출');
         await expect(asOf).toContainText('결제 불이행(FTD)');
         await expect(asOf).toContainText('약 2주 뒤에 공개');
-        await expect(asOf).toContainText('Nasdaq·NYSE·Cboe');
+        await expect(asOf).toContainText('Nasdaq, NYSE, Cboe');
     });
 
     test('기관 IN/OUT 막대와 4분할 카드가 방향을 글자·부호로 보여 준다', async ({
@@ -175,10 +175,10 @@ test.describe('flows: happy path', () => {
             .getByTestId('flows-threshold');
         await expect(threshold.getByText('과열 목록 등재')).toBeVisible();
         await expect(
-            threshold.getByText('15거래일 연속 · Nasdaq')
+            threshold.getByText('15거래일 연속, Nasdaq')
         ).toBeVisible();
         await expect(
-            threshold.getByText(/출처: Nasdaq·NYSE·Cboe/)
+            threshold.getByText(/출처: Nasdaq, NYSE, Cboe/)
         ).toBeVisible();
     });
 
@@ -229,7 +229,7 @@ test.describe('flows: happy path', () => {
             'section[aria-labelledby="flows-dilution-heading"]'
         );
         await expect(
-            dilution.getByRole('heading', { level: 2, name: /증자·희석 공시/ })
+            dilution.getByRole('heading', { level: 2, name: /증자 희석 공시/ })
         ).toBeVisible();
         for (const kind of ['ATM', '선반 등록', '사모']) {
             await expect(
@@ -359,10 +359,10 @@ test.describe('flows: 데이터 없음', () => {
         await expect(
             page.getByRole('heading', {
                 level: 1,
-                name: /EMPTYX.*기관·공매도 수급/,
+                name: /EMPTYX.*기관과 공매도 수급/,
             })
         ).toBeVisible();
-        await expect(page.getByText(/데이터 없음 — 이 종목은/)).toBeVisible();
+        await expect(page.getByText(/데이터 없음: 이 종목은/)).toBeVisible();
         await expect(
             page.getByRole('heading', { name: 'AI 수급 해석' })
         ).toHaveCount(0);

@@ -45,7 +45,7 @@ test.describe('economy overview', () => {
         await expect(
             page.getByRole('heading', {
                 level: 1,
-                name: '미국 경제 — 지표·캘린더 한눈에',
+                name: '미국 경제: 지표와 캘린더 한눈에',
             })
         ).toBeVisible();
 
@@ -194,7 +194,7 @@ test.describe('economy overview', () => {
         await expect(
             page.getByRole('heading', {
                 level: 1,
-                name: '미국 경제 — 지표·캘린더 한눈에',
+                name: '미국 경제: 지표와 캘린더 한눈에',
             })
         ).toBeVisible();
     });

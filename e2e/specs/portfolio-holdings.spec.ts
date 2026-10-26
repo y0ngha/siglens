@@ -145,7 +145,7 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
         // Exact match proves the "set" state, not the "평단 설정" unset copy.
         // Generous timeout: this is a fresh hard navigation, so the chip's own
         // client-side holdings fetch (not just hydration) must complete first.
-        await expect(chip).toHaveText('평단 $150 · 10주', {
+        await expect(chip).toHaveText('평단 $150, 10주', {
             timeout: SETTLE_TIMEOUT_MS,
         });
 

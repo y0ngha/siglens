@@ -17,8 +17,8 @@ import type { Page } from '@playwright/test';
  * 않고, click을 걸면 닫힌다 — 순서 의존 실패의 정체가 이것이다.
  *
  * @param page - 테스트 페이지.
- * @param vertical - 헤더 1단 라벨(`시장 분석`·`공포·탐욕 지수`·`뉴스`·`경제`).
- * @param region - 패널 안 지역 라벨(`미국`·`한국`·`암호화폐`). 정확히 일치해야 한다.
+ * @param vertical - 헤더 1단 라벨(`시장 분석`, `공포 탐욕 지수`, `뉴스`, `경제`).
+ * @param region - 패널 안 지역 라벨(`미국`, `한국`, `암호화폐`). 정확히 일치해야 한다.
  */
 export async function clickHeaderNavRegion(
     page: Page,

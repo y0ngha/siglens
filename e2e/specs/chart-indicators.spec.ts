@@ -7,7 +7,7 @@ import { test, expect } from '../support/fixtures';
  * 모달 UI 흐름을 검증한다 — 차트 데이터에 비의존이라 안정적이다.
  */
 test.describe('chart indicator settings popover', () => {
-    // 트리거는 글자 메뉴("보조지표" / 켜진 지표가 있으면 "보조지표 · N")라 이름이 바뀐다 — 패널(group) 이름은 고정.
+    // 트리거는 글자 메뉴("보조지표" / 켜진 지표가 있으면 "보조지표 (N)")라 이름이 바뀐다 — 패널(group) 이름은 고정.
     const TRIGGER = /^보조지표/;
     const PANEL = '보조지표 설정';
 
@@ -24,7 +24,7 @@ test.describe('chart indicator settings popover', () => {
         await expect(dialog.getByText('추세')).toBeVisible();
         await expect(dialog.getByText('모멘텀')).toBeVisible();
         await expect(dialog.getByText('변동성')).toBeVisible();
-        await expect(dialog.getByText('볼륨')).toBeVisible();
+        await expect(dialog.getByText('거래량')).toBeVisible();
         // smc 지표 등록으로 'SMC' 카테고리 그룹이 이제 모달에 노출된다(heading으로 'SMC Zones' 체크박스와 구별).
         await expect(
             dialog.getByRole('heading', { name: 'SMC' })
@@ -260,7 +260,7 @@ test.describe('chart indicator settings popover', () => {
         // 시간외 거래 행은 이 메뉴에 있다(적용 여부와 무관하게 항상 보인다).
         await expect(
             page.getByRole('group', { name: '차트 설정' }).getByRole('button', {
-                name: /시간외 거래\(프리·애프터마켓\) 표시/,
+                name: /시간외 거래\(프리마켓, 애프터마켓\) 표시/,
             })
         ).toBeVisible();
     });

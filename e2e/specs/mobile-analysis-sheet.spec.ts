@@ -102,7 +102,7 @@ test.describe('@webkit mobile analysis sheet', () => {
         await page.getByRole('button', { name: '종목 검색 열기' }).tap();
 
         const search = page.getByRole('searchbox', {
-            name: '종목명 · 티커 검색',
+            name: '종목명 또는 티커 검색',
         });
         await expect(search).toBeFocused();
         await search.fill('TSLA');
