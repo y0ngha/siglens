@@ -91,7 +91,7 @@ export const KR_SECTOR_GROUPS: readonly SectorGroupDef[] = [
  * 파생 작업이다. 섹터당 2~5종으로 얇지만 정직하다 — 확장은 후속 과제.
  *
  * `sectorSymbol`은 **실제 업종**으로 맞춘다. 홈 그리드의 카테고리(`kr-semiconductor`
- * 등)와 1:1로 두지 않은 이유: 삼성SDI는 `반도체·IT` 카테고리에 있지만 배터리 회사라,
+ * 등)와 1:1로 두지 않은 이유: 삼성SDI는 `반도체/IT` 카테고리에 있지만 배터리 회사라,
  * 카테고리를 그대로 옮기면 `KODEX 반도체` 탭에 배터리주가 섞인다.
  */
 export const KR_SECTOR_STOCKS: readonly SectorStock[] = [
@@ -118,7 +118,7 @@ export const KR_SECTOR_STOCKS: readonly SectorStock[] = [
         koreanName: '에코프로비엠',
         sectorSymbol: '305720.KS',
     },
-    // 인터넷·SW (266360.KS) — 2
+    // 인터넷/SW (266360.KS) — 2
     { symbol: '035420.KS', koreanName: '네이버', sectorSymbol: '266360.KS' },
     { symbol: '035720.KS', koreanName: '카카오', sectorSymbol: '266360.KS' },
     // 자동차 (091180.KS) — 3

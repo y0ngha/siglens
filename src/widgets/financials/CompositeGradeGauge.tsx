@@ -3,7 +3,7 @@ import type { FinancialsGrade } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 
 interface CompositeGradeGaugeProps {
-    /** Composite score 0–100; null renders "—" in place of the number. */
+    /** Composite score 0–100; null renders "-" in place of the number. */
     score: number | null;
     /** Letter grade derived from score. */
     grade: FinancialsGrade;
@@ -90,7 +90,7 @@ const TICK_LABEL_RADIUS = GAUGE_RADIUS + TICK_LABEL_OFFSET;
  * tick labels, large grade letter, and a Korean summary line.
  *
  * Accessibility: `role="img"` + `aria-label` on the SVG.
- * Null score renders "—" in place of the numeric value.
+ * Null score renders "-" in place of the numeric value.
  */
 export function CompositeGradeGauge({
     score,

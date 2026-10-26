@@ -59,7 +59,7 @@ const SIGNAL_CHIP_CLASS: Record<FinancialSignalDirection, string> = {
  * - `ratio` → "2.1x"
  * - `usd`   → compact currency (e.g. "$5B")
  * - `score` → raw integer string
- * - `null`  → "—"
+ * - `null`  → "-"
  */
 function formatMetricValue(
     value: number | null,
