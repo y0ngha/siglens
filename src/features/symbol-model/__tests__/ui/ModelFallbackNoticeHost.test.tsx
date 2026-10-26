@@ -4,15 +4,12 @@ import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
 import { publishAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import {
-    ModelFallbackNoticeHost,
-    resetModelFallbackNoticeForTests,
-} from '@/features/symbol-model/ui/ModelFallbackNoticeHost';
+import { ModelFallbackNoticeHost } from '@/features/symbol-model/ui/ModelFallbackNoticeHost';
 
 const mocks = vi.hoisted(() => ({
     showToast: vi.fn(),
     symbolModel: {
-        allowedModels: [] as string[],
+        fallbackModel: 'deepseek-v4.1-flash',
         unavailableModels: [] as string[],
         isHydrated: true,
     },
@@ -37,10 +34,10 @@ function renderHost(client = new QueryClient()) {
 
 describe('ModelFallbackNoticeHost', () => {
     beforeEach(() => {
-        resetModelFallbackNoticeForTests();
+        sessionStorage.clear();
         mocks.showToast.mockClear();
         mocks.symbolModel = {
-            allowedModels: ['deepseek-v4.1-flash', 'claude-sonnet-5-5'],
+            fallbackModel: 'deepseek-v4.1-flash',
             unavailableModels: [],
             isHydrated: true,
         };
@@ -53,7 +50,7 @@ describe('ModelFallbackNoticeHost', () => {
             'claude-sonnet-5-5'
         );
         mocks.symbolModel = {
-            allowedModels: ['deepseek-v4.1-flash', 'claude-sonnet-5-5'],
+            fallbackModel: 'deepseek-v4.1-flash',
             unavailableModels: ['claude-sonnet-5-5'],
             isHydrated: true,
         };
@@ -76,7 +73,7 @@ describe('ModelFallbackNoticeHost', () => {
             'deepseek-v4.1-flash'
         );
         mocks.symbolModel = {
-            allowedModels: ['deepseek-v4.1-flash', 'claude-sonnet-5-5'],
+            fallbackModel: 'deepseek-v4.1-flash',
             unavailableModels: ['claude-sonnet-5-5'],
             isHydrated: true,
         };
@@ -104,7 +101,7 @@ describe('ModelFallbackNoticeHost', () => {
         });
     });
 
-    it('안내는 페이지 생명주기당 한 번이다(종목을 옮겨 다시 마운트돼도)', () => {
+    it('안내는 탭 세션당 한 번이다(종목을 옮겨 다시 마운트돼도)', () => {
         const first = new QueryClient();
         renderHost(first);
         act(() => {

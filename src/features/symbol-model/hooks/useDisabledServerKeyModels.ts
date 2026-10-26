@@ -9,8 +9,8 @@ import {
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
+    isRosterModelId,
     MODEL_AVAILABILITY_PATH,
-    type ModelAvailabilityResponse,
 } from '@/shared/lib/modelAvailability';
 
 const NONE: readonly ModelId[] = [];
@@ -18,8 +18,17 @@ const NONE: readonly ModelId[] = [];
 async function fetchDisabledModels(): Promise<readonly ModelId[]> {
     const response = await fetch(MODEL_AVAILABILITY_PATH);
     if (!response.ok) throw new Error(`model availability ${response.status}`);
-    const body = (await response.json()) as ModelAvailabilityResponse;
-    return body.disabledModels;
+    // 응답 모양을 믿지 않고 좁힌다 — 모르는 값은 버린다(배포 중 로스터가 엇갈린 경우).
+    const body: unknown = await response.json();
+    if (
+        typeof body !== 'object' ||
+        body === null ||
+        !('disabledModels' in body) ||
+        !Array.isArray(body.disabledModels)
+    ) {
+        return NONE;
+    }
+    return body.disabledModels.filter(isRosterModelId);
 }
 
 export interface DisabledServerKeyModels {

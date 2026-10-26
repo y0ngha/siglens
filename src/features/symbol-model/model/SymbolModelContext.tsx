@@ -13,7 +13,7 @@ import {
     type ModelId,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { useSelectedModel } from '../hooks/useSelectedModel';
+import { pickFallbackModel, useSelectedModel } from '../hooks/useSelectedModel';
 import {
     useModelGate,
     type ModelGateState,
@@ -37,6 +37,11 @@ interface SymbolModelContextValue {
      * 목록에서 "일시 중단"으로 비활성 표시하고, 저장된 선택이 이 안에 있으면 기본 모델로 강등한다.
      */
     unavailableModels: readonly ModelId[];
+    /**
+     * 저장된 선택을 고를 수 없을 때 떨어지는 모델 — `useSelectedModel`이 강등에 쓰는 것과 같은
+     * 규칙(`pickFallbackModel`)을 고를 수 있는 모델(허용 − 일시 중단)에 적용한 값이다.
+     */
+    fallbackModel: ModelId;
     isHydrated: boolean;
     tier: Tier;
     isTierHydrated: boolean;
@@ -148,6 +153,10 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
                   ),
         [allowedModels, unavailableModels]
     );
+    const fallbackModel = useMemo(
+        () => pickFallbackModel(selectableModels),
+        [selectableModels]
+    );
     const isTierHydrated = !isTierLoading;
     // 저장된 선택은 등급과 꺼진 모델 목록이 **둘 다** 확정된 뒤에 읽는다. 목록보다 먼저
     // 읽으면 꺼진 모델로 첫 분석이 나간 뒤 강등돼 같은 분석이 한 번 더 나간다.
@@ -191,6 +200,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             modelId,
             allowedModels,
             unavailableModels,
+            fallbackModel,
             isHydrated,
             tier,
             isTierHydrated,
@@ -210,6 +220,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             modelId,
             allowedModels,
             unavailableModels,
+            fallbackModel,
             isHydrated,
             tier,
             isTierHydrated,

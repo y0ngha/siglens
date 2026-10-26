@@ -54,6 +54,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
 
 vi.mock('@/features/symbol-model/hooks/useSelectedModel', () => ({
     useSelectedModel: vi.fn(() => ['gemini-3.5-flash-lite', vi.fn(), true]),
+    // 규칙 자체는 useSelectedModel.test가 실물로 검증한다 — 여기서는 배선만 본다.
+    pickFallbackModel: (models: readonly string[]) => models[0],
 }));
 
 vi.mock('@/features/premium-gate/hooks/useModelGate', () => ({
@@ -372,6 +374,8 @@ describe('SymbolModelContext', () => {
             expect(result.current.unavailableModels).toEqual([
                 'claude-haiku-5-5',
             ]);
+            // 강등 대상은 고를 수 있는 모델에서 같은 규칙으로 구한다.
+            expect(result.current.fallbackModel).toBe('gemini-3.5-flash-lite');
             expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
                 ['gemini-3.5-flash-lite'],
                 true

@@ -24,7 +24,13 @@ const KNOWN_PROVIDERS: readonly LlmProvider[] = [
  * 빈 값을 저장할 수 없어서 다시 켤 때는 파라미터를 지우거나 `none`처럼 모르는 값을 넣는다.
  *
  * 크레딧 소진·provider 장애처럼 그 provider의 서버 키 호출이 전부 실패하는 동안
- * 쓰는 운영 스위치다. 호출마다 읽는다(모듈 상수로 굳히지 않는다) — 테스트가 env를
+ * 쓰는 운영 스위치다.
+ *
+ * **적용 범위**: 사용자가 고른 분석 모델이 서버 키로 도는 경로, 곧 `/api/analysis/stream`
+ * (종목 분석 탭 전부)과 화면의 모델 목록뿐이다. 공개 API(`/api/v1`)는 `keyPolicy: 'byok-only'`라
+ * 호출자 자신의 키로 돌아 대상이 아니고, 사용자가 모델을 고르지 않는 서버 작업(뉴스 카드·
+ * 브리핑·SEO 프리웜 등)은 코드가 정한 고정 모델로 돈다 — 그 provider가 끊기면 이 스위치가
+ * 아니라 해당 작업의 모델 설정을 바꾼다. 호출마다 읽는다(모듈 상수로 굳히지 않는다) — 테스트가 env를
  * 바꿔 가며 검증하고, 런타임 env는 재시작 전까지 어차피 바뀌지 않는다.
  */
 export function readDisabledServerKeyProviders(): ReadonlySet<LlmProvider> {

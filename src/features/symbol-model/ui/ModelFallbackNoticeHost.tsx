@@ -6,20 +6,27 @@ import { useTranslations } from 'next-intl';
 import type { ModelId } from '@y0ngha/siglens-core';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
+import { SESSION_STORAGE_MODEL_FALLBACK_NOTICE_KEY } from '@/shared/lib/storageKeys';
 import { subscribeAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';
 import { useToast } from '@/shared/ui/ToastProvider';
-import { pickFallbackModel, readStoredModel } from '../hooks/useSelectedModel';
+import { readStoredModel } from '../hooks/useSelectedModel';
 import { useSymbolModel } from '../model/SymbolModelContext';
 
 /**
- * 안내는 페이지 생명주기당 한 번이다. `[symbol]` 레이아웃은 종목을 옮길 때마다 다시
- * 마운트되므로 컴포넌트 상태로 두면 종목마다 같은 토스트가 뜬다.
+ * 안내는 탭 세션당 한 번이다. `[symbol]` 레이아웃은 종목을 옮길 때마다 다시 마운트되므로
+ * 컴포넌트 상태로 두면 종목마다 같은 토스트가 뜬다. 저장소가 막힌 브라우저(시크릿 모드
+ * 등)는 `SecurityError`를 던지므로, 그때는 "아직 안 띄웠다"로 보고 띄운다 — 안내가 한 번
+ * 더 뜨는 편이 아예 안 뜨는 편보다 낫다.
  */
-let hasNotified = false;
-
-/** 테스트 전용 — 모듈 상태를 되돌린다. */
-export function resetModelFallbackNoticeForTests(): void {
-    hasNotified = false;
+function claimNotice(): boolean {
+    try {
+        if (sessionStorage.getItem(SESSION_STORAGE_MODEL_FALLBACK_NOTICE_KEY))
+            return false;
+        sessionStorage.setItem(SESSION_STORAGE_MODEL_FALLBACK_NOTICE_KEY, '1');
+    } catch {
+        // 위 JSDoc — 저장소 차단은 띄우는 쪽으로 처리한다.
+    }
+    return true;
 }
 
 /**
@@ -36,11 +43,10 @@ export function ModelFallbackNoticeHost() {
     const t = useTranslations('features.symbol-model');
     const { showToast } = useToast();
     const queryClient = useQueryClient();
-    const { allowedModels, unavailableModels, isHydrated } = useSymbolModel();
+    const { unavailableModels, fallbackModel, isHydrated } = useSymbolModel();
 
     const notify = useEffectEvent((from: ModelId, to: ModelId) => {
-        if (hasNotified) return;
-        hasNotified = true;
+        if (!claimNotice()) return;
         showToast({
             message: t('fallbackTitle', { model: getModelDisplay(from).label }),
             detail: t('fallbackDetail', {
@@ -67,19 +73,12 @@ export function ModelFallbackNoticeHost() {
     useEffect(() => {
         if (!isHydrated || unavailableModels.length === 0) return;
         const stored = readStoredModel();
-        // 강등 대상은 `useSelectedModel`과 같은 규칙(`pickFallbackModel`)으로 구한다.
-        // 컨텍스트의 `modelId`는 이 effect 시점에 아직 강등 전 값일 수 있어 쓰지 않는다.
+        // 강등 대상은 컨텍스트가 `useSelectedModel`과 같은 규칙으로 구한 `fallbackModel`이다.
+        // `modelId`는 이 effect 시점에 아직 강등 전 값일 수 있어 쓰지 않는다.
         if (stored !== null && unavailableModels.includes(stored)) {
-            notify(
-                stored,
-                pickFallbackModel(
-                    allowedModels.filter(
-                        model => !unavailableModels.includes(model)
-                    )
-                )
-            );
+            notify(stored, fallbackModel);
         }
-    }, [isHydrated, allowedModels, unavailableModels]);
+    }, [isHydrated, unavailableModels, fallbackModel]);
 
     return null;
 }

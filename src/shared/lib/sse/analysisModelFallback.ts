@@ -1,4 +1,5 @@
 import type { ModelId } from '@y0ngha/siglens-core';
+import { isRosterModelId } from '@/shared/lib/modelAvailability';
 
 /**
  * 분석 결과 객체에 서버가 덧붙이는 필드 이름. 꺼진 서버 키 모델로 들어온 요청을
@@ -22,8 +23,8 @@ export function readAnalysisModelFallback(
     if (typeof value !== 'object' || value === null) return null;
     if (!('from' in value) || !('to' in value)) return null;
     const { from, to } = value;
-    if (typeof from !== 'string' || typeof to !== 'string') return null;
-    return { from: from as ModelId, to: to as ModelId };
+    if (!isRosterModelId(from) || !isRosterModelId(to)) return null;
+    return { from, to };
 }
 
 /**
@@ -33,10 +34,9 @@ export function readAnalysisModelFallback(
 export function omitAnalysisModelFallback<T>(result: T): T {
     if (typeof result !== 'object' || result === null) return result;
     if (!(MODEL_FALLBACK_FIELD in result)) return result;
-    const { [MODEL_FALLBACK_FIELD]: _omitted, ...rest } = result as Record<
-        string,
-        unknown
-    >;
+    const { [MODEL_FALLBACK_FIELD]: _omitted, ...rest } = result;
+    // 필드 하나를 뺀 나머지는 원래 결과의 필드 그대로다. 호출부(`runAnalysisStream`)는
+    // 이 필드를 결과 타입 `T`에 선언하지 않으므로 뺀 뒤에도 `T`와 같은 모양이다.
     return rest as T;
 }
 
