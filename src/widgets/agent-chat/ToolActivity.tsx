@@ -135,7 +135,7 @@ export function ToolActivity({
                   : '',
           ]
         : [
-              t('ToolActivity.checked', { sources: distinct.join(' · ') }),
+              t('ToolActivity.checked', { sources: distinct.join(', ') }),
               failed ? t('ToolActivity.partialFailure') : '',
               loginNeeded ? t('ToolActivity.loginRequired') : '',
               totalMs > 0 ? seconds(totalMs) : '',
@@ -165,7 +165,7 @@ export function ToolActivity({
                     )}
                 />
                 <span className="truncate">
-                    {summary.filter(Boolean).join(' · ')}
+                    {summary.filter(Boolean).join(' | ')}
                 </span>
                 <ChevronDownIcon
                     className={cn(

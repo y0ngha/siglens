@@ -1,5 +1,5 @@
 ---
-title: 买入·卖出成交量
+title: 买卖成交量
 aliases: [Buy/Sell Volume, 买卖成交量拆分, 买入占比]
 summary: 按收盘价位置把单根K线的成交量拆成买入部分和卖出部分，显示这根K线里谁占优势。
 seoTitle: 买卖成交量指标怎么看，买入占比

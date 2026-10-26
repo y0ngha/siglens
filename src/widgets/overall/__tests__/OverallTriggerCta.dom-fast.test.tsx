@@ -10,7 +10,7 @@ describe('OverallTriggerCta', () => {
             screen.getByRole('heading', { name: /AI 종합 분석/ })
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/차트·옵션·펀더멘털·뉴스·시장 분위기/)
+            screen.getByText(/차트, 옵션, 펀더멘털, 뉴스, 시장 분위기/)
         ).toBeInTheDocument();
     });
 
@@ -66,11 +66,11 @@ describe('OverallTriggerCta', () => {
         expect(screen.getByText(/30초~1분 소요/)).toBeInTheDocument();
     });
 
-    it('assetClass="crypto": subtitle lists 차트·뉴스·시장 분위기 and omits equity-only words', () => {
+    it('assetClass="crypto": subtitle lists 차트, 뉴스, 시장 분위기 and omits equity-only words', () => {
         render(<OverallTriggerCta onTrigger={vi.fn()} assetClass="crypto" />);
 
         // Crypto subtitle must be present.
-        expect(screen.getByText(/차트·뉴스·시장 분위기/)).toBeInTheDocument();
+        expect(screen.getByText(/차트, 뉴스, 시장 분위기/)).toBeInTheDocument();
 
         // Equity-only terms must NOT appear in the rendered output.
         expect(screen.queryByText(/옵션/)).not.toBeInTheDocument();

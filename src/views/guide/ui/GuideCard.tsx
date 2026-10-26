@@ -48,7 +48,7 @@ export function GuideCard({ entry, categoryLabel }: GuideCardProps) {
                     <p className="mt-1 line-clamp-1 text-xs text-secondary-400">
                         {entry.aliases
                             .slice(0, GUIDE_CARD_ALIAS_LIMIT)
-                            .join(' · ')}
+                            .join(', ')}
                     </p>
                 ) : null}
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-secondary-300">

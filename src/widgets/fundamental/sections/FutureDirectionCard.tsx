@@ -48,12 +48,12 @@ function pct(value: number, total: number): string {
 // 적용됐다. 국내 종목의 원화 금액에 `US$`를 붙이던 결함도 같은 자리였다
 // (`목표 주가 US$450,000`은 같은 사이트가 차트 탭에서 `₩274,500`으로 쓰는 값이다).
 function fmtMoney(v: number | null, symbol: string, locale: Locale): string {
-    if (v === null) return '—';
+    if (v === null) return '-';
     return formatCurrencyForSymbol(v, symbol, locale);
 }
 
 function fmtBig(v: number | null, symbol: string, locale: Locale): string {
-    return v !== null ? formatCompactCurrency(v, symbol, locale) : '—';
+    return v !== null ? formatCompactCurrency(v, symbol, locale) : '-';
 }
 
 /**

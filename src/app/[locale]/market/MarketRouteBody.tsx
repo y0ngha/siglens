@@ -231,7 +231,7 @@ export async function MarketRouteBody({
         itemListElement: scope.sectorEtfs.map((sector, idx) => ({
             '@type': 'ListItem',
             position: idx + 1,
-            name: `${sector.koreanName} (${sector.sectorName} · ${sector.symbol})`,
+            name: `${sector.koreanName} (${sector.sectorName}, ${sector.symbol})`,
             // 색인되는 종목(`isPopularSymbol`)에만 `url`을 단다. sitemap에 없는 종목 페이지는
             // 큐레이션 밖이라 noindex다 — 색인 안 되는 URL을 ListItem 대상으로 선언하면
             // 구조화데이터가 크롤 예산만 그쪽으로 보낸다.

@@ -127,11 +127,11 @@ describe('MarketNewsCard는', () => {
     describe('카테고리 배지', () => {
         it.each([
             ['earnings', '실적'],
-            ['m_and_a', '인수·합병'],
+            ['m_and_a', '인수합병'],
             ['guidance', '가이던스'],
             ['regulation', '규제'],
             ['macro', '거시경제'],
-            ['product', '제품·서비스'],
+            ['product', '제품/서비스'],
         ] as const)(
             '%s → "%s"로 한국어 라벨을 보여 주고 raw enum은 노출하지 않는다',
             (value, label) => {

@@ -22,7 +22,7 @@ interface GrowthBarProps {
 /** Inline SVG bar for a single growth metric. Positive = green, negative = red; clamps at ±100%. */
 function GrowthBar({ label, value, description }: GrowthBarProps) {
     const pct = value !== null ? value * 100 : null;
-    const formattedPct = pct !== null ? formatSignedPercent(pct) : '—';
+    const formattedPct = pct !== null ? formatSignedPercent(pct) : '-';
 
     const fillAbs = pct !== null ? Math.min(100, Math.abs(pct)) : 0;
     const isPositive = pct !== null ? pct >= 0 : true;

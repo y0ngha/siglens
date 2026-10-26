@@ -53,7 +53,7 @@ describe('Composer', () => {
         const box = screen.getByRole('textbox');
         fireEvent.change(box, { target: { value: 'x'.repeat(4001) } });
         expect(
-            screen.getByText('4,001 / 4,000자 — 너무 깁니다')
+            screen.getByText('4,001 / 4,000자로 너무 깁니다')
         ).toBeInTheDocument();
     });
 
@@ -62,13 +62,11 @@ describe('Composer', () => {
         const box = screen.getByRole('textbox');
         expect(screen.queryByText(/\/ 4,000$/)).toBeNull();
         expect(
-            screen.getByText('Enter 전송 · Shift+Enter 줄바꿈')
+            screen.getByText('Enter 전송, Shift+Enter 줄바꿈')
         ).toBeInTheDocument();
         fireEvent.change(box, { target: { value: 'x'.repeat(3200) } });
         expect(screen.getByText('3,200 / 4,000')).toBeInTheDocument();
-        expect(
-            screen.queryByText('Enter 전송 · Shift+Enter 줄바꿈')
-        ).toBeNull();
+        expect(screen.queryByText('Enter 전송, Shift+Enter 줄바꿈')).toBeNull();
     });
 
     it('shows a stop button while streaming and no send button', () => {
@@ -104,7 +102,7 @@ describe('Composer', () => {
     it('states the Beta status next to the not-investment-advice notice', () => {
         renderComposer();
         expect(
-            screen.getByText(/Beta · 답변에 오류가 있을 수 있으며/)
+            screen.getByText(/Beta: 답변에 오류가 있을 수 있으며/)
         ).toBeInTheDocument();
     });
 });

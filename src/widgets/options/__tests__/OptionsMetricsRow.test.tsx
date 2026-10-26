@@ -17,13 +17,13 @@ vi.mock('@/widgets/options/utils/optionsTooltips', () => ({
 
 vi.mock('@/entities/options-chain/lib/optionsFormatters', () => ({
     formatMaxPain: (v: number | null) =>
-        v === null ? '—' : `$${v.toFixed(0)}`,
-    formatPutCallRatio: (v: number | null) => (v === null ? '—' : v.toFixed(2)),
+        v === null ? '-' : `$${v.toFixed(0)}`,
+    formatPutCallRatio: (v: number | null) => (v === null ? '-' : v.toFixed(2)),
     formatAtmIv: (v: number | null) =>
-        v === null ? '—' : `${(v * 100).toFixed(1)}%`,
+        v === null ? '-' : `${(v * 100).toFixed(1)}%`,
     formatImpliedMove: (v: number | null) =>
-        v === null ? '—' : `±${v.toFixed(1)}%`,
-    METRIC_PLACEHOLDER: '—',
+        v === null ? '-' : `±${v.toFixed(1)}%`,
+    METRIC_PLACEHOLDER: '-',
 }));
 
 const METRICS: OptionsExpirationMetrics = {
@@ -90,7 +90,7 @@ describe('OptionsMetricsRow', () => {
             // 20:00 UTC = 다음 날 05:00 KST.
             expect(
                 screen.getByText(
-                    /직전 정규장 기준 · .*6월 14일.*05:00 KST 수집/
+                    /직전 정규장 기준 \(.*6월 14일.*05:00 KST 수집\)/
                 )
             ).toBeInTheDocument();
         });
@@ -152,7 +152,7 @@ describe('OptionsMetricsRow', () => {
                 showCapturedCaption={false}
             />
         );
-        const dashes = screen.getAllByText('—');
+        const dashes = screen.getAllByText('-');
         expect(dashes).toHaveLength(4);
     });
 
@@ -181,7 +181,7 @@ describe('OptionsMetricsRow', () => {
                 showCapturedCaption={false}
             />
         );
-        const dashes = screen.getAllByText('—');
+        const dashes = screen.getAllByText('-');
         expect(dashes).toHaveLength(4);
     });
 

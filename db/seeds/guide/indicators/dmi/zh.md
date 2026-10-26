@@ -16,7 +16,7 @@ faq:
 
 ## 计算方法
 
-DMI（Directional Movement Index）由J. 威尔斯·威尔德于1978年创立，用两条线判断方向。+DI是向上运动的力量，-DI是向下运动的力量。逐根K线测量最高价比前一根K线上升了多少、最低价下降了多少，取14根K线的平均，再除以同一周期的平均波幅（与[ATR](/guide/indicators/atr)相同的数据），转换成百分比。
+DMI（Directional Movement Index）由威尔德（J. Welles Wilder）于1978年创立，用两条线判断方向。+DI是向上运动的力量，-DI是向下运动的力量。逐根K线测量最高价比前一根K线上升了多少、最低价下降了多少，取14根K线的平均，再除以同一周期的平均波幅（与[ATR](/guide/indicators/atr)相同的数据），转换成百分比。
 
 把两条线之间的差距再取平均，就是[ADX](/guide/indicators/adx)。它不分方向，用0到100显示趋势有多强。DMI负责方向，ADX负责该方向的力度。
 

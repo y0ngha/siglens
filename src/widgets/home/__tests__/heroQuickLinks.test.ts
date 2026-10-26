@@ -10,7 +10,7 @@ describe('HERO_QUICK_LINKS', () => {
         expect(HERO_QUICK_LINKS.map(l => koMessage(l.labelKey))).toEqual([
             '미국 시장 분석',
             '한국 시장 분석',
-            '미국 공포·탐욕 지수',
+            '미국 공포 탐욕 지수',
             '미국 시장 뉴스',
             '미국 경제',
         ]);

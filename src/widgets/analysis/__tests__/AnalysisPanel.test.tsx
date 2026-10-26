@@ -225,7 +225,7 @@ describe('AnalysisPanel', () => {
             )
         ).toBeInTheDocument();
         // The member-only detail items are folded into the same card.
-        expect(screen.getByText(/보조지표 심층 분석/)).toBeInTheDocument();
+        expect(screen.getByText(/보조지표 상세 분석/)).toBeInTheDocument();
         // The two former cards were consolidated into one, so a free user now
         // sees exactly ONE signup CTA (no duplicate call to action).
         const signupLinks = screen.getAllByRole('link', { name: '회원가입' });

@@ -175,8 +175,7 @@ export function FearGreedRouteBody({
                         <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
                             {FACTOR_KEYS[market].map(key => (
                                 <li key={key}>
-                                    {factorLabel(key)} —{' '}
-                                    {factorDescription(key)}
+                                    {factorLabel(key)}: {factorDescription(key)}
                                 </li>
                             ))}
                         </ul>

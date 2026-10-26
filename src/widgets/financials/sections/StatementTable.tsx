@@ -44,7 +44,7 @@ interface StatementTableProps {
 }
 
 /**
- * Format a financial value based on its type. Returns '—' for null.
+ * Format a financial value based on its type. Returns '-' for null.
  *
  * `locale`에 기본값을 두지 않는다 — 예전에는 `'ko'` 기본값이 있었고 유일한
  * 호출부가 locale을 빠뜨려 /en·/ja·/zh 재무표 금액이 `US$1111.8억`으로 찍혔다.
@@ -55,7 +55,7 @@ function formatValue(
     currency: StatementCurrency,
     locale: Locale
 ): string {
-    if (value === null) return '—';
+    if (value === null) return '-';
 
     switch (format ?? 'num') {
         // 'usd'는 "금액" 축을 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
@@ -165,7 +165,7 @@ export function StatementTable({
                                             key={columns[j]}
                                             className={cn(
                                                 'px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap tabular-nums',
-                                                formatted === '—'
+                                                formatted === '-'
                                                     ? 'text-secondary-400'
                                                     : !shouldColorize
                                                       ? 'text-secondary-300'

@@ -37,7 +37,7 @@ describe('EconomicIndicatorGrid', () => {
         expect(screen.getByText('금리')).toBeInTheDocument();
         expect(screen.getByText('물가')).toBeInTheDocument();
         // 성장 섹션은 GDP만 등록돼있는데 latest=null이라 omit → 헤더도 안 렌더(빈 섹션 0 카드)
-        expect(screen.queryByText('성장·경기')).not.toBeInTheDocument();
+        expect(screen.queryByText('성장과 경기')).not.toBeInTheDocument();
     });
 
     it('값 있는 지표는 카드로 렌더 (라벨 + 값 + 단위)', () => {
@@ -87,7 +87,7 @@ describe('EconomicIndicatorGrid', () => {
         );
         expect(screen.getByText('159,044')).toBeInTheDocument();
         expect(screen.queryByText('159044')).not.toBeInTheDocument();
-        expect(screen.getByText(/\+1,044천명/)).toBeInTheDocument();
+        expect(screen.getByText(/\+1,044천 명/)).toBeInTheDocument();
     });
 
     it('% 지표의 변화량 단위는 ko에서 %p다', () => {
@@ -174,7 +174,7 @@ describe('EconomicIndicatorGrid', () => {
     // `vs. Previous Period +41천명`·`-6000건`을 그대로 찍던 결함. unit이
     // shared.enumLabel.economyUnit 카탈로그 키로 바뀌었으므로 ko 표시 문자열은
     // 그대로 유지되는지(회귀 가드) 여기서 확인한다.
-    it('천명/건 단위 지표는 ko에서 기존과 동일한 단위 문자열을 렌더한다', () => {
+    it('천 명/건 단위 지표는 ko에서 기존과 동일한 단위 문자열을 렌더한다', () => {
         render(
             <EconomicIndicatorGrid
                 snapshot={snap({
@@ -197,8 +197,8 @@ describe('EconomicIndicatorGrid', () => {
         );
         const payrollValue =
             screen.getByText('158,449').closest('div')?.textContent ?? '';
-        expect(payrollValue).toContain('천명');
-        expect(screen.getByText(/\+41천명/)).toBeInTheDocument();
+        expect(payrollValue).toContain('천 명');
+        expect(screen.getByText(/\+41천 명/)).toBeInTheDocument();
 
         const claimsValue =
             screen.getByText('220,000').closest('div')?.textContent ?? '';

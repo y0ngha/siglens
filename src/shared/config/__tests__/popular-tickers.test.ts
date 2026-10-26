@@ -54,7 +54,7 @@ describe('TICKER_CATEGORIES', () => {
     it('순수 우주 기업 카테고리를 포함한다', () => {
         const space = TICKER_CATEGORIES.find(c => c.id === 'space');
         expect(space).toBeDefined();
-        expect(space!.label).toBe('우주·항공우주');
+        expect(space!.label).toBe('우주항공');
         expect(space!.items.map(i => i.symbol)).toEqual([
             'RKLB',
             'ASTS',

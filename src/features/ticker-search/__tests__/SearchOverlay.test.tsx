@@ -112,9 +112,9 @@ describe('SearchOverlay', () => {
         // 첫 방문자가 보는 유일한 화면이다. 미국만 있으면 한국·코인 사용자에게
         // "입력 전에도 볼 게 있다"가 성립하지 않는다.
         renderOverlay();
-        expect(screen.getByText('인기 종목 · 미국')).toBeInTheDocument();
-        expect(screen.getByText('인기 종목 · 한국')).toBeInTheDocument();
-        expect(screen.getByText('인기 종목 · 암호화폐')).toBeInTheDocument();
+        expect(screen.getByText('미국 인기 종목')).toBeInTheDocument();
+        expect(screen.getByText('한국 인기 종목')).toBeInTheDocument();
+        expect(screen.getByText('암호화폐 인기 종목')).toBeInTheDocument();
     });
 
     it('최근 검색을 저장된 만큼 전부 보여준다', () => {

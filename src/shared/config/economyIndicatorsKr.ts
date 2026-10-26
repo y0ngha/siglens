@@ -79,7 +79,7 @@ export const KR_ECONOMY_INDICATORS: readonly KrEconomyIndicatorMeta[] = [
         unit: '%',
         precision: 3,
         tooltip:
-            '정부가 10년 만기 국고채를 발행할 때 정해진 금리예요. 장기 성장·물가 기대를 반영해요.',
+            '정부가 10년 만기 국고채를 발행할 때 정해진 금리예요. 장기 성장과 물가 기대를 반영해요.',
     },
     {
         event: KR_INDICATOR_EVENT.cpi,

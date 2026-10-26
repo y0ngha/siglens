@@ -61,7 +61,7 @@ describe('StatementTable', () => {
 
     it('formats pct values with percent sign', () => {
         render(<StatementTable {...BASE_PROPS} />);
-        // 10% and 20% (third value is null → em-dash, not %)
+        // 10% and 20% (third value is null → "-", not %)
         expect(screen.getAllByText(/%/)).toHaveLength(2);
     });
 
@@ -72,10 +72,10 @@ describe('StatementTable', () => {
         expect(screen.getByText('3.10')).toBeInTheDocument();
     });
 
-    it('renders em-dash for null values', () => {
+    it('renders the "-" placeholder for null values', () => {
         render(<StatementTable {...BASE_PROPS} />);
         // only 순이익률 row has a single null value
-        expect(screen.getAllByText('—')).toHaveLength(1);
+        expect(screen.getAllByText('-')).toHaveLength(1);
     });
 
     it('applies font-mono tabular-nums to value cells', () => {

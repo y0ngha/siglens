@@ -1516,11 +1516,11 @@ describe('StockChart', () => {
             render(<StockChart bars={regular} timeframe="5Min" />);
             expect(mockAttachPrimitive).not.toHaveBeenCalled();
             expect(
-                screen.queryByText('음영: 시간외(프리·애프터마켓)')
+                screen.queryByText('음영: 시간외(프리마켓, 애프터마켓)')
             ).toBeNull();
         });
 
-        it('시간외 봉이 있으면 음영이 시간외(프리·애프터마켓)임을 말하는 범례를 띄운다', () => {
+        it('시간외 봉이 있으면 음영이 시간외(프리마켓, 애프터마켓)임을 말하는 범례를 띄운다', () => {
             render(
                 <StockChart
                     bars={regular}
@@ -1530,7 +1530,7 @@ describe('StockChart', () => {
                 />
             );
             expect(
-                screen.getByText('음영: 시간외(프리·애프터마켓)')
+                screen.getByText('음영: 시간외(프리마켓, 애프터마켓)')
             ).toBeInTheDocument();
         });
 
@@ -1859,7 +1859,7 @@ describe('StockChart', () => {
                     screen.getByRole('button', { name: '차트 설정' })
                 );
                 const row = screen.getByRole('button', {
-                    name: '시간외 거래(프리·애프터마켓) 표시',
+                    name: '시간외 거래(프리마켓, 애프터마켓) 표시',
                 });
                 expect(row).toHaveAttribute('aria-pressed', 'true');
                 fireEvent.click(row);
@@ -1882,7 +1882,7 @@ describe('StockChart', () => {
                 );
                 expect(
                     screen.queryByRole('button', {
-                        name: '시간외 거래(프리·애프터마켓) 표시',
+                        name: '시간외 거래(프리마켓, 애프터마켓) 표시',
                     })
                 ).toBeNull();
             });
@@ -1894,12 +1894,12 @@ describe('StockChart', () => {
                 );
                 expect(
                     screen.getByRole('button', {
-                        name: /시간외 거래\(프리·애프터마켓\) 표시/,
+                        name: /시간외 거래\(프리마켓, 애프터마켓\) 표시/,
                     })
                 ).toHaveAttribute('aria-disabled', 'true');
                 expect(
                     screen.getByText(
-                        '1일봉·한국 종목·코인에는 시간외 거래가 없어요'
+                        '1일봉, 한국 종목, 코인에는 시간외 거래가 없어요'
                     )
                 ).toBeInTheDocument();
             });

@@ -25,12 +25,12 @@ const BRIEFING: MarketBriefingResponse = {
 describe('BriefingCard', () => {
     /**
      * 섹터명은 core가 **한국어 표시명**으로 준다. 그대로 찍으면 영어 페이지에서
-     * 바로 아래 번역된 `performanceDescription` 옆에 `기술·금융`이 붙는다.
+     * 바로 아래 번역된 `performanceDescription` 옆에 `기술, 금융`이 붙는다.
      * 표시 시점에 심볼로 카탈로그를 찾는지 비-기본 로케일로 확인한다.
      */
     it.each([
-        ['en', 'Technology·Financials', 'Energy'],
-        ['ja', 'テクノロジー·金融', 'エネルギー'],
+        ['en', 'Technology, Financials', 'Energy'],
+        ['ja', 'テクノロジー, 金融', 'エネルギー'],
     ] as const)(
         '%s: 섹터명을 그 로케일로 표시한다',
         (locale, leading, lagging) => {
@@ -45,7 +45,7 @@ describe('BriefingCard', () => {
 
             expect(screen.getByText(leading)).toBeInTheDocument();
             expect(screen.getByText(lagging)).toBeInTheDocument();
-            expect(screen.queryByText('기술·금융')).not.toBeInTheDocument();
+            expect(screen.queryByText('기술, 금융')).not.toBeInTheDocument();
         }
     );
 
@@ -80,7 +80,7 @@ describe('BriefingCard', () => {
                 generatedAt="2025-01-15T10:00:00Z"
             />
         );
-        expect(screen.getByText('기술·금융')).toBeInTheDocument();
+        expect(screen.getByText('기술, 금융')).toBeInTheDocument();
         expect(screen.getByText('에너지')).toBeInTheDocument();
     });
 
@@ -256,7 +256,7 @@ describe('BriefingCard — 근거 없는 값 차단', () => {
             />
         );
 
-        expect(screen.getByText('기술·금융')).toBeInTheDocument();
+        expect(screen.getByText('기술, 금융')).toBeInTheDocument();
         expect(screen.getByText('에너지')).toBeInTheDocument();
         expect(screen.getByText(/VIX 14\.50/)).toBeInTheDocument();
     });

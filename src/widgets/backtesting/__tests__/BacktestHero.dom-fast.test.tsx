@@ -30,7 +30,7 @@ describe('BacktestHero', () => {
 
         expect(
             screen.getByRole('heading', {
-                name: /백테스트 — 과거 데이터 사후 검증/,
+                name: /백테스트: 과거 데이터 사후 검증/,
             })
         ).toBeInTheDocument();
         expect(screen.queryByText(/2년/)).not.toBeInTheDocument();
@@ -52,7 +52,7 @@ describe('BacktestHero', () => {
 
         expect(screen.getByText('93/150')).toBeInTheDocument();
         expect(
-            screen.getByText('결정 케이스 14/20 · 중립 130건 제외')
+            screen.getByText('결정 케이스 14/20, 중립 130건 제외')
         ).toBeInTheDocument();
     });
 

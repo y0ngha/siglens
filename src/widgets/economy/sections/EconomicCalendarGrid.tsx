@@ -263,7 +263,7 @@ function displayEventLabel(
 }
 
 /** 값 줄의 예상·이전·실제 조각 구분자. */
-const VALUE_PART_SEPARATOR = ' · ';
+const VALUE_PART_SEPARATOR = ' | ';
 
 type ValuePartKey =
     | 'EconomicCalendarGrid.forecastPart'
@@ -524,7 +524,7 @@ function DayCell({
                                   .map(impact =>
                                       tLabel(IMPACT_LABEL_KEY[impact])
                                   )
-                                  .join('·'),
+                                  .join(', '),
                           }))
                 }
                 aria-pressed={isSelected}

@@ -41,7 +41,7 @@ const CHANNEL = {
     // 한글 표기와 영문 표기를 함께 — 피드 구독 목록·검색에서 "시그렌즈"로도 찾힌다.
     title: `${brandIntroName(DEFAULT_LOCALE)} 시장 브리핑`,
     description:
-        '시장 브리핑과 뉴스 요약 — 규칙으로 계산한 값을 AI가 문장으로 정리했습니다.',
+        '시장 브리핑과 뉴스 요약. 규칙으로 계산한 값을 AI가 문장으로 정리했습니다.',
     language: 'ko',
 } as const;
 

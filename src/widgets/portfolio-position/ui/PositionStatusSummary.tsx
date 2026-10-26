@@ -72,7 +72,7 @@ export function PositionStatusSummary({
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <ReadoutRow
                     label={t('PositionStatusSummary.f2116e')}
-                    value={`${avgDisplay} · ${quantityDisplay}`}
+                    value={`${avgDisplay}, ${quantityDisplay}`}
                 />
                 <ReadoutRow
                     label={t('PositionStatusSummary.44acd6')}

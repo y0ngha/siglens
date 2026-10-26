@@ -125,7 +125,7 @@ function DetailBody({ detail, targets }: BodyProps) {
                                                                 </th>
                                                                 <td className="py-1.5 pr-3 tabular-nums">
                                                                     {extracted.value ??
-                                                                        '—'}
+                                                                        '-'}
                                                                 </td>
                                                                 <td className="py-1.5 pr-3">
                                                                     <BenchmarkVerdictChip
@@ -145,7 +145,7 @@ function DetailBody({ detail, targets }: BodyProps) {
                                                                     lang="ko"
                                                                 >
                                                                     {extracted.reason ??
-                                                                        '—'}
+                                                                        '-'}
                                                                 </td>
                                                             </tr>
                                                         )
@@ -171,15 +171,15 @@ function DetailBody({ detail, targets }: BodyProps) {
                                         )}
                                     >
                                         <p className="text-xs font-semibold text-secondary-400">
-                                            {judgement.level} ·{' '}
+                                            {judgement.level} |{' '}
                                             <span translate="no">
                                                 {judgement.judge}
                                             </span>{' '}
-                                            ·{' '}
+                                            |{' '}
                                             {t('round', {
                                                 round: judgement.round,
                                             })}{' '}
-                                            ·{' '}
+                                            |{' '}
                                             <span className="tabular-nums">
                                                 {formatBenchmarkScore(
                                                     judgement.score

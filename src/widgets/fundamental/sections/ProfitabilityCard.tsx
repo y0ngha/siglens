@@ -22,7 +22,7 @@ interface MetricBarProps {
 }
 
 function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
-    const displayValue = value !== null ? `${(value * 100).toFixed(1)}%` : '—';
+    const displayValue = value !== null ? `${(value * 100).toFixed(1)}%` : '-';
 
     // Clamp fill width 0–100% for progress bar visualisation (ratio expected 0–1)
     const fillPct =

@@ -138,7 +138,7 @@ describe('MarketFearGreedPage', () => {
                 <MarketFearGreedPage market="us" view={emptyView} />
             );
             expect(
-                getByText('시장 공포·탐욕 지수를 계산할 데이터가 부족합니다.')
+                getByText('시장 공포 탐욕 지수를 계산할 데이터가 부족합니다.')
             ).toBeInTheDocument();
             expect(container.querySelector('svg[role="img"]')).toBeNull();
         });

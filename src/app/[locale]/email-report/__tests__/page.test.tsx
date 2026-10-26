@@ -141,7 +141,7 @@ describe('EmailReportPage', () => {
         ).toBeInTheDocument();
     });
 
-    it('제목·안내를 그린다', async () => {
+    it('제목과 안내를 그린다', async () => {
         render(await EmailReportPage({ params: params('ko') }));
 
         expect(
@@ -149,7 +149,7 @@ describe('EmailReportPage', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                '고른 요일과 시각에 보유·관심종목 리포트를 메일로 받아 보세요.'
+                '고른 요일과 시각에 보유종목과 관심종목 리포트를 메일로 받아 보세요.'
             )
         ).toBeInTheDocument();
     });

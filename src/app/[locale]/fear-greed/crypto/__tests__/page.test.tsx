@@ -157,7 +157,7 @@ describe('/fear-greed/crypto page', () => {
                     `shared.lib.fearGreedFactor.descriptionCrypto.${key}`
                 );
                 expect(
-                    screen.getByText(new RegExp(`^${label} — `))
+                    screen.getByText(new RegExp(`^${label}: `))
                 ).toHaveTextContent(description);
             }
             // 미국·한국 전용 요인은 나오지 않는다.

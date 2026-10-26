@@ -74,7 +74,7 @@ describe('ReportSymbolsPreview', () => {
         );
 
         expect(
-            screen.getByText(/아직 보유·관심종목이 없어요/)
+            screen.getByText(/아직 보유종목이나 관심종목이 없어요/)
         ).toBeInTheDocument();
     });
 
@@ -148,7 +148,7 @@ describe('ReportSymbolsPreview', () => {
             screen.getByText(/리포트에 담을 종목을 모두 뺐어요/)
         ).toBeInTheDocument();
         expect(
-            screen.queryByText(/아직 보유·관심종목이 없어요/)
+            screen.queryByText(/아직 보유종목이나 관심종목이 없어요/)
         ).not.toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: 'AAPL 리포트에 다시 넣기' })
@@ -167,7 +167,7 @@ describe('ReportSymbolsPreview', () => {
         );
 
         expect(
-            screen.getByText(/아직 보유·관심종목이 없어요/)
+            screen.getByText(/아직 보유종목이나 관심종목이 없어요/)
         ).toBeInTheDocument();
         expect(
             screen.queryByText(/리포트에 담을 종목을 모두 뺐어요/)

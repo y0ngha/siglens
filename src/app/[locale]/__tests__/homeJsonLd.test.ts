@@ -33,7 +33,7 @@ describe('buildHomeFaq — 시장 신호 스캐너 개수', () => {
     it('ko: 업종과 테마를 구분해 말한다', async () => {
         const answer = await scannerAnswer('ko');
         expect(answer).toContain(`미국 ${INDUSTRIES}개 업종(GICS 섹터)`);
-        expect(answer).toContain(`양자컴퓨팅·우주 등 ${THEMES}개 테마`);
+        expect(answer).toContain(`양자컴퓨팅, 우주 등 ${THEMES}개 테마`);
     });
 
     it('플레이스홀더가 치환되지 않은 채 남지 않는다 (ko)', async () => {

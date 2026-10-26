@@ -22,7 +22,7 @@ export interface BuildSkillMarkdownInput {
 export const FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
 
 const SKILL_DESCRIPTION =
-    "Query SigLens stock analysis (US/KR equities, crypto) — ticker search, quotes, bars with indicators (one call returns bars plus any of the technical indicators as time-aligned series), AI technical analysis, news, options, fundamentals, congress trades, macro. Use when the user asks about a stock's chart, signals or analysis.";
+    "Query SigLens stock analysis (US/KR equities, crypto): ticker search, quotes, bars with indicators (one call returns bars plus any of the technical indicators as time-aligned series), AI technical analysis, news, options, fundamentals, congress trades, macro. Use when the user asks about a stock's chart, signals or analysis.";
 
 /** 인자 타입의 사람용 표기(`"1Day" | "1Hour"`, `integer (10..60)`). `/developers`의 인자 표도 같은 표기를 쓴다. */
 export function typeLabel(prop: JsonSchemaProperty): string {
@@ -44,7 +44,7 @@ function renderArguments(tool: AgentToolSpec): string {
     const lines = entries.map(([name, prop]) => {
         const flag = required.has(name) ? 'required' : 'optional';
         const description =
-            prop.description === undefined ? '' : ` — ${prop.description}`;
+            prop.description === undefined ? '' : `: ${prop.description}`;
         return `- \`${name}\` (${typeLabel(prop)}, ${flag})${description}`;
     });
     return ['Arguments:', ...lines].join('\n');
@@ -70,12 +70,12 @@ export function renderLimits(limits: PublicApiRateLimit): string {
  */
 export function renderFreshAnalysisNotes(): string[] {
     return [
-        '- `run_fresh_analysis` first looks for a shared cached analysis: a hit is returned at no cost (`meta.source: "cache"`, no LLM call, no `ai` quota) with a normal JSON response. Only when none exists does it generate one — with your own LLM key registered at siglens.io/account (BYOK). SigLens never spends its own LLM key on API calls.',
+        '- `run_fresh_analysis` first looks for a shared cached analysis: a hit is returned at no cost (`meta.source: "cache"`, no LLM call, no `ai` quota) with a normal JSON response. Only when none exists does it generate one, with your own LLM key registered at siglens.io/account (BYOK). SigLens never spends its own LLM key on API calls.',
         "- Every model in the `model` argument list can generate a new analysis, free and member models included, but only with your own registered key for that model's provider. SigLens's own LLM key is never used (the SigLens website generates the lower models with its own key; the API does not).",
         '- Pick the model with `model`, or set an API default model at siglens.io/account (`GET /me` shows it as `defaultModel`).',
         `- Generation attempts (a cache miss that calls your LLM) have their own per-account limit: ${renderLimits(PUBLIC_API_RATE_LIMITS.ai)}. Cached hits only use the regular limit above.`,
         `- Generating usually takes about a minute and never longer than the ${FRESH_ANALYSIS_DEADLINE_SECONDS}-second tool deadline (then \`tool_timeout\`). Once everything is validated and generation starts, the response is HTTP 200 \`application/json\` that is written in two parts: whitespace keepalive bytes (a newline, sent periodically so proxies do not cut the silent connection), then the JSON body. Leading whitespace is valid JSON, so just parse the whole body. Because the status is already sent, a failure after that point also arrives as HTTP 200: parse the body, and an \`error\` field means failure even on 200. The streamed response also carries \`X-RateLimit-AI-Limit\`, \`X-RateLimit-AI-Remaining\` and \`X-RateLimit-AI-Reset\` for the \`ai\` quota it just used (cache hits do not touch that quota, so they have no such headers). Everything found before generation (auth, rate limits, bad arguments, model, missing key, cache hits) uses normal status codes and a normal body. Closing the connection does not cancel the generation: it still finishes, is charged to your key, and fills the shared cache, so calling again later returns it as a cache hit.`,
-        '- `run_fresh_analysis` errors with a normal status: 400 `model_required` (no `model` and no default), 400 `invalid_model`, 400 `byok_key_required` (`error.details.provider` is the provider whose key you must register), 429 `rate_limited`, 503 `busy`. Errors inside a streamed (200) body use the same shape: `analysis_failed` (`error.details.code` says why, e.g. `no_news`), `provider_error` (`error.details`: `provider`, `status` — your key was rejected or the provider is failing; fix the key/quota or retry later), `tool_timeout`, `tool_failed`.',
+        '- `run_fresh_analysis` errors with a normal status: 400 `model_required` (no `model` and no default), 400 `invalid_model`, 400 `byok_key_required` (`error.details.provider` is the provider whose key you must register), 429 `rate_limited`, 503 `busy`. Errors inside a streamed (200) body use the same shape: `analysis_failed` (`error.details.code` says why, e.g. `no_news`), `provider_error` (`error.details`: `provider`, `status`; your key was rejected or the provider is failing, so fix the key/quota or retry later), `tool_timeout`, `tool_failed`.',
     ];
 }
 
@@ -115,7 +115,7 @@ export function buildSkillMarkdown({
         `- Rate limits are per account (all your keys share them): ${renderLimits(PUBLIC_API_RATE_LIMITS.data)}. Every call to \`/me\`, \`/tools\` and a tool counts. Over the limit you get HTTP 429 with \`Retry-After\`. Every metered response (success, tool error and 429) carries \`X-RateLimit-Limit\`, \`X-RateLimit-Remaining\` and \`X-RateLimit-Reset\` (epoch seconds); requests rejected before metering (401, 400, 404, 413) do not.`,
         '- Responses are `{ "data": ..., "meta": { "tool": "<name>" } }` on success (`run_fresh_analysis` adds `meta.source` and `meta.model`) and `{ "error": { "code": "...", "message": "..." } }` on failure (401 `invalid_api_key`, 400 `invalid_args`, 429 `rate_limited`, 503 `rate_limiter_unavailable`).',
         `- Send \`${LOCALE_HEADER_DOC_NAME}: ${LOCALES.join('|')}\` to choose the language of localized text (default \`${DEFAULT_LOCALE}\`, the same as siglens.io, so cached analyses written by the website are shared).`,
-        '- Not investment advice. Quote delays and data freshness are reported in each result — pass them on to the user.',
+        '- Not investment advice. Quote delays and data freshness are reported in each result; pass them on to the user.',
     ];
     return [
         '---',

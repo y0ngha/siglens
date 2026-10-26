@@ -182,7 +182,7 @@ export function CompositeGradeGauge({
             <div className="text-center">
                 <div className="flex items-baseline justify-center gap-1.5">
                     <span className="font-mono text-5xl font-bold text-secondary-100 tabular-nums">
-                        {score !== null ? score : '—'}
+                        {score !== null ? score : '-'}
                     </span>
                     {score !== null && (
                         <span className="text-xs text-secondary-400">

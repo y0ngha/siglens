@@ -32,7 +32,7 @@ describe('ToolActivity', () => {
     it('folds finished tools into one localized summary — no function names, no raw payloads — and expands to a step list', () => {
         wrap(<ToolActivity tools={done} />);
         const summary = screen.getByRole('button', { expanded: false });
-        expect(summary).toHaveTextContent('시세 · 뉴스 확인 · 3.2초');
+        expect(summary).toHaveTextContent('시세, 뉴스 확인 | 3.2초');
         expect(screen.queryByText(/get_quote|get_news/)).toBeNull();
         fireEvent.click(summary);
         expect(summary).toHaveAttribute('aria-expanded', 'true');
@@ -58,7 +58,7 @@ describe('ToolActivity', () => {
             />
         );
         expect(screen.getByRole('button')).toHaveTextContent(
-            '차트·지표·공포탐욕 확인'
+            '차트, 지표, 공포탐욕 지수 확인'
         );
         daily.unmount();
         for (const args of [
@@ -67,7 +67,7 @@ describe('ToolActivity', () => {
         ]) {
             const view = wrap(<ToolActivity tools={[bars('x', args)]} />);
             const text = screen.getByRole('button').textContent ?? '';
-            expect(text).toContain('차트·지표 확인');
+            expect(text).toContain('차트와 지표 확인');
             expect(text).not.toContain('공포탐욕');
             view.unmount();
         }
@@ -102,8 +102,8 @@ describe('ToolActivity', () => {
             />
         );
         const summary = screen.getByRole('button');
-        expect(summary).toHaveTextContent('차트·지표·공포탐욕 확인');
-        expect(summary.textContent).not.toContain('차트·지표 확인');
+        expect(summary).toHaveTextContent('차트, 지표, 공포탐욕 지수 확인');
+        expect(summary.textContent).not.toContain('차트와 지표 확인');
         fireEvent.click(summary);
         const list = screen.getByRole('list', { name: '사용한 도구' });
         expect(list.querySelectorAll('li')).toHaveLength(3);
@@ -123,7 +123,7 @@ describe('ToolActivity', () => {
             />
         );
         expect(screen.getByRole('button')).toHaveTextContent(
-            '차트·지표·공포탐욕 AAPL'
+            '차트, 지표, 공포탐욕 지수 AAPL'
         );
     });
 
@@ -142,7 +142,7 @@ describe('ToolActivity', () => {
             />
         );
         expect(screen.getByRole('button')).toHaveTextContent(
-            '새 분석 생성 NVDA 확인 중 · 약 90초'
+            '새 분석 생성 NVDA 확인 중 | 약 90초'
         );
     });
 
@@ -188,7 +188,7 @@ describe('ToolActivity', () => {
             />
         );
         const summary = screen.getByRole('button');
-        expect(summary).toHaveTextContent('뉴스 확인 · 일부 실패');
+        expect(summary).toHaveTextContent('뉴스 확인 | 일부 실패');
         fireEvent.click(summary);
         expect(screen.getByText('실패')).toBeInTheDocument();
     });

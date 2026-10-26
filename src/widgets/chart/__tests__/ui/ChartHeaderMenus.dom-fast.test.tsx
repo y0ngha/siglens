@@ -47,7 +47,7 @@ describe('차트 헤더 메뉴 셋', () => {
         const names = screen
             .getAllByRole('button')
             .map(b => b.getAttribute('aria-label'));
-        expect(names).toEqual(['보조지표 · 1', '차트 작도 · 1', '차트 설정']);
+        expect(names).toEqual(['보조지표 (1)', '차트 작도 (1)', '차트 설정']);
     });
 
     it('한 번에 하나만 열린다 — 다른 메뉴 트리거를 누르면 열려 있던 메뉴가 닫힌다', async () => {

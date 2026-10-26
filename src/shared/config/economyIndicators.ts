@@ -41,7 +41,7 @@ export interface EconomyIndicatorMeta {
 export const ECONOMY_INDICATOR_CATEGORIES: readonly EconomyCategoryMeta[] = [
     { key: 'rates', label: '금리' },
     { key: 'inflation', label: '물가' },
-    { key: 'growth', label: '성장·경기' },
+    { key: 'growth', label: '성장, 경기' },
     { key: 'labor', label: '고용' },
 ];
 
@@ -79,7 +79,7 @@ export const ECONOMY_INDICATORS: readonly EconomyIndicatorMeta[] = [
         unit: 'pt',
         precision: 1,
         tooltip:
-            '소비자가 사는 물건·서비스 가격을 지수로 만든 거예요. 이 지수의 변화율이 인플레이션이에요.',
+            '소비자가 사는 물건과 서비스 가격을 지수로 만든 거예요. 이 지수의 변화율이 인플레이션이에요.',
     },
     {
         name: 'GDP',
@@ -97,7 +97,7 @@ export const ECONOMY_INDICATORS: readonly EconomyIndicatorMeta[] = [
         unit: 'pt',
         precision: 1,
         tooltip:
-            '공장·광업·전기 등 실물 생산 활동을 지수로 본 거예요. 경기를 비교적 빠르게 보여줘요.',
+            '공장, 광업, 전기 등 실물 생산 활동을 지수로 본 거예요. 경기를 비교적 빠르게 보여줘요.',
     },
     {
         name: 'smoothedUSRecessionProbabilities',

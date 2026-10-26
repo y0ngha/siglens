@@ -84,7 +84,7 @@ describe('IndicatorMenu', () => {
             />
         );
         expect(
-            screen.getByRole('button', { name: '보조지표 · 2' })
+            screen.getByRole('button', { name: '보조지표 (2)' })
         ).toBeInTheDocument();
     });
 

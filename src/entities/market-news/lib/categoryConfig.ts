@@ -100,7 +100,7 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         region: 'crypto',
         koLabel: '암호화폐',
         koDescription:
-            '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.',
+            '비트코인, 이더리움 등 주요 암호화폐 시장 동향을 모았습니다.',
         labelKey: 'entities.market-news.category.crypto.label',
         descriptionKey: 'entities.market-news.category.crypto.description',
     },
@@ -113,7 +113,7 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         region: 'us',
         koLabel: '미국 외환',
         koDescription:
-            '달러·엔·유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다.',
+            '달러, 엔, 유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다.',
         labelKey: 'entities.market-news.category.forex.label',
         descriptionKey: 'entities.market-news.category.forex.description',
     },
@@ -133,7 +133,7 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
     kr: {
         sentinel: '__NEWS_KR__',
         fmpEndpoint: '',
-        // 코스피·코스닥을 각각 덮고, 지수 이름이 안 들어간 거시·수급 기사를 위해
+        // 코스피, 코스닥을 각각 덮고, 지수 이름이 안 들어간 거시·수급 기사를 위해
         // `국내 증시`를 더한다. 3회 호출은 refresh TTL 주기당 비용이다
         // (`MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES` = 10분 → 하루 최대 432회).
         naverQueries: ['코스피', '코스닥', '국내 증시'],
@@ -142,7 +142,7 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         region: 'kr',
         koLabel: '한국 증시',
         koDescription:
-            '코스피·코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다.',
+            '코스피, 코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다.',
         labelKey: 'entities.market-news.category.kr.label',
         descriptionKey: 'entities.market-news.category.kr.description',
     },

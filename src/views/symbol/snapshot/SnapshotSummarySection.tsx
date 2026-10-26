@@ -173,8 +173,8 @@ export function SnapshotSummarySection({
     const captionKey = AS_OF_CAPTION_KEY[marketProfile];
     const caption =
         formattedAsOf === null
-            ? `${displayName} · ${t(captionKey.fallback)}`
-            : `${displayName} · ${formattedAsOf} ${t(captionKey.suffix)}`;
+            ? `${displayName} | ${t(captionKey.fallback)}`
+            : `${displayName} | ${formattedAsOf} ${t(captionKey.suffix)}`;
 
     const body = (
         <>
@@ -266,7 +266,7 @@ export function SnapshotSummarySection({
         >
             {duplicatesLiveWidget ? (
                 <SnapshotProseDisclosure
-                    summaryLabel={`${t('SnapshotSummarySection.disclosureSummary')} · ${caption}`}
+                    summaryLabel={`${t('SnapshotSummarySection.disclosureSummary')} | ${caption}`}
                 >
                     {body}
                 </SnapshotProseDisclosure>

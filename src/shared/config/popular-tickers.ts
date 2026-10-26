@@ -5,7 +5,7 @@ import type { CategoryId, TickerCategory } from '@/shared/lib/types';
 export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {
         id: 'megacap',
-        label: '메가캡·지수',
+        label: '메가캡/지수',
         items: [
             { symbol: 'AAPL', name: '애플' },
             { symbol: 'MSFT', name: '마이크로소프트' },
@@ -20,7 +20,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'ai-semiconductor',
-        label: 'AI·반도체',
+        label: 'AI 반도체',
         items: [
             { symbol: 'AMD', name: 'AMD' },
             { symbol: 'AVGO', name: '브로드컴' },
@@ -32,7 +32,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'software-cloud',
-        label: '소프트웨어·클라우드',
+        label: '소프트웨어/클라우드',
         items: [
             { symbol: 'PLTR', name: '팔란티어' },
             { symbol: 'CRWD', name: '크라우드스트라이크' },
@@ -45,7 +45,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'fintech-crypto',
-        label: '핀테크·크립토',
+        label: '핀테크/크립토',
         items: [
             { symbol: 'COIN', name: '코인베이스' },
             { symbol: 'MSTR', name: '마이크로스트래티지' },
@@ -69,7 +69,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'healthcare-bio',
-        label: '헬스케어·바이오',
+        label: '헬스케어/바이오',
         items: [
             { symbol: 'LLY', name: '일라이릴리' },
             { symbol: 'NVO', name: '노보노디스크' },
@@ -92,7 +92,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'space',
-        label: '우주·항공우주',
+        label: '우주항공',
         // SpaceX(SPCX)는 여기 없다 — SpaceX는 비상장이고, SPCX는 그 이름을 딴
         // SPAC/신규 발행 ETF다. 대체할 진짜 SpaceX 티커가 없으므로 빼기만 한다
         // (SEO 감사 라운드 2 finding 1 — 카테고리 그리드가 이 심볼을 SpaceX로 표기해
@@ -108,7 +108,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'ev-mobility',
-        label: 'EV·모빌리티',
+        label: 'EV/모빌리티',
         items: [
             // TSLA intentionally duplicated from megacap — it leads both categories
             { symbol: 'TSLA', name: '테슬라' },
@@ -122,7 +122,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'energy-industrial',
-        label: '에너지·산업재',
+        label: '에너지/산업재',
         items: [
             { symbol: 'XOM', name: '엑슨모빌' },
             { symbol: 'CVX', name: '셰브론' },
@@ -135,7 +135,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'kr-semiconductor',
-        label: '반도체·IT',
+        label: '반도체/IT',
         // 아래 여섯 개 KR 카테고리의 종목 합집합은 `POPULAR_TICKERS`의 KR 블록과
         // **정확히 같아야 한다.**
         //
@@ -155,7 +155,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'kr-auto-battery',
-        label: '자동차·2차전지',
+        label: '자동차/2차전지',
         items: [
             { symbol: '005380.KS', name: '현대차' },
             { symbol: '000270.KS', name: '기아' },
@@ -166,7 +166,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'kr-bio',
-        label: '바이오·헬스케어',
+        label: '바이오/헬스케어',
         items: [
             { symbol: '207940.KS', name: '삼성바이오로직스' },
             { symbol: '068270.KS', name: '셀트리온' },
@@ -174,7 +174,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'kr-platform',
-        label: '인터넷·플랫폼',
+        label: '인터넷/플랫폼',
         items: [
             { symbol: '035420.KS', name: '네이버' },
             { symbol: '035720.KS', name: '카카오' },
@@ -182,7 +182,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     },
     {
         id: 'kr-finance',
-        label: '금융·지주',
+        label: '금융/지주',
         items: [
             { symbol: '105560.KS', name: 'KB금융' },
             { symbol: '055550.KS', name: '신한지주' },

@@ -240,7 +240,7 @@ describe('flows page 본문', () => {
             'us-equity'
         );
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            '애플(AAPL) 기관·공매도 수급'
+            '애플(AAPL) 기관과 공매도 수급'
         );
     });
 
@@ -415,7 +415,7 @@ describe('flows page 본문 — 한국 종목', () => {
             'kr-equity'
         );
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            '대량보유·임원 지분 공시'
+            '대량보유와 임원 지분 공시'
         );
     });
 

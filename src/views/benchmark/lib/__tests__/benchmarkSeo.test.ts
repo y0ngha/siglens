@@ -35,10 +35,10 @@ describe('getBenchmarkSeoCopy', () => {
     it('names the compared models in the title and description', async () => {
         const copy = await getBenchmarkSeoCopy('ko', BENCHMARK_FIXTURE);
         expect(copy.title).toBe(
-            '주식 AI 정확도 벤치마크 — 시그렌즈 AI vs BetaGPT·GammaGem'
+            '주식 AI 정확도 벤치마크: 시그렌즈 AI vs BetaGPT, GammaGem'
         );
         expect(copy.description).toBe(
-            '미국·한국 주식 질문 4개를 시그렌즈 AI와 BetaGPT·GammaGem에 똑같이 묻고 시세·공시로 만든 정답과 비교했습니다. 점수 차와 신뢰구간, 문항별 답변 원문을 공개합니다.'
+            '미국과 한국 주식 질문 4개를 시그렌즈 AI와 BetaGPT, GammaGem에 똑같이 묻고 시세와 공시로 만든 정답과 비교했습니다. 점수 차와 신뢰구간, 문항별 답변 원문을 공개합니다.'
         );
     });
 
@@ -73,11 +73,11 @@ describe('getBenchmarkSeoCopy', () => {
     it('follows the locale for the brand and the model separator', async () => {
         const copy = await getBenchmarkSeoCopy('en', BENCHMARK_FIXTURE);
         expect(copy.title).toBe(
-            'Stock AI accuracy benchmark — SIGLENS AI vs BetaGPT, GammaGem'
+            'Stock AI accuracy benchmark: SIGLENS AI vs BetaGPT, GammaGem'
         );
         expect(copy.ogLabel).toBe('SIGLENS AI benchmark results');
         expect(copy.datasetName).toBe(
-            'SIGLENS AI stock question benchmark 2099-01 — questions, ground truth and raw answers'
+            'SIGLENS AI stock question benchmark 2099-01: questions, ground truth and raw answers'
         );
     });
 
@@ -88,7 +88,7 @@ describe('getBenchmarkSeoCopy', () => {
         });
         expect(copy.description).toContain('4개');
         expect(copy.title).toBe(
-            '시그렌즈 AI 벤치마크 결과 — 범용 AI 모델과의 문항별 비교'
+            '시그렌즈 AI 벤치마크 결과: 범용 AI 모델과의 문항별 비교'
         );
     });
 });

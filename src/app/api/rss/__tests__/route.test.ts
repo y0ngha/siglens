@@ -182,12 +182,12 @@ describe('GET /api/rss', () => {
         const xml = await (await GET(request())).text();
 
         // STAMP_AT = 2026-10-04T03:00Z = KST 10월 4일 12:00.
-        expect(xml).toContain('<title>미국 시장 브리핑 — 10월 4일</title>');
-        expect(xml).toContain('<title>한국 시장 브리핑 — 10월 4일</title>');
-        expect(xml).toContain('<title>거시 경제 브리핑 — 10월 4일</title>');
+        expect(xml).toContain('<title>미국 시장 브리핑 (10월 4일)</title>');
+        expect(xml).toContain('<title>한국 시장 브리핑 (10월 4일)</title>');
+        expect(xml).toContain('<title>거시 경제 브리핑 (10월 4일)</title>');
         for (const config of Object.values(CATEGORY_CONFIG)) {
             expect(xml).toContain(
-                `<title>${config.koLabel} 뉴스 요약 — 10월 4일</title>`
+                `<title>${config.koLabel} 뉴스 요약 (10월 4일)</title>`
             );
         }
     });
@@ -204,7 +204,7 @@ describe('GET /api/rss', () => {
 
         const xml = await (await GET(request())).text();
 
-        expect(xml).toContain('<title>미국 시장 브리핑 — 10월 5일</title>');
+        expect(xml).toContain('<title>미국 시장 브리핑 (10월 5일)</title>');
     });
 
     it('content:encoded에 같은 본문 전체를 CDATA <p> 문단으로 싣는다', async () => {

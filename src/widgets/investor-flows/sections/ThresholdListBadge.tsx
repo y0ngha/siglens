@@ -35,7 +35,7 @@ function ThresholdLine({ status }: ThresholdListBadgeProps) {
             <span className="tabular-nums">
                 {t('threshold.listedDetail', {
                     days: formatInteger(status.consecutiveDays, locale),
-                    markets: status.markets.join(' · '),
+                    markets: status.markets.join(', '),
                 })}
             </span>
         </p>

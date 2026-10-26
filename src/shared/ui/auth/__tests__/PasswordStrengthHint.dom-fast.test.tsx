@@ -5,7 +5,7 @@ describe('PasswordStrengthHint', () => {
     it('renders all three rules', () => {
         render(<PasswordStrengthHint password="" />);
         expect(screen.getByText(/자 이상/)).toBeInTheDocument();
-        expect(screen.getByText('영어 포함')).toBeInTheDocument();
+        expect(screen.getByText('영문 포함')).toBeInTheDocument();
         expect(screen.getByText('숫자 포함')).toBeInTheDocument();
     });
 

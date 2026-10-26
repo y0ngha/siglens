@@ -32,7 +32,7 @@ describe('GET /api/ai/og/[file]', () => {
         await get('en.png');
         expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
             ticker: 'SIGLENS AI',
-            label: 'Ask AI about stocks & crypto · Beta',
+            label: 'Ask AI about stocks & crypto (Beta)',
             locale: 'en',
         });
     });
@@ -41,7 +41,7 @@ describe('GET /api/ai/og/[file]', () => {
         await get('ko.png');
         expect(mockBuildSymbolOgImage).toHaveBeenCalledWith(
             expect.objectContaining({
-                label: '주식·코인, AI에게 물어보세요 · Beta',
+                label: '주식과 코인, AI에게 물어보세요 (Beta)',
                 locale: 'ko',
             })
         );

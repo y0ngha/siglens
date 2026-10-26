@@ -26,7 +26,7 @@ CRSI(3, 2, 100) = [RSI(收盘价, 3) + RSI(连续天数, 2) + 收益率百分位
 
 三个不同的值取平均，其中一个突然跳动，整体也不容易被带偏。
 
-它由拉里·康纳斯与塞萨尔·阿尔瓦雷斯、马特·拉德特克共同创立，在2012年的"An Introduction to ConnorsRSI"中提出。
+它由Larry Connors与Cesar Alvarez、Matt Radtke共同创立，在2012年的"An Introduction to ConnorsRSI"中提出。
 
 ## 说明了什么
 

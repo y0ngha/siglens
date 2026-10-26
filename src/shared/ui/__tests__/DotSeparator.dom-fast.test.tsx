@@ -2,9 +2,9 @@ import { render } from '@testing-library/react';
 import { DotSeparator } from '@/shared/ui/DotSeparator';
 
 describe('DotSeparator', () => {
-    it('renders the dot character', () => {
+    it('renders the separator character', () => {
         const { container } = render(<DotSeparator />);
-        expect(container.textContent).toBe('·');
+        expect(container.textContent).toBe('|');
     });
 
     it('is aria-hidden for screen readers', () => {

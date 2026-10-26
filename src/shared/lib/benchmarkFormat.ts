@@ -1,5 +1,5 @@
 /** 값이 없을 때 표에 찍는 자리표시. */
-export const BENCHMARK_EMPTY_CELL = '—';
+export const BENCHMARK_EMPTY_CELL = '-';
 
 const MINUS = '−';
 

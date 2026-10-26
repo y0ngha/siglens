@@ -78,7 +78,7 @@ export function ExtendedHoursQuoteLine({
                 <InfoTooltip>
                     <span data-testid="extended-hours-detail">
                         {basis}
-                        {' · '}
+                        {' | '}
                         {t('tradedAt', {
                             time: formatTradeTime(quote.tradedAtMs, locale),
                         })}

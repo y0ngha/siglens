@@ -19,5 +19,5 @@ export function rssItemTitle(title: string, at: Date): string {
         month: 'long',
         day: 'numeric',
     }).format(at);
-    return `${title} — ${date}`;
+    return `${title} (${date})`;
 }

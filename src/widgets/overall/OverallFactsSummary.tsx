@@ -55,7 +55,7 @@ export function OverallFactsSummary({
                             <span className="font-medium text-secondary-300">
                                 {tLabel(SCENARIO_LABEL[scenario.name])}:
                             </span>{' '}
-                            {scenario.triggerConditionKo} —{' '}
+                            {scenario.triggerConditionKo}:{' '}
                             {scenario.priceRangeKo}
                         </li>
                     ))}

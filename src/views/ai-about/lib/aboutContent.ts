@@ -74,7 +74,7 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
         tools,
         lines,
         summary: t('replay.summary', {
-            tools: tools.map(x => x.label).join(' · '),
+            tools: tools.map(x => x.label).join(', '),
             seconds: (tools.reduce((sum, x) => sum + x.ms, 0) / 1000).toFixed(
                 1
             ),
@@ -128,7 +128,7 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
             t('market.q'),
             [
                 tool(t('tool.market'), t('market.subjectIndices'), 700),
-                tool(t('tool.economy'), 'CPI · FOMC', 760),
+                tool(t('tool.economy'), 'CPI, FOMC', 760),
                 tool(news, t('market.subjectNews'), 900),
             ],
             [

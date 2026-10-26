@@ -602,7 +602,7 @@ describe('buildFearGreedMarketGapLine', () => {
         );
 
         expect(line).toBe(
-            '같은 날(2026년 1월 1일) 미국 증시 공포·탐욕 지수 50점보다 15점 높습니다.'
+            '같은 날(2026년 1월 1일) 미국 증시 공포 탐욕 지수 50점보다 15점 높습니다.'
         );
     });
 
@@ -626,7 +626,7 @@ describe('buildFearGreedMarketGapLine', () => {
         );
 
         expect(line).toBe(
-            '같은 날(2026년 1월 1일) 미국 증시 공포·탐욕 지수 65점과 같습니다.'
+            '같은 날(2026년 1월 1일) 미국 증시 공포 탐욕 지수 65점과 같습니다.'
         );
     });
 

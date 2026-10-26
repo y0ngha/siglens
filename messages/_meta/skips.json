@@ -825,7 +825,7 @@
         "file": "src/entities/economy/lib/indicatorNameKo.ts",
         "line": 65,
         "reason": "catalog-backed-data",
-        "text": "M2·M3 통화량"
+        "text": "M2, M3 통화량"
     },
     {
         "file": "src/entities/economy/lib/indicatorNameKo.ts",
@@ -927,7 +927,7 @@
         "file": "src/entities/market-news/lib/categoryConfig.ts",
         "line": 103,
         "reason": "catalog-backed-data",
-        "text": "비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다."
+        "text": "비트코인, 이더리움 등 주요 암호화폐 시장 동향을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
@@ -939,7 +939,7 @@
         "file": "src/entities/market-news/lib/categoryConfig.ts",
         "line": 116,
         "reason": "catalog-backed-data",
-        "text": "달러·엔·유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다."
+        "text": "달러, 엔, 유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
@@ -981,7 +981,7 @@
         "file": "src/entities/market-news/lib/categoryConfig.ts",
         "line": 145,
         "reason": "catalog-backed-data",
-        "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
+        "text": "코스피, 코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },
     {
         "file": "src/entities/ticker/lib/koreanSearchKey.ts",
@@ -1449,7 +1449,7 @@
         "file": "src/shared/config/dashboard-tickers-kr.ts",
         "line": 60,
         "reason": "catalog-backed-data",
-        "text": "인터넷·SW"
+        "text": "인터넷/SW"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
@@ -1471,127 +1471,127 @@
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 71,
+        "line": 67,
         "reason": "catalog-backed-data",
-        "text": "성장·기술"
+        "text": "성장/기술"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 72,
+        "line": 68,
         "reason": "catalog-backed-data",
-        "text": "경기·방어"
+        "text": "경기/방어"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 89,
+        "line": 99,
         "reason": "catalog-backed-data",
         "text": "삼성전자"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 92,
+        "line": 102,
         "reason": "catalog-backed-data",
         "text": "SK하이닉스"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 95,
+        "line": 105,
         "reason": "catalog-backed-data",
         "text": "리노공업"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 100,
+        "line": 110,
         "reason": "catalog-backed-data",
         "text": "LG에너지솔루션"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 103,
+        "line": 113,
         "reason": "catalog-backed-data",
         "text": "LG화학"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 104,
+        "line": 114,
         "reason": "catalog-backed-data",
         "text": "삼성SDI"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 105,
+        "line": 115,
         "reason": "catalog-backed-data",
         "text": "에코프로"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 108,
+        "line": 118,
         "reason": "catalog-backed-data",
         "text": "에코프로비엠"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 112,
+        "line": 122,
         "reason": "catalog-backed-data",
         "text": "네이버"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 113,
+        "line": 123,
         "reason": "catalog-backed-data",
         "text": "카카오"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 115,
+        "line": 125,
         "reason": "catalog-backed-data",
         "text": "현대차"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 116,
+        "line": 126,
         "reason": "catalog-backed-data",
         "text": "기아"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 119,
+        "line": 129,
         "reason": "catalog-backed-data",
         "text": "현대모비스"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 123,
+        "line": 133,
         "reason": "catalog-backed-data",
         "text": "KB금융"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 124,
+        "line": 134,
         "reason": "catalog-backed-data",
         "text": "신한지주"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 125,
+        "line": 135,
         "reason": "catalog-backed-data",
         "text": "삼성물산"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 129,
+        "line": 139,
         "reason": "catalog-backed-data",
         "text": "삼성바이오로직스"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 132,
+        "line": 142,
         "reason": "catalog-backed-data",
         "text": "셀트리온"
     },
     {
         "file": "src/shared/config/dashboard-tickers-kr.ts",
-        "line": 133,
+        "line": 143,
         "reason": "catalog-backed-data",
         "text": "알테오젠"
     },
@@ -2187,7 +2187,7 @@
         "file": "src/shared/config/economyIndicators.ts",
         "line": 44,
         "reason": "catalog-backed-data",
-        "text": "성장·경기"
+        "text": "성장, 경기"
     },
     {
         "file": "src/shared/config/economyIndicators.ts",
@@ -2229,7 +2229,7 @@
         "file": "src/shared/config/economyIndicators.ts",
         "line": 82,
         "reason": "catalog-backed-data",
-        "text": "소비자가 사는 물건·서비스 가격을 지수로 만든 거예요. 이 지수의 변화율이 인플레이션이에요."
+        "text": "소비자가 사는 물건과 서비스 가격을 지수로 만든 거예요. 이 지수의 변화율이 인플레이션이에요."
     },
     {
         "file": "src/shared/config/economyIndicators.ts",
@@ -2247,7 +2247,7 @@
         "file": "src/shared/config/economyIndicators.ts",
         "line": 100,
         "reason": "catalog-backed-data",
-        "text": "공장·광업·전기 등 실물 생산 활동을 지수로 본 거예요. 경기를 비교적 빠르게 보여줘요."
+        "text": "공장, 광업, 전기 등 실물 생산 활동을 지수로 본 거예요. 경기를 비교적 빠르게 보여줘요."
     },
     {
         "file": "src/shared/config/economyIndicators.ts",
@@ -2331,7 +2331,7 @@
         "file": "src/shared/config/economyIndicatorsKr.ts",
         "line": 82,
         "reason": "catalog-backed-data",
-        "text": "정부가 10년 만기 국고채를 발행할 때 정해진 금리예요. 장기 성장·물가 기대를 반영해요."
+        "text": "정부가 10년 만기 국고채를 발행할 때 정해진 금리예요. 장기 성장과 물가 기대를 반영해요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
@@ -2595,7 +2595,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 8,
         "reason": "catalog-backed-data",
-        "text": "메가캡·지수"
+        "text": "메가캡/지수"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -2649,7 +2649,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 23,
         "reason": "catalog-backed-data",
-        "text": "AI·반도체"
+        "text": "AI 반도체"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -2685,7 +2685,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 35,
         "reason": "catalog-backed-data",
-        "text": "소프트웨어·클라우드"
+        "text": "소프트웨어/클라우드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -2733,7 +2733,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 48,
         "reason": "catalog-backed-data",
-        "text": "핀테크·크립토"
+        "text": "핀테크/크립토"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -2817,7 +2817,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 72,
         "reason": "catalog-backed-data",
-        "text": "헬스케어·바이오"
+        "text": "헬스케어/바이오"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -2889,7 +2889,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 95,
         "reason": "catalog-backed-data",
-        "text": "우주·항공우주"
+        "text": "우주항공"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -2931,7 +2931,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 111,
         "reason": "catalog-backed-data",
-        "text": "EV·모빌리티"
+        "text": "EV/모빌리티"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -2979,7 +2979,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 125,
         "reason": "catalog-backed-data",
-        "text": "에너지·산업재"
+        "text": "에너지/산업재"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -3027,7 +3027,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 138,
         "reason": "catalog-backed-data",
-        "text": "반도체·IT"
+        "text": "반도체/IT"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -3051,7 +3051,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 158,
         "reason": "catalog-backed-data",
-        "text": "자동차·2차전지"
+        "text": "자동차/2차전지"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -3087,7 +3087,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 169,
         "reason": "catalog-backed-data",
-        "text": "바이오·헬스케어"
+        "text": "바이오/헬스케어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -3105,7 +3105,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 177,
         "reason": "catalog-backed-data",
-        "text": "인터넷·플랫폼"
+        "text": "인터넷/플랫폼"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -3123,7 +3123,7 @@
         "file": "src/shared/config/popular-tickers.ts",
         "line": 185,
         "reason": "catalog-backed-data",
-        "text": "금융·지주"
+        "text": "금융/지주"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
@@ -3183,7 +3183,7 @@
         "file": "src/shared/config/supportedAssets.ts",
         "line": 18,
         "reason": "catalog-backed-data",
-        "text": "미국·한국 주식"
+        "text": "미국, 한국 주식"
     },
     {
         "file": "src/shared/config/supportedAssets.ts",
@@ -3201,7 +3201,7 @@
         "file": "src/shared/config/supportedAssets.ts",
         "line": 21,
         "reason": "catalog-backed-data",
-        "text": "미국·한국 주식"
+        "text": "미국, 한국 주식"
     },
     {
         "file": "src/shared/config/supportedAssets.ts",
@@ -3259,9 +3259,81 @@
     },
     {
         "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 12,
+        "reason": "catalog-backed-data",
+        "text": "메가캡/지수"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 13,
+        "reason": "catalog-backed-data",
+        "text": "AI 반도체"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 14,
+        "reason": "catalog-backed-data",
+        "text": "소프트웨어/클라우드"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 15,
+        "reason": "catalog-backed-data",
+        "text": "핀테크/크립토"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
         "line": 16,
         "reason": "catalog-backed-data",
         "text": "레버리지 ETF"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 17,
+        "reason": "catalog-backed-data",
+        "text": "헬스케어/바이오"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 20,
+        "reason": "catalog-backed-data",
+        "text": "EV/모빌리티"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 21,
+        "reason": "catalog-backed-data",
+        "text": "에너지/산업재"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 22,
+        "reason": "catalog-backed-data",
+        "text": "반도체/IT"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 23,
+        "reason": "catalog-backed-data",
+        "text": "자동차/2차전지"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 24,
+        "reason": "catalog-backed-data",
+        "text": "바이오/헬스케어"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 25,
+        "reason": "catalog-backed-data",
+        "text": "인터넷/플랫폼"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 26,
+        "reason": "catalog-backed-data",
+        "text": "금융/지주"
     },
     {
         "file": "src/shared/config/tickerCategoryLabel.ts",
@@ -3271,9 +3343,81 @@
     },
     {
         "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 43,
+        "reason": "catalog-backed-data",
+        "text": "메가캡/지수"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 44,
+        "reason": "catalog-backed-data",
+        "text": "AI 반도체"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 45,
+        "reason": "catalog-backed-data",
+        "text": "소프트웨어/클라우드"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 46,
+        "reason": "catalog-backed-data",
+        "text": "핀테크/크립토"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
         "line": 47,
         "reason": "catalog-backed-data",
         "text": "레버리지 ETF"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 48,
+        "reason": "catalog-backed-data",
+        "text": "헬스케어/바이오"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 51,
+        "reason": "catalog-backed-data",
+        "text": "EV/모빌리티"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 52,
+        "reason": "catalog-backed-data",
+        "text": "에너지/산업재"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 53,
+        "reason": "catalog-backed-data",
+        "text": "반도체/IT"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 54,
+        "reason": "catalog-backed-data",
+        "text": "자동차/2차전지"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 55,
+        "reason": "catalog-backed-data",
+        "text": "바이오/헬스케어"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 56,
+        "reason": "catalog-backed-data",
+        "text": "인터넷/플랫폼"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 57,
+        "reason": "catalog-backed-data",
+        "text": "금융/지주"
     },
     {
         "file": "src/shared/config/tickerCategoryLabel.ts",

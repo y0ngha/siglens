@@ -5,7 +5,7 @@ import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
 const NOTE = '최근 SEC 공시 기준이며, 실제 매도 규모는 공시로 알 수 없어요.';
 
 describe('DilutionRiskBadge', () => {
-    it('ATM: 문구·MM/DD 신고일을 보이고 수급 탭 증자·희석 섹션으로 잇는다', () => {
+    it('ATM: 문구와 MM/DD 신고일을 보이고 수급 탭 증자 희석 섹션으로 잇는다', () => {
         render(
             <DilutionRiskBadge
                 symbol="AAPL"
@@ -13,7 +13,7 @@ describe('DilutionRiskBadge', () => {
             />
         );
         const link = screen.getByRole('link', {
-            name: '증자·희석: 최근 ATM(시장가 상시 발행) 공시 · 10/09',
+            name: '증자/희석: 최근 ATM(시장가 상시 발행) 공시 | 10/09',
         });
         expect(link).toHaveAttribute(
             'href',
@@ -32,9 +32,9 @@ describe('DilutionRiskBadge', () => {
         );
         const link = screen.getByRole('link');
         const label = within(link).getByText(
-            '증자·희석: 최근 ATM(시장가 상시 발행) 공시'
+            '증자/희석: 최근 ATM(시장가 상시 발행) 공시'
         );
-        const date = within(link).getByText('· 10/04');
+        const date = within(link).getByText('| 10/04');
         expect(label).toHaveClass('truncate');
         expect(date).not.toHaveClass('truncate');
         expect(date).toHaveClass('shrink-0');
@@ -50,7 +50,7 @@ describe('DilutionRiskBadge', () => {
         );
         expect(
             screen.getByRole('link', {
-                name: '증자·희석: 최근 공모 발행 공시 · 09/25',
+                name: '증자/희석: 최근 공모 발행 공시 | 09/25',
             })
         ).toHaveAttribute('href', '/SOFI/flows#flows-dilution-heading');
     });

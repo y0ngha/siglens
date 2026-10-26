@@ -32,7 +32,7 @@ describe('shared.lib.legal 약관 문구', () => {
         // 한때 "미국 주식 기술적 분석 웹 서비스"만 적어, 국내 주식·암호화폐·SIGLENS AI를
         // 쓰는 이용자에게 약관 첫 문장이 서비스 범위를 잘못 말했다.
         expect(ko.termsIntro).toContain(
-            '미국 주식·국내 주식·암호화폐 분석 웹 서비스 및 시그렌즈 AI 대화 서비스(이하 "서비스")'
+            '미국 주식, 국내 주식, 암호화폐 분석 웹 서비스 및 시그렌즈 AI 대화 서비스(이하 "서비스")'
         );
         expect(ko.termsIntro).not.toContain('미국 주식 기술적 분석');
     });

@@ -159,7 +159,7 @@ describe('GuideCategoryPage', () => {
             '/guide/strategies',
         ]);
         expect(
-            within(nav).getByRole('link', { name: /전략·이론/ })
+            within(nav).getByRole('link', { name: /전략과 이론/ })
         ).toHaveTextContent('1개 항목');
     });
 

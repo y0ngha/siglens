@@ -78,7 +78,7 @@ export function BacktestHero({ stats }: BacktestHeroProps) {
         <header className="border-b border-secondary-700 py-10 text-center">
             <div className="page-container">
                 <p className="mb-2 font-mono text-xs tracking-[0.14em] text-secondary-400 uppercase">
-                    BACKTESTING RESULTS · {period}
+                    BACKTESTING RESULTS | {period}
                 </p>
                 <h1 className="mb-3 text-2xl font-bold text-balance text-secondary-50 sm:text-3xl">
                     {t('BacktestHero.d8b543')}

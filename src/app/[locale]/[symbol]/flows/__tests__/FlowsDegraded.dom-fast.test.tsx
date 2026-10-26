@@ -8,7 +8,7 @@ describe('FlowsDegraded', () => {
             <FlowsDegraded displayName="애플" symbol="AAPL" krListing={false} />
         );
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            '애플 기관·공매도 수급'
+            '애플 기관과 공매도 수급'
         );
     });
 
@@ -31,10 +31,10 @@ describe('FlowsDegraded', () => {
             />
         );
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            '삼성전자 대량보유·임원 지분 공시'
+            '삼성전자 대량보유와 임원 지분 공시'
         );
         expect(
-            screen.getByText(/대량보유·임원 지분 공시를 보실 수 있어요/)
+            screen.getByText(/대량보유와 임원 지분 공시를 보실 수 있어요/)
         ).toBeInTheDocument();
     });
 });

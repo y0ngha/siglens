@@ -140,7 +140,7 @@ describe('siglens.io/benchmark route', () => {
         it('builds the description from the data', async () => {
             const metadata = await generateMetadata(params());
             expect(metadata.description).toContain('4개');
-            expect(metadata.description).toContain('BetaGPT·GammaGem');
+            expect(metadata.description).toContain('BetaGPT, GammaGem');
         });
 
         it('hands the same props to the view as the ai route', async () => {

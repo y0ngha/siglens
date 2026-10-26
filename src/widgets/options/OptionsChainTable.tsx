@@ -24,7 +24,7 @@ function formatOi(value: number): string {
 }
 
 function formatIv(value: number | null): string {
-    if (value === null) return '—';
+    if (value === null) return '-';
     return `${(value * 100).toFixed(1)}%`;
 }
 
@@ -47,9 +47,9 @@ const strikeFormatter = new Intl.NumberFormat('en-US', {
 });
 
 function formatBidAsk(bid: number | null, ask: number | null): string {
-    if (bid === null && ask === null) return '—';
-    const bidStr = bid !== null ? quoteFormatter.format(bid) : '—';
-    const askStr = ask !== null ? quoteFormatter.format(ask) : '—';
+    if (bid === null && ask === null) return '-';
+    const bidStr = bid !== null ? quoteFormatter.format(bid) : '-';
+    const askStr = ask !== null ? quoteFormatter.format(ask) : '-';
     return `${bidStr}/${askStr}`;
 }
 
@@ -124,7 +124,7 @@ export function OptionsChainTable({
 
     const headerLabel = expanded
         ? tChain('chainHeaderExpanded', {
-              v0: chain?.expirationDate ?? '—',
+              v0: chain?.expirationDate ?? '-',
           })
         : tChain('chainHeaderCollapsed', {
               v0: numberFormatter.format(totalContracts),
@@ -267,13 +267,13 @@ export function OptionsChainTable({
                                                       call.bid,
                                                       call.ask
                                                   )
-                                                : '—'}
+                                                : '-'}
                                         </td>
 
                                         <td className="px-3 py-1.5 text-right text-secondary-300">
                                             {call
                                                 ? formatOi(call.openInterest)
-                                                : '—'}
+                                                : '-'}
                                         </td>
 
                                         <td className="px-3 py-1.5 text-right text-secondary-300">
@@ -281,19 +281,19 @@ export function OptionsChainTable({
                                                 ? formatIv(
                                                       call.impliedVolatility
                                                   )
-                                                : '—'}
+                                                : '-'}
                                         </td>
 
                                         <td className="px-3 py-1.5 text-right font-mono whitespace-nowrap text-secondary-300 tabular-nums">
                                             {put
                                                 ? formatBidAsk(put.bid, put.ask)
-                                                : '—'}
+                                                : '-'}
                                         </td>
 
                                         <td className="px-3 py-1.5 text-right text-secondary-300">
                                             {put
                                                 ? formatOi(put.openInterest)
-                                                : '—'}
+                                                : '-'}
                                         </td>
 
                                         <td className="px-3 py-1.5 text-right text-secondary-300">
@@ -301,7 +301,7 @@ export function OptionsChainTable({
                                                 ? formatIv(
                                                       put.impliedVolatility
                                                   )
-                                                : '—'}
+                                                : '-'}
                                         </td>
                                     </tr>
                                 );

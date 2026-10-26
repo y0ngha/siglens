@@ -200,7 +200,7 @@ describe('generateMetadata', () => {
         // symbolMetadataFromSeo는 title을 `{ absolute }`로 감싸 root layout의
         // title.template("%s | 시그렌즈")을 무시한다(sibling 인덱서블 탭과 동일).
         expect(metadata.title).toEqual({
-            absolute: '내 평단은 몇 층? — Apple Inc. 내 위치',
+            absolute: '내 평단은 몇 층? Apple Inc. 내 위치',
         });
         // 후킹 description: 아파트/층 메타포 키워드를 담고, SEO_DESCRIPTION_MAX_LENGTH 이내.
         const description = metadata.description ?? '';
@@ -220,11 +220,11 @@ describe('generateMetadata', () => {
         // sibling 심볼 페이지(symbolMetadataFromSeo의 fullTitle 패턴)와 동일하게
         // 브랜드 suffix가 직접 실려야 한다 — metadata.title과 달라야 정상이다.
         expect(metadata.openGraph?.title).toBe(
-            '내 평단은 몇 층? — Apple Inc. 내 위치 | 시그렌즈'
+            '내 평단은 몇 층? Apple Inc. 내 위치 | 시그렌즈'
         );
         expect(metadata.openGraph?.description).toBe(metadata.description);
         expect(metadata.twitter?.title).toBe(
-            '내 평단은 몇 층? — Apple Inc. 내 위치 | 시그렌즈'
+            '내 평단은 몇 층? Apple Inc. 내 위치 | 시그렌즈'
         );
         expect(metadata.twitter?.description).toBe(metadata.description);
         // OG url은 self-canonical과 일치해야 공유 카드가 올바른 페이지를 가리킨다.
@@ -522,7 +522,7 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
         expect(className).not.toContain('sr-only');
 
         // low=85, high=110, lastClose=100 → (100-85)/(110-85) = 0.6 → 60%,
-        // floorIndex=floor(0.6*5)=3 → "4층 · 고층"(describeFloor의 BAND_COUNT=5
+        // floorIndex=floor(0.6*5)=3 → "4층, 고층"(describeFloor의 BAND_COUNT=5
         // 표와 동일한 매핑 — PositionBuilding.dom-fast.test.tsx의 avgPos=0.6 케이스 참고).
         // percentile(60)은 JSX 안에서 인접 텍스트('% 지점')와 별개 자식 노드로
         // 렌더되므로(숫자 보간), JSON.stringify 결과에서 "60%"로 붙어있지 않다 —
@@ -533,7 +533,7 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
         expect(serialized).toContain('$100');
         expect(serialized).toContain('60');
         expect(serialized).toContain('% 지점');
-        expect(serialized).toContain('4층 · 고층');
+        expect(serialized).toContain('4층, 고층');
         // 같은 문장의 나머지 절반. 이 단언이 없어서 층 라벨과 톤이 서로를
         // 부정하는 상태가 초록으로 통과했다 — 60%는 '고층'인데 톤은 70/30
         // 리터럴을 쓰느라 '중간 지점'을 냈다(감사 실측: NVDA 68%, 005930.KS 62%).

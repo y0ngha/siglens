@@ -71,7 +71,7 @@ export function KeyRow({ apiKey, revokeFormAction }: KeyRowProps) {
                 {t('SiglensApiKeySection.createdAt', {
                     v0: formatDay(apiKey.createdAt, locale),
                 })}
-                {' · '}
+                {' | '}
                 {apiKey.lastUsedAt === null
                     ? t('SiglensApiKeySection.neverUsed')
                     : t('SiglensApiKeySection.lastUsedAt', {

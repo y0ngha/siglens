@@ -88,7 +88,7 @@ describe('PortfolioSection', () => {
         setHoldings({ holdings: [HOLDING] });
         render(<PortfolioSection />);
         expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
-        expect(screen.getByText(/10주 · 평단 \$150\.5/)).toBeInTheDocument();
+        expect(screen.getByText(/10주, 평단 \$150\.5/)).toBeInTheDocument();
     });
 
     it('submits the add form with the entered symbol/quantity/averagePrice', async () => {

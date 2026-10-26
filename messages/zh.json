@@ -29,7 +29,7 @@
             },
             "manifest": {
                 "description": "向 AI 询问任何股票或加密货币。它会分析 SIGLENS 自行计算的行情、指标与新闻数据后作答。",
-                "name": "{v0} — 股票与加密货币 AI 聊天"
+                "name": "{v0}：股票与加密货币 AI 聊天"
             },
             "not-found": {
                 "04598e": "开始新对话",
@@ -37,9 +37,9 @@
                 "pageTitle": "找不到页面"
             },
             "seo": {
-                "title": "股票与加密货币 AI 聊天助手 — 问行情·图表·新闻 | SIGLENS AI",
+                "title": "股票与加密货币 AI 聊天助手：问行情、图表、新闻 | SIGLENS AI",
                 "description": "三星电子、苹果、比特币……想了解的股票，直接问 AI。它会分析 SIGLENS 自行计算的行情、图表指标和新闻数据后作答。支持美股、韩股和加密货币，无需登录即可开始。",
-                "ogLabel": "股票与加密货币，问 AI · 测试版"
+                "ogLabel": "股票与加密货币，问 AI（测试版）"
             }
         },
         "api": {
@@ -125,7 +125,7 @@
                 "350c3b": "如何解读恐惧与贪婪指数",
                 "ae2ce9": "常见问题"
             },
-            "bandRange": "{v0}~{v1} 分 — {v2}",
+            "bandRange": "{v0}~{v1} 分：{v2}",
             "error": {
                 "729779": "临时错误",
                 "0c767c": "重试",
@@ -163,7 +163,7 @@
             "jsonLd": {
                 "faq": {
                     "q0": {
-                        "answer": "输入美股代码，即可分别看到图表（技术指标、K线形态、支撑位与阻力位）、财报与估值、财务报表、近期新闻走向、期权市场数据、议员交易披露，以及短期买入情绪（恐惧贪婪指数），并给出把这些整合起来的综合分析。服务免费。对于 KOSPI、KOSDAQ 的韩国上市标的，提供图表、财报、财务报表、新闻、恐惧贪婪指数与综合分析（韩国没有议员交易披露制度与个股期权市场，故略去这两项）。对于比特币、以太坊等加密货币，提供图表、新闻、恐惧贪婪指数与综合分析。无需注册即可使用。",
+                        "answer": "输入美股代码，即可分别看到图表（技术指标、K线形态、支撑位与阻力位）、财报与估值、财务报表、近期新闻走向、期权市场数据、议员交易披露，以及短期买入情绪（恐惧与贪婪指数），并给出把这些整合起来的综合分析。服务免费。对于 KOSPI、KOSDAQ 的韩国上市标的，提供图表、财报、财务报表、新闻、恐惧与贪婪指数与综合分析（韩国没有议员交易披露制度与个股期权市场，故略去这两项）。对于比特币、以太坊等加密货币，提供图表、新闻、恐惧与贪婪指数与综合分析。无需注册即可使用。",
                         "question": "{v0}是什么服务？"
                     },
                     "q10": {
@@ -171,7 +171,7 @@
                         "question": "使用该服务需要付费吗？"
                     },
                     "q11": {
-                        "answer": "比特币（BTCUSD）、以太坊（ETHUSD）等主要加密货币也像股票一样分析。输入代码即可查看 24 小时价格图表与技术指标、技术信号、最新加密新闻、恐惧贪婪指数，以及整合这些的 AI 综合分析。例如 /BTCUSD。",
+                        "answer": "比特币（BTCUSD）、以太坊（ETHUSD）等主要加密货币也像股票一样分析。输入代码即可查看 24 小时价格图表与技术指标、技术信号、最新加密新闻、恐惧与贪婪指数，以及整合这些的 AI 综合分析。例如 /BTCUSD。",
                         "question": "也能分析加密货币吗？"
                     },
                     "q2": {
@@ -179,7 +179,7 @@
                         "question": "今日市场概况能看到哪些信号？"
                     },
                     "q8": {
-                        "answer": "在标的页面的综合分析标签中，把图表、财报、新闻、期权市场与恐惧贪婪指数整合为一份分析，梳理看涨与看跌情景、关键检查点与风险因素。例如英伟达对应 /NVDA/overall。",
+                        "answer": "在标的页面的综合分析标签中，把图表、财报、新闻、期权市场与恐惧与贪婪指数整合为一份分析，梳理看涨与看跌情景、关键检查点与风险因素。例如英伟达对应 /NVDA/overall。",
                         "question": "在哪里查看整合图表、财报、新闻与期权的综合分析？"
                     },
                     "q9": {
@@ -188,8 +188,8 @@
                     }
                 },
                 "howTo": {
-                    "description": "在 {v0} 通过图表、新闻与恐惧贪婪指数查看美股、KOSPI/KOSDAQ 韩股与加密货币，并查看整合后的综合分析与情景的流程。美股另含财报、财务报表、期权市场与国会交易披露；韩股另含财报与财务报表。",
-                    "name": "如何在 {v0} 通过图表、新闻与恐惧贪婪指数查看美股、韩股与加密货币，并查看综合分析",
+                    "description": "在 {v0} 通过图表、新闻与恐惧与贪婪指数查看美股、KOSPI/KOSDAQ 韩股与加密货币，并查看整合后的综合分析与情景的流程。美股另含财报、财务报表、期权市场与国会交易披露；韩股另含财报与财务报表。",
+                    "name": "如何在 {v0} 通过图表、新闻与恐惧与贪婪指数查看美股、韩股与加密货币，并查看综合分析",
                     "step1Name": "输入名称或代码",
                     "step1Text": "在搜索框输入想分析标的的名称或代码。例如 Apple、Tesla、AAPL、TSLA；韩股可输入 Samsung Electronics 或 005930.KS；加密货币可输入 BTCUSD 或 ETHUSD。",
                     "step2Name": "查看图表分析",
@@ -199,9 +199,9 @@
                     "step4Name": "查看期权市场押注",
                     "step4Text": "在期权分析标签（例如 /AAPL/options）查看 Max Pain、Put/Call 比率与未平仓量分布，了解机构对后市价格的预期。",
                     "step5Name": "查看短期买入情绪",
-                    "step5Text": "在恐惧贪婪指数标签（例如 /AAPL/fear-greed），通过 0~100 分数与五个等级判断短期买盘强弱。即便图表看起来不错，情绪过热时也值得再检查一次趋势判断。",
+                    "step5Text": "在恐惧与贪婪指数标签（例如 /AAPL/fear-greed），通过 0~100 分数与五个等级判断短期买盘强弱。即便图表看起来不错，情绪过热时也值得再检查一次趋势判断。",
                     "step6Name": "查看综合分析",
-                    "step6Text": "在综合分析标签（例如 /AAPL/overall）查看整合图表、财报、新闻、期权与恐惧贪婪指数的综合分析，以及看涨看跌情景、检查要点与风险因素。",
+                    "step6Text": "在综合分析标签（例如 /AAPL/overall）查看整合图表、财报、新闻、期权与恐惧与贪婪指数的综合分析，以及看涨看跌情景、检查要点与风险因素。",
                     "step7Name": "向 AI 追问",
                     "step7Text": "当判断不明确时，可直接向聊天机器人提问。它以你当前查看标的的数据为上下文，回答指标解读、情景比较与交易策略等问题。"
                 }
@@ -260,7 +260,7 @@
             },
             "opengraph-image": {
                 "3a465d": "新闻",
-                "4ad764": "美国 · 韩国 · 加密货币",
+                "4ad764": "美国、韩国、加密货币",
                 "91dd85": "市场新闻",
                 "dc06c4": "市场新闻中心"
             },
@@ -388,7 +388,7 @@
                 "5c38df": "未能加载分析师趋势。",
                 "6723ea": "财报日程",
                 "69d338": "我的持仓",
-                "6cd32e": "{v0} 恐惧与贪婪指数 — 0-100分与近期走势",
+                "6cd32e": "{v0} 恐惧与贪婪指数：0-100分与近期走势",
                 "9e0659": "{v0} 财务指标和分析师意见",
                 "b2cd1a": "分析师评级变更",
                 "ba2808": "{v0} 期权市场分析",
@@ -401,18 +401,18 @@
                 "newsArticleDescEquity": "汇总 {v0} 最新新闻中的利好利空情绪与核心议题。",
                 "newsHeadingCrypto": "{v0} 最新加密新闻",
                 "newsHeadingEquity": "{v0} 最新新闻与财报日程",
-                "overallGuideCryptoP1": "在一个页面上梳理 {v0} 目前所处的位置。将三个维度合在一起：图表趋势与主要支撑位和阻力位、近期新闻中市场在对什么作出反应，以及买入情绪（恐惧贪婪指数）。",
+                "overallGuideCryptoP1": "在一个页面上梳理 {v0} 目前所处的位置。将三个维度合在一起：图表趋势与主要支撑位和阻力位、近期新闻中市场在对什么作出反应，以及买入情绪（恐惧与贪婪指数）。",
                 "overallGuideCryptoP2": "将三个维度综合为多头与空头两种情景，并指出哪些价位值得考虑入场、出现哪些信号会使情景失效。",
                 "overallGuideCryptoP3": "宏观事件、监管问题、重大新闻等可能颠覆该情景的风险因素也会单独标出，买入前浏览一遍会有帮助。",
                 "overallGuideEquityP3": "财报发布、指引变动、宏观事件等可能颠覆该情景的风险因素也会单独标出，买入前浏览一遍会有帮助。",
-                "overallGuideKrEquityP1": "在一个页面上梳理 {v0} 目前所处的位置。涵盖图表趋势与主要支撑位和阻力位、季度财报走势，以及近期新闻中市场在对什么作出反应——三个分析维度再加上整体市场情绪。",
+                "overallGuideKrEquityP1": "在一个页面上梳理 {v0} 目前所处的位置。涵盖图表趋势与主要支撑位和阻力位、季度财报走势，以及近期新闻中市场在对什么作出反应，共三个分析维度，再加上整体市场情绪。",
                 "overallGuideKrEquityP2": "还会用一行说明季度财报是否超出市场预期、下季度指引如何。将三个维度综合为多头与空头两种情景，并指出哪些价位值得考虑入场、出现哪些信号会使情景失效。",
-                "overallGuideUsEquityP1": "在一个页面上梳理 {v0} 目前所处的位置。涵盖图表趋势与主要支撑位和阻力位、期权市场定价的短期方向、季度财报走势，以及近期新闻中市场在对什么作出反应——四个分析维度再加上整体市场情绪。",
+                "overallGuideUsEquityP1": "在一个页面上梳理 {v0} 目前所处的位置。涵盖图表趋势与主要支撑位和阻力位、期权市场定价的短期方向、季度财报走势，以及近期新闻中市场在对什么作出反应，共四个分析维度，再加上整体市场情绪。",
                 "overallGuideUsEquityP2": "还会用一行说明近月期权更偏向看涨还是看跌。将四个维度综合为多头与空头两种情景，并指出哪些价位值得考虑入场、出现哪些信号会使情景失效。",
-                "overallHeadingCrypto": "{v0} 综合分析 — 图表、新闻与买入情绪",
-                "overallHeadingKrEquity": "{v0} 综合分析 — 图表、财报与新闻",
-                "overallHeadingUsEquity": "{v0} 综合分析 — 图表、期权、财报与新闻",
-                "positionRangeSentence": "{v0} 近52周区间为 {v1} ~ {v2}，当前价 {v3} 位于该区间的 {v4}% 处 — {v5}。",
+                "overallHeadingCrypto": "{v0} 综合分析：图表、新闻与买入情绪",
+                "overallHeadingKrEquity": "{v0} 综合分析：图表、财报与新闻",
+                "overallHeadingUsEquity": "{v0} 综合分析：图表、期权、财报与新闻",
+                "positionRangeSentence": "{v0} 近52周区间为 {v1} ~ {v2}，当前价 {v3} 位于该区间的 {v4}% 处（{v5}）。",
                 "positionRegisterHint": "在下方登记持仓后，还能在同一栋楼里看到自己买入的楼层。",
                 "marketFearGreedLinkCrypto": "加密货币市场恐惧与贪婪指数",
                 "marketLabelCrypto": "加密货币市场"
@@ -520,7 +520,7 @@
                 "invalidSymbol": "股票代码无效。"
             },
             "email": {
-                "briefColPrice": "收盘 · 涨跌幅",
+                "briefColPrice": "收盘/涨跌幅",
                 "briefColSignals": "信号摘要",
                 "briefColSymbol": "股票",
                 "briefColTrend": "趋势",
@@ -552,14 +552,14 @@
                     "bullish": "利好",
                     "neutral": "中性"
                 },
-                "signalAbstain": "共振度 —",
+                "signalAbstain": "共振度 -",
                 "signalBearish": "看跌 {v0}",
                 "signalBullish": "看涨 {v0}",
                 "signalFresh": "新出现: {v0}",
                 "signalMore": "+{v0}",
                 "signalPullback": "回调: {v0}",
                 "signalScore": "共振度 {v0}",
-                "subject": "[{v0}] 持仓与自选股报告 · {v1}",
+                "subject": "[{v0}] 持仓与自选股报告（{v1}）",
                 "trendState": {
                     "downtrend": "下降趋势",
                     "sideways": "横盘",
@@ -823,7 +823,7 @@
         "email-report-nudge": {
             "EmailReportNudgeModal": {
                 "0fcd14": "以后再说",
-                "20cd3b": "已添加 — 将从下一份报告开始包含",
+                "20cd3b": "已添加，将从下一份报告开始包含",
                 "3dc0b0": "通过邮件接收持仓与自选股报告",
                 "5da22e": "也通过邮件报告接收这只股票吗？",
                 "8495de": "我们会在您选择的日期和时间，将 {v0} 只持仓与自选股的日线图、简明解读、新闻和信号摘要发送到您的邮箱。",
@@ -928,7 +928,7 @@
                 "20b566": "您还没有添加任何持仓。请添加第一只股票。",
                 "283e16": "正在删除…",
                 "4e29b2": "暂时无法加载持仓。",
-                "91d7d2": "{v0} 股 · 均价 ${v1}",
+                "91d7d2": "{v0} 股，均价 ${v1}",
                 "ac4dd7": "确定删除吗？",
                 "cae421": "持仓",
                 "deleteHolding": "删除{v0}持仓",
@@ -990,7 +990,7 @@
             },
             "a11y": {
                 "featureLabel": "详细分析",
-                "signupPrompt": "{v0} — 注册后即可使用",
+                "signupPrompt": "{v0}（注册后即可使用）",
                 "toggleAria": "切换{v0}（推理）"
             }
         },
@@ -1070,7 +1070,7 @@
                 "4f5a3f": "搜索",
                 "5dd6d9": "无搜索结果",
                 "e39068": "搜索中…",
-                "e62852": "无搜索结果 — 请尝试使用股票代码（例：AAPL）进行搜索"
+                "e62852": "无搜索结果。请尝试使用股票代码（例：AAPL）进行搜索"
             },
             "assetBadge": {
                 "coin": "加密货币",
@@ -1099,11 +1099,11 @@
                 "navigating": "正在打开个股页面",
                 "navigatingBar": "正在打开个股页面",
                 "noResults": "没有搜索结果",
-                "noResultsTryTicker": "没有结果 — 请尝试用代码搜索",
-                "noResultsTryTickerExample": "没有结果 — 请尝试代码（例如 AAPL）",
+                "noResultsTryTicker": "没有结果，请尝试用代码搜索",
+                "noResultsTryTickerExample": "没有结果，请尝试代码（例如 AAPL）",
                 "overlayLabel": "股票搜索",
                 "placeholder": "搜索名称或代码",
-                "popularHeading": "热门 · {v0}",
+                "popularHeading": "热门：{v0}",
                 "recentHeading": "最近搜索",
                 "resultsCount": "{v0} 条搜索结果",
                 "resultsLabel": "搜索结果",
@@ -1456,7 +1456,7 @@
             "title": {
                 "chart": "图表分析",
                 "congress": "国会交易",
-                "fear-greed": "恐惧贪婪指数",
+                "fear-greed": "恐惧与贪婪指数",
                 "financials": "财务报表",
                 "flows": "机构资金与做空",
                 "fundamental": "基本面分析",
@@ -1605,7 +1605,7 @@
             "shareKind": {
                 "chart": "图表分析",
                 "congress": "国会交易分析",
-                "fear-greed": "恐惧贪婪指数",
+                "fear-greed": "恐惧与贪婪指数",
                 "financials": "财务分析",
                 "fundamental": "基本面分析",
                 "news": "新闻分析",
@@ -1785,7 +1785,7 @@
             "accountDeleteTitle": "注销账户",
             "backtesting": {
                 "description": "涵盖AAPL、NVDA、TSLA等10只个股的历史数据事后验证回测。基于历史数据对RSI、MACD、Supertrend技术信号与AI情景进行验证，结果不保证未来表现。",
-                "title": "AAPL、NVDA、TSLA 回测 — 技术信号事后验证"
+                "title": "AAPL、NVDA、TSLA 回测：技术信号事后验证"
             },
             "backtestingOgAlt": "{v0} AI 回测结果",
             "developers": {
@@ -1795,14 +1795,14 @@
             },
             "economy": {
                 "kr": {
-                    "description": "一页查看韩国经济指标 — 基准利率、消费者物价、就业率、GDP增速等核心指标,加上国债收益率与出口增速,并提供即将发布的数据日程。",
+                    "description": "一页查看韩国经济指标：基准利率、消费者物价、就业率、GDP增速等核心指标，加上国债收益率与出口增速，并提供即将发布的数据日程。",
                     "faq0a": "韩国银行金融通货委员会每年召开 8 次会议决定基准利率。本页的“韩国政策利率”卡片显示最近一次决议值。",
                     "faq0q": "韩国政策利率由谁决定？",
                     "faq1a": "政府发行国债时通过招标确定的利率。3 年期被视为短端基准，10 年期为长端基准；两者差距越大，有时被解读为对经济扩张的预期越强。",
                     "faq1q": "国债中标利率是什么？",
                     "faq2a": "数据基于 Financial Modeling Prep（FMP）经济日历中的韩国发布记录采集。指标卡片显示各指标最近一次发布值，每有新发布即更新。",
                     "faq2q": "这些数据来自哪里？",
-                    "title": "韩国经济 — 一览指标与日历"
+                    "title": "韩国经济：指标与日历一览"
                 },
                 "us": {
                     "description": "一页汇总美国基准利率、物价、就业与增长指标及即将发布的经济数据。AI为您概括当前宏观形势。",
@@ -1814,7 +1814,7 @@
                     "faq2q": "CPI 多久发布一次？",
                     "faq3a": "经济指标和日历来自 Financial Modeling Prep（FMP）API。美国国债收益率取美国财政部官方每日收益率与 FMP 中日期更新的一方。每 {v0} 小时更新一次。",
                     "faq3q": "这些数据来自哪里？",
-                    "title": "美国经济 — 一览指标与日历"
+                    "title": "美国经济：指标与日历一览"
                 }
             },
             "emailReport": {
@@ -1832,31 +1832,31 @@
             "fearGreedPage": {
                 "kr": {
                     "copy_faq0a": "综合 KOSPI200、KOSPI 已实现波动率、30年期国债、公司债、3年期国债与 KOSPI200 等权这五个因子的近期收盘走势，用 0~100 的分数呈现韩股整体的短期买入情绪。",
-                    "copy_faq0q": "韩国恐惧贪婪指数衡量什么？",
+                    "copy_faq0q": "韩国恐惧与贪婪指数衡量什么？",
                     "copy_faq1a": "VKOSPI（KOSPI200 波动率指数）没有免费的行情来源。因此改为直接由 KOSPI 收盘价计算 20 日已实现波动率（年化）并用于同一位置。",
                     "copy_faq1q": "为什么使用已实现波动率而不是 VKOSPI？",
                     "copy_faq2a": "计算公式相同，但输入资产不同。韩国没有流动性充足的高收益债市场，因此信用因子改用公司债与到期日相近的 3 年期国债的收益率差替代。",
-                    "copy_faq2q": "可以把该分数与美国指数直接比较吗？",
+                    "copy_faq2q": "可以把该分数与美国恐惧与贪婪指数直接比较吗？",
                     "copy_faq3a": "以 KOSPI 常规交易时段的收盘价为准，按交易日更新（每天一次）。页面本身最多缓存 1 小时。",
                     "copy_faq3q": "分数多久更新一次？",
-                    "copy_intro0": "韩国市场恐惧贪婪指数综合 KOSPI200（KODEX 200）、KOSPI 已实现波动率、30年期国债、公司债、3年期国债与 KOSPI200 等权的近期收盘走势，以 0~100 的分数呈现韩股整体的短期买入情绪。",
+                    "copy_intro0": "韩国市场恐惧与贪婪指数综合 KOSPI200（KODEX 200）、KOSPI 已实现波动率、30年期国债、公司债、3年期国债与 KOSPI200 等权的近期收盘走势，以 0~100 的分数呈现韩股整体的短期买入情绪。",
                     "copy_intro1": "五个因子分别在各自的历史分布中换算为百分位，再等权平均得出。分数越低表示恐惧越强，越高表示贪婪越强。",
                     "description": "结合KOSPI200、国债、公司债与等权重ETF的近期走势,以0-100分及5档标签呈现韩股整体买盘情绪。",
                     "heading": "韩股恐惧与贪婪指数",
-                    "title": "今日KOSPI市场情绪 — 恐惧与贪婪指数"
+                    "title": "今日KOSPI市场情绪：恐惧与贪婪指数"
                 },
                 "us": {
                     "copy_faq0a": "综合标普500、VIX、长期国债、高收益/投资级公司债与等权指数这五个因子的近期收盘走势，用 0~100 的分数呈现美股整体的短期买入情绪。",
-                    "copy_faq0q": "市场恐惧贪婪指数衡量什么？",
+                    "copy_faq0q": "市场恐惧与贪婪指数衡量什么？",
                     "copy_faq1a": "不是。该指数独立于 CNN，仅基于日收盘数据自行计算五个因子（动能、波动率、避险需求、垃圾债需求、市场广度）。它不包含 CNN 使用的部分指标（如期权 Put/Call 比率），因此恐惧与贪婪的方向大体相似，但由于构建方式不同，具体分数与 CNN 指数并不一致。",
                     "copy_faq1q": "这与 CNN 的恐惧贪婪指数是同一个指数吗？",
                     "copy_faq2a": "以常规交易时段的收盘价为准，按交易日更新（每天一次）。页面本身最多缓存 1 小时。",
                     "copy_faq2q": "分数多久更新一次？",
-                    "copy_intro0": "市场恐惧贪婪指数综合标普500、VIX、长期国债、公司债（高收益与投资级）与等权指数的近期收盘走势，以 0~100 的分数呈现美股整体的短期买入情绪。",
+                    "copy_intro0": "市场恐惧与贪婪指数综合标普500、VIX、长期国债、公司债（高收益与投资级）与等权指数的近期收盘走势，以 0~100 的分数呈现美股整体的短期买入情绪。",
                     "copy_intro1": "五个因子分别在各自的历史分布中换算为百分位，再等权平均得出。分数越低表示恐惧越强，越高表示贪婪越强。",
                     "description": "结合标普500、VIX、长期美债、公司债与等权重指数的近期走势,以0-100分及5档标签呈现美股整体买盘情绪。",
                     "heading": "美股恐惧与贪婪指数",
-                    "title": "今日美股市场情绪 — 恐惧与贪婪指数"
+                    "title": "今日美股市场情绪：恐惧与贪婪指数"
                 },
                 "crypto": {
                     "title": "加密货币恐惧与贪婪指数 - 今日加密市场情绪",
@@ -1886,7 +1886,7 @@
             },
             "manifest": {
                 "description": "用 AI 分析美股、韩股与加密货币。整合图表、基本面与新闻，给出基于多种技术指标的综合分析，并提供基于历史数据的回测检验。",
-                "name": "{v0} — 美股、韩股与加密货币 AI 分析",
+                "name": "{v0}：美股、韩股与加密货币 AI 分析",
                 "shortcutMarket": "市场概览",
                 "shortcutSearch": "搜索标的"
             },
@@ -1895,13 +1895,13 @@
                     "breadcrumb": "韩国市场概况",
                     "description": "按板块查看今日KOSPI与KOSDAQ。在半导体、二次电池、生物科技等板块中筛选出现金叉、RSI背离或布林带收窄信号的个股,并链接AI分析。",
                     "itemListName": "韩股板块信号扫描器",
-                    "title": "今日韩股 — 按板块划分的技术信号"
+                    "title": "今日韩股：按板块划分的技术信号"
                 },
                 "us": {
                     "breadcrumb": "美国市场概况",
                     "description": "按板块查看今日美股。在AI芯片、大型科技、医疗等板块中筛选出现金叉、RSI背离或布林带收窄信号的个股,并链接AI分析。",
                     "itemListName": "美股板块与主题信号扫描器",
-                    "title": "今日美股 — 按板块划分的技术信号"
+                    "title": "今日美股：按板块划分的技术信号"
                 }
             },
             "methodology": {
@@ -1914,15 +1914,15 @@
                 "emptyDescriptionTemplate": "无法加载{label}的最新新闻。",
                 "emptyTitleTemplate": "{label}新闻",
                 "itemListName": "{label}最新新闻",
-                "titleTemplate": "{label}新闻 — 最新动态与AI摘要"
+                "titleTemplate": "{label}新闻：最新动态与AI摘要"
             },
             "newsHub": {
                 "description": "在美股、韩股与加密货币三大市场之间做选择的新闻中心。选择市场即可进入其分类最新新闻，并可先浏览各地区的头条。",
-                "title": "市场新闻中心 — 美股·韩股·加密货币"
+                "title": "市场新闻中心：美股、韩股、加密货币"
             },
             "newsUs": {
                 "description": "美国市场新闻的分类选择页。分为股票、外汇、研究与加密货币四类，选择分类即可查看该领域的最新文章与 AI 摘要。",
-                "title": "美国市场新闻 — 按类别浏览最新动态"
+                "title": "美国市场新闻：按类别浏览最新动态"
             },
             "oauthConsentFullTitle": "{v0} 社交登录注册条款同意",
             "oauthConsentTitle": "社交登录注册同意",
@@ -1933,10 +1933,10 @@
             "position": {
                 "breadcrumb": "我的持仓",
                 "description": "你的成本价靠近高点还是低点？看看它在 {v0} 的 52 周区间中处于什么位置。",
-                "title": "我的成本价在第几层？ — {v0} 我的持仓"
+                "title": "我的成本价在第几层？| {v0} 我的持仓"
             },
             "privacy": {
-                "description": "了解SIGLENS隐私政策 — 注册与使用服务期间收集的个人信息项目及用途、保存与销毁期限、是否提供给第三方,以及您可行使的查阅、更正、删除等权利,均可在本页详细查看。",
+                "description": "了解SIGLENS隐私政策：注册与使用服务期间收集的个人信息项目及用途、保存与销毁期限、是否提供给第三方，以及您可行使的查阅、更正、删除等权利。",
                 "title": "隐私政策"
             },
             "resetPassword": {
@@ -1944,10 +1944,10 @@
                 "title": "重置密码"
             },
             "root": {
-                "description": "用一个代码全面分析美股、韩股与加密货币。指标图表与技术信号、基本面与新闻、恐惧贪婪指数汇总为一份 AI 综合分析。",
+                "description": "用一个代码全面分析美股、韩股与加密货币。指标图表与技术信号、基本面与新闻、恐惧与贪婪指数汇总为一份 AI 综合分析。",
                 "headline": "美股、韩股与加密货币 AI 分析",
-                "ogImageAlt": "{v0} — 图表、基本面、新闻、期权、恐惧贪婪指数与综合分析",
-                "title": "{v0} — 美股、韩股与加密货币 AI 分析"
+                "ogImageAlt": "{v0}：图表、基本面、新闻、期权、恐惧与贪婪指数与综合分析",
+                "title": "{v0}：美股、韩股与加密货币 AI 分析"
             },
             "signup": {
                 "description": "注册SIGLENS会员即可享受更多权益。注册为可选项,非会员同样可使用全部基础功能。",
@@ -1955,8 +1955,8 @@
             },
             "symbol": {
                 "chart": {
-                    "description": "在图表中查看{subject}的股价走势与技术信号。AI分析RSI、MACD、布林带、K线形态及主要支撑/阻力位,梳理趋势与主要价格区间。",
-                    "descriptionWithSector": "在图表中查看{sector}板块{subject}的股价走势与技术信号。AI分析RSI、MACD、布林带、K线形态及主要支撑/阻力位,梳理趋势与主要价格区间。",
+                    "description": "在图表中查看{subject}的股价走势与技术信号。AI分析RSI、MACD、布林带、K线形态及主要支撑位与阻力位,梳理趋势与主要价格区间。",
+                    "descriptionWithSector": "在图表中查看{sector}板块{subject}的股价走势与技术信号。AI分析RSI、MACD、布林带、K线形态及主要支撑位与阻力位,梳理趋势与主要价格区间。",
                     "titleCore": "股价分析",
                     "titleTail": "图表与技术信号"
                 },
@@ -1966,7 +1966,7 @@
                     "titleTail": "参众两院交易披露"
                 },
                 "crypto": {
-                    "description": "在图表中查看{subject}的价格走势与技术信号。AI分析RSI、MACD、布林带、K线形态及主要支撑/阻力位,梳理趋势与主要价格区间。",
+                    "description": "在图表中查看{subject}的价格走势与技术信号。AI分析RSI、MACD、布林带、K线形态及主要支撑位与阻力位,梳理趋势与主要价格区间。",
                     "titleCore": "行情分析"
                 },
                 "cryptoNews": {
@@ -1999,21 +1999,21 @@
                 "financials": {
                     "description": "一目了然查看{subject}的损益、财务状况与现金流,以及成长性、盈利能力、稳定性和现金创造力评分。",
                     "titleCore": "财务报表",
-                    "titleTail": "营收·利润·现金流"
+                    "titleTail": "营收、利润、现金流"
                 },
                 "flows": {
                     "description": "汇总查看{subject}的机构持仓变化(13F)、内部人交易、5%大额持股披露与卖空余额，并由AI解读资金流向。",
                     "titleCore": "机构资金与做空",
-                    "titleTail": "13F·内部人·做空",
+                    "titleTail": "13F、内部人、做空",
                     "krTitleCore": "持股公告",
-                    "krTitleTail": "大额持股·高管持股",
+                    "krTitleTail": "大额持股与高管持股",
                     "krDescription": "汇总查看{subject}在韩国金融监督院电子公告(DART)上的5%大额持股报告、高管与主要股东持股变动和交易计划报告，并由AI解读持股动向。"
                 },
                 "fundamental": {
                     "description": "一页汇总{subject}的公司概况、PER/PSR/EPS估值、ROE与利润率、负债与现金流健康度,并附分析师一致预期与目标价。",
                     "descriptionWithSector": "一页汇总{subject}的公司概况、PER/PSR/EPS估值、ROE与利润率、负债与现金流健康度,并附其在{sector}板块中的位置、分析师一致预期与目标价。",
                     "titleCore": "基本面",
-                    "titleTail": "PER·ROE与一致预期"
+                    "titleTail": "PER、ROE与一致预期"
                 },
                 "news": {
                     "description": "按文章整理{subject}最新新闻的利好/利空氛围与要点，并附下次财报日期及分析师目标价与评级变动。",
@@ -2024,7 +2024,7 @@
                     "description": "AI解读{subject}的期权市场。查看各到期日的Max Pain、认沽认购比、平值隐含波动率与隐含波幅,以及各行权价的未平仓量,洞察市场押注方向。",
                     "descriptionNoMarket": "{subject}目前尚未形成期权市场。请通过图表、基本面和新闻分析来查看该股票。",
                     "titleCore": "期权分析",
-                    "titleTail": "Max Pain·未平仓·认沽认购比"
+                    "titleTail": "Max Pain、未平仓、认沽认购比"
                 },
                 "overall": {
                     "description": "从图表、财报、新闻与买盘情绪四个维度判断{subject}哪种情景更占优势,整理为多空情景,并给出主要价格区间及情景失效的风险因素。",
@@ -2034,10 +2034,10 @@
             },
             "symbols": {
                 "description": "SIGLENS 上最常被查看的美股、韩股与加密货币标的。选择一个即可查看其图表、基本面、新闻与综合 AI 分析。",
-                "title": "热门标的 — 美股、韩股与加密货币"
+                "title": "热门标的：美股、韩股与加密货币"
             },
             "terms": {
-                "description": "了解SIGLENS服务条款 — 注册与使用条件、AI分析与回测等投资信息提供的免责声明、账户与内容使用规则,以及用户与公司各自的权利义务,均可在本页详细查看。",
+                "description": "了解SIGLENS服务条款：注册与使用条件、AI分析与回测等投资信息的免责声明、账户与内容使用规则，以及用户与公司各自的权利义务。",
                 "title": "服务条款"
             },
             "watchlist": {
@@ -2093,10 +2093,10 @@
             "Above/Below the Stomach Guide": "腹上 / 腹下形态",
             "Advance Block / Ladder Bottom Guide": "前进阻碍形态 / 梯形底部形态",
             "Bearish Engulfing Guide": "看跌吞噬形态",
-            "Bollinger %B & BandWidth Signal Guide": "布林线 %B·带宽信号指南",
+            "Bollinger %B & BandWidth Signal Guide": "布林线 %B 与带宽信号指南",
             "Bollinger Bands Signal Guide": "布林带信号指南",
             "Bullish Engulfing Guide": "看涨吞噬形态",
-            "Buy/Sell Volume Signal Guide": "买入·卖出成交量信号指南",
+            "Buy/Sell Volume Signal Guide": "买入/卖出成交量信号指南",
             "CCI Signal Guide": "CCI 信号指南",
             "CMF Signal Guide": "CMF 信号指南",
             "Chandelier Exit Signal Guide": "吊灯离场信号指南",
@@ -2110,7 +2110,7 @@
             "Elder Impulse System Signal Guide": "艾尔德脉冲系统信号指南",
             "Elder-Ray Signal Guide": "艾尔德射线信号指南",
             "Force Index Signal Guide": "强力指数信号指南",
-            "Gap Continuation Guide (Tasuki / Neck)": "缺口持续形态 (武士缺口 · 颈线)",
+            "Gap Continuation Guide (Tasuki / Neck)": "缺口持续形态 (武士缺口、颈线)",
             "Hammer/Shooting Star Guide": "锤子形态 / 射击之星形态",
             "Harami Pattern Guide": "孕线形态",
             "Hurst Exponent Signal Guide": "赫斯特指数信号指南",
@@ -2145,7 +2145,7 @@
         "symbolTab": {
             "chart": "图表",
             "congress": "国会交易",
-            "fear-greed": "恐惧贪婪指数",
+            "fear-greed": "恐惧与贪婪指数",
             "financials": "财务报表",
             "flows": "资金流向",
             "fundamental": "基本面",
@@ -2225,7 +2225,7 @@
                 "contact": "联系我们",
                 "filterAll": "全部",
                 "flatChange": "0.00% 持平",
-                "holdingAverage": "成本价 {v0} · {v1} 股",
+                "holdingAverage": "成本价 {v0}，{v1} 股",
                 "lastNDays": "最近 {v0} 天",
                 "liveCrossRef": "这是预先保存的过往分析，可能与当前市价不同。",
                 "naverNews": "Naver 新闻",
@@ -2276,16 +2276,16 @@
             "CCI Signal Guide": "衡量价格偏离常态价格区间的程度，以判断超买或超卖",
             "CMF Signal Guide": "通过成交量衡量资金在一定时期内是流入还是流出",
             "Chandelier Exit Signal Guide": "通过从近期高点向下移动波动幅度形成的线，确认趋势是否延续",
-            "Connors RSI Signal Guide": "通过极短期超买·超卖数值，寻找短期回调点",
+            "Connors RSI Signal Guide": "通过极短期超买、超卖数值，寻找短期回调点",
             "Counterattack / Belt Hold Guide": "通过观察单边长K线或回补至前一日收盘价的K线，判断短期方向是否反转。",
             "DMI Signal Guide": "比较上涨动能(+DI)和下跌动能(-DI)，观察哪一方更强",
-            "Doji Pattern Guide": "开盘价和收盘价几乎相同，买卖双方势均力敌的K线（十字星·纺锤线）",
-            "Donchian Channel Signal Guide": "通过连接近20日最高价·最低价的通道，确认突破",
-            "EMA Signal Guide": "通过更侧重近期价格的移动平均线，观察支撑位·阻力位和趋势",
+            "Doji Pattern Guide": "开盘价和收盘价几乎相同，买卖双方势均力敌的K线（十字星、纺锤线）",
+            "Donchian Channel Signal Guide": "通过连接近20日最高价和最低价的通道，确认突破",
+            "EMA Signal Guide": "通过更侧重近期价格的移动平均线，观察支撑位、阻力位和趋势",
             "EWMA Volatility Signal Guide": "快速反映近期波动率，以数值形式观察当前波动幅度",
             "Elder Impulse System Signal Guide": "通过柱状图颜色，筛选当前是否适合买入或卖出",
             "Elder-Ray Signal Guide": "分别衡量买方和卖方相对于趋势线的力量并进行比较",
-            "Force Index Signal Guide": "将价格变化乘以成交量，以衡量上涨·下跌所蕴含的力量",
+            "Force Index Signal Guide": "将价格变化乘以成交量，衡量上涨或下跌的力度",
             "Gap Continuation Guide (Tasuki / Neck)": "如果跳空后的回调未能回补缺口，或反弹在前期低点停止，则视为暂时休整而非方向反转。",
             "Hammer/Shooting Star Guide": "以长下影线锤头和长上影线射击之星为特征的单K线反转信号",
             "Harami Pattern Guide": "大K线内包含小K线，趋势停滞的形态",
@@ -2309,7 +2309,7 @@
             "Stochastic Signal Guide": "通过观察当前价格在近期价格范围内的位置，观察超买、超卖和反转",
             "Supertrend Signal Guide": "通过跟随波动幅度的线在上方或下方切换，指示趋势方向",
             "Three Inside / Outside Guide": "内部包含或包围形态后，再次出现确认K线，形成3K线反转",
-            "Three Soldiers/Crows Guide": "三根同色K线连续推进，形成3K线反转（红三兵·黑三鸦）",
+            "Three Soldiers/Crows Guide": "三根同色K线连续推进，形成3K线反转（红三兵、黑三鸦）",
             "Three-Line Strike Guide": "第四根K线完全覆盖三根同色K线，方向与第四根K线一致",
             "Tweezers Pattern Guide": "高点或低点相同的两根K线紧密相连，趋势反转的形态",
             "Upside Gap Two Crows / Downside Gap Two Rabbits Guide": "解读大阳线后跳空出现的两根阴线，以及其反向形态",
@@ -2320,7 +2320,7 @@
             "Yang-Zhang Volatility Signal Guide": "综合考虑跳空和盘中波动，精确衡量实际波动率",
             "가치 투자 (Value Investing)": "寻找交易价格低于实际价值的优质企业的投资理念",
             "갭 분석": "通过上下文判断与前一K线形成的跳空是趋势的开始还是结束",
-            "다이버전스 전략": "当价格与RSI·MACD方向背离时，捕捉趋势反转的策略",
+            "다이버전스 전략": "当价格与RSI、MACD方向背离时，捕捉趋势反转的策略",
             "다중 시간대 분석": "通过大时间周期确定方向，小时间周期选择入场时机",
             "대칭삼각형": "高点逐渐降低，低点逐渐升高，形成收敛后向一侧突破的形态",
             "매크로 영향 분석 (Macro Impact)": "利率、物价、就业等经济指标发布对各行业股价的影响",
@@ -2500,13 +2500,13 @@
                 "verify": "验证方法:确认原始数据中 prereg/manifest.sha256 的值与上面的哈希一致,再用 OpenTimestamps 验证 .ots 文件即可得知记录时间。"
             },
             "seo": {
-                "datasetName": "{brand} 股票问答基准测试 {round} — 题目、标准答案和回答原文",
+                "datasetName": "{brand} 股票问答基准测试 {round}：题目、标准答案和回答原文",
                 "description": "用 {items, number} 道美国和韩国股票题同样提问 {brand} 与 {models},并以行情和公告数据评分。公开分数差、置信区间和逐题回答原文。",
                 "descriptionPlain": "用 {items, number} 道美国和韩国股票题对比 {brand} 与通用 AI 模型的基准测试结果及逐题原始数据。",
                 "modelSeparator": "、",
                 "ogLabel": "{brand} 基准测试结果",
-                "title": "股票 AI 准确度基准测试 — {brand} vs {models}",
-                "titlePlain": "{brand} 基准测试结果 — 与通用 AI 模型的逐题对比",
+                "title": "股票 AI 准确度基准测试：{brand} vs {models}",
+                "titlePlain": "{brand} 基准测试结果：与通用 AI 模型的逐题对比",
                 "variableMeasured": "股票问答客观得分(正确 +1、未作答 0、错误 −1),解读与诚实性评审得分"
             },
             "subset": {
@@ -2547,7 +2547,7 @@
                 "aboutRewritten": "重写了关于页面。",
                 "crawlerParity": "更改为即使搜索机器人访问，也以与人类相同的方式生成股票分析。",
                 "fearGreedFiveYears": "个股与整体市场的恐惧与贪婪指数所比较的历史期间已延长至约5年，因此分数可能与之前不同。",
-                "indexableTabs": "将搜索结果中显示的股票标签减少到图表、新闻、恐惧与贪婪三种。也取消了仅替换股票名称的常见问题。",
+                "indexableTabs": "将搜索结果中显示的股票标签减少到图表、新闻、恐惧与贪婪指数三种。也取消了仅替换股票名称的常见问题。",
                 "methodologyPublished": "发布了分析方法页面（本页面）。",
                 "sub": "方法或政策变更时会在此处记录。",
                 "title": "变更历史"
@@ -2573,7 +2573,7 @@
                 "marketKr": "韩国股市",
                 "marketUs": "美国股市",
                 "naver": "Naver新闻搜索",
-                "rowBars": "行情·图表",
+                "rowBars": "行情与图表",
                 "rowDelay": "行情延迟",
                 "rowFinancials": "财务",
                 "rowNews": "新闻",
@@ -2653,9 +2653,9 @@
                 "aiBody": "这是AI将SIGLENS根据规则计算的数值整理成的文本。简明视图文本中若混入计算中没有的价格，会自动重写或删除该句子。不会有人逐篇阅读审核，也不构成投资建议。数据来源：{source}等。",
                 "calcLink": "计算方法",
                 "dataSource": {
-                    "crypto": "行情·新闻 Financial Modeling Prep",
+                    "crypto": "行情、新闻：Financial Modeling Prep",
                     "krEquity": "行情 Yahoo Finance，新闻 Naver新闻搜索",
-                    "usEquity": "行情·新闻 Financial Modeling Prep"
+                    "usEquity": "行情、新闻：Financial Modeling Prep"
                 },
                 "dataSourcePrices": {
                     "crypto": "行情 Financial Modeling Prep",
@@ -2681,9 +2681,9 @@
                 "f7e3fb": "国会交易趋势摘要"
             },
             "DilutionRiskBadge": {
-                "atm": "增发·稀释：近期 ATM（按市价随时发行）申报",
+                "atm": "增发/稀释：近期 ATM（按市价随时发行）申报",
                 "note": "依据近期 SEC 申报文件，实际出售规模无法从申报中得知。",
-                "priced": "增发·稀释：近期公开发行申报"
+                "priced": "增发/稀释：近期公开发行申报"
             },
             "FearGreedFactsSummary": {
                 "asOfClose": "(截至 {v0} 收盘)",
@@ -2692,7 +2692,7 @@
             },
             "FearGreedHeaderChip": {
                 "afe032": "恐惧与贪婪数据不足",
-                "ariaLabel": "恐惧贪婪指数 {v0} {v1} 分{v2}"
+                "ariaLabel": "恐惧与贪婪指数 {v0} {v1} 分{v2}"
             },
             "FinancialsSnapshotProse": {
                 "13bd2e": "{v0} 财务报表综合评估: {v1}",
@@ -2798,7 +2798,7 @@
                 "extremeZoneColPeakGreed": "最高分",
                 "extremeZoneColSessions": "停留交易日",
                 "extremeZoneColStart": "进入日",
-                "extremeZoneNoScore": "—",
+                "extremeZoneNoScore": "-",
                 "extremeZoneNone": "统计期间内，分数从未新进入极度恐惧或极度贪婪区间。",
                 "extremeZoneNotice": "这是对过去的记录整理，不预测未来价格，也不建议买入或卖出。",
                 "extremeZoneOmitted": "更早的{v0}条记录未显示。",
@@ -2935,7 +2935,7 @@
                 "newsScope": "收集的新闻不够时，会到网上继续查找",
                 "options": "期权",
                 "optionsBody": "通过期权交易看投资者更多押注上涨还是下跌。",
-                "optionsScope": "美股 · 隐含波动率、看跌/看涨比、最大痛点",
+                "optionsScope": "美股：隐含波动率、看跌/看涨比、最大痛点",
                 "portfolio": "我的持仓",
                 "portfolioBody": "根据你登记的股票和平均买入价，一并告诉你现在的盈亏和各只股票的情况。",
                 "portfolioScope": "登录后可用",
@@ -2983,7 +2983,7 @@
                 "asOf": "2026-09-19 09:00",
                 "news": "新闻40条",
                 "q": "本周美国市场新闻，只要重要的",
-                "subjectIndices": "标普500 · 纳斯达克",
+                "subjectIndices": "标普500、纳斯达克",
                 "subjectNews": "美国市场"
             },
             "more": {
@@ -3037,7 +3037,7 @@
                 "region": "SIGLENS AI 对话示例",
                 "resume": "播放",
                 "sources": "来源",
-                "summary": "已查看{tools} · {seconds}秒"
+                "summary": "已查看{tools}，用时{seconds}秒"
             },
             "samsung": {
                 "a1": "三星电子9月18日收于<b>71,800韩元</b>，较前一日上涨<up>+1.3%</up>。",
@@ -3056,7 +3056,7 @@
             },
             "tool": {
                 "analysis": "SIGLENS 分析",
-                "bars": "图表·指标",
+                "bars": "图表与指标",
                 "company": "公司信息",
                 "economy": "经济指标",
                 "market": "市场动向",
@@ -3211,7 +3211,7 @@
             "categoryIndicators": "技术指标",
             "categoryIntroCandlesticks": "从单根 K线到几根 K线组成的形态，讲解 K线形态能说明什么。从开盘价、最高价、最低价、收盘价怎么读，到十字星、锤子线、吞没形态、启明星等反转与持续形态，都有涉及。",
             "categoryIntroChartPatterns": "讲解由许多根 K线组成的大形态。双底、头肩形、三角形、楔形、旗形等在趋势延续或转向时常见的形态，长什么样，以及 SIGLENS 按什么标准识别，这里都有说明。",
-            "categoryIntroHowto": "股票图表怎么看、RSI 怎么看、双底怎么确认——针对实际看图时的问题分步解答。每篇都链接到相关指标或形态条目。",
+            "categoryIntroHowto": "股票图表怎么看、RSI 怎么看、双底怎么确认：针对实际看图时的问题分步解答。每篇都链接到相关指标或形态条目。",
             "categoryIntroIndicators": "汇集了移动平均线、RSI、MACD、布林带等由价格和成交量计算出来的技术指标。除了计算方法和读法，也写明了指标容易失灵的情况。",
             "categoryIntroStrategies": "讲解艾略特波浪、斐波那契回撤、背离、突破、跳空等把多个信号结合起来看的分析思路。这些理论适合在单个指标看不清走势时使用。",
             "categoryListHeading": "{name}列表",
@@ -3246,8 +3246,8 @@
             "hubSeoKeywords": "图表指南,看图方法,K线形态,图表形态,技术指标,技术分析术语",
             "hubSeoTitle": "图表指南：K线形态、图表形态与指标含义",
             "hubTitle": "图表指南",
-            "liveBasisScanner": "SIGLENS 信号扫描 · 截至 {time}",
-            "liveBasisSnapshot": "收盘后快照 · 截至 {date}",
+            "liveBasisScanner": "SIGLENS 信号扫描（截至 {time}）",
+            "liveBasisSnapshot": "收盘后快照（截至 {date}）",
             "liveDetectedOn": "{date} 检出",
             "liveExpectedTag": "(预期)",
             "liveHeading": "当前出现该信号的股票",
@@ -3294,14 +3294,14 @@
                 "asOf": "截至{time}",
                 "note": "这是示例画面。数值是为说明而编写的，真实分析请在各股票页面查看。",
                 "step": {
-                    "bars": "行情·图表",
-                    "barsPending": "正在加载行情·图表",
+                    "bars": "行情与图表",
+                    "barsPending": "正在加载行情与图表",
                     "indicators": "技术指标",
                     "indicatorsPending": "正在计算技术指标",
-                    "patterns": "K线·图表形态",
+                    "patterns": "K线与图表形态",
                     "patternsPending": "正在寻找形态",
-                    "fundamentals": "财务·新闻",
-                    "fundamentalsPending": "正在查看财务·新闻",
+                    "fundamentals": "财务与新闻",
+                    "fundamentalsPending": "正在查看财务与新闻",
                     "news": "新闻",
                     "newsPending": "正在查看新闻",
                     "report": "AI报告",
@@ -3354,17 +3354,17 @@
             "data": {
                 "title": "一只股票能看到这么多",
                 "body": "股票页面的每个标签页分别分析，再在综合页中汇总。",
-                "scopeAll": "美股·韩股·加密货币",
-                "scopeEquity": "美股·韩股",
+                "scopeAll": "美股、韩股、加密货币",
+                "scopeEquity": "美股、韩股",
                 "scopeUs": "美股",
                 "example": "查看{name}的{tab}",
-                "chart": "图表·技术指标",
+                "chart": "图表与技术指标",
                 "chartBody": "根据价格和成交量，计算移动平均线、RSI、MACD等{indicators}种技术指标。",
-                "patterns": "K线·图表形态",
+                "patterns": "K线与图表形态",
                 "patternsBody": "寻找{candles}种K线形态和{patterns}种图表形态，并标出构成支撑位和阻力位的价格区间。",
                 "financials": "财务报表",
                 "financialsBody": "按季度和年度查看营收、利润和现金流，判断公司是否赚钱、是否稳健。",
-                "fundamental": "财报·估值",
+                "fundamental": "财报与估值",
                 "fundamentalBody": "通过财报走势和市盈率等估值指标，判断当前股价是贵还是便宜。",
                 "news": "新闻",
                 "newsBody": "收集近期文章，总结可能影响股价的内容。韩国股票查看韩国新闻。",
@@ -3394,7 +3394,7 @@
             "operator": {
                 "title": "谁在开发和运营",
                 "body": "SIGLENS由个人开发者{name}独自开发和运营。运营费用自掏腰包，不与证券公司或资产管理公司合作，也不收取推广任何股票的报酬。没有交易或下单功能，也不连接证券账户。",
-                "role": "开发·运营",
+                "role": "开发与运营",
                 "email": "发邮件咨询",
                 "github": "GitHub主页",
                 "repo": "公开的源代码",
@@ -3413,7 +3413,7 @@
             "faq": {
                 "title": "常见问题",
                 "whatQ": "SIGLENS是什么服务？",
-                "whatA": "输入股票名称或代码后，AI会把图表、技术指标、K线形态、财务报表、新闻、期权、美国国会交易和恐惧与贪婪指数放在一起分析的网络服务。支持美股、韩股（KOSPI·KOSDAQ）和加密货币。",
+                "whatA": "一项网络服务：输入股票名称或代码后，AI会把图表、技术指标、K线形态、财务报表、新闻、期权、美国国会交易和恐惧与贪婪指数放在一起分析。支持美股、韩股（KOSPI、KOSDAQ）和加密货币。",
                 "freeQ": "免费吗？需要注册吗？",
                 "freeA": "基础分析无需注册即可免费查看。成为会员后可以选择更强的AI模型和推理选项，还能看到入场、止损、目标价格区间等部分内容。",
                 "coverageQ": "支持韩股和加密货币吗？",
@@ -3467,14 +3467,14 @@
                 "8da27a": "支撑",
                 "911acb": "{v0}种指标已应用",
                 "913a74": "策略",
-                "9971e1": "包含辅助指标深度分析、K线形态、核心\n                                    支撑·阻力位、交易情景。",
+                "9971e1": "包含辅助指标深度分析、K线形态、核心\n                                    支撑位与阻力位、交易情景。",
                 "b321c3": "这是多个指标汇聚在相近价格水平的区域。",
                 "b3df82": "内部校正值",
                 "bdeea2": "K线形态",
                 "c68843": "复制到剪贴板失败。请检查浏览器权限。",
-                "c80f22": "{v0}个技能已检测 ·",
+                "c80f22": "已检测到{v0}个技能，",
                 "cfbeac": "显示图表价格线",
-                "d39704": "汇聚的指标越多，该价格水平的支撑·阻力可靠性越高。",
+                "d39704": "汇聚的指标越多，该价位作为支撑或阻力的可靠性越高。",
                 "d930e0": "阻力",
                 "db5809": "如果与实时价格走势不符，将在此处\n                            调整。",
                 "e5c85b": "已复制",
@@ -3505,7 +3505,7 @@
             "PlanCheckBlock": {
                 "0f23de": "上方交易策略的盈亏比以 AI 建议的进场价为基准。",
                 "690c28": "按当前价",
-                "8895c2": "盈亏比 — 按计划进场价",
+                "8895c2": "盈亏比（按计划进场价）",
                 "currentPriceNote": "此处数值是把相同的止损与目标价放到<strong>当前价</strong>上重新计算的，因此价格已经变动时两者会不同。",
                 "d6bde3": "无法计算",
                 "fc05d0": "按当前价复核"
@@ -3526,7 +3526,7 @@
                 "invalidation": "- 失效标准：{v0}",
                 "invalidationNote": "关键失效标准是{v0}。",
                 "keyLevelsHeading": "关键价位：",
-                "levelConvergence": " · {v0}项依据收敛",
+                "levelConvergence": "，{v0}项依据收敛",
                 "levelsResistance": "- 阻力：{v0}",
                 "levelsSupport": "- 支撑：{v0}",
                 "reportTitle": "[{v0}] 技术分析报告",
@@ -3599,8 +3599,8 @@
                 "skill": "技能"
             },
             "settingsMenu": {
-                "aria": "分析设置 · 当前模型：{v0}",
-                "ariaChanged": "分析设置 · 当前模型：{v0}（已更改）"
+                "aria": "分析设置，当前模型：{v0}",
+                "ariaChanged": "分析设置，当前模型：{v0}（已更改）"
             },
             "signalStrength": {
                 "moderate": "中等信号",
@@ -3654,7 +3654,7 @@
                 "394fff": "指标信号命中率（历史）",
                 "5a254c": "AI 情景命中率（历史）",
                 "caee31": "展示将 SIGLENS 当前提供的 AI 分析原样应用于过去数据时的结果。基于历史数据，不保证未来表现。",
-                "d8b543": "回测 — 基于历史数据的事后验证",
+                "d8b543": "回测：基于历史数据的事后验证",
                 "f92294": "总案例",
                 "aiTrendHitRateLabel": "AI 趋势方向命中率（历史）",
                 "meanReturnLabel": "平均收益率（全部案例）",
@@ -3666,7 +3666,7 @@
             "hero": {
                 "caseCount": "{v0} 例",
                 "tickerCount": "{v0} 只",
-                "aiSubLabel": "决定性案例 {v0}/{v1} · 排除中立 {v2} 例",
+                "aiSubLabel": "决定性案例 {v0}/{v1}，排除中立 {v2} 例",
                 "medianHoldingDays": "{v0}天"
             },
             "methodology": {
@@ -3758,11 +3758,11 @@
                 "volume": "成交量"
             },
             "ChartOverlayMenu": {
-                "07d45b": "入场·止盈·止损价格线",
+                "07d45b": "入场、止盈、止损价格线",
                 "0b5eb6": "趋势线",
                 "2bac73": "斐波那契",
                 "3b6851": "艾略特波浪",
-                "4b1cdc": "图表绘制 · {v0}",
+                "4b1cdc": "图表绘制（{v0}）",
                 "5d0ffc": "图表绘制",
                 "67eb73": "背离",
                 "a57483": "水平线向右延伸",
@@ -3773,7 +3773,7 @@
             },
             "IndicatorMenu": {
                 "panelLabel": "辅助指标设置",
-                "trigger": "辅助指标 · {v0}",
+                "trigger": "辅助指标（{v0}）",
                 "triggerEmpty": "辅助指标"
             },
             "ChartSettingsMenu": {
@@ -4020,7 +4020,7 @@
                 "a0f763": "宏观经济简报加载中",
                 "b5f759": "宏观经济简报指南"
             },
-            "dayCellAriaImpacts": " — 重要度 {v0}",
+            "dayCellAriaImpacts": "，重要度 {v0}",
             "krMacroFacts": {
                 "cpiAndUnemployment": "最新消费者物价涨幅为{v0}%，失业率为{v1}%。",
                 "cpiChange": "消费者物价涨幅较上次公布变动{v0}个百分点。",
@@ -4059,7 +4059,7 @@
                 "percentile": "{v0}百分位"
             },
             "FearGreedPage": {
-                "0506ae": "供需·趋势分组分数详情",
+                "0506ae": "供需与趋势分组分数详情",
                 "180c65": "恐惧与贪婪指数趋势 (近1年)",
                 "29eed9": "当前恐惧与贪婪指数与按期间比较",
                 "7da634": "恐惧与贪婪指数加载中",
@@ -4071,13 +4071,13 @@
                 "f9482c": "恐惧与贪婪指数"
             },
             "FearGreedShareView": {
-                "0506ae": "供需·趋势分组分数详情",
+                "0506ae": "供需与趋势分组分数详情",
                 "d9e96a": "当前恐惧与贪婪指数"
             },
             "gauge": {
-                "ariaScore": "恐惧贪婪指数 {v0} 分，{v1}",
-                "ariaScoreOnly": "恐惧贪婪指数 {v0} 分",
-                "ariaScoreWithPeriod": "{v0} 恐惧贪婪指数 {v1} 分，{v2}",
+                "ariaScore": "恐惧与贪婪指数 {v0} 分，{v1}",
+                "ariaScoreOnly": "恐惧与贪婪指数 {v0} 分",
+                "ariaScoreWithPeriod": "{v0} 恐惧与贪婪指数 {v1} 分，{v2}",
                 "confidenceLimited": "置信度受限",
                 "confidenceLimitedNote": "交易数据不足，因此置信度受限。",
                 "confidenceLimitedRecovery": "随着记录的增加，分数会更准确。",
@@ -4363,25 +4363,25 @@
                 "f6087a": "美国主题热门股票"
             },
             "categoryDescription": {
-                "AIsemiconductors": "制造AI算力芯片与服务器的公司 — 随数据中心投资周期波动。",
-                "Altcoins": "主流之外的主要加密资产 — 随比特币走势放大波动。",
-                "Autosbatteries": "整车厂与电池材料企业 — 电动车需求和汇率决定财报表现。",
-                "Biotechhealthcare": "韩国制药与生物科技公司 — 对技术授权和临床消息反应剧烈。",
-                "EVmobility": "电动车与自动驾驶公司 — 对交付量和补贴政策敏感。",
-                "Energyindustrials": "石油、电力与重型装备公司 — 跟随大宗商品价格与经济周期。",
-                "Financialsholdings": "银行、券商与控股公司 — 利率方向与股息政策是核心变量。",
-                "Fintechcrypto": "支付、券商与加密资产交易公司 — 同时受利率与币价影响。",
-                "Healthcarebiotech": "制药、医疗器械与新药研发公司 — 临床结果与监管审批决定股价。",
-                "Internetplatforms": "韩国门户、电商与游戏公司 — 关注广告景气与用户指标。",
+                "AIsemiconductors": "制造AI算力芯片与服务器的公司，随数据中心投资周期波动。",
+                "Altcoins": "主流之外的主要加密资产，随比特币走势放大波动。",
+                "Autosbatteries": "整车厂与电池材料企业，电动车需求和汇率决定财报表现。",
+                "Biotechhealthcare": "韩国制药与生物科技公司，对技术授权和临床消息反应剧烈。",
+                "EVmobility": "电动车与自动驾驶公司，对交付量和补贴政策敏感。",
+                "Energyindustrials": "石油、电力与重型装备公司，跟随大宗商品价格与经济周期。",
+                "Financialsholdings": "银行、券商与控股公司，利率方向与股息政策是核心变量。",
+                "Fintechcrypto": "支付、券商与加密资产交易公司，同时受利率与币价影响。",
+                "Healthcarebiotech": "制药、医疗器械与新药研发公司，临床结果与监管审批决定股价。",
+                "Internetplatforms": "韩国门户、电商与游戏公司，关注广告景气与用户指标。",
                 "Trendinginterest": "本周SIGLENS访问者查看最多的韩国股票。",
-                "KOSDAQ": "韩国KOSDAQ市值靠前的标的 — 波动率高于KOSPI。",
-                "LeveragedETFs": "以2至3倍跟踪指数日收益的ETF — 波动率高，长期持有存在复利损耗。",
-                "Major": "市值居前的加密资产 — 是整个市场走势的基准。",
-                "Megacapsindices": "美国市值最大的科技股与代表性指数ETF — 决定市场方向的标的。",
-                "Quantumcomputing": "量子计算软硬件公司 — 尚未商业化，情绪驱动的波动较大。",
-                "SemiconductorsIT": "韩国KOSPI半导体与电子元件龙头 — 与存储器价格和出口数据挂钩。",
-                "Softwarecloud": "订阅制软件与云基础设施公司 — 以营收增速和利润率衡量。",
-                "Spaceaerospace": "卫星、运载与国防公司 — 政府预算与订单公告是主要变量。"
+                "KOSDAQ": "韩国KOSDAQ市值靠前的标的，波动率高于KOSPI。",
+                "LeveragedETFs": "以2至3倍跟踪指数日收益的ETF。波动率高，长期持有存在复利损耗。",
+                "Major": "市值居前的加密资产，是整个市场走势的基准。",
+                "Megacapsindices": "美国市值最大的科技股与代表性指数ETF，是决定市场方向的标的。",
+                "Quantumcomputing": "量子计算软硬件公司。尚未商业化，情绪驱动的波动较大。",
+                "SemiconductorsIT": "韩国KOSPI半导体与电子元件龙头，与存储器价格和出口数据挂钩。",
+                "Softwarecloud": "订阅制软件与云基础设施公司，以营收增速和利润率衡量。",
+                "Spaceaerospace": "卫星、运载与国防公司，政府预算与订单公告是主要变量。"
             },
             "skillBadge": {
                 "candlestick": "K线",
@@ -4441,17 +4441,17 @@
                 "ftdNone": "无数据",
                 "insiderNone": "暂无数据",
                 "insiderWindow": "{from} ~ {to}(近{days}天)",
-                "institutionalComplete": "{period}季度末 · 已提交完毕",
+                "institutionalComplete": "{period}季度末（已提交完毕）",
                 "institutionalNone": "暂无数据",
                 "institutionalPartial": "更近的{period}季度仅有部分机构提交，为部分汇总。",
                 "shortInterestDate": "结算日 {date}",
                 "shortInterestNone": "暂无数据",
                 "shortVolumeDate": "最后交易日 {date}",
                 "shortVolumeNone": "暂无数据",
-                "sources": "来源: 美国SEC EDGAR的13F(机构持股·期权)、Form 144、增发申报、交收失败(FTD)、Form 4·13D/G(内部人·大额持股，由FMP提供)。",
+                "sources": "来源: 美国SEC EDGAR的13F(机构持股、期权)、Form 144、增发申报、交收失败(FTD)、Form 4与13D/G(内部人、大额持股，由FMP提供)。",
                 "sourcesWithExchange": "{sources} Reg SHO门槛名单由Nasdaq、NYSE和Cboe发布。",
-                "sourcesWithFinra": "来源: 美国SEC EDGAR的13F(机构持股·期权)、Form 144、增发申报、交收失败(FTD)、Form 4·13D/G(内部人·大额持股，由FMP提供)，以及FINRA(卖空余额·场外报告交易)。",
-                "termFilings": "Form 144·增发申报",
+                "sourcesWithFinra": "来源: 美国SEC EDGAR的13F(机构持股、期权)、Form 144、增发申报、交收失败(FTD)、Form 4与13D/G(内部人、大额持股，由FMP提供)，以及FINRA(卖空余额、场外报告交易)。",
+                "termFilings": "Form 144与增发申报",
                 "termFtd": "交收失败(FTD)",
                 "termInsider": "内部人交易",
                 "termInstitutional": "机构持仓(13F)",
@@ -4464,7 +4464,7 @@
                 "title": "数据时点与来源"
             },
             "axis": {
-                "dilution": "增发·稀释",
+                "dilution": "增发/稀释",
                 "insider": "内部人",
                 "institutional": "机构",
                 "largeHolders": "大额持股(5%)",
@@ -4510,43 +4510,43 @@
                     "shelf": "储架注册",
                     "underwritten": "承销"
                 },
-                "none": "没有已受理的增发·稀释申报。",
+                "none": "没有已受理的增发或稀释申报。",
                 "omitted": "较早的{count}份申报未列入。",
                 "source": "来源: 美国SEC EDGAR(S-1、S-3、F-1、F-3、424B、Form D)。",
                 "subtitle": "公司为发行并出售新股而向SEC提交的申报。一旦真正出售，现有股东的持股比例就会相应被稀释。",
-                "title": "增发·稀释申报",
-                "unavailable": "未能加载增发·稀释申报，请稍后再查看。",
+                "title": "增发与稀释申报",
+                "unavailable": "未能加载增发与稀释申报，请稍后再查看。",
                 "window": "评分依据近{days}天({from}至{to})的申报。"
             },
             "empty": {
-                "body": "暂无数据 — 该股票还没有机构持仓(13F)、内部人或卖空数据。新上市或交易规模较小的股票经常出现这种情况。",
+                "body": "暂无数据：该股票还没有机构持仓(13F)、内部人或卖空数据。新上市或交易规模较小的股票经常出现这种情况。",
                 "title": "资金流向数据"
             },
             "ev": {
                 "daysToCover": "回补天数 {days}天",
                 "dilutionFilings": "近{days}天增发及注册申报 {count}份",
-                "dilutionIssuance": "ATM {atm}份 · 公开发行 {marketed}份",
+                "dilutionIssuance": "ATM {atm}份，公开发行 {marketed}份",
                 "ftdPct": "交收失败峰值 {pct}(占已发行股份)",
                 "holders": "持仓机构 {count}家(较上季度 {change})",
                 "holdersOnly": "持仓机构 {count}家",
                 "insiderCluster": "集中买入:{count}位不同内部人",
-                "insiderCounts": "买入 {buys}笔 · 卖出 {sells}笔",
+                "insiderCounts": "买入 {buys}笔，卖出 {sells}笔",
                 "insiderNetBuy": "近{days}天净买入 {amount}",
                 "insiderNetSell": "近{days}天净卖出 {amount}",
-                "insiderProposedSales": "拟出售申报(Form 144) {count}笔 · {amount}",
-                "largeHolderCounts": "13D 持仓{d}个 · 申报{df}份 · 13G 持仓{g}个 · 申报{gf}份(近{days}天)",
+                "insiderProposedSales": "拟出售申报(Form 144) {count}笔，{amount}",
+                "largeHolderCounts": "13D 持仓{d}个、申报{df}份；13G 持仓{g}个、申报{gf}份(近{days}天)",
                 "netSharesOutstanding": "机构持股净变化 {pct}(占总股本)",
                 "netSharesPrior": "机构持股净变化 {pct}(较上季度持仓量)",
-                "newExited": "新进 {added}家 · 清仓 {exited}家",
+                "newExited": "新进 {added}家，清仓 {exited}家",
                 "putCallRatio": "13F期权看跌/看涨名义金额比 {ratio}",
                 "shortPct": "卖空余额 {pct}(占流通股)",
                 "shortRatio": "场外卖空占比 {pct}(最近交易日)",
                 "shortTrend": "余额变化 {pct}(最近3个结算日)",
                 "thresholdListed": "连续{days}个交易日列入门槛名单",
-                "krMajorHolderReports": "最近{days}天大额持股报告{reports}份 · 报告人{reporters}名",
+                "krMajorHolderReports": "最近{days}天大额持股报告{reports}份，报告人{reporters}名",
                 "krMajorHolderDetailed": "一般报告{count}份",
-                "krInsiderReports": "最近{days}天持股报告{reports}份 · 报告人{reporters}名",
-                "krInsiderReportsBatch": "最近{days}天持股报告{reports}份 · 报告人{reporters}名(含{date}一次性集中报告{batchCount}份)",
+                "krInsiderReports": "最近{days}天持股报告{reports}份，报告人{reporters}名",
+                "krInsiderReportsBatch": "最近{days}天持股报告{reports}份，报告人{reporters}名(含{date}一次性集中报告{batchCount}份)",
                 "krInsiderNetShares": "净增减 {shares}股",
                 "krInsiderNetPct": "持股比例净增减 {pct}",
                 "krTradingPlans": "交易计划报告{count}份",
@@ -4609,7 +4609,7 @@
                 "emptyFiltered": "没有符合条件的机构。",
                 "filterLabel": "查看筛选",
                 "noChange": "无变化",
-                "noData": "暂无数据 — 还没有主要持仓机构名单。",
+                "noData": "暂无数据：还没有主要持仓机构名单。",
                 "title": "主要持仓机构"
             },
             "holdersTrend": {
@@ -4620,7 +4620,7 @@
             "insider": {
                 "buy": "买入",
                 "buys": "买入",
-                "clusterBadge": "集中买入 · {count}位内部人",
+                "clusterBadge": "集中买入：{count}位内部人",
                 "colDate": "交易日",
                 "colFiling": "披露",
                 "colName": "内部人",
@@ -4632,7 +4632,7 @@
                 "netBuy": "净买入 {amount}",
                 "netFlat": "无净买卖",
                 "netSell": "净卖出 {amount}",
-                "noData": "暂无数据 — 没有内部人交易申报。",
+                "noData": "暂无数据：没有内部人交易申报。",
                 "noRecent": "最近{days}天没有内部人买卖申报。",
                 "noTrades": "没有可列出的买卖申报。",
                 "noTradesInWindow": "最近{days}天内没有买卖申报。",
@@ -4641,13 +4641,13 @@
                 "outsideWindowTitle": "统计期间外({from}之前)",
                 "sell": "卖出",
                 "sells": "卖出",
-                "summary": "{count}笔 · {people}人 · {amount}",
+                "summary": "{count}笔，{people}人，{amount}",
                 "tableTitle": "近期内部人买卖",
                 "title": "内部人交易(Form 4)",
                 "window": "统计最近{days}天({from} ~ {to})。"
             },
             "institutional": {
-                "noData": "暂无数据 — 该股票还没有机构持仓(13F)数据。",
+                "noData": "暂无数据：该股票还没有机构持仓(13F)数据。",
                 "partialNote": "进行中的{period}季度尚未提交完毕，为部分汇总：目前已有{holders}家提交，净变化{net}({direction})。",
                 "subtitle": "通过大型机构每季度申报的持仓(13F)，查看流入(IN)与流出(OUT)。",
                 "title": "机构买卖(13F)"
@@ -4672,10 +4672,10 @@
                 "kind13d": "13D 积极股东",
                 "kind13g": "13G 被动投资",
                 "kindOther": "其他",
-                "noData": "暂无数据 — 没有5%大额持股披露。",
+                "noData": "暂无数据：没有5%大额持股披露。",
                 "subtitle": "持有公司5%以上股份的股东最近提交的披露。",
                 "temporarilyUnavailable": "暂时无法加载大额持股披露，请稍后再查看。",
-                "title": "5%以上大额持股(13D·13G)",
+                "title": "5%以上大额持股(13D/13G)",
                 "unavailable": "无法加载大额持股披露，请稍后再查看。",
                 "unknownFiler": "提交人未知",
                 "window": "评分只计入近{days}天({from}至{to})的申报，更早的申报也一并列出。"
@@ -4686,8 +4686,8 @@
                 "put": "看跌",
                 "ratio": "{period}看跌/看涨名义金额比 {ratio}",
                 "ratioWithPrior": "{period}看跌/看涨名义金额比 {ratio}(上一季度 {prior})",
-                "title": "期权头寸(看跌·看涨名义金额)",
-                "value": "{amount} · {holders}家"
+                "title": "期权头寸(看跌、看涨名义金额)",
+                "value": "{amount}，{holders}家"
             },
             "scorecard": {
                 "axisCollecting": "数据收集中，暂未计入评分。",
@@ -4798,7 +4798,7 @@
             "threshold": {
                 "collecting": "正在收集门槛名单。",
                 "listedBadge": "已列入门槛名单",
-                "listedDetail": "连续{days}个交易日 · {markets}",
+                "listedDetail": "连续{days}个交易日，{markets}",
                 "notListed": "目前不在门槛名单上。",
                 "source": "来源: Nasdaq、NYSE、Cboe",
                 "sourceWithDate": "来源: Nasdaq、NYSE、Cboe(以{date}名单为准)",
@@ -4934,7 +4934,7 @@
                 "insiders": {
                     "title": "高管与主要股东持股报告",
                     "caption": "高管或持股10%以上的股东每次持股变动时提交的报告。报告中不说明是场内买卖还是赠与、继承。",
-                    "colReporter": "报告人·职位",
+                    "colReporter": "报告人/职位",
                     "colRegistered": "是否登记",
                     "colMajor": "主要股东",
                     "colShares": "持有股数",
@@ -4959,7 +4959,7 @@
                 },
                 "empty": {
                     "title": "持股公告数据",
-                    "body": "无数据 — 最近2年未找到该股票的大额持股或高管持股公告。"
+                    "body": "无数据：最近2年未找到该股票的大额持股或高管持股公告。"
                 }
             }
         },
@@ -5188,7 +5188,7 @@
                 "e0c6a1": "期权信号列表",
                 "e26a05": "▸ 按到期日划分的解读",
                 "eefb95": "AI 期权分析",
-                "previousSessionBasis": "分析依据: 前一常规交易时段期权数据 · {v0} 收集"
+                "previousSessionBasis": "分析依据: 前一常规交易时段期权数据（{v0} 收集）"
             },
             "OptionsAiAnalysisError": {
                 "e756f5": "未能获取期权分析。请稍后重试。",
@@ -5206,7 +5206,7 @@
                 "eefb95": "AI 期权分析"
             },
             "OptionsChainTable": {
-                "0300a5": "所有到期日合计 — 以最近到期日 ({v0}) 为准显示。如需查看其他到期日，请在上方到期日按钮中选择。",
+                "0300a5": "所有到期日合计，以最近到期日 ({v0}) 为准显示。如需查看其他到期日，请在上方到期日按钮中选择。",
                 "1b9687": "▸ 查看完整期权链表格 (0 contracts)",
                 "b2411c": "{v0} {v1} 期权链 (按行权价划分的看涨/看跌价格、未平仓合约、隐含波动率)"
             },
@@ -5217,11 +5217,11 @@
                 "9e8562": "请在其他分析页面查看股票。"
             },
             "OptionsMetricsRow": {
-                "6db40b": "所有到期日合计 — 以最近到期日 ({v0}) 为准显示。",
+                "6db40b": "所有到期日合计，以最近到期日 ({v0}) 为准显示。",
                 "atmIv": "ATM隐含波动率",
                 "impliedMove": "预期波动幅度",
                 "maxPain": "最大痛点",
-                "previousSessionCaption": "以上一个常规交易时段为准 · {v0} 收集",
+                "previousSessionCaption": "以上一个常规交易时段为准（{v0} 收集）",
                 "putCallRatio": "看跌/看涨比率"
             },
             "OptionsStaleDataBanner": {
@@ -5258,7 +5258,7 @@
                 "149b70": "最接近当前股价的期权所反映的预期波动率。",
                 "2c2508": ": 在美国常规交易时段结束后或盘前交易时段，Yahoo 有时会将 ATM 期权的 IV 清零发送，因此无法获得准确数值。请在韩国时间平日 {v0} (美国常规交易时段, {v1}) 再次确认。美国股市休市日除外。",
                 "2eb007": "期权市场在价格中反映的“该股票未来可能波动幅度”的范围。",
-                "974bf0": "显示为‘—’时",
+                "974bf0": "显示为‘-’时",
                 "cc43f8": ": 由于是从 ATM IV 计算，如果 ATM IV 为空 (例如在非常规交易时段)，则此项也为空。此外，如果是在到期日，剩余时间为 0，无法计算，也可能显示为空。请在韩国时间平日 {v0} (美国常规交易时段) 再次确认。美国股市休市日除外。",
                 "d9d063": "通常在财报发布前上涨。",
                 "f76775": "例如，如果为±4%，则市场认为在下一个到期日之前，股价有很高可能性波动±4%左右。",
@@ -5378,7 +5378,7 @@
         },
         "portfolio-position": {
             "PositionBuilding": {
-                "305967": "收益率 {v0} · 位于近期范围的 {v1}% 点"
+                "305967": "收益率 {v0}，位于近期范围的 {v1}% 处"
             },
             "PositionCard": {
                 "082179": "我的平均成本",
@@ -5412,7 +5412,7 @@
                 "44acd6": "浮动盈亏",
                 "70227d": "至近期低点",
                 "bda91f": "我的仓位",
-                "f2116e": "平均成本 · 数量",
+                "f2116e": "平均成本/数量",
                 "fb64df": "收益率"
             },
             "PositionTabContent": {
@@ -5427,19 +5427,19 @@
                 "ariaSummary": "{v0} 持仓：均价 {v1}，现价 {v2}，收益率 {v3}{v4}%，位于近期区间的 {v5}%，{v6}",
                 "ariaSummaryCurrentOnly": "{v0} 现价位置：现价 {v1}，位于近期区间的 {v2}%，{v3}",
                 "avgPrefix": "★ 均价 ",
-                "bandMain": "{v0}–{v1} · 占比 {v2}%",
+                "bandMain": "{v0}–{v1}，占比 {v2}%",
                 "bandQualifier": "基于近52周成交量",
                 "basement": "地下",
-                "basementNote": "{v0} · 低于近期低点",
+                "basementNote": "{v0}，低于近期低点",
                 "belowLow": "低于近期低点",
                 "currentPrefix": "● 现价 ",
-                "floorNote": "第{v0}层 · {v1}",
+                "floorNote": "第{v0}层，{v1}",
                 "highFloor": "高层",
                 "lowFloor": "低层",
                 "midFloor": "中层",
                 "penthouse": "顶层",
                 "rooftop": "屋顶之上",
-                "rooftopNote": "{v0} · 高于近期高点"
+                "rooftopNote": "{v0}，高于近期高点"
             },
             "statusSummary": {
                 "rangePoint": "区间 {v0}%",
@@ -5473,7 +5473,7 @@
                 "2d4e13": "稍后",
                 "5481d6": "分享前将准备分析",
                 "94b7db": "关闭",
-                "b74ea2": "此股票暂无AI分析。稍等片刻即可准备好 — 完成后将直接跳转到分享界面。",
+                "b74ea2": "此股票暂无AI分析。稍等片刻即可准备好，完成后将直接跳转到分享界面。",
                 "cc6aae": "分析并分享"
             }
         },
@@ -5506,12 +5506,12 @@
                 "4077ce": "发送",
                 "d2e7e7": "停止",
                 "fdad68": "消息输入",
-                "tooLong": "{len} / {max} 字符 — 太长",
-                "remainingTurns": "今日剩余 {n} 次 · ",
+                "tooLong": "{len} / {max} 字符，太长了",
+                "remainingTurns": "今日剩余 {n} 次，",
                 "charCount": "{len} / {max}",
                 "placeholder": "向 SIGLENS AI 提问…",
-                "keyHint": "Enter 发送 · Shift+Enter 换行",
-                "betaNotice": "测试版 · 回答可能有误，不构成投资建议。"
+                "keyHint": "Enter 发送，Shift+Enter 换行",
+                "betaNotice": "测试版：回答可能有误，不构成投资建议。"
             },
             "EmptyState": {
                 "a00741": "使用 SIGLENS 账户登录",
@@ -5592,7 +5592,7 @@
                 "seconds": "{n} 秒",
                 "toolAnalysis": "SIGLENS 分析",
                 "toolBars": "图表与指标",
-                "toolBarsFearGreed": "图表·指标·恐惧与贪婪",
+                "toolBarsFearGreed": "图表、指标、恐惧与贪婪",
                 "toolCongressTrades": "国会交易",
                 "toolEconomy": "经济数据",
                 "toolFundamentals": "公司基本面",

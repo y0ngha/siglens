@@ -26,7 +26,7 @@ faq:
 
 数值以一根K线为单位，在日线上用小数表示价格一天通常晃动百分之几，比常见的按一年计算（年化）的波动率小得多。
 
-这是丹尼斯·杨和张强在2000年发表于《商业杂志》（Journal of Business）的方法。
+这是Dennis Yang和Qiang Zhang在2000年发表于《商业杂志》（Journal of Business）的方法。
 
 ## 说明了什么
 

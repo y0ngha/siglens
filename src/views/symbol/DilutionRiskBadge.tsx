@@ -32,7 +32,7 @@ export function DilutionRiskBadge({ symbol, event }: DilutionRiskBadgeProps) {
             : t('DilutionRiskBadge.priced');
     // 신고일은 문구와 따로 그린다 — 좁은 화면에서 문구만 말줄임되고 날짜는 항상 보인다(모바일에서 날짜가 먼저 잘리던 문제).
     // 접근 가능한 이름은 `aria-label`로 문구 전체 + 날짜를 그대로 준다(보이는 글자가 이름의 앞부분이라 WCAG 2.5.3 충족).
-    const dateSuffix = ` · ${date}`;
+    const dateSuffix = ` | ${date}`;
     const note = t('DilutionRiskBadge.note');
     return (
         <>

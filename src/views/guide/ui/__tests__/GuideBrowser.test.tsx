@@ -410,7 +410,7 @@ describe('GuideBrowser — 제목 중복·카드 별칭', () => {
 
         expect(
             screen.getByText(
-                aliases.slice(0, GUIDE_CARD_ALIAS_LIMIT).join(' · ')
+                aliases.slice(0, GUIDE_CARD_ALIAS_LIMIT).join(', ')
             )
         ).toBeInTheDocument();
         expect(

@@ -100,7 +100,7 @@ describe('FinancialsScorecard widget (empty snapshot)', () => {
             screen.getByRole('heading', { name: '성장성' })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('heading', { name: '수익성·질' })
+            screen.getByRole('heading', { name: '수익성과 질' })
         ).toBeInTheDocument();
         expect(
             screen.getByRole('heading', { name: '안정성' })
@@ -130,7 +130,7 @@ describe('FinancialsScorecard widget (hand-built scorecard)', () => {
             screen.getByRole('heading', { name: '성장성' })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('heading', { name: '수익성·질' })
+            screen.getByRole('heading', { name: '수익성과 질' })
         ).toBeInTheDocument();
         expect(
             screen.getByRole('heading', { name: '안정성' })

@@ -22,7 +22,7 @@
  * (§15 drift trap). 둘 중 한 쪽 표기만 바뀌면 사용자에게는 같은 자리에 서로
  * 다른 placeholder가 보이게 된다.
  */
-export const METRIC_PLACEHOLDER = '—';
+export const METRIC_PLACEHOLDER = '-';
 
 // `toFixed(1)`이 "0.0"으로 반올림되는 경계값. 정상 시장의 IV는 보통 5% 이상이고
 // `±implied move`도 0.05% 이상이라, 이 임계 아래의 값은 noise(또는 Yahoo가 채우다

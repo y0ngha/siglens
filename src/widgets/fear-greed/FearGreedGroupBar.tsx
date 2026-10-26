@@ -61,7 +61,7 @@ export function FearGreedGroupBar({
                             className="flex items-center justify-between"
                         >
                             <span>
-                                ·{' '}
+                                -{' '}
                                 {tFactor(`symbolLabel.${f.key}`, {
                                     v0: POC_WINDOW_DEFAULT,
                                 })}

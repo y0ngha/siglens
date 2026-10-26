@@ -66,7 +66,7 @@ describe('OAuthConsentForm', () => {
         render(<OAuthConsentForm {...baseProps} />);
         expect(screen.getByLabelText('모두 동의')).toBeInTheDocument();
         expect(
-            screen.getByLabelText(/개인정보 수집·이용 동의/)
+            screen.getByLabelText(/개인정보 수집 및 이용 동의/)
         ).toBeInTheDocument();
         expect(
             screen.getByLabelText(/서비스 이용약관 동의/)
@@ -175,7 +175,7 @@ describe('OAuthConsentForm', () => {
         const user = userEvent.setup();
         const { container } = render(<OAuthConsentForm {...baseProps} />);
         const privacyCheckbox = screen.getByLabelText(
-            /개인정보 수집·이용 동의/
+            /개인정보 수집 및 이용 동의/
         );
         await user.click(privacyCheckbox);
         const hiddenInput = container.querySelector(

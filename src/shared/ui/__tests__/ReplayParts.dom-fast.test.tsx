@@ -190,10 +190,10 @@ describe('ReplaySources', () => {
         expect(screen.getByText('출처')).toBeInTheDocument();
         expect(screen.getByText('FMP')).toBeInTheDocument();
         expect(screen.getByText('SEC')).toBeInTheDocument();
-        expect(screen.getByText('· 기준 2026-09-18 종가')).toBeInTheDocument();
+        expect(screen.getByText('| 기준 2026-09-18 종가')).toBeInTheDocument();
     });
 
-    it('separator={false}면 기준 시각 앞의 `·`를 빼고 그린다 (광고 랜딩 카피 규칙)', () => {
+    it('separator={false}면 기준 시각 앞의 `|`를 빼고 그린다 (광고 랜딩 카피 규칙)', () => {
         const { container } = render(
             <ReplaySources
                 label="출처"
@@ -204,7 +204,7 @@ describe('ReplaySources', () => {
         );
 
         expect(screen.getByText('기준 2026-09-18 종가')).toBeInTheDocument();
-        expect(container.textContent).not.toContain('·');
+        expect(container.textContent).not.toContain('|');
     });
 });
 

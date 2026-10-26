@@ -55,7 +55,7 @@ describe('PositionStatusSummary', () => {
                 quantityRaw="10.50000000"
             />
         );
-        expect(getByText('$150 · 10.5주')).toBeInTheDocument();
+        expect(getByText('$150, 10.5주')).toBeInTheDocument();
     });
 
     it('평가손익이 양수면 ui-success-text, 수익률도 양수면 ui-success-text', () => {
@@ -127,7 +127,7 @@ describe('PositionStatusSummary', () => {
                 quantityRaw="1000"
             />
         );
-        expect(getByText('$0.0001 · 1000주')).toBeInTheDocument();
+        expect(getByText('$0.0001, 1000주')).toBeInTheDocument();
         expect(getByText('+$0.10000')).toBeInTheDocument();
     });
 
@@ -157,9 +157,9 @@ describe('PositionStatusSummary', () => {
                 quantityRaw="10"
             />
         );
-        expect(getByText('₩150 · 10주')).toBeInTheDocument();
+        expect(getByText('₩150, 10주')).toBeInTheDocument();
         expect(getByText('+₩300')).toBeInTheDocument();
-        expect(queryByText('$150 · 10주')).not.toBeInTheDocument();
+        expect(queryByText('$150, 10주')).not.toBeInTheDocument();
         expect(queryByText('+$300.00')).not.toBeInTheDocument();
     });
 });

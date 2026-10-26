@@ -176,7 +176,7 @@ function signalBriefText(
         signalFreshPart(signals, t, signalLabel),
         signalPullbackPart(signals, t),
     ];
-    return parts.filter((p): p is string => p !== null).join(' · ');
+    return parts.filter((p): p is string => p !== null).join(' | ');
 }
 
 function signalLineHtml(
@@ -188,7 +188,7 @@ function signalLineHtml(
     const trend =
         brief.trend === null
             ? ''
-            : `<span style="color:${COLORS.heading};font-weight:600;">${escapeHtml(t(`trendState.${brief.trend}`))}</span> · `;
+            : `<span style="color:${COLORS.heading};font-weight:600;">${escapeHtml(t(`trendState.${brief.trend}`))}</span> | `;
     return `<p style="font-size:13px;line-height:1.6;color:${COLORS.muted};margin:0 0 12px;">${trend}${escapeHtml(signalBriefText(brief.signals, t, signalLabel))}</p>`;
 }
 
@@ -340,7 +340,7 @@ function sectionText(
     const lines = [`■ ${report.symbol}`];
     if (brief.signals !== null) {
         const trend =
-            brief.trend === null ? '' : `${t(`trendState.${brief.trend}`)} · `;
+            brief.trend === null ? '' : `${t(`trendState.${brief.trend}`)} | `;
         lines.push(`${trend}${signalBriefText(brief.signals, t, signalLabel)}`);
     }
     if (report.technical === null) {
@@ -402,19 +402,19 @@ function briefRowCells(
     const { brief } = row;
     if (brief.signals === null) {
         return {
-            close: '—',
+            close: '-',
             change: '',
             changeColor: COLORS.muted,
-            trend: '—',
+            trend: '-',
             signals: t('briefNoData'),
         };
     }
     const pct = brief.changePercent;
     return {
-        close: brief.close === null ? '—' : formatClose(brief.close, locale),
+        close: brief.close === null ? '-' : formatClose(brief.close, locale),
         change: pct === null ? '' : formatSignedPercent(pct),
         changeColor: changeColorFor(pct),
-        trend: brief.trend === null ? '—' : t(`trendState.${brief.trend}`),
+        trend: brief.trend === null ? '-' : t(`trendState.${brief.trend}`),
         signals: signalBriefText(brief.signals, t, signalLabel),
     };
 }
@@ -469,7 +469,7 @@ function briefTableText(
         `■ ${t('sectionBrief')}`,
         ...rows.map(row => {
             const cells = briefRowCells(row, locale, t, signalLabel);
-            return `- ${row.brief.symbol} · ${[cells.close, cells.change].filter(Boolean).join(' ')} · ${cells.trend} · ${cells.signals}\n  ${row.pageUrl}`;
+            return `- ${row.brief.symbol} | ${[cells.close, cells.change].filter(Boolean).join(' ')} | ${cells.trend} | ${cells.signals}\n  ${row.pageUrl}`;
         }),
         '',
     ];
@@ -508,7 +508,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
   <div style="padding:16px 8px;border-top:1px solid ${COLORS.rule};">
     <p style="font-size:12px;line-height:1.6;color:${COLORS.muted};margin:0 0 8px;">${escapeHtml(disclaimer)}</p>
     ${showConfluenceNote ? `<p style="font-size:12px;line-height:1.6;color:${COLORS.muted};margin:0 0 8px;">${escapeHtml(t('confluenceNote'))}</p>` : ''}
-    <p style="font-size:12px;line-height:1.6;color:${COLORS.faint};margin:0;">${escapeHtml(reason)} <a href="${escapeHtml(input.settingsUrl)}" style="color:${COLORS.link};">${escapeHtml(t('manage'))}</a> · <a href="${escapeHtml(input.unsubscribePageUrl)}" style="color:${COLORS.link};">${escapeHtml(t('unsubscribe'))}</a></p>
+    <p style="font-size:12px;line-height:1.6;color:${COLORS.faint};margin:0;">${escapeHtml(reason)} <a href="${escapeHtml(input.settingsUrl)}" style="color:${COLORS.link};">${escapeHtml(t('manage'))}</a> | <a href="${escapeHtml(input.unsubscribePageUrl)}" style="color:${COLORS.link};">${escapeHtml(t('unsubscribe'))}</a></p>
   </div>
 </div></body></html>`;
 

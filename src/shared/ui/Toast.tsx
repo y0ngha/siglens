@@ -87,7 +87,7 @@ export function Toast({ toast, onDismiss, onPauseChange }: ToastProps) {
                                         className="text-secondary-500"
                                     >
                                         {' '}
-                                        ·{' '}
+                                        |{' '}
                                     </span>
                                     <Link
                                         href={toast.link.href}
@@ -106,7 +106,7 @@ export function Toast({ toast, onDismiss, onPauseChange }: ToastProps) {
                                         className="text-secondary-500"
                                     >
                                         {' '}
-                                        ·{' '}
+                                        |{' '}
                                     </span>
                                     <button
                                         type="button"

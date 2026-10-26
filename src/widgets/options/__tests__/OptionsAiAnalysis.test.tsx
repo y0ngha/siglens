@@ -205,7 +205,7 @@ describe('OptionsAiAnalysis', () => {
             });
             expect(
                 screen.getByText(
-                    /분석 기준: 직전 정규장 옵션 데이터 · .*6월 14일.*05:00 KST 수집/
+                    /분석 기준: 직전 정규장 옵션 데이터 \(.*6월 14일.*05:00 KST 수집\)/
                 )
             ).toBeInTheDocument();
         });

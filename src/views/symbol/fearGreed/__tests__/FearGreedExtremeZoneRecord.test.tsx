@@ -4,7 +4,7 @@ import { EXTREME_ZONE_REENTRY_GAP } from '@y0ngha/siglens-core';
 import { FearGreedExtremeZoneRecord } from '../FearGreedExtremeZoneRecord';
 import type { ExtremeZoneRecord } from '../utils/fearGreedFacts';
 
-const NOTICE = '앞으로의 가격을 예측하거나 매수·매도를 권하지 않아요';
+const NOTICE = '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않아요';
 const GROUP_NAME = '극단 구간 기록';
 
 const BASE: Omit<ExtremeZoneRecord, 'sections'> = {
@@ -131,7 +131,7 @@ describe('FearGreedExtremeZoneRecord', () => {
         );
 
         const row = screen.getByRole('row', { name: /2026년 4월 7일/ });
-        expect(within(row).getByText('—')).toBeInTheDocument();
+        expect(within(row).getByText('-')).toBeInTheDocument();
     });
 
     it('집계 기간을 싣고 묶는 기준은 분석 방법 링크로 넘기며, 수익률은 보이지 않는다', () => {

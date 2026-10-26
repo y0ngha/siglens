@@ -32,7 +32,7 @@ describe('buildSnapshotMetaDescription — 짧은 주어와 문장 단위 절단
             'ko',
             LABEL
         );
-        expect(result).toBe('애플(AAPL) 주가 분석 — 추세는 상승입니다.');
+        expect(result).toBe('애플(AAPL) 주가 분석: 추세는 상승입니다.');
     });
 
     it('원문 경로도 160자 안에서 온전한 문장까지만 담는다(문장 중간에서 끊지 않는다)', () => {

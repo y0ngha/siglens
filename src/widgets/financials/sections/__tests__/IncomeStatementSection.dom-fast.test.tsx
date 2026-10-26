@@ -83,10 +83,10 @@ describe('IncomeStatementSection', () => {
         expect(screen.getByText('순이익률')).toBeInTheDocument();
     });
 
-    it('renders em-dash for null operating income', () => {
+    it('renders the "-" placeholder for null operating income', () => {
         render(<IncomeStatementSection rows={SAMPLE_ROWS} />);
-        // 2022 row: operatingIncome + operatingMargin both null → 2 em-dashes
-        expect(screen.getAllByText('—')).toHaveLength(2);
+        // 2022 row: operatingIncome + operatingMargin both null → 2 "-" placeholders
+        expect(screen.getAllByText('-')).toHaveLength(2);
     });
 
     it('renders fiscal year labels as columns (oldest→newest)', () => {

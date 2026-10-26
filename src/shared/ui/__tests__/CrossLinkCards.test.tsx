@@ -123,7 +123,7 @@ describe('CrossLinkCards — crypto profile', () => {
         );
         expect(screen.queryByText('4축 통합 AI 결론 + 시나리오')).toBeNull();
         expect(
-            screen.getByText('차트·뉴스·시장 분위기 통합 AI 결론 + 시나리오')
+            screen.getByText('차트, 뉴스, 시장 분위기 통합 AI 결론 + 시나리오')
         ).toBeInTheDocument();
     });
 
@@ -232,7 +232,7 @@ describe('CrossLinkCards — crypto profile', () => {
                 'a[href="/005930.KS/flows"]'
             ) as HTMLElement;
             expect(card).toHaveTextContent('지분 공시 수급');
-            expect(card).toHaveTextContent('5% 대량보유·임원 소유 공시');
+            expect(card).toHaveTextContent('5% 대량보유, 임원 소유 공시');
             expect(card).not.toHaveTextContent('공매도');
         });
 

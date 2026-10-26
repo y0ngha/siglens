@@ -67,7 +67,7 @@ function formatMetricValue(
     currency: StatementCurrency,
     locale: Locale
 ): string {
-    if (value === null) return '—';
+    if (value === null) return '-';
 
     switch (unit) {
         case 'pct':

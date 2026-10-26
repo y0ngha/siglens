@@ -34,7 +34,7 @@ describe('CompositeGradeGauge', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders null score as em-dash', () => {
+    it('renders null score as a dash placeholder', () => {
         render(
             <CompositeGradeGauge
                 score={null}
@@ -42,7 +42,7 @@ describe('CompositeGradeGauge', () => {
                 summaryKo="데이터 없음"
             />
         );
-        expect(screen.getByText('—')).toBeInTheDocument();
+        expect(screen.getByText('-')).toBeInTheDocument();
         expect(screen.queryByText('null')).not.toBeInTheDocument();
     });
 
