@@ -1,5 +1,15 @@
 # Changelog
 
+# [0.113.0](https://github.com/y0ngha/siglens/compare/v0.112.0...v0.113.0) (2026-10-26)
+
+### Bug Fixes
+
+* 사용자 노출 문구 감사와 가운뎃점, 엠대시 제거 ([#1119](https://github.com/y0ngha/siglens/issues/1119)) ([07b505b](https://github.com/y0ngha/siglens/commit/07b505bf6d9cc885e50322ef773f766ac8fca51e))
+
+### Features
+
+* 실전 가이드 14편 추가와 제품 설명 바로잡기 ([#1118](https://github.com/y0ngha/siglens/issues/1118)) ([6cc4a3d](https://github.com/y0ngha/siglens/commit/6cc4a3ded766222abb56e17b2ca8c88b88b0ca52))
+
 # [0.112.0](https://github.com/y0ngha/siglens/compare/v0.111.0...v0.112.0) (2026-10-25)
 
 ### Bug Fixes
