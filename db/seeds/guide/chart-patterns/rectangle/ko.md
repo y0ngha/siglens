@@ -2,8 +2,8 @@
 category: chart-patterns
 order: 160
 related: [ascending-triangle, descending-triangle, ascending-channel, breakout]
-title: 직사각형
-aliases: [박스권, 레인지, 렉탱글, 사각형 패턴, Rectangle]
+title: 직사각형 패턴(박스권)
+aliases: [직사각형, 박스권, 레인지, 렉탱글, 사각형 패턴, Rectangle]
 summary: 가격이 수평한 저항선과 지지선 사이를 오가는 박스권이에요. 앞선 추세와 상관없이 위로 벗어난 경우가 더 많았어요.
 seoTitle: 직사각형(박스권) 패턴 뜻과 돌파 방향
 seoDescription: 직사각형(박스권) 패턴에서 돌파 방향을 판단하는 법과 앞선 추세와의 관계, 거짓 돌파를 가려내는 법을 예시 차트로 알아봐요.

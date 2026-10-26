@@ -1,8 +1,8 @@
 ---
 title: DMI
-aliases: [方向性指数, Directional Movement Index, +DI -DI, ディレクショナル・ムーブメント]
+aliases: [方向性指数, Directional Movement Index, +DI -DI, ディレクショナルムーブメント]
 summary: 買い方向の力(+DI)と売り方向の力(-DI)の2本の線を比べて、トレンドの方向と優劣を示す指標です。
-seoTitle: DMI指標の見方と+DI・-DIのクロス
+seoTitle: DMI指標の見方、+DIと-DIのクロス
 seoDescription: DMIの+DIと-DIとは何か、2本の線のクロスをADX 20を基準にふるいにかける方法、レンジ相場で細かいシグナルが多い理由を説明します。
 demoCaption: 説明用に作った架空のローソク足です。上昇が続いて+DIが-DIを上抜け、ADXも一緒に上がる様子を示しています。
 faq:
@@ -16,7 +16,7 @@ faq:
 
 ## 計算方法
 
-DMI(Directional Movement Index)は、J.ウェルズ・ワイルダーが1978年に考案した指標で、2本の線で方向を見ます。+DIは上に動いた力、-DIは下に動いた力です。足ごとに、高値が前の足よりどれだけ上がったか、安値がどれだけ下がったかを測り、これを14本平均したうえで、同じ期間の平均値幅([ATR](/guide/indicators/atr)と同じ材料)で割って百分率にします。
+DMI(Directional Movement Index)は、ワイルダー（J. Welles Wilder）が1978年に考案した指標で、2本の線で方向を見ます。+DIは上に動いた力、-DIは下に動いた力です。足ごとに、高値が前の足よりどれだけ上がったか、安値がどれだけ下がったかを測り、これを14本平均したうえで、同じ期間の平均値幅([ATR](/guide/indicators/atr)と同じ材料)で割って百分率にします。
 
 2本の線がどれだけ開いているかをさらに平均した値が[ADX](/guide/indicators/adx)です。方向に関係なく、トレンドがどれだけ強いかを0〜100で示します。DMIは方向を、ADXはその方向の力を受け持ちます。
 

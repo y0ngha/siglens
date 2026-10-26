@@ -203,7 +203,7 @@
                     "step6Name": "Read the overall analysis",
                     "step6Text": "On the Overall tab (e.g. /AAPL/overall), read the overall analysis that ties chart, earnings, news, options and the Fear & Greed Index together, with bull and bear scenarios, checkpoints and risks.",
                     "step7Name": "Ask the AI a follow-up",
-                    "step7Text": "When the call is unclear, ask the chatbot directly. With the data of the ticker you are viewing as context, it answers on reading indicators, comparing scenarios and trading strategy."
+                    "step7Text": "When the call is unclear, press the 'Ask SIGLENS AI' button at the bottom right of the ticker page. SIGLENS AI opens in a new tab with a question about that ticker already filled in, and it looks up quotes, chart indicators and news itself to answer questions on reading indicators, comparing scenarios and trading strategy."
                 }
             },
             "not-found": {

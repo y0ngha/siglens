@@ -203,7 +203,7 @@
                     "step6Name": "종합 분석 확인",
                     "step6Text": "종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수를 묶은 종합 분석과 강세, 약세 시나리오, 점검 포인트, 위험 요인을 함께 확인합니다.",
                     "step7Name": "AI에게 추가 질문",
-                    "step7Text": "판단이 애매할 때는 챗봇에게 직접 질문할 수 있습니다. 현재 보고 있는 종목 데이터를 바탕으로 지표 해석, 시나리오 비교, 매매 전략 같은 질문에 답변을 받습니다."
+                    "step7Text": "판단이 애매할 때는 종목 페이지 오른쪽 아래의 '시그렌즈 AI에게 물어보기' 버튼을 누르면 됩니다. 그 종목에 대한 질문이 미리 채워진 채 시그렌즈 AI가 새 탭에서 열리고, 시그렌즈 AI가 시세, 차트 지표, 뉴스 데이터를 직접 조회해 지표 해석, 시나리오 비교, 매매 전략 같은 질문에 답합니다."
                 }
             },
             "not-found": {
@@ -2050,8 +2050,8 @@
             "ADX Signal Guide": "ADX 신호 가이드",
             "ATR Signal Guide": "ATR 신호 가이드",
             "Abandoned Baby / Tri-Star Guide": "어밴던드 베이비 / 트라이스타형",
-            "Above/Below the Stomach Guide": "배 위 / 배 아래형",
-            "Advance Block / Ladder Bottom Guide": "전진 블록형 / 사다리 바닥형",
+            "Above/Below the Stomach Guide": "어보브 더 스토막 / 빌로우 더 스토막",
+            "Advance Block / Ladder Bottom Guide": "어드밴스 블록 / 래더 바텀",
             "Bearish Engulfing Guide": "하락 장악형",
             "Bollinger %B & BandWidth Signal Guide": "볼린저 %B와 밴드폭 신호 가이드",
             "Bollinger Bands Signal Guide": "볼린저 밴드 신호 가이드",
@@ -2094,7 +2094,7 @@
             "Supertrend Signal Guide": "슈퍼트렌드 신호 가이드",
             "Three Inside / Outside Guide": "쓰리 인사이드 / 아웃사이드",
             "Three Soldiers/Crows Guide": "적삼병 / 흑삼병",
-            "Three-Line Strike Guide": "삼선 타격형",
+            "Three-Line Strike Guide": "쓰리 라인 스트라이크",
             "Tweezers Pattern Guide": "트위저형",
             "Upside Gap Two Crows / Downside Gap Two Rabbits Guide": "상승 갭 투 크로우 / 하락 갭 투 래빗",
             "VWAP Signal Guide": "VWAP 신호 가이드",
