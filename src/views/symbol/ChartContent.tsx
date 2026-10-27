@@ -271,7 +271,7 @@ export function ChartContent({
         isAnalyzing,
         analysisError,
         handleReanalyze,
-        reanalyzeCooldownMs,
+        reanalyzeCooldownUntil,
         cooldownNotice,
         isPersonalized,
         meter,
@@ -523,7 +523,7 @@ export function ChartContent({
                     progressTipIndex={progressTipIndex}
                     onReanalyze={handleReanalyze}
                     onReanalyzeIntent={syncReanalyzeCooldown}
-                    reanalyzeCooldownMs={reanalyzeCooldownMs}
+                    reanalyzeCooldownUntil={reanalyzeCooldownUntil}
                     cooldownNotice={cooldownNotice}
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
@@ -573,7 +573,7 @@ export function ChartContent({
         progressTipIndex,
         handleReanalyze,
         syncReanalyzeCooldown,
-        reanalyzeCooldownMs,
+        reanalyzeCooldownUntil,
         cooldownNotice,
         actionPricesVisible,
         setActionPricesVisible,

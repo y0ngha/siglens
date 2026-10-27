@@ -85,6 +85,10 @@ function makeOptions(overrides?: PartialOptions) {
     };
 }
 
+/** 쿨다운이 끝나는 시각(`reanalyzeCooldownUntil`)을 지금 기준 남은 ms로 바꾼다. */
+const remainingOf = (until: number): number =>
+    until === 0 ? 0 : until - Date.now();
+
 describe('useAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
@@ -204,7 +208,7 @@ describe('useAnalysis — branch coverage', () => {
             await waitFor(() => {
                 expect(result.current.analysisError).not.toBeNull();
             });
-            expect(result.current.reanalyzeCooldownMs).toBe(0);
+            expect(result.current.reanalyzeCooldownUntil).toBe(0);
         });
     });
 
@@ -284,7 +288,9 @@ describe('useAnalysis — branch coverage', () => {
 
             await waitFor(() => {
                 expect(result.current.cooldownNotice).not.toBeNull();
-                expect(result.current.reanalyzeCooldownMs).toBe(180000);
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(180000, -3);
             });
         });
 
@@ -321,7 +327,9 @@ describe('useAnalysis — branch coverage', () => {
             });
 
             await waitFor(() => {
-                expect(result.current.reanalyzeCooldownMs).toBe(120000);
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(120000, -3);
             });
             expect(result.current.analysis).toEqual(before);
         });
@@ -361,7 +369,9 @@ describe('useAnalysis — branch coverage', () => {
             });
 
             await waitFor(() => {
-                expect(result.current.reanalyzeCooldownMs).toBe(120000);
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(120000, -3);
             });
             expect(result.current.plain).toBe('쉽게 쓴 분석문입니다.');
         });
@@ -543,10 +553,11 @@ describe('useAnalysis — branch coverage', () => {
         });
     });
 
-    describe('cooldown countdown (L444-452)', () => {
-        it('starts interval when cooldownMs > 0 and counts down', async () => {
-            // The fetchReanalyzeCooldownMs mock returns a positive value,
-            // which activates the countdown effect.
+    describe('cooldown end time', () => {
+        it('keeps a fixed end time instead of ticking state every second', async () => {
+            // The hook stores when the cooldown ends; the button that shows it counts
+            // down on its own (`useCountdownMs`). Ticking here re-rendered the whole
+            // symbol page every second for the cooldown's duration.
             (getReanalyzeCooldownMs as Mock).mockResolvedValue(3000);
 
             vi.useFakeTimers();
@@ -563,15 +574,16 @@ describe('useAnalysis — branch coverage', () => {
                 await vi.advanceTimersByTimeAsync(0);
             });
 
-            // Cooldown should now be 3000
-            expect(result.current.reanalyzeCooldownMs).toBe(3000);
+            const until = result.current.reanalyzeCooldownUntil;
+            expect(remainingOf(until)).toBe(3000);
 
-            // Advance 1 second — interval fires
             await act(async () => {
                 await vi.advanceTimersByTimeAsync(1000);
             });
 
-            expect(result.current.reanalyzeCooldownMs).toBe(2000);
+            // Same end time (no state update), and 1 second less remains.
+            expect(result.current.reanalyzeCooldownUntil).toBe(until);
+            expect(remainingOf(until)).toBe(2000);
 
             vi.useRealTimers();
         });
@@ -604,7 +616,9 @@ describe('useAnalysis — branch coverage', () => {
                 );
             });
             expect(result.current.lockedInfoDepth).toEqual([]);
-            expect(result.current.reanalyzeCooldownMs).toBeGreaterThan(0);
+            expect(result.current.reanalyzeCooldownUntil).toBeGreaterThan(
+                Date.now()
+            );
         });
 
         it('ignores a reanalyze request issued before the tier has hydrated', () => {

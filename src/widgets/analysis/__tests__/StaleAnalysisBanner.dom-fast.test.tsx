@@ -9,7 +9,7 @@ describe('StaleAnalysisBanner', () => {
         render(
             <StaleAnalysisBanner
                 onReanalyze={onReanalyze}
-                reanalyzeCooldownMs={0}
+                reanalyzeCooldownUntil={0}
             />
         );
         expect(
@@ -25,7 +25,7 @@ describe('StaleAnalysisBanner', () => {
             <StaleAnalysisBanner
                 onReanalyze={vi.fn()}
                 onReanalyzeIntent={onReanalyzeIntent}
-                reanalyzeCooldownMs={0}
+                reanalyzeCooldownUntil={0}
             />
         );
         const button = screen.getByRole('button', { name: /재분석/ });
@@ -41,7 +41,7 @@ describe('StaleAnalysisBanner', () => {
         render(
             <StaleAnalysisBanner
                 onReanalyze={onReanalyze}
-                reanalyzeCooldownMs={60_000}
+                reanalyzeCooldownUntil={Date.now() + 60_000}
             />
         );
         const button = screen.getByRole('button', { name: /재분석/ });
@@ -54,7 +54,7 @@ describe('StaleAnalysisBanner', () => {
         render(
             <StaleAnalysisBanner
                 onReanalyze={onReanalyze}
-                reanalyzeCooldownMs={60_000}
+                reanalyzeCooldownUntil={Date.now() + 60_000}
             />
         );
         await user.click(screen.getByRole('button', { name: /재분석/ }));

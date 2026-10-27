@@ -560,7 +560,7 @@ describe('공유 등록 plain 배선', () => {
             isAnalyzing: false,
             analysisError: null,
             handleReanalyze: vi.fn(),
-            reanalyzeCooldownMs: 0,
+            reanalyzeCooldownUntil: 0,
             cooldownNotice: null,
         };
 

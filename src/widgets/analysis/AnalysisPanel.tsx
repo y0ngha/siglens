@@ -60,6 +60,7 @@ import type { CooldownNotice } from './model/types';
 import { TRENDLINE_DIRECTION_LABEL_KEY } from '@/shared/lib/trendline';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
+import { useCountdownMs } from '@/shared/hooks/useCountdownMs';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
@@ -962,7 +963,8 @@ function getReanalyzeLabel(
 
 interface ReanalyzeButtonProps {
     isAnalyzing: boolean;
-    reanalyzeCooldownMs: number;
+    /** 쿨다운이 끝나는 시각(epoch ms). 0이면 없음. 남은 시간은 이 버튼만 센다. */
+    reanalyzeCooldownUntil: number;
     onReanalyze: () => void;
     /** 포인터가 올라가거나 포커스가 갈 때 — 누르기 직전의 의도 신호. */
     onIntent?: () => void;
@@ -970,12 +972,13 @@ interface ReanalyzeButtonProps {
 
 function ReanalyzeButton({
     isAnalyzing,
-    reanalyzeCooldownMs,
+    reanalyzeCooldownUntil,
     onReanalyze,
     onIntent,
 }: ReanalyzeButtonProps) {
     const t = useTranslations('widgets.analysis');
     const tPanel = useTranslations('widgets.analysis.panel');
+    const reanalyzeCooldownMs = useCountdownMs(reanalyzeCooldownUntil);
     const isCoolingDown = reanalyzeCooldownMs > 0;
     const isDisabled = isAnalyzing || isCoolingDown;
     const label = getReanalyzeLabel(isAnalyzing, reanalyzeCooldownMs, tPanel);
@@ -1021,8 +1024,8 @@ interface AnalysisPanelProps {
      * 마운트마다 읽지 않기 위해서다.
      */
     onReanalyzeIntent?: () => void;
-    /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
-    reanalyzeCooldownMs?: number;
+    /** 재분석 쿨다운이 끝나는 시각(epoch ms). 0이면 즉시 가능. */
+    reanalyzeCooldownUntil?: number;
     /** 쿨다운 중 재분석 시도를 토스트로 알리기 위한 알림. */
     cooldownNotice?: CooldownNotice | null;
     actionPricesVisible?: boolean;
@@ -1097,7 +1100,7 @@ export function AnalysisPanel({
     progressTipIndex = 0,
     onReanalyze,
     onReanalyzeIntent,
-    reanalyzeCooldownMs = 0,
+    reanalyzeCooldownUntil = 0,
     cooldownNotice = null,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
@@ -1276,7 +1279,7 @@ export function AnalysisPanel({
                 <StaleAnalysisBanner
                     onReanalyze={onReanalyze}
                     onReanalyzeIntent={onReanalyzeIntent}
-                    reanalyzeCooldownMs={reanalyzeCooldownMs ?? 0}
+                    reanalyzeCooldownUntil={reanalyzeCooldownUntil}
                 />
             )}
             <AnalysisToast
@@ -1775,7 +1778,7 @@ export function AnalysisPanel({
                 <div className="mt-1">
                     <ReanalyzeButton
                         isAnalyzing={isAnalyzing || showProgress}
-                        reanalyzeCooldownMs={reanalyzeCooldownMs}
+                        reanalyzeCooldownUntil={reanalyzeCooldownUntil}
                         onReanalyze={onReanalyze}
                         onIntent={onReanalyzeIntent}
                     />
