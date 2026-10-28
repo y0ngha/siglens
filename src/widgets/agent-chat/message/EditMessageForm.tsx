@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
-import { isSendableMessage } from '../utils/messageLimits';
+import { isSendableMessage } from '@/features/agent-chat/lib/messageLimits';
 
 const EDIT_ACTION_SIZE = 'min-h-9 px-3 text-sm';
 

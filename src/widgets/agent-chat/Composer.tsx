@@ -7,7 +7,10 @@ import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
 import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
-import { isSendableMessage, MESSAGE_MAX_CHARS } from './utils/messageLimits';
+import {
+    isSendableMessage,
+    MESSAGE_MAX_CHARS,
+} from '@/features/agent-chat/lib/messageLimits';
 
 /** The counter stays hidden until the message is long enough that the cap is a real concern. */
 const COUNTER_VISIBLE_FROM = MESSAGE_MAX_CHARS * 0.8;

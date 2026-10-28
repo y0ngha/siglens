@@ -80,11 +80,11 @@ export function MessageList({
     const renderTurn = (m: AgentUiMessage, isLast: boolean) => {
         const minHeight =
             isLast && activeMinHeight !== null ? activeMinHeight : undefined;
-        const isEditableUser =
-            m.role === 'user' &&
-            m === lastUser &&
-            m.seq !== undefined &&
-            !streaming;
+        // 편집할 수 있는 질문의 seq — 마지막 질문이고 스트리밍이 아닐 때만 있다.
+        const editableSeq =
+            m.role === 'user' && m === lastUser && !streaming
+                ? m.seq
+                : undefined;
         const actions = (
             <MessageActions
                 align={m.role === 'user' ? 'user' : 'assistant'}
@@ -96,7 +96,9 @@ export function MessageList({
                         : undefined
                 }
                 onEdit={
-                    isEditableUser ? () => setEditingSeq(m.seq!) : undefined
+                    editableSeq === undefined
+                        ? undefined
+                        : () => setEditingSeq(editableSeq)
                 }
             />
         );
@@ -122,28 +124,6 @@ export function MessageList({
             );
         }
 
-        if (isEditableUser && editingSeq === m.seq) {
-            const seq = m.seq!;
-            return (
-                <article
-                    key={m.id}
-                    ref={registerUserNode(m.id)}
-                    data-role="user"
-                    style={minHeight === undefined ? undefined : { minHeight }}
-                    className="flex flex-col items-end"
-                >
-                    <EditMessageForm
-                        initialText={m.content}
-                        onSave={text => {
-                            onEdit(seq, text);
-                            setEditingSeq(null);
-                        }}
-                        onCancel={() => setEditingSeq(null)}
-                    />
-                </article>
-            );
-        }
-
         return (
             <UserMessage
                 key={m.id}
@@ -151,6 +131,18 @@ export function MessageList({
                 nodeRef={registerUserNode(m.id)}
                 minHeight={minHeight}
                 actions={actions}
+                editor={
+                    editableSeq !== undefined && editingSeq === editableSeq ? (
+                        <EditMessageForm
+                            initialText={m.content}
+                            onSave={text => {
+                                onEdit(editableSeq, text);
+                                setEditingSeq(null);
+                            }}
+                            onCancel={() => setEditingSeq(null)}
+                        />
+                    ) : undefined
+                }
             />
         );
     };

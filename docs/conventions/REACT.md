@@ -185,12 +185,25 @@ Derive "is a member" in one exported place, not separately per consumer.
 
 Open/editing/popover state that is only meaningful while a condition holds (the last message is editable, a menu is
 available, a panel is visible) must be cleared when that condition stops holding. Otherwise the hidden UI reopens
-when the condition returns. Reset it during render with the previous-value comparison (EF-1), not in an effect.
+when the condition returns. Reset it during render by checking the condition itself, not in an effect; compare against
+the previous value (EF-1) only when the trigger is a changed prop rather than a condition you can read now.
 
 ```tsx
 // ❌ const [editingSeq, setEditingSeq] = useState<number | null>(null); // survives canEdit -> false
 // ✅ if (!canEdit && editingSeq !== null) setEditingSeq(null);
 ```
+
+<a id="HK-5"></a>
+
+#### HK-5 — An imperative cache lives with the object it describes and is cleared on every exit path
+
+A cache of facts about an imperative object (a chart series, a DOM node, a reused entry in a ref map) belongs on that
+object's entry, not re-seeded from props on every effect run while the object itself is reused. Clear or update the
+entry on every exit path (success and failure), not only the failure branch; otherwise the cache and the object
+disagree on the next run.
+
+- ❌ `cacheRef.current = fromProps(...)` on each run while the series is reused; `delete` only in `catch`.
+- ✅ The cache is a field on the reused entry, and the same reset runs in both `then` and `catch` (or `finally`).
 
 ---
 
