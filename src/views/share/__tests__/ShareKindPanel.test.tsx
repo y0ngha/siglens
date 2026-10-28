@@ -43,7 +43,7 @@ vi.mock('@/widgets/news/NewsAiSummary', () => ({
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
     FundamentalAiSummaryView: () => null,
 }));
-vi.mock('@/widgets/financials/FinancialsAiSummary', () => ({
+vi.mock('@/widgets/financials/ui/ai-summary/FinancialsAiSummaryView', () => ({
     FinancialsAiSummaryView: () => null,
 }));
 vi.mock('@/widgets/congress/CongressTrendSummaryView', () => ({

@@ -4161,7 +4161,8 @@
             },
             "periodToggle": {
                 "annual": "年度",
-                "quarter": "季度"
+                "quarter": "季度",
+                "quarterUnavailable": "无法加载季度财务报表，已显示年度数据。"
             },
             "section": {
                 "balanceSheet": "资产负债表",
@@ -4198,6 +4199,22 @@
                     "总负债减去持有现金后的数值。",
                     "为负说明现金多于负债，即“净现金”状态，财务非常稳健。"
                 ]
+            },
+            "signalType": {
+                "accrualWarning": "盈利质量需关注",
+                "capexHeavy": "资本支出偏高",
+                "debtRising": "负债增加",
+                "earningsQualityGood": "盈利质量良好",
+                "fcfGrowth": "自由现金流增长",
+                "fcfNegative": "自由现金流为负",
+                "fcfSolid": "自由现金流稳健",
+                "growthDecline": "营收下滑",
+                "marginContraction": "利润率恶化",
+                "marginExpansion": "利润率改善",
+                "netCash": "净现金企业",
+                "operatingIncomeGrowth": "营业利润增长",
+                "operatingLeverage": "经营杠杆",
+                "revenueAccel": "营收增长加速"
             }
         },
         "fundamental": {

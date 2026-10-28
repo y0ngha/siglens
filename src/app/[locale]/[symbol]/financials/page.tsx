@@ -7,7 +7,7 @@ import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
-import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { deriveStatementCurrency } from '@/widgets/financials/utils/statementCurrency';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
@@ -271,7 +271,7 @@ export default async function FinancialsPage({ params }: Props) {
                 </SymbolPageHeading>
                 <FinancialsScorecard
                     scorecard={scorecard}
-                    currency={currencyForSymbol(upper)}
+                    currency={deriveStatementCurrency(snapshot, upper)}
                 />
 
                 {/* audit fix FIX 2: XOR — FinancialsAiSummary (client widget) and
