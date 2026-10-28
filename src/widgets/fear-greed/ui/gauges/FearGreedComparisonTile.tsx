@@ -1,5 +1,5 @@
-import { useLocale, useTranslations } from 'next-intl';
-import type { Locale } from '@/shared/i18n/locales';
+import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
 import type { ComparisonTile } from '../../utils/comparisonTiles';
@@ -18,7 +18,7 @@ export function FearGreedComparisonTile({
 }: FearGreedComparisonTileProps) {
     const t = useTranslations('widgets.fear-greed');
     const tPeriod = useTranslations('shared.ui.period');
-    const locale = useLocale() as Locale;
+    const locale = useResolvedLocale();
     const period = tPeriod(tile.periodMessageKey);
     const periodLabel = tile.clamped
         ? t('FearGreedComparisonTile.sincePeriod', {

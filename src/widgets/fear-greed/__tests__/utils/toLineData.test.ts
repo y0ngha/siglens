@@ -29,6 +29,18 @@ describe('toLineData', () => {
         expect(data[0].time).toBe(history[5].date);
     });
 
+    it('점수가 있는 세션만 세어 자른다 — 중간에 빈 점이 있어도 1년치를 채운다', () => {
+        // 점수 250개 → 빈 점 5개 → 점수 10개. 점수 있는 세션은 260개다.
+        const history = [
+            ...Array.from({ length: 250 }, (_, i) => point(i, 50)),
+            ...Array.from({ length: 5 }, (_, i) => point(250 + i, null)),
+            ...Array.from({ length: 10 }, (_, i) => point(255 + i, 60)),
+        ];
+        const data = toLineData(history);
+        expect(data).toHaveLength(252);
+        expect(data[0].time).toBe('2024-01-09');
+    });
+
     it('빈 history는 빈 배열이다', () => {
         expect(toLineData([])).toEqual([]);
     });
