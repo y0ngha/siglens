@@ -3804,7 +3804,6 @@
                 "0c2cd8": "Holder",
                 "1ed947": "Disclosure Date",
                 "26d466": "Disclosure",
-                "27edc1": "Senate",
                 "29c3ae": "Member",
                 "29efb6": "Type",
                 "5073ef": "Asset Description",
@@ -3812,7 +3811,6 @@
                 "af2fee": "Category",
                 "b488b1": "← Scroll horizontally →",
                 "c8eed2": "Amount Range",
-                "d8edd7": "House",
                 "de5545": "Congressional Trades Disclosure List",
                 "e6fa15": "Transaction Date",
                 "fdf8d2": "Disclosure Search"
@@ -3846,6 +3844,8 @@
             "disclosureDocument": "document",
             "disclosureLink": "{v0} {v1} {v2} disclosure: {v3}",
             "disclosureSearch": "search",
+            "ptrIdFull": "Full PTR ID: {v0}",
+            "ptrIdLabel": "PTR ID {v0}…",
             "tooltip": {
                 "amountRange": [
                     "The STOCK Act (2012) lets members disclose a range (e.g. $1,001–$15,000) instead of an exact amount.",
@@ -3870,7 +3870,9 @@
                 "senateDisclosure": [
                     "Senate filings (efdsearch) open only after an agreement page. Search again there by PTR ID. House filings are direct PDF links and open right away."
                 ]
-            }
+            },
+            "tradesCaptionTruncated": "Congressional trades disclosure list (showing the latest {v0} of {v1} trades)",
+            "tradesTruncated": "Showing only the latest {v0} trades · {v1} in total"
         },
         "dashboard": {
             "BriefingCard": {

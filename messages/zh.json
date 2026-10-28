@@ -3804,7 +3804,6 @@
                 "0c2cd8": "持有者",
                 "1ed947": "披露日期",
                 "26d466": "披露",
-                "27edc1": "参议院 (Senate)",
                 "29c3ae": "议员",
                 "29efb6": "类型",
                 "5073ef": "资产描述",
@@ -3812,7 +3811,6 @@
                 "af2fee": "分类",
                 "b488b1": "← 左右滚动 →",
                 "c8eed2": "金额区间",
-                "d8edd7": "众议院 (House)",
                 "de5545": "国会交易披露列表",
                 "e6fa15": "交易日期",
                 "fdf8d2": "披露搜索"
@@ -3846,6 +3844,8 @@
             "disclosureDocument": "文件",
             "disclosureLink": "{v0} {v1} {v2} 披露 {v3}",
             "disclosureSearch": "搜索",
+            "ptrIdFull": "PTR 完整 ID: {v0}",
+            "ptrIdLabel": "PTR 编号 {v0}…",
             "tooltip": {
                 "amountRange": [
                     "《STOCK法案》（2012年）允许议员只披露金额区间（例如 $1,001–$15,000），而非确切金额。",
@@ -3870,7 +3870,9 @@
                 "senateDisclosure": [
                     "参议院披露（efdsearch）需先通过同意页面才能打开，请在搜索页用 PTR ID 重新查找。众议院披露是 PDF 直链，可直接打开。"
                 ]
-            }
+            },
+            "tradesCaptionTruncated": "国会交易披露列表 (共 {v1} 笔，仅显示最近 {v0} 笔)",
+            "tradesTruncated": "仅显示最近 {v0} 笔 · 共 {v1} 笔"
         },
         "dashboard": {
             "BriefingCard": {
