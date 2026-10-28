@@ -5071,7 +5071,8 @@
                 "242236": "No news in the last {v0} {v0, plural, one {day} other {days}}.",
                 "8e5a3a": "Show more ({v0} remaining)",
                 "b514aa": "Collecting news...",
-                "d107e1": "Latest Market News"
+                "d107e1": "Latest Market News",
+                "pollFailed": "We couldn't load the latest news. Please refresh the page in a moment."
             }
         },
         "news": {

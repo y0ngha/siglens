@@ -70,18 +70,102 @@ describe('MarketNewsList', () => {
         mockUseMarketNewsCardPolling.mockReset();
     });
 
-    it('pollError !== null → throws the error (caught by nearest error boundary)', () => {
+    describe('폴링이 실패로 끝난 경우', () => {
         const pollError = new Error('DB connection failed');
-        mockUseMarketNewsCardPolling.mockReturnValue({
-            items: [],
-            isPolling: false,
-            pollError,
+        const PENDING_ITEM: MarketNewsCardItem = {
+            ...makeItem(99),
+            sentiment: null,
+            priceImpact: null,
+            category: null,
+            summaryKo: null,
+        };
+
+        it('에러 바운더리로 던지지 않고 마지막 목록을 그대로 보여 준다', () => {
+            mockUseMarketNewsCardPolling.mockReturnValue({
+                items: makeItems(2),
+                isPolling: false,
+                pollError,
+            });
+
+            render(<MarketNewsList category="general" initialItems={[]} />);
+
+            expect(screen.getAllByRole('article')).toHaveLength(2);
+            expect(screen.getByText('뉴스 헤드라인 1')).toBeInTheDocument();
         });
 
-        // MarketNewsList throws pollError directly when it is not null.
-        expect(() =>
-            render(<MarketNewsList category="general" initialItems={[]} />)
-        ).toThrow(pollError);
+        it('role=status 안내를 보여 준다', () => {
+            mockUseMarketNewsCardPolling.mockReturnValue({
+                items: makeItems(2),
+                isPolling: false,
+                pollError,
+            });
+
+            render(<MarketNewsList category="general" initialItems={[]} />);
+
+            expect(screen.getByRole('status')).toHaveTextContent(
+                '새 뉴스를 불러오지 못했어요. 잠시 후 페이지를 새로고침해 주세요.'
+            );
+        });
+
+        it('안내는 카드 목록 뒤에 와서 카드를 밀어내지 않는다', () => {
+            mockUseMarketNewsCardPolling.mockReturnValue({
+                items: makeItems(2),
+                isPolling: false,
+                pollError,
+            });
+
+            render(<MarketNewsList category="general" initialItems={[]} />);
+
+            const list = screen.getByRole('list');
+            const notice = screen.getByRole('status');
+            expect(
+                list.compareDocumentPosition(notice) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('보강 대기 중이던 카드의 스켈레톤을 걷는다', () => {
+            mockUseMarketNewsCardPolling.mockReturnValue({
+                items: [PENDING_ITEM],
+                isPolling: false,
+                pollError,
+            });
+
+            render(<MarketNewsList category="general" initialItems={[]} />);
+
+            expect(screen.queryByText('AI 분석 중…')).not.toBeInTheDocument();
+            expect(screen.getByText('뉴스 헤드라인 99')).toBeInTheDocument();
+        });
+
+        it('실패가 없으면 보강 대기 카드는 스켈레톤을 유지하고 안내는 없다', () => {
+            mockUseMarketNewsCardPolling.mockReturnValue({
+                items: [PENDING_ITEM],
+                isPolling: true,
+                pollError: null,
+            });
+
+            render(<MarketNewsList category="general" initialItems={[]} />);
+
+            expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
+            expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        });
+
+        it('목록이 비어 있으면 "뉴스 없음" 대신 안내를 보여 준다', () => {
+            mockUseMarketNewsCardPolling.mockReturnValue({
+                items: [],
+                isPolling: false,
+                pollError,
+            });
+
+            render(<MarketNewsList category="general" initialItems={[]} />);
+
+            expect(screen.getByRole('status')).toHaveTextContent(
+                '새 뉴스를 불러오지 못했어요'
+            );
+            expect(
+                screen.queryByText(/동안 들어온 뉴스가 없어요/)
+            ).not.toBeInTheDocument();
+        });
     });
 
     it('items.length === 0 && isPolling=true → renders LoadingState (skeletons + aria-busy)', () => {
