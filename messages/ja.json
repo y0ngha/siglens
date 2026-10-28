@@ -5569,6 +5569,7 @@
                 "73e5a8": "名前を変更",
                 "9a7569": "会話一覧",
                 "backToSiglens": "SIGLENSホームへ",
+                "deleteFailed": "会話を削除できませんでした。もう一度お試しください。",
                 "empty": "まだ会話がありません。",
                 "fc81e2": "削除",
                 "groupOlder": "それ以前",
@@ -5583,6 +5584,7 @@
                 "noMatch": "一致する会話がありません。",
                 "privacy": "プライバシーポリシー",
                 "renameCancel": "名前の変更をキャンセル",
+                "renameFailed": "名前を変更できませんでした。もう一度お試しください。",
                 "terms": "利用規約"
             },
             "ToolActivity": {

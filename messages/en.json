@@ -5569,6 +5569,7 @@
                 "73e5a8": "Rename",
                 "9a7569": "Conversation list",
                 "backToSiglens": "Back to SIGLENS",
+                "deleteFailed": "Couldn't delete the conversation. Please try again.",
                 "empty": "No conversations yet.",
                 "fc81e2": "Delete",
                 "groupOlder": "Older",
@@ -5583,6 +5584,7 @@
                 "noMatch": "No matches.",
                 "privacy": "Privacy Policy",
                 "renameCancel": "Cancel rename",
+                "renameFailed": "Couldn't rename the conversation. Please try again.",
                 "terms": "Terms of Service"
             },
             "ToolActivity": {

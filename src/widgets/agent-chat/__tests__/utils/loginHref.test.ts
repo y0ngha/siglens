@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loginHref } from '@/widgets/agent-chat/loginHref';
+import { loginHref } from '@/widgets/agent-chat/utils/loginHref';
 
 describe('loginHref', () => {
     it('wraps the ai-host handoff path in the main-host login next param', () => {

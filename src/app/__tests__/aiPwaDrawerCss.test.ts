@@ -83,9 +83,11 @@ describe('globals.css — 상단 배너는 크롬 아래에 뜬다', () => {
         const header = read('../../widgets/layout/Header.tsx');
         expect(header).toMatch(/<header\s+data-scroll-chrome=""/);
         expect(header).toContain('h-(--header-h)');
-        const chatShell = read('../../widgets/agent-chat/ChatShell.tsx');
-        expect(chatShell).toContain('data-agent-chat-bar=""');
-        expect(chatShell).toContain('h-(--agent-chat-bar-h)');
+        const chatBar = read(
+            '../../widgets/agent-chat/shell/MobileChatBar.tsx'
+        );
+        expect(chatBar).toContain('data-agent-chat-bar=""');
+        expect(chatBar).toContain('h-(--agent-chat-bar-h)');
         const about = read('../../views/ai-about/ui/AboutCtaBar.tsx');
         expect(about).toContain('data-ai-about-cta=""');
         expect(about).toContain('h-(--ai-about-cta-h)');

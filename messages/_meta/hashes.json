@@ -4127,5 +4127,7 @@
     "views.benchmark.breakdown.overallNote": "6496c2919e72",
     "features.symbol-model.fallbackTitle": "344c6757c43c",
     "features.symbol-model.fallbackDetail": "52027113be04",
-    "widgets.analysis.ModelSelector.unavailable": "4378697958ff"
+    "widgets.analysis.ModelSelector.unavailable": "4378697958ff",
+    "widgets.agent-chat.Sidebar.deleteFailed": "3d3651d91c13",
+    "widgets.agent-chat.Sidebar.renameFailed": "f5c79ed96410"
 }

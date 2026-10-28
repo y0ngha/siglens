@@ -179,6 +179,19 @@ Derive "is a member" in one exported place, not separately per consumer.
 //    const active = decision?.userId === userId ? decision.value : null;
 ```
 
+<a id="HK-4"></a>
+
+#### HK-4 — State tied to a condition is reset when the condition goes false
+
+Open/editing/popover state that is only meaningful while a condition holds (the last message is editable, a menu is
+available, a panel is visible) must be cleared when that condition stops holding. Otherwise the hidden UI reopens
+when the condition returns. Reset it during render with the previous-value comparison (EF-1), not in an effect.
+
+```tsx
+// ❌ const [editingSeq, setEditingSeq] = useState<number | null>(null); // survives canEdit -> false
+// ✅ if (!canEdit && editingSeq !== null) setEditingSeq(null);
+```
+
 ---
 
 ## Component Rules

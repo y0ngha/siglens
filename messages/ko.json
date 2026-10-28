@@ -3536,6 +3536,7 @@
                 "73e5a8": "이름 변경",
                 "9a7569": "대화 목록",
                 "backToSiglens": "시그렌즈 홈으로",
+                "deleteFailed": "대화를 삭제하지 못했어요. 다시 시도해 주세요.",
                 "empty": "아직 대화가 없습니다.",
                 "fc81e2": "삭제",
                 "groupOlder": "이전",
@@ -3550,6 +3551,7 @@
                 "noMatch": "검색 결과가 없습니다.",
                 "privacy": "개인정보처리방침",
                 "renameCancel": "이름 변경 취소",
+                "renameFailed": "이름을 바꾸지 못했어요. 다시 시도해 주세요.",
                 "terms": "이용약관"
             },
             "ToolActivity": {
