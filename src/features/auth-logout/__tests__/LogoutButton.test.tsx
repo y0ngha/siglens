@@ -19,7 +19,7 @@ describe('LogoutButton', () => {
         mockUseLogout.mockReturnValue({ pending: false, logout: vi.fn() });
         render(<LogoutButton />);
         expect(
-            screen.getByRole('menuitem', { name: '로그아웃' })
+            screen.getByRole('button', { name: '로그아웃' })
         ).toBeInTheDocument();
     });
 
@@ -27,14 +27,14 @@ describe('LogoutButton', () => {
         mockUseLogout.mockReturnValue({ pending: true, logout: vi.fn() });
         render(<LogoutButton />);
         expect(
-            screen.getByRole('menuitem', { name: '로그아웃 중…' })
+            screen.getByRole('button', { name: '로그아웃 중…' })
         ).toBeInTheDocument();
     });
 
     it('is disabled when pending', () => {
         mockUseLogout.mockReturnValue({ pending: true, logout: vi.fn() });
         render(<LogoutButton />);
-        expect(screen.getByRole('menuitem')).toBeDisabled();
+        expect(screen.getByRole('button')).toBeDisabled();
     });
 
     it('calls logout on click', async () => {
@@ -42,13 +42,13 @@ describe('LogoutButton', () => {
         mockUseLogout.mockReturnValue({ pending: false, logout: logoutFn });
         const user = userEvent.setup();
         render(<LogoutButton />);
-        await user.click(screen.getByRole('menuitem'));
+        await user.click(screen.getByRole('button'));
         expect(logoutFn).toHaveBeenCalledTimes(1);
     });
 
     it('has button type="button"', () => {
         mockUseLogout.mockReturnValue({ pending: false, logout: vi.fn() });
         render(<LogoutButton />);
-        expect(screen.getByRole('menuitem')).toHaveAttribute('type', 'button');
+        expect(screen.getByRole('button')).toHaveAttribute('type', 'button');
     });
 });

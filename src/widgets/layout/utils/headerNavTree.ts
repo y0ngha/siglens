@@ -1,3 +1,6 @@
+/**
+ * 헤더·모바일 드로어가 그리는 내비 트리(`NAV_TREE`)와 그 노드 타입.
+ */
 import {
     hasRegionForRoot,
     NAV_VERTICALS,

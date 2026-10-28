@@ -23,7 +23,7 @@ const ALLOWED_RAW_PATHNAME_USERS = [
     // 이 훅 자신이 접두사를 뗀다.
     'src/shared/i18n/useAppPathname.ts',
     // next-intl의 navigation(이미 접두사를 뗀 값을 준다)을 쓴다.
-    'src/widgets/layout/LocaleSwitcher.tsx',
+    'src/widgets/layout/hooks/useLocaleSwitch.ts',
 ];
 
 describe('usePathname 직접 사용', () => {
