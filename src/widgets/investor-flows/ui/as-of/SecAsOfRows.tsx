@@ -4,7 +4,7 @@
 import { useTranslations } from 'next-intl';
 import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type { CollectingArms } from '../../utils/collecting';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import { formatInteger } from '../../utils/flowFormat';
 import { AsOfRow } from './AsOfRow';
 

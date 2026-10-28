@@ -7,10 +7,8 @@ import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
 import { AsOfNotice } from '../sections/AsOfNotice';
 import { InstitutionalSection } from '../sections/InstitutionalSection';
 import { ScorecardCard } from '../sections/ScorecardCard';
-import {
-    resolveCollectingArms,
-    type CollectingArms,
-} from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import {
     collectingAxes,
     temporarilyUnavailableAxes,

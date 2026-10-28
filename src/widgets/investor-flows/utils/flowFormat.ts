@@ -27,12 +27,16 @@ export function formatInteger(value: number, locale: Locale): string {
     }).format(value);
 }
 
-/** 달러 금액을 짧게(`$1.2M`). 음수는 앞에 `-`. */
+/**
+ * 달러 금액을 짧게(`$1.2M`). 음수는 앞에 `-`. 통화 스타일의 기본 최소 소수 자릿수는 엔진 버전마다 달라 `$300.0K`/`$300K`로 갈리므로
+ * `minimumFractionDigits: 0`을 명시해 출력을 고정한다.
+ */
 export function formatUsdCompact(value: number, locale: Locale): string {
     const body = cachedNumberFormat(INTL_LOCALE[locale], {
         style: 'currency',
         currency: 'USD',
         notation: 'compact',
+        minimumFractionDigits: 0,
         maximumFractionDigits: 1,
     }).format(Math.abs(value));
     return value < 0 ? `-${body}` : body;

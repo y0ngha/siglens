@@ -10,7 +10,7 @@ import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import type { CollectingArms } from '../utils/collecting';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import {
     buildShortInterestView,
     buildShortVolumeSeries,

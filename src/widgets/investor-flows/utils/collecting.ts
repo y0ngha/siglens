@@ -3,15 +3,11 @@
  */
 import type { InvestorFlowsAxisId } from '@y0ngha/siglens-core';
 import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
-import type { InvestorFlowsDegradedPart } from '@/entities/investor-flows/model';
-
-/** 미국 수급 탭의 구간별 수집 중 판정 입력 — 엔티티 `resolveCollectingArms`와 같은 모양이다. */
-export type ResolveCollectingInput = Parameters<
-    typeof resolveCollectingArms
->[0];
-
-/** 구간별 "수집 중" 판정 결과 — 위젯 UI가 엔티티 lib를 직접 import하지 않고 쓰는 이름이다. */
-export type CollectingArms = ReturnType<typeof resolveCollectingArms>;
+import type {
+    CollectingArms,
+    InvestorFlowsDegradedPart,
+    ResolveCollectingInput,
+} from '@/entities/investor-flows/model';
 
 /**
  * 구간별 "수집 중" 판정. 위젯 `.tsx`가 엔티티 lib를 직접 부르지 않도록 이 util이 판정을 맡는다 — 초기 수집이 끝나기 전의 빈

@@ -3,7 +3,7 @@
  */
 import { useTranslations } from 'next-intl';
 import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
-import type { CollectingArms } from '../../utils/collecting';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import { AsOfRow } from './AsOfRow';
 
 interface FinraAsOfRowsProps {

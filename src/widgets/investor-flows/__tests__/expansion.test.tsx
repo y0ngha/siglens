@@ -5,7 +5,7 @@ import type {
     InvestorFlowsSnapshot,
     SqueezeRiskScore,
 } from '@y0ngha/siglens-core';
-import type { CollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import { DilutionSection } from '../sections/DilutionSection';
 import { FailsToDeliverBlock } from '../sections/FailsToDeliverBlock';
 import { OptionsPositionsBlock } from '../sections/OptionsPositionsBlock';

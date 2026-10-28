@@ -1,6 +1,17 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
+import { LargeHolderCard } from '../../../ui/large-holders/LargeHolderCard';
+import { OfferingRow } from '../../../ui/dilution/OfferingRow';
+import { ProposedSaleRecords } from '../../../ui/form144/ProposedSaleRecords';
+import { TradeRecords } from '../../../ui/insider/TradeRecords';
+import {
+    makeLargeHolder,
+    makeOffering,
+    makeProposedSale,
+    makeTransaction,
+} from '../../fixtures/flowsFixtures';
 import { DartFilingLink } from '../../../ui/filings/DartFilingLink';
 import { FilingLink } from '../../../ui/filings/FilingLink';
 
@@ -69,4 +80,58 @@ describe('DartFilingLink', () => {
             screen.getByRole('link', { name: '국민연금공단 DART 원문' })
         ).toHaveTextContent('DART 원문');
     });
+});
+
+describe('호출부별 링크 접근 가능한 이름 (로케일)', () => {
+    const URL = 'https://www.sec.gov/Archives/edgar/data/0/x-index.htm';
+
+    function renderCallers(locale: 'en' | 'ja' | 'zh') {
+        render(
+            withLocale(
+                <>
+                    <ul>
+                        <OfferingRow filing={makeOffering({ url: URL })} />
+                        <LargeHolderCard
+                            filing={makeLargeHolder({ url: URL })}
+                        />
+                    </ul>
+                    <ProposedSaleRecords
+                        sales={[makeProposedSale({ url: URL })]}
+                    />
+                    <TradeRecords
+                        rows={[makeTransaction({ url: URL })]}
+                        caption="caption"
+                    />
+                    <DartFilingLink url={URL} reporter="Fixture Reporter" />
+                </>,
+                locale
+            )
+        );
+        return screen.getAllByRole('link');
+    }
+
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s: 모든 호출부의 접근 가능한 이름이 보이는 글자를 포함한다',
+        locale => {
+            const links = renderCallers(locale);
+            expect(links).toHaveLength(7);
+            for (const link of links) {
+                expect(link.getAttribute('aria-label')).toContain(
+                    link.textContent
+                );
+            }
+        }
+    );
+
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s: 호출부마다 접근 가능한 이름이 서로 다르다',
+        locale => {
+            const links = renderCallers(locale);
+            // 카드·표 두 표현이 같은 이름을 갖는 호출부(Form 144, 내부자 거래)는 한 이름으로 센다.
+            const names = new Set(
+                links.map(link => link.getAttribute('aria-label'))
+            );
+            expect(names.size).toBe(5);
+        }
+    );
 });

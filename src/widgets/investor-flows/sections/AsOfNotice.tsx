@@ -6,7 +6,7 @@ import type { InvestorFlowsScorecard } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import type { CollectingArms } from '../utils/collecting';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import { formatSnapshotDate } from '../utils/snapshotDate';
 import { AsOfRow } from '../ui/as-of/AsOfRow';
 import { FinraAsOfRows } from '../ui/as-of/FinraAsOfRows';
