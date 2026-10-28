@@ -1,10 +1,7 @@
 /**
- * Pure helpers and layout constants for the OI chart's floating tooltip.
- *
- * Extracted out of `OpenInterestChart.tsx` so the clamping math can be
- * exercised by unit tests without instantiating React or the SVG container.
- * The function is pure — its output depends only on its arguments and these
- * module-level constants.
+ * strike 바 차트(OI·거래량) 공용 툴팁 위치 계산과 레이아웃 상수 — `useStrikeBarChart`가 두 차트에
+ * 같이 쓴다. React·SVG 없이 클램핑 계산을 단위 테스트할 수 있게 순수 함수로 둔다(출력은 인자와
+ * 이 모듈의 상수에만 달린다).
  */
 import type { PointerEvent } from 'react';
 
