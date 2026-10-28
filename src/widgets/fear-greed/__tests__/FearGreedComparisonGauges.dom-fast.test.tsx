@@ -87,7 +87,7 @@ describe('FearGreedComparisonGauges', () => {
             const history = makeHistory(
                 Array.from({ length: 10 }, (_, i) => 30 + i)
             );
-            const oldest = history[0].date;
+            const oldest = '2026년 1월 1일';
             const { getByText, queryByText } = render(
                 <FearGreedComparisonGauges history={history} />
             );
@@ -102,7 +102,7 @@ describe('FearGreedComparisonGauges', () => {
             const history = makeHistory(
                 Array.from({ length: 10 }, (_, i) => 30 + i)
             );
-            const oldest = history[0].date;
+            const oldest = '2026년 1월 1일';
             const { container } = render(
                 <FearGreedComparisonGauges history={history} />
             );

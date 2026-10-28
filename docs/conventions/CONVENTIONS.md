@@ -721,6 +721,18 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
 
+<a id="CM-11"></a>
+
+#### CM-11 — One comment language per file
+
+Match the language of the comments already in the file you edit: a new JSDoc or comment follows the file's existing
+language, never introducing a second one. A mixed file reads as two authors and makes a grep for a concept miss half of it.
+
+```typescript
+// ❌ English JSDoc throughout the file, one new block written in Korean
+// ✅ the new block is English like its neighbours
+```
+
 ---
 
 ## Change Synchronization

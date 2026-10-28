@@ -35,8 +35,9 @@ function toComparison(
 }
 
 /**
- * 1년에 해당하는 거래 세션 수. "1년 전" 비교 기준점이고, 종목 페이지의 "최근 1년" 차트도
- * 같은 값으로 잘라 그린다 — 두 값이 어긋나면 차트 첫 점과 "1년 전" 게이지가 다른 날을 가리킨다.
+ * Trading sessions in one year. It is the "1 year ago" lookback, and the per-stock
+ * page trims its "last year" chart to the same count — if the two drifted apart,
+ * the chart's first point and the "1 year ago" gauge would point at different days.
  */
 export const FEAR_GREED_SESSIONS_PER_YEAR = 252;
 

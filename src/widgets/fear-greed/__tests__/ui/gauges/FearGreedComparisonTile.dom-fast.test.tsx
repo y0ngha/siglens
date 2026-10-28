@@ -47,6 +47,7 @@ describe('FearGreedComparisonTile', () => {
         const { text, ariaLabel } = renderTile(YEAR_TILE);
         expect(text).toContain(tPeriod('year'));
         expect(text).not.toContain(YEAR_TILE.date);
+        expect(text).not.toContain('2025년 3월 4일');
         expect(ariaLabel).toContain(tPeriod('year'));
         expect(ariaLabel).not.toContain(YEAR_TILE.date);
     });
@@ -54,7 +55,7 @@ describe('FearGreedComparisonTile', () => {
     it('clamp된 칸은 화면 글자와 aria-label 모두에 실제로 쓴 날짜를 적는다', () => {
         const since = tWidget('FearGreedComparisonTile.sincePeriod', {
             v0: tPeriod('year'),
-            v1: YEAR_TILE.date,
+            v1: '2025년 3월 4일',
         });
         const { text, ariaLabel } = renderTile({ ...YEAR_TILE, clamped: true });
         expect(text).toContain(since);
