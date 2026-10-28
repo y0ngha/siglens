@@ -19,7 +19,7 @@ interface SignalSubsectionProps {
     /** 티커를 주 제목으로 쓸지(`DashboardScope.tickerIsReadable`). */
     tickerIsReadable: boolean;
     title: string;
-    marker: string; // ▲ ▼ △ ▽ ◈
+    marker: string;
     variant: SignalSubsectionVariant;
     stocks: readonly StockWithConflict[];
     infoMessage?: ReactNode;

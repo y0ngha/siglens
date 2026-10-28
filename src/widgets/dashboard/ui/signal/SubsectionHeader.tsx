@@ -15,7 +15,7 @@ const COUNT_PAD_LENGTH = 2;
 
 interface SubsectionHeaderProps {
     title: string;
-    marker: string; // ▲ ▼ △ ▽ ◈
+    marker: string;
     variant: SignalSubsectionVariant;
     count: number;
     infoMessage?: ReactNode;
