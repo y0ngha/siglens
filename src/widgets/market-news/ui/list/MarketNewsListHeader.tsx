@@ -1,6 +1,5 @@
 /**
- * 로딩·빈 상태·목록이 같은 제목과 기간 배지를 쓰도록 한 곳에 둔다 — 상태마다 따로 그리면
- * 조회 기간 표기가 어긋난다.
+ * 상태마다 따로 그리면 조회 기간 표기가 어긋나 한 곳에 둔다.
  */
 import { useTranslations } from 'next-intl';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

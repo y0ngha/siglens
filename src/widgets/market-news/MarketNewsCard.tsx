@@ -24,7 +24,7 @@ export interface MarketNewsCardProps {
     item: MarketNewsCardItem;
     /**
      * 보강 폴링이 끝났음에도 아직 보강되지 않은 카드를 스켈레톤 대신 보강 전 모습으로 그린다.
-     * 폴링이 실패로 멈추면 영영 오지 않을 결과를 기다리는 스피너가 남기 때문이다.
+     * 폴링이 실패·상한·정체로 멈추면 영영 오지 않을 결과를 기다리는 스피너가 남기 때문이다.
      */
     enrichmentStopped?: boolean;
 }

@@ -146,6 +146,31 @@ describe('useMarketNewsCardPolling', () => {
         errorSpy.mockRestore();
     });
 
+    it('실패 한 번 뒤 성공하면 pollError를 세팅하지 않고 폴링을 이어간다', async () => {
+        mockGetMarketNewsCardsAction
+            .mockResolvedValueOnce({ ok: false, error: 'transient' })
+            .mockResolvedValue({ ok: true, items: [PENDING_ITEM] });
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('stock', [PENDING_ITEM]),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(result.current.pollError).toBeNull();
+        await advancePolls(3);
+
+        expect(result.current.pollError).toBeNull();
+        expect(result.current.isPolling).toBe(true);
+
+        errorSpy.mockRestore();
+    });
+
     it('빈 스냅샷 연속 20회 후 폴링을 멈춘다', async () => {
         mockGetMarketNewsCardsAction.mockResolvedValue({ ok: true, items: [] });
 

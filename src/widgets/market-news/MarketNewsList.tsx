@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * 상태(로딩·빈·목록)마다 화면을 갈라 한 컴포넌트가 분기만 맡고, 그리기는 `ui/list`에 맡긴다.
+ * 폴링 상태가 화면 분기를 정하므로 이 컴포넌트는 분기만 맡는다.
  */
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
@@ -40,6 +40,9 @@ export function MarketNewsList({
     } = useMarketNewsCardPolling(category, initialItems);
     const items = capMarketNewsRows(polledItems);
     const pollFailed = pollError !== null;
+    // 실패뿐 아니라 5분 상한·정체·빈 스냅샷 반복처럼 오류 없이 끝난 폴링도 더는 보강 결과가
+    // 오지 않는다. 첫 폴 전에는 isPolling이 true라 스켈레톤이 그대로 보인다.
+    const enrichmentStopped = !isPolling;
     const lookbackDays = getMarketNewsLookbackDays();
 
     if (items.length === 0) {
@@ -66,7 +69,7 @@ export function MarketNewsList({
                         <MarketNewsCard
                             category={category}
                             item={item}
-                            enrichmentStopped={pollFailed}
+                            enrichmentStopped={enrichmentStopped}
                         />
                     </li>
                 ))}

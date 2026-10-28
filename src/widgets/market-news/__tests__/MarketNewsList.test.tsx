@@ -150,6 +150,20 @@ describe('MarketNewsList', () => {
             expect(screen.queryByRole('status')).not.toBeInTheDocument();
         });
 
+        it('오류 없이 폴링이 끝나도(상한·정체) 보강 대기 카드의 스켈레톤을 걷고 안내는 없다', () => {
+            mockUseMarketNewsCardPolling.mockReturnValue({
+                items: [PENDING_ITEM],
+                isPolling: false,
+                pollError: null,
+            });
+
+            render(<MarketNewsList category="general" initialItems={[]} />);
+
+            expect(screen.queryByText('AI 분석 중…')).not.toBeInTheDocument();
+            expect(screen.getByText('뉴스 헤드라인 99')).toBeInTheDocument();
+            expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        });
+
         it('목록이 비어 있으면 "뉴스 없음" 대신 안내를 보여 준다', () => {
             mockUseMarketNewsCardPolling.mockReturnValue({
                 items: [],

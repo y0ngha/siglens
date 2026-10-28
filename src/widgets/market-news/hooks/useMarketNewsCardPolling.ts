@@ -29,16 +29,15 @@ const LIST_POLICY: CardListPollPolicy = {
 const EMPTY_ITEMS: readonly MarketNewsCardItem[] = [];
 
 /**
- * Keeps the market-news card list up-to-date while background analysis is in
- * progress for a given feed category.
+ * 카테고리별 백그라운드 분석이 진행되는 동안 마켓 뉴스 카드 목록을 최신으로 유지한다.
  *
  * `usePollingQuery`(키 `marketNewsCards`)로 `POLL_INTERVAL_MS`마다 폴링한다. 같은 화면의
  * 다이제스트 대기(`useWaitForMarketNewsCards`)와 쿼리를 나눠 써서 요청이 한 번만 나가고,
  * 숨은 탭에서는 멈추며, 응답이 이전과 같으면 목록이 다시 그려지지 않는다. 종료 조건은
  * `decideCardListPoll` — 전건 보강, 5분 상한, 연속 실패, 빈 스냅샷 반복, 정체.
  *
- * Pass a stable `key` on the consuming list to force a fresh-mount reset
- * when the snapshot array identity must drive a reset (e.g. client navigation).
+ * 스냅샷 배열 참조가 초기화를 좌우해야 할 때(예: 클라이언트 내비게이션) 소비하는 목록에
+ * 안정적인 `key`를 넘겨 새로 마운트시킨다.
  */
 export function useMarketNewsCardPolling(
     category: NewsFeedCategoryId,
@@ -46,8 +45,7 @@ export function useMarketNewsCardPolling(
 ): UseMarketNewsCardPollingReturn {
     const [isPolling, setIsPolling] = useState(true);
     const [pollError, setPollError] = useState<Error | null>(null);
-    // Reset on category change in render (React-recommended "store information
-    // from previous renders" pattern).
+    // 카테고리가 바뀌면 렌더 중에 초기화한다(React 권장 "이전 렌더 정보 저장" 패턴).
     // https://react.dev/reference/react/useState#storing-information-from-previous-renders
     const [prevCategory, setPrevCategory] = useState(category);
     // 카테고리별 카운터. 카테고리가 바뀌면(같은 인스턴스가 남는 경우) 처음부터 센다.
