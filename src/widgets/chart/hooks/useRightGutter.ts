@@ -31,7 +31,8 @@ export function useRightGutter(
     );
 
     useEffect(() => {
-        // 측정된 라벨 폭에서 계산한 우측 여백을 부모 차트 레이아웃에 알린다. 콜백은 ref로 읽어 재등록이 없고, 값은 렌더 중에 알 수 없다(텍스트 측정).
+        // 부모에 알리는 일은 커밋 뒤에 한다 — 콜백이 부모 상태를 바꾸므로 자식 렌더 중에 부를 수
+        // 없다. 콜백은 ref로 읽어 값이 바뀔 때만 다시 부른다.
         // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
         callbackRef.current?.(rightGutterPx);
     }, [rightGutterPx]);
