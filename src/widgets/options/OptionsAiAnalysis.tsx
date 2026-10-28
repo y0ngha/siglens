@@ -16,7 +16,7 @@ import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { PerExpirationSection } from './ui/ai-analysis/PerExpirationSection';
 import { SignalsSection } from './ui/ai-analysis/SignalsSection';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
-import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
@@ -133,7 +133,11 @@ export function OptionsAiAnalysis({
 }: OptionsAiAnalysisProps) {
     const t = useTranslations('widgets.options');
     const locale = useResolvedLocale();
-    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
+    // 숨긴(hideView) 위젯은 공유 트리거가 `start`를 부를 때만 생성한다 — 보이지 않는 유료 생성을 막는다.
+    const { allowed: autoRunAllowed, start } = useAiRunPermission(
+        symbol,
+        hideView
+    );
     const state = useOptionsAnalysis({
         symbol,
         companyName,
@@ -158,7 +162,9 @@ export function OptionsAiAnalysis({
         // 공유 스냅샷에 쉽게보기 산문을 함께 싣는다 — 링크를 받은 사람은
         // SSE 라우트를 타지 않아 평이화를 다시 만들 수 없다.
         plain: state.status === 'done' ? state.plain : null,
-        trigger: state.trigger,
+        // 대기 중에는 캐시 전용 재조회가 아니라 생성을 여는 `start`여야 공유 흐름이 분석을 시작한다.
+        trigger:
+            state.status === 'awaiting_interaction' ? start : state.trigger,
     });
 
     // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
@@ -191,7 +197,7 @@ export function OptionsAiAnalysis({
             <AiAnalysisAwaitingSection
                 heading={t('OptionsAiAnalysis.eefb95')}
                 idPrefix="options-ai-analysis"
-                onStart={grant}
+                onStart={start}
             />
         );
     }
