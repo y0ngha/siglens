@@ -721,6 +721,20 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
 
+<a id="CM-11"></a>
+
+#### CM-11 — Comments describe the current design and WHY, not history
+
+A comment or JSDoc states the present constraint and reason. It does not narrate PRs, audits, review rounds or what
+the code used to do. When a refactor changes a strategy (for example how a chart is remounted on theme change), re-read
+the comments and helpers that describe the old strategy and rewrite or delete them; a comment that contradicts the code
+is worse than none.
+
+```typescript
+// ❌ Added in the audit round; previously remounted via useThemeVersion().
+// ✅ The chart is recreated on theme change because series colours are fixed at creation.
+```
+
 ---
 
 ## Change Synchronization

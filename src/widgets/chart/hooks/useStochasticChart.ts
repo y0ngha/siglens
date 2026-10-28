@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 스토캐스틱 보조 pane 시리즈를 그리는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
@@ -134,7 +138,6 @@ export function useStochasticChart({
         if (!isVisible) return;
 
         const { stochastic } = indicators;
-        if (!stochastic.length) return;
 
         if (!percentKSeriesRef.current || !percentDSeriesRef.current) return;
 

@@ -1,3 +1,7 @@
+/**
+ * 작도의 결과(목표·무효화) 레벨 라벨과 엘리어트 구조 이름 해석 유틸.
+ */
+
 import { OVERLAY_LEVEL_LABELS, type ChartOverlay } from '@y0ngha/siglens-core';
 
 /** core 엘리어트 후보 id(`ew:<dir>:<time>:<구조>`)의 구조 — 무효화·목표선 이름에 붙인다. */

@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 스토캐스틱 RSI 보조 pane 시리즈를 그리는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
@@ -131,7 +135,6 @@ export function useStochRSIChart({
         if (!isVisible) return;
 
         const { stochRsi } = indicators;
-        if (!stochRsi.length) return;
 
         if (!kSeriesRef.current || !dSeriesRef.current) return;
 

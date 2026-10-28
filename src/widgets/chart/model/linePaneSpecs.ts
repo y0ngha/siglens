@@ -1,3 +1,7 @@
+/**
+ * 선형 보조 pane 지표별 시리즈·기준선 스펙(LINE_PANE_SPECS) 정의.
+ */
+
 import {
     CCI_OVERBOUGHT_LEVEL,
     CCI_OVERSOLD_LEVEL,
