@@ -101,7 +101,7 @@ export function OverallContent({
         result: state.status === 'done' ? state.result : null,
         context: {
             symbol,
-            displayName: companyName ?? symbol,
+            displayName: companyName,
             assetClass,
             // OverallAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
