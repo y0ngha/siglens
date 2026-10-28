@@ -50,8 +50,10 @@ export function useCaseListVisibility(
             applyCaseListVisibility(panel, token);
             const months = Array.from(panel.querySelectorAll('details'));
             if (activeTicker !== null) {
-                savedOpenRef.current ??= new Map();
-                openAllMonths(months, savedOpenRef.current);
+                // 컴파일러가 `??=`를 못 다뤄 풀어 쓴다.
+                const saved = savedOpenRef.current ?? new Map();
+                savedOpenRef.current = saved;
+                openAllMonths(months, saved);
                 return;
             }
             if (savedOpenRef.current === null) return;

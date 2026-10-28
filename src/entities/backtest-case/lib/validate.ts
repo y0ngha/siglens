@@ -38,6 +38,10 @@ const RISK_LEVEL_ALIASES: Readonly<Record<string, BacktestRiskLevel>> = {
     medium: 'moderate',
 };
 
+function isBacktestRiskLevel(level: string): level is BacktestRiskLevel {
+    return VALID_RISK_LEVELS.some(valid => valid === level);
+}
+
 function normalizeRiskLevel(level: string): string {
     // `in`은 프로토타입까지 보므로 자기 키만 인정한다.
     return Object.hasOwn(RISK_LEVEL_ALIASES, level)
@@ -200,9 +204,7 @@ export function validateBacktestData(data: unknown): BacktestData {
 
         if (
             typeof aiAnalysis['riskLevel'] === 'string' &&
-            !VALID_RISK_LEVELS.includes(
-                normalizeRiskLevel(aiAnalysis['riskLevel']) as BacktestRiskLevel
-            )
+            !isBacktestRiskLevel(normalizeRiskLevel(aiAnalysis['riskLevel']))
         ) {
             throw new Error(
                 `cases[${i}].aiAnalysis.riskLevel must be 'low', 'moderate' (alias 'medium'), 'high', or 'extreme' when present`
@@ -210,6 +212,6 @@ export function validateBacktestData(data: unknown): BacktestData {
         }
     });
 
-    // Safe: all required fields validated above
+    // 검증기가 보장하는 것: 위에서 확인한 케이스 필드와 정규화된 riskLevel. meta 내부 필드는 확인하지 않고 산출물을 신뢰한다.
     return { ...d, cases: cases.map(normalizeCase) } as unknown as BacktestData;
 }
