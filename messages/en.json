@@ -3917,7 +3917,7 @@
                 "loadFailed": "Couldn't load sector signals. Please try again shortly.",
                 "loading": "Loading sector signals.",
                 "retry": "Try again",
-                "statusSummary": "Stocks by group: uptrend signals {v0}, bullish signs {v1}, mixed {v2}, bearish signs {v3}, downtrend signals {v4}."
+                "statusSummary": "Stocks by group: uptrend signals {v0}, bullish signs {v1}, mixed {v2}, bearish signs {v3}, downtrend signals {v4}"
             },
             "SectorSignalPanelSkeleton": {
                 "f65a95": "Loading Sector Signals"

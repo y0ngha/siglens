@@ -77,7 +77,7 @@ describe('SectorSignalStatusLine', () => {
     it.each([
         [
             'en',
-            'Stocks by group: uptrend signals 2, bullish signs 1, mixed 1, bearish signs 0, downtrend signals 3.',
+            'Stocks by group: uptrend signals 2, bullish signs 1, mixed 1, bearish signs 0, downtrend signals 3',
         ],
         [
             'ja',
