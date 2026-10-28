@@ -29,7 +29,7 @@ const NEUTRAL_TONE: ExitTone = {
  */
 const EXIT_REASON: Record<
     BacktestExitReason,
-    { labelKey: string; tone: ExitTone }
+    { labelKey: `backtestExitReason.${BacktestExitReason}`; tone: ExitTone }
 > = {
     stop_loss: {
         labelKey: 'backtestExitReason.stop_loss',

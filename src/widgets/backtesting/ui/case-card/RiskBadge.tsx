@@ -18,7 +18,7 @@ const NEUTRAL_TONE = 'bg-secondary-800 text-secondary-400 border-secondary-700';
  */
 const RISK_BADGE: Record<
     BacktestRiskLevel,
-    { labelKey: string; toneClass: string }
+    { labelKey: `backtestRiskLevel.${BacktestRiskLevel}`; toneClass: string }
 > = {
     low: { labelKey: 'backtestRiskLevel.low', toneClass: SUCCESS_TONE },
     moderate: {

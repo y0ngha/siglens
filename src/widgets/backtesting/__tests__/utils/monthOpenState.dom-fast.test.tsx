@@ -28,6 +28,20 @@ describe('monthOpenState', () => {
         expect(snapshot.get(month)).toBe(false);
     });
 
+    it('지금 목록에 없는 월은 기억에서 지운다', () => {
+        const detached = makeMonth(true);
+        const kept = makeMonth(false);
+        const snapshot = new Map([
+            [detached, true],
+            [kept, false],
+        ]);
+
+        openAllMonths([kept], snapshot);
+
+        expect(snapshot.has(detached)).toBe(false);
+        expect(snapshot.get(kept)).toBe(false);
+    });
+
     it('restoreMonths는 기억된 상태로 되돌리고 모르는 월은 그대로 둔다', () => {
         const remembered = makeMonth(true);
         const unknown = makeMonth(true);
