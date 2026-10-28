@@ -27,6 +27,7 @@ export function NewsListLoadingState() {
             <ul className="space-y-3">
                 {Array.from({ length: NEWS_LIST_SKELETON_COUNT }).map(
                     (_, i) => (
+                        // 고정 개수의 정적 자리표시자라 재정렬·삽입이 없다 — 인덱스 key로 충분하다.
                         <li key={i}>
                             <NewsCardSkeleton />
                         </li>

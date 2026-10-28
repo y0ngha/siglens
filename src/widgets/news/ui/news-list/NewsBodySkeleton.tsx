@@ -22,6 +22,7 @@ export function NewsBodySkeleton() {
                 <div className="h-3 w-12 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             </div>
             {/* 문단(text-sm leading-relaxed ≈ 22.75px 줄) */}
+            {/* 상수 폭 배열의 정적 줄이라 재정렬·삽입이 없다 — 인덱스 key로 충분하다(폭은 중복될 수 있다). */}
             {NEWS_BODY_SKELETON_LINE_WIDTHS.map((width, i) => (
                 <div key={i} className="flex h-5.5 items-center">
                     <div
