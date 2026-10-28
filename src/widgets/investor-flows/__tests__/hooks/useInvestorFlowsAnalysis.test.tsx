@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import koMessages from '../../../../../messages/ko.json';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { useInvestorFlowsAnalysis } from '../useInvestorFlowsAnalysis';
+import { useInvestorFlowsAnalysis } from '../../hooks/useInvestorFlowsAnalysis';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

@@ -467,7 +467,9 @@ describe('InsiderSection', () => {
 
     it('SEC 공시 링크는 새 창 + noopener로 연다', () => {
         render(<InsiderSection {...insiderProps(snapshot)} />);
-        const link = screen.getAllByRole('link', { name: '공시 보기' })[0];
+        const link = screen.getAllByRole('link', {
+            name: 'Fixture Director A 공시 보기',
+        })[0];
         expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         expect(link).toHaveAttribute('target', '_blank');
     });
@@ -481,7 +483,7 @@ describe('InsiderSection', () => {
                 )}
             />
         );
-        expect(screen.queryByRole('link', { name: '공시 보기' })).toBeNull();
+        expect(screen.queryByRole('link', { name: /공시 보기/ })).toBeNull();
     });
 
     it('점수 창 밖의 거래는 "집계 기간 밖" 묶음으로 따로 그린다(요약 건수와 섞지 않는다)', () => {

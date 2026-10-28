@@ -1,10 +1,9 @@
-import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
-
 /**
  * 수급 화면의 숫자 포맷. 로케일은 호출부가 `useResolvedLocale()`로 얻어 넘긴다 — 한국어는 억·만,
  * 영어는 M·B로 로케일이 알아서 줄여 주므로 단위 문자열을 코드에 두지 않는다.
  */
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 
 /** 큰 수를 짧게(`1.4억`, `142M`). 소수 한 자리까지. */
 export function formatCompact(value: number, locale: Locale): string {
@@ -68,14 +67,19 @@ export function formatSmallPercent(
     return formatPercent(value, locale, digits);
 }
 
-/** 부호를 항상 붙인 퍼센트(`+2.5%`, `-0.4%`). 0은 `0.0%`. */
+/** 값이 `digits`자리 반올림에서 0이 되는가 — 이때 표시에는 부호를 붙이지 않는다(`+0.0`·`-0.0`은 "변화 없음"과 어긋난다). */
+function roundsToZero(value: number, digits: number): boolean {
+    return Math.round(Math.abs(value) * 10 ** digits) === 0;
+}
+
+/** 부호를 항상 붙인 퍼센트(`+2.5%`, `-0.4%`). `digits`자리에서 0이 되는 값은 부호 없이 `0.0%`. */
 export function formatSignedPercent(
     value: number,
     locale: Locale,
     digits = 1
 ): string {
     const body = formatPercent(Math.abs(value), locale, digits);
-    if (value === 0) return body;
+    if (roundsToZero(value, digits)) return body;
     return `${value > 0 ? '+' : '-'}${body}`;
 }
 
@@ -91,15 +95,14 @@ export function formatDecimal(
     }).format(value);
 }
 
-/** 부호를 항상 붙인 소수(`+5.4`, `-0.8`). 0은 부호 없이. 점수(-100~+100) 표기에 쓴다. */
+/** 부호를 항상 붙인 소수(`+5.4`, `-0.8`). `digits`자리에서 0이 되는 값은 부호 없이. 점수(-100~+100) 표기에 쓴다. */
 export function formatSignedDecimal(
     value: number,
     locale: Locale,
     digits = 1
 ): string {
     const body = formatDecimal(Math.abs(value), locale, digits);
-    const factor = 10 ** digits;
-    if (Math.round(Math.abs(value) * factor) === 0) return body;
+    if (roundsToZero(value, digits)) return body;
     return `${value > 0 ? '+' : '-'}${body}`;
 }
 

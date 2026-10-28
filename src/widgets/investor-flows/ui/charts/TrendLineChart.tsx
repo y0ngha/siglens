@@ -1,6 +1,10 @@
+/**
+ * 가벼운 선 그래프 — inline SVG(차트 라이브러리 없음).
+ */
 import type { CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { buildLineGeometry, segmentToPath } from '../utils/linePath';
+import { buildLineGeometry, segmentToPath } from '../../utils/linePath';
+import { AxisEndLabels, ScaleTicks } from './ChartScaleParts';
 
 interface TrendLineChartProps {
     /** 오래된 → 최신. `null`은 선을 끊는다. */
@@ -22,8 +26,6 @@ interface TrendLineChartProps {
 }
 
 /**
- * 가벼운 선 그래프 — inline SVG(`GrowthChart`·`FearGreedGauge`와 같은 방식, 차트 라이브러리 없음).
- *
  * `viewBox` 0~100 + `preserveAspectRatio="none"`로 어떤 폭에서도 채우되, 늘어남으로 선이 굵어지지 않게
  * `vector-effect: non-scaling-stroke`(`[vector-effect:non-scaling-stroke]`)를 쓴다. 끝점 표식은 SVG가 늘어나며
  * 타원이 되지 않도록 HTML 점으로 얹는다(좌표는 CSS 변수 — TW-1). 눈금·양끝 라벨도 HTML이라 글자 크기가
@@ -42,7 +44,7 @@ export function TrendLineChart({
 }: TrendLineChartProps) {
     const geometry = buildLineGeometry(values, average);
     if (geometry === null) return null;
-    // 안전한 캐스트: 값은 이 파일이 만든 `%` 문자열(숫자 + `%`)뿐이라 CSS 변수 두 개 외에는 담지 않는다.
+    // 안전한 캐스트: 값은 `%` 문자열(숫자 + `%`)뿐이라 CSS 변수 두 개 외에는 담지 않는다.
     const dotStyle =
         geometry.last === null
             ? undefined
@@ -53,13 +55,7 @@ export function TrendLineChart({
     return (
         <div>
             <div className="flex gap-2">
-                <div
-                    aria-hidden="true"
-                    className="flex h-32 w-14 shrink-0 flex-col justify-between text-right text-xs text-secondary-400 tabular-nums"
-                >
-                    <span>{maxLabel}</span>
-                    <span>{minLabel}</span>
-                </div>
+                <ScaleTicks top={maxLabel} bottom={minLabel} />
                 <div
                     role="img"
                     aria-label={ariaLabel}
@@ -82,8 +78,9 @@ export function TrendLineChart({
                                 strokeDasharray="4 3"
                             />
                         )}
-                        {geometry.segments.map(points =>
-                            points.length > 1 ? (
+                        {geometry.segments
+                            .filter(points => points.length > 1)
+                            .map(points => (
                                 <path
                                     key={`${points[0].x}-${points[0].y}`}
                                     d={segmentToPath(points)}
@@ -96,8 +93,7 @@ export function TrendLineChart({
                                     strokeLinejoin="round"
                                     strokeLinecap="round"
                                 />
-                            ) : null
-                        )}
+                            ))}
                     </svg>
                     {dotStyle !== undefined && (
                         <span
@@ -111,13 +107,7 @@ export function TrendLineChart({
                     )}
                 </div>
             </div>
-            <div
-                aria-hidden="true"
-                className="mt-1 flex justify-between pl-16 font-mono text-xs text-secondary-400 tabular-nums"
-            >
-                <span>{startLabel}</span>
-                <span>{endLabel}</span>
-            </div>
+            <AxisEndLabels start={startLabel} end={endLabel} />
         </div>
     );
 }

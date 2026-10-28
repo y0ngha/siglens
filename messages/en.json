@@ -4505,6 +4505,7 @@
             },
             "dilution": {
                 "filing": "SEC filing",
+                "filingLabel": "SEC filing, {form} filed {date}",
                 "kind": {
                     "atm": "ATM",
                     "bestEfforts": "Best efforts",
@@ -4537,6 +4538,7 @@
                 "insiderCluster": "Cluster buy by {count} different insiders",
                 "insiderCounts": "{buys} buys, {sells} sells",
                 "insiderNetBuy": "Net buying of {amount} in the last {days} days",
+                "insiderNetFlat": "No net buying or selling in the last {days} days",
                 "insiderNetSell": "Net selling of {amount} in the last {days} days",
                 "insiderProposedSales": "Proposed sale notices (Form 144): {count}, {amount}",
                 "largeHolderCounts": "13D positions {d}, filings {df}; 13G positions {g}, filings {gf} (last {days} days)",
@@ -4582,6 +4584,7 @@
                 "colShares": "Shares",
                 "colValue": "Value",
                 "filing": "View filing",
+                "filingLabel": "View filing: Form 144 by {filer}",
                 "none": "No proposed sale notices on file.",
                 "omitted": "{count} older notices are left out of the list.",
                 "planBadge": "10b5-1 plan",
@@ -4623,6 +4626,7 @@
                 "title": "Number of Institutional Holders"
             },
             "insider": {
+                "afterWindowTitle": "Outside the scoring window (after {to})",
                 "buy": "Buy",
                 "buys": "Buys",
                 "clusterBadge": "Cluster buy: {count} insiders",
@@ -4633,6 +4637,7 @@
                 "colType": "Type",
                 "colValue": "Value",
                 "filing": "View filing",
+                "filingLabel": "View filing by {name}",
                 "net": "Net buying or selling",
                 "netBuy": "Net buy {amount}",
                 "netFlat": "No net buying or selling",
@@ -4641,6 +4646,7 @@
                 "noRecent": "No insider buys or sells were reported in the last {days} days.",
                 "noTrades": "There are no buy or sell filings to list.",
                 "noTradesInWindow": "No buy or sell filings in the last {days} days.",
+                "omitted": "{count} older trades are left out of the table.",
                 "omittedOther": "{count} other filings, such as gifts and option exercises, are left out of the table.",
                 "outsideWindowNote": "These trades are not counted in the summary above.",
                 "outsideWindowTitle": "Outside the scoring window (before {from})",
@@ -4674,6 +4680,7 @@
                 "colPercent": "Stake",
                 "colShares": "Shares",
                 "filing": "View filing",
+                "filingLabel": "View filing: {form} by {filer}",
                 "kind13d": "13D activist",
                 "kind13g": "13G passive",
                 "kindOther": "Other",

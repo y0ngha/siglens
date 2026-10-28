@@ -4505,6 +4505,7 @@
             },
             "dilution": {
                 "filing": "SEC原文",
+                "filingLabel": "SEC原文、{date}提出の{form}",
                 "kind": {
                     "atm": "ATM",
                     "bestEfforts": "ベストエフォート",
@@ -4537,6 +4538,7 @@
                 "insiderCluster": "クラスター買い:異なるインサイダー {count}人",
                 "insiderCounts": "買い {buys}件、売り {sells}件",
                 "insiderNetBuy": "直近{days}日の純買い {amount}",
+                "insiderNetFlat": "直近{days}日は純買いも純売りもなし",
                 "insiderNetSell": "直近{days}日の純売り {amount}",
                 "insiderProposedSales": "売却予定届(Form 144) {count}件、{amount}",
                 "largeHolderCounts": "13D ポジション{d}件（届出{df}回）、13G ポジション{g}件（届出{gf}回）(直近{days}日)",
@@ -4582,6 +4584,7 @@
                 "colShares": "予定株数",
                 "colValue": "予定金額",
                 "filing": "届出を見る",
+                "filingLabel": "{filer}の届出を見る",
                 "none": "受理された売却予定届はありません。",
                 "omitted": "古い届出{count}件は一覧から外しました。",
                 "planBadge": "10b5-1プラン",
@@ -4623,6 +4626,7 @@
                 "title": "保有機関数の推移"
             },
             "insider": {
+                "afterWindowTitle": "集計期間外({to}より後)",
                 "buy": "買い",
                 "buys": "買い",
                 "clusterBadge": "クラスター買い（インサイダー{count}人）",
@@ -4633,6 +4637,7 @@
                 "colType": "区分",
                 "colValue": "金額",
                 "filing": "開示を見る",
+                "filingLabel": "{name}の開示を見る",
                 "net": "純買い／純売り",
                 "netBuy": "純買い {amount}",
                 "netFlat": "純買いも純売りもなし",
@@ -4641,6 +4646,7 @@
                 "noRecent": "直近{days}日間に届け出られたインサイダーの売買はありません。",
                 "noTrades": "表に載せる売買の届け出がありません。",
                 "noTradesInWindow": "直近{days}日の売買の届け出はありません。",
+                "omitted": "古い取引{count}件は表から除いています。",
                 "omittedOther": "贈与、オプション行使などのその他の届け出{count}件は表から除いています。",
                 "outsideWindowNote": "上の集計の件数と金額には含まれない取引です。",
                 "outsideWindowTitle": "集計期間外({from}より前)",
@@ -4674,6 +4680,7 @@
                 "colPercent": "持株比率",
                 "colShares": "保有株数",
                 "filing": "開示を見る",
+                "filingLabel": "{filer}の{form}開示を見る",
                 "kind13d": "13D アクティビスト",
                 "kind13g": "13G 純投資",
                 "kindOther": "その他",
