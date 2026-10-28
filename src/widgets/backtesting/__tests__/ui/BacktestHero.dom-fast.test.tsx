@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import type { BacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
+import type { BacktestStats } from '@/entities/backtest-case/model';
 
-import { BacktestHero } from '../BacktestHero';
+import { BacktestHero } from '../../BacktestHero';
 
 const STATS: BacktestStats = {
     totalCases: 150,
@@ -108,8 +108,14 @@ describe('BacktestHero', () => {
     it('colors a negative mean return with the danger token', () => {
         render(<BacktestHero stats={{ ...STATS, meanReturnPct: -1.2 }} />);
 
-        const value = screen.getByText('-1.2%');
+        const value = screen.getByText('-1.20%');
         expect(value).toHaveClass('text-ui-danger-text');
+    });
+
+    it('평균 수익률은 값과 무관하게 소수 둘째 자리까지 고정해 그린다', () => {
+        render(<BacktestHero stats={{ ...STATS, meanReturnPct: 0.3 }} />);
+
+        expect(screen.getByText('+0.30%')).toBeInTheDocument();
     });
 
     /**

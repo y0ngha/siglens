@@ -1,4 +1,4 @@
-vi.mock('../BacktestCaseCard', () => ({
+vi.mock('../../BacktestCaseCard', () => ({
     BacktestCaseCard: ({ case_ }: { case_: { ticker: string } }) => (
         <div data-testid={`case-${case_.ticker}`}>{case_.ticker}</div>
     ),
@@ -7,7 +7,7 @@ vi.mock('../BacktestCaseCard', () => ({
 import { render, screen } from '@testing-library/react';
 import type { BacktestCase } from '@y0ngha/siglens-core';
 
-import { BacktestCaseList } from '../BacktestCaseList';
+import { BacktestCaseList } from '../../BacktestCaseList';
 
 function makeCase(ticker: string, entryDate: string): BacktestCase {
     return {
@@ -36,7 +36,7 @@ describe('BacktestCaseList', () => {
         render(<BacktestCaseList cases={[]} />);
 
         expect(
-            screen.getByText(/해당 종목의 케이스가 없습니다/)
+            screen.getByText('표시할 케이스가 없습니다.')
         ).toBeInTheDocument();
     });
 
@@ -64,9 +64,8 @@ describe('BacktestCaseList', () => {
     });
 
     /**
-     * 월 구분은 **헤딩이어야 한다.** 시각적으로만 제목이고 `<div>`였던 탓에
-     * 41,000자짜리 이 페이지에 헤딩이 h1 하나뿐이었고, 스크린리더로 케이스
-     * 100개를 훑을 길이 없었다(접근성 감사 SC 1.3.1).
+     * 월 구분은 **헤딩이어야 한다.** `<div>`로 제목처럼만 꾸미면 스크린리더가
+     * 헤딩 탐색으로 월을 건너뛸 수 없다(WCAG SC 1.3.1).
      *
      * 태그를 되돌려도 위 "groups cases by month"는 `getByText`라 그대로
      * 통과한다 — 그래서 **역할(role)**로 따로 단언한다.
@@ -239,5 +238,35 @@ describe('BacktestCaseList — 월별 접이식', () => {
             '2024년 7월',
             '2024년 6월',
         ]);
+    });
+});
+
+describe('BacktestCaseList — 필터 표기', () => {
+    it('카드 래퍼에 카드 표식을 단다', () => {
+        render(<BacktestCaseList cases={[makeCase('AAPL', '2024-06-15')]} />);
+
+        expect(screen.getByTestId('case-AAPL').parentElement).toHaveAttribute(
+            'data-backtest-card'
+        );
+    });
+
+    it('종목 탭이 비었을 때 드러낼 안내를 숨긴 채 서버에서 그린다', () => {
+        render(<BacktestCaseList cases={[makeCase('AAPL', '2024-06-15')]} />);
+
+        const empty = screen.getByText(
+            '선택한 종목에 해당하는 케이스가 없습니다.'
+        );
+        expect(empty).toHaveAttribute('data-backtest-empty');
+        expect(empty).toHaveAttribute('hidden');
+        expect(empty).toHaveAttribute('role', 'status');
+    });
+
+    it('데이터셋이 비면 종목 필터 안내 없이 일반 안내만 그린다', () => {
+        render(<BacktestCaseList cases={[]} />);
+
+        expect(
+            screen.queryByText('선택한 종목에 해당하는 케이스가 없습니다.')
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/이 종목|해당 종목/)).not.toBeInTheDocument();
     });
 });

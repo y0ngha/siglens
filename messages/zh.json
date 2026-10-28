@@ -1472,11 +1472,15 @@
             "descriptionFlowsKr": "5%大额持股与高管持股公告及AI解读"
         },
         "enumLabel": {
+            "backtestExitReason": {
+                "stop_loss": "止损",
+                "take_profit": "止盈",
+                "time": "到期平仓"
+            },
             "backtestRiskLevel": {
                 "extreme": "风险极高",
                 "high": "风险高",
                 "low": "风险低",
-                "medium": "风险中等",
                 "moderate": "风险中等"
             },
             "chamber": {
@@ -3638,11 +3642,9 @@
                 "456225": "目标价:",
                 "06cf3e": "<n>{v0}</n> 天",
                 "0f8bf6": "AI 入场建议",
-                "1e38a3": "止损",
                 "31e4d3": "买入",
                 "540e42": "AI建议观望",
                 "58b71d": "AI 预测级别",
-                "62a65c": "卖出",
                 "6c8ca5": "AI 规避建议",
                 "75a556": "依据:",
                 "b19f09": "亏损",
@@ -3651,8 +3653,9 @@
                 "fa9de3": "✓ 达成"
             },
             "BacktestCaseList": {
-                "9018e2": "该股票无相关案例。",
-                "caseCount": "{v0}例"
+                "caseCount": "{v0}例",
+                "emptyDataset": "没有可显示的案例。",
+                "emptyFiltered": "所选股票没有相关案例。"
             },
             "BacktestHero": {
                 "116858": "这是通过实际市场数据验证的回测结果。",

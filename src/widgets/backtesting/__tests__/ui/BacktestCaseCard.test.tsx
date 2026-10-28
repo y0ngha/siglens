@@ -11,9 +11,9 @@ vi.mock('@/shared/lib/priceFormat', async importOriginal => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import type { BacktestCase } from '@y0ngha/siglens-core';
+import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
 
-import { BacktestCaseCard } from '../BacktestCaseCard';
+import { BacktestCaseCard } from '../../BacktestCaseCard';
 
 function makeCase(overrides: Partial<BacktestCase> = {}): BacktestCase {
     return {
@@ -117,32 +117,54 @@ describe('BacktestCaseCard', () => {
  */
 describe('청산 칩 배색', () => {
     it('손절은 danger 배색이다', () => {
-        const { container } = render(
+        render(
             <BacktestCaseCard case_={makeCase({ exitReason: 'stop_loss' })} />
         );
         const chip = screen.getByText('손절').parentElement as HTMLElement;
         expect(chip.className).toContain('chart-bearish');
-        expect(container).toBeTruthy();
     });
 
-    it.each(['take_profit', 'time'] as const)(
-        '%s 청산은 danger 배색이 아니다',
-        reason => {
-            render(
-                <BacktestCaseCard
-                    case_={makeCase({ exitReason: reason, result: 'win' })}
-                />
-            );
-            const chip = screen.getByText('매도').parentElement as HTMLElement;
-            expect(chip.className).not.toContain('chart-bearish');
-        }
-    );
+    it.each([
+        ['take_profit', '익절'],
+        ['time', '기간 만료'],
+    ] as const)('%s 청산은 danger 배색이 아니다', (reason, label) => {
+        render(
+            <BacktestCaseCard
+                case_={makeCase({ exitReason: reason, result: 'win' })}
+            />
+        );
+        const chip = screen.getByText(label).parentElement as HTMLElement;
+        expect(chip.className).not.toContain('chart-bearish');
+    });
 });
 
 /**
- * 10개 종목을 다루면서 심볼 페이지로 나가는 내부 링크가 하나도 없었다
- * (감사 실측: 앵커 43개가 전부 전역 nav/footer 크롬). 배지를 링크로 되돌려
- * 놓아도 화면상 차이가 거의 없어 조용히 회귀한다.
+ * 청산 사유마다 전용 라벨을 쓴다. 손절이 아닌 청산을 전부 "매도"로 찍으면 기간 만료
+ * 청산이 익절처럼 읽힌다.
+ */
+describe('청산 사유 라벨', () => {
+    it.each([
+        ['stop_loss', '손절'],
+        ['take_profit', '익절'],
+        ['time', '기간 만료'],
+    ] as const)('%s → %s', (reason, label) => {
+        render(<BacktestCaseCard case_={makeCase({ exitReason: reason })} />);
+        const chip = screen.getByText(label, {
+            selector: 'span.font-semibold',
+        });
+        expect(chip).toBeInTheDocument();
+        expect(chip.parentElement?.textContent).toContain(makeCase().exitDate);
+    });
+
+    it('어떤 청산에도 진입 신호 라벨 "매도"를 쓰지 않는다', () => {
+        render(<BacktestCaseCard case_={makeCase({ exitReason: 'time' })} />);
+        expect(screen.queryByText('매도')).not.toBeInTheDocument();
+    });
+});
+
+/**
+ * 티커 배지는 종목 페이지로 가는 이 목록의 유일한 내부 링크다. 링크가 아닌
+ * 요소로 바꿔도 화면상 차이가 거의 없으므로 href로 따로 단언한다.
  */
 describe('티커 링크', () => {
     it('티커 배지가 종목 페이지로 간다', () => {
@@ -152,29 +174,21 @@ describe('티커 링크', () => {
 });
 
 /**
- * 위험도 배지는 원문 enum 대문자(`HIGH`)를 그대로 찍지 않고 라벨로 푼다. 공개 데이터에는
- * core 타입에 없는 `medium`이 실제로 들어 있다(72건) — `moderate`만 매핑하면 가장 흔한
- * 값이 새므로 둘 다 "보통"이어야 한다.
+ * 위험도 배지는 원문 enum 대문자(`HIGH`)를 그대로 찍지 않고 라벨로 푼다. 데이터의 별칭
+ * (`medium`)은 entity 검증이 `moderate`로 정규화하므로 위젯은 core 타입 4값만 안다.
  */
 describe('위험도 배지 라벨', () => {
-    const withRisk = (riskLevel: string) => {
+    const withRisk = (riskLevel: BacktestRiskLevel) => {
         const base = makeCase();
-        return makeCase({
-            aiAnalysis: {
-                ...base.aiAnalysis,
-                // 데이터에는 타입에 없는 값이 있다 — JSON 파서처럼 any로 만든다.
-                riskLevel: JSON.parse(JSON.stringify(riskLevel)),
-            },
-        });
+        return makeCase({ aiAnalysis: { ...base.aiAnalysis, riskLevel } });
     };
 
     it.each([
         ['low', '위험 낮음'],
-        ['medium', '위험 보통'],
         ['moderate', '위험 보통'],
         ['high', '위험 높음'],
         ['extreme', '위험 매우 높음'],
-    ])('%s → %s', (level, label) => {
+    ] as const)('%s → %s', (level, label) => {
         const { container } = render(
             <BacktestCaseCard case_={withRisk(level)} />
         );
@@ -183,11 +197,68 @@ describe('위험도 배지 라벨', () => {
         expect(container.textContent).not.toMatch(new RegExp(`\\b${level}\\b`));
     });
 
-    it('알 수 없는 값은 배지를 그리지 않는다', () => {
+    it('riskLevel이 없으면 위험 배지를 그리지 않는다', () => {
+        const base = makeCase();
         const { container } = render(
-            <BacktestCaseCard case_={withRisk('mystery')} />
+            <BacktestCaseCard
+                case_={makeCase({
+                    aiAnalysis: { ...base.aiAnalysis, riskLevel: undefined },
+                })}
+            />
         );
-        expect(container.textContent).not.toMatch(/mystery|MYSTERY|위험/);
+        expect(container.textContent).not.toMatch(/위험/);
+    });
+});
+
+/**
+ * 진입 권고·위험도 배지는 모든 케이스가 갖는다. 가격 레벨(목표가·익절가·손절가)이 없다고
+ * 배지까지 숨기면 안 된다. 가격 줄은 있는 것만 그린다.
+ */
+describe('AI 예측 패널', () => {
+    const withoutLevels = () => {
+        const base = makeCase();
+        return makeCase({
+            aiAnalysis: {
+                ...base.aiAnalysis,
+                bullishTargets: [],
+                stopLoss: undefined,
+                takeProfit: undefined,
+            },
+        });
+    };
+
+    it('가격 레벨이 없어도 진입 권고·위험도 배지를 그린다', () => {
+        render(<BacktestCaseCard case_={withoutLevels()} />);
+
+        expect(screen.getByText('AI 진입 권고')).toBeInTheDocument();
+        expect(screen.getByText('위험 낮음')).toBeInTheDocument();
+    });
+
+    it('가격 레벨이 없으면 가격 줄을 그리지 않는다', () => {
+        const { container } = render(
+            <BacktestCaseCard case_={withoutLevels()} />
+        );
+
+        expect(container.textContent).not.toMatch(/목표가|익절가|손절가|근거/);
+    });
+
+    it('일부 레벨만 있으면 있는 줄만 그린다', () => {
+        const base = makeCase();
+        render(
+            <BacktestCaseCard
+                case_={makeCase({
+                    aiAnalysis: {
+                        ...base.aiAnalysis,
+                        bullishTargets: [],
+                        takeProfit: undefined,
+                    },
+                })}
+            />
+        );
+
+        expect(screen.getByText(/손절가:/)).toBeInTheDocument();
+        expect(screen.queryByText(/익절가:/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/목표가:/)).not.toBeInTheDocument();
     });
 });
 

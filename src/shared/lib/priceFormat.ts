@@ -198,15 +198,20 @@ export function formatPrice(value: number, spec: PriceFormatConfig): string {
     }).format(value);
 }
 
+/** {@link formatSignedPercent}의 기본 소수 자릿수. */
+const DEFAULT_SIGNED_PERCENT_DIGITS = 1;
+
 /**
- * "+12.3%" / "-4.5%" — signed percent with one decimal place. Extracted from
- * three byte-identical copies (PositionBuilding/PositionHoldingCard/PositionCard —
- * rule-of-three, DESIGN.md/CONVENTIONS.md dedupe guidance) into a single shared
- * helper next to the other price-formatting utilities.
+ * "+12.3%" / "-4.5%" — signed percent, one decimal place by default.
+ * `fractionDigits` overrides the precision (e.g. 2 so a small mean like 0.36%
+ * is not rounded to 0.4%).
  */
-export function formatSignedPercent(value: number): string {
+export function formatSignedPercent(
+    value: number,
+    fractionDigits = DEFAULT_SIGNED_PERCENT_DIGITS
+): string {
     const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(1)}%`;
+    return `${sign}${value.toFixed(fractionDigits)}%`;
 }
 
 /**

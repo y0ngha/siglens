@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { BacktestMethodology } from '../BacktestMethodology';
+import { BacktestMethodology } from '../../BacktestMethodology';
 
 describe('BacktestMethodology', () => {
     it('renders the heading and all methodology bullets', () => {

@@ -3,6 +3,7 @@ import type {
     BacktestAiResult,
     BacktestData,
     BacktestExitReason,
+    BacktestRiskLevel,
     BacktestSignalResult,
 } from '@y0ngha/siglens-core';
 
@@ -19,6 +20,52 @@ const VALID_ENTRY_RECOMMENDATIONS: BacktestAiEntryRecommendation[] = [
     'avoid',
 ];
 
+/** 케이스 날짜(`entryDate`/`exitDate`) 형식. 월 그룹 키(`YYYY-MM`)가 여기서 파생된다. */
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const VALID_RISK_LEVELS: BacktestRiskLevel[] = [
+    'low',
+    'moderate',
+    'high',
+    'extreme',
+];
+
+/**
+ * 산출물(`data.json`)이 쓰는 위험도 별칭 → core 정식 값.
+ * 생성기는 중간 단계를 `medium`으로 적는데 core 타입은 `moderate`다.
+ */
+const RISK_LEVEL_ALIASES: Readonly<Record<string, BacktestRiskLevel>> = {
+    medium: 'moderate',
+};
+
+function normalizeRiskLevel(level: string): string {
+    // `in`은 프로토타입까지 보므로 자기 키만 인정한다.
+    return Object.hasOwn(RISK_LEVEL_ALIASES, level)
+        ? RISK_LEVEL_ALIASES[level]
+        : level;
+}
+
+/** 검증을 통과한 케이스의 `riskLevel` 별칭을 정식 값으로 바꾼 사본. 없으면 그대로 둔다. */
+function normalizeCase(item: unknown): unknown {
+    // validateBacktestData가 모든 케이스를 object로 확인한 뒤에만 부른다
+    const c = item as Record<string, unknown> & {
+        aiAnalysis: Record<string, unknown>;
+    };
+    const riskLevel = c.aiAnalysis['riskLevel'];
+    if (typeof riskLevel !== 'string') return c;
+    return {
+        ...c,
+        aiAnalysis: {
+            ...c.aiAnalysis,
+            riskLevel: normalizeRiskLevel(riskLevel),
+        },
+    };
+}
+
+/**
+ * 백테스트 산출물의 모양을 검증하고, `riskLevel`의 별칭(`medium`)을 core 정식 값
+ * (`moderate`)으로 정규화한 데이터를 돌려준다. 모르는 위험도 값은 던진다.
+ */
 export function validateBacktestData(data: unknown): BacktestData {
     if (typeof data !== 'object' || data === null) {
         throw new Error('BacktestData must be an object');
@@ -39,6 +86,14 @@ export function validateBacktestData(data: unknown): BacktestData {
     cases.forEach((item, i) => {
         // Each element is unknown; cast to Record to access named fields for validation
         const c = item as Record<string, unknown>;
+        (['entryDate', 'exitDate'] as const).forEach(field => {
+            const value = c[field];
+            if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) {
+                throw new Error(
+                    `cases[${i}].${field} must be a YYYY-MM-DD string`
+                );
+            }
+        });
         if (typeof c['returnPct'] !== 'number') {
             throw new Error(`cases[${i}].returnPct must be a number`);
         }
@@ -142,8 +197,19 @@ export function validateBacktestData(data: unknown): BacktestData {
                 `cases[${i}].aiAnalysis.riskLevel must be a string when present`
             );
         }
+
+        if (
+            typeof aiAnalysis['riskLevel'] === 'string' &&
+            !VALID_RISK_LEVELS.includes(
+                normalizeRiskLevel(aiAnalysis['riskLevel']) as BacktestRiskLevel
+            )
+        ) {
+            throw new Error(
+                `cases[${i}].aiAnalysis.riskLevel must be 'low', 'moderate' (alias 'medium'), 'high', or 'extreme' when present`
+            );
+        }
     });
 
     // Safe: all required fields validated above
-    return data as BacktestData;
+    return { ...d, cases: cases.map(normalizeCase) } as unknown as BacktestData;
 }

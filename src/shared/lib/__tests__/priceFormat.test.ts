@@ -8,6 +8,7 @@ import {
     dynamicDecimals,
     currencyFractionDigits,
     signColorClass,
+    formatSignedPercent,
     quotePrefixFor,
 } from '@/shared/lib/priceFormat';
 import type { PricePrecision } from '@/shared/config/marketProfile/types';
@@ -223,5 +224,22 @@ describe('quotePrefixFor', () => {
 
     it('빈 접두를 그대로 돌려준다(통화 기호가 빈 시장)', () => {
         expect(quotePrefixFor('SPY', '')).toBe('');
+    });
+});
+
+describe('formatSignedPercent', () => {
+    it('기본은 소수 한 자리다', () => {
+        expect(formatSignedPercent(0.36)).toBe('+0.4%');
+        expect(formatSignedPercent(-4.52)).toBe('-4.5%');
+    });
+
+    it('fractionDigits로 자릿수를 고른다', () => {
+        expect(formatSignedPercent(0.36, 2)).toBe('+0.36%');
+        expect(formatSignedPercent(-0.3, 2)).toBe('-0.30%');
+        expect(formatSignedPercent(5, 0)).toBe('+5%');
+    });
+
+    it('0은 + 부호를 붙인다', () => {
+        expect(formatSignedPercent(0, 2)).toBe('+0.00%');
     });
 });

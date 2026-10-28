@@ -1472,11 +1472,15 @@
             "titleFlowsKr": "지분 공시 수급"
         },
         "enumLabel": {
+            "backtestExitReason": {
+                "stop_loss": "손절",
+                "take_profit": "익절",
+                "time": "기간 만료"
+            },
             "backtestRiskLevel": {
                 "extreme": "위험 매우 높음",
                 "high": "위험 높음",
                 "low": "위험 낮음",
-                "medium": "위험 보통",
                 "moderate": "위험 보통"
             },
             "chamber": {
@@ -3777,11 +3781,9 @@
                 "456225": "목표가:",
                 "06cf3e": "<n>{v0}</n>일",
                 "0f8bf6": "AI 진입 권고",
-                "1e38a3": "손절",
                 "31e4d3": "매수",
                 "540e42": "AI 관망 권고",
                 "58b71d": "AI 예측 레벨",
-                "62a65c": "매도",
                 "6c8ca5": "AI 회피 권고",
                 "75a556": "근거:",
                 "b19f09": "손실",
@@ -3790,8 +3792,9 @@
                 "fa9de3": "✓ 도달"
             },
             "BacktestCaseList": {
-                "9018e2": "해당 종목의 케이스가 없습니다.",
-                "caseCount": "{v0}건"
+                "caseCount": "{v0}건",
+                "emptyDataset": "표시할 케이스가 없습니다.",
+                "emptyFiltered": "선택한 종목에 해당하는 케이스가 없습니다."
             },
             "BacktestHero": {
                 "116858": "실제 시장 데이터로 검증한 백테스트 결과예요.",
