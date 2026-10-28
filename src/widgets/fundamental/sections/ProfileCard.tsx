@@ -1,3 +1,6 @@
+/**
+ * 기업 프로필 카드 — 회사명·섹터·시가총액과 CEO·웹사이트 행. 외부 값 정규화는 `utils/profileLinks`.
+ */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { ReactNode } from 'react';
@@ -7,6 +10,10 @@ import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import {
+    normalizeCeo,
+    normalizeWebsite,
+} from '@/widgets/fundamental/utils/profileLinks';
 
 const HEADING_ID = 'profile-heading';
 const HEADING_CLASS_NAME = HEADING_SECTION;
@@ -16,6 +23,7 @@ interface ProfileCardProps {
     descriptionSlot: ReactNode;
 }
 
+/** 기업 프로필 카드. 프로필이 없으면 설명 슬롯만 담은 빈 카드를 그린다. */
 export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
     const t = useTranslations('widgets.fundamental');
     const locale = useResolvedLocale();
@@ -36,6 +44,9 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
         profile.symbol,
         locale
     );
+
+    const ceo = normalizeCeo(profile.ceo);
+    const website = normalizeWebsite(profile.website);
 
     return (
         <section
@@ -66,28 +77,28 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
             </div>
 
             <dl className="mt-4 grid grid-cols-1 gap-y-2 sm:grid-cols-2">
-                {profile.ceo !== null && (
+                {ceo !== null && (
                     <div className="flex gap-2">
                         <dt className="w-10 shrink-0 text-sm text-secondary-400">
                             CEO
                         </dt>
-                        <dd className="text-sm">{profile.ceo}</dd>
+                        <dd className="text-sm">{ceo}</dd>
                     </div>
                 )}
-                {profile.website !== null && (
+                {website !== null && (
                     <div className="flex gap-2">
                         <dt className="w-10 shrink-0 text-sm text-secondary-400">
                             {t('ProfileCard.9f451a')}
                         </dt>
                         <dd className="text-sm">
                             <a
-                                href={profile.website}
+                                href={website.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="rounded text-secondary-400 underline underline-offset-2 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                                 translate="no"
                             >
-                                {profile.website.replace(/^https?:\/\//, '')}
+                                {website.label}
                             </a>
                         </dd>
                     </div>
