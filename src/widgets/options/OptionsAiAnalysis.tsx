@@ -1,131 +1,28 @@
 'use client';
 
-import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+/**
+ * Options AI analysis card: wires the analysis hook, share registration and
+ * status branches. Section markup lives in `ui/ai-analysis/`.
+ */
 import { useTranslations } from 'next-intl';
-import type {
-    ModelId,
-    OptionsAnalysisResponse,
-    OptionsSignalKind,
-    OptionsTone,
-} from '@y0ngha/siglens-core';
+import type { ModelId, OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 
-import { cn } from '@/shared/lib/cn';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatCapturedAtKst } from './utils/formatCapturedAtKst';
+import { isEmptyOptionsAnalysis } from './utils/isEmptyOptionsAnalysis';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
+import { PerExpirationSection } from './ui/ai-analysis/PerExpirationSection';
+import { SignalsSection } from './ui/ai-analysis/SignalsSection';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
-import {
-    HEADING_SECTION,
-    HEADING_SUBSECTION,
-} from '@/shared/lib/typographyStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-
-/** OptionsTone → `shared.enumLabel.optionsTone` 카탈로그 키. */
-const TONE_LABEL_KEY: Record<OptionsTone, string> = {
-    bullish: 'optionsTone.bullish',
-    bearish: 'optionsTone.bearish',
-    cautious: 'optionsTone.cautious',
-    neutral: 'optionsTone.neutral',
-};
-
-// 배지 **텍스트**는 `-text` 변형을 쓴다. `chart-bullish`/`chart-bearish`/`ui-warning`은
-// 그래픽(3:1) 기준으로 튜닝된 값이라, 자기 `/10` 틴트 위 10px 글씨로 쓰면 라이트에서
-// 3.99~4.14:1로 AA(4.5)에 미달한다(실측). `globals.css`의 `ui-*-text` 주석이 정확히
-// 이 경우를 경고하고 있었는데, 이 파일의 예전 주석은 반대로 "Safe for UI badge usage"라고
-// 적혀 있었다 — 측정으로 반증됐다.
-// 채움·보더는 그래픽이므로 기본 토큰을 그대로 쓴다.
-const TONE_CLASS: Record<
-    OptionsTone,
-    { text: string; bg: string; border: string }
-> = {
-    bullish: {
-        text: 'text-ui-success-text',
-        bg: 'bg-chart-bullish/10',
-        border: 'border-chart-bullish/30',
-    },
-    bearish: {
-        text: 'text-ui-danger-text',
-        bg: 'bg-chart-bearish/10',
-        border: 'border-chart-bearish/30',
-    },
-    cautious: {
-        text: 'text-ui-warning-text',
-        bg: 'bg-ui-warning/10',
-        border: 'border-ui-warning/30',
-    },
-    neutral: {
-        text: 'text-secondary-400',
-        bg: 'bg-secondary-700/40',
-        border: 'border-secondary-600',
-    },
-};
-
-const SIGNAL_KIND_CLASS: Record<
-    OptionsSignalKind,
-    { text: string; bg: string; border: string }
-> = {
-    bullish: TONE_CLASS.bullish,
-    bearish: TONE_CLASS.bearish,
-    volatility: TONE_CLASS.cautious,
-    neutral: TONE_CLASS.neutral,
-};
-
-/** OptionsSignalKind → `shared.enumLabel.optionsSignalKind` 카탈로그 키. */
-const SIGNAL_KIND_LABEL_KEY: Record<OptionsSignalKind, string> = {
-    bullish: 'optionsSignalKind.bullish',
-    bearish: 'optionsSignalKind.bearish',
-    volatility: 'optionsSignalKind.volatility',
-    neutral: 'optionsSignalKind.neutral',
-};
-
-interface ToneBadgeProps {
-    tone: OptionsTone;
-}
-
-function ToneBadge({ tone }: ToneBadgeProps) {
-    const tLabel = useTranslations('shared.enumLabel');
-    const cls = TONE_CLASS[tone];
-    return (
-        <span
-            className={cn(
-                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium',
-                cls.text,
-                cls.bg,
-                cls.border
-            )}
-        >
-            {tLabel(TONE_LABEL_KEY[tone])}
-        </span>
-    );
-}
-
-interface SignalBadgeProps {
-    kind: OptionsSignalKind;
-}
-
-function SignalBadge({ kind }: SignalBadgeProps) {
-    const tLabel = useTranslations('shared.enumLabel');
-    const cls = SIGNAL_KIND_CLASS[kind];
-    return (
-        <span
-            className={cn(
-                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium',
-                cls.text,
-                cls.bg,
-                cls.border
-            )}
-        >
-            {tLabel(SIGNAL_KIND_LABEL_KEY[kind])}
-        </span>
-    );
-}
 
 interface OptionsAiAnalysisViewProps {
     result: OptionsAnalysisResponse;
@@ -138,17 +35,14 @@ interface OptionsAiAnalysisViewProps {
     basisCaption?: string | null;
 }
 
+/** Read-only analysis view; also used by the share panel. */
 export function OptionsAiAnalysisView({
     result,
     basisCaption = null,
 }: OptionsAiAnalysisViewProps) {
     const t = useTranslations('widgets.options');
-    const isEmpty =
-        result.summary === '' &&
-        result.perExpiration.length === 0 &&
-        result.signals.length === 0;
 
-    if (isEmpty) {
+    if (isEmptyOptionsAnalysis(result)) {
         return <OptionsAiAnalysisError />;
     }
 
@@ -186,69 +80,8 @@ export function OptionsAiAnalysisView({
                 </p>
             ) : null}
 
-            {result.perExpiration.length > 0 && (
-                <div className="mb-5">
-                    <h3 className={cn('mb-3', HEADING_SUBSECTION)}>
-                        {t('OptionsAiAnalysis.e26a05')}
-                    </h3>
-                    <ul
-                        className="space-y-3"
-                        aria-label={t('OptionsAiAnalysis.440d96')}
-                    >
-                        {result.perExpiration.map(item => (
-                            <li
-                                key={item.expirationDate}
-                                className={cn(SURFACE_NESTED, 'p-3')}
-                            >
-                                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                                    <span className="text-xs font-medium text-secondary-200 tabular-nums">
-                                        {item.expirationDate}
-                                    </span>
-                                    <ToneBadge tone={item.tone} />
-                                </div>
-                                <p className="text-sm leading-relaxed text-secondary-400">
-                                    {item.commentary}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {result.signals.length > 0 && (
-                <div>
-                    <h3 className={cn('mb-3', HEADING_SUBSECTION)}>
-                        {t('OptionsAiAnalysis.598bf4')}
-                    </h3>
-                    <ul
-                        className="space-y-2"
-                        aria-label={t('OptionsAiAnalysis.e0c6a1')}
-                    >
-                        {result.signals.map(signal => (
-                            <li
-                                // Signals are render-only and the AI rarely emits
-                                // duplicate `${kind}::${message}` pairs; using the
-                                // composite as key avoids the index-key anti-pattern.
-                                key={`${signal.kind}::${signal.message}`}
-                                className="flex min-w-0 items-start gap-2 text-sm text-secondary-400"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-secondary-500"
-                                >
-                                    •
-                                </span>
-                                <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-                                    <SignalBadge kind={signal.kind} />
-                                    <span className="min-w-0 leading-relaxed">
-                                        {signal.message}
-                                    </span>
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            <PerExpirationSection items={result.perExpiration} />
+            <SignalsSection signals={result.signals} />
         </section>
     );
 }
@@ -285,6 +118,7 @@ interface OptionsAiAnalysisProps {
     showSnapshotBasis?: boolean;
 }
 
+/** Live options analysis card for the options tab. */
 export function OptionsAiAnalysis({
     symbol,
     companyName,
@@ -346,9 +180,8 @@ export function OptionsAiAnalysis({
     }
 
     // `cache_miss`: the cacheOnly read found no cached analysis. Render
-    // nothing (no data, no notice) — in practice this caller always pairs
-    // `cacheOnly` with `hideView` too (see `useOptionsAnalysis`'s `cacheOnly`
-    // JSDoc), so this never reaches a visible page.
+    // nothing — this caller always pairs `cacheOnly` with `hideView`, so a
+    // visible page never reaches this branch.
     if (state.status === 'cache_miss') {
         return null;
     }
@@ -364,7 +197,12 @@ export function OptionsAiAnalysis({
     }
 
     if (state.status === 'error') {
-        return <OptionsAiAnalysisError resetErrorBoundary={state.retry} />;
+        return (
+            <OptionsAiAnalysisError
+                resetErrorBoundary={state.retry}
+                message={state.error.message}
+            />
+        );
     }
 
     return (

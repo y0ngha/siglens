@@ -26,9 +26,6 @@ export const TOOLTIP_HALF_WIDTH_PX = TOOLTIP_MIN_WIDTH_PX / 2;
 export const TOOLTIP_VIEWPORT_PADDING_PX = 8;
 // Tooltip 카드 자체의 대략적 높이. 정확한 측정 대신 추정값으로 상단 클램핑에 사용.
 export const TOOLTIP_APPROX_HEIGHT_PX = 110;
-// DOM tooltip id — `role="tooltip"` 요소와 hit-rect의 `aria-describedby`가
-// 공유하는 anchor. WAI-ARIA tooltip 패턴.
-export const TOOLTIP_ELEMENT_ID = 'oi-chart-tooltip';
 
 /**
  * Compute container-relative tooltip coordinates from a pointer event,
