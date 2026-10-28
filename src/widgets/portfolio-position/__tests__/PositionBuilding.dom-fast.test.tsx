@@ -3,7 +3,7 @@ import {
     BAND_COUNT,
     computePosition,
     type PositionModel,
-} from '../lib/positionGeometry';
+} from '../utils/positionGeometry';
 import { PositionBuilding } from '../ui/PositionBuilding';
 
 import koMessages from '@/../messages/ko.json';
@@ -22,13 +22,15 @@ const tPos = (key: string, values?: Record<string, string | number>) => {
 
 import {
     AVG_LABEL_PREFIX_KEY,
-    CENTER_X,
     CURRENT_LABEL_PREFIX_KEY,
     describeFloor,
+} from '../utils/positionBuildingNotes';
+import { formatCompactForSvgLabel } from '../utils/buildingPriceFormat';
+import {
+    CENTER_X,
     estimateSvgLabelWidth,
-    formatCompactForSvgLabel,
     SVG_LABEL_AVAILABLE_WIDTH,
-} from '../lib/positionBuildingNotes';
+} from '../utils/buildingGeometry';
 
 function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
     return computePosition({
@@ -364,7 +366,7 @@ describe('PositionBuilding', () => {
             expect(label).not.toContain('$');
         });
 
-        it('한국 상장 종목의 in-SVG 라벨은 고가 축약 표기에서도 ₩를 쓴다($XXXK가 아니라 ₩XXXK)', () => {
+        it('한국 상장 종목의 in-SVG 라벨은 흔한 원화 가격(₩600,000)을 줄이지 않고 전체로 쓴다', () => {
             const { container } = renderBuilding(
                 {
                     low52w: 400_000,
@@ -377,10 +379,29 @@ describe('PositionBuilding', () => {
                 '005930.KS'
             );
             const svg = container.querySelector('svg[role="img"]');
-            expect(svg?.textContent).toContain('₩600K');
-            expect(svg?.textContent).toContain('₩650K');
+            expect(svg?.textContent).toContain('₩600,000');
+            expect(svg?.textContent).toContain('₩650,000');
+            expect(svg?.textContent).not.toContain('K');
             expect(svg?.textContent).not.toContain('$');
             expect(svg?.getAttribute('aria-label')).not.toContain('$');
+        });
+
+        it('한국 상장 종목도 천만 원 이상이면 축약하되 ₩를 쓴다($XXM가 아니라 ₩XXM)', () => {
+            const { container } = renderBuilding(
+                {
+                    low52w: 10_000_000,
+                    high52w: 14_000_000,
+                    avg: 12_000_000,
+                    current: 13_000_000,
+                },
+                undefined,
+                undefined,
+                '005930.KS'
+            );
+            const svg = container.querySelector('svg[role="img"]');
+            expect(svg?.textContent).toContain('₩12M');
+            expect(svg?.textContent).toContain('₩13M');
+            expect(svg?.textContent).not.toContain('$');
         });
 
         it('한국 상장 종목의 층(floor) 툴팁도 ₩로 표기된다', () => {

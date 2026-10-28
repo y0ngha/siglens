@@ -4,6 +4,7 @@
  * 시간/난수/DOM 의존 없는 순수 함수.
  */
 
+/** 위치 계산 입력 — 최근 범위, 현재가, 회원 평단. */
 export interface PositionInputs {
     low52w: number;
     high52w: number;
@@ -26,6 +27,7 @@ interface PositionBand {
  */
 export type RangeClamp = 'above' | 'below' | null;
 
+/** 건물·카드가 그리는 위치 모델 — 평단·현재가의 범위 내 위치, 거리·수익률, 5개 구간. */
 export interface PositionModel {
     avgPos: number; // 0..1, [low,high] 내 정규화(clamped)
     currentPos: number; // 0..1, clamped

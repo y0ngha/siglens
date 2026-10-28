@@ -1,3 +1,6 @@
+/**
+ * 포지션 카드 리드아웃 표의 한 줄(라벨·값).
+ */
 import { cn } from '@/shared/lib/cn';
 
 interface ReadoutRowProps {

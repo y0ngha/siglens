@@ -528,7 +528,6 @@
     "widgets.overall.InvestorFlowsSummary.listLabel": "3c7eb4c640b6",
     "widgets.overall.InvestorFlowsSummary.title": "85df6c0c70a0",
     "widgets.portfolio-position.PositionHoldingCard.0ac914": "0ac9148d8c64",
-    "widgets.portfolio-position.PositionHoldingCard.0bafa3": "0bafa3ac42e3",
     "widgets.portfolio-position.PositionHoldingCard.497d1e": "497d1eff496c",
     "widgets.portfolio-position.PositionHoldingCard.900beb": "900beb1790ae",
     "widgets.portfolio-position.PositionHoldingCard.ba09a5": "ba09a54ec8b7",
@@ -4127,5 +4126,6 @@
     "views.benchmark.breakdown.overallNote": "6496c2919e72",
     "features.symbol-model.fallbackTitle": "344c6757c43c",
     "features.symbol-model.fallbackDetail": "52027113be04",
-    "widgets.analysis.ModelSelector.unavailable": "4378697958ff"
+    "widgets.analysis.ModelSelector.unavailable": "4378697958ff",
+    "widgets.portfolio-position.PositionHoldingCard.avgInvalid": "073459ea2458"
 }

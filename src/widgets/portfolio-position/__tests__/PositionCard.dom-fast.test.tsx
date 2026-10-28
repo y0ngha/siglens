@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { computePosition, type PositionModel } from '../lib/positionGeometry';
+import { computePosition, type PositionModel } from '../utils/positionGeometry';
 import { PositionCard } from '../ui/PositionCard';
 
 function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
@@ -48,6 +48,14 @@ describe('PositionCard', () => {
         expect(pctFromHighValue.className).not.toContain(
             'text-ui-success-text'
         );
+    });
+
+    it('수익률이 정확히 0%(본전)면 이익색이 아니라 중립색이다 — 옆 빌딩 리드아웃과 같은 규칙', () => {
+        const { getByText } = renderCard({ avg: 150, current: 150 });
+        const returnValue = getByText(/^[+]?0\.0%$/);
+        expect(returnValue.className).toContain('text-secondary-400');
+        expect(returnValue.className).not.toContain('text-ui-success-text');
+        expect(returnValue.className).not.toContain('text-ui-danger-text');
     });
 
     it('수익률이 음수면(returnPct < 0) 수익률 리드아웃이 ui-danger-text를 사용한다', () => {

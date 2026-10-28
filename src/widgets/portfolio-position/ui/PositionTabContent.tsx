@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * `[symbol]/position` "내 위치" 탭의 진입점 — 하이드레이션 뒤 로그인 여부로 비회원 CTA와 회원 전용
+ * 본문(지연 로딩 청크)을 가른다.
+ */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Bar } from '@y0ngha/siglens-core';
-import { computeVolumeByBand } from '../lib/volumeByBand';
+import { computeVolumeByBand } from '@/widgets/portfolio-position/utils/volumeByBand';
 
 function bar(close: number, volume: number): Bar {
     return { time: 0, open: close, high: close, low: close, close, volume };

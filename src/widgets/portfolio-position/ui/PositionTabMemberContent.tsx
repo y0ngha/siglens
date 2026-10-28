@@ -1,10 +1,14 @@
 'use client';
 
+/**
+ * "내 위치" 탭의 회원 본문 — 이 종목 보유를 조회해 빌딩과 수치 카드를 그리고, 보유가 없거나 조회가
+ * 실패하면 CTA로, 범위를 만들 수 없으면 데이터 부족 안내로 돌린다.
+ */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
-import { computePosition } from '../lib/positionGeometry';
+import { computePosition } from '../utils/positionGeometry';
 import { PositionBuilding } from './PositionBuilding';
 import { PositionCard } from './PositionCard';
 import { PositionCta } from './PositionCta';
@@ -18,6 +22,7 @@ interface PositionTabMemberContentProps {
     volumeByBand?: readonly number[] | null;
 }
 
+/** 보유 조회 중 자리 — 결과와 같은 최소 높이를 잡는다. */
 function PositionSkeleton() {
     const t = useTranslations('widgets.portfolio-position');
     return (
@@ -42,6 +47,7 @@ function PositionSkeleton() {
     );
 }
 
+/** 범위·평단으로 위치를 계산할 수 없을 때의 안내. */
 function DataInsufficientNote() {
     const t = useTranslations('widgets.portfolio-position');
     return (
