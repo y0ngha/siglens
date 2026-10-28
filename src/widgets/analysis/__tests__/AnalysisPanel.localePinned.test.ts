@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -12,10 +12,24 @@ import { describe, expect, it } from 'vitest';
  * 우리 네 로케일(ko·en·ja·zh)은 모두 `1,234.50`이라 렌더 결과로는 차이를 잡을 수 없다 —
  * 그래서 소스에서 막는다.
  */
-const SOURCE = readFileSync(
-    path.resolve(__dirname, '../AnalysisPanel.tsx'),
-    'utf8'
-).replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, '');
+/**
+ * 패널은 오케스트레이터(`AnalysisPanel.tsx`)와 섹션·아이템(`sections/`·`ui/`)으로 나뉘어
+ * 있다 — 가격을 그리는 곳은 하위 파일이므로 패널 렌더 트리 전체를 함께 검사한다.
+ */
+const WIDGET_DIR = path.resolve(__dirname, '..');
+const PANEL_FILES = [
+    'AnalysisPanel.tsx',
+    ...['sections', 'ui'].flatMap(dir =>
+        readdirSync(path.join(WIDGET_DIR, dir))
+            .filter(name => name.endsWith('.tsx'))
+            .map(name => path.join(dir, name))
+    ),
+];
+const SOURCE = PANEL_FILES.map(file =>
+    readFileSync(path.join(WIDGET_DIR, file), 'utf8')
+)
+    .join('\n')
+    .replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, '');
 
 describe('AnalysisPanel 숫자 포맷 로케일 고정', () => {
     it('toLocaleString/toLocaleDateString을 직접 부르지 않는다', () => {

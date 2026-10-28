@@ -1,8 +1,14 @@
+/**
+ * 분석 결과 → 복사용 전문가 리포트 텍스트 빌더. 섹션(해석·핵심 레벨·근거·시나리오·
+ * 대응·리스크)별 헬퍼가 문자열을 만들고 진입점이 이어 붙인다.
+ */
 import type {
     AnalysisResponse,
     ClusteredKeyLevel,
     ClusteredKeyLevels,
     EntryRecommendation,
+    KrxTickTable,
+    PriceScenario,
     RiskLevel,
     Trend,
 } from '@y0ngha/siglens-core';
@@ -11,10 +17,11 @@ import {
     type EffectiveActionLevels,
 } from '@/entities/analysis/lib/effectiveActionLevels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import type { KrxTickTable } from '@y0ngha/siglens-core';
 import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { selectPanelSkillResults } from './panelSkillResults';
+import { TREND_LABEL_KEY } from './trendUtils';
 
 interface BuildExpertAnalysisReportInput {
     symbol: string;
@@ -30,6 +37,11 @@ interface BuildExpertAnalysisReportInput {
     t: EnumLabelTranslator;
     /** `widgets.analysis.expertReport` 번역자. */
     tReport: ReportTranslator;
+    /**
+     * 스킬 원본 이름 → 로케일 표시명(`useSkillLabel`). 필수다 — 빠지면 `/en`
+     * 복사본에 한국어 front-matter 이름이 섞인다(패널은 이미 표시명을 쓴다).
+     */
+    skillLabel: (name: string) => string;
 }
 
 /**
@@ -43,12 +55,6 @@ type ReportTranslator = (
     values?: Record<string, string | number>
 ) => string;
 
-const TREND_LABEL_KEY: Record<Trend, string> = {
-    bullish: 'trend.bullish',
-    bearish: 'trend.bearish',
-    neutral: 'trend.neutral',
-};
-
 const TREND_INTERPRETATION_KEY: Record<Trend, string> = {
     bullish: 'trendInterpretation.bullish',
     bearish: 'trendInterpretation.bearish',
@@ -59,6 +65,13 @@ const RISK_LABEL_KEY: Record<RiskLevel, string> = {
     low: 'riskLevel.low',
     medium: 'riskLevel.medium',
     high: 'riskLevel.high',
+};
+
+/** RiskLevel → `widgets.analysis.expertReport` 리스크 문장 키. */
+const RISK_NOTE_KEY: Record<RiskLevel, string> = {
+    high: 'riskHigh',
+    medium: 'riskMedium',
+    low: 'riskLow',
 };
 
 const ENTRY_STANCE_KEY: Record<EntryRecommendation, string> = {
@@ -114,6 +127,16 @@ function buildTitle(symbol: string, tReport: ReportTranslator): string {
     return tReport('reportTitle', { v0: symbol.toUpperCase() });
 }
 
+/** 조건부 항목 목록에서 빠진(`null`) 항목을 걷어낸다. */
+function presentLines(lines: readonly (string | null)[]): string[] {
+    return lines.filter((line): line is string => line !== null);
+}
+
+/** 제목 + 항목 줄로 된 블록. 항목이 없으면 블록 자체를 생략(`null`)한다. */
+function headedBlock(heading: string, lines: readonly string[]): string | null {
+    return lines.length === 0 ? null : [heading, ...lines].join('\n');
+}
+
 function buildInterpretation(
     analysis: AnalysisResponse,
     supportLevels: ClusteredKeyLevel[],
@@ -122,38 +145,26 @@ function buildInterpretation(
     tReport: ReportTranslator,
     formatPrice: ReportPriceFormatter
 ): string {
-    const parts = [
+    const levelNote = (key: string, levels: ClusteredKeyLevel[]) =>
+        levels.length > 0
+            ? tReport(key, {
+                  v0: formatPriceList(
+                      levels.map(level => level.price),
+                      formatPrice
+                  ),
+              })
+            : null;
+
+    return presentLines([
         tReport('trendSummary', {
             v0: t(TREND_LABEL_KEY[analysis.trend]),
             v1: t(TREND_INTERPRETATION_KEY[analysis.trend]),
             v2: t(RISK_LABEL_KEY[analysis.riskLevel]),
         }),
         normalizeWhitespace(analysis.summary),
-    ];
-
-    if (resistanceLevels.length > 0) {
-        parts.push(
-            tReport('resistanceNote', {
-                v0: formatPriceList(
-                    resistanceLevels.map(level => level.price),
-                    formatPrice
-                ),
-            })
-        );
-    }
-
-    if (supportLevels.length > 0) {
-        parts.push(
-            tReport('supportNote', {
-                v0: formatPriceList(
-                    supportLevels.map(level => level.price),
-                    formatPrice
-                ),
-            })
-        );
-    }
-
-    return parts.join(' ');
+        levelNote('resistanceNote', resistanceLevels),
+        levelNote('supportNote', supportLevels),
+    ]).join(' ');
 }
 
 function buildKeyLevelsBlock(
@@ -162,102 +173,78 @@ function buildKeyLevelsBlock(
     tReport: ReportTranslator,
     formatPrice: ReportPriceFormatter
 ): string | null {
-    const lines: string[] = [];
-
-    if (keyLevels.resistance.length > 0) {
-        lines.push(
-            tReport('levelsResistance', {
-                v0: keyLevels.resistance
-                    .map(level =>
-                        formatLevelWithReason(level, tReport, formatPrice)
-                    )
-                    .join(', '),
-            })
-        );
-    }
-
-    if (keyLevels.support.length > 0) {
-        lines.push(
-            tReport('levelsSupport', {
-                v0: keyLevels.support
-                    .map(level =>
-                        formatLevelWithReason(level, tReport, formatPrice)
-                    )
-                    .join(', '),
-            })
-        );
-    }
-
-    if (keyLevels.poc !== undefined) {
-        lines.push(
-            `- PoC: ${formatPrice(keyLevels.poc.price)} (${keyLevels.poc.reason})`
-        );
-    }
-
+    const levelLine = (key: string, levels: ClusteredKeyLevel[]) =>
+        levels.length > 0
+            ? tReport(key, {
+                  v0: levels
+                      .map(level =>
+                          formatLevelWithReason(level, tReport, formatPrice)
+                      )
+                      .join(', '),
+              })
+            : null;
+    const priceListLine = (key: string, prices: number[] | undefined) =>
+        prices?.length
+            ? tReport(key, { v0: formatPriceList(prices, formatPrice) })
+            : null;
+    const { poc } = keyLevels;
     const { entryPrices, stopLoss, takeProfitPrices } = effectiveLevels;
-    if (entryPrices?.length) {
-        lines.push(
-            tReport('entryZone', {
-                v0: formatPriceList(entryPrices, formatPrice),
-            })
-        );
-    }
-    if (stopLoss !== undefined) {
-        lines.push(
-            tReport('invalidation', {
-                v0: formatPrice(stopLoss),
-            })
-        );
-    }
-    if (takeProfitPrices?.length) {
-        lines.push(
-            tReport('targetZone', {
-                v0: formatPriceList(takeProfitPrices, formatPrice),
-            })
-        );
-    }
 
-    if (lines.length === 0) return null;
-    return [tReport('keyLevelsHeading'), ...lines].join('\n');
+    return headedBlock(
+        tReport('keyLevelsHeading'),
+        presentLines([
+            levelLine('levelsResistance', keyLevels.resistance),
+            levelLine('levelsSupport', keyLevels.support),
+            poc !== undefined
+                ? `- PoC: ${formatPrice(poc.price)} (${poc.reason})`
+                : null,
+            priceListLine('entryZone', entryPrices),
+            stopLoss !== undefined
+                ? tReport('invalidation', { v0: formatPrice(stopLoss) })
+                : null,
+            priceListLine('targetZone', takeProfitPrices),
+        ])
+    );
 }
 
+/** 근거 한 항목 — 이름 아래에 별표(마크다운 강조)를 걷어낸 설명을 들여 쓴다. */
+function formatEvidenceLine(name: string, description: string): string {
+    return `- ${name}\n  - ${normalizeWhitespace(description).replace(/\*/g, '')}`;
+}
+
+/**
+ * 근거 블록. 패널과 같은 선별(`selectPanelSkillResults`)을 거친다 — 패턴으로 이미
+ * 실린 전략·지표가 두 번 나오거나 패널의 "N개 스킬 감지"와 개수가 어긋나지 않게.
+ */
 function buildEvidenceBlock(
     analysis: AnalysisResponse,
-    tReport: ReportTranslator
+    tReport: ReportTranslator,
+    skillLabel: (name: string) => string
 ): string | null {
-    const lines: string[] = [];
+    const { detectedPatterns, strategies, indicatorResults } =
+        selectPanelSkillResults(analysis);
 
-    const indicatorLines = (analysis.indicatorResults ?? []).flatMap(result =>
-        result.indicatorName === ''
-            ? []
-            : result.signals.map(
-                  signal =>
-                      `- ${result.indicatorName}\n  - ${normalizeWhitespace(signal.description).replace(/\*/g, '')}`
-              )
-    );
-    lines.push(...indicatorLines);
-
-    const patternLines = (analysis.patternSummaries ?? []).flatMap(pattern =>
-        pattern.detected
-            ? [
-                  `- ${pattern.skillName}\n  - ${normalizeWhitespace(
-                      pattern.summary
-                  ).replace(/\*/g, '')}`,
-              ]
-            : []
-    );
-    lines.push(...patternLines);
-
-    const strategyLines = (analysis.strategyResults ?? []).map(
-        strategy =>
-            `- ${strategy.strategyName}\n  - ${normalizeWhitespace(
+    const lines = [
+        ...indicatorResults.flatMap(result =>
+            result.signals.map(signal =>
+                formatEvidenceLine(
+                    skillLabel(result.indicatorName),
+                    signal.description
+                )
+            )
+        ),
+        ...detectedPatterns.map(pattern =>
+            formatEvidenceLine(skillLabel(pattern.skillName), pattern.summary)
+        ),
+        ...strategies.map(strategy =>
+            formatEvidenceLine(
+                skillLabel(strategy.strategyName),
                 strategy.summary
-            ).replace(/\*/g, '')}`
-    );
-    lines.push(...strategyLines);
+            )
+        ),
+    ];
 
-    if (lines.length === 0) return null;
-    return [tReport('evidenceHeading'), ...lines].join('\n');
+    return headedBlock(tReport('evidenceHeading'), lines);
 }
 
 function buildScenarioBlock(
@@ -265,39 +252,29 @@ function buildScenarioBlock(
     tReport: ReportTranslator,
     formatPrice: ReportPriceFormatter
 ): string | null {
-    const lines: string[] = [];
+    const scenarioLine = (key: string, scenario: PriceScenario | null) =>
+        scenario && scenario.targets.length > 0
+            ? tReport(key, {
+                  v0: normalizeWhitespace(scenario.condition),
+                  v1: formatPriceList(
+                      scenario.targets.map(target => target.price),
+                      formatPrice
+                  ),
+              })
+            : null;
     // priceTargets는 부분 응답에서 누락될 수 있으므로 방어적으로 기본값을 둔다.
     const priceTargets = analysis.priceTargets ?? {
         bullish: null,
         bearish: null,
     };
 
-    if (priceTargets.bullish && priceTargets.bullish.targets.length > 0) {
-        lines.push(
-            tReport('upside', {
-                v0: normalizeWhitespace(priceTargets.bullish.condition),
-                v1: formatPriceList(
-                    priceTargets.bullish.targets.map(target => target.price),
-                    formatPrice
-                ),
-            })
-        );
-    }
-
-    if (priceTargets.bearish && priceTargets.bearish.targets.length > 0) {
-        lines.push(
-            tReport('downside', {
-                v0: normalizeWhitespace(priceTargets.bearish.condition),
-                v1: formatPriceList(
-                    priceTargets.bearish.targets.map(target => target.price),
-                    formatPrice
-                ),
-            })
-        );
-    }
-
-    if (lines.length === 0) return null;
-    return [tReport('scenarioHeading'), ...lines].join('\n');
+    return headedBlock(
+        tReport('scenarioHeading'),
+        presentLines([
+            scenarioLine('upside', priceTargets.bullish),
+            scenarioLine('downside', priceTargets.bearish),
+        ])
+    );
 }
 
 function buildResponseStance(
@@ -344,26 +321,32 @@ function buildResponseStance(
     return tReport('stanceNeutral');
 }
 
+/** 리스크 블록 — 리스크 등급 문장 뒤에 실효 손익비를 붙인다. */
 function buildRiskNote(
     analysis: AnalysisResponse,
     tReport: ReportTranslator
 ): string {
     const { riskLevel, actionRecommendation } = analysis;
-    const prefix =
-        riskLevel === 'high'
-            ? tReport('riskHigh')
-            : riskLevel === 'medium'
-              ? tReport('riskMedium')
-              : tReport('riskLow');
+    const prefix = tReport(RISK_NOTE_KEY[riskLevel]);
 
+    // 손익비도 실효값을 싣는다 — core가 레벨을 보정했으면 원본 `riskReward`는
+    // 이미 거부된 손절·목표 기준이라, 같은 리포트의 핵심 레벨 블록(보정값)과 모순된다.
+    const reconciledRiskReward =
+        actionRecommendation?.reconciledLevels?.riskReward ?? '';
+    const riskReward =
+        reconciledRiskReward !== ''
+            ? reconciledRiskReward
+            : actionRecommendation?.riskReward;
     const suffix =
-        actionRecommendation?.riskReward !== undefined
-            ? normalizeWhitespace(actionRecommendation.riskReward)
-            : '';
+        riskReward !== undefined ? normalizeWhitespace(riskReward) : '';
 
     return normalizeWhitespace([prefix, suffix].join(' '));
 }
 
+/**
+ * 분석 결과를 복사·공유용 평문 전문가 리포트로 직렬화한다(순수 함수).
+ * 번역자·표시명 함수는 호출 훅(`useCopyAnalysisReport`)이 주입한다.
+ */
 export function buildExpertAnalysisReport({
     symbol,
     krxTickTable = 'share',
@@ -371,6 +354,7 @@ export function buildExpertAnalysisReport({
     keyLevels,
     t,
     tReport,
+    skillLabel,
 }: BuildExpertAnalysisReportInput): string {
     // keyLevels(ClusteredKeyLevels)는 부분 객체로 전달될 수 있으므로 support/
     // resistance 배열을 입구에서 1회 정규화한다 — 이후 helper들이 안전한 배열을
@@ -414,7 +398,7 @@ export function buildExpertAnalysisReport({
             tReport,
             formatPrice
         ),
-        buildEvidenceBlock(analysis, tReport),
+        buildEvidenceBlock(analysis, tReport, skillLabel),
         buildScenarioBlock(analysis, tReport, formatPrice),
         `${tReport('responseStance')}
 ${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, t, tReport, formatPrice)}`,

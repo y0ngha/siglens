@@ -220,7 +220,9 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 1292 (1302에서 −10): 패널 전용 가격 포매터 두 개를 shared `formatAnalysisPrice`(한국 종목 호가 단위)로 옮겼다.
     // 1317 (1292에서 +25): 국내 ETF 호가표(`krxTickTable`) prop을 패널과 하위 카드에 전달했다.
     // 1320 (1317에서 +3): 위쪽 선 카드 리터럴을 `SURFACE_NESTED`/`SURFACE_CARD`로 옮기며 줄이 늘었다.
-    'widgets/analysis/AnalysisPanel.tsx:1320',
+    // ui/CopyReportButton.tsx:35: 패널 SRP 분해로 버튼이 전용 컴포넌트 파일로 옮겨졌다
+    // (비활성은 이제 `aria-disabled`지만 같은 진행 중 분기다).
+    'widgets/analysis/ui/CopyReportButton.tsx:35',
 
     // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
     // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.
