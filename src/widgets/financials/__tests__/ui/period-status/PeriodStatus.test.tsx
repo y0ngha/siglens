@@ -3,11 +3,9 @@ import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
 import { PeriodStatus } from '@/widgets/financials/ui/period-status/PeriodStatus';
 
 describe('PeriodStatus', () => {
-    it('아무 상태도 아니면 아무것도 그리지 않는다', () => {
-        const { container } = render(
-            <PeriodStatus isLoading={false} quarterUnavailable={false} />
-        );
-        expect(container).toBeEmptyDOMElement();
+    it('아무 상태도 아니어도 빈 status 영역을 미리 마운트해 둔다', () => {
+        render(<PeriodStatus isLoading={false} quarterUnavailable={false} />);
+        expect(screen.getByRole('status')).toBeEmptyDOMElement();
     });
 
     it('조회 중이면 로딩 안내를 status로 알린다', () => {

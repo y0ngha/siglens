@@ -10,7 +10,11 @@ interface PeriodStatusProps {
     quarterUnavailable: boolean;
 }
 
-/** 조회 중이면 스피너를, 실패했으면 안내 문구를 `role="status"`로 알린다. 둘 다 아니면 비운다. */
+/**
+ * 조회 중이면 스피너를, 실패했으면 안내 문구를 알린다. 라이브 영역은 내용이 없을 때도 마운트해 둔다 —
+ * 내용과 함께 새로 생기는 `role="status"`는 스크린 리더가 놓칠 수 있고, 자리를 미리 잡아 두면
+ * 문구가 나타나고 사라질 때 토글 줄의 높이도 흔들리지 않는다.
+ */
 export function PeriodStatus({
     isLoading,
     quarterUnavailable,
@@ -18,30 +22,20 @@ export function PeriodStatus({
     const t = useTranslations('widgets.financials');
     const tPeriod = useTranslations('widgets.financials.periodToggle');
 
-    if (isLoading) {
-        return (
-            <span
-                className="flex items-center gap-1.5 text-xs text-secondary-400"
-                role="status"
-                aria-live="polite"
-            >
-                <Spinner size="sm" />
-                {t('FinancialsStatements.c78656')}
-            </span>
-        );
-    }
-
-    if (quarterUnavailable) {
-        return (
-            <span
-                className="text-xs text-secondary-400"
-                role="status"
-                aria-live="polite"
-            >
-                {tPeriod('quarterUnavailable')}
-            </span>
-        );
-    }
-
-    return null;
+    return (
+        <span
+            className="flex min-h-5 min-w-0 items-center justify-end gap-1.5 text-right text-xs text-secondary-400"
+            role="status"
+            aria-live="polite"
+        >
+            {isLoading ? (
+                <>
+                    <Spinner size="sm" />
+                    {t('FinancialsStatements.c78656')}
+                </>
+            ) : (
+                quarterUnavailable && tPeriod('quarterUnavailable')
+            )}
+        </span>
+    );
 }

@@ -29,12 +29,24 @@ export const GAUGE_CENTER = { x: GAUGE_CX, y: GAUGE_CY } as const;
 /** 점수 1단위당 각도 — 180° 반원이 100점을 담는다. */
 const DEGREES_PER_SCORE_UNIT = 1.8;
 
-/** 호 바깥에 라벨로 그리는 눈금 값. */
-export const TICK_VALUES: readonly number[] = [0, 25, 50, 75, 100];
+/** 눈금 간격 — 만점을 4등분한다. */
+const TICK_STEP = SCORE_MAX / 4;
+
+/** 호 바깥에 라벨로 그리는 눈금 값(0·25·50·75·100). */
+export const TICK_VALUES: readonly number[] = Array.from(
+    { length: SCORE_MAX / TICK_STEP + 1 },
+    (_, i) => SCORE_MIN + i * TICK_STEP
+);
 const TICK_LABEL_OFFSET = 16;
 const TICK_LABEL_RADIUS = GAUGE_RADIUS + TICK_LABEL_OFFSET;
 /** 양 끝 눈금은 호 끝과 겹치지 않도록 아래로 내린다. */
 const EDGE_TICK_DY = 14;
+
+/**
+ * 등급별 최소 점수 — core `financialsScorecard`의 등급 경계와 같다(core가 경계를 export하지 않아
+ * 여기서 한 번만 적는다). F는 `SCORE_MIN`부터다.
+ */
+const GRADE_MIN_SCORE = { D: 35, C: 50, B: 65, A: 80 } as const;
 
 /** 호 한 구간 — 점수 범위와 stroke 색(`stroke="currentColor"`에 얹는 text 색 클래스). */
 interface GaugeSegment {
@@ -49,11 +61,23 @@ interface GaugeSegment {
  *   0–34 F(빨강) / 35–49 D(주황) / 50–64 C(노랑) / 65–79 B(라임) / 80–100 A(초록)
  */
 export const SEGMENTS: readonly GaugeSegment[] = [
-    { from: 0, to: 35, strokeClass: 'text-grade-f' },
-    { from: 35, to: 50, strokeClass: 'text-grade-d' },
-    { from: 50, to: 65, strokeClass: 'text-grade-c' },
-    { from: 65, to: 80, strokeClass: 'text-grade-b' },
-    { from: 80, to: 100, strokeClass: 'text-grade-a' },
+    { from: SCORE_MIN, to: GRADE_MIN_SCORE.D, strokeClass: 'text-grade-f' },
+    {
+        from: GRADE_MIN_SCORE.D,
+        to: GRADE_MIN_SCORE.C,
+        strokeClass: 'text-grade-d',
+    },
+    {
+        from: GRADE_MIN_SCORE.C,
+        to: GRADE_MIN_SCORE.B,
+        strokeClass: 'text-grade-c',
+    },
+    {
+        from: GRADE_MIN_SCORE.B,
+        to: GRADE_MIN_SCORE.A,
+        strokeClass: 'text-grade-b',
+    },
+    { from: GRADE_MIN_SCORE.A, to: SCORE_MAX, strokeClass: 'text-grade-a' },
 ];
 
 /** 점수 → 반원 위 각도(라디안). 0점이 왼쪽 끝(π), 100점이 오른쪽 끝(0)이다. */
