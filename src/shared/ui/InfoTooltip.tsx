@@ -111,8 +111,10 @@ export function InfoTooltip({ children, className, label }: InfoTooltipProps) {
                         }}
                         id={tooltipId}
                         role="tooltip"
+                        // 폭은 화면 폭에서 좌우 여백(TOOLTIP_VIEWPORT_PADDING × 2)을 뺀 값을 넘지 않는다 —
+                        // 위치 계산은 왼쪽만 여백에 고정하므로, 폭이 화면만큼 넓으면 오른쪽으로 넘친다(320px 화면).
                         className={cn(
-                            'bg-secondary-800 border-secondary-600 fixed top-(--tt) left-(--tl) z-9999 max-w-xs rounded border p-2 text-xs leading-relaxed shadow-lg',
+                            'bg-secondary-800 border-secondary-600 fixed top-(--tt) left-(--tl) z-9999 max-w-[min(20rem,calc(100vw-1rem))] rounded border p-2 text-xs leading-relaxed shadow-lg',
                             positioned ? 'visible' : 'invisible'
                         )}
                         style={
