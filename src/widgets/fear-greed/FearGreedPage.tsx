@@ -1,25 +1,26 @@
 'use client';
 
 import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
-import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
+import { useFearGreedShareRegistration } from './hooks/useFearGreedShareRegistration';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
-import dynamic from 'next/dynamic';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { FearGreedPageSkeleton } from './ui/page/FearGreedPageSkeleton';
+import { FearGreedUnavailable } from './ui/page/FearGreedUnavailable';
 
 /**
  * 추이 차트는 `lightweight-charts`(원본 ~177KB)를 쓴다. 정적으로 import하면 이 탭의 첫 JS에
- * 실리는데 차트는 하이드레이션 뒤에야 그려지고 첫 화면 아래에 있다(2026-10-05 JS 커버리지:
- * `/AAPL/fear-greed`에서 이 청크 95% 미사용). 차트 탭처럼 지연 로드한다. 자리는 차트와 같은
- * 높이로 미리 잡아 도착할 때 아래 내용이 밀리지 않게 한다.
+ * 실리는데 차트는 하이드레이션 뒤에야 그려지고 첫 화면 아래에 있다. 차트 탭처럼 지연 로드한다.
+ * 자리는 차트와 같은 높이로 미리 잡아 도착할 때 아래 내용이 밀리지 않게 한다.
  */
 const FearGreedHistoricalChart = dynamic(
     () =>
@@ -40,6 +41,8 @@ const FearGreedHistoricalChart = dynamic(
 interface FearGreedPageProps {
     symbol: string;
     fmpSymbol?: string;
+    /** 공유에 실을 종목 표시명(회사명). 없으면 심볼을 쓴다. */
+    displayName?: string;
     /**
      * 자기 정규화 경고 배지를 숨긴다.
      *
@@ -74,35 +77,10 @@ interface FearGreedPageProps {
     hasSeed?: boolean;
 }
 
-/** seed가 없을 때 서버·첫 클라 렌더와, 브라우저 조회가 끝나기 전의 Suspense fallback. */
-function FearGreedPageSkeleton() {
-    const t = useTranslations('widgets.fear-greed');
-    return (
-        <div
-            role="status"
-            className="flex flex-col gap-6 p-4 md:p-6"
-            aria-busy="true"
-            aria-label={t('FearGreedPage.7da634')}
-        >
-            <div className="grid gap-6 md:grid-cols-2">
-                <section className="flex flex-col gap-3">
-                    <div className="h-4 w-40 animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
-                    <div className="h-48 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
-                    <div className="h-16 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
-                </section>
-                <section className="flex flex-col gap-3">
-                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
-                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
-                </section>
-            </div>
-            <section className="flex flex-col gap-2">
-                <div className="h-4 w-32 animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
-                <div className="h-40 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
-            </section>
-        </div>
-    );
-}
-
+/**
+ * 종목 공포·탐욕 페이지 본문. 서버가 seed한 값(없으면 브라우저 조회)으로 게이지·그룹·추이를
+ * 그리고, 같은 스냅샷을 공유 버튼에 등록한다.
+ */
 export function FearGreedPage({
     hasSeed = true,
     ...bodyProps
@@ -122,6 +100,7 @@ export function FearGreedPage({
 function FearGreedPageBody({
     symbol,
     fmpSymbol,
+    displayName,
     hideSelfNormWarning = false,
     hideSampleFooter = false,
 }: Omit<FearGreedPageProps, 'hasSeed'>) {
@@ -129,45 +108,27 @@ function FearGreedPageBody({
     const themeVersion = useThemeVersion();
     // seed 재조회는 사람 입력 이후로 미룬다 — 크롤러 렌더마다 나가던 Server Action을 없앤다.
     const humanInteracted = useHumanInteracted();
-    const { snapshot, history } = useFearGreedFromSymbol({
+    const { snapshot, history, dataUpdatedAt } = useFearGreedFromSymbol({
         symbol,
         fmpSymbol,
         refetchEnabled: humanInteracted,
     });
-
-    useRegisterShareable({
-        kind: 'fear-greed',
-        status: snapshot ? 'success' : 'unavailable',
-        result: snapshot ?? null,
-        context: {
-            symbol,
-            displayName: symbol,
-            // FearGreedSnapshot has no analyzedAt; resolveAsOf falls back to createdAt.
-        },
-        // fear-greed is deterministic (computed from bars client-side, no async
-        // analysis job to dispatch). The snapshot is ready once bars load — no
-        // trigger action needed.
-        trigger: () => {},
+    useFearGreedShareRegistration({
+        symbol,
+        displayName,
+        snapshot,
+        dataUpdatedAt,
     });
 
     // 게이지·칩·그룹은 서버 seed로 **SSR한다**(하이드레이션 게이트 없음).
     //
-    // 예전엔 하이드레이션 동안 점수 없는 스켈레톤을 그렸다: seed는 quantize된 봉(형성 중 봉
-    // 제외)으로 계산되고 클라는 마운트 직후 quantize 없는 봉으로 재조회했으므로, 장중(크립토는
-    // 항상) SSR 점수와 첫 클라 점수가 갈려 React #418이 났다. 지금은 재조회가 사람 입력
-    // 이후로 미뤄져 있다(`refetchEnabled: humanInteracted` → 그 전엔 `staleTime: Infinity`).
-    // 하이드레이션 렌더는 SSR과 **같은 seed**를 읽으므로 텍스트가 갈리지 않고, 입력 뒤의
-    // 재조회 결과는 평범한 React 업데이트다. 추이 차트만 `ssr: false`로 브라우저에서 그린다.
-    if (!snapshot) {
-        return (
-            <div className="flex flex-col gap-2 p-6 text-sm text-secondary-400">
-                <p>{t('FearGreedPage.d6e558')}</p>
-                <p className="text-xs text-secondary-500">
-                    {t('FearGreedPage.ef5b22')}
-                </p>
-            </div>
-        );
-    }
+    // seed는 quantize된 봉(형성 중 봉 제외)으로 계산되고 quantize 없는 재조회는 장중
+    // (크립토는 항상) 다른 점수를 내므로, 마운트 직후 재조회하면 SSR 점수와 첫 클라 점수가
+    // 갈려 하이드레이션 불일치(React #418)가 난다. 그래서 재조회는 사람 입력 이후로 미뤄져
+    // 있다(`refetchEnabled: humanInteracted` → 그 전엔 `staleTime: Infinity`). 하이드레이션
+    // 렌더는 SSR과 **같은 seed**를 읽으므로 텍스트가 갈리지 않고, 입력 뒤의 재조회 결과는
+    // 평범한 React 업데이트다. 추이 차트만 `ssr: false`로 브라우저에서 그린다.
+    if (!snapshot) return <FearGreedUnavailable />;
 
     return (
         <div className="flex flex-col gap-6 p-4 md:p-6">

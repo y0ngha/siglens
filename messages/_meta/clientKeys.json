@@ -1142,6 +1142,7 @@
                 "shared.ui.misc.submitting",
                 "shared.ui.toast.close",
                 "widgets.chart.FearGreedHistoricalChart.9b98f6",
+                "widgets.fear-greed.FearGreedComparisonTile.sincePeriod",
                 "widgets.fear-greed.FearGreedGroupBar.groupNameFlow",
                 "widgets.fear-greed.FearGreedGroupBar.groupNameTrend",
                 "widgets.fear-greed.FearGreedGroupBar.groupScore",

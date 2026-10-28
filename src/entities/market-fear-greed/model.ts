@@ -37,6 +37,15 @@ export interface MarketFearGreedComparisonPoint {
 }
 
 /**
+ * A lookback reading plus whether the history was too short to reach it. When
+ * `clamped`, `date` is the earliest scored session rather than the requested
+ * lookback, so a caller can tell the reader which session the tile really shows.
+ */
+export interface FearGreedLookbackPoint extends MarketFearGreedComparisonPoint {
+    clamped: boolean;
+}
+
+/**
  * Everything the market Fear & Greed page renders.
  *
  * The walk-forward history is *not* carried here: it runs to ~750 sessions and

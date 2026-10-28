@@ -49,6 +49,52 @@ describe('FearGreedHero', () => {
         });
     });
 
+    /**
+     * 점수를 반올림해 찍으므로 라벨도 그 정수로 구해야 한다. 반올림 전 점수의 라벨을 쓰면
+     * 경계 근처에서 숫자(45, 중립 구간)와 라벨(공포)이 갈라진다.
+     */
+    describe('label at a cutoff after rounding', () => {
+        const nearFearCutoff: FearGreedSnapshot = {
+            ...snapshot,
+            score: 44.6,
+            label: 'FEAR',
+        };
+
+        it('44.6은 45로 찍고 중립 라벨을 붙인다', () => {
+            const { getByText, queryByText } = render(
+                <FearGreedHero snapshot={nearFearCutoff} />
+            );
+            expect(getByText('45')).toBeInTheDocument();
+            expect(
+                getByText(sentimentLabelText('NEUTRAL', t))
+            ).toBeInTheDocument();
+            expect(queryByText(sentimentLabelText('FEAR', t))).toBeNull();
+        });
+
+        it('SVG aria-label의 점수와 라벨도 같은 구간을 가리킨다', () => {
+            const { container } = render(
+                <FearGreedHero snapshot={nearFearCutoff} />
+            );
+            const ariaLabel = container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label');
+            expect(ariaLabel).toContain('45');
+            expect(ariaLabel).toContain(sentimentLabelText('NEUTRAL', t));
+        });
+
+        it('반올림해도 구간이 바뀌지 않으면 원래 라벨을 유지한다', () => {
+            const { getByText } = render(
+                <FearGreedHero
+                    snapshot={{ ...snapshot, score: 44.4, label: 'FEAR' }}
+                />
+            );
+            expect(getByText('44')).toBeInTheDocument();
+            expect(
+                getByText(sentimentLabelText('FEAR', t))
+            ).toBeInTheDocument();
+        });
+    });
+
     describe('with GREED snapshot', () => {
         it('renders GREED label for score 60', () => {
             const greedSnap: FearGreedSnapshot = {

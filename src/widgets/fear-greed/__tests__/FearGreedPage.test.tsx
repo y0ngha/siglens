@@ -20,6 +20,8 @@ const baseSnapshot: FearGreedSnapshot = {
     warning: null,
 };
 
+const SEED_UPDATED_AT = Date.parse('2026-10-01T00:00:00Z');
+
 const { mockUseFearGreedFromSymbol } = vi.hoisted(() => ({
     mockUseFearGreedFromSymbol: vi.fn(),
 }));
@@ -44,6 +46,7 @@ describe('FearGreedPage', () => {
             mockUseFearGreedFromSymbol.mockReturnValue({
                 snapshot: baseSnapshot,
                 history: [],
+                dataUpdatedAt: SEED_UPDATED_AT,
             });
         });
 
@@ -85,6 +88,7 @@ describe('FearGreedPage', () => {
             mockUseFearGreedFromSymbol.mockReturnValue({
                 snapshot: baseSnapshot,
                 history: [],
+                dataUpdatedAt: SEED_UPDATED_AT,
             });
         });
 
@@ -117,6 +121,7 @@ describe('FearGreedPage', () => {
                 mockUseFearGreedFromSymbol.mockReturnValue({
                     snapshot: baseSnapshot,
                     history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
                 });
             });
 
@@ -140,6 +145,7 @@ describe('FearGreedPage', () => {
                         sampleSize: 45,
                     },
                     history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
                 });
                 const { getByText } = render(<FearGreedPage symbol="NVDA" />);
                 expect(
@@ -169,6 +175,7 @@ describe('FearGreedPage', () => {
                 mockUseFearGreedFromSymbol.mockReturnValue({
                     snapshot: null,
                     history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
                 });
                 const { getByText } = render(<FearGreedPage symbol="NVDA" />);
                 expect(
@@ -191,6 +198,7 @@ describe('FearGreedPage', () => {
                 mockUseFearGreedFromSymbol.mockReturnValue({
                     snapshot: baseSnapshot,
                     history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
                 });
             });
 
@@ -224,11 +232,104 @@ describe('FearGreedPage', () => {
             });
         });
 
+        /**
+         * 공유 버튼은 등록된 값을 읽는다. 등록은 `analyzedAt` 같은 원시값이 바뀔 때만 다시
+         * 일어나므로, 재조회가 가져온 새 스냅샷이 공유에 실리려면 받은 시각이 따라 바뀌어야 한다.
+         */
+        describe('share registration payload', () => {
+            function ShareProbe() {
+                const shareable = useShareable();
+                return (
+                    <output data-testid="shared">
+                        {JSON.stringify({
+                            result: shareable?.result ?? null,
+                            context: shareable?.context ?? null,
+                        })}
+                    </output>
+                );
+            }
+
+            function readShared(getByTestId: (id: string) => HTMLElement): {
+                result: { score: number } | null;
+                context: { displayName: string; analyzedAt: string } | null;
+            } {
+                return JSON.parse(getByTestId('shared').textContent ?? 'null');
+            }
+
+            function tree(displayName?: string) {
+                return (
+                    <ShareableAnalysisProvider>
+                        <FearGreedPage
+                            symbol="NVDA"
+                            displayName={displayName}
+                        />
+                        <ShareProbe />
+                    </ShareableAnalysisProvider>
+                );
+            }
+
+            it('재조회로 새 스냅샷이 오면 등록된 결과가 새 점수로 바뀐다', () => {
+                mockUseFearGreedFromSymbol.mockReturnValue({
+                    snapshot: baseSnapshot,
+                    history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
+                });
+                const { getByTestId, rerender } = render(tree());
+                expect(readShared(getByTestId).result?.score).toBe(50);
+
+                mockUseFearGreedFromSymbol.mockReturnValue({
+                    snapshot: { ...baseSnapshot, score: 72 },
+                    history: [],
+                    dataUpdatedAt: Date.parse('2026-10-02T09:30:00Z'),
+                });
+                rerender(tree());
+
+                expect(readShared(getByTestId).result?.score).toBe(72);
+            });
+
+            it('스냅샷을 받은 시각을 analyzedAt(ISO)으로 등록한다', () => {
+                mockUseFearGreedFromSymbol.mockReturnValue({
+                    snapshot: baseSnapshot,
+                    history: [],
+                    dataUpdatedAt: Date.parse('2026-10-02T09:30:00Z'),
+                });
+                const { getByTestId } = render(tree());
+                expect(readShared(getByTestId).context?.analyzedAt).toBe(
+                    '2026-10-02T09:30:00.000Z'
+                );
+            });
+
+            it('displayName을 받으면 회사명으로 등록한다', () => {
+                mockUseFearGreedFromSymbol.mockReturnValue({
+                    snapshot: baseSnapshot,
+                    history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
+                });
+                const { getByTestId } = render(tree('NVIDIA Corporation'));
+                expect(readShared(getByTestId).context?.displayName).toBe(
+                    'NVIDIA Corporation'
+                );
+            });
+
+            it('displayName이 없으면 심볼로 등록한다', () => {
+                mockUseFearGreedFromSymbol.mockReturnValue({
+                    snapshot: baseSnapshot,
+                    history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
+                });
+                const { getByTestId } = render(tree());
+                expect(readShared(getByTestId).context?.displayName).toBe(
+                    'NVDA'
+                );
+            });
+        });
+
         describe('limited confidence', () => {
             it('renders limited confidence note', () => {
                 mockUseFearGreedFromSymbol.mockReturnValue({
                     snapshot: { ...baseSnapshot, confidence: 'limited' },
                     history: [],
+                    dataUpdatedAt: SEED_UPDATED_AT,
                 });
                 const { getAllByText, getByText } = render(
                     <FearGreedPage symbol="NVDA" />

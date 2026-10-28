@@ -4056,6 +4056,9 @@
             "tradedAt": "{time} ET 約定"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0}（{v1}から）"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "需給",
                 "groupNameTrend": "トレンド",

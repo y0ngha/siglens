@@ -4188,6 +4188,9 @@
             "tradedAt": "{time} ET 체결"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0} ({v1}부터)"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "수급",
                 "groupNameTrend": "추세",

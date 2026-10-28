@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
-import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
+import { FEAR_GREED_SESSIONS_PER_YEAR } from '@/entities/market-fear-greed/lib/buildMarketFearGreedComparisons';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
 
@@ -123,7 +123,7 @@ describe('FearGreedHistoricalChart', () => {
      * 서버는 "1년 전" 게이지 때문에 약 2년(504점)을 보낸다. 제목이 "최근 1년"이므로
      * 차트는 마지막 252점만 그려야 한다 — 앞쪽 1년이 섞이면 x축이 2년으로 늘어난다.
      */
-    it('plots only the last TRADING_DAYS_1Y points of a 2-year history', () => {
+    it('plots only the last FEAR_GREED_SESSIONS_PER_YEAR points of a 2-year history', () => {
         const start = Date.UTC(2024, 0, 1);
         const twoYears: FearGreedHistoryPoint[] = Array.from(
             { length: 504 },
@@ -139,8 +139,10 @@ describe('FearGreedHistoricalChart', () => {
         const data = mockSetData.mock.calls.at(-1)?.[0] as {
             time: string;
         }[];
-        expect(data).toHaveLength(TRADING_DAYS_1Y);
-        expect(data[0].time).toBe(twoYears[504 - TRADING_DAYS_1Y].date);
+        expect(data).toHaveLength(FEAR_GREED_SESSIONS_PER_YEAR);
+        expect(data[0].time).toBe(
+            twoYears[504 - FEAR_GREED_SESSIONS_PER_YEAR].date
+        );
         expect(data.at(-1)?.time).toBe(twoYears[503].date);
     });
 
