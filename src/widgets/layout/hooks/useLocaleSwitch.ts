@@ -3,7 +3,14 @@
 import { useTransition } from 'react';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/shared/i18n/navigation';
-import type { Locale } from '@/shared/i18n/locales';
+import { resolveLocale, type Locale } from '@/shared/i18n/locales';
+
+interface UseLocaleSwitchResult {
+    readonly locale: Locale;
+    readonly isPending: boolean;
+    /** 같은 페이지를 `next` 로케일로 연다. 현재 로케일이면 아무 일도 하지 않는다. */
+    readonly select: (next: Locale) => void;
+}
 
 /**
  * 현재 로케일과, 같은 페이지를 다른 로케일로 여는 `select`.
@@ -20,8 +27,9 @@ import type { Locale } from '@/shared/i18n/locales';
  *
  * 쿠키로 로케일을 기억하지 않는다. 로케일의 단일 소스는 URL이다.
  */
-export function useLocaleSwitch() {
-    const locale = useLocale() as Locale;
+export function useLocaleSwitch(): UseLocaleSwitchResult {
+    // `useLocale()`은 `string`이다 — 지원 목록으로 좁혀 단언 없이 `Locale`을 얻는다.
+    const locale = resolveLocale(useLocale());
     const pathname = usePathname();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();

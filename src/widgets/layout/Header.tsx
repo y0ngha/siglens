@@ -46,7 +46,7 @@ export function Header({
         <HeaderShell hiddenOnMobile={hiddenOnMobile}>
             <LogoLockup />
             {/*
-                데스크톱 내비. Suspense로 감싸지 않는다 — 같은 내비 마크업(7.5KB)을 전 페이지
+                데스크톱 내비. Suspense로 감싸지 않는다 — 같은 내비 마크업을 전 페이지
                 HTML에 fallback + 숨김 청크로 두 번 싣기만 한다(`navPanelIdUniqueness.test.tsx`).
 
                 브레이크포인트가 `lg`(1024px)인 것은 의도다. 헤더는 고정 한 줄이고 로고·검색·

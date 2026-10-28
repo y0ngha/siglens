@@ -24,6 +24,14 @@ describe('MobileDrawerPanel', () => {
         expect(renderPanel(false)).toHaveAttribute('inert');
     });
 
+    it('닫혀 있으면 aria-hidden="true"다', () => {
+        expect(renderPanel(false)).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('열려 있으면 aria-hidden 속성이 없다', () => {
+        expect(renderPanel(true)).not.toHaveAttribute('aria-hidden');
+    });
+
     it('열려 있으면 inert가 아니고 aria-modal이다', () => {
         const drawer = renderPanel(true);
 

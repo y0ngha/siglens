@@ -29,6 +29,7 @@ export function ContactDialog({
     triggerClassName,
 }: ContactDialogProps) {
     const tMisc = useTranslations('shared.ui.misc');
+    // 에러 셸 테마 보정을 얹어 둔 자리 — 이유와 제거 조건은 `useApplyStoredTheme` 참고.
     useApplyStoredTheme();
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
 

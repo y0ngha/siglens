@@ -4,6 +4,19 @@ import { useEffect, useEffectEvent } from 'react';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 
 /**
+ * `lg` 미만 여부가 바뀔 때 `onChange`를 부르는 구독. 해제 함수를 돌려준다.
+ *
+ * 리스너 등록·해제는 훅 본문이 아니라 모듈 수준 함수에 둔다(REACT.md#EF-3).
+ */
+function subscribeBelowLg(
+    onChange: (event: MediaQueryListEvent) => void
+): () => void {
+    const mediaQueryList = window.matchMedia(BELOW_LG_MEDIA_QUERY);
+    mediaQueryList.addEventListener('change', onChange);
+    return () => mediaQueryList.removeEventListener('change', onChange);
+}
+
+/**
  * 열려 있는 동안 뷰포트가 `lg` 이상으로 넘어가면 `onDesktop`을 부른다.
  *
  * 모바일 드로어는 `document.body`로 포털되어 트리거 래퍼의 `lg:hidden`이 닿지 않는다.
@@ -18,11 +31,8 @@ export function useCloseAtDesktop(
 
     useEffect(() => {
         if (!isOpen) return;
-        const mediaQueryList = window.matchMedia(BELOW_LG_MEDIA_QUERY);
-        const onChange = (event: MediaQueryListEvent) => {
+        return subscribeBelowLg(event => {
             if (!event.matches) handleDesktop();
-        };
-        mediaQueryList.addEventListener('change', onChange);
-        return () => mediaQueryList.removeEventListener('change', onChange);
+        });
     }, [isOpen]);
 }

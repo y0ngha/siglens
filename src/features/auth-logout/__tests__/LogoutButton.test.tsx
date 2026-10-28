@@ -31,10 +31,25 @@ describe('LogoutButton', () => {
         ).toBeInTheDocument();
     });
 
-    it('is disabled when pending', () => {
+    it('is aria-disabled, not disabled, when pending', () => {
         mockUseLogout.mockReturnValue({ pending: true, logout: vi.fn() });
         render(<LogoutButton />);
-        expect(screen.getByRole('button')).toBeDisabled();
+        const button = screen.getByRole('button');
+        expect(button).toHaveAttribute('aria-disabled', 'true');
+        expect(button).not.toBeDisabled();
+    });
+
+    it('keeps focus and does not call logout again while pending', async () => {
+        const logoutFn = vi.fn();
+        mockUseLogout.mockReturnValue({ pending: true, logout: logoutFn });
+        const user = userEvent.setup();
+        render(<LogoutButton />);
+        const button = screen.getByRole('button');
+        button.focus();
+        await user.click(button);
+        await user.keyboard('{Enter}');
+        expect(button).toHaveFocus();
+        expect(logoutFn).not.toHaveBeenCalled();
     });
 
     it('calls logout on click', async () => {

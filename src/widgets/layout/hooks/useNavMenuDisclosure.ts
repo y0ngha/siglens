@@ -3,11 +3,23 @@
 import {
     useRef,
     useState,
+    type RefObject,
     type FocusEvent as ReactFocusEvent,
     type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useEscapeDismiss } from './useEscapeDismiss';
+
+interface UseNavMenuDisclosureResult {
+    readonly isOpen: boolean;
+    readonly close: () => void;
+    readonly containerRef: RefObject<HTMLDivElement | null>;
+    readonly triggerRef: RefObject<HTMLButtonElement | null>;
+    readonly onTriggerClick: () => void;
+    readonly onPointerEnter: (event: ReactPointerEvent) => void;
+    readonly onPointerLeave: (event: ReactPointerEvent) => void;
+    readonly onBlur: (event: ReactFocusEvent<HTMLElement>) => void;
+}
 
 /** 메뉴가 무엇으로 열렸는지. 호버로 열린 메뉴를 클릭하면 `click`으로 고정된다. */
 type OpenSource = 'hover' | 'click';
@@ -25,10 +37,12 @@ type OpenSource = 'hover' | 'click';
  *   패널이 여러 개 열린 채 남는 것을 막는다. 창 전환처럼 도착 요소가 없는 blur는 무시한다.
  * - **Escape**: 항상 닫고, 포커스가 메뉴 안에 있었을 때만 트리거로 되돌린다.
  */
-export function useNavMenuDisclosure() {
+export function useNavMenuDisclosure(): UseNavMenuDisclosureResult {
     const [openedBy, setOpenedBy] = useState<OpenSource | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    // HK-1 예외: `isOpen`·`close`는 아래 훅들(`useEscapeDismiss`·`useOnClickOutside`)의 입력이라
+    // 그 훅보다 먼저 선언한다.
     const isOpen = openedBy !== null;
 
     const close = () => setOpenedBy(null);

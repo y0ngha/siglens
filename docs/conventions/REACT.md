@@ -361,7 +361,7 @@ remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 - **No `aria-hidden` on content users must read or re-enter** (an email to confirm, instructions, data fields). Hide only decorative or duplicated content.
 - **Duplicated user-facing text is announced twice.** Render a message once; if a second copy is needed, hide it and reference the primary through `aria-describedby`.
 - **Accordion triggers carry `aria-expanded`.**
-- **`inert` for visually hidden interactives.** Controls moved off-screen with transform/opacity stay in the tab order; set `inert={isHidden}` in sync with visibility, but skip hiding while focus is inside the container so focus is not blurred mid-interaction.
+- **`inert` for visually hidden interactives.** Controls moved off-screen with transform/opacity stay in the tab order; set `inert={isHidden}` in sync with visibility, but skip hiding while focus is inside the container so focus is not blurred mid-interaction. `inert` alone does not remove a closed container from Playwright's role engine (`getByRole` still matches it), so keep `aria-hidden` on the closed container as well and drop it when open; check e2e role queries before removing it.
 - **Info icons are buttons, not `<span title>`.** Tooltips must be keyboard-reachable: a `<button aria-describedby>` pointing at a `role="tooltip"` element.
 - **Nested interactives keep native keyboard activation.** A parent `role="button"` with `onKeyDown` guards with `if (e.target !== e.currentTarget) return;`, or it swallows Enter/Space of nested buttons.
 - **Tablist:** roving `tabIndex` (`0` active, `-1` others) plus ArrowLeft/ArrowRight. **Listbox:** the same plus Up/Down/Home/End/Enter/Escape and real DOM `focus()` that follows the visual selection.

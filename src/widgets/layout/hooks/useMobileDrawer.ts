@@ -6,11 +6,20 @@ import {
     useEffectEvent,
     useRef,
     useState,
+    type RefObject,
 } from 'react';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useCloseAtDesktop } from './useCloseAtDesktop';
+
+interface UseMobileDrawerResult {
+    readonly isOpen: boolean;
+    readonly triggerRef: RefObject<HTMLButtonElement | null>;
+    readonly drawerRef: RefObject<HTMLDivElement | null>;
+    readonly close: () => void;
+    readonly toggle: () => void;
+}
 
 /**
  * 모바일 드로어의 열림 상태와 부수 효과 일체 — 포커스 트랩·스크롤 잠금·Escape·경로 변경·
@@ -20,11 +29,14 @@ import { useCloseAtDesktop } from './useCloseAtDesktop';
  * 같은 히스토리 이동은 그 핸들러를 건너뛰어, 닫지 않으면 스크롤이 잠긴 채 드로어가 남는다.
  * 닫힌 상태에서는 포커스를 건드리지 않는다(마운트 직후 트리거 포커스 탈취 방지).
  */
-export function useMobileDrawer(pathname: string | null) {
+export function useMobileDrawer(
+    pathname: string | null
+): UseMobileDrawerResult {
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const drawerRef = useRef<HTMLDivElement>(null);
 
+    // HK-1 예외: `close`는 `useEscapeLayer`의 입력이므로 그 훅 바로 앞에 선언한다.
     const close = () => {
         setIsOpen(false);
         triggerRef.current?.focus();

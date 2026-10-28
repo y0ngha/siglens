@@ -27,6 +27,10 @@ interface MobileDrawerPanelProps {
  * 단다. 포털은 하이드레이션 뒤에만 그린다 — 첫 클라이언트 렌더가 서버 HTML(포털 없음)과 같아야
  * 한다. 드로어는 늘 렌더하고 `translate-x`로 숨긴다(슬라이드 인 애니메이션을 위해).
  * 닫힌 동안은 `inert`라 내용이 탭 순서·보조 기술에서 모두 빠진다.
+ *
+ * 닫힌 동안 `aria-hidden`도 함께 단다 — 일부 보조 기술·도구(Playwright의 role 쿼리)는
+ * `inert`를 존중하지 않아 닫힌 드로어가 `dialog`로 잡혀 다른 다이얼로그 셀렉터와 겹친다.
+ * 열리면 속성 자체를 뺀다(`aria-hidden="false"`는 렌더하지 않는다).
  */
 export function MobileDrawerPanel({
     drawerRef,
@@ -58,6 +62,7 @@ export function MobileDrawerPanel({
                 aria-modal={isOpen ? 'true' : undefined}
                 aria-label={t('HeaderMobileMenu.076925')}
                 inert={!isOpen}
+                aria-hidden={isOpen ? undefined : true}
                 tabIndex={-1}
                 className={cn(
                     'border-secondary-700 bg-secondary-900 fixed top-0 right-0 z-70 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none lg:hidden',
