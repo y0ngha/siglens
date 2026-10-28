@@ -9,8 +9,7 @@ import type { CalendarImpact } from '@y0ngha/siglens-core';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import type { MonthView } from '../../model/calendarTypes';
 import { monthLabel, weekdayLabels } from '../../utils/calendarLabels';
-import { DayCell } from './DayCell';
-import { EmptyDayCell } from './EmptyDayCell';
+import { MonthCell } from './MonthCell';
 
 interface MonthCalendarProps {
     view: MonthView;
@@ -67,33 +66,17 @@ export function MonthCalendar({
                 <tbody>
                     {weeks.map(({ cells, isPast }, wi) => (
                         <tr key={wi} hidden={isPast && !showPast}>
-                            {cells.map((cell, ci) =>
-                                cell === null ? (
-                                    <td
-                                        key={`empty-${wi}-${ci}`}
-                                        aria-hidden="true"
-                                        className="p-0.5"
-                                    />
-                                ) : cell.group !== null ? (
-                                    <DayCell
-                                        key={cell.dateKey}
-                                        group={cell.group}
-                                        isSelected={
-                                            selectedDateKey === cell.dateKey
-                                        }
-                                        isToday={cell.dateKey === todayKey}
-                                        activeImpacts={activeImpacts}
-                                        onSelect={onSelect}
-                                        labels={labels}
-                                    />
-                                ) : (
-                                    <EmptyDayCell
-                                        key={cell.dateKey}
-                                        day={cell.day}
-                                        isToday={cell.dateKey === todayKey}
-                                    />
-                                )
-                            )}
+                            {cells.map((cell, ci) => (
+                                <MonthCell
+                                    key={cell?.dateKey ?? `empty-${wi}-${ci}`}
+                                    cell={cell}
+                                    selectedDateKey={selectedDateKey}
+                                    todayKey={todayKey}
+                                    activeImpacts={activeImpacts}
+                                    onSelect={onSelect}
+                                    labels={labels}
+                                />
+                            ))}
                         </tr>
                     ))}
                 </tbody>

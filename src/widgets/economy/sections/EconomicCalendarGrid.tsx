@@ -107,7 +107,9 @@ export function EconomicCalendarGrid({
     if (events.length === 0) {
         return (
             <section aria-labelledby={CALENDAR_HEADING_ID}>
-                <CalendarHeading spacing="mb-3" />
+                <div className="mb-3">
+                    <CalendarHeading />
+                </div>
                 <p className="text-sm text-secondary-400">
                     {t('EconomicCalendarGrid.f9d9dc', { v0: countryLabel })}
                 </p>
@@ -117,7 +119,9 @@ export function EconomicCalendarGrid({
 
     return (
         <section aria-labelledby={CALENDAR_HEADING_ID}>
-            <CalendarHeading spacing="mb-4" />
+            <div className="mb-4">
+                <CalendarHeading />
+            </div>
 
             <div className="mb-3">
                 <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />

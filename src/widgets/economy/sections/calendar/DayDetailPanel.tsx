@@ -36,7 +36,9 @@ export function DayDetailPanel({
     const t = useTranslations('widgets.economy');
     const locale = useCurrentLocale();
     const { month, day, dateKey } = group;
-    const hasVisibleEvents = visibleEventsOf(group, activeImpacts).length > 0;
+    // 빈 상태 안내는 선택된 패널에만 그리므로, 보이는 이벤트 유무도 그때만 센다.
+    const showEmptyNote =
+        isSelected && visibleEventsOf(group, activeImpacts).length === 0;
 
     return (
         <div
@@ -58,7 +60,7 @@ export function DayDetailPanel({
                 })}
             </h3>
             {/* 비선택(hidden) 패널에는 넣지 않는다 — 크롤러가 이벤트 목록 옆에서 "일정 없음"을 함께 색인한다. */}
-            {isSelected && !hasVisibleEvents && (
+            {showEmptyNote && (
                 <p className="text-sm text-secondary-400">
                     {t('EconomicCalendarGrid.noVisibleEvents')}
                 </p>

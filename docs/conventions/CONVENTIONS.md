@@ -969,6 +969,17 @@ When a block is shown or hidden based on a text or value, the check reads the sa
 - ❌ `summaryKo ? <Summary text={resolveSummary(item, locale)} /> : null`
 - ✅ `const text = resolveSummary(item, locale); text ? <Summary text={text} /> : null`
 
+<a id="CS-21"></a>
+
+#### CS-21 — Compute a value only on the path that uses it
+
+A value that only one branch reads is computed inside that branch (or behind the same condition), not on every render or
+call and then discarded when the condition is off. Deriving it unconditionally does work the user never sees and hides
+which branch actually depends on it.
+
+- ❌ `const hasVisible = visibleOf(group).length > 0;` … `{isSelected && !hasVisible && <EmptyNote />}`
+- ✅ `const showEmptyNote = isSelected && visibleOf(group).length === 0;`
+
 ---
 
 ## Layer Dependency Rules

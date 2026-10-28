@@ -50,13 +50,8 @@ export function groupEventsByKstDay(
         })
         .toSorted((a, b) => a.kst.iso.localeCompare(b.kst.iso));
 
-    // 함수 안 지역 버킷이라 push로 채운다 — 날마다 배열을 복사하면 O(n²)이다.
-    const byDay = new Map<string, KstEvent[]>();
-    sorted.forEach(({ dateKey, kst }) => {
-        const bucket = byDay.get(dateKey);
-        if (bucket === undefined) byDay.set(dateKey, [kst]);
-        else bucket.push(kst);
-    });
+    // 한 번 훑어 날짜별로 묶는다(정렬된 순서 유지, O(n)).
+    const byDay = Map.groupBy(sorted, ({ dateKey }) => dateKey);
 
     // 날짜 키로도 한 번 더 정렬한다 — 파싱 실패로 ISO 형식이 다른 이벤트가 섞여도 날짜순을 지킨다.
     return [...byDay]
@@ -65,7 +60,7 @@ export function groupEventsByKstDay(
             dateKey,
             dayOfWeek: dayOfWeekFromKey(dateKey),
             ...parseDateKey(dateKey),
-            events: dayEvents,
+            events: dayEvents.map(({ kst }) => kst),
         }));
 }
 

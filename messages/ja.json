@@ -2224,7 +2224,6 @@
                 "backtestMonth": "{v0}年{v1}月",
                 "bulletListAria": "{v0} {v1} 一覧",
                 "byokUnlock": "{v0} APIキーを登録するとこのモデルを利用できます。",
-                "calendarDayAria": "{v0}月{v1}日、イベント{v2}件",
                 "chartAria": "{v0} {v1} ローソク足チャート",
                 "contact": "お問い合わせ",
                 "filterAll": "すべて",
@@ -4026,7 +4025,8 @@
                 "a0f763": "マクロ経済ブリーフィング読み込み中",
                 "b5f759": "マクロ経済ブリーフィング案内"
             },
-            "dayCellAriaImpacts": "、重要度 {v0}",
+            "dayCellAria": "{v0}月{v1}日、イベント{v2}件",
+            "dayCellAriaWithImpacts": "{v0}月{v1}日、イベント{v2}件、重要度 {v3}",
             "krMacroFacts": {
                 "cpiAndUnemployment": "直近の消費者物価上昇率は{v0}%、失業率は{v1}%です。",
                 "cpiChange": "消費者物価上昇率は前回発表から{v0}%ポイント動きました。",

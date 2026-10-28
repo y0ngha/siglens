@@ -2321,7 +2321,6 @@
                 "backtestMonth": "{v0}년 {v1}월",
                 "bulletListAria": "{v0} {v1} 목록",
                 "byokUnlock": "{v0} API 키를 등록하면 이 모델을 사용할 수 있어요.",
-                "calendarDayAria": "{v0}월 {v1}일, 이벤트 {v2}건",
                 "chartAria": "{v0} {v1} 캔들 차트",
                 "contact": "문의하기",
                 "filterAll": "전체",
@@ -4158,7 +4157,8 @@
                 "a0f763": "거시 경제 브리핑 로딩 중",
                 "b5f759": "거시 경제 브리핑 안내"
             },
-            "dayCellAriaImpacts": ", 중요도 {v0}",
+            "dayCellAria": "{v0}월 {v1}일, 이벤트 {v2}건",
+            "dayCellAriaWithImpacts": "{v0}월 {v1}일, 이벤트 {v2}건, 중요도 {v3}",
             "krMacroFacts": {
                 "cpiAndUnemployment": "최신 소비자물가 상승률은 {v0}%, 실업률은 {v1}%입니다.",
                 "cpiChange": "소비자물가 상승률은 직전 발표 대비 {v0}%p 움직였습니다.",

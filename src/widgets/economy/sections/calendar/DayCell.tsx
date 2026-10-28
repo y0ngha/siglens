@@ -42,7 +42,6 @@ export function DayCell({
     labels,
 }: DayCellProps) {
     const t = useTranslations('widgets.economy');
-    const tMisc = useTranslations('shared.ui.misc');
     const tLabel = useTranslations('shared.enumLabel');
     const { day, month, dateKey } = group;
 
@@ -69,20 +68,23 @@ export function DayCell({
                  * 갈라도 읽히지 않으므로 텍스트로 낸다.
                  */
                 aria-label={
-                    tMisc('calendarDayAria', {
-                        v0: month + 1,
-                        v1: day,
-                        v2: count,
-                    }) +
-                    (dots.length === 0
-                        ? ''
-                        : t('dayCellAriaImpacts', {
-                              v0: dots
+                    // 문장 하나를 통째로 고른다 — 조각을 이어 붙이면 로케일마다 어순을 맞출 수 없다.
+                    dots.length === 0
+                        ? t('dayCellAria', {
+                              v0: month + 1,
+                              v1: day,
+                              v2: count,
+                          })
+                        : t('dayCellAriaWithImpacts', {
+                              v0: month + 1,
+                              v1: day,
+                              v2: count,
+                              v3: dots
                                   .map(impact =>
                                       tLabel(IMPACT_LABEL_KEY[impact])
                                   )
                                   .join(', '),
-                          }))
+                          })
                 }
                 aria-pressed={isSelected}
                 aria-current={isToday ? 'date' : undefined}
