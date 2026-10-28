@@ -1,39 +1,34 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
-import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
-import { useOverallAnalysis } from './hooks/useOverallAnalysis';
-import { OverallTriggerCta } from './OverallTriggerCta';
-import { ReanalyzeButton } from './ReanalyzeButton';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
-import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
-import { cn } from '@/shared/lib/cn';
-import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
-import { type CSSProperties } from 'react';
-import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
-import type { AssetClass } from '@/shared/config/marketProfile/types';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
-import { OverallView } from './OverallView';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import { Spinner } from '@/shared/ui/Spinner';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-
-const SKELETON_LINE_COUNT = 3;
-const SKELETON_WIDTH_START_PCT = 85;
-const SKELETON_WIDTH_STEP_PCT = 12;
+import { useOverallAnalysis } from './hooks/useOverallAnalysis';
+import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
+import { OverallView } from './OverallView';
+import { OverallNoticeBanner } from './ui/notice/OverallNoticeBanner';
+import { ReanalyzeButton } from './ui/reanalyze/ReanalyzeButton';
+import { OverallErrorCard } from './ui/state-cards/OverallErrorCard';
+import { OverallLoadingCard } from './ui/state-cards/OverallLoadingCard';
+import { OverallPollErrorCard } from './ui/state-cards/OverallPollErrorCard';
+import { OverallTriggerCta } from './ui/trigger-cta/OverallTriggerCta';
+import { shouldHighlightReanalyze } from './utils/optionsSection';
 
 interface OverallContentProps {
     symbol: string;
     companyName: string;
     /**
-     * 서버에서 peek로 미리 읽은 캐시 종합 분석 서사(SSR seed). 주어지면
-     * useOverallAnalysis가 마운트 즉시 done 상태로 렌더한다(LLM 비용 0).
+     * 서버에서 peek로 미리 읽은 캐시 종합 분석 서사(SSR seed). 주어지면 마운트 즉시
+     * done 상태로 렌더한다(LLM 비용 0). 생성을 허락하지는 않는다.
      */
     initialAnalysis?: OverallAnalysisResponse;
     /**
@@ -42,25 +37,22 @@ interface OverallContentProps {
      * /news submitNewsAnalysis 호출의 input이 동기화돼야 axis cache가 공유된다.
      */
     hasEnrichedNews: boolean;
-    /**
-     * Asset class of the symbol being analysed.
-     * Controls which axes are submitted/polled (crypto: technical + news only)
-     * and which result sections are rendered (crypto: no options/fundamental/financials).
-     */
+    /** 분석 대상 자산군. 크립토는 옵션·펀더멘털·재무 섹션과 해당 부제 항목이 빠진다. */
     assetClass?: AssetClass;
     /**
-     * 옵션 탭이 실제로 존재하는지. `assetClass`만으로는 한국 개별주식(assetClass는
-     * 'equity'지만 옵션 탭이 없음)을 구분하지 못한다 — 페이지가
-     * `getDescriptor(marketProfile).tabs.includes('options')`로 판정해 넘긴다.
-     * `OverallView`(required — SEO 감사 2026-08-18, JSDoc 참고)로 그대로 전달돼
-     * OptionsSummary 섹션 노출 여부를 결정한다. required로 강제한다 — optional +
-     * `= true` 기본값은 `OverallView`에서 적용한 required 강화를 이 한 단계
-     * 위에서 무력화한다(SEO 감사 2026-08-18 finding 2): 호출부가 실수로 값을
-     * 빼먹어도 컴파일이 통과하고 "옵션 있음"으로 조용히 폴백한다.
+     * 옵션 탭이 실제로 존재하는지. `assetClass`만으로는 옵션 탭이 없는 한국 개별주식을
+     * 구분하지 못해 페이지가 `getDescriptor(marketProfile).tabs.includes('options')`로
+     * 판정해 넘긴다. 옵션 섹션·재분석 강조·CTA 부제가 모두 이 값을 따른다. 기본값이
+     * 있으면 호출부가 빼먹어도 조용히 "옵션 있음"으로 흡수되므로 필수로 둔다.
      */
     hasOptions: boolean;
 }
 
+/**
+ * 종합 분석 탭의 오케스트레이터. 뉴스 카드 보강 게이트·timeframe·모델 설정을 모아
+ * `useOverallAnalysis`에 넘기고, 반환된 상태 유니온을 카드 하나로 옮긴다.
+ * 분석 생성은 CTA 클릭(`trigger`)이나 재분석 클릭(`reanalyze`)으로만 시작된다.
+ */
 export function OverallContent({
     symbol,
     companyName,
@@ -69,7 +61,6 @@ export function OverallContent({
     assetClass = 'equity',
     hasOptions,
 }: OverallContentProps) {
-    const t = useTranslations('widgets.overall');
     // /news와 동일 패턴: 마운트 시 개별 카드 분석 fire-and-forget trigger + cards ready 폴링.
     // 새 뉴스 fetch+분석을 사용자 클릭 전에 시작해두면 trigger 시점엔 분석 완료 row만
     // input으로 들어가 submitNewsAnalysis cache key가 /news와 일치한다(axis hit).
@@ -94,7 +85,7 @@ export function OverallContent({
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
     const isSettingsHydrated = useAnalysisSettingsHydrated();
-    const { state, trigger } = useOverallAnalysis(
+    const { state, trigger, reanalyze } = useOverallAnalysis(
         symbol,
         companyName,
         timeframe,
@@ -121,40 +112,10 @@ export function OverallContent({
         trigger,
     });
 
-    // useWaitForNewsCards가 누적 polling 실패 임계를 넘으면 inline fallback으로 회복한다 —
-    // OverallContent는 ErrorBoundary로 감싸지 않으므로(throw하면 페이지 전체 crash),
-    // 자체 fallback UI로 사용자에게 안내하고 새로고침 기회를 준다.
-    if (pollError !== null) {
-        return (
-            <section
-                aria-labelledby="overall-cta-poll-error-heading"
-                role="alert"
-                className={cn(
-                    SURFACE_CARD,
-                    'border-ui-danger/30 p-6 text-center'
-                )}
-            >
-                <h2
-                    id="overall-cta-poll-error-heading"
-                    className={cn(HEADING_SECTION, 'mb-2 text-balance')}
-                >
-                    {t('OverallContent.8b7ae7')}
-                </h2>
-                <p className="text-sm text-ui-danger-text">
-                    {t('OverallContent.1c85d8')}
-                </p>
-                <button
-                    type="button"
-                    onClick={() => window.location.reload()}
-                    className="mt-4 inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
-                >
-                    {t('OverallContent.0c767c')}
-                </button>
-            </section>
-        );
-    }
-
+    // 뉴스 카드 준비 실패는 시작 CTA만 막는다. 이미 보이는 분석(seed·done)이나
+    // 진행 중인 요청은 그 실패와 무관하므로 가리지 않는다.
     if (state.status === 'idle') {
+        if (pollError !== null) return <OverallPollErrorCard />;
         // /news와 동일 게이트 — 새 뉴스 fetch+분석을 백그라운드에서 끝낸 뒤 submit이 일어나야
         // submitNewsAnalysis cache key가 /news와 일치(axis hit)한다.
         return (
@@ -162,106 +123,43 @@ export function OverallContent({
                 onTrigger={trigger}
                 disabled={!isCardsReady}
                 assetClass={assetClass}
+                hasOptions={hasOptions}
             />
         );
     }
 
-    if (state.status === 'submitting') {
-        const loadingLabel = t('OverallContent.e69812');
-        return (
-            <section
-                aria-labelledby="overall-loading-heading"
-                aria-busy="true"
-                className={cn(SURFACE_CARD, 'p-6')}
-            >
-                <h2
-                    id="overall-loading-heading"
-                    className={cn(HEADING_SECTION, 'mb-4 text-balance')}
-                >
-                    {t('OverallContent.8b7ae7')}
-                </h2>
-                <div className="flex items-center gap-3">
-                    <Spinner />
-                    <p
-                        className="text-sm text-secondary-400"
-                        aria-live="polite"
-                        aria-atomic="true"
-                    >
-                        {loadingLabel}
-                    </p>
-                </div>
-                <div className="mt-4 space-y-2">
-                    {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
-                        <div
-                            key={i}
-                            className={cn(
-                                'bg-secondary-700 h-4 animate-pulse rounded motion-reduce:animate-none',
-                                'w-(--skeleton-w)'
-                            )}
-                            style={
-                                {
-                                    '--skeleton-w': `${SKELETON_WIDTH_START_PCT - i * SKELETON_WIDTH_STEP_PCT}%`,
-                                } as CSSProperties
-                            }
-                            aria-hidden="true"
-                        />
-                    ))}
-                </div>
-            </section>
-        );
-    }
+    if (state.status === 'submitting') return <OverallLoadingCard />;
 
     if (state.status === 'error') {
         return (
-            <section
-                aria-labelledby="overall-error-heading"
-                className={cn(SURFACE_CARD, 'border-ui-danger/30 p-6')}
-            >
-                <h2
-                    id="overall-error-heading"
-                    className={cn(HEADING_SECTION, 'mb-2 text-balance')}
-                >
-                    {t('OverallContent.8b7ae7')}
-                </h2>
-                <p className="text-sm text-ui-danger-text" role="alert">
-                    {state.error ?? t('OverallContent.0bb0bd')}
-                    {state.axis !== undefined
-                        ? t('axisFailed', { v0: state.axis })
-                        : ''}
-                </p>
-                <button
-                    type="button"
-                    onClick={trigger}
-                    className="mt-3 rounded text-sm text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
-                >
-                    {t('OverallContent.0c767c')}
-                </button>
-            </section>
+            <OverallErrorCard
+                message={state.error}
+                axis={state.axis}
+                onRetry={trigger}
+            />
         );
     }
-
-    if (state.status !== 'done') return null;
-
-    const r = state.result;
-    const optionsOiStale = r.optionsOiStale ?? false;
-    // 옵션 분석이 실제로 수행됐고(=bullets 존재) OI 스냅샷이 stale일 때만 재분석
-    // 버튼을 amber로 강조한다. 빈 옵션 분석(NoChains)에서는 stale 여부가 의미가
-    // 없으므로 강조하지 않는다 — OptionsSummary의 stale 배지 노출 조건과 동일.
-    const reanalyzeHighlighted =
-        r.optionsBulletsKo.length > 0 && optionsOiStale;
 
     return (
         <div className="space-y-6">
             <PlainAnalysisSwitch plain={state.plain}>
                 <OverallView
-                    result={r}
+                    result={state.result}
                     assetClass={assetClass}
                     hasOptions={hasOptions}
                 />
             </PlainAnalysisSwitch>
+            {state.notice !== null && (
+                <OverallNoticeBanner notice={state.notice} />
+            )}
             <ReanalyzeButton
-                onClick={trigger}
-                highlighted={reanalyzeHighlighted}
+                onClick={reanalyze}
+                reanalyzing={state.reanalyzing}
+                highlighted={shouldHighlightReanalyze(
+                    state.result,
+                    assetClass,
+                    hasOptions
+                )}
             />
         </div>
     );

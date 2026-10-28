@@ -154,6 +154,7 @@
         "widgets.options.chainTable",
         "widgets.options.dst",
         "widgets.options.tooltip",
+        "widgets.overall.ctaSubtitle",
         "widgets.portfolio-position.positionNote",
         "widgets.portfolio-position.statusSummary"
     ],

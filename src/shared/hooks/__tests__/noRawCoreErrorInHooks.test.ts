@@ -29,6 +29,7 @@ describe('분석 훅은 core 원시 에러 문자열을 화면에 던지지 않�
         'src/widgets/fundamental/hooks/useFundamentalAnalysis.ts',
         'src/widgets/news/hooks/useNewsAnalysis.ts',
         'src/widgets/overall/hooks/useOverallAnalysis.ts',
+        'src/widgets/overall/utils/fetchOverallAnalysis.ts',
         'src/widgets/congress/hooks/useCongressTrend.ts',
     ];
 

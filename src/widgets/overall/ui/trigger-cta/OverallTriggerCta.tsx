@@ -6,6 +6,21 @@ import type { AssetClass } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
+type SubtitleKey = 'crypto' | 'equity' | 'equityNoOptions';
+
+/**
+ * 자산군과 옵션 탭 유무 → 부제 카탈로그 키(`widgets.overall.ctaSubtitle`). 옵션 탭이
+ * 없는 한국 개별주식에 옵션을 약속하는 문구를 보이면 안 된다. 암호화폐는 옵션 유무와
+ * 무관하다.
+ */
+const SUBTITLE_KEY: Record<
+    AssetClass,
+    Record<'withOptions' | 'withoutOptions', SubtitleKey>
+> = {
+    crypto: { withOptions: 'crypto', withoutOptions: 'crypto' },
+    equity: { withOptions: 'equity', withoutOptions: 'equityNoOptions' },
+};
+
 interface OverallTriggerCtaProps {
     onTrigger: () => void;
     /**
@@ -13,26 +28,26 @@ interface OverallTriggerCtaProps {
      * 새 뉴스 누락 부분 결과로 진행되는 걸 막을 때 사용한다(/news와 동일 게이트).
      */
     disabled?: boolean;
-    /**
-     * Asset class of the symbol being analysed.
-     * Controls the subtitle copy:
-     * - Crypto shows a subtitle listing 차트·뉴스·시장 분위기.
-     * - Equity shows a subtitle listing 차트·옵션·펀더멘털·뉴스·시장 분위기.
-     * (These are the subtitle's emphasis items, not the analysis-axis count.)
-     */
+    /** 분석 대상 자산군. 부제가 나열하는 강조 항목이 자산군마다 다르다. */
     assetClass?: AssetClass;
+    /** 옵션 탭이 실제로 존재하는지. 없으면 부제에서 옵션을 뺀다. */
+    hasOptions: boolean;
 }
 
+/** 종합 분석 시작 CTA. 개별 뉴스 카드 분석이 끝날 때까지 버튼을 잠근다. */
 export function OverallTriggerCta({
     onTrigger,
     disabled = false,
     assetClass = 'equity',
+    hasOptions,
 }: OverallTriggerCtaProps) {
     const t = useTranslations('widgets.overall');
-    const subtitle =
-        assetClass === 'crypto'
-            ? t('OverallTriggerCta.ec0085')
-            : t('OverallTriggerCta.2a1422');
+    // extract.mjs의 동적 키 탐지는 번역자를 직접 호출하는 파일 안의 조회만 본다 —
+    // 부제 키를 전용 네임스페이스로 분리해 조회 테이블 전체가 아니라 이 세 키만 싣는다.
+    const tSubtitle = useTranslations('widgets.overall.ctaSubtitle');
+    const subtitle = tSubtitle(
+        SUBTITLE_KEY[assetClass][hasOptions ? 'withOptions' : 'withoutOptions']
+    );
 
     return (
         <section

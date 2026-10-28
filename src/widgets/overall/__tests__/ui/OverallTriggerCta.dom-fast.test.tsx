@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 
-import { OverallTriggerCta } from '../OverallTriggerCta';
+import { OverallTriggerCta } from '@/widgets/overall/ui/trigger-cta/OverallTriggerCta';
 
 describe('OverallTriggerCta', () => {
     it('renders the heading and description', () => {
-        render(<OverallTriggerCta onTrigger={vi.fn()} />);
+        render(<OverallTriggerCta onTrigger={vi.fn()} hasOptions={true} />);
 
         expect(
             screen.getByRole('heading', { name: /AI 종합 분석/ })
@@ -16,7 +16,9 @@ describe('OverallTriggerCta', () => {
 
     it('calls onTrigger when the button is clicked', () => {
         const handleTrigger = vi.fn();
-        render(<OverallTriggerCta onTrigger={handleTrigger} />);
+        render(
+            <OverallTriggerCta onTrigger={handleTrigger} hasOptions={true} />
+        );
 
         fireEvent.click(
             screen.getByRole('button', { name: /AI 종합 분석 받기/ })
@@ -26,7 +28,7 @@ describe('OverallTriggerCta', () => {
     });
 
     it('has an accessible section landmark', () => {
-        render(<OverallTriggerCta onTrigger={vi.fn()} />);
+        render(<OverallTriggerCta onTrigger={vi.fn()} hasOptions={true} />);
 
         expect(
             screen.getByRole('region', { name: /AI 종합 분석/ })
@@ -34,7 +36,7 @@ describe('OverallTriggerCta', () => {
     });
 
     it('disabled=false (default): button is enabled with "AI 종합 분석 받기" label and no waiting hint', () => {
-        render(<OverallTriggerCta onTrigger={vi.fn()} />);
+        render(<OverallTriggerCta onTrigger={vi.fn()} hasOptions={true} />);
 
         const button = screen.getByRole('button', {
             name: /AI 종합 분석 받기/,
@@ -50,7 +52,13 @@ describe('OverallTriggerCta', () => {
 
     it('disabled=true: button is disabled with "뉴스 카드 분석 중…" label, region marks aria-busy, waiting hint is shown', () => {
         const handleTrigger = vi.fn();
-        render(<OverallTriggerCta onTrigger={handleTrigger} disabled />);
+        render(
+            <OverallTriggerCta
+                onTrigger={handleTrigger}
+                hasOptions={true}
+                disabled
+            />
+        );
 
         const button = screen.getByRole('button', {
             name: /뉴스 카드 분석 중…/,
@@ -67,7 +75,13 @@ describe('OverallTriggerCta', () => {
     });
 
     it('assetClass="crypto": subtitle lists 차트, 뉴스, 시장 분위기 and omits equity-only words', () => {
-        render(<OverallTriggerCta onTrigger={vi.fn()} assetClass="crypto" />);
+        render(
+            <OverallTriggerCta
+                onTrigger={vi.fn()}
+                assetClass="crypto"
+                hasOptions={false}
+            />
+        );
 
         // Crypto subtitle must be present.
         expect(screen.getByText(/차트, 뉴스, 시장 분위기/)).toBeInTheDocument();
@@ -75,5 +89,32 @@ describe('OverallTriggerCta', () => {
         // Equity-only terms must NOT appear in the rendered output.
         expect(screen.queryByText(/옵션/)).not.toBeInTheDocument();
         expect(screen.queryByText(/펀더멘털/)).not.toBeInTheDocument();
+    });
+
+    it('assetClass="crypto": 옵션 탭 유무와 무관하게 같은 부제를 쓴다', () => {
+        render(
+            <OverallTriggerCta
+                onTrigger={vi.fn()}
+                assetClass="crypto"
+                hasOptions={true}
+            />
+        );
+
+        expect(screen.getByText(/차트, 뉴스, 시장 분위기/)).toBeInTheDocument();
+    });
+
+    it('옵션 탭이 없는 주식(hasOptions=false): 부제가 옵션을 약속하지 않는다', () => {
+        render(
+            <OverallTriggerCta
+                onTrigger={vi.fn()}
+                assetClass="equity"
+                hasOptions={false}
+            />
+        );
+
+        expect(
+            screen.getByText(/차트, 펀더멘털, 뉴스, 시장 분위기/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/옵션/)).not.toBeInTheDocument();
     });
 });
