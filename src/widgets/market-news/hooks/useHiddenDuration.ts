@@ -32,7 +32,9 @@ export function useHiddenDuration(resetKey: string): () => number {
 
         const onVisibilityChange = (): void => {
             if (isDocumentHidden()) {
-                hiddenSinceRef.current ??= Date.now();
+                if (hiddenSinceRef.current === null) {
+                    hiddenSinceRef.current = Date.now();
+                }
                 return;
             }
             hiddenTotalRef.current = readTotal();

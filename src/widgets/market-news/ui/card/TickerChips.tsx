@@ -28,8 +28,9 @@ export function TickerChips({ chips }: TickerChipsProps) {
         >
             {chips.map(({ ticker, href }, index) =>
                 href === null ? (
-                    // 티커가 중복돼도 key가 겹치지 않게 인덱스를 함께 쓴다.
                     <span
+                        // 티커 문자열 외에 안정 id가 없고 같은 티커가 중복될 수 있어 인덱스를 함께 쓴다(정적 목록).
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={`${index}-${ticker}`}
                         data-testid="ticker-chip"
                         className={TEXT_CHIP_CLASS}
@@ -38,6 +39,8 @@ export function TickerChips({ chips }: TickerChipsProps) {
                     </span>
                 ) : (
                     <Link
+                        // 위 span과 같은 이유 — 안정 id가 없는 정적 목록.
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={`${index}-${ticker}`}
                         href={href}
                         aria-label={t('MarketNewsCard.goToSymbol', {

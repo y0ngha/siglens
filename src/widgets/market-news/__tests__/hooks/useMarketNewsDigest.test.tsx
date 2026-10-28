@@ -320,6 +320,68 @@ describe('useMarketNewsDigest', () => {
         unmount();
     });
 
+    describe('카테고리가 바뀌는 클라이언트 내비게이션', () => {
+        const OTHER_SEED: NewsAnalysisResponse = {
+            ...PEEK_SEED,
+            currentDriverKo: '다른 카테고리의 시드입니다.',
+        };
+
+        type Props = {
+            category: 'articles' | 'general';
+            seed: NewsAnalysisResponse | null;
+        };
+
+        it('새 카테고리의 시드가 있으면 그 시드를 보여 준다(옛 시드가 아니다)', async () => {
+            const { result, rerender } = renderHook(
+                ({ category, seed }: Props) =>
+                    useMarketNewsDigest(category, true, seed),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: {
+                        category: 'articles',
+                        seed: PEEK_SEED,
+                    } as Props,
+                }
+            );
+
+            rerender({ category: 'general', seed: OTHER_SEED });
+
+            expect(result.current).toMatchObject({
+                status: 'done',
+                result: OTHER_SEED,
+            });
+        });
+
+        it('새 카테고리의 시드가 없으면 옛 시드를 이어 쓰지 않고 조회한다', async () => {
+            mockFetchMarketNewsDigest.mockImplementation(
+                () => new Promise(() => {})
+            );
+            const { result, rerender } = renderHook(
+                ({ category, seed }: Props) =>
+                    useMarketNewsDigest(category, true, seed),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: {
+                        category: 'articles',
+                        seed: PEEK_SEED,
+                    } as Props,
+                }
+            );
+
+            rerender({ category: 'general', seed: null });
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            });
+
+            expect(result.current.status).toBe('loading');
+            expect(mockFetchMarketNewsDigest).toHaveBeenCalledWith(
+                'general',
+                expect.anything(),
+                expect.anything()
+            );
+        });
+    });
+
     describe('카드 대기 실패', () => {
         const WAIT_FAIL_STEPS = 3;
 

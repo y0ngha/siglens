@@ -29,7 +29,8 @@ export function DigestEventList({
             <ul className="space-y-1.5" aria-label={listLabel}>
                 {events.map((event, index) => (
                     <li
-                        // 같은 문장이 두 번 나와도 key가 겹치지 않게 인덱스를 함께 쓴다.
+                        // 문장 외에 안정 id가 없고 같은 문장이 두 번 나올 수 있어 인덱스를 함께 쓴다(정적 목록).
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         key={`${index}-${event}`}
                         className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
                     >

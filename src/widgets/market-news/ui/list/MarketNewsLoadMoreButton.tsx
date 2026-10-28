@@ -1,5 +1,5 @@
 /**
- * 목록 "더보기" 버튼.
+ * 카드가 많은 카테고리에서 한 번에 다 그리지 않고 사용자가 펼치게 해 초기 렌더 비용을 줄인다.
  */
 import { useTranslations } from 'next-intl';
 
@@ -8,7 +8,7 @@ interface MarketNewsLoadMoreButtonProps {
     onClick: () => void;
 }
 
-/** 남은 개수를 라벨에 담는다. */
+/** 남은 개수를 라벨에 보여 줘야 사용자가 더 볼지 판단할 수 있다. */
 export function MarketNewsLoadMoreButton({
     remaining,
     onClick,

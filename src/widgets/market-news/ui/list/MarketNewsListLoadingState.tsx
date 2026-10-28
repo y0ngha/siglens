@@ -1,5 +1,5 @@
 /**
- * 첫 폴링 응답을 기다리는 동안의 목록 화면.
+ * 첫 응답 전에 빈 화면이 뜨면 "뉴스 없음"으로 읽히므로, 수집 중임을 알리는 자리표시자를 둔다.
  */
 import { useTranslations } from 'next-intl';
 import { MarketNewsCardSkeleton } from './MarketNewsCardSkeleton';
@@ -8,8 +8,15 @@ import { MarketNewsListHeader } from './MarketNewsListHeader';
 const SKELETON_COUNT = 3;
 const SKELETON_SLOTS = Array.from({ length: SKELETON_COUNT }, (_, i) => i);
 
-/** `aria-busy` 섹션과 `aria-live` 수집 안내, 카드 스켈레톤 3장. */
-export function MarketNewsListLoadingState() {
+interface MarketNewsListLoadingStateProps {
+    /** 헤더의 조회 기간 배지에 쓴다. */
+    lookbackDays: number;
+}
+
+/** 스크린리더에도 대기 중임을 알리려고 `aria-busy`와 `aria-live`를 함께 쓴다. */
+export function MarketNewsListLoadingState({
+    lookbackDays,
+}: MarketNewsListLoadingStateProps) {
     const t = useTranslations('widgets.market-news');
     return (
         <section
@@ -17,7 +24,7 @@ export function MarketNewsListLoadingState() {
             aria-busy="true"
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
-            <MarketNewsListHeader />
+            <MarketNewsListHeader lookbackDays={lookbackDays} />
             <span
                 className="block text-xs text-secondary-400"
                 aria-live="polite"

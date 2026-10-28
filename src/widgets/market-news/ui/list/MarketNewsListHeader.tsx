@@ -1,12 +1,19 @@
 /**
- * 마켓 뉴스 목록의 제목 줄.
+ * 로딩·빈 상태·목록이 같은 제목과 기간 배지를 쓰도록 한 곳에 둔다 — 상태마다 따로 그리면
+ * 조회 기간 표기가 어긋난다.
  */
 import { useTranslations } from 'next-intl';
-import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news/lib/marketNewsConstants';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
-/** 제목(`market-news-list-heading`)과 조회 기간 배지. 목록 섹션들이 `aria-labelledby`로 가리킨다. */
-export function MarketNewsListHeader() {
+interface MarketNewsListHeaderProps {
+    /** 수집 쪽 조회 기간과 같은 값을 오케스트레이터가 내려 준다. */
+    lookbackDays: number;
+}
+
+/** 제목 id(`market-news-list-heading`)가 한 곳에서만 정의돼야 각 섹션의 `aria-labelledby`가 어긋나지 않는다. */
+export function MarketNewsListHeader({
+    lookbackDays,
+}: MarketNewsListHeaderProps) {
     const t = useTranslations('widgets.market-news');
     const tMisc = useTranslations('shared.ui.misc');
     return (
@@ -15,7 +22,7 @@ export function MarketNewsListHeader() {
                 {t('MarketNewsList.d107e1')}
             </h2>
             <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
-                {tMisc('lastNDays', { v0: MARKET_NEWS_LOOKBACK_DAYS })}
+                {tMisc('lastNDays', { v0: lookbackDays })}
             </span>
         </div>
     );

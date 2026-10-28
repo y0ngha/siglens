@@ -1,13 +1,14 @@
 'use client';
 
 /**
- * 마켓 뉴스 목록 — 폴링 결과를 로딩·빈 상태·목록(+더보기)으로 나눠 조립한다.
+ * 상태(로딩·빈·목록)마다 화면을 갈라 한 컴포넌트가 분기만 맡고, 그리기는 `ui/list`에 맡긴다.
  */
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { useMarketNewsPagination } from './hooks/useMarketNewsPagination';
 import { capMarketNewsRows } from './utils/capMarketNewsRows';
+import { getMarketNewsLookbackDays } from './utils/marketNewsLookback';
 import { MarketNewsCard } from './MarketNewsCard';
 import { MarketNewsListEmpty } from './ui/list/MarketNewsListEmpty';
 import { MarketNewsListHeader } from './ui/list/MarketNewsListHeader';
@@ -39,12 +40,16 @@ export function MarketNewsList({
     } = useMarketNewsCardPolling(category, initialItems);
     const items = capMarketNewsRows(polledItems);
     const pollFailed = pollError !== null;
+    const lookbackDays = getMarketNewsLookbackDays();
 
     if (items.length === 0) {
         return isPolling ? (
-            <MarketNewsListLoadingState />
+            <MarketNewsListLoadingState lookbackDays={lookbackDays} />
         ) : (
-            <MarketNewsListEmpty pollFailed={pollFailed} />
+            <MarketNewsListEmpty
+                pollFailed={pollFailed}
+                lookbackDays={lookbackDays}
+            />
         );
     }
 
@@ -54,7 +59,7 @@ export function MarketNewsList({
             aria-busy={isPolling}
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
-            <MarketNewsListHeader />
+            <MarketNewsListHeader lookbackDays={lookbackDays} />
             <ul className="space-y-3">
                 {items.slice(0, visibleCount).map(item => (
                     <li key={item.id}>
