@@ -124,10 +124,6 @@ describe('FearGreedComparisonGauges', () => {
     });
 
     /*
-     * 회귀: 타일 보더가 양쪽 다 `/40`이라 `현재` 강조와 기본이 대비상 구분되지
-     * 않았다. 시장 버전(`MarketFearGreedComparison`)이 먼저 고친 것과 맞춘다.
-     */
-    /*
      * 4칸을 flex-wrap으로 두면 폭에 따라 3+1로 갈라져 한 칸만 홀로 남는다. 시장 지수
      * 비교(`MarketFearGreedComparison`)와 같은 2열→4열 grid를 쓴다.
      */
@@ -160,6 +156,10 @@ describe('FearGreedComparisonGauges', () => {
         expect(ariaLabel).not.toContain(sentimentLabelText('NEUTRAL', t));
     });
 
+    /*
+     * 보더가 양쪽 다 `/40`이면 `현재` 강조와 기본 보더가 대비로 구분되지 않는다.
+     * 시장 버전(`MarketFearGreedComparison`)과 같은 배색을 쓴다.
+     */
     it('타일 보더에 /40 알파를 쓰지 않고 현재 타일만 primary 보더로 강조한다', () => {
         const history = makeHistory(
             Array.from({ length: 300 }, (_, i) => 50 + (i % 20))
