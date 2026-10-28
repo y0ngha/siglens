@@ -70,10 +70,15 @@ function renderWidget(hideView: boolean) {
     );
 }
 
-function streamParams() {
-    return mockStream.mock.calls.map(
+/** 지금까지의 스트림 요청 중 캐시 전용(`cacheOnly: true`)과 생성 요청의 개수. */
+function requestCounts() {
+    const params = mockStream.mock.calls.map(
         ([arg]) => arg.params as { cacheOnly?: boolean }
     );
+    return {
+        cacheOnly: params.filter(p => p.cacheOnly === true).length,
+        generate: params.filter(p => p.cacheOnly !== true).length,
+    };
 }
 
 describe('FundamentalAiSummary — 실행 권한', () => {
@@ -101,7 +106,7 @@ describe('FundamentalAiSummary — 실행 권한', () => {
                 screen.getByRole('button', { name: /AI 분석 시작/ })
             ).toBeInTheDocument()
         );
-        expect(streamParams()[0].cacheOnly).toBe(true);
+        expect(requestCounts()).toEqual({ cacheOnly: 1, generate: 0 });
 
         act(() => captured.trigger?.());
 
@@ -118,7 +123,7 @@ describe('FundamentalAiSummary — 실행 권한', () => {
         renderWidget(true);
 
         await waitFor(() => expect(mockStream).toHaveBeenCalledTimes(1));
-        expect(streamParams()[0].cacheOnly).toBe(true);
+        expect(requestCounts()).toEqual({ cacheOnly: 1, generate: 0 });
         // 미스가 반영돼 awaiting 상태가 된 뒤에야 트리거가 start를 가리킨다.
         await waitFor(() => expect(captured.trigger).toBeDefined());
         await act(async () => {});
@@ -126,7 +131,7 @@ describe('FundamentalAiSummary — 실행 권한', () => {
         act(() => captured.trigger?.());
 
         await waitFor(() => expect(mockStream).toHaveBeenCalledTimes(2));
-        expect(streamParams()[1].cacheOnly).toBeUndefined();
+        expect(requestCounts()).toEqual({ cacheOnly: 1, generate: 1 });
         expect(mockGrant).not.toHaveBeenCalled();
     });
 });

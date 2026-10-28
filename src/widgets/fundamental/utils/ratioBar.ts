@@ -1,7 +1,11 @@
 /**
  * 수익성 비율 막대의 표기와 채움 폭 계산.
  */
-import { MISSING_VALUE, PERCENT_SCALE } from './moneyFormat';
+import {
+    BAR_FILL_MAX_PERCENT,
+    MISSING_VALUE,
+    PERCENT_SCALE,
+} from './displayConstants';
 
 /** 퍼센트 표기의 소수 자릿수. */
 const PERCENT_FRACTION_DIGITS = 1;
@@ -15,5 +19,5 @@ export function formatRatioPercent(value: number | null): string {
 /** 막대 채움 폭(%)을 0~100으로 제한한다. 값이 없으면 0. */
 export function ratioFillPercent(value: number | null): number {
     if (value === null) return 0;
-    return Math.min(PERCENT_SCALE, Math.max(0, value * PERCENT_SCALE));
+    return Math.min(BAR_FILL_MAX_PERCENT, Math.max(0, value * PERCENT_SCALE));
 }

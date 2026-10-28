@@ -6,12 +6,7 @@ import {
     formatCompactCurrency,
     formatCurrencyForSymbol,
 } from '@/shared/lib/priceFormat';
-
-/** 값이 없을 때의 자리표시자. */
-export const MISSING_VALUE = '-';
-
-/** 비율(0.12)을 퍼센트(12)로 바꾸는 배율이자 퍼센트 막대 폭의 상한(%). */
-export const PERCENT_SCALE = 100;
+import { MISSING_VALUE, PERCENT_SCALE } from './displayConstants';
 
 /** `value`가 `total`에서 차지하는 비율을 소수 첫째 자리까지의 퍼센트 문자열로 만든다. */
 export function sharePercent(value: number, total: number): string {

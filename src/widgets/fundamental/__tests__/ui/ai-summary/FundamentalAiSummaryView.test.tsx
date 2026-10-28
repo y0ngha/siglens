@@ -16,10 +16,15 @@ function sameKeyWarnings(spy: { mock: { calls: unknown[][] } }) {
 }
 
 describe('FundamentalAiSummaryView — 중복 항목 키', () => {
+    let errorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {});
+
     it('같은 리스크 문장이 반복돼도 모두 그리고 키 경고가 없다', () => {
-        const errorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
         render(
             <FundamentalAiSummaryView
                 result={{
@@ -32,13 +37,9 @@ describe('FundamentalAiSummaryView — 중복 항목 키', () => {
         expect(screen.getAllByText('경쟁 심화')).toHaveLength(2);
         expect(screen.getByText('환율 변동')).toBeInTheDocument();
         expect(sameKeyWarnings(errorSpy)).toHaveLength(0);
-        errorSpy.mockRestore();
     });
 
     it('같은 카테고리 평가가 반복돼도 모두 그리고 키 경고가 없다', () => {
-        const errorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
         render(
             <FundamentalAiSummaryView
                 result={{
@@ -64,6 +65,5 @@ describe('FundamentalAiSummaryView — 중복 항목 키', () => {
         expect(screen.getByText('첫 번째 근거')).toBeInTheDocument();
         expect(screen.getByText('두 번째 근거')).toBeInTheDocument();
         expect(sameKeyWarnings(errorSpy)).toHaveLength(0);
-        errorSpy.mockRestore();
     });
 });

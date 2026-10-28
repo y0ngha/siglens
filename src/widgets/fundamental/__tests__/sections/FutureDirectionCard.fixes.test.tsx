@@ -8,17 +8,17 @@ import type {
 import { koMessage } from '@/shared/test-utils/koMessage';
 
 const PT_SUMMARY: FundamentalPriceTargetSummaryInput = {
-    lastMonth: { count: 3, avgPriceTarget: 210 },
-    lastQuarter: { count: 9, avgPriceTarget: 205 },
-    lastYear: { count: 30, avgPriceTarget: 190 },
-} as unknown as FundamentalPriceTargetSummaryInput;
+    lastMonth: { avgPriceTarget: 210 },
+    lastQuarter: { avgPriceTarget: 205 },
+    lastYear: { avgPriceTarget: 190 },
+};
 
-const PT_CONSENSUS = {
+const PT_CONSENSUS: FundamentalPriceTargetConsensusInput = {
     targetLow: 150,
     targetMedian: 200,
     targetConsensus: 195,
     targetHigh: 250,
-} as unknown as FundamentalPriceTargetConsensusInput;
+};
 
 const ZERO_GRADES: FundamentalGradesConsensusInput = {
     strongBuy: 0,

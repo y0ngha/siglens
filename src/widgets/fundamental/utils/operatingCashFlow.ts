@@ -8,7 +8,7 @@ import {
     formatCompactInCurrency,
 } from '@/shared/lib/priceFormat';
 import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
-import { MISSING_VALUE } from './moneyFormat';
+import { MISSING_VALUE } from './displayConstants';
 
 /**
  * 영업현금흐름을 축약 표기한다.

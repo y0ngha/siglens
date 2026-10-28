@@ -2,7 +2,11 @@
  * 성장률 막대의 방향·채움·색 계산.
  */
 import { formatSignedPercent } from '@/shared/lib/priceFormat';
-import { MISSING_VALUE, PERCENT_SCALE } from './moneyFormat';
+import {
+    BAR_FILL_MAX_PERCENT,
+    MISSING_VALUE,
+    PERCENT_SCALE,
+} from './displayConstants';
 
 /** 성장률 막대 한 줄을 그리는 데 필요한 값. */
 export interface GrowthBarView {
@@ -37,7 +41,7 @@ export function growthBarView(value: number | null): GrowthBarView {
         formatted: formatSignedPercent(pct),
         hasValue: true,
         isPositive: pct >= 0,
-        fillAbs: Math.min(PERCENT_SCALE, Math.abs(pct)),
+        fillAbs: Math.min(BAR_FILL_MAX_PERCENT, Math.abs(pct)),
     };
 }
 
