@@ -3875,17 +3875,18 @@
         "dashboard": {
             "BriefingCard": {
                 "38eff4": "Generating AI Briefing...",
-                "39b300": "as of",
                 "7bd647": "Declining Sectors",
                 "8b256d": "Failed to load briefing.",
-                "e1760c": "Rising Sectors"
+                "e1760c": "Rising Sectors",
+                "generatedAt": "As of <time>{v0}</time> KST"
             },
             "IndexCard": {
-                "analyzeTitle": "{v0} analysis"
+                "analyzeTitle": "Analyze {v0}"
             },
             "MarketDataErrorNotice": {
                 "69afbd": "Please refresh and try again shortly.",
                 "76bb07": "Close Notice",
+                "marketLabelCrypto": "the crypto market",
                 "marketLabelKr": "the Korean stock market",
                 "marketLabelUs": "the U.S. stock market",
                 "partial": "Some {v0} data could not be loaded.",
@@ -3899,7 +3900,7 @@
             },
             "SectorFactsSummary": {
                 "581217": "Sector Signals Overview",
-                "9550ad": "No stocks with technical signals currently. Please check again shortly.\n                    ",
+                "9550ad": "No stocks with technical signals currently. Please check again shortly.",
                 "a39a24": "Sector Signal Summary",
                 "e6dcde": "{v0} {v0, plural, one {stock} other {stocks}} with bullish signals, {v1} {v1, plural, one {stock} other {stocks}} with bearish signals"
             },
@@ -3912,7 +3913,11 @@
                 "976db4": "Bullish Signs",
                 "9c8687": "The direction of movement is unclear, so it's advisable to be cautious.\n                                ",
                 "ab2e36": "No signals detected in this sector. Explore other sectors.",
-                "ede11c": "These are stocks where the strength of uptrend and downtrend signals is similar.\n                                "
+                "ede11c": "These are stocks where the strength of uptrend and downtrend signals is similar.\n                                ",
+                "loadFailed": "Couldn't load sector signals. Please try again shortly.",
+                "loading": "Loading sector signals.",
+                "retry": "Try again",
+                "statusSummary": "Stocks by group: uptrend signals {v0}, bullish signs {v1}, mixed {v2}, bearish signs {v3}, downtrend signals {v4}."
             },
             "SectorSignalPanelSkeleton": {
                 "f65a95": "Loading Sector Signals"
