@@ -1,7 +1,8 @@
 import { render } from '@testing-library/react';
 import type { MarketFearGreedFactor } from '@y0ngha/siglens-core';
-import { MarketFearGreedFactorBar } from '@/widgets/market-fear-greed/MarketFearGreedFactorBar';
+import { MarketFearGreedFactorBar } from '@/widgets/market-fear-greed/ui/factors/MarketFearGreedFactorBar';
 
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import koMessages from '@/../messages/ko.json';
 
 /** ko 카탈로그의 팩터 라벨·설명 — 소스 상수를 대체한다. */
@@ -10,8 +11,6 @@ const FG = koMessages.shared.lib.fearGreedFactor as unknown as {
     descriptionUs: Record<string, string>;
     symbolLabel: Record<string, string>;
 };
-
-import {} from '@/shared/lib/marketFearGreedLabels';
 
 const momentumFactor: MarketFearGreedFactor = {
     key: 'momentum',
@@ -47,6 +46,17 @@ describe('MarketFearGreedFactorBar', () => {
                 <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
             expect(getByText(FG.descriptionUs.momentum)).toBeInTheDocument();
+        });
+
+        it('renders the factor name with the subsection heading token', () => {
+            const { getByRole } = render(
+                <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
+            );
+            const heading = getByRole('heading', {
+                level: 3,
+                name: FG.label.momentum,
+            });
+            expect(heading.className).toBe(HEADING_SUBSECTION);
         });
 
         it('exposes the percentile via an accessible progressbar', () => {
