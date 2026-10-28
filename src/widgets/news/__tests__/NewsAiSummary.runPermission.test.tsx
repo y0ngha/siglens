@@ -101,7 +101,7 @@ describe('NewsAiSummary — 실행 권한', () => {
         );
     });
 
-    it('[N10] 대기 중 헤더 공유 트리거가 캐시 전용 재조회가 아니라 권한을 여는 동작이다', async () => {
+    it('대기 중 헤더 공유 트리거가 캐시 전용 재조회가 아니라 권한을 여는 동작이다', async () => {
         mockUseAiAutoRunAllowed.mockReturnValue({
             allowed: false,
             grant: mockGrant,
@@ -122,7 +122,7 @@ describe('NewsAiSummary — 실행 권한', () => {
         expect(mockGrant).toHaveBeenCalledTimes(1);
     });
 
-    it('[N10] 숨긴 위젯은 자동 실행이 허용돼도 캐시만 읽고, 공유 트리거가 생성을 시작한다', async () => {
+    it('숨긴 위젯은 자동 실행이 허용돼도 캐시만 읽고, 공유 트리거가 생성을 시작한다', async () => {
         mockUseAiAutoRunAllowed.mockReturnValue({
             allowed: true,
             grant: mockGrant,

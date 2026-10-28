@@ -302,7 +302,7 @@ describe('useNewsPollingWithInvalidation — 무효화 방식', () => {
     const enriched = (id: string) =>
         ({ ...ENRICHED_ITEM, id }) as NewsDisplayItem;
 
-    it('[N4] 상한이 찬 목록에서 새 보강 행이 옛 보강 행을 밀어내 개수가 같아도 무효화한다', () => {
+    it('상한이 찬 목록에서 새 보강 행이 옛 보강 행을 밀어내 개수가 같아도 무효화한다', () => {
         // 전부 보강된 꽉 찬 목록. 폴링 후에도 개수(=상한)는 같지만 id가 일부 교체됐다.
         const initial = Array.from(
             { length: NEWS_ROW_SERIALIZATION_LIMIT },
@@ -333,7 +333,7 @@ describe('useNewsPollingWithInvalidation — 무효화 방식', () => {
         client.clear();
     });
 
-    it('[N3] 이미 도는 분석 스트림을 취소하지 않는다 — 진행 중 fetch가 끝까지 간다', async () => {
+    it('이미 도는 분석 스트림을 취소하지 않는다 — 진행 중 fetch가 끝까지 간다', async () => {
         const { client, wrapper } = makeWrapper();
         const key = QUERY_KEYS.newsAnalysisPrefix('AAPL');
         let aborted = false;

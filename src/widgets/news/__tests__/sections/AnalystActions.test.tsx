@@ -136,7 +136,7 @@ describe('AnalystActions', () => {
         expect(screen.queryByText(/더보기/)).not.toBeInTheDocument();
     });
 
-    it('[N5] 유지·기타 액션 배지는 AA 대비를 만족하는 중립 토큰(-300)을 쓴다', () => {
+    it('유지·기타 액션 배지는 AA 대비를 만족하는 중립 토큰(-300)을 쓴다', () => {
         render(
             <AnalystActions
                 events={[
@@ -155,7 +155,7 @@ describe('AnalystActions', () => {
         });
     });
 
-    it('[N6] FMP가 같은 날 같은 등급 행을 반복해도 중복 키 없이 모두 렌더한다', () => {
+    it('FMP가 같은 날 같은 등급 행을 반복해도 중복 키 없이 모두 렌더한다', () => {
         const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});

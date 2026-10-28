@@ -11,7 +11,7 @@ const EVENT: GradesEvent = {
 };
 
 describe('gradeRowKey', () => {
-    it('[N6] 내용이 같은 두 행도 인덱스로 구분한다', () => {
+    it('내용이 같은 두 행도 인덱스로 구분한다', () => {
         expect(gradeRowKey(EVENT, 0)).not.toBe(gradeRowKey({ ...EVENT }, 1));
     });
 });

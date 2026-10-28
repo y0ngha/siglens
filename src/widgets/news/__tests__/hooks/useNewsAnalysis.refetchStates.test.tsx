@@ -52,7 +52,7 @@ describe('useNewsAnalysis — 재조회 상태', () => {
         mockStream.mockReset();
     });
 
-    it('[N1] 백그라운드 재조회가 실패해도 화면의 결과를 done으로 유지한다', async () => {
+    it('백그라운드 재조회가 실패해도 화면의 결과를 done으로 유지한다', async () => {
         mockStream.mockResolvedValueOnce({
             status: 'cached',
             result: NEWS_RESULT,
@@ -80,7 +80,7 @@ describe('useNewsAnalysis — 재조회 상태', () => {
         client.clear();
     });
 
-    it('[N2] 오류 뒤 재시도하는 동안은 오류가 아니라 loading이다', async () => {
+    it('오류 뒤 재시도하는 동안은 오류가 아니라 loading이다', async () => {
         mockStream.mockResolvedValueOnce(LIMIT_ERROR);
         const { client, result } = setup();
         await waitFor(() => expect(result.current.status).toBe('error'));
@@ -101,7 +101,7 @@ describe('useNewsAnalysis — 재조회 상태', () => {
         client.clear();
     });
 
-    it('[N2] 재조회 실패로 오류가 남은 쿼리를 다시 부르는 동안에도 loading이다', async () => {
+    it('재조회 실패로 오류가 남은 쿼리를 다시 부르는 동안에도 loading이다', async () => {
         // 이전 데이터가 있으면 React Query는 재조회가 시작돼도 직전 `isError`를 유지한다.
         mockStream.mockResolvedValueOnce({
             status: 'cached',

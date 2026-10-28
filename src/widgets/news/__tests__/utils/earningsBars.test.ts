@@ -16,7 +16,7 @@ describe('getMaxAbs', () => {
 });
 
 describe('getBarWidth', () => {
-    it('[N8] 정확히 0은 폭 0이다 — 최소 폭이 0 실적을 양의 막대로 보이게 하지 않는다', () => {
+    it('정확히 0은 폭 0이다 — 최소 폭이 0 실적을 양의 막대로 보이게 하지 않는다', () => {
         expect(getBarWidth(0, 10, false)).toBe(0);
         expect(getBarWidth(0, 10, true)).toBe(0);
     });

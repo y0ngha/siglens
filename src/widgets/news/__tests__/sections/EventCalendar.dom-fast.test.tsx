@@ -113,7 +113,7 @@ describe('EventCalendar', () => {
         });
     });
 
-    it('[N8] 실제치가 정확히 0이면 막대를 그리지 않는다(폭 0)', () => {
+    it('실제치가 정확히 0이면 막대를 그리지 않는다(폭 0)', () => {
         render(
             <EventCalendar
                 earningsReports={[

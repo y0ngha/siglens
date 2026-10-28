@@ -19,7 +19,7 @@ describe('buildNewsCardView', () => {
         expect(view.isHighImpact).toBe(true);
     });
 
-    it('[N7] sentiment만 있고 priceImpact가 null이면 엔티티 정의대로 대기 카드다', () => {
+    it('sentiment만 있고 priceImpact가 null이면 엔티티 정의대로 대기 카드다', () => {
         const view = buildNewsCardView({ ...ITEM, priceImpact: null }, 'ko');
         expect(view.pending).toBe(true);
         expect(view.isHighImpact).toBe(false);
