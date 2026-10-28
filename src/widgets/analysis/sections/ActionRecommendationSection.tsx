@@ -50,15 +50,9 @@ interface ActionRecommendationSectionProps {
     rec: ActionRecommendation;
     isChartVisible: boolean;
     /**
-     * 없으면 차트 토글 버튼을 **렌더하지 않는다.**
-     *
-     * 공유 페이지(`views/share/kindPanelRegistry`)는 이 핸들러를 넘기지 않고,
-     * 그 주석은 "핸들러가 없으면 패널이 그 UI를 숨긴다"고 적혀 있었다 — 사실이
-     * 아니었다. 버튼은 무조건 렌더됐고 `onToggleChart?.()`가 아무것도 하지
-     * 않아, 눌러도 반응 없는 컨트롤이 공유 화면에 남아 있었다(감사 실측:
-     * `aria-label="차트 가격선 숨기기"`, 클릭 2회 후 DOM 바이트 동일).
-     * 게다가 그 버튼이 숨기겠다고 말하는 가격선은 `StockChart`가 그리는데
-     * 공유 페이지는 `ShareCandlestickChart`를 쓰므로 애초에 존재하지 않는다.
+     * 없으면 차트 토글 버튼을 **렌더하지 않는다.** 공유 페이지(`views/share/kindPanelRegistry`)는
+     * 핸들러를 넘기지 않고, 버튼이 숨기는 가격선(`StockChart`가 그린다)도 그 화면에는 없다 —
+     * 눌러도 반응 없는 컨트롤을 남기지 않는다.
      */
     onToggleChart?: () => void;
 }

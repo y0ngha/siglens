@@ -101,7 +101,7 @@ interface AnalysisPanelProps {
     skillCount?: number;
     /**
      * 서버(SSE 분석 라우트)가 THIS 제출에서 실제로 개인화(포지션 버킷)
-     * 캐시 키를 사용했는지 여부 — personalized-analysis 투명성 배지(§FIX 2)의
+     * 캐시 키를 사용했는지 여부 — "내 평단 기준으로 분석했어요" 투명성 배지의
      * 유일한 게이트. `useAnalysis`가 라우트의 `personalized`
      * 응답 필드를 그대로 threading한다. 미전달 시 `false`로 취급해 배지를 숨긴다
      * (하위 호환 — 이 prop을 모르는 기존 호출부/테스트는 안전하게 배지 없음).

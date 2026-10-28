@@ -1995,7 +1995,7 @@ describe('AnalysisPanel — missing/partial field resilience', () => {
     });
 });
 
-describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', () => {
+describe('AnalysisPanel — "내 평단 기준으로 분석했어요" 투명성 배지', () => {
     // 4건의 독립 사전-PR 감사가 지적한 정직성 갭 수정: 배지는 이제 홀딩 존재
     // 여부(tier + useSymbolHolding)가 아니라 서버-authoritative `isPersonalized`
     // prop 하나로만 게이트된다 — submitAnalysisAction이 THIS 제출에서 실제로
