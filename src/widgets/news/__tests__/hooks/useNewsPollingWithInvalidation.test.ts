@@ -2,7 +2,11 @@
 import { act, renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+    QueryClient,
+    QueryClientProvider,
+    QueryObserver,
+} from '@tanstack/react-query';
 import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
@@ -80,9 +84,10 @@ describe('useNewsPollingWithInvalidation', () => {
         ) => void;
         act(() => onComplete([ENRICHED_ITEM, PENDING_ITEM]));
 
-        expect(invalidate).toHaveBeenCalledWith({
-            queryKey: QUERY_KEYS.newsAnalysisPrefix('AAPL'),
-        });
+        expect(invalidate).toHaveBeenCalledWith(
+            { queryKey: QUERY_KEYS.newsAnalysisPrefix('AAPL') },
+            { cancelRefetch: false }
+        );
         client.clear();
     });
 
@@ -248,9 +253,10 @@ describe('useNewsPollingWithInvalidation — 직렬화 상한', () => {
         ) => void;
         act(() => onComplete(rows(10, 2, 'm')));
 
-        expect(invalidate).toHaveBeenCalledWith({
-            queryKey: QUERY_KEYS.newsAnalysisPrefix('MSFT'),
-        });
+        expect(invalidate).toHaveBeenCalledWith(
+            { queryKey: QUERY_KEYS.newsAnalysisPrefix('MSFT') },
+            { cancelRefetch: false }
+        );
         client.clear();
     });
 
@@ -284,6 +290,95 @@ describe('useNewsPollingWithInvalidation — 직렬화 상한', () => {
 
         // 기준선이 capRows를 안 거치면 1,400 기준이 되어 이 무효화가 영영 안 난다.
         expect(invalidate).toHaveBeenCalled();
+        client.clear();
+    });
+});
+
+describe('useNewsPollingWithInvalidation — 무효화 방식', () => {
+    afterEach(() => {
+        mockUseNewsCardPolling.mockReset();
+    });
+
+    const enriched = (id: string) =>
+        ({ ...ENRICHED_ITEM, id }) as NewsDisplayItem;
+
+    it('[N4] 상한이 찬 목록에서 새 보강 행이 옛 보강 행을 밀어내 개수가 같아도 무효화한다', () => {
+        // 전부 보강된 꽉 찬 목록. 폴링 후에도 개수(=상한)는 같지만 id가 일부 교체됐다.
+        const initial = Array.from(
+            { length: NEWS_ROW_SERIALIZATION_LIMIT },
+            (_, i) => enriched(`old${i}`)
+        );
+        mockUseNewsCardPolling.mockReturnValue({
+            items: initial,
+            isPolling: true,
+        });
+
+        const { client, wrapper } = makeWrapper();
+        const invalidate = vi.spyOn(client, 'invalidateQueries');
+        renderHook(() => useNewsPollingWithInvalidation('AAPL', initial), {
+            wrapper,
+        });
+
+        const onComplete = mockUseNewsCardPolling.mock.calls[0]![2] as (
+            i: NewsDisplayItem[]
+        ) => void;
+        act(() =>
+            onComplete([
+                enriched('fresh'),
+                ...initial.slice(0, NEWS_ROW_SERIALIZATION_LIMIT - 1),
+            ])
+        );
+
+        expect(invalidate).toHaveBeenCalledTimes(1);
+        client.clear();
+    });
+
+    it('[N3] 이미 도는 분석 스트림을 취소하지 않는다 — 진행 중 fetch가 끝까지 간다', async () => {
+        const { client, wrapper } = makeWrapper();
+        const key = QUERY_KEYS.newsAnalysisPrefix('AAPL');
+        let aborted = false;
+        let release: (v: string) => void = () => {};
+        const queryFn = vi.fn(
+            ({ signal }: { signal: AbortSignal }) =>
+                new Promise<string>(resolve => {
+                    signal.addEventListener('abort', () => {
+                        aborted = true;
+                    });
+                    release = resolve;
+                })
+        );
+        // 취소는 기존 데이터가 있는 백그라운드 재조회에만 일어난다 — 이전 결과를 심어 둔다.
+        client.setQueryData(key, 'previous');
+        // 활성 옵저버가 있어야 invalidate가 refetch 대상으로 잡는다.
+        const observer = new QueryObserver(client, {
+            queryKey: key,
+            queryFn,
+            retry: false,
+        });
+        const unsubscribe = observer.subscribe(() => {});
+        mockUseNewsCardPolling.mockReturnValue({
+            items: [PENDING_ITEM],
+            isPolling: true,
+        });
+        renderHook(
+            () => useNewsPollingWithInvalidation('AAPL', [PENDING_ITEM]),
+            { wrapper }
+        );
+        const onComplete = mockUseNewsCardPolling.mock.calls[0]![2] as (
+            i: NewsDisplayItem[]
+        ) => void;
+
+        await act(async () => {
+            onComplete([ENRICHED_ITEM]);
+        });
+        release('done');
+        await vi.waitFor(() =>
+            expect(observer.getCurrentResult().data).toBe('done')
+        );
+
+        expect(aborted).toBe(false);
+        expect(queryFn).toHaveBeenCalledTimes(1);
+        unsubscribe();
         client.clear();
     });
 });

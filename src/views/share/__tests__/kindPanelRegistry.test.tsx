@@ -68,7 +68,7 @@ vi.mock('@/widgets/chart/ShareCandlestickChart', () => ({
 vi.mock('@/widgets/overall/OverallView', () => ({
     OverallView: () => null,
 }));
-vi.mock('@/widgets/news/NewsAiSummary', () => ({
+vi.mock('@/widgets/news/ui/ai-summary/NewsAiSummaryView', () => ({
     NewsAiSummaryView: () => null,
 }));
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
