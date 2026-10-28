@@ -8,9 +8,9 @@
 export type ReturnSign = 'gain' | 'loss' | 'flat';
 
 /** 수익률 부호를 판정한다. */
-export function returnSign(returnPct: number): ReturnSign {
-    if (returnPct > 0) return 'gain';
-    if (returnPct < 0) return 'loss';
+export function returnSign(signedValue: number): ReturnSign {
+    if (signedValue > 0) return 'gain';
+    if (signedValue < 0) return 'loss';
     return 'flat';
 }
 
@@ -20,9 +20,9 @@ const RETURN_TEXT_CLASS: Record<ReturnSign, string> = {
     flat: 'text-secondary-400',
 };
 
-/** 손익 글자 색 — 리드아웃과 카드의 평가손익·수익률 칸. */
-export function returnTextClass(returnPct: number): string {
-    return RETURN_TEXT_CLASS[returnSign(returnPct)];
+/** 손익 글자 색 — 부호만 본다(수익률 %·평가손익 금액 모두). */
+export function returnTextClass(signedValue: number): string {
+    return RETURN_TEXT_CLASS[returnSign(signedValue)];
 }
 
 const MARKER_CLASS: Record<ReturnSign, string> = {

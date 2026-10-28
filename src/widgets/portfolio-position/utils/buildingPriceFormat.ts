@@ -61,11 +61,14 @@ const IN_SVG_COMPACT_THRESHOLD: Record<'USD' | 'KRW', number> = {
 
 const CURRENCY_PREFIX: Record<'USD' | 'KRW', string> = { USD: '$', KRW: '₩' };
 
+const THOUSAND = 1_000;
+const MILLION = 1_000_000;
+
 /** 천 단위(K)로 줄이고, 반올림이 1000K에 닿으면(999,600 → "1000K") 백만 단위(M, 소수 1자리)로 올린다. */
 function compactAmount(value: number): string {
-    const thousands = Math.round(value / 1_000);
-    if (Math.abs(thousands) < 1_000) return `${thousands}K`;
-    return `${Number((value / 1_000_000).toFixed(1))}M`;
+    const thousands = Math.round(value / THOUSAND);
+    if (Math.abs(thousands) < THOUSAND) return `${thousands}K`;
+    return `${Number((value / MILLION).toFixed(1))}M`;
 }
 
 /** Exported so the clipping-regression test can build the exact string the

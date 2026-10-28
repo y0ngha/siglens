@@ -175,6 +175,8 @@ export function PositionBuilding({
 
                 {/* bands[0]=저점 인접(1층) ... bands[4]=고점 인접(최상층) */}
                 {model.bands.map((band, i) => {
+                    // 거래량 분포가 있으면 모든 층이 반응한다(비중 0%인 층도 "0%"를 보여 준다) —
+                    // null은 분포가 없거나 그 층 값이 유한하지 않을 때뿐이다.
                     const isInteractive = floorTooltips[i] !== null;
                     return (
                         <BuildingFloor

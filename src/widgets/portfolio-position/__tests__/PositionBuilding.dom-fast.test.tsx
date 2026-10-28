@@ -517,7 +517,7 @@ describe('PositionBuilding', () => {
         expect(svg?.getAttribute('class')).toContain('lg:max-w-[440px]');
     });
 
-    describe('floor hover — volume-by-price (design §floor-hover)', () => {
+    describe('floor hover — volume-by-price', () => {
         // low52w=100, high52w=200, bandCount=5 → width=20 → bands
         // [100,120) [120,140) [140,160) [160,180) [180,200]
         const VOLUME_BY_BAND = [10, 20, 30, 25, 15];

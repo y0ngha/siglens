@@ -32,7 +32,7 @@ interface PositionTabContentProps {
     high52w: number | null;
     lastClose: number | null;
     /** 5개 가격대별 최근 거래량 비중(%) — optional, 서버가 집계 못하면 null/undefined.
-     * PositionBuilding의 층 hover에만 쓰인다(design §volume-by-price). */
+     * PositionBuilding의 층 hover에만 쓰인다. */
     volumeByBand?: readonly number[] | null;
 }
 

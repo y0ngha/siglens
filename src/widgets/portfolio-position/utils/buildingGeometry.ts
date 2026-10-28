@@ -198,7 +198,8 @@ export const ROOF_POLYGON = pointsAttr([
 ]);
 
 /**
- * 5×20% 구간 팔레트 — NEUTRAL 그라디언트, high=위험 의미 부여 금지(design §5).
+ * 5×20% 구간 팔레트 — 중립 그라디언트다. 높은 층에 '위험' 같은 의미를 입히지 않는다(층 색이 판단처럼
+ * 읽히면 안 된다).
  * top→bottom 순서다 — bands[i]는 저점에서 i번째 구간(0=최저)이므로 `BAND_COUNT - 1 - i`로
  * 찾는다. 우측 면은 밝게(lit), 좌측 면은 어둡게(shadow) 해 음영 리듬만 준다 — 색 자체엔
  * 의미가 없다(마커+텍스트가 의미를 담당).
@@ -218,12 +219,16 @@ const FACE_SHADOW_TOKENS: readonly string[] = [
     'text-secondary-950/55',
 ];
 
-/** 층(저점 기준 index)의 위→아래 순번과 좌/우 면 색 토큰. */
-export function floorShading(bandIndexFromLow: number): {
+/** 층 하나의 위→아래 순번과 좌/우 면 색 토큰. */
+export interface FloorShading {
+    /** 최상층이 0. */
     fromTop: number;
     lit: string;
     shadow: string;
-} {
+}
+
+/** 층(저점 기준 index)의 위→아래 순번과 좌/우 면 색 토큰. */
+export function floorShading(bandIndexFromLow: number): FloorShading {
     const fromTop = BAND_COUNT - 1 - bandIndexFromLow;
     return {
         fromTop,

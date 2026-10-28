@@ -185,4 +185,64 @@ describe('useFloorTooltip', () => {
             expect(active()).toBe('0');
         });
     });
+    describe('창 리스너 수명', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('안쪽 스크롤 컨테이너가 스크롤돼도 닫는다 — 창에 capture로 붙어 있어서다', () => {
+            render(<Harness />);
+            fireEvent.click(screen.getByTestId('floor-0'));
+            expect(active()).toBe('0');
+
+            // scroll은 버블되지 않는다 — capture 리스너가 아니면 창까지 오지 않는다.
+            fireEvent.scroll(screen.getByTestId('container'));
+
+            expect(active()).toBe('none');
+        });
+
+        it('열릴 때만 scroll(capture)·resize를 붙이고, 닫히면 같은 리스너를 뗀다', () => {
+            const add = vi.spyOn(window, 'addEventListener');
+            const remove = vi.spyOn(window, 'removeEventListener');
+            render(<Harness />);
+            const listenersFor = (spy: typeof add, type: string) =>
+                spy.mock.calls.filter(([t]) => t === type);
+            expect(listenersFor(add, 'scroll')).toHaveLength(0);
+
+            fireEvent.click(screen.getByTestId('floor-0'));
+            const [[, scrollHandler, scrollOptions]] = listenersFor(
+                add,
+                'scroll'
+            );
+            expect(scrollOptions).toMatchObject({ capture: true });
+            const [[, resizeHandler]] = listenersFor(add, 'resize');
+
+            fireEvent.click(screen.getByTestId('floor-0'));
+            expect(active()).toBe('none');
+            expect(remove).toHaveBeenCalledWith(
+                'scroll',
+                scrollHandler,
+                expect.objectContaining({ capture: true })
+            );
+            expect(remove).toHaveBeenCalledWith('resize', resizeHandler);
+        });
+
+        it('열린 채 언마운트돼도 리스너를 뗀다', () => {
+            const add = vi.spyOn(window, 'addEventListener');
+            const remove = vi.spyOn(window, 'removeEventListener');
+            const { unmount } = render(<Harness />);
+            fireEvent.click(screen.getByTestId('floor-1'));
+            const scrollHandler = add.mock.calls.find(
+                ([t]) => t === 'scroll'
+            )?.[1];
+
+            unmount();
+
+            expect(remove).toHaveBeenCalledWith(
+                'scroll',
+                scrollHandler,
+                expect.objectContaining({ capture: true })
+            );
+        });
+    });
 });

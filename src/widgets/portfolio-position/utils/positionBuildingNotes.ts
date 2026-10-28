@@ -15,6 +15,7 @@ export type PositionTranslator = (
     key: string,
     values?: Record<string, string | number>
 ) => string;
+
 /** svg aria-label 요약 — 평단·현재가·수익률·범위 내 위치·층 안내를 전부 담는다(전체 값, 축약 없음). */
 export function buildAriaLabel(
     symbol: string,
@@ -272,6 +273,7 @@ export function computeActiveFloorTooltipContent(
     if (activeFloor === null) return null;
     return floorTooltips[activeFloor.index] ?? null;
 }
+
 /**
  * in-SVG 마커 라벨 prefix — aria-label(buildAriaLabel, "평단"/"현재가" 전체 표기,
  * 폭 제약 없음)과 별개로 고정 viewBox 폭 제약을 받는 시각 라벨 전용이다. "내

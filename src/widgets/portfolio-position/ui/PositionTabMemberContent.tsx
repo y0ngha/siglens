@@ -66,7 +66,7 @@ function DataInsufficientNote() {
  * member — only that audience ever fires `useSymbolHolding` (the holdings
  * query) or downloads this chunk. Mirrors the deleted `PositionSection`'s
  * holding-presence gate, extended with a graceful `computePosition` null
- * fallback (design §에러/엣지).
+ * fallback.
  */
 export function PositionTabMemberContent({
     symbol,

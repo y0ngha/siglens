@@ -34,7 +34,7 @@ function validAverage(raw: string): number | null {
 /**
  * 같은 쿼리 키(`useBars`와 공유)를 써 심볼 페이지를 먼저 방문했다면 캐시를 재사용한다. 평단이
  * 잘못됐으면 봉을 받지 않고 곧바로 평단 확인 안내를 보인다 — 받아도 그릴 수 없다. 받기 실패와
- * 범위 계산 불가는 카드 단위로 대체하고 그리드 전체는 깨지지 않는다(design §에러/엣지).
+ * 범위 계산 불가는 카드 단위로 대체하고 그리드 전체는 깨지지 않는다.
  */
 export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
     const t = useTranslations('widgets.portfolio-position');
@@ -66,6 +66,7 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
             );
         if (!isVisible || isLoading)
             return <HoldingCardSkeleton symbol={holding.symbol} />;
+        // `model`이 있으면 `facts`도 있지만, 아래 렌더가 `facts`를 쓰므로 TS가 좁히도록 같이 본다.
         if (isError || facts === null || model === null)
             return (
                 <HoldingCardDegraded
@@ -102,7 +103,7 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
         // 보존한다. IntersectionObserver 대상(ref)도 안쪽 div에 그대로 둔다.
         <Link
             href={`/${holding.symbol}/position`}
-            // 보유 종목 수만큼 카드가 렌더된다 — docs/architecture/CDN_CACHING.md §1
+            // 보유 종목 수만큼 카드가 렌더된다 — 카드마다 목적지 페이지를 미리 받으면 요청이 종목 수만큼 는다.
             prefetch={false}
             className="group block rounded-lg transition-shadow focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
         >
