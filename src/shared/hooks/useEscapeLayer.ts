@@ -36,6 +36,10 @@ function pushLayer(onEscape: () => void): () => void {
  * 중첩된 레이어에서는 한 번의 Escape가 둘 다 닫는다. 안쪽이 닫힌 뒤 다시 누를 때
  * 바깥이 닫히도록 하고 싶은 호출부만 이 훅을 쓴다 — 기존 `useEscapeKey` 호출부의
  * 동작은 바뀌지 않는다.
+ *
+ * 안쪽 판정은 활성화 순서에 기댄다. 두 레이어가 같은 커밋에서 함께 enabled가 되면 effect가
+ * 자식 → 부모 순으로 돌아 안팎이 뒤집힐 수 있으므로, 레이어는 사용자 조작으로 하나씩 열린다는
+ * 전제에서만 쓴다(드로어를 연 뒤 그 안의 팝오버를 여는 식).
  */
 export function useEscapeLayer(onEscape: () => void, enabled: boolean): void {
     const handleEscape = useEffectEvent(onEscape);
