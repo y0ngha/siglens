@@ -16,6 +16,18 @@ interface UseFearGreedShareRegistrationInput {
 function noopTrigger(): void {}
 
 /**
+ * 공유에 실을 분석 시각(ISO). 스냅샷이 없거나 받은 시각이 없으면(`0` — 봉이 없는 seed의
+ * 대체값) 생략한다. `new Date(0)`은 1970-01-01이라 시각으로 실으면 거짓 신선도가 된다.
+ */
+function toAnalyzedAt(
+    snapshot: FearGreedSnapshot | null,
+    dataUpdatedAt: number
+): string | undefined {
+    if (!snapshot || dataUpdatedAt <= 0) return undefined;
+    return new Date(dataUpdatedAt).toISOString();
+}
+
+/**
  * 현재 공포·탐욕 스냅샷을 헤더 공유 버튼에 등록한다.
  *
  * 등록은 `kind`·`status`·`symbol`·`displayName`·`analyzedAt`이 바뀔 때만 다시 일어나므로,
@@ -36,7 +48,7 @@ export function useFearGreedShareRegistration({
         context: {
             symbol,
             displayName: displayName ?? symbol,
-            analyzedAt: new Date(dataUpdatedAt).toISOString(),
+            analyzedAt: toAnalyzedAt(snapshot, dataUpdatedAt),
         },
         trigger: noopTrigger,
     });

@@ -4,6 +4,7 @@ import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoric
 import { FEAR_GREED_SESSIONS_PER_YEAR } from '@/entities/market-fear-greed/lib/buildMarketFearGreedComparisons';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
+import { FEAR_GREED_CHART_HEIGHT } from '@/widgets/fear-greed/constants';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
 const {
@@ -167,6 +168,15 @@ describe('FearGreedHistoricalChart', () => {
             priceRange: { minValue: 0, maxValue: 100 },
             margins: { above: 0.1, below: 0.1 },
         });
+    });
+
+    /** 차트가 붙기 전에도 컨테이너가 차트와 같은 높이를 잡아야 도착할 때 아래가 밀리지 않는다. */
+    it('컨테이너 높이를 차트 생성 옵션과 같은 상수로 미리 잡는다', () => {
+        const { container } = render(
+            <FearGreedHistoricalChart history={history} />
+        );
+        const box = container.querySelector<HTMLDivElement>('[role="img"]');
+        expect(box?.style.height).toBe(`${FEAR_GREED_CHART_HEIGHT}px`);
     });
 
     it('fits the time scale after setting data', () => {

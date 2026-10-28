@@ -50,28 +50,28 @@ describe('FearGreedHero', () => {
     });
 
     /**
-     * 점수를 반올림해 찍으므로 라벨도 그 정수로 구해야 한다. 반올림 전 점수의 라벨을 쓰면
-     * 경계 근처에서 숫자(45, 중립 구간)와 라벨(공포)이 갈라진다.
+     * 라벨은 core가 준 값이다. 반올림한 점수(45)가 다른 구간이어도 헤더 배지·서버 요약과
+     * 같은 `snapshot.label`을 보여야 한 페이지의 라벨이 갈라지지 않는다.
      */
-    describe('label at a cutoff after rounding', () => {
+    describe('label near a cutoff', () => {
         const nearFearCutoff: FearGreedSnapshot = {
             ...snapshot,
             score: 44.6,
             label: 'FEAR',
         };
 
-        it('44.6은 45로 찍고 중립 라벨을 붙인다', () => {
+        it('44.6은 45로 찍되 라벨은 core의 FEAR를 그대로 쓴다', () => {
             const { getByText, queryByText } = render(
                 <FearGreedHero snapshot={nearFearCutoff} />
             );
             expect(getByText('45')).toBeInTheDocument();
             expect(
-                getByText(sentimentLabelText('NEUTRAL', t))
+                getByText(sentimentLabelText('FEAR', t))
             ).toBeInTheDocument();
-            expect(queryByText(sentimentLabelText('FEAR', t))).toBeNull();
+            expect(queryByText(sentimentLabelText('NEUTRAL', t))).toBeNull();
         });
 
-        it('SVG aria-label의 점수와 라벨도 같은 구간을 가리킨다', () => {
+        it('SVG aria-label에도 반올림 점수와 core 라벨이 담긴다', () => {
             const { container } = render(
                 <FearGreedHero snapshot={nearFearCutoff} />
             );
@@ -79,19 +79,8 @@ describe('FearGreedHero', () => {
                 .querySelector('svg[role="img"]')
                 ?.getAttribute('aria-label');
             expect(ariaLabel).toContain('45');
-            expect(ariaLabel).toContain(sentimentLabelText('NEUTRAL', t));
-        });
-
-        it('반올림해도 구간이 바뀌지 않으면 원래 라벨을 유지한다', () => {
-            const { getByText } = render(
-                <FearGreedHero
-                    snapshot={{ ...snapshot, score: 44.4, label: 'FEAR' }}
-                />
-            );
-            expect(getByText('44')).toBeInTheDocument();
-            expect(
-                getByText(sentimentLabelText('FEAR', t))
-            ).toBeInTheDocument();
+            expect(ariaLabel).toContain(sentimentLabelText('FEAR', t));
+            expect(ariaLabel).not.toContain(sentimentLabelText('NEUTRAL', t));
         });
     });
 

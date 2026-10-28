@@ -8,6 +8,7 @@ import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { FEAR_GREED_CHART_HEIGHT } from './constants';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { useFearGreedShareRegistration } from './hooks/useFearGreedShareRegistration';
 import { FearGreedHero } from './FearGreedHero';
@@ -32,7 +33,8 @@ const FearGreedHistoricalChart = dynamic(
         loading: () => (
             <div
                 aria-hidden="true"
-                className="h-[240px] w-full animate-pulse rounded bg-secondary-800/40 motion-reduce:animate-none"
+                className="w-full animate-pulse rounded bg-secondary-800/40 motion-reduce:animate-none"
+                style={{ height: FEAR_GREED_CHART_HEIGHT }}
             />
         ),
     }

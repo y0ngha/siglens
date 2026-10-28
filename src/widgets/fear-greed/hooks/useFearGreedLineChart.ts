@@ -11,10 +11,10 @@ import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { FEAR_GREED_CHART_HEIGHT } from '../constants';
 import { monthTickFormatter } from '../utils/monthTickFormatter';
 import { toLineData } from '../utils/toLineData';
 
-const FEAR_GREED_CHART_HEIGHT = 240;
 const LINE_WIDTH = 1;
 
 /**

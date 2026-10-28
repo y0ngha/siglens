@@ -63,13 +63,13 @@ describe('buildComparisonTiles', () => {
         expect(tiles[3].date).toBe('2025-01-01');
     });
 
-    it('점수는 반올림하고 라벨은 반올림한 점수에서 구한다', () => {
+    it('점수는 반올림하고 라벨은 반올림 점수가 다른 구간이어도 core 라벨을 그대로 쓴다', () => {
         const history: FearGreedHistoryPoint[] = [
             { date: '2025-01-01', score: 44.6, label: 'FEAR' },
         ];
         expect(buildComparisonTiles(history)[0]).toMatchObject({
             score: 45,
-            label: 'NEUTRAL',
+            label: 'FEAR',
         });
     });
 

@@ -1,6 +1,15 @@
 import { render } from '@testing-library/react';
+import { beforeAll } from 'vitest';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
 import { FearGreedComparisonGauges } from '@/widgets/fear-greed/FearGreedComparisonGauges';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 function makeHistory(scores: Array<number | null>): FearGreedHistoryPoint[] {
     return scores.map((s, i) => ({
@@ -136,15 +145,19 @@ describe('FearGreedComparisonGauges', () => {
         expect(list?.className).not.toContain('flex-wrap');
     });
 
-    it('현재 타일의 라벨은 Hero처럼 반올림한 점수에서 구한다', () => {
+    it('현재 타일은 반올림 점수를 찍되 라벨은 Hero처럼 core 라벨을 쓴다', () => {
         const history: FearGreedHistoryPoint[] = [
             { date: '2026-01-01', score: 44.6, label: 'FEAR' },
         ];
         const { container } = render(
             <FearGreedComparisonGauges history={history} />
         );
-        const first = container.querySelector('li svg[role="img"]');
-        expect(first?.getAttribute('aria-label')).toContain('중립');
+        const ariaLabel = container
+            .querySelector('li svg[role="img"]')
+            ?.getAttribute('aria-label');
+        expect(ariaLabel).toContain('45');
+        expect(ariaLabel).toContain(sentimentLabelText('FEAR', t));
+        expect(ariaLabel).not.toContain(sentimentLabelText('NEUTRAL', t));
     });
 
     it('타일 보더에 /40 알파를 쓰지 않고 현재 타일만 primary 보더로 강조한다', () => {

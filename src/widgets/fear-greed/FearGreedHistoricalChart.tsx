@@ -2,6 +2,7 @@
 
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
+import { FEAR_GREED_CHART_HEIGHT } from './constants';
 import { useFearGreedLineChart } from './hooks/useFearGreedLineChart';
 
 interface FearGreedHistoricalChartProps {
@@ -21,8 +22,9 @@ export function FearGreedHistoricalChart({
     return (
         <div
             ref={containerRef}
-            // 차트가 그려지기 전에도 높이를 잡아 둔다(`FEAR_GREED_CHART_HEIGHT`와 같은 값).
-            className="h-[240px] w-full"
+            // 차트가 그려지기 전에도 높이를 잡아 둔다 — 차트 생성 옵션과 같은 상수다.
+            className="w-full"
+            style={{ height: FEAR_GREED_CHART_HEIGHT }}
             role="img"
             aria-label={t('FearGreedHistoricalChart.9b98f6')}
         />
