@@ -25,8 +25,8 @@ import {
 import {
     CALENDAR_COUNTRY,
     CALENDAR_COUNTRY_KR,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 import {
     INDICATOR_NAME_KO,
     normalizeIndicatorName,

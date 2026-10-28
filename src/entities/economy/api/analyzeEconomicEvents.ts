@@ -20,8 +20,8 @@ import {
     CALENDAR_ANALYZED_IMPACTS,
     CALENDAR_REGION_LABEL,
     economyCalendarCacheTag,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 export interface AnalyzeEconomicEventsOptions {
     /**

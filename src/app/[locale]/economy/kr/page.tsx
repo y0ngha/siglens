@@ -10,10 +10,8 @@ import { EconomyKrMacroFacts } from '@/widgets/economy/sections/EconomyKrMacroFa
 import { KrEconomicIndicatorGrid } from '@/widgets/economy/sections/KrEconomicIndicatorGrid';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이다.
 // app 레이어(RSC)에서만 import하므로 클라이언트 번들 누출 위험이 없다.
-import {
-    getKrIndicatorCards,
-    type KrIndicatorCard,
-} from '@/entities/economy/api/getKrIndicatorCards';
+import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards';
+import type { KrIndicatorCard } from '@/entities/economy/model';
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';

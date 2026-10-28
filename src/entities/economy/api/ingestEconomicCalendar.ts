@@ -23,8 +23,8 @@ import {
     CALENDAR_PAST_WINDOW_DAYS,
     CALENDAR_RECENT_PAST_DAYS,
     economyCalendarCacheTag,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 export type IngestEconomicCalendarResult =
     | { readonly status: 'recently-fetched' }

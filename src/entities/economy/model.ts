@@ -2,6 +2,7 @@ import type {
     EconomicCalendarEvent,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
+import type { KrEconomyIndicatorMeta } from '@/shared/config/economyIndicatorsKr';
 
 /**
  * 표시 계층용 캘린더 이벤트 + (선택) AI 분석. 인제스션이 채운 `EconomicCalendarEvent`에
@@ -53,4 +54,40 @@ export function resolveCalendarInterpretation(
     event: CalendarInterpretationSource
 ): string | null {
     return event.interpretationLocalized ?? event.interpretationKo ?? null;
+}
+
+/**
+ * 캘린더를 수집·표시하는 국가 코드.
+ *
+ * `/economy`(미국)와 `/economy/kr`(한국)이 같은 `economic_calendar` 테이블을
+ * `country` 컬럼으로 나눠 쓴다. FMP는 한 번의 호출로 전 국가를 돌려주고 우리가
+ * 국가로 거른다.
+ *
+ * **왕복은 국가별로 따로 난다.** 매시간 창(`CALENDAR_RECENT_PAST_DAYS` ~ 미래
+ * `CALENDAR_INGESTION_WINDOW_DAYS`일)은 두 국가가 같지만 `fmpGet`에 데이터 캐시가 없어
+ * 같은 전 국가 응답(~1MB)을 국가마다 한 번씩 받는다. 범위로 캐시해 두 국가가 나눠 쓰면 시간당
+ * 한 번으로 줄일 수 있다(아직 하지 않았다). 한국만 쓰는 앞쪽 과거는 하루 한 번 따로 읽는다.
+ */
+export type CalendarCountry = 'US' | 'KR';
+
+export interface KrIndicatorCard {
+    meta: KrEconomyIndicatorMeta;
+    /** 가장 최근 발표값. */
+    latest: number;
+    /**
+     * 발표일 `YYYY-MM-DD` — **KST 달력일**.
+     *
+     * DB의 `date_et`는 FMP 원본 UTC 벽시계라 그대로 자르면 한국 늦은 밤 발표가
+     * 다음 날로 밀린다(한국 CPI 00:00 KST = 전날 15:00 UTC 근처). 같은 행을 그리는
+     * 아래 캘린더는 이미 `fmpCalendarDateTimeToKst`로 KST 키를 쓰므로, 카드만 UTC
+     * 그대로 두면 **같은 발표가 카드와 캘린더에서 다른 날짜로** 보인다.
+     */
+    latestDate: string;
+    /**
+     * 직전 발표 대비 변화. 직전 발표가 없으면 `null` —
+     * FMP `previous` 필드가 아니라 **우리가 가진 이력**에서 계산한다.
+     * 두 값이 다를 때가 있는데(개정치 반영), 화면에 함께 그리는 추세와 어긋나지
+     * 않으려면 같은 출처를 써야 한다.
+     */
+    changeFromPrevious: number | null;
 }

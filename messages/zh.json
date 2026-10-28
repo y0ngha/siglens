@@ -3996,6 +3996,7 @@
                 "dc712b": "{v0}{v1}日（{v2}）",
                 "f9d9dc": "即将到来的 {v0} 经济发布日程暂无。",
                 "forecastPart": "预测 {v0}",
+                "noVisibleEvents": "所选重要度下没有事件。",
                 "pastCollapse": "收起过往日程",
                 "pastExpand": "查看过往日程",
                 "previousPart": "前值 {v0}"
@@ -4030,6 +4031,7 @@
                 "cpiAndUnemployment": "最新消费者物价涨幅为{v0}%，失业率为{v1}%。",
                 "cpiChange": "消费者物价涨幅较上次公布变动{v0}个百分点。",
                 "cpiOnly": "最新消费者物价涨幅为{v0}%。",
+                "cpiUnchanged": "消费者物价涨幅与上次发布持平。",
                 "ratesOnly": "当前韩国央行基准利率为{v0}%。",
                 "ratesWithKtb": "当前韩国央行基准利率为{v0}%，10年期国债招标收益率为{v1}%。",
                 "unemploymentOnly": "最新失业率为{v0}%。"

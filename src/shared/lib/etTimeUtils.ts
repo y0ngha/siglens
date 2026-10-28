@@ -88,11 +88,17 @@ export function fmpCalendarDateTimeToIso(date: string): string {
  * - `iso`         : UTC ISO-8601 문자열 — HTML `<time dateTime>` 용도.
  * - `kstDateKey`  : KST 기준 날짜 'YYYY-MM-DD' — 캘린더 그룹핑 키.
  * - `kstTimeLabel`: KST 시각 레이블 '오전/오후 H:mm' (로케일별, 한국 표준시).
+ * - `kstCompactTimeLabel`: 오전/오후 없는 KST 시각(24시간) — 월 셀처럼 좁은 자리용.
  */
 export interface FmpCalendarKstResult {
     iso: string;
     kstDateKey: string;
     kstTimeLabel: string;
+    /**
+     * 오전/오후 없는 KST 시각(24시간) — 한 줄 폭인 월 셀처럼 짧은 자리용. 같은 파싱 결과로
+     * 함께 만들어, 두 표기가 필요한 호출부가 문자열을 두 번 파싱하지 않게 한다.
+     */
+    kstCompactTimeLabel: string;
 }
 
 /**
@@ -127,6 +133,14 @@ export function fmpCalendarDateTimeToKst(
     const kstDateKeyValue = kstDateKey(d);
 
     const kstTimeLabel = kstTimeLabelFormatter(locale, hour12).format(d);
+    const kstCompactTimeLabel = hour12
+        ? kstTimeLabelFormatter(locale, false).format(d)
+        : kstTimeLabel;
 
-    return { iso, kstDateKey: kstDateKeyValue, kstTimeLabel };
+    return {
+        iso,
+        kstDateKey: kstDateKeyValue,
+        kstTimeLabel,
+        kstCompactTimeLabel,
+    };
 }

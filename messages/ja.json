@@ -3996,6 +3996,7 @@
                 "dc712b": "{v0}{v1}日 ({v2})",
                 "f9d9dc": "今後の{v0}経済発表予定はまだありません。",
                 "forecastPart": "予想 {v0}",
+                "noVisibleEvents": "選択した重要度の予定はありません。",
                 "pastCollapse": "過去の予定を折りたたむ",
                 "pastExpand": "過去の予定を表示",
                 "previousPart": "前回 {v0}"
@@ -4030,6 +4031,7 @@
                 "cpiAndUnemployment": "直近の消費者物価上昇率は{v0}%、失業率は{v1}%です。",
                 "cpiChange": "消費者物価上昇率は前回発表から{v0}%ポイント動きました。",
                 "cpiOnly": "直近の消費者物価上昇率は{v0}%です。",
+                "cpiUnchanged": "消費者物価上昇率は前回発表から変わりません。",
                 "ratesOnly": "現在の韓国銀行の基準金利は{v0}%です。",
                 "ratesWithKtb": "現在の韓国銀行の基準金利は{v0}%、10年国債の落札利回りは{v1}%です。",
                 "unemploymentOnly": "直近の失業率は{v0}%です。"

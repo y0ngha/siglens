@@ -19,8 +19,8 @@ import {
     CALENDAR_COUNTRY,
     economyCalendarCacheTag,
     ECONOMY_CALENDAR_REVALIDATE_SECONDS,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /**
  * `anchorEt`를 인자로 받아 Next.js ISR 캐시에 올리는 모듈-레벨 래퍼.

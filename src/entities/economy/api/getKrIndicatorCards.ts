@@ -8,9 +8,9 @@ import { fmpCalendarDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import {
     KR_ECONOMY_INDICATORS,
     normalizeKrEventName,
-    type KrEconomyIndicatorMeta,
 } from '@/shared/config/economyIndicatorsKr';
 
+import type { KrIndicatorCard } from '../model';
 import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import {
@@ -19,28 +19,6 @@ import {
     ECONOMY_CALENDAR_REVALIDATE_SECONDS,
     KR_INDICATOR_HISTORY_DAYS,
 } from '../lib/economyCalendarConstants';
-
-export interface KrIndicatorCard {
-    meta: KrEconomyIndicatorMeta;
-    /** 가장 최근 발표값. */
-    latest: number;
-    /**
-     * 발표일 `YYYY-MM-DD` — **KST 달력일**.
-     *
-     * DB의 `date_et`는 FMP 원본 UTC 벽시계라 그대로 자르면 한국 늦은 밤 발표가
-     * 다음 날로 밀린다(한국 CPI 00:00 KST = 전날 15:00 UTC 근처). 같은 행을 그리는
-     * 아래 캘린더는 이미 `fmpCalendarDateTimeToKst`로 KST 키를 쓰므로, 카드만 UTC
-     * 그대로 두면 **같은 발표가 카드와 캘린더에서 다른 날짜로** 보인다.
-     */
-    latestDate: string;
-    /**
-     * 직전 발표 대비 변화. 직전 발표가 없으면 `null` —
-     * FMP `previous` 필드가 아니라 **우리가 가진 이력**에서 계산한다.
-     * 두 값이 다를 때가 있는데(개정치 반영), 화면에 함께 그리는 추세와 어긋나지
-     * 않으려면 같은 출처를 써야 한다.
-     */
-    changeFromPrevious: number | null;
-}
 
 /**
  * 한국 거시 지표 카드 — 경제 캘린더 발표 이력에서 되짚는다.

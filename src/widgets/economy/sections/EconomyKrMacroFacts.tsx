@@ -1,10 +1,14 @@
+/**
+ * 한국 거시 지표를 결정론적 문장 몇 줄로 요약하는 SSR 사실 블록.
+ */
 import { useTranslations } from 'next-intl';
-import type { KrIndicatorCard } from '@/entities/economy/api/getKrIndicatorCards';
+import type { KrIndicatorCard } from '@/entities/economy/model';
 import { KR_INDICATOR_EVENT } from '@/shared/config/economyIndicatorsKr';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { formatFixed } from '@/shared/lib/formatNum';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { formatSignedFixed, roundToPrecision } from '../utils/signedFixed';
 
 interface EconomyKrMacroFactsProps {
     readonly cards: readonly KrIndicatorCard[];
@@ -92,14 +96,21 @@ export function EconomyKrMacroFacts({ cards }: EconomyKrMacroFactsProps) {
     );
 
     const cpiChange = cpi?.changeFromPrevious ?? null;
+    // 표시 자릿수에서 0이면 "움직였다" 대신 변화 없음 문장 — 같은 화면의 DeltaBadge와 맞춘다.
     const changeSentence =
-        cpi !== undefined && cpiChange !== null
-            ? tFacts('cpiChange', {
-                  // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
-                  // 달라져 번역이 어긋난다(미국판과 같은 규칙).
-                  v0: `${cpiChange >= 0 ? '+' : ''}${formatFixed(cpiChange, cpi.meta.precision, locale)}`,
-              })
-            : null;
+        cpi === undefined || cpiChange === null
+            ? null
+            : roundToPrecision(cpiChange, cpi.meta.precision) === 0
+              ? tFacts('cpiUnchanged')
+              : tFacts('cpiChange', {
+                    // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
+                    // 달라져 번역이 어긋난다(미국판과 같은 규칙).
+                    v0: formatSignedFixed(
+                        cpiChange,
+                        cpi.meta.precision,
+                        locale
+                    ),
+                });
 
     const sentences = [ratesSentence, macroSentence, changeSentence].filter(
         (sentence): sentence is string => sentence !== null

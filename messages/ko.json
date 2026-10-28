@@ -4128,6 +4128,7 @@
                 "dc712b": "{v0} {v1}일 ({v2})",
                 "f9d9dc": "다가오는 {v0} 경제 발표 일정이 아직 없어요.",
                 "forecastPart": "예상 {v0}",
+                "noVisibleEvents": "선택한 중요도의 일정이 없어요.",
                 "pastCollapse": "지난 일정 접기",
                 "pastExpand": "지난 일정 보기",
                 "previousPart": "이전 {v0}"
@@ -4162,6 +4163,7 @@
                 "cpiAndUnemployment": "최신 소비자물가 상승률은 {v0}%, 실업률은 {v1}%입니다.",
                 "cpiChange": "소비자물가 상승률은 직전 발표 대비 {v0}%p 움직였습니다.",
                 "cpiOnly": "최신 소비자물가 상승률은 {v0}%입니다.",
+                "cpiUnchanged": "소비자물가 상승률은 직전 발표와 같습니다.",
                 "ratesOnly": "현재 한국은행 기준금리는 {v0}%입니다.",
                 "ratesWithKtb": "현재 한국은행 기준금리는 {v0}%, 10년 국고채 낙찰금리는 {v1}%입니다.",
                 "unemploymentOnly": "최신 실업률은 {v0}%입니다."
