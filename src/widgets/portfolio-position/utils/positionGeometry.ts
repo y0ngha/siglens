@@ -45,7 +45,7 @@ export interface PositionModel {
  * 기능이 정확하려면 PositionBuilding의 렌더 층 개수와 `[symbol]/position/page.tsx`가
  * computeVolumeByBand에 넘기는 거래량 히스토그램 버킷 개수가 이 값과 항상 같아야
  * 한다 — 둘 다 이 export(BAND_COUNT)를 직접 import해 단일 소스로 묶는다
- * (audit finding: 세 값이 암묵적으로만 같았던 걸 명시적 커플링으로 전환).
+ * (세 값이 같아야 한다는 계약을 import로 드러낸다).
  */
 export const BAND_COUNT = 5;
 const BAND_WIDTH_PCT = 100 / BAND_COUNT;

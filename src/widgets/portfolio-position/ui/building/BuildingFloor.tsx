@@ -70,7 +70,6 @@ export function BuildingFloor({
                     aria-hidden="true"
                 />
             ))}
-            {/* 층 경계선(정면 모서리) */}
             <line
                 x1={CENTER_X - ISO_DX}
                 y1={edgeY}

@@ -10,7 +10,8 @@ import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 
-interface HoldingRangeFacts {
+/** 카드가 그리는 범위 사실 — 최근 고/저와 마지막 종가. */
+export interface HoldingRangeFacts {
     low52w: number;
     high52w: number;
     lastClose: number;

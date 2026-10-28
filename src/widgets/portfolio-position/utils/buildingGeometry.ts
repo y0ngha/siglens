@@ -113,7 +113,7 @@ export const GROUND_ELLIPSE_CY_OFFSET = 6;
 /** 지면 타원을 좌/우 외곽선보다 살짝 넓히는 폭. */
 export const GROUND_ELLIPSE_RX_OFFSET = 14;
 
-/** SVG 좌표 한 점. */
+/** viewBox 픽셀 좌표 — 투영 계산과 마커 배치가 같은 좌표계를 쓴다(y는 아래로 증가). */
 export interface Point {
     x: number;
     y: number;
@@ -123,7 +123,7 @@ function lerp(a: Point, b: Point, t: number): Point {
     return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
 
-/** 점 목록을 `<polygon points>` 문자열로 바꾼다. */
+/** `<polygon points>`는 "x,y x,y …" 문자열만 받는다. */
 export function pointsAttr(points: readonly Point[]): string {
     return points.map(p => `${p.x},${p.y}`).join(' ');
 }

@@ -26,7 +26,7 @@ export function BuildingFrame() {
                 strokeWidth={1}
                 data-testid="building-roof"
             />
-            {/* 건물 정면 모서리 세로선 — 마커가 이 선을 기준으로 위치한다 */}
+            {/* 마커가 이 정면 모서리 세로선 위에 놓인다 */}
             <line
                 x1={CENTER_X}
                 y1={ROOF_FRONT_Y}

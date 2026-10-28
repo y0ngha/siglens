@@ -1,5 +1,5 @@
 /**
- * 포지션 카드 리드아웃 표의 한 줄(라벨·값).
+ * 포지션 카드들의 리드아웃 행 — 세 카드가 같은 행 모양(흐린 라벨, 오른쪽 tabular 숫자)을 쓰도록 한 곳에 둔다.
  */
 import { cn } from '@/shared/lib/cn';
 
@@ -9,7 +9,7 @@ interface ReadoutRowProps {
     valueClassName?: string;
 }
 
-/** `<dl>` 안의 라벨·수치 한 줄 — 포지션 카드들의 리드아웃 행. */
+/** `<dl>` 안에 둔다 — 라벨은 `dt`, 값은 `dd`라 스크린 리더가 짝으로 읽는다. */
 export function ReadoutRow({ label, value, valueClassName }: ReadoutRowProps) {
     return (
         <div className="flex justify-between gap-4">

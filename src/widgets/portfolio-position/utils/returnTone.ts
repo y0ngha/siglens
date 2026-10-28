@@ -4,10 +4,10 @@
  * (`signColorClass`는 0을 이익색으로 칠한다).
  */
 
-/** 수익률의 부호. */
+/** 0을 따로 두는 세 갈래 — 본전은 이익도 손실도 아니다. */
 export type ReturnSign = 'gain' | 'loss' | 'flat';
 
-/** 수익률 부호를 판정한다. */
+/** 부호만 본다 — 수익률(%)이든 평가손익 금액이든 같은 규칙이다. */
 export function returnSign(signedValue: number): ReturnSign {
     if (signedValue > 0) return 'gain';
     if (signedValue < 0) return 'loss';

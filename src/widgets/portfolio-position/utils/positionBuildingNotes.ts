@@ -277,9 +277,9 @@ export function computeActiveFloorTooltipContent(
 /**
  * in-SVG 마커 라벨 prefix — aria-label(buildAriaLabel, "평단"/"현재가" 전체 표기,
  * 폭 제약 없음)과 별개로 고정 viewBox 폭 제약을 받는 시각 라벨 전용이다. "내
- * 평단"/"현재가"보다 짧게 둬(audit finding #1) 4자리 이상 가격에서도 라벨이
+ * 평단"/"현재가"보다 짧게 둬 4자리 이상 가격에서도 라벨이
  * viewBox를 벗어나지 않게 한다.
  */
 export const AVG_LABEL_PREFIX_KEY = 'avgPrefix';
-/** ●현재가 라벨 prefix 번역 키. */
+/** ●현재가 쪽 짝 — 위 ★평단 prefix와 같은 폭 제약을 받는다. */
 export const CURRENT_LABEL_PREFIX_KEY = 'currentPrefix';
