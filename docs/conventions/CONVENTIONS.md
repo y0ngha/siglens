@@ -951,6 +951,17 @@ complete. Show it as in-progress or leave it out.
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
 
+<a id="CS-20"></a>
+
+#### CS-20 — Sign, colour and prefix come from the rounded value that is printed
+
+When a number is displayed at fixed precision, decide its sign, "+" prefix, colour and zero state from the rounded
+value, not the raw one. Otherwise a value that rounds to zero prints as "-0.00%" or is coloured as a loss while the
+text shows nothing.
+
+- ❌ `value < 0 ? '-' : '+'` on the raw `-0.004`, printing `-0.00%`.
+- ✅ Round first (`const r = Number(value.toFixed(2))`), then derive sign and colour from `r`; `0` gets the neutral colour and the same prefix as an exact zero.
+
 ---
 
 ## Layer Dependency Rules

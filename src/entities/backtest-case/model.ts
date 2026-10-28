@@ -15,11 +15,11 @@ export interface BacktestStats {
     aiWinRateDecisive: number;
     aiNeutralCount: number;
     aiTrendHitRate: number;
-    /** Mean of `returnPct` across all cases, 2 decimal places (small values need the extra digit — 1 decimal would round 0.36 to 0.4). */
+    /** 전체 케이스 `returnPct`의 평균. 소수 2자리(작은 값은 한 자리 더 필요하다 — 1자리면 0.36이 0.4로 반올림된다). */
     meanReturnPct: number;
-    /** Median of `holdingDays`; can be fractional when the case count is even. */
+    /** `holdingDays`의 중앙값. 케이스 수가 짝수면 소수일 수 있다. */
     medianHoldingDays: number;
-    /** ISO `YYYY-MM-DD`, min/max of `entryDate`. Empty string when `cases` is empty. */
+    /** `entryDate`의 최솟값/최댓값(ISO `YYYY-MM-DD`). `cases`가 비면 빈 문자열이다. */
     periodStart: string;
     periodEnd: string;
 }

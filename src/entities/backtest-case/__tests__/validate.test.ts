@@ -521,4 +521,27 @@ describe('validateBacktestData — 날짜 형식', () => {
             ).toThrow(`cases[0].${field} must be a YYYY-MM-DD string`);
         }
     });
+
+    it.each(['entryDate', 'exitDate'])(
+        '%s가 달력에 없는 날짜면 던진다',
+        field => {
+            for (const bad of [
+                '2026-13-45',
+                '2026-00-10',
+                '2026-04-31',
+                '2026-02-30',
+                '2025-02-29',
+            ]) {
+                expect(() =>
+                    validateBacktestData(withDates({ [field]: bad }))
+                ).toThrow(`cases[0].${field} must be a YYYY-MM-DD string`);
+            }
+        }
+    );
+
+    it('윤일은 통과한다', () => {
+        expect(() =>
+            validateBacktestData(withDates({ entryDate: '2024-02-29' }))
+        ).not.toThrow();
+    });
 });

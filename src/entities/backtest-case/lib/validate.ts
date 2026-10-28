@@ -23,6 +23,19 @@ const VALID_ENTRY_RECOMMENDATIONS: BacktestAiEntryRecommendation[] = [
 /** 케이스 날짜(`entryDate`/`exitDate`) 형식. 월 그룹 키(`YYYY-MM`)가 여기서 파생된다. */
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * 형식뿐 아니라 실제 달력에 있는 날짜인지 확인한다. `Date`는 `2026-02-30`을 3월 2일로
+ * 넘겨 파싱하므로, 다시 ISO 문자열로 바꿔 입력과 같은지 비교한다.
+ */
+function isCalendarDate(value: string): boolean {
+    if (!ISO_DATE_PATTERN.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return (
+        !Number.isNaN(parsed.getTime()) &&
+        parsed.toISOString().slice(0, 10) === value
+    );
+}
+
 const VALID_RISK_LEVELS: BacktestRiskLevel[] = [
     'low',
     'moderate',
@@ -51,7 +64,8 @@ function normalizeRiskLevel(level: string): string {
 
 /** 검증을 통과한 케이스의 `riskLevel` 별칭을 정식 값으로 바꾼 사본. 없으면 그대로 둔다. */
 function normalizeCase(item: unknown): unknown {
-    // validateBacktestData가 모든 케이스를 object로 확인한 뒤에만 부른다
+    // validateBacktestData가 케이스와 `aiAnalysis`가 object임을 이미 확인한 뒤에만 부르므로
+    // 이 단언은 안전하다. 별도 가드는 같은 검사를 되풀이할 뿐이라 두지 않는다.
     const c = item as Record<string, unknown> & {
         aiAnalysis: Record<string, unknown>;
     };
@@ -92,7 +106,7 @@ export function validateBacktestData(data: unknown): BacktestData {
         const c = item as Record<string, unknown>;
         (['entryDate', 'exitDate'] as const).forEach(field => {
             const value = c[field];
-            if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) {
+            if (typeof value !== 'string' || !isCalendarDate(value)) {
                 throw new Error(
                     `cases[${i}].${field} must be a YYYY-MM-DD string`
                 );
@@ -212,6 +226,7 @@ export function validateBacktestData(data: unknown): BacktestData {
         }
     });
 
-    // 검증기가 보장하는 것: 위에서 확인한 케이스 필드와 정규화된 riskLevel. meta 내부 필드는 확인하지 않고 산출물을 신뢰한다.
+    // 검증기가 보장하는 것: 위에서 확인한 케이스 필드와 정규화된 riskLevel.
+    // meta 내부 필드는 확인하지 않고 산출물을 신뢰한다.
     return { ...d, cases: cases.map(normalizeCase) } as unknown as BacktestData;
 }

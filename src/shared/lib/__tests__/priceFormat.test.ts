@@ -241,5 +241,17 @@ describe('formatSignedPercent', () => {
 
     it('0은 + 부호를 붙인다', () => {
         expect(formatSignedPercent(0, 2)).toBe('+0.00%');
+        expect(formatSignedPercent(0)).toBe('+0.0%');
+    });
+
+    it('반올림해서 0이 되는 음수도 0과 같이 낸다(음의 0 금지)', () => {
+        expect(formatSignedPercent(-0.001, 2)).toBe('+0.00%');
+        expect(formatSignedPercent(-0.04)).toBe('+0.0%');
+        expect(formatSignedPercent(0.004, 2)).toBe('+0.00%');
+        expect(formatSignedPercent(-0, 2)).toBe('+0.00%');
+    });
+
+    it('반올림 후에도 음수면 - 부호를 유지한다', () => {
+        expect(formatSignedPercent(-0.006, 2)).toBe('-0.01%');
     });
 });

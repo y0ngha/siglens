@@ -10,7 +10,7 @@ interface AiPredictionPanelProps {
 }
 
 /**
- * AI 예측 패널. 진입 권고·위험도 배지는 모든 케이스가 갖고 있으므로 항상 그리고,
+ * AI 예측 패널. 진입 권고 배지는 항상 그리고, 위험도 배지는 `riskLevel`이 있을 때만,
  * 가격 레벨 줄은 레벨이 하나라도 있을 때만 그린다.
  *
  * 면은 위 요약 밴드와 같은 `bg-secondary-700/40` 인셋이다. `bg-secondary-900/60`은 양 테마

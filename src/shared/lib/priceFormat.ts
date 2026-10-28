@@ -202,16 +202,20 @@ export function formatPrice(value: number, spec: PriceFormatConfig): string {
 const DEFAULT_SIGNED_PERCENT_DIGITS = 1;
 
 /**
- * "+12.3%" / "-4.5%" — signed percent, one decimal place by default.
- * `fractionDigits` overrides the precision (e.g. 2 so a small mean like 0.36%
- * is not rounded to 0.4%).
+ * "+12.3%" / "-4.5%" — 기본 소수 1자리의 부호 있는 퍼센트.
+ * `fractionDigits`로 자릿수를 바꾼다(예: 2자리면 평균 0.36%가 0.4%로 뭉개지지 않는다).
+ *
+ * 부호는 반올림한 값으로 정한다. 원값으로 정하면 `-0.001`이 `-0.00%`로 찍힌다.
+ * 반올림해서 0이 되면 0과 똑같이 `+0.0%`로 낸다(음의 0 금지).
  */
 export function formatSignedPercent(
     value: number,
     fractionDigits = DEFAULT_SIGNED_PERCENT_DIGITS
 ): string {
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(fractionDigits)}%`;
+    // 반올림 결과가 `-0`이어도 `-0 >= 0`은 참이고 `(-0).toFixed`는 `"0.00"`이라 `+0.00%`가 된다.
+    const rounded = Number(value.toFixed(fractionDigits));
+    const sign = rounded >= 0 ? '+' : '';
+    return `${sign}${rounded.toFixed(fractionDigits)}%`;
 }
 
 /**
