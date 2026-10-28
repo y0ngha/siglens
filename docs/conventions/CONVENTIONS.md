@@ -1302,4 +1302,20 @@ const label = (item: Item, locale?: Locale) => item.names[locale ?? 'ko'];
 const label = (item: Item, locale: Locale) => pickLocalized(item.names, locale);
 ```
 
+<a id="I18-14"></a>
+
+#### I18-14 — One full-sentence key per message; never join translated fragments
+
+Tooltips, aria-labels and other copy are a single catalog key with ICU arguments, not several keys concatenated in code
+(`${t('a')}~${t('b')}`, `[t('x'), t('y')].join(' ')`). Word order, separators and ranges differ per locale, and a joined
+string also drifts from the logic it describes when a boundary changes.
+
+```typescript
+// ❌ two keys glued with a hardcoded separator
+`${t('rangeMin')}~${t('rangeMax')}`
+
+// ✅ one key, locale decides the shape
+t('range', { min, max })
+```
+
 ---

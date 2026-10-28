@@ -2699,11 +2699,8 @@
     "widgets.home.HeroIllustration.018ed1": "018ed1b8747f",
     "widgets.home.SkillsShowcase.0d2c24": "0d2c2495e11a",
     "widgets.home.SkillsShowcase.158954": "1589543bb171",
-    "widgets.home.SkillsShowcase.7e6540": "7e654025ab07",
-    "widgets.home.SkillsShowcase.c266ba": "c266ba008235",
     "widgets.home.SkillsShowcase.c78b79": "c78b79c05158",
     "widgets.home.SkillsShowcase.e0f5c5": "e0f5c5b1f5bb",
-    "widgets.home.SkillsShowcase.e20b1b": "e20b1b9e03cf",
     "widgets.home.SkillsShowcase.ebff92": "ebff92c367db",
     "widgets.home.StatsBar.deac8e": "03bbd2f973f6",
     "widgets.home.TickerCategories.0ab969": "d6775360577b",
@@ -4127,5 +4124,7 @@
     "views.benchmark.breakdown.overallNote": "6496c2919e72",
     "features.symbol-model.fallbackTitle": "344c6757c43c",
     "features.symbol-model.fallbackDetail": "52027113be04",
-    "widgets.analysis.ModelSelector.unavailable": "4378697958ff"
+    "widgets.analysis.ModelSelector.unavailable": "4378697958ff",
+    "widgets.home.SkillsShowcase.confidenceTiers": "ce9951d83445",
+    "widgets.home.SkillsShowcase.7e6540": "7e654025ab07"
 }

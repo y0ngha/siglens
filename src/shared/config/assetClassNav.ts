@@ -9,7 +9,7 @@
  * 1. `widgets/layout/HeaderNav*` — 데스크톱 드롭다운
  * 2. `widgets/layout/HeaderMobileMenu` — 모바일 드로어(섹션 + 지역 링크)
  * 3. `widgets/layout/Footer` — 평탄화한 전체 링크
- * 4. `widgets/home/heroQuickLinks` — 홈 히어로 퀵링크
+ * 4. `widgets/home/utils/heroQuickLinks` — 홈 히어로 퀵링크
  *
  * **왜 단일 소스여야 하는가**: 2026-08 감사에서 헤더와 홈 히어로가 같은 목적지를
  * 다른 라벨로 가리키고 한쪽만 갱신된 이력이 있다. 버티컬마다 지역 개수가 다른

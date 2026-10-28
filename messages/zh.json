@@ -4349,14 +4349,13 @@
                 "158954": "AI 分析技能",
                 "0d2c24": "收起",
                 "7e6540": "置信度分数说明",
-                "c266ba": "{v0}% 为中等，{v1}% 以上为高。",
+                "allGuides": "查看全部指南",
                 "c78b79": "技能类别标签页",
+                "confidenceTiers": "低于 {low}% 为低，{low}% 以上、低于 {high}% 为中等，{high}% 及以上为高。",
                 "e0f5c5": "低分也会作为辅助参考纳入分析。",
-                "e20b1b": "{v0}% 以下为低, {v1}",
                 "ebff92": "分析方法的置信度分数。",
                 "guideLink": "查看指南",
-                "guideLinkAria": "{name} 查看指南",
-                "allGuides": "查看全部指南"
+                "guideLinkAria": "{name} 查看指南"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS 分析规模"

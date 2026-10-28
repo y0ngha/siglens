@@ -18,12 +18,17 @@ interface InfoTooltipProps {
     readonly children: ReactNode;
     /** 추가 className. 기본 접근성 클래스(focus-visible ring 등)에 병합된다. */
     readonly className?: string;
+    /**
+     * 트리거 버튼의 접근성 이름. 없으면 범용 "추가 정보" — 무엇을 설명하는지 버튼 이름만으로
+     * 알려야 할 때(섹션 제목 옆 ⓘ 등) 넘긴다.
+     */
+    readonly label?: string;
 }
 
 const DEFAULT_TRIGGER_CLASS =
     'inline-flex items-center justify-center min-h-6 min-w-6 text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-400 ml-1 cursor-help rounded text-xs leading-none transition-colors focus:outline-none focus-visible:ring-2';
 
-export function InfoTooltip({ children, className }: InfoTooltipProps) {
+export function InfoTooltip({ children, className, label }: InfoTooltipProps) {
     const t = useTranslations('shared.ui');
     const tooltipId = useId();
     const [open, setOpen] = useState(false);
@@ -71,7 +76,7 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
             <button
                 ref={triggerRef}
                 type="button"
-                aria-label={t('InfoTooltip.9b3193')}
+                aria-label={label ?? t('InfoTooltip.9b3193')}
                 aria-describedby={open ? tooltipId : undefined}
                 aria-expanded={open}
                 onClick={handleClick}

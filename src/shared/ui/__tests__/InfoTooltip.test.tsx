@@ -16,6 +16,13 @@ describe('InfoTooltip', () => {
         ).toBeInTheDocument();
     });
 
+    it('uses the label prop as the trigger name when given', () => {
+        render(<InfoTooltip label="Score help">Tooltip content</InfoTooltip>);
+        expect(
+            screen.getByRole('button', { name: 'Score help' })
+        ).toBeInTheDocument();
+    });
+
     it('does not show tooltip content initially', () => {
         render(<InfoTooltip>Tooltip content</InfoTooltip>);
         expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();

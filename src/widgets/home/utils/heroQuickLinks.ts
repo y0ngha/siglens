@@ -3,10 +3,9 @@ import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
 /**
  * 홈 히어로 아래 붙는 빠른 이동 링크.
  *
- * **`NAV_VERTICALS`에서 파생한다.** 예전에는 목적지·라벨을 여기에 손으로 적었고,
- * 그래서 헤더와 히어로가 같은 목적지를 다른 이름으로 부르다 한쪽만 갱신되는 일이
- * 반복됐다(2026-08 감사). 자산군을 1차 축으로 올린 지금은 링크 수가 더 늘어
- * 손으로 맞추는 방식이 유지되지 않는다.
+ * **`NAV_VERTICALS`에서 파생한다.** 목적지·라벨을 따로 적으면 헤더와 히어로가 같은
+ * 목적지를 다른 이름으로 부르다 한쪽만 갱신된다. 단일 소스에서 파생해 둘이 어긋나지
+ * 않게 한다.
  *
  * **허브가 아니라 최종 목적지만 넣는다.** `/news`(3지역 허브) 같은 중간 페이지를
  * 걸면 랜딩에서 원하는 화면까지 클릭이 두 번이 된다 — 자산군을 1차 축으로 올린
@@ -26,6 +25,7 @@ export interface HeroQuickLink {
 /** 지역까지 펼쳐 보여줄 버티컬. 나머지는 첫 지역 1개만 노출한다. */
 const EXPANDED_VERTICAL_ID = 'market';
 
+/** 히어로 퀵링크 목록 — `NAV_VERTICALS`에서 파생하므로 헤더 내비와 항상 같은 목적지를 가리킨다. */
 export const HERO_QUICK_LINKS: ReadonlyArray<HeroQuickLink> =
     NAV_VERTICALS.flatMap(vertical => {
         const shown =
