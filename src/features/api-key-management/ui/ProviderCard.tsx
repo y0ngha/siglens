@@ -61,6 +61,7 @@ export function ProviderCard({
     onFocusRestored,
     onRegistrationChange,
 }: ProviderCardProps) {
+    // 키는 분리 전 `ApiKeySection.*` 네임스페이스를 일부러 그대로 쓴다 — 옮기면 카탈로그만 의미 없이 갈아엎힌다.
     const t = useTranslations('features.api-key-management');
     // 등록된 프로바이더에서 '재등록'을 누른 동안만 true.
     const [editMode, setEditMode] = useState(false);

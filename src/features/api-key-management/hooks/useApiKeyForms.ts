@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useCallback } from 'react';
+import { useActionState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
 import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
@@ -54,22 +54,21 @@ export function useApiKeyForms({
 }: UseApiKeyFormsOptions = {}): ApiKeyFormsReturn {
     const queryClient = useQueryClient();
 
-    const settle = useCallback(
+    // `useCallback`으로 감싸지 않는다 — 호출부의 `onSuccess`가 렌더마다 새 화살표라 메모가 늘
+    // 깨지고, `useActionState`는 디스패치 때 가장 최근 렌더의 액션을 쓰므로 식별자가 안정할 필요가 없다.
+    const settle =
         (action: ApiKeyAction, kind: ApiKeyFormKind): ApiKeyAction =>
-            async (prevState, formData) => {
-                const next = await action(prevState, formData);
-                if (next.status === 'success') {
-                    void queryClient.invalidateQueries({
-                        queryKey: QUERY_KEYS.registeredProviders(),
-                    });
-                    onSuccess?.(kind);
-                }
-                return next;
-            },
-        [queryClient, onSuccess]
-    );
+        async (prevState, formData) => {
+            const next = await action(prevState, formData);
+            if (next.status === 'success') {
+                void queryClient.invalidateQueries({
+                    queryKey: QUERY_KEYS.registeredProviders(),
+                });
+                onSuccess?.(kind);
+            }
+            return next;
+        };
 
-    // 아래 두 `useActionState`는 `settle`로 감싼 액션을 받으므로 그 뒤에 둔다.
     const [saveState, saveFormAction, isSavePending] = useActionState<
         ApiKeyActionState,
         FormData
