@@ -72,6 +72,32 @@ describe('useDeleteAccountForm', () => {
         expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
 
+    /**
+     * 회귀: 관심종목(staleTime 5분)·등록 API 키(1분) 캐시가 남아 같은 탭의 다음
+     * 사용자가 지워진 회원의 관심종목을 보고, 남은 등록 키로 BYOK 게이트를 건너뛰었다.
+     */
+    it('clears watchlist and registeredProviders caches before the action runs', async () => {
+        let removedBeforeAction: unknown[] = [];
+        mockDeleteAccountAction.mockImplementation(() => {
+            removedBeforeAction = mockRemoveQueries.mock.calls.map(
+                ([filters]) => filters
+            );
+            return new Promise(() => {});
+        });
+        const { result } = renderHook(() => useDeleteAccountForm());
+
+        await act(async () => {
+            result.current[1](makeFormData({ email: 'user@example.com' }));
+        });
+
+        expect(removedBeforeAction).toContainEqual({
+            queryKey: ['watchlist'],
+        });
+        expect(removedBeforeAction).toContainEqual({
+            queryKey: ['llm', 'registered-providers'],
+        });
+    });
+
     it('refetches currentUser when deletion fails (user is still signed in)', async () => {
         mockDeleteAccountAction.mockResolvedValue({
             error: { code: 'user_not_found', message: 'x' },

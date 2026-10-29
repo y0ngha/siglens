@@ -701,6 +701,20 @@ A seed marked never-stale removes the client's only self-healing path for a degr
 changing staleness, list what the refetch used to repair and keep a replacement for it. Test seeds through
 `dehydrate` -> `hydrate`, the path production takes, not by writing directly to the cache.
 
+<a id="RQ-5"></a>
+
+#### RQ-5 — Sign-out and account deletion clear every member-scoped query
+
+Both flows end in a soft redirect, so the QueryClient survives: a member-keyed entry (watchlist, registered
+providers, holdings, settings) is served to the next member who signs in on the same tab until it goes stale, and a
+leftover registered-providers entry lets them skip the BYOK gate. Remove every member-scoped key, each by its exact
+key (a shared prefix such as `['llm']` also holds global queries), before the action runs, in every flow that ends a
+session. On the server side, expire the session and hint cookies on the error path too.
+
+- ❌ Logout removes holdings and settings but not the watchlist; account deletion copies an older, shorter list.
+- ✅ Each flow lists all member-scoped keys, and a test asserts the watchlist and registered-providers keys are removed
+  before the action.
+
 ---
 
 ## URL State Rules

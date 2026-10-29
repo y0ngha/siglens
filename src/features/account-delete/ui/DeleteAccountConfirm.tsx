@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 회원 탈퇴 확인 폼. 본인 이메일을 다시 입력해야 삭제 버튼이 열린다.
+ */
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -9,6 +12,10 @@ import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
+import {
+    getEmailConfirmStatus,
+    type EmailConfirmStatus,
+} from '../lib/emailConfirmStatus';
 
 const INPUT_HINT_ID = 'delete-account-email-hint';
 // 힌트 문구는 `entities.auth.error`에 있다 — 삭제 흐름의 다른 문구와 같은
@@ -24,23 +31,24 @@ const HINT_MATCH = 'error.deleteHintMatch';
 const ERROR_FALLBACK = 'error.accountDeleteFailed';
 
 interface DeleteAccountConfirmProps {
+    /** 탈퇴할 회원 본인의 이메일 — 확인 입력과 비교하고 화면에 그대로 보여 준다. */
     userEmail: string;
 }
 
+/** 탈퇴 확인 폼. 제출은 `useDeleteAccountForm`이 맡는다. */
 export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
     const t = useTranslations('features.account-delete');
     const tAuth = useTranslations('entities.auth');
     const [input, setInput] = useState('');
     const [state, formAction] = useDeleteAccountForm();
-    const trimmed = input.trim();
-    const isMatch = trimmed.toLowerCase() === userEmail.toLowerCase();
-    const hintMessage =
-        trimmed.length === 0
-            ? tAuth(HINT_DEFAULT)
-            : isMatch
-              ? tAuth(HINT_MATCH)
-              : tAuth(HINT_MISMATCH);
-    const isMismatch = trimmed.length > 0 && !isMatch;
+    const status = getEmailConfirmStatus(input, userEmail);
+    const hintByStatus: Record<EmailConfirmStatus, string> = {
+        empty: tAuth(HINT_DEFAULT),
+        match: tAuth(HINT_MATCH),
+        mismatch: tAuth(HINT_MISMATCH),
+    };
+    const isMatch = status === 'match';
+    const isMismatch = status === 'mismatch';
     const errorMessage = state.error
         ? tAuth(AUTH_ERROR_KEY[state.error.code] ?? ERROR_FALLBACK)
         : null;
@@ -87,7 +95,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                             : 'text-secondary-400'
                     )}
                 >
-                    {hintMessage}
+                    {hintByStatus[status]}
                 </div>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -1,5 +1,8 @@
 'use server';
 
+/**
+ * 회원 탈퇴 Server Action.
+ */
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account/api';
 import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
@@ -18,6 +21,10 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getTranslations } from 'next-intl/server';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
+/**
+ * 확인 이메일이 로그인한 본인과 같을 때 계정을 지우고 세션 쿠키를 만료한 뒤 홈으로
+ * 리다이렉트한다. 실패는 던지지 않고 폼 상태의 에러 코드로 돌려준다.
+ */
 export async function deleteAccountAction(
     _prev: DeleteAccountFormState,
     formData: FormData
