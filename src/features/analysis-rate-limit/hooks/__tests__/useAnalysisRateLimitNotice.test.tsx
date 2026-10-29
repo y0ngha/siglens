@@ -46,14 +46,19 @@ describe('useAnalysisRateLimitNotice', () => {
         expect(result.current.notice).toEqual(GUEST_QUOTA);
     });
 
-    it('stays dismissed for the same window and reopens for a later one', () => {
+    it('stays dismissed when the same window is published again', () => {
         const { result } = renderHook(() => useAnalysisRateLimitNotice());
         publish(GUEST_QUOTA);
         act(() => result.current.dismiss());
-        expect(result.current.notice).toBeNull();
 
         publish(GUEST_QUOTA);
         expect(result.current.notice).toBeNull();
+    });
+
+    it('reopens for a later window after a dismiss', () => {
+        const { result } = renderHook(() => useAnalysisRateLimitNotice());
+        publish(GUEST_QUOTA);
+        act(() => result.current.dismiss());
 
         const later = { ...GUEST_QUOTA, retryAt: RETRY_AT + 1 };
         publish(later);
