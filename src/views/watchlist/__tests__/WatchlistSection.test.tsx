@@ -198,6 +198,30 @@ describe('WatchlistSection', () => {
         expect(rows[0]).toHaveTextContent('150.25');
     });
 
+    it('종목 링크는 블록 상자라 긴 이름이 칸 안에서 잘린다', () => {
+        setWatchlist();
+        render(<WatchlistSection />);
+        expect(screen.getByRole('link', { name: '애플 (AAPL)' })).toHaveClass(
+            'block',
+            'max-w-full',
+            'truncate'
+        );
+    });
+
+    it('시세 줄은 자리표시자일 때도 시세와 같은 고정 높이 줄에 담긴다', () => {
+        setWatchlist();
+        mockUseQuote.mockReturnValue({ quote: null, isSettled: false });
+        render(<WatchlistSection />);
+        const row = screen
+            .getByRole('link', { name: '애플 (AAPL)' })
+            .closest('li')!;
+        expect(row.querySelector('.animate-pulse')!.parentElement).toHaveClass(
+            'flex',
+            'h-5',
+            'items-center'
+        );
+    });
+
     it('시세가 없으면 "시세 없음"', () => {
         setWatchlist();
         mockUseQuote.mockReturnValue({ quote: null, isSettled: true });
@@ -258,6 +282,20 @@ describe('WatchlistSection', () => {
         });
         expect(wl.remove).toHaveBeenCalledWith('AAPL');
         expect(toast.showToast).not.toHaveBeenCalled();
+    });
+
+    it('회원: 보유로 전환을 열면 수량 칸으로, 취소하면 전환 버튼으로 포커스가 옮겨진다', async () => {
+        setWatchlist({ isMember: true });
+        const user = userEvent.setup();
+        render(<WatchlistSection />);
+        await user.click(
+            screen.getByRole('button', { name: 'AAPL 보유로 전환' })
+        );
+        expect(screen.getByLabelText('수량')).toHaveFocus();
+        await user.click(screen.getByRole('button', { name: '취소' }));
+        expect(
+            screen.getByRole('button', { name: 'AAPL 보유로 전환' })
+        ).toHaveFocus();
     });
 
     it('회원: 보유는 저장됐는데 관심 항목 삭제가 실패하면 구체적인 토스트를 띄운다', async () => {
