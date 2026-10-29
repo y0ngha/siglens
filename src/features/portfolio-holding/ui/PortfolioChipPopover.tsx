@@ -15,6 +15,8 @@ import { HoldingAmountField } from './HoldingAmountField';
 
 // `BUTTON_PRIMARY`'s pending look hangs off `disabled:`; this button uses
 // `aria-disabled` instead, so the same tones are repeated on that variant.
+// Tailwind v4 emits `aria-*` variants after `hover:`/`active:` at equal
+// specificity, so the pending tones also hold under hover, as `disabled:` did.
 const SAVE_BUTTON = cn(
     BUTTON_PRIMARY,
     'h-9 flex-1 px-4 text-sm',

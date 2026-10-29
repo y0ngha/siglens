@@ -118,8 +118,11 @@ export function useHoldingPopoverForm({
                 return;
             }
             setError({ message: outcome.message, field: outcome.field });
-            const fieldRefs = { quantity: quantityRef, averagePrice: priceRef };
-            if (outcome.field) fieldRefs[outcome.field].current?.focus();
+            if (outcome.field) {
+                const fieldRef =
+                    outcome.field === 'quantity' ? quantityRef : priceRef;
+                fieldRef.current?.focus();
+            }
         },
         [
             isPending,
