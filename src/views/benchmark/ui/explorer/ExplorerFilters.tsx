@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * 문항 탐색기의 필터 카드 — 셀렉트 여섯 개, 표시 개수, 초기화 버튼.
+ * 문항 탐색기의 필터 카드 — 항목별 셀렉트, 표시 개수, 초기화 버튼.
  */
 import { useId, useRef, type Ref } from 'react';
 import { useTranslations } from 'next-intl';

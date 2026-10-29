@@ -3,6 +3,7 @@
 /**
  * 펼친 문항에서 대상 하나의 기록 — 회차별 답변 원문, 추출값, 중립 심사.
  */
+import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 import type {
     BenchmarkItemDetail,
@@ -26,9 +27,14 @@ export function ItemTargetDetail({ detail, target }: Props) {
     const t = useTranslations('views.benchmark.explorer.detail');
     const rounds = detail.targets[target.id] ?? [];
     const judgements = detail.judgements.filter(j => j.target === target.id);
+    const headingId = useId();
     return (
-        <section aria-label={target.label} className="flex flex-col gap-3">
-            <h3 className={cn(HEADING_SUBSECTION, 'text-sm')} translate="no">
+        <section aria-labelledby={headingId} className="flex flex-col gap-3">
+            <h3
+                id={headingId}
+                className={cn(HEADING_SUBSECTION, 'text-sm')}
+                translate="no"
+            >
                 {target.label}
             </h3>
             {rounds.length === 0 ? (
