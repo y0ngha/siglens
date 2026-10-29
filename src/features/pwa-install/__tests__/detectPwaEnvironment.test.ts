@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
-import { detectPwaEnvironment } from '@/features/pwa-install/lib/detectPwaEnvironment';
+import {
+    SERVER_PWA_ENVIRONMENT,
+    detectPwaEnvironment,
+    readPwaEnvironment,
+} from '@/features/pwa-install/lib/detectPwaEnvironment';
 
 describe('detectPwaEnvironment', () => {
     it('iPhone UA → isMobile=true, isIos=true', () => {
@@ -85,5 +89,50 @@ describe('detectPwaEnvironment', () => {
             undefined
         );
         expect(result.isMobile).toBe(false);
+    });
+});
+
+describe('readPwaEnvironment', () => {
+    const ANDROID_UA =
+        'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36';
+
+    function stubStandaloneMediaQuery(matches: boolean): void {
+        vi.stubGlobal('matchMedia', (query: string) => ({
+            matches: query === '(display-mode: standalone)' && matches,
+            media: query,
+        }));
+    }
+
+    beforeEach(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+            value: ANDROID_UA,
+            configurable: true,
+        });
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        // 인스턴스에 얹은 값을 지워 프로토타입 getter로 되돌린다.
+        Reflect.deleteProperty(navigator, 'userAgent');
+    });
+
+    it('브라우저의 UA를 판정에 넘긴다', () => {
+        stubStandaloneMediaQuery(false);
+        expect(readPwaEnvironment()).toEqual({
+            isMobile: true,
+            isIos: false,
+            isInAppBrowser: false,
+            isStandalone: false,
+        });
+    });
+
+    it('display-mode: standalone 미디어 쿼리를 읽는다', () => {
+        stubStandaloneMediaQuery(true);
+        expect(readPwaEnvironment().isStandalone).toBe(true);
+    });
+
+    it('window가 없으면(서버) 모든 플래그가 꺼진 환경', () => {
+        vi.stubGlobal('window', undefined);
+        expect(readPwaEnvironment()).toBe(SERVER_PWA_ENVIRONMENT);
     });
 });

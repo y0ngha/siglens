@@ -179,6 +179,20 @@ Derive "is a member" in one exported place, not separately per consumer.
 //    const active = decision?.userId === userId ? decision.value : null;
 ```
 
+<a id="HK-6"></a>
+
+#### HK-6 — Functions returned from a custom hook have stable identity
+
+Handlers a hook returns (`dismiss`, `install`, `reset`) are wrapped in `useCallback` with correct deps. An inline
+closure gets a new identity every render, so consumers that put it in a dependency array or pass it to a memoized
+child re-run or re-render on every render.
+
+```tsx
+// ❌ return { dismiss: () => setOpen(false) };
+// ✅ const dismiss = useCallback(() => setOpen(false), []);
+//    return { dismiss };
+```
+
 ---
 
 ## Component Rules
