@@ -14,7 +14,7 @@ import {
     buildReportScenarios,
     EMPTY_SKILL_COUNTS,
     getAboutFaq,
-} from '../aboutContent';
+} from '../../lib/aboutContent';
 
 const COUNTS = {
     ...EMPTY_SKILL_COUNTS,
@@ -87,5 +87,22 @@ describe('buildReportScenarios', () => {
         const labels = btc.tools.map(x => x.label);
         expect(labels).toContain('뉴스');
         expect(labels).not.toContain('재무·뉴스');
+    });
+});
+
+describe('buildReportScenarios with a malformed catalog line', () => {
+    it('renders a body line that is not a string as an empty line', () => {
+        const messages = structuredClone(ko);
+        (messages.views.about.replay.aapl as Record<string, unknown>).a1 = {
+            nested: 'x',
+        };
+        const t = createTranslator({
+            locale: 'ko',
+            messages,
+            namespace: 'views.about',
+        } as never);
+        const [aapl] = buildReportScenarios(t as never, COUNTS);
+        expect(aapl!.lines[0]).toEqual({ kind: 'p', segments: [] });
+        expect(aapl!.lines[1]!.segments.length).toBeGreaterThan(0);
     });
 });
