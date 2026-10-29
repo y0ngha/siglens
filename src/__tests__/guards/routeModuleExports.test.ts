@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { SYMBOL_SUB_TAB_KEYS } from '@/views/symbol/utils/symbolTabsConfig';
+
 import { blankComments } from './support/sourceScan';
 
 /**
@@ -104,8 +106,9 @@ describe('라우트 모듈 export 가드 (AP-6)', () => {
     it('스캔 대상이 비어 있지 않고 레이아웃과 페이지를 포함한다', () => {
         expect(modules).toContain('layout.tsx');
         expect(modules).toContain('page.tsx');
-        expect(modules.filter(file => file.endsWith('/page.tsx')).length).toBe(
-            9
+        // 하위 탭 키마다 `<key>/page.tsx`가 스캔돼야 한다 — 하나라도 빠지면 그 탭의 export는 검사되지 않는다.
+        expect(modules.filter(file => file.endsWith('/page.tsx'))).toEqual(
+            SYMBOL_SUB_TAB_KEYS.map(key => `${key}/page.tsx`).sort()
         );
     });
 

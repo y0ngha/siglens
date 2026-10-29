@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
 import * as time from '@/shared/config/time';
+import { SYMBOL_SUB_TAB_KEYS } from '@/views/symbol/utils/symbolTabsConfig';
 
 import { blankComments } from './support/sourceScan';
 
@@ -45,19 +46,24 @@ const SRC_DIR = path.resolve(__dirname, '../..');
 const readFile = (abs: string): string => readFileSync(abs, 'utf8');
 const read = (rel: string): string => readFile(path.join(SYMBOL_DIR, rel));
 
-const TAB_PAGES = [
+/**
+ * 검사할 탭 페이지 — 차트 탭(`page.tsx`) + 탭 설정의 하위 탭 키마다 `<key>/page.tsx`. 손으로 적지 않고
+ * `SYMBOL_SUB_TAB_KEYS`(탭 바의 단일 소스)에서 유도해, 탭이 늘면 이 가드도 그 탭을 검사한다.
+ */
+const TAB_PAGES: readonly string[] = [
     'page.tsx',
-    'news/page.tsx',
-    'overall/page.tsx',
-    'fundamental/page.tsx',
-    'financials/page.tsx',
-    'congress/page.tsx',
-    'flows/page.tsx',
-    'options/page.tsx',
-    'position/page.tsx',
-    'fear-greed/page.tsx',
-] as const;
-type TabPage = (typeof TAB_PAGES)[number];
+    ...SYMBOL_SUB_TAB_KEYS.map(key => `${key}/page.tsx`),
+];
+
+/** 디렉터리에 실제로 있는 하위 탭 페이지(`[symbol]/<dir>/page.tsx`). */
+function subTabPagesOnDisk(): string[] {
+    return readdirSync(SYMBOL_DIR, { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && !entry.name.startsWith('_'))
+        .filter(entry => entry.name !== '__tests__')
+        .map(entry => `${entry.name}/page.tsx`)
+        .filter(rel => existsSync(path.join(SYMBOL_DIR, rel)))
+        .sort();
+}
 
 /** `export const revalidate = N` 리터럴(라우트 segment config는 리터럴이어야 한다 — app/CLAUDE.md). */
 function declaredRevalidate(source: string): number {
@@ -193,7 +199,7 @@ type PageRead = Omit<CacheRead, 'revalidate'> & {
     readonly revalidate: number | typeof PAGE;
 };
 
-const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
+const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
     'page.tsx': [
         {
             token: 'getQuantizedBarsStatic',
@@ -327,6 +333,17 @@ describe('importedModules', () => {
 });
 
 describe('[symbol] 탭 revalidate clamp 가드', () => {
+    it('탭 키마다 페이지가 있고, 탭 키에 없는 탭 페이지는 없다', () => {
+        expect(subTabPagesOnDisk()).toEqual(
+            SYMBOL_SUB_TAB_KEYS.map(key => `${key}/page.tsx`).sort()
+        );
+        expect(existsSync(path.join(SYMBOL_DIR, 'page.tsx'))).toBe(true);
+    });
+
+    it('읽기 표가 모든 탭 페이지를 덮는다(새 탭은 표에도 적는다)', () => {
+        expect(Object.keys(PAGE_READS).sort()).toEqual([...TAB_PAGES].sort());
+    });
+
     it('레이아웃(+로컬 헬퍼)은 짧은 revalidate 캐시 모듈을 import하지도, 6h 읽기 함수를 부르지도 않는다 (9탭 공유)', () => {
         for (const { rel, source } of withLocalHelpers(LAYOUT)) {
             const imports = importedModules(source);
@@ -432,7 +449,7 @@ describe('[symbol] 탭 revalidate clamp 가드', () => {
             const code = withLocalHelpers(page)
                 .map(({ source }) => stripComments(source))
                 .join('\n');
-            for (const { token } of PAGE_READS[page]) {
+            for (const { token } of PAGE_READS[page] ?? []) {
                 expect(code.includes(token), `${page}: ${token}`).toBe(true);
             }
         }
@@ -444,7 +461,7 @@ describe('[symbol] 탭 revalidate clamp 가드', () => {
             const declared = declaredRevalidate(read(page));
             const reads: CacheRead[] = [
                 ...LAYOUT_READS,
-                ...PAGE_READS[page].map(r => ({
+                ...(PAGE_READS[page] ?? []).map(r => ({
                     token: r.token,
                     revalidate: r.revalidate === PAGE ? declared : r.revalidate,
                 })),
