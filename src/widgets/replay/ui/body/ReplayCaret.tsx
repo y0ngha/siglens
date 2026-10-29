@@ -1,6 +1,7 @@
-/** The blinking block caret at the end of typed or streamed text (decorative). */
-
-/** Decorative caret; still under reduced motion, so it never draws the eye. */
+/**
+ * The block caret at the end of typed or streamed text. Decorative (hidden from assistive tech),
+ * and it only blinks when motion is allowed, so under reduced motion it never draws the eye.
+ */
 export function ReplayCaret() {
     return (
         <span
