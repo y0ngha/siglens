@@ -1,14 +1,13 @@
-import {
-    getRecentSearches,
-    RECENT_SEARCHES_STORAGE_KEY,
-    type RecentSearchEntry,
-} from '@/entities/ticker/lib/recentSearches';
-
 /**
  * 최근 검색 저장소를 `useSyncExternalStore`에 잇는 어댑터. 저장 자체(`localStorage`
  * 읽기·쓰기·파싱)는 `entities/ticker/lib/recentSearches`가 맡고, 여기서는 구독과
  * 스냅샷 동일성만 다룬다.
  */
+import {
+    getRecentSearches,
+    RECENT_SEARCHES_STORAGE_KEY,
+    type RecentSearchEntry,
+} from '@/entities/ticker/lib/recentSearches';
 
 /**
  * 같은 탭 안의 변경 알림. `storage` 이벤트는 **다른** 탭에서만 오므로, 이 탭에서 쓴
