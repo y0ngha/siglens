@@ -3590,6 +3590,8 @@
     "widgets.home.SkillsShowcase.guideLink": "f68ad76c9341",
     "widgets.home.SkillsShowcase.guideLinkAria": "c491f5c55735",
     "widgets.home.SkillsShowcase.allGuides": "893cfdad522d",
+    "widgets.home.SkillsShowcase.confidenceTiers": "ce9951d83445",
+    "widgets.home.SkillsShowcase.7e6540": "7e654025ab07",
     "widgets.analysis.GuideHintLink.label": "4989e79b1c2f",
     "widgets.analysis.GuideHintLink.aria": "d8dc18791b9f",
     "widgets.analysis.GuideHintLink.entry": "c50f8ad0033a",
@@ -4124,7 +4126,5 @@
     "views.benchmark.breakdown.overallNote": "6496c2919e72",
     "features.symbol-model.fallbackTitle": "344c6757c43c",
     "features.symbol-model.fallbackDetail": "52027113be04",
-    "widgets.analysis.ModelSelector.unavailable": "4378697958ff",
-    "widgets.home.SkillsShowcase.confidenceTiers": "ce9951d83445",
-    "widgets.home.SkillsShowcase.7e6540": "7e654025ab07"
+    "widgets.analysis.ModelSelector.unavailable": "4378697958ff"
 }
