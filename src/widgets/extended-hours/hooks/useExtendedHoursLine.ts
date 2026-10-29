@@ -18,7 +18,7 @@ import {
 import { formatTradeTime } from '../utils/formatTradeTime';
 
 /** 캡션 한 줄에 들어가는 문자열과 등락 표시. */
-export interface ExtendedHoursLineView {
+interface ExtendedHoursLineView {
     /** 보이는 세션 라벨(프리마켓·애프터마켓). */
     sessionLabel: string;
     /** 등락 기준 문구 — 프리마켓은 직전 세션 종가, 애프터마켓은 오늘 정규장 종가. */

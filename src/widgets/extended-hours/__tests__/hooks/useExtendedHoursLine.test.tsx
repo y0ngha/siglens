@@ -11,14 +11,16 @@ import {
     PRE_FLAT,
     PRE_UP,
 } from '@/widgets/extended-hours/__tests__/fixtures/extendedHoursQuotes';
-import {
-    useExtendedHoursLine,
-    type ExtendedHoursLineView,
-} from '@/widgets/extended-hours/hooks/useExtendedHoursLine';
+import { useExtendedHoursLine } from '@/widgets/extended-hours/hooks/useExtendedHoursLine';
 import { describeExtendedMove } from '@/widgets/extended-hours/utils/extendedMove';
 import { formatTradeTime } from '@/widgets/extended-hours/utils/formatTradeTime';
 
 const mockedQuote = vi.mocked(useExtendedHoursQuote);
+
+/** 훅이 그릴 줄을 돌려줄 때의 모양. */
+type ExtendedHoursLineView = NonNullable<
+    ReturnType<typeof useExtendedHoursLine>
+>;
 
 /** 카탈로그 문구에 ko 체결 시각을 끼운 기대값. */
 const expectedTradedAt = (ms: number): string =>
