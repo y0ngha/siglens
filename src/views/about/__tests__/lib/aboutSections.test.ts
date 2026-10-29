@@ -1,5 +1,5 @@
-import { createTranslator } from 'next-intl';
-import { describe, expect, it } from 'vitest';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { METHODOLOGY_PATH, SITE_OPERATOR } from '@/shared/lib/legal';
 import { CORE_GITHUB_URL, GITHUB_URL } from '@/shared/lib/seo';
@@ -21,11 +21,10 @@ import {
 } from '../../lib/aboutSections';
 import type { AboutT } from '../../lib/types';
 
-const t = createTranslator({
-    locale: 'ko',
-    messages: ko,
-    namespace: 'views.about',
-} as never) as unknown as AboutT;
+let t: AboutT;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'views.about' });
+});
 
 const about = ko.views.about;
 
@@ -177,12 +176,11 @@ describe('buildAiAboutLink', () => {
         });
     });
 
-    it('keeps a non-default locale’s prefix on the ai host', () => {
-        const tEn = createTranslator({
+    it('keeps a non-default locale’s prefix on the ai host', async () => {
+        const tEn = await getTranslations({
             locale: 'en',
-            messages: en,
             namespace: 'views.about',
-        } as never) as unknown as AboutT;
+        });
         expect(buildAiAboutLink(tEn, 'en')).toEqual({
             href: `${AI_SITE_URL}/en/about`,
             label: en.views.about.more.ai,

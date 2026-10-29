@@ -1,4 +1,4 @@
-/** The `/about` limits list and investment disclaimer. */
+/** The `/about` limits card: what an analysis cannot do, then the disclaimer. */
 import { cn } from '@/shared/lib/cn';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -11,7 +11,7 @@ interface LimitsCardProps {
     readonly termsLabel: string;
 }
 
-/** What an analysis cannot do, then the disclaimer with a link to the terms. */
+/** The disclaimer ends on a link to the terms page. */
 export function LimitsCard({
     limits,
     disclaimer,

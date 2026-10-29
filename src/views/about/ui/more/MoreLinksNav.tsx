@@ -1,4 +1,4 @@
-/** The `/about` "more on SIGLENS" link nav. */
+/** The `/about` "more on SIGLENS" link nav, named by its h2. */
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 import type { LabelledLink } from '../../lib/types';
 
@@ -15,7 +15,10 @@ interface MoreLinksNavProps {
     readonly aiLink: LabelledLink;
 }
 
-/** A `<nav>` named by its h2: the hub links, then the SIGLENS AI about page. */
+/**
+ * Site paths go through `LocaleLink`; the SIGLENS AI about page comes last as
+ * a plain `<a>`, since it leaves this host.
+ */
 export function MoreLinksNav({ title, links, aiLink }: MoreLinksNavProps) {
     return (
         <nav aria-labelledby={HEADING_ID} className="mt-12">

@@ -6,11 +6,14 @@ import type { MethodStep } from '../../lib/types';
 
 interface MethodStepCardProps {
     readonly step: MethodStep;
-    /** 1-based; decorative, since the parent `<ol>` already numbers it. */
+    /** 1-based position in the parent `<ol>`. */
     readonly number: number;
 }
 
-/** A step card: number badge, h3 and body. */
+/**
+ * The number badge only repeats the parent `<ol>`'s own numbering, so it is
+ * `aria-hidden` and the step reads as its h3 and body.
+ */
 export function MethodStepCard({ step, number }: MethodStepCardProps) {
     return (
         <li className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
