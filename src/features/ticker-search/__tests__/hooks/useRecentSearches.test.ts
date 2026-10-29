@@ -2,8 +2,7 @@
 import { renderHook, act } from '@testing-library/react';
 import type { RecentSearchEntry } from '@/entities/ticker/lib/recentSearches';
 import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
-
-const RECENT_SEARCHES_EVENT = 'siglens:recent-searches-change';
+import { RECENT_SEARCHES_EVENT } from '@/features/ticker-search/lib/recentSearchesStore';
 
 // 저장 단위는 `{ symbol, label }`이다. `string[]`로 선언돼 있던 것은 형태를
 // 바꾸기 전(2026-08)의 잔재다.

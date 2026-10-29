@@ -11,9 +11,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const replaceMock = vi.fn();
 const pushMock = vi.fn();
+const routeState = { pathname: '/NVDA' };
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: replaceMock, push: pushMock }),
-    usePathname: () => '/NVDA',
+    usePathname: () => routeState.pathname,
 }));
 
 const searchState = {
@@ -66,6 +67,7 @@ describe('SearchOverlay', () => {
         searchState.debouncedQuery = '';
         searchState.isError = false;
         recentState.recentSearches = [];
+        routeState.pathname = '/NVDA';
         onNavigateMock.mockClear();
     });
 
@@ -383,6 +385,19 @@ describe('SearchOverlay', () => {
         // usePathname mock이 '/NVDA'이므로 NVDA 선택은 같은 경로다. 이동이 없으니
         // 히스토리 항목을 되돌리는 `onClose`가 맞다 — `onNavigate`를 쓰면 우리가 넣은
         // 항목이 소비되지 않은 채 남아 뒤로가기가 한 번 헛돈다.
+        recentState.recentSearches = [{ symbol: 'NVDA', label: '엔비디아' }];
+        const { onClose } = renderOverlay();
+
+        await userEvent.click(screen.getByRole('button', { name: '엔비디아' }));
+
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(onNavigateMock).not.toHaveBeenCalled();
+    });
+
+    it('로케일 접두사가 붙은 경로에서도 보던 종목을 다시 고르면 이동 없이 닫는다', async () => {
+        // `/en/NVDA`를 `/NVDA`와 다르게 보면 같은 URL로 `onNavigate`가 나가고, 열 때 넣은
+        // 히스토리 항목이 남아 다음 닫기의 `history.back()`이 보던 페이지를 떠난다.
+        routeState.pathname = '/en/NVDA';
         recentState.recentSearches = [{ symbol: 'NVDA', label: '엔비디아' }];
         const { onClose } = renderOverlay();
 

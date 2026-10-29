@@ -5,7 +5,10 @@ import zhMessages from '@/../messages/zh.json';
 import { describe, expect, it } from 'vitest';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
-import { POPULAR_PREVIEW_GROUPS } from '@/features/ticker-search/lib/popularPreview';
+import {
+    POPULAR_PREVIEW_GROUPS,
+    popularNameKey,
+} from '@/features/ticker-search/lib/popularPreview';
 
 /**
  * 이 목록의 계약은 두 가지다 — **세 자산군을 대표할 것**, 그리고 **손으로 적은 네 번째
@@ -60,7 +63,7 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
             for (const group of POPULAR_PREVIEW_GROUPS) {
                 for (const symbol of group.items) {
                     // next-intl은 `.`를 중첩 구분자로 쓴다 — `useAssetLabel`과 같은 치환.
-                    const key = symbol.replace(/\./g, '_');
+                    const key = popularNameKey(symbol);
                     expect(table[key], `${locale}: ${symbol}`).toBeTruthy();
                 }
             }
@@ -87,10 +90,10 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
             ).popularName;
             const symbols = POPULAR_PREVIEW_GROUPS.flatMap(g => g.items);
             expect(Object.keys(narrow).toSorted()).toEqual(
-                symbols.map(s => s.replace(/\./g, '_')).toSorted()
+                symbols.map(popularNameKey).toSorted()
             );
             for (const symbol of symbols) {
-                const key = symbol.replace(/\./g, '_');
+                const key = popularNameKey(symbol);
                 expect(narrow[key], `${locale}: ${symbol}`).toBe(wide[key]);
             }
         }
@@ -104,7 +107,7 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
             >;
             for (const group of POPULAR_PREVIEW_GROUPS) {
                 for (const symbol of group.items) {
-                    const key = symbol.replace(/\./g, '_');
+                    const key = popularNameKey(symbol);
                     expect(table[key], `${locale}: ${symbol}`).not.toMatch(
                         /[가-힣]/
                     );
@@ -116,5 +119,9 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
     it('한국 그룹은 실제 국내 종목을 담는다', () => {
         const kr = POPULAR_PREVIEW_GROUPS.find(g => g.labelKey === 'kr');
         expect(kr?.items.every(s => /\.(KS|KQ)$/.test(s))).toBe(true);
+    });
+
+    it('popularNameKey는 심볼의 `.`을 `_`로 바꾼다', () => {
+        expect(popularNameKey('005930.KS')).toBe('005930_KS');
     });
 });

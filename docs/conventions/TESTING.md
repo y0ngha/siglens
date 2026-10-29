@@ -367,6 +367,15 @@ Defensive guards, fallbacks, timeouts and degradations kept "because X" need a t
 - ❌ A fallback cache write kept "for DB failure absorption" with no test exercising a DB write failure.
 - ✅ A test that fails the DB write and asserts the fallback entry exists.
 
+<a id="TE-58"></a>
+
+#### TE-58 — Source-reading guards follow the code when it moves
+
+A test that reads source files (`readFileSync`, a glob over a slice) pins a path or file list. When code is split, renamed or moved, update the guard's file list in the same change and assert that each scanned file exists and the scan is non-empty; otherwise it keeps passing against the old files and stops guarding the moved code.
+
+- ❌ A scan of `Panel.tsx` keeps passing after its logic moves to `PanelRow.tsx` and `usePanel.ts`.
+- ✅ The scan derives its files from the directory (or lists the new files), and fails when a listed path is missing.
+
 ## Time, Flakes & Isolation
 
 <a id="TE-7"></a>

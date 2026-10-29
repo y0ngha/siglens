@@ -410,6 +410,42 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 <button aria-label="Watchlist" aria-pressed={on} />
 ```
 
+<a id="AX-7"></a>
+
+#### AX-7 — ARIA references point at rendered elements; a combobox follows the WAI-ARIA pattern
+
+`aria-describedby`, `aria-controls`, `aria-labelledby` and `aria-activedescendant` name an id that exists in the DOM at that moment: set the attribute only while its target is rendered. A reference to an unrendered element is silently ignored and misleads assistive tech. For a combobox (search input with a suggestion popup):
+
+- `aria-expanded` is true only while the listbox with at least one option is rendered; `aria-controls` is set only then.
+- The `role="listbox"` has an accessible name and contains only `role="option"` children. Status, empty and loading text lives in a separate `role="status"` region outside the listbox, announced for every layout variant (desktop and mobile).
+- `aria-activedescendant` points at a rendered option and is cleared when the popup closes or the options change; Enter must not follow a hidden active option.
+- Options are not tab stops (`tabIndex={-1}`, keyboard moves through the input); blur and Escape close the popup.
+
+```tsx
+// ❌ listbox not rendered, status text inside it, active option hidden
+<input aria-expanded={open} aria-controls="results" aria-activedescendant={activeId} />
+// ✅
+<input
+  aria-expanded={open && options.length > 0}
+  aria-controls={open && options.length > 0 ? listId : undefined}
+  aria-activedescendant={open ? activeId : undefined}
+/>
+```
+
+<a id="CR-9"></a>
+
+#### CR-9 — A DOM id in a reusable component comes from `useId`
+
+A hard-coded `id` (for `htmlFor`, `aria-describedby`, `aria-controls`) is duplicated whenever the component renders twice on one page (desktop plus mobile sheet, list rows). Generate it with `useId()` and derive related ids from it; an id nothing references is removed.
+
+```tsx
+// ❌
+<label htmlFor="search-input">…</label><input id="search-input" />
+// ✅
+const inputId = useId();
+<label htmlFor={inputId}>…</label><input id={inputId} />
+```
+
 ---
 
 ## useEffect Side Effect Isolation

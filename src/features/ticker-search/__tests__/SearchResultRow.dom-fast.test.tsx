@@ -73,24 +73,27 @@ describe('SearchResultRow', () => {
             <SearchResultRow result={result()} onSelect={vi.fn()} />
         );
         expect(container.querySelector('a')).toBeNull();
-        // `role="option"`은 방향키 모델이 없어 제거했다(SearchOverlay 주석 참고).
+        // `role="option"`은 방향키 모델이 없어 제거했다(OverlayResults JSDoc 참고).
         // 네이티브 button 역할 그대로가 계약이다.
         expect(screen.getByRole('button')).toBeInstanceOf(HTMLButtonElement);
     });
 
     it('소스에 prefetch 배선이 없다', () => {
-        // 데스크톱 `ResultItem`의 `onMouseEnter={onPrefetch}`를 복사해 오지 않았는지
+        // 데스크톱 `AutocompleteOption`의 `onMouseEnter={onPrefetch}`를 복사해 오지 않았는지
         // **소스 수준에서** 본다. React는 핸들러를 DOM 속성으로 노출하지 않아 렌더
         // 결과로는 검증할 수 없다(`vaulPatchIntegrity.test.ts`와 같은 성격의 가드).
         //
         // `router.prefetch`는 `prefetch={false}`를 우회하고 `/AAPL` RSC는 1.71MB다
         // (docs/architecture/CDN_CACHING.md §1). 10행 목록에 걸면 오버레이를 한 번
         // 열 때마다 ~17MB가 오리진에서 나가 PR #719가 막은 폭주가 되살아난다.
-        // 인기·최근 행은 `SearchResultRow`를 거치지 않고 `SearchOverlay`가 직접
-        // 그린다. 한쪽만 보면 그쪽에 붙은 prefetch 배선을 놓친다.
+        // 인기·최근 행은 `SearchResultRow`를 거치지 않고 `search-overlay/` 아래
+        // 컴포넌트가 직접 그린다. 한쪽만 보면 그쪽에 붙은 prefetch 배선을 놓친다.
         const source = [
             'src/features/ticker-search/ui/SearchResultRow.tsx',
             'src/features/ticker-search/ui/SearchOverlay.tsx',
+            'src/features/ticker-search/ui/search-overlay/OverlayPopularPreview.tsx',
+            'src/features/ticker-search/ui/search-overlay/OverlayRecentSearches.tsx',
+            'src/features/ticker-search/ui/search-overlay/OverlayResults.tsx',
         ]
             .map(file => readFileSync(join(process.cwd(), file), 'utf-8'))
             .join('\n');
