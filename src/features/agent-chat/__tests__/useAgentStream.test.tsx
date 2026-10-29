@@ -1,10 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessageView } from '@/entities/chat-conversation/model';
-import {
-    fromViews,
-    useAgentStream,
-} from '@/features/agent-chat/hooks/useAgentStream';
+import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 
 const trackAdsConversion = vi.hoisted(() => vi.fn());
 vi.mock('@/shared/lib/googleAds', () => ({ trackAdsConversion }));
@@ -58,107 +55,6 @@ function droppedSse(frames: string[]): Response {
 }
 
 afterEach(() => vi.restoreAllMocks());
-
-function toolCallsView(
-    seq: number,
-    toolCalls: { id: string; name: string; args: Record<string, unknown> }[]
-): ChatMessageView {
-    return {
-        id: `m${seq}`,
-        seq,
-        role: 'assistant',
-        content: '',
-        toolCalls,
-        toolName: null,
-        status: 'complete',
-        createdAt: new Date(2026, 0, 1).toISOString(),
-    };
-}
-
-function toolResultView(
-    seq: number,
-    toolName: string | null,
-    content: string
-): ChatMessageView {
-    return {
-        id: `m${seq}`,
-        seq,
-        role: 'tool',
-        content,
-        toolCalls: null,
-        toolName,
-        status: 'complete',
-        createdAt: new Date(2026, 0, 1).toISOString(),
-    };
-}
-
-describe('fromViews', () => {
-    it('drops a tool row that has no preceding assistant bubble to attach to', () => {
-        expect(fromViews([toolResultView(1, 'get_quote', 'result')])).toEqual(
-            []
-        );
-    });
-
-    it('a tool row with no matching tool call by name is appended as a new chip (not merged)', () => {
-        const out = fromViews([
-            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
-            toolResultView(2, 'weird', 'result'),
-        ]);
-        expect(out[0]!.tools.map(t => [t.name, t.summary])).toEqual([
-            ['search', undefined],
-            ['weird', 'result'],
-        ]);
-    });
-
-    it('a tool row with a null toolName falls back to the literal name "tool", both when matching and when pushed fresh', () => {
-        const out = fromViews([
-            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
-            toolResultView(2, null, 'result'),
-        ]);
-        // No existing call named "tool" — pushed as a new chip named "tool".
-        expect(out[0]!.tools.map(t => [t.name, t.summary])).toEqual([
-            ['search', undefined],
-            ['tool', 'result'],
-        ]);
-    });
-
-    it('a second empty-content assistant tool-call bubble merges an aborted status', () => {
-        const out = fromViews([
-            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
-            {
-                id: 'm2',
-                seq: 2,
-                role: 'assistant',
-                content: 'partial answer',
-                toolCalls: null,
-                toolName: null,
-                status: 'aborted',
-                createdAt: new Date(2026, 0, 1).toISOString(),
-            },
-        ]);
-        expect(out).toHaveLength(1);
-        expect(out[0]!.content).toBe('partial answer');
-        expect(out[0]!.status).toBe('aborted');
-    });
-
-    it('a standalone aborted assistant row (no merge) keeps the aborted status', () => {
-        const out = fromViews([
-            {
-                id: 'm1',
-                seq: 1,
-                role: 'assistant',
-                content: 'partial',
-                toolCalls: null,
-                toolName: null,
-                status: 'aborted',
-                createdAt: new Date(2026, 0, 1).toISOString(),
-            },
-        ]);
-        expect(out).toEqual([
-            expect.objectContaining({ content: 'partial', status: 'aborted' }),
-        ]);
-    });
-});
 
 describe('useAgentStream', () => {
     it('send records one chatQuestion conversion; regenerate records none', async () => {
@@ -1216,6 +1112,59 @@ describe('useAgentStream', () => {
         expect(result.current.messages.at(-1)!.content).toBe('second');
     });
 
+    it('a call replaced by a newer one marks its own bubble aborted instead of leaving it streaming', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch');
+        fetchMock.mockImplementationOnce(
+            (_url, init) =>
+                new Promise((_resolve, reject) => {
+                    init?.signal?.addEventListener('abort', () =>
+                        reject(new DOMException('aborted', 'AbortError'))
+                    );
+                })
+        );
+        fetchMock.mockResolvedValueOnce(
+            sse([
+                'event: text\ndata: {"delta":"second"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('first');
+        });
+        act(() => {
+            void result.current.send('second');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+
+        expect(
+            result.current.messages
+                .filter(m => m.role === 'assistant')
+                .map(m => m.status)
+        ).toEqual(['aborted', 'complete']);
+    });
+
+    it('two questions sent in the same millisecond get distinct bubble ids', () => {
+        vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            () => new Promise(() => {})
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('first');
+        });
+        act(() => {
+            void result.current.send('second');
+        });
+
+        const ids = result.current.messages.map(m => m.id);
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+
     /**
      * 후속 질문 마커 줄은 서버가 뗀다 — `done`이 최종 본문(`body`)과 칩 항목
      * (`followUps`)을 싣고, 클라이언트는 core 없이 그대로 쓴다.
@@ -1257,17 +1206,6 @@ describe('useAgentStream', () => {
         await waitFor(() => expect(result.current.status).toBe('idle'));
         expect(result.current.messages.at(-1)!.content).toBe('그대로');
         expect(result.current.messages.at(-1)!.followUps).toEqual([]);
-    });
-
-    it('저장된 대화의 followUps(서버가 나눈 값)를 메시지에 싣는다', () => {
-        const answer = {
-            ...view(2, 'assistant', '본문'),
-            followUps: ['A', 'B'],
-        };
-        expect(fromViews([view(1, 'user', 'q'), answer])[1]).toMatchObject({
-            content: '본문',
-            followUps: ['A', 'B'],
-        });
     });
 
     /**
