@@ -24,6 +24,9 @@ describe('parseSentSymbols', () => {
         ['깨진 JSON', '{not json'],
         ['형태가 다름', '{"date":"2026-10-29","symbols":"AAPL"}'],
         ['null 값', 'null'],
+        ['원시값', '123'],
+        ['date 누락', '{"symbols":["AAPL"]}'],
+        ['date가 문자열이 아님', '{"date":20261029,"symbols":["AAPL"]}'],
     ])('%s이면 빈 배열이다', (_label, raw) => {
         expect(parseSentSymbols(raw, '2026-10-29')).toEqual([]);
     });
