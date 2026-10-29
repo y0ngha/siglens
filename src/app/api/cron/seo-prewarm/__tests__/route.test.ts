@@ -36,7 +36,7 @@ vi.mock('../pruneExpiredRows', () => ({
     }),
 }));
 
-// Task S4 — DrizzleAnalysisHistoryRepository is stubbed so route tests only
+// DrizzleAnalysisHistoryRepository is stubbed so route tests only
 // verify the cron's own isolation contract (prune never blocks lock
 // release), not the repository's own retention logic (covered by
 // entities/analysis/__tests__/analysisHistoryRepository.test.ts).
@@ -182,7 +182,7 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         errSpy.mockRestore();
     });
 
-    it('FIX H(감사) — acquirePrewarmLock이 throw해도(Upstash 장애) 204를 반환하고 after는 예약되지 않는다', async () => {
+    it('acquirePrewarmLock이 throw해도(Upstash 장애) 204를 반환하고 after는 예약되지 않는다', async () => {
         vi.mocked(acquirePrewarmLock).mockRejectedValue(
             new Error('upstash timeout')
         );
@@ -201,7 +201,7 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         errSpy.mockRestore();
     });
 
-    it('Task S4 — 배치 성공 후 pruneAnalysisHistory를 호출하고 결과를 로그한 뒤 releasePrewarmLock한다', async () => {
+    it('배치 성공 후 pruneAnalysisHistory를 호출하고 결과를 로그한 뒤 releasePrewarmLock한다', async () => {
         vi.mocked(acquirePrewarmLock).mockResolvedValue('token-1');
         vi.mocked(runPrewarmBatch).mockResolvedValue({
             harvested: 2,
@@ -268,7 +268,7 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         logSpy.mockRestore();
     });
 
-    it('Task S4 — pruneAnalysisHistory가 throw해도(방어적 격리) cron은 정상 종료하고 releasePrewarmLock을 호출한다', async () => {
+    it('pruneAnalysisHistory가 throw해도(방어적 격리) cron은 정상 종료하고 releasePrewarmLock을 호출한다', async () => {
         vi.mocked(acquirePrewarmLock).mockResolvedValue('token-1');
         vi.mocked(runPrewarmBatch).mockResolvedValue({
             harvested: 2,
