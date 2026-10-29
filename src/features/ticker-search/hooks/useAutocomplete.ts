@@ -25,7 +25,7 @@ import {
     type SubmitTarget,
 } from '../lib/resolveSubmitTarget';
 import { resultDisplayNames } from '../lib/resultDisplay';
-import { searchStatus, type SearchStatus } from '../lib/searchStatus';
+import { deriveSearchState, type SearchStatus } from '../lib/searchStatus';
 import { useSymbolNavigation } from './useSymbolNavigation';
 import { useTickerSearch } from './useTickerSearch';
 
@@ -111,8 +111,8 @@ export function useAutocomplete({
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const { goToSymbol, prefetchSymbol } = useSymbolNavigation();
-    const { results, isSearching, hasQuery, isError, debouncedQuery } =
-        useTickerSearch(query);
+    const search = useTickerSearch(query);
+    const { results, isSearching, hasQuery, isError } = search;
 
     const close = useCallback(() => {
         setIsClosed(true);
@@ -217,14 +217,7 @@ export function useAutocomplete({
     useOnClickOutside([inputRef, dropdownRef], close);
 
     const isOpen = !isClosed && hasQuery;
-    const isSettled = debouncedQuery.trim() === query.trim();
-    const status = searchStatus({
-        query,
-        hasQuery,
-        isSearching,
-        isError,
-        resultCount: results.length,
-    });
+    const { isSettled, status } = deriveSearchState(query, search);
 
     /**
      * 보류해 둔 검색 의도를 결착된 뒤에 처리한다 — 렌더 중 상태 조정(REACT.md#EF-1)이다.

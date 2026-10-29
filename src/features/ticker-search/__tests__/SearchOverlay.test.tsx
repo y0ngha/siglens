@@ -509,11 +509,11 @@ describe('SearchOverlay', () => {
         expect(onNavigateMock).not.toHaveBeenCalled();
     });
 
-    it('디바운스 질의에 공백이 붙어도 첫 결과를 신뢰한다', async () => {
-        // 양쪽을 trim하지 않으면 `"apple "`은 `"apple"`과 영영 같아지지 않는다.
+    it('입력에 공백이 붙어도 첫 결과를 신뢰한다', async () => {
+        // 입력을 trim하지 않으면 `"apple "`은 디바운스 질의 `"apple"`과 영영 같아지지 않는다.
         // 그러면 화면에 첫 결과가 떠 있는데도 무시하고 `/APPLE`로 직행해 404가 난다.
         searchState.hasQuery = true;
-        searchState.debouncedQuery = 'apple ';
+        searchState.debouncedQuery = 'apple';
         searchState.results = [
             {
                 symbol: 'AAPL',
@@ -525,7 +525,7 @@ describe('SearchOverlay', () => {
         ];
         renderOverlay();
 
-        await userEvent.type(screen.getByRole('searchbox'), 'apple{Enter}');
+        await userEvent.type(screen.getByRole('searchbox'), 'apple {Enter}');
         expect(onNavigateMock).toHaveBeenCalledWith('AAPL');
     });
 

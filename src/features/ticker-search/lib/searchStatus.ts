@@ -28,6 +28,37 @@ export interface SearchStatusInput {
     resultCount: number;
 }
 
+/** `deriveSearchState`가 읽는 `useTickerSearch`의 반환 일부. */
+export interface SearchSnapshot {
+    results: readonly unknown[];
+    isSearching: boolean;
+    hasQuery: boolean;
+    isError: boolean;
+    debouncedQuery: string;
+}
+
+/**
+ * 조회가 입력을 따라잡았는지와 그 위의 표시 상태를 한곳에서 계산한다.
+ *
+ * `debouncedQuery`는 이미 앞뒤 공백을 뗀 값이므로 입력 쪽만 trim해 비교한다 —
+ * `"apple "`을 친 채 검색하면 화면의 첫 결과를 믿어야 한다.
+ */
+export function deriveSearchState(
+    query: string,
+    { results, isSearching, hasQuery, isError, debouncedQuery }: SearchSnapshot
+): { isSettled: boolean; status: SearchStatus } {
+    return {
+        isSettled: debouncedQuery === query.trim(),
+        status: searchStatus({
+            query,
+            hasQuery,
+            isSearching,
+            isError,
+            resultCount: results.length,
+        }),
+    };
+}
+
 /**
  * 검색 상태를 하나로 정한다. 두 표면이 같은 우선순위를 쓰도록 한곳에 둔다.
  *

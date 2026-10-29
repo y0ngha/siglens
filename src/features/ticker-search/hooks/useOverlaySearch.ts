@@ -15,7 +15,7 @@ import {
     resolvePendingSubmit,
     type SubmitTarget,
 } from '../lib/resolveSubmitTarget';
-import { searchStatus, type SearchStatus } from '../lib/searchStatus';
+import { deriveSearchState, type SearchStatus } from '../lib/searchStatus';
 import { useTickerSearch } from './useTickerSearch';
 
 /** `useOverlaySearch`의 반환값. 핸들러는 참조가 안정적이다. */
@@ -59,8 +59,8 @@ export function useOverlaySearch(
     const [submitTick, setSubmitTick] = useState(0);
     const pendingSubmitRef = useRef(false);
 
-    const { results, isSearching, hasQuery, debouncedQuery, isError } =
-        useTickerSearch(query);
+    const search = useTickerSearch(query);
+    const { results, isSearching, hasQuery, isError } = search;
 
     /**
      * 결착된 조회 결과로 목적지를 정해 넘긴다. 호출부는 검색 의도가 있고 조회가 settle된
@@ -93,15 +93,7 @@ export function useOverlaySearch(
         setSubmitTick(tick => tick + 1);
     }, []);
 
-    // 양쪽을 trim해 비교한다 — `"apple "`을 친 채 검색하면 화면의 첫 결과를 믿어야 한다.
-    const isSettled = debouncedQuery.trim() === query.trim();
-    const status = searchStatus({
-        query,
-        hasQuery,
-        isSearching,
-        isError,
-        resultCount: results.length,
-    });
+    const { isSettled, status } = deriveSearchState(query, search);
 
     // Enter 시점에 디바운스된 검색이 아직 안 끝났을 수 있어, 제출 의도를 ref에 두고 결과가 settle된 뒤에 이동한다(위 JSDoc). 핸들러에서 즉시 처리하면 한 박자 전 질의 결과로 이동한다.
     // react-doctor-disable-next-line react-doctor/no-event-handler

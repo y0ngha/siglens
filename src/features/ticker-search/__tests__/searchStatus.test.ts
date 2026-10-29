@@ -1,4 +1,5 @@
 import {
+    deriveSearchState,
     searchStatus,
     type SearchStatusInput,
 } from '@/features/ticker-search/lib/searchStatus';
@@ -49,5 +50,34 @@ describe('searchStatus', () => {
         expect(searchStatus({ ...SETTLED_EMPTY, query: '삼성전자' })).toBe(
             'emptyKorean'
         );
+    });
+});
+
+describe('deriveSearchState', () => {
+    const snapshot = {
+        results: [],
+        isSearching: false,
+        hasQuery: true,
+        isError: false,
+        debouncedQuery: 'apple',
+    };
+
+    it('입력의 앞뒤 공백을 떼면 debouncedQuery와 같을 때 settled', () => {
+        expect(deriveSearchState('apple ', snapshot).isSettled).toBe(true);
+    });
+
+    it('debouncedQuery가 입력을 못 따라잡았으면 settled가 아니다', () => {
+        expect(deriveSearchState('apples', snapshot).isSettled).toBe(false);
+    });
+
+    it('status는 searchStatus와 같은 우선순위로 정해진다', () => {
+        expect(deriveSearchState('apple', snapshot).status).toBe('empty');
+        expect(
+            deriveSearchState('apple', { ...snapshot, isSearching: true })
+                .status
+        ).toBe('searching');
+        expect(
+            deriveSearchState('apple', { ...snapshot, results: [{}] }).status
+        ).toBe('results');
     });
 });

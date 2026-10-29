@@ -79,7 +79,8 @@ vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
                 : [],
         isSearching: searchState.isSearching,
         isError: searchState.isError,
-        debouncedQuery: searchState.staleDebouncedQuery ?? query,
+        // 실제 훅의 계약: 디바운스 질의는 앞뒤 공백을 뗀 값이다.
+        debouncedQuery: searchState.staleDebouncedQuery ?? query.trim(),
         hasQuery: query.length >= 1,
     }),
 }));
