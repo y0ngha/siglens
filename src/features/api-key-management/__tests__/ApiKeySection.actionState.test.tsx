@@ -1,6 +1,3 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
     createRef,
     startTransition,
@@ -8,6 +5,10 @@ import {
     useState,
     type RefObject,
 } from 'react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
 import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
@@ -208,7 +209,9 @@ describe('ApiKeySection with the real form hooks', () => {
                 within(anthropicCard()).getByRole('button', { name: '저장' })
             );
             await within(anthropicCard()).findByText('저장되었습니다.');
-            (document.activeElement as HTMLElement | null)?.blur();
+            if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+            }
 
             // 재등록은 카드를 다시 마운트하지 않는다. 그 뒤 다른 탭에서 삭제해
             // 목록만 다시 내려와도 포커스를 가져오지 않는다.

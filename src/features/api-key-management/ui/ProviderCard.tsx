@@ -2,11 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ApiKeyInput } from './ApiKeyInput';
-import { ApiKeyStatusMessage } from './ApiKeyStatusMessage';
-import { PendingLabelSubmit } from './PendingLabelSubmit';
-import { useApiKeyForms } from '../hooks/useApiKeyForms';
-import { useProviderCardFocus } from '../hooks/useProviderCardFocus';
+
 import type { LlmProvider } from '@/shared/config/llmProviders';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -15,6 +11,12 @@ import {
     BUTTON_OUTLINE_DANGER,
 } from '@/shared/lib/buttonStyles';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
+
+import { useApiKeyForms } from '../hooks/useApiKeyForms';
+import { useProviderCardFocus } from '../hooks/useProviderCardFocus';
+import { ApiKeyInput } from './ApiKeyInput';
+import { ApiKeyStatusMessage } from './ApiKeyStatusMessage';
+import { PendingLabelSubmit } from './PendingLabelSubmit';
 
 const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
     anthropic: 'sk-ant-...',
@@ -61,10 +63,10 @@ export function ProviderCard({
     onFocusRestored,
     onRegistrationChange,
 }: ProviderCardProps) {
-    // 키는 분리 전 `ApiKeySection.*` 네임스페이스를 일부러 그대로 쓴다 — 옮기면 카탈로그만 의미 없이 갈아엎힌다.
-    const t = useTranslations('features.api-key-management');
     // 등록된 프로바이더에서 '재등록'을 누른 동안만 true.
     const [editMode, setEditMode] = useState(false);
+    // 키는 분리 전 `ApiKeySection.*` 네임스페이스를 일부러 그대로 쓴다 — 옮기면 카탈로그만 의미 없이 갈아엎힌다.
+    const t = useTranslations('features.api-key-management');
     const {
         saveState,
         saveFormAction,
@@ -81,6 +83,7 @@ export function ProviderCard({
         },
     });
     const showSaveInput = !isRegistered || editMode;
+    // REACT.md#HK-1 예외: 파생값 `showSaveInput`을 입력으로 받는다.
     const { inputRef, reRegisterRef } = useProviderCardFocus({
         showSaveInput,
         restoreFocus,

@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ProviderCard } from './ProviderCard';
+
 import {
     LLM_PROVIDER_VALUES,
     type LlmProvider,
 } from '@/shared/config/llmProviders';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { useState } from 'react';
+
+import { ProviderCard } from './ProviderCard';
 
 /** 포커스를 이어받을 카드. 카드 `key`와 같은 두 값으로 집는다. */
 interface FocusTarget {

@@ -1,7 +1,8 @@
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import { ApiKeyInput } from '@/features/api-key-management/ui/ApiKeyInput';
-import { createRef } from 'react';
 
 describe('ApiKeyInput', () => {
     it('renders password input by default', () => {
