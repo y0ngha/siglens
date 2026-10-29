@@ -115,7 +115,7 @@ describe('useEmailReportSettingsForm', () => {
         });
     });
 
-    it('리렌더해도 반환된 핸들러 참조를 유지한다', () => {
+    it('입력이 그대로인 리렌더에서는 반환된 핸들러 참조를 유지한다', () => {
         const save = makeSave();
         const { result, rerender } = renderHook(() =>
             useEmailReportSettingsForm(INITIAL, save)

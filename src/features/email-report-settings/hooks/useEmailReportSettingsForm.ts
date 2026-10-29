@@ -55,7 +55,10 @@ export interface HourOption {
     readonly label: string;
 }
 
-/** [[useEmailReportSettingsForm]]이 폼 UI에 넘기는 값과 안정적인 핸들러. */
+/**
+ * [[useEmailReportSettingsForm]]이 폼 UI에 넘기는 값과 핸들러. 수신·요일·시각 핸들러는 참조가 유지되고,
+ * `handleSubmit`은 폼 값(요일·시각·시간대·수신 여부)이나 저장 상태가 바뀌면 새로 만들어진다.
+ */
 export interface EmailReportSettingsFormState {
     readonly enabled: boolean;
     readonly sendHour: number;
