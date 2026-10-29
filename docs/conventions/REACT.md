@@ -412,6 +412,19 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 
 ---
 
+<a id="AX-5"></a>
+
+#### AX-5 — Move focus to the invalid field after a failed form action
+
+When a form action comes back with a field error, move focus to the first invalid field so its `aria-describedby`
+error is read. Focus has usually left the form by then (a pending control lost it, or the step remounted), and a
+keyboard user would otherwise restart from the top of the page. Key the effect on the new error object, never on
+mount: a form that renders with no error (or restores one from cache) must not take focus. Test the mount case by
+asserting right after render, without calling `focus()` yourself.
+
+- ❌ The error renders under the field while focus stays on `<body>`.
+- ✅ A small hook focuses the first `[aria-invalid="true"]` field when a new error object arrives.
+
 ## useEffect Side Effect Isolation
 
 Separate side effects inside `useEffect` by responsibility.
