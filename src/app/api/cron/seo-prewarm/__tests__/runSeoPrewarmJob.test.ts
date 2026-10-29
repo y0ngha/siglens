@@ -179,6 +179,11 @@ describe('runSeoPrewarmJob', () => {
             expect(mockPruneExpiredRows).toHaveBeenCalledTimes(1);
         });
 
+        it('이력 정리는 여전히 돈다', async () => {
+            await runSeoPrewarmJob('token-1', 1_000);
+            expect(mockPruneAnalysisHistory).toHaveBeenCalledTimes(1);
+        });
+
         it('락은 여전히 해제한다', async () => {
             await runSeoPrewarmJob('token-1', 1_000);
             expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');

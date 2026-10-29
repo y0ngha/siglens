@@ -30,7 +30,7 @@ export async function PATCH(request: Request): Promise<Response> {
     // CloudWatch metric filter와 같은 마커라, "redis 미구성"과 "락 획득이 던짐" 두 경로를 필터 하나로 잡는다.
     let token: string | null;
     try {
-        // 배치 표식: 락 명령도 배치용 Redis 클라이언트(긴 timeout)로 보낸다(아래 본문과 같다).
+        // 배치 표식: 락 명령도 배치용 Redis 클라이언트(긴 timeout)로 보낸다(아래 afterWithDrain 콜백과 같다).
         token = await runAsBatchWork(() => acquirePrewarmLock());
     } catch (error) {
         console.error(
