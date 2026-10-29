@@ -165,8 +165,8 @@ export async function POST(request: Request): Promise<Response> {
     // all read the same pre-increment count and all proceed, letting an instance exceed
     // `MAX_CONCURRENT_AGENT_TURNS`. Every exit path from here on (lock busy, validation
     // errors, repository throw, or the turn itself) must release this slot exactly once —
-    // `decrementOnce` below, and `releaseOnce` after the lock exists.
-    const decrementOnce = reserveTurnSlot();
+    // `releaseSlot` below, and `releaseOnce` after the lock exists.
+    const releaseSlot = reserveTurnSlot();
 
     // Taken before any DB call (turnLock.ts doc) — the 720s TTL already
     // covers the deadline + pre-turn reads, and holding it any earlier
@@ -178,11 +178,11 @@ export async function POST(request: Request): Promise<Response> {
     try {
         lock = await acquireTurnLock(subject);
     } catch (error) {
-        decrementOnce();
+        releaseSlot();
         throw error;
     }
     if (lock === null) {
-        decrementOnce();
+        releaseSlot();
         return json(HTTP_STATUS_CONFLICT, { error: 'server_busy' });
     }
 
@@ -190,7 +190,7 @@ export async function POST(request: Request): Promise<Response> {
     const releaseOnce = async (): Promise<void> => {
         if (released) return;
         released = true;
-        decrementOnce();
+        releaseSlot();
         await lock.release();
     };
 

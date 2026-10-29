@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { runTurn, appendMessages } = vi.hoisted(() => ({
     runTurn: vi.fn(),
@@ -76,6 +76,8 @@ const start = (
 const readAll = async (stream: ReadableStream<Uint8Array>): Promise<string> =>
     new Response(stream).text();
 
+afterEach(() => vi.restoreAllMocks());
+
 describe('appendOrNotFound', () => {
     const repo = { appendMessages } as unknown as NonNullable<
         ReadyTurn['repo']
@@ -146,12 +148,11 @@ describe('agentTurnStream', () => {
             partialText: 'x',
         });
         appendMessages.mockRejectedValue(FK_ERROR);
-        const err = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { stream } = start();
         const text = await readAll(stream);
         expect(text).toContain('"code":"not_found"');
         expect(text).not.toContain('fk');
-        err.mockRestore();
     });
 
     it('게스트는 부분 답변이 있어도 저장하지 않는다', async () => {
@@ -160,25 +161,23 @@ describe('agentTurnStream', () => {
             error: 'aborted',
             partialText: 'x',
         });
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { stream } = start({
             turn: { ...memberTurn(), repo: null, conversationId: null },
             guest: true,
         });
         await readAll(stream);
         expect(appendMessages).not.toHaveBeenCalled();
-        warn.mockRestore();
     });
 
     it('턴이 던지면 server_error 프레임을 보내고 release를 한 번 부른다', async () => {
         runTurn.mockRejectedValue(new Error('provider exploded'));
-        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => {});
         const { stream, release } = start();
         const text = await readAll(stream);
         expect(text).toContain('"code":"server_error"');
         expect(text).not.toContain('provider exploded');
         expect(release).toHaveBeenCalledTimes(1);
-        err.mockRestore();
     });
 
     it('클라이언트가 끊으면 턴 signal을 중단하고 턴이 끝난 뒤 release를 한 번 부른다', async () => {
@@ -192,13 +191,12 @@ describe('agentTurnStream', () => {
                     );
                 })
         );
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { stream, release } = start();
         const reader = stream.getReader();
         await reader.read();
         await reader.cancel();
         await vi.waitFor(() => expect(release).toHaveBeenCalledTimes(1));
         expect(seenSignal?.aborted).toBe(true);
-        warn.mockRestore();
     });
 });

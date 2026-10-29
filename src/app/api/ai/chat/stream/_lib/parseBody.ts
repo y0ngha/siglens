@@ -38,11 +38,9 @@ interface GuestHistoryItem {
 
 function isGuestHistoryItem(x: unknown): x is GuestHistoryItem {
     if (typeof x !== 'object' || x === null) return false;
-    const { role, content, followUps } = x as {
-        role?: unknown;
-        content?: unknown;
-        followUps?: unknown;
-    };
+    const role: unknown = Reflect.get(x, 'role');
+    const content: unknown = Reflect.get(x, 'content');
+    const followUps: unknown = Reflect.get(x, 'followUps');
     return (
         (role === 'user' || role === 'assistant') &&
         typeof content === 'string' &&
@@ -94,30 +92,32 @@ function isAction(x: unknown): x is Action {
  */
 export function parseBody(raw: unknown): ParsedBody | null {
     if (typeof raw !== 'object' || raw === null) return null;
-    const b = raw as Record<string, unknown>;
+    const rawAction: unknown = Reflect.get(raw, 'action');
+    const rawMessage: unknown = Reflect.get(raw, 'message');
+    const rawConversationId: unknown = Reflect.get(raw, 'conversationId');
     // `action` is not part of the pilot's client-visible surface (send/regenerate/edit
     // are internal to the SSE contract); an unrecognized value is a client bug, not a
     // silent default — reject it instead of coercing to `send`.
-    if (b.action !== undefined && !isAction(b.action)) return null;
-    const action: Action = b.action ?? 'send';
-    const message = typeof b.message === 'string' ? b.message.trim() : '';
+    if (rawAction !== undefined && !isAction(rawAction)) return null;
+    const action: Action = rawAction ?? 'send';
+    const message = typeof rawMessage === 'string' ? rawMessage.trim() : '';
     if (
         action !== 'regenerate' &&
         (message.length === 0 || message.length > MESSAGE_MAX_CHARS)
     )
         return null;
-    const history = parseGuestHistory(b.history);
+    const history = parseGuestHistory(Reflect.get(raw, 'history'));
     if (history === null) return null;
     const base: BaseBody = {
         conversationId:
-            typeof b.conversationId === 'string' ? b.conversationId : null,
+            typeof rawConversationId === 'string' ? rawConversationId : null,
         message,
         history,
     };
     if (action !== 'edit') return { ...base, action };
     // editSeq must be a positive integer — 0/negative would delete the whole
     // transcript in `deleteFromSeq` (`seq >= 0` matches every row).
-    const { editSeq } = b;
+    const editSeq: unknown = Reflect.get(raw, 'editSeq');
     if (
         typeof editSeq !== 'number' ||
         !Number.isInteger(editSeq) ||
