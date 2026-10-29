@@ -22,9 +22,9 @@ export interface GuideCategoryCopy {
 /**
  * 분류별 문구를 불러온다.
  *
- * `t('리터럴')`을 키마다 직접 적는 이유: 번역자를 인자로 받는 헬퍼나 `t(`category.${c}`)`
- * 같은 동적 조회는 i18n 추출기가 사용 중인 키로 세지 못해 `--write` 한 번에 카탈로그에서
- * 지워진다. 번역자를 이 함수 안에서 선언해 모든 소비자가 같은 정적 키를 읽게 한다.
+ * `t('리터럴')`을 키마다 직접 적는 이유: 번역자를 다른 파일의 헬퍼에 넘겨 거기서 키를 부르거나
+ * `t(`category.${c}`)` 같은 동적 조회를 쓰면 i18n 추출기가 사용 중인 키로 세지 못해 `--write` 한 번에
+ * 카탈로그에서 지워진다. 번역자를 이 함수 안에서 선언해 모든 소비자가 같은 정적 키를 읽게 한다.
  */
 export async function loadGuideCategoryCopy(
     locale: Locale
@@ -85,30 +85,50 @@ export function countGuideHubEntries(
     return { terms: entries.length - howto, howto };
 }
 
-/** 허브·분류 허브의 SEO 문구. 허브 설명은 실전 가이드 편수(`counts.howto`)에 따라 세 문구 중 하나다. */
+type HubSeoDescriptionKey =
+    | 'hubSeoDescriptionWithHowto'
+    | 'hubSeoDescriptionWithHowtoNoCount'
+    | 'hubSeoDescription';
+
+/** `views.guide` 네임스페이스 번역자 중 `hubSeoDescription`이 부르는 모양만. */
+export type HubSeoDescriptionTranslator = (
+    key: HubSeoDescriptionKey,
+    values: Readonly<Record<string, string | number>>
+) => string;
+
+/**
+ * 허브 SEO 설명 — 실전 가이드 편수(`counts.howto`)에 따라 세 문구 중 하나다. 실전 가이드가 아직 없으면(시드 전)
+ * "0편"을 적지 않는 문구로 돌아가고, `HOWTO_COUNT_DISPLAY_MIN` 미만이면 편수를 뺀 문구를 쓴다.
+ *
+ * 번역자를 인자로 받지만 키는 여전히 이 파일의 `t('리터럴')`이다 — i18n 추출기는 파일 단위로 `t…('키')` 호출을
+ * 세므로, 매개변수 이름이 `t`로 시작하고 같은 파일에 있는 한 `--write`가 키를 지우지 않는다.
+ */
+export function hubSeoDescription(
+    t: HubSeoDescriptionTranslator,
+    counts: GuideHubCounts
+): string {
+    if (counts.howto >= HOWTO_COUNT_DISPLAY_MIN)
+        return t('hubSeoDescriptionWithHowto', {
+            terms: counts.terms,
+            howto: counts.howto,
+        });
+    if (counts.howto > 0)
+        return t('hubSeoDescriptionWithHowtoNoCount', {
+            terms: counts.terms,
+        });
+    return t('hubSeoDescription', { terms: counts.terms });
+}
+
+/** 허브·분류 허브의 SEO 문구. 허브 설명은 `hubSeoDescription`이 고른다. */
 export async function loadGuideHubSeoCopy(
     locale: Locale,
     counts: GuideHubCounts
 ): Promise<GuideHubSeoCopy> {
     const t = await getTranslations({ locale, namespace: 'views.guide' });
-    // 실전 가이드가 아직 없으면(시드 전) "0편"을 적지 않는 문구로 돌아가고,
-    // `HOWTO_COUNT_DISPLAY_MIN` 미만이면 편수를 뺀 문구를 쓴다.
-    const hubSeoDescription = (): string => {
-        if (counts.howto >= HOWTO_COUNT_DISPLAY_MIN)
-            return t('hubSeoDescriptionWithHowto', {
-                terms: counts.terms,
-                howto: counts.howto,
-            });
-        if (counts.howto > 0)
-            return t('hubSeoDescriptionWithHowtoNoCount', {
-                terms: counts.terms,
-            });
-        return t('hubSeoDescription', { terms: counts.terms });
-    };
     return {
         hubTitle: t('hubTitle'),
         hubSeoTitle: t('hubSeoTitle'),
-        hubSeoDescription: hubSeoDescription(),
+        hubSeoDescription: hubSeoDescription(t, counts),
         hubSeoKeywords: t('hubSeoKeywords')
             .split(',')
             .map(keyword => keyword.trim())

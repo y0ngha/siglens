@@ -87,6 +87,11 @@ const AGAINST_DIRECTION_PENALTY = 1.4;
 /** 겹치는 박스 가장자리에 붙일 때 남기는 틈(viewBox 단위). */
 const EDGE_GAP = 1;
 
+/** 1부터 `max`까지의 정수. 제자리에서 몇 칸 민 후보를 위·아래(좌·우) 양쪽으로 펼칠 때 쓴다. */
+function stepsUpTo(max: number): number[] {
+    return Array.from({ length: max }, (_, index) => index + 1);
+}
+
 /**
  * 이미 놓인 라벨·장애물(봉)과 겹치지 않는 자리를 찾는다. 후보는 제자리, 한 줄씩 민 자리,
  * 겹치는 박스의 위/아래 가장자리에 딱 붙인 자리, 거기에 좌우로 조금 민 자리이고,
@@ -117,11 +122,9 @@ export function placeLabel(
             other.x < start.x + start.width + reach &&
             start.x - reach < other.x + other.width
     );
-    const steps = (max: number): number[] =>
-        Array.from({ length: max }, (_, index) => index + 1);
     const ys = new Set<number>([
         start.y,
-        ...steps(MAX_ROW_STEPS).flatMap(step => [
+        ...stepsUpTo(MAX_ROW_STEPS).flatMap(step => [
             start.y + step * stride,
             start.y - step * stride,
         ]),
@@ -132,7 +135,7 @@ export function placeLabel(
     ]);
     const dxs = [
         0,
-        ...steps(MAX_SHIFT_STEPS).flatMap(step => [
+        ...stepsUpTo(MAX_SHIFT_STEPS).flatMap(step => [
             step * SHIFT_STRIDE,
             -step * SHIFT_STRIDE,
         ]),

@@ -1,6 +1,7 @@
 /** 데모 차트 가격 영역의 가로 눈금선과 오른쪽 가격 라벨. */
 import { formatTick } from '@/views/guide/lib/chartLayout';
 import {
+    DEMO_AXIS_TEXT_GAP,
     DEMO_CHART_FONT,
     type DemoChartFrame,
 } from '@/views/guide/lib/demoChartLayout';
@@ -26,7 +27,7 @@ export function DemoPriceGrid({ frame }: DemoPriceGridProps) {
                 className="fill-secondary-400"
                 dominantBaseline="central"
                 fontSize={DEMO_CHART_FONT - 1}
-                x={plot.right + 4}
+                x={plot.right + DEMO_AXIS_TEXT_GAP}
                 y={yOf(tick)}
             >
                 {formatTick(tick, frame.tickStep)}

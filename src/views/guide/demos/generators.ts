@@ -82,6 +82,13 @@ function classifyWaypoints(points: readonly Waypoint[]): Extremum[] {
     });
 }
 
+/** 봉 인덱스 `abs`가 속한 웨이포인트 구간 — 앞 꼭짓점 인덱스. 마지막 구간을 넘으면 마지막 구간에 머문다. */
+function segmentOf(waypoints: readonly Waypoint[], abs: number): number {
+    return waypoints.findIndex(
+        (_, seg) => seg === waypoints.length - 2 || abs <= waypoints[seg + 1].i
+    );
+}
+
 /**
  * 웨이포인트(꼭짓점)를 지나가는 OHLC 봉열을 만든다.
  *
@@ -111,16 +118,10 @@ export function pathToBars(
         return point.price;
     };
 
-    // 각 봉이 속한 웨이포인트 구간 — 앞 꼭짓점 인덱스(마지막 구간에서 멈춘다).
-    const segmentOf = (abs: number): number =>
-        waypoints.findIndex(
-            (_, seg) =>
-                seg === waypoints.length - 2 || abs <= waypoints[seg + 1].i
-        );
     // `rand()`는 호출 순서가 곧 수열이다 — map은 앞에서부터 돌므로 봉 순서대로 소비한다.
     const closes = Array.from({ length: count }, (_, i) => {
         const abs = first.i + i;
-        const seg = segmentOf(abs);
+        const seg = segmentOf(waypoints, abs);
         const a = waypoints[seg];
         const b = waypoints[seg + 1];
         const t = b.i === a.i ? 0 : (abs - a.i) / (b.i - a.i);

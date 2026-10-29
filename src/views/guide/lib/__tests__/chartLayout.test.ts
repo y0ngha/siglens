@@ -12,7 +12,7 @@ import {
 } from '@/views/guide/lib/chartLayout';
 
 describe('linearScale', () => {
-    it('maps the domain onto the range and centres a degenerate domain', () => {
+    it('정의역을 치역에 대응시키고 폭이 0인 정의역은 가운데로 보낸다', () => {
         const scale = linearScale(0, 10, 100, 0);
         expect(scale(0)).toBe(100);
         expect(scale(10)).toBe(0);
@@ -22,13 +22,13 @@ describe('linearScale', () => {
 });
 
 describe('niceTicks', () => {
-    it('picks 1/2/5 steps inside the range', () => {
+    it('범위 안에서 1/2/5 단위 간격을 고른다', () => {
         const ticks = niceTicks(92, 131, 5);
         expect(ticks).toEqual([100, 110, 120, 130]);
         expect(formatTick(100, 10)).toBe('100');
     });
 
-    it('uses decimals for small steps', () => {
+    it('작은 간격에는 소수를 쓴다', () => {
         const ticks = niceTicks(0, 1, 4);
         expect(ticks[0]).toBe(0);
         expect(ticks).toEqual([0, 0.5, 1]);
@@ -40,7 +40,7 @@ describe('niceTicks', () => {
 describe('placeLabel', () => {
     const bounds = { top: 0, bottom: 200 };
 
-    it('pushes an overlapping label out until it is free', () => {
+    it('겹치는 라벨을 빈자리가 나올 때까지 밀어낸다', () => {
         const first = placeLabel(
             [],
             { x: 10, y: 50, width: 40, height: 14 },
@@ -57,7 +57,7 @@ describe('placeLabel', () => {
         expect(second.y).toBeLessThan(50 - 14 + 1);
     });
 
-    it('does not add the result to the placed list', () => {
+    it('결과를 placed 목록에 더하지 않는다', () => {
         const placed: readonly LabelBox[] = [
             { x: 100, y: 100, width: 10, height: 14 },
         ];
@@ -65,7 +65,7 @@ describe('placeLabel', () => {
         expect(placed).toEqual([{ x: 100, y: 100, width: 10, height: 14 }]);
     });
 
-    it('keeps labels inside the vertical bounds', () => {
+    it('라벨을 세로 경계 안에 둔다', () => {
         const box = placeLabel(
             [],
             { x: 0, y: -30, width: 10, height: 14 },
@@ -77,7 +77,7 @@ describe('placeLabel', () => {
 });
 
 describe('splitRuns', () => {
-    it('breaks lines at null values', () => {
+    it('null에서 선을 끊는다', () => {
         const runs = splitRuns(
             [1, 2, null, 4],
             i => i,
@@ -90,7 +90,7 @@ describe('splitRuns', () => {
 });
 
 describe('estimateLabelWidth', () => {
-    it('counts wide characters as wider', () => {
+    it('넓은 글자는 더 넓게 센다', () => {
         expect(estimateLabelWidth('가가', 12)).toBeGreaterThan(
             estimateLabelWidth('ab', 12)
         );
@@ -98,7 +98,7 @@ describe('estimateLabelWidth', () => {
 });
 
 describe('formatCompact', () => {
-    it('shortens large numbers', () => {
+    it('큰 수를 줄여 쓴다', () => {
         expect(formatCompact(-200_000_000)).toBe('-200M');
         expect(formatCompact(1_500_000_000)).toBe('1.5B');
         expect(formatCompact(250_000)).toBe('250K');
@@ -106,8 +106,8 @@ describe('formatCompact', () => {
     });
 });
 
-describe('placeLabel fallback', () => {
-    it('tries the opposite direction when the preferred side is blocked by the bounds', () => {
+describe('placeLabel 반대 방향 대체', () => {
+    it('선호 방향이 경계에 막히면 반대 방향을 시도한다', () => {
         const bounds = { top: 0, bottom: 100 };
         const a = placeLabel(
             [],
@@ -126,10 +126,10 @@ describe('placeLabel fallback', () => {
     });
 });
 
-describe('placeLabel with obstacles', () => {
+describe('placeLabel 장애물', () => {
     const bounds = { top: 0, bottom: 200, left: 0, right: 300 };
 
-    it('moves a label off the candles under it, to the nearest free side', () => {
+    it('아래 봉에서 가장 가까운 빈 쪽으로 라벨을 옮긴다', () => {
         const candle: LabelBox = { x: 40, y: 40, width: 8, height: 60 };
         const result = placeLabel(
             [],
@@ -146,7 +146,7 @@ describe('placeLabel with obstacles', () => {
         expect(clear).toBe(true);
     });
 
-    it('keeps the label inside the horizontal bounds', () => {
+    it('라벨을 가로 경계 안에 둔다', () => {
         const result = placeLabel(
             [],
             { x: 0, y: 60, width: 40, height: 14 },
@@ -160,7 +160,7 @@ describe('placeLabel with obstacles', () => {
 });
 
 describe('niceStep', () => {
-    it('rounds a raw step up to 1, 2, 5 x 10^n', () => {
+    it('원시 간격을 1, 2, 5 × 10^n으로 올린다', () => {
         expect(niceStep(0.3)).toBe(0.5);
         expect(niceStep(1.4)).toBe(2);
         expect(niceStep(700_000)).toBe(1_000_000);

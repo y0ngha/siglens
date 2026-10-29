@@ -275,10 +275,10 @@ export function selectLiveSymbols({
     // 같은 종목은 정렬상 가장 앞선 행 하나만 남긴다. 거꾸로 채운 Map은 뒤 항목을 앞 항목이
     // 덮어써 종목마다 첫 행이 남고, 거르기는 정렬 순서를 그대로 지킨다(O(n)).
     const firstBySymbol = new Map(
-        sorted.toReversed().map(ranked => [ranked.row.symbol, ranked])
+        sorted.toReversed().map(entry => [entry.row.symbol, entry])
     );
     const deduped = sorted
-        .filter(ranked => firstBySymbol.get(ranked.row.symbol) === ranked)
+        .filter(entry => firstBySymbol.get(entry.row.symbol) === entry)
         .map(({ row }) => {
             const known = scannerBySymbol.get(row.symbol);
             return known === undefined || known === row

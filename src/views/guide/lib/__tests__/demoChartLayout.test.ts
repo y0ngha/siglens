@@ -17,24 +17,34 @@ import {
     demoPriceDomain,
     isFiniteValue,
     isOverlayDrawable,
+    LABEL_BOX_PAD_Y,
+    LABEL_INSET,
     labelBoxAt,
     labelTextX,
     layoutOverlayLabels,
     MARKER_ARROW_REACH_RATIO,
     MARKER_BAR_GAP,
+    MARKER_ROOM,
     markerGeometry,
     overlayKey,
     overlayLayers,
+    PANE_GAP,
+    PANE_HEIGHT,
+    PRICE_PAD,
     profileRowHeight,
 } from '@/views/guide/lib/demoChartLayout';
 
-/** 봉 범위가 [100, 110]인 평평한 봉열. */
+const BAR_LOW = 100;
+const BAR_HIGH = 110;
+const BAR_SPAN = BAR_HIGH - BAR_LOW;
+
+/** 봉 범위가 [BAR_LOW, BAR_HIGH]인 평평한 봉열. */
 const flatBars = (count: number): DemoBar[] =>
     Array.from({ length: count }, (_, i) => ({
         time: i,
         open: 102,
-        high: 110,
-        low: 100,
+        high: BAR_HIGH,
+        low: BAR_LOW,
         close: 108,
     }));
 
@@ -43,8 +53,14 @@ const demoWith = (overlays: DemoOverlay[], count = 10): GuideDemo => ({
     overlays,
 });
 
+/** 오버레이가 넓히지 않았을 때의 가격 축 범위 — 봉 범위를 위아래로 `PRICE_PAD`만큼 띄운다. */
+const BAR_DOMAIN = [
+    BAR_LOW - BAR_SPAN * PRICE_PAD,
+    BAR_HIGH + BAR_SPAN * PRICE_PAD,
+];
+
 describe('isFiniteValue', () => {
-    it('accepts finite numbers only', () => {
+    it('유한한 숫자만 받는다', () => {
         expect(
             [0, -3.5, null, undefined, Number.NaN, Infinity].map(isFiniteValue)
         ).toEqual([true, true, false, false, false, false]);
@@ -52,28 +68,28 @@ describe('isFiniteValue', () => {
 });
 
 describe('demoPriceDomain', () => {
-    it('pads the bar range by 7% on each side', () => {
-        expect(demoPriceDomain(demoWith([]))).toEqual([99.3, 110.7]);
+    it('봉 범위를 위아래로 PRICE_PAD만큼 띄운다', () => {
+        expect(demoPriceDomain(demoWith([]))).toEqual(BAR_DOMAIN);
     });
 
-    it('widens the range for a level outside the bars', () => {
+    it('봉 밖의 수평선까지 범위를 넓힌다', () => {
         const [, max] = demoPriceDomain(
             demoWith([{ kind: 'level', price: 130, label: 'R' }])
         );
-        expect(max).toBeCloseTo(130 + 30 * 0.07);
+        expect(max).toBeCloseTo(130 + (130 - BAR_LOW) * PRICE_PAD);
     });
 
-    it('ignores a far series that is not part of the domain', () => {
+    it('범위에 넣지 않는 먼 시리즈는 무시한다', () => {
         expect(
             demoPriceDomain(
                 demoWith([
                     { kind: 'series', values: [200, null], label: 'FAR' },
                 ])
             )
-        ).toEqual([99.3, 110.7]);
+        ).toEqual(BAR_DOMAIN);
     });
 
-    it('judges "far" against the range widened by earlier overlays', () => {
+    it('"먼" 값은 앞선 오버레이가 넓힌 범위를 기준으로 판정한다', () => {
         // 봉 범위 10의 35% = 3.5. 레벨 130이 먼저 넓히면 133은 더 이상 멀지 않다.
         const series: DemoOverlay = {
             kind: 'series',
@@ -82,14 +98,14 @@ describe('demoPriceDomain', () => {
         };
         const level: DemoOverlay = { kind: 'level', price: 130, label: 'R' };
         expect(demoPriceDomain(demoWith([level, series]))[1]).toBeCloseTo(
-            133 + 33 * 0.07
+            133 + (133 - BAR_LOW) * PRICE_PAD
         );
         expect(demoPriceDomain(demoWith([series, level]))[1]).toBeCloseTo(
-            130 + 30 * 0.07
+            130 + (130 - BAR_LOW) * PRICE_PAD
         );
     });
 
-    it('leaves room above a marker on the top of a bar', () => {
+    it('봉 위 표식이 들어갈 자리를 남긴다', () => {
         const [, max] = demoPriceDomain(
             demoWith([
                 {
@@ -101,13 +117,14 @@ describe('demoPriceDomain', () => {
                 },
             ])
         );
-        // 고가 110 + 봉 범위 10 × 12%
-        expect(max).toBeCloseTo(111.2 + 11.2 * 0.07);
+        // 고가 + 봉 범위 × MARKER_ROOM까지 넓힌 뒤 PRICE_PAD를 띄운다.
+        const markerTop = BAR_HIGH + BAR_SPAN * MARKER_ROOM;
+        expect(max).toBeCloseTo(markerTop + (markerTop - BAR_LOW) * PRICE_PAD);
     });
 });
 
 describe('demoChartFrame', () => {
-    it('ends below the price area when there are no panes', () => {
+    it('패널이 없으면 가격 영역 아래에서 끝난다', () => {
         const frame = demoChartFrame(demoWith([]));
         expect(frame.panes).toEqual([]);
         expect(frame.totalHeight).toBe(
@@ -115,7 +132,7 @@ describe('demoChartFrame', () => {
         );
     });
 
-    it('stacks panes under the price area with a gap', () => {
+    it('패널을 가격 영역 아래에 간격을 두고 쌓는다', () => {
         const frame = demoChartFrame({
             bars: flatBars(4),
             panes: [{ label: 'A' }, { label: 'B', height: 50 }],
@@ -123,16 +140,24 @@ describe('demoChartFrame', () => {
         const priceBottom = DEMO_CHART_MARGIN_TOP + DEMO_PRICE_HEIGHT;
         expect(frame.panes.map(({ top, height }) => ({ top, height }))).toEqual(
             [
-                { top: priceBottom + 8, height: 78 },
-                { top: priceBottom + 8 + 78 + 8, height: 50 },
+                { top: priceBottom + PANE_GAP, height: PANE_HEIGHT },
+                {
+                    top: priceBottom + PANE_GAP + PANE_HEIGHT + PANE_GAP,
+                    height: 50,
+                },
             ]
         );
         expect(frame.totalHeight).toBe(
-            priceBottom + 8 + 78 + 8 + 50 + DEMO_CHART_MARGIN_BOTTOM
+            priceBottom +
+                PANE_GAP +
+                PANE_HEIGHT +
+                PANE_GAP +
+                50 +
+                DEMO_CHART_MARGIN_BOTTOM
         );
     });
 
-    it('centres each bar in its slot', () => {
+    it('봉을 칸 가운데에 놓는다', () => {
         const frame = demoChartFrame(demoWith([], 4));
         expect(frame.pitch).toBe(frame.plotWidth / 4);
         expect(frame.xOf(0)).toBe(frame.plot.left + frame.pitch / 2);
@@ -143,37 +168,41 @@ describe('demoChartFrame', () => {
 describe('labelBoxAt / labelTextX', () => {
     const plot = { top: 0, bottom: 100, left: 10, right: 200 };
 
-    it('places the box by its anchor', () => {
-        const width = estimateLabelWidth('AB', DEMO_CHART_FONT);
-        expect(labelBoxAt('AB', 100, 50, 'start', plot).x).toBe(100);
-        expect(labelBoxAt('AB', 100, 50, 'end', plot).x).toBe(100 - width);
-        expect(labelBoxAt('AB', 100, 50, 'middle', plot).x).toBe(
-            100 - width / 2
-        );
-    });
+    const width = estimateLabelWidth('AB', DEMO_CHART_FONT);
 
-    it('keeps the box inside the plot horizontally', () => {
+    it.each([
+        ['start', 100],
+        ['middle', 100 - width / 2],
+        ['end', 100 - width],
+    ] as const)(
+        '%s 기준점이면 박스 왼쪽 끝을 그에 맞춰 놓는다',
+        (anchor, left) => {
+            expect(labelBoxAt('AB', 100, 50, anchor, plot).x).toBe(left);
+        }
+    );
+
+    it('박스를 가격 영역 좌우 안에 둔다', () => {
         const width = estimateLabelWidth('AB', DEMO_CHART_FONT);
         expect(labelBoxAt('AB', 0, 50, 'start', plot).x).toBe(10);
         expect(labelBoxAt('AB', 400, 50, 'start', plot).x).toBe(200 - width);
     });
 
-    it('centres the box vertically on y', () => {
+    it('박스를 y에 세로 가운데로 맞춘다', () => {
         const box = labelBoxAt('AB', 100, 50, 'start', plot);
-        expect(box.height).toBe(DEMO_CHART_FONT + 3);
+        expect(box.height).toBe(DEMO_CHART_FONT + LABEL_BOX_PAD_Y);
         expect(box.y + box.height / 2).toBe(50);
     });
 
-    it('insets the text anchor from the box edges', () => {
+    it('글자 기준점을 박스 가장자리에서 LABEL_INSET만큼 들인다', () => {
         const box = { x: 10, y: 0, width: 40, height: 15 };
-        expect(labelTextX(box, 'start')).toBe(12);
+        expect(labelTextX(box, 'start')).toBe(10 + LABEL_INSET);
         expect(labelTextX(box, 'middle')).toBe(30);
-        expect(labelTextX(box, 'end')).toBe(48);
+        expect(labelTextX(box, 'end')).toBe(50 - LABEL_INSET);
     });
 });
 
 describe('bandEdges', () => {
-    it('keeps only slots where both edges are finite', () => {
+    it('위·아래 값이 둘 다 유한한 칸만 남긴다', () => {
         expect(
             bandEdges({
                 kind: 'band',
@@ -200,25 +229,25 @@ describe('isOverlayDrawable', () => {
             tone: 'bull',
         }) satisfies DemoOverlay;
 
-    it('draws a band with two or more valid slots', () => {
+    it('유효 칸이 둘 이상인 띠는 그린다', () => {
         expect(isOverlayDrawable(band([5, null, 7], [1, 2, 3]), [])).toBe(true);
     });
 
-    it('skips a band with fewer than two valid slots', () => {
+    it('유효 칸이 둘 미만인 띠는 건너뛴다', () => {
         expect(isOverlayDrawable(band([5, null, 7], [1, 2, null]), [])).toBe(
             false
         );
     });
 
-    it('draws a marker that points at an existing bar', () => {
+    it('있는 봉을 가리키는 표식은 그린다', () => {
         expect(isOverlayDrawable(marker(9), flatBars(10))).toBe(true);
     });
 
-    it('skips a marker that points past the last bar', () => {
+    it('마지막 봉 너머를 가리키는 표식은 건너뛴다', () => {
         expect(isOverlayDrawable(marker(10), flatBars(10))).toBe(false);
     });
 
-    it('always draws the other overlay kinds', () => {
+    it('나머지 오버레이 종류는 항상 그린다', () => {
         expect(
             isOverlayDrawable({ kind: 'level', price: 1, label: 'L' }, [])
         ).toBe(true);
@@ -228,7 +257,7 @@ describe('isOverlayDrawable', () => {
 describe('markerGeometry', () => {
     const frame = demoChartFrame(demoWith([]));
 
-    it('returns null for a marker past the last bar', () => {
+    it('마지막 봉 너머를 가리키는 표식은 null이다', () => {
         expect(
             markerGeometry(
                 {
@@ -244,7 +273,7 @@ describe('markerGeometry', () => {
         ).toBeNull();
     });
 
-    it('points down at the high from above, and up at the low from below', () => {
+    it('위 표식은 고가 위에서 아래를 가리킨다', () => {
         const above = markerGeometry(
             {
                 kind: 'marker',
@@ -256,6 +285,18 @@ describe('markerGeometry', () => {
             flatBars(10),
             frame
         );
+        expect(above).toEqual({
+            x: frame.xOf(2),
+            tipY: frame.yOf(BAR_HIGH) - MARKER_BAR_GAP,
+            baseY:
+                frame.yOf(BAR_HIGH) -
+                MARKER_BAR_GAP -
+                DEMO_MARKER_ARROW * MARKER_ARROW_REACH_RATIO,
+            above: true,
+        });
+    });
+
+    it('아래 표식은 저가 아래에서 위를 가리킨다', () => {
         const below = markerGeometry(
             {
                 kind: 'marker',
@@ -267,18 +308,9 @@ describe('markerGeometry', () => {
             flatBars(10),
             frame
         );
-        expect(above).toEqual({
-            x: frame.xOf(2),
-            tipY: frame.yOf(110) - MARKER_BAR_GAP,
-            baseY:
-                frame.yOf(110) -
-                MARKER_BAR_GAP -
-                DEMO_MARKER_ARROW * MARKER_ARROW_REACH_RATIO,
-            above: true,
-        });
-        expect(below?.tipY).toBe(frame.yOf(100) + MARKER_BAR_GAP);
+        expect(below?.tipY).toBe(frame.yOf(BAR_LOW) + MARKER_BAR_GAP);
         expect(below?.baseY).toBe(
-            frame.yOf(100) +
+            frame.yOf(BAR_LOW) +
                 MARKER_BAR_GAP +
                 DEMO_MARKER_ARROW * MARKER_ARROW_REACH_RATIO
         );
@@ -288,14 +320,17 @@ describe('markerGeometry', () => {
 describe('profileRowHeight', () => {
     const yOf = (value: number): number => -value * 2;
 
-    it('uses the smallest price gap minus one, at least 2', () => {
+    it('가장 가까운 두 가격 간격(화면 좌표)에서 1을 뺀다', () => {
         expect(
             profileRowHeight([{ price: 10 }, { price: 16 }, { price: 13 }], yOf)
         ).toBe(5);
+    });
+
+    it('간격이 좁아도 높이는 2 아래로 내려가지 않는다', () => {
         expect(profileRowHeight([{ price: 10 }, { price: 10.2 }], yOf)).toBe(2);
     });
 
-    it('falls back to 4 for a single row', () => {
+    it('한 줄뿐이면 4로 돌아간다', () => {
         expect(profileRowHeight([{ price: 10 }], yOf)).toBe(4);
     });
 });
@@ -307,7 +342,7 @@ describe('layoutOverlayLabels', () => {
         label,
     });
 
-    it('keys labels by overlay kind and position and keeps overlay order', () => {
+    it('라벨 키는 오버레이 종류+위치이고 오버레이 순서를 지킨다', () => {
         const demo = demoWith([
             { kind: 'profile', rows: [{ price: 105, volume: 1 }] },
             level(108, 'R1'),
@@ -321,7 +356,7 @@ describe('layoutOverlayLabels', () => {
         expect(labels[0].key).toBe('level-1');
     });
 
-    it('moves a later label off an earlier one at the same spot', () => {
+    it('같은 자리의 뒤 라벨을 앞 라벨에서 비켜 놓는다', () => {
         // 봉 위쪽 빈 자리라 첫 라벨은 제자리에 앉고, 둘째만 비켜 간다.
         const demo = demoWith([level(130, 'AAA'), level(130, 'BBB')]);
         const [first, second] = layoutOverlayLabels(demo, demoChartFrame(demo));
@@ -333,7 +368,7 @@ describe('layoutOverlayLabels', () => {
         expect(overlap).toBe(false);
     });
 
-    it('colours each label by its overlay', () => {
+    it('라벨마다 자기 오버레이의 색 근거를 쓴다', () => {
         const demo = demoWith([
             {
                 kind: 'zone',
@@ -371,7 +406,7 @@ describe('layoutOverlayLabels', () => {
         ]);
     });
 
-    it('skips labels for overlays that cannot draw or have no text', () => {
+    it('그릴 수 없거나 글자가 없는 오버레이는 라벨을 내지 않는다', () => {
         const demo = demoWith([
             {
                 kind: 'band',
@@ -400,7 +435,7 @@ describe('layoutOverlayLabels', () => {
         expect(layoutOverlayLabels(demo, demoChartFrame(demo))).toEqual([]);
     });
 
-    it('labels a band at its last finite upper value', () => {
+    it('띠 라벨은 마지막 유한한 위 값에 붙는다', () => {
         const demo = demoWith([
             {
                 kind: 'band',
@@ -433,7 +468,7 @@ describe('overlayLayers', () => {
     };
     const level: DemoOverlay = { kind: 'level', price: 105, label: 'L' };
 
-    it('puts markers above the bars and everything else below, keeping order', () => {
+    it('표식은 봉 위 층, 나머지는 봉 아래 층에 두고 순서를 지킨다', () => {
         const { belowBars, aboveBars } = overlayLayers([
             marker(3),
             zone,
@@ -447,7 +482,7 @@ describe('overlayLayers', () => {
         ]);
     });
 
-    it('keys each overlay by its position in the original list', () => {
+    it('키는 원래 목록에서의 위치로 매긴다', () => {
         const { belowBars, aboveBars } = overlayLayers([
             marker(3),
             zone,

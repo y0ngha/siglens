@@ -63,7 +63,9 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
     const clipId = `${uid}-clip`;
     const t = useTranslations('views.guide');
     const format = useFormatter();
-    const fallbackDescription = describeDemo(demo, t, format);
+    // 캡션이 있으면 `<desc>`를 내지 않으므로 대체 설명도 만들지 않는다.
+    const fallbackDescription =
+        caption === null ? describeDemo(demo, t, format) : null;
     const frame = demoChartFrame(demo);
     const { plot, pitch } = frame;
     const { belowBars, aboveBars } = overlayLayers(demo.overlays ?? []);
@@ -88,9 +90,9 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                 role="img"
                 viewBox={`0 0 ${DEMO_CHART_WIDTH} ${frame.totalHeight}`}
             >
-                {caption === null ? (
+                {fallbackDescription !== null && (
                     <desc id={descId}>{fallbackDescription}</desc>
-                ) : null}
+                )}
                 <defs>
                     <clipPath id={clipId}>
                         <rect

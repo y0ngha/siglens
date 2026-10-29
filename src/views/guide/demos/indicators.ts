@@ -517,17 +517,22 @@ const elderRayDemo = windowed(40, c => {
     };
 });
 
+/** `i`번째 봉의 전일 대비 종가 변화. `i`는 1 이상이어야 한다(앞 봉이 있어야 한다). */
+function closeChange(bars: readonly DemoBar[], i: number): number {
+    return bars[i].close - bars[i - 1].close;
+}
+
 const ewmaDemo = windowed(
     150,
     c => {
-        const change = (i: number): number =>
-            c.bars[i].close - c.bars[i - 1].close;
         // 하루 하락폭이 가장 큰 봉(같으면 앞선 봉).
         const worst = c.bars
             .slice(1)
             .reduce(
                 (best, _bar, offset) =>
-                    change(offset + 1) < change(best) ? offset + 1 : best,
+                    closeChange(c.bars, offset + 1) < closeChange(c.bars, best)
+                        ? offset + 1
+                        : best,
                 1
             );
         return {

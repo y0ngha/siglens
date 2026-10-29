@@ -5,6 +5,7 @@ import {
     bandEdges,
     DEMO_MARKER_ARROW,
     isOverlayDrawable,
+    MARKER_ARROW_HALF_BASE_RATIO,
     markerGeometry,
     profileRowHeight,
     type DemoChartFrame,
@@ -184,7 +185,7 @@ function MarkerShape({
     const marker = markerGeometry(overlay, bars, frame);
     if (marker === null) return null;
     const { x, tipY, baseY } = marker;
-    const half = DEMO_MARKER_ARROW * 0.75;
+    const half = DEMO_MARKER_ARROW * MARKER_ARROW_HALF_BASE_RATIO;
     return (
         <polygon
             className={TONE_FILL[overlay.tone]}

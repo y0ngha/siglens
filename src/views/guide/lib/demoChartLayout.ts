@@ -32,22 +32,27 @@ export const DEMO_CHART_MARGIN_TOP = 14;
 export const DEMO_CHART_MARGIN_BOTTOM = 8;
 /** 가격 영역 높이(viewBox 단위). 보조 패널은 이 아래에 쌓이고, 도형이 패널로 넘치지 않게 clipPath도 이 높이로 자른다. */
 export const DEMO_PRICE_HEIGHT = 230;
-const PANE_HEIGHT = 78;
-const PANE_GAP = 8;
+/** 보조 패널 기본 높이(viewBox 단위). 패널이 `height`를 정하지 않으면 이 값이다. */
+export const PANE_HEIGHT = 78;
+/** 가격 영역과 첫 패널, 패널과 패널 사이 세로 간격. */
+export const PANE_GAP = 8;
 /** 라벨 기본 글자 크기(viewBox 단위). 라벨 박스 크기·표식 라벨 간격도 이 값에서 나온다. */
 export const DEMO_CHART_FONT = 12;
 const BODY_RATIO = 0.62;
 const MAX_BODY = 20;
 const MIN_BODY = 2;
-const PRICE_PAD = 0.07;
+/** 가격 축 범위를 위아래로 띄우는 비율(범위 대비). 봉·선이 가격 영역 위아래 끝에 붙지 않게 한다. */
+export const PRICE_PAD = 0.07;
 /** 가격 범위에 넣지 않는 선이 봉 범위에서 이 비율 넘게 떨어지면 범위를 늘리지 않는다. */
 const FAR_SERIES_SPAN = 0.35;
-/** 표식 화살표의 기준 크기. 밑변 반폭(`DemoOverlayShape`)과 높이(`MARKER_ARROW_REACH_RATIO`)가 이 값의 배수라 함께 커진다. */
+/** 표식 화살표의 기준 크기. 밑변 반폭(`MARKER_ARROW_HALF_BASE_RATIO`)과 높이(`MARKER_ARROW_REACH_RATIO`)가 이 값의 배수라 함께 커진다. */
 export const DEMO_MARKER_ARROW = 5;
 /** 화살표 끝과 봉 끝(고가·저가) 사이 틈 — 화살표가 꼬리에 붙어 꼬리의 일부처럼 보이지 않게 띄운다. */
 export const MARKER_BAR_GAP = 3;
-/** 화살표 높이(끝 → 밑변) = 기준 크기 × 이 값. 밑변 반폭(0.75배)보다 길어야 위·아래를 가리키는 모양으로 읽힌다. */
+/** 화살표 높이(끝 → 밑변) = 기준 크기 × 이 값. 밑변 반폭(`MARKER_ARROW_HALF_BASE_RATIO`)보다 길어야 위·아래를 가리키는 모양으로 읽힌다. */
 export const MARKER_ARROW_REACH_RATIO = 1.4;
+/** 화살표 밑변 반폭 = 기준 크기 × 이 값(`DemoOverlayShape`). 높이 비율보다 작아 화살표가 뾰족하게 읽힌다. */
+export const MARKER_ARROW_HALF_BASE_RATIO = 0.75;
 /** 표식 라벨 중심이 화살표 밑변에서 떨어지는 거리(글자 크기 대비). 기본 글자에서 7.8로 박스 반높이(7.5)보다 조금 커, 박스가 밑변에 닿기 직전에 놓인다. */
 const MARKER_LABEL_OFFSET_RATIO = 0.65;
 /**
@@ -57,11 +62,16 @@ const MARKER_LABEL_OFFSET_RATIO = 0.65;
 const LEVEL_LABEL_OFFSET = 8;
 const LINE_END_LABEL_OFFSET = 9;
 /** 라벨 박스 높이 = 글자 크기 + 이 값. 위아래 여유가 있어야 이웃 박스와 맞붙어도 글자끼리 닿지 않는다. */
-const LABEL_BOX_PAD_Y = 3;
+export const LABEL_BOX_PAD_Y = 3;
 /** 글자를 박스·구간·가격 영역 가장자리에서 들이는 거리. 가장자리 선과 글자가 겹치지 않게 한다. */
-const LABEL_INSET = 2;
-/** 봉 끝에 붙은 표식·라벨이 들어갈 자리(봉 범위 대비 비율). */
-const MARKER_ROOM = 0.12;
+export const LABEL_INSET = 2;
+/** 봉 끝에 붙은 표식·라벨이 들어갈 자리(봉 범위 대비 비율). 가격 축 범위를 이만큼 더 넓힌다. */
+export const MARKER_ROOM = 0.12;
+/**
+ * 가격 영역·보조 패널 오른쪽 끝과 축 글자(가격 눈금·패널 눈금·레벨 값) 사이 간격. 두 영역이 같은 오른쪽 끝을
+ * 쓰므로 한 값을 읽어야 축 글자가 세로 한 줄로 맞는다(`DemoPriceGrid`, `GuideDemoPane`).
+ */
+export const DEMO_AXIS_TEXT_GAP = 4;
 
 /** 라벨 글자를 박스의 어느 쪽에 맞추는지(SVG `text-anchor`). */
 export type LabelAnchor = 'start' | 'middle' | 'end';
@@ -123,7 +133,7 @@ function overlayDomainCandidates(
 }
 
 /**
- * 가격 축 범위. 봉 범위에서 시작해 오버레이 값을 그리는 순서대로 넓히고, 위아래로 7%를 띄운다.
+ * 가격 축 범위. 봉 범위에서 시작해 오버레이 값을 그리는 순서대로 넓히고, 위아래로 `PRICE_PAD`만큼 띄운다.
  * 가격 범위에 넣지 않는 선은 **그때까지 넓혀진** 범위에서 봉 범위의 35% 안쪽일 때만 범위를 넓힌다 —
  * 그래서 순서가 결과에 영향을 준다.
  */

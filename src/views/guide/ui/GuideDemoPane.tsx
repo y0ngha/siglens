@@ -4,10 +4,12 @@ import {
     splitRuns,
     toPoints,
 } from '@/views/guide/lib/chartLayout';
-import type { PaneFrame } from '@/views/guide/lib/demoChartLayout';
+import {
+    DEMO_AXIS_TEXT_GAP,
+    type PaneFrame,
+} from '@/views/guide/lib/demoChartLayout';
 import {
     legendPositions,
-    PANE_AXIS_TEXT_GAP,
     PANE_INNER_PAD,
     PANE_LABEL_INSET,
     paneDomain,
@@ -98,7 +100,7 @@ export function GuideDemoPane({
                         className="fill-secondary-400"
                         dominantBaseline="middle"
                         fontSize={labelFontSize - 1}
-                        x={frame.right + PANE_AXIS_TEXT_GAP}
+                        x={frame.right + DEMO_AXIS_TEXT_GAP}
                         y={yOf(level.value)}
                     >
                         {level.label ?? paneLevelText(level.value)}
@@ -111,7 +113,7 @@ export function GuideDemoPane({
                     className="fill-secondary-400"
                     dominantBaseline="middle"
                     fontSize={labelFontSize - 1}
-                    x={frame.right + PANE_AXIS_TEXT_GAP}
+                    x={frame.right + DEMO_AXIS_TEXT_GAP}
                     y={yOf(tick)}
                 >
                     {paneTickText(tick, step)}
