@@ -11,15 +11,21 @@ import {
     detailsStepErrorSlot,
     emailStepErrorSlot,
 } from '../lib/signupErrorSlot';
-import {
-    derivePhase,
-    SIGNUP_FIELD_ID,
-    type SignupPhase,
-} from '../lib/signupPhase';
+import { signupFocusTarget } from '../lib/signupFocusTarget';
+import { derivePhase, type SignupPhase } from '../lib/signupPhase';
 import { useSignupFocus } from './useSignupFocus';
 import { useSignupForm } from './useSignupForm';
 
 type FormAction = (formData: FormData) => void;
+
+/** 오류 자리가 `target`일 때만 문구를 넘긴다 — 한 오류는 한 자리에만 뜬다. */
+function messageAt<Slot extends string>(
+    slot: Slot | null,
+    target: Slot,
+    message: string | undefined
+): string | undefined {
+    return slot === target ? message : undefined;
+}
 
 interface UseSignupFlowParams {
     /** 흐름 전체를 1단계로 되돌린다(부모가 key를 바꿔 다시 마운트). */
@@ -83,6 +89,7 @@ export function useSignupFlow({
     const [codeState, codeFormAction] = useVerifyEmail();
     const [signupState, signupFormAction] = useSignupForm();
 
+    // HK-1 예외: 초기값이 위 custom hook의 emailState·codeState에 의존해 그 뒤에 둔다.
     // Next.js router cache가 useActionState를 이전 세션 값으로 hydrate한 채
     // 컴포넌트를 리마운트할 수 있다. 마운트 시점에 이미 non-initial 상태라면
     // 뒤로가기로 복원된 것이므로 paint 전에 1단계로 리셋한다.
@@ -114,33 +121,21 @@ export function useSignupFlow({
     const detailsSlot = signupState.error
         ? detailsStepErrorSlot(signupState.error)
         : null;
+    const emailMessage = describe(emailState.error);
+    const codeMessage = describe(codeState.error);
+    const signupMessage = describe(signupState.error);
 
-    const focusTargetByPhase: Record<
-        SignupPhase,
-        { error: object | null; fieldId: string | null }
-    > = {
-        email: {
-            error: emailState.error,
-            fieldId: emailSlot === 'field' ? SIGNUP_FIELD_ID.email : null,
-        },
-        code: {
-            error: codeState.error,
-            fieldId: codeSlot === 'field' ? SIGNUP_FIELD_ID.code : null,
-        },
-        details: {
-            error: signupState.error,
-            fieldId:
-                detailsSlot === 'password' ? SIGNUP_FIELD_ID.password : null,
-        },
-    };
-    const focusTarget = focusTargetByPhase[phase];
+    const focusTarget = signupFocusTarget(phase, {
+        email: emailState.error,
+        code: codeState.error,
+        details: signupState.error,
+    });
 
-    // 입력이 위에서 계산한 `phase`·오류 자리라 그 계산 바로 뒤에 둔다.
+    // 입력이 위에서 계산한 `phase`·`focusTarget`이라 그 계산 바로 뒤에 둔다.
     useSignupFocus({
         phase,
         focusFirstFieldOnMount: focusEmailOnMount,
-        error: focusTarget.error,
-        errorFieldId: focusTarget.fieldId,
+        ...focusTarget,
     });
 
     useLayoutEffect(() => {
@@ -156,32 +151,19 @@ export function useSignupFlow({
             action: submitEmail,
             draftEmail,
             onDraftEmailChange: changeDraftEmail,
-            fieldError:
-                emailSlot === 'field' ? describe(emailState.error) : undefined,
-            bannerError:
-                emailSlot === 'banner' ? describe(emailState.error) : undefined,
+            fieldError: messageAt(emailSlot, 'field', emailMessage),
+            bannerError: messageAt(emailSlot, 'banner', emailMessage),
         },
         codeStep: {
             action: codeFormAction,
-            fieldError:
-                codeSlot === 'field' ? describe(codeState.error) : undefined,
-            bannerError:
-                codeSlot === 'banner' ? describe(codeState.error) : undefined,
+            fieldError: messageAt(codeSlot, 'field', codeMessage),
+            bannerError: messageAt(codeSlot, 'banner', codeMessage),
         },
         detailsStep: {
             action: signupFormAction,
-            bannerError:
-                detailsSlot === 'banner'
-                    ? describe(signupState.error)
-                    : undefined,
-            passwordError:
-                detailsSlot === 'password'
-                    ? describe(signupState.error)
-                    : undefined,
-            consentError:
-                detailsSlot === 'consent'
-                    ? describe(signupState.error)
-                    : undefined,
+            bannerError: messageAt(detailsSlot, 'banner', signupMessage),
+            passwordError: messageAt(detailsSlot, 'password', signupMessage),
+            consentError: messageAt(detailsSlot, 'consent', signupMessage),
         },
     };
 }

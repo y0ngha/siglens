@@ -15,23 +15,26 @@ vi.mock('@/features/auth-email-verification/hooks/useEmailVerificationForms');
 
 const mockEmailFormAction = vi.fn();
 
-function setStates(signupState: SignupFormState = { error: null }) {
+function setStates(
+    signupState: SignupFormState = { error: null },
+    { submitted = true, verified = true } = {}
+) {
     vi.mocked(useRequestEmailVerification).mockReturnValue([
-        { submitted: true, error: null },
+        { submitted, error: null },
         mockEmailFormAction,
         false,
     ]);
     vi.mocked(useVerifyEmail).mockReturnValue([
-        { verified: true, error: null },
+        { verified, error: null },
         vi.fn(),
         false,
     ]);
     vi.mocked(useSignupForm).mockReturnValue([signupState, vi.fn(), false]);
 }
 
-function renderFlow() {
+function renderFlow(onRestart = vi.fn()) {
     return renderHook(() =>
-        useSignupFlow({ onRestart: vi.fn(), focusEmailOnMount: false })
+        useSignupFlow({ onRestart, focusEmailOnMount: false })
     );
 }
 
@@ -87,5 +90,29 @@ describe('useSignupFlow', () => {
         expect(result.current.emailStep.onDraftEmailChange).toBe(
             onDraftEmailChange
         );
+    });
+
+    it.each([
+        { submitted: true, verified: false },
+        { submitted: false, verified: true },
+    ])(
+        'restarts when the action state is already past step 1 at mount (%o)',
+        flags => {
+            setStates({ error: null }, flags);
+            const onRestart = vi.fn();
+
+            renderFlow(onRestart);
+
+            expect(onRestart).toHaveBeenCalledTimes(1);
+        }
+    );
+
+    it('does not restart a fresh mount at step 1', () => {
+        setStates({ error: null }, { submitted: false, verified: false });
+        const onRestart = vi.fn();
+
+        renderFlow(onRestart);
+
+        expect(onRestart).not.toHaveBeenCalled();
     });
 });

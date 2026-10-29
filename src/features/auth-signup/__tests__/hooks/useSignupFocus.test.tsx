@@ -1,25 +1,30 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { useSignupFocus } from '@/features/auth-signup/hooks/useSignupFocus';
+import type { SignupStepError } from '@/features/auth-signup/lib/signupFocusTarget';
 import {
     SIGNUP_FIELD_ID,
     type SignupPhase,
 } from '@/features/auth-signup/lib/signupPhase';
 
+function weakPassword(): SignupStepError {
+    return { code: 'weak_password', field: 'password', message: 'm' };
+}
+
 interface HarnessProps {
     phase: SignupPhase;
     focusFirstFieldOnMount?: boolean;
-    error?: object | null;
-    errorFieldId?: string | null;
+    error?: SignupStepError | null;
+    fieldId?: string | null;
 }
 
 function Harness({
     phase,
     focusFirstFieldOnMount = false,
     error = null,
-    errorFieldId = null,
+    fieldId = null,
 }: HarnessProps) {
-    useSignupFocus({ phase, focusFirstFieldOnMount, error, errorFieldId });
+    useSignupFocus({ phase, focusFirstFieldOnMount, error, fieldId });
     return (
         <>
             <label htmlFor={SIGNUP_FIELD_ID.email}>email</label>
@@ -66,8 +71,8 @@ describe('useSignupFocus', () => {
         rerender(
             <Harness
                 phase="details"
-                error={{ code: 'weak_password' }}
-                errorFieldId={SIGNUP_FIELD_ID.password}
+                error={weakPassword()}
+                fieldId={SIGNUP_FIELD_ID.password}
             />
         );
         expect(screen.getByLabelText('password')).toHaveFocus();
@@ -77,8 +82,8 @@ describe('useSignupFocus', () => {
         render(
             <Harness
                 phase="details"
-                error={{ code: 'weak_password' }}
-                errorFieldId={SIGNUP_FIELD_ID.password}
+                error={weakPassword()}
+                fieldId={SIGNUP_FIELD_ID.password}
             />
         );
         expect(document.body).toHaveFocus();
@@ -88,15 +93,15 @@ describe('useSignupFocus', () => {
         const { rerender } = render(
             <Harness
                 phase="details"
-                error={{ code: 'weak_password' }}
-                errorFieldId={SIGNUP_FIELD_ID.password}
+                error={weakPassword()}
+                fieldId={SIGNUP_FIELD_ID.password}
             />
         );
         rerender(
             <Harness
                 phase="details"
-                error={{ code: 'weak_password' }}
-                errorFieldId={SIGNUP_FIELD_ID.password}
+                error={weakPassword()}
+                fieldId={SIGNUP_FIELD_ID.password}
             />
         );
         expect(screen.getByLabelText('password')).toHaveFocus();
@@ -107,8 +112,8 @@ describe('useSignupFocus', () => {
         rerender(
             <Harness
                 phase="details"
-                error={{ code: 'service_unavailable' }}
-                errorFieldId={null}
+                error={{ code: 'service_unavailable', message: 'm' }}
+                fieldId={null}
             />
         );
         expect(document.body).toHaveFocus();

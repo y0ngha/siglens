@@ -17,6 +17,9 @@ type DetailsStepError = NonNullable<SignupFormState['error']>;
  */
 type StepErrorSlot = 'field' | 'banner';
 
+/** 3단계(가입) 오류의 자리. 고칠 입력이 비밀번호뿐이고, 동의 누락은 체크박스 묶음에 붙는다. */
+export type DetailsStepErrorSlot = 'password' | 'consent' | 'banner';
+
 const EMAIL_STEP_SLOT: Record<EmailStepErrorCode, StepErrorSlot> = {
     invalid_email: 'field',
     redis_unavailable: 'banner',
@@ -47,7 +50,7 @@ export function codeStepErrorSlot(code: CodeStepErrorCode): StepErrorSlot {
  */
 export function detailsStepErrorSlot(
     error: DetailsStepError
-): 'password' | 'consent' | 'banner' {
+): DetailsStepErrorSlot {
     if (error.code === 'consent_required') return 'consent';
     if (error.field === 'password') return 'password';
     return 'banner';

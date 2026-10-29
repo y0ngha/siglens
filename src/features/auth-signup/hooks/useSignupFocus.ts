@@ -1,19 +1,13 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import type { FocusTarget } from '../lib/signupFocusTarget';
 import { PHASE_FIRST_FIELD_ID, type SignupPhase } from '../lib/signupPhase';
 
-interface UseSignupFocusParams {
+interface UseSignupFocusParams extends FocusTarget {
     phase: SignupPhase;
     /** 첫 렌더에서도 단계의 첫 입력에 포커스를 줄지(「이메일 수정」으로 다시 시작한 경우). */
     focusFirstFieldOnMount: boolean;
-    /**
-     * 현재 단계의 액션 오류. 마운트 뒤 새 오류 객체가 올 때마다 `errorFieldId`로
-     * 포커스를 옮긴다. 마운트 시점에 이미 있던 오류에는 포커스를 옮기지 않는다.
-     */
-    error: object | null;
-    /** 오류가 붙은 입력의 id. 배너 오류처럼 고칠 입력이 없으면 `null`. */
-    errorFieldId: string | null;
 }
 
 /**
@@ -29,7 +23,7 @@ export function useSignupFocus({
     phase,
     focusFirstFieldOnMount,
     error,
-    errorFieldId,
+    fieldId,
 }: UseSignupFocusParams): void {
     // 마지막으로 포커스를 맞춘 단계. 마운트 시 현재 단계로 두면 첫 진입은 건너뛴다.
     const focusedPhaseRef = useRef<SignupPhase | null>(
@@ -45,12 +39,12 @@ export function useSignupFocus({
     // 마지막으로 처리한 오류 객체. 마운트 시점의 오류로 두어, 오류가 이미 담긴 채
     // 마운트된 흐름(라우터 캐시 복원 등)이 페이지 로드에서 포커스를 빼앗지 않게 한다.
     // 오류 객체의 참조가 그 뒤에 바뀔 때만 포커스를 옮긴다.
-    const handledErrorRef = useRef<object | null>(error);
+    const handledErrorRef = useRef<FocusTarget['error']>(error);
 
     useEffect(() => {
         if (handledErrorRef.current === error) return;
         handledErrorRef.current = error;
-        if (!error || !errorFieldId) return;
-        document.getElementById(errorFieldId)?.focus();
-    }, [error, errorFieldId]);
+        if (!error || !fieldId) return;
+        document.getElementById(fieldId)?.focus();
+    }, [error, fieldId]);
 }
