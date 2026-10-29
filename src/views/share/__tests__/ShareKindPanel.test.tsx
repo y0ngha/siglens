@@ -2,22 +2,16 @@
  * ShareKindPanel — RSC boundary dispatcher.
  *
  * Verifies that `<ShareKindPanel kind={k} result={r} />` renders without
- * throwing for all 8 ShareableKind values.
+ * throwing for every ShareableKind value, and that snapshot fields reach the
+ * kind panel.
  *
  * Why this test matters:
- *   The previous architecture had `page.tsx` (server component) extract
- *   an arrow function from `SHARE_KIND_PANEL_REGISTRY` (a 'use client' plain
- *   object) and render it as JSX. Next.js RSC only creates client references
- *   for **named exports** of 'use client' modules — anonymous functions inside
- *   a plain object resolve to `undefined` at the RSC boundary, causing:
- *     "Element type is invalid: ... but got: undefined"
- *
- *   `ShareKindPanel` is a *named* 'use client' component, so it IS properly
- *   registered as an RSC client reference. The dispatch (`SHARE_KIND_PANEL_REGISTRY[kind]`)
- *   happens *inside* the client boundary where module init order is normal.
- *
- * This test exercises the full registry → panel dispatch path to catch
- * any future regression where a panel import resolves to `undefined`.
+ *   Next.js RSC only creates client references for **named exports** of
+ *   'use client' modules — an arrow function pulled out of the
+ *   `SHARE_KIND_PANEL_REGISTRY` plain object by a server component resolves to
+ *   `undefined` ("Element type is invalid: ... but got: undefined").
+ *   `ShareKindPanel` is a named 'use client' component, so the dispatch
+ *   (`SHARE_KIND_PANEL_REGISTRY[kind]`) happens inside the client boundary.
  */
 
 import { render, waitFor } from '@testing-library/react';
@@ -26,7 +20,8 @@ import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { ShareKindPanel } from '@/views/share/ShareKindPanel';
 
 // Mock heavy widget deps so the test stays unit-level.
-// Paths MUST match the imports in kindPanelRegistry.tsx (the defining files).
+// Paths MUST match the imports in kindPanelRegistry.tsx / ChartSharePanel.tsx
+// (the defining files).
 
 const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
@@ -56,7 +51,7 @@ vi.mock('@/widgets/fear-greed/FearGreedShareView', () => ({
     FearGreedShareView: () => null,
 }));
 // ShareCandlestickChart uses lightweight-charts which requires a DOM canvas;
-// mock it at the widget path so kindPanelRegistry.tsx can resolve it.
+// mock it at the widget path so ChartSharePanel.tsx can resolve it.
 vi.mock('@/widgets/chart/ShareCandlestickChart', () => ({
     ShareCandlestickChart: () => null,
 }));
@@ -76,7 +71,7 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
     /**
      * The primary regression guard:
      * Rendering `<ShareKindPanel kind={k} result={r} />` must not throw
-     * "Element type is invalid" for any of the 8 kinds.
+     * "Element type is invalid" for any kind.
      */
     describe('renders each kind without throwing (RSC undefined-component guard)', () => {
         for (const kind of SHAREABLE_KIND_VALUES) {
@@ -166,12 +161,8 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
     });
 
     /**
-     * Regression guard for Blocker A — assetClass must flow from ShareKindPanel
-     * down to OverallView so crypto shares suppress equity-only sections.
-     *
-     * Without the fix, `overall` registry entry ignored assetClass and
-     * OverallView always received its default ('equity'), causing
-     * Options/Fundamental/Financials sections to appear on crypto overall shares.
+     * assetClass must flow from ShareKindPanel down to OverallView so crypto
+     * shares suppress the equity-only Options/Fundamental/Financials sections.
      */
     describe('overall panel: assetClass forwarded to OverallView', () => {
         beforeEach(() => {
@@ -227,19 +218,12 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
     });
 
     /**
-     * Regression guard (SEO audit finding 2, 2026-08-18) — this is the second
-     * call site of the same defect the assetClass tests above cover: the
-     * `overall` registry entry rendered `<OverallView>` with no `hasOptions`,
-     * so a shared kr-equity overall analysis (assetClass 'equity', no options
-     * tab) fell through to the default `true` and rendered a bogus "옵션 시장"
-     * section. `OverallView.hasOptions` is now required, so the registry must
-     * derive it from the `symbol` already threaded through this dispatcher
-     * (same prop the `chart` entry uses). 파생은 `isKrEquitySymbol`을 직접
-     * 부르지 않고 `profileIdForSymbol` → `getDescriptor(...).tabs`를 탄다 —
-     * 여기서 형상 판정을 다시 쓰면 "옵션 탭이 있는가"의 세 번째 독립 파생이
-     * 되어 프로필 설정과 조용히 갈라진다(kindPanelRegistry.tsx JSDoc 참고).
+     * The `overall` entry derives `OverallView.hasOptions` from the threaded
+     * `symbol` (`shareHasOptionsTab`) — a kr-equity overall share must not render
+     * an options section. Edge cases (missing/empty symbol) live in
+     * shareHasOptionsTab.test.ts; this pins the wiring.
      */
-    describe('overall panel: hasOptions derived from symbol (SEO audit finding 2)', () => {
+    describe('overall panel: hasOptions derived from symbol', () => {
         beforeEach(() => {
             mockOverallView.mockClear();
         });
@@ -272,45 +256,6 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
             await waitFor(() =>
                 expect(mockOverallView).toHaveBeenCalledWith(
                     expect.objectContaining({ hasOptions: true })
-                )
-            );
-        });
-
-        // 모르는 상태를 `true`로 열면 존재하지 않는 옵션 섹션이 뜬다 — 이 감사가
-        // 두 라운드 연속 잡아낸 실패 방향이다. 숨기는 쪽이 틀려도 대가가 작다.
-        it('symbol이 없으면 hasOptions=false — 모를 때는 숨긴다', async () => {
-            render(
-                <ShareKindPanel
-                    kind="overall"
-                    result={stubResults.overall as never}
-                    assetClass="equity"
-                />
-            );
-            await waitFor(() =>
-                expect(mockOverallView).toHaveBeenCalledWith(
-                    expect.objectContaining({ hasOptions: false })
-                )
-            );
-        });
-
-        // 뮤테이션 감사(2026-08-18) — `symbol !== undefined` 하나로만 게이트하면
-        // `symbol=''`은 undefined가 아니므로 게이트를 통과해
-        // `profileIdForSymbol('')`(us-equity로 폴백)까지 흘러 hasOptions=true로
-        // 열린다. 빈 문자열은 "심볼 없음"과 같은 실패 형태(모르는 상태)이므로
-        // undefined와 동일하게 숨겨야 한다 — 위 "symbol이 없으면" 케이스와 같은
-        // 결론을 빈 문자열에도 고정한다.
-        it('symbol이 빈 문자열이면 hasOptions=false — undefined와 동일하게 숨긴다', async () => {
-            render(
-                <ShareKindPanel
-                    kind="overall"
-                    result={stubResults.overall as never}
-                    assetClass="equity"
-                    symbol=""
-                />
-            );
-            await waitFor(() =>
-                expect(mockOverallView).toHaveBeenCalledWith(
-                    expect.objectContaining({ hasOptions: false })
                 )
             );
         });
