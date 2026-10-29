@@ -4,12 +4,14 @@ import type { WatchlistPreviewTab } from '../lib/watchlistTabs';
 import { useRecentSymbols } from './useRecentSymbols';
 import { useWatchlist } from './useWatchlist';
 
+/** 미리보기·홈 카드·최근 본 목록의 한 행. 회원·비회원·최근 본이 이 모양으로 수렴한다. */
 export interface WatchlistPreviewItem {
     symbol: string;
     /** 화면에 그릴 이름. 담을 때(또는 볼 때) 저장한 표시명, 없으면 심볼. */
     name: string;
 }
 
+/** `useWatchlistPreview`의 반환값. */
 export interface UseWatchlistPreviewResult {
     watchlist: WatchlistPreviewItem[];
     recent: WatchlistPreviewItem[];

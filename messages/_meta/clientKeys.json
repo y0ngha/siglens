@@ -224,6 +224,7 @@
                 "features.watchlist.home.popular",
                 "features.watchlist.home.viewAll",
                 "features.watchlist.preview.edit",
+                "features.watchlist.preview.emptyRecent",
                 "features.watchlist.preview.emptyWatchlist",
                 "features.watchlist.preview.tabRecent",
                 "features.watchlist.preview.tabWatchlist",

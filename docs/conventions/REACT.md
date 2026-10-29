@@ -179,6 +179,23 @@ Derive "is a member" in one exported place, not separately per consumer.
 //    const active = decision?.userId === userId ? decision.value : null;
 ```
 
+<a id="HK-7"></a>
+
+#### HK-7 — Discard async results that no longer belong to the current identity or key
+
+An async result (a merge, a fetch, a late failure) is applied, and its side effects run (state, storage writes,
+notices, navigation), only if the identity or key that started it is still current when it resolves. Logout, an account
+switch, a symbol change or a navigation while the request was in flight make the result stale. Capture the identity/key
+at call time and compare it with the current one (a ref, or `isAlive()` from the run context) after every `await`,
+before the first side effect. Test every way the owner can change (logout and account switch, not just one).
+
+```ts
+// ❌ const merged = await mergeLocal(userId); setItems(merged); // applied after logout or a switch to user B
+// ✅ const merged = await mergeLocal(userId);
+//    if (currentUserIdRef.current !== userId) return;
+//    setItems(merged);
+```
+
 ---
 
 ## Component Rules

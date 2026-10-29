@@ -1,5 +1,6 @@
 /** 관심종목 목록의 탭(표시 순서). 헤더 미리보기·홈 카드·`/watchlist`가 같은 값을 쓴다. */
 export const WATCHLIST_TABS = ['watchlist', 'recent'] as const;
+/** 탭 이름. URL `?tab=` 값은 `tabFromParam`으로 좁혀 이 타입이 된다. */
 export type WatchlistPreviewTab = (typeof WATCHLIST_TABS)[number];
 /** 따로 고르지 않았을 때의 탭. URL 쿼리에도 싣지 않는다. */
 export const DEFAULT_WATCHLIST_TAB: WatchlistPreviewTab = 'watchlist';
@@ -32,7 +33,7 @@ export function adjacentWatchlistTab(
     const index = WATCHLIST_TABS.indexOf(tab);
     const next =
         (index + delta + WATCHLIST_TABS.length) % WATCHLIST_TABS.length;
-    return WATCHLIST_TABS[next]!;
+    return WATCHLIST_TABS[next] ?? tab;
 }
 
 /** 탭 버튼 id. 한 화면에 탭이 둘 이상 뜰 수 있어 호출부의 `useId`를 접두사로 받는다. */
