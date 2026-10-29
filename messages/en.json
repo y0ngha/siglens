@@ -986,7 +986,7 @@
             "ReasoningToggle": {
                 "3592be": "This feature allows AI to reason more deeply in multiple steps before providing an answer.",
                 "c48ae3": "However, analysis may take a bit longer.",
-                "ddf353": "Enables a more thorough analysis considering indicators, news, and scenarios.\n                    "
+                "ddf353": "Enables a more thorough analysis considering indicators, news, and scenarios."
             },
             "a11y": {
                 "featureLabel": "Detailed analysis",

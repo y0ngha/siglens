@@ -1,39 +1,83 @@
 'use client';
 
+/**
+ * 상세 분석(reasoning) 스위치. 라벨·설명 툴팁·스위치를 한 줄로 그린다.
+ */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { REASONING_FEATURE_LABEL_KEY } from '../model/reasoningFeature';
+import {
+    getReasoningSwitchMode,
+    type ReasoningSwitchMode,
+} from '../lib/reasoningSwitchMode';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
+/**
+ * 트랙 공통 클래스.
+ *
+ * 버튼 자체는 h-5 w-9 알약 그대로 두고, 터치 영역은 흐름 밖에 놓인 `before:`
+ * 가상 요소로 넓힌다 — 버튼 크기를 키우면 종목 헤더의 줄바꿈된 컨트롤 행이 높아진다.
+ * 헤더 행 간격이 `gap-y-2`(8px)라 위아래로 4px(`-inset-y-1`)까지만 넓힐 수 있다.
+ * 그 이상이면 인접 행을 덮어 오탭이 난다. 그래도 ~28px로 WCAG 2.5.8(AA) 24px을 넘는다.
+ *
+ * 트랙·썸에 `border-control`을 두르는 이유: 라이트 테마에서 트랙(off `secondary-700`,
+ * locked `secondary-800`)과 흰 썸이 페이지 배경에 사실상 묻힌다. WCAG 1.4.11은 상태를
+ * 알리는 조작 요소에 3:1을 요구하고, 이 스위치는 locked일 때도 클릭 가능한 조작 요소다.
+ */
+const TRACK_BASE_CLASS =
+    "focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 touch-manipulation items-center rounded-full border border-border-control transition-colors before:absolute before:-inset-x-1 before:-inset-y-1 before:content-[''] focus-visible:ring-1 focus-visible:outline-none";
+
+/**
+ * 모드별 트랙 클래스.
+ *
+ * `locked`에는 `opacity-*`를 넣지 않는다. opacity는 보더까지 흐리게 해, 라이트
+ * 테마에서 흰 트랙 위 흰 썸을 식별하게 해 주는 유일한 단서(보더)가 3:1 아래로
+ * 떨어진다. 그래서 흐림 대신 트랙·썸 색을 낮춰 "잠김"을 전한다. 클릭하면 가입
+ * 넛지가 열리므로 커서는 `pointer`다.
+ */
+const TRACK_MODE_CLASS: Record<ReasoningSwitchMode, string> = {
+    disabled: 'cursor-not-allowed opacity-60',
+    locked: 'bg-secondary-800 cursor-pointer',
+    interactive: '',
+};
+
+/** 모드별 썸 색. locked만 썸 색을 낮춰 잠김을 표시한다. */
+const THUMB_MODE_CLASS: Record<ReasoningSwitchMode, string> = {
+    disabled: 'bg-white',
+    locked: 'bg-secondary-400',
+    interactive: 'bg-white',
+};
+
+/**
+ * 썸 공통 클래스. 썸도 트랙과 같은 보더를 둘러 흰 트랙 위에서 보이게 한다.
+ * 켜짐 이동량이 16px인 이유: `border-box`라 좌우 보더 1px씩이 안쪽 폭을 34px로
+ * 줄여, 좌측 여백 4px과 대칭이 되는 값이 16px이다.
+ */
+const THUMB_BASE_CLASS =
+    'pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full border border-border-control transition-transform';
+
 interface ReasoningToggleProps {
-    /** Current toggle value. */
+    /** 회원이 저장해 둔 토글 값. */
     checked: boolean;
+    /** 회원이 스위치를 뒤집을 때 새 값으로 부른다. */
     onChange: (value: boolean) => void;
     /**
-     * Member gating (member-reasoning-toggle spec Part A.4) — anonymous and
-     * free-tier visitors still see the control, but it renders in a
-     * locked/disabled visual state instead of being hidden. This lets
-     * everyone discover the feature via the ⓘ tooltip and the free-tier
-     * signup nudge (`onLockedClick`) instead of the control simply vanishing.
+     * 회원이라 기능을 쓸 수 있는지. `false`여도 스위치를 숨기지 않고 잠긴 모양으로
+     * 그린다 — 툴팁과 가입 넛지로 기능을 알게 하려는 것이다.
      */
     canUse: boolean;
-    /**
-     * Called instead of `onChange` when a non-member (`canUse=false`) clicks
-     * the locked switch. Wired to open the signup nudge modal by the caller.
-     */
+    /** 잠긴 스위치(`canUse=false`)를 누르면 `onChange` 대신 부른다. 호출자가 가입 넛지를 연다. */
     onLockedClick?: () => void;
+    /** 조작이 무의미할 때(추론 미지원 모델). `canUse`보다 우선하며 클릭이 아무 일도 하지 않는다. */
     disabled?: boolean;
+    /** 바깥 래퍼에 덧붙일 클래스. */
     className?: string;
 }
 
 /**
- * "상세 분석" (deep-thinking / reasoning) toggle — threads a per-request
- * `reasoning: boolean` into every symbol analysis submit
- * (member-reasoning-toggle spec Part A). Mirrors `ModelSelector`'s visual
- * language so it reads as part of the same control cluster.
- *
- * Always rendered regardless of tier: members can flip it freely, non-members
- * see a locked switch that opens a signup nudge on click instead of toggling.
+ * 상세 분석(reasoning) 토글. 종목 분석 요청마다 `reasoning` 값을 싣는다.
+ * 등급과 무관하게 항상 그린다 — 회원은 자유롭게 켜고 끄고, 비회원은 잠긴 스위치를
+ * 누르면 토글 대신 가입 넛지가 열린다.
  */
 export function ReasoningToggle({
     checked,
@@ -45,31 +89,22 @@ export function ReasoningToggle({
 }: ReasoningToggleProps) {
     const t = useTranslations('features.reasoning-toggle');
     const tA11y = useTranslations('features.reasoning-toggle.a11y');
-    const locked = !canUse;
-    // Locked non-members never actually have reasoning enabled server-side,
-    // so the switch always reads as OFF regardless of the raw `checked` prop
-    // (which may still hold a member's previously-persisted preference).
-    const effectiveChecked = locked ? false : checked;
-    // Locked is still clickable (it opens the signup nudge), so its
-    // accessible name must say "signup unlocks this" rather than the generic
-    // toggle label — otherwise a screen reader user has no way to know why
-    // activating it doesn't flip the switch.
+    const mode = getReasoningSwitchMode({ canUse, disabled });
+    // 비회원은 서버에서도 추론이 꺼진다 — 회원 시절 저장값(`checked`)이 남아 있어도 OFF로 보인다.
+    const effectiveChecked = canUse && checked;
     const featureLabel = tA11y(REASONING_FEATURE_LABEL_KEY);
-    const ariaLabel = locked
-        ? tA11y('signupPrompt', { v0: featureLabel })
-        : tA11y('toggleAria', { v0: featureLabel });
+    // locked는 눌러도 뒤집히지 않으므로 접근성 이름이 그 이유("가입하면 사용")를 말해야 한다.
+    // disabled는 가입해도 열리지 않으므로 그 약속을 하지 않고 일반 이름을 쓴다.
+    const ariaLabel =
+        mode === 'locked'
+            ? tA11y('signupPrompt', { v0: featureLabel })
+            : tA11y('toggleAria', { v0: featureLabel });
 
-    const handleClick = (): void => {
-        // A genuine `disabled` is a full no-op and takes precedence: it reports
-        // aria-disabled (non-operable to AT), so it must fire NOTHING on click —
-        // not even the locked signup nudge — otherwise the control would
-        // contradict its own aria-disabled state.
-        if (disabled) return;
-        if (locked) {
-            onLockedClick?.();
-            return;
-        }
-        onChange(!checked);
+    const clickByMode: Record<ReasoningSwitchMode, () => void> = {
+        // `aria-disabled`를 알리는 상태라 가입 넛지조차 띄우지 않는다.
+        disabled: () => {},
+        locked: () => onLockedClick?.(),
+        interactive: () => onChange(!checked),
     };
 
     return (
@@ -87,83 +122,22 @@ export function ReasoningToggle({
                 role="switch"
                 aria-checked={effectiveChecked}
                 aria-label={ariaLabel}
-                // Only the genuine `disabled` (true no-op) case is non-operable.
-                // A `locked` non-member switch is still interactive (clicking it
-                // opens the signup nudge), so it must NOT report aria-disabled —
-                // that would tell assistive tech the control can't be activated.
+                // locked는 클릭하면 넛지가 열리는 조작 가능한 상태라 aria-disabled·native
+                // disabled를 달지 않는다. native disabled는 탭 순서에서도 빠진다.
                 aria-disabled={disabled || undefined}
-                // Native `disabled` gates on the `disabled` PROP (a genuine
-                // no-op), which also removes it from the tab order. `locked`
-                // never sets it — the `disabled` prop is false for locked
-                // non-members — so the locked switch stays focusable/clickable
-                // to open the signup nudge.
                 disabled={disabled}
-                onClick={handleClick}
+                onClick={clickByMode[mode]}
                 className={cn(
-                    // Layout-neutral touch target: the button's own box stays
-                    // the compact h-5 w-9 visual pill (its rendered
-                    // background = the track) so it doesn't inflate the
-                    // symbol-page header's wrapped-controls row height. The
-                    // tappable area instead comes from the `before:`
-                    // pseudo-element below, which is absolutely positioned
-                    // (out of flow) with a negative inset, so it extends the
-                    // hit area without occupying layout space. (A prior
-                    // version grew the button's own min-h/min-w to 44px
-                    // directly — that pushed the header taller on short
-                    // mobile viewports, shoving the tab nav down into the
-                    // floating chat panel's overlap band; see the webkit
-                    // regression fixed alongside this comment.)
-                    //
-                    // Trade-off: the header row uses `gap-y-2` (8px) between
-                    // wrapped lines, so an out-of-flow hit area can only grow
-                    // by up to 4px on each of the top/bottom edges before it
-                    // bleeds into the row above/below and causes mis-taps on
-                    // wrap. `-inset-y-3` (12px/side) exceeded that, giving a
-                    // full 44px (WCAG 2.5.5 AAA) box that overlapped the
-                    // adjacent row. `-inset-y-1` (4px/side) stays exactly
-                    // within the gap — the resulting ~28px tall hit area
-                    // still clears the WCAG 2.5.8 (AA) 24px minimum without
-                    // any overhang or layout inflation.
-                    // 트랙·썸에 `border-control`을 두르는 이유: 라이트 테마에서
-                    // 트랙(off `secondary-700`=#e6e8ec, locked `secondary-800`=#fff)과
-                    // 흰 썸이 페이지 배경과 1.01~1.10:1로 사실상 사라졌다(실측).
-                    // WCAG 1.4.11은 상태를 알리는 조작 요소에 3:1을 요구하고,
-                    // 이 스위치는 locked일 때도 클릭 가능한 조작 요소다.
-                    // `border-control`은 그 용도로 만든 토큰이다(다크 3.57 / 라이트 3.30).
-                    "focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 touch-manipulation items-center rounded-full border border-border-control transition-colors before:absolute before:-inset-x-1 before:-inset-y-1 before:content-[''] focus-visible:ring-1 focus-visible:outline-none",
+                    TRACK_BASE_CLASS,
                     effectiveChecked ? 'bg-primary-600' : 'bg-secondary-700',
-                    locked && !disabled && 'bg-secondary-800',
-                    // A genuine `disabled` (true no-op) always wins the cursor:
-                    // it must read as non-operable (cursor-not-allowed) even when
-                    // also locked, so this precedence matches `handleClick`, where
-                    // `disabled` short-circuits before the locked branch.
-                    disabled && 'cursor-not-allowed opacity-60',
-                    // Locked non-members: the switch carries the "unavailable"
-                    // meaning through the muted track + a muted thumb
-                    // (`bg-secondary-400`, below) — there is no separate lock
-                    // affordance. It stays clickable so the click opens the
-                    // signup nudge (cursor-pointer, not cursor-not-allowed; no
-                    // native `disabled` which would swallow onClick).
-                    //
-                    // 이 분기에 `opacity-*`를 **다시 넣지 말 것.** opacity는
-                    // 보더까지 함께 흐리게 만드는데, 라이트 테마에서는 흰 썸이
-                    // 흰 트랙에 1.23:1로 묻혀 **보더만이** 썸을 식별한다
-                    // (3.10:1, 시스템 최저점). 흐려지면 그 값이 1.65:1까지
-                    // 떨어져 WCAG 1.4.11(3:1)을 깬다. 그래서 "흐림" 대신
-                    // "썸 색을 낮춤"으로 같은 의미를 전달한다.
-                    locked && !disabled && 'cursor-pointer'
+                    TRACK_MODE_CLASS[mode]
                 )}
             >
                 <span
                     aria-hidden="true"
                     className={cn(
-                        // 썸도 같은 보더를 갖는다 — 라이트에서 흰 썸이 흰 트랙 위에
-                        // 1.01:1로 사라지기 때문이다. locked는 `opacity` 대신 썸 색을
-                        // 낮춰 구분한다(흐림은 보더 대비까지 함께 깎는다).
-                        // translate 값이 18px → 16px인 이유: `border-box`라 보더 1px씩이
-                        // 안쪽 폭을 34px로 줄여, 좌측 여백 4px과 대칭이 되는 값이 16px다.
-                        'pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full border border-border-control transition-transform',
-                        locked && !disabled ? 'bg-secondary-400' : 'bg-white',
+                        THUMB_BASE_CLASS,
+                        THUMB_MODE_CLASS[mode],
                         effectiveChecked
                             ? 'translate-x-[16px]'
                             : 'translate-x-1'

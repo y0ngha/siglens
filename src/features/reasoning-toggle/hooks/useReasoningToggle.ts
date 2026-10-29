@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 회원의 상세 분석(reasoning) 토글 선호값을 localStorage에 두고 읽는 훅.
+ */
 import {
     startTransition,
     useCallback,
@@ -23,8 +26,8 @@ function readStoredReasoning(): string | null {
 }
 
 /**
- * Member "깊은 생각" (deep-thinking / reasoning) toggle state — persisted to
- * localStorage (member-reasoning-toggle spec Part A.2). Mirrors
+ * Member reasoning (detailed analysis) toggle state, persisted to
+ * localStorage. Mirrors
  * `useSelectedModel`'s hydration pattern: SSR/first paint always renders the
  * default (`false`), then a `useEffect` reads the stored value so hydration
  * never mismatches server output.
