@@ -1,4 +1,4 @@
-/** 분류 허브로 건너가는 타일 줄. */
+/** 분류 허브 하단의 다른 분류로 건너가는 타일 줄과, 분류 허브가 표시 문구를 채워 넘기는 타일 데이터 모양. */
 import type { ComponentType } from 'react';
 import type { GuideCategory } from '@/entities/guide/types';
 import { guideCategoryPath } from '@/shared/lib/guidePaths';
@@ -23,7 +23,7 @@ const CATEGORY_ICON: Readonly<Record<GuideCategory, IconComponent>> = {
     strategies: LayersIcon,
 };
 
-/** 타일 하나 — 분류, 표시명, 항목 수 문구. */
+/** 타일 하나. 표시명과 항목 수는 번역된 문구로 받는다 — 이 컴포넌트는 아이콘만 분류에서 고른다. */
 export interface GuideCategoryTile {
     readonly category: GuideCategory;
     readonly label: string;

@@ -1,10 +1,10 @@
-/** 데모 차트 오버레이(구간·띠·가격대별 거래량·수평선·추세선·시리즈·표식)의 도형. 라벨은 `DemoTextLabel`이 그린다. */
 import type { ReactNode } from 'react';
 import type { DemoBar, DemoOverlay } from '@/views/guide/demos/types';
 import { splitRuns, toPoints } from '@/views/guide/lib/chartLayout';
 import {
     bandEdges,
     DEMO_MARKER_ARROW,
+    isOverlayDrawable,
     markerGeometry,
     profileRowHeight,
     type DemoChartFrame,
@@ -158,19 +158,20 @@ function SeriesShape({ overlay, frame }: ShapeProps<'series'>) {
     }
     return (
         <g>
-            {runs.map((run, runIndex) => (
-                <polyline
-                    // 한 선의 끊긴 구간들이다. 순서가 곧 위치라 인덱스 외의 정체성이 없다.
-                    // react-doctor-disable-next-line react-doctor/no-array-index-as-key
-                    key={runIndex}
-                    className={SERIES_STROKE[tone]}
-                    fill="none"
-                    points={toPoints(run)}
-                    strokeDasharray={tone === 'c' ? '4 2' : undefined}
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                />
-            ))}
+            {runs
+                .map(run => toPoints(run))
+                .map(points => (
+                    <polyline
+                        // 끊긴 구간들은 서로 다른 봉 칸을 덮어 좌표 문자열이 겹치지 않는다.
+                        key={points}
+                        className={SERIES_STROKE[tone]}
+                        fill="none"
+                        points={points}
+                        strokeDasharray={tone === 'c' ? '4 2' : undefined}
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                    />
+                ))}
         </g>
     );
 }
@@ -215,30 +216,22 @@ function shapeOf(
     }
 }
 
-/** 그릴 수 없는 오버레이(유효 칸이 모자란 띠, 없는 봉을 가리키는 표식)는 감싸는 `<g>`도 남기지 않는다. */
-function isDrawable(overlay: DemoOverlay, bars: readonly DemoBar[]): boolean {
-    switch (overlay.kind) {
-        case 'band':
-            return bandEdges(overlay).length >= 2;
-        case 'marker':
-            return bars[overlay.i] !== undefined;
-        default:
-            return true;
-    }
-}
-
 interface DemoOverlayShapeProps {
     readonly overlay: DemoOverlay;
     readonly frame: DemoChartFrame;
     readonly bars: readonly DemoBar[];
 }
 
-/** 오버레이 하나의 도형을 `<g>`로 감싸 그린다. */
+/**
+ * 데모 차트 오버레이(구간·띠·가격대별 거래량·수평선·추세선·시리즈·표식) 하나의 도형을 `<g>`로 감싸 그린다.
+ * 라벨은 여기서 그리지 않는다 — 라벨은 봉·다른 라벨을 피해 자리를 잡아야 해서 `DemoTextLabel`이 맨 위 층에 따로 그린다.
+ */
 export function DemoOverlayShape({
     overlay,
     frame,
     bars,
 }: DemoOverlayShapeProps) {
-    if (!isDrawable(overlay, bars)) return null;
+    // 그릴 것이 없으면 감싸는 `<g>`도 남기지 않는다.
+    if (!isOverlayDrawable(overlay, bars)) return null;
     return <g>{shapeOf(overlay, frame, bars)}</g>;
 }

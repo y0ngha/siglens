@@ -506,7 +506,7 @@ const pivotPoints = (): GuideDemo => {
     };
 };
 
-/** 전략·이론 slug → 데모 생성 함수. */
+/** 전략·이론 slug → 데모 생성 함수. 값이 아니라 함수라 요청된 항목의 데모만 만든다(`getGuideDemo`). */
 export const STRATEGY_DEMOS: Record<string, () => GuideDemo> = {
     '52-week-high-momentum': week52HighMomentum,
     breakout,

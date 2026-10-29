@@ -1,4 +1,3 @@
-/** `/guide/[category]` 뷰 — 분류 허브. */
 import { getTranslations } from 'next-intl/server';
 import {
     GUIDE_CATEGORIES,

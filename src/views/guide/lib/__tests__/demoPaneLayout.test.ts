@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { estimateLabelWidth, linearScale } from '@/views/guide/lib/chartLayout';
 import {
     legendPositions,
+    PANE_LABEL_INSET,
     paneDomain,
     paneLevelText,
     paneTicks,
@@ -71,7 +72,7 @@ describe('paneTicks', () => {
 describe('legendPositions', () => {
     it('starts after the pane name and advances by each previous label width', () => {
         const name = estimateLabelWidth('MACD', 12);
-        const first = 6 + 4 + name + 10;
+        const first = 6 + PANE_LABEL_INSET + name + 10;
         expect(legendPositions('MACD', ['MACD', 'Signal'], 6, 12)).toEqual([
             first,
             first + estimateLabelWidth('MACD', 12) + 10,

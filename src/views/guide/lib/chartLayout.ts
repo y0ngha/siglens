@@ -1,6 +1,6 @@
 /** 가이드 데모 차트의 좌표 계산 (DOM 없는 순수 함수). */
 
-/** 값 → 화면 좌표 변환 함수. */
+/** 값 → 화면 좌표 변환 함수. 범위 밖 값도 자르지 않고 그대로 옮기므로, 영역을 벗어났는지는 호출부가 판정한다. */
 export interface LinearScale {
     (value: number): number;
 }
@@ -174,7 +174,7 @@ export function formatCompact(value: number): string {
     return String(Math.round(value));
 }
 
-/** 화면 좌표의 한 점. */
+/** 화면 좌표(viewBox 단위)의 한 점. `splitRuns`가 내고 `toPoints`가 SVG `points` 문자열로 바꾼다. */
 export interface ChartPoint {
     readonly x: number;
     readonly y: number;

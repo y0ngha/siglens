@@ -12,7 +12,7 @@ export interface Waypoint {
     price: number;
 }
 
-/** `pathToBars` 옵션. */
+/** `pathToBars` 옵션. 시드가 같으면 같은 봉이 나와 페이지와 테스트가 같은 그림을 본다. */
 export interface PathBarsOptions {
     seed: number;
     /** 한 봉의 평균 몸통+꼬리 폭 (가격 대비 비율). */
@@ -47,7 +47,7 @@ export function toCoreBars(bars: readonly DemoBar[]): Bar[] {
     return bars as Bar[];
 }
 
-/** 봉 인덱스 → 시각(초). */
+/** 봉 인덱스 → 시각(초). 고정 기준일부터 하루 간격이라 core 지표가 봉을 일봉 시간순으로 읽는다. */
 export function barTime(index: number): number {
     return BASE_TIME + index * BAR_SECONDS;
 }

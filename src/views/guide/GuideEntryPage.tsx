@@ -1,4 +1,3 @@
-/** `/guide/[category]/[slug]` 뷰 — 가이드 항목 한 편. */
 import { getTranslations } from 'next-intl/server';
 import type { GuideEntry } from '@/entities/guide/types';
 import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';

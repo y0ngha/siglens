@@ -4,7 +4,7 @@ import {
     scanMarkdownLines,
 } from '@/shared/lib/markdownHeadings';
 
-/** 나눈 두 조각. */
+/** 나눈 두 조각. 항목 페이지가 두 조각 사이에 라이브 종목 모듈을 끼운다. */
 export interface SplitMarkdown {
     readonly before: string;
     /** 앵커 절 다음부터 끝까지. 앵커가 없거나 마지막 절이면 null. */

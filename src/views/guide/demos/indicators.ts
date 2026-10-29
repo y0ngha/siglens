@@ -29,7 +29,7 @@ import type {
 } from '@/views/guide/demos/types';
 
 type Num = number | null;
-/** 표식 색 톤. */
+/** 표식(`marker`) 색 톤. 전략 데모(`strategies.ts`)도 같은 `marker` 헬퍼로 표식을 단다. */
 export type Tone = 'bull' | 'bear' | 'neutral';
 
 /** `windowed`가 데모 빌더에 넘기는 구간 문맥. 인덱스는 '절대'(시세 전체 기준)와 '구간'(잘라낸 창 기준) 두 가지다. */
@@ -120,10 +120,13 @@ export const firstAfter = (
     test: (abs: number) => boolean
 ): number => c.find(abs => abs >= c.start + offset && test(abs));
 
-/** core 결과의 `period`일 단순이동평균(없으면 빈 배열). */
+/**
+ * core 결과에서 `period`일 단순이동평균을 꺼낸다. core는 기본 기간(`MA_DEFAULT_PERIODS`)만 계산하므로
+ * 없는 기간은 빈 배열이고, 빈 시리즈는 선도 라벨도 없이 그려진다(데모 생성이 예외로 깨지지 않는다).
+ */
 export const maOf = (r: IndicatorResult, period: number): readonly Num[] =>
     r.ma[period] ?? [];
-/** core 결과의 `period`일 지수이동평균(없으면 빈 배열). */
+/** `maOf`의 지수이동평균판(core 기본 기간은 `EMA_DEFAULT_PERIODS`). 없는 기간을 빈 배열로 돌려주는 이유도 같다. */
 export const emaOf = (r: IndicatorResult, period: number): readonly Num[] =>
     r.ema[period] ?? [];
 
@@ -161,7 +164,7 @@ export function splitByDirection(
     };
 }
 
-/** 보조 패널 하나를 만든다. */
+/** 보조 패널을 이름 먼저 적어 만든다. 데모 정의에서 패널 이름이 첫눈에 보이게 하려는 모양일 뿐 값은 그대로 옮긴다. */
 export const pane = (
     label: string,
     rest: Omit<DemoPane, 'label'>
@@ -232,9 +235,9 @@ function sma(values: readonly number[], period: number): Num[] {
     );
 }
 
-/** 골든크로스 데모의 단기 이동평균 기간. */
+/** 골든크로스 데모의 단기 이동평균 기간. core 기본 기간이라 core 결과(`maOf`)에서 그대로 꺼낸다. */
 export const GOLDEN_CROSS_SHORT = 20;
-/** 골든크로스 데모의 장기 이동평균 기간. */
+/** 골든크로스 데모의 장기 이동평균 기간. core 기본 기간(`MA_DEFAULT_PERIODS`)에 없어 이 파일의 `sma`로 계산한다. */
 export const GOLDEN_CROSS_LONG = 50;
 
 const maDemo = windowed(175, c => {
@@ -1091,7 +1094,7 @@ const atrDemo = windowed(
     VOLATILITY_BARS
 );
 
-/** 보조지표 slug → 데모 생성 함수. */
+/** 보조지표 slug → 데모 생성 함수. 값이 아니라 함수라 요청된 항목의 데모만 만든다(`getGuideDemo`). */
 export const INDICATOR_DEMOS: Record<string, () => GuideDemo> = {
     adx: adxDemo,
     atr: atrDemo,

@@ -22,6 +22,16 @@ const PANE_TICK_TARGET = 3;
 /** 절댓값이 이 값 이상이면 눈금·레벨 라벨을 K/M 단위 축약형으로 줄여 좁은 축 영역에 맞춘다. */
 const COMPACT_ABS_THRESHOLD = 1e4;
 
+/**
+ * 패널 이름을 패널 왼쪽 테두리에서 들이는 거리. `GuideDemoPane`이 이름을 그리는 x와 범례 시작점
+ * (`legendPositions`)이 같은 값을 읽어야 범례가 이름과 겹치지 않는다.
+ */
+export const PANE_LABEL_INSET = 4;
+/** 패널 안쪽 위·아래 여백. 값이 범위 끝이어도 선·막대가 테두리 선에 붙지 않게 한다. */
+export const PANE_INNER_PAD = 4;
+/** 패널 오른쪽 테두리와 눈금·레벨 글자 사이 간격. */
+export const PANE_AXIS_TEXT_GAP = 4;
+
 /** 레벨 라벨 소수 자릿수 상한 — 0.0001 단위 지표값까지 구분하고 그 아래 꼬리 자릿수는 버린다. */
 const LEVEL_MAX_DECIMALS = 4;
 
@@ -65,7 +75,7 @@ export interface PaneTicks {
     readonly step: number;
 }
 
-/** [min, max] 패널의 눈금을 고른다. */
+/** [min, max] 패널의 눈금을 고른다. 레벨 선과 겹칠 눈금을 빼야 해서 화면 좌표(`yOf`)까지 받는다. */
 export function paneTicks(
     min: number,
     max: number,
@@ -99,7 +109,10 @@ export function legendPositions(
     fontSize: number
 ): number[] {
     const start =
-        left + 4 + estimateLabelWidth(paneLabel, fontSize) + LEGEND_GAP;
+        left +
+        PANE_LABEL_INSET +
+        estimateLabelWidth(paneLabel, fontSize) +
+        LEGEND_GAP;
     return legendLabels.reduce<number[]>(
         (xs, _label, index) =>
             index === 0

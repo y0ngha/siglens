@@ -1,6 +1,5 @@
 'use client';
 
-/** 가이드 목록의 검색·분류 필터 상태 훅(URL `?q=`·`?c=` 동기화). */
 import {
     usePickUntilPopstate,
     useUrlSearchParam,

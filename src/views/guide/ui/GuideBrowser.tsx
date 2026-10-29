@@ -1,6 +1,5 @@
 'use client';
 
-/** 가이드 목록 + 검색 + 분류 칩(허브·분류 허브 공용). */
 import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 import type { GuideCategory, GuideEntrySummary } from '@/entities/guide/types';
@@ -26,7 +25,7 @@ interface GuideBrowserProps {
 }
 
 /**
- * 가이드 목록 + 검색 + 분류 칩.
+ * 허브와 분류 허브가 함께 쓰는 가이드 목록 + 검색 + 분류 칩.
  *
  * **서버가 전체 목록을 이미 그린다** — 이 컴포넌트의 첫 렌더(서버·하이드레이션)는 필터가 없는
  * 전체 목록이라 크롤러가 90개 링크를 HTML에서 본다. 하이드레이션 뒤 URL의 `?q=`·`?c=`가 적용된다

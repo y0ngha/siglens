@@ -16,11 +16,15 @@ import {
     demoChartFrame,
     demoPriceDomain,
     isFiniteValue,
+    isOverlayDrawable,
     labelBoxAt,
     labelTextX,
     layoutOverlayLabels,
+    MARKER_ARROW_REACH_RATIO,
+    MARKER_BAR_GAP,
     markerGeometry,
     overlayKey,
+    overlayLayers,
     profileRowHeight,
 } from '@/views/guide/lib/demoChartLayout';
 
@@ -184,6 +188,43 @@ describe('bandEdges', () => {
     });
 });
 
+describe('isOverlayDrawable', () => {
+    const band = (upper: (number | null)[], lower: (number | null)[]) =>
+        ({ kind: 'band', upper, lower, label: '' }) satisfies DemoOverlay;
+    const marker = (i: number) =>
+        ({
+            kind: 'marker',
+            i,
+            position: 'above',
+            label: 'M',
+            tone: 'bull',
+        }) satisfies DemoOverlay;
+
+    it('draws a band with two or more valid slots', () => {
+        expect(isOverlayDrawable(band([5, null, 7], [1, 2, 3]), [])).toBe(true);
+    });
+
+    it('skips a band with fewer than two valid slots', () => {
+        expect(isOverlayDrawable(band([5, null, 7], [1, 2, null]), [])).toBe(
+            false
+        );
+    });
+
+    it('draws a marker that points at an existing bar', () => {
+        expect(isOverlayDrawable(marker(9), flatBars(10))).toBe(true);
+    });
+
+    it('skips a marker that points past the last bar', () => {
+        expect(isOverlayDrawable(marker(10), flatBars(10))).toBe(false);
+    });
+
+    it('always draws the other overlay kinds', () => {
+        expect(
+            isOverlayDrawable({ kind: 'level', price: 1, label: 'L' }, [])
+        ).toBe(true);
+    });
+});
+
 describe('markerGeometry', () => {
     const frame = demoChartFrame(demoWith([]));
 
@@ -228,12 +269,19 @@ describe('markerGeometry', () => {
         );
         expect(above).toEqual({
             x: frame.xOf(2),
-            tipY: frame.yOf(110) - 3,
-            baseY: frame.yOf(110) - 3 - DEMO_MARKER_ARROW * 1.4,
+            tipY: frame.yOf(110) - MARKER_BAR_GAP,
+            baseY:
+                frame.yOf(110) -
+                MARKER_BAR_GAP -
+                DEMO_MARKER_ARROW * MARKER_ARROW_REACH_RATIO,
             above: true,
         });
-        expect(below?.tipY).toBe(frame.yOf(100) + 3);
-        expect(below?.baseY).toBe(frame.yOf(100) + 3 + DEMO_MARKER_ARROW * 1.4);
+        expect(below?.tipY).toBe(frame.yOf(100) + MARKER_BAR_GAP);
+        expect(below?.baseY).toBe(
+            frame.yOf(100) +
+                MARKER_BAR_GAP +
+                DEMO_MARKER_ARROW * MARKER_ARROW_REACH_RATIO
+        );
     });
 });
 
@@ -365,5 +413,47 @@ describe('layoutOverlayLabels', () => {
         const [label] = layoutOverlayLabels(demo, frame);
         expect(label.anchor).toBe('end');
         expect(label.box.x + label.box.width).toBeLessThanOrEqual(frame.xOf(1));
+    });
+});
+
+describe('overlayLayers', () => {
+    const marker = (i: number): DemoOverlay => ({
+        kind: 'marker',
+        i,
+        position: 'above',
+        label: 'M',
+        tone: 'bull',
+    });
+    const zone: DemoOverlay = {
+        kind: 'zone',
+        fromIndex: 0,
+        toIndex: 1,
+        low: 100,
+        high: 101,
+    };
+    const level: DemoOverlay = { kind: 'level', price: 105, label: 'L' };
+
+    it('puts markers above the bars and everything else below, keeping order', () => {
+        const { belowBars, aboveBars } = overlayLayers([
+            marker(3),
+            zone,
+            marker(1),
+            level,
+        ]);
+        expect(belowBars.map(({ overlay }) => overlay)).toEqual([zone, level]);
+        expect(aboveBars.map(({ overlay }) => overlay)).toEqual([
+            marker(3),
+            marker(1),
+        ]);
+    });
+
+    it('keys each overlay by its position in the original list', () => {
+        const { belowBars, aboveBars } = overlayLayers([
+            marker(3),
+            zone,
+            level,
+        ]);
+        expect(belowBars.map(({ key }) => key)).toEqual(['zone-1', 'level-2']);
+        expect(aboveBars.map(({ key }) => key)).toEqual(['marker-0']);
     });
 });

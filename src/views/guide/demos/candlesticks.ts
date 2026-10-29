@@ -437,7 +437,7 @@ const candleBasics = (): GuideDemo => ({
     ],
 });
 
-/** 캔들 패턴 slug → 데모 생성 함수. */
+/** 캔들 패턴 slug → 데모 생성 함수. 값이 아니라 함수라 요청된 항목의 데모만 만든다(`getGuideDemo`). */
 export const CANDLESTICK_DEMOS: Record<string, () => GuideDemo> = {
     'abandoned-baby-tri-star': abandonedBaby,
     'advance-block-ladder-bottom': advanceBlockLadderBottom,

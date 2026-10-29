@@ -1,4 +1,3 @@
-/** 데모 차트의 보조 패널(RSI·MACD·거래량 등) SVG 조각. */
 import { cn } from '@/shared/lib/cn';
 import {
     linearScale,
@@ -8,6 +7,9 @@ import {
 import type { PaneFrame } from '@/views/guide/lib/demoChartLayout';
 import {
     legendPositions,
+    PANE_AXIS_TEXT_GAP,
+    PANE_INNER_PAD,
+    PANE_LABEL_INSET,
     paneDomain,
     paneLevelText,
     paneTicks,
@@ -27,15 +29,18 @@ interface GuideDemoPaneProps {
     readonly labelFontSize: number;
 }
 
-/** 가격 차트 아래에 붙는 보조 패널 (RSI·MACD·거래량 등). x축은 가격 차트와 공유한다. */
+/**
+ * 데모 차트의 가격 영역 아래에 붙는 보조 패널(RSI·MACD·거래량 등) SVG 조각. x축(`frame.xOf`)은 가격 차트와
+ * 공유하고, y축은 패널마다 자기 값 범위(`paneDomain`)로 따로 잡는다.
+ */
 export function GuideDemoPane({
     pane,
     frame,
     labelFontSize,
 }: GuideDemoPaneProps) {
     const [min, max] = paneDomain(pane);
-    const innerTop = frame.top + 4;
-    const innerBottom = frame.top + frame.height - 4;
+    const innerTop = frame.top + PANE_INNER_PAD;
+    const innerBottom = frame.top + frame.height - PANE_INNER_PAD;
     const yOf = linearScale(min, max, innerBottom, innerTop);
     const levelValues = (pane.levels ?? []).map(level => level.value);
     const { ticks, step } = paneTicks(min, max, levelValues, yOf);
@@ -93,7 +98,7 @@ export function GuideDemoPane({
                         className="fill-secondary-400"
                         dominantBaseline="middle"
                         fontSize={labelFontSize - 1}
-                        x={frame.right + 4}
+                        x={frame.right + PANE_AXIS_TEXT_GAP}
                         y={yOf(level.value)}
                     >
                         {level.label ?? paneLevelText(level.value)}
@@ -106,7 +111,7 @@ export function GuideDemoPane({
                     className="fill-secondary-400"
                     dominantBaseline="middle"
                     fontSize={labelFontSize - 1}
-                    x={frame.right + 4}
+                    x={frame.right + PANE_AXIS_TEXT_GAP}
                     y={yOf(tick)}
                 >
                     {paneTickText(tick, step)}
@@ -131,7 +136,7 @@ export function GuideDemoPane({
                 paintOrder="stroke"
                 strokeLinejoin="round"
                 strokeWidth={3}
-                x={frame.left + 4}
+                x={frame.left + PANE_LABEL_INSET}
                 y={frame.top + labelFontSize}
             >
                 {pane.label}

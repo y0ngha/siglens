@@ -21,9 +21,12 @@ export interface GuideBrowseState {
     readonly category: GuideFilterCategory;
 }
 
-/** 검색 질의를 싣는 쿼리 파라미터. */
+/**
+ * 검색 질의의 URL 파라미터 이름. 읽기(`useGuideBrowserState`)와 쓰기(`toGuideSearchString`)가 한 상수를 봐야
+ * 공유한 링크·뒤로 가기에서 필터가 되살아난다. 이름을 바꾸면 이미 퍼진 `?q=` 링크는 필터 없이 열린다.
+ */
 export const GUIDE_QUERY_PARAM = 'q';
-/** 고른 분류를 싣는 쿼리 파라미터. */
+/** 고른 분류의 URL 파라미터 이름. 분류 허브는 분류가 경로에 있어 이 파라미터를 읽지도 쓰지도 않는다. */
 export const GUIDE_CATEGORY_PARAM = 'c';
 
 /** 검색창에 넣을 수 있는 최대 길이. URL에 그대로 실리므로 상한을 둔다. */
@@ -120,7 +123,7 @@ export function guideListLayout(
     return 'grouped';
 }
 
-/** 분류 칩 하나. */
+/** 분류 칩 하나. 표시명·개수를 여기서 정해 `GuideFilterChips`는 계산 없이 버튼으로 그린다. */
 export interface GuideFilterChip {
     readonly value: GuideFilterCategory;
     readonly label: string;
@@ -146,7 +149,7 @@ export function buildGuideFilterChips(
     ];
 }
 
-/** 한 분류와 그 분류의 항목들. */
+/** 분류별 절 하나의 데이터. 요약·전체 항목 어느 쪽이든 묶을 수 있게 항목 타입을 열어 둔다. */
 export interface GuideCategoryGroup<T extends GuideEntrySummary> {
     readonly category: GuideCategory;
     readonly entries: readonly T[];
@@ -174,7 +177,7 @@ export function countByCategory(
     ) as Record<GuideCategory, number>;
 }
 
-/** 같은 분류 안의 앞·뒤 항목. */
+/** 항목 페이지 페이저(`GuidePager`)의 앞·뒤 칸. 분류의 처음/끝이면 그 칸이 `null`이다. */
 export interface GuideNeighbors {
     readonly previous: GuideEntrySummary | null;
     readonly next: GuideEntrySummary | null;

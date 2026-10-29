@@ -42,7 +42,7 @@ function PagerLink({ direction, label, target }: PagerLinkProps) {
 }
 
 interface GuidePagerProps {
-    /** 내비게이션 랜드마크 이름. */
+    /** `nav` 랜드마크의 접근 가능한 이름. 같은 페이지의 브레드크럼 `nav`와 구분하려고 필요하다. */
     readonly label: string;
     readonly previousLabel: string;
     readonly nextLabel: string;

@@ -1,4 +1,3 @@
-/** `/guide` 뷰 — 차트 가이드 허브. */
 import { getTranslations } from 'next-intl/server';
 import type { GuideEntrySummary } from '@/entities/guide/types';
 import type { Locale } from '@/shared/i18n/locales';

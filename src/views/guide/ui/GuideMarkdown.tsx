@@ -1,4 +1,3 @@
-/** 가이드 본문 마크다운 렌더러(서버 전용). */
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';

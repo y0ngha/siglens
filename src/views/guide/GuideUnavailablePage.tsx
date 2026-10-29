@@ -1,4 +1,3 @@
-/** 가이드 라우트가 카탈로그를 못 읽었을 때의 안내 뷰. */
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/shared/i18n/locales';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';

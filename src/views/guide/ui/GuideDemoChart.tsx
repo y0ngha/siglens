@@ -1,4 +1,3 @@
-/** 가이드 항목의 설명용 데모 차트(순수 SVG). */
 import { useFormatter, useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
@@ -12,8 +11,11 @@ import {
     DEMO_PRICE_HEIGHT,
     demoChartFrame,
     layoutOverlayLabels,
-    overlayKey,
+    overlayLayers,
+    type DemoChartFrame,
+    type KeyedOverlay,
 } from '@/views/guide/lib/demoChartLayout';
+import { describeDemo } from '@/views/guide/lib/demoDescription';
 import { DemoCandles } from '@/views/guide/ui/demo-chart/DemoCandles';
 import { DemoOverlayShape } from '@/views/guide/ui/demo-chart/DemoOverlayShape';
 import { DemoPriceGrid } from '@/views/guide/ui/demo-chart/DemoPriceGrid';
@@ -26,19 +28,22 @@ interface GuideDemoChartProps {
     readonly caption: string | null;
 }
 
-/**
- * 캡션이 없을 때 SVG 설명(`<desc>`) — 봉 수와 보조 패널 이름. 패널 이름은 로케일의 목록 형식으로 잇는다.
- */
-function useFallbackDescription(demo: GuideDemo): string {
-    const t = useTranslations('views.guide');
-    const format = useFormatter();
-    const paneLabels = (demo.panes ?? []).map(pane => pane.label);
-    const count = demo.bars.length;
-    if (paneLabels.length === 0) return t('demoFallbackDescription', { count });
-    return t('demoFallbackDescriptionWithPanes', {
-        count,
-        panes: format.list(paneLabels, { type: 'conjunction' }),
-    });
+interface DemoOverlayLayerProps {
+    readonly layer: readonly KeyedOverlay[];
+    readonly bars: GuideDemo['bars'];
+    readonly frame: DemoChartFrame;
+}
+
+/** 봉 아래 또는 위 한 층의 오버레이 도형. 감싸는 요소를 두지 않아 층을 나누기 전과 같은 SVG가 나온다. */
+function DemoOverlayLayer({ layer, bars, frame }: DemoOverlayLayerProps) {
+    return layer.map(({ key, overlay }) => (
+        <DemoOverlayShape
+            key={key}
+            bars={bars}
+            frame={frame}
+            overlay={overlay}
+        />
+    ));
 }
 
 /**
@@ -56,22 +61,13 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
     const descId = `${uid}-desc`;
     const captionId = `${uid}-caption`;
     const clipId = `${uid}-clip`;
-    const fallbackDescription = useFallbackDescription(demo);
+    const t = useTranslations('views.guide');
+    const format = useFormatter();
+    const fallbackDescription = describeDemo(demo, t, format);
     const frame = demoChartFrame(demo);
     const { plot, pitch } = frame;
-    const overlays = demo.overlays ?? [];
+    const { belowBars, aboveBars } = overlayLayers(demo.overlays ?? []);
     const labels = layoutOverlayLabels(demo, frame);
-    const shapes = (keep: (isMarker: boolean) => boolean) =>
-        overlays.map((overlay, index) =>
-            keep(overlay.kind === 'marker') ? (
-                <DemoOverlayShape
-                    key={overlayKey(overlay, index)}
-                    bars={demo.bars}
-                    frame={frame}
-                    overlay={overlay}
-                />
-            ) : null
-        );
 
     return (
         <figure
@@ -126,9 +122,17 @@ export function GuideDemoChart({ demo, title, caption }: GuideDemoChartProps) {
                 )}
                 <DemoPriceGrid frame={frame} />
                 <g clipPath={`url(#${clipId})`}>
-                    {shapes(isMarker => !isMarker)}
+                    <DemoOverlayLayer
+                        bars={demo.bars}
+                        frame={frame}
+                        layer={belowBars}
+                    />
                     <DemoCandles bars={demo.bars} frame={frame} />
-                    {shapes(isMarker => isMarker)}
+                    <DemoOverlayLayer
+                        bars={demo.bars}
+                        frame={frame}
+                        layer={aboveBars}
+                    />
                 </g>
                 {labels.map(label => (
                     <DemoTextLabel key={label.key} label={label} />

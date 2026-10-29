@@ -637,7 +637,7 @@ const roundingTop = (): GuideDemo => {
     );
 };
 
-/** 차트 패턴 slug → 데모 생성 함수. */
+/** 차트 패턴 slug → 데모 생성 함수. 값이 아니라 함수라 요청된 항목의 데모만 만든다(`getGuideDemo`). */
 export const CHART_PATTERN_DEMOS: Record<string, () => GuideDemo> = {
     'ascending-channel': ascendingChannel,
     'ascending-triangle': ascendingTriangle,

@@ -28,13 +28,13 @@ const MARGIN_LEFT = 6;
 const MARGIN_RIGHT = 46;
 /** 가격 영역 위 여백. 강조 구간 띠도 여기서 시작한다. */
 export const DEMO_CHART_MARGIN_TOP = 14;
-/** 차트 맨 아래 여백. */
+/** 마지막 패널(없으면 가격 영역) 아래 여백. 강조 구간 띠 높이도 위·아래 여백을 뺀 값이다(`GuideDemoChart`). */
 export const DEMO_CHART_MARGIN_BOTTOM = 8;
-/** 가격 영역 높이. */
+/** 가격 영역 높이(viewBox 단위). 보조 패널은 이 아래에 쌓이고, 도형이 패널로 넘치지 않게 clipPath도 이 높이로 자른다. */
 export const DEMO_PRICE_HEIGHT = 230;
 const PANE_HEIGHT = 78;
 const PANE_GAP = 8;
-/** 라벨 기본 글자 크기(viewBox 단위). */
+/** 라벨 기본 글자 크기(viewBox 단위). 라벨 박스 크기·표식 라벨 간격도 이 값에서 나온다. */
 export const DEMO_CHART_FONT = 12;
 const BODY_RATIO = 0.62;
 const MAX_BODY = 20;
@@ -42,8 +42,24 @@ const MIN_BODY = 2;
 const PRICE_PAD = 0.07;
 /** 가격 범위에 넣지 않는 선이 봉 범위에서 이 비율 넘게 떨어지면 범위를 늘리지 않는다. */
 const FAR_SERIES_SPAN = 0.35;
-/** 표식 화살표 크기. */
+/** 표식 화살표의 기준 크기. 밑변 반폭(`DemoOverlayShape`)과 높이(`MARKER_ARROW_REACH_RATIO`)가 이 값의 배수라 함께 커진다. */
 export const DEMO_MARKER_ARROW = 5;
+/** 화살표 끝과 봉 끝(고가·저가) 사이 틈 — 화살표가 꼬리에 붙어 꼬리의 일부처럼 보이지 않게 띄운다. */
+export const MARKER_BAR_GAP = 3;
+/** 화살표 높이(끝 → 밑변) = 기준 크기 × 이 값. 밑변 반폭(0.75배)보다 길어야 위·아래를 가리키는 모양으로 읽힌다. */
+export const MARKER_ARROW_REACH_RATIO = 1.4;
+/** 표식 라벨 중심이 화살표 밑변에서 떨어지는 거리(글자 크기 대비). 기본 글자에서 7.8로 박스 반높이(7.5)보다 조금 커, 박스가 밑변에 닿기 직전에 놓인다. */
+const MARKER_LABEL_OFFSET_RATIO = 0.65;
+/**
+ * 라벨 중심을 기준선에서 띄우는 거리. 기본 글자의 라벨 박스 반높이는 7.5라 8이면 박스가 선 바로 위(아래)에 놓인다.
+ * 추세선·시리즈 끝 라벨은 선이 더 굵어(1.4·1.5, 구간·띠·수평선은 0.9~1.1) 1 더 띄운다.
+ */
+const LEVEL_LABEL_OFFSET = 8;
+const LINE_END_LABEL_OFFSET = 9;
+/** 라벨 박스 높이 = 글자 크기 + 이 값. 위아래 여유가 있어야 이웃 박스와 맞붙어도 글자끼리 닿지 않는다. */
+const LABEL_BOX_PAD_Y = 3;
+/** 글자를 박스·구간·가격 영역 가장자리에서 들이는 거리. 가장자리 선과 글자가 겹치지 않게 한다. */
+const LABEL_INSET = 2;
 /** 봉 끝에 붙은 표식·라벨이 들어갈 자리(봉 범위 대비 비율). */
 const MARKER_ROOM = 0.12;
 
@@ -143,7 +159,7 @@ export interface PaneFrame {
     readonly height: number;
     readonly left: number;
     readonly right: number;
-    /** 봉 인덱스 → x 좌표 */
+    /** 봉 인덱스 → 칸 가운데 x. 가격 차트와 같은 함수라 패널 막대·선이 봉과 세로로 줄을 맞춘다. */
     readonly xOf: (index: number) => number;
     readonly pitch: number;
     readonly barCount: number;
@@ -157,11 +173,11 @@ export interface PlotBounds {
     readonly right: number;
 }
 
-/** 데모 차트 한 장의 좌표계. */
+/** 데모 차트 한 장의 좌표계. `demoChartFrame`이 한 번 만들고 도형·라벨·패널이 모두 이 축을 읽어 서로 어긋나지 않는다. */
 export interface DemoChartFrame {
     readonly plot: PlotBounds;
     readonly plotWidth: number;
-    /** 봉 한 칸의 폭. */
+    /** 봉 한 칸의 폭(몸통 + 양옆 간격). 구간·수평선의 좌우 끝을 칸 경계에 맞추는 데 쓴다. */
     readonly pitch: number;
     readonly xOf: (index: number) => number;
     readonly yOf: LinearScale;
@@ -242,7 +258,7 @@ export function labelBoxAt(
     size: number = DEMO_CHART_FONT
 ): LabelBox {
     const width = estimateLabelWidth(text, size);
-    const height = size + 3;
+    const height = size + LABEL_BOX_PAD_Y;
     const leftByAnchor: Readonly<Record<LabelAnchor, number>> = {
         start: x,
         middle: x - width / 2,
@@ -259,17 +275,17 @@ export function labelBoxAt(
     };
 }
 
-/** 박스 안에서 `anchor`에 맞는 글자 기준 x. 좌우 끝은 2만큼 들인다. */
+/** 박스 안에서 `anchor`에 맞는 글자 기준 x. 좌우 끝은 `LABEL_INSET`만큼 들인다. */
 export function labelTextX(box: LabelBox, anchor: LabelAnchor): number {
     const xByAnchor: Readonly<Record<LabelAnchor, number>> = {
-        start: box.x + 2,
+        start: box.x + LABEL_INSET,
         middle: box.x + box.width / 2,
-        end: box.x + box.width - 2,
+        end: box.x + box.width - LABEL_INSET,
     };
     return xByAnchor[anchor];
 }
 
-/** 띠 위·아래 값이 둘 다 있는 칸. */
+/** 띠 위·아래 값이 둘 다 유한한 칸. 채움 다각형은 이 칸들만 이어 빈 칸에서 띠가 0으로 꺼지지 않는다. */
 export interface BandEdge {
     readonly i: number;
     readonly upper: number;
@@ -288,7 +304,29 @@ export function bandEdges(
     });
 }
 
-/** 표식 화살표의 끝(봉에 닿는 쪽)과 밑변 y. */
+/**
+ * 오버레이에 그릴 도형이 있는지. 유효 칸이 2개 미만인 띠와 없는 봉을 가리키는 표식은 도형이 없다 —
+ * `DemoOverlayShape`는 이때 감싸는 `<g>`도 내지 않아 빈 그룹이 SVG에 남지 않는다.
+ */
+export function isOverlayDrawable(
+    overlay: DemoOverlay,
+    bars: readonly DemoBar[]
+): boolean {
+    switch (overlay.kind) {
+        case 'band':
+            return bandEdges(overlay).length >= 2;
+        case 'marker':
+            return bars[overlay.i] !== undefined;
+        case 'zone':
+        case 'profile':
+        case 'level':
+        case 'line':
+        case 'series':
+            return true;
+    }
+}
+
+/** 표식 화살표의 끝(봉 쪽)과 밑변 y. 도형과 라벨 자리가 같은 값을 읽어 라벨이 화살표에 맞춰 붙는다. */
 export interface MarkerGeometry {
     readonly x: number;
     readonly tipY: number;
@@ -305,8 +343,10 @@ export function markerGeometry(
     const bar = bars[overlay.i];
     if (bar === undefined) return null;
     const above = overlay.position === 'above';
-    const tipY = above ? frame.yOf(bar.high) - 3 : frame.yOf(bar.low) + 3;
-    const reach = DEMO_MARKER_ARROW * 1.4;
+    const tipY = above
+        ? frame.yOf(bar.high) - MARKER_BAR_GAP
+        : frame.yOf(bar.low) + MARKER_BAR_GAP;
+    const reach = DEMO_MARKER_ARROW * MARKER_ARROW_REACH_RATIO;
     return {
         x: frame.xOf(overlay.i),
         tipY,
@@ -336,7 +376,7 @@ export type OverlayLabelColour =
     | { readonly palette: 'role'; readonly role: DemoLineRole }
     | { readonly palette: 'bar'; readonly tone: DemoBarTone };
 
-/** 자리를 찾은 오버레이 라벨 하나. */
+/** `layoutOverlayLabels`가 자리를 정한 라벨 하나. `DemoTextLabel`은 계산 없이 이 값대로 그린다. */
 export interface OverlayLabel {
     readonly key: string;
     readonly text: string;
@@ -355,9 +395,35 @@ interface LabelRequest {
     readonly colour: OverlayLabelColour;
 }
 
-/** 오버레이 키 — 종류+위치. 정적 데모 목록이라 재정렬이 없다. */
+/** 오버레이 키 — 종류+위치. 정적 데모 목록이라 재정렬이 없다. 도형과 라벨이 같은 키를 쓴다. */
 export function overlayKey(overlay: DemoOverlay, index: number): string {
     return `${overlay.kind}-${index}`;
+}
+
+/** 키를 붙인 오버레이. 층을 나눈 뒤에도 키는 원래 목록의 위치에서 나온다. */
+export interface KeyedOverlay {
+    readonly key: string;
+    readonly overlay: DemoOverlay;
+}
+
+/** 봉을 사이에 둔 두 층의 오버레이. */
+export interface OverlayLayers {
+    /** 봉보다 먼저(아래에) 그리는 도형 — 표식이 아닌 모든 오버레이. */
+    readonly belowBars: readonly KeyedOverlay[];
+    /** 봉 위에 그리는 표식 — 봉 뒤에 깔리면 가려진다. */
+    readonly aboveBars: readonly KeyedOverlay[];
+}
+
+/** 오버레이를 봉 아래·위 두 층으로 한 번에 나눈다. 각 층 안의 순서는 원래 순서 그대로다. */
+export function overlayLayers(overlays: readonly DemoOverlay[]): OverlayLayers {
+    const keyed = overlays.map((overlay, index): KeyedOverlay => ({
+        key: overlayKey(overlay, index),
+        overlay,
+    }));
+    return {
+        belowBars: keyed.filter(({ overlay }) => overlay.kind !== 'marker'),
+        aboveBars: keyed.filter(({ overlay }) => overlay.kind === 'marker'),
+    };
 }
 
 function lastFiniteIndex(values: readonly (number | null)[]): number {
@@ -386,8 +452,8 @@ function labelRequest(
                 ? null
                 : {
                       text: overlay.label,
-                      x: xOf(overlay.fromIndex) - pitch / 2 + 2,
-                      y: yOf(overlay.high) + 8,
+                      x: xOf(overlay.fromIndex) - pitch / 2 + LABEL_INSET,
+                      y: yOf(overlay.high) + LEVEL_LABEL_OFFSET,
                       anchor: 'start',
                       direction: 1,
                       colour: { palette: 'zone' },
@@ -402,7 +468,7 @@ function labelRequest(
                 ? {
                       text: overlay.label,
                       x: xOf(upperIdx),
-                      y: yOf(upperValue) - 8,
+                      y: yOf(upperValue) - LEVEL_LABEL_OFFSET,
                       anchor: 'end',
                       direction: -1,
                       colour: { palette: 'series', tone: overlay.tone ?? 'a' },
@@ -414,8 +480,8 @@ function labelRequest(
         case 'level':
             return {
                 text: overlay.label,
-                x: plot.right - 2,
-                y: yOf(overlay.price) - 8,
+                x: plot.right - LABEL_INSET,
+                y: yOf(overlay.price) - LEVEL_LABEL_OFFSET,
                 anchor: 'end',
                 direction: -1,
                 colour: { palette: 'role', role: overlay.role ?? 'neutral' },
@@ -426,7 +492,7 @@ function labelRequest(
                 : {
                       text: overlay.label,
                       x: xOf(overlay.to.i),
-                      y: yOf(overlay.to.price) - 9,
+                      y: yOf(overlay.to.price) - LINE_END_LABEL_OFFSET,
                       anchor: 'end',
                       direction: -1,
                       colour: { palette: 'role', role: overlay.role },
@@ -442,7 +508,7 @@ function labelRequest(
                 : {
                       text: overlay.label,
                       x: last.x,
-                      y: last.y - 9,
+                      y: last.y - LINE_END_LABEL_OFFSET,
                       anchor: 'end',
                       direction: -1,
                       colour: { palette: 'series', tone: overlay.tone ?? 'a' },
@@ -451,7 +517,7 @@ function labelRequest(
         case 'marker': {
             const marker = markerGeometry(overlay, bars, frame);
             if (marker === null) return null;
-            const offset = DEMO_CHART_FONT * 0.65;
+            const offset = DEMO_CHART_FONT * MARKER_LABEL_OFFSET_RATIO;
             return {
                 text: overlay.label,
                 x: marker.x,

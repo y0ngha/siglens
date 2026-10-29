@@ -42,7 +42,7 @@ const PATH: Waypoint[] = [
 
 const BASE_VOLUME = 1_000_000;
 
-/** 합성 시세 한 벌 — 봉과 그 봉으로 core가 계산한 지표 결과. */
+/** 합성 시세 한 벌. 데모 빌더는 `result`를 잘라 그릴 뿐 지표를 다시 계산하지 않아, 값이 core 엔진과 어긋나지 않는다. */
 export interface SharedSeries {
     bars: DemoBar[];
     result: IndicatorResult;
@@ -65,7 +65,7 @@ function buildSharedSeries(): SharedSeries {
 // 시드 고정이라 결정적이고 260봉 계산이 싸다 — 모듈 로드 때 한 번 만들어 둔다.
 const SHARED_SERIES = buildSharedSeries();
 
-/** 기본 공통 시세(상승 → 횡보 → 하락 → 반등). */
+/** `windowed`의 기본 시세 — 시세를 따로 고르지 않은 지표 데모가 구간만 바꿔 자른다. 모듈 로드 때 한 번 만든 같은 객체를 돌려준다. */
 export function getSharedSeries(): SharedSeries {
     return SHARED_SERIES;
 }
@@ -76,7 +76,7 @@ export function getSharedSeries(): SharedSeries {
  * 저점 인덱스는 `DIVERGENCE_LOW_1`, `DIVERGENCE_LOW_2`.
  */
 export const DIVERGENCE_LOW_1 = 30;
-/** 다이버전스 시세의 두 번째(더 낮은) 가격 저점 인덱스. */
+/** 다이버전스 시세의 두 번째(더 낮은) 가격 저점 인덱스. 데모 표식과 테스트가 이 값으로 저점을 가리킨다. */
 export const DIVERGENCE_LOW_2 = 76;
 
 const DIVERGENCE_PATH: Waypoint[] = [
@@ -115,7 +115,7 @@ function buildDivergenceSeries(): SharedSeries {
 
 const DIVERGENCE_SERIES = buildDivergenceSeries();
 
-/** 다이버전스용 합성 시세. */
+/** OBV·포스 인덱스 데모의 시세. 가격 저점은 낮아지고 지표 저점은 높아지도록 거래량을 맞춰 다이버전스가 한눈에 보인다. */
 export function getDivergenceSeries(): SharedSeries {
     return DIVERGENCE_SERIES;
 }
@@ -157,7 +157,7 @@ function buildTrendSeries(): SharedSeries {
 
 const TREND_SERIES = buildTrendSeries();
 
-/** 완만한 장기 상승 + 눌림 합성 시세. */
+/** 장기 이동평균 위 되돌림 전략 데모(`strategies.ts`)의 시세. 끝 구간의 눌림 저점은 `TREND_DIP_LOW`다. */
 export function getTrendSeries(): SharedSeries {
     return TREND_SERIES;
 }
@@ -240,7 +240,7 @@ function buildIntradaySeries(): SharedSeries {
 
 const INTRADAY_SERIES = buildIntradaySeries();
 
-/** 장중 5분봉 합성 시세 하루치. */
+/** VWAP 데모의 시세. 일봉인 공통 시세로는 하루 동안 누적되는 VWAP을 보여 줄 수 없다. */
 export function getIntradaySeries(): SharedSeries {
     return INTRADAY_SERIES;
 }
@@ -251,7 +251,7 @@ export function getIntradaySeries(): SharedSeries {
  * 허스트(100봉 창)와 분산비율(60봉 창)이 두 구간에서 서로 다른 쪽으로 가는 걸 보여 준다.
  */
 export const REGIME_TREND_END = 120;
-/** 장세 전환 시세의 전체 봉 수. */
+/** 장세 전환 시세의 전체 봉 수. `REGIME_TREND_END`부터 끝까지가 평균회귀 구간이다. */
 export const REGIME_TOTAL_BARS = 260;
 
 function buildRegimeSeries(): SharedSeries {
@@ -290,7 +290,7 @@ function buildRegimeSeries(): SharedSeries {
 
 const REGIME_SERIES = buildRegimeSeries();
 
-/** 장세 전환(추세 → 평균회귀) 합성 시세. */
+/** 허스트 지수·분산비율 데모의 시세 — 한 차트 안에서 추세 구간과 평균회귀 구간을 대비해 보여 준다. */
 export function getRegimeSeries(): SharedSeries {
     return REGIME_SERIES;
 }
@@ -332,7 +332,7 @@ function buildVolatilitySeries(): SharedSeries {
 
 const VOLATILITY_SERIES = buildVolatilitySeries();
 
-/** 변동성 확대·수축 합성 시세. */
+/** ATR 데모의 시세. 변동폭이 커졌다 잦아드는 구간을 일부러 만들어 ATR의 오르내림이 보이게 한다. */
 export function getVolatilitySeries(): SharedSeries {
     return VOLATILITY_SERIES;
 }
