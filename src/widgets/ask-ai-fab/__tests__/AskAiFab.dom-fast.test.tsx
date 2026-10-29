@@ -1,3 +1,6 @@
+/**
+ * `AskAiFab` 렌더 계약 — 링크 대상(href)·새 탭 속성·접근성 이름·고정 위치 클래스.
+ */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AskAiFab } from '../AskAiFab';
@@ -55,9 +58,9 @@ describe('AskAiFab', () => {
         const paths = Array.from(container.querySelectorAll('svg path')).map(
             p => p.getAttribute('d')
         );
-        // 5-point star path (기존 "즐겨찾기"로 오독되던 아이콘)는 더 이상 없다.
+        // 5각 별 path는 "즐겨찾기"로 읽히므로 쓰지 않는다.
         expect(paths.some(d => d?.startsWith('M9.049 2.927'))).toBe(false);
-        // 스파클(두 개의 다이아몬드) path가 대신 렌더된다.
+        // 스파클(두 개의 다이아몬드) path를 렌더한다.
         expect(paths).toContain(
             'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z'
         );
@@ -98,5 +101,55 @@ describe('AskAiFab', () => {
         const href = link.getAttribute('href');
         expect(href).not.toBeNull();
         expect(new URL(href!).pathname).toBe('/en');
+    });
+
+    describe('접근성 이름', () => {
+        // 모바일은 짧은 라벨만 보인다. 이름을 `aria-label`로 못박으면 보이는 글자가
+        // 이름에 없어 음성 제어가 링크를 못 찾는다 — 이름은 보이는 텍스트에서 나와야 한다.
+        it('aria-label로 이름을 덮어쓰지 않고, 짧은 라벨이 이름에 들어간다', async () => {
+            await renderFab('애플', '/');
+
+            const link = screen.getByRole('link');
+            expect(link).not.toHaveAttribute('aria-label');
+            expect(link).toHaveAccessibleName(/AI에게 묻기/);
+        });
+
+        it('전체 라벨과 새 탭 안내가 이름에 들어간다', async () => {
+            await renderFab('애플', '/');
+
+            const link = screen.getByRole('link');
+            expect(link).toHaveAccessibleName(/시그렌즈 AI에게 물어보기/);
+            expect(link).toHaveAccessibleName(/\(새 탭\)$/);
+        });
+
+        it('새 탭 안내는 화면에 보이지 않는 sr-only 조각이다', async () => {
+            await renderFab('애플', '/');
+
+            expect(screen.getByText('(새 탭)')).toHaveClass('sr-only');
+        });
+    });
+
+    // 라이트 테마는 primary-500(링)과 primary-600(버튼 면)이 같은 값이라, 간격 없이
+    // 붙은 링은 버튼 면과 구분되지 않는다.
+    it('포커스 링을 버튼 면에서 띄우는 ring-offset을 단다', async () => {
+        await renderFab('애플', '/');
+
+        expect(screen.getByRole('link')).toHaveClass(
+            'focus-visible:ring-2',
+            'focus-visible:ring-primary-500',
+            'focus-visible:ring-offset-2',
+            'focus-visible:ring-offset-secondary-900'
+        );
+    });
+
+    // `viewportFit: 'cover'`라 가로 모드 iPhone(폭 768px 이상 → md)에서는 노치가 오른쪽
+    // 인셋(약 47px)을 차지한다. 고정 오프셋(24px)만 주면 버튼이 노치 밑으로 들어간다.
+    it('오른쪽 오프셋이 모든 폭에서 safe-area-inset-right 이상이다', async () => {
+        await renderFab('애플', '/');
+
+        expect(screen.getByRole('link')).toHaveClass(
+            'right-[max(1rem,env(safe-area-inset-right))]',
+            'md:right-[max(1.5rem,env(safe-area-inset-right))]'
+        );
     });
 });

@@ -3789,7 +3789,7 @@
         },
         "ask-ai-fab": {
             "label": "向 SIGLENS AI 提问",
-            "ariaLabel": "向 SIGLENS AI 提问（新标签页）",
+            "newTab": "（新标签页）",
             "question": "综合说说{name}现在的情况",
             "shortLabel": "问 AI",
             "guideQuestion": "指南：{title}，请结合图表示例通俗讲解"

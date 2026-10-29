@@ -3789,7 +3789,7 @@
         },
         "ask-ai-fab": {
             "label": "SIGLENS AIに質問する",
-            "ariaLabel": "SIGLENS AIに質問する（新しいタブ）",
+            "newTab": "（新しいタブ）",
             "question": "{name}の今の状況を総合的に教えて",
             "shortLabel": "AIに質問",
             "guideQuestion": "ガイド：{title}。チャートの例を交えて分かりやすく説明して"

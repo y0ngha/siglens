@@ -3789,7 +3789,7 @@
         },
         "ask-ai-fab": {
             "label": "Ask SIGLENS AI",
-            "ariaLabel": "Ask SIGLENS AI (opens in a new tab)",
+            "newTab": "(opens in a new tab)",
             "question": "Give me an overall read on how {name} is doing right now",
             "shortLabel": "Ask AI",
             "guideQuestion": "Guide: {title}. Explain it simply with a chart example"
