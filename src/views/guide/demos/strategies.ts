@@ -1,3 +1,7 @@
+/**
+ * 전략·이론 데모. 이동평균·RSI·MACD 값은 core `calculateIndicators`의 실제 계산이고,
+ * 가격 모양은 꼭짓점(`pathToBars`)에서 만든다.
+ */
 import { calculateIndicators } from '@y0ngha/siglens-core';
 import {
     candle,
@@ -26,11 +30,6 @@ import type {
     DemoOverlay,
     GuideDemo,
 } from '@/views/guide/demos/types';
-
-/**
- * 전략·이론 데모. 이동평균·RSI·MACD 값은 core `calculateIndicators`의 실제 계산이고,
- * 가격 모양은 꼭짓점(`pathToBars`)에서 만든다.
- */
 
 const wp = (pairs: readonly (readonly [number, number])[]): Waypoint[] =>
     pairs.map(([i, price]) => ({ i, price }));
@@ -507,6 +506,7 @@ const pivotPoints = (): GuideDemo => {
     };
 };
 
+/** 전략·이론 slug → 데모 생성 함수. */
 export const STRATEGY_DEMOS: Record<string, () => GuideDemo> = {
     '52-week-high-momentum': week52HighMomentum,
     breakout,

@@ -1,9 +1,11 @@
+/** 가이드 라우트가 카탈로그를 못 읽었을 때의 안내 뷰. */
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/shared/i18n/locales';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { GuidePageHeader } from './ui/GuidePageHeader';
 
 interface GuideUnavailablePageProps {
     readonly locale: Locale;
@@ -22,14 +24,7 @@ export async function GuideUnavailablePage({
     return (
         <main className="page-container flex flex-1 flex-col py-8 sm:py-12">
             <Breadcrumb trail={[{ label: t('hubTitle') }]} />
-            <header className="max-w-2xl">
-                <p className="font-mono text-xs tracking-widest text-primary-400">
-                    CHART GUIDE
-                </p>
-                <h1 className="mt-3 text-3xl font-bold tracking-tight text-secondary-50 sm:text-4xl">
-                    {t('hubTitle')}
-                </h1>
-            </header>
+            <GuidePageHeader title={t('hubTitle')} />
             <div className="my-8 max-w-2xl rounded-lg border border-ui-warning/30 bg-ui-warning/5 p-5">
                 <p className="text-sm font-semibold text-secondary-100">
                     {t('unavailableTitle')}

@@ -3587,6 +3587,8 @@
     "views.guide.unavailableHome": "ba998ba71cd0",
     "widgets.ask-ai-fab.guideQuestion": "3e545a19801a",
     "views.guide.tableLabel": "08b6501f5583",
+    "views.guide.demoFallbackDescription": "b0df3da5b12f",
+    "views.guide.demoFallbackDescriptionWithPanes": "ffc3ece17818",
     "widgets.layout.HeaderNav.guideLink": "f4796ff36c7e",
     "widgets.layout.HeaderMobileMenu.guideLink": "eae886d65279",
     "widgets.layout.Footer.guideLink": "eae886d65279",

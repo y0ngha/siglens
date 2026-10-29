@@ -15,6 +15,7 @@ export type GuideDemoCategory =
 /** 봉 색을 방향이 아니라 의미로 덮어쓸 때 쓴다 (엘더 임펄스: 녹/청/적). */
 export type DemoBarTone = 'bull' | 'bear' | 'neutral';
 
+/** 데모 봉 하나. `time`은 단조 증가만 의미가 있다. */
 export interface DemoBar {
     time: number;
     open: number;
@@ -28,6 +29,7 @@ export interface DemoBar {
 /** 선·밴드에 쓰는 색 슬롯. a/b/c는 구분용 3색, bull/bear는 방향색. */
 export type DemoSeriesTone = 'a' | 'b' | 'c' | 'bull' | 'bear';
 
+/** 선의 의미 — 색과 점선 여부를 정한다. */
 export type DemoLineRole =
     | 'support'
     | 'resistance'
@@ -35,6 +37,7 @@ export type DemoLineRole =
     | 'trend'
     | 'neutral';
 
+/** 가격 영역에 얹는 도형 한 개. */
 export type DemoOverlay =
     | {
           kind: 'line';
@@ -91,12 +94,14 @@ export type DemoOverlay =
           label?: string;
       };
 
+/** 보조 패널 안의 선 하나. */
 export interface DemoPaneLine {
     values: readonly (number | null)[];
     label: string;
     tone?: DemoSeriesTone;
 }
 
+/** 가격 차트 아래 보조 패널 하나. `range`가 없으면 값에서 범위를 잡는다. */
 export interface DemoPane {
     label: string;
     height?: number;
@@ -108,6 +113,7 @@ export interface DemoPane {
     range?: readonly [number, number];
 }
 
+/** 데모 차트 한 장의 입력. */
 export interface GuideDemo {
     bars: readonly DemoBar[];
     overlays?: readonly DemoOverlay[];

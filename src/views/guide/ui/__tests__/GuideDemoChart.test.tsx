@@ -1,5 +1,7 @@
-import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import ko from '../../../../../messages/ko.json';
+import en from '../../../../../messages/en.json';
 import { getGuideDemo } from '@/views/guide/demos/registry';
 import type { DemoBar, GuideDemo } from '@/views/guide/demos/types';
 import { estimateLabelWidth } from '@/views/guide/lib/chartLayout';
@@ -12,8 +14,8 @@ function demoOf(category: string, slug: string): GuideDemo {
 }
 
 describe('GuideDemoChart', () => {
-    it('renders an accessible figure with title, description and caption', () => {
-        const { container } = render(
+    it('names the image with the title and describes it with the visible figcaption', () => {
+        const { container } = renderWithIntl(
             <GuideDemoChart
                 caption="설명용 캡션"
                 demo={demoOf('candlesticks', 'hammer-shooting-star')}
@@ -24,33 +26,74 @@ describe('GuideDemoChart', () => {
         expect(svg?.getAttribute('role')).toBe('img');
         expect(svg?.getAttribute('aria-label')).toBe('망치형');
         const describedBy = svg?.getAttribute('aria-describedby') ?? '';
-        expect(
-            container.querySelector(`[id="${describedBy}"]`)?.textContent
-        ).toBe('설명용 캡션');
+        const description = container.querySelector(`[id="${describedBy}"]`);
+        expect(description?.tagName).toBe('FIGCAPTION');
+        expect(description?.textContent).toBe('설명용 캡션');
         // 본문 SVG의 `<title>`은 SEO 검사기가 문서 제목으로 센다 — 문서당 `<title>`은 하나여야 한다.
         expect(container.querySelector('title')).toBeNull();
-        expect(container.querySelector('figcaption')?.textContent).toBe(
-            '설명용 캡션'
+    });
+
+    it('does not repeat the caption inside the SVG', () => {
+        const { container } = renderWithIntl(
+            <GuideDemoChart
+                caption="설명용 캡션"
+                demo={demoOf('candlesticks', 'hammer-shooting-star')}
+                title="망치형"
+            />
+        );
+        expect(container.querySelector('desc')).toBeNull();
+        expect(container.textContent?.split('설명용 캡션')).toHaveLength(2);
+    });
+
+    it('omits the figcaption and falls back to a localized description without a caption', () => {
+        const demo = demoOf('indicators', 'macd');
+        const { container } = renderWithIntl(
+            <GuideDemoChart caption={null} demo={demo} title="MACD" />
+        );
+        expect(container.querySelector('figcaption')).toBeNull();
+        const svg = container.querySelector('svg');
+        const desc = container.querySelector('desc');
+        expect(svg?.getAttribute('aria-describedby')).toBe(desc?.id);
+        expect(desc?.textContent).toBe(
+            ko.views.guide.demoFallbackDescriptionWithPanes
+                .replace('{count}', String(demo.bars.length))
+                .replace('{panes}', '12-26-9')
         );
     });
 
-    it('omits the figcaption and falls back to a generated description without a caption', () => {
-        const { container } = render(
-            <GuideDemoChart
-                caption={null}
-                demo={demoOf('indicators', 'macd')}
-                title="MACD"
-            />
+    it('joins several pane names with the locale list format', () => {
+        const demo: GuideDemo = {
+            bars: demoOf('indicators', 'macd').bars.slice(0, 3),
+            panes: [{ label: 'RSI 14' }, { label: 'Volume' }],
+        };
+        const { container } = renderWithIntl(
+            <GuideDemoChart caption={null} demo={demo} title="t" />,
+            { locale: 'en' }
         );
-        expect(container.querySelector('figcaption')).toBeNull();
-        expect(container.querySelector('desc')?.textContent).toContain(
-            'candlesticks'
+        expect(en.views.guide.demoFallbackDescriptionWithPanes).toContain(
+            '(indicator panes: {panes})'
+        );
+        expect(container.querySelector('desc')?.textContent).toBe(
+            'Example chart of 3 candlesticks (indicator panes: RSI 14 and Volume)'
+        );
+    });
+
+    it('describes a demo without panes by its bar count only', () => {
+        const demo = demoOf('candlesticks', 'hammer-shooting-star');
+        const { container } = renderWithIntl(
+            <GuideDemoChart caption={null} demo={demo} title="t" />
+        );
+        expect(container.querySelector('desc')?.textContent).toBe(
+            ko.views.guide.demoFallbackDescription.replace(
+                '{count}',
+                String(demo.bars.length)
+            )
         );
     });
 
     it('draws one candle body per bar plus pane content, with token colours only', () => {
         const demo = demoOf('indicators', 'macd');
-        const { container } = render(
+        const { container } = renderWithIntl(
             <GuideDemoChart caption={null} demo={demo} title="MACD" />
         );
         const html = container.innerHTML;
@@ -73,7 +116,7 @@ describe('GuideDemoChart', () => {
             ['indicators', 'elder-impulse'],
             ['strategies', 'breakout'],
         ] as const) {
-            const { container, unmount } = render(
+            const { container, unmount } = renderWithIntl(
                 <GuideDemoChart
                     caption="c"
                     demo={demoOf(category, slug)}
@@ -97,7 +140,7 @@ describe('GuideDemoChart', () => {
                 close: 108,
             }));
         const renderDemo = (demo: GuideDemo) =>
-            render(<GuideDemoChart caption="c" demo={demo} title="t" />)
+            renderWithIntl(<GuideDemoChart caption="c" demo={demo} title="t" />)
                 .container;
         const axisValues = (container: HTMLElement): number[] =>
             Array.from(container.querySelectorAll('text.fill-secondary-400'))

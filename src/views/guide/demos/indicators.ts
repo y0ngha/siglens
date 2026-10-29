@@ -1,3 +1,7 @@
+/**
+ * 지표 데모는 공통 합성 시세(`sharedSeries.ts`)의 한 구간을 잘라 core `calculateIndicators`가
+ * 계산한 **실제 값**을 그린다. 값은 이 파일이 만들지 않고 구간만 고른다.
+ */
 import {
     calculateIndicators,
     type IndicatorResult,
@@ -24,14 +28,11 @@ import type {
     GuideDemo,
 } from '@/views/guide/demos/types';
 
-/**
- * 지표 데모는 공통 합성 시세(`sharedSeries.ts`)의 한 구간을 잘라 core `calculateIndicators`가
- * 계산한 **실제 값**을 그린다. 값은 이 파일이 만들지 않고 구간만 고른다.
- */
-
 type Num = number | null;
+/** 표식 색 톤. */
 export type Tone = 'bull' | 'bear' | 'neutral';
 
+/** `windowed`가 데모 빌더에 넘기는 구간 문맥. 인덱스는 '절대'(시세 전체 기준)와 '구간'(잘라낸 창 기준) 두 가지다. */
 export interface Ctx {
     r: IndicatorResult;
     bars: DemoBar[];
@@ -46,6 +47,7 @@ export interface Ctx {
 
 const WINDOW = 90;
 
+/** 공통 시세의 `[start, start + length)` 구간을 잘라 데모 빌더를 돌리는 데모 생성 함수를 만든다. */
 export function windowed(
     start: number,
     build: (ctx: Ctx) => Omit<GuideDemo, 'bars'> & { bars?: DemoBar[] },
@@ -61,17 +63,17 @@ export function windowed(
             start,
             at: abs => abs - start,
             s: values => values.slice(start, end),
-            find: test => {
-                for (let abs = start; abs < end; abs++) {
-                    if (test(abs)) return abs - start;
-                }
-                return -1;
-            },
+            find: test =>
+                Array.from(
+                    { length: Math.max(0, end - start) },
+                    (_, offset) => start + offset
+                ).findIndex(test),
         };
         return { bars: ctx.bars, ...build(ctx) };
     };
 }
 
+/** 구간 인덱스 `i`에 표식 하나. `i`가 음수(못 찾음)면 표식을 내지 않는다. */
 export const marker = (
     i: number,
     label: string,
@@ -80,6 +82,7 @@ export const marker = (
 ): DemoOverlay[] =>
     i < 0 ? [] : [{ kind: 'marker', i, label, tone, position }];
 
+/** 빈 값을 NaN으로 — 비교식이 거짓이 되어 교차 판정에서 자연히 빠진다. */
 export const num = (value: Num | undefined): number => value ?? Number.NaN;
 
 /** 위로 교차한(이전엔 a <= b, 지금은 a > b) 첫 절대 인덱스 조건. */
@@ -90,6 +93,7 @@ export const crossedUp =
         num(a[abs]) > num(b[abs]) &&
         num(a[abs - 1]) <= num(b[abs - 1]);
 
+/** 아래로 교차한(이전엔 a >= b, 지금은 a < b) 첫 절대 인덱스 조건. */
 export const crossedDown =
     (a: readonly Num[], b: readonly Num[]) =>
     (abs: number): boolean =>
@@ -103,6 +107,7 @@ export const crossedUpLevel =
     (abs: number): boolean =>
         abs > 0 && num(values[abs]) > level && num(values[abs - 1]) <= level;
 
+/** 값이 기준선을 위에서 아래로 깬(이전엔 >= level, 지금은 < level) 절대 인덱스 조건. */
 export const crossedDownLevel =
     (values: readonly Num[], level: number) =>
     (abs: number): boolean =>
@@ -115,29 +120,29 @@ export const firstAfter = (
     test: (abs: number) => boolean
 ): number => c.find(abs => abs >= c.start + offset && test(abs));
 
+/** core 결과의 `period`일 단순이동평균(없으면 빈 배열). */
 export const maOf = (r: IndicatorResult, period: number): readonly Num[] =>
     r.ma[period] ?? [];
+/** core 결과의 `period`일 지수이동평균(없으면 빈 배열). */
 export const emaOf = (r: IndicatorResult, period: number): readonly Num[] =>
     r.ema[period] ?? [];
 
 /** 표준 EMA (첫 값은 SMA로 시작). 엘더 레이의 13일 EMA처럼 core가 따로 내지 않는 선에만 쓴다. */
 function ema(values: readonly number[], period: number): Num[] {
     const k = 2 / (period + 1);
-    const out: Num[] = [];
-    let prev = 0;
-    values.forEach((value, index) => {
-        if (index < period - 1) {
-            out.push(null);
-            prev += value;
-            return;
-        }
-        prev =
-            index === period - 1
-                ? (prev + value) / period
-                : value * k + prev * (1 - k);
-        out.push(prev);
-    });
-    return out;
+    // `carry`는 첫 기간 동안 합계, 그 뒤로는 직전 EMA다.
+    return values.reduce<{ out: Num[]; carry: number }>(
+        ({ out, carry }, value, index) => {
+            if (index < period - 1)
+                return { out: [...out, null], carry: carry + value };
+            const next =
+                index === period - 1
+                    ? (carry + value) / period
+                    : value * k + carry * (1 - k);
+            return { out: [...out, next], carry: next };
+        },
+        { out: [], carry: 0 }
+    ).out;
 }
 
 /** 방향 배열로 한 선을 위/아래 두 갈래(null로 끊김)로 나눈다. */
@@ -145,16 +150,18 @@ export function splitByDirection(
     values: readonly Num[],
     isUp: (index: number) => boolean | null
 ): { up: Num[]; down: Num[] } {
-    const up: Num[] = [];
-    const down: Num[] = [];
-    values.forEach((value, index) => {
-        const direction = isUp(index);
-        up.push(direction === true ? value : null);
-        down.push(direction === false ? value : null);
-    });
-    return { up, down };
+    const directions = values.map((_, index) => isUp(index));
+    return {
+        up: values.map((value, index) =>
+            directions[index] === true ? value : null
+        ),
+        down: values.map((value, index) =>
+            directions[index] === false ? value : null
+        ),
+    };
 }
 
+/** 보조 패널 하나를 만든다. */
 export const pane = (
     label: string,
     rest: Omit<DemoPane, 'label'>
@@ -225,7 +232,9 @@ function sma(values: readonly number[], period: number): Num[] {
     );
 }
 
+/** 골든크로스 데모의 단기 이동평균 기간. */
 export const GOLDEN_CROSS_SHORT = 20;
+/** 골든크로스 데모의 장기 이동평균 기간. */
 export const GOLDEN_CROSS_LONG = 50;
 
 const maDemo = windowed(175, c => {
@@ -508,14 +517,16 @@ const elderRayDemo = windowed(40, c => {
 const ewmaDemo = windowed(
     150,
     c => {
-        let worst = 1;
-        for (let i = 1; i < c.bars.length; i++) {
-            if (
-                c.bars[i].close - c.bars[i - 1].close <
-                c.bars[worst].close - c.bars[worst - 1].close
-            )
-                worst = i;
-        }
+        const change = (i: number): number =>
+            c.bars[i].close - c.bars[i - 1].close;
+        // 하루 하락폭이 가장 큰 봉(같으면 앞선 봉).
+        const worst = c.bars
+            .slice(1)
+            .reduce(
+                (best, _bar, offset) =>
+                    change(offset + 1) < change(best) ? offset + 1 : best,
+                1
+            );
         return {
             overlays: marker(worst, 'Big drop', 'bear'),
             panes: [
@@ -747,7 +758,7 @@ const smcDemo = windowed(
     c => {
         const { smc } = c.r;
         const end = c.start + c.bars.length;
-        const overlays: DemoOverlay[] = smc.structureBreaks
+        const bosMarkers: DemoOverlay[] = smc.structureBreaks
             .filter(
                 b =>
                     b.breakType === 'bos' && b.index >= c.start && b.index < end
@@ -779,28 +790,34 @@ const smcDemo = windowed(
                 : smc.fairValueGaps.find(
                       f => f.type === 'bullish' && f.index >= bos.index
                   );
-        if (bos !== undefined && block !== undefined) {
-            overlays.push({
-                kind: 'zone',
-                fromIndex: c.at(block.startIndex),
-                toIndex: c.at(bos.index),
-                low: block.low,
-                high: block.high,
-                label: 'Order block',
-            });
-        }
-        if (gap !== undefined) {
-            // 아직 메워지지 않은 갭이라 오른쪽 끝까지 이어서 그린다.
-            overlays.push({
-                kind: 'zone',
-                fromIndex: c.at(gap.index - 1),
-                toIndex: c.bars.length - 1,
-                low: gap.low,
-                high: gap.high,
-                label: 'FVG',
-            });
-        }
-        return { overlays };
+        const blockZone: DemoOverlay[] =
+            bos !== undefined && block !== undefined
+                ? [
+                      {
+                          kind: 'zone',
+                          fromIndex: c.at(block.startIndex),
+                          toIndex: c.at(bos.index),
+                          low: block.low,
+                          high: block.high,
+                          label: 'Order block',
+                      },
+                  ]
+                : [];
+        // 아직 메워지지 않은 갭이라 오른쪽 끝까지 이어서 그린다.
+        const gapZone: DemoOverlay[] =
+            gap === undefined
+                ? []
+                : [
+                      {
+                          kind: 'zone',
+                          fromIndex: c.at(gap.index - 1),
+                          toIndex: c.bars.length - 1,
+                          low: gap.low,
+                          high: gap.high,
+                          label: 'FVG',
+                      },
+                  ];
+        return { overlays: [...bosMarkers, ...blockZone, ...gapZone] };
     },
     getSharedSeries,
     45
@@ -1074,6 +1091,7 @@ const atrDemo = windowed(
     VOLATILITY_BARS
 );
 
+/** 보조지표 slug → 데모 생성 함수. */
 export const INDICATOR_DEMOS: Record<string, () => GuideDemo> = {
     adx: adxDemo,
     atr: atrDemo,

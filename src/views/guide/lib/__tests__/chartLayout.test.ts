@@ -41,15 +41,14 @@ describe('placeLabel', () => {
     const bounds = { top: 0, bottom: 200 };
 
     it('pushes an overlapping label out until it is free', () => {
-        const placed: LabelBox[] = [];
         const first = placeLabel(
-            placed,
+            [],
             { x: 10, y: 50, width: 40, height: 14 },
             -1,
             bounds
         );
         const second = placeLabel(
-            placed,
+            [first],
             { x: 20, y: 50, width: 40, height: 14 },
             -1,
             bounds
@@ -58,10 +57,17 @@ describe('placeLabel', () => {
         expect(second.y).toBeLessThan(50 - 14 + 1);
     });
 
+    it('does not add the result to the placed list', () => {
+        const placed: readonly LabelBox[] = [
+            { x: 100, y: 100, width: 10, height: 14 },
+        ];
+        placeLabel(placed, { x: 0, y: 20, width: 10, height: 14 }, -1, bounds);
+        expect(placed).toEqual([{ x: 100, y: 100, width: 10, height: 14 }]);
+    });
+
     it('keeps labels inside the vertical bounds', () => {
-        const placed: LabelBox[] = [];
         const box = placeLabel(
-            placed,
+            [],
             { x: 0, y: -30, width: 10, height: 14 },
             -1,
             bounds
@@ -102,16 +108,15 @@ describe('formatCompact', () => {
 
 describe('placeLabel fallback', () => {
     it('tries the opposite direction when the preferred side is blocked by the bounds', () => {
-        const placed: LabelBox[] = [];
         const bounds = { top: 0, bottom: 100 };
         const a = placeLabel(
-            placed,
+            [],
             { x: 0, y: 0, width: 30, height: 14 },
             -1,
             bounds
         );
         const b = placeLabel(
-            placed,
+            [a],
             { x: 0, y: 0, width: 30, height: 14 },
             -1,
             bounds

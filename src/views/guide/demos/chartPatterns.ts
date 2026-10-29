@@ -1,3 +1,7 @@
+/**
+ * 차트 패턴 데모는 꼭짓점(웨이포인트) 목록에서 시드 고정 노이즈 봉을 만들고,
+ * 넥라인·추세선·돌파 마커를 **같은 꼭짓점에서** 계산한다. 선이 그림과 어긋날 수 없다.
+ */
 import { pathToBars } from '@/views/guide/demos/generators';
 import type {
     DemoBar,
@@ -5,11 +9,6 @@ import type {
     DemoOverlay,
     GuideDemo,
 } from '@/views/guide/demos/types';
-
-/**
- * 차트 패턴 데모는 꼭짓점(웨이포인트) 목록에서 시드 고정 노이즈 봉을 만들고,
- * 넥라인·추세선·돌파 마커를 **같은 꼭짓점에서** 계산한다. 선이 그림과 어긋날 수 없다.
- */
 
 type Point = { i: number; price: number };
 
@@ -638,6 +637,7 @@ const roundingTop = (): GuideDemo => {
     );
 };
 
+/** 차트 패턴 slug → 데모 생성 함수. */
 export const CHART_PATTERN_DEMOS: Record<string, () => GuideDemo> = {
     'ascending-channel': ascendingChannel,
     'ascending-triangle': ascendingTriangle,

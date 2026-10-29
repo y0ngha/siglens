@@ -3234,6 +3234,8 @@
             "ctaBody": "気になる銘柄を検索すると、チャートと分析をあわせて見られます。",
             "ctaButton": "銘柄を検索する",
             "ctaHeading": "実際の銘柄で確認する",
+            "demoFallbackDescription": "{count}本のローソク足の例示チャート",
+            "demoFallbackDescriptionWithPanes": "{count}本のローソク足の例示チャート（サブパネル：{panes}）",
             "emptyAiQuestion": "ガイドにない用語：{query}。チャートの例を交えて分かりやすく説明して",
             "emptyAskAi": "AIに質問する",
             "emptyBody": "別の名前で検索するか、AIに直接質問してみてください。",

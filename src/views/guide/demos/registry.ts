@@ -1,3 +1,4 @@
+/** 분류·slug → 데모 생성 함수 조회표. */
 import { CANDLESTICK_DEMOS } from '@/views/guide/demos/candlesticks';
 import { CHART_PATTERN_DEMOS } from '@/views/guide/demos/chartPatterns';
 import { INDICATOR_DEMOS } from '@/views/guide/demos/indicators';

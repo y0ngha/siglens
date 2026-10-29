@@ -1,3 +1,4 @@
+/** 분류 허브로 건너가는 타일 줄. */
 import type { ComponentType } from 'react';
 import type { GuideCategory } from '@/entities/guide/types';
 import { guideCategoryPath } from '@/shared/lib/guidePaths';
@@ -22,6 +23,7 @@ const CATEGORY_ICON: Readonly<Record<GuideCategory, IconComponent>> = {
     strategies: LayersIcon,
 };
 
+/** 타일 하나 — 분류, 표시명, 항목 수 문구. */
 export interface GuideCategoryTile {
     readonly category: GuideCategory;
     readonly label: string;

@@ -1,8 +1,10 @@
+/** 항목 본문을 라이브 종목 모듈 자리(앵커 h2 절 끝)에서 두 조각으로 나눈다. */
 import {
     parseHeadingLine,
     scanMarkdownLines,
 } from '@/shared/lib/markdownHeadings';
 
+/** 나눈 두 조각. */
 export interface SplitMarkdown {
     readonly before: string;
     /** 앵커 절 다음부터 끝까지. 앵커가 없거나 마지막 절이면 null. */

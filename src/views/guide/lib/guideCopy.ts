@@ -1,3 +1,4 @@
+/** 가이드 화면·메타데이터가 읽는 분류별·허브 문구를 한 번에 불러온다(번역 키는 모두 정적 리터럴). */
 import { getTranslations } from 'next-intl/server';
 import type { GuideCategory } from '@/entities/guide/types';
 import type { Locale } from '@/shared/i18n/locales';
@@ -76,6 +77,7 @@ export interface GuideHubCounts {
     readonly howto: number;
 }
 
+/** 카탈로그를 용어 항목과 실전 가이드(howto)로 나눠 센다. */
 export function countGuideHubEntries(
     entries: readonly { readonly category: GuideCategory }[]
 ): GuideHubCounts {
@@ -83,27 +85,30 @@ export function countGuideHubEntries(
     return { terms: entries.length - howto, howto };
 }
 
+/** 허브·분류 허브의 SEO 문구. 허브 설명은 실전 가이드 편수(`counts.howto`)에 따라 세 문구 중 하나다. */
 export async function loadGuideHubSeoCopy(
     locale: Locale,
     counts: GuideHubCounts
 ): Promise<GuideHubSeoCopy> {
     const t = await getTranslations({ locale, namespace: 'views.guide' });
+    // 실전 가이드가 아직 없으면(시드 전) "0편"을 적지 않는 문구로 돌아가고,
+    // `HOWTO_COUNT_DISPLAY_MIN` 미만이면 편수를 뺀 문구를 쓴다.
+    const hubSeoDescription = (): string => {
+        if (counts.howto >= HOWTO_COUNT_DISPLAY_MIN)
+            return t('hubSeoDescriptionWithHowto', {
+                terms: counts.terms,
+                howto: counts.howto,
+            });
+        if (counts.howto > 0)
+            return t('hubSeoDescriptionWithHowtoNoCount', {
+                terms: counts.terms,
+            });
+        return t('hubSeoDescription', { terms: counts.terms });
+    };
     return {
         hubTitle: t('hubTitle'),
         hubSeoTitle: t('hubSeoTitle'),
-        // 실전 가이드가 아직 없으면(시드 전) "0편"을 적지 않는 문구로 돌아가고,
-        // `HOWTO_COUNT_DISPLAY_MIN` 미만이면 편수를 뺀 문구를 쓴다.
-        hubSeoDescription:
-            counts.howto >= HOWTO_COUNT_DISPLAY_MIN
-                ? t('hubSeoDescriptionWithHowto', {
-                      terms: counts.terms,
-                      howto: counts.howto,
-                  })
-                : counts.howto > 0
-                  ? t('hubSeoDescriptionWithHowtoNoCount', {
-                        terms: counts.terms,
-                    })
-                  : t('hubSeoDescription', { terms: counts.terms }),
+        hubSeoDescription: hubSeoDescription(),
         hubSeoKeywords: t('hubSeoKeywords')
             .split(',')
             .map(keyword => keyword.trim())

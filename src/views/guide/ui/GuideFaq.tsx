@@ -1,3 +1,4 @@
+/** 항목 페이지의 FAQ 절. */
 import type { GuideFaqItem } from '@/entities/guide/types';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';

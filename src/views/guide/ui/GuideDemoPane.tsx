@@ -1,13 +1,18 @@
+/** 데모 차트의 보조 패널(RSI·MACD·거래량 등) SVG 조각. */
+import { cn } from '@/shared/lib/cn';
 import {
-    formatCompact,
-    formatTick,
-    estimateLabelWidth,
     linearScale,
-    niceStep,
-    niceTicks,
     splitRuns,
     toPoints,
 } from '@/views/guide/lib/chartLayout';
+import type { PaneFrame } from '@/views/guide/lib/demoChartLayout';
+import {
+    legendPositions,
+    paneDomain,
+    paneLevelText,
+    paneTicks,
+    paneTickText,
+} from '@/views/guide/lib/demoPaneLayout';
 import type { DemoPane } from '@/views/guide/demos/types';
 import {
     LABEL_HALO,
@@ -16,62 +21,11 @@ import {
     TONE_FILL,
 } from '@/views/guide/ui/guideChartStyles';
 
-export interface PaneFrame {
-    top: number;
-    height: number;
-    left: number;
-    right: number;
-    /** 봉 인덱스 → x 좌표 */
-    xOf: (index: number) => number;
-    pitch: number;
-    barCount: number;
-}
-
 interface GuideDemoPaneProps {
-    pane: DemoPane;
-    frame: PaneFrame;
-    labelFontSize: number;
+    readonly pane: DemoPane;
+    readonly frame: PaneFrame;
+    readonly labelFontSize: number;
 }
-
-const PANE_PAD_RATIO = 0.12;
-const LEGEND_GAP = 10;
-
-function paneDomain(pane: DemoPane): [number, number] {
-    if (pane.range !== undefined) return [pane.range[0], pane.range[1]];
-    const values: number[] = [];
-    for (const line of pane.lines ?? []) {
-        for (const value of line.values) {
-            if (value !== null && Number.isFinite(value)) values.push(value);
-        }
-    }
-    for (const value of pane.histogram ?? []) {
-        if (value !== null && Number.isFinite(value)) values.push(value);
-    }
-    for (const level of pane.levels ?? []) values.push(level.value);
-    if (pane.histogram !== undefined) values.push(0);
-    if (values.length === 0) return [0, 1];
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const pad = (max - min || Math.abs(max) || 1) * PANE_PAD_RATIO;
-    return [min - pad, max + pad];
-}
-
-/** 절댓값이 이 값 이상이면 눈금·레벨 라벨을 K/M 단위 축약형으로 줄여 좁은 축 영역에 맞춘다. */
-const COMPACT_ABS_THRESHOLD = 1e4;
-
-/** 레벨 라벨 소수 자릿수 상한 — 0.0001 단위 지표값까지 구분하고 그 아래 꼬리 자릿수는 버린다. */
-const LEVEL_MAX_DECIMALS = 4;
-
-const tickText = (value: number, step: number): string =>
-    step >= 1000 || Math.abs(value) >= COMPACT_ABS_THRESHOLD
-        ? formatCompact(value)
-        : formatTick(value, step);
-
-/** 레벨 라벨은 눈금 간격이 아니라 자기 값을 그대로(최대 4자리) 보여 준다. */
-const levelText = (value: number): string =>
-    Math.abs(value) >= COMPACT_ABS_THRESHOLD
-        ? formatCompact(value)
-        : String(Number(value.toFixed(LEVEL_MAX_DECIMALS)));
 
 /** 가격 차트 아래에 붙는 보조 패널 (RSI·MACD·거래량 등). x축은 가격 차트와 공유한다. */
 export function GuideDemoPane({
@@ -84,34 +38,16 @@ export function GuideDemoPane({
     const innerBottom = frame.top + frame.height - 4;
     const yOf = linearScale(min, max, innerBottom, innerTop);
     const levelValues = (pane.levels ?? []).map(level => level.value);
-    const allTicks = niceTicks(min, max, 3);
-    const ticks = allTicks.filter(
-        tick => !levelValues.some(v => Math.abs(yOf(v) - yOf(tick)) < 9)
-    );
-    const step =
-        allTicks.length > 1
-            ? allTicks[1] - allTicks[0]
-            : niceStep((max - min) / 3);
+    const { ticks, step } = paneTicks(min, max, levelValues, yOf);
     const baseline = min <= 0 && max >= 0 ? yOf(0) : innerBottom;
     const barWidth = Math.max(1.2, frame.pitch * 0.7);
     const legendLines = (pane.lines ?? []).filter(line => line.label !== '');
-    const legendStart =
-        frame.left +
-        4 +
-        estimateLabelWidth(pane.label, labelFontSize) +
-        LEGEND_GAP;
-    const legendXs = legendLines.reduce<number[]>((xs, line, index) => {
-        const prev = legendLines[index - 1];
-        const last = xs[index - 1];
-        xs.push(
-            prev === undefined
-                ? legendStart
-                : last +
-                      estimateLabelWidth(prev.label, labelFontSize) +
-                      LEGEND_GAP
-        );
-        return xs;
-    }, []);
+    const legendXs = legendPositions(
+        pane.label,
+        legendLines.map(line => line.label),
+        frame.left,
+        labelFontSize
+    );
 
     return (
         <g>
@@ -160,7 +96,7 @@ export function GuideDemoPane({
                         x={frame.right + 4}
                         y={yOf(level.value)}
                     >
-                        {level.label ?? levelText(level.value)}
+                        {level.label ?? paneLevelText(level.value)}
                     </text>
                 </g>
             ))}
@@ -173,7 +109,7 @@ export function GuideDemoPane({
                     x={frame.right + 4}
                     y={yOf(tick)}
                 >
-                    {tickText(tick, step)}
+                    {paneTickText(tick, step)}
                 </text>
             ))}
             {(pane.lines ?? []).map(line =>
@@ -189,7 +125,7 @@ export function GuideDemoPane({
                 ))
             )}
             <text
-                className={`fill-secondary-300 ${LABEL_HALO}`}
+                className={cn('fill-secondary-300', LABEL_HALO)}
                 fontSize={labelFontSize - 1}
                 fontWeight={600}
                 paintOrder="stroke"
@@ -205,7 +141,10 @@ export function GuideDemoPane({
                 return (
                     <text
                         key={`legend-${line.label}`}
-                        className={`${SERIES_TEXT[line.tone ?? 'a']} ${LABEL_HALO}`}
+                        className={cn(
+                            SERIES_TEXT[line.tone ?? 'a'],
+                            LABEL_HALO
+                        )}
                         fontSize={labelFontSize - 1}
                         fontWeight={600}
                         paintOrder="stroke"

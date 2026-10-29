@@ -3234,6 +3234,8 @@
             "ctaBody": "Search a stock you follow to read its chart and analysis side by side.",
             "ctaButton": "Search stocks",
             "ctaHeading": "See it on a real stock",
+            "demoFallbackDescription": "Example chart of {count, plural, one {# candlestick} other {# candlesticks}}",
+            "demoFallbackDescriptionWithPanes": "Example chart of {count, plural, one {# candlestick} other {# candlesticks}} (indicator panes: {panes})",
             "emptyAiQuestion": "A term missing from the guide: {query}. Explain it simply with a chart example",
             "emptyAskAi": "Ask the AI",
             "emptyBody": "Try another name, or ask the AI directly.",

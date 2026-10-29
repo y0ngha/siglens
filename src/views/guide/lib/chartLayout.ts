@@ -1,5 +1,6 @@
 /** 가이드 데모 차트의 좌표 계산 (DOM 없는 순수 함수). */
 
+/** 값 → 화면 좌표 변환 함수. */
 export interface LinearScale {
     (value: number): number;
 }
@@ -32,11 +33,11 @@ export function niceTicks(min: number, max: number, target: number): number[] {
     if (!(max > min)) return [min];
     const step = niceStep((max - min) / Math.max(1, target));
     const start = Math.ceil(min / step) * step;
-    const ticks: number[] = [];
-    for (let value = start; value <= max + step * 1e-9; value += step) {
-        ticks.push(Number(value.toFixed(10)));
-    }
-    return ticks;
+    // 부동소수 오차로 `max` 바로 위에 떨어진 마지막 눈금도 포함한다.
+    const count = Math.floor((max + step * 1e-9 - start) / step) + 1;
+    return Array.from({ length: Math.max(0, count) }, (_, index) =>
+        Number((start + index * step).toFixed(10))
+    );
 }
 
 /** 눈금 간격에 맞는 소수 자릿수로 가격 라벨을 만든다. */
@@ -50,6 +51,7 @@ export function tickStep(ticks: readonly number[]): number {
     return ticks.length > 1 ? ticks[1] - ticks[0] : 1;
 }
 
+/** 라벨이 차지하는 사각형 (viewBox 단위). */
 export interface LabelBox {
     x: number;
     y: number;
@@ -59,10 +61,10 @@ export interface LabelBox {
 
 /** 글자 수로 라벨 폭을 어림한다 (viewBox 단위). */
 export function estimateLabelWidth(text: string, fontSize: number): number {
-    let units = 0;
-    for (const char of text) {
-        units += char.charCodeAt(0) > 0x2e80 ? 1 : 0.58;
-    }
+    const units = [...text].reduce(
+        (sum, char) => sum + (char.charCodeAt(0) > 0x2e80 ? 1 : 0.58),
+        0
+    );
     return units * fontSize + 4;
 }
 
@@ -89,11 +91,12 @@ const EDGE_GAP = 1;
  * 이미 놓인 라벨·장애물(봉)과 겹치지 않는 자리를 찾는다. 후보는 제자리, 한 줄씩 민 자리,
  * 겹치는 박스의 위/아래 가장자리에 딱 붙인 자리, 거기에 좌우로 조금 민 자리이고,
  * `direction`(-1 위, +1 아래) 쪽으로 덜 움직인 후보를 고른다 (좌우 이동은 세로보다 싸게 쳐서
- * 라벨이 자기 표식에서 멀리 떠나지 않게 한다). 놓은 박스는 `placed`에 쌓이고 최종 박스를 돌려준다.
+ * 라벨이 자기 표식에서 멀리 떠나지 않게 한다). 최종 박스를 돌려줄 뿐 `placed`를 바꾸지 않는다 —
+ * 다음 라벨을 놓을 때 호출부가 결과를 `placed`에 더해 넘긴다.
  * `obstacles`는 쌓이지 않는 고정 장애물(봉의 몸통·꼬리)이다.
  */
 export function placeLabel(
-    placed: LabelBox[],
+    placed: readonly LabelBox[],
     box: LabelBox,
     direction: -1 | 1,
     bounds: { top: number; bottom: number; left?: number; right?: number },
@@ -114,19 +117,26 @@ export function placeLabel(
             other.x < start.x + start.width + reach &&
             start.x - reach < other.x + other.width
     );
-    const ys = new Set<number>([start.y]);
-    for (let step = 1; step <= MAX_ROW_STEPS; step++) {
-        ys.add(start.y + step * stride);
-        ys.add(start.y - step * stride);
-    }
-    for (const other of blockers) {
-        ys.add(other.y - start.height - EDGE_GAP);
-        ys.add(other.y + other.height + EDGE_GAP);
-    }
-    const dxs = [0];
-    for (let step = 1; step <= MAX_SHIFT_STEPS; step++) {
-        dxs.push(step * SHIFT_STRIDE, -step * SHIFT_STRIDE);
-    }
+    const steps = (max: number): number[] =>
+        Array.from({ length: max }, (_, index) => index + 1);
+    const ys = new Set<number>([
+        start.y,
+        ...steps(MAX_ROW_STEPS).flatMap(step => [
+            start.y + step * stride,
+            start.y - step * stride,
+        ]),
+        ...blockers.flatMap(other => [
+            other.y - start.height - EDGE_GAP,
+            other.y + other.height + EDGE_GAP,
+        ]),
+    ]);
+    const dxs = [
+        0,
+        ...steps(MAX_SHIFT_STEPS).flatMap(step => [
+            step * SHIFT_STRIDE,
+            -step * SHIFT_STRIDE,
+        ]),
+    ];
     const minX = bounds.left ?? -Infinity;
     const maxX = bounds.right ?? Infinity;
     const cost = (candidate: LabelBox): number => {
@@ -152,9 +162,7 @@ export function placeLabel(
             (acc, c) => (acc === null || cost(c) < cost(acc) ? c : acc),
             null
         );
-    const result = best ?? start;
-    placed.push(result);
-    return result;
+    return best ?? start;
 }
 
 /** 큰 수를 K/M/B로 줄인다 (패널 눈금 라벨 폭 절약). */
@@ -166,27 +174,44 @@ export function formatCompact(value: number): string {
     return String(Math.round(value));
 }
 
+/** 화면 좌표의 한 점. */
+export interface ChartPoint {
+    readonly x: number;
+    readonly y: number;
+}
+
 /** null을 건너뛰어 끊어진 구간별 점 목록으로 나눈다 (선을 이을 때 null에서 끊는다). */
 export function splitRuns(
     values: readonly (number | null)[],
     xOf: (index: number) => number,
     yOf: (value: number) => number
-): { x: number; y: number }[][] {
-    const runs: { x: number; y: number }[][] = [];
-    let current: { x: number; y: number }[] = [];
-    values.forEach((value, index) => {
-        if (value === null || !Number.isFinite(value)) {
-            if (current.length > 0) runs.push(current);
-            current = [];
-            return;
-        }
-        current.push({ x: xOf(index), y: yOf(value) });
-    });
-    if (current.length > 0) runs.push(current);
-    return runs;
+): ChartPoint[][] {
+    // 끊김(null·비유한값)을 만나면 진행 중이던 구간을 닫는다.
+    const { done, current } = values.reduce<{
+        done: ChartPoint[][];
+        current: ChartPoint[];
+    }>(
+        (acc, value, index) =>
+            value === null || !Number.isFinite(value)
+                ? { done: closeRun(acc.done, acc.current), current: [] }
+                : {
+                      done: acc.done,
+                      current: [
+                          ...acc.current,
+                          { x: xOf(index), y: yOf(value) },
+                      ],
+                  },
+        { done: [], current: [] }
+    );
+    return closeRun(done, current);
 }
 
-export function toPoints(points: readonly { x: number; y: number }[]): string {
+function closeRun(done: ChartPoint[][], current: ChartPoint[]): ChartPoint[][] {
+    return current.length > 0 ? [...done, current] : done;
+}
+
+/** 점 목록 → SVG `points` 속성 문자열(소수 한 자리). */
+export function toPoints(points: readonly ChartPoint[]): string {
     return points
         .map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
         .join(' ');
