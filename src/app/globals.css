@@ -770,7 +770,8 @@ body:has(#agent-chat-sidebar-drawer) [data-pwa-banner] {
  * 둘 다 화면 오른쪽 아래(0.75rem + safe-area)에 고정된다. 배너는 모바일에서 전폭
  * 카드(h-12 = 3rem)라 FAB을 그 높이 + 간격(0.5rem)만큼 띄운다. sm 이상에서는
  * 배너가 왼쪽 아래 `w-96`이라 겹치지 않으므로 FAB 자리는 그대로 둔다
- * (`AskAiFab.tsx`의 `FAB_POSITION` 주석에 적힌 위치 계약). 배너가 닫히면 `:has()`가 풀려 원위치로 돌아온다.
+ * (`AskAiFab.tsx`의 `FAB_POSITION` 주석에 적힌 위치 계약). 배너가 닫히면
+ * `:has()`가 풀려 원위치로 돌아온다.
  * 펼친 시트에서는 위 규칙이 둘 다 숨긴다.
  */
 @media (width < 40rem) {

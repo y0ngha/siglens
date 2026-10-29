@@ -63,7 +63,8 @@ export async function AskAiFab(props: AskAiFabProps) {
             <AiSparkIcon />
             <span className="sm:hidden">{t('shortLabel')}</span>
             <span className="hidden sm:inline">{t('label')}</span>
-            <span className="sr-only">{t('newTab')}</span>
+            {/* 공백을 두어 이름이 "…물어보기 (새 탭)"으로 띄어 읽히게 한다(sr-only 조각은 붙어 이어진다). */}
+            <span className="sr-only"> {t('newTab')}</span>
         </a>
     );
 }

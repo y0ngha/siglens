@@ -126,6 +126,8 @@ describe('AskAiFab', () => {
             await renderFab('애플', '/');
 
             expect(screen.getByText('(새 탭)')).toHaveClass('sr-only');
+            // 브라우저는 인라인 조각을 공백 없이 잇는다 — 안내 앞 공백이 이름을 띄어 읽게 한다.
+            expect(screen.getByText('(새 탭)').textContent).toBe(' (새 탭)');
         });
     });
 
