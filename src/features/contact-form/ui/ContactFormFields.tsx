@@ -35,10 +35,10 @@ export function ContactFormFields({
     state,
     formAction,
 }: ContactFormFieldsProps) {
+    const formRef = useRef<HTMLFormElement>(null);
     const t = useTranslations('features.contact-form');
     const tError = useTranslations('shared.lib.contactError');
     const currentUser = useCurrentUser();
-    const formRef = useRef<HTMLFormElement>(null);
     useFocusInvalidFieldOnError(formRef, state.error);
 
     const submissionError = getSubmissionError(state.error, tError);
