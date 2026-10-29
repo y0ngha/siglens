@@ -1302,4 +1302,19 @@ const label = (item: Item, locale?: Locale) => item.names[locale ?? 'ko'];
 const label = (item: Item, locale: Locale) => pickLocalized(item.names, locale);
 ```
 
+<a id="I18-16"></a>
+
+#### I18-16 — Translator keys are string literals, never built from templates
+
+`i18n:extract` finds keys by static analysis. A key assembled with a template string or concatenation is invisible to it, so the extractor either misses the key or widens the whole namespace into the client bundle. Map the variants through a literal record of keys and look the record up.
+
+```typescript
+// ❌ extractor cannot see these keys
+t(`category.${kind}`)
+
+// ✅ every key is a literal
+const LABEL_KEY = { stock: 'category.stock', etf: 'category.etf' } as const;
+t(LABEL_KEY[kind]);
+```
+
 ---
