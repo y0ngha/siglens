@@ -7,8 +7,9 @@ export type FrameHandle =
     | { kind: 'timeout'; id: ReturnType<typeof setTimeout> };
 
 /**
- * `callback`을 다음 프레임에 한 번 부르도록 예약한다(rAF). 텍스트 조각을 한 프레임에 한 번만 화면에 반영하는 데 쓴다. `requestAnimationFrame`이
- * 없는 환경(일부 테스트·워커)에서는 한 프레임 남짓한 타이머로 대신한다.
+ * `callback`을 다음 프레임에 한 번 부르도록 예약한다(rAF). 텍스트 조각을 한 프레임에
+ * 한 번만 화면에 반영하는 데 쓴다. `requestAnimationFrame`이 없는 환경(일부 테스트·워커)에서는
+ * 한 프레임 남짓한 타이머로 대신한다.
  */
 export function scheduleFrame(callback: () => void): FrameHandle {
     if (typeof requestAnimationFrame === 'function')

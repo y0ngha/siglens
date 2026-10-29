@@ -1,5 +1,7 @@
 import type { AgentUiMessage } from '../model/types';
 
+// Intentional module state: a process-wide counter is the cheapest way to make
+// same-millisecond client ids unique; tests match ids by pattern, not by value.
 let sequence = 0;
 
 /**
