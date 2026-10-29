@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import { useApiKeyForms } from '@/features/api-key-management/hooks/useApiKeyForms';
 import type { ApiKeyActionState } from '@/shared/lib/types';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -20,8 +21,10 @@ function setApiKeyForms(
     mockUseApiKeyForms.mockReturnValue({
         saveState,
         saveFormAction: vi.fn(),
+        isSavePending: false,
         deleteState,
         deleteFormAction: vi.fn(),
+        isDeletePending: false,
     });
 }
 
@@ -151,8 +154,10 @@ describe('ApiKeySection', () => {
         mockUseApiKeyForms.mockReturnValue({
             saveState: IDLE_STATE,
             saveFormAction,
+            isSavePending: false,
             deleteState: IDLE_STATE,
             deleteFormAction: vi.fn(),
+            isDeletePending: false,
         });
         render(<ApiKeySection registeredProviders={['anthropic']} />);
         const card = screen.getByTestId('api-key-card-anthropic');
@@ -177,8 +182,10 @@ describe('ApiKeySection', () => {
         mockUseApiKeyForms.mockReturnValue({
             saveState: IDLE_STATE,
             saveFormAction: vi.fn(),
+            isSavePending: false,
             deleteState: IDLE_STATE,
             deleteFormAction,
+            isDeletePending: false,
         });
         render(<ApiKeySection registeredProviders={['anthropic']} />);
 
@@ -202,6 +209,90 @@ describe('ApiKeySection', () => {
         expect(
             document.getElementById('api-key-delete-status-anthropic')
         ).toBeNull();
+    });
+
+    it('shows the re-register save result after the edit form has closed', () => {
+        setApiKeyForms({
+            status: 'error',
+            message: '저장에 실패했습니다.',
+            code: 'unknown',
+        });
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        const card = screen.getByTestId('api-key-card-anthropic');
+        expect(within(card).queryByRole('button', { name: '저장' })).toBeNull();
+        expect(
+            within(card).getByText('저장에 실패했습니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('keeps the save status region mounted while a re-register save is pending', () => {
+        mockUseApiKeyForms.mockReturnValue({
+            saveState: IDLE_STATE,
+            saveFormAction: vi.fn(),
+            isSavePending: true,
+            deleteState: IDLE_STATE,
+            deleteFormAction: vi.fn(),
+            isDeletePending: false,
+        });
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        expect(
+            document.getElementById('api-key-save-status-anthropic')
+        ).toHaveAttribute('role', 'status');
+    });
+
+    it('does not render a save status region for a collapsed registered card with no result', () => {
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        expect(
+            document.getElementById('api-key-save-status-anthropic')
+        ).toBeNull();
+    });
+
+    it('mounts the delete status region while a delete is pending', () => {
+        mockUseApiKeyForms.mockReturnValue({
+            saveState: IDLE_STATE,
+            saveFormAction: vi.fn(),
+            isSavePending: false,
+            deleteState: IDLE_STATE,
+            deleteFormAction: vi.fn(),
+            isDeletePending: true,
+        });
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        expect(
+            document.getElementById('api-key-delete-status-anthropic')
+        ).toHaveAttribute('role', 'status');
+    });
+
+    it('moves focus to the key input when 재등록 opens the form', async () => {
+        const user = userEvent.setup();
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+
+        await user.click(screen.getByRole('button', { name: '재등록' }));
+
+        expect(
+            screen.getByLabelText('Claude (Anthropic) API 키')
+        ).toHaveFocus();
+    });
+
+    it('moves focus back to 재등록 when 취소 closes the form', async () => {
+        const user = userEvent.setup();
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        await user.click(screen.getByRole('button', { name: '재등록' }));
+
+        await user.click(screen.getByRole('button', { name: '취소' }));
+
+        expect(screen.getByRole('button', { name: '재등록' })).toHaveFocus();
+    });
+
+    it('does not move focus on first render', () => {
+        render(<ApiKeySection registeredProviders={[]} />);
+        expect(document.body).toHaveFocus();
+    });
+
+    it('uses the shared section heading token', () => {
+        render(<ApiKeySection registeredProviders={[]} />);
+        expect(
+            screen.getByRole('heading', { name: 'AI 모델 API 키' })
+        ).toHaveClass(...HEADING_SECTION.split(' '));
     });
 
     it('renders description text', () => {

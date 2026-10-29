@@ -2,17 +2,27 @@
 
 import { useTranslations } from 'next-intl';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 
 interface ApiKeyInputProps {
     name: string;
+    /** 카드가 편집 모드로 바뀔 때 포커스를 옮기는 데 쓴다. */
+    ref?: Ref<HTMLInputElement>;
     placeholder?: string;
     'aria-label'?: string;
     'aria-describedby'?: string;
 }
 
+/**
+ * 보기 토글이 달린 API 키 입력칸.
+ *
+ * 비제어 입력이다 — 키를 React 상태에 두지 않고, `<form action>`이 액션 뒤에
+ * 칸을 비운다. 맞춤법 검사·자동 교정은 끈다: '보이기'로 `type="text"`가 되면
+ * 브라우저의 클라우드 맞춤법 검사가 칸의 내용(키 원문)을 외부로 보낼 수 있다.
+ */
 export function ApiKeyInput({
     name,
+    ref,
     placeholder,
     'aria-label': ariaLabel,
     'aria-describedby': ariaDescribedby,
@@ -23,10 +33,14 @@ export function ApiKeyInput({
     return (
         <div className="relative min-w-0 flex-1">
             <input
+                ref={ref}
                 type={visible ? 'text' : 'password'}
                 name={name}
                 required
                 autoComplete="new-password"
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="none"
                 placeholder={placeholder}
                 aria-label={ariaLabel}
                 aria-describedby={ariaDescribedby}
