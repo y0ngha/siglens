@@ -28,7 +28,7 @@ export interface LocalWatchlistAddResult {
     added: boolean;
 }
 
-/** `removeLocalWatchlistEntry`의 결과. */
+/** 삭제 후 호출부(`useLocalWatchlist`)가 상태를 되돌릴지 정할 수 있도록 목록과 저장 성공 여부를 함께 준다. */
 export interface LocalWatchlistRemoveResult {
     entries: LocalWatchlistEntry[];
     /** 저장까지 끝났는가. 쓰기에 실패하면 false(목록은 그대로). */

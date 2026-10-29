@@ -1,6 +1,6 @@
 /** 미니 차트 viewBox 폭 — `Sparkline`이 같은 값으로 viewBox를 잡는다. */
 export const SPARKLINE_WIDTH = 64;
-/** 미니 차트 viewBox 높이. */
+/** 미니 차트 viewBox 높이 — 폭과 함께 `Sparkline`의 종횡비(64:24)를 정한다. */
 export const SPARKLINE_HEIGHT = 24;
 /** 선이 위아래 가장자리에 붙어 잘리지 않게 두는 여백(viewBox 단위). */
 const PAD = 2;

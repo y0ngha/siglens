@@ -11,7 +11,7 @@ export interface WatchlistPreviewItem {
     name: string;
 }
 
-/** `useWatchlistPreview`의 반환값. */
+/** 헤더 패널·홈 카드·`/watchlist`가 같은 모양으로 소비하는 목록 묶음 — 탭 상태는 `useWatchlistPreviewTabs`가 더한다. */
 export interface UseWatchlistPreviewResult {
     watchlist: WatchlistPreviewItem[];
     recent: WatchlistPreviewItem[];

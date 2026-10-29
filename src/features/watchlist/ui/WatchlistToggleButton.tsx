@@ -37,10 +37,10 @@ const IDLE =
     'border-border-control text-secondary-300 hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100';
 const PRESSED =
     'border-primary-500 bg-primary-900/10 text-primary-300 hover:bg-primary-900/20';
-/** 상한으로 막힌 상태는 `CONTROL`의 `aria-disabled:` 색만 쓴다. */
 type ControlState = 'blocked' | 'pressed' | 'idle';
 
 const STATE_CLASS: Record<ControlState, string | null> = {
+    // 상한으로 막힌 상태는 `CONTROL`의 `aria-disabled:` 색만 쓴다.
     blocked: null,
     pressed: PRESSED,
     idle: IDLE,

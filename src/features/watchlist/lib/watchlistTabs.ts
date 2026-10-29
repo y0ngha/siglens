@@ -33,6 +33,7 @@ export function adjacentWatchlistTab(
     const index = WATCHLIST_TABS.indexOf(tab);
     const next =
         (index + delta + WATCHLIST_TABS.length) % WATCHLIST_TABS.length;
+    // 인덱스가 배열 길이로 나눈 나머지라 `?? tab`은 닿지 않는다 — `!` 없이 타입만 좁히려는 것.
     return WATCHLIST_TABS[next] ?? tab;
 }
 

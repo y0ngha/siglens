@@ -3,7 +3,10 @@
 import { useTranslations } from 'next-intl';
 import { useOpenTickerSearch } from '../../hooks/useOpenTickerSearch';
 
-/** 홈 카드 PC 격자의 마지막 칸 "+ 추가" — 누르면 헤더 종목 검색을 연다. */
+/**
+ * `HomeWatchlistItems`가 PC 격자 끝에 붙이는 "+ 추가" 칸. 별도 추가 화면을 두지 않고 헤더의
+ * 종목 검색을 재사용해 담는 길을 하나로 유지한다.
+ */
 export function HomeWatchlistAddCard() {
     const t = useTranslations('features.watchlist');
     const openSearch = useOpenTickerSearch();

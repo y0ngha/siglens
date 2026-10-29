@@ -1,4 +1,4 @@
-/** 관심종목 화면들이 함께 쓰는 Tailwind 클래스 조합. */
+/** `/watchlist`·헤더 미리보기·홈 카드가 공유하는 Tailwind 클래스 — 화면마다 복제하면 모양이 어긋난다. */
 
 /** `/watchlist`의 관심 탭 행과 최근 본 탭 행이 함께 쓰는 행 표면 — 두 탭을 오가도 행 모양이 같다. */
 export const WATCHLIST_ROW_CHROME =
