@@ -59,6 +59,36 @@ describe('useLogout', () => {
         });
     });
 
+    // The post-logout redirect is a soft navigation, so these entries would
+    // otherwise be served to the next member who signs in on the same tab.
+    it('removes the watchlist and registered-providers queries from the cache on logout', async () => {
+        const { result } = renderHook(() => useLogout());
+
+        await act(async () => {
+            result.current.logout();
+        });
+
+        expect(mockRemoveQueries).toHaveBeenCalledWith({
+            queryKey: QUERY_KEYS.watchlist(),
+        });
+        expect(mockRemoveQueries).toHaveBeenCalledWith({
+            queryKey: QUERY_KEYS.registeredProviders(),
+        });
+        expect(mockRemoveQueries).toHaveBeenCalledTimes(4);
+    });
+
+    it('clears the cache before calling logoutAction', async () => {
+        const { result } = renderHook(() => useLogout());
+
+        await act(async () => {
+            result.current.logout();
+        });
+
+        expect(mockRemoveQueries.mock.invocationCallOrder.at(-1)!).toBeLessThan(
+            mockLogoutAction.mock.invocationCallOrder[0]!
+        );
+    });
+
     it('logout function is always callable after re-render', () => {
         const { result, rerender } = renderHook(() => useLogout());
 

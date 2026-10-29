@@ -1,10 +1,16 @@
 'use server';
 
+/**
+ * 로그아웃 Server Action. 세션을 지우고 쿠키를 만료시킨 뒤 호스트에 맞는 곳으로
+ * 리다이렉트한다.
+ */
+
 import { getLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { localeHref } from '@/shared/i18n/localeRedirect';
 import { cookies, headers } from 'next/headers';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { createExpiredSessionCookie } from '@/entities/auth/lib/sessionCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
@@ -21,6 +27,7 @@ import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
+/** 요청 로케일. */
 async function requestLocale(): Promise<Locale> {
     const raw = await getLocale();
     return resolveLocale(raw);
@@ -50,6 +57,30 @@ async function aiLogoutTarget(userId: string | null): Promise<string> {
     return aiSignedOutUrl(locale).href;
 }
 
+/**
+ * 오류가 난 로그아웃에서도 이 브라우저의 세션 쿠키·힌트 쿠키는 만료시킨다. DB 세션
+ * 삭제가 실패했다고 쿠키를 남기면 사용자는 로그아웃했다고 믿지만 다음 요청에서 그대로
+ * 로그인돼 있다(공용 PC에서 다음 사람이 그 계정을 쓴다). 쿠키를 지우는 것까지 실패하면
+ * 리다이렉트를 막지 않도록 기록만 한다.
+ */
+async function expireAuthCookiesAfterError(): Promise<void> {
+    try {
+        const secure = isSecureCookieEnv();
+        const cookieStore = await cookies();
+        cookieStore.set(
+            applyAuthCookie(createExpiredSessionCookie({ secure }))
+        );
+        cookieStore.set(createExpiredAuthHintCookie({ secure }));
+    } catch (error) {
+        console.error('[logoutAction] auth cookies not expired', error);
+    }
+}
+
+/**
+ * 로그아웃. 메인 호스트는 로케일 홈으로, ai 호스트는 메인 세션까지 끝내는 핸드오프
+ * 로그아웃(`aiLogoutTarget`)으로 보낸다. 성공·실패 모두 리다이렉트로 끝나며 값을
+ * 돌려주지 않는다.
+ */
 export async function logoutAction(): Promise<void> {
     const onAiHost = isAiHost((await headers()).get('host'));
     try {
@@ -76,6 +107,7 @@ export async function logoutAction(): Promise<void> {
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
         console.error('[logoutAction] unexpected error:', err);
+        await expireAuthCookiesAfterError();
         redirect(
             onAiHost
                 ? aiSignedOutUrl(await requestLocale()).href
