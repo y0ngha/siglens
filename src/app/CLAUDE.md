@@ -191,6 +191,18 @@ route의 `generateMetadata`가 필드(description, robots, canonical …)를 빼
 ❌ `not-found.tsx`: `{ title, robots }`만 반환 → home description 상속
 ✅ `{ title, description: '…', robots: 'noindex' }`
 
+<a id="AP-6"></a>
+
+#### AP-6 — 라우트 모듈은 Next가 인식하는 export만 둔다
+
+`page.tsx`·`layout.tsx`·`error.tsx`·OG 이미지 파일 등 라우트 모듈은 Next가 인식하는 필드(`default`, `metadata`,
+`generateMetadata`, `revalidate`, `size` …)만 export한다. 테스트가 접근해야 하는 컴포넌트·함수는 `_components/`나
+`_lib/`로 옮겨 정의 파일에서 직접 import한다. `next typegen`과 tsc는 추가 export를 잡아내지 못하므로
+이 규칙은 리뷰로만 강제된다.
+
+❌ `layout.tsx`에서 테스트용으로 `export function SymbolLayoutChrome`
+✅ `_components/SymbolLayoutChrome.tsx`에 정의하고 `layout.tsx`와 테스트가 거기서 import
+
 ---
 
 ## proxy.ts

@@ -381,7 +381,6 @@
                 "flows": "机构资金与做空"
             },
             "page": {
-                "2ab959": "当前价格位于这栋楼的第几层？",
                 "3c87a9": "未能加载财报日程。",
                 "465a63": "{v0} 财务报表",
                 "ddc932": "{v2}的恐惧与贪婪指数，是将成交量走向、基于日K线估算的买卖压力和价格位置与该标的自身历史值相比，换算成0~100的分数。{v0}整体走势可在<link>{v1}</link>查看。",
@@ -412,6 +411,7 @@
                 "overallHeadingCrypto": "{v0} 综合分析：图表、新闻与买入情绪",
                 "overallHeadingKrEquity": "{v0} 综合分析：图表、财报与新闻",
                 "overallHeadingUsEquity": "{v0} 综合分析：图表、期权、财报与新闻",
+                "positionGuideHeading": "{v0} 当前价格位于这栋楼的第几层？",
                 "positionRangeSentence": "{v0} 近52周区间为 {v1} ~ {v2}，当前价 {v3} 位于该区间的 {v4}% 处（{v5}）。",
                 "positionRegisterHint": "在下方登记持仓后，还能在同一栋楼里看到自己买入的楼层。",
                 "marketFearGreedLinkCrypto": "加密货币市场恐惧与贪婪指数",

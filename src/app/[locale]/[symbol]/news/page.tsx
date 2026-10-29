@@ -1,98 +1,86 @@
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
+
+import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
-    getEarningsReportComparison,
-    getGradeEvents,
-} from '@/app/[locale]/[symbol]/news/newsData';
-import {
-    LOCALE_HREFLANG,
-    type Locale,
-    resolveLocale,
-} from '@/shared/i18n/locales';
-import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { getNewsList } from '@/entities/news-article/api';
-import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
-import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
-import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
-import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
-import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
-import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
-import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
-import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
-import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
-import { NewsList } from '@/widgets/news/sections/NewsList';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
-import { hasNewsProse } from '@/entities/seo-snapshot/lib/newsContent';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { SymbolRouteParams } from '@/shared/config/market';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
-import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+    enterSymbolTabMetadata,
+    enterSymbolTabPage,
+    type SymbolTabParams,
+} from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
+import { loadSymbolNewsList } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
-import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
-import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-// `NewsList`와 이 페이지가 같은 정의 파일에서 가져와 같은 값을 보게 한다.
-import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
-import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
-import {
-    buildBreadcrumbJsonLd,
-    buildSymbolSeoContent,
-    buildTitleSubject,
-    localizedAbsoluteUrl,
-    ORGANIZATION_JSON_LD_ID,
-    resolveSymbolNewsSeoContent,
-    SITE_URL,
-} from '@/shared/lib/seo';
-import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
-import { SITE_NAME } from '@/shared/config/brand';
-import { ABOUT_PATH } from '@/shared/lib/legal';
+import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { cache, Suspense } from 'react';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { hasNewsProse } from '@/entities/seo-snapshot/lib/newsContent';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { SymbolRouteParams } from '@/shared/config/market';
 import {
     getDescriptor,
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { cn } from '@/shared/lib/cn';
-import { enterLocale } from '@/shared/lib/enterLocale';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import {
+    buildTitleSubject,
+    resolveSymbolNewsSeoContent,
+} from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
+import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
+import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
+import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
+import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
+import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
 
-export const revalidate = 43200; // 12h — 신선도는 ensureNewsCardsAnalyzedAction의 on-demand revalidateTag('news:${symbol}', 'max')가 보장, 시간 기반은 상한만
+import {
+    AnalystActionsSection,
+    EventCalendarSection,
+    NewsListSection,
+} from './_components/NewsSections';
+import {
+    buildNewsArticleJsonLd,
+    buildNewsListJsonLd,
+    newsArticleDates,
+} from './_lib/newsJsonLd';
 
-// generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
-// 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
-// revalidate 주기로 재생성하는 on-demand ISR. (cacheComponents 비활성이라 빈 배열 허용)
+/**
+ * ISR 상한. 신선도는 `ensureNewsCardsAnalyzedAction`의 on-demand
+ * `revalidateTag('news:${symbol}', 'max')`가 보장하고, 시간 기반은 상한만 둔다.
+ */
+export const revalidate = 43200; // 12h
+
+/**
+ * 빈 배열 = 빌드 시 prebuild 없이 첫 요청에 렌더+캐시하는 on-demand ISR. 없으면 동적 세그먼트가
+ * 매 요청 동적 렌더돼 `revalidate`가 무력화된다.
+ */
 export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
     return [];
 }
 
 interface Props {
-    params: Promise<{ locale: string; symbol: string }>;
+    params: SymbolTabParams;
 }
 
+/**
+ * 뉴스 탭 메타데이터. 색인 판정(렌더 가능한 AI 스냅샷 산문 기준 — sitemap과 같은 `hasProseForTab`)은
+ * `getBlockedSymbolMetadata`가 하고, 차단 시 canonical은 살아 있는 자기 URL(self-canonical)이다.
+ * 스냅샷이 있으면 검색 결과용 description만 스냅샷 문장으로 바꾼다.
+ */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = resolveLocale(rawLocale);
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    const upper = symbol.toUpperCase();
-    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
-    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
-    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
-    if (!isAdmissibleSymbolShape(upper)) notFound();
-    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
-    const { assetInfo, degraded } = await requireResolvableAsset(upper);
+    const {
+        locale,
+        ticker: upper,
+        tSeo,
+        assetInfo,
+        degraded,
+    } = await enterSymbolTabMetadata(params);
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: upper,
@@ -113,7 +101,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8).
     const { description: snapshotDescription } = await loadTabSnapshotMeta({
         symbol: upper,
         tab: 'news',
@@ -121,181 +108,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         locale,
         // 접두는 짧은 주어(`애플(AAPL)`) — 긴 표시명이 문장 예산을 먹는다.
         subject: buildTitleSubject(upper, assetInfo.koreanName),
-        assetClass: assetClass,
+        assetClass,
         tSeo,
     });
-
-    // **산문 게이트는 `getBlockedSymbolMetadata`가 한다** (위 `tab: 'news'`).
-    //
-    // 뉴스 탭의 색인 기준은 **렌더 가능한 AI 스냅샷 산문**(`hasNewsProse`) 하나다. 예전에는
-    // "감정이 채워진 뉴스 카드(`NewsFactsSummary`의 분포 요약)가 있으면 산문이 없어도 색인"
-    // 예외가 있었는데, 문서(`SEO_RECOVERY_2026_09.md` §5 A3)와 sitemap(`PROSE_GATED_SITEMAP_TABS`)은
-    // 산문 기준이라 페이지만 느슨했다 — sitemap에 없는데 색인되는 URL이 생겼다. 카드만 있는
-    // 페이지는 종목 고유 문장이 수치 요약뿐이라 thin이다. 판정이 한 곳(`prose: present|absent|
-    // unknown`)이라 페이지·sitemap이 같은 `hasProseForTab`을 본다. 스냅샷을 못 읽은 렌더
-    // (`unknown`)는 색인을 유지하고 5분(런타임 degrade 핀) 뒤 다시 판정한다.
-    //
-    // 차단 시 canonical은 `noindexSymbolMetadata`의 self-canonical이다 — 페이지는 멀쩡히
-    // 살아 있으므로 자기 URL을 가리킨다.
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;
 }
 
-interface SymbolSectionProps {
-    symbol: string;
-}
-
 /**
- * 뉴스 목록만 로케일을 받는다 — 본문이 DB 콘텐츠라 해석이 필요하다. 다른
- * 섹션(캘린더·애널리스트)은 로케일과 무관한 수치라 `SymbolSectionProps`를 쓴다.
- */
-interface NewsListSectionProps extends SymbolSectionProps {
-    locale: Locale;
-}
-
-type NewsListItems = Awaited<ReturnType<typeof getNewsList>>;
-
-/**
- * 이 탭의 뉴스 목록 — **요청당 한 번만** 읽는다.
+ * 뉴스 탭 본문 — 제목, 뉴스 사실 요약, AI 스냅샷 산문, AI 요약 위젯, 목록·캘린더·애널리스트 섹션.
  *
- * 페이지 본문(JSON-LD·AI 요약 시작 게이트)과 `NewsListSection`이 같은 목록을 쓴다. 각자
- * `staticSymbolCache`를 부르면 키가 같아도 캐시 핸들러를 두 번 거친다 — `unstable_cache`는
- * 요청 안에서 dedup하지 않고(`cacheComponents` 꺼짐 → resume data cache 없음), 목록 엔트리는
- * 메모리 저장 상한(32KB)을 넘어 매번 S3 GET이다(2026-10 서버 성능 감사 M4). `React.cache`로
- * 묶어 두 번째 호출은 같은 프라미스를 받는다. 두 호출 모두 이 페이지 렌더 안이라 첫 호출이
- * 렌더 스토어에 남긴 태그(`news:SYM`)·revalidate가 그대로 이 라우트에 붙는다.
- *
- * ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가 굳는 것을
- * 막으려면 여기서 흡수해야 한다. [] 로 degrade → NewsList는 빈 배열로 기존 empty-state UI를,
- * 본문은 `newsListJsonLd` 없이 페이지 크롬(heading/AI summary/CrossLinks 등)을 렌더한다.
+ * AI 산문과 AI 위젯은 같은 결론을 그리므로 XOR이다: 스냅샷이 렌더 가능하면 산문만 보이고, 위젯은
+ * `hideView`로 화면만 끈 채 마운트를 유지한다(헤더 공유 버튼의 `useRegisterShareable` 등록 때문).
+ * `NewsFactsSummary`는 DB 목록의 결정적 사실이라 이 게이트와 무관하게 공존한다.
  */
-const loadNewsList = cache(
-    (symbol: string, locale: Locale): Promise<NewsListItems> =>
-        staticSymbolCache(
-            [NEWS_LIST_CACHE_KEY, symbol, ...contentLocaleKeyPart(locale)],
-            symbol,
-            () => getNewsList(symbol, locale),
-            [newsCacheTag(symbol)],
-            SECONDS_PER_HALF_DAY
-        ).catch((e: unknown): NewsListItems => {
-            console.error('[NewsPage] getNewsList failed, degrading to []:', e);
-            return [];
-        })
-);
-
-export async function NewsListSection({
-    symbol,
-    locale,
-}: NewsListSectionProps) {
-    const items = await loadNewsList(symbol, locale);
-    // 그리지 않는 행까지 RSC 페이로드로 내보내지 않는다 — NEWS_ROW_SERIALIZATION_LIMIT 주석 참고.
-    return (
-        <NewsList
-            items={items.slice(0, NEWS_ROW_SERIALIZATION_LIMIT)}
-            symbol={symbol}
-        />
-    );
-}
-
-export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
-    const t = await getTranslations('app.symbol');
-    const today = kstDateKey(new Date());
-    let earningsReports: Awaited<
-        ReturnType<typeof getEarningsReportComparison>
-    >;
-    try {
-        earningsReports = await staticSymbolCache(
-            ['news:earnings', symbol, today],
-            symbol,
-            () => getEarningsReportComparison(symbol, today),
-            [newsCacheTag(symbol)],
-            SECONDS_PER_HALF_DAY
-        );
-    } catch (error) {
-        console.error(
-            '[EventCalendarSection] earnings load failed, degrading:',
-            error
-        );
-        // FMP 장애(렌더 예산 초과 포함) 안내가 라우트 revalidate 동안 굳지 않게 5분으로 낮춘다.
-        await shortenRevalidateForRuntimeDegrade();
-        const message =
-            translateFmpError(error, await getTranslations()) ??
-            t('page.3c87a9');
-        return (
-            <NewsDataServerAlert title={t('page.6723ea')} message={message} />
-        );
-    }
-    return <EventCalendar earningsReports={earningsReports} />;
-}
-
-export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
-    const t = await getTranslations('app.symbol');
-    let events: Awaited<ReturnType<typeof getGradeEvents>>;
-    try {
-        events = await staticSymbolCache(
-            ['news:grades', symbol],
-            symbol,
-            () => getGradeEvents(symbol),
-            [newsCacheTag(symbol)],
-            SECONDS_PER_HALF_DAY
-        );
-    } catch (error) {
-        console.error(
-            '[AnalystActionsSection] grades load failed, degrading:',
-            error
-        );
-        await shortenRevalidateForRuntimeDegrade();
-        const message =
-            translateFmpError(error, await getTranslations()) ??
-            t('page.5c38df');
-        return (
-            <NewsDataServerAlert title={t('page.b2cd1a')} message={message} />
-        );
-    }
-    // 뉴스 목록과 같은 이유로 자른다 — AAPL 실측 1,786건 중 화면에 닿는 것은 앞의 몇 개뿐이다.
-    return (
-        <AnalystActions
-            events={events.slice(0, NEWS_ROW_SERIALIZATION_LIMIT)}
-        />
-    );
-}
-
-interface NewsDataServerAlertProps {
-    title: string;
-    message: string;
-}
-
-function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
-    return (
-        <section
-            className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
-            role="alert"
-        >
-            <h2 className={cn('mb-2', HEADING_SECTION)}>{title}</h2>
-            <p className="text-sm text-ui-danger-text">{message}</p>
-        </section>
-    );
-}
-
 export default async function NewsPage({ params }: Props) {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = enterLocale(rawLocale);
-    const t = await getTranslations('app.symbol');
-    const tSeo = await getTranslations('shared.seo');
-    const upper = symbol.toUpperCase();
-
-    if (!isAdmissibleSymbolShape(upper)) {
-        notFound();
-    }
-
-    const { assetInfo, degraded } = await getAssetInfoResilient(upper);
-    // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
-    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
-    if (isUnresolvableDegraded(upper, degraded)) notFound();
-    if (!assetInfo) {
-        notFound();
-    }
+    const { locale, ticker: upper } = await enterSymbolTabPage(params);
+    // 번역과 존재 판정은 서로 독립이다(존재하지 않으면 `notFound()`로 함께 끊긴다).
+    const [t, tSeo, { assetInfo }] = await Promise.all([
+        getTranslations('app.symbol'),
+        getTranslations('shared.seo'),
+        requireResolvableAsset(upper),
+    ]);
 
     const displayName = buildDisplayName(assetInfo, upper, locale);
     const marketProfile = marketProfileOf(assetInfo);
@@ -313,48 +148,31 @@ export default async function NewsPage({ params }: Props) {
         }
     );
 
-    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목과 crypto는
-    // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF·지수·모호한 종목과 crypto(schema.org 표준
+    // 타입 없음)는 undefined로 생략된다.
     const aboutNode = buildAssetAboutNode(
         upper,
         pickAssetName(assetInfo, upper, locale),
         assetInfo.fmpSymbol,
         assetClass
     );
-    // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
-    // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
-    const tTab = await getTranslations('shared.symbolTab');
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [
-            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
-            { name: tTab('news'), url },
-        ],
-        locale
-    );
-
-    // 목록 읽기·degrade는 `loadNewsList`(요청당 1회, 아래 `NewsListSection`과 공유).
-    // Promise.all로 병렬화 — snapshots read는 서로 독립이라 직렬 await할 이유가 없다.
-    const [newsItems, snapshots] = await Promise.all([
-        loadNewsList(upper, locale),
-        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
-        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-        // `export const revalidate` literal above.
+    const [breadcrumbJsonLd, newsItems, snapshots] = await Promise.all([
+        buildSymbolTabBreadcrumbJsonLd({
+            ticker: upper,
+            displayName,
+            tab: 'news',
+            tabUrl: url,
+            tSeo,
+            locale,
+        }),
+        loadSymbolNewsList(upper, locale),
+        // revalidate는 이 페이지 선언과 같은 값이라 메타데이터·색인 게이트의 읽기와 캐시를 공유한다.
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const newsSnapshot = findSnapshotForLocale(snapshots, 'news', locale);
-    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasNewsProse)
-    // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
-    // 위젯을 아예 렌더하지 않으면 `useRegisterShareable`이 돌지 않아 헤더 공유
-    // 버튼이 이 탭의 분석 결과를 등록받지 못한다(review round 2 fix: 챗 발행이
-    // 아니라 공유 등록이 이 마운트를 필요로 한다). 두
-    // 소스가 동일 필드(currentDriverKo/keyEventsKo/upcomingEventsKo)를 같은
-    // 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에 두
-    // 번, 중복 콘텐츠 SEO 리스크)를 해소한다. NewsFactsSummary(결정론적 DB
-    // 목록 사실)는 이 게이트 대상이 아니다 — 계속 공존한다.
-    // `OverallSnapshotProse.hasOverallProse` 패턴과 동일 — narrowNewsContent를
-    // 재사용해 프로즈 컴포넌트와 동일 판단.
+    // 프로즈 컴포넌트와 같은 `narrowNewsContent` 판정이라 둘이 어긋나지 않는다.
     const showNewsProse = hasNewsProse(newsSnapshot?.content);
-    // At least one AI-enriched card means aggregate analysis can start immediately.
+    // AI 반영 카드가 하나라도 있으면 종합 분석을 바로 시작할 수 있다.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
     const jsonLd = buildSymbolWebPageJsonLd({
@@ -363,42 +181,12 @@ export default async function NewsPage({ params }: Props) {
         description,
         about: aboutNode,
         locale,
-        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
-        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다.
         generatedAt: showNewsProse ? newsSnapshot?.generatedAt : null,
     });
-
-    // `dateModified`는 **화면에 그려지는 산문이 만들어진 시각**, 곧 스냅샷 `generatedAt`이다
-    // — 위 `WebPage.dateModified`·sitemap `lastmod`와 같은 값이다. 예전에는 가장 최근 뉴스
-    // 기사의 발행 시각을 썼는데, 그건 이 페이지가 아니라 외부 기사의 시각이라 같은 문서의
-    // 두 노드(WebPage·Article)가 서로 다른 수정 시각을 말했다.
-    // `generatedAt`은 Date(캐시 왕복 후에는 문자열)라 `new Date(...)`로 한 번 정규화한다.
-    const articleModifiedAt =
-        newsSnapshot?.generatedAt == null
-            ? null
-            : new Date(newsSnapshot.generatedAt).toISOString();
-    // 발행일은 이 종목의 뉴스 요약이 **처음** 만들어진 시각(`firstGeneratedAt`)이다.
-    // 값이 없는 행(컬럼 도입 전 + 백필이 소스를 못 찾은 경우)은 필드를 생략한다 —
-    // 모르는 발행일을 지어내는 대신 아무 말도 하지 않는다.
-    //
-    // `> dateModified`면 함께 생략한다: 발행이 최종 수정보다 늦다고 주장하는
-    // 마크업은 스스로 모순이고, 뉴스가 끊긴 종목(dateModified가 옛 기사 발행일)에서
-    // 실제로 나올 수 있는 조합이다.
-    const firstGeneratedAt = newsSnapshot?.firstGeneratedAt ?? null;
-    const articlePublishedAt =
-        firstGeneratedAt === null
-            ? null
-            : new Date(firstGeneratedAt).toISOString();
-    const articlePublishedAtForJsonLd =
-        articlePublishedAt !== null &&
-        (articleModifiedAt === null || articlePublishedAt <= articleModifiedAt)
-            ? articlePublishedAt
-            : null;
-    // headline/description은 자산 유형별로 분기한다 — 크립토 페이지에 주식 특유의
-    // "어닝·실적·애널리스트" 문구가 등장하면 실제로 없는 콘텐츠를 약속하는 허위 신호가 된다.
-    const aiArticleJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Article',
+    // headline/description은 자산 유형별로 갈린다 — 크립토 페이지에 "실적·애널리스트" 문구가 나오면
+    // 없는 콘텐츠를 약속하는 셈이다.
+    const aiArticleJsonLd = buildNewsArticleJsonLd({
         headline: isEquity
             ? tSeo('faq.newsArticleHeadlineEquity', { v0: displayName })
             : tSeo('faq.newsArticleHeadlineCrypto', { v0: displayName }),
@@ -408,89 +196,25 @@ export default async function NewsPage({ params }: Props) {
                 : 'page.newsArticleDescCrypto',
             { v0: displayName }
         ),
-        inLanguage: LOCALE_HREFLANG[locale],
-        // datePublished/dateModified 계산 근거는 위 `articlePublishedAtForJsonLd`
-        // 주석 참고. 예전에는 datePublished를 통째로 생략했는데, 그 근거였던
-        // "ticker별 최초 시각을 알 수 없다"가 사실이 아니었다 — `first_generated_at`
-        // 컬럼과 1회 백필(뉴스 탭은 심볼별 `min(news.fetched_at)`)로 확보했다.
-        //
-        // dateModified는 **이 페이지에 실제로 실린 산문**의 시각이다(스냅샷 생성 시각).
-        // 없으면 필드를 생략한다. 예전에는 `getTodayIsoDay()`(오늘 0시)였는데, 그건 "크롤된 날"이지
-        // 내용이 바뀐 날이 아니라 전 종목이 매일 갱신된다고 주장하는 거짓 신선도
-        // 신호였다(2026-09-17 정책 감사 M2).
-        ...(articlePublishedAtForJsonLd !== null && {
-            datePublished: articlePublishedAtForJsonLd,
-        }),
-        ...(articleModifiedAt !== null && { dateModified: articleModifiedAt }),
-        // `@id`는 `buildWebPageJsonLd`가 로케일 접두사를 붙인 값과 **같아야**
-        // 한다 — 로케일화 이후 이 back-reference만 기본 로케일 URL을 가리켜
-        // 같은 문서 안에 존재하지 않는 노드를 참조하고 있었다.
-        isPartOf: {
-            '@type': 'WebPage',
-            '@id': `${localizedAbsoluteUrl(url, locale)}#webpage`,
-        },
-        // Article schema는 image를 명시할 때 Rich Results 자격이 강해진다.
-        // 정적 og-image.png를 사용해 hashless permanent URL을 보장 — Next.js의
-        // file-based opengraph-image route는 빌드 시 `?<hash>` cache-buster를
-        // URL에 부여하기 때문에, schema에서 그 URL을 hardcode하면 빌드마다
-        // schema image와 OG meta가 불일치하는 회귀가 발생한다. 정적 자원은
-        // 영구 URL이라 schema image 신뢰도 측면에서 더 유리.
-        image: [`${SITE_URL}/og-image.png`],
-        // author URL은 홈이 아니라 `/about` — 누가 어떻게 만든 요약인지(운영 주체·
-        // 생성 방식)를 설명하는 페이지를 가리켜야 저작 주체 신호가 된다.
-        // 둘 다 사이트 발행 주체 노드(`ORGANIZATION_JSON_LD_ID`)와 같은 엔티티다 — `@id`가 없으면
-        // 파서가 이름만 같은 익명 Organization 두 개를 따로 만든다.
-        author: {
-            '@type': 'Organization',
-            '@id': ORGANIZATION_JSON_LD_ID,
-            name: SITE_NAME,
-            url: `${SITE_URL}${ABOUT_PATH}`,
-        },
-        publisher: {
-            '@type': 'Organization',
-            '@id': ORGANIZATION_JSON_LD_ID,
-            name: SITE_NAME,
-            url: SITE_URL,
-            logo: {
-                '@type': 'ImageObject',
-                url: `${SITE_URL}/icon512.png`,
-            },
-        },
-    };
-
-    const newsListJsonLd =
-        newsItems.length > 0
-            ? {
-                  '@context': 'https://schema.org',
-                  '@type': 'ItemList',
-                  name: tSeo('faq.newsListName', { v0: displayName }),
-                  // 초기 DOM에 실제로 그려지는 카드 수와 같은 상수로 자른다.
-                  // "더보기"로 늘어난 카드는 클라이언트 상태에만 있으므로 구글은
-                  // 보지 못한다 — 상한이 렌더 수보다 크면 마크업이 페이지에 없는
-                  // 항목을 주장하게 된다(상수 근거는 `newsSerialization.ts`).
-                  itemListElement: newsItems
-                      .slice(0, NEWS_LIST_PAGE_SIZE)
-                      .map((item, idx) => ({
-                          '@type': 'ListItem',
-                          position: idx + 1,
-                          // `NewsArticle`로 선언하지 않는다(2026-10-04 감사):
-                          // `url`은 외부 매체가 발행한 기사인데 헤드라인만 우리가
-                          // 번역한 것이다. `NewsArticle` + `datePublished`는 이
-                          // 페이지가 호스팅하지 않는 콘텐츠의 저작을 주장하게 되므로
-                          // 목록 항목(위치·URL·이름)까지만 말한다.
-                          url: item.url,
-                          name: resolveNewsTitle(item, locale),
-                      })),
-              }
-            : null;
+        locale,
+        pageUrl: url,
+        dates: newsArticleDates(
+            newsSnapshot?.generatedAt,
+            newsSnapshot?.firstGeneratedAt
+        ),
+    });
+    const newsListJsonLd = buildNewsListJsonLd(
+        newsItems,
+        tSeo('faq.newsListName', { v0: displayName }),
+        locale
+    );
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            {/* Article은 화면에 보이는 AI 산문이 있을 때만 싣는다 — 산문이 없으면
-                이 노드가 주장하는 "분석 기사"가 페이지에 존재하지 않는다(FAQPage를
-                가시 `FaqSection`에만 붙이는 것과 같은 규칙). */}
+            {/* Article은 화면에 보이는 AI 산문이 있을 때만 싣는다(FAQPage를 가시 FAQ에만 붙이는 것과
+                같은 규칙). */}
             {showNewsProse ? <JsonLd data={aiArticleJsonLd} /> : null}
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
@@ -507,14 +231,8 @@ export default async function NewsPage({ params }: Props) {
                     assetClass={assetClass}
                     items={newsItems}
                 />
-                {/* NewsAiSummary (below) is a client component that fetches its
-                    aggregate analysis via a client-side hook — during ISR
-                    generation it bakes its loading skeleton into the static HTML
-                    (no crawlable AI text). This adds the pre-warmed SEO snapshot
-                    prose as a plain SSR sibling, complementary to the
-                    deterministic NewsFactsSummary above (list-based facts) — both
-                    coexist. Renders null when no snapshot exists (spec
-                    2026-07-24 Task 7b). */}
+                {/* 스냅샷 산문은 SSR sibling이다. 아래 AI 위젯은 클라 훅으로 데이터를 받아 ISR HTML에
+                    골격만 남기므로, 크롤러가 읽는 AI 문장은 이 산문뿐이다. 스냅샷이 없으면 null. */}
                 <NewsSnapshotProse
                     symbol={upper}
                     content={newsSnapshot?.content}
@@ -523,20 +241,7 @@ export default async function NewsPage({ params }: Props) {
                     generatedAt={newsSnapshot?.generatedAt}
                     plain={newsSnapshot?.plain}
                 />
-                {/* audit fix FIX 2: XOR — NewsAiSummary (client widget) and
-                    NewsSnapshotProse (SSR prose, above) both render the same AI
-                    conclusion (currentDriverKo/keyEventsKo/upcomingEventsKo).
-                    Showing both duplicated the text for sighted users and
-                    screen readers and doubled as a duplicate-content SEO risk.
-                    When the snapshot is renderable, the widget renders nothing
-                    (`hideView`) but stays mounted so `useRegisterShareable` keeps
-                    registering Share data for this tab; it stays the fallback
-                    for when no snapshot exists — NewsAiSummary is a client
-                    component that fetches its aggregate analysis via a
-                    client-side hook, so during ISR generation it bakes its
-                    loading skeleton into the static HTML (no crawlable AI text)
-                    until it hydrates. NewsFactsSummary above is unaffected —
-                    it's deterministic DB-list facts, not an AI conclusion. */}
+                {/* 클라 전용 경계 — 서버 데이터를 기다리지 않는다. */}
                 <NewsAiSummaryErrorBoundary>
                     <Suspense
                         fallback={
@@ -553,25 +258,26 @@ export default async function NewsPage({ params }: Props) {
                 </NewsAiSummaryErrorBoundary>
 
                 {/*
-                 * `NewsList`도 `NewsAiSummary`처럼 지속 폴링 오류를 다시
-                 * 던진다. 바운더리가 없으면 그 throw가 `[symbol]/error.tsx`까지
-                 * 올라가 헤더·탭 레일·관련 종목까지 **심볼 라우트 전체**를
-                 * 내린다(감사 실측: 본문 1,079 → 582자).
+                 * `NewsList`는 지속 폴링 오류를 다시 던진다 — 바운더리가 없으면 `[symbol]/error.tsx`까지
+                 * 올라가 헤더·탭 레일·관련 종목까지 심볼 라우트 전체를 내린다.
                  *
-                 * 아래 세 서버 섹션(뉴스 목록·이벤트 캘린더·애널리스트 의견)은
-                 * **Suspense로 감싸지 않는다**(2026-10-05 크롤 감사). 서버 데이터
-                 * Suspense는 raw HTML에 `<template>` 숨김 청크 + 교체 스크립트를
-                 * 남겨, JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)에게 본문이
-                 * 문서 끝쪽으로 밀리거나 보이지 않게 하고, 경계 안쪽 `notFound()`
-                 * 류가 200으로 새게 한다. 이 라우트는 ISR 정적 응답이라 워엄에서는
-                 * 대기가 없고, 콜드젠 지연은 문서 전체가 함께 기다린다(레이아웃과
-                 * 같은 트레이드오프). 클라 전용 경계(`NewsAiSummary`)는 위에서 유지한다.
+                 * 세 서버 섹션은 Suspense로 감싸지 않는다. 서버 데이터 경계는 raw HTML에 숨김 청크를
+                 * 남겨 JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)에게 본문을 문서 끝으로 밀고, 경계
+                 * 안쪽 `notFound()`를 200으로 새게 한다. ISR 정적 응답이라 대기는 콜드젠 한 번뿐이다.
                  */}
                 <NewsListErrorBoundary>
                     <NewsListSection symbol={upper} locale={locale} />
                 </NewsListErrorBoundary>
 
-                {isEquity && <EventCalendarSection symbol={upper} />}
+                {isEquity && (
+                    <EventCalendarSection
+                        symbol={upper}
+                        // 요청 시각을 읽는 것 자체가 목적이다. 서버 섹션의 캐시 키로만 쓰이고 클라이언트로
+                        // 하이드레이션되지 않는다 — 하이드레이션 불일치 경로가 아니다.
+                        // react-doctor-disable-next-line react-doctor/rendering-hydration-mismatch-time
+                        today={kstDateKey(new Date())}
+                    />
+                )}
 
                 {isEquity && <AnalystActionsSection symbol={upper} />}
 

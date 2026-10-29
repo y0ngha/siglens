@@ -23,13 +23,14 @@ import * as time from '@/shared/config/time';
  * 레이아웃은 9탭 공유라 한 번의 짧은 읽기가 전 탭을 끌어내린다. 이 가드는 세 가지를 고정한다.
  *
  * 1. **구조** — 6h 캐시 모듈(봉·AI peek)과 시장 허브 1h 캐시 모듈을 레이아웃과 6h보다 긴 선언의
- *    탭이 import하지 않는다. 페이지와 그 **한 단계 로컬 헬퍼**(`@/app/[locale]/[symbol]/…`·`./…`
- *    import — 예: `financialData.ts`, `symbolIndexabilityMetadata.ts`)까지 본다. 6h 읽기 함수
- *    이름(`getQuantizedBarsStatic` 등)은 주석을 뺀 코드에 나타나지도 않아야 한다.
+ *    탭이 import하지 않는다. 페이지와 거기서 닿는 **`[symbol]` 안 로컬 헬퍼 전부**
+ *    (`@/app/[locale]/[symbol]/…`·상대 import를 전이적으로 — 예: `financialData.ts`,
+ *    `news/_components/NewsSections.tsx` → `newsData.ts`)를 본다. 6h 읽기 함수 이름
+ *    (`getQuantizedBarsStatic` 등)은 주석을 뺀 코드에 나타나지도 않아야 한다.
  * 2. **TTL 인자** — 페이지가 import하는 `SECONDS_PER_*`(= `staticSymbolCache` TTL 인자)는 선언 이상이다.
  * 3. **목록** — 각 탭 렌더가 읽는 `unstable_cache`와 그 revalidate를 아래 표에 적고, 전부 선언 이상인지
  *    확인한다. 표가 소스와 따로 놀지 않도록 각 행의 `token`(읽기 함수·키 리터럴)이 그 페이지(또는
- *    레이아웃)와 한 단계 로컬 헬퍼의 코드에 실제로 나타나는지 단언한다 — 읽기를 지우거나 바꾸면
+ *    레이아웃)와 로컬 헬퍼의 코드에 실제로 나타나는지 단언한다 — 읽기를 지우거나 바꾸면
  *    표도 같이 고치게 된다. 호출 그래프 전체를 정적으로 따라가지는 못하므로, **새 정적 캐시 읽기를
  *    추가하면 표에도 적는다.**
  *
@@ -75,32 +76,42 @@ function importedModules(source: string): string[] {
     );
 }
 
-/** `@/app/[locale]/[symbol]/…`·`./…` import를 실제 파일로 푼다(.ts/.tsx). 못 찾으면 건너뛴다. */
+/**
+ * `@/app/[locale]/[symbol]/…`·상대 경로(`./…`·`../…`) import를 실제 파일로 푼다(.ts/.tsx). `[symbol]`
+ * 슬라이스 밖이거나 못 찾으면 건너뛴다.
+ */
 function resolveLocalImport(specifier: string, fromAbs: string): string | null {
     const base = specifier.startsWith('@/app/[locale]/[symbol]/')
         ? path.join(SRC_DIR, specifier.slice('@/'.length))
-        : specifier.startsWith('./')
+        : specifier.startsWith('.')
           ? path.join(path.dirname(fromAbs), specifier)
           : null;
     if (base === null) return null;
+    if (!base.startsWith(`${SYMBOL_DIR}${path.sep}`)) return null;
     const found = ['.ts', '.tsx']
         .map(ext => `${base}${ext}`)
         .find(candidate => existsSync(candidate));
     return found ?? null;
 }
 
-/** 파일 자신 + 한 단계 로컬 헬퍼의 소스. */
+/**
+ * 파일 자신 + 거기서 닿는 `[symbol]` 슬라이스 안 로컬 헬퍼 전부(전이적). 라우트 파일이 섹션·로더를
+ * `_components/`·`_lib/`로 내리면 캐시 읽기가 두 단계 이상 아래로 내려가므로 깊이를 제한하지 않는다.
+ * 방문 집합으로 순환을 끊는다.
+ */
 function withLocalHelpers(rel: string): { rel: string; source: string }[] {
-    const abs = path.join(SYMBOL_DIR, rel);
-    const source = readFile(abs);
-    const helpers = importedModules(source)
-        .map(specifier => resolveLocalImport(specifier, abs))
-        .filter((file): file is string => file !== null)
-        .map(file => ({
-            rel: path.relative(SYMBOL_DIR, file),
-            source: readFile(file),
-        }));
-    return [{ rel, source }, ...helpers];
+    const visited = new Set<string>();
+    const visit = (abs: string): { rel: string; source: string }[] => {
+        if (visited.has(abs)) return [];
+        visited.add(abs);
+        const source = readFile(abs);
+        const children = importedModules(source)
+            .map(specifier => resolveLocalImport(specifier, abs))
+            .filter((file): file is string => file !== null)
+            .flatMap(visit);
+        return [{ rel: path.relative(SYMBOL_DIR, abs), source }, ...children];
+    };
+    return visit(path.join(SYMBOL_DIR, rel));
 }
 
 /** 6h 이하 revalidate의 `unstable_cache`를 두는 모듈 — 이 값보다 긴 선언의 탭·레이아웃은 import 금지. */
@@ -129,7 +140,7 @@ const SHORT_REVALIDATE_READERS = [
 
 /**
  * 표의 한 행. `token`은 그 읽기가 소스에 있다는 증거(읽기 함수 이름 또는 캐시 키 리터럴)다 —
- * 페이지(또는 레이아웃)와 한 단계 로컬 헬퍼의 코드에서 찾는다.
+ * 페이지(또는 레이아웃)와 로컬 헬퍼(전이적)의 코드에서 찾는다.
  */
 interface CacheRead {
     readonly token: string;
@@ -303,10 +314,26 @@ describe('[symbol] 탭 revalidate clamp 가드', () => {
                 ).toBe(false);
             }
         }
-        expect(importedModules(read(LAYOUT))).toContain(
-            '@/entities/bars/lib/sessionBarsStaticCache'
-        );
+        expect(
+            withLocalHelpers(LAYOUT).flatMap(({ source }) =>
+                importedModules(source)
+            )
+        ).toContain('@/entities/bars/lib/sessionBarsStaticCache');
     });
+
+    it.each([
+        ['news/page.tsx', 'news/newsData.ts'],
+        ['fundamental/page.tsx', 'fundamental/fundamentalData.ts'],
+        ['fundamental/page.tsx', 'fundamental/profileDescription.ts'],
+        ['layout.tsx', '_components/SymbolLayoutChrome.tsx'],
+    ])(
+        '%s의 스캔 대상에 두 단계 아래 헬퍼 %s가 들어간다(전이 탐색)',
+        (entry, helper) => {
+            expect(withLocalHelpers(entry).map(({ rel }) => rel)).toContain(
+                helper
+            );
+        }
+    );
 
     it.each(TAB_PAGES)(
         '%s (+로컬 헬퍼) — 선언보다 짧은 revalidate 캐시 모듈·읽기 함수를 쓰지 않는다',
