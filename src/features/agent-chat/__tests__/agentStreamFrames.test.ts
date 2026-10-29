@@ -86,6 +86,18 @@ describe('withToolStarted', () => {
         });
         expect(next.tools[0]).toMatchObject({ args: {}, estimatedSeconds: 40 });
     });
+
+    it.each([['str'], [null], [[1, 2]], [7]])(
+        'treats non-object args %j as an empty object',
+        args => {
+            const next = withToolStarted(bubble(), {
+                id: 't1',
+                name: 'x',
+                args,
+            });
+            expect(next.tools[0]?.args).toEqual({});
+        }
+    );
 });
 
 describe('withToolEnded', () => {

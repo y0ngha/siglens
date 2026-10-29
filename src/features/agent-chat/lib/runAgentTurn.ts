@@ -24,6 +24,7 @@ import {
 } from './errorCodes';
 import { cancelFrame, scheduleFrame, type FrameHandle } from './frameScheduler';
 import { localMessageId } from './optimisticMessages';
+import { isAgentRemaining, isRecord } from './wireGuards';
 
 /**
  * A delimiter-less stream (proxy strips blank lines, provider hangs mid
@@ -91,10 +92,12 @@ async function postTurn(
         signal: ctx.controller.signal,
     });
     if (!response.ok || response.body === null) {
-        const payload = (await response.json().catch(() => ({}))) as {
-            error?: string;
-        };
-        throw new HttpError(payload.error ?? `http_${response.status}`);
+        const payload: unknown = await response.json().catch(() => null);
+        throw new HttpError(
+            isRecord(payload) && typeof payload.error === 'string'
+                ? payload.error
+                : `http_${response.status}`
+        );
     }
     return response.body.pipeThrough(new TextDecoderStream()).getReader();
 }
@@ -205,8 +208,8 @@ export async function runAgentTurn(
                     patchLast(m => withToolEnded(m, data));
                 } else if (event === 'done') {
                     patchLast(m => withDone(m, data));
-                    if (data.remaining)
-                        ctx.setRemaining(data.remaining as AgentRemaining);
+                    if (isAgentRemaining(data.remaining))
+                        ctx.setRemaining(data.remaining);
                 } else if (event === 'error') {
                     throw new TurnFrameError(
                         String(data.code ?? 'server_error')

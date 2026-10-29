@@ -1,4 +1,5 @@
 import type { AgentUiMessage } from '../model/types';
+import { isRecord } from './wireGuards';
 
 /** Parsed `data:` payload of one SSE frame (`parseSseFrame`), untrusted until narrowed. */
 type FrameData = Record<string, unknown>;
@@ -43,7 +44,7 @@ export function withToolStarted(
             {
                 id: String(data.id),
                 name: String(data.name),
-                args: (data.args as Record<string, unknown>) ?? {},
+                args: isRecord(data.args) ? data.args : {},
                 status: 'running',
                 estimatedSeconds:
                     typeof data.estimatedSeconds === 'number'

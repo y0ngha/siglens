@@ -885,6 +885,35 @@ describe('useAgentStream', () => {
         await waitFor(() => expect(result.current.error).toBe('server_error'));
     });
 
+    it('an HTTP-stage error body whose "error" is not a string falls back to "http_<status>"', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            Response.json({ error: { code: 1 } }, { status: 500 })
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.error).toBe('server_error'));
+    });
+
+    it('a done frame whose "remaining" is malformed leaves remaining unset', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: done\ndata: {"assistantMessageId":"m2","remaining":{"turns":"many"}}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.remaining).toBeNull();
+    });
+
     it('a malformed (non-JSON) SSE frame is skipped instead of crashing the stream', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
             sse([
