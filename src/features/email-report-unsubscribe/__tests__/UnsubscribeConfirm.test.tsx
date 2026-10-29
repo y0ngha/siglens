@@ -92,22 +92,28 @@ describe('UnsubscribeConfirm', () => {
         );
     });
 
-    it('처리 중에는 aria-disabled로 막아 포커스를 지키고, 다시 눌러도 요청하지 않는다', async () => {
-        const { mutate } = setup();
+    it('처리 중에도 버튼을 aria-disabled로만 막아 키보드 포커스가 버튼에 남는다', async () => {
+        setup();
         const { rerender } = render(<UnsubscribeConfirm />);
         await userEvent.click(
             screen.getByRole('button', { name: '수신 거부하기' })
         );
-        expect(mutate).toHaveBeenCalledTimes(1);
 
-        const pending = setup({ isPending: true });
+        setup({ isPending: true });
         rerender(<UnsubscribeConfirm />);
         const button = screen.getByRole('button', { name: '처리 중…' });
 
         expect(button).toHaveAttribute('aria-disabled', 'true');
         expect(button).not.toBeDisabled();
         expect(button).toHaveFocus();
-        await userEvent.click(button);
-        expect(pending.mutate).not.toHaveBeenCalled();
+    });
+
+    it('처리 중에 다시 눌러도 요청하지 않는다', async () => {
+        const { mutate } = setup({ isPending: true });
+        render(<UnsubscribeConfirm />);
+
+        await userEvent.click(screen.getByRole('button', { name: '처리 중…' }));
+
+        expect(mutate).not.toHaveBeenCalled();
     });
 });
