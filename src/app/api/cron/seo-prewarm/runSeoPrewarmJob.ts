@@ -5,8 +5,11 @@ import { releasePrewarmLock } from './lock';
 import { pruneExpiredRows } from './pruneExpiredRows';
 import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
 
-/** 배치 중 예외를 삼키고 로그만 남긴다 — 뒤 단계(워밍·정리·락 해제)가 앞 단계 실패에 막히지 않게 한다. */
-async function logFailure(label: string, step: () => Promise<void>) {
+/** 한 단계의 예외를 삼키고 로그만 남긴다 — 뒤 단계(워밍·정리·락 해제)가 앞 단계 실패에 막히지 않게 한다. */
+async function logFailure(
+    label: string,
+    step: () => Promise<void>
+): Promise<void> {
     try {
         await step();
     } catch (error) {
