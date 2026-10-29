@@ -29,6 +29,10 @@ interface MobileSheetPlaceholderProps {
  *  4,947ms  시트 등장
  * ```
  *
+ * 재측정: Chrome DevTools Performance 패널에서 390×844 기기 에뮬레이션과 CPU 4× slowdown을
+ * 켜고 `/{symbol}` 첫 로드를 기록한 뒤, Network 트랙에서 `MobileAnalysisSheet` 청크의 요청
+ * 시작 시점을 본다.
+ *
  * 네트워크가 아니라 **요청 시작까지의 4.6초**가 병목이다. 이 컴포넌트는 그 구간을
  * 시각적으로 메운다. 실제 시트는 `ssr: false`라 SSR HTML에 아무것도 남기지 않으므로
  * 껍데기는 **반드시 서버 쪽(app 라우트)에서** 렌더해야 한다. (`SymbolPageClient`
