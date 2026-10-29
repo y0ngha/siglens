@@ -49,6 +49,14 @@ describe('useFocusInvalidFieldOnError', () => {
         expect(document.activeElement).toBe(document.body);
     });
 
+    it('does not move focus when the form mounts with an error already set', () => {
+        render(<Harness error={{ ...fieldError }} />);
+        expect(document.activeElement).not.toBe(
+            screen.getByLabelText('first-invalid')
+        );
+        expect(document.activeElement).toBe(document.body);
+    });
+
     it('does not focus an invalid field on a null to null re-render', () => {
         const { rerender } = render(<Harness error={null} />);
         rerender(<Harness error={null} />);
