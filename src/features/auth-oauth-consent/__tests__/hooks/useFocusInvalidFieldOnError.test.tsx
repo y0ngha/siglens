@@ -67,6 +67,14 @@ describe('useFocusInvalidFieldOnError', () => {
         expect(document.activeElement).toBe(document.body);
     });
 
+    it('does not move focus when the form mounts with an error already set', () => {
+        render(<Harness error={consentError()} />);
+        expect(document.activeElement).not.toBe(
+            screen.getByLabelText('first-unticked')
+        );
+        expect(document.activeElement).toBe(document.body);
+    });
+
     it('does not focus an unticked checkbox on a no-error to no-error re-render', () => {
         const { rerender } = render(<Harness error={undefined} />);
         rerender(<Harness error={undefined} />);

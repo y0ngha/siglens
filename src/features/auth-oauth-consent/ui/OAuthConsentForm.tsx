@@ -11,7 +11,10 @@ import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { usePageShowReload } from '@/shared/hooks/usePageShowReload';
 import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
 import { useFocusInvalidFieldOnError } from '../hooks/useFocusInvalidFieldOnError';
-import { CONSENT_AGREED_VALUE } from '../lib/readConsentForm';
+import {
+    CONSENT_AGREED_VALUE,
+    CONSENT_DECLINED_VALUE,
+} from '../lib/readConsentForm';
 import { OAuthAccountCard } from './OAuthAccountCard';
 
 interface OAuthConsentFormProps {
@@ -72,12 +75,20 @@ export function OAuthConsentForm({
                 <input
                     type="hidden"
                     name="agreed_privacy"
-                    value={privacyChecked ? CONSENT_AGREED_VALUE : 'false'}
+                    value={
+                        privacyChecked
+                            ? CONSENT_AGREED_VALUE
+                            : CONSENT_DECLINED_VALUE
+                    }
                 />
                 <input
                     type="hidden"
                     name="agreed_tos"
-                    value={tosChecked ? CONSENT_AGREED_VALUE : 'false'}
+                    value={
+                        tosChecked
+                            ? CONSENT_AGREED_VALUE
+                            : CONSENT_DECLINED_VALUE
+                    }
                 />
                 <ConsentCheckboxGroup
                     privacyChecked={privacyChecked}

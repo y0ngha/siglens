@@ -9,6 +9,13 @@ export interface ConsentFormInput {
 /** 체크박스 상태를 실어 나르는 숨은 입력이 "동의"일 때 보내는 값. */
 export const CONSENT_AGREED_VALUE = 'true';
 
+/**
+ * 체크박스 상태를 실어 나르는 숨은 입력이 "동의 안 함"일 때 보내는 값. 서버는
+ * `CONSENT_AGREED_VALUE`와 정확히 같은지만 보므로 이 값은 판정에 쓰이지 않지만,
+ * 폼이 보내는 두 상태를 한곳에 둬 클라이언트 리터럴이 흩어지지 않게 한다.
+ */
+export const CONSENT_DECLINED_VALUE = 'false';
+
 function readField(formData: FormData, key: string): string {
     return String(formData.get(key) ?? '');
 }
