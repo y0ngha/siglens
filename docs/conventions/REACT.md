@@ -402,8 +402,9 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 - A control that becomes pending while it holds focus uses `aria-disabled`, not `disabled`, so focus does not fall to
   `body` (Tab then escapes a modal). On success move focus to a persistent live region or the next target.
 - An auto-dismissing toast that carries an action pauses its timer on hover and `focus-within`.
-- A "who acted last" flag that hands focus to a row after an action is scoped to that row's key, cleared once consumed,
-  and independent of sibling effect or commit order; otherwise a later remount or another row steals focus.
+- A flag that hands focus on after an action (e.g. "focus the heading after a delete") either names its target (the
+  row key) or is guarded by the current UI state (no other row editor or confirm open), is cleared once consumed, and
+  does not depend on sibling effect or commit order; otherwise a later remount or another row steals focus.
 
 ```tsx
 // ❌
