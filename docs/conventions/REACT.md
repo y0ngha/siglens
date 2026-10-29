@@ -43,7 +43,7 @@ Include a step only when it is needed.
 
 Why: every hook call must happen before derived values and handlers so that the reading order matches the dependency order and no hook ends up between computations.
 
-**Documented exception.** A hook whose input is a derived value is declared immediately after that derived value, with a comment naming the dependency. Examples in the code: a query keyed on a derived `activeTimeframe`, or a tier-gated flag passed into a custom hook. Every other hook still precedes that derived variable.
+**Documented exception.** A hook whose input is a derived value is declared immediately after that derived value, with a comment naming the dependency. The comment sits on **each** hook the exception covers, not once above the first of several. Examples in the code: a query keyed on a derived `activeTimeframe`, or a tier-gated flag passed into a custom hook. Every other hook still precedes that derived variable.
 
 **After moving part of a hook**, re-check that the remaining pieces (effects, handlers, `useCallback`s) are still in their slot. If effects depend on each other's run order, keep them together in that order and say why in a comment.
 
@@ -484,7 +484,7 @@ useSyncExternalStore(subscribePreference, getPreferenceSnapshot, getServerPrefer
 
 #### EF-2 — Effect dependencies are complete; stable references are excluded
 
-Every outer-scope value read in an effect body is in the dependency array; missing deps cause stale closures. Stable references are left out: refs and `useEffectEvent` functions. A callback **prop** that the effect calls must not sit in the deps (it changes identity each render and loops); wrap it with `useEffectEvent` and call that inside the effect. Never suppress `exhaustive-deps` with a lint comment — restructure instead.
+Every outer-scope value read in an effect body is in the dependency array; missing deps cause stale closures. Stable references are left out: refs and `useEffectEvent` functions. A callback **prop** that the effect calls must not sit in the deps (it changes identity each render and loops); wrap it with `useEffectEvent` and call that inside the effect. The same applies to a "latest value" ref kept in sync by an effect: read the value through `useEffectEvent` instead. Never suppress `exhaustive-deps` with a lint comment — restructure instead.
 
 ```typescript
 // ❌ slot is read but missing; snapToPoint (useEffectEvent) is stable and does not belong

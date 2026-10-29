@@ -77,6 +77,32 @@ describe('EmailReportNudgeModal', () => {
         ).toHaveAttribute('href', '/email-report?from=nudge');
     });
 
+    it('설정 권유 대화상자는 본문을 설명으로 읽힌다(aria-describedby)', () => {
+        render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'setup', symbolCount: 4 }}
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('dialog')).toHaveAccessibleDescription(
+            '보유종목과 관심종목 4개의 일봉 차트, 쉽게 보기 분석, 뉴스, 신호 요약을 원하는 요일과 시각에 메일로 보내 드려요.'
+        );
+    });
+
+    it('종목 권유 대화상자는 본문을 설명으로 읽힌다(aria-describedby)', () => {
+        render(
+            <EmailReportNudgeModal
+                nudge={{ kind: 'symbol', symbol: 'TSLA' }}
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('dialog')).toHaveAccessibleDescription(
+            'TSLA 종목을 관심종목에 담으면 정기 메일 리포트에 함께 넣어 보내 드려요.'
+        );
+    });
+
     it('종목 권유 CTA는 페이지 이동 없이 관심종목 담기를 nudge 출처로 실행한다', async () => {
         render(
             <EmailReportNudgeModal
