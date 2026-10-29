@@ -9,7 +9,8 @@ interface EmailReportSampleViewProps {
 }
 
 /**
- * 기존 회원용 "설정으로" 보조 링크. 가입 CTA(버튼) 옆에서 한 단계 낮은 행동으로 읽히도록 hover에서만 밑줄이 생기는 텍스트 링크로 둔다.
+ * 기존 회원용 "설정으로" 보조 링크. 가입 CTA(버튼) 옆에서 한 단계 낮은 행동으로 읽히도록
+ * hover에서만 밑줄이 생기는 텍스트 링크로 둔다.
  */
 const SETTINGS_LINK_CLASSES =
     'text-sm font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
