@@ -383,6 +383,7 @@ A cast is acceptable only when TypeScript cannot express a constraint the runtim
 - `Object.fromEntries(pairs) as Record<K, V>` and `Object.keys(record) as T[]` (keys widen to `string`, but `Record<T, …>` guarantees them) are the sanctioned safe-casts.
 - Test files are exempt from the comment for self-documenting mock casts such as `fn as MockedFunction<typeof fn>`.
 - Replace a post-check `value!` that repeats across call sites with a helper that returns the narrowed type (or throws), e.g. `requireDatabaseUrl()`.
+- Narrow external data (parsed JSON, a `Response` body, `unknown` input) with a type guard instead of asserting its shape (`body as Foo | null`); a double assertion (`as unknown as T`) needs the same WHY comment, in tests too, unless a typed fixture or guard removes the need.
 
 ```typescript
 // ❌ hides a possible null / wrong shape
@@ -606,6 +607,7 @@ file or the rule it describes changes:
   becoming a per-test reset), re-read the config or JSDoc that describes the old behavior (`vitest.config.ts` lane
   docs, header comments) in the same edit; grep the old wording repo-wide, and its concept and paraphrases too ("module cache" also hides as "evaluated module"), not only the exact phrase. Re-read the header doc of every file you
   touched, including the file that holds the change itself, not only the config that points at it.
+- A comment about when an effect, callback or request runs (on mount, after commit, before the response) is checked against the actual hook or call order; a comment stating the opposite of the code's timing is worse than none.
 - After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 
 <a id="CM-3"></a>

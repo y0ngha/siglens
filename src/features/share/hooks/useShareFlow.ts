@@ -159,8 +159,10 @@ export function useShareFlow(): UseShareFlowResult {
                 text: t('shareText', { v0: symbol }),
                 url,
             });
-            // Close the modal only after the OS sheet settles, so the
-            // auto-advance effect cannot re-fire on a provider re-render meanwhile.
+            // 전달(OS 시트)이 끝난 뒤에야 모달을 닫는다. 자동 진행 effect는
+            // preparingOpen이 true인 동안만 동작하므로, 시트가 열려 있는 동안
+            // reg.result 참조가 바뀌면 다시 발동할 수 있다(이전 동작 유지:
+            // 기존 hasTriggered 게이트도 같은 시점에 해제됐다).
             setPreparingOpen(false);
             if (delivery === 'sheet') setSheetOpen(true);
         },

@@ -1,4 +1,4 @@
-import type { Bar } from '@y0ngha/siglens-core';
+import type { AnalysisResponse, Bar } from '@y0ngha/siglens-core';
 import { buildShareSnapshotInput } from '@/features/share/lib/buildShareSnapshotInput';
 import type { ShareableRegistration } from '@/features/share/model/ShareableAnalysisContext';
 import { MAX_CHART_BARS } from '@/entities/shared-analysis/types';
@@ -7,13 +7,26 @@ function bar(time: number): Bar {
     return { time, open: 1, high: 2, low: 0.5, close: 1.5, volume: 10 };
 }
 
+const RESULT: AnalysisResponse = {
+    summary: '상승 추세',
+    trend: 'bullish',
+    indicatorResults: [],
+    riskLevel: 'low',
+    keyLevels: { support: [], resistance: [] },
+    priceTargets: { bullish: null, bearish: null },
+    patternSummaries: [],
+    strategyResults: [],
+    candlePatterns: [],
+    trendlines: [],
+};
+
 function reg(
     overrides: Partial<ShareableRegistration> = {}
 ): ShareableRegistration {
     return {
         kind: 'chart',
         status: 'success',
-        result: { trend: 'bullish' },
+        result: RESULT,
         context: {
             symbol: 'MSFT',
             displayName: 'Microsoft',
@@ -21,7 +34,7 @@ function reg(
         },
         trigger: () => {},
         ...overrides,
-    } as unknown as ShareableRegistration;
+    };
 }
 
 describe('buildShareSnapshotInput', () => {
@@ -52,7 +65,7 @@ describe('buildShareSnapshotInput', () => {
                 displayName: 'Microsoft',
                 assetClass: 'us_equity',
             },
-            result: { trend: 'bullish' },
+            result: RESULT,
             sharerTier: 'pro',
         });
     });
