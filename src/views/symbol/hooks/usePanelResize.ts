@@ -1,11 +1,17 @@
 'use client';
 
+/**
+ * 데스크톱 AI 패널 폭 조절(마우스 드래그·키보드).
+ */
 import type React from 'react';
 import { useRef, useState } from 'react';
 import { useDragListener } from './useDragListener';
 
+/** AI 패널 최소 폭(px). */
 export const PANEL_MIN_WIDTH = 240;
+/** AI 패널 최대 폭이자 초기 폭(px). */
 export const PANEL_MAX_WIDTH = 640;
+/** 화살표 키 한 번의 폭 변화(px). */
 const KEYBOARD_RESIZE_STEP = 10;
 
 interface UsePanelResizeResult {
@@ -15,6 +21,10 @@ interface UsePanelResizeResult {
     handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
+/**
+ * 패널 폭 상태. 드래그는 왼쪽으로 끌수록 넓어지고(패널이 오른쪽에 있다), ←/→ 키는 값(폭)을
+ * 줄이고 늘린다 — 구분선의 `aria-valuenow`가 폭이다.
+ */
 export function usePanelResize(): UsePanelResizeResult {
     const [panelWidth, setPanelWidth] = useState(PANEL_MAX_WIDTH);
 

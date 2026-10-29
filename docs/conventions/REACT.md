@@ -393,6 +393,21 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 <button aria-describedby="tooltip-1">…</button>
 ```
 
+<a id="AX-4"></a>
+
+#### AX-4 — Adjacent text parts get a real space, not only `gap`/margin
+
+When two inline or flex text parts (label + count, name + ticker, heading + badge) are separated only by CSS `gap` or margin, `textContent`, copy-paste, reader mode and some accessible-name computations join them ("전체90", "엔비디아NVDA"). Put a text space `{' '}` between them. Whitespace between flex items is not rendered, so the layout does not change.
+
+Test it through `textContent`: jsdom's accessible-name calculation inserts spaces by itself, so `toHaveAccessibleName` cannot catch a missing one.
+
+```tsx
+// ❌
+<span className="flex gap-1"><span>{label}</span><span>{count}</span></span>
+// ✅
+<span className="flex gap-1"><span>{label}</span>{' '}<span>{count}</span></span>
+```
+
 <a id="AX-3"></a>
 
 #### AX-3 — Toggles and pending controls keep a stable name and keep focus

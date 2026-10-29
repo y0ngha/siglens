@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 같은 종목 안의 탭 이동 pending 판정과, 그동안 이전 탭 대신 골격을 그리는 page slot.
+ */
 import type { ReactNode } from 'react';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { symbolOfAppPath } from '@/shared/config/reservedFirstSegments';
@@ -9,8 +12,8 @@ import { PendingSlot } from '@/shared/ui/PendingSlot';
 /**
  * 같은 종목 안의 다른 탭으로 가는 중이면 그 탭 경로 — 아니면 null.
  *
- * 탭 링크는 `prefetch={false}`(CDN_CACHING.md §1)라, 클릭 뒤 라우터가 그 탭의 RSC
- * 페이로드(0.9~2.7MB)를 다 받기 전까지는 아무것도 커밋하지 못한다. `loading.tsx`는
+ * 탭 링크는 `prefetch={false}`라, 클릭 뒤 라우터가 그 탭의 RSC 페이로드(수 MB)를
+ * 다 받기 전까지는 아무것도 커밋하지 못한다. `loading.tsx`는
  * 새 세그먼트가 커밋된 **뒤에야** 보이므로 이 공백을 못 메운다. 클릭 순간은
  * `LocaleLink`가 전역 `NavigationPendingContext`에 세우고, 여기서는 그중 "같은
  * 종목의 탭 이동"만 골라낸다(다른 종목으로 가는 이동은 루트의 종목 진입 슬롯 몫).

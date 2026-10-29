@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 차트 탭 타임프레임 선택·URL 동기화·전환 중 표시 상태.
+ */
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import {
     useDeferredValue,
@@ -44,6 +47,7 @@ interface UseTimeframeChangeResult {
     handleTimeframeChange: (nextTimeframe: Timeframe) => void;
 }
 
+/** 타임프레임 선택을 URL·tier 게이트와 맞추고, 새 봉이 올 때까지 이전 차트를 유지한다. */
 export function useTimeframeChange(
     symbol: string,
     isFreeTier: boolean,

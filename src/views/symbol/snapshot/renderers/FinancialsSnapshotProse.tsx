@@ -1,3 +1,6 @@
+/**
+ * 재무제표 탭 SEO 스냅샷 산문 렌더러.
+ */
 import { useTranslations } from 'next-intl';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
@@ -43,8 +46,8 @@ interface FinancialsSnapshotProseProps {
 }
 
 /**
- * SEO pre-warm 스냅샷의 financials 탭 프로즈 렌더러 — Task 6, 네 번째 탭
- * 렌더러. `overallConclusionKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가
+ * SEO pre-warm 스냅샷의 financials 탭 프로즈 렌더러.
+ * `overallConclusionKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가
  * 있으면 리드 문구로, `axisAssessments`를 축 라벨 붙은 목록으로,
  * `riskFactorsKo`를 위험 요인 목록으로 렌더한다.
  *

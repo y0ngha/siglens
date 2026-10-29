@@ -1,107 +1,19 @@
+/**
+ * 심볼 페이지 하단의 "관련 종목" 칩 스트립(서버 컴포넌트).
+ */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { RelatedSymbolLink } from '@/views/symbol/RelatedSymbolLink';
-import {
-    relatedSymbolsFor,
-    type RelatedSymbol,
-} from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { pickAssetName } from '@/entities/ticker/lib/ticker';
-import {
-    DEFAULT_LOCALE,
-    resolveLocale,
-    type Locale,
-} from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { resolveChipNames } from './relatedSymbolNames';
+import { groupRelatedByLabel } from './utils/relatedSymbolChips';
 
 interface RelatedSymbolsProps {
     /** 현재 심볼(대문자). 자기 자신은 목록에서 제외된다. */
     symbol: string;
-}
-
-/** 칩 이름 판정 — DB 이름 우선, 큐레이션 한글명 폴백은 ko에서만(아래 `resolveChipNames` JSDoc의 "로케일"). */
-function chipNameFor(
-    assetInfo: { name: string; koreanName?: string } | null,
-    item: RelatedSymbol,
-    locale: Locale
-): string | undefined {
-    // 큐레이션 이름은 DB가 비었을 때의 폴백이며 한글이라 ko에서만 쓴다.
-    const curated = locale === DEFAULT_LOCALE ? item.koreanName : undefined;
-    if (assetInfo === null) return curated;
-    if (locale === DEFAULT_LOCALE) return assetInfo.koreanName ?? curated;
-    const name = pickAssetName(assetInfo, item.symbol, locale);
-    return name === item.symbol ? curated : name;
-}
-
-/**
- * 칩에 쓸 한글명을 확정한다. 큐레이션 상수(무비용)를 기본으로 두고, DB에 이름이
- * 있으면 그쪽을 쓴다.
- *
- * ## 왜 DB를 읽는가
- *
- * `relatedSymbolsFor`는 I/O 0인 순수 함수라 큐레이션 상수에 있는 이름만 붙일 수
- * 있는데, 2026-08-24 실측 기준 그 커버리지가 **전체 칩의 42%**였다. 나머지는
- * `LENZ`·`TSM`처럼 티커만 노출됐다 — 정작 그 종목 페이지 제목은 "렌즈
- * 테라퓨틱스(LENZ)", "TSMC(TSM)"으로 멀쩡히 한글명을 쓰고 있는데도. 같은 종목이
- * 화면마다 다른 이름으로 보이는 데다, 한국어 질의에 걸리는 앵커 텍스트를 절반 넘게
- * 버리는 셈이었다.
- *
- * ## 왜 이 방식인가 — 새 조회 경로를 만들지 않는다
- *
- * `getAssetInfoResilient`는 이 페이지가 현재 심볼에 대해 이미 쓰는 리졸버이고
- * 심볼당 `unstable_cache`로 감싸져 있다. 그래서 (a) 칩 이름이 링크 대상 페이지의
- * 제목과 **같은 소스**라 어긋날 수 없고, (b) 각 피어의 엔트리는 그 종목 자신의
- * 페이지 렌더가 이미 채워 둔 것을 공유하며, (c) 번역이 나중에 채워져도 자동으로
- * 따라온다. `Promise.all`이라 왕복은 한 번이다.
- *
- * ## 로케일
- *
- * ko는 한글명만 칩에 쓴다(한글명이 없으면 티커만). 그 외 로케일은 `pickAssetName`으로
- * 영문명을 쓰고, 영문명이 없을 때만 한글명으로 떨어진다 — 영문 페이지에 "애플 AAPL"이
- * 나오던 결함이다. 같은 이유로 비-ko에서는 DB가 비었을 때의 **큐레이션 한글명 폴백도 쓰지
- * 않는다**(티커만 남긴다). 이름이 티커와 같으면(`name === symbol`) 칩에 티커가 두 번
- * 찍히므로 이름으로 치지 않는다. 이 규칙 전체(DB 이름 → ko 한정 큐레이션 폴백)가 이
- * 판정은 순수 함수 `chipNameFor` 한 곳에 있다.
- *
- * 인프라 실패는 삼킨다 — 이름 하나 없다고 내부링크가 사라지면 이 컴포넌트의 존재
- * 이유가 없어진다. 그 경우 큐레이션 이름(있으면)으로, 없으면 티커로 폴백한다.
- * **단 `DYNAMIC_SERVER_USAGE`는 예외로 되던진다** — 실패가 아니라 Next의 제어 흐름
- * 신호이기 때문이다(아래 catch 주석).
- */
-async function resolveChipNames(
-    items: readonly RelatedSymbol[],
-    locale: Locale
-): Promise<ReadonlyMap<string, string>> {
-    const resolved = await Promise.all(
-        items.map(async item => {
-            const { symbol } = item;
-            try {
-                const { assetInfo } = await getAssetInfoResilient(symbol);
-                return [
-                    symbol,
-                    chipNameFor(assetInfo ?? null, item, locale),
-                ] as const;
-            } catch (e: unknown) {
-                // `DYNAMIC_SERVER_USAGE`는 실패가 아니라 Next의 **제어 흐름
-                // 신호**다 — 정적 생성 중 동적 API가 쓰였으니 이 렌더를 포기하라는
-                // 뜻이다. 삼키면 Next가 의도한 bail-out을 막아 잘못된 결과를 캐시에
-                // 굳힌다(#545 인시던트). 형제 resilient 래퍼들과 동일하게 되던진다.
-                if (isDynamicServerError(e)) throw e;
-                console.error(
-                    `[RelatedSymbols] name lookup failed for ${symbol}:`,
-                    e
-                );
-                return [symbol, chipNameFor(null, item, locale)] as const;
-            }
-        })
-    );
-    return new Map(
-        resolved.filter((entry): entry is readonly [string, string] =>
-            Boolean(entry[1])
-        )
-    );
 }
 
 /**
@@ -109,10 +21,9 @@ async function resolveChipNames(
  *
  * ## 왜 있는가
  *
- * 2026-08-24 실측에서 sitemap이 광고하는 심볼 431종 중 **303종(70%)이 내부링크
- * 고아**였다(자세한 측정과 링 설계 근거는 `relatedSymbolsFor` JSDoc). 심볼
- * 페이지끼리 서로를 하나도 링크하지 않았기 때문인데, 이 컴포넌트가 그 간선을
- * 만든다. 링 ±1이 유니버스 전체를 하나의 순환으로 이어 고아가 0이 된다.
+ * 심볼 페이지끼리 서로를 링크하는 간선을 만든다 — 없으면 sitemap의 심볼 대부분이 내부링크
+ * 고아가 된다(측정과 링 설계 근거는 `relatedSymbolsFor` JSDoc). 링 ±1이 유니버스 전체를
+ * 하나의 순환으로 잇는다.
  *
  * ## 왜 서버 컴포넌트이고, 왜 Suspense fallback이 아닌가
  *
@@ -151,13 +62,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
     if (related.length === 0) return null;
     const locale = resolveLocale(await getLocale());
     const names = await resolveChipNames(related, locale);
-
-    // 선정 순서(테마 → 링)를 유지한 채 캡션별로 묶는다 — `Map`이 삽입 순서를
-    // 지키므로 관련성이 높은 그룹이 먼저 온다.
-    const groups = new Map<string, RelatedSymbol[]>();
-    for (const item of related) {
-        groups.set(item.label, [...(groups.get(item.label) ?? []), item]);
-    }
+    const groups = groupRelatedByLabel(related);
 
     return (
         <nav
@@ -167,7 +72,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
             <h2 id="related-symbols-heading" className={HEADING_SECTION}>
                 {t('RelatedSymbols.c35191')}
             </h2>
-            {[...groups].map(([label, items]) => (
+            {groups.map(({ label, items }) => (
                 <div key={label} className="mt-3">
                     {/* 칩만 나열하면 왜 관련 종목인지 알 수 없다 — 그룹의 근거를
                         한 줄로 밝힌다(테마명 · 섹터명 · "다른 종목 둘러보기"). */}
@@ -185,8 +90,13 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
                                         symbol={item.symbol}
                                         className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
+                                        {/* 이름과 티커 사이 공백은 실제 텍스트다 — `gap-1.5`만 두면
+                                            링크의 접근 가능한 이름·앵커 텍스트가 `엔비디아NVDA`로
+                                            붙는다(inline-flex라 공백 노드는 화면 간격을 바꾸지 않는다). */}
                                         {chipName !== undefined && (
-                                            <span>{chipName}</span>
+                                            <>
+                                                <span>{chipName}</span>{' '}
+                                            </>
                                         )}
                                         {/* 표기는 접미사를 뗀 `displayTicker` — 국내 종목의
                                             `.KS`/`.KQ`는 검색량이 0이고 사이트의 title

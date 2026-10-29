@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 차트 탭 하위 트리가 공유하는 페이지 상수(지표 수·스킬 수) 컨텍스트.
+ */
 import type { ReactNode } from 'react';
 import { createContext, useContext } from 'react';
 
@@ -17,6 +20,7 @@ interface SymbolPageProviderProps {
     children: ReactNode;
 }
 
+/** 차트 탭 페이지 상수를 하위 트리에 공급한다. */
 export function SymbolPageProvider({
     indicatorCount,
     skillCount,
@@ -29,6 +33,7 @@ export function SymbolPageProvider({
     );
 }
 
+/** 페이지 상수를 읽는다. `SymbolPageProvider` 밖에서 부르면 throw한다. */
 export function useSymbolPageContext(): SymbolPageContextValue {
     const ctx = useContext(SymbolPageContext);
     if (!ctx)

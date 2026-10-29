@@ -1,3 +1,6 @@
+/**
+ * 종목 공포·탐욕 탭에 점수가 그려지는지 판정(색인 게이트와 본문 공용).
+ */
 import type { BarsData } from '@y0ngha/siglens-core';
 import { symbolFearGreedSnapshot } from '@/entities/bars/lib/symbolFearGreed';
 

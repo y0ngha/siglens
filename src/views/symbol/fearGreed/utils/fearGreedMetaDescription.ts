@@ -1,3 +1,6 @@
+/**
+ * 종목 공포·탐욕 탭 meta description 문장 조립.
+ */
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
 import {

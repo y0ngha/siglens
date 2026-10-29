@@ -1,3 +1,6 @@
+/**
+ * 의회 거래 탭 SEO 스냅샷 산문 렌더러.
+ */
 import { useTranslations } from 'next-intl';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
@@ -41,8 +44,8 @@ interface CongressSnapshotProseProps {
 }
 
 /**
- * SEO pre-warm 스냅샷의 congress 탭 프로즈 렌더러 — Task 6, 다섯 번째 탭
- * 렌더러. `summaryKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가
+ * SEO pre-warm 스냅샷의 congress 탭 프로즈 렌더러.
+ * `summaryKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가
  * 있으면 리드 문구로, `notableMembersKo`를 목록으로, `riskNoteKo`를 참고
  * 사항 문단으로 렌더한다.
  *

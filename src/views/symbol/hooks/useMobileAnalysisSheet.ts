@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 모바일 분석 시트(vaul)의 열림 상태·ref·닫힘 방어.
+ */
 import { SNAP_FULL, SNAP_PEEK, type SnapPoint } from '../constants/mobileSheet';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 
@@ -39,6 +42,7 @@ export const MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS = 66;
 // 뜨지 않았다(2026-10-22 실기기 제보, rAF를 멈춘 브라우저로 재현).
 // Vaul이 최소 스냅 아래 드래그 시 내부적으로 닫으려 할 수 있으므로 open을 직접 제어해
 // 즉시 재오픈하고 activeSnap도 SNAP_PEEK로 초기화한다 — 시트/핸들이 사라지지 않도록 보호.
+/** 시트 열림을 하이드레이션 뒤로 미루고, vaul이 닫으려 하면 PEEK로 되돌린다. */
 export function useMobileAnalysisSheet({
     activeSnap,
     onActiveSnapChange,

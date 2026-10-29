@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 분석 진행 화면을 마무리 애니메이션이 끝날 때까지 유지하는 표시 상태.
+ */
 import { useCallback, useState } from 'react';
 
 interface UseAnalysisDisplayReturn {
@@ -14,6 +17,7 @@ interface UseAnalysisDisplayReturn {
 // `skipFinishing`(서버가 생성 없이 즉시 돌려준 응답 — `useAnalysis.isInstantResponse`)이면
 // 마무리 애니메이션을 기다리지 않고 응답이 온 그 렌더에서 내린다. `useAnalysisProgress`도
 // 같은 값으로 마무리 시퀀스를 건너뛰므로 `onProgressFinished`는 오지 않는다.
+/** 진행 화면 표시 여부와, 마무리 애니메이션 종료 콜백. */
 export function useAnalysisDisplay(
     isAnalyzing: boolean,
     skipFinishing = false

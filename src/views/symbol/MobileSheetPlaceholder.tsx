@@ -1,10 +1,23 @@
+/**
+ * 하이드레이션 전 모바일 분석 시트 자리를 채우는 서버 렌더 껍데기.
+ */
 import type { CSSProperties } from 'react';
 import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
+
+interface MobileSheetPlaceholderProps {
+    /**
+     * 시트 제목. **번역은 호출부가 한다** — 이 컴포넌트를 `async`로 만들어
+     * `getTranslations`를 부르면 순수 컴포넌트가 아니게 되고, 그 순간
+     * 렌더 테스트가 next-intl 서버 컨텍스트를 요구한다. 문구 하나 때문에
+     * 치수·CSS 훅 계약을 검사하던 테스트를 통째로 비동기로 바꿀 이유가 없다.
+     */
+    label: string;
+}
 
 /**
  * 모바일 바텀시트의 **서버 렌더 껍데기**. 실제 vaul 시트가 마운트되기 전까지만 보인다.
  *
- * ## 왜 필요한가 (2026-08-20 실측)
+ * ## 왜 필요한가 (iPhone 390×844 / CPU 4배 스로틀 실측)
  *
  * 실제 시트(`MobileAnalysisSheet`)는 `dynamic(..., { ssr: false })`이고
  * `SymbolPageClient`의 `isHydrated && isMobileViewport` 게이트 뒤에 있다. 그래서
@@ -42,16 +55,6 @@ import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
  * 스크린리더에 동작하지 않는 컨트롤을 노출하지 않는다. 실제 시트가 뜨면 그쪽이
  * 접근성 트리를 담당한다.
  */
-interface MobileSheetPlaceholderProps {
-    /**
-     * 시트 제목. **번역은 호출부가 한다** — 이 컴포넌트를 `async`로 만들어
-     * `getTranslations`를 부르면 순수 컴포넌트가 아니게 되고, 그 순간
-     * 렌더 테스트가 next-intl 서버 컨텍스트를 요구한다. 문구 하나 때문에
-     * 치수·CSS 훅 계약을 검사하던 테스트를 통째로 비동기로 바꿀 이유가 없다.
-     */
-    label: string;
-}
-
 export function MobileSheetPlaceholder({ label }: MobileSheetPlaceholderProps) {
     return (
         <div

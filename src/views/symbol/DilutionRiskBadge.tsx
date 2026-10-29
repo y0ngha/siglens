@@ -1,3 +1,6 @@
+/**
+ * 차트 탭 h1 옆의 증자·희석 배지(서버 컴포넌트).
+ */
 import { useTranslations } from 'next-intl';
 import { FLOWS_DILUTION_SECTION_ID } from '@/entities/investor-flows/lib/flowsAnchors';
 import type { RecentDilutionEvent } from '@/entities/investor-flows/lib/recentDilutionEvent';

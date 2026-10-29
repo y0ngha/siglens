@@ -1,3 +1,6 @@
+/**
+ * 봉 데이터에서 종목 공포·탐욕 메타 사실을 만드는 진입점.
+ */
 import type { BarsData } from '@y0ngha/siglens-core';
 import {
     computeSymbolFearGreedSeries,

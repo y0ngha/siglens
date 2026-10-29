@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 문서 단위 마우스 드래그를 프레임당 한 번의 가로 이동량으로 넘기는 훅.
+ */
 import type React from 'react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 

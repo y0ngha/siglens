@@ -1,4 +1,7 @@
 /**
+ * 종목 서브탭 골격의 섹션 카드 수 — 탭 본문 Suspense fallback과 탭 이동 골격이 공유한다.
+ */
+/**
  * 종목 서브탭 골격이 그리는 섹션 카드 수 — 탭 본문이 섹션 카드의 세로 목록인 탭만.
  *
  * 두 곳이 같은 수를 써야 한다: 탭 본문 안의 섹션 Suspense fallback(`SectionSkeleton`)과
@@ -16,8 +19,10 @@ export const SYMBOL_TAB_SECTION_COUNT = {
     position: 3,
 } as const satisfies Readonly<Record<string, number>>;
 
+/** 섹션 카드 골격을 쓰는 탭 키. */
 export type SectionSkeletonTab = keyof typeof SYMBOL_TAB_SECTION_COUNT;
 
+/** 탭 세그먼트가 섹션 카드 골격을 쓰는 탭인가. */
 export function isSectionSkeletonTab(tab: string): tab is SectionSkeletonTab {
     return Object.hasOwn(SYMBOL_TAB_SECTION_COUNT, tab);
 }

@@ -1,3 +1,6 @@
+/**
+ * 극심한 공포·탐욕 구간 진입·체류 기록 표(서버 렌더 본문).
+ */
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
@@ -19,7 +22,7 @@ interface FearGreedExtremeZoneRecordProps {
  * 서버 렌더 본문이다 — 크롤러가 JS 없이 표를 읽는다. 기록은 core
  * `summarizeExtremeZoneEpisodes`가 만들고, 이 컴포넌트는 그리기만 한다.
  *
- * 투자 권유로 읽히지 않게(사용자 지시 2026-10-05):
+ * 투자 권유로 읽히지 않게:
  *  - 진입 뒤 수익률은 보이지 않는다. 날짜·머문 거래일·극값 점수 같은 기록만 둔다.
  *  - 집계 기간과 "과거 기록이며 예측·권유가 아니다"라는 고지를 **표와 같은 블록에서
  *    항상** 보인다. 표만 떼어 읽히는 경로가 없다.

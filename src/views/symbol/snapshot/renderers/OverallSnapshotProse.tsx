@@ -1,8 +1,11 @@
+/**
+ * 종합 탭 SEO 스냅샷 산문 렌더러.
+ */
 import { useTranslations } from 'next-intl';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
-import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
+import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../utils/liveAnalysisCrossRef';
 import {
     ScenarioBullet,
     narrowOverallContent,
@@ -42,16 +45,15 @@ interface OverallSnapshotProseProps {
 
 /**
  * SEO pre-warm 스냅샷의 overall 탭 프로즈 렌더러 — `TechnicalSnapshotProse`가
- * 세운 패턴(spec 2026-07-24 Task 4)을 그대로 따르는 두 번째 탭 렌더러(Task 5).
+ * 세운 패턴을 그대로 따르는 overall 탭 렌더러.
  * `headlineKo`를 리드 문구로, `integratedConclusionKo`를 문단으로(`\n` 기준
  * 분리 — technical `summary`의 토픽 구분 관례와 동일하게 방어적으로 처리),
- * 강세/중립/약세 시나리오와 위험 요인을 각각 라벨 붙은 목록으로 렌더한다
- * (audit fix — 이전에는 neutral 시나리오와 riskFactorsKo를 드롭해 이 렌더러가
- * 대체하는 `OverallFactsSummary`보다 텍스트가 적었다).
+ * 강세/중립/약세 시나리오와 위험 요인을 각각 라벨 붙은 목록으로 렌더한다 —
+ * 하나라도 빠지면 이 렌더러가 대체하는 `OverallFactsSummary`보다 텍스트가 적어진다.
  *
  * `technicalBulletsKo`/`fundamentalBulletsKo`/`newsBulletsKo`/
  * `optionsBulletsKo`/`financialsBulletsKo`도 각각 라벨 붙은 목록(기술적
- * 분석/펀더멘털/뉴스/옵션/재무제표)으로 렌더한다(audit fix FIX 2) — 배열이
+ * 분석/펀더멘털/뉴스/옵션/재무제표)으로 렌더한다 — 배열이
  * 비어있으면 해당 섹션 헤딩 자체를 렌더하지 않는다(다른 목록 섹션들과
  * 동일한 "값 있을 때만" 계약).
  *

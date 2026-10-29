@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * SSR 스냅샷 산문을 라이브 분석·모바일에서 접는 `<details>` 아일랜드.
+ */
 import { useEffect, useState, type ReactNode } from 'react';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 
@@ -12,12 +15,9 @@ interface SnapshotProseDisclosureProps {
 /**
  * SSR 스냅샷 산문을 **접기**로 감싸는 클라이언트 아일랜드.
  *
- * 예전에는 라이브 분석이 뜨면 이 섹션을 `display: none`으로 감췄다
- * (`[data-analysis-view='plain'] [data-snapshot-prose]`). 그 섹션은 2026-07 thin
- * 콘텐츠 절벽 대응으로 넣은 SEO 자산인데, 구글은 `display:none` 텍스트를
- * 감가하고 아코디언(접힌 `<details>`) 안의 텍스트는 명시적으로 동등하게 취급한다.
- * 그래서 숨김을 접기로 바꾼다 — 텍스트는 DOM에 그대로 남고, 사용자는 펼쳐서
- * 라이브 분석과 비교할 수 있다.
+ * 라이브 분석이 뜨면 이 섹션을 감추지 않고 접는다. 이 섹션은 크롤러에게 본문을 싣는 SEO
+ * 자산인데, 구글은 `display:none` 텍스트를 감가하고 아코디언(접힌 `<details>`) 안의 텍스트는
+ * 동등하게 취급한다 — 텍스트는 DOM에 그대로 남고, 사용자는 펼쳐서 라이브 분석과 비교할 수 있다.
  *
  * 신호는 그대로 루트의 `data-analysis-view`다. 이 표식은 **라이브 위젯의**
  * `PlainAnalysisSwitch`만 세운다(스냅샷 안쪽 스위치는 `hideToggle`이라 세우지
@@ -29,7 +29,7 @@ interface SnapshotProseDisclosureProps {
  *
  * 모바일(`md` 미만)에서는 표식과 무관하게 접는다. 모바일은 분석을 바텀시트로 따로
  * 띄우는데 이 스냅샷 산문은 본문 아래에 그대로 펼쳐져 있어, 같은 분석이 시트와 본문에
- * 두 번 보였다(UX 감사 2026-10-05). `useIsMobileViewport`는 서버·첫 하이드레이션
+ * 두 번 보인다. `useIsMobileViewport`는 서버·첫 하이드레이션
  * 렌더에서 `false`라 서버 HTML은 계속 `open`이고(하이드레이션 불일치 없음, 접기 전과
  * 같은 SSR), 마운트 뒤에야 모바일이면 접힌다. 텍스트는 접혀도 DOM에 남는다.
  *

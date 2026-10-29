@@ -1,3 +1,6 @@
+/**
+ * 스냅샷 산문 렌더러들이 공유하는 라벨 붙은 글머리표 목록.
+ */
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { useTranslations } from 'next-intl';
@@ -13,15 +16,9 @@ interface SnapshotBulletListProps {
 /**
  * Shared list markup for the plain-string bullet arrays that recur across
  * every `*SnapshotProse` renderer (technical/overall/news/fundamental/
- * financials/congress) — labeled heading + `role="list"` (FIX 7a) +
- * `aria-hidden` bullet span + `min-w-0 break-words` item text (FIX 7b).
- * Originally extracted inside `OverallSnapshotProse` (PR #698 round-2 FIX 2)
- * for its own five axis-bullet arrays, then promoted here (PR #698 round-3
- * FIX 2) so the identical markup previously duplicated inline in
- * `OverallSnapshotProse` (strength/neutral/weak scenarios + risk factors),
- * `NewsSnapshotProse` (핵심 이벤트/다가오는 일정), `FundamentalSnapshotProse`/
- * `FinancialsSnapshotProse` (위험 요인), and `CongressSnapshotProse` (주목할
- * 인물) can't drift from each other.
+ * financials/congress) — labeled heading + `role="list"` + `aria-hidden`
+ * bullet span + `min-w-0 break-words` item text — so the renderers' list blocks
+ * (scenarios, risk factors, key events, notable members …) can't drift apart.
  *
  * Only for blocks whose items are plain strings rendered verbatim. Blocks
  * that compose an item from multiple fields (e.g. a label prefix + a

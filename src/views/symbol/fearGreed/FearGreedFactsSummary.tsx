@@ -1,33 +1,22 @@
+/**
+ * 종목 공포·탐욕 탭의 서버 렌더 사실 요약 — 크롤러가 JS 없이도 점수와 5개 지표를 받는다.
+ */
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
-import type {
-    Bar,
-    BuySellVolumeResult,
-    FearGreedReading,
-} from '@y0ngha/siglens-core';
-import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
+import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
 import {
     SENTIMENT_LABEL_KEY,
     WARNING_TEXT_KEY,
 } from '@/shared/lib/fearGreedLabels';
 import {
-    buildFearGreedFactorTable,
-    buildFearGreedGroupComparisonLine,
-    buildFearGreedFactorRankingLine,
-    buildFearGreedPeriodComparisonLine,
-    buildFearGreedYearRangeLine,
-    buildFearGreedRegimeDistributionLine,
-    buildFearGreedTransitionLine,
-    buildFearGreedMarketGapLine,
-    buildExtremeZoneRecord,
-    type FearGreedFactorTable,
-} from './utils/fearGreedFacts';
-import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
+    buildFearGreedSummaryModel,
+    type FearGreedMarketReading,
+} from './utils/fearGreedSummaryModel';
 import { FearGreedExtremeZoneRecord } from './FearGreedExtremeZoneRecord';
+import { FearGreedFactorTable } from './FearGreedFactorTable';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { AnalysisProvenanceNote } from '../snapshot/AnalysisProvenanceNote';
 
@@ -35,6 +24,7 @@ interface FearGreedFactsSummaryProps {
     symbol: string;
     /** 출처 고지(`AnalysisProvenanceNote`)가 시장별 데이터 출처를 고르는 데 쓴다. */
     marketProfile: MarketProfileId;
+    /** 페이지가 `symbolFearGreedInputs`로 넘긴 5년 일봉. */
     bars: Bar[];
     buySellVolume: BuySellVolumeResult[];
     /**
@@ -42,19 +32,14 @@ interface FearGreedFactsSummaryProps {
      * 둘은 한 문장에 함께 쓰이므로 묶어서 받는다 — 판독만 있고 이름이 빈 문장이
      * 생길 수 없다. 같은 날짜 점수가 있을 때만 차이 문장을 낸다. 조회 실패·미제공은 `null`.
      */
-    market?: {
-        readonly reading: FearGreedReading;
-        readonly label: string;
-    } | null;
+    market?: FearGreedMarketReading | null;
 }
 
 /**
  * 서버 계산 공포 탐욕 요약 — 크롤러가 JS 없이도 점수와 5-factor 수치를 받는다.
- * `computeFearGreedIndex`는 `@y0ngha/siglens-core`의 순수 함수(AI 없음,
- * deterministic)라 RSC 본문에서 직접 호출 가능하다. 클라 게이지(`FearGreedPage`)와
- * 상호보완적으로 공존한다 — 사용자에게도 동일한 수치가 보이므로 클로킹이 아니다.
- * `TechnicalFactsSummary`와 동일한 결정적 사실 층 패턴(bars/indicators props →
- * 순수 계산 → null이면 생략).
+ * 계산은 `@y0ngha/siglens-core`의 결정적 순수 함수(AI 없음)라 RSC 본문에서 직접 호출한다.
+ * 클라 게이지(`FearGreedPage`)와 같은 수치를 보이므로 클로킹이 아니다. `TechnicalFactsSummary`와
+ * 같은 결정적 사실 층 패턴이다(입력 → 순수 계산 → null이면 생략).
  */
 export function FearGreedFactsSummary({
     symbol,
@@ -67,113 +52,68 @@ export function FearGreedFactsSummary({
     // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
     // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
     // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다
-    // (fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고). 아래
-    // `buildFearGreedPeriodComparisonLine(points, tLabel)` 등 인자 전달 호출도
-    // 이 위젯 범위 안이라 이 직접 호출 하나로 파일 전체가 넓혀진다.
+    // (fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
     const tLabel = useTranslations('shared.enumLabel');
     const tFacts = useTranslations('views.symbol.fearGreedFacts');
     const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const tFearGreed = useTranslations('shared.lib.fearGreed');
     const locale = useResolvedLocale();
     const headingId = useId();
-    // 헤더 배지·색인 게이트·클라이언트 seed와 같은 계산을 공유한다(요청 스코프 메모).
-    // `bars`·`buySellVolume`은 페이지가 `symbolFearGreedInputs`로 넘긴 5년 시계열이다.
-    const { snapshot, history } = computeSymbolFearGreedSeries(
-        bars,
-        buySellVolume
+    const model = buildFearGreedSummaryModel(
+        { bars, buySellVolume, market, locale },
+        { tLabel, tFacts, tFactor }
     );
-    if (!snapshot) return null;
-
-    const score = Math.round(snapshot.score);
-    const factorTable = buildFearGreedFactorTable(snapshot, tFactor, locale);
-    // audit fix FIX 6 (option b): genuinely per-symbol narrative sentences
-    // built from group scores / factor ranking (numbers that already exist
-    // in `snapshot` but were unused) — materially improves the
-    // unique:boilerplate ratio over the fixed-template factor lines alone.
-    const groupComparisonLine = buildFearGreedGroupComparisonLine(
-        snapshot,
-        tFacts
-    );
-    const factorRankingLine = buildFearGreedFactorRankingLine(
-        snapshot,
-        tFacts,
-        tFactor
-    );
-
-    // 시계열 문장 3종. 위에서 계산한 같은 `history`(5년 일봉, 요청 스코프 메모로 헤더
-    // 배지·클라이언트 seed와 공유)를 쓴다 — 새 fetch도, 새 계산도 없다.
-    //
-    // 왜 필요한가: 이 페이지는 283개 URL이 서로 76.7% 겹치는 준중복 상태였고(5-gram
-    // Jaccard 실측, 형제 탭은 21~27%), 심볼별로 실제 달라지는 텍스트가 페이지의 4%뿐이었다.
-    // 아래 세 문장은 날짜·점수·체류일이 들어가 그 비율을 실질적으로 끌어올린다.
-    // 전부 로그인 없이 보이는 클라이언트 화면의 부분집합이라 클로킹이 아니다.
-    // 기준 시점. seed bars는 `quantizeBarsDataToLastClosed`가 **형성 중인 마지막 봉을
-    // 떼어낸** 상태라, 장중에는 클라이언트 게이지(실시간 봉 포함)와 점수가 다르다.
-    // 실측(2026-08-19 장중 QQQ): 이 블록 36점 vs 게이지 49점. 한 봉 차이가 퍼센타일
-    // 창을 통째로 밀기 때문이고, 설계상 그렇다(FearGreedPage.tsx 주석 참조).
-    //
-    // 숨기지 않고 **기준을 밝힌다**. 그래야 같은 화면의 두 수치가 모순이 아니라
-    // "종가 기준 vs 실시간"으로 읽힌다. 크롤 텍스트에 날짜가 들어가는 부수 효과도 있다.
-    const asOf = bars.at(-1)?.time;
-    const asOfLabel =
-        asOf === undefined ? null : toUtcIsoDate(new Date(asOf * 1000));
-
-    const points = scoredHistory(history);
-    const timeSeriesLines = [
-        buildFearGreedPeriodComparisonLine(points, tLabel, tFacts),
-        buildFearGreedYearRangeLine(points, tFacts),
-        buildFearGreedRegimeDistributionLine(points, tLabel, tFacts),
-        // 구간 전환 날짜와 같은 날 시장 대비 차이 — 종목마다 다른 사실이라 이 탭의
-        // 템플릿 비율을 낮춘다(siglens-core#252).
-        buildFearGreedTransitionLine(history, tLabel, tFacts),
-        market === null
-            ? null
-            : buildFearGreedMarketGapLine(
-                  history,
-                  market.reading,
-                  market.label,
-                  tFacts
-              ),
-    ].filter((line): line is string => line !== null);
-    // 같은 `history`로 계산한다 — 위 문장들과 기록 표의 기간이 갈리지 않는다.
-    const extremeZoneRecord = buildExtremeZoneRecord(history, tLabel, tFacts);
+    if (model === null) return null;
+    const { snapshot } = model;
 
     return (
         <section
             aria-labelledby={headingId}
             className="flex flex-col gap-3 rounded-lg bg-secondary-800 p-4"
         >
+            {/* 기준 시점 앞의 공백은 실제 텍스트다 — 여백만 두면 제목의 textContent가
+                `…요약(2026-10-28 종가 기준)`처럼 붙는다. */}
             <h2 id={headingId} className={HEADING_SECTION}>
                 {symbol} {t('FearGreedFactsSummary.fabc11')}
-                {asOfLabel !== null && (
-                    <span className="ml-2 font-normal text-secondary-400">
-                        {t('FearGreedFactsSummary.asOfClose', {
-                            v0: asOfLabel,
-                        })}
-                    </span>
+                {model.asOfLabel !== null && (
+                    <>
+                        {' '}
+                        <span className="ml-1 font-normal text-secondary-400">
+                            {t('FearGreedFactsSummary.asOfClose', {
+                                v0: model.asOfLabel,
+                            })}
+                        </span>
+                    </>
                 )}
             </h2>
             {/* 서술 문장이 점수 행(`<dl>`)보다 DOM에서 앞서야 한다 — 네이버가 본문
-                첫 텍스트로 스니펫을 만든다(`TechnicalFactsSummary`와 같은 이유, 2026-10-04). */}
+                첫 텍스트로 스니펫을 만든다(`TechnicalFactsSummary`와 같은 이유). */}
             <div className="space-y-1 text-sm leading-6 text-secondary-300">
-                {timeSeriesLines.map(line => (
+                {model.timeSeriesLines.map(line => (
                     <p key={line}>{line}</p>
                 ))}
                 {snapshot.warning !== null && (
                     <p>{tFearGreed(WARNING_TEXT_KEY[snapshot.warning])}</p>
                 )}
-                {groupComparisonLine !== null && <p>{groupComparisonLine}</p>}
-                {factorRankingLine !== null && <p>{factorRankingLine}</p>}
+                {model.groupComparisonLine !== null && (
+                    <p>{model.groupComparisonLine}</p>
+                )}
+                {model.factorRankingLine !== null && (
+                    <p>{model.factorRankingLine}</p>
+                )}
             </div>
-            <FactorTable table={factorTable} />
+            <FearGreedFactorTable table={model.factorTable} />
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">
                     <dt className="text-secondary-400">
                         {t('FearGreedFactsSummary.fa167e')}
                     </dt>
+                    {/* 괄호를 메시지 안에 둔다 — 괄호 문자는 로케일이 정한다. */}
                     <dd>
-                        {score} / 100 (
-                        {tLabel(SENTIMENT_LABEL_KEY[snapshot.label])})
+                        {t('FearGreedFactsSummary.scoreValue', {
+                            v0: model.score,
+                            v1: tLabel(SENTIMENT_LABEL_KEY[snapshot.label]),
+                        })}
                     </dd>
                 </div>
             </dl>
@@ -183,8 +123,8 @@ export function FearGreedFactsSummary({
                     sampleSize={snapshot.sampleSize}
                 />
             </p>
-            {extremeZoneRecord !== null && (
-                <FearGreedExtremeZoneRecord record={extremeZoneRecord} />
+            {model.extremeZoneRecord !== null && (
+                <FearGreedExtremeZoneRecord record={model.extremeZoneRecord} />
             )}
             {/* AI 서술 없이 규칙으로만 계산한 점수라는 고지. 요약 문장 전부 아래에 둔다. */}
             <AnalysisProvenanceNote
@@ -192,80 +132,5 @@ export function FearGreedFactsSummary({
                 variant="rule-based"
             />
         </section>
-    );
-}
-
-interface FactorTableProps {
-    readonly table: FearGreedFactorTable;
-}
-
-/**
- * 5개 지표를 표 하나로. 기준(`과거 값(최대 약 5년)과 견준 퍼센타일`)은 캡션에 한 번만 적고, 해석은
- * 평소 범위(25~75 퍼센타일)를 벗어난 지표에만 한 문장으로 붙인다.
- */
-function FactorTable({ table }: FactorTableProps) {
-    const t = useTranslations('views.symbol.fearGreedFacts');
-    return (
-        <div className="space-y-2">
-            <div className="overflow-x-auto">
-                <table className="w-full min-w-[22rem] text-left text-sm text-secondary-300">
-                    <caption className="pb-1.5 text-left text-xs text-secondary-400">
-                        {t('factorTableCaption')}
-                    </caption>
-                    <thead className="text-xs text-secondary-400">
-                        <tr>
-                            <th scope="col" className="py-1.5 pr-3 font-medium">
-                                {t('factorColName')}
-                            </th>
-                            <th scope="col" className="py-1.5 pr-3 font-medium">
-                                {t('factorColValue')}
-                            </th>
-                            <th scope="col" className="py-1.5 pr-3 font-medium">
-                                {t('factorColPercentile')}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {table.rows.map(row => (
-                            <tr
-                                key={row.label}
-                                className="border-t border-secondary-700"
-                            >
-                                <th
-                                    scope="row"
-                                    className="py-1.5 pr-3 font-medium text-secondary-200"
-                                >
-                                    {row.label}
-                                </th>
-                                <td className="py-1.5 pr-3 tabular-nums">
-                                    {row.value}
-                                </td>
-                                <td className="py-1.5 pr-3 tabular-nums">
-                                    {row.percentile}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <p className="text-sm leading-6 text-secondary-300">
-                {table.outliers.length === 0
-                    ? t('factorAllInRange')
-                    : t('factorOutliers', {
-                          v0: table.outliers
-                              .map(o =>
-                                  t('factorOutlierItem', {
-                                      v0: o.label,
-                                      v1: t(
-                                          o.level === 'high'
-                                              ? 'factorHighShort'
-                                              : 'factorLowShort'
-                                      ),
-                                  })
-                              )
-                              .join(t('clauseJoin')),
-                      })}
-            </p>
-        </div>
     );
 }

@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 차트 작도 항목의 on/off·강조 상태(차트 메뉴와 AI 패널이 공유).
+ */
 import { useCallback, useState } from 'react';
 
 const EMPTY_KEYS: ReadonlySet<string> = new Set();

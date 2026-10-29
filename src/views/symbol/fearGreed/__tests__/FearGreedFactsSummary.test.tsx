@@ -184,6 +184,23 @@ describe('FearGreedFactsSummary', () => {
      * 나온다는 가정 하에) `bars.at(-1)?.time`이 undefined가 되어 asOfLabel이
      * `null`로 떨어진다 — "종가 기준" 안내 span 자체가 생략되는 경로.
      */
+    it('제목의 기준 시점 앞에 실제 공백이 있다(textContent가 붙지 않는다)', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { getByRole } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        expect(getByRole('heading', { level: 2 }).textContent).toMatch(
+            /^AAPL 공포 탐욕 지수 요약 \(\d{4}-\d{2}-\d{2} 종가 기준\)$/
+        );
+    });
+
     it('bars가 비어 있으면 기준 시점(asOf) 안내를 렌더하지 않는다', () => {
         (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
 

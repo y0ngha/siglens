@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 분석 응답에서 차트·패널이 함께 쓰는 파생 값(키 레벨 클러스터·행동 가격).
+ */
 import { useMemo } from 'react';
 import {
     type AnalysisResponse,
@@ -27,6 +30,7 @@ interface UseAnalysisDerivedDataReturn {
 }
 
 // 여러 훅/컴포넌트가 동일 deps로 반복 메모하지 않도록 파생 데이터를 한 곳에 집중한다.
+/** 분석·봉에서 키 레벨 클러스터와 검증된 행동 가격·행동선을 한 번씩 메모한다. */
 export function useAnalysisDerivedData(
     analysis: AnalysisResponse,
     bars: Bar[]
