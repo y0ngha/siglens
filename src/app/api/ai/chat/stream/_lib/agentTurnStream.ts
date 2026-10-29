@@ -4,7 +4,10 @@ import {
     splitAgentFollowUps,
     type Tier,
 } from '@y0ngha/siglens-core';
-import type { NewChatMessage } from '@/entities/chat-conversation/model';
+import type {
+    ChatMessageRecord,
+    NewChatMessage,
+} from '@/entities/chat-conversation/model';
 import { getAgentProvider } from '@/entities/llm-provider/api/agent/getAgentProvider';
 import {
     AGENT_FALLBACK_MODEL,
@@ -44,7 +47,7 @@ export async function appendOrNotFound(
     repo: NonNullable<ReadyTurn['repo']>,
     conversationId: string,
     rows: NewChatMessage[]
-): Promise<Awaited<ReturnType<typeof repo.appendMessages>>> {
+): Promise<ChatMessageRecord[]> {
     try {
         return await repo.appendMessages(conversationId, rows);
     } catch (error) {

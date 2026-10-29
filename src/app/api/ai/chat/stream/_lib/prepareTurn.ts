@@ -6,7 +6,10 @@ import {
     type Tier,
 } from '@y0ngha/siglens-core';
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
-import { toAgentHistory } from '@/entities/chat-conversation/model';
+import {
+    toAgentHistory,
+    type ChatMessageRecord,
+} from '@/entities/chat-conversation/model';
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -59,9 +62,12 @@ const FK_VIOLATION_CODE = '23503';
 
 /** 메시지 INSERT가 대화 삭제 경합(FK 위반)으로 실패한 것인지 가린다. */
 export function isConversationGone(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) return false;
+    const cause: unknown = Reflect.get(error, 'cause');
     return (
-        (error as { cause?: { code?: unknown } } | null)?.cause?.code ===
-        FK_VIOLATION_CODE
+        typeof cause === 'object' &&
+        cause !== null &&
+        Reflect.get(cause, 'code') === FK_VIOLATION_CODE
     );
 }
 
@@ -163,7 +169,7 @@ export async function prepareMemberTurn(
         history =
             lastUserIndex >= 0 ? history.slice(0, lastUserIndex) : history;
     } else {
-        let saved;
+        let saved: ChatMessageRecord | undefined;
         try {
             [saved] = await repo.appendMessages(conversationId, [
                 { role: 'user', content: body.message },

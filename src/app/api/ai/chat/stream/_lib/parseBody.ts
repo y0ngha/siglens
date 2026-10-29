@@ -79,11 +79,18 @@ function parseGuestHistory(raw: unknown): AgentMessage[] | null {
 
 type Action = ParsedBody['action'];
 
-/** `action` 필드의 허용값 — 목록 밖 값은 기본값으로 덮지 않고 거절한다. */
-const ACTIONS: readonly Action[] = ['send', 'regenerate', 'edit'];
+/**
+ * `action` 필드의 허용값 — 목록 밖 값은 기본값으로 덮지 않고 거절한다.
+ * `satisfies Record<Action, true>`라 유니언에 멤버가 늘면 여기서 컴파일 에러가 난다.
+ */
+const ACTIONS = {
+    send: true,
+    regenerate: true,
+    edit: true,
+} as const satisfies Record<Action, true>;
 
 function isAction(x: unknown): x is Action {
-    return ACTIONS.some(action => action === x);
+    return typeof x === 'string' && Object.hasOwn(ACTIONS, x);
 }
 
 /**
