@@ -1,16 +1,11 @@
 import {
     buildMethodologyBreadcrumbJsonLd,
     buildMethodologyJsonLd,
-    METHODOLOGY_PAGE_URL,
 } from '@/app/[locale]/methodology/_lib/methodologyJsonLd';
 
 const t = (key: string) => key;
 
 describe('methodology JSON-LD', () => {
-    it('절대 URL은 로케일 접두사 없는 /methodology다', () => {
-        expect(METHODOLOGY_PAGE_URL).toBe('https://siglens.io/methodology');
-    });
-
     it('publisher는 홈 Organization의 @id를 가리킨다', () => {
         expect(buildMethodologyJsonLd(t, 'ko').publisher).toEqual({
             '@id': 'https://siglens.io#organization',

@@ -4,13 +4,9 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    SITE_URL,
-    SYMBOLS_PATH,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-
-/** 로케일 접두사 없는 `/symbols` 절대 URL — JSON-LD가 쓴다. */
-export const SYMBOLS_PAGE_URL = `${SITE_URL}${SYMBOLS_PATH}`;
+import { SYMBOLS_PAGE_URL } from './symbolsUrls';
 
 /** `<title>`·화면 제목의 짧은 이름(자산군 꼬리표 없음). */
 export function symbolsTitle(t: SeoTranslator): string {
@@ -32,7 +28,8 @@ export function symbolsDescription(t: SeoTranslator): string {
  *
  * `heading`은 화면 h1·브레드크럼 마디와 같은 짧은 제목이어야 한다 — `BreadcrumbList`의
  * `name`이 화면에 보이는 마디와 달라지면 구글이 마크업을 무시한다. `ItemList`는 싣지
- * 않는다: 416개 항목이면 JSON-LD만 50KB 가까이 늘어나는데, 크롤러가 얻어야 하는 것은
+ * 않는다: 416개 항목이면 JSON-LD만 50KB 가까이(근사치 —
+ * 재려면 항목 수를 센 뒤 `JSON.stringify(ItemList).length`를 잰다) 늘어나는데, 크롤러가 얻어야 하는 것은
  * 링크 자체이고 그건 이미 `<a>`로 있다.
  */
 export function buildSymbolsJsonLd(

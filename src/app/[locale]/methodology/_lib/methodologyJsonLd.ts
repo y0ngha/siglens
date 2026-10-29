@@ -1,5 +1,4 @@
 import {
-    METHODOLOGY_PATH,
     METHODOLOGY_UPDATED_AT,
     methodologyDescription,
     methodologyFullTitle,
@@ -10,13 +9,10 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     ORGANIZATION_JSON_LD_ID,
-    SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
-
-/** 로케일 접두사 없는 `/methodology` 절대 URL — 메타데이터와 JSON-LD가 함께 쓴다. */
-export const METHODOLOGY_PAGE_URL = `${SITE_URL}${METHODOLOGY_PATH}`;
+import { METHODOLOGY_PAGE_URL } from './methodologyUrls';
 
 /**
  * `/methodology`의 `WebPage` 노드. `buildWebPageJsonLd`는 심볼 페이지들이 공유하는 범용

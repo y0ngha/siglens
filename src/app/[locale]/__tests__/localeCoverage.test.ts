@@ -24,7 +24,7 @@ const PAGES = collectPages(APP_DIR);
 const METADATA_HELPER_IMPORT =
     /from '@\/app\/\[locale\]\/([^']*\/_lib\/[A-Za-z]+Metadata)'/g;
 
-/** 페이지에서 임포트로 이어지는 `_lib/*Metadata` 헬퍼의 실제 파일 경로(존재하지 않으면 빈 항목이 아니라 그대로 반환). */
+/** 페이지의 `_lib/*Metadata` 임포트에서 유도한 헬퍼 경로를 돌려준다(존재 여부는 확인하지 않는다 — `sourceWithMetadataHelpers`가 단언한다). */
 function metadataHelperPaths(source: string): string[] {
     return [...source.matchAll(METADATA_HELPER_IMPORT)].map(match =>
         join(APP_DIR, `${match[1]}.ts`)
@@ -122,14 +122,11 @@ describe('로케일 커버리지', () => {
         ['developers', 'developersMetadata'],
         ['backtesting', 'backtestingMetadata'],
         ['symbols', 'symbolsMetadata'],
-    ])('%s 페이지는 %s 헬퍼를 따라가며 헬퍼가 존재한다', (route, helper) => {
+    ])('%s 페이지는 %s 헬퍼를 임포트한다', (route, helper) => {
         const page = join(APP_DIR, route, 'page.tsx');
         expect(metadataHelperPaths(readFileSync(page, 'utf8'))).toEqual([
             join(APP_DIR, route, '_lib', `${helper}.ts`),
         ]);
-        expect(existsSync(join(APP_DIR, route, '_lib', `${helper}.ts`))).toBe(
-            true
-        );
     });
 
     it('페이지 목록이 비어 있지 않다 — 비면 아래 가드가 통째로 무력화된다', () => {

@@ -15,7 +15,7 @@ import {
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import { METHODOLOGY_PAGE_URL } from './methodologyJsonLd';
+import { METHODOLOGY_PAGE_URL } from './methodologyUrls';
 
 /**
  * `/methodology` 라우트의 `generateMetadata` 본체.

@@ -10,10 +10,8 @@ import { formatKoreanDate } from '@/shared/lib/legal';
 import { buildBreadcrumbJsonLd, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DevelopersPage } from '@/views/developers/DevelopersPage';
-import {
-    buildDevelopersJsonLd,
-    DEVELOPERS_PAGE_URL,
-} from '@/app/[locale]/developers/_lib/developersSeo';
+import { buildDevelopersJsonLd } from '@/app/[locale]/developers/_lib/developersSeo';
+import { DEVELOPERS_PAGE_URL } from '@/app/[locale]/developers/_lib/developersUrls';
 import { buildDevelopersMetadata } from '@/app/[locale]/developers/_lib/developersMetadata';
 
 // `/about`·`/methodology`와 같은 근거 — 본문이 메시지 카탈로그와 코드 상수(한도·오류 코드·도구 스펙)라

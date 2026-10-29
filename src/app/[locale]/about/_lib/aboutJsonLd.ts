@@ -1,5 +1,4 @@
 import {
-    ABOUT_PATH,
     ABOUT_UPDATED_AT,
     aboutDescription,
     aboutFullTitle,
@@ -12,13 +11,10 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     ORGANIZATION_JSON_LD_ID,
-    SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
-
-/** 로케일 접두사 없는 `/about` 절대 URL — 메타데이터와 JSON-LD가 함께 쓴다. */
-export const ABOUT_PAGE_URL = `${SITE_URL}${ABOUT_PATH}`;
+import { ABOUT_PAGE_URL } from './aboutUrls';
 
 /**
  * `/about`의 `AboutPage` 노드. `buildWebPageJsonLd`는 심볼 페이지들이 공유하는

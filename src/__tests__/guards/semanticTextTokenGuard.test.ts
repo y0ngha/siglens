@@ -237,7 +237,7 @@ function tintPairsIn(rawSource: string): TintPair[] {
     for (const m of source.matchAll(PAIR_RE)) {
         const token = m[1];
         // **줄이 아니라 초기화식 단위로 짝을 찾는다.** 틴트를 얹은 요소와
-        // 그 위에 놓인 글자는 거의 언제나 다른 줄에 있다 — `terms/page.tsx`의
+        // 그 위에 놓인 글자는 거의 언제나 다른 줄에 있다 — `terms/_components/TermsContent.tsx`의
         // `bg-ui-danger/5` 컨테이너와 그 안 `text-ui-danger-text`가 그렇고,
         // 클래스 맵 객체도 키마다 줄이 나뉜다. 줄로 자르면 그 알파들이
         // 불변식 검사에서 통째로 빠져, 규칙의 근거가 실사용을 못 덮는다.

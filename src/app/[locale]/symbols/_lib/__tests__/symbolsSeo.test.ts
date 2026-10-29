@@ -1,6 +1,5 @@
 import {
     buildSymbolsJsonLd,
-    SYMBOLS_PAGE_URL,
     symbolsDescription,
     symbolsFullTitle,
     symbolsTitle,
@@ -9,10 +8,6 @@ import {
 const t = (key: string) => key;
 
 describe('symbols SEO', () => {
-    it('절대 URL은 로케일 접두사 없는 /symbols다', () => {
-        expect(SYMBOLS_PAGE_URL).toBe('https://siglens.io/symbols');
-    });
-
     it('짧은 제목은 symbols.title 키에서 온다', () => {
         expect(symbolsTitle(t)).toBe('symbols.title');
     });

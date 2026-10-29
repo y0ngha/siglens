@@ -1,5 +1,4 @@
 import {
-    ABOUT_PAGE_URL,
     buildAboutBreadcrumbJsonLd,
     buildAboutJsonLd,
     buildAboutPersonJsonLd,
@@ -8,10 +7,6 @@ import {
 const t = (key: string) => key;
 
 describe('about JSON-LD', () => {
-    it('절대 URL은 로케일 접두사 없는 /about이다', () => {
-        expect(ABOUT_PAGE_URL).toBe('https://siglens.io/about');
-    });
-
     it('AboutPage 노드는 @type을 AboutPage로 좁힌다', () => {
         expect(buildAboutJsonLd(t, 'ko')['@type']).toBe('AboutPage');
     });

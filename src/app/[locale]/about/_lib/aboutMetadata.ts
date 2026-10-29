@@ -15,7 +15,7 @@ import {
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import { ABOUT_PAGE_URL } from './aboutJsonLd';
+import { ABOUT_PAGE_URL } from './aboutUrls';
 
 /**
  * `/about` 라우트의 `generateMetadata` 본체.

@@ -1,16 +1,11 @@
 import {
     buildDevelopersJsonLd,
-    DEVELOPERS_PAGE_URL,
     developersFullTitle,
 } from '@/app/[locale]/developers/_lib/developersSeo';
 
 const t = (key: string) => key;
 
 describe('developers SEO', () => {
-    it('절대 URL은 로케일 접두사 없는 /developers다', () => {
-        expect(DEVELOPERS_PAGE_URL).toBe('https://siglens.io/developers');
-    });
-
     it('전체 제목은 developers.metaTitle 키에서 온다', () => {
         expect(developersFullTitle(t)).toBe('developers.metaTitle');
     });

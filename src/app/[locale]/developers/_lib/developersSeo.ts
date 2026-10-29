@@ -1,17 +1,11 @@
-import {
-    DEVELOPERS_PATH,
-    DEVELOPERS_UPDATED_AT,
-} from '@/shared/config/publicApi';
+import { DEVELOPERS_UPDATED_AT } from '@/shared/config/publicApi';
 import {
     buildWebPageJsonLd,
     ORGANIZATION_JSON_LD_ID,
-    SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
-
-/** 로케일 접두사 없는 `/developers` 절대 URL — 메타데이터와 JSON-LD가 함께 쓴다. */
-export const DEVELOPERS_PAGE_URL = `${SITE_URL}${DEVELOPERS_PATH}`;
+import { DEVELOPERS_PAGE_URL } from './developersUrls';
 
 /**
  * `<title>`·OG 제목. `/methodology`와 같은 이유로 레이아웃 템플릿(`%s | 시그렌즈`)을 타지 않는다 —

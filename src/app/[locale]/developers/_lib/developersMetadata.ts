@@ -13,7 +13,8 @@ import {
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import { DEVELOPERS_PAGE_URL, developersFullTitle } from './developersSeo';
+import { DEVELOPERS_PAGE_URL } from './developersUrls';
+import { developersFullTitle } from './developersSeo';
 
 /**
  * `/developers` 라우트의 `generateMetadata` 본체.
