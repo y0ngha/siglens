@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AnalysisRateLimitPayload } from '@/shared/lib/sse/analysisRateLimit';
 import { subscribeAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
 import { shouldOpenSignupModal } from '../lib/shouldOpenSignupModal';
@@ -39,5 +39,6 @@ export function useAnalysisRateLimitNotice(): AnalysisRateLimitNotice {
         []
     );
 
-    return { notice, dismiss: () => setNotice(null) };
+    const dismiss = useCallback(() => setNotice(null), []);
+    return { notice, dismiss };
 }

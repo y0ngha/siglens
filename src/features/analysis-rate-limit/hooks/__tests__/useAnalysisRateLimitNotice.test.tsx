@@ -10,6 +10,29 @@ const GUEST_QUOTA: AnalysisRateLimitPayload = {
     retryAt: RETRY_AT,
 };
 
+const { unsubscribeSpy } = vi.hoisted(() => ({ unsubscribeSpy: vi.fn() }));
+
+// 실제 채널은 그대로 쓰고, 해제 함수가 불렸는지만 기록한다 — 언마운트 뒤에는
+// `result.current`가 갱신되지 않아 상태로는 해제 여부를 볼 수 없다.
+vi.mock('@/shared/lib/sse/analysisRateLimitSignal', async importOriginal => {
+    const actual =
+        await importOriginal<
+            typeof import('@/shared/lib/sse/analysisRateLimitSignal')
+        >();
+    return {
+        ...actual,
+        subscribeAnalysisRateLimited: (
+            listener: Parameters<typeof actual.subscribeAnalysisRateLimited>[0]
+        ) => {
+            const unsubscribe = actual.subscribeAnalysisRateLimited(listener);
+            return () => {
+                unsubscribeSpy();
+                unsubscribe();
+            };
+        },
+    };
+});
+
 function publish(payload: AnalysisRateLimitPayload): void {
     act(() => publishAnalysisRateLimited(payload));
 }
@@ -38,11 +61,17 @@ describe('useAnalysisRateLimitNotice', () => {
     });
 
     it('unsubscribes on unmount', () => {
-        const { result, unmount } = renderHook(() =>
-            useAnalysisRateLimitNotice()
-        );
+        unsubscribeSpy.mockClear();
+        const { unmount } = renderHook(() => useAnalysisRateLimitNotice());
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
         unmount();
+        expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps dismiss stable across renders', () => {
+        const { result } = renderHook(() => useAnalysisRateLimitNotice());
+        const { dismiss } = result.current;
         publish(GUEST_QUOTA);
-        expect(result.current.notice).toBeNull();
+        expect(result.current.dismiss).toBe(dismiss);
     });
 });
