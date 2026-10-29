@@ -19,15 +19,6 @@ export type SearchStatus =
     | 'emptyKorean'
     | 'empty';
 
-/** `searchStatus`의 입력. `useTickerSearch`가 주는 값과 지금 친 문자열이다. */
-export interface SearchStatusInput {
-    query: string;
-    hasQuery: boolean;
-    isSearching: boolean;
-    isError: boolean;
-    resultCount: number;
-}
-
 /**
  * 검색 조회 한 번의 상태. `useTickerSearch`의 반환 타입이 이 인터페이스를 확장하므로
  * 필드가 바뀌면 컴파일러가 두 곳을 함께 맞추게 한다. `results`는 개수만 읽어 요소 타입을 묻지 않는다.
@@ -43,6 +34,15 @@ export interface SearchSnapshot {
      * 한 박자 전 것이다 — 첫 결과로 바로 이동하는 호출부(검색 키)가 이를 확인해야 한다.
      */
     debouncedQuery: string;
+}
+
+/** `searchStatus`의 입력. 조회 상태는 `SearchSnapshot`에서 가져오고, 지금 친 문자열과 결과 수를 더한다. */
+export interface SearchStatusInput extends Pick<
+    SearchSnapshot,
+    'hasQuery' | 'isSearching' | 'isError'
+> {
+    query: string;
+    resultCount: number;
 }
 
 /**

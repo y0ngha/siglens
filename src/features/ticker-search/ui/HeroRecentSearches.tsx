@@ -21,6 +21,8 @@ interface HeroRecentSearchesProps {
      * 그대로 두면 포커스가 `<body>`로 떨어져 다음 Tab이 문서 처음부터 시작한다(WCAG 2.4.3).
      */
     onEmptied: () => void;
+    /** 바깥 여백 등 배치 클래스. 여백은 호출부가 정한다. */
+    className?: string;
 }
 
 /**
@@ -35,6 +37,7 @@ export function HeroRecentSearches({
     onRemove,
     onClearAll,
     onEmptied,
+    className,
 }: HeroRecentSearchesProps) {
     const t = useTranslations('features.ticker-search');
     const tRecent = useTranslations('features.ticker-search.recentSearch');
@@ -63,7 +66,10 @@ export function HeroRecentSearches({
         <div
             ref={chipRowRef}
             tabIndex={-1}
-            className="mt-4 flex flex-wrap items-center justify-center gap-2 outline-none lg:justify-start"
+            className={cn(
+                'flex flex-wrap items-center justify-center gap-2 outline-none lg:justify-start',
+                className
+            )}
         >
             <span className="text-xs text-secondary-400">
                 {t('SymbolSearchPanel.d7fe41')}

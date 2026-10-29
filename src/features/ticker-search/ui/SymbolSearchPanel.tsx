@@ -76,6 +76,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                 onRemove={removeSearch}
                 onClearAll={clearAll}
                 onEmptied={focusVisibleSearchSurface}
+                className="mt-4"
             />
         </div>
     );
