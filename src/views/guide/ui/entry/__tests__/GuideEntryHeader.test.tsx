@@ -28,7 +28,7 @@ function renderHeader(entry: GuideEntry) {
 }
 
 describe('GuideEntryHeader', () => {
-    it('shows the aliases list for a term entry', () => {
+    it('용어 항목은 다른 이름 목록을 보여 준다', () => {
         renderHeader(guideEntry({ slug: 'rsi', aliases: ALIASES }));
 
         expect(screen.getByRole('term')).toHaveTextContent(aliasesLabel);
@@ -37,7 +37,7 @@ describe('GuideEntryHeader', () => {
         ).toEqual(ALIASES);
     });
 
-    it('hides the aliases of a howto entry — they exist for search only', () => {
+    it('하우투 항목의 다른 이름은 숨긴다 — 검색용일 뿐이다', () => {
         renderHeader(
             guideEntry({
                 slug: 'read-rsi',
@@ -50,13 +50,13 @@ describe('GuideEntryHeader', () => {
         ALIASES.forEach(alias => expect(screen.queryByText(alias)).toBeNull());
     });
 
-    it('renders no aliases list when a term entry has none', () => {
+    it('다른 이름이 없는 용어 항목은 목록을 그리지 않는다', () => {
         renderHeader(guideEntry({ slug: 'macd', aliases: [] }));
 
         expect(screen.queryByRole('term')).toBeNull();
     });
 
-    it('renders the title as the h1 and the updated date as a machine-readable time', () => {
+    it('제목은 h1, 수정일은 기계가 읽는 time 요소로 그린다', () => {
         const entry = guideEntry({ slug: 'rsi', title: 'RSI' });
         renderHeader(entry);
 

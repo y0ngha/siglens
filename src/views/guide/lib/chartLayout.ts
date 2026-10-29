@@ -189,28 +189,18 @@ export function splitRuns(
     xOf: (index: number) => number,
     yOf: (value: number) => number
 ): ChartPoint[][] {
-    // 끊김(null·비유한값)은 null 점이 된다. 구간은 앞이 끊긴 점에서 시작해 뒤가 끊긴 점에서 끝나므로
-    // 경계 인덱스를 한 번씩 훑어 모은 뒤 잘라 낸다 — 점을 하나씩 덧붙여 배열을 복사하면 O(n²)이다.
-    const points = values.map((value, index): ChartPoint | null =>
+    // 유한한 칸만 원래 인덱스와 함께 한 번 모아 처음부터 `ChartPoint`로 둔다(잘라 낸 뒤 형을 다시 좁히지 않는다).
+    // 앞 칸과 인덱스가 이어지지 않는 점이 구간 시작이다. 경계만 모아 한 번씩 자르므로 O(n)이다.
+    const drawn = values.flatMap((value, index) =>
         value === null || !Number.isFinite(value)
-            ? null
-            : { x: xOf(index), y: yOf(value) }
+            ? []
+            : [{ index, point: { x: xOf(index), y: yOf(value) } }]
     );
-    const isPointAt = (index: number): boolean =>
-        (points[index] ?? null) !== null;
-    const starts = points.flatMap((point, index) =>
-        point !== null && !isPointAt(index - 1) ? [index] : []
+    const points: ChartPoint[] = drawn.map(({ point }) => point);
+    const starts = drawn.flatMap(({ index }, k) =>
+        k === 0 || drawn[k - 1].index !== index - 1 ? [k] : []
     );
-    const ends = points.flatMap((point, index) =>
-        point !== null && !isPointAt(index + 1) ? [index + 1] : []
-    );
-    return starts.map((start, run) =>
-        points.slice(start, ends[run]).filter(isChartPoint)
-    );
-}
-
-function isChartPoint(point: ChartPoint | null): point is ChartPoint {
-    return point !== null;
+    return starts.map((start, run) => points.slice(start, starts[run + 1]));
 }
 
 /** 점 목록 → SVG `points` 속성 문자열(소수 한 자리). */

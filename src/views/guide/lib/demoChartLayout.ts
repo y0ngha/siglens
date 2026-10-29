@@ -301,38 +301,23 @@ export interface BandEdge {
     readonly lower: number;
 }
 
-/** 띠(`band`)에서 위·아래 값이 모두 유한한 칸만 남긴다. 두 칸 미만이면 띠를 그리지 않는다. */
+/** 띠 채움 다각형을 이루는 데 필요한 최소 칸 수 — 한 칸으로는 넓이가 없어 띠를 그리지 않는다. */
+const MIN_BAND_EDGES = 2;
+
+/**
+ * 띠(`band`)에서 위·아래 값이 모두 유한한 칸만 남긴다. `MIN_BAND_EDGES`보다 적으면 null —
+ * 띠 도형(`DemoOverlayShape`)과 띠 라벨이 이 null 하나로 그리지 않음을 판단해 규칙이 한 곳에만 있다.
+ */
 export function bandEdges(
     overlay: Extract<DemoOverlay, { kind: 'band' }>
-): BandEdge[] {
-    return overlay.upper.flatMap((upper, i) => {
+): readonly BandEdge[] | null {
+    const edges = overlay.upper.flatMap((upper, i) => {
         const lower = overlay.lower[i];
         return isFiniteValue(upper) && isFiniteValue(lower)
             ? [{ i, upper, lower }]
             : [];
     });
-}
-
-/**
- * 오버레이에 그릴 도형이 있는지. 유효 칸이 2개 미만인 띠와 없는 봉을 가리키는 표식은 도형이 없다 —
- * `DemoOverlayShape`는 이때 감싸는 `<g>`도 내지 않아 빈 그룹이 SVG에 남지 않는다.
- */
-export function isOverlayDrawable(
-    overlay: DemoOverlay,
-    bars: readonly DemoBar[]
-): boolean {
-    switch (overlay.kind) {
-        case 'band':
-            return bandEdges(overlay).length >= 2;
-        case 'marker':
-            return bars[overlay.i] !== undefined;
-        case 'zone':
-        case 'profile':
-        case 'level':
-        case 'line':
-        case 'series':
-            return true;
-    }
+    return edges.length < MIN_BAND_EDGES ? null : edges;
 }
 
 /** 표식 화살표의 끝(봉 쪽)과 밑변 y. 도형과 라벨 자리가 같은 값을 읽어 라벨이 화살표에 맞춰 붙는다. */
@@ -343,7 +328,7 @@ export interface MarkerGeometry {
     readonly above: boolean;
 }
 
-/** 표식이 가리키는 봉이 없으면 null. */
+/** 표식이 가리키는 봉이 없으면 null — 도형과 라벨 모두 이 null 하나로 표식을 건너뛴다. */
 export function markerGeometry(
     overlay: Extract<DemoOverlay, { kind: 'marker' }>,
     bars: readonly DemoBar[],
@@ -486,8 +471,8 @@ function labelRequest(
                       colour: { palette: 'zone' },
                   };
         case 'band': {
-            // 띠를 못 그리면(유효 칸 2개 미만) 라벨도 없다.
-            if (bandEdges(overlay).length < 2 || overlay.label === '')
+            // 띠를 못 그리면 라벨도 없다.
+            if (bandEdges(overlay) === null || overlay.label === '')
                 return null;
             const upperIdx = lastFiniteIndex(overlay.upper);
             const upperValue = overlay.upper[upperIdx];

@@ -37,7 +37,7 @@ function renderChips(
 }
 
 describe('GuideFilterChips', () => {
-    it('marks only the selected chip as pressed', () => {
+    it('고른 칩만 눌린 상태로 표시한다', () => {
         const group = renderChips('indicators');
 
         expect(
@@ -47,7 +47,7 @@ describe('GuideFilterChips', () => {
         ).toEqual(['false', 'true', 'false']);
     });
 
-    it('keeps the chip name unchanged when pressed and separates the count with a real space', () => {
+    it('눌려도 칩 이름은 그대로이고 개수와는 실제 공백으로 떨어진다', () => {
         const group = renderChips('indicators');
 
         expect(
@@ -55,7 +55,7 @@ describe('GuideFilterChips', () => {
         ).toHaveAccessibleName(`${chips[1].label} ${chips[1].count}`);
     });
 
-    it('styles the active chip and its count differently from idle chips', () => {
+    it('고른 칩과 그 개수는 다른 칩과 다른 색으로 그린다', () => {
         const group = renderChips(GUIDE_FILTER_ALL);
         const [active, idle] = group.getAllByRole('button');
 
@@ -65,7 +65,7 @@ describe('GuideFilterChips', () => {
         expect(idle.querySelector('span')).toHaveClass('text-secondary-400');
     });
 
-    it('reports the clicked chip value', async () => {
+    it('누른 칩의 값을 알린다', async () => {
         const onSelect = vi.fn();
         const group = renderChips(GUIDE_FILTER_ALL, onSelect);
 

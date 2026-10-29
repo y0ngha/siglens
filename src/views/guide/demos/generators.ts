@@ -89,6 +89,57 @@ function segmentOf(waypoints: readonly Waypoint[], abs: number): number {
     );
 }
 
+/** 극값 하나가 눌러 주는 이웃 봉 범위(앞뒤 각각). */
+const EXTREMUM_NEIGHBOURS = 3;
+
+/** 몸통이 바뀐 뒤 고가·저가가 몸통을 감싸게 다시 맞춘다. */
+function wrapBody(bar: DemoBar): DemoBar {
+    return {
+        ...bar,
+        high: Math.max(bar.high, bar.open, bar.close),
+        low: Math.min(bar.low, bar.open, bar.close),
+    };
+}
+
+/** 극값 옆 봉을 극값보다 조금(0.15%) 안쪽으로 누른다. */
+function clampInside(bar: DemoBar, price: number, isPeak: boolean): DemoBar {
+    if (isPeak) {
+        const cap = price * 0.9985;
+        return wrapBody({
+            ...bar,
+            open: Math.min(bar.open, cap),
+            close: Math.min(bar.close, cap),
+            high: Math.min(bar.high, cap),
+        });
+    }
+    const floor = price * 1.0015;
+    return wrapBody({
+        ...bar,
+        open: Math.max(bar.open, floor),
+        close: Math.max(bar.close, floor),
+        low: Math.max(bar.low, floor),
+    });
+}
+
+/** 극값 봉의 고가(또는 저가)를 꼭짓점 가격에 정확히 맞춘다. */
+function pinExtremum(bar: DemoBar, price: number, isPeak: boolean): DemoBar {
+    return wrapBody(
+        isPeak
+            ? {
+                  ...bar,
+                  high: price,
+                  open: Math.min(bar.open, price),
+                  close: Math.min(bar.close, price),
+              }
+            : {
+                  ...bar,
+                  low: price,
+                  open: Math.max(bar.open, price),
+                  close: Math.max(bar.close, price),
+              }
+    );
+}
+
 /**
  * 웨이포인트(꼭짓점)를 지나가는 OHLC 봉열을 만든다.
  *
@@ -172,57 +223,6 @@ export function pathToBars(
                 : bar;
         });
     }, rawBars);
-}
-
-/** 극값 하나가 눌러 주는 이웃 봉 범위(앞뒤 각각). */
-const EXTREMUM_NEIGHBOURS = 3;
-
-/** 몸통이 바뀐 뒤 고가·저가가 몸통을 감싸게 다시 맞춘다. */
-function wrapBody(bar: DemoBar): DemoBar {
-    return {
-        ...bar,
-        high: Math.max(bar.high, bar.open, bar.close),
-        low: Math.min(bar.low, bar.open, bar.close),
-    };
-}
-
-/** 극값 옆 봉을 극값보다 조금(0.15%) 안쪽으로 누른다. */
-function clampInside(bar: DemoBar, price: number, isPeak: boolean): DemoBar {
-    if (isPeak) {
-        const cap = price * 0.9985;
-        return wrapBody({
-            ...bar,
-            open: Math.min(bar.open, cap),
-            close: Math.min(bar.close, cap),
-            high: Math.min(bar.high, cap),
-        });
-    }
-    const floor = price * 1.0015;
-    return wrapBody({
-        ...bar,
-        open: Math.max(bar.open, floor),
-        close: Math.max(bar.close, floor),
-        low: Math.max(bar.low, floor),
-    });
-}
-
-/** 극값 봉의 고가(또는 저가)를 꼭짓점 가격에 정확히 맞춘다. */
-function pinExtremum(bar: DemoBar, price: number, isPeak: boolean): DemoBar {
-    return wrapBody(
-        isPeak
-            ? {
-                  ...bar,
-                  high: price,
-                  open: Math.min(bar.open, price),
-                  close: Math.min(bar.close, price),
-              }
-            : {
-                  ...bar,
-                  low: price,
-                  open: Math.max(bar.open, price),
-                  close: Math.max(bar.close, price),
-              }
-    );
 }
 
 /** 두 가격 사이를 잇는 단순 추세 봉열 (`pathToBars`의 두 점 버전). */

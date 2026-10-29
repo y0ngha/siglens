@@ -16,7 +16,6 @@ import {
     demoChartFrame,
     demoPriceDomain,
     isFiniteValue,
-    isOverlayDrawable,
     LABEL_BOX_PAD_Y,
     LABEL_INSET,
     labelBoxAt,
@@ -215,42 +214,16 @@ describe('bandEdges', () => {
             { i: 3, upper: 8, lower: 4 },
         ]);
     });
-});
 
-describe('isOverlayDrawable', () => {
-    const band = (upper: (number | null)[], lower: (number | null)[]) =>
-        ({ kind: 'band', upper, lower, label: '' }) satisfies DemoOverlay;
-    const marker = (i: number) =>
-        ({
-            kind: 'marker',
-            i,
-            position: 'above',
-            label: 'M',
-            tone: 'bull',
-        }) satisfies DemoOverlay;
-
-    it('유효 칸이 둘 이상인 띠는 그린다', () => {
-        expect(isOverlayDrawable(band([5, null, 7], [1, 2, 3]), [])).toBe(true);
-    });
-
-    it('유효 칸이 둘 미만인 띠는 건너뛴다', () => {
-        expect(isOverlayDrawable(band([5, null, 7], [1, 2, null]), [])).toBe(
-            false
-        );
-    });
-
-    it('있는 봉을 가리키는 표식은 그린다', () => {
-        expect(isOverlayDrawable(marker(9), flatBars(10))).toBe(true);
-    });
-
-    it('마지막 봉 너머를 가리키는 표식은 건너뛴다', () => {
-        expect(isOverlayDrawable(marker(10), flatBars(10))).toBe(false);
-    });
-
-    it('나머지 오버레이 종류는 항상 그린다', () => {
+    it('유효 칸이 둘 미만이면 띠를 그리지 않도록 null이다', () => {
         expect(
-            isOverlayDrawable({ kind: 'level', price: 1, label: 'L' }, [])
-        ).toBe(true);
+            bandEdges({
+                kind: 'band',
+                upper: [5, null, 7],
+                lower: [1, 2, null],
+                label: '',
+            })
+        ).toBeNull();
     });
 });
 

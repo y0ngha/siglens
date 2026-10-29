@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
 import { getGuideDemo } from '@/views/guide/demos/registry';
 import type { DemoBar, GuideDemo } from '@/views/guide/demos/types';
@@ -45,7 +44,7 @@ describe('GuideDemoChart', () => {
         expect(container.textContent?.split('설명용 캡션')).toHaveLength(2);
     });
 
-    it('omits the figcaption and falls back to a localized description without a caption', () => {
+    it('omits the figcaption and links a fallback <desc> without a caption', () => {
         const demo = demoOf('indicators', 'macd');
         const { container } = renderWithIntl(
             <GuideDemoChart caption={null} demo={demo} title="MACD" />
@@ -53,12 +52,10 @@ describe('GuideDemoChart', () => {
         expect(container.querySelector('figcaption')).toBeNull();
         const svg = container.querySelector('svg');
         const desc = container.querySelector('desc');
+        // 설명 문구 자체는 실제 번역기로 `demoDescription.test.ts`가 검증한다 — 여기서는 연결만 본다.
+        expect(desc).not.toBeNull();
+        expect(desc?.id).not.toBe('');
         expect(svg?.getAttribute('aria-describedby')).toBe(desc?.id);
-        expect(desc?.textContent).toBe(
-            ko.views.guide.demoFallbackDescriptionWithPanes
-                .replace('{count}', String(demo.bars.length))
-                .replace('{panes}', '12-26-9')
-        );
     });
 
     it('joins several pane names with the locale list format', () => {
@@ -75,19 +72,6 @@ describe('GuideDemoChart', () => {
         );
         expect(container.querySelector('desc')?.textContent).toBe(
             'Example chart of 3 candlesticks (indicator panes: RSI 14 and Volume)'
-        );
-    });
-
-    it('describes a demo without panes by its bar count only', () => {
-        const demo = demoOf('candlesticks', 'hammer-shooting-star');
-        const { container } = renderWithIntl(
-            <GuideDemoChart caption={null} demo={demo} title="t" />
-        );
-        expect(container.querySelector('desc')?.textContent).toBe(
-            ko.views.guide.demoFallbackDescription.replace(
-                '{count}',
-                String(demo.bars.length)
-            )
         );
     });
 

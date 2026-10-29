@@ -20,12 +20,12 @@ function renderPager(
 }
 
 describe('GuidePager', () => {
-    it('renders nothing when there is neither a previous nor a next entry', () => {
+    it('이전·다음 항목이 모두 없으면 아무것도 그리지 않는다', () => {
         const { container } = renderPager({ previous: null, next: null });
         expect(container.childElementCount).toBe(0);
     });
 
-    it('names the navigation landmark and links both neighbours', () => {
+    it('내비게이션 랜드마크에 이름을 달고 양쪽 이웃 항목을 잇는다', () => {
         renderPager({ previous, next });
         const nav = screen.getByRole('navigation', { name: '항목 넘기기' });
         const links = Array.from(nav.querySelectorAll('a'));
@@ -35,7 +35,7 @@ describe('GuidePager', () => {
         ]);
     });
 
-    it('keeps an empty first column so "next" stays on the right without a previous entry', () => {
+    it('이전 항목이 없어도 첫 칸을 비워 "다음"이 오른쪽에 남는다', () => {
         renderPager({ previous: null, next });
         const nav = screen.getByRole('navigation', { name: '항목 넘기기' });
         expect(nav.children).toHaveLength(2);

@@ -1,5 +1,3 @@
-'use client';
-
 /** 가이드 목록의 분류 칩 줄(토글 버튼 묶음). */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
