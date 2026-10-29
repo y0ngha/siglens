@@ -1,3 +1,5 @@
+'use client';
+
 /** 가이드 검색 결과가 없을 때의 안내 — AI에게 묻기와 필터 지우기. */
 import { useTranslations } from 'next-intl';
 import { aiAskUrl } from '@/shared/config/aiHost';

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import en from '../../../../../messages/en.json';
 import { getGuideDemo } from '@/views/guide/demos/registry';
 import type { DemoBar, GuideDemo } from '@/views/guide/demos/types';
 import { estimateLabelWidth } from '@/views/guide/lib/chartLayout';
@@ -66,9 +65,6 @@ describe('GuideDemoChart', () => {
         const { container } = renderWithIntl(
             <GuideDemoChart caption={null} demo={demo} title="t" />,
             { locale: 'en' }
-        );
-        expect(en.views.guide.demoFallbackDescriptionWithPanes).toContain(
-            '(indicator panes: {panes})'
         );
         expect(container.querySelector('desc')?.textContent).toBe(
             'Example chart of 3 candlesticks (indicator panes: RSI 14 and Volume)'
