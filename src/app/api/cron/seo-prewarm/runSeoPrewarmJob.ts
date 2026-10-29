@@ -55,7 +55,8 @@ export async function runSeoPrewarmJob(
             JSON.stringify(outcome)
         );
     });
-    // 정리는 배치 뒤에 둬 정리 실패가 배치 결과나 락 해제를 늦추지 못한다.
+    // 정리는 배치 뒤에 둬 정리 실패가 배치 결과에 영향을 주지 못하고, 락 해제를 늦추는 것도
+    // 한 번의 bounded 쿼리 왕복만큼으로 제한된다.
     // `pruneAnalysisHistory`·`pruneExpiredRows`는 스스로 던지지 않지만, DB 클라이언트 조회·저장소 생성의
     // 예외까지 여기서 막는다.
     await logFailure('prune', async () => {
