@@ -1,25 +1,21 @@
 'use client';
 
-import {
-    useCallback,
-    useEffect,
-    useId,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import { localePath } from '@/shared/i18n/locales';
-import { useShareable } from '../model/ShareableAnalysisContext';
-import type { ShareableRegistration } from '../model/ShareableAnalysisContext';
-import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 import type { Tier } from '@y0ngha/siglens-core';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
-import { MAX_CHART_BARS } from '@/entities/shared-analysis/types';
-import { canShareNatively, isShareAbort } from '@/shared/lib/share';
-import { SITE_URL } from '@/shared/lib/seo';
+import { useShareable } from '../model/ShareableAnalysisContext';
+import type {
+    ShareableRegistration,
+    ShareableStatus,
+} from '../model/ShareableAnalysisContext';
+import { buildShareSnapshotInput } from '../lib/buildShareSnapshotInput';
+import { buildShareUrl } from '../lib/shareUrl';
+import { deliverShare } from '../lib/deliverShare';
+import { SHARE_CLICK_ACTION } from '../lib/shareClickAction';
 
 /**
  * Return type of useShareFlow — contains all state and handlers that
@@ -27,7 +23,7 @@ import { SITE_URL } from '@/shared/lib/seo';
  */
 export interface UseShareFlowResult {
     /** Effective share status, 'unavailable' when no registration. */
-    status: 'idle' | 'pending' | 'success' | 'error' | 'unavailable';
+    status: ShareableStatus;
     /** True while the createShareSnapshotAction mutation is in flight. */
     isMutating: boolean;
     /** Controls the bottom-sheet that shows the share URL / tweet link. */
@@ -67,30 +63,28 @@ export interface UseShareFlowResult {
 /**
  * Orchestrates the full share flow for the currently active analysis tab.
  *
- * State machine (based on useShareable() status):
- * - null / 'unavailable' → click shows inline notice.
- * - 'success'           → runShare() → createShareSnapshotAction → native share or ShareSheet.
- * - 'pending'           → open SharePreparingModal (already polling).
- * - 'idle' / 'error'   → open ShareTriggerDialog; on confirm → reg.trigger() + modal.
+ * A click is routed by `SHARE_CLICK_ACTION` on the registration status:
+ * - 'unavailable' (or nothing registered) → inline notice.
+ * - 'success' → createShareSnapshotAction → native share or ShareSheet.
+ * - 'pending' → SharePreparingModal while the analysis already runs.
+ * - 'idle' / 'error' → ShareTriggerDialog; on confirm → reg.trigger() + modal.
  *
- * Auto-advance: `hasTriggered` is set in event handlers when the user enters the
- * preparing flow. A useEffect keyed on `hasTriggered` + `reg.status` + `reg.result`
- * watches for the 'success' transition and calls runShare() automatically without any
- * setState (satisfying react-hooks/set-state-in-effect). State cleanup happens inside
- * the mutation's async onSuccess callback.
+ * Auto-advance: while the preparing modal is open, an effect watches for the
+ * registration to reach 'success' and starts the share without any setState
+ * (react-hooks/set-state-in-effect). The modal is closed from the mutation's
+ * async callbacks.
  */
 export function useShareFlow(): UseShareFlowResult {
     const [sheetOpen, setSheetOpen] = useState(false);
     const [triggerDialogOpen, setTriggerDialogOpen] = useState(false);
+    /**
+     * Open while the user waits for an analysis to finish so it can be shared.
+     * It also gates auto-advance and the error phase, so an already-errored
+     * registration never auto-shares or shows the error before the user acts.
+     */
     const [preparingOpen, setPreparingOpen] = useState(false);
     const [shareUrl, setShareUrl] = useState<string | null>(null);
     const [unavailableVisible, setUnavailableVisible] = useState(false);
-    /**
-     * True when the user is in the preparing flow (set in event handlers, never in
-     * effects). Combined with `reg.status` to derive preparingPhase and gate the
-     * auto-advance effect. Cleared in onSuccess (async callback) and handlePreparingClose.
-     */
-    const [hasTriggered, setHasTriggered] = useState(false);
 
     const buttonRef = useRef<HTMLButtonElement>(null);
     /**
@@ -106,7 +100,8 @@ export function useShareFlow(): UseShareFlowResult {
      * Stable ref to mutation.mutate so runShare's identity never changes across
      * renders. Without this, every mutation state update (idle→pending→success)
      * would produce a new `mutation` object, a new `runShare`, and re-fire the
-     * auto-advance effect while hasTriggered is still true — causing double mutate().
+     * auto-advance effect while the preparing modal is still open — causing a
+     * double mutate().
      */
     const mutateRef = useRef<() => void>(() => undefined);
 
@@ -114,13 +109,15 @@ export function useShareFlow(): UseShareFlowResult {
     const { tier: sharerTier } = useUserTier();
     const locale = useCurrentLocale();
     const t = useTranslations('features.share.useShareFlow');
+    const describedById = useId();
 
     /**
      * Reset all transient UI state when the user switches to a different analysis tab.
      *
      * Uses the getDerivedStateFromProps-equivalent pattern (setState during render)
      * to avoid the react-hooks/set-state-in-effect lint rule while still resetting
-     * synchronously before the next paint.
+     * synchronously before the next paint. Declared after `useShareable` because
+     * it compares against `reg.kind`.
      */
     const [prevKind, setPrevKind] = useState(reg?.kind);
     if (prevKind !== reg?.kind) {
@@ -129,111 +126,45 @@ export function useShareFlow(): UseShareFlowResult {
         setTriggerDialogOpen(false);
         setPreparingOpen(false);
         setUnavailableVisible(false);
-        setHasTriggered(false);
     }
 
     const mutation = useMutation({
         mutationFn: async () => {
-            const currentReg = regRef.current;
-            if (
-                !currentReg ||
-                currentReg.status !== 'success' ||
-                !currentReg.result
-            ) {
+            const input = buildShareSnapshotInput(
+                regRef.current,
+                sharerTierRef.current
+            );
+            if (input === null) {
                 throw new Error('No shareable result available');
             }
-            // Slice to the last MAX_CHART_BARS candles (most recent = most relevant
-            // for the analysis). The server re-validates the count in isValidShareInput;
-            // this client-side cap prevents exceeding the server limit before the
-            // network round-trip.
-            const chartBars =
-                currentReg.kind === 'chart' &&
-                currentReg.chartBars !== undefined &&
-                currentReg.chartBars.length > 0
-                    ? currentReg.chartBars.slice(-MAX_CHART_BARS)
-                    : undefined;
-            // 빈 문자열·공백만 있는 산문은 보내지 않는다 — 서버가 거부해
-            // (isNonEmptyString) 공유 전체가 invalid_input으로 실패한다.
-            const plain =
-                typeof currentReg.plain === 'string' &&
-                currentReg.plain.trim().length > 0
-                    ? currentReg.plain
-                    : undefined;
-            return createShareSnapshotAction({
-                kind: currentReg.kind,
-                symbol: currentReg.context.symbol,
-                context: currentReg.context,
-                result: currentReg.result,
-                sharerTier: sharerTierRef.current,
-                ...(chartBars !== undefined && { chartBars }),
-                ...(plain !== undefined && { plain }),
-            });
+            return createShareSnapshotAction(input);
         },
+        // Network / unexpected throw: dismiss the preparing modal so it doesn't stay stuck.
         onError: () => {
-            // Network / unexpected throw: dismiss the preparing modal so it
-            // doesn't stay stuck, and reset the auto-advance gate.
-            setHasTriggered(false);
             setPreparingOpen(false);
         },
         onSuccess: async result => {
             if (!result.ok) {
-                // Action-level error (e.g. rate_limited, persist_failed): dismiss
-                // preparing modal so it doesn't stay stuck, reset auto-advance gate.
-                setHasTriggered(false);
+                // Action-level error (e.g. rate_limited, persist_failed).
                 setPreparingOpen(false);
                 return;
             }
-            // 공유 링크에 로케일을 유지한다 — 일본어 사용자가 보낸 링크가
-            // 상대에게 한국어로 열리면 공유의 의미가 없다.
-            const url = `${SITE_URL}${localePath(locale, `/share/${result.id}`)}`;
+            const url = buildShareUrl(locale, result.id);
             setShareUrl(url);
 
             const symbol = regRef.current?.context.symbol ?? '';
-            // 이 문자열은 **X에 실제로 게시되는 본문**이다 — 영어 UI에서
-            // 한국어가 나가고 있었다.
-            const title = t('shareTitle', { v0: symbol });
-            const text = t('shareText', { v0: symbol });
-
-            if (canShareNatively()) {
-                try {
-                    await navigator.share({ title, text, url });
-                    // Reset preparing-flow state so the auto-advance effect cannot
-                    // re-fire on a subsequent provider re-render (double-fire guard).
-                    setHasTriggered(false);
-                    setPreparingOpen(false);
-                } catch (err) {
-                    if (!isShareAbort(err)) {
-                        // Non-abort errors: fall through to sheet.
-                        setSheetOpen(true);
-                    }
-                    // AbortError → user dismissed OS sheet, silently ignore.
-                    // Reset preparing-flow state in both error sub-cases so the
-                    // SharePreparingModal is dismissed and the auto-advance effect
-                    // is gated out on the next render.
-                    setHasTriggered(false);
-                    setPreparingOpen(false);
-                }
-            } else {
-                // Close preparing modal if open and open sheet.
-                setHasTriggered(false);
-                setPreparingOpen(false);
-                setSheetOpen(true);
-            }
+            // 이 문자열은 **X에 실제로 게시되는 본문**이라 UI 로케일을 따른다.
+            const delivery = await deliverShare({
+                title: t('shareTitle', { v0: symbol }),
+                text: t('shareText', { v0: symbol }),
+                url,
+            });
+            // Close the modal only after the OS sheet settles, so the
+            // auto-advance effect cannot re-fire on a provider re-render meanwhile.
+            setPreparingOpen(false);
+            if (delivery === 'sheet') setSheetOpen(true);
         },
     });
-
-    /**
-     * Phase is derived purely from observable state — no setState called during render
-     * and no refs read during render. Error phase only shows after the user has
-     * actually triggered analysis (`hasTriggered`) and the result came back as an error,
-     * preventing a false error phase when opening the modal from an already-errored reg.
-     */
-    const preparingPhase = useMemo((): 'pending' | 'error' => {
-        if (preparingOpen && hasTriggered && reg?.status === 'error') {
-            return 'error';
-        }
-        return 'pending';
-    }, [preparingOpen, hasTriggered, reg?.status]);
 
     /**
      * Shared share-execution function used by both the direct success-click path and
@@ -244,42 +175,37 @@ export function useShareFlow(): UseShareFlowResult {
         mutateRef.current();
     }, []);
 
-    // Placed after useMemo/useCallback per REACT.md#HK-1 strict hook order:
-    // useState/useRef → hooks/useMutation → useCallback/useMemo → derived → handlers → useEffect.
     const effectiveStatus = reg?.status ?? 'unavailable';
     const isMutating = mutation.isPending;
+    const preparingPhase =
+        preparingOpen && reg?.status === 'error' ? 'error' : 'pending';
+    const symbol = reg?.context.symbol ?? '';
+    const tweetText = t('shareText', { v0: symbol });
 
     const onClick = useCallback(() => {
         // Prevent double-click while mutation is in flight.
         if (isMutating) return;
-
-        // Hide stale unavailable notice on each click.
-        setUnavailableVisible(false);
-
-        if (effectiveStatus === 'unavailable' || reg === null) {
-            setUnavailableVisible(true);
-            return;
+        const action = SHARE_CLICK_ACTION[effectiveStatus];
+        // Each click hides a stale notice unless this click shows it again.
+        setUnavailableVisible(action === 'notice');
+        switch (action) {
+            case 'notice':
+                return;
+            case 'share':
+                runShare();
+                return;
+            case 'wait':
+                setPreparingOpen(true);
+                return;
+            case 'confirm':
+                setTriggerDialogOpen(true);
+                return;
         }
-
-        if (effectiveStatus === 'success') {
-            runShare();
-            return;
-        }
-
-        if (effectiveStatus === 'pending') {
-            setHasTriggered(true);
-            setPreparingOpen(true);
-            return;
-        }
-
-        // 'idle' | 'error'
-        setTriggerDialogOpen(true);
-    }, [isMutating, effectiveStatus, reg, runShare]);
+    }, [isMutating, effectiveStatus, runShare]);
 
     const onTriggerConfirm = useCallback(() => {
         setTriggerDialogOpen(false);
         reg?.trigger();
-        setHasTriggered(true);
         setPreparingOpen(true);
     }, [reg]);
 
@@ -289,7 +215,6 @@ export function useShareFlow(): UseShareFlowResult {
     }, []);
 
     const onPreparingClose = useCallback(() => {
-        setHasTriggered(false);
         setPreparingOpen(false);
         buttonRef.current?.focus();
     }, []);
@@ -307,6 +232,7 @@ export function useShareFlow(): UseShareFlowResult {
      * Keep all stable refs in sync with the latest values so callbacks and the
      * mutation fn always read up-to-date state without stale closure issues.
      * No deps (runs after every render) — intentional: always reflects latest values.
+     * Declared before the auto-advance effect so the refs are fresh when it fires.
      */
     useEffect(() => {
         regRef.current = reg;
@@ -315,23 +241,16 @@ export function useShareFlow(): UseShareFlowResult {
     });
 
     /**
-     * When the user has triggered analysis (hasTriggered) and the result becomes
-     * available (reg transitions to 'success'), automatically execute the share.
-     * This effect only calls runShare() — an external-system side-effect via React
-     * Query — and does NOT call setState directly, complying with the
-     * react-hooks/set-state-in-effect rule. State cleanup happens inside the mutation's
-     * async onSuccess callback.
+     * While the preparing modal is open, share as soon as the registration
+     * reaches 'success'. Only calls runShare() — a React Query side effect — and
+     * no setState, so react-hooks/set-state-in-effect holds.
      */
     useEffect(() => {
-        if (!hasTriggered) return;
+        if (!preparingOpen) return;
         if (reg?.status === 'success' && reg.result != null) {
             runShare();
         }
-    }, [hasTriggered, reg?.status, reg?.result, runShare]);
-
-    const describedById = useId();
-    const symbol = reg?.context.symbol ?? '';
-    const tweetText = t('shareText', { v0: symbol });
+    }, [preparingOpen, reg?.status, reg?.result, runShare]);
 
     return {
         status: effectiveStatus,
