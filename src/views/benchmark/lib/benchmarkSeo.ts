@@ -1,3 +1,6 @@
+/**
+ * 벤치마크 페이지의 SEO 문구와 Dataset JSON-LD. 두 호스트 라우트가 함께 쓴다.
+ */
 import { getTranslations } from 'next-intl/server';
 import { buildBenchmarkHeadline } from '@/entities/benchmark/lib/benchmarkHeadline';
 import type { BenchmarkRelease } from '@/entities/benchmark/types';
@@ -9,6 +12,7 @@ import { clampSeoDescription } from '@/shared/lib/seo';
 import { formatBenchmarkDate } from '@/shared/lib/benchmarkFormat';
 import { BENCHMARK_DATA_LICENSE_URL } from '@/shared/config/benchmark';
 
+/** 두 호스트 라우트의 메타데이터·JSON-LD가 쓰는 문구. */
 export interface BenchmarkSeoCopy extends AiSeoCopy {
     /** Dataset JSON-LD 전용 — 페이지 제목이 아니라 데이터셋 자체의 이름. */
     readonly datasetName: string;

@@ -110,6 +110,26 @@ describe('BenchmarkItemExplorer', () => {
             );
         });
 
+        it('separates the meta fields and the question with spaces in the text', () => {
+            renderExplorer();
+            const item = BENCHMARK_FIXTURE.items[0]!;
+            const button = screen.getByRole('button', {
+                name: new RegExp(item.question),
+            });
+            expect(button.textContent).toBe(
+                `${item.qid} L1 미국 ${item.template} ${item.pool} ${item.question}`
+            );
+        });
+
+        it('separates the target name from the verdict in a chip', () => {
+            renderExplorer();
+            const chip = screen
+                .getByText(BENCHMARK_FIXTURE.items[0]!.question)
+                .closest('li')!
+                .querySelector('[data-verdict]')!;
+            expect(chip.textContent).toBe(`AlphaAI ${e.label.correct}`);
+        });
+
         it('does not request any detail until a row is expanded', () => {
             renderExplorer();
             expect(fetchStub).not.toHaveBeenCalled();
@@ -249,6 +269,20 @@ describe('BenchmarkItemExplorer', () => {
             expect(questionButtons()).toHaveLength(0);
         });
 
+        it('moves focus to the first filter when reset removes its own button', async () => {
+            const user = userEvent.setup();
+            renderExplorer();
+            await user.selectOptions(screen.getByLabelText(e.filter.pool), 'B');
+            screen.getByRole('button', { name: e.filter.reset }).focus();
+            await user.keyboard('{Enter}');
+            expect(
+                screen.queryByRole('button', { name: e.filter.reset })
+            ).toBeNull();
+            expect(document.activeElement).toBe(
+                screen.getByLabelText(e.filter.level)
+            );
+        });
+
         it('offers reset only while a filter is active and clears the URL', async () => {
             const user = userEvent.setup();
             renderExplorer();
@@ -296,6 +330,41 @@ describe('BenchmarkItemExplorer', () => {
             expect(judgements[0]!.textContent).toContain('1회차');
             expect(judgements[1]!.textContent).toContain('2회차');
             expect(window.location.search).toBe('?open=q-001');
+        });
+
+        it('titles each target with an h3 under the section h2 and makes the value table keyboard-reachable', async () => {
+            fetchStub.mockResolvedValueOnce(detailResponse());
+            const user = userEvent.setup();
+            renderExplorer();
+            await user.click(
+                screen.getByRole('button', {
+                    name: new RegExp(BENCHMARK_FIXTURE.items[0]!.question),
+                })
+            );
+            await screen.findByText('종가는 12.34입니다.');
+            expect(
+                screen
+                    .getAllByRole('heading', { level: 3 })
+                    .map(h => h.textContent)
+            ).toEqual(BENCHMARK_FIXTURE.targets.map(target => target.label));
+            expect(screen.queryAllByRole('heading', { level: 4 })).toHaveLength(
+                0
+            );
+            const regions = screen.getAllByRole('region', {
+                name: new RegExp(`${e.detail.extracted}$`),
+            });
+            expect(regions.length).toBeGreaterThan(0);
+            for (const region of regions) {
+                expect(region.getAttribute('tabindex')).toBe('0');
+            }
+            // 대상 × 회차마다 표가 하나씩이라, 이름이 겹치면 랜드마크 목록에서 구분되지 않는다.
+            const names = regions.map(region =>
+                region.getAttribute('aria-label')
+            );
+            expect(new Set(names).size).toBe(names.length);
+            expect(names[0]).toBe(
+                `${BENCHMARK_FIXTURE.targets[0]!.label} 1회차 ${e.detail.extracted}`
+            );
         });
 
         it('shows a loading status while the file is in flight', async () => {

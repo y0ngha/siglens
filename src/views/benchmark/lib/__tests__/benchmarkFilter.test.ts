@@ -8,6 +8,7 @@ import {
     isBenchmarkFilterActive,
     parseBenchmarkFilter,
     parseBenchmarkOpen,
+    pickBenchmarkFilterValue,
     toBenchmarkSearchString,
     type BenchmarkFilterState,
 } from '../benchmarkFilter';
@@ -205,5 +206,20 @@ describe('isBenchmarkFilterActive', () => {
                 pool: 'A',
             })
         ).toBe(true);
+    });
+});
+
+describe('pickBenchmarkFilterValue', () => {
+    it('returns an allowed value as is', () => {
+        expect(pickBenchmarkFilterValue('kr', OPTIONS.markets)).toBe('kr');
+    });
+
+    it('falls back to all for an unknown value or null', () => {
+        expect(pickBenchmarkFilterValue('jp', OPTIONS.markets)).toBe(
+            BENCHMARK_FILTER_ALL
+        );
+        expect(pickBenchmarkFilterValue(null, OPTIONS.markets)).toBe(
+            BENCHMARK_FILTER_ALL
+        );
     });
 });

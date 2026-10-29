@@ -2467,6 +2467,7 @@
                 "title": "Browse by question"
             },
             "koreanNote": "The questions and raw answers are in Korean. The measurement was run in Korean, so the questions, ground-truth summaries and answers on this page are shown untranslated.",
+            "koreanNoteLabel": "Language notice",
             "levels": {
                 "L4": "L4 interpretation",
                 "L5": "L5 honesty and safety"

@@ -1,3 +1,7 @@
+/**
+ * 문항 탐색기 필터의 순수 로직 — URL 읽기·쓰기, 고를 수 있는 값 모으기, 목록 거르기.
+ * 판정 자체는 데이터(`release`)에 이미 있고 여기서는 걸러 보기만 한다.
+ */
 import {
     BENCHMARK_FILTER_ALL,
     BENCHMARK_LABELS,
@@ -22,6 +26,7 @@ export const BENCHMARK_PARAMS = {
     open: 'open',
 } as const;
 
+/** 탐색기 필터 값. 각 칸은 고른 값이거나 `all`(필터 없음)이다. */
 export interface BenchmarkFilterState {
     readonly level: BenchmarkLevel | All;
     readonly market: BenchmarkMarket | All;
@@ -35,6 +40,7 @@ export interface BenchmarkFilterState {
     readonly verdict: BenchmarkLabel | All;
 }
 
+/** 아무 필터도 걸리지 않은 상태. 초기화 버튼이 이 값으로 되돌린다. */
 export const BENCHMARK_FILTER_INITIAL: BenchmarkFilterState = {
     level: BENCHMARK_FILTER_ALL,
     market: BENCHMARK_FILTER_ALL,
@@ -44,6 +50,7 @@ export const BENCHMARK_FILTER_INITIAL: BenchmarkFilterState = {
     verdict: BENCHMARK_FILTER_ALL,
 };
 
+/** 필터마다 고를 수 있는 값(목록에 실제로 있는 값만). */
 export interface BenchmarkFilterOptions {
     readonly levels: readonly BenchmarkLevel[];
     readonly markets: readonly BenchmarkMarket[];
@@ -68,7 +75,11 @@ export function collectBenchmarkFilterOptions(
     };
 }
 
-function pick<T extends string>(
+/**
+ * 밖에서 온 문자열(URL·셀렉트 값)을 허용 값으로 좁힌다. 모르는 값은 `all`이다 — 캐스트 없이
+ * 필터 타입을 지킨다.
+ */
+export function pickBenchmarkFilterValue<T extends string>(
     raw: string | null,
     allowed: readonly T[]
 ): T | All {
@@ -82,14 +93,14 @@ export function parseBenchmarkFilter(
     read: ReadParam,
     options: BenchmarkFilterOptions
 ): BenchmarkFilterState {
-    const verdict = pick(read(BENCHMARK_PARAMS.verdict), BENCHMARK_LABELS);
+    const pick = pickBenchmarkFilterValue;
     return {
         level: pick(read(BENCHMARK_PARAMS.level), options.levels),
         market: pick(read(BENCHMARK_PARAMS.market), options.markets),
         template: pick(read(BENCHMARK_PARAMS.template), options.templates),
         pool: pick(read(BENCHMARK_PARAMS.pool), options.pools),
         target: pick(read(BENCHMARK_PARAMS.target), options.targets),
-        verdict,
+        verdict: pick(read(BENCHMARK_PARAMS.verdict), BENCHMARK_LABELS),
     };
 }
 
@@ -106,8 +117,7 @@ export function toBenchmarkSearchString(
     state: BenchmarkFilterState,
     open: string | null
 ): string {
-    const params = new URLSearchParams();
-    const entries: readonly [string, string][] = [
+    const filters: readonly [string, string][] = [
         [BENCHMARK_PARAMS.level, state.level],
         [BENCHMARK_PARAMS.market, state.market],
         [BENCHMARK_PARAMS.template, state.template],
@@ -115,11 +125,12 @@ export function toBenchmarkSearchString(
         [BENCHMARK_PARAMS.target, state.target],
         [BENCHMARK_PARAMS.verdict, state.verdict],
     ];
-    for (const [name, value] of entries) {
-        if (value !== BENCHMARK_FILTER_ALL) params.set(name, value);
-    }
-    if (open !== null) params.set(BENCHMARK_PARAMS.open, open);
-    return params.toString();
+    const openEntry: readonly [string, string][] =
+        open === null ? [] : [[BENCHMARK_PARAMS.open, open]];
+    return new URLSearchParams([
+        ...filters.filter(([, value]) => value !== BENCHMARK_FILTER_ALL),
+        ...openEntry,
+    ]).toString();
 }
 
 /** 필터가 하나라도 걸렸는가. */
@@ -146,19 +157,22 @@ function matchesTargetAndVerdict(
     return Object.values(item.results).some(r => r.label === state.verdict);
 }
 
+/** 필터 한 칸이 `all`이거나 문항 값과 같은가. */
+function matchesOrAll(filter: string, value: string): boolean {
+    return filter === BENCHMARK_FILTER_ALL || filter === value;
+}
+
+/** 모든 필터를 통과한 문항(원래 순서). */
 export function filterBenchmarkItems(
     items: readonly BenchmarkItem[],
     state: BenchmarkFilterState
 ): readonly BenchmarkItem[] {
     return items.filter(
         item =>
-            (state.level === BENCHMARK_FILTER_ALL ||
-                item.level === state.level) &&
-            (state.market === BENCHMARK_FILTER_ALL ||
-                item.market === state.market) &&
-            (state.template === BENCHMARK_FILTER_ALL ||
-                item.template === state.template) &&
-            (state.pool === BENCHMARK_FILTER_ALL || item.pool === state.pool) &&
+            matchesOrAll(state.level, item.level) &&
+            matchesOrAll(state.market, item.market) &&
+            matchesOrAll(state.template, item.template) &&
+            matchesOrAll(state.pool, item.pool) &&
             matchesTargetAndVerdict(item, state)
     );
 }

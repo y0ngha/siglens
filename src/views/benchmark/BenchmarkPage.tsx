@@ -1,8 +1,9 @@
+/**
+ * 벤치마크 결과 페이지 본문(서버 컴포넌트). 두 호스트 라우트가 같은 props로 그린다.
+ */
 import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
 import {
     BENCHMARK_JUDGED_LEVELS,
-    BENCHMARK_LABELS,
     BENCHMARK_MARKETS,
     BENCHMARK_OBJECTIVE_LEVELS,
     BENCHMARK_SUBSETS,
@@ -14,24 +15,20 @@ import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
 import { GITHUB_URL } from '@/shared/lib/seo';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import {
-    HEADING_SECTION,
-    HEADING_SUBSECTION,
-} from '@/shared/lib/typographyStyles';
+import { formatBenchmarkDate } from '@/shared/lib/benchmarkFormat';
 import { BenchmarkItemExplorer } from './BenchmarkItemExplorer';
 import {
-    BENCHMARK_SIGNIFICANCE_LEVEL,
-    buildBenchmarkHeadline,
-    withSubjectLabel,
-} from '@/entities/benchmark/lib/benchmarkHeadline';
-import {
-    formatBenchmarkContrast,
-    formatBenchmarkDate,
-} from '@/shared/lib/benchmarkFormat';
-import {
-    BenchmarkScoreTable,
-    BenchmarkTableShell,
-} from './ui/BenchmarkScoreTables';
+    buildBenchmarkPageModel,
+    formatBenchmarkPoolSummary,
+} from './lib/benchmarkPageModel';
+import { toBenchmarkScoreRows } from './lib/benchmarkScoreTable';
+import { BenchmarkSection } from './ui/page/BenchmarkSection';
+import { BenchmarkScoreTable } from './ui/page/BenchmarkScoreTables';
+import { BENCHMARK_TEXT_LINK } from './ui/page/benchmarkPageStyles';
+import { HeadlineContrastTable } from './ui/page/HeadlineContrastTable';
+import { LabelCountsTable } from './ui/page/LabelCountsTable';
+import { MethodCards } from './ui/page/MethodCards';
+import { PreregList } from './ui/page/PreregList';
 
 interface Props {
     readonly release: BenchmarkRelease;
@@ -42,42 +39,14 @@ interface Props {
     readonly aiSiteUrl: string;
 }
 
-const TEXT_LINK =
-    'inline-flex min-h-11 items-center rounded text-secondary-300 underline underline-offset-2 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
-
-const TH =
-    'px-3 py-2 text-xs font-semibold text-secondary-400 whitespace-nowrap';
-
-interface SectionProps {
-    readonly id: string;
-    readonly title: string;
-    readonly sub?: string;
-    readonly children: ReactNode;
-}
-
-function Section({ id, title, sub, children }: SectionProps) {
-    return (
-        <section aria-labelledby={id} className="mt-14 first:mt-0">
-            <h2 id={id} className={cn(HEADING_SECTION, 'scroll-mt-24')}>
-                {title}
-            </h2>
-            {sub ? (
-                <p className="mt-2 text-[15px] leading-6 text-secondary-400">
-                    {sub}
-                </p>
-            ) : null}
-            <div className="mt-5">{children}</div>
-        </section>
-    );
-}
-
 /**
  * 벤치마크 결과 상세. `ai.siglens.io/benchmark`(정본)와 `siglens.io/benchmark`(사본)가 같은
  * props로 같은 본문을 그린다 — 본문이 다르면 검색엔진이 canonical을 무시할 수 있다.
  *
  * 서버 컴포넌트다. 헤드라인·점수표·방법론은 크롤러가 읽으므로 전부 서버에서 텍스트로
  * 나가고, 문항 탐색기(클라이언트)는 목록 메타를 props로 받아 서버에서도 그려진다.
- * 모든 수치는 `release`에서 오며 문구에 손으로 쓴 결과 숫자는 없다.
+ * 모든 수치는 `release`에서 오며 문구에 손으로 쓴 결과 숫자는 없다. 번역은 이 파일에서만
+ * 하고 하위 구역 컴포넌트는 번역된 문자열을 받는다.
  */
 export async function BenchmarkPage({
     release: rawRelease,
@@ -87,9 +56,7 @@ export async function BenchmarkPage({
 }: Props) {
     const t = await getTranslations({ locale, namespace: 'views.benchmark' });
     const brand = brandAiName(locale);
-    // 주체는 화면 어디서나 브랜드 표기로 부른다(경쟁 모델은 데이터 라벨 그대로).
-    const release = withSubjectLabel(rawRelease, brand);
-    const headline = buildBenchmarkHeadline(release);
+    const { release, headline } = buildBenchmarkPageModel(rawRelease, brand);
     const { targets, breakdown, methodology, prereg, downloads } = release;
     const verdictText = {
         ahead: t('headline.verdict.ahead'),
@@ -118,24 +85,87 @@ export async function BenchmarkPage({
         noTool: t('subset.noTool'),
         heldOut: t('subset.heldOut'),
     } as const;
-    const scoreRows = (
-        keys: readonly string[],
-        table: Readonly<
-            Record<string, Readonly<Record<string, number | null>>>
-        >,
-        names: Readonly<Record<string, string>>
-    ) =>
-        keys.map(key => ({
-            key,
-            label: names[key] ?? key,
-            scores: table[key] ?? {},
-        }));
-    const poolSummary = Object.entries(methodology.poolSizes)
-        .map(([pool, size]) => `${pool} ${size}`)
-        .join(', ');
+    const groupCaption = {
+        competitors: t('headline.competitors'),
+        baselines: t('headline.baselines'),
+    } as const;
     const totalItems = release.items.length;
-    const methodologyHref = `${siteUrl}${localePath(locale, '/methodology')}`;
-    const aiAboutHref = `${aiSiteUrl}${localePath(locale, '/about')}`;
+    const measuredAt = formatBenchmarkDate(release.measuredAt);
+    const lambda = methodology.lambda;
+    const methodCards = [
+        {
+            key: 'items',
+            title: t('method.itemsTitle'),
+            paragraphs: [
+                t('method.items', {
+                    total: totalItems,
+                    pools: formatBenchmarkPoolSummary(
+                        methodology.poolSizes,
+                        locale
+                    ),
+                }),
+                t('method.levels'),
+            ],
+        },
+        {
+            key: 'truth',
+            title: t('method.truthTitle'),
+            paragraphs: [
+                t('method.truth'),
+                ...(methodology.vendorMismatchCount === null
+                    ? []
+                    : [
+                          t('method.vendorMismatch', {
+                              count: methodology.vendorMismatchCount,
+                          }),
+                      ]),
+            ],
+        },
+        {
+            key: 'scoring',
+            title: t('method.scoringTitle'),
+            paragraphs: [t('method.scoring', { lambda })],
+        },
+        {
+            key: 'judges',
+            title: t('method.judgesTitle'),
+            paragraphs: [t('method.judges')],
+        },
+        {
+            key: 'schedule',
+            title: t('method.scheduleTitle'),
+            paragraphs: [
+                t('method.schedule', {
+                    brand,
+                    rounds: methodology.rounds,
+                    measuredAt,
+                    subjectVersion: methodology.subjectVersion,
+                    subjectMeasuredAt: formatBenchmarkDate(
+                        methodology.subjectMeasuredAt
+                    ),
+                }),
+            ],
+            wide: true,
+        },
+    ];
+    const methodLinks = [
+        {
+            key: 'site',
+            href: `${siteUrl}${localePath(locale, '/methodology')}`,
+            text: t('method.siteMethodology'),
+        },
+        {
+            key: 'ai',
+            href: `${aiSiteUrl}${localePath(locale, '/about')}`,
+            text: t('method.aiAbout'),
+        },
+        {
+            key: 'design',
+            href: `${GITHUB_URL}/blob/master/BENCHMARK.md`,
+            rel: 'noopener',
+            text: t('method.designDoc'),
+        },
+    ];
 
     return (
         <main className="relative isolate flex-1 pb-16">
@@ -151,7 +181,7 @@ export async function BenchmarkPage({
                         {t('hero.lede', {
                             brand,
                             items: totalItems,
-                            measuredAt: formatBenchmarkDate(release.measuredAt),
+                            measuredAt,
                             scoredAt: formatBenchmarkDate(release.scoredAt),
                             sameDay:
                                 release.measuredAt === release.scoredAt
@@ -159,183 +189,68 @@ export async function BenchmarkPage({
                                     : 'no',
                         })}
                     </p>
-                    {locale !== DEFAULT_LOCALE ? (
-                        <p
+                    {locale === DEFAULT_LOCALE ? null : (
+                        <div
                             role="note"
+                            aria-label={t('koreanNoteLabel')}
                             className={cn(
                                 SURFACE_CARD,
                                 'mt-4 px-4 py-3 text-sm leading-6 text-secondary-200'
                             )}
                         >
                             {t('koreanNote')}
-                        </p>
-                    ) : null}
+                        </div>
+                    )}
                 </header>
 
-                <Section
+                <BenchmarkSection
                     id="benchmark-headline"
                     title={t('headline.title')}
-                    sub={t('headline.sub', { lambda: methodology.lambda })}
+                    sub={t('headline.sub', { lambda })}
                 >
                     {headline ? (
                         <>
                             <p className="text-lg leading-8 text-secondary-100">
-                                {t('headline.summary', {
-                                    subject: headline.subject.label,
-                                    count: headline.competitors.length,
-                                    ahead: headline.counts.ahead,
-                                    tie: headline.counts.tie,
-                                    behind: headline.counts.behind,
-                                })}
+                                {t('headline.summary', { ...headline.summary })}
                             </p>
                             <div className="mt-5 flex flex-col gap-4">
-                                {[
-                                    {
-                                        key: 'competitors',
-                                        caption: t('headline.competitors'),
-                                        entries: headline.competitors,
-                                    },
-                                    {
-                                        key: 'baselines',
-                                        caption: t('headline.baselines'),
-                                        entries: headline.baselines,
-                                    },
-                                ]
-                                    .filter(group => group.entries.length > 0)
-                                    .map(group => (
-                                        <BenchmarkTableShell
-                                            key={group.key}
-                                            caption={group.caption}
-                                        >
-                                            <thead>
-                                                <tr>
-                                                    <th
-                                                        scope="col"
-                                                        className={TH}
-                                                    >
-                                                        {t('headline.target')}
-                                                    </th>
-                                                    <th
-                                                        scope="col"
-                                                        className={cn(
-                                                            TH,
-                                                            'text-right'
-                                                        )}
-                                                    >
-                                                        {t('headline.diff', {
-                                                            subject:
-                                                                headline.subject
-                                                                    .label,
-                                                        })}
-                                                    </th>
-                                                    <th
-                                                        scope="col"
-                                                        className={cn(
-                                                            TH,
-                                                            'text-right'
-                                                        )}
-                                                    >
-                                                        {t('headline.ci')}
-                                                    </th>
-                                                    <th
-                                                        scope="col"
-                                                        className={cn(
-                                                            TH,
-                                                            'text-right'
-                                                        )}
-                                                    >
-                                                        {t('headline.p')}
-                                                    </th>
-                                                    <th
-                                                        scope="col"
-                                                        className={cn(
-                                                            TH,
-                                                            'text-right'
-                                                        )}
-                                                    >
-                                                        {t('headline.n')}
-                                                    </th>
-                                                    <th
-                                                        scope="col"
-                                                        className={TH}
-                                                    >
-                                                        {t('headline.reading')}
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {group.entries.map(entry => {
-                                                    const text =
-                                                        formatBenchmarkContrast(
-                                                            entry.contrast
-                                                        );
-                                                    return (
-                                                        <tr
-                                                            key={
-                                                                entry.target.id
-                                                            }
-                                                            className="border-t border-secondary-700"
-                                                        >
-                                                            <th
-                                                                scope="row"
-                                                                className="px-3 py-2 font-normal text-secondary-100"
-                                                                translate="no"
-                                                            >
-                                                                {
-                                                                    entry.target
-                                                                        .label
-                                                                }
-                                                            </th>
-                                                            <td className="px-3 py-2 text-right font-semibold text-secondary-50">
-                                                                {text.diffText}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-right whitespace-nowrap text-secondary-300">
-                                                                {text.ciText}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-right text-secondary-300">
-                                                                {text.pText}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-right text-secondary-300">
-                                                                {
-                                                                    entry
-                                                                        .contrast
-                                                                        .n
-                                                                }
-                                                            </td>
-                                                            <td className="px-3 py-2 whitespace-nowrap text-secondary-200">
-                                                                {
-                                                                    verdictText[
-                                                                        entry
-                                                                            .verdict
-                                                                    ]
-                                                                }
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </BenchmarkTableShell>
-                                    ))}
+                                {headline.groups.map(group => (
+                                    <HeadlineContrastTable
+                                        key={group.key}
+                                        caption={groupCaption[group.key]}
+                                        columns={{
+                                            target: t('headline.target'),
+                                            diff: t('headline.diff', {
+                                                subject:
+                                                    headline.summary.subject,
+                                            }),
+                                            ci: t('headline.ci'),
+                                            p: t('headline.p'),
+                                            n: t('headline.n'),
+                                            reading: t('headline.reading'),
+                                        }}
+                                        rows={group.rows}
+                                        verdictText={verdictText}
+                                    />
+                                ))}
                             </div>
                             <p className="mt-3 text-xs leading-5 text-secondary-400">
                                 {t('headline.note', {
-                                    alpha: BENCHMARK_SIGNIFICANCE_LEVEL,
+                                    alpha: headline.significanceLevel,
                                 })}
                             </p>
                         </>
                     ) : null}
-                </Section>
+                </BenchmarkSection>
 
-                <Section
+                <BenchmarkSection
                     id="benchmark-breakdown"
                     title={t('breakdown.title')}
                     sub={t('breakdown.sub')}
                 >
                     <div className="flex flex-col gap-4">
                         <BenchmarkScoreTable
-                            caption={t('breakdown.byLevel', {
-                                lambda: methodology.lambda,
-                            })}
+                            caption={t('breakdown.byLevel', { lambda })}
                             rowHeader={t('breakdown.rowLevel')}
                             targets={targets}
                             rows={[
@@ -344,7 +259,7 @@ export async function BenchmarkPage({
                                     label: t('breakdown.rowOverall'),
                                     scores: breakdown.overall,
                                 },
-                                ...scoreRows(
+                                ...toBenchmarkScoreRows(
                                     BENCHMARK_OBJECTIVE_LEVELS,
                                     breakdown.byLevel,
                                     levelText
@@ -355,24 +270,20 @@ export async function BenchmarkPage({
                             {t('breakdown.overallNote')}
                         </p>
                         <BenchmarkScoreTable
-                            caption={t('breakdown.byMarket', {
-                                lambda: methodology.lambda,
-                            })}
+                            caption={t('breakdown.byMarket', { lambda })}
                             rowHeader={t('breakdown.rowMarket')}
                             targets={targets}
-                            rows={scoreRows(
+                            rows={toBenchmarkScoreRows(
                                 BENCHMARK_MARKETS,
                                 breakdown.byMarket,
                                 marketText
                             )}
                         />
                         <BenchmarkScoreTable
-                            caption={t('breakdown.bySubset', {
-                                lambda: methodology.lambda,
-                            })}
+                            caption={t('breakdown.bySubset', { lambda })}
                             rowHeader={t('breakdown.rowSubset')}
                             targets={targets}
-                            rows={scoreRows(
+                            rows={toBenchmarkScoreRows(
                                 BENCHMARK_SUBSETS,
                                 breakdown.bySubset,
                                 subsetText
@@ -382,204 +293,63 @@ export async function BenchmarkPage({
                             caption={t('breakdown.judged')}
                             rowHeader={t('breakdown.rowLevel')}
                             targets={targets}
-                            rows={scoreRows(
+                            rows={toBenchmarkScoreRows(
                                 BENCHMARK_JUDGED_LEVELS,
                                 breakdown.judged,
                                 levelText
                             )}
                         />
-                        <BenchmarkTableShell caption={t('breakdown.counts')}>
-                            <thead>
-                                <tr>
-                                    <th scope="col" className={TH}>
-                                        {t('headline.target')}
-                                    </th>
-                                    {BENCHMARK_LABELS.map(label => (
-                                        <th
-                                            key={label}
-                                            scope="col"
-                                            className={cn(TH, 'text-right')}
-                                        >
-                                            {labelText[label]}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {targets.map(target => (
-                                    <tr
-                                        key={target.id}
-                                        className="border-t border-secondary-700"
-                                    >
-                                        <th
-                                            scope="row"
-                                            className="px-3 py-2 font-normal text-secondary-200"
-                                            translate="no"
-                                        >
-                                            {target.label}
-                                        </th>
-                                        {BENCHMARK_LABELS.map(label => (
-                                            <td
-                                                key={label}
-                                                className="px-3 py-2 text-right text-secondary-300"
-                                            >
-                                                {breakdown.labelCounts[
-                                                    target.id
-                                                ]?.[label] ?? 0}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </BenchmarkTableShell>
+                        <LabelCountsTable
+                            caption={t('breakdown.counts')}
+                            targetHeader={t('headline.target')}
+                            targets={targets}
+                            labelCounts={breakdown.labelCounts}
+                            labelText={labelText}
+                        />
                     </div>
-                </Section>
+                </BenchmarkSection>
 
-                <Section
+                <BenchmarkSection
                     id="benchmark-method"
                     title={t('method.title')}
                     sub={t('method.sub')}
                 >
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                            <h3 className={HEADING_SUBSECTION}>
-                                {t('method.itemsTitle')}
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-secondary-300">
-                                {t('method.items', {
-                                    total: totalItems,
-                                    pools: poolSummary,
-                                })}
-                            </p>
-                            <p className="mt-2 text-sm leading-6 text-secondary-300">
-                                {t('method.levels')}
-                            </p>
-                        </div>
-                        <div className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                            <h3 className={HEADING_SUBSECTION}>
-                                {t('method.truthTitle')}
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-secondary-300">
-                                {t('method.truth')}
-                            </p>
-                            {methodology.vendorMismatchCount !== null ? (
-                                <p className="mt-2 text-sm leading-6 text-secondary-300">
-                                    {t('method.vendorMismatch', {
-                                        count: methodology.vendorMismatchCount,
-                                    })}
-                                </p>
-                            ) : null}
-                        </div>
-                        <div className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                            <h3 className={HEADING_SUBSECTION}>
-                                {t('method.scoringTitle')}
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-secondary-300">
-                                {t('method.scoring', {
-                                    lambda: methodology.lambda,
-                                })}
-                            </p>
-                        </div>
-                        <div className={cn(SURFACE_CARD, 'p-4 sm:p-5')}>
-                            <h3 className={HEADING_SUBSECTION}>
-                                {t('method.judgesTitle')}
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-secondary-300">
-                                {t('method.judges')}
-                            </p>
-                        </div>
-                        <div
-                            className={cn(
-                                SURFACE_CARD,
-                                'p-4 sm:p-5 md:col-span-2'
-                            )}
-                        >
-                            <h3 className={HEADING_SUBSECTION}>
-                                {t('method.scheduleTitle')}
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-secondary-300">
-                                {t('method.schedule', {
-                                    brand,
-                                    rounds: methodology.rounds,
-                                    measuredAt: formatBenchmarkDate(
-                                        release.measuredAt
-                                    ),
-                                    subjectVersion: methodology.subjectVersion,
-                                    subjectMeasuredAt: formatBenchmarkDate(
-                                        methodology.subjectMeasuredAt
-                                    ),
-                                })}
-                            </p>
-                        </div>
-                    </div>
+                    <MethodCards cards={methodCards} />
                     <ul className="mt-6 flex flex-wrap gap-x-5">
-                        <li>
-                            <a href={methodologyHref} className={TEXT_LINK}>
-                                {t('method.siteMethodology')}
-                            </a>
-                        </li>
-                        <li>
-                            <a href={aiAboutHref} className={TEXT_LINK}>
-                                {t('method.aiAbout')}
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href={`${GITHUB_URL}/blob/master/BENCHMARK.md`}
-                                rel="noopener"
-                                className={TEXT_LINK}
-                            >
-                                {t('method.designDoc')}
-                            </a>
-                        </li>
+                        {methodLinks.map(link => (
+                            <li key={link.key}>
+                                <a
+                                    href={link.href}
+                                    rel={link.rel}
+                                    className={BENCHMARK_TEXT_LINK}
+                                >
+                                    {link.text}
+                                </a>
+                            </li>
+                        ))}
                     </ul>
-                </Section>
+                </BenchmarkSection>
 
-                <Section
+                <BenchmarkSection
                     id="benchmark-prereg"
                     title={t('prereg.title')}
                     sub={t('prereg.sub', { brand })}
                 >
-                    <dl className={cn(SURFACE_CARD, 'grid gap-3 p-4 sm:p-5')}>
-                        <div className="grid gap-x-4 gap-y-1 sm:grid-cols-[9rem_minmax(0,1fr)]">
-                            <dt className="text-xs font-semibold text-secondary-400">
-                                {t('prereg.hash')}
-                            </dt>
-                            <dd className="font-mono text-xs break-all text-secondary-200">
-                                {prereg.combinedSha256}
-                            </dd>
-                        </div>
-                        <div className="grid gap-x-4 gap-y-1 sm:grid-cols-[9rem_minmax(0,1fr)]">
-                            <dt className="text-xs font-semibold text-secondary-400">
-                                {t('prereg.gist')}
-                            </dt>
-                            <dd>
-                                <a
-                                    href={prereg.gistUrl}
-                                    rel="noopener"
-                                    className={cn(TEXT_LINK, 'break-all')}
-                                >
-                                    {prereg.gistUrl}
-                                </a>
-                            </dd>
-                        </div>
-                        <div className="grid gap-x-4 gap-y-1 sm:grid-cols-[9rem_minmax(0,1fr)]">
-                            <dt className="text-xs font-semibold text-secondary-400">
-                                {t('prereg.ots')}
-                            </dt>
-                            <dd>
-                                <a href={prereg.otsPath} className={TEXT_LINK}>
-                                    {t('prereg.otsLink')}
-                                </a>
-                            </dd>
-                        </div>
-                    </dl>
+                    <PreregList
+                        prereg={prereg}
+                        text={{
+                            hash: t('prereg.hash'),
+                            gist: t('prereg.gist'),
+                            ots: t('prereg.ots'),
+                            otsLink: t('prereg.otsLink'),
+                        }}
+                    />
                     <p className="mt-3 text-sm leading-6 text-secondary-300">
                         {t('prereg.verify')}
                     </p>
-                </Section>
+                </BenchmarkSection>
 
-                <Section
+                <BenchmarkSection
                     id="benchmark-downloads"
                     title={t('downloads.title')}
                     sub={t('downloads.sub')}
@@ -589,7 +359,7 @@ export async function BenchmarkPage({
                             <a
                                 href={downloads.zipPath}
                                 download
-                                className={TEXT_LINK}
+                                className={BENCHMARK_TEXT_LINK}
                             >
                                 {t('downloads.zip')}
                             </a>
@@ -602,7 +372,7 @@ export async function BenchmarkPage({
                                 <a
                                     href={BENCHMARK_DATA_LICENSE_URL}
                                     rel="license noopener"
-                                    className={TEXT_LINK}
+                                    className={BENCHMARK_TEXT_LINK}
                                 >
                                     {chunks}
                                 </a>
@@ -615,9 +385,9 @@ export async function BenchmarkPage({
                     <p className="mt-2 text-sm leading-6 text-secondary-300">
                         {t('downloads.disclaimer')}
                     </p>
-                </Section>
+                </BenchmarkSection>
 
-                <Section
+                <BenchmarkSection
                     id="benchmark-items"
                     title={t('items.title')}
                     sub={t('items.sub')}
@@ -633,7 +403,7 @@ export async function BenchmarkPage({
                         items={release.items}
                         levelNames={levelText}
                     />
-                </Section>
+                </BenchmarkSection>
             </div>
         </main>
     );
