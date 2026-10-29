@@ -50,7 +50,7 @@ describe('useDeleteAccountForm', () => {
      * 회귀: 탈퇴가 `useLogout`과 달리 React Query 캐시를 비우지 않아, 소프트 이동한
      * 홈에서 지워진 회원의 사용자 정보·보유종목이 남아 보였다.
      */
-    it('clears currentUser and portfolioHoldings caches like useLogout does', async () => {
+    it('sets currentUser to null and clears holdings and email-report caches', async () => {
         // 성공 경로는 서버 리다이렉트라 돌아오지 않는다.
         mockDeleteAccountAction.mockReturnValue(new Promise(() => {}));
         const { result } = renderHook(() => useDeleteAccountForm());
