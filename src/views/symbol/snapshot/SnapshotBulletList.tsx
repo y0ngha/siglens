@@ -1,6 +1,3 @@
-/**
- * 스냅샷 산문 렌더러들이 공유하는 라벨 붙은 글머리표 목록.
- */
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { useTranslations } from 'next-intl';

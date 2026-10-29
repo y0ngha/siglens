@@ -1,6 +1,3 @@
-/**
- * 종목 공포·탐욕 5개 지표 표와 평소 범위 밖 지표 해석 한 문장.
- */
 import { useTranslations } from 'next-intl';
 import type { FearGreedFactorTable as FactorTableData } from './utils/fearGreedFacts';
 

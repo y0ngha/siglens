@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 차트 탭 이동 중 골격(레이아웃 헤더 아래 page slot만 채운다).
- */
 // ⚠️ 클라이언트 컴포넌트로 둔다. 서버 `useTranslations`는 요청 스코프의 로케일을 요구하는데
 // ISR 콜드 생성 시점에는 그게 없어 next-intl이 `headers()`로 폴백하고 정적 렌더가
 // `DYNAMIC_SERVER_USAGE`로 중단된다(종목 페이지 전체가 500). 클라이언트 컴포넌트는

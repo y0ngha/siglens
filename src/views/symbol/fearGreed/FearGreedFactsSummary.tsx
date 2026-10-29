@@ -1,6 +1,3 @@
-/**
- * 종목 공포·탐욕 탭의 서버 렌더 사실 요약 — 크롤러가 JS 없이도 점수와 5개 지표를 받는다.
- */
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';

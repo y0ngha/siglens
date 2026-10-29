@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 모든 `/[symbol]/*` 페이지에 렌더되는 레이아웃 헤더 — 브레드크럼·공포탐욕 칩·컨트롤·탭 레일.
- */
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { Suspense } from 'react';
 import { useSelectedLayoutSegment } from 'next/navigation';

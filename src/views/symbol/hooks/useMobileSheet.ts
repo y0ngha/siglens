@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 차트 탭 모바일 분석 시트의 스냅 위치와 시트 본문 상태.
- */
 import {
     type Dispatch,
     type ReactNode,

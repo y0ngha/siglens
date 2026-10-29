@@ -1,6 +1,3 @@
-/**
- * 심볼 페이지 하단의 "관련 종목" 칩 스트립(서버 컴포넌트).
- */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getLocale, getTranslations } from 'next-intl/server';

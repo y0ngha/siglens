@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * FULL 스냅의 모바일 분석 시트를 아래로 끌어 줄이는 터치 제스처.
- */
 import { type RefObject, useEffect, useEffectEvent } from 'react';
 import {
     DRAG_RESISTANCE,
@@ -24,10 +21,12 @@ interface UseMobileSheetDragOptions {
     onSnapChange: (snap: SnapPoint) => void;
 }
 
-// FULL 스냅 + scrollTop === 0에서 아래로 스와이프 시 시트를 축소하는 제스처.
-// vaul의 shouldDrag는 아래 방향 드래그를 차단하므로, 별도 터치 핸들러로 스냅 전환을 처리한다.
-// touchmove에서 Drawer.Content의 transform을 직접 조작해 손가락을 따라오는 실시간 피드백을 준다.
-/** FULL 스냅일 때만 시트 스크롤 영역에 터치 리스너를 단다(언마운트·스냅 변경 시 정리). */
+/**
+ * FULL 스냅 + scrollTop === 0에서 아래로 스와이프 시 시트를 축소하는 제스처.
+ * vaul의 shouldDrag는 아래 방향 드래그를 차단하므로, 별도 터치 핸들러로 스냅 전환을 처리한다.
+ * touchmove에서 Drawer.Content의 transform을 직접 조작해 손가락을 따라오는 실시간 피드백을 준다.
+ * 리스너는 FULL 스냅일 때만 시트 스크롤 영역에 달고, 언마운트·스냅 변경 시 정리한다.
+ */
 export function useMobileSheetDrag({
     scrollElRef,
     drawerElRef,

@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 차트 탭 타임프레임 선택·URL 동기화·전환 중 표시 상태.
- */
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import {
     useDeferredValue,

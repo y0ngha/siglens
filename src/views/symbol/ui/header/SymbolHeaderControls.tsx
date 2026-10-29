@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 종목 레이아웃 헤더 오른쪽 컨트롤 묶음 — 관심종목·평단 칩·공유·분석 설정.
- */
 import type { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
 import { ShareButton } from '@/widgets/share/ui/ShareButton';

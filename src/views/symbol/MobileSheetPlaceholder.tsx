@@ -1,6 +1,3 @@
-/**
- * 하이드레이션 전 모바일 분석 시트 자리를 채우는 서버 렌더 껍데기.
- */
 import type { CSSProperties } from 'react';
 import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
 

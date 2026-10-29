@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 경로가 바뀔 때마다 활성 탭을 가로 스크롤 레일 안으로 끌어오는 훅.
- */
 import { useEffect, useRef, type RefObject } from 'react';
 import { railScrollLeftFor } from '../utils/tabRailScroll';
 
@@ -14,6 +11,8 @@ interface UseKeepActiveTabInRailResult {
 }
 
 /**
+ * 경로가 바뀔 때마다 활성 탭을 가로 스크롤 레일 안으로 끌어온다.
+ *
  * 탭이 9개라 모바일 폭에서 레일이 넘친다. 그 라우트로 직접 들어온 사용자는 활성 탭이
  * 화면 밖에 있으면 자기가 어느 탭에 있는지 볼 수 없다(`aria-current`는 AT에만 들린다).
  *

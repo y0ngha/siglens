@@ -1,6 +1,3 @@
-/**
- * 모든 `/[symbol]/*` 헤더에 붙는 종목 공포·탐욕 칩(서버가 계산한 스냅샷을 그대로 렌더).
- */
 import { useTranslations } from 'next-intl';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import {

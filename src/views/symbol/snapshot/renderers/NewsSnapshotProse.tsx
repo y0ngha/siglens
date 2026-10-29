@@ -1,6 +1,3 @@
-/**
- * 뉴스 탭 SEO 스냅샷 산문 렌더러.
- */
 import { useTranslations } from 'next-intl';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';

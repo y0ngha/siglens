@@ -1,6 +1,3 @@
-/**
- * 프리웜된 SEO 분석 스냅샷 산문을 감싸는 섹션 셸 — 제목·기준일 캡션·쉽게보기·출처 고지.
- */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useId, type ReactNode } from 'react';

@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 종목 레이아웃 헤더의 탭 레일(차트·뉴스·…·포지션).
- */
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { cn } from '@/shared/lib/cn';

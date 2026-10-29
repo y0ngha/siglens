@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 차트 탭 상단 한 줄 — 페이지 h1·헤딩 배지·모바일 "AI 분석 보기" 버튼·타임프레임 셀렉터.
- */
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { Timeframe } from '@y0ngha/siglens-core';
@@ -23,6 +20,8 @@ interface ChartTimeframeBarProps {
 }
 
 /**
+ * 차트 탭 상단 한 줄 — 페이지 h1과 타임프레임 셀렉터(모바일은 "AI 분석 보기" 버튼도).
+ *
  * 이 바는 아래 차트/AI 레일 2-pane에 정렬한다 — 자기가 제어하는 대상이 그쪽이다. `px-4`면 h1은
  * 캔버스 좌단에서 16px, 셀렉터 우단은 레일 우단(vw−16)과 같은 선에 놓인다. 위의 브레드크럼·탭도
  * 같은 전폭 `px-4`를 쓴다 — 두 값은 함께 움직여야 한다(`SymbolLayoutHeader`).

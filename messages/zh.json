@@ -2693,7 +2693,7 @@
                 "asOfClose": "(截至 {v0} 收盘)",
                 "fa167e": "当前分数",
                 "fabc11": "恐惧与贪婪指数摘要",
-                "scoreValue": "{v0} / 100 ({v1})"
+                "scoreValue": "{v0} / 100（{v1}）"
             },
             "FearGreedHeaderChip": {
                 "afe032": "恐惧与贪婪数据不足",

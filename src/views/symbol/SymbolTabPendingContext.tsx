@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * 같은 종목 안의 탭 이동 pending 판정과, 그동안 이전 탭 대신 골격을 그리는 page slot.
+ * `[symbol]` 레이아웃이 같은 종목 안 탭 이동 동안 이전 탭 대신 `SymbolTabSkeleton`을 그리게 하는
+ * 클라이언트 경계. 탭 레일(`SymbolTabs`)과 골격도 같은 판정(`usePendingSymbolTab`)을 읽는다.
  */
 import type { ReactNode } from 'react';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';

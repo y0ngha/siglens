@@ -1,6 +1,3 @@
-/**
- * 차트 탭 서술 문장의 주어(로케일별 종목 표기).
- */
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { buildTitleSubject } from '@/shared/lib/seo';
 

@@ -1,6 +1,3 @@
-/**
- * 종목 산문 하단의 출처·작성 방식 고지.
- */
 import { useTranslations } from 'next-intl';
 import { dataSourceLabelKey } from '@/shared/config/marketProfile/dataSourceLabel';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';

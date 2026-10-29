@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * 차트 탭 하위 트리가 공유하는 페이지 상수(지표 수·스킬 수) 컨텍스트.
+ * 차트 탭 페이지가 서버에서 센 지표 수·스킬 카탈로그 수를 `SymbolPageClient`에서 `ChartContent`로
+ * 공급하는 컨텍스트. 값은 페이지 렌더 동안 바뀌지 않는 상수다.
  */
 import type { ReactNode } from 'react';
 import { createContext, useContext } from 'react';

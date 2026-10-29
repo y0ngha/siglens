@@ -1,5 +1,7 @@
 /**
- * 모바일 분석 시트의 스냅 지점·띠 높이·드래그 임계값 상수.
+ * 모바일 분석 시트(vaul)의 치수 계약. 시트는 PEEK(초기 접힘, 차트를 가리지 않는 띠) → HALF(드래그
+ * 중간) → FULL(전체 열림) 세 스냅만 갖고, 차트 예약 높이·SSR 껍데기·드래그 제스처가 모두 이 값에서
+ * 파생되므로 리터럴을 다른 곳에 두지 않는다.
  */
 
 /** vaul 스냅 지점 값(뷰포트 비율 또는 px 문자열). */
@@ -10,9 +12,11 @@ export type SnapPoint = number | string | null;
  * 가리지 않는 실측 임계값(0.194~0.215) 아래에 머문다. 산식과 여유 근거는 useMobileSheet 참고.
  */
 export const SNAP_PEEK = 0.2;
-/** 55% — 드래그 중간 스냅. */
 export const SNAP_HALF = 0.55;
-/** 97% — 전체 열림. */
+/**
+ * 시트 높이(`SHEET_HEIGHT_SVH`)와 같은 값이라 FULL에서는 시트 전체가 보인다 — `useMobileSheetDrag`는
+ * FULL 위치를 항상 `translateY(0)`으로 본다.
+ */
 export const SNAP_FULL = 0.97;
 
 /** PEEK → HALF → FULL 순서의 스냅 지점. */

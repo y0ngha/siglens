@@ -1,6 +1,3 @@
-/**
- * 차트 탭의 결정적 기술적 사실 요약(AI 서사가 없을 때도 크롤 가능한 텍스트).
- */
 import { useTranslations } from 'next-intl';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useId } from 'react';

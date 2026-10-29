@@ -1,5 +1,7 @@
 /**
- * 차트 탭 기술적 사실 요약(`TechnicalFactsSummary`)의 판정·서술 문장·표시 값.
+ * `TechnicalFactsSummary`가 그리는 결정적 사실의 판정·문장·표시 값. 판정은 문자열이 아니라 카탈로그
+ * 키를 고르는 값(`Direction`·`RsiZone`)으로 내고, 그 키의 번역 호출은 컴포넌트 파일에 남긴다
+ * (`DIRECTION_LABEL_KEY` 참고).
  */
 import {
     RSI_OVERBOUGHT_LEVEL,

@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 종목 레이아웃 헤더의 가시 브레드크럼(`시그렌즈 / 종목명 (티커) / 탭`).
- */
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { cn } from '@/shared/lib/cn';
 import { brandName } from '@/shared/lib/brandName';
@@ -32,6 +29,8 @@ const NAME_CLASS =
     'line-clamp-2 text-base leading-tight font-semibold tracking-wide text-secondary-100 sm:line-clamp-none sm:truncate sm:text-lg';
 
 /**
+ * 종목 레이아웃 헤더의 가시 브레드크럼(`시그렌즈 / 종목명 (티커) / 탭`).
+ *
  * 각 탭 페이지의 `BreadcrumbList` JSON-LD와 같은 마디를 같은 문자열로 그린다. 홈 마디 텍스트는
  * JSON-LD와 같은 `brandName(locale)`이고 영문 대문자는 CSS(`uppercase`)가 만든다.
  *

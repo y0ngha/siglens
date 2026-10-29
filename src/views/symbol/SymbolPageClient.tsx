@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 차트 탭(`/[symbol]`) 본문 — 타임프레임 바, 차트+AI 패널, 모바일 분석 시트.
- */
 import { ChartErrorFallback } from '@/widgets/chart/ChartErrorFallback';
 import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
 import { ExtendedHoursQuoteLine } from '@/widgets/extended-hours/ui/ExtendedHoursQuoteLine';

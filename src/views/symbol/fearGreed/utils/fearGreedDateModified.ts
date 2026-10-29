@@ -1,6 +1,3 @@
-/**
- * 종목 공포·탐욕 탭 JSON-LD `dateModified` 계산.
- */
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { sessionCloseUtcOnDate } from '@/shared/lib/marketSessionDate';

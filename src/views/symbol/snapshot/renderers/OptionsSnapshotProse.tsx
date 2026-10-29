@@ -1,6 +1,3 @@
-/**
- * 옵션 탭 SEO 스냅샷 산문 렌더러.
- */
 import { useTranslations } from 'next-intl';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { cn } from '@/shared/lib/cn';

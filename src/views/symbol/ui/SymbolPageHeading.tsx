@@ -1,6 +1,3 @@
-/**
- * 종목 서브탭 페이지가 공유하는 가시 h1.
- */
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 

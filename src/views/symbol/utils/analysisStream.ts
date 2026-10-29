@@ -1,5 +1,6 @@
 /**
- * 기술적 분석 SSE 제출(`useAnalysis`)의 결과 타입·결과 분류·오류 매핑·쿨다운 상수.
+ * `useAnalysis` SSE 제출 계약 중 React와 무관한 부분 — 결과를 onSuccess/onError로 가르는 규칙과
+ * 쿨다운 값. 훅 없이 단위 테스트한다(`views/symbol/__tests__/utils/analysisStream.test.ts`).
  */
 import {
     TIER_CONFIG,
@@ -127,10 +128,13 @@ export function toAnalysisOutcome(
         throw new Error(messages.keyRequired);
     }
     if (result.status === 'error') {
+        const { error } = result;
         const message =
-            typeof result.error === 'object' && result.error !== null
-                ? ((result.error as { message?: string }).message ??
-                  messages.generic)
+            typeof error === 'object' &&
+            error !== null &&
+            'message' in error &&
+            typeof error.message === 'string'
+                ? error.message
                 : messages.generic;
         throw new Error(message);
     }

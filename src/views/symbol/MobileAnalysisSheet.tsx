@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 모바일 분석 바텀시트(vaul) — 차트 탭 AI 분석 패널을 담는 비모달 시트.
- */
 import { useTranslations } from 'next-intl';
 import { type ReactNode } from 'react';
 import { Drawer } from 'vaul';
@@ -22,7 +19,7 @@ interface MobileAnalysisSheetProps {
 }
 
 /**
- * 모바일 분석 바텀시트.
+ * 모바일 분석 바텀시트(vaul) — 차트 탭 AI 분석 패널을 담는 비모달 시트.
  *
  * `modal={false}`는 반드시 Radix Dialog까지 도달해야 한다. vaul 1.1.2는 이 prop을
  * 내부 `DialogPrimitive.Root`에 전달하지 않는 회귀가 있어(업스트림 이슈

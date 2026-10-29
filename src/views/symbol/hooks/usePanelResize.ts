@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 데스크톱 AI 패널 폭 조절(마우스 드래그·키보드).
- */
 import type React from 'react';
 import { useRef, useState } from 'react';
 import { useDragListener } from './useDragListener';

@@ -1,5 +1,6 @@
 /**
- * 종목 공포·탐욕 사실 요약(`FearGreedFactsSummary`)이 그릴 값을 한 번에 만든다.
+ * `FearGreedFactsSummary`의 계산 부분. 컴포넌트는 번역자를 만들어 넘기고 결과를 그리기만 해서, 문장
+ * 조립은 렌더 없이 단위 테스트한다(`fearGreed/__tests__/fearGreedSummaryModel.test.ts`).
  */
 import type {
     Bar,

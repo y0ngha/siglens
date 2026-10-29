@@ -1,5 +1,7 @@
 /**
- * 봉 데이터에서 종목 공포·탐욕 메타 사실을 만드는 진입점.
+ * 공포·탐욕 탭 페이지(`[symbol]/fear-greed/page.tsx`)가 `BarsData`만 들고 메타 설명·`dateModified`에
+ * 필요한 사실을 꺼내는 어댑터 — 입력 고르기와 계산(`entities/bars/lib/symbolFearGreed`)을 페이지가
+ * 직접 조립하지 않게 한다.
  */
 import type { BarsData } from '@y0ngha/siglens-core';
 import {

@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * SSR 스냅샷 산문을 라이브 분석·모바일에서 접는 `<details>` 아일랜드.
- */
 import { useEffect, useState, type ReactNode } from 'react';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 

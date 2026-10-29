@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 관련 종목 칩의 앵커 — 현재 탭을 유지한 채 피어 종목으로 넘어간다.
- */
 import type { ReactNode } from 'react';
 import { useSelectedLayoutSegment } from 'next/navigation';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';

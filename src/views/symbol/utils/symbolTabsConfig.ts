@@ -1,5 +1,6 @@
 /**
- * 종목 분석 탭의 단일 출처 — 탭 순서·경로, 프로필별 노출, 하위 탭 판정.
+ * 탭 레일(`SymbolTabs`)·브레드크럼(`SymbolLayoutHeader`)·`[symbol]` 레이아웃이 함께 읽는 탭 정의 —
+ * 각자 탭 목록을 들면 노출되는 탭과 링크가 갈린다.
  */
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {

@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 차트 탭 기술적 분석의 제출·재분석·쿨다운·개인화 상태를 소유하는 훅.
- */
 import { useMutation } from '@tanstack/react-query';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import {

@@ -1,6 +1,3 @@
-/**
- * 극심한 공포·탐욕 구간 진입·체류 기록 표(서버 렌더 본문).
- */
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';

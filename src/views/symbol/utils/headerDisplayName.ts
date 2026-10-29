@@ -1,6 +1,3 @@
-/**
- * 종목 레이아웃 헤더의 종목명 줄(브레드크럼 둘째 마디)과 관심종목 표시명 판정.
- */
 import { shouldShowEnglishName } from '@/entities/ticker/lib/ticker';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import type { AssetInfo } from '@/shared/lib/types';

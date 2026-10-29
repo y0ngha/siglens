@@ -1,7 +1,7 @@
 /**
- * 분석 진행·오류 표시 상태 판정.
+ * `ChartContent`가 AI 패널에 넘기는 진행·오류 상태. 플래그 두 개 대신 판별 유니온 하나로 넘겨
+ * "진행 중이면서 오류" 같은 조합이 패널에 닿지 않게 한다.
  */
-/** 분석 패널의 진행·오류 상태. */
 export type AnalysisStatus =
     | { type: 'idle' }
     | { type: 'analyzing' }

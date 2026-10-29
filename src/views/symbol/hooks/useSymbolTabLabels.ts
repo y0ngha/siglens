@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 종목 탭 레일의 탭 라벨을 리터럴 카탈로그 키로 만든다.
- */
 import { useTranslations } from 'next-intl';
 import type { TabKey } from '@/shared/config/marketProfile/types';
 

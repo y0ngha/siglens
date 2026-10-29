@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 옵션 탭 이동 중 골격.
- */
 // ⚠️ 클라이언트 컴포넌트로 둔다. 서버 `useTranslations`는 요청 스코프의 로케일을 요구하는데
 // ISR 콜드 생성 시점에는 그게 없어 next-intl이 `headers()`로 폴백하고 정적 렌더가
 // `DYNAMIC_SERVER_USAGE`로 중단된다(종목 페이지 전체가 500). 클라이언트 컴포넌트는
@@ -32,7 +29,10 @@ const CHAIN_TABLE_ROW_COUNT = 6;
 // CrossLinkCards는 3개 (overall, fundamental, news 등) 가로 그리드.
 const CROSS_LINK_CARD_COUNT = 3;
 
-/** 옵션 탭 본문 구조를 따른 이동 중 골격. */
+/**
+ * 옵션 탭으로 이동하는 동안 `SymbolTabSkeleton`이 그리는 골격. 옵션 탭 본문은 섹션 카드의 세로 목록이
+ * 아니라(만기 칩·지표 카드·체인 표) `SectionSkeleton` 묶음 대신 본문 구조를 그대로 따른다.
+ */
 export function OptionsTabSkeleton() {
     const t = useTranslations('app.symbol');
     return (

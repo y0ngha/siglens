@@ -1,5 +1,10 @@
 /**
- * 종목 공포·탐욕 탭의 결정적 크롤 문장·지표 표·극단 구간 기록 빌더(번역자를 인자로 받는 순수 함수).
+ * 종목 공포·탐욕 탭의 SSR 크롤 문장·지표 표·극단 구간 기록 빌더. 본문(`FearGreedFactsSummary`)과
+ * meta description(`fearGreedMetaDescription`)이 같은 사실을 읽도록 한 곳에 둔다.
+ *
+ * `t`/`tFacts`는 `views.symbol.fearGreedFacts` 네임스페이스 번역자(`SeoTranslator` 모양)다. JS 없이
+ * 읽히는 본문이라 여기 남은 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고
+ * 훅을 부르지 않고 번역자를 인자로 받는다.
  */
 import type {
     FearGreedFactor,
@@ -38,12 +43,6 @@ const HIGH_PERCENTILE_MIN = 75;
 // factor/group 점수 percentile 척도의 중앙값. "평소 수준"에서 얼마나 벗어났는지
 // 판단하는 기준점으로 findMostExtremeFactor·buildFearGreedFactorRankingLine이 공유한다.
 const MEDIAN_PERCENTILE = 50;
-
-// `t`/`tFacts`는 `views.symbol.fearGreedFacts` 네임스페이스 번역자(`SeoTranslator` 모양).
-//
-// 이 모듈은 SSR 크롤 텍스트를 만든다 — JS 없이 읽히는 본문이라, 여기 남은
-// 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고 훅을
-// 부르지 않고 번역자를 인자로 받는다(호출부는 컴포넌트 하나뿐).
 
 /** 평소 범위(25~75 퍼센타일) 기준 위치. */
 type FactorLevel = 'high' | 'mid' | 'low';
@@ -175,8 +174,9 @@ function findMostExtremeFactor(
 
 /**
  * 5개 factor 중 50번째 퍼센타일(평소 수준)에서 가장 멀리 벗어난 — 즉 가장
- * 두드러진 — factor를 지목하는 심볼별 서사 문장을 만든다. 어느 factor가 뽑히는지 자체가 심볼마다 달라지므로 숫자 치환을
- * 넘어 문장 구조(주어)가 달라진다. factor가 하나도 없으면 `null`.
+ * 두드러진 — factor를 지목하는 심볼별 서사 문장을 만든다. 어느 factor가
+ * 뽑히는지 자체가 심볼마다 달라지므로 숫자 치환을 넘어 문장 구조(주어)가
+ * 달라진다. factor가 하나도 없으면 `null`.
  */
 export function buildFearGreedFactorRankingLine(
     snapshot: FearGreedSnapshot,
