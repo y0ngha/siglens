@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 상세 분석(reasoning) 스위치. 라벨·설명 툴팁·스위치를 한 줄로 그린다.
- */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { REASONING_FEATURE_LABEL_KEY } from '../model/reasoningFeature';
@@ -100,11 +97,14 @@ export function ReasoningToggle({
             ? tA11y('signupPrompt', { v0: featureLabel })
             : tA11y('toggleAria', { v0: featureLabel });
 
-    const clickByMode: Record<ReasoningSwitchMode, () => void> = {
-        // `aria-disabled`를 알리는 상태라 가입 넛지조차 띄우지 않는다.
-        disabled: () => {},
-        locked: () => onLockedClick?.(),
-        interactive: () => onChange(!checked),
+    const handleClick = (): void => {
+        // `disabled`는 `aria-disabled`를 알리는 상태라 가입 넛지조차 띄우지 않는다.
+        if (mode === 'disabled') return;
+        if (mode === 'locked') {
+            onLockedClick?.();
+            return;
+        }
+        onChange(!checked);
     };
 
     return (
@@ -126,7 +126,7 @@ export function ReasoningToggle({
                 // disabled를 달지 않는다. native disabled는 탭 순서에서도 빠진다.
                 aria-disabled={disabled || undefined}
                 disabled={disabled}
-                onClick={clickByMode[mode]}
+                onClick={handleClick}
                 className={cn(
                     TRACK_BASE_CLASS,
                     effectiveChecked ? 'bg-primary-600' : 'bg-secondary-700',

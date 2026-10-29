@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 회원의 상세 분석(reasoning) 토글 선호값을 localStorage에 두고 읽는 훅.
- */
 import {
     startTransition,
     useCallback,
