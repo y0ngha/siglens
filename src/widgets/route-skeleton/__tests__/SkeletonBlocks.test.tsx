@@ -18,10 +18,10 @@ describe('SkeletonLines', () => {
         expect(lines).toHaveLength(5);
         const [w0, w1, w2, w3] = SKELETON_LINE_WIDTHS;
         expect(
-            lines.map((line, i) =>
-                line.classList.contains([w0, w1, w2, w3, w0][i] ?? '')
+            lines.map(line =>
+                Array.from(line.classList).filter(c => c.startsWith('w-'))
             )
-        ).toEqual([true, true, true, true, true]);
+        ).toEqual([[w0], [w1], [w2], [w3], [w0]]);
     });
 });
 

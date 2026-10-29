@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { SKELETON_BAR, SKELETON_BLOCK_RADIUS } from '../../model/barClasses';
+import { cycleTake } from '../../utils/cycleTake';
 
 interface SkeletonCardsProps {
     readonly count: number;
@@ -13,7 +14,7 @@ interface SkeletonCardsProps {
  * 카드 격자 자리 — 같은 크기의 카드 막대 `count`장.
  */
 export function SkeletonCards({ count, grid, card }: SkeletonCardsProps) {
-    const cards = Array.from({ length: count }, () => card);
+    const cards = cycleTake([card], count);
     return (
         <div className={cn('grid gap-3', grid)}>
             {cards.map((cardClass, i) => (

@@ -11,6 +11,7 @@ export function cycleTake<T>(items: readonly T[], count: number): T[] {
     if (items.length === 0 || count <= 0) return [];
     return Array.from(
         { length: count },
+        // 위에서 길이를 확인해 인덱스가 늘 범위 안이다 — `noUncheckedIndexedAccess`가 넓힌 `undefined`만 걷어낸다.
         (_, i) => items[i % items.length] as T
     );
 }

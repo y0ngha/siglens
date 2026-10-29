@@ -5,8 +5,13 @@ import { ROUTE_SKELETON_LAYOUTS } from './model/layouts';
 import type { SkeletonRouteKind } from './types';
 import { SkeletonBlockView } from './ui/blocks/SkeletonBlockView';
 
+interface RouteSkeletonProps {
+    readonly kind: SkeletonRouteKind;
+}
+
 /**
- * 종목 밖 라우트로 들어가는 순간 루트 page slot에 그리는 골격.
+ * 목적지 라우트 종류(`kind`)에 맞는 글자 없는 장식 골격. 종목 밖 라우트로 들어가는
+ * 순간 루트 page slot에 그린다.
  *
  * 클릭 직후, 목적지 RSC가 오기 전에 보인다(`NavigationPendingContext` JSDoc). 그래서
  * 목적지에 대해 아는 것은 경로뿐이다 — 데이터도, 그 라우트의 번역 메시지도 아직 없다.
@@ -21,12 +26,6 @@ import { SkeletonBlockView } from './ui/blocks/SkeletonBlockView';
  *
  * 종목 라우트는 여기서 그리지 않는다 — 헤더·탭까지 같은 틀인 `SymbolEntrySkeleton`이 맡는다.
  */
-
-interface RouteSkeletonProps {
-    readonly kind: SkeletonRouteKind;
-}
-
-/** 목적지 라우트 종류(`kind`)에 맞는 글자 없는 장식 골격. */
 export function RouteSkeleton({ kind }: RouteSkeletonProps) {
     const layout = ROUTE_SKELETON_LAYOUTS[kind];
     const blocks = layout.blocks.map((block, i) => (
