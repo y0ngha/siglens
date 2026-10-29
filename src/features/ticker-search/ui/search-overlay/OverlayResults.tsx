@@ -7,6 +7,14 @@ import { resultDisplayNames } from '../../lib/resultDisplay';
 import type { SearchStatus } from '../../lib/searchStatus';
 import { SearchResultRow } from '../SearchResultRow';
 
+const CENTERED_STATUS_CLASS =
+    'px-4 py-10 text-center text-sm text-secondary-400';
+
+interface StatusMessage {
+    className: string;
+    text: string;
+}
+
 interface OverlayResultsProps {
     results: readonly TickerSearchResult[];
     status: SearchStatus;
@@ -28,6 +36,34 @@ export function OverlayResults({
     onSelect,
 }: OverlayResultsProps) {
     const t = useTranslations('features.ticker-search');
+    // 새 상태가 생기면 컴파일이 실패하도록 전부 적는다. 아무것도 보이지 않는 상태는 null이다.
+    // "결과 없음"과 "조회 실패"는 다르다. 구분하지 않으면 검색 서버가 죽어도
+    // "결과가 없습니다"로 보이고, 한글 질의에는 "티커로 쳐보세요"라는 틀린 안내가
+    // 나간다 — 사용자는 없는 종목을 찾은 줄 안다.
+    // 한글 질의는 검색 키 직행이 막혀 있다(회사명을 URL로 삼으면 없는 페이지로 간다).
+    // FMP가 색인하지 않는 종목을 한글로 찾으면 티커로 다시 쳐보라는 안내가 유일한
+    // 출구다. 데스크톱 자동완성과 같은 문구.
+    const statusMessages: Record<SearchStatus, StatusMessage | null> = {
+        idle: null,
+        results: null,
+        searching: {
+            className: 'px-4 py-3 text-sm text-secondary-400',
+            text: t('search.searchingEllipsis'),
+        },
+        error: {
+            className: CENTERED_STATUS_CLASS,
+            text: t('search.loadFailedRetry'),
+        },
+        emptyKorean: {
+            className: CENTERED_STATUS_CLASS,
+            text: t('search.noResultsTryTickerExample'),
+        },
+        empty: {
+            className: CENTERED_STATUS_CLASS,
+            text: t('search.noResults'),
+        },
+    };
+    const statusMessage = statusMessages[status];
 
     return (
         <section aria-label={t('search.resultsLabel')}>
@@ -48,31 +84,8 @@ export function OverlayResults({
                     />
                 </div>
             ))}
-            {status === 'searching' && (
-                <p className="px-4 py-3 text-sm text-secondary-400">
-                    {t('search.searchingEllipsis')}
-                </p>
-            )}
-            {/* "결과 없음"과 "조회 실패"는 다르다. 구분하지 않으면 검색 서버가 죽어도
-                "결과가 없습니다"로 보이고, 한글 질의에는 "티커로 쳐보세요"라는 틀린 안내가
-                나간다 — 사용자는 없는 종목을 찾은 줄 안다. */}
-            {status === 'error' && (
-                <p className="px-4 py-10 text-center text-sm text-secondary-400">
-                    {t('search.loadFailedRetry')}
-                </p>
-            )}
-            {/* 한글 질의는 검색 키 직행이 막혀 있다(회사명을 URL로 삼으면 없는 페이지로
-                간다). FMP가 색인하지 않는 종목을 한글로 찾으면 티커로 다시 쳐보라는 안내가
-                유일한 출구다. 데스크톱 자동완성과 같은 문구. */}
-            {status === 'emptyKorean' && (
-                <p className="px-4 py-10 text-center text-sm text-secondary-400">
-                    {t('search.noResultsTryTickerExample')}
-                </p>
-            )}
-            {status === 'empty' && (
-                <p className="px-4 py-10 text-center text-sm text-secondary-400">
-                    {t('search.noResults')}
-                </p>
+            {statusMessage && (
+                <p className={statusMessage.className}>{statusMessage.text}</p>
             )}
         </section>
     );

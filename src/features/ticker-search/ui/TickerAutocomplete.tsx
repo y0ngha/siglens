@@ -125,12 +125,14 @@ export function TickerAutocomplete({
             ? optionId(selectedIndex)
             : undefined;
     // 화면의 상태 문구. 결과 행이 있는 동안의 재조회에도 "검색 중…"을 함께 보인다.
-    const statusTexts: Partial<Record<SearchStatus, () => string>> = {
+    const statusTexts: Record<SearchStatus, (() => string) | null> = {
+        idle: null,
         searching: () => t('TickerAutocomplete.e39068'),
         // "결과 없음"과 "조회 실패"는 다르다. 구분하지 않으면 검색이 죽어도 "결과
         // 없음"으로 보이고, 한글 질의에는 "티커로 쳐보세요"라는 틀린 안내까지 나간다.
         // 오버레이와 같은 문구.
         error: () => t('search.loadFailedRetry'),
+        results: null,
         emptyKorean: () => t('TickerAutocomplete.e62852'),
         empty: () => t('TickerAutocomplete.5dd6d9'),
     };
@@ -192,7 +194,13 @@ export function TickerAutocomplete({
                         )}
                     >
                         {statusText && (
-                            <div className={STATUS_ROW_CLASS}>{statusText}</div>
+                            // 같은 문구를 아래 라이브 리전이 고지한다 — 보조기술이 두 번 읽지 않게 시각 행은 숨긴다.
+                            <div
+                                aria-hidden="true"
+                                className={STATUS_ROW_CLASS}
+                            >
+                                {statusText}
+                            </div>
                         )}
                         {isListboxShown && (
                             <div

@@ -513,6 +513,23 @@ describe('TickerAutocomplete', () => {
         expect(screen.queryByText(/검색 결과 없음/)).toBeNull();
     });
 
+    it('보이는 상태 행은 aria-hidden이고 라이브 리전이 같은 문구를 고지한다', () => {
+        // 둘 다 접근성 트리에 있으면 스크린리더가 같은 문구를 두 번 읽는다.
+        setupAutocomplete({
+            query: 'xyz',
+            isOpen: true,
+            status: 'empty',
+            results: [],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getByText('검색 결과 없음')).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+        expect(screen.getByRole('status')).toHaveTextContent(/결과/);
+    });
+
     describe('combobox ARIA 배선', () => {
         it('두 인스턴스가 서로 다른 listbox id를 쓴다', () => {
             // 홈에는 헤더와 히어로에 자동완성이 동시에 뜬다. 고정 id면

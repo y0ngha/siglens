@@ -12,7 +12,7 @@ import {
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { isImeComposing } from '../lib/isImeComposing';
 import {
-    resolveSubmitTarget,
+    resolvePendingSubmit,
     type SubmitTarget,
 } from '../lib/resolveSubmitTarget';
 import { searchStatus, type SearchStatus } from '../lib/searchStatus';
@@ -36,7 +36,7 @@ export interface UseOverlaySearchReturn {
  * ## 검색 키(Enter·`enterKeyHint="search"`)
  *
  * 티커를 아는 사용자가 디바운스 + 왕복 + 탭을 치르지 않게 하는 길이고, FMP 검색이 색인하지
- * 않는 종목에 닿는 유일한 길이다. 목적지는 `resolveSubmitTarget`이 정한다 — 한글 회사명은
+ * 않는 종목에 닿는 유일한 길이다. 목적지는 `resolvePendingSubmit`이 정한다 — 한글 회사명은
  * 직행시키지 않는다(없는 종목 페이지로 보내게 된다).
  *
  * 누른 순간 결정하지 않고 의도를 남겼다가 조회가 결착된 뒤 처리한다. 디바운스(300ms) 때문에
@@ -63,11 +63,16 @@ export function useOverlaySearch(
         useTickerSearch(query);
 
     /**
-     * 결착된 조회 결과로 목적지를 정해 넘긴다. effect event라 `query`·`results`·
+     * 결착된 조회 결과로 목적지를 정해 넘긴다. 호출부는 검색 의도가 있고 조회가 settle된
+     * 상태에서만 불러야 한다 — 여기서는 settle 여부를 다시 확인하지 않는다. 실패(`isError`)면
+     * `resolvePendingSubmit`이 null을 돌려 아무 데도 가지 않는다. effect event라 `query`·`results`·
      * `onSubmitTarget`을 항상 최신으로 읽으면서도 아래 effect의 의존성에는 들어가지 않는다.
      */
     const submitResolvedTarget = useEffectEvent(() => {
-        const target = resolveSubmitTarget(query, results);
+        const target = resolvePendingSubmit(query, results, {
+            navigateOnSelect: true,
+            isError,
+        });
         if (target) onSubmitTarget(target);
     });
 
@@ -103,7 +108,6 @@ export function useOverlaySearch(
     useEffect(() => {
         if (!pendingSubmitRef.current || !isSettled || isSearching) return;
         pendingSubmitRef.current = false;
-        if (isError) return;
         // 검색 settle 뒤 확정된 목적지로 이동/선택을 알리는 것이며 라이브 상태를 부모에 동기화하는 것이 아니다.
         // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-pass-live-state-to-parent
         submitResolvedTarget();
