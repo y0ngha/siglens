@@ -402,6 +402,20 @@ When you keep a local `readonly T[]` to back a `value is T` guard (for example `
 
 Prefer deriving the list so it cannot drift: `Object.keys(map) as T[]` from an upstream `Record<T, …>`, a compile-time exhaustiveness check paired with `satisfies`, or exporting the list from core itself.
 
+<a id="TS-4"></a>
+
+#### TS-4 — Narrow with a local binding instead of a non-null assertion
+
+Do not use `x!` (including `array.find(...)!` in tests). A `!` silences the compiler and fails later with an unhelpful `undefined` error. Bind the value to a local `const` and narrow it with a guard or an explicit assertion that fails with a readable message.
+
+```ts
+// ❌
+const row = rows.find(r => r.id === id)!;
+// ✅
+const row = rows.find(r => r.id === id);
+if (!row) throw new Error(`row ${id} not found`);
+```
+
 #### Other TypeScript rules
 
 - **Add parsed fields to the owning interface immediately.** When an adapter starts reading a new field from its data source, add it to the domain interface in the same change.

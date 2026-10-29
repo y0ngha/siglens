@@ -1,12 +1,20 @@
 'use client';
 
+/**
+ * @file 미리보기 칩의 빼기·다시 넣기·기록 지우기 훅과 그 모드.
+ */
+
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useTransition } from 'react';
+import { useCallback, useTransition } from 'react';
 import { excludeReportSymbolAction } from '@/entities/email-report/actions/excludeReportSymbolAction';
 import { includeReportSymbolAction } from '@/entities/email-report/actions/includeReportSymbolAction';
-import { REPORT_SYMBOLS_PREVIEW_ID } from '@/features/email-report-settings/lib/reportSymbolsPreviewIds';
+import type {
+    RawReportSymbolInput,
+    ReportSymbolActionResult,
+} from '@/entities/email-report/model';
 import { useToast } from '@/shared/ui/ToastProvider';
+import { REPORT_SYMBOLS_PREVIEW_ID } from '../lib/reportSymbolsPreviewIds';
 
 /**
  * `exclude`: 리포트에 담긴 종목을 뺀다. `include`: 뺀 종목을 다시 넣는다. `clear`: 목록에서 이미
@@ -14,10 +22,21 @@ import { useToast } from '@/shared/ui/ToastProvider';
  */
 export type ReportSymbolToggleMode = 'exclude' | 'include' | 'clear';
 
+/** [[useReportSymbolToggle]]이 칩 버튼에 넘기는 진행 상태와 안정적인 토글 함수. */
 interface UseReportSymbolToggleResult {
+    /** 요청과 새로고침이 끝날 때까지 true — 버튼은 `aria-disabled`로 보인다. */
     pending: boolean;
     toggle: () => void;
 }
+
+const ACTION_BY_MODE: Record<
+    ReportSymbolToggleMode,
+    (input: RawReportSymbolInput) => Promise<ReportSymbolActionResult>
+> = {
+    exclude: excludeReportSymbolAction,
+    include: includeReportSymbolAction,
+    clear: includeReportSymbolAction,
+};
 
 /**
  * 리포트에서 종목을 빼거나 다시 넣는다. 성공하면 `router.refresh()`로 서버가 계산한 미리보기를
@@ -32,30 +51,25 @@ export function useReportSymbolToggle(
     mode: ReportSymbolToggleMode,
     label: string
 ): UseReportSymbolToggleResult {
+    const [pending, startTransition] = useTransition();
+
     const t = useTranslations('features.email-report-settings');
     const router = useRouter();
     const { showToast } = useToast();
-    const [pending, startTransition] = useTransition();
 
-    const toggle = () => {
+    const toggle = useCallback(() => {
         if (pending) return;
+        const successMessage: Record<ReportSymbolToggleMode, () => string> = {
+            exclude: () => t('ReportSymbolChip.excludedToast', { v0: label }),
+            include: () => t('ReportSymbolChip.includedToast', { v0: label }),
+            clear: () => t('ReportSymbolChip.clearedToast', { v0: label }),
+        };
         startTransition(async () => {
-            const action =
-                mode === 'exclude'
-                    ? excludeReportSymbolAction
-                    : includeReportSymbolAction;
-            const successMessage = (v0: string) => {
-                if (mode === 'exclude')
-                    return t('ReportSymbolChip.excludedToast', { v0 });
-                if (mode === 'include')
-                    return t('ReportSymbolChip.includedToast', { v0 });
-                return t('ReportSymbolChip.clearedToast', { v0 });
-            };
             try {
-                const result = await action({ symbol });
+                const result = await ACTION_BY_MODE[mode]({ symbol });
                 if (result.status === 'ok') {
                     router.refresh();
-                    showToast({ message: successMessage(label) });
+                    showToast({ message: successMessage[mode]() });
                     document.getElementById(REPORT_SYMBOLS_PREVIEW_ID)?.focus();
                     return;
                 }
@@ -65,7 +79,7 @@ export function useReportSymbolToggle(
                 showToast({ message: t('ReportSymbolChip.failed') });
             }
         });
-    };
+    }, [pending, mode, symbol, label, t, router, showToast]);
 
     return { pending, toggle };
 }
