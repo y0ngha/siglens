@@ -9,7 +9,7 @@ import type { Locator, Page } from '@playwright/test';
  *
  * Runs in the `authed` Playwright project: the shared storageState
  * (.auth/user.json, the seeded e2e-auth-user) authenticates the request through
- * proxy.ts and account/page.tsx's getCurrentUser re-check. This spec only
+ * proxy.ts and account/_components/AccountContent.tsx's getCurrentUser re-check. This spec only
  * read/writes that user's `userApiKeys` rows — it never deletes the user — so it
  * leaves the shared storageState intact for the other account specs.
  *

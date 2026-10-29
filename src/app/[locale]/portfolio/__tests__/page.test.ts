@@ -5,9 +5,9 @@
  * fetches per-symbol price ranges), the 0-holdings empty-state CTA, and the
  * degrade-to-error-state behavior on a transient DB read failure.
  *
- * `PortfolioMemberArea` reads holdings directly via `DrizzlePortfolioRepository`
- * (not `getPortfolioHoldingsAction`, which re-resolves `getCurrentUser`
- * internally — see the page's doc comment), so this mocks the repository +
+ * `PortfolioMemberArea` reads holdings via `loadPortfolioHoldings`, which uses
+ * `DrizzlePortfolioRepository` directly (not `getPortfolioHoldingsAction`, which
+ * re-resolves `getCurrentUser` internally), so this mocks the repository +
  * `getDatabaseClient` the same way `src/app/[locale]/privacy/__tests__/page.test.ts`
  * mocks `DrizzleTermsRepository`. `toView` is real (pure), so fixtures are
  * raw `PortfolioHoldingRecord`-shaped rows (Date `updatedAt`).
@@ -26,6 +26,7 @@ vi.mock('@/entities/portfolio/api', () => ({
         return { findByUser: mockFindByUser };
     }),
 }));
+vi.mock('server-only', () => ({}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
@@ -39,7 +40,7 @@ vi.mock('@/widgets/portfolio-position/ui/PositionHoldingCard', () => ({
 vi.mock('@/features/portfolio-management/ui/PortfolioSignupCta', () => ({
     PortfolioSignupCta: () => null,
 }));
-vi.mock('@/app/[locale]/portfolio/PortfolioManager', () => ({
+vi.mock('@/app/[locale]/portfolio/_components/PortfolioManager', () => ({
     PortfolioManager: () => null,
 }));
 
@@ -47,13 +48,13 @@ import { isValidElement, type ReactNode } from 'react';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
-import { PortfolioManager } from '@/app/[locale]/portfolio/PortfolioManager';
+import { PortfolioManager } from '@/app/[locale]/portfolio/_components/PortfolioManager';
+import { generateMetadata } from '@/app/[locale]/portfolio/page';
+import { PortfolioMemberArea } from '@/app/[locale]/portfolio/_components/PortfolioMemberArea';
 import {
-    generateMetadata,
     PortfolioEmptyState,
     PortfolioErrorState,
-    PortfolioMemberArea,
-} from '@/app/[locale]/portfolio/page';
+} from '@/app/[locale]/portfolio/_components/PortfolioStates';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { PortfolioHoldingRecord } from '@/shared/db/types';
 
@@ -125,6 +126,9 @@ describe('Portfolio page', () => {
     describe('PortfolioMemberArea', () => {
         beforeEach(() => {
             vi.clearAllMocks();
+        });
+        afterEach(() => {
+            vi.restoreAllMocks();
         });
 
         it('비로그인이면 리다이렉트 없이 가입 CTA 카드를 그리고 보유 카드는 없다', async () => {
@@ -202,6 +206,7 @@ describe('Portfolio page', () => {
         });
 
         it('degrades to the in-page error state (never throws to the root error boundary) when the holdings read fails', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
             mockFindByUser.mockRejectedValue(new Error('transient DB error'));
 

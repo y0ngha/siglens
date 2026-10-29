@@ -33,7 +33,7 @@ vi.mock('@/features/portfolio-management/ui/PortfolioSection', () => ({
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { PortfolioManager } from '@/app/[locale]/portfolio/PortfolioManager';
+import { PortfolioManager } from '@/app/[locale]/portfolio/_components/PortfolioManager';
 
 describe('PortfolioManager', () => {
     beforeEach(() => {

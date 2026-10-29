@@ -51,10 +51,10 @@ vi.mock('next/link', () => ({
 
 import { redirect } from 'next/navigation';
 import EmailReportPage, {
-    EmailReportGuard,
-    ReportPreviewLoader,
     generateMetadata,
 } from '@/app/[locale]/email-report/page';
+import { EmailReportGuard } from '@/app/[locale]/email-report/_components/EmailReportGuard';
+import { ReportPreviewLoader } from '@/app/[locale]/email-report/_components/IncludedSymbolsNote';
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 

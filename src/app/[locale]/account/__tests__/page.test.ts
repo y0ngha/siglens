@@ -25,7 +25,11 @@ vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
 
+import { redirect } from 'next/navigation';
+import { AccountContent } from '@/app/[locale]/account/_components/AccountContent';
 import { generateMetadata } from '@/app/[locale]/account/page';
+import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 
 describe('Account page', () => {
     it('exports metadata with account title', async () => {
@@ -51,5 +55,20 @@ describe('Account page', () => {
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/account'
         );
+    });
+});
+
+describe('AccountContent', () => {
+    it('세션이 유효하지 않으면 돌아올 경로를 달아 로케일 로그인으로 보낸다', async () => {
+        vi.mocked(getCurrentUser).mockResolvedValue(null);
+        vi.mocked(getRegisteredProvidersAction).mockResolvedValue([]);
+        vi.mocked(redirect).mockImplementationOnce(() => {
+            throw new Error('NEXT_REDIRECT');
+        });
+
+        await expect(AccountContent({ locale: 'en' })).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
+        expect(redirect).toHaveBeenCalledWith('/en/login?next=%2Fen%2Faccount');
     });
 });
