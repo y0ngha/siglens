@@ -52,10 +52,7 @@ export interface UseAutocompleteOptions {
 export interface UseAutocompleteReturn {
     query: string;
     results: readonly TickerSearchResult[];
-    isSearching: boolean;
-    /** 조회 실패. 호출부는 "결과 없음"과 구분해 보여줘야 한다. */
-    isError: boolean;
-    /** 드롭다운이 보여 줄 상태(조회 중·실패·결과·결과 없음). */
+    /** 드롭다운이 보여 줄 상태(조회 중·실패·결과·결과 없음). 실패는 "결과 없음"과 구분된다. */
     status: SearchStatus;
     /** 활성 옵션 인덱스. -1이면 활성 옵션이 없다(포커스는 늘 입력에 있다). */
     selectedIndex: number;
@@ -256,8 +253,6 @@ export function useAutocomplete({
     return {
         query,
         results,
-        isSearching,
-        isError,
         status,
         selectedIndex,
         isOpen,

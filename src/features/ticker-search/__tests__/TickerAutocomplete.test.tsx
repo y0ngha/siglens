@@ -35,8 +35,6 @@ function setupAutocomplete(overrides: Partial<UseAutocompleteReturn> = {}) {
     const defaults: UseAutocompleteReturn = {
         query: '',
         results: [],
-        isSearching: false,
-        isError: false,
         status: 'idle',
         selectedIndex: -1,
         isOpen: false,
@@ -100,7 +98,6 @@ describe('TickerAutocomplete', () => {
     it('shows searching indicator', () => {
         setupAutocomplete({
             isOpen: true,
-            isSearching: true,
             status: 'searching',
         });
         render(<TickerAutocomplete />);
@@ -503,7 +500,6 @@ describe('TickerAutocomplete', () => {
         setupAutocomplete({
             query: '삼성',
             isOpen: true,
-            isError: true,
             status: 'error',
             results: [],
         });

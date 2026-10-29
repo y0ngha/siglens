@@ -118,7 +118,7 @@ describe('useAutocomplete', () => {
 
         expect(result.current.query).toBe('');
         expect(result.current.results).toEqual([]);
-        expect(result.current.isSearching).toBe(false);
+        expect(result.current.status).toBe('idle');
         expect(result.current.selectedIndex).toBe(-1);
         expect(result.current.isOpen).toBe(false);
     });
