@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { loadGuideCatalog } from '@/entities/guide/api';
 import { GuideCategoryPage } from '@/views/guide/GuideCategoryPage';
 import {
     countGuideHubEntries,
@@ -10,7 +11,6 @@ import {
     buildGuideBreadcrumbJsonLd,
     buildGuideCollectionJsonLd,
 } from '@/views/guide/lib/guideJsonLd';
-import { loadGuideCatalog } from '@/entities/guide/api';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { guideCategoryPath } from '@/shared/lib/guidePaths';

@@ -13,6 +13,7 @@ import { loadCategorySnapshot } from '@/app/[locale]/news/[category]/_lib/catego
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { cacheNonEmptyOrNull } from '@/shared/cache/cacheNonEmpty';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 
 const ITEM: MarketNewsCardItem = {
     id: 'n1',
@@ -75,7 +76,7 @@ describe('loadCategorySnapshot', () => {
             '__NEWS_GENERAL__',
             expect.any(Function),
             ['market-news:__NEWS_GENERAL__'],
-            43200
+            SECONDS_PER_HALF_DAY
         );
     });
 });

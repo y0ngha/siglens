@@ -19,6 +19,7 @@ import {
 import { resolveLocale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { calendarEventsForClient } from '../_lib/calendarEventsForClient';
 import { hasEconomyData } from '../_lib/economyDegraded';
 import { buildEconomyPageJsonLd } from '../_lib/economyJsonLd';
 import { requestNow } from '../_lib/requestNow';
@@ -92,11 +93,6 @@ export async function EconomyContent() {
     // 다음날로 밀려 오늘 그룹을 건너뛴다).
     const todayKstKey = kstDateKey(now);
     const calendarEvents = await calendarEventsPromise;
-    // `analyzedAt`은 클라이언트 그리드가 읽지 않는다. 타입에서 빼는 것만으로는 런타임 값이
-    // flight에 그대로 실리므로 여기서 실제로 떼어낸다.
-    const calendarEventsForClient = calendarEvents.map(
-        ({ analyzedAt: _analyzedAt, ...rest }) => rest
-    );
     const indicatorLabels = await indicatorLabelsPromise;
     // 구조화데이터를 셸이 아니라 **여기서** 낸다(FAQ는 예외 — 셸에 남는다). degrade 분기를
     // 지난 렌더에서만 도달하므로 `generateMetadata`가 noindex를 건 렌더에는 실리지 않는다.
@@ -118,7 +114,7 @@ export async function EconomyContent() {
             <MacroBriefing peekSeed={peekSeed} />
             <EconomicIndicatorGrid snapshot={snapshot} />
             <EconomicCalendar
-                events={calendarEventsForClient}
+                events={calendarEventsForClient(calendarEvents)}
                 today={todayKstKey}
                 labels={indicatorLabels}
                 country={CALENDAR_COUNTRY}

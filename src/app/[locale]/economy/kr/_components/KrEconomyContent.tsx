@@ -13,10 +13,11 @@ import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildD
 import { resolveLocale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { calendarEventsForClient } from '../../_lib/calendarEventsForClient';
 import { isKrEconomyDegraded } from '../../_lib/economyDegraded';
 import { buildEconomyPageJsonLd } from '../../_lib/economyJsonLd';
-import { economyKrDescription, economyKrTitle } from '../../constants';
 import { requestNow } from '../../_lib/requestNow';
+import { economyKrDescription, economyKrTitle } from '../../constants';
 import { KrEconomyDegraded } from './KrEconomyDegraded';
 
 /**
@@ -104,7 +105,7 @@ export async function KrEconomyContent() {
              * ISR에 굳는다. 그리드는 자체 빈 상태를 갖고 있다.
              */}
             <EconomicCalendar
-                events={calendarEvents}
+                events={calendarEventsForClient(calendarEvents)}
                 today={todayKstKey}
                 labels={indicatorLabels}
                 country={CALENDAR_COUNTRY_KR}
