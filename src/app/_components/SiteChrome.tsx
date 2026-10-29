@@ -42,10 +42,10 @@ export function SiteChrome({ locale, messages, children }: SiteChromeProps) {
         <LocaleProvider locale={locale}>
             <NextIntlClientProvider locale={locale} messages={messages}>
                 <ReactQueryProvider>
-                    {/* 전체화면 검색 오버레이는 앱 전체에 하나다 — 헤더와 홈 히어로가 같은 인스턴스를
-                        연다. 번역된 문구를 쓰므로 `NextIntlClientProvider` 안이어야 한다. */}
                     <NavigationPendingProvider>
                         <ToastProvider>
+                            {/* 전체화면 검색 오버레이는 앱 전체에 하나다 — 헤더와 홈 히어로가 같은
+                                인스턴스를 연다. 번역된 문구를 쓰므로 `NextIntlClientProvider` 안이어야 한다. */}
                             <SearchOverlayProvider>
                                 {/* 방문자 집계 비콘. 렌더 결과가 없고 하루 한 번만 요청한다 — 다른 UI보다
                                     먼저 두어 이탈이 빠른 방문자도 잡는다. */}

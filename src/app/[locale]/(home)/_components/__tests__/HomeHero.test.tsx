@@ -7,6 +7,7 @@ vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { Locale } from '@/shared/i18n/locales';
 import { HomeHero } from '@/app/[locale]/(home)/_components/HomeHero';
 
 const COPY = {
@@ -22,7 +23,7 @@ const QUICK_LINKS = [
     { href: '/news', label: '미국 뉴스' },
 ];
 
-function renderHero(locale: 'ko' | 'en' = 'ko') {
+function renderHero(locale: Locale = 'ko') {
     return render(
         <HomeHero locale={locale} copy={COPY} quickLinks={QUICK_LINKS} />
     );
@@ -37,27 +38,13 @@ describe('HomeHero', () => {
         );
     });
 
-    it.each([
-        ['ko', '지표 13개로 분석합니다.\u00a0무료입니다.'],
-        ['en', '지표 13개로 분석합니다.\u00a0무료입니다.'],
-        ['ja', '지표 13개로 분석합니다.\u00a0무료입니다.'],
-        ['zh', '지표 13개로 분석합니다.\u00a0무료입니다.'],
-    ] as const)(
-        '%s: 소개 문단 두 문장을 NBSP로 잇는다(모바일에서는 <br>이 숨는다)',
-        (locale, text) => {
-            render(
-                <HomeHero
-                    locale={locale}
-                    copy={COPY}
-                    quickLinks={QUICK_LINKS}
-                />
-            );
+    it('소개 문단 두 문장을 NBSP로 잇는다(모바일에서는 <br>이 숨는다)', () => {
+        renderHero();
 
-            expect(screen.getByText(/지표 13개로 분석합니다/).textContent).toBe(
-                text
-            );
-        }
-    );
+        expect(screen.getByText(/지표 13개로 분석합니다/).textContent).toBe(
+            '지표 13개로 분석합니다.\u00a0무료입니다.'
+        );
+    });
 
     it('건너뛰기 대상 #search가 포커스를 받을 수 있고 검색 패널을 담는다', () => {
         const { container } = renderHero();

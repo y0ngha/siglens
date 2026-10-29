@@ -25,7 +25,7 @@ interface GoogleAdsTagProps {
 }
 
 /**
- * Google Ads 태그(gtag.js)와 가입 전환 기록. 메인 호스트 레이아웃과 광고 랜딩(`lp`) 레이아웃이 싣는다.
+ * Google Ads 태그(gtag.js)와 가입 전환 기록. 메인·ai 호스트 레이아웃과 광고 랜딩(`lp`) 레이아웃이 싣는다.
  *
  * 레이아웃(서버 컴포넌트)이 `GOOGLE_ADS_ID`가 있을 때만 렌더한다 — 운영 빌드·E2E
  * 여부는 서버에서만 정확히 안다(`shared/config/googleAds.ts`).
