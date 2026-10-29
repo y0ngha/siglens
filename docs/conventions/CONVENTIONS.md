@@ -504,6 +504,26 @@ import { formatPriceChange } from '@/shared/lib/priceFormat';
 import { formatUsdPrice, formatPriceChange } from '@/shared/lib/priceFormat';
 ```
 
+<a id="CS-24"></a>
+
+#### CS-24 — Imports form one block: packages first, then `@/` aliases, then relative
+
+All `import` statements sit at the top of the file in a single block ordered package imports (`react` first), then `@/` alias imports, then relative imports. Never place an import below another group or mid-block; the formatter does not reorder across groups, so review is the only guard.
+
+```typescript
+// ❌
+import { cn } from '@/shared/lib/cn';
+import { useState } from 'react';
+import { helper } from './helper';
+
+// ✅
+import { useState } from 'react';
+
+import { cn } from '@/shared/lib/cn';
+
+import { helper } from './helper';
+```
+
 ### No Barrels — Import from the Defining File
 
 `index.ts`/`index.tsx` barrel은 금지다(`src/__tests__/guards/noBarrelFiles.test.ts`가 강제).

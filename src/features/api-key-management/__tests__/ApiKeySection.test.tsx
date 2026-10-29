@@ -211,6 +211,26 @@ describe('ApiKeySection', () => {
         ).toBeNull();
     });
 
+    it('does not point the delete button at a status region while deleteState is idle', () => {
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        expect(
+            screen.getByRole('button', { name: '삭제' })
+        ).not.toHaveAttribute('aria-describedby');
+    });
+
+    it('points the delete button at the delete status region once it is shown', () => {
+        setApiKeyForms(IDLE_STATE, {
+            status: 'error',
+            message: '삭제에 실패했습니다.',
+            code: 'unknown',
+        });
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        expect(screen.getByRole('button', { name: '삭제' })).toHaveAttribute(
+            'aria-describedby',
+            'api-key-delete-status-anthropic'
+        );
+    });
+
     it('shows the re-register save result after the edit form has closed', () => {
         setApiKeyForms({
             status: 'error',

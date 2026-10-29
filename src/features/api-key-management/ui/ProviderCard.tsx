@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ApiKeyInput } from './ApiKeyInput';
 import { ApiKeyStatusMessage } from './ApiKeyStatusMessage';
@@ -14,7 +15,6 @@ import {
     BUTTON_OUTLINE_DANGER,
 } from '@/shared/lib/buttonStyles';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import { useState } from 'react';
 
 const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
     anthropic: 'sk-ant-...',
@@ -147,7 +147,11 @@ export function ProviderCard({
                             <PendingLabelSubmit
                                 label={t('ApiKeySection.fc81e2')}
                                 pendingLabel={t('ApiKeySection.283e16')}
-                                aria-describedby={deleteStatusId}
+                                aria-describedby={
+                                    showDeleteStatus
+                                        ? deleteStatusId
+                                        : undefined
+                                }
                                 className={cn(
                                     BUTTON_OUTLINE_DANGER,
                                     PENDING_OUTLINE_DANGER,
