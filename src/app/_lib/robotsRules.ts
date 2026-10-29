@@ -1,9 +1,10 @@
 import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
 
 /**
- * AI 검색·인용 크롤러 그룹의 crawl-delay(초). 10초면 봇 하나가 하루 8,640 URL을 가져가 종목 × 탭
- * 페이지를 며칠 안에 한 바퀴 돌고(60초면 몇 주가 걸려 AI 검색 인용 수집이 사실상 멈춘다), 봇당 평균
- * 0.1 req/s라 오리진 부하는 무시할 수준이다.
+ * AI 검색·인용 크롤러 그룹의 crawl-delay(초). 60초면 봇 하나가 하루 최대 1,440 URL만 가져가, 종목 ×
+ * 탭 페이지 수만 개를 한 바퀴 도는 데 몇 주가 걸려 AI 검색 인용(GEO) 쪽 수집이 사실상 멈춘다. 10초면
+ * 하루 8,640 URL이고 봇당 평균 0.1 req/s라 오리진 부하는 여전히 무시할 수준이다(산술값 — 실제
+ * 수집량·부하는 CDN의 봇 트래픽 통계로 다시 잰다).
  *
  * ⚠️ `Crawl-delay`는 비표준이고 **Google은 무시한다.** Google 계열 토큰을 이 그룹에 넣으면 사실상
  * 무제한이 된다(`GOOGLE_NON_SEARCH_USER_AGENTS` 참고). 나머지 봇의 준수도 best-effort 힌트라 확실한
@@ -145,8 +146,10 @@ export const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
 /**
  * 종목 **색인 탭**(차트·뉴스·공포탐욕)의 한국어 OG 이미지만 Googlebot에 되돌려 준다.
  *
- * 색인 페이지는 이미지가 없으면 Discover·이미지 검색·rich result 카드가 빈다. 롱테일 종목의 이미지도
- * 같이 열리지만 그 페이지가 noindex라 실제 수집은 적다(수용).
+ * Googlebot 그룹이 `/*​/opengraph-image`를 막은 근거(크롤 예산 61GB)는 색인되지 않는 탭과
+ * 롱테일까지 포함한 물량이다. 색인 페이지(차트·뉴스·공포탐욕 × 인기 종목, 약 1.1K 이미지)는
+ * 이미지가 없으면 Discover·이미지 검색·rich result 카드가 빈다. 롱테일 종목의 이미지도 같이
+ * 열리지만 그 페이지가 noindex라 실제 수집은 적다(수용).
  *
  * **패턴이 `/ko/*​/opengraph-image` 하나인 이유**: `*`는 `/`까지 먹으므로 종목 차트와 하위 탭을 한 번에
  * 연다. 열면 안 되는 쪽은 **더 긴 Disallow**로 되돌린다 — 항상 noindex인 탭(`NOINDEX_TAB_OG_DISALLOW`)과

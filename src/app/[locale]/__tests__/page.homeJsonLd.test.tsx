@@ -65,7 +65,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
 import Home, { generateMetadata } from '@/app/[locale]/(home)/page';
-import { buildHomeFaq } from '@/app/[locale]/homeJsonLd';
+import { buildHomeFaq } from '@/app/[locale]/(home)/_lib/homeJsonLd';
 import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {

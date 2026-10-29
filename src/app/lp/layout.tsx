@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import type { ReactNode } from 'react';
+import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
+import { FONT_VARIABLE_CLASSES } from '@/app/fontVariables';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { cn } from '@/shared/lib/cn';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
-import { GoogleAdsTag } from '../_components/GoogleAdsTag';
-import { FONT_VARIABLE_CLASSES } from '../fontVariables';
 import '../globals.css';
 
 /**

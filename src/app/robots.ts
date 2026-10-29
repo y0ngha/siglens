@@ -31,9 +31,9 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: BASELINE_DISALLOW,
             },
             {
-                // Googlebot 전용 그룹. 종목 페이지마다 동적 생성되는 OG PNG가 크롤 예산의 상당 부분을
-                // 소모하므로 막아 실제 콘텐츠 페이지에 예산을 돌린다. 색인 탭의 한국어 OG와 뉴스 허브
-                // 이미지만 더 긴 Allow로 되돌린다. Googlebot-Image는 별도 그룹이 없으면 이 그룹을 따르므로
+                // Googlebot 전용 그룹. 종목 페이지마다 동적 생성되는 OG PNG가 크롤 예산의 상당
+                // 부분(Search Console 크롤 통계 기준 61GB)을 소모하므로 막아 실제 콘텐츠 페이지에
+                // 예산을 돌린다. 색인 탭의 한국어 OG와 뉴스 허브 이미지만 더 긴 Allow로 되돌린다. Googlebot-Image는 별도 그룹이 없으면 이 그룹을 따르므로
                 // 이미지 검색에도 같이 적용된다.
                 //
                 // ⚠️ **이 disallow를 `*` 그룹으로 올리지 말 것.** 소셜 카드 크롤러(Twitterbot 등)가 `*`

@@ -7,6 +7,9 @@ import {
     getTranslations,
     setRequestLocale,
 } from 'next-intl/server';
+import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
+import { SiteChrome } from '@/app/_components/SiteChrome';
+import { FONT_VARIABLE_CLASSES } from '@/app/fontVariables';
 import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
 import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { SITE_NAME } from '@/shared/config/brand';
@@ -32,9 +35,6 @@ import { brandIntroName, ROOT_KEYWORDS, SITE_URL } from '@/shared/lib/seo';
 import { localeOpenGraph, localePageRobots } from '@/shared/lib/seoAlternates';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import { GoogleAdsTag } from '../_components/GoogleAdsTag';
-import { SiteChrome } from '../_components/SiteChrome';
-import { FONT_VARIABLE_CLASSES } from '../fontVariables';
 import '../globals.css';
 
 /**
