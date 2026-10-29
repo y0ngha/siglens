@@ -951,9 +951,9 @@ complete. Show it as in-progress or leave it out.
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
 
-<a id="CS-20"></a>
+<a id="CS-23"></a>
 
-#### CS-20 — Sign, colour and prefix come from the rounded value that is printed
+#### CS-23 — Sign, colour and prefix come from the rounded value that is printed
 
 When a number is displayed at fixed precision, decide its sign, "+" prefix, colour and zero state from the rounded
 value, not the raw one. Otherwise a value that rounds to zero prints as "-0.00%" or is coloured as a loss while the
