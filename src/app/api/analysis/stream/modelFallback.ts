@@ -7,6 +7,7 @@ import {
     type AnalysisModelFallback,
 } from '@/shared/lib/sse/analysisModelFallback';
 
+/** `resolveRequestModel`의 결과 — 실제로 돌릴 모델과 대체 표시. */
 export interface RequestModel {
     /** 실제로 돌릴 모델. 요청에 모델이 없었으면 `undefined` 그대로다. */
     modelId: ModelId | undefined;

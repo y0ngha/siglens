@@ -12,7 +12,7 @@ import { srhCommand } from '../support/srhClient';
  *   2. the user-initiated force re-analysis branch (`handleReanalyze`).
  *
  * Both run against the E2E short-circuit in the SSE route
- * (`src/app/api/analysis/stream/route.ts`). No LLM round-trip, no external
+ * (`src/app/api/analysis/stream/_lib/e2eTechnicalResponse.ts`). No LLM round-trip, no external
  * browser request — the support/fixtures network guard enforces zero
  * non-app traffic.
  *

@@ -522,6 +522,14 @@ describe('POST /api/analysis/stream', () => {
             expect(body.error).toContain('invalid JSON');
         });
 
+        it('본문이 JSON null이면 처리되지 않은 TypeError 대신 400을 반환한다', async () => {
+            const response = await POST(makeRequest(undefined, 'null'));
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: 'request body must be a JSON object',
+            });
+        });
+
         it('지원하지 않는 type 시 400 JSON 응답을 반환한다', async () => {
             const response = await POST(
                 makeRequest(

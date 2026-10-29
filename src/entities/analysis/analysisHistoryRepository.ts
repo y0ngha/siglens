@@ -114,7 +114,7 @@ export const ORPHAN_BLOB_MIN_AGE_MS = 5 * MS_PER_MINUTE;
  * ordering and window query that reads this column.
  *
  * Shared by both `analysis_history` writers — the SSE route
- * (`app/api/analysis/stream/route.ts`) and the SEO prewarm seams
+ * (`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`) and the SEO prewarm seams
  * (`entities/analysis/api.ts`'s `prewarmTechnical`/`prewarmOverall`) — so the
  * guard lives in exactly one place instead of being copy-pasted per caller.
  * Lives here (not in the app-layer route) because `entities/analysis/api.ts`

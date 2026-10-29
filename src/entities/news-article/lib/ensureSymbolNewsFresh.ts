@@ -365,7 +365,7 @@ async function enrichAll(
  * 기사를 받고도 12시간 TTL까지 옛 목록을 서빙했다.
  *
  * `after()`는 이 레포가 SSE 라우트에서 이미 쓰는 패턴이다
- * (`api/analysis/stream/route.ts`의 `schedulePersistAnalysisHistory`).
+ * (`api/analysis/stream/_lib/persistAnalysisHistory.ts`의 `schedulePersistAnalysisHistory`).
  *
  * ## 순서 — 보강을 끝내고 나서 무효화한다
  *
@@ -403,7 +403,7 @@ function scheduleRefreshTail(
     try {
         // `after()` 자체가 동기적으로 throw할 수 있다(요청 스코프 밖 호출 등).
         // 이 함수는 절대 throw하지 않는 계약 안에 있으므로 삼키고 로그만 남긴다
-        // — `api/analysis/stream/route.ts`의 같은 가드와 동일한 이유다.
+        // — `api/analysis/stream/_lib/persistAnalysisHistory.ts`의 같은 가드와 동일한 이유다.
         after(async () => {
             let invalidate = false;
             try {

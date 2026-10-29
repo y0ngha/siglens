@@ -73,7 +73,7 @@ import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
  * Task S3 (prior-analysis-context) — prewarm 결과를 `analysis_history`에
- * best-effort로 기록한다. SSE 경로(`app/api/analysis/stream/route.ts`의
+ * best-effort로 기록한다. SSE 경로(`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`의
  * `schedulePersistAnalysisHistory`)와 같은 목적, 같은 컬럼 집합이지만
  * **`after()`로 감싸지 않는다.**
  *
@@ -421,9 +421,9 @@ export async function prewarmOverall(
     //
     // 두 벌을 따로 읽는다 — technical 탭과 overall의 technical 축은 recency
     // 윈도우가 다르다(`ANALYSIS_CACHE_TTL[timeframe]` vs
-    // `OVERALL_CACHE_TTL_SECONDS`). 스트림 경로(route.ts)와 같은 이유로,
-    // 하나의 배열을 양쪽에 동시에 흘려보내면 한쪽이 틀린 창으로 읽은
-    // 이력을 갖게 된다.
+    // `OVERALL_CACHE_TTL_SECONDS`). 스트림 경로
+    // (`app/api/analysis/stream/_lib/overallDispatch.ts`)와 같은 이유로, 하나의
+    // 배열을 양쪽에 동시에 흘려보내면 한쪽이 틀린 창으로 읽은 이력을 갖게 된다.
     const historyRepo = new DrizzleAnalysisHistoryRepository(db);
     const [
         technicalPriorAnalyses,

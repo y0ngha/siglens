@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic';
  */
 const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300';
 
+/** `GET /api/analysis/model-availability` — 서버 키가 꺼진 모델 목록. 사용자와 무관한 공개 값이다. */
 export function GET(): Response {
     const body: ModelAvailabilityResponse = {
         disabledModels: listDisabledServerKeyModels(),
