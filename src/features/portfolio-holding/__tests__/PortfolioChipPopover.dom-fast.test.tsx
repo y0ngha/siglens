@@ -1,4 +1,4 @@
-import { createRef } from 'react';
+import { createRef, type RefObject } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { PortfolioChipPopover } from '../ui/PortfolioChipPopover';
@@ -12,31 +12,49 @@ const HOLDING: PortfolioHoldingView = {
     updatedAt: '2026-01-02T00:00:00.000Z',
 };
 
+type Save = Parameters<typeof PortfolioChipPopover>[0]['save'];
+
+function makeSave(isPending: boolean): Save {
+    return { mutateAsync: vi.fn(), isPending } as unknown as Save;
+}
+
+function popoverTree(
+    isMobile: boolean,
+    save: Save,
+    triggerRef: RefObject<HTMLButtonElement | null>,
+    onClose: () => void
+) {
+    return (
+        <div data-testid="anchor">
+            <button ref={triggerRef} type="button">
+                trigger
+            </button>
+            <PortfolioChipPopover
+                symbol="AAPL"
+                holding={HOLDING}
+                save={save}
+                triggerRef={triggerRef}
+                onClose={onClose}
+                isMobile={isMobile}
+            />
+        </div>
+    );
+}
+
 function renderPopover(isMobile: boolean) {
     const triggerRef = createRef<HTMLButtonElement>();
-    const save = {
-        mutateAsync: vi.fn(),
-        isPending: false,
-    } as unknown as Parameters<typeof PortfolioChipPopover>[0]['save'];
     const onClose = vi.fn();
+    const view = render(
+        popoverTree(isMobile, makeSave(false), triggerRef, onClose)
+    );
 
     return {
         onClose,
-        ...render(
-            <div data-testid="anchor">
-                <button ref={triggerRef} type="button">
-                    trigger
-                </button>
-                <PortfolioChipPopover
-                    symbol="AAPL"
-                    holding={HOLDING}
-                    save={save}
-                    triggerRef={triggerRef}
-                    onClose={onClose}
-                    isMobile={isMobile}
-                />
-            </div>
-        ),
+        ...view,
+        setPending: (isPending: boolean) =>
+            view.rerender(
+                popoverTree(isMobile, makeSave(isPending), triggerRef, onClose)
+            ),
     };
 }
 
@@ -61,13 +79,9 @@ describe('PortfolioChipPopover', () => {
         expect(screen.getByLabelText('평단')).toBeInTheDocument();
     });
 
-    // 이 테스트가 빠져 있던 게 CRITICAL 2가 그대로 배포된 이유였다: 이전에는
-    // PortfolioChipPopover가 내부에서 useIsMobileViewport()를 직접 호출했는데,
-    // next/dynamic({ssr:false})로 열릴 때마다 새로 마운트되는 이 컴포넌트에서
-    // 그 훅은 매번 false로 시작해 effect 이후에야 true로 바뀐다 — PopoverSurface가
-    // Fragment→Portal로 fiber 타입을 바꾸며 패널 서브트리 전체가 unmount/remount되고,
-    // useFocusTrap의 안정적인 [active, ref] deps는 재무장되지 않는다(포커스 트랩
-    // 무력화). isMobile을 프롭으로 이미 확정된 값으로 받으면 그 전환 자체가 없다.
+    // isMobile은 열리기 전에 확정된 값으로 들어온다. 이 컴포넌트가 뷰포트를 직접
+    // 읽으면 마운트마다 false로 시작해 PopoverSurface가 Fragment→Portal로 바뀌며
+    // 패널이 remount되고, 안정적인 deps의 useFocusTrap은 재무장되지 않는다.
     it('모바일(isMobile=true)로 열려도 포커스 트랩이 다이얼로그 안에 포커스를 둔다', () => {
         renderPopover(true);
 
@@ -77,10 +91,9 @@ describe('PortfolioChipPopover', () => {
         expect(dialog.contains(document.activeElement)).toBe(true);
     });
 
-    // C4(감사): 모바일에서는 백드롭이 트리거를 완전히 덮으므로, 닫힘은 전적으로
-    // useOnClickOutside가 백드롭 pointerdown에서 발화하는지에 달려 있다 —
-    // 이 경로는 지금까지 테스트되지 않았다.
-    describe('모바일 닫힘 경로 (C4 감사)', () => {
+    // 모바일에서는 백드롭이 트리거를 완전히 덮으므로, 닫힘은 전적으로
+    // useOnClickOutside가 백드롭 pointerdown에서 발화하는지에 달려 있다.
+    describe('모바일 닫힘 경로', () => {
         it('백드롭을 pointerdown하면 닫히고, 패널 안쪽을 pointerdown하면 열린 채 유지된다', () => {
             const { onClose } = renderPopover(true);
 
@@ -101,6 +114,42 @@ describe('PortfolioChipPopover', () => {
 
             expect(onClose).not.toHaveBeenCalled();
             expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+    });
+
+    // 포커스를 쥔 버튼에 네이티브 disabled를 걸면 브라우저가 포커스를 body로 떨어뜨리고,
+    // 포커스 트랩은 자기 가장자리에서만 순환하므로 Tab이 다이얼로그 밖으로 나간다.
+    describe('저장 진행 중', () => {
+        it('저장 버튼은 disabled가 아니라 aria-disabled로 표시된다', () => {
+            const { setPending } = renderPopover(false);
+
+            setPending(true);
+
+            const saveButton = screen.getByRole('button', { name: '저장 중…' });
+            expect(saveButton).toHaveAttribute('aria-disabled', 'true');
+            expect(saveButton).not.toBeDisabled();
+        });
+
+        it('aria-disabled 저장 버튼을 클릭하거나 폼을 제출해도 mutateAsync를 호출하지 않는다', () => {
+            const save = makeSave(true);
+            render(popoverTree(false, save, createRef(), vi.fn()));
+
+            const saveButton = screen.getByRole('button', { name: '저장 중…' });
+            fireEvent.click(saveButton);
+            fireEvent.submit(saveButton.closest('form') as HTMLFormElement);
+
+            expect(save.mutateAsync).not.toHaveBeenCalled();
+        });
+
+        it('저장이 끝나면 aria-disabled를 뗀다', () => {
+            const { setPending } = renderPopover(false);
+
+            setPending(true);
+            setPending(false);
+
+            expect(
+                screen.getByRole('button', { name: '저장' })
+            ).not.toHaveAttribute('aria-disabled');
         });
     });
 });

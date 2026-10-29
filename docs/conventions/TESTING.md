@@ -281,6 +281,7 @@ Use exact matchers when the value is deterministic, avoid compound boolean asser
 - `||`/`&&`/ternary inside `expect` passes on several failure modes. ❌ `expect(arg === undefined || arg.force !== true).toBe(true)` ✅ `expect(firstArgs?.[4]).toEqual({ force: false })`.
 - Additive behavior (layer A persists, layer B appended) asserts both parts.
 - Regression bounds are tight: a `>=` bound that the broken code also satisfies is vacuous. Use equality or the narrowest bound, and revert-check it against the broken implementation.
+- A test exercises the path its title claims and asserts every half of that claim. A "throws/rejects" test makes the callee itself reject (a callee that catches the error never reaches the path), and a "shows X without Y" test asserts both X present and Y absent.
 
 <a id="TE-10"></a>
 
