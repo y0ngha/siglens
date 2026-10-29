@@ -485,13 +485,16 @@ Test rules live in [TESTING.md](./TESTING.md) (rule IDs `TE-N`).
 ## Import Path Rules
 
 ```typescript
-// ✅ Use path aliases
+// ✅ Use path aliases across slices and layers
 import { cn } from '@/shared/lib/cn';
 import { useBars } from '@/widgets/symbol-page/hooks/useBars';
 
-// ❌ No relative paths
+// ❌ Relative paths that climb out of the slice (../../..)
 import { cn } from '../../../shared/lib/cn';
 ```
+
+Inside the same slice, cross-segment imports stay relative (`../lib/resolveGateMode`, see "No Barrels" below); the
+alias is for crossing a slice or layer boundary.
 
 Consolidate imports from the same module into one statement (oxlint has no `no-duplicates` rule here, so review catches it):
 
@@ -561,7 +564,9 @@ the root `CLAUDE.md`. The rules below target comments that restate the code or s
 
 A comment earns its place by recording a reason, constraint or tradeoff the code cannot show. Delete comments that
 label a section, narrate a state transition, restate a name or a type narrowing the compiler already proves,
-`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name, and
+`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name (or a props
+JSDoc that only lists field names), a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
+export), and
 structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
 multi-line WHY blocks.
 
