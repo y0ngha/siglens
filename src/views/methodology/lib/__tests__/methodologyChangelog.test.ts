@@ -1,4 +1,4 @@
-import { createTranslator } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { METHODOLOGY_UPDATED_AT } from '@/shared/lib/legal';
 import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
@@ -8,15 +8,9 @@ import {
     methodologyChangelogItems,
 } from '../methodologyChangelog';
 
-function translator(
-    messages: typeof ko,
-    locale: string
-): MethodologyTranslator {
-    return createTranslator({
-        locale,
-        messages,
-        namespace: 'views.methodology',
-    } as never) as unknown as MethodologyTranslator;
+/** 페이지와 같은 `views.methodology` 번역기 — 테스트 설정이 로케일별 카탈로그를 연결한다. */
+function translator(locale: 'ko' | 'en'): Promise<MethodologyTranslator> {
+    return getTranslations({ locale, namespace: 'views.methodology' });
 }
 
 /** `YYYY-MM-DD`, 한국 날짜 — 변경 이력 표가 쓰는 형식과 같다. */
@@ -48,8 +42,8 @@ describe('METHODOLOGY_CHANGELOG', () => {
 });
 
 describe('methodologyChangelogItems', () => {
-    it('resolves every entry in order with its catalog text and KST date', () => {
-        const items = methodologyChangelogItems(translator(ko, 'ko'), 'ko');
+    it('resolves every entry in order with its catalog text and KST date', async () => {
+        const items = methodologyChangelogItems(await translator('ko'), 'ko');
         expect(items.map(item => item.key)).toEqual(
             METHODOLOGY_CHANGELOG.map(entry => entry.key)
         );
@@ -67,11 +61,8 @@ describe('methodologyChangelogItems', () => {
         });
     });
 
-    it('formats the date label for the locale without shifting the KST day', () => {
-        const items = methodologyChangelogItems(
-            translator(en as typeof ko, 'en'),
-            'en'
-        );
+    it('formats the date label for the locale without shifting the KST day', async () => {
+        const items = methodologyChangelogItems(await translator('en'), 'en');
         expect(items[0]?.label).toBe('October 5, 2026');
         expect(items[0]?.text).toBe(
             en.views.methodology.changelog.fearGreedFiveYears

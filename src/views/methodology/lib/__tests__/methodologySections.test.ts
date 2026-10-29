@@ -1,4 +1,5 @@
-import { createTranslator } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
 import ko from '../../../../../messages/ko.json';
 import {
     METHODOLOGY_SECTION_IDS,
@@ -6,11 +7,10 @@ import {
 } from '../methodologySections';
 import type { MethodologyTranslator } from '../../types';
 
-const t = createTranslator({
-    locale: 'ko',
-    messages: ko,
-    namespace: 'views.methodology',
-} as never) as unknown as MethodologyTranslator;
+let t: MethodologyTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'views.methodology' });
+});
 
 const m = ko.views.methodology;
 
