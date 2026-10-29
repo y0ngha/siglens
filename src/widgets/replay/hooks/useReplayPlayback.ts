@@ -1,5 +1,7 @@
 'use client';
 
+/** Drives a replay `Frame` from React: playback loop, pause, visibility and scroll-follow. */
+
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useCanAnimate } from '@/shared/hooks/useCanAnimate';
 import {
@@ -7,9 +9,10 @@ import {
     runPlayback,
     type Frame,
     type PlaybackContext,
-} from '@/shared/lib/replay/replayPlayer';
+} from '@/widgets/replay/utils/replayPlayer';
 import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
 
+/** What `useReplayPlayback` hands the replay chrome. */
 export interface ReplayPlayback {
     readonly frame: Frame;
     readonly paused: boolean;
@@ -32,6 +35,10 @@ export interface ReplayPlayback {
  * pauses while the card is off screen or `togglePaused` was pressed — motion
  * that runs on its own for more than five seconds needs a stop control
  * (WCAG 2.2.2).
+ *
+ * Whenever playback stops (reduced motion switched on mid-scenario, new
+ * scenarios, unmount) the frame snaps to the current scenario complete, so a
+ * reader is never left with a half-typed question and no control to finish it.
  */
 export function useReplayPlayback(
     scenarios: readonly ReplayScenario[]
@@ -44,6 +51,8 @@ export function useReplayPlayback(
     const threadRef = useRef<HTMLDivElement>(null);
     const animated = useCanAnimate();
 
+    const togglePaused = () => setPaused(p => !p);
+
     useEffect(() => {
         pausedRef.current = paused;
     }, [paused]);
@@ -51,8 +60,11 @@ export function useReplayPlayback(
     useEffect(() => {
         const root = rootRef.current;
         if (!root || typeof IntersectionObserver === 'undefined') return;
+        // One callback can carry several entries for the card when it crosses
+        // the viewport edge more than once between notifications; they arrive
+        // oldest first, so the last one is the current state.
         const observer = new IntersectionObserver(entries => {
-            visibleRef.current = entries[0]?.isIntersecting ?? true;
+            visibleRef.current = entries.at(-1)?.isIntersecting ?? true;
         });
         observer.observe(root);
         return () => observer.disconnect();
@@ -61,14 +73,14 @@ export function useReplayPlayback(
     useEffect(() => {
         if (!animated) return;
         let cancelled = false;
-        const timers = new Set<ReturnType<typeof setTimeout>>();
+        let pendingTimer: ReturnType<typeof setTimeout> | undefined;
         const ctx: PlaybackContext = {
             scenarios,
             setFrame,
             isCancelled: () => cancelled,
             isRunning: () => !pausedRef.current && visibleRef.current,
-            addTimer: id => {
-                timers.add(id);
+            setPendingTimer: id => {
+                pendingTimer = id;
             },
             random: Math.random,
         };
@@ -77,7 +89,8 @@ export function useReplayPlayback(
 
         return () => {
             cancelled = true;
-            for (const id of timers) clearTimeout(id);
+            clearTimeout(pendingTimer);
+            setFrame(current => completeFrame(current.index));
         };
     }, [animated, scenarios]);
 
@@ -90,7 +103,7 @@ export function useReplayPlayback(
     return {
         frame,
         paused,
-        togglePaused: () => setPaused(p => !p),
+        togglePaused,
         animated,
         rootRef,
         threadRef,

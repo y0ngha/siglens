@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseReplayLine, type ReplayScenario } from '../replayScript';
+import {
+    parseReplayLine,
+    type ReplayScenario,
+} from '@/shared/lib/replay/replayScript';
 import {
     completeFrame,
     playScenario,
@@ -7,7 +10,7 @@ import {
     waitPlaying,
     type Frame,
     type PlaybackContext,
-} from '../replayPlayer';
+} from '@/widgets/replay/utils/replayPlayer';
 
 function makeScenario(id: string, question: string): ReplayScenario {
     return {
@@ -41,7 +44,7 @@ function makeContext(
         },
         isCancelled: () => false,
         isRunning: () => true,
-        addTimer: () => {},
+        setPendingTimer: () => {},
         random: () => 0,
         ...overrides,
     };
@@ -65,7 +68,7 @@ describe('replayPlayer', () => {
                 setFrame: () => {},
                 isCancelled: () => false,
                 isRunning: () => running,
-                addTimer: () => {},
+                setPendingTimer: () => {},
                 random: () => 0,
             };
             void waitPlaying(ctx, 100).then(() => {
