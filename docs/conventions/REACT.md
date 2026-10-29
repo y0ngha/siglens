@@ -357,6 +357,7 @@ remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 - **Do not override native roles.** Use `<div role="note">`, not `<p role="note">` or `<aside role="note">`.
 - **No nested live regions with different urgency.** A `role="alert"` (assertive) inside `aria-live="polite"` produces competing announcements.
 - **Announce state changes.** A pending navigation signalled only visually (`aria-busy`) is invisible to screen readers: add an always-mounted `role="status"` (sr-only) region whose text changes.
+- **A live region exists before its text does.** A `role="status"` / `aria-live` node mounted together with its first text, or present in only one phase of a multi-phase surface (modal, wizard), is not announced. Keep one persistent region across all phases and change only its content.
 - **Dynamic validation uses a live region and `aria-invalid`.** `aria-describedby` pointing at a static hint announces nothing new; point it at `<div role="status" aria-live="polite" id="msg">{error || hint}</div>` and toggle `aria-invalid={!!error}`.
 - **No `aria-hidden` on content users must read or re-enter** (an email to confirm, instructions, data fields). Hide only decorative or duplicated content.
 - **Duplicated user-facing text is announced twice.** Render a message once; if a second copy is needed, hide it and reference the primary through `aria-describedby`.
@@ -371,6 +372,7 @@ remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 #### AX-1 — An `aria-label` mirrors the visible heading or label
 
 A landmark/section `aria-label` matches or closely mirrors its visible text. Two different names for one section confuse screen-reader users.
+For a link or button whose text is visible, the accessible name must contain that visible text (WCAG 2.5.3 label-in-name), ideally starting with it, in every locale; otherwise voice-control users cannot target it by what they see.
 
 ```tsx
 // ❌
