@@ -1,4 +1,7 @@
-import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
+import {
+    GOOGLE_REQUEST_TIMEOUT_MS,
+    googleOAuthAdapter,
+} from '@/features/auth-oauth/lib/google';
 import { jsonResponse } from '@/shared/test-utils/jsonResponse';
 
 const ORIGINAL_FETCH = global.fetch;
@@ -144,6 +147,105 @@ describe('googleOAuthAdapter', () => {
                 name: 'User',
                 avatarUrl: 'https://img/u.png',
             },
+        });
+    });
+
+    describe('Google 요청 자체가 실패할 때', () => {
+        const networkError = new TypeError('fetch failed');
+
+        beforeEach(() => {
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        /** 회귀: token 요청의 reject가 콜백 라우트까지 throw돼 500이 났다. */
+        it('token 요청이 reject되면 token_exchange_failed를 반환한다', async () => {
+            global.fetch = vi.fn(async () => {
+                throw networkError;
+            }) as never;
+            await expect(
+                googleOAuthAdapter.exchangeCodeForProfile({
+                    code: 'c',
+                    redirectUri: REDIRECT_URI,
+                })
+            ).resolves.toEqual({ ok: false, reason: 'token_exchange_failed' });
+        });
+
+        /** 회귀: userinfo 요청의 reject가 콜백 라우트까지 throw돼 500이 났다. */
+        it('userinfo 요청이 reject되면 profile_fetch_failed를 반환한다', async () => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce(
+                    jsonResponse(200, { access_token: 'tok' })
+                )
+                .mockRejectedValueOnce(networkError);
+            global.fetch = fetchMock as never;
+            await expect(
+                googleOAuthAdapter.exchangeCodeForProfile({
+                    code: 'c',
+                    redirectUri: REDIRECT_URI,
+                })
+            ).resolves.toEqual({ ok: false, reason: 'profile_fetch_failed' });
+        });
+
+        it('실패 원인을 단계와 함께 로그로 남긴다', async () => {
+            global.fetch = vi.fn(async () => {
+                throw networkError;
+            }) as never;
+            await googleOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            });
+            expect(console.error).toHaveBeenCalledWith(
+                '[googleOAuthAdapter] token request failed:',
+                networkError
+            );
+        });
+
+        it('비OK 응답은 본문 없이 상태 코드만 로그로 남긴다', async () => {
+            global.fetch = vi.fn(async () =>
+                jsonResponse(400, { error: 'invalid_grant' })
+            ) as never;
+            await googleOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            });
+            expect(console.error).toHaveBeenCalledWith(
+                '[googleOAuthAdapter] token request failed with status 400'
+            );
+        });
+    });
+
+    describe('요청 타임아웃', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        /** 회귀: 응답이 멈춘 Google 요청이 undici 기본값(300초)까지 콜백을 붙잡았다. */
+        it('token·userinfo 요청 모두 GOOGLE_REQUEST_TIMEOUT_MS signal을 싣는다', async () => {
+            const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+            const calls = [
+                jsonResponse(200, { access_token: 'tok' }),
+                jsonResponse(200, { sub: 'gid', email: 'user@example.com' }),
+            ];
+            const fetchMock = vi.fn(async (_url: string, _init: RequestInit) =>
+                calls.shift()!
+            );
+            global.fetch = fetchMock as never;
+            await googleOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            });
+            expect(timeoutSpy.mock.calls).toEqual([
+                [GOOGLE_REQUEST_TIMEOUT_MS],
+                [GOOGLE_REQUEST_TIMEOUT_MS],
+            ]);
+            expect(fetchMock.mock.calls.map(([, init]) => init.signal)).toEqual(
+                timeoutSpy.mock.results.map(r => r.value)
+            );
         });
     });
 });

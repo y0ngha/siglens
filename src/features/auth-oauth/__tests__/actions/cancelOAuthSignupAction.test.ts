@@ -84,6 +84,34 @@ describe('cancelOAuthSignupAction', () => {
         expect(mockRedirect).toHaveBeenCalledWith('/login');
     });
 
+    describe('store 실패 로그', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('store.delete 실패를 로그로 남긴다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            const redisError = new Error('Redis down');
+            mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+                delete: vi.fn().mockRejectedValue(redisError),
+                save: vi.fn(),
+                peek: vi.fn().mockResolvedValue(null),
+                consume: vi.fn(),
+            });
+            const fd = new FormData();
+            fd.set('token', 'tok');
+            await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+                'NEXT_REDIRECT'
+            );
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[cancelOAuthSignupAction] delete failed:',
+                redisError
+            );
+        });
+    });
+
     it('예상치 못한 내부 에러 시 /login으로 리다이렉트한다', async () => {
         mockCreatePendingOAuthSignupStoreFromEnv.mockImplementation(() => {
             throw new Error('Unexpected store error');

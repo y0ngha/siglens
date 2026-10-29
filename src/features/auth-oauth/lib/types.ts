@@ -1,3 +1,4 @@
+/** OAuth 시작·콜백 라우트와 provider 어댑터 사이의 계약 타입. */
 import type { OAuthProvider } from '@/shared/lib/types';
 import type { SocialLoginUserInput } from '@/entities/auth/lib/authUseCaseTypes';
 
