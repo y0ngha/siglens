@@ -24,8 +24,17 @@ export type AboutT = Awaited<ReturnType<typeof getTranslations>>;
  */
 const ANSWER_LINE_KINDS = ['p', 'li', 'li', 'li', 'p'] as const;
 
-/** One `t.raw` value per entry of {@link ANSWER_LINE_KINDS}. */
-type AnswerRaws = { readonly [K in keyof typeof ANSWER_LINE_KINDS]: unknown };
+/**
+ * One `unknown` per element of `T`. The type parameter is what keeps the
+ * result a tuple: a mapped type over a concrete `typeof tuple` maps the keys
+ * into a plain object with `length: unknown`, so extra elements slip through.
+ */
+type RawsFor<T extends readonly unknown[]> = {
+    readonly [K in keyof T]: unknown;
+};
+
+/** One `t.raw` value per entry of {@link ANSWER_LINE_KINDS}, exactly as many. */
+export type AnswerRaws = RawsFor<typeof ANSWER_LINE_KINDS>;
 
 /** Title, description and OG label for `/about`'s metadata. */
 export async function getAboutSeoCopy(locale: Locale): Promise<AiSeoCopy> {

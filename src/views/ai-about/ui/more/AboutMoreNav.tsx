@@ -5,7 +5,11 @@ interface Props {
     readonly links: readonly MoreLink[];
 }
 
-/** The "more on SIGLENS" link list: a navigation landmark named by its heading. */
+/**
+ * The "more on SIGLENS" link list: a navigation landmark named by its heading.
+ * Not an `AboutSection` on purpose: it is a `<nav>`, not a content region, and
+ * its h2 is a small label, not a section title.
+ */
 export function AboutMoreNav({ title, links }: Props) {
     return (
         <nav aria-labelledby="about-more" className="mt-12">

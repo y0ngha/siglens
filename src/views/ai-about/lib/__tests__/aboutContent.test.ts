@@ -20,6 +20,7 @@ import {
     getAboutFaq,
     getAboutSeoCopy,
     type AboutT,
+    type AnswerRaws,
 } from '../aboutContent';
 
 const CATALOGS = { ko, en, ja, zh } as const;
@@ -122,5 +123,16 @@ describe('buildScenarios answer lines', () => {
                 'li',
                 'p',
             ]);
+    });
+
+    it('types the raw answers as exactly five values', () => {
+        // Compile-time check: each `@ts-expect-error` fails `tsc` the moment
+        // a four- or six-value answer becomes assignable.
+        const five: AnswerRaws = ['a', 'b', 'c', 'd', 'e'];
+        // @ts-expect-error one value short of the five answer lines
+        const four: AnswerRaws = ['a', 'b', 'c', 'd'];
+        // @ts-expect-error one value past the five answer lines
+        const six: AnswerRaws = ['a', 'b', 'c', 'd', 'e', 'f'];
+        expect([five, four, six].map(raws => raws.length)).toEqual([5, 4, 6]);
     });
 });
