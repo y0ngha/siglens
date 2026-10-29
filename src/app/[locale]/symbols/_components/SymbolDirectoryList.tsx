@@ -36,7 +36,9 @@ export function SymbolDirectoryList({
                                 <Link
                                     href={`/${item.symbol}`}
                                     // 400여 개 링크에 prefetch가 붙으면 진입만으로
-                                    // 수백 개 `_rsc` 요청이 나간다.
+                                    // 수백 개 `_rsc` 요청이 나간다(화면에 보이는 링크당 대략 하나).
+                                    // 다시 재려면 `prefetch`를 켠 채 `/symbols`를 열고 DevTools
+                                    // Network를 `_rsc`로 걸러 요청 수를 센다.
                                     prefetch={false}
                                     // 모바일은 두 칸이라 `삼성바이오로직스 (207940.KS)`가
                                     // 말줄임으로 잘리면 어느 종목인지 알 수 없다 — 줄바꿈하고

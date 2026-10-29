@@ -33,7 +33,8 @@ import {
  *
  * 하루면 보통 충분하다 — 개정은 대개 사전 고지를 거치므로 시각 단위 정확도가
  * 필요 없고, 재생성 비용은 DB 조회 한 번이다. 고지 기간이 짧아 발효 직후 노출이
- * 중요하면 발효 시각 이후 배포로 즉시 재생성한다.
+ * 중요하면 `revalidate`(24시간)를 기다리지 않는다 — 기다리면 만료 전까지 옛 본문이
+ * 남으므로, 발효 시각 이후에 재배포해 ISR 페이지를 다시 생성한다.
  */
 export const revalidate = 86400;
 
@@ -80,7 +81,9 @@ export default async function PrivacyPage({
             {/* 본문을 Suspense로 감싸지 않는다. ISR 응답은 통째로 버퍼링돼 스트리밍
                 이득이 없는데, React는 500B를 넘는 경계를 fallback + 숨김 청크로
                 내보낸다 — 빈 fallback 자리에 푸터가 먼저 그려졌다가 본문이 풀리며
-                밀려 모바일 CLS가 0.74였다(운영 Lighthouse 실측). */}
+                밀려 모바일 CLS가 0.74였다(운영 Lighthouse 모바일 프로필 1회성 실측, 저장된 기준선
+                없음. 다시 재려면 운영 `/privacy` URL에 Lighthouse를 모바일 프로필로 돌려 CLS를
+                읽는다). */}
             <PrivacyContent locale={locale} terms={terms} />
         </>
     );

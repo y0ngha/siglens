@@ -82,10 +82,7 @@ export default async function SymbolsDirectoryPage({
                         {t('page.intro')}
                     </p>
                 </header>
-                <SymbolDirectoryList
-                    sections={sections}
-                    labelOf={key => tNav(key)}
-                />
+                <SymbolDirectoryList sections={sections} labelOf={tNav} />
             </main>
         </>
     );
