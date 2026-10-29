@@ -143,6 +143,38 @@ describe('OAuthConsentForm', () => {
         ).not.toBeInTheDocument();
     });
 
+    /**
+     * 회귀: provider 이름과 번역 조각을 공백으로 이어 붙여, 영어에서
+     * "Google Sign up with account"처럼 어순이 깨졌다. 이름은 문구 안의 자리표시자다.
+     */
+    it('비한국어 로케일에서 provider 이름이 문구 어순에 맞게 들어간다', () => {
+        renderWithIntl(<OAuthConsentForm {...baseProps} />, { locale: 'en' });
+        expect(
+            screen.getByText('Sign up with your Google account')
+        ).toBeInTheDocument();
+    });
+
+    /**
+     * 회귀: 제출 버튼이 전송 중 `disabled`가 되며 포커스를 잃어, 약관 미동의 오류가
+     * 와도 포커스가 빠진 항목과 무관한 곳에 남았다. 동의 안 한 첫 항목으로 옮긴다.
+     */
+    it('consent_required 오류가 오면 동의하지 않은 첫 약관으로 포커스를 옮긴다', () => {
+        const { rerender } = render(<OAuthConsentForm {...baseProps} />);
+        screen.getByRole('button', { name: /가입 완료/ }).focus();
+
+        setupHook({
+            error: {
+                code: 'consent_required',
+                message: '약관에 동의해 주세요.',
+            },
+        });
+        rerender(<OAuthConsentForm {...baseProps} />);
+
+        expect(document.activeElement).toBe(
+            screen.getByLabelText(/개인정보 수집 및 이용 동의/)
+        );
+    });
+
     it('비한국어 로케일에서는 consent_required 에러를 해당 언어로 띄운다', () => {
         setupHook({
             error: {

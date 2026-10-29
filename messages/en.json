@@ -750,11 +750,13 @@
             }
         },
         "auth-oauth-consent": {
+            "OAuthAccountCard": {
+                "7af734": "Sign up with your {v0} account"
+            },
             "OAuthConsentForm": {
                 "19b2d1": "Cancel",
                 "6615ab": "Sign Up Complete",
-                "e6e1a2": "Processing...",
-                "ecb738": "Sign up with account"
+                "e6e1a2": "Processing..."
             }
         },
         "auth-oauth": {
