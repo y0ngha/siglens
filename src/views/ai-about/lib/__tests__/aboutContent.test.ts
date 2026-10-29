@@ -2,7 +2,11 @@ import { createTranslator } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { describe, expect, it, vi } from 'vitest';
 import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/guestTurnLimit';
+import en from '../../../../../messages/en.json';
+import ja from '../../../../../messages/ja.json';
 import ko from '../../../../../messages/ko.json';
+import zh from '../../../../../messages/zh.json';
+import type { Locale } from '@/shared/i18n/locales';
 
 vi.mock('next-intl/server', () => ({
     getTranslations: vi.fn(
@@ -11,7 +15,22 @@ vi.mock('next-intl/server', () => ({
     ),
 }));
 
-import { buildScenarios, getAboutFaq, getAboutSeoCopy } from '../aboutContent';
+import {
+    buildScenarios,
+    getAboutFaq,
+    getAboutSeoCopy,
+    type AboutT,
+} from '../aboutContent';
+
+const CATALOGS = { ko, en, ja, zh } as const;
+
+function aboutTranslator(locale: Locale): AboutT {
+    return createTranslator({
+        locale,
+        messages: CATALOGS[locale],
+        namespace: 'views.ai-about',
+    } as never) as unknown as AboutT;
+}
 
 describe('getAboutSeoCopy', () => {
     it('resolves the seo copy from the ko catalog', async () => {
@@ -45,7 +64,7 @@ describe('buildScenarios', () => {
             locale: 'ko',
             namespace: 'views.ai-about',
         });
-        const scenarios = buildScenarios(t);
+        const scenarios = buildScenarios(t, 'ko');
 
         expect(scenarios).toHaveLength(5);
         expect(new Set(scenarios.map(s => s.id)).size).toBe(5);
@@ -65,5 +84,43 @@ describe('buildScenarios', () => {
 
             expect(scenario.asOf.startsWith('기준')).toBe(true);
         }
+    });
+});
+
+describe('buildScenarios summary', () => {
+    it.each([
+        ['ko', '종목 검색, 시세, 차트와 지표 및 시그렌즈 분석 확인, 3.0초'],
+        [
+            'en',
+            'Checked Ticker search, Quote, Charts & indicators, and SIGLENS analysis in 3.0s',
+        ],
+        ['ja', '銘柄検索、株価、チャートと指標、SIGLENS分析を確認（3.0秒）'],
+        ['zh', '已查看股票搜索、行情、图表与指标和SIGLENS 分析，用时3.0秒'],
+    ] as const)(
+        'joins the tool labels with the %s list separators',
+        (locale, summary) => {
+            const [samsung] = buildScenarios(aboutTranslator(locale), locale);
+            expect(samsung?.summary).toBe(summary);
+        }
+    );
+
+    it('joins two tool labels with the conjunction alone', () => {
+        const nvdaPro = buildScenarios(aboutTranslator('ko'), 'ko').find(
+            s => s.id === 'nvdaPro'
+        );
+        expect(nvdaPro?.summary).toBe('시세 및 옵션 확인, 1.8초');
+    });
+});
+
+describe('buildScenarios answer lines', () => {
+    it('reads each answer as a lead paragraph, three bullets and a closing paragraph', () => {
+        for (const scenario of buildScenarios(aboutTranslator('ko'), 'ko'))
+            expect(scenario.lines.map(line => line.kind)).toEqual([
+                'p',
+                'li',
+                'li',
+                'li',
+                'p',
+            ]);
     });
 });
