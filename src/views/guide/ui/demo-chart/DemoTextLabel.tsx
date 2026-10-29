@@ -1,4 +1,3 @@
-/** 데모 차트 오버레이 라벨 한 개 — 봉과 겹쳐도 읽히게 카드 배경색 테두리(halo)를 두른다. */
 import { cn } from '@/shared/lib/cn';
 import {
     DEMO_CHART_FONT,
@@ -14,7 +13,11 @@ interface DemoTextLabelProps {
     readonly label: OverlayLabel;
 }
 
-/** `layoutOverlayLabels`가 자리를 정한 라벨을 그린다. */
+/**
+ * `layoutOverlayLabels`가 정한 상자 그대로 그리고 자리는 여기서 다시 계산하지 않는다 — 라벨끼리·봉과
+ * 겹치지 않게 비키는 판단은 모든 라벨 상자를 아는 레이아웃만 할 수 있다. 그래도 선·띠와는 겹칠 수 있어
+ * 글자 뒤에 카드 배경색 테두리(halo, `paintOrder="stroke"`)를 둘러 읽히게 한다.
+ */
 export function DemoTextLabel({ label }: DemoTextLabelProps) {
     return (
         <text

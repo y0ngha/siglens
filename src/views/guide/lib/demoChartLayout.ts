@@ -15,7 +15,6 @@ import {
     linearScale,
     niceTicks,
     placeLabel,
-    splitRuns,
     tickStep,
     type ChartPoint,
     type LabelBox,
@@ -365,7 +364,14 @@ export function markerGeometry(
     };
 }
 
-/** 가격대별 거래량 막대 한 줄의 높이 — 가장 가까운 두 가격 간격에서 1을 뺀다(최소 2, 한 줄뿐이면 4). */
+/** 이웃한 가격대 막대 사이에 남기는 틈(viewBox 단위) — 막대가 맞붙어 한 덩어리로 보이지 않게 한다. */
+const PROFILE_ROW_GAP = 1;
+/** 가격대가 촘촘해도 막대가 이 높이 아래로 얇아져 사라지지 않게 하는 하한. */
+const PROFILE_ROW_MIN_HEIGHT = 2;
+/** 가격대가 하나뿐이면 잴 이웃 간격이 없어 이 높이로 그린다. */
+const PROFILE_ROW_FALLBACK_HEIGHT = 4;
+
+/** 가격대별 거래량 막대 한 줄의 높이 — 가장 가까운 두 가격 간격에서 `PROFILE_ROW_GAP`을 뺀다. */
 export function profileRowHeight(
     rows: readonly { readonly price: number }[],
     yOf: LinearScale
@@ -375,8 +381,11 @@ export function profileRowHeight(
         .slice(1)
         .reduce((min, price, i) => Math.min(min, price - prices[i]), Infinity);
     return Number.isFinite(gap)
-        ? Math.max(2, Math.abs(yOf(0) - yOf(gap)) - 1)
-        : 4;
+        ? Math.max(
+              PROFILE_ROW_MIN_HEIGHT,
+              Math.abs(yOf(0) - yOf(gap)) - PROFILE_ROW_GAP
+          )
+        : PROFILE_ROW_FALLBACK_HEIGHT;
 }
 
 /** 라벨 글자색을 고르는 근거. 색 클래스는 `ui/guideChartStyles`가 고른다. */
@@ -443,11 +452,19 @@ function lastFiniteIndex(values: readonly (number | null)[]): number {
     );
 }
 
+/**
+ * 선 끝 라벨이 붙는 점 — `splitRuns`가 낼 마지막 구간의 마지막 점과 같다. 구간을 다시 나누지 않고
+ * 마지막 유효 칸만 찾는다: 도형(`SeriesShape`)이 이미 같은 구간을 나누므로 라벨 쪽은 끝점 하나면 된다.
+ */
 function lastSeriesPoint(
     values: readonly (number | null)[],
     frame: Pick<DemoChartFrame, 'xOf' | 'yOf'>
 ): ChartPoint | undefined {
-    return splitRuns(values, frame.xOf, frame.yOf).at(-1)?.at(-1);
+    const index = lastFiniteIndex(values);
+    const value = values[index];
+    return isFiniteValue(value)
+        ? { x: frame.xOf(index), y: frame.yOf(value) }
+        : undefined;
 }
 
 function labelRequest(

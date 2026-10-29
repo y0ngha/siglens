@@ -1,4 +1,3 @@
-/** 가이드 허브·분류 허브·안내 페이지가 함께 쓰는 머리(눈썹 글자 + h1 + 소개). */
 import { cn } from '@/shared/lib/cn';
 
 /**
@@ -13,7 +12,11 @@ interface GuidePageHeaderProps {
     readonly intro?: string;
 }
 
-/** 페이지의 유일한 h1을 그린다. */
+/**
+ * 가이드 허브·분류 허브·안내 페이지의 머리. 이 페이지들에서 h1은 여기서만 나온다 — 목록 절은 h2,
+ * 카드 제목은 h3라, 검색엔진과 스크린리더의 제목 탐색이 이 h1 하나를 페이지 주제로 읽는다.
+ * 두 번째 h1이 생기면 주제가 둘로 갈려 읽히므로 페이지 테스트(`GuidePages.test`)가 h1을 제목으로 단언한다.
+ */
 export function GuidePageHeader({ title, intro }: GuidePageHeaderProps) {
     return (
         <header

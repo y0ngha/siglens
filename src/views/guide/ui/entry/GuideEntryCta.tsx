@@ -1,4 +1,3 @@
-/** 항목 페이지 끝의 종목 검색 안내 카드. */
 import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -13,7 +12,10 @@ interface GuideEntryCtaProps {
     readonly buttonLabel: string;
 }
 
-/** 제목(h2)·한 줄 설명·홈(종목 검색)으로 가는 버튼. */
+/**
+ * 항목을 다 읽은 독자를 실제 종목 차트로 보내는 출구(`GuideEntryPage` 끝). 종목 검색은 홈에만 있어
+ * 버튼은 `/`로 간다(로케일 접두사는 `LocaleLink`가 붙인다). 제목 id가 고정이라 한 페이지에 한 번만 둔다.
+ */
 export function GuideEntryCta({
     heading,
     body,

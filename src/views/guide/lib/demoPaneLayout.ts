@@ -25,6 +25,12 @@ const PANE_TICK_TARGET = 3;
 const COMPACT_ABS_THRESHOLD = 1e4;
 
 /**
+ * 눈금 간격이 이 값 이상이면 값 크기와 무관하게 축약 포맷터(`formatCompact`)로 보낸다. 천 단위 간격의
+ * 축(거래량·OBV류)은 소수 자릿수를 따질 일이 없는 큰 정수 눈금이라, 0 근처 눈금까지 같은 포맷터를 거치게 한다.
+ */
+const COMPACT_STEP_THRESHOLD = 1000;
+
+/**
  * 패널 이름을 패널 왼쪽 테두리에서 들이는 거리. `GuideDemoPane`이 이름을 그리는 x와 범례 시작점
  * (`legendPositions`)이 같은 값을 읽어야 범례가 이름과 겹치지 않는다.
  */
@@ -55,9 +61,10 @@ export function paneDomain(pane: DemoPane): [number, number] {
     return [min - pad, max + pad];
 }
 
-/** 눈금 글자. 간격이 1000 이상이거나 값이 크면 축약형이다. */
+/** 눈금 글자. 간격(`COMPACT_STEP_THRESHOLD`)이나 값(`COMPACT_ABS_THRESHOLD`)이 크면 축약형이다. */
 export function paneTickText(value: number, step: number): string {
-    return step >= 1000 || Math.abs(value) >= COMPACT_ABS_THRESHOLD
+    return step >= COMPACT_STEP_THRESHOLD ||
+        Math.abs(value) >= COMPACT_ABS_THRESHOLD
         ? formatCompact(value)
         : formatTick(value, step);
 }

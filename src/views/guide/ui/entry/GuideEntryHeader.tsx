@@ -1,4 +1,3 @@
-/** 항목 페이지 머리 — 분류 링크, 제목(h1), 다른 이름, 요약, 마지막 업데이트. */
 import type { GuideEntry } from '@/entities/guide/types';
 import { cn } from '@/shared/lib/cn';
 import { guideCategoryPath } from '@/shared/lib/guidePaths';
@@ -14,7 +13,11 @@ interface GuideEntryHeaderProps {
     readonly updatedAtLabel: string;
 }
 
-/** 페이지의 유일한 h1을 그린다. */
+/**
+ * 항목 페이지의 머리. 항목 제목 h1은 여기서만 나온다 — 본문 마크다운(`GuideMarkdown`)은 h2부터 쓰고
+ * 아래 절·카드는 h2·h3라, 검색엔진과 스크린리더가 항목 제목 하나를 페이지 주제로 읽는다.
+ * `GuideEntryPage` 테스트가 h1이 하나이고 항목 제목인지 지킨다.
+ */
 export function GuideEntryHeader({
     entry,
     categoryLabel,

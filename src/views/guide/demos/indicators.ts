@@ -73,7 +73,10 @@ export function windowed(
     };
 }
 
-/** 구간 인덱스 `i`에 표식 하나. `i`가 음수(못 찾음)면 표식을 내지 않는다. */
+/**
+ * 표식을 배열로 돌려줘 호출부가 `c.find` 결과(못 찾으면 -1)를 검사 없이 `...marker(idx, …)`로 펼치게 한다.
+ * 시세를 바꿔 교차가 사라져도 데모는 표식만 빠지고 깨지지 않는다. 전략 데모(`strategies.ts`)도 이 헬퍼를 쓴다.
+ */
 export const marker = (
     i: number,
     label: string,
@@ -82,7 +85,10 @@ export const marker = (
 ): DemoOverlay[] =>
     i < 0 ? [] : [{ kind: 'marker', i, label, tone, position }];
 
-/** 빈 값을 NaN으로 — 비교식이 거짓이 되어 교차 판정에서 자연히 빠진다. */
+/**
+ * core 지표 배열의 null(계산 전 워밍업 칸)을 NaN으로 바꾼다. NaN과의 비교는 모두 거짓이라 `crossedUp` 같은
+ * 판정이 null 검사 없이도 워밍업 칸을 교차로 세지 않는다.
+ */
 export const num = (value: Num | undefined): number => value ?? Number.NaN;
 
 /** 위로 교차한(이전엔 a <= b, 지금은 a > b) 첫 절대 인덱스 조건. */
@@ -164,7 +170,10 @@ export function splitByDirection(
     };
 }
 
-/** 보조 패널을 이름 먼저 적어 만든다. 데모 정의에서 패널 이름이 첫눈에 보이게 하려는 모양일 뿐 값은 그대로 옮긴다. */
+/**
+ * 데모 정의에서 패널 이름(`'RSI 14'`)을 첫 인자로 앞세워, 긴 선·레벨 객체 속에 묻히지 않고 어느 패널인지
+ * 첫 줄에서 읽히게 한다. 값은 바꾸지 않는다.
+ */
 export const pane = (
     label: string,
     rest: Omit<DemoPane, 'label'>

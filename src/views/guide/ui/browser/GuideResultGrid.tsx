@@ -1,4 +1,3 @@
-/** 가이드 목록을 한 줄 그리드로 — 필터가 걸렸거나 분류가 고정된 목록. */
 import type { GuideCategory, GuideEntrySummary } from '@/entities/guide/types';
 import { GuideCard } from '@/views/guide/ui/GuideCard';
 import { GUIDE_GRID } from '@/views/guide/ui/browser/guideGrid';
@@ -13,7 +12,11 @@ interface GuideResultGridProps {
     readonly categoryLabels?: Readonly<Record<GuideCategory, string>>;
 }
 
-/** 숨긴 h2 아래 카드 그리드. */
+/**
+ * `GuideBrowser`가 필터가 걸렸거나 분류가 고정된 목록을 분류 절 없이 한 그리드로 보일 때 쓴다.
+ * 절 제목을 화면에서는 숨기지만 h2로 남겨 두는 것은 카드 제목(h3)이 상위 h2 없이 떠 스크린리더의
+ * 제목 탐색에서 h2 단계가 빠지지 않게 하려는 것이다(분류 절 그리드와 같은 개요가 된다).
+ */
 export function GuideResultGrid({
     headingId,
     heading,

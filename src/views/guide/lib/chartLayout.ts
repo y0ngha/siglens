@@ -189,28 +189,28 @@ export function splitRuns(
     xOf: (index: number) => number,
     yOf: (value: number) => number
 ): ChartPoint[][] {
-    // 끊김(null·비유한값)을 만나면 진행 중이던 구간을 닫는다.
-    const { done, current } = values.reduce<{
-        done: ChartPoint[][];
-        current: ChartPoint[];
-    }>(
-        (acc, value, index) =>
-            value === null || !Number.isFinite(value)
-                ? { done: closeRun(acc.done, acc.current), current: [] }
-                : {
-                      done: acc.done,
-                      current: [
-                          ...acc.current,
-                          { x: xOf(index), y: yOf(value) },
-                      ],
-                  },
-        { done: [], current: [] }
+    // 끊김(null·비유한값)은 null 점이 된다. 구간은 앞이 끊긴 점에서 시작해 뒤가 끊긴 점에서 끝나므로
+    // 경계 인덱스를 한 번씩 훑어 모은 뒤 잘라 낸다 — 점을 하나씩 덧붙여 배열을 복사하면 O(n²)이다.
+    const points = values.map((value, index): ChartPoint | null =>
+        value === null || !Number.isFinite(value)
+            ? null
+            : { x: xOf(index), y: yOf(value) }
     );
-    return closeRun(done, current);
+    const isPointAt = (index: number): boolean =>
+        (points[index] ?? null) !== null;
+    const starts = points.flatMap((point, index) =>
+        point !== null && !isPointAt(index - 1) ? [index] : []
+    );
+    const ends = points.flatMap((point, index) =>
+        point !== null && !isPointAt(index + 1) ? [index + 1] : []
+    );
+    return starts.map((start, run) =>
+        points.slice(start, ends[run]).filter(isChartPoint)
+    );
 }
 
-function closeRun(done: ChartPoint[][], current: ChartPoint[]): ChartPoint[][] {
-    return current.length > 0 ? [...done, current] : done;
+function isChartPoint(point: ChartPoint | null): point is ChartPoint {
+    return point !== null;
 }
 
 /** 점 목록 → SVG `points` 속성 문자열(소수 한 자리). */
