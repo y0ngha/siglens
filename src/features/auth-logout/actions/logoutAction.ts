@@ -24,10 +24,11 @@ import {
 } from '@/entities/auth/lib/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
+import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
-/** 요청 로케일. */
+/** `getLocale()`의 문자열을 지원 로케일로 좁힌다 — 핸드오프 URL과 `aiSignedOutUrl`이 `Locale`을 받는다. */
 async function requestLocale(): Promise<Locale> {
     const raw = await getLocale();
     return resolveLocale(raw);
@@ -58,6 +59,19 @@ async function aiLogoutTarget(userId: string | null): Promise<string> {
 }
 
 /**
+ * 만료된 세션 쿠키와 힌트 쿠키를 한 쌍으로 심는다. 성공 경로와 오류 경로가 같은 쌍을
+ * 지워야 하므로 한곳에 둔다 — 힌트만 남으면 헤더가 로그인 상태로 그려진다.
+ */
+async function setLoggedOutCookies(
+    sessionCookie: AuthSessionCookie,
+    secure: boolean
+): Promise<void> {
+    const cookieStore = await cookies();
+    cookieStore.set(applyAuthCookie(sessionCookie));
+    cookieStore.set(createExpiredAuthHintCookie({ secure }));
+}
+
+/**
  * 오류가 난 로그아웃에서도 이 브라우저의 세션 쿠키·힌트 쿠키는 만료시킨다. DB 세션
  * 삭제가 실패했다고 쿠키를 남기면 사용자는 로그아웃했다고 믿지만 다음 요청에서 그대로
  * 로그인돼 있다(공용 PC에서 다음 사람이 그 계정을 쓴다). 쿠키를 지우는 것까지 실패하면
@@ -66,11 +80,10 @@ async function aiLogoutTarget(userId: string | null): Promise<string> {
 async function expireAuthCookiesAfterError(): Promise<void> {
     try {
         const secure = isSecureCookieEnv();
-        const cookieStore = await cookies();
-        cookieStore.set(
-            applyAuthCookie(createExpiredSessionCookie({ secure }))
+        await setLoggedOutCookies(
+            createExpiredSessionCookie({ secure }),
+            secure
         );
-        cookieStore.set(createExpiredAuthHintCookie({ secure }));
     } catch (error) {
         console.error('[logoutAction] auth cookies not expired', error);
     }
@@ -96,8 +109,7 @@ export async function logoutAction(): Promise<void> {
                 { sessions: new DrizzleSessionRepository(db) },
                 { secureCookie: secure }
             );
-            cookieStore.set(applyAuthCookie(result.cookie));
-            cookieStore.set(createExpiredAuthHintCookie({ secure }));
+            await setLoggedOutCookies(result.cookie, secure);
         }
         redirect(
             onAiHost

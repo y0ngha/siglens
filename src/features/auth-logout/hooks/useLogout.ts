@@ -10,11 +10,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { logoutAction } from '../actions/logoutAction';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
-/** State and trigger returned by `useLogout`. */
+/** What `LogoutButton` needs: a trigger and a flag to disable itself while logging out. */
 export interface UseLogoutResult {
     /** True from the click until the redirect lands. */
     pending: boolean;
-    /** Starts the logout. */
+    /** Clears member-scoped caches, then runs `logoutAction` (which redirects). */
     logout: () => void;
 }
 
