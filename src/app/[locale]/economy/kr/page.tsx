@@ -83,7 +83,7 @@ export async function generateMetadata({
         title: economyKrTitle(tSeo),
         description: economyKrDescription(tSeo),
         keywords: ECONOMY_KR_KEYWORDS,
-        degraded: isKrEconomyDegraded(cards, calendarEvents),
+        degraded: isKrEconomyDegraded({ cards, calendarEvents }),
     });
 }
 

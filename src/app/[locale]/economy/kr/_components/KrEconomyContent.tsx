@@ -71,7 +71,7 @@ export async function KrEconomyContent() {
     // 지표도 캘린더도 없으면 `generateMetadata`가 noindex를 건다 — 그 렌더에서 WebPage를 내면
     // "색인하지 말라"면서 "이 URL이 정식 문서"라고 주장하게 되므로 같은 술어로 끈다. 데이터를
     // 가진 유일한 지점이 여기라 셸이 아니라 이 컴포넌트에서 낸다.
-    const jsonLd = isKrEconomyDegraded(cards, calendarEvents)
+    const jsonLd = isKrEconomyDegraded({ cards, calendarEvents })
         ? null
         : buildEconomyPageJsonLd({
               path: '/economy/kr',

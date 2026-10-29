@@ -16,11 +16,15 @@ export function hasEconomyData(
 /**
  * `/economy/kr`이 degrade(noindex·구조화데이터 생략)인가 — 지표 카드도 캘린더도 없을 때만.
  * 지표만 빈 상태(인제스션 직후 첫 크롤의 흔한 모습)는 캘린더가 있어 색인할 만한 렌더다.
- * `generateMetadata`와 `KrEconomyContent`가 함께 쓰는 단일 술어. 개수만 보므로 원소 타입을 묻지 않는다.
+ * `generateMetadata`와 `KrEconomyContent`가 함께 쓰는 단일 술어. 개수만 보므로 원소 타입을 묻지 않고,
+ * 두 목록을 이름으로 받아 순서가 바뀌어도 뜻이 갈리지 않게 한다.
  */
-export function isKrEconomyDegraded(
-    cards: readonly unknown[],
-    calendarEvents: readonly unknown[]
-): boolean {
+export function isKrEconomyDegraded({
+    cards,
+    calendarEvents,
+}: {
+    readonly cards: readonly unknown[];
+    readonly calendarEvents: readonly unknown[];
+}): boolean {
     return cards.length === 0 && calendarEvents.length === 0;
 }

@@ -40,14 +40,20 @@ describe('hasEconomyData', () => {
 
 describe('isKrEconomyDegraded', () => {
     it('지표도 캘린더도 없으면 degraded다', () => {
-        expect(isKrEconomyDegraded([], [])).toBe(true);
+        expect(isKrEconomyDegraded({ cards: [], calendarEvents: [] })).toBe(
+            true
+        );
     });
 
     it('지표만 비고 캘린더가 있으면 degraded가 아니다', () => {
-        expect(isKrEconomyDegraded([], ['event'])).toBe(false);
+        expect(
+            isKrEconomyDegraded({ cards: [], calendarEvents: ['event'] })
+        ).toBe(false);
     });
 
     it('지표가 있으면 캘린더가 비어도 degraded가 아니다', () => {
-        expect(isKrEconomyDegraded(['card'], [])).toBe(false);
+        expect(
+            isKrEconomyDegraded({ cards: ['card'], calendarEvents: [] })
+        ).toBe(false);
     });
 });
