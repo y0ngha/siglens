@@ -1,12 +1,6 @@
 import type { Metadata } from 'next';
-import { loadGuideCatalog } from '@/entities/guide/api';
-import { resolveLocale } from '@/shared/i18n/locales';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import { guideCategoryPath } from '@/shared/lib/guidePaths';
-import { buildHubMetadata } from '@/shared/lib/seoAlternates';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { GuideCategoryPage } from '@/views/guide/GuideCategoryPage';
 import { notFound } from 'next/navigation';
+import { GuideCategoryPage } from '@/views/guide/GuideCategoryPage';
 import {
     countGuideHubEntries,
     loadGuideCategoryCopy,
@@ -16,12 +10,22 @@ import {
     buildGuideBreadcrumbJsonLd,
     buildGuideCollectionJsonLd,
 } from '@/views/guide/lib/guideJsonLd';
-import { renderGuideUnavailable, requireCategory } from '../_lib/guideRoute';
+import { loadGuideCatalog } from '@/entities/guide/api';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { guideCategoryPath } from '@/shared/lib/guidePaths';
+import { buildHubMetadata } from '@/shared/lib/seoAlternates';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import {
+    entriesInCategory,
+    renderGuideUnavailable,
+    requireCategory,
+} from '../_lib/guideRoute';
 
-// `/guide`와 같은 근거(AP-1: 리터럴).
+// `/guide`와 같은 근거(src/app/CLAUDE.md#AP-1: 리터럴).
 export const revalidate = 86400;
 
-// 빈 배열 = on-demand ISR. 이게 없으면 동적 세그먼트가 매 요청 렌더(ƒ)로 남는다(AP-1).
+// 빈 배열 = on-demand ISR. 이게 없으면 동적 세그먼트가 매 요청 렌더(ƒ)로 남는다(src/app/CLAUDE.md#AP-1).
 export async function generateStaticParams() {
     return [];
 }
@@ -30,6 +34,7 @@ interface GuideCategoryRouteProps {
     readonly params: Promise<{ locale: string; category: string }>;
 }
 
+/** 분류 페이지 메타데이터 — 모르는 분류·항목 없는 분류는 404, 카탈로그 실패는 noindex. */
 export async function generateMetadata({
     params,
 }: GuideCategoryRouteProps): Promise<Metadata> {
@@ -38,8 +43,9 @@ export async function generateMetadata({
     const category = requireCategory(categorySegment);
     const catalog = await loadGuideCatalog(locale);
     const count =
-        catalog?.entries.filter(entry => entry.category === category).length ??
-        0;
+        catalog === null
+            ? 0
+            : entriesInCategory(catalog.entries, category).length;
     // 항목이 없는 분류(시드 전의 howto 등)는 빈 목록 페이지를 색인시키지 않는다. 카탈로그를 못 읽은 경우(null)는 안내가 맡는다.
     if (catalog !== null && count === 0) notFound();
     const [copy, seo] = await Promise.all([
@@ -60,6 +66,7 @@ export async function generateMetadata({
     });
 }
 
+/** 분류 페이지 — 그 분류의 항목 목록과 CollectionPage·BreadcrumbList 구조화데이터. */
 export default async function GuideCategoryRoute({
     params,
 }: GuideCategoryRouteProps) {
@@ -69,9 +76,7 @@ export default async function GuideCategoryRoute({
     const catalog = await loadGuideCatalog(locale);
     if (catalog === null) return renderGuideUnavailable(locale);
 
-    const inCategory = catalog.entries.filter(
-        entry => entry.category === category
-    );
+    const inCategory = entriesInCategory(catalog.entries, category);
     // 항목이 없는 분류는 404다 — 빈 목록이 soft 404로 색인되지 않게 한다.
     if (inCategory.length === 0) notFound();
     const [copy, seo] = await Promise.all([

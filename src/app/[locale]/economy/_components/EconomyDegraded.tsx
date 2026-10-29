@@ -1,10 +1,10 @@
 import { useTranslations } from 'next-intl';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /**
- * /economy degrade UI — 전 축이 비어 있어 의미 있는 정보를 노출할 수 없을 때 200 + noindex로
- * 보여주는 안내. financials `FinancialsDegraded`와 동일 패턴.
+ * `/economy` degrade UI — 스냅샷 전 축이 비어(또는 로더 실패) 의미 있는 정보를 노출할 수 없을 때
+ * 200 + noindex 렌더로 보여주는 안내. `EconomyContent`가 `generateMetadata`와 같은 판정으로 고른다.
  */
 export function EconomyDegraded() {
     const t = useTranslations('app.economy');
