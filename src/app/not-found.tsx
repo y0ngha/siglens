@@ -4,17 +4,16 @@
  * 처음부터 세우는 것이 유일하게 정상 동작하는 경로다. */
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { NotFoundLayout } from '@/app/_components/NotFoundLayout';
-import {
-    documentTitleOf,
-    buildOverrides,
-} from '@/app/_components/notFoundOverrides';
-import { NotFoundView } from '@/app/_components/NotFoundView';
 import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
-import { DEFAULT_LOCALE, localePath } from '@/shared/i18n/locales';
 import { SITE_NAME } from '@/shared/config/brand';
-import { brandName } from '@/shared/lib/brandName';
+import { DEFAULT_LOCALE, localePath } from '@/shared/i18n/locales';
 import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
+import { NotFoundLayout } from './_components/NotFoundLayout';
+import {
+    buildOverrides,
+    buildSiteOverride,
+} from './_components/notFoundOverrides';
+import { NotFoundView } from './_components/NotFoundView';
 import './globals.css';
 
 const HOME_NAMESPACE = 'app.home';
@@ -60,8 +59,9 @@ export function generateMetadata(): Metadata {
  * 링크는 전체 페이지 로드가 되도록 맨 `<a>`다.
  */
 export default async function RootNotFound() {
-    const [overrides, t, tNav] = await Promise.all([
+    const [overrides, copy, t, tNav] = await Promise.all([
         buildOverrides(),
+        buildSiteOverride(DEFAULT_LOCALE),
         getTranslations({ locale: DEFAULT_LOCALE, namespace: HOME_NAMESPACE }),
         getTranslations({ locale: DEFAULT_LOCALE }),
     ]);
@@ -79,23 +79,16 @@ export default async function RootNotFound() {
                     <NotFoundLayout
                         wordmark={SITE_NAME}
                         homeHref={localePath(DEFAULT_LOCALE, '/')}
-                        documentTitle={documentTitleOf(
-                            t('not-found.6cbd6d'),
-                            brandName(DEFAULT_LOCALE)
-                        )}
+                        documentTitle={copy.documentTitle}
                         navLabel={tNav(NAV_LABEL_KEY)}
                         navLinks={NAV_VERTICALS.map(vertical => ({
                             id: vertical.id,
                             href: localePath(DEFAULT_LOCALE, vertical.rootHref),
                             label: tNav(vertical.labelKey),
                         }))}
-                        title={t('not-found.6cbd6d')}
-                        description={t('not-found.03ecab')
-                            .replace(/\s+/gu, ' ')
-                            .trim()}
-                        homeLabel={t('not-found.ba81f0', {
-                            v0: brandName(DEFAULT_LOCALE),
-                        })}
+                        title={copy.headline}
+                        description={copy.body}
+                        homeLabel={copy.homeLabel}
                         shortcuts={[
                             {
                                 id: 'market',

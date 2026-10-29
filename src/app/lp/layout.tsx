@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
 import Script from 'next/script';
-import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
+import type { ReactNode } from 'react';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
+import { cn } from '@/shared/lib/cn';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { GoogleAdsTag } from '../_components/GoogleAdsTag';
 import { FONT_VARIABLE_CLASSES } from '../fontVariables';
 import '../globals.css';
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = { manifest: null };
 
 /**
  * Root layout for the ad-only landing pages (`/lp/*`), a sibling of `[locale]`
- * and `ai/[locale]` (spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`).
+ * and `ai/[locale]`.
  *
  * Korean only and deliberately bare: no global header/footer, search overlay,
  * nav verticals or `NextIntlClientProvider`. The global chrome carries crypto
@@ -31,7 +32,10 @@ export default function LandingRootLayout({
     return (
         <html
             lang="ko"
-            className={`${FONT_VARIABLE_CLASSES} h-full antialiased scheme-dark`}
+            className={cn(
+                FONT_VARIABLE_CLASSES,
+                'h-full antialiased scheme-dark'
+            )}
             // THEME_INIT_SCRIPT stamps `data-theme` on <html> before first paint;
             // the server HTML has none, so silence that one expected mismatch.
             suppressHydrationWarning

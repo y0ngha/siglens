@@ -12,6 +12,7 @@ export const metadata: Metadata = {
     robots: { index: false, follow: false },
 };
 
+/** `/lp/stock-analysis` 광고 랜딩. 본문은 `StockAnalysisLanding` 뷰가 그린다. */
 export default function StockAnalysisLandingPage() {
     return <StockAnalysisLanding />;
 }

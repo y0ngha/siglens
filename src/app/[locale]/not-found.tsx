@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { collapseWhitespace } from '@/app/_components/notFoundOverrides';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { NotFoundContent } from './NotFoundContent';
 
 /**
- * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
- * 없어 `<title>`이 전 로케일에서 한국어였다. 본문이 SSR되지 않는(아래 참고) 이
- * 경계에서는 **제목이 크롤러와 JS 없는 사용자가 받는 전부**라 영향이 크다.
+ * 로케일 404 메타데이터. 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을
+ * 볼 수 없다. 본문이 SSR되지 않는(아래 참고) 이 경계에서는 **제목이 크롤러와 JS 없는 사용자가 받는
+ * 전부**다.
  */
 export async function generateMetadata({
     params,
@@ -20,16 +21,14 @@ export async function generateMetadata({
         namespace: 'app.home',
     });
     const title = t('not-found.6cbd6d');
-    // JSX 들여쓰기에서 온 줄바꿈·연속 공백은 메타 태그에 그대로 실리면 안 되므로 한 줄로 접는다.
-    const description = t('not-found.03ecab').replace(/\s+/gu, ' ').trim();
+    const description = collapseWhitespace(t('not-found.03ecab'));
     return {
         title,
         /**
          * `description`을 비워 두면 Next가 **루트 레이아웃 값을 상속**시킨다 —
          * 즉 존재하지 않는 모든 URL이 홈과 **똑같은** `<meta name="description">`을
-         * 달고 나간다(실측 2026-09-20: `/ZZZZZ`·`/nonexistent-page-xyz`·
-         * `/news/nosuchcat`·`/share/<없는id>`가 전부 홈 설명문). 404 URL은 수에
-         * 상한이 없어서 네이버 서치어드바이저의 "동일 설명문" 집계를 혼자 채운다.
+         * 달고 나간다. 404 URL은 수에 상한이 없어서 네이버 서치어드바이저의 "동일
+         * 설명문" 집계를 혼자 채운다.
          * `noindex`는 색인만 막을 뿐 이 동일성 선언까지 막아 주지 않는다 —
          * `NOINDEX_SYMBOL_METADATA`가 차단된 심볼에 대해 같은 이유로 자기 카피를
          * 갖는 것과 같은 처방이다.

@@ -7,7 +7,7 @@ import { userAgent } from 'next/server';
  * AI 크롤러 대부분과 기생 SEO 크롤러, 스크립트 클라이언트가 전부 통과한다 —
  * 그 구멍이 방문자 집계(`/api/presence`)를 부풀리고 AI 잡 큐를 낭비시킨다.
  *
- * 토큰 목록은 `src/app/robots.ts`의 그룹들과 의도적으로 겹친다. 그쪽은 크롤러에게
+ * 토큰 목록은 `src/app/_lib/robotsRules.ts`의 목록들과 의도적으로 겹친다. 그쪽은 크롤러에게
  * 보내는 *요청*이고 여기는 우리 쪽 *판정*이라 준수 여부와 무관하게 동작해야 한다.
  * robots.txt에 토큰을 추가할 때 여기도 같이 보는 것을 권한다.
  *
