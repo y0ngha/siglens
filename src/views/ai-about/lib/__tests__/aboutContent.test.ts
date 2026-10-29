@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/guestTurnLimit';
 import ko from '../../../../../messages/ko.json';
 import type { Locale } from '@/shared/i18n/locales';
@@ -116,14 +116,16 @@ describe('buildScenarios answer lines', () => {
             ]);
     });
 
-    it('types the raw answers as exactly five values', () => {
-        // Compile-time check: each `@ts-expect-error` fails `tsc` the moment
+    it('types the raw answers as exactly five values (type-level check)', () => {
+        // Checked by `tsc`, not at runtime: `expectTypeOf` is a no-op when the
+        // test runs, and each `@ts-expect-error` fails the type check the moment
         // a four- or six-value answer becomes assignable.
-        const five: AnswerRaws = ['a', 'b', 'c', 'd', 'e'];
+        expectTypeOf<AnswerRaws['length']>().toEqualTypeOf<5>();
         // @ts-expect-error one value short of the five answer lines
         const four: AnswerRaws = ['a', 'b', 'c', 'd'];
         // @ts-expect-error one value past the five answer lines
         const six: AnswerRaws = ['a', 'b', 'c', 'd', 'e', 'f'];
-        expect([five, four, six].map(raws => raws.length)).toEqual([5, 4, 6]);
+        expectTypeOf(four).toEqualTypeOf<AnswerRaws>();
+        expectTypeOf(six).toEqualTypeOf<AnswerRaws>();
     });
 });
