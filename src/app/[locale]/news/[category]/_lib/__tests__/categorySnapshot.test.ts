@@ -30,7 +30,7 @@ const ITEM: MarketNewsCardItem = {
     tickers: [],
 };
 
-// `React.cache`가 같은 인자를 요청 안에서 기억하므로 테스트마다 다른 (카테고리, 로케일)을 쓴다.
+// 테스트마다 다른 (카테고리, 로케일)을 써서, `React.cache`가 실행 환경에서 메모하든 않든 각 케이스가 로더를 따로 부른다.
 describe('loadCategorySnapshot', () => {
     beforeEach(() => {
         vi.mocked(shortenRevalidateForRuntimeDegrade).mockClear();
