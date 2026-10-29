@@ -81,7 +81,7 @@ export default async function TermsPage({
             {/* 본문을 Suspense로 감싸지 않는다. ISR 응답은 통째로 버퍼링돼 스트리밍
                 이득이 없는데, React는 500B를 넘는 경계를 fallback + 숨김 청크로
                 내보낸다 — 빈 fallback 자리에 푸터가 먼저 그려졌다가 본문이 풀리며
-                밀려 모바일 CLS가 0.74였다(운영 Lighthouse 모바일 프로필 1회성 실측, 저장된 기준선
+                밀려 모바일 CLS가 0.74였다(2026-10-04 운영 Lighthouse 모바일 프로필 1회성 실측, 저장된 기준선
                 없음. 다시 재려면 운영 `/terms` URL에 Lighthouse를 모바일 프로필로 돌려 CLS를
                 읽는다). */}
             <TermsContent locale={locale} terms={terms} />

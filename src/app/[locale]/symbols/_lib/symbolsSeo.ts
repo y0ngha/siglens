@@ -23,6 +23,12 @@ export function symbolsDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('symbols.description'));
 }
 
+/** `/symbols` 페이지가 `<JsonLd>`로 각각 내보내는 두 노드. */
+export interface SymbolsJsonLd {
+    readonly webPageJsonLd: Record<string, unknown>;
+    readonly breadcrumbJsonLd: Record<string, unknown>;
+}
+
 /**
  * `/symbols`의 `WebPage`·`BreadcrumbList` JSON-LD.
  *
@@ -36,7 +42,7 @@ export function buildSymbolsJsonLd(
     t: SeoTranslator,
     locale: Locale,
     heading: string
-) {
+): SymbolsJsonLd {
     return {
         webPageJsonLd: buildWebPageJsonLd({
             url: SYMBOLS_PAGE_URL,

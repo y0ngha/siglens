@@ -4,8 +4,9 @@ import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
 
 /**
  * 백테스트 케이스 데이터. JSON import는 느슨한 타입이라 `validateBacktestData`가 로드 시점에
- * shape를 보장한다. `data.json`은 (로컬·gitignore) 생성 스크립트로만 교체되고 요청 시점에는
- * 바뀌지 않으므로 아래 파생값도 모듈 로드 시 한 번만 계산한다.
+ * shape를 보장한다. `data.json`은 커밋된 파일이고, 이를 만드는 생성 스크립트는 저장소에 없는
+ * 로컬 전용(`scripts/**` gitignore)이다. 요청 시점에는 데이터가 바뀌지 않으므로 아래 파생값도
+ * 모듈 로드 시 한 번만 계산한다.
  */
 export const BACKTEST_DATA = validateBacktestData(backtestData as unknown);
 

@@ -32,7 +32,7 @@ export async function buildSymbolsMetadata(
         robots: localePageRobots(locale),
         // 소셜 카드는 `localePageSocial`로 통째로 선언한다 — `og:url`이 canonical과
         // 같은 로케일별 URL이 되고(`/en/symbols`가 ko URL을 가리키지 않게), 정적
-        // `/og-image.png`도 함께 실린다. 실측으로 이 라우트만 `og:image`가 없었다 — 이미지를
+        // `/og-image.png`도 함께 실린다. 2026-09-18 실측으로 이 라우트만 `og:image`가 없었다 — 이미지를
         // 아예 안 주면 공유 카드가 텅 빈 채로 나간다.
         ...localePageSocial(locale, SYMBOLS_PATH, {
             title: symbolsFullTitle(tSeo, locale),

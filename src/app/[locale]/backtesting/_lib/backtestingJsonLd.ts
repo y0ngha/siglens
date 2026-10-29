@@ -14,6 +14,13 @@ import {
 } from '@/shared/lib/seo';
 import { BACKTEST_STATS } from './backtestingData';
 
+/** `/backtesting` 페이지가 `<JsonLd>`로 각각 내보내는 세 노드. */
+export interface BacktestingJsonLd {
+    readonly webPageJsonLd: Record<string, unknown>;
+    readonly breadcrumbJsonLd: Record<string, unknown>;
+    readonly datasetJsonLd: Record<string, unknown>;
+}
+
 /**
  * `/backtesting`의 JSON-LD 세 노드(WebPage·BreadcrumbList·Dataset).
  *
@@ -35,7 +42,7 @@ export function buildBacktestingJsonLd(
     tPage: SeoTranslator,
     breadcrumbLabel: string,
     locale: Locale
-) {
+): BacktestingJsonLd {
     const description = backtestingDescription(t);
     const fullTitle = brandTitle(backtestingTitle(t), locale);
     return {
