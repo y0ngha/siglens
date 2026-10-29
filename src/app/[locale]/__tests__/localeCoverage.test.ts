@@ -2,6 +2,8 @@ import {} from '@/shared/i18n/indexableLocales';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { blankComments } from '@/__tests__/guards/support/sourceScan';
+
 const APP_DIR = join(process.cwd(), 'src/app/[locale]');
 
 /** `src/app/[locale]` 아래의 모든 page 파일. */
@@ -162,7 +164,8 @@ describe('로케일 커버리지', () => {
      * 사라지고, 빌드는 성공하며 테스트도 통과한다 — 캐시 비용 청구서로만 드러난다.
      */
     it.each(SERVER_PAGES)('%s: setRequestLocale을 호출한다', page => {
-        const source = readFileSync(page, 'utf8');
+        // 주석을 비운다 — 주석·JSDoc 속 호출 언급이 검사를 통과시키면 안 된다.
+        const source = blankComments(readFileSync(page, 'utf8'));
         // `enterLocale`(shared/lib/enterLocale)이 `setRequestLocale`을 감싼다.
         if (/\b(setRequestLocale|enterLocale)\(/.test(source)) return;
         // `[symbol]` 탭은 본문 진입 헬퍼 `enterSymbolTabPage`(`[symbol]/_lib/symbolTabEntry`)가
@@ -173,7 +176,9 @@ describe('로케일 커버리지', () => {
     });
 
     it('[symbol] 탭 본문 진입 헬퍼 enterSymbolTabPage가 enterLocale을 호출한다', () => {
-        const source = readFileSync(SYMBOL_TAB_ENTRY_FILE, 'utf8');
+        const source = blankComments(
+            readFileSync(SYMBOL_TAB_ENTRY_FILE, 'utf8')
+        );
         const body =
             /export async function enterSymbolTabPage\([\s\S]*?\n\}/.exec(
                 source

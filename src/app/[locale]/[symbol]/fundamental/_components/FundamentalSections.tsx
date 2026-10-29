@@ -24,6 +24,9 @@ import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 
+/** TTM 재무비율 캐시 키 — 수익성 카드와 재무 건전성 카드가 같은 캐시 엔트리를 공유한다. */
+const RATIOS_CACHE_KEY = 'fundamental:ratios-v2';
+
 interface SymbolSectionProps {
     /** 대문자 티커. */
     symbol: string;
@@ -123,7 +126,7 @@ export async function PeersSection({ symbol }: SymbolSectionProps) {
 /** 수익성 카드. 실패하면 `ProfitabilityCard(null)`의 빈 상태. */
 export async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     const ratios = await loadSection(
-        'fundamental:ratios-v2',
+        RATIOS_CACHE_KEY,
         symbol,
         () => getRatiosTtm(symbol),
         '[ProfitabilitySection] getRatiosTtm failed, degrading to null:',
@@ -148,7 +151,7 @@ export async function GrowthSection({ symbol }: SymbolSectionProps) {
 export async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     const [ratios, scores, cashFlow] = await Promise.all([
         loadSection(
-            'fundamental:ratios-v2',
+            RATIOS_CACHE_KEY,
             symbol,
             () => getRatiosTtm(symbol),
             '[FinancialHealthSection] getRatiosTtm failed, degrading to null:',

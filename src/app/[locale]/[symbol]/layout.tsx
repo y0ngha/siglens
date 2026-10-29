@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 
 import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';
+import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
@@ -17,12 +18,9 @@ import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
 
 import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 
-/** `[locale]/[symbol]` 세그먼트 파라미터(Next 16은 Promise로 넘긴다). */
-type SymbolLayoutParams = Promise<{ locale: string; symbol: string }>;
-
 interface SymbolLayoutProps {
     children: ReactNode;
-    params: SymbolLayoutParams;
+    params: SymbolTabParams;
 }
 
 /**

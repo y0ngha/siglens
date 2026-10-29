@@ -12,9 +12,7 @@ export const dynamic = 'force-static';
 /** 신선한 데이터가 없는 이미지라 길게 캐시한다. 템플릿 변경은 배포 때 캐시가 무효화된다. */
 export const revalidate = 2592000; // 30d
 
-/** 공유 카드 규격 — 동적·정적 OG가 함께 쓰는 `shared/lib/og` 상수. */
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
-/** 이미지 응답 MIME. */
 export const contentType = 'image/png';
 /**
  * Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지 본문은 로케일별로 그린다). 네

@@ -1,11 +1,13 @@
 import { getTranslations } from 'next-intl/server';
+
+import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 import { resolveLocale } from '@/shared/i18n/locales';
 import type { SeoTranslator } from '@/shared/lib/seo';
 
 /** 종목 탭 `opengraph-image.tsx`가 받는 라우트 파라미터. */
 export interface SymbolTabOgImageProps {
-    params: Promise<{ locale: string; symbol: string }>;
+    params: SymbolTabParams;
 }
 
 /**

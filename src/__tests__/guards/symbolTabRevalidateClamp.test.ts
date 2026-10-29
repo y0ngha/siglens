@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 import * as time from '@/shared/config/time';
 
+import { blankComments } from './support/sourceScan';
+
 /**
  * **`[symbol]` 탭이 읽는 `unstable_cache`의 revalidate는 그 탭의 선언값 이상이어야 한다.**
  *
@@ -69,10 +71,23 @@ function stripComments(source: string): string {
     return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }
 
-/** 소스가 import하는 모듈 지정자. 주석 속 이름은 세지 않는다. */
+/** 모듈 간선 종류별 지정자 패턴 — 정적 import·재export·부수효과 import·동적 `import()`. */
+const MODULE_EDGE_PATTERNS: readonly RegExp[] = [
+    /^import\s[^;]*?from\s+'([^']+)';/gm,
+    /^export\s[^;]*?from\s+'([^']+)';/gm,
+    /^import\s+'([^']+)';/gm,
+    /\bimport\(\s*'([^']+)'\s*\)/g,
+];
+
+/**
+ * 소스가 의존하는 모듈 지정자 — 정적 import뿐 아니라 `export … from` 재export, 부수효과 `import '…'`,
+ * 동적 `import('…')`까지 센다(어느 간선이든 그 모듈의 `unstable_cache`가 렌더에서 읽힐 수 있다).
+ * 주석을 먼저 비워(`blankComments`) 주석 속 이름은 세지 않는다.
+ */
 function importedModules(source: string): string[] {
-    return [...source.matchAll(/^import[^;]*?from '([^']+)';/gm)].map(
-        m => m[1]
+    const code = blankComments(source);
+    return MODULE_EDGE_PATTERNS.flatMap(pattern =>
+        [...code.matchAll(pattern)].map(m => m[1] ?? '')
     );
 }
 
@@ -296,6 +311,20 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
 };
 
 const LAYOUT = 'layout.tsx';
+
+describe('importedModules', () => {
+    it.each([
+        ["import { a } from '@/x';", ['@/x']],
+        ["import type { T } from '@/t';", ['@/t']],
+        ["export { a } from './a';", ['./a']],
+        ["export * from './star';", ['./star']],
+        ["import './side-effect';", ['./side-effect']],
+        ["const m = await import('@/dynamic');", ['@/dynamic']],
+        ["// import { a } from '@/commented';\n/* import('@/blocked') */", []],
+    ] as const)('%s → %j', (source, specifiers) => {
+        expect(importedModules(source)).toEqual(specifiers);
+    });
+});
 
 describe('[symbol] 탭 revalidate clamp 가드', () => {
     it('레이아웃(+로컬 헬퍼)은 짧은 revalidate 캐시 모듈을 import하지도, 6h 읽기 함수를 부르지도 않는다 (9탭 공유)', () => {

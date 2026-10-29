@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 import { getTranslations } from 'next-intl/server';
 
+import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { getSymbolFearGreedChipStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
@@ -19,7 +20,7 @@ import {
 
 interface SymbolLayoutChromeProps {
     /** `[locale]/[symbol]` 세그먼트 파라미터(레이아웃이 받은 그대로). */
-    params: Promise<{ locale: string; symbol: string }>;
+    params: SymbolTabParams;
     /** 레이아웃 가드를 통과한 자산 정보 — null이면 그 전에 `notFound()`로 끊긴다. */
     assetInfo: AssetInfo;
     /** `getAssetInfoResilient`가 폴백으로 푼 값인가. 시드의 `updatedAt`을 가른다. */

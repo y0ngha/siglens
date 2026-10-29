@@ -8,7 +8,7 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { AssetInfo } from '@/shared/lib/types';
 
-/** `[symbol]` 탭 라우트 파일(`page.tsx`·`generateMetadata`)이 받는 세그먼트 파라미터. */
+/** `[locale]/[symbol]` 라우트 모듈(레이아웃·페이지·`generateMetadata`·OG 이미지)이 받는 세그먼트 파라미터. */
 export type SymbolTabParams = Promise<{ locale: string; symbol: string }>;
 
 /** 탭 `generateMetadata`가 공통 진입 판정을 마친 뒤 이어 쓰는 값. */
