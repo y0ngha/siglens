@@ -3434,6 +3434,7 @@
     "app.fear-greed.symbolListTitle": "fc24213c569c",
     "widgets.portfolio-position.PositionCta.8df3cf": "8df3cf79ee25",
     "widgets.portfolio-position.positionNote.ariaSummaryCurrentOnly": "1a68fd654cff",
+    "widgets.portfolio-position.PositionHoldingCard.avgInvalid": "073459ea2458",
     "app.backtesting.breadcrumb": "175b9028ef07",
     "shared.enumLabel.backtestRiskLevel.extreme": "45625aed636e",
     "shared.enumLabel.backtestRiskLevel.high": "160ea7712adc",
@@ -4126,6 +4127,5 @@
     "views.benchmark.breakdown.overallNote": "6496c2919e72",
     "features.symbol-model.fallbackTitle": "344c6757c43c",
     "features.symbol-model.fallbackDetail": "52027113be04",
-    "widgets.analysis.ModelSelector.unavailable": "4378697958ff",
-    "widgets.portfolio-position.PositionHoldingCard.avgInvalid": "073459ea2458"
+    "widgets.analysis.ModelSelector.unavailable": "4378697958ff"
 }
