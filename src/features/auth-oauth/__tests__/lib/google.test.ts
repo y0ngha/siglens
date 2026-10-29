@@ -4,7 +4,15 @@ import {
 } from '@/features/auth-oauth/lib/google';
 import { jsonResponse } from '@/shared/test-utils/jsonResponse';
 
-const ORIGINAL_FETCH = global.fetch;
+/** 전역 fetch를 대체하고 호출 검사용 mock을 돌려준다. 복원은 `vi.unstubAllGlobals()`가 맡는다. */
+function stubFetch(
+    impl: (url: string, init: RequestInit) => Promise<Response> = async () =>
+        jsonResponse(500, {})
+) {
+    const fetchMock = vi.fn(impl);
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+}
 
 describe('googleOAuthAdapter', () => {
     const REDIRECT_URI = 'https://app.example.com/api/auth/callback/google';
@@ -15,7 +23,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     afterEach(() => {
-        global.fetch = ORIGINAL_FETCH;
+        vi.unstubAllGlobals();
     });
 
     it('GOOGLE_CLIENT_ID/SECRET 미설정 시 빈 문자열로 빌드된다', async () => {
@@ -26,7 +34,7 @@ describe('googleOAuthAdapter', () => {
             redirectUri: REDIRECT_URI,
         });
         expect(new URL(url).searchParams.get('client_id')).toBe('');
-        global.fetch = vi.fn(async () => jsonResponse(400, {})) as never;
+        stubFetch(async () => jsonResponse(400, {}));
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -49,7 +57,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     it('token endpoint 가 비OK면 token_exchange_failed', async () => {
-        global.fetch = vi.fn(async () => jsonResponse(400, {})) as never;
+        stubFetch(async () => jsonResponse(400, {}));
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -59,7 +67,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     it('access_token이 누락되면 token_exchange_failed', async () => {
-        global.fetch = vi.fn(async () => jsonResponse(200, {})) as never;
+        stubFetch(async () => jsonResponse(200, {}));
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -73,7 +81,7 @@ describe('googleOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             jsonResponse(401, {}),
         ];
-        global.fetch = vi.fn(async () => calls.shift()!) as never;
+        stubFetch(async () => calls.shift()!);
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -83,9 +91,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     it('access_token이 문자열이 아니면 token_exchange_failed', async () => {
-        global.fetch = vi.fn(async () =>
-            jsonResponse(200, { access_token: 123 })
-        ) as never;
+        stubFetch(async () => jsonResponse(200, { access_token: 123 }));
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -102,7 +108,7 @@ describe('googleOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             jsonResponse(200, userinfo),
         ];
-        global.fetch = vi.fn(async () => calls.shift()!) as never;
+        stubFetch(async () => calls.shift()!);
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -116,7 +122,7 @@ describe('googleOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             jsonResponse(200, { sub: 'gid' }),
         ];
-        global.fetch = vi.fn(async () => calls.shift()!) as never;
+        stubFetch(async () => calls.shift()!);
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -126,9 +132,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     it('token JSON 파싱 실패 시 token_exchange_failed', async () => {
-        global.fetch = vi.fn(
-            async () => new Response('not-json', { status: 200 })
-        ) as never;
+        stubFetch(async () => new Response('not-json', { status: 200 }));
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -142,7 +146,7 @@ describe('googleOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             new Response('not-json', { status: 200 }),
         ];
-        global.fetch = vi.fn(async () => calls.shift()!) as never;
+        stubFetch(async () => calls.shift()!);
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -161,7 +165,7 @@ describe('googleOAuthAdapter', () => {
                 picture: 'https://img/u.png',
             }),
         ];
-        global.fetch = vi.fn(async () => calls.shift()!) as never;
+        stubFetch(async () => calls.shift()!);
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -190,11 +194,11 @@ describe('googleOAuthAdapter', () => {
             vi.restoreAllMocks();
         });
 
-        /** 회귀: token 요청의 reject가 콜백 라우트까지 throw돼 500이 났다. */
+        // 콜백 라우트는 어댑터에서 throw된 오류를 받지 않는다. reject는 결과 값으로 바뀐다.
         it('token 요청이 reject되면 token_exchange_failed를 반환한다', async () => {
-            global.fetch = vi.fn(async () => {
+            stubFetch(async () => {
                 throw networkError;
-            }) as never;
+            });
             await expect(
                 googleOAuthAdapter.exchangeCodeForProfile({
                     code: 'c',
@@ -203,27 +207,28 @@ describe('googleOAuthAdapter', () => {
             ).resolves.toEqual({ ok: false, reason: 'token_exchange_failed' });
         });
 
-        /** 회귀: userinfo 요청의 reject가 콜백 라우트까지 throw돼 500이 났다. */
         it('userinfo 요청이 reject되면 profile_fetch_failed를 반환한다', async () => {
-            const fetchMock = vi
-                .fn()
+            stubFetch()
                 .mockResolvedValueOnce(
                     jsonResponse(200, { access_token: 'tok' })
                 )
                 .mockRejectedValueOnce(networkError);
-            global.fetch = fetchMock as never;
             await expect(
                 googleOAuthAdapter.exchangeCodeForProfile({
                     code: 'c',
                     redirectUri: REDIRECT_URI,
                 })
             ).resolves.toEqual({ ok: false, reason: 'profile_fetch_failed' });
+            expect(console.error).toHaveBeenCalledWith(
+                '[googleOAuthAdapter] userinfo request failed:',
+                networkError
+            );
         });
 
         it('실패 원인을 단계와 함께 로그로 남긴다', async () => {
-            global.fetch = vi.fn(async () => {
+            stubFetch(async () => {
                 throw networkError;
-            }) as never;
+            });
             await googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
                 redirectUri: REDIRECT_URI,
@@ -239,7 +244,7 @@ describe('googleOAuthAdapter', () => {
                 jsonResponse(200, { access_token: 'tok' }),
                 jsonResponse(401, { error: 'invalid_token' }),
             ];
-            global.fetch = vi.fn(async () => calls.shift()!) as never;
+            stubFetch(async () => calls.shift()!);
             await expect(
                 googleOAuthAdapter.exchangeCodeForProfile({
                     code: 'c',
@@ -252,9 +257,9 @@ describe('googleOAuthAdapter', () => {
         });
 
         it('비OK 응답은 본문 없이 상태 코드만 로그로 남긴다', async () => {
-            global.fetch = vi.fn(async () =>
+            stubFetch(async () =>
                 jsonResponse(400, { error: 'invalid_grant' })
-            ) as never;
+            );
             await googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
                 redirectUri: REDIRECT_URI,
@@ -270,17 +275,14 @@ describe('googleOAuthAdapter', () => {
             vi.restoreAllMocks();
         });
 
-        /** 회귀: 응답이 멈춘 Google 요청이 undici 기본값(300초)까지 콜백을 붙잡았다. */
+        // 모든 Google 요청은 제한 시간 signal을 실어 멈춘 연결이 콜백을 붙잡지 못한다.
         it('token·userinfo 요청 모두 GOOGLE_REQUEST_TIMEOUT_MS signal을 싣는다', async () => {
             const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
             const calls = [
                 jsonResponse(200, { access_token: 'tok' }),
                 jsonResponse(200, { sub: 'gid', email: 'user@example.com' }),
             ];
-            const fetchMock = vi.fn(async (_url: string, _init: RequestInit) =>
-                calls.shift()!
-            );
-            global.fetch = fetchMock as never;
+            const fetchMock = stubFetch(async () => calls.shift()!);
             await googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
                 redirectUri: REDIRECT_URI,
