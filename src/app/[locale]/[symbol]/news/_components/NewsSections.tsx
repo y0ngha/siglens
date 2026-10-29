@@ -56,37 +56,62 @@ interface EventCalendarSectionProps extends SymbolSectionProps {
     today: string;
 }
 
+/** 섹션 로더가 실패해 경고 카드로 떨어졌을 때의 안내 문구. */
+interface DegradedSection {
+    readonly degradedMessage: string;
+}
+
 /**
- * 실적 이벤트 캘린더 섹션(주식 전용). FMP 장애(렌더 예산 초과 포함)는 경고 카드로 흡수하고, 그 안내가
- * 라우트 revalidate 동안 굳지 않게 이 렌더의 revalidate를 짧게 낮춘다.
+ * 섹션 로더 실패의 공통 흡수 — 로그를 남기고 **이 렌더의 revalidate를 짧게 낮춘 뒤**(FMP 장애 안내가 라우트
+ * revalidate 동안 굳지 않게) 경고 카드 문구를 돌려준다. FMP 오류는 사용자용 번역을, 그 밖은 섹션 기본
+ * 문구를 쓴다.
+ */
+async function degradeSection(
+    failureLog: string,
+    error: unknown,
+    fallbackMessage: string
+): Promise<DegradedSection> {
+    console.error(failureLog, error);
+    await shortenRevalidateForRuntimeDegrade();
+    return {
+        degradedMessage:
+            translateFmpError(error, await getTranslations()) ??
+            fallbackMessage,
+    };
+}
+
+/** 정상 결과(배열)와 `degradeSection` 결과를 가른다. */
+const isDegraded = <T,>(value: T | DegradedSection): value is DegradedSection =>
+    typeof value === 'object' && value !== null && 'degradedMessage' in value;
+
+/**
+ * 실적 이벤트 캘린더 섹션(주식 전용). FMP 장애(렌더 예산 초과 포함)는 경고 카드로 흡수한다
+ * (`degradeSection`).
  */
 export async function EventCalendarSection({
     symbol,
     today,
 }: EventCalendarSectionProps) {
     const t = await getTranslations('app.symbol');
-    let earningsReports: Awaited<
-        ReturnType<typeof getEarningsReportComparison>
-    >;
-    try {
-        earningsReports = await staticSymbolCache(
-            ['news:earnings', symbol, today],
-            symbol,
-            () => getEarningsReportComparison(symbol, today),
-            [newsCacheTag(symbol)],
-            SECONDS_PER_HALF_DAY
-        );
-    } catch (error) {
-        console.error(
+    const earningsReports = await staticSymbolCache(
+        ['news:earnings', symbol, today],
+        symbol,
+        () => getEarningsReportComparison(symbol, today),
+        [newsCacheTag(symbol)],
+        SECONDS_PER_HALF_DAY
+    ).catch((error: unknown) =>
+        degradeSection(
             '[EventCalendarSection] earnings load failed, degrading:',
-            error
-        );
-        await shortenRevalidateForRuntimeDegrade();
-        const message =
-            translateFmpError(error, await getTranslations()) ??
-            t('page.3c87a9');
+            error,
+            t('page.3c87a9')
+        )
+    );
+    if (isDegraded(earningsReports)) {
         return (
-            <NewsDataServerAlert title={t('page.6723ea')} message={message} />
+            <NewsDataServerAlert
+                title={t('page.6723ea')}
+                message={earningsReports.degradedMessage}
+            />
         );
     }
     return <EventCalendar earningsReports={earningsReports} />;
@@ -98,26 +123,25 @@ export async function EventCalendarSection({
  */
 export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
     const t = await getTranslations('app.symbol');
-    let events: Awaited<ReturnType<typeof getGradeEvents>>;
-    try {
-        events = await staticSymbolCache(
-            ['news:grades', symbol],
-            symbol,
-            () => getGradeEvents(symbol),
-            [newsCacheTag(symbol)],
-            SECONDS_PER_HALF_DAY
-        );
-    } catch (error) {
-        console.error(
+    const events = await staticSymbolCache(
+        ['news:grades', symbol],
+        symbol,
+        () => getGradeEvents(symbol),
+        [newsCacheTag(symbol)],
+        SECONDS_PER_HALF_DAY
+    ).catch((error: unknown) =>
+        degradeSection(
             '[AnalystActionsSection] grades load failed, degrading:',
-            error
-        );
-        await shortenRevalidateForRuntimeDegrade();
-        const message =
-            translateFmpError(error, await getTranslations()) ??
-            t('page.5c38df');
+            error,
+            t('page.5c38df')
+        )
+    );
+    if (isDegraded(events)) {
         return (
-            <NewsDataServerAlert title={t('page.b2cd1a')} message={message} />
+            <NewsDataServerAlert
+                title={t('page.b2cd1a')}
+                message={events.degradedMessage}
+            />
         );
     }
     return (

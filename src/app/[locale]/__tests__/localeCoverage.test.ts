@@ -20,6 +20,12 @@ function collectPages(dir: string, acc: string[] = []): string[] {
 
 const PAGES = collectPages(APP_DIR);
 
+/** `[symbol]` 탭이 공유하는 진입 헬퍼(본문의 `enterLocale` 호출을 대신 맡는다). */
+const SYMBOL_TAB_ENTRY_FILE = join(APP_DIR, '[symbol]/_lib/symbolTabEntry.ts');
+/** 그 헬퍼의 import — 별칭(`@/app/[locale]/[symbol]/…`)이나 같은 폴더 상대 경로(`./_lib/…`). */
+const SYMBOL_TAB_ENTRY_IMPORT =
+    /from '(?:@\/app\/\[locale\]\/\[symbol\]|\.)\/_lib\/symbolTabEntry';/;
+
 /**
  * 무조건 noindex인 페이지(로그인·회원가입·계정·공유 링크 등)는 이 가드에서 제외한다.
  *
@@ -156,10 +162,24 @@ describe('로케일 커버리지', () => {
      * 사라지고, 빌드는 성공하며 테스트도 통과한다 — 캐시 비용 청구서로만 드러난다.
      */
     it.each(SERVER_PAGES)('%s: setRequestLocale을 호출한다', page => {
+        const source = readFileSync(page, 'utf8');
         // `enterLocale`(shared/lib/enterLocale)이 `setRequestLocale`을 감싼다.
-        expect(readFileSync(page, 'utf8')).toMatch(
-            /\b(setRequestLocale|enterLocale)\(/
-        );
+        if (/\b(setRequestLocale|enterLocale)\(/.test(source)) return;
+        // `[symbol]` 탭은 본문 진입 헬퍼 `enterSymbolTabPage`(`[symbol]/_lib/symbolTabEntry`)가
+        // `enterLocale`을 부른다 — 그 헬퍼를 import해 호출해야만 인정한다(아래 테스트가 헬퍼를 고정한다).
+        // 메타데이터용 `enterSymbolTabMetadata`는 요청 로케일을 등록하지 않으므로 인정하지 않는다.
+        expect(source).toMatch(SYMBOL_TAB_ENTRY_IMPORT);
+        expect(source).toMatch(/\benterSymbolTabPage\(/);
+    });
+
+    it('[symbol] 탭 본문 진입 헬퍼 enterSymbolTabPage가 enterLocale을 호출한다', () => {
+        const source = readFileSync(SYMBOL_TAB_ENTRY_FILE, 'utf8');
+        const body =
+            /export async function enterSymbolTabPage\([\s\S]*?\n\}/.exec(
+                source
+            )?.[0];
+        expect(body).toBeDefined();
+        expect(body).toMatch(/\benterLocale\(/);
     });
 
     /**

@@ -2,13 +2,13 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { loadSymbolNewsList } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
     enterSymbolTabMetadata,
     enterSymbolTabPage,
     type SymbolTabParams,
 } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
-import { loadSymbolNewsList } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';

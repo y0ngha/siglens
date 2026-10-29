@@ -249,6 +249,7 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 
 - "Tests/lint/format/build pass" is reported only after the command ran and its full output (exit code, warning count) was read. Never trust the last line of piped output; read the exit code.
 - Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards`, because scoped runs skip the repo-wide guards.
+- Source-scanning guards also live in route/slice `__tests__` folders outside `src/__tests__/guards` (`src/app/[locale]/__tests__`, `src/shared/i18n/__tests__`). When a change moves calls, directives (`'use client'`) or exports into a helper, include those folders in the scope and update the guard to follow the moved code.
 - Run `yarn format:check` before committing; a skipped formatter pass is the most common gate miss.
 - A claim of cleanup ("removed the dead mocks from both files") is verified with a repo-wide grep, and a claim of absence ("the page has no such control") is checked against the component source, not inferred from the rendered page.
 - ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
