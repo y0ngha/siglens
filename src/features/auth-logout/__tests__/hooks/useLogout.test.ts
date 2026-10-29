@@ -68,13 +68,17 @@ describe('useLogout', () => {
             result.current.logout();
         });
 
-        expect(mockRemoveQueries).toHaveBeenCalledWith({
-            queryKey: QUERY_KEYS.watchlist(),
-        });
-        expect(mockRemoveQueries).toHaveBeenCalledWith({
-            queryKey: QUERY_KEYS.registeredProviders(),
-        });
-        expect(mockRemoveQueries).toHaveBeenCalledTimes(4);
+        // 회원 전용 키만 정확히 지운다 — `['llm']` 접두사 전체를 지우면 전역 쿼리까지 날아간다.
+        const removedKeys = mockRemoveQueries.mock.calls.map(
+            ([filters]) => filters.queryKey
+        );
+        expect(removedKeys).toEqual(
+            expect.arrayContaining([
+                QUERY_KEYS.watchlist(),
+                QUERY_KEYS.registeredProviders(),
+            ])
+        );
+        expect(removedKeys).not.toContainEqual(['llm']);
     });
 
     it('clears the cache before calling logoutAction', async () => {
