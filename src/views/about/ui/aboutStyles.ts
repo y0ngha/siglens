@@ -3,14 +3,7 @@
  * link and heading treatment is defined once.
  */
 import { cn } from '@/shared/lib/cn';
-import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-
-/** The closing call-to-action button. */
-export const PRIMARY_BUTTON = cn(
-    BUTTON_PRIMARY,
-    'min-h-11 px-6 text-sm focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900'
-);
 
 /** An underlined in-copy link. */
 export const TEXT_LINK =

@@ -1,9 +1,15 @@
 /** The `/about` closing call-to-action card. */
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
-import { PRIMARY_BUTTON } from '../aboutStyles';
+
+/** The closing call-to-action button — only this card uses it. */
+const PRIMARY_BUTTON = cn(
+    BUTTON_PRIMARY,
+    'min-h-11 px-6 text-sm focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900'
+);
 
 interface EndCtaProps {
     readonly title: string;
