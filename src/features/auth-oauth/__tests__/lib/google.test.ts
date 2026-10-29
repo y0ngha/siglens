@@ -82,6 +82,35 @@ describe('googleOAuthAdapter', () => {
         ).resolves.toEqual({ ok: false, reason: 'profile_fetch_failed' });
     });
 
+    it('access_token이 문자열이 아니면 token_exchange_failed', async () => {
+        global.fetch = vi.fn(async () =>
+            jsonResponse(200, { access_token: 123 })
+        ) as never;
+        await expect(
+            googleOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            })
+        ).resolves.toEqual({ ok: false, reason: 'token_exchange_failed' });
+    });
+
+    it.each([
+        ['sub', { sub: 123, email: 'user@example.com' }],
+        ['email', { sub: 'gid', email: { value: 'user@example.com' } }],
+    ])('%s가 문자열이 아니면 email_missing', async (_field, userinfo) => {
+        const calls = [
+            jsonResponse(200, { access_token: 'tok' }),
+            jsonResponse(200, userinfo),
+        ];
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
+        await expect(
+            googleOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            })
+        ).resolves.toEqual({ ok: false, reason: 'email_missing' });
+    });
+
     it('email/sub 누락 시 email_missing', async () => {
         const calls = [
             jsonResponse(200, { access_token: 'tok' }),
@@ -202,6 +231,23 @@ describe('googleOAuthAdapter', () => {
             expect(console.error).toHaveBeenCalledWith(
                 '[googleOAuthAdapter] token request failed:',
                 networkError
+            );
+        });
+
+        it('userinfo 비OK 응답은 상태 코드를 로그로 남기고 profile_fetch_failed를 반환한다', async () => {
+            const calls = [
+                jsonResponse(200, { access_token: 'tok' }),
+                jsonResponse(401, { error: 'invalid_token' }),
+            ];
+            global.fetch = vi.fn(async () => calls.shift()!) as never;
+            await expect(
+                googleOAuthAdapter.exchangeCodeForProfile({
+                    code: 'c',
+                    redirectUri: REDIRECT_URI,
+                })
+            ).resolves.toEqual({ ok: false, reason: 'profile_fetch_failed' });
+            expect(console.error).toHaveBeenCalledWith(
+                '[googleOAuthAdapter] userinfo request failed with status 401'
             );
         });
 

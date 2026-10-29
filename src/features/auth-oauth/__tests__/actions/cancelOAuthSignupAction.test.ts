@@ -110,6 +110,49 @@ describe('cancelOAuthSignupAction', () => {
                 redisError
             );
         });
+
+        it('store.peek 실패를 로그로 남기고 토큰은 계속 지운다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            const peekError = new Error('peek down');
+            const deleteMock = vi.fn().mockResolvedValue(undefined);
+            mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+                delete: deleteMock,
+                save: vi.fn(),
+                peek: vi.fn().mockRejectedValue(peekError),
+                consume: vi.fn(),
+            });
+            const fd = new FormData();
+            fd.set('token', 'tok');
+            await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+                'NEXT_REDIRECT'
+            );
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[cancelOAuthSignupAction] peek failed:',
+                peekError
+            );
+            expect(deleteMock).toHaveBeenCalledWith('tok');
+        });
+
+        it('예상치 못한 내부 에러는 discard failed로 로그에 남긴다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            const storeError = new Error('Unexpected store error');
+            mockCreatePendingOAuthSignupStoreFromEnv.mockImplementation(() => {
+                throw storeError;
+            });
+            const fd = new FormData();
+            fd.set('token', 'tok');
+            await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+                'NEXT_REDIRECT'
+            );
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[cancelOAuthSignupAction] discard failed:',
+                storeError
+            );
+        });
     });
 
     it('예상치 못한 내부 에러 시 /login으로 리다이렉트한다', async () => {

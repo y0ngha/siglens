@@ -306,6 +306,7 @@ A new `if (value < THRESHOLD)` branch needs a case for the branch taken and one 
 
 - ❌ Testing `formatImpliedMove(0.04)` for the floor branch with only `value <= 0` cases.
 - ✅ Below-floor, above-floor and exact-boundary cases.
+- A branch that only logs (a new failure log on a non-OK response) is a branch: assert the log call, and give each sibling step the same non-OK case.
 
 <a id="TE-33"></a>
 
