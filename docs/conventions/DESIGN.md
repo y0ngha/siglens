@@ -593,6 +593,8 @@ className="text-[#1a2b3c]"
   그 단계를 상속해 자신을 다스리는 h2/h1과 같거나 더 밝아진다. **대비 스윕으로는 못 잡는다** — 가장 밝은 색은 항상 대비를 통과하므로
   225개 요소 스윕이 0건을 보고하는 동안에도 결함은 살아 있었다. 위계 결함이지 대비 결함이 아니다(`headingColourTokenGuard`가 정적으로 막는다).
 - **색이 있어도 충분하지 않다.** 부모와 색·굵기가 같고 크기만 다른 제목도 같은 결함이다. 임계값이 아니라 **자기 부모 제목과 비교**한다.
+  `HEADING_SECTION`(`font-semibold text-secondary-100`) 아래의 h3에 `font-semibold text-secondary-50`(더 밝음)이나
+  `font-semibold text-secondary-100`(같음) 같은 리터럴을 쓰는 것도 같은 위반이다.
 - **같은 위계는 하나의 토큰.** 모든 h2는 `HEADING_SECTION`, 모든 h3는 `HEADING_SUBSECTION`(`src/shared/lib/typographyStyles.ts`).
   파일마다 같은 클래스 문자열을 상수로 복제하면 grep에서 숨고, 한쪽만 고쳐지면서 같은 위계의 크기·굵기가 갈라진다.
   리터럴끼리 "톤을 맞춘" 일치는 토큰과의 불일치다.
