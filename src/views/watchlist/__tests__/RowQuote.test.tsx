@@ -36,7 +36,9 @@ describe('RowQuote', () => {
     ])('$state 상태도 고정 높이 줄(h-5)에 담긴다', ({ value, find }) => {
         mockUseQuote.mockReturnValue(value);
         const { container } = render(<RowQuote symbol="AAPL" enabled />);
-        expect(find(container)!.parentElement).toHaveClass(
+        const stateNode = find(container);
+        expect(stateNode).not.toBeNull();
+        expect(stateNode?.parentElement).toHaveClass(
             'mt-1',
             'flex',
             'h-5',

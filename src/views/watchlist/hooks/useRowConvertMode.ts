@@ -45,6 +45,12 @@ export function useRowConvertMode(
         [observeRow]
     );
 
+    const open = (): void => setIsConverting(true);
+    const close = (): void => {
+        returnFocusRef.current = true;
+        setIsConverting(false);
+    };
+
     useEffect(() => {
         if (isConverting) {
             rowRef.current?.querySelector<HTMLInputElement>('input')?.focus();
@@ -54,12 +60,6 @@ export function useRowConvertMode(
         returnFocusRef.current = false;
         triggerRef.current?.focus();
     }, [isConverting]);
-
-    const open = (): void => setIsConverting(true);
-    const close = (): void => {
-        returnFocusRef.current = true;
-        setIsConverting(false);
-    };
 
     return { isConverting, open, close, setRow, triggerRef };
 }
