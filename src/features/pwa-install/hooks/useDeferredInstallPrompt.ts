@@ -15,6 +15,9 @@ import {
  * 버튼이 써야 한다. `prompt`는 받아 둔 이벤트를 **먼저 비우고** 띄운다: 이벤트는 한 번만
  * 쓸 수 있고, 연타한 두 번째 클릭이 같은 이벤트를 다시 부르지 않게 한다. 받아 둔 것이
  * 없으면 아무것도 띄우지 않고 false로 끝난다.
+ *
+ * `enabled`가 false로 바뀌어도 이미 받아 둔 이벤트는 비우지 않는다 — 호출처가 마운트 뒤
+ * `enabled`를 바꾸지 않는다는 전제다.
  */
 export function useDeferredInstallPrompt(
     enabled: boolean

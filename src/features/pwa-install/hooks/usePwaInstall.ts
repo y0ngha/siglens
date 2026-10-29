@@ -31,7 +31,7 @@ export interface UsePwaInstallReturn {
     handleModalClose: () => void;
 }
 
-/** [[usePwaInstall]] 옵션. */
+/** 설치 배너가 함께 켜는 서비스 워커 등록의 새로고침 정책을 호출 화면이 고르게 한다. */
 export interface UsePwaInstallOptions {
     /** Passed to `registerServiceWorker` — see its `reloadOnUpdate`. */
     readonly reloadOnServiceWorkerUpdate?: boolean;

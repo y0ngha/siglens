@@ -5,14 +5,13 @@ import { useDeferredInstallPrompt } from '@/features/pwa-install/hooks/useDeferr
 function dispatchPromptEvent(
     outcome: 'accepted' | 'dismissed',
     prompt = vi.fn().mockResolvedValue(undefined)
-): typeof prompt {
+): void {
     window.dispatchEvent(
         Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
             prompt,
             userChoice: Promise.resolve({ outcome }),
         })
     );
-    return prompt;
 }
 
 describe('useDeferredInstallPrompt', () => {
@@ -31,9 +30,9 @@ describe('useDeferredInstallPrompt', () => {
 
     it('연달아 불러도 같은 프롬프트를 한 번만 띄운다', async () => {
         const { result } = renderHook(() => useDeferredInstallPrompt(true));
-        let prompt = vi.fn();
+        const prompt = vi.fn().mockResolvedValue(undefined);
         act(() => {
-            prompt = dispatchPromptEvent('dismissed');
+            dispatchPromptEvent('dismissed', prompt);
         });
         await act(async () => {
             await Promise.all([result.current(), result.current()]);
@@ -43,9 +42,9 @@ describe('useDeferredInstallPrompt', () => {
 
     it('enabled=false면 프롬프트를 받아 두지 않는다', async () => {
         const { result } = renderHook(() => useDeferredInstallPrompt(false));
-        let prompt = vi.fn();
+        const prompt = vi.fn().mockResolvedValue(undefined);
         act(() => {
-            prompt = dispatchPromptEvent('accepted');
+            dispatchPromptEvent('accepted', prompt);
         });
         await act(async () => {
             await result.current();

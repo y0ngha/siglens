@@ -8,7 +8,7 @@ import { pageReload } from '@/shared/lib/pageReload';
 // 모듈 플래그로 controllerchange 리스너 1회 부착 보장 (브라우저 register 자체는 idempotent).
 let registered = false;
 
-/** [[registerServiceWorker]] 옵션. 테스트 주입 지점과 새로고침 정책을 받는다. */
+/** 테스트가 브라우저 API를 갈아 끼울 지점과, 새 SW 인계 시 새로고침할지 여부를 정한다. */
 export interface RegisterServiceWorkerOptions {
     /** Override the location used for the soft reload. Tests inject this. */
     readonly reload?: () => void;

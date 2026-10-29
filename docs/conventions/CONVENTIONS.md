@@ -101,6 +101,8 @@ return result;
 const result = condition ? newValue : value;
 ```
 
+In tests, do not reassign a `let` mock inside `act()`/callbacks; create a `const` mock and pass it into the helper.
+
 <a id="CP-5"></a>
 
 #### CP-5 — Name complex inline expressions; turn repeated JSX into data + map
@@ -561,7 +563,7 @@ the root `CLAUDE.md`. The rules below target comments that restate the code or s
 
 A comment earns its place by recording a reason, constraint or tradeoff the code cannot show. Delete comments that
 label a section, narrate a state transition, restate a name or a type narrowing the compiler already proves,
-`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name, and
+`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's or options interface's name (`/** [[useX]] options. */` — say what the options control instead), and
 structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
 multi-line WHY blocks.
 
@@ -670,6 +672,7 @@ otherwise a later sweep "fixes" it. Examples: a call site that skips a new param
 deliberate omission from a title, a status code that differs from its siblings, shared state with
 last-event-wins semantics, work started early for parallelism (state its discard cost on early return). A temporary
 workaround names its removal condition and the tracking link.
+A hook or function that is only correct under a caller assumption (e.g. an `enabled` flag never flipped after mount) states that assumption in its JSDoc.
 
 <a id="CM-7"></a>
 
