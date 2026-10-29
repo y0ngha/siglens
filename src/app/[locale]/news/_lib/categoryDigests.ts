@@ -29,10 +29,15 @@ export async function fetchCategoryDigestLines(
                     locale
                 );
                 return firstSentence(digest?.currentDriverKo);
-            } catch {
+            } catch (error) {
                 // 다이제스트는 부가 정보다 — 실패가 허브를 깨뜨리지 않는다. 지금은
                 // `peekMarketNewsDigestStatic`이 내부에서 에러를 `null`로 수렴시키지만, 경계가
-                // 여기라 그 계약이 바뀌어도 허브 전체가 500이 되지 않게 둔다.
+                // 여기라 그 계약이 바뀌어도 허브 전체가 500이 되지 않게 두고, 원인은 로그로 남긴다.
+                console.error(
+                    '[NewsHub] category digest peek failed:',
+                    category,
+                    error
+                );
                 return null;
             }
         })

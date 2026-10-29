@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import {
     CATEGORY_CONFIG,
     categoriesInRegion,
+    type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
 import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
@@ -53,7 +54,7 @@ function newsHubDescription(t: SeoTranslator): string {
 }
 
 /** 지역 카드 순서(`regionsOf('news')`)와 같은 순서의 미리보기 카테고리. */
-function regionPreviewCategories() {
+function regionPreviewCategories(): NewsFeedCategoryId[] {
     return regionsOf('news').map(region => previewCategoryOf(region.region));
 }
 
