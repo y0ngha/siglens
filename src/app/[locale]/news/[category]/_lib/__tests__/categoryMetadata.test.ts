@@ -5,9 +5,8 @@ import {
 } from '@/app/[locale]/news/[category]/_lib/categoryMetadata';
 import type { SeoTranslator } from '@/shared/lib/seo';
 
-/** 키와 라벨을 그대로 이어 붙이는 번역자 — 어떤 템플릿 키를 썼는지 단언한다. */
-const tSeo = ((key: string, values?: Record<string, unknown>) =>
-    `${key}:${String(values?.label)}`) as SeoTranslator;
+/** `키:label`을 돌려주는 번역자 — 어떤 템플릿 키에 어떤 라벨을 넘겼는지 단언한다. */
+const tSeo: SeoTranslator = (key, values) => `${key}:${String(values?.label)}`;
 
 describe('buildEmptyCategoryMetadata', () => {
     const meta = buildEmptyCategoryMetadata({

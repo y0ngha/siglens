@@ -749,6 +749,13 @@ needs it and have the other callers delegate to it.
 - ❌ Two helpers each re-derive "the previous trading day" with their own weekend handling.
 - ✅ One exported helper owns the boundary; both callers import it, and one test pins its edge cases.
 
+A condition that must hold in both a route's `generateMetadata` and its body component (a "degraded"/"empty" state
+that switches the robots directive and the rendered content) is one `_lib` predicate that both call. A comment saying
+"same expression as the body" is not enforcement.
+
+- ❌ `page.tsx` metadata and `_components/Body` each spell out the degrade condition, with a comment promising they match.
+- ✅ `_lib/isDegraded(data)` is imported by both.
+
 A summary label follows the same rule: derive it from the aggregate it summarizes, never copy it from one component.
 Validate label/aggregate consistency where the data enters, and regenerate bundled copies (an archive of the same data)
 in the same change.

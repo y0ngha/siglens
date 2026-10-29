@@ -3,6 +3,7 @@ import { buildNewsItemListJsonLd } from '@/app/[locale]/news/[category]/_lib/new
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { MARKET_NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 
+/** 실제 카드 타입의 필수 필드를 모두 채운 기사. URL에 `utm_*`와 일반 쿼리를 함께 둔다. */
 function item(index: number): MarketNewsCardItem {
     return {
         id: `n${index}`,
@@ -17,7 +18,7 @@ function item(index: number): MarketNewsCardItem {
         category: null,
         priceImpact: null,
         tickers: [],
-    } as MarketNewsCardItem;
+    };
 }
 
 describe('buildNewsItemListJsonLd', () => {

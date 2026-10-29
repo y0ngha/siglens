@@ -129,6 +129,11 @@ import {
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 describe('Market page', () => {
+    // 단언이 먼저 실패해도 console 스파이가 다음 테스트로 새지 않게 여기서 복원한다(TESTING.md#TE-30).
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     describe('ISR route config', () => {
         it('exports revalidate = 3600 (literal — required for Next.js static analysis)', () => {
             // src/app/CLAUDE.md#AP-1: route segment config must be a literal, not an imported constant
@@ -254,9 +259,7 @@ describe('Market page', () => {
             mockGetSectorSignalsStatic.mockRejectedValue(
                 new Error('cache miss')
             );
-            const consoleSpy = vi
-                .spyOn(console, 'error')
-                .mockImplementation(() => undefined);
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
             const metadata = await generateMetadata({
                 params: Promise.resolve({ locale: 'ko' }),
@@ -267,8 +270,6 @@ describe('Market page', () => {
                 canonical: 'https://siglens.io/market',
             });
             expect(metadata.robots).toEqual({ index: false, follow: true });
-
-            consoleSpy.mockRestore();
         });
     });
 
@@ -464,7 +465,6 @@ describe('Market page', () => {
                 '[MarketContent] peekBriefingStatic failed:',
                 expect.any(Error)
             );
-            consoleSpy.mockRestore();
         });
 
         it('getMarketSummaryStatic throwing → .catch() degraded empty summary, page does not throw', async () => {
@@ -484,8 +484,6 @@ describe('Market page', () => {
                 ),
                 expect.any(Error)
             );
-
-            consoleSpy.mockRestore();
         });
 
         it('getSectorSignalsStatic throwing → .catch() degraded empty stocks, page does not throw', async () => {
@@ -507,8 +505,6 @@ describe('Market page', () => {
                 ),
                 expect.any(Error)
             );
-
-            consoleSpy.mockRestore();
         });
     });
 

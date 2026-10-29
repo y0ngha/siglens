@@ -7,7 +7,6 @@ import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingSta
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';
 import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstants';
-import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
 import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
 import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
@@ -20,6 +19,7 @@ import {
 import { resolveLocale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { hasEconomyData } from '../_lib/economyDegraded';
 import { buildEconomyPageJsonLd } from '../_lib/economyJsonLd';
 import { requestNow } from '../_lib/requestNow';
 import { economyDescription, economyTitle } from '../constants';
@@ -75,8 +75,7 @@ export async function EconomyContent() {
     await shortenRevalidateIfFmpFailedAtBuild();
     // 배포 빌드에는 DB가 없어 캘린더가 비어 구워진다 — 같은 방식으로 60초 뒤 재생성한다.
     await shortenRevalidateIfDatabaseMissingAtBuild();
-    if (snapshot === null || isEmptyEconomySnapshot(snapshot))
-        return <EconomyDegraded />;
+    if (!hasEconomyData(snapshot)) return <EconomyDegraded />;
 
     // UTC 날짜 버킷 키(core 거시 브리핑 캐시 키와 같은 경계)로 브리핑 peek seed를 읽는다.
     // miss는 null → 클라가 submit한다. 실패는 로그를 남기고 흡수한다(SERVER.md#SA-2).

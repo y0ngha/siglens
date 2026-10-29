@@ -13,49 +13,49 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 32,
+        "line": 33,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 33,
+        "line": 34,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 34,
+        "line": 35,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 39,
+        "line": 40,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },

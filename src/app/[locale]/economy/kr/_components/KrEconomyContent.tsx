@@ -13,6 +13,7 @@ import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildD
 import { resolveLocale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { isKrEconomyDegraded } from '../../_lib/economyDegraded';
 import { buildEconomyPageJsonLd } from '../../_lib/economyJsonLd';
 import { economyKrDescription, economyKrTitle } from '../../constants';
 import { requestNow } from '../../_lib/requestNow';
@@ -69,17 +70,18 @@ export async function KrEconomyContent() {
     // 지표도 캘린더도 없으면 `generateMetadata`가 noindex를 건다 — 그 렌더에서 WebPage를 내면
     // "색인하지 말라"면서 "이 URL이 정식 문서"라고 주장하게 되므로 같은 술어로 끈다. 데이터를
     // 가진 유일한 지점이 여기라 셸이 아니라 이 컴포넌트에서 낸다.
-    const degraded = cards.length === 0 && calendarEvents.length === 0;
-    const jsonLd = buildEconomyPageJsonLd({
-        path: '/economy/kr',
-        title: economyKrTitle(tSeo),
-        description: economyKrDescription(tSeo),
-        locale,
-    });
+    const jsonLd = isKrEconomyDegraded(cards, calendarEvents)
+        ? null
+        : buildEconomyPageJsonLd({
+              path: '/economy/kr',
+              title: economyKrTitle(tSeo),
+              description: economyKrDescription(tSeo),
+              locale,
+          });
 
     return (
         <div className="space-y-6">
-            {!degraded && (
+            {jsonLd && (
                 <>
                     <JsonLd data={jsonLd.webPage} />
                     <JsonLd data={jsonLd.breadcrumb} />

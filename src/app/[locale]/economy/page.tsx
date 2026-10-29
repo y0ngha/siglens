@@ -3,7 +3,6 @@ import { getTranslations } from 'next-intl/server';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이다.
 // app 레이어(RSC)에서만 import하므로 클라이언트 번들 누출 위험이 없다.
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
-import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
 import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { resolveLocale } from '@/shared/i18n/locales';
@@ -15,6 +14,7 @@ import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { EconomyContent } from './_components/EconomyContent';
+import { hasEconomyData } from './_lib/economyDegraded';
 import { buildEconomyFaq } from './_lib/economyJsonLd';
 import { economyDescription, economyTitle } from './constants';
 
@@ -67,7 +67,7 @@ export async function generateMetadata({
         title: economyTitle(tSeo),
         description: economyDescription(tSeo),
         keywords: ECONOMY_KEYWORDS,
-        degraded: snapshot === null || isEmptyEconomySnapshot(snapshot),
+        degraded: !hasEconomyData(snapshot),
         alternateTypes: rssAlternateTypes(locale),
     });
 }

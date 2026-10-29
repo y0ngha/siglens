@@ -17,6 +17,7 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { isKrEconomyDegraded } from '../_lib/economyDegraded';
 import { buildEconomyKrFaq } from '../_lib/economyJsonLd';
 import { requestNow } from '../_lib/requestNow';
 import { economyKrDescription, economyKrTitle } from '../constants';
@@ -82,7 +83,7 @@ export async function generateMetadata({
         title: economyKrTitle(tSeo),
         description: economyKrDescription(tSeo),
         keywords: ECONOMY_KR_KEYWORDS,
-        degraded: cards.length === 0 && calendarEvents.length === 0,
+        degraded: isKrEconomyDegraded(cards, calendarEvents),
     });
 }
 

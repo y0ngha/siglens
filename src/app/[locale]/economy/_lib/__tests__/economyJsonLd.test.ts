@@ -6,11 +6,9 @@ import {
 } from '@/app/[locale]/economy/_lib/economyJsonLd';
 import type { SeoTranslator } from '@/shared/lib/seo';
 
-/** 키와 `v0`을 이어 붙이는 번역자 — 어떤 키·값으로 풀었는지 단언한다. */
-const t = ((key: string, values?: Record<string, unknown>) =>
-    values === undefined
-        ? key
-        : `${key}:${String(values.v0)}`) as SeoTranslator;
+/** 키(값이 있으면 `키:v0`)를 그대로 돌려주는 번역자 — 어떤 키·값으로 풀었는지 단언한다. */
+const t: SeoTranslator = (key, values) =>
+    values === undefined ? key : `${key}:${String(values.v0)}`;
 
 describe('buildEconomyPageJsonLd', () => {
     const jsonLd = buildEconomyPageJsonLd({
@@ -34,15 +32,15 @@ describe('buildEconomyPageJsonLd', () => {
     });
 
     it('breadcrumb 마지막 마디는 브랜드 없는 제목과 로케일 URL이다', () => {
-        const items = (
-            jsonLd.breadcrumb as {
-                itemListElement: { name: string; item: string }[];
-            }
-        ).itemListElement;
-
-        expect(items.at(-1)).toMatchObject({
-            name: 'Korea economy',
-            item: 'https://siglens.io/en/economy/kr',
+        // 홈 마디는 `buildBreadcrumbJsonLd`가 앞에 붙인다 — 이 라우트가 넘긴 마디는 그 다음이다.
+        expect(jsonLd.breadcrumb).toMatchObject({
+            itemListElement: [
+                expect.anything(),
+                {
+                    name: 'Korea economy',
+                    item: 'https://siglens.io/en/economy/kr',
+                },
+            ],
         });
     });
 });

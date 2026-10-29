@@ -1,4 +1,13 @@
-import { describe, expect, it } from 'vitest';
+vi.mock('@/entities/market-news/lib/categoryConfig', async importOriginal => {
+    const actual =
+        await importOriginal<
+            typeof import('@/entities/market-news/lib/categoryConfig')
+        >();
+    return { ...actual, categoriesInRegion: vi.fn(actual.categoriesInRegion) };
+});
+
+import { describe, expect, it, vi } from 'vitest';
+import { categoriesInRegion } from '@/entities/market-news/lib/categoryConfig';
 import {
     allPreviewsEmpty,
     previewCategoryOf,
@@ -15,6 +24,16 @@ describe('previewCategoryOf', () => {
 
     it('암호화폐는 그 지역의 첫 카테고리를 고른다', () => {
         expect(previewCategoryOf('crypto')).toBe('crypto');
+    });
+});
+
+describe('previewCategoryOf — 설정 결함', () => {
+    it('카테고리가 없는 지역이면 던진다', () => {
+        vi.mocked(categoriesInRegion).mockReturnValueOnce([]);
+
+        expect(() => previewCategoryOf('kr')).toThrow(
+            '[NewsHubPage] region has no categories: kr'
+        );
     });
 });
 
