@@ -142,7 +142,7 @@ describe('useModelGate', () => {
             result.current.handleModelChange('member-model' as ModelId);
         });
 
-        // 회귀: 모달이 member 모델에는 API 키 안내를 빼도록 등급을 함께 넘긴다.
+        // 모달이 member 모델에는 API 키 안내를 빼도록 등급을 함께 넘긴다.
         expect(result.current.gateModal).toEqual({
             mode: 'auth',
             provider: 'anthropic',

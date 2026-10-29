@@ -48,8 +48,7 @@ describe('PremiumModelGateModal', () => {
         });
 
         it('member 모델은 가입만으로 열리므로 API 키 안내 없이 가입을 권한다', () => {
-            // 회귀: member 모델(서버 키 대납)에도 "API 키를 등록하면" 문구가 떠 가입 후 키가
-            // 더 필요한 것처럼 안내했다.
+            // member 모델은 서버 키로 돌아가므로, 가입 뒤에 키가 더 필요하다고 읽히면 안 된다.
             render(
                 <PremiumModelGateModal
                     mode="auth"

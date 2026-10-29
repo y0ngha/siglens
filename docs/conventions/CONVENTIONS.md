@@ -566,7 +566,8 @@ A comment earns its place by recording a reason, constraint or tradeoff the code
 label a section, narrate a state transition, restate a name or a type narrowing the compiler already proves,
 `// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name (or a props
 JSDoc that only lists field names), a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
-export), and
+export), comments framed as history ("회귀:", "previously…", "fixed in…"; state the current reason
+instead), and
 structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
 multi-line WHY blocks.
 
