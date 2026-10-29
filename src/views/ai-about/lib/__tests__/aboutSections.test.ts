@@ -1,5 +1,5 @@
-import { createTranslator } from 'next-intl';
-import { describe, expect, it } from 'vitest';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll, describe, expect, it } from 'vitest';
 import ko from '../../../../../messages/ko.json';
 import type { AboutT } from '../aboutContent';
 import {
@@ -10,11 +10,10 @@ import {
 } from '../aboutSections';
 
 const copy = ko.views['ai-about'];
-const t = createTranslator({
-    locale: 'ko',
-    messages: ko,
-    namespace: 'views.ai-about',
-} as never) as unknown as AboutT;
+let t: AboutT;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'views.ai-about' });
+});
 
 describe('buildPainPoints', () => {
     it('pairs each complaint with its own fix, in display order', () => {

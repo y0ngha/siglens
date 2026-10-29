@@ -1,20 +1,8 @@
-import { createTranslator } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/guestTurnLimit';
-import en from '../../../../../messages/en.json';
-import ja from '../../../../../messages/ja.json';
 import ko from '../../../../../messages/ko.json';
-import zh from '../../../../../messages/zh.json';
 import type { Locale } from '@/shared/i18n/locales';
-
-vi.mock('next-intl/server', () => ({
-    getTranslations: vi.fn(
-        async ({ namespace }: { locale: string; namespace: string }) =>
-            createTranslator({ locale: 'ko', messages: ko, namespace } as never)
-    ),
-}));
-
 import {
     buildScenarios,
     getAboutFaq,
@@ -23,15 +11,18 @@ import {
     type AnswerRaws,
 } from '../aboutContent';
 
-const CATALOGS = { ko, en, ja, zh } as const;
+const aboutTranslator = (locale: Locale): Promise<AboutT> =>
+    getTranslations({ locale, namespace: 'views.ai-about' });
 
-function aboutTranslator(locale: Locale): AboutT {
-    return createTranslator({
-        locale,
-        messages: CATALOGS[locale],
-        namespace: 'views.ai-about',
-    } as never) as unknown as AboutT;
-}
+let translators: Record<Locale, AboutT>;
+beforeAll(async () => {
+    translators = {
+        ko: await aboutTranslator('ko'),
+        en: await aboutTranslator('en'),
+        ja: await aboutTranslator('ja'),
+        zh: await aboutTranslator('zh'),
+    };
+});
 
 describe('getAboutSeoCopy', () => {
     it('resolves the seo copy from the ko catalog', async () => {
@@ -100,13 +91,13 @@ describe('buildScenarios summary', () => {
     ] as const)(
         'joins the tool labels with the %s list separators',
         (locale, summary) => {
-            const [samsung] = buildScenarios(aboutTranslator(locale), locale);
+            const [samsung] = buildScenarios(translators[locale], locale);
             expect(samsung?.summary).toBe(summary);
         }
     );
 
     it('joins two tool labels with the conjunction alone', () => {
-        const nvdaPro = buildScenarios(aboutTranslator('ko'), 'ko').find(
+        const nvdaPro = buildScenarios(translators.ko, 'ko').find(
             s => s.id === 'nvdaPro'
         );
         expect(nvdaPro?.summary).toBe('시세 및 옵션 확인, 1.8초');
@@ -115,7 +106,7 @@ describe('buildScenarios summary', () => {
 
 describe('buildScenarios answer lines', () => {
     it('reads each answer as a lead paragraph, three bullets and a closing paragraph', () => {
-        for (const scenario of buildScenarios(aboutTranslator('ko'), 'ko'))
+        for (const scenario of buildScenarios(translators.ko, 'ko'))
             expect(scenario.lines.map(line => line.kind)).toEqual([
                 'p',
                 'li',
