@@ -1,8 +1,5 @@
 'use server';
 
-/**
- * 회원 탈퇴 Server Action.
- */
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account/api';
 import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
@@ -48,7 +45,8 @@ export async function deleteAccountAction(
             };
         }
 
-        if (confirmEmail !== user.email.toLowerCase()) {
+        // 폼의 일치 판정(`getEmailConfirmStatus`)과 같은 정규화로 비교한다.
+        if (confirmEmail !== normalizeEmail(user.email)) {
             return {
                 error: {
                     code: 'email_mismatch',

@@ -709,9 +709,10 @@ Both flows end in a soft redirect, so the QueryClient survives: a member-keyed e
 providers, holdings, settings) is served to the next member who signs in on the same tab until it goes stale, and a
 leftover registered-providers entry lets them skip the BYOK gate. Remove every member-scoped key, each by its exact
 key (a shared prefix such as `['llm']` also holds global queries), before the action runs, in every flow that ends a
-session. On the server side, expire the session and hint cookies on the error path too.
+session. The logout action also expires the session and hint cookies on its error path; a failed account deletion
+keeps the account, so it keeps the session too.
 
-- ❌ Logout removes holdings and settings but not the watchlist; account deletion copies an older, shorter list.
+- ❌ One flow removes holdings and settings but not the watchlist or registered providers.
 - ✅ Each flow lists all member-scoped keys, and a test asserts the watchlist and registered-providers keys are removed
   before the action.
 

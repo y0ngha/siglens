@@ -1,8 +1,5 @@
 'use client';
 
-/**
- * 회원 탈퇴 확인 폼. 본인 이메일을 다시 입력해야 삭제 버튼이 열린다.
- */
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -35,7 +32,10 @@ interface DeleteAccountConfirmProps {
     userEmail: string;
 }
 
-/** 탈퇴 확인 폼. 제출은 `useDeleteAccountForm`이 맡는다. */
+/**
+ * 회원 탈퇴 확인 폼. 본인 이메일을 다시 입력해야 삭제 버튼이 열리고, 제출은
+ * `useDeleteAccountForm`이 맡는다.
+ */
 export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
     const t = useTranslations('features.account-delete');
     const tAuth = useTranslations('entities.auth');
