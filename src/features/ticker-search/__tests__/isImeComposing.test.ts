@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import { isImeComposing } from '@/features/ticker-search/lib/isImeComposing';
 
+// 핸들러가 읽는 필드만 채운 최소 이벤트다. 나머지 필드는 읽히지 않으므로 캐스트로 타입만 맞춘다.
 function keyEvent(nativeEvent: {
     isComposing: boolean;
     keyCode: number;

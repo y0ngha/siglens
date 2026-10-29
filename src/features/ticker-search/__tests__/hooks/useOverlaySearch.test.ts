@@ -30,10 +30,12 @@ vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
     }),
 }));
 
+// 핸들러가 읽는 필드만 채운 최소 이벤트다. 나머지 필드는 읽히지 않으므로 캐스트로 타입만 맞춘다.
 function change(value: string): ChangeEvent<HTMLInputElement> {
     return { target: { value } } as ChangeEvent<HTMLInputElement>;
 }
 
+// 핸들러가 읽는 필드만 채운 최소 이벤트다. 나머지 필드는 읽히지 않으므로 캐스트로 타입만 맞춘다.
 function enter(isComposing = false): KeyboardEvent<HTMLInputElement> {
     return {
         key: 'Enter',

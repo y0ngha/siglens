@@ -104,7 +104,7 @@ export function useOverlaySearch(
         // `no-pass-data-to-parent`는 이 호출이 확정된 목적지(결과에서 고른 종목)를 콜백 인자로 넘기기 때문에 함께 끈다.
         // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-pass-live-state-to-parent
         submitResolvedTarget();
-    }, [submitTick, isSettled, isSearching, isError]);
+    }, [submitTick, isSettled, isSearching]);
 
     return { query, results, hasQuery, status, handleChange, handleKeyDown };
 }
