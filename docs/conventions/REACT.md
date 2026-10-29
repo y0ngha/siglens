@@ -329,9 +329,9 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
-<a id="CR-4"></a>
+<a id="CR-7"></a>
 
-#### CR-4 — Swapping to a shared component preserves what the old one encoded
+#### CR-7 — Swapping to a shared component preserves what the old one encoded
 
 Before replacing a hand-rolled element with a shared component, list the constraints the old one carried (accessible name, size limits, z-index, viewport clamping) and check the shared one meets each; pass the specific label and cap the size where it does not.
 
