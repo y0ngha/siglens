@@ -1,12 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { TextField } from '@/shared/ui/TextField';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { SuccessNotice } from '@/shared/ui/SuccessNotice';
 import { useForgotPasswordForm } from '../hooks/useForgotPasswordForm';
 import { forgotPasswordErrorKey } from '../lib/forgotPasswordErrorKey';
-import { useState } from 'react';
 
 /**
  * 비밀번호 재설정 메일 요청 폼. 성공 시 폼이 통째로 사라진다 — 포커스·알림
