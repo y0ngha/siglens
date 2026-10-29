@@ -92,6 +92,11 @@ describe('buildReportScenarios', () => {
 
 describe('buildReportScenarios with a malformed catalog line', () => {
     it('renders a body line that is not a string as an empty line', () => {
+        // A deliberately malformed catalog: the casts let the test put a
+        // non-string where the typed catalog only allows strings, and hand that
+        // catalog to a translator typed for the real one. `i18n:verify` keeps
+        // real catalogs from ever having this shape, which is what makes the
+        // fallback worth pinning here rather than reachable in production.
         const messages = structuredClone(ko);
         (messages.views.about.replay.aapl as Record<string, unknown>).a1 = {
             nested: 'x',
