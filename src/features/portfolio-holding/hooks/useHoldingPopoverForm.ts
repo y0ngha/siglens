@@ -10,12 +10,26 @@ import {
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
-import {
-    type HoldingErrorField,
-    type HoldingSubmitOutcome,
-    submitHolding,
-} from '../lib/submitHolding';
+import { type HoldingErrorField, submitHolding } from '../lib/submitHolding';
 import type { UseSymbolHoldingReturn } from './useSymbolHolding';
+
+/**
+ * Runs `task` and always clears `guard` afterwards, even if `task` rejects.
+ * `submitHolding` already maps a thrown save to `failed`, but the guard must not
+ * depend on that: a leaked rejection would lock the form until it remounts.
+ * Kept outside the hook because React Compiler cannot lower a `try/finally`
+ * without a `catch` inside a hook body.
+ */
+async function releaseAfter<T>(
+    guard: RefObject<boolean>,
+    task: () => Promise<T>
+): Promise<T> {
+    try {
+        return await task();
+    } finally {
+        guard.current = false;
+    }
+}
 
 /** The message shown under the form, and the field it is pinned to (if any). */
 export interface HoldingFormError {
@@ -91,19 +105,9 @@ export function useHoldingPopoverForm({
             if (inFlightRef.current || isPending) return;
             inFlightRef.current = true;
             setError(null);
-            let outcome: HoldingSubmitOutcome;
-            try {
-                outcome = await submitHolding(mutateAsync, {
-                    symbol,
-                    quantity,
-                    averagePrice,
-                });
-            } finally {
-                // `submitHolding` maps a thrown save to `failed`, but the guard
-                // must not depend on that: a leaked rejection would otherwise
-                // lock the form until it remounts.
-                inFlightRef.current = false;
-            }
+            const outcome = await releaseAfter(inFlightRef, () =>
+                submitHolding(mutateAsync, { symbol, quantity, averagePrice })
+            );
 
             if (outcome.kind === 'saved') {
                 onSaved();
