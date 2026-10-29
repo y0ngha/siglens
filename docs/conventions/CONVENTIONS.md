@@ -619,6 +619,9 @@ compares; two residency figures with different binding conditions say so), and f
 version, the check date and the command to re-check. Schedules and windows come from the schedule source, cited by
 file, not from assumptions about business hours. When there is no measurement, say so ("no baseline yet").
 
+When moving code or trimming history comments, keep the measured evidence (figures, conditions, re-check command); drop
+only the narration of the past fix.
+
 ```typescript
 // ❌ unverifiable
 // strong ETags block Cloudflare compression

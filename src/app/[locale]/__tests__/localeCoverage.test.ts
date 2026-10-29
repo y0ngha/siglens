@@ -1,5 +1,5 @@
 import {} from '@/shared/i18n/indexableLocales';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const APP_DIR = join(process.cwd(), 'src/app/[locale]');
@@ -19,6 +19,27 @@ function collectPages(dir: string, acc: string[] = []): string[] {
 }
 
 const PAGES = collectPages(APP_DIR);
+
+/** 페이지가 `@/app/[locale]/<route>/_lib/<name>Metadata`로 위임한 헬퍼 모듈의 경로 접미사. */
+const METADATA_HELPER_IMPORT =
+    /from '@\/app\/\[locale\]\/([^']*\/_lib\/[A-Za-z]+Metadata)'/g;
+
+/** 페이지에서 임포트로 이어지는 `_lib/*Metadata` 헬퍼의 실제 파일 경로(존재하지 않으면 빈 항목이 아니라 그대로 반환). */
+function metadataHelperPaths(source: string): string[] {
+    return [...source.matchAll(METADATA_HELPER_IMPORT)].map(match =>
+        join(APP_DIR, `${match[1]}.ts`)
+    );
+}
+
+/** 페이지 소스 + 위임한 메타데이터 헬퍼 소스. 헬퍼 파일이 없으면 실패한다. */
+function sourceWithMetadataHelpers(page: string): string {
+    const source = readFileSync(page, 'utf8');
+    const helpers = metadataHelperPaths(source).map(path => {
+        expect(existsSync(path), `${path} 헬퍼가 있어야 한다`).toBe(true);
+        return readFileSync(path, 'utf8');
+    });
+    return [source, ...helpers].join('\n');
+}
 
 /**
  * 무조건 noindex인 페이지(로그인·회원가입·계정·공유 링크 등)는 이 가드에서 제외한다.
@@ -95,6 +116,22 @@ describe('로케일 커버리지', () => {
         }
     );
 
+    it.each([
+        ['about', 'aboutMetadata'],
+        ['methodology', 'methodologyMetadata'],
+        ['developers', 'developersMetadata'],
+        ['backtesting', 'backtestingMetadata'],
+        ['symbols', 'symbolsMetadata'],
+    ])('%s 페이지는 %s 헬퍼를 따라가며 헬퍼가 존재한다', (route, helper) => {
+        const page = join(APP_DIR, route, 'page.tsx');
+        expect(metadataHelperPaths(readFileSync(page, 'utf8'))).toEqual([
+            join(APP_DIR, route, '_lib', `${helper}.ts`),
+        ]);
+        expect(existsSync(join(APP_DIR, route, '_lib', `${helper}.ts`))).toBe(
+            true
+        );
+    });
+
     it('페이지 목록이 비어 있지 않다 — 비면 아래 가드가 통째로 무력화된다', () => {
         expect(PAGES.length).toBeGreaterThanOrEqual(30);
         expect(INDEXABLE_PAGES.length).toBeGreaterThanOrEqual(15);
@@ -139,7 +176,8 @@ describe('로케일 커버리지', () => {
         // 허브·약관 라우트는 공용 빌더를 거친다 — 전부 내부에서
         // `localeAlternatesFrom`을 부른다(`seoAlternates.buildHubMetadata`,
         // `fear-greed/fearGreedRoute`, `market/marketMetadata`, `_legal/legalPolicy`).
-        expect(source).toMatch(
+        // 같은 라우트의 `_lib/*Metadata` 헬퍼로 위임한 페이지는 그 헬퍼 소스까지 합쳐서 본다.
+        expect(sourceWithMetadataHelpers(page)).toMatch(
             /localeAlternatesFrom|localeAlternates\(|symbolMetadataFromSeo\(|buildHubMetadata\(|fearGreedMetadata\(|marketMetadata\(|legalPolicyMetadata\(/
         );
     });

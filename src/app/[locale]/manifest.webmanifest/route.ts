@@ -9,6 +9,7 @@ export function generateStaticParams() {
 
 export const dynamic = 'force-static';
 
+/** 로케일별 웹 매니페스트(`application/manifest+json`). 번역은 `shared.seo.manifest`에서 온다. */
 export async function GET(
     _request: Request,
     { params }: { params: Promise<{ locale: string }> }
