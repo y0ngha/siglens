@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
+import { NoticeDialogBody } from '@/widgets/notice-popup/ui/dialog/NoticeDialogBody';
 import { stubNoticesFetch } from './noticesFetchStub';
 import type { NoticeRecord } from '@/entities/notice/model/types';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 const { mockPathname } = vi.hoisted(() => ({
     mockPathname: vi.fn(() => '/'),
@@ -25,6 +27,29 @@ function notice(overrides: Partial<NoticeRecord> = {}): NoticeRecord {
     };
 }
 
+/**
+ * 본문 렌더러(`MarkdownText`)는 지연 청크다. 첫 공지를 그리는 케이스가 무거운 모듈
+ * 그래프 적재와 lazy 경계의 첫 서스펜드를 함께 치르면, 병렬 부하에서 `findBy*`의 기본
+ * 대기 시간을 넘긴다. 본문을 한 번 미리 그려 lazy 래퍼를 해소해 두면 이후 케이스는
+ * 서스펜드 없이 곧바로 그린다(래퍼는 모듈 스코프라 파일 안에서 유지된다).
+ */
+beforeAll(async () => {
+    const { unmount } = render(
+        <NoticeDialogBody
+            notice={{
+                body: '워밍업 본문',
+                createdAt: new Date(2026, 0, 1),
+                linkUrl: null,
+                linkLabel: null,
+            }}
+        />
+    );
+    await screen.findByText('워밍업 본문', undefined, {
+        timeout: MODULE_LOAD_TIMEOUT_MS,
+    });
+    unmount();
+}, MODULE_LOAD_TIMEOUT_MS);
+
 describe('NoticePopup', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -40,8 +65,8 @@ describe('NoticePopup', () => {
     it('활성 공지가 없으면 아무것도 렌더하지 않는다', async () => {
         mockedAction.mockResolvedValue([]);
         const { container } = render(<NoticePopup />);
-        // fetch-once + client-side filter 구조: fetch 호출 후 filter effect가
-        // 추가로 한 번 실행되므로 container가 비었을 때까지 waitFor로 대기한다.
+        // 큐는 fetch 응답을 받은 뒤 렌더 중에 걸러진다 — 호출이 일어난 뒤에도
+        // 비어 있는지를 함께 기다린다.
         await waitFor(() => {
             expect(mockedAction).toHaveBeenCalledTimes(1);
             expect(container).toBeEmptyDOMElement();
@@ -52,8 +77,8 @@ describe('NoticePopup', () => {
         mockedAction.mockResolvedValue([notice()]);
         render(<NoticePopup />);
         expect(await screen.findByText('긴급 점검 안내')).toBeInTheDocument();
-        // 본문은 `MarkdownText`가 그리는데 그 렌더러는 lazy 청크라(공지가 있을 때만
-        // 내려받는다) 제목보다 한 틱 늦게 도착한다 — 동기 조회로는 잡히지 않는다.
+        // 본문은 lazy 청크인 `MarkdownText`가 그린다(공지가 있을 때만 내려받는다) —
+        // 래퍼 해소 순서에 기대지 않도록 비동기 조회로 기다린다.
         expect(await screen.findByText('오늘 23시')).toBeInTheDocument();
         expect(screen.getByText('2026.06.03 작성')).toBeInTheDocument();
     });
@@ -177,7 +202,7 @@ describe('NoticePopup', () => {
     it('action이 reject해도 throw하지 않고 모달을 띄우지 않는다', async () => {
         mockedAction.mockRejectedValue(new Error('network'));
         const { container } = render(<NoticePopup />);
-        // reject 시에는 allNotices가 갱신되지 않으므로 filter effect는 빈 배열로 실행된다.
+        // reject 시에는 받아 둔 공지가 없으므로 큐도 빈 채로 남는다.
         await waitFor(() => {
             expect(mockedAction).toHaveBeenCalledTimes(1);
             expect(container).toBeEmptyDOMElement();
@@ -209,17 +234,57 @@ describe('NoticePopup', () => {
         expect(screen.queryByRole('link')).toBeNull();
     });
 
-    it('fetch 완료 전에 언마운트하면 상태 업데이트를 건너뛴다(cancelled guard)', async () => {
-        let resolveNotices!: (v: NoticeRecord[]) => void;
-        mockedAction.mockReturnValue(
-            new Promise<NoticeRecord[]>(res => {
-                resolveNotices = res;
-            })
-        );
+    it('fetch 완료 전에 언마운트하면 요청을 취소한다', async () => {
+        mockedAction.mockReturnValue(new Promise<NoticeRecord[]>(() => {}));
         const { unmount } = render(<NoticePopup />);
+        await waitFor(() => expect(mockedAction).toHaveBeenCalledTimes(1));
+        const fetchMock = vi.mocked(globalThis.fetch);
+        expect(fetchMock).toHaveBeenCalledWith('/api/notices?locale=ko', {
+            signal: expect.objectContaining({ aborted: false }),
+        });
         unmount();
-        resolveNotices([notice()]);
-        await new Promise(r => setTimeout(r, 0));
+        // 같은 AbortSignal 객체라 언마운트 뒤에는 취소된 상태로 보인다.
+        expect(fetchMock).toHaveBeenCalledWith('/api/notices?locale=ko', {
+            signal: expect.objectContaining({ aborted: true }),
+        });
+    });
+
+    it('링크 라벨이 빈 문자열이면 URL을 링크 이름으로 쓴다', async () => {
+        mockedAction.mockResolvedValue([
+            notice({ linkUrl: 'https://siglens.io/blank', linkLabel: '' }),
+        ]);
+        render(<NoticePopup />);
+        expect(
+            await screen.findByRole('link', {
+                name: 'https://siglens.io/blank',
+            })
+        ).toBeInTheDocument();
+    });
+
+    it('같은 공지가 떠 있는 채 경로만 바뀌면 포커스를 다시 빼앗지 않는다', async () => {
+        mockedAction.mockResolvedValue([notice({ pathPattern: null })]);
+        const { rerender } = render(<NoticePopup />);
+        await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+        const keepButton = screen.getByRole('button', {
+            name: '다시 보지 않기',
+        });
+        keepButton.focus();
+        mockPathname.mockReturnValue('/market');
+        rerender(<NoticePopup />);
+        expect(screen.getByText('긴급 점검 안내')).toBeInTheDocument();
+        expect(keepButton).toHaveFocus();
+    });
+
+    it('다음 공지로 넘어가면 다이얼로그에 포커스를 준다', async () => {
+        mockedAction.mockResolvedValue([
+            notice({ id: 'n1', title: '첫 번째' }),
+            notice({ id: 'n2', title: '두 번째' }),
+        ]);
+        render(<NoticePopup />);
+        await screen.findByText('첫 번째');
+        fireEvent.click(screen.getByRole('button', { name: '닫기' }));
+        await screen.findByText('두 번째');
+        expect(screen.getByRole('dialog')).toHaveFocus();
     });
 
     it('"다시 보지 않기" 클릭 시 current가 있을 때만 dismissNotice를 호출한다', async () => {
