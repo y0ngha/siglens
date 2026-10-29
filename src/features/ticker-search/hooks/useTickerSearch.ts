@@ -10,24 +10,16 @@ import {
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { reportClientError } from '@/shared/lib/reportClientError';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import type { SearchSnapshot } from '../lib/searchStatus';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;
 /** 결과가 아직 없을 때의 값. 렌더마다 새 배열을 주면 이를 deps로 쓰는 콜백이 매번 바뀐다. */
 const NO_RESULTS: TickerSearchResult[] = [];
 
-/** `useTickerSearch`의 반환값. */
-export interface UseTickerSearchResult {
+/** `useTickerSearch`의 반환값. 조회 상태 필드는 `SearchSnapshot`에서 정의한다. */
+export interface UseTickerSearchResult extends SearchSnapshot {
     results: TickerSearchResult[];
-    isSearching: boolean;
-    hasQuery: boolean;
-    /** 조회가 실패했는지. 호출부는 "결과 없음"과 구분해 보여줘야 한다. */
-    isError: boolean;
-    /**
-     * 실제로 조회에 쓰인 질의(앞뒤 공백을 뗀 값). `query.trim()`과 다르면 `results`는
-     * 한 박자 전 것이다 — 첫 결과로 바로 이동하는 호출부(검색 키)가 이를 확인해야 한다.
-     */
-    debouncedQuery: string;
 }
 
 /**

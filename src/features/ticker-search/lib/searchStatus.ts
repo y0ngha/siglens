@@ -28,12 +28,20 @@ export interface SearchStatusInput {
     resultCount: number;
 }
 
-/** `deriveSearchState`가 읽는 `useTickerSearch`의 반환 일부. */
+/**
+ * 검색 조회 한 번의 상태. `useTickerSearch`의 반환 타입이 이 인터페이스를 확장하므로
+ * 필드가 바뀌면 컴파일러가 두 곳을 함께 맞추게 한다. `results`는 개수만 읽어 요소 타입을 묻지 않는다.
+ */
 export interface SearchSnapshot {
     results: readonly unknown[];
     isSearching: boolean;
     hasQuery: boolean;
+    /** 조회가 실패했는지. 호출부는 "결과 없음"과 구분해 보여줘야 한다. */
     isError: boolean;
+    /**
+     * 실제로 조회에 쓰인 질의(앞뒤 공백을 뗀 값). `query.trim()`과 다르면 `results`는
+     * 한 박자 전 것이다 — 첫 결과로 바로 이동하는 호출부(검색 키)가 이를 확인해야 한다.
+     */
     debouncedQuery: string;
 }
 

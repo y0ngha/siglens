@@ -48,7 +48,11 @@ export interface UseAutocompleteOptions {
     navigateOnSelect?: boolean;
 }
 
-/** `useAutocomplete`의 반환값. 함수는 모두 참조가 안정적이다(deps가 바뀔 때만 새로 만든다). */
+/**
+ * `useAutocomplete`의 반환값. 함수는 `useCallback`으로 deps가 바뀔 때만 새로 만든다 —
+ * `handleKeyDown`은 활성 옵션·결과가 바뀔 때마다, `navigate`는 호출부가 넘긴 `onSelect`가
+ * 바뀔 때마다 새 참조다.
+ */
 export interface UseAutocompleteReturn {
     query: string;
     results: readonly TickerSearchResult[];
@@ -202,6 +206,9 @@ export function useAutocomplete({
     const handleBlur = useCallback(
         (e: FocusEvent<HTMLInputElement>) => {
             const next = e.relatedTarget;
+            // 포인터 클릭은 드롭다운의 mousedown 차단으로 blur 자체가 없다. 이 분기는 스크린 리더가
+            // 가상 커서로 옵션을 활성화하며 포커스를 옵션(`tabIndex=-1`)으로 옮기는 경로용이다 —
+            // 여기서 닫으면 그 클릭이 닿기 전에 옵션이 사라진다.
             if (next instanceof Node && dropdownRef.current?.contains(next)) {
                 return;
             }
