@@ -10,19 +10,16 @@ vi.mock('@/widgets/legal/LegalPageShell', () => ({
     LegalPageShell: ({
         eyebrow,
         topNotice,
-        bottomNotice,
         children,
     }: {
         eyebrow: string;
         topNotice?: React.ReactNode;
-        bottomNotice?: React.ReactNode;
         children: React.ReactNode;
     }) => (
         <div>
             <p data-testid="eyebrow">{eyebrow}</p>
             <section data-testid="top">{topNotice}</section>
             {children}
-            <section data-testid="bottom">{bottomNotice}</section>
         </div>
     ),
 }));
@@ -42,11 +39,6 @@ vi.mock('@/widgets/legal/UntranslatedNotice', () => ({
         <p>
             untranslated:{requested}:{served}
         </p>
-    ),
-}));
-vi.mock('@/shared/ui/LocaleLink', () => ({
-    LocaleLink: ({ children }: { children: React.ReactNode }) => (
-        <span>{children}</span>
     ),
 }));
 

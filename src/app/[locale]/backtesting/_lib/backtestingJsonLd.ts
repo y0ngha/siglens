@@ -28,14 +28,14 @@ export interface BacktestingJsonLd {
  * title/description과 같은 로케일로 정렬된다. `variableMeasured`/`keywords`는 그 문구와
  * 무관한 별도 문구다.
  *
+ * **번역자를 둘 받는다.** `datasetName`은 `app.backtesting.seo` 아래에 있어 `shared.seo`
+ * 번역자로 부르면 next-intl이 던지지 않고 **키 경로 문자열을 그대로 돌려주므로**
+ * Dataset JSON-LD의 `name`에 키 경로가 박힌 채 크롤러에 나간다(실측: e2e webServer
+ * 로그의 `MISSING_MESSAGE`). 타입도 게이트도 통과하고 런타임에만 드러난다.
+ *
  * @param t      `shared.seo` 번역자 — `backtestingTitle`/`backtestingDescription`이 쓴다.
  * @param tPage  `app.backtesting.seo` 번역자 — Dataset 전용 문구가 쓴다.
  * @param breadcrumbLabel  화면 브레드크럼과 `BreadcrumbList`가 함께 쓰는 짧은 이름.
- *
- * **번역자를 둘 받는다.** `datasetName`은 `app.backtesting.seo` 아래에 있어 `shared.seo`
- * 번역자로 부르면 next-intl이 던지지 않고 **키 경로 문자열을 그대로 돌려주므로**
- * Dataset JSON-LD의 `name`에 키 경로가 박힌 채 크롤러에 나간다. 타입도 게이트도
- * 통과하고 런타임에만(`MISSING_MESSAGE`) 드러난다.
  */
 export function buildBacktestingJsonLd(
     t: SeoTranslator,
@@ -73,6 +73,7 @@ export function buildBacktestingJsonLd(
             },
             license: `${SITE_URL}${TERMS_PATH}`,
             // 화면 통계(`BacktestHero`)와 같은 파생값을 쓴다 — 두 표면이 같은 기간을 말한다.
+            // 손으로 적은 범위는 실제 진입일 범위(2024-11~2026-03, 2026-09-17 확인)보다 넓었다.
             temporalCoverage: `${BACKTEST_STATS.periodStart}/${BACKTEST_STATS.periodEnd}`,
             /*
              * Dataset은 신선도를 `dateModified`로 읽는다. 정적 데이터셋이라 값은
