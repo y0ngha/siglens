@@ -4051,6 +4051,7 @@
         "extended-hours": {
             "basisAfter": "vs. today's close",
             "basisPre": "vs. previous close",
+            "flat": "unchanged",
             "sessionAfter": "After-hours",
             "sessionPre": "Pre-market",
             "tradedAt": "{time} ET"

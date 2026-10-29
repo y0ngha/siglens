@@ -951,6 +951,16 @@ complete. Show it as in-progress or leave it out.
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
 
+<a id="CS-22"></a>
+
+#### CS-22 — Export only what another module imports
+
+A constant, type or helper with no importer outside its own file stays private. Do not export a symbol only so a test can
+read it; test through the public behaviour, or move the symbol to a non-component module that a consumer really imports.
+
+- ❌ `export const FLAT_EPSILON = 0.005` that nothing imports.
+- ✅ `const FLAT_EPSILON = 0.005`, exercised through the component's rendered output.
+
 ---
 
 ## Layer Dependency Rules

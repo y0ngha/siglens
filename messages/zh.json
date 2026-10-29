@@ -4051,6 +4051,7 @@
         "extended-hours": {
             "basisAfter": "较今日收盘价",
             "basisPre": "较前收盘价",
+            "flat": "持平",
             "sessionAfter": "盘后",
             "sessionPre": "盘前",
             "tradedAt": "{time} ET 成交"
