@@ -15,21 +15,24 @@ import {
  * `CATEGORY_CONFIG.labelKey`(예: "미국 일반 시장")는 가로 스크롤 탭에 너무 길어 탭
  * 전용 짧은 라벨을 쓴다. 키를 조립하지 않고 리터럴로 적어 카탈로그와 grep으로 맞춘다.
  */
-const SHORT_LABEL_KEY: Record<NewsFeedCategoryId, string> = {
+const SHORT_LABEL_KEY = {
     general: 'general.shortLabel',
     stock: 'stock.shortLabel',
     crypto: 'crypto.shortLabel',
     forex: 'forex.shortLabel',
     articles: 'articles.shortLabel',
     kr: 'kr.shortLabel',
-};
+} as const satisfies { [K in NewsFeedCategoryId]: `${K}.shortLabel` };
+
+/** 탭 라벨 키의 리터럴 union. 오타나 다른 카테고리의 키는 타입 오류가 된다. */
+type CategoryTabLabelKey = (typeof SHORT_LABEL_KEY)[NewsFeedCategoryId];
 
 /** 카테고리 탭 하나. */
 export interface CategoryTabItem {
     readonly category: NewsFeedCategoryId;
     readonly href: string;
     /** `entities.market-news.category` 네임스페이스 안의 라벨 키. */
-    readonly labelKey: string;
+    readonly labelKey: CategoryTabLabelKey;
     /** 현재 보고 있는 카테고리인가. 링크 대신 `aria-current` 텍스트가 된다. */
     readonly active: boolean;
 }

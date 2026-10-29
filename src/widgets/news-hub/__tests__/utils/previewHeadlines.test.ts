@@ -22,6 +22,16 @@ describe('distinctPreviewHeadlines', () => {
         ).toEqual(['엔화 급등', '금값 최고']);
     });
 
+    it('꼬리 공백만 다른 헤드라인은 같은 것으로 보고 공백을 걷어낸 값을 돌려준다', () => {
+        expect(
+            distinctPreviewHeadlines([
+                ' 국채 금리 상승',
+                '국채 금리 상승  ',
+                '원유 재고',
+            ])
+        ).toEqual(['국채 금리 상승', '원유 재고']);
+    });
+
     it('남는 것이 없으면 빈 배열이다', () => {
         expect(distinctPreviewHeadlines(['', ''])).toEqual([]);
     });

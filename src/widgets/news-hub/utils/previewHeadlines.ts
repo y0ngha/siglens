@@ -12,7 +12,9 @@
 export const PREVIEW_HEADLINE_LIMIT = 3;
 
 /**
- * 빈 헤드라인을 버리고 같은 헤드라인은 처음 것만 남긴다(입력 순서 유지).
+ * 앞뒤 공백을 걷어낸 뒤 빈 헤드라인을 버리고, 같은 헤드라인은 처음 것만 남긴다(입력
+ * 순서 유지). 돌려주는 값도 공백을 걷어낸 문자열이다 — 꼬리 공백만 다른 두 제목이
+ * 두 줄로 남지 않게 비교 기준과 표시 값을 같게 둔다.
  *
  * 제목 컬럼이 비어 있는 행은 `resolveNewsTitle`이 `''`를 돌려주고, 통신사 기사는
  * 여러 매체에 같은 제목으로 실린다. 그대로 그리면 빈 항목·같은 줄이 반복되고 React
@@ -21,5 +23,6 @@ export const PREVIEW_HEADLINE_LIMIT = 3;
 export function distinctPreviewHeadlines(
     headlines: readonly string[]
 ): readonly string[] {
-    return [...new Set(headlines.filter(headline => headline.trim() !== ''))];
+    const trimmed = headlines.map(headline => headline.trim());
+    return [...new Set(trimmed.filter(headline => headline !== ''))];
 }
