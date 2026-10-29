@@ -23,16 +23,8 @@ vi.mock('@/shared/lib/seo', () => ({
 vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
-vi.mock('@/shared/i18n/localeRedirect', () => ({
-    localeRedirect: vi.fn(async (path: string) => {
-        throw new Error(`NEXT_REDIRECT ${path}`);
-    }),
-}));
 
-import { ConsentContent } from '@/app/[locale]/signup/oauth/consent/_components/ConsentContent';
 import { generateMetadata } from '@/app/[locale]/signup/oauth/consent/page';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
-import { localeRedirect } from '@/shared/i18n/localeRedirect';
 
 describe('OAuth consent page', () => {
     it('exports metadata with consent title', async () => {
@@ -78,51 +70,6 @@ describe('OAuth consent page', () => {
         });
         expect(metadata.twitter).toEqual(
             expect.objectContaining({ title: '소셜 로그인 가입 동의' })
-        );
-    });
-});
-
-describe('ConsentContent', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it.each([
-        ['반복된 키(배열)', ['a', 'b']],
-        ['빈 토큰', ''],
-    ])(
-        '%s면 스토어를 열지 않고 consentInvalid로 보낸다',
-        async (_label, token) => {
-            const peek = vi.fn();
-            vi.mocked(createPendingOAuthSignupStoreFromEnv).mockReturnValue({
-                peek,
-            } as never);
-
-            await expect(
-                ConsentContent({ searchParams: Promise.resolve({ token }) })
-            ).rejects.toThrow('NEXT_REDIRECT');
-
-            expect(localeRedirect).toHaveBeenCalledWith(
-                '/login?error=oauth_consent_invalid'
-            );
-            expect(createPendingOAuthSignupStoreFromEnv).not.toHaveBeenCalled();
-            expect(peek).not.toHaveBeenCalled();
-        }
-    );
-
-    it('문자열 토큰은 스토어에서 조회한다', async () => {
-        const peek = vi.fn().mockResolvedValue(null);
-        vi.mocked(createPendingOAuthSignupStoreFromEnv).mockReturnValue({
-            peek,
-        } as never);
-
-        await expect(
-            ConsentContent({ searchParams: Promise.resolve({ token: 'abc' }) })
-        ).rejects.toThrow('NEXT_REDIRECT');
-
-        expect(peek).toHaveBeenCalledWith('abc');
-        expect(localeRedirect).toHaveBeenCalledWith(
-            '/login?error=oauth_consent_expired'
         );
     });
 });

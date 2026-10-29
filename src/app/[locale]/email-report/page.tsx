@@ -11,8 +11,7 @@ import {
     EmailReportSettingsSkeleton,
 } from './_components/EmailReportGuard';
 import { IncludedSymbolsNote } from './_components/IncludedSymbolsNote';
-
-const PATH = '/email-report';
+import { EMAIL_REPORT_PATH } from './_lib/paths';
 
 /** 로그인 전용 개인 설정 페이지 — 색인하지 않는다(포트폴리오·계정 설정과 같은 취급). */
 export async function generateMetadata({
@@ -28,8 +27,8 @@ export async function generateMetadata({
     return {
         title,
         description,
-        alternates: { canonical: localeCanonical(locale, PATH) },
-        ...localePageSocial(locale, PATH, { title, description }),
+        alternates: { canonical: localeCanonical(locale, EMAIL_REPORT_PATH) },
+        ...localePageSocial(locale, EMAIL_REPORT_PATH, { title, description }),
         robots: { index: false, follow: false },
     };
 }

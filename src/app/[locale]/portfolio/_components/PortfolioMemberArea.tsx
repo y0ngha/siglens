@@ -15,6 +15,11 @@ import {
     PortfolioManagerSkeleton,
 } from './PortfolioStates';
 
+/** 요청 로케일 — 회원 영역 문구를 같은 로케일로 번역하는 데 쓴다. */
+export interface PortfolioMemberAreaProps {
+    readonly locale: Locale;
+}
+
 /**
  * `/portfolio`의 세션 의존 영역. 비회원도 이 페이지에 들어온다(프록시 가드·`redirect` 없음) —
  * 비회원에게는 가입 CTA 카드를 그리고 보유 DB를 읽지 않는다. 회원에게는 보유종목 관리 폼과 위치
@@ -25,7 +30,9 @@ import {
  * `PositionHoldingCard`가 뷰포트에 들어올 때 자기 종목의 봉을 클라이언트에서 지연 로드하므로
  * 이 동적 페이지가 방문마다 N-symbol FMP 팬아웃을 일으키지 않는다.
  */
-export async function PortfolioMemberArea({ locale }: { locale: Locale }) {
+export async function PortfolioMemberArea({
+    locale,
+}: PortfolioMemberAreaProps) {
     const user = await getCurrentUser();
     if (!user) return <PortfolioSignupCta />;
 

@@ -6,6 +6,7 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { AccountContent } from './_components/AccountContent';
 import { AccountContentSkeleton } from './_components/AccountContentSkeleton';
+import { ACCOUNT_PATH } from './_lib/paths';
 
 /**
  * 로케일별 메타데이터. 정적 `metadata`는 로케일을 볼 수 없어 `/en/account`의 canonical이
@@ -29,8 +30,8 @@ export async function generateMetadata({
     return {
         title,
         description,
-        alternates: { canonical: localeCanonical(locale, '/account') },
-        ...localePageSocial(locale, '/account', {
+        alternates: { canonical: localeCanonical(locale, ACCOUNT_PATH) },
+        ...localePageSocial(locale, ACCOUNT_PATH, {
             title,
             description,
         }),

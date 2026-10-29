@@ -21,23 +21,21 @@ import type { Locale } from '@/shared/i18n/locales';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import { cn } from '@/shared/lib/cn';
-import { isActiveModelId } from '@/shared/lib/isActiveModelId';
-import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { SITE_URL } from '@/shared/lib/seo';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { localePathToLogin } from '../../_personal/localePathToLogin';
+import { defaultModelLabel } from '../_lib/defaultModelLabel';
+import { ACCOUNT_PATH } from '../_lib/paths';
 
 /** "AI 모델 API 키" 섹션의 앵커 — API 기본 모델 영역의 "키 등록하러 가기" 링크가 가리킨다. */
 const BYOK_SECTION_ID = 'byok-keys';
 
-/** 기본 모델 표시명. 저장된 값이 더 이상 제공하지 않는 모델이면 이름 없이 둔다(폼이 "미설정"으로 그린다). */
-function defaultModelLabel(model: string | null): string | null {
-    if (model === null || !isActiveModelId(model)) return null;
-    return getModelDisplay(model).fullName;
+interface ProfileSectionProps {
+    readonly user: AuthUserRecord;
 }
 
-async function ProfileSection({ user }: { user: AuthUserRecord }) {
+async function ProfileSection({ user }: ProfileSectionProps) {
     const t = await getTranslations('app.account');
     return (
         <section
@@ -97,6 +95,11 @@ async function DangerZoneSection() {
     );
 }
 
+/** 요청 로케일 — 세션이 없을 때 같은 로케일의 로그인으로 보내는 데 쓴다. */
+export interface AccountContentProps {
+    readonly locale: Locale;
+}
+
 /**
  * `/account` 회원 본문 — 프로필·메일 리포트 링크·AI 모델 API 키·시그렌즈 API·탈퇴 영역.
  * 쿠키로 세션을 읽으므로 페이지의 Suspense 안에서 그려 머리말이 먼저 스트리밍되게 한다.
@@ -104,7 +107,7 @@ async function DangerZoneSection() {
  * 돌려주므로 세션 확인을 기다렸다 시작할 이유가 없다. 공개 API 출시 전에는 "시그렌즈 API"
  * 섹션을 그리지 않고 그 데이터도 읽지 않는다.
  */
-export async function AccountContent({ locale }: { locale: Locale }) {
+export async function AccountContent({ locale }: AccountContentProps) {
     const t = await getTranslations('app.account');
     const publicApiEnabled = isPublicApiEnabled();
     const [user, rawProviders, siglensApiKeys, apiDefaultModel] =
@@ -114,7 +117,7 @@ export async function AccountContent({ locale }: { locale: Locale }) {
             publicApiEnabled ? listSiglensApiKeysAction() : null,
             publicApiEnabled ? getApiDefaultModelAction() : null,
         ]);
-    if (!user) redirect(localePathToLogin(locale, '/account'));
+    if (!user) redirect(localePathToLogin(locale, ACCOUNT_PATH));
     const registeredProviders = rawProviders.map(({ provider }) => provider);
     const apiModelGroups = buildApiModelOptionGroups(registeredProviders);
     return (
