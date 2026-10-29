@@ -402,6 +402,8 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 - A control that becomes pending while it holds focus uses `aria-disabled`, not `disabled`, so focus does not fall to
   `body` (Tab then escapes a modal). On success move focus to a persistent live region or the next target.
 - An auto-dismissing toast that carries an action pauses its timer on hover and `focus-within`.
+- A "who acted last" flag that hands focus to a row after an action is scoped to that row's key, cleared once consumed,
+  and independent of sibling effect or commit order; otherwise a later remount or another row steals focus.
 
 ```tsx
 // ❌
@@ -700,6 +702,22 @@ deriving it differently.
 A seed marked never-stale removes the client's only self-healing path for a degraded (fallback) seed. Before
 changing staleness, list what the refetch used to repair and keep a replacement for it. Test seeds through
 `dehydrate` -> `hydrate`, the path production takes, not by writing directly to the cache.
+
+<a id="RQ-6"></a>
+
+#### RQ-6 — Pending state belongs to the request that owns it, not to a shared mutation
+
+A mutation hook shared by several forms or rows exposes one `isPending`. Deriving a form's "submitting" state from it
+(plus unrelated UI state) lets a second submit through while that form's own request is in flight, and shows every
+row as busy when only one is. Track the form's own in-flight request (a ref or local state set around `mutate`), and
+mark a row pending only when it matches `mutation.variables`.
+
+```tsx
+// ❌ every row spins, and the form can double-submit
+const busy = remove.isPending
+// ✅ only the row being removed
+const busy = remove.isPending && remove.variables === id
+```
 
 ---
 

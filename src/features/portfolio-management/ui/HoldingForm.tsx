@@ -1,45 +1,22 @@
 'use client';
 
+import { useId } from 'react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
-import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
 import { cn } from '@/shared/lib/cn';
-import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
-import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
-import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
-import { symbolLabel } from '@/shared/lib/symbolLabel';
 import type {
-    PortfolioActionErrorCode,
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
 } from '@/entities/portfolio/model';
-
-const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
-const FIELD_INPUT =
-    'bg-secondary-950 border-border-control text-secondary-100 placeholder-secondary-400 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full touch-manipulation rounded-lg border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
-const FIELD_INPUT_ERROR =
-    'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
-const SYMBOL_CHIP =
-    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between gap-2 rounded-lg border px-3';
-const SAVE_BUTTON = cn(BUTTON_PRIMARY, 'h-10 shrink-0 px-4 text-sm');
-const CANCEL_BUTTON = cn(BUTTON_GHOST, 'h-10 shrink-0 px-2 text-sm');
-
-/** Which field a `PortfolioActionErrorCode` should be surfaced against; codes with no dedicated field (e.g. storage/auth failures) render only the alert message. */
-type HoldingErrorField = 'symbol' | 'quantity' | 'averagePrice' | null;
-
-function fieldForErrorCode(code: PortfolioActionErrorCode): HoldingErrorField {
-    switch (code) {
-        case 'invalid_symbol':
-            return 'symbol';
-        case 'invalid_quantity':
-            return 'quantity';
-        case 'invalid_price':
-            return 'averagePrice';
-        default:
-            return null;
-    }
-}
+import { useHoldingForm } from '../hooks/useHoldingForm';
+import {
+    CANCEL_BUTTON,
+    FIELD_INPUT,
+    FIELD_INPUT_ERROR,
+    FIELD_LABEL,
+    SAVE_BUTTON,
+} from '../lib/holdingStyles';
+import { HoldingSymbolField } from './HoldingSymbolField';
 
 interface HoldingFormProps {
     /** Present -> edit mode (symbol is fixed, read-only). Absent -> add mode (symbol picked via autocomplete). */
@@ -51,6 +28,7 @@ interface HoldingFormProps {
      */
     defaultSymbol?: string;
     onSubmit: (input: RawHoldingInput) => Promise<SavePortfolioResult>;
+    /** 부모가 아는 진행 중 신호(관심종목 전환의 저장 등). 폼은 자기 제출의 진행 중 상태도 따로 든다. */
     submitting?: boolean;
     onCancel?: () => void;
     /**
@@ -73,233 +51,76 @@ export function HoldingForm({
     autoFocusFirstField = false,
 }: HoldingFormProps) {
     const t = useTranslations('features.portfolio-management');
-    const isEditMode = initial !== undefined;
     const formId = useId();
+    const form = useHoldingForm({
+        initial,
+        defaultSymbol,
+        onSubmit,
+        submitting,
+        onCancel,
+        autoFocusFirstField,
+    });
+
     const errorId = `${formId}-error`;
-
-    const [symbol, setSymbol] = useState(
-        initial?.symbol ?? defaultSymbol ?? ''
-    );
-    // 표시 전용 — 자동완성이 넘긴 이름으로 칩을 `회사명 (티커)`로 그린다.
-    // 제출 페이로드는 심볼뿐이고, 저장되는 회사명은 서버가 따로 해석한다.
-    const [symbolName, setSymbolName] = useState<string | null>(
-        initial?.companyName ?? null
-    );
-    const [quantity, setQuantity] = useState(
-        initial ? trimTrailingZeros(initial.quantity) : ''
-    );
-    const [averagePrice, setAveragePrice] = useState(
-        initial ? trimTrailingZeros(initial.averagePrice) : ''
-    );
-    const [error, setError] = useState<string | null>(null);
-    const [errorField, setErrorField] = useState<HoldingErrorField>(null);
-
-    const symbolFieldRef = useRef<HTMLDivElement>(null);
-    const quantityRef = useRef<HTMLInputElement>(null);
-    const priceRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (autoFocusFirstField && isEditMode) {
-            quantityRef.current?.focus();
-        }
-        // This form remounts fresh each time a row enters edit mode (the
-        // parent swaps element trees rather than re-rendering the same
-        // instance), so autoFocusFirstField/isEditMode are stable for the
-        // instance's lifetime and this still fires focus exactly once per
-        // edit-mode entry.
-    }, [autoFocusFirstField, isEditMode]);
-
-    const focusField = (field: HoldingErrorField) => {
-        if (field === 'quantity') quantityRef.current?.focus();
-        else if (field === 'averagePrice') priceRef.current?.focus();
-        else if (field === 'symbol') {
-            symbolFieldRef.current
-                ?.querySelector<HTMLElement>('input, button')
-                ?.focus();
-        }
-    };
-
-    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (submitting) return;
-        setError(null);
-        setErrorField(null);
-        try {
-            const result = await onSubmit({ symbol, quantity, averagePrice });
-            if (result.status === 'error') {
-                setError(result.message);
-                const field = fieldForErrorCode(result.code);
-                setErrorField(field);
-                focusField(field);
-                return;
-            }
-            if (isEditMode) {
-                onCancel?.();
-            } else {
-                setSymbol('');
-                setSymbolName(null);
-                setQuantity('');
-                setAveragePrice('');
-            }
-        } catch {
-            setError(t('HoldingForm.ea9c99'));
-        }
-    };
+    const idleSubmitLabel = form.isEditMode
+        ? t('HoldingForm.1f1712')
+        : t('HoldingForm.579429');
+    const submitLabel = form.isSubmitting
+        ? t('HoldingForm.9f6785')
+        : idleSubmitLabel;
 
     return (
         <form
-            onSubmit={handleSubmit}
+            onSubmit={form.handleSubmit}
             noValidate
             className="flex flex-col gap-3"
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div ref={symbolFieldRef} className="min-w-0 flex-1">
-                    <span id={`${formId}-symbol-label`} className={FIELD_LABEL}>
-                        {t('HoldingForm.dfa8d7')}
-                    </span>
-                    {isEditMode ? (
-                        <div
-                            aria-labelledby={`${formId}-symbol-label`}
-                            className={cn(
-                                FIELD_INPUT,
-                                'flex items-center font-semibold'
-                            )}
-                        >
-                            <span className="truncate">
-                                {symbolLabel(symbol, symbolName)}
-                            </span>
-                        </div>
-                    ) : symbol ? (
-                        <div
-                            className={cn(
-                                SYMBOL_CHIP,
-                                errorField === 'symbol' && 'border-ui-danger'
-                            )}
-                        >
-                            <span className="min-w-0 truncate text-sm font-semibold text-secondary-100">
-                                {symbolLabel(symbol, symbolName)}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSymbol('');
-                                    setSymbolName(null);
-                                }}
-                                className="-my-2 touch-manipulation rounded px-1 py-2 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                            >
-                                {t('HoldingForm.ce0109')}
-                            </button>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Visually hidden: combined with the visible
-                                "종목" label above via ariaLabelledby so the
-                                accessible name stays "종목 티커 검색" (unchanged
-                                for e2e/screen-reader users) while the visible
-                                label is now the programmatic source of the
-                                first half, instead of sitting unassociated. */}
-                            <span
-                                id={`${formId}-symbol-search-suffix`}
-                                className="sr-only"
-                            >
-                                {t('HoldingForm.3407f9')}
-                            </span>
-                            <TickerAutocomplete
-                                size="sm"
-                                navigateOnSelect={false}
-                                onSelect={entry => {
-                                    setSymbol(entry.symbol);
-                                    setSymbolName(entry.label);
-                                }}
-                                inputClassName={cn(
-                                    'bg-secondary-950 h-10 rounded-lg placeholder-secondary-400 focus:ring-2',
-                                    errorField === 'symbol'
-                                        ? FIELD_INPUT_ERROR
-                                        : 'focus:border-primary-500 focus:ring-primary-500/40'
-                                )}
-                                ariaInvalid={errorField === 'symbol'}
-                                ariaDescribedby={
-                                    errorField === 'symbol'
-                                        ? errorId
-                                        : undefined
-                                }
-                                ariaLabelledby={`${formId}-symbol-label ${formId}-symbol-search-suffix`}
-                            />
-                        </>
-                    )}
-                </div>
-                <div className="w-full sm:w-28">
-                    <label
-                        htmlFor={`${formId}-quantity`}
-                        className={FIELD_LABEL}
-                    >
-                        {t('HoldingForm.7294d6')}
-                    </label>
-                    <input
-                        ref={quantityRef}
-                        id={`${formId}-quantity`}
-                        name="quantity"
-                        type="text"
-                        inputMode="decimal"
-                        autoComplete="off"
-                        required
-                        placeholder={t('HoldingForm.7c07f7')}
-                        value={quantity}
-                        onChange={e =>
-                            setQuantity(stripNegativeSign(e.target.value))
-                        }
-                        aria-invalid={errorField === 'quantity'}
-                        aria-describedby={
-                            errorField === 'quantity' ? errorId : undefined
-                        }
-                        className={cn(
-                            FIELD_INPUT,
-                            errorField === 'quantity' && FIELD_INPUT_ERROR
-                        )}
-                    />
-                </div>
-                <div className="w-full sm:w-32">
-                    <label
-                        htmlFor={`${formId}-average-price`}
-                        className={FIELD_LABEL}
-                    >
-                        {t('HoldingForm.900beb')}
-                    </label>
-                    <input
-                        ref={priceRef}
-                        id={`${formId}-average-price`}
-                        name="averagePrice"
-                        type="text"
-                        inputMode="decimal"
-                        autoComplete="off"
-                        required
-                        placeholder={t('HoldingForm.ca59e5')}
-                        value={averagePrice}
-                        onChange={e =>
-                            setAveragePrice(stripNegativeSign(e.target.value))
-                        }
-                        aria-invalid={errorField === 'averagePrice'}
-                        aria-describedby={
-                            errorField === 'averagePrice' ? errorId : undefined
-                        }
-                        className={cn(
-                            FIELD_INPUT,
-                            errorField === 'averagePrice' && FIELD_INPUT_ERROR
-                        )}
-                    />
-                </div>
+                <HoldingSymbolField
+                    formId={formId}
+                    errorId={errorId}
+                    isEditMode={form.isEditMode}
+                    symbol={form.symbol}
+                    symbolName={form.symbolName}
+                    isInvalid={form.errorField === 'symbol'}
+                    containerRef={form.symbolFieldRef}
+                    onSelect={form.selectSymbol}
+                    onClear={form.clearSymbol}
+                />
+                <NumberField
+                    id={`${formId}-quantity`}
+                    name="quantity"
+                    label={t('HoldingForm.7294d6')}
+                    placeholder={t('HoldingForm.7c07f7')}
+                    widthClassName="sm:w-28"
+                    inputRef={form.quantityRef}
+                    value={form.quantity}
+                    onChange={form.changeQuantity}
+                    isInvalid={form.errorField === 'quantity'}
+                    errorId={errorId}
+                />
+                <NumberField
+                    id={`${formId}-average-price`}
+                    name="averagePrice"
+                    label={t('HoldingForm.900beb')}
+                    placeholder={t('HoldingForm.ca59e5')}
+                    widthClassName="sm:w-32"
+                    inputRef={form.priceRef}
+                    value={form.averagePrice}
+                    onChange={form.changeAveragePrice}
+                    isInvalid={form.errorField === 'averagePrice'}
+                    errorId={errorId}
+                />
                 <div className="flex shrink-0 items-center gap-1">
+                    {/* 진행 중에도 포커스를 쥐도록 disabled 대신 aria-disabled로 막는다(REACT.md#AX-3).
+                        중복 제출은 훅의 handleSubmit이 진행 중이면 돌려보내 막는다. */}
                     <button
                         type="submit"
-                        disabled={submitting}
-                        aria-busy={submitting}
+                        aria-disabled={form.isSubmitting || undefined}
+                        aria-busy={form.isSubmitting}
                         className={SAVE_BUTTON}
                     >
-                        {submitting
-                            ? t('HoldingForm.9f6785')
-                            : isEditMode
-                              ? t('HoldingForm.1f1712')
-                              : t('HoldingForm.579429')}
+                        {submitLabel}
                     </button>
                     {onCancel && (
                         <button
@@ -313,8 +134,60 @@ export function HoldingForm({
                 </div>
             </div>
             <div id={errorId} role="alert" className="min-h-5 text-sm">
-                {error && <span className="text-ui-danger-text">{error}</span>}
+                {form.error && (
+                    <span className="text-ui-danger-text">{form.error}</span>
+                )}
             </div>
         </form>
+    );
+}
+
+interface NumberFieldProps {
+    id: string;
+    name: keyof Omit<RawHoldingInput, 'symbol'>;
+    label: string;
+    placeholder: string;
+    /** `sm` 이상에서 칸 폭. 모바일에서는 두 칸 모두 한 줄을 다 쓴다. */
+    widthClassName: string;
+    inputRef: React.Ref<HTMLInputElement>;
+    value: string;
+    onChange: (value: string) => void;
+    isInvalid: boolean;
+    errorId: string;
+}
+
+function NumberField({
+    id,
+    name,
+    label,
+    placeholder,
+    widthClassName,
+    inputRef,
+    value,
+    onChange,
+    isInvalid,
+    errorId,
+}: NumberFieldProps) {
+    return (
+        <div className={cn('w-full', widthClassName)}>
+            <label htmlFor={id} className={FIELD_LABEL}>
+                {label}
+            </label>
+            <input
+                ref={inputRef}
+                id={id}
+                name={name}
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                required
+                placeholder={placeholder}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                aria-invalid={isInvalid}
+                aria-describedby={isInvalid ? errorId : undefined}
+                className={cn(FIELD_INPUT, isInvalid && FIELD_INPUT_ERROR)}
+            />
+        </div>
     );
 }
