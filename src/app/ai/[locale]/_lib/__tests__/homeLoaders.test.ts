@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
     findByUser: vi.fn(),
@@ -21,6 +21,10 @@ import { loadAiHomeSuggestions } from '../homeLoaders';
 describe('loadAiHomeSuggestions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('포트폴리오 심볼을 제안 생성에 넘긴다', async () => {

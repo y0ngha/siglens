@@ -26,7 +26,10 @@ import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
  */
 export const AI_PRODUCT_NAME = 'SIGLENS AI';
 
-/** `locale`의 `path`를 가리키는 ai 호스트 절대 URL(`/`는 채팅 홈). canonical·hreflang·JSON-LD가 같은 규칙을 쓰게 하는 단일 출처. */
+/**
+ * `locale`의 `path`를 가리키는 ai 호스트 절대 URL(`/`는 채팅 홈).
+ * canonical·hreflang·JSON-LD가 같은 규칙을 쓰게 하는 단일 출처.
+ */
 export function aiUrl(locale: Locale, path: string): string {
     return `${AI_SITE_URL}${localePath(locale, path)}`;
 }
@@ -53,7 +56,10 @@ export function buildAiAboutMetadata(
     return buildAiPageMetadata(locale, '/about', copy);
 }
 
-/** `/benchmark` 메타데이터. 정본이 이 호스트라 메인 사이트의 `/benchmark` canonical이 여기를 가리킨다. */
+/**
+ * `/benchmark` 메타데이터. 정본이 이 호스트라 메인 사이트의 `/benchmark`
+ * canonical이 여기를 가리킨다.
+ */
 export function buildAiBenchmarkMetadata(
     locale: Locale,
     copy: AiSeoCopy
@@ -61,7 +67,10 @@ export function buildAiBenchmarkMetadata(
     return buildAiPageMetadata(locale, '/benchmark', copy);
 }
 
-/** ai 호스트의 로케일별 OG 이미지. 경로 세그먼트 + `.png` — 정적화·엣지 캐시되는 형태(`api/ai/og/[file]/route.tsx`). */
+/**
+ * ai 호스트의 로케일별 OG 이미지. 경로 세그먼트 + `.png` — 정적화·엣지 캐시되는
+ * 형태(`api/ai/og/[file]/route.tsx`).
+ */
 export function aiOgImageUrl(locale: Locale): string {
     return `${AI_SITE_URL}/api/ai/og/${locale}.png`;
 }
