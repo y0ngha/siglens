@@ -3688,7 +3688,8 @@
             "l5": "Honesty and safety (L5)",
             "l5Note": "Neutral judges, average on a 0 to 1 scale",
             "more": "See the full benchmark results",
-            "sub": "Objective score gaps on the same {items, number} questions. A positive number means {subject} scored higher.",
+            "questions": "{n, number} shared questions",
+            "sub": "Objective score gaps on the same questions. A positive number means {subject} scored higher.",
             "title": "Benchmark results",
             "verdict": {
                 "ahead": "Clearly ahead",
