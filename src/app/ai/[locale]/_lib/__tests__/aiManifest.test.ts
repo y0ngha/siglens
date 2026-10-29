@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { aiManifestPath, buildAiManifest } from '@/app/ai/[locale]/aiManifest';
+import {
+    aiManifestPath,
+    buildAiManifest,
+} from '@/app/ai/[locale]/_lib/aiManifest';
 import { LOCALE_HREFLANG, LOCALES } from '@/shared/i18n/locales';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
