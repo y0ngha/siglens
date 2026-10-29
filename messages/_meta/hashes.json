@@ -3462,6 +3462,10 @@
     "widgets.economy.DeltaBadge.unchanged": "015416364f3e",
     "widgets.economy.DeltaBadge.changeSincePeriod": "58c098f342d8",
     "widgets.economy.DeltaBadge.changeSinceRelease": "9fc30a7f4758",
+    "widgets.economy.EconomicCalendarGrid.noVisibleEvents": "2f903f9d4964",
+    "widgets.economy.krMacroFacts.cpiUnchanged": "b74ffbef422a",
+    "widgets.economy.dayCellAria": "5307c2a242c6",
+    "widgets.economy.dayCellAriaWithImpacts": "7b7b49da34fb",
     "widgets.extended-hours.basisAfter": "4c3e097885d1",
     "widgets.extended-hours.basisPre": "f18ca33d42f4",
     "widgets.extended-hours.sessionAfter": "5faae88ba5af",
@@ -4125,9 +4129,5 @@
     "views.benchmark.breakdown.overallNote": "6496c2919e72",
     "features.symbol-model.fallbackTitle": "344c6757c43c",
     "features.symbol-model.fallbackDetail": "52027113be04",
-    "widgets.analysis.ModelSelector.unavailable": "4378697958ff",
-    "widgets.economy.EconomicCalendarGrid.noVisibleEvents": "2f903f9d4964",
-    "widgets.economy.krMacroFacts.cpiUnchanged": "b74ffbef422a",
-    "widgets.economy.dayCellAria": "5307c2a242c6",
-    "widgets.economy.dayCellAriaWithImpacts": "7b7b49da34fb"
+    "widgets.analysis.ModelSelector.unavailable": "4378697958ff"
 }
