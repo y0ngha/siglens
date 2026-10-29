@@ -28,6 +28,20 @@ function Row() {
     );
 }
 
+/** 행 노드가 뷰포트 감지 콜백으로도 넘어가는지 보는 행. */
+function ObservedRow({
+    observeRow,
+}: {
+    observeRow: (node: HTMLLIElement | null) => void;
+}) {
+    const { setRow } = useRowConvertMode(observeRow);
+    return (
+        <ul>
+            <li ref={setRow}>행</li>
+        </ul>
+    );
+}
+
 describe('useRowConvertMode', () => {
     it('처음 그릴 때는 포커스를 옮기지 않는다', () => {
         render(<Row />);
@@ -53,15 +67,7 @@ describe('useRowConvertMode', () => {
 
     it('행 노드를 뷰포트 감지 콜백에도 넘긴다', () => {
         const observeRow = vi.fn();
-        function Probe() {
-            const { setRow } = useRowConvertMode(observeRow);
-            return (
-                <ul>
-                    <li ref={setRow}>행</li>
-                </ul>
-            );
-        }
-        render(<Probe />);
+        render(<ObservedRow observeRow={observeRow} />);
         expect(observeRow).toHaveBeenCalledWith(screen.getByRole('listitem'));
     });
 });

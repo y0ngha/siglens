@@ -93,9 +93,7 @@ export function WatchlistRow({
                 >
                     {name}
                 </Link>
-                <div className="mt-1 flex h-5 items-center">
-                    <RowQuote symbol={item.symbol} enabled={isVisible} />
-                </div>
+                <RowQuote symbol={item.symbol} enabled={isVisible} />
             </div>
             <MiniTrend
                 symbol={item.symbol}

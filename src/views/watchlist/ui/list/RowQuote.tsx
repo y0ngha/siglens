@@ -18,10 +18,21 @@ interface RowQuoteProps {
 }
 
 /**
- * 관심 행의 현재가·등락률 한 줄. 자리표시자·"시세 없음"·시세의 세 상태가 같은 높이를 쓰도록
- * 부모가 고정 높이 줄(`h-5`)에 담는다.
+ * 시세 줄의 고정 높이. 자리표시자(`h-4`)·"시세 없음"(`text-xs`)·시세(`text-sm`)는 제 높이가
+ * 서로 달라서, 시세가 도착할 때 행 높이가 흔들리지 않도록 세 상태를 모두 이 한 줄에 담는다.
  */
+const QUOTE_LINE = 'mt-1 flex h-5 items-center';
+
+/** 관심 행의 현재가·등락률 한 줄. 세 상태 모두 같은 고정 높이 줄(`QUOTE_LINE`)에 그린다. */
 export function RowQuote({ symbol, enabled }: RowQuoteProps) {
+    return (
+        <div className={QUOTE_LINE}>
+            <RowQuoteContent symbol={symbol} enabled={enabled} />
+        </div>
+    );
+}
+
+function RowQuoteContent({ symbol, enabled }: RowQuoteProps) {
     const t = useTranslations('features.watchlist');
     const locale = useResolvedLocale();
     const { quote, isSettled } = useWatchlistQuote(symbol, enabled);

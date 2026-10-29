@@ -25,7 +25,8 @@ export interface UseRowConvertModeResult {
  * 관심 행의 "보유로 전환" 모드. 버튼과 폼이 서로를 갈아 끼우므로 그대로 두면 포커스가 `<body>`로
  * 떨어진다 — 키보드 사용자가 폼을 찾아 처음부터 Tab을 다시 눌러야 한다. 그래서 열면 폼의 첫
  * 입력칸으로, 닫으면 여는 버튼으로 포커스를 옮긴다. 폼은 `HoldingForm`이 그리므로 입력칸은
- * 행 노드 안에서 찾는다.
+ * 행 노드 안에서 찾는다. 전환에 성공해 행 자체가 사라지면 이 훅은 함께 언마운트되므로, 그때의
+ * 포커스는 목록 쪽(`useRemovedRowFocus`)이 옆 행으로 옮긴다.
  */
 export function useRowConvertMode(
     observeRow: (node: HTMLLIElement | null) => void

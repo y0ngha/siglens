@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { Ref } from 'react';
 import { useOpenTickerSearch } from '@/features/watchlist/hooks/useOpenTickerSearch';
 import { WATCHLIST_ROW_CHROME } from '@/features/watchlist/lib/watchlistStyles';
 import { cn } from '@/shared/lib/cn';
@@ -30,13 +31,22 @@ export function WatchlistListSkeleton() {
     );
 }
 
+interface WatchlistEmptyStateProps {
+    /** 마지막 행을 지운 뒤 포커스를 받을 안내 문장. 그래서 `tabIndex={-1}`이다. */
+    titleRef?: Ref<HTMLParagraphElement>;
+}
+
 /** 담은 종목이 없을 때의 안내와 종목 검색 버튼. */
-export function WatchlistEmptyState() {
+export function WatchlistEmptyState({ titleRef }: WatchlistEmptyStateProps) {
     const t = useTranslations('features.watchlist');
     const openSearch = useOpenTickerSearch();
     return (
         <div className="rounded-lg border border-dashed border-secondary-700 px-4 py-8 text-center text-sm text-secondary-400">
-            <p className="font-medium text-secondary-200">
+            <p
+                ref={titleRef}
+                tabIndex={-1}
+                className="rounded font-medium text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+            >
                 {t('section.empty')}
             </p>
             <p className="mt-1">{t('common.emptyBody')}</p>
