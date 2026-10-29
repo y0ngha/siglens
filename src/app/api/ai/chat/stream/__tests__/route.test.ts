@@ -540,7 +540,7 @@ describe('POST /api/ai/chat/stream', () => {
         expect(f[0]).toContain('"conversationId":"c-new"');
         // The client needs the stored user row's `seq` on the `meta` frame to make the
         // optimistic bubble it renders before this response arrives immediately
-        // editable (spec §UI) — otherwise Edit only shows up after a reload.
+        // editable — otherwise Edit only shows up after a reload.
         expect(f[0]).toContain('"userMessageSeq":1');
         expect(f.at(-1)).toContain('event: done');
         expect(m.repo.create).toHaveBeenCalledWith({
@@ -1012,7 +1012,7 @@ describe('POST /api/ai/chat/stream', () => {
     it('tool_end summary가 민감정보를 담고 있어도 SSE 출력에는 안전한 요약만 실린다(운반만, 가공은 tools 계층 책임)', async () => {
         m.runTurn.mockImplementation(
             async (_p: unknown, deps: { onEvent: (e: unknown) => void }) => {
-                // tools/createToolExecutor (Task 9) already guarantees `summary` never
+                // tools/createToolExecutor already guarantees `summary` never
                 // carries raw error text/SQL — this asserts the route does not add its
                 // own leak by re-logging or re-shaping the event with extra fields.
                 deps.onEvent({

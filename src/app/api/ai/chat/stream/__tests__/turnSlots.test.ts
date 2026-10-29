@@ -7,11 +7,18 @@ import {
 } from '@/app/api/ai/chat/stream/_lib/turnSlots';
 
 describe('turnSlots', () => {
-    it('상한까지 예약하면 빈 슬롯이 없고, 반납하면 다시 생긴다', () => {
+    // 용량 정책 값이라 의도적으로 리터럴로 고정한다 — 바꾸려면 이 줄도 함께 바꿔야 한다.
+    it('인스턴스당 동시 턴 상한은 4', () => {
         expect(MAX_CONCURRENT_AGENT_TURNS).toBe(4);
-        const releases = Array.from({ length: 4 }, () => reserveTurnSlot());
+    });
+
+    it('상한까지 예약하면 빈 슬롯이 없고, 반납하면 다시 생긴다', () => {
+        const releases = Array.from(
+            { length: MAX_CONCURRENT_AGENT_TURNS },
+            () => reserveTurnSlot()
+        );
         expect(hasFreeTurnSlot()).toBe(false);
-        expect(getActiveAgentTurns()).toBe(4);
+        expect(getActiveAgentTurns()).toBe(MAX_CONCURRENT_AGENT_TURNS);
         releases[0]();
         expect(hasFreeTurnSlot()).toBe(true);
         releases.slice(1).forEach(release => release());

@@ -1,6 +1,10 @@
 import { constants } from 'node:http2';
-import type { AgentMessage, Tier } from '@y0ngha/siglens-core';
-import { AGENT_LIMITS, agentLimit } from '@y0ngha/siglens-core';
+import {
+    AGENT_LIMITS,
+    agentLimit,
+    type AgentMessage,
+    type Tier,
+} from '@y0ngha/siglens-core';
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import { toAgentHistory } from '@/entities/chat-conversation/model';
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
@@ -62,7 +66,7 @@ export function isConversationGone(error: unknown): boolean {
 }
 
 /** A guest turn: the browser's transcript is the history, and nothing is stored. */
-export function guestTurn(body: ParsedBody): PreparedTurn {
+export function guestTurn(body: ParsedBody): ReadyTurn {
     return {
         repo: null,
         conversationId: null,

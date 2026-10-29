@@ -32,10 +32,8 @@ vi.mock('@/entities/portfolio/api', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
-vi.mock('@/entities/llm-provider/api/agent/router', () => ({
-    AGENT_MODEL: 'deepseek-v4.1-flash',
-}));
 
+import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import {
     guestTurn,
     isConversationGone,
@@ -163,7 +161,7 @@ describe('prepareMemberTurn', () => {
             userId: 'u1',
             firstMessage: 'hello',
             locale: 'ko',
-            modelId: 'deepseek-v4.1-flash',
+            modelId: AGENT_MODEL,
         });
     });
 

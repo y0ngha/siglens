@@ -90,7 +90,7 @@ function isAction(x: unknown): x is Action {
 
 /**
  * `POST /api/ai/chat/stream` 본문 검증. 형식이 어긋나면 `null`(→ 400
- * `invalid_body`). Pilot: `model`/`analysisModel` from the client are ignored (spec R12).
+ * `invalid_body`). Pilot: 클라이언트가 보낸 `model`/`analysisModel`은 읽지 않고 무시한다.
  */
 export function parseBody(raw: unknown): ParsedBody | null {
     if (typeof raw !== 'object' || raw === null) return null;

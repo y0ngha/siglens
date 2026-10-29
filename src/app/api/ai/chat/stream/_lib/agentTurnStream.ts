@@ -1,8 +1,8 @@
-import type { Tier } from '@y0ngha/siglens-core';
 import {
     findUngroundedNumbers,
     runAgentTurn,
     splitAgentFollowUps,
+    type Tier,
 } from '@y0ngha/siglens-core';
 import type { NewChatMessage } from '@/entities/chat-conversation/model';
 import { getAgentProvider } from '@/entities/llm-provider/api/agent/getAgentProvider';
@@ -34,6 +34,24 @@ import { isConversationGone, type ReadyTurn } from './prepareTurn';
  * rarely needs more than this.
  */
 const AGENT_MAX_OUTPUT_TOKENS = 8_192;
+
+/**
+ * 행 저장이 대화 삭제 경합(FK 위반)으로 실패하면 원본 드라이버 오류 대신
+ * `AgentTurnError('not_found')`로 바꿔 던진다 — 클라이언트에 SQL·바인딩 값이
+ * 새지 않고, 이미 끝난 턴이 모호한 `server_error`로 보이지 않는다.
+ */
+export async function appendOrNotFound(
+    repo: NonNullable<ReadyTurn['repo']>,
+    conversationId: string,
+    rows: NewChatMessage[]
+): Promise<Awaited<ReturnType<typeof repo.appendMessages>>> {
+    try {
+        return await repo.appendMessages(conversationId, rows);
+    } catch (error) {
+        if (isConversationGone(error)) throw new AgentTurnError('not_found');
+        throw error;
+    }
+}
 
 export interface AgentTurnStreamParams {
     turn: ReadyTurn;
@@ -144,20 +162,14 @@ export function agentTurnStream({
                 if (!result.ok) {
                     const partial = result.partialText?.trim();
                     if (partial && repo && conversationId) {
-                        try {
-                            await repo.appendMessages(conversationId, [
-                                {
-                                    role: 'assistant',
-                                    content: partial,
-                                    modelId: effectiveModel,
-                                    status: persistedStatusFor(result.error),
-                                },
-                            ]);
-                        } catch (error) {
-                            if (isConversationGone(error))
-                                throw new AgentTurnError('not_found');
-                            throw error;
-                        }
+                        await appendOrNotFound(repo, conversationId, [
+                            {
+                                role: 'assistant',
+                                content: partial,
+                                modelId: effectiveModel,
+                                status: persistedStatusFor(result.error),
+                            },
+                        ]);
                     }
                     throw new AgentTurnError(result.error);
                 }
@@ -215,17 +227,12 @@ export function agentTurnStream({
                 ];
                 let assistantMessageId = '';
                 if (repo && conversationId) {
-                    try {
-                        const saved = await repo.appendMessages(
-                            conversationId,
-                            rowsToSave
-                        );
-                        assistantMessageId = saved.at(-1)?.id ?? '';
-                    } catch (error) {
-                        if (isConversationGone(error))
-                            throw new AgentTurnError('not_found');
-                        throw error;
-                    }
+                    const saved = await appendOrNotFound(
+                        repo,
+                        conversationId,
+                        rowsToSave
+                    );
+                    assistantMessageId = saved.at(-1)?.id ?? '';
                 }
                 console.info(
                     '[Agent]',

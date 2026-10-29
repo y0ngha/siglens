@@ -1,4 +1,4 @@
-/** Per-instance cap on concurrent agent turns (spec §6-3). */
+/** 인스턴스당 동시에 돌 수 있는 에이전트 턴의 상한. */
 export const MAX_CONCURRENT_AGENT_TURNS = 4;
 
 let activeAgentTurns = 0;
