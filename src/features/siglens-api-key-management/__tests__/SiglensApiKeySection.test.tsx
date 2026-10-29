@@ -12,6 +12,10 @@ import {
     type SiglensApiKeyFormsReturn,
 } from '@/features/siglens-api-key-management/hooks/useSiglensApiKeyForms';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 const { formStatus } = vi.hoisted(() => ({
     formStatus: { pending: false },
@@ -60,10 +64,10 @@ function setForms(overrides: Partial<SiglensApiKeyFormsReturn> = {}) {
     return forms;
 }
 
-function renderSection(
+function sectionTree(
     props: Partial<React.ComponentProps<typeof SiglensApiKeySection>> = {}
 ) {
-    return render(
+    return (
         <>
             {/* 계정 페이지의 BYOK 섹션 자리(안내 모달이 스크롤·포커스하는 대상). */}
             <section id="byok-keys" tabIndex={-1} aria-label="byok" />
@@ -80,6 +84,19 @@ function renderSection(
         </>
     );
 }
+
+function renderSection(
+    props: Partial<React.ComponentProps<typeof SiglensApiKeySection>> = {}
+) {
+    return render(sectionTree(props));
+}
+
+const CREATED: SiglensApiKeyFormsReturn['createState'] = {
+    status: 'created',
+    rawKey: RAW_KEY,
+    keyName: '내 에이전트',
+    keyPrefix: RAW_KEY.slice(0, 10),
+};
 
 describe('SiglensApiKeySection', () => {
     beforeEach(() => {
@@ -390,12 +407,26 @@ describe('SiglensApiKeySection', () => {
         });
 
         it('폐기에 성공하면 남아 있는 상태 영역으로 포커스가 옮겨 간다', () => {
+            const { rerender } = renderSection();
             setForms({ revokeState: { status: 'revoked' } });
-            renderSection();
+            rerender(sectionTree());
             const region = screen
                 .getByText('키를 폐기했어요.')
                 .closest('[role="status"]');
             expect(region).toHaveFocus();
+        });
+
+        it('확인 버튼은 되돌릴 수 없다는 경고 문구를 설명으로 읽힌다', async () => {
+            const user = userEvent.setup();
+            renderSection();
+            await user.click(
+                screen.getByRole('button', { name: '내 에이전트 키 폐기' })
+            );
+            expect(
+                screen.getByRole('button', { name: '폐기하기' })
+            ).toHaveAccessibleDescription(
+                '이 키를 폐기할까요? 이 키로 하던 호출은 바로 막히고 되돌릴 수 없어요.'
+            );
         });
 
         it('진행 중인 버튼은 disabled가 아니라 aria-disabled이고 클릭 기본 동작(제출)을 막는다', async () => {
@@ -593,7 +624,8 @@ describe('SiglensApiKeySection — BYOK 키가 없을 때 발급 확인', () => 
         await clickCreate(user);
         // 인스턴스에 덮어써 이 폼의 프로그램 제출만 불발로 만든다(제출 이벤트가 일어나지 않는다).
         const requestSubmit = vi.fn();
-        const formEl = container.querySelector('form')!;
+        const formEl = container.querySelector('form');
+        if (formEl === null) throw new Error('발급 폼이 없다');
         formEl.requestSubmit = requestSubmit;
         await user.click(
             screen.getByRole('button', {
@@ -609,5 +641,134 @@ describe('SiglensApiKeySection — BYOK 키가 없을 때 발급 확인', () => 
 
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         expect(form.createFormAction).not.toHaveBeenCalled();
+    });
+});
+
+describe('SiglensApiKeySection — 새 키 원문 노출', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        formStatus.pending = false;
+        setForms();
+    });
+
+    it('보관하기 전에 다시 낸 발급이 실패해도 앞 키의 원문은 남는다', () => {
+        setForms({ createState: CREATED });
+        const { rerender } = renderSection();
+        setForms({
+            createState: {
+                status: 'error',
+                code: 'invalid_name',
+                message: '키 이름을 확인해 주세요.',
+            },
+        });
+        rerender(sectionTree());
+        expect(screen.getByTestId('siglens-api-key-raw')).toHaveTextContent(
+            RAW_KEY
+        );
+        expect(
+            screen.getByText('키 이름을 확인해 주세요.')
+        ).toBeInTheDocument();
+    });
+
+    it('새 키를 또 만들면 그 원문으로 바뀐다', () => {
+        const nextRawKey = `slk_${'Wp4'.repeat(13)}W`;
+        setForms({ createState: CREATED });
+        const { rerender } = renderSection();
+        setForms({
+            createState: { ...CREATED, rawKey: nextRawKey },
+        });
+        rerender(sectionTree());
+        expect(screen.getByTestId('siglens-api-key-raw')).toHaveTextContent(
+            nextRawKey
+        );
+    });
+
+    it('발급에 성공하면 원문 패널로 포커스가 옮겨 간다', () => {
+        const { rerender } = renderSection();
+        setForms({ createState: CREATED });
+        rerender(sectionTree());
+        expect(screen.getByTestId('siglens-api-key-revealed')).toHaveFocus();
+    });
+
+    it('"보관했어요"를 누르면 포커스가 키 이름 입력칸으로 간다', async () => {
+        const user = userEvent.setup();
+        setForms({ createState: CREATED });
+        renderSection();
+        await user.click(screen.getByRole('button', { name: '보관했어요' }));
+        expect(screen.getByLabelText('키 이름')).toHaveFocus();
+    });
+});
+
+describe('SiglensApiKeySection — 발급 오류 연결', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        formStatus.pending = false;
+    });
+
+    it('이름 오류면 입력칸이 aria-invalid다', () => {
+        setForms({
+            createState: {
+                status: 'error',
+                code: 'invalid_name',
+                message: '키 이름을 확인해 주세요.',
+            },
+        });
+        renderSection();
+        expect(screen.getByLabelText('키 이름')).toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
+    });
+
+    it('이름과 무관한 오류면 입력칸에 aria-invalid가 없다', () => {
+        setForms({
+            createState: {
+                status: 'error',
+                code: 'server_error',
+                message: '잠시 후 다시 시도해 주세요.',
+            },
+        });
+        renderSection();
+        expect(screen.getByLabelText('키 이름')).not.toHaveAttribute(
+            'aria-invalid'
+        );
+    });
+});
+
+describe('SiglensApiKeySection — 제목 위계(DS-4)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        setForms();
+    });
+
+    it('섹션 제목은 h2 공유 토큰을 쓴다', () => {
+        renderSection();
+        expect(
+            screen.getByRole('heading', { name: '시그렌즈 API', level: 2 })
+        ).toHaveClass(...HEADING_SECTION.split(' '));
+    });
+
+    it('시작 가이드 제목은 h3 공유 토큰을 쓴다', () => {
+        renderSection();
+        expect(
+            screen.getByRole('heading', { name: '30초 시작 가이드', level: 3 })
+        ).toHaveClass(...HEADING_SUBSECTION.split(' '));
+    });
+});
+
+describe('SiglensApiKeySection — 시작 가이드 텍스트', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        setForms();
+    });
+
+    it('1단계 문장과 export 명령 사이에 실제 공백이 있다', () => {
+        renderSection();
+        const step = screen.getByText(
+            'export SIGLENS_API_KEY=slk_…'
+        ).parentElement;
+        expect(step?.textContent).toBe(
+            '위에서 키를 만든 뒤 환경변수에 저장해요. export SIGLENS_API_KEY=slk_…'
+        );
     });
 });
