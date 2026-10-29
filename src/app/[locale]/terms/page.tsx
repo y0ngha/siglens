@@ -110,6 +110,7 @@ async function TermsContent({ locale, terms }: TermsContentProps) {
             intro={tLegal('termsIntro', { v0: brandName(locale) })}
             effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
             toc={toc}
+            bodyLocale={terms.bodyLocale}
             topNotice={
                 <>
                     {/* 번역 안내가 투자 고지보다 위에 온다 — 이 문서를 읽을 수
