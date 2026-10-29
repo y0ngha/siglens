@@ -612,6 +612,7 @@ file or the rule it describes changes:
   sentence is cut in the middle or loses a field the next paragraph relies on.
 - Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
 - A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
+- A "stable" / "memoized" claim in a JSDoc must match the hook's dependency list; if the deps change when the inputs change, say what the identity depends on instead of calling it stable.
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A comment claiming parity with other components or tabs ("same order as the other tabs") or relying on platform behavior (a robots-blocked URL's headers being read) is checked against those components and that behavior; drop the claim if it does not hold.

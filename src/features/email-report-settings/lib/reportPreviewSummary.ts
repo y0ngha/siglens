@@ -1,9 +1,6 @@
 /**
- * @file 리포트 대상 미리보기(`ReportSymbolsPreview`)가 위에 보일 요약 문장의 종류와, 지운 종목
- * 기록 안내에 넣는 제외 상한.
+ * @file 리포트 대상 미리보기(`ReportSymbolsPreview`)가 위에 보일 요약 문장의 종류.
  */
-
-import { EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS } from '@/entities/email-report/lib/emailReportConstants';
 
 /** 미리보기 그룹별 종목 수 — 요약 문장 고르기에 필요한 것만. */
 export interface ReportPreviewCounts {
@@ -43,9 +40,3 @@ export function summarizeReportPreview(
     if (counts.excluded > 0) return { kind: 'allExcluded' };
     return { kind: 'empty' };
 }
-
-/**
- * 지운 종목의 제외 기록 안내에 보이는 한도 — 기록이 이 상한을 차지한다는 것을 알려 지우게 한다.
- * 액션(`excludeReportSymbolAction`)이 같은 상수로 막는다.
- */
-export const STALE_EXCLUDED_NOTICE_LIMIT = EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS;

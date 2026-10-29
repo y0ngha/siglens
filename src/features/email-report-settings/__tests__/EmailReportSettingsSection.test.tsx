@@ -173,14 +173,17 @@ describe('EmailReportSettingsSection', () => {
         render(<EmailReportSettingsSection />);
 
         const boxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
-        const onlyDay = boxes.find(box => box.checked)!;
+        const onlyDay = boxes.find(box => box.checked);
+        if (!onlyDay) throw new Error('선택된 요일 체크박스가 없다');
         expect(onlyDay).toBeDisabled();
         expect(
             screen.getByText('요일을 하나 이상 골라 주세요.')
         ).toBeInTheDocument();
 
         // 다른 요일을 고르면 마지막 요일 잠금이 풀린다.
-        await userEvent.click(boxes.find(box => !box.checked)!);
+        const otherDay = boxes.find(box => !box.checked);
+        if (!otherDay) throw new Error('선택되지 않은 요일 체크박스가 없다');
+        await userEvent.click(otherDay);
         expect(onlyDay).toBeEnabled();
         await userEvent.click(onlyDay);
         await userEvent.click(screen.getByRole('button', { name: '저장' }));

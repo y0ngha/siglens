@@ -3,8 +3,8 @@
  */
 
 import type { Weekday } from '@/entities/email-report/model';
+import { MS_PER_DAY } from '@/shared/config/time';
 
-const DAY_MS = 86_400_000;
 // 2024-01-07은 일요일 — `Date#getDay()`가 n인 날짜를 만들려고 n일을 더한다.
 const SUNDAY_UTC = Date.UTC(2024, 0, 7);
 
@@ -34,7 +34,7 @@ export function createScheduleLabelFormatters(
         timeZone: 'UTC',
     });
     return {
-        weekday: day => weekday.format(new Date(SUNDAY_UTC + day * DAY_MS)),
+        weekday: day => weekday.format(new Date(SUNDAY_UTC + day * MS_PER_DAY)),
         hour: h => hour.format(new Date(Date.UTC(2024, 0, 1, h))),
     };
 }

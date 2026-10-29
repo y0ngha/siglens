@@ -22,7 +22,7 @@ import { REPORT_SYMBOLS_PREVIEW_ID } from '../lib/reportSymbolsPreviewIds';
  */
 export type ReportSymbolToggleMode = 'exclude' | 'include' | 'clear';
 
-/** [[useReportSymbolToggle]]이 칩 버튼에 넘기는 진행 상태와 안정적인 토글 함수. */
+/** [[useReportSymbolToggle]]이 칩 버튼에 넘기는 진행 상태와 토글 함수. `toggle`은 `pending`·`mode`·`symbol`·`label`이 바뀔 때만 새로 만들어진다. */
 interface UseReportSymbolToggleResult {
     /** 요청과 새로고침이 끝날 때까지 true — 버튼은 `aria-disabled`로 보인다. */
     pending: boolean;

@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import type { ReportSymbolToggleMode } from '../hooks/useReportSymbolToggle';
 import {
     type ReportPreviewSummary,
-    STALE_EXCLUDED_NOTICE_LIMIT,
     summarizeReportPreview,
 } from '../lib/reportPreviewSummary';
 import {
@@ -40,6 +39,11 @@ export interface ReportSymbolsPreviewData {
 interface ReportSymbolsPreviewProps {
     /** `null`이면 조회 실패 — 안내만 그린다. */
     preview: ReportSymbolsPreviewData | null;
+    /**
+     * 지운 종목의 제외 기록 안내에 보이는 한도 — 기록이 이 상한을 차지한다는 것을 알려 지우게
+     * 한다. 액션이 막는 상수를 호출 측(app)이 넘긴다.
+     */
+    excludedLimit: number;
 }
 
 interface ChipGroupProps {
@@ -146,7 +150,10 @@ function PreviewSummaryText({ summary }: PreviewSummaryTextProps) {
  * 이 컴포넌트는 서버 컴포넌트로 렌더되고, 칩의 빼기·다시 넣기 버튼만 클라이언트 컴포넌트
  * (`ReportSymbolChip`)다.
  */
-export function ReportSymbolsPreview({ preview }: ReportSymbolsPreviewProps) {
+export function ReportSymbolsPreview({
+    preview,
+    excludedLimit,
+}: ReportSymbolsPreviewProps) {
     const t = useTranslations('features.email-report-settings');
     if (preview === null) {
         return (
@@ -185,7 +192,7 @@ export function ReportSymbolsPreview({ preview }: ReportSymbolsPreviewProps) {
             id: 'staleExcluded',
             label: t('ReportSymbolsPreview.staleExcludedGroup'),
             hint: t('ReportSymbolsPreview.staleExcludedHint', {
-                v0: STALE_EXCLUDED_NOTICE_LIMIT,
+                v0: excludedLimit,
             }),
             chips: preview.staleExcluded,
             mode: 'clear',
