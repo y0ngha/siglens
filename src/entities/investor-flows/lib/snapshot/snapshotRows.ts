@@ -27,5 +27,5 @@ export function ascendingTail<T>(
     key: (row: T) => string,
     max: number
 ): T[] {
-    return [...rows].sort((a, b) => compareIsoDate(key(a), key(b))).slice(-max);
+    return rows.toSorted((a, b) => compareIsoDate(key(a), key(b))).slice(-max);
 }

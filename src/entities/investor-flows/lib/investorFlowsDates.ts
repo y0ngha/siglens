@@ -118,13 +118,8 @@ export function positionsRetentionFloor(today: string): string {
 /** 보존 범위 안의 분기들(하한 ~ 가장 최근 분기말, 오름차순) — DB를 훑지 않고 날짜로 계산한다. 하한이 가장 최근 분기말보다 늦으면 빈 배열. */
 export function retainedPeriods(floor: string, today: string): string[] {
     const latest = latestQuarterEndOnOrBefore(today);
-    const periods: string[] = [];
-    for (
-        let period = floor;
-        period <= latest;
-        period = nextQuarterEnd(period)
-    ) {
-        periods.push(period);
-    }
-    return periods;
+    // 보존 범위는 몇 분기뿐이라 재귀 깊이가 문제 되지 않는다.
+    const from = (period: string): string[] =>
+        period > latest ? [] : [period, ...from(nextQuarterEnd(period))];
+    return from(floor);
 }

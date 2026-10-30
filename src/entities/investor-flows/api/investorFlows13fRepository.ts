@@ -42,6 +42,7 @@ import {
     pruneAggregatesBefore,
     pruneFilingsBefore,
     prunePositionsBefore,
+    type PruneResult,
 } from './prune13f';
 import type { UpsertLog } from './uniqueForUpsert';
 
@@ -482,7 +483,7 @@ export class Drizzle13fRepository {
     prunePositionsBefore(
         floor: string,
         shouldStop: () => boolean
-    ): Promise<{ deleted: number; done: boolean }> {
+    ): Promise<PruneResult> {
         return prunePositionsBefore(this.db, floor, shouldStop);
     }
 

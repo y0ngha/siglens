@@ -6,6 +6,12 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { INVESTOR_FLOWS_PRUNE_BATCH_SIZE } from '../lib/investorFlowsPolicy';
 import { affectedRows } from './affectedRows';
 
+/** 배치 정리 한 번의 결과 — 지운 행 수와, 대상을 다 비웠는지(`shouldStop`으로 멈췄으면 false). */
+export interface PruneResult {
+    deleted: number;
+    done: boolean;
+}
+
 /**
  * 보존 하한보다 이른 분기의 포지션을 **배치로** 지운다(집계는 남는다) — 주식 포지션 다음 옵션 포지션(같은 보존 규칙).
  * `RETURNING`을 쓰지 않고 드라이버의 영향 행 수만 읽는다(수백만 행을 메모리에 올리지 않는다). 한 배치는
@@ -16,7 +22,7 @@ export async function prunePositionsBefore(
     db: SiglensDatabase,
     floor: string,
     shouldStop: () => boolean
-): Promise<{ deleted: number; done: boolean }> {
+): Promise<PruneResult> {
     const stock = await pruneBatchesBefore(
         db,
         sql`sec_13f_positions`,
@@ -41,7 +47,7 @@ async function pruneBatchesBefore(
     table: SQL,
     floor: string,
     shouldStop: () => boolean
-): Promise<{ deleted: number; done: boolean }> {
+): Promise<PruneResult> {
     let deleted = 0;
     for (;;) {
         if (shouldStop()) return { deleted, done: false };
