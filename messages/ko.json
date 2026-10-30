@@ -757,11 +757,13 @@
             }
         },
         "auth-oauth-consent": {
+            "OAuthAccountCard": {
+                "7af734": "{v0} 계정으로 가입"
+            },
             "OAuthConsentForm": {
                 "19b2d1": "취소",
                 "6615ab": "가입 완료",
-                "e6e1a2": "처리 중...",
-                "ecb738": "계정으로 가입"
+                "e6e1a2": "처리 중..."
             }
         },
         "auth-oauth": {

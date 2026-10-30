@@ -750,11 +750,13 @@
             }
         },
         "auth-oauth-consent": {
+            "OAuthAccountCard": {
+                "7af734": "{v0}アカウントで登録"
+            },
             "OAuthConsentForm": {
                 "19b2d1": "キャンセル",
                 "6615ab": "登録完了",
-                "e6e1a2": "処理中...",
-                "ecb738": "アカウントで登録"
+                "e6e1a2": "処理中..."
             }
         },
         "auth-oauth": {

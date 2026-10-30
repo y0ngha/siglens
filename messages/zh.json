@@ -750,11 +750,13 @@
             }
         },
         "auth-oauth-consent": {
+            "OAuthAccountCard": {
+                "7af734": "使用 {v0} 账号注册"
+            },
             "OAuthConsentForm": {
                 "19b2d1": "取消",
                 "6615ab": "注册完成",
-                "e6e1a2": "正在处理...",
-                "ecb738": "注册账号"
+                "e6e1a2": "正在处理..."
             }
         },
         "auth-oauth": {
