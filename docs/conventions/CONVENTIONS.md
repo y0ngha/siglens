@@ -635,6 +635,7 @@ file or the rule it describes changes:
   becoming a per-test reset), re-read the config or JSDoc that describes the old behavior (`vitest.config.ts` lane
   docs, header comments) in the same edit; grep the old wording repo-wide, and its concept and paraphrases too ("module cache" also hides as "evaluated module"), not only the exact phrase. Re-read the header doc of every file you
   touched, including the file that holds the change itself, not only the config that points at it.
+- A comment about when an effect, callback or request runs (on mount, after commit, before the response) is checked against the actual hook or call order; a comment stating the opposite of the code's timing is worse than none.
 - After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 
 <a id="CM-3"></a>
