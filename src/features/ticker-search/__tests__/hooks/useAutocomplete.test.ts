@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-import type { ChangeEvent, KeyboardEvent } from 'react';
+import type { ChangeEvent, FocusEvent, KeyboardEvent } from 'react';
 import { useAutocomplete } from '@/features/ticker-search/hooks/useAutocomplete';
 import type { Locale } from '@/shared/i18n/locales';
 import { assignLocation } from '@/shared/lib/crossHostNavigate';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 
 const mockPush = vi.fn();
 const mockPrefetch = vi.fn();
@@ -78,15 +79,18 @@ vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
                 : [],
         isSearching: searchState.isSearching,
         isError: searchState.isError,
-        debouncedQuery: searchState.staleDebouncedQuery ?? query,
+        // 실제 훅의 계약: 디바운스 질의는 앞뒤 공백을 뗀 값이다.
+        debouncedQuery: searchState.staleDebouncedQuery ?? query.trim(),
         hasQuery: query.length >= 1,
     }),
 }));
 
+// 핸들러가 읽는 필드만 채운 최소 이벤트다. 나머지 필드는 읽히지 않으므로 캐스트로 타입만 맞춘다.
 function createChangeEvent(value: string): ChangeEvent<HTMLInputElement> {
     return { target: { value } } as ChangeEvent<HTMLInputElement>;
 }
 
+// 핸들러가 읽는 필드만 채운 최소 이벤트다. 나머지 필드는 읽히지 않으므로 캐스트로 타입만 맞춘다.
 function createKeyEvent(
     key: string,
     extra: Partial<KeyboardEvent<HTMLInputElement>> = {}
@@ -116,7 +120,7 @@ describe('useAutocomplete', () => {
 
         expect(result.current.query).toBe('');
         expect(result.current.results).toEqual([]);
-        expect(result.current.isSearching).toBe(false);
+        expect(result.current.status).toBe('idle');
         expect(result.current.selectedIndex).toBe(-1);
         expect(result.current.isOpen).toBe(false);
     });
@@ -662,5 +666,117 @@ describe('useAutocomplete', () => {
             label: '애플',
         });
         expect(mockPush).toHaveBeenCalledWith('/AAPL');
+    });
+
+    describe('combobox 키보드·포커스 모델', () => {
+        function renderOpen() {
+            const hook = renderHook(() => useAutocomplete());
+            act(() => {
+                hook.result.current.handleChange(createChangeEvent('A'));
+            });
+            return hook;
+        }
+
+        // 핸들러가 읽는 필드만 채운 최소 이벤트다. 나머지 필드는 읽히지 않으므로 캐스트로 타입만 맞춘다.
+        function blurEvent(
+            relatedTarget: Node | null
+        ): FocusEvent<HTMLInputElement> {
+            return { relatedTarget } as unknown as FocusEvent<HTMLInputElement>;
+        }
+
+        it('Escape로 닫은 뒤 ArrowDown은 목록을 다시 연다', () => {
+            const { result } = renderOpen();
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('Escape'));
+            });
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('ArrowDown'));
+            });
+
+            expect(result.current.isOpen).toBe(true);
+            expect(result.current.selectedIndex).toBe(0);
+        });
+
+        it('Escape는 활성 옵션을 해제한다', () => {
+            const { result } = renderOpen();
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('ArrowDown'));
+            });
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('Escape'));
+            });
+
+            expect(result.current.selectedIndex).toBe(-1);
+        });
+
+        it('Home은 활성 옵션을 해제하고 캐럿 이동(기본 동작)은 막지 않는다', () => {
+            const { result } = renderOpen();
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('ArrowDown'));
+            });
+            const home = createKeyEvent('Home');
+            act(() => {
+                result.current.handleKeyDown(home);
+            });
+
+            expect(result.current.selectedIndex).toBe(-1);
+            expect(home.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('Home으로 옵션을 해제한 뒤의 Enter는 그 옵션으로 이동하지 않고 검색 키로 처리된다', () => {
+            searchState.resultsOverride = [
+                { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+                { symbol: 'A', name: 'Agilent' },
+            ];
+            const { result } = renderOpen();
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('ArrowDown'));
+            });
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('End'));
+            });
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('Enter'));
+            });
+
+            // 친 문자열과 정확히 같은 심볼(`A`)이 검색 키의 목적지다 — 활성이던 AMZN이 아니다.
+            expect(mockPush).toHaveBeenCalledWith('/A');
+        });
+
+        it('포커스가 드롭다운 밖으로 나가면(Tab) 닫는다', () => {
+            const { result } = renderOpen();
+            act(() => {
+                result.current.handleBlur(blurEvent(document.body));
+            });
+
+            expect(result.current.isOpen).toBe(false);
+        });
+
+        it('포커스가 드롭다운 안으로 옮겨 가면 닫지 않는다', () => {
+            const { result } = renderOpen();
+            const dropdown = document.createElement('div');
+            const option = document.createElement('button');
+            dropdown.append(option);
+            result.current.dropdownRef.current = dropdown;
+            act(() => {
+                result.current.handleBlur(blurEvent(option));
+            });
+
+            expect(result.current.isOpen).toBe(true);
+        });
+
+        it('바깥 클릭으로 닫으면 활성 옵션도 해제한다', () => {
+            const { result } = renderOpen();
+            act(() => {
+                result.current.handleKeyDown(createKeyEvent('ArrowDown'));
+            });
+            const onOutside = vi.mocked(useOnClickOutside).mock.lastCall?.[1];
+            act(() => {
+                onOutside?.(new PointerEvent('pointerdown'));
+            });
+
+            expect(result.current.isOpen).toBe(false);
+            expect(result.current.selectedIndex).toBe(-1);
+        });
     });
 });

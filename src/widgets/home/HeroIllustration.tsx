@@ -1,3 +1,7 @@
+/**
+ * 홈 히어로의 LCP 일러스트.
+ */
+
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
@@ -15,10 +19,10 @@ interface HeroIllustrationProps {
  * 외부 SVG 파일을 `<img>`로 로드하면 단일 image LCP 후보가 되어 의도대로
  * SVG가 LCP가 된다.
  *
- * `priority`로 next/image가 preload를 emit하지만, `unoptimized` SVG에는
+ * `preload`(Next 16에서 deprecated된 `priority`의 후속)로 next/image가 preload를 emit하지만, `unoptimized` SVG에는
  * `fetchpriority="high"`가 자동 부여되지 않는 케이스가 PSI `lcp-discovery-insight`
- * audit에서 0점으로 잡혔다(priorityHinted: false). 명시적으로 `fetchPriority="high"`를
- * 추가해 Resource load delay 1.7s 단축을 노린다.
+ * audit에서 0점으로 잡힌다(priorityHinted: false). 명시적으로 `fetchPriority="high"`를
+ * 추가해 LCP 리소스의 load delay를 줄인다.
  * `unoptimized`로 next/image의 SVG 변환(불가능)을 우회한다.
  *
  * SVG 본체는 `public/hero-dashboard.svg`에 정적 자산으로 둔다. 컨셉
@@ -35,7 +39,7 @@ export function HeroIllustration({ className }: HeroIllustrationProps) {
             alt={t('HeroIllustration.018ed1')}
             width={800}
             height={500}
-            priority
+            preload
             fetchPriority="high"
             unoptimized
             className={className}

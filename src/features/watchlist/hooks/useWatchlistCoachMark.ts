@@ -16,6 +16,7 @@ interface UseWatchlistCoachMarkOptions {
     enabled: boolean;
 }
 
+/** 코치 마크 표시 여부와 닫기. 호출부가 말풍선과 ☆의 `aria-describedby`를 이 값으로 그린다. */
 export interface UseWatchlistCoachMarkResult {
     visible: boolean;
     /** 닫기 또는 첫 토글. 영구 플래그를 적어 다시 뜨지 않게 한다. */
@@ -23,7 +24,7 @@ export interface UseWatchlistCoachMarkResult {
 }
 
 /**
- * 종목 헤더 ☆ 아래 1회 말풍선(§6.1). 차트 탭이 분석을 그린 뒤(`publishSymbolAnalyzed`) 뜨고,
+ * 종목 헤더 ☆ 아래 1회 말풍선. 차트 탭이 분석을 그린 뒤(`publishSymbolAnalyzed`) 뜨고,
  * 넛지 모달과 같은 탭 세션에 겹치지 않도록 `nudgeSession` 플래그를 **공유**한다 — 모달이
  * 먼저 떴으면 코치 마크는 다음 세션이고, 코치 마크가 먼저 떴으면 모달이 다음 세션이다.
  * 구독 콜백 안의 `setState`는 EF-1이 허용하는 경로다.

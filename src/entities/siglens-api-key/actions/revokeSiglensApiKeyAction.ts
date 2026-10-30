@@ -9,7 +9,7 @@ import type {
     ReachableSiglensApiKeyErrorCode,
     SiglensApiKeyActionErrorCode,
 } from '@/entities/siglens-api-key/model';
-import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuth';
+import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
 

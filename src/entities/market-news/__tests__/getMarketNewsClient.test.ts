@@ -9,17 +9,17 @@ class FakeNaverClient {
     readonly kind = 'naver';
 }
 
-vi.mock('@/entities/market-news/lib/fmpMarketNewsClient', () => ({
+vi.mock('@/entities/market-news/api/fmpMarketNewsClient', () => ({
     FmpMarketNewsClient: FakeFmpClient,
 }));
-vi.mock('@/entities/market-news/lib/naverMarketNewsClient', () => ({
+vi.mock('@/entities/market-news/api/naverMarketNewsClient', () => ({
     NaverMarketNewsClient: FakeNaverClient,
 }));
 
 /** 싱글턴이 모듈 레벨이라 env를 바꿔 검증하려면 매 케이스 모듈을 다시 들인다. */
 async function loadModule() {
     vi.resetModules();
-    return import('@/entities/market-news/lib/getMarketNewsClient');
+    return import('@/entities/market-news/api/getMarketNewsClient');
 }
 
 describe('getMarketNewsClient', () => {

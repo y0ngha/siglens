@@ -166,6 +166,36 @@ describe('useTickerSearch', () => {
         expect(lastQueryKey).toEqual(QUERY_KEYS.tickerSearch('MSFT'));
     });
 
+    it('질의 앞뒤 공백을 떼고 조회 키로 쓴다', () => {
+        // 서버도 공백을 떼므로 `MSFT `와 `MSFT`는 같은 응답이다 — 한 캐시 항목을 쓴다.
+        const { result } = renderHook(() => useTickerSearch('  MSFT '));
+
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+
+        expect(lastQueryKey).toEqual(['ticker-search', 'MSFT']);
+        expect(result.current.debouncedQuery).toBe('MSFT');
+    });
+
+    it('공백만 친 입력은 질의가 없는 것으로 본다', () => {
+        // 빈 질의로 요청을 보내 "결과 없음"을 띄우는 대신 최근·인기 종목을 남긴다.
+        const { result } = renderHook(() => useTickerSearch('   '));
+
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+
+        expect(result.current.hasQuery).toBe(false);
+    });
+
+    it('결과가 없을 때 렌더마다 같은 빈 배열을 준다', () => {
+        const { result, rerender } = renderHook(() => useTickerSearch(''));
+        const first = result.current.results;
+        rerender();
+        expect(result.current.results).toBe(first);
+    });
+
     it('재시도 대기 중(pending)에도 검색 중으로 본다', () => {
         // `isFetching`으로 판단하면 재시도 백오프 구간이 false라 "결과 없음"이
         // 한 번 번쩍인다. `status`는 첫 결착까지 pending을 유지한다.

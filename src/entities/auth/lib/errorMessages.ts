@@ -9,7 +9,10 @@ export const AUTH_SERVICE_UNAVAILABLE_MESSAGE =
 export const CONSENT_REQUIRED_MESSAGE =
     '개인정보처리방침과 이용약관에 동의해주세요.';
 
-/** OAuth consent-flow redirect targets — must match keys in login/LoginContent.tsx OAUTH_ERROR_MESSAGES. */
+/**
+ * OAuth 동의 흐름의 리다이렉트 대상. `error=` 코드는 `AUTH_ERROR_KEY`(`shared/lib/authErrorKey.ts`)의
+ * 키여야 한다 — 로그인 화면(`login/_lib/loginErrorKey.ts`)이 그 표로만 배너 문구를 찾는다.
+ */
 export const OAUTH_ERROR_REDIRECT = {
     consentInvalid: '/login?error=oauth_consent_invalid',
     consentExpired: '/login?error=oauth_consent_expired',

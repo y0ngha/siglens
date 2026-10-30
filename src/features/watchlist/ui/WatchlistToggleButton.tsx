@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useId } from 'react';
+import { useTranslations } from 'next-intl';
 import type { WatchlistSource } from '@/entities/watchlist/model';
 import { cn } from '@/shared/lib/cn';
 import { StarIcon } from '@/shared/ui/StrokeIcons';
@@ -37,7 +37,24 @@ const IDLE =
     'border-border-control text-secondary-300 hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100';
 const PRESSED =
     'border-primary-500 bg-primary-900/10 text-primary-300 hover:bg-primary-900/20';
+type ControlState = 'blocked' | 'pressed' | 'idle';
 
+const STATE_CLASS: Record<ControlState, string | null> = {
+    // 상한으로 막힌 상태는 `CONTROL`의 `aria-disabled:` 색만 쓴다.
+    blocked: null,
+    pressed: PRESSED,
+    idle: IDLE,
+};
+
+function controlState(blockedByLimit: boolean, pressed: boolean): ControlState {
+    if (blockedByLimit) return 'blocked';
+    return pressed ? 'pressed' : 'idle';
+}
+
+/**
+ * 종목 헤더·`/watchlist` 최근 본 행의 ☆ 토글. 상한에 걸리면 `aria-disabled`로 포커스는 받되
+ * 누름은 막고, 이유는 숨은 설명(`aria-describedby`)으로 읽힌다.
+ */
 export function WatchlistToggleButton({
     symbol,
     label,
@@ -88,7 +105,7 @@ export function WatchlistToggleButton({
                 onClick={handleClick}
                 className={cn(
                     CONTROL,
-                    blockedByLimit ? null : pressed ? PRESSED : IDLE
+                    STATE_CLASS[controlState(blockedByLimit, pressed)]
                 )}
             >
                 <StarIcon filled={pressed} className="size-5" />

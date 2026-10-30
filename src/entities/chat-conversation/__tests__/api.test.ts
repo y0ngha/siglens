@@ -4,6 +4,7 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import { CONVERSATION_LIST_LIMIT } from '@/entities/chat-conversation/model';
+import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 const VALID_ID = '11111111-1111-1111-1111-111111111111';
@@ -236,6 +237,21 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         const repo = new DrizzleChatConversationRepository(db);
         await repo.listForUser(VALID_USER);
         expect(captured[0]!.params).toContain(CONVERSATION_LIST_LIMIT);
+    });
+
+    it('supersedeAfterLastUser: 전체 메시지를 읽지 않고 max(seq) 한 건만 조회한 뒤 그 뒤 행만 갱신한다', async () => {
+        const { db, captured } = createSqlCaptureDb((_q, i) =>
+            i === 0 ? [{ seq: 3 }] : []
+        );
+        const repo = new DrizzleChatConversationRepository(db);
+        expect(await repo.supersedeAfterLastUser(VALID_ID)).toBe(3);
+        expect(captured).toHaveLength(2);
+        const selectSql = captured[0]!.sql.toLowerCase();
+        expect(selectSql).toContain('select max("seq") from "chat_messages"');
+        expect(whereOnly(captured[0]!.sql)).toContain('"role" = $');
+        expect(captured[0]!.params).toEqual([VALID_ID, 'user']);
+        expect(captured[1]!.sql.toLowerCase()).toContain('"seq" >= $');
+        expect(captured[1]!.params).toContain(4);
     });
 
     it('deleteFromSeq: 카운터 갱신도 count(*) 재계산(별도 SELECT 없음)', async () => {
@@ -514,12 +530,7 @@ describe('DrizzleChatConversationRepository — behavior (chain stub)', () => {
     });
 
     it('supersedeAfterLastUser는 마지막 user 이후 행만 superseded', async () => {
-        const db = chain([
-            { seq: 1, role: 'user' },
-            { seq: 2, role: 'assistant' },
-            { seq: 3, role: 'user' },
-            { seq: 4, role: 'assistant' },
-        ]);
+        const db = chain([{ seq: 3 }]);
         const repo = new DrizzleChatConversationRepository(
             db as unknown as SiglensDatabase
         );
@@ -527,11 +538,8 @@ describe('DrizzleChatConversationRepository — behavior (chain stub)', () => {
         expect(db.set).toHaveBeenLastCalledWith({ status: 'superseded' });
     });
 
-    it('supersedeAfterLastUser: user 행이 없으면 null, update 없음', async () => {
-        const db = chain([
-            { seq: 1, role: 'assistant' },
-            { seq: 2, role: 'assistant' },
-        ]);
+    it('supersedeAfterLastUser: user 행이 없으면(max=null) null, update 없음', async () => {
+        const db = chain([{ seq: null }]);
         const repo = new DrizzleChatConversationRepository(
             db as unknown as SiglensDatabase
         );
