@@ -6,44 +6,33 @@
  * 저장 형식 `Array<{ symbol, label, addedAt }>` — `addedAt`은 epoch ms. 읽기 파서는 방어적이다:
  * 손으로 고친 값·옛 번들이 쓴 값이 와도 빈 칩이나 예외가 아니라 살릴 수 있는 항목만 살린다.
  */
+import type { WatchlistItemView } from '@/entities/watchlist/model';
 import { WATCHLIST_MAX_LOCAL } from '@/shared/config/watchlist';
 import { LOCAL_STORAGE_WATCHLIST_KEY } from '@/shared/lib/storageKeys';
-import type { WatchlistItemView } from '@/entities/watchlist/model';
+import { getDefaultLocalStorage, type StorageLike } from './browserStorage';
 
 /** `Date`가 표현하는 최대 epoch ms. 넘으면 `toISOString()`이 RangeError를 던진다(NaN·Infinity는 이 비교에서 걸러진다). */
 const MAX_DATE_MS = 8.64e15;
 
+/** 비회원 관심종목 한 건(저장 형식 그대로). `symbol`은 대문자, `label`은 비어 있지 않다. */
 export interface LocalWatchlistEntry {
     symbol: string;
     label: string;
     addedAt: number;
 }
 
+/** `addLocalWatchlistEntry`의 결과 — 호출부가 담기 성공을 실제 저장 결과로만 보고하게 한다. */
 export interface LocalWatchlistAddResult {
     entries: LocalWatchlistEntry[];
     /** 새로 들어갔는가. 이미 있거나 상한이면 false. */
     added: boolean;
 }
 
+/** 삭제 후 호출부(`useLocalWatchlist`)가 상태를 되돌릴지 정할 수 있도록 목록과 저장 성공 여부를 함께 준다. */
 export interface LocalWatchlistRemoveResult {
     entries: LocalWatchlistEntry[];
     /** 저장까지 끝났는가. 쓰기에 실패하면 false(목록은 그대로). */
     removed: boolean;
-}
-
-export interface StorageLike {
-    getItem(key: string): string | null;
-    setItem(key: string, value: string): void;
-    removeItem(key: string): void;
-}
-
-function getDefaultStorage(): StorageLike | null {
-    if (typeof window === 'undefined') return null;
-    try {
-        return window.localStorage;
-    } catch {
-        return null;
-    }
 }
 
 function toEntry(item: unknown): LocalWatchlistEntry[] {
@@ -74,6 +63,7 @@ function dedupeNewest(entries: LocalWatchlistEntry[]): LocalWatchlistEntry[] {
     });
 }
 
+/** 저장된 원문을 항목 목록으로. 최근 담은 순·심볼 중복 제거·로컬 상한까지. 깨진 값은 빈 목록이다. */
 export function parseLocalWatchlist(raw: string | null): LocalWatchlistEntry[] {
     if (!raw) return [];
     try {
@@ -89,8 +79,9 @@ export function parseLocalWatchlist(raw: string | null): LocalWatchlistEntry[] {
     }
 }
 
+/** 저장소에서 읽어 파싱한다. 저장소가 없거나 읽기가 던지면 빈 목록. */
 export function readLocalWatchlist(
-    storage: StorageLike | null = getDefaultStorage()
+    storage: StorageLike | null = getDefaultLocalStorage()
 ): LocalWatchlistEntry[] {
     if (!storage) return [];
     try {
@@ -119,7 +110,7 @@ function write(storage: StorageLike, entries: LocalWatchlistEntry[]): boolean {
 export function addLocalWatchlistEntry(
     entry: { symbol: string; label: string },
     now: number,
-    storage: StorageLike | null = getDefaultStorage()
+    storage: StorageLike | null = getDefaultLocalStorage()
 ): LocalWatchlistAddResult {
     if (!storage) return { entries: [], added: false };
     const symbol = entry.symbol.trim().toUpperCase();
@@ -139,9 +130,10 @@ export function addLocalWatchlistEntry(
     return { entries: next, added: true };
 }
 
+/** 한 건 뺀다(없는 심볼이어도 성공). 쓰기에 실패하면 `removed: false`로 목록을 그대로 돌려준다. */
 export function removeLocalWatchlistEntry(
     symbol: string,
-    storage: StorageLike | null = getDefaultStorage()
+    storage: StorageLike | null = getDefaultLocalStorage()
 ): LocalWatchlistRemoveResult {
     if (!storage) return { entries: [], removed: false };
     const upper = symbol.trim().toUpperCase();
@@ -151,8 +143,9 @@ export function removeLocalWatchlistEntry(
     return { entries: next, removed: true };
 }
 
+/** 목록을 통째로 지운다 — 계정 병합이 끝난 뒤. 저장소가 막혀 있으면 아무것도 하지 않는다. */
 export function clearLocalWatchlist(
-    storage: StorageLike | null = getDefaultStorage()
+    storage: StorageLike | null = getDefaultLocalStorage()
 ): void {
     if (!storage) return;
     try {

@@ -30,7 +30,7 @@ export function marketBriefingCacheTag(scope: DashboardScope): string {
 /**
  * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
  * data cache로 감싼다. 키는 date-hour(매시 자연 무효화)로 충분 — 같은 시간대면 같은
- * cached briefing. revalidate=1h, `market:briefing` tag.
+ * cached briefing. revalidate=1h, `market:briefing:<scopeId>` tag.
  * 태그는 summary/sector와 분리한다(공유 시 한 무효화가 셋 다 날리는 blast-radius 방지).
  */
 export function peekBriefingStatic(

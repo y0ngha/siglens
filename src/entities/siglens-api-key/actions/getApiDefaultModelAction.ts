@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
+import { logActionError } from '@/shared/lib/logActionError';
 
 /**
  * 본인의 API 기본 모델. 비로그인·미설정·조회 실패는 모두 `null`(조회 실패는 로그를 남긴다 —
@@ -20,7 +21,7 @@ export async function getApiDefaultModelAction(): Promise<string | null> {
             getDatabaseClient().db
         ).findApiDefaultModel(user.id);
     } catch (error) {
-        console.error('[getApiDefaultModelAction] failed:', error);
+        logActionError('[getApiDefaultModelAction] failed:', error);
         return null;
     }
 }

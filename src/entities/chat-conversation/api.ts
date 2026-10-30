@@ -1,25 +1,24 @@
 import 'server-only';
 
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, max, sql, type SQL } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { chatConversations, chatMessages } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { withRetry } from '@/shared/lib/withRetry';
 import type { Locale } from '@/shared/i18n/locales';
+import { withRetry } from '@/shared/lib/withRetry';
 import {
-    deriveTitle,
     CONVERSATION_LIST_LIMIT,
+    CONVERSATION_TITLE_COLUMN_MAX,
+    deriveTitle,
     type ChatConversationRecord,
     type ChatMessageRecord,
     type NewChatMessage,
 } from './model';
 
 /**
- * Postgres `uuid` columns 22P02 (invalid_text_representation) on a
- * malformed literal — this repository is a common landing spot for
- * attacker- or client-bug-controlled ids (URL segments, action args), so
- * every id-taking method below validates shape *before* touching the DB
- * instead of letting a raw driver error surface as a 500.
+ * Postgres `uuid` 컬럼은 형식이 틀린 리터럴에 22P02(invalid_text_representation)를 던진다.
+ * 이 저장소는 URL 세그먼트·액션 인자처럼 공격자나 클라이언트 버그가 정하는 id를 받는 자리라,
+ * id를 받는 모든 메서드가 DB에 가기 전에 형식을 검사해 드라이버 오류가 500으로 새지 않게 한다.
  */
 const UUID_RE =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,32 +27,29 @@ function isValidUuid(id: string): boolean {
     return UUID_RE.test(id);
 }
 
+/** `chat_messages` 행 수로 `message_count`를 다시 계산하는 서브쿼리. 증분(`+ n`)이 아니라 재계산이라 재시도에 멱등이고 기존 어긋남도 스스로 복구된다. */
+function messageCountSql(conversationId: string): SQL {
+    return sql`(select count(*) from ${chatMessages} where ${chatMessages.conversationId} = ${conversationId})`;
+}
+
 /**
- * Drizzle ORM implementation backing SIGLENS AI conversations/messages
- * (spec §6-1).
+ * SIGLENS AI 대화·메시지의 Drizzle 저장소.
  *
- * Conversation methods (`create`/`findForUser`/`listForUser`/`countForUser`/
- * `rename`/`delete`) are owner-scoped: every query filters by `userId`
- * in the SQL `WHERE` clause itself — never post-fetch-and-check — so a
- * stray row from another user can never leak through even under a future
- * refactor.
+ * 대화 메서드(`create`/`findForUser`/`listForUser`/`countForUser`/`rename`/`delete`)는
+ * 소유자 범위다: 조회 후 검사가 아니라 SQL `WHERE`에서 `userId`로 걸러, 훗날 리팩터링에도
+ * 다른 사용자의 행이 새지 않는다.
  *
- * **Message methods (`listMessages`, `appendMessages`,
- * `supersedeAfterLastUser`, `deleteFromSeq`) take a bare `conversationId`
- * and are NOT owner-scoped** — they trust the caller already resolved and
- * authorized that id. Every caller MUST first confirm ownership via
- * `findForUser(id, userId)` (returning null on any mismatch) before calling
- * one of these; skipping that check lets one user read or mutate another
- * user's messages by id alone.
+ * **메시지 메서드(`listMessages`, `appendMessages`, `supersedeAfterLastUser`,
+ * `deleteFromSeq`)는 `conversationId`만 받으며 소유자 범위가 아니다** — 호출자가 이미 그 id를
+ * 확인·인가했다고 신뢰한다. 호출자는 반드시 먼저 `findForUser(id, userId)`로 소유를 확인해야 한다
+ * (불일치는 null). 건너뛰면 id만으로 남의 메시지를 읽거나 바꿀 수 있다.
  */
 export class DrizzleChatConversationRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     /**
-     * Inserts a new conversation. Not retried — an INSERT with a
-     * server-generated `id` is not idempotent, so retrying after a lost
-     * response (network drop after the write commits) would create a
-     * duplicate conversation.
+     * 새 대화를 만든다. 재시도하지 않는다 — 서버가 `id`를 생성하는 INSERT는 멱등이 아니라서,
+     * 커밋 뒤 응답이 유실된 상태로 재시도하면 대화가 중복된다.
      */
     async create(input: {
         userId: string;
@@ -74,7 +70,7 @@ export class DrizzleChatConversationRepository {
         return row as ChatConversationRecord;
     }
 
-    /** Owner-scoped; null for other users' or already-deleted (row no longer exists) conversations, and for a malformed (non-UUID) `id` — no query is issued in that case. */
+    /** 소유자 범위 조회. 타인의 대화·이미 삭제된 대화·UUID 형식이 아닌 `id`면 null이고, 형식 오류는 쿼리를 보내지 않는다. */
     async findForUser(
         id: string,
         userId: string
@@ -97,10 +93,7 @@ export class DrizzleChatConversationRepository {
         return (row as ChatConversationRecord | undefined) ?? null;
     }
 
-    /**
-     * Owner-scoped conversation list, most-recent first, capped at
-     * {@link CONVERSATION_LIST_LIMIT}.
-     */
+    /** 소유자 범위 대화 목록. 최근 순이며 {@link CONVERSATION_LIST_LIMIT}건까지. 일시 DB 오류는 재시도한다. */
     async listForUser(
         userId: string,
         limit = CONVERSATION_LIST_LIMIT
@@ -117,7 +110,7 @@ export class DrizzleChatConversationRepository {
         ) as Promise<ChatConversationRecord[]>;
     }
 
-    /** Owner-scoped count of conversations. */
+    /** 소유자 범위 대화 수. 재시도하지 않는다. */
     async countForUser(userId: string): Promise<number> {
         const [row] = await this.db
             .select({ count: sql<number>`count(*)` })
@@ -126,15 +119,15 @@ export class DrizzleChatConversationRepository {
         return Number(row?.count ?? 0);
     }
 
-    /**
-     * Renames the conversation, scoped to the owner. No-ops for a malformed
-     * `id` (same effect as the id simply not matching any row).
-     */
+    /** 소유자 범위로 제목을 바꾼다. 형식이 틀린 `id`는 일치하는 행이 없는 것과 같게 no-op이다. */
     async rename(id: string, userId: string, title: string): Promise<void> {
         if (!isValidUuid(id)) return;
         await this.db
             .update(chatConversations)
-            .set({ title: title.slice(0, 120), updatedAt: new Date() })
+            .set({
+                title: title.slice(0, CONVERSATION_TITLE_COLUMN_MAX),
+                updatedAt: new Date(),
+            })
             .where(
                 and(
                     eq(chatConversations.id, id),
@@ -144,19 +137,13 @@ export class DrizzleChatConversationRepository {
     }
 
     /**
-     * Hard-deletes the conversation, scoped to the owner. `chat_messages.
-     * conversation_id` has `onDelete: 'cascade'` (schema.ts), so the whole
-     * transcript — including any message content, market data, and
-     * portfolio holdings discussed — is removed in the same statement; no
-     * follow-up cron is needed or exists. Matching zero rows (unknown id,
-     * another user's id, or an id already deleted) is a silent no-op, which
-     * also makes a repeated call idempotent. No-ops for a malformed `id`
-     * without touching the DB.
+     * 소유자 범위 하드 삭제. `chat_messages.conversation_id`가 `onDelete: 'cascade'`라 같은
+     * 문장으로 대화록 전체(메시지 본문·시장 데이터·논의된 보유 종목 포함)가 지워지며 별도
+     * 후속 작업은 없다. 일치하는 행이 없으면(없는 id·타인의 id·이미 삭제) 조용한 no-op이라
+     * 반복 호출도 멱등이다. 형식이 틀린 `id`는 DB에 가지 않고 no-op이다.
      *
-     * The privacy policy (`db/seeds/terms/privacy/v4.md` §4/§8) promises
-     * conversations are destroyed immediately on user-initiated deletion —
-     * a soft-delete flag alone would leave the promised data in Neon
-     * indefinitely, so this must be a real `DELETE`, not an UPDATE.
+     * 개인정보 처리방침(`db/seeds/terms/privacy/v4.md`)이 사용자 삭제 시 즉시 파기를 약속하므로
+     * soft-delete 플래그가 아니라 실제 `DELETE`여야 한다.
      */
     async delete(id: string, userId: string): Promise<void> {
         if (!isValidUuid(id)) return;
@@ -170,10 +157,7 @@ export class DrizzleChatConversationRepository {
             );
     }
 
-    /**
-     * NOT owner-scoped — see the class doc. Returns `[]` for a malformed
-     * `conversationId` without querying.
-     */
+    /** 소유자 범위가 아니다(클래스 문서 참고). 형식이 틀린 `conversationId`는 쿼리 없이 `[]`. 일시 DB 오류는 재시도한다. */
     async listMessages(conversationId: string): Promise<ChatMessageRecord[]> {
         if (!isValidUuid(conversationId)) return [];
         return withRetry(
@@ -188,15 +172,11 @@ export class DrizzleChatConversationRepository {
     }
 
     /**
-     * NOT owner-scoped — see the class doc. One INSERT whose `seq` values
-     * are `(select coalesce(max(seq),0) …) + n` — evaluated inside the
-     * statement, so no transaction is needed.
-     * Cross-request races are excluded by the per-user turn lock.
+     * 소유자 범위가 아니다(클래스 문서 참고). `seq`를 `(select coalesce(max(seq),0) …) + n`으로
+     * 한 INSERT 안에서 매기므로 트랜잭션이 필요 없다. 요청 간 경합은 사용자별 턴 락이 막는다.
      *
-     * Not retried: like `create`, an INSERT of new message rows is not
-     * idempotent — retrying after a lost response would duplicate the
-     * turn's messages. Returns `[]` without touching the DB for an empty
-     * `messages` array or a malformed `conversationId`.
+     * INSERT는 재시도하지 않는다 — `create`처럼 멱등이 아니라서 응답 유실 뒤 재시도하면 턴의
+     * 메시지가 중복된다. 빈 `messages`나 형식이 틀린 `conversationId`는 DB에 가지 않고 `[]`.
      */
     async appendMessages(
         conversationId: string,
@@ -220,24 +200,16 @@ export class DrizzleChatConversationRepository {
             .insert(chatMessages)
             .values(rows)
             .returning();
-        // Recomputed from a COUNT rather than incremented — this makes the
-        // statement idempotent (safe to retry after a lost response) and
-        // self-healing against any prior drift, unlike `messageCount + n`
-        // which would double-count on a retried call.
-        //
-        // The messages themselves are already committed at this point — if
-        // this update still fails after its own retries, the turn must not
-        // be reported as failed (that would make the caller retry and
-        // duplicate the just-inserted rows). We swallow the error and return
-        // the inserted messages; the next `appendMessages` call recomputes
-        // `message_count`/`last_message_at` from scratch and self-heals.
+        // 메시지는 이미 커밋됐다. 카운터 갱신이 재시도 후에도 실패했을 때 턴을 실패로 알리면
+        // 호출자가 재시도해 방금 넣은 행이 중복되므로, 오류를 삼키고 삽입된 메시지를 돌려준다.
+        // 다음 `appendMessages`가 `message_count`/`last_message_at`을 처음부터 다시 계산해 복구한다.
         try {
             await withRetry(
                 () =>
                     this.db
                         .update(chatConversations)
                         .set({
-                            messageCount: sql`(select count(*) from ${chatMessages} where ${chatMessages.conversationId} = ${conversationId})`,
+                            messageCount: messageCountSql(conversationId),
                             lastMessageAt: new Date(),
                             updatedAt: new Date(),
                         })
@@ -254,33 +226,44 @@ export class DrizzleChatConversationRepository {
     }
 
     /**
-     * NOT owner-scoped — see the class doc. regenerate: rows after the last
-     * user row → superseded. Returns that user row's seq, or `null` (also
-     * for a malformed `conversationId`, without querying).
+     * 소유자 범위가 아니다(클래스 문서 참고). regenerate: 마지막 user 행 뒤의 행을 superseded로
+     * 바꾸고 그 user 행의 seq를 돌려준다. user 행이 없거나 `conversationId` 형식이 틀리면
+     * `null`(형식 오류는 쿼리 없이). superseded가 된 user 행도 "마지막 user"로 센다.
      */
     async supersedeAfterLastUser(
         conversationId: string
     ): Promise<number | null> {
         if (!isValidUuid(conversationId)) return null;
-        const rows = await this.listMessages(conversationId);
-        const lastUser = [...rows].reverse().find(r => r.role === 'user');
-        if (!lastUser) return null;
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select({ seq: max(chatMessages.seq) })
+                    .from(chatMessages)
+                    .where(
+                        and(
+                            eq(chatMessages.conversationId, conversationId),
+                            eq(chatMessages.role, 'user')
+                        )
+                    ),
+            DB_TRANSIENT_RETRY
+        );
+        const lastUserSeq = row?.seq ?? null;
+        if (lastUserSeq === null) return null;
         await this.db
             .update(chatMessages)
             .set({ status: 'superseded' })
             .where(
                 and(
                     eq(chatMessages.conversationId, conversationId),
-                    gte(chatMessages.seq, lastUser.seq + 1)
+                    gte(chatMessages.seq, lastUserSeq + 1)
                 )
             );
-        return lastUser.seq;
+        return lastUserSeq;
     }
 
     /**
-     * NOT owner-scoped — see the class doc. edit: hard-delete from `seq`
-     * (the edited user row) onward and recount. No-ops for a malformed
-     * `conversationId`.
+     * 소유자 범위가 아니다(클래스 문서 참고). edit: `seq`(편집한 user 행)부터 뒤를 하드 삭제하고
+     * `message_count`를 다시 센다. 형식이 틀린 `conversationId`는 no-op.
      */
     async deleteFromSeq(conversationId: string, seq: number): Promise<void> {
         if (!isValidUuid(conversationId)) return;
@@ -292,13 +275,12 @@ export class DrizzleChatConversationRepository {
                     gte(chatMessages.seq, seq)
                 )
             );
-        // Same idempotent COUNT recompute as `appendMessages` — no separate
-        // SELECT-then-write-back round trip, and no risk of the two steps
-        // observing different data under concurrent writes.
+        // 삭제와 재계산을 한 문장으로 묶지 못하지만, 재계산이 COUNT라 동시 쓰기가 있어도 마지막
+        // 실행이 항상 현재 행 수로 수렴한다.
         await this.db
             .update(chatConversations)
             .set({
-                messageCount: sql`(select count(*) from ${chatMessages} where ${chatMessages.conversationId} = ${conversationId})`,
+                messageCount: messageCountSql(conversationId),
                 updatedAt: new Date(),
             })
             .where(eq(chatConversations.id, conversationId));

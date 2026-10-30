@@ -116,7 +116,7 @@ vi.mock(
 const { mockResolveHoldingPositionBucket } = vi.hoisted(() => ({
     mockResolveHoldingPositionBucket: vi.fn(),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: mockResolveHoldingPositionBucket,
 }));
 

@@ -20,8 +20,8 @@ interface UseDialogReturn {
 /**
  * 네이티브 `<dialog>` 모달 제어.
  *
- * 예전에는 div + role="dialog"에 포커스 트랩(useFocusTrap) · Esc(useEscapeKey) ·
- * 바깥 클릭(useOnClickOutside)을 직접 붙였다. `showModal()`로 열면 그 셋이 전부
+ * div + role="dialog"에 포커스 트랩(useFocusTrap) · Esc(useEscapeKey) · 바깥
+ * 클릭(useOnClickOutside)을 직접 붙이는 대신 `showModal()`로 연다. 그러면 그 셋이 전부
  * 브라우저 기본 동작으로 대체된다 — 포커스는 다이얼로그 안에 갇히고, Esc는 close를
  * 발생시키며, ::backdrop이 하위 콘텐츠를 비활성화한다. 직접 구현한 트랩이 어긋나
  * 키보드 사용자가 모달 밖으로 탭 아웃되는 부류의 버그가 구조적으로 사라진다.

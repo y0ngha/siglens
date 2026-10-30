@@ -6,6 +6,7 @@ import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 import { quoteFromBars, type WatchlistQuote } from '../lib/quoteFromBars';
 
+/** 행 하나의 시세 상태. `isSettled` 전에는 자리표시자를 그린다. */
 export interface UseWatchlistQuoteResult {
     quote: WatchlistQuote | null;
     /** 요청이 끝났는가(성공·실패 모두). `enabled`가 false면 false. */
