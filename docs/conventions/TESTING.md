@@ -516,6 +516,7 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 - ❌ A cache's fetch window is widened and its fingerprint input changed with no test on either, or a flag that must be set only after the primary write succeeds has no test where that write fails. ✅ Assert the window width and the fingerprint input, and assert the flag is absent when the primary step fails, so moving the mark earlier or reverting the change fails the test.
 - ❌ A test mocks the collaborator that holds the behaviour under test (the function computing the value, the predicate deciding the branch) and asserts only the mock's canned output, so the production logic could be deleted. ✅ Mock only the I/O boundary, run the real derivation, and assert on values that differ per branch.
 - ❌ After renaming a cache key, a negative assertion still checks the old key (`store.has('old:KEY') === false`), which passes on any implementation. ✅ Point it at the key the code now writes, and add a test that flips when a deliberately changed guard (for example, caching a partial result) is reverted.
+- ❌ An "unsubscribes on unmount" hook test asserts on `renderHook`'s `result.current` after `unmount()`; the result stops updating after unmount, so the assertion passes whether or not cleanup runs. ✅ Spy on the unsubscribe function (or the underlying subscription) and assert it was called on unmount.
 
 <a id="TE-54"></a>
 
