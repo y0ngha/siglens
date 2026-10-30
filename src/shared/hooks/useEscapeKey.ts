@@ -2,6 +2,9 @@
 
 import { useEffect, useEffectEvent } from 'react';
 
+/**
+ * `enabled`인 동안 `Escape`를 누르면 `onEscape`를 부른다. IME 조합 중의 `Escape`는 무시한다.
+ */
 export function useEscapeKey(onEscape: () => void, enabled: boolean): void {
     const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
         // 한글 조합 중의 Escape는 IME의 **취소 키**다. 그대로 닫으면 반쯤 조합한

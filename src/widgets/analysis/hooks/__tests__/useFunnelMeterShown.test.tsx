@@ -13,7 +13,7 @@ vi.mock('@/shared/lib/funnel/meterShownDedupe', () => ({
     claimMeterShown: claim,
 }));
 
-import { useFunnelMeterShown } from '@/shared/hooks/useFunnelMeterShown';
+import { useFunnelMeterShown } from '../useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 
 function Probe({
