@@ -1,52 +1,25 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { getAgentSuggestions } from '@/entities/agent-suggestions/api';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
-import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { getDatabaseClient } from '@/shared/db/client';
-import { localePath, resolveLocale, type Locale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { enterLocale } from '@/shared/lib/enterLocale';
 import { SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
-import {
-    buildAiHomeJsonLd,
-    buildAiHomeMetadata,
-    type AiSeoCopy,
-} from './aiSeo';
-import { maybeHandoffRedirect } from './handoffRedirect';
-import { enterLocale } from '@/shared/lib/enterLocale';
+import { buildAiHomeJsonLd, buildAiHomeMetadata } from './_lib/aiSeo';
+import { maybeHandoffRedirect } from './_lib/handoffRedirect';
+import { draftFrom } from './_lib/homeDraft';
+import { getAiHomeSeoCopy, loadAiHomeSuggestions } from './_lib/homeLoaders';
+import { localePrefixOf } from './_lib/localePrefix';
 
 /**
- * Deliberately no `loading.tsx` for this route. With one, the streamed
- * response's visible HTML was only a loading skeleton — the whole landing
- * body (guide, FAQ, examples) sat in a hidden `<div hidden id="S:…">` chunk
- * that JS swapped in later, so non-JS crawlers and `curl` only ever saw a
- * skeleton (verified 2026-09-14 on production). The remaining awaits below
- * (session, conversation list, SEO copy) are fast; the slow part (AI
- * suggestions, LLM up to 8s) streams inside `EmptyState`'s own Suspense
- * boundary instead.
+ * 이 라우트에는 의도적으로 `loading.tsx`가 없다. 있으면 스트리밍 응답의 보이는 HTML이
+ * 로딩 스켈레톤뿐이고 랜딩 본문(가이드·FAQ·예시)이 JS가 나중에 바꿔 끼우는
+ * `<div hidden id="S:…">` 청크에 들어가, JS 없는 크롤러와 `curl`은 스켈레톤만 봤다(프로덕션
+ * 실측). 아래의 나머지 await(세션·대화 목록·SEO 문구)는 빠르고, 느린 부분(AI 제안, LLM 최대
+ * 8초)은 `EmptyState` 자체의 Suspense 경계 안에서 스트리밍된다.
  */
 export const dynamic = 'force-dynamic';
-
-/** Entry links from siglens.io prefill the composer with `?q=`. */
-const DRAFT_MAX_CHARS = 500;
-function draftFrom(
-    sp: Record<string, string | string[] | undefined>
-): string | undefined {
-    return typeof sp.q === 'string' && sp.q.trim()
-        ? sp.q.trim().slice(0, DRAFT_MAX_CHARS)
-        : undefined;
-}
-
-async function seoCopy(locale: Locale): Promise<AiSeoCopy> {
-    const t = await getTranslations({ locale, namespace: 'app.ai' });
-    return {
-        title: t('seo.title'),
-        description: t('seo.description'),
-        ogLabel: t('seo.ogLabel'),
-    };
-}
 
 export async function generateMetadata({
     params,
@@ -55,25 +28,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale: raw } = await params;
     const locale = resolveLocale(raw);
-    return buildAiHomeMetadata(locale, await seoCopy(locale));
-}
-
-/**
- * AI-generated empty-screen suggestions (spec §4-3) — portfolio symbols feed
- * the prompt exactly like the chat turn itself does in `stream/route.ts`.
- * Guests never reach this (no `user`), so they always get the static
- * fallback `EmptyState` already renders.
- */
-async function loadSuggestions(
-    userId: string,
-    locale: Locale
-): Promise<string[] | null> {
-    const portfolioSymbols = (
-        await new DrizzlePortfolioRepository(getDatabaseClient().db).findByUser(
-            userId
-        )
-    ).map(h => h.symbol);
-    return getAgentSuggestions({ locale, userId, portfolioSymbols });
+    return buildAiHomeMetadata(locale, await getAiHomeSeoCopy(locale));
 }
 
 export default async function AiHomePage({
@@ -90,20 +45,14 @@ export default async function AiHomePage({
     const sp = await searchParams;
     await maybeHandoffRedirect(locale, '/', sp);
     const user = await getCurrentUser();
-    // Suggestions are handed down unawaited: a cache miss generates them with an
-    // LLM (up to 8s), and awaiting here held back the whole landing — the body then
-    // streamed in a hidden chunk behind a skeleton, which non-JS crawlers never see.
-    const suggestions = user
-        ? loadSuggestions(user.id, locale).catch(error => {
-              console.error('[AiHomePage] loadSuggestions failed:', error);
-              return null;
-          })
-        : null;
+    // 제안은 await 없이 내려보낸다: 캐시 미스면 LLM이 만들어(최대 8초) 여기서 기다리면
+    // 랜딩 전체가 막히고, 본문이 스켈레톤 뒤 숨김 청크로 스트리밍돼 JS 없는 크롤러가 못 본다.
+    const suggestions = user ? loadAiHomeSuggestions(user.id, locale) : null;
     const [conversations, copy] = await Promise.all([
         user ? listConversationsAction() : Promise.resolve([]),
-        seoCopy(locale),
+        getAiHomeSeoCopy(locale),
     ]);
-    const localePrefix = localePath(locale, '').replace(/\/$/, '');
+    const localePrefix = localePrefixOf(locale);
     return (
         <>
             <JsonLd data={buildAiHomeJsonLd(locale, copy)} />

@@ -1,22 +1,19 @@
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import {
     clampSeoDescription,
     clampSeoTitle,
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
+} from '@/shared/lib/seoClamp';
+import { type SeoTranslator } from '@/shared/lib/seo';
 
 /**
  * 레이아웃 template이 뒤에 붙이는 사이트 접미사의 폭. **예산에서 먼저 뺀다.**
  *
- * 이걸 빼지 않으면 `clampSeoTitle`이 접미사 없는 문자열을 재고, 실제 SERP에 나가는
- * 것은 접미사가 붙은 쪽이라 가드가 통째로 무의미해진다 — 옛 꼬리표로 만든
- * `한국 증시 뉴스 — 최신 시장 흐름과 AI 다이제스트`는 그 자체로는 47이라 상한 55를
- * 통과하지만, `| SIGLENS`(폭 10)까지 더하면 57로 넘는다.
- *
- * 접미사는 로케일마다 다르다(ko `| 시그렌즈` 폭 11, 그 외 `| SIGLENS` 폭 10 —
- * `brandTitle`). 이 함수는 로케일을 받지 않으므로 넓은 쪽으로 예산을 잡는다.
+ * 이걸 빼지 않으면 `clampSeoTitle`이 접미사 없는 문자열을 재는데 실제 SERP에 나가는
+ * 것은 접미사가 붙은 쪽이라 상한 검사가 무의미해진다. 접미사는 로케일마다 다르고
+ * (`brandTitle`: ko `| 시그렌즈`, 그 외 `| SIGLENS`) 제목 빌더는 로케일을 받지 않으므로
+ * 넓은 쪽으로 예산을 잡는다.
  */
 const SITE_SUFFIX_WIDTH = Math.max(
     seoTitleWidth(` | ${SITE_NAME}`),
@@ -24,27 +21,17 @@ const SITE_SUFFIX_WIDTH = Math.max(
 );
 
 /**
- * Single source for the category page title string.
- * Used by both `generateMetadata` and the JSON-LD WebPage block so that
- * metadata.title, og.title, and schema.org name are always identical.
+ * 카테고리 페이지 제목의 단일 소스 — `generateMetadata`와 JSON-LD WebPage가 함께 써서
+ * `metadata.title`·`og:title`·schema.org `name`이 항상 같다.
  *
- * `label`은 호출부가 이미 로케일에 맞게 번역한 카테고리명이다
- * (`entities.market-news.category.<id>.label` — `CATEGORY_CONFIG.labelKey`).
+ * `label`은 호출부가 이미 로케일에 맞게 번역한 카테고리명이다(`CATEGORY_CONFIG.labelKey`).
  */
 export function buildCategoryPageTitle(
     label: string,
     t: SeoTranslator
 ): string {
-    /*
-     * 꼬리표를 `— 최신 시장 흐름과 AI 다이제스트`에서 줄였다.
-     *
-     * 라벨 길이가 카테고리마다 달라서(`미국 마켓 아티클` vs `미국 주식`) 긴 꼬리표를
-     * 붙이면 폭 예산을 넘는 조합이 생긴다. 실측(접미사 `| SIGLENS` 포함, ko 접미사는 폭이 1 더 넓다):
-     * 옛 꼬리표는 6개 카테고리가 56~64로 **전부** 상한 55를 넘었고, 지금은 45~53이다.
-     *
-     * clamp도 남겨 둔다 — 나중에 라벨이 더 긴 카테고리가 붙어도 잘려 나가지
-     * 통째로 넘치지는 않게.
-     */
+    // 라벨 길이가 카테고리마다 달라(`미국 마켓 아티클` vs `미국 주식`) 꼬리표는 짧게 두고,
+    // 더 긴 라벨이 붙어도 통째로 넘치지 않게 clamp로 자른다.
     return clampSeoTitle(
         t('newsCategory.titleTemplate', { label }),
         SEO_TITLE_MAX_WIDTH - SITE_SUFFIX_WIDTH
@@ -52,16 +39,12 @@ export function buildCategoryPageTitle(
 }
 
 /**
- * Single source for the category page description.
- * `clampSeoDescription` is applied here so every consumer (metadata, JSON-LD)
- * receives the already-clamped form — no risk of differing truncation.
+ * 카테고리 페이지 설명의 단일 소스. 여기서 `clampSeoDescription`을 거쳐 metadata·JSON-LD가
+ * 같은 잘린 형태를 받는다.
  *
- * **앞머리는 카테고리 고유 문장이다.** 예전에는 템플릿 하나에 라벨만 갈아 끼워서
- * 색인 대상 5개의 설명이 사실상 같았다(2026-09-18 운영 실측: `{라벨} 분야의 최신
- * 뉴스를…`로 시작하는 문장이 5개 카테고리에 동일). 화면 본문이 이미 카테고리마다
- * 다른 소개 문장(`CATEGORY_CONFIG.descriptionKey`)을 네 로케일로 갖고 있으므로,
- * 새 문구를 쓰지 않고 그것을 앞에 둔다 — 설명이 서로 달라지고, 화면과 메타가 같은
- * 말을 하게 된다.
+ * **앞머리는 카테고리 고유 소개 문장이다**(`CATEGORY_CONFIG.descriptionKey`, 화면 본문과
+ * 같은 문장). 템플릿에 라벨만 갈아 끼우면 카테고리들의 설명이 같은 문장으로 시작해 서로
+ * 구분되지 않는다.
  */
 export function buildCategoryPageDescription(
     categoryIntro: string,

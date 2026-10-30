@@ -18,7 +18,7 @@ vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
     }),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -39,7 +39,7 @@ const { getAssetInfo, resolveMarketProfile, getQuote } = vi.hoisted(() => ({
     resolveMarketProfile: vi.fn(),
     getQuote: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({ getAssetInfo }));
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({ getAssetInfo }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile,
 }));
@@ -57,7 +57,7 @@ import {
     type RunFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { runFundamentalAnalysisAction } from '../actions/runFundamentalAnalysisAction';

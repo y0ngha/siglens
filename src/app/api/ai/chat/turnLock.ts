@@ -24,7 +24,7 @@ const RELEASE_LOCK_SCRIPT =
  */
 export const TURN_LOCK_TTL_SECONDS = 720;
 
-/** Same marker core logs for counter-store outages; spec §12 alarms on it. */
+/** Same marker core logs for counter-store outages; an alarm keys on it. */
 const STORE_UNAVAILABLE_LOG = '[agent] quota store unavailable';
 
 export interface TurnLock {
@@ -32,7 +32,7 @@ export interface TurnLock {
 }
 
 /**
- * One in-flight agent turn per user across instances (spec §4-5).
+ * One in-flight agent turn per user across instances.
  * Fail-closed: returns `null` when Redis is unconfigured, the lock is
  * already held, or the SET call errors.
  */

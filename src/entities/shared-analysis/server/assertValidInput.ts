@@ -1,27 +1,22 @@
 import { SHAREABLE_KIND_VALUES, USER_TIER_VALUES } from '@/shared/db/constants';
+import { isRecord } from '@/shared/lib/isRecord';
 import type { CreateShareInput } from '../types';
 import { MAX_CHART_BARS } from '../types';
 
-function isNonEmptyString(v: unknown): v is string {
-    return typeof v === 'string' && v.length > 0;
-}
-
 /**
- * Maximum UTF-8 byte length allowed for the `result` field in a share snapshot.
- * 64 KB is comfortably above the largest legitimate analysis response while
- * blocking pathological payloads that would bloat the shared_analyses jsonb column.
+ * `result` 필드의 UTF-8 바이트 길이 상한.
+ * 64 KB는 가장 큰 정상 분석 응답보다 넉넉히 크면서, shared_analyses jsonb 컬럼을
+ * 부풀리는 비정상 페이로드는 막는다.
  *
- * Measured with `Buffer.byteLength(..., 'utf8')` rather than
- * `JSON.stringify(...).length` to correctly account for multibyte characters
- * (e.g. Korean text) that occupy 3 bytes each in UTF-8 but only 1 UTF-16 code
- * unit — which the `.length` property returns.
+ * 한국어처럼 UTF-8에서 3바이트인 문자가 UTF-16 코드 유닛 1개로 세어지므로
+ * `JSON.stringify(...).length`가 아니라 `Buffer.byteLength(..., 'utf8')`로 잰다.
  */
 export const MAX_RESULT_BYTES = 65_536;
 
 /**
- * Maximum byte length for `context.displayName` and `context.assetClass`.
- * Prevents bypassing the MAX_RESULT_BYTES guard by stuffing large payloads
- * into string context fields that are not covered by the `result` size check.
+ * `context.displayName`·`context.assetClass`의 길이 상한.
+ * `result` 크기 검사가 닿지 않는 컨텍스트 문자열에 큰 페이로드를 숨겨
+ * MAX_RESULT_BYTES를 우회하는 것을 막는다.
  */
 export const MAX_DISPLAY_NAME_LENGTH = 128;
 
@@ -37,90 +32,91 @@ export const MAX_DISPLAY_NAME_LENGTH = 128;
  */
 export const MAX_PLAIN_BYTES = 32_768;
 
-/**
- * Returns true when the value is a valid OHLCV Bar element.
- *
- * `time`, `open`, `high`, `low`, and `close` must all be finite numbers.
- * `volume` is optional in the Bar type (`vwap` is also optional and ignored
- * here), but when present it must also be a finite number.
- */
-function isValidBar(v: unknown): boolean {
-    if (typeof v !== 'object' || v === null) return false;
-    // guarded by the typeof + null check just above; safe to index as a plain object map
-    const b = v as Record<string, unknown>;
-    const requiredNumeric: (keyof typeof b)[] = [
-        'time',
-        'open',
-        'high',
-        'low',
-        'close',
-    ];
-    for (const key of requiredNumeric) {
-        if (typeof b[key] !== 'number' || !Number.isFinite(b[key] as number))
-            return false;
-    }
-    // volume is required in Bar but checking presence defensively.
-    if (b.volume !== undefined) {
-        if (
-            typeof b.volume !== 'number' ||
-            !Number.isFinite(b.volume as number)
-        )
-            return false;
-    }
-    return true;
+const MAX_SYMBOL_LENGTH = 32;
+
+const REQUIRED_BAR_NUMERIC_KEYS = ['time', 'open', 'high', 'low', 'close'];
+
+function isNonEmptyString(v: unknown): v is string {
+    return typeof v === 'string' && v.length > 0;
 }
 
-/** 클라가 전달한 공유 입력의 형태를 검증한다(내용 신뢰 X, 형태만). */
+function isFiniteNumber(v: unknown): boolean {
+    return typeof v === 'number' && Number.isFinite(v);
+}
+
+/** 선택 문자열 필드: 없으면 통과, 있으면 문자열이고 길이 상한 이하여야 한다. */
+function isOptionalBoundedString(v: unknown): boolean {
+    if (v === undefined) return true;
+    return typeof v === 'string' && v.length <= MAX_DISPLAY_NAME_LENGTH;
+}
+
+/**
+ * OHLCV Bar 원소인지 확인한다. `time`·`open`·`high`·`low`·`close`는 유한한 숫자여야
+ * 하고, `volume`은 Bar 타입에서 선택이지만 있으면 유한한 숫자여야 한다(`vwap`은 무시).
+ */
+function isValidBar(v: unknown): boolean {
+    if (!isRecord(v)) return false;
+    if (!REQUIRED_BAR_NUMERIC_KEYS.every(key => isFiniteNumber(v[key])))
+        return false;
+    return v.volume === undefined || isFiniteNumber(v.volume);
+}
+
+function isValidContext(ctx: unknown): boolean {
+    if (!isRecord(ctx)) return false;
+    return (
+        isNonEmptyString(ctx.displayName) &&
+        ctx.displayName.length <= MAX_DISPLAY_NAME_LENGTH &&
+        isOptionalBoundedString(ctx.assetClass) &&
+        isOptionalBoundedString(ctx.analyzedAt)
+    );
+}
+
+/** chartBars는 chart kind에만 허용되고, 비어 있지 않으며 개수 상한 이하의 유효 Bar 배열이어야 한다. */
+function isValidChartBars(kind: unknown, bars: unknown): boolean {
+    if (kind !== 'chart') return false;
+    if (!Array.isArray(bars)) return false;
+    if (bars.length === 0 || bars.length > MAX_CHART_BARS) return false;
+    return bars.every(isValidBar);
+}
+
+/**
+ * 공백만 있는 값도 거부한다. 클라이언트가 이미 trim으로 거르지만 신뢰 경계는
+ * 여기다 — 통과하면 뷰어에 빈 쉽게보기 화면이 뜬다. 내용은 파싱하지 않고 텍스트로만 렌더된다.
+ */
+function isValidPlain(plain: unknown): boolean {
+    if (!isNonEmptyString(plain) || plain.trim().length === 0) return false;
+    return Buffer.byteLength(plain, 'utf8') <= MAX_PLAIN_BYTES;
+}
+
+/**
+ * 클라가 전달한 공유 입력의 형태를 검증한다(내용 신뢰 X, 형태만).
+ * `createShareSnapshotAction`의 첫 관문이다.
+ */
 export function isValidShareInput(raw: unknown): raw is CreateShareInput {
-    if (typeof raw !== 'object' || raw === null) return false;
-    // guarded by the typeof + null check just above; safe to index as a plain object map
-    const o = raw as Record<string, unknown>;
+    if (!isRecord(raw)) return false;
     if (
-        // const arrays widened to readonly string[] so .includes() accepts a plain string argument
-        !(SHAREABLE_KIND_VALUES as readonly string[]).includes(o.kind as string)
+        typeof raw.kind !== 'string' ||
+        // readonly 튜플을 string[]으로 넓혀야 임의 string을 includes에 넘길 수 있다
+        !(SHAREABLE_KIND_VALUES as readonly string[]).includes(raw.kind)
     )
         return false;
-    if (!isNonEmptyString(o.symbol) || (o.symbol as string).length > 32)
+    if (!isNonEmptyString(raw.symbol) || raw.symbol.length > MAX_SYMBOL_LENGTH)
         return false;
-    if (typeof o.context !== 'object' || o.context === null) return false;
-    const ctx = o.context as Record<string, unknown>;
-    if (!isNonEmptyString(ctx.displayName)) return false;
-    if ((ctx.displayName as string).length > MAX_DISPLAY_NAME_LENGTH)
-        return false;
-    // assetClass is optional; when present it must be a string within the length cap.
-    if (ctx.assetClass !== undefined) {
-        if (typeof ctx.assetClass !== 'string') return false;
-        if ((ctx.assetClass as string).length > MAX_DISPLAY_NAME_LENGTH)
-            return false;
-    }
-    if (typeof o.result !== 'object' || o.result === null) return false;
-    if (Buffer.byteLength(JSON.stringify(o.result), 'utf8') > MAX_RESULT_BYTES)
-        return false;
+    if (!isValidContext(raw.context)) return false;
+    if (!isRecord(raw.result)) return false;
     if (
-        // const array widened to readonly string[] so .includes() accepts a plain string argument
-        !(USER_TIER_VALUES as readonly string[]).includes(
-            o.sharerTier as string
-        )
+        Buffer.byteLength(JSON.stringify(raw.result), 'utf8') > MAX_RESULT_BYTES
     )
         return false;
-    // chartBars is optional; when present (chart kind), it must be a non-empty
-    // array within the count cap where every element has valid Bar shape.
-    // Non-chart kinds must not include chartBars.
-    if (o.chartBars !== undefined) {
-        if (o.kind !== 'chart') return false;
-        if (!Array.isArray(o.chartBars)) return false;
-        if (o.chartBars.length === 0 || o.chartBars.length > MAX_CHART_BARS)
-            return false;
-        if (!o.chartBars.every(isValidBar)) return false;
-    }
-    // plain is optional; when present it must be a non-empty string within the
-    // byte cap. Contents are not trusted or parsed — it is rendered as text.
-    if (o.plain !== undefined) {
-        // 공백만 있는 값도 거부한다. 클라이언트가 이미 trim으로 거르지만
-        // 신뢰 경계는 여기다 — 통과하면 뷰어에 빈 쉽게보기 화면이 뜬다.
-        if (!isNonEmptyString(o.plain) || o.plain.trim().length === 0)
-            return false;
-        if (Buffer.byteLength(o.plain, 'utf8') > MAX_PLAIN_BYTES) return false;
-    }
-    return true;
+    if (
+        typeof raw.sharerTier !== 'string' ||
+        !(USER_TIER_VALUES as readonly string[]).includes(raw.sharerTier)
+    )
+        return false;
+    if (
+        raw.chartBars !== undefined &&
+        !isValidChartBars(raw.kind, raw.chartBars)
+    )
+        return false;
+    return raw.plain === undefined || isValidPlain(raw.plain);
 }

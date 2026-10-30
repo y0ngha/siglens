@@ -5,7 +5,7 @@ vi.mock('next-intl/server', async () => {
         await import('@/shared/test-utils/catalogTranslator');
     return nextIntlServerStub();
 });
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -19,9 +19,9 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
 }));
 
 import { revalidatePath } from 'next/cache';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { createSiglensApiKeyAction } from '@/entities/siglens-api-key/actions/createSiglensApiKeyAction';
-import { hashApiKey } from '@/entities/siglens-api-key/lib/apiKeyToken';
+import { hashApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import type { CreateSiglensApiKeyState } from '@/entities/siglens-api-key/model';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,

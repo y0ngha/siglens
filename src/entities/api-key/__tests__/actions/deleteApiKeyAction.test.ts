@@ -13,7 +13,7 @@ vi.mock('next-intl/server', async () => {
         await import('@/shared/test-utils/catalogTranslator');
     return nextIntlServerStub();
 });
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -35,7 +35,7 @@ vi.mock('@/entities/api-key/api', () => ({
     }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
@@ -99,6 +99,31 @@ describe('deleteApiKeyAction', () => {
         );
 
         expect(result.status).toBe('error');
+    });
+
+    it('DB 삭제 실패 시 원인을 정제해(name·code만) 남긴다', async () => {
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const failure = Object.assign(new Error('params: ciphertext-abc'), {
+            cause: { code: '08006' },
+        });
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+        mockDeleteByUserAndProvider.mockRejectedValue(failure);
+
+        await deleteApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic' })
+        );
+
+        expect(consoleError).toHaveBeenCalledWith(
+            '[deleteApiKeyAction] Failed to delete user API key',
+            { name: 'Error', code: '08006' }
+        );
+        consoleError.mockRestore();
     });
 
     it('DB 삭제 실패 시 status: error를 반환한다', async () => {

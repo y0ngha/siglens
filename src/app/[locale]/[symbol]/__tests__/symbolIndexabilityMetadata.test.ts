@@ -13,14 +13,14 @@ vi.mock(
     })
 );
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
-import type { SymbolSeoTab } from '@/shared/lib/seo';
+import type { SymbolSeoTab } from '@/shared/lib/seoSymbol';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Metadata } from 'next';
 

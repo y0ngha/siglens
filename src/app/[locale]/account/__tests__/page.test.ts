@@ -8,7 +8,7 @@ vi.mock(
 vi.mock('@/entities/siglens-api-key/actions/listSiglensApiKeysAction', () => ({
     listSiglensApiKeysAction: vi.fn(),
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/entities/api-key/actions/getRegisteredProvidersAction', () => ({

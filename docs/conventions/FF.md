@@ -5,7 +5,7 @@ Good frontend code is **code that is easy to modify**.
 
 **Rule IDs.** Principles below are positional (`1-E`, `2-C` …) and may be renumbered as the document grows.
 Rules added from review findings carry a stable, never-renumbered ID (`FF-N`) with an anchor, and are cited as
-`FF.md#FF-N`. Other docs use their own prefixes: `CONVENTIONS.md` (CP/TS/NC/CM/CS/I18), `REACT.md` (HK/CR/AX/EF/LW/TW/RQ), `SERVER.md` (SA/CC/DC/DB),
+`FF.md#FF-N`. Other docs use their own prefixes: `CONVENTIONS.md` (CP/TS/NC/CM/CS), `I18N.md` (I18), `REACT.md` (HK/CR/AX/EF/LW/TW/RQ), `SERVER.md` (SA/CC/DC/DB),
 `TESTING.md` (TE), `DESIGN.md` (DS), `TOOLCHAIN.md` (TC), `GIT_CONVENTIONS.md` (GC).
 
 ---
@@ -394,6 +394,17 @@ const PANEL_AXIS_OFFSET_CLASS = 'lg:right-60';
 - Related data keyed by the same dimension belongs in one structure. ❌ `CONFIG = { level: [...], icon: [...] }` plus
   `TOOLTIP = { level: [...], text: [...] }` → ✅ `BADGE_DATA = { level: [{ icon, tooltip }, ...] }`. Adding a level then touches one constant.
 - Constants with different purposes or owners go into separate modules. ❌ SEO metadata and legal disclaimers in one file → ✅ one module each.
+
+<a id="FF-9"></a>
+
+#### FF-9 — Fields that must agree are derived from one value
+
+When a view model or component needs several facts that must always agree (a direction, its sign and its colour; a
+`linkable` flag and its `href`), compute them all from one source value and one predicate. Using the raw value for some
+and a rounded or differently-tested value for others lets them disagree (a flat move shown as up or down).
+
+- ❌ Sign and colour from `change > 0`, flatness from `Math.round(change) === 0`.
+- ✅ One `direction` ('up' | 'down' | 'flat') derived once; sign, colour and label are looked up from it.
 
 ### 3-C. Match form cohesion to the unit of change
 

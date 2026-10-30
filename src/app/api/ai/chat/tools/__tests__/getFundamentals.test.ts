@@ -42,7 +42,7 @@ vi.mock('@/entities/ticker/api', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile,
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
 // `isKrEquitySymbol` is real (via `importOriginal`) — `getFundamentals.ts`
@@ -73,7 +73,7 @@ vi.mock('@/entities/earnings-report/api', () => ({
 vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
     getFinancialStatementsProvider: () => ({ getIncomeStatements }),
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
 }));
 vi.mock('@/app/api/ai/chat/tools/dividends', async importOriginal => ({

@@ -1,27 +1,31 @@
 'use server';
 
-import type { Locale } from '@/shared/i18n/locales';
 import {
     type SubmitOverallAnalysisOptions,
     type RunOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { isE2E } from '@/shared/api/e2eEnv';
+import type { Locale } from '@/shared/i18n/locales';
+import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
+import { buildGateError, resolveTierAndByok } from '@/shared/lib/byokGate';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import {
     executeOverallAnalysis,
     type SubmitOverallAnalysisActionOptions,
-} from '@/entities/analysis/server/overallAnalysisRunner';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
-import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isE2E } from '@/shared/api/e2eEnv';
-import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+} from '../server/overallAnalysisRunner';
 
-/** Final return type — core's overall result + our siglens-side gate errors. */
+/** core의 종합 분석 결과에 siglens 쪽 게이트 거부를 더한 최종 반환 타입. */
 export type RunOverallAnalysisActionResult =
     | RunOverallAnalysisResult
     | AnalysisGateBlockedResult;
 
-/** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | done | error`. */
+/**
+ * Server Action: tier·BYOK 게이트를 거쳐 4축 종합 분석 job을 제출한다. 입력 조립(DB의
+ * 뉴스·실적, 옵션 스냅샷, FMP provider)은 `executeOverallAnalysis`가 맡는다.
+ * `cached | done | error`를 돌려준다.
+ */
 export async function runOverallAnalysisAction(
     symbol: string,
     companyName: string,
@@ -37,12 +41,11 @@ export async function runOverallAnalysisAction(
     signal?: AbortSignal
 ): Promise<RunOverallAnalysisActionResult> {
     try {
-        // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
-        // (see e2eAnalysisStub). The stub + JSON fixture load via a DYNAMIC import
-        // under the inline E2E guard so they sit in a lazy chunk (not the prod main
-        // bundle) and the branch stays resolvable by the vitest runner. Lives inside
-        // try so a load failure can't propagate to the client (mirrors
-        // SSE 분석 라우트의 technical 분기).
+        // E2E는 LLM/worker를 단락하고 결정적인 캐시 픽스처를 돌려준다(`e2eAnalysisStub`).
+        // 스텁과 JSON 픽스처는 인라인 E2E 가드 아래 동적 import로 불러 프로덕션 메인
+        // 번들이 아닌 지연 청크에 놓이게 하고, vitest 러너가 분기를 해석할 수 있게
+        // 한다. 로드 실패가 클라이언트로 전파되지 않도록 try 안에 둔다(SSE 분석
+        // 라우트의 technical 분기와 같다).
         if (isE2E()) {
             const { e2eCachedOverall } =
                 await import('@/shared/api/e2eAnalysisStub');

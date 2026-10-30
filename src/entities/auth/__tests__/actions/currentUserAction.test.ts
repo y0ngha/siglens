@@ -4,11 +4,11 @@ const { cookieStore } = vi.hoisted(() => ({
     cookieStore: { get: vi.fn(), set: vi.fn() },
 }));
 vi.mock('next/headers', () => ({ cookies: async () => cookieStore }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 
 const mockGet = getCurrentUser as MockedFunction<typeof getCurrentUser>;
@@ -18,6 +18,10 @@ describe('currentUserAction', () => {
         cookieStore.get.mockReset();
         cookieStore.set.mockReset();
         mockGet.mockReset();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('getCurrentUser 결과를 그대로 반환하고 쿠키는 건드리지 않는다', async () => {
@@ -62,5 +66,38 @@ describe('currentUserAction', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
         await expect(currentUserAction()).resolves.toBeNull();
         expect(cookieStore.set).not.toHaveBeenCalled();
+    });
+
+    it('DB 오류는 세션 토큰 원문을 로그에 남기지 않는다 — DrizzleQueryError 메시지·params·cause 모두', async () => {
+        const sentinel = 'SENTINEL-SESSION-TOKEN-0123456789abcdef';
+        const cause = Object.assign(new Error(`cause ${sentinel}`), {
+            code: '57P01',
+        });
+        const dbError = Object.assign(
+            new Error(
+                `Failed query: select "id" from "sessions" where "id" = $1\nparams: ${sentinel},1`,
+                { cause }
+            ),
+            { name: 'DrizzleQueryError', params: [sentinel, 1], cause }
+        );
+        mockGet.mockRejectedValue(dbError);
+        cookieStore.get.mockReturnValue({ value: sentinel });
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        await expect(currentUserAction()).resolves.toBeNull();
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[currentUserAction] unexpected error',
+            { name: 'DrizzleQueryError', code: '57P01' }
+        );
+        const logged = errorSpy.mock.calls
+            .flat()
+            .map(arg =>
+                typeof arg === 'string'
+                    ? arg
+                    : JSON.stringify(arg, Object.getOwnPropertyNames(arg ?? {}))
+            )
+            .join('\n');
+        expect(logged).not.toContain(sentinel);
     });
 });

@@ -5,6 +5,10 @@ import {
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';
+import type {
+    CardListPollPolicy,
+    EnrichableCard,
+} from '@/entities/news-article/model';
 
 /**
  * 뉴스 카드 보강 폴링의 **판정**만 담는다(종목 뉴스·마켓 뉴스 공용).
@@ -17,16 +21,11 @@ import {
  * (`onSettled`)가 자기 태그를 붙여 한다.
  */
 
-/** `sentiment`·`priceImpact`가 `null`이면 아직 AI 보강 전이다. */
-export interface EnrichableCard {
-    sentiment: unknown;
-    priceImpact: unknown;
-}
-
 export type CardPollOutcome<T> =
     | { ok: true; data: readonly T[] }
     | { ok: false; error: Error };
 
+/** 폴링 판정이 폴 사이에 넘겨받는 누적 상태. 호출부가 ref로 들고 있다가 `step.counters`로 갱신한다. */
 export interface CardPollCounters {
     pollCount: number;
     consecutiveFailures: number;
@@ -36,6 +35,7 @@ export interface CardPollCounters {
     stagnantPolls: number;
 }
 
+/** 폴링을 시작하거나 종목이 바뀔 때 쓰는 0 상태. */
 export const INITIAL_CARD_POLL_COUNTERS: CardPollCounters = {
     pollCount: 0,
     consecutiveFailures: 0,
@@ -43,31 +43,28 @@ export const INITIAL_CARD_POLL_COUNTERS: CardPollCounters = {
     stagnantPolls: 0,
 };
 
-export function hasPendingCard(items: readonly EnrichableCard[]): boolean {
-    return items.some(
-        item => item.sentiment === null || item.priceImpact === null
-    );
+/**
+ * 카드 하나가 아직 AI 보강 전인가 — `sentiment`·`priceImpact` 중 하나라도 `null`이면 대기다.
+ * 목록 폴러(`hasPendingCard`)와 위젯의 "보강 완료 수" 계산이 같은 정의를 쓰도록 단일 출처로 둔다.
+ * (정체 판정의 `hasAnyEnrichedCard`는 `sentiment`만 보는 더 느슨한 기준이며 별개다.)
+ */
+export function isCardPending(item: EnrichableCard): boolean {
+    return item.sentiment === null || item.priceImpact === null;
 }
 
+/** 목록에 보강 전 카드가 하나라도 있는가 — 있으면 폴링을 이어간다. */
+export function hasPendingCard(items: readonly EnrichableCard[]): boolean {
+    return items.some(isCardPending);
+}
+
+/** 보강된 카드가 하나라도 있는가 — 대기 폴러가 AI 집계 분석을 열 시점이다. */
 export function hasAnyEnrichedCard(
     items: readonly Pick<EnrichableCard, 'sentiment'>[]
 ): boolean {
     return items.some(item => item.sentiment !== null);
 }
 
-/** 목록 폴러의 호출부별 차이. */
-export interface CardListPollPolicy {
-    /**
-     * "전부 보강됨"으로 끝내고 스피너를 끄기 전에 지나야 하는 최소 폴 수. 종목 뉴스는 서버가
-     * 뒤에서 새 기사를 받아오는 중일 수 있어 몇 번은 더 확인한다. 마켓 뉴스는 `0`.
-     */
-    completeMinPolls: number;
-    /** 실패도 폴 수로 센다(종목 뉴스) — 실패만 이어지는 빈 목록이 상한까지 끌지 않게. */
-    errorsCountAsPolls: boolean;
-    /** 5분 상한으로 끝날 때도 완료 알림(`completedItems`)을 보낸다(종목 뉴스). */
-    completeOnTimeout: boolean;
-}
-
+/** {@link decideCardListPoll}이 돌려주는 다음 걸음. */
 export interface CardListPollStep<T> {
     counters: CardPollCounters;
     stop: boolean;
@@ -201,6 +198,7 @@ export interface CardWaitPollPolicy {
     timeoutIsError: boolean;
 }
 
+/** {@link decideCardWaitPoll}이 돌려주는 다음 걸음. */
 export interface CardWaitPollStep {
     counters: CardPollCounters;
     stop: boolean;

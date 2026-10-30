@@ -190,7 +190,7 @@ export function localeOpenGraph(
  * `STATIC_INDEXABLE_LOCALES`는 hreflang·sitemap alternates만 움직였고 `robots`는
  * 건드리지 않았다. 그래서 `/terms`·`/en/terms`·`/ja/terms`·`/zh/terms`가 전부
  * **각자 자기 자신을 canonical로 걸고 index:true**로 나갔다 — 제목·설명은 아직
- * 한국어(`shared/lib/seo.ts`는 미추출 문자열 1,649개 중 229개), 약관·정책 본문은
+ * 한국어(`shared/lib/seo.ts`·`seoSymbol.ts`의 카피), 약관·정책 본문은
  * DB의 한국어 원문. 2026-07 thin/duplicate content 붕괴와 정확히 같은 모양이
  * 언어 3개로 복제된다.
  *

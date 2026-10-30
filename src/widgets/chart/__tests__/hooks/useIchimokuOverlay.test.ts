@@ -214,4 +214,24 @@ describe('useIchimokuOverlay', () => {
         rerender();
         expect(result.current.toggle).toBe(firstToggle);
     });
+    // 값이 비면 이전 종목의 선과 봉만으로 계산되는 선행 구름까지 모두 비운다.
+    it('clears all seven series when ichimoku has no values', () => {
+        const chart = makeChart();
+        const { result } = renderHook(() =>
+            useIchimokuOverlay({
+                chartRef: makeChartRef(chart),
+                bars: FAKE_BARS,
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        mockSetData.mockClear();
+        act(() => {
+            result.current.toggle();
+        });
+
+        expect(mockSetData).toHaveBeenCalledTimes(7);
+        expect(
+            mockSetData.mock.calls.every(([data]) => data.length === 0)
+        ).toBe(true);
+    });
 });

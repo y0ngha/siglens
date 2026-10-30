@@ -5,8 +5,8 @@ import type {
 } from '@y0ngha/siglens-core';
 
 /**
- * What the widgets read from a snapshot. Both core snapshot types satisfy it;
- * `factors[].key` stays a plain string so labels are looked up per market.
+ * 위젯이 스냅샷에서 읽는 필드. core의 두 스냅샷 타입(시장·크립토)이 모두 만족한다.
+ * `factors[].key`를 평범한 문자열로 두어 라벨을 시장별로 찾는다.
  */
 export interface MarketFearGreedViewSnapshot {
     score: number;
@@ -21,41 +21,48 @@ export interface MarketFearGreedViewSnapshot {
     asOf: string;
 }
 
-/** The four lookbacks the page compares the current reading against. */
+/** 페이지가 현재 판독과 견주는 네 가지 과거 시점. */
 export type MarketFearGreedComparisonKey = 'now' | '1w' | '1m' | '1y';
 
-/** One historical reading, already resolved to a concrete session. */
+/** 구체적인 세션으로 이미 풀어낸 과거 판독 하나. */
 export interface MarketFearGreedComparisonPoint {
-    /** Which lookback this point answers. */
+    /** 이 점이 답하는 과거 시점. */
     key: MarketFearGreedComparisonKey;
-    /** ISO `YYYY-MM-DD` of the session actually used (may be clamped to the earliest available). */
+    /** 실제로 쓴 세션의 ISO `YYYY-MM-DD`. 이력이 짧으면 가장 이른 세션으로 당겨진다. */
     date: string;
-    /** Score in [0, 100]. */
+    /** [0, 100] 범위의 점수. */
     score: number;
-    /** Five-stage label for `score`. */
+    /** `score`의 5단계 라벨. */
     label: FearGreedLabel;
 }
 
 /**
- * Everything the market Fear & Greed page renders.
+ * 과거 판독 하나에 이력이 너무 짧아 닿지 못했는지를 더한 것. `clamped`이면 `date`는
+ * 요청한 과거 시점이 아니라 점수가 있는 가장 이른 세션이라, 호출자가 타일이 실제로 보여 주는
+ * 세션을 독자에게 알릴 수 있다.
+ */
+export interface FearGreedLookbackPoint extends MarketFearGreedComparisonPoint {
+    clamped: boolean;
+}
+
+/**
+ * 시장 공포·탐욕 페이지가 그리는 전부.
  *
- * The walk-forward history is *not* carried here: it runs to ~750 sessions and
- * the page only reads four of them, so it is reduced to `comparisons` at the
- * cache boundary rather than serialised into the RSC payload.
+ * walk-forward 이력은 여기에 싣지 않는다: ~750 세션에 달하는데 페이지는 그중 네 개만
+ * 읽으므로, RSC 페이로드로 직렬화하지 않고 캐시 경계에서 `comparisons`로 줄인다.
  *
- * Generic over the snapshot so the market (`MarketFearGreedSnapshot`) and crypto
- * (`CryptoFearGreedSnapshot`) readings render through the same widgets without
- * casts — the two share everything but the factor key set.
+ * 스냅샷에 대해 제네릭이라 시장(`MarketFearGreedSnapshot`)과 크립토(`CryptoFearGreedSnapshot`)
+ * 판독이 캐스트 없이 같은 위젯으로 렌더된다 — 둘은 요인 키 집합만 다르다.
  */
 export interface MarketFearGreedView<
     S extends MarketFearGreedViewSnapshot = MarketFearGreedSnapshot,
 > {
-    /** Latest reading, or `null` when the data is insufficient. */
+    /** 최신 판독. 데이터가 부족하면 `null`. */
     snapshot: S | null;
-    /** Current + 1 week / 1 month / 1 year ago, in that order. Empty when `snapshot` is `null`. */
+    /** 현재 + 1주·1개월·1년 전, 이 순서. `snapshot`이 `null`이면 빈 배열. */
     comparisons: MarketFearGreedComparisonPoint[];
 }
 
-/** Crypto reading: same view, crypto snapshot (six crypto factor keys). */
+/** 크립토 판독: 같은 뷰에 크립토 스냅샷(크립토 요인 키 여섯 개)을 끼운 형태. */
 export type MarketFearGreedCryptoView =
     MarketFearGreedView<CryptoFearGreedSnapshot>;

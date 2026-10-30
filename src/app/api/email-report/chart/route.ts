@@ -1,13 +1,11 @@
 import { constants } from 'node:http2';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
-import {
-    buildReportChartImage,
-    REPORT_CHART_MA_PERIODS,
-} from '@/entities/email-report/lib/buildReportChartImage';
 import { barsUpToDate } from '@/entities/email-report/lib/barsUpToDate';
+import { REPORT_CHART_MA_PERIODS } from '@/entities/email-report/lib/chartGeometry';
 import { chartSignatureValue } from '@/entities/email-report/lib/reportLinks';
 import { verifyReportValue } from '@/entities/email-report/lib/reportSignature';
+import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 

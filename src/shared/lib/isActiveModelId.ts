@@ -19,7 +19,7 @@ import { MODEL_SPECS } from '@y0ngha/siglens-core';
  * Extracted to `shared/lib` because it is used from two different entity
  * slices — `entities/llm-provider/api/router.ts` (`isActiveModelId` there
  * throws `[router] Unknown model` on a `false` result) and
- * `entities/ticker/lib/config.ts` (`isValidTranslateModel` layers a Gemini
+ * `entities/ticker/server/config.ts` (`isValidTranslateModel` layers a Gemini
  * provider + disabled-thinking check on top of this own-property check) — and
  * FSD forbids cross-slice imports between entities, so neither slice may
  * import the other's copy.

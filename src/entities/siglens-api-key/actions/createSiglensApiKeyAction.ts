@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
-import { generateApiKey } from '@/entities/siglens-api-key/lib/apiKeyToken';
 import { validateKeyName } from '@/entities/siglens-api-key/lib/validateKeyName';
 import type {
     CreateSiglensApiKeyState,
     ReachableSiglensApiKeyErrorCode,
 } from '@/entities/siglens-api-key/model';
+import { generateApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
     API_KEY_NAME_MAX_LENGTH,
@@ -27,7 +27,7 @@ const ERROR_MESSAGE_KEY: Record<ReachableSiglensApiKeyErrorCode, string> = {
     server_error: 'serverError',
 };
 
-/** ICU 인자(`{v0}`)로 넘기는 상한 — 카탈로그 문구에 숫자를 적지 않는다(CONVENTIONS.md#I18-6). */
+/** ICU 인자(`{v0}`)로 넘기는 상한 — 카탈로그 문구에 숫자를 적지 않는다(I18N.md#I18-6). */
 const ERROR_MESSAGE_VALUES: Partial<
     Record<ReachableSiglensApiKeyErrorCode, { v0: number }>
 > = {

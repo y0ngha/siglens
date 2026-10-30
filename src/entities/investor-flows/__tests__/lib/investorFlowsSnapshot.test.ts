@@ -1,28 +1,38 @@
 import { describe, expect, it } from 'vitest';
 import {
     assembleInvestorFlowsSnapshot,
+    type InvestorFlowsSnapshotInput,
+} from '../../lib/investorFlowsSnapshot';
+import {
     buildFailsToDeliver,
-    buildOfferings,
-    buildOptionQuarters,
-    buildProposedSales,
     buildThresholdList,
-    buildInsiderStats,
-    buildInsiderTransactions,
-    buildInstitutionalQuarters,
-    buildLargeHolders,
     buildShortInterest,
     buildShortVolume,
-    buildTopHolders,
-    inferLargeHolderForm,
-    mapInsiderTransactionType,
     SNAPSHOT_MAX_FTD_POINTS,
+} from '../../lib/snapshot/short';
+import {
+    buildOfferings,
+    buildProposedSales,
     SNAPSHOT_MAX_OFFERINGS,
     SNAPSHOT_MAX_PROPOSED_SALES,
+} from '../../lib/snapshot/filings';
+import {
+    buildOptionQuarters,
+    buildInstitutionalQuarters,
+    buildTopHolders,
     SNAPSHOT_MAX_QUARTERS,
     SNAPSHOT_MAX_TOP_HOLDERS,
     type AggregateRecord,
-    type InvestorFlowsSnapshotInput,
-} from '../../lib/investorFlowsSnapshot';
+} from '../../lib/snapshot/institutional';
+import {
+    buildInsiderStats,
+    buildInsiderTransactions,
+    mapInsiderTransactionType,
+} from '../../lib/snapshot/insider';
+import {
+    buildLargeHolders,
+    inferLargeHolderForm,
+} from '../../lib/snapshot/largeHolders';
 import type {
     OfferingRecord,
     OptionAggregateRecord,

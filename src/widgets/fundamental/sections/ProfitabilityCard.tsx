@@ -1,3 +1,6 @@
+/**
+ * 수익성 카드 — ROE·ROA·영업이익률·순이익률 막대.
+ */
 import { useTranslations } from 'next-intl';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
@@ -6,6 +9,10 @@ import type { CSSProperties, ReactNode } from 'react';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import {
+    formatRatioPercent,
+    ratioFillPercent,
+} from '@/widgets/fundamental/utils/ratioBar';
 
 const HEADING_ID = 'profitability-heading';
 const HEADING_CLASS_NAME = cn('mb-2', HEADING_SECTION);
@@ -21,12 +28,10 @@ interface MetricBarProps {
     tooltip?: ReactNode;
 }
 
+/** 비율 값과 0~100%로 제한한 채움 막대를 한 줄로 그린다. */
 function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
-    const displayValue = value !== null ? `${(value * 100).toFixed(1)}%` : '-';
-
-    // Clamp fill width 0–100% for progress bar visualisation (ratio expected 0–1)
-    const fillPct =
-        value !== null ? Math.min(100, Math.max(0, value * 100)) : 0;
+    const displayValue = formatRatioPercent(value);
+    const fillPct = ratioFillPercent(value);
 
     return (
         <div className="py-2.5">
@@ -64,6 +69,7 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
     );
 }
 
+/** 수익성 카드. 비율이 없으면 빈 카드를 그린다. */
 export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
     const t = useTranslations('widgets.fundamental');
     if (ratios === null) {

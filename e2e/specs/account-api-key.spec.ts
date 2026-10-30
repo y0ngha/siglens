@@ -3,23 +3,25 @@ import type { Locator, Page } from '@playwright/test';
 
 /**
  * Authed Tier 2 spec — exercises the BYOK API-key CRUD on /account
- * (features/api-key-management/ui/ApiKeySection.tsx) end to end against the real
- * local Postgres, with REAL AES-256-GCM encryption (LLM_API_KEY_ENCRYPTION_KEY
- * from .env.e2e) running in the save path.
+ * (features/api-key-management/ui/ApiKeySection.tsx, which renders one
+ * features/api-key-management/ui/ProviderCard.tsx per provider) end to end
+ * against the real local Postgres, with REAL AES-256-GCM encryption
+ * (LLM_API_KEY_ENCRYPTION_KEY from .env.e2e) running in the save path.
  *
  * Runs in the `authed` Playwright project: the shared storageState
  * (.auth/user.json, the seeded e2e-auth-user) authenticates the request through
- * proxy.ts and account/page.tsx's getCurrentUser re-check. This spec only
- * read/writes that user's `userApiKeys` rows — it never deletes the user — so it
- * leaves the shared storageState intact for the other account specs.
+ * proxy.ts and account/_components/AccountContent.tsx's getCurrentUser
+ * re-check. This spec only read/writes that user's `userApiKeys` rows — it
+ * never deletes the user — so it leaves the shared storageState intact for the
+ * other account specs.
  *
- * DOM contract (verified against the real ApiKeySection.tsx, NOT the mocked
+ * DOM contract (verified against the real ProviderCard.tsx, NOT the mocked
  * integration test): each provider renders a card whose header shows the
  * provider label (Anthropic → "Claude (Anthropic)") plus a 미등록/등록됨 badge.
  * An unregistered (or 재등록-editing) provider exposes a save form with an
  * `<label>API 키` input ("Claude (Anthropic) API 키") and a 저장 button; a
- * registered provider shows 재등록 + 삭제 buttons. The card's React key encodes
- * `${provider}-${isRegistered}`, so saving/deleting (each runs
+ * registered provider shows 재등록 + 삭제 buttons. ApiKeySection.tsx keys each
+ * card by `${provider}-${isRegistered}`, so saving/deleting (each runs
  * revalidatePath('/account')) remounts the card and flips the badge without a
  * manual reload.
  *

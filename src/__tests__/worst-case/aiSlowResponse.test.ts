@@ -31,7 +31,7 @@ vi.mock('@/shared/api/getClientIp', () => ({
     getClientIp: vi.fn().mockResolvedValue('203.0.113.1'),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@/shared/api/isBot', () => ({
@@ -52,7 +52,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 /**
@@ -133,10 +133,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '@/app/api/analysis/stream/route';
 import { runAnalysis } from '@/app/api/analysis/stream/runAnalysisBridge';
 import { HEARTBEAT_INTERVAL_MS } from '@/shared/lib/sse/heartbeatStream';
-
-// 10분 — route.ts의 STREAM_DEADLINE_MS와 동기화한다.
-// 미export 상수이므로 값을 직접 선언한다. 값이 바뀌면 이 테스트도 실패해 불일치를 잡아준다.
-const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
+import { STREAM_DEADLINE_MS } from '@/app/api/analysis/stream/_lib/withDeadline';
 
 const decoder = new TextDecoder();
 
@@ -227,7 +224,7 @@ describe('AI 응답 지연·연결 오류 최악 시나리오', () => {
         }
 
         expect(errorText).toBeDefined();
-        // 한국어 타임아웃 메시지 — route.ts의 withDeadline에서 정의한 문자열.
+        // 한국어 타임아웃 메시지 — `app.api.stream` 카탈로그의 `timeout` 키 문구.
         expect(errorText).toContain('시간이 초과');
 
         // withDeadline은 자체 AbortController를 abort했으므로 그 signal도 abort 상태다.

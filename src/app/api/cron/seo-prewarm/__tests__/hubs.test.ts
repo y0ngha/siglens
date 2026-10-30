@@ -60,6 +60,14 @@ vi.mock(
             typeof import('@/entities/market-news/api/marketNewsRepository')
         >()),
         getMarketNewsList: mocks.getMarketNewsList,
+    })
+);
+vi.mock(
+    '@/entities/market-news/api/marketNewsRefreshFlags',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/market-news/api/marketNewsRefreshFlags')
+        >()),
         isCronIngestedRecently: mocks.isCronIngestedRecently,
         markCronIngested: mocks.markCronIngested,
     })

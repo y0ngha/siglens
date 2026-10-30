@@ -1,7 +1,9 @@
 import type { FearGreedLabel, OptionsSignalKind } from '@y0ngha/siglens-core';
-import type { ShareableKind } from '../types';
 import { truncateWithEllipsis } from '@/shared/lib/truncate';
+import { isRecord } from '@/shared/lib/isRecord';
+import type { ShareableKind } from '../types';
 
+/** OG 메타 description과 트윗 문안 한 쌍 — `buildOgText`가 돌려주고 공유 페이지 메타·OG 이미지가 쓴다. */
 export interface OgText {
     description: string;
     tweet: string;
@@ -47,13 +49,36 @@ function firstLine(text: string): string {
     return text.split('\n')[0]?.trim() ?? '';
 }
 
-function majorityName(
-    scenarios: ReadonlyArray<{ name?: string }> | undefined
-): string {
-    if (!scenarios?.length) return 'neutral';
+/**
+ * 시나리오 배열에서 `name` 문자열만 뽑는다. `result`는 객체인지만 검증된 jsonb라
+ * `scenarios`가 배열이 아니거나 원소가 null일 수 있고, 그대로 순회하면 메타 생성이
+ * 던져 해당 공유 페이지가 500이 된다. 문자열이 아닌 `name`은 깨진 저장값으로 보고
+ * 의도적으로 무시한다.
+ */
+function scenarioNames(scenarios: unknown): string[] {
+    if (!Array.isArray(scenarios)) return [];
+    return scenarios
+        .map(s => (isRecord(s) ? s.name : undefined))
+        .filter((name): name is string => typeof name === 'string' && !!name);
+}
+
+/**
+ * 옵션 `signals`의 첫 원소 `kind`. 배열이 아니거나 원소 형태가 다르거나 `kind`가
+ * 문자열이 아니면(깨진 저장값으로 보고 의도적으로 무시) undefined — 호출부가 tone으로 폴백한다.
+ */
+function firstSignalKind(signals: unknown): string | undefined {
+    if (!Array.isArray(signals)) return undefined;
+    const first: unknown = signals[0];
+    return isRecord(first) && typeof first.kind === 'string'
+        ? first.kind
+        : undefined;
+}
+
+function majorityName(names: readonly string[]): string {
+    if (names.length === 0) return 'neutral';
     const counts = new Map<string, number>();
-    for (const s of scenarios) {
-        if (s.name) counts.set(s.name, (counts.get(s.name) ?? 0) + 1);
+    for (const name of names) {
+        counts.set(name, (counts.get(name) ?? 0) + 1);
     }
     let best = 'neutral';
     let bestN = -1;
@@ -88,12 +113,11 @@ function buildOgParts(
 }
 
 /**
- * Per-kind builder map. Each entry extracts direction + summary from a raw result
- * object and returns `{ description, tweet }`.
+ * kind별 OG 문안 빌더 맵. 각 항목은 저장된 result 객체에서 방향성과 요약을 뽑아
+ * `{ description, tweet }`을 만든다. `buildOgText`가 kind로 디스패치한다.
  *
- * Typed with `satisfies Record<ShareableKind, ...>` so TypeScript enforces
- * compile-time exhaustiveness: adding a new kind to `ShareableKind` without
- * a corresponding builder here is a compile error. See spec §6-1 / §6-3.
+ * `satisfies Record<ShareableKind, ...>`로 컴파일 시점에 빠짐없음을 강제한다 —
+ * `ShareableKind`에 kind를 추가하고 여기에 빌더를 넣지 않으면 컴파일 에러다.
  */
 export const SHARE_KIND_OG_BUILDERS = {
     chart: (
@@ -111,11 +135,7 @@ export const SHARE_KIND_OG_BUILDERS = {
         symbol: string,
         t: OgTranslator
     ): OgText => {
-        const direction = majorityName(
-            // r.scenarios is validated as an object array by isValidShareInput at write
-            // time; the cast narrows the opaque Record value to the expected shape.
-            r.scenarios as { name?: string }[] | undefined
-        );
+        const direction = majorityName(scenarioNames(r.scenarios));
         const summary = firstLine(
             String(r.headlineKo ?? r.integratedConclusionKo ?? '')
         );
@@ -167,10 +187,8 @@ export const SHARE_KIND_OG_BUILDERS = {
         symbol: string,
         t: OgTranslator
     ): OgText => {
-        // r.signals is a validated object array from the server-written snapshot;
-        // the cast narrows the opaque Record value to the expected shape.
-        const signals = (r.signals as { kind?: string }[] | undefined) ?? [];
-        const direction = signals[0]?.kind ?? String(r.tone ?? 'neutral');
+        const direction =
+            firstSignalKind(r.signals) ?? String(r.tone ?? 'neutral');
         const summary = firstLine(String(r.summary ?? ''));
         return buildOgParts(symbol, direction, summary, t);
     },

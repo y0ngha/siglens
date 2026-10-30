@@ -6,7 +6,7 @@
  * 요구하므로 그 상태는 리치 결과 자격이 없을 뿐 아니라 숨김 콘텐츠 판정 쪽에
  * 가깝다. 배열 하나에서 두 표면을 만들면 갈릴 수가 없다는 것을 여기서 못 박는다.
  */
-vi.mock('@/widgets/home/heroQuickLinks', () => ({
+vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
     HERO_QUICK_LINKS: [
         { href: '/market', labelKey: 'shared.config.nav.full.market.us' },
     ],
@@ -65,18 +65,17 @@ import { describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
 import Home, { generateMetadata } from '@/app/[locale]/(home)/page';
-import { buildHomeFaq } from '@/app/[locale]/homeJsonLd';
+import { buildHomeFaq } from '@/app/[locale]/(home)/_lib/homeJsonLd';
 import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {
     brandIntroName,
     buildOrganizationCoreJsonLd,
     GITHUB_URL,
-    SEO_TITLE_MAX_WIDTH,
-    seoTitleWidth,
     VELOG_URL,
     X_URL,
 } from '@/shared/lib/seo';
+import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
 import { SITE_NAME_KO } from '@/shared/config/brand';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { StatsBar } from '@/widgets/home/StatsBar';

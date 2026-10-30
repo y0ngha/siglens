@@ -8,7 +8,8 @@ All review comments must be written in **Korean**.
 
 Before reviewing, read the following project documents in order:
 
-1. `docs/conventions/CONVENTIONS.md` — coding paradigm, TypeScript rules, comments, change synchronization, i18n, layer dependency rules
+1. `docs/conventions/CONVENTIONS.md` — coding paradigm, TypeScript rules, comments, change synchronization, layer dependency rules
+   - `docs/conventions/I18N.md` — i18n catalogs, extraction, locale routing (when user-facing text or locale code is touched)
    - `docs/conventions/REACT.md` — hooks, components, effects, charts, Tailwind, React Query (when client code is touched)
    - `docs/conventions/SERVER.md` — Server Actions, I/O, concurrency, data cache, DB (when server code is touched)
 2. `docs/conventions/TESTING.md` — test structure, mocking, fixtures, e2e (when tests are touched)

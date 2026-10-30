@@ -29,7 +29,7 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
-vi.mock('@/entities/ticker/lib/loadSymbolNames', () => ({
+vi.mock('@/entities/ticker/server/loadSymbolNames', () => ({
     loadSymbolNames: vi.fn(async () => new Map<string, string>()),
 }));
 

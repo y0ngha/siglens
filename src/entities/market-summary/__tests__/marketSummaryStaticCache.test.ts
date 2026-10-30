@@ -29,7 +29,10 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     scopeUsesFmp: (scope: string) => scope !== 'kr',
 }));
 
-import { getMarketSummaryStatic } from '../api/marketSummaryStaticCache';
+import {
+    getMarketSummaryStatic,
+    marketSummaryCacheTag,
+} from '../api/marketSummaryStaticCache';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import {
@@ -60,6 +63,19 @@ const sampleSummary: MarketSummaryData = {
         },
     ],
 };
+
+describe('marketSummaryCacheTag', () => {
+    describe('시장 scope가 주어지면', () => {
+        it('market:summary:<scopeId> 태그를 만든다', () => {
+            expect(marketSummaryCacheTag(US_DASHBOARD_SCOPE)).toBe(
+                'market:summary:us'
+            );
+            expect(marketSummaryCacheTag(KR_DASHBOARD_SCOPE)).toBe(
+                'market:summary:kr'
+            );
+        });
+    });
+});
 
 describe('getMarketSummaryStatic', () => {
     beforeEach(() => {

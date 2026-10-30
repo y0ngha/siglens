@@ -4,7 +4,7 @@ vi.mock('@/shared/ui/auth/AuthCardShell', () => ({
 vi.mock('@/features/account-delete/ui/DeleteAccountConfirm', () => ({
     DeleteAccountConfirm: () => null,
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
@@ -40,6 +40,27 @@ describe('Delete account page', () => {
         });
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/account/delete'
+        );
+    });
+
+    it('og 제목·URL을 이 페이지 값으로 채운다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'en' }),
+        });
+        expect(metadata.openGraph).toEqual(
+            expect.objectContaining({
+                title: 'Delete account',
+                url: 'https://siglens.io/en/account/delete',
+            })
+        );
+    });
+
+    it('twitter 제목을 루트(홈) 값이 아니라 이 페이지 값으로 덮는다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        expect(metadata.twitter).toEqual(
+            expect.objectContaining({ title: '회원 탈퇴' })
         );
     });
 });

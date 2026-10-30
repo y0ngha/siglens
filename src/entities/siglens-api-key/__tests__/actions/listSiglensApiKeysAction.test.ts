@@ -1,6 +1,6 @@
 const { mockList } = vi.hoisted(() => ({ mockList: vi.fn() }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
     }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { listSiglensApiKeysAction } from '@/entities/siglens-api-key/actions/listSiglensApiKeysAction';
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);
@@ -50,7 +50,13 @@ describe('listSiglensApiKeysAction', () => {
         mockGetCurrentUser.mockResolvedValue({ id: USER_ID } as never);
         mockList.mockRejectedValue(new Error('db down'));
         await expect(listSiglensApiKeysAction()).resolves.toBeNull();
-        expect(console.error).toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+            '[listSiglensApiKeysAction] failed:',
+            {
+                name: 'Error',
+                code: undefined,
+            }
+        );
     });
 
     it('세션 조회 오류는 삼키지 않고 전파한다 (Next 동적 렌더 신호 보존)', async () => {

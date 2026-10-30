@@ -18,7 +18,7 @@ const {
     getEconomy: vi.fn(),
     ensureSymbolNewsFresh: vi.fn(),
 }));
-vi.mock('@/entities/news-article/lib/ensureSymbolNewsFresh', () => ({
+vi.mock('@/entities/news-article/server/ensureSymbolNewsFresh', () => ({
     ensureSymbolNewsFresh,
 }));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
@@ -65,7 +65,7 @@ vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => e2eState.on }));
 const correctKrSymbolSuffix = vi.hoisted(() =>
     vi.fn(async (s: string) => s.toUpperCase())
 );
-vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     correctKrSymbolSuffix,
 }));
 

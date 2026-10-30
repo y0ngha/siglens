@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 일목균형표 오버레이 시리즈(선행 구름 포함) 생성·갱신과 표시 토글 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
@@ -193,7 +197,6 @@ export function useIchimokuOverlay({
         if (!isVisible) return;
 
         const { ichimoku } = indicators;
-        if (!ichimoku.length) return;
 
         if (
             !tenkanRef.current ||
@@ -205,6 +208,21 @@ export function useIchimokuOverlay({
             !cloudBearishRef.current
         )
             return;
+
+        // 값이 비면 이전 종목·타임프레임의 선을 지운다 — 남겨 두면 낡은 시각이 공유
+        // 시간축을 넓혀 캔들을 밀어낸다. 선행 구름도 봉만으로 계산되므로 함께 비운다.
+        if (!ichimoku.length) {
+            [
+                tenkanRef,
+                kijunRef,
+                chikouRef,
+                senkouARef,
+                senkouBRef,
+                cloudBullishRef,
+                cloudBearishRef,
+            ].forEach(ref => ref.current?.setData([]));
+            return;
+        }
 
         const cloudData = buildCloudData(ichimoku);
 

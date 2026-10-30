@@ -4,7 +4,10 @@ import type {
     FindUserBySessionTokenOptions,
 } from './authUseCaseTypes';
 
-/** Resolve a session cookie token to its owning user. */
+/**
+ * 세션 쿠키 토큰이 가리키는 사용자를 찾는다. 세션이 없거나 만료(`expiresAt <= now`)됐거나
+ * 사용자가 없으면 null이다.
+ */
 export async function findUserBySessionToken(
     sessionToken: string,
     dependencies: FindUserBySessionTokenDependencies,

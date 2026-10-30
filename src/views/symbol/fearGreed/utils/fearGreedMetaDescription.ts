@@ -1,9 +1,7 @@
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
-import {
-    SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 import type { FearGreedMetaFacts } from './fearGreedFacts';
 
 const PERIOD_KEY = {

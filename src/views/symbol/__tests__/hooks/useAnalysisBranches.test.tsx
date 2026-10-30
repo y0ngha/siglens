@@ -13,10 +13,8 @@ import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 type RunAnalysisActionResult =
     | (RunAnalysisResult & { personalized?: boolean })
     | AnalysisGateBlockedResult;
-import {
-    getReanalyzeCooldownMs,
-    tryAcquireReanalyzeCooldown,
-} from '@/entities/analysis/lib/reanalyzeCooldown';
+import { getReanalyzeCooldownMs } from '@/entities/analysis/actions/getReanalyzeCooldownMs';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
@@ -27,13 +25,24 @@ vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
 }));
 
 // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
-vi.mock('@/entities/analysis/lib/reanalyzeCooldown', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/entities/analysis/lib/reanalyzeCooldown')
-    >()),
-    getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-    tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
-}));
+vi.mock(
+    '@/entities/analysis/actions/getReanalyzeCooldownMs',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/analysis/actions/getReanalyzeCooldownMs')
+        >()),
+        getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
+    })
+);
+vi.mock(
+    '@/entities/analysis/actions/tryAcquireReanalyzeCooldown',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/analysis/actions/tryAcquireReanalyzeCooldown')
+        >()),
+        tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
+    })
+);
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),

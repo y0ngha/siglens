@@ -36,9 +36,11 @@ interface ThemeOption {
     readonly labelKey: string;
 }
 
+const SYSTEM_OPTION: ThemeOption = { value: 'system', labelKey: 'system' };
+
 /** `system`이 먼저다 — 기본값이자 대부분의 사용자가 머무는 자리. */
 const OPTIONS: readonly ThemeOption[] = [
-    { value: 'system', labelKey: 'system' },
+    SYSTEM_OPTION,
     { value: 'light', labelKey: 'light' },
     { value: 'dark', labelKey: 'dark' },
 ];
@@ -92,7 +94,7 @@ export function ThemeToggle() {
     useEscapeKey(close, isOpen);
     const menuId = useId();
 
-    const current = OPTIONS.find(o => o.value === preference) ?? OPTIONS[0]!;
+    const current = OPTIONS.find(o => o.value === preference) ?? SYSTEM_OPTION;
 
     /*
      * WAI-ARIA APG의 라디오 그룹은 **단일 탭 스톱**이다. 세 버튼을 각각 탭
@@ -102,13 +104,15 @@ export function ThemeToggle() {
      */
     const moveFocus = (from: number, delta: number) => {
         const next = (from + delta + OPTIONS.length) % OPTIONS.length;
+        const nextOption = OPTIONS[next];
+        if (nextOption === undefined) return;
         const buttons =
             groupRef.current?.querySelectorAll<HTMLButtonElement>(
                 '[role="radio"]'
             );
         buttons?.[next]?.focus();
         // APG 규약: 화살표 이동은 포커스와 선택을 함께 옮긴다.
-        setTheme(OPTIONS[next]!.value);
+        setTheme(nextOption.value);
     };
 
     return (
@@ -116,7 +120,6 @@ export function ThemeToggle() {
             <button
                 type="button"
                 onClick={toggle}
-                aria-haspopup="true"
                 aria-expanded={isOpen}
                 aria-controls={isOpen ? menuId : undefined}
                 /* 라벨에 **현재 선택**을 적는다. 예전 2단 토글은 동작("라이트 모드로

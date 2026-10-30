@@ -25,6 +25,7 @@ export interface SlottedOptionsDataProvider extends OptionsDataProvider {
     fetchSnapshot(symbol: string): Promise<SlottedOptionsSnapshot | null>;
 }
 
+/** `mapExpirationsToSlots`가 매핑 없는 슬롯에 채우는 `null`을 걸러내는 `filter` 타입 가드. */
 export const isSlotMapping = (s: SlotMapping | null): s is SlotMapping =>
     s !== null;
 

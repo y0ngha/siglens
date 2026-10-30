@@ -65,6 +65,7 @@ const TRANSLATION_SOURCE_VALUES = Object.values(
     TRANSLATION_SOURCE
 ) as readonly TranslationSource[];
 
+/** DB `source` 문자열이 알려진 출처인지 좁힌다. 모르는 값은 호출부가 `ai`로 강등한다. */
 export function isTranslationSource(
     value: string | null | undefined
 ): value is TranslationSource {

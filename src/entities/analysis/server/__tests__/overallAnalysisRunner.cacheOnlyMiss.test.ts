@@ -66,18 +66,21 @@ vi.mock('@/entities/earnings-report/api', () => {
 vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     loadNewsMacroCalendar: vi.fn(async () => []),
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(async () => null),
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => ({})),
 }));
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(async () => {
-        throw new Error('no financials');
-    }),
-}));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(async () => {
+            throw new Error('no financials');
+        }),
+    })
+);
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: vi.fn(async () => undefined),
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({

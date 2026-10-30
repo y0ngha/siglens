@@ -1,8 +1,8 @@
 import type { OptionsSignalKind, OptionsTone } from '@y0ngha/siglens-core';
-import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { createEnumGuard } from './createEnumGuard';
+import { asRecord, narrowCleanString } from './narrowJson';
 
-/** OptionsTone → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+/** OptionsTone → `shared.enumLabel` 카탈로그 키. 렌더 시점에 `tLabel`로 조회한다. */
 export const TONE_LABEL_KEY: Record<OptionsTone, string> = {
     bullish: 'optionsTone.bullish',
     bearish: 'optionsTone.bearish',
@@ -10,9 +10,7 @@ export const TONE_LABEL_KEY: Record<OptionsTone, string> = {
     neutral: 'optionsTone.neutral',
 };
 
-// See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
-// rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
-// implementation).
+// `Object.hasOwn`으로 거르는 이유는 `createEnumGuard` JSDoc 참고.
 const isTone = createEnumGuard(TONE_LABEL_KEY);
 
 /** OptionsSignalKind → `shared.enumLabel` 카탈로그 키. */
@@ -32,12 +30,9 @@ interface NarrowedPerExpiration {
 }
 
 function narrowPerExpiration(value: unknown): NarrowedPerExpiration | null {
-    if (typeof value !== 'object' || value === null) return null;
-    const record = value as Record<string, unknown>;
-    const commentary =
-        typeof record.commentary === 'string'
-            ? stripSnapshotMarkdown(record.commentary).trim()
-            : '';
+    const record = asRecord(value);
+    if (record === null) return null;
+    const commentary = narrowCleanString(record.commentary);
     if (commentary.length === 0) return null;
 
     return {
@@ -56,12 +51,9 @@ interface NarrowedSignal {
 }
 
 function narrowSignal(value: unknown): NarrowedSignal | null {
-    if (typeof value !== 'object' || value === null) return null;
-    const record = value as Record<string, unknown>;
-    const message =
-        typeof record.message === 'string'
-            ? stripSnapshotMarkdown(record.message).trim()
-            : '';
+    const record = asRecord(value);
+    if (record === null) return null;
+    const message = narrowCleanString(record.message);
     if (message.length === 0) return null;
 
     return {
@@ -77,22 +69,19 @@ interface NarrowedOptionsContent {
 }
 
 /**
- * `content`를 options 결과 모양으로 좁힌다.
+ * `content`를 options 결과 모양으로 좁힌다. 산문 근거가 전혀 없으면 `null`.
  *
- * `summary`(심볼 요약), `perExpiration`(만기별 해설, 각 `commentary`를
- * 동반), `signals`(구조화 시그널, 각 `message`를 동반)가 프로즈 소스다. 이
- * 응답은 tier 마스킹을 거치지 않으므로 세 필드 전부 값이 채워질 수 있다.
+ * `summary`(심볼 요약), `perExpiration`(만기별 해설, 각 `commentary`를 동반), `signals`(구조화
+ * 시그널, 각 `message`를 동반)가 산문 소스다. 이 응답은 tier 마스킹을 거치지 않으므로 세 필드
+ * 전부 값이 채워질 수 있다.
  */
 export function narrowOptionsContent(
     content: unknown
 ): NarrowedOptionsContent | null {
-    if (typeof content !== 'object' || content === null) return null;
+    const record = asRecord(content);
+    if (record === null) return null;
 
-    const record = content as Record<string, unknown>;
-    const summary =
-        typeof record.summary === 'string'
-            ? stripSnapshotMarkdown(record.summary).trim()
-            : '';
+    const summary = narrowCleanString(record.summary);
 
     const perExpiration = Array.isArray(record.perExpiration)
         ? record.perExpiration.map(narrowPerExpiration).filter(e => e !== null)
@@ -114,15 +103,11 @@ export function narrowOptionsContent(
 }
 
 /**
- * `options/page.tsx`(→ `OptionsPageClient`)가 `<OptionsSnapshotProse>`를
- * 렌더할지 아니면 클라이언트 AI 위젯(`OptionsAiAnalysis`)을 렌더할지 판단하는
- * 예측기(audit fix FIX 2 — `OverallSnapshotProse.hasOverallProse` 패턴). 두
- * 소스가 같은 필드(summary/perExpiration/signals)를 같은 순서로 중복 렌더하던
- * 문제를 XOR 게이팅으로 해소한다.
- *
- * `narrowOptionsContent`를 그대로 재사용해 이 예측기와 컴포넌트가 서로 다른
- * 판단을 내릴 수 없게 한다(단일 진실 소스). `OptionsEmptyState`의
- * `snapshotSlot` 게이트(audit fix FIX 9)에서도 재사용된다.
+ * `options/page.tsx`(→ `OptionsPageClient`)가 `<OptionsSnapshotProse>`를 렌더할지 아니면
+ * 클라이언트 AI 위젯(`OptionsAiAnalysis`)을 렌더할지 판단하는 예측기. 두 소스가 같은 필드
+ * (summary/perExpiration/signals)를 중복 렌더하지 않도록 XOR로 게이팅하며,
+ * `OptionsEmptyState`의 `snapshotSlot` 게이트도 이것을 쓴다. 렌더러와 같은
+ * `narrowOptionsContent`를 쓰므로 둘이 서로 다른 판단을 내릴 수 없다.
  */
 export function hasOptionsProse(content: unknown): boolean {
     return narrowOptionsContent(content) !== null;

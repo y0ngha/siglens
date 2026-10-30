@@ -8,7 +8,7 @@ vi.mock('next-intl/server', async () => {
         await import('@/shared/test-utils/catalogTranslator');
     return nextIntlServerStub();
 });
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -20,12 +20,12 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
         return { revokeOwned: mockRevoke };
     }),
 }));
-vi.mock('@/entities/siglens-api-key/server/apiKeyAuth', () => ({
+vi.mock('@/entities/siglens-api-key/server/apiKeyAuthCache', () => ({
     revokeApiKeyAuth: mockInvalidate,
 }));
 
 import { revalidatePath } from 'next/cache';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { revokeSiglensApiKeyAction } from '@/entities/siglens-api-key/actions/revokeSiglensApiKeyAction';
 import type { RevokeSiglensApiKeyState } from '@/entities/siglens-api-key/model';
 import { makeFormData } from '@/shared/test-utils/makeFormData';

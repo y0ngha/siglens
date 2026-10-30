@@ -381,7 +381,6 @@
                 "flows": "機関と空売りの需給"
             },
             "page": {
-                "2ab959": "今の価格はこのマンションの何階？",
                 "3c87a9": "決算スケジュールを読み込めませんでした。",
                 "465a63": "{v0} 財務諸表",
                 "ddc932": "{v2}の恐怖強欲指数は、出来高の流れ、日足から推定した買い/売り圧力、価格の位置をこの銘柄自身の過去の値と比べて0〜100点で示したものです。{v0}全体の動きは<link>{v1}</link>で確認できます。",
@@ -412,6 +411,7 @@
                 "overallHeadingCrypto": "{v0} 総合分析：チャート、ニュース、買い意欲",
                 "overallHeadingKrEquity": "{v0} 総合分析：チャート、決算、ニュース",
                 "overallHeadingUsEquity": "{v0} 総合分析：チャート、オプション、決算、ニュース",
+                "positionGuideHeading": "{v0} 今の価格はこのマンションの何階？",
                 "positionRangeSentence": "{v0} の直近52週レンジは {v1} 〜 {v2} で、現在値 {v3} はこのレンジの {v4}% 地点（{v5}）にあたります。",
                 "positionRegisterHint": "下で保有銘柄を登録すると、同じ建物の中で自分が買った階まで一緒に確認できます。",
                 "marketFearGreedLinkCrypto": "暗号資産市場の恐怖強欲指数",
@@ -750,11 +750,13 @@
             }
         },
         "auth-oauth-consent": {
+            "OAuthAccountCard": {
+                "7af734": "{v0}アカウントで登録"
+            },
             "OAuthConsentForm": {
                 "19b2d1": "キャンセル",
                 "6615ab": "登録完了",
-                "e6e1a2": "処理中...",
-                "ecb738": "アカウントで登録"
+                "e6e1a2": "処理中..."
             }
         },
         "auth-oauth": {
@@ -956,6 +958,7 @@
                 "2b8afd": "会員登録へ",
                 "2d4880": "プレミアムモデル利用案内",
                 "2f2f6d": "APIキー登録が必要です",
+                "41b8c4": "会員登録すると、APIキーなしでこのモデルを利用できます。",
                 "671fa2": "会員登録後、APIキーを登録するとこのモデルを利用できます。",
                 "94b7db": "閉じる",
                 "e91c23": "登録へ"
@@ -986,7 +989,7 @@
             "ReasoningToggle": {
                 "3592be": "AIが回答を出す前に複数段階でより深く推論する機能です。",
                 "c48ae3": "ただし、分析には少し時間がかかる場合があります。",
-                "ddf353": "オンにすると指標、ニュース、シナリオをより詳細に考慮し、詳細な分析を\n                    提供します。"
+                "ddf353": "オンにすると指標、ニュース、シナリオをより詳細に考慮し、詳細な分析を提供します。"
             },
             "a11y": {
                 "featureLabel": "詳細分析",
@@ -1472,11 +1475,15 @@
             "descriptionFlowsKr": "5%大量保有、役員所有の開示とAIの読み解き"
         },
         "enumLabel": {
+            "backtestExitReason": {
+                "stop_loss": "損切り",
+                "take_profit": "利益確定",
+                "time": "期間満了"
+            },
             "backtestRiskLevel": {
                 "extreme": "リスク極高",
                 "high": "リスク高",
                 "low": "リスク低",
-                "medium": "リスク中",
                 "moderate": "リスク中"
             },
             "chamber": {
@@ -2224,7 +2231,6 @@
                 "backtestMonth": "{v0}年{v1}月",
                 "bulletListAria": "{v0} {v1} 一覧",
                 "byokUnlock": "{v0} APIキーを登録するとこのモデルを利用できます。",
-                "calendarDayAria": "{v0}月{v1}日、イベント{v2}件",
                 "chartAria": "{v0} {v1} ローソク足チャート",
                 "contact": "お問い合わせ",
                 "filterAll": "すべて",
@@ -2467,6 +2473,7 @@
                 "title": "問題別の閲覧"
             },
             "koreanNote": "質問と回答の原文は韓国語です。測定を韓国語で行ったため、このページの質問、正解の要約、回答は翻訳せずそのまま表示しています。",
+            "koreanNoteLabel": "言語に関するお知らせ",
             "levels": {
                 "L4": "L4 解釈",
                 "L5": "L5 誠実性と安全性"
@@ -2692,7 +2699,8 @@
             "FearGreedFactsSummary": {
                 "asOfClose": "({v0} 終値基準)",
                 "fa167e": "現在のスコア",
-                "fabc11": "恐怖強欲指数の要約"
+                "fabc11": "恐怖強欲指数の要約",
+                "scoreValue": "{v0} / 100 ({v1})"
             },
             "FearGreedHeaderChip": {
                 "afe032": "恐怖強欲データ不足",
@@ -2769,7 +2777,8 @@
                 "beae1d": "上記の指標は、表示されたチャートデータに基づき自動計算された値です。",
                 "d8446c": "MACDモメンタム",
                 "e532e4": "({v0}分遅延)",
-                "recentBarsPosition": "直近{v0}本の位置"
+                "recentBarsPosition": "直近{v0}本の位置",
+                "rsiValue": "{v0} ({v1})"
             },
             "TechnicalSnapshotProse": {
                 "938737": "テクニカル分析サマリー",
@@ -3234,6 +3243,8 @@
             "ctaBody": "気になる銘柄を検索すると、チャートと分析をあわせて見られます。",
             "ctaButton": "銘柄を検索する",
             "ctaHeading": "実際の銘柄で確認する",
+            "demoFallbackDescription": "{count}本のローソク足の例示チャート",
+            "demoFallbackDescriptionWithPanes": "{count}本のローソク足の例示チャート（サブパネル：{panes}）",
             "emptyAiQuestion": "ガイドにない用語：{query}。チャートの例を交えて分かりやすく説明して",
             "emptyAskAi": "AIに質問する",
             "emptyBody": "別の名前で検索するか、AIに直接質問してみてください。",
@@ -3487,7 +3498,6 @@
                 "edb872": "エントリー意見",
                 "f0256c": "会員登録すると、全スキルを適用した詳細な分析を受けられます。",
                 "f0cdeb": "AI分析",
-                "f744e1": "チャート価格ラインを非表示",
                 "fb0cf0": "主要価格",
                 "bcc718": "チャートで表示",
                 "f66b28": "{v0}をチャートで表示"
@@ -3638,11 +3648,9 @@
                 "456225": "目標価格:",
                 "06cf3e": "<n>{v0}</n>日",
                 "0f8bf6": "AIエントリー推奨",
-                "1e38a3": "損切り",
                 "31e4d3": "買い",
                 "540e42": "AIによる様子見推奨",
                 "58b71d": "AI予測レベル",
-                "62a65c": "売り",
                 "6c8ca5": "AI回避推奨",
                 "75a556": "根拠:",
                 "b19f09": "損失",
@@ -3651,8 +3659,9 @@
                 "fa9de3": "✓ 達成"
             },
             "BacktestCaseList": {
-                "9018e2": "該当銘柄のケースはありません。",
-                "caseCount": "{v0}件"
+                "caseCount": "{v0}件",
+                "emptyDataset": "表示できるケースがありません。",
+                "emptyFiltered": "選択した銘柄に該当するケースはありません。"
             },
             "BacktestHero": {
                 "116858": "実際の市場データで検証したバックテスト結果です。",
@@ -3688,7 +3697,8 @@
             "l5": "誠実性と安全性(L5)",
             "l5Note": "中立の審査員の平均、0~1点",
             "more": "ベンチマーク結果の詳細を見る",
-            "sub": "同じ{items, number}問で測った客観スコアの差です。正の値は{subject}の方が高いことを表します。",
+            "questions": "共通の{n, number}問",
+            "sub": "同じ問題で測った客観スコアの差です。正の値は{subject}の方が高いことを表します。",
             "title": "ベンチマーク結果",
             "verdict": {
                 "ahead": "有意に上回る",
@@ -3789,7 +3799,7 @@
         },
         "ask-ai-fab": {
             "label": "SIGLENS AIに質問する",
-            "ariaLabel": "SIGLENS AIに質問する（新しいタブ）",
+            "newTab": "（新しいタブ）",
             "question": "{name}の今の状況を総合的に教えて",
             "shortLabel": "AIに質問",
             "guideQuestion": "ガイド：{title}。チャートの例を交えて分かりやすく説明して"
@@ -3804,7 +3814,6 @@
                 "0c2cd8": "保有者",
                 "1ed947": "開示日",
                 "26d466": "開示",
-                "27edc1": "上院 (Senate)",
                 "29c3ae": "議員",
                 "29efb6": "種類",
                 "5073ef": "資産説明",
@@ -3812,7 +3821,6 @@
                 "af2fee": "区分",
                 "b488b1": "← 左右にスクロール →",
                 "c8eed2": "金額範囲",
-                "d8edd7": "下院 (House)",
                 "de5545": "議会取引開示リスト",
                 "e6fa15": "取引日",
                 "fdf8d2": "開示検索"
@@ -3846,6 +3854,8 @@
             "disclosureDocument": "文書",
             "disclosureLink": "{v0} {v1} {v2} 開示 {v3}",
             "disclosureSearch": "検索",
+            "ptrIdFull": "PTR の完全な ID: {v0}",
+            "ptrIdLabel": "PTR の ID {v0}…",
             "tooltip": {
                 "amountRange": [
                     "STOCK Act（2012年）は、議員が正確な金額の代わりに区間（例：$1,001〜$15,000）のみを開示することを認めています。",
@@ -3870,22 +3880,25 @@
                 "senateDisclosure": [
                     "上院の開示（efdsearch）は同意ページを通過しないと開けません。検索ページでPTR IDから再度お探しください。下院の開示はPDFの直リンクなのですぐ開きます。"
                 ]
-            }
+            },
+            "tradesCaptionTruncated": "議会取引開示リスト (全{v1}件のうち最新の{v0}件を表示)",
+            "tradesTruncated": "最新の{v0}件のみ表示しています · 全{v1}件"
         },
         "dashboard": {
             "BriefingCard": {
                 "38eff4": "AIブリーフィング生成中…",
-                "39b300": "基準",
                 "7bd647": "下落セクター",
                 "8b256d": "ブリーフィングを読み込めませんでした。",
-                "e1760c": "上昇セクター"
+                "e1760c": "上昇セクター",
+                "generatedAt": "<time>{v0}</time> KST基準"
             },
             "IndexCard": {
-                "analyzeTitle": "{v0}の分析"
+                "analyzeTitle": "{v0}を分析"
             },
             "MarketDataErrorNotice": {
                 "69afbd": "しばらくしてから更新して再試行してください。",
                 "76bb07": "案内を閉じる",
+                "marketLabelCrypto": "暗号資産市場",
                 "marketLabelKr": "韓国株式市場",
                 "marketLabelUs": "米国株式市場",
                 "partial": "{v0}のデータの一部を読み込めませんでした。",
@@ -3912,7 +3925,11 @@
                 "976db4": "上昇の兆し",
                 "9c8687": "どちらに動くか方向性が明確ではないため、\n                                慎重に見るのが良いでしょう。",
                 "ab2e36": "このセクターには現在シグナルがありません。他のセクターをご覧ください。",
-                "ede11c": "上昇シグナルと下落シグナルの強度が同程度の\n                                銘柄です。"
+                "ede11c": "上昇シグナルと下落シグナルの強度が同程度の\n                                銘柄です。",
+                "loadFailed": "セクターシグナルを読み込めませんでした。しばらくしてからもう一度お試しください。",
+                "loading": "セクターシグナルを読み込み中です。",
+                "retry": "再試行",
+                "statusSummary": "銘柄数：上昇シグナル{v0}、上昇の兆し{v1}、混在{v2}、下落の兆し{v3}、下落シグナル{v4}"
             },
             "SectorSignalPanelSkeleton": {
                 "f65a95": "セクターシグナル読み込み中"
@@ -3996,6 +4013,7 @@
                 "dc712b": "{v0}{v1}日 ({v2})",
                 "f9d9dc": "今後の{v0}経済発表予定はまだありません。",
                 "forecastPart": "予想 {v0}",
+                "noVisibleEvents": "選択した重要度の予定はありません。",
                 "pastCollapse": "過去の予定を折りたたむ",
                 "pastExpand": "過去の予定を表示",
                 "previousPart": "前回 {v0}"
@@ -4025,11 +4043,13 @@
                 "a0f763": "マクロ経済ブリーフィング読み込み中",
                 "b5f759": "マクロ経済ブリーフィング案内"
             },
-            "dayCellAriaImpacts": "、重要度 {v0}",
+            "dayCellAria": "{v0}月{v1}日、イベント{v2}件",
+            "dayCellAriaWithImpacts": "{v0}月{v1}日、イベント{v2}件、重要度 {v3}",
             "krMacroFacts": {
                 "cpiAndUnemployment": "直近の消費者物価上昇率は{v0}%、失業率は{v1}%です。",
                 "cpiChange": "消費者物価上昇率は前回発表から{v0}%ポイント動きました。",
                 "cpiOnly": "直近の消費者物価上昇率は{v0}%です。",
+                "cpiUnchanged": "消費者物価上昇率は前回発表から変わりません。",
                 "ratesOnly": "現在の韓国銀行の基準金利は{v0}%です。",
                 "ratesWithKtb": "現在の韓国銀行の基準金利は{v0}%、10年国債の落札利回りは{v1}%です。",
                 "unemploymentOnly": "直近の失業率は{v0}%です。"
@@ -4051,11 +4071,15 @@
         "extended-hours": {
             "basisAfter": "本日終値比",
             "basisPre": "前日終値比",
+            "flat": "横ばい",
             "sessionAfter": "アフターマーケット",
             "sessionPre": "プレマーケット",
             "tradedAt": "{time} ET 約定"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0}（{v1}から）"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "需給",
                 "groupNameTrend": "トレンド",
@@ -4161,7 +4185,8 @@
             },
             "periodToggle": {
                 "annual": "年次",
-                "quarter": "四半期"
+                "quarter": "四半期",
+                "quarterUnavailable": "四半期の財務諸表を取得できなかったため、年次の数値を表示しています。"
             },
             "section": {
                 "balanceSheet": "貸借対照表",
@@ -4198,6 +4223,22 @@
                     "総負債から保有現金を差し引いた値です。",
                     "マイナスであれば現金が負債を上回る「ネットキャッシュ」の状態で、財務が非常に健全だという意味です。"
                 ]
+            },
+            "signalType": {
+                "accrualWarning": "利益の質に注意",
+                "capexHeavy": "設備投資が過大",
+                "debtRising": "負債の増加",
+                "earningsQualityGood": "利益の質が良好",
+                "fcfGrowth": "フリーキャッシュフローの成長",
+                "fcfNegative": "フリーキャッシュフローが赤字",
+                "fcfSolid": "フリーキャッシュフローが堅調",
+                "growthDecline": "売上の減少",
+                "marginContraction": "マージンの悪化",
+                "marginExpansion": "マージンの改善",
+                "netCash": "ネットキャッシュ企業",
+                "operatingIncomeGrowth": "営業利益の成長",
+                "operatingLeverage": "営業レバレッジ",
+                "revenueAccel": "売上成長の加速"
             }
         },
         "fundamental": {
@@ -4349,14 +4390,13 @@
                 "158954": "AI分析スキル",
                 "0d2c24": "折りたたむ",
                 "7e6540": "信頼度スコアの説明",
-                "c266ba": "{v0}%は普通、{v1}%以上は高めです。",
+                "allGuides": "ガイドをすべて見る",
                 "c78b79": "スキルカテゴリタブ",
+                "confidenceTiers": "{low}%未満は低め、{low}%以上{high}%未満は普通、{high}%以上は高めです。",
                 "e0f5c5": "低いスコアも分析に補助的に反映されます。",
-                "e20b1b": "{v0}%未満は低め、{v1}",
                 "ebff92": "分析手法の信頼度スコアです。",
                 "guideLink": "ガイドを見る",
-                "guideLinkAria": "{name}のガイドを見る",
-                "allGuides": "ガイドをすべて見る"
+                "guideLinkAria": "{name}のガイドを見る"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS分析規模"
@@ -4505,6 +4545,7 @@
             },
             "dilution": {
                 "filing": "SEC原文",
+                "filingLabel": "SEC原文、{date}提出の{form}",
                 "kind": {
                     "atm": "ATM",
                     "bestEfforts": "ベストエフォート",
@@ -4537,6 +4578,7 @@
                 "insiderCluster": "クラスター買い:異なるインサイダー {count}人",
                 "insiderCounts": "買い {buys}件、売り {sells}件",
                 "insiderNetBuy": "直近{days}日の純買い {amount}",
+                "insiderNetFlat": "直近{days}日は純買いも純売りもなし",
                 "insiderNetSell": "直近{days}日の純売り {amount}",
                 "insiderProposedSales": "売却予定届(Form 144) {count}件、{amount}",
                 "largeHolderCounts": "13D ポジション{d}件（届出{df}回）、13G ポジション{g}件（届出{gf}回）(直近{days}日)",
@@ -4582,6 +4624,7 @@
                 "colShares": "予定株数",
                 "colValue": "予定金額",
                 "filing": "届出を見る",
+                "filingLabel": "{filer}の届出を見る",
                 "none": "受理された売却予定届はありません。",
                 "omitted": "古い届出{count}件は一覧から外しました。",
                 "planBadge": "10b5-1プラン",
@@ -4623,6 +4666,7 @@
                 "title": "保有機関数の推移"
             },
             "insider": {
+                "afterWindowTitle": "集計期間外({to}より後)",
                 "buy": "買い",
                 "buys": "買い",
                 "clusterBadge": "クラスター買い（インサイダー{count}人）",
@@ -4633,6 +4677,7 @@
                 "colType": "区分",
                 "colValue": "金額",
                 "filing": "開示を見る",
+                "filingLabel": "{name}の開示を見る",
                 "net": "純買い／純売り",
                 "netBuy": "純買い {amount}",
                 "netFlat": "純買いも純売りもなし",
@@ -4641,6 +4686,7 @@
                 "noRecent": "直近{days}日間に届け出られたインサイダーの売買はありません。",
                 "noTrades": "表に載せる売買の届け出がありません。",
                 "noTradesInWindow": "直近{days}日の売買の届け出はありません。",
+                "omitted": "古い取引{count}件は表から除いています。",
                 "omittedOther": "贈与、オプション行使などのその他の届け出{count}件は表から除いています。",
                 "outsideWindowNote": "上の集計の件数と金額には含まれない取引です。",
                 "outsideWindowTitle": "集計期間外({from}より前)",
@@ -4674,6 +4720,7 @@
                 "colPercent": "持株比率",
                 "colShares": "保有株数",
                 "filing": "開示を見る",
+                "filingLabel": "{filer}の{form}開示を見る",
                 "kind13d": "13D アクティビスト",
                 "kind13g": "13G 純投資",
                 "kindOther": "その他",
@@ -5042,7 +5089,7 @@
                 "1d7b3e": "市場の恐怖強欲指数を計算するデータが不足しています。",
                 "41205a": "期間別比較",
                 "c099fa": "要因別寄与度",
-                "e446f9": "データがまだ十分に蓄積されていない可能性があります。しばらくしてから再度\n                    ご確認ください。"
+                "e446f9": "データがまだ十分に蓄積されていない可能性があります。しばらくしてから再度ご確認ください。"
             },
             "page": {
                 "asOfClose": "{v0}年{v1}月{v2}日の終値基準",
@@ -5071,7 +5118,8 @@
                 "242236": "{v0}日間ニュースはありません。",
                 "8e5a3a": "さらに表示 (残り{v0}件)",
                 "b514aa": "ニュース収集中…",
-                "d107e1": "最新市場ニュース"
+                "d107e1": "最新市場ニュース",
+                "pollFailed": "最新のニュースを読み込めませんでした。しばらくしてからページを更新してください。"
             }
         },
         "news": {
@@ -5334,7 +5382,6 @@
                 "e55475": "OIデータ遅延"
             },
             "OverallContent": {
-                "0bb0bd": "分析中にエラーが発生しました。",
                 "0c767c": "再試行",
                 "1c85d8": "ニュースカード分析の準備中にエラーが発生しました。",
                 "8b7ae7": "AI総合分析",
@@ -5355,15 +5402,14 @@
                 "99a89d": "総合要約"
             },
             "OverallTriggerCta": {
-                "2a1422": "チャート、オプション、ファンダメンタルズ、ニュース、市場の雰囲気を統合したAI結論を受け取ってください。",
                 "51480a": "AI総合分析を受け取る",
                 "5f4a34": "個別のニュース分析が完了すると、自動的に総合分析を受け取ることができます\n                    （通常30秒〜1分かかります）。",
                 "8b7ae7": "AI総合分析",
-                "ec0085": "チャート、ニュース、市場の雰囲気を統合したAI結論を受け取ってください。",
                 "ff9889": "ニュースカード分析中…"
             },
             "ReanalyzeButton": {
-                "1d02c7": "再分析"
+                "1d02c7": "再分析",
+                "pending": "再分析中…"
             },
             "RiskFactors": {
                 "af0480": "危険要因",
@@ -5379,7 +5425,12 @@
                 "938737": "テクニカル分析要約",
                 "6d957a": "テクニカル分析項目"
             },
-            "axisFailed": "（{v0} 軸の失敗）"
+            "axisFailed": "（{v0} 軸の失敗）",
+            "ctaSubtitle": {
+                "crypto": "チャート、ニュース、市場の雰囲気を統合したAI結論を受け取ってください。",
+                "equity": "チャート、オプション、ファンダメンタルズ、ニュース、市場の雰囲気を統合したAI結論を受け取ってください。",
+                "equityNoOptions": "チャート、ファンダメンタルズ、ニュース、市場の雰囲気を統合したAI結論を受け取ってください。"
+            }
         },
         "portfolio-position": {
             "PositionBuilding": {
@@ -5404,9 +5455,9 @@
             },
             "PositionHoldingCard": {
                 "0ac914": "平均単価 {v0}",
-                "0bafa3": "データ不足",
                 "497d1e": "現在価格",
                 "900beb": "平均取得単価",
+                "avgInvalid": "平均取得単価を確認してください",
                 "ba09a5": "{v0} ポジションを読み込み中",
                 "fa94cf": "範囲データを読み込めませんでした",
                 "fb64df": "収益率"
@@ -5469,7 +5520,6 @@
             "ShareSheet": {
                 "01660a": "リンクをコピー",
                 "4cb3cd": "Xで共有",
-                "a46c88": "X(Twitter)で共有",
                 "c040b8": "リンクをコピーしました",
                 "e4441b": "共有リンク (直接コピー)",
                 "e5c85b": "コピー済み"
@@ -5478,7 +5528,7 @@
                 "2d4e13": "後で",
                 "5481d6": "共有する前に分析を準備します",
                 "94b7db": "閉じる",
-                "b74ea2": "この銘柄のAI分析はまだありません。しばらくお待ちください。\n                        完了後、すぐに共有画面へご案内します。",
+                "b74ea2": "この銘柄のAI分析はまだありません。しばらくお待ちください。完了後、すぐに共有画面へご案内します。",
                 "cc6aae": "分析して共有する"
             }
         },
@@ -5569,6 +5619,7 @@
                 "73e5a8": "名前を変更",
                 "9a7569": "会話一覧",
                 "backToSiglens": "SIGLENSホームへ",
+                "deleteFailed": "会話を削除できませんでした。もう一度お試しください。",
                 "empty": "まだ会話がありません。",
                 "fc81e2": "削除",
                 "groupOlder": "それ以前",
@@ -5583,6 +5634,7 @@
                 "noMatch": "一致する会話がありません。",
                 "privacy": "プライバシーポリシー",
                 "renameCancel": "名前の変更をキャンセル",
+                "renameFailed": "名前を変更できませんでした。もう一度お試しください。",
                 "terms": "利用規約"
             },
             "ToolActivity": {

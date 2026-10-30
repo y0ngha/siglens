@@ -118,7 +118,7 @@ describe('useWaitForNewsCards', () => {
      * [회귀] `cardPollingConfig`의 계약은 "5분 안에 안 채워지면 포기"이고 형제 훅
      * (`useNewsCardPolling`)은 지키고 있었는데 이 훅만 상한이 없었다 — 보강될 카드가
      * 없는 종목에서 탭이 열려 있는 내내 3초마다 server action POST + Neon 조회가
-     * 나갔다(감사: 비용 라운드 13).
+     * 나갔다.
      */
     it('MAX_POLL_DURATION_MS를 넘기면 폴링을 멈춘다', async () => {
         mockGetCards.mockResolvedValue([PENDING_ITEM]);
@@ -167,7 +167,7 @@ describe('useWaitForNewsCards', () => {
     it('기사가 있지만 아직 보강 전이면 20회에서 접지 않는다', async () => {
         // 조기 종료는 "기사가 아예 없다"에만 걸려야 한다. 이 조건이 빠지면 무조건
         // 20회(60초)에서 접혀 5분 계약이 사라지고, 하필 LLM 보강을 기다리는
-        // 꼬리 케이스가 그 대상이다(감사 라운드 14).
+        // 꼬리 케이스가 그 대상이다.
         mockGetCards.mockResolvedValue([PENDING_ITEM]);
         renderHook(() => useWaitForNewsCards('AAPL', false), {
             wrapper: makeQueryWrapper(),

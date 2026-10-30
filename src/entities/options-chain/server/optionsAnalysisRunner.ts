@@ -1,19 +1,20 @@
 import 'server-only';
 import { getTranslations } from 'next-intl/server';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     runOptionsAnalysis,
     type RunOptionsAnalysisResult,
     type ModelId,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
+import type { Locale } from '@/shared/i18n/locales';
 import { resolveReasoning } from '@/shared/lib/byokGate';
 import {
     resolveCallerKeyOptions,
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import { fetchOptionsSnapshot } from './optionsDataCache';
 
+/** `executeOptionsAnalysis` 입력 — 쿠키 액션과 공개 API가 각자 만들어 넘긴다. */
 export interface ExecuteOptionsAnalysisParams {
     /** 누구의 이름으로 어떤 키로 부르는지 — 쿠키 액션도 공개 API도 호출부가 정해 넘긴다. */
     readonly caller: AnalysisCaller;
@@ -47,7 +48,6 @@ export async function executeOptionsAnalysis({
     cacheOnly,
 }: ExecuteOptionsAnalysisParams): Promise<RunOptionsAnalysisResult> {
     const keyOptions = resolveCallerKeyOptions(caller, cacheOnly);
-    const skipEnqueueIfMiss = cacheOnly;
     const snapshot = await fetchOptionsSnapshot(symbol);
     if (snapshot === null) {
         return {
@@ -64,8 +64,8 @@ export async function executeOptionsAnalysis({
 
     return await runOptionsAnalysis({
         symbol,
-        // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
-        // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
+        // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터 받는다. `ko`는
+        // 접미 없는 기존 캐시 키를 그대로 맞힌다.
         locale,
         companyName,
         expirationDate,
@@ -73,7 +73,7 @@ export async function executeOptionsAnalysis({
         snapshot,
         tier: caller.tier,
         reasoning: resolveReasoning(caller.tier, reasoning),
-        skipEnqueueIfMiss,
+        skipEnqueueIfMiss: cacheOnly,
         signal,
         ...keyOptions,
     });

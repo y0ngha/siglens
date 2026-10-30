@@ -28,7 +28,7 @@ vi.mock('@/features/ticker-search/ui/TickerAutocomplete', () => ({
 }));
 
 import { render as rtlRender, screen, within } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import userEvent from '@testing-library/user-event';
 import { WatchlistSection } from '@/views/watchlist/WatchlistSection';
@@ -95,6 +95,44 @@ function setHoldings(
         } as unknown as Holdings['remove'],
     });
     return save;
+}
+
+/**
+ * 실제 `useWatchlist`처럼 `remove`가 성공하면 그 항목이 목록에서 빠지는 회원 목록. 행이 정말로
+ * 사라져야 "지운 뒤 포커스가 어디로 가는가"를 볼 수 있다.
+ */
+function setRemovableWatchlist(initial: Watchlist['items']) {
+    mockUseWatchlist.mockImplementation(function useRemovableWatchlist() {
+        const [items, setItems] = useState(initial);
+        return {
+            items,
+            has: vi.fn(() => true),
+            toggle: vi.fn(async () => 'removed' as const),
+            add: vi.fn(async () => 'added' as const),
+            remove: async (symbol: string) => {
+                setItems(prev => prev.filter(item => item.symbol !== symbol));
+                return true;
+            },
+            isHydrated: true,
+            isAtLimit: false,
+            limit: 20,
+            isIdentityPending: false,
+            isMember: true,
+        };
+    });
+}
+
+async function convertRow(
+    user: ReturnType<typeof userEvent.setup>,
+    symbol: string
+) {
+    await user.click(
+        screen.getByRole('button', { name: `${symbol} 보유로 전환` })
+    );
+    const row = screen.getByRole('button', { name: '추가' }).closest('li')!;
+    await user.type(within(row).getByLabelText('수량'), '10');
+    await user.type(within(row).getByLabelText('평단'), '150');
+    await user.click(within(row).getByRole('button', { name: '추가' }));
 }
 
 describe('WatchlistSection', () => {
@@ -198,6 +236,16 @@ describe('WatchlistSection', () => {
         expect(rows[0]).toHaveTextContent('150.25');
     });
 
+    it('종목 링크는 블록 상자라 긴 이름이 칸 안에서 잘린다', () => {
+        setWatchlist();
+        render(<WatchlistSection />);
+        expect(screen.getByRole('link', { name: '애플 (AAPL)' })).toHaveClass(
+            'block',
+            'max-w-full',
+            'truncate'
+        );
+    });
+
     it('시세가 없으면 "시세 없음"', () => {
         setWatchlist();
         mockUseQuote.mockReturnValue({ quote: null, isSettled: true });
@@ -260,6 +308,20 @@ describe('WatchlistSection', () => {
         expect(toast.showToast).not.toHaveBeenCalled();
     });
 
+    it('회원: 보유로 전환을 열면 수량 칸으로, 취소하면 전환 버튼으로 포커스가 옮겨진다', async () => {
+        setWatchlist({ isMember: true });
+        const user = userEvent.setup();
+        render(<WatchlistSection />);
+        await user.click(
+            screen.getByRole('button', { name: 'AAPL 보유로 전환' })
+        );
+        expect(screen.getByLabelText('수량')).toHaveFocus();
+        await user.click(screen.getByRole('button', { name: '취소' }));
+        expect(
+            screen.getByRole('button', { name: 'AAPL 보유로 전환' })
+        ).toHaveFocus();
+    });
+
     it('회원: 보유는 저장됐는데 관심 항목 삭제가 실패하면 구체적인 토스트를 띄운다', async () => {
         setWatchlist({ isMember: true, remove: vi.fn(async () => false) });
         const user = userEvent.setup();
@@ -276,6 +338,56 @@ describe('WatchlistSection', () => {
             message:
                 '보유종목은 저장했지만 관심종목에서는 빼지 못했어요. 관심종목 페이지에서 직접 삭제해 주세요.',
         });
+    });
+
+    describe('회원: 전환에 성공해 행이 사라지면', () => {
+        it('다음 행의 종목 링크로 포커스를 옮긴다', async () => {
+            setRemovableWatchlist([AAPL, ZZZQ]);
+            const user = userEvent.setup();
+            render(<WatchlistSection />);
+            await convertRow(user, 'AAPL');
+            expect(screen.getByRole('link', { name: 'ZZZQ' })).toHaveFocus();
+        });
+
+        it('마지막 행이었으면 이전 행의 종목 링크로 포커스를 옮긴다', async () => {
+            // 관심 항목 삭제는 저장된 보유의 심볼을 쓴다.
+            setHoldings({
+                status: 'ok',
+                holding: {
+                    symbol: 'ZZZQ',
+                    companyName: null,
+                    fmpSymbol: 'ZZZQ',
+                    quantity: '10',
+                    averagePrice: '150',
+                    updatedAt: '',
+                },
+            });
+            setRemovableWatchlist([AAPL, ZZZQ]);
+            const user = userEvent.setup();
+            render(<WatchlistSection />);
+            await convertRow(user, 'ZZZQ');
+            expect(
+                screen.getByRole('link', { name: '애플 (AAPL)' })
+            ).toHaveFocus();
+        });
+
+        it('목록이 비면 빈 상태 안내로 포커스를 옮긴다', async () => {
+            setRemovableWatchlist([AAPL]);
+            const user = userEvent.setup();
+            render(<WatchlistSection />);
+            await convertRow(user, 'AAPL');
+            expect(screen.getByText('아직 담은 종목이 없어요')).toHaveFocus();
+        });
+    });
+
+    it('삭제 버튼으로 행이 사라져도 다음 행의 종목 링크로 포커스를 옮긴다', async () => {
+        setRemovableWatchlist([AAPL, ZZZQ]);
+        const user = userEvent.setup();
+        render(<WatchlistSection />);
+        await user.click(
+            screen.getByRole('button', { name: 'AAPL 관심종목 삭제' })
+        );
+        expect(screen.getByRole('link', { name: 'ZZZQ' })).toHaveFocus();
     });
 
     it('회원 판정은 useWatchlist의 isMember를 따른다(힌트만 있어도 전환 버튼)', () => {

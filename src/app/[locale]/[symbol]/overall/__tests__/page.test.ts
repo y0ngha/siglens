@@ -10,7 +10,7 @@ const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
 }));
 
 // vi.mock은 hoist되지만 import/first와 가독성을 위해 모든 import 위에 둔다.
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/widgets/overall/OverallContent', () => ({
@@ -37,7 +37,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
@@ -45,6 +45,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi
         .fn()
         .mockReturnValue({ url: 'https://siglens.io/AAPL' }),
@@ -55,7 +59,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL/overall',
         keywords: ['AAPL'],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
     isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
@@ -87,7 +90,7 @@ import {
     default as OverallPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/overall/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekOverallAnalysisCache,

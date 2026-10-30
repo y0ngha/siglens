@@ -14,12 +14,12 @@ import {
     INDEXNOW_ENDPOINTS,
     INDEXNOW_TIMEOUT_MS,
 } from '@/shared/config/indexNow';
-import { isIndexNowEnabled } from '@/shared/lib/indexNow';
+import { isIndexNowEnabled } from '@/shared/api/indexNow';
 import {
     drainIndexNow,
     enqueueIndexNow,
     type IndexNowQueueEntry,
-} from '@/shared/lib/indexNowQueue';
+} from '@/shared/api/indexNowQueue';
 import {
     diffStaticLastmod,
     readStaticLastmods,

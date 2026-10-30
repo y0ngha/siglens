@@ -1,9 +1,9 @@
 import type { MockedFunction } from 'vitest';
 import { getAssetInfoAction } from '../../actions/getAssetInfoAction';
-import { getAssetInfo } from '../../lib/getAssetInfo';
+import { getAssetInfo } from '../../server/getAssetInfo';
 import type { AssetInfo } from '@/shared/lib/types';
 
-vi.mock('../../lib/getAssetInfo', () => ({
+vi.mock('../../server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
 

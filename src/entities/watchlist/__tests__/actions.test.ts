@@ -7,7 +7,7 @@ const { mockFindByUser, mockAdd, mockRemove, mockMerge } = vi.hoisted(() => ({
     mockMerge: vi.fn(),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -23,12 +23,12 @@ vi.mock('@/entities/watchlist/api', () => ({
         };
     }),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
 import { addWatchlistItemAction } from '@/entities/watchlist/actions/addWatchlistItemAction';
 import { removeWatchlistItemAction } from '@/entities/watchlist/actions/removeWatchlistItemAction';

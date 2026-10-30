@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 // 한글명 리졸버는 DB/FMP를 타는 server-only 경로다. 이 파일의 관심사는 렌더된
 // 링크 그래프이지 이름 조회가 아니므로, 결정적인 스텁으로 고정한다.
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -22,7 +22,7 @@ vi.mock('next/navigation', async importOriginal => ({
 
 import { RelatedSymbols } from '../RelatedSymbols';
 import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -104,6 +104,13 @@ describe('RelatedSymbols', () => {
         expect(
             screen.queryByRole('link', { name: /^NVDA$/ })
         ).not.toBeInTheDocument();
+    });
+
+    /** CSS를 읽지 않는 크롤러에게 앵커 텍스트는 textContent 그대로다 — `gap`만으로는 붙는다. */
+    it('칩 앵커 텍스트는 이름과 티커를 실제 공백으로 띄운다', async () => {
+        await renderRelated('MSFT');
+        const link = screen.getByRole('link', { name: /NVDA/ });
+        expect(link.textContent).toBe('엔비디아 NVDA');
     });
 
     it('큐레이션 한글명이 있으면 티커와 함께 노출한다 (DB 미스 폴백)', async () => {

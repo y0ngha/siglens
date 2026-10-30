@@ -36,7 +36,7 @@ vi.mock('@/entities/earnings-report/api', () => {
 vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     loadNewsMacroCalendar: vi.fn(async () => []),
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(async () => null),
 }));
 vi.mock('@/shared/lib/options/openInterestStale', () => ({
@@ -45,19 +45,22 @@ vi.mock('@/shared/lib/options/openInterestStale', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => ({})),
 }));
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(async () => ({})),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(async () => ({})),
+    })
+);
 const { mockPositionBucket } = vi.hoisted(() => ({
     mockPositionBucket: vi.fn(async () => undefined),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: mockPositionBucket,
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 const { mockFlowsScorecard } = vi.hoisted(() => ({
@@ -73,15 +76,15 @@ vi.mock('@/shared/lib/byokGate', () => ({
             tier !== 'free' && clientReasoning === true
     ),
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
 import { runOverallAnalysis, type ModelId } from '@y0ngha/siglens-core';
 import { executeOverallAnalysis } from '@/entities/analysis/server/overallAnalysisRunner';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import {
     getNextEarningsReport,
     listEarningsDates,

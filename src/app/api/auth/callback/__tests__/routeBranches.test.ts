@@ -32,7 +32,7 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
-vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
 
@@ -73,7 +73,7 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import {
     getOAuthAdapter,
     isOAuthProvider,
@@ -221,6 +221,35 @@ describe('GET /api/auth/callback — branch coverage', () => {
         const location = res.headers.get('location') ?? '';
         expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_profile_invalid');
+    });
+
+    it('redirects to error instead of throwing when the code exchange rejects', async () => {
+        mockIsOAuthProvider.mockReturnValue(true);
+        mockVerifyOAuthState.mockReturnValue({ ok: true, next: '/AAPL' });
+        mockGetOAuthAdapter.mockReturnValue({
+            id: 'google',
+            exchangeCodeForProfile: vi
+                .fn()
+                .mockRejectedValue(new TypeError('fetch failed')),
+        } as never);
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const req = makeRequest(
+            { state: 'valid', code: 'auth-code' },
+            { oauth_state: 'cookie' }
+        );
+        const res = await GET(req, DEFAULT_PARAMS);
+
+        expect(res.status).toBe(307);
+        const location = new URL(res.headers.get('location') ?? '');
+        expect(location.pathname).toBe('/login');
+        expect(location.searchParams.get('error')).toBe(
+            'oauth_profile_invalid'
+        );
+        expect(location.searchParams.get('next')).toBe('/AAPL');
+        errorSpy.mockRestore();
     });
 
     it('saves profile with empty accessToken when undefined (L135)', async () => {

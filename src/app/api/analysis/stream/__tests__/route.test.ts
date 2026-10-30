@@ -53,7 +53,7 @@ vi.mock('@/shared/api/verifiedCrawler', () => ({
     isVerifiedCrawler: vi.fn().mockResolvedValue(false),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
@@ -79,7 +79,7 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 
@@ -283,10 +283,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 vi.mock('@/entities/analysis-plain/api', () => ({
     rewriteToPlainLanguage: vi.fn(async () => '쉽게 쓴 분석문입니다.'),
 }));
-vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
+vi.mock('@/entities/analysis-plain/server/currentPrice', () => ({
     /**
      * 현재가 조회는 이 라우트의 관심사가 아니다 — "payload에 숫자가 있으면
-     * 조회하지 않는다"는 분기는 `entities/analysis-plain/lib/currentPrice.ts`로
+     * 조회하지 않는다"는 분기는 `entities/analysis-plain/server/currentPrice.ts`로
      * 옮겨졌고, 그쪽 단위 테스트가 실물로 검증한다. 여기서 실물을 쓰면 시세
      * 프로바이더까지 끌려온다.
      */
@@ -294,7 +294,7 @@ vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
     // 기준 시점 계산은 analysis-plain 단위 테스트가 실물로 검증한다 — 여기서는 배선만 본다.
     resolvePriceAsOf: vi.fn(async () => '9월 29일 종가'),
 }));
-vi.mock('@/entities/analysis/lib/reanalyzeCooldown', () => ({
+vi.mock('@/entities/analysis/actions/tryAcquireReanalyzeCooldown', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
@@ -313,8 +313,8 @@ import {
     resolveReasoning,
 } from '@/shared/lib/byokGate';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
-import { resolvePriceAsOf } from '@/entities/analysis-plain/lib/currentPrice';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { resolvePriceAsOf } from '@/entities/analysis-plain/server/currentPrice';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { isBot } from '@/shared/api/isBot';
@@ -335,7 +335,7 @@ import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/sub
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import {
     MAX_CONCURRENT_ANALYSIS_STREAMS,
@@ -343,7 +343,7 @@ import {
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
@@ -520,6 +520,14 @@ describe('POST /api/analysis/stream', () => {
             expect(response.status).toBe(400);
             const body = await response.json();
             expect(body.error).toContain('invalid JSON');
+        });
+
+        it('본문이 JSON null이면 처리되지 않은 TypeError 대신 400을 반환한다', async () => {
+            const response = await POST(makeRequest(undefined, 'null'));
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: 'request body must be a JSON object',
+            });
         });
 
         it('지원하지 않는 type 시 400 JSON 응답을 반환한다', async () => {
@@ -1024,7 +1032,7 @@ describe('POST /api/analysis/stream', () => {
 
         /**
          * `technical`은 DISPATCH 테이블을 타지 않고 **자기 분기에서** 로케일을
-         * 따로 푼다(`route.ts:608`). 그래서 DISPATCH 쪽 테스트가 아무리 촘촘해도
+         * 따로 푼다(`handleTechnicalStream.ts`의 `requestLocale`). 그래서 DISPATCH 쪽 테스트가 아무리 촘촘해도
          * 이 분기는 비어 있었다 — 실증: 그 줄을 `DEFAULT_LOCALE`로 고정해도
          * 89개 테스트가 전부 통과했다. 최다 트래픽 경로다.
          */
@@ -1908,7 +1916,8 @@ describe('POST /api/analysis/stream', () => {
     /**
      * Task S3 (prior-analysis-context) — both axes read history BEFORE the
      * core call (never lazily on a cache miss — see the long comment above
-     * each `findRecentForPrompt` call site in `route.ts`).
+     * each `findRecentForPrompt` call site in `_lib/technicalPromptInputs.ts` and
+     * `_lib/overallDispatch.ts`).
      *
      * 2026-09-27: 봇 요청도 더 이상 이 읽기를 건너뛰지 않는다 — core가
      * `priorAnalyses`의 fingerprint를 캐시 키에 접으므로, 건너뛰면 봇과

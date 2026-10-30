@@ -1,7 +1,7 @@
 'use client';
 
-import Script from 'next/script';
 import { useEffect, useSyncExternalStore } from 'react';
+import Script from 'next/script';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
     consumeSignupConversionFlag,
@@ -25,7 +25,7 @@ interface GoogleAdsTagProps {
 }
 
 /**
- * Google Ads 태그(gtag.js)와 가입 전환 기록.
+ * Google Ads 태그(gtag.js)와 가입 전환 기록. 메인·ai 호스트 레이아웃과 광고 랜딩(`lp`) 레이아웃이 싣는다.
  *
  * 레이아웃(서버 컴포넌트)이 `GOOGLE_ADS_ID`가 있을 때만 렌더한다 — 운영 빌드·E2E
  * 여부는 서버에서만 정확히 안다(`shared/config/googleAds.ts`).
@@ -33,8 +33,8 @@ interface GoogleAdsTagProps {
  * `allow_ad_personalization_signals: false`로 리마케팅을 끈다. 개인정보처리방침 v5가
  * "맞춤형 광고에 이용하지 않음"을 약속하므로 이 옵션을 지우면 방침이 거짓이 된다.
  *
- * **언제 불러오나.** gtag.js(~150KB)는 예전에 하이드레이션 직후 높은 우선순위로 받아,
- * 느린 모바일 회선에서 폰트·앱 JS와 대역을 다퉜다(2026-10-04 Lighthouse). 지금은
+ * **언제 불러오나.** gtag.js(~150KB)를 하이드레이션 직후 높은 우선순위로 받으면 느린 모바일
+ * 회선에서 폰트·앱 JS와 대역을 다툰다. 그래서
  *   - 광고 클릭으로 들어온 문서(URL에 클릭 식별자), 가입 직후, 광고 랜딩 → 바로
  *   - 그 밖 → 페이지가 다 뜬 뒤 한가할 때(`lazyOnload`)
  *   - 대기 중에 전환이 큐에 들어오면 → 그 순간 바로(`ADS_CONVERSION_QUEUED_EVENT`)

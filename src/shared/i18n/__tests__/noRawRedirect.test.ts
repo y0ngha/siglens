@@ -19,6 +19,16 @@ describe('서버 리다이렉트 로케일 가드', () => {
     const APP_PATHS = ['src/features', 'src/entities', 'src/app'];
     const isProd = (file: string) =>
         !file.includes('__tests__') && !file.includes('.test.');
+    /**
+     * 리다이렉트 대상이 이미 로케일이 붙은 경로라 헬퍼를 거치지 않는 파일.
+     * 항목마다 그 경로가 어디서 로케일을 얻는지 적는다.
+     */
+    const LOCALE_PREFIXED_TARGET_FILES: ReadonlySet<string> = new Set([
+        // OAuth state의 `next` — 로그인 화면이 로케일 접두사를 붙여 실었다.
+        'src/app/api/auth/callback/_lib/redirectSignedIn.ts',
+        // 받은 `url`을 내보내기만 하는 응답 빌더 — 호출부(handoff 라우트)가 `localePath`로 만든다.
+        'src/app/api/auth/handoff/_shared/responses.ts',
+    ]);
 
     it('리다이렉트 인자에 경로 리터럴을 직접 넣지 않는다', () => {
         // `redirect('/login')`처럼 리터럴로 시작하는 호출은 로케일을 잃는다.
@@ -35,14 +45,30 @@ describe('서버 리다이렉트 로케일 가드', () => {
         // 붙어 있다).
         // ponytail: 파일 단위 검사라 한 파일에 로케일 인지/미인지 리다이렉트가
         // 섞이면 통과한다. AST로 올리는 건 실제로 섞인 파일이 생기면.
+        // 헬퍼 검색도 같은 줄 패턴을 써서 주석 속 헬퍼 이름으로는 통과하지 못하게 한다.
+        // `localePathToLogin`(app/[locale]/_personal)은 내부에서 `localePath`로 로그인 주소와
+        // `next`를 모두 만드는 로케일 인지 헬퍼라 허용한다.
         const offenders = grepFiles(String.raw`^[^/*]*\bredirect\(`, APP_PATHS)
             .filter(isProd)
+            .filter(file => !LOCALE_PREFIXED_TARGET_FILES.has(file))
             .filter(
                 file =>
-                    grepFiles('localePath|localeHref|localeRedirect', [file])
-                        .length === 0
+                    grepFiles(
+                        String.raw`^[^/*]*\b(localePath|localeHref|localeRedirect|localePathToLogin)\b`,
+                        [file]
+                    ).length === 0
             );
         expect(offenders).toEqual([]);
+    });
+
+    it('예외 목록의 파일은 실제로 존재하고 redirect를 부른다', () => {
+        // 파일이 옮겨지거나 리다이렉트가 사라지면 예외가 죽은 채 남지 않게 한다.
+        const redirecting = new Set(
+            grepFiles(String.raw`^[^/*]*\bredirect\(`, APP_PATHS)
+        );
+        expect(
+            [...LOCALE_PREFIXED_TARGET_FILES].filter(f => !redirecting.has(f))
+        ).toEqual([]);
     });
 
     it('양성 대조: grep이 실제로 동작한다', () => {

@@ -22,10 +22,10 @@ vi.mock('@/entities/oauth-account/api', () => ({
         return {};
     }),
 }));
-vi.mock('@/entities/oauth-account/lib/revoker', () => ({
+vi.mock('@/entities/oauth-account/server/revoker', () => ({
     compositeOAuthRevoker: { revokeToken: vi.fn() },
 }));
-vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStore: vi.fn(),
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));

@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-    brandIntroName,
-    ROOT_KEYWORDS,
-    seoTitleWidth,
-    SEO_TITLE_MAX_WIDTH,
-} from '../seo';
+import { brandIntroName, ROOT_KEYWORDS } from '../seo';
+import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '../seoClamp';
 import { SITE_NAME_KO } from '@/shared/config/brand';
 import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';

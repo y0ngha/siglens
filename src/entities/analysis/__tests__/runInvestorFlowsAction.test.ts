@@ -22,7 +22,7 @@ vi.mock(
 
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: vi.fn(() => false) }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -47,7 +47,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getInvestorFlowsEvaluationOptions } from '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { investorFlowsCachedProvider } from '@/entities/investor-flows/server/getInvestorFlowsCachedProvider';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';

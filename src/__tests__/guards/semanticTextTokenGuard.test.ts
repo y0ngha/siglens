@@ -87,10 +87,10 @@ const TEXT_UTILITY_RE = new RegExp(
 const ALLOWED: ReadonlySet<string> = new Set([
     // 등급 게이지의 호(arc)는 SVG `stroke`다 — 글자가 아니라 그래픽이므로
     // 1.4.11의 3:1이 적용되고, 이 계열은 민 표면에서 4.1 이상이라 통과한다.
-    'widgets/financials/CompositeGradeGauge.tsx::SEGMENTS',
+    'widgets/financials/utils/gaugeGeometry.ts::SEGMENTS',
     // 큰 등급 글자는 `text-4xl font-bold`(36px)라 WCAG의 **큰 텍스트**에
     // 해당해 기준이 3:1이다. 같은 이유로 `-text` 짝이 필요 없다.
-    'widgets/financials/CompositeGradeGauge.tsx::GRADE_TEXT_COLOR',
+    'widgets/financials/utils/gradeStyles.ts::GRADE_TEXT_COLOR',
 ]);
 
 function offenders(): string[] {
@@ -237,7 +237,7 @@ function tintPairsIn(rawSource: string): TintPair[] {
     for (const m of source.matchAll(PAIR_RE)) {
         const token = m[1];
         // **줄이 아니라 초기화식 단위로 짝을 찾는다.** 틴트를 얹은 요소와
-        // 그 위에 놓인 글자는 거의 언제나 다른 줄에 있다 — `terms/page.tsx`의
+        // 그 위에 놓인 글자는 거의 언제나 다른 줄에 있다 — `terms/_components/TermsContent.tsx`의
         // `bg-ui-danger/5` 컨테이너와 그 안 `text-ui-danger-text`가 그렇고,
         // 클래스 맵 객체도 키마다 줄이 나뉜다. 줄로 자르면 그 알파들이
         // 불변식 검사에서 통째로 빠져, 규칙의 근거가 실사용을 못 덮는다.

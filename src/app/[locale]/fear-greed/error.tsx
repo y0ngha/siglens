@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { RouteErrorView } from '@/app/_components/RouteErrorView';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
-import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface FearGreedErrorProps {
     error: Error & { digest?: string };
@@ -11,13 +11,10 @@ interface FearGreedErrorProps {
 }
 
 /**
- * Error boundary for the `/fear-greed` ISR route.
+ * `/fear-greed` 서브트리(미국·한국·암호화폐)의 에러 경계.
  *
- * `getMarketFearGreedStatic` already degrades gracefully (page-level `.catch`
- * falls back to an empty snapshot), so a thrown render here would only come
- * from an unexpected client/render bug rather than the usual FMP/Redis
- * flakiness. This boundary still contains that into a branded, retryable UI
- * instead of a bare 500. `reset()` re-renders the segment.
+ * 판독값 로더 실패는 라우트가 빈 스냅샷으로 흡수하므로, 여기까지 오는 것은 예상 밖의
+ * 렌더 오류다. 그 경우에도 맨 500 대신 브랜드 화면과 재시도(`reset()` — 세그먼트 재렌더)를 준다.
  */
 export default function FearGreedError({ error, reset }: FearGreedErrorProps) {
     const t = useTranslations('app.fear-greed');

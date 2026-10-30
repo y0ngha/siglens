@@ -1,16 +1,13 @@
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 /**
- * Pick the chain to display for a given selector value.
+ * 선택한 만기 값에 해당하는 표시용 체인을 고른다.
  *
- * The options page shares one selection axis across three rendering
- * surfaces (metrics row, OI chart, chain table). Each surface used to
- * carry its own copy of this lookup; centralizing here keeps the rule
- * — `"all"` falls back to the nearest expiration, otherwise prefer an
- * exact match (with nearest as the safety net) — in one place.
+ * 옵션 페이지는 세 화면(지표 행, OI 차트, 체인 테이블)이 하나의 선택 축을 공유한다.
+ * 규칙 — `"all"`이면 가장 가까운 만기, 아니면 정확히 일치하는 만기(없으면 가장 가까운
+ * 만기로 안전망) — 을 한 곳에 둔다.
  *
- * Returns `null` when the snapshot has no chains at all (caller renders
- * an empty-state).
+ * 스냅샷에 체인이 하나도 없으면 `null`이다(호출자가 빈 상태를 그린다).
  *
  * 체인 타입에 대해 제네릭이다 — 서버의 전체 `OptionsSnapshot`과 클라이언트로 투영된
  * `ClientOptionsSnapshot`이 같은 규칙을 쓴다.

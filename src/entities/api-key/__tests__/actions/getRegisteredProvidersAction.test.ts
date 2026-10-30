@@ -1,7 +1,7 @@
 import type { MockedFunction } from 'vitest';
 const { mockFindByUser } = vi.hoisted(() => ({ mockFindByUser: vi.fn() }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -15,7 +15,7 @@ vi.mock('@/entities/api-key/api', () => ({
     }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
@@ -96,7 +96,11 @@ describe('getRegisteredProvidersAction', () => {
             id: 'user-1',
             email: 'test@example.com',
         } as never);
-        mockFindByUser.mockRejectedValue(new Error('DB connection failed'));
+        mockFindByUser.mockRejectedValue(
+            Object.assign(new Error('params: ciphertext-abc'), {
+                cause: { code: '08006' },
+            })
+        );
         const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -104,7 +108,10 @@ describe('getRegisteredProvidersAction', () => {
         const result = await getRegisteredProvidersAction();
 
         expect(result).toEqual([]);
-        expect(consoleErrorSpy).toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[getRegisteredProvidersAction] Failed to load registered providers',
+            { name: 'Error', code: '08006' }
+        );
         consoleErrorSpy.mockRestore();
     });
 

@@ -11,7 +11,7 @@ vi.mock('next-intl/server', async () => {
         await import('@/shared/test-utils/catalogTranslator');
     return nextIntlServerStub();
 });
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -33,7 +33,7 @@ vi.mock('@/entities/api-key/api', () => ({
     }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
@@ -161,6 +161,33 @@ describe('saveApiKeyAction', () => {
 
         expect(result.status).toBe('error');
         expect(result.code).toBe('storage_unavailable');
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('저장 실패 시 암호문이 담긴 원본 오류 대신 name·code만 로그에 남긴다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+        mockUpsert.mockRejectedValue(
+            Object.assign(new Error('Failed query: params: ciphertext-abc'), {
+                code: '23505',
+                cause: { code: '23505' },
+            })
+        );
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await saveApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic', apiKey: 'sk-ant-test-1234' })
+        );
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[saveApiKeyAction] Database error during user API key upsert',
+            { name: 'Error', code: '23505' }
+        );
         consoleErrorSpy.mockRestore();
     });
 

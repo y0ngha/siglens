@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { getReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { getReanalyzeCooldownMs } from '@/entities/analysis/actions/getReanalyzeCooldownMs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type {
@@ -17,12 +17,15 @@ vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
 }));
 
 // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
-vi.mock('@/entities/analysis/lib/reanalyzeCooldown', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/entities/analysis/lib/reanalyzeCooldown')
-    >()),
-    getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-}));
+vi.mock(
+    '@/entities/analysis/actions/getReanalyzeCooldownMs',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/analysis/actions/getReanalyzeCooldownMs')
+        >()),
+        getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
+    })
+);
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
@@ -244,6 +247,65 @@ describe('useAnalysis', () => {
             expect(
                 remainingOf(result.current.reanalyzeCooldownUntil)
             ).not.toBeCloseTo(99_000, -3);
+        });
+
+        it('응답 전에 종목이 바뀌면 새 종목을 조회하지 않았어도 늦게 온 값을 버린다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            let resolveAapl: (ms: number) => void = () => {};
+            (getReanalyzeCooldownMs as Mock).mockImplementationOnce(
+                () =>
+                    new Promise<number>(resolve => {
+                        resolveAapl = resolve;
+                    })
+            );
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(makeOptions({ symbol })),
+                { wrapper: makeWrapper(), initialProps: { symbol: 'AAPL' } }
+            );
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            rerender({ symbol: 'MSFT' });
+            await act(async () => {
+                resolveAapl(99_000);
+            });
+
+            expect(result.current.reanalyzeCooldownUntil).toBe(0);
+        });
+
+        it('다른 종목에 갔다 돌아오면 이미 읽었던 종목도 다시 조회한다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            (getReanalyzeCooldownMs as Mock).mockResolvedValue(42_000);
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(makeOptions({ symbol })),
+                { wrapper: makeWrapper(), initialProps: { symbol: 'AAPL' } }
+            );
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await waitFor(() =>
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(42_000, -3)
+            );
+            rerender({ symbol: 'MSFT' });
+            rerender({ symbol: 'AAPL' });
+            expect(result.current.reanalyzeCooldownUntil).toBe(0);
+
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+
+            await waitFor(() =>
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(42_000, -3)
+            );
+            expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(2);
         });
     });
 

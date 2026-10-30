@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DrizzleNoticeRepository } from '@/entities/notice/api';
-import { getActiveNoticesMemoized } from '@/entities/notice/lib/activeNoticesMemo';
+import { getActiveNoticesMemoized } from '@/entities/notice/server/activeNoticesMemo';
 import type { NoticeWireRecord } from '@/entities/notice/model/types';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { resolveLocale } from '@/shared/i18n/locales';
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * 공개 캐시 헤더. 응답이 **전 방문자 공통**이고(로케일은 쿼리 문자열, 개인화 값 없음) 공지는
  * "긴급 반영"이 요건이라 길게 잡지 않는다 — 60초 + 만료 뒤 5분은 stale로 내주며 뒤에서 갱신.
  *
- * ⚠️ 현재 Cloudflare 캐시 규칙은 `/api`를 제외한다(`docs/architecture/CDN_CACHING.md` §3).
+ * ⚠️ 현재 Cloudflare 캐시 규칙은 `/api`를 제외한다.
  * 그래서 `s-maxage`는 **지금은 엣지에서 효과가 없다** — `/api/notices`용 CDN 규칙이 나중에
  * 추가될 때 비로소 동작하도록 헤더만 올바르게 둔 것이다. 그 사이 오리진 DB 부하는 같은 60초
  * 창의 인스턴스 메모(`getActiveNoticesMemoized`)가 막는다.
@@ -26,7 +26,7 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 /**
  * 활성 공지 목록(`NoticeWireRecord[]`) — 우선순위/최신순.
  *
- * ## 왜 서버 액션이 아니라 GET 라우트인가 (2026-10-05 운영 크롤)
+ * ## 왜 서버 액션이 아니라 GET 라우트인가
  *
  * 공지 팝업은 모든 페이지에서 마운트되는데, 예전엔 마운트 때마다 Server Action(POST)으로
  * 공지를 읽었다. 크롤러 렌더도 그 POST를 매 페이지 한 번씩 쏘았다. 이 라우트로 옮기면 그

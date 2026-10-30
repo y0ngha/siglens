@@ -1,10 +1,9 @@
 /**
- * `analysis_history` / `analysis_prompt_blobs` repository.
+ * `analysis_history` / `analysis_prompt_blobs` 저장소.
  *
- * This module imports `node:crypto` (for `sha256Hex`) and is `server-only` —
- * only server consumers may import it. A client component reaching it would
- * repeat the earlier incident where a barrel leak shipped `crypto-browserify`
- * into all 33 routes' first-load JS (`project_client_bundle_server_sdk_leak`).
+ * `node:crypto`(`sha256Hex`)를 import하는 `server-only` 모듈이라 서버 소비자만 import할
+ * 수 있다. 클라이언트 컴포넌트가 이 모듈에 닿으면 예전에 barrel 누수로
+ * `crypto-browserify`가 33개 라우트의 first-load JS에 실린 사고가 반복된다.
  */
 import 'server-only';
 
@@ -26,9 +25,7 @@ import {
     type AssembledPromptRecord,
     type MarketSessionSpec,
     type PriorAnalysis,
-    type RiskLevel,
     type Timeframe,
-    type Trend,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
@@ -36,12 +33,9 @@ import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
-import {
-    resolveEffectiveActionLevels,
-    type ActionLevelsSource,
-} from './lib/effectiveActionLevels';
+import { toPriorAnalysis } from './lib/toPriorAnalysis';
 
-/** `analysis_history` 탭 축 — S2 스코프는 technical/overall 둘뿐. */
+/** `analysis_history` 탭 축 — 현재는 technical/overall 둘뿐이다. */
 export type AnalysisHistoryTab = 'technical' | 'overall';
 
 /**
@@ -77,52 +71,45 @@ export const PROMPT_DYNAMIC_RETENTION_DAYS = 7;
 export const PRUNE_BATCH_SIZE = 500;
 
 /**
- * Minimum age (from {@link analysisPromptBlobs.firstSeenAt}) a blob must
- * have before the orphan sweep in {@link DrizzleAnalysisHistoryRepository.pruneAnalysisHistory}
- * is allowed to delete it, even if no `analysis_history` row currently
- * references it.
+ * 고아 블롭 청소({@link DrizzleAnalysisHistoryRepository.pruneAnalysisHistory})가
+ * 삭제할 수 있는 블롭의 최소 나이({@link analysisPromptBlobs.firstSeenAt} 기준).
+ * 현재 어떤 `analysis_history` 행도 참조하지 않는 블롭이라도 이보다 어리면 지우지 않는다.
  *
- * **The race this closes.** `saveAnalysisHistory` does two sequential,
- * non-transactional writes — insert the prompt blobs, then (a network
- * round-trip later) insert the `analysis_history` row that references
- * their hashes. There is deliberately no FK between the two tables (see
- * `pruneAnalysisHistory`'s JSDoc), so nothing stops the orphan sweep from
- * running in that gap: it would see a freshly-inserted blob with no
- * referencing row yet, delete it, and the history insert that follows
- * would then persist a hash pointing at nothing. Silent — `result` is
- * unaffected (prior-analysis only reads that column), but the row loses
- * its prompt for no reason.
+ * **이것이 막는 경쟁.** `saveAnalysisHistory`는 트랜잭션 없는 두 번의 순차 쓰기를 한다 —
+ * 프롬프트 블롭을 넣고, (네트워크 왕복 뒤) 그 해시를 가리키는 `analysis_history` 행을
+ * 넣는다. 두 테이블 사이에는 의도적으로 FK가 없어(`pruneAnalysisHistory` JSDoc 참고)
+ * 그 틈에 고아 청소가 돌 수 있다: 막 들어온, 아직 참조 행이 없는 블롭을 보고 지우면,
+ * 뒤이은 history insert가 아무것도 가리키지 않는 해시를 남긴다. 조용한 손실이다 —
+ * `result`는 영향이 없지만(prior-analysis는 그 컬럼만 읽는다) 그 행은 까닭 없이
+ * 프롬프트를 잃는다.
  *
- * **Why this value is safe.** The gap between the two writes is bounded by
- * one blob-insert round-trip plus its `DB_TRANSIENT_RETRY` backoff
- * budget (`backoffBudgetMs: 5000` — see `isTransientDbError.ts`), so a
- * few seconds covers every realistic case, including a transient Neon
- * retry. Five minutes is two to three orders of magnitude past that,
- * with room to spare for clock skew between the app instance and Neon.
- * It costs nothing to wait — the sweep just picks up a still-orphaned
- * blob on a later `pruneAnalysisHistory` call, the same way it already
- * carries over remainders past {@link PRUNE_BATCH_SIZE}.
+ * **이 값이 안전한 이유.** 두 쓰기 사이의 간격은 블롭 insert 한 번의 왕복과
+ * `DB_TRANSIENT_RETRY` 백오프 예산(`backoffBudgetMs: 5000`, `isTransientDbError.ts`)으로
+ * 묶이므로 수 초면 일시적인 Neon 재시도를 포함한 모든 현실적 경우를 덮는다. 5분은 그보다
+ * 두세 자릿수 크고 앱 인스턴스와 Neon 사이의 시계 오차도 흡수한다. 기다려도 비용이 없다 —
+ * 청소는 여전히 고아인 블롭을 이후 호출에서 집어 가고, {@link PRUNE_BATCH_SIZE}를 넘긴
+ * 나머지를 이월하는 것과 같다.
  */
 export const ORPHAN_BLOB_MIN_AGE_MS = 5 * MS_PER_MINUTE;
 
 /**
- * The analysis's own generation time when it carries one, otherwise now.
+ * 분석이 자기 생성 시각을 싣고 있으면 그 시각, 아니면 지금.
  *
- * `AnalysisResponse.analyzedAt` is an ISO string set by core when the result
- * is produced. It is optional and, on a bad value, must not poison the row —
- * an unparseable date would become `Invalid Date` and silently break every
- * ordering and window query that reads this column.
+ * `AnalysisResponse.analyzedAt`은 core가 결과를 만들 때 찍는 ISO 문자열이다. 선택
+ * 필드이고, 잘못된 값이면 행을 오염시키면 안 된다 — 파싱 불가 날짜는 `Invalid Date`가
+ * 되어 이 컬럼을 읽는 모든 정렬·윈도우 쿼리를 조용히 깨뜨린다.
  *
- * Shared by both `analysis_history` writers — the SSE route
- * (`app/api/analysis/stream/route.ts`) and the SEO prewarm seams
- * (`entities/analysis/api.ts`'s `prewarmTechnical`/`prewarmOverall`) — so the
- * guard lives in exactly one place instead of being copy-pasted per caller.
- * Lives here (not in the app-layer route) because `entities/analysis/api.ts`
- * cannot import from `app/` (FSD dependency direction), while both callers
- * can already import this repository module directly.
+ * `analysis_history` 작성자 둘이 공유한다 — SSE 라우트(`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`)와
+ * SEO 프리웜 seam(`entities/analysis/api.ts`의 `prewarmTechnical`/`prewarmOverall`). 가드가 한 곳에만
+ * 있게 하려는 것이다. app 레이어 라우트가 아니라 여기 둔 이유는 `api.ts`가 `app/`을
+ * import할 수 없는 반면(FSD 의존 방향) 두 호출자는 이 저장소 모듈을 직접 import할 수
+ * 있어서다.
  */
 export function resolveGeneratedAt(result: unknown): Date {
-    const stamped = (result as { analyzedAt?: unknown } | null)?.analyzedAt;
+    const stamped =
+        typeof result === 'object' && result !== null
+            ? Reflect.get(result, 'analyzedAt')
+            : undefined;
     if (typeof stamped === 'string') {
         const parsed = new Date(stamped);
         if (!Number.isNaN(parsed.getTime())) return parsed;
@@ -153,74 +140,32 @@ export interface SaveAnalysisHistoryInput {
     inputFingerprint?: string;
 }
 
-function sha256Hex(body: string): string {
-    return createHash('sha256').update(body, 'utf8').digest('hex');
+/** `findRecentForPrompt` 입력. */
+export interface FindRecentForPromptInput {
+    symbol: string;
+    timeframe: string;
+    tab: AnalysisHistoryTab;
+    /** 이 이력이 먹이는 캐시 축. 기본 `'technical'`. */
+    axis?: AnalysisHistoryAxis;
+    /**
+     * `generatedBeforeMs`(현재 캐시 버킷) 제외를 건너뛴다. 현재 캐시 윈도우 안이든
+     * 아니든 절대 최신 행이 필요한 호출자 전용이다. 기본 `false`(축출 루프에 안전한 동작).
+     */
+    includeCurrentWindow?: boolean;
+    now?: Date;
+    /**
+     * 호출자가 이 분석의 core 호출(`runAnalysis`의 `session` / overall의
+     * `technical.session`)에 넘기는 시장 세션 스펙. `analysisHistoryQuery`로 전달해
+     * `generatedBeforeMs`가 core가 캐시 키의 이력을 자를 때 쓰는 세션 마감 경계와
+     * 같은 곳에 놓이게 한다(예: KRX 1Day는 05:00 KST가 아니라 세션 마감에서 넘어간다).
+     * 여기서 어긋나면 아래 축출 루프가 다시 열린다. 호출자가 core에도 생략할 때만
+     * 생략한다.
+     */
+    session?: MarketSessionSpec;
 }
 
-/**
- * `Trend` / `RiskLevel`의 허용 값 집합.
- *
- * `typeof === 'string'`만으로는 부족하다. 이 행들은 몇 달 전 스키마가 쓴
- * 것일 수 있고(이 모듈의 다른 JSDoc이 인정하는 전제다), 유니온에 없는
- * 문자열(`'sideways'` 등)이 들어 있으면 캐스트로는 걸러지지 않은 채
- * **AI 프롬프트에 사실처럼 주입된다.** 값이 실제로 유니온에 속하는지
- * 확인해야 하고, 아니면 그 행은 버린다.
- */
-const TRENDS: ReadonlySet<string> = new Set<Trend>([
-    'bullish',
-    'bearish',
-    'neutral',
-]);
-const RISK_LEVELS: ReadonlySet<string> = new Set<RiskLevel>([
-    'low',
-    'medium',
-    'high',
-]);
-
-const isTrend = (value: unknown): value is Trend =>
-    typeof value === 'string' && TRENDS.has(value);
-
-const isRiskLevel = (value: unknown): value is RiskLevel =>
-    typeof value === 'string' && RISK_LEVELS.has(value);
-
-/**
- * `analysis_history.result` jsonb → core's `PriorAnalysis` projection.
- *
- * `result` is `unknown` at the type level and may hold whatever an older
- * schema version wrote months ago, so this is defensive rather than a
- * straight cast: a row missing `trend`/`riskLevel`, or holding a non-string
- * value for either, is not a usable prior analysis and is dropped (returns
- * `null`) rather than passed through with garbage fields. Numeric fields
- * under `actionRecommendation` are filtered individually — a single bad
- * `NaN`/`Infinity` entry drops just that value, not the whole row, mirroring
- * core's own guard against non-finite values on the way into the prompt.
- */
-function toPriorAnalysis(row: {
-    result: unknown;
-    generatedAt: Date;
-}): PriorAnalysis | null {
-    if (typeof row.result !== 'object' || row.result === null) return null;
-    const { trend, riskLevel, actionRecommendation } = row.result as {
-        trend?: unknown;
-        riskLevel?: unknown;
-        actionRecommendation?: ActionLevelsSource;
-    };
-    if (!isTrend(trend) || !isRiskLevel(riskLevel)) {
-        return null;
-    }
-
-    // 진입가 검증 + 손절/익절 보정값 우선 — 근거는 헬퍼 JSDoc.
-    const { entryPrices, stopLoss, takeProfitPrices } =
-        resolveEffectiveActionLevels(actionRecommendation);
-
-    return {
-        generatedAt: row.generatedAt,
-        trend,
-        riskLevel,
-        ...(entryPrices !== undefined ? { entryPrices } : {}),
-        ...(stopLoss !== undefined ? { stopLoss } : {}),
-        ...(takeProfitPrices !== undefined ? { takeProfitPrices } : {}),
-    };
+function sha256Hex(body: string): string {
+    return createHash('sha256').update(body, 'utf8').digest('hex');
 }
 
 /**
@@ -262,7 +207,7 @@ export class DrizzleAnalysisHistoryRepository {
      * 2건이 남았고, 그중 하나만 프롬프트를 갖고 있었다.
      *
      * 그 중복은 조용히 기능을 무력화한다. 프롬프트에 실리는 이력은 최근
-     * {@link PRIOR_ANALYSIS_LIMIT}건인데, 그 자리가 **같은 시점의 복제본**으로 차면
+     * `PRIOR_ANALYSIS_LIMIT`건인데, 그 자리가 **같은 시점의 복제본**으로 차면
      * 모델에게 "이전 분석들"이라며 한 시점을 여러 번 보여 주게 된다 — 서로 다른
      * 시점의 판단을 비교시키려는 설계 의도와 정반대다.
      *
@@ -355,80 +300,46 @@ export class DrizzleAnalysisHistoryRepository {
     }
 
     /**
-     * Reads recent prior analyses for one (symbol, timeframe, tab) to feed
-     * core's `priorAnalyses` option (Task S3, prior-analysis-context).
+     * (symbol, timeframe, tab) 하나의 최근 이전 분석을 읽어 core의 `priorAnalyses`
+     * 옵션을 먹인다.
      *
-     * **`model_id` and `locale` are deliberately NOT filtered.** Both columns
-     * exist on `analysis_history` for auditing only — see the table's JSDoc
-     * in `shared/db/schema.ts`. Analyses are generated per output locale
-     * (four separate LLM calls per analysis run), but the digest core builds
-     * from `PriorAnalysis` is numeric/enum-only and language-neutral, so all
-     * four locales draw from one shared history pool; filtering by locale
-     * would cut the available data to a quarter for no reason. The same
-     * logic applies to `model_id`: a past market call (trend/risk/levels) is
-     * a past market call regardless of which model produced it, so this read
-     * is model-agnostic too. **If you are "fixing" this by adding a
-     * `WHERE model_id = ...` or `WHERE locale = ...` clause, don't — that is
-     * the specific mistake this comment exists to head off.**
+     * **`model_id`와 `locale`로는 일부러 거르지 않는다.** 두 컬럼은 감사용으로만
+     * `analysis_history`에 있다 — 테이블 JSDoc(`shared/db/schema.ts`) 참고. 분석은
+     * 출력 로케일별로 생성되지만(분석 1회에 LLM 호출 4번) core가 `PriorAnalysis`로 만드는
+     * 요약은 숫자·enum뿐이라 언어 중립이고, 네 로케일이 한 이력 풀을 공유한다. 로케일로
+     * 거르면 까닭 없이 데이터가 1/4로 줄어든다. `model_id`도 같다: 과거의 시장 판단
+     * (추세·위험·레벨)은 어느 모델이 냈든 과거의 시장 판단이다. **이를 "고치려고"
+     * `WHERE model_id = ...`나 `WHERE locale = ...`을 넣지 말 것 — 이 주석이 막으려는
+     * 바로 그 실수다.**
      *
-     * The query is sized via core's `analysisHistoryQuery(timeframe, axis,
-     * now, session)` (`limit` + `sinceMs` + `generatedBeforeMs`) rather than
-     * hand-picked constants — it is a
-     * deliberately coarse pre-filter core re-narrows twice downstream, and
-     * under-fetching here silently disables the feature. Never tighten this
-     * query below what `analysisHistoryQuery` returns.
+     * 쿼리 크기는 손으로 고른 상수가 아니라 core의 `analysisHistoryQuery(timeframe, axis,
+     * now, session)`(`limit` + `sinceMs` + `generatedBeforeMs`)로 정한다. core가 하류에서
+     * 두 번 다시 좁히는 의도적으로 거친 사전 필터이고, 여기서 덜 가져오면 기능이 조용히
+     * 꺼진다. 이 쿼리를 `analysisHistoryQuery`가 돌려주는 것보다 좁히지 말 것.
      *
-     * **`generatedBeforeMs` — the eviction-loop fix (measured on production,
-     * PLTR 1Day, 2026-09-29).** `ORDER BY generated_at DESC LIMIT limit` runs
-     * before core narrows the result to its cache-key fingerprint. Once the
-     * in-window rows fill `limit`, each fresh generation pushes the oldest
-     * out-of-window row out of *this query's* result set too — the survivor
-     * set (and therefore the `:hist=` fingerprint core derives from it)
-     * changes on every single generation, so the very next request misses
-     * the cache and regenerates, forever. Excluding rows inside the current
-     * cache bucket (`generated_at < generatedBeforeMs`, the same anchored
-     * bucket start core's key-narrowing uses) makes the result set depend
-     * only on rows the bucket cannot touch, so new generations can no longer
-     * displace it. Callers that explicitly want the newest row *including*
-     * the current bucket (e.g. a chat fallback wanting "whatever exists
-     * right now") pass `includeCurrentWindow: true` to skip this bound.
+     * **`generatedBeforeMs` — 축출 루프 수정(운영 실측, PLTR 1Day, 2026-09-29).**
+     * `ORDER BY generated_at DESC LIMIT limit`은 core가 결과를 캐시 키 지문으로 좁히기
+     * **전에** 돈다. 윈도우 안 행이 `limit`을 채우면, 새로 생성될 때마다 가장 오래된
+     * 윈도우 밖 행이 *이 쿼리의* 결과 집합에서도 밀려난다 — 생존 집합(그리고 core가 그것에서
+     * 도출하는 `:hist=` 지문)이 생성할 때마다 바뀌어, 바로 다음 요청이 캐시를 놓치고 영원히
+     * 재생성한다. 현재 캐시 버킷 안의 행(`generated_at < generatedBeforeMs`, core의 키
+     * 좁히기와 같은 앵커 버킷 시작)을 제외하면 결과 집합이 버킷이 건드릴 수 없는 행에만
+     * 의존해 새 생성이 그것을 밀어낼 수 없다. 현재 버킷을 포함한 가장 최신 행이 필요한
+     * 호출자(예: "지금 있는 것 아무거나"를 원하는 챗 폴백)는 `includeCurrentWindow: true`로
+     * 이 상한을 건너뛴다.
      *
-     * Each row's `result` jsonb is mapped to `PriorAnalysis` via
-     * {@link toPriorAnalysis}, which drops rows with a missing/non-string
-     * `trend` or `riskLevel` and strips individual non-finite prices rather
-     * than passing them through.
+     * 각 행의 `result` jsonb는 {@link toPriorAnalysis}로 `PriorAnalysis`에 매핑한다.
+     * `trend`/`riskLevel`이 없거나 문자열이 아닌 행은 버리고, 비유한 가격은 통과시키지
+     * 않고 값 단위로 걷어 낸다.
      *
-     * **Best-effort, like `saveAnalysisHistory`.** A history read must never
-     * fail — or slow down beyond one indexed query — an analysis request. Any
-     * failure (bad connection, malformed rows, etc.) is logged and resolves
-     * to `[]`, which is byte-identical to "this symbol/timeframe/tab has no
-     * history yet" from core's point of view.
+     * **`saveAnalysisHistory`처럼 best-effort다.** 이력 읽기는 분석 요청을 실패시키거나
+     * 인덱스 쿼리 하나 이상으로 느리게 해선 안 된다. 어떤 실패(연결 불량, 깨진 행 등)든
+     * 로그를 남기고 `[]`로 해소한다 — core 입장에서는 "이 symbol/timeframe/tab에 아직
+     * 이력이 없다"와 바이트 단위로 같다.
      */
-    async findRecentForPrompt(input: {
-        symbol: string;
-        timeframe: string;
-        tab: AnalysisHistoryTab;
-        /** Which cache axis this history feeds. Defaults to `'technical'`. */
-        axis?: AnalysisHistoryAxis;
-        /**
-         * Skip the `generatedBeforeMs` (current-cache-bucket) exclusion.
-         * Only for callers that want the absolute newest row regardless of
-         * whether it falls inside the current cache window. Defaults to
-         * `false` (the eviction-loop-safe behaviour).
-         */
-        includeCurrentWindow?: boolean;
-        now?: Date;
-        /**
-         * The market-session spec the caller hands core for this same
-         * analysis (`runAnalysis`'s `session` / overall's `technical.session`).
-         * Forwarded to `analysisHistoryQuery` so `generatedBeforeMs` lands on
-         * the same session-close boundary core uses to cut the cache-key
-         * history (e.g. KRX 1Day rolls at the session close, not 05:00 KST).
-         * A mismatch here re-opens the eviction loop described above. Omit it
-         * only when the caller also omits it from core.
-         */
-        session?: MarketSessionSpec;
-    }): Promise<PriorAnalysis[]> {
+    async findRecentForPrompt(
+        input: FindRecentForPromptInput
+    ): Promise<PriorAnalysis[]> {
         try {
             const now = input.now ?? new Date();
             const { limit, sinceMs, generatedBeforeMs } = analysisHistoryQuery(
@@ -481,144 +392,38 @@ export class DrizzleAnalysisHistoryRepository {
     }
 
     /**
-     * Retention sweep for `analysis_history` / `analysis_prompt_blobs`
-     * (Task S4). Intended caller: the seo-prewarm cron, after its primary
-     * work — see that route's JSDoc.
+     * `analysis_history` / `analysis_prompt_blobs` 보존 기간 청소. 호출자는 seo-prewarm
+     * cron이고, 주 작업 뒤에 돈다 — 그 라우트의 JSDoc 참고.
      *
-     * Two schedules, deliberately different — see {@link RESULT_RETENTION_DAYS}
-     * and {@link PROMPT_DYNAMIC_RETENTION_DAYS} (also `schema.ts`'s
-     * `analysisHistory` JSDoc):
+     * 서로 일부러 다른 두 주기다 — {@link RESULT_RETENTION_DAYS},
+     * {@link PROMPT_DYNAMIC_RETENTION_DAYS}(그리고 `schema.ts`의 `analysisHistory` JSDoc):
      *
-     * 1. Delete rows older than {@link RESULT_RETENTION_DAYS}.
-     * 2. Among survivors, clear `prompt_dynamic` (only) on rows older than
-     *    {@link PROMPT_DYNAMIC_RETENTION_DAYS} that still have it set —
-     *    `prompt_stable_hash`/`prompt_system_hash`/`prompt_version` are left
-     *    untouched.
-     * 3. Sweep `analysis_prompt_blobs` for hashes no `analysis_history` row
-     *    references any more (neither as `prompt_stable_hash` nor
-     *    `prompt_system_hash`). Run **after** steps 1–2 so it sees the final
-     *    state — step 1 is what actually orphans a blob (step 2 never
-     *    touches the hash columns, so it cannot orphan anything on its own).
-     *    There is no FK between the two tables specifically so this sweep
-     *    stays possible despite the differing retention windows (schema.ts).
-     *    Only blobs older than {@link ORPHAN_BLOB_MIN_AGE_MS} are eligible —
-     *    see that constant for the concurrent-write race this excludes.
+     * 1. {@link RESULT_RETENTION_DAYS}를 넘긴 행을 삭제한다.
+     * 2. 살아남은 행 중 {@link PROMPT_DYNAMIC_RETENTION_DAYS}를 넘기고 아직
+     *    `prompt_dynamic`이 있는 행의 그 컬럼**만** 비운다 —
+     *    `prompt_stable_hash`/`prompt_system_hash`/`prompt_version`은 건드리지 않는다.
+     * 3. 더 이상 어떤 `analysis_history` 행도 참조하지 않는(`prompt_stable_hash`로도
+     *    `prompt_system_hash`로도) 해시의 `analysis_prompt_blobs`를 청소한다. 최종
+     *    상태를 보도록 1–2 **뒤에** 돈다 — 블롭을 실제로 고아로 만드는 건 1이다(2는
+     *    해시 컬럼을 건드리지 않아 혼자서는 아무것도 고아로 만들 수 없다). 두 테이블의
+     *    보존 기간이 달라도 이 청소가 가능하도록 FK를 두지 않았다(schema.ts).
+     *    {@link ORPHAN_BLOB_MIN_AGE_MS}보다 오래된 블롭만 대상이다 — 그 상수가 막는
+     *    동시 쓰기 경쟁을 참고.
      *
-     * Every statement is capped at {@link PRUNE_BATCH_SIZE} rows — see that
-     * constant for why and what happens when more remains than one call can
-     * clear.
+     * 모든 문장은 {@link PRUNE_BATCH_SIZE}행으로 제한된다 — 이유와 한 호출이 다 지우지
+     * 못할 때의 동작은 그 상수를 참고.
      *
-     * **Best-effort, like `saveAnalysisHistory`/`findRecentForPrompt`.**
-     * Retention housekeeping must never take down the cron that carries it.
-     * Any failure is logged and resolved to zeroed counts.
+     * **`saveAnalysisHistory`/`findRecentForPrompt`처럼 best-effort다.** 보존 기간
+     * 청소가 그것을 싣고 가는 cron을 무너뜨려선 안 된다. 어떤 실패든 로그를 남기고 0으로
+     * 채운 개수로 해소한다.
      */
     async pruneAnalysisHistory(
         now: Date = new Date()
     ): Promise<PruneAnalysisHistoryResult> {
         try {
-            const resultCutoff = new Date(
-                now.getTime() - RESULT_RETENTION_DAYS * MS_PER_DAY
-            );
-            const promptCutoff = new Date(
-                now.getTime() - PROMPT_DYNAMIC_RETENTION_DAYS * MS_PER_DAY
-            );
-            const blobAgeCutoff = new Date(
-                now.getTime() - ORPHAN_BLOB_MIN_AGE_MS
-            );
-
-            // (1) Delete rows past the result retention window.
-            const staleRowIds = this.db
-                .select({ id: analysisHistory.id })
-                .from(analysisHistory)
-                .where(lt(analysisHistory.generatedAt, resultCutoff))
-                .limit(PRUNE_BATCH_SIZE);
-
-            const deletedRows = await withRetry(
-                () =>
-                    this.db
-                        .delete(analysisHistory)
-                        .where(inArray(analysisHistory.id, staleRowIds))
-                        .returning({ id: analysisHistory.id }),
-                DB_TRANSIENT_RETRY
-            );
-
-            // (2) Among survivors, clear prompt_dynamic past the shorter window.
-            const promptClearIds = this.db
-                .select({ id: analysisHistory.id })
-                .from(analysisHistory)
-                .where(
-                    and(
-                        lt(analysisHistory.generatedAt, promptCutoff),
-                        isNotNull(analysisHistory.promptDynamic)
-                    )
-                )
-                .limit(PRUNE_BATCH_SIZE);
-
-            const clearedRows = await withRetry(
-                () =>
-                    this.db
-                        .update(analysisHistory)
-                        .set({ promptDynamic: null })
-                        .where(inArray(analysisHistory.id, promptClearIds))
-                        .returning({ id: analysisHistory.id }),
-                DB_TRANSIENT_RETRY
-            );
-
-            // (3) Sweep blobs no surviving row references — computed last so
-            // it sees the post-delete state. `notExists` (not `notInArray`)
-            // is required here: the hash columns are nullable, and
-            // `NOT IN (subquery-with-NULLs)` is three-valued-logic UNKNOWN
-            // for every row once the subquery returns any NULL, which would
-            // silently keep every orphan forever.
-            //
-            // `lt(firstSeenAt, blobAgeCutoff)` guards against the
-            // insert-order race with `saveAnalysisHistory` — see
-            // `ORPHAN_BLOB_MIN_AGE_MS` for what it closes and why the
-            // window is sized the way it is. Without it, a blob inserted
-            // moments ago (its `analysis_history` row not written yet)
-            // looks identical to a real orphan and gets deleted here.
-            const orphanBlobHashes = this.db
-                .select({ hash: analysisPromptBlobs.hash })
-                .from(analysisPromptBlobs)
-                .where(
-                    and(
-                        lt(analysisPromptBlobs.firstSeenAt, blobAgeCutoff),
-                        notExists(
-                            this.db
-                                .select({ one: sql`1` })
-                                .from(analysisHistory)
-                                .where(
-                                    eq(
-                                        analysisHistory.promptStableHash,
-                                        analysisPromptBlobs.hash
-                                    )
-                                )
-                        ),
-                        notExists(
-                            this.db
-                                .select({ one: sql`1` })
-                                .from(analysisHistory)
-                                .where(
-                                    eq(
-                                        analysisHistory.promptSystemHash,
-                                        analysisPromptBlobs.hash
-                                    )
-                                )
-                        )
-                    )
-                )
-                .limit(PRUNE_BATCH_SIZE);
-
-            const deletedBlobs = await withRetry(
-                () =>
-                    this.db
-                        .delete(analysisPromptBlobs)
-                        .where(
-                            inArray(analysisPromptBlobs.hash, orphanBlobHashes)
-                        )
-                        .returning({ hash: analysisPromptBlobs.hash }),
-                DB_TRANSIENT_RETRY
-            );
+            const deletedRows = await this.deleteRowsPastRetention(now);
+            const clearedRows = await this.clearExpiredPromptDynamic(now);
+            const deletedBlobs = await this.deleteOrphanBlobs(now);
             console.log(
                 `[analysisHistoryRepository] prune: ${deletedRows.length} row(s) deleted, ${clearedRows.length} prompt(s) cleared, ${deletedBlobs.length} orphan blob(s) deleted`
             );
@@ -634,5 +439,108 @@ export class DrizzleAnalysisHistoryRepository {
             );
             return { rowsDeleted: 0, promptsCleared: 0 };
         }
+    }
+
+    /** (1) 결과 보존 기간을 넘긴 행을 삭제한다. */
+    private deleteRowsPastRetention(now: Date): Promise<{ id: string }[]> {
+        const resultCutoff = new Date(
+            now.getTime() - RESULT_RETENTION_DAYS * MS_PER_DAY
+        );
+        const staleRowIds = this.db
+            .select({ id: analysisHistory.id })
+            .from(analysisHistory)
+            .where(lt(analysisHistory.generatedAt, resultCutoff))
+            .limit(PRUNE_BATCH_SIZE);
+
+        return withRetry(
+            () =>
+                this.db
+                    .delete(analysisHistory)
+                    .where(inArray(analysisHistory.id, staleRowIds))
+                    .returning({ id: analysisHistory.id }),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /** (2) 살아남은 행 중 더 짧은 보존 기간을 넘긴 행의 `prompt_dynamic`을 비운다. */
+    private clearExpiredPromptDynamic(now: Date): Promise<{ id: string }[]> {
+        const promptCutoff = new Date(
+            now.getTime() - PROMPT_DYNAMIC_RETENTION_DAYS * MS_PER_DAY
+        );
+        const promptClearIds = this.db
+            .select({ id: analysisHistory.id })
+            .from(analysisHistory)
+            .where(
+                and(
+                    lt(analysisHistory.generatedAt, promptCutoff),
+                    isNotNull(analysisHistory.promptDynamic)
+                )
+            )
+            .limit(PRUNE_BATCH_SIZE);
+
+        return withRetry(
+            () =>
+                this.db
+                    .update(analysisHistory)
+                    .set({ promptDynamic: null })
+                    .where(inArray(analysisHistory.id, promptClearIds))
+                    .returning({ id: analysisHistory.id }),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /**
+     * (3) 살아남은 행이 참조하지 않는 블롭을 청소한다 — 삭제 이후 상태를 보도록 마지막에
+     * 계산한다. `notInArray`가 아니라 `notExists`여야 한다: 해시 컬럼이 nullable이고,
+     * `NOT IN (NULL이 섞인 서브쿼리)`는 서브쿼리가 NULL을 하나라도 돌려주는 순간 모든
+     * 행에서 3값 논리 UNKNOWN이 되어 고아를 영원히 남긴다.
+     *
+     * `lt(firstSeenAt, blobAgeCutoff)`는 `saveAnalysisHistory`와의 insert 순서 경쟁을
+     * 막는다 — 무엇을 막고 창을 왜 그 크기로 잡았는지는 `ORPHAN_BLOB_MIN_AGE_MS` 참고.
+     * 이것이 없으면 막 들어온(아직 `analysis_history` 행이 없는) 블롭이 진짜 고아와
+     * 구별되지 않아 여기서 삭제된다.
+     */
+    private deleteOrphanBlobs(now: Date): Promise<{ hash: string }[]> {
+        const blobAgeCutoff = new Date(now.getTime() - ORPHAN_BLOB_MIN_AGE_MS);
+        const orphanBlobHashes = this.db
+            .select({ hash: analysisPromptBlobs.hash })
+            .from(analysisPromptBlobs)
+            .where(
+                and(
+                    lt(analysisPromptBlobs.firstSeenAt, blobAgeCutoff),
+                    notExists(
+                        this.db
+                            .select({ one: sql`1` })
+                            .from(analysisHistory)
+                            .where(
+                                eq(
+                                    analysisHistory.promptStableHash,
+                                    analysisPromptBlobs.hash
+                                )
+                            )
+                    ),
+                    notExists(
+                        this.db
+                            .select({ one: sql`1` })
+                            .from(analysisHistory)
+                            .where(
+                                eq(
+                                    analysisHistory.promptSystemHash,
+                                    analysisPromptBlobs.hash
+                                )
+                            )
+                    )
+                )
+            )
+            .limit(PRUNE_BATCH_SIZE);
+
+        return withRetry(
+            () =>
+                this.db
+                    .delete(analysisPromptBlobs)
+                    .where(inArray(analysisPromptBlobs.hash, orphanBlobHashes))
+                    .returning({ hash: analysisPromptBlobs.hash }),
+            DB_TRANSIENT_RETRY
+        );
     }
 }

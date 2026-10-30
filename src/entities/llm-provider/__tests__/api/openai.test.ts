@@ -10,7 +10,7 @@ vi.mock('openai', () => ({
     default: MockOpenAI,
 }));
 
-import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/api/callDeadline';
 import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
 
 const BASE_OPTIONS = {

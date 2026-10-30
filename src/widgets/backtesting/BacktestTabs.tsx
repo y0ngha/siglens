@@ -12,10 +12,9 @@ interface BacktestTabsProps {
     /**
      * 서버에서 렌더된 케이스 목록(`BacktestCaseList`).
      *
-     * 예전에는 케이스 배열 전체를 받아 여기서 카드 트리를 그렸다 — 클라이언트
-     * 컴포넌트라 그 배열이 통째로 RSC 페이로드에 실리고 카드 100장이 전부 하이드레이션됐다.
-     * 상호작용은 종목 탭 하나뿐이라 목록은 서버가 그리고, 탭은 보이는 범위만 고른다
-     * (`useCaseListVisibility`).
+     * 클라이언트 컴포넌트가 케이스 배열을 받아 카드를 그리면 배열 전체가 RSC 페이로드에
+     * 실리고 카드가 전부 하이드레이션된다. 상호작용은 종목 탭 하나뿐이라 목록은 서버가
+     * 그리고, 탭은 보이는 범위만 고른다(`useCaseListVisibility`).
      */
     children: ReactNode;
 }
@@ -38,6 +37,7 @@ export function BacktestTabs({ tickers, children }: BacktestTabsProps) {
                 ariaLabel={t('BacktestTabs.7425e7')}
                 size="xs"
                 idPrefix={TABS_ID_PREFIX}
+                panelMounting="active"
             />
 
             <div

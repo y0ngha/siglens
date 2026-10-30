@@ -1,9 +1,10 @@
 import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
-import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
+import { FEAR_GREED_SESSIONS_PER_YEAR } from '@/entities/market-fear-greed/lib/buildMarketFearGreedComparisons';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
+import { FEAR_GREED_CHART_HEIGHT } from '@/widgets/fear-greed/constants';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
 const {
@@ -123,7 +124,7 @@ describe('FearGreedHistoricalChart', () => {
      * 서버는 "1년 전" 게이지 때문에 약 2년(504점)을 보낸다. 제목이 "최근 1년"이므로
      * 차트는 마지막 252점만 그려야 한다 — 앞쪽 1년이 섞이면 x축이 2년으로 늘어난다.
      */
-    it('plots only the last TRADING_DAYS_1Y points of a 2-year history', () => {
+    it('plots only the last FEAR_GREED_SESSIONS_PER_YEAR points of a 2-year history', () => {
         const start = Date.UTC(2024, 0, 1);
         const twoYears: FearGreedHistoryPoint[] = Array.from(
             { length: 504 },
@@ -139,8 +140,10 @@ describe('FearGreedHistoricalChart', () => {
         const data = mockSetData.mock.calls.at(-1)?.[0] as {
             time: string;
         }[];
-        expect(data).toHaveLength(TRADING_DAYS_1Y);
-        expect(data[0].time).toBe(twoYears[504 - TRADING_DAYS_1Y].date);
+        expect(data).toHaveLength(FEAR_GREED_SESSIONS_PER_YEAR);
+        expect(data[0].time).toBe(
+            twoYears[504 - FEAR_GREED_SESSIONS_PER_YEAR].date
+        );
         expect(data.at(-1)?.time).toBe(twoYears[503].date);
     });
 
@@ -165,6 +168,15 @@ describe('FearGreedHistoricalChart', () => {
             priceRange: { minValue: 0, maxValue: 100 },
             margins: { above: 0.1, below: 0.1 },
         });
+    });
+
+    /** 차트가 붙기 전에도 컨테이너가 차트와 같은 높이를 잡아야 도착할 때 아래가 밀리지 않는다. */
+    it('컨테이너 높이를 차트 생성 옵션과 같은 상수로 미리 잡는다', () => {
+        const { container } = render(
+            <FearGreedHistoricalChart history={history} />
+        );
+        const box = container.querySelector<HTMLDivElement>('[role="img"]');
+        expect(box?.style.height).toBe(`${FEAR_GREED_CHART_HEIGHT}px`);
     });
 
     it('fits the time scale after setting data', () => {

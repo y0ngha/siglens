@@ -18,7 +18,7 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     ),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -51,14 +51,14 @@ vi.mock('@/shared/api/market/sessionSpecFor', async () => {
 
 import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
-import { __resetBarsMemoryForTests } from '../lib/barsDataCache';
+import { __resetBarsMemoryForTests } from '../server/barsDataCache';
 import {
     EMPTY_SMC_RESULT,
     fetchBarsWithIndicators,
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
 } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierOnly } from '@/shared/lib/byokGate';
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';

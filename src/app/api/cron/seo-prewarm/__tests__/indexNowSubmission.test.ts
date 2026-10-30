@@ -3,7 +3,7 @@ import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCry
 import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import { INDEXNOW_ENDPOINTS } from '@/shared/config/indexNow';
-import type { IndexNowQueueEntry } from '@/shared/lib/indexNowQueue';
+import type { IndexNowQueueEntry } from '@/shared/api/indexNowQueue';
 import { SITE_URL } from '@/shared/lib/seo';
 
 const {
@@ -26,10 +26,10 @@ const {
     mockWriteStaticLastmods: vi.fn(),
 }));
 
-vi.mock('@/shared/lib/indexNow', () => ({
+vi.mock('@/shared/api/indexNow', () => ({
     isIndexNowEnabled: mockIsIndexNowEnabled,
 }));
-vi.mock('@/shared/lib/indexNowQueue', () => ({
+vi.mock('@/shared/api/indexNowQueue', () => ({
     enqueueIndexNow: mockEnqueue,
     drainIndexNow: mockDrain,
 }));

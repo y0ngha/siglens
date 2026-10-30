@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SectorTabs } from '@/widgets/dashboard/SectorTabs';
+import { SectorTabs } from '@/widgets/dashboard/ui/sector-signal/SectorTabs';
 import { SignalStockCard } from '@/widgets/dashboard/SignalStockCard';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
 

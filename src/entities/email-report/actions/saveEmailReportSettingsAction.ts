@@ -1,11 +1,12 @@
 'use server';
 
 import { getTranslations } from 'next-intl/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { logActionError } from '@/shared/lib/logActionError';
-import { DrizzleEmailReportSubscriptionRepository } from '@/entities/email-report/api';
+import { DrizzleEmailReportSubscriptionRepository } from '../api';
+import { isRawEmailReportSettingsInput } from '../lib/isRawEmailReportSettingsInput';
 import { toSettingsView } from '../lib/toSettingsView';
 import { validateEmailReportSettings } from '../lib/validateEmailReportSettings';
 import { weekdaysToMask } from '../lib/weekdayMask';
@@ -24,21 +25,6 @@ const MESSAGE_KEY: Record<EmailReportActionErrorCode, string> = {
     invalid_input: 'invalidInput',
     storage_unavailable: 'saveFailed',
 };
-
-/**
- * Server Action 인자는 선언 타입과 무관하게 클라이언트가 임의 JSON을 보낼 수 있다.
- * `validateEmailReportSettings`가 필드 타입을 가정하므로 모양부터 좁힌다.
- */
-function isRawInputShape(input: unknown): input is RawEmailReportSettingsInput {
-    if (typeof input !== 'object' || input === null) return false;
-    const candidate = input as Record<string, unknown>;
-    return (
-        typeof candidate.enabled === 'boolean' &&
-        Array.isArray(candidate.daysOfWeek) &&
-        typeof candidate.sendHour === 'number' &&
-        typeof candidate.timezone === 'string'
-    );
-}
 
 /**
  * 회원의 메일 리포트 수신 설정을 저장한다. 던지지 않고 결과를 돌려준다(SA-1).
@@ -60,7 +46,7 @@ export async function saveEmailReportSettingsAction(
 
     const user = await getCurrentUser();
     if (user === null) return fail('unauthenticated');
-    if (!isRawInputShape(input)) return fail('invalid_input');
+    if (!isRawEmailReportSettingsInput(input)) return fail('invalid_input');
 
     const v = validateEmailReportSettings(input);
     if (!v.ok) return fail(v.code);

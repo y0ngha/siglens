@@ -1,7 +1,7 @@
+import type { RateLimitVerdict } from '@/entities/siglens-api-key/lib/rateLimitWindow';
 import {
     consumeRateLimit,
     RateLimiterUnavailableError,
-    type RateLimitVerdict,
 } from '@/entities/siglens-api-key/server/rateLimit';
 import type { PublicApiRateBucket } from '@/shared/config/publicApi';
 import { apiError, API_STATUS } from './apiResponse';
@@ -9,6 +9,7 @@ import { apiError, API_STATUS } from './apiResponse';
 /** Redis 장애 시 클라이언트가 기다릴 초. */
 const LIMITER_UNAVAILABLE_RETRY_SECONDS = 30;
 
+/** 판정을 `X-RateLimit-Limit/Remaining/Reset` 헤더로 바꾼다. */
 export function rateLimitHeaders(
     verdict: RateLimitVerdict
 ): Record<string, string> {
@@ -41,6 +42,7 @@ export function prefixRateLimitHeaders(
     );
 }
 
+/** 한도 소비 결과 — 통과하면 응답에 실을 헤더, 거절이면 그대로 돌려줄 429/503 응답. */
 export type RateLimitOutcome =
     | { ok: true; headers: Record<string, string> }
     | { ok: false; response: Response };
@@ -93,6 +95,7 @@ export async function decideRateLimit(
     };
 }
 
+/** `decideRateLimit`의 거절을 라우트가 바로 반환할 응답으로 바꾼다. */
 export async function enforceRateLimit(
     userId: string,
     bucket: PublicApiRateBucket

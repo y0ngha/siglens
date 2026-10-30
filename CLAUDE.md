@@ -249,8 +249,12 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 
 - "Tests/lint/format/build pass" is reported only after the command ran and its full output (exit code, warning count) was read. Never trust the last line of piped output; read the exit code.
 - Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards`, because scoped runs skip the repo-wide guards.
+- Source-scanning guards also live in route/slice `__tests__` folders outside `src/__tests__/guards` (`src/app/[locale]/__tests__`, `src/shared/i18n/__tests__`). When a change moves calls, directives (`'use client'`) or exports into a helper, include those folders in the scope and update the guard to follow the moved code.
+- Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards` and `src/shared/i18n/__tests__` (e.g. `noClientHookInServerComponent`), because scoped runs skip the repo-wide guards. Before removing a `'use client'` directive, confirm the component calls no client-only hook.
 - Run `yarn format:check` before committing; a skipped formatter pass is the most common gate miss.
+- Rerun every gate covering a file after each code-changing review fix, React Doctor included; a pass on the earlier version does not carry over to the fixed one.
 - A claim of cleanup ("removed the dead mocks from both files") is verified with a repo-wide grep, and a claim of absence ("the page has no such control") is checked against the component source, not inferred from the rendered page.
+- A rule added or sharpened in a PR is swept across that PR's own diff before pushing (grep for the violating pattern in every changed file), not only the file the reviewer named; otherwise the PR violates its own new rule.
 - ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
 
 ---
@@ -279,7 +283,8 @@ Guidance lives in exactly one place. Pick the home by the kind of rule:
 
 | Rule kind | Home | ID prefix |
 |---|---|---|
-| Cross-cutting code style, TypeScript, constants, comments, change synchronization, i18n | `docs/conventions/CONVENTIONS.md` | CP TS NC CM CS I18 |
+| Cross-cutting code style, TypeScript, constants, comments, change synchronization | `docs/conventions/CONVENTIONS.md` | CP TS NC CM CS |
+| i18n (catalogs, extract, client keys, locale handling) | `docs/conventions/I18N.md` | I18 |
 | Client: hooks, components, a11y, effects, charts, Tailwind, React Query, URL state | `docs/conventions/REACT.md` | HK CR AX EF LW TW RQ |
 | Server: Server Actions, route handlers, I/O, concurrency, data cache, DB | `docs/conventions/SERVER.md` | SA CC DC DB |
 | Tests (structure, mocking, assertions, fixtures, E2E, guards) | `docs/conventions/TESTING.md` | TE |

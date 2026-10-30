@@ -60,4 +60,23 @@ describe('EmailReportUnsubscribePage', () => {
             'https://siglens.io/en/email-report/unsubscribe'
         );
     });
+
+    it('og:url을 루트(홈) 값이 아니라 이 페이지 URL로 단다', async () => {
+        const en = await generateMetadata({ params: params('en') });
+
+        expect(en.openGraph).toEqual(
+            expect.objectContaining({
+                title: 'Unsubscribe from email reports',
+                url: 'https://siglens.io/en/email-report/unsubscribe',
+            })
+        );
+    });
+
+    it('twitter 제목을 이 페이지 값으로 덮는다', async () => {
+        const ko = await generateMetadata({ params: params('ko') });
+
+        expect(ko.twitter).toEqual(
+            expect.objectContaining({ title: '메일 리포트 수신 거부' })
+        );
+    });
 });

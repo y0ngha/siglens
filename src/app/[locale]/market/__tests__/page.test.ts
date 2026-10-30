@@ -104,9 +104,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({ '@type': 'WebPage' }),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
-    clampSeoDescription: (text: string) => text,
     ROOT_KEYWORDS: ['주식'],
     SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoClamp', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoClamp')>()),
+    clampSeoDescription: (text: string) => text,
 }));
 
 vi.mock('@/shared/lib/og', () => ({
@@ -116,7 +119,8 @@ vi.mock('@/shared/lib/og', () => ({
 
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { blankComments } from '@/__tests__/guards/support/sourceScan';
 import * as pageModule from '@/app/[locale]/market/page';
 import { generateMetadata } from '@/app/[locale]/market/page';
 // `MarketContent`는 미국·한국 라우트가 공유하는 본문으로 옮겨졌다 — scope를 인자로 받는다.
@@ -128,6 +132,11 @@ import {
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 describe('Market page', () => {
+    // 단언이 먼저 실패해도 console 스파이가 다음 테스트로 새지 않게 여기서 복원한다(TESTING.md#TE-30).
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     describe('ISR route config', () => {
         it('exports revalidate = 3600 (literal — required for Next.js static analysis)', () => {
             // src/app/CLAUDE.md#AP-1: route segment config must be a literal, not an imported constant
@@ -253,9 +262,7 @@ describe('Market page', () => {
             mockGetSectorSignalsStatic.mockRejectedValue(
                 new Error('cache miss')
             );
-            const consoleSpy = vi
-                .spyOn(console, 'error')
-                .mockImplementation(() => undefined);
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
             const metadata = await generateMetadata({
                 params: Promise.resolve({ locale: 'ko' }),
@@ -266,8 +273,6 @@ describe('Market page', () => {
                 canonical: 'https://siglens.io/market',
             });
             expect(metadata.robots).toEqual({ index: false, follow: true });
-
-            consoleSpy.mockRestore();
         });
     });
 
@@ -449,14 +454,20 @@ describe('Market page', () => {
             ).resolves.toBeDefined();
         });
 
-        it('peekBriefingStatic throwing → .catch(() => null) prevents page crash', async () => {
-            // The page uses .catch(() => null) — even if peekBriefingStatic throws,
-            // peekSeed = null and the page continues to render. This test would FAIL
-            // if the page's own .catch were removed, because MarketContent({ scope: US_DASHBOARD_SCOPE }) would reject.
+        it('peekBriefingStatic throwing → 실패를 로그로 남기고 peekSeed null로 흡수한다', async () => {
+            // 본문의 `.catch`가 없으면 MarketContent가 reject하고, 로그가 없으면 두 번째 단언이 실패한다.
             mockPeekBriefingStatic.mockRejectedValue(new Error('redis down'));
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
             await expect(
                 MarketContent({ scope: US_DASHBOARD_SCOPE })
             ).resolves.toBeDefined();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                '[MarketContent] peekBriefingStatic failed:',
+                expect.any(Error)
+            );
         });
 
         it('getMarketSummaryStatic throwing → .catch() degraded empty summary, page does not throw', async () => {
@@ -476,8 +487,6 @@ describe('Market page', () => {
                 ),
                 expect.any(Error)
             );
-
-            consoleSpy.mockRestore();
         });
 
         it('getSectorSignalsStatic throwing → .catch() degraded empty stocks, page does not throw', async () => {
@@ -499,19 +508,35 @@ describe('Market page', () => {
                 ),
                 expect.any(Error)
             );
-
-            consoleSpy.mockRestore();
         });
     });
 
     describe('page structure — no searchParams dependency', () => {
-        it('MarketPage default export does not accept searchParams prop', () => {
-            // `params`(로케일 세그먼트)는 받지만 `searchParams`는 받지 않아야 한다.
-            // `searchParams`를 소비하면 Next가 라우트를 dynamic으로 분류해 ISR이 꺼진다.
-            // `params`는 라우트 세그먼트라 정적 렌더와 양립한다(`generateStaticParams`).
-            const source = readFileSync(
-                new URL('../page.tsx', import.meta.url),
-                'utf8'
+        /**
+         * `searchParams`를 소비하면 Next가 라우트를 dynamic으로 분류해 ISR이 꺼진다.
+         * 라우트 파일은 얇은 래퍼라, 라우트 로직을 실제로 가진 파일 전부를 읽는다 —
+         * 코드가 옮겨 가면 목록도 따라간다. 주석은 비우고 본다(TESTING.md#TE-42) —
+         * 이 계약을 설명하는 주석이 오탐을 내지 않게. `params`(로케일 세그먼트)는
+         * 라우트 세그먼트라 정적 렌더와 양립한다.
+         */
+        const ROUTE_LOGIC_FILES = [
+            '../page.tsx',
+            '../kr/page.tsx',
+            '../MarketRouteBody.tsx',
+            '../marketMetadata.ts',
+            '../loadMarketSignals.ts',
+            '../copy.ts',
+            '../_lib/marketSeed.ts',
+            '../_lib/marketItemListJsonLd.ts',
+        ];
+
+        it.each(ROUTE_LOGIC_FILES)('%s가 존재한다', file => {
+            expect(existsSync(new URL(file, import.meta.url))).toBe(true);
+        });
+
+        it.each(ROUTE_LOGIC_FILES)('%s는 searchParams를 읽지 않는다', file => {
+            const source = blankComments(
+                readFileSync(new URL(file, import.meta.url), 'utf8')
             );
             expect(source).not.toMatch(/searchParams/);
         });

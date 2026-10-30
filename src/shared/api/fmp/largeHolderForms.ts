@@ -1,3 +1,5 @@
+import { isRecord } from '@/shared/lib/isRecord';
+
 /**
  * 13D/G 공시의 **정확한 양식**을 SEC 제출 목록에서 찾는 순수 헬퍼.
  *
@@ -30,17 +32,12 @@ export interface SubmissionsIndex {
     extraFiles: { name: string; filingFrom: string; filingTo: string }[];
 }
 
-interface FilingColumns {
-    accessionNumber?: unknown;
-    filingDate?: unknown;
-    form?: unknown;
-}
-
 function readColumns(columns: unknown): SubmissionsIndex {
     const forms = new Map<string, string>();
     let oldest: string | null = null;
-    const { accessionNumber, filingDate, form } = (columns ??
-        {}) as FilingColumns;
+    const { accessionNumber, filingDate, form } = isRecord(columns)
+        ? columns
+        : {};
     if (Array.isArray(accessionNumber) && Array.isArray(form)) {
         accessionNumber.forEach((accession, i) => {
             const f = form[i];
@@ -64,14 +61,15 @@ function readColumns(columns: unknown): SubmissionsIndex {
 
 /** 제출 목록 JSON(`filings.recent` 열 배열 구조)을 읽는다. 모양이 다르면 빈 결과. */
 export function indexSubmissions(json: unknown): SubmissionsIndex {
-    const filings = (
-        json as { filings?: { recent?: unknown; files?: unknown } } | null
-    )?.filings;
-    const index = readColumns(filings?.recent);
-    if (Array.isArray(filings?.files)) {
-        for (const file of filings.files as Record<string, unknown>[]) {
+    const filings = isRecord(json) ? json.filings : undefined;
+    const recent = isRecord(filings) ? filings.recent : undefined;
+    const files: unknown = isRecord(filings) ? filings.files : undefined;
+    const index = readColumns(recent);
+    if (Array.isArray(files)) {
+        for (const file of files) {
             if (
-                typeof file?.name === 'string' &&
+                isRecord(file) &&
+                typeof file.name === 'string' &&
                 typeof file.filingFrom === 'string' &&
                 typeof file.filingTo === 'string'
             ) {

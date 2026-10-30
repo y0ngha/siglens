@@ -6,6 +6,7 @@ import {
     type ApiDefaultModelFormReturn,
 } from '@/features/siglens-api-key-management/hooks/useApiDefaultModelForm';
 import type { ApiModelOptionGroup } from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 vi.mock('react-dom', async importOriginal => ({
     ...(await importOriginal<typeof import('react-dom')>()),
@@ -79,6 +80,21 @@ function getHiddenModelValue(container: HTMLElement): string | undefined {
 }
 
 describe('DefaultModelForm — 키가 있을 때', () => {
+    it('제목은 섹션 h2 아래 단계인 h3 공유 토큰을 쓴다', () => {
+        renderForm();
+        expect(
+            screen.getByRole('heading', { name: 'API 기본 모델', level: 3 })
+        ).toHaveClass(...HEADING_SUBSECTION.split(' '));
+    });
+
+    it('목록 트리거는 늘 렌더되는 상태 영역을 설명으로 가리킨다', () => {
+        setForm({ state: { status: 'saved', model: 'claude-opus-5' } });
+        renderForm({ defaultModel: 'claude-opus-5' });
+        expect(getTrigger()).toHaveAccessibleDescription(
+            '기본 모델을 저장했어요.'
+        );
+    });
+
     it('열기 전에는 목록이 없고 트리거가 listbox를 연다고 알린다', () => {
         renderForm();
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();

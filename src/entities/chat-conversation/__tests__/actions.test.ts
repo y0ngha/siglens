@@ -13,7 +13,7 @@ const { mockUser, repo, RepoCtor } = vi.hoisted(() => {
     });
     return { mockUser: vi.fn(), repo, RepoCtor };
 });
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: mockUser,
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -36,6 +36,21 @@ describe('chat-conversation actions', () => {
     describe('unauthenticated', () => {
         it('비로그인은 실패/빈 결과이고 repository를 생성하지 않는다', async () => {
             mockUser.mockResolvedValue(null);
+            expect(await listConversationsAction()).toEqual([]);
+            expect(await getConversationAction(VALID_ID)).toBeNull();
+            expect(await deleteConversationAction(VALID_ID)).toEqual({
+                ok: false,
+            });
+            expect(await renameConversationAction(VALID_ID, 'title')).toEqual({
+                ok: false,
+            });
+            expect(RepoCtor).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('세션 조회 실패', () => {
+        it('getCurrentUser가 던져도 액션은 던지지 않고 실패 결과를 돌려준다', async () => {
+            mockUser.mockRejectedValue(new Error('session db down'));
             expect(await listConversationsAction()).toEqual([]);
             expect(await getConversationAction(VALID_ID)).toBeNull();
             expect(await deleteConversationAction(VALID_ID)).toEqual({

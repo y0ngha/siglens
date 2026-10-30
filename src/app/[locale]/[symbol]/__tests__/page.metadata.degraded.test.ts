@@ -28,17 +28,17 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string }) => info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
 }));
 
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: vi.fn(),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
@@ -46,7 +46,7 @@ vi.mock('next/navigation', () => ({ notFound: vi.fn() }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata } from '@/app/[locale]/[symbol]/page';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 
 type Snapshots = Awaited<ReturnType<typeof getSeoSnapshotsStatic>>;
 

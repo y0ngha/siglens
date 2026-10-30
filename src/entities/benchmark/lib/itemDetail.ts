@@ -1,3 +1,4 @@
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import {
     BENCHMARK_JUDGED_LEVELS,
     BENCHMARK_LABELS,
@@ -12,19 +13,15 @@ export function benchmarkItemDetailPath(round: string, qid: string): string {
     return `/benchmark/${encodeURIComponent(round)}/items/${encodeURIComponent(qid)}.json`;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function isRoundDetail(value: unknown): boolean {
     return (
-        isRecord(value) &&
+        isPlainRecord(value) &&
         typeof value.round === 'number' &&
         typeof value.answerText === 'string' &&
         Array.isArray(value.extracted) &&
         value.extracted.every(
             extracted =>
-                isRecord(extracted) &&
+                isPlainRecord(extracted) &&
                 typeof extracted.part === 'string' &&
                 (extracted.value === null ||
                     typeof extracted.value === 'string') &&
@@ -39,7 +36,7 @@ function isRoundDetail(value: unknown): boolean {
 
 function isJudgement(value: unknown): boolean {
     return (
-        isRecord(value) &&
+        isPlainRecord(value) &&
         typeof value.target === 'string' &&
         (BENCHMARK_JUDGED_LEVELS as readonly unknown[]).includes(value.level) &&
         typeof value.judge === 'string' &&
@@ -55,8 +52,8 @@ function isJudgement(value: unknown): boolean {
 export function isBenchmarkItemDetail(
     value: unknown
 ): value is BenchmarkItemDetail {
-    if (!isRecord(value) || typeof value.qid !== 'string') return false;
-    if (!isRecord(value.targets)) return false;
+    if (!isPlainRecord(value) || typeof value.qid !== 'string') return false;
+    if (!isPlainRecord(value.targets)) return false;
     const targetsOk = Object.values(value.targets).every(
         rounds => Array.isArray(rounds) && rounds.every(isRoundDetail)
     );

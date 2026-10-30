@@ -1,16 +1,18 @@
 'use server';
 
-import { localeRedirect } from '@/shared/i18n/localeRedirect';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { getDatabaseClient } from '@/shared/db/client';
+import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
-import { isLlmProvider, normalizeLlmApiKey } from '../lib/apiKey';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { getDatabaseClient } from '@/shared/db/client';
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
+import { logActionError } from '@/shared/lib/logActionError';
 import type {
     ApiKeyActionErrorCode,
     ApiKeyActionState,
 } from '@/shared/lib/types';
-import { revalidatePath } from 'next/cache';
-import { getTranslations } from 'next-intl/server';
+import { isLlmProvider, normalizeLlmApiKey } from '../lib/apiKey';
+import { classifySaveApiKeyError } from '../lib/saveApiKeyError';
 
 /** 에러 코드 → `entities.api-key.action` 메시지 키. */
 const ERROR_MESSAGE_KEY: Record<ApiKeyActionErrorCode, string> = {
@@ -19,6 +21,13 @@ const ERROR_MESSAGE_KEY: Record<ApiKeyActionErrorCode, string> = {
     storage_unavailable: 'storageUnavailable',
     unknown: 'unknown',
 };
+
+/** 분류된 저장 실패 코드별 서버 로그 문구. */
+const LOG_MESSAGE = {
+    server_misconfigured: 'Server encryption key misconfigured',
+    storage_unavailable: 'Database error during user API key upsert',
+    unknown: 'Unexpected error during user API key upsert',
+} as const satisfies Partial<Record<ApiKeyActionErrorCode, string>>;
 
 /**
  * 액션이 문구를 직접 만든다 — 상태의 `message`가 그대로 화면에 뿌려지므로
@@ -36,30 +45,10 @@ async function buildErrorState(
     };
 }
 
-/** Identifies the misconfigured-encryption-key error thrown by the repository. */
-function isEncryptionKeyMisconfigured(error: unknown): boolean {
-    return (
-        error instanceof Error &&
-        error.message.includes('LLM_API_KEY_ENCRYPTION_KEY')
-    );
-}
-
 /**
- * Best-effort detection of a Postgres-driver error.
- *
- * `postgres-js` and `pg` both attach a 5-character SQLSTATE on `error.code`
- * (e.g. `'23505'` for unique violation, `'08006'` for connection failure).
- * Detecting this shape lets us distinguish "DB layer failure" (recoverable
- * by retry / surfaced as `storage_unavailable`) from genuinely unexpected
- * exceptions which should fall through to `unknown` so we don't mislead the
- * user about the failure mode.
+ * `/account`의 키 등록 폼 액션. 로그인한 본인 계정(`user.id`)에만 저장하며,
+ * 평문 키는 로그·반환 상태에 싣지 않는다. 실패는 코드별 번역 문구로 돌려준다.
  */
-function isLikelyDatabaseError(error: unknown): boolean {
-    if (!(error instanceof Error)) return false;
-    const code = (error as { code?: unknown }).code;
-    return typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code);
-}
-
 export async function saveApiKeyAction(
     _prevState: ApiKeyActionState,
     formData: FormData
@@ -73,8 +62,9 @@ export async function saveApiKeyAction(
     if (typeof rawProvider !== 'string' || !isLlmProvider(rawProvider)) {
         const t = await getTranslations('entities.api-key.action');
         return {
-            ...(await buildErrorState('invalid_key_format')),
+            status: 'error',
             message: t('invalidProvider'),
+            code: 'invalid_key_format',
         };
     }
 
@@ -102,24 +92,8 @@ export async function saveApiKeyAction(
             message: t('saved'),
         };
     } catch (error) {
-        if (isEncryptionKeyMisconfigured(error)) {
-            console.error(
-                '[saveApiKeyAction] Server encryption key misconfigured',
-                error
-            );
-            return buildErrorState('server_misconfigured');
-        }
-        if (isLikelyDatabaseError(error)) {
-            console.error(
-                '[saveApiKeyAction] Database error during user API key upsert',
-                error
-            );
-            return buildErrorState('storage_unavailable');
-        }
-        console.error(
-            '[saveApiKeyAction] Unexpected error during user API key upsert',
-            error
-        );
-        return buildErrorState('unknown');
+        const code = classifySaveApiKeyError(error);
+        logActionError(`[saveApiKeyAction] ${LOG_MESSAGE[code]}`, error);
+        return buildErrorState(code);
     }
 }

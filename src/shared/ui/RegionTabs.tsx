@@ -80,7 +80,7 @@ export function RegionTabs({
                         href={region.href}
                         // 지역 탭은 모든 버티컬 페이지 상단에 렌더된다. prefetch를 켜면
                         // 같은 목적지에 대해 진입 페이지마다 다른 `_rsc` 키가 쌓여
-                        // CDN 캐시가 파편화된다 (docs/architecture/CDN_CACHING.md §1).
+                        // CDN 캐시가 파편화된다.
                         prefetch={false}
                         className={cn(
                             baseClass,

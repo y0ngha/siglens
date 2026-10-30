@@ -1,3 +1,6 @@
+/**
+ * 수급 데이터가 없는 종목의 빈 화면 — 시장별로 이유를 밝힌다.
+ */
 import { useTranslations } from 'next-intl';
 import type { InvestorFlowsMarket } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';

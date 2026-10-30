@@ -20,9 +20,10 @@ import {
     CALENDAR_ANALYZED_IMPACTS,
     CALENDAR_REGION_LABEL,
     economyCalendarCacheTag,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
+/** `analyzeEconomicEvents` 호출 옵션 — 방문자 경로는 `limit` 없이, 크론은 상한을 걸어 부른다. */
 export interface AnalyzeEconomicEventsOptions {
     /**
      * 한 번에 분석할 최대 이벤트 수. 생략하면 미분석 이벤트 전부(방문자 경로).
@@ -33,6 +34,7 @@ export interface AnalyzeEconomicEventsOptions {
     readonly logLabel: string;
 }
 
+/** `analyzeEconomicEvents`의 결과 — `recently-run`이면 스캔 자체를 건너뛴 것이다. */
 export type AnalyzeEconomicEventsResult =
     | { readonly status: 'recently-run' }
     | {

@@ -1,4 +1,5 @@
 import type { IndicatorResult } from '@y0ngha/siglens-core';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 
 /**
  * 클라이언트로 내려보내는 지표값의 **유효숫자** 자릿수.
@@ -45,16 +46,13 @@ export function roundNumber(value: number): number {
 }
 
 /**
- * Recursively applies {@link roundNumber} to every number in a JSON-like
- * value, preserving keys and array lengths. A type-generic public wrapper
- * around the same private `roundDeep` traversal `roundIndicators` (below)
- * also calls — NOT layered on top of `roundIndicators`, a sibling of it —
- * for agent tool results that pass core metrics straight through (binary-
- * float noise such as `0.050000000000000266` otherwise reaches the model
- * verbatim).
+ * JSON 모양 값의 모든 숫자에 {@link roundNumber}를 재귀 적용한다(키·배열 길이 보존). `roundIndicators`가
+ * 쓰는 것과 같은 `roundDeep` 순회의 타입 제네릭 공개판이다 — `roundIndicators` 위에 얹은 것이 아니라
+ * 그 형제다. core 지표를 그대로 통과시키는 에이전트 도구 결과가 쓴다. 이게 없으면
+ * `0.050000000000000266` 같은 이진 부동소수 잡음이 모델에 그대로 전달된다.
  */
 export function roundNumbersDeep<T>(value: T): T {
-    // safe: roundDeep only swaps numbers for numbers, so the runtime shape is T.
+    // roundDeep은 숫자를 숫자로만 바꾸므로 런타임 모양이 T와 같다.
     return roundDeep(value) as T;
 }
 
@@ -69,14 +67,9 @@ export function roundNumbersDeep<T>(value: T): T {
 function roundDeep(value: unknown): unknown {
     if (typeof value === 'number') return roundNumber(value);
     if (Array.isArray(value)) return value.map(roundDeep);
-    if (value !== null && typeof value === 'object') {
+    if (isPlainRecord(value)) {
         return Object.fromEntries(
-            // safe: guarded by `typeof value === 'object' && value !== null` above —
-            // any non-null object is string-indexable, so Object.entries accepts it.
-            Object.entries(value as Record<string, unknown>).map(([k, v]) => [
-                k,
-                roundDeep(v),
-            ])
+            Object.entries(value).map(([k, v]) => [k, roundDeep(v)])
         );
     }
     return value;
@@ -93,13 +86,12 @@ function roundDeep(value: unknown): unknown {
  * 심볼 라우트는 롱테일(URL당 1.14회 요청, 93%가 1회성)이라 CDN 캐시가 사실상 도움을
  * 주지 못하는 구간이다 — 즉 이 페이로드는 매 요청 오리진에서 그대로 나간다. 게다가
  * `useBars`가 30초 staleTime으로 장중 재요청하므로 사용자당 반복 비용이기도 하다.
- * 배경: docs/architecture/CDN_CACHING.md §2 (L5)
  *
  * **계산과 캐시는 건드리지 않는다.** core의 지표 계산도, 캐시 키도 그대로다 —
  * 값을 만들어 캐시에 넣는 과정은 불변이고, 클라이언트로 나가는 마지막 순간에만 줄인다.
  */
 export function roundIndicators(indicators: IndicatorResult): IndicatorResult {
-    // safe: roundDeep은 키를 보존하고 실수만 같은 자리의 실수로 바꾸므로
+    // roundDeep은 키를 보존하고 실수만 같은 자리의 실수로 바꾸므로
     // 런타임 모양이 IndicatorResult와 구조적으로 동일하다.
     return roundDeep(indicators) as IndicatorResult;
 }

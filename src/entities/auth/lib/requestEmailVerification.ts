@@ -13,7 +13,12 @@ import type {
 
 const PURPOSE = 'email_verification' as const;
 
-/** Issue a numeric email verification code and dispatch it to the address. */
+/**
+ * 숫자 이메일 인증 코드를 발급해 해당 주소로 보낸다. 코드는 해시만 저장한다.
+ *
+ * 형식이 잘못된 이메일은 오류 대신 `ok: true`(`codeIssued: false`)를 돌려준다. 발송 실패는
+ * 던지지 않고 `emailDispatched: false`로 알린다.
+ */
 export async function requestEmailVerification(
     input: RequestEmailVerificationInput,
     dependencies: RequestEmailVerificationDependencies,

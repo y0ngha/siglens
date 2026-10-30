@@ -1,4 +1,5 @@
 import 'server-only';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 
 /**
  * 네이버 증권 모바일 API의 투자자별 일별 매매동향(`/api/stock/{code}/trend`) 어댑터.
@@ -43,12 +44,8 @@ function formatBizdate(raw: unknown): string | null {
     return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function parseRow(item: unknown): NaverInvestorTrendRow | null {
-    if (!isRecord(item)) return null;
+    if (!isPlainRecord(item)) return null;
     const r = item;
     const date = formatBizdate(r.bizdate);
     const foreignNet = parseNaverNumber(r.foreignerPureBuyQuant);

@@ -1,3 +1,4 @@
+import backtestData from '@/entities/backtest-case/data/data.json';
 import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
 
 describe('validateBacktestData', () => {
@@ -29,6 +30,12 @@ describe('validateBacktestData', () => {
         meta: {},
         cases: [validCase],
     };
+
+    describe('bundled data', () => {
+        it('accepts the shipped data.json', () => {
+            expect(() => validateBacktestData(backtestData)).not.toThrow();
+        });
+    });
 
     describe('valid input', () => {
         it('returns data unchanged when input is valid', () => {
@@ -97,6 +104,36 @@ describe('validateBacktestData', () => {
             expect(() =>
                 validateBacktestData({ ...validData, cases: null })
             ).toThrow('cases must be an array');
+        });
+
+        it('throws a descriptive error when a case is null', () => {
+            expect(() =>
+                validateBacktestData({ ...validData, cases: [null] })
+            ).toThrow('cases[0] must be an object');
+        });
+
+        it('throws a descriptive error when a case is a primitive', () => {
+            expect(() =>
+                validateBacktestData({ ...validData, cases: [validCase, 1] })
+            ).toThrow('cases[1] must be an object');
+        });
+
+        it('throws when a bullishTargets entry is null', () => {
+            const data = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            bullishTargets: [null],
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(data)).toThrow(
+                'cases[0].aiAnalysis.bullishTargets[0] must be an object'
+            );
         });
 
         it('throws when a case has invalid returnPct type', () => {
@@ -419,5 +456,129 @@ describe('validateBacktestData', () => {
             };
             expect(validateBacktestData(data)).toEqual(data);
         });
+    });
+});
+
+describe('validateBacktestData — riskLevel 정규화', () => {
+    const baseCase = {
+        ticker: 'NVDA',
+        entryDate: '2025-04-11',
+        entryPrice: 98.31,
+        exitDate: '2025-04-19',
+        exitPrice: 121.42,
+        holdingDays: 8,
+        returnPct: 23.5,
+        signalType: 'buy',
+        result: 'win',
+        exitReason: 'take_profit',
+        aiResult: 'win',
+        aiTrendHit: true,
+        aiAnalysis: {
+            summary: 'RSI 반등',
+            tags: [],
+            entryRecommendation: 'enter',
+            bullishTargets: [],
+        },
+    };
+    const withRisk = (riskLevel: unknown) => ({
+        meta: {},
+        cases: [
+            { ...baseCase, aiAnalysis: { ...baseCase.aiAnalysis, riskLevel } },
+        ],
+    });
+
+    it('데이터의 medium을 core 정식 값 moderate로 바꾼다', () => {
+        const result = validateBacktestData(withRisk('medium'));
+        expect(result.cases[0].aiAnalysis.riskLevel).toBe('moderate');
+    });
+
+    it.each(['low', 'moderate', 'high', 'extreme'])(
+        '정식 값 %s는 그대로 둔다',
+        level => {
+            const result = validateBacktestData(withRisk(level));
+            expect(result.cases[0].aiAnalysis.riskLevel).toBe(level);
+        }
+    );
+
+    it('입력 객체를 변형하지 않는다', () => {
+        const input = withRisk('medium');
+        validateBacktestData(input);
+        expect(input.cases[0].aiAnalysis.riskLevel).toBe('medium');
+    });
+
+    it('riskLevel이 없는 케이스는 그대로 통과한다', () => {
+        const input = { meta: {}, cases: [baseCase] };
+        expect(validateBacktestData(input)).toEqual(input);
+    });
+
+    it.each(['mystery', 'HIGH', 'constructor', ''])(
+        '모르는 값 %j은 던진다',
+        level => {
+            expect(() => validateBacktestData(withRisk(level))).toThrow(
+                /cases\[0\]\.aiAnalysis\.riskLevel must be 'low'/
+            );
+        }
+    );
+});
+
+describe('validateBacktestData — 날짜 형식', () => {
+    const base = {
+        ticker: 'NVDA',
+        entryDate: '2025-04-11',
+        entryPrice: 98.31,
+        exitDate: '2025-04-19',
+        exitPrice: 121.42,
+        holdingDays: 8,
+        returnPct: 23.5,
+        signalType: 'buy',
+        result: 'win',
+        exitReason: 'take_profit',
+        aiResult: 'win',
+        aiTrendHit: true,
+        aiAnalysis: {
+            summary: '',
+            tags: [],
+            entryRecommendation: 'enter',
+            bullishTargets: [],
+        },
+    };
+    const withDates = (overrides: Record<string, unknown>) => ({
+        meta: {},
+        cases: [{ ...base, ...overrides }],
+    });
+
+    it('YYYY-MM-DD 날짜는 통과한다', () => {
+        expect(() => validateBacktestData(withDates({}))).not.toThrow();
+    });
+
+    it.each(['entryDate', 'exitDate'])('%s가 잘못된 형식이면 던진다', field => {
+        for (const bad of ['2025-4-11', '2025/04/11', '', 20250411, null]) {
+            expect(() =>
+                validateBacktestData(withDates({ [field]: bad }))
+            ).toThrow(`cases[0].${field} must be a YYYY-MM-DD string`);
+        }
+    });
+
+    it.each(['entryDate', 'exitDate'])(
+        '%s가 달력에 없는 날짜면 던진다',
+        field => {
+            for (const bad of [
+                '2026-13-45',
+                '2026-00-10',
+                '2026-04-31',
+                '2026-02-30',
+                '2025-02-29',
+            ]) {
+                expect(() =>
+                    validateBacktestData(withDates({ [field]: bad }))
+                ).toThrow(`cases[0].${field} must be a YYYY-MM-DD string`);
+            }
+        }
+    );
+
+    it('윤일은 통과한다', () => {
+        expect(() =>
+            validateBacktestData(withDates({ entryDate: '2024-02-29' }))
+        ).not.toThrow();
     });
 });

@@ -18,7 +18,7 @@ const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/entities/ticker/api', () => ({
@@ -32,13 +32,13 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
     hasOptionsMarket: vi.fn(),
 }));
@@ -78,6 +78,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolOptionsSeoContent: vi.fn().mockReturnValue({
         title: '',
@@ -86,7 +90,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: '',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -94,11 +97,11 @@ import type { ReactNode } from 'react';
 import OptionsPage from '@/app/[locale]/[symbol]/options/page';
 import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/entities/options-chain/lib/optionsDataCache';
+} from '@/entities/options-chain/server/optionsDataCache';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';

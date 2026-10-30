@@ -70,7 +70,7 @@ describe('Footer', () => {
 
     /**
      * 저작권 줄의 브랜드는 로케일 표기다 — ko `시그렌즈`, 그 외 `SIGLENS`
-     * (`CONVENTIONS.md#I18-11`).
+     * (`I18N.md#I18-11`).
      */
     it('ko 저작권 줄은 한글 브랜드(시그렌즈)다', () => {
         renderWithIntl(<Footer />, { locale: 'ko' });

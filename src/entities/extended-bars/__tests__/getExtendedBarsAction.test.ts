@@ -1,7 +1,7 @@
 vi.mock('@/entities/extended-bars/api', () => ({
     loadExtendedBars: vi.fn(),
 }));
-vi.mock('@/entities/auth/lib/resolveCallerTier', () => ({
+vi.mock('@/entities/auth/server/resolveCallerTier', () => ({
     resolveCallerTier: vi.fn(),
 }));
 
@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Bar, Tier } from '@y0ngha/siglens-core';
 import { getExtendedBarsAction } from '@/entities/extended-bars/actions/getExtendedBarsAction';
 import { loadExtendedBars } from '@/entities/extended-bars/api';
-import { resolveCallerTier } from '@/entities/auth/lib/resolveCallerTier';
+import { resolveCallerTier } from '@/entities/auth/server/resolveCallerTier';
 
 const mockedLoad = vi.mocked(loadExtendedBars);
 const mockedTier = vi.mocked(resolveCallerTier);

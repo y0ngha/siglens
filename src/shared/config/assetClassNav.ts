@@ -9,7 +9,7 @@
  * 1. `widgets/layout/HeaderNav*` — 데스크톱 드롭다운
  * 2. `widgets/layout/HeaderMobileMenu` — 모바일 드로어(섹션 + 지역 링크)
  * 3. `widgets/layout/Footer` — 평탄화한 전체 링크
- * 4. `widgets/home/heroQuickLinks` — 홈 히어로 퀵링크
+ * 4. `widgets/home/utils/heroQuickLinks` — 홈 히어로 퀵링크
  *
  * **왜 단일 소스여야 하는가**: 2026-08 감사에서 헤더와 홈 히어로가 같은 목적지를
  * 다른 라벨로 가리키고 한쪽만 갱신된 이력이 있다. 버티컬마다 지역 개수가 다른
@@ -18,7 +18,7 @@
  *
  * **지역 개수가 버티컬마다 다른 것은 의도다.** 데이터가 없는 지역은 메뉴에 열지
  * 않는다 — 눌렀더니 "표본이 부족합니다"만 나오는 링크는 없는 것만 못하다.
- * 근거는 `docs/superpowers/specs/2026-08-19-asset-class-navigation-design.md` §1.3.
+ * (2026-08-19 자산군 내비게이션 설계 결정.)
  */
 
 /** 지역(자산군) 축. 암호화폐는 지리적 지역이 아니지만 사용자에게는 같은 층의 선택지다. */

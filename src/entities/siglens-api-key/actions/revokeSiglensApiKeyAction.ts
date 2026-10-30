@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import type {
     RevokeSiglensApiKeyState,
     ReachableSiglensApiKeyErrorCode,
     SiglensApiKeyActionErrorCode,
 } from '@/entities/siglens-api-key/model';
-import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuth';
+import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
 

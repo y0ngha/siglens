@@ -6,7 +6,7 @@ import { GUIDE_CACHE_TAG } from '@/entities/guide/api';
 import type { GuideEntry } from '@/entities/guide/types';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
-import { lookupTickerDisplayNames } from '@/entities/ticker/lib/koreanNameStore';
+import { lookupTickerDisplayNames } from '@/entities/ticker/server/koreanNameStore';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { dashboardScopeOf } from '@/shared/config/dashboardScope';

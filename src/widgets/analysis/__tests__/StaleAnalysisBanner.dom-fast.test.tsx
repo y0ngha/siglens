@@ -36,7 +36,7 @@ describe('StaleAnalysisBanner', () => {
         expect(onReanalyzeIntent).toHaveBeenCalledTimes(2);
     });
 
-    it('disables the reanalyze button while cooldown is active', () => {
+    it('marks the reanalyze button aria-disabled (not disabled) while cooldown is active', () => {
         const onReanalyze = vi.fn();
         render(
             <StaleAnalysisBanner
@@ -45,7 +45,9 @@ describe('StaleAnalysisBanner', () => {
             />
         );
         const button = screen.getByRole('button', { name: /재분석/ });
-        expect(button).toBeDisabled();
+        // `disabled`면 포커스 중 쿨다운이 걸릴 때 포커스가 body로 떨어진다(REACT.md#AX-3).
+        expect(button).toHaveAttribute('aria-disabled', 'true');
+        expect(button).not.toBeDisabled();
     });
 
     it('does not invoke onReanalyze when the button is clicked while cooling down', async () => {

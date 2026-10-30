@@ -145,4 +145,48 @@ describe('useCopyToClipboard', () => {
         expect(result.current.failed).toBe(true);
         expect(writeTextMock).not.toHaveBeenCalled();
     });
+
+    it('keeps the last copy visible for the full reset window when copies overlap', async () => {
+        const resolvers: Array<() => void> = [];
+        const deferred = (): Promise<void> =>
+            new Promise<void>(resolve => {
+                resolvers.push(resolve);
+            });
+        writeTextMock
+            .mockImplementationOnce(deferred)
+            .mockImplementationOnce(deferred);
+        const { result } = renderHook(() => useCopyToClipboard());
+
+        let first: Promise<boolean> | undefined;
+        let second: Promise<boolean> | undefined;
+        await act(async () => {
+            first = result.current.copy('a');
+            second = result.current.copy('b');
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        await act(async () => {
+            resolvers[0]?.();
+            await first;
+        });
+        act(() => {
+            vi.advanceTimersByTime(DEFAULT_RESET_MS - 500);
+        });
+        await act(async () => {
+            resolvers[1]?.();
+            await second;
+        });
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+
+        expect(result.current.copied).toBe(true);
+    });
+
+    it('returns a stable copy callback across renders', () => {
+        const { result, rerender } = renderHook(() => useCopyToClipboard());
+        const first = result.current.copy;
+        rerender();
+        expect(result.current.copy).toBe(first);
+    });
 });
