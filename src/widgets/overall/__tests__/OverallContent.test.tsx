@@ -97,7 +97,11 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
-import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
+import {
+    useOverallAnalysis,
+    type UseOverallAnalysisReturn,
+} from '@/widgets/overall/hooks/useOverallAnalysis';
+import type { OverallAnalysisNotice } from '@/widgets/overall/types';
 import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
@@ -139,10 +143,19 @@ function makeDoneResult(
     };
 }
 
-function mockDoneState(result: OverallAnalysisResponse, trigger = vi.fn()) {
+function mockDoneState(
+    result: OverallAnalysisResponse,
+    overrides: Partial<UseOverallAnalysisReturn> & {
+        reanalyzing?: boolean;
+        notice?: OverallAnalysisNotice | null;
+    } = {}
+) {
+    const { reanalyzing = false, notice = null, ...hookOverrides } = overrides;
     mockUseOverallAnalysis.mockReturnValue({
-        state: { status: 'done', plain: null, result },
-        trigger,
+        state: { status: 'done', plain: null, result, reanalyzing, notice },
+        trigger: vi.fn(),
+        reanalyze: vi.fn(),
+        ...hookOverrides,
     });
 }
 
@@ -152,6 +165,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'idle' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         setSearch('');
     });
@@ -212,6 +226,7 @@ describe('OverallContent non-done branches', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'idle' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -230,6 +245,7 @@ describe('OverallContent non-done branches', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'submitting' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -246,6 +262,7 @@ describe('OverallContent non-done branches', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'error', error: '분석 중 오류가 발생했습니다.' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -264,6 +281,7 @@ describe('OverallContent non-done branches', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'error', error: '커스텀 에러' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -280,6 +298,7 @@ describe('OverallContent non-done branches', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'error', error: '분석 오류', axis: 'technical' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -289,19 +308,24 @@ describe('OverallContent non-done branches', () => {
                 hasOptions={true}
             />
         );
-        expect(screen.getByText(/technical 축 실패/)).toBeInTheDocument();
+        expect(screen.getByText(/차트 축 실패/)).toBeInTheDocument();
+        expect(screen.queryByText(/technical/)).not.toBeInTheDocument();
     });
 
     /**
-     * 축 실패 접미사는 카탈로그를 거쳐야 한다.
+     * 축 실패 접미사와 축 이름은 카탈로그를 거쳐야 한다.
      *
-     * ko 정규식만 단언하면 **하드코딩 한국어 리터럴도 똑같이 만족**한다 —
-     * 감사 실측: 소스를 `` ` (${axis} 축 실패)` ``로 되돌려도 3/3, 29/29가
-     * 통과했다. 비-기본 로케일로 렌더해야 반증이 된다.
+     * ko 정규식만 단언하면 **하드코딩 한국어 리터럴도 똑같이 만족**한다.
+     * 비-기본 로케일로 렌더해야 반증이 된다. 축 이름은 내부 id(`technical`)가
+     * 아니라 탭바와 같은 로케일 라벨이어야 한다.
      */
-    it.each(['en', 'ja', 'zh'] as const)(
-        '%s: 축 실패 접미사에 한글이 없다',
-        locale => {
+    it.each([
+        ['en', 'Chart'],
+        ['ja', 'チャート'],
+        ['zh', '图表'],
+    ] as const)(
+        '%s: 축 실패 접미사에 번역된 축 이름이 들어가고 한글이 없다',
+        (locale, axisLabel) => {
             mockUseOverallAnalysis.mockReturnValue({
                 state: {
                     status: 'error',
@@ -309,6 +333,7 @@ describe('OverallContent non-done branches', () => {
                     axis: 'technical',
                 },
                 trigger: vi.fn(),
+                reanalyze: vi.fn(),
             });
             const { container } = renderWithIntl(
                 <OverallContent
@@ -322,16 +347,42 @@ describe('OverallContent non-done branches', () => {
 
             const alert = container.querySelector('[role="alert"]');
 
-            expect(alert?.textContent ?? '').toContain('technical');
+            expect(alert?.textContent ?? '').toContain(axisLabel);
+            expect(alert?.textContent ?? '').not.toContain('technical');
             expect(alert?.textContent ?? '').not.toMatch(/[가-힣]/);
         }
     );
+
+    it.each([
+        ['technical', '차트'],
+        ['fundamental', '펀더멘털'],
+        ['news', '뉴스'],
+        ['options', '옵션'],
+    ] as const)('axis=%s 는 "%s 축 실패"로 보인다', (axis, label) => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'error', error: '분석 오류', axis },
+            trigger: vi.fn(),
+            reanalyze: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+        expect(
+            screen.getByText(`분석 오류 (${label} 축 실패)`)
+        ).toBeInTheDocument();
+    });
 
     it('renders retry button in error state that calls trigger', () => {
         const trigger = vi.fn();
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'error', error: '오류' },
             trigger,
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -464,9 +515,10 @@ describe('OverallContent done branch', () => {
         expect(btn.className).not.toMatch(/ui-warning/);
     });
 
-    it('ReanalyzeButton 클릭 시 trigger를 호출한다', () => {
+    it('ReanalyzeButton 클릭 시 reanalyze를 호출하고 trigger는 호출하지 않는다', () => {
         const trigger = vi.fn();
-        mockDoneState(makeDoneResult(), trigger);
+        const reanalyze = vi.fn();
+        mockDoneState(makeDoneResult(), { trigger, reanalyze });
         render(
             <OverallContent
                 symbol="AAPL"
@@ -476,7 +528,104 @@ describe('OverallContent done branch', () => {
             />
         );
         fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
-        expect(trigger).toHaveBeenCalledTimes(1);
+        expect(reanalyze).toHaveBeenCalledTimes(1);
+        expect(trigger).not.toHaveBeenCalled();
+    });
+
+    it('재분석이 진행 중이면 결과를 그대로 두고 버튼이 진행 중임을 알린다', () => {
+        const reanalyze = vi.fn();
+        mockDoneState(makeDoneResult(), { reanalyze, reanalyzing: true });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        const btn = screen.getByRole('button', { name: '재분석 중…' });
+        expect(btn).toHaveAttribute('aria-disabled', 'true');
+        expect(screen.getByText('통합 결론 텍스트')).toBeInTheDocument();
+        fireEvent.click(btn);
+        expect(reanalyze).not.toHaveBeenCalled();
+    });
+
+    it('쿨다운 안내를 결과 아래에 status로 노출한다', () => {
+        mockDoneState(makeDoneResult(), {
+            notice: { kind: 'cooldown', message: '2분 뒤에 다시 시도하세요.' },
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        expect(screen.getByRole('status')).toHaveTextContent(
+            '2분 뒤에 다시 시도하세요.'
+        );
+        expect(screen.getByText('통합 결론 텍스트')).toBeInTheDocument();
+    });
+
+    it('재분석 실패 안내는 alert로 노출하고 결과를 지킨다', () => {
+        mockDoneState(makeDoneResult(), {
+            notice: { kind: 'failed', message: '분석에 실패했어요.' },
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '분석에 실패했어요.'
+        );
+        expect(screen.getByText('통합 결론 텍스트')).toBeInTheDocument();
+    });
+
+    it('안내가 없으면 status·alert 영역을 렌더하지 않는다', () => {
+        mockDoneState(makeDoneResult());
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('옵션 탭이 없는 종목(hasOptions=false)은 stale 옵션 데이터가 있어도 재분석 버튼을 강조하지 않는다', () => {
+        mockDoneState(
+            makeDoneResult({
+                optionsBulletsKo: ['감마 상승'],
+                optionsOiStale: true,
+            })
+        );
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={false}
+            />
+        );
+
+        expect(
+            screen.queryByRole('heading', { name: /옵션 시장/ })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: /재분석/ }).className
+        ).not.toMatch(/ui-warning/);
     });
 
     it('financialsBulletsKo가 있으면 재무 분석 섹션을 렌더한다', () => {
@@ -604,6 +753,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'idle' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         (
             useNewsAnalysisTrigger as MockedFunction<
@@ -685,6 +835,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'idle' },
             trigger,
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -762,6 +913,147 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
 });
 
 /**
+ * 뉴스 카드 준비 실패(pollError)는 시작 CTA만 막는다 — 이미 보이는 분석이나 진행 중인
+ * 요청까지 가리면 사용자가 읽던 결과가 사라진다.
+ */
+describe('OverallContent — pollError는 idle CTA만 막는다', () => {
+    beforeEach(() => {
+        mockUseOverallAnalysis.mockReset();
+        (
+            useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
+        ).mockImplementation(() => ({
+            isReady: false,
+            pollError: new Error('polling exhausted'),
+        }));
+    });
+
+    afterEach(() => {
+        (
+            useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
+        ).mockImplementation((_symbol: string, initiallyReady: boolean) => ({
+            isReady: initiallyReady,
+            pollError: null,
+        }));
+    });
+
+    function renderContent() {
+        return render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={false}
+                hasOptions={true}
+            />
+        );
+    }
+
+    it('idle이면 준비 실패 카드를 보여 준다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger: vi.fn(),
+            reanalyze: vi.fn(),
+        });
+        renderContent();
+
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '뉴스 카드 분석 준비 중 오류가 발생했어요'
+        );
+        expect(
+            screen.queryByRole('button', { name: /AI 종합 분석 받기/ })
+        ).not.toBeInTheDocument();
+    });
+
+    it('이미 보이는 분석(done)은 그대로 보여 준다', () => {
+        mockDoneState(makeDoneResult({ headlineKo: '시드 헤드라인' }));
+        renderContent();
+
+        expect(screen.getByText('시드 헤드라인')).toBeInTheDocument();
+        expect(
+            screen.queryByText('뉴스 카드 분석 준비 중 오류가 발생했어요.')
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: '재분석' })
+        ).toBeInTheDocument();
+    });
+
+    it('요청이 진행 중(submitting)이면 로딩을 보여 준다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'submitting' },
+            trigger: vi.fn(),
+            reanalyze: vi.fn(),
+        });
+        renderContent();
+
+        expect(screen.getByText('AI 종합 분석 요청 중…')).toBeInTheDocument();
+        expect(
+            screen.queryByText('뉴스 카드 분석 준비 중 오류가 발생했어요.')
+        ).not.toBeInTheDocument();
+    });
+
+    it('분석 오류(error)는 분석 오류 카드를 보여 준다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'error', error: '분석 오류' },
+            trigger: vi.fn(),
+            reanalyze: vi.fn(),
+        });
+        renderContent();
+
+        expect(screen.getByText('분석 오류')).toBeInTheDocument();
+        expect(
+            screen.queryByText('뉴스 카드 분석 준비 중 오류가 발생했어요.')
+        ).not.toBeInTheDocument();
+    });
+});
+
+/**
+ * 옵션 탭이 없는 종목의 CTA 부제는 옵션을 약속하지 않는다.
+ */
+describe('OverallContent — idle CTA 부제', () => {
+    beforeEach(() => {
+        mockUseOverallAnalysis.mockReset();
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger: vi.fn(),
+            reanalyze: vi.fn(),
+        });
+    });
+
+    it('hasOptions=false이면 옵션을 뺀 부제를 쓴다', () => {
+        render(
+            <OverallContent
+                symbol="005930"
+                companyName="삼성전자"
+                hasEnrichedNews={true}
+                hasOptions={false}
+            />
+        );
+
+        expect(
+            screen.getByText(
+                '차트, 펀더멘털, 뉴스, 시장 분위기를 통합한 AI 결론을 받아보세요.'
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('hasOptions=true이면 옵션을 포함한 부제를 쓴다', () => {
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        expect(
+            screen.getByText(
+                '차트, 옵션, 펀더멘털, 뉴스, 시장 분위기를 통합한 AI 결론을 받아보세요.'
+            )
+        ).toBeInTheDocument();
+    });
+});
+
+/**
  * F1: crypto assetClass — OverallContent hides options/fundamental/financials sections.
  * `assetClass` is not forwarded to `useOverallAnalysis` (axis gating for crypto happens
  * server-side in `runOverallAnalysis`).
@@ -783,6 +1075,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'idle' },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -809,9 +1102,12 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             state: {
                 status: 'done',
                 plain: null,
+                reanalyzing: false,
+                notice: null,
                 result: makeDoneResult({ optionsBulletsKo: ['옵션 신호'] }),
             },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -830,11 +1126,14 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             state: {
                 status: 'done',
                 plain: null,
+                reanalyzing: false,
+                notice: null,
                 result: makeDoneResult({
                     fundamentalBulletsKo: ['펀더멘털 신호'],
                 }),
             },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -855,9 +1154,12 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             state: {
                 status: 'done',
                 plain: null,
+                reanalyzing: false,
+                notice: null,
                 result: makeDoneResult({ financialsBulletsKo: ['재무 신호'] }),
             },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent
@@ -878,12 +1180,15 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             state: {
                 status: 'done',
                 plain: null,
+                reanalyzing: false,
+                notice: null,
                 result: makeDoneResult({
                     technicalBulletsKo: ['기술적 신호'],
                     newsBulletsKo: ['뉴스 신호'],
                 }),
             },
             trigger: vi.fn(),
+            reanalyze: vi.fn(),
         });
         render(
             <OverallContent

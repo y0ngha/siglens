@@ -166,7 +166,7 @@ export async function MarketContent({
                 but it shows only the active sector; SectorFactsSummary lists all sectors as
                 static text (with `이름 (TICKER)` anchors) so crawlers see the whole snapshot and
                 its `/{symbol}` links without JS. Not cloaking — users see the same data. */}
-            <SectorFactsSummary data={sectorDataSeed} />
+            <SectorFactsSummary data={sectorDataSeed} scope={clientScope} />
             <SignalTypeGuide />
         </>
     );

@@ -2,12 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
-import { getExtendedHoursQuoteAction } from '@/entities/extended-hours/actions/getExtendedHoursQuoteAction';
-import { extendedSessionAt } from '@/entities/extended-hours/lib/extendedSession';
-import type {
-    ExtendedHoursQuote,
-    ExtendedSessionKind,
-} from '@/entities/extended-hours/model';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import {
     EXTENDED_QUOTE_REFETCH_MS,
@@ -15,6 +9,9 @@ import {
 } from '@/shared/config/queryConfig';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 import { SKIP_VERSION_SKEW_RELOAD_META } from '@/shared/lib/reloadOnVersionSkew';
+import { getExtendedHoursQuoteAction } from '../actions/getExtendedHoursQuoteAction';
+import { extendedSessionAt } from '../lib/extendedSession';
+import type { ExtendedHoursQuote, ExtendedSessionKind } from '../model';
 
 /** 분 경계 판정이면 충분하다 — 세션 전환을 늦어도 1분 안에 따라간다. */
 function subscribeToMinuteClock(onChange: () => void): () => void {

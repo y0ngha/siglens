@@ -26,17 +26,29 @@ vi.mock('@/widgets/options/ExpirationSelector', () => ({
 // 실제 위젯과 동일하게 `hideView`에서 UI를 내지 않되 **마운트는 유지**한다.
 // 마운트 유지가 계약의 핵심 — 트리에서 빠지면 useRegisterShareable이 돌지
 // 않아 헤더 공유 버튼이 이 탭의 분석 결과를 등록받지 못한다.
+const { analysisRenders } = vi.hoisted(() => ({
+    analysisRenders: [] as Array<{
+        isSettingsHydrated?: boolean;
+        cacheOnly?: boolean;
+    }>,
+}));
+
 vi.mock('@/widgets/options/OptionsAiAnalysis', () => ({
     OptionsAiAnalysis: ({
         hideView = false,
         snapshotCapturedAt,
         showSnapshotBasis,
+        isSettingsHydrated,
+        cacheOnly,
     }: {
         hideView?: boolean;
         snapshotCapturedAt?: string;
         showSnapshotBasis?: boolean;
-    }) =>
-        hideView ? (
+        isSettingsHydrated?: boolean;
+        cacheOnly?: boolean;
+    }) => {
+        analysisRenders.push({ isSettingsHydrated, cacheOnly });
+        return hideView ? (
             <div data-testid="ai-analysis-headless" />
         ) : (
             <div
@@ -44,7 +56,8 @@ vi.mock('@/widgets/options/OptionsAiAnalysis', () => ({
                 data-captured-at={snapshotCapturedAt}
                 data-show-basis={String(showSnapshotBasis)}
             />
-        ),
+        );
+    },
 }));
 
 vi.mock('@/widgets/options/OptionsAiAnalysisError', () => ({
@@ -88,7 +101,11 @@ vi.mock('@/widgets/options/OptionsStaleDataBanner', () => ({
 }));
 
 vi.mock('@/widgets/options/hooks/useOptionsChainMetrics', () => ({
-    useOptionsChainMetrics: () => ({ chain: null, metrics: null }),
+    useOptionsChainMetrics: () => ({
+        chain: null,
+        metrics: null,
+        oiByStrike: [],
+    }),
 }));
 
 // oiStale = !isEtRegularSessionOpen(now) && isOpenInterestSnapshotStale(snapshot).
@@ -139,6 +156,50 @@ describe('OptionsPageClient', () => {
     beforeEach(() => {
         mockSessionOpen.mockReturnValue(true);
         mockOiSnapshotStale.mockReturnValue(false);
+        analysisRenders.length = 0;
+    });
+
+    describe('analysis query readiness', () => {
+        it('never enables the analysis for a render whose cacheOnly is still unevaluated (stale snapshot, hydrated settings)', () => {
+            setOiStale();
+
+            render(
+                <OptionsPageClient
+                    symbol="AAPL"
+                    companyName="Apple"
+                    snapshot={SNAPSHOT}
+                    slots={SLOTS}
+                    hasSnapshotProse
+                />
+            );
+
+            expect(analysisRenders.length).toBeGreaterThan(0);
+            expect(
+                analysisRenders.filter(
+                    r => r.isSettingsHydrated === true && r.cacheOnly !== true
+                )
+            ).toEqual([]);
+            expect(analysisRenders.at(-1)).toEqual({
+                isSettingsHydrated: true,
+                cacheOnly: true,
+            });
+        });
+
+        it('enables the analysis once staleness is evaluated for a fresh snapshot', () => {
+            render(
+                <OptionsPageClient
+                    symbol="AAPL"
+                    companyName="Apple"
+                    snapshot={SNAPSHOT}
+                    slots={SLOTS}
+                />
+            );
+
+            expect(analysisRenders.at(-1)).toEqual({
+                isSettingsHydrated: true,
+                cacheOnly: false,
+            });
+        });
     });
 
     it('renders ExpirationSelector', () => {

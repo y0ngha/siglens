@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { followUpLine } from '@/app/api/ai/chat/followUps';
 import {
     GUEST_HISTORY_MESSAGE_MAX_CHARS,
-    MESSAGE_MAX_CHARS,
     parseBody,
 } from '@/app/api/ai/chat/stream/_lib/parseBody';
+import { MESSAGE_MAX_CHARS } from '@/features/agent-chat/lib/messageLimits';
 
 describe('parseBody', () => {
     it('action 생략 시 send로 해석한다', () => {

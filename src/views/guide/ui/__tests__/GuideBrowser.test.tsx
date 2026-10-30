@@ -143,6 +143,23 @@ describe('GuideBrowser — 필터가 없을 때', () => {
     });
 });
 
+describe('GuideBrowser — 칩 이름', () => {
+    it('칩 글자는 분류명과 개수 사이에 실제 공백이 있다', () => {
+        renderBrowser();
+
+        // jsdom의 이름 계산은 요소 사이에 공백을 넣어 주지만 브라우저는 인라인 span을 그대로 붙인다 —
+        // 그래서 textContent로 단언한다.
+        expect(screen.getByRole('button', { name: /^전체/ }).textContent).toBe(
+            `${g.filterAll} 5`
+        );
+        expect(
+            screen.getByRole('button', {
+                name: new RegExp(g.categoryIndicators),
+            }).textContent
+        ).toBe(`${g.categoryIndicators} 2`);
+    });
+});
+
 describe('GuideBrowser — 빈 분류 칩', () => {
     it('항목이 없는 분류는 칩을 만들지 않는다', () => {
         renderBrowser();

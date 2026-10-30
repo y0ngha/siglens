@@ -128,6 +128,7 @@ describe('useShareFlow', () => {
 
         // 'error' status routes through the trigger-dialog path first.
         act(() => result.current.onClick());
+        expect(result.current.triggerDialogOpen).toBe(true);
         act(() => result.current.onTriggerConfirm());
 
         expect(result.current.preparingPhase).toBe('error');

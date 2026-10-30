@@ -1,33 +1,5 @@
 import type { BacktestCase } from '@y0ngha/siglens-core';
-
-/**
- * Display statistics derived directly from `cases`, not from `data.json`'s
- * `meta` block.
- *
- * `meta.aiWinRate` is computed over *decisive* cases only (8/13 = 61.5%;
- * 87 of 100 cases are `neutral`), but the UI used to show the bare 61.5% next
- * to "100 cases" with no denominator, and `meta.period` is a hand-typed string
- * that drifts from the real `entryDate` span. Deriving everything here — with
- * the counts the labels need — means the UI can never omit that context again
- * (SEO audit 2026-09-17, finding H-2).
- */
-export interface BacktestStats {
-    totalCases: number;
-    indicatorWins: number;
-    indicatorWinRate: number;
-    aiDecisiveCount: number;
-    aiWins: number;
-    aiWinRateDecisive: number;
-    aiNeutralCount: number;
-    aiTrendHitRate: number;
-    /** Mean of `returnPct` across all cases, 2 decimal places (small values need the extra digit — 1 decimal would round 0.36 to 0.4). */
-    meanReturnPct: number;
-    /** Median of `holdingDays`; can be fractional when the case count is even. */
-    medianHoldingDays: number;
-    /** ISO `YYYY-MM-DD`, min/max of `entryDate`. Empty string when `cases` is empty. */
-    periodStart: string;
-    periodEnd: string;
-}
+import type { BacktestStats } from '@/entities/backtest-case/model';
 
 function percent(count: number, total: number): number {
     return total > 0 ? Number(((count / total) * 100).toFixed(1)) : 0;
@@ -42,6 +14,7 @@ function median(values: readonly number[]): number {
         : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+/** `cases`에서 화면에 쓰는 통계를 계산한다. `meta` 블록은 읽지 않는다. */
 export function deriveBacktestStats(
     cases: readonly BacktestCase[]
 ): BacktestStats {

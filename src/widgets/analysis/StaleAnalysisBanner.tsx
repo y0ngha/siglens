@@ -1,9 +1,12 @@
 'use client';
 
+/**
+ * 오래된 분석 안내 배너 — 타임프레임 임계값을 넘긴 분석 위에 재분석 버튼과 함께 띄운다.
+ */
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import { MS_PER_MINUTE } from '@/shared/config/time';
-
-const COOLDOWN_TOOLTIP_ID = 'stale-banner-cooldown-tooltip';
+import { cn } from '@/shared/lib/cn';
 
 interface StaleAnalysisBannerProps {
     onReanalyze: () => void;
@@ -12,12 +15,19 @@ interface StaleAnalysisBannerProps {
     reanalyzeCooldownMs: number;
 }
 
+/**
+ * 쿨다운 중에는 `aria-disabled`로 막는다(REACT.md#AX-3) — 포커스를 받는 순간
+ * `onReanalyzeIntent`가 쿨다운을 읽어 와 비활성으로 바뀌는데, `disabled`면 포커스가
+ * `body`로 떨어진다. 툴팁 id는 `useId`로 만든다 — 패널이 데스크톱·모바일 시트에 두 번
+ * 마운트돼 고정 id면 DOM에 중복 id가 생긴다.
+ */
 export function StaleAnalysisBanner({
     onReanalyze,
     onReanalyzeIntent,
     reanalyzeCooldownMs,
 }: StaleAnalysisBannerProps) {
     const t = useTranslations('widgets.analysis.staleBanner');
+    const tooltipId = useId();
     const isCoolingDown = reanalyzeCooldownMs > 0;
     const cooldownMinutes = Math.ceil(reanalyzeCooldownMs / MS_PER_MINUTE);
     return (
@@ -29,28 +39,29 @@ export function StaleAnalysisBanner({
             <div className="relative inline-flex">
                 <button
                     type="button"
-                    onClick={onReanalyze}
+                    onClick={() => {
+                        if (!isCoolingDown) onReanalyze();
+                    }}
                     onPointerEnter={onReanalyzeIntent}
                     onFocus={onReanalyzeIntent}
-                    disabled={isCoolingDown}
-                    aria-describedby={
-                        isCoolingDown ? COOLDOWN_TOOLTIP_ID : undefined
-                    }
+                    aria-disabled={isCoolingDown}
+                    aria-describedby={isCoolingDown ? tooltipId : undefined}
                     title={
                         isCoolingDown
                             ? t('cooldown', { v0: cooldownMinutes })
                             : undefined
                     }
-                    className="rounded-lg border border-ui-warning px-2 py-1 text-xs font-medium hover:bg-ui-warning/20 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:border-border-control disabled:text-secondary-500"
+                    className={cn(
+                        'rounded-lg border px-2 py-1 text-xs font-medium focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none',
+                        isCoolingDown
+                            ? 'cursor-not-allowed border-border-control text-secondary-500'
+                            : 'border-ui-warning hover:bg-ui-warning/20'
+                    )}
                 >
                     {t('reanalyze')}
                 </button>
                 {isCoolingDown && (
-                    <span
-                        id={COOLDOWN_TOOLTIP_ID}
-                        role="tooltip"
-                        className="sr-only"
-                    >
+                    <span id={tooltipId} role="tooltip" className="sr-only">
                         {t('cooldown', { v0: cooldownMinutes })}
                     </span>
                 )}

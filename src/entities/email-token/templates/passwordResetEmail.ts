@@ -1,14 +1,16 @@
 import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
-import { SITE_HOST } from '@/shared/lib/seo';
 import { brandName } from '@/shared/lib/brandName';
+import { SITE_HOST } from '@/shared/lib/seo';
 import type { EmailTranslator } from './emailTranslator';
 
-// `SITE_URL`(shared/lib/seo)과 같은 기본값. 그 상수를 직접 쓰지 않는 이유는 아래
-// `buildSiteUrl` — 모듈 로드 시점이 아니라 호출 시점에 env를 읽어야 한다.
+/**
+ * `NEXT_PUBLIC_SITE_URL`이 없을 때의 사이트 기본 URL. `SITE_URL`(shared/lib/seo)과 값은 같지만
+ * 그 상수를 쓰지 않는다 — 모듈 로드 시점이 아니라 호출 시점에 env를 읽어야 해서다(`buildSiteUrl`).
+ */
 export const DEFAULT_SITE_URL = `https://${SITE_HOST}`;
 
-// Resolved per-call so tests can override NEXT_PUBLIC_SITE_URL via process.env (Domain #3).
+// 호출 시점에 env를 읽어 테스트가 process.env로 NEXT_PUBLIC_SITE_URL을 바꿀 수 있게 한다.
 function buildSiteUrl(): string {
     return (process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL).replace(
         /\/$/,
@@ -26,8 +28,8 @@ interface BuildPasswordResetEmailInput {
      *
      * 빼면 `/ja/forgot-password`에서 요청한 사용자가 메일 링크를 눌렀을 때
      * **한국어** `/reset-password`에 떨어진다 — 로케일이 메일 왕복 전체에서
-     * 사라진다. 본문 번역은 별도 작업이지만(설계 §13 Phase), 착지 지점이
-     * 어긋나는 것은 그와 무관한 결함이다.
+     * 사라진다. 착지 지점이 어긋나면 본문 언어와 무관하게
+     * 링크가 잘못된 로케일로 간다.
      */
     locale?: Locale;
     /** `entities.email-token.email` 네임스페이스 번역자. */
@@ -35,8 +37,12 @@ interface BuildPasswordResetEmailInput {
 }
 
 const RESET_PATH = '/reset-password';
-// Redis TTL 전환 이후 코어가 expiresAt를 전달하지 않으므로 만료 시각을 표시하지 않는다.
 
+/**
+ * 비밀번호 재설정 링크 메일을 만든다. 순수 함수로 발송은 하지 않으며, requestPasswordResetAction이
+ * 반환값을 dispatcher에 넘긴다. 토큰이 Redis TTL로 만료돼 만료 시각은 표시하지 않고, 링크의 email·token은
+ * URL 인코딩한다.
+ */
 export function buildPasswordResetEmail({
     email,
     token,

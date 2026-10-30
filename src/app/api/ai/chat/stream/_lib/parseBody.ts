@@ -1,8 +1,6 @@
 import type { AgentMessage } from '@y0ngha/siglens-core';
 import { followUpLine } from '@/app/api/ai/chat/followUps';
-
-/** 한 번에 받는 사용자 메시지의 글자 수 상한 — 이를 넘으면 `invalid_body`. */
-export const MESSAGE_MAX_CHARS = 4_000;
+import { isSendableMessage } from '@/features/agent-chat/lib/messageLimits';
 
 /**
  * A guest's transcript lives only in the browser, so the client sends it with
@@ -108,11 +106,7 @@ export function parseBody(raw: unknown): ParsedBody | null {
     if (rawAction !== undefined && !isAction(rawAction)) return null;
     const action: Action = rawAction ?? 'send';
     const message = typeof rawMessage === 'string' ? rawMessage.trim() : '';
-    if (
-        action !== 'regenerate' &&
-        (message.length === 0 || message.length > MESSAGE_MAX_CHARS)
-    )
-        return null;
+    if (action !== 'regenerate' && !isSendableMessage(message)) return null;
     const history = parseGuestHistory(Reflect.get(raw, 'history'));
     if (history === null) return null;
     const base: BaseBody = {

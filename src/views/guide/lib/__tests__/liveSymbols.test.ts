@@ -299,6 +299,55 @@ describe('selectLiveSymbols', () => {
         });
     });
 
+    it('같은 종목이 여러 번 오면 정렬상 첫 행만 남기고 나머지 행 순서는 그대로다', () => {
+        const at = '2026-10-24T21:00:00.000Z';
+        const groups = selectLiveSymbols({
+            targets: {
+                signalTypes: [],
+                patternNames: ['double_bottom', 'double_top'],
+            },
+            scanner: [],
+            snapshotHits: [
+                {
+                    symbol: 'TSLA',
+                    generatedAt: at,
+                    detectedPatterns: ['double_top'],
+                },
+                {
+                    symbol: 'AMD',
+                    generatedAt: at,
+                    detectedPatterns: ['double_bottom'],
+                },
+                {
+                    symbol: 'TSLA',
+                    generatedAt: at,
+                    detectedPatterns: ['double_bottom'],
+                },
+                {
+                    symbol: 'MSFT',
+                    generatedAt: at,
+                    detectedPatterns: ['double_top'],
+                },
+                {
+                    symbol: 'AMD',
+                    generatedAt: at,
+                    detectedPatterns: ['double_top'],
+                },
+            ],
+            limitPerMarket: 5,
+        });
+        expect(
+            groups[0].rows.map(row => [
+                row.symbol,
+                row.match?.kind === 'pattern' ? row.match.guidePath : null,
+            ])
+        ).toEqual([
+            ['TSLA', '/guide/chart-patterns/double-top'],
+            ['AMD', '/guide/chart-patterns/double-bottom'],
+            ['MSFT', '/guide/chart-patterns/double-top'],
+        ]);
+    });
+
     it('적중한 패턴에 가이드가 없으면 스냅샷 행의 match는 null이다', () => {
         const groups = selectLiveSymbols({
             targets: { signalTypes: [], patternNames: ['double_bottom'] },
