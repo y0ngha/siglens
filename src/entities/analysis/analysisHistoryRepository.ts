@@ -99,8 +99,8 @@ export const ORPHAN_BLOB_MIN_AGE_MS = 5 * MS_PER_MINUTE;
  * 필드이고, 잘못된 값이면 행을 오염시키면 안 된다 — 파싱 불가 날짜는 `Invalid Date`가
  * 되어 이 컬럼을 읽는 모든 정렬·윈도우 쿼리를 조용히 깨뜨린다.
  *
- * `analysis_history` 작성자 둘이 공유한다 — SSE 라우트(`app/api/analysis/stream/route.ts`)와
- * SEO 프리웜 seam(`entities/analysis/api.ts`의 `prewarmTechnical`). 가드가 한 곳에만
+ * `analysis_history` 작성자 둘이 공유한다 — SSE 라우트(`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`)와
+ * SEO 프리웜 seam(`entities/analysis/api.ts`의 `prewarmTechnical`/`prewarmOverall`). 가드가 한 곳에만
  * 있게 하려는 것이다. app 레이어 라우트가 아니라 여기 둔 이유는 `api.ts`가 `app/`을
  * import할 수 없는 반면(FSD 의존 방향) 두 호출자는 이 저장소 모듈을 직접 import할 수
  * 있어서다.

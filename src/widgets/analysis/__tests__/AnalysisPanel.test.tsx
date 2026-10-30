@@ -1170,6 +1170,30 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText(/재분석 가능까지/)).toBeInTheDocument();
     });
 
+    // 포커스를 받은 버튼이 쿨다운·분석 시작으로 비활성이 될 때 `disabled`면 포커스가
+    // body로 떨어진다 — aria-disabled로 막고 클릭은 핸들러가 거른다(REACT.md#AX-3).
+    it('keeps the reanalyze button focusable while cooling down and ignores clicks', () => {
+        const onReanalyze = vi.fn();
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                onReanalyze={onReanalyze}
+                reanalyzeCooldownMs={120000}
+            />
+        );
+
+        const button = screen.getByText(/재분석 가능까지/).closest('button')!;
+        expect(button).toHaveAttribute('aria-disabled', 'true');
+        expect(button).not.toBeDisabled();
+        button.focus();
+        fireEvent.click(button);
+        expect(button).toHaveFocus();
+        expect(onReanalyze).not.toHaveBeenCalled();
+    });
+
     it('shows "분석 중" label on reanalyze button when analyzing', () => {
         render(
             <AnalysisPanel
@@ -1201,13 +1225,16 @@ describe('AnalysisPanel', () => {
         );
 
         const chartButton = screen.getByRole('button', {
-            name: '차트 가격선 숨기기',
+            name: '차트 가격선 표시',
         });
+        expect(chartButton).toHaveAttribute('aria-pressed', 'true');
         fireEvent.click(chartButton);
         expect(onVisibilityChange).toHaveBeenCalledWith(false);
     });
 
-    it('renders chart toggle with show label when not visible', () => {
+    // 토글은 이름 하나를 유지하고 상태는 aria-pressed로만 낸다(REACT.md#AX-3) —
+    // 이름을 "숨기기/표시"로 바꾸면 상태가 이름과 aria-pressed로 두 번 읽힌다.
+    it('keeps one accessible name for the chart toggle and reports state via aria-pressed', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
@@ -1223,11 +1250,11 @@ describe('AnalysisPanel', () => {
 
         expect(
             screen.getByRole('button', { name: '차트 가격선 표시' })
-        ).toBeInTheDocument();
+        ).toHaveAttribute('aria-pressed', 'false');
     });
 
     /**
-     * 공유 페이지(`views/share/kindPanelRegistry`)는 이 핸들러를 넘기지 않는다.
+     * 공유 페이지(`views/share/ui/chart/ChartSharePanel`)는 이 핸들러를 넘기지 않는다.
      * 예전에는 그래도 버튼이 렌더돼, 눌러도 아무 일도 없는 컨트롤이 남아
      * 있었다 — 게다가 그 버튼이 숨기겠다고 말하는 가격선은 `StockChart`가
      * 그리는데 공유 페이지는 `ShareCandlestickChart`를 쓰므로 존재하지도 않는다.
@@ -1622,8 +1649,11 @@ describe('AnalysisPanel — 차트 작도 켜기/끄기 토글 (설계 2026-09-2
         ).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('마우스 포인터로 카드에 진입·이탈하면 onHighlightOverlay를 카드 id·null로 호출한다', () => {
+    // 이탈은 `null`이 아니라 멱등 해제(`onClearOverlayHighlight(id)`)다 — `null`로 지우면
+    // 키보드 포커스로 다른 카드가 잡고 있던 강조까지 사라진다.
+    it('마우스 포인터로 카드에 진입하면 카드 id로 강조하고, 이탈하면 그 id만 멱등 해제한다', () => {
         const onHighlight = vi.fn();
+        const onClear = vi.fn();
         render(
             <AnalysisPanel
                 symbol="AAPL"
@@ -1637,7 +1667,7 @@ describe('AnalysisPanel — 차트 작도 켜기/끄기 토글 (설계 2026-09-2
                 overlaySourceRefs={new Set(['p1'])}
                 onToggleOverlay={vi.fn()}
                 onHighlightOverlay={onHighlight}
-                onClearOverlayHighlight={vi.fn()}
+                onClearOverlayHighlight={onClear}
             />
         );
 
@@ -1648,7 +1678,8 @@ describe('AnalysisPanel — 차트 작도 켜기/끄기 토글 (설계 2026-09-2
         expect(onHighlight).toHaveBeenCalledWith('p1');
 
         fireEvent.pointerLeave(card, { pointerType: 'mouse' });
-        expect(onHighlight).toHaveBeenLastCalledWith(null);
+        expect(onClear).toHaveBeenCalledWith('p1');
+        expect(onHighlight).not.toHaveBeenCalledWith(null);
     });
 
     it('터치 포인터의 진입·이탈은 강조를 걸지 않는다(설계: 모바일은 강조 없음)', () => {
@@ -1964,7 +1995,7 @@ describe('AnalysisPanel — missing/partial field resilience', () => {
     });
 });
 
-describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', () => {
+describe('AnalysisPanel — "내 평단 기준으로 분석했어요" 투명성 배지', () => {
     // 4건의 독립 사전-PR 감사가 지적한 정직성 갭 수정: 배지는 이제 홀딩 존재
     // 여부(tier + useSymbolHolding)가 아니라 서버-authoritative `isPersonalized`
     // prop 하나로만 게이트된다 — submitAnalysisAction이 THIS 제출에서 실제로

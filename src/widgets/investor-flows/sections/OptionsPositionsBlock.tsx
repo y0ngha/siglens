@@ -1,3 +1,6 @@
+/**
+ * 13F 옵션 포지션(풋·콜 명목) 블록.
+ */
 import { Fragment } from 'react';
 import { useTranslations } from 'next-intl';
 import type {

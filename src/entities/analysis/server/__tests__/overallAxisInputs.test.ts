@@ -8,10 +8,13 @@ vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
     fetchOptionsSnapshot: (...args: unknown[]) =>
         mockFetchOptionsSnapshot(...args),
 }));
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: (...args: unknown[]) =>
-        mockGetFinancialsSnapshot(...args),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: (...args: unknown[]) =>
+            mockGetFinancialsSnapshot(...args),
+    })
+);
 vi.mock('@y0ngha/siglens-core', () => ({
     computeFinancialsScorecard: (...args: unknown[]) =>
         mockComputeFinancialsScorecard(...args),

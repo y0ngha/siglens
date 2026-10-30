@@ -3,16 +3,22 @@ import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { APPROVED_LONGTAIL_TICKERS } from '../config/approved-longtail-tickers';
-import { isCuratedSymbol } from './isCuratedSymbol';
 import type {
     SymbolIndexabilityDecision,
     SymbolIndexabilityInput,
 } from '../model';
+import { isCuratedSymbol } from './isCuratedSymbol';
 
 const POPULAR_TICKER_SET = new Set<string>(POPULAR_TICKERS);
 const POPULAR_CRYPTO_SET = new Set<string>(POPULAR_CRYPTOS);
 const APPROVED_LONGTAIL_SET = new Set<string>(APPROVED_LONGTAIL_TICKERS);
 
+/**
+ * 심볼 페이지의 색인 여부와 그 사유를 정한다. 종목 페이지의 robots 메타
+ * (`getBlockedSymbolMetadata`)가 유일한 소비자이며, 규칙 평가 순서가 곧 우선순위다
+ * (형태 → 로케일 → 자산 → 봉 → degraded → 산문 → 화이트리스트). 순서를 바꾸면 결과가
+ * 달라진다. 로케일·봉·degraded·산문 게이트의 위치 근거는 해당 분기 주석에 있다.
+ */
 export function evaluateSymbolIndexability({
     symbol,
     assetInfo,
@@ -49,11 +55,10 @@ export function evaluateSymbolIndexability({
     }
 
     if (degraded) {
-        // Whitelisted symbols with a stored SEO snapshot can stay indexable even
-        // while degraded — the body renders substantive snapshot content instead
-        // of the thin degraded shell. Non-whitelisted or snapshot-less degraded
-        // pages stay noindex (this must NOT move below the whitelist checks below,
-        // or a degraded, snapshot-less popular symbol would get indexed).
+        // 저장된 SEO 스냅샷이 있는 화이트리스트 종목은 degraded여도 색인을 유지한다 —
+        // 본문이 얇은 degraded 껍데기 대신 스냅샷의 실질 콘텐츠를 렌더하기 때문이다.
+        // 화이트리스트 밖이거나 스냅샷이 없는 degraded 페이지는 noindex다. 이 분기를
+        // 아래 화이트리스트 검사보다 뒤로 옮기면 스냅샷 없는 degraded 인기 종목이 색인된다.
         const whitelisted = isCuratedSymbol(upper);
         if (hasSnapshot === true && whitelisted) {
             return { indexable: true, reason: 'degraded-with-snapshot' };

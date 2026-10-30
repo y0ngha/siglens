@@ -235,6 +235,61 @@ describe('useAnalysis', () => {
 
             expect(result.current.reanalyzeCooldownMs).not.toBe(99_000);
         });
+
+        it('응답 전에 종목이 바뀌면 새 종목을 조회하지 않았어도 늦게 온 값을 버린다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            let resolveAapl: (ms: number) => void = () => {};
+            (getReanalyzeCooldownMs as Mock).mockImplementationOnce(
+                () =>
+                    new Promise<number>(resolve => {
+                        resolveAapl = resolve;
+                    })
+            );
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(makeOptions({ symbol })),
+                { wrapper: makeWrapper(), initialProps: { symbol: 'AAPL' } }
+            );
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            rerender({ symbol: 'MSFT' });
+            await act(async () => {
+                resolveAapl(99_000);
+            });
+
+            expect(result.current.reanalyzeCooldownMs).toBe(0);
+        });
+
+        it('다른 종목에 갔다 돌아오면 이미 읽었던 종목도 다시 조회한다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            (getReanalyzeCooldownMs as Mock).mockResolvedValue(42_000);
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(makeOptions({ symbol })),
+                { wrapper: makeWrapper(), initialProps: { symbol: 'AAPL' } }
+            );
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await waitFor(() =>
+                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+            );
+            rerender({ symbol: 'MSFT' });
+            rerender({ symbol: 'AAPL' });
+            expect(result.current.reanalyzeCooldownMs).toBe(0);
+
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+
+            await waitFor(() =>
+                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+            );
+            expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(2);
+        });
     });
 
     describe('isInstantResponse — 마무리 애니메이션 생략 신호', () => {

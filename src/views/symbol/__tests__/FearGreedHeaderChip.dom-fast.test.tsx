@@ -94,6 +94,32 @@ describe('FearGreedHeaderChip', () => {
         });
     });
 
+    describe('접근성 이름과 텍스트', () => {
+        it('aria-label을 이름으로 쓰도록 role="img"다(generic span은 aria-label 금지)', () => {
+            const { getByRole } = render(
+                <FearGreedHeaderChip
+                    snapshot={{ ...make('GREED'), score: 61 }}
+                />
+            );
+            expect(
+                getByRole('img', {
+                    name: `공포 탐욕 지수 ${sentimentLabelText('GREED', t)} 61점`,
+                })
+            ).toBeInTheDocument();
+        });
+
+        it('라벨과 점수 사이에 실제 공백이 있다', () => {
+            const { container } = render(
+                <FearGreedHeaderChip
+                    snapshot={{ ...make('GREED'), score: 61 }}
+                />
+            );
+            expect(container.textContent).toBe(
+                `${sentimentLabelText('GREED', t)} 61`
+            );
+        });
+    });
+
     describe('aria-label', () => {
         it('exposes label, score, and confidence note via aria-label', () => {
             const { container } = render(

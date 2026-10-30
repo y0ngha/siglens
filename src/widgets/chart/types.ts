@@ -1,3 +1,7 @@
+/**
+ * 차트 위젯 공용 타입(오버레이 범례 항목, pane 라벨, 토글 설정 등).
+ */
+
 import type { IndicatorKey } from './model/indicatorRegistry';
 
 export interface OverlayItemBase {

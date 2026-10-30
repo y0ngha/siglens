@@ -5,7 +5,7 @@ import {
     type FinancialsScorecard,
     type OptionsSnapshot,
 } from '@y0ngha/siglens-core';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 // 교차 entity(options-chain): overall이 옵션 스냅샷을 조합한다 — `src/entities/CLAUDE.md`
 // "의도적 예외" 표에 등재된 허용 경로.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';

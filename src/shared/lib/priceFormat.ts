@@ -127,6 +127,40 @@ export function formatCompactAmount(
 }
 
 /**
+ * 임의 ISO 4217 통화로 축약 표기한다. USD·KRW는 기존 축약 포매터를 그대로 써 다른 카드와
+ * 표기가 같고, 그 밖의 통화(ADR의 본국 통화 TWD·JPY 등)는 `currencyDisplay: 'code'`로
+ * 통화 코드를 붙인다 — 기호는 `$`를 쓰는 통화(CAD·AUD·TWD…)끼리 서로 헷갈리고 엔진별
+ * CLDR 차이로 하이드레이션 불일치도 낼 수 있지만, 코드는 항상 같고 모호하지 않다.
+ *
+ * 형식이 잘못된 코드(`Intl`이 `RangeError`를 던지는 값)는 `null`을 돌려준다 — 호출부가
+ * 상장 통화 포매터로 폴백하도록 맡긴다. 소수 자릿수는 `compactFormatter`와 같은
+ * 하이드레이션 사유로 명시한다.
+ */
+export function formatCompactInCurrency(
+    value: number,
+    isoCurrency: string,
+    locale: Locale
+): string | null {
+    const currency = isoCurrency.trim().toUpperCase();
+    if (currency === 'USD' || currency === 'KRW') {
+        return formatCompactAmount(value, currency, locale);
+    }
+    try {
+        return cachedNumberFormat(INTL_LOCALE[locale], {
+            notation: 'compact',
+            style: 'currency',
+            currency,
+            currencyDisplay: 'code',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 1,
+        }).format(value);
+    } catch (error) {
+        if (error instanceof RangeError) return null;
+        throw error;
+    }
+}
+
+/**
  * 시가총액·현금흐름 같은 큰 금액을 통화 기호와 함께 축약 표기한다.
  *
  * **통화는 심볼에서 유도한다.** 예전에는 USD로 고정돼 있어서, 국내 상장 종목의 원화
@@ -150,6 +184,41 @@ export function formatCompactCurrency(
         locale,
         currencyForSymbol(symbol) === 'KRW' ? 'KRW' : 'USD'
     ).format(value);
+}
+
+/**
+ * 임의 ISO 4217 통화로 비축약 금액을 표기한다 — EPS처럼 축약하면 의미가 사라지는 주당 금액용.
+ * USD·KRW는 기존 표기(`$`·`₩`)를 그대로 쓰고, 그 밖의 통화는 `currencyDisplay: 'code'`로
+ * 통화 코드를 붙인다(`formatCompactInCurrency`와 같은 사유). 소수 자릿수는
+ * `currencyFractionDigits`를 따르며(원화 0, 그 외 2) 하이드레이션 일치를 위해 최소·최대를
+ * 함께 명시한다.
+ *
+ * 형식이 잘못된 코드(`Intl`이 `RangeError`를 던지는 값)는 `null`을 돌려준다 — 호출부가
+ * 상장 통화로 폴백하도록 맡긴다.
+ */
+export function formatInCurrency(
+    value: number,
+    isoCurrency: string,
+    locale: Locale
+): string | null {
+    const currency = isoCurrency.trim().toUpperCase();
+    const digits = currencyFractionDigits(currency);
+    const currencyDisplay =
+        currency === 'USD' || currency === 'KRW'
+            ? currencyDisplayFor(currency)
+            : 'code';
+    try {
+        return cachedNumberFormat(INTL_LOCALE[locale], {
+            style: 'currency',
+            currency,
+            currencyDisplay,
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+        }).format(value);
+    } catch (error) {
+        if (error instanceof RangeError) return null;
+        throw error;
+    }
 }
 
 /**
@@ -198,15 +267,24 @@ export function formatPrice(value: number, spec: PriceFormatConfig): string {
     }).format(value);
 }
 
+/** {@link formatSignedPercent}의 기본 소수 자릿수. */
+const DEFAULT_SIGNED_PERCENT_DIGITS = 1;
+
 /**
- * "+12.3%" / "-4.5%" — signed percent with one decimal place. Extracted from
- * three byte-identical copies (PositionBuilding/PositionHoldingCard/PositionCard —
- * rule-of-three, DESIGN.md/CONVENTIONS.md dedupe guidance) into a single shared
- * helper next to the other price-formatting utilities.
+ * "+12.3%" / "-4.5%" — 기본 소수 1자리의 부호 있는 퍼센트.
+ * `fractionDigits`로 자릿수를 바꾼다(예: 2자리면 평균 0.36%가 0.4%로 뭉개지지 않는다).
+ *
+ * 부호는 반올림한 값으로 정한다. 원값으로 정하면 `-0.001`이 `-0.00%`로 찍힌다.
+ * 반올림해서 0이 되면 0과 똑같이 `+0.0%`로 낸다(음의 0 금지).
  */
-export function formatSignedPercent(value: number): string {
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(1)}%`;
+export function formatSignedPercent(
+    value: number,
+    fractionDigits = DEFAULT_SIGNED_PERCENT_DIGITS
+): string {
+    // 반올림 결과가 `-0`이어도 `-0 >= 0`은 참이고 `(-0).toFixed`는 `"0.00"`이라 `+0.00%`가 된다.
+    const rounded = Number(value.toFixed(fractionDigits));
+    const sign = rounded >= 0 ? '+' : '';
+    return `${sign}${rounded.toFixed(fractionDigits)}%`;
 }
 
 /**
@@ -230,7 +308,7 @@ export function formatSignedUsd(value: number): string {
  * "+₩1,250,000" / "-$12.34" — currency-aware counterpart to `formatSignedUsd`
  * for signed delta displays (e.g. unrealized P&L). Currency is derived from
  * the symbol via `currencyForSymbol` — the same single source `formatAmount`
- * (`widgets/portfolio-position/lib/positionBuildingNotes.ts`) and
+ * (`widgets/portfolio-position/utils/buildingPriceFormat.ts`) and
  * `PortfolioChip` use, so a hardcoded `$` doesn't leak onto KR-equity
  * symbols (`005930.KS`). KRW has no fractional digits (원화 호가 관례,
  * `KR_EQUITY_DESCRIPTOR.priceFormat.precision`); non-KRW delegates to

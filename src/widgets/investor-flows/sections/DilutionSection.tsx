@@ -1,85 +1,19 @@
+/**
+ * 증자·희석 공시 섹션.
+ */
 import { useTranslations } from 'next-intl';
-import type {
-    InvestorFlowsWindow,
-    OfferingFiling,
-    OfferingKind,
-} from '@y0ngha/siglens-core';
-import { FLOWS_DILUTION_SECTION_ID } from '@/entities/investor-flows/lib/flowsAnchors';
+import type { InvestorFlowsWindow, OfferingFiling } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import { formatInteger } from '../utils/flowFormat';
-import {
-    buildOfferingRows,
-    OFFERING_TONE,
-    offeringKey,
-    type OfferingTone,
-} from '../utils/secFilings';
+import { DILUTION_HEADING_ID } from '../utils/sectionAnchors';
+import { buildOfferingRows, offeringKey } from '../utils/secFilings';
+import { OfferingRow } from '../ui/dilution/OfferingRow';
+import { OmittedNote } from '../ui/notes/OmittedNote';
 import { CollectingNotice } from './CollectingNotice';
-
-const HEADING_ID = FLOWS_DILUTION_SECTION_ID;
-
-const TONE_CLASS: Record<OfferingTone, string> = {
-    issuance: 'bg-ui-warning/10 text-ui-warning-text',
-    neutral: 'bg-secondary-700 text-secondary-300',
-};
-
-const LINK_CLASS =
-    'tap-target rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
-
-function OfferingRow({ filing }: { readonly filing: OfferingFiling }) {
-    const t = useTranslations('widgets.investor-flows');
-    // 리터럴 `t()` 호출로 만들어 두고 종류로 고른다(추출기가 키를 볼 수 있게).
-    const kindLabels: Record<OfferingKind, string> = {
-        atm: t('dilution.kind.atm'),
-        underwritten: t('dilution.kind.underwritten'),
-        best_efforts: t('dilution.kind.bestEfforts'),
-        shelf: t('dilution.kind.shelf'),
-        registration: t('dilution.kind.registration'),
-        private_placement: t('dilution.kind.privatePlacement'),
-        prospectus: t('dilution.kind.prospectus'),
-        other: t('dilution.kind.other'),
-    };
-    const href = toSafeHttpUrl(filing.url);
-    return (
-        <li
-            className={cn(
-                SURFACE_NESTED,
-                'flex flex-wrap items-center justify-between gap-2 p-3'
-            )}
-        >
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <span
-                    className={cn(
-                        'rounded px-1.5 py-0.5 text-xs font-medium',
-                        TONE_CLASS[OFFERING_TONE[filing.kind]]
-                    )}
-                >
-                    {kindLabels[filing.kind]}
-                </span>
-                <span className="font-mono text-xs text-secondary-200">
-                    {filing.form}
-                </span>
-                <span className="font-mono text-xs text-secondary-300 tabular-nums">
-                    {filing.filingDate}
-                </span>
-            </div>
-            {href !== null && (
-                <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={LINK_CLASS}
-                >
-                    {t('dilution.filing')}
-                </a>
-            )}
-        </li>
-    );
-}
 
 interface DilutionSectionProps {
     /** `undefined` = 이 원천이 스냅샷에 없다(조회 실패). */
@@ -90,6 +24,7 @@ interface DilutionSectionProps {
     readonly collecting: boolean;
 }
 
+/** 수집 중 → 조회 불가 → 공시 없음 → 목록 순으로 첫 해당 분기만 그린다. */
 function DilutionBody({ filings, collecting }: DilutionSectionProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
@@ -115,11 +50,11 @@ function DilutionBody({ filings, collecting }: DilutionSectionProps) {
                 ))}
             </ul>
             {omittedCount > 0 && (
-                <p className="text-xs text-secondary-400">
+                <OmittedNote>
                     {t('dilution.omitted', {
                         count: formatInteger(omittedCount, locale),
                     })}
-                </p>
+                </OmittedNote>
             )}
         </>
     );
@@ -136,7 +71,7 @@ export function DilutionSection(props: DilutionSectionProps) {
     const { scoringWindow } = props;
     return (
         <section
-            aria-labelledby={HEADING_ID}
+            aria-labelledby={DILUTION_HEADING_ID}
             className={cn(SURFACE_CARD, 'space-y-4 p-6')}
         >
             <div>
@@ -144,7 +79,7 @@ export function DilutionSection(props: DilutionSectionProps) {
                     (`--header-h` 3.5rem)와 카드 윗여백(p-6 = 1.5rem)을 넘겨 카드 위 테두리까지 보이게 띄운다
                     — 앵커 제목의 사이트 관례(`scroll-mt-24`, 가이드·방법론 페이지)와 같은 값이다. */}
                 <h2
-                    id={HEADING_ID}
+                    id={DILUTION_HEADING_ID}
                     className={cn(HEADING_SECTION, 'scroll-mt-24')}
                 >
                     {t('dilution.title')}

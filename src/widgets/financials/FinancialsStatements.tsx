@@ -1,6 +1,8 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+/**
+ * 재무제표 클라이언트 래퍼 — 기간 토글과 네 재무제표 섹션을 잇는다.
+ */
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 import { PeriodToggle } from './PeriodToggle';
 import { useFinancialsPeriod } from './hooks/useFinancialsPeriod';
@@ -8,52 +10,41 @@ import { IncomeStatementSection } from './sections/IncomeStatementSection';
 import { BalanceSheetSection } from './sections/BalanceSheetSection';
 import { CashFlowSection } from './sections/CashFlowSection';
 import { GrowthAnalysisSection } from './sections/GrowthAnalysisSection';
-import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
-import { Spinner } from '@/shared/ui/Spinner';
+import { PeriodStatus } from './ui/period-status/PeriodStatus';
+import { deriveStatementCurrency } from './utils/statementCurrency';
 
 interface FinancialsStatementsProps {
-    /** Ticker symbol (already uppercased). */
+    /** 대문자로 정규화된 티커 심볼. */
     symbol: string;
-    /** SSR-fetched annual snapshot — shown immediately without any client fetch. */
+    /** SSR이 가져온 연간 스냅샷 — 클라이언트 조회 없이 바로 보인다. */
     annualSnapshot: FinancialsSnapshot;
 }
 
 /**
- * Client wrapper that combines the period toggle with the four statement
- * sections. The RSC page passes the SSR annual snapshot; switching to
- * 'quarter' lazily fetches via `useFinancialsPeriod`.
+ * RSC 페이지가 SSR 연간 스냅샷을 넘기고, 'quarter'로 전환하면 `useFinancialsPeriod`가 분기
+ * 스냅샷을 지연 조회한다.
  *
- * The scorecard (hero) stays pure-SSR and is rendered by the page directly —
- * it is always computed from the annual snapshot and does not participate in
- * the toggle.
+ * 스코어카드(히어로)는 페이지가 직접 SSR로 그린다 — 항상 연간 스냅샷으로 계산되며 토글에
+ * 참여하지 않는다.
  */
 export function FinancialsStatements({
     symbol,
     annualSnapshot,
 }: FinancialsStatementsProps) {
-    const t = useTranslations('widgets.financials');
-    const { period, setPeriod, snapshot, isLoading } = useFinancialsPeriod(
-        symbol,
-        annualSnapshot
-    );
-    // 재무제표 금액의 통화는 심볼 형상만으로 결정된다 — 한국 종목은 원화라
-    // `$333T`가 아니라 `₩333조`로 표기돼야 한다. 별도 조회나 prop이 필요 없다.
-    const currency = currencyForSymbol(symbol);
+    const { period, setPeriod, snapshot, isLoading, quarterUnavailable } =
+        useFinancialsPeriod(symbol, annualSnapshot);
+    // 통화는 보여 주는 스냅샷마다 정한다 — 공시자의 보고 통화가 있으면 그것(ADR의 TWD 등),
+    // 없으면 심볼 형상으로 정한 상장 통화다.
+    const currency = deriveStatementCurrency(snapshot, symbol);
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
                 <PeriodToggle value={period} onChange={setPeriod} />
-                {isLoading && (
-                    <span
-                        className="flex items-center gap-1.5 text-xs text-secondary-400"
-                        role="status"
-                        aria-live="polite"
-                    >
-                        <Spinner size="sm" />
-                        {t('FinancialsStatements.c78656')}
-                    </span>
-                )}
+                <PeriodStatus
+                    isLoading={isLoading}
+                    quarterUnavailable={quarterUnavailable}
+                />
             </div>
             <IncomeStatementSection
                 rows={snapshot.income}

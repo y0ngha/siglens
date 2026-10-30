@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 거래량 차트 컴포넌트 — 총 거래량·매수/매도 거래량 시리즈를 그린다.
+ */
+
 import { useMemo, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
@@ -10,7 +14,6 @@ import {
     buildExtendedSessionRanges,
     isExtendedBarTimeframe,
 } from '@/shared/api/market/extendedBarsSession';
-import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { usePaneLabels } from './hooks/usePaneLabels';
 import { useExtendedSessionBand } from './hooks/useExtendedSessionBand';
 import { useVolumeChartData } from './hooks/useVolumeChartData';
@@ -50,11 +53,8 @@ export function VolumeChart({
     const tMisc = useTranslations('shared.ui.misc');
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    /* 반환값을 쓰지 않고 호출만 한다 — 이 훅의 일은 테마가 바뀌었을 때
-       리렌더를 일으키는 것뿐이고, 바뀐 색은 아래 `CHART_COLORS` 읽기가
-       가져온다. 버전 숫자 자체를 의존성으로 쓰면 린터가 볼 수 없는 간접
-       의존이 되어 억제 주석이 필요해진다. */
-    useThemeVersion();
+    // 테마 전환은 마운트 지점의 `key={themeVersion}`이 이 컴포넌트를 통째로 remount해
+    // 처리한다(chartThemeRemountGuard) — 여기서 따로 리렌더를 일으킬 필요가 없다.
 
     const { chartRef, totalSeriesRef, buySeriesRef } = useVolumeChartLifecycle({
         containerRef,

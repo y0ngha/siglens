@@ -6,7 +6,8 @@
  * 그래서 쿨다운 `release`는 여기 두지 않는다 — 열어두면 "해제 → 재분석 요청"을
  * 반복해 쿨다운을 무력화할 수 있고, 그 쿨다운이 공개 SSE 라우트에서 캐시 우회
  * LLM 호출을 막는 유일한 장치다. 해제는 라우트가 서버 안에서 직접 한다
- * (`src/app/api/analysis/stream/route.ts`의 `releaseOnFailure`).
+ * (`src/app/api/analysis/stream/_lib/handleTechnicalStream.ts`의 `releaseOnFailure`와
+ * `releaseCooldown.ts`의 `releaseCooldownQuietly`).
  */
 
 import {

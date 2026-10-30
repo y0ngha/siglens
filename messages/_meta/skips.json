@@ -13,49 +13,49 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 53,
+        "line": 51,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 54,
+        "line": 52,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 55,
+        "line": 53,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 56,
+        "line": 54,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 57,
+        "line": 55,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 58,
+        "line": 56,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 59,
+        "line": 57,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 60,
+        "line": 58,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
@@ -505,13 +505,13 @@
     },
     {
         "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",
-        "line": 30,
+        "line": 31,
         "reason": "developer-diagnostic",
         "text": "[ReanalyzeCooldown] acquire 실패:"
     },
     {
         "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",
-        "line": 43,
+        "line": 44,
         "reason": "developer-diagnostic",
         "text": "[ReanalyzeCooldown] pttl 조회 실패:"
     },
@@ -588,8 +588,8 @@
         "text": "인증 코드가 만료되었습니다."
     },
     {
-        "file": "src/entities/congress-trades/lib/getCongressTradesResilient.ts",
-        "line": 44,
+        "file": "src/entities/congress-trades/server/getCongressTradesResilient.ts",
+        "line": 36,
         "reason": "developer-diagnostic",
         "text": "[getCongressTradesResilient] FMP 의회 거래 장애, degrade:"
     },
@@ -871,7 +871,7 @@
     },
     {
         "file": "src/entities/guide/api.ts",
-        "line": 87,
+        "line": 88,
         "reason": "developer-diagnostic",
         "text": "[guide] 카탈로그 조회 실패"
     },
@@ -1195,7 +1195,7 @@
     },
     {
         "file": "src/shared/api/dart/dartClient.ts",
-        "line": 411,
+        "line": 297,
         "reason": "developer-diagnostic",
         "text": "[dart] ip_not_allowed — DART returned 012; remove the IP restriction on the API "
     },

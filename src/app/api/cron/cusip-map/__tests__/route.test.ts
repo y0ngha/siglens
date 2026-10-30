@@ -12,15 +12,9 @@ const {
     mockCreateCikDeps: vi.fn(),
 }));
 vi.mock('../../leasedCron', () => ({ handleLeasedCron: mockHandle }));
-vi.mock(
-    '@/entities/investor-flows/server/syncCusipMap',
-    async importOriginal => ({
-        ...(await importOriginal<
-            typeof import('@/entities/investor-flows/server/syncCusipMap')
-        >()),
-        runCusipMapSync: mockRun,
-    })
-);
+vi.mock('@/entities/investor-flows/server/syncCusipMap', () => ({
+    runCusipMapSync: mockRun,
+}));
 vi.mock('@/entities/investor-flows/server/syncCikSymbolMap', () => ({
     runCikSymbolMapSync: mockRunCikSync,
 }));
@@ -39,7 +33,7 @@ import {
     LIMITS,
     OPENFIGI_TIMEOUT_MS,
 } from '@/shared/api/openfigi/openFigiClient';
-import { PROFILE_CHUNK_SPACING_MS } from '@/entities/investor-flows/server/syncCusipMap';
+import { PROFILE_CHUNK_SPACING_MS } from '@/entities/investor-flows/lib/cusipMapPlan';
 import { PATCH } from '../route';
 
 /** FMP's non-render fetch timeout (`httpClient.ts`, not exported): one attempt. */

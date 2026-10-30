@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 선 pane 스펙(LinePaneSpec)에 따라 선형 보조 pane 시리즈를 그리는 공용 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
@@ -98,7 +102,6 @@ export function useLinePaneChart({
         if (!isVisible || !seriesRef.current) return;
 
         const values = spec.values(indicators);
-        if (!values.length) return;
 
         seriesRef.current.setData(buildSeriesDataFromValues(bars, values));
     }, [indicators, bars, isVisible, paneIndex, spec]);

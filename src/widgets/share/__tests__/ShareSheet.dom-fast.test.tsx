@@ -1,18 +1,25 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { buildTweetIntentUrl } from '@/shared/lib/share';
 import { ShareSheet } from '@/widgets/share/ui/ShareSheet';
 
 const defaultProps = {
     shareUrl: 'https://siglens.io/share/abc',
     tweetText: 'AAPL 강세',
     title: 'AAPL AI 분석 결과',
-    description: '강세',
-    onClose: vi.fn(),
 };
 
-function setup(extraProps: Partial<typeof defaultProps> = {}) {
+const ANCHOR_TEST_ID = 'share-sheet-anchor';
+
+function setup() {
     const onClose = vi.fn();
-    render(<ShareSheet {...defaultProps} {...extraProps} onClose={onClose} />);
-    return { onClose };
+    const anchor = document.createElement('button');
+    anchor.dataset.testid = ANCHOR_TEST_ID;
+    document.body.appendChild(anchor);
+    const anchorRef = { current: anchor };
+    render(
+        <ShareSheet {...defaultProps} anchorRef={anchorRef} onClose={onClose} />
+    );
+    return { onClose, anchor };
 }
 
 describe('ShareSheet', () => {
@@ -26,7 +33,9 @@ describe('ShareSheet', () => {
 
     afterEach(() => {
         vi.unstubAllGlobals();
-        vi.unstubAllEnvs();
+        document
+            .querySelectorAll(`[data-testid="${ANCHOR_TEST_ID}"]`)
+            .forEach(el => el.remove());
     });
 
     // C-5 test 1: renders copy + X options; X has rel containing noopener
@@ -138,5 +147,44 @@ describe('ShareSheet', () => {
         const panel = document.querySelector('[role="dialog"]') as HTMLElement;
         fireEvent.pointerDown(panel);
         expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('does NOT call onClose when pointerdown lands on the anchor trigger', () => {
+        const { onClose, anchor } = setup();
+        fireEvent.pointerDown(anchor);
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('names the X link with exactly its visible text', () => {
+        setup();
+        expect(
+            screen.getByRole('link', { name: 'X에 공유' })
+        ).toBeInTheDocument();
+    });
+
+    it('builds the X link from the tweet text and share URL', () => {
+        setup();
+        expect(screen.getByRole('link', { name: 'X에 공유' })).toHaveAttribute(
+            'href',
+            buildTweetIntentUrl({
+                text: defaultProps.tweetText,
+                shareUrl: defaultProps.shareUrl,
+            })
+        );
+    });
+
+    it('moves focus to the selected fallback input when the clipboard write fails', async () => {
+        vi.stubGlobal('navigator', {
+            clipboard: {
+                writeText: vi.fn().mockRejectedValue(new Error('denied')),
+            },
+        });
+        setup();
+        fireEvent.click(screen.getByRole('button', { name: /링크 복사/ }));
+
+        const input = await screen.findByRole('textbox', {
+            name: '공유 링크 (직접 복사)',
+        });
+        expect(input).toHaveFocus();
     });
 });

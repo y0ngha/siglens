@@ -2,12 +2,9 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import koMessages from '../../../../messages/ko.json';
-import enMessages from '../../../../messages/en.json';
-import jaMessages from '../../../../messages/ja.json';
-import zhMessages from '../../../../messages/zh.json';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { useSkillDescription } from '@/shared/i18n/skillDescription';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
 const CORE_DIR = join(SKILLS_DIR, '_core');
@@ -41,16 +38,10 @@ const visibleSkills: VisibleSkill[] = collectMarkdown(SKILLS_DIR)
         return name ? [{ name, description: field('description') ?? '' }] : [];
     });
 
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-} as const;
-
 type SummaryTable = Record<string, string>;
-const summaryOf = (locale: keyof typeof CATALOGS): SummaryTable =>
-    (CATALOGS[locale].shared as { skillSummary: SummaryTable }).skillSummary;
+const summaryOf = (locale: keyof typeof MESSAGE_CATALOGS): SummaryTable =>
+    (MESSAGE_CATALOGS[locale].shared as { skillSummary: SummaryTable })
+        .skillSummary;
 
 /** 방문자에게 보이는 문장에 내부 용어가 새지 않게 막는 목록. */
 const INTERNAL_TERMS = /게이팅|primer|코어|Bulkowski|엣지|프리스크리너|digest/i;

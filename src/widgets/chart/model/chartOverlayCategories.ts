@@ -1,3 +1,7 @@
+/**
+ * 작도(overlay) kind별 색과 불투명도·강조 선 두께 등 표시 상수.
+ */
+
 import type { OverlayKind } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 
