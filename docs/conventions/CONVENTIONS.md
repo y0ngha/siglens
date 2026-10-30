@@ -626,6 +626,7 @@ conversions) must match reality, and a false WHY is worse than none. Re-verify t
 file or the rule it describes changes:
 
 - "Only X uses this" claims go stale when a second caller appears; name callers explicitly or drop the claim.
+- Before writing a claim about consumers, callers, usage counts or per-method behavior ("used in two places", "both validate at import time", "all queries retry", "reason is used for logging"), grep the repo for the actual callers and read each method; a claim that holds for one member does not hold for the group.
 - When a function's processing order or workload changes (a step appended, steps reordered), re-read its JSDoc and the
   route or caller doc that describes it, for example a "short, no lock needed" claim.
 - When a function's input, data source or location changes, or a file or function is deleted, grep for comments,
@@ -663,6 +664,8 @@ the conditions and units (a size measured as gzip S3 object size is not the unco
 compares; two residency figures with different binding conditions say so), and for version-dependent claims give the
 version, the check date and the command to re-check. Schedules and windows come from the schedule source, cited by
 file, not from assumptions about business hours. When there is no measurement, say so ("no baseline yet").
+
+When rewriting a comment, drop only the pointer to local audit or history notes (CM-9) and keep the measured figures (rates, counts, sizes) with their conditions; a figure removed together with its pointer leaves the claim unsourced.
 
 ```typescript
 // ❌ unverifiable

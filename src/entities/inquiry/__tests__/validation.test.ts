@@ -103,6 +103,25 @@ describe('validateContactInput', () => {
             expect(result.error.code).toBe('email_invalid');
         });
 
+        it('이메일이 DB 컬럼 한도인 320자이면 통과한다', () => {
+            const email = `${'a'.repeat(320 - '@b.co'.length)}@b.co`;
+            expect(email).toHaveLength(320);
+            const result = validateContactInput({ ...validInput, email });
+            expect(result.ok).toBe(true);
+        });
+
+        it('이메일이 321자이면 email_invalid 에러를 반환한다', () => {
+            const email = `${'a'.repeat(321 - '@b.co'.length)}@b.co`;
+            expect(email).toHaveLength(321);
+            const result = validateContactInput({ ...validInput, email });
+            expect(result.ok).toBe(false);
+            if (result.ok) return;
+            expect(result.error).toEqual({
+                code: 'email_invalid',
+                field: 'email',
+            });
+        });
+
         it('공백이 포함되면 email_invalid 에러를 반환한다', () => {
             const result = expectFailure(
                 validateContactInput({
