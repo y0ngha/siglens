@@ -4070,6 +4070,7 @@
         "extended-hours": {
             "basisAfter": "本日終値比",
             "basisPre": "前日終値比",
+            "flat": "横ばい",
             "sessionAfter": "アフターマーケット",
             "sessionPre": "プレマーケット",
             "tradedAt": "{time} ET 約定"

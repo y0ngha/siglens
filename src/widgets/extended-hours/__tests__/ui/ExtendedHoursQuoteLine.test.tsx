@@ -5,30 +5,15 @@ vi.mock('@/entities/extended-hours/hooks/useExtendedHoursQuote', () => ({
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { useExtendedHoursQuote } from '@/entities/extended-hours/hooks/useExtendedHoursQuote';
-import type { ExtendedHoursQuote } from '@/entities/extended-hours/model';
 import { ExtendedHoursQuoteLine } from '@/widgets/extended-hours/ui/ExtendedHoursQuoteLine';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import {
+    AFTER_DOWN,
+    PRE_FLAT,
+    PRE_UP,
+} from '@/widgets/extended-hours/__tests__/fixtures/extendedHoursQuotes';
 
 const mockedHook = vi.mocked(useExtendedHoursQuote);
-
-/** 라이브 프로브 값: AAPL 프리마켓 346.38, 직전 종가 342.96, 07:07:12 ET. */
-const PRE_UP: ExtendedHoursQuote = {
-    session: 'pre-market',
-    price: 346.38,
-    referenceClose: 342.96,
-    change: 3.42,
-    changePercent: (3.42 / 342.96) * 100,
-    tradedAtMs: 1792062432000,
-};
-
-const AFTER_DOWN: ExtendedHoursQuote = {
-    session: 'after-hours',
-    price: 348.25,
-    referenceClose: 350,
-    change: -1.75,
-    changePercent: -0.5,
-    tradedAtMs: Date.UTC(2026, 9, 15, 20, 55), // 16:55 EDT
-};
 
 describe('ExtendedHoursQuoteLine', () => {
     beforeEach(() => {
@@ -198,6 +183,29 @@ describe('ExtendedHoursQuoteLine', () => {
 
             expect(screen.getByText('▼').parentElement).toHaveClass(
                 'text-ui-danger-text'
+            );
+        });
+    });
+
+    describe('보합(등락 0)', () => {
+        beforeEach(() => mockedHook.mockReturnValue(PRE_FLAT));
+
+        it('상승으로 칠하지 않는다 — 화살표·부호·방향색 없이 보합 단어를 전한다', () => {
+            render(<ExtendedHoursQuoteLine symbol="AAPL" />);
+
+            const line = screen.getByTestId('extended-hours-quote');
+            expect(line).toHaveTextContent('$342.96');
+            expect(line).toHaveTextContent('$0.00 0.00%');
+            expect(line).not.toHaveTextContent('+');
+            expect(line).not.toHaveTextContent('▲');
+            expect(
+                screen.getByText(koMessage('widgets.extended-hours.flat'))
+            ).toHaveClass('sr-only');
+            expect(
+                screen.queryByText(koMessage('shared.lib.priceMove.up'))
+            ).toBeNull();
+            expect(screen.getByTestId('extended-hours-move')).not.toHaveClass(
+                'text-ui-success-text'
             );
         });
     });

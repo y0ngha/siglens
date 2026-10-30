@@ -4204,6 +4204,7 @@
         "extended-hours": {
             "basisAfter": "오늘 종가 대비",
             "basisPre": "전일 종가 대비",
+            "flat": "보합",
             "sessionAfter": "애프터마켓",
             "sessionPre": "프리마켓",
             "tradedAt": "{time} ET 체결"
