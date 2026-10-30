@@ -50,7 +50,13 @@ describe('listSiglensApiKeysAction', () => {
         mockGetCurrentUser.mockResolvedValue({ id: USER_ID } as never);
         mockList.mockRejectedValue(new Error('db down'));
         await expect(listSiglensApiKeysAction()).resolves.toBeNull();
-        expect(console.error).toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+            '[listSiglensApiKeysAction] failed:',
+            {
+                name: 'Error',
+                code: undefined,
+            }
+        );
     });
 
     it('세션 조회 오류는 삼키지 않고 전파한다 (Next 동적 렌더 신호 보존)', async () => {

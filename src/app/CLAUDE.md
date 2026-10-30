@@ -3,7 +3,7 @@
 ## Core Principle
 
 Next.js App Router layer. Handles RSC (React Server Components) and Route Handlers.
-This folder is **routing only** — it composes widgets/features/entities/shared but does not implement business logic or UI components here.
+This folder is **routing only** — it composes widgets/features/entities/shared but does not implement business logic here. 재사용되는 UI 컴포넌트는 `widgets/`에 두고, 한 라우트 전용 조립 코드만 AP-5의 비공개 폴더(`_components/`·`_lib/`)에 둔다.
 
 In FSD, `app/` is the **composition root**: it wires together widgets, features, entities, and shared layers via page-level RSC orchestration.
 
@@ -174,6 +174,18 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
 schema.org 타입은 의미가 맞는 것만 쓴다. `FinancialProduct`는 대출·카드·보험용이지 분석 서비스가 아니고,
 이미 `WebPage`·`about.Corporation`이 덮는 내용을 다른 타입으로 중복하지 않는다. `Article.datePublished`는
 최초 발행 시각이며 요청 시각이 아니다(갱신 시각은 `dateModified`).
+
+<a id="AP-5"></a>
+
+#### AP-5 — 한 라우트 전용 조립 컴포넌트·헬퍼는 그 라우트의 `_components/`·`_lib/`에 둔다
+
+한 라우트만 쓰고 다른 곳에서 재사용하지 않는 조립용 컴포넌트(번역된 문구를 props로 받아 배치만 하는 섹션 등)와
+순수 헬퍼는 그 라우트의 비공개 폴더(`_components/`·`_lib/`)에 둔다. 두 곳 이상에서 쓰이면 `widgets/`(UI) 또는
+`shared/`·`entities/`(로직)로 내린다. 비즈니스·도메인 로직은 여기 두지 않는다 — entities 또는 siglens-core 몫이다
+(데이터 조회를 감싼 서버 헬퍼는 `_lib`에 둘 수 있다).
+
+❌ 두 라우트가 `app/a/_components/Section.tsx`를 서로 import
+✅ 공유가 필요해지면 `widgets/<slice>/`로 내려 두 라우트가 그곳에서 import
 
 <a id="AP-3"></a>
 

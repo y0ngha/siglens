@@ -39,6 +39,12 @@ describe('getApiDefaultModelAction', () => {
         vi.mocked(getCurrentUser).mockResolvedValue({ id: USER_ID } as never);
         mockFind.mockRejectedValue(new Error('db down'));
         await expect(getApiDefaultModelAction()).resolves.toBeNull();
-        expect(console.error).toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+            '[getApiDefaultModelAction] failed:',
+            {
+                name: 'Error',
+                code: undefined,
+            }
+        );
     });
 });

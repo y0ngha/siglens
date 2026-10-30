@@ -15,7 +15,7 @@ vi.mock(
 
 vi.mock('@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup');
 
-vi.mock('@/shared/hooks/usePageShowReload', () => ({
+vi.mock('../hooks/usePageShowReload', () => ({
     usePageShowReload: vi.fn(),
 }));
 

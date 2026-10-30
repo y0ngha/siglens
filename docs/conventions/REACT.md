@@ -147,6 +147,8 @@ import { useState, useEffect } from 'react';
 
 A `run`/`poll`/`retry` function defined inside a hook's `useCallback`/`useEffect` body inherits its closure (alive flag, retry counter, timers, `setState`) implicitly, so it cannot be tested alone. Extract it to a module-level async function taking an explicit context object (`RunContext { symbol, setState, isAlive, setRetryHandle }`); the hook becomes a thin coordinator that builds the context and dispatches.
 
+The extracted function gets its own direct test file (drive it with a fake context and assert each transition, including the superseded/not-alive paths); testing it only through the hook leaves its branches unpinned.
+
 ```typescript
 // ❌
 const trigger = useCallback(() => {
@@ -179,6 +181,21 @@ Derive "is a member" in one exported place, not separately per consumer.
 //    const active = decision?.userId === userId ? decision.value : null;
 ```
 
+<a id="HK-7"></a>
+
+#### HK-7 — Discard async results that no longer belong to the current identity or key
+
+An async result (a merge, a fetch, a late failure) is applied, and its side effects run (state, storage writes,
+notices, navigation), only if the identity or key that started it is still current when it resolves. Logout, an account
+switch, a symbol change or a navigation while the request was in flight make the result stale. Capture the identity/key
+at call time and compare it with the current one (a ref, or `isAlive()` from the run context) after every `await`,
+before the first side effect. Test every way the owner can change (logout and account switch, not just one).
+
+```ts
+// ❌ const merged = await mergeLocal(userId); setItems(merged); // applied after logout or a switch to user B
+// ✅ const merged = await mergeLocal(userId);
+//    if (currentUserIdRef.current !== userId) return;
+//    setItems(merged);
 <a id="HK-6"></a>
 
 #### HK-6 — Functions returned from a custom hook have stable identity
@@ -501,6 +518,9 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 - A control that becomes pending while it holds focus uses `aria-disabled`, not `disabled`, so focus does not fall to
   `body` (Tab then escapes a modal). On success move focus to a persistent live region or the next target.
 - An auto-dismissing toast that carries an action pauses its timer on hover and `focus-within`.
+- A flag that hands focus on after an action (e.g. "focus the heading after a delete") either names its target (the
+  row key) or is guarded by the current UI state (no other row editor or confirm open), is cleared once consumed, and
+  does not depend on sibling effect or commit order; otherwise a later remount or another row steals focus.
 
 ```tsx
 // ❌
@@ -905,6 +925,21 @@ A seed marked never-stale removes the client's only self-healing path for a degr
 changing staleness, list what the refetch used to repair and keep a replacement for it. Test seeds through
 `dehydrate` -> `hydrate`, the path production takes, not by writing directly to the cache.
 
+<a id="RQ-6"></a>
+
+#### RQ-6 — Pending state belongs to the request that owns it, not to a shared mutation
+
+A mutation hook shared by several forms or rows exposes one `isPending`. Deriving a form's "submitting" state from it
+(plus unrelated UI state) lets a second submit through while that form's own request is in flight, and shows every
+row as busy when only one is. Track the form's own in-flight request (a ref or local state set around `mutate`), and
+mark a row pending only when it matches `mutation.variables`.
+
+```tsx
+// ❌ every row spins, and the form can double-submit
+const busy = remove.isPending
+// ✅ only the row being removed
+const busy = remove.isPending && remove.variables === id
+```
 <a id="RQ-5"></a>
 
 #### RQ-5 — Sign-out and account deletion clear every member-scoped query

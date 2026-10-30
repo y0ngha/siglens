@@ -71,9 +71,9 @@ function getServerPreferenceSnapshot(): ThemePreference {
  * `preference`는 `localStorage`를 외부 스토어로 구독한다
  * (`useSyncExternalStore`, `usePersistentState`와 같은 이유). 하이드레이션
  * 렌더는 `getServerPreferenceSnapshot`(= `system`)을 쓰므로 서버 HTML과 일치하고,
- * 하이드레이션이 끝나면 React가 실제 저장값으로 전환한다 — 예전에는 이 전환을
- * 마운트 `useEffect`의 `setState`로 직접 했는데, 그러면 커밋마다 렌더가 한 번 더
- * 돈다(react/set-state-in-effect가 잡는 바로 그 패턴).
+ * 하이드레이션이 끝나면 React가 실제 저장값으로 전환한다 — 마운트 `useEffect`의
+ * `setState`로 전환하면 커밋마다 렌더가 한 번 더 돈다(react/set-state-in-effect가
+ * 잡는 패턴).
  */
 export function useTheme(): UseThemeResult {
     const preference = useSyncExternalStore(
@@ -100,7 +100,7 @@ export function useTheme(): UseThemeResult {
 
     /* 마운트 때 한 번 meta를 맞춘다. `applyTheme`가 meta를 덮어쓰는 것은
        **선택을 바꿀 때뿐**이라, 저장된 선택으로 페이지를 열면 로드 직후에는
-       어긋난 채였다. 근거는 [[syncThemeColorMeta]]. */
+       어긋난 채이기 때문이다. 근거는 [[syncThemeColorMeta]]. */
     useEffect(() => {
         const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
         if (current === 'light' || current === 'dark') {
@@ -111,10 +111,7 @@ export function useTheme(): UseThemeResult {
     /*
      * OS 선호도 변경을 따라간다 — **선택이 `system`일 때만.**
      *
-     * 예전에 이 리스너가 제거된 적이 있는데, 그때는 `system`이 선택지로
-     * 노출되지 않아 "아무것도 고르지 않은 사용자"가 OS를 바꾸는 순간 앱이
-     * 뒤집혔고, 결과를 저장하지도 않아 새로고침하면 되돌아갔다. 지금은 다르다 —
-     * `system`이 명시적 선택이고 키의 부재로 저장되므로, OS를 따라가는 것이
+     * `system`은 명시적 선택이고 키의 부재로 저장되므로, OS 변경을 따라가는 것이
      * 사용자가 고른 동작이며 새로고침 후에도 같은 판정이 나온다.
      *
      * `light`/`dark`를 고른 사용자에게는 아무 일도 일어나지 않는다.

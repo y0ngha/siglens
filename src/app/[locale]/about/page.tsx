@@ -43,7 +43,7 @@ export default async function AboutRoute({
     const locale = enterLocale(rawLocale);
 
     // countSkillFiles 오류는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
-    // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다((home)/page.tsx와 동일 근거).
+    // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다((home)/_lib/homeSkills.ts와 동일 근거).
     // FAQ는 화면 FaqSection과 FAQPage JSON-LD의 단일 소스 — 두 번 만들지 않는다.
     const [tSeo, counts, faq] = await Promise.all([
         getTranslations({ locale, namespace: 'shared.seo' }),

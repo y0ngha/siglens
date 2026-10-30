@@ -16,7 +16,7 @@ export interface AgentEventStreamOptions<
 > {
     meta: Record<string, unknown>;
     work: (emit: (event: AgentTurnEvent) => void) => Promise<TDone>;
-    /** Client disconnected — abort the provider/tool signal (never the fresh analysis, spec §6-3). */
+    /** Client disconnected — abort the provider/tool signal (never the fresh analysis). */
     onAbort: () => void;
 }
 
@@ -25,7 +25,7 @@ const frame = (event: string, data: unknown): string =>
 
 /**
  * Incremental SSE writer for agent turns. `heartbeatStream` carries one promise
- * and emits only open/heartbeat/done/error, so it cannot stream tokens (spec §2-11).
+ * and emits only open/heartbeat/done/error, so it cannot stream tokens.
  * The `[agent-stream] failed:` marker feeds the CloudWatch filter (07-alarms.sh).
  */
 export function agentEventStream<TDone extends Record<string, unknown>>(

@@ -1,14 +1,17 @@
-import { LLM_PROVIDER_VALUES, type LlmProvider } from './constants';
+import {
+    LLM_PROVIDER_VALUES,
+    type LlmProvider,
+} from '@/shared/config/llmProviders';
 
-/** Trim a raw LLM API key string; returns `null` when the trimmed value is empty so callers can treat missing and blank uniformly. */
+/** 입력 API 키의 앞뒤 공백을 제거한다. 비어 있으면 `null`이라 호출부가 미입력과 공백만 입력을 같게 다룬다. */
 export function normalizeLlmApiKey(apiKey: string): string | null {
     const trimmed = apiKey.trim();
     return trimmed.length === 0 ? null : trimmed;
 }
 
-/** Type guard checking whether a string is a supported {@link LlmProvider}. */
+/** 폼 입력 문자열이 지원하는 {@link LlmProvider}인지 좁히는 타입 가드. */
 export function isLlmProvider(value: string): value is LlmProvider {
-    // TS limitation: ReadonlyArray<LlmProvider>.includes() does not accept `string`;
-    // widening to readonly string[] is safe because LLM_PROVIDER_VALUES is always string[].
+    // ReadonlyArray<LlmProvider>.includes()는 string을 받지 못해 넓힌다.
+    // LLM_PROVIDER_VALUES는 항상 문자열 배열이라 안전하다.
     return (LLM_PROVIDER_VALUES as readonly string[]).includes(value);
 }
