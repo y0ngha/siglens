@@ -1,9 +1,4 @@
-import { isRecord } from '@/shared/lib/isRecord';
-
-function readStringCode(value: unknown): string | undefined {
-    if (!isRecord(value)) return undefined;
-    return typeof value.code === 'string' ? value.code : undefined;
-}
+import { readErrorCode } from '@/shared/lib/readErrorCode';
 
 /**
  * 서버 액션 실패를 쿼리 내용 노출 없이 로깅한다. `DrizzleQueryError`의
@@ -18,8 +13,5 @@ function readStringCode(value: unknown): string | undefined {
  */
 export function logActionError(tag: string, error: unknown): void {
     const name = error instanceof Error ? error.name : 'unknown';
-    const code =
-        readStringCode(isRecord(error) ? error.cause : undefined) ??
-        readStringCode(error);
-    console.error(tag, { name, code });
+    console.error(tag, { name, code: readErrorCode(error) });
 }

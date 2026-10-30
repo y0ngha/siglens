@@ -1,10 +1,5 @@
 import 'server-only';
-import { isRecord } from '@/shared/lib/isRecord';
-
-function readStringCode(value: unknown): string | undefined {
-    if (!isRecord(value)) return undefined;
-    return typeof value.code === 'string' ? value.code : undefined;
-}
+import { readErrorCode } from '@/shared/lib/readErrorCode';
 
 /**
  * The non-sensitive diagnostics a thrown value is safe to log — never the
@@ -19,12 +14,8 @@ export function safeErrorFields(error: unknown): {
     code: string | undefined;
 } {
     const errorName = error instanceof Error ? error.name : 'unknown';
-    // Drizzle이 감싼 에러는 cause.code, 감싸지 않은 postgres-js/소켓 에러는
-    // 최상위 code를 읽는다 (shared/lib/logActionError.ts와 동일, cause 우선).
-    const code =
-        readStringCode(isRecord(error) ? error.cause : undefined) ??
-        readStringCode(error);
-    return { errorName, code };
+    // cause.code 우선, 없으면 최상위 code — 서버 액션 로그와 같은 규칙(readErrorCode).
+    return { errorName, code: readErrorCode(error) };
 }
 
 /**

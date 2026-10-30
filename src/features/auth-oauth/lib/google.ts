@@ -1,5 +1,5 @@
-import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 /** Google OAuth 2.0 / OpenID Connect 어댑터 — 인가 URL을 만들고 code를 프로필로 바꾼다. */
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { OAuthProviderAdapter, OAuthProfileResult } from './types';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -24,7 +24,6 @@ interface GoogleUserInfoResponse {
     picture?: string;
 }
 
-/** 값이 `null`이 아닌 객체(배열 포함 안 함)일 때만 필드를 읽을 수 있게 좁힌다. */
 /** 문자열일 때만 값을 쓰고, 그 외(누락·다른 타입)는 없는 것으로 본다. */
 function stringOrUndefined(value: unknown): string | undefined {
     return typeof value === 'string' ? value : undefined;
