@@ -6,19 +6,18 @@ export type OptionsCacheLifeProfile =
     | 'options-weekend';
 
 /**
- * Pick the cache life profile based on current ET time. Profiles are
- * registered in `next.config.ts`'s `cacheLife` map.
+ * 현재 ET 시각으로 캐시 수명 프로파일을 고른다. 프로파일은 `next.config.ts`의 `cacheLife`
+ * 맵에 등록돼 있다.
  *
- * - Saturday/Sunday **and NYSE holidays** → `options-weekend`
- * - Trading day 09:30–16:00 ET (13:00 on a half day, close exclusive) → `options-market-open`
- * - Trading-day off-hours (incl. the close bell itself) → `options-market-closed`
+ * - 토·일 **및 NYSE 휴장일** → `options-weekend`
+ * - 거래일 09:30–16:00 ET(반장은 13:00, 종료 시각 제외) → `options-market-open`
+ * - 거래일 장외 시간(종가 종소리 순간 포함) → `options-market-closed`
  *
- * The profile name says "weekend" but the condition is "no session today at all".
- * A holiday is the same situation as a Saturday — Yahoo will not publish another
- * options snapshot until the next open — so the 30-minute `options-market-closed`
- * TTL would just re-fetch identical data ~48 times over the day, and that TTL is
- * also the Redis TTL (`optionsDataCache`). The name is kept because it is a
- * registered `cacheLife` profile key in `next.config.ts`.
+ * 이름은 "weekend"지만 조건은 "오늘 세션이 아예 없음"이다. 휴장일은 토요일과 같은 상황이라
+ * — Yahoo가 다음 개장 전까지 새 옵션 스냅샷을 내지 않는다 — 30분짜리 `options-market-closed`
+ * TTL로는 같은 데이터를 하루에 ~48번 다시 받을 뿐이고, 그 TTL은 Redis TTL
+ * (`optionsDataCache`)이기도 하다. 이름은 `next.config.ts`에 등록된 `cacheLife` 프로파일 키라
+ * 그대로 둔다.
  */
 export function getOptionsCacheLifeProfile(
     now: Date = new Date()

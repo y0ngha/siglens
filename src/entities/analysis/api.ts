@@ -45,7 +45,7 @@ import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalen
 import { fetchQuotePriceForAnalysis } from './lib/fetchQuotePriceForAnalysis';
 // Cross-entity: overall이 options-chain 스냅샷을 조합한다. submitOverallAnalysisAction과
 // 동일한 의도적 예외(entities/CLAUDE.md).
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 // analysisHistoryRepository는 server-only + node:crypto 의존이다(상단 JSDoc 참고).
 import {

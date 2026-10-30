@@ -36,7 +36,7 @@ import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalen
 import { resolveReasoning } from '@/shared/lib/byokGate';
 // Cross-entity(options-chain): overall은 옵션 스냅샷까지 조합하는 multi-entity
 // orchestration이다 — `src/entities/CLAUDE.md` "의도적 예외" 표에 등재된 허용 경로.
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import {

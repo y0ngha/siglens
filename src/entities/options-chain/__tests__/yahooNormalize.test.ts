@@ -126,7 +126,7 @@ describe('normalizeYahooContract', () => {
 describe('normalizeYahooExpiration', () => {
     /**
      * now = 2026-05-14T16:00:00Z = 12:00 noon EDT.
-     * etMidnight(now) → ET date is May 14 → Date.UTC(2026, 4, 14, 12) = 2026-05-14T12:00:00Z
+     * etNoonUtc(now) → ET date is May 14 → Date.UTC(2026, 4, 14, 12) = 2026-05-14T12:00:00Z
      */
     const NOW = new Date('2026-05-14T16:00:00Z');
 
@@ -153,7 +153,7 @@ describe('normalizeYahooExpiration', () => {
     it('computes daysToExpiration = 1 for next-day expiration (noon-ET reference)', () => {
         /**
          * expMidnight = 2026-05-15T00:00:00Z
-         * refMidnight = 2026-05-14T12:00:00Z  (etMidnight of NOW)
+         * refNoon = 2026-05-14T12:00:00Z  (etNoonUtc of NOW)
          * diff = 12 h → 0.5 days → Math.round(0.5) = 1
          */
         const exp = makeYahooExpiration(
@@ -168,7 +168,7 @@ describe('normalizeYahooExpiration', () => {
     it('computes daysToExpiration = 8 for expiration 8 days out', () => {
         /**
          * expMidnight = 2026-05-22T00:00:00Z
-         * refMidnight = 2026-05-14T12:00:00Z
+         * refNoon = 2026-05-14T12:00:00Z
          * diff = 7.5 days → Math.round = 8
          */
         const exp = makeYahooExpiration(
