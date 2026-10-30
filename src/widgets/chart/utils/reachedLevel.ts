@@ -1,3 +1,7 @@
+/**
+ * 현재가가 이미 지나간 목표 레벨인지 판정하는 유틸.
+ */
+
 import { OVERLAY_LEVEL_LABELS, type ChartOverlay } from '@y0ngha/siglens-core';
 import {
     firstSegmentDirection,

@@ -166,4 +166,31 @@ describe('MarketNewsDigest', () => {
 
         expect(screen.queryByText('주목 일정')).not.toBeInTheDocument();
     });
+
+    it('status: done, 같은 문장이 반복돼도 모두 그리고 중복 key 경고가 없다', () => {
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            mockUseMarketNewsDigest.mockReturnValue({
+                status: 'done',
+                result: {
+                    ...DONE_RESULT,
+                    keyEventsKo: ['금리 동결', '금리 동결'],
+                },
+            });
+
+            render(
+                <MarketNewsDigest category="general" hasEnrichedNews={true} />
+            );
+
+            expect(screen.getAllByText('금리 동결')).toHaveLength(2);
+            const logged = consoleError.mock.calls
+                .map(args => String(args[0]))
+                .join('\n');
+            expect(logged).not.toContain('same key');
+        } finally {
+            consoleError.mockRestore();
+        }
+    });
 });

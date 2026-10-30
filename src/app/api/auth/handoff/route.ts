@@ -16,7 +16,7 @@ import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';
 export const dynamic = 'force-dynamic';
 
 /**
- * MAIN host only: issue a one-time code for the signed-in user (spec §8, §9-4).
+ * MAIN host only: issue a one-time code for the signed-in user.
  *
  * Not an open redirect: `to` is an enum (only `ai`), the target origin is always
  * the `AI_SITE_URL` constant, and `next` is reduced to a path before it is used.

@@ -139,7 +139,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         },
     };
 });
-vi.mock('@/entities/llm-provider/lib/serverKeys', () => ({
+vi.mock('@/entities/llm-provider/api/serverKeys', () => ({
     getServerPrimaryKey: serverKeys.getServerPrimaryKey,
 }));
 vi.mock('@/entities/analysis/server/overallAnalysisRunner', () => ({

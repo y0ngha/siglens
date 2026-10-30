@@ -5,6 +5,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type { SignalBrief } from '../reportModel';
 
+/** `buildSignalBrief`의 입력 — core 판정기를 부른 호출자가 결과를 넘긴다. */
 export interface SignalBriefInput {
     /** `evaluateConfluence(bars, { timeframe: '1Day' })` — HTF 게이트 없이. */
     confluence: ConfluenceSnapshot | null;

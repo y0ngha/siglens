@@ -1,3 +1,4 @@
+/** E2E stand-in for the Google OAuth adapter and the fixture identity it provisions. */
 import type { OAuthProviderAdapter, OAuthProfileResult } from './types';
 
 /**
@@ -32,18 +33,13 @@ const FIXTURE_PROFILE = {
  * any code, so the auth callback flow can be exercised hermetically without
  * contacting Google.
  *
- * DELIBERATE — Plan §4 exception (static import, NOT require-gated):
- * The plan defaults to loading fakes via a gated require (as with
- * FakeMarketProvider / FakeNewsClient, which pull in heavier postgres/fixtures).
- * This adapter is intentionally exempt and statically imported in
- * getOAuthAdapter, mirroring E2eEmailDispatcher, because:
- *   (1) it has no heavy deps (only type-only imports), so its bundle footprint
- *       is negligible — require-gating buys nothing here; and
+ * Statically imported by getOAuthAdapter, unlike heavier fakes (FakeMarketProvider,
+ * FakeNewsClient) that are loaded through a gated `require`, because:
+ *   (1) it has only type-only imports, so shipping it in the bundle costs
+ *       nothing; and
  *   (2) a static import keeps getOAuthAdapter's E2E branch unit-testable —
  *       vitest can mock a static module but not a relative CJS `require` inside
  *       a require-gated factory.
- * Treat the require-gate as the rule for heavy fakes and static import as the
- * sanctioned pattern for these dependency-free ones.
  *
  * `authorizeUrl` returns a localhost URL (it does not delegate to the real
  * adapter) so it requires no GOOGLE_CLIENT_ID; the returned URL still carries

@@ -5,7 +5,16 @@ import {
     type GenerateContentConfig,
     type HttpOptions,
 } from '@google/genai';
-import type { GeminiThinkingLevel } from '@y0ngha/siglens-core';
+import type {
+    AiContents,
+    ConversationTurn,
+    GeminiThinkingLevel,
+} from '@y0ngha/siglens-core';
+import { findSpecByApiModelId, resolveMaxOutputTokens } from '../lib/utils';
+import type { ProviderCallLimits, ProviderCallOptions } from '../model';
+import { CHAT_JOB_ID, extractGeminiUsage } from '../lib/usage';
+import { createCallDeadline, runWithCallDeadline } from './callDeadline';
+import { logUsage } from './logUsage';
 
 /**
  * 도메인 thinking level → SDK의 `ThinkingLevel` enum.
@@ -18,41 +27,32 @@ const THINKING_LEVEL_TO_SDK: Record<GeminiThinkingLevel, ThinkingLevel> = {
     medium: ThinkingLevel.MEDIUM,
     high: ThinkingLevel.HIGH,
 };
-import type { AiContents, ConversationTurn } from '@y0ngha/siglens-core';
-import type { ProviderCallLimits, ProviderCallOptions } from '../model';
-import {
-    createCallDeadline,
-    findSpecByApiModelId,
-    resolveMaxOutputTokens,
-} from '../lib/utils';
-import { CHAT_JOB_ID, extractGeminiUsage, logUsage } from '../lib/usage';
 
 interface GeminiChatOptions extends ProviderCallOptions {
     /**
-     * Gemini thinking level. Pass `'minimal'` to disable extended thinking for
-     * deterministic tasks (translation, classification). Omit to use the
-     * model's default thinking behaviour.
+     * Gemini thinking level. 번역·분류처럼 결정적인 작업에서 확장 추론을 끄려면
+     * `'minimal'`을 넘긴다. 생략하면 모델의 기본 추론 동작을 따른다.
      *
      * ⚠️ 숫자 `thinkingBudget`을 쓰지 않는다. 3세대 Gemini는 리터럴 0을 400으로
      * 거부하거나(`gemini-3.5-flash-lite`·`3.6-flash`·`3.1-pro-preview`) 에러
      * 없이 무시한다(`3.7-flash`·`3.8-flash`) — 2026-09-06 실측. 조용한 무시가
-     * 특히 위험해서 level 문자열로 전환했다. 모델별로 받는 최저 level이 다르므로
+     * 특히 위험해서 level 문자열을 쓴다. 모델별로 받는 최저 level이 다르므로
      * (`minimal` 미지원 모델은 `low`가 바닥) 호출 측이 `supportsHardOff`로
      * 검증한 모델만 `'minimal'`을 보낸다.
      */
     thinkingLevel?: GeminiThinkingLevel;
 }
 
-/** Gemini SDK's native conversation-turn shape. */
+/** Gemini SDK의 네이티브 대화 턴 모양. */
 interface GeminiTurn {
     role: 'user' | 'model';
     parts: [{ text: string }];
 }
 
 /**
- * Convert siglens-core's provider-neutral `AiContents` to the Gemini SDK's
- * native turn shape. Gemini expects `{ role: 'user' | 'model', parts: [{ text }] }`,
- * whereas siglens-core 0.11.4 emits `{ role: 'user' | 'assistant', text }`.
+ * siglens-core의 provider-중립 `AiContents`를 Gemini SDK의 네이티브 턴 모양으로 바꾼다.
+ * Gemini는 `{ role: 'user' | 'model', parts: [{ text }] }`를 기대하지만
+ * core는 `{ role: 'user' | 'assistant', text }`를 내보낸다.
  */
 function toGeminiContents(contents: AiContents): string | GeminiTurn[] {
     if (typeof contents === 'string') {
@@ -110,6 +110,11 @@ function buildGeminiConfig(
     return Object.keys(config).length > 0 ? config : undefined;
 }
 
+/**
+ * Gemini `generateContent`로 챗 한 번을 부르고 text를 돌려준다.
+ * `limits.timeoutMs`는 응답 본문까지 묶는다 — SDK의 `httpOptions.timeout`은 요청 단위
+ * 헤더 타임아웃이라 호출 전체를 보장하지 못한다. 만료 시 `abortSignal`로 연결을 끊는다.
+ */
 export async function callGeminiChat({
     apiKey,
     model,
@@ -122,12 +127,9 @@ export async function callGeminiChat({
     const startedAt = Date.now();
     const genai = new GoogleGenAI({ apiKey });
 
-    // 응답 본문까지 `limits.timeoutMs`로 묶는다 — SDK의 `httpOptions.timeout`은 요청 단위
-    // 헤더 타임아웃이라 호출 전체를 보장하지 못한다. 만료 시 `abortSignal`로 연결을 끊는다.
     const deadline = createCallDeadline(limits?.timeoutMs);
-    let response: Awaited<ReturnType<typeof genai.models.generateContent>>;
-    // 요청 생성이 던져도 타이머가 남지 않도록 생성부터 try 안에 둔다.
-    try {
+    // config 생성과 요청 생성이 던져도 타이머가 남지 않도록 둘 다 `runWithCallDeadline` 안에서 한다.
+    const response = await runWithCallDeadline(deadline, () => {
         const config = buildGeminiConfig(
             model,
             systemInstruction,
@@ -135,16 +137,12 @@ export async function callGeminiChat({
             limits,
             deadline.signal
         );
-        response = await deadline.guard(
-            genai.models.generateContent({
-                model,
-                contents: toGeminiContents(contents),
-                ...(config !== undefined ? { config } : {}),
-            })
-        );
-    } finally {
-        deadline.dispose();
-    }
+        return genai.models.generateContent({
+            model,
+            contents: toGeminiContents(contents),
+            ...(config !== undefined ? { config } : {}),
+        });
+    });
     logUsage({
         jobId,
         model,

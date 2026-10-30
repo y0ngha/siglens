@@ -64,6 +64,10 @@ export function readMemberNudgeRecord(userId: string): MemberNudgeRecord {
     }
 }
 
+/**
+ * 회원 한 명의 기록을 저장한다. 다른 회원의 기록은 그대로 둔다. 저장소가 막혀 있으면
+ * 조용히 포기한다(위와 같은 이유).
+ */
 export function writeMemberNudgeRecord(
     userId: string,
     record: MemberNudgeRecord

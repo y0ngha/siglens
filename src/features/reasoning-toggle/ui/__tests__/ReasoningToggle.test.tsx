@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReasoningToggle } from '@/features/reasoning-toggle/ui/ReasoningToggle';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 // 기능 이름은 이제 `features.reasoning-toggle.a11y.featureLabel` 키다 —
 // 예전엔 모듈 상수라 `/en`의 토글이 영어 UI 안에서 `상세 분석`을 렌더했다.
@@ -281,6 +282,52 @@ describe('ReasoningToggle', () => {
 
         expect(onChange).not.toHaveBeenCalled();
         expect(onLockedClick).not.toHaveBeenCalled();
+    });
+
+    /**
+     * 회귀: locked이면서 disabled(추론 미지원 모델)인 스위치가 "회원가입하면 사용할 수
+     * 있어요"라고 읽혔다. 그 모델은 가입해도 열리지 않으므로 거짓 약속이었다.
+     */
+    it('locked AND disabled: uses the generic toggle name, not the signup promise', () => {
+        render(
+            <ReasoningToggle
+                checked={false}
+                onChange={vi.fn()}
+                canUse={false}
+                disabled={true}
+            />
+        );
+
+        expect(
+            screen.getByRole('switch', { name: '상세 분석 (추론) 토글' })
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole('switch', {
+                name: '상세 분석: 회원가입하면 사용할 수 있어요',
+            })
+        ).toBeNull();
+    });
+
+    /**
+     * 회귀: 툴팁 둘째 문장의 ja 값에 JSX 들여쓰기(줄바꿈+공백)가 남아 있어
+     * 「詳細な分析を 提供します」처럼 일본어 문장 한가운데 공백이 보였다.
+     */
+    it('renders the ja tooltip sentence without a stray indentation space', () => {
+        renderWithIntl(
+            <ReasoningToggle
+                checked={false}
+                onChange={vi.fn()}
+                canUse={true}
+            />,
+            { locale: 'ja' }
+        );
+        fireEvent.click(screen.getByRole('button', { name: '追加情報' }));
+
+        expect(
+            screen.getByText(
+                'オンにすると指標、ニュース、シナリオをより詳細に考慮し、詳細な分析を提供します。'
+            )
+        ).toBeInTheDocument();
     });
 
     it('keeps its own layout box compact (h-5 w-9, no min-h-11) while extending the tap area via an out-of-flow before: pseudo — guards the mobile symbol-header webkit regression (no header-row inflation)', () => {

@@ -13,7 +13,7 @@ import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
 export const dynamic = 'force-dynamic';
 
 /**
- * AI host only: first hop of the SSO handoff (spec §9-4).
+ * AI host only: first hop of the SSO handoff.
  *
  * Why this route exists — login CSRF. Without a browser binding, an attacker can
  * mint a code for *their own* account (it is valid for 60s) and make a victim's

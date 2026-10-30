@@ -30,6 +30,7 @@ export interface SymbolReport {
     analyzedAt: string | null;
 }
 
+/** 종목 카드에 싣는 뉴스 한 건 — 표시 언어로 이미 골라낸 제목·요약. */
 export interface SymbolReportNews {
     title: string;
     /** AI 카드 요약. 분석 전 기사면 `null`. */
@@ -40,6 +41,7 @@ export interface SymbolReportNews {
     publishedAt: string;
 }
 
+/** 종목 카드의 옵션 섹션 데이터. 지표는 값이 없으면 각각 `null`이고 템플릿이 그 줄만 뺀다. */
 export interface SymbolReportOptions {
     expirationDate: string;
     /** 미결제약정 기준 풋/콜 비율. */
@@ -52,7 +54,9 @@ export interface SymbolReportOptions {
     summary: string | null;
 }
 
+/** 카드 한 장에 싣는 차트 패턴 설명의 최대 개수. */
 export const REPORT_MAX_PATTERNS = 2;
+/** 카드 한 장에 싣는 뉴스의 최대 개수. */
 export const REPORT_MAX_NEWS = 3;
 
 /**

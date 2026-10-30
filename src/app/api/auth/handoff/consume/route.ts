@@ -33,7 +33,7 @@ function redirectClearingState(url: URL): NextResponse {
 }
 
 /**
- * AI host only: exchange a one-time code for an ai-host session (spec §9-4).
+ * AI host only: exchange a one-time code for an ai-host session.
  *
  * The session cookie is host-only (the cookie descriptor has no `domain`), so the
  * main-host session is never widened to subdomains. `secure` follows the same

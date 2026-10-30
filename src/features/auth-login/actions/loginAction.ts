@@ -1,5 +1,9 @@
 'use server';
 
+/**
+ * @file 이메일·비밀번호 로그인 서버 액션.
+ */
+
 import { localeHref } from '@/shared/i18n/localeRedirect';
 import { getTranslations } from 'next-intl/server';
 
@@ -21,7 +25,15 @@ import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { LOGIN_FIELD } from '../lib/loginFields';
 
+/**
+ * 이메일·비밀번호 로그인 서버 액션(`useActionState` 시그니처).
+ *
+ * 성공하면 세션·힌트 쿠키를 심고 같은-오리진 `next`(SSO 핸드오프면 ai 호스트
+ * start URL)로 `redirect`한다 — 반환하지 않는다. 실패하면 오류 코드를 담은 폼
+ * 상태를 돌려주고, 예상 밖 예외는 원인을 숨긴 채 `unexpected`로 바꾼다.
+ */
 export async function loginAction(
     _prev: LoginFormState,
     formData: FormData
@@ -29,9 +41,13 @@ export async function loginAction(
     // 상태의 `message`가 그대로 화면에 뿌려지므로 요청 로케일로 만든다.
     const tAuth = await getTranslations('entities.auth.error');
     try {
-        const email = normalizeEmail(String(formData.get('email') ?? ''));
-        const password = String(formData.get('password') ?? '');
-        const next = sanitizeNextPath(formData.get('next')?.toString());
+        const email = normalizeEmail(
+            String(formData.get(LOGIN_FIELD.email) ?? '')
+        );
+        const password = String(formData.get(LOGIN_FIELD.password) ?? '');
+        const next = sanitizeNextPath(
+            formData.get(LOGIN_FIELD.next)?.toString()
+        );
         const secure = isSecureCookieEnv();
 
         const { db } = getDatabaseClient();

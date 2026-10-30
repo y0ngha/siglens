@@ -15,6 +15,7 @@ export const STREAMING_JSON_HEADERS: Readonly<Record<string, string>> = {
     'X-Accel-Buffering': 'no',
 };
 
+/** `streamingJsonResponse`의 입력. */
 export interface StreamingJsonOptions {
     /** 최종 JSON 본문. reject되면 일반 오류 봉투로 닫는다. */
     body: Promise<unknown>;

@@ -32,8 +32,8 @@ import {
 import {
     getNextEarningsSchedule,
     listReportedEarningsDates,
-    type NextEarningsSchedule,
 } from '@/entities/earnings-report/api';
+import type { NextEarningsSchedule } from '@/entities/earnings-report/model';
 import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';

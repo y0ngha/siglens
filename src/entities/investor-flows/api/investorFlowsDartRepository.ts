@@ -24,6 +24,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { KR_SYMBOL_LIKE_PATTERNS } from '@/entities/ticker/api';
 import { commonShareCandidates, resolveDartCorp } from '../lib/dartSymbol';
+import { chunked } from '../lib/chunked';
 import { compositeKey } from '../lib/dedupeByKey';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import type {
@@ -59,15 +60,9 @@ async function writeInChunks<T>(
     rows: readonly T[],
     write: (chunk: T[]) => Promise<unknown>
 ): Promise<void> {
-    const chunks = Array.from(
-        { length: Math.ceil(rows.length / INVESTOR_FLOWS_UPSERT_CHUNK_SIZE) },
-        (_, index) =>
-            rows.slice(
-                index * INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
-                (index + 1) * INVESTOR_FLOWS_UPSERT_CHUNK_SIZE
-            )
-    );
-    await chunks.reduce<Promise<unknown>>(
+    await chunked(rows, INVESTOR_FLOWS_UPSERT_CHUNK_SIZE).reduce<
+        Promise<unknown>
+    >(
         (previous, chunk) => previous.then(() => write(chunk)),
         Promise.resolve()
     );
