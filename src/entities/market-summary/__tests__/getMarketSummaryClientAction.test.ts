@@ -125,6 +125,23 @@ describe('getMarketSummaryClientAction 함수는', () => {
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });
+
+        it('실패 로그에는 에러 이름만 남기고 메시지(바인딩 값 등)는 싣지 않는다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            mockGetCachedMarketSummary.mockRejectedValueOnce(
+                new Error('secret-bound-param')
+            );
+
+            await getMarketSummaryClientAction('us');
+
+            expect(errSpy).toHaveBeenCalledWith(
+                '[getMarketSummaryClientAction] failed:',
+                { name: 'Error', code: undefined }
+            );
+            errSpy.mockRestore();
+        });
     });
 
     describe('scope 배선', () => {

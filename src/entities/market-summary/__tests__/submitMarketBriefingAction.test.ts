@@ -363,6 +363,21 @@ describe('submitMarketBriefingAction 함수는', () => {
             errSpy.mockRestore();
         });
 
+        it('실패 로그에는 에러 이름만 남기고 메시지는 싣지 않는다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            mockRunBriefing.mockRejectedValueOnce(new Error('secret-detail'));
+
+            await submitMarketBriefingAction('us');
+
+            expect(errSpy).toHaveBeenCalledWith(
+                '[submitMarketBriefingAction] failed:',
+                { name: 'Error', code: undefined }
+            );
+            errSpy.mockRestore();
+        });
+
         it('남이 잡은 슬롯(콜드 스타트 생성)은 실패해도 돌려주지 않는다', async () => {
             const errSpy = vi
                 .spyOn(console, 'error')
