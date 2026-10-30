@@ -28,6 +28,7 @@ import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessa
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
+import { INVALID_EMAIL_CODE } from '@/shared/lib/auth/constants';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockRequest = requestEmailVerification as MockedFunction<
@@ -86,6 +87,29 @@ describe('requestEmailVerificationAction', () => {
         });
     });
 
+    describe('형식이 틀린 이메일', () => {
+        it.each([
+            ['형식이 틀린 주소', { email: 'invalid' }],
+            ['email 키 없음', {}],
+        ])(
+            '%s면 코어를 부르지 않고 invalid_email 에러를 반환한다',
+            async (_label, fields) => {
+                const result = await requestEmailVerificationAction(
+                    { submitted: false, error: null },
+                    makeFormData(fields)
+                );
+                expect(result).toEqual({
+                    submitted: false,
+                    error: {
+                        code: INVALID_EMAIL_CODE,
+                        message: 'Invalid email format.',
+                    },
+                });
+                expect(mockRequest).not.toHaveBeenCalled();
+            }
+        );
+    });
+
     describe('항상 submitted: true 반환 (enumeration 회피)', () => {
         it('codeIssued: false 응답에도 submitted: true 를 반환한다', async () => {
             mockRequest.mockResolvedValue({
@@ -95,7 +119,7 @@ describe('requestEmailVerificationAction', () => {
             });
             const result = await requestEmailVerificationAction(
                 { submitted: false, error: null },
-                makeFormData({ email: 'invalid' })
+                makeFormData({ email: 'user@example.com' })
             );
             expect(result.submitted).toBe(true);
         });
@@ -142,32 +166,6 @@ describe('requestEmailVerificationAction', () => {
             );
             expect(mockRequest).toHaveBeenCalledWith(
                 { email: 'user@example.com' },
-                expect.objectContaining({
-                    emailTokens: expect.objectContaining({
-                        set: expect.any(Function),
-                        get: expect.any(Function),
-                        delete: expect.any(Function),
-                    }),
-                    emailDispatcher: expect.objectContaining({
-                        sendEmail: expect.any(Function),
-                    }),
-                }),
-                expect.any(Object)
-            );
-        });
-
-        it('email 키가 없으면 빈 문자열로 코어를 호출한다', async () => {
-            mockRequest.mockResolvedValue({
-                ok: true,
-                codeIssued: false,
-                emailDispatched: false,
-            });
-            await requestEmailVerificationAction(
-                { submitted: false, error: null },
-                makeFormData({})
-            );
-            expect(mockRequest).toHaveBeenCalledWith(
-                { email: '' },
                 expect.objectContaining({
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),

@@ -12,8 +12,10 @@ export const GUIDE_CATEGORIES = [
     'strategies',
 ] as const;
 
+/** 가이드 항목의 분류. 허브·카탈로그·sitemap이 `GUIDE_CATEGORIES` 순서로 묶는다. */
 export type GuideCategory = (typeof GUIDE_CATEGORIES)[number];
 
+/** DB 문자열 등 외부 값을 `GuideCategory`로 좁힌다. */
 export function isGuideCategory(value: unknown): value is GuideCategory {
     return (
         typeof value === 'string' &&
@@ -21,11 +23,13 @@ export function isGuideCategory(value: unknown): value is GuideCategory {
     );
 }
 
+/** 항목 하단 FAQ 한 쌍(JSON-LD FAQPage 입력). */
 export interface GuideFaqItem {
     readonly q: string;
     readonly a: string;
 }
 
+/** 목록·검색·sitemap이 쓰는 가벼운 항목 모양(본문 제외). */
 export interface GuideEntrySummary {
     readonly slug: string;
     readonly category: GuideCategory;
@@ -46,6 +50,7 @@ export interface GuideEntrySummary {
     readonly demoFrom: string | null;
 }
 
+/** 상세 페이지가 쓰는 항목 전체(본문·SEO·FAQ 포함). */
 export interface GuideEntry extends GuideEntrySummary {
     readonly seoTitle: string;
     readonly seoDescription: string;
@@ -57,7 +62,7 @@ export interface GuideEntry extends GuideEntrySummary {
     readonly isFallback: boolean;
 }
 
-/** 카테고리 순서 → `order` 순으로 정렬돼 있다. */
+/** `loadGuideCatalog`가 돌려주는 카탈로그. 카테고리 순서 → `order` 순으로 정렬돼 있다. */
 export interface GuideCatalog {
     readonly entries: readonly GuideEntry[];
 }

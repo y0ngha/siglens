@@ -81,6 +81,30 @@ describe('indexSubmissions (real AAPL submissions, trimmed)', () => {
                 .forms.size
         ).toBe(0);
     });
+
+    it('skips archive file entries that are not objects with name and dates', () => {
+        const index = indexSubmissions({
+            filings: {
+                files: [
+                    null,
+                    'x',
+                    { name: 'a.json' },
+                    {
+                        name: 'CIK-submissions-001.json',
+                        filingFrom: '2001-01-01',
+                        filingTo: '2010-12-31',
+                    },
+                ],
+            },
+        });
+        expect(index.extraFiles).toEqual([
+            {
+                name: 'CIK-submissions-001.json',
+                filingFrom: '2001-01-01',
+                filingTo: '2010-12-31',
+            },
+        ]);
+    });
 });
 
 describe('indexSubmissionsFile', () => {

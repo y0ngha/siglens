@@ -1,63 +1,42 @@
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { sitemapAlternates } from './sitemapAlternates';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
-import { floorToHour } from './floorToHour';
+
 import type { SitemapEntry } from '../model';
+import { floorToHour } from './floorToHour';
+import { latestOf } from './latestOf';
 import {
     makeProseGate,
     makeSnapshotTimeLookup,
     type BuildPopularEntriesOptions,
 } from './proseGate';
+import { startOfUtcDay } from './startOfUtcDay';
+import { withSymbolAlternates } from './withSymbolAlternates';
 
 /**
- * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
+ * 크립토 종목 sitemap 엔트리.
  *
- * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 분기(산문 게이트 등)마다
- * 리터럴이 흩어지면 한 곳만 빠뜨려도 그 탭만 조용히 hreflang을 잃기 때문이다.
- * 마지막에 일괄로 붙인다.
+ * lastmod는 UTC 일봉 마감(가장 최근 UTC 자정)에 닻을 둔다. 크립토 일봉은 00:00Z에 닫히므로
+ * 차트 데이터 근거가 그보다 자주 바뀌지 않는다(예전의 6시간 내림은 하루 네 번 신선도를
+ * 과장했다 — 2026-10-05 감사). 2026-10-04 정직화(2차)부터 스냅샷 산문이 있는 두 탭은
+ * 산문이 실제로 구워진 시각도 싣는다:
+ *   - 차트: `max(UTC 자정, technical 스냅샷 generatedAt)` — 산문은 자정 이후에 구워지므로
+ *     그 사이에 크롤한 크롤러가 변경을 놓치지 않게 한다.
+ *   - 뉴스: 뉴스 스냅샷의 `generatedAt`. 실측(2026-10-04) 모든 뉴스 엔트리가 `now − 1h`였고
+ *     렌더되는 스냅샷은 중앙값 32시간 전에 구워진 것이었다. 로더가 실패했을 때(스냅샷 맵
+ *     없음)만 예전 폴백(`now − 1h`를 정시로 내림)을 쓴다.
  *
- * `SYMBOL_INDEXABLE_LOCALES`가 기본 로케일 하나인 동안에는 `sitemapAlternates`가
- * `undefined`를 돌려 XML이 지금과 바이트 단위로 동일하다.
- */
-function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
-    return entries.map(entry => {
-        const alternates = sitemapAlternates(
-            entry.url.slice(SITE_URL.length),
-            SYMBOL_INDEXABLE_LOCALES
-        );
-        return alternates ? { ...entry, alternates } : entry;
-    });
-}
-
-/**
- * Crypto popular sitemap entries.
+ * `changeFrequency`는 lastmod와 독립적인 편집 의도다:
+ *   - 차트(`revalidate=21600`, 6h ISR) → `daily`.
+ *   - 뉴스(`revalidate=43200`, 12h) → `daily`. 폴백 lastmod는 `floorToHour`로 내려 같은
+ *     시간대 안의 반복 호출이 같은 값을 내게 한다(on-demand revalidateTag가 ISR 창 안에서
+ *     페이지를 갱신할 수 있다).
+ *   - 공포탐욕(`revalidate=86400`, 24h) → `daily`, UTC 자정 lastmod — 페이지가 하루에 한 번만
+ *     재생성되므로 6시간 경계는 과장이다.
  *
- * lastmod is anchored to the UTC daily-bar close (the most recent UTC midnight): a crypto
- * daily bar closes at 00:00Z, so nothing about the chart's data basis changes more often
- * (the old 6h floor over-claimed freshness four times a day, 2026-10-05 audit). Since the
- * 2026-10-04 honesty pass (round 2) the two snapshot-backed tabs also carry the time their
- * prose was actually baked:
- *   - chart: `max(UTC midnight, technical snapshot generatedAt)` — the prose is generated
- *     after the midnight, so a crawl in between would otherwise miss the change.
- *   - news: the news snapshot's `generatedAt`. Measured 2026-10-04: every news entry
- *     carried `now − 1h` while the rendered snapshot was a median of 32h old. Only when the
- *     loader failed (no snapshot map) does it fall back to the old floored `now − 1h`.
- *
- * `changeFrequency` per tab reflects editorial intent and is independent of lastmod:
- *   - chart (`revalidate=21600`, 6h ISR) → `changeFrequency: 'daily'`.
- *   - news (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`; the fallback lastmod is
- *     floored to the hour (`floorToHour`) so repeated calls within the same hour agree
- *     (on-demand revalidateTag can refresh the page inside the ISR window).
- *   - fear-greed (`revalidate=86400`, 24h) → `changeFrequency: 'daily'`, UTC-midnight
- *     lastmod — the page regenerates at most daily, so a 6h boundary would over-claim.
- *
- * Only the crypto-applicable, indexable tabs are advertised (chart/news/fear-greed).
- * `/overall` is always noindex since the 2026-10-01 SEO audit
- * (`docs/architecture/SEO_RECOVERY_2026_09.md` §10 — `ALWAYS_NOINDEX_TAB_ROBOTS`), and
- * `/position` is always noindex (2026-09-11), so listing them would only burn crawl
- * budget. fundamental/financials/options/congress are not rendered for crypto.
+ * 크립토에 적용되고 색인되는 탭(차트·뉴스·공포탐욕)만 싣는다. `/overall`은 2026-10-01 SEO
+ * 감사부터(`ALWAYS_NOINDEX_TAB_ROBOTS`), `/position`은 2026-09-11부터 항상 noindex라 실으면
+ * 크롤 예산만 태운다. 펀더멘털·재무제표·옵션·의회거래는 크립토에 렌더되지 않는다.
  */
 export function buildCryptoPopularEntries(
     now: Date,
@@ -67,21 +46,16 @@ export function buildCryptoPopularEntries(
 ): SitemapEntry[] {
     const hasProse = makeProseGate(options);
     const snapshotTimeOf = makeSnapshotTimeLookup(options);
-    const utcMidnight = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-    );
-    // floorToHour: rolling `now - 1h`를 그대로 쓰면 매 호출마다 값이 달라져
-    // sitemap index lastmod의 freshness 신호가 무력화된다 — `buildPopularEntries`의
-    // `/news` 엔트리와 같은 이유(floorToHour JSDoc 참고).
+    const utcMidnight = startOfUtcDay(now);
+    // rolling `now - 1h`를 그대로 쓰면 매 호출마다 값이 달라져 sitemap index lastmod의
+    // freshness 신호가 무력화된다 — `buildPopularEntries`의 `/news` 엔트리와 같은 이유다.
     const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
     return withSymbolAlternates(
         POPULAR_CRYPTOS.flatMap((sym): SitemapEntry[] => {
-            const technicalAt = snapshotTimeOf(sym, 'technical');
-            const chartLastModified =
-                technicalAt !== undefined &&
-                technicalAt.getTime() > utcMidnight.getTime()
-                    ? technicalAt
-                    : utcMidnight;
+            const chartLastModified = latestOf(
+                [utcMidnight, snapshotTimeOf(sym, 'technical')],
+                utcMidnight
+            );
             return [
                 // 차트 탭도 산문 게이트 대상이다(`buildPopularEntries`와 같은 규칙) — 렌더 가능한
                 // technical 산문이 없으면 페이지가 noindex(`no-prose`)다.

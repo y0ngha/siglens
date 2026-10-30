@@ -187,4 +187,64 @@ describe('useMarketBriefing', () => {
         });
         client.clear();
     });
+
+    /**
+     * 롤링 배포 중 구 컨테이너가 scope 없는 응답을 주면 한국 페이지에서는 버려진다.
+     * seed도 없으면 `undefined`로 두지 말고 오류로 알려야 한다 — 이 쿼리는 다시 오지
+     * 않아 로딩 카드가 영영 돈다.
+     */
+    describe('scope가 어긋난 응답', () => {
+        it("seed가 없으면 input 'error'", async () => {
+            mockAction.mockResolvedValue(CACHED_BRIEFING_RESULT);
+            const { client, wrapper } = makeWrapper();
+            const { result } = renderHook(() => useMarketBriefing('kr'), {
+                wrapper,
+            });
+
+            await waitFor(() => {
+                expect(mockAction).toHaveBeenCalled();
+            });
+            await waitFor(() => {
+                expect(result.current.input).toBe('error');
+            });
+            client.clear();
+        });
+
+        it('seed가 있으면 seed를 계속 보여 준다', async () => {
+            mockAction.mockResolvedValue(CACHED_BRIEFING_RESULT);
+            const { client, wrapper } = makeWrapper();
+            const { result } = renderHook(
+                () => useMarketBriefing('kr', PEEK_SEED),
+                { wrapper }
+            );
+
+            await waitFor(() => {
+                expect(mockAction).toHaveBeenCalled();
+            });
+            expect(result.current.input).toMatchObject({
+                status: 'cached',
+                briefing: PEEK_SEED,
+            });
+            client.clear();
+        });
+
+        it('scope가 일치하는 응답은 그대로 쓴다', async () => {
+            mockAction.mockResolvedValue({
+                ...CACHED_BRIEFING_RESULT,
+                scope: 'kr',
+            });
+            const { client, wrapper } = makeWrapper();
+            const { result } = renderHook(() => useMarketBriefing('kr'), {
+                wrapper,
+            });
+
+            await waitFor(() => {
+                expect(result.current.input).toMatchObject({
+                    status: 'cached',
+                    generatedAt: '2025-01-01T10:00:00Z',
+                });
+            });
+            client.clear();
+        });
+    });
 });

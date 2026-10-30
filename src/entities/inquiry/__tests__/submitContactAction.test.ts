@@ -7,7 +7,7 @@ const { mockSubmitInquiry, mockCreate } = vi.hoisted(() => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-vi.mock('@/entities/inquiry/api', () => ({
+vi.mock('../api', () => ({
     DrizzleContactRepository: vi.fn().mockImplementation(function () {
         return {
             create: mockCreate,
@@ -152,7 +152,27 @@ describe('submitContactAction', () => {
             expect(result.submitted).toBe(false);
             expect(result.error).toEqual({ code: 'submission_failed' });
             expect(result.values).toEqual(validForm);
-            expect(consoleErrorSpy).toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[submitContactAction] Failed to persist contact inquiry',
+                { name: 'Error', code: undefined }
+            );
+        });
+
+        it('로그 인자에 Error 인스턴스나 폼 값이 담긴 문자열을 남기지 않는다', async () => {
+            mockSubmitInquiry.mockRejectedValueOnce(
+                new Error(
+                    `Failed query: insert\nparams: ${validForm.title},${validForm.content},${validForm.email}`
+                )
+            );
+
+            await submitContactAction(INITIAL_STATE, makeFormData(validForm));
+
+            const loggedArgs = consoleErrorSpy.mock.calls.flat();
+            expect(loggedArgs.some(arg => arg instanceof Error)).toBe(false);
+            const serialized = loggedArgs.map(arg => JSON.stringify(arg));
+            for (const value of Object.values(validForm)) {
+                expect(serialized.join('')).not.toContain(value);
+            }
         });
     });
 });

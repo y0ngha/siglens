@@ -1,44 +1,14 @@
 import { useTranslations } from 'next-intl';
-import { formatPriceChange, formatPrice } from '@/shared/lib/priceFormat';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useId } from 'react';
 import {
-    buildTechnicalFactsNarrative,
+    buildTechnicalFactsSummaryModel,
     technicalFactsMacdMomentumLabel,
     technicalFactsRsiZone,
     DIRECTION_LABEL_KEY,
     RSI_ZONE_LABEL_KEY,
 } from './utils/technicalFacts';
-import {
-    buildTechnicalFacts,
-    RECENT_BARS_WINDOW,
-} from '@/entities/bars/lib/technicalFacts';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-
-interface ChangeDisplay {
-    colorClass: string;
-    /** `null`이면 보합 — 렌더 쪽이 `shared.ui.misc.flatChange`를 넣는다. */
-    text: string | null;
-}
-
-/**
- * 보합(0%)은 화살표가 없어 문구가 필요하다. 문구를 여기서 만들지 않는 이유는
- * 이 파일의 다른 헬퍼와 같다 — 번역자를 인자로 받는 모듈에서 `t('리터럴')`을
- * 부르면 추출기가 파일을 건너뛴다(§noTranslatorParamCall.test.ts). 대신
- * `text: null`로 알리고 렌더 쪽이 문구를 넣는다.
- */
-function formatVisibleChange(changePercent: number): ChangeDisplay {
-    if (changePercent === 0) {
-        return { colorClass: 'text-secondary-300', text: null };
-    }
-
-    const change = formatPriceChange(changePercent);
-    return {
-        colorClass: change.colorClass,
-        text: `${change.arrow} ${change.sign}${Math.abs(changePercent).toFixed(2)}%`,
-    };
-}
 
 /** `TechnicalFactsSummary`가 그려지는 자리(`placement` JSDoc). */
 export type TechnicalFactsPlacement = 'panel' | 'page';
@@ -93,21 +63,19 @@ export function TechnicalFactsSummary({
     // (fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
     const tLabel = useTranslations('shared.enumLabel');
     const headingId = useId();
-    const facts = buildTechnicalFacts(bars, indicators);
     const tFacts = useTranslations('views.symbol.technicalFacts');
-    // `if (!facts) return null`보다 **위**여야 한다. 아래에 두면 지표가 없는
+    // `if (!model) return null`보다 **위**여야 한다. 아래에 두면 지표가 없는
     // 종목에서만 훅이 하나 줄어 훅 순서가 깨진다.
     const tMisc = useTranslations('shared.ui.misc');
-    if (!facts) return null;
-
-    const change = formatVisibleChange(facts.changePercent);
-    const { quoteDelayMinutes, priceFormat } = getDescriptor(marketProfile);
-    const narrative = buildTechnicalFactsNarrative(
+    const model = buildTechnicalFactsSummaryModel(
+        bars,
+        indicators,
         subject,
-        facts,
         marketProfile,
         tFacts
     );
+    if (!model) return null;
+    const { facts, change } = model;
 
     return (
         <section
@@ -122,11 +90,9 @@ export function TechnicalFactsSummary({
                 {t('TechnicalFactsSummary.170a59', { v0: subject })}
             </h2>
             {/* 서술 문장이 표(`<dl>`)보다 **DOM에서 앞서야** 한다 — 네이버는 본문
-                첫 텍스트로 스니펫을 만드는데, 예전 순서에서는 그것이 "현재가 : $25.40
-                … RSI : 50.5" 같은 숫자 나열이었다(2026-10-04). 시각 순서도 함께 바뀐다:
-                이 블록은 SSR 사실 층이라 문장이 위에 오는 것이 읽는 순서와도 맞다. */}
+                첫 텍스트로 스니펫을 만들므로, 표가 앞서면 스니펫이 숫자 나열이 된다. */}
             <div className="space-y-1 text-sm leading-6 text-secondary-300">
-                {narrative.map(line => (
+                {model.narrative.map(line => (
                     <p key={line}>{line}</p>
                 ))}
             </div>
@@ -137,18 +103,18 @@ export function TechnicalFactsSummary({
                         {/* 지연 시세를 실시간으로 오독하지 않도록 라벨에 바로 붙인다.
                             값 옆이 아니라 라벨에 두는 이유: 가격·등락률과 한 줄에 섞이면
                             숫자의 일부처럼 읽힌다. */}
-                        {quoteDelayMinutes > 0 && (
+                        {model.quoteDelayMinutes > 0 && (
                             <span className="ml-1 text-xs font-normal text-secondary-500">
                                 {/* 괄호를 메시지 안에 둔다 — 로케일마다
                                     괄호 문자가 다르다(zh는 전각). */}
                                 {t('TechnicalFactsSummary.e532e4', {
-                                    v0: quoteDelayMinutes,
+                                    v0: model.quoteDelayMinutes,
                                 })}
                             </span>
                         )}
                     </dt>
                     <dd>
-                        {formatPrice(facts.lastClose, priceFormat)}{' '}
+                        {model.priceText}{' '}
                         <span className={change.colorClass}>
                             {change.text ?? tMisc('flatChange')}
                         </span>
@@ -157,8 +123,16 @@ export function TechnicalFactsSummary({
                 {facts.rsi !== null && (
                     <div className="flex justify-between gap-4">
                         <dt className="text-secondary-400">RSI</dt>
+                        {/* 괄호를 메시지 안에 둔다 — 로케일마다 괄호 문자가 다르다(zh는 전각). */}
                         <dd>
-                            {`${facts.rsi.toFixed(1)} (${tLabel(RSI_ZONE_LABEL_KEY[technicalFactsRsiZone(facts.rsi)])})`}
+                            {t('TechnicalFactsSummary.rsiValue', {
+                                v0: facts.rsi.toFixed(1),
+                                v1: tLabel(
+                                    RSI_ZONE_LABEL_KEY[
+                                        technicalFactsRsiZone(facts.rsi)
+                                    ]
+                                ),
+                            })}
                         </dd>
                     </div>
                 )}
@@ -181,12 +155,11 @@ export function TechnicalFactsSummary({
                 <div className="flex justify-between gap-4">
                     <dt className="text-secondary-400">
                         {t('TechnicalFactsSummary.recentBarsPosition', {
-                            v0: RECENT_BARS_WINDOW,
+                            v0: model.recentBarsWindow,
                         })}
                     </dt>
-                    {/* `%`를 JSX에 따로 두면 안 된다 — 로케일마다 마지막 자리가
-                        달라, en에서 `+41.6 from low%`처럼 엉뚱한 데 붙었다.
-                        기호는 메시지 안에 둬야 위치를 번역자가 정한다. */}
+                    {/* `%`를 JSX에 따로 두지 않는다 — 기호 위치가 로케일마다 달라
+                        메시지 안에 둬야 번역자가 정한다. */}
                     <dd>
                         {t('TechnicalFactsSummary.269f7b', {
                             v0: facts.pctFrom52wHigh.toFixed(1),

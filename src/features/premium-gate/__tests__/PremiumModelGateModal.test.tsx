@@ -47,6 +47,42 @@ describe('PremiumModelGateModal', () => {
             ).toBeInTheDocument();
         });
 
+        it('member 모델은 가입만으로 열리므로 API 키 안내 없이 가입을 권한다', () => {
+            // member 모델은 서버 키로 돌아가므로, 가입 뒤에 키가 더 필요하다고 읽히면 안 된다.
+            render(
+                <PremiumModelGateModal
+                    mode="auth"
+                    access="member"
+                    onClose={onClose}
+                />
+            );
+            expect(
+                screen.getByText(
+                    '회원가입하면 API 키 없이 이 모델을 사용할 수 있어요.'
+                )
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByText(
+                    '회원가입 후 API 키를 등록하면 이 모델을 사용할 수 있어요.'
+                )
+            ).not.toBeInTheDocument();
+        });
+
+        it('byok 모델은 가입 후 API 키 등록까지 안내한다', () => {
+            render(
+                <PremiumModelGateModal
+                    mode="auth"
+                    access="byok"
+                    onClose={onClose}
+                />
+            );
+            expect(
+                screen.getByText(
+                    '회원가입 후 API 키를 등록하면 이 모델을 사용할 수 있어요.'
+                )
+            ).toBeInTheDocument();
+        });
+
         it('renders signup link', () => {
             render(<PremiumModelGateModal mode="auth" onClose={onClose} />);
             const link = screen.getByRole('link', {

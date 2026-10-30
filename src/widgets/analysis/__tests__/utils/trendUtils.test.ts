@@ -56,4 +56,10 @@ describe('resolveTrendDisplay', () => {
             ).toBeNull();
         });
     });
+    it.each(['toString', 'constructor', '__proto__'])(
+        'Object.prototype 키(%s)는 유효한 Trend로 받지 않는다',
+        key => {
+            expect(resolveTrendDisplay(key as Trend, identityT)).toBeNull();
+        }
+    );
 });

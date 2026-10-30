@@ -1,10 +1,11 @@
 'use client';
 
+/** Client entry of the congress AI trend summary: wires settings, run permission and share registration to the state views. */
 import { useTranslations } from 'next-intl';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
-import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
@@ -29,6 +30,7 @@ interface CongressTrendSummaryProps {
     hideView?: boolean;
 }
 
+/** Mounted even when `hideView` so the header share button still receives this tab's result; see `useAiRunPermission` for why hidden mounts don't generate on their own. */
 export function CongressTrendSummary({
     symbol,
     hideView = false,
@@ -37,13 +39,13 @@ export function CongressTrendSummary({
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
     const isSettingsHydrated = useAnalysisSettingsHydrated();
-    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
+    const { allowed, start } = useAiRunPermission(symbol, hideView);
     const state = useCongressTrend(
         symbol,
         modelId,
         reasoning,
         isSettingsHydrated,
-        autoRunAllowed
+        allowed
     );
 
     useRegisterShareable({
@@ -59,7 +61,10 @@ export function CongressTrendSummary({
         // 공유 스냅샷에 쉽게보기 산문을 함께 싣는다 — 링크를 받은 사람은
         // SSE 라우트를 타지 않아 평이화를 다시 만들 수 없다.
         plain: state.status === 'done' ? state.plain : null,
-        trigger: state.trigger,
+        // 대기 중에는 캐시 전용 재조회(`state.trigger`)가 아니라 생성을 여는 `start`여야
+        // 헤더 공유 흐름이 분석을 시작할 수 있다.
+        trigger:
+            state.status === 'awaiting_interaction' ? start : state.trigger,
     });
 
     // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
@@ -78,7 +83,7 @@ export function CongressTrendSummary({
             <AiAnalysisAwaitingSection
                 heading={t('CongressTrendSummary.bbb041')}
                 idPrefix="congress-trend-summary"
-                onStart={grant}
+                onStart={start}
             />
         );
     }

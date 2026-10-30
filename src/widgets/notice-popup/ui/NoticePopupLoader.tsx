@@ -1,11 +1,14 @@
 'use client';
 
+/**
+ * 루트 레이아웃이 마운트하는 공지 팝업 진입점 — 노출 시점을 정하고 팝업 청크를 지연 로드한다.
+ */
 import dynamic from 'next/dynamic';
 import { useDeferredReveal } from '../hooks/useDeferredReveal';
 
 // 공지 팝업은 부가 기능이라 SSR이 불필요하다. ssr:false로 client-only lazy 마운트하면
 // 페이지 hydration 완료 후에 마운트되어, streaming 라우트(예: not-found shell)의
-// hydration과 경쟁하지 않는다(E2E race 해소).
+// hydration과 경쟁하지 않는다.
 const NoticePopup = dynamic(
     () => import('./NoticePopup').then(m => m.NoticePopup),
     { ssr: false }

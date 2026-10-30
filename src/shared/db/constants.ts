@@ -1,7 +1,7 @@
 import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
 
-/** Database enum values for the user `tier` column; mirrors the `Tier` union from `@y0ngha/siglens-core` to keep the Postgres enum in lockstep. */
+/** user `tier` 컬럼의 enum 값. `satisfies`로 core의 `Tier` 유니온과 어긋나면 컴파일이 실패하게 묶는다. */
 export const USER_TIER_VALUES = [
     'free',
     'member',
@@ -15,11 +15,11 @@ export const OAUTH_PROVIDER_VALUES = [
     'apple',
 ] as const satisfies readonly OAuthProvider[];
 
-/** Legal terms document kinds tracked in the `terms` table. */
+/** `terms` 테이블이 구분하는 약관 문서 종류. */
 export const TERMS_KIND_VALUES = ['privacy', 'tos'] as const;
 export type TermsKind = (typeof TERMS_KIND_VALUES)[number];
 
-/** All valid shareable analysis kinds — used as a Postgres enum and UI discriminant. */
+/** 공유 가능한 분석 종류 — Postgres enum이자 UI 판별자로 함께 쓴다. */
 export const SHAREABLE_KIND_VALUES = [
     'chart',
     'overall',

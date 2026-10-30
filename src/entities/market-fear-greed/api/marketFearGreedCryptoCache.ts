@@ -9,12 +9,12 @@ import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { secondsUntilSessionRoll } from '@/shared/lib/marketSessionDate';
 import { buildCalendarDayComparisons } from '../lib/buildMarketFearGreedComparisons';
-import { sessionKeyedTtlSeconds } from '../lib/sessionKeyedTtl';
+import { hasSnapshot } from '../lib/hasSnapshot';
 import {
     cryptoLookbackStartDate,
-    fetchCryptoDailyBars,
     lastClosedUtcDate,
-} from '../lib/fetchCryptoDailyBars';
+} from '../lib/marketFearGreedWindows';
+import { sessionKeyedTtlSeconds } from '../lib/sessionKeyedTtl';
 import {
     MARKET_FEAR_GREED_CRYPTO_BENCHMARK,
     MARKET_FEAR_GREED_CRYPTO_LOOKBACK_DAYS,
@@ -22,6 +22,7 @@ import {
     MARKET_FEAR_GREED_CRYPTO_UNIVERSE,
 } from '../lib/marketFearGreedCryptoSymbols';
 import type { MarketFearGreedCryptoView } from '../model';
+import { fetchCryptoDailyBars } from './fetchCryptoDailyBars';
 
 /**
  * 티커 표 fingerprint를 캐시 키에 박아, 유니버스를 바꾸면 옛 판독값이 TTL까지
@@ -78,11 +79,6 @@ async function buildView(now: Date): Promise<MarketFearGreedCryptoView> {
             computeCryptoFearGreedHistory(input)
         ),
     };
-}
-
-/** snapshot이 없는 뷰 = 표본 부족. 그 상태를 캐시에 굳히지 않는다. */
-function hasSnapshot(view: MarketFearGreedCryptoView): boolean {
-    return view.snapshot !== null;
 }
 
 /**

@@ -1,11 +1,10 @@
 /**
- * Shared tooltip JSX for congress-trades page metrics.
+ * Tooltip JSX for the congress-trades table column headers and senate disclosure cell.
  *
- * House style: `~이에요`체, 2–3문장, fits `max-w-xs`.
- *
- * These are pure JSX fragments (no time-dependent logic), so they are safe
- * as module-level constants — no `'use client'` directive needed here.
- * The `InfoTooltip` wrapper passed in each usage is already `'use client'`.
+ * Kept as JSX (not `utils/`) because each constant is a rendered element. They
+ * are static fragments, so module-level constants are safe and no `'use client'`
+ * is needed; the `InfoTooltip` that receives them is the client boundary.
+ * Copy lives in the catalog (`widgets.congress.tooltip.*`).
  */
 
 import { TooltipParagraphs } from '@/shared/ui/TooltipParagraphs';

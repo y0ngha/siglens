@@ -1,7 +1,7 @@
 import 'server-only';
 import { getProviderForModel, type ModelId } from '@y0ngha/siglens-core';
 import { isActiveModelId } from '@/shared/lib/isActiveModelId';
-import { getServerPrimaryKey } from '@/entities/llm-provider/lib/serverKeys';
+import { getServerPrimaryKey } from '@/entities/llm-provider/api/serverKeys';
 
 /**
  * 평이화에 쓰는 모델.

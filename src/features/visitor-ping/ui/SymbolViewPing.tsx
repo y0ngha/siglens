@@ -3,31 +3,20 @@
 import { useEffect } from 'react';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { postBeacon, sendOnHumanInteraction } from '@/shared/lib/beacon';
+import {
+    SYMBOL_VIEWS_STORAGE_KEY,
+    parseSentSymbols,
+    serializeSentSymbols,
+} from '../lib/sentSymbols';
 
-/** 오늘(KST) 이미 보낸 심볼 목록. 날짜가 바뀌면 버린다. */
-const STORAGE_KEY = 'siglens:symbol-views';
-
-interface SentToday {
-    date: string;
-    symbols: string[];
-}
-
-function isSentToday(value: unknown): value is SentToday {
-    if (typeof value !== 'object' || value === null) return false;
-    const { date, symbols } = value as Partial<SentToday>;
-    return typeof date === 'string' && Array.isArray(symbols);
-}
-
+/** 오늘 보낸 심볼 목록. 프라이빗 모드처럼 저장소를 못 읽으면 빈 목록 — 한 번 더 보낼 뿐이다. */
 function readSent(today: string): string[] {
     try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
-        if (raw === null) return [];
-        const parsed: unknown = JSON.parse(raw);
-        return isSentToday(parsed) && parsed.date === today
-            ? parsed.symbols
-            : [];
+        return parseSentSymbols(
+            window.localStorage.getItem(SYMBOL_VIEWS_STORAGE_KEY),
+            today
+        );
     } catch {
-        // 프라이빗 모드·깨진 값 — 보낸다. 중복은 임계값이 흡수한다.
         return [];
     }
 }
@@ -41,16 +30,17 @@ function sendView(symbol: string): void {
         body: { symbol },
         onDelivered: () => {
             // 쓰기 직전에 다시 읽는다 — 다른 탭이 그사이 덧붙였을 수 있다.
-            const next: SentToday = {
-                date: today,
-                symbols: [...readSent(today), symbol],
-            };
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            window.localStorage.setItem(
+                SYMBOL_VIEWS_STORAGE_KEY,
+                serializeSentSymbols(today, readSent(today), symbol)
+            );
         },
     });
 }
 
+/** 종목 레이아웃(`[symbol]/layout.tsx`)이 라우트에서 넘기는 값. */
 interface SymbolViewPingProps {
+    /** 하루에 한 번만 보내도록 중복을 거르는 키. 라우트가 정규화한 티커를 그대로 쓴다. */
     symbol: string;
 }
 

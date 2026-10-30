@@ -112,4 +112,17 @@ describe('EventCalendar', () => {
             expect(time.textContent ?? '').not.toMatch(/[가-힣]/);
         });
     });
+
+    it('실제치가 정확히 0이면 막대를 그리지 않는다(폭 0)', () => {
+        render(
+            <EventCalendar
+                earningsReports={[
+                    { ...SURPRISE_ITEM, epsActual: 0, epsEstimated: 1.5 },
+                ]}
+            />
+        );
+
+        const zeroBar = screen.getByLabelText('실제: $0.00');
+        expect(zeroBar).toHaveStyle({ width: '0%' });
+    });
 });
