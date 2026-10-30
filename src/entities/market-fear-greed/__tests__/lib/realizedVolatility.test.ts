@@ -2,7 +2,7 @@ import type { MarketDailyClose } from '@y0ngha/siglens-core';
 import {
     REALIZED_VOL_WINDOW,
     toRealizedVolatilitySeries,
-} from '../lib/realizedVolatility';
+} from '../../lib/realizedVolatility';
 
 /** `n`일치 종가 시리즈 — `step(i)`가 i번째 종가를 준다. */
 function series(n: number, step: (i: number) => number): MarketDailyClose[] {
@@ -81,5 +81,15 @@ describe('toRealizedVolatilitySeries', () => {
         const out = toRealizedVolatilitySeries(closes);
         expect(out.length).toBeGreaterThan(0);
         expect(out.every(p => Number.isFinite(p.close))).toBe(true);
+    });
+
+    // 0 이하 종가만 건너뛰는 `<= 0` 비교라 NaN 종가는 걸러지지 않고 NaN으로 전파된다 —
+    // 시리즈가 조용히 짧아지지 않는다.
+    it('propagates NaN from a NaN close instead of shortening the series', () => {
+        const out = toRealizedVolatilitySeries(
+            series(40, i => (i === 30 ? Number.NaN : 100 + i))
+        );
+        expect(out).toHaveLength(40 - 1 - REALIZED_VOL_WINDOW + 1);
+        expect(Number.isNaN(out.at(-1)?.close)).toBe(true);
     });
 });

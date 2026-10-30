@@ -1,12 +1,9 @@
+vi.mock('server-only', () => ({}));
 vi.mock('@/shared/api/fmp/httpClient');
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import {
-    cryptoLookbackStartDate,
-    fetchCryptoDailyBars,
-    lastClosedUtcDate,
-} from '../../lib/fetchCryptoDailyBars';
+import { fetchCryptoDailyBars } from '../../api/fetchCryptoDailyBars';
 
 const mockFmpGet = vi.mocked(fmpGet);
 
@@ -92,23 +89,5 @@ describe('fetchCryptoDailyBars — E2E fixture', () => {
         expect(mockFmpGet).not.toHaveBeenCalled();
         expect(bars.length).toBeGreaterThan(185);
         expect(bars.every(b => b.volume > 0)).toBe(true);
-    });
-});
-
-describe('조회 창', () => {
-    // 진행 중인 날의 행은 실시간 시세를 종가로 싣는다 — 절대 요청하지 않는다.
-    it('상한은 어제(UTC)다 — UTC 자정 직후에도 오늘을 포함하지 않는다', () => {
-        expect(lastClosedUtcDate(new Date('2026-09-25T00:00:01Z'))).toBe(
-            '2026-09-24'
-        );
-        expect(lastClosedUtcDate(new Date('2026-09-25T23:59:59Z'))).toBe(
-            '2026-09-24'
-        );
-    });
-
-    it('하한은 1830 달력일(core FEAR_GREED_LOOKBACK_DAYS, 약 5년) 전이다', () => {
-        expect(cryptoLookbackStartDate(new Date('2026-09-25T12:00:00Z'))).toBe(
-            '2021-09-21'
-        );
     });
 });

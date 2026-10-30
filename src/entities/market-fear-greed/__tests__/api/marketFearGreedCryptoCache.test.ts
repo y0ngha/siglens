@@ -20,16 +20,9 @@ vi.mock('@y0ngha/siglens-core', async () => {
 });
 
 const fetchCryptoDailyBars = vi.fn();
-vi.mock('../lib/fetchCryptoDailyBars', async () => {
-    const actual = await vi.importActual<
-        typeof import('../lib/fetchCryptoDailyBars')
-    >('../lib/fetchCryptoDailyBars');
-    return {
-        ...actual,
-        fetchCryptoDailyBars: (...args: unknown[]) =>
-            fetchCryptoDailyBars(...args),
-    };
-});
+vi.mock('../../api/fetchCryptoDailyBars', () => ({
+    fetchCryptoDailyBars: (...args: unknown[]) => fetchCryptoDailyBars(...args),
+}));
 
 const getOrSetCache = vi.fn();
 vi.mock('@/shared/cache/getOrSetCache', () => ({
@@ -39,14 +32,14 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
 import {
     getCachedMarketFearGreedCrypto,
     MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT,
-} from '../api/marketFearGreedCryptoCache';
-import { MARKET_FEAR_GREED_CONFIG_FINGERPRINT } from '../api/marketFearGreedCache';
-import { MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT } from '../api/marketFearGreedKrCache';
+} from '../../api/marketFearGreedCryptoCache';
+import { MARKET_FEAR_GREED_CONFIG_FINGERPRINT } from '../../api/marketFearGreedCache';
+import { MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT } from '../../api/marketFearGreedKrCache';
 import {
     MARKET_FEAR_GREED_CRYPTO_BENCHMARK,
     MARKET_FEAR_GREED_CRYPTO_SAFE_HAVEN,
     MARKET_FEAR_GREED_CRYPTO_UNIVERSE,
-} from '../lib/marketFearGreedCryptoSymbols';
+} from '../../lib/marketFearGreedCryptoSymbols';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /** `getOrSetCache(key, ttl, fetcher, guard)`의 fetcher를 실행해 결과를 얻는다. */

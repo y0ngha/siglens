@@ -4,8 +4,8 @@ import {
     MARKET_FEAR_GREED_KR_LOOKBACK_DAYS,
     MARKET_FEAR_GREED_KR_SERIES,
     MARKET_FEAR_GREED_KR_SYMBOLS,
-} from '../lib/marketFearGreedKrSymbols';
-import { MARKET_FEAR_GREED_SYMBOLS } from '../lib/marketFearGreedSymbols';
+} from '../../lib/marketFearGreedKrSymbols';
+import { MARKET_FEAR_GREED_SYMBOLS } from '../../lib/marketFearGreedSymbols';
 
 describe('KR market fear & greed symbols', () => {
     it('maps every core series key except vix', () => {

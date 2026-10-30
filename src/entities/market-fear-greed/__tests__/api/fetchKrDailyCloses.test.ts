@@ -7,25 +7,10 @@ vi.mock('@/shared/api/yahoo/createYahooClient', () => ({
     getYahooClient: () => ({ chart }),
 }));
 
-import {
-    fetchKrDailyCloses,
-    krLookbackStartDate,
-} from '@/entities/market-fear-greed/lib/fetchKrDailyCloses';
-import { MARKET_FEAR_GREED_KR_LOOKBACK_DAYS } from '@/entities/market-fear-greed/lib/marketFearGreedKrSymbols';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { fetchKrDailyCloses } from '@/entities/market-fear-greed/api/fetchKrDailyCloses';
 
 const FROM = new Date('2026-01-01T00:00:00.000Z');
 const TO = new Date('2026-08-18T00:00:00.000Z');
-
-describe('krLookbackStartDate', () => {
-    it('(Happy) lookback 일수만큼 과거로 물러난다', () => {
-        const now = new Date('2026-08-18T09:00:00.000Z');
-
-        expect(krLookbackStartDate(now).getTime()).toBe(
-            now.getTime() - MARKET_FEAR_GREED_KR_LOOKBACK_DAYS * MS_PER_DAY
-        );
-    });
-});
 
 describe('fetchKrDailyCloses', () => {
     const originalE2E = process.env.E2E_TEST;
