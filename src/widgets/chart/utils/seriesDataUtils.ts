@@ -1,3 +1,7 @@
+/**
+ * 봉과 지표 배열을 tail 정렬해 차트 시리즈 데이터로 변환하는 유틸.
+ */
+
 import type { Bar } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 

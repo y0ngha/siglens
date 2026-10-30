@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 수급 AI 해석 분석 훅 — 쿼리 한 개로 로딩·완료·데이터 없음·상호작용 대기·오류를 하나의 상태로 낸다.
+ */
 import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
@@ -30,6 +33,7 @@ class NoInvestorFlowsDataError extends Error {
     }
 }
 
+/** 훅이 돌려주는 상태. `trigger`는 대기 중인 분석을 시작하고, 오류일 때만 `retry`가 따로 있다. */
 export type InvestorFlowsAnalysisState =
     | { status: 'loading'; trigger: () => void }
     | {
@@ -81,6 +85,7 @@ async function fetchInvestorFlowsAnalysis(
     throw new Error(messages.unexpected);
 }
 
+/** 종목·모델·추론 여부를 키로 수급 AI 해석을 한 번 불러온다(캐시가 있으면 재사용). */
 export function useInvestorFlowsAnalysis(
     symbol: string,
     modelId: ModelId,
@@ -119,13 +124,14 @@ export function useInvestorFlowsAnalysis(
 
     const { refetch } = query;
 
+    const isAwaitingInteraction =
+        query.error instanceof AwaitingInteractionError;
+    // `isAwaitingInteraction`이 입력이라 파생값 바로 뒤에 둔다(REACT.md#HK-1의 문서화된 예외).
+    useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);
+
     const retry = () => {
         void refetch();
     };
-
-    const isAwaitingInteraction =
-        query.error instanceof AwaitingInteractionError;
-    useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);
 
     if (query.isError) {
         if (isAwaitingInteraction) {

@@ -441,3 +441,39 @@ export interface KrDisclosureCompany {
 export interface DartCorpRecord extends DartCorpMatch {
     corpName: string;
 }
+
+export interface CollectingArms {
+    /** 13F 초기 수집이 아직 안 끝났다 — 구간에 행이 있어도(부분 집계) 참이다(`isCollectingAggregate`). */
+    readonly institutional: boolean;
+    /** FINRA가 켜져 있고 공매도 구간이 비어 있으며 첫 수집이 아직 안 끝났다. */
+    readonly short: boolean;
+    /** FTD 구간이 비어 있고 첫 파일이 아직 저장되지 않았다. */
+    readonly failsToDeliver: boolean;
+    /** Form 144 구간이 비어 있고 공시 수집이 최근까지 따라잡지 못했다. */
+    readonly proposedSales: boolean;
+    /** 증자·희석 공시 구간이 비어 있고 공시 수집이 최근까지 따라잡지 못했다. */
+    readonly offerings: boolean;
+    /** 과열 목록 플래그가 켜져 있고 첫 목록을 아직 받지 못했다(상태가 없다). */
+    readonly thresholdList: boolean;
+}
+
+/** `resolveCollectingArms`가 읽는 스냅샷 필드 — 스냅샷이 없을 때도 호출부가 빈 값으로 채워 넘긴다. */
+export type CollectingSnapshotFields = Pick<
+    InvestorFlowsSnapshot,
+    | 'institutional'
+    | 'shortInterest'
+    | 'shortVolume'
+    | 'failsToDeliver'
+    | 'proposedSales'
+    | 'offerings'
+    | 'thresholdList'
+>;
+
+/** `resolveCollectingArms` 입력 — 준비 상태·스냅샷·피드 플래그를 한 번에 받는다. */
+export interface ResolveCollectingInput {
+    readonly readiness: InvestorFlowsPipelineReadiness;
+    readonly snapshot: CollectingSnapshotFields;
+    readonly finraEnabled: boolean;
+    /** Reg SHO 플래그 — 꺼져 있으면 과열 목록은 수집 중이 아니다(공매도의 `finraEnabled`와 같은 역할, 낡은 준비 상태 캐시 방어). */
+    readonly regShoEnabled: boolean;
+}

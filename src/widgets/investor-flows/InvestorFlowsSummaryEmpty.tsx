@@ -1,3 +1,6 @@
+/**
+ * AI 해석의 데이터 없음 화면.
+ */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

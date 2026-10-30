@@ -1,100 +1,43 @@
 'use client';
 
-import { AI_SITE_URL } from '@/shared/config/aiHost';
-import { useCurrentLocale, useHrefBase } from '@/shared/i18n/LocaleContext';
-import { localePath } from '@/shared/i18n/locales';
-import { brandAiName } from '@/shared/lib/brandName';
-import { cn } from '@/shared/lib/cn';
-import { BetaBadge } from '@/shared/ui/BetaBadge';
+import type { ComponentType } from 'react';
+import {
+    AiPillLink,
+    AiTextLink,
+    AiWordmarkLink,
+    type AiLinkProps,
+} from './ui/ai/AiLinkVariants';
+import { useAiNavLinkTarget } from './hooks/useAiNavLinkTarget';
 
 interface Props {
     readonly className?: string;
-    readonly tabIndex?: number;
     /**
-     * `wordmark` — the "AI" half of the `SIGLENS AI` logo lockup in the header
-     * (same mono/tracking grammar as the wordmark, brand colour). `pill` — the
-     * labelled entry in the mobile drawer. `text` — a plain inline link (footer
-     * sitemap row): no Beta badge, no `aria-label` override since the visible
-     * text already is the full product name. `pill` and `text` are text labels,
-     * so they read `시그렌즈 AI` in ko; only `wordmark` (half of the logo
-     * lockup) keeps `SIGLENS AI` (`CONVENTIONS.md#I18-11`).
+     * `wordmark` — 헤더 로고 락업의 "AI" 반쪽(워드마크와 같은 mono/자간 문법, 브랜드 색).
+     * `pill` — 모바일 드로어의 라벨 달린 항목. `text` — 푸터 사이트맵 행의 평문 링크
+     * (Beta 배지 없음). `pill`·`text`는 글자 라벨이라 ko에서 `시그렌즈 AI`를 읽고,
+     * 로고의 반쪽인 `wordmark`만 `SIGLENS AI`를 유지한다.
      */
     readonly variant?: 'pill' | 'wordmark' | 'text';
 }
 
-/** Where the AI product lives for the current locale — shared by the lockup and the drawer entry. */
-function useAiHomeHref(): string {
-    const locale = useCurrentLocale();
-    return `${AI_SITE_URL}${localePath(locale, '/')}`;
-}
+const VARIANT_LINK: Record<
+    NonNullable<Props['variant']>,
+    ComponentType<AiLinkProps>
+> = {
+    pill: AiPillLink,
+    wordmark: AiWordmarkLink,
+    text: AiTextLink,
+};
 
 /**
- * Entry point to ai.siglens.io. A plain `<a>` on purpose: it is a different
- * origin, so `LocaleLink`'s client-side routing has nothing to do here. On
- * the ai host itself the same header is rendered with a link base set
- * (`useHrefBase() !== ''`), which is how the link knows to show itself as the
- * current page.
+ * ai.siglens.io 진입 링크.
  *
- * The wordmark's accessible name is always "SIGLENS AI Beta" — it only
- * *shows* "AI" + the Beta tag (the "SIGLENS" half is the logo right next to
- * it), so the label restores the full product name for assistive tech and the
- * E2E suite while still containing every visible word (WCAG 2.5.3).
+ * 다른 오리진이라 `LocaleLink`의 클라이언트 라우팅이 할 일이 없으므로 일반 `<a>`다.
+ * ai 호스트에서는 같은 헤더가 링크 기준(`useHrefBase() !== ''`)을 둔 채 렌더되며,
+ * 그것으로 링크가 스스로를 현재 페이지로 표시한다.
  */
-export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
-    const onAiHost = useHrefBase() !== '';
-    const locale = useCurrentLocale();
-    const href = useAiHomeHref();
-    if (variant === 'text') {
-        return (
-            <a
-                href={href}
-                translate="no"
-                aria-current={onAiHost ? 'page' : undefined}
-                tabIndex={tabIndex}
-                className={className}
-            >
-                {brandAiName(locale)}
-            </a>
-        );
-    }
-    if (variant === 'wordmark') {
-        return (
-            <a
-                href={href}
-                translate="no"
-                aria-label="SIGLENS AI Beta"
-                aria-current={onAiHost ? 'page' : undefined}
-                tabIndex={tabIndex}
-                className={cn(
-                    'inline-flex min-h-11 items-center gap-1.5 rounded px-1 font-mono text-sm font-semibold tracking-[0.15em] text-primary-400 uppercase hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
-                    className
-                )}
-            >
-                AI
-                {/* The signed-in ai-host header on a 375px phone (logo text +
-                    search + theme + avatar + menu) has no 40px to spare; the
-                    landing's eyebrow and the composer notice carry Beta there. */}
-                <BetaBadge
-                    className={onAiHost ? 'max-[399px]:hidden' : undefined}
-                />
-            </a>
-        );
-    }
-    return (
-        <a
-            href={href}
-            translate="no"
-            aria-label={`${brandAiName(locale)} Beta`}
-            aria-current={onAiHost ? 'page' : undefined}
-            tabIndex={tabIndex}
-            className={cn(
-                'inline-flex min-h-11 items-center rounded-full border border-border-control px-3 text-sm font-medium text-primary-300 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
-                onAiHost && 'bg-secondary-800 text-secondary-100',
-                className
-            )}
-        >
-            {brandAiName(locale)}
-            <BetaBadge className="ml-1.5" />
-        </a>
-    );
+export function AiNavLink({ className, variant = 'pill' }: Props) {
+    const target = useAiNavLinkTarget();
+    const Link = VARIANT_LINK[variant];
+    return <Link {...target} className={className} />;
 }

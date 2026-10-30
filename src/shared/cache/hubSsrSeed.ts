@@ -1,6 +1,6 @@
 import 'server-only';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import { getRedisClient } from '@/shared/cache/redisClient';
+import { getRedisClient } from './redisClient';
 
 /**
  * 프리웜이 만든 값을 **키가 흔들리지 않는 자리**에 보관하는 작은 read/write 쌍.
@@ -27,10 +27,10 @@ import { getRedisClient } from '@/shared/cache/redisClient';
  * 나이를 드러내지 않으므로 TTL이 유일한 방어선이다. 거시 브리핑 seed는 `{ briefing,
  * generatedAt }` 봉투를 저장해 화면이 "생성 시각"으로 나이를 드러낸다(그래도 TTL은 같다).
  *
- * 그래서 프리웜 크론 창 사이 최대 공백(09:55→20:30 UTC ≈ 10시간 35분,
- * `docs/reference/CRON.md`) 바로 위로만 잡는다. 반나절(12h)이면 그 공백을 덮으면서 최악 노출을
- * 반나절로 묶는다. 더 늘리면 시각 표시도 없는 하루 지난 내용이 색인될 수 있고, 더 줄이면
- * 정상 운영 중에도 공백에서 seed가 만료돼 페이지가 다시 빈다.
+ * 그래서 프리웜 크론 창 사이 최대 공백(09:55→20:30 UTC ≈ 10시간 35분) 바로 위로만
+ * 잡는다. 반나절(12h)이면 그 공백을 덮으면서 최악 노출을 반나절로 묶는다. 더 늘리면
+ * 시각 표시도 없는 하루 지난 내용이 색인될 수 있고, 더 줄이면 정상 운영 중에도 공백에서
+ * seed가 만료돼 페이지가 다시 빈다.
  */
 export const SEED_TTL_SECONDS = SECONDS_PER_HALF_DAY;
 

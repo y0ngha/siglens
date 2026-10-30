@@ -142,9 +142,11 @@ describe('useModelGate', () => {
             result.current.handleModelChange('member-model' as ModelId);
         });
 
+        // 모달이 member 모델에는 API 키 안내를 빼도록 등급을 함께 넘긴다.
         expect(result.current.gateModal).toEqual({
             mode: 'auth',
             provider: 'anthropic',
+            access: 'member',
         });
         expect(onAllow).not.toHaveBeenCalled();
     });
@@ -177,6 +179,7 @@ describe('useModelGate', () => {
         expect(result.current.gateModal).toEqual({
             mode: 'auth',
             provider: 'anthropic',
+            access: 'byok',
         });
         expect(onAllow).not.toHaveBeenCalled();
     });
@@ -207,6 +210,7 @@ describe('useModelGate', () => {
         expect(result.current.gateModal).toEqual({
             mode: 'byok',
             provider: 'anthropic',
+            access: 'byok',
         });
         expect(onAllow).not.toHaveBeenCalled();
     });
@@ -241,23 +245,6 @@ describe('useModelGate', () => {
         });
 
         expect(result.current.gateModal).toBeNull();
-    });
-
-    it('showGate sets the gate modal to the provided state', () => {
-        const onAllow = vi.fn();
-        const { result } = renderHook(() => useModelGate({ onAllow }));
-
-        act(() => {
-            result.current.showGate({
-                mode: 'byok',
-                provider: 'anthropic' as LlmProvider,
-            });
-        });
-
-        expect(result.current.gateModal).toEqual({
-            mode: 'byok',
-            provider: 'anthropic',
-        });
     });
 
     describe('퍼널 gate_clicked{model}', () => {
@@ -299,19 +286,6 @@ describe('useModelGate', () => {
                 result.current.handleModelChange('free-model' as ModelId)
             );
             expect(onAllow).toHaveBeenCalledWith('free-model');
-            expect(track).not.toHaveBeenCalled();
-        });
-
-        it('showGate 프로그램 호출은 클릭이 아니라 기록하지 않는다', () => {
-            const { result } = renderHook(() =>
-                useModelGate({ onAllow: vi.fn() })
-            );
-            act(() =>
-                result.current.showGate({
-                    mode: 'byok',
-                    provider: 'anthropic' as LlmProvider,
-                })
-            );
             expect(track).not.toHaveBeenCalled();
         });
     });

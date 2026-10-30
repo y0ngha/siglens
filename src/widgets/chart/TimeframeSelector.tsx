@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 차트 타임프레임 선택 컨트롤(무료 티어 제한 반영).
+ */
+
 import { useTranslations } from 'next-intl';
 import { TIMEFRAMES } from '@/shared/config/market';
 import type { Timeframe } from '@y0ngha/siglens-core';

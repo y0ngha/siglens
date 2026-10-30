@@ -4,8 +4,8 @@ import type { ShareableStatus } from '../model/ShareableAnalysisContext';
  * Maps a raw hook status string (from any analysis hook) to a canonical
  * `ShareableStatus` understood by the share system.
  *
- * Addendum D-1 (options empty-market): `useOptionsAnalysis` does NOT emit a
- * distinct empty-market status token. When options data is unavailable for a
+ * Options empty market: `useOptionsAnalysis` does NOT emit a distinct
+ * empty-market status token. When options data is unavailable for a
  * symbol, the widget renders a separate `OptionsEmptyState` component and the
  * hook never mounts — so no mapping is needed here. The `no_trades` token
  * (mapped to 'unavailable' below) covers other analysis hooks that explicitly

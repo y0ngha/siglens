@@ -51,7 +51,7 @@ const BOUNDARY_RE = new RegExp(
 const ALLOWED: ReadonlySet<string> = new Set([
     // 아바타 위 티어 점을 헤더 배경에서 오려낸다. 헤더가 `bg-secondary-900/90`
     // 이므로 링도 `secondary-900`이어야 점만 떠 보인다.
-    'widgets/layout/HeaderUserMenu.tsx::ring-secondary-900',
+    'widgets/layout/ui/user-menu/UserAvatarButton.tsx::ring-secondary-900',
 ]);
 
 interface Offence {

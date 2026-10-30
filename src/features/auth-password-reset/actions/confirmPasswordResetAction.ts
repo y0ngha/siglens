@@ -16,6 +16,10 @@ import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
+/**
+ * 재설정 토큰을 검증·소비하고 비밀번호를 바꾼 뒤 `/login?password_reset=1`로
+ * 리디렉트한다. 실패는 throw하지 않고 오류 코드가 담긴 폼 상태로 돌려준다.
+ */
 export async function confirmPasswordResetAction(
     _prev: ResetPasswordFormState,
     formData: FormData

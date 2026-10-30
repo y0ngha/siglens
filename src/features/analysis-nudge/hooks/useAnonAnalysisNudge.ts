@@ -14,6 +14,7 @@ import {
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
 
+/** Return value of {@link useAnonAnalysisNudge}. */
 export interface UseAnonAnalysisNudgeResult {
     /**
      * True once `useCurrentUser` has settled (data !== undefined) — i.e. we
@@ -25,12 +26,12 @@ export interface UseAnonAnalysisNudgeResult {
      * no-op branch below, the ref is marked "done" anyway, and the
      * effective (anonymous) call that would fire once resolution flips
      * true never happens — dropping that symbol from the distinct-symbol
-     * count (see member-reasoning-toggle spec Part B).
+     * count.
      */
     isLoginResolved: boolean;
     /**
      * Call when a symbol analysis completes/renders. No-op for members and
-     * while the login state is still resolving (§ do not count before
+     * while the login state is still resolving (do not count before
      * membership is known — a member's first paint must never be
      * miscounted as anonymous activity, and an anonymous visitor's first
      * paint must not be dropped either way, so the safest boundary is to
@@ -40,8 +41,8 @@ export interface UseAnonAnalysisNudgeResult {
 }
 
 /**
- * Anonymous signup nudge (member-reasoning-toggle spec Part B; the threshold
- * is `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the first analysis). Tracks
+ * Anonymous signup nudge (the threshold is
+ * `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the first analysis). Tracks
  * distinct symbols an anonymous visitor has analyzed today via
  * `recordAnonSymbolAnalysis`, and opens a soft nudge modal the first time the
  * count crosses the threshold — once per day (`hasNudgeShownToday`/

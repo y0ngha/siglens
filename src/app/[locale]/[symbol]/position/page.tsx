@@ -1,16 +1,14 @@
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getTranslations } from 'next-intl/server';
-import type { PositionTranslator } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+import type { PositionTranslator } from '@/widgets/portfolio-position/utils/positionBuildingNotes';
 import {
     BAND_COUNT,
     computePosition,
-} from '@/widgets/portfolio-position/lib/positionGeometry';
-import { computeVolumeByBand } from '@/widgets/portfolio-position/lib/volumeByBand';
-import {
-    describeFloor,
-    formatAmountAligned,
-} from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+} from '@/widgets/portfolio-position/utils/positionGeometry';
+import { computeVolumeByBand } from '@/widgets/portfolio-position/utils/volumeByBand';
+import { describeFloor } from '@/widgets/portfolio-position/utils/positionBuildingNotes';
+import { formatAmountAligned } from '@/widgets/portfolio-position/utils/buildingPriceFormat';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';

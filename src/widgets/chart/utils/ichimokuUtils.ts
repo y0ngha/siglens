@@ -1,3 +1,6 @@
+/**
+ * 일목균형표 표시 데이터 — 구름 상·하단 분리와 선행 구름 미래 점 연장.
+ */
 import type { Bar, IchimokuFuturePoint } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 import type { SeriesPoint } from './seriesDataUtils';
@@ -40,47 +43,30 @@ export function extendWithFutureCloud(
     const barsLastTime = bars[bars.length - 1].time;
     const interval = barsLastTime - bars[bars.length - 2].time;
     const lastTime = Math.max(barsLastTime, anchorTime ?? barsLastTime);
-    return futureCloud.reduce(
-        (
-            acc: IchimokuCloudSeriesAccumulator,
-            point: IchimokuCloudPoint,
-            j: number
-        ) => {
-            const time = (lastTime + (j + 1) * interval) as UTCTimestamp;
-            return {
-                finalSenkouA: [
-                    ...acc.finalSenkouA,
-                    point.senkouA !== null
-                        ? { time, value: point.senkouA }
-                        : { time },
-                ],
-                finalSenkouB: [
-                    ...acc.finalSenkouB,
-                    point.senkouB !== null
-                        ? { time, value: point.senkouB }
-                        : { time },
-                ],
-                finalCloudBullish: [
-                    ...acc.finalCloudBullish,
-                    point.cloudBullishUpper !== null
-                        ? { time, value: point.cloudBullishUpper }
-                        : { time },
-                ],
-                finalCloudBearish: [
-                    ...acc.finalCloudBearish,
-                    point.cloudBearishUpper !== null
-                        ? { time, value: point.cloudBearishUpper }
-                        : { time },
-                ],
-            };
-        },
-        {
-            finalSenkouA: base.senkouAData,
-            finalSenkouB: base.senkouBData,
-            finalCloudBullish: base.cloudBullishData,
-            finalCloudBearish: base.cloudBearishData,
-        }
-    );
+    const timeAt = (j: number) =>
+        (lastTime + (j + 1) * interval) as UTCTimestamp;
+    // 필드마다 미래 점을 한 번에 만들어 이어 붙인다 — 점마다 기존 배열을 복사하던
+    // reduce는 O(N·K)였다.
+    const futurePoints = (
+        valueOf: (point: IchimokuCloudPoint) => number | null
+    ): SeriesPoint[] =>
+        futureCloud.map((point, j) => {
+            const value = valueOf(point);
+            return value !== null
+                ? { time: timeAt(j), value }
+                : { time: timeAt(j) };
+        });
+
+    return {
+        finalSenkouA: base.senkouAData.concat(futurePoints(p => p.senkouA)),
+        finalSenkouB: base.senkouBData.concat(futurePoints(p => p.senkouB)),
+        finalCloudBullish: base.cloudBullishData.concat(
+            futurePoints(p => p.cloudBullishUpper)
+        ),
+        finalCloudBearish: base.cloudBearishData.concat(
+            futurePoints(p => p.cloudBearishUpper)
+        ),
+    };
 }
 
 interface IchimokuCloudInput extends IchimokuFuturePoint {
@@ -89,6 +75,7 @@ interface IchimokuCloudInput extends IchimokuFuturePoint {
     chikou?: number | null;
 }
 
+/** core 일목 결과를 구름 색(상승·하락) 분리 상단값이 붙은 표시 점으로 바꾼다. */
 export function buildCloudData(
     ichimoku: IchimokuCloudInput[]
 ): IchimokuCloudPoint[] {

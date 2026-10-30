@@ -18,5 +18,5 @@ export function isValidTimeframe(
     value: string | undefined | null
 ): value is Timeframe {
     if (!value) return false;
-    return (TIMEFRAMES as readonly string[]).includes(value);
+    return TIMEFRAMES.some(timeframe => timeframe === value);
 }

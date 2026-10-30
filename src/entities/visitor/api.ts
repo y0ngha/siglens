@@ -46,7 +46,7 @@ export interface VisitorDayRecord {
 interface VisitorRepository {
     /** 방문자당 하루 1행. 이미 있으면 user_id만 비어 있을 때 채운다. */
     recordVisit(visit: VisitorDayRecord): Promise<void>;
-    /** `cutoffDate` **이전** 행을 지운다. 개인정보처리방침 §4의 보존 기간 집행. */
+    /** `cutoffDate` **이전** 행을 지운다. 개인정보처리방침에 고지한 보존 기간 집행. */
     pruneOlderThan(cutoffDate: string): Promise<void>;
     /** `fromDate` 이후의 날짜별 방문자 수. 최신 날짜가 먼저 온다. */
     dailyActiveUsers(fromDate: string): Promise<DailyActiveUsers[]>;
@@ -80,7 +80,10 @@ function landingSectionPattern(section: string): string {
     return `^(/(${LOCALES.join('|')}))?/${section}(/|$)`;
 }
 
-/** Drizzle ORM-backed implementation. */
+/**
+ * `VisitorRepository`의 Postgres 구현. `/api/presence` 라우트(적재·정리)와
+ * 지표 스크립트(집계)가 쓴다. server-only라 클라이언트에서 import하지 않는다.
+ */
 export class DrizzleVisitorRepository implements VisitorRepository {
     constructor(private readonly db: SiglensDatabase) {}
 

@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 종목 뉴스 집계 AI 요약 위젯 — 카드 보강 대기 → 분석 조회 → 상태별 화면(대기·로딩·오류·결과) 선택과 공유 등록을
+ * 맡는 오케스트레이터. 화면 조각은 `ui/ai-summary/`에 있다.
+ */
 import { useTranslations } from 'next-intl';
 import { useNewsAnalysis } from './hooks/useNewsAnalysis';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
@@ -7,239 +11,14 @@ import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNew
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
-import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
-import { cn } from '@/shared/lib/cn';
-import {
-    type NewsAnalysisResponse,
-    type NewsSentiment,
-} from '@y0ngha/siglens-core';
-
-import { NEWS_ANALYSIS_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
-import {
-    HEADING_SECTION,
-    HEADING_SUBSECTION,
-} from '@/shared/lib/typographyStyles';
-import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import { Spinner } from '@/shared/ui/Spinner';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-
-const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-ui-success-text',
-    neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-ui-danger-text',
-};
-
-interface StatusCardProps {
-    phase: 'fetching' | 'analyzing';
-}
-
-function StatusCard({ phase }: StatusCardProps) {
-    const t = useTranslations('widgets.news');
-    const tPeriod = useTranslations('shared.lib.newsPeriod');
-    const isFetching = phase === 'fetching';
-
-    return (
-        <section
-            aria-labelledby="news-ai-summary-status-heading"
-            aria-busy="true"
-            className={cn(
-                SURFACE_CARD,
-                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
-            )}
-        >
-            <div className="mb-4 flex items-center gap-2">
-                <h2
-                    id="news-ai-summary-status-heading"
-                    className={HEADING_SECTION}
-                >
-                    {t('NewsAiSummary.a74178')}
-                </h2>
-                <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                    {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
-                </span>
-            </div>
-            <div className="flex items-center gap-3">
-                <Spinner />
-                <p
-                    className="text-sm text-secondary-400"
-                    aria-live="polite"
-                    aria-atomic="true"
-                >
-                    {isFetching
-                        ? t('NewsAiSummary.678c71')
-                        : t('NewsAiSummary.c520e4')}
-                </p>
-            </div>
-            <p className="mt-2 text-xs text-secondary-500">
-                {isFetching
-                    ? t('NewsAiSummary.c4068f')
-                    : t('NewsAiSummary.595bae')}
-            </p>
-            <div className="mt-4 space-y-2" aria-hidden="true">
-                <div className="h-4 w-[91%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-                <div className="h-4 w-[67%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-                <div className="h-4 w-[79%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            </div>
-        </section>
-    );
-}
-
-interface NewsAiSummaryViewProps {
-    result: NewsAnalysisResponse;
-}
-
-export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
-    const tPeriod = useTranslations('shared.lib.newsPeriod');
-    const t = useTranslations('widgets.news');
-    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
-    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
-    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
-    const tLabel = useTranslations('shared.enumLabel');
-    return (
-        <section
-            aria-labelledby="news-ai-summary-heading"
-            className={cn(
-                SURFACE_CARD,
-                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
-            )}
-        >
-            <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                    <h2
-                        id="news-ai-summary-heading"
-                        className={HEADING_SECTION}
-                    >
-                        {t('NewsAiSummary.a74178')}
-                    </h2>
-                    <span className="shrink-0 rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                        {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
-                    </span>
-                </div>
-                <span
-                    className={cn(
-                        'rounded px-2 py-0.5 text-xs font-medium',
-                        SENTIMENT_CLASS[result.overallSentiment]
-                    )}
-                >
-                    {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
-                </span>
-            </div>
-
-            <p className="mb-4 text-sm leading-relaxed wrap-break-word text-secondary-400">
-                {result.currentDriverKo}
-            </p>
-
-            {result.keyEventsKo.length > 0 && (
-                <div className="mb-4">
-                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        {t('NewsAiSummary.d65c2f')}
-                    </h3>
-                    <ul
-                        className="space-y-1.5"
-                        aria-label={t('NewsAiSummary.3cad3e')}
-                    >
-                        {result.keyEventsKo.map(event => (
-                            <li
-                                key={event}
-                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0"
-                                >
-                                    •
-                                </span>
-                                <span className="min-w-0 wrap-break-word">
-                                    {event}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {result.upcomingEventsKo.length > 0 && (
-                <div>
-                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        {t('NewsAiSummary.1244e3')}
-                    </h3>
-                    <ul
-                        className="space-y-1.5"
-                        aria-label={t('NewsAiSummary.a96ba1')}
-                    >
-                        {result.upcomingEventsKo.map(event => (
-                            <li
-                                key={event}
-                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-ui-warning-text"
-                                >
-                                    ⚠
-                                </span>
-                                <span className="min-w-0 wrap-break-word">
-                                    {event}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-        </section>
-    );
-}
-
-interface NewsAiSummaryInlineErrorProps {
-    error: Error;
-    onRetry: () => void;
-}
-
-function NewsAiSummaryInlineError({
-    error,
-    onRetry,
-}: NewsAiSummaryInlineErrorProps) {
-    const t = useTranslations('widgets.news');
-    const tPeriod = useTranslations('shared.lib.newsPeriod');
-    return (
-        <section
-            aria-labelledby="news-ai-summary-error-heading"
-            className={cn(
-                SURFACE_CARD,
-                'w-full max-w-full min-w-0 overflow-hidden border-ui-danger/30 p-6'
-            )}
-        >
-            <div className="mb-2 flex items-center gap-2">
-                <h2
-                    id="news-ai-summary-error-heading"
-                    className={HEADING_SECTION}
-                >
-                    {t('NewsAiSummary.a74178')}
-                </h2>
-                <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                    {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
-                </span>
-            </div>
-            <p
-                className="text-sm wrap-break-word text-ui-danger-text"
-                role="alert"
-            >
-                {error.message}
-            </p>
-            <button
-                type="button"
-                onClick={onRetry}
-                className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
-            >
-                {t('NewsAiSummary.0c767c')}
-            </button>
-        </section>
-    );
-}
+import { NewsAiSummaryInlineError } from './ui/ai-summary/NewsAiSummaryInlineError';
+import { NewsAiSummaryView } from './ui/ai-summary/NewsAiSummaryView';
+import { StatusCard } from './ui/ai-summary/StatusCard';
 
 interface NewsAiSummaryProps {
     symbol: string;
@@ -255,11 +34,12 @@ interface NewsAiSummaryProps {
      *
      * UI만 숨기고 마운트는 유지한다 — `useRegisterShareable`이 여기서만 불리므로,
      * 페이지가 위젯을 렌더하지 않으면 헤더의 공유 버튼이 이 탭의 분석 결과를
-     * 등록받지 못한다.
+     * 등록받지 못한다. 숨긴 동안은 캐시만 읽고, 공유 흐름이 요청할 때만 생성한다.
      */
     hideView?: boolean;
 }
 
+/** 훅과 폴링 오류 전파는 `hideView`와 무관하게 유지하고 렌더만 건너뛴다. */
 export function NewsAiSummary({
     symbol,
     companyName,
@@ -267,7 +47,10 @@ export function NewsAiSummary({
     hideView = false,
 }: NewsAiSummaryProps) {
     const t = useTranslations('widgets.news');
-    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
+    const { allowed: autoRunAllowed, start } = useAiRunPermission(
+        symbol,
+        hideView
+    );
     useNewsAnalysisTrigger(symbol, autoRunAllowed);
 
     const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
@@ -289,11 +72,9 @@ export function NewsAiSummary({
         autoRunAllowed,
     });
 
-    // When enriched news cards are not yet ready the analysis query is disabled
-    // (enabled: false → useNewsAnalysis returns status 'loading' immediately).
-    // Mapping that 'loading' to 'pending' misleads the share system into showing
-    // "preparing" before any actual analysis has started. Register 'idle' instead
-    // so the share button stays dormant until real analysis work begins.
+    // 보강된 카드가 아직 없으면 분석 쿼리는 비활성이라 'loading'을 돌려준다. 이를 'pending'으로
+    // 매핑하면 분석이 시작되기도 전에 공유 시스템이 "준비 중"을 띄우므로 'idle'로 등록해 실제
+    // 분석이 시작될 때까지 공유 버튼을 잠재운다.
     useRegisterShareable({
         kind: 'news',
         status: isCardsReady ? mapAnalysisStatus(analysis.status) : 'idle',
@@ -307,16 +88,19 @@ export function NewsAiSummary({
         // 공유 스냅샷에 쉽게보기 산문을 함께 싣는다 — 링크를 받은 사람은
         // SSE 라우트를 타지 않아 평이화를 다시 만들 수 없다.
         plain: analysis.status === 'done' ? analysis.plain : null,
-        trigger: analysis.trigger,
+        // 대기 중에는 캐시 전용 재조회(`analysis.trigger`)가 아니라 실행 권한을 여는 `start`를 건다 —
+        // 그래야 헤더 공유 흐름이 분석을 실제로 시작할 수 있다.
+        trigger:
+            analysis.status === 'awaiting_interaction'
+                ? start
+                : analysis.trigger,
     });
 
-    // Surface persistent polling errors to the surrounding error boundary
-    // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.
+    // 영구 폴링 오류는 에러 바운더리(NewsAiSummaryErrorBoundary)의 폴백이 맡게 던진다.
     if (pollError !== null) {
         throw pollError;
     }
 
-    // 훅과 pollError 전파는 그대로 두고 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
     if (hideView) return null;
 
     // 게이트가 닫혀 있으면 카드 보강 자체가 미뤄져 있다 — "수집 중" 스피너를 띄우면
@@ -329,7 +113,7 @@ export function NewsAiSummary({
             <AiAnalysisAwaitingSection
                 heading={t('NewsAiSummary.a74178')}
                 idPrefix="news-ai-summary"
-                onStart={grant}
+                onStart={start}
                 className="w-full max-w-full min-w-0"
             />
         );

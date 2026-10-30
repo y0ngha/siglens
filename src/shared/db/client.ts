@@ -1,15 +1,15 @@
-import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { readDatabaseConfig, tryReadDatabaseConfig } from './config';
-import { noStoreQueryLogger } from './noStoreQueryLogger';
-import * as schema from './schema';
-import type { DatabaseClient, DatabaseConfig } from './types';
+import postgres from 'postgres';
 import {
     assertOnline,
     isOfflineBuild,
     warnOfflineBuildOnce,
     OFFLINE_BUILD_SERVICE,
 } from '@/shared/api/offlineBuild';
+import { readDatabaseConfig, tryReadDatabaseConfig } from './config';
+import { noStoreQueryLogger } from './noStoreQueryLogger';
+import * as schema from './schema';
+import type { DatabaseClient, DatabaseConfig } from './types';
 
 /**
  * 클라이언트 캐시의 `globalThis` 키.
@@ -209,9 +209,8 @@ export function createDatabaseClient(config: DatabaseConfig): DatabaseClient {
 }
 
 /**
- * Returns the cached `DatabaseClient`, creating it on first call; throws when
- * `DATABASE_URL` is unset, or when `SIGLENS_OFFLINE_BUILD=1` (blocks the DB
- * connection before `postgres()` is ever constructed).
+ * 캐시된 `DatabaseClient`를 돌려주고, 첫 호출이면 만든다. `DATABASE_URL`이 없거나
+ * `SIGLENS_OFFLINE_BUILD=1`이면 던진다(후자는 `postgres()`를 만들기 전에 막는다).
  */
 export function getDatabaseClient(): DatabaseClient {
     assertOnline(OFFLINE_BUILD_SERVICE.DATABASE, 'connection');
@@ -222,9 +221,8 @@ export function getDatabaseClient(): DatabaseClient {
 }
 
 /**
- * Returns the cached `DatabaseClient`, or `null` when `DATABASE_URL` is
- * absent (graceful degradation), or when `SIGLENS_OFFLINE_BUILD=1` (blocks
- * the DB connection before `postgres()` is ever constructed).
+ * 캐시된 `DatabaseClient`를 돌려주되, `DATABASE_URL`이 없거나(degrade)
+ * `SIGLENS_OFFLINE_BUILD=1`이면 `null`이다(후자는 `postgres()`를 만들기 전에 막는다).
  */
 export function tryGetDatabaseClient(): DatabaseClient | null {
     if (isOfflineBuild()) {
@@ -257,7 +255,7 @@ export async function endDatabaseClient(timeoutSeconds = 5): Promise<void> {
     }
 }
 
-/** @internal Resets the cached client between test runs. */
+/** 테스트 사이에 캐시된 클라이언트를 비운다. 풀은 닫지 않는다. */
 export function resetDatabaseClientForTests(): void {
     writeCachedClient(null);
 }

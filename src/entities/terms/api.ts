@@ -1,24 +1,25 @@
-import type { TermsKind } from '@/shared/db/constants';
-import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
-import { contentTranslations, terms } from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
-import { withRetry } from '@/shared/lib/withRetry';
 import { and, desc, eq, lte, sql } from 'drizzle-orm';
-import { localizeContentRow } from '@/shared/db/localizeContent';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
+
+import { isOfflineBuild } from '@/shared/api/offlineBuild';
+import { RELEASE_ID } from '@/shared/config/release';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { TermsKind } from '@/shared/db/constants';
 import {
     CONTENT_FIELD,
     TRANSLATABLE_ENTITY,
     TRANSLATION_SOURCE,
 } from '@/shared/db/contentTranslationFields';
-import { RELEASE_ID } from '@/shared/config/release';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
+import { localizeContentRow } from '@/shared/db/localizeContent';
+import { contentTranslations, terms } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { cache } from 'react';
-import { unstable_cache } from 'next/cache';
-import { getDatabaseClient } from '@/shared/db/client';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
-import { isOfflineBuild } from '@/shared/api/offlineBuild';
+import { withRetry } from '@/shared/lib/withRetry';
 
-/** Public-facing record returned by the repository. */
+/** `findActive`·`getActiveTerms`가 돌려주는 약관 한 건. `/terms`·`/privacy` 화면과 sitemap lastmod가 읽는다. */
 export interface TermsRecord {
     id: string;
     kind: TermsKind;
@@ -38,7 +39,7 @@ export interface TermsRecord {
     isTranslationFallback: boolean;
 }
 
-/** Input used by the seed script to upsert a versioned terms row. */
+/** 시드 스크립트가 버전 약관 행을 적재할 때 넘기는 입력. */
 export interface TermsSeedInput {
     kind: TermsKind;
     version: number;
@@ -46,7 +47,7 @@ export interface TermsSeedInput {
     body: string;
 }
 
-/** Input used by the seed script to upsert a human-authored body translation. */
+/** 시드 스크립트가 인간 번역 본문을 적재할 때 넘기는 입력. */
 export interface TermsTranslationInput {
     /** `terms` 행의 uuid. `upsertFromSeed`가 돌려준 값이다. */
     termsId: string;
@@ -54,10 +55,10 @@ export interface TermsTranslationInput {
     body: string;
 }
 
-/** Repository for versioned legal terms documents. */
+/** 버전 약관 저장소 계약. 구현은 `DrizzleTermsRepository` 하나다. */
 interface TermsRepository {
     /**
-     * Return the active version for the given kind, or null if none.
+     * 발효 중인 최신 버전을 돌려준다. 없으면 null.
      *
      * 본문은 요청 로케일로 해석한다. **인간 번역(`source = 'human'`)만
      * 신뢰한다** — 약관은 오역이 곧 의무의 변경이라 AI 번역을 그대로 내보낼 수
@@ -66,7 +67,7 @@ interface TermsRepository {
      */
     findActive(kind: TermsKind, locale: Locale): Promise<TermsRecord | null>;
     /**
-     * Insert a versioned row; no-op on (kind, version) conflict.
+     * (kind, version) 행을 넣는다. 충돌하면 아무것도 바꾸지 않는다.
      *
      * 충돌해도 **그 행의 id를 돌려준다** — 번역 사이드카가 `entityId`로 이 값을
      * 쓰므로, 이미 적재된 버전에 번역만 덧붙이는 재실행이 성립해야 한다.
@@ -81,7 +82,10 @@ interface TermsRepository {
     upsertTranslation(input: TermsTranslationInput): Promise<void>;
 }
 
-/** Drizzle ORM-backed implementation. */
+/**
+ * Drizzle 구현. `getActiveTerms`(읽기), 가입·OAuth 동의 액션(동의 버전 조회),
+ * sitemap(lastmod), 시드 스크립트(적재)가 쓴다.
+ */
 export class DrizzleTermsRepository implements TermsRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
@@ -104,9 +108,8 @@ export class DrizzleTermsRepository implements TermsRepository {
             .orderBy(desc(terms.effectiveDate))
             .limit(1);
 
-        if (rows.length === 0) return null;
-
-        const row = rows[0]!;
+        const row = rows[0];
+        if (row === undefined) return null;
         const localized = await localizeContentRow({
             entity: TRANSLATABLE_ENTITY.terms,
             row,
@@ -124,8 +127,7 @@ export class DrizzleTermsRepository implements TermsRepository {
 
         return {
             id: row.id,
-            // Safe: pgEnum('terms_kind', TERMS_KIND_VALUES) constrains the DB column to TermsKind values.
-            kind: row.kind as TermsKind,
+            kind: row.kind,
             version: row.version,
             effectiveDate: row.effectiveDate,
             // 해석 실패(사이드카가 빈 문자열)여도 원문은 항상 있다 — 약관이
@@ -212,7 +214,7 @@ export class DrizzleTermsRepository implements TermsRepository {
     }
 }
 
-/** 활성 약관 데이터 캐시 키·태그. */
+/** 활성 약관 데이터 캐시의 키 접두와 무효화 태그. */
 const TERMS_ACTIVE_CACHE_KEY = 'terms:active';
 
 /**
