@@ -24,6 +24,10 @@ describe('ResendEmailDispatcher', () => {
         ResendCtor.mockClear();
     });
 
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     it('성공 응답 시 true를 반환한다', async () => {
         sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
         const dispatcher = new ResendEmailDispatcher({
@@ -90,6 +94,5 @@ describe('ResendEmailDispatcher', () => {
             from: 'noreply@siglens.io',
         });
         await expect(dispatcher.sendEmail(message)).resolves.toBe(false);
-        vi.restoreAllMocks();
     });
 });
