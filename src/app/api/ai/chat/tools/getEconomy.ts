@@ -23,8 +23,8 @@ import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import {
     CALENDAR_COUNTRY,
     CALENDAR_COUNTRY_KR,
-    type CalendarCountry,
 } from '@/entities/economy/lib/economyCalendarConstants';
+import type { CalendarCountry } from '@/entities/economy/model';
 import {
     etDateOf,
     futureWindowEnd,

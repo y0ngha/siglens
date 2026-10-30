@@ -1,11 +1,11 @@
 import { getTranslations } from 'next-intl/server';
-import { resolveLocale } from '@/shared/i18n/locales';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildSymbolOgImage } from '@/entities/og-image/server/buildSymbolOgImage';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 
-// 공유 스냅샷은 id마다 달라 정적 생성 불가 → force-dynamic
+/** 공유 스냅샷은 id마다 달라 정적 생성 불가 → force-dynamic. */
 export const dynamic = 'force-dynamic';
 
 /**
@@ -17,17 +17,25 @@ export const dynamic = 'force-dynamic';
  */
 const SHARE_OG_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
+/** 사이트 공용 OG 규격(`shared/lib/og`) — 카드 미리보기가 다른 OG 이미지와 같은 비율로 보인다. */
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
+/** `ImageResponse`가 내는 형식. */
 export const contentType = 'image/png';
-// `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지
-// 본문은 아래에서 로케일별로 그린다). 네 로케일이 한 값을 공유해야 하므로
-// 한국어 대신 영어로 둔다 — 예전엔 한국어라 `/en/…` 공유 카드의 alt만 한국어였다.
+/**
+ * `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지 본문은 아래에서
+ * 로케일별로 그린다). 네 로케일이 한 값을 공유해야 하므로 한국어 대신 영어로 둔다 — 한국어면
+ * `/en/…` 공유 카드의 alt만 한국어로 나간다.
+ */
 export const alt = 'SIGLENS shared AI analysis';
 
 interface Props {
     params: Promise<{ locale: string; id: string }>;
 }
 
+/**
+ * 공유 카드 OG 이미지 — 유효한 스냅샷이면 종목·분석 종류를, 없거나 만료됐으면 "만료된 공유"
+ * 카드를 요청 로케일로 그린다.
+ */
 export default async function Image({ params }: Props) {
     const { id, locale } = await params;
     const resolvedLocale = resolveLocale(locale);

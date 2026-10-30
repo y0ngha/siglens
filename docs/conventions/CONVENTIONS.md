@@ -101,6 +101,8 @@ return result;
 const result = condition ? newValue : value;
 ```
 
+In tests, do not reassign a `let` mock inside `act()`/callbacks; create a `const` mock and pass it into the helper.
+
 <a id="CP-5"></a>
 
 #### CP-5 — Name complex inline expressions; turn repeated JSX into data + map
@@ -600,6 +602,7 @@ the root `CLAUDE.md`. The rules below target comments that restate the code or s
 
 A comment earns its place by recording a reason, constraint or tradeoff the code cannot show. Delete comments that
 label a section, narrate a state transition, restate a name or a type narrowing the compiler already proves,
+`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's or options interface's name (`/** [[useX]] options. */` — say what the options control instead), and
 `// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name (or a props
 JSDoc that only lists field names), a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
 export), comments framed as history ("회귀:", "previously…", "fixed in…"; state the current reason
@@ -727,6 +730,7 @@ otherwise a later sweep "fixes" it. Examples: a call site that skips a new param
 deliberate omission from a title, a status code that differs from its siblings, shared state with
 last-event-wins semantics, work started early for parallelism (state its discard cost on early return). A temporary
 workaround names its removal condition and the tracking link.
+A hook or function that is only correct under a caller assumption (e.g. an `enabled` flag never flipped after mount) states that assumption in its JSDoc.
 
 <a id="CM-7"></a>
 
@@ -791,6 +795,24 @@ consumer.
 export function rssNewsSurface() {}
 // ✅ /** Why this surface exists and who consumes it. */
 
+<a id="CM-13"></a>
+
+#### CM-13 — One comment language per file
+
+Match the language of the comments already in the file you edit: a new JSDoc or comment follows the file's existing
+language, never introducing a second one. A mixed file reads as two authors and makes a grep for a concept miss half of it.
+
+```typescript
+// ❌ English JSDoc throughout the file, one new block written in Korean
+// ✅ the new block is English like its neighbours
+<a id="CM-12"></a>
+
+#### CM-12 — Every exported component, hook and helper carries its own JSDoc
+
+A module-level JSDoc does not replace per-symbol docs. Each exported component, hook and non-trivial helper gets a JSDoc directly above it stating its responsibility (and, for hooks, what it returns). A new export is not finished without one.
+
+- ❌ A new `useEconomyFilter` exported under only the file's header comment.
+- ✅ A short JSDoc above `useEconomyFilter` naming what it owns and returns.
 <a id="CM-11"></a>
 
 #### CM-11 — Comments describe the current design and WHY, not history
@@ -836,6 +858,13 @@ old logic before calling the extraction done.
 
 - ❌ Two helpers each re-derive "the previous trading day" with their own weekend handling.
 - ✅ One exported helper owns the boundary; both callers import it, and one test pins its edge cases.
+
+A condition that must hold in both a route's `generateMetadata` and its body component (a "degraded"/"empty" state
+that switches the robots directive and the rendered content) is one `_lib` predicate that both call. A comment saying
+"same expression as the body" is not enforcement.
+
+- ❌ `page.tsx` metadata and `_components/Body` each spell out the degrade condition, with a comment promising they match.
+- ✅ `_lib/isDegraded(data)` is imported by both.
 
 A summary label follows the same rule: derive it from the aggregate it summarizes, never copy it from one component.
 Validate label/aggregate consistency where the data enters, and regenerate bundled copies (an archive of the same data)
@@ -1039,6 +1068,34 @@ complete. Show it as in-progress or leave it out.
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
 
+<a id="CS-22"></a>
+
+#### CS-22 — Export only what another module imports
+
+A constant, type or helper with no importer outside its own file stays private. Do not export a symbol only so a test can
+read it; test through the public behaviour, or move the symbol to a non-component module that a consumer really imports.
+
+- ❌ `export const FLAT_EPSILON = 0.005` that nothing imports.
+- ✅ `const FLAT_EPSILON = 0.005`, exercised through the component's rendered output.
+<a id="CS-20"></a>
+
+#### CS-20 — Visibility and emptiness checks use the value the UI renders
+
+When a block is shown or hidden based on a text or value, the check reads the same resolver, field and rounding the rendered output uses. Testing a different field (a raw or non-localized one) than the one printed makes the block appear empty, or hide when it has content. Derive both from one shared value.
+
+- ❌ `summaryKo ? <Summary text={resolveSummary(item, locale)} /> : null`
+- ✅ `const text = resolveSummary(item, locale); text ? <Summary text={text} /> : null`
+
+<a id="CS-21"></a>
+
+#### CS-21 — Compute a value only on the path that uses it
+
+A value that only one branch reads is computed inside that branch (or behind the same condition), not on every render or
+call and then discarded when the condition is off. Deriving it unconditionally does work the user never sees and hides
+which branch actually depends on it.
+
+- ❌ `const hasVisible = visibleOf(group).length > 0;` … `{isSelected && !hasVisible && <EmptyNote />}`
+- ✅ `const showEmptyNote = isSelected && visibleOf(group).length === 0;`
 <a id="CS-23"></a>
 
 #### CS-23 — Sign, colour and prefix come from the rounded value that is printed
@@ -1401,6 +1458,48 @@ const label = (item: Item, locale?: Locale) => item.names[locale ?? 'ko'];
 const label = (item: Item, locale: Locale) => pickLocalized(item.names, locale);
 ```
 
+<a id="I18-16"></a>
+
+#### I18-16 — Translator keys are string literals, never built from templates
+
+`i18n:extract` finds keys by static analysis. A key assembled with a template string or concatenation is invisible to it, so the extractor either misses the key or widens the whole namespace into the client bundle. Map the variants through a literal record of keys and look the record up.
+
+```typescript
+// ❌ extractor cannot see these keys
+t(`category.${kind}`)
+
+// ✅ every key is a literal
+const LABEL_KEY = { stock: 'category.stock', etf: 'category.etf' } as const;
+t(LABEL_KEY[kind]);
+```
+
+<a id="I18-17"></a>
+
+#### I18-17 — Records of translator keys are typed as literal unions, not `string`
+
+A lookup record that maps a domain value to a translator key (`labelKey`, `descriptionKey`) is typed with the literal key type, so a typo or a key missing from the catalog is a compile error instead of a runtime fallback. Derive the type from the catalog namespace or a template literal over the domain union.
+
+```typescript
+// ❌ any string compiles, typos surface only at runtime
+const EXIT: Record<ExitReason, { labelKey: string }> = { stop: { labelKey: 'exit.stopp' } };
+
+// ✅ the key must be a real literal of the namespace
+type ExitKey = `exit.${ExitReason}`;
+const EXIT: Record<ExitReason, { labelKey: ExitKey }> = { stop: { labelKey: 'exit.stop' } };
+<a id="I18-14"></a>
+
+#### I18-14 — One full-sentence key per message; never join translated fragments
+
+Tooltips, aria-labels and other copy are a single catalog key with ICU arguments, not several keys concatenated in code
+(`${t('a')}~${t('b')}`, `[t('x'), t('y')].join(' ')`). Word order, separators and ranges differ per locale, and a joined
+string also drifts from the logic it describes when a boundary changes.
+
+```typescript
+// ❌ two keys glued with a hardcoded separator
+`${t('rangeMin')}~${t('rangeMax')}`
+
+// ✅ one key, locale decides the shape
+t('range', { min, max })
 <a id="I18-15"></a>
 
 #### I18-15 — Catalog values carry no layout whitespace

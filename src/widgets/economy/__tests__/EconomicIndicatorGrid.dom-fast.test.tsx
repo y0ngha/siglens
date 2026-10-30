@@ -116,6 +116,28 @@ describe('EconomicIndicatorGrid', () => {
         expect(container.textContent).not.toMatch(/\+0\.40%(?!p)/);
     });
 
+    // 원값 부호로 고르면 -0.004가 `-0.00`(빨강)으로 찍힌다 — 반올림한 값으로 판정한다.
+    it('반올림해 0인 스프레드는 부호 없는 0.00으로, 음수 색 없이 그린다', () => {
+        render(
+            <EconomicIndicatorGrid
+                snapshot={snap({
+                    treasury: {
+                        date: '2026-06-15',
+                        year2: 4.474,
+                        year10: 4.47,
+                    },
+                })}
+            />
+        );
+        const value = screen
+            .getByText('2s10s 스프레드')
+            .closest('article')!
+            .querySelector('div');
+        expect(value).toHaveTextContent('0.00%p');
+        expect(value?.textContent).not.toContain('-');
+        expect(value?.className).not.toContain('ui-danger');
+    });
+
     it('금리 섹션은 treasury 카드 3종(2Y·10Y·2s10s) 렌더', () => {
         render(<EconomicIndicatorGrid snapshot={snap()} />);
         expect(screen.getByText('2년물 국채')).toBeInTheDocument();
