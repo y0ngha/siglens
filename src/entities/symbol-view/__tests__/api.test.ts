@@ -154,9 +154,11 @@ describe('DrizzleSymbolViewRepository', () => {
         await new DrizzleSymbolViewRepository(db).topViewed('2026-09-17', 3);
 
         expect(orderBy).toHaveBeenCalledTimes(1);
-        expect(orderBy.mock.calls[0]).toHaveLength(2);
-        expect(orderBy.mock.calls[0]?.[1]).toMatchObject({
-            queryChunks: expect.arrayContaining([symbolViewsDaily.symbol]),
-        });
+        expect(orderBy).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                queryChunks: expect.arrayContaining([symbolViewsDaily.symbol]),
+            })
+        );
     });
 });
