@@ -35,6 +35,9 @@ export function SectorTabs({
             ariaLabel={t('SectorTabs.651e5e')}
             size="sm"
             idPrefix={TABS_ID_PREFIX}
+            // 패널은 활성 섹터 하나만 그린다(`SectorSignalPanel`) — 비활성 탭의
+            // `aria-controls`가 없는 요소를 가리키지 않게 한다.
+            panelMounting="active"
         />
     );
 }
