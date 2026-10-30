@@ -369,6 +369,17 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-8"></a>
+
+#### CR-8 — Secret values never become React keys or extra props
+
+A one-time secret (API key, token, password) is rendered in exactly one place. Do not use it as a `key`, a `data-*` attribute, an `id`, or a prop forwarded to components that only need to know "a secret exists": keys and props show up in React DevTools and dev-mode warnings. To remount a subtree when a new secret arrives, key it on a counter or other non-secret identity. Clear the secret from state once the user dismisses it.
+
+```tsx
+// ❌
+<SecretPanel key={secret} secret={secret} />
+// ✅
+<SecretPanel key={secretVersion} secret={secret} />
 <a id="CR-6"></a>
 
 #### CR-6 — List keys are unique, non-blank and independent of display text
@@ -498,6 +509,18 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 <button aria-label="Watchlist" aria-pressed={on} />
 ```
 
+<a id="AX-6"></a>
+
+#### AX-6 — Hand focus off when the focused element goes away, and focus newly revealed status
+
+- When the focused element unmounts itself (a dismiss button, a removed list row), move focus to the next logical target (neighbouring row, the list or empty-state heading, the control that opened it) in the same handler; otherwise focus falls to `<body>` and keyboard users restart from the top of the page.
+- A status or result panel that appears after an action and is not inside an existing live region gets `role="status"` (or is focused via `tabIndex={-1}` when it holds content to act on), so it is announced.
+
+```tsx
+// ❌ the button removes itself; focus drops to <body>
+<button onClick={() => setSecret(null)}>Dismiss</button>
+// ✅
+<button onClick={() => { setSecret(null); headingRef.current?.focus(); }}>Dismiss</button>
 <a id="AX-7"></a>
 
 #### AX-7 — ARIA references point at rendered elements; a combobox follows the WAI-ARIA pattern
