@@ -34,11 +34,10 @@ function toEnrichedRowShape(
 /**
  * `MarketNewsRow`를 core의 `EnrichedNewsItem`으로 바꾼다. 아직 보강되지 않았으면 `null`.
  *
- * 쓰기 경로(`submitMarketNewsDigestAction`)와 SSR peek(`peekMarketNewsDigestStatic`)가
- * `selectDigestNews`를 거쳐 이 함수를 공유한다 — 두 경로가 `MarketNewsRow[]`에서 정확히 같은
- * `EnrichedNewsItem[]`을 만들어야 다이제스트 캐시 키가 맞는다(core
- * `MarketNewsDigestCacheKeyOptions.news`가 키에 접힌다). 구현을 하나로 두어 이 일치를
- * 호출부의 기억이 아니라 구조로 보장한다.
+ * 다이제스트 입력은 `selectDigestNews`가 이 함수로 만든다. 그 소비자(`submitMarketNewsDigestAction`
+ * 생성, `peekMarketNewsDigestStatic` SSR peek, seo-prewarm cron의 뉴스 허브)가 같은
+ * `EnrichedNewsItem[]`을 만들어야 core 다이제스트 캐시 키(`MarketNewsDigestCacheKeyOptions.news`)가
+ * 맞는다. 구현을 하나로 두어 이 일치를 호출부의 기억이 아니라 구조로 보장한다.
  */
 export function toEnrichedMarketNewsItem(
     row: MarketNewsRow

@@ -7,14 +7,9 @@ import {
     runBriefing,
     runMacroBriefing,
     runMarketNewsDigest,
-    type EnrichedNewsItem,
-    type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
-import {
-    MAX_AGGREGATE_NEWS_ITEMS,
-    selectAggregateNewsItems,
-} from '@/entities/news-article/lib/newsAnalysisSelection';
+import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalysisSelection';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedMarketSummary } from '@/entities/market-summary/api/marketSummaryCache';
 import { marketBriefingContextOf } from '@/entities/market-summary/lib/marketBriefingContext';
@@ -44,7 +39,10 @@ import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
-import { toEnrichedMarketNewsItem } from '@/entities/market-news/lib/toEnrichedMarketNewsItem';
+import {
+    selectDigestNews,
+    toCoreFeedCategory,
+} from '@/entities/market-news/lib/digestInput';
 import {
     DEFAULT_DIGEST_MODEL_ID,
     DIGEST_REASONING,
@@ -568,19 +566,14 @@ function newsDigestTargets(now: () => number): HubTarget[] {
                 const { sentinel, koLabel } = CATEGORY_CONFIG[category];
                 await ingestCategoryBeforeDigest(category, sentinel);
                 const rows = await getMarketNewsList(sentinel);
-                const enriched = rows
-                    .map(toEnrichedMarketNewsItem)
-                    .filter((item): item is EnrichedNewsItem => item !== null);
-                const news = selectAggregateNewsItems(enriched);
+                const news = selectDigestNews(rows);
                 if (news.length === 0) {
                     // 기사가 하나도 없으면 다이제스트도 없다. 실패가 아니라 할 일
                     // 없음이다 — 다만 `generated`와는 갈라 센다(HubOutcome 주석 ②).
                     return runResult('noData');
                 }
                 const options = {
-                    // `'kr'`은 core union 밖이지만 core가 값으로 분기하지 않고
-                    // 문자열로만 흘린다 — 근거는 `submitMarketNewsDigestAction` 주석.
-                    category: category as NewsFeedCategory,
+                    category: toCoreFeedCategory(category),
                     locale: DEFAULT_LOCALE,
                     categoryLabel: koLabel,
                     modelId: DEFAULT_DIGEST_MODEL_ID,

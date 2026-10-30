@@ -15,16 +15,15 @@ export function mergeNaverNewsBatches(
     sentinel: string,
     cutoff: Date
 ): MarketNewsItem[] {
-    const byId = new Map<string, MarketNewsItem>();
-    for (const raw of batches.flat()) {
-        const item = toNaverNewsItem(raw, sentinel);
-        if (item === null) continue;
-        if (new Date(item.publishedAt) < cutoff) continue;
-        if (byId.has(item.id)) continue;
-        byId.set(item.id, { ...item, tickers: [] });
-    }
-
-    return [...byId.values()].toSorted((a, b) =>
-        b.publishedAt.localeCompare(a.publishedAt)
-    );
+    return batches
+        .flat()
+        .map(raw => toNaverNewsItem(raw, sentinel))
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .filter(item => new Date(item.publishedAt) >= cutoff)
+        .filter(
+            (item, index, items) =>
+                items.findIndex(other => other.id === item.id) === index
+        )
+        .map((item): MarketNewsItem => ({ ...item, tickers: [] }))
+        .toSorted((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
