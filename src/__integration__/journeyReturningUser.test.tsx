@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SectorTabs } from '@/widgets/dashboard/SectorTabs';
+import { SectorTabs } from '@/widgets/dashboard/ui/sector-signal/SectorTabs';
 import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 import { ModelSelector } from '@/widgets/analysis/ModelSelector';

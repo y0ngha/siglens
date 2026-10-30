@@ -13,6 +13,11 @@ import type { AssetInfo } from '@/shared/lib/types';
  */
 export type SnapshotProseState = 'present' | 'absent' | 'unknown';
 
+/**
+ * `evaluateSymbolIndexability` 입력. `symbol`·`assetInfo`·`degraded`·`locale`은 필수다.
+ * `hasPriceData`·`prose`는 생략하면 해당 게이트를 건너뛰고, `hasSnapshot`은 degraded
+ * 분기에서만 읽힌다(생략하면 스냅샷 없음으로 보아 degraded는 noindex).
+ */
 export interface SymbolIndexabilityInput {
     symbol: string;
     assetInfo: AssetInfo | null;
@@ -56,8 +61,8 @@ export interface SymbolIndexabilityInput {
     hasPriceData?: boolean;
     /**
      * 이 탭의 산문 보유 상태 — **차트(`technical`)·뉴스(`news`) 탭만** 넘긴다. 이 둘은
-     * 종목 고유 텍스트가 AI 스냅샷 산문뿐이라(`SEO_RECOVERY_2026_09.md` §5 A3), 산문이 없으면
-     * 남는 건 제목·크롬·수치 요약이라 thin 페이지다.
+     * 종목 고유 텍스트가 AI 스냅샷 산문뿐이라, 산문이 없으면 남는 건 제목·크롬·수치
+     * 요약이라 thin 페이지다.
      *
      * `absent`면 화이트리스트와 무관하게 noindex(`no-prose`)다. 평가 순서는 degraded **다음**,
      * 화이트리스트 **앞**이다 — degraded는 스스로 스냅샷 유무를 보는 별도 규칙(
@@ -71,6 +76,7 @@ export interface SymbolIndexabilityInput {
     prose?: SnapshotProseState;
 }
 
+/** 어떤 게이트가 결론을 냈는지. 운영 코드는 `indexable`만 읽고, 사유는 테스트가 게이트 순서를 검증하는 데 쓴다. */
 type SymbolIndexabilityReason =
     | 'popular'
     | 'curated-crypto'
@@ -84,6 +90,7 @@ type SymbolIndexabilityReason =
     | 'longtail-default-blocked'
     | 'locale-not-ready';
 
+/** 색인 가능 여부와 그 사유. 소비자는 `indexable`로 robots 메타를 가른다. */
 export interface SymbolIndexabilityDecision {
     indexable: boolean;
     reason: SymbolIndexabilityReason;

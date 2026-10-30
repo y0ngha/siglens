@@ -218,4 +218,64 @@ describe('useFinancialsAnalysis', () => {
         });
         expect(mockSubmit).toHaveBeenCalledTimes(2);
     });
+
+    describe('받아 둔 결과가 있을 때의 재실행', () => {
+        async function renderDoneHook() {
+            mockSubmit.mockResolvedValueOnce({
+                status: 'cached',
+                result: FINANCIALS_RESULT,
+            });
+            const hook = renderHook(
+                () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
+                { wrapper: makeWrapper() }
+            );
+            await waitFor(() =>
+                expect(hook.result.current.status).toBe('done')
+            );
+            return hook;
+        }
+
+        it('재실행이 실패해도 보이던 결과를 오류 카드로 바꾸지 않는다', async () => {
+            const { result } = await renderDoneHook();
+            mockSubmit.mockRejectedValueOnce(new Error('temporary failure'));
+
+            act(() => {
+                result.current.trigger();
+            });
+            await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(2));
+            await act(async () => {});
+
+            expect(result.current.status).toBe('done');
+            if (result.current.status !== 'done') {
+                throw new Error('expected done state');
+            }
+            expect(result.current.result).toEqual(FINANCIALS_RESULT);
+        });
+
+        it('재실행이 도는 동안은 loading, 성공하면 새 결과로 done이다', async () => {
+            const { result } = await renderDoneHook();
+            let resolveRerun: (value: unknown) => void = () => undefined;
+            mockSubmit.mockReturnValueOnce(
+                new Promise(resolve => {
+                    resolveRerun = resolve;
+                })
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+            await waitFor(() => expect(result.current.status).toBe('loading'));
+
+            const rerun = { ...FINANCIALS_RESULT, overallConclusionKo: '갱신' };
+            await act(async () => {
+                resolveRerun({ status: 'done', result: rerun });
+            });
+
+            await waitFor(() => expect(result.current.status).toBe('done'));
+            if (result.current.status !== 'done') {
+                throw new Error('expected done state');
+            }
+            expect(result.current.result).toEqual(rerun);
+        });
+    });
 });

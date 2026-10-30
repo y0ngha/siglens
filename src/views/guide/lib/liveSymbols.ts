@@ -1,3 +1,7 @@
+/**
+ * 가이드 항목의 "지금 이 신호가 나온 종목" 모듈이 보여 줄 종목 고르기 — 스캐너 신호와 장 마감 스냅샷의
+ * 패턴 적중을 합쳐 시장별로 줄 세운다(순수 함수).
+ */
 import type {
     SectorSignalsResult,
     SignalType,
@@ -8,6 +12,7 @@ import { GUIDE_PATH_BY_TRIGGER } from '@/shared/config/guideLinks.generated';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
 
+/** 모듈이 나눠 보여 주는 주식 시장. 그룹은 `us` → `kr` 순으로 나온다(`selectLiveSymbols`). */
 export type LiveMarket = 'us' | 'kr';
 
 /**
@@ -23,6 +28,7 @@ export type LiveMatch =
       }
     | { readonly kind: 'pattern'; readonly guidePath: string };
 
+/** 모듈의 종목 한 행. 스캐너·스냅샷 두 데이터원을 한 모양으로 맞춰 컴포넌트가 출처를 몰라도 그리게 한다. */
 export interface LiveSymbolRow {
     readonly symbol: string;
     /** 한국어 이름. 스캐너 행은 스캐너가 준 이름, 스냅샷 행은 이름을 모른다(null) — 로더가 {@link withDisplayNames}로 채운다. */
@@ -36,17 +42,20 @@ export interface LiveSymbolRow {
     readonly match: LiveMatch | null;
 }
 
+/** 한 시장의 행 묶음. 행이 없는 시장은 그룹을 만들지 않아, 컴포넌트는 빈 시장 제목을 걸러낼 필요가 없다. */
 export interface LiveSymbolGroup {
     readonly market: LiveMarket;
     readonly rows: readonly LiveSymbolRow[];
 }
 
+/** 항목이 찾는 대상 — 스캐너 신호 종류와 차트 패턴 id. 로더가 패턴 id가 있을 때만 스냅샷을 조회하는 근거다. */
 export interface LiveTargets {
     readonly signalTypes: readonly SignalType[];
     /** core 차트 패턴 id(`PatternSummary.patternName`, 예: `double_bottom`). */
     readonly patternNames: readonly string[];
 }
 
+/** 장 마감 스냅샷 한 건에서 맞은 패턴. 로더가 캐시에 담는 모양이기도 해, 필드를 바꾸면 캐시 키 버전도 올린다. */
 export interface SnapshotPatternHit {
     readonly symbol: string;
     readonly generatedAt: string;
@@ -54,11 +63,13 @@ export interface SnapshotPatternHit {
     readonly detectedPatterns: readonly string[];
 }
 
+/** 한 시장의 스캐너 결과. 로더는 스캐너를 못 읽은 시장을 빼고 넘긴다. */
 export interface ScannerInput {
     readonly market: LiveMarket;
     readonly result: SectorSignalsResult;
 }
 
+/** {@link selectLiveSymbols}의 입력. */
 export interface SelectLiveSymbolsInput {
     readonly targets: LiveTargets;
     readonly scanner: readonly ScannerInput[];
@@ -255,19 +266,19 @@ export function selectLiveSymbols({
         scannerRanked.map(({ row }) => [row.symbol, row])
     );
 
-    const seen = new Set<string>();
-    const deduped = ranked
-        .toSorted(
-            (a, b) =>
-                rank[a.phase] - rank[b.phase] ||
-                Math.abs(b.row.changePercent ?? 0) -
-                    Math.abs(a.row.changePercent ?? 0)
-        )
-        .filter(({ row }) => {
-            if (seen.has(row.symbol)) return false;
-            seen.add(row.symbol);
-            return true;
-        })
+    const sorted = ranked.toSorted(
+        (a, b) =>
+            rank[a.phase] - rank[b.phase] ||
+            Math.abs(b.row.changePercent ?? 0) -
+                Math.abs(a.row.changePercent ?? 0)
+    );
+    // 같은 종목은 정렬상 가장 앞선 행 하나만 남긴다. 거꾸로 채운 Map은 뒤 항목을 앞 항목이
+    // 덮어써 종목마다 첫 행이 남고, 거르기는 정렬 순서를 그대로 지킨다(O(n)).
+    const firstBySymbol = new Map(
+        sorted.toReversed().map(entry => [entry.row.symbol, entry])
+    );
+    const deduped = sorted
+        .filter(entry => firstBySymbol.get(entry.row.symbol) === entry)
         .map(({ row }) => {
             const known = scannerBySymbol.get(row.symbol);
             return known === undefined || known === row

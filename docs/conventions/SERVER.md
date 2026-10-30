@@ -298,6 +298,15 @@ that shape, and pin it with a test.
 
 - ❌ Adding `.filter((row) => row?.title)` to a news mapper that used to throw on a title-less row.
 - ✅ Keep the throw (or return the error result); the surrounding catch logs and degrades per SA-4.
+<a id="SA-20"></a>
+
+#### SA-20 — Validators check semantic validity, not only shape
+
+A format regex proves the shape, not that the value exists. Validate the meaning too (a real calendar date, an email
+that parses, an error code that something actually emits) before acting on it or showing a success state.
+
+- ❌ `/^\d{4}-\d{2}-\d{2}$/.test(date)` accepts `2026-13-45`.
+- ✅ The pattern check is followed by a calendar check (round-trip the parsed date) before the value is used.
 
 ---
 

@@ -148,8 +148,8 @@ describe('getCachedMarketDataProvider', () => {
 
     /**
      * [회귀] 어느 세션 스펙이 넘어가는지는 어떤 테스트도 안 잡고 있었다 —
-     * KR 분기에 `US_EQUITY_SESSION`을 넣어도 이 디렉터리 70건이 전부 통과했다
-     * (감사 라운드 12). 기존 단언은 싱글톤 동일성과 `instanceof`뿐이다.
+     * KR 분기에 `US_EQUITY_SESSION`을 넣어도 이 디렉터리 70건이 전부 통과했다.
+     * 기존 단언은 싱글톤 동일성과 `instanceof`뿐이다.
      *
      * `session`은 `computeBarsEffectiveTtl`과 `lastClosedSessionDate`(EOD 꼬리)에
      * 쓰인다. 미국 스펙이 들어가면 KST 낮 시간대에 이미 닫힌 KRX를 열려 있다고

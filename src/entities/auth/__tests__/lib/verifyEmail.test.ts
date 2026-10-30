@@ -5,7 +5,7 @@ import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
-} from '@/entities/email-token/api';
+} from '@/entities/email-token/types';
 
 const VALID_CODE = '123456';
 const STORED_HASH = hashEmailToken(VALID_CODE);
@@ -83,6 +83,27 @@ describe('verifyEmail', () => {
 
         const result = await verifyEmail(
             { email: 'user@example.com', code: '999999' },
+            dependencies
+        );
+
+        expect(result).toEqual({
+            ok: false,
+            error: {
+                code: 'invalid_verification_code',
+                field: 'code',
+                message: '인증 코드가 올바르지 않습니다.',
+            },
+        });
+        expect(setToken).not.toHaveBeenCalled();
+    });
+
+    it('returns invalid_verification_code (not expired) when the stored hash is not a sha256 hex digest', async () => {
+        const { dependencies, setToken } = makeDependencies({
+            stored: { status: 'pending', tokenHash: 'not-a-hex-digest' },
+        });
+
+        const result = await verifyEmail(
+            { email: 'user@example.com', code: VALID_CODE },
             dependencies
         );
 

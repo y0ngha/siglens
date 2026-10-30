@@ -78,9 +78,9 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
         );
     }
 
-    // 통화는 심볼에서 유도한다(currencyForSymbol) — 이 칩은 헤더에 상주해 모든 KR
-    // 탭에서 노출되므로, 하드코딩된 `$`는 원화 종목(005930.KS)에도 달러 기호를
-    // 찍어 접근 가능한 이름(aria)에까지 오표기가 새는 버그였다.
+    // 통화는 심볼에서 유도한다(currencyForSymbol) — 이 칩은 헤더에 상주해 KR
+    // 종목(005930.KS)에서도 노출되고, 라벨이 곧 버튼의 접근 가능한 이름이라 통화
+    // 기호가 틀리면 스크린리더에도 그대로 틀리게 읽힌다.
     const currencyPrefix = currencyForSymbol(symbol) === 'KRW' ? '₩' : '$';
     const label =
         holding === null

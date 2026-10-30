@@ -5,6 +5,7 @@ import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useUrlSearchParam } from '@/shared/hooks/useUrlSearchParam';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
+import { canonicalTimeframeUrl } from '../utils/canonicalTimeframeUrl';
 
 /**
  * URL의 `tf` 쿼리에서 timeframe을 읽어 검증한다. 서버가 아닌 **client**에서 읽어야
@@ -57,7 +58,12 @@ export function useTimeframeFromUrl(
         window.history.replaceState(
             null,
             '',
-            toLocalePath(`/${symbol}/overall?tf=${DEFAULT_TIMEFRAME}`)
+            canonicalTimeframeUrl(
+                toLocalePath(`/${symbol}/overall`),
+                window.location.search,
+                window.location.hash,
+                DEFAULT_TIMEFRAME
+            )
         );
     }, [isFreeTier, isTierHydrated, symbol, tfParam, toLocalePath]);
 

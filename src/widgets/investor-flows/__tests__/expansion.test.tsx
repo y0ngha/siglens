@@ -5,7 +5,7 @@ import type {
     InvestorFlowsSnapshot,
     SqueezeRiskScore,
 } from '@y0ngha/siglens-core';
-import type { CollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import { DilutionSection } from '../sections/DilutionSection';
 import { FailsToDeliverBlock } from '../sections/FailsToDeliverBlock';
 import { OptionsPositionsBlock } from '../sections/OptionsPositionsBlock';
@@ -343,7 +343,7 @@ describe('ProposedSalesBlock', () => {
             0
         );
         const link = within(block).getAllByRole('link', {
-            name: '공시 보기',
+            name: 'Fixture Officer F 매도 예정 신고 공시 보기',
         })[0];
         expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         expect(link).toHaveAttribute('target', '_blank');
@@ -356,7 +356,9 @@ describe('ProposedSalesBlock', () => {
                 collecting={false}
             />
         );
-        expect(screen.queryByRole('link', { name: '공시 보기' })).toBeNull();
+        expect(
+            screen.queryByRole('link', { name: /매도 예정 신고 공시 보기/ })
+        ).toBeNull();
     });
 
     it('separates "none on file", "could not load" and "collecting"', () => {
@@ -420,9 +422,14 @@ describe('DilutionSection', () => {
             expect(within(section).getByText(label)).toBeInTheDocument();
         }
         expect(within(section).getByText('424B5')).toBeInTheDocument();
+        const links = within(section).getAllByRole('link', {
+            name: /SEC 원문/,
+        });
+        expect(links).toHaveLength(3);
+        // 같은 글자의 링크가 여럿이어도 이름(양식·제출일)으로 서로 구분된다.
         expect(
-            within(section).getAllByRole('link', { name: 'SEC 원문' })
-        ).toHaveLength(3);
+            new Set(links.map(link => link.getAttribute('aria-label')))
+        ).toHaveProperty('size', 3);
         expect(
             within(section).getByText(
                 '점수는 최근 180일(2026-04-19 ~ 2026-10-16) 공시로 매겨요.'

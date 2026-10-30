@@ -342,6 +342,41 @@ describe('MessageList', () => {
         ).toBeInTheDocument();
     });
 
+    it('편집 중 스트리밍이 시작되면 폼을 닫고, 끝난 뒤에도 저절로 다시 열지 않는다', () => {
+        const userTurn: AgentUiMessage = {
+            id: '1',
+            role: 'user',
+            content: 'q',
+            tools: [],
+            status: 'complete',
+            seq: 1,
+        };
+        const props = {
+            siteUrl: 'https://siglens.io',
+            localePrefix: '',
+            messages: [userTurn],
+            onRegenerate: vi.fn(),
+            onEdit: vi.fn(),
+            onSend: vi.fn(),
+        };
+        const { rerender } = wrap(<MessageList {...props} streaming={false} />);
+        fireEvent.click(screen.getByRole('button', { name: /수정/ }));
+        expect(screen.getByRole('textbox')).toBeInTheDocument();
+
+        const rewrap = (streaming: boolean) =>
+            rerender(
+                <QueryClientProvider client={new QueryClient()}>
+                    <NextIntlClientProvider locale="ko" messages={ko}>
+                        <MessageList {...props} streaming={streaming} />
+                    </NextIntlClientProvider>
+                </QueryClientProvider>
+            );
+        rewrap(true);
+        expect(screen.queryByRole('textbox')).toBeNull();
+        rewrap(false);
+        expect(screen.queryByRole('textbox')).toBeNull();
+    });
+
     it('copy button tolerates a missing Clipboard API (non-secure context) without throwing', () => {
         const original = navigator.clipboard;
         // @ts-expect-error -- simulating a non-secure context where the Clipboard API is undefined

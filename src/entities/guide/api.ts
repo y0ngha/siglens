@@ -17,6 +17,7 @@ import type { GuideCatalog } from './types';
 /** 가이드 데이터 캐시 태그·키 접두사. */
 export const GUIDE_CACHE_TAG = 'guide';
 
+/** 요청 로케일 + ko 행을 한 번의 조인으로 읽어 카탈로그로 만든다(캐시 안쪽 본체). */
 async function fetchGuideCatalog(locale: Locale): Promise<GuideCatalog> {
     const { db } = getDatabaseClient();
     const locales =
@@ -62,9 +63,9 @@ async function fetchGuideCatalog(locale: Locale): Promise<GuideCatalog> {
  * 번역 행이 없는 항목은 ko 내용으로 채우고 `isFallback`을 세운다.
  *
  * **조회는 `unstable_cache` 안에서 한다**(`src/app/CLAUDE.md` 축 1). 가이드 페이지는 ISR
- * 정적 렌더라, 캐시 밖 DB 조회는 `noStoreQueryLogger`가 렌더를 동적으로 바꿔 ISR이 깨진다
- * (약관 페이지 v0.96.0 장애와 같은 경로). TTL은 페이지 revalidate(24시간)와 같게 둔다 —
- * 더 짧으면 그 주기로 페이지 전체가 재생성된다. 에이전트 도구(`get_guide`)도 같은 캐시를
+ * 정적 렌더라, 캐시 밖 DB 조회는 `noStoreQueryLogger`가 렌더를 동적으로 바꿔 ISR이
+ * 깨진다. TTL은 페이지 revalidate(24시간)와 같게 둔다 — 더 짧으면 그 주기로 페이지
+ * 전체가 재생성된다. 에이전트 도구(`get_guide`)도 같은 캐시를
  * 쓰므로 호출마다 본문 전체를 다시 읽지 않는다.
  *
  * 실패는 캐시 **밖**에서 잡는다 — 안에서 `null`을 돌려주면 장애가 하루 동안 캐시된다.

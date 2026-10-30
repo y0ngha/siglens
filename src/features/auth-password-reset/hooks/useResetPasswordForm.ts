@@ -10,6 +10,10 @@ type UseResetPasswordFormReturn = ReturnType<
     typeof useActionState<ResetPasswordFormState, FormData>
 >;
 
+/**
+ * `ResetPasswordForm`의 `useActionState` 연결. 성공은 액션의 리디렉트라
+ * 상태에는 실패 오류만 남는다.
+ */
 export function useResetPasswordForm(): UseResetPasswordFormReturn {
     return useActionState<ResetPasswordFormState, FormData>(
         confirmPasswordResetAction,
