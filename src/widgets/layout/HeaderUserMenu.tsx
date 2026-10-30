@@ -1,200 +1,64 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { LogoutButton } from '@/features/auth-logout/ui/LogoutButton';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
-import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
-import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
-import { cn } from '@/shared/lib/cn';
+import { useId } from 'react';
 import { authNextQuery } from '@/shared/lib/auth/redirect';
-import type { Tier } from '@y0ngha/siglens-core';
-import Image from 'next/image';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { useRef } from 'react';
-
-const TIER_DOT_COLOR: Record<Tier, string> = {
-    free: 'bg-secondary-500',
-    member: 'bg-primary-500',
-    pro: 'bg-ui-warning',
-};
-
-/** Minimal serializable user shape passed across the RSC boundary; decoupled from `AuthUserRecord` to avoid shipping Date fields the menu doesn't read. */
-export interface HeaderUserMenuUser {
-    readonly email: string;
-    readonly name: string | null;
-    readonly tier: Tier;
-    readonly avatarUrl: string | null;
-}
+import { usePopoverDisclosure } from './hooks/usePopoverDisclosure';
+import type { HeaderUserMenuUser } from './types';
+import { GuestAuthLinks } from './ui/user-menu/GuestAuthLinks';
+import { UserAvatarButton } from './ui/user-menu/UserAvatarButton';
+import { UserMenuPanel } from './ui/user-menu/UserMenuPanel';
+import { UserMenuSkeleton } from './ui/user-menu/UserMenuSkeleton';
 
 interface HeaderUserMenuProps {
-    /** Current user; null when guest. Fetched server-side in Header. */
+    /** 현재 사용자. 비로그인이면 `null`. 헤더에서 서버 측으로 조회한다. */
     readonly currentUser: HeaderUserMenuUser | null;
     /**
-     * When true, renders a skeleton placeholder instead of login/signup buttons.
-     * Used as the inner Suspense fallback when the hint cookie signals the user
-     * is likely logged in while the DB lookup is still in flight.
+     * `true`면 로그인/회원가입 버튼 대신 스켈레톤을 그린다. 힌트 쿠키가 로그인 상태를
+     * 가리키는데 DB 조회가 아직 진행 중일 때의 안쪽 Suspense fallback이다.
      */
     readonly loading?: boolean;
     /**
-     * SSO handoff query appended to `/login`/`/signup` hrefs (e.g.
-     * `/api/auth/handoff?to=ai&next=%2F`), so a visitor who reached the main
-     * host's header from ai.siglens.io returns there after signing in.
-     * Undefined on the main host — hrefs stay plain `/login`/`/signup`.
+     * `/login`·`/signup` href에 붙는 SSO handoff 쿼리(예: `/api/auth/handoff?to=ai&next=%2F`).
+     * ai 호스트에서 온 방문자가 로그인 뒤 그곳으로 돌아오게 한다. 메인 호스트에서는 `undefined`.
      */
     readonly authNext?: string;
 }
 
-function getInitial(user: HeaderUserMenuUser): string {
-    const source = user.name && user.name.length > 0 ? user.name : user.email;
-    return source.charAt(0).toUpperCase();
-}
-
+/**
+ * 헤더 우측 계정 영역 — 스켈레톤 / 게스트 CTA / 로그인 사용자 메뉴 중 하나를 그린다.
+ *
+ * 사용자 메뉴는 Disclosure Navigation 패턴이다: 아바타 버튼이 `aria-expanded`로 상태를
+ * 알리고 패널은 평범한 링크 목록이다. Escape로 닫으면 포커스가 패널 안에 있었을 때만 버튼으로
+ * 되돌린다.
+ */
 export function HeaderUserMenu({
     currentUser,
     loading,
     authNext,
 }: HeaderUserMenuProps) {
-    const t = useTranslations('widgets.layout');
     const authQuery = authNextQuery(authNext);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const { isOpen, close, toggle } = usePopoverToggle(containerRef);
-    useEscapeKey(close, isOpen);
+    const { containerRef, triggerRef, isOpen, close, toggle } =
+        usePopoverDisclosure();
+    const panelId = useId();
 
-    if (loading) {
-        return (
-            <div
-                role="status"
-                aria-label={t('HeaderUserMenu.ce5200')}
-                className="size-10 animate-pulse rounded-full bg-secondary-700 motion-reduce:animate-none"
-            />
-        );
-    }
+    if (loading) return <UserMenuSkeleton />;
+    if (!currentUser) return <GuestAuthLinks authQuery={authQuery} />;
 
-    if (!currentUser) {
-        return (
-            <nav
-                aria-label={t('HeaderUserMenu.ce7156')}
-                // 회원 추정(`<html data-auth-hint="member">`)이면 첫 페인트부터 숨긴다 —
-                // 하이드레이션 뒤에는 어차피 스켈레톤이 이 자리를 차지한다(`globals.css`).
-                data-header-guest-cta=""
-                className="flex items-center gap-2"
-            >
-                {/*
-                    전역 헤더의 인증 CTA — 비로그인 방문자의 **모든** 페이지뷰에 렌더되므로
-                    NAV_VERTICALS·로고와 같은 범주다. 전환 행동이라 prefetch를 남길지 검토했으나
-                    실측이 반대였다(2026-08-13, 12h): `/login` 히트율 22.2%(miss 54),
-                    `/signup` 44.0%(miss 38) — 진입 페이지별 `_rsc` 해시 파편화로 캐시가
-                    재사용되지 않고 미스만 쌓이고 있었다. 두 페이지 HTML은 엣지에 캐시돼
-                    있어 클릭 시점 fetch로도 충분히 빠르다.
-                    (docs/architecture/CDN_CACHING.md §1)
-                */}
-                <Link
-                    href={`/login${authQuery}`}
-                    prefetch={false}
-                    className="hidden min-h-11 items-center rounded px-3 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:inline-flex"
-                >
-                    {t('HeaderUserMenu.e225a6')}
-                </Link>
-                <Link
-                    href={`/signup${authQuery}`}
-                    prefetch={false}
-                    /* 모바일에서는 숨긴다 — 좁은 한 줄에 검색·언어·테마·
-                       햄버거가 이미 서 있다. 진입점은 드로어 바닥의 같은
-                       CTA(`HeaderMobileMenu`)가 맡는다. */
-                    className="hidden min-h-11 items-center rounded bg-primary-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:inline-flex"
-                >
-                    {t('HeaderUserMenu.ecb4cc')}
-                </Link>
-            </nav>
-        );
-    }
-
-    const initial = getInitial(currentUser);
-    const tierColor = TIER_DOT_COLOR[currentUser.tier];
-    const tierLabel = TIER_LABEL[currentUser.tier];
     return (
         <div ref={containerRef} className="relative">
-            <button
-                type="button"
+            <UserAvatarButton
+                ref={triggerRef}
+                user={currentUser}
+                isOpen={isOpen}
+                panelId={panelId}
                 onClick={toggle}
-                aria-haspopup="menu"
-                aria-expanded={isOpen}
-                aria-label={t('HeaderUserMenu.menuLabel', { v0: tierLabel })}
-                className="relative flex size-10 items-center justify-center rounded-full bg-secondary-800 text-sm font-semibold text-secondary-100 transition-colors hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-            >
-                {currentUser.avatarUrl ? (
-                    <Image
-                        src={currentUser.avatarUrl}
-                        alt={t('HeaderUserMenu.3a7424')}
-                        width={40}
-                        height={40}
-                        className="size-full rounded-full object-cover"
-                    />
-                ) : (
-                    <span aria-hidden>{initial}</span>
-                )}
-                <span
-                    aria-hidden
-                    className={cn(
-                        'ring-secondary-900 absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-2',
-                        tierColor
-                    )}
-                />
-            </button>
+            />
             {isOpen ? (
-                <div
-                    role="menu"
-                    aria-label={t('HeaderUserMenu.b9a45e')}
-                    className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-secondary-700 bg-secondary-900 p-2 shadow-2xl"
-                >
-                    <div className="border-b border-secondary-700 px-3 py-2 text-sm">
-                        <p className="font-semibold text-secondary-50">
-                            {currentUser.name ?? currentUser.email}
-                        </p>
-                        {currentUser.name ? (
-                            <p className="text-xs text-secondary-400">
-                                {currentUser.email}
-                            </p>
-                        ) : null}
-                        <p className="mt-1 flex items-center gap-1.5 text-xs text-secondary-400">
-                            <span
-                                aria-hidden
-                                className={cn(
-                                    'inline-block size-2 rounded-full',
-                                    tierColor
-                                )}
-                            />
-                            <span>{tierLabel}</span>
-                        </p>
-                    </div>
-                    <div role="none" className="mt-1">
-                        <Link
-                            href="/portfolio"
-                            role="menuitem"
-                            onClick={close}
-                            className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        >
-                            {t('HeaderUserMenu.myPortfolio')}
-                        </Link>
-                        <Link
-                            href="/email-report"
-                            role="menuitem"
-                            onClick={close}
-                            className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        >
-                            {t('HeaderUserMenu.411c76')}
-                        </Link>
-                        <Link
-                            href="/account"
-                            role="menuitem"
-                            onClick={close}
-                            className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        >
-                            {t('HeaderUserMenu.622fae')}
-                        </Link>
-                        <LogoutButton />
-                    </div>
-                </div>
+                <UserMenuPanel
+                    id={panelId}
+                    user={currentUser}
+                    onNavigate={close}
+                />
             ) : null}
         </div>
     );

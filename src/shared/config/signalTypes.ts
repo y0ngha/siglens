@@ -48,6 +48,8 @@ const SIGNAL_TYPE_SET = {
     support_proximity_bullish: true,
 } as const satisfies Record<SignalType, true>;
 
+// safe: `Object.keys`는 항상 `string[]`로 타이핑되지만 이 객체는 `Record<SignalType, true>`를
+// 만족해야 컴파일되므로 키가 정확히 `SignalType` 전체다.
 export const SIGNAL_TYPES = Object.keys(
     SIGNAL_TYPE_SET
 ) as readonly SignalType[];

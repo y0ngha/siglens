@@ -28,10 +28,8 @@ import {
     INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_DART_LIST_CURSOR,
 } from '../../lib/investorFlowsPolicy';
-import {
-    runDartFilingsIngest,
-    type IngestDartFilingsDeps,
-} from '../../server/ingestDartFilings';
+import { runDartFilingsIngest } from '../../server/ingestDartFilings';
+import type { IngestDartFilingsDeps } from '../../server/ingestDartFilingsTypes';
 import type {
     DartInsiderReportRow,
     DartMajorHoldingRow,

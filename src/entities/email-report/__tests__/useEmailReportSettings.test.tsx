@@ -62,6 +62,32 @@ describe('useEmailReportSettings', () => {
         clients.splice(0).forEach(c => c.clear());
     });
 
+    it('refetch는 리렌더에도 같은 참조를 유지한다', async () => {
+        const { result, rerender } = renderHook(
+            () => useEmailReportSettings(),
+            { wrapper: makeWrapper() }
+        );
+        await waitFor(() => expect(result.current.isPending).toBe(false));
+        const first = result.current.refetch;
+
+        rerender();
+
+        expect(result.current.refetch).toBe(first);
+    });
+
+    it('refetch를 부르면 설정을 다시 조회한다', async () => {
+        const { result } = renderHook(() => useEmailReportSettings(), {
+            wrapper: makeWrapper(),
+        });
+        await waitFor(() => expect(result.current.isPending).toBe(false));
+
+        act(() => {
+            result.current.refetch();
+        });
+
+        await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2));
+    });
+
     it('조회한 설정을 돌려준다', async () => {
         const { result } = renderHook(() => useEmailReportSettings(), {
             wrapper: makeWrapper(),

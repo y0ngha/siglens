@@ -2,6 +2,7 @@ import 'server-only';
 import type { EmailReportSubscriptionRepository } from '@/shared/db/types';
 import { verifyReportValue } from './lib/reportSignature';
 
+/** `invalid`는 서명 불일치·비밀값 없음·형식 오류를 구분하지 않는다 — 호출자가 이유를 알 필요가 없다. */
 export type UnsubscribeOutcome = 'ok' | 'invalid';
 
 const UUID_RE =

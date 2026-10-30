@@ -34,17 +34,49 @@ describe('buildInsiderTable', () => {
         expect(buildInsiderTable(many).rows).toHaveLength(MAX_INSIDER_ROWS);
     });
 
+    it('상한 밖으로 빠진 매수·매도 건수를 omittedCount로 알린다(other는 포함하지 않는다)', () => {
+        const traded = Array.from({ length: MAX_INSIDER_ROWS + 5 }, (_, i) =>
+            makeTransaction({
+                date: `2026-09-${String((i % 28) + 1).padStart(2, '0')}`,
+            })
+        );
+        const table = buildInsiderTable([
+            ...traded,
+            makeTransaction({ date: '2026-09-30', type: 'other' }),
+        ]);
+        expect(table.omittedCount).toBe(5);
+        expect(table.omittedOtherCount).toBe(1);
+        expect(buildInsiderTable(traded.slice(0, 3)).omittedCount).toBe(0);
+    });
+
+    it('상한은 창과 무관하게 최신 거래일 순으로 먼저 자른다 — 가장 오래된 거래가 빠진다', () => {
+        const window = { days: 90, from: '2026-07-18', to: '2026-10-16' };
+        const inWindow = Array.from({ length: MAX_INSIDER_ROWS }, () =>
+            makeTransaction({ date: '2026-09-01' })
+        );
+        const table = buildInsiderTable(
+            [...inWindow, makeTransaction({ date: '2026-04-15' })],
+            window
+        );
+        expect(table.rows).toHaveLength(MAX_INSIDER_ROWS);
+        expect(table.beforeWindowRows).toEqual([]);
+        expect(table.omittedCount).toBe(1);
+    });
+
     it('빈 입력은 빈 표다', () => {
         expect(buildInsiderTable([])).toEqual({
             rows: [],
-            outsideWindowRows: [],
+            beforeWindowRows: [],
+            afterWindowRows: [],
             omittedOtherCount: 0,
+            omittedCount: 0,
         });
     });
 
-    it('점수 창 밖(창 시작 전)의 거래는 outsideWindowRows로 나눈다 — 창 양 끝은 안이다', () => {
+    it('점수 창 밖의 거래는 창 시작 전과 끝난 뒤로 나눈다 — 창 양 끝은 안이다', () => {
         const table = buildInsiderTable(
             [
+                makeTransaction({ date: '2026-10-17' }),
                 makeTransaction({ date: '2026-10-16' }),
                 makeTransaction({ date: '2026-07-18' }),
                 makeTransaction({ date: '2026-07-17' }),
@@ -56,10 +88,11 @@ describe('buildInsiderTable', () => {
             '2026-10-16',
             '2026-07-18',
         ]);
-        expect(table.outsideWindowRows.map(r => r.date)).toEqual([
+        expect(table.beforeWindowRows.map(r => r.date)).toEqual([
             '2026-07-17',
             '2026-04-15',
         ]);
+        expect(table.afterWindowRows.map(r => r.date)).toEqual(['2026-10-17']);
     });
 
     it('창을 모르면(null·끝 null) 나누지 않는다', () => {
@@ -67,11 +100,16 @@ describe('buildInsiderTable', () => {
             makeTransaction({ date: '2026-10-16' }),
             makeTransaction({ date: '2026-01-02' }),
         ];
-        expect(buildInsiderTable(txs).outsideWindowRows).toEqual([]);
-        expect(
-            buildInsiderTable(txs, { days: 90, from: null, to: null })
-                .outsideWindowRows
-        ).toEqual([]);
+        const unknownWindow = buildInsiderTable(txs, {
+            days: 90,
+            from: null,
+            to: null,
+        });
+        expect(buildInsiderTable(txs).beforeWindowRows).toEqual([]);
+        expect(buildInsiderTable(txs).afterWindowRows).toEqual([]);
+        expect(unknownWindow.beforeWindowRows).toEqual([]);
+        expect(unknownWindow.afterWindowRows).toEqual([]);
+        expect(unknownWindow.rows).toHaveLength(2);
     });
 });
 

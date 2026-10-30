@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 종목 페이지의 "현재 공유할 분석" 레지스트리. 활성 탭 위젯이 자기 분석 상태를
+ * 등록하고, 헤더의 ShareButton(`useShareFlow`)이 그 등록값을 읽는다.
+ */
 import {
     createContext,
     useCallback,
@@ -17,6 +21,7 @@ import type {
 import type { ShareableKind } from '@/shared/db/constants';
 import type { Bar } from '@y0ngha/siglens-core';
 
+/** 공유 플로우가 이해하는 분석 상태. 위젯 고유 상태는 `mapAnalysisStatus`/`deriveChartStatus`로 여기에 맞춘다. */
 export type ShareableStatus =
     | 'idle'
     | 'pending'
@@ -24,6 +29,7 @@ export type ShareableStatus =
     | 'error'
     | 'unavailable';
 
+/** 활성 탭 위젯이 공유 플로우에 넘기는 분석 상태·결과·재실행 콜백. */
 export interface ShareableRegistration<
     K extends ShareableKind = ShareableKind,
 > {
@@ -53,11 +59,14 @@ interface ShareableContextValue {
 
 const Ctx = createContext<ShareableContextValue | null>(null);
 
+interface ShareableAnalysisProviderProps {
+    children: ReactNode;
+}
+
+/** `[symbol]` 레이아웃에 한 번 두어 탭 위젯과 헤더 공유 버튼이 등록값을 공유하게 한다. */
 export function ShareableAnalysisProvider({
     children,
-}: {
-    children: ReactNode;
-}) {
+}: ShareableAnalysisProviderProps) {
     const [current, setCurrent] = useState<ShareableRegistration | null>(null);
     const register = useCallback(
         (reg: ShareableRegistration | null) => setCurrent(reg),
@@ -87,11 +96,10 @@ export function useShareable(): ShareableRegistration | null {
  * update (the analysis result / status transitions accompany a new bars fetch).
  *
  * Intentional design: chartBars-only updates (bars changing but status/result
- * unchanged) do NOT re-trigger registration. This is acceptable for the share flow
- * because (a) bars always change in concert with status/result transitions in
- * practice, and (b) the share snapshot is immutable once created — stale bars at
- * registration time are low-risk and the snapshot captures bars at share-click time
- * via the ref (not at registration time).
+ * unchanged) do NOT re-trigger registration, so a share sends the bars captured
+ * at the last registration, not the bars on screen at click time. This is
+ * acceptable because bars change in concert with status/result transitions in
+ * practice, and those bars are the ones the registered analysis was read from.
  */
 export function useRegisterShareable(reg: ShareableRegistration): void {
     const ctx = useContext(Ctx);

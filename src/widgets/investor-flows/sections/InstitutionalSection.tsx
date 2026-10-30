@@ -1,32 +1,27 @@
-import type { ReactNode } from 'react';
+/**
+ * 기관 매수·매도(13F) 섹션.
+ */
 import { useTranslations } from 'next-intl';
 import type {
     InstitutionalMetrics,
     InstitutionalSnapshot,
 } from '@y0ngha/siglens-core';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { QuarterFlowChart } from '../charts/QuarterFlowChart';
-import { TrendLineChart } from '../charts/TrendLineChart';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import {
-    formatCompact,
-    formatInteger,
-    formatPeriodShort,
-    formatSignedCompact,
-} from '../utils/flowFormat';
-import {
+    buildHoldersTrend,
     buildQuarterBars,
     buildSplitComparison,
     findPartialQuarter,
-    flowDirection,
-    type FlowDirection,
 } from '../utils/institutional';
+import { QuarterFlowChart } from '../ui/charts/QuarterFlowChart';
+import { HoldersTrendChart } from '../ui/institutional/HoldersTrendChart';
+import { PartialQuarterNote } from '../ui/institutional/PartialQuarterNote';
 import { ChangeSplitCard } from './ChangeSplitCard';
 import { CollectingNotice } from './CollectingNotice';
 import { OptionsPositionsBlock } from './OptionsPositionsBlock';
@@ -45,6 +40,80 @@ interface InstitutionalSectionProps {
     readonly collecting?: boolean;
 }
 
+/** 데이터가 있을 때의 본문: 분기 막대 → 보유 기관 수 추이 → 4분할 → 부분 집계 안내 → 상위 보유 기관 → 옵션. */
+function InstitutionalBody({
+    institutional,
+    metrics,
+}: Pick<InstitutionalSectionProps, 'institutional' | 'metrics'>) {
+    const t = useTranslations('widgets.investor-flows');
+    const { quarters, topHolders, topHoldersPeriod } = institutional;
+    const bars = buildQuarterBars(quarters);
+    const split = buildSplitComparison(quarters);
+    const partial = findPartialQuarter(
+        quarters,
+        split?.complete === true ? split.period : null
+    );
+    const holdersTrend = buildHoldersTrend(bars);
+    return (
+        <>
+            {bars.length > 0 && (
+                <div>
+                    <h3 className={cn('mb-1', HEADING_SUBSECTION)}>
+                        {t('flowChart.title')}
+                        <FlowTooltip term="netBuySell" />
+                    </h3>
+                    <p className="mb-3 text-xs text-secondary-400">
+                        {t('flowChart.caption')}
+                    </p>
+                    <QuarterFlowChart bars={bars} />
+                </div>
+            )}
+            {holdersTrend !== null && (
+                <HoldersTrendChart trend={holdersTrend} />
+            )}
+            {split !== null && <ChangeSplitCard comparison={split} />}
+            {partial !== null && <PartialQuarterNote quarter={partial} />}
+            {topHolders.length > 0 ? (
+                <TopHoldersList
+                    holders={topHolders}
+                    period={topHoldersPeriod}
+                />
+            ) : (
+                <p className="text-sm text-secondary-300">
+                    {t('holders.noData')}
+                </p>
+            )}
+            <OptionsPositionsBlock
+                quarters={institutional.options ?? []}
+                metrics={metrics}
+            />
+        </>
+    );
+}
+
+/** 수집 중이면(행이 있어도) 안내, 데이터가 없으면 "데이터 없음", 아니면 본문을 그린다. */
+function InstitutionalContent({
+    institutional,
+    metrics,
+    collecting,
+}: InstitutionalSectionProps) {
+    const t = useTranslations('widgets.investor-flows');
+    if (collecting) return <CollectingNotice variant="institutional" />;
+    const hasData =
+        institutional.quarters.length > 0 ||
+        institutional.topHolders.length > 0;
+    if (!hasData) {
+        return (
+            <p className="text-sm text-secondary-300">
+                {t('institutional.noData')}
+            </p>
+        );
+    }
+    return (
+        <InstitutionalBody institutional={institutional} metrics={metrics} />
+    );
+}
+
 /**
  * 기관 매수·매도(13F) 섹션 — "들어왔나(IN), 나갔나(OUT)"를 한눈에.
  *
@@ -61,39 +130,6 @@ export function InstitutionalSection({
     collecting = false,
 }: InstitutionalSectionProps) {
     const t = useTranslations('widgets.investor-flows');
-    const locale = useResolvedLocale();
-    const { quarters, topHolders, topHoldersPeriod } = institutional;
-    const bars = buildQuarterBars(quarters);
-    const split = buildSplitComparison(quarters);
-    const partial = findPartialQuarter(
-        quarters,
-        split?.complete === true ? split.period : null
-    );
-    // 진행 중 분기는 제출이 덜 모여 기관 수가 작다 — 추이 선에 넣으면 "급감"처럼 읽히므로 뺀다.
-    const holdersTrend = bars.filter(bar => bar.complete);
-    const hasData = quarters.length > 0 || topHolders.length > 0;
-    const partialFlow =
-        partial === null ? null : flowDirection(partial.netShareChange);
-    const directionLabels: Record<FlowDirection, string> = {
-        in: t('flowChart.in'),
-        out: t('flowChart.out'),
-        flat: t('flowChart.flat'),
-    };
-    const partialDirection =
-        partialFlow === null ? '' : directionLabels[partialFlow];
-
-    // 본문 대신 그리는 자리 — 수집 중이면(행이 있어도) 안내, 데이터가 없으면 "데이터 없음". 둘 다 아니면 `null`이라 본문을 그린다.
-    let emptyState: ReactNode = null;
-    if (collecting) {
-        emptyState = <CollectingNotice variant="institutional" />;
-    } else if (!hasData) {
-        emptyState = (
-            <p className="text-sm text-secondary-300">
-                {t('institutional.noData')}
-            </p>
-        );
-    }
-
     return (
         <section
             aria-labelledby={HEADING_ID}
@@ -108,102 +144,11 @@ export function InstitutionalSection({
                     {t('institutional.subtitle')}
                 </p>
             </div>
-
-            {emptyState ?? (
-                <>
-                    {bars.length > 0 && (
-                        <div>
-                            <h3 className={cn('mb-1', HEADING_SUBSECTION)}>
-                                {t('flowChart.title')}
-                                <FlowTooltip term="netBuySell" />
-                            </h3>
-                            <p className="mb-3 text-xs text-secondary-400">
-                                {t('flowChart.caption')}
-                            </p>
-                            <QuarterFlowChart bars={bars} />
-                        </div>
-                    )}
-
-                    {holdersTrend.length > 1 && (
-                        <div>
-                            <h3 className={cn('mb-1', HEADING_SUBSECTION)}>
-                                {t('holdersTrend.title')}
-                            </h3>
-                            <p className="mb-3 text-xs text-secondary-400">
-                                {t('holdersTrend.caption')}
-                            </p>
-                            <TrendLineChart
-                                values={holdersTrend.map(bar => bar.holders)}
-                                ariaLabel={t('holdersTrend.aria', {
-                                    from: formatInteger(
-                                        holdersTrend[0].holders,
-                                        locale
-                                    ),
-                                    to: formatInteger(
-                                        holdersTrend[holdersTrend.length - 1]
-                                            .holders,
-                                        locale
-                                    ),
-                                })}
-                                maxLabel={formatCompact(
-                                    Math.max(
-                                        ...holdersTrend.map(b => b.holders)
-                                    ),
-                                    locale
-                                )}
-                                minLabel={formatCompact(
-                                    Math.min(
-                                        ...holdersTrend.map(b => b.holders)
-                                    ),
-                                    locale
-                                )}
-                                startLabel={formatPeriodShort(
-                                    holdersTrend[0].period
-                                )}
-                                endLabel={formatPeriodShort(
-                                    holdersTrend[holdersTrend.length - 1].period
-                                )}
-                            />
-                        </div>
-                    )}
-
-                    {split !== null && <ChangeSplitCard comparison={split} />}
-
-                    {partial !== null && (
-                        <p
-                            className="rounded-lg bg-secondary-700/40 p-3 text-xs text-secondary-300"
-                            data-testid="flows-partial-quarter"
-                        >
-                            {t('institutional.partialNote', {
-                                period: partial.period,
-                                holders: formatInteger(partial.holders, locale),
-                                net: formatSignedCompact(
-                                    partial.netShareChange,
-                                    locale
-                                ),
-                                direction: partialDirection,
-                            })}
-                            <FlowTooltip term="partialAggregation" />
-                        </p>
-                    )}
-
-                    {topHolders.length > 0 ? (
-                        <TopHoldersList
-                            holders={topHolders}
-                            period={topHoldersPeriod}
-                        />
-                    ) : (
-                        <p className="text-sm text-secondary-300">
-                            {t('holders.noData')}
-                        </p>
-                    )}
-
-                    <OptionsPositionsBlock
-                        quarters={institutional.options ?? []}
-                        metrics={metrics}
-                    />
-                </>
-            )}
+            <InstitutionalContent
+                institutional={institutional}
+                metrics={metrics}
+                collecting={collecting}
+            />
         </section>
     );
 }

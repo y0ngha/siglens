@@ -23,6 +23,7 @@ import {
 import type { Bar } from '@y0ngha/siglens-core';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
+import { chartLocalization } from './utils/chartLocalization';
 import { chartPriceFormat } from './utils/chartPriceFormat';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { dynamicDecimals } from '@/shared/lib/priceFormat';
@@ -50,7 +51,6 @@ export function ShareCandlestickChart({
     // Store chart and series refs for cleanup.
     const chartRef = useRef<IChartApi | null>(null);
 
-    /* 테마 전환 시 크롬만 교체(리마운트 없음). */
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
@@ -80,6 +80,8 @@ export function ShareCandlestickChart({
                 vertLines: { color: chrome.grid },
                 horzLines: { color: chrome.grid },
             },
+            // 축 눈금을 페이지 로케일로 그린다(`chartLocalization` JSDoc).
+            localization: chartLocalization(locale),
             // Hide crosshair on the share page — read-only static snapshot view.
             crosshair: {
                 mode: CrosshairMode.Hidden,

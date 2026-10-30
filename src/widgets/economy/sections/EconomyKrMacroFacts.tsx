@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { KrIndicatorCard } from '@/entities/economy/api/getKrIndicatorCards';
+import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import { KR_INDICATOR_EVENT } from '@/shared/config/economyIndicatorsKr';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';

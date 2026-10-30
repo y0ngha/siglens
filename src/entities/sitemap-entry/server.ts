@@ -2,60 +2,44 @@ import 'server-only';
 
 import { unstable_cache } from 'next/cache';
 
-import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability/config/approved-longtail-tickers';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { getDatabaseClient } from '@/shared/db/client';
-
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
 import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
-import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot/model';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { getDatabaseClient } from '@/shared/db/client';
+import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 import { DrizzleRemovalSitemapCandidateSource } from './api';
+import { buildRemovalEntries } from './lib/buildRemovalEntries';
 import type { BuildStaticEntriesOptions } from './lib/buildStaticEntries';
+import { fromIsoRecord, toIsoRecord } from './lib/isoRecord';
+import {
+    deserializePopularSitemapInputs,
+    serializePopularSitemapInputs,
+    type SerializedPopularSitemapInputs,
+} from './lib/popularSnapshotCache';
 import {
     PROSE_GATED_SITEMAP_TABS,
-    snapshotKey,
     type BuildPopularEntriesOptions,
-    type ProseGatedSitemapTab,
 } from './lib/proseGate';
-import { buildRemovalEntries } from './lib/buildRemovalEntries';
 import {
-    REMOVAL_CHART_CUTOFF_ISO,
+    PROTECTED_SITEMAP_SYMBOLS,
+    excludeProtectedSymbols,
+    removalCutoffIsoFor,
+} from './lib/removalCandidates';
+import {
     REMOVAL_CRYPTO_LIMIT,
-    REMOVAL_LEGACY_TAB_CUTOFF_ISO,
     type RemovalSitemapEntry,
     type RemovalSitemapKind,
 } from './model';
 
 const REMOVAL_SITEMAP_CACHE_KEY_PREFIX = 'temporary-removal-sitemap:v1';
-
-const protectedSymbolSet = new Set(
-    [...POPULAR_TICKERS, ...POPULAR_CRYPTOS, ...APPROVED_LONGTAIL_TICKERS].map(
-        symbol => symbol.toUpperCase()
-    )
-);
-const protectedSymbols: readonly string[] = [...protectedSymbolSet].toSorted();
-
-function cutoffIsoFor(kind: RemovalSitemapKind): string {
-    return kind === 'chart'
-        ? REMOVAL_CHART_CUTOFF_ISO
-        : REMOVAL_LEGACY_TAB_CUTOFF_ISO;
-}
-
-function excludeProtectedSymbols(symbols: readonly string[]): string[] {
-    return symbols.filter(
-        symbol => !protectedSymbolSet.has(symbol.toUpperCase())
-    );
-}
 
 async function loadUncachedSymbols(
     kind: RemovalSitemapKind
@@ -64,8 +48,8 @@ async function loadUncachedSymbols(
         getDatabaseClient().db
     );
     const stockSymbolsPromise = source.loadStockSymbolsBefore(
-        new Date(cutoffIsoFor(kind)),
-        protectedSymbols
+        new Date(removalCutoffIsoFor(kind)),
+        PROTECTED_SITEMAP_SYMBOLS
     );
 
     if (kind !== 'chart') {
@@ -77,18 +61,22 @@ async function loadUncachedSymbols(
         stockSymbolsPromise,
         source.loadHistoricalCryptoSymbols(
             REMOVAL_CRYPTO_LIMIT,
-            protectedSymbols
+            PROTECTED_SITEMAP_SYMBOLS
         ),
     ]);
 
     return excludeProtectedSymbols([...stockSymbols, ...cryptoSymbols]);
 }
 
+/**
+ * 임시 제거 sitemap의 URL 엔트리. 후보 심볼 조회는 컷오프별로 `unstable_cache`에
+ * 영구(`revalidate: false`) 저장된다 — 컷오프가 캐시 키에 들어 있어 바뀌면 새 항목이 된다.
+ * 색인 대상 심볼은 후보에서 빠진다(`excludeProtectedSymbols`).
+ */
 export async function loadRemovalSitemapEntries(
     kind: RemovalSitemapKind
 ): Promise<RemovalSitemapEntry[]> {
-    const cutoffIso = cutoffIsoFor(kind);
-    const cacheKey = `${REMOVAL_SITEMAP_CACHE_KEY_PREFIX}:${kind}:${cutoffIso}`;
+    const cacheKey = `${REMOVAL_SITEMAP_CACHE_KEY_PREFIX}:${kind}:${removalCutoffIsoFor(kind)}`;
 
     const symbols = await unstable_cache(
         () => loadUncachedSymbols(kind),
@@ -107,56 +95,14 @@ const STATIC_SITEMAP_NEWS_CACHE_KEY = 'static-sitemap-news-latest:v1';
 const STATIC_SITEMAP_LEGAL_CACHE_KEY = 'static-sitemap-legal-dates:v1';
 
 /**
- * sitemap의 lastmod를 **요청 시각이 아니라 콘텐츠의 갱신 시각**으로 만들기 위한
- * DB 읽기. 순수 빌더(`buildStaticEntries`)는 I/O를 하지 않으므로 여기서 읽어
- * 옵션으로 넘긴다.
- *
- * 실패하면 그 입력만 빠진 옵션을 돌려준다 — 빌더가 `SITE_BUILD_DATE`/UTC 일
- * 경계로 폴백하고 뉴스 카테고리는 전부 싣는다(fail-open). 그래서 sitemap 자체는 계속 나간다.
- * sitemap을 500으로 떨어뜨리는 것보다 lastmod 한 칸이 덜 정확한 편이 낫다.
- *
- * **실패를 캐시에 넣지 않는다.** 읽기 실패는 `unstable_cache` 콜백 안에서 **throw**하고
- * 바깥(`loadNewsLatestPublishedAt`)에서 잡는다 — 안쪽에서 `{}`로 삼키면 그 `{}`가 한 시간 저장되고,
- * 빌더는 그것을 "로더 성공, 기사 0건"으로 읽어 모든 뉴스 카테고리를 sitemap에서 뺀다.
- * 던지면 저장을 건너뛰고(stale 엔트리가 있으면 그 값을 돌려준다), 바깥 catch가 `undefined`
- * ("모름")를 돌려준다.
- *
- * 한 시간 캐시: 두 sitemap 라우트(index + static)가 같은 값을 쓰고, 뉴스 인제스션
- * 주기보다 잦게 읽을 이유가 없다.
- */
-/**
- * `unstable_cache`가 반환값을 JSON으로 직렬화하므로, 여기서 넘기는 `Date`는
- * 캐시를 한 번 거치면 ISO 문자열로 돌아온다. 그 계약을 타입으로 명시해
- * 캐시 경계 너머(`loadStaticSitemapInputs`)에서만 다시 `Date`로 복원한다 —
- * 그렇지 않으면 `buildStaticEntries`가 문자열에 `.getTime()`을 불러 죽는다
- * (`maxLastModified`의 reduce에서 `TypeError: r.getTime is not a function`).
+ * `unstable_cache`가 반환값을 JSON으로 직렬화하므로, 캐시 콜백이 넘기는 `Date`는
+ * 캐시를 한 번 거치면 ISO 문자열로 돌아온다. 이 계약을 타입으로 명시해 캐시 경계 너머
+ * (`loadNewsLatestPublishedAt`·`loadLegalDates`)에서만 다시 `Date`로 복원한다 — 그렇지
+ * 않으면 `buildStaticEntries`가 문자열에 `.getTime()`을 불러 죽는다(`maxLastModified`의
+ * reduce에서 `TypeError: r.getTime is not a function`).
  */
 type SerializedNewsLatest = Partial<Record<NewsFeedCategoryId, string>>;
 type SerializedLegalDates = Partial<Record<TermsKind, string>>;
-
-function toIsoRecord<K extends string>(
-    record: Partial<Record<K, Date>>
-): Partial<Record<K, string>> {
-    return Object.fromEntries(
-        Object.entries(record).map(([key, value]) => [
-            key,
-            (value as Date).toISOString(),
-        ])
-    ) as Partial<Record<K, string>>;
-}
-
-function fromIsoRecord<K extends string>(
-    record: Partial<Record<K, string>>
-): Partial<Record<K, Date>> {
-    return Object.fromEntries(
-        Object.entries(record).map(([key, value]) => [
-            key,
-            new Date(value as string),
-        ])
-    ) as Partial<Record<K, Date>>;
-}
-
-type DatabaseClient = ReturnType<typeof getDatabaseClient>['db'];
 
 /** 실패하면 throw한다(캐시에 `{}`를 굳히지 않으려고). 호출부가 바깥에서 잡는다. */
 async function loadUncachedNewsLatestPublishedAt(): Promise<SerializedNewsLatest> {
@@ -174,38 +120,28 @@ async function loadUncachedNewsLatestPublishedAt(): Promise<SerializedNewsLatest
                 const latest = bySentinel.get(CATEGORY_CONFIG[cat].sentinel);
                 return latest === undefined ? [] : [[cat, latest] as const];
             })
-        ) as Partial<Record<NewsFeedCategoryId, Date>>
+        )
     );
 }
 
+/** 본문은 로케일별로 갈리지만 발효일은 갈리지 않는다 — 기본 로케일로 한 번만 읽는다. */
 async function loadUncachedLegalEffectiveDates(): Promise<SerializedLegalDates> {
-    const { db } = getDatabaseClient();
-    return toIsoRecord(await loadLegalEffectiveDates(db));
-}
-
-async function loadLegalEffectiveDates(
-    db: DatabaseClient
-): Promise<Partial<Record<TermsKind, Date>>> {
-    const repo = new DrizzleTermsRepository(db);
-    // 본문은 로케일별로 갈리지만 발효일은 갈리지 않는다 — 기본 로케일로 한 번만 읽는다.
-    const rows = await Promise.all(
-        TERMS_KIND_VALUES.map(kind =>
-            repo.findActive(kind, DEFAULT_LOCALE).catch((error: unknown) => {
-                console.error(
-                    `[staticSitemapInputs] terms(${kind}) failed:`,
-                    error
-                );
-                return null;
-            })
-        )
+    const repo = new DrizzleTermsRepository(getDatabaseClient().db);
+    const entries = await Promise.all(
+        TERMS_KIND_VALUES.map(async kind => {
+            const row = await repo
+                .findActive(kind, DEFAULT_LOCALE)
+                .catch((error: unknown) => {
+                    console.error(
+                        `[staticSitemapInputs] terms(${kind}) failed:`,
+                        error
+                    );
+                    return null;
+                });
+            return row === null ? [] : [[kind, row.effectiveDate] as const];
+        })
     );
-    return Object.fromEntries(
-        rows.flatMap((row, index) =>
-            row === null
-                ? []
-                : [[TERMS_KIND_VALUES[index]!, row.effectiveDate] as const]
-        )
-    );
+    return toIsoRecord(Object.fromEntries(entries.flat()));
 }
 
 /** `undefined` = 모름(읽기 실패). `{}`는 "기사가 하나도 없음"이라는 성공 결과다. */
@@ -241,6 +177,23 @@ async function loadLegalDates(): Promise<
     }
 }
 
+/**
+ * 정적 sitemap의 lastmod를 **요청 시각이 아니라 콘텐츠의 갱신 시각**으로 만들기 위한
+ * DB 읽기. 순수 빌더(`buildStaticEntries`)는 I/O를 하지 않으므로 여기서 읽어 옵션으로 넘긴다.
+ *
+ * 실패하면 그 입력만 빠진 옵션을 돌려준다 — 빌더가 `SITE_BUILD_DATE`/UTC 일 경계로
+ * 폴백하고 뉴스 카테고리는 전부 싣는다(fail-open). sitemap을 500으로 떨어뜨리는 것보다
+ * lastmod 한 칸이 덜 정확한 편이 낫다.
+ *
+ * **실패를 캐시에 넣지 않는다.** 읽기 실패는 `unstable_cache` 콜백 안에서 **throw**하고
+ * 바깥에서 잡는다 — 안쪽에서 `{}`로 삼키면 그 `{}`가 한 시간 저장되고, 빌더는 그것을
+ * "로더 성공, 기사 0건"으로 읽어 모든 뉴스 카테고리를 sitemap에서 뺀다. 던지면 저장을
+ * 건너뛰고(stale 엔트리가 있으면 그 값을 돌려준다), 바깥 catch가 `undefined`("모름")를
+ * 돌려준다. 약관은 종류별 실패를 안쪽에서 흡수해 그 종류만 빠진다.
+ *
+ * 한 시간 캐시: 두 sitemap 라우트(index + static)가 같은 값을 쓰고, 뉴스 인제스션
+ * 주기보다 잦게 읽을 이유가 없다.
+ */
 export async function loadStaticSitemapInputs(): Promise<BuildStaticEntriesOptions> {
     const [newsLatestPublishedAt, legalEffectiveDates] = await Promise.all([
         loadNewsLatestPublishedAt(),
@@ -256,16 +209,6 @@ export async function loadStaticSitemapInputs(): Promise<BuildStaticEntriesOptio
 // 새 코드가 읽으면 `serialized.snapshotGeneratedAt`이 undefined라 죽는다.
 const POPULAR_SITEMAP_INPUT_CACHE_KEY = 'popular-sitemap-inputs:v2';
 
-/**
- * `unstable_cache`가 반환값을 JSON으로 직렬화하므로 `Date`는 캐시를 거치면 ISO
- * 문자열로 돌아온다 — `SerializedStaticSitemapInputs`와 같은 계약이다. `Map`도 JSON에서
- * `{}`로 깨지므로 `[키, ISO]` 쌍 배열로 넘기고, 캐시 경계 너머(`loadPopularSitemapInputs`)에서만
- * `Map<string, Date>`로 복원한다. 복원하지 않으면 빌더가 문자열에 `.getTime()`을 불러 죽는다.
- */
-interface SerializedPopularSitemapInputs {
-    readonly snapshotGeneratedAt: ReadonlyArray<readonly [string, string]>;
-}
-
 async function loadUncachedPopularSitemapInputs(): Promise<SerializedPopularSitemapInputs> {
     const rows = await new DrizzleSeoSnapshotRepository(
         getDatabaseClient().db
@@ -274,22 +217,7 @@ async function loadUncachedPopularSitemapInputs(): Promise<SerializedPopularSite
         DEFAULT_LOCALE,
         new Date(Date.now() - SNAPSHOT_MAX_AGE_MS)
     );
-    return {
-        snapshotGeneratedAt: rows
-            // 렌더 가능한 산문이 없는 행은 맵에 넣지 않는다 — 키가 곧 "페이지가 색인 대상"이다.
-            .filter(row => row.hasProse)
-            .map(
-                row =>
-                    [
-                        // safe: 쿼리가 `PROSE_GATED_SITEMAP_TABS`로 거른 행이다.
-                        snapshotKey(
-                            row.symbol,
-                            row.tab as ProseGatedSitemapTab
-                        ),
-                        row.generatedAt.toISOString(),
-                    ] as const
-            ),
-    };
+    return serializePopularSitemapInputs(rows);
 }
 
 /**
@@ -317,13 +245,7 @@ export async function loadPopularSitemapInputs(): Promise<BuildPopularEntriesOpt
             [POPULAR_SITEMAP_INPUT_CACHE_KEY],
             { revalidate: SECONDS_PER_HOUR }
         )();
-        return {
-            snapshotGeneratedAt: new Map(
-                serialized.snapshotGeneratedAt.map(
-                    ([key, iso]) => [key, new Date(iso)] as const
-                )
-            ),
-        };
+        return deserializePopularSitemapInputs(serialized);
     } catch (error) {
         console.error('[popularSitemapInputs] load failed:', error);
         return {};

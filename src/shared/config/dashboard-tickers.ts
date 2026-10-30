@@ -143,8 +143,8 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'IBM', koreanName: 'IBM', sectorSymbol: 'QNTM' },
     // Space (SPACE) — 6 (virtual sector, no ETF)
     // SPCX는 여기 없다 — SpaceX는 비상장이고, SPCX는 그 이름을 딴 SPAC/신규 발행
-    // ETF다. 대체할 진짜 SpaceX 티커가 없으므로 빼기만 한다(SEO 감사 라운드 3
-    // finding 2 — /market의 SectorFactsSummary가 이 심볼이 top signal로 뜨면
+    // ETF다. 대체할 진짜 SpaceX 티커가 없으므로 빼기만 한다(/market의
+    // SectorFactsSummary가 이 심볼이 top signal로 뜨면
     // 크롤러가 보는 `<Link href="/SPCX">`를 만들어냈다. popular-tickers.ts의
     // 같은 이유로 이미 뺀 것과 일치시킨다).
     { symbol: 'RKLB', koreanName: '로켓랩', sectorSymbol: 'SPACE' },
@@ -155,7 +155,7 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'SPCE', koreanName: '버진 갤럭틱', sectorSymbol: 'SPACE' },
 ];
 
-// Timeframes supported by Panel C sector signal dashboard
+// 섹터 신호 대시보드(Panel C)가 지원하는 타임프레임
 export const DASHBOARD_TIMEFRAMES: readonly DashboardTimeframe[] = [
     '15Min',
     '1Hour',
@@ -164,18 +164,18 @@ export const DASHBOARD_TIMEFRAMES: readonly DashboardTimeframe[] = [
 
 export const DEFAULT_DASHBOARD_TIMEFRAME: DashboardTimeframe = '1Day';
 
-/** Type guard — returns true if `value` is a valid `DashboardTimeframe`. */
+/**
+ * URL 쿼리·Server Action 인자처럼 검증되지 않은 값을 `DashboardTimeframe`으로 좁힌다.
+ * `includes`는 인자를 `DashboardTimeframe`으로만 받아 `unknown`을 단언해야 하므로
+ * 단언 없이 `some`으로 비교한다.
+ */
 export function isDashboardTimeframe(
     value: unknown
 ): value is DashboardTimeframe {
-    // The `as DashboardTimeframe` cast is safe here: the `.includes()` membership check
-    // is the actual runtime validation. The cast only satisfies TypeScript's strict
-    // `Array<T>.includes(searchElement: T)` parameter type — it does not bypass any
-    // runtime check or assume the input is already a valid timeframe.
-    return DASHBOARD_TIMEFRAMES.includes(value as DashboardTimeframe);
+    return DASHBOARD_TIMEFRAMES.some(timeframe => timeframe === value);
 }
 
-// Panel C sector tabs — SECTOR_ETFS + virtual sectors (no ETF)
+// Panel C 섹터 탭 — SECTOR_ETFS + ETF가 없는 가상 섹터
 export const SIGNAL_SECTORS: readonly SectorEtf[] = [
     ...SECTOR_ETFS,
     { symbol: 'QNTM', sectorName: 'Quantum', koreanName: '양자' },

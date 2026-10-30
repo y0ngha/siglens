@@ -1,6 +1,6 @@
-import type { ContactRepository } from '@/entities/inquiry/api';
+import type { ContactRepository } from '../api';
 
-/** Dependencies required by the `submitInquiry` use-case. */
+/** `submitInquiry`가 요구하는 의존성. */
 export interface SubmitInquiryDeps {
     contactRepository: ContactRepository;
 }

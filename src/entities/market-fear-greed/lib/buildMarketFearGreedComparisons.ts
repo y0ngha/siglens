@@ -7,9 +7,9 @@ import type {
 } from '../model';
 
 /**
- * One walk-forward history point. Typed structurally so the market
- * (`MarketFearGreedHistoryPoint`) and crypto (`FearGreedHistoryPoint`) histories
- * both fit without a cast — they share the `{ date, score, label }` shape.
+ * walk-forward 이력의 한 점. 구조적으로 타입을 줘서 시장(`MarketFearGreedHistoryPoint`)과
+ * 크립토(`FearGreedHistoryPoint`) 이력이 캐스트 없이 모두 들어맞는다 — 둘은
+ * `{ date, score, label }` 모양을 공유한다.
  */
 interface HistoryPoint {
     date: string;
@@ -19,7 +19,7 @@ interface HistoryPoint {
 
 type ScoredPoint = HistoryPoint & { score: number; label: FearGreedLabel };
 
-/** Warm-up points carry `null`; only fully scored points can be compared. */
+/** 워밍업 구간 점은 `null`을 싣는다. 점수·라벨이 다 있는 점만 비교할 수 있다. */
 function scoredPoints(history: readonly HistoryPoint[]): ScoredPoint[] {
     return history.filter(
         (point): point is ScoredPoint =>
@@ -35,16 +35,14 @@ function toComparison(
 }
 
 /**
- * Trading sessions in one year. It is the "1 year ago" lookback, and the per-stock
- * page trims its "last year" chart to the same count — if the two drifted apart,
- * the chart's first point and the "1 year ago" gauge would point at different days.
+ * 1년의 거래 세션 수. "1년 전" 과거 시점이며, 종목별 페이지도 "지난 1년" 차트를 같은 개수로
+ * 자른다 — 둘이 어긋나면 차트의 첫 점과 "1년 전" 게이지가 서로 다른 날을 가리킨다.
  */
 export const FEAR_GREED_SESSIONS_PER_YEAR = 252;
 
 /**
- * Lookbacks in trading sessions, matching the per-stock page's gauges so the
- * two Fear & Greed surfaces read the same way: ~5 sessions a week, ~21 a month,
- * ~252 a year.
+ * 거래 세션 단위 과거 시점. 종목 페이지 게이지와 맞춰 두 공포·탐욕 화면이 같은 방식으로
+ * 읽히게 한다: 주 ~5 세션, 월 ~21, 연 ~252.
  */
 const COMPARISON_OFFSETS = [
     { key: 'now', sessionsBack: 0 },
@@ -57,21 +55,19 @@ const COMPARISON_OFFSETS = [
 }>;
 
 /**
- * Resolve a walk-forward history to the four session lookbacks, flagging the
- * ones the history is too short to reach.
+ * walk-forward 이력을 네 개의 세션 과거 시점으로 줄이고, 이력이 너무 짧아 닿지 못한 것은
+ * 표시한다.
  *
- * Shared by every Fear & Greed surface that compares "now" with past sessions
- * (the market pages and the per-symbol gauges), so they all count lookbacks the
- * same way.
+ * "현재"를 과거 세션과 비교하는 모든 공포·탐욕 화면(시장 페이지와 종목별 게이지)이 공유해
+ * 과거 시점을 같은 방식으로 센다.
  *
- * Warm-up points carry a `null` score, so offsets are counted over *scored*
- * sessions only — otherwise "1 year ago" could land in the warm-up window and
- * silently disappear. When the history is shorter than a lookback the index is
- * clamped to the earliest scored session; `clamped` is set and `date` tells the
- * caller which session it actually got.
+ * 워밍업 점은 `null` 점수를 싣기 때문에 오프셋은 *점수가 있는* 세션만 세어 계산한다 —
+ * 아니면 "1년 전"이 워밍업 구간에 떨어져 조용히 사라질 수 있다. 이력이 과거 시점보다
+ * 짧으면 인덱스를 점수가 있는 가장 이른 세션으로 당기고 `clamped`를 켠다. 반환된 `date`가
+ * 실제로 쓴 세션을 알려준다.
  *
- * @param history - Walk-forward history, ascending by date.
- * @returns Four points, or an empty array when nothing is scored yet.
+ * @param history - 날짜 오름차순 walk-forward 이력.
+ * @returns 네 점. 점수가 있는 점이 아직 없으면 빈 배열.
  */
 export function resolveSessionComparisons(
     history: readonly HistoryPoint[]
@@ -102,7 +98,7 @@ export function buildMarketFearGreedComparisons(
     );
 }
 
-/** Lookbacks in calendar days, for a market that trades every day (crypto). */
+/** 매일 거래되는 시장(크립토)용 달력일 단위 과거 시점. */
 const CALENDAR_COMPARISON_OFFSETS = [
     { key: 'now', daysBack: 0 },
     { key: '1w', daysBack: 7 },
@@ -114,16 +110,15 @@ const CALENDAR_COMPARISON_OFFSETS = [
 }>;
 
 /**
- * Calendar-day variant of {@link buildMarketFearGreedComparisons}.
+ * {@link buildMarketFearGreedComparisons}의 달력일 버전.
  *
- * Crypto trades seven days a week, so "1 week ago" is the same weekday seven
- * calendar days back rather than five sessions. Offsets are resolved by date,
- * not by index: a day dropped by the inner join (one coin missing a bar) would
- * otherwise shift every lookback by a day. Each lookback takes the latest scored
- * point on or before its target date, clamped to the earliest scored point.
+ * 크립토는 주 7일 거래라 "1주 전"은 다섯 세션이 아니라 달력일로 7일 전 같은 요일이다.
+ * 오프셋은 인덱스가 아니라 날짜로 푼다: inner join에서 떨어진 날(코인 하나가 봉이
+ * 없을 때)이 있으면 인덱스 방식은 모든 과거 시점을 하루씩 밀어 버린다. 각 시점은 목표
+ * 날짜 이하의 마지막 점수 점을 취하고, 없으면 점수가 있는 가장 이른 점으로 당긴다.
  *
- * @param history - Walk-forward history, ascending by date.
- * @returns Four points, or an empty array when nothing is scored yet.
+ * @param history - 날짜 오름차순 walk-forward 이력.
+ * @returns 네 점. 점수가 있는 점이 아직 없으면 빈 배열.
  */
 export function buildCalendarDayComparisons(
     history: readonly HistoryPoint[]

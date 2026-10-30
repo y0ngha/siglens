@@ -8,56 +8,53 @@ import {
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import { getAgentProvider } from '@/entities/llm-provider/api/agent/getAgentProvider';
 import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
-import { type MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Locale } from '@/shared/i18n/locales';
-import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import { createSingleFlight } from '@/shared/lib/singleFlight';
 import { suggestionsCacheKey } from './lib/cacheKey';
+import { MIN_SUGGESTIONS } from './lib/constants';
+import { mergeHeadlines } from './lib/mergeHeadlines';
+import { readCachedSuggestions } from './lib/readCachedSuggestions';
 import type { AgentSuggestionsInput } from './model';
 
 const HEADLINES_LOOKBACK_MS = 48 * MS_PER_HOUR;
 const HEADLINES_MAX = 8;
-const MIN_SUGGESTIONS = 3;
 const CACHE_TTL_SECONDS = 3_600;
 /**
- * A failed or too-short generation is remembered briefly as `[]`. Without it a
- * run of bad model output would re-invoke the paid provider on every page load
- * for the rest of the hour — the one thing the hourly key exists to prevent.
+ * 실패하거나 너무 짧은 생성 결과는 `[]`로 잠깐 기억한다. 없으면 모델 출력이
+ * 계속 나쁠 때 그 시간대 내내 페이지 로드마다 유료 provider를 다시 호출하게 되어,
+ * 시간 단위 키가 막으려는 바로 그 일이 벌어진다.
  */
 const NEGATIVE_TTL_SECONDS = 300;
 const PROVIDER_TIMEOUT_MS = 8_000;
 const PROVIDER_MAX_OUTPUT_TOKENS = 400;
 
 /**
- * Feed categories mixed into the headline pool — general market + individual
- * stock news, the two `market-news` buckets that read as generic "what's
- * happening" material rather than a single-symbol story. Not `news-article`
- * (that entity is scoped to a single symbol's own news, e.g. `getNewsList`);
- * `general`/`stock` are `market-news`'s category sentinels
- * (`CATEGORY_CONFIG`).
+ * 헤드라인 풀에 섞는 피드 카테고리 — 시장 일반 + 개별 종목 뉴스. 단일 종목
+ * 스토리가 아니라 "지금 무슨 일이 있나" 소재로 읽히는 `market-news`의 두 버킷이다.
+ * 종목 하나의 뉴스에 한정된 `news-article`은 쓰지 않는다. `general`/`stock`은
+ * `market-news`의 카테고리 센티넬 키(`CATEGORY_CONFIG`)이기도 하다.
  */
 const HEADLINE_CATEGORY_IDS = ['general', 'stock'] as const;
 
-// ponytail: cross-instance stampede on a cache miss is ignored — traffic is
-// bounded to <=4 locales x 1 generation/hour, so a duplicate provider call
-// from another instance is rare and cheap. Upgrade to a Redis lock if this
-// key space grows (e.g. per-user fan-out at scale).
+// 인스턴스 간 캐시 미스 중복 생성은 허용한다 — 로케일 4개 x 시간당 1회로
+// 트래픽이 제한되어 다른 인스턴스의 중복 provider 호출은 드물고 저렴하다.
+// 키 공간이 커지면(예: 사용자별 fan-out) Redis 락으로 올린다.
 const inFlight = createSingleFlight<string[] | null>();
 
+/** 에러 이름만 경고로 남긴다. */
 function warn(context: string, error: unknown): void {
-    // Never log `error.message` — for DB errors it can embed SQL/bound
-    // params (see `route.ts`'s `isConversationGone` comment for the same
-    // rule applied to the stream route).
+    // DB 에러의 `message`에는 SQL/바인딩 파라미터가 섞일 수 있어 이름만 남긴다.
     console.warn(
         `[agent-suggestions] ${context}:`,
         error instanceof Error ? error.name : 'unknown'
     );
 }
 
+/** 두 카테고리 헤드라인을 가져온다. 어떤 실패도 빈 목록으로 흡수한다. */
 async function fetchHeadlines(locale: Locale): Promise<SuggestionHeadline[]> {
     try {
         const { db } = getDatabaseClient();
@@ -71,32 +68,21 @@ async function fetchHeadlines(locale: Locale): Promise<SuggestionHeadline[]> {
                         locale
                     )
                     .then(rows => rows.map(row => ({ row, categoryId })))
-                    // One category failing (e.g. a bad sentinel) must not
-                    // blank out the other's headlines.
+                    // 한 카테고리가 실패해도 다른 카테고리의 헤드라인은 살린다.
                     .catch((error: unknown) => {
                         warn(`headlines(${categoryId}) failed`, error);
                         return [];
                     })
             )
         );
-        const merged: Array<{
-            row: MarketNewsCardItem;
-            categoryId: (typeof HEADLINE_CATEGORY_IDS)[number];
-        }> = perCategory.flat();
-        // Newest first across both categories — publishedAt is an ISO-8601
-        // string (see `toNewsRow`), so lexical order is chronological order.
-        merged.sort((a, b) => (a.row.publishedAt < b.row.publishedAt ? 1 : -1));
-        return merged.slice(0, HEADLINES_MAX).map(({ row, categoryId }) => ({
-            title: resolveNewsTitle(row, locale),
-            category: categoryId,
-            ...(row.tickers[0] !== undefined ? { symbol: row.tickers[0] } : {}),
-        }));
+        return mergeHeadlines(perCategory.flat(), locale, HEADLINES_MAX);
     } catch (error) {
         warn('headlines failed', error);
         return [];
     }
 }
 
+/** provider로 추천 질문을 생성해 캐시에 쓴다. 실패·부족 시 음성 마커를 쓰고 `null`을 반환한다. */
 async function generate(
     input: AgentSuggestionsInput,
     now: Date,
@@ -138,6 +124,7 @@ async function generate(
     }
 }
 
+/** 캐시 쓰기 실패는 경고만 남기고 삼킨다. */
 async function writeCache(
     redis: ReturnType<typeof getRedisClient>,
     cacheKey: string,
@@ -153,11 +140,10 @@ async function writeCache(
 }
 
 /**
- * AI-generated suggested questions for the empty screen (spec §4-3).
+ * ai.siglens.io 빈 화면에 보여줄 AI 생성 추천 질문. `/ai/[locale]` 페이지가 호출한다.
  *
- * `null` means "show the static six" — every failure mode (kill switch, Redis
- * down, provider timeout/error, a too-short parse) degrades to that rather
- * than surfacing an error to the user; see `EmptyState`'s `suggestions` prop.
+ * `null`은 "정적 6개를 보여준다"는 뜻이다 — 킬 스위치, Redis 장애, provider
+ * 타임아웃/에러, 너무 짧은 파싱 결과 모두 사용자에게 에러를 노출하지 않고 이쪽으로 떨어진다.
  */
 export async function getAgentSuggestions(
     input: AgentSuggestionsInput
@@ -170,12 +156,11 @@ export async function getAgentSuggestions(
 
     if (redis) {
         try {
-            const cached = await redis.get<string[]>(cacheKey);
-            if (Array.isArray(cached)) {
-                // `[]` is the negative marker (see NEGATIVE_TTL_SECONDS).
-                if (cached.length === 0) return null;
-                if (cached.length >= MIN_SUGGESTIONS) return cached;
-            }
+            const cached = readCachedSuggestions(
+                await redis.get<unknown>(cacheKey)
+            );
+            if (cached.kind === 'negative') return null;
+            if (cached.kind === 'hit') return cached.items;
         } catch (error) {
             warn('cache read failed', error);
         }

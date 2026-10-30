@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * "차트 작도" 메뉴 — 작도 항목별 표시 토글과 레벨 연장 설정 UI.
+ */
+
 import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import { useEffect, useId, useRef } from 'react';
