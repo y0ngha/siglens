@@ -298,6 +298,18 @@ that shape, and pin it with a test.
 
 - ❌ Adding `.filter((row) => row?.title)` to a news mapper that used to throw on a title-less row.
 - ✅ Keep the throw (or return the error result); the surrounding catch logs and degrades per SA-4.
+<a id="SA-19"></a>
+
+#### SA-19 — Log database errors through `logActionError`, never the raw error
+
+A `DrizzleQueryError` message embeds the failed statement's bound parameters, so `console.error(tag, error)` writes
+user input (ciphertext of a stored key, free-text titles, personal data) into server logs. Log a caught DB error with
+`logActionError(tag, error)` from `shared/lib/logActionError`, which records only the error name and the driver code.
+This refines SA-4: the failure is still logged before degrading, just not with the raw object.
+
+- ❌ `catch (error) { console.error('[saveKeyAction]', error); return { ok: false }; }`
+- ✅ `catch (error) { logActionError('[saveKeyAction]', error); return { ok: false }; }`
+
 <a id="SA-20"></a>
 
 #### SA-20 — Validators check semantic validity, not only shape

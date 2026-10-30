@@ -5,7 +5,7 @@
  */
 import { useTranslations } from 'next-intl';
 import type { MouseEvent, ReactNode, Ref } from 'react';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import type { ConversationListItem } from '@/entities/chat-conversation/model';
 import { cn } from '@/shared/lib/cn';
 import { CloseIcon, PencilIcon, TrashIcon } from '@/shared/ui/StrokeIcons';
 

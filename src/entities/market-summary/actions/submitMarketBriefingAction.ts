@@ -9,6 +9,7 @@ import {
     type MarketSummaryData,
     type RunBriefingResult,
 } from '@y0ngha/siglens-core';
+import { logActionError } from '@/shared/lib/logActionError';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
 import { marketBriefingContextOf } from '../lib/marketBriefingContext';
@@ -160,7 +161,7 @@ export async function submitMarketBriefingAction(
         );
         return { briefing, scope: resolved.id };
     } catch (e) {
-        console.error('[submitMarketBriefingAction] failed:', e);
+        logActionError('[submitMarketBriefingAction] failed:', e);
         return { ok: false, error: 'server_error' };
     }
 }

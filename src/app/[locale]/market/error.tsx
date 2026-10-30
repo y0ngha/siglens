@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { RouteErrorView } from '@/app/_components/RouteErrorView';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
-import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface MarketErrorProps {
     error: Error & { digest?: string };
@@ -11,15 +11,11 @@ interface MarketErrorProps {
 }
 
 /**
- * Error boundary for the `/market` ISR route.
+ * `/market` 서브트리(미국·한국)의 에러 경계.
  *
- * `MarketContent` fans out to FMP (market summary / sector signals) + the
- * briefing peek. Those paths degrade gracefully today (core returns null quotes
- * / Promise.allSettled drops failures), so a thrown render is unlikely — but an
- * unexpected throw during an uncached ISR cold-gen (DB/Redis client init, an
- * unforeseen core error) would otherwise surface as a bare 500. This boundary
- * contains that into a branded, retryable UI. `reset()` re-renders the segment,
- * which on a transient outage typically succeeds on the next attempt.
+ * 시세 요약·섹터 신호·브리핑 peek 실패는 `MarketContent`가 빈 값으로 흡수하지만, 캐시 없는
+ * ISR cold-gen 중의 예상 밖 throw(DB/Redis 클라이언트 초기화, core 오류)는 이 경계가 없으면
+ * 맨 500이 된다. `reset()`은 세그먼트를 다시 렌더해 일시 장애에서 회복한다.
  */
 export default function MarketError({ error, reset }: MarketErrorProps) {
     const t = useTranslations('app.market');

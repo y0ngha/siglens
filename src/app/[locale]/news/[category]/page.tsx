@@ -1,365 +1,190 @@
-import { useTranslations } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { localePath, resolveLocale } from '@/shared/i18n/locales';
-import type { Locale } from '@/shared/i18n/locales';
-import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import { notFound } from 'next/navigation';
-import { cache, Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import {
     CATEGORY_CONFIG,
     NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
-    type CategoryConfig,
-    type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
-import { MARKET_NEWS_CACHE_TAG_PREFIX } from '@/entities/market-news/lib/marketNewsConstants';
-import { type MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
-import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
 import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
-import {
-    MARKET_NEWS_LIST_PAGE_SIZE,
-    NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
-} from '@/shared/config/newsSerialization';
 import { NewsCategoryTabs } from '@/widgets/news-hub/NewsCategoryTabs';
-import { Breadcrumb } from '@/shared/ui/Breadcrumb';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { stripUtmParams } from '@/shared/lib/stripUtmParams';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import { rssAlternateTypes } from '@/shared/config/rssFeed';
-import { RegionTabs } from '@/shared/ui/RegionTabs';
-import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
-import { cacheNonEmptyOrNull } from '@/shared/cache/cacheNonEmpty';
-import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
-import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+import { isDatabaseConfigured } from '@/shared/db/config';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { brandTitle } from '@/shared/lib/brandName';
+import { enterLocale } from '@/shared/lib/enterLocale';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     SITE_URL,
 } from '@/shared/lib/seo';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
-import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
-import { isDatabaseConfigured } from '@/shared/db/config';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
-import { brandName, brandTitle } from '@/shared/lib/brandName';
+import { localeAlternates, localePageRobots } from '@/shared/lib/seoAlternates';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { DigestSkeleton } from './_components/DigestSkeleton';
+import { MarketNewsDegraded } from './_components/MarketNewsDegraded';
+import {
+    categoryBreadcrumbTrail,
+    toVisibleCrumbs,
+} from './_lib/categoryBreadcrumb';
+import { buildCategoryKeywords } from './_lib/categoryKeywords';
+import {
+    buildEmptyCategoryMetadata,
+    categorySocialMetadata,
+} from './_lib/categoryMetadata';
+import { loadCategorySnapshot } from './_lib/categorySnapshot';
+import { buildNewsItemListJsonLd } from './_lib/newsItemListJsonLd';
+import { buildCategoryPageDescription, buildCategoryPageTitle } from './seo';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
 export const revalidate = 43200;
 
-// 빈 배열 = on-demand ISR, generateStaticParams 없으면 dynamic으로 남아 ISR이 걸리지 않는다 — app CLAUDE.md 축 3.
 type CategoryPageParams = { category: string };
+
 /**
  * DB가 있는 빌드(로컬·E2E)에서만 전 카테고리를 빌드타임에 prerender한다.
  *
- * 운영 DB가 사설 RDS라 배포 빌드(GitHub Actions 러너)에는 DB가 없다. 그 상태로
- * prerender하면 뉴스 목록이 `[]`인 degrade 페이지(noindex)가 이미지에 구워져 12h
- * revalidate 동안 크롤러에게 나간다. 그래서 DB가 없으면 빈 배열을 돌려 첫 요청이
- * 실데이터로 블로킹 렌더하게 한다(에러/빈 결과는 `cacheNonEmpty`가 굳히지 않는다).
- * 배포 직후 `scripts/warm-isr.sh`가 캐시 퍼지 뒤 이 URL들을 미리 렌더한다.
+ * 배포 빌드에는 DB가 없어, 그 상태로 prerender하면 뉴스 목록이 `[]`인 degrade 페이지(noindex)가
+ * 구워져 12h revalidate 동안 크롤러에게 나간다. 그래서 DB가 없으면 빈 배열(= on-demand ISR —
+ * 이게 없으면 동적 세그먼트가 매 요청 렌더로 남는다, 축 3)을 돌려 첫 요청이 실데이터로 렌더하게
+ * 한다(에러/빈 결과는 `cacheNonEmpty`가 굳히지 않는다).
  */
 export function generateStaticParams(): CategoryPageParams[] {
     if (!isDatabaseConfigured()) return [];
     return NEWS_CATEGORY_SLUGS.map(category => ({ category }));
 }
 
-/**
- * 지역별 추가 SEO 키워드.
- *
- * `미국 마켓 뉴스`는 2026-08 리브랜딩 전 표기다 — 기존 유입 질의를 잃지 않으려고
- * 미국 카테고리에만 남긴다.
- */
-const REGION_KEYWORDS: Record<NavRegionId, readonly string[]> = {
-    us: ['미국 시장 뉴스', '미국 마켓 뉴스'],
-    kr: ['한국 증시 뉴스', '코스피 뉴스', '코스닥 뉴스'],
-    crypto: ['암호화폐 뉴스', '비트코인 뉴스'],
-};
-
-/**
- * 카테고리 페이지의 breadcrumb 마디 — 허브 → 지역 허브 → 카테고리.
- *
- * 지역에 카테고리가 하나뿐이면(한국·암호화폐) 지역 허브와 카테고리 페이지가
- * 같은 URL이라 2단계로 줄인다. 같은 URL을 두 단계로 넣으면 breadcrumb가
- * 자기 자신을 부모로 갖는다.
- *
- * **마디를 돌려주고 마크업은 만들지 않는다.** 같은 배열이 `BreadcrumbList`
- * JSON-LD와 화면 `<Breadcrumb>` 양쪽을 만든다 — 구글은 둘의 텍스트가 다르면
- * 마크업을 무시하므로 두 벌로 두면 한쪽만 고쳐져 자격을 잃는다.
- */
-/** `categoryBreadcrumbTrail`의 마디 하나. `BreadcrumbCrumb`(label/href)과는
- * 필드명이 달라 재사용하지 않는다 — 이 마디는 JSON-LD와 화면 렌더 양쪽의
- * 원본 자료이고, `Breadcrumb.tsx` shape 변환은 호출부에서 한다. */
-interface BreadcrumbTrailNode {
-    name: string;
-    path: string;
-}
-
-function categoryBreadcrumbTrail(
-    cfg: CategoryConfig,
-    categoryPath: string,
-    /** `shared.config` 번역자. 이 헬퍼는 순수 함수라 훅을 부를 수 없어 주입받는다. */
-    tNav: (key: string) => string
-): BreadcrumbTrailNode[] {
-    const regionLink = regionsOf('news').find(r => r.region === cfg.region);
-    const trail = [{ name: tNav('app.news.page.dc06c4'), path: '/news' }];
-    if (regionLink && regionLink.href !== categoryPath) {
-        trail.push({
-            name: tNav(regionLink.fullLabelKey),
-            path: regionLink.href,
-        });
-    }
-    trail.push({ name: tNav(cfg.labelKey), path: categoryPath });
-    return trail;
-}
-
 interface Props {
     params: Promise<{ locale: string; category: string }>;
 }
 
-interface CategorySnapshot {
-    items: MarketNewsCardItem[];
-    isEmpty: boolean;
-}
-
 /**
- * Shared helper: load the category snapshot and determine whether the list is
- * empty. Used by both `generateMetadata` and the page component so noindex
- * and the degrade UI come from a single source (no parity drift).
- *
- * Uses `cacheNonEmpty` (`staticSymbolCache` underneath, axis 1) to avoid
- * DYNAMIC_SERVER_USAGE from the DB call during ISR cold-gen, without pinning an
- * empty list for the TTL.
- *
- * **요청당 한 번**: `React.cache`로 감싼다. 메타데이터와 본문이 각각 부르는데
- * `unstable_cache`는 요청 안에서 dedup하지 않아, 예전에는 같은 목록을 캐시 핸들러(큰 엔트리는
- * S3 GET)에서 두 번 읽었다(2026-10 서버 성능 감사 L7). 장애 시 revalidate 하향
- * (`shortenRevalidateForRuntimeDegrade`)은 첫 호출에서 한 번 일어나고 같은 렌더에 그대로 남는다.
- *
- * 읽기(`getMarketNewsCards`) 자체가 카드 투영이라 DB 내부 컬럼(bodyEn, symbol,
- * analyzedAt)은 애초에 SELECT되지 않는다 — 받은 뒤 거르면 Neon 전송과 S3 ISR
- * 블롭에는 그대로 남는다(감사: 비용 라운드 15).
+ * 잘못된 slug는 404, 빈 목록은 noindex 메타(`buildEmptyCategoryMetadata`), 그 외에는 색인
+ * 메타(로케일별 alternates + RSS 발견 링크)를 낸다 — 판정은 본문과 같은 `loadCategorySnapshot`.
  */
-const loadCategorySnapshot = cache(async function loadCategorySnapshot(
-    category: NewsFeedCategoryId,
-    locale: Locale
-): Promise<CategorySnapshot> {
-    const cfg = CATEGORY_CONFIG[category];
-    // `cacheNonEmpty` — 빈 목록은 캐시하지 않는다. 기사가 적재되기 전 순간의 `[]`가
-    // 12h 굳으면, 허브 프리웜이 다이제스트를 구운 뒤에도 목록만 "불러오지 못했어요"로
-    // 남는다(2026-10-01 `/news/articles` 실측). DB 읽기 실패는 `null`로 구분돼 흡수되고
-    // (ISR에 0-byte 결과가 굳는 것 방지) 기존 `MarketNewsDegraded` 분기로 빠진다.
-    const loaded = await cacheNonEmptyOrNull(
-        ['market-news:list', cfg.sentinel, ...contentLocaleKeyPart(locale)],
-        cfg.sentinel,
-        () => getMarketNewsCards(cfg.sentinel, locale),
-        [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
-        SECONDS_PER_HALF_DAY
-    );
-    // 읽기가 **실패**했을 때만(`null`) 이 렌더의 revalidate를 300초로 낮춘다. 건강한 빈 상태(`[]`
-    // — 기사가 정말 없는 카테고리)는 라우트 기본 revalidate를 유지한다: 장애가 아닌데 5분마다
-    // 재생성하면 `/news/forex` 같은 만성 빈 카테고리가 크롤마다 DB를 다시 읽는다. 둘 다
-    // noindex·self-canonical 렌더라는 점은 같다. `cacheNonEmptyOrNull` **바깥**(페이지 렌더
-    // 경로)이라 하향이 먹고, `generateMetadata`와 본문이 이 헬퍼를 함께 거쳐 한 곳에서 처리한다.
-    if (loaded === null) await shortenRevalidateForRuntimeDegrade();
-    const rows = loaded ?? [];
-    // 읽기 자체가 카드 투영이라 여기서 다시 거를 것이 없다 — 서버 전용 컬럼
-    // (bodyEn/symbol/analyzedAt)은 애초에 select되지 않는다.
-    return { items: rows, isEmpty: rows.length === 0 };
-});
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, category: slug } = await params;
     const locale = resolveLocale(rawLocale);
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    // 카테고리 라벨은 이미 네 로케일 카탈로그에 있다(`CATEGORY_CONFIG.labelKey`).
-    // `cfg.koLabel`을 번역된 템플릿에 꽂으면 `미국 주식 News`처럼 반쪽만
-    // 번역된 문장이 나간다 — 제목·설명·h1·JSON-LD가 전부 그 상태였다.
-    const tRoot = await getTranslations({ locale });
     const cat = categoryFromSlug(slug);
-
-    // 잘못된 slug — 본문과 같은 판정으로 메타데이터 단계에서도 404다. 본문이 notFound()를
-    // 던져도 generateMetadata 결과가 이기므로, 여기서 title/description만 돌려주면 404 응답이
-    // 홈 description·og·twitter를 상속한다. 던지면 404 경계(`[locale]/not-found.tsx`)의 메타가 쓰인다.
+    // 잘못된 slug — 본문과 같은 판정으로 메타데이터 단계에서도 404다. 본문만 notFound()를 던지면
+    // generateMetadata 결과가 이겨 404 응답이 홈 description·og·twitter를 상속한다. 던지면 404
+    // 경계(`[locale]/not-found.tsx`)의 메타가 쓰인다.
     if (!cat) notFound();
 
     const cfg = CATEGORY_CONFIG[cat];
-    const { isEmpty } = await loadCategorySnapshot(cat, locale);
-
     const canonicalPath = `/news/${cfg.slug}`;
+    // 카테고리 라벨·소개는 네 로케일 카탈로그의 키(`labelKey`·`descriptionKey`)로 푼다 —
+    // `koLabel`을 번역된 템플릿에 꽂으면 반쪽만 번역된 문장이 나간다.
+    const [tSeo, tRoot, { isEmpty }] = await Promise.all([
+        getTranslations({ locale, namespace: 'shared.seo' }),
+        getTranslations({ locale }),
+        loadCategorySnapshot(cat, locale),
+    ]);
+    const label = tRoot(cfg.labelKey);
 
-    // 데이터 없으면 noindex — 페이지 본문의 degrade 메시지와 일관.
     if (isEmpty) {
-        const emptyTitle = tSeo('newsCategory.emptyTitleTemplate', {
-            label: tRoot(cfg.labelKey),
+        return buildEmptyCategoryMetadata({
+            locale,
+            canonicalPath,
+            label,
+            tSeo,
         });
-        const emptyDescription = tSeo('newsCategory.emptyDescriptionTemplate', {
-            label: tRoot(cfg.labelKey),
-        });
-        const emptyUrl = `${SITE_URL}${localePath(locale, canonicalPath)}`;
-        return {
-            title: emptyTitle,
-            description: emptyDescription,
-            // `follow: true` — 헤더가 전 페이지에서 이 URL을 링크한다. 콜드 배포
-            // 직후의 빈 상태를 `nofollow`로 두면 사이트 전역에서 링크 주스가 끊기는
-            // 막다른 길이 된다. 자매 KR 라우트(`/market/kr` 등)도 전부 follow다.
-            robots: { index: false, follow: true },
-            // self-canonical — `canonical: null`(또는 생략)이면 신호가 비어 크롤러가 군집을
-            // 추정한다. 항상-noindex 탭과 같은 방식으로 자기
-            // URL을 가리킨다. hreflang 군집(`languages`)은 noindex라 싣지 않는다.
-            alternates: { canonical: emptyUrl },
-            // og/twitter를 비우면 루트 레이아웃의 홈 값을 상속해 이 URL이 `og:url`로 홈을
-            // 선언한다 — 자기 제목·설명·URL을 낸다.
-            openGraph: {
-                type: 'website',
-                siteName: brandName(locale),
-                title: emptyTitle,
-                description: emptyDescription,
-                url: emptyUrl,
-                ...localeOpenGraph(locale),
-            },
-            twitter: buildTwitterMetadata({
-                title: emptyTitle,
-                description: emptyDescription,
-            }),
-        };
     }
 
-    const title = buildCategoryPageTitle(tRoot(cfg.labelKey), tSeo);
-    const fullTitle = brandTitle(title, locale);
+    const title = buildCategoryPageTitle(label, tSeo);
     const description = buildCategoryPageDescription(
         tRoot(cfg.descriptionKey),
         tSeo
     );
-    const keywords = [
-        `${cfg.koLabel} 뉴스`,
-        `${cfg.koLabel} 최신 뉴스`,
-        `${cfg.koLabel} 뉴스 분석`,
-        // 지역 키워드는 그 카테고리가 실제로 속한 지역만 붙인다 — 한국 증시
-        // 페이지에 `미국 시장 뉴스`를 넣으면 무관한 질의로 유입돼 이탈만 만든다.
-        ...REGION_KEYWORDS[cfg.region],
-        '시장 뉴스 한국어',
-        'AI 뉴스 다이제스트',
-    ];
-
     return {
         title,
         description,
-        keywords,
-        // canonical을 넘기지 않는다 — `localeAlternates`가 로케일별 자기참조
-        // URL을 만든다. 로케일 무관 경로를 넘기면 `/en/news/…`이 ko를 canonical로
-        // 가리켜 hreflang 상호참조가 깨진다.
+        keywords: buildCategoryKeywords(cfg),
+        // canonical을 넘기지 않는다 — `localeAlternates`가 로케일별 자기참조 URL을 만든다.
+        // 로케일 무관 경로를 넘기면 `/en/news/…`이 ko를 canonical로 가리켜 hreflang 상호참조가 깨진다.
         alternates: localeAlternates(locale, canonicalPath, {
             types: rssAlternateTypes(locale),
         }),
-        openGraph: {
-            type: 'website',
-            siteName: brandName(locale),
-            title: fullTitle,
-            description,
-            url: `${SITE_URL}${localePath(locale, canonicalPath)}`,
-            ...localeOpenGraph(locale),
-        },
-        twitter: buildTwitterMetadata({ title: fullTitle, description }),
+        // 루트 레이아웃과 같은 값이지만 명시한다 — 생략하면 상속에 기대게 된다(src/app/CLAUDE.md#AP-3).
+        robots: localePageRobots(locale),
+        ...categorySocialMetadata(
+            locale,
+            canonicalPath,
+            brandTitle(title, locale),
+            description
+        ),
     };
 }
 
+/**
+ * 카테고리 뉴스 페이지 — 지역·카테고리 탭, 다이제스트(SSR peek 시드), 기사 목록. 목록이 비면
+ * 탭을 남긴 채 degrade 안내를 그리고 WebPage·BreadcrumbList 구조화데이터는 생략한다.
+ */
 export default async function CategoryNewsPage({ params }: Props) {
     const { locale: rawLocale, category: slug } = await params;
     const locale = enterLocale(rawLocale);
-    // 셋은 서로 독립이다.
-    const [tNav, t, tSeo] = await Promise.all([
-        getTranslations(),
-        getTranslations('app.news'),
-        getTranslations('shared.seo'),
-    ]);
     const cat = categoryFromSlug(slug);
-
-    if (!cat) {
-        notFound();
-    }
+    if (!cat) notFound();
 
     const cfg = CATEGORY_CONFIG[cat];
-    // D3 follow-up: SSR seed for the digest via peekMarketNewsDigestStatic
-    // (core 1.9.0's peekMarketNewsDigestCache), same pattern as /market's
-    // peekBriefingStatic and /economy's peekMacroBriefingStatic. See
-    // src/entities/market-news/api/marketNewsDigestStaticCache.ts.
-    const [{ items, isEmpty }, digestPeekSeed] = await Promise.all([
-        loadCategorySnapshot(cat, locale),
-        peekMarketNewsDigestStatic(cat, locale),
-    ]);
-
-    const hasEnrichedNews = items.some(item => item.sentiment !== null);
-
-    const categoryUrl = `${SITE_URL}/news/${cfg.slug}`;
-
-    // Only emit structured data on indexable pages — noindex degrade pages waste
-    // crawl budget on schema that won't be processed anyway.
-    const webPageJsonLd = !isEmpty
-        ? {
-              ...buildWebPageJsonLd({
-                  url: categoryUrl,
-                  name: brandTitle(
-                      buildCategoryPageTitle(tNav(cfg.labelKey), tSeo),
-                      locale
-                  ),
-                  description: buildCategoryPageDescription(
-                      tNav(cfg.descriptionKey),
-                      tSeo
-                  ),
-                  locale,
-              }),
-          }
-        : null;
-
+    const categoryPath = `/news/${cfg.slug}`;
+    // 번역자·목록·다이제스트 SSR 시드(`peekMarketNewsDigestStatic`, 읽기 전용 peek)는 서로 독립이다.
+    const [tNav, t, tSeo, { items, isEmpty }, digestPeekSeed] =
+        await Promise.all([
+            getTranslations(),
+            getTranslations('app.news'),
+            getTranslations('shared.seo'),
+            loadCategorySnapshot(cat, locale),
+            peekMarketNewsDigestStatic(cat, locale),
+        ]);
+    const label = tNav(cfg.labelKey);
+    const intro = tNav(cfg.descriptionKey);
+    const categoryUrl = `${SITE_URL}${categoryPath}`;
     // JSON-LD와 화면 브레드크럼의 단일 소스.
-    const breadcrumbTrail = categoryBreadcrumbTrail(
-        cfg,
-        `/news/${cfg.slug}`,
-        tNav
+    const breadcrumbTrail = categoryBreadcrumbTrail(cfg, categoryPath, tNav);
+    const newsListJsonLd = buildNewsItemListJsonLd(
+        items,
+        tSeo('faq.newsListName', { v0: label }),
+        locale
     );
-    const breadcrumbJsonLd = !isEmpty
-        ? buildBreadcrumbJsonLd(
-              breadcrumbTrail.map(({ name, path }) => ({
-                  name,
-                  url: `${SITE_URL}${path}`,
-              })),
-              locale
-          )
-        : null;
-
-    const newsListJsonLd =
-        items.length > 0
-            ? {
-                  '@context': 'https://schema.org',
-                  '@type': 'ItemList',
-                  name: tSeo('faq.newsListName', { v0: tNav(cfg.labelKey) }),
-                  // 초기 DOM에 실제로 그려지는 카드 수와 같은 상수로 자른다 — 근거는
-                  // `MARKET_NEWS_LIST_PAGE_SIZE`(shared/config/newsSerialization) 주석.
-                  itemListElement: items
-                      .slice(0, MARKET_NEWS_LIST_PAGE_SIZE)
-                      .map((item, idx) => ({
-                          '@type': 'ListItem',
-                          position: idx + 1,
-                          // 제3자 기사를 `Article`로 선언하지 않는다(2026-10-05 감사):
-                          // `url`은 외부 매체가 발행한 기사인데 `Article`에 `datePublished`·
-                          // `author`·`publisher`를 달면 이 페이지가 호스팅하지 않는 콘텐츠의
-                          // 저작을 주장하게 된다. 종목 뉴스 탭의 ItemList와 같이 목록 항목
-                          // (위치·URL·이름)까지만 말한다. URL에서 `utm_*` 추적 파라미터는 뗀다.
-                          url: stripUtmParams(item.url),
-                          name: resolveNewsTitle(item, locale),
-                      })),
-              }
-            : null;
 
     return (
         <>
-            {webPageJsonLd ? <JsonLd data={webPageJsonLd} /> : null}
-            {breadcrumbJsonLd ? <JsonLd data={breadcrumbJsonLd} /> : null}
+            {/* WebPage·BreadcrumbList는 색인되는 렌더에만 낸다 — noindex degrade 렌더에서는
+                처리되지 않을 마크업이 크롤 예산만 쓴다. */}
+            {!isEmpty && (
+                <>
+                    <JsonLd
+                        data={buildWebPageJsonLd({
+                            url: categoryUrl,
+                            name: brandTitle(
+                                buildCategoryPageTitle(label, tSeo),
+                                locale
+                            ),
+                            description: buildCategoryPageDescription(
+                                intro,
+                                tSeo
+                            ),
+                            locale,
+                        })}
+                    />
+                    <JsonLd
+                        data={buildBreadcrumbJsonLd(
+                            breadcrumbTrail.map(({ name, path }) => ({
+                                name,
+                                url: `${SITE_URL}${path}`,
+                            })),
+                            locale
+                        )}
+                    />
+                </>
+            )}
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 {/*
@@ -370,83 +195,38 @@ export default async function CategoryNewsPage({ params }: Props) {
                 <RegionTabs
                     vertical="news"
                     active={cfg.region}
-                    currentPath={`/news/${cfg.slug}`}
+                    currentPath={categoryPath}
                 />
                 <NewsCategoryTabs activeCategory={cat} />
-                {/* 마지막 마디는 현재 페이지라 링크를 걸지 않는다. */}
-                <Breadcrumb
-                    trail={breadcrumbTrail.map(({ name, path }, index) => ({
-                        label: name,
-                        ...(index === breadcrumbTrail.length - 1
-                            ? {}
-                            : { href: path }),
-                    }))}
-                />
+                <Breadcrumb trail={toVisibleCrumbs(breadcrumbTrail)} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
-                    {/* `koLabel`(AI 프롬프트용 한국어)이 아니라 로케일 라벨 — 예전에는 `/en/news/crypto`
-                        h1이 `암호화폐 News`였다. */}
-                    {tNav(cfg.labelKey)} {t('page.3a465d')}
+                    {/* `koLabel`(AI 프롬프트용 한국어)이 아니라 로케일 라벨이다. */}
+                    {label} {t('page.3a465d')}
                 </h1>
-                <p className="text-sm text-secondary-400">
-                    {tNav(cfg.descriptionKey)}
-                </p>
+                <p className="text-sm text-secondary-400">{intro}</p>
                 <Suspense fallback={<DigestSkeleton />}>
                     <MarketNewsDigest
                         category={cat}
-                        hasEnrichedNews={hasEnrichedNews}
+                        hasEnrichedNews={items.some(
+                            item => item.sentiment !== null
+                        )}
                         peekSeed={digestPeekSeed}
                     />
                 </Suspense>
                 {isEmpty ? (
-                    <MarketNewsDegraded koLabel={tNav(cfg.labelKey)} />
+                    <MarketNewsDegraded label={label} />
                 ) : (
                     // 그리지 않는 카드까지 RSC 페이로드로 내보내지 않는다 —
-                    // MARKET_NEWS_ROW_SERIALIZATION_LIMIT 주석 참고.
+                    // NEWS_ROW_SERIALIZATION_LIMIT 주석 참고.
                     <MarketNewsList
                         category={cat}
                         initialItems={items.slice(
                             0,
-                            MARKET_NEWS_ROW_SERIALIZATION_LIMIT
+                            NEWS_ROW_SERIALIZATION_LIMIT
                         )}
                     />
                 )}
             </main>
         </>
-    );
-}
-
-function DigestSkeleton() {
-    const t = useTranslations('app.news');
-    return (
-        <div
-            aria-busy="true"
-            role="status"
-            aria-label={t('page.faef4a')}
-            className={cn(SURFACE_CARD, 'p-6')}
-        >
-            <div className="mb-4 h-5 w-1/3 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            <div className="space-y-2">
-                <div className="h-3.5 w-full animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
-                <div className="h-3.5 w-2/3 animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
-            </div>
-        </div>
-    );
-}
-
-interface MarketNewsDegradedProps {
-    koLabel: string;
-}
-
-function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
-    const t = useTranslations('app.news');
-    return (
-        <section
-            aria-label={t('page.newsEmptyAria', { v0: koLabel })}
-            className={cn(SURFACE_CARD, 'p-6')}
-        >
-            <p className="text-sm text-secondary-400">
-                {t('page.fdb87b', { v0: koLabel })}
-            </p>
-        </section>
     );
 }

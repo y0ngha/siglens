@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
+import { useRevealedKey } from '../hooks/useRevealedKey';
+import { useRevokeStatusFocus } from '../hooks/useRevokeStatusFocus';
 import { useSiglensApiKeyForms } from '../hooks/useSiglensApiKeyForms';
 import { CreateKeyForm } from './CreateKeyForm';
 import { KeyRow } from './KeyRow';
@@ -14,6 +17,7 @@ import { RevealedKey } from './RevealedKey';
 interface SiglensApiKeySectionProps {
     /** `null` = 목록을 불러오지 못했다(빈 목록과 다르다). */
     keys: readonly SiglensApiKeySummary[] | null;
+    /** 활성 키 상한. 닿으면 발급을 막는다(서버도 같은 값으로 다시 막는다). */
     maxKeys: number;
     /** 이메일 인증 전에는 발급할 수 없다 — 폼을 막고 안내를 먼저 보여 준다. */
     emailVerified: boolean;
@@ -29,6 +33,47 @@ interface SiglensApiKeySectionProps {
     byokSectionId: string;
 }
 
+interface KeyListProps {
+    keys: readonly SiglensApiKeySummary[] | null;
+    revokeFormAction: (formData: FormData) => void;
+}
+
+/** 키 목록 — 불러오기 실패·빈 목록·키 행 목록 셋 중 하나. */
+function KeyList({ keys, revokeFormAction }: KeyListProps) {
+    const t = useTranslations('features.siglens-api-key-management');
+    if (keys === null)
+        return (
+            <p role="alert" className="text-sm text-ui-danger-text">
+                {t('SiglensApiKeySection.loadFailed')}
+            </p>
+        );
+    if (keys.length === 0)
+        return (
+            <p className="text-sm text-secondary-400">
+                {t('SiglensApiKeySection.empty')}
+            </p>
+        );
+    return (
+        <ul
+            className="space-y-2"
+            aria-label={t('SiglensApiKeySection.listLabel')}
+        >
+            {keys.map(apiKey => (
+                <KeyRow
+                    key={apiKey.id}
+                    apiKey={apiKey}
+                    revokeFormAction={revokeFormAction}
+                />
+            ))}
+        </ul>
+    );
+}
+
+/**
+ * `/account`의 "시그렌즈 API" 섹션 — 키 발급(원문 1회 노출)·목록·폐기, API 기본 모델 슬롯,
+ * 시작 가이드. 목록과 상한 판단의 근거는 서버가 props로 내려 주고, 발급·폐기 결과는
+ * `useSiglensApiKeyForms`의 액션 상태로 받는다.
+ */
 export function SiglensApiKeySection({
     keys,
     maxKeys,
@@ -40,26 +85,25 @@ export function SiglensApiKeySection({
     byokSectionId,
 }: SiglensApiKeySectionProps) {
     const t = useTranslations('features.siglens-api-key-management');
+    const nameInputRef = useRef<HTMLInputElement>(null);
     const { createState, createFormAction, revokeState, revokeFormAction } =
         useSiglensApiKeyForms();
-    const [dismissedRawKey, setDismissedRawKey] = useState<string | null>(null);
+    const { revealedKey, revealId, dismiss } = useRevealedKey(createState);
+    const revokeStatusRef = useRevokeStatusFocus(revokeState);
+
     const activeCount = keys?.length ?? 0;
     const limitReached = keys !== null && activeCount >= maxKeys;
-    const revokeStatusRef = useRef<HTMLDivElement>(null);
-    // 폐기에 성공하면 누른 행이 사라진다 — 항상 남아 있는 상태 영역으로 포커스를 옮긴다.
-    useEffect(() => {
-        if (revokeState.status === 'revoked') revokeStatusRef.current?.focus();
-    }, [revokeState]);
-    const revealedKey =
-        createState.status === 'created' &&
-        createState.rawKey !== dismissedRawKey
-            ? createState.rawKey
-            : null;
+
+    // "보관했어요"를 누르면 그 버튼이 패널과 함께 사라진다 — 다음 키 이름을 적을 입력칸으로 보낸다.
+    const handleDismiss = () => {
+        dismiss();
+        nameInputRef.current?.focus();
+    };
 
     return (
         <div className="space-y-4" data-testid="siglens-api-key-section">
             <div>
-                <h2 className="text-lg font-semibold text-secondary-100">
+                <h2 className={HEADING_SECTION}>
                     {t('SiglensApiKeySection.title')}
                 </h2>
                 <p className="mt-1 text-sm text-secondary-400">
@@ -77,8 +121,9 @@ export function SiglensApiKeySection({
 
             {revealedKey !== null && (
                 <RevealedKey
+                    key={revealId}
                     rawKey={revealedKey}
-                    onDismiss={() => setDismissedRawKey(revealedKey)}
+                    onDismiss={handleDismiss}
                 />
             )}
 
@@ -90,30 +135,10 @@ export function SiglensApiKeySection({
                 maxKeys={maxKeys}
                 hasByokKey={hasByokKey}
                 byokSectionId={byokSectionId}
+                nameInputRef={nameInputRef}
             />
 
-            {keys === null ? (
-                <p role="alert" className="text-sm text-ui-danger-text">
-                    {t('SiglensApiKeySection.loadFailed')}
-                </p>
-            ) : keys.length === 0 ? (
-                <p className="text-sm text-secondary-400">
-                    {t('SiglensApiKeySection.empty')}
-                </p>
-            ) : (
-                <ul
-                    className="space-y-2"
-                    aria-label={t('SiglensApiKeySection.listLabel')}
-                >
-                    {keys.map(apiKey => (
-                        <KeyRow
-                            key={apiKey.id}
-                            apiKey={apiKey}
-                            revokeFormAction={revokeFormAction}
-                        />
-                    ))}
-                </ul>
-            )}
+            <KeyList keys={keys} revokeFormAction={revokeFormAction} />
 
             <div
                 ref={revokeStatusRef}

@@ -3,8 +3,8 @@ import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import {
     CALENDAR_ANALYSIS_REFRESH_FLAG_KEY,
     CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_SECONDS,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /**
  * 국가별 키. 전역 키 하나면 먼저 방문한 쪽이 30분 창을 태워, 다른 국가의 발표는

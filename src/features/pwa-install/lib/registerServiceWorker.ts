@@ -1,9 +1,14 @@
+/**
+ * @file 서비스 워커 등록 — `useRegisterServiceWorker`가 부르는 단일 경로.
+ */
+
 import { pageReload } from '@/shared/lib/pageReload';
 
 // SW 등록 + controllerchange 시 소프트 리로드 → 캐시된 HTML과 신규 JS 청크 간 hydration mismatch 방지.
 // 모듈 플래그로 controllerchange 리스너 1회 부착 보장 (브라우저 register 자체는 idempotent).
 let registered = false;
 
+/** 테스트가 브라우저 API를 갈아 끼울 지점과, 새 SW 인계 시 새로고침할지 여부를 정한다. */
 export interface RegisterServiceWorkerOptions {
     /** Override the location used for the soft reload. Tests inject this. */
     readonly reload?: () => void;

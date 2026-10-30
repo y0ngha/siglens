@@ -54,7 +54,7 @@ vi.mock(
 const { mockPositionBucket } = vi.hoisted(() => ({
     mockPositionBucket: vi.fn(async () => undefined),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: mockPositionBucket,
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
