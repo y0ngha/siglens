@@ -1,3 +1,7 @@
+/**
+ * 탭 레일(`SymbolTabs`)·브레드크럼(`SymbolLayoutHeader`)·`[symbol]` 레이아웃이 함께 읽는 탭 정의 —
+ * 각자 탭 목록을 들면 노출되는 탭과 링크가 갈린다.
+ */
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     type MarketProfileId,
@@ -10,57 +14,46 @@ import {
  * (`SymbolTabsSkeleton`, used by the RSC layout's PPR shell) can import it without
  * pulling in client-only modules.
  *
- * **라벨은 키만 담는다.** 여기서 번역자를 인자로 받아 `t()`를 부르면 추출기가
- * 이 파일을 건너뛰어(`translatorNamespace.size === 0` 조기 반환) 그 키가
- * 클라이언트 페이로드에서 빠지고, 화면에는 키 문자열이 그대로 렌더된다 —
- * 실제로 그렇게 냈다(`noTranslatorParamCall` 가드가 지금은 막는다).
- * `labelKey`는 `shared.symbolTab` 네임스페이스 기준 상대 키다.
+ * 라벨은 여기 두지 않는다 — 번역자를 인자로 받는 모듈에서 `t()`를 부르면 추출기가
+ * 이 파일을 건너뛴다(`noTranslatorParamCall` 가드). 탭 라벨은 `useSymbolTabLabels`가
+ * 리터럴 키로 만든다.
  */
 export const TABS = [
-    { key: 'chart', labelKey: 'chart', hrefBuilder: (s: string) => `/${s}` },
+    { key: 'chart', hrefBuilder: (s: string) => `/${s}` },
     {
         key: 'news',
-        labelKey: 'news',
         hrefBuilder: (s: string) => `/${s}/news`,
     },
     {
         key: 'fundamental',
-        labelKey: 'fundamental',
         hrefBuilder: (s: string) => `/${s}/fundamental`,
     },
     {
         key: 'financials',
-        labelKey: 'financials',
         hrefBuilder: (s: string) => `/${s}/financials`,
     },
     {
         key: 'congress',
-        labelKey: 'congress',
         hrefBuilder: (s: string) => `/${s}/congress`,
     },
     {
         key: 'flows',
-        labelKey: 'flows',
         hrefBuilder: (s: string) => `/${s}/flows`,
     },
     {
         key: 'options',
-        labelKey: 'options',
         hrefBuilder: (s: string) => `/${s}/options`,
     },
     {
         key: 'fear-greed',
-        labelKey: 'fear-greed',
         hrefBuilder: (s: string) => `/${s}/fear-greed`,
     },
     {
         key: 'overall',
-        labelKey: 'overall',
         hrefBuilder: (s: string) => `/${s}/overall`,
     },
     {
         key: 'position',
-        labelKey: 'position',
         hrefBuilder: (s: string) => `/${s}/position`,
     },
 ] as const;
@@ -82,3 +75,21 @@ function isSubTabKey(key: TabKey): key is SymbolSubTabKey {
 export const SYMBOL_SUB_TAB_KEYS: readonly SymbolSubTabKey[] = TABS.map(
     tab => tab.key
 ).filter(isSubTabKey);
+
+const SYMBOL_SUB_TAB_KEY_SET: ReadonlySet<string> = new Set<string>(
+    SYMBOL_SUB_TAB_KEYS
+);
+
+function isSubTabSegment(segment: string): segment is SymbolSubTabKey {
+    return SYMBOL_SUB_TAB_KEY_SET.has(segment);
+}
+
+/**
+ * `useSelectedLayoutSegment()`가 돌려준 세그먼트가 하위 탭이면 그 키, 아니면 null —
+ * 차트(`null`)나 알 수 없는 세그먼트면 브레드크럼 셋째 마디를 그리지 않는다.
+ */
+export function subTabOfSegment(
+    segment: string | null
+): SymbolSubTabKey | null {
+    return segment !== null && isSubTabSegment(segment) ? segment : null;
+}

@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import { cn } from '@/shared/lib/cn';
@@ -10,14 +8,23 @@ import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
 import { MailIcon, PortfolioIcon } from '@/shared/ui/StrokeIcons';
-import type { EmailReportNudge } from '../hooks/useEmailReportNudge';
+import { useFocusWhenAdded } from '../hooks/useFocusWhenAdded';
+import { useNudgeWatchlistAdd } from '../hooks/useNudgeWatchlistAdd';
+import type { EmailReportNudge } from '../lib/nudgeDecisions';
 
 interface EmailReportNudgeModalProps {
+    /** 띄울 넛지 — 종류에 따라 설정 권유 또는 종목 담기 권유를 그린다. */
     nudge: EmailReportNudge;
+    /** 닫기(나중에·Esc·배경 클릭·설정 이동). 호스트가 같은 넛지를 다시 띄우지 않는다. */
     onClose: () => void;
 }
 
 const TITLE_ID = 'email-report-nudge-title';
+/**
+ * 본문 설명의 id. 패널에 포커스를 두는 안내형 모달이라 `aria-describedby`가 없으면
+ * 스크린리더가 제목만 읽고 무엇을 보내 주는지(본문)는 건너뛴다.
+ */
+const DESCRIPTION_ID = 'email-report-nudge-description';
 const ACTION_SIZE = 'h-10 px-4 text-sm';
 const PANEL_CLASS =
     'max-w-sm bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-700';
@@ -49,13 +56,13 @@ export function EmailReportNudgeModal({
     }
 }
 
-function SetupNudgeModal({
-    symbolCount,
-    onClose,
-}: {
+interface SetupNudgeModalProps {
+    /** 보유∪관심 종목 수 — 본문의 "N개"에 들어간다. */
     symbolCount: number;
     onClose: () => void;
-}) {
+}
+
+function SetupNudgeModal({ symbolCount, onClose }: SetupNudgeModalProps) {
     const t = useTranslations('features.email-report-nudge');
     useFunnelNudgeShown({ kind: 'member_setup' });
 
@@ -70,6 +77,7 @@ function SetupNudgeModal({
     return (
         <ModalShell
             titleId={TITLE_ID}
+            descriptionId={DESCRIPTION_ID}
             onClose={onClose}
             focusPanel
             className={PANEL_CLASS}
@@ -79,7 +87,10 @@ function SetupNudgeModal({
                 <h2 id={TITLE_ID} className="font-semibold text-secondary-50">
                     {t('EmailReportNudgeModal.3dc0b0')}
                 </h2>
-                <p className="text-sm leading-relaxed text-secondary-300">
+                <p
+                    id={DESCRIPTION_ID}
+                    className="text-sm leading-relaxed text-secondary-300"
+                >
                     {t('EmailReportNudgeModal.8495de', { v0: symbolCount })}
                 </p>
             </div>
@@ -104,54 +115,22 @@ function SetupNudgeModal({
     );
 }
 
-function SymbolNudgeModal({
-    symbol,
-    onClose,
-}: {
+interface SymbolNudgeModalProps {
+    /** 권할 종목(대문자 심볼). */
     symbol: string;
     onClose: () => void;
-}) {
+}
+
+function SymbolNudgeModal({ symbol, onClose }: SymbolNudgeModalProps) {
     const t = useTranslations('features.email-report-nudge');
-    const watchlist = useWatchlist();
-    const [isPending, setIsPending] = useState(false);
-    const pendingRef = useRef(false);
-    const statusRef = useRef<HTMLParagraphElement>(null);
+    const { added, canAdd, isPending, add } = useNudgeWatchlistAdd(symbol);
+    const statusRef = useFocusWhenAdded<HTMLParagraphElement>(added);
     useFunnelNudgeShown({ kind: 'member_symbol' });
-
-    // "담았어요"는 실제로 담긴 상태(`has`, 낙관적 갱신·실패 시 롤백)만 따른다. 한도 초과·실패는
-    // 훅이 토스트로 알리고 버튼은 그대로 남아, 담기지 않았는데 담겼다고 보이는 일이 없다.
-    const added = watchlist.has(symbol);
-    const canToggle = watchlist.isHydrated && !watchlist.isIdentityPending;
-
-    // 담기 성공으로 버튼이 사라지면 포커스가 body로 떨어져 Tab이 모달 밖으로 새므로,
-    // 담김 상태로 바뀌는 순간 상태 문구로 포커스를 옮긴다(열릴 때 이미 담겨 있으면 건드리지 않는다).
-    const wasAddedRef = useRef(added);
-    useEffect(() => {
-        if (added && !wasAddedRef.current) statusRef.current?.focus();
-        wasAddedRef.current = added;
-    }, [added]);
-
-    const addToWatchlist = async (): Promise<void> => {
-        if (!canToggle || pendingRef.current) return;
-        pendingRef.current = true;
-        trackFunnelEvent('nudge_clicked', {
-            kind: 'member_symbol',
-            cta: 'add',
-        });
-        setIsPending(true);
-        // 라벨은 심볼로 넘긴다: 회원 경로의 `addWatchlistItemAction`이 회사명을 채운다.
-        // `try … finally`는 React Compiler가 내리지 못해(react-hooks-js/todo) `.catch`로 대신한다 —
-        // add는 실패를 결과값('failed')으로 돌려주지만, 혹시 던져도 진행 상태는 반드시 푼다.
-        await watchlist
-            .add({ symbol, label: symbol }, 'nudge')
-            .catch(() => 'failed' as const);
-        pendingRef.current = false;
-        setIsPending(false);
-    };
 
     return (
         <ModalShell
             titleId={TITLE_ID}
+            descriptionId={DESCRIPTION_ID}
             onClose={onClose}
             focusPanel
             className={PANEL_CLASS}
@@ -161,7 +140,10 @@ function SymbolNudgeModal({
                 <h2 id={TITLE_ID} className="font-semibold text-secondary-50">
                     {t('EmailReportNudgeModal.5da22e')}
                 </h2>
-                <p className="text-sm leading-relaxed text-secondary-300">
+                <p
+                    id={DESCRIPTION_ID}
+                    className="text-sm leading-relaxed text-secondary-300"
+                >
                     {t('EmailReportNudgeModal.ef5a22', { v0: symbol })}
                 </p>
             </div>
@@ -185,8 +167,8 @@ function SymbolNudgeModal({
                         // 네이티브 disabled는 포커스를 body로 떨어뜨리므로 aria-disabled로 막는다.
                         <button
                             type="button"
-                            onClick={addToWatchlist}
-                            aria-disabled={!canToggle || isPending}
+                            onClick={add}
+                            aria-disabled={!canAdd || isPending}
                             className={cn(
                                 BUTTON_PRIMARY,
                                 ACTION_SIZE,

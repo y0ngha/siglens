@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { LOCALES, resolveLocale } from '@/shared/i18n/locales';
-import { buildAiManifest } from '../aiManifest';
+import { buildAiManifest } from '../_lib/aiManifest';
 
 /** 로케일별 매니페스트는 정적으로 굽는다 — 요청마다 만들 이유가 없다. */
 export function generateStaticParams() {

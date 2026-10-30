@@ -1,6 +1,7 @@
 import {
     getFieldError,
     getSubmissionError,
+    resolveEmailDefault,
 } from '@/features/contact-form/lib/contactFormUtils';
 import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 import {
@@ -73,6 +74,33 @@ describe('getSubmissionError', () => {
         const error = { code: 'submission_failed' as const };
         expect(getSubmissionError(error, fakeT)).toBe(
             CONTACT_ERROR_KEY.submission_failed
+        );
+    });
+});
+
+describe('resolveEmailDefault', () => {
+    const values = { title: 't', email: 'typed@example.com', content: 'c' };
+
+    it('prefills the signed-in email before any action result', () => {
+        const state = { submitted: false, error: null, values };
+        expect(resolveEmailDefault(state, 'me@example.com')).toBe(
+            'me@example.com'
+        );
+    });
+
+    it('returns an empty string for a signed-out visitor', () => {
+        const state = { submitted: false, error: null, values };
+        expect(resolveEmailDefault(state, undefined)).toBe('');
+    });
+
+    it('keeps what the user sent once the action returned an error', () => {
+        const state = {
+            submitted: false,
+            error: { code: 'title_required' as const, field: 'title' as const },
+            values,
+        };
+        expect(resolveEmailDefault(state, 'me@example.com')).toBe(
+            'typed@example.com'
         );
     });
 });

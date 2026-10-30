@@ -1,3 +1,7 @@
+/**
+ * 차트 로딩 중 캔버스 위에 덮는 스켈레톤 오버레이.
+ */
+
 import { useTranslations } from 'next-intl';
 export function ChartSkeleton() {
     const t = useTranslations('widgets.chart');

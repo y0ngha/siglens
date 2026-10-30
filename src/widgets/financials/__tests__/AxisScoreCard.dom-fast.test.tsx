@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
 import { AxisScoreCard } from '@/widgets/financials/AxisScoreCard';
 import type { AxisScore } from '@y0ngha/siglens-core';
 
@@ -45,13 +46,46 @@ describe('AxisScoreCard', () => {
         expect(screen.getByText('B')).toBeInTheDocument();
     });
 
-    it('renders all signal chips with labelKo', () => {
+    it('renders signal chips from the type translation, not the core labelKo', () => {
         render(
             <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
         );
-        expect(screen.getByText('매출 가속화')).toBeInTheDocument();
-        expect(screen.getByText('성장 둔화')).toBeInTheDocument();
+        expect(screen.getByText('매출 성장 가속')).toBeInTheDocument();
+        expect(screen.getByText('매출 역성장')).toBeInTheDocument();
         expect(screen.getByText('영업 레버리지')).toBeInTheDocument();
+        expect(screen.queryByText('매출 가속화')).not.toBeInTheDocument();
+    });
+
+    it('renders signal chips in the active locale', () => {
+        render(
+            withLocale(
+                <AxisScoreCard
+                    title="Growth"
+                    axisKey="growth"
+                    axis={SAMPLE_AXIS}
+                />,
+                'en'
+            )
+        );
+        expect(
+            screen.getByText('Revenue growth accelerating')
+        ).toBeInTheDocument();
+        expect(screen.getByText('Revenue decline')).toBeInTheDocument();
+        expect(screen.getByText('Operating leverage')).toBeInTheDocument();
+        expect(screen.queryByText('매출 가속화')).not.toBeInTheDocument();
+    });
+
+    it('formats amount metrics in the statement currency', () => {
+        render(
+            <AxisScoreCard
+                title="성장성"
+                axisKey="growth"
+                axis={SAMPLE_AXIS}
+                currency="TWD"
+            />
+        );
+        expect(screen.getByText(/TWD/)).toBeInTheDocument();
+        expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
     });
 
     it('renders metric labels and formatted values', () => {
@@ -109,8 +143,8 @@ describe('AxisScoreCard', () => {
             />
         );
         // None of the signal labels should be present
-        expect(screen.queryByText('매출 가속화')).not.toBeInTheDocument();
-        expect(screen.queryByText('성장 둔화')).not.toBeInTheDocument();
+        expect(screen.queryByText('매출 성장 가속')).not.toBeInTheDocument();
+        expect(screen.queryByText('매출 역성장')).not.toBeInTheDocument();
     });
 
     it('renders the axis score value', () => {

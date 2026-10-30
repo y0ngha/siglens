@@ -65,12 +65,22 @@ describe('buildShortVolumeSeries', () => {
         ]);
         expect(series.rows[0].ratio).toBeNull();
         expect(series.average).toBeCloseTo(0.5);
+        // 평균에 들어간 날은 비중을 계산할 수 있던 하루뿐이다(행은 둘).
+        expect(series.rows).toHaveLength(2);
+        expect(series.averagedDays).toBe(1);
+    });
+
+    it('averagedDays는 구간 안에서 비중을 계산할 수 있던 거래일 수다', () => {
+        expect(buildShortVolumeSeries(makeShortVolume(70)).averagedDays).toBe(
+            SHORT_VOLUME_CHART_DAYS
+        );
     });
 
     it('빈 입력은 평균·최신이 null이다', () => {
         expect(buildShortVolumeSeries([])).toEqual({
             rows: [],
             average: null,
+            averagedDays: 0,
             latest: null,
         });
     });

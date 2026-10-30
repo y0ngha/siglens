@@ -4,10 +4,8 @@ import {
     type ApiErrorDoc,
     type ApiErrorScope,
 } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
-import {
-    buildApiToolReference,
-    type ApiToolReference,
-} from '@/entities/siglens-api-key/lib/buildApiToolReferences';
+import { buildApiToolReference } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
+import type { ApiToolReference } from '@/entities/siglens-api-key/model';
 import {
     FRESH_ANALYSIS_TOOL,
     renderChartDataNotes,

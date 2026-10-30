@@ -1,6 +1,7 @@
 import type { Bar } from '@y0ngha/siglens-core';
 import {
     computeChartGeometry,
+    isReportChartMaPeriod,
     REPORT_CHART_BARS,
 } from '@/entities/email-report/lib/chartGeometry';
 
@@ -72,5 +73,13 @@ describe('computeChartGeometry', () => {
 
         expect(geo.high).toBe(30);
         expect(geo.maLines).toEqual([{ period: 50, points: '150.0,10.0' }]);
+    });
+});
+
+describe('isReportChartMaPeriod', () => {
+    it('리포트 차트가 그리는 기간(20·60)만 참이다', () => {
+        expect(isReportChartMaPeriod(20)).toBe(true);
+        expect(isReportChartMaPeriod(60)).toBe(true);
+        expect(isReportChartMaPeriod(50)).toBe(false);
     });
 });

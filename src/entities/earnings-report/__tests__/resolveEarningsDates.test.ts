@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import {
-    DrizzleEarningsReportsRepository,
     EARNINGS_DATES_LOOKBACK_DAYS,
     listEarningsDates,
     listEarningsDatesAfterRefresh,

@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * EMA 이동평균 오버레이 훅 — 기간 선택과 표시 상태를 관리한다.
+ */
+
 import type { RefObject } from 'react';
 import type { IChartApi, LineWidth } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';

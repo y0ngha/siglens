@@ -1,383 +1,104 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
-import { GUIDE_PATH } from '@/shared/lib/guidePaths';
-import {
-    startTransition,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
-import { createPortal } from 'react-dom';
-import { cn } from '@/shared/lib/cn';
 import { authNextQuery } from '@/shared/lib/auth/redirect';
-import { LocaleSwitcher } from './LocaleSwitcher';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
-import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
-import { useHydrated } from '@/shared/hooks/useHydrated';
-import { CloseIcon, MenuIcon } from '@/shared/ui/StrokeIcons';
-import type { NavVerticalNode } from './headerNavTree';
-import { isHrefActive } from './navActiveState';
+import { GUIDE_PATH } from '@/shared/lib/guidePaths';
 import { AiNavLink } from './AiNavLink';
+import { useMobileDrawer } from './hooks/useMobileDrawer';
+import { LocaleSwitcher } from './LocaleSwitcher';
+import { MobileAuthCta } from './ui/mobile-menu/MobileAuthCta';
+import { MobileDrawerPanel } from './ui/mobile-menu/MobileDrawerPanel';
+import { MobileMenuTrigger } from './ui/mobile-menu/MobileMenuTrigger';
+import { MobileNavGroup } from './ui/mobile-menu/MobileNavGroup';
+import { MobileNavLink } from './ui/mobile-menu/MobileNavLink';
+import type { NavVerticalNode } from './utils/headerNavTree';
+import { isPathWithin } from './utils/navActiveState';
 
 interface HeaderMobileMenuProps {
     readonly items: ReadonlyArray<NavVerticalNode>;
     /**
-     * 비로그인일 때만 드로어에 인증 CTA를 낸다.
-     *
-     * 모바일 헤더에서 `회원가입` 버튼을 뺐으므로(좁은 한 줄에 아이콘 넷이
-     * 이미 서 있다) 그 진입점이 여기로 온다. 로그인 상태에서는 헤더의
-     * 아바타 메뉴가 계정 링크를 이미 갖고 있어 중복이라 내지 않는다.
+     * 비로그인일 때만 드로어에 인증 CTA를 낸다. 로그인 상태에서는 헤더의 아바타 메뉴가
+     * 계정 링크를 이미 갖고 있어 중복이다.
      */
     readonly showAuthCta?: boolean;
     /**
-     * SSO handoff query appended to the auth CTA's `/login`/`/signup` hrefs
-     * (e.g. `/api/auth/handoff?to=ai&next=%2F`), so a visitor who opened the
-     * drawer on the ai host returns there after signing in. Undefined on the
-     * main host — hrefs stay plain `/login`/`/signup`.
+     * 인증 CTA의 `/login`·`/signup` href에 붙는 SSO handoff 쿼리
+     * (예: `/api/auth/handoff?to=ai&next=%2F`). ai 호스트에서 드로어를 연 방문자가 로그인 뒤
+     * 그곳으로 돌아오게 한다. 메인 호스트에서는 `undefined`라 href가 그대로 `/login`·`/signup`이다.
      */
     readonly authNext?: string;
 }
 
+/**
+ * 모바일 햄버거 + 드로어 내비 조립.
+ *
+ * 열림 상태와 부수 효과는 `useMobileDrawer`, 셸은 `MobileDrawerPanel`이 맡고 여기서는 드로어
+ * 안의 순서만 정한다 — 언어 설정, 내비 그룹, 차트 가이드, AI 진입, 인증 CTA.
+ * 래퍼의 `lg:hidden`은 `Header`의 데스크톱 내비 `hidden lg:flex`와 짝이다 — 한쪽만 바꾸면 두
+ * 내비가 동시에 보이거나 둘 다 사라진다.
+ */
 export function HeaderMobileMenu({
     items,
     showAuthCta = false,
     authNext,
 }: HeaderMobileMenuProps) {
-    const authQuery = authNextQuery(authNext);
     const t = useTranslations('widgets.layout');
-    // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
-    const tNav = useTranslations();
-    // 헤더 CTA와 **같은 키**를 쓴다 — 같은 목적지에 다른 문구가 붙으면 안 된다.
-    const tUser = useTranslations('widgets.layout');
-    const [isOpen, setIsOpen] = useState(false);
-    // 포털은 하이드레이션 뒤에만 그린다 — 첫 클라이언트 렌더가 서버 HTML(포털 없음)과
-    // 같아야 React #418이 나지 않는다. `document` 존재로 게이트하면 첫 렌더부터 어긋난다.
-    const mounted = useHydrated();
-    // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
-    // `/en/market`을 그대로 주므로, 떼지 않으면 `isHrefActive`의 정확 일치가 영영
-    // 실패해 **비-ko 사용자에게 활성 내비 표시가 통째로 사라진다.**
-    // next-intl의 navigation 대신 순수 헬퍼를 쓰는 이유: 그쪽은 모듈 로드 시점에
-    // `next/navigation`의 `redirect`를 읽어, 부분 mock을 쓰는 기존 테스트 70여 개가
-    // 한꺼번에 import에 실패한다.
+    const authQuery = authNextQuery(authNext);
     const pathname = useAppPathname();
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const drawerRef = useRef<HTMLDivElement>(null);
-
-    const close = () => {
-        setIsOpen(false);
-        triggerRef.current?.focus();
-    };
-
-    const toggle = () => setIsOpen(v => !v);
-
-    useEscapeKey(close, isOpen);
-    useFocusTrap(drawerRef, isOpen);
-
-    // Auto-close the drawer when the pathname changes (e.g. browser back/forward
-    // popstate navigation). Nav link clicks already call close() directly, but
-    // history navigation bypasses that handler — leaving the drawer open with
-    // body-scroll locked until the user manually dismisses it.
-    // useEffectEvent lets the effect read the latest `isOpen` without listing it as a
-    // dependency, so the effect still fires only when the pathname changes. It does NOT
-    // exempt the call from react/set-state-in-effect (oxlint traces setState through
-    // useEffectEvent bodies too); what satisfies the lint is the startTransition
-    // wrapper, whose callback is not treated as a synchronous setState in the effect
-    // (REACT.md#EF-1).
-    const closeOnNav = useEffectEvent(() => {
-        if (!isOpen) return; // already closed: nothing to do (avoids spurious focus() on mount)
-        startTransition(() => {
-            close();
-        });
-    });
-    useEffect(() => {
-        closeOnNav();
-    }, [pathname]);
-
-    // Prevent body scroll while the drawer is open
-    useBodyScrollLock(isOpen);
-
-    /*
-     * The backdrop + drawer are portaled to document.body to escape the header's
-     * `backdrop-filter: blur(...)` containing block. Per CSS spec, `backdrop-filter`
-     * (like `transform` and `filter`) makes the element the containing block for
-     * `position: fixed` descendants — so without the portal, the fixed inset
-     * coordinates (drawer `top-0 right-0`, backdrop `inset-0`) resolve against
-     * the header's bounding box instead of the viewport, and the backdrop would
-     * cover only the header area, not the full screen. Portaling to document.body
-     * restores standard viewport-relative fixed positioning.
-     *
-     * Nav links remain crawlable because the desktop `HeaderNav` already renders
-     * the same `NAV_TREE` server-side; the mobile drawer being
-     * client-only does not affect discoverability.
-     *
-     * The drawer is always rendered (when mounted) and shown/hidden via translate-x
-     * so the slide-in animation works correctly on open.
-     */
+    const { isOpen, triggerRef, drawerRef, close, toggle } =
+        useMobileDrawer(pathname);
 
     return (
-        // `lg` 는 Header.tsx의 데스크톱 내비 `hidden lg:flex`와 짝이다 — 한쪽만
-        // 바꾸면 두 내비가 동시에 보이거나 둘 다 사라진다.
         <div className="lg:hidden">
-            <button
+            <MobileMenuTrigger
                 ref={triggerRef}
-                type="button"
-                aria-label={
-                    isOpen
-                        ? t('HeaderMobileMenu.923b26')
-                        : t('HeaderMobileMenu.195da6')
-                }
-                aria-expanded={isOpen}
-                aria-controls="mobile-nav-drawer"
+                isOpen={isOpen}
                 onClick={toggle}
-                className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+            />
+            <MobileDrawerPanel
+                drawerRef={drawerRef}
+                isOpen={isOpen}
+                onClose={close}
             >
-                <MenuIcon className="size-6" />
-            </button>
+                {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로 <nav> 밖에 둔다 — 안에 넣으면
+                    스크린리더가 메뉴 링크 목록의 일부로 읽는다. */}
+                <div className="border-b border-secondary-700 px-2 py-2">
+                    <LocaleSwitcher showLabel align="start" />
+                </div>
 
-            {mounted &&
-                typeof document !== 'undefined' &&
-                createPortal(
-                    <>
-                        {/*
-                          z-70: 모바일 분석 시트(z-50)·AI 버튼(z-60) 위에 떠야 한다.
-                          검색 오버레이(z-70)와는 동시에 열리지 않는다.
-                        */}
-                        {isOpen && (
-                            <div
-                                className="fixed inset-0 z-70 bg-black/50"
-                                aria-hidden="true"
-                                data-testid="mobile-nav-backdrop"
-                                onClick={close}
-                            />
-                        )}
+                <nav
+                    aria-label={t('HeaderMobileMenu.076925')}
+                    className="overflow-y-auto overscroll-contain"
+                >
+                    {items.map(vertical => (
+                        <MobileNavGroup
+                            key={vertical.id}
+                            vertical={vertical}
+                            pathname={pathname}
+                            onNavigate={close}
+                        />
+                    ))}
+                    {/* 차트 가이드는 버티컬 목록의 마지막 그룹이다 — 아래 고정 영역에 두면 스크롤
+                        목록이 그만큼 줄어 뉴스 하위 항목이 잘려 보인다. */}
+                    <div className="border-t border-secondary-700 py-2">
+                        <MobileNavLink
+                            href={GUIDE_PATH}
+                            label={t('HeaderMobileMenu.guideLink')}
+                            active={isPathWithin(GUIDE_PATH, pathname)}
+                            onNavigate={close}
+                        />
+                    </div>
+                </nav>
 
-                        <div
-                            id="mobile-nav-drawer"
-                            ref={drawerRef}
-                            role="dialog"
-                            aria-modal={isOpen ? 'true' : undefined}
-                            aria-label={t('HeaderMobileMenu.076925')}
-                            aria-hidden={!isOpen}
-                            tabIndex={-1}
-                            className={cn(
-                                'border-secondary-700 bg-secondary-900 fixed top-0 right-0 z-70 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none',
-                                isOpen ? 'translate-x-0' : 'translate-x-full'
-                            )}
-                        >
-                            <div className="flex items-center justify-end border-b border-secondary-700 px-3 py-2">
-                                <button
-                                    type="button"
-                                    onClick={close}
-                                    aria-label={t('HeaderMobileMenu.d28d27')}
-                                    tabIndex={isOpen ? undefined : -1}
-                                    className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                >
-                                    <CloseIcon className="size-5" />
-                                </button>
-                            </div>
+                <div className="border-t border-secondary-700 p-3">
+                    <AiNavLink className="w-full justify-center" />
+                </div>
 
-                            {/*
-                                데스크톱은 드롭다운이지만 드로어는 **펼친 채로** 둔다.
-                                좁은 화면에서 2단 접힘 메뉴는 목적지 하나에 탭 두 번을
-                                요구하고, 열림 상태를 버티컬마다 따로 관리해야 한다.
-                                수직 공간은 남으므로 전부 보여주는 편이 짧다.
-                            */}
-                            {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로
-                                <nav> 밖에 둔다 — 안에 넣으면 스크린리더가 메뉴
-                                링크 목록의 일부로 읽는다. */}
-                            <div className="border-b border-secondary-700 px-2 py-2">
-                                <LocaleSwitcher
-                                    tabIndex={isOpen ? undefined : -1}
-                                    showLabel
-                                    align="start"
-                                />
-                            </div>
-
-                            <nav
-                                aria-label={t('HeaderMobileMenu.076925')}
-                                className="overflow-y-auto overscroll-contain"
-                            >
-                                {items.map(vertical => (
-                                    /*
-                                        그룹 구분은 **제목 크기와 구분선**이 함께
-                                        만든다. 처음에는 제목을 10px 회색으로 뒀는데,
-                                        지역 링크(12px)와 크기가 비슷해 `시장 분석`이
-                                        그 아래 `미국`·`한국`과 같은 층으로 읽혔다 —
-                                        특히 뉴스처럼 자식이 6줄인 그룹에서는 어디서
-                                        다음 그룹이 시작되는지 알 수 없었다.
-                                        제목을 키우고 밝게 한 뒤 그룹 사이에 선을 둔다.
-                                    */
-                                    <div
-                                        key={vertical.id}
-                                        // 시각적 구분만으로는 부족하다 — 지역 라벨이
-                                        // 짧아져(`미국`/`한국`) 버티컬마다 반복되므로,
-                                        // 스크린리더에는 같은 이름의 링크 8개가 한
-                                        // 줄로 이어진다. 그룹에 이름을 붙여 어느
-                                        // 버티컬의 `미국`인지 읽히게 한다.
-                                        role="group"
-                                        aria-labelledby={`mobile-nav-group-${vertical.id}`}
-                                        className="border-t border-secondary-700 py-2 first:border-t-0"
-                                    >
-                                        <p
-                                            id={`mobile-nav-group-${vertical.id}`}
-                                            className="px-4 pt-1 pb-2 text-sm font-bold tracking-wide text-secondary-100"
-                                        >
-                                            {tNav(vertical.labelKey)}
-                                        </p>
-                                        {vertical.overview && (
-                                            <MobileNavLink
-                                                key={vertical.overview.href}
-                                                href={vertical.overview.href}
-                                                label={tNav(
-                                                    vertical.overview.labelKey
-                                                )}
-                                                active={isHrefActive(
-                                                    vertical.overview.href,
-                                                    pathname
-                                                )}
-                                                focusable={isOpen}
-                                                onNavigate={close}
-                                            />
-                                        )}
-                                        {vertical.regions.flatMap(region => [
-                                            <MobileNavLink
-                                                key={region.href}
-                                                href={region.href}
-                                                label={tNav(region.labelKey)}
-                                                active={isHrefActive(
-                                                    region.href,
-                                                    pathname
-                                                )}
-                                                focusable={isOpen}
-                                                onNavigate={close}
-                                            />,
-                                            ...region.children.map(leaf => (
-                                                <MobileNavLink
-                                                    key={leaf.href}
-                                                    href={leaf.href}
-                                                    label={tNav(leaf.labelKey)}
-                                                    active={isHrefActive(
-                                                        leaf.href,
-                                                        pathname
-                                                    )}
-                                                    focusable={isOpen}
-                                                    onNavigate={close}
-                                                    // 들여쓰기로 계층 표현 — 데스크톱 메뉴와 동일 규칙.
-                                                    indented
-                                                />
-                                            )),
-                                        ])}
-                                    </div>
-                                ))}
-                                {/* 차트 가이드는 버티컬 목록의 마지막 그룹으로 둔다 — 아래 고정 영역(AI·로그인)에
-                                    두면 스크롤 목록이 그만큼 줄어 뉴스 하위 항목이 잘려 보인다. */}
-                                <div className="border-t border-secondary-700 py-2">
-                                    <MobileNavLink
-                                        href={GUIDE_PATH}
-                                        label={t('HeaderMobileMenu.guideLink')}
-                                        active={
-                                            pathname === GUIDE_PATH ||
-                                            pathname?.startsWith(
-                                                `${GUIDE_PATH}/`
-                                            ) === true
-                                        }
-                                        focusable={isOpen}
-                                        onNavigate={close}
-                                    />
-                                </div>
-                            </nav>
-
-                            <div className="border-t border-secondary-700 p-3">
-                                <AiNavLink
-                                    className="w-full justify-center"
-                                    tabIndex={isOpen ? undefined : -1}
-                                />
-                            </div>
-
-                            {/* 인증 CTA는 내비 **밑**이다 — 위에 두면 메뉴를
-                                열 때마다 목적지 목록보다 가입 유도가 먼저 온다.
-                                `mt-auto`로 바닥에 붙여 스크롤과 무관하게 보인다. */}
-                            {showAuthCta && (
-                                <div className="mt-auto flex flex-col gap-2 border-t border-secondary-700 p-3">
-                                    <Link
-                                        href={`/signup${authQuery}`}
-                                        prefetch={false}
-                                        tabIndex={isOpen ? undefined : -1}
-                                        onClick={close}
-                                        className="inline-flex min-h-11 items-center justify-center rounded bg-primary-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                    >
-                                        {tUser('HeaderUserMenu.ecb4cc')}
-                                    </Link>
-                                    <Link
-                                        href={`/login${authQuery}`}
-                                        prefetch={false}
-                                        tabIndex={isOpen ? undefined : -1}
-                                        onClick={close}
-                                        className="inline-flex min-h-11 items-center justify-center rounded border border-border-control px-3 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                    >
-                                        {tUser('HeaderUserMenu.e225a6')}
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                    </>,
-                    document.body
+                {showAuthCta && (
+                    <MobileAuthCta authQuery={authQuery} onNavigate={close} />
                 )}
+            </MobileDrawerPanel>
         </div>
-    );
-}
-
-interface MobileNavLinkProps {
-    readonly href: string;
-    readonly label: string;
-    readonly active: boolean;
-    /** 드로어가 닫혀 있으면 탭 순서에서 뺀다 — 화면 밖 링크에 포커스가 갇히지 않도록. */
-    readonly focusable: boolean;
-    readonly onNavigate: () => void;
-    readonly indented?: boolean;
-}
-
-/** 드로어의 링크 한 줄. 지역과 그 하위 목적지가 같은 컴포넌트를 쓴다(들여쓰기만 다름). */
-function MobileNavLink({
-    href,
-    label,
-    active,
-    focusable,
-    onNavigate,
-    indented,
-}: MobileNavLinkProps) {
-    return (
-        <Link
-            href={href}
-            // HeaderNav와 동일 — `_rsc` 해시 파편화로 캐시 미스만 늘어난다
-            // (CDN_CACHING.md §1).
-            prefetch={false}
-            aria-current={active ? 'page' : undefined}
-            onClick={onNavigate}
-            tabIndex={focusable ? undefined : -1}
-            className={cn(
-                // 한글 메뉴 라벨이라 0.12em 자간을 걷어낸다(HeaderNavMenu와 동일
-                // 근거). 모바일 메뉴 항목은 탭 타깃이기도 해 14px로 올린다.
-                'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none',
-                indented
-                    ? 'pr-4 pl-8 font-normal text-secondary-500 hover:text-secondary-200'
-                    : 'px-4 font-semibold',
-                active
-                    ? 'text-secondary-100 border-primary-500 border-l-2'
-                    : cn(
-                          'border-l-2 border-transparent',
-                          indented
-                              ? ''
-                              : 'text-secondary-400 hover:text-secondary-100'
-                      )
-            )}
-        >
-            {label}
-        </Link>
     );
 }

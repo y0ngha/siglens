@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 재무 AI 분석 쿼리 훅 — SSE 스트림 호출, 게이트 대기(`awaiting_interaction`), 오류 정규화를
+ * 한 곳에서 맡아 위젯이 상태 유니온만 보고 렌더하게 한다.
+ */
 import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
@@ -14,6 +18,7 @@ import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
 
+/** 위젯이 분기하는 분석 상태 유니온. 모든 variant가 `trigger`를 노출한다. */
 export type FinancialsAnalysisState =
     | { status: 'loading'; trigger: () => void }
     | {
@@ -52,8 +57,8 @@ async function fetchFinancialsAnalysis(
 
     if (result.status === 'cached' || result.status === 'done')
         return { data: result.result, plain: readPlain(result) };
-    // `miss_no_trigger`: AI 자동 실행 게이트가 막은 상태의 캐시 전용 조회가 미스였다
-    // (`useAiAutoRunAllowed`). 오류가 아니라 대기 상태다 — 입력이 들어오면 다시 부른다.
+    // `miss_no_trigger`: 실행 권한(`useAiRunPermission`)이 막은 상태의 캐시 전용 조회가
+    // 미스였다. 오류가 아니라 대기 상태다 — 권한이 열리면 다시 부른다.
     if (result.status === 'miss_no_trigger') {
         throw new AwaitingInteractionError();
     }
@@ -62,12 +67,10 @@ async function fetchFinancialsAnalysis(
             throw new Error(result.error.message);
         }
         /**
-         * core는 `fetch_failed`에 **항상** `error`를 채운다 — `String(error)`나
-         * `Profile not found for symbol: AAPL` 같은 **영어 예외 문자열**이다
-         * (core의 `dist/application` 아래 run 파일들). 그래서
-         * `result.error ?? fallback`은
-         * 폴백이 절대 안 걸리고 원시 예외가 전 로케일에 그대로 나갔다.
-         * 카탈로그 문구를 먼저 쓰고, 원문은 개발자용으로 콘솔에만 남긴다.
+         * core는 `fetch_failed`에 **항상** 영어 예외 문자열(`Profile not found for symbol: AAPL`
+         * 등)을 `error`로 채운다 — `result.error ?? fallback`으로는 폴백이 걸리지 않고 원문이
+         * 전 로케일에 나가므로, 화면에는 카탈로그 문구를 쓰고 원문은 개발자용으로 콘솔에만
+         * 남긴다.
          */
         if (result.code === 'fetch_failed' && result.error) {
             console.error('[fetchFailed]', result.error);
@@ -84,14 +87,19 @@ async function fetchFinancialsAnalysis(
     throw new Error(messages.unexpected);
 }
 
+/**
+ * 재무 분석을 조회하고 상태 유니온으로 돌려준다. `autoRunAllowed`가 거짓이면 캐시만 읽고,
+ * 허용되는 순간 대기 중인 쿼리를 한 번 다시 불러 생성한다.
+ *
+ * 한 번 받은 결과는 재실행이 실패해도 지킨다 — 공유 트리거나 재시도가 완료된 분석을 다시
+ * 돌렸다가 실패했을 때 보이던 결과를 오류 카드로 바꾸지 않는다.
+ */
 export function useFinancialsAnalysis(
     symbol: string,
     modelId: ModelId,
     /**
-     * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
-     * spec Part A). Defaults to `false` — pre-toggle callers keep resolving
-     * to the exact same query key as before. Part of the query key so
-     * toggling re-submits analysis (distinct cache key).
+     * 회원의 "깊은 생각" 토글 값. 기본값은 `false`이며 쿼리 키의 일부라 토글하면 별도 캐시
+     * 키로 분석을 다시 제출한다.
      */
     reasoning = false,
     /**
@@ -100,18 +108,17 @@ export function useFinancialsAnalysis(
      */
     isSettingsHydrated = true,
     /**
-     * AI 분석을 생성까지 요청해도 되는지(`useAiAutoRunAllowed().allowed`). `false`면
-     * 캐시만 조회하고, 미스면 `awaiting_interaction`으로 둔다. 기본값 `true`는 단위
-     * 테스트와 게이트가 필요 없는 호출부용이다.
+     * AI 분석을 생성까지 요청해도 되는지(`useAiRunPermission().allowed`). `false`면 캐시만
+     * 조회하고, 미스면 `awaiting_interaction`으로 둔다. 기본값 `true`는 단위 테스트와 게이트가
+     * 필요 없는 호출부용이다.
      */
     autoRunAllowed = true
 ): FinancialsAnalysisState {
     const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
     const streamMessages = useStreamErrorMessages();
-    // queryKey는 인라인으로 둔다(§17 훅 순서: useMemo는 useQuery보다 뒤여야 함).
-    // React Query는 queryKey를 deep-equality로 비교하므로 매 렌더 새 배열 참조가
-    // 생성돼도 불필요한 재페치가 발생하지 않는다.
+    // queryKey는 메모하지 않는다 — React Query가 키를 깊은 비교하므로 매 렌더 새 배열이어도
+    // 같은 쿼리다.
     const query = useQuery({
         queryKey: QUERY_KEYS.financialsAnalysis(
             symbol,
@@ -144,9 +151,23 @@ export function useFinancialsAnalysis(
         void refetch();
     };
 
+    // useRefetchWhenAllowed의 입력(isAwaiting)이 query.error에서 파생되므로 파생값 바로 뒤에
+    // 선언한다(HK-1 예외) — 다른 훅은 모두 이 변수 앞에 있다.
     const isAwaitingInteraction =
         query.error instanceof AwaitingInteractionError;
     useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);
+
+    // 데이터가 있으면 오류보다 먼저 본다 — React Query는 재실행이 실패해도 직전 데이터를 남긴다.
+    if (query.data !== undefined) {
+        return query.isFetching
+            ? { status: 'loading', trigger: retry }
+            : {
+                  status: 'done',
+                  result: query.data.data,
+                  plain: query.data.plain,
+                  trigger: retry,
+              };
+    }
 
     if (query.isError) {
         if (isAwaitingInteraction) {
@@ -163,15 +184,6 @@ export function useFinancialsAnalysis(
                     ? query.error
                     : new Error(tError('analysisFailed')),
             retry,
-            trigger: retry,
-        };
-    }
-
-    if (query.data !== undefined) {
-        return {
-            status: 'done',
-            result: query.data.data,
-            plain: query.data.plain,
             trigger: retry,
         };
     }
