@@ -23,14 +23,22 @@ export const PROTECTED_SITEMAP_SYMBOLS: readonly string[] = [
     ...protectedSymbolSet,
 ].toSorted();
 
+const REMOVAL_CUTOFF_ISO_BY_KIND: Readonly<Record<RemovalSitemapKind, string>> =
+    {
+        chart: REMOVAL_CHART_CUTOFF_ISO,
+        news: REMOVAL_LEGACY_TAB_CUTOFF_ISO,
+        overall: REMOVAL_LEGACY_TAB_CUTOFF_ISO,
+        fundamental: REMOVAL_LEGACY_TAB_CUTOFF_ISO,
+        'fear-greed': REMOVAL_LEGACY_TAB_CUTOFF_ISO,
+    };
+
 /**
  * kind별 후보 컷오프(ISO). 차트 URL만 신규 컷오프를 쓰고 나머지 탭은 레거시 컷오프를 쓴다.
+ * kind를 추가하면 Record 매핑에서 컴파일 에러로 누락을 잡는다.
  * 캐시 키에도 들어가므로 컷오프가 바뀌면 캐시 항목이 새로 만들어진다.
  */
 export function removalCutoffIsoFor(kind: RemovalSitemapKind): string {
-    return kind === 'chart'
-        ? REMOVAL_CHART_CUTOFF_ISO
-        : REMOVAL_LEGACY_TAB_CUTOFF_ISO;
+    return REMOVAL_CUTOFF_ISO_BY_KIND[kind];
 }
 
 /** 색인 대상 심볼을 대소문자 무시로 제외한 후보 목록. */
