@@ -1,55 +1,25 @@
 'use client';
 
+/**
+ * 시장 요약 패널 — 지수·섹터 그룹 카드와 AI 브리핑, 데이터 조회 실패 안내를 조립한다.
+ */
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/shared/lib/cn';
-import { quotePrefixFor } from '@/shared/lib/priceFormat';
-import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
-import { IndexCard } from './IndexCard';
-import {
-    BriefingCard,
-    BriefingErrorCard,
-    BriefingLoadingCard,
-} from './BriefingCard';
-import { MarketDataErrorNotice } from './MarketDataErrorNotice';
-import { useMarketSummary } from './hooks/useMarketSummary';
-import { useMarketBriefing } from './hooks/useMarketBriefing';
-import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
-import {
-    KR_CYCLICAL_DEFENSIVE_GROUP_LABEL,
-    KR_GROWTH_TECH_GROUP_LABEL,
-} from '@/shared/config/dashboard-tickers-kr';
-import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import type {
     MarketBriefingResponse,
     MarketSectorData,
-    RunBriefingResult,
 } from '@y0ngha/siglens-core';
-
-interface BriefingRegionProps {
-    input: RunBriefingResult | 'error' | undefined;
-    scope: ClientDashboardScope;
-}
-
-function BriefingRegion({ input, scope }: BriefingRegionProps) {
-    // 아직 결과가 없다(서버 seed 없음 + 스트림 진행 전·중). `null` 대신 자리를 잡은 로딩
-    // 카드를 그린다 — 서버 HTML에도 나가므로 브리핑 도착 시 아래 패널이 밀리지 않는다.
-    if (input === undefined) return <BriefingLoadingCard />;
-    if (input === 'error') return <BriefingErrorCard />;
-    // Both 'cached' and 'done' have briefing + generatedAt — no Suspense needed
-    // because run* is blocking and always returns a complete result.
-    if (input.status === 'cached' || input.status === 'done') {
-        return (
-            <BriefingCard
-                briefing={input.briefing}
-                generatedAt={input.generatedAt}
-                scope={scope}
-            />
-        );
-    }
-    // Fallback: unexpected status — render loading skeleton (defensive)
-    return <BriefingLoadingCard />;
-}
+import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { BriefingRegion } from './BriefingRegion';
+import { useMarketBriefing } from './hooks/useMarketBriefing';
+import { useMarketSummary } from './hooks/useMarketSummary';
+import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
+import { IndexGrid } from './ui/market-summary/IndexGrid';
+import { MarketDataErrorNotice } from './ui/market-summary/MarketDataErrorNotice';
+import { SectorGroupSection } from './ui/market-summary/SectorGroupSection';
+import { panelHeadingKey } from './utils/marketLabelKeys';
 
 interface MarketSummaryPanelProps {
     /** 어느 시장인가. 시세·브리핑 조회와 섹터 묶음, 섹션 제목이 전부 여기서 갈린다. */
@@ -58,54 +28,29 @@ interface MarketSummaryPanelProps {
 }
 
 /**
- * 섹션 제목 겸 랜드마크 라벨. 지역 탭이 위에 있어도 "지금 보고 있는 게 어느 시장인지"를
- * 제목이 한 번 더 말해 줘야 한다 — 스크린리더는 탭의 활성 상태를 이 섹션과 함께
- * 읽어 주지 않는다.
- */
-const PANEL_HEADING_KEY: Partial<Record<ClientDashboardScope['id'], string>> = {
-    us: 'panelHeading.us',
-    kr: 'panelHeading.kr',
-};
-
-/**
- * 섹터 그룹 라벨 → 메시지 키.
+ * 시세 조회가 끝나기 전에는 스켈레톤을, 요약이 아예 없으면 안내만(닫으면 빈 화면) 그린다.
  *
- * `SectorGroupDef.label`은 `@y0ngha/siglens-core` 타입의 필드라 여기서 모양을
- * 바꿀 수 없다(§SCOPE 크로스레포 가드). 그래서 **어댑터**로 붙인다 — 라벨은
- * siglens 쪽 config(`dashboard-tickers*.ts`)가 정하므로 이 표만 맞춰 두면 된다.
- * 표에 없는 라벨은 원문 그대로 떨어뜨린다(빈 화면보다 낫다).
+ * 라이브 영역(`aria-live="polite"`)은 지수·섹터 카드 갱신 낭독용으로 카드 그리드에만 둔다.
+ * `role="alert"`(assertive)인 데이터 안내와 브리핑 영역(오류 카드 `role="alert"`, 로딩 카드
+ * `role="status"`)을 그 안에 중첩하면 라이브리전이 경쟁하므로, 모두 polite 영역 밖에 렌더한다.
  */
-const SECTOR_GROUP_LABEL_KEY: Record<string, string> = {
-    성장: 'sectorGroup.growth',
-    경기민감: 'sectorGroup.cyclical',
-    방어: 'sectorGroup.defensive',
-    [KR_GROWTH_TECH_GROUP_LABEL]: 'sectorGroup.growthTech',
-    [KR_CYCLICAL_DEFENSIVE_GROUP_LABEL]: 'sectorGroup.cyclicalDefensive',
-};
-
 export function MarketSummaryPanel({
     scope,
     peekSeed,
 }: MarketSummaryPanelProps) {
     const t = useTranslations('widgets.dashboard');
     const [noticeDismissed, setNoticeDismissed] = useState(false);
-    const { data, isPending, sectorMap, indices, hasMissingQuotes } =
+    const { isPending, isTotalFailure, sectorMap, indices, hasMissingQuotes } =
         useMarketSummary(scope.id);
     const { input: briefing } = useMarketBriefing(scope.id, peekSeed);
-    // `crypto` scope에는 이 패널을 쓰는 페이지가 없다(에이전트 도구 전용). 키를
-    // 억지로 채우면 미국 제목이 크립토 화면에 붙는데, 그건 화면이 생기는 날까지
-    // 아무도 못 본다 — 없으면 scope 자신의 라벨로 떨어뜨린다.
-    const headingKey = PANEL_HEADING_KEY[scope.id];
+    const headingKey = panelHeadingKey(scope.id);
     const heading = headingKey ? t(headingKey) : scope.marketLabel;
 
     if (isPending) return <MarketSummaryPanelSkeleton scope={scope} />;
 
-    const isTotalFailure = data !== undefined && 'ok' in data;
     const showNotice = !noticeDismissed && (isTotalFailure || hasMissingQuotes);
     const dismissNotice = () => setNoticeDismissed(true);
 
-    // 완전 실패(server_error)는 summary 자체가 없다 — 안내만 띄우고, 닫으면 기존처럼
-    // 아무것도 렌더하지 않는다(빈 화면).
     if (isTotalFailure) {
         if (!showNotice) return null;
         return (
@@ -119,9 +64,6 @@ export function MarketSummaryPanel({
         );
     }
 
-    // aria-live="polite"는 카드/브리핑 갱신 announce용으로 데이터 div에만 둔다.
-    // role="alert"(assertive)인 안내를 그 안에 중첩하면 라이브리전이 경쟁하므로,
-    // 안내는 polite 영역 밖(제목 아래·그리드 위)에 렌더한다.
     return (
         <section aria-label={heading} className="page-container py-10">
             <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
@@ -133,73 +75,26 @@ export function MarketSummaryPanel({
                     className="mb-6"
                 />
             )}
-            <div className="flex flex-col gap-6" aria-live="polite">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {indices.map(idx => (
-                        <IndexCard
-                            key={idx.fmpSymbol}
-                            data={idx}
-                            // 지수 값은 포인트라 통화 기호를 붙이지 않는다(`^`로 시작하는
-                            // 공급자 심볼). 환율·ETF는 그 시장의 통화를 쓴다.
-                            currencySymbol={quotePrefixFor(
-                                idx.fmpSymbol,
-                                scope.currencySymbol
-                            )}
-                            tickerIsReadable={scope.tickerIsReadable}
-                        />
-                    ))}
-                </div>
-
-                {/* 섹터 ETF — 그룹별 내부 링크 포함 (SEO) */}
-                <div className="flex flex-col gap-3">
-                    {scope.sectorGroups.map(group => {
-                        const groupSectors = group.symbols
-                            .map(sym => sectorMap.get(sym))
-                            .filter(
-                                (s): s is MarketSectorData => s !== undefined
-                            );
-
-                        return (
-                            <div key={group.label}>
-                                <p className={cn('mb-1.5', LABEL_KO)}>
-                                    {SECTOR_GROUP_LABEL_KEY[group.label]
-                                        ? t(SECTOR_GROUP_LABEL_KEY[group.label])
-                                        : group.label}
-                                </p>
-                                {/* 모바일에서는 2열로 접는다. 바로 위 지수 그리드가
-                                    이미 `grid-cols-2 sm:grid-cols-4`인데 이쪽만
-                                    반응형 접두사가 없어, 320px에서 카드가 66px로
-                                    눌리고 `shrink-0`인 등락률 배지(73px)가 카드를
-                                    33px 넘겼다 — 가격이 `$18`처럼 잘렸다. */}
-                                <div
-                                    className={cn(
-                                        'grid grid-cols-2 gap-2',
-                                        groupSectors.length === 3
-                                            ? 'sm:grid-cols-3'
-                                            : 'sm:grid-cols-4'
+            <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6" aria-live="polite">
+                    <IndexGrid indices={indices} scope={scope} />
+                    {/* 섹터 ETF — 그룹별 내부 링크 포함 (SEO) */}
+                    <div className="flex flex-col gap-3">
+                        {scope.sectorGroups.map(group => (
+                            <SectorGroupSection
+                                key={group.label}
+                                label={group.label}
+                                sectors={group.symbols
+                                    .map(symbol => sectorMap.get(symbol))
+                                    .filter(
+                                        (sector): sector is MarketSectorData =>
+                                            sector !== undefined
                                     )}
-                                >
-                                    {groupSectors.map(etf => (
-                                        <IndexCard
-                                            key={etf.symbol}
-                                            data={etf}
-                                            currencySymbol={
-                                                scope.currencySymbol
-                                            }
-                                            tickerIsReadable={
-                                                scope.tickerIsReadable
-                                            }
-                                            {...(scope.linkSectorCards
-                                                ? { href: `/${etf.symbol}` }
-                                                : {})}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
+                                scope={scope}
+                            />
+                        ))}
+                    </div>
                 </div>
-
                 <BriefingRegion input={briefing} scope={scope} />
             </div>
         </section>

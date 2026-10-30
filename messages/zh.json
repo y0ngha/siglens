@@ -3876,17 +3876,18 @@
         "dashboard": {
             "BriefingCard": {
                 "38eff4": "AI 简报生成中…",
-                "39b300": "截至",
                 "7bd647": "下跌板块",
                 "8b256d": "未能加载简报。",
-                "e1760c": "上涨板块"
+                "e1760c": "上涨板块",
+                "generatedAt": "截至 <time>{v0}</time>（KST）"
             },
             "IndexCard": {
-                "analyzeTitle": "{v0} 分析"
+                "analyzeTitle": "分析 {v0}"
             },
             "MarketDataErrorNotice": {
                 "69afbd": "请稍后刷新重试。",
                 "76bb07": "关闭通知",
+                "marketLabelCrypto": "加密货币市场",
                 "marketLabelKr": "韩国股市",
                 "marketLabelUs": "美国股市",
                 "partial": "部分{v0}数据未能加载。",
@@ -3913,7 +3914,11 @@
                 "976db4": "上涨迹象",
                 "9c8687": "方向不明，建议谨慎观察。",
                 "ab2e36": "该板块目前没有捕捉到信号。请查看其他板块。",
-                "ede11c": "上涨信号和下跌信号强度相似的股票。"
+                "ede11c": "上涨信号和下跌信号强度相似的股票。",
+                "loadFailed": "未能加载板块信号。请稍后重试。",
+                "loading": "正在加载板块信号。",
+                "retry": "重试",
+                "statusSummary": "股票数量：上涨信号 {v0} 只，上涨迹象 {v1} 只，混合 {v2} 只，下跌迹象 {v3} 只，下跌信号 {v4} 只"
             },
             "SectorSignalPanelSkeleton": {
                 "f65a95": "板块信号加载中"
@@ -3922,7 +3927,7 @@
                 "651e5e": "选择板块"
             },
             "SignalStockCard": {
-                "analyzeTitle": "分析{v0}",
+                "analyzeTitle": "分析 {v0}",
                 "fe2ec0": "上涨 {v0} 次 / 下跌 {v1} 次 已检测"
             },
             "SignalSubsection": {
