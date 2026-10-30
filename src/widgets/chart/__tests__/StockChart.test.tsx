@@ -617,6 +617,23 @@ describe('StockChart', () => {
         expect(mockCreateChart).toHaveBeenCalledTimes(1);
     });
 
+    // 차트는 마운트 시 한 번만 만든다 — 빈 상태에서 캔버스 컨테이너를 빼면, 같은 인스턴스로
+    // 데이터가 도착했을 때(전환 중 타임프레임 변경) 차트가 영영 생기지 않았다.
+    it('creates the chart even when the first render has no bars, and draws once bars arrive', () => {
+        const { rerender } = render(<StockChart bars={[]} timeframe="1Day" />);
+        expect(mockCreateChart).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('차트 데이터가 없습니다')).toBeInTheDocument();
+
+        mockSetData.mockClear();
+        rerender(<StockChart bars={mockBars} timeframe="1Day" />);
+
+        expect(mockCreateChart).toHaveBeenCalledTimes(1);
+        expect(mockSetData).toHaveBeenCalled();
+        expect(
+            screen.queryByText('차트 데이터가 없습니다')
+        ).not.toBeInTheDocument();
+    });
+
     /**
      * 이 차트 **바로 아래**에 거래량 차트가 붙고 그쪽이 자기 시간축을 그린다.
      * 여기까지 그리면 같은 날짜 라벨이 화면에 두 번 찍히고(각 28px), 세로 예산이
