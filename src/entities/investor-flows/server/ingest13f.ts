@@ -28,7 +28,9 @@ import {
     nextQuarterEnd,
     positionsRetentionFloor,
     previousQuarterEnd,
+    retainedPeriods,
 } from '../lib/investorFlowsDates';
+import { groupFilingsByCik } from '../lib/groupFilingsByCik';
 import {
     parseSec13fPrimaryDoc,
     pickSec13fDocuments,
@@ -44,10 +46,9 @@ import type {
     Sec13fIndexEntry,
 } from '../model';
 import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
+import type { ApplyFilingInput, ReapplyAmendment } from '../api/apply13fFiling';
 import type {
-    ApplyFilingInput,
     DirtyBatch,
-    ReapplyAmendment,
     FilingFailureInput,
     PendingFiling,
 } from '../api/investorFlows13fRepository';
@@ -391,27 +392,6 @@ async function processFiling(
     });
 }
 
-/** 같은 필러의 제출은 한 그룹으로 묶어 직렬(정정 규칙이 순서에 의존), 그룹끼리만 병렬. */
-function groupByCik(targets: readonly FilingTarget[]): FilingTarget[][] {
-    const groups = new Map<string, FilingTarget[]>();
-    for (const target of targets) {
-        const group = groups.get(target.cik) ?? [];
-        group.push(target);
-        groups.set(target.cik, group);
-    }
-    return [...groups.values()].map(group =>
-        [...group].sort((a, b) =>
-            a.filingDate !== b.filingDate
-                ? a.filingDate < b.filingDate
-                    ? -1
-                    : 1
-                : a.accession < b.accession
-                  ? -1
-                  : 1
-        )
-    );
-}
-
 async function processTargets(
     deps: Ingest13fDeps,
     targets: readonly FilingTarget[],
@@ -419,7 +399,7 @@ async function processTargets(
     floor: string,
     state: RunState
 ): Promise<void> {
-    const groups = groupByCik(targets);
+    const groups = groupFilingsByCik(targets);
 
     /** 한 필러의 제출을 차례로 — 멈춤 결정(마감·차단·오류)이 서면 **제출 사이에서** 즉시 그만둔다. */
     async function runGroup(group: readonly FilingTarget[]): Promise<void> {
@@ -515,20 +495,6 @@ export async function aggregateModeFor(
 ): Promise<AggregateMode> {
     if (!(await hasBaseline(repo, period, floor))) return 'none';
     return isPeriodComplete(period, today) ? 'complete' : 'panel';
-}
-
-/** 보존 범위 안의 분기들(하한 ~ 가장 최근 분기말) — DB를 훑지 않고 날짜로 계산한다. */
-function retainedPeriods(floor: string, today: string): string[] {
-    const periods: string[] = [];
-    const latest = latestQuarterEndOnOrBefore(today);
-    for (
-        let period = floor;
-        period <= latest;
-        period = nextQuarterEnd(period)
-    ) {
-        periods.push(period);
-    }
-    return periods;
 }
 
 /**

@@ -15,10 +15,8 @@ import {
     type Ingest13fRepository,
 } from '../../server/ingest13f';
 import type { AggregateMode } from '../../api/aggregateSql';
-import type {
-    ApplyFilingInput,
-    DirtyBatch,
-} from '../../api/investorFlows13fRepository';
+import type { ApplyFilingInput } from '../../api/apply13fFiling';
+import type { DirtyBatch } from '../../api/investorFlows13fRepository';
 import type { InvestorFlowsUniverse } from '../../api/investorFlowsUniverseRepository';
 import type { FilingRecord } from '../../model';
 import {

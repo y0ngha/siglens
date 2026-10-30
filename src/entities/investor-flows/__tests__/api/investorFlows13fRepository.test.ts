@@ -6,11 +6,8 @@ import {
     sec13fOptionPositions,
     sec13fPositions,
 } from '@/shared/db/schema';
-import {
-    Drizzle13fRepository,
-    toValueK,
-    type ApplyFilingInput,
-} from '../../api/investorFlows13fRepository';
+import { toValueK, type ApplyFilingInput } from '../../api/apply13fFiling';
+import { Drizzle13fRepository } from '../../api/investorFlows13fRepository';
 import { callsOf, createFakeDb, renderSql } from '../fixtures/fakeDb';
 
 vi.mock('server-only', () => ({}));

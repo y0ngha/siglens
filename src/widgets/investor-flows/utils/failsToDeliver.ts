@@ -1,6 +1,6 @@
 import type { FailsToDeliverPoint } from '@y0ngha/siglens-core';
 import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
-import { FTD_LOOKBACK_DAYS } from '@/entities/investor-flows/lib/investorFlowsSnapshot';
+import { FTD_LOOKBACK_DAYS } from '@/entities/investor-flows/lib/snapshot/short';
 
 export interface FailsToDeliverSeries {
     /** 결제일 오름차순(실패가 있던 날만). */
