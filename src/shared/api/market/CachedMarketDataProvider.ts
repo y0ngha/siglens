@@ -11,7 +11,6 @@ import {
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { createMemoryLru } from '@/shared/cache/memoryLru';
 import {
     EOD_PUBLISH_BUFFER_HOURS,
     lastClosedSessionDate,
@@ -22,7 +21,6 @@ import {
     MS_PER_SECOND,
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
-import type { EodHistoryEntry } from './eodHistoryMerge';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import { type EodHistoryDeps, getEodHistory } from './eodHistoryCache';
 import {
@@ -31,6 +29,7 @@ import {
     INTRADAY_HISTORY_TTL_SECONDS,
     readCachedHistory,
     type HistoryMemory,
+    createHistoryMemory,
 } from './historyCache';
 import {
     EXTENDED_HISTORY_MEMORY_MAX_ENTRIES,
@@ -118,16 +117,16 @@ export class CachedMarketDataProvider
     /**
      * 히스토리 L1. Redis 히스토리 키는 세션이 바뀔 때만 갱신되는데, 장중에는 종목 페이지·섹터
      * 스캔이 그 키(5년 일봉 ~41KB 압축)를 분마다 다시 GET했다. 같은 인스턴스가 이미 들고
-     * 있는 값이라 메모리에서 낸다. 일봉은 {@link EodHistoryEntry}, 인트라데이는 `Bar[]`를
+     * 있는 값이라 메모리에서 낸다. 일봉은 `EodHistoryEntry`, 인트라데이는 `Bar[]`를
      * 담는다 — 한 LRU에 섞어 둬야 인스턴스 힙 상한(`HISTORY_MEMORY_MAX_ENTRIES`)이 하나로 유지된다.
      */
-    private readonly historyMemory: HistoryMemory = createMemoryLru<
-        Bar[] | EodHistoryEntry
-    >(HISTORY_MEMORY_MAX_ENTRIES);
+    private readonly historyMemory: HistoryMemory = createHistoryMemory(
+        HISTORY_MEMORY_MAX_ENTRIES
+    );
 
-    private readonly extendedHistoryMemory: HistoryMemory = createMemoryLru<
-        Bar[] | EodHistoryEntry
-    >(EXTENDED_HISTORY_MEMORY_MAX_ENTRIES);
+    private readonly extendedHistoryMemory: HistoryMemory = createHistoryMemory(
+        EXTENDED_HISTORY_MEMORY_MAX_ENTRIES
+    );
 
     private readonly eodHistoryDeps: EodHistoryDeps = {
         getBars: options => this.inner.getBars(options),

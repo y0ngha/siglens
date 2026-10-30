@@ -4,6 +4,7 @@ import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { createMemoryLru } from '@/shared/cache/memoryLru';
 import {
     HISTORY_MEMORY_TTL_CAP_SECONDS,
+    createHistoryMemory,
     readCachedHistory,
     type HistoryMemory,
 } from '../historyCache';
@@ -102,5 +103,17 @@ describe('readCachedHistory', () => {
             HISTORY_MEMORY_TTL_CAP_SECONDS * MS_PER_SECOND
         );
         expect(HISTORY_MEMORY_TTL_CAP_SECONDS).toBe(30 * SECONDS_PER_MINUTE);
+    });
+});
+
+describe('createHistoryMemory', () => {
+    it('evicts the oldest entry once past the cap', () => {
+        const memory = createHistoryMemory(1);
+
+        memory.set('a', [BAR], 1_000);
+        memory.set('b', [BAR], 1_000);
+
+        expect(memory.get('a')).toBeUndefined();
+        expect(memory.get('b')).toEqual([BAR]);
     });
 });

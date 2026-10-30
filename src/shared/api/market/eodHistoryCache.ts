@@ -25,6 +25,12 @@ export interface EodHistoryDeps {
 }
 
 /**
+ * 경고 로그 접두사. 분리 전 로그와 같은 문자열로 검색되도록 `CachedMarketDataProvider`
+ * 이름을 일부러 유지한다.
+ */
+const EOD_HISTORY_LOG_PREFIX = '[CachedMarketDataProvider] eodhist';
+
+/**
  * EOD history 키 접두사. 종목당 키 하나(`bars:eodhist:v3:<SYM>`)에 {@link EodHistoryEntry}를
  * 담는다. `v2`(세션 날짜가 키에 든 `Bar[]`)와 값 모양이 달라 접두사를 올렸다 — 같은 키를
  * 재사용하면 배포 직후 옛 엔트리를 새 모양으로 잘못 읽는다. 옛 키는 읽는 코드가 없어 각자의
@@ -172,16 +178,14 @@ async function refreshEodHistory(
             // 조정이 하루 늦게 반영돼도 그때 바로잡힌다(예전 매일 전체 조회와 같은 상한).
             // 실제 급등락이면 전체 조회 두 번이 비용의 전부이고 결과는 같다.
             console.warn(
-                '[CachedMarketDataProvider] eodhist price gap, full refetch:',
+                `${EOD_HISTORY_LOG_PREFIX} price gap, full refetch:`,
                 options.symbol.toUpperCase()
             );
             return build(await fetchBars(ctx.fetchFrom), 0);
         }
         // 영구적으로 반복되면(경계 의미가 다른 공급자 등) 증분의 이득이 사라지므로 보이게 남긴다.
-        // 두 경고의 `[CachedMarketDataProvider]` 접두사는 분리 전 로그와 같은 문자열로
-        // 검색되도록 일부러 유지한다.
         console.warn(
-            '[CachedMarketDataProvider] eodhist overlap mismatch, full refetch:',
+            `${EOD_HISTORY_LOG_PREFIX} overlap mismatch, full refetch:`,
             options.symbol.toUpperCase(),
             status
         );

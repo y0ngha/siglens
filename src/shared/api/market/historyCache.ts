@@ -1,6 +1,6 @@
 import type { Bar } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import type { MemoryLru } from '@/shared/cache/memoryLru';
+import { type MemoryLru, createMemoryLru } from '@/shared/cache/memoryLru';
 import {
     MS_PER_SECOND,
     SECONDS_PER_DAY,
@@ -10,6 +10,16 @@ import type { EodHistoryEntry } from './eodHistoryMerge';
 
 /** 히스토리 L1에 담는 값 — 일봉은 {@link EodHistoryEntry}, 인트라데이는 `Bar[]`. */
 export type HistoryMemory = MemoryLru<Bar[] | EodHistoryEntry>;
+
+type HistoryMemoryValue = HistoryMemory extends MemoryLru<infer V> ? V : never;
+
+/**
+ * 히스토리 L1을 만든다 — 일봉·인트라데이를 한 LRU에 섞어 담는 값 타입을 한곳에 고정해,
+ * provider가 인스턴스마다 제네릭 인자를 되풀이하지 않게 한다.
+ */
+export function createHistoryMemory(maxEntries: number): HistoryMemory {
+    return createMemoryLru<HistoryMemoryValue>(maxEntries);
+}
 
 /**
  * 히스토리(`bars:eodhist`·`bars:intrahist`) L1 메모리 상한(provider 인스턴스당).
