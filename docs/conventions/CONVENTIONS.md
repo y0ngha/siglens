@@ -721,6 +721,20 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
 
+<a id="CM-14"></a>
+
+#### CM-14 — Every export in a module gets JSDoc once its siblings do
+
+When a file's exports carry JSDoc (role, consumer, WHY), a newly added or split-out export gets one too, and a JSDoc
+that only restates the name or type does not count. A lone undocumented export reads as an oversight and hides its
+consumer.
+
+```typescript
+// ❌ siblings documented, this one bare
+export function rssNewsSurface() {}
+// ✅ /** Why this surface exists and who consumes it. */
+```
+
 ---
 
 ## Change Synchronization
