@@ -2,7 +2,10 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { FmpNewsClient, SOURCE_UNKNOWN_FALLBACK } from '../lib/fmpNewsClient';
+import {
+    FmpNewsClient,
+    SOURCE_UNKNOWN_FALLBACK,
+} from '../../server/fmpNewsClient';
 import { MS_PER_DAY } from '@/shared/config/time';
 
 const mockFetch = vi.fn();
@@ -93,7 +96,7 @@ describe('FmpNewsClient', () => {
 
         /**
          * [회귀] `bodyTruncated`의 소스 필드를 아무 테스트도 안 잡고 있었다 —
-         * `raw.text` 대신 `raw.title`을 넣어도 전건 통과했다(감사 라운드 12).
+         * `raw.text` 대신 `raw.title`을 넣어도 전건 통과했다.
          * 이 플래그의 유일한 소비자는 core의 카드 분석 프롬프트다: 잘리지 않았다고
          * 알리면 모델이 잘려 나간 수치를 보존하라는 지시를 받아 날조를 유도한다.
          *

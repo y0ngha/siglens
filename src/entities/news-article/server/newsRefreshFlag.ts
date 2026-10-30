@@ -5,32 +5,33 @@ import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 const NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
 
-/** 뉴스 refresh 플래그 TTL — 이 시간 내 재크롤링(봇)은 FMP fetch+upsert를 스킵. */
+/** 뉴스 refresh 플래그 TTL — 이 시간 안의 재방문은 FMP fetch+upsert를 건너뛴다. */
 export const NEWS_REFRESH_FLAG_TTL_SECONDS =
     NEWS_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;
 
+/** 심볼 대소문자와 무관하게 같은 키가 되도록 대문자로 정규화한다. */
 function refreshKey(symbol: string): string {
     return `news:refresh:${symbol.toUpperCase()}`;
 }
 
-const _flag = createRedisFlag(
+const flag = createRedisFlag(
     refreshKey,
     NEWS_REFRESH_FLAG_TTL_SECONDS,
     '[newsRefreshFlag]'
 );
 
 /** 최근(TTL 내) 이 symbol의 뉴스를 fetch했는지. Redis 미설정/장애 시 false(=항상 fetch). */
-export const isRecentlyFetched = _flag.isSet;
+export const isRecentlyFetched = flag.isSet;
 
 /** 이 symbol을 "최근 fetch함"으로 표시. Redis 미설정/장애 시 noop. */
-export const markFetched = _flag.mark;
+export const markFetched = flag.mark;
 
 /**
  * 이 symbol의 refresh를 **원자적으로** 선점한다(`SET NX EX`). 이미 TTL 안이면 `false`.
  *
  * {@link isRecentlyFetched} → (작업) → {@link markFetched}는 GET 뒤에 SET이 와서, 같은
  * 순간 들어온 방문자들이 모두 "아직 안 함"을 읽고 FMP 적재와 카드 분석을 중복으로
- * 돌렸다(감사 L1). 공개 액션의 진입 가드는 이걸 쓴다. 적재가 끝나면 `markFetched`가
+ * 돌렸다. 공개 액션의 진입 가드는 이걸 쓴다. 적재가 끝나면 `markFetched`가
  * 같은 키를 다시 써 TTL을 적재 완료 시점부터 다시 센다.
  *
  * Redis 미설정/장애 시 `true`(=항상 진행) — 기존 `isRecentlyFetched`의 강등과 같다.

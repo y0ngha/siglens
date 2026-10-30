@@ -1,12 +1,12 @@
-import { FmpNewsClient } from './fmpNewsClient';
-import { EMPTY_NEWS_CLIENT } from './emptyNewsClient';
-import { NaverNewsClient } from './naverNewsClient';
 import { hasNaverCredentials } from '@/shared/api/naver/naverSearch';
 import { getKoreanNames } from '@/entities/ticker/lib/koreanNameStore';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
-import type { NewsClientPort } from './newsClientPort';
 import type { NewsSource } from '@/shared/config/marketProfile/types';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { EMPTY_NEWS_CLIENT } from './emptyNewsClient';
+import { FmpNewsClient } from './fmpNewsClient';
+import { NaverNewsClient } from './naverNewsClient';
+import type { NewsClientPort } from './newsClientPort';
 
 let cachedStock: NewsClientPort | null = null;
 let cachedCrypto: NewsClientPort | null = null;
@@ -33,14 +33,17 @@ async function resolveKoreanQuery(symbol: string): Promise<string | null> {
     return names[upper] ?? CURATED_KOREAN_NAMES.get(upper) ?? null;
 }
 
-/** Returns the app's news client (FMP in prod, fake under E2E_TEST). */
+/**
+ * 시장 프로필의 뉴스 소스에 맞는 클라이언트를 돌려준다(E2E_TEST에서는 가짜 클라이언트).
+ * 소스별로 프로세스당 한 인스턴스를 재사용한다.
+ */
 export function getNewsClient(
     newsSource: NewsSource = 'stock'
 ): NewsClientPort {
     if (isE2E()) {
-        // Singleton fake: FakeNewsClient holds call-tracking state used by E2E
-        // assertions, so all callers must share the same instance. Sync require()
-        // keeps the fake out of the production bundle (Turbopack dead-code).
+        // 싱글턴 가짜: FakeNewsClient는 E2E 단언이 읽는 호출 추적 상태를 들고 있어
+        // 모든 호출부가 같은 인스턴스를 써야 한다. 동기 require()로 불러 가짜가
+        // 프로덕션 번들에 들어가지 않게 한다(Turbopack dead-code).
         if (!cachedFake) {
             const { FakeNewsClient } =
                 require('./FakeNewsClient') as typeof import('./FakeNewsClient');

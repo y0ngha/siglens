@@ -11,7 +11,7 @@ import {
  *
  * 실패한 기사는 `analyzedAt`이 비어 있어 다음 방문(10분 뒤)·다음 prewarm이 다시
  * 집는다. 응답이 계속 깨지는 기사(본문이 프롬프트를 망가뜨리는 경우 등)는 그렇게
- * 영원히 10분마다 LLM 왕복을 태운다(감사 L1). 실패 횟수만큼 간격을 늘려 비용을
+ * 영원히 10분마다 LLM 왕복을 태운다. 실패 횟수만큼 간격을 늘려 비용을
  * 기하급수적으로 줄이되, 일시 장애로 실패한 기사는 첫 재시도에서 회복되게 한다.
  */
 const FIRST_RETRY_DELAY_MS = 30 * MS_PER_MINUTE;
@@ -24,6 +24,7 @@ const BACKOFF_FACTOR = 2;
  */
 const FAILURE_RECORD_TTL_SECONDS = 7 * SECONDS_PER_DAY;
 
+/** Redis에 JSON으로 저장되는 기사별 실패 기록. */
 export interface NewsCardFailureState {
     /** 연속 실패 횟수(1부터). */
     readonly attempts: number;
@@ -31,6 +32,7 @@ export interface NewsCardFailureState {
     readonly retryAfter: number;
 }
 
+/** 기사 id별 네거티브 캐시 키(영속 형식 — 바꾸면 기존 기록이 고아가 된다). */
 function failureKey(id: string): string {
     return `news:card:fail:${id}`;
 }
@@ -52,6 +54,7 @@ export function nextFailureState(
     return { attempts, retryAfter: now + retryDelayMs(attempts) };
 }
 
+/** Redis에서 읽은 값이 실패 기록 형상인지 좁힌다. 아니면 기록 없음으로 취급한다. */
 function isFailureState(value: unknown): value is NewsCardFailureState {
     return (
         typeof value === 'object' &&

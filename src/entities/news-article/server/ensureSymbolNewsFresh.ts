@@ -1,73 +1,25 @@
 import 'server-only';
-import type { NewsItem } from '@y0ngha/siglens-core';
 import { revalidateTag } from 'next/cache';
 import { after } from 'next/server';
+import type { NewsItem } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '../api';
-import { analyzeNewsCards } from './analyzeNewsCards';
+import { analyzeNewsCards } from '../lib/analyzeNewsCards';
 import {
     countChangedRows,
     ingestNewsForSymbol,
     type NewsIngestResult,
-} from './ingestNewsForSymbol';
+} from '../lib/ingestNewsForSymbol';
 import {
     CHAT_SYNC_NEWS_CARD_LIMIT,
     VISITOR_NEWS_CARD_LIMIT,
-} from './newsAnalysisConstants';
-import { newsCacheTag } from './newsCacheTag';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from './newsLookback';
+} from '../lib/newsAnalysisConstants';
+import { newsCacheTag } from '../lib/newsCacheTag';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
+import { selectUnanalyzed } from '../lib/selectUnanalyzed';
 import { isRecentlyFetched } from './newsRefreshFlag';
-import { selectUnanalyzed } from './selectUnanalyzed';
 
-/**
- * 챗 툴이 심볼 데이터를 읽기 **전에** 돌리는 수급 단계
- * (`app/api/ai/chat/tools/chatTools.ts`의 `ensureSymbolData`가 호출한다).
- *
- * 같은 "적재 → 보강 → 무효화" 골격을 쓰는 형제 경로가 둘 더 있다 — 뉴스 탭 방문
- * (`actions/ensureNewsCardsAnalyzedAction`, 180일 목록 창·Server Action이라 즉시
- * 무효화)과 SEO prewarm(`api.ts`의 `prewarmNews`, 게이트 없음·분석까지 이어짐).
- * 창·게이트·예산·무효화 시점이 경로마다 의도적으로 달라 한 함수로 합치지 않고,
- * 적재(`ingestNewsForSymbol`)·변경 판단(`countChangedRows`)·선별(`selectUnanalyzed`)·
- * 보강(`analyzeNewsCards`)·태그(`newsCacheTag`) 부품을 공유한다.
- *
- * ## 왜 필요한가
- *
- * 챗의 `get_news`는 `listCardsBySymbol`로 **DB만 읽었다**. 적재(ingest)를 트리거하는
- * 경로는 뉴스 탭 방문(`ensureNewsCardsAnalyzedAction`)과 prewarm cron 둘뿐이라,
- * 둘 다 안 돌면 DB가 며칠씩 정체된 채 그대로 답으로 나갔다.
- *
- * 실측(2026-09-21): 사용자가 LAES의 당일 보도자료를 물었을 때 FMP에는 그 기사가
- * **이미 있었는데** 챗은 "가장 최근 것이 2026-09-17(89시간 전)"이라고 답했다.
- * 뉴스가 없어서가 아니라 아무도 적재를 부르지 않아서였다.
- *
- * ## 왜 "무조건 최신화"가 아니라 게이트인가
- *
- * 질문마다 무조건 적재하면 FMP 왕복이 질문 수에 비례해 늘고, 같은 심볼을 연달아
- * 묻는 대화에서 그대로 증폭된다. 이미 같은 목적의 장치가 있다 —
- * `newsRefreshFlag`(Redis, TTL 10분). 뉴스 탭 방문 경로가 쓰는 바로 그 플래그이고,
- * 봇 연타 방어까지 이미 들어 있다. 챗만 이걸 안 쓰고 있었을 뿐이라 그대로 재사용한다.
- *
- * ## 계약
- *
- * - **절대 throw하지 않는다.** 수급 실패가 질문 자체를 죽이면 안 된다 — DB에 있는
- *   것으로 답하는 편이 낫다. 반환값은 진단용이며(지금은 테스트만 읽는다) 호출부
- *   `ToolRuntime.ensureSymbolData`는 이를 버리고 `void`로 접는다.
- * - **신규 기사 보강(LLM 번역·라벨)은 응답 전에 동기로 한다.** 건수는
- *   `CHAT_SYNC_NEWS_CARD_LIMIT`로 묶는다. 호출부(`get_news`)가 바로 다음에 DB를
- *   읽어 그 턴의 답을 만들기 때문에, 여기서 기다려야 방금 들어온 기사가 한국어
- *   제목·감성을 달고 나간다.
- * - **바깥 세계로 나가는 두 대기에 벽시계 예산이 붙는다** — 적재(FMP)와 보강(LLM).
- *   근거와 숫자는 `INGEST_BUDGET_MS` 주석에 있다. 예산을 넘긴 작업은 **버리지
- *   않고** 그대로 `after()`가 이어받는다 — 취소가 안 되므로 버려도 계속 돌고,
- *   다시 부르면 같은 값을 두 번 지불한다.
- *   나머지 두 왕복(`isRecentlyFetched` = Redis, `repo.listBySymbol` = Neon)은
- *   예산 없이 기다린다. 이 둘은 자체 재시도 사다리가 없어 꼬리가 짧고, 둘이
- *   막힐 정도면 툴 결과보다 큰 문제다 — 30초 천장에 남겨 둔 12초가 그 몫이다.
- * - **수급이 예산을 넘겨도 답은 나간다.** `listCardsBySymbol`이 미보강 행도
- *   돌려주므로 제목·발행일·링크는 즉시 보이고 감성·분류 라벨만 다음 읽기까지
- *   빈다. 이 열화가 툴 타임아웃(모델이 **아무것도** 못 받는다)보다 낫다는 판단이
- *   예산의 존재 이유다.
- */
+/** `ensureSymbolNewsFresh`의 진단용 결과. 호출부는 값을 버리고 테스트만 읽는다. */
 export interface SymbolFreshnessResult {
     /** 이번 호출이 실제로 외부 수급을 돌렸는가(false = TTL 내라 건너뜀). */
     refreshed: boolean;
@@ -93,8 +45,8 @@ const DEFERRED: SymbolFreshnessResult = {
  * 이 경로는 `get_news` 안에서 돈다. `get_news`는 core 스펙상 `costClass: 'free'`라
  * `TOOL_TIMEOUT_MS.free = 30_000`을 받고, 넘기면 `runAgentTurn.executeOne`이 그 툴
  * 호출을 `{ error: 'timeout' }`으로 접는다 — 모델은 **기사를 한 건도 못 받는다.**
- * master는 이 경로에서 적재를 아예 부르지 않았으므로, 바운드 없는 수급은 고치려던
- * 문제보다 나쁜 상태를 만든다.
+ * 이 경로는 원래 적재를 부르지 않으므로, 바운드 없는 수급은 오히려 툴 전체를
+ * 타임아웃으로 만드는 더 나쁜 상태를 만든다.
  *
  * 그래서 **두 단계 모두** 예산을 든다. 둘 다 혼자서 30초를 넘길 수 있다:
  *
@@ -144,6 +96,55 @@ async function withBudget<T>(
     });
 }
 
+/**
+ * 챗 툴이 심볼 데이터를 읽기 **전에** 돌리는 수급 단계
+ * (`app/api/ai/chat/tools/chatTools.ts`의 `ensureSymbolData`가 호출한다).
+ *
+ * 같은 "적재 → 보강 → 무효화" 골격을 쓰는 형제 경로가 둘 더 있다 — 뉴스 탭 방문
+ * (`actions/ensureNewsCardsAnalyzedAction`, 180일 목록 창·Server Action이라 즉시
+ * 무효화)과 SEO prewarm(`server/prewarmNews`, 게이트 없음·분석까지 이어짐).
+ * 창·게이트·예산·무효화 시점이 경로마다 의도적으로 달라 한 함수로 합치지 않고,
+ * 적재(`ingestNewsForSymbol`)·변경 판단(`countChangedRows`)·선별(`selectUnanalyzed`)·
+ * 보강(`analyzeNewsCards`)·태그(`newsCacheTag`) 부품을 공유한다.
+ *
+ * ## 왜 필요한가
+ *
+ * 챗의 `get_news`는 `listCardsBySymbol`로 **DB만 읽는다**. 적재(ingest)를 트리거하는
+ * 경로는 뉴스 탭 방문(`ensureNewsCardsAnalyzedAction`)과 prewarm cron 둘뿐이라,
+ * 둘 다 안 돌면 DB가 며칠씩 정체된 채 그대로 답으로 나간다.
+ *
+ * 실측(2026-09-21): 사용자가 LAES의 당일 보도자료를 물었을 때 FMP에는 그 기사가
+ * **이미 있었는데** 챗은 "가장 최근 것이 2026-09-17(89시간 전)"이라고 답했다.
+ * 뉴스가 없어서가 아니라 아무도 적재를 부르지 않아서였다.
+ *
+ * ## 왜 "무조건 최신화"가 아니라 게이트인가
+ *
+ * 질문마다 무조건 적재하면 FMP 왕복이 질문 수에 비례해 늘고, 같은 심볼을 연달아
+ * 묻는 대화에서 그대로 증폭된다. 이미 같은 목적의 장치가 있다 —
+ * `newsRefreshFlag`(Redis, TTL 10분). 뉴스 탭 방문 경로가 쓰는 바로 그 플래그이고,
+ * 봇 연타 방어까지 이미 들어 있어 그대로 재사용한다.
+ *
+ * ## 계약
+ *
+ * - **절대 throw하지 않는다.** 수급 실패가 질문 자체를 죽이면 안 된다 — DB에 있는
+ *   것으로 답하는 편이 낫다. 반환값은 진단용이며(지금은 테스트만 읽는다) 호출부
+ *   `ToolRuntime.ensureSymbolData`는 이를 버리고 `void`로 접는다.
+ * - **신규 기사 보강(LLM 번역·라벨)은 응답 전에 동기로 한다.** 건수는
+ *   `CHAT_SYNC_NEWS_CARD_LIMIT`로 묶는다. 호출부(`get_news`)가 바로 다음에 DB를
+ *   읽어 그 턴의 답을 만들기 때문에, 여기서 기다려야 방금 들어온 기사가 한국어
+ *   제목·감성을 달고 나간다.
+ * - **바깥 세계로 나가는 두 대기에 벽시계 예산이 붙는다** — 적재(FMP)와 보강(LLM).
+ *   근거와 숫자는 `INGEST_BUDGET_MS` 주석에 있다. 예산을 넘긴 작업은 **버리지
+ *   않고** 그대로 `after()`가 이어받는다 — 취소가 안 되므로 버려도 계속 돌고,
+ *   다시 부르면 같은 값을 두 번 지불한다.
+ *   나머지 두 왕복(`isRecentlyFetched` = Redis, `repo.listBySymbol` = Neon)은
+ *   예산 없이 기다린다. 이 둘은 자체 재시도 사다리가 없어 꼬리가 짧고, 둘이
+ *   막힐 정도면 툴 결과보다 큰 문제다 — 30초 천장에 남겨 둔 12초가 그 몫이다.
+ * - **수급이 예산을 넘겨도 답은 나간다.** `listCardsBySymbol`이 미보강 행도
+ *   돌려주므로 제목·발행일·링크는 즉시 보이고 감성·분류 라벨만 다음 읽기까지
+ *   빈다. 이 열화가 툴 타임아웃(모델이 **아무것도** 못 받는다)보다 낫다는 판단이
+ *   예산의 존재 이유다.
+ */
 export async function ensureSymbolNewsFresh(
     symbol: string
 ): Promise<SymbolFreshnessResult> {
@@ -159,7 +160,7 @@ export async function ensureSymbolNewsFresh(
         // 30일로 clamp하고(`MAX_LOOKBACK_MS`), `run_fresh_analysis`의 뉴스 경로는
         // `NEWS_ANALYSIS_LOOKBACK_MS`를 쓴다. 180일치를 받으면 읽지도 않을 기사를
         // Neon에 쓰느라 왕복이 6배가 되는데, 그 비용이 **대화 지연에 그대로 얹힌다**.
-        // `prewarmNews`가 cron 경로에서 같은 이유로 이미 좁혀 둔 것을 따른다(감사 F5).
+        // `prewarmNews`가 cron 경로에서 같은 이유로 이미 좁혀 둔 것을 따른다.
         const ingestion = ingestNewsForSymbol(
             symbol,
             repo,
@@ -265,7 +266,7 @@ export async function ensureSymbolNewsFresh(
  * 돌려주는 게 핵심이다. `analyzeNewsCards`는 취소되지 않으므로 여기서 손을 떼도
  * 계속 돌아 DB에 기록한다 — 호출부가 그걸 `after()`에서 await해야 무효화가 보강
  * **뒤에** 일어난다. 그냥 버리면 무효화가 먼저 나가서 미보강 스냅샷이 TTL 내내
- * 굳는다(이 PR이 없애려던 바로 그 실패다).
+ * 굳는다.
  *
  * 다시 부르지 않으므로 LLM 왕복은 한 번뿐이다. 다만 그 사이 행들은 여전히
  * `analyzedAt === null`이라, 겹쳐 도는 prewarm(`isRecentlyFetched` 미참조)이나

@@ -1,7 +1,7 @@
 import 'server-only';
 import type { DrizzleNewsRepository } from '../api';
-import { buildAnalysisNewsItems } from './buildAnalysisNewsItems';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from './newsLookback';
+import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 
 /**
  * "이 심볼로 지금 뉴스 분석을 만들 수 있는가" — prewarm `news` 탭의 전제조건.
