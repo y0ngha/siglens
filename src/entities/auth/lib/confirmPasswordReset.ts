@@ -1,3 +1,4 @@
+import type { ConfirmPasswordResetError } from '@/shared/lib/auth/types';
 import { normalizeEmail, validatePassword } from '@/shared/lib/auth/validation';
 import { hashEmailToken, safeCompareTokenHashes } from './tokenUtils';
 import {
@@ -6,7 +7,6 @@ import {
 } from './authUseCaseConstants';
 import type {
     ConfirmPasswordResetDependencies,
-    ConfirmPasswordResetError,
     ConfirmPasswordResetInput,
     ConfirmPasswordResetResult,
 } from './authUseCaseTypes';
@@ -40,14 +40,17 @@ function samePasswordError(): ConfirmPasswordResetError {
     };
 }
 
-// 동시성 계약: 비밀번호 업데이트 전에 토큰을 atomic consume(read+delete) → 동시 요청 둘이
-// 같은 토큰으로 모두 성공하지 못하도록 보장. consume race를 이긴 caller만 rehash 수행.
-//
-// same-password 체크는 토큰 소비 없이 링크를 재사용할 수 있어야 하므로 consume 이전에 수행한다.
-// 그러나 토큰 검증 없이 same-password 체크를 노출하면 유효하지 않은 토큰으로도 현재
-// 비밀번호를 probe할 수 있다. 이를 방지하기 위해 먼저 get(소비 없음)으로 토큰을 선검증한 뒤
-// same-password를 확인하고, 마지막으로 consume으로 원자적으로 소비·재검증한다(TOCTOU 방어).
-/** 비밀번호 재설정 토큰을 소비하고 사용자 비밀번호 해시를 교체. */
+/**
+ * 비밀번호 재설정 토큰을 소비하고 사용자 비밀번호 해시를 교체한다.
+ *
+ * 동시성 계약: 비밀번호를 바꾸기 전에 토큰을 atomic consume(read+delete)해, 같은 토큰으로
+ * 동시 요청 둘이 모두 성공하지 못하게 한다. consume 경합을 이긴 호출만 rehash한다.
+ *
+ * same-password 체크는 링크를 재사용할 수 있게 consume 이전에 한다. 하지만 토큰 검증 없이
+ * 노출하면 무효 토큰으로도 현재 비밀번호를 probe할 수 있으므로, 먼저 get(소비 없음)으로
+ * 토큰을 선검증한 뒤 same-password를 확인하고, 마지막으로 consume으로 원자적으로 소비·재검증한다
+ * (TOCTOU 방어).
+ */
 export async function confirmPasswordReset(
     input: ConfirmPasswordResetInput,
     dependencies: ConfirmPasswordResetDependencies
@@ -61,7 +64,7 @@ export async function confirmPasswordReset(
     const email = normalizeEmail(input.email);
     const submittedHash = hashEmailToken(input.token);
 
-    // Step 1: pre-validate the token without consuming it.
+    // 1단계: 토큰을 소비하지 않고 선검증한다.
     const peeked = await dependencies.emailTokens.get(PURPOSE, email);
     if (peeked === null) {
         return { ok: false, error: expiredTokenError() };
@@ -73,7 +76,7 @@ export async function confirmPasswordReset(
         return { ok: false, error: invalidTokenError() };
     }
 
-    // Step 2: same-password check before consuming, so the link stays valid on retry.
+    // 2단계: 소비 전에 same-password를 확인해, 재시도해도 링크가 유효하게 한다.
     const user =
         await dependencies.emailAuthUsers.findEmailAuthUserByEmail(email);
     if (user === null || user.passwordHash === null) {
@@ -87,8 +90,8 @@ export async function confirmPasswordReset(
         return { ok: false, error: samePasswordError() };
     }
 
-    // Step 3: atomically consume the token. Any racing caller receives null here.
-    // Re-validate the consumed value to guard against TOCTOU token replacement.
+    // 3단계: 토큰을 원자적으로 소비한다. 경합한 다른 호출은 여기서 null을 받는다.
+    // TOCTOU 토큰 교체를 막으려고 소비한 값을 다시 검증한다.
     const stored = await dependencies.emailTokens.consume(PURPOSE, email);
     if (stored === null) {
         return { ok: false, error: expiredTokenError() };

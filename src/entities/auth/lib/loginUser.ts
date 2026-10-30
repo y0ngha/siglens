@@ -24,7 +24,11 @@ function omitPasswordHash(user: EmailAuthUserRecord): AuthUserRecord {
     return safeUser;
 }
 
-/** Log in a user with email and password. */
+/**
+ * 이메일·비밀번호로 로그인해 새 세션과 쿠키를 만든다. 없는 계정·비밀번호 없는(OAuth 전용)
+ * 계정·틀린 비밀번호는 같은 `invalid_credentials`로 응답해 계정 존재 여부를 구분할 수 없게 한다.
+ * 반환 사용자에서 `passwordHash`는 제거된다.
+ */
 export async function loginUser(
     input: LoginUserInput,
     dependencies: LoginUserDependencies,

@@ -4,8 +4,8 @@ import type { BarsData } from '@y0ngha/siglens-core';
  * 공포·탐욕 탭 테스트가 공유하는 결정적 시드 봉 fixture.
  *
  * 실제 `getSeedBarsStatic` 산출물의 모양을 따른다 — `bars`는 전 구간, `buySellVolume`도
- * 전 구간, `rsi`·`macd`는 마지막 non-null **하나씩**만 담긴다(`barsStaticCache.ts`의
- * `keepLastNonNull`). 게이트 두 술어(`buildTechnicalFacts` 2봉 이상 /
+ * 전 구간, `rsi`·`macd`는 마지막 non-null **하나씩**만 담긴다(`entities/bars/lib/seedBars.ts`의
+ * `toSeedBarsData`/`keepLastNonNull`). 게이트 두 술어(`buildTechnicalFacts` 2봉 이상 /
  * `computeFearGreedIndex` 점수 표본)가 읽는 입력이 전부 실제 모양이라는 뜻이다.
  *
  * 봉 수만 바꿔 같은 모양으로 자를 수 있다. 실제 `computeFearGreedIndex`(2026-10-04

@@ -278,7 +278,7 @@ describe('프리·애프터마켓 봉은 표시 전용이다', () => {
             expect(
                 entityImportOffenders([
                     probe(
-                        'entities/bars/lib/loadBarsData.ts',
+                        'entities/bars/server/loadBarsData.ts',
                         "import { x } from '@/entities/extended-bars/lib/extendedBarsRequest';"
                     ),
                     probe(
@@ -287,7 +287,7 @@ describe('프리·애프터마켓 봉은 표시 전용이다', () => {
                     ),
                 ])
             ).toEqual([
-                'entities/bars/lib/loadBarsData.ts',
+                'entities/bars/server/loadBarsData.ts',
                 'entities/analysis/a.ts',
             ]);
         });

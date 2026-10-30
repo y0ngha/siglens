@@ -56,7 +56,7 @@ vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsSchedule: async () => null,
     listReportedEarningsDates: async () => [],
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: async () => ({ bars: [], indicators: {} }),
 }));
 vi.mock('@/app/api/ai/chat/tools/loadSecQuarters', () => ({

@@ -1,4 +1,4 @@
-import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,

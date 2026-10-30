@@ -11,7 +11,7 @@ vi.mock('@/entities/ticker/lib/assetClassification', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: vi.fn(),
 }));
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
@@ -31,7 +31,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import PositionPage from '@/app/[locale]/[symbol]/position/page';
-import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 

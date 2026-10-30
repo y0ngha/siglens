@@ -81,15 +81,16 @@ describe('focus indicator guard', () => {
      * (실측으로 확인된 상태였다).
      */
     it('건너뛰기 링크의 대상이 포커스를 받는다', () => {
-        // 홈은 로케일 세그먼트 아래로 옮겼다(`/`도 `[locale]`이 처리한다).
-        const source = read('app/[locale]/(home)/page.tsx');
-        const href = /<a\s+href="#([\w-]+)"/.exec(source);
+        // 링크는 홈 페이지에, 대상(검색 영역)은 히어로 컴포넌트에 있다.
+        const page = read('app/[locale]/(home)/page.tsx');
+        const hero = read('app/[locale]/(home)/_components/HomeHero.tsx');
+        const href = /<a\s+href="#([\w-]+)"/.exec(page);
         expect(href, '건너뛰기 링크를 못 찾음').not.toBeNull();
         const id = (href as RegExpExecArray)[1];
         const target = new RegExp(
             `id="${id}"[\\s\\S]{0,200}?tabIndex=\\{-1\\}`
         );
-        expect(source, `#${id} 대상에 tabIndex={-1}이 없다`).toMatch(target);
+        expect(hero, `#${id} 대상에 tabIndex={-1}이 없다`).toMatch(target);
     });
 
     /**

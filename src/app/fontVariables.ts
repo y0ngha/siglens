@@ -1,21 +1,11 @@
 import { Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 
-/**
- * 두 루트 레이아웃(`[locale]/layout.tsx`, `ai/[locale]/layout.tsx`)이 **같은**
- * 폰트 변수를 `<html>`에 싣도록 한 곳에서 정의한다. 따로 두었을 때 ai 호스트에만
- * `Geist_Mono`가 빠져 `--font-geist-mono`가 비었고, 헤더 로고·AI 워드마크처럼
- * `font-mono`를 쓰는 글자가 브라우저 기본 고정폭으로 떨어져 두 호스트의 헤더
- * 글꼴이 달라 보였다(2026-09-13 사용자 제보).
- */
-
-// 산세리프는 Pretendard 단일 폰트다(globals.css `--font-sans` 주석). 예전에는 `Geist`
-// (sans)도 여기서 로드했는데 `--font-geist-sans`를 참조하는 곳이 CSS·TS 어디에도
-// 남지 않은 채 **모든 페이지에서 woff2를 preload**하고 있었다(2026-10 CWV 감사) —
-// 쓰지 않는 폰트가 첫 로드 대역을 Pretendard·JS와 다퉜다. 모노(`font-mono`)는
-// 헤더 로고·티커·가격이 쓰므로 Geist_Mono만 남긴다.
-// 재현: 아무 페이지 view-source의 `<head>`에서 `<link rel="preload" as="font">`를
-// 세면 된다 — 지금은 Geist Mono·Pretendard 두 개만 나와야 한다.
+// 산세리프는 Pretendard 단일 폰트다(globals.css `--font-sans` 주석). 로더는 쓰는 폰트만 둔다 —
+// next/font는 로드한 폰트를 모든 페이지에서 preload하므로, 참조되지 않는 폰트도 첫 로드 대역을
+// Pretendard·JS와 다툰다. 모노(`font-mono`)는 헤더 로고·티커·가격이 쓴다.
+// 확인: 아무 페이지 view-source의 `<head>`에 `<link rel="preload" as="font">`가 Geist Mono·
+// Pretendard 두 개만 있어야 한다.
 const geistMono = Geist_Mono({
     variable: '--font-geist-mono',
     subsets: ['latin'],
@@ -38,7 +28,7 @@ const geistMono = Geist_Mono({
 // 이상 단축한다. unicode-range 분할은 운영 복잡도 증가 대비 효과가 크지 않아
 // 단일 파일을 유지한다.
 //
-// preload(기본값 true)를 유지하는 이유 (2026-10 CWV 감사에서 재평가):
+// preload(기본값 true)를 유지하는 이유:
 //  • 로케일별로 끌 수 없다. next/font의 preload 링크는 **로더를 import한 레이아웃
 //    모듈 단위**로 빌드 타임에 붙는다 — `[locale]/layout.tsx` 하나가 네 로케일을
 //    모두 렌더하므로 런타임 locale로 분기할 자리가 없다(preload 설정이 다른 로더를
@@ -58,5 +48,10 @@ const pretendard = localFont({
     weight: '100 900',
 });
 
-/** `<html className>`에 붙이는 폰트 CSS 변수 클래스 묶음. */
+/**
+ * `<html className>`에 붙이는 폰트 CSS 변수 클래스 묶음. 루트 레이아웃 셋(`[locale]`·`ai/[locale]`·
+ * `lp`)이 이 한 곳의 로더를 공유해야 호스트마다 같은 변수(`--font-geist-mono`·`--font-pretendard`)와
+ * 같은 폰트 파일 URL을 싣는다 — 따로 두면 한 호스트에서 변수가 빠져 `font-mono` 글자가 브라우저
+ * 기본 고정폭으로 떨어질 수 있다.
+ */
 export const FONT_VARIABLE_CLASSES = `${geistMono.variable} ${pretendard.variable}`;

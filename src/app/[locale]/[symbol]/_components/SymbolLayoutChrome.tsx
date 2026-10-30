@@ -6,7 +6,7 @@ import {
 import { getTranslations } from 'next-intl/server';
 
 import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
-import { getSymbolFearGreedChipStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSymbolFearGreedChipStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';

@@ -1,9 +1,22 @@
+import { useTranslations } from 'next-intl';
+import { ContactDialog } from '@/widgets/layout/ContactDialog';
+import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { brandName } from '@/shared/lib/brandName';
+import { cn } from '@/shared/lib/cn';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { NotFoundMessage } from './NotFoundMessage';
+
+const CONTINUE_LINK_CLASSES = cn(
+    'rounded-full border border-border-control px-4 py-1.5 text-xs text-secondary-300',
+    'transition-colors hover:border-primary-500 hover:text-primary-400',
+    'focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
+);
+
 /**
- * 404 본문. **서버 컴포넌트다.**
- *
- * `'use client'`였을 때는 본문이 SSR HTML에 전혀 나오지 않고 RSC flight로만
- * 실려, 모든 404가 제목만 있는 **빈 페이지**로 나갔다(한국어 사용자 포함).
- * 상태 코드는 404로 정확해서 상태만 보는 검사로는 드러나지 않았다.
+ * 로케일 404 본문(`[locale]/not-found.tsx`) — 헤드라인, 홈 링크, 종목 검색,
+ * 허브 바로가기, 연락처. **서버 컴포넌트다** — 클라이언트 컴포넌트면 본문이
+ * SSR HTML에 나오지 않고 RSC flight로만 실린다.
  *
  * 서버에서 `useTranslations`를 써도 안전한 이유: 이 컴포넌트가 렌더될 시점에는
  * `[locale]/layout.tsx`가 이미 `setRequestLocale(locale)`을 호출한 뒤다. 요청
@@ -14,21 +27,6 @@
  * 헤드라인만 클라이언트 아일랜드(`NotFoundMessage`)다 — 경로별 문구 분기에
  * `usePathname()`이 필요하다.
  */
-import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { brandName } from '@/shared/lib/brandName';
-import { ContactDialog } from '@/widgets/layout/ContactDialog';
-import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
-import { cn } from '@/shared/lib/cn';
-import { NotFoundMessage } from './NotFoundMessage';
-
-const CONTINUE_LINK_CLASSES = cn(
-    'rounded-full border border-border-control px-4 py-1.5 text-xs text-secondary-300',
-    'transition-colors hover:border-primary-500 hover:text-primary-400',
-    'focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
-);
-
 export function NotFoundContent() {
     const t = useTranslations('app.home');
     const locale = useResolvedLocale();
@@ -51,8 +49,8 @@ export function NotFoundContent() {
                 {/*
                     카테고리 그리드(`TickerCategories`, 링크 85개)를 대신한다 — 404는
                     "여기엔 없다"를 말하는 페이지인데 그 아래 사이트 전체 링크 묶음을
-                    두면 크롤러에게는 404가 허브처럼 보이고(2026-09 구글 정책 감사
-                    L19), 사용자에게는 원래 찾던 것과 무관한 벽이 된다. 허브 둘만 남긴다.
+                    두면 크롤러에게는 404가 허브처럼 보이고, 사용자에게는 원래 찾던
+                    것과 무관한 벽이 된다. 허브 둘만 남긴다.
                     키는 리터럴로 적는다 — 동적 키를 쓰면 추출기가 `app.home`
                     네임스페이스를 통째로 넓혀 홈 FAQ 카탈로그까지 딸려 온다.
                 */}

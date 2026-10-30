@@ -12,7 +12,7 @@ const { mockBars, mockFinra, mockRegSho } = vi.hoisted(() => ({
     mockFinra: vi.fn(() => true),
     mockRegSho: vi.fn(() => true),
 }));
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: mockBars,
 }));
 vi.mock('@/shared/api/finra/finraShortDataEnabled', () => ({

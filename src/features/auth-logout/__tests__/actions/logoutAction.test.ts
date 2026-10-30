@@ -17,9 +17,8 @@ vi.mock('next/headers', () => ({
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
-// 핸드오프 스토어는 Redis 발급만 가짜로 두고 URL 빌더는 실제 것을 쓴다.
-vi.mock('@/entities/auth/lib/handoffStore', async () => ({
-    ...(await vi.importActual('@/entities/auth/lib/handoffStore')),
+// Redis 발급만 가짜로 둔다. URL 빌더(handoffRedirect)는 실제 것을 쓴다.
+vi.mock('@/entities/auth/server/handoffStore', () => ({
     issueLogoutCode: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -63,7 +62,7 @@ import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { issueLogoutCode } from '@/entities/auth/lib/handoffStore';
+import { issueLogoutCode } from '@/entities/auth/server/handoffStore';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockLogout = logoutUser as MockedFunction<typeof logoutUser>;

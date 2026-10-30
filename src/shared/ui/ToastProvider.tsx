@@ -28,7 +28,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 /**
  * 앱 전체에 토스트는 **한 번에 하나**다. 새 토스트가 오면 이전 것을 교체하고 자동 닫힘
  * 타이머를 다시 시작한다. 토스트에 호버·포커스가 있는 동안은 타이머가 멈추고,
- * 떠나면 처음부터 다시 센다. 루트 레이아웃(`[locale]/layout.tsx`)이 한 번 마운트한다 —
+ * 떠나면 처음부터 다시 센다. 메인 호스트 앱 크롬(`app/_components/SiteChrome.tsx`)이 한 번 마운트한다 —
  * 종목 헤더 ☆, 병합 호스트, 관심종목 목록, 검색 ★가 같은 인스턴스를 쓴다.
  */
 export function ToastProvider({ children }: { children: ReactNode }) {

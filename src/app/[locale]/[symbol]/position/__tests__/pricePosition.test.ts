@@ -1,4 +1,4 @@
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: vi.fn(),
 }));
 
@@ -9,7 +9,7 @@ import {
     resolveCurrentPricePosition,
     resolvePriceRange,
 } from '@/app/[locale]/[symbol]/position/_lib/pricePosition';
-import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import type { PositionTranslator } from '@/widgets/portfolio-position/utils/positionBuildingNotes';
 
 /** 키와 인자를 그대로 드러내는 번역자 — 어떤 키를 골랐는지 단언한다. */
