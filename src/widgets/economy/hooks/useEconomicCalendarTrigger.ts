@@ -1,9 +1,12 @@
 'use client';
 
+/**
+ * 캘린더 인제스션·AI 분석을 마운트 시 한 번 깨우는 트리거 훅.
+ */
 import { useEffect, useEffectEvent, useRef } from 'react';
 import { ensureEconomicCalendarAction } from '@/entities/economy/actions/ensureEconomicCalendarAction';
 import { ensureEconomicEventsAnalyzedAction } from '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction';
-import type { CalendarCountry } from '@/entities/economy/lib/economyCalendarConstants';
+import type { CalendarCountry } from '@/entities/economy/model';
 
 /**
  * Fire-and-forget on mount (봇 포함, 1회):

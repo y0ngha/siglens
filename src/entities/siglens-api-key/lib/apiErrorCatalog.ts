@@ -15,6 +15,7 @@ export type ApiErrorScope =
     /** `run_fresh_analysis`만. */
     | 'fresh-analysis';
 
+/** 공개 API 오류 한 종류의 문서 항목. OpenAPI 오류 응답과 SKILL.md 오류표가 같은 목록을 쓴다. */
 export interface ApiErrorDoc {
     readonly code: string;
     /** HTTP 상태. 스트리밍 응답(`200`) 본문 안의 오류도 같은 코드를 쓰며, 그때의 상태는 `streamed`로 알린다. */
@@ -28,6 +29,7 @@ export interface ApiErrorDoc {
     readonly summary: string;
 }
 
+/** 공개 API가 돌려주는 오류 코드 전체의 문서 원천. 코드·상태를 바꾸면 라우트와 함께 맞춰야 한다. */
 export const API_ERROR_DOCS: readonly ApiErrorDoc[] = [
     {
         code: 'invalid_api_key',

@@ -2,14 +2,18 @@
 
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { reportClientError } from '@/shared/lib/reportClientError';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface LoginErrorProps {
     error: Error & { digest?: string };
     reset: () => void;
 }
 
+/**
+ * `/login` 렌더 오류 경계 — 루트 오류 화면 대신 로그인 맥락의 안내와 재시도·홈 이동을 준다.
+ * 오류는 콘솔과 클라이언트 오류 리포터에 한 번씩 남긴다(`error`가 바뀔 때마다).
+ */
 export default function LoginError({ error, reset }: LoginErrorProps) {
     const t = useTranslations('app.login');
     useEffect(() => {

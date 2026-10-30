@@ -4,12 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
-import { generateApiKey } from '@/entities/siglens-api-key/lib/apiKeyToken';
 import { validateKeyName } from '@/entities/siglens-api-key/lib/validateKeyName';
 import type {
     CreateSiglensApiKeyState,
     ReachableSiglensApiKeyErrorCode,
 } from '@/entities/siglens-api-key/model';
+import { generateApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
     API_KEY_NAME_MAX_LENGTH,

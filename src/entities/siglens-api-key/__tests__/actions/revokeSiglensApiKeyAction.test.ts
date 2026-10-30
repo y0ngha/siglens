@@ -20,7 +20,7 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
         return { revokeOwned: mockRevoke };
     }),
 }));
-vi.mock('@/entities/siglens-api-key/server/apiKeyAuth', () => ({
+vi.mock('@/entities/siglens-api-key/server/apiKeyAuthCache', () => ({
     revokeApiKeyAuth: mockInvalidate,
 }));
 

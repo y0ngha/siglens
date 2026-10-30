@@ -32,8 +32,7 @@ import { TickerCategories } from '../TickerCategories';
  *
  * `TickerCategories.test.tsx`가 `TICKER_CATEGORIES`를 목으로 대체하는 것과 달리,
  * 이 파일은 **실제 설정**을 렌더한다 — 목을 쓰면 정작 검사하려는 대상이 사라진다.
- * 업종 분할(2026-08)로 KR 카테고리가 하나에서 여섯으로 늘었으므로 링크 커버리지는
- * 카테고리별이 아니라 합집합으로 검사한다.
+ * KR 카테고리가 여러 개이므로 링크 커버리지는 카테고리별이 아니라 합집합으로 검사한다.
  */
 describe('TickerCategories — KR 종목 크롤 커버리지', () => {
     it('모든 KR 인기 종목이 크롤 가능한 링크로 렌더된다', () => {
