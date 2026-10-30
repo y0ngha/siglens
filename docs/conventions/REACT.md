@@ -355,6 +355,14 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-7"></a>
+
+#### CR-7 — Swapping to a shared component preserves what the old one encoded
+
+Before replacing a hand-rolled element with a shared component, list the constraints the old one carried (accessible name, size limits, z-index, viewport clamping) and check the shared one meets each; pass the specific label and cap the size where it does not.
+
+- ❌ Swapping a fixed-width tooltip for the shared `InfoTooltip` and silently getting a generic accessible name and a width that overflows 320px screens.
+- ✅ Pass the specific `aria-label` and cap the width to the viewport minus padding.
 <a id="CR-5"></a>
 
 #### CR-5 — Swapping to a shared component keeps the constraints the old one encoded

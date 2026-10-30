@@ -4075,6 +4075,9 @@
             "tradedAt": "{time} ET 成交"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0}（自{v1}起）"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "供需",
                 "groupNameTrend": "趋势",

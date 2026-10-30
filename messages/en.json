@@ -4075,6 +4075,9 @@
             "tradedAt": "{time} ET"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0} (since {v1})"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "Flow",
                 "groupNameTrend": "Trend",

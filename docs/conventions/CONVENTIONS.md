@@ -778,6 +778,16 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
 
+<a id="CM-13"></a>
+
+#### CM-13 — One comment language per file
+
+Match the language of the comments already in the file you edit: a new JSDoc or comment follows the file's existing
+language, never introducing a second one. A mixed file reads as two authors and makes a grep for a concept miss half of it.
+
+```typescript
+// ❌ English JSDoc throughout the file, one new block written in Korean
+// ✅ the new block is English like its neighbours
 <a id="CM-12"></a>
 
 #### CM-12 — Every exported component, hook and helper carries its own JSDoc
