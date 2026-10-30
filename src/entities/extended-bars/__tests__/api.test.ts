@@ -1,4 +1,4 @@
-vi.mock('@/entities/ticker/lib/getAssetInfoStatic', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoStatic', () => ({
     getAssetInfoStatic: vi.fn(),
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
@@ -16,7 +16,7 @@ import {
 } from 'vitest';
 import type { Bar, GetBarsOptions } from '@y0ngha/siglens-core';
 import { loadExtendedBars } from '@/entities/extended-bars/api';
-import { getAssetInfoStatic } from '@/entities/ticker/lib/getAssetInfoStatic';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { getCachedExtendedBarsProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import type { AssetInfo } from '@/shared/lib/types';
 

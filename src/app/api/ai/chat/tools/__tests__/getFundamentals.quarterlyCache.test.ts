@@ -24,7 +24,7 @@ vi.mock('@/entities/ticker/api', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: async () => 'us-equity',
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: async () => null,
 }));
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({

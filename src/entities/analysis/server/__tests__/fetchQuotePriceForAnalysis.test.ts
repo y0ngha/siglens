@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGetQuote = vi.fn();
 
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(async () => null),
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({

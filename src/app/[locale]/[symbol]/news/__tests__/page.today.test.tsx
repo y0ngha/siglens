@@ -16,7 +16,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -111,7 +111,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { EventCalendarSection } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import NewsPage from '@/app/[locale]/[symbol]/news/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 
 describe('NewsPage — 실적 캘린더 today', () => {
     beforeEach(() => {

@@ -19,7 +19,7 @@ import { type SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import type { HarvestedUnits } from '@/entities/sitemap-entry/lib/indexNowUrls';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {

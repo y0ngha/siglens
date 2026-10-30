@@ -2,7 +2,7 @@ const { mockGetAssetInfoResilient, mockSetRequestLocale } = vi.hoisted(() => ({
     mockGetAssetInfoResilient: vi.fn(),
     mockSetRequestLocale: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
 }));
 vi.mock('next/navigation', () => ({

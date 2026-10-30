@@ -30,7 +30,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -150,7 +150,7 @@ import {
     AnalystActionsSection,
 } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
 import {
     getEarningsReportComparison,

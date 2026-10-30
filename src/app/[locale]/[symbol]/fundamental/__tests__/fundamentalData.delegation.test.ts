@@ -69,7 +69,7 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     DrizzleProfileDescriptionTranslationRepository: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
+vi.mock('@/entities/ticker/server/koreanTranslator', () => ({
     translateCompanyDescription: vi.fn(),
 }));
 

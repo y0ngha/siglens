@@ -42,7 +42,7 @@ vi.mock('@/entities/ticker/api', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile,
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
 // `isKrEquitySymbol` is real (via `importOriginal`) — `getFundamentals.ts`

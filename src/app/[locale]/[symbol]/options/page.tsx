@@ -17,7 +17,7 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapsho
 import { hasOptionsProse } from '@/entities/seo-snapshot/lib/optionsContent';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { SymbolRouteParams } from '@/shared/config/market';
 import {

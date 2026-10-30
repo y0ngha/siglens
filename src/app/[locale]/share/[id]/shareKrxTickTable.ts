@@ -1,7 +1,7 @@
 import 'server-only';
 import type { KrxTickTable } from '@y0ngha/siglens-core';
 import type { ShareableKind } from '@/shared/db/constants';
-import { resolveKrxTickTableForDisplay } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTableForDisplay } from '@/entities/ticker/server/resolveKrxTickTable';
 
 /**
  * 공유 화면의 가격 카드가 쓸 KRX 호가표. 가격 카드(키레벨·목표가)는 차트 종류에만 있어 그때만

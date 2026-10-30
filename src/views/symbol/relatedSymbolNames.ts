@@ -3,7 +3,7 @@
  * 종목 정보를 읽어 그 판정에 넘긴다.
  */
 import type { RelatedSymbol } from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import type { Locale } from '@/shared/i18n/locales';
 import { chipNameFor } from './utils/relatedSymbolChips';

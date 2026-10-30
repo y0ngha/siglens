@@ -131,7 +131,7 @@ vi.mock('@/shared/config/queryConfig', () => ({
     QUERY_STALE_TIME_MS: 60_000,
 }));
 
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
 }));

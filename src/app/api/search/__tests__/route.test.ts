@@ -3,9 +3,9 @@ vi.mock('@/shared/api/getClientIp', () => ({ getClientIp: mockGetClientIp }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/entities/ticker/lib/searchTickerQuery', async importOriginal => ({
+vi.mock('@/entities/ticker/server/searchTickerQuery', async importOriginal => ({
     ...(await importOriginal<
-        typeof import('@/entities/ticker/lib/searchTickerQuery')
+        typeof import('@/entities/ticker/server/searchTickerQuery')
     >()),
     searchTickerQuery: vi.fn(),
 }));
@@ -14,7 +14,7 @@ import { GET } from '../route';
 import {
     MAX_SEARCH_QUERY_LENGTH,
     searchTickerQuery,
-} from '@/entities/ticker/lib/searchTickerQuery';
+} from '@/entities/ticker/server/searchTickerQuery';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import {
     SEARCH_REQUESTS_PER_IP_PER_MINUTE,

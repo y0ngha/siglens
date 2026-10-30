@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { loadSymbolNames } from '@/entities/ticker/lib/loadSymbolNames';
+import { loadSymbolNames } from '@/entities/ticker/server/loadSymbolNames';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';

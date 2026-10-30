@@ -4,7 +4,7 @@ import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { loadSymbolNames } from '@/entities/ticker/lib/loadSymbolNames';
+import { loadSymbolNames } from '@/entities/ticker/server/loadSymbolNames';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
 import {
     shortenRevalidateIfDatabaseMissingAtBuild,

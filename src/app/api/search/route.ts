@@ -5,7 +5,7 @@ import { searchLimiter } from '@/app/api/search/searchLimiter';
 import {
     MAX_SEARCH_QUERY_LENGTH,
     searchTickerQuery,
-} from '@/entities/ticker/lib/searchTickerQuery';
+} from '@/entities/ticker/server/searchTickerQuery';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 // 요청 URL(`?q=`)을 읽으므로 빌드 시점에 굳을 수 없다. 캐시는 아래 `Cache-Control`이 맡는다.

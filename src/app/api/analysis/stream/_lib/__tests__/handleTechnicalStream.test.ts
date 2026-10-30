@@ -32,7 +32,7 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: async () => 'krx-table',
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { getAssetInfo } = vi.hoisted(() => ({ getAssetInfo: vi.fn() }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({ getAssetInfo }));
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({ getAssetInfo }));
 
 import {
     resolveAssetInfoOrNull,

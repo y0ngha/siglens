@@ -271,7 +271,7 @@ function buildInlinedRequest(id: string, prompt: string): InlinedRequest {
             // 이름 음역은 결정적 변환이라 사고가 필요 없다. 3세대 Gemini는 숫자
             // `thinkingBudget: 0`을 400으로 거부하므로 level 문자열로 끈다 —
             // `gemini-3.5-flash-lite`는 `minimal`에서 사고 토큰이 0이다
-            // (`entities/ticker/lib/config.ts`의 `supportsHardOff` 주석).
+            // (`entities/ticker/server/config.ts`의 `supportsHardOff` 주석).
             thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
         },
         metadata: { id },

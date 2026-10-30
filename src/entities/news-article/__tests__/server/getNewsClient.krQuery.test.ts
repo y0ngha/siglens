@@ -5,7 +5,7 @@ const { mockGetKoreanNames, capturedResolvers } = vi.hoisted(() => ({
     capturedResolvers: [] as ((symbol: string) => Promise<string | null>)[],
 }));
 
-vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     getKoreanNames: mockGetKoreanNames,
 }));
 

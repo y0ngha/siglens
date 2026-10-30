@@ -15,8 +15,8 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { type SymbolRouteParams } from '@/shared/config/market';

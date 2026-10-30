@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 // 한글명 리졸버는 DB/FMP를 타는 server-only 경로다. 이 파일의 관심사는 렌더된
 // 링크 그래프이지 이름 조회가 아니므로, 결정적인 스텁으로 고정한다.
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -22,7 +22,7 @@ vi.mock('next/navigation', async importOriginal => ({
 
 import { RelatedSymbols } from '../RelatedSymbols';
 import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<

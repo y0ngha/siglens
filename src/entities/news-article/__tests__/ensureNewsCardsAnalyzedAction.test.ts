@@ -48,7 +48,7 @@ vi.mock('@/shared/db/client', () => ({
 
 // getAssetInfo is called by ensureNewsCardsAnalyzedAction (via resolveMarketProfile) to resolve
 // news source per asset. Default to equity (no marketProfile) so existing tests are unaffected.
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn().mockResolvedValue({ symbol: 'AAPL', name: 'Apple' }),
 }));
 
@@ -83,7 +83,7 @@ import {
     markFetched,
 } from '../server/newsRefreshFlag';
 import { withNewsCardAnalysisLock } from '../server/newsCardAnalysisLock';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { NewsIngestWriteError } from '../lib/ingestNewsForSymbol';
 
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<

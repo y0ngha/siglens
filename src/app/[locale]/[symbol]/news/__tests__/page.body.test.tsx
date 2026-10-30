@@ -22,7 +22,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -115,7 +115,7 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Suspense, isValidElement, type ReactNode } from 'react';
 import NewsPage from '@/app/[locale]/[symbol]/news/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';

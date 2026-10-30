@@ -22,7 +22,7 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapsho
 import { hasTechnicalProse } from '@/entities/seo-snapshot/lib/technicalContent';
 import { countSkillFiles } from '@/entities/skill/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { resolveKrxTickTableForDisplay } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTableForDisplay } from '@/entities/ticker/server/resolveKrxTickTable';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import type { AssetInfo } from '@/shared/lib/types';
 

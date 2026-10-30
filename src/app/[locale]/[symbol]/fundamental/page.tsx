@@ -17,8 +17,8 @@ import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotF
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { SymbolRouteParams } from '@/shared/config/market';
 import {

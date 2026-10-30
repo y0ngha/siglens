@@ -2,7 +2,7 @@
  * "내 위치" 탭 본문의 로케일 정합성 — 형제 탭과 같은 로케일별 이름을 쓰고, 가이드 제목이 한 메시지로
  * 번역되는지 고정한다. `@/entities/ticker/lib/ticker`는 목킹하지 않는다(실제 `pickAssetName`이 대상이다).
  */
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/entities/ticker/lib/assetClassification', () => ({
@@ -33,7 +33,7 @@ import { findElementByType } from '@/__tests__/utils/findElementByType';
 import PositionPage from '@/app/[locale]/[symbol]/position/page';
 import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 
 const AAPL_ASSET_INFO = {
     symbol: 'AAPL',
