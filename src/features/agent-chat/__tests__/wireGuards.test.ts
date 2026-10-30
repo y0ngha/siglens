@@ -1,19 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-    isAgentRemaining,
-    isRecord,
-} from '@/features/agent-chat/lib/wireGuards';
-
-describe('isRecord', () => {
-    it('accepts plain objects', () => {
-        expect(isRecord({})).toBe(true);
-        expect(isRecord({ a: 1 })).toBe(true);
-    });
-
-    it.each([null, undefined, [], [1], 'x', 3, true])('rejects %j', value => {
-        expect(isRecord(value)).toBe(false);
-    });
-});
+import { isAgentRemaining } from '@/features/agent-chat/lib/wireGuards';
 
 describe('isAgentRemaining', () => {
     it('accepts numeric and null (uncapped) counters', () => {

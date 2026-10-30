@@ -1,3 +1,4 @@
+import { isRecord } from '@/shared/lib/isRecord';
 import { AI_SERVER_UNSTABLE } from './sse/LocalizedStreamError';
 import type { AnalysisGateErrorCode } from './types';
 
@@ -15,10 +16,6 @@ const DEEPSEEK_STALLED_CODE = 'DEEPSEEK_STALLED';
 
 const HTTP_TOO_MANY_REQUESTS = 429;
 const HTTP_SERVER_ERROR_MIN = 500;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
-}
 
 /**
  * LLM SDK가 던진 API 에러인지 — **모양으로** 판정한다.

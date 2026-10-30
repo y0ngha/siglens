@@ -24,9 +24,9 @@
  * Lives in `shared/lib` (moved from `views/symbol/snapshot/lib` on 2026-09-17)
  * because `buildSnapshotMetaDescription` in
  * `shared/lib/seoSnapshotDescription.ts` reads the same markdown fields for
- * `<meta name="description">`, and a shared module cannot import from `views`. Production crawl after v0.79.2: chart-tab descriptions
- * that fell back to the raw `summary` field started with a literal
- * `**종합 진단**:`.
+ * `<meta name="description">`, and a shared module cannot import from `views`.
+ * Production crawl after v0.79.2: chart-tab descriptions that fell back to the
+ * raw `summary` field started with a literal `**종합 진단**:`.
  */
 export function stripSnapshotMarkdown(text: string): string {
     return (

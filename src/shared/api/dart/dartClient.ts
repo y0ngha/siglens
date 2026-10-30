@@ -2,6 +2,7 @@ import 'server-only';
 import { readBoundedBody } from '@/shared/lib/readBoundedBody';
 import { sleep } from '@/shared/lib/sleep';
 import { withRetry } from '@/shared/lib/withRetry';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import {
     openQuotaBreaker,
     reserveCall,
@@ -312,9 +313,6 @@ interface DartJsonEnvelope {
     raw: Readonly<Record<string, unknown>>;
 }
 
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
-
 function parseEnvelope(
     endpoint: DartEndpoint,
     bytes: Uint8Array
@@ -325,10 +323,12 @@ function parseEnvelope(
     } catch {
         throw new DartApiError(endpoint, 'response is not JSON');
     }
-    if (!isRecord(parsed) || typeof parsed.status !== 'string') {
+    if (!isPlainRecord(parsed) || typeof parsed.status !== 'string') {
         throw new DartApiError(endpoint, 'response has no status');
     }
-    const list = Array.isArray(parsed.list) ? parsed.list.filter(isRecord) : [];
+    const list = Array.isArray(parsed.list)
+        ? parsed.list.filter(isPlainRecord)
+        : [];
     return {
         status: parsed.status,
         message: typeof parsed.message === 'string' ? parsed.message : '',

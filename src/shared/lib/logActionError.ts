@@ -1,6 +1,4 @@
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
-}
+import { isRecord } from '@/shared/lib/isRecord';
 
 function readStringCode(value: unknown): string | undefined {
     if (!isRecord(value)) return undefined;

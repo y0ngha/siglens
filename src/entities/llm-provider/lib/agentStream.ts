@@ -1,4 +1,5 @@
 import type { AgentStopReason, AgentToolCall } from '@y0ngha/siglens-core';
+import { isRecord } from '@/shared/lib/isRecord';
 
 /**
  * 도구가 제공되는 동안 스텝 텍스트의 앞 이 글자 수는 스트리밍하지 않고 보류한다.
@@ -62,10 +63,6 @@ export function mapStopReason(
         default:
             return 'other';
     }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
 }
 
 /**

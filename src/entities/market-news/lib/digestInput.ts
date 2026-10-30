@@ -5,8 +5,8 @@ import { toEnrichedMarketNewsItem } from './toEnrichedMarketNewsItem';
 import type { MarketNewsRow } from '../model';
 
 /**
- * 다이제스트 입력 기사 — 보강이 끝난 행만 core 형상으로 바꾸고 `selectAggregateNewsItems`로
- * 시장을 움직일 상위 기사만 남긴다(프롬프트 크기 상한).
+ * 다이제스트 입력 기사 — 보강이 끝난 행만 core 형상으로 바꾸고
+ * `selectAggregateNewsItems`로 시장을 움직일 상위 기사만 남긴다(프롬프트 크기 상한).
  *
  * `submitMarketNewsDigestAction`(생성), `peekMarketNewsDigestStatic`(SSR peek),
  * seo-prewarm cron의 뉴스 허브가 같은 함수를 써야 한다 — core 캐시 키가 `news`에서

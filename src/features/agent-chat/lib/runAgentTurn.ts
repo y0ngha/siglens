@@ -6,6 +6,7 @@ import {
     splitLocalePath,
 } from '@/shared/i18n/locales';
 import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { AgentStreamStatus, AgentUiMessage } from '../model/types';
 import { HttpError, TurnFrameError } from './agentStreamErrors';
 import {
@@ -24,7 +25,7 @@ import {
 } from './errorCodes';
 import { cancelFrame, scheduleFrame, type FrameHandle } from './frameScheduler';
 import { localMessageId } from './optimisticMessages';
-import { isAgentRemaining, isRecord } from './wireGuards';
+import { isAgentRemaining } from './wireGuards';
 
 /**
  * A delimiter-less stream (proxy strips blank lines, provider hangs mid
@@ -94,7 +95,7 @@ async function postTurn(
     if (!response.ok || response.body === null) {
         const payload: unknown = await response.json().catch(() => null);
         throw new HttpError(
-            isRecord(payload) && typeof payload.error === 'string'
+            isPlainRecord(payload) && typeof payload.error === 'string'
                 ? payload.error
                 : `http_${response.status}`
         );

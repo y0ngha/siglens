@@ -1,10 +1,10 @@
 import type { IndicatorResult } from '@y0ngha/siglens-core';
-import { isRecord } from './isRecord';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 
 /** 값의 모양에 따라 마지막 봉 원소를 뗀다. 지표 필드는 세 모양이다(함수 JSDoc 참고). */
 function dropLastBar(value: unknown): unknown {
     if (Array.isArray(value)) return value.slice(0, -1);
-    if (!isRecord(value)) return value;
+    if (!isPlainRecord(value)) return value;
     const entries = Object.entries(value);
     const allArrays =
         entries.length > 0 && entries.every(([, v]) => Array.isArray(v));

@@ -4,7 +4,8 @@ import type {
     SkillStatePredicate,
     SkillStatePredicateKind,
 } from '@y0ngha/siglens-core';
-import { isOneOf, isRecord } from './guards';
+import { isRecord } from '@/shared/lib/isRecord';
+import { isOneOf } from './guards';
 
 // core의 `SkillGating` 판별 유니온은 `tier` / `signalKind`를 인라인 리터럴로만 갖고 있어
 // 독립 export 유니온이 없다. 그래서 유니온에서 닫힌 집합을 뽑고, `satisfies` + 아래 완전성

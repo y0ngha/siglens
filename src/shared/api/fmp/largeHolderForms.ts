@@ -1,3 +1,5 @@
+import { isRecord } from '@/shared/lib/isRecord';
+
 /**
  * 13D/G 공시의 **정확한 양식**을 SEC 제출 목록에서 찾는 순수 헬퍼.
  *
@@ -29,9 +31,6 @@ export interface SubmissionsIndex {
     /** 더 오래된 제출이 든 보조 파일(`filings.files[]`). */
     extraFiles: { name: string; filingFrom: string; filingTo: string }[];
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null;
 
 function readColumns(columns: unknown): SubmissionsIndex {
     const forms = new Map<string, string>();

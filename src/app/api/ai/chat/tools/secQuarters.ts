@@ -1,4 +1,5 @@
 import { MS_PER_DAY } from '@/shared/config/time';
+import { isRecord } from '@/shared/lib/isRecord';
 import { pctVs, roundPct2 } from './percent';
 
 /**
@@ -97,10 +98,6 @@ const FY_START_TOLERANCE_DAYS = 7;
 
 function isSecForm(value: unknown): value is SecForm {
     return SEC_QUARTER_FORMS.some(form => form === value);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
 }
 
 function isIsoDate(value: unknown): value is string {

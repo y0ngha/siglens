@@ -46,6 +46,53 @@ describe('logToolDegrade', () => {
         );
     });
 
+    it('cause.code가 없으면 최상위 string code로 폴백한다', () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const error = Object.assign(new Error('socket reset'), {
+            code: 'ECONNRESET',
+        });
+
+        logToolDegrade('get_quote', 'quote lookup', error);
+
+        expect(spy).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_quote',
+            'quote lookup failed, degrading',
+            { errorName: 'Error', code: 'ECONNRESET' }
+        );
+    });
+
+    it('cause.code와 최상위 code가 모두 있으면 cause.code가 우선한다', () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const error = Object.assign(new Error('wrapped'), {
+            code: 'ECONNRESET',
+            cause: { code: '23505' },
+        });
+
+        logToolDegrade('get_quote', 'quote lookup', error);
+
+        expect(spy).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_quote',
+            'quote lookup failed, degrading',
+            { errorName: 'Error', code: '23505' }
+        );
+    });
+
+    it('최상위 code가 string이 아니면 undefined로 처리한다', () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const error = Object.assign(new Error('odd'), { code: 42 });
+
+        logToolDegrade('get_quote', 'quote lookup', error);
+
+        expect(spy).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_quote',
+            'quote lookup failed, degrading',
+            { errorName: 'Error', code: undefined }
+        );
+    });
+
     it('message는 절대 로그에 노출하지 않는다', () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         const error = new Error('bound param: userId=u1-secret leaked here');
