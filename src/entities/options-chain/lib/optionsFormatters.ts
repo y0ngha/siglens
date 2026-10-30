@@ -15,7 +15,7 @@ export const PERCENT_DISPLAY_FLOOR = 0.05;
 /** Max Pain 행사가를 표시한다. null/NaN이면 `'-'`, 아니면 반올림해 천 단위 쉼표를 넣은 `$<값>`이다. */
 export function formatMaxPain(value: number | null | undefined): string {
     if (value == null || Number.isNaN(value)) return METRIC_PLACEHOLDER;
-    return `$${Math.round(value).toLocaleString()}`;
+    return `$${Math.round(value).toLocaleString('en-US')}`;
 }
 
 /**
