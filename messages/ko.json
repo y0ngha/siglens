@@ -381,7 +381,6 @@
                 "flows": "기관과 공매도 수급"
             },
             "page": {
-                "2ab959": "지금 가격은 이 아파트 몇 층?",
                 "3c87a9": "실적 일정을 불러오지 못했어요.",
                 "465a63": "{v0} 재무제표",
                 "5c38df": "애널리스트 동향을 불러오지 못했어요.",
@@ -414,6 +413,7 @@
                 "overallHeadingCrypto": "{v0} 차트와 뉴스, 매수 분위기 종합 분석",
                 "overallHeadingKrEquity": "{v0} 차트와 실적, 뉴스 종합 분석",
                 "overallHeadingUsEquity": "{v0} 차트와 옵션 시장, 실적, 뉴스 종합 분석",
+                "positionGuideHeading": "{v0} 지금 가격은 이 아파트 몇 층?",
                 "positionRangeSentence": "{v0}의 최근 52주 범위는 {v1} ~ {v2}이고, 현재가 {v3}는 이 범위의 {v4}% 지점으로, {v5}에 해당합니다.",
                 "positionRegisterHint": "아래에서 보유종목을 등록하면 같은 건물 안에서 내가 산 층까지 함께 확인할 수 있어요."
             },

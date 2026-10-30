@@ -381,7 +381,6 @@
                 "flows": "Investor Flows"
             },
             "page": {
-                "2ab959": "which floor of this building is the price on?",
                 "3c87a9": "Could not load Earnings schedule.",
                 "465a63": "{v0} Financial Statements",
                 "ddc932": "{v2}'s Fear & Greed Index scores volume flow, estimated buy/sell pressure from daily candles and price position from 0 to 100 against the stock's own history. For the wider picture, see <link>{v1}</link> for {v0}.",
@@ -412,6 +411,7 @@
                 "overallHeadingCrypto": "{v0} Overall Analysis: Chart, News and Buying Sentiment",
                 "overallHeadingKrEquity": "{v0} Overall Analysis: Chart, Earnings and News",
                 "overallHeadingUsEquity": "{v0} Overall Analysis: Chart, Options, Earnings and News",
+                "positionGuideHeading": "{v0}: which floor of this building is the price on?",
                 "positionRangeSentence": "The 52-week range for {v0} is {v1} to {v2}, and the current price of {v3} sits at the {v4}% mark of that range: {v5}.",
                 "positionRegisterHint": "Register a holding below and you can also see the floor you bought on, inside the same building.",
                 "marketFearGreedLinkCrypto": "Crypto Market Fear and Greed Index",
