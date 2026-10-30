@@ -1032,7 +1032,7 @@ describe('POST /api/analysis/stream', () => {
 
         /**
          * `technical`은 DISPATCH 테이블을 타지 않고 **자기 분기에서** 로케일을
-         * 따로 푼다(`route.ts:608`). 그래서 DISPATCH 쪽 테스트가 아무리 촘촘해도
+         * 따로 푼다(`handleTechnicalStream.ts`의 `requestLocale`). 그래서 DISPATCH 쪽 테스트가 아무리 촘촘해도
          * 이 분기는 비어 있었다 — 실증: 그 줄을 `DEFAULT_LOCALE`로 고정해도
          * 89개 테스트가 전부 통과했다. 최다 트래픽 경로다.
          */
@@ -1916,7 +1916,8 @@ describe('POST /api/analysis/stream', () => {
     /**
      * Task S3 (prior-analysis-context) — both axes read history BEFORE the
      * core call (never lazily on a cache miss — see the long comment above
-     * each `findRecentForPrompt` call site in `route.ts`).
+     * each `findRecentForPrompt` call site in `_lib/technicalPromptInputs.ts` and
+     * `_lib/overallDispatch.ts`).
      *
      * 2026-09-27: 봇 요청도 더 이상 이 읽기를 건너뛰지 않는다 — core가
      * `priorAnalyses`의 fingerprint를 캐시 키에 접으므로, 건너뛰면 봇과

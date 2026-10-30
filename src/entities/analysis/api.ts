@@ -73,7 +73,8 @@ import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
  * Task S3 (prior-analysis-context) — prewarm 결과를 `analysis_history`에
- * best-effort로 기록한다. SSE 경로(`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`의
+ * best-effort로 기록한다. SSE 경로
+ * (`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`의
  * `schedulePersistAnalysisHistory`)와 같은 목적, 같은 컬럼 집합이지만
  * **`after()`로 감싸지 않는다.**
  *

@@ -12,9 +12,9 @@ import { srhCommand } from '../support/srhClient';
  *   2. the user-initiated force re-analysis branch (`handleReanalyze`).
  *
  * Both run against the E2E short-circuit in the SSE route
- * (`src/app/api/analysis/stream/_lib/e2eTechnicalResponse.ts`). No LLM round-trip, no external
- * browser request — the support/fixtures network guard enforces zero
- * non-app traffic.
+ * (`src/app/api/analysis/stream/_lib/e2eTechnicalResponse.ts`). No LLM
+ * round-trip, no external browser request — the support/fixtures network
+ * guard enforces zero non-app traffic.
  *
  * **2026-09-27: the E2E short-circuit is no longer bot-aware.** It used to
  * branch on `isBot(request.headers)` and return `{ status: 'miss_no_trigger' }`

@@ -90,8 +90,8 @@ export type ByokOutcome =
  *
  * - the SSE route (`src/app/api/analysis/stream/_lib/handleTechnicalStream.ts`
  *   and `e2eTechnicalResponse.ts`) — two branches call it.
- *   The `modelId === undefined` branch (in `handleTechnicalStream.ts`) is genuinely modelId-less
- *   (chart/technical analysis submitted with no model selection at all, so
+ *   The `modelId === undefined` branch (in `handleTechnicalStream.ts`) is
+ *   genuinely modelId-less (chart/technical analysis submitted with no model selection at all, so
  *   there is nothing to gate on). The
  *   `isE2E()` branch is entered regardless of `modelId` — a caller can still
  *   pass a premium model there — but it short-circuits to a stub fixture
