@@ -1,7 +1,13 @@
-/** ShareTriggerDialog·SharePreparingModal이 같은 틀을 쓴다 — 한쪽만 바뀌면 두 모달이 갈라진다. */
+/**
+ * 공유 모달(분석 준비 확인·준비 중) 두 개가 함께 쓰는 클래스 상수.
+ * 한쪽만 바뀌면 두 모달의 틀이 갈라지므로 여기 한 곳에 둔다.
+ */
+
+/** 두 모달 패널의 폭·면·경계. */
 export const SHARE_MODAL_PANEL =
     'max-w-sm border border-secondary-700 bg-secondary-800 shadow-2xl';
 
+/** 모달 하단 세로 버튼의 높이·패딩·글자 크기. */
 export const SHARE_MODAL_ACTION_SIZE = 'h-9 px-4 text-sm';
 
 /**

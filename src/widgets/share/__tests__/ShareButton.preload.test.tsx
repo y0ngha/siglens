@@ -1,3 +1,5 @@
+// 격리 레인(`*.test.tsx`)에 둔다. `vi.mock` 팩토리 실행 횟수로 청크 로드를 세므로 모듈 캐시를
+// 공유하는 `dom-fast` 레인에서는 횟수가 틀어지고, 아래 null 모킹이 같은 워커의 다른 테스트로 샌다.
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ShareButton } from '../ui/ShareButton';
 

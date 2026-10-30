@@ -1332,4 +1332,20 @@ const label = (item: Item, locale?: Locale) => item.names[locale ?? 'ko'];
 const label = (item: Item, locale: Locale) => pickLocalized(item.names, locale);
 ```
 
+<a id="I18-15"></a>
+
+#### I18-15 — Catalog values carry no layout whitespace
+
+A message value is the exact text shown to the user. Never bake JSX line-wrapping into it (a newline plus indentation
+spaces copied from a multi-line `t(...)` call or a wrapped JSX string). HTML collapses it in ko/en but it surfaces as
+stray spaces in ja/zh, which have no inter-word spaces. Keep each value on one line with only the spaces the sentence
+needs, and let the formatter wrap the call site, not the value.
+
+```json
+// ❌ indentation copied into the value
+"disclaimer": "Data is delayed\n        by 15 minutes."
+// ✅
+"disclaimer": "Data is delayed by 15 minutes."
+```
+
 ---

@@ -5506,7 +5506,6 @@
             "ShareSheet": {
                 "01660a": "Copy Link",
                 "4cb3cd": "Share on X",
-                "a46c88": "Share on X (Twitter)",
                 "c040b8": "Link copied",
                 "e4441b": "Share Link (Copy Manually)",
                 "e5c85b": "Copied"
@@ -5515,7 +5514,7 @@
                 "2d4e13": "Later",
                 "5481d6": "Preparing analysis before sharing",
                 "94b7db": "Close",
-                "b74ea2": "There's no AI analysis for this stock yet. It'll be ready in a moment.\n                        Once complete, we'll take you to the share screen.",
+                "b74ea2": "There's no AI analysis for this stock yet. It'll be ready in a moment. Once complete, we'll take you to the share screen.",
                 "cc6aae": "Analyze and Share"
             }
         },

@@ -9,25 +9,11 @@ describe('SharePreparingModal', () => {
         vi.clearAllMocks();
     });
 
-    // C-7: !open → null
-    it('returns null when open is false', () => {
-        const { container } = render(
-            <SharePreparingModal
-                open={false}
-                phase="pending"
-                onClose={onClose}
-                onRetry={onRetry}
-            />
-        );
-        expect(container.firstChild).toBeNull();
-    });
-
     describe('pending phase', () => {
         // C-7: pending shows aria-live text
         it('renders the aria-live status text', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="pending"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -46,7 +32,6 @@ describe('SharePreparingModal', () => {
         it('renders the sub-hint about timing', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="pending"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -61,7 +46,6 @@ describe('SharePreparingModal', () => {
         it('sets aria-busy on the dialog in pending phase', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="pending"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -76,7 +60,6 @@ describe('SharePreparingModal', () => {
         it('does not render the retry button in pending phase', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="pending"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -90,7 +73,6 @@ describe('SharePreparingModal', () => {
         it('renders the close button', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="pending"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -104,7 +86,6 @@ describe('SharePreparingModal', () => {
         it('calls onClose when the close button is clicked in pending phase', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="pending"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -120,7 +101,6 @@ describe('SharePreparingModal', () => {
         it('renders the retry button', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="error"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -134,7 +114,6 @@ describe('SharePreparingModal', () => {
         it('calls onRetry when the retry button is clicked', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="error"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -148,7 +127,6 @@ describe('SharePreparingModal', () => {
         it('renders exactly two close buttons (header ✕ + body 닫기) in error phase', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="error"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -164,7 +142,6 @@ describe('SharePreparingModal', () => {
         it('calls onClose when the body 닫기 button is clicked', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="error"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -181,7 +158,6 @@ describe('SharePreparingModal', () => {
         it('renders the error message text', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="error"
                     onClose={onClose}
                     onRetry={onRetry}
@@ -195,13 +171,65 @@ describe('SharePreparingModal', () => {
         it('does not set aria-busy in error phase', () => {
             render(
                 <SharePreparingModal
-                    open
                     phase="error"
                     onClose={onClose}
                     onRetry={onRetry}
                 />
             );
             expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-busy');
+        });
+    });
+
+    describe('pending → error transition', () => {
+        it('announces the error text through the live region that was already mounted', () => {
+            const { rerender } = render(
+                <SharePreparingModal
+                    phase="pending"
+                    onClose={onClose}
+                    onRetry={onRetry}
+                />
+            );
+            const liveRegion = screen
+                .getByRole('dialog')
+                .querySelector('[aria-live="polite"]');
+
+            rerender(
+                <SharePreparingModal
+                    phase="error"
+                    onClose={onClose}
+                    onRetry={onRetry}
+                />
+            );
+
+            expect(
+                screen.getByRole('dialog').querySelector('[aria-live="polite"]')
+            ).toBe(liveRegion);
+            expect(liveRegion).toHaveTextContent(
+                '분석을 끝내지 못했어요. 다시 시도할까요?'
+            );
+        });
+
+        it('keeps focus on the header close button', () => {
+            const { rerender } = render(
+                <SharePreparingModal
+                    phase="pending"
+                    onClose={onClose}
+                    onRetry={onRetry}
+                />
+            );
+            const [headerClose] = screen.getAllByRole('button', {
+                name: '닫기',
+            });
+
+            rerender(
+                <SharePreparingModal
+                    phase="error"
+                    onClose={onClose}
+                    onRetry={onRetry}
+                />
+            );
+
+            expect(headerClose).toHaveFocus();
         });
     });
 });
