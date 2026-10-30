@@ -85,7 +85,7 @@ vi.mock('@/widgets/options/OptionsPageClient', () => ({
 vi.mock('@/widgets/options/OptionsEmptyState', () => ({
     OptionsEmptyState: () => null,
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     hasOptionsMarket: vi.fn().mockResolvedValue(true),
     fetchOptionsSnapshot: vi.fn().mockResolvedValue(null),
 }));

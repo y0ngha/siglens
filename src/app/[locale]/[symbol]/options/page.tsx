@@ -19,7 +19,7 @@ import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvabl
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/entities/options-chain/lib/optionsDataCache';
+} from '@/entities/options-chain/server/optionsDataCache';
 import { resolveSnapshotSlots } from '@/entities/options-chain/lib/optionsSlots';
 import { toClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';

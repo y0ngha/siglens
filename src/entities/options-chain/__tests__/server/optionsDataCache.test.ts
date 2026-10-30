@@ -34,7 +34,7 @@ const {
     mockRedisConstructor: vi.fn(),
 }));
 
-vi.mock('../lib/YahooOptionsAdapter', () => ({
+vi.mock('../../server/YahooOptionsAdapter', () => ({
     YahooOptionsAdapter: vi.fn().mockImplementation(function () {
         return {
             hasOptionsMarket: mockHasOptionsMarket,
@@ -50,7 +50,7 @@ vi.mock('@upstash/redis', () => ({
     }),
 }));
 
-vi.mock('../lib/optionsCacheLife', () => ({
+vi.mock('../../lib/optionsCacheLife', () => ({
     getOptionsCacheLifeProfile: vi.fn(() => 'options-market-open'),
 }));
 
@@ -58,11 +58,11 @@ import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
     HAS_OPTIONS_MARKET_TTL_SECONDS,
-    LAST_GOOD_SNAPSHOT_TTL_SECONDS,
     OPTIONS_SNAPSHOT_TTL_SECONDS,
     SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS,
-} from '../lib/optionsDataCache';
-import { getOptionsCacheLifeProfile } from '../lib/optionsCacheLife';
+} from '../../server/optionsDataCache';
+import { LAST_GOOD_SNAPSHOT_TTL_SECONDS } from '../../server/optionsLastGoodStore';
+import { getOptionsCacheLifeProfile } from '../../lib/optionsCacheLife';
 import {
     COMPRESSED_VALUE_PREFIX,
     decodeCacheValue,
@@ -75,11 +75,11 @@ import {
 async function loadWithEnv(opts: {
     url?: string;
     token?: string;
-}): Promise<typeof import('../lib/optionsDataCache')> {
+}): Promise<typeof import('../../server/optionsDataCache')> {
     process.env.UPSTASH_REDIS_REST_URL = opts.url ?? '';
     process.env.UPSTASH_REDIS_REST_TOKEN = opts.token ?? '';
     vi.resetModules();
-    const mod = await import('../lib/optionsDataCache');
+    const mod = await import('../../server/optionsDataCache');
     return mod;
 }
 
@@ -1161,79 +1161,6 @@ describe('refreshLastGoodSnapshot', () => {
 
         expect(result).toBe('none');
         expect(mockFetchSnapshot).not.toHaveBeenCalled();
-    });
-});
-
-describe('readLastGoodCapturedAtBatch', () => {
-    const REDIS_ENV = { url: 'https://example.upstash.io', token: 'tok' };
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('보조 키를 MGET 한 번으로 읽고 값이 있는 종목만 맵에 담는다', async () => {
-        mockRedisMget.mockResolvedValue([
-            '2026-10-05T20:30:00.000Z',
-            null,
-            '2026-10-05T20:40:00.000Z',
-        ]);
-
-        const mod = await loadWithEnv(REDIS_ENV);
-        const result = await mod.readLastGoodCapturedAtBatch([
-            'AAPL',
-            'msft',
-            'NVDA',
-        ]);
-
-        expect(mockRedisMget).toHaveBeenCalledTimes(1);
-        expect(mockRedisMget).toHaveBeenCalledWith(
-            'options:snapshot:last-good-at:v2:AAPL',
-            'options:snapshot:last-good-at:v2:MSFT',
-            'options:snapshot:last-good-at:v2:NVDA'
-        );
-        expect(Object.fromEntries(result)).toEqual({
-            AAPL: '2026-10-05T20:30:00.000Z',
-            NVDA: '2026-10-05T20:40:00.000Z',
-        });
-        // 스냅샷 전체 키는 읽지 않는다.
-        expect(mockRedisGet).not.toHaveBeenCalled();
-    });
-
-    it('문자열이 아닌 값(깨진 데이터)은 미확보로 본다', async () => {
-        mockRedisMget.mockResolvedValue([123, { a: 1 }]);
-
-        const mod = await loadWithEnv(REDIS_ENV);
-        const result = await mod.readLastGoodCapturedAtBatch(['AAPL', 'MSFT']);
-
-        expect(result.size).toBe(0);
-    });
-
-    it('종목이 없으면 Redis를 부르지 않는다', async () => {
-        const mod = await loadWithEnv(REDIS_ENV);
-        const result = await mod.readLastGoodCapturedAtBatch([]);
-
-        expect(result.size).toBe(0);
-        expect(mockRedisMget).not.toHaveBeenCalled();
-    });
-
-    it('Redis 오류는 흡수하고 빈 맵이다', async () => {
-        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        mockRedisMget.mockRejectedValue(new Error('redis down'));
-
-        const mod = await loadWithEnv(REDIS_ENV);
-        const result = await mod.readLastGoodCapturedAtBatch(['AAPL']);
-
-        expect(result.size).toBe(0);
-        expect(errSpy).toHaveBeenCalled();
-        errSpy.mockRestore();
-    });
-
-    it('Redis가 없으면 빈 맵이다', async () => {
-        const mod = await loadWithEnv({});
-        const result = await mod.readLastGoodCapturedAtBatch(['AAPL']);
-
-        expect(result.size).toBe(0);
-        expect(mockRedisMget).not.toHaveBeenCalled();
     });
 });
 

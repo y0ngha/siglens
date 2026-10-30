@@ -1,6 +1,6 @@
 import { constants } from 'node:http2';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
-import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
+import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptionsLastGood';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';

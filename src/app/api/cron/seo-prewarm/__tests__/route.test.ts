@@ -20,7 +20,7 @@ vi.mock('../runPrewarmBatch', () => ({
     BATCH_WALL_CLOCK_BUDGET_MS: BATCH_BUDGET_MS,
 }));
 
-vi.mock('@/entities/options-chain/lib/warmOptionsLastGood', () => ({
+vi.mock('@/entities/options-chain/server/warmOptionsLastGood', () => ({
     warmOptionsLastGood: vi.fn(),
 }));
 
@@ -56,7 +56,7 @@ import {
     releasePrewarmLock,
 } from '@/app/api/cron/seo-prewarm/lock';
 import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
-import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
+import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptionsLastGood';
 import { pruneExpiredRows } from '@/app/api/cron/seo-prewarm/pruneExpiredRows';
 import { isBatchWork } from '@/shared/lib/renderBudget';
 

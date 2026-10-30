@@ -9,8 +9,8 @@ describe('getOptionsProvider (prod)', () => {
     // 첫 케이스는 이 레지스트리를 그대로 쓰고, 이후 리셋 뒤 재평가는 변환 결과를 재사용한다.
     beforeAll(async () => {
         await Promise.all([
-            import('@/entities/options-chain/lib/getOptionsProvider'),
-            import('@/entities/options-chain/lib/YahooOptionsAdapter'),
+            import('@/entities/options-chain/server/getOptionsProvider'),
+            import('@/entities/options-chain/server/YahooOptionsAdapter'),
         ]);
     }, MODULE_LOAD_TIMEOUT_MS);
 
@@ -20,26 +20,34 @@ describe('getOptionsProvider (prod)', () => {
 
     it('returns a YahooOptionsAdapter instance in prod', async () => {
         const { getOptionsProvider } =
-            await import('@/entities/options-chain/lib/getOptionsProvider');
+            await import('@/entities/options-chain/server/getOptionsProvider');
         const { YahooOptionsAdapter } =
-            await import('@/entities/options-chain/lib/YahooOptionsAdapter');
+            await import('@/entities/options-chain/server/YahooOptionsAdapter');
         expect(getOptionsProvider()).toBeInstanceOf(YahooOptionsAdapter);
+    });
+
+    it('exposes the OptionsDataProvider surface callers depend on', async () => {
+        const { getOptionsProvider } =
+            await import('@/entities/options-chain/server/getOptionsProvider');
+        const provider = getOptionsProvider();
+        expect(typeof provider.fetchSnapshot).toBe('function');
+        expect(typeof provider.hasOptionsMarket).toBe('function');
     });
 
     it('returns the same singleton across calls', async () => {
         const { getOptionsProvider } =
-            await import('@/entities/options-chain/lib/getOptionsProvider');
+            await import('@/entities/options-chain/server/getOptionsProvider');
         expect(getOptionsProvider()).toBe(getOptionsProvider());
     });
 
     it('singleton is reset between module reloads (vi.resetModules)', async () => {
         const { getOptionsProvider: get1 } =
-            await import('@/entities/options-chain/lib/getOptionsProvider');
+            await import('@/entities/options-chain/server/getOptionsProvider');
         vi.resetModules();
         vi.doMock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
 
         const { getOptionsProvider: get2 } =
-            await import('@/entities/options-chain/lib/getOptionsProvider');
+            await import('@/entities/options-chain/server/getOptionsProvider');
         // Different module instances → different singletons (module-level `cached` resets)
         expect(get1()).not.toBe(get2());
     });
