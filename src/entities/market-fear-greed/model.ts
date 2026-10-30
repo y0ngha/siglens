@@ -37,6 +37,15 @@ export interface MarketFearGreedComparisonPoint {
 }
 
 /**
+ * 과거 판독 하나에 이력이 너무 짧아 닿지 못했는지를 더한 것. `clamped`이면 `date`는
+ * 요청한 과거 시점이 아니라 점수가 있는 가장 이른 세션이라, 호출자가 타일이 실제로 보여 주는
+ * 세션을 독자에게 알릴 수 있다.
+ */
+export interface FearGreedLookbackPoint extends MarketFearGreedComparisonPoint {
+    clamped: boolean;
+}
+
+/**
  * 시장 공포·탐욕 페이지가 그리는 전부.
  *
  * walk-forward 이력은 여기에 싣지 않는다: ~750 세션에 달하는데 페이지는 그중 네 개만

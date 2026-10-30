@@ -1,5 +1,6 @@
 import {
     buildApiModelOptionGroups,
+    findSelectableModelId,
     listApiKeyProviderLabels,
 } from '@/features/siglens-api-key-management/lib/buildApiModelOptions';
 import { listApiSelectableModels } from '@/entities/siglens-api-key/lib/apiModels';
@@ -61,5 +62,23 @@ describe('listApiKeyProviderLabels', () => {
         expect(label).toContain('ChatGPT (OpenAI)');
         expect(label).toContain('Gemini (Google)');
         expect(label).toContain('DeepSeek');
+    });
+});
+
+describe('findSelectableModelId', () => {
+    const groups = buildApiModelOptionGroups(['anthropic']);
+
+    it('선택지에 있는 저장값은 그 모델 id다', () => {
+        expect(findSelectableModelId(groups, 'claude-opus-5')).toBe(
+            'claude-opus-5'
+        );
+    });
+
+    it('선택지에 없는 저장값(키를 지운 provider)은 null이다', () => {
+        expect(findSelectableModelId(groups, 'gpt-6-astra')).toBeNull();
+    });
+
+    it('저장값이 없으면 null이다', () => {
+        expect(findSelectableModelId(groups, null)).toBeNull();
     });
 });

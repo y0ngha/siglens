@@ -11,11 +11,8 @@ interface ShareErrorProps {
 }
 
 /**
- * Error boundary for the `/share/[id]` subtree.
- *
- * Any uncaught render error inside the share page — e.g. an unexpected
- * snapshot shape or a rendering failure in a kind panel — degrades to this
- * branded screen instead of the generic root error.
+ * `/share/[id]` 서브트리의 오류 경계. 공유 페이지 안의 처리되지 않은 렌더 오류(예상 밖 스냅샷
+ * 모양, 종류별 패널의 렌더 실패 등)를 루트 오류 화면 대신 이 브랜드 화면으로 degrade한다.
  */
 export default function ShareError({ error, reset }: ShareErrorProps) {
     const t = useTranslations('app.share');

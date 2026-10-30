@@ -13,6 +13,7 @@ import {
     removeRecentSearch,
 } from '@/entities/ticker/lib/recentSearches';
 import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
+import { RECENT_SEARCHES_EVENT } from '@/features/ticker-search/lib/recentSearchesStore';
 
 // `vi.mock`은 import 블록 **뒤에** 모아 둔다 — import 사이에 끼우지 않는다
 // (TESTING.md#TE-1). 호이스팅 덕에 동작은 같지만, 읽는 사람에게는
@@ -66,7 +67,7 @@ describe('useRecentSearches — branch coverage', () => {
             { symbol: 'AAPL', label: '애플' },
         ]);
         act(() => {
-            window.dispatchEvent(new Event('siglens:recent-searches-change'));
+            window.dispatchEvent(new Event(RECENT_SEARCHES_EVENT));
         });
         rerender();
 

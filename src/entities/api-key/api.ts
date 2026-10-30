@@ -1,14 +1,14 @@
-import type { LlmProvider } from './lib/constants';
 import { and, eq, sql } from 'drizzle-orm';
+import type { LlmProvider } from '@/shared/config/llmProviders';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { userApiKeys } from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
 import {
     decryptToken,
     encryptToken,
     tryReadLlmApiKeyEncryptionKey,
 } from '@/shared/db/tokenEncryption';
 import type {
+    SiglensDatabase,
     UpsertUserApiKeyInput,
     UserApiKeyMetaRecord,
     UserApiKeyRecord,
@@ -17,10 +17,8 @@ import type {
 import { withRetry } from '@/shared/lib/withRetry';
 
 /**
- * Thrown when a stored ciphertext exists but cannot be decrypted with the
- * configured `LLM_API_KEY_ENCRYPTION_KEY`. Distinct from the "no row" case so
- * callers can prompt the user to re-register their key instead of silently
- * downgrading them to the free-tier path.
+ * 저장된 암호문이 있는데 설정된 `LLM_API_KEY_ENCRYPTION_KEY`로 복호화하지 못할 때 던진다.
+ * "행 없음"과 구분되어, 호출부가 무료 경로로 조용히 내리지 않고 키 재등록을 안내할 수 있다.
  */
 export class LlmApiKeyDecryptionFailedError extends Error {
     readonly code = 'api_key_corrupted' as const;
@@ -49,7 +47,7 @@ const userApiKeyRowColumns = {
     encryptedApiKey: userApiKeys.encryptedApiKey,
 };
 
-/** Resolves the LLM encryption key, throwing when absent or invalid, to prevent plaintext storage or blank decryption. */
+/** LLM 암호화 키를 읽는다. 없거나 잘못됐으면 던져, 평문 저장이나 빈 키 복호화를 막는다. */
 function requireLlmEncryptionKey(): string {
     const encryptionKey = tryReadLlmApiKeyEncryptionKey();
     if (encryptionKey === null) {
@@ -61,14 +59,14 @@ function requireLlmEncryptionKey(): string {
 }
 
 /**
- * Drizzle ORM implementation of {@link UserApiKeyRepository} backed by PostgreSQL
- * PostgreSQL. Encrypts plaintext API keys with AES-256-GCM (via
- * {@link encryptToken}) before storage and decrypts them on single-row reads.
+ * PostgreSQL 기반 {@link UserApiKeyRepository} 구현. 평문 API 키를 저장 전에
+ * AES-256-GCM({@link encryptToken})으로 암호화하고, 단건 조회에서만 복호화한다.
+ * 목록 조회·삭제는 암호문 컬럼을 읽지 않는다.
  *
- * Requires `LLM_API_KEY_ENCRYPTION_KEY` (32-byte hex) to be present in the
- * environment whenever {@link upsert} or {@link findByUserAndProvider} runs.
+ * `upsert`와 `findByUserAndProvider`는 환경변수 `LLM_API_KEY_ENCRYPTION_KEY`
+ * (32바이트 hex)가 있어야 한다.
  *
- * @param db - Drizzle-wrapped database client; obtain via `createDatabaseClient`.
+ * @param db - `createDatabaseClient`로 얻은 Drizzle 클라이언트.
  */
 export class DrizzleUserApiKeyRepository implements UserApiKeyRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -129,10 +127,8 @@ export class DrizzleUserApiKeyRepository implements UserApiKeyRepository {
         const encryptionKey = requireLlmEncryptionKey();
         const apiKey = decryptToken(row.encryptedApiKey, encryptionKey);
         if (apiKey === null) {
-            // Row exists but the stored ciphertext failed to decrypt.
-            // Surface this as a typed error so callers do not silently treat
-            // the user as "no BYOK key registered". userId/provider are
-            // non-secret context for observability.
+            // 행은 있지만 복호화에 실패했다. 호출부가 "BYOK 키 없음"으로 오인하지
+            // 않도록 타입 있는 오류로 올린다. userId/provider는 비밀이 아니라 로그에 남긴다.
             console.error(
                 '[userApiKeyRepository] Failed to decrypt stored API key',
                 { userId, provider }

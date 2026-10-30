@@ -47,7 +47,9 @@ describe('useFearGreedFromSymbol', () => {
             { wrapper: wrapperWith(client) }
         );
 
-        await waitFor(() => expect(result.current).toEqual(SERVER_RESULT));
+        await waitFor(() =>
+            expect(result.current).toMatchObject(SERVER_RESULT)
+        );
         expect(mockAction).toHaveBeenCalledWith('AAPL', 'aapl-fmp');
     });
 
@@ -64,8 +66,24 @@ describe('useFearGreedFromSymbol', () => {
             { wrapper: wrapperWith(client) }
         );
 
-        expect(result.current).toEqual(SERVER_RESULT);
+        expect(result.current).toMatchObject(SERVER_RESULT);
         expect(mockAction).not.toHaveBeenCalled();
+    });
+
+    it('결과를 쿼리 캐시에 들인 시각을 dataUpdatedAt으로 함께 돌려준다', () => {
+        const client = new QueryClient();
+        client.setQueryData(
+            QUERY_KEYS.symbolFearGreed('NVDA', undefined),
+            SERVER_RESULT,
+            { updatedAt: 1_700_000_000_000 }
+        );
+
+        const { result } = renderHook(
+            () => useFearGreedFromSymbol({ symbol: 'NVDA' }),
+            { wrapper: wrapperWith(client) }
+        );
+
+        expect(result.current.dataUpdatedAt).toBe(1_700_000_000_000);
     });
 
     /**
@@ -100,7 +118,7 @@ describe('useFearGreedFromSymbol', () => {
                 { wrapper: wrapperWith(seededClient()) }
             );
             await new Promise(resolve => setTimeout(resolve, 20));
-            expect(result.current).toEqual(SERVER_RESULT);
+            expect(result.current).toMatchObject(SERVER_RESULT);
             expect(mockAction).not.toHaveBeenCalled();
         });
 

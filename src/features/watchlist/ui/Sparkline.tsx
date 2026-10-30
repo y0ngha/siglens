@@ -1,9 +1,9 @@
+import { cn } from '@/shared/lib/cn';
 import {
     SPARKLINE_HEIGHT,
     SPARKLINE_WIDTH,
     sparklinePoints,
-} from '@/features/watchlist/lib/sparklinePoints';
-import { cn } from '@/shared/lib/cn';
+} from '../lib/sparklinePoints';
 
 interface SparklineProps {
     /** 오래된 것부터의 종가. 2개 미만이면 아무것도 그리지 않는다. */
