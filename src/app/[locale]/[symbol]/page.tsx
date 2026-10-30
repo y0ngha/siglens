@@ -18,7 +18,7 @@ import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
-import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
+import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
 import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';

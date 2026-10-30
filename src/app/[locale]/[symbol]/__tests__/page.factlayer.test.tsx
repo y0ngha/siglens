@@ -154,7 +154,7 @@ vi.mock('next/navigation', () => ({
 }));
 // peekAnalysisStatic wraps peekAnalysisCache via unstable_cache(identity in tests).
 // Mocking the static cache directly gives cleaner control in this test suite.
-vi.mock('@/entities/analysis/lib/peekAnalysisStaticCache', () => ({
+vi.mock('@/entities/analysis/server/peekAnalysisStaticCache', () => ({
     peekAnalysisStatic: vi.fn().mockResolvedValue(null),
 }));
 

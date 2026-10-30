@@ -1,8 +1,8 @@
 import {
     isGateBlockedResult,
     GATE_ERROR_CODES,
-    type AnalysisGateBlockedResult,
 } from '@/entities/analysis/lib/gate';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 describe('isGateBlockedResult', () => {
     it('returns true for AnalysisGateBlockedResult shape', () => {

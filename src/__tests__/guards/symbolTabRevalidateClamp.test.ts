@@ -108,7 +108,7 @@ const SHORT_REVALIDATE_MODULES: Readonly<Record<string, number>> = {
     // getBarsStatic / getQuantizedBarsStatic / getSeedBarsStatic
     '@/entities/bars/lib/barsStaticCache': time.SECONDS_PER_QUARTER_DAY,
     // peekAnalysisStatic
-    '@/entities/analysis/lib/peekAnalysisStaticCache':
+    '@/entities/analysis/server/peekAnalysisStaticCache':
         time.SECONDS_PER_QUARTER_DAY,
     // 시장 공포·탐욕 허브 캐시(1h). 종목 탭은 `marketFearGreedReading`(세션 키 24h)으로 읽는다.
     '@/entities/market-fear-greed/api/marketFearGreedStaticCache':

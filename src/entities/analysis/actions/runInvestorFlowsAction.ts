@@ -1,7 +1,6 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     runInvestorFlowsAnalysis,
     type ModelId,
@@ -9,20 +8,18 @@ import {
 } from '@y0ngha/siglens-core';
 import { investorFlowsCachedProvider } from '@/entities/investor-flows/server/getInvestorFlowsCachedProvider';
 import { getInvestorFlowsEvaluationOptions } from '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions';
-import { runGatedAnalysis } from '../lib/runGatedAnalysis';
+import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { runGatedAnalysis } from '../server/runGatedAnalysis';
 
-/**
- * Final return type — core's investor-flows result union + our siglens-side gate
- * errors (mirrors `runCongressTrendAction`).
- */
+/** core의 수급 해석 결과 유니온에 siglens 쪽 게이트 거부를 더한 최종 반환 타입. */
 export type RunInvestorFlowsActionResult =
     | RunInvestorFlowsAnalysisResult
     | AnalysisGateBlockedResult;
 
 /**
- * Server Action: tier + BYOK gate, then run the investor-flows (수급) interpretation via
- * siglens-core. Returns `cached | done | no_data | miss_no_trigger | error`.
+ * Server Action: tier·BYOK 게이트를 거쳐 siglens-core로 수급 해석을 실행한다.
+ * `cached | done | no_data | miss_no_trigger | error`를 돌려준다.
  *
  * 수급 데이터(13F·Form 4·13D/G·FINRA·DART)는 공개 자료라 core에 사용량 한도 인자가 없다. 그래도 호출자는
  * 프리미엄 `modelId`를 고를 수 있어, `resolveTierAndByok`가 다른 축과 똑같이 게이트한다(무료·비회원 +
@@ -43,7 +40,7 @@ export async function runInvestorFlowsAction(
      * 액션이 스스로 알 수 없다. **기본값을 두지 않는다** — 두면 호출부에서 빠져도 타입체커가 못 잡는다.
      */
     locale: Locale,
-    /** Client-requested "깊은 생각" toggle. Only honored for member/pro tiers. */
+    /** 클라이언트가 요청한 "깊은 생각" 토글. 회원·pro tier에서만 반영된다. */
     reasoning?: boolean,
     signal?: AbortSignal,
     /**

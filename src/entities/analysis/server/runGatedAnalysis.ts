@@ -1,26 +1,26 @@
 import 'server-only';
 import type { ModelId, Tier } from '@y0ngha/siglens-core';
-import type { Locale } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import {
-    resolveTierAndByok,
-    resolveReasoning,
-    buildGateError,
-} from '@/shared/lib/byokGate';
-import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
+import type { Locale } from '@/shared/i18n/locales';
+import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
+import {
+    buildGateError,
+    resolveReasoning,
+    resolveTierAndByok,
+} from '@/shared/lib/byokGate';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /**
- * The gate-derived fields every core `run*` call takes. The caller spreads them
- * into its core options next to its own `symbol`/`locale`/`modelId`/`dataProvider`.
+ * 게이트가 정한 필드로, core `run*` 호출이 공통으로 받는다. 호출부가 자신의
+ * `symbol`/`locale`/`modelId`/`dataProvider`와 함께 core 옵션에 펼쳐 넣는다.
  */
 interface GatedAnalysisOptions {
     readonly tier: Tier;
-    /** "깊은 생각" toggle — already forced `false` for free/anonymous callers. */
+    /** "깊은 생각" 토글 — 무료·비회원이면 이미 `false`로 강제된 값. */
     readonly reasoning: boolean;
     /**
-     * 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과 같은 본문을
+     * 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과 같은 본문을
      * 생성해야 한다(`src/app/api/analysis/stream/route.ts` 상단 불변식과 동일 원칙).
      * 예전에는 봇이면 생성을 막아 Googlebot이 실제 분석 대신 "봇 트래픽" 안내문을 색인했다.
      *
@@ -29,26 +29,25 @@ interface GatedAnalysisOptions {
      * 생략·`false`면 지금과 같은 동작이라 클라이언트가 속여도 새 비용 경로가 없다.
      */
     readonly skipEnqueueIfMiss: boolean;
-    /** Member's stored BYOK key, present only when the gate charged it. */
+    /** 게이트가 과금 대상으로 판정했을 때만 있는, 회원이 저장한 BYOK 키. */
     readonly userApiKey?: string;
 }
 
 interface RunGatedAnalysisParams<R> {
-    /** Log prefix for the catch-all, e.g. `'runFinancialsAnalysisAction'`. */
+    /** 최종 catch 로그의 접두어. 예: `'runFinancialsAnalysisAction'`. */
     readonly actionName: string;
     readonly modelId: ModelId;
     /** 게이트 거부·예외 문구의 로케일. */
     readonly locale: Locale;
-    /** Raw client "깊은 생각" toggle; `resolveReasoning` applies the tier rule. */
+    /** 클라이언트가 보낸 "깊은 생각" 원본 토글. tier 규칙은 `resolveReasoning`이 적용한다. */
     readonly reasoning: boolean | undefined;
     /**
-     * E2E short-circuit. Callers load the stub with a DYNAMIC
-     * `import('@/shared/api/e2eAnalysisStub')` inside this callback so the stub +
-     * JSON fixture sit in a lazy chunk (not the prod main bundle) while the
-     * branch stays resolvable by the vitest runner.
+     * E2E 단락. 호출부는 이 콜백 안에서 `import('@/shared/api/e2eAnalysisStub')`를
+     * **동적으로** 불러, 스텁과 JSON 픽스처가 프로덕션 메인 번들이 아닌 지연 청크에
+     * 놓이게 하면서도 vitest 러너가 분기를 해석할 수 있게 한다.
      */
     readonly e2eResult: () => Promise<R>;
-    /** The core `run*` call, given the gate-derived options. */
+    /** 게이트가 정한 옵션을 받아 core `run*`을 호출한다. */
     readonly submit: (gated: GatedAnalysisOptions) => Promise<R>;
     /**
      * 캐시만 읽고 미스면 생성하지 않는다(core가 `miss_no_trigger`). 클라이언트의
@@ -58,16 +57,16 @@ interface RunGatedAnalysisParams<R> {
 }
 
 /**
- * Shared flow of the per-panel analysis Server Actions (fundamental, financials,
- * congress): E2E fixture → current user → tier + BYOK gate → core submit.
+ * 패널별 분석 Server Action(fundamental·financials·congress·investor-flows)이
+ * 공유하는 흐름: E2E 픽스처 → 현재 사용자 → tier·BYOK 게이트 → core 호출.
  *
- * Every throw — including an E2E stub load failure — is caught and mapped to a
- * localized `AnalysisGateBlockedResult` (SERVER.md#SA-1: Server Actions never
- * propagate raw exceptions). Keeping that catch-all here is what keeps the
- * hooks' `isGateBlockedResult` check a reliable discriminant across all three.
+ * E2E 스텁 로드 실패를 포함해 모든 throw를 잡아 로케일 문구가 담긴
+ * `AnalysisGateBlockedResult`로 바꾼다(SERVER.md#SA-1: Server Action은 원시 예외를
+ * 전파하지 않는다). 이 catch-all이 여기 있어야 각 훅의 `isGateBlockedResult` 검사가
+ * 모든 패널에서 믿을 수 있는 판별자로 남는다.
  *
- * The overall action is not routed through this: it additionally reads the
- * holding position bucket and fans out to several entities.
+ * 종합 분석은 이 경로를 쓰지 않는다 — 보유 포지션 버킷을 추가로 읽고 여러 entity로
+ * 팬아웃하기 때문이다.
  */
 export async function runGatedAnalysis<R>({
     actionName,

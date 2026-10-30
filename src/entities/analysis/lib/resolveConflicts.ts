@@ -18,6 +18,11 @@ function countSignalDirections(signals: readonly Signal[]): ConflictInfo {
     );
 }
 
+/**
+ * 종목별로 상반된 시그널을 정리한다. 한 방향뿐이면 그대로 `resolved`, 양 방향 개수가
+ * 같으면 `mixed`(충돌 정보 포함), 다르면 다수 방향 시그널만 남겨 `resolved`에 충돌
+ * 정보와 함께 담는다.
+ */
 export function resolveConflicts(
     stocks: readonly StockSignalResult[]
 ): ConflictResolution {
