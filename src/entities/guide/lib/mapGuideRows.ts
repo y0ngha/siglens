@@ -31,6 +31,7 @@ export interface GuideRow {
     readonly contentUpdatedAt: Date;
 }
 
+/** jsonb faq를 `{q, a}` 문자열 쌍만 남겨 좁힌다. 모양이 틀린 항목은 버린다. */
 function toFaq(value: unknown): GuideFaqItem[] {
     if (!Array.isArray(value)) return [];
     return value.flatMap((item): GuideFaqItem[] => {

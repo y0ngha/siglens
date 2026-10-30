@@ -871,7 +871,7 @@
     },
     {
         "file": "src/entities/guide/api.ts",
-        "line": 87,
+        "line": 88,
         "reason": "developer-diagnostic",
         "text": "[guide] 카탈로그 조회 실패"
     },
