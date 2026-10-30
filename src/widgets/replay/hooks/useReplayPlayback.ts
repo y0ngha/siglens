@@ -1,7 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import { useCanAnimate } from '@/shared/hooks/useCanAnimate';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type RefObject,
+} from 'react';
 import {
     completeFrame,
     runPlayback,
@@ -9,28 +14,29 @@ import {
     type PlaybackContext,
 } from '@/shared/lib/replay/replayPlayer';
 import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
+import { useCanAnimate } from './useCanAnimate';
 
 export interface ReplayPlayback {
+    /** 지금 그릴 프레임. 서버·첫 렌더는 첫 시나리오의 완성본이다. */
     readonly frame: Frame;
     readonly paused: boolean;
     readonly togglePaused: () => void;
-    /** False on the server, on first render and under reduced motion. */
+    /** 서버·첫 렌더·모션 감소 설정에서는 `false`. */
     readonly animated: boolean;
-    /** Attach to the card: playback pauses while it is off screen. */
+    /** 카드에 붙인다 — 화면 밖에 있는 동안 재생이 멈춘다. */
     readonly rootRef: RefObject<HTMLDivElement | null>;
-    /** Attach to the scrolling body: it follows the newest text. */
+    /** 스크롤되는 본문에 붙인다 — 가장 새 텍스트를 따라간다. */
     readonly threadRef: RefObject<HTMLDivElement | null>;
 }
 
 /**
- * React side of `replayPlayer`, shared by `ChatReplay` (ai.siglens.io/about)
- * and `ReportReplay` (siglens.io/about).
+ * `replayPlayer`의 React 쪽 어댑터. `ChatReplay`(ai.siglens.io/about)와
+ * `ReportReplay`(siglens.io/about)가 함께 쓴다.
  *
- * SSR and the first client render show the first scenario complete, so
- * crawlers and a no-JS reader get a whole example and hydration matches.
- * Playback starts after mount unless the reader prefers reduced motion. It
- * pauses while the card is off screen or `togglePaused` was pressed — motion
- * that runs on its own for more than five seconds needs a stop control
+ * SSR과 첫 클라이언트 렌더는 첫 시나리오를 완성된 채로 보여 줘서, 크롤러와 JS 없는
+ * 독자도 완전한 예시를 받고 하이드레이션도 어긋나지 않는다. 재생은 마운트 뒤에
+ * 시작하며 모션 감소 설정이면 시작하지 않는다. 카드가 화면 밖이거나 `togglePaused`를
+ * 눌렀을 때 멈춘다 — 스스로 5초 넘게 움직이는 콘텐츠에는 정지 수단이 필요하다
  * (WCAG 2.2.2).
  */
 export function useReplayPlayback(
@@ -81,16 +87,18 @@ export function useReplayPlayback(
         };
     }, [animated, scenarios]);
 
-    // Keep the newest text in view once the body outgrows the fixed card.
+    // 본문이 고정 높이 카드를 넘치면 가장 새 텍스트가 보이도록 맨 아래로 내린다.
     useEffect(() => {
         const thread = threadRef.current;
         if (thread) thread.scrollTop = thread.scrollHeight;
     }, [frame]);
 
+    const togglePaused = useCallback(() => setPaused(p => !p), []);
+
     return {
         frame,
         paused,
-        togglePaused: () => setPaused(p => !p),
+        togglePaused,
         animated,
         rootRef,
         threadRef,

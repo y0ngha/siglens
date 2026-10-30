@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { renderHook, render, act } from '@testing-library/react';
-import { useReplayPlayback } from '@/shared/hooks/useReplayPlayback';
-import { useCanAnimate } from '@/shared/hooks/useCanAnimate';
+import { useReplayPlayback } from '../useReplayPlayback';
+import { useCanAnimate } from '../useCanAnimate';
 import { completeFrame } from '@/shared/lib/replay/replayPlayer';
 import {
     parseReplayLine,
     type ReplayScenario,
 } from '@/shared/lib/replay/replayScript';
 
-vi.mock('@/shared/hooks/useCanAnimate', () => ({
+vi.mock('../useCanAnimate', () => ({
     useCanAnimate: vi.fn(),
 }));
 

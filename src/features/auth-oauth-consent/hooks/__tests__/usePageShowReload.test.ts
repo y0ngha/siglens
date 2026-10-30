@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
-import { usePageShowReload } from '@/shared/hooks/usePageShowReload';
+import { usePageShowReload } from '../usePageShowReload';
 import { pageReload } from '@/shared/lib/pageReload';
 
 vi.mock('@/shared/lib/pageReload', () => ({

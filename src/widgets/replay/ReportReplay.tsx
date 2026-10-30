@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useReplayPlayback } from '@/shared/hooks/useReplayPlayback';
 import {
     revealLines,
     type ReplayScenario,
@@ -15,6 +14,7 @@ import {
 } from '@/shared/ui/ReplayParts';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { useReplayPlayback } from './hooks/useReplayPlayback';
 
 interface ReportReplayLabels {
     /** `SITE_HOST`, passed down so this client module doesn't pull in `shared/lib/seo`. */

@@ -41,7 +41,6 @@ import {
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
-import { useFunnelMeterShown } from '@/shared/hooks/useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { LABEL_GROUP, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
@@ -66,6 +65,7 @@ import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { PlanCheckBlock } from './PlanCheckBlock';
 import { GuideEntryLink } from './GuideEntryLink';
 import { GuideHintLink } from './GuideHintLink';
+import { useFunnelMeterShown } from './hooks/useFunnelMeterShown';
 import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatAnalysisPrice } from '@/shared/lib/analysisPriceFormat';

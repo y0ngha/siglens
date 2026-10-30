@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useReplayPlayback } from '@/shared/hooks/useReplayPlayback';
 import {
     revealLines,
     type ReplayScenario,
@@ -17,6 +16,7 @@ import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
+import { useReplayPlayback } from './hooks/useReplayPlayback';
 
 interface ChatReplayLabels {
     readonly region: string;

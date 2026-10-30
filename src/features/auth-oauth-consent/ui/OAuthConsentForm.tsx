@@ -11,7 +11,7 @@ import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
-import { usePageShowReload } from '@/shared/hooks/usePageShowReload';
+import { usePageShowReload } from '../hooks/usePageShowReload';
 
 interface OAuthConsentFormProps {
     token: string;
