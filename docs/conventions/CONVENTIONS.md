@@ -383,6 +383,7 @@ A cast is acceptable only when TypeScript cannot express a constraint the runtim
 - `Object.fromEntries(pairs) as Record<K, V>` and `Object.keys(record) as T[]` (keys widen to `string`, but `Record<T, …>` guarantees them) are the sanctioned safe-casts.
 - Test files are exempt from the comment for self-documenting mock casts such as `fn as MockedFunction<typeof fn>`.
 - Replace a post-check `value!` that repeats across call sites with a helper that returns the narrowed type (or throws), e.g. `requireDatabaseUrl()`.
+- Narrow external data (parsed JSON, a `Response` body, `unknown` input) with a type guard instead of asserting its shape (`body as Foo | null`); a double assertion (`as unknown as T`) needs the same WHY comment, in tests too, unless a typed fixture or guard removes the need.
 
 ```typescript
 // ❌ hides a possible null / wrong shape
