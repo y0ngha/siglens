@@ -760,6 +760,10 @@ The same applies to derived logic, not only literals: one window boundary (for e
 "last completed daily close" rule computed in two places drifts apart. Keep one function in the lowest layer that
 needs it and have the other callers delegate to it.
 
+Extracting a shared rule (a validation predicate, a locale or formatting helper) is finished only when every existing
+copy, including hand-rolled duplicates and constant aliases at the original call site, is migrated to it. Grep for the
+old logic before calling the extraction done.
+
 - ❌ Two helpers each re-derive "the previous trading day" with their own weekend handling.
 - ✅ One exported helper owns the boundary; both callers import it, and one test pins its edge cases.
 

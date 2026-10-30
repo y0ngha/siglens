@@ -5568,6 +5568,7 @@
                 "73e5a8": "重命名",
                 "9a7569": "对话列表",
                 "backToSiglens": "返回 SIGLENS 首页",
+                "deleteFailed": "无法删除对话，请重试。",
                 "empty": "还没有对话。",
                 "fc81e2": "删除",
                 "groupOlder": "更早",
@@ -5582,6 +5583,7 @@
                 "noMatch": "没有匹配的对话。",
                 "privacy": "隐私政策",
                 "renameCancel": "取消重命名",
+                "renameFailed": "无法重命名对话，请重试。",
                 "terms": "服务条款"
             },
             "ToolActivity": {

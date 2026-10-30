@@ -4120,6 +4120,8 @@
     "views.methodology.ai.benchmarkLink": "580f2632b6d2",
     "views.methodology.ai.benchmarkTitle": "00bf225a6510",
     "widgets.agent-chat.EmptyState.benchmarkLink": "580f2632b6d2",
+    "widgets.agent-chat.Sidebar.deleteFailed": "3d3651d91c13",
+    "widgets.agent-chat.Sidebar.renameFailed": "f5c79ed96410",
     "views.benchmark.breakdown.rowOverall": "934dd25ec5f7",
     "views.benchmark.counts.partial": "a4f2b6b494f0",
     "views.benchmark.explorer.label.partial": "a4f2b6b494f0",
