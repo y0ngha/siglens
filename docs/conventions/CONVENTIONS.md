@@ -1068,6 +1068,20 @@ complete. Show it as in-progress or leave it out.
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
 
+<a id="CS-25"></a>
+
+#### CS-25 — A refactor changes no behavior without a demonstrated bug
+
+In a structure-only change (SRP split, rename, move), do not add a guard, tighten validation, add a sort tiebreak or
+otherwise alter what input is accepted or what output is produced "while you are there". Such an edit needs a failing
+case that shows the bug (a test, a real data shape, a reproduction); without one it is speculation that changes accepted
+input or ordering and hides inside a diff reviewers read as a pure move. A change with a demonstrated bug is a behavior
+change: keep it separate from the move or list it in the PR body.
+
+- ❌ Adding a strict hex regex to a token check, or an `orderBy` tiebreak where the data never produces a tie, in an
+  extraction PR.
+- ✅ Move the code unchanged; fix a proven bug in its own commit with the test that failed.
+
 <a id="CS-22"></a>
 
 #### CS-22 — Export only what another module imports
