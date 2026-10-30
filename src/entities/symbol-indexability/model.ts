@@ -61,8 +61,8 @@ export interface SymbolIndexabilityInput {
     hasPriceData?: boolean;
     /**
      * 이 탭의 산문 보유 상태 — **차트(`technical`)·뉴스(`news`) 탭만** 넘긴다. 이 둘은
-     * 종목 고유 텍스트가 AI 스냅샷 산문뿐이라, 산문이 없으면
-     * 남는 건 제목·크롬·수치 요약이라 thin 페이지다.
+     * 종목 고유 텍스트가 AI 스냅샷 산문뿐이라, 산문이 없으면 남는 건 제목·크롬·수치
+     * 요약이라 thin 페이지다.
      *
      * `absent`면 화이트리스트와 무관하게 noindex(`no-prose`)다. 평가 순서는 degraded **다음**,
      * 화이트리스트 **앞**이다 — degraded는 스스로 스냅샷 유무를 보는 별도 규칙(
