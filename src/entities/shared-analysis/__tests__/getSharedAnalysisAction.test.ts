@@ -84,4 +84,15 @@ describe('getSharedAnalysisAction', () => {
         expect(res.status).toBe('not_found');
         spy.mockRestore();
     });
+
+    it('logs only the error name when the lookup throws', async () => {
+        mockFindById.mockRejectedValue(new Error('select ... params: id1'));
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        await getSharedAnalysisAction('id1');
+        expect(spy).toHaveBeenCalledWith(
+            '[getSharedAnalysisAction] lookup failed',
+            { name: 'Error', code: undefined }
+        );
+        spy.mockRestore();
+    });
 });
