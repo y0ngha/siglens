@@ -1,19 +1,20 @@
 import 'server-only';
 
+import type { Tier } from '@y0ngha/siglens-core';
 import { and, eq, inArray, lt } from 'drizzle-orm';
 import { MS_PER_DAY } from '@/shared/config/time';
-import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
-import { sharedAnalyses } from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
-import { withRetry } from '@/shared/lib/withRetry';
-import type { Tier } from '@y0ngha/siglens-core';
-import type { SharedAnalysisSnapshot } from './types';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     LEGACY_CONTENT_LOCALE,
     toContentLocale,
 } from '@/shared/db/contentLocale';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
+import { sharedAnalyses } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
+import type { Locale } from '@/shared/i18n/locales';
+import { withRetry } from '@/shared/lib/withRetry';
+import type { SharedAnalysisSnapshot } from './types';
 
+/** `findById`가 돌려주는 행. 만료·스냅샷 형태 판정은 호출부(`getSharedAnalysisAction`)가 한다. */
 export interface SharedAnalysisRow {
     snapshotJson: unknown;
     createdAt: Date;
@@ -29,6 +30,7 @@ export interface SharedAnalysisRow {
     locale: Locale;
 }
 
+/** `create`가 INSERT할 행. `id`는 호출당 한 번 만든 랜덤 토큰이다. */
 export interface CreateRecord {
     id: string;
     kind: SharedAnalysisSnapshot['kind'];
@@ -63,28 +65,24 @@ interface SharedAnalysisRepository {
     findById(id: string): Promise<SharedAnalysisRow | null>;
 }
 
+/** `shared_analyses` 테이블 접근. server-only라 같은 entity의 액션과 app 크론(`pruneExpiredRows`)만 쓴다. */
 export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     /**
-     * Inserts a new shared-analysis row, or — if the same content_hash already
-     * exists — updates expiresAt and returns the existing id (dedupe path).
+     * 새 공유 행을 넣거나, 같은 content_hash가 이미 있으면 `expiresAt`만 갱신하고
+     * 기존 id를 돌려준다(dedupe 경로).
      *
-     * A single `INSERT … ON CONFLICT DO UPDATE … RETURNING { id }` statement
-     * handles both paths atomically, so callers always get the canonical id back
-     * regardless of whether the row was new or a duplicate.
+     * `INSERT … ON CONFLICT DO UPDATE … RETURNING { id }` 한 문장이 두 경로를 원자적으로
+     * 처리하므로, 새 행이든 중복이든 호출자는 항상 정본 id를 받는다.
      *
-     * Wrapped in withRetry(DB_TRANSIENT_RETRY) to absorb transient DB
-     * failures (e.g. admin_shutdown, CONNECTION_CLOSED) without surfacing them
-     * to the action layer.
+     * `withRetry(DB_TRANSIENT_RETRY)`로 일시적 DB 장애(admin_shutdown, CONNECTION_CLOSED)를
+     * 액션 계층에 노출하지 않고 흡수한다.
      *
-     * Retry safety: `record.id` is a fresh random token generated once per
-     * action call (in generateShareId, before this method is invoked), so a
-     * retry cannot produce a duplicate PK for the same logical request. The
-     * ON CONFLICT on content_hash is the realistic dup-prevention path (same
-     * analysis shared twice). A PK collision on retry is theoretically possible
-     * but vanishingly unlikely (crypto-random 21-char nanoid); accepted as a
-     * known, low-risk window rather than adding retry-level ID regeneration.
+     * 재시도 안전성: `record.id`는 액션 호출당 한 번(generateShareId) 만든 랜덤 토큰이라
+     * 재시도가 같은 논리 요청에 중복 PK를 만들지 않는다. 현실적인 중복 방지 경로는
+     * content_hash의 ON CONFLICT(같은 분석을 두 번 공유)다. 재시도 중 PK 충돌은 이론상
+     * 가능하지만 암호학적 난수 128비트라 사실상 0이어서, 재시도 단위 id 재생성은 두지 않는다.
      */
     async create(record: CreateRecord): Promise<string> {
         const [row] = await withRetry(
@@ -114,7 +112,10 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
                     .returning({ id: sharedAnalyses.id }),
             DB_TRANSIENT_RETRY
         );
-        return row!.id;
+        if (row === undefined) {
+            throw new Error('shared_analyses upsert returned no row');
+        }
+        return row.id;
     }
 
     /**
@@ -154,6 +155,10 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
         return deleted.length;
     }
 
+    /**
+     * id로 한 행을 읽는다(만료 여부와 무관하게 반환). 없으면 null.
+     * `locale` 컬럼이 알 수 없는 값이면 레거시 로케일로 읽는다.
+     */
     async findById(id: string): Promise<SharedAnalysisRow | null> {
         const rows = await withRetry(
             () =>
@@ -169,7 +174,7 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
                     .limit(1),
             DB_TRANSIENT_RETRY
         );
-        const row = rows[0];
+        const [row] = rows;
         if (row === undefined) return null;
         return {
             snapshotJson: row.snapshotJson,

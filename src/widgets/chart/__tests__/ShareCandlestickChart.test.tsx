@@ -93,6 +93,16 @@ describe('ShareCandlestickChart', () => {
         );
     });
 
+    // 축 눈금을 브라우저 언어(`navigator.language`)가 아니라 페이지 로케일로 그린다.
+    it('creates the chart with the page locale for axis labels', async () => {
+        const { createChart } = await import('lightweight-charts');
+        render(<ShareCandlestickChart bars={mockBars} />);
+
+        expect(vi.mocked(createChart).mock.calls.at(-1)?.[1]).toMatchObject({
+            localization: { locale: 'ko-KR' },
+        });
+    });
+
     it('sets candlestick data derived from the bars once on mount', () => {
         render(<ShareCandlestickChart bars={mockBars} />);
 

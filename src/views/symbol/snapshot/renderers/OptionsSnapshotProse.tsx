@@ -47,8 +47,8 @@ interface OptionsSnapshotProseProps {
 }
 
 /**
- * SEO pre-warm 스냅샷의 options 탭 프로즈 렌더러 — Task 6, 여섯 번째 탭
- * 렌더러. `summary`를 리드 문단으로, `perExpiration`을 만기 날짜+톤 라벨
+ * SEO pre-warm 스냅샷의 options 탭 프로즈 렌더러.
+ * `summary`를 리드 문단으로, `perExpiration`을 만기 날짜+톤 라벨
  * 붙은 해설 목록으로, `signals`를 시그널 종류 라벨 붙은 목록으로 렌더한다.
  *
  * `OptionsAnalysisResponse`는 다른 네 탭과 달리 심볼 단위 `overallSentiment`가

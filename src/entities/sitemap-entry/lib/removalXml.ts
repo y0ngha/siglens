@@ -3,6 +3,10 @@ import { escapeXml } from './xml';
 
 const DATE_ONLY_LENGTH = 10;
 
+/**
+ * 제거 sitemap을 urlset XML로 직렬화한다. lastmod는 UTC 날짜(YYYY-MM-DD)까지만 내보내며
+ * 일반 sitemap(`toUrlSetXml`)과 달리 changefreq·priority를 싣지 않는다.
+ */
 export function toRemovalUrlSetXml(
     entries: ReadonlyArray<RemovalSitemapEntry>
 ): string {

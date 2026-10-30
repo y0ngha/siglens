@@ -1,31 +1,37 @@
 'use client';
 
-import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-import Image from 'next/image';
-import type { OAuthProvider, SupportedOAuthProvider } from '@/shared/lib/types';
+import { useRef, useState } from 'react';
+import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
-import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
 import { usePageShowReload } from '../hooks/usePageShowReload';
+import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
+import { useFocusInvalidFieldOnError } from '../hooks/useFocusInvalidFieldOnError';
+import {
+    CONSENT_AGREED_VALUE,
+    CONSENT_DECLINED_VALUE,
+} from '../lib/readConsentForm';
+import { OAuthAccountCard } from './OAuthAccountCard';
 
 interface OAuthConsentFormProps {
+    /** 대기 중인 OAuth 가입 토큰 — 가입·취소 두 폼이 함께 실어 보낸다. */
     token: string;
     provider: SupportedOAuthProvider;
     email: string;
     name?: string;
     avatarUrl?: string;
+    /** 대기 가입을 지우고 로그인 화면으로 돌려보내는 Server Action(페이지가 주입). */
     cancelAction: (formData: FormData) => Promise<void>;
 }
 
-const PROVIDER_LABEL: Partial<Record<OAuthProvider, string>> = {
-    google: 'Google',
-};
-
+/**
+ * OAuth 신규 가입의 약관 동의 화면 — 계정 요약, 필수 약관 동의 후 "가입 완료",
+ * 그리고 별도 폼의 "취소". 체크박스 상태는 숨은 입력으로 액션에 실어 보낸다.
+ */
 export function OAuthConsentForm({
     token,
     provider,
@@ -39,7 +45,9 @@ export function OAuthConsentForm({
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
     const [finalizeState, finalizeFormAction] = useFinalizeOAuthSignup();
+    const finalizeFormRef = useRef<HTMLFormElement>(null);
     usePageShowReload();
+    useFocusInvalidFieldOnError(finalizeFormRef, finalizeState.error);
 
     // 액션의 `message`는 로그·폴백용 한국어 원문이다(`AUTH_ERROR_KEY` 주석 참고) —
     // 그대로 띄우면 모든 로케일에 한국어가 나간다. 표시는 코드로 번역한다.
@@ -50,48 +58,37 @@ export function OAuthConsentForm({
 
     return (
         <div className="space-y-6">
-            <div className={cn(SURFACE_NESTED, 'flex items-center gap-3 p-4')}>
-                {avatarUrl ? (
-                    <Image
-                        src={avatarUrl}
-                        alt=""
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                    />
-                ) : (
-                    <div
-                        aria-hidden="true"
-                        className="size-8 rounded-full bg-secondary-800"
-                    />
-                )}
-                <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-sm text-secondary-100">
-                        {email}
-                    </p>
-                    {name ? (
-                        <p className="truncate text-xs text-secondary-300">
-                            {name}
-                        </p>
-                    ) : null}
-                    <p className="text-xs text-secondary-400">
-                        {PROVIDER_LABEL[provider] ?? provider}{' '}
-                        {t('OAuthConsentForm.ecb738')}
-                    </p>
-                </div>
-            </div>
+            <OAuthAccountCard
+                provider={provider}
+                email={email}
+                name={name}
+                avatarUrl={avatarUrl}
+            />
 
-            <form action={finalizeFormAction} className="space-y-4" noValidate>
+            <form
+                ref={finalizeFormRef}
+                action={finalizeFormAction}
+                className="space-y-4"
+                noValidate
+            >
                 <input type="hidden" name="token" value={token} />
                 <input
                     type="hidden"
                     name="agreed_privacy"
-                    value={privacyChecked ? 'true' : 'false'}
+                    value={
+                        privacyChecked
+                            ? CONSENT_AGREED_VALUE
+                            : CONSENT_DECLINED_VALUE
+                    }
                 />
                 <input
                     type="hidden"
                     name="agreed_tos"
-                    value={tosChecked ? 'true' : 'false'}
+                    value={
+                        tosChecked
+                            ? CONSENT_AGREED_VALUE
+                            : CONSENT_DECLINED_VALUE
+                    }
                 />
                 <ConsentCheckboxGroup
                     privacyChecked={privacyChecked}

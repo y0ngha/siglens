@@ -1,3 +1,4 @@
+/** 데모 봉 생성기 — 시드 고정 의사난수와 꼭짓점(웨이포인트)에서 OHLC 봉을 만든다. */
 import type { Bar } from '@y0ngha/siglens-core';
 import type { DemoBar } from '@/views/guide/demos/types';
 
@@ -5,11 +6,13 @@ import type { DemoBar } from '@/views/guide/demos/types';
 const BASE_TIME = 1_704_153_600;
 const BAR_SECONDS = 86_400;
 
+/** 가격 경로의 꼭짓점 — 봉 인덱스와 그 봉의 종가. */
 export interface Waypoint {
     i: number;
     price: number;
 }
 
+/** `pathToBars` 옵션. 시드가 같으면 같은 봉이 나와 페이지와 테스트가 같은 그림을 본다. */
 export interface PathBarsOptions {
     seed: number;
     /** 한 봉의 평균 몸통+꼬리 폭 (가격 대비 비율). */
@@ -44,6 +47,7 @@ export function toCoreBars(bars: readonly DemoBar[]): Bar[] {
     return bars as Bar[];
 }
 
+/** 봉 인덱스 → 시각(초). 고정 기준일부터 하루 간격이라 core 지표가 봉을 일봉 시간순으로 읽는다. */
 export function barTime(index: number): number {
     return BASE_TIME + index * BAR_SECONDS;
 }
@@ -78,6 +82,64 @@ function classifyWaypoints(points: readonly Waypoint[]): Extremum[] {
     });
 }
 
+/** 봉 인덱스 `abs`가 속한 웨이포인트 구간 — 앞 꼭짓점 인덱스. 마지막 구간을 넘으면 마지막 구간에 머문다. */
+function segmentOf(waypoints: readonly Waypoint[], abs: number): number {
+    return waypoints.findIndex(
+        (_, seg) => seg === waypoints.length - 2 || abs <= waypoints[seg + 1].i
+    );
+}
+
+/** 극값 하나가 눌러 주는 이웃 봉 범위(앞뒤 각각). */
+const EXTREMUM_NEIGHBOURS = 3;
+
+/** 몸통이 바뀐 뒤 고가·저가가 몸통을 감싸게 다시 맞춘다. */
+function wrapBody(bar: DemoBar): DemoBar {
+    return {
+        ...bar,
+        high: Math.max(bar.high, bar.open, bar.close),
+        low: Math.min(bar.low, bar.open, bar.close),
+    };
+}
+
+/** 극값 옆 봉을 극값보다 조금(0.15%) 안쪽으로 누른다. */
+function clampInside(bar: DemoBar, price: number, isPeak: boolean): DemoBar {
+    if (isPeak) {
+        const cap = price * 0.9985;
+        return wrapBody({
+            ...bar,
+            open: Math.min(bar.open, cap),
+            close: Math.min(bar.close, cap),
+            high: Math.min(bar.high, cap),
+        });
+    }
+    const floor = price * 1.0015;
+    return wrapBody({
+        ...bar,
+        open: Math.max(bar.open, floor),
+        close: Math.max(bar.close, floor),
+        low: Math.max(bar.low, floor),
+    });
+}
+
+/** 극값 봉의 고가(또는 저가)를 꼭짓점 가격에 정확히 맞춘다. */
+function pinExtremum(bar: DemoBar, price: number, isPeak: boolean): DemoBar {
+    return wrapBody(
+        isPeak
+            ? {
+                  ...bar,
+                  high: price,
+                  open: Math.min(bar.open, price),
+                  close: Math.min(bar.close, price),
+              }
+            : {
+                  ...bar,
+                  low: price,
+                  open: Math.max(bar.open, price),
+                  close: Math.max(bar.close, price),
+              }
+    );
+}
+
 /**
  * 웨이포인트(꼭짓점)를 지나가는 OHLC 봉열을 만든다.
  *
@@ -107,11 +169,10 @@ export function pathToBars(
         return point.price;
     };
 
-    const closes: number[] = [];
-    for (let i = 0; i < count; i++) {
+    // `rand()`는 호출 순서가 곧 수열이다 — map은 앞에서부터 돌므로 봉 순서대로 소비한다.
+    const closes = Array.from({ length: count }, (_, i) => {
         const abs = first.i + i;
-        let seg = 0;
-        while (seg < waypoints.length - 2 && abs > waypoints[seg + 1].i) seg++;
+        const seg = segmentOf(waypoints, abs);
         const a = waypoints[seg];
         const b = waypoints[seg + 1];
         const t = b.i === a.i ? 0 : (abs - a.i) / (b.i - a.i);
@@ -119,8 +180,8 @@ export function pathToBars(
             anchorClose(seg) + (anchorClose(seg + 1) - anchorClose(seg)) * t;
         const noise =
             (rand() * 2 - 1) * noisePct * base * Math.sin(Math.PI * t);
-        closes.push(base + noise);
-    }
+        return base + noise;
+    });
 
     const bounds = waypoints.map((point, index) => ({
         i: point.i - first.i,
@@ -130,63 +191,38 @@ export function pathToBars(
     const isWaypointBar = (index: number) =>
         bounds.some(bound => bound.i === index);
 
-    const bars: DemoBar[] = [];
-    for (let i = 0; i < count; i++) {
+    const rawBars = closes.map((close, i): DemoBar => {
         const open = i === 0 ? closes[0] * (1 - rangePct * 0.2) : closes[i - 1];
-        const close = closes[i];
         const body = Math.max(open, close) - Math.min(open, close);
         const wick = close * rangePct * (0.15 + rand() * 0.35);
-        let high = Math.max(open, close) + wick * (0.4 + rand() * 0.6);
-        let low = Math.min(open, close) - wick * (0.4 + rand() * 0.6);
-        if (body === 0) high += wick * 0.2;
-        bars.push({
+        const high = Math.max(open, close) + wick * (0.4 + rand() * 0.6);
+        const low = Math.min(open, close) - wick * (0.4 + rand() * 0.6);
+        return {
             time: barTime(i),
             open,
-            high,
+            high: body === 0 ? high + wick * 0.2 : high,
             low,
             close,
             volume:
                 options.volume === undefined
                     ? undefined
                     : Math.round(options.volume * (0.7 + rand() * 0.6)),
-        });
-    }
+        };
+    });
 
     // 극값 근처 봉을 극값 안쪽으로 눌러서 극값 봉만 진짜 고점/저점이 되게 한다.
-    for (const bound of bounds) {
-        if (bound.kind === 'edge') continue;
-        for (let offset = -3; offset <= 3; offset++) {
-            const idx = bound.i + offset;
-            const bar = bars[idx];
-            if (bar === undefined || isWaypointBar(idx)) continue;
-            if (bound.kind === 'peak') {
-                const cap = bound.price * 0.9985;
-                bar.open = Math.min(bar.open, cap);
-                bar.close = Math.min(bar.close, cap);
-                bar.high = Math.min(bar.high, cap);
-            } else {
-                const floor = bound.price * 1.0015;
-                bar.open = Math.max(bar.open, floor);
-                bar.close = Math.max(bar.close, floor);
-                bar.low = Math.max(bar.low, floor);
-            }
-            bar.high = Math.max(bar.high, bar.open, bar.close);
-            bar.low = Math.min(bar.low, bar.open, bar.close);
-        }
-        const bar = bars[bound.i];
-        if (bound.kind === 'peak') {
-            bar.high = bound.price;
-            bar.open = Math.min(bar.open, bound.price);
-            bar.close = Math.min(bar.close, bound.price);
-        } else {
-            bar.low = bound.price;
-            bar.open = Math.max(bar.open, bound.price);
-            bar.close = Math.max(bar.close, bound.price);
-        }
-        bar.high = Math.max(bar.high, bar.open, bar.close);
-        bar.low = Math.min(bar.low, bar.open, bar.close);
-    }
-    return bars;
+    // 꼭짓점 순서대로 적용한다 — 가까운 두 극값이 같은 봉을 누르면 뒤 극값이 이긴다.
+    return bounds.reduce<DemoBar[]>((bars, bound) => {
+        if (bound.kind === 'edge') return bars;
+        const isPeak = bound.kind === 'peak';
+        return bars.map((bar, idx) => {
+            if (idx === bound.i) return pinExtremum(bar, bound.price, isPeak);
+            const near = Math.abs(idx - bound.i) <= EXTREMUM_NEIGHBOURS;
+            return near && !isWaypointBar(idx)
+                ? clampInside(bar, bound.price, isPeak)
+                : bar;
+        });
+    }, rawBars);
 }
 
 /** 두 가격 사이를 잇는 단순 추세 봉열 (`pathToBars`의 두 점 버전). */

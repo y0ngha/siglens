@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 /**
- * `LIVE_ANALYSIS_CROSS_REF`(`../lib/liveAnalysisCrossRef.ts`)는 "실시간 AI 분석
+ * `LIVE_ANALYSIS_CROSS_REF`(`../utils/liveAnalysisCrossRef.ts`)는 "실시간 AI 분석
  * 결과는 분석 패널에서 따로 제공됩니다" 문장을 export한다. 이 문장은 Technical과
  * Overall 탭에서만 의미가 있다 — 이 두 탭만 화면에 라이브 분석 패널이 함께
  * 떠 있어서 "그건 딴 데 있다"고 가리킬 대상이 실제로 존재한다. Congress/

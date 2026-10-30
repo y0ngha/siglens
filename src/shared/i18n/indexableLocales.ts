@@ -10,7 +10,7 @@ import { DEFAULT_LOCALE, type Locale } from './locales';
  * 세 개 언어로 재현된다.
  *
  * 그래서 기본값은 기본 로케일 하나다. 분석 후처리 번역이 배포되면
- * (설계 §6.3, Phase 3) 여기에 로케일을 추가한다 — 이 상수 하나가
+ * 여기에 로케일을 추가한다 — 이 상수 하나가
  * `robots` 메타데이터와 hreflang alternates, sitemap alternates를 동시에 움직인다.
  */
 export const SYMBOL_INDEXABLE_LOCALES: readonly Locale[] = [DEFAULT_LOCALE];

@@ -142,9 +142,9 @@ describe('FinancialsScorecard widget (hand-built scorecard)', () => {
 
     it('renders signal chips from axis data', () => {
         render(<FinancialsScorecardWidget scorecard={HAND_BUILT_SCORECARD} />);
-        expect(screen.getByText('매출 가속화')).toBeInTheDocument();
-        expect(screen.getByText('마진 확대')).toBeInTheDocument();
+        expect(screen.getByText('매출 성장 가속')).toBeInTheDocument();
+        expect(screen.getByText('마진 개선')).toBeInTheDocument();
         expect(screen.getByText('부채 증가')).toBeInTheDocument();
-        expect(screen.getByText('FCF 견조')).toBeInTheDocument();
+        expect(screen.getByText('잉여현금흐름 견조')).toBeInTheDocument();
     });
 });

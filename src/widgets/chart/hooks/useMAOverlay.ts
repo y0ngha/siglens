@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 단순 이동평균(MA) 오버레이 훅 — 이동평균 공용 훅에 MA 데이터 접근자를 연결한다.
+ */
+
 import type { RefObject } from 'react';
 import type { IChartApi, LineWidth } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';

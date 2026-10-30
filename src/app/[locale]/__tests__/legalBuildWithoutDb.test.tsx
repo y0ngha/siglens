@@ -46,6 +46,7 @@ vi.mock('@/widgets/legal/LegalBreadcrumb', () => ({
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import type { Metadata } from 'next';
+import koMessages from '../../../../messages/ko.json';
 import TermsPage, {
     generateMetadata as termsMetadata,
 } from '@/app/[locale]/terms/page';
@@ -82,6 +83,9 @@ const ACTIVE_TERMS = {
 
 const params = () => Promise.resolve({ locale: 'ko' });
 
+/** 안내문은 두 라우트가 같은 카탈로그 값을 쓴다(문서 종류를 특정하지 않는 문구). */
+const LEGAL_MESSAGES = koMessages.widgets.legal;
+
 beforeEach(() => {
     vi.clearAllMocks();
     mockGetActiveTerms.mockResolvedValue(ACTIVE_TERMS);
@@ -110,8 +114,10 @@ describe('DB 없는 빌드(NEXT_PHASE=build, DATABASE_URL 없음)', () => {
                 screen.getByRole('heading', { level: 1 })
             ).toBeInTheDocument();
             expect(
-                screen.getByRole('status', { name: '약관 불러오기 안내' })
-            ).toHaveTextContent('약관 전문을 불러오는 중이에요');
+                screen.getByRole('status', {
+                    name: LEGAL_MESSAGES.unavailableNoticeLabel,
+                })
+            ).toHaveTextContent(LEGAL_MESSAGES.unavailableNotice);
         }
     );
 

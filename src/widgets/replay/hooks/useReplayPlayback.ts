@@ -1,5 +1,7 @@
 'use client';
 
+/** Drives a replay `Frame` from React: playback loop, pause, visibility and scroll-follow. */
+
 import {
     useCallback,
     useEffect,
@@ -12,10 +14,11 @@ import {
     runPlayback,
     type Frame,
     type PlaybackContext,
-} from '@/shared/lib/replay/replayPlayer';
+} from '@/widgets/replay/utils/replayPlayer';
 import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
 import { useCanAnimate } from './useCanAnimate';
 
+/** What `useReplayPlayback` hands the replay chrome. */
 export interface ReplayPlayback {
     /** 지금 그릴 프레임. 서버·첫 렌더는 첫 시나리오의 완성본이다. */
     readonly frame: Frame;
@@ -38,6 +41,10 @@ export interface ReplayPlayback {
  * 시작하며 모션 감소 설정이면 시작하지 않는다. 카드가 화면 밖이거나 `togglePaused`를
  * 눌렀을 때 멈춘다 — 스스로 5초 넘게 움직이는 콘텐츠에는 정지 수단이 필요하다
  * (WCAG 2.2.2).
+ *
+ * Whenever playback stops (reduced motion switched on mid-scenario, new
+ * scenarios, unmount) the frame snaps to the current scenario complete, so a
+ * reader is never left with a half-typed question and no control to finish it.
  */
 export function useReplayPlayback(
     scenarios: readonly ReplayScenario[]
@@ -57,8 +64,11 @@ export function useReplayPlayback(
     useEffect(() => {
         const root = rootRef.current;
         if (!root || typeof IntersectionObserver === 'undefined') return;
+        // One callback can carry several entries for the card when it crosses
+        // the viewport edge more than once between notifications; they arrive
+        // oldest first, so the last one is the current state.
         const observer = new IntersectionObserver(entries => {
-            visibleRef.current = entries[0]?.isIntersecting ?? true;
+            visibleRef.current = entries.at(-1)?.isIntersecting ?? true;
         });
         observer.observe(root);
         return () => observer.disconnect();
@@ -67,14 +77,14 @@ export function useReplayPlayback(
     useEffect(() => {
         if (!animated) return;
         let cancelled = false;
-        const timers = new Set<ReturnType<typeof setTimeout>>();
+        let pendingTimer: ReturnType<typeof setTimeout> | undefined;
         const ctx: PlaybackContext = {
             scenarios,
             setFrame,
             isCancelled: () => cancelled,
             isRunning: () => !pausedRef.current && visibleRef.current,
-            addTimer: id => {
-                timers.add(id);
+            setPendingTimer: id => {
+                pendingTimer = id;
             },
             random: Math.random,
         };
@@ -83,7 +93,8 @@ export function useReplayPlayback(
 
         return () => {
             cancelled = true;
-            for (const id of timers) clearTimeout(id);
+            clearTimeout(pendingTimer);
+            setFrame(current => completeFrame(current.index));
         };
     }, [animated, scenarios]);
 

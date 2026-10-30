@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * "차트 설정" 메뉴 — 시간외 표시 등 차트 표시 옵션 토글 UI.
+ */
+
 import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';

@@ -1,5 +1,6 @@
 import { validateWatchlistSymbol } from '@/entities/watchlist/lib/validateWatchlistSymbol';
 
+/** 입력이 유효하면 정규화된 심볼, 아니면 이유 없는 실패 — 호출자가 `invalid_symbol`로 옮긴다. */
 export type ParseReportSymbolInputResult =
     | { ok: true; symbol: string }
     | { ok: false };
@@ -11,10 +12,15 @@ export type ParseReportSymbolInputResult =
 export function parseReportSymbolInput(
     input: unknown
 ): ParseReportSymbolInputResult {
-    if (typeof input !== 'object' || input === null) return { ok: false };
-    const { symbol } = input as Record<string, unknown>;
-    if (typeof symbol !== 'string') return { ok: false };
-    const validated = validateWatchlistSymbol(symbol);
+    if (
+        typeof input !== 'object' ||
+        input === null ||
+        !('symbol' in input) ||
+        typeof input.symbol !== 'string'
+    ) {
+        return { ok: false };
+    }
+    const validated = validateWatchlistSymbol(input.symbol);
     return validated.ok
         ? { ok: true, symbol: validated.symbol }
         : { ok: false };

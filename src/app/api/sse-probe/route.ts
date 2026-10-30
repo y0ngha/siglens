@@ -1,6 +1,12 @@
 import { constants } from 'node:http2';
+import {
+    createProbeStream,
+    DEFAULT_DURATION_SECONDS,
+    DEFAULT_INTERVAL_SECONDS,
+    MAX_DURATION_SECONDS,
+} from '@/app/api/sse-probe/_lib/probeStream';
+import { readPositiveInt } from '@/app/api/sse-probe/_lib/readPositiveInt';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
-import { MS_PER_SECOND } from '@/shared/config/time';
 
 const { HTTP_STATUS_UNAUTHORIZED } = constants;
 
@@ -29,159 +35,28 @@ const { HTTP_STATUS_UNAUTHORIZED } = constants;
  */
 export const dynamic = 'force-dynamic';
 
-/**
- * 스트림 길이 상한.
- *
- * 300초였던 것을 660초로 올린다 — `STREAM_DEADLINE_MS`를 10분으로 늘려도 되는지
- * 판단하려면 그 길이의 연결이 실제로 Cloudflare 엣지(cloudflared 터널)를 통과하는지
- * 재야 하는데, 상한이 300초면 잴 수가 없다. 기존 실측은 286초까지만 있었다
- * (`docs/architecture/DEPLOY_RUNBOOK.md`
- * 및 SSE 실측 기록 참조). 660은 600초 측정에 여유 60초를 더한 값이다.
- *
- * 연결을 방치하지 않는다는 성질은 그대로다: `HARD_TIMEOUT_GRACE_MS`를 더한 하드
- * 타임아웃이 항상 스트림을 닫고, 라우트 전체가 cron과 동일한 Bearer 인증 뒤에 있다.
- */
-const MAX_DURATION_SECONDS = 660;
-const DEFAULT_DURATION_SECONDS = 150;
-const DEFAULT_INTERVAL_SECONDS = 5;
-
-/**
- * 하드 타임아웃 여유분. `interval > duration`인 대조군에서는 tick이 한 번도
- * 돌지 않아 정상 종료 경로에 도달하지 못하므로, duration 경과 후 이 여유를 두고
- * 강제로 닫는다. tick 기반 종료가 정상 동작할 때는 항상 그쪽이 먼저 이긴다.
- */
-const HARD_TIMEOUT_GRACE_MS = 5 * MS_PER_SECOND;
-
-/** SSE 클라이언트 재접속 힌트(ms). 진단용이라 재접속을 서두르게 할 이유가 없다. */
-const SSE_RETRY_MS = 10_000;
-
-/**
- * 쿼리 파라미터를 엄격하게 파싱한다. `Number.parseInt`는 `'10abc'`를 10으로
- * 받아주지만, 이 엔드포인트의 목적이 정밀한 타이밍 측정이라 오타가 조용히
- * 통과하면 측정값을 신뢰할 수 없게 된다 — 숫자만으로 이루어진 입력만 받는다.
- */
-function readPositiveInt(
-    params: URLSearchParams,
-    key: string,
-    fallback: number,
-    max: number
-): number {
-    const raw = params.get(key);
-    if (raw === null || !/^\d+$/.test(raw)) return fallback;
-    const parsed = Number(raw);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) return fallback;
-    return Math.min(parsed, max);
-}
-
+/** 진단 SSE 스트림을 연다. Bearer 인증이 없으면 401이고, 쿼리의 `duration`·`interval`은 상한이 걸린다. */
 export function GET(request: Request): Response {
     if (!isAuthorizedCronRequest(request)) {
         return new Response(null, { status: HTTP_STATUS_UNAUTHORIZED });
     }
 
     const params = new URL(request.url).searchParams;
-    const durationSeconds = readPositiveInt(
-        params,
-        'duration',
-        DEFAULT_DURATION_SECONDS,
-        MAX_DURATION_SECONDS
-    );
-    // interval에도 같은 상한을 건다. 상한이 없으면 거대한 값 하나로 tick이 영원히
-    // 돌지 않는 연결을 만들 수 있다(하드 타임아웃이 있더라도 굳이 허용할 이유가 없다).
-    const intervalSeconds = readPositiveInt(
-        params,
-        'interval',
-        DEFAULT_INTERVAL_SECONDS,
-        MAX_DURATION_SECONDS
-    );
-
-    const startedAt = Date.now();
-    const encoder = new TextEncoder();
-    let timer: ReturnType<typeof setInterval> | undefined;
-    let hardTimeout: ReturnType<typeof setTimeout> | undefined;
-
-    const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
-            let closed = false;
-
-            /** 타이머를 남김없이 회수한다. 어느 종료 경로에서 불려도 안전(멱등). */
-            const clearTimers = (): void => {
-                if (timer !== undefined) clearInterval(timer);
-                if (hardTimeout !== undefined) clearTimeout(hardTimeout);
-            };
-
-            /**
-             * enqueue/close는 컨트롤러가 이미 닫힌 뒤 호출되면 던진다. 클라이언트가
-             * 끊거나 엣지가 연결을 자른 직후(= 이 엔드포인트가 측정하려는 바로 그
-             * 상황) tick이 한 번 더 도는 경합이 실재하므로, 던지면 조용히 흡수하고
-             * 타이머부터 회수한다. 이 방어가 없으면 throw가 clearInterval 도달 전에
-             * 콜백을 빠져나가 타이머가 영원히 재발화한다.
-             */
-            const safely = (action: () => void): void => {
-                if (closed) return;
-                try {
-                    action();
-                } catch {
-                    closed = true;
-                    clearTimers();
-                }
-            };
-
-            const send = (payload: string): void => {
-                safely(() => controller.enqueue(encoder.encode(payload)));
-            };
-
-            const finish = (event: string, seq: number): void => {
-                const elapsedMs = Date.now() - startedAt;
-                send(
-                    `event: ${event}\ndata: ${JSON.stringify({ seq, elapsedMs })}\n\n`
-                );
-                clearTimers();
-                safely(() => {
-                    controller.close();
-                    closed = true;
-                });
-            };
-
-            // 첫 바이트를 즉시 보낸다. TTFB가 지연되면 그건 엣지 버퍼링이지
-            // 서버가 늦은 게 아니라는 걸 수신 측이 구분할 수 있어야 한다.
-            send(`retry: ${SSE_RETRY_MS}\n\n`);
-            send(
-                `event: open\ndata: ${JSON.stringify({
-                    durationSeconds,
-                    intervalSeconds,
-                })}\n\n`
-            );
-
-            // 초기 send가 이미 실패했다면(= 스트림이 시작도 전에 죽었다면) 타이머를
-            // 걸지 않는다. `safely`가 매 tick을 no-op으로 흘려보내 실질 피해는 없지만,
-            // 죽은 연결을 위해 최대 305초짜리 타이머를 예약해 둘 이유가 없다.
-            if (closed) return;
-
-            let seq = 0;
-            timer = setInterval(() => {
-                const elapsedMs = Date.now() - startedAt;
-                seq += 1;
-
-                if (elapsedMs >= durationSeconds * MS_PER_SECOND) {
-                    finish('done', seq);
-                    return;
-                }
-
-                send(
-                    `event: tick\ndata: ${JSON.stringify({ seq, elapsedMs })}\n\n`
-                );
-            }, intervalSeconds * MS_PER_SECOND);
-
-            hardTimeout = setTimeout(
-                () => finish('timeout', seq),
-                durationSeconds * MS_PER_SECOND + HARD_TIMEOUT_GRACE_MS
-            );
-        },
-        cancel() {
-            // 클라이언트가 끊거나 엣지가 연결을 잘랐을 때 타이머를 반드시 회수한다.
-            if (timer !== undefined) clearInterval(timer);
-            if (hardTimeout !== undefined) clearTimeout(hardTimeout);
-        },
+    const stream = createProbeStream({
+        durationSeconds: readPositiveInt(
+            params,
+            'duration',
+            DEFAULT_DURATION_SECONDS,
+            MAX_DURATION_SECONDS
+        ),
+        // interval에도 같은 상한을 건다. 상한이 없으면 거대한 값 하나로 tick이 영원히
+        // 돌지 않는 연결을 만들 수 있다(하드 타임아웃이 있더라도 굳이 허용할 이유가 없다).
+        intervalSeconds: readPositiveInt(
+            params,
+            'interval',
+            DEFAULT_INTERVAL_SECONDS,
+            MAX_DURATION_SECONDS
+        ),
     });
 
     return new Response(stream, {

@@ -5,11 +5,11 @@ import type { EmailMessage } from '@/shared/email/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import { createSignalLabelResolver } from './lib/signalLabelResolver';
 import { buildSampleReportEmailInput } from './lib/sampleReportData';
-import {
-    buildReportEmail,
-    type ReportEmailTranslator,
-    type SignalLabelResolver,
-} from './templates/reportEmail';
+import { buildReportEmail } from './templates/reportEmail';
+import type {
+    ReportEmailTranslator,
+    SignalLabelResolver,
+} from './templates/reportEmailTypes';
 
 /**
  * 메일 리포트의 서버 전용 조립 지점. 번역 카탈로그를 읽는 I/O(`getTranslations`)가 있어
@@ -44,10 +44,13 @@ export async function getReportSignalLabelResolver(
         locale,
         namespace: 'shared.enumLabel',
     });
-    return createSignalLabelResolver({
-        has: key => tLabel.has(key),
-        label: key => tLabel(key),
-    });
+    return createSignalLabelResolver(
+        {
+            has: key => tLabel.has(key),
+            label: key => tLabel(key),
+        },
+        console.warn
+    );
 }
 
 /**

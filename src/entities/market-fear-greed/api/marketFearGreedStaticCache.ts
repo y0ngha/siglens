@@ -10,29 +10,25 @@ import {
 import type { MarketFearGreedView } from '../model';
 
 /**
- * ISR-safe market Fear & Greed reading. Wraps the Redis layer in the Next data
- * cache so static generation is not blocked by the underlying `no-store` FMP
- * fetches. `revalidate` is 1h — the inputs are end-of-day closes, so the value
- * changes once per session and an hour bounds how long a fresh close waits.
+ * ISR-safe 미국 시장 공포·탐욕 판독값. Redis 계층을 Next 데이터 캐시로 감싸, 아래층
+ * `no-store` FMP fetch가 정적 생성을 막지 않게 한다. `revalidate` 1h — 입력이 EOD 종가라
+ * 값은 세션당 한 번 바뀌고, 1시간이 새 종가가 반영되기까지의 대기 상한이다.
  *
- * Its own `market:fear-greed` tag, separate from `market:summary` and
- * `sector:signals`, so revalidating one surface does not blow away the others.
+ * 전용 `market:fear-greed` 태그를 쓴다. `market:summary`·`sector:signals:<scopeId>`와
+ * 분리해 한 화면을 재검증해도 다른 화면 캐시가 날아가지 않게 한다.
  *
- * Wrapped in `React.cache` because `generateMetadata` and the page body both
- * read this within one request, and their answers must agree: metadata decides
- * `noindex` from `snapshot === null` while the body decides which UI to render
- * from the same field. Without the in-request memo the two calls could land on
- * either side of a cache expiry and disagree — an indexable page showing the
- * empty state, or the reverse. `unstable_cache` handles cross-request
- * staticization, not in-request memoization.
+ * `React.cache`로 감싸는 이유: `generateMetadata`와 페이지 본문이 한 요청 안에서 각각
+ * 읽는데 둘의 답이 **일치해야** 한다. metadata는 `snapshot === null`로 `noindex`를 정하고
+ * 본문은 같은 필드로 어떤 UI를 그릴지 정한다. 요청 내 메모가 없으면 두 호출이 캐시 만료
+ * 경계의 양쪽에 떨어져 서로 다른 답을 볼 수 있다 — 색인되는 페이지가 빈 상태를 보여주거나
+ * 그 반대. `unstable_cache`는 요청 간 정적화를 담당하지 요청 내 메모가 아니다.
  *
- * (The FMP fan-out itself is already deduped a layer down —
- * `getCachedMarketFearGreed` is `React.cache`d — so this wrapper is about
- * agreement between the two readers, not about duplicate upstream calls.)
+ * (FMP fan-out 자체는 한 층 아래 `getCachedMarketFearGreed`가 `React.cache`라 이미
+ * 중복 제거된다 — 이 래퍼는 중복 업스트림 호출이 아니라 두 독자의 일치를 위한 것이다.)
  *
- * Same shape as `economySnapshotStaticCache`, for the same reason.
- * `/market`'s `getMarketSummaryStatic` deliberately omits it: its
- * `generateMetadata` does not read the summary, so it is called once per request.
+ * `economySnapshotStaticCache`와 같은 모양이고 이유도 같다. `/market`의
+ * `getMarketSummaryStatic`은 `generateMetadata`가 요약을 읽지 않아 요청당 한 번만
+ * 불리므로 일부러 `React.cache`를 두지 않는다.
  */
 export const getMarketFearGreedStatic = cache(
     (): Promise<MarketFearGreedView> =>

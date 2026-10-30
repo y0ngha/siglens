@@ -2,79 +2,40 @@
  * kindPanelRegistry exhaustiveness, function-shape, and render tests.
  *
  * We assert:
- *  1. All 8 ShareableKind keys are present in the registry.
- *  2. Each entry is a function.
- *  3. The registry key set exactly equals SHAREABLE_KIND_VALUES (no extras).
- *  4. Each kind actually RENDERS without throwing (catches undefined component bugs).
- *  5. The chart adapter derives ClusteredKeyLevels from result.keyLevels via
- *     validateKeyLevels + clusterKeyLevels and passes them to AnalysisPanel.
- *  6. The chart adapter renders ShareCandlestickChart when chartBars is provided,
- *     and omits it when chartBars is absent (graceful degradation for old snapshots).
- *  7. Panel widgets are loaded per kind (`next/dynamic`), never statically — so the
- *     assertions on widget mocks wait for the lazily loaded module.
+ *  1. The registry key set exactly equals SHAREABLE_KIND_VALUES (no extras).
+ *  2. Each entry is a distinct function.
+ *  3. Each kind actually RENDERS without throwing (catches undefined component bugs).
+ *  4. Panel widgets are loaded per kind (`next/dynamic`), never statically.
  *
- * Mocks use deep paths that match the imports in kindPanelRegistry.tsx — so the
- * mock resolves at the same module boundary that the registry uses, preventing
- * undefined-component regressions.
+ * The chart entry's own behaviour is covered by ChartSharePanel.test.tsx.
+ *
+ * Mock paths match the imports in kindPanelRegistry.tsx and ChartSharePanel.tsx
+ * (the defining files), so each mock resolves at the same module boundary the
+ * registry uses.
  */
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { render, waitFor } from '@testing-library/react';
-import type { Bar, ClusteredKeyLevels } from '@y0ngha/siglens-core';
+import { render } from '@testing-library/react';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { SHARE_KIND_PANEL_REGISTRY } from '@/views/share/kindPanelRegistry';
 
-// Mock every heavy widget so this test stays unit-level.
-//
-// IMPORTANT: mock paths MUST match the import paths in kindPanelRegistry.tsx.
-// If the mock targets a different module path than the registry imports, the
-// mock won't intercept and the component will be undefined.
-
-const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
-const mockShareCandlestickChart = vi.fn(
-    (_props: Record<string, unknown>) => null
-);
-
-// Stub clusterKeyLevels / validateKeyLevels so the chart adapter test is
-// deterministic without depending on core implementation details.
-const STUB_CLUSTERED: ClusteredKeyLevels = {
-    support: [{ price: 100, reason: 'stub', count: 1, sources: [] }],
-    resistance: [{ price: 200, reason: 'stub', count: 1, sources: [] }],
-};
-const mockClusterKeyLevels = vi.fn(
-    (_kl: unknown, _price: number) => STUB_CLUSTERED
-);
-const mockValidateKeyLevels = vi.fn((kl: unknown) => kl);
-
-vi.mock('@y0ngha/siglens-core', async importOriginal => {
-    const original =
-        await importOriginal<typeof import('@y0ngha/siglens-core')>();
-    return {
-        ...original,
-        clusterKeyLevels: (kl: unknown, price: number) =>
-            mockClusterKeyLevels(kl, price),
-        validateKeyLevels: (kl: unknown) => mockValidateKeyLevels(kl),
-    };
-});
-
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
-    AnalysisPanel: (props: Record<string, unknown>) => mockAnalysisPanel(props),
+    AnalysisPanel: () => null,
 }));
 vi.mock('@/widgets/chart/ShareCandlestickChart', () => ({
-    ShareCandlestickChart: (props: Record<string, unknown>) =>
-        mockShareCandlestickChart(props),
+    ShareCandlestickChart: () => null,
 }));
 vi.mock('@/widgets/overall/OverallView', () => ({
     OverallView: () => null,
 }));
-vi.mock('@/widgets/news/NewsAiSummary', () => ({
+vi.mock('@/widgets/news/ui/ai-summary/NewsAiSummaryView', () => ({
     NewsAiSummaryView: () => null,
 }));
-vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
+vi.mock('@/widgets/fundamental/ui/ai-summary/FundamentalAiSummaryView', () => ({
     FundamentalAiSummaryView: () => null,
 }));
-vi.mock('@/widgets/financials/FinancialsAiSummary', () => ({
+vi.mock('@/widgets/financials/ui/ai-summary/FinancialsAiSummaryView', () => ({
     FinancialsAiSummaryView: () => null,
 }));
 vi.mock('@/widgets/congress/CongressTrendSummaryView', () => ({
@@ -88,7 +49,6 @@ vi.mock('@/widgets/fear-greed/FearGreedShareView', () => ({
 }));
 
 // Minimal stub results (cast to never — mocks ignore props anyway).
-
 const stubResults = {
     chart: { trend: 'bullish', summary: '차트 분석' },
     overall: { score: 70 },
@@ -101,7 +61,7 @@ const stubResults = {
 } as const;
 
 describe('SHARE_KIND_PANEL_REGISTRY', () => {
-    it('contains exactly the 8 shareable kinds — no more, no less', () => {
+    it('contains exactly the shareable kinds — no more, no less', () => {
         const registryKeys = new Set(Object.keys(SHARE_KIND_PANEL_REGISTRY));
         const expectedKeys = new Set(SHAREABLE_KIND_VALUES);
         expect(registryKeys).toEqual(expectedKeys);
@@ -117,18 +77,13 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
         const fns = SHAREABLE_KIND_VALUES.map(
             k => SHARE_KIND_PANEL_REGISTRY[k]
         );
-        const uniqueFns = new Set(fns);
-        // Every entry should be a separate function reference
-        expect(uniqueFns.size).toBe(SHAREABLE_KIND_VALUES.length);
+        expect(new Set(fns).size).toBe(SHAREABLE_KIND_VALUES.length);
     });
 
     /**
-     * Render test: exercises the registry → component resolution for every kind.
-     *
-     * This catches the class of bug where a component import resolves to
-     * `undefined` (e.g. due to a deep-import circular dependency) — which only
-     * manifests at render time, not at typeof-check time. Each render must not
-     * throw "Element type is invalid: expected a string ... but got: undefined".
+     * Exercises the registry → component resolution for every kind. A component
+     * import that resolves to `undefined` only fails at render time, not at a
+     * typeof check: "Element type is invalid: ... but got: undefined".
      */
     describe('each kind renders without throwing (undefined-component guard)', () => {
         for (const kind of SHAREABLE_KIND_VALUES) {
@@ -145,177 +100,28 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
         }
     });
 
-    // T4: chart adapter derives ClusteredKeyLevels from result.keyLevels and passes to AnalysisPanel
-    describe('chart adapter (ChartSharePanel)', () => {
-        beforeEach(() => {
-            mockAnalysisPanel.mockClear();
-            mockClusterKeyLevels.mockClear();
-            mockValidateKeyLevels.mockClear();
-        });
-
-        it('derives ClusteredKeyLevels from result.keyLevels via validateKeyLevels + clusterKeyLevels and passes to AnalysisPanel', async () => {
-            /**
-             * ChartSharePanel derives keyLevels from the snapshot result:
-             * - validateKeyLevels filters invalid entries from result.keyLevels
-             * - clusterKeyLevels clusters the validated levels (currentPrice=0 since
-             *   no live bar data is available; epsilon=0 means no merging but all
-             *   valid levels still flow through)
-             * - The ClusteredKeyLevels output is passed to AnalysisPanel
-             * - symbol: forwarded from the snapshot so the copy-report utility
-             *   uses the real ticker (e.g. `AAPL 기술적 분석 리포트`, `siglens.io/AAPL`)
-             * - timeframe: '1Day' (non-triggering stale-banner default)
-             * - isFreeUser: false
-             * See kindPanelRegistry.tsx ChartSharePanel JSDoc for full rationale.
-             */
-            const rawKeyLevels = {
-                support: [{ price: 100, reason: '지지선' }],
-                resistance: [{ price: 200, reason: '저항선' }],
-            };
-            const fakeResult = {
-                trend: 'bullish',
-                summary: '상승 추세',
-                keyLevels: rawKeyLevels,
-            };
-            render(
-                SHARE_KIND_PANEL_REGISTRY.chart({
-                    result: fakeResult as never,
-                    symbol: 'AAPL',
-                })
-            );
-
-            // validateKeyLevels called with the raw keyLevels from result
-            expect(mockValidateKeyLevels).toHaveBeenCalledWith(rawKeyLevels);
-            // clusterKeyLevels called with currentPrice=0 (no live bar data)
-            expect(mockClusterKeyLevels).toHaveBeenCalledWith(
-                expect.anything(),
-                0
-            );
-            // AnalysisPanel receives the clustered output and the real ticker
-            await waitFor(() =>
-                expect(mockAnalysisPanel).toHaveBeenCalledTimes(1)
-            );
-            await waitFor(() =>
-                expect(mockAnalysisPanel).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        analysis: fakeResult,
-                        keyLevels: STUB_CLUSTERED,
-                        timeframe: '1Day',
-                        symbol: 'AAPL',
-                    })
-                )
-            );
-        });
-
-        it('uses empty string when symbol is omitted (backwards compat for callers that omit symbol)', async () => {
-            const fakeResult = { trend: 'bullish', summary: '상승 추세' };
-            render(
-                SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
-            );
-            await waitFor(() =>
-                expect(mockAnalysisPanel).toHaveBeenCalledWith(
-                    expect.objectContaining({ symbol: '' })
-                )
-            );
-        });
-
-        it('falls back to empty clustered structure when result.keyLevels is absent', async () => {
-            const fakeResult = { trend: 'bullish', summary: '상승 추세' };
-            render(
-                SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
-            );
-
-            // validateKeyLevels called with the empty fallback
-            expect(mockValidateKeyLevels).toHaveBeenCalledWith({
-                support: [],
-                resistance: [],
-            });
-            await waitFor(() =>
-                expect(mockAnalysisPanel).toHaveBeenCalledTimes(1)
-            );
-            // The clustered output (mocked as STUB_CLUSTERED) is still passed through
-            await waitFor(() =>
-                expect(mockAnalysisPanel).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        analysis: fakeResult,
-                        keyLevels: STUB_CLUSTERED,
-                    })
-                )
-            );
-        });
-
-        // T6: snapshot-time chart rendering via ShareCandlestickChart
-
-        it('renders ShareCandlestickChart when chartBars is provided, forwarding ticker for aria-label (S2)', async () => {
-            mockShareCandlestickChart.mockClear();
-            const fakeResult = { trend: 'bullish', summary: '차트 분석' };
-            const stubBars: Bar[] = [
-                {
-                    time: 1700000000,
-                    open: 150,
-                    high: 155,
-                    low: 148,
-                    close: 153,
-                    volume: 1000000,
-                },
-            ];
-            render(
-                SHARE_KIND_PANEL_REGISTRY.chart({
-                    result: fakeResult as never,
-                    chartBars: stubBars,
-                    symbol: 'TSLA',
-                })
-            );
-            await waitFor(() =>
-                expect(mockShareCandlestickChart).toHaveBeenCalledTimes(1)
-            );
-            // ticker must be forwarded so aria-label reads "TSLA 스냅샷 캔들 차트"
-            await waitFor(() =>
-                expect(mockShareCandlestickChart).toHaveBeenCalledWith(
-                    expect.objectContaining({ bars: stubBars, ticker: 'TSLA' })
-                )
-            );
-        });
-
-        it('does not render ShareCandlestickChart when chartBars is absent (old snapshot graceful degradation)', async () => {
-            mockShareCandlestickChart.mockClear();
-            const fakeResult = { trend: 'bullish', summary: '차트 분석' };
-            render(
-                SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
-            );
-            // AnalysisPanel still renders without the chart
-            await waitFor(() =>
-                expect(mockAnalysisPanel).toHaveBeenCalledTimes(1)
-            );
-            expect(mockShareCandlestickChart).not.toHaveBeenCalled();
-        });
-
-        it('does not render ShareCandlestickChart when chartBars is an empty array', async () => {
-            mockShareCandlestickChart.mockClear();
-            const fakeResult = { trend: 'bullish', summary: '차트 분석' };
-            render(
-                SHARE_KIND_PANEL_REGISTRY.chart({
-                    result: fakeResult as never,
-                    chartBars: [],
-                })
-            );
-            await waitFor(() => expect(mockAnalysisPanel).toHaveBeenCalled());
-            expect(mockShareCandlestickChart).not.toHaveBeenCalled();
-        });
-    });
-
     /**
-     * 공유 링크는 kind 하나만 보여 주므로 패널 위젯을 정적으로 import하면 8개 패널과
-     * `lightweight-charts`가 모든 공유 페이지 first-load에 실린다. 누가 편의상 정적
-     * import로 되돌리면 동작은 그대로라 다른 테스트로는 잡히지 않는다.
+     * 공유 링크는 kind 하나만 보여 주므로 패널 위젯을 정적으로 import하면 모든 패널과
+     * `lightweight-charts`가 모든 공유 페이지 first-load에 실린다. 정적 import로 되돌려도
+     * 동작은 그대로라 다른 테스트로는 잡히지 않는다.
      */
-    it('패널 위젯을 정적으로 import하지 않는다(kind별 next/dynamic)', () => {
-        const source = readFileSync(
-            join(process.cwd(), 'src/views/share/kindPanelRegistry.tsx'),
-            'utf8'
-        );
-        expect(source).not.toMatch(/^import [^;]* from '@\/widgets\//m);
-        expect(source).toMatch(
-            /import\('@\/widgets\/analysis\/AnalysisPanel'\)/
-        );
+    describe('패널 위젯을 정적으로 import하지 않는다(kind별 next/dynamic)', () => {
+        const readSource = (relativePath: string): string =>
+            readFileSync(join(process.cwd(), relativePath), 'utf8');
+
+        it.each([
+            [
+                'src/views/share/kindPanelRegistry.tsx',
+                /import\('@\/widgets\/overall\/OverallView'\)/,
+            ],
+            [
+                'src/views/share/ui/chart/ChartSharePanel.tsx',
+                /import\('@\/widgets\/analysis\/AnalysisPanel'\)/,
+            ],
+        ])('%s', (relativePath, dynamicImport) => {
+            const source = readSource(relativePath);
+            expect(source).not.toMatch(/^import [^;]* from '@\/widgets\//m);
+            expect(source).toMatch(dynamicImport);
+        });
     });
 });

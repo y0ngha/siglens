@@ -2,11 +2,11 @@ import 'server-only';
 import { inArray, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { economicIndicatorTranslations } from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     IndicatorTranslationRecord,
     IndicatorTranslationRepository,
     IndicatorTranslationSource,
+    SiglensDatabase,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
@@ -43,6 +43,7 @@ function toRecord(row: IndicatorTranslationRow): IndicatorTranslationRecord {
 export class DrizzleIndicatorTranslationRepository implements IndicatorTranslationRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /** 정규화된 지표명 목록의 캐시 행을 읽는다. 빈 목록은 쿼리 없이 `[]`. */
     async findByNames(
         normalizedNames: readonly string[]
     ): Promise<IndicatorTranslationRecord[]> {
@@ -62,6 +63,7 @@ export class DrizzleIndicatorTranslationRepository implements IndicatorTranslati
         return rows.map(toRecord);
     }
 
+    /** 지표명 기준 upsert — 같은 이름이면 번역·출처·`updatedAt`을 덮어쓴다. */
     async upsert(record: IndicatorTranslationRecord): Promise<void> {
         await withRetry(
             () =>

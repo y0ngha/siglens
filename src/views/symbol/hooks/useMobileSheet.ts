@@ -15,6 +15,7 @@ interface UseMobileSheetReturn {
     setMobileSheetContent: Dispatch<SetStateAction<ReactNode>>;
 }
 
+/** 시트 스냅(초기 PEEK)과, `ChartContent`가 채우는 시트 본문을 들고 있다. */
 export function useMobileSheet(): UseMobileSheetReturn {
     // 초기 스냅은 PEEK이다. HALF(0.55)로 열면 캔들·거래량 차트를 덮는다
     // (3개 기기 실측: 차트를 가리지 않는 최대 시트 점유율 0.194~0.215).

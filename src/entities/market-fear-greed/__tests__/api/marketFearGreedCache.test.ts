@@ -5,12 +5,9 @@ const { mockFetchDailyCloses } = vi.hoisted(() => ({
     mockFetchDailyCloses: vi.fn(),
 }));
 
-// lookbackStartDate는 실제 구현을 그대로 쓰고, fetchDailyCloses만 대체한다 — 그래야
-// buildMarketFearGreedView가 계산하는 `from` 값이 실제 로직으로 검증된다.
-vi.mock('@/entities/market-fear-greed/lib/fetchDailyCloses', async () => ({
-    ...(await vi.importActual(
-        '@/entities/market-fear-greed/lib/fetchDailyCloses'
-    )),
+// 조회 창 헬퍼(`marketFearGreedWindows`)는 실제 구현을 그대로 쓰고, fetchDailyCloses만
+// 대체한다 — 그래야 buildMarketFearGreedView가 계산하는 `from` 값이 실제 로직으로 검증된다.
+vi.mock('@/entities/market-fear-greed/api/fetchDailyCloses', () => ({
     fetchDailyCloses: mockFetchDailyCloses,
 }));
 
@@ -20,9 +17,9 @@ import {
     getCachedMarketFearGreed,
     MARKET_FEAR_GREED_CONFIG_FINGERPRINT,
 } from '@/entities/market-fear-greed/api/marketFearGreedCache';
-// `lastPublishedSessionDate`는 위 vi.mock에서 실제 구현이 그대로 재수출되므로,
-// 여기서 import한 것과 buildMarketFearGreedView 내부가 계산하는 `to`는 같은 함수다.
-import { lastPublishedSessionDate } from '@/entities/market-fear-greed/lib/fetchDailyCloses';
+// 모킹하지 않은 실제 함수라, 여기서 import한 것과 buildMarketFearGreedView 내부가
+// 계산하는 `to`는 같은 함수다.
+import { lastPublishedSessionDate } from '@/entities/market-fear-greed/lib/marketFearGreedWindows';
 import { MARKET_FEAR_GREED_SYMBOLS } from '@/entities/market-fear-greed/lib/marketFearGreedSymbols';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';

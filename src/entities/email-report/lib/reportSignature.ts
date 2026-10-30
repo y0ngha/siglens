@@ -20,6 +20,7 @@ function digest(
     return createHmac('sha256', secret).update(`${purpose}:${value}`).digest();
 }
 
+/** `purpose`별로 분리된 HMAC-SHA256 서명(base64url). 메일 속 링크를 만들 때 쓴다. */
 export function signReportValue(
     secret: string,
     purpose: ReportSignaturePurpose,

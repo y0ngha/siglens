@@ -39,35 +39,38 @@ export function toRealizedVolatilitySeries(
 ): MarketDailyClose[] {
     const sorted = [...closes].sort((a, b) => a.date.localeCompare(b.date));
 
-    // 로그수익률. 0 이하 종가는 로그가 정의되지 않으므로 그 지점에서 창을 끊는다
-    // (분할·병합 같은 데이터 오류가 NaN으로 전파되는 것을 막는다).
-    const returns: { date: string; value: number }[] = [];
-    for (let i = 1; i < sorted.length; i++) {
-        const prev = sorted[i - 1].close;
-        const curr = sorted[i].close;
-        if (prev <= 0 || curr <= 0) continue;
-        returns.push({ date: sorted[i].date, value: Math.log(curr / prev) });
-    }
+    // 로그수익률. 0 이하 종가는 로그가 정의되지 않으므로 그 구간의 수익률은 건너뛴다
+    // (분할·병합 같은 데이터 오류가 NaN으로 전파되는 것을 막는다). 비교가 `<= 0`이라 NaN 종가는
+    // 걸러지지 않고 NaN 수익률로 이어진다 — 입력 종가는 상류 파서가 양의 유한수만 통과시킨다. 건너뛴 자리에서
+    // 창이 끊기지는 않고 앞뒤 수익률이 이어진다.
+    const returns = sorted.slice(1).flatMap((curr, i) => {
+        const prev = sorted[i];
+        return !(prev.close <= 0 || curr.close <= 0)
+            ? [{ date: curr.date, value: Math.log(curr.close / prev.close) }]
+            : [];
+    });
 
     if (returns.length < REALIZED_VOL_WINDOW) return [];
 
-    const out: MarketDailyClose[] = [];
-    for (let end = REALIZED_VOL_WINDOW; end <= returns.length; end++) {
-        const window = returns.slice(end - REALIZED_VOL_WINDOW, end);
-        const mean =
-            window.reduce((sum, r) => sum + r.value, 0) / REALIZED_VOL_WINDOW;
-        // 표본분산(n-1). 창이 20이라 모분산(n)과의 차이가 작지만, 표본에서
-        // 추정하는 값이므로 통계적으로 맞는 쪽을 쓴다.
-        const variance =
-            window.reduce((sum, r) => sum + (r.value - mean) ** 2, 0) /
-            (REALIZED_VOL_WINDOW - 1);
-        out.push({
-            date: window[window.length - 1].date,
-            // 백분율 표기(VIX와 같은 축척) — `16.4`는 연율 16.4%를 뜻한다.
-            // core는 레벨의 상대 위치만 보므로 배율 자체는 결과에 영향이 없지만,
-            // 로그에 찍혔을 때 사람이 바로 읽을 수 있는 단위를 고른다.
-            close: Math.sqrt(variance * TRADING_DAYS_PER_YEAR) * 100,
-        });
-    }
-    return out;
+    return Array.from(
+        { length: returns.length - REALIZED_VOL_WINDOW + 1 },
+        (_, start) => {
+            const window = returns.slice(start, start + REALIZED_VOL_WINDOW);
+            const mean =
+                window.reduce((sum, r) => sum + r.value, 0) /
+                REALIZED_VOL_WINDOW;
+            // 표본분산(n-1). 창이 20이라 모분산(n)과의 차이가 작지만, 표본에서
+            // 추정하는 값이므로 통계적으로 맞는 쪽을 쓴다.
+            const variance =
+                window.reduce((sum, r) => sum + (r.value - mean) ** 2, 0) /
+                (REALIZED_VOL_WINDOW - 1);
+            return {
+                date: window[window.length - 1].date,
+                // 백분율 표기(VIX와 같은 축척) — `16.4`는 연율 16.4%를 뜻한다.
+                // core는 레벨의 상대 위치만 보므로 배율 자체는 결과에 영향이 없지만,
+                // 로그에 찍혔을 때 사람이 바로 읽을 수 있는 단위를 고른다.
+                close: Math.sqrt(variance * TRADING_DAYS_PER_YEAR) * 100,
+            };
+        }
+    );
 }
