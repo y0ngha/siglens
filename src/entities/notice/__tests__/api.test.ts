@@ -1,3 +1,4 @@
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { DrizzleNoticeRepository } from '@/entities/notice/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NoticeRecord } from '@/entities/notice/model/types';
@@ -112,5 +113,19 @@ describe('DrizzleNoticeRepository.findActive', () => {
         // 실제 필터 의미론(is_active + 시간창)은 e2e/specs/notice-popup.spec.ts의
         // '비노출 조건'(is_active=false / 미래 starts_at / 과거 ends_at) 테스트가 실 DB로 검증한다.
         expect(whereSpy.mock.calls[0][0]).toHaveProperty('queryChunks');
+    });
+
+    it('where 절은 활성 여부와 양 끝을 포함하는 시간창을 SQL로 만든다', async () => {
+        const { db, whereSpy } = makeMockDb([baseRow]);
+        await new DrizzleNoticeRepository(db).findActive('ko');
+        const { sql: text, params } = new PgDialect().sqlToQuery(
+            whereSpy.mock.calls[0][0]
+        );
+        expect(text).toContain('"notices"."is_active" = $1');
+        expect(text).toContain('"notices"."starts_at" is null');
+        expect(text).toContain('"notices"."starts_at" <= NOW()');
+        expect(text).toContain('"notices"."ends_at" is null');
+        expect(text).toContain('"notices"."ends_at" >= NOW()');
+        expect(params).toEqual([true]);
     });
 });
