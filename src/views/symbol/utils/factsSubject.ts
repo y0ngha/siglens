@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { buildTitleSubject } from '@/shared/lib/seo';
+import { buildTitleSubject } from '@/shared/lib/seoSymbol';
 
 /**
  * 차트 탭 서술 문장(`TechnicalFactsSummary`)의 주어.

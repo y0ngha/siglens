@@ -6,7 +6,7 @@ import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
 import ja from '../../../../../messages/ja.json';
 import zh from '../../../../../messages/zh.json';
-import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seo';
+import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
 
 const catalogs = { ko, en } as const;
 

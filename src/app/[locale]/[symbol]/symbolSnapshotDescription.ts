@@ -6,11 +6,9 @@ import type {
 } from '@/entities/seo-snapshot/model';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
 import type { Locale } from '@/shared/i18n/locales';
-import {
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { symbolTabDescriptionLabel } from '@/shared/lib/seoSymbol';
+import { buildSnapshotMetaDescription } from '@/shared/lib/seoSnapshotDescription';
 
 interface TabSnapshotInput {
     /** 대문자 심볼. */

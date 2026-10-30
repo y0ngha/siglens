@@ -22,7 +22,7 @@
  * so line-leading markers (`- `, `#`, `1. `) are recognized per line.
  *
  * Lives in `shared/lib` (moved from `views/symbol/snapshot/lib` on 2026-09-17)
- * because `buildSnapshotMetaDescription` in `shared/lib/seo.ts` reads the same
+ * because `buildSnapshotMetaDescription` in `shared/lib/seoSnapshotDescription.ts` reads the same
  * markdown fields for `<meta name="description">`, and a shared module cannot
  * import from `views`. Production crawl after v0.79.2: chart-tab descriptions
  * that fell back to the raw `summary` field started with a literal
@@ -43,7 +43,7 @@ export function stripSnapshotMarkdown(text: string): string {
             // 기호로 보지 않는다. 경계가 없던 예전 식은 무관한 두 기호 사이를
             // 통째로 지웠다 — `250*2 … 100*3` → `2502 … 1003`, `BRK_A와 BRK_B` →
             // `BRKA와 BRKB`. 이 결과가 `<meta name="description">`으로도 나가게
-            // 되면서(seo.ts) 경계를 넣었다. `\w`는 `u` 플래그 없이 한글을 포함하지
+            // 되면서(seoSnapshotDescription.ts) 경계를 넣었다. `\w`는 `u` 플래그 없이 한글을 포함하지
             // 않으므로 `*강조*입니다`는 그대로 벗겨진다.
             .replace(/(?<![\w*])\*(?=\S)(.+?)(?<=\S)\*(?![\w*])/g, '$1')
             .replace(/(?<![\w_])_(?=\S)(.+?)(?<=\S)_(?![\w_])/g, '$1')

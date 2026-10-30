@@ -59,6 +59,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolCongressSeoContent: vi.fn().mockReturnValue({
         title: '',
@@ -67,7 +71,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: '',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 
 import {

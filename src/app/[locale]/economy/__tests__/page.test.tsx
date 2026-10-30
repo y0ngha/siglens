@@ -27,10 +27,13 @@ vi.mock('@/entities/economy/lib/economyCompleteness', () => ({
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
-    clampSeoDescription: (s: string) => s,
     ROOT_KEYWORDS: [],
     SITE_URL: 'https://siglens.io',
     SITE_BUILD_DATE: new Date('2026-01-01T00:00:00.000Z'),
+}));
+vi.mock('@/shared/lib/seoClamp', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoClamp')>()),
+    clampSeoDescription: (s: string) => s,
 }));
 vi.mock('@/shared/lib/legal', () => ({
     TERMS_PATH: '/terms',

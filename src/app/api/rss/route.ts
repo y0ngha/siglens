@@ -14,13 +14,12 @@ import {
     hashHubBody,
     readHubContentStamp,
 } from '@/shared/cache/hubContentStamp';
+import { brandIntroName, SITE_URL } from '@/shared/lib/seo';
 import {
     clampAtSentenceBoundary,
     collapseToSingleLine,
-    brandIntroName,
-    SITE_URL,
     takeWholeSentences,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSnapshotDescription';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { rssItemTitle } from './rssItemTitle';
@@ -45,7 +44,10 @@ const CHANNEL = {
     language: 'ko',
 } as const;
 
-/** 마크다운을 떼고 한 줄로 합친 뒤 문장 경계에서 줄인다(`seo.ts`의 description 헬퍼 재사용). */
+/**
+ * 마크다운을 떼고 한 줄로 합친 뒤 문장 경계에서 줄인다
+ * (`seoSnapshotDescription.ts`의 description 헬퍼 재사용).
+ */
 function toDescription(prose: string): string {
     const plain = collapseToSingleLine(prose);
     return (

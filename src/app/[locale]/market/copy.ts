@@ -1,4 +1,5 @@
-import { clampSeoDescription, type SeoTranslator } from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 /**

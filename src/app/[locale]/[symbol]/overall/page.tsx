@@ -23,10 +23,12 @@ import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
 import {
     ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
-    buildSymbolSeoContent,
-    resolveSymbolOverallSeoContent,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import {
+    buildSymbolSeoContent,
+    resolveSymbolOverallSeoContent,
+} from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {

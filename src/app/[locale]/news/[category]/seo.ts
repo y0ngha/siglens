@@ -1,10 +1,10 @@
+import { type SeoTranslator } from '@/shared/lib/seo';
 import {
     clampSeoDescription,
     clampSeoTitle,
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoClamp';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 /**

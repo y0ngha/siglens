@@ -10,7 +10,10 @@ import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { INDEXABLE_SYMBOL_TABS, type SymbolSeoTab } from '@/shared/lib/seo';
+import {
+    INDEXABLE_SYMBOL_TABS,
+    type SymbolSeoTab,
+} from '@/shared/lib/seoSymbol';
 
 /** All cross-linked page types in the symbol sub-navigation. */
 const ALL_PAGES = [

@@ -34,10 +34,12 @@ import {
 } from '@/entities/bars/lib/technicalFacts';
 import {
     buildBreadcrumbJsonLd,
-    buildSymbolPositionSeoContent,
-    buildSymbolSeoContent,
     NOINDEX_SYMBOL_METADATA,
 } from '@/shared/lib/seo';
+import {
+    buildSymbolPositionSeoContent,
+    buildSymbolSeoContent,
+} from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { JsonLd } from '@/shared/ui/JsonLd';

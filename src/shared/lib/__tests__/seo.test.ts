@@ -3,6 +3,13 @@ import { readFileSync } from 'node:fs';
 import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import {
+    buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
+    buildWebPageJsonLd,
+    SITE_URL,
+    type SeoTranslator,
+} from '@/shared/lib/seo';
+import {
     buildSymbolSeoContent,
     buildSymbolFundamentalSeoContent,
     buildSymbolFinancialsSeoContent,
@@ -10,21 +17,18 @@ import {
     buildSymbolOverallSeoContent,
     buildSymbolFearGreedSeoContent,
     buildSymbolOptionsSeoContent,
-    buildBreadcrumbJsonLd,
-    buildFaqJsonLd,
-    buildWebPageJsonLd,
-    buildSnapshotMetaDescription,
     composeSymbolTitle,
-    clampSeoDescription,
-    SEO_DESCRIPTION_MAX_LENGTH,
-    SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
-    SITE_URL,
-    type SeoTranslator,
     resolveSymbolSeoContent,
     resolveSymbolNewsSeoContent,
     resolveSymbolOverallSeoContent,
     resolveSymbolFearGreedSeoContent,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
+import { buildSnapshotMetaDescription } from '@/shared/lib/seoSnapshotDescription';
+import {
+    clampSeoDescription,
+    SEO_DESCRIPTION_MAX_LENGTH,
+    SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
+} from '@/shared/lib/seoClamp';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 
 // t는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
@@ -1257,9 +1261,9 @@ describe('resolve*SeoContent — englishName 전달', () => {
     ] as const;
 
     it('리졸버를 하나도 빠뜨리지 않았다', () => {
-        // seo.ts가 내보내는 `resolve*SeoContent` 수와 위 목록이 일치해야 한다.
+        // seoSymbol.ts가 내보내는 `resolve*SeoContent` 수와 위 목록이 일치해야 한다.
         const source = readFileSync(
-            `${process.cwd()}/src/shared/lib/seo.ts`,
+            `${process.cwd()}/src/shared/lib/seoSymbol.ts`,
             'utf8'
         );
         const exported = [
@@ -1644,7 +1648,8 @@ describe('buildSymbolFlowsSeoContent', () => {
             locale: 'ko',
             namespace: 'shared.seo',
         });
-        const { buildSymbolFlowsSeoContent } = await import('@/shared/lib/seo');
+        const { buildSymbolFlowsSeoContent } =
+            await import('@/shared/lib/seoSymbol');
         const seo = buildSymbolFlowsSeoContent('aapl', t, {
             displayName: '애플(AAPL)',
             koreanName: '애플',
@@ -1664,7 +1669,8 @@ describe('buildSymbolFlowsSeoContent', () => {
             locale: 'ko',
             namespace: 'shared.seo',
         });
-        const { buildSymbolFlowsSeoContent } = await import('@/shared/lib/seo');
+        const { buildSymbolFlowsSeoContent } =
+            await import('@/shared/lib/seoSymbol');
         const seo = buildSymbolFlowsSeoContent('MSFT', t);
         expect(seo.keywords.some(k => k.includes('undefined'))).toBe(false);
         expect(seo.keywords).toContain('MSFT 수급');
@@ -1676,7 +1682,8 @@ describe('buildSymbolFlowsSeoContent', () => {
             locale: 'ko',
             namespace: 'shared.seo',
         });
-        const { buildSymbolFlowsSeoContent } = await import('@/shared/lib/seo');
+        const { buildSymbolFlowsSeoContent } =
+            await import('@/shared/lib/seoSymbol');
         const seo = buildSymbolFlowsSeoContent('005930.ks', t, {
             displayName: '삼성전자',
             koreanName: '삼성전자',

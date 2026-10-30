@@ -1,8 +1,5 @@
-import {
-    composeSymbolTitle,
-    seoTitleWidth,
-    SEO_TITLE_MAX_WIDTH,
-} from '@/shared/lib/seo';
+import { composeSymbolTitle } from '@/shared/lib/seoSymbol';
+import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '@/shared/lib/seoClamp';
 import {
     SEO_WORST_CASE_KOREAN_NAME,
     SEO_WORST_CASE_TICKER,

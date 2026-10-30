@@ -24,10 +24,10 @@ import { RegionTabs } from '@/shared/ui/RegionTabs';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    clampSeoDescription,
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

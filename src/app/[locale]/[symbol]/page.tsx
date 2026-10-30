@@ -41,11 +41,11 @@ import { chartSkillTotal } from '@/shared/lib/skillStats';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { buildBreadcrumbJsonLd } from '@/shared/lib/seo';
 import {
-    buildBreadcrumbJsonLd,
     buildTitleSubject,
     resolveSymbolSeoContent,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import {
     dehydrate,

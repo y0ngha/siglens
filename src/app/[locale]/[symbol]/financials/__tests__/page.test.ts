@@ -61,6 +61,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         '@type': 'BreadcrumbList',
         itemListElement: [],
     }),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi
         .fn()
         .mockReturnValue({ url: 'https://siglens.io/AAPL' }),
@@ -72,7 +76,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL/financials',
         keywords: ['AAPL', 'AAPL 재무제표'],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),

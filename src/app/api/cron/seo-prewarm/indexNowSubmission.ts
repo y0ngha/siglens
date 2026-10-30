@@ -14,7 +14,7 @@ import {
     INDEXNOW_ENDPOINTS,
     INDEXNOW_TIMEOUT_MS,
 } from '@/shared/config/indexNow';
-import { isIndexNowEnabled } from '@/shared/lib/indexNow';
+import { isIndexNowEnabled } from '@/shared/api/indexNow';
 import {
     drainIndexNow,
     enqueueIndexNow,

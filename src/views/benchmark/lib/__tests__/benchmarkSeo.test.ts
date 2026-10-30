@@ -4,7 +4,7 @@ import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
 import ja from '../../../../../messages/ja.json';
 import zh from '../../../../../messages/zh.json';
-import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 
 const CATALOGS = { ko, en, ja, zh } as const;
 

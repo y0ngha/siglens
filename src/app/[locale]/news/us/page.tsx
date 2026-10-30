@@ -23,9 +23,9 @@ import { fetchCategoryDigestLines } from '../_lib/categoryDigests';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    clampSeoDescription,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { brandName, brandTitle } from '@/shared/lib/brandName';

@@ -25,9 +25,11 @@ import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvabl
 import {
     ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
+} from '@/shared/lib/seo';
+import {
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';

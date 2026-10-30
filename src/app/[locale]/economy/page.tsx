@@ -23,11 +23,11 @@ import {
     buildBreadcrumbJsonLd,
     buildFaqJsonLd,
     buildWebPageJsonLd,
-    clampSeoDescription,
     SITE_URL,
     type FaqItem,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';

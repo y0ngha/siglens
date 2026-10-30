@@ -182,9 +182,10 @@ const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
  * 비-ko 로케일은 계속 막힌다(Allow가 `/ko/`에서 시작하고 `opengraph-image`만 가리킨다).
  * 종목 탭에는 `twitter-image` 라우트가 더 이상 없다(2026-10 PR-9 — Next가 `twitter:image`를
  * 탭의 `opengraph-image` URL로 채운다). 남은 `twitter-image`는 뉴스 허브(`/news`,
- * `/news/{category}`)뿐이고, 아래 Googlebot 그룹의 `twitter-image` Disallow는 그 경로들 때문에 둔다. 탭 목록은 `seo.ts`를 import하지 않고 적는다 — 이 파일은 `SITE_URL`만 의존하도록
- * 두었고(`robots.test.ts`가 그것만 목한다), 탭을 다시 열 때 `ALWAYS_NOINDEX_TAB_ROBOTS`와 함께
- * 여기를 고친다. `robots.test.ts`의 허용/차단 행렬이 두 방향을 고정한다.
+ * `/news/{category}`)뿐이고, 아래 Googlebot 그룹의 `twitter-image` Disallow는 그 경로들 때문에 둔다.
+ * 탭 목록은 `seoSymbol.ts`를 import하지 않고 적는다 — 이 파일은 `SITE_URL`만
+ * 의존하도록 두었고(`robots.test.ts`가 그것만 목한다), 탭을 다시 열 때
+ * `ALWAYS_NOINDEX_TAB_ROBOTS`와 함께 여기를 고친다. `robots.test.ts`의 허용/차단 행렬이 두 방향을 고정한다.
  */
 const SYMBOL_OG_ALLOW = [`/${DEFAULT_LOCALE}/*/opengraph-image`];
 const NOINDEX_TAB_OG_DISALLOW = [

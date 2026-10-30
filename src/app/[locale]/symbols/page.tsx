@@ -12,11 +12,11 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    clampSeoDescription,
     SITE_URL,
     SYMBOLS_PATH,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';

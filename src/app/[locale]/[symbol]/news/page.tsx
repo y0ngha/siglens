@@ -45,13 +45,15 @@ import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
-    buildSymbolSeoContent,
-    buildTitleSubject,
     localizedAbsoluteUrl,
     ORGANIZATION_JSON_LD_ID,
-    resolveSymbolNewsSeoContent,
     SITE_URL,
 } from '@/shared/lib/seo';
+import {
+    buildSymbolSeoContent,
+    buildTitleSubject,
+    resolveSymbolNewsSeoContent,
+} from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { SITE_NAME } from '@/shared/config/brand';
 import { ABOUT_PATH } from '@/shared/lib/legal';

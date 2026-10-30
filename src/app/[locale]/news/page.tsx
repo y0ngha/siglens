@@ -25,9 +25,9 @@ import { fetchCategoryDigestLines } from './_lib/categoryDigests';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    clampSeoDescription,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';

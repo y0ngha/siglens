@@ -27,9 +27,11 @@ import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
+} from '@/shared/lib/seo';
+import {
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import type { Metadata } from 'next';

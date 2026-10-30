@@ -1,5 +1,6 @@
 import { FEAR_GREED_LABEL_CUTOFFS } from '@y0ngha/siglens-core';
-import { clampSeoDescription, type SeoTranslator } from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 
 /**
