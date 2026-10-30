@@ -135,7 +135,8 @@ describe('useVolumeChartData', () => {
         ]);
     });
 
-    it('sets empty data when buySellVolume is empty but bars exist', () => {
+    // 총 거래량은 봉에서만 나온다 — 분해가 비어도 총 막대는 그대로 그린다.
+    it('keeps total volume and empties only the buy split when buySellVolume is empty', () => {
         const refs = makeRefs(true);
         renderHook(() =>
             useVolumeChartData({
@@ -145,7 +146,10 @@ describe('useVolumeChartData', () => {
             })
         );
 
-        expect(mockTotalSetData).toHaveBeenCalledWith([]);
+        expect(mockTotalSetData).toHaveBeenCalledTimes(1);
+        expect(mockTotalSetData.mock.calls[0][0]).toHaveLength(
+            FAKE_BARS.length
+        );
         expect(mockBuySetData).toHaveBeenCalledWith([]);
     });
 

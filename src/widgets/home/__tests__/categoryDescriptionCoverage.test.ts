@@ -12,16 +12,7 @@ import {
     TICKER_CATEGORY_LABEL_KEY,
 } from '@/shared/config/tickerCategoryLabel';
 import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
-
-const LABEL_CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-} as const;
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 const ALL_LABELS = [
     ...TICKER_CATEGORIES.map(c => c.label),
@@ -50,7 +41,7 @@ describe('카테고리 설명 커버리지', () => {
         expect(TICKER_CATEGORY_LABEL_KEY[label]).toBeDefined();
     });
 
-    describe.each(Object.entries(LABEL_CATALOGS))(
+    describe.each(Object.entries(MESSAGE_CATALOGS))(
         '%s 카탈로그',
         (locale, catalog) => {
             it.each(ALL_LABELS)('%s의 라벨 키가 카탈로그에 있다', label => {

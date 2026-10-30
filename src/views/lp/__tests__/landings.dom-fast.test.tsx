@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_URL } from '@/shared/lib/seo';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { StockAnalysisLanding } from '@/views/lp/StockAnalysisLanding';
 import { StockChatLanding } from '@/views/lp/StockChatLanding';
 import { lpCopyViolations } from './lpCopyRules';
@@ -19,6 +20,16 @@ describe.each([
     it('has no crypto wording, middle dot, em dash, "티커" or "no signup" phrasing', () => {
         const { container } = render(<Landing />);
         expect(lpCopyViolations(pageText(container))).toEqual([]);
+    });
+
+    it('styles every h3 one step below its h2 (HEADING_SUBSECTION)', () => {
+        render(<Landing />);
+        const h3s = screen.getAllByRole('heading', { level: 3 });
+        expect(h3s.length).toBeGreaterThan(0);
+        for (const h3 of h3s) {
+            expect(h3).toHaveClass(...HEADING_SUBSECTION.split(' '));
+            expect(h3).not.toHaveClass('text-secondary-50', 'font-semibold');
+        }
     });
 
     it('has a minimal footer: privacy, terms, disclaimer', () => {
@@ -72,6 +83,19 @@ describe('StockAnalysisLanding', () => {
         }
     });
 
+    it('keeps each feature title and its market scope apart in the heading name', () => {
+        render(<StockAnalysisLanding />);
+        const names = screen
+            .getAllByRole('heading', { level: 3 })
+            .map(h => h.textContent);
+        expect(names).toEqual([
+            '차트 지표 AI 해석 미국, 한국',
+            '지지선과 저항선 정리 미국, 한국',
+            '공포탐욕지수 미국, 한국',
+            '옵션과 재무, 뉴스 옵션은 미국 주식',
+        ]);
+    });
+
     it('lists popular stocks company name first, ticker second', () => {
         render(<StockAnalysisLanding />);
         const list = screen.getByRole('region', { name: '많이 찾는 종목' });
@@ -79,11 +103,11 @@ describe('StockAnalysisLanding', () => {
             .getAllByRole('link')
             .map(link => link.textContent);
         expect(names).toEqual([
-            '엔비디아NVDA',
-            '애플AAPL',
-            '테슬라TSLA',
-            '삼성전자005930.KS',
-            'SK하이닉스000660.KS',
+            '엔비디아 NVDA',
+            '애플 AAPL',
+            '테슬라 TSLA',
+            '삼성전자 005930.KS',
+            'SK하이닉스 000660.KS',
         ]);
     });
 
@@ -122,6 +146,13 @@ describe('StockChatLanding', () => {
         ).toBeInTheDocument();
         const faq = screen.getByRole('region', { name: '자주 묻는 질문' });
         expect(within(faq).getAllByRole('group')).toHaveLength(3);
+    });
+
+    it('keeps the answer source chips apart in the text', () => {
+        render(<StockChatLanding />);
+        const how = screen.getByRole('region', { name: '이렇게 답해요' });
+        const chips = within(how).getByText('기업 정보').parentElement;
+        expect(chips?.textContent).toBe('시세 기업 정보 기준 2026-09-18');
     });
 
     it('shows the example chat replay, complete on first render', () => {

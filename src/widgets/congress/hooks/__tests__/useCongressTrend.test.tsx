@@ -215,4 +215,43 @@ describe('useCongressTrend', () => {
         });
         expect(mockSubmit).toHaveBeenCalledTimes(2);
     });
+    it('오류 뒤 retry가 도는 동안 error가 아니라 loading을 반환한다', async () => {
+        let resolveRetry: (value: unknown) => void = () => {};
+        mockSubmit
+            .mockResolvedValueOnce({
+                status: 'error',
+                code: 'fetch_failed',
+                error: 'boom',
+            })
+            .mockReturnValueOnce(
+                new Promise(resolve => {
+                    resolveRetry = resolve;
+                })
+            );
+
+        const wrapper = makeWrapper();
+        const { result } = renderHook(
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
+            { wrapper }
+        );
+
+        await waitFor(() => {
+            expect(result.current.status).toBe('error');
+        });
+
+        act(() => {
+            if (result.current.status === 'error') result.current.retry();
+        });
+
+        await waitFor(() => {
+            expect(result.current.status).toBe('loading');
+        });
+
+        await act(async () => {
+            resolveRetry({ status: 'cached', result: CONGRESS_RESULT });
+        });
+        await waitFor(() => {
+            expect(result.current.status).toBe('done');
+        });
+    });
 });

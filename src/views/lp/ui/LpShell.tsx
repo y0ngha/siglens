@@ -1,11 +1,21 @@
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+/**
+ * Page chrome for the ad landing pages: header, `<main>` and footer.
+ */
 import type { ReactNode } from 'react';
-import { cn } from '@/shared/lib/cn';
-import { LP_PRIMARY_BUTTON } from './lpPrimaryButton';
 import { SITE_URL } from '@/shared/lib/seo';
+import { LpCtaLink } from './LpCtaLink';
 
 const LP_DISCLAIMER =
     '투자 권유가 아닌 참고용 정보입니다. 투자 판단은 본인 책임입니다.';
+
+const FOOTER_LINK =
+    'inline-flex min-h-10 items-center rounded hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+
+/** The footer's legal links. They live on the main host on both pages. */
+const LEGAL_LINKS = [
+    { label: '개인정보처리방침', href: `${SITE_URL}/privacy` },
+    { label: '이용약관', href: `${SITE_URL}/terms` },
+] as const;
 
 interface LpShellProps {
     /** The page's own path. The logo links here, never to the site home. */
@@ -21,7 +31,7 @@ interface LpShellProps {
  *
  * Deliberately not the global `Header`/`Footer`: those carry the crypto menu
  * items on every page, and the logo does not link to the site home because the
- * home page mentions crypto too (spec `2026-09-26-ad-landing-pages-design.md`).
+ * home page mentions crypto too.
  */
 export function LpShell({ selfHref, cta, ctaHref, children }: LpShellProps) {
     return (
@@ -35,9 +45,9 @@ export function LpShell({ selfHref, cta, ctaHref, children }: LpShellProps) {
                     >
                         SIGLENS
                     </a>
-                    <a href={ctaHref} className={cn(LP_PRIMARY_BUTTON, 'px-4')}>
+                    <LpCtaLink href={ctaHref} className="px-4">
                         {cta}
-                    </a>
+                    </LpCtaLink>
                 </div>
             </header>
             {/* `relative isolate` so a page's decorative backdrop (`-z-10`) sits behind content, not behind `<body>`. */}
@@ -47,39 +57,15 @@ export function LpShell({ selfHref, cta, ctaHref, children }: LpShellProps) {
             <footer className="border-t border-secondary-700 px-4 py-8 text-sm text-secondary-400">
                 <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
                     <nav aria-label="약관" className="flex gap-4">
-                        <a
-                            href={`${SITE_URL}/privacy`}
-                            className="inline-flex min-h-10 items-center rounded hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        >
-                            개인정보처리방침
-                        </a>
-                        <a
-                            href={`${SITE_URL}/terms`}
-                            className="inline-flex min-h-10 items-center rounded hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        >
-                            이용약관
-                        </a>
+                        {LEGAL_LINKS.map(({ label, href }) => (
+                            <a key={href} href={href} className={FOOTER_LINK}>
+                                {label}
+                            </a>
+                        ))}
                     </nav>
                     <p>{LP_DISCLAIMER}</p>
                 </div>
             </footer>
         </>
-    );
-}
-
-/** Body disclaimer block shared by both landing pages. */
-export function LpDisclaimer() {
-    return (
-        <section
-            aria-label="투자 유의사항"
-            className={cn(
-                SURFACE_CARD,
-                'mt-16 px-5 py-4 text-sm leading-6 text-secondary-400'
-            )}
-        >
-            시그렌즈가 보여주는 분석과 답변은 공개 데이터를 정리한 참고 자료이며
-            특정 종목의 매수나 매도를 권유하지 않습니다. 투자 판단과 그 결과는
-            투자자 본인에게 있습니다.
-        </section>
     );
 }

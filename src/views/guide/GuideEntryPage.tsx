@@ -1,37 +1,30 @@
 import { getTranslations } from 'next-intl/server';
-import type { GuideEntry, GuideEntrySummary } from '@/entities/guide/types';
+import type { GuideEntry } from '@/entities/guide/types';
 import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
 import { localePath, type Locale } from '@/shared/i18n/locales';
-import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
-import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
-import { cn } from '@/shared/lib/cn';
-import {
-    GUIDE_PATH,
-    guideCategoryPath,
-    guideEntryPath,
-} from '@/shared/lib/guidePaths';
+import { GUIDE_PATH, guideCategoryPath } from '@/shared/lib/guidePaths';
 import { extractToc } from '@/shared/lib/legal-toc';
 import {
     formatKoreanDate,
     INVESTMENT_DISCLAIMER_KEY,
 } from '@/shared/lib/legal';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
-import { LocaleLink } from '@/shared/ui/LocaleLink';
-import { ArrowRightIcon } from '@/shared/ui/StrokeIcons';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
 import { getGuideDemo } from './demos/registry';
 import {
     guideNeighbors,
     resolveAnsweredBy,
     resolveRelated,
-    toGuideSummary,
 } from './lib/guideBrowse';
 import { loadGuideCategoryCopy } from './lib/guideCopy';
+import { patternTitlesByPath, resolveDemoSource } from './lib/guideEntry';
 import type { LiveSymbolGroup } from './lib/liveSymbols';
 import { splitMarkdownAtHeading } from './lib/splitMarkdown';
-import { GuideCard } from './ui/GuideCard';
+import { GuideEntryAside } from './ui/entry/GuideEntryAside';
+import { GuideEntryCardSection } from './ui/entry/GuideEntryCardSection';
+import { GuideEntryCta } from './ui/entry/GuideEntryCta';
+import { GuideEntryHeader } from './ui/entry/GuideEntryHeader';
+import { GuidePager } from './ui/entry/GuidePager';
 import { GuideDemoChart } from './ui/GuideDemoChart';
 import { GuideFaq } from './ui/GuideFaq';
 import { GuideLiveSymbols } from './ui/GuideLiveSymbols';
@@ -48,42 +41,6 @@ interface GuideEntryPageProps {
 
 const ANSWERED_BY_HEADING_ID = 'guide-answered-by-heading';
 const RELATED_HEADING_ID = 'guide-related-heading';
-const CTA_HEADING_ID = 'guide-cta-heading';
-
-const PAGER_LINK = cn(CARD_LINK_CLASSES, 'group h-full p-4');
-
-interface PagerLinkProps {
-    readonly direction: 'previous' | 'next';
-    readonly label: string;
-    readonly target: GuideEntrySummary;
-}
-
-function PagerLink({ direction, label, target }: PagerLinkProps) {
-    const isNext = direction === 'next';
-    return (
-        <LocaleLink
-            href={guideEntryPath(target.category, target.slug)}
-            prefetch={false}
-            className={cn(PAGER_LINK, isNext && 'sm:text-right')}
-        >
-            <span
-                className={cn(
-                    'flex items-center gap-1.5 text-xs text-secondary-400',
-                    isNext && 'sm:justify-end'
-                )}
-            >
-                {isNext ? null : (
-                    <ArrowRightIcon className="size-3.5 rotate-180" />
-                )}
-                {label}
-                {isNext ? <ArrowRightIcon className="size-3.5" /> : null}
-            </span>
-            <span className="mt-1 block text-sm font-medium text-secondary-100 transition-colors group-hover:text-primary-400 motion-reduce:transition-none">
-                {target.title}
-            </span>
-        </LocaleLink>
-    );
-}
 
 /**
  * `/guide/[category]/[slug]` — 항목 한 편.
@@ -106,21 +63,9 @@ export async function GuideEntryPage({
         loadGuideCategoryCopy(locale),
     ]);
     const categoryLabel = copy.label[entry.category];
-    // howto는 자기 데모가 없다 — `demoFrom`이 가리키는 용어 항목의 데모를 빌린다(캡션은 자기 것).
-    const demoSource =
-        entry.demoFrom === null
-            ? entry
-            : (catalog.find(item => item.slug === entry.demoFrom) ?? entry);
+    const demoSource = resolveDemoSource(entry, catalog);
     const demo = getGuideDemo(demoSource.category, demoSource.slug);
-    const answeredBy = resolveAnsweredBy(catalog, entry);
     const body = splitMarkdownAtHeading(entry.bodyMd, LIVE_ANCHOR_HEADING);
-    const toc = extractToc(entry.bodyMd);
-    const patternTitles = Object.fromEntries(
-        catalog
-            .filter(item => item.category === 'chart-patterns')
-            .map(item => [guideEntryPath(item.category, item.slug), item.title])
-    );
-    const related = resolveRelated(catalog, entry);
     const { previous, next } = guideNeighbors(catalog, entry);
     // 이름과 달리 로케일을 따른다(`INTL_LOCALE[locale]`). 타임존만 KST로 고정해 `updatedAt`의
     // 같은 순간이 어느 서버 타임존에서도 같은 날짜로 찍힌다(발행 기준일은 한국 날짜).
@@ -141,46 +86,12 @@ export async function GuideEntryPage({
 
             <div className="lg:grid lg:grid-cols-[minmax(0,42rem)_15rem] lg:justify-center lg:gap-14">
                 <article className="min-w-0">
-                    <header>
-                        <LocaleLink
-                            href={guideCategoryPath(entry.category)}
-                            prefetch={false}
-                            className={cn(
-                                LABEL_KO,
-                                'tap-target rounded-sm transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none'
-                            )}
-                        >
-                            {categoryLabel}
-                        </LocaleLink>
-                        <h1 className="mt-2 text-3xl font-bold tracking-tight text-secondary-50 sm:text-4xl">
-                            {entry.title}
-                        </h1>
-                        {/* howto의 별칭은 검색 전용이다 — 노출하면 용어 항목과 같은 검색어를 화면에 또 적게 된다. */}
-                        {entry.category !== 'howto' &&
-                        entry.aliases.length > 0 ? (
-                            <dl className="mt-4 flex flex-wrap items-center gap-2">
-                                <dt className={LABEL_KO}>
-                                    {t('aliasesLabel')}
-                                </dt>
-                                {entry.aliases.map(alias => (
-                                    <dd
-                                        key={alias}
-                                        className="rounded border border-secondary-700 px-2 py-0.5 text-xs text-secondary-300"
-                                    >
-                                        {alias}
-                                    </dd>
-                                ))}
-                            </dl>
-                        ) : null}
-                        <p className="mt-5 text-base leading-relaxed text-secondary-300 sm:text-lg">
-                            {entry.summary}
-                        </p>
-                        <p className="mt-4 text-xs text-secondary-500">
-                            <time dateTime={entry.updatedAt}>
-                                {t('updatedAt', { date: updatedAt })}
-                            </time>
-                        </p>
-                    </header>
+                    <GuideEntryHeader
+                        entry={entry}
+                        categoryLabel={categoryLabel}
+                        aliasesLabel={t('aliasesLabel')}
+                        updatedAtLabel={t('updatedAt', { date: updatedAt })}
+                    />
 
                     {demo === null ? null : (
                         <div className="mt-8">
@@ -199,7 +110,7 @@ export async function GuideEntryPage({
                         <GuideLiveSymbols
                             locale={locale}
                             groups={liveSymbols}
-                            patternTitles={patternTitles}
+                            patternTitles={patternTitlesByPath(catalog)}
                         />
                     )}
                     {body.after === null ? null : (
@@ -213,142 +124,44 @@ export async function GuideEntryPage({
 
                     <GuideFaq heading={t('faqHeading')} items={entry.faq} />
 
-                    {answeredBy.length > 0 ? (
-                        <section
-                            aria-labelledby={ANSWERED_BY_HEADING_ID}
-                            className="mt-14"
-                        >
-                            <h2
-                                id={ANSWERED_BY_HEADING_ID}
-                                className={HEADING_SECTION}
-                            >
-                                {t('answeredByHeading')}
-                            </h2>
-                            <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                {answeredBy.map(item => (
-                                    <GuideCard
-                                        key={item.slug}
-                                        entry={toGuideSummary(item)}
-                                        categoryLabel={
-                                            copy.label[item.category]
-                                        }
-                                    />
-                                ))}
-                            </ul>
-                        </section>
-                    ) : null}
+                    <GuideEntryCardSection
+                        headingId={ANSWERED_BY_HEADING_ID}
+                        heading={t('answeredByHeading')}
+                        entries={resolveAnsweredBy(catalog, entry)}
+                        categoryLabels={copy.label}
+                    />
+                    <GuideEntryCardSection
+                        headingId={RELATED_HEADING_ID}
+                        heading={t('relatedHeading')}
+                        entries={resolveRelated(catalog, entry)}
+                        categoryLabels={copy.label}
+                    />
 
-                    {related.length > 0 ? (
-                        <section
-                            aria-labelledby={RELATED_HEADING_ID}
-                            className="mt-14"
-                        >
-                            <h2
-                                id={RELATED_HEADING_ID}
-                                className={HEADING_SECTION}
-                            >
-                                {t('relatedHeading')}
-                            </h2>
-                            <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                {related.map(item => (
-                                    <GuideCard
-                                        key={item.slug}
-                                        entry={toGuideSummary(item)}
-                                        categoryLabel={
-                                            copy.label[item.category]
-                                        }
-                                    />
-                                ))}
-                            </ul>
-                        </section>
-                    ) : null}
+                    <GuidePager
+                        label={t('paginationLabel')}
+                        previousLabel={t('previousLabel')}
+                        nextLabel={t('nextLabel')}
+                        previous={previous}
+                        next={next}
+                    />
 
-                    {previous !== null || next !== null ? (
-                        <nav
-                            aria-label={t('paginationLabel')}
-                            className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2"
-                        >
-                            {previous !== null ? (
-                                <PagerLink
-                                    direction="previous"
-                                    label={t('previousLabel')}
-                                    target={previous}
-                                />
-                            ) : (
-                                <span aria-hidden className="hidden sm:block" />
-                            )}
-                            {next !== null ? (
-                                <PagerLink
-                                    direction="next"
-                                    label={t('nextLabel')}
-                                    target={next}
-                                />
-                            ) : null}
-                        </nav>
-                    ) : null}
-
-                    <section
-                        aria-labelledby={CTA_HEADING_ID}
-                        className={cn(
-                            SURFACE_CARD,
-                            'mt-14 flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between'
-                        )}
-                    >
-                        <div className="max-w-md">
-                            <h2 id={CTA_HEADING_ID} className={HEADING_SECTION}>
-                                {t('ctaHeading')}
-                            </h2>
-                            <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                                {t('ctaBody')}
-                            </p>
-                        </div>
-                        <LocaleLink
-                            href="/"
-                            prefetch={false}
-                            className={cn(
-                                BUTTON_OUTLINE,
-                                'min-h-11 shrink-0 px-5 text-sm'
-                            )}
-                        >
-                            {t('ctaButton')}
-                        </LocaleLink>
-                    </section>
+                    <GuideEntryCta
+                        heading={t('ctaHeading')}
+                        body={t('ctaBody')}
+                        buttonLabel={t('ctaButton')}
+                    />
 
                     <p className="mt-8 text-xs leading-relaxed text-secondary-500">
                         {tLegal(INVESTMENT_DISCLAIMER_KEY)}
                     </p>
                 </article>
 
-                <aside className="hidden lg:block">
-                    <div className="sticky top-24 space-y-6">
-                        {toc.length > 0 ? (
-                            <nav aria-label={t('tocLabel')}>
-                                <p className="text-sm font-semibold text-secondary-200">
-                                    {t('tocLabel')}
-                                </p>
-                                <ol className="mt-3 space-y-1 border-l border-secondary-700">
-                                    {toc.map(item => (
-                                        <li key={item.id}>
-                                            <a
-                                                href={`#${item.id}`}
-                                                className="-ml-px block border-l border-transparent py-1.5 pl-4 text-sm text-secondary-400 transition-colors hover:border-primary-400 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none"
-                                            >
-                                                {item.label}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ol>
-                            </nav>
-                        ) : null}
-                        <LocaleLink
-                            href={guideCategoryPath(entry.category)}
-                            prefetch={false}
-                            className="block rounded-sm text-sm text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none"
-                        >
-                            {t('backToCategory', { name: categoryLabel })}
-                        </LocaleLink>
-                    </div>
-                </aside>
+                <GuideEntryAside
+                    toc={extractToc(entry.bodyMd)}
+                    tocLabel={t('tocLabel')}
+                    category={entry.category}
+                    backLabel={t('backToCategory', { name: categoryLabel })}
+                />
             </div>
 
             <AskAiFab

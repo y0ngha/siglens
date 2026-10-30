@@ -15,6 +15,7 @@ export type ModelResolution =
     | { ok: true; model: ModelId }
     | { ok: false; failure: Failure };
 
+/** 요청 `model` → 계정 기본 모델 순으로 모델을 정한다(`ModelResolution` 참고). */
 export async function resolveRequestedModel(
     requested: unknown,
     principal: ApiKeyPrincipal

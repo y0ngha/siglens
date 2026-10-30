@@ -3,10 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import koMessages from '../../../../messages/ko.json';
-import enMessages from '../../../../messages/en.json';
-import jaMessages from '../../../../messages/ja.json';
-import zhMessages from '../../../../messages/zh.json';
 import { FlowTooltip, type FlowTerm } from '../investorFlowsTooltips';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /** `Record<FlowTerm, true>`라 용어가 늘면 여기서 컴파일 오류가 나 카탈로그 검사에 빠지지 않는다. */
 const TERMS: Record<FlowTerm, true> = {
@@ -37,18 +35,11 @@ const TERMS: Record<FlowTerm, true> = {
     krInsider: true,
 };
 
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
-
 describe('수급 용어 툴팁', () => {
     it.each(Object.keys(TERMS) as FlowTerm[])(
         '%s는 네 로케일에 1~3개 문단으로 있다',
         term => {
-            for (const [locale, catalog] of Object.entries(CATALOGS)) {
+            for (const [locale, catalog] of Object.entries(MESSAGE_CATALOGS)) {
                 const paragraphs = (
                     catalog.widgets['investor-flows'].tooltip as Record<
                         string,

@@ -1,3 +1,6 @@
+/**
+ * 수급 화면의 용어 풀이 툴팁.
+ */
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { TooltipParagraphs } from '@/shared/ui/TooltipParagraphs';
 

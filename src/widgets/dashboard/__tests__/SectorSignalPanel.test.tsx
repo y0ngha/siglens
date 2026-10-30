@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import type {
     SectorSignalsResult,
@@ -38,12 +38,18 @@ const EMPTY_QUADRANTS = {
     bearishConfirmed: [],
 };
 
+const mockRetry = vi.fn();
+
 // 기본 픽스처는 신호가 하나 있는 섹터 — 다섯 구획이 모두 그려지는 정상 경로.
 const mockReturn = {
     activeSector: 'XLK',
     activeTimeframe: '1Day' as const,
-    quadrants: { ...EMPTY_QUADRANTS, bullishConfirmed: [STOCK] },
-    mixedStocks: [],
+    status: 'ready' as const,
+    retry: mockRetry,
+    view: {
+        quadrants: { ...EMPTY_QUADRANTS, bullishConfirmed: [STOCK] },
+        mixedStocks: [],
+    },
     handleSectorChange: vi.fn(),
     handleTimeframeChange: vi.fn(),
 };
@@ -52,11 +58,11 @@ vi.mock('@/widgets/dashboard/hooks/useSectorSignalState', () => ({
     useSectorSignalState: mockUseSectorSignalState,
 }));
 
-vi.mock('@/widgets/dashboard/SectorTabs', () => ({
+vi.mock('@/widgets/dashboard/ui/sector-signal/SectorTabs', () => ({
     SectorTabs: () => <div data-testid="sector-tabs" />,
 }));
 
-vi.mock('@/widgets/dashboard/TimeframeSelector', () => ({
+vi.mock('@/widgets/dashboard/ui/sector-signal/TimeframeSelector', () => ({
     TimeframeSelector: () => <div data-testid="timeframe-selector" />,
 }));
 
@@ -139,19 +145,17 @@ describe('SectorSignalPanel', () => {
                 />
             );
 
-        it('다섯 구획과 mixed가 모두 비면 구획 대신 안내 한 줄만 role=status로 렌더한다', () => {
+        it('다섯 구획과 mixed가 모두 비면 구획 대신 안내 한 줄만 렌더한다', () => {
             mockUseSectorSignalState.mockReturnValue({
                 ...mockReturn,
-                quadrants: EMPTY_QUADRANTS,
-                mixedStocks: [],
+                view: { quadrants: EMPTY_QUADRANTS, mixedStocks: [] },
             });
             renderPanel();
-            expect(screen.getAllByRole('status')).toHaveLength(1);
             expect(
-                screen.getByText(
+                screen.getAllByText(
                     '이 섹터에는 지금 잡힌 신호가 없어요. 다른 섹터를 살펴보세요.'
-                )
-            ).toBeInTheDocument();
+                ).length
+            ).toBeGreaterThan(0);
             expect(
                 document.querySelectorAll('[data-testid^="subsection-"]')
             ).toHaveLength(0);
@@ -162,11 +166,9 @@ describe('SectorSignalPanel', () => {
         it('mixed 구획에만 종목이 있어도 빈 섹터로 취급하지 않는다', () => {
             mockUseSectorSignalState.mockReturnValue({
                 ...mockReturn,
-                quadrants: EMPTY_QUADRANTS,
-                mixedStocks: [STOCK],
+                view: { quadrants: EMPTY_QUADRANTS, mixedStocks: [STOCK] },
             });
             renderPanel();
-            expect(screen.queryByRole('status')).not.toBeInTheDocument();
             expect(
                 document.querySelectorAll('[data-testid^="subsection-"]')
             ).toHaveLength(5);
@@ -174,10 +176,110 @@ describe('SectorSignalPanel', () => {
 
         it('구획 하나만 비어 있지 않아도 다섯 구획을 모두 렌더한다', () => {
             renderPanel();
-            expect(screen.queryByRole('status')).not.toBeInTheDocument();
             expect(
                 document.querySelectorAll('[data-testid^="subsection-"]')
             ).toHaveLength(5);
+        });
+    });
+
+    /**
+     * 조회가 끝나지 않았거나 실패했을 때 화면을 "이 섹터에는 신호가 없어요"로 그리면
+     * 사용자는 신호가 없다고 읽는다.
+     */
+    describe('조회 상태', () => {
+        const EMPTY_VIEW = { quadrants: EMPTY_QUADRANTS, mixedStocks: [] };
+        const NO_SIGNAL_MESSAGE =
+            '이 섹터에는 지금 잡힌 신호가 없어요. 다른 섹터를 살펴보세요.';
+        const renderPanel = () =>
+            render(
+                <SectorSignalPanel
+                    scope={TEST_SCOPE}
+                    initialSector="XLK"
+                    initialTimeframe="1Day"
+                />
+            );
+
+        it('조회 중에는 빈 섹터 안내 없이 로딩 자리를 그린다', () => {
+            mockUseSectorSignalState.mockReturnValue({
+                ...mockReturn,
+                status: 'loading',
+                view: EMPTY_VIEW,
+            });
+            renderPanel();
+            expect(
+                screen.queryByText(NO_SIGNAL_MESSAGE)
+            ).not.toBeInTheDocument();
+            expect(
+                screen.getByRole('tabpanel').querySelector('[aria-busy="true"]')
+            ).not.toBeNull();
+            expect(
+                screen.getByText('섹터 신호를 불러오는 중이에요.')
+            ).toBeInTheDocument();
+        });
+
+        it('조회가 실패하면 빈 섹터 안내 없이 오류 알림을 그린다', () => {
+            mockUseSectorSignalState.mockReturnValue({
+                ...mockReturn,
+                status: 'error',
+                view: EMPTY_VIEW,
+            });
+            renderPanel();
+            expect(
+                screen.queryByText(NO_SIGNAL_MESSAGE)
+            ).not.toBeInTheDocument();
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                '섹터 신호를 불러오지 못했어요'
+            );
+        });
+
+        it('다시 시도 버튼이 retry를 부른다', () => {
+            mockRetry.mockClear();
+            mockUseSectorSignalState.mockReturnValue({
+                ...mockReturn,
+                status: 'error',
+                view: EMPTY_VIEW,
+            });
+            renderPanel();
+            fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+            expect(mockRetry).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    /**
+     * 섹션 전체가 live region이면 탭·타임프레임을 바꿀 때마다 카드 수십 개가 낭독된다.
+     * 낭독되는 영역은 짧은 상태 줄 하나뿐이어야 한다.
+     */
+    describe('스크린리더 낭독 범위', () => {
+        const renderPanel = () =>
+            render(
+                <SectorSignalPanel
+                    scope={TEST_SCOPE}
+                    initialSector="XLK"
+                    initialTimeframe="1Day"
+                />
+            );
+
+        it('섹션 자체는 live region이 아니다', () => {
+            renderPanel();
+            expect(
+                screen.getByRole('region', { name: '섹터별 신호 모아보기' })
+            ).not.toHaveAttribute('aria-live');
+        });
+
+        it('탭 패널도 live region이 아니다', () => {
+            renderPanel();
+            expect(screen.getByRole('tabpanel')).not.toHaveAttribute(
+                'aria-live'
+            );
+        });
+
+        it('낭독되는 영역은 소절별 종목 수를 알리는 상태 줄 하나다', () => {
+            renderPanel();
+            const status = screen.getByRole('status');
+            expect(status).toHaveClass('sr-only');
+            expect(status).toHaveTextContent(
+                '종목 수: 상승 신호 1개, 상승 조짐 0개, 혼재 0개, 하락 조짐 0개, 하락 신호 0개'
+            );
         });
     });
 

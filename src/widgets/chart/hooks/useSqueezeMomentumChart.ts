@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 스퀴즈 모멘텀 보조 pane 히스토그램을 그리는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
@@ -97,7 +101,6 @@ export function useSqueezeMomentumChart({
         if (!isVisible) return;
 
         const { squeezeMomentum } = indicators;
-        if (!squeezeMomentum.length) return;
 
         if (!momentumSeriesRef.current || !stateDotsSeriesRef.current) return;
 

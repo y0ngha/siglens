@@ -5,8 +5,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SectionCard } from '../ui/section/SectionCard';
 
 /** OverallScenarioName → `shared.enumLabel.overallScenario` 카탈로그 키. */
 const SCENARIO_LABEL_KEY: Record<OverallScenarioName, string> = {
@@ -25,7 +24,7 @@ interface ScenarioAnalysisProps {
     scenarios: OverallScenario[];
 }
 
-/** RSC section: bullish/neutral/bearish scenarios with trigger conditions and projected price ranges. */
+/** 강세·중립·약세 시나리오를 발동 조건과 예상 가격대와 함께 보여 주는 섹션. 시나리오가 없으면 렌더하지 않는다. */
 export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     const t = useTranslations('widgets.overall');
     // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
@@ -34,16 +33,11 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     const tLabel = useTranslations('shared.enumLabel');
     if (scenarios.length === 0) return null;
     return (
-        <section
-            aria-labelledby="scenario-analysis-heading"
-            className={cn(SURFACE_CARD, 'p-6')}
+        <SectionCard
+            headingId="scenario-analysis-heading"
+            title={t('ScenarioAnalysis.bb732c')}
+            headingGap="mb-4"
         >
-            <h2
-                id="scenario-analysis-heading"
-                className={cn(HEADING_SECTION, 'mb-4 text-balance')}
-            >
-                {t('ScenarioAnalysis.bb732c')}
-            </h2>
             <ul aria-label={t('ScenarioAnalysis.239da9')} className="space-y-4">
                 {scenarios.map(scenario => (
                     <li
@@ -79,6 +73,6 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                     </li>
                 ))}
             </ul>
-        </section>
+        </SectionCard>
     );
 }

@@ -1,14 +1,5 @@
-import koMessages from '../../../messages/ko.json';
-import enMessages from '../../../messages/en.json';
-import jaMessages from '../../../messages/ja.json';
-import zhMessages from '../../../messages/zh.json';
-
-const CATALOGS: Record<string, unknown> = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
+import { isLocale } from '@/shared/i18n/locales';
+import { MESSAGE_CATALOGS } from './messageCatalogs';
 
 /**
  * 서버 액션·메일 템플릿이 받는 번역자와 같은 시그니처, `+ .has()` — 실제
@@ -23,14 +14,17 @@ export interface CatalogTranslator {
     has: (key: string) => boolean;
 }
 
-function resolve(node: unknown, path: string): unknown {
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
+
+/** 점으로 구분한 경로를 카탈로그 트리에서 따라 내려간다. 중간에 객체가 아니면 `undefined`. */
+export function resolveCatalogPath(node: unknown, path: string): unknown {
     return path
         .split('.')
         .reduce<unknown>(
             (current, segment) =>
-                typeof current === 'object' && current !== null
-                    ? (current as Record<string, unknown>)[segment]
-                    : undefined,
+                isRecord(current) ? current[segment] : undefined,
             node
         );
 }
@@ -42,14 +36,20 @@ function resolve(node: unknown, path: string): unknown {
  *
  * 값 치환은 `{v0}` 형태만 다룬다. ICU 복수형·select는 재현하지 않는다 —
  * 그게 필요한 지점은 실제 `next-intl` 렌더를 거치는 컴포넌트 테스트다.
+ *
+ * 지원하지 않는 로케일은 던진다. ko로 조용히 대체하면 오타 난 로케일로 호출한
+ * 테스트가 한국어 문구를 검증하면서 통과한다.
  */
 export function catalogTranslator(
     namespace: string,
-    locale: keyof typeof CATALOGS | string = 'ko'
+    locale: string = 'ko'
 ): CatalogTranslator {
-    const group = resolve(CATALOGS[locale] ?? koMessages, namespace);
+    if (!isLocale(locale)) {
+        throw new Error(`[catalogTranslator] 지원하지 않는 로케일: ${locale}`);
+    }
+    const group = resolveCatalogPath(MESSAGE_CATALOGS[locale], namespace);
     const t = ((key, values) => {
-        const template = resolve(group, key);
+        const template = resolveCatalogPath(group, key);
         if (typeof template !== 'string') {
             throw new Error(
                 `[catalogTranslator] ${locale} 카탈로그에 없는 키: ${namespace}.${key}`
@@ -61,7 +61,7 @@ export function catalogTranslator(
             template
         );
     }) as CatalogTranslator;
-    t.has = key => typeof resolve(group, key) === 'string';
+    t.has = key => typeof resolveCatalogPath(group, key) === 'string';
     return t;
 }
 
@@ -72,7 +72,12 @@ export function catalogTranslator(
  * 모두 받는다 — 액션마다 호출 형태가 달라서 한쪽만 지원하면 조용히 undefined가
  * 된다.
  */
-export function nextIntlServerStub(defaultLocale = 'ko') {
+export function nextIntlServerStub(defaultLocale = 'ko'): {
+    getLocale: () => Promise<string>;
+    getTranslations: (
+        arg: string | { locale?: string; namespace?: string }
+    ) => Promise<CatalogTranslator>;
+} {
     return {
         getLocale: async () => defaultLocale,
         getTranslations: async (

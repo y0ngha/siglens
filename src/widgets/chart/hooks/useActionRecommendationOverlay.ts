@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * AI 매매 추천(진입·청산·손절) 가격선을 차트에 그리는 훅.
+ */
+
 import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';

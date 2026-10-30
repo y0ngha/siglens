@@ -1,16 +1,10 @@
 /**
- * ShareButton tests (C-4 + base spec §9-1 + addendum C-4).
+ * ShareButton 통합 테스트 — 실제 `useShareFlow`를 돌리고 I/O 경계만 목으로 둔다.
  *
- * Provider setup: wrap in ShareableAnalysisProvider + QueryClientProvider.
- * useShareable is mocked so we can control reg directly without a full provider tree.
- * useUserTier is mocked to return { tier: 'free', isLoading: false }.
- * createShareSnapshotAction is mocked to return { ok: true, id: 'abc' }.
- * @/shared/lib/share — canShareNatively stubbed to false (desktop path) so ShareSheet appears.
- * @/shared/lib/seo  — SITE_URL stubbed to 'https://siglens.io'.
- *
- * Note: useShareable is mocked at the model-module level
- * (@/features/share/model/ShareableAnalysisContext) so that useShareFlow — which
- * imports it via the relative path — picks up the mock.
+ * - `useShareable`은 모델 모듈에서 목으로 바꿔 등록 상태를 직접 정한다
+ *   (`useShareFlow`가 상대 경로로 import하므로 그 모듈을 가로챈다).
+ * - `createShareSnapshotAction`은 `{ ok: true, id: 'abc' }`를 돌려준다.
+ * - `canShareNatively`는 기본 false(데스크톱 경로)라 성공하면 ShareSheet가 열린다.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -42,16 +36,6 @@ vi.mock(
             useShareable: mockUseShareable,
         };
     }
-);
-
-vi.mock(
-    '@/features/share/model/ShareableAnalysisContext',
-    async importOriginal => ({
-        ...(await importOriginal<
-            typeof import('@/features/share/model/ShareableAnalysisContext')
-        >()),
-        useShareable: mockUseShareable,
-    })
 );
 
 vi.mock('@/features/symbol-model/hooks/useUserTier', () => ({
@@ -110,23 +94,24 @@ function renderButton() {
     return render(<ShareButton />, { wrapper: Wrapper });
 }
 
-beforeEach(() => {
-    queryClient = new QueryClient({
-        defaultOptions: {
-            queries: { retry: false },
-            mutations: { retry: false },
-        },
-    });
-    vi.clearAllMocks();
-    mockAction.mockResolvedValue({ ok: true, id: 'abc' });
-    mockCanShareNatively.mockReturnValue(false);
-});
-
-afterEach(() => {
-    queryClient.clear();
-});
-
 describe('ShareButton', () => {
+    beforeEach(() => {
+        queryClient = new QueryClient({
+            defaultOptions: {
+                queries: { retry: false },
+                mutations: { retry: false },
+            },
+        });
+        vi.clearAllMocks();
+        mockAction.mockResolvedValue({ ok: true, id: 'abc' });
+        mockCanShareNatively.mockReturnValue(false);
+    });
+
+    afterEach(() => {
+        queryClient.clear();
+        vi.unstubAllGlobals();
+    });
+
     it('has aria-label "분석 결과 공유"', () => {
         mockUseShareable.mockReturnValue(null);
         renderButton();
@@ -450,8 +435,6 @@ describe('ShareButton', () => {
 
             // Allow any pending micro-tasks to flush.
             await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
-
-            vi.unstubAllGlobals();
         });
 
         it('native-share AbortError: preparing modal is closed and does not re-fire', async () => {
@@ -486,8 +469,6 @@ describe('ShareButton', () => {
             // No double-fire on subsequent rerender.
             rerender(<ShareButton />);
             await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
-
-            vi.unstubAllGlobals();
         });
     });
 
@@ -521,7 +502,6 @@ describe('ShareButton', () => {
             expect(
                 screen.queryByRole('dialog', { name: /AAPL AI 분석 결과/ })
             ).not.toBeInTheDocument();
-            vi.unstubAllGlobals();
         });
 
         it('swallows AbortError silently when navigator.share rejects with AbortError', async () => {
@@ -539,7 +519,6 @@ describe('ShareButton', () => {
             expect(
                 screen.queryByRole('dialog', { name: /AAPL AI 분석 결과/ })
             ).not.toBeInTheDocument();
-            vi.unstubAllGlobals();
         });
 
         it('falls back to ShareSheet when navigator.share rejects with non-abort error', async () => {
@@ -558,7 +537,102 @@ describe('ShareButton', () => {
                     screen.getByRole('dialog', { name: /AAPL AI 분석 결과/ })
                 ).toBeInTheDocument()
             );
-            vi.unstubAllGlobals();
+        });
+    });
+
+    describe('clicking the trigger again while the sheet is open', () => {
+        it('closes the sheet without creating another snapshot', async () => {
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            const button = screen.getByRole('button', {
+                name: '분석 결과 공유',
+            });
+            fireEvent.click(button);
+            await screen.findByRole('dialog', { name: /AAPL AI 분석 결과/ });
+
+            // Reproduce the real pointer sequence: pointerdown, then click.
+            fireEvent.pointerDown(button);
+            fireEvent.click(button);
+
+            await waitFor(() =>
+                expect(
+                    screen.queryByRole('dialog', { name: /AAPL AI 분석 결과/ })
+                ).not.toBeInTheDocument()
+            );
+            expect(mockAction).toHaveBeenCalledTimes(1);
+        });
+
+        it('returns focus to the trigger after closing', async () => {
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            const button = screen.getByRole('button', {
+                name: '분석 결과 공유',
+            });
+            fireEvent.click(button);
+            await screen.findByRole('dialog', { name: /AAPL AI 분석 결과/ });
+
+            fireEvent.pointerDown(button);
+            fireEvent.click(button);
+
+            await waitFor(() => expect(button).toHaveFocus());
+        });
+    });
+
+    describe('while the snapshot mutation is pending', () => {
+        it('uses aria-disabled instead of disabled so the button keeps focus', async () => {
+            mockAction.mockReturnValue(new Promise(() => {}));
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            const button = screen.getByRole('button', {
+                name: '분석 결과 공유',
+            });
+            fireEvent.click(button);
+
+            await waitFor(() =>
+                expect(button).toHaveAttribute('aria-disabled', 'true')
+            );
+            expect(button).not.toHaveAttribute('disabled');
+        });
+
+        it('ignores a second click and calls the action once', async () => {
+            mockAction.mockReturnValue(new Promise(() => {}));
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            const button = screen.getByRole('button', {
+                name: '분석 결과 공유',
+            });
+            fireEvent.click(button);
+            await waitFor(() =>
+                expect(button).toHaveAttribute('aria-disabled', 'true')
+            );
+
+            fireEvent.click(button);
+
+            expect(mockAction).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('unavailable notice status region', () => {
+        it('is mounted empty before the first click', () => {
+            mockUseShareable.mockReturnValue(null);
+            renderButton();
+
+            expect(screen.getByRole('status')).toBeEmptyDOMElement();
+        });
+
+        it('fills the same region with the notice on click', () => {
+            mockUseShareable.mockReturnValue(null);
+            renderButton();
+            const region = screen.getByRole('status');
+
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+
+            expect(screen.getByRole('status')).toBe(region);
+            expect(region).toHaveTextContent(
+                '이 탭은 공유할 분석이 아직 없어요'
+            );
         });
     });
 });

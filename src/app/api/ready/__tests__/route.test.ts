@@ -24,6 +24,7 @@ function makeRedis(pingImpl: () => Promise<string>) {
 describe('GET /api/ready', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     it('DB와 Redis가 모두 도달 가능하면 200과 status:ready를 반환한다', async () => {
@@ -56,7 +57,7 @@ describe('GET /api/ready', () => {
         expect(res.status).toBe(503);
         const body = await res.json();
         expect(body.status).toBe('not_ready');
-        expect(body.database).toEqual({ ok: false, error: 'db down' });
+        expect(body.database).toEqual({ ok: false, error: 'unreachable' });
         expect(body.redis.ok).toBe(true);
     });
 
@@ -72,7 +73,7 @@ describe('GET /api/ready', () => {
         expect(res.status).toBe(503);
         const body = await res.json();
         expect(body.status).toBe('not_ready');
-        expect(body.redis).toEqual({ ok: false, error: 'redis down' });
+        expect(body.redis).toEqual({ ok: false, error: 'unreachable' });
         expect(body.database.ok).toBe(true);
     });
 

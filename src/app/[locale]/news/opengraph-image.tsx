@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { ImageResponse } from 'next/og';
-import { loadOgFont } from '@/entities/og-image/lib/loadOgFont';
+import { loadOgFont } from '@/entities/og-image/server/loadOgFont';
 import {
     OG_BG,
     OG_FG,
