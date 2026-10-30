@@ -23,6 +23,7 @@ export type IndexNowRouteKind =
     | 'economy'
     | 'staticPage';
 
+/** URL 종류별 IndexNow 제출 지연(시간). 각 값은 해당 페이지의 ISR 주기 이상이어야 한다. */
 export const INDEXNOW_DELAY_HOURS: Readonly<Record<IndexNowRouteKind, number>> =
     {
         symbolChart: 6,

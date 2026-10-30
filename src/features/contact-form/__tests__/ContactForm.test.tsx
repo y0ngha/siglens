@@ -173,6 +173,25 @@ describe('ContactForm', () => {
         expect(document.activeElement).toBe(panel);
     });
 
+    /**
+     * 회귀: 제출 버튼이 전송 중 `disabled`가 되며 포커스를 잃어, 오류가 와도 포커스가
+     * 오류 필드와 무관한 곳에 남았다. 오류가 오면 첫 오류 필드로 옮긴다.
+     */
+    it('필드 오류가 오면 해당 필드로 포커스를 옮긴다', () => {
+        mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
+        const { rerender } = render(<ContactForm />);
+        screen.getByRole('button', { name: '문의 보내기' }).focus();
+
+        setContactFormState({
+            submitted: false,
+            error: { code: 'email_required', field: 'email' },
+            values: { title: 't', email: '', content: 'c' },
+        });
+        rerender(<ContactForm />);
+
+        expect(document.activeElement).toBe(screen.getByLabelText('이메일'));
+    });
+
     it('submission_failed 에러는 폼 상단의 alert 로 노출된다', () => {
         mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
         setContactFormState({

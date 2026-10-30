@@ -1,144 +1,22 @@
 'use client';
 
+/**
+ * 펀더멘털 AI 요약 오케스트레이터 — 분석 훅·실행 권한·공유 등록을 잇고 상태별 화면만 고른다.
+ * 결과 본문 렌더는 `ui/ai-summary/FundamentalAiSummaryView`가 맡는다.
+ */
 import { useTranslations } from 'next-intl';
-import {
-    type FundamentalAnalysisResponse,
-    type FundamentalCategory,
-    type FundamentalSentiment,
-} from '@y0ngha/siglens-core';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
-import { cn } from '@/shared/lib/cn';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
-import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
-import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import {
-    HEADING_SECTION,
-    HEADING_SUBSECTION,
-} from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-
-/** FundamentalSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
-const SENTIMENT_LABEL_KEY: Record<FundamentalSentiment, string> = {
-    bullish: 'sentiment.bullish',
-    neutral: 'sentiment.neutral',
-    bearish: 'sentiment.bearish',
-};
-
-const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-ui-success-text',
-    neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-ui-danger-text',
-};
-
-/** FundamentalCategory → `shared.enumLabel.fundamentalCategory` 카탈로그 키. */
-const CATEGORY_LABEL_KEY: Record<FundamentalCategory, string> = {
-    valuation: 'fundamentalCategory.valuation',
-    profitability: 'fundamentalCategory.profitability',
-    growth: 'fundamentalCategory.growth',
-    health: 'fundamentalCategory.health',
-    futureDirection: 'fundamentalCategory.futureDirection',
-};
-
-interface FundamentalAiSummaryViewProps {
-    result: FundamentalAnalysisResponse;
-}
-
-export function FundamentalAiSummaryView({
-    result,
-}: FundamentalAiSummaryViewProps) {
-    const t = useTranslations('widgets.fundamental');
-    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
-    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`/`CATEGORY_LABEL_KEY[...]`를
-    // 그대로 `tLabel(...)`에 넣어야 `shared.enumLabel`이 이 라우트의
-    // 클라이언트 번들에 실린다.
-    const tLabel = useTranslations('shared.enumLabel');
-    return (
-        <section
-            aria-labelledby="ai-summary-heading"
-            className={cn(SURFACE_CARD, 'p-6')}
-        >
-            <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 id="ai-summary-heading" className={HEADING_SECTION}>
-                    {t('FundamentalAiSummary.17769c')}
-                </h2>
-                <span
-                    className={cn(
-                        'rounded px-2 py-0.5 text-xs font-medium',
-                        SENTIMENT_CLASS[result.overallSentiment]
-                    )}
-                >
-                    {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
-                </span>
-            </div>
-
-            <p className="mb-5 text-sm leading-relaxed text-secondary-400">
-                {result.overallConclusionKo}
-            </p>
-
-            {result.categoryAssessments.length > 0 && (
-                <ul
-                    aria-label={t('FundamentalAiSummary.74f3b1')}
-                    className="mb-5 space-y-3"
-                >
-                    {result.categoryAssessments.map(a => (
-                        <li
-                            key={a.category}
-                            className="rounded-lg bg-secondary-800/40 p-3"
-                        >
-                            <div className="mb-1 flex items-center gap-2">
-                                <span className="text-sm font-medium">
-                                    {tLabel(CATEGORY_LABEL_KEY[a.category])}
-                                </span>
-                                <span
-                                    className={cn(
-                                        'rounded px-1.5 py-0.5 text-xs font-medium',
-                                        SENTIMENT_CLASS[a.sentiment]
-                                    )}
-                                >
-                                    {tLabel(SENTIMENT_LABEL_KEY[a.sentiment])}
-                                </span>
-                            </div>
-                            <p className="text-sm leading-relaxed text-secondary-400">
-                                {a.rationaleKo}
-                            </p>
-                        </li>
-                    ))}
-                </ul>
-            )}
-
-            {result.riskFactorsKo.length > 0 && (
-                <div>
-                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        {t('FundamentalAiSummary.af0480')}
-                    </h3>
-                    <ul className="space-y-1.5">
-                        {result.riskFactorsKo.map(risk => (
-                            <li
-                                key={risk}
-                                className="flex gap-2 text-sm text-secondary-400"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0"
-                                >
-                                    •
-                                </span>
-                                {risk}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-        </section>
-    );
-}
+import { FundamentalAiSummaryView } from './ui/ai-summary/FundamentalAiSummaryView';
 
 interface FundamentalAiSummaryProps {
     symbol: string;
@@ -154,6 +32,7 @@ interface FundamentalAiSummaryProps {
     hideView?: boolean;
 }
 
+/** 펀더멘털 탭의 AI 요약. `hideView`여도 마운트는 유지해 공유 버튼에 결과를 등록한다. */
 export function FundamentalAiSummary({
     symbol,
     hideView = false,
@@ -162,13 +41,13 @@ export function FundamentalAiSummary({
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
     const isSettingsHydrated = useAnalysisSettingsHydrated();
-    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
+    const { allowed, start } = useAiRunPermission(symbol, hideView);
     const state = useFundamentalAnalysis(
         symbol,
         modelId,
         reasoning,
         isSettingsHydrated,
-        autoRunAllowed
+        allowed
     );
 
     useRegisterShareable({
@@ -184,7 +63,10 @@ export function FundamentalAiSummary({
         // 공유 스냅샷에 쉽게보기 산문을 함께 싣는다 — 링크를 받은 사람은
         // SSE 라우트를 타지 않아 평이화를 다시 만들 수 없다.
         plain: state.status === 'done' ? state.plain : null,
-        trigger: state.trigger,
+        // 대기 중에는 캐시 전용 재조회(`state.trigger`)가 아니라 생성을 여는 `start`여야
+        // 헤더 공유 흐름이 분석을 시작할 수 있다.
+        trigger:
+            state.status === 'awaiting_interaction' ? start : state.trigger,
     });
 
     // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
@@ -199,7 +81,7 @@ export function FundamentalAiSummary({
             <AiAnalysisAwaitingSection
                 heading={t('FundamentalAiSummary.17769c')}
                 idPrefix="ai-summary"
-                onStart={grant}
+                onStart={start}
             />
         );
     }

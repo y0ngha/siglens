@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 볼륨 프로파일 오버레이 생성·갱신과 표시 토글 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';

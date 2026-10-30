@@ -11,7 +11,7 @@ import { execSync } from 'node:child_process';
  */
 const ALLOWED_RAW_PATHNAME_USERS = [
     // 이동에 재사용 — 접두사가 있어야 한다.
-    'src/widgets/dashboard/hooks/useSectorSignalState.ts',
+    'src/widgets/dashboard/hooks/useSectorSelection.ts',
     'src/features/backtest-filter/hooks/useBacktestFilter.ts',
     // 경로 변경 감지 키로만 쓴다 — 접두사 유무가 무관하다.
     'src/app/_components/AuthSessionHeaderClient.tsx',
@@ -23,7 +23,7 @@ const ALLOWED_RAW_PATHNAME_USERS = [
     // 이 훅 자신이 접두사를 뗀다.
     'src/shared/i18n/useAppPathname.ts',
     // next-intl의 navigation(이미 접두사를 뗀 값을 준다)을 쓴다.
-    'src/widgets/layout/LocaleSwitcher.tsx',
+    'src/widgets/layout/hooks/useLocaleSwitch.ts',
 ];
 
 describe('usePathname 직접 사용', () => {

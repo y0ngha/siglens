@@ -15,7 +15,7 @@ import {
     buildBenchmarkDatasetJsonLd,
     getBenchmarkSeoCopy,
 } from '@/views/benchmark/lib/benchmarkSeo';
-import { aiOgImageUrl, aiUrl } from '@/app/ai/[locale]/aiSeo';
+import { aiOgImageUrl, aiUrl } from '@/app/ai/[locale]/_lib/aiSeo';
 
 // 결과 데이터는 배포 때 고정된다(릴리스 JSON이 번들에 들어간다) — 배포 자체가 갱신이라
 // 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).

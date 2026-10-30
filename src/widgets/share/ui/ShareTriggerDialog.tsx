@@ -1,42 +1,32 @@
 'use client';
 
+/** 공유할 분석이 아직 없을 때 분석부터 돌릴지 묻는 확인 모달. */
+
 import { useTranslations } from 'next-intl';
-import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
-import { cn } from '@/shared/lib/cn';
 import { ModalShell } from '@/shared/ui/ModalShell';
-import { CloseIcon } from '@/shared/ui/StrokeIcons';
-import {
-    SHARE_MODAL_ACTION_SIZE,
-    SHARE_MODAL_CLOSE_BUTTON,
-    SHARE_MODAL_OUTLINE_HOVER,
-    SHARE_MODAL_PANEL,
-} from './modalStyles';
+import { SHARE_MODAL_PANEL } from '../utils/modalStyles';
+import { ShareModalActions } from './modal/ShareModalActions';
+import { ShareModalHeader } from './modal/ShareModalHeader';
 
 const TITLE_ID = 'share-trigger-dialog-title';
 
 interface ShareTriggerDialogProps {
-    open: boolean;
     onConfirm: () => void;
     onCancel: () => void;
 }
 
 /**
- * Confirmation dialog shown when the user clicks Share but no analysis result
- * is ready yet. Explains that an analysis will be triggered first, then the
- * share sheet will open automatically.
+ * 분석을 먼저 돌린 뒤 끝나면 공유 화면으로 이어진다고 알리는 확인 모달. 마운트 = 열림이다.
  *
- * ModalShell supplies the focus trap (initial focus + Tab wrap + trigger restore),
- * Escape and backdrop-click dismissal.
- * Default focus lands on the primary CTA so a single Enter confirms.
+ * `ModalShell`이 포커스 트랩(첫 조작 요소 포커스·Tab 순환·트리거 복원)과 Esc·배경 클릭
+ * 닫기를 맡는다. 첫 조작 요소는 머리줄 닫기 버튼이라, 열린 직후 Enter는 확인이 아니라
+ * 닫기다 — 분석을 실수로 시작하지 않게 한다.
  */
 export function ShareTriggerDialog({
-    open,
     onConfirm,
     onCancel,
 }: ShareTriggerDialogProps) {
     const t = useTranslations('widgets.share');
-
-    if (!open) return null;
 
     return (
         <ModalShell
@@ -44,49 +34,27 @@ export function ShareTriggerDialog({
             onClose={onCancel}
             className={SHARE_MODAL_PANEL}
         >
-            <div className="flex items-center justify-between border-b border-secondary-700 px-5 py-4">
-                <h2
-                    id={TITLE_ID}
-                    className="text-sm font-semibold text-secondary-100"
-                >
-                    {t('ShareTriggerDialog.5481d6')}
-                </h2>
-                <button
-                    type="button"
-                    aria-label={t('ShareTriggerDialog.94b7db')}
-                    onClick={onCancel}
-                    className={SHARE_MODAL_CLOSE_BUTTON}
-                >
-                    <CloseIcon />
-                </button>
-            </div>
+            <ShareModalHeader
+                titleId={TITLE_ID}
+                title={t('ShareTriggerDialog.5481d6')}
+                closeLabel={t('ShareTriggerDialog.94b7db')}
+                onClose={onCancel}
+            />
 
             <div className="flex flex-col gap-4 px-5 py-4">
                 <p className="text-sm leading-relaxed text-secondary-400">
                     {t('ShareTriggerDialog.b74ea2')}
                 </p>
-
-                <div className="flex flex-col gap-2">
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        className={cn(BUTTON_PRIMARY, SHARE_MODAL_ACTION_SIZE)}
-                    >
-                        {t('ShareTriggerDialog.cc6aae')}
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className={cn(
-                            BUTTON_OUTLINE,
-                            SHARE_MODAL_ACTION_SIZE,
-                            SHARE_MODAL_OUTLINE_HOVER
-                        )}
-                    >
-                        {t('ShareTriggerDialog.2d4e13')}
-                    </button>
-                </div>
+                <ShareModalActions
+                    primary={{
+                        label: t('ShareTriggerDialog.cc6aae'),
+                        onClick: onConfirm,
+                    }}
+                    secondary={{
+                        label: t('ShareTriggerDialog.2d4e13'),
+                        onClick: onCancel,
+                    }}
+                />
             </div>
         </ModalShell>
     );

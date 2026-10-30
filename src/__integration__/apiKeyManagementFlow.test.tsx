@@ -34,8 +34,10 @@ vi.mock('@/features/api-key-management/hooks/useApiKeyForms', () => ({
     useApiKeyForms: () => ({
         saveState: idleState,
         saveFormAction: mockSaveFormAction,
+        isSavePending: false,
         deleteState: idleState,
         deleteFormAction: mockDeleteFormAction,
+        isDeletePending: false,
     }),
 }));
 

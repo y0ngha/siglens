@@ -11,11 +11,11 @@ vi.mock('@/shared/db/client', () => ({
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     DART_MAX_RETRIES,
-    DART_QUOTA_GUARD_MAX_REDIS_COMMANDS,
     DART_REQUEST_TIMEOUT_MS,
     DART_RETRY_BASE_DELAY_MS,
     __resetDartClientForTests,
 } from '@/shared/api/dart/dartClient';
+import { DART_QUOTA_GUARD_MAX_REDIS_COMMANDS } from '@/shared/api/dart/dartQuotaGuard';
 import { REDIS_LONG_COMMAND_TIMEOUT_MS } from '@/shared/cache/redisClient';
 import { DART_CRON_LEASE_NAME } from '../../leasedCron';
 import { PATCH } from '../route';

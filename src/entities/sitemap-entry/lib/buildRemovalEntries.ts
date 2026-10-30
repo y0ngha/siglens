@@ -14,6 +14,10 @@ const REMOVAL_SUFFIX_BY_KIND: Record<RemovalSitemapKind, string> = {
     'fear-greed': '/fear-greed',
 };
 
+/**
+ * 후보 심볼을 제거 sitemap 엔트리로 만든다. 심볼은 대문자로 정규화·중복 제거·정렬해
+ * 출력이 입력 순서와 무관하게 결정적이다. kind별 URL 접미사는 차트가 심볼 루트, 나머지는 탭 경로다.
+ */
 export function buildRemovalEntries(
     kind: RemovalSitemapKind,
     symbols: readonly string[]

@@ -20,7 +20,10 @@ interface NoticeRepository {
     findActive(locale: Locale): Promise<NoticeRecord[]>;
 }
 
-/** Drizzle ORM-backed 구현. */
+/**
+ * `NoticeRepository`의 Drizzle 구현. `GET /api/notices` 라우트가 사용한다.
+ * 시간창은 `starts_at <= NOW() <= ends_at`(양 끝 포함, null은 무제한)이다.
+ */
 export class DrizzleNoticeRepository implements NoticeRepository {
     constructor(private readonly db: SiglensDatabase) {}
 

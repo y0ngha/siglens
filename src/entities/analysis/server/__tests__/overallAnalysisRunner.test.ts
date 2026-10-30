@@ -45,9 +45,12 @@ vi.mock('@/shared/lib/options/openInterestStale', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => ({})),
 }));
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(async () => ({})),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(async () => ({})),
+    })
+);
 const { mockPositionBucket } = vi.hoisted(() => ({
     mockPositionBucket: vi.fn(async () => undefined),
 }));

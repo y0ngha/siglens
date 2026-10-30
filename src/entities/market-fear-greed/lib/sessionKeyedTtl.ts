@@ -13,7 +13,7 @@ const INCOMPLETE_READING_TTL_SECONDS = SECONDS_PER_HOUR;
 
 /**
  * 키가 넘어가는 시각에 더하는 여유. 인스턴스 간 시계 차이로 넘어가기 직전에 읽는 요청을
- * 덮는 정도면 된다(`CachedMarketDataProvider`의 EOD 히스토리 키와 같은 값).
+ * 덮는 정도면 된다(`shared/api/market/eodHistoryCache.ts`의 EOD 히스토리 키와 같은 값).
  */
 const ROLL_MARGIN_SECONDS = SECONDS_PER_HOUR;
 

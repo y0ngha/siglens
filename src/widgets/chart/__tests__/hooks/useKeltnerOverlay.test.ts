@@ -147,7 +147,7 @@ describe('useKeltnerOverlay', () => {
         expect(mockSetData).toHaveBeenCalledTimes(3);
     });
 
-    it('does not set data when keltnerChannel is empty', () => {
+    it('clears its series when keltnerChannel has no values', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>
             useKeltnerOverlay({
@@ -161,7 +161,11 @@ describe('useKeltnerOverlay', () => {
             result.current.toggle();
         });
 
-        expect(mockSetData).not.toHaveBeenCalled();
+        // 빈 값이면 이전 종목·타임프레임의 선이 남지 않도록 시리즈를 비운다.
+        expect(mockSetData).toHaveBeenCalled();
+        expect(
+            mockSetData.mock.calls.every(([data]) => data.length === 0)
+        ).toBe(true);
     });
 
     it('persists isVisible to localStorage on toggle', () => {

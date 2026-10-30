@@ -1,34 +1,20 @@
 'use client';
 
-import {
-    createContext,
-    useCallback,
-    useContext,
-    useMemo,
-    useState,
-    type ReactNode,
-} from 'react';
-import {
-    getAllowedModels,
-    type ModelId,
-    type Tier,
-} from '@y0ngha/siglens-core';
-import { pickFallbackModel, useSelectedModel } from '../hooks/useSelectedModel';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import type { ModelId, Tier } from '@y0ngha/siglens-core';
 import {
     useModelGate,
     type ModelGateState,
 } from '@/features/premium-gate/hooks/useModelGate';
-import { useUserTier } from '../hooks/useUserTier';
-import { useDisabledServerKeyModels } from '../hooks/useDisabledServerKeyModels';
-import { useReasoningToggle } from '@/features/reasoning-toggle/hooks/useReasoningToggle';
-import { isReasoningToggleable } from '@y0ngha/siglens-core';
-import {
-    AnalysisSignupNudgeModal,
-    type SignupNudgeKind,
-} from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
+import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
+import { useEffectiveReasoning } from '../hooks/useEffectiveReasoning';
+import { useModelSelection } from '../hooks/useModelSelection';
+import { useSignupNudgeControls } from '../hooks/useSignupNudgeControls';
 
+/** `useSymbolModel()`이 돌려주는 종목 페이지의 모델·추론·가입 넛지 상태. */
 interface SymbolModelContextValue {
+    /** 지금 선택된 분석 모델. `isHydrated` 전에는 기본 모델이다. */
     modelId: ModelId;
     /** 이 등급이 목록에서 보는 모델 전부. 일시 중단된 모델도 들어 있다(`unavailableModels`). */
     allowedModels: readonly ModelId[];
@@ -42,16 +28,20 @@ interface SymbolModelContextValue {
      * 규칙(`pickFallbackModel`)을 고를 수 있는 모델(허용 − 일시 중단)에 적용한 값이다.
      */
     fallbackModel: ModelId;
+    /** 저장된 선택을 읽었는지 — 분석 요청은 이 값이 참이 된 뒤에 보낸다. */
     isHydrated: boolean;
+    /** 현재 사용자의 tier. 확정 전(`isTierHydrated` false)에는 core `DEFAULT_TIER`다. */
     tier: Tier;
     isTierHydrated: boolean;
+    /** 열려 있는 premium 모델 게이트 안내(인증/BYOK). 없으면 `null`. */
     gateModal: ModelGateState | null;
     dismissGate: () => void;
+    /** 모델 선택 UI가 부른다. 게이트를 통과한 선택만 저장된다. */
     handleModelChange: (model: ModelId) => void;
     /**
-     * Effective "깊은 생각" (reasoning) value — member-reasoning-toggle spec
-     * Part A. Already tier-gated: `false` for anonymous/free regardless of
-     * the member's stored preference. Server-side `resolveReasoning` is the
+     * Effective "깊은 생각" (reasoning) value to send with an analysis request.
+     * Already tier-gated: `false` for anonymous/free regardless of the
+     * member's stored preference. Server-side `resolveReasoning` is the
      * authoritative enforcement; this client-side gate only prevents a
      * stale/stray `true` from a downgraded session from being sent at all.
      */
@@ -65,8 +55,7 @@ interface SymbolModelContextValue {
      * tier, this one about the model. On a model whose `off` and `on` states
      * are identical (core spec `toggleable: false`, decided by
      * `isReasoningToggleable`) the toggle is inert, so the control is disabled
-     * rather than shown as an unlocked switch. The 2026-10 roster has no such
-     * model; the branch stays for future ones.
+     * rather than shown as an unlocked switch.
      */
     isReasoningSupported: boolean;
     /**
@@ -108,92 +97,44 @@ interface SymbolModelContextValue {
     closeSignupNudge: () => void;
 }
 
-/** 공유 가입 넛지 모달의 열림 상태 — 어떤 문구를, 어떤 계기로. 닫혀 있으면 null. */
-interface SignupNudgeState {
-    kind: SignupNudgeKind;
-    variant: SignupNudgeVariant;
-}
-
 const SymbolModelContext = createContext<SymbolModelContextValue | null>(null);
 
 interface SymbolModelProviderProps {
     children: ReactNode;
 }
 
+/**
+ * 종목 레이아웃(헤더 + 탭 트리)을 감싸 모델 선택·추론 토글·가입 넛지를 한 곳에서 공유한다.
+ * 가입 넛지 모달은 여기서 **한 번만** 그린다 — 열림 상태가 컨텍스트 값 밖에 있어 열고 닫아도
+ * 소비자가 다시 렌더되지 않는다(`openSignupNudge` 문서 참조).
+ */
 export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
-    // Single shared open-state for the signup-nudge modal. Both entry points
-    // (locked-toggle click in the header, first-analysis auto-nudge in ChartContent)
-    // flip this same flag, and the modal is rendered once below — see the
-    // `openSignupNudge` doc for why a single instance is required. This state
-    // is provider-LOCAL and intentionally NOT part of the context value: only
-    // the provider reads it (to render the modal), so keeping it out of the
-    // memoized value means open/close never churns `useSymbolModel()` consumers.
-    // (Declared first per the useState → custom-hooks → derived → handlers
-    // hook-ordering convention — REACT.md "Custom Hook Declaration Order".)
-    const [signupNudge, setSignupNudge] = useState<SignupNudgeState | null>(
-        null
-    );
-
-    const { tier, isLoading: isTierLoading } = useUserTier();
-    const { models: disabledModels, isSettled: isAvailabilitySettled } =
-        useDisabledServerKeyModels();
-    const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
-    const unavailableModels = useMemo(
-        () => allowedModels.filter(model => disabledModels.includes(model)),
-        [allowedModels, disabledModels]
-    );
-    // 선택 검증은 고를 수 있는 모델로만 한다 — 꺼진 모델 저장값은 기본 모델로 떨어진다.
-    // 저장값(localStorage)은 지우지 않으므로 스위치를 다시 켜면 다음 로드에 되살아난다.
-    const selectableModels = useMemo(
-        () =>
-            unavailableModels.length === 0
-                ? allowedModels
-                : allowedModels.filter(
-                      model => !unavailableModels.includes(model)
-                  ),
-        [allowedModels, unavailableModels]
-    );
-    const fallbackModel = useMemo(
-        () => pickFallbackModel(selectableModels),
-        [selectableModels]
-    );
-    const isTierHydrated = !isTierLoading;
-    // 저장된 선택은 등급과 꺼진 모델 목록이 **둘 다** 확정된 뒤에 읽는다. 목록보다 먼저
-    // 읽으면 꺼진 모델로 첫 분석이 나간 뒤 강등돼 같은 분석이 한 번 더 나간다.
-    const [modelId, setModelId, isHydrated] = useSelectedModel(
-        selectableModels,
-        isTierHydrated && isAvailabilitySettled
-    );
+    const {
+        signupNudge,
+        openSignupNudge,
+        openSignupNudgeAs,
+        closeSignupNudge,
+    } = useSignupNudgeControls();
+    const {
+        tier,
+        isTierHydrated,
+        allowedModels,
+        unavailableModels,
+        fallbackModel,
+        modelId,
+        setModelId,
+        isHydrated,
+    } = useModelSelection();
     const { gateModal, dismissGate, handleModelChange } = useModelGate({
         onAllow: setModelId,
     });
-    const [storedReasoning, setReasoning, isReasoningHydrated] =
-        useReasoningToggle();
-    // free(익명 포함) tier는 서버에서도 강제되지만(resolveReasoning), 클라에서도
-    // 미리 false로 접어 두면 downgrade(로그아웃/등급 하락) 직후 stale true 값이
-    // 한 프레임이라도 실제 submit에 실려 나가는 것을 방지한다.
-    const canUseReasoning = tier !== 'free';
-    // 등급과 별개로, 토글이 아무 효과도 없는 모델(`off`와 `on`이 같은 모델)에서는
-    // 컨트롤을 비활성화한다. 켜도 아무 일이 없는데 켜졌다고 보이는 편이 더 나쁘다.
-    // 판정은 core `isReasoningToggleable`(스펙의 `toggleable: false`)이 한다. 2026-10
-    // 로스터에는 그런 모델이 없지만(Haiku 4.5 퇴역), 다시 생길 때를 위해 분기를 유지한다.
-    const isReasoningSupported = isReasoningToggleable(modelId);
-    const reasoning =
-        canUseReasoning && isReasoningSupported && storedReasoning;
-
-    // 잠긴 추론 토글 클릭. 문구는 늘 상세 분석이고, 퍼널에는 `reasoning_toggle`로 남는다.
-    const openSignupNudge = useCallback(
-        () =>
-            setSignupNudge({ kind: 'reasoning_toggle', variant: 'reasoning' }),
-        []
-    );
-    // 익명 첫 분석 자동 넛지. 문구를 번갈아 쓰고, 퍼널에는 `anon_auto`+variant로 남는다.
-    const openSignupNudgeAs = useCallback(
-        (variant: SignupNudgeVariant) =>
-            setSignupNudge({ kind: 'anon_auto', variant }),
-        []
-    );
-    const closeSignupNudge = useCallback(() => setSignupNudge(null), []);
+    const {
+        reasoning,
+        setReasoning,
+        canUseReasoning,
+        isReasoningSupported,
+        isReasoningHydrated,
+    } = useEffectiveReasoning(tier, modelId);
 
     const value = useMemo(
         () => ({
@@ -241,8 +182,6 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     return (
         <SymbolModelContext.Provider value={value}>
             {children}
-            {/* Single signup-nudge modal instance shared by the header's
-                locked-toggle nudge and ChartContent's first-analysis auto-nudge. */}
             {signupNudge !== null && (
                 <AnalysisSignupNudgeModal
                     kind={signupNudge.kind}
@@ -254,6 +193,10 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     );
 }
 
+/**
+ * 종목 페이지의 모델·추론·넛지 상태를 읽는다. `SymbolModelProvider` 밖에서 부르면 던진다 —
+ * 기본값을 두지 않아 배선 실수가 첫 렌더에서 드러난다.
+ */
 export function useSymbolModel(): SymbolModelContextValue {
     const ctx = useContext(SymbolModelContext);
     if (!ctx)
