@@ -19,6 +19,7 @@ const KIND_LABEL_MAP = {
     'fear-greed': 'shareKind.fear-greed',
 } as const satisfies Record<ShareableKind, string>;
 
+/** 종류 칩·OG 레이블용 메시지 키를 돌려준다(번역은 호출부 몫). */
 export function kindLabelKey(kind: ShareableKind): string {
     return KIND_LABEL_MAP[kind];
 }

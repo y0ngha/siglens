@@ -44,7 +44,7 @@ describe('Symbol Tab Navigation', () => {
         render(<SymbolTabs symbol="AAPL" />);
         for (const tab of TABS) {
             expect(
-                screen.getByText(koMessages.shared.symbolTab[tab.labelKey])
+                screen.getByText(koMessages.shared.symbolTab[tab.key])
             ).toBeInTheDocument();
         }
     });
@@ -59,7 +59,7 @@ describe('Symbol Tab Navigation', () => {
 
         for (const tab of TABS) {
             expect(
-                screen.getByText(enMessages.shared.symbolTab[tab.labelKey])
+                screen.getByText(enMessages.shared.symbolTab[tab.key])
             ).toBeInTheDocument();
         }
         expect(

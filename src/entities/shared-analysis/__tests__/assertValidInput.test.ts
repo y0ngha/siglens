@@ -22,6 +22,51 @@ describe('isValidShareInput', () => {
             })
         ).toBe(true);
     });
+    it('rejects a non-string context.analyzedAt', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: {
+                    symbol: 'AAPL',
+                    displayName: 'Apple',
+                    analyzedAt: 1_700_000_000,
+                },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+    it('rejects a context.analyzedAt longer than the display-name cap', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: {
+                    symbol: 'AAPL',
+                    displayName: 'Apple',
+                    analyzedAt: 'x'.repeat(129),
+                },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+    it('accepts an ISO string context.analyzedAt', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: {
+                    symbol: 'AAPL',
+                    displayName: 'Apple',
+                    analyzedAt: '2026-06-29T00:00:00Z',
+                },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+            })
+        ).toBe(true);
+    });
     it('rejects unknown kind', () => {
         expect(
             isValidShareInput({

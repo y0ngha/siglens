@@ -27,7 +27,7 @@ import {
     callAnthropicChat,
     withHistoryCacheBreakpoint,
 } from '@/entities/llm-provider/api/anthropic';
-import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/api/callDeadline';
 import type Anthropic from '@anthropic-ai/sdk';
 
 const BASE_OPTIONS = {

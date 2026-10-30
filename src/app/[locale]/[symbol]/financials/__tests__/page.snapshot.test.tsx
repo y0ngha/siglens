@@ -60,8 +60,13 @@ vi.mock('@/app/[locale]/[symbol]/financials/FinancialsDegraded', () => ({
         <div data-testid="financials-degraded" {...props} />
     ),
 }));
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(),
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(),
+    })
+);
+vi.mock('@/entities/financials-statements/lib/financialsSnapshot', () => ({
     isEmptyFinancialsSnapshot: vi.fn().mockReturnValue(false),
 }));
 vi.mock('@/widgets/financials/FinancialsAiSummary', () => ({
@@ -105,7 +110,7 @@ import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
-import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';

@@ -2,87 +2,49 @@ import 'server-only';
 import OpenAI from 'openai';
 import type {
     AgentProviderResult,
-    AgentStopReason,
-    AgentToolCall,
     CallAgentProviderOptions,
 } from '@y0ngha/siglens-core';
 import {
+    accumulateToolCallDeltas,
+    buildToolCalls,
+    holdNarration,
+    mapStopReason,
+    type PartialToolCall,
+} from '../../lib/agentStream';
+import {
     extractOpenAiCompatibleUsage,
-    logUsage,
     type OpenAiCompatibleUsageLike,
 } from '../../lib/usage';
+import { logUsage } from '../logUsage';
 
 const AGENT_JOB_ID = 'agent';
 
-/** `CallAgentProviderOptions` plus the provider-specific model id the router resolved. */
+/** `CallAgentProviderOptions`에 라우터가 해석한 provider별 모델 ID를 더한 옵션. */
 export type AgentAdapterOptions = CallAgentProviderOptions & {
     apiModelId: string;
 };
 
 /**
- * No response headers / no chunk for this long aborts the call. A silent
- * provider otherwise holds the turn until the 10-minute stream deadline, and a
- * hung call cannot fall back to another model. 90s is well above the slowest
- * observed first-token latency on the flash tier.
+ * 응답 헤더도 청크도 이 시간 동안 없으면 호출을 abort한다. 조용한 provider는 10분짜리
+ * 스트림 마감까지 턴을 붙잡고, 멈춘 호출은 다른 모델로 폴백할 수도 없다. 90초는 flash 티어에서
+ * 관찰된 가장 느린 첫 토큰 지연보다 한참 크다.
  */
 export const AGENT_STALL_TIMEOUT_MS = 90_000;
+/** 스톨 감시가 abort한 호출의 `error.code`. 라우터가 폴백 대상 여부를 이 값으로 가른다. */
 export const AGENT_PROVIDER_STALLED = 'AGENT_PROVIDER_STALLED';
 
-/**
- * While tools are offered, the first this-many characters of a step's text are
- * held back instead of streamed. DeepSeek sometimes announces its tool calls
- * ("I'll check SIGLENS's latest analysis…", 2026-09-15 production) despite the
- * prompt forbidding it; a held announcement is dropped once a tool call
- * arrives. A real answer outgrows the hold within a second and streams on.
- * Announcements observed were under 100 characters.
- */
-export const AGENT_NARRATION_HOLD_CHARS = 200;
-
-/** Provider-specific bits of an OpenAI-compatible chat.completions request. */
+/** OpenAI 호환 chat.completions 요청 중 provider별로 다른 부분. */
 export interface OpenAiCompatibleRequest {
     baseURL: string;
-    /** Transcript without the system prompt (the loop prepends `o.system`). */
+    /** system 프롬프트를 뺀 transcript (루프가 `o.system`을 앞에 붙인다). */
     messages: OpenAI.Chat.ChatCompletionMessageParam[];
-    /** Provider-only top-level body fields (e.g. DeepSeek `thinking`). */
+    /** provider 전용 최상위 본문 필드 (예: DeepSeek `thinking`). */
     extraBody: Record<string, unknown>;
     /**
-     * Sampling temperature; omitted from the body when `undefined`. Gemini
-     * leaves it out: Google ignores custom sampling from 3.6 Flash on and
-     * announced a 400 for it on upcoming models.
+     * 샘플링 temperature. `undefined`면 본문에서 뺀다. Gemini는 넣지 않는다:
+     * Google은 3.6 Flash부터 커스텀 샘플링을 무시하고, 앞으로 나올 모델은 400을 낸다고 공지했다.
      */
     temperature?: number;
-}
-
-/**
- * `finish_reason` alone is not enough: Gemini's OpenAI-compatible endpoint
- * reports `'stop'` even when the turn ended in tool calls (verified live
- * 2026-09-15). Mapping that to `end` would make core never run the tools.
- */
-function mapStopReason(
-    reason: string | null | undefined,
-    hasToolCalls: boolean
-): AgentStopReason {
-    switch (reason) {
-        case 'tool_calls':
-            return 'tool_use';
-        case 'stop':
-            return hasToolCalls ? 'tool_use' : 'end';
-        case 'length':
-            return 'max_tokens';
-        default:
-            return 'other';
-    }
-}
-
-function parseArgs(raw: string): Record<string, unknown> {
-    try {
-        const parsed: unknown = JSON.parse(raw || '{}');
-        return typeof parsed === 'object' && parsed !== null
-            ? (parsed as Record<string, unknown>)
-            : {};
-    } catch {
-        return {};
-    }
 }
 
 function stalledError(): Error {
@@ -94,13 +56,82 @@ function stalledError(): Error {
     );
 }
 
+/** 호출자 signal의 abort를 내부 controller로 전달하고, 리스너를 푸는 함수를 돌려준다. */
+function linkAbortSignal(
+    source: AbortSignal,
+    controller: AbortController
+): () => void {
+    const forwardAbort = (): void => controller.abort(source.reason);
+    if (source.aborted) forwardAbort();
+    else source.addEventListener('abort', forwardAbort, { once: true });
+    return () => source.removeEventListener('abort', forwardAbort);
+}
+
+interface StallWatchdog {
+    /** 타이머를 (재)무장한다. 응답·청크가 올 때마다 부른다. */
+    arm(): void;
+    /** 감시가 직접 abort를 걸었는가. 호출자 abort와 구분하는 데 쓴다. */
+    isStalled(): boolean;
+    dispose(): void;
+}
+
+/** `AGENT_STALL_TIMEOUT_MS` 동안 `arm()`이 없으면 `controller`를 abort하는 감시자. */
+function createStallWatchdog(controller: AbortController): StallWatchdog {
+    let stalled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return {
+        arm: () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                stalled = true;
+                controller.abort();
+            }, AGENT_STALL_TIMEOUT_MS);
+        },
+        isStalled: () => stalled,
+        dispose: () => clearTimeout(timer),
+    };
+}
+
+/** 스트리밍 chat.completions 요청 본문. 도구가 없으면 `tools`·`tool_choice`를 싣지 않는다. */
+function buildRequestBody(
+    o: AgentAdapterOptions,
+    req: OpenAiCompatibleRequest
+): OpenAI.Chat.ChatCompletionCreateParamsStreaming {
+    return {
+        model: o.apiModelId,
+        messages: [{ role: 'system', content: o.system }, ...req.messages],
+        ...(o.tools.length > 0
+            ? {
+                  tools: o.tools.map(t => ({
+                      type: 'function' as const,
+                      function: {
+                          name: t.name,
+                          description: t.description,
+                          // core의 `JsonSchemaObject`는 인덱스 시그니처가 없는 닫힌 모양이고
+                          // openai SDK의 `FunctionParameters`는 `Record<string, unknown>`을 요구해 펼쳐서 넘긴다.
+                          parameters: { ...t.inputSchema },
+                      },
+                  })),
+                  tool_choice: o.toolChoice ?? 'auto',
+              }
+            : {}),
+        max_tokens: o.maxOutputTokens,
+        ...(req.temperature !== undefined
+            ? { temperature: req.temperature }
+            : {}),
+        ...req.extraBody,
+        stream: true,
+        stream_options: { include_usage: true },
+    };
+}
+
 /**
- * The shared OpenAI-compatible streaming loop (DeepSeek, Gemini): request,
- * tool-call accumulation, stop mapping, usage telemetry and the stall watchdog.
+ * OpenAI 호환 스트리밍 루프(DeepSeek, Gemini)를 공유한다: 요청, 도구 호출 누적, 종료 사유
+ * 매핑, usage 텔레메트리, 스톨 감시.
  *
- * The watchdog aborts through an internal controller linked to `o.signal`, so
- * a stall rejects with `code: AGENT_PROVIDER_STALLED` while a caller abort
- * still surfaces as the plain abort error.
+ * 감시자는 `o.signal`에 연결된 내부 controller로 abort하므로, 스톨은 `code: AGENT_PROVIDER_STALLED`로
+ * reject하고 호출자 abort는 평범한 abort 오류로 드러난다. 도구가 제공되는 스텝은 텍스트 앞부분을
+ * 보류한다(`AGENT_NARRATION_HOLD_CHARS`). 이벤트(`text`/`tool_call`/`usage`/`stop`)는 `o.onEvent`로 내보낸다.
  */
 export async function streamOpenAiCompatibleAgent(
     o: AgentAdapterOptions,
@@ -108,22 +139,12 @@ export async function streamOpenAiCompatibleAgent(
 ): Promise<AgentProviderResult> {
     const client = new OpenAI({ apiKey: o.apiKey, baseURL: req.baseURL });
     const controller = new AbortController();
-    const forwardAbort = (): void => controller.abort(o.signal.reason);
-    if (o.signal.aborted) forwardAbort();
-    else o.signal.addEventListener('abort', forwardAbort, { once: true });
-    let stalled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const arm = (): void => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            stalled = true;
-            controller.abort();
-        }, AGENT_STALL_TIMEOUT_MS);
-    };
+    const unlinkAbort = linkAbortSignal(o.signal, controller);
+    const watchdog = createStallWatchdog(controller);
 
     const startedAt = Date.now();
     let text = '';
-    // Held text not yet emitted; `null` once the hold is released for this step.
+    // 아직 내보내지 않은 보류 텍스트. 이 스텝의 보류가 풀리면 `null`이다.
     let held: string | null = o.tools.length > 0 ? '' : null;
     const emitText = (delta: string): void => {
         text += delta;
@@ -131,103 +152,44 @@ export async function streamOpenAiCompatibleAgent(
     };
     let finish: string | null | undefined;
     let usage: OpenAiCompatibleUsageLike | undefined;
-    const partial = new Map<
-        number,
-        { id: string; name: string; args: string }
-    >();
+    const partial = new Map<number, PartialToolCall>();
     try {
-        arm();
+        watchdog.arm();
         const stream = await client.chat.completions.create(
-            {
-                model: o.apiModelId,
-                messages: [
-                    { role: 'system', content: o.system },
-                    ...req.messages,
-                ],
-                ...(o.tools.length > 0
-                    ? {
-                          tools: o.tools.map(t => ({
-                              type: 'function' as const,
-                              // `JsonSchemaObject` (core) is a closed shape with no index signature;
-                              // the openai SDK's `FunctionParameters` requires `Record<string, unknown>`.
-                              function: {
-                                  name: t.name,
-                                  description: t.description,
-                                  parameters:
-                                      t.inputSchema as unknown as Record<
-                                          string,
-                                          unknown
-                                      >,
-                              },
-                          })),
-                          tool_choice: o.toolChoice ?? 'auto',
-                      }
-                    : {}),
-                max_tokens: o.maxOutputTokens,
-                ...(req.temperature !== undefined
-                    ? { temperature: req.temperature }
-                    : {}),
-                ...req.extraBody,
-                stream: true,
-                stream_options: { include_usage: true },
-            },
+            buildRequestBody(o, req),
             { signal: controller.signal }
         );
         for await (const chunk of stream) {
-            arm();
+            watchdog.arm();
             const choice = chunk.choices[0];
             const delta = choice?.delta;
             if (delta?.content) {
-                if (held === null) {
-                    emitText(delta.content);
-                } else {
-                    held += delta.content;
-                    if (held.length >= AGENT_NARRATION_HOLD_CHARS) {
-                        emitText(held);
-                        held = null;
-                    }
-                }
+                const step = holdNarration(held, delta.content);
+                held = step.held;
+                if (step.emit) emitText(step.emit);
             }
-            // Text held before a tool call is an announcement, not an answer.
+            // 도구 호출 앞에 보류된 텍스트는 답이 아니라 예고 문장이다.
             if (held !== null && delta?.tool_calls?.length) held = '';
-            for (const tc of delta?.tool_calls ?? []) {
-                const slot = partial.get(tc.index) ?? {
-                    id: '',
-                    name: '',
-                    args: '',
-                };
-                if (tc.id) slot.id = tc.id;
-                // Name arrives whole (openai SDK's own accumulator assigns it); only arguments stream in pieces.
-                if (tc.function?.name) slot.name = tc.function.name;
-                if (tc.function?.arguments) slot.args += tc.function.arguments;
-                partial.set(tc.index, slot);
-            }
+            accumulateToolCallDeltas(partial, delta?.tool_calls ?? []);
             if (choice?.finish_reason) finish = choice.finish_reason;
-            if (chunk.usage) usage = chunk.usage as OpenAiCompatibleUsageLike;
+            if (chunk.usage) usage = chunk.usage;
         }
-        // The openai SDK ends `for await` quietly when the signal aborts mid-stream; the
-        // port contract says upstream errors propagate, so don't resolve a partial result.
+        // openai SDK는 스트림 도중 signal이 abort되면 `for await`를 조용히 끝낸다. 포트 계약은
+        // upstream 오류를 전파하라는 것이므로 부분 결과로 resolve하지 않는다.
         o.signal.throwIfAborted();
-        if (stalled) throw stalledError();
+        if (watchdog.isStalled()) throw stalledError();
     } catch (err) {
-        if (stalled && !o.signal.aborted) throw stalledError();
+        if (watchdog.isStalled() && !o.signal.aborted) throw stalledError();
         throw err;
     } finally {
-        clearTimeout(timer);
-        o.signal.removeEventListener('abort', forwardAbort);
+        watchdog.dispose();
+        unlinkAbort();
     }
 
-    const toolCalls: AgentToolCall[] = [...partial.entries()]
-        .sort(([a], [b]) => a - b)
-        // An id-less call would replay as `tool_call_id: ''` next step and collide in the UI.
-        .map(([index, s]) => ({
-            id: s.id || `call_${index}`,
-            name: s.name,
-            args: parseArgs(s.args),
-        }));
+    const toolCalls = buildToolCalls(partial);
     const stopReason = mapStopReason(finish, toolCalls.length > 0);
     if (held && stopReason !== 'tool_use') emitText(held);
-    // Core only executes calls on `tool_use`; announcing others would show chips for calls that never run.
+    // core는 `tool_use`일 때만 호출을 실행한다. 그 외에 알리면 실행되지 않을 호출의 칩이 보인다.
     if (stopReason === 'tool_use') {
         for (const call of toolCalls) o.onEvent({ type: 'tool_call', call });
     }

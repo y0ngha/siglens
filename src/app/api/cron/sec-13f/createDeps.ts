@@ -16,8 +16,8 @@ import { Drizzle13fRepository } from '@/entities/investor-flows/api/investorFlow
 import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
 import { DrizzleInvestorFlowsUniverseRepository } from '@/entities/investor-flows/api/investorFlowsUniverseRepository';
 import { addDays } from '@/entities/investor-flows/lib/investorFlowsDates';
-import type { Ingest13fDeps } from '@/entities/investor-flows/server/ingest13f';
-import type { IngestSecFilingsDeps } from '@/entities/investor-flows/server/ingestSecFilings';
+import type { Ingest13fDeps } from '@/entities/investor-flows/server/ingest13fTypes';
+import type { IngestSecFilingsDeps } from '@/entities/investor-flows/server/ingestSecFilingsTypes';
 import { rememberRecentIndexes } from '@/entities/investor-flows/server/runSecIndexIngest';
 
 /** 두 단계(13F·공시)가 함께 쓰도록 기억하는 최근 daily index 범위(일) — 평소 두 커서가 머무는 구간(겹침 3일 + 주말). */

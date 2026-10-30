@@ -12,7 +12,7 @@ import {
     buildBenchmarkDatasetJsonLd,
     getBenchmarkSeoCopy,
 } from '@/views/benchmark/lib/benchmarkSeo';
-import { aiUrl, buildAiBenchmarkMetadata } from '../aiSeo';
+import { aiUrl, buildAiBenchmarkMetadata } from '../_lib/aiSeo';
 
 /**
  * 공개 전(`release`가 null)에는 404다. 메타데이터도 같은 게이트를 지나므로 not-found가

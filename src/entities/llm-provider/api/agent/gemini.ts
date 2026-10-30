@@ -7,10 +7,9 @@ import {
 } from './openAiCompatibleStream';
 
 /**
- * Gemini 3 rejects (HTTP 400) any replayed assistant tool call without a
- * thought signature — including calls DeepSeek produced earlier in the same
- * conversation, which is exactly the fallback case. This is Google's
- * documented dummy value that skips the validation (verified live 2026-09-15).
+ * Gemini 3은 thought signature가 없는 재생된 assistant 도구 호출을 모두 400으로 거절한다 —
+ * 같은 대화에서 앞서 DeepSeek이 만든 호출도 포함하며, 바로 폴백 상황이다. Google이 문서화한,
+ * 검증을 건너뛰는 더미 값이다(2026-09-15 실측).
  */
 const GEMINI_TOOL_CALL_EXTRA = {
     extra_content: {
@@ -18,7 +17,7 @@ const GEMINI_TOOL_CALL_EXTRA = {
     },
 };
 
-/** Gemini via its OpenAI-compatible chat.completions endpoint (agent fallback), reasoning minimal. */
+/** Gemini를 OpenAI 호환 chat.completions 엔드포인트로 부른다(agent 폴백 모델). 추론은 minimal이다. */
 export async function callGeminiAgent(
     o: AgentAdapterOptions
 ): Promise<AgentProviderResult> {

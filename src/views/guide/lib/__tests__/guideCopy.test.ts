@@ -1,6 +1,5 @@
-import { createTranslator } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { GUIDE_CATEGORIES, type GuideCategory } from '@/entities/guide/types';
 import ko from '../../../../../messages/ko.json';
 import en from '../../../../../messages/en.json';
@@ -8,31 +7,16 @@ import ja from '../../../../../messages/ja.json';
 import zh from '../../../../../messages/zh.json';
 import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
 
-const catalogs = { ko, en } as const;
-
-vi.mock('next-intl/server', () => ({
-    getTranslations: vi.fn(
-        async ({
-            locale,
-            namespace,
-        }: {
-            locale: 'ko' | 'en';
-            namespace: string;
-        }) =>
-            createTranslator({
-                locale,
-                messages: catalogs[locale],
-                namespace,
-            } as never)
-    ),
-}));
-
 import {
     HOWTO_COUNT_DISPLAY_MIN,
     countGuideHubEntries,
+    hubSeoDescription,
     loadGuideCategoryCopy,
     loadGuideHubSeoCopy,
+    type HubSeoDescriptionTranslator,
 } from '../guideCopy';
+
+const catalogs = { ko, en } as const;
 
 const CATEGORY_KEYS = {
     howto: 'Howto',
@@ -41,10 +25,6 @@ const CATEGORY_KEYS = {
     indicators: 'Indicators',
     strategies: 'Strategies',
 } as const;
-
-beforeEach(() => {
-    vi.mocked(getTranslations).mockClear();
-});
 
 describe('loadGuideCategoryCopy', () => {
     it.each(GUIDE_CATEGORIES)(
@@ -79,13 +59,9 @@ describe('loadGuideCategoryCopy', () => {
         }
     });
 
-    it('요청 로케일과 views.guide 네임스페이스로 번역자를 만든다', async () => {
+    it('요청 로케일의 views.guide 카탈로그를 읽는다', async () => {
         const copy = await loadGuideCategoryCopy('en');
 
-        expect(getTranslations).toHaveBeenCalledWith({
-            locale: 'en',
-            namespace: 'views.guide',
-        });
         expect(copy.label.indicators).toBe(en.views.guide.categoryIndicators);
         expect(copy.label.indicators).not.toBe(
             ko.views.guide.categoryIndicators
@@ -223,6 +199,46 @@ describe('loadGuideHubSeoCopy', () => {
 
         expect(copy.hubTitle).toBe(en.views.guide.hubTitle);
         expect(copy.hubTitle).not.toBe(ko.views.guide.hubTitle);
+    });
+});
+
+describe('hubSeoDescription', () => {
+    let t: HubSeoDescriptionTranslator;
+    beforeAll(async () => {
+        t = await getTranslations({ locale: 'ko', namespace: 'views.guide' });
+    });
+
+    it('실전 가이드가 기준 편수 이상이면 용어 수와 가이드 수를 함께 적는 문구다', () => {
+        expect(
+            hubSeoDescription(t, {
+                terms: 90,
+                howto: HOWTO_COUNT_DISPLAY_MIN,
+            })
+        ).toBe(
+            ko.views.guide.hubSeoDescriptionWithHowto
+                .replace('{terms}', '90')
+                .replace('{howto}', String(HOWTO_COUNT_DISPLAY_MIN))
+        );
+    });
+
+    it('실전 가이드가 1편 이상 기준 편수 미만이면 가이드 수를 뺀 문구다', () => {
+        expect(
+            hubSeoDescription(t, {
+                terms: 90,
+                howto: HOWTO_COUNT_DISPLAY_MIN - 1,
+            })
+        ).toBe(
+            ko.views.guide.hubSeoDescriptionWithHowtoNoCount.replace(
+                '{terms}',
+                '90'
+            )
+        );
+    });
+
+    it('실전 가이드가 없으면 실전 가이드를 언급하지 않는 기본 문구다', () => {
+        expect(hubSeoDescription(t, { terms: 90, howto: 0 })).toBe(
+            ko.views.guide.hubSeoDescription.replace('{terms}', '90')
+        );
     });
 });
 

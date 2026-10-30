@@ -8,12 +8,14 @@ import {
     REPORT_SYMBOLS_PREVIEW_ID,
 } from '@/features/email-report-settings/lib/reportSymbolsPreviewIds';
 import { ReportSymbolsPreview } from '@/features/email-report-settings/ui/ReportSymbolsPreview';
-import { EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS } from '@/entities/email-report/lib/emailReportConstants';
+
+const EXCLUDED_LIMIT = 7;
 
 describe('ReportSymbolsPreview', () => {
     it('상세·요약 그룹의 이름 칩과 요약 문장을 그린다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [
                         { symbol: 'AAPL', name: 'Apple' },
@@ -45,6 +47,7 @@ describe('ReportSymbolsPreview', () => {
     it('이름이 있어도 심볼을 함께 보이고, 비어 있는 그룹은 그리지 않는다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [{ symbol: 'NVDA', name: 'NVIDIA' }],
                     brief: [],
@@ -64,6 +67,7 @@ describe('ReportSymbolsPreview', () => {
     it('종목이 하나도 없으면 빈 상태 문구를 보인다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [],
                     brief: [],
@@ -79,7 +83,12 @@ describe('ReportSymbolsPreview', () => {
     });
 
     it('불러오지 못했으면(null) 안내만 보인다', () => {
-        render(<ReportSymbolsPreview preview={null} />);
+        render(
+            <ReportSymbolsPreview
+                preview={null}
+                excludedLimit={EXCLUDED_LIMIT}
+            />
+        );
 
         expect(
             screen.getByText('리포트 대상 종목을 지금은 불러오지 못했어요.')
@@ -89,6 +98,7 @@ describe('ReportSymbolsPreview', () => {
     it('담기는 칩마다 빼기 버튼을 달고, 뺄 수 있다는 안내를 보인다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [{ symbol: 'AAPL', name: 'Apple' }],
                     brief: [{ symbol: 'TSLA', name: null }],
@@ -113,6 +123,7 @@ describe('ReportSymbolsPreview', () => {
     it('뺀 종목 그룹에는 다시 넣기 버튼이 달린다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [{ symbol: 'AAPL', name: 'Apple' }],
                     brief: [],
@@ -135,6 +146,7 @@ describe('ReportSymbolsPreview', () => {
     it('전부 빼서 담긴 종목이 없어도 뺀 종목은 보이고 빈 상태 문구로 오해하지 않는다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [],
                     brief: [],
@@ -157,6 +169,7 @@ describe('ReportSymbolsPreview', () => {
     it('목록에 남은 뺀 종목이 없으면 지운 종목 기록만 있어도 "모두 뺐어요"가 아니라 빈 상태 문구를 보인다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [],
                     brief: [],
@@ -176,9 +189,9 @@ describe('ReportSymbolsPreview', () => {
             name: '목록에서 지운 종목의 제외 기록',
         });
         expect(group).toHaveTextContent('GONE');
-        // 지워도 리포트는 그대로라는 것과 한도를 차지한다는 것을 알린다(한도는 상수에서 주입).
+        // 지워도 리포트는 그대로라는 것과 한도를 차지한다는 것을 알린다(한도는 prop으로 주입).
         expect(group).toHaveTextContent(
-            `리포트 제외 한도(${EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS}개)만 차지해요`
+            `리포트 제외 한도(${EXCLUDED_LIMIT}개)만 차지해요`
         );
         expect(
             screen.getByRole('button', { name: 'GONE 제외 기록 지우기' })
@@ -188,6 +201,7 @@ describe('ReportSymbolsPreview', () => {
     it('담긴 종목이 있어도 지운 종목의 제외 기록 그룹을 함께 그린다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [{ symbol: 'AAPL', name: 'Apple' }],
                     brief: [],
@@ -210,6 +224,7 @@ describe('ReportSymbolsPreview', () => {
     it('지운 종목 기록이 없으면 그 그룹을 그리지 않는다', () => {
         render(
             <ReportSymbolsPreview
+                excludedLimit={EXCLUDED_LIMIT}
                 preview={{
                     full: [{ symbol: 'AAPL', name: 'Apple' }],
                     brief: [],
@@ -227,7 +242,12 @@ describe('ReportSymbolsPreview', () => {
     });
 
     it('포커스 복귀용 컨테이너를 제목으로 이름 붙여 그린다(tabIndex -1)', () => {
-        const { container } = render(<ReportSymbolsPreview preview={null} />);
+        const { container } = render(
+            <ReportSymbolsPreview
+                preview={null}
+                excludedLimit={EXCLUDED_LIMIT}
+            />
+        );
 
         const root = container.firstElementChild as HTMLElement;
         expect(root.id).toBe(REPORT_SYMBOLS_PREVIEW_ID);

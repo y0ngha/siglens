@@ -1,9 +1,8 @@
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
+import { SYMBOL_VIEWS_STORAGE_KEY as STORAGE_KEY } from '@/features/visitor-ping/lib/sentSymbols';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-
-const STORAGE_KEY = 'siglens:symbol-views';
 // 가짜 타이머 금지 — RTL waitFor 폴링이 멈춘다 (VisitorPing.test.tsx와 같은 이유).
 const TODAY = kstDateKey(new Date());
 

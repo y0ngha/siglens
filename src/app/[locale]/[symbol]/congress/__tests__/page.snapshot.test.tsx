@@ -46,7 +46,7 @@ vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
         .fn()
         .mockResolvedValue({ trades: [], degraded: false }),
 }));
-vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
+vi.mock('@/entities/congress-trades/server/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
 vi.mock('@/widgets/congress/CongressTrendSummary', () => ({

@@ -14,6 +14,10 @@ interface ContactTextareaFieldProps {
     error?: string;
 }
 
+/**
+ * 문의 본문용 여러 줄 입력. `shared/ui/TextField`와 같은 라벨·오류 구조에 글자 수
+ * 상한 안내를 더하고, 안내와 오류를 함께 `aria-describedby`로 묶는다.
+ */
 export function ContactTextareaField({
     id,
     name,
@@ -55,7 +59,7 @@ export function ContactTextareaField({
             />
             <p id={helperId} className="text-right text-xs text-secondary-500">
                 {t('ContactTextareaField.fbccd7', {
-                    // 자릿수 구분은 현재 로케일을 따른다 — 예전엔 'ko-KR' 고정이었다.
+                    // 자릿수 구분은 현재 로케일을 따른다.
                     v0: maxLength.toLocaleString(INTL_LOCALE[locale]),
                 })}
             </p>
