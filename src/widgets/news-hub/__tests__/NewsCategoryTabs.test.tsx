@@ -67,9 +67,8 @@ describe('NewsCategoryTabs', () => {
      * 현재 카테고리는 `<span aria-current="page">`이고 링크가 아니다.
      *
      * `<Link>`로 두면 자기 자신을 가리키는 죽은 앵커가 되어 내부 링크 그래프에
-     * 자기 참조가 들어간다(감사 실측: /news/stock의 내부 링크 집합에
-     * '/news/stock' 포함). 형제인 `shared/ui/RegionTabs`가 이미 같은 이유로
-     * 같은 형태를 쓴다 — 두 탭 줄이 한 화면에 같이 있으므로 어긋나면 눈에 띈다.
+     * 자기 참조가 들어간다. 형제인 `shared/ui/RegionTabs`가 같은 이유로 같은
+     * 형태를 쓴다 — 두 탭 줄이 한 화면에 같이 있으므로 어긋나면 눈에 띈다.
      */
     it('현재 카테고리는 링크가 아니라 aria-current 텍스트다', () => {
         render(<NewsCategoryTabs activeCategory="forex" />);

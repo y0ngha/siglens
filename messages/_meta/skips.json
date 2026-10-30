@@ -1182,14 +1182,14 @@
         "text": "이더리움"
     },
     {
-        "file": "src/features/pwa-install/hooks/usePwaInstall.ts",
-        "line": 114,
+        "file": "src/features/pwa-install/lib/installPrompt.ts",
+        "line": 51,
         "reason": "developer-diagnostic",
         "text": "[PWA] prompt 실패"
     },
     {
         "file": "src/features/pwa-install/lib/registerServiceWorker.ts",
-        "line": 46,
+        "line": 51,
         "reason": "developer-diagnostic",
         "text": "[PWA] SW 등록 실패"
     },

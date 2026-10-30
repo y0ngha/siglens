@@ -24,7 +24,7 @@ vi.mock('@/features/watchlist/ui/HomeWatchlistCard', () => ({
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
 }));
-vi.mock('@/widgets/home/heroQuickLinks', () => ({
+vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
     // 컴포넌트가 아닌 상수도 이 배럴을 통해 나간다 — 빠뜨리면 `page.tsx`가
     // `undefined.map`으로 죽어 ISR degrade 테스트가 엉뚱한 이유로 실패한다.
     //

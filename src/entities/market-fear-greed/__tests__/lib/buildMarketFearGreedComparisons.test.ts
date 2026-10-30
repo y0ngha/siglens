@@ -4,6 +4,7 @@ import { MS_PER_DAY } from '@/shared/config/time';
 import {
     buildCalendarDayComparisons,
     buildMarketFearGreedComparisons,
+    resolveSessionComparisons,
 } from '../../lib/buildMarketFearGreedComparisons';
 
 const BASE_DATE_MS = new Date('2020-01-01T00:00:00Z').getTime();
@@ -164,5 +165,60 @@ describe('buildCalendarDayComparisons', () => {
         );
 
         expect(oneYear?.date).toBe(isoDateAt(1));
+    });
+});
+
+describe('resolveSessionComparisons', () => {
+    it('빈 history는 빈 배열을 반환한다', () => {
+        expect(resolveSessionComparisons([])).toEqual([]);
+    });
+
+    it('history가 모든 lookback에 닿으면 clamped가 전부 false다', () => {
+        // 253개 scored 세션 → latest 인덱스 252, 1년 전(252)까지 정확히 닿는다.
+        const history = Array.from({ length: 253 }, (_, i) => scoredPoint(i));
+
+        const flags = resolveSessionComparisons(history).map(p => p.clamped);
+
+        expect(flags).toEqual([false, false, false, false]);
+    });
+
+    it('scored 세션이 252개면 1년 전만 clamp되고 가장 오래된 세션 날짜를 돌려준다', () => {
+        const history = Array.from({ length: 252 }, (_, i) => scoredPoint(i));
+
+        const result = resolveSessionComparisons(history);
+
+        expect(result.map(p => p.clamped)).toEqual([false, false, false, true]);
+        expect(result[3].date).toBe('2020-01-01');
+    });
+
+    it('scored 세션이 단 하나면 now를 뺀 세 지점이 clamp된다', () => {
+        const result = resolveSessionComparisons([scoredPoint(0)]);
+
+        expect(result.map(p => p.clamped)).toEqual([false, true, true, true]);
+    });
+
+    it('warm-up null 구간은 offset 계산에서 제외한다', () => {
+        const history = [
+            ...Array.from({ length: 30 }, (_, i) => nullPoint(i)),
+            ...Array.from({ length: 10 }, (_, i) => scoredPoint(30 + i)),
+        ];
+
+        const result = resolveSessionComparisons(history);
+
+        expect(result.map(p => p.clamped)).toEqual([false, false, true, true]);
+        expect(result[3].date).toBe(isoDateAt(30));
+    });
+
+    it('buildMarketFearGreedComparisons는 clamped 필드 없이 같은 지점을 돌려준다', () => {
+        const history = Array.from({ length: 10 }, (_, i) => scoredPoint(i));
+
+        const market = buildMarketFearGreedComparisons(history);
+
+        expect(market).toEqual(
+            resolveSessionComparisons(history).map(
+                ({ key, date, score, label }) => ({ key, date, score, label })
+            )
+        );
+        expect(market[0]).not.toHaveProperty('clamped');
     });
 });

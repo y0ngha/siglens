@@ -369,6 +369,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         <FearGreedPage
                             symbol={ticker}
                             fmpSymbol={assetInfo.fmpSymbol}
+                            displayName={displayName}
                             hasSeed={quantizedFgBars !== null}
                             // 아래 `FearGreedFactsSummary`가 같은 경고 문구와 표본 수
                             // 안내를 이미 서버 렌더한다 — 둘 다 그리면 중복이다.

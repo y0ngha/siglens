@@ -1,15 +1,12 @@
-import {
-    TICKER_CATEGORY_DESCRIPTION_KEY,
-    TICKER_CATEGORY_LABEL_KEY,
-} from '@/shared/config/tickerCategoryLabel';
+/**
+ * 홈 암호화폐 인기 종목 섹션: 카테고리별 색 매핑만 소유하고 렌더는 `CategoryCardGrid`에 맡긴다.
+ */
+
 import { useTranslations } from 'next-intl';
 import type { CryptoCategoryId } from '@/shared/lib/types';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
-import {
-    CategoryCardGrid,
-    type CategoryCard,
-    type CardStyle,
-} from './ui/CategoryCardGrid';
+import { CategoryCardGrid, type CardStyle } from './ui/CategoryCardGrid';
+import { toCategoryCards } from './utils/toCategoryCards';
 
 const CRYPTO_STYLES: Record<CryptoCategoryId, CardStyle> = {
     major: {
@@ -22,16 +19,9 @@ const CRYPTO_STYLES: Record<CryptoCategoryId, CardStyle> = {
     },
 };
 
-const CRYPTO_CARDS: CategoryCard[] = CRYPTO_CATEGORIES.map(category => ({
-    id: category.id,
-    // 라벨은 렌더 시점에 번역한다 — config는 데이터, 표시는 카탈로그.
-    labelKey: TICKER_CATEGORY_LABEL_KEY[category.label],
-    descriptionKey: TICKER_CATEGORY_DESCRIPTION_KEY[category.label],
-    label: category.label,
-    ...CRYPTO_STYLES[category.id],
-    items: category.items,
-}));
+const CRYPTO_CARDS = toCategoryCards(CRYPTO_CATEGORIES, CRYPTO_STYLES);
 
+/** 홈의 암호화폐 인기 종목 섹션 — 설정 카테고리를 카드 그리드로 그린다. */
 export function CryptoShowcase() {
     const t = useTranslations('widgets.home');
     return (

@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 거시 AI 브리핑 조회 훅 — seed 우선 표시 후 서버 액션 결과를 단일 union 상태로 낸다.
+ */
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
