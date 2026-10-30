@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 무료 사용자용 AdSense 배너 — 배치 슬롯별 광고 단위와 후원 안내 문구를 그린다. 광고가 꺼져
+ * 있거나 유료 사용자면 아무것도 그리지 않는다.
+ */
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import {

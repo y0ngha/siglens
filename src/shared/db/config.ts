@@ -1,7 +1,7 @@
 import { isBuildPhase, isOfflineBuild } from '@/shared/api/offlineBuild';
 import type { DatabaseConfig } from './types';
 
-/** Read `DATABASE_URL` from the environment and return a `DatabaseConfig`; throws when the variable is unset. */
+/** `DATABASE_URL`을 읽어 `DatabaseConfig`로 돌려준다. 비어 있으면 던진다 — DB가 필수인 경로용. */
 export function readDatabaseConfig(): DatabaseConfig {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
@@ -10,7 +10,7 @@ export function readDatabaseConfig(): DatabaseConfig {
     return { databaseUrl };
 }
 
-/** Read `DATABASE_URL` from the environment; returns `null` when the variable is absent. */
+/** `DATABASE_URL`을 읽는다. 비어 있으면 `null` — DB 없이도 degrade하는 경로용. */
 export function tryReadDatabaseConfig(): DatabaseConfig | null {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) return null;

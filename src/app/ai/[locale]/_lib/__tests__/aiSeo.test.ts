@@ -1,0 +1,117 @@
+import { describe, expect, it } from 'vitest';
+import {
+    aiUrl,
+    buildAiAboutMetadata,
+    buildAiBenchmarkMetadata,
+    buildAiHomeJsonLd,
+    buildAiHomeMetadata,
+} from '@/app/ai/[locale]/_lib/aiSeo';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
+
+const copy = {
+    title: '주식·코인 AI 챗봇 — 시세·차트·뉴스 물어보기 | 시그렌즈 AI',
+    description: '설명',
+    ogLabel: '라벨',
+};
+
+describe('buildAiHomeMetadata', () => {
+    it('indexable locale (ko): index, canonical to the ai host home, full OG/Twitter card', () => {
+        const m = buildAiHomeMetadata('ko', copy);
+        expect(m.title).toEqual({ absolute: copy.title });
+        expect(m.description).toBe(copy.description);
+        expect(m.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/`);
+        expect(m.openGraph).toMatchObject({
+            siteName: '시그렌즈 AI',
+            url: `${AI_SITE_URL}/`,
+            images: [{ url: `${AI_SITE_URL}/api/ai/og/ko.png` }],
+        });
+        expect(m.twitter).toMatchObject({ card: 'summary_large_image' });
+    });
+
+    it('a locale outside the static index gate is noindex (still followed) and keeps its own canonical', () => {
+        const m = buildAiHomeMetadata('en', copy);
+        expect(m.robots).toMatchObject({
+            index: false,
+            follow: true,
+            googleBot: { index: false },
+        });
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en`);
+        // A one-locale cluster is not a cluster: no hreflang map.
+        expect(m.alternates?.languages).toBeUndefined();
+    });
+
+    it('product name in og:site_name / applicationName follows the locale', () => {
+        expect(buildAiHomeMetadata('ko', copy).applicationName).toBe(
+            '시그렌즈 AI'
+        );
+        const en = buildAiHomeMetadata('en', copy);
+        expect(en.applicationName).toBe('SIGLENS AI');
+        expect(en.openGraph).toMatchObject({ siteName: 'SIGLENS AI' });
+    });
+});
+
+describe('buildAiAboutMetadata', () => {
+    it('indexes /about with its own canonical and OG url, not the home', () => {
+        const m = buildAiAboutMetadata('ko', copy);
+        expect(m.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/about`);
+        expect(m.openGraph).toMatchObject({ url: `${AI_SITE_URL}/about` });
+    });
+
+    it('keeps the locale prefix and the same index gate as the home', () => {
+        const m = buildAiAboutMetadata('en', copy);
+        expect(m.robots).toMatchObject({
+            index: false,
+            follow: true,
+            googleBot: { index: false },
+        });
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en/about`);
+    });
+});
+
+describe('buildAiHomeJsonLd', () => {
+    it('is a WebApplication tied to the siglens Organization, not a separate publisher', () => {
+        const ld = buildAiHomeJsonLd('ko', copy);
+        expect(ld['@type']).toBe('WebApplication');
+        expect(ld.url).toBe(`${AI_SITE_URL}/`);
+        // Named and linked, not a bare cross-domain @id Google cannot resolve.
+        expect(ld.publisher).toEqual({
+            '@type': 'Organization',
+            '@id': expect.stringMatching(/#organization$/),
+            name: 'SIGLENS',
+            url: expect.stringMatching(/^https?:\/\//),
+        });
+        // The JSON-LD name stays the mark; the Korean name rides in alternateName.
+        expect(ld.name).toBe('SIGLENS AI');
+        expect(ld.alternateName).toBe('시그렌즈 AI');
+        expect(ld).not.toHaveProperty('releaseNotes');
+        expect(ld.applicationCategory).toBe('FinanceApplication');
+    });
+});
+
+describe('buildAiBenchmarkMetadata', () => {
+    it('is the canonical copy: own canonical and OG url on the ai host', () => {
+        const m = buildAiBenchmarkMetadata('ko', copy);
+        expect(m.title).toEqual({ absolute: copy.title });
+        expect(m.description).toBe(copy.description);
+        expect(m.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/benchmark`);
+        expect(m.openGraph).toMatchObject({
+            url: `${AI_SITE_URL}/benchmark`,
+        });
+    });
+
+    it('keeps the locale prefix in the canonical of a non-default locale', () => {
+        const m = buildAiBenchmarkMetadata('en', copy);
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en/benchmark`);
+    });
+});
+
+describe('aiUrl', () => {
+    it('joins the ai origin and the localized path', () => {
+        expect(aiUrl('ko', '/benchmark')).toBe(`${AI_SITE_URL}/benchmark`);
+        expect(aiUrl('ja', '/benchmark')).toBe(`${AI_SITE_URL}/ja/benchmark`);
+    });
+});

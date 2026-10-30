@@ -5,9 +5,9 @@
  *
  * Google Ads (KR) limits any ad whose landing page mentions crypto, and these
  * pages exist only as ad final URLs, so one crypto word anywhere defeats their
- * purpose (spec `2026-09-26-ad-landing-pages-design.md` "Guard"). The rest are
- * house style for ad copy: no middle dot or em dash, "종목" or the company name
- * rather than the jargon "티커", and no "가입/로그인 없이" phrasing.
+ * purpose. The rest are house style for ad copy: no middle dot or em dash,
+ * "종목" or the company name rather than the jargon "티커", and no "가입/로그인
+ * 없이" phrasing.
  */
 export const CRYPTO_RE =
     /코인|비트코인|이더리움|암호화폐|가상자산|크립토|crypto|bitcoin/i;

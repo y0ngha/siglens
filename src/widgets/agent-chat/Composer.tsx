@@ -7,10 +7,13 @@ import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
 import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
+import {
+    isSendableMessage,
+    MESSAGE_MAX_CHARS,
+} from '@/features/agent-chat/lib/messageLimits';
 
-const MAX = 4_000;
 /** The counter stays hidden until the message is long enough that the cap is a real concern. */
-const COUNTER_VISIBLE_FROM = MAX * 0.8;
+const COUNTER_VISIBLE_FROM = MESSAGE_MAX_CHARS * 0.8;
 
 interface Props {
     readonly disabled: boolean;
@@ -54,11 +57,12 @@ export function Composer({
     initialValue = '',
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
-    const [text, setText] = useState(() => initialValue.slice(0, MAX));
+    const [text, setText] = useState(() =>
+        initialValue.slice(0, MESSAGE_MAX_CHARS)
+    );
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const overLimit = text.length > MAX;
-    const canSend =
-        !disabled && !streaming && text.trim().length > 0 && !overLimit;
+    const overLimit = text.length > MESSAGE_MAX_CHARS;
+    const canSend = !disabled && !streaming && isSendableMessage(text);
     const submit = (): void => {
         if (!canSend) return;
         onSend(text.trim());
@@ -156,14 +160,14 @@ export function Composer({
                         <span className="text-ui-danger-text">
                             {t('Composer.tooLong', {
                                 len: text.length.toLocaleString(),
-                                max: MAX.toLocaleString(),
+                                max: MESSAGE_MAX_CHARS.toLocaleString(),
                             })}
                         </span>
                     ) : text.length >= COUNTER_VISIBLE_FROM ? (
                         <span className="tabular-nums">
                             {t('Composer.charCount', {
                                 len: text.length.toLocaleString(),
-                                max: MAX.toLocaleString(),
+                                max: MESSAGE_MAX_CHARS.toLocaleString(),
                             })}
                         </span>
                     ) : (

@@ -306,6 +306,20 @@ describe('TechnicalFactsSummary — en 로케일 (audit item 1: enum 값 카탈�
         expect(macdRow).not.toMatch(/[가-힣]/);
     });
 
+    it('zh는 RSI 값의 괄호를 로케일 카탈로그(전각)대로 쓴다', () => {
+        renderWithIntl(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{ ...emptyIndicators, rsi: [null, NEUTRAL_RSI] }}
+            />,
+            { locale: 'zh' }
+        );
+
+        const rsiValue = screen.getByText('RSI').nextElementSibling;
+        expect(rsiValue?.textContent).toMatch(/^\d+\.\d（[^)）]+）$/);
+    });
+
     it('MACD histogram이 음수이면 en에서 Bearish로 렌더한다', () => {
         renderWithIntl(
             <TechnicalFactsSummary

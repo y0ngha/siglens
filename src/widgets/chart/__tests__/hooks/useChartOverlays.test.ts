@@ -12,6 +12,7 @@ const mockCreateSeriesMarkers = vi.fn();
 const createdSeries: {
     setData: ReturnType<typeof vi.fn>;
     attachPrimitive: ReturnType<typeof vi.fn>;
+    detachPrimitive: ReturnType<typeof vi.fn>;
     applyOptions: ReturnType<typeof vi.fn>;
 }[] = [];
 // 가격 → y좌표. 테스트마다 바꿔 라벨 겹침을 흉내 낸다(기본: 1원 = 10px, 위로 갈수록 작은 y).
@@ -20,6 +21,7 @@ const mockAddSeries = vi.fn(() => {
     const series = {
         setData: vi.fn(),
         attachPrimitive: vi.fn(),
+        detachPrimitive: vi.fn(),
         applyOptions: vi.fn(),
         priceToCoordinate: (price: number) => priceToY(price),
     };
@@ -206,19 +208,70 @@ describe('useChartOverlays', () => {
         expect(mockRemoveSeries).toHaveBeenCalledTimes(1);
     });
 
-    it('removes the previous series and recreates when specs change', () => {
-        const chart = makeChart();
-        const { rerender } = renderHook(
-            ({ specs }: { specs: OverlayLineSpec[] }) =>
-                useChartOverlays({ chartRef: makeChartRef(chart), specs }),
-            { initialProps: { specs: [SPEC] } }
-        );
-        expect(mockAddSeries).toHaveBeenCalledTimes(1);
+    // 기하가 같은 스펙은 시리즈를 재사용한다 — hover 강조·실시간 종가처럼 스타일만 바뀌는
+    // 갱신마다 수십 개 시리즈를 지웠다 다시 만들던 깜빡임을 없앤다.
+    describe('스펙 변경 시 차이만 반영', () => {
+        const stableRef = makeChartRef(makeChart());
 
-        rerender({ specs: [SPEC, { ...SPEC }] });
-        expect(mockRemoveSeries).toHaveBeenCalledTimes(1);
-        expect(mockAddSeries).toHaveBeenCalledTimes(3);
+        it('추가된 스펙만 만들고 기존 시리즈는 지우지 않는다', () => {
+            const { rerender } = renderHook(
+                ({ specs }: { specs: OverlayLineSpec[] }) =>
+                    useChartOverlays({ chartRef: stableRef, specs }),
+                { initialProps: { specs: [SPEC] } }
+            );
+            expect(mockAddSeries).toHaveBeenCalledTimes(1);
+
+            rerender({ specs: [SPEC, { ...SPEC }] });
+            expect(mockRemoveSeries).not.toHaveBeenCalled();
+            expect(mockAddSeries).toHaveBeenCalledTimes(2);
+        });
+
+        it('스타일만 바뀌면 같은 시리즈에 옵션만 입힌다', () => {
+            const { rerender } = renderHook(
+                ({ specs }: { specs: OverlayLineSpec[] }) =>
+                    useChartOverlays({ chartRef: stableRef, specs }),
+                { initialProps: { specs: [SPEC] } }
+            );
+            rerender({ specs: [{ ...SPEC, opacity: 0.3, lineWidthMult: 2 }] });
+
+            expect(mockAddSeries).toHaveBeenCalledTimes(1);
+            expect(mockRemoveSeries).not.toHaveBeenCalled();
+            expect(createdSeries[0]!.applyOptions).toHaveBeenCalledWith(
+                expect.objectContaining({ color: '#42a5f54d' })
+            );
+        });
+
+        it('기하가 바뀐 스펙은 지우고 새로 만든다', () => {
+            const { rerender } = renderHook(
+                ({ specs }: { specs: OverlayLineSpec[] }) =>
+                    useChartOverlays({ chartRef: stableRef, specs }),
+                { initialProps: { specs: [SPEC] } }
+            );
+            rerender({
+                specs: [
+                    {
+                        ...SPEC,
+                        points: [SPEC.points[0], { time: 5, value: 9 }],
+                    },
+                ],
+            });
+            expect(mockRemoveSeries).toHaveBeenCalledTimes(1);
+            expect(mockAddSeries).toHaveBeenCalledTimes(2);
+        });
+
+        it('연장 primitive는 스타일이 바뀌면 갈아 끼운다', () => {
+            const level = { ...SPEC, extendRight: true };
+            const { rerender } = renderHook(
+                ({ specs }: { specs: OverlayLineSpec[] }) =>
+                    useChartOverlays({ chartRef: stableRef, specs }),
+                { initialProps: { specs: [level] } }
+            );
+            rerender({ specs: [{ ...level, opacity: 0.5 }] });
+            expect(createdSeries[0]!.detachPrimitive).toHaveBeenCalledTimes(1);
+            expect(createdSeries[0]!.attachPrimitive).toHaveBeenCalledTimes(2);
+        });
     });
+
     describe('레벨 라벨 겹침', () => {
         const level = (
             title: string,
@@ -288,6 +341,36 @@ describe('useChartOverlays', () => {
             const onRange = timeScale.subscribeVisibleLogicalRangeChange.mock
                 .calls[0]![0] as () => void;
             onRange();
+            flushFrames();
+            expect(titleOf(0)).toBe('A 무효화');
+        });
+
+        // 재사용된 시리즈는 직전 판정에서 지운 제목을 기억해야 한다 — 다른 작도의 스타일만
+        // 바뀐 재실행에서 "이미 보인다"로 오판하면 숨긴 제목이 되살아나지 않는다.
+        it('스타일만 바뀐 재실행에서도 숨겼던 라벨을 되살린다', () => {
+            const chartRef = makeChartRef(makeChart());
+            const other: OverlayLineSpec = {
+                ...SPEC,
+                points: [
+                    { time: 1, value: 90 },
+                    { time: 3, value: 95 },
+                ],
+            };
+            const specsWith = (otherOpacity: number) => [
+                level('A 무효화', 17.1, 1),
+                level('B 돌파', 17.2, 2),
+                { ...other, opacity: otherOpacity },
+            ];
+            const { rerender } = renderHook(
+                ({ specs }: { specs: OverlayLineSpec[] }) =>
+                    useChartOverlays({ chartRef, specs }),
+                { initialProps: { specs: specsWith(1) } }
+            );
+            flushFrames();
+            expect(titleOf(0)).toBe('');
+
+            priceToY = price => 10000 - price * 1000;
+            rerender({ specs: specsWith(0.4) });
             flushFrames();
             expect(titleOf(0)).toBe('A 무효화');
         });

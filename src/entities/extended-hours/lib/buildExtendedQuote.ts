@@ -1,10 +1,10 @@
 import type { ExtendedHoursTrade } from '@/shared/api/market/marketProvider.types';
-import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
-import type { ExtendedHoursQuote } from '../model';
 import {
     etDayNumber,
     previousTradingEtDay,
 } from '@/shared/api/market/usSessionClock';
+import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
+import type { ExtendedHoursQuote } from '../model';
 import type { ExtendedSessionWindow } from './extendedSession';
 
 /** 서버·FMP 시계 차이 허용치 — 이보다 미래인 체결은 깨진 데이터로 본다. */
@@ -25,6 +25,7 @@ export interface ReferenceQuote {
     timestampSec?: number;
 }
 
+/** `buildExtendedQuote` 입력 — 세션 창, 마지막 확장 체결, 기준 종가, 판정 시각(epoch ms). */
 interface BuildExtendedQuoteInput {
     window: ExtendedSessionWindow;
     trade: ExtendedHoursTrade | null;
@@ -32,6 +33,7 @@ interface BuildExtendedQuoteInput {
     nowMs: number;
 }
 
+/** 가격·시각 필드가 양의 유한수인지 좁히는 가드. */
 const isPositiveFinite = (n: unknown): n is number =>
     typeof n === 'number' && Number.isFinite(n) && n > 0;
 

@@ -1,5 +1,5 @@
 import type { Bar } from '@y0ngha/siglens-core';
-import { buildReportChartImage } from '@/entities/email-report/lib/buildReportChartImage';
+import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 
 function bar(i: number): Bar {
     const base = 100 + i;

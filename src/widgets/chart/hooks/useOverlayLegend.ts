@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 크로스헤어 위치에 맞춰 오버레이 지표 범례 값을 계산하는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { IChartApi } from 'lightweight-charts';

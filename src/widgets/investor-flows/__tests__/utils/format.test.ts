@@ -46,6 +46,16 @@ describe('flowFormat', () => {
         expect(formatSignedDecimal(-0.04, 'en')).toBe('0.0');
     });
 
+    it('formatSignedPercent는 주어진 자리에서 반올림해 0이면 부호를 붙이지 않는다', () => {
+        expect(formatSignedPercent(-0.04, 'en')).toBe('0.0%');
+        expect(formatSignedPercent(0.04, 'en')).toBe('0.0%');
+        expect(formatSignedPercent(-0.004, 'en', 2)).toBe('0.00%');
+        // 반올림하면 0이 아닌 값은 부호를 유지한다.
+        expect(formatSignedPercent(-0.05, 'en')).toBe('-0.1%');
+        expect(formatSignedPercent(0.006, 'en', 2)).toBe('+0.01%');
+        expect(formatSignedPercent(2.46, 'en')).toBe('+2.5%');
+    });
+
     it('날짜 축약, 형식이 이상하면 원문', () => {
         expect(formatPeriodShort('2026-06-30')).toBe("'26.06");
         expect(formatPeriodShort('bad')).toBe('bad');

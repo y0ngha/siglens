@@ -1,3 +1,6 @@
+/**
+ * 추세(Trend) → 배지 표시 라벨·색 해석.
+ */
 import type { Trend } from '@y0ngha/siglens-core';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
@@ -15,7 +18,7 @@ export interface TrendDisplay {
  * 패널 헤드라인이 스냅샷 프로즈("AAPL Technical Direction: Flat") 바로 옆에서
  * `보합`을 찍었다(같은 값, 두 언어, 한 화면).
  */
-const TREND_LABEL_KEY: Record<Trend, string> = {
+export const TREND_LABEL_KEY: Record<Trend, string> = {
     bullish: 'trend.bullish',
     bearish: 'trend.bearish',
     neutral: 'trend.neutral',
@@ -53,6 +56,6 @@ export function resolveTrendDisplay(
     trend: Trend | null | undefined,
     t: EnumLabelTranslator
 ): TrendDisplay | null {
-    if (trend == null || !(trend in TREND_STYLE)) return null;
+    if (trend == null || !Object.hasOwn(TREND_STYLE, trend)) return null;
     return { label: t(TREND_LABEL_KEY[trend]), ...TREND_STYLE[trend] };
 }

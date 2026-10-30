@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { SignalSubsection } from '@/widgets/dashboard/SignalSubsection';
+import { SIGNAL_CARD_GRID_CLASS } from '@/widgets/dashboard/utils/signalCardGrid';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
 
 vi.mock('@/shared/lib/cn', () => ({
@@ -105,6 +106,8 @@ describe('SignalSubsection', () => {
             />
         );
         expect(screen.getByText('해당 종목 없음')).toBeInTheDocument();
+        // 낭독은 패널의 상태 줄이 맡는다 — 소절마다 live region을 두지 않는다.
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
         // 시간대·기간을 단정하는 문구("오늘은")는 쓰지 않는다 — 1시간·1일 어느 탭에서나 맞아야 한다.
         expect(screen.queryByText(/오늘은/)).not.toBeInTheDocument();
     });
@@ -121,6 +124,22 @@ describe('SignalSubsection', () => {
             />
         );
         expect(screen.getByTestId('stock-AAPL')).toBeInTheDocument();
+    });
+
+    it('카드 그리드는 자리 표시와 공유하는 반응형 클래스를 쓴다', () => {
+        render(
+            <SignalSubsection
+                tickerIsReadable
+                currencySymbol="$"
+                title="상승 신호"
+                marker="▲"
+                variant="confirmed"
+                stocks={[STOCK]}
+            />
+        );
+        expect(screen.getByTestId('stock-AAPL').parentElement).toHaveClass(
+            ...SIGNAL_CARD_GRID_CLASS.split(' ')
+        );
     });
 
     it('renders info tooltip when infoMessage is provided', () => {
