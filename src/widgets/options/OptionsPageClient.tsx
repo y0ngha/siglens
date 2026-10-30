@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * Client container for `/[symbol]/options`: owns the expiration selection and
+ * the client-only staleness evaluation, and drills derived view models down.
+ */
+
 import { startTransition, useEffect, useEffectEvent, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
@@ -79,15 +84,17 @@ export function OptionsPageClient({
     const { modelId, reasoning } = useSymbolModel();
     const isSettingsHydrated = useAnalysisSettingsHydrated();
     const validSlots = slots.filter(isSlotMapping);
-    // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
-    // 이전엔 OptionsMetricsRow / OpenInterestChart / OptionsChainTable이
-    // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
-    // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
+    // (chain, metrics, oiByStrike)를 한 번 산출해 지표 행·차트·표에 prop-drill 한다.
+    // 자식이 각자 pickActiveChain·summarizeChainForLlm·aggregateOpenInterest를
+    // 돌리면 칩 전환마다 같은 계산이 반복된다.
     const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
     // 마운트 이후 + 미국 정규장 밖. 서버·첫 렌더는 항상 false.
     const afterHours = now !== null && !isEtRegularSessionOpen(now);
     const oiStale = afterHours && isOpenInterestSnapshotStale(snapshot);
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
+    // `cacheOnly`(=oiStale)는 마운트 이후에야 확정된다. 그 전에 분석 쿼리가 돌면
+    // stale OI로 생성 모드 요청이 나가므로, 평가가 끝나기 전에는 쿼리를 켜지 않는다.
+    const analysisReady = isSettingsHydrated && now !== null;
     // handlers — useEffectEvent 는 stable reference 이므로 deps 에 넣지 않는다
     // (REACT.md#EF-2). 다만 useEffectEvent 자체는 react/set-state-in-effect
     // lint 를 피하게 해주지 않는다(oxlint 가 그 본문의 setState 도 추적한다). lint
@@ -106,11 +113,9 @@ export function OptionsPageClient({
         // page.tsx가 이미 <main> landmark로 감싸므로 여기는 일반 컨테이너만.
         // 중첩 <main>은 invalid HTML이고 screen reader landmark navigation을
         // 깬다.
-        // audit fix FIX 3: `mx-auto max-w-5xl px-4` 제거 — page.tsx의 <main>이
-        // 이미 동일 max-width+px를 적용하고 있어(single source), 이 div가
-        // 다시 적용하면 이중 inset(양쪽 16px씩)이 걸려 위(OptionsSnapshotProse
-        // 카드)와 폭이 어긋난다. `space-y-6 py-6`만 유지 — 세로 간격/패딩은
-        // 이 컨테이너 고유 관심사라 유지한다.
+        // 가로 폭·inset은 page.tsx의 <main>이 단일 소스로 정한다. 여기서 다시
+        // 적용하면 이중 inset이 걸려 위쪽 OptionsSnapshotProse 카드와 폭이 어긋나므로,
+        // 이 컨테이너 고유 관심사인 세로 간격/패딩만 둔다.
         <div className="space-y-6 py-6">
             <ExpirationSelector
                 slots={validSlots}
@@ -145,7 +150,7 @@ export function OptionsPageClient({
                         expirationDate={expirationDate}
                         modelId={modelId}
                         reasoning={reasoning}
-                        isSettingsHydrated={isSettingsHydrated}
+                        isSettingsHydrated={analysisReady}
                         hideView={hasSnapshotProse}
                         cacheOnly={oiStale}
                         snapshotCapturedAt={snapshot.capturedAt}
@@ -166,8 +171,9 @@ export function OptionsPageClient({
             <div className="space-y-4">
                 <OpenInterestChart
                     underlyingPrice={snapshot.underlyingPrice}
-                    chain={chainMetrics.chain}
+                    oiByStrike={chainMetrics.oiByStrike}
                     metrics={chainMetrics.metrics}
+                    oiStale={oiStale}
                 />
 
                 <StrikeVolumeChart
@@ -181,7 +187,9 @@ export function OptionsPageClient({
                 expirationDate={expirationDate}
                 underlyingPrice={snapshot.underlyingPrice}
                 chain={chainMetrics.chain}
+                oiByStrike={chainMetrics.oiByStrike}
                 metrics={chainMetrics.metrics}
+                oiStale={oiStale}
                 nearestExpiry={nearestExpiry}
             />
 

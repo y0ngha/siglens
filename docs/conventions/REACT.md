@@ -355,6 +355,21 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-4"></a>
+
+#### CR-4 — Pointer-anchored overlays measure the target at event time
+
+A tooltip or marker positioned from a `DOMRect` must read `getBoundingClientRect()` inside the pointer handler that uses it. A rect cached at `pointerenter` goes stale once the page or an ancestor scrolls, so the overlay drifts away from the element.
+
+```typescript
+// ❌ rect captured once at pointerenter, reused by pointermove
+const onEnter = (e: PointerEvent) => { rectRef.current = e.currentTarget.getBoundingClientRect(); };
+const onMove = (e: PointerEvent) => place(e.clientX - rectRef.current.left);
+
+// ✅ measured where it is used
+const onMove = (e: PointerEvent) => place(e.clientX - e.currentTarget.getBoundingClientRect().left);
+```
+
 #### Other props and state rules
 
 - **Pass gating props explicitly.** A component that consumes a tier-gating prop (`isFreeUser` …) receives it from every call site; relying on a permissive default leaks free-tier surfaces (ads) to paid users.

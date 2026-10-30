@@ -7,7 +7,7 @@ import {
     slotWidth,
     barCenterX,
     barPixelHeight,
-} from '@/widgets/options/lib/strikeChartGeometry';
+} from '@/widgets/options/utils/strikeChartGeometry';
 
 describe('slotWidth', () => {
     it('chartWidth를 count로 균등 분할해 반환한다', () => {
