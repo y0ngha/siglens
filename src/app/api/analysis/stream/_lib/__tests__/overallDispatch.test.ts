@@ -1,4 +1,4 @@
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shouldAttemptReanalyze } from '../../generationQuota';
@@ -13,7 +13,7 @@ const { findRecentForPrompt } = vi.hoisted(() => ({
 vi.mock('@/entities/analysis/actions/runOverallAnalysisAction', () => ({
     runOverallAnalysisAction: vi.fn(),
 }));
-vi.mock('@/entities/analysis/lib/reanalyzeCooldown', () => ({
+vi.mock('@/entities/analysis/actions/tryAcquireReanalyzeCooldown', () => ({
     tryAcquireReanalyzeCooldown: vi.fn(),
 }));
 vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({

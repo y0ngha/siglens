@@ -7,12 +7,14 @@ vi.mock('@/shared/ui/tabs/TabsUnderline', () => ({
         tabs,
         activeTab,
         onChange,
+        panelMounting,
     }: {
         tabs: { value: string; label: string }[];
         activeTab: string;
         onChange: (v: string) => void;
+        panelMounting?: string;
     }) => (
-        <div role="tablist">
+        <div role="tablist" data-panel-mounting={panelMounting}>
             {tabs.map(t => (
                 <button
                     key={t.value}
@@ -329,6 +331,23 @@ describe('BacktestTabs', () => {
             renderTabs();
 
             expect(screen.getByTestId('empty')).toHaveAttribute('hidden');
+        });
+    });
+
+    describe('panelMounting', () => {
+        it("활성 패널만 마운트하므로 TabsUnderline에 panelMounting='active'를 넘긴다", () => {
+            mockUseBacktestFilter.mockReturnValue(filterState());
+
+            render(
+                <BacktestTabs tickers={['AAPL', 'NVDA']}>
+                    <ServerList />
+                </BacktestTabs>
+            );
+
+            expect(screen.getByRole('tablist')).toHaveAttribute(
+                'data-panel-mounting',
+                'active'
+            );
         });
     });
 });

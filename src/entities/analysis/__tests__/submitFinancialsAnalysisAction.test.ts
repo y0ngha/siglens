@@ -23,7 +23,7 @@ vi.mock('@/shared/api/e2eAnalysisStub', () => ({
     E2E_FORCE_FINANCIALS_ERROR_COOKIE: 'e2e_force_financials_error',
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -47,7 +47,7 @@ import {
     type RunFinancialsAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { runFinancialsAnalysisAction } from '../actions/runFinancialsAnalysisAction';

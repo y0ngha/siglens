@@ -22,7 +22,7 @@ vi.mock('@/entities/auth/lib/findUserBySessionToken', () => ({
 
 import { cookies } from 'next/headers';
 import { findUserBySessionToken } from '@/entities/auth/lib/findUserBySessionToken';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;

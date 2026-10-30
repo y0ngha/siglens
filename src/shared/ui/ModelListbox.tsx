@@ -12,7 +12,7 @@ import type { ModelId } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { ModelAccessBadge } from '@/shared/ui/ModelAccessBadge';
-import { getListboxNextIndex } from '@/shared/ui/modelListboxNav';
+import { getListboxNextIndex } from '@/shared/ui/utils/modelListboxNav';
 
 export interface ModelListboxGroup {
     /** 그룹 머리글(예: provider 이름). */

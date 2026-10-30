@@ -9,7 +9,7 @@ vi.mock('@/entities/auth/server/handoffStore', async importOriginal => ({
     ...(await importOriginal<object>()),
     consumeLogoutCode: m.consume,
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: m.getCurrentUser,
 }));
 vi.mock('@/entities/auth/lib/logoutUser', () => ({ logoutUser: m.logoutUser }));

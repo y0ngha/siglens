@@ -1,4 +1,4 @@
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -20,7 +20,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { runGatedAnalysis } from '@/entities/analysis/server/runGatedAnalysis';

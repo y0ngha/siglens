@@ -1,7 +1,7 @@
 import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
 import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';

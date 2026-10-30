@@ -13,7 +13,7 @@ const { mockUser, repo, RepoCtor } = vi.hoisted(() => {
     });
     return { mockUser: vi.fn(), repo, RepoCtor };
 });
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: mockUser,
 }));
 vi.mock('@/shared/db/client', () => ({

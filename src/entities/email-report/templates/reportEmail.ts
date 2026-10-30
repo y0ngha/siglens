@@ -30,7 +30,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     const showConfluenceNote =
         input.sections.some(s => s.brief.signals !== null) ||
         input.briefRows.some(r => r.brief.signals !== null);
-    // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`CONVENTIONS.md#I18-11`).
+    // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`I18N.md#I18-11`).
     const brand = brandName(locale);
     const reason = t('reason', { v0: brand });
 

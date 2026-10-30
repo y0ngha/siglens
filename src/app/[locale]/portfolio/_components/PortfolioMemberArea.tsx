@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
 import type { Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';

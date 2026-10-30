@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { logActionError } from '@/shared/lib/logActionError';

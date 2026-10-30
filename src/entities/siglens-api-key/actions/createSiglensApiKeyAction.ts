@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { validateKeyName } from '@/entities/siglens-api-key/lib/validateKeyName';
 import type {
@@ -27,7 +27,7 @@ const ERROR_MESSAGE_KEY: Record<ReachableSiglensApiKeyErrorCode, string> = {
     server_error: 'serverError',
 };
 
-/** ICU 인자(`{v0}`)로 넘기는 상한 — 카탈로그 문구에 숫자를 적지 않는다(CONVENTIONS.md#I18-6). */
+/** ICU 인자(`{v0}`)로 넘기는 상한 — 카탈로그 문구에 숫자를 적지 않는다(I18N.md#I18-6). */
 const ERROR_MESSAGE_VALUES: Partial<
     Record<ReachableSiglensApiKeyErrorCode, { v0: number }>
 > = {

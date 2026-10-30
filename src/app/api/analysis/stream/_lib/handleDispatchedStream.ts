@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import {

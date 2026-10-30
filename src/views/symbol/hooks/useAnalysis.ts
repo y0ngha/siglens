@@ -20,7 +20,7 @@ import type {
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { getReanalyzeCooldownMs as fetchReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { getReanalyzeCooldownMs as fetchReanalyzeCooldownMs } from '@/entities/analysis/actions/getReanalyzeCooldownMs';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 // symbol-page → analysis는 허용된 하향 의존(views → widgets).
 import type { CooldownNotice } from '@/widgets/analysis/model/types';

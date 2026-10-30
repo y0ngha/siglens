@@ -11,12 +11,12 @@ vi.mock('@/shared/lib/byokGate', () => ({
             tier !== 'free' && clientReasoning === true
     ),
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
 import { runOptionsAnalysis, type ModelId } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { executeOptionsAnalysis } from '@/entities/options-chain/server/optionsAnalysisRunner';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';

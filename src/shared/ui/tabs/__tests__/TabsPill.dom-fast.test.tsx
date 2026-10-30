@@ -96,4 +96,46 @@ describe('TabsPill', () => {
         );
         expect(screen.getByRole('tablist').className).toContain('mt-4');
     });
+
+    describe('panelMounting', () => {
+        it("기본값 'all'이면 모든 탭이 자기 패널을 aria-controls로 가리킨다", () => {
+            render(
+                <TabsPill
+                    tabs={tabs}
+                    activeTab="a"
+                    onChange={vi.fn()}
+                    ariaLabel="Test tabs"
+                    idPrefix="pill"
+                />
+            );
+            expect(screen.getByText('Tab A')).toHaveAttribute(
+                'aria-controls',
+                'pill-panel-a'
+            );
+            expect(screen.getByText('Tab B')).toHaveAttribute(
+                'aria-controls',
+                'pill-panel-b'
+            );
+        });
+
+        it("'active'면 비활성 탭은 존재하지 않는 패널을 가리키지 않는다", () => {
+            render(
+                <TabsPill
+                    tabs={tabs}
+                    activeTab="a"
+                    onChange={vi.fn()}
+                    ariaLabel="Test tabs"
+                    idPrefix="pill"
+                    panelMounting="active"
+                />
+            );
+            expect(screen.getByText('Tab A')).toHaveAttribute(
+                'aria-controls',
+                'pill-panel-a'
+            );
+            expect(screen.getByText('Tab B')).not.toHaveAttribute(
+                'aria-controls'
+            );
+        });
+    });
 });

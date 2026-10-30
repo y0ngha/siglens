@@ -17,7 +17,7 @@ import type { Mock } from 'vitest';
 import {
     createPendingOAuthSignupStore,
     type PendingOAuthSignup,
-} from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+} from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { Redis } from '@upstash/redis';
@@ -227,7 +227,7 @@ describe('createPendingOAuthSignupStoreFromEnv', () => {
         process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
 
         const { createPendingOAuthSignupStoreFromEnv } =
-            await import('@/entities/oauth-account/lib/pendingOAuthSignupStore');
+            await import('@/entities/oauth-account/server/pendingOAuthSignupStore');
         const store = createPendingOAuthSignupStoreFromEnv();
 
         expect(store).not.toBeNull();
@@ -250,7 +250,7 @@ describe('createPendingOAuthSignupStoreFromEnv', () => {
         process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
 
         const { createPendingOAuthSignupStoreFromEnv } =
-            await import('@/entities/oauth-account/lib/pendingOAuthSignupStore');
+            await import('@/entities/oauth-account/server/pendingOAuthSignupStore');
         const store = createPendingOAuthSignupStoreFromEnv();
 
         expect(store).toBeNull();
@@ -261,7 +261,7 @@ describe('createPendingOAuthSignupStoreFromEnv', () => {
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
         const { createPendingOAuthSignupStoreFromEnv } =
-            await import('@/entities/oauth-account/lib/pendingOAuthSignupStore');
+            await import('@/entities/oauth-account/server/pendingOAuthSignupStore');
         const store = createPendingOAuthSignupStoreFromEnv();
 
         expect(store).toBeNull();

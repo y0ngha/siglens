@@ -1,7 +1,7 @@
 import type { MockedFunction } from 'vitest';
 const { mockFindByUser } = vi.hoisted(() => ({ mockFindByUser: vi.fn() }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -15,7 +15,7 @@ vi.mock('@/entities/api-key/api', () => ({
     }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<

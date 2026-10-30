@@ -62,7 +62,7 @@ const SELF = path.join(ROOT, 'src/__tests__/guards/ruleReferences.test.ts');
 
 /** `FILE#ID` — ID는 대문자 접두사 + 번호(`CS-5`, `TE-12`). */
 const REFERENCE_PATTERN =
-    /((?:[\w.-]+\/)*[A-Za-z_]+\.md)#([A-Z][A-Z0-9]*-\d+)/g;
+    /((?:[\w.-]+\/)*[A-Za-z0-9_]+\.md)#([A-Z][A-Z0-9]*-\d+)/g;
 /**
  * 앵커 줄 바로 아래(빈 줄 허용)에 같은 ID를 단 제목이 와야 규칙 정의로 센다.
  * 범례나 에이전트 지침 속 예시 문자열(`<a id="CP-2"></a>`)은 정의가 아니다.

@@ -136,7 +136,7 @@ vi.mock('@/entities/options-chain/api', () => ({
 vi.mock('@/shared/api/indexNow', () => ({
     isIndexNowEnabled: mockIsIndexNowEnabled,
 }));
-vi.mock('@/shared/lib/indexNowQueue', () => ({
+vi.mock('@/shared/api/indexNowQueue', () => ({
     enqueueIndexNow: mockEnqueue,
     drainIndexNow: mockDrain,
 }));

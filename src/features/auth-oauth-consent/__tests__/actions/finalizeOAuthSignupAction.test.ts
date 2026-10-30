@@ -17,7 +17,7 @@ vi.mock('@/entities/oauth-account/api', () => ({
 vi.mock('@/entities/oauth-account/server/revoker', () => ({
     compositeOAuthRevoker: { revokeToken: vi.fn() },
 }));
-vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStore: vi.fn(),
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
@@ -82,7 +82,7 @@ vi.mock('next/navigation', () => ({
 
 import { finalizeOAuthSignupAction } from '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction';
 import { redirect } from 'next/navigation';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';

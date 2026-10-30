@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 
 /**
  * 비콘을 보낸 회원의 id. `getCurrentUser`는 세션 쿠키가 없으면 DB를 건드리지 않고

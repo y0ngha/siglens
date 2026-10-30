@@ -31,7 +31,7 @@ import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import {
     createPendingOAuthSignupStoreFromEnv,
     type PendingOAuthSignup,
-} from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+} from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { cookies } from 'next/headers';

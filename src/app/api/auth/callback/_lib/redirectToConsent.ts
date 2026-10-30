@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { getOAuthRedirectBaseUrl } from '@/features/auth-oauth/lib/providers';
 import { expiredOAuthStateCookie } from '@/features/auth-oauth/lib/state';
 import type { OAuthProfileResult } from '@/features/auth-oauth/lib/types';
