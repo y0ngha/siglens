@@ -1,5 +1,5 @@
 /**
- * Branch coverage tests for skill/api.ts — targets uncovered branches in
+ * Branch coverage tests for skill/api.ts (FileSkillsLoader 경유) — targets uncovered branches in
  * parseYamlValue, classifyLine, parseYamlBlock, parseSkillDisplay (missing
  * defaults in toSkill), and collectMdFiles child line filtering.
  */

@@ -573,6 +573,12 @@ if (oauthRecord) return redirect('/dashboard');
 // ✅ WHY
 // Guard: a negative value breaks the log calculation downstream.
 if (value < 0) return null;
+
+// ❌ JSDoc that only restates the name
+/** 회원이 담은 건수. */
+export interface WatchlistCount { memberCount: number }
+
+// ✅ Delete it, or state what the name cannot (unit, source, edge case)
 ```
 
 <a id="CM-2"></a>
@@ -590,6 +596,9 @@ file or the rule it describes changes:
   JSDoc and test names that mention it and update them in the same change (see CS-8).
 - When a method gains a cache or otherwise changes behavior, re-read the class- or module-level summary and sibling
   files that describe it, not only the method's own JSDoc; a summary listing the method under its old behavior goes stale.
+- When a symbol moves or is renamed (a function removed, a class relocated to another module), grep the old name and
+  every "lives in the same module" style location claim in comments and test files, and update them in the same change.
+  ❌ A test comment saying the repo class is "in the same module" after it moved to `server/`. ✅ The comment names the new location or is dropped.
 - After reversing a layout contract, grep the whole repo (`src/`, `e2e/`, `docs/`) for the old wording, including
   test names.
 - A time-zone comment must match the literal exactly; check DST dates with
