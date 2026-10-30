@@ -11,7 +11,6 @@ import {
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { createMemoryLru, type MemoryLru } from '@/shared/cache/memoryLru';
 import {
     EOD_PUBLISH_BUFFER_HOURS,
     lastClosedSessionDate,
@@ -20,33 +19,30 @@ import {
 import {
     ISO_DATE_LENGTH,
     MS_PER_SECOND,
-    SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
-    SECONDS_PER_MINUTE,
 } from '@/shared/config/time';
-import {
-    type EodHistoryEntry,
-    type EodServeContext,
-    canExtendIncrementally,
-    isEntryServable,
-    hasSuspiciousGap,
-    mergeIncremental,
-    overlapStatus,
-    trimToWindow,
-} from './eodHistoryMerge';
 import { mergeBarsByTime } from './mergeBarsByTime';
-import { quoteSnapshotTtlSeconds } from './quoteSnapshotTtl';
+import { type EodHistoryDeps, getEodHistory } from './eodHistoryCache';
+import {
+    EMPTY_INTRADAY_TAIL_MAX_TTL_SECONDS,
+    HISTORY_MEMORY_MAX_ENTRIES,
+    INTRADAY_HISTORY_TTL_SECONDS,
+    readCachedHistory,
+    type HistoryMemory,
+    createHistoryMemory,
+} from './historyCache';
+import {
+    EXTENDED_HISTORY_MEMORY_MAX_ENTRIES,
+    readExtendedBars,
+} from './extendedBarsCache';
+import { isUsableSnapshot, quoteSnapshotTtlSeconds } from './quoteSnapshotTtl';
+import { buildBarsRawKey, buildQuoteSnapshotKey } from './marketCacheKeys';
+import { isoDateDaysAgo, sliceFrom, utcMidnightSeconds } from './barsWindow';
 import type {
     ExtendedBarsProvider,
     QuoteSnapshot,
     SiglensMarketProvider,
 } from './marketProvider.types';
-import {
-    extendedTailTtlSeconds,
-    filterOutOfSessionBars,
-    isExtendedBarTimeframe,
-} from './extendedBarsSession';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * `isLongDailyWindow` 라우팅 게이트의 룩백 임계값(일 수).
@@ -64,38 +60,6 @@ const EOD_LONG_WINDOW_GATE_DAYS = 10;
 const EOD_HISTORY_WINDOW_DAYS = FEAR_GREED_LOOKBACK_DAYS;
 
 /**
- * EOD history 키 접두사. 종목당 키 하나(`bars:eodhist:v3:<SYM>`)에 {@link EodHistoryEntry}를
- * 담는다. `v2`(세션 날짜가 키에 든 `Bar[]`)와 값 모양이 달라 접두사를 올렸다 — 같은 키를
- * 재사용하면 배포 직후 옛 엔트리를 새 모양으로 잘못 읽는다. 옛 키는 읽는 코드가 없어 각자의
- * TTL로 저절로 사라진다. 올리는 비용은 종목당 전체 창을 한 번 더 받는 것(평소의 세션 롤 한 번)과
- * 같지만, 전 종목이 같은 시점에 겹치므로 배포 직후 FMP 호출이 한꺼번에 몰린다.
- *
- * ## 증분 갱신 (2026-10)
- *
- * 예전에는 키가 세션 날짜(`lastClosed`)별이라 세션이 넘어갈 때마다 활성 종목 전부가 5년치
- * (~1,260봉, 압축 ~41KB)를 FMP `historical-price-eod/full`에서 통째로 다시 받았다 — 엔드포인트별
- * 바이트 1위였다. 이제 세션이 바뀌면 **마지막 캐시 봉의 날짜부터** 겹쳐 받아 새 봉만 이어 붙인다
- * (`getEodHistory`). 키가 세션과 무관하니 종목당 한 벌만 남는다 — 날짜별 사본이 쌓이지 않는다
- * (날짜 키를 7일 TTL로 쌓아 두던 시절 326MB — 2026-10-04 운영). 보관 기간은 아래 TTL 참고.
- */
-const EOD_HISTORY_KEY_PREFIX = 'bars:eodhist:v3';
-
-/**
- * EOD history 엔트리의 Redis TTL. 이제 세션 롤이 아니라 엔트리 안의 `asOf`가 유효성을 정하므로
- * TTL은 "오래 안 보는 종목을 치우는" 정리용 상한이다. 엔트리가 사라져도 정확성은 그대로이고
- * (다음 요청이 전체 창을 한 번 받는다) 증분의 이득만 잃는다. 쓸 때마다 갱신된다.
- *
- * 5일은 저장량과 증분 이득의 절충이다. 매일 조회되는 종목은 쓸 때마다 갱신돼 사라지지 않는다.
- * 고정 TTL은 쓴 시각부터 세므로, 금요일 저녁(~20:00 ET)에 쓴 엔트리는 월요일이 휴장인 연휴 뒤
- * 화요일 롤(~4일 뒤)까지 살아 있어야 한다 — 4일이면 그 직전에 만료돼 시장 전체가 한꺼번에
- * 전체 창을 받는다. 5일은 일반 주말(금→월 롤)과 월·금요일 휴장 연휴(사흘 연휴)를 덮는다.
- * 덮지 못하는 것은 그보다 긴 휴장(KRX 추석 등)으로, 그 뒤에는 종목당 한 번 전체 창을 받는다
- * (예전과 같은 비용). 그보다 길게 안 보이는 롱테일 종목까지 붙들면 그 수만큼 5년치 봉이
- * Redis에 남는다(종목당 ~41KB) — 예전 날짜 키는 롤 + 1시간이면 사라졌다.
- */
-const EOD_HISTORY_TTL_SECONDS = 5 * SECONDS_PER_DAY;
-
-/**
  * 불완전 EOD history(상장폐지/거래정지, 휴장일로 라벨된 세션, 드물게 4h를 초과하는 FMP 지연)를
  * 업스트림 재확인 없이 내주는 쿨다운. 엔트리의 `checkedAt`부터 이 시간이 지나야 다음 요청이
  * 증분 재확인을 하므로 재fetch가 ≈6회/일/심볼로 제한되어 스래싱을 막는다(재확인은 겹침 봉
@@ -111,81 +75,6 @@ const EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS =
 const EOD_HIST_INCOMPLETE_COOLDOWN_MS =
     EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS * MS_PER_SECOND;
 
-function isoDateDaysAgo(now: Date, days: number): string {
-    const d = new Date(now);
-    d.setUTCDate(d.getUTCDate() - days);
-    return toUtcIsoDate(d);
-}
-
-/** YYYY-MM-DD(또는 ISO) 날짜를 UTC 자정 unix초로 변환(Bar.time과 동일 규약). */
-function utcMidnightSeconds(dateStr: string): number {
-    return Math.floor(
-        Date.parse(dateStr.slice(0, ISO_DATE_LENGTH) + 'T00:00:00Z') / 1000
-    );
-}
-
-/** `from` 이후(포함) 봉만 남긴다 — 단일 `getBars(from)`와 동일 집합 보장. */
-function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
-    if (from === undefined) return bars;
-    const threshold = utcMidnightSeconds(from);
-    return bars.filter(b => b.time >= threshold);
-}
-
-/**
- * 인트라데이 히스토리 키(`bars:intrahist:...:<오늘>`)의 TTL. 키에 "오늘" 날짜가 들어가
- * 날짜가 넘어가면 다시 읽히지 않으므로, TTL은 하루를 넘지 않게 두는 정리용 상한일 뿐이다.
- */
-const INTRADAY_HISTORY_TTL_SECONDS = SECONDS_PER_DAY;
-
-/**
- * 비어 있는 인트라데이 오늘 tail의 TTL 상한. 개장 전·주말에는 정상적으로 비지만, 장 마감
- * 뒤 FMP가 일시적으로 빈 배열을 준 것일 수도 있다 — 그 값을 다음 개장까지(최대 24h) 굳히면
- * 오늘 봉이 통째로 사라지므로 길게 두지 않는다. 장중 TTL(60초)보다 길어지는 일은 없다.
- */
-const EMPTY_INTRADAY_TAIL_MAX_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
-
-/**
- * 히스토리(`bars:eodhist`·`bars:intrahist`) L1 메모리 상한(provider 인스턴스당).
- *
- * 5년 일봉 히스토리 한 벌이 힙에서 ~110KB(봉 ~1,360개)다. 128개면 ~14MB이고, provider
- * 싱글톤이 세션별로 셋(US·크립토·KR)이라 최악 ~42MB다. 섹터 스캔(미국 ~80종목)과
- * 종목 페이지의 뜨거운 종목을 함께 덮는 크기다.
- *
- * 재측정: `node --expose-gc`에서 5년 일봉 `Bar[]` N벌을 만들어 두기 전후에 `gc()` →
- * `process.memoryUsage().heapUsed`를 재고, 증가분 ÷ N이 한 벌의 크기다.
- */
-const HISTORY_MEMORY_MAX_ENTRIES = 128;
-
-/**
- * 히스토리 L1의 TTL 상한. 유효성은 엔트리의 `asOf`·`checkedAt`이 정하지만(L1 hit에도 같은
- * 판정을 한다), 다른 인스턴스가 Redis 쪽을 먼저 갱신할 수 있다. 메모리 쪽이 그보다 오래 낡은
- * 값을 쥐지 않도록 30분마다 Redis를 다시 본다 — 그 비용은 키당 GET 한 번이다.
- */
-const HISTORY_MEMORY_TTL_CAP_SECONDS = 30 * SECONDS_PER_MINUTE;
-
-/**
- * 확장(프리·애프터마켓) 인트라데이 히스토리 L1 상한. 정규장 히스토리 L1(`historyMemory`)과 **따로**
- * 둔다 — 확장 봉은 정규장보다 봉이 훨씬 많아(5분봉 하루 192 vs 78) 같은 LRU에 섞으면 값어치가 더 큰
- * 5년 일봉 히스토리를 밀어낸다. 정규장 밖 봉만 남겨(`filterOutOfSessionBars`) 한 벌이 ~60KB 안팎이라
- * 32개면 ~2MB다.
- */
-const EXTENDED_HISTORY_MEMORY_MAX_ENTRIES = 32;
-
-/**
- * 확장 봉 히스토리 키 접두사 — 정규장 `bars:intrahist:`와 **절대 겹치지 않게** 다른 문자열이다.
- * 같은 키를 쓰면 정규장 `Bar[]`와 확장 `Bar[]`가 서로를 덮어 차트·분석이 시간외 봉을 지표에 섞는다.
- */
-const EXTENDED_HISTORY_KEY_PREFIX = 'bars:intrahist-ext';
-
-/**
- * 확장 봉 tail이 "새 봉이 생기는 중"일 때의 TTL(초). 정규장 장중 TTL(60초)과 같은 값이다 —
- * `this.ttl()`을 쓰면 정규장 밖에서 "다음 개장까지"가 나와 프리·애프터마켓 봉이 가려지므로 상수로 둔다.
- */
-const EXTENDED_TAIL_LIVE_TTL_SECONDS = SECONDS_PER_MINUTE;
-
-/** 확장 봉 tail 키 접두사(정규장 `bars:raw:`와 분리). */
-const EXTENDED_TAIL_KEY_PREFIX = 'bars:raw-ext';
-
 /** 생성 옵션 — 세션과 별개로 inner provider의 특성을 기술한다. */
 export interface CachedMarketDataProviderOptions {
     /**
@@ -199,49 +88,6 @@ export interface CachedMarketDataProviderOptions {
 
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
 const QUOTE_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
-
-/**
- * 시세 스냅샷 키. `getQuote`(시세)와 일봉의 오늘 봉(`getCachedDailyBars`)이 같은 키를
- * 읽는다 — 둘 다 업스트림 `quote` 한 번에서 나오는데, 예전에는 `quote:<SYM>`과
- * `bars:today:<SYM>` 두 키로 같은 데이터를 두 번 받았다.
- *
- * 이름이 `quote:<SYM>`/`bars:today:<SYM>`과 겹치지 않아야 한다: 옛 키는 각각 `MarketQuote`·
- * `Bar[]` 모양이라, 같은 키를 재사용하면 배포 직후 옛 엔트리를 스냅샷으로 잘못 읽는다.
- * 옛 키는 읽는 코드가 없어 각자의 세션 TTL로 저절로 사라진다.
- */
-function buildQuoteSnapshotKey(symbol: string): string {
-    return `quote:snapshot:${symbol.toUpperCase()}`;
-}
-
-/**
- * 둘 다 null(조회 실패·빈 응답)인 스냅샷은 굳히지 않는다.
- *
- * 한쪽만 있는 스냅샷은 굳힌다 — 예전 두 가드(`quote`는 null 미저장, `bars:today`는 빈
- * 봉 미저장)와 다른 점이다. 두 방향 모두 의도적으로 허용한다:
- * - 시세만 있고 오늘 봉이 없음: FMP quote 행의 timestamp가 깨져 오늘 봉 매핑만 실패할 때다.
- *   그동안 오늘 봉 없이(live tail 없음) 서빙하고, 그 종목의 1Day 조회마다 FMP를 다시 부르지
- *   않는다.
- * - 오늘 봉만 있고 시세가 없음: 시세 매핑만 실패할 때다(지금 매퍼로는 사실상 생기지 않는다).
- *   그동안 `getQuote`가 `null`을 돌려준다 — 예전엔 null 시세를 굳히지 않았다.
- * 저장 기간은 세션 TTL(장중 60초)이되 장외에도 5분을 넘기지 않는다(`quoteSnapshotTtlSeconds`)
- * — 공급자가 행을 고치면 5분 안에 반영된다.
- */
-function isUsableSnapshot(snapshot: QuoteSnapshot): boolean {
-    return snapshot.quote !== null || snapshot.todayBar !== null;
-}
-
-/**
- * 캐시 키는 결과에 영향을 줄 수 있는 `GetBarsOptions` 필드를 모두 포함한다 —
- * symbol/timeframe/from/before에 더해 limit까지. 현재 FmpMarketProvider는 limit을
- * URL에 쓰지 않지만, 캐시를 거치는 호출부(fetchBarsWithIndicators)는 limit을
- * timeframe별 상수(TIMEFRAME_BARS_LIMIT)로 고정하므로 limit은 timeframe에 종속이다 →
- * 키에 포함해도 캐시 분할이 생기지 않으면서, 향후 옵션이 결과에 영향을 주도록 바뀌어도
- * 키 충돌(서로 다른 요청이 같은 캐시 반환)을 방지한다. `GetBarsOptions`에 결과-영향
- * 필드가 추가되면 이 키도 함께 갱신할 것.
- */
-function buildBarsRawKey(o: GetBarsOptions): string {
-    return `bars:raw:${o.symbol.toUpperCase()}:${o.timeframe}:${o.from ?? ''}:${o.before ?? ''}:${o.limit ?? ''}`;
-}
 
 /**
  * `MarketDataProvider`를 감싸 getBars/getQuote에 provider 레벨 Redis 캐싱을 주입하는
@@ -271,16 +117,21 @@ export class CachedMarketDataProvider
     /**
      * 히스토리 L1. Redis 히스토리 키는 세션이 바뀔 때만 갱신되는데, 장중에는 종목 페이지·섹터
      * 스캔이 그 키(5년 일봉 ~41KB 압축)를 분마다 다시 GET했다. 같은 인스턴스가 이미 들고
-     * 있는 값이라 메모리에서 낸다. 일봉은 {@link EodHistoryEntry}, 인트라데이는 `Bar[]`를
+     * 있는 값이라 메모리에서 낸다. 일봉은 `EodHistoryEntry`, 인트라데이는 `Bar[]`를
      * 담는다 — 한 LRU에 섞어 둬야 인스턴스 힙 상한(`HISTORY_MEMORY_MAX_ENTRIES`)이 하나로 유지된다.
      */
-    private readonly historyMemory: MemoryLru<Bar[] | EodHistoryEntry> =
-        createMemoryLru<Bar[] | EodHistoryEntry>(HISTORY_MEMORY_MAX_ENTRIES);
+    private readonly historyMemory: HistoryMemory = createHistoryMemory(
+        HISTORY_MEMORY_MAX_ENTRIES
+    );
 
-    private readonly extendedHistoryMemory: MemoryLru<Bar[] | EodHistoryEntry> =
-        createMemoryLru<Bar[] | EodHistoryEntry>(
-            EXTENDED_HISTORY_MEMORY_MAX_ENTRIES
-        );
+    private readonly extendedHistoryMemory: HistoryMemory = createHistoryMemory(
+        EXTENDED_HISTORY_MEMORY_MAX_ENTRIES
+    );
+
+    private readonly eodHistoryDeps: EodHistoryDeps = {
+        getBars: options => this.inner.getBars(options),
+        memory: this.historyMemory,
+    };
 
     constructor(
         private readonly inner: SiglensMarketProvider &
@@ -417,7 +268,7 @@ export class CachedMarketDataProvider
         const fetchFrom = withinWindow ? historyFrom : requestedFrom;
 
         const [history, todayBars] = await Promise.all([
-            this.getEodHistory(options, {
+            getEodHistory(this.eodHistoryDeps, options, {
                 lastClosed,
                 lastClosedThreshold,
                 fetchFrom,
@@ -478,7 +329,8 @@ export class CachedMarketDataProvider
         const liveTtl = this.ttl(options.timeframe);
 
         const [history, tail] = await Promise.all([
-            this.getHistory(
+            readCachedHistory(
+                this.historyMemory,
                 `bars:intrahist:${symbolKey}:${options.timeframe}:${fromDate}:${today}:${options.limit ?? ''}`,
                 () => INTRADAY_HISTORY_TTL_SECONDS,
                 async () =>
@@ -513,257 +365,19 @@ export class CachedMarketDataProvider
     }
 
     /**
-     * 일봉 EOD 히스토리를 읽는다: L1 → Redis(`getOrSetCache`) → 증분 갱신 또는 전체 fetch.
-     *
-     * 엔트리가 `isEntryServable`이면 업스트림 호출 없이 낸다. 아니면(세션이 바뀜, 불완전 쿨다운
-     * 만료, 요청 창을 못 덮음) 낡은 엔트리를 밑천으로 `refreshEodHistory`가 겹쳐 받아 이어 붙이거나,
-     * 이어 붙일 수 없으면 고정 창 전체를 받는다. 빈 결과는 어디에도 두지 않는다.
-     *
-     * ## 동시성: 왜 `getOrSetCache`의 `isFresh` 클로저로 낡은 엔트리를 붙잡는가
-     *
-     * 세션이 넘어가는 순간 차트·분석·fear&greed·섹터 스캔·프리웜이 같은 종목을 동시에 요청한다.
-     * 증분인지 전체인지 정하려면 캐시 값을 먼저 봐야 하는데, 별도로 GET하면 41KB를 한 번 더 받고
-     * 단일 비행(single-flight)도 직접 만들어야 한다. `getOrSetCache`는 같은 키의 miss를 하나의
-     * fetch로 접으므로(`inFlight`), 그 `isFresh` 판정 자리에서 "낡은 값이었다"를 클로저 변수에
-     * 담아 두면 소유자의 fetcher가 그 값을 밑천으로 쓴다 — GET은 한 번이고 업스트림 호출도 키당
-     * 하나다. 대기자는 소유자 결과가 자기 기준에 맞으면 그대로 받고, 안 맞으면(세션 경계에서
-     * 서로 `lastClosed`가 다름, 더 이른 `from`) 소유자 결과를 밑천 삼아 직접 갱신한다(캐시에는
-     * 쓰지 않는다 — `getOrSetCache` 규약).
-     *
-     * Redis가 없거나 GET이 실패하면 L1의 낡은 엔트리가 밑천이다(L1이 비어 있으면 전체 fetch).
+     * 프리·애프터마켓 인트라데이 봉(**정규장 밖 봉만**) — 표시 전용 계통. 키 계통·TTL·게이트는
+     * {@link readExtendedBars} 참고.
      */
-    private async getEodHistory(
-        options: GetBarsOptions,
-        ctx: EodServeContext
-    ): Promise<Bar[]> {
-        const key = `${EOD_HISTORY_KEY_PREFIX}:${options.symbol.toUpperCase()}`;
-        const memo = this.historyMemory.get(key);
-        let stale: EodHistoryEntry | undefined;
-        if (memo !== undefined && !Array.isArray(memo)) {
-            if (isEntryServable(memo, ctx)) return memo.bars;
-            stale = memo;
-        }
-
-        const entry = await getOrSetCache<EodHistoryEntry>(
-            key,
-            EOD_HISTORY_TTL_SECONDS,
-            () => this.refreshEodHistory(options, ctx, stale),
-            fetched => fetched.bars.length > 0,
-            cached => {
-                const servable = isEntryServable(cached, ctx);
-                // 낡았지만 읽힌 값은 증분 갱신의 밑천이다. 같은 키에 둘 이상이면 가장 최근
-                // `checkedAt`이 더 많은 봉을 안다.
-                if (
-                    !servable &&
-                    (stale === undefined || cached.checkedAt >= stale.checkedAt)
-                ) {
-                    stale = cached;
-                }
-                return servable;
-            }
+    getExtendedBars = (options: GetBarsOptions): Promise<Bar[]> =>
+        readExtendedBars(
+            {
+                timeZone: this.options.intradayDateTimeZone,
+                session: this.session,
+                fetchExtended: this.inner.getExtendedBars?.bind(this.inner),
+                memory: this.extendedHistoryMemory,
+            },
+            options
         );
-        if (entry.bars.length > 0 && isEntryServable(entry, ctx)) {
-            this.historyMemory.set(
-                key,
-                entry,
-                HISTORY_MEMORY_TTL_CAP_SECONDS * MS_PER_SECOND
-            );
-        }
-        return entry.bars;
-    }
-
-    /**
-     * 낡은 엔트리(`stale`) 뒤를 이어 붙이거나, 못 하면 고정 창 전체를 받아 새 엔트리를 만든다.
-     *
-     * 증분: `from` = 마지막 캐시 봉의 날짜(포함)로 `before=lastClosed`까지 받는다. 그 봉이 캐시와
-     * 같으면(`overlapStatus`) 이후 봉만 이어 붙이고 새 창 앞쪽을 자른다(`fullAt`은 이어받는다). 다르거나 응답에 없으면
-     * 분할 등으로 과거가 소급 조정됐거나 알 수 없는 상태이므로 전체 창을 다시 받는다 — 분할 뒤
-     * 단순 이어 붙이기는 차트·지표를 조용히 망가뜨리기 때문이다. 증분 호출이 던지면 그대로
-     * 전파한다(전체 fetch와 같은 장애 정책, 장애를 캐시하지 않는다).
-     */
-    private async refreshEodHistory(
-        options: GetBarsOptions,
-        ctx: EodServeContext,
-        stale: EodHistoryEntry | undefined
-    ): Promise<EodHistoryEntry> {
-        const fromThreshold = utcMidnightSeconds(ctx.fetchFrom);
-        const build = (bars: Bar[], fullAt: number): EodHistoryEntry => ({
-            asOf: ctx.lastClosed,
-            from: ctx.fetchFrom,
-            checkedAt: ctx.nowMs,
-            fullAt,
-            bars,
-        });
-        const fetchBars = (from: string): Promise<Bar[]> =>
-            this.inner.getBars({ ...options, from, before: ctx.lastClosed });
-
-        const cachedLast = stale?.bars.at(-1);
-        if (
-            stale !== undefined &&
-            cachedLast !== undefined &&
-            canExtendIncrementally(stale, ctx, fromThreshold)
-        ) {
-            // `from`을 포함하는지는 실측으로 확인했다(2026-10): FMP `eod/full`은 `from` 날짜 봉을
-            // 포함하고, yahoo chart는 `period1 = '2026-10-07'`에 2026-10-07T00:00:00Z 봉을 준다
-            // (005930.KS). 두 공급자 모두 겹침 봉이 응답에 들어온다.
-            const fetched = await fetchBars(
-                toUtcIsoDate(new Date(cachedLast.time * MS_PER_SECOND))
-            );
-            const status = overlapStatus(cachedLast, fetched);
-            if (status === 'match' && !hasSuspiciousGap(cachedLast, fetched)) {
-                return build(
-                    trimToWindow(
-                        mergeIncremental(stale.bars, fetched, cachedLast.time),
-                        fromThreshold
-                    ),
-                    stale.fullAt
-                );
-            }
-            if (status === 'match') {
-                // 겹친 봉은 그대로인데 새 봉이 직전 종가에서 크게 뛰었다 — 공급자가 분할 후 봉을
-                // 먼저 내고 과거 봉 조정은 나중에 하면 겹침 비교만으로는 못 잡는다(`hasSuspiciousGap`).
-                // 지금 전체를 다시 받고, `fullAt`을 0으로 둬 다음 롤에서도 한 번 더 전체를 받는다 —
-                // 조정이 하루 늦게 반영돼도 그때 바로잡힌다(예전 매일 전체 조회와 같은 상한).
-                // 실제 급등락이면 전체 조회 두 번이 비용의 전부이고 결과는 같다.
-                console.warn(
-                    '[CachedMarketDataProvider] eodhist price gap, full refetch:',
-                    options.symbol.toUpperCase()
-                );
-                return build(await fetchBars(ctx.fetchFrom), 0);
-            }
-            // 영구적으로 반복되면(경계 의미가 다른 공급자 등) 증분의 이득이 사라지므로 보이게 남긴다.
-            console.warn(
-                '[CachedMarketDataProvider] eodhist overlap mismatch, full refetch:',
-                options.symbol.toUpperCase(),
-                status
-            );
-        }
-        return build(await fetchBars(ctx.fetchFrom), ctx.nowMs);
-    }
-
-    /**
-     * 히스토리 키 읽기: L1 메모리 → `getOrSetCache`(Redis + in-flight dedup) 순. 빈 결과는
-     * 어느 쪽에도 두지 않는다. `isFresh`는 L1 hit에도 똑같이 적용한다 — 넓은 기준으로 저장된
-     * 값만 좁은 요청을 덮는다(`getOrSetCache`의 isFresh 규약과 같다).
-     */
-    private async getHistory(
-        key: string,
-        ttlSeconds: (bars: Bar[]) => number,
-        fetcher: () => Promise<Bar[]>,
-        isFresh: (bars: Bar[]) => boolean,
-        memory: MemoryLru<Bar[] | EodHistoryEntry> = this.historyMemory
-    ): Promise<Bar[]> {
-        const memo = memory.get(key);
-        if (memo !== undefined && Array.isArray(memo) && isFresh(memo))
-            return memo;
-        const bars = await getOrSetCache<Bar[]>(
-            key,
-            ttlSeconds,
-            fetcher,
-            fetched => fetched.length > 0,
-            isFresh
-        );
-        if (bars.length > 0 && isFresh(bars)) {
-            memory.set(
-                key,
-                bars,
-                Math.min(ttlSeconds(bars), HISTORY_MEMORY_TTL_CAP_SECONDS) *
-                    MS_PER_SECOND
-            );
-        }
-        return bars;
-    }
-
-    /**
-     * 프리·애프터마켓 인트라데이 봉(**정규장 밖 봉만**) — 표시 전용 계통이다.
-     *
-     * `getCachedIntradayBars`의 거울이지만 **키 계통이 다르다**: 히스토리 `bars:intrahist-ext:<SYM>:<tf>:
-     * <fromDate>:<today>:<limit>`(24h), tail `bars:raw-ext:<SYM>:<tf>:<today>::<limit>`. 기존
-     * `bars:intrahist`·`bars:raw`·`bars:eodhist:v3`는 건드리지 않는다 — 키를 바꾸면 배포 직후 전 종목
-     * 캐시가 비어 FMP 429가 몰린다. 새 키 계통은 처음에 비어 있지만 정규장 키는 그대로라 그 위험이 없고,
-     * 확장 봉은 사용자가 인트라데이 차트를 열었을 때만 채워진다(봇·SSR·프리웜은 부르지 않는다).
-     *
-     * 미국 주식 세션(`US_EQUITY_SESSION`)·FMP 날짜 해석 타임존(`intradayDateTimeZone`)·확장 봉을
-     * 지원하는 inner·인트라데이 타임프레임에서만 동작하고, 그 밖에는 FMP를 **부르지 않고** 빈 배열이다.
-     * Redis에는 정규장 밖 봉만 저장한다(`filterOutOfSessionBars`) — 정규장 구간은 정규 경로가 이미 갖고 있다.
-     *
-     * tail TTL은 정규장 TTL이 아니라 `extendedTailTtlSeconds`다 — 프리·애프터마켓에도 새 봉이 생긴다.
-     */
-    getExtendedBars = async (options: GetBarsOptions): Promise<Bar[]> => {
-        const timeZone = this.options.intradayDateTimeZone;
-        const { timeframe, from } = options;
-        // 좁힌 const로 들고 간다 — 클로저 안에서 `this.inner.getExtendedBars`의 undefined 검사가 풀리지 않게.
-        const innerGetExtendedBars = this.inner.getExtendedBars?.bind(
-            this.inner
-        );
-        if (
-            timeZone === undefined ||
-            this.session !== US_EQUITY_SESSION ||
-            innerGetExtendedBars === undefined ||
-            !isExtendedBarTimeframe(timeframe) ||
-            from === undefined
-        ) {
-            return [];
-        }
-        const fetchExtended = (o: GetBarsOptions): Promise<Bar[]> =>
-            innerGetExtendedBars(o);
-        const now = new Date();
-        const today = zonedDate(now, timeZone);
-        const fromDate = from.slice(0, ISO_DATE_LENGTH);
-        const symbolKey = options.symbol.toUpperCase();
-        const limitKey = options.limit ?? '';
-        const tailOptions: GetBarsOptions = {
-            ...options,
-            from: fromDate < today ? today : fromDate,
-            before: undefined,
-        };
-        const liveTtl = extendedTailTtlSeconds(
-            now,
-            EXTENDED_TAIL_LIVE_TTL_SECONDS
-        );
-
-        const [history, tail] = await Promise.all([
-            fromDate < today
-                ? this.getHistory(
-                      `${EXTENDED_HISTORY_KEY_PREFIX}:${symbolKey}:${timeframe}:${fromDate}:${today}:${limitKey}`,
-                      () => INTRADAY_HISTORY_TTL_SECONDS,
-                      async () =>
-                          filterOutOfSessionBars(
-                              await fetchExtended({
-                                  ...options,
-                                  from: fromDate,
-                                  before: today,
-                              }),
-                              timeframe
-                          ).filter(
-                              b =>
-                                  zonedDate(
-                                      new Date(b.time * MS_PER_SECOND),
-                                      timeZone
-                                  ) < today
-                          ),
-                      bars => bars.length > 0,
-                      this.extendedHistoryMemory
-                  )
-                : Promise.resolve<Bar[]>([]),
-            getOrSetCache<Bar[]>(
-                `${EXTENDED_TAIL_KEY_PREFIX}:${symbolKey}:${timeframe}:${tailOptions.from}::${limitKey}`,
-                bars =>
-                    bars.length > 0
-                        ? liveTtl
-                        : Math.min(
-                              liveTtl,
-                              EMPTY_INTRADAY_TAIL_MAX_TTL_SECONDS
-                          ),
-                async () =>
-                    filterOutOfSessionBars(
-                        await fetchExtended(tailOptions),
-                        timeframe
-                    )
-            ),
-        ]);
-        return mergeBarsByTime(history, tail);
-    };
 
     /**
      * `getQuote`와 일봉 오늘 봉이 공유하는 단일 읽기 경로. 두 호출자가 같은 키를 같은

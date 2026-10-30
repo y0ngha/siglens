@@ -1,11 +1,10 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
     CHAT_JOB_ID,
     extractClaudeUsage,
     extractOpenAiCompatibleUsage,
     extractGeminiUsage,
     extractOpenAIUsage,
-    logUsage,
 } from '@/entities/llm-provider/lib/usage';
 
 const ZERO = {
@@ -128,71 +127,8 @@ describe('extractOpenAiCompatibleUsage', () => {
     });
 });
 
-describe('logUsage', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    /**
-     * core가 분석 경로에서 내보내는 라인과 **동일한 필드명**을 하나의 순수 JSON
-     * 객체로 직렬화해야 한다 — `tag`는 CloudWatch JSON 필터(`$.tag = "[Usage]"`)가
-     * 매칭하는 마커 필드다. 텍스트에 `[Usage]`가 그대로 남아 있어 core의 2-인자
-     * 포맷을 겨냥한 기존 `like /\[Usage\]/` Insights 쿼리도 계속 매치된다.
-     */
-    it('순수 JSON({tag, jobId, model, ...})으로 직렬화한다', () => {
-        const info = vi.spyOn(console, 'info').mockImplementation(() => {});
-
-        logUsage({
-            jobId: CHAT_JOB_ID,
-            model: 'claude-opus-5',
-            latencyMs: 1234,
-            promptTokens: 10,
-            cachedTokens: 5,
-            cacheWriteTokens: 2,
-            outputTokens: 7,
-        });
-
-        expect(info).toHaveBeenCalledTimes(1);
-        const call = info.mock.calls[0]!;
-        expect(call).toHaveLength(1);
-        const parsed: unknown = JSON.parse(call[0] as string);
-        expect(parsed).toEqual({
-            tag: '[Usage]',
-            jobId: 'chat',
-            model: 'claude-opus-5',
-            latencyMs: 1234,
-            promptTokens: 10,
-            cachedTokens: 5,
-            cacheWriteTokens: 2,
-            outputTokens: 7,
-        });
-    });
-
-    it('API 키·프롬프트·사용자 식별자 필드를 포함하지 않는다', () => {
-        const info = vi.spyOn(console, 'info').mockImplementation(() => {});
-
-        logUsage({
-            jobId: 'agent',
-            model: 'deepseek-chat',
-            latencyMs: 500,
-            promptTokens: 1,
-            cachedTokens: 0,
-            cacheWriteTokens: 0,
-            outputTokens: 1,
-        });
-
-        const parsed = JSON.parse(info.mock.calls[0]![0] as string) as Record<
-            string,
-            unknown
-        >;
-        for (const forbidden of [
-            'apiKey',
-            'prompt',
-            'promptText',
-            'userId',
-            'message',
-        ]) {
-            expect(parsed).not.toHaveProperty(forbidden);
-        }
+describe('CHAT_JOB_ID', () => {
+    it('라우터 경로 호출의 jobId 리터럴이다', () => {
+        expect(CHAT_JOB_ID).toBe('chat');
     });
 });

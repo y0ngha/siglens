@@ -8,7 +8,7 @@ import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
 import { AnalysisProgress } from '@/widgets/analysis/AnalysisProgress';
 import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
 import { useChartSync } from '@/widgets/chart/hooks/useChartSync';
-import { computePositionStatus } from '@/widgets/portfolio-position/lib/positionStatus';
+import { computePositionStatus } from '@/widgets/portfolio-position/utils/positionStatus';
 import { PositionStatusSummary } from '@/widgets/portfolio-position/ui/PositionStatusSummary';
 import {
     type AnalysisResponse,

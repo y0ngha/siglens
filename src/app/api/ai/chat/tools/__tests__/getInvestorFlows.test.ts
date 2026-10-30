@@ -28,12 +28,12 @@ import { INVESTOR_FLOWS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncat
 import {
     SUMMARY_MAX_INSIDER_TRANSACTIONS,
     SUMMARY_MAX_LARGE_HOLDERS,
-    SUMMARY_MAX_OFFERINGS,
     SUMMARY_MAX_PROPOSED_SALES,
-    SUMMARY_MAX_SIGNALS,
-    SUMMARY_MAX_TOP_HOLDERS,
-    type InvestorFlowsSummary,
-} from '@/entities/investor-flows/lib/summarizeInvestorFlows';
+} from '@/entities/investor-flows/lib/summary/insider';
+import { SUMMARY_MAX_OFFERINGS } from '@/entities/investor-flows/lib/summary/dilution';
+import { SUMMARY_MAX_SIGNALS } from '@/entities/investor-flows/lib/summary/signals';
+import { SUMMARY_MAX_TOP_HOLDERS } from '@/entities/investor-flows/lib/summary/institutional';
+import { type InvestorFlowsSummary } from '@/entities/investor-flows/lib/summary/types';
 import {
     KR_SUMMARY_MAX_INSIDERS,
     KR_SUMMARY_MAX_MAJOR_HOLDERS,

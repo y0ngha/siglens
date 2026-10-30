@@ -8,8 +8,8 @@ import {
     SEC_FILINGS_MIN_BUDGET_MS,
     type SecIndexIngestSteps,
 } from '../../server/runSecIndexIngest';
-import type { Ingest13fResult } from '../../server/ingest13f';
-import type { IngestSecFilingsResult } from '../../server/ingestSecFilings';
+import type { Ingest13fResult } from '../../server/ingest13fTypes';
+import type { IngestSecFilingsResult } from '../../server/ingestSecFilingsTypes';
 
 const thirteenF = (stoppedBy: Ingest13fResult['stoppedBy']) =>
     ({ stoppedBy }) as Ingest13fResult;

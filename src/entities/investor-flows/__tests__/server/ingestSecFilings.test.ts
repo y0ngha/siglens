@@ -9,12 +9,12 @@ import {
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
 import { addDays } from '../../lib/investorFlowsDates';
-import {
-    SEC_FILINGS_CURSOR_OVERLAP_DAYS,
-    runSecFilingsIngest,
-    type IngestSecFilingsDeps,
-    type IngestSecFilingsRepository,
-} from '../../server/ingestSecFilings';
+import { SEC_FILINGS_CURSOR_OVERLAP_DAYS } from '../../lib/secFilingsPlan';
+import { runSecFilingsIngest } from '../../server/ingestSecFilings';
+import type {
+    IngestSecFilingsDeps,
+    IngestSecFilingsRepository,
+} from '../../server/ingestSecFilingsTypes';
 import type { FilingRetry, Form144Row, OfferingFilingRow } from '../../model';
 import type { FilingsPruneCutoffs } from '../../api/investorFlowsFilingsRepository';
 import {

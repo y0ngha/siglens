@@ -98,10 +98,12 @@ export const PUBLIC_API_ONLY_TOOL_SPECS: readonly AgentToolSpec[] = [
     CHART_DATA_TOOL_SPEC,
 ];
 
+/** 에이전트 실행기를 거치지 않고 공개 API가 직접 구현한 도구인가. */
 export function isPublicApiOnlyTool(name: string): boolean {
     return PUBLIC_API_ONLY_TOOL_SPECS.some(spec => spec.name === name);
 }
 
+/** 공개 API가 노출하는 도구 이름 집합. */
 export function publicApiToolNames(): ReadonlySet<string> {
     return new Set(
         [...availableToolNames()].filter(

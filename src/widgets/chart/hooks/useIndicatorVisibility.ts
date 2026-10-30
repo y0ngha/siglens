@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 보조 pane 지표의 표시 상태와 pane 인덱스 배정을 관리하는 훅.
+ */
+
 import { useCallback, useMemo } from 'react';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import {

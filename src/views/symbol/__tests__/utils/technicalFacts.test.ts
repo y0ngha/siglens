@@ -17,7 +17,12 @@ const tFacts = (key: string, values?: Record<string, string | number>) => {
     );
 };
 
-import { buildTechnicalFactsNarrative } from '../../utils/technicalFacts';
+import {
+    buildTechnicalFactsNarrative,
+    buildTechnicalFactsSummaryModel,
+    formatVisibleChange,
+} from '../../utils/technicalFacts';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,
@@ -268,5 +273,61 @@ describe('buildTechnicalFactsNarrative', () => {
 
         expect(narrative[0]).toContain('$0.05816이고');
         expect(narrative[0]).not.toContain('$0.06이고');
+    });
+});
+
+describe('buildTechnicalFactsSummaryModel', () => {
+    it('사실을 계산할 수 없으면(봉 2개 미만) null이다', () => {
+        expect(
+            buildTechnicalFactsSummaryModel(
+                [bar(100)],
+                indicators({}),
+                'AAPL',
+                'us-equity',
+                tFacts
+            )
+        ).toBeNull();
+    });
+
+    it('표시 값과 서술 문장을 한 벌로 만든다', () => {
+        const bars = [bar(100), bar(110)];
+        const model = buildTechnicalFactsSummaryModel(
+            bars,
+            indicators({}),
+            '애플(AAPL)',
+            'us-equity',
+            tFacts
+        );
+        expect(model).not.toBeNull();
+        expect(model!.priceText).toBe('$110.00');
+        expect(model!.recentBarsWindow).toBe(RECENT_BARS_WINDOW);
+        expect(model!.quoteDelayMinutes).toBe(
+            getDescriptor('us-equity').quoteDelayMinutes
+        );
+        expect(model!.narrative).toEqual(
+            buildTechnicalFactsNarrative(
+                '애플(AAPL)',
+                model!.facts,
+                'us-equity',
+                tFacts
+            )
+        );
+    });
+});
+
+describe('formatVisibleChange', () => {
+    it('보합이면 문구 없이 중립 색만 준다', () => {
+        expect(formatVisibleChange(0)).toEqual({
+            colorClass: 'text-secondary-300',
+            text: null,
+        });
+    });
+
+    it('상승은 화살표·부호·소수 둘째 자리 등락률이다', () => {
+        expect(formatVisibleChange(1.234).text).toBe('▲ +1.23%');
+    });
+
+    it('하락은 아래 화살표와 절댓값이다(부호 없음)', () => {
+        expect(formatVisibleChange(-2.5).text).toBe('▼ 2.50%');
     });
 });

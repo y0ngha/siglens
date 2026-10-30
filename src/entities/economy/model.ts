@@ -54,3 +54,17 @@ export function resolveCalendarInterpretation(
 ): string | null {
     return event.interpretationLocalized ?? event.interpretationKo ?? null;
 }
+
+/**
+ * 발표가 끝난 이벤트 한 건 — 한국 지표 카드(`buildKrIndicatorCards`)가 소비하는 최소 형상.
+ * 리포지토리 `listAnnouncedSince`가 `actual IS NOT NULL`로 걸러 돌려준다.
+ */
+export interface AnnouncedEventPoint {
+    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(존 표시 없는 UTC — ET 아님. 컬럼명만 과거 오인대로 남아 있다). */
+    dateEt: string;
+    event: string;
+    /** `actual IS NOT NULL` 필터를 통과했으므로 number 보장. */
+    actual: number;
+    previous: number | null;
+    unit: string;
+}

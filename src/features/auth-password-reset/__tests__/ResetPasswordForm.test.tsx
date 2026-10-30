@@ -121,6 +121,19 @@ describe('ResetPasswordForm', () => {
         );
     });
 
+    it('shows the localized message of an unexpected error in the form banner', () => {
+        setFormState({
+            error: {
+                code: 'unexpected',
+                message: '비밀번호 재설정 중 오류가 발생했습니다.',
+            },
+        });
+        render(<ResetPasswordForm email="user@test.com" token="abc123" />);
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '비밀번호 재설정 중 오류가 발생했습니다.'
+        );
+    });
+
     it('blocks submission and shows a confirm-mismatch error when passwords differ, without calling the form action', async () => {
         const user = userEvent.setup();
         render(<ResetPasswordForm email="user@test.com" token="abc123" />);

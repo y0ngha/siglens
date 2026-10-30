@@ -2,7 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
-import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
+import type { ModelId } from '@y0ngha/siglens-core';
+import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 import { ReasoningToggle } from '@/features/reasoning-toggle/ui/ReasoningToggle';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
@@ -72,9 +73,9 @@ export function AnalysisSettingsMenu({
 
     // Active = a non-default choice is in effect: reasoning turned on, or a
     // model other than the app-wide default free model is selected. Read
-    // from the same source of truth `useSelectedModel` falls back to
-    // (`DEEPSEEK_V4_1_FLASH_MODEL`) rather than hardcoding a model id here.
-    const isActive = reasoning || modelId !== DEEPSEEK_V4_1_FLASH_MODEL;
+    // from the same source of truth `useSelectedModel` and the server fallback
+    // use (`DEFAULT_ANALYSIS_MODEL`) rather than hardcoding a model id here.
+    const isActive = reasoning || modelId !== DEFAULT_ANALYSIS_MODEL;
 
     // 잠긴 토글 클릭 = 가입 넛지를 여는 게이트. 모달 노출(`nudge_shown`)은 모달이 따로 센다 —
     // 둘 다 기록되는 것이 의도다(전자는 "눌렀다", 후자는 "모달을 봤다").
