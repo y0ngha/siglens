@@ -30,7 +30,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
     getCongressTrades,
     CONGRESS_TRADE_LIMIT,
-} from '@/entities/congress-trades/lib/getCongressTrades';
+} from '@/entities/congress-trades/server/getCongressTrades';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 describe('getCongressTrades', () => {
