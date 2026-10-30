@@ -39,9 +39,8 @@ export async function loadMessages(
 /**
  * 클라이언트 프로바이더에 넘길 네임스페이스만 골라낸다.
  *
- * 전체 카탈로그(2천여 키)를 주입하면 first-load JS가 회귀한다 — 2026-08에
- * 서버 SDK 누출을 잡아 first-load를 38% 줄인 작업의 성과를 그대로 되돌린다.
- * 라우트가 실제로 쓰는 네임스페이스만 명시적으로 넘긴다.
+ * 전체 카탈로그(2천여 키)를 주입하면 모든 라우트의 first-load JS가 카탈로그
+ * 크기만큼 커진다. 라우트가 실제로 쓰는 네임스페이스만 명시적으로 넘긴다.
  *
  * 네임스페이스는 `widgets.layout`처럼 **점으로 구분된 경로**이고 카탈로그는
  * 그에 맞게 중첩돼 있다 — next-intl은 네임스페이스와 키를 항상 `.`로 쪼개
@@ -53,7 +52,12 @@ export function pickMessages(
     namespaces: readonly string[]
 ): AbstractIntlMessages {
     const picked: MessageTree = {};
-    for (const namespace of namespaces) {
+    // 상위 네임스페이스가 이미 통째로 복사되면 하위 경로는 같은 값을 다시 쓸 뿐이다.
+    const roots = namespaces.filter(
+        namespace =>
+            !namespaces.some(other => namespace.startsWith(`${other}.`))
+    );
+    for (const namespace of roots) {
         const segments = namespace.split('.');
         const source = segments.reduce<unknown>(
             (node, segment) => (isTree(node) ? node[segment] : undefined),

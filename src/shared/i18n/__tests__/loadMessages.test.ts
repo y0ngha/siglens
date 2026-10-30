@@ -82,6 +82,35 @@ describe('pickMessages', () => {
         });
     });
 
+    it('상위 접두사가 뒤에 와도 같은 결과를 낸다', () => {
+        expect(
+            pickMessages(CATALOG, [
+                'widgets.layout.localeSwitcher',
+                'widgets.layout',
+            ])
+        ).toEqual({
+            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+        });
+    });
+
+    it('통째로 복사된 접두사의 하위 경로는 카탈로그 노드를 다시 쓰지 않는다', () => {
+        const frozen = {
+            widgets: {
+                layout: Object.freeze({
+                    localeSwitcher: Object.freeze({ label: '언어 선택' }),
+                }),
+            },
+        };
+        expect(
+            pickMessages(frozen, [
+                'widgets.layout',
+                'widgets.layout.localeSwitcher',
+            ])
+        ).toEqual({
+            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+        });
+    });
+
     it('입력 카탈로그를 바꾸지 않는다', () => {
         const before = JSON.stringify(CATALOG);
         pickMessages(CATALOG, [
