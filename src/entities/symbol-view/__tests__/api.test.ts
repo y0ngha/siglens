@@ -3,6 +3,14 @@ import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
 import { symbolViewsDaily } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
+}));
+
+const TRANSIENT_ERROR = Object.assign(new Error('socket reset'), {
+    code: 'ECONNRESET',
+});
+
 describe('DrizzleSymbolViewRepository', () => {
     it('recordView는 (date, symbol) 충돌 시 views를 올리는 upsert를 건다', async () => {
         const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
@@ -63,5 +71,92 @@ describe('DrizzleSymbolViewRepository', () => {
         expect(result).toEqual(rows);
         expect(groupBy).toHaveBeenCalledWith(symbolViewsDaily.symbol);
         expect(having).toHaveBeenCalledTimes(1);
+    });
+
+    it('recordView는 일시적 DB 오류면 재시도해 upsert를 다시 건다', async () => {
+        const onConflictDoUpdate = vi
+            .fn()
+            .mockRejectedValueOnce(TRANSIENT_ERROR)
+            .mockResolvedValue(undefined);
+        const db = {
+            insert: vi.fn(() => ({
+                values: vi.fn(() => ({ onConflictDoUpdate })),
+            })),
+        } as unknown as SiglensDatabase;
+
+        await new DrizzleSymbolViewRepository(db).recordView(
+            '2026-09-24',
+            'AAPL'
+        );
+
+        expect(onConflictDoUpdate).toHaveBeenCalledTimes(2);
+    });
+
+    it('recordView는 일시적이지 않은 오류를 재시도 없이 던진다', async () => {
+        const failure = new Error('constraint violation');
+        const onConflictDoUpdate = vi.fn().mockRejectedValue(failure);
+        const db = {
+            insert: vi.fn(() => ({
+                values: vi.fn(() => ({ onConflictDoUpdate })),
+            })),
+        } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzleSymbolViewRepository(db).recordView('2026-09-24', 'AAPL')
+        ).rejects.toBe(failure);
+        expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('pruneOlderThan은 일시적 DB 오류면 재시도한다', async () => {
+        const where = vi
+            .fn()
+            .mockRejectedValueOnce(TRANSIENT_ERROR)
+            .mockResolvedValue(undefined);
+        const db = {
+            delete: vi.fn(() => ({ where })),
+        } as unknown as SiglensDatabase;
+
+        await new DrizzleSymbolViewRepository(db).pruneOlderThan('2026-06-26');
+
+        expect(where).toHaveBeenCalledTimes(2);
+    });
+
+    it('topViewed는 일시적 DB 오류도 재시도하지 않고 던진다', async () => {
+        const orderBy = vi.fn().mockRejectedValue(TRANSIENT_ERROR);
+        const db = {
+            select: vi.fn(() => ({
+                from: () => ({
+                    where: () => ({
+                        groupBy: () => ({ having: () => ({ orderBy }) }),
+                    }),
+                }),
+            })),
+        } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzleSymbolViewRepository(db).topViewed('2026-09-17', 3)
+        ).rejects.toBe(TRANSIENT_ERROR);
+        expect(orderBy).toHaveBeenCalledTimes(1);
+    });
+
+    it('topViewed는 동률을 심볼 오름차순으로 끊도록 두 번째 정렬 키를 건다', async () => {
+        const orderBy = vi.fn().mockResolvedValue([]);
+        const db = {
+            select: vi.fn(() => ({
+                from: () => ({
+                    where: () => ({
+                        groupBy: () => ({ having: () => ({ orderBy }) }),
+                    }),
+                }),
+            })),
+        } as unknown as SiglensDatabase;
+
+        await new DrizzleSymbolViewRepository(db).topViewed('2026-09-17', 3);
+
+        expect(orderBy).toHaveBeenCalledTimes(1);
+        expect(orderBy.mock.calls[0]).toHaveLength(2);
+        expect(orderBy.mock.calls[0]?.[1]).toMatchObject({
+            queryChunks: expect.arrayContaining([symbolViewsDaily.symbol]),
+        });
     });
 });
