@@ -5,8 +5,10 @@ import type { SiglensDatabase } from '@/shared/db/types';
 
 /** 한 번만 불렸음을 단언한 뒤 그 인자를 돌려준다 — 호출 순번 인덱스에 기대지 않는다. */
 function onlyCall<T extends unknown[]>(mock: { mock: { calls: T[] } }): T {
+    const [call] = mock.mock.calls;
     expect(mock.mock.calls).toHaveLength(1);
-    return mock.mock.calls.find(() => true)!;
+    if (call === undefined) throw new Error('mock was not called');
+    return call;
 }
 
 function makeInsertDb() {
