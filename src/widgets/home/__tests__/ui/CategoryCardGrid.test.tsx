@@ -34,7 +34,7 @@ vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-import { CategoryCardGrid, type CategoryCard } from '../ui/CategoryCardGrid';
+import { CategoryCardGrid, type CategoryCard } from '../../ui/CategoryCardGrid';
 
 const CARDS: CategoryCard[] = [
     {
@@ -78,6 +78,37 @@ describe('CategoryCardGrid', () => {
         expect(link).toHaveTextContent('BTCUSD');
     });
 
+    it('카드 요소에 DOM id를 달지 않는다(카테고리 id가 문서 내에서 겹칠 수 있다)', () => {
+        const { container } = render(
+            <CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />
+        );
+
+        expect(container.querySelector('#major')).toBeNull();
+        expect(container.querySelector('[id]')).toBeNull();
+    });
+
+    it('labelKey가 있으면 h3 제목과 종목 목록 aria-label이 같은 번역 제목을 쓴다', () => {
+        render(
+            <CategoryCardGrid
+                heading="h"
+                ariaLabel="a"
+                cards={[
+                    {
+                        ...CARDS[0]!,
+                        label: '원문 라벨',
+                        labelKey: 'tickerCategory.Major',
+                    },
+                ]}
+            />
+        );
+
+        const title = screen.getByRole('heading', { level: 3 }).textContent;
+        expect(title).toBe('메이저');
+        expect(screen.getByRole('list').getAttribute('aria-label')).toContain(
+            title
+        );
+    });
+
     it('cards가 빈 배열이면 카드 없이 nav를 렌더한다', () => {
         render(
             <CategoryCardGrid
@@ -94,8 +125,8 @@ describe('CategoryCardGrid', () => {
 });
 
 /**
- * 카드가 티커 칩만 나열하면 크롤러가 받는 것은 링크 묶음뿐이다(2026-09 구글 정책
- * 감사 L20). 카테고리가 무엇을 묶은 것인지 한 문장이 h3 아래 있어야 한다.
+ * 카드가 티커 칩만 나열하면 크롤러가 받는 것은 링크 묶음뿐이다(검색 노출 정책).
+ * 카테고리가 무엇을 묶은 것인지 한 문장이 h3 아래 있어야 한다.
  */
 describe('CategoryCardGrid 카테고리 설명', () => {
     it('descriptionKey가 있으면 h3 아래 한 줄 설명을 렌더한다', () => {

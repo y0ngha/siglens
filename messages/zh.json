@@ -2231,7 +2231,6 @@
                 "backtestMonth": "{v0} 年 {v1} 月",
                 "bulletListAria": "{v0} {v1} 列表",
                 "byokUnlock": "注册 {v0} API 密钥后即可使用该模型。",
-                "calendarDayAria": "{v0} 月 {v1} 日，{v2} 个事件",
                 "chartAria": "{v0} {v1} K线图",
                 "contact": "联系我们",
                 "filterAll": "全部",
@@ -4013,6 +4012,7 @@
                 "dc712b": "{v0}{v1}日（{v2}）",
                 "f9d9dc": "即将到来的 {v0} 经济发布日程暂无。",
                 "forecastPart": "预测 {v0}",
+                "noVisibleEvents": "所选重要度下没有事件。",
                 "pastCollapse": "收起过往日程",
                 "pastExpand": "查看过往日程",
                 "previousPart": "前值 {v0}"
@@ -4042,11 +4042,13 @@
                 "a0f763": "宏观经济简报加载中",
                 "b5f759": "宏观经济简报指南"
             },
-            "dayCellAriaImpacts": "，重要度 {v0}",
+            "dayCellAria": "{v0} 月 {v1} 日，{v2} 个事件",
+            "dayCellAriaWithImpacts": "{v0} 月 {v1} 日，{v2} 个事件，重要度 {v3}",
             "krMacroFacts": {
                 "cpiAndUnemployment": "最新消费者物价涨幅为{v0}%，失业率为{v1}%。",
                 "cpiChange": "消费者物价涨幅较上次公布变动{v0}个百分点。",
                 "cpiOnly": "最新消费者物价涨幅为{v0}%。",
+                "cpiUnchanged": "消费者物价涨幅与上次发布持平。",
                 "ratesOnly": "当前韩国央行基准利率为{v0}%。",
                 "ratesWithKtb": "当前韩国央行基准利率为{v0}%，10年期国债招标收益率为{v1}%。",
                 "unemploymentOnly": "最新失业率为{v0}%。"
@@ -4074,6 +4076,9 @@
             "tradedAt": "{time} ET 成交"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0}（自{v1}起）"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "供需",
                 "groupNameTrend": "趋势",
@@ -4384,14 +4389,13 @@
                 "158954": "AI 分析技能",
                 "0d2c24": "收起",
                 "7e6540": "置信度分数说明",
-                "c266ba": "{v0}% 为中等，{v1}% 以上为高。",
+                "allGuides": "查看全部指南",
                 "c78b79": "技能类别标签页",
+                "confidenceTiers": "低于 {low}% 为低，{low}% 以上、低于 {high}% 为中等，{high}% 及以上为高。",
                 "e0f5c5": "低分也会作为辅助参考纳入分析。",
-                "e20b1b": "{v0}% 以下为低, {v1}",
                 "ebff92": "分析方法的置信度分数。",
                 "guideLink": "查看指南",
-                "guideLinkAria": "{name} 查看指南",
-                "allGuides": "查看全部指南"
+                "guideLinkAria": "{name} 查看指南"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS 分析规模"
