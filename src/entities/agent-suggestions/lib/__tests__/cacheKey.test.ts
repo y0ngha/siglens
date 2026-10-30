@@ -1,6 +1,6 @@
 import { SUGGESTIONS_PROMPT_VERSION } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { suggestionsCacheKey } from './cacheKey';
+import { suggestionsCacheKey } from '../cacheKey';
 
 const NOW = new Date('2026-09-12T03:07:00.000Z');
 
