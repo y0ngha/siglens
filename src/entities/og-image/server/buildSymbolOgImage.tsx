@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { SITE_NAME } from '@/shared/config/brand';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     OG_ACCENT,
     OG_BG,
@@ -16,9 +17,9 @@ import {
     OG_SITE_NAME_TOP,
     OG_TICKER_FONT_SIZE,
 } from '@/shared/lib/og';
-import type { Locale } from '@/shared/i18n/locales';
 import { loadOgFont } from './loadOgFont';
 
+/** {@link buildSymbolOgImage} 입력. */
 export interface SymbolOgImageOptions {
     ticker: string;
     label: string;
@@ -32,6 +33,10 @@ export interface SymbolOgImageOptions {
     cacheControl?: string;
 }
 
+/**
+ * 심볼 OG 이미지(1200×630)를 그린다 — `ticker`·`label`을 로케일 폰트로 렌더하는
+ * app 라우트의 OG 이미지 공통 진입점. 폰트 로드가 실패하면 Latin 폴백으로 그린다.
+ */
 export async function buildSymbolOgImage({
     ticker,
     label,
