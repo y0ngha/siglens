@@ -619,6 +619,68 @@ describe('DrizzleUserRepository', () => {
         expect(deleteWhere).toHaveBeenCalledTimes(1);
     });
 
+    it('보상 삭제가 실패해도 로그에 바인딩된 사용자 id를 남기지 않는다', async () => {
+        const sentinel = 'SENTINEL-USER-ID-0123456789';
+        const accountError = new Error('account insert failed');
+        const deleteError = Object.assign(
+            new Error(
+                `Failed query: delete from "users" where "id" = $1\nparams: ${sentinel}`
+            ),
+            { name: 'DrizzleQueryError', params: [sentinel] }
+        );
+        const deleteWhere = vi.fn(() => ({
+            returning: vi.fn().mockRejectedValue(deleteError),
+        }));
+        const userValues = vi.fn(() => ({
+            onConflictDoNothing: () => ({
+                returning: vi.fn().mockResolvedValue([userRecord]),
+            }),
+        }));
+        const accountValues = vi.fn(() => ({
+            onConflictDoNothing: () => ({
+                returning: vi.fn().mockRejectedValue(accountError),
+            }),
+        }));
+        const insert = vi
+            .fn()
+            .mockReturnValueOnce({ values: userValues })
+            .mockReturnValue({ values: accountValues });
+        const repository = new DrizzleUserRepository({
+            insert,
+            delete: vi.fn(() => ({ where: deleteWhere })),
+        } as unknown as SiglensDatabase);
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await expect(
+            repository.createOAuthUser({
+                email: 'user@example.com',
+                provider: 'google',
+                providerAccountId: 'provider-user-1',
+            })
+        ).rejects.toThrow(accountError);
+
+        const logged = [...errorSpy.mock.calls, ...warnSpy.mock.calls]
+            .flat()
+            .map(arg =>
+                typeof arg === 'string'
+                    ? arg
+                    : JSON.stringify(arg, Object.getOwnPropertyNames(arg ?? {}))
+            )
+            .join('\n');
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[createOAuthUser] compensating delete failed'
+            ),
+            { name: 'DrizzleQueryError', code: undefined }
+        );
+        expect(logged).not.toContain(sentinel);
+        errorSpy.mockRestore();
+        warnSpy.mockRestore();
+    });
+
     it('rethrows unexpected OAuth user creation failures', async () => {
         const error = new Error('database unavailable');
         const { db } = makeFailingOAuthInsertDb(error);

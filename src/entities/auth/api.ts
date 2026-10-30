@@ -1,6 +1,7 @@
 import type { Tier } from '@y0ngha/siglens-core';
 import { and, eq, inArray, lt, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
+import { logActionError } from '@/shared/lib/logActionError';
 import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import {
     encryptToken,
@@ -389,7 +390,9 @@ export class DrizzleUserRepository
                     .returning({ id: users.id }),
             DB_TRANSIENT_RETRY
         ).catch(deleteErr => {
-            console.warn(
+            // `DrizzleQueryError` 메시지에는 바인딩된 사용자 id가 들어가므로
+            // 원본 오류 대신 `{ name, code }`만 남긴다.
+            logActionError(
                 '[createOAuthUser] compensating delete failed — user row may be orphaned',
                 deleteErr
             );
