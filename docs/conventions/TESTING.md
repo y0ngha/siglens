@@ -144,6 +144,15 @@ A new `describe`/`it` name uses the same language as the other tests in that fil
 - ❌ `it('rounds half a cent up')` added to a file whose other cases are Korean.
 - ✅ `it('반 센트는 올림한다')` in the same file.
 
+<a id="TE-57"></a>
+
+#### TE-57 — New hooks and branchy components get their own tests
+
+A new custom hook, or a UI component with its own branches (states, empty/error paths, derived labels), gets a colocated test that drives it directly. Coverage through the parent's integration test alone leaves the branches unpinned and lets a regression in the extracted unit stay green.
+
+- ❌ A hook split out of a component, covered only by the parent component's test.
+- ✅ A `renderHook` test for the hook and a render test per branch of the component, next to the source.
+
 ## Required Test Cases
 
 <a id="TE-21"></a>
@@ -371,6 +380,15 @@ Defensive guards, fallbacks, timeouts and degradations kept "because X" need a t
 
 - ❌ A fallback cache write kept "for DB failure absorption" with no test exercising a DB write failure.
 - ✅ A test that fails the DB write and asserts the fallback entry exists.
+
+<a id="TE-58"></a>
+
+#### TE-58 — Source-reading guards follow the code when it moves
+
+A test that reads source files (`readFileSync`, a glob over a slice) pins a path or file list. When code is split, renamed or moved, update the guard's file list in the same change and assert that each scanned file exists and the scan is non-empty; otherwise it keeps passing against the old files and stops guarding the moved code.
+
+- ❌ A scan of `Panel.tsx` keeps passing after its logic moves to `PanelRow.tsx` and `usePanel.ts`.
+- ✅ The scan derives its files from the directory (or lists the new files), and fails when a listed path is missing.
 
 ## Time, Flakes & Isolation
 

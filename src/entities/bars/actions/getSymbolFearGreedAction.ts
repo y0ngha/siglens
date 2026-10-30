@@ -1,10 +1,8 @@
 'use server';
 
 import { loadBarsData } from '../lib/loadBarsData';
-import {
-    clientSymbolFearGreed,
-    type SymbolFearGreedSeries,
-} from '../lib/symbolFearGreed';
+import { clientSymbolFearGreed } from '../lib/symbolFearGreed';
+import type { SymbolFearGreedSeries } from '../model';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 
 /**
