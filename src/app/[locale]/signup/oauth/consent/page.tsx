@@ -1,22 +1,20 @@
-import { getTranslations } from 'next-intl/server';
-import { resolveLocale } from '@/shared/i18n/locales';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
-import { localeRedirect } from '@/shared/i18n/localeRedirect';
-import { Suspense } from 'react';
-import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
-import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAuthSignupAction';
-import { OAUTH_ERROR_REDIRECT } from '@/entities/auth/lib/errorMessages';
 import type { Metadata } from 'next';
-import { enterLocale } from '@/shared/lib/enterLocale';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { ConsentContent } from './_components/ConsentContent';
 
-// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
+const PATH = '/signup/oauth/consent';
+
 /**
- * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
- * 없어 `/ja/signup/oauth/consent`도 canonical이 한국어 URL로 나갔다. noindex 페이지에 다른 URL을
- * canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ * 로케일별 메타데이터 — 정적 `metadata`는 로케일을 볼 수 없어 `/ja/signup/oauth/consent`의
+ * canonical이 한국어 URL로 나간다. og·twitter도 이 페이지 값으로 채운다: 일부만 두면 Next가
+ * `openGraph`를 통째로 교체해 og:title이 빠지고, `twitter`는 루트 레이아웃의 홈 제목·설명을
+ * 그대로 상속한다.
  */
 export async function generateMetadata({
     params,
@@ -29,55 +27,26 @@ export async function generateMetadata({
         locale,
         namespace: 'shared.seo',
     });
+    const title = tSeo('oauthConsentTitle');
+    const description = tSeo('oauthConsentFullTitle', {
+        v0: brandName(locale),
+    });
     return {
-        title: tSeo('oauthConsentTitle'),
-        description: tSeo('oauthConsentFullTitle', { v0: brandName(locale) }),
-        alternates: {
-            canonical: localeCanonical(locale, '/signup/oauth/consent'),
-        },
-        openGraph: { url: localeCanonical(locale, '/signup/oauth/consent') },
+        title,
+        description,
+        alternates: { canonical: localeCanonical(locale, PATH) },
+        ...localePageSocial(locale, PATH, { title, description }),
         robots: { index: false, follow: false },
     };
 }
 
-interface ConsentContentProps {
-    searchParams: Promise<{ token?: string }>;
-}
-
-/** 페이지 props — 로케일 세그먼트 때문에 `params`가 추가로 들어온다. */
-interface PageProps extends ConsentContentProps {
+/** 페이지 props — 로케일 세그먼트의 `params`와 동의 토큰이 든 `searchParams`. */
+interface PageProps {
     readonly params: Promise<{ locale: string }>;
+    readonly searchParams: Promise<{ token?: string | string[] }>;
 }
 
-async function ConsentContent({ searchParams }: ConsentContentProps) {
-    const params = await searchParams;
-    const token = params.token;
-    if (!token) {
-        return localeRedirect(OAUTH_ERROR_REDIRECT.consentInvalid);
-    }
-
-    const store = createPendingOAuthSignupStoreFromEnv();
-    if (!store) {
-        return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
-    }
-
-    const profile = await store.peek(token);
-    if (!profile) {
-        return localeRedirect(OAUTH_ERROR_REDIRECT.consentExpired);
-    }
-
-    return (
-        <OAuthConsentForm
-            token={token}
-            provider={profile.provider}
-            email={profile.email}
-            name={profile.name}
-            avatarUrl={profile.avatarUrl}
-            cancelAction={cancelOAuthSignupAction}
-        />
-    );
-}
-
+/** 소셜 로그인 신규 가입의 약관 동의 페이지. 카드 껍데기는 쿼리와 무관해 먼저 그린다. */
 export default async function OAuthConsentPage({
     params,
     searchParams,

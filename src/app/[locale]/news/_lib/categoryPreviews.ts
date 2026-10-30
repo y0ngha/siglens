@@ -5,7 +5,7 @@ import {
 } from '@/entities/market-news/lib/categoryConfig';
 import { MARKET_NEWS_CACHE_TAG_PREFIX } from '@/entities/market-news/lib/marketNewsConstants';
 import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
-import { PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub/CategoryCard';
+import { PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub/utils/previewHeadlines';
 import { cacheNonEmpty } from '@/shared/cache/cacheNonEmpty';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
