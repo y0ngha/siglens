@@ -1,4 +1,4 @@
-vi.mock('@/entities/news-article/lib/ensureSymbolNewsFresh', () => ({
+vi.mock('@/entities/news-article/server/ensureSymbolNewsFresh', () => ({
     ensureSymbolNewsFresh: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({

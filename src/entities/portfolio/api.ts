@@ -22,18 +22,17 @@ const columns = {
 };
 
 /**
- * Drizzle ORM implementation of {@link PortfolioHoldingRepository} backed by
- * PostgreSQL. One row per (userId, symbol); `upsert` relies on the
- * `portfolio_holdings_user_symbol_uidx` unique index to merge repeat
- * submissions for the same symbol instead of accumulating duplicate rows.
+ * {@link PortfolioHoldingRepository}의 PostgreSQL(Drizzle) 구현. (userId, symbol)당 한 행이며,
+ * `upsert`는 `portfolio_holdings_user_symbol_uidx` 유니크 인덱스로 같은 심볼의 반복 제출을
+ * 중복 행 없이 병합한다.
  *
- * Every method wraps its query in `withRetry(DB_TRANSIENT_RETRY)` — retry
- * is a repository-layer concern, applied uniformly here rather than
- * scattered across individual action call sites.
+ * 모든 메서드는 쿼리를 `withRetry(DB_TRANSIENT_RETRY)`로 감싼다 — 재시도는 액션 호출부마다
+ * 흩뿌리지 않고 리포지토리 계층에서 일괄 적용한다.
  */
 export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /** 회원의 보유종목 전체 행을 정렬 없이 돌려준다. 정렬은 호출자(액션) 책임이다. */
     async findByUser(userId: string): Promise<PortfolioHoldingRecord[]> {
         return withRetry(
             () =>
@@ -45,13 +44,7 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
         );
     }
 
-    /**
-     * Intentionally has no production caller yet — spec §4-mandated and
-     * forward-provisioned for subsystem B ("where am I" position lookup for
-     * a single symbol) and subsystem C (personalized analysis keyed off one
-     * holding). Kept in place (and unit-tested) as a deliberate seam rather
-     * than accidental dead code.
-     */
+    /** 한 심볼의 보유 행을 돌려준다. 없으면 `null`. `symbol`은 대문자 정규형이어야 한다. */
     async findByUserAndSymbol(
         userId: string,
         symbol: string
@@ -73,6 +66,10 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
         return row ?? null;
     }
 
+    /**
+     * (userId, symbol) 기준으로 삽입하거나 갱신한다. 충돌 시 수량·평단은 덮어쓰고,
+     * `companyName`·`fmpSymbol`은 새 값이 `null`이면 기존 값을 보존한다.
+     */
     async upsert(
         input: UpsertPortfolioHoldingInput
     ): Promise<PortfolioHoldingRecord> {
@@ -93,13 +90,11 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
                             portfolioHoldings.userId,
                             portfolioHoldings.symbol,
                         ],
-                        // COALESCE preserves the previously-stored metadata when the
-                        // incoming value is null — a null here always means "symbol
-                        // resolution degraded on this edit", never "known to be
-                        // empty" (a genuine null from getAssetInfo is rejected as
-                        // symbol_not_found before reaching upsert). Without this,
-                        // editing quantity/price during an FMP outage would silently
-                        // wipe out the correct companyName/fmpSymbol saved earlier.
+                        // 들어온 값이 null이면 COALESCE로 기존 메타데이터를 보존한다 — 여기서 null은
+                        // 항상 "이번 편집에서 심볼 해석이 degrade됨"이지 "비어 있음이 확인됨"이
+                        // 아니다(getAssetInfo가 진짜 null을 주면 upsert 전에 symbol_not_found로
+                        // 거부된다). 이게 없으면 FMP 장애 중 수량/평단을 고칠 때 이전에 저장된 올바른
+                        // companyName/fmpSymbol이 조용히 지워진다.
                         set: {
                             companyName: sql`coalesce(${input.companyName}, ${portfolioHoldings.companyName})`,
                             fmpSymbol: sql`coalesce(${input.fmpSymbol}, ${portfolioHoldings.fmpSymbol})`,
@@ -118,6 +113,7 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
         return row;
     }
 
+    /** 보유 행을 지우고 실제로 지워졌는지(`true`) 돌려준다. 이미 없으면 `false`. */
     async deleteByUserAndSymbol(
         userId: string,
         symbol: string

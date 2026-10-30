@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { WatchlistPageContent } from '@/views/watchlist/WatchlistPageContent';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { PAGE_HEADER_LINK } from '../_personal/pageHeaderLink';
+import { WatchlistShell } from '@/app/[locale]/watchlist/_components/WatchlistShell';
 
 /**
  * `generateMetadata`인 이유는 `/portfolio`와 같다 — 정적 객체는 로케일을 못 봐서 `/en/watchlist`의
@@ -31,11 +29,7 @@ export async function generateMetadata({
     };
 }
 
-/**
- * 관심종목 페이지. 비회원에게도 열린다 — 목록의 출처(계정 DB 또는 기기
- * localStorage)는 `useWatchlist`가 숨긴다. 쿠키·DB를 읽지 않는 정적 셸이고 본문은 전부
- * 클라이언트에서 그린다. 보유종목은 `/portfolio`가 따로 맡는다.
- */
+/** 관심종목 페이지. 비회원에게도 열린다. 보유종목은 `/portfolio`가 따로 맡는다. */
 export default async function WatchlistPage({
     params,
 }: {
@@ -43,29 +37,5 @@ export default async function WatchlistPage({
 }) {
     const { locale: rawLocale } = await params;
     enterLocale(rawLocale);
-    const t = await getTranslations('app.watchlist');
-    return (
-        <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
-            <div className="mx-auto w-full max-w-5xl space-y-6">
-                <header className="flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                        <h1 className="text-2xl font-semibold text-secondary-50">
-                            {t('page.title')}
-                        </h1>
-                        <p className="mt-1 text-sm text-secondary-400">
-                            {t('page.subtitle')}
-                        </p>
-                    </div>
-                    <Link
-                        href="/portfolio"
-                        prefetch={false}
-                        className={PAGE_HEADER_LINK}
-                    >
-                        {t('page.toPortfolio')}
-                    </Link>
-                </header>
-                <WatchlistPageContent />
-            </div>
-        </main>
-    );
+    return <WatchlistShell />;
 }

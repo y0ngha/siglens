@@ -1,131 +1,94 @@
+import type { BarsData } from '@y0ngha/siglens-core';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
-import { resolveLocale } from '@/shared/i18n/locales';
-import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { ErrorBoundary } from 'react-error-boundary';
-import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
-import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
-import { hasFearGreedScore } from '@/views/symbol/fearGreed/utils/hasFearGreedScore';
-import {
-    buildFearGreedMetaFactsFromBars,
-    lastScoredDateFromBars,
-} from '@/views/symbol/fearGreed/utils/fearGreedFromBars';
-import { composeFearGreedDescription } from '@/views/symbol/fearGreed/utils/fearGreedMetaDescription';
-import { fearGreedDateModified } from '@/views/symbol/fearGreed/utils/fearGreedDateModified';
-import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { SymbolRouteParams } from '@/shared/config/market';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
-import {
-    clientSymbolFearGreed,
-    symbolFearGreedInputs,
-} from '@/entities/bars/lib/symbolFearGreed';
-import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
-import {
-    getDescriptor,
-    marketProfileOf,
-} from '@/shared/config/marketProfile/registry';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
-import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
-import { MS_PER_SECOND } from '@/shared/config/time';
-import {
-    buildBreadcrumbJsonLd,
-    buildSymbolSeoContent,
-    resolveSymbolFearGreedSeoContent,
-} from '@/shared/lib/seo';
-import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
-import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     dehydrate,
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query';
-import type { BarsData } from '@y0ngha/siglens-core';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { ErrorBoundary } from 'react-error-boundary';
+
+import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
+import {
+    enterSymbolTabMetadata,
+    enterSymbolTabPage,
+    type SymbolTabParams,
+} from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
+import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
+import {
+    clientSymbolFearGreed,
+    symbolFearGreedInputs,
+} from '@/entities/bars/lib/symbolFearGreed';
+import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
+import { SymbolRouteParams } from '@/shared/config/market';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { MS_PER_SECOND } from '@/shared/config/time';
+import { resolveSymbolFearGreedSeoContent } from '@/shared/lib/seo';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { enterLocale } from '@/shared/lib/enterLocale';
+import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
+import { fearGreedDateModified } from '@/views/symbol/fearGreed/utils/fearGreedDateModified';
+import {
+    buildFearGreedMetaFactsFromBars,
+    lastScoredDateFromBars,
+} from '@/views/symbol/fearGreed/utils/fearGreedFromBars';
+import { composeFearGreedDescription } from '@/views/symbol/fearGreed/utils/fearGreedMetaDescription';
+import { hasFearGreedScore } from '@/views/symbol/fearGreed/utils/hasFearGreedScore';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
+import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
+import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 
-// 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
-// compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
+import { MARKET_FEAR_GREED_LINK } from './_lib/marketFearGreedLink';
+
 /**
- * 종목이 속한 시장의 상위 공포·탐욕 지수 링크.
- *
- * 암호화폐는 예전에 전용 시장 지수가 없어 미국 페이지를 가리켰다. 이제
- * `/fear-greed/crypto`가 있으므로 세 시장 모두 자기 지수로 간다.
+ * ISR 상한. SSR이 점수·요인·시계열 요약까지 텍스트로 렌더하므로(`FearGreedFactsSummary`) 이 값이
+ * **크롤러가 보는 수치의 신선도**를 직접 정한다 — 줄이면 ISR 재생성 비용이 오른다.
  */
+export const revalidate = 86400; // 24h
+
 /**
- * 라벨은 **카탈로그 키**로 들고 있는다. 문자열을 그대로 두면 영어 페이지에서도
- * 한국어 링크 문구와 한국어 시장명이 그대로 나간다(`/en/AAPL/fear-greed`에서
- * "시장 전체 공포·탐욕 지수"가 영어 문장 한가운데 박혀 있었다).
+ * 빈 배열 = 빌드 시 prebuild 없이 첫 요청에 렌더+캐시하는 on-demand ISR. 없으면 동적 세그먼트가
+ * 매 요청 동적 렌더돼 `revalidate`가 무력화된다.
  */
-const MARKET_FEAR_GREED_LINK: Record<
-    ReturnType<typeof marketProfileOf>,
-    { href: string; labelKey: string; marketLabelKey: string }
-> = {
-    'us-equity': {
-        href: '/fear-greed',
-        labelKey: 'page.marketFearGreedLinkAll',
-        marketLabelKey: 'page.marketLabelUs',
-    },
-    'kr-equity': {
-        href: '/fear-greed/kr',
-        labelKey: 'page.marketFearGreedLinkKr',
-        marketLabelKey: 'page.marketLabelKr',
-    },
-    crypto: {
-        href: '/fear-greed/crypto',
-        labelKey: 'page.marketFearGreedLinkCrypto',
-        marketLabelKey: 'page.marketLabelCrypto',
-    },
-};
-
-export const revalidate = 86400; // 24h — SSR이 점수·요인·시계열 요약까지 텍스트로 렌더한다(FearGreedFactsSummary).
-// 예전엔 "정적 가이드뿐"이었으나 2026-08 thin-content 대응으로 바뀌었다. 즉 이 TTL은
-// **크롤러가 보는 수치의 신선도**를 직접 정한다 — 줄이면 ISR 재생성 비용이 오른다.
-
-// generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
-// 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
-// revalidate 주기로 재생성하는 on-demand ISR. (cacheComponents 비활성이라 빈 배열 허용)
 export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
     return [];
 }
 
 interface Props {
-    params: Promise<{ locale: string; symbol: string }>;
+    params: SymbolTabParams;
 }
 
+/**
+ * 종목별 공포·탐욕 탭 메타데이터 — 이 탭은 **색인한다**(종목별 색인 탭은 차트·뉴스·공포탐욕 셋).
+ * 이 탭의 롱테일이 실제 클릭을 만들어 온 수요가 근거다. 대신 템플릿 비중을 낮추려고 종목 탭 FAQ를
+ * 걷어냈다. 크롤 후 미색인이 쌓이거나 게재순위가 나빠지면 noindex로 되돌리는 것이 롤백 신호다.
+ *
+ * 점수를 낼 수 있으면 description을 점수에서 만든 종목별 문장으로 바꾼다.
+ */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = resolveLocale(rawLocale);
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    const ticker = symbol.toUpperCase();
-    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
-    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
-    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
-    if (!isAdmissibleSymbolShape(ticker)) notFound();
-    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
-    const { assetInfo, degraded } = await requireResolvableAsset(ticker);
-    // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
-    // (`hasFearGreedScore`)로 판정한다(CONVENTIONS.md#CP-2). 본문이 쓰는 `getSessionBarsStatic`과
-    // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
-    // (`[symbol]/page.tsx`)와 같은 모양이다:
-    //   - 조회 **실패**(`null`) → degraded로 넘긴다. 이 탭에는 스냅샷이 없으므로
-    //     (`tab: 'fear-greed'`는 제목 카피용이라 스냅샷을 읽지 않는다) degraded는 곧
-    //     noindex — 장애 중 빈 껍데기가 색인되지 않는다.
-    //   - 조회는 됐는데 **점수가 안 나오면**(봉 부족·점수 표본 부족, 상장폐지·신규
-    //     상장 종목 등) 요약이 그려지지 않아 본문이 도입 문단뿐이다 → `no-price-data`로
-    //     noindex. 예전에는 `buildTechnicalFacts`(봉 2개 이상)로 판정해 봉은 있으나
-    //     점수가 없는 종목(`/TOSCF`·`/SLROF`, 2026-10-04)이 색인돼 있었다.
+    const { locale, ticker, tSeo, assetInfo, degraded } =
+        await enterSymbolTabMetadata(params);
+    // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**(`hasFearGreedScore`)로
+    // 판정한다(CONVENTIONS.md#CP-2). 본문과 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다.
+    //   - 조회 **실패**(`null`) → degraded. 이 탭에는 스냅샷이 없어(`tab: 'fear-greed'`는 제목 카피용)
+    //     degraded는 곧 noindex다 — 장애 중 빈 껍데기가 색인되지 않는다.
+    //   - 조회는 됐는데 **점수가 안 나오면**(봉·표본 부족, 상장폐지·신규 상장) 본문이 도입 문단뿐이라
+    //     `no-price-data`로 noindex. 봉 2개 기준(`buildTechnicalFacts`)으로는 봉은 있고 점수가 없는
+    //     종목이 색인된다.
     const metadataBars = await getSessionBarsStatic(
         ticker,
         marketProfileOf(assetInfo),
@@ -159,27 +122,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         englishName: assetInfo.name,
         locale,
     });
-    /*
-     * 종목별 공포·탐욕 탭은 **색인한다** (2026-10-01 사용자 결정,
-     * `SEO_RECOVERY_2026_09.md` §10).
-     *
-     * 2026-09-17 운영 렌더 감사는 이 탭을 항상 noindex로 돌렸다 — 본문의 92%(중앙값)가
-     * 숫자만 바뀌는 공통 문장이었다(차트 30%, 뉴스 26%). 그 판단을 되돌리는 근거는
-     * **수요**다: 2026-06에 실제 클릭을 만든 것은 거의 전부 이 탭의 롱테일이었고,
-     * 노출 회복 전략이 "산문 있는 탭만 색인"으로 좁혀 둔 뒤 그 수요를 받을 페이지가
-     * 사라졌다. 대신 템플릿 비중을 낮추려고 같은 날 종목 탭 FAQ를 걷어냈고(FAQ는
-     * 이 페이지 공통 문장의 큰 덩어리였다), 다른 탭 다섯 개를 noindex로 빼 종목당
-     * 색인 페이지를 세 개(차트·뉴스·공포탐욕)로 줄였다.
-     *
-     * 되돌림 신호: GSC `크롤링됨-현재 색인 생성되지 않음`에 `/fear-greed` URL이
-     * 쌓이거나, 사이트 평균 게재순위가 나빠지면 이 탭을 다시 noindex로 돌린다.
-     */
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // 점수에서 만든 종목별 설명. 본문(`FearGreedFactsSummary`)과 같은 봉·같은 계산이다 —
-    // `metadataBars`는 위에서 이미 읽은 값이고 `computeSymbolFearGreedSeries`는 같은 입력
-    // 배열이면 요청 안에서 한 번만 계산(`React.cache`)하므로 추가 provider 호출이 없다.
-    // 점수를 못 내면(봉 부족) 템플릿 설명을 그대로 둔다.
+    // 점수에서 만든 종목별 설명 — 본문과 같은 봉·같은 계산이고(`computeSymbolFearGreedSeries`는 요청 안에서
+    // `React.cache`), 점수를 못 내면 템플릿 설명을 그대로 둔다.
     const metaFacts =
         metadataBars === null
             ? null
@@ -200,24 +146,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
+/**
+ * 종목별 공포·탐욕 탭 본문 — 시장 허브 안내 문단, 게이지(서버 계산 결과를 seed해 SSR), 서버 계산
+ * 요인 요약(`FearGreedFactsSummary`, 점수가 없으면 생략).
+ */
 export default async function SymbolFearGreedPage({ params }: Props) {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = enterLocale(rawLocale);
-    const t = await getTranslations('app.symbol');
-    const tSeo = await getTranslations('shared.seo');
-    const ticker = symbol.toUpperCase();
-
-    if (!isAdmissibleSymbolShape(ticker)) {
-        notFound();
-    }
-
-    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
-    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
-    if (isUnresolvableDegraded(ticker, degraded)) notFound();
-    if (!assetInfo) {
-        notFound();
-    }
+    const { locale, ticker, segment } = await enterSymbolTabPage(params);
+    // 번역과 존재 판정은 서로 독립이다(존재하지 않으면 `notFound()`로 함께 끊긴다).
+    const [t, tSeo, { assetInfo, degraded }] = await Promise.all([
+        getTranslations('app.symbol'),
+        getTranslations('shared.seo'),
+        requireResolvableAsset(ticker),
+    ]);
 
     const displayName = buildDisplayName(assetInfo, ticker, locale);
     const marketProfile = marketProfileOf(assetInfo);
@@ -236,46 +176,40 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         }
     );
 
-    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목과 crypto는
-    // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF·지수·모호한 종목과 crypto(schema.org 표준
+    // 타입 없음)는 undefined로 생략된다.
     const aboutNode = buildAssetAboutNode(
         ticker,
         pickAssetName(assetInfo, ticker, locale),
         assetInfo.fmpSymbol,
         assetClass
     );
-    // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
-    // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
-    const tTab = await getTranslations('shared.symbolTab');
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [
-            { name: displayName, url: buildSymbolSeoContent(ticker, tSeo).url },
-            { name: tTab('fear-greed'), url },
-        ],
-        locale
-    );
+    const breadcrumbJsonLd = await buildSymbolTabBreadcrumbJsonLd({
+        ticker,
+        displayName,
+        tab: 'fear-greed',
+        tabUrl: url,
+        tSeo,
+        locale,
+    });
 
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
-    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
+    queryClient.setQueryData(QUERY_KEYS.assetInfo(segment), assetInfo, {
         updatedAt: assetInfoSeedUpdatedAt(degraded),
     });
-    // **세션 키 축소 봉(`getSessionBarsStatic`)을 쓴다** — 5년 일봉(`fearGreedBars`)을 담고,
-    // 키가 마지막 마감 세션 날짜라 revalidate가 24h다. 예전 `getQuantizedBarsStatic`(6h)은
-    // 이 탭(24h 선언)을 6h로 clamp했다(`sessionBarsStaticCache.ts` JSDoc).
-    // generateMetadata(색인 게이트)와 같은 헬퍼·같은 인자라 요청 스코프 메모가 접혀 조회도,
-    // 5년 계산(`symbolFearGreed`의 React.cache)도 한 번이다. 헤더 칩(레이아웃)은 같은 세션
-    // 키의 스냅샷 캐시를 읽으므로 이 본문 요약과 같은 점수다.
+    // **세션 키 축소 봉(`getSessionBarsStatic`)을 쓴다** — 5년 일봉을 담고 키가 마지막 마감 세션
+    // 날짜라 revalidate가 24h다. 6h 봉 캐시를 읽으면 이 탭(24h 선언)이 6h로 clamp된다
+    // (`sessionBarsStaticCache.ts` JSDoc). 메타데이터 게이트와 같은 인자라 조회도 5년 계산도 한 번이고,
+    // 헤더 칩(레이아웃)도 같은 세션 키라 이 본문 요약과 같은 점수다.
     //
-    // **봉을 seed하지 않는다.** 예전에는 클라이언트 게이지가 `useBars`의 일봉으로 직접
-    // 계산해서 이 페이지가 `QUERY_KEYS.bars`를 seed했다. 이제 게이지는 서버가 계산한
-    // 결과(`useFearGreedFromSymbol` → `getSymbolFearGreedAction`)를 쓰므로, 그 결과만
-    // seed한다 — 일봉 500개+지표 대신 점수와 최근 2년 history라 이 탭의 RSC가 가벼워진다.
+    // **봉을 seed하지 않는다.** 게이지는 서버가 계산한 결과(`useFearGreedFromSymbol` →
+    // `getSymbolFearGreedAction`)를 쓰므로 그 결과만 seed한다 — 일봉 500개 + 지표 대신 점수와 최근 2년
+    // history라 RSC가 가볍다.
     //
-    // 시장 판독은 봉 조회와 독립이라 병렬로 받는다. 시장 허브와 같은 로더를 세션 키 24h
-    // 캐시로 감싸 읽으며(허브의 1h 캐시를 직접 읽으면 이 탭이 1h로 clamp된다), 실패는
-    // `getMarketFearGreedReading` 안에서 `null`로 삼킨다(보조 문장 하나뿐이다).
+    // 시장 판독은 봉 조회와 독립이라 병렬로 받는다. 허브의 1h 캐시를 직접 읽으면 이 탭이 1h로
+    // clamp되므로 세션 키 24h 캐시로 감싼 로더를 읽고, 실패는 그 안에서 `null`로 삼킨다.
     const [quantizedFgBars, marketReading] = await Promise.all([
         getSessionBarsStatic(
             ticker,
@@ -292,18 +226,16 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             ? null
             : symbolFearGreedInputs(quantizedFgBars);
     if (quantizedFgBars === null) {
-        // 봉 조회 실패 — 게이지는 seed 없이 브라우저에서 조회하고(`hasSeed`), 요약 문단도
-        // 빠진다. 이 degraded 렌더가 라우트 revalidate(24h) 동안 굳지 않게 5분으로 낮춘다.
-        // `getSessionBarsStatic`은 큐레이션 종목에서만 낮추므로(롱테일 noindex 비용 절약)
-        // 롱테일의 빈 게이지가 하루 동안 남는 것을 여기서 막는다.
+        // 봉 조회 실패 — 게이지는 seed 없이 브라우저에서 조회하고(`hasSeed`), 요약 문단도 빠진다. 이
+        // degraded 렌더가 24h 굳지 않게 5분으로 낮춘다. `getSessionBarsStatic`은 큐레이션 종목에서만
+        // 낮추므로 롱테일의 빈 게이지가 하루 동안 남는 것을 여기서 막는다.
         await shortenRevalidateForRuntimeDegrade();
     } else {
-        // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른
-        // timestamp가 HTML에 박혀 ISR write churn이 생긴다. 마지막 완료 봉의 time으로
+        // updatedAt 명시(AP-2): 기본값 Date.now()는 재생성마다 HTML을 바꾼다. 마지막 완료 봉의 시각으로
         // 고정한다(Bar.time은 초, dataUpdatedAt은 밀리초).
         const lastBarSec = quantizedFgBars.bars.at(-1)?.time ?? 0;
         queryClient.setQueryData(
-            QUERY_KEYS.symbolFearGreed(symbol, assetInfo.fmpSymbol),
+            QUERY_KEYS.symbolFearGreed(segment, assetInfo.fmpSymbol),
             clientSymbolFearGreed(quantizedFgBars),
             { updatedAt: lastBarSec * MS_PER_SECOND }
         );
@@ -327,9 +259,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 : fearGreedDateModified(lastScoredDate, marketProfile),
     });
 
-    // 요약 여부는 `FearGreedFactsSummary`가 정한다(점수가 없으면 null). 게이트의
-    // `hasFearGreedScore`와 같은 core 계산·같은 입력이라 색인과 화면이 갈리지 않는다.
-
     return (
         <>
             <JsonLd data={webPageJsonLd} />
@@ -338,18 +267,12 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 <SymbolPageHeading>
                     {t('page.6cd32e', { v0: displayName })}
                 </SymbolPageHeading>
-                {/* 종목 탭 FAQ(지표 설명 3문항)는 2026-10-01에 걷어냈다 — 종목명만
-                    바뀌는 템플릿이라 이 탭의 공통 문장 비율(92%)을 끌어올리던 덩어리였다
-                    (`SEO_RECOVERY_2026_09.md` §10). 지표 일반 설명은 사이트 단위
-                    `/fear-greed` 허브가 맡고, 아래 문단이 그 허브로 보낸다. */}
+                {/* 지표 일반 설명은 사이트 단위 `/fear-greed` 허브가 맡고, 이 문단이 종목이 속한 시장의
+                    허브로 보낸다(종목명만 바뀌는 FAQ는 두지 않는다 — 공통 문장 비중을 끌어올린다). */}
                 <p className="text-sm leading-relaxed text-secondary-400">
-                    {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
-                        `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
-                        하드코딩이 맞았지만, 지금은 한국 종목 페이지가
-                        "미국 증시 전반"을 참조하게 된다. */}
                     {t.rich('page.ddc932', {
-                        v0: t(marketFearGreedLink.marketLabelKey),
-                        v1: t(marketFearGreedLink.labelKey),
+                        v0: marketFearGreedLink.marketLabel(t),
+                        v1: marketFearGreedLink.label(t),
                         v2: displayName,
                         link: chunks => (
                             <Link
@@ -369,6 +292,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         <FearGreedPage
                             symbol={ticker}
                             fmpSymbol={assetInfo.fmpSymbol}
+                            displayName={displayName}
                             hasSeed={quantizedFgBars !== null}
                             // 아래 `FearGreedFactsSummary`가 같은 경고 문구와 표본 수
                             // 안내를 이미 서버 렌더한다 — 둘 다 그리면 중복이다.
@@ -392,9 +316,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                                 ? null
                                 : {
                                       reading: marketReading,
-                                      label: t(
-                                          marketFearGreedLink.marketLabelKey
-                                      ),
+                                      label: marketFearGreedLink.marketLabel(t),
                                   }
                         }
                     />

@@ -49,6 +49,41 @@ describe('FearGreedHero', () => {
         });
     });
 
+    /**
+     * 라벨은 core가 준 값이다. 반올림한 점수(45)가 다른 구간이어도 헤더 배지·서버 요약과
+     * 같은 `snapshot.label`을 보여야 한 페이지의 라벨이 갈라지지 않는다.
+     */
+    describe('label near a cutoff', () => {
+        const nearFearCutoff: FearGreedSnapshot = {
+            ...snapshot,
+            score: 44.6,
+            label: 'FEAR',
+        };
+
+        it('44.6은 45로 찍되 라벨은 core의 FEAR를 그대로 쓴다', () => {
+            const { getByText, queryByText } = render(
+                <FearGreedHero snapshot={nearFearCutoff} />
+            );
+            expect(getByText('45')).toBeInTheDocument();
+            expect(
+                getByText(sentimentLabelText('FEAR', t))
+            ).toBeInTheDocument();
+            expect(queryByText(sentimentLabelText('NEUTRAL', t))).toBeNull();
+        });
+
+        it('SVG aria-label에도 반올림 점수와 core 라벨이 담긴다', () => {
+            const { container } = render(
+                <FearGreedHero snapshot={nearFearCutoff} />
+            );
+            const ariaLabel = container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label');
+            expect(ariaLabel).toContain('45');
+            expect(ariaLabel).toContain(sentimentLabelText('FEAR', t));
+            expect(ariaLabel).not.toContain(sentimentLabelText('NEUTRAL', t));
+        });
+    });
+
     describe('with GREED snapshot', () => {
         it('renders GREED label for score 60', () => {
             const greedSnap: FearGreedSnapshot = {

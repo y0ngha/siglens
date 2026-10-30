@@ -1,8 +1,11 @@
 import type { WatchlistItemView } from '@/entities/watchlist/model';
 
+/** `/watchlist`가 고를 수 있는 정렬(선택 상자의 표시 순서). */
 export const WATCHLIST_SORTS = ['added', 'change', 'name'] as const;
+/** 정렬 이름. 선택 상자 값은 `isWatchlistSort`로 좁힌 뒤 이 타입으로 쓴다. */
 export type WatchlistSort = (typeof WATCHLIST_SORTS)[number];
 
+/** 임의 문자열(선택 상자 값 등)이 정렬 이름인가. */
 export function isWatchlistSort(value: string): value is WatchlistSort {
     // 리터럴 튜플을 `readonly string[]`로 넓히는 것뿐이다(좁히는 단언이 아니다) — `includes`가
     // 임의의 문자열을 받게 하려는 것이고, 판정 결과가 곧 타입 가드다.

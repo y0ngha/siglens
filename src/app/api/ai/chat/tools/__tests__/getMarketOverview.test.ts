@@ -24,7 +24,7 @@ vi.mock(
     '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache',
     () => ({ getMarketFearGreedKrStatic: fgKr })
 );
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: cachedBars,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({

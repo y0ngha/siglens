@@ -11,6 +11,7 @@ import {
 } from '@/shared/config/publicApi';
 import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
 
+/** `buildSkillMarkdown` 입력. */
 export interface BuildSkillMarkdownInput {
     /** 사이트 origin(끝 슬래시 없음). 예: `https://siglens.io` */
     baseUrl: string;
@@ -60,6 +61,7 @@ function renderTool(tool: AgentToolSpec): string {
     ].join('\n');
 }
 
+/** 한도 한 줄 표기(`<분>/minute, <일>/day`). 일 한도만 천 단위 구분자를 쓴다. */
 export function renderLimits(limits: PublicApiRateLimit): string {
     return `${limits.perMinute}/minute, ${limits.perDay.toLocaleString('en-US')}/day`;
 }

@@ -5,8 +5,10 @@
  * 새 대화 때 다시 시작할 수 있게 key로 감싼다.
  */
 import { useState } from 'react';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
-import type { ChatMessageView } from '@/entities/chat-conversation/model';
+import type {
+    ChatMessageView,
+    ConversationListItem,
+} from '@/entities/chat-conversation/model';
 import type { PendingSuggestions } from './EmptyState';
 import { useConversationList } from './hooks/useConversationList';
 import { ChatSession } from './shell/ChatSession';

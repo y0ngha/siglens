@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
-import { useTabs } from '@/shared/ui/tabs/hooks/useTabs';
+import { useTabs, type TabPanelMounting } from '@/shared/ui/tabs/hooks/useTabs';
 import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 
 // 'xs' — BacktestTabs 스타일 (12px, font-medium, active: primary text+border)
@@ -53,6 +53,8 @@ interface TabsUnderlineProps<T extends string> {
     size: TabsUnderlineSize;
     idPrefix?: string;
     withHomeEnd?: boolean;
+    /** 비활성 패널을 마운트하지 않는 소비자는 `'active'`를 넘긴다 — `useTabs` 참고. */
+    panelMounting?: TabPanelMounting;
 }
 
 export function TabsUnderline<T extends string>({
@@ -63,6 +65,7 @@ export function TabsUnderline<T extends string>({
     size,
     idPrefix,
     withHomeEnd,
+    panelMounting,
 }: TabsUnderlineProps<T>) {
     const values = tabs.map(t => t.value);
     const { getTabProps } = useTabs({
@@ -71,6 +74,7 @@ export function TabsUnderline<T extends string>({
         onChange,
         idPrefix,
         withHomeEnd,
+        panelMounting,
     });
     const styles = SIZE_STYLES[size];
 

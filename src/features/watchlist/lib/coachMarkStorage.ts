@@ -12,6 +12,7 @@ export function hasSeenWatchlistCoachMark(): boolean {
     }
 }
 
+/** 코치 마크를 본 것으로 영구히 적는다(닫기·첫 토글). */
 export function markWatchlistCoachMarkSeen(): void {
     if (typeof window === 'undefined') return;
     try {

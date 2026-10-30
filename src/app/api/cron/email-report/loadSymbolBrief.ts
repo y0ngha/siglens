@@ -5,7 +5,7 @@ import {
     evaluatePullback,
     type BarsData,
 } from '@y0ngha/siglens-core';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { buildSignalBrief } from '@/entities/email-report/lib/buildSignalBrief';
 import type { SymbolBrief } from '@/entities/email-report/reportModel';
 

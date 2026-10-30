@@ -139,11 +139,11 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 // 레이아웃은 6h 봉 캐시(barsStaticCache)를 **읽지 않아야** 한다 — 스파이로 두어 호출 부재를
 // 단언한다. 칩은 세션 키 스냅샷 캐시에서 읽는다(스냅샷 계산 자체는
 // `sessionBarsStaticCache.test.ts`가 검증한다).
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSymbolFearGreedChipStatic: mockGetSymbolFearGreedChipStatic,
 }));
 
@@ -154,9 +154,8 @@ vi.mock('@/features/visitor-ping/ui/SymbolViewPing', () => ({
     },
 }));
 
-import SymbolLayout, {
-    SymbolLayoutChrome,
-} from '@/app/[locale]/[symbol]/layout';
+import SymbolLayout from '@/app/[locale]/[symbol]/layout';
+import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';

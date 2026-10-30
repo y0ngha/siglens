@@ -93,11 +93,11 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 // return different bars data without going through the unstable_cache chain.
 // quantizeBarsDataToLastClosed는 별도 unit 테스트에서 완전 커버된다.
 // 이 스위트는 FactLayer SSR 배선을 검증하므로, 시장 시간 의존을 제거해 결정론적으로 유지한다.
-// production page.tsx가 import하는 정의 파일(`@/entities/bars/lib/barsStaticCache`)을 mock한다.
+// production page.tsx가 import하는 정의 파일(`@/entities/bars/server/barsStaticCache`)을 mock한다.
 // getSeedBarsStatic은 seed 경로 전용이다. FactLayer는 축소되지 않은 원본
 // (getQuantizedBarsStatic)을 계속 읽어야 하므로, 두 mock을 분리해 두면 페이지가
 // 실수로 축소판에서 fact를 만들 때 이 스위트가 잡아낸다.
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
@@ -166,7 +166,7 @@ import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
-import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';

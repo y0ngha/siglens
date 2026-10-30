@@ -283,5 +283,16 @@ describe('ModelListbox', () => {
             expect(onChange).toHaveBeenCalledWith('claude-opus-5');
             expect(screen.getAllByRole('option')[2]).toHaveFocus();
         });
+
+        it('선택된 모델이 고를 수 없게 된 상태에서 ArrowUp은 마지막 선택 가능 항목으로 간다', () => {
+            const { onChange, listbox } = renderListbox(PAUSED, {
+                unavailableModels: [PAUSED],
+                unavailableLabel: '일시 중단',
+            });
+
+            fireEvent.keyDown(listbox, { key: 'ArrowUp' });
+
+            expect(onChange).toHaveBeenCalledWith('claude-opus-5');
+        });
     });
 });

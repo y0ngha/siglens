@@ -15,7 +15,7 @@ vi.mock(
 
 vi.mock('@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup');
 
-vi.mock('@/shared/hooks/usePageShowReload', () => ({
+vi.mock('../hooks/usePageShowReload', () => ({
     usePageShowReload: vi.fn(),
 }));
 
@@ -155,7 +155,7 @@ describe('OAuthConsentForm', () => {
         render(<OAuthConsentForm {...baseProps} />);
         const btn = screen.getByRole('button', { name: /처리 중/ });
         expect(btn).toBeInTheDocument();
-        expect(btn).toBeDisabled();
+        expect(btn).toHaveAttribute('aria-disabled', 'true');
     });
 
     it('starts both consent hidden inputs at the declined value', () => {
