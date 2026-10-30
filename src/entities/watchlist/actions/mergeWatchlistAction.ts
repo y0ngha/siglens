@@ -15,7 +15,11 @@ import { normalizeWatchlistLabel } from '../lib/normalizeWatchlistLabel';
 import { validateWatchlistSymbol } from '../lib/validateWatchlistSymbol';
 import type { MergeWatchlistResult, RawWatchlistInput } from '../model';
 
-/** 형상이 맞는 항목만 후보 한 건으로, 아니면 빈 배열(flatMap용). */
+/**
+ * 심볼 형상 검증을 통과한 항목만 후보 한 건으로, 아니면 빈 배열(`flatMap`으로 filter+map을
+ * 한 번에 한다). 라벨은 심볼 정규화 결과를 기준으로 {@link normalizeWatchlistLabel}에 맡기며,
+ * 심볼 존재 검증은 하지 않는다(`mergeWatchlistAction` JSDoc).
+ */
 function toCandidate(entry: RawWatchlistInput): MergeWatchlistCandidate[] {
     const validated = validateWatchlistSymbol(entry.symbol);
     if (!validated.ok) return [];

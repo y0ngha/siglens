@@ -46,7 +46,7 @@ async function lockMember(tx: WatchlistTx, userId: string): Promise<void> {
 export class DrizzleWatchlistRepository implements WatchlistItemRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
-    /** 회원의 전 행(정렬 없음 — 최근 담은 순 정렬은 호출부 몫). */
+    /** 정렬 없음 — 최근 담은 순 정렬은 호출부 몫이다(`getWatchlistAction`이 `addedAt` 내림차순으로 정렬). */
     async findByUser(userId: string): Promise<WatchlistItemRecord[]> {
         return withRetry(
             () =>
@@ -127,7 +127,11 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
         );
     }
 
-    /** 한 건 삭제. 지운 행이 있었으면 true(없는 심볼은 false — 멱등). */
+    /**
+     * `symbol`은 정확 일치로 비교하므로 호출부가 정규화(trim·대문자)한 값이어야 한다.
+     * 반환값(지운 행 존재 여부)은 현재 `removeWatchlistItemAction`이 쓰지 않는다 — 없는 심볼
+     * 삭제도 성공으로 취급하는 멱등 계약이라 false가 오류가 아니다.
+     */
     async remove(userId: string, symbol: string): Promise<boolean> {
         const deleted = await withRetry(
             () =>

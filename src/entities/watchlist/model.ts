@@ -31,7 +31,10 @@ export interface RawWatchlistInput {
     label: string;
 }
 
-/** `validateWatchlistSymbol`의 결과 — 통과하면 정규화된 심볼. */
+/**
+ * `validateWatchlistSymbol`의 결과. 통과한 경우의 `symbol`은 trim·대문자 정규화가 끝난 값이라
+ * 호출부가 다시 정규화하지 않고 그대로 저장·비교에 쓴다. 실패 사유는 형상 위반 하나뿐이다.
+ */
 export type ValidateWatchlistSymbolResult =
     | { ok: true; symbol: string }
     | { ok: false; code: 'invalid_symbol' };

@@ -31,7 +31,10 @@ interface UseWatchlistQueryOptions {
     enabled: boolean;
 }
 
-/** `useWatchlistQuery`의 반환. 소비처는 `features/watchlist`의 훅들. */
+/**
+ * `useWatchlistQuery`의 반환. `add`·`remove`는 목록 캐시를 낙관적으로 먼저 고치고,
+ * 액션이 던지거나 오류를 돌려주면 이전 상태로 되돌린다 — 소비자는 별도 롤백을 하지 않는다.
+ */
 export interface UseWatchlistQueryResult {
     items: WatchlistItemView[];
     /** 아직 모름(`enabled`인데 첫 응답 전). RQ-3: `data === undefined`가 아니라 `isPending`으로 판단. */

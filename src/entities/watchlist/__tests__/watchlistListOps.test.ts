@@ -49,6 +49,15 @@ describe('rollbackAddedItem', () => {
         });
         expect(result).toEqual([item('A'), item('C'), prior]);
     });
+
+    it('중간 index면 정확히 그 자리에 되돌린다', () => {
+        const prior = { ...item('B'), companyName: 'Old' };
+        const result = rollbackAddedItem(
+            [item('A'), item('B'), item('C'), item('D')],
+            { symbol: 'B', prior, index: 1 }
+        );
+        expect(result).toEqual([item('A'), prior, item('C'), item('D')]);
+    });
 });
 
 describe('rollbackRemovedItem', () => {
