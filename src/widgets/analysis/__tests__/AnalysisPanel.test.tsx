@@ -1254,7 +1254,7 @@ describe('AnalysisPanel', () => {
     });
 
     /**
-     * 공유 페이지(`views/share/kindPanelRegistry`)는 이 핸들러를 넘기지 않는다.
+     * 공유 페이지(`views/share/ui/chart/ChartSharePanel`)는 이 핸들러를 넘기지 않는다.
      * 예전에는 그래도 버튼이 렌더돼, 눌러도 아무 일도 없는 컨트롤이 남아
      * 있었다 — 게다가 그 버튼이 숨기겠다고 말하는 가격선은 `StockChart`가
      * 그리는데 공유 페이지는 `ShareCandlestickChart`를 쓰므로 존재하지도 않는다.
