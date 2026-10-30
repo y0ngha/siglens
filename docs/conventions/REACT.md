@@ -537,6 +537,20 @@ useEffect(() => { /* slot, snapToPoint */ }, [isFullSnap, snapToPoint]);
 useEffect(() => { /* slot, snapToPoint */ }, [isFullSnap, slot]);
 ```
 
+<a id="EF-5"></a>
+
+#### EF-5 — Key an effect on the stable identity it reacts to, not on a derived value
+
+An effect keyed on a memoized or derived object re-runs whenever that object's identity changes for unrelated reasons (a route change, a hover, a live tick), redoing work such as refocusing a dialog or rebuilding chart series. Key it on the primitive (id, geometry, open flag) that actually matters, and apply only the difference.
+
+```typescript
+// ❌ refocuses on every navigation: `notice` gets a new identity per route change
+useEffect(() => { dialogRef.current?.focus(); }, [notice]);
+
+// ✅ runs only when the notice itself changes
+useEffect(() => { dialogRef.current?.focus(); }, [notice?.id]);
+```
+
 <a id="EF-3"></a>
 
 #### EF-3 — Keep `try/finally` and listener wiring out of hook bodies (React Compiler / React Doctor)
