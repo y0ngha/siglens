@@ -7,12 +7,16 @@
  * The phases are generic — type an input, light up steps one by one, stream
  * the body — so `ChatReplay` (ai.siglens.io, a question and tool lookups) and
  * `ReportReplay` (siglens.io, a ticker URL and analysis steps) render the same
- * `Frame` differently. Each only builds the context (refs, `setFrame`,
- * cancellation) and calls `runPlayback` from a `useEffect`; every timing
- * decision lives here.
+ * `Frame` differently. `useReplayPlayback` only builds the context (refs,
+ * `setFrame`, cancellation) and calls `runPlayback` from a `useEffect`; every
+ * timing decision lives here.
  */
 
-import { lineLength, pickNextIndex, type ReplayScenario } from './replayScript';
+import {
+    lineLength,
+    pickNextIndex,
+    type ReplayScenario,
+} from '@/shared/lib/replay/replayScript';
 
 /** What is on screen at one instant of the replay. */
 export interface Frame {
@@ -26,6 +30,8 @@ export interface Frame {
 }
 
 const COMPLETE = Number.MAX_SAFE_INTEGER;
+
+/** Scenario `index` with every phase finished: the SSR / reduced-motion frame. */
 export const completeFrame = (index: number): Frame => ({
     index,
     typed: COMPLETE,
@@ -65,13 +71,19 @@ class PlaybackCancelled extends Error {
     }
 }
 
+/** Everything the engine needs from its host, passed explicitly (REACT.md#HK-2). */
 export interface PlaybackContext {
     readonly scenarios: readonly ReplayScenario[];
     readonly setFrame: (frame: Frame) => void;
     readonly isCancelled: () => boolean;
     /** `!paused && visible` — whether playback time should advance right now. */
     readonly isRunning: () => boolean;
-    readonly addTimer: (id: ReturnType<typeof setTimeout>) => void;
+    /**
+     * Receives each timeout as it is scheduled. Playback is strictly serial, so
+     * only the latest one is ever pending — the host keeps that one to clear on
+     * cleanup instead of collecting every id it was ever handed.
+     */
+    readonly setPendingTimer: (id: ReturnType<typeof setTimeout>) => void;
     readonly random: () => number;
 }
 
@@ -91,7 +103,7 @@ export function waitPlaying(ctx: PlaybackContext, ms: number): Promise<void> {
             last = now;
             if (left <= 0) return resolve();
             const id = setTimeout(tick, Math.min(left, TICK_MS));
-            ctx.addTimer(id);
+            ctx.setPendingTimer(id);
         };
         tick();
     });
@@ -117,7 +129,7 @@ export async function playScenario(
     ctx.setFrame(base);
     for (let i = 1; i <= scenario.question.length; i++) {
         ctx.setFrame({ ...base, typed: i });
-        // 프레임 단위 타이밍 재생이라 직렬 대기가 곧 기능이다.
+        // Frame-by-frame timed playback: waiting serially is the feature.
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await waitPlaying(ctx, TYPE_MS * (0.6 + ctx.random() * 0.8));
     }
@@ -125,7 +137,7 @@ export async function playScenario(
     const typed = scenario.question.length;
     for (let t = 0; t < scenario.tools.length; t++) {
         ctx.setFrame({ ...base, typed, toolsShown: t + 1, toolsDone: t });
-        // 프레임 단위 타이밍 재생이라 직렬 대기가 곧 기능이다.
+        // Frame-by-frame timed playback: waiting serially is the feature.
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await waitPlaying(ctx, scenario.tools[t]!.ms);
         ctx.setFrame({ ...base, typed, toolsShown: t + 1, toolsDone: t + 1 });
@@ -138,7 +150,7 @@ export async function playScenario(
     );
     for (let c = 0; c <= total; c += STREAM_STEP) {
         ctx.setFrame({ ...base, typed, summary: true, chars: c });
-        // 프레임 단위 타이밍 재생이라 직렬 대기가 곧 기능이다.
+        // Frame-by-frame timed playback: waiting serially is the feature.
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
         await waitPlaying(ctx, STREAM_MS);
     }
