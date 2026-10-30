@@ -161,12 +161,15 @@ function toggleStates(): { name: string; track: string; thumb: string }[] {
         '꺼짐 트랙'
     );
     const lockedTrack = pick(
-        /locked && !disabled && '(bg-[\w-]+)'/,
+        /TRACK_MODE_CLASS[^{]*\{[^}]*locked: '[^']*?(bg-[\w-]+)/,
         '잠김 트랙'
     );
-    const lockedThumb = pick(/locked && !disabled \? '(bg-[\w-]+)'/, '잠김 썸');
+    const lockedThumb = pick(
+        /THUMB_MODE_CLASS[^{]*\{[^}]*locked: '(bg-[\w-]+)'/,
+        '잠김 썸'
+    );
     const thumb = pick(
-        /locked && !disabled \? 'bg-[\w-]+' : '(bg-[\w-]+)'/,
+        /THUMB_MODE_CLASS[^{]*\{[^}]*interactive: '(bg-[\w-]+)'/,
         '기본 썸'
     );
     const asColour = (cls: string): string =>
