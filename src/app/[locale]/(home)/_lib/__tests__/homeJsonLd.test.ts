@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { buildHomeFaq } from '@/app/[locale]/homeJsonLd';
+import { buildHomeFaq } from '@/app/[locale]/(home)/_lib/homeJsonLd';
 import { SECTOR_ETFS, SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
 import type { Locale } from '@/shared/i18n/locales';
 
