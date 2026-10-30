@@ -29,7 +29,7 @@ import { userAgent } from 'next/server';
  * 시장·거시 브리핑(`submitMarketBriefingAction`·`submitMacroBriefingAction`)은
  * 애초에 이 값을 쓴 적이 없다 — 생성이 시각 버킷당 한 번으로 접혀 비용이 작고,
  * 봇 분기가 `/market`·`/economy` 렌더에 차단 안내문을 색인시키고 있었다
- * (2026-09-17 운영 감사).
+ * (2026-09-17 운영 점검).
  */
 const BOT_UA_RE = new RegExp(
     [
