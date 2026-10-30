@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest';
-import { googleOAuthRevokerAdapter } from '@/entities/oauth-account/lib/googleRevoker';
+import { googleOAuthRevokerAdapter } from '@/entities/oauth-account/server/googleRevoker';
 
 describe('googleOAuthRevokerAdapter.revokeToken', () => {
     const originalFetch = global.fetch;
@@ -14,7 +14,7 @@ describe('googleOAuthRevokerAdapter.revokeToken', () => {
         global.fetch = originalFetch;
     });
 
-    it('posts to the Google revocation endpoint with the access token', async () => {
+    it('posts to the Google revocation endpoint without the token in the URL', async () => {
         fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 
         await googleOAuthRevokerAdapter.revokeToken({
@@ -23,12 +23,17 @@ describe('googleOAuthRevokerAdapter.revokeToken', () => {
         });
 
         expect(fetchMock).toHaveBeenCalledWith(
-            'https://oauth2.googleapis.com/revoke?token=ya29.access-token',
-            expect.objectContaining({ method: 'POST' })
+            'https://oauth2.googleapis.com/revoke',
+            expect.objectContaining({
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            })
         );
     });
 
-    it('encodes special characters in the access token', async () => {
+    it('sends the access token form-encoded in the body', async () => {
         fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 
         await googleOAuthRevokerAdapter.revokeToken({
@@ -36,9 +41,9 @@ describe('googleOAuthRevokerAdapter.revokeToken', () => {
             refreshToken: null,
         });
 
-        const calledUrl = fetchMock.mock.calls[0]?.[0] as string;
-        expect(calledUrl).toContain(
-            encodeURIComponent('token with spaces & special=chars')
+        const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+        expect(String(init.body)).toBe(
+            'token=token+with+spaces+%26+special%3Dchars'
         );
     });
 

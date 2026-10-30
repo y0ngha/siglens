@@ -2,7 +2,7 @@
 
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account/api';
-import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
+import { compositeOAuthRevoker } from '@/entities/oauth-account/server/revoker';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
