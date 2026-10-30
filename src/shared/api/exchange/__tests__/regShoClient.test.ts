@@ -16,6 +16,19 @@ const fetchSpy = vi.fn(
     }
 );
 
+/** 취소 여부를 관측할 수 있는 본문을 가진 응답. */
+function responseWithCancelSpy(status: number, onCancel: () => void): Response {
+    return new Response(
+        new ReadableStream({
+            pull(controller) {
+                controller.enqueue(new TextEncoder().encode('x'));
+            },
+            cancel: onCancel,
+        }),
+        { status }
+    );
+}
+
 describe('regShoClient', () => {
     beforeEach(() => {
         fetchSpy.mockClear();
@@ -167,6 +180,20 @@ describe('regShoClient', () => {
                 (await fetchRegShoThresholdText('nasdaq', '2026-10-15'))?.length
             ).toBe(REG_SHO_MAX_BODY_BYTES);
         });
+
+        it.each([302, 404, 500])(
+            'releases the unread body of a %i response',
+            async status => {
+                const onCancel = vi.fn();
+                fetchSpy.mockResolvedValue(
+                    responseWithCancelSpy(status, onCancel)
+                );
+                await fetchRegShoThresholdText('nasdaq', '2026-10-15').catch(
+                    () => null
+                );
+                expect(onCancel).toHaveBeenCalled();
+            }
+        );
 
         it('retries a 5xx once', async () => {
             fetchSpy

@@ -22,8 +22,8 @@ export const MACRO_BRIEFING_CACHE_TAG = 'economy:briefing';
 /**
  * 저장된 seed가 `{ briefing, generatedAt }` 봉투인지 판별한다.
  *
- * 이 변경 이전의 프리웜은 `MacroBriefingResponse`를 그대로 seed에 썼다. TTL(12h) 동안
- * 그 옛 형태가 남아 있으므로, 봉투가 아니면 생성 시각 없는 본문으로 읽는다 — 그대로
+ * 옛 프리웜은 `MacroBriefingResponse`를 그대로 seed에 썼다. TTL(12h) 동안
+ * 그 옛 형태가 남아 있을 수 있으므로, 봉투가 아니면 생성 시각 없는 본문으로 읽는다 — 그대로
  * 봉투로 취급하면 `entry.briefing`이 undefined가 되어 페이지가 깨진다.
  */
 function isSeedEnvelope(

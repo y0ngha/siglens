@@ -3,7 +3,7 @@ const { mockBuildSymbolOgImage } = vi.hoisted(() => ({
     mockBuildSymbolOgImage: vi.fn(),
 }));
 
-vi.mock('@/entities/og-image/lib/buildSymbolOgImage', () => ({
+vi.mock('@/entities/og-image/server/buildSymbolOgImage', () => ({
     buildSymbolOgImage: mockBuildSymbolOgImage,
 }));
 

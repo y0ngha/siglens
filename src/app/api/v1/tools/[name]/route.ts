@@ -1,19 +1,11 @@
 import { validateArgs } from '@y0ngha/siglens-core';
-import {
-    apiError,
-    apiOk,
-    API_STATUS,
-    errorBody,
-    okBody,
-    withApiErrorBoundary,
-} from '../../apiResponse';
-import { streamingJsonResponse } from '../../apiStream';
-import { isPublicToolStream } from '../../publicToolOutcome';
+import { apiError, API_STATUS, withApiErrorBoundary } from '../../apiResponse';
 import { requireApiKey } from '../../authenticate';
 import { executePublicTool, resolveApiLocale } from '../../executePublicTool';
 import { findPublicApiToolSpec } from '../../publicApiTools';
 import { enforceRateLimit } from '../../rateLimitHeaders';
 import { readToolArgs } from '../../readToolArgs';
+import { toolOutcomeResponse } from '../../toolResponse';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,42 +56,11 @@ export async function POST(
             resolveApiLocale(request),
             request.signal
         );
-        if (isPublicToolStream(outcome)) {
-            // 긴 생성(`run_fresh_analysis`): 사전 검사를 모두 통과했다. 200으로 시작해 공백 heartbeat를
-            // 흘리고 최종 JSON을 쓴다 — 실패도 200 본문의 `{ error }`다(상태는 이미 나갔다).
-            return streamingJsonResponse({
-                // data 버킷 한도 + 소비한 ai 버킷 상태(`X-RateLimit-AI-*`).
-                headers: { ...limit.headers, ...outcome.headers },
-                signal: request.signal,
-                body: outcome.completion.then(final =>
-                    final.ok
-                        ? okBody(final.data, {
-                              tool: spec.name,
-                              ...(final.truncated
-                                  ? { truncated: true as const }
-                                  : {}),
-                              ...final.meta,
-                          })
-                        : errorBody(final.code, final.message, final.details)
-                ),
-                onBodyError: () =>
-                    errorBody('internal_error', 'Unexpected server error.'),
-            });
-        }
-        if (!outcome.ok)
-            return apiError(outcome.status, outcome.code, outcome.message, {
-                // 오류 응답 자체의 헤더(`ai` 버킷 429의 한도 헤더·`Retry-After`)가 `data` 버킷 헤더를 덮는다.
-                headers: { ...limit.headers, ...outcome.headers },
-                details: outcome.details,
-            });
-        return apiOk(
-            outcome.data,
-            {
-                tool: spec.name,
-                ...(outcome.truncated ? { truncated: true as const } : {}),
-                ...outcome.meta,
-            },
-            limit.headers
+        return toolOutcomeResponse(
+            outcome,
+            spec.name,
+            limit.headers,
+            request.signal
         );
     });
 }

@@ -54,8 +54,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
 
 vi.mock('@/features/symbol-model/hooks/useSelectedModel', () => ({
     useSelectedModel: vi.fn(() => ['gemini-3.5-flash-lite', vi.fn(), true]),
-    // 규칙 자체는 useSelectedModel.test가 실물로 검증한다 — 여기서는 배선만 본다.
-    pickFallbackModel: (models: readonly string[]) => models[0],
 }));
 
 vi.mock('@/features/premium-gate/hooks/useModelGate', () => ({
@@ -162,7 +160,8 @@ describe('SymbolModelContext', () => {
         expect(result.current.isTierHydrated).toBe(true);
     });
 
-    describe('reasoning gating (member-reasoning-toggle spec Part A)', () => {
+    // 등급·모델별 접기 규칙은 useEffectiveReasoning.test가 검증한다 — 여기서는 배선만 본다.
+    describe('reasoning wiring', () => {
         it('forces reasoning=false and canUseReasoning=false for free tier even if stored preference is true', () => {
             mockUseUserTier.mockReturnValue({ tier: 'free', isLoading: false });
             mockUseReasoningToggle.mockReturnValue([true, vi.fn(), true]);
@@ -188,33 +187,6 @@ describe('SymbolModelContext', () => {
 
             expect(result.current.canUseReasoning).toBe(true);
             expect(result.current.reasoning).toBe(true);
-        });
-
-        it('honors the stored true preference for pro tier', () => {
-            mockUseUserTier.mockReturnValue({ tier: 'pro', isLoading: false });
-            mockUseReasoningToggle.mockReturnValue([true, vi.fn(), true]);
-
-            const { result } = renderHook(() => useSymbolModel(), {
-                wrapper: makeWrapper(),
-            });
-
-            expect(result.current.canUseReasoning).toBe(true);
-            expect(result.current.reasoning).toBe(true);
-        });
-
-        it('defaults reasoning=false for member tier when stored preference is false', () => {
-            mockUseUserTier.mockReturnValue({
-                tier: 'member',
-                isLoading: false,
-            });
-            mockUseReasoningToggle.mockReturnValue([false, vi.fn(), true]);
-
-            const { result } = renderHook(() => useSymbolModel(), {
-                wrapper: makeWrapper(),
-            });
-
-            expect(result.current.canUseReasoning).toBe(true);
-            expect(result.current.reasoning).toBe(false);
         });
 
         it('exposes setReasoning delegating to the underlying toggle setter', () => {
@@ -351,61 +323,26 @@ describe('SymbolModelContext', () => {
         });
     });
 
-    describe('일시 중단된 서버 키 모델', () => {
-        it('목록에는 남기고 unavailableModels로 표시하며, 선택 검증에서는 뺀다', () => {
-            vi.mocked(getAllowedModels).mockReturnValueOnce([
-                'gemini-3.5-flash-lite',
-                'claude-haiku-5-5',
-            ] as ModelId[]);
-            mockUseDisabledModels.mockReturnValue({
-                models: ['claude-haiku-5-5', 'claude-sonnet-5-5'],
-                isSettled: true,
-            });
-
-            const { result } = renderHook(() => useSymbolModel(), {
-                wrapper: makeWrapper(),
-            });
-
-            expect(result.current.allowedModels).toEqual([
-                'gemini-3.5-flash-lite',
-                'claude-haiku-5-5',
-            ]);
-            // 이 등급 목록에 없는 sonnet은 표시 대상이 아니다.
-            expect(result.current.unavailableModels).toEqual([
-                'claude-haiku-5-5',
-            ]);
-            // 강등 대상은 고를 수 있는 모델에서 같은 규칙으로 구한다.
-            expect(result.current.fallbackModel).toBe('gemini-3.5-flash-lite');
-            expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
-                ['gemini-3.5-flash-lite'],
-                true
-            );
+    // 목록 분할·읽기 시점 규칙은 useModelSelection.test가 검증한다 — 여기서는 배선만 본다.
+    it('일시 중단된 모델과 강등 대상을 컨텍스트로 내보내고, 고를 수 있는 목록으로 선택을 검증한다', () => {
+        vi.mocked(getAllowedModels).mockReturnValueOnce([
+            'gemini-3.5-flash-lite',
+            'claude-haiku-5-5',
+        ] as ModelId[]);
+        mockUseDisabledModels.mockReturnValue({
+            models: ['claude-haiku-5-5', 'claude-sonnet-5-5'],
+            isSettled: true,
         });
 
-        it('꺼진 목록 조회가 끝나기 전에는 저장된 선택을 읽지 않는다(이중 분석 방지)', () => {
-            mockUseDisabledModels.mockReturnValue({
-                models: [],
-                isSettled: false,
-            });
-
-            renderHook(() => useSymbolModel(), { wrapper: makeWrapper() });
-
-            expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
-                ['gemini-3.5-flash-lite'],
-                false
-            );
+        const { result } = renderHook(() => useSymbolModel(), {
+            wrapper: makeWrapper(),
         });
 
-        it('꺼진 모델이 없으면 등급 목록 그대로 선택을 검증한다', () => {
-            const { result } = renderHook(() => useSymbolModel(), {
-                wrapper: makeWrapper(),
-            });
-
-            expect(result.current.unavailableModels).toEqual([]);
-            expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
-                ['gemini-3.5-flash-lite'],
-                true
-            );
-        });
+        expect(result.current.unavailableModels).toEqual(['claude-haiku-5-5']);
+        expect(result.current.fallbackModel).toBe('gemini-3.5-flash-lite');
+        expect(vi.mocked(useSelectedModel)).toHaveBeenLastCalledWith(
+            ['gemini-3.5-flash-lite'],
+            true
+        );
     });
 });

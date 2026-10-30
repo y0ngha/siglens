@@ -138,6 +138,42 @@ describe('PendingOAuthSignupStore', () => {
         expect(result).toBeNull();
     });
 
+    it.each([
+        ['wrong provider', { ...sample, provider: 'kakao' }],
+        ['missing accessToken', { ...sample, accessToken: undefined }],
+        ['non-string email', { ...sample, email: 42 }],
+        ['non-string optional name', { ...sample, name: 7 }],
+        ['array', [sample]],
+    ])('peek rejects an object with %s', async (_label, value) => {
+        const { client } = makeRedis();
+        (client.get as Mock).mockResolvedValueOnce(value);
+        const sut = createPendingOAuthSignupStore(client);
+
+        expect(await sut.peek('some-token')).toBeNull();
+    });
+
+    it('consume rejects a JSON string that is not a profile', async () => {
+        const { client } = makeRedis();
+        (client.getdel as Mock).mockResolvedValueOnce('null');
+        const sut = createPendingOAuthSignupStore(client);
+
+        expect(await sut.consume('some-token')).toBeNull();
+    });
+
+    it('peek keeps optional fields when present', async () => {
+        const { client } = makeRedis();
+        const full = {
+            ...sample,
+            avatarUrl: 'https://x/y.png',
+            refreshToken: 'rt',
+            tokenExpiresAt: '2026-05-04T01:00:00.000Z',
+        };
+        (client.get as Mock).mockResolvedValueOnce(JSON.stringify(full));
+        const sut = createPendingOAuthSignupStore(client);
+
+        expect(await sut.peek('some-token')).toEqual(full);
+    });
+
     it('consume returns null for corrupted stored value', async () => {
         const { client } = makeRedis();
         (client.getdel as Mock).mockResolvedValueOnce('not valid json {{');

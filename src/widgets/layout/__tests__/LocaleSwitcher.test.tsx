@@ -121,12 +121,37 @@ describe('LocaleSwitcher', () => {
         expect(mockReplace).not.toHaveBeenCalled();
     });
 
-    /** 드로어가 닫혀 있을 때 포커스 순서에 남으면 Tab이 보이지 않는 곳으로 샌다. */
-    it('tabIndex를 그대로 트리거에 전달한다', () => {
-        renderWithIntl(<LocaleSwitcher tabIndex={-1} />);
-        expect(
-            screen.getByRole('button', { name: /언어|Language/, hidden: true })
-        ).toHaveAttribute('tabindex', '-1');
+    describe('Escape', () => {
+        const trigger = () =>
+            screen.getByRole('button', { name: /언어|Language/ });
+
+        it('팝오버 안에 포커스가 있으면 닫고 포커스를 트리거로 돌려준다', () => {
+            renderWithIntl(<LocaleSwitcher />);
+            open();
+            screen.getAllByRole('radio')[0]!.focus();
+
+            fireEvent.keyDown(document, { key: 'Escape' });
+
+            expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+            expect(trigger()).toHaveFocus();
+        });
+
+        it('포커스가 바깥에 있으면 닫기만 하고 포커스를 가져오지 않는다', () => {
+            renderWithIntl(
+                <>
+                    <LocaleSwitcher />
+                    <input aria-label="검색" />
+                </>
+            );
+            open();
+            const input = screen.getByLabelText('검색');
+            input.focus();
+
+            fireEvent.keyDown(document, { key: 'Escape' });
+
+            expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+            expect(input).toHaveFocus();
+        });
     });
 
     it('showLabel이 true면 라벨 span에서 좁은 화면 전용 hidden 클래스를 뺀다', () => {

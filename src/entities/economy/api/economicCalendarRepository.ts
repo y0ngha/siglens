@@ -19,9 +19,13 @@ import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { economicCalendar } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import { economicCalendarId } from '../lib/economicCalendarId';
 import { toNewsSentiment } from '@/shared/lib/news/newsEnumCoercion';
-import type { EconomicCalendarEventWithAnalysis } from '../model';
+
+import { economicCalendarId } from '../lib/economicCalendarId';
+import type {
+    AnnouncedEventPoint,
+    EconomicCalendarEventWithAnalysis,
+} from '../model';
 
 /** 읽기 경계에서 검증하는 impact 정규값 — 미지값은 'Low'로 강등(graceful). */
 const IMPACT_RECORD: Record<CalendarImpact, true> = {
@@ -29,6 +33,7 @@ const IMPACT_RECORD: Record<CalendarImpact, true> = {
     Medium: true,
     Low: true,
 };
+
 function toImpact(value: string): CalendarImpact {
     // `in` 멤버십 검사가 value가 CalendarImpact임을 보장하므로 타입 단언은 안전하다.
     return value in IMPACT_RECORD ? (value as CalendarImpact) : 'Low';
@@ -83,6 +88,11 @@ export interface UnanalyzedAnnouncedEvent {
  */
 const UNANALYZED_SCAN_LIMIT = 20;
 
+/**
+ * `economic_calendar` 읽기/쓰기 repository. 모든 쿼리는 `country`로 가른다 — 미국·한국
+ * 라우트가 같은 테이블을 쓰고, 분석 결과는 write-once라 섞이면 되돌릴 수 없다.
+ * 모든 쿼리는 `DB_TRANSIENT_RETRY`로 재시도한다.
+ */
 export class DrizzleEconomicCalendarRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
@@ -252,16 +262,22 @@ export class DrizzleEconomicCalendarRepository {
                     .limit(UNANALYZED_SCAN_LIMIT),
             DB_TRANSIENT_RETRY
         );
-        return rows.map(r => ({
-            id: r.id,
-            event: r.event,
-            impact: toImpact(r.impact),
-            // WHERE isNotNull(actual) guarantees non-null at runtime; Drizzle's select type doesn't narrow it.
-            actual: r.actual!,
-            estimate: r.estimate,
-            previous: r.previous,
-            unit: r.unit,
-        }));
+        // WHERE isNotNull(actual)이 보장하지만 Drizzle select 타입은 좁혀 주지 않아 여기서 좁힌다.
+        return rows.flatMap(r =>
+            r.actual === null
+                ? []
+                : [
+                      {
+                          id: r.id,
+                          event: r.event,
+                          impact: toImpact(r.impact),
+                          actual: r.actual,
+                          estimate: r.estimate,
+                          previous: r.previous,
+                          unit: r.unit,
+                      },
+                  ]
+        );
     }
 
     /**
@@ -311,15 +327,4 @@ export class DrizzleEconomicCalendarRepository {
                   ]
         );
     }
-}
-
-/** 발표가 끝난 이벤트 한 건 — 지표 카드가 소비하는 최소 형상. */
-export interface AnnouncedEventPoint {
-    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(존 표시 없는 UTC — ET 아님. 컬럼명만 과거 오인대로 남아 있다). */
-    dateEt: string;
-    event: string;
-    /** `actual IS NOT NULL` 필터를 통과했으므로 number 보장. */
-    actual: number;
-    previous: number | null;
-    unit: string;
 }

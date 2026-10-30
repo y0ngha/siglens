@@ -3,7 +3,13 @@
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 
+/**
+ * One symbol's slice of `usePortfolioHoldings`: its holding plus the list's
+ * load flags and the shared save mutation (the chip, the analysis request and
+ * the position tab all read this shape).
+ */
 export interface UseSymbolHoldingReturn {
+    /** `null` when the member holds no position in this symbol. */
     holding: PortfolioHoldingView | null;
     isHydrated: boolean;
     isLoading: boolean;

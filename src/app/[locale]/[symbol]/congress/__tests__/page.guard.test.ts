@@ -36,7 +36,7 @@ vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
 vi.mock('@/app/[locale]/[symbol]/congress/CongressDegraded', () => ({
     CongressDegraded: () => null,
 }));
-vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
+vi.mock('@/entities/congress-trades/server/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
 vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({

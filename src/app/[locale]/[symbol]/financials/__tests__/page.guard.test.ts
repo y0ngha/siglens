@@ -46,8 +46,13 @@ vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
 vi.mock('@/app/[locale]/[symbol]/financials/FinancialsDegraded', () => ({
     FinancialsDegraded: () => null,
 }));
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(),
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(),
+    })
+);
+vi.mock('@/entities/financials-statements/lib/financialsSnapshot', () => ({
     isEmptyFinancialsSnapshot: vi.fn().mockReturnValue(false),
 }));
 vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({

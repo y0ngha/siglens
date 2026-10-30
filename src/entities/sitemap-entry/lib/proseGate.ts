@@ -5,7 +5,7 @@ import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
  * 가진 종목**에만 싣는다. 스냅샷 탭 이름 기준이다 — URL 세그먼트와 같다.
  *
  * 차트(`technical`)·뉴스(`news`) 두 탭이다. 둘 다 종목 고유 텍스트가 AI 스냅샷 산문뿐이라
- * (`SEO_RECOVERY_2026_09.md` §5 A3), 페이지는 산문이 없으면 noindex(`no-prose`)다
+ * 페이지는 산문이 없으면 noindex(`no-prose`)다
  * (`SymbolIndexabilityInput.prose`). sitemap이 같은 판정으로 URL을 빼야 "sitemap에 있는데
  * noindex"(GSC 오류)와 그 반대(색인되는데 sitemap에 없음)가 둘 다 생기지 않는다 — 두 쪽이
  * 같은 `hasProseForTab`을 쓰고 `sitemapPageParity.test.ts`가 같은 픽스처로 일치를 고정한다.
@@ -23,6 +23,13 @@ export const PROSE_GATED_SITEMAP_TABS = [
 ] as const satisfies readonly SeoSnapshotTab[];
 
 export type ProseGatedSitemapTab = (typeof PROSE_GATED_SITEMAP_TABS)[number];
+
+/** 스냅샷 탭이 산문 게이트 대상인지 좁힌다. 로더가 DB 행을 키로 바꾸기 전에 쓴다. */
+export function isProseGatedSitemapTab(
+    tab: SeoSnapshotTab
+): tab is ProseGatedSitemapTab {
+    return PROSE_GATED_SITEMAP_TABS.some(gated => gated === tab);
+}
 
 /**
  * 스냅샷 조합 키. 로더(`server.ts`)가 만들고 게이트·시각 조회가 읽으므로 형식을

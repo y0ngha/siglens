@@ -9,21 +9,26 @@
 /** 문항 난이도 구간. L1~L3은 객관 채점, L4·L5는 중립 심사위원이 채점한다. */
 export type BenchmarkLevel = 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
 
+/** 객관 채점 레벨. 점수표 열과 데이터 검증이 같은 목록을 쓴다. */
 export const BENCHMARK_OBJECTIVE_LEVELS = ['L1', 'L2', 'L3'] as const;
 export type BenchmarkObjectiveLevel =
     (typeof BENCHMARK_OBJECTIVE_LEVELS)[number];
 
+/** 중립 심사위원이 채점하는 레벨. */
 export const BENCHMARK_JUDGED_LEVELS = ['L4', 'L5'] as const;
 export type BenchmarkJudgedLevel = (typeof BENCHMARK_JUDGED_LEVELS)[number];
 
+/** 모든 레벨, 쉬운 구간부터. 문항 level 검증과 필터 순서에 쓴다. */
 export const BENCHMARK_LEVELS: readonly BenchmarkLevel[] = [
     ...BENCHMARK_OBJECTIVE_LEVELS,
     ...BENCHMARK_JUDGED_LEVELS,
 ];
 
+/** 문항 시장 구분(미국·한국). */
 export const BENCHMARK_MARKETS = ['us', 'kr'] as const;
 export type BenchmarkMarket = (typeof BENCHMARK_MARKETS)[number];
 
+/** 점수표가 따로 집계하는 부분집합 키. */
 export const BENCHMARK_SUBSETS = ['noTool', 'heldOut'] as const;
 /** noTool = 전용 도구가 없는 문항(×), heldOut = 설계 때 보지 않은 문항(H). */
 export type BenchmarkSubset = (typeof BENCHMARK_SUBSETS)[number];

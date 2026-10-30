@@ -1,6 +1,6 @@
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../../src/entities/investor-flows/lib/investorFlowsPolicy';
 import { positionsRetentionFloor } from '../../src/entities/investor-flows/lib/investorFlowsDates';
-import { aggregateModeFor } from '../../src/entities/investor-flows/server/ingest13f';
+import { aggregateModeFor } from '../../src/entities/investor-flows/server/ingest13fAggregates';
 
 /**
  * 수급 13F 집계(`sec_13f_aggregates`) 전체 재계산의 순수 흐름. DB·CLI는 `scripts/rebuild-investor-flows-aggregates.ts`가

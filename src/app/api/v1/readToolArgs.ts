@@ -1,6 +1,7 @@
 import { PUBLIC_API_MAX_BODY_CHARS } from '@/shared/config/publicApi';
 import { apiError, API_STATUS } from './apiResponse';
 
+/** 본문 읽기 결과 — 인자 객체 또는 413/400 응답. */
 export type ToolArgsOutcome =
     | { ok: true; args: Record<string, unknown> }
     | { ok: false; response: Response };

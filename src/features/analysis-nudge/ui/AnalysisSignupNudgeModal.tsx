@@ -40,10 +40,9 @@ const TITLE_ID = 'analysis-signup-nudge-title';
 const ACTION_SIZE = 'h-10 px-4 text-sm';
 
 /**
- * Anonymous signup nudge modal (member-reasoning-toggle
- * spec Part B.3). Same shell as `PremiumModelGateModal` (focus-trap/escape/
- * backdrop close via `ModalShell`) but with its own copy — this modal is
- * purely informational (soft nudge), never blocking analysis.
+ * 비회원 가입 넛지 모달 — 상세 분석(추론 토글)이나 메일 리포트를 알리며 가입을 권한다.
+ * `PremiumModelGateModal`과 같은 `ModalShell`(포커스 트랩·Esc·배경 클릭 닫기)을 쓰지만
+ * 정보성 넛지라 분석을 막지 않는다.
  */
 export function AnalysisSignupNudgeModal({
     kind,

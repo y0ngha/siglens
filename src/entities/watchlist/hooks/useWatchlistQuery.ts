@@ -10,15 +10,20 @@ import {
     QUERY_KEYS,
     WATCHLIST_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
-import { addWatchlistItemAction } from '@/entities/watchlist/actions/addWatchlistItemAction';
-import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
-import { removeWatchlistItemAction } from '@/entities/watchlist/actions/removeWatchlistItemAction';
+import { addWatchlistItemAction } from '../actions/addWatchlistItemAction';
+import { getWatchlistAction } from '../actions/getWatchlistAction';
+import { removeWatchlistItemAction } from '../actions/removeWatchlistItemAction';
 import { normalizeWatchlistLabel } from '../lib/normalizeWatchlistLabel';
+import {
+    rollbackAddedItem,
+    rollbackRemovedItem,
+} from '../lib/watchlistListOps';
 import type {
     AddWatchlistResult,
     RawWatchlistInput,
     RemoveWatchlistResult,
     WatchlistItemView,
+    WatchlistMutationContext,
 } from '../model';
 
 interface UseWatchlistQueryOptions {
@@ -26,6 +31,10 @@ interface UseWatchlistQueryOptions {
     enabled: boolean;
 }
 
+/**
+ * `useWatchlistQuery`의 반환. `add`·`remove`는 목록 캐시를 낙관적으로 먼저 고치고,
+ * 액션이 던지거나 오류를 돌려주면 이전 상태로 되돌린다 — 소비자는 별도 롤백을 하지 않는다.
+ */
 export interface UseWatchlistQueryResult {
     items: WatchlistItemView[];
     /** 아직 모름(`enabled`인데 첫 응답 전). RQ-3: `data === undefined`가 아니라 `isPending`으로 판단. */
@@ -35,31 +44,20 @@ export interface UseWatchlistQueryResult {
         AddWatchlistResult,
         Error,
         RawWatchlistInput,
-        MutationContext
+        WatchlistMutationContext
     >;
     remove: UseMutationResult<
         RemoveWatchlistResult,
         Error,
         string,
-        MutationContext
+        WatchlistMutationContext
     >;
-}
-
-/**
- * 변이 시작 시점에 그 심볼에 대해 알던 것. 목록 전체 스냅샷이 아니라 **심볼 단위**로 되돌려야
- * 동시에 진행 중인 다른 심볼의 낙관적 행을 지우지 않는다.
- */
-interface MutationContext {
-    symbol: string;
-    /** 변이 직전 캐시에 있던 그 심볼의 행(없으면 null). */
-    prior: WatchlistItemView | null;
-    /** `prior`가 있던 자리. */
-    index: number;
 }
 
 /** 두 변이가 공유하는 키 — 진행 중인 변이 수로 재동기화 시점을 정한다. */
 const MUTATION_KEY = ['watchlist', 'mutate'] as const;
 
+/** 참조가 안정적인 빈 목록 — 비활성·미로딩 때 새 배열을 만들지 않는다. */
 const EMPTY: WatchlistItemView[] = [];
 
 /**
@@ -81,7 +79,9 @@ export function useWatchlistQuery({
         staleTime: WATCHLIST_STALE_TIME_MS,
     });
 
-    const capture = async (symbol: string): Promise<MutationContext> => {
+    const capture = async (
+        symbol: string
+    ): Promise<WatchlistMutationContext> => {
         await qc.cancelQueries({ queryKey: key });
         const current = qc.getQueryData<WatchlistItemView[]>(key) ?? EMPTY;
         const index = current.findIndex(item => item.symbol === symbol);
@@ -94,36 +94,17 @@ export function useWatchlistQuery({
             fn(current ?? EMPTY)
         );
     };
-    const insertAt = (
-        list: WatchlistItemView[],
-        item: WatchlistItemView,
-        index: number
-    ): WatchlistItemView[] => {
-        // `toSpliced`는 클라이언트 폴리필 목록(`legacyBrowserPolyfills`)에 없다 — 복사 후 splice 대신 slice로 잇는다.
-        const at = Math.min(index, list.length);
-        return [...list.slice(0, at), item, ...list.slice(at)];
-    };
-    /** 담기 실패: 그 심볼만 변이 전 상태(없었으면 없음)로 돌린다. */
-    const rollbackAdd = (context: MutationContext | undefined): void => {
+    const rollbackAdd = (
+        context: WatchlistMutationContext | undefined
+    ): void => {
         if (!context) return;
-        update(current => {
-            const without = current.filter(
-                item => item.symbol !== context.symbol
-            );
-            return context.prior
-                ? insertAt(without, context.prior, context.index)
-                : without;
-        });
+        update(current => rollbackAddedItem(current, context));
     };
-    /** 빼기 실패: 지운 행만 원래 자리에 다시 넣는다(이미 돌아와 있으면 그대로). */
-    const rollbackRemove = (context: MutationContext | undefined): void => {
-        if (!context?.prior) return;
-        const { prior, index, symbol } = context;
-        update(current =>
-            current.some(item => item.symbol === symbol)
-                ? current
-                : insertAt(current, prior, index)
-        );
+    const rollbackRemove = (
+        context: WatchlistMutationContext | undefined
+    ): void => {
+        if (!context) return;
+        update(current => rollbackRemovedItem(current, context));
     };
     /**
      * 진행 중인 변이가 이 변이 하나뿐일 때만 서버 목록으로 다시 맞춘다. `onSettled`가 불리는
@@ -140,7 +121,7 @@ export function useWatchlistQuery({
         AddWatchlistResult,
         Error,
         RawWatchlistInput,
-        MutationContext
+        WatchlistMutationContext
     >({
         mutationKey: MUTATION_KEY,
         mutationFn: input => addWatchlistItemAction(input),
@@ -170,7 +151,7 @@ export function useWatchlistQuery({
         RemoveWatchlistResult,
         Error,
         string,
-        MutationContext
+        WatchlistMutationContext
     >({
         mutationKey: MUTATION_KEY,
         mutationFn: symbol => removeWatchlistItemAction(symbol),

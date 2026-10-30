@@ -43,7 +43,7 @@ vi.mock('@/app/[locale]/[symbol]/congress/CongressDegraded', () => ({
 }));
 // `getCongressTradesResilient`는 generateMetadata가 page body와 동일한 envelope를
 // 한 번 더 호출(React.cache로 메모이즈됨)하므로 mock으로 케이스별 degrade를 제어한다.
-vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
+vi.mock('@/entities/congress-trades/server/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
@@ -83,7 +83,7 @@ import {
 } from '@/app/[locale]/[symbol]/congress/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
-import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
+import { getCongressTradesResilient } from '@/entities/congress-trades/server/getCongressTradesResilient';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import type { MockedFunction } from 'vitest';
 

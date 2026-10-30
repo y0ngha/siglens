@@ -14,8 +14,9 @@ export const SENTIMENT_LABEL_KEY: Record<FinancialsSentiment, string> = {
 const isSentiment = createEnumGuard(SENTIMENT_LABEL_KEY);
 
 /**
- * FinancialsAxis → `shared.enumLabel` 카탈로그 키. 위젯의 축 라벨과 같은 라벨이지만, entity는
- * 위젯 레이어를 import할 수 없어 여기에 따로 정의한다.
+ * FinancialsAxis → `shared.enumLabel` 카탈로그 키. 재무 위젯(`widgets/financials`의
+ * `utils/axisLabels.ts`)도 이 맵을 그대로 읽는다 — 프로즈와 위젯의 축 제목이 갈라지지 않도록
+ * 정의를 여기 한 곳에 둔다.
  */
 export const AXIS_LABEL_KEY: Record<FinancialsAxis, string> = {
     growth: 'financialsAxis.growth',

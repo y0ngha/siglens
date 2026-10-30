@@ -1,35 +1,25 @@
-import { getTranslations } from 'next-intl/server';
 import type { Metadata, Viewport } from 'next';
-import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, setRequestLocale } from 'next-intl/server';
-import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
-import { ReactQueryProvider } from '@/app/providers';
-import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
-import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
-import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
-import { AI_SITE_URL } from '@/shared/config/aiHost';
-import { SITE_VIEWPORT } from '@/shared/config/viewport';
-import { LocaleProvider } from '@/shared/i18n/LocaleContext';
-import { pickMessages } from '@/shared/i18n/loadMessages';
+import Script from 'next/script';
 import {
-    isLocale,
+    getMessages,
+    getTranslations,
+    setRequestLocale,
+} from 'next-intl/server';
+import type { ReactNode } from 'react';
+import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
+import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
+import { SITE_VIEWPORT } from '@/shared/config/viewport';
+import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
+import {
     LOCALE_HREFLANG,
+    isLocale,
     resolveLocale,
 } from '@/shared/i18n/locales';
-import { brandAiName } from '@/shared/lib/brandName';
-import Script from 'next/script';
-import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
-import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
-import { SITE_URL } from '@/shared/lib/seo';
-import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
-import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
-import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
-import { ServiceWorkerRegistrar } from '@/features/pwa-install/ui/ServiceWorkerRegistrar';
-import { AI_CLIENT_PATHS } from './aiClientPaths';
-import { aiManifestPath } from './aiManifest';
+import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { AiAppProviders } from './_components/AiAppProviders';
+import { buildAiLayoutMetadata } from './_lib/aiLayoutMetadata';
 import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
@@ -42,46 +32,14 @@ export const dynamic = 'force-dynamic';
  */
 export const viewport: Viewport = SITE_VIEWPORT;
 
-/**
- * 제목의 제품명은 로케일을 따른다 — ko `시그렌즈 AI`, 그 외 `SIGLENS AI`
- * (`CONVENTIONS.md#I18-11`). 그래서 정적 `metadata`가 아니라 `generateMetadata`다.
- */
 export async function generateMetadata({
     params,
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
     const { locale: raw } = await params;
-    const locale = resolveLocale(raw);
-    const productName = brandAiName(locale);
-    return {
-        ...AI_LAYOUT_METADATA,
-        title: {
-            default: productName,
-            template: `%s | ${productName}`,
-        },
-        // ai 호스트 전용 매니페스트. 없으면 `app/manifest.ts`가 자동으로 걸려 ai 호스트에서
-        // 설치한 앱이 메인 사이트 이름("시그렌즈")·바로가기(`/market`)를 달았다.
-        manifest: aiManifestPath(locale),
-        // iOS 홈 화면 이름은 이 값(없으면 문서 제목)을 쓴다 — 제목은 SEO 문구라 길다.
-        appleWebApp: { title: productName },
-    };
+    return buildAiLayoutMetadata(resolveLocale(raw));
 }
-
-const AI_LAYOUT_METADATA: Metadata = {
-    metadataBase: new URL(AI_SITE_URL),
-    // Default for everything under the ai host (conversations, not-found):
-    // private or empty, never indexed. The landing (`page.tsx`) overrides it.
-    robots: { index: false, follow: false },
-    // 네이버 서치어드바이저는 호스트별로 소유 확인을 받는다. siglens.io 토큰은
-    // `[locale]/layout.tsx`에 있고, 이 레이아웃은 별도 루트라 상속되지 않는다.
-    verification: {
-        other: {
-            'naver-site-verification':
-                'dd05a56cc099f67ca0597793f6965c8c9bd13ba3',
-        },
-    },
-};
 
 export default async function AiRootLayout({
     children,
@@ -133,46 +91,14 @@ export default async function AiRootLayout({
                     strategy="beforeInteractive"
                     dangerouslySetInnerHTML={{ __html: AUTH_HINT_INIT_SCRIPT }}
                 />
-                <LocaleProvider locale={locale} hrefBase={SITE_URL}>
-                    <NextIntlClientProvider
-                        locale={locale}
-                        messages={pickMessages(messages, [...AI_CLIENT_PATHS])}
-                    >
-                        <ReactQueryProvider>
-                            <SearchOverlayProvider>
-                                <VisitorPing />
-                                {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
-                                렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
-                                <FunnelSignupPing />
-                                {/* 설치 배너 + 서비스 워커 등록. 하단은 입력창 자리라 위에 띄우고,
-                                    스트리밍 중인 답변이 끊기지 않게 SW 교체 때 새로고침하지 않는다.
-                                    점검 중(`disabled`)에는 점검 안내만 여는 앱을 권하지 않도록 배너는 띄우지 않되,
-                                    오프라인 페이지 프리캐시가 빠지지 않게 서비스 워커는 등록한다. */}
-                                {disabled ? (
-                                    <ServiceWorkerRegistrar
-                                        reloadOnUpdate={false}
-                                    />
-                                ) : (
-                                    <PwaBanner
-                                        placement="top"
-                                        reloadOnServiceWorkerUpdate={false}
-                                    />
-                                )}
-                                <AuthSessionHeaderClient
-                                    authReturn="ai"
-                                    hideOnScrollDown
-                                />
-                                {disabled ? (
-                                    <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
-                                        {t('layout.9401e4')}
-                                    </main>
-                                ) : (
-                                    children
-                                )}
-                            </SearchOverlayProvider>
-                        </ReactQueryProvider>
-                    </NextIntlClientProvider>
-                </LocaleProvider>
+                <AiAppProviders
+                    locale={locale}
+                    messages={messages}
+                    disabled={disabled}
+                    maintenanceNotice={t('layout.9401e4')}
+                >
+                    {children}
+                </AiAppProviders>
                 {/* Google Ads 전환 측정(질문 전송·가입). 판단 근거는
                     shared/config/googleAds.ts. */}
                 {GOOGLE_ADS_ID && <GoogleAdsTag id={GOOGLE_ADS_ID} />}
