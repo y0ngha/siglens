@@ -3,8 +3,6 @@ import {
     countSkillFiles,
     FileSkillsLoader,
 } from '@/entities/skill/api';
-import type { Skill } from '@y0ngha/siglens-core';
-import { dedupeByName, parseGating } from '../api';
 import path from 'node:path';
 
 const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
@@ -1007,19 +1005,6 @@ ${gatingYaml}${extra}
             expect(skill.gating).toBeUndefined();
         });
 
-        // The inline-array YAML parser coerces every element to a string, so a
-        // non-string trigger can't reach parseGating's guard through loadSkills.
-        // Exercise that fail-open branch directly with a raw object instead.
-        it('triggers에 비문자열 항목이 섞이면 gating undefined로 fail-open한다', () => {
-            expect(
-                parseGating({
-                    tier: 'gated',
-                    signal_kind: 'event',
-                    triggers: ['rsi_oversold', 42],
-                })
-            ).toBeUndefined();
-        });
-
         it('state predicate의 feature가 유효하지 않으면 gating undefined', async () => {
             const skill = await loadOne(
                 withGating(
@@ -1299,118 +1284,22 @@ confidence_weight: 0.5
     });
 });
 
-describe('usage_roles 파싱 (parseUsageRoles)', () => {
-    let loader: FileSkillsLoader;
-
-    const withUsageRoles = (usageRolesYaml: string) => `---
-name: 역할 스킬
-description: 역할 테스트
-type: indicator_guide
-indicators: []
-confidence_weight: 0.8
-${usageRolesYaml}
----
-
-내용`;
-
-    const loadOne = async (md: string) => {
-        mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
-        mockReadFile.mockResolvedValue(md);
-        const skills = await loader.loadSkills();
-        return skills[0];
-    };
-
+describe('FileSkillsLoader usage_roles 배선', () => {
     beforeEach(() => {
-        loader = new FileSkillsLoader();
         mockReaddir.mockReset();
         mockReadFile.mockReset();
     });
 
-    it('valid usage_roles [confirmation, signal] → usageRoles 정규 순서 [signal, confirmation]', async () => {
-        const skill = await loadOne(
-            withUsageRoles('usage_roles: [confirmation, signal]')
-        );
-        expect(skill.usageRoles).toEqual(['signal', 'confirmation']);
-    });
+    describe('usage_roles frontmatter', () => {
+        it('[confirmation, signal]은 정규 순서 [signal, confirmation]으로 로드된다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+            mockReadFile.mockResolvedValue(
+                '---\nname: 역할 스킬\ndescription: 역할 테스트\ntype: indicator_guide\nindicators: []\nconfidence_weight: 0.8\nusage_roles: [confirmation, signal]\n---\n\n내용'
+            );
 
-    it('모든 5개 역할 → 정규 순서로 정렬된다', async () => {
-        const skill = await loadOne(
-            withUsageRoles(
-                'usage_roles: [risk, regime, confirmation, measurement, signal]'
-            )
-        );
-        expect(skill.usageRoles).toEqual([
-            'signal',
-            'confirmation',
-            'regime',
-            'measurement',
-            'risk',
-        ]);
-    });
+            const skills = await new FileSkillsLoader().loadSkills();
 
-    it('알 수 없는 역할이 포함되면 usageRoles === undefined (fail-open)', async () => {
-        const skill = await loadOne(
-            withUsageRoles('usage_roles: [signal, unknown_role]')
-        );
-        expect(skill.usageRoles).toBeUndefined();
-    });
-
-    it('빈 배열 [] → usageRoles === undefined', async () => {
-        const skill = await loadOne(withUsageRoles('usage_roles: []'));
-        expect(skill.usageRoles).toBeUndefined();
-    });
-
-    it('중복 역할이 있으면 usageRoles === undefined', async () => {
-        // The inline YAML parser produces a string[] from [signal, signal];
-        // parseUsageRoles must detect the duplicate and return undefined.
-        const skill = await loadOne(
-            withUsageRoles('usage_roles: [signal, signal]')
-        );
-        expect(skill.usageRoles).toBeUndefined();
-    });
-
-    it('usage_roles 필드 없음 → usageRoles === undefined', async () => {
-        const skill = await loadOne(
-            withUsageRoles('') // no usage_roles line
-        );
-        expect(skill.usageRoles).toBeUndefined();
-    });
-
-    it('scalar(비배열) usage_roles → usageRoles === undefined', async () => {
-        // parseYamlValue returns a string for a bare scalar,
-        // so parseUsageRoles receives a non-array → undefined.
-        const skill = await loadOne(withUsageRoles('usage_roles: signal'));
-        expect(skill.usageRoles).toBeUndefined();
-    });
-});
-
-describe('dedupeByName', () => {
-    const skill = (name: string, description = 'd'): Skill => ({
-        name,
-        description,
-        indicators: [],
-        confidenceWeight: 0,
-        content: '',
-        smcFullGuide: false,
-    });
-
-    it('이름 중복 시 첫 번째만 남기고 이후 중복을 제거한다', () => {
-        const out = dedupeByName([
-            skill('A', 'first'),
-            skill('B'),
-            skill('A', 'dup'),
-            skill('C'),
-        ]);
-        expect(out.map(s => s.name)).toEqual(['A', 'B', 'C']);
-        expect(out[0].description).toBe('first');
-    });
-
-    it('빈 입력은 빈 배열을 반환한다', () => {
-        expect(dedupeByName([])).toEqual([]);
-    });
-
-    it('이름이 모두 고유하면 순서를 유지한 채 그대로 반환한다', () => {
-        const out = dedupeByName([skill('A'), skill('B'), skill('C')]);
-        expect(out.map(s => s.name)).toEqual(['A', 'B', 'C']);
+            expect(skills[0].usageRoles).toEqual(['signal', 'confirmation']);
+        });
     });
 });

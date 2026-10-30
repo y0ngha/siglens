@@ -1,3 +1,6 @@
+/**
+ * 13F 옵션 포지션 분기 행 선택.
+ */
 import type { InstitutionalOptionsQuarter } from '@y0ngha/siglens-core';
 import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
 

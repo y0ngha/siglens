@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
+import { buildSymbolOgImage } from '@/entities/og-image/server/buildSymbolOgImage';
 import { isLocale } from '@/shared/i18n/locales';
 
 /**

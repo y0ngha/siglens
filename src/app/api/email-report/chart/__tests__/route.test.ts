@@ -4,8 +4,7 @@ vi.mock('@/entities/bars/server/loadBarsData', () => ({
 vi.mock('@/entities/email-report/emailReportSecret', () => ({
     readEmailReportSecret: vi.fn(),
 }));
-vi.mock('@/entities/email-report/lib/buildReportChartImage', () => ({
-    REPORT_CHART_MA_PERIODS: [20, 60],
+vi.mock('@/entities/email-report/server/buildReportChartImage', () => ({
     buildReportChartImage: vi.fn(),
 }));
 
@@ -13,7 +12,7 @@ import type { Bar } from '@y0ngha/siglens-core';
 import { GET } from '@/app/api/email-report/chart/route';
 import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
-import { buildReportChartImage } from '@/entities/email-report/lib/buildReportChartImage';
+import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 import { buildChartImageUrl } from '@/entities/email-report/lib/reportLinks';
 
 const SECRET = 'chart-secret-chart-secret-chart-secret';

@@ -1,13 +1,15 @@
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { sitemapAlternates } from './sitemapAlternates';
+
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { SITE_URL } from '@/shared/lib/seo';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+
+import type { SitemapEntry } from '../model';
 import { floorToHour } from './floorToHour';
+import { latestOf } from './latestOf';
 // 게이트 정의(탭 목록·옵션 타입)는 `proseGate.ts`가 소유한다 — 크립토 빌더와
 // `server.ts`도 거기서 직접 가져온다.
 import {
@@ -15,34 +17,13 @@ import {
     makeSnapshotTimeLookup,
     type BuildPopularEntriesOptions,
 } from './proseGate';
-import type { SitemapEntry } from '../model';
-
-/**
- * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
- *
- * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 분기(산문 게이트 등)마다
- * 리터럴이 흩어지면 한 곳만 빠뜨려도 그 탭만 조용히 hreflang을 잃기 때문이다.
- * 마지막에 일괄로 붙인다.
- *
- * `SYMBOL_INDEXABLE_LOCALES`가 기본 로케일 하나인 동안에는 `sitemapAlternates`가
- * `undefined`를 돌려 XML이 지금과 바이트 단위로 동일하다.
- */
-function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
-    return entries.map(entry => {
-        const alternates = sitemapAlternates(
-            entry.url.slice(SITE_URL.length),
-            SYMBOL_INDEXABLE_LOCALES
-        );
-        return alternates ? { ...entry, alternates } : entry;
-    });
-}
+import { withSymbolAlternates } from './withSymbolAlternates';
 
 /**
  * POPULAR_TICKERS의 색인 대상 sub-route(차트/뉴스/공포탐욕)에 대한 sitemap 엔트리를
  * 반환한다.
  *
- * **종목당 세 탭뿐이다** (2026-10-01 SEO 감사, `docs/architecture/SEO_RECOVERY_2026_09.md`
- * §10). 종합·펀더멘털·재무제표·옵션·의회거래 다섯 탭은 페이지가 항상 noindex다
+ * **종목당 세 탭뿐이다** (2026-10-01 SEO 감사). 종합·펀더멘털·재무제표·옵션·의회거래 다섯 탭은 페이지가 항상 noindex다
  * (`ALWAYS_NOINDEX_TAB_ROBOTS`) — 프리웜이 그 탭의 산문을 더는 굽지 않고, 종목당 산문
  * 페이지 5~7개가 "AI 생성 프로그래매틱 금융 사이트" 판정의 분모였다. 내위치 탭도 항상
  * noindex다(2026-09-11). noindex URL을 sitemap에 실으면 크롤 예산만 태우고 GSC 오류가
@@ -88,12 +69,10 @@ export function buildPopularEntries(
             const todayClose = isKrEquitySymbol(ticker) ? krClose : usClose;
             // 차트 탭만 technical 스냅샷 시각과 겨룬다 — 공포탐욕 탭은 같은 일봉에서
             // 결정적으로 계산돼 스냅샷 산문이 없으므로 세션 마감이 사실이다.
-            const technicalAt = snapshotTimeOf(ticker, 'technical');
-            const chartLastModified =
-                technicalAt !== undefined &&
-                technicalAt.getTime() > todayClose.getTime()
-                    ? technicalAt
-                    : todayClose;
+            const chartLastModified = latestOf(
+                [todayClose, snapshotTimeOf(ticker, 'technical')],
+                todayClose
+            );
             return [
                 // 차트 탭도 산문 게이트 대상이다 — 렌더 가능한 technical 산문이 없으면 페이지가
                 // noindex(`no-prose`)이므로 sitemap에서 뺀다. 로더 실패(맵 없음)는 전부 싣는다.
@@ -129,7 +108,7 @@ export function buildPopularEntries(
                 // 표본이 모자란 종목도 여기 실린다. 2026-10-04 기준 `TOSCF`·`SLROF` 두
                 // 종목이 그 상태라 sitemap에 noindex URL 2개가 있다. 표본이 쌓이면
                 // 스스로 풀리므로 회귀로 보고 고치지 말 것 — 늘어나면 그때 빌더 입력에
-                // 점수 가능 여부를 싣는다(설계 2026-10-04 §2 A3).
+                // 점수 가능 여부를 싣는다(2026-10-04 설계).
                 {
                     url: `${SITE_URL}/${ticker}/fear-greed`,
                     lastModified: todayClose,

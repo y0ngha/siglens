@@ -1,6 +1,10 @@
+/**
+ * 숏스퀴즈 점수 카드의 표시 규칙 — 수준 배지, 구성요소 값 포맷, 출처.
+ */
 import type {
     SqueezeRiskComponentId,
     SqueezeRiskLevel,
+    SqueezeRiskScore,
 } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
 import {
@@ -54,11 +58,48 @@ const COMPONENT_UNIT: Record<SqueezeRiskComponentId, ComponentUnit> = {
     volume_ratio: 'multiple',
 };
 
+/** 포맷한 구성요소 값과 단위. */
 export interface FormattedComponentValue {
     /** 단위 — 퍼센트는 `value`에 `%`가 이미 붙고, 나머지는 화면이 로케일별 단위 글자를 붙인다(`notListed`는 `value`가 빈 문자열). */
     unit: ValueUnit;
     value: string;
 }
+
+/** 퍼센트 원값(유통주식 대비 잔고 %·결제 불이행 %)의 소수 자리. */
+const PERCENT_DIGITS = 2;
+/** 증감 퍼센트·일수·z·배수의 소수 자리. */
+const DECIMAL_DIGITS = 1;
+
+/** 단위별 값 포맷. `tradingDays`는 등재되지 않았으면(0 이하) 숫자 대신 `notListed`로 바꾼다. */
+const UNIT_FORMATTER: Record<
+    ComponentUnit,
+    (value: number, locale: Locale) => FormattedComponentValue
+> = {
+    percent: (value, locale) => ({
+        unit: 'percent',
+        value: formatPercent(value, locale, PERCENT_DIGITS),
+    }),
+    signedPercent: (value, locale) => ({
+        unit: 'signedPercent',
+        value: formatSignedPercent(value, locale, DECIMAL_DIGITS),
+    }),
+    tradingDays: (value, locale) =>
+        value <= 0
+            ? { unit: 'notListed', value: '' }
+            : { unit: 'tradingDays', value: formatInteger(value, locale) },
+    days: (value, locale) => ({
+        unit: 'days',
+        value: formatDecimal(value, locale, DECIMAL_DIGITS),
+    }),
+    z: (value, locale) => ({
+        unit: 'z',
+        value: formatDecimal(value, locale, DECIMAL_DIGITS),
+    }),
+    multiple: (value, locale) => ({
+        unit: 'multiple',
+        value: formatDecimal(value, locale, DECIMAL_DIGITS),
+    }),
+};
 
 /** 구성요소 원값을 단위에 맞게 포맷한다(계산하지 않고 core 값을 그대로 쓴다). */
 export function formatComponentValue(
@@ -66,19 +107,30 @@ export function formatComponentValue(
     value: number,
     locale: Locale
 ): FormattedComponentValue {
-    const unit = COMPONENT_UNIT[id];
-    switch (unit) {
-        case 'percent':
-            return { unit, value: formatPercent(value, locale, 2) };
-        case 'signedPercent':
-            return { unit, value: formatSignedPercent(value, locale, 1) };
-        case 'tradingDays':
-            return value <= 0
-                ? { unit: 'notListed', value: '' }
-                : { unit, value: formatInteger(value, locale) };
-        case 'days':
-        case 'z':
-        case 'multiple':
-            return { unit, value: formatDecimal(value, locale, 1) };
-    }
+    return UNIT_FORMATTER[COMPONENT_UNIT[id]](value, locale);
+}
+
+/** 숏스퀴즈 점수가 기댄 데이터 출처. */
+export type SqueezeSource = 'finra' | 'sec' | 'exchange' | 'price';
+
+/** 출처를 문구에 나열하는 순서. */
+const SQUEEZE_SOURCE_ORDER: readonly SqueezeSource[] = [
+    'finra',
+    'sec',
+    'exchange',
+    'price',
+];
+
+/**
+ * 점수에 실제로 쓰인 출처를 순서대로 모은다 — FINRA(공매도 잔고·비중), SEC(결제 불이행 구성요소가 있을 때), 거래소 과열 목록,
+ * 가격(마지막 봉 날짜가 있을 때).
+ */
+export function squeezeSources(risk: SqueezeRiskScore): SqueezeSource[] {
+    const used: Record<SqueezeSource, boolean> = {
+        finra: risk.includesFinra,
+        sec: risk.components.some(c => c.id === 'fails_to_deliver_pct'),
+        exchange: risk.includesExchangeLists,
+        price: risk.lastBarDate !== null,
+    };
+    return SQUEEZE_SOURCE_ORDER.filter(source => used[source]);
 }

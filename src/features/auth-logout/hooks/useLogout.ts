@@ -1,31 +1,48 @@
 'use client';
 
+/**
+ * Client-side logout: clears the signed-in member's React Query cache, then
+ * runs the logout Server Action (which redirects).
+ */
+
 import { useTransition } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { logoutAction } from '../actions/logoutAction';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
-interface UseLogoutResult {
+/** What `LogoutButton` needs: a trigger and a flag to disable itself while logging out. */
+export interface UseLogoutResult {
+    /** True from the click until the redirect lands. */
     pending: boolean;
+    /** Clears member-scoped caches, then runs `logoutAction` (which redirects). */
     logout: () => void;
 }
 
+/**
+ * Queries whose data belongs to the signed-in member. The post-logout redirect
+ * is a soft navigation, so the cache survives it: a stale entry would let the
+ * next member who signs in on the same tab see the prior member's data (or,
+ * for registered providers, skip the BYOK gate on the prior member's keys)
+ * until the entry goes stale and refetches.
+ */
+const MEMBER_SCOPED_QUERY_KEYS = [
+    QUERY_KEYS.portfolioHoldings(),
+    QUERY_KEYS.watchlist(),
+    QUERY_KEYS.emailReportSettings(),
+    QUERY_KEYS.registeredProviders(),
+] as const;
+
+/** Logout trigger for the user menu; `pending` stays true until the redirect. */
 export function useLogout(): UseLogoutResult {
     const [pending, startTransition] = useTransition();
     const queryClient = useQueryClient();
     const logout = () =>
         startTransition(async () => {
+            // Flip the header to the guest state immediately, before the action round-trip.
             queryClient.setQueryData(QUERY_KEYS.currentUser(), null);
-            // Drop the previous member's holdings and email-report settings
-            // from the cache — a stale React Query entry would otherwise let a
-            // subsequent user on the same browser briefly see the prior
-            // member's data before the next authenticated fetch resolves.
-            queryClient.removeQueries({
-                queryKey: QUERY_KEYS.portfolioHoldings(),
-            });
-            queryClient.removeQueries({
-                queryKey: QUERY_KEYS.emailReportSettings(),
-            });
+            MEMBER_SCOPED_QUERY_KEYS.forEach(queryKey =>
+                queryClient.removeQueries({ queryKey })
+            );
             await logoutAction();
         });
     return { pending, logout };

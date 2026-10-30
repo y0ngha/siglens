@@ -1,18 +1,21 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { LegalBreadcrumb } from './LegalBreadcrumb';
+import { LegalPageFrame } from './ui/layout/LegalPageFrame';
+import { LegalWarningNotice } from './ui/notice/LegalWarningNotice';
 
+/** 본문 대신 남기는 문서 링크 하나. */
 interface LegalUnavailableLink {
     readonly href: string;
     readonly label: string;
 }
 
 interface LegalUnavailableProps {
-    breadcrumbTitle: string;
-    eyebrow: string;
-    title: string;
+    readonly breadcrumbTitle: string;
+    readonly eyebrow: string;
+    readonly title: string;
     /** 문서 제목 링크들(약관 ↔ 방침). 본문이 비어도 사용자가 갈 곳을 남긴다. */
-    links: readonly LegalUnavailableLink[];
+    readonly links: readonly LegalUnavailableLink[];
 }
 
 /**
@@ -31,42 +34,30 @@ export function LegalUnavailable({
 }: LegalUnavailableProps) {
     const t = useTranslations('widgets.legal');
     return (
-        <main className="page-container flex flex-1 flex-col items-center py-12 sm:py-16">
-            <article className="w-full max-w-3xl">
-                <LegalBreadcrumb pageTitle={breadcrumbTitle} />
+        <LegalPageFrame
+            breadcrumb={<LegalBreadcrumb pageTitle={breadcrumbTitle} />}
+            eyebrow={eyebrow}
+            title={title}
+        >
+            <LegalWarningNotice
+                role="status"
+                label={t('unavailableNoticeLabel')}
+            >
+                {t('unavailableNotice')}
+            </LegalWarningNotice>
 
-                <header className="border-b border-secondary-700 pb-8">
-                    <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
-                        {eyebrow}
-                    </p>
-                    <h1 className="mt-3 text-3xl font-bold text-secondary-50 sm:text-4xl">
-                        {title}
-                    </h1>
-                </header>
-
-                <div
-                    role="status"
-                    aria-label={t('unavailableNoticeLabel')}
-                    className="my-8 rounded-lg border border-ui-warning/30 bg-ui-warning/5 p-4"
-                >
-                    <p className="text-sm leading-relaxed text-secondary-200">
-                        {t('unavailableNotice')}
-                    </p>
-                </div>
-
-                <ul className="space-y-2 text-sm">
-                    {links.map(link => (
-                        <li key={link.href}>
-                            <Link
-                                href={link.href}
-                                className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                            >
-                                {link.label}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </article>
-        </main>
+            <ul className="space-y-2 text-sm">
+                {links.map(link => (
+                    <li key={link.href}>
+                        <Link
+                            href={link.href}
+                            className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                            {link.label}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </LegalPageFrame>
     );
 }

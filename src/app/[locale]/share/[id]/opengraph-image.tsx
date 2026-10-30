@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
+import { buildSymbolOgImage } from '@/entities/og-image/server/buildSymbolOgImage';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 

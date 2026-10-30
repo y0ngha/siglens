@@ -196,11 +196,24 @@ describe('PolicyMarkdownBody', () => {
     });
 
     it('renders external link with target=_blank rel=noopener', () => {
+        const md = '자료 [안내](https://example.com/guide)';
+        const { container } = render(<PolicyMarkdownBody markdown={md} />);
+        const anchor = container.querySelector(
+            'a[href="https://example.com/guide"]'
+        );
+        expect(anchor?.getAttribute('target')).toBe('_blank');
+        expect(anchor?.getAttribute('rel')).toContain('noopener');
+    });
+
+    it('keeps the contact mailto link in the same tab', () => {
+        // A mailto link hands off to the mail app; with target=_blank the
+        // browser leaves an empty tab behind.
         const md = '문의 [메일](mailto:stock.siglens@gmail.com)';
         const { container } = render(<PolicyMarkdownBody markdown={md} />);
         const anchor = container.querySelector('a[href^="mailto:"]');
-        expect(anchor?.getAttribute('target')).toBe('_blank');
-        expect(anchor?.getAttribute('rel')).toContain('noopener');
+        expect(anchor).not.toBeNull();
+        expect(anchor?.getAttribute('target')).toBeNull();
+        expect(anchor?.getAttribute('rel')).toBeNull();
     });
 
     it('renders unordered list', () => {
@@ -230,8 +243,8 @@ describe('PolicyMarkdownBody', () => {
     });
 
     it('treats a link with an empty href as external (falsy short-circuit)', () => {
-        // isInternalHref bails out early on a falsy href, so an empty-string
-        // href must not be routed through next/link.
+        // An empty href is neither an internal path nor a mail/anchor link,
+        // so it must not be routed through next/link.
         const md = '자료 [빈 링크]()';
         const { container } = render(<PolicyMarkdownBody markdown={md} />);
         const anchor = container.querySelector('a');
@@ -240,7 +253,7 @@ describe('PolicyMarkdownBody', () => {
     });
 
     it('treats a protocol-relative link (//) as external, not internal', () => {
-        // isInternalHref requires a leading "/" but rejects "//" so
+        // Internal paths need a leading "/" but not "//", so
         // protocol-relative URLs (e.g. //cdn.example.com) don't get routed
         // through next/link, which can't resolve them.
         const md = '자료 [다운로드](//cdn.example.com/file.pdf)';

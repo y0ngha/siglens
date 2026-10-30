@@ -38,7 +38,7 @@ vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
         children,
 }));
 // PositionTabContent is stubbed (client component, not under test here). The
-// pure lib modules (volumeByBand/positionGeometry/positionBuildingNotes) stay
+// pure utils modules (volumeByBand/positionGeometry/positionBuildingNotes) stay
 // real so the page's server data path and the Task 1 per-symbol content block
 // exercise the real aggregation/geometry, not a stub.
 vi.mock('@/widgets/portfolio-position/ui/PositionTabContent', () => ({

@@ -1,3 +1,7 @@
+/**
+ * 작도(overlay)를 차트 선 스펙으로 변환하고 정렬·표시 여부를 판정하는 유틸.
+ */
+
 import type { ChartOverlay, OverlayLabel } from '@y0ngha/siglens-core';
 import {
     ALTERNATE_OVERLAY_OPACITY,

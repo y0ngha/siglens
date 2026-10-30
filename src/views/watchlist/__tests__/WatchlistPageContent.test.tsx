@@ -18,8 +18,9 @@ import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import { WatchlistPageContent } from '@/views/watchlist/WatchlistPageContent';
 
 describe('WatchlistPageContent', () => {
-    beforeEach(() => {
-        window.history.replaceState(null, '', '/watchlist');
+    function setWatchlist(
+        overrides: Partial<ReturnType<typeof useWatchlist>> = {}
+    ) {
         vi.mocked(useWatchlist).mockReturnValue({
             items: [],
             has: () => false,
@@ -31,7 +32,13 @@ describe('WatchlistPageContent', () => {
             limit: 20,
             isMember: false,
             isIdentityPending: false,
+            ...overrides,
         });
+    }
+
+    beforeEach(() => {
+        window.history.replaceState(null, '', '/watchlist');
+        setWatchlist();
     });
 
     it('?tab=recent면 최근 본 탭으로 연다', () => {
@@ -59,6 +66,21 @@ describe('WatchlistPageContent', () => {
         await user.selectOptions(screen.getByLabelText('정렬'), 'change');
         expect(screen.getByTestId('watchlist-section')).toHaveTextContent(
             'change'
+        );
+    });
+
+    it('회원 여부를 모르는 동안의 빈 목록이면 관심 탭에 개수(0)를 그리지 않는다', () => {
+        setWatchlist({ isIdentityPending: true });
+        render(<WatchlistPageContent />);
+        expect(screen.getByRole('tab', { name: '관심' })).toHaveTextContent(
+            /^관심$/
+        );
+    });
+
+    it('목록이 확정되면 관심 탭에 개수를 그린다', () => {
+        render(<WatchlistPageContent />);
+        expect(screen.getByRole('tab', { name: /관심/ })).toHaveTextContent(
+            /^관심0$/
         );
     });
 

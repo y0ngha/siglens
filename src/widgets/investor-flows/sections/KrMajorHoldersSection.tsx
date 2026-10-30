@@ -1,153 +1,20 @@
+/**
+ * 한국 대량보유 보고 섹션(DART `majorstock`).
+ */
 import { useTranslations } from 'next-intl';
-import type {
-    KrMajorHolderReport,
-    KrMajorHolderReportForm,
-} from '@y0ngha/siglens-core';
+import type { KrMajorHolderReport } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import {
-    formatInteger,
-    formatPercent,
-    formatSignedCompact,
-    formatSignedDecimal,
-} from '../utils/flowFormat';
-import { majorHolderRatioChange } from '@/entities/investor-flows/lib/krMajorHolderRatioChange';
-import { krDisclosureKey, newestKrRows } from '../utils/krDisclosures';
+import { formatInteger } from '../utils/flowFormat';
+import { buildMajorHolderRows } from '../utils/krMajorHolders';
+import { MajorHolderRecords } from '../ui/kr/MajorHolderRecords';
+import { OmittedNote } from '../ui/notes/OmittedNote';
 import { CollectingNotice } from './CollectingNotice';
-import { DartFilingLink } from './DartFilingLink';
 
 const HEADING_ID = 'flows-kr-major-holders-heading';
-/** 보유비율 증감(%p)의 소수 자리 — DART가 소수 둘째 자리까지 준다. */
-const RATIO_DIGITS = 2;
-
-function FormBadge({ form }: { readonly form: KrMajorHolderReportForm }) {
-    const t = useTranslations('widgets.investor-flows');
-    // 리터럴 `t()` 호출로 만들어 두고 고른다(추출기가 키를 볼 수 있게).
-    const labels: Record<KrMajorHolderReportForm, string> = {
-        detailed: t('kr.majorHolders.formDetailed'),
-        abbreviated: t('kr.majorHolders.formAbbreviated'),
-    };
-    return (
-        <span className="inline-flex items-center rounded bg-secondary-700 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-secondary-200">
-            {labels[form]}
-        </span>
-    );
-}
-
-interface MajorHolderRowProps {
-    readonly row: KrMajorHolderReport;
-    /** 같은 보고자의 직전 보고 대비 증감(%p). 최초 보고라 계산할 수 없으면 `null` — 증감을 표시하지 않는다. */
-    readonly ratioChangePct: number | null;
-}
-
-function useRowText({ row, ratioChangePct }: MajorHolderRowProps) {
-    const t = useTranslations('widgets.investor-flows');
-    const locale = useResolvedLocale();
-    return {
-        ratio: formatPercent(row.ratioPct, locale, RATIO_DIGITS),
-        // DART 증감(`stkrt_irds`)은 최초 보고에서 보유비율 전체라 그대로 쓰면 "+5.12%p"처럼 틀린다.
-        ratioChange:
-            ratioChangePct === null
-                ? null
-                : t('kr.pointChange', {
-                      value: formatSignedDecimal(
-                          ratioChangePct,
-                          locale,
-                          RATIO_DIGITS
-                      ),
-                  }),
-        sharesChange: formatSignedCompact(row.sharesChange, locale),
-        reason:
-            row.reason === '' ? t('kr.majorHolders.reasonNone') : row.reason,
-    };
-}
-
-function MajorHolderCard(props: MajorHolderRowProps) {
-    const { row } = props;
-    const t = useTranslations('widgets.investor-flows');
-    const text = useRowText(props);
-    return (
-        <li className={cn(SURFACE_NESTED, 'p-3')}>
-            <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 text-sm font-medium break-words text-secondary-100">
-                    {row.reporter}
-                </p>
-                <FormBadge form={row.reportForm} />
-            </div>
-            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                <dt className="text-secondary-400">{t('kr.colReceipt')}</dt>
-                <dd className="text-right font-mono text-secondary-200 tabular-nums">
-                    {row.receiptDate}
-                </dd>
-                <dt className="text-secondary-400">
-                    {t('kr.majorHolders.colRatio')}
-                </dt>
-                <dd className="text-right text-secondary-200 tabular-nums">
-                    {text.ratio}
-                    {text.ratioChange !== null && (
-                        <span className="text-secondary-400">
-                            {' '}
-                            ({text.ratioChange})
-                        </span>
-                    )}
-                </dd>
-                <dt className="text-secondary-400">
-                    {t('kr.majorHolders.colSharesChange')}
-                </dt>
-                <dd className="text-right text-secondary-200 tabular-nums">
-                    {text.sharesChange}
-                </dd>
-            </dl>
-            <p className="mt-2 text-xs break-words text-secondary-300">
-                {text.reason}
-            </p>
-            <div className="mt-2 text-right">
-                <DartFilingLink url={row.url} reporter={row.reporter} />
-            </div>
-        </li>
-    );
-}
-
-function MajorHolderTableRow(props: MajorHolderRowProps) {
-    const { row } = props;
-    const text = useRowText(props);
-    return (
-        <tr className="border-b border-secondary-700 last:border-b-0">
-            <td className="py-2.5 pr-3 font-mono whitespace-nowrap tabular-nums">
-                {row.receiptDate}
-            </td>
-            <th
-                scope="row"
-                className="px-3 py-2.5 text-left font-medium break-words text-secondary-100"
-            >
-                {row.reporter}
-            </th>
-            <td className="px-3 py-2.5">
-                <FormBadge form={row.reportForm} />
-            </td>
-            <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
-                {text.ratio}
-                {text.ratioChange !== null && (
-                    <span className="block text-xs text-secondary-400">
-                        {text.ratioChange}
-                    </span>
-                )}
-            </td>
-            <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
-                {text.sharesChange}
-            </td>
-            <td className="px-3 py-2.5 text-xs break-words text-secondary-300">
-                {text.reason}
-            </td>
-            <td className="py-2.5 pl-3 text-right">
-                <DartFilingLink url={row.url} reporter={row.reporter} />
-            </td>
-        </tr>
-    );
-}
 
 interface KrMajorHoldersSectionProps {
     readonly reports: readonly KrMajorHolderReport[];
@@ -155,11 +22,12 @@ interface KrMajorHoldersSectionProps {
     readonly collecting: boolean;
 }
 
+/** 수집 중 → 보고 없음 → 목록 순으로 첫 해당 분기만 그린다. */
 function MajorHoldersBody({ reports, collecting }: KrMajorHoldersSectionProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
     if (collecting) return <CollectingNotice variant="dart" />;
-    const { rows, omittedCount } = newestKrRows(reports);
+    const { rows, omittedCount } = buildMajorHolderRows(reports);
     if (rows.length === 0) {
         return (
             <p className="text-sm text-secondary-300">
@@ -169,86 +37,13 @@ function MajorHoldersBody({ reports, collecting }: KrMajorHoldersSectionProps) {
     }
     return (
         <>
-            <ul className="space-y-2 md:hidden">
-                {rows.map(row => (
-                    <MajorHolderCard
-                        key={krDisclosureKey(row)}
-                        row={row}
-                        ratioChangePct={majorHolderRatioChange(row, reports)}
-                    />
-                ))}
-            </ul>
-            <div className="hidden md:block">
-                <table className="w-full text-sm">
-                    <caption className="sr-only">
-                        {t('kr.majorHolders.title')}
-                    </caption>
-                    <thead>
-                        <tr className="border-b border-secondary-700 text-xs text-secondary-400">
-                            <th
-                                scope="col"
-                                className="py-2 pr-3 text-left font-medium"
-                            >
-                                {t('kr.colReceipt')}
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-2 text-left font-medium"
-                            >
-                                {t('kr.colReporter')}
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-2 text-left font-medium"
-                            >
-                                {t('kr.majorHolders.colForm')}
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-2 text-right font-medium"
-                            >
-                                {t('kr.majorHolders.colRatio')}
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-2 text-right font-medium"
-                            >
-                                {t('kr.majorHolders.colSharesChange')}
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-3 py-2 text-left font-medium"
-                            >
-                                {t('kr.majorHolders.colReason')}
-                            </th>
-                            <th
-                                scope="col"
-                                className="py-2 pl-3 text-right font-medium"
-                            >
-                                {t('kr.colFiling')}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map(row => (
-                            <MajorHolderTableRow
-                                key={krDisclosureKey(row)}
-                                row={row}
-                                ratioChangePct={majorHolderRatioChange(
-                                    row,
-                                    reports
-                                )}
-                            />
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <MajorHolderRecords rows={rows} />
             {omittedCount > 0 && (
-                <p className="mt-2 text-xs text-secondary-400">
+                <OmittedNote>
                     {t('kr.omitted', {
                         count: formatInteger(omittedCount, locale),
                     })}
-                </p>
+                </OmittedNote>
             )}
         </>
     );

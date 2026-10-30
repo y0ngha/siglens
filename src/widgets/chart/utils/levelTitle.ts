@@ -1,3 +1,7 @@
+/**
+ * 작도 레벨선에 붙일 제목 문구를 종류별로 결정하는 유틸.
+ */
+
 import type { ChartOverlay } from '@y0ngha/siglens-core';
 import { BREAKOUT_LEVEL_LABEL } from '../model/chartOverlayCategories';
 import { formatFibLevelLabel, type FibLevelTexts } from './fibLevelLabel';

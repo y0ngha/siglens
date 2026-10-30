@@ -6,16 +6,16 @@ import {
     type AgentAdapterOptions,
 } from './openAiCompatibleStream';
 
-/** DeepSeek via the OpenAI-compatible chat.completions stream; thinking OFF (spec §2-6, pilot). */
+/** DeepSeek을 OpenAI 호환 chat.completions 스트림으로 부른다(agent 기본 모델). thinking은 끈다. */
 export async function callDeepseekAgent(
     o: AgentAdapterOptions
 ): Promise<AgentProviderResult> {
     return streamOpenAiCompatibleAgent(o, {
         baseURL: 'https://api.deepseek.com',
         messages: toOpenAiChatMessages(o.messages),
-        // Thinking is off, so DeepSeek applies the sampling temperature.
+        // thinking이 꺼져 있으므로 DeepSeek이 샘플링 temperature를 적용한다.
         temperature: 0,
-        // DeepSeek-only top-level field, absent from the openai SDK types.
+        // openai SDK 타입에 없는 DeepSeek 전용 최상위 필드.
         extraBody: { thinking: { type: 'disabled' } },
     });
 }

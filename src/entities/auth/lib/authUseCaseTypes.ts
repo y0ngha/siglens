@@ -15,7 +15,7 @@ import type {
     PasswordVerifier,
 } from '@/shared/lib/auth/types';
 import type { EmailDispatcher, EmailMessage } from '@/shared/email/types';
-import type { EmailTokenStore } from '@/entities/email-token/api';
+import type { EmailTokenStore } from '@/entities/email-token/types';
 import type {
     ConfirmPasswordResetError,
     DeleteAccountErrorCode,

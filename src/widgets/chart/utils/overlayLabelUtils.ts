@@ -1,3 +1,7 @@
+/**
+ * 오버레이 범례 라벨 설정을 만들고 봉 시각별 값을 조회하는 유틸.
+ */
+
 import { CHART_COLORS, getPeriodColor } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type { OverlayItemBase, OverlayLegendItem } from '../types';

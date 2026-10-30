@@ -1,22 +1,19 @@
 /**
- * ISR revalidate periods shared across config and sitemap helpers.
+ * 사이트맵 보조 함수와 설정이 함께 쓰는 ISR revalidate 주기.
  *
- * NOTE: these constants MUST NOT be used as Next.js route segment config values
- * (e.g. `export const revalidate = CRYPTO_CHART_ISR_PERIOD_HOURS * 3600`).
- * Next.js static analysis requires route segment config to be a plain numeric
- * literal — importing a constant causes the config to be silently ignored and
- * the route to fall back to dynamic rendering.
- * (app/CLAUDE.md ISR 4축 규약 §4: route segment config must stay a literal for
- * Next.js static analysis — the magic-number-extraction rule does not apply here.)
+ * 주의: 이 상수들을 Next.js 라우트 세그먼트 설정 값으로 쓰면 안 된다
+ * (예: `export const revalidate = CRYPTO_CHART_ISR_PERIOD_HOURS * 3600`).
+ * Next.js 정적 분석은 세그먼트 설정이 순수 숫자 리터럴이기를 요구한다 — 상수를
+ * import하면 설정이 조용히 무시되고 라우트가 동적 렌더링으로 떨어진다.
+ * (`src/app/CLAUDE.md`의 ISR 규약: 세그먼트 설정은 리터럴로 둔다 — 매직 넘버 추출
+ * 규칙은 여기 적용되지 않는다.)
  *
- * Use these constants in sitemap helpers, TTL calculations, and test assertions
- * where no Next.js static analysis is involved.
+ * 사이트맵 보조 함수, TTL 계산, 테스트 단언처럼 Next.js 정적 분석이 관여하지 않는 곳에서 쓴다.
  */
 
 /**
- * Crypto chart page ISR period in hours (matches `revalidate = 21600` in
- * `app/[symbol]/page.tsx`). Used to align sitemap lastmod quantization with
- * the actual page regeneration cadence so Googlebot does not recrawl faster
- * than content can change.
+ * 암호화폐 차트 페이지의 ISR 주기(시간 단위, `app/[symbol]/page.tsx`의
+ * `revalidate = 21600`과 일치). 사이트맵 lastmod 양자화를 실제 페이지 재생성 주기에
+ * 맞춰, 콘텐츠가 바뀔 수 있는 속도보다 Googlebot이 더 자주 재크롤하지 않게 한다.
  */
 export const CRYPTO_CHART_ISR_PERIOD_HOURS = 6;
