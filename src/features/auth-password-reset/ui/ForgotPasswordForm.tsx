@@ -1,17 +1,25 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { TextField } from '@/shared/ui/TextField';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { SuccessNotice } from '@/shared/ui/SuccessNotice';
 import { useForgotPasswordForm } from '../hooks/useForgotPasswordForm';
+import { forgotPasswordErrorKey } from '../lib/forgotPasswordErrorKey';
 
-/** 성공 시 폼이 통째로 사라진다 — 포커스·알림 처리는 `SuccessNotice` 참고. */
+/**
+ * 비밀번호 재설정 메일 요청 폼. 성공 시 폼이 통째로 사라진다 — 포커스·알림
+ * 처리는 `SuccessNotice` 참고.
+ */
 export function ForgotPasswordForm() {
     const t = useTranslations('features.auth-password-reset');
     const tAuth = useTranslations('entities.auth');
+    // 제어 입력이어야 한다. `<form action>`은 액션이 끝나면 비제어 입력을
+    // 비우므로, 형식 오류가 나면 고칠 주소가 사라져 처음부터 다시 쳐야 한다.
+    const [email, setEmail] = useState('');
     const [state, formAction] = useForgotPasswordForm();
+    const errorKey = forgotPasswordErrorKey(state.errorCode);
 
     return (
         <>
@@ -32,19 +40,9 @@ export function ForgotPasswordForm() {
                         type="email"
                         autoComplete="email"
                         required
-                        /*
-                         * 형식 오류만 표시한다. 계정 존재 여부는 여전히 숨긴다 —
-                         * 열거 방어는 "가입돼 있는가"를 감추는 것이지, 빈 값에도
-                         * "메일을 보냈다"고 말하라는 뜻이 아니다.
-                         */
-                        error={
-                            state.errorCode
-                                ? tAuth(
-                                      AUTH_ERROR_KEY[state.errorCode] ??
-                                          'error.emailInvalid'
-                                  )
-                                : undefined
-                        }
+                        value={email}
+                        onChange={event => setEmail(event.target.value)}
+                        error={errorKey ? tAuth(errorKey) : undefined}
                     />
                     <SubmitButton
                         label={t('ForgotPasswordForm.f4d6d3')}

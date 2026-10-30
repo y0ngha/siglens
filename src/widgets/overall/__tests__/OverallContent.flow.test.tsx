@@ -181,15 +181,18 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
         // 클라이언트가 캐시 우회를 지시할 수 있으면 인증 없는 공개 라우트에서
         // 누구나 서버 키로 LLM을 무제한 태울 수 있다.
         expect(mockSubmit).toHaveBeenCalledTimes(1);
-        const [firstCall] = mockSubmit.mock.calls[0]!;
-        expect(firstCall).toMatchObject({
-            type: 'overall',
-            params: expect.objectContaining({
-                symbol: 'AAPL',
-                reasoning: false,
-            }),
-        });
-        expect(firstCall.params).not.toHaveProperty('force');
+        expect(mockSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'gemini-3.5-flash-lite',
+                    reasoning: false,
+                },
+            })
+        );
     });
 
     it('CTA 클릭 → submit 에러 → "다시 시도" 클릭 → 재시도해 done이 된다', async () => {
@@ -212,9 +215,7 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
             await screen.findByRole('button', { name: /AI 종합 분석 받기/ })
         );
 
-        expect(
-            await screen.findByText(/technical 축 실패/)
-        ).toBeInTheDocument();
+        expect(await screen.findByText(/차트 축 실패/)).toBeInTheDocument();
         const retry = screen.getByRole('button', { name: '다시 시도' });
         await user.click(retry);
 
@@ -222,5 +223,38 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
             await screen.findByText('AAPL 종합 분석 헤드라인')
         ).toBeInTheDocument();
         expect(mockSubmit).toHaveBeenCalledTimes(2);
+        // 결과 없는 오류 뒤 재시도는 일반 요청이다 — 캐시를 우회하는 재분석 의도를
+        // 보내면 쿨다운 오류에서 같은 오류가 반복된다.
+        expect(mockSubmit).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                params: expect.objectContaining({ reanalyze: true }),
+            })
+        );
+    });
+
+    it('done 뒤 "재분석" 클릭은 reanalyze 의도로 보내고 쿨다운이면 결과와 안내를 함께 보인다', async () => {
+        const user = userEvent.setup();
+        mockSubmit
+            .mockResolvedValueOnce({ status: 'cached', result: DONE_RESULT })
+            .mockResolvedValueOnce({
+                status: 'reanalyze_cooldown',
+                remainingMs: 120_000,
+            });
+
+        renderOverall();
+        await user.click(
+            await screen.findByRole('button', { name: /AI 종합 분석 받기/ })
+        );
+        await screen.findByText('AAPL 종합 분석 헤드라인');
+
+        await user.click(screen.getByRole('button', { name: '재분석' }));
+
+        expect(await screen.findByRole('status')).toHaveTextContent('120');
+        expect(screen.getByText('AAPL 종합 분석 헤드라인')).toBeInTheDocument();
+        expect(mockSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                params: expect.objectContaining({ reanalyze: true }),
+            })
+        );
     });
 });

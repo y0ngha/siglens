@@ -1,3 +1,7 @@
+/**
+ * 차트 헤더 팝오버 메뉴가 공유하는 행 스타일·체크박스·설정 행 컴포넌트.
+ */
+
 import { cn } from '@/shared/lib/cn';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
 

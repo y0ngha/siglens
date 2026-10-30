@@ -1,7 +1,8 @@
 /**
- * Branch coverage tests for skill/api.ts — targets uncovered branches in
- * parseYamlValue, classifyLine, parseYamlBlock, parseSkillDisplay (missing
- * defaults in toSkill), and collectMdFiles child line filtering.
+ * `FileSkillsLoader`를 거쳐 스킬 파싱의 남은 분기를 검증한다. 대상은
+ * `lib/parseFrontmatter.ts`의 `parseYamlValue`·`classifyLine`·`parseYamlBlock`,
+ * `lib/toSkill.ts`의 `parseSkillDisplay`(누락 필드 기본값), 그리고 `api.ts`의
+ * `collectMdFiles` 하위 항목 필터링이다.
  */
 
 import { FileSkillsLoader } from '@/entities/skill/api';
@@ -22,7 +23,7 @@ const fileDirent = (name: string) => ({
     isFile: () => true,
 });
 
-describe('skill/api — branch coverage', () => {
+describe('FileSkillsLoader — 파싱 분기 커버리지', () => {
     let loader: FileSkillsLoader;
 
     beforeEach(() => {

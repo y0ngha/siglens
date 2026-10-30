@@ -21,6 +21,7 @@ const {
  */
 const NO_STORE_CACHE_CONTROL = 'no-store';
 
+/** 오류 본문의 `code`. 문서화된 코드 외에 도구가 내는 도메인 코드(문자열)도 통과한다. */
 export type ApiErrorCode =
     | 'invalid_api_key'
     | 'invalid_body'
@@ -35,6 +36,7 @@ export type ApiErrorCode =
     | 'internal_error'
     | (string & {});
 
+/** 성공 본문 `meta`. 해당 없는 키는 아예 싣지 않는다. */
 export interface ApiMeta {
     tool?: string;
     /** 결과가 크기 상한에 걸려 `{ truncated, preview }`로 접혔다. 접히지 않았으면 키 자체가 없다. */
@@ -45,6 +47,7 @@ export interface ApiMeta {
     model?: string;
 }
 
+/** v1 JSON 응답의 단일 출구 — 모든 응답에 `Cache-Control: no-store`를 강제한다. */
 export function apiJson(
     status: number,
     body: unknown,
@@ -60,6 +63,7 @@ export function okBody(data: unknown, meta: ApiMeta = {}): unknown {
     return { data, meta };
 }
 
+/** 200 `{ data, meta }` 응답. */
 export function apiOk(
     data: unknown,
     meta: ApiMeta = {},
@@ -94,6 +98,7 @@ export function errorBody(
     };
 }
 
+/** `{ error: { code, message, details? } }` 응답. `message`는 영어 고정이고 내부 오류 상세를 싣지 않는다. */
 export function apiError(
     status: number,
     code: ApiErrorCode,
@@ -107,6 +112,7 @@ export function apiError(
     );
 }
 
+/** v1이 쓰는 HTTP 상태 이름표. 숫자 리터럴을 흩뿌리지 않으려는 것이다. */
 export const API_STATUS = {
     badRequest: HTTP_STATUS_BAD_REQUEST,
     unauthorized: HTTP_STATUS_UNAUTHORIZED,

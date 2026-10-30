@@ -129,6 +129,26 @@ describe('logoutAction', () => {
         errorSpy.mockRestore();
     });
 
+    it('logoutUser가 실패해도 세션·힌트 쿠키를 만료시킨다', async () => {
+        getSpy.mockReturnValue({ value: 'tok' });
+        mockLogout.mockRejectedValue(new Error('DB connection lost'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT:/');
+        expect(setSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'siglens_session',
+                value: '',
+                maxAgeSeconds: 0,
+            })
+        );
+        expect(setSpy).toHaveBeenCalledWith({ name: 'auth_hint', value: '' });
+
+        errorSpy.mockRestore();
+    });
+
     it('세션 쿠키가 있으면 logoutUser를 호출하고 만료 쿠키를 set한다', async () => {
         getSpy.mockReturnValue({ value: 'tok' });
         mockLogout.mockResolvedValue({
@@ -233,6 +253,12 @@ describe('logoutAction', () => {
             await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT');
             expect(mockRedirect).toHaveBeenLastCalledWith(
                 'https://ai.siglens.io/?sso=none'
+            );
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_session',
+                    maxAgeSeconds: 0,
+                })
             );
             errorSpy.mockRestore();
         });

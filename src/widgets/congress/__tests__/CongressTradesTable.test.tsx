@@ -2,11 +2,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { CongressTrade } from '@y0ngha/siglens-core';
+import { CongressTradesTable } from '../CongressTradesTable';
 import {
-    CongressTradesTable,
     SENATE_EFD_SEARCH_URL,
     PTR_ID_PREFIX_LENGTH,
-} from '../CongressTradesTable';
+} from '../utils/disclosureLinks';
 
 // InfoTooltip uses createPortal + DOM refs. Stub it to a plain <button> so
 // RTL renders without a real DOM and without react-dom/server warnings.
@@ -190,7 +190,7 @@ describe('CongressTradesTable', () => {
             // If PTR_ID_PREFIX_LENGTH changes, update this literal to match.
             const expectedPtrPrefix = '029f67f3';
             expect(
-                screen.getByText(new RegExp(`PTR ${expectedPtrPrefix}`))
+                screen.getByText(new RegExp(`PTR 번호 ${expectedPtrPrefix}`))
             ).toBeInTheDocument();
         });
 
@@ -327,7 +327,7 @@ describe('CongressTradesTable', () => {
 
         it('house row: no PTR ID prefix span shown', () => {
             render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
-            expect(screen.queryByText(/^PTR [0-9a-f]/)).toBeNull();
+            expect(screen.queryByText(/PTR 번호/)).toBeNull();
         });
 
         it('senate row with unparseable link: routes to efdsearch, no PTR ID prefix span', () => {
@@ -338,9 +338,9 @@ describe('CongressTradesTable', () => {
             render(<CongressTradesTable trades={[unparseableSenate]} />);
             const link = screen.getByRole('link', { name: /공시/ });
             expect(link.getAttribute('href')).toBe(SENATE_EFD_SEARCH_URL);
-            // Tooltip mentions "PTR ID" but the 8-char prefix span (e.g. "PTR 029f67f3…")
+            // Tooltip mentions "PTR ID" but the 8-char prefix span (e.g. "PTR 번호 029f67f3…")
             // must not appear when the URL is unparseable.
-            expect(screen.queryByText(/^PTR [0-9a-f]/)).toBeNull();
+            expect(screen.queryByText(/PTR 번호/)).toBeNull();
         });
 
         it('extracts PTR ID even when URL has query parameters (regex robustness guard)', () => {
@@ -355,7 +355,7 @@ describe('CongressTradesTable', () => {
                     PTR_ID_PREFIX_LENGTH
                 );
             expect(
-                screen.getByText(new RegExp(`PTR ${expectedPtrPrefix}`))
+                screen.getByText(new RegExp(`PTR 번호 ${expectedPtrPrefix}`))
             ).toBeInTheDocument();
         });
     });
@@ -392,6 +392,58 @@ describe('CongressTradesTable', () => {
                 />
             );
             expect(container.textContent).not.toContain('shared.enumLabel');
+        });
+    });
+    describe('senate PTR id exposure', () => {
+        const FULL_PTR_ID = '029f67f3-1234-5678-abcd-ef0123456789';
+
+        it('keeps the short visible label but exposes the full id as hidden text and title', () => {
+            const { container } = render(
+                <CongressTradesTable trades={[BASE_TRADE]} />
+            );
+            const hint = screen.getByTitle(`PTR 전체 ID: ${FULL_PTR_ID}`);
+            expect(hint.textContent).toContain('PTR 번호 029f67f3…');
+            expect(hint.textContent).toContain(FULL_PTR_ID);
+            expect(container.querySelector('.sr-only')).not.toBeNull();
+        });
+    });
+
+    describe('row limit', () => {
+        const manyTrades = (n: number): CongressTrade[] =>
+            Array.from({ length: n }, (_, i) => ({
+                ...BASE_TRADE,
+                office: `Member ${i}`,
+            }));
+
+        it('shows a truncation note and caption when rows exceed MAX_ROWS', () => {
+            const { container } = render(
+                <CongressTradesTable trades={manyTrades(60)} />
+            );
+            expect(container.querySelectorAll('tbody tr')).toHaveLength(50);
+            expect(
+                screen.getByText('최근 50건만 표시합니다 · 전체 60건')
+            ).toBeInTheDocument();
+            expect(container.querySelector('caption')?.textContent).toBe(
+                '의회 거래 공시 목록 (최근 50건만 표시, 전체 60건)'
+            );
+        });
+
+        it('shows no note when every row fits', () => {
+            const { container } = render(
+                <CongressTradesTable trades={manyTrades(50)} />
+            );
+            expect(screen.queryByText(/건만 표시합니다/)).toBeNull();
+            expect(container.querySelector('caption')?.textContent).toBe(
+                '의회 거래 공시 목록'
+            );
+        });
+    });
+
+    describe('chamber badge', () => {
+        it('renders the visible label without a redundant aria-label', () => {
+            render(<CongressTradesTable trades={[BASE_TRADE]} />);
+            const badge = screen.getByText('상원');
+            expect(badge).not.toHaveAttribute('aria-label');
         });
     });
 });

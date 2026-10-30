@@ -27,7 +27,7 @@ fundamental/news, must carry an explicit `tier`.
   malformed `gating` block for every skill file, so an untagged skill is never
   committed.
 - **Runtime (prompt-build time):** this repo's app-side parser
-  (`src/entities/skill/api.ts`'s `parseGating`) does not throw — it returns
+  (`src/entities/skill/lib/parseGating.ts`'s `parseGating`) does not throw — it returns
   `undefined` (treated as untagged) for a malformed/unreachable block. The
   throw comes one step later: siglens-core's `selectSkills` is fail-closed and
   throws on a whitelisted skill whose `gating` is `undefined`. So a bad block
@@ -156,7 +156,7 @@ For a **candle** skill, the trigger is the candle pattern name (e.g. `hammer`,
 `state` gating must use one of these pairs (they are the only ones the core's
 `isStateNotable` evaluates). Any other pairing is **unreachable** and rejected by CI.
 The list is `VALID_STATE_PAIRS` in `scripts/validate-skills.ts` (mirrored in
-`src/entities/skill/api.ts` — the two must stay in sync).
+`src/entities/skill/lib/parseGating.ts` — the two must stay in sync).
 
 ## PROMPT_DIGEST markers
 

@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * SMC(스마트 머니) premium/discount/equilibrium 존을 가격선으로 그리는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import type {

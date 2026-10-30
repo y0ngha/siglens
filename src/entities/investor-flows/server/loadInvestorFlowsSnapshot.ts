@@ -19,23 +19,27 @@ import type {
     ThresholdListingRecord,
     ThresholdStatusSummary,
 } from '../model';
+import { assembleInvestorFlowsSnapshot } from '../lib/investorFlowsSnapshot';
 import {
-    assembleInvestorFlowsSnapshot,
     FTD_LOOKBACK_DAYS,
-    OFFERING_LOOKBACK_DAYS,
-    PROPOSED_SALE_LOOKBACK_DAYS,
-    SNAPSHOT_MAX_EXITED_HOLDERS,
-    SNAPSHOT_MAX_OFFERINGS,
-    SNAPSHOT_MAX_PROPOSED_SALES,
-    SNAPSHOT_MAX_QUARTERS,
     SNAPSHOT_MAX_SHORT_INTEREST_POINTS,
     SNAPSHOT_MAX_SHORT_VOLUME_POINTS,
+    type ShortInterestRecord,
+    type ShortVolumeRecord,
+} from '../lib/snapshot/short';
+import {
+    OFFERING_LOOKBACK_DAYS,
+    PROPOSED_SALE_LOOKBACK_DAYS,
+    SNAPSHOT_MAX_OFFERINGS,
+    SNAPSHOT_MAX_PROPOSED_SALES,
+} from '../lib/snapshot/filings';
+import {
+    SNAPSHOT_MAX_EXITED_HOLDERS,
+    SNAPSHOT_MAX_QUARTERS,
     SNAPSHOT_MAX_TOP_HOLDERS,
     type AggregateRecord,
     type HolderRecord,
-    type ShortInterestRecord,
-    type ShortVolumeRecord,
-} from '../lib/investorFlowsSnapshot';
+} from '../lib/snapshot/institutional';
 import {
     addDays,
     isPeriodComplete,

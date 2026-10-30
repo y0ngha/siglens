@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    buildHoldersTrend,
     buildQuarterBars,
     buildSplitComparison,
     filterHolders,
@@ -149,5 +150,40 @@ describe('splitDeltaKind', () => {
             splitDeltaKind(3),
             splitDeltaKind(-3),
         ]).toEqual(['none', 'flat', 'up', 'down']);
+    });
+});
+
+describe('buildHoldersTrend', () => {
+    it('완결 분기만으로 값과 눈금·양끝 분기를 만든다 — 진행 중 분기는 뺀다', () => {
+        const bars = buildQuarterBars([
+            makeQuarter({ period: '2025-12-31', holders: 5110 }),
+            makeQuarter({ period: '2026-03-31', holders: 5160 }),
+            makeQuarter({ period: '2026-06-30', holders: 5240 }),
+            makeQuarter({
+                period: '2026-09-30',
+                complete: false,
+                holders: 900,
+            }),
+        ]);
+        expect(buildHoldersTrend(bars)).toEqual({
+            values: [5110, 5160, 5240],
+            max: 5240,
+            min: 5110,
+            first: 5110,
+            last: 5240,
+            startPeriod: '2025-12-31',
+            endPeriod: '2026-06-30',
+        });
+    });
+
+    it('완결 분기가 둘 미만이면 null이다', () => {
+        expect(
+            buildHoldersTrend(
+                buildQuarterBars([
+                    makeQuarter({ period: '2026-06-30' }),
+                    makeQuarter({ period: '2026-09-30', complete: false }),
+                ])
+            )
+        ).toBeNull();
     });
 });

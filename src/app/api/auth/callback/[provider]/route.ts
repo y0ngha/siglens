@@ -1,75 +1,25 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
-import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import {
-    createAuthSession,
-    DEFAULT_SESSION_TTL_SECONDS,
-} from '@/entities/auth/lib/sessionCookie';
-import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import {
-    DrizzleSessionRepository,
-    DrizzleUserRepository,
-} from '@/entities/auth/api';
-import { getDatabaseClient } from '@/shared/db/client';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
-import {
-    buildOAuthRedirectUri,
-    getOAuthAdapter,
-    getOAuthRedirectBaseUrl,
-    isOAuthProvider,
-} from '@/features/auth-oauth/lib/providers';
+import type { NextRequest, NextResponse } from 'next/server';
+import { exchangeProfile } from '@/app/api/auth/callback/_lib/exchangeProfile';
+import { redirectToConsent } from '@/app/api/auth/callback/_lib/redirectToConsent';
+import { redirectSignedIn } from '@/app/api/auth/callback/_lib/redirectSignedIn';
+import { redirectToLoginWithError } from '@/app/api/auth/callback/_lib/loginRedirect';
+import { DrizzleUserRepository } from '@/entities/auth/api';
+import { isOAuthProvider } from '@/features/auth-oauth/lib/providers';
 import {
     OAUTH_STATE_COOKIE_NAME,
     OAuthStateSecretMisconfiguredError,
-    expiredOAuthStateCookie,
     verifyOAuthState,
 } from '@/features/auth-oauth/lib/state';
-import {
-    DEFAULT_REDIRECT_PATH,
-    sanitizeNextPath,
-    toSameOriginPath,
-} from '@/shared/lib/auth/redirect';
-import { localePath, splitLocalePath } from '@/shared/i18n/locales';
+import { getDatabaseClient } from '@/shared/db/client';
 
 interface CallbackRouteParams {
     params: Promise<{ provider: string }>;
 }
 
 /**
- * `/api/*`는 next-intl 매처에서 제외돼 있어(`proxy.ts`) 이 핸들러에는 로케일이
- * 없다. 그런데 여기서 리다이렉트하는 대상은 API 소비자가 아니라 **사용자가 볼
- * 앱 페이지**다. 로케일을 잃으면 `/en/login`에서 시작한 사용자가 OAuth 왕복 후
- * 한국어 페이지에 떨어진다.
- *
- * 로케일은 state에 실린 `next`에서 복원한다 — `LoginContent`/`SignupContent`가
- * 접두사를 붙여 넣기 때문이다. state 검증 전에 실패한 경우(`next` 없음)에만
- * 기본 로케일로 떨어지는데, 그건 애초에 복원할 근거가 없는 자리다.
+ * OAuth 인가 코드 콜백 — state 쿠키·서명 검증 → 코드 교환 → 기존 계정이면 로그인, 이메일이
+ * 겹치면 충돌 오류, 신규면 약관 동의 화면. 모든 실패는 로그인 화면의 `?error=` 코드로 돌아간다.
  */
-function localeFromNext(next: string | undefined) {
-    return splitLocalePath(next).locale;
-}
-
-function redirectToLoginWithError(
-    code: string,
-    email?: string,
-    next?: string
-): NextResponse {
-    const url = new URL(
-        localePath(localeFromNext(next), '/login'),
-        getOAuthRedirectBaseUrl()
-    );
-    url.searchParams.set('error', code);
-    if (email) url.searchParams.set('email', email);
-    // 돌아갈 곳을 로그인 화면에 되실어 준다 — 없으면 ai.siglens.io에서 온 사용자가
-    // (SSO 핸드오프 `next`) 이메일로 다시 로그인한 뒤 메인 홈에 남는다.
-    const safeNext = sanitizeNextPath(next);
-    if (safeNext !== DEFAULT_REDIRECT_PATH)
-        url.searchParams.set('next', safeNext);
-    const response = NextResponse.redirect(url);
-    response.cookies.set(expiredOAuthStateCookie());
-    return response;
-}
-
 export async function GET(
     req: NextRequest,
     { params }: CallbackRouteParams
@@ -92,8 +42,7 @@ export async function GET(
         stateResult = verifyOAuthState(provider, queryState, stateCookie);
     } catch (error) {
         if (error instanceof OAuthStateSecretMisconfiguredError) {
-            // Fail closed: when the HMAC secret is misconfigured, refuse the callback
-            // rather than fall back to unsigned validation.
+            // HMAC 시크릿이 잘못 설정되면 서명 없는 검증으로 물러서지 않고 콜백을 거절한다.
             return redirectToLoginWithError('oauth_unknown');
         }
         throw error;
@@ -102,10 +51,7 @@ export async function GET(
         return redirectToLoginWithError('oauth_unknown');
     }
 
-    const redirectUri = buildOAuthRedirectUri(provider);
-    const profileResult = await getOAuthAdapter(
-        provider
-    ).exchangeCodeForProfile({ code, redirectUri });
+    const profileResult = await exchangeProfile(provider, code);
     if (!profileResult.ok) {
         return redirectToLoginWithError(
             'oauth_profile_invalid',
@@ -114,41 +60,13 @@ export async function GET(
         );
     }
 
-    const { db } = getDatabaseClient();
-    const userRepo = new DrizzleUserRepository(db);
-    const sessionRepo = new DrizzleSessionRepository(db);
-
+    const userRepo = new DrizzleUserRepository(getDatabaseClient().db);
     const existingOAuthUser = await userRepo.findByOAuthAccount(
         profileResult.profile.provider,
         profileResult.profile.providerAccountId
     );
     if (existingOAuthUser !== null) {
-        const secure = isSecureCookieEnv();
-        const { cookie } = await createAuthSession({
-            userId: existingOAuthUser.id,
-            sessions: sessionRepo,
-            now: new Date(),
-            secureCookie: secure,
-        });
-        // 세 서버 액션이 쓰는 것과 **같은** 2차 방어를 여기에도 건다. 예전에는
-        // 파싱 결과를 그대로 넘겨서, 문자열 검사를 통과한 `"/\t/evil.com"`이
-        // `https://evil.com/`으로 해석돼 나갔다(세션 쿠키를 심은 직후라 피싱
-        // 등급의 오픈 리디렉트였다).
-        const response = NextResponse.redirect(
-            new URL(
-                toSameOriginPath(sanitizeNextPath(stateResult.next)),
-                getOAuthRedirectBaseUrl()
-            )
-        );
-        response.cookies.set(applyAuthCookie(cookie));
-        response.cookies.set(
-            createAuthHintCookie({
-                maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
-                secure,
-            })
-        );
-        response.cookies.set(expiredOAuthStateCookie());
-        return response;
+        return redirectSignedIn(existingOAuthUser.id, stateResult.next);
     }
 
     const existingEmailUser = await userRepo.findByEmail(
@@ -162,43 +80,5 @@ export async function GET(
         );
     }
 
-    const pendingStore = createPendingOAuthSignupStoreFromEnv();
-    if (!pendingStore) {
-        return redirectToLoginWithError(
-            'oauth_unknown',
-            undefined,
-            stateResult.next
-        );
-    }
-
-    // `provider` was already narrowed to SupportedOAuthProvider by isOAuthProvider() above.
-    const token = await pendingStore
-        .save({
-            provider,
-            email: profileResult.profile.email,
-            providerAccountId: profileResult.profile.providerAccountId,
-            name: profileResult.profile.name,
-            avatarUrl: profileResult.profile.avatarUrl,
-            accessToken: profileResult.profile.accessToken ?? '',
-            refreshToken: profileResult.profile.refreshToken,
-            tokenExpiresAt: profileResult.profile.tokenExpiresAt?.toISOString(),
-            next: stateResult.next,
-            createdAt: new Date().toISOString(),
-        })
-        .catch(() => null);
-    if (!token)
-        return redirectToLoginWithError(
-            'oauth_unknown',
-            undefined,
-            stateResult.next
-        );
-
-    const consentUrl = new URL(
-        localePath(localeFromNext(stateResult.next), '/signup/oauth/consent'),
-        getOAuthRedirectBaseUrl()
-    );
-    consentUrl.searchParams.set('token', token);
-    const response = NextResponse.redirect(consentUrl);
-    response.cookies.set(expiredOAuthStateCookie());
-    return response;
+    return redirectToConsent(provider, profileResult.profile, stateResult.next);
 }

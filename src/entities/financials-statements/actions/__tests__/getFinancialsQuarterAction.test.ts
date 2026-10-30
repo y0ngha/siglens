@@ -3,12 +3,12 @@ const { mockGetFinancialsSnapshot } = vi.hoisted(() => ({
     mockGetFinancialsSnapshot: vi.fn(),
 }));
 
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: mockGetFinancialsSnapshot,
-    // Re-export the real limit constant value so the action's delegation can be
-    // asserted against the expected 8.
-    QUARTER_LIMIT: 8,
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: mockGetFinancialsSnapshot,
+    })
+);
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
@@ -40,12 +40,12 @@ describe('getFinancialsQuarterAction', () => {
         expect(mockGetFinancialsSnapshot).toHaveBeenCalledTimes(1);
     });
 
-    it('lib이 반환한 snapshot을 그대로 반환한다', async () => {
+    it('server가 반환한 snapshot을 그대로 반환한다', async () => {
         const result = await getFinancialsQuarterAction('TSLA');
         expect(result).toBe(SNAPSHOT);
     });
 
-    describe('lib이 throw할 때 (§0.7)', () => {
+    describe('getFinancialsSnapshot이 throw할 때', () => {
         it('예외를 전파하지 않고 EMPTY snapshot을 반환한다', async () => {
             const consoleSpy = vi
                 .spyOn(console, 'error')

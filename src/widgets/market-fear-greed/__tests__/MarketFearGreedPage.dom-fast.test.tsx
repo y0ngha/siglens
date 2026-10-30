@@ -81,7 +81,7 @@ describe('MarketFearGreedPage', () => {
             expect(getByText(FG.label.volatility)).toBeInTheDocument();
             expect(getByText(FG.label.safe_haven)).toBeInTheDocument();
             expect(
-                // 미국 시장은 로 갈린다(한국은 신용 스프레드).
+                // `junk_bond`는 시장별 이름을 쓴다 — 미국은 하이일드 수요(한국은 신용 스프레드).
                 getByText(FG.label.junk_bond_us!)
             ).toBeInTheDocument();
             expect(getByText(FG.label.breadth)).toBeInTheDocument();
@@ -145,13 +145,8 @@ describe('MarketFearGreedPage', () => {
     });
 
     /*
-     * 섹션 제목 톤 회귀 가드.
-     *
-     * 이 페이지의 h2 두 개는 원래 `text-sm font-medium text-secondary-300`이라
-     * 자기가 거느린 h3(14px/500)보다 **어두웠다** — 같은 크기·굵기에 더 흐린,
-     * 뒤집힌 위계였다. `HEADING_SECTION`으로 옮겨 18px/600으로 올렸는데,
-     * 이 톤을 고정하는 테스트가 없어 같은 드리프트가 조용히 돌아올 수 있었다.
-     * (`/market`에서 실제로 그렇게 재발했다.)
+     * 섹션 제목 톤 가드 — h2가 자기가 거느린 요인 h3보다 작거나 흐려지면 위계가
+     * 뒤집힌다. 리터럴 클래스로 돌아가는 드리프트를 토큰 값으로 막는다.
      */
     it('섹션 제목이 HEADING_SECTION 톤을 유지한다', () => {
         const { getAllByRole } = render(

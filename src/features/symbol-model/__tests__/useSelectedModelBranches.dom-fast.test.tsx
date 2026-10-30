@@ -1,9 +1,7 @@
 /**
- * Branch coverage tests for useSelectedModel — targets uncovered:
- * - L26: window undefined check in setSelectedModel
- * - L33: window undefined check in readFromStorage
- * - L57: DEFAULT_MODEL not in allowedModels fallback
- * - L59: allowedModels[0] ?? DEFAULT_MODEL fallback
+ * Branch coverage tests for useSelectedModel: hydration from storage, the
+ * fallback when the stored model is not allowed, and re-validation when the
+ * allowed list narrows (including lists without the default model).
  */
 
 import { renderHook, act } from '@testing-library/react';
@@ -22,10 +20,6 @@ describe('useSelectedModel — branch coverage', () => {
             'gemini-3.6-flash'
         );
 
-        // Includes DEEPSEEK_V4_1_FLASH_MODEL (the real DEFAULT_MODEL) so the mount-time
-        // re-validate effect (L52-61) doesn't race the hydration effect and clobber it —
-        // matches production, where tier restrictions are disabled and every model
-        // (including the default) is always in allowedModels.
         const allowedModels: ModelId[] = [
             'deepseek-v4.1-flash',
             'gemini-3.5-flash-lite',
@@ -108,8 +102,8 @@ describe('useSelectedModel — branch coverage', () => {
             });
         });
 
-        // DEFAULT_MODEL (deepseek-v4.1-flash) is not in the new allowedModels either,
-        // so this falls through to allowedModels[0] (L59), not DEFAULT_MODEL (L57).
+        // The default model (deepseek-v4.1-flash) is not in the new allowedModels
+        // either, so pickFallbackModel falls through to the first free model.
         expect(result.current[0]).toBe('gemini-3.5-flash-lite');
     });
 

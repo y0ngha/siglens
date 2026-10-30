@@ -1,302 +1,105 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import {
-    useCallback,
-    useEffect,
-    useId,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from 'react';
-import {
-    useRequestEmailVerification,
-    useVerifyEmail,
-} from '@/features/auth-email-verification/hooks/useEmailVerificationForms';
-import { useSignupForm } from '../hooks/useSignupForm';
-import { ErrorAlert } from '@/shared/ui/ErrorAlert';
-import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
-import { TextField } from '@/shared/ui/TextField';
-import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
-import { PasswordField } from '@/shared/ui/auth/PasswordField';
-import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
-import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { useCallback, useState } from 'react';
+import { useRestartOnHistoryRestore } from '../hooks/useRestartOnHistoryRestore';
+import { useSignupFlow } from '../hooks/useSignupFlow';
+import type { SignupPhase } from '../lib/signupPhase';
+import { CodeStepForm } from './CodeStepForm';
+import { DetailsStepForm } from './DetailsStepForm';
+import { EmailStepForm } from './EmailStepForm';
 
 interface SignupFormProps {
+    /** 가입 후 돌아갈 경로(검증 전 원문). */
     next?: string;
 }
 
-type Phase = 'email' | 'code' | 'details';
-
-/** 단계 제목은 카탈로그 키로 들고 있다 — 문자열이면 `/en/signup`에서 여기만 한국어다. */
-const STEP_LABEL_KEY: Record<Phase, string> = {
-    email: 'SignupForm.stepEmail',
-    code: 'SignupForm.stepCode',
-    details: 'SignupForm.stepDetails',
-};
-
-function derivePhase(submitted: boolean, verified: boolean): Phase {
-    if (verified) return 'details';
-    if (submitted) return 'code';
-    return 'email';
-}
-
 interface StepIndicatorProps {
-    phase: Phase;
+    phase: SignupPhase;
 }
 
 function StepIndicator({ phase }: StepIndicatorProps) {
     const t = useTranslations('features.auth-signup');
+    const label: Record<SignupPhase, string> = {
+        email: t('SignupForm.stepEmail'),
+        code: t('SignupForm.stepCode'),
+        details: t('SignupForm.stepDetails'),
+    };
     return (
         <p
             aria-live="polite"
             className="mb-4 text-xs font-medium text-secondary-400"
         >
-            {t(STEP_LABEL_KEY[phase])}
+            {label[phase]}
         </p>
     );
 }
 
-interface EmailEditButtonProps {
-    onClick: () => void;
-}
-
-function EmailEditButton({ onClick }: EmailEditButtonProps) {
-    const t = useTranslations('features.auth-signup');
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className="rounded font-medium text-primary-400 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
-        >
-            {t('SignupForm.f38cb1')}
-        </button>
-    );
-}
-
+/**
+ * 회원가입 흐름의 뼈대. 다시 시작은 `SignupFormFlow`의 key를 바꿔 세 액션
+ * 상태와 입력을 한꺼번에 버리는 방식이다 — 액션 상태는 되돌릴 API가 없다.
+ * 「이메일 수정」으로 다시 시작할 때만 이메일 입력에 포커스를 준다(뒤로가기
+ * 복원은 사용자가 누른 컨트롤이 없어 포커스를 옮기지 않는다).
+ */
 export function SignupForm({ next }: SignupFormProps) {
-    const [resetKey, setResetKey] = useState(0);
+    const [flow, setFlow] = useState({ key: 0, focusEmail: false });
 
-    const handleRestart = useCallback((): void => {
-        setResetKey(current => current + 1);
+    const restart = useCallback((): void => {
+        setFlow(current => ({ key: current.key + 1, focusEmail: false }));
     }, []);
 
-    // 브라우저 bfcache로 페이지가 복원될 경우 1단계로 초기화
-    useEffect(() => {
-        const handlePageShow = (event: PageTransitionEvent): void => {
-            if (event.persisted) {
-                handleRestart();
-            }
-        };
-        window.addEventListener('pageshow', handlePageShow);
-        return () => window.removeEventListener('pageshow', handlePageShow);
-    }, [handleRestart]);
+    const editEmail = useCallback((): void => {
+        setFlow(current => ({ key: current.key + 1, focusEmail: true }));
+    }, []);
 
-    // Next.js router cache로 컴포넌트가 메모리에 유지된 채 뒤로가기가 발생하면
-    // popstate 이벤트로 감지해 1단계로 초기화
-    useEffect(() => {
-        window.addEventListener('popstate', handleRestart);
-        return () => window.removeEventListener('popstate', handleRestart);
-    }, [handleRestart]);
+    useRestartOnHistoryRestore(restart);
 
     return (
-        <SignupFormFlow key={resetKey} next={next} onRestart={handleRestart} />
+        <SignupFormFlow
+            key={flow.key}
+            next={next}
+            focusEmailOnMount={flow.focusEmail}
+            onRestart={restart}
+            onEditEmail={editEmail}
+        />
     );
 }
 
 interface SignupFormFlowProps extends SignupFormProps {
+    focusEmailOnMount: boolean;
     onRestart: () => void;
+    onEditEmail: () => void;
 }
 
-function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
-    const t = useTranslations('features.auth-signup');
-    // 에러 코드 → 화면 문구. 코드가 표에 없을 때만 원문(`useDescribeAuthError` 참고).
-    const describe = useDescribeAuthError();
-    const [email, setEmail] = useState('');
-    const [name, setName] = useState('');
-    const [password, setPassword] = useState('');
-    const [privacyChecked, setPrivacyChecked] = useState(false);
-    const [tosChecked, setTosChecked] = useState(false);
-    const hintId = useId();
-
-    const [emailState, emailFormAction] = useRequestEmailVerification();
-    const [codeState, codeFormAction] = useVerifyEmail();
-    const [signupState, signupFormAction] = useSignupForm();
-
-    // useActionState 결과에서 직접 derive — set-state-in-effect 회피.
-    const phase = derivePhase(emailState.submitted, codeState.verified);
-
-    // Next.js router cache가 useActionState를 이전 세션 값으로 hydrate한 채
-    // 컴포넌트를 리마운트할 수 있다. 마운트 시점에 이미 non-initial 상태라면
-    // 뒤로가기로 복원된 것이므로 paint 전에 1단계로 리셋한다.
-    const restoredFromCacheRef = useRef(
-        emailState.submitted || codeState.verified
-    );
-    useLayoutEffect(() => {
-        if (restoredFromCacheRef.current) {
-            onRestart();
-        }
-    }, [onRestart]);
-
-    const signupError = signupState.error;
-    const signupEmailError =
-        signupError?.field === 'email' ? describe(signupError) : undefined;
-    const signupPasswordError =
-        signupError?.field === 'password' ? describe(signupError) : undefined;
-    const consentErrorMessage =
-        signupError?.code === 'consent_required'
-            ? describe(signupError)
-            : undefined;
-    const signupFormError =
-        signupError &&
-        !signupError.field &&
-        signupError.code !== 'consent_required'
-            ? describe(signupError)
-            : null;
+function SignupFormFlow({
+    next,
+    focusEmailOnMount,
+    onRestart,
+    onEditEmail,
+}: SignupFormFlowProps) {
+    const { phase, email, emailStep, codeStep, detailsStep } = useSignupFlow({
+        onRestart,
+        focusEmailOnMount,
+    });
 
     return (
         <div className="space-y-4">
             <StepIndicator phase={phase} />
-            {phase === 'email' && (
-                <form action={emailFormAction} className="space-y-4" noValidate>
-                    {emailState.error ? (
-                        <ErrorAlert
-                            message={describe(emailState.error) ?? ''}
-                        />
-                    ) : null}
-                    <TextField
-                        id="signup-email"
-                        name="email"
-                        label={t('SignupForm.3c3776')}
-                        type="email"
-                        autoComplete="email"
-                        required
-                        defaultValue={email}
-                        onChange={event => setEmail(event.target.value.trim())}
-                    />
-                    <SubmitButton
-                        label={t('SignupForm.f4a9ff')}
-                        pendingLabel={t('SignupForm.8321f5')}
-                    />
-                </form>
-            )}
+            {phase === 'email' && <EmailStepForm step={emailStep} />}
             {phase === 'code' && (
-                <form action={codeFormAction} className="space-y-4" noValidate>
-                    <input type="hidden" name="email" value={email} />
-                    <p className="text-sm text-secondary-300">
-                        {t.rich('SignupForm.d50482', {
-                            v0: email,
-                            email: chunks => (
-                                <span className="font-mono break-all text-secondary-100">
-                                    {chunks}
-                                </span>
-                            ),
-                        })}{' '}
-                        <EmailEditButton onClick={onRestart} />
-                    </p>
-                    {codeState.error?.code === 'redis_unavailable' ||
-                    codeState.error?.code === 'email_already_exists' ? (
-                        <ErrorAlert message={describe(codeState.error) ?? ''} />
-                    ) : null}
-                    <TextField
-                        id="signup-code"
-                        name="code"
-                        label={t('SignupForm.d89be9')}
-                        type="text"
-                        autoComplete="one-time-code"
-                        required
-                        placeholder={t('SignupForm.403732')}
-                        error={
-                            codeState.error?.code !== 'redis_unavailable' &&
-                            codeState.error?.code !== 'email_already_exists'
-                                ? describe(codeState.error)
-                                : undefined
-                        }
-                    />
-                    <SubmitButton
-                        label={t('SignupForm.7b5f5a')}
-                        pendingLabel={t('SignupForm.33c1f7')}
-                    />
-                </form>
+                <CodeStepForm
+                    step={codeStep}
+                    email={email}
+                    onEditEmail={onEditEmail}
+                />
             )}
             {phase === 'details' && (
-                <form
-                    action={signupFormAction}
-                    className="space-y-4"
-                    noValidate
-                >
-                    <input type="hidden" name="email" value={email} />
-                    {next ? (
-                        <input type="hidden" name="next" value={next} />
-                    ) : null}
-                    <input
-                        type="hidden"
-                        name="agreed_privacy"
-                        value={privacyChecked ? 'true' : 'false'}
-                    />
-                    <input
-                        type="hidden"
-                        name="agreed_tos"
-                        value={tosChecked ? 'true' : 'false'}
-                    />
-                    {signupFormError ? (
-                        <ErrorAlert message={signupFormError} />
-                    ) : null}
-                    {signupEmailError ? (
-                        <ErrorAlert message={signupEmailError} />
-                    ) : null}
-                    <p className="text-sm text-secondary-300">
-                        <span
-                            className="text-ui-success-text"
-                            aria-hidden="true"
-                        >
-                            ✓
-                        </span>{' '}
-                        {t('SignupForm.0d75cf')}{' '}
-                        <span className="font-mono break-all text-secondary-100">
-                            {email}
-                        </span>{' '}
-                        <EmailEditButton onClick={onRestart} />
-                    </p>
-                    <TextField
-                        id="signup-name"
-                        name="name"
-                        label={t('SignupForm.e4d212')}
-                        type="text"
-                        autoComplete="name"
-                        placeholder={t('SignupForm.4e96eb')}
-                        value={name}
-                        onChange={event => setName(event.target.value)}
-                    />
-                    <PasswordField
-                        id="signup-password"
-                        name="password"
-                        label={t('SignupForm.819738')}
-                        autoComplete="new-password"
-                        required
-                        value={password}
-                        error={signupPasswordError}
-                        describedById={hintId}
-                        onChange={setPassword}
-                        hint={
-                            <PasswordStrengthHint
-                                password={password}
-                                descriptionId={hintId}
-                            />
-                        }
-                    />
-                    <ConsentCheckboxGroup
-                        privacyChecked={privacyChecked}
-                        tosChecked={tosChecked}
-                        onPrivacyChange={setPrivacyChecked}
-                        onTosChange={setTosChecked}
-                        error={consentErrorMessage}
-                    />
-                    <SubmitButton
-                        label={t('SignupForm.ecb4cc')}
-                        pendingLabel={t('SignupForm.d01150')}
-                    />
-                </form>
+                <DetailsStepForm
+                    step={detailsStep}
+                    email={email}
+                    next={next}
+                    onEditEmail={onEditEmail}
+                />
             )}
         </div>
     );

@@ -48,6 +48,7 @@ import { AGENT_BUSY_LOG } from '../busyLog';
 import { createFollowUpTextFilter, followUpLine } from '../followUps';
 import { guestSubject } from '../guestSubject';
 import { acquireTurnLock } from '../turnLock';
+import { isSendableMessage } from '@/features/agent-chat/lib/messageLimits';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -76,7 +77,6 @@ const SSE_HEADERS: HeadersInit = {
     'Cache-Control': 'no-cache, no-store, no-transform',
     'X-Accel-Buffering': 'no',
 };
-const MESSAGE_MAX_CHARS = 4_000;
 /**
  * Answer length cap per provider call. Core's default (4,096) cut long
  * multi-symbol summaries mid-sentence; DeepSeek accepts far more, and a turn
@@ -173,11 +173,7 @@ function parseBody(raw: unknown): Body | null {
         return null;
     const action: Action = (b.action as Action | undefined) ?? 'send';
     const message = typeof b.message === 'string' ? b.message.trim() : '';
-    if (
-        action !== 'regenerate' &&
-        (message.length === 0 || message.length > MESSAGE_MAX_CHARS)
-    )
-        return null;
+    if (action !== 'regenerate' && !isSendableMessage(message)) return null;
     // editSeq must be a positive integer — 0/negative would delete the whole
     // transcript in `deleteFromSeq` (`seq >= 0` matches every row).
     if (

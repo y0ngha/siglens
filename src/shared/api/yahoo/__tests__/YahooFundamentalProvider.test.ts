@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 /**
  * [회귀] 이 클래스에는 테스트 파일이 아예 없었다 — `toFmpShape`의 `rawPayload`와
  * `getEarningsReport`의 2필드 투영에서 `symbol`과 `earningsDate`를 맞바꿔도
- * yahoo + fmp 스위트 458건이 전부 통과했다(감사 라운드 12).
+ * yahoo + fmp 스위트 458건이 전부 통과했다.
  *
  * 두 값이 가는 곳이 다르다: `getEarningsReport`는 core의 `runFundamentalAnalysis`가
  * 그대로 받아 펀더멘털 AI 프롬프트에 싣고, `rawPayload`는 `earnings_reports`의

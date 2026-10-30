@@ -1,13 +1,17 @@
+/**
+ * 한국 거래계획 보고서 섹션(DART D005).
+ */
 import { useTranslations } from 'next-intl';
 import type { KrTradingPlan } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { formatInteger } from '../utils/flowFormat';
-import { krDisclosureKey, newestKrRows } from '../utils/krDisclosures';
+import { newestKrRows } from '../utils/krDisclosures';
+import { OmittedNote } from '../ui/notes/OmittedNote';
+import { TradingPlanList } from '../ui/kr/TradingPlanList';
 import { CollectingNotice } from './CollectingNotice';
-import { DartFilingLink } from './DartFilingLink';
 
 const HEADING_ID = 'flows-kr-trading-plans-heading';
 
@@ -17,6 +21,7 @@ interface KrTradingPlansSectionProps {
     readonly collecting: boolean;
 }
 
+/** 수집 중 → 보고 없음 → 목록 순으로 첫 해당 분기만 그린다. */
 function TradingPlansBody({ plans, collecting }: KrTradingPlansSectionProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
@@ -31,39 +36,13 @@ function TradingPlansBody({ plans, collecting }: KrTradingPlansSectionProps) {
     }
     return (
         <>
-            <ul className="space-y-2">
-                {rows.map(plan => (
-                    <li
-                        key={krDisclosureKey(plan)}
-                        className={cn(
-                            SURFACE_NESTED,
-                            'flex flex-wrap items-start justify-between gap-2 p-3'
-                        )}
-                    >
-                        <div className="min-w-0">
-                            <p className="text-sm font-medium break-words text-secondary-100">
-                                {plan.reporter}
-                            </p>
-                            <p className="text-xs break-words text-secondary-300">
-                                {plan.title}
-                            </p>
-                            <p className="mt-1 font-mono text-xs text-secondary-400 tabular-nums">
-                                {plan.receiptDate}
-                            </p>
-                        </div>
-                        <DartFilingLink
-                            url={plan.url}
-                            reporter={plan.reporter}
-                        />
-                    </li>
-                ))}
-            </ul>
+            <TradingPlanList plans={rows} />
             {omittedCount > 0 && (
-                <p className="mt-2 text-xs text-secondary-400">
+                <OmittedNote>
                     {t('kr.omitted', {
                         count: formatInteger(omittedCount, locale),
                     })}
-                </p>
+                </OmittedNote>
             )}
         </>
     );
