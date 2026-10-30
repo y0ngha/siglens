@@ -18,7 +18,7 @@ import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataP
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';

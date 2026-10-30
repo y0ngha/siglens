@@ -12,7 +12,7 @@ import {
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
-import { loadSymbolNames } from '@/entities/ticker/lib/loadSymbolNames';
+import { loadSymbolNames } from '@/entities/ticker/server/loadSymbolNames';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {

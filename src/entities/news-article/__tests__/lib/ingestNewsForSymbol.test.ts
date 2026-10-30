@@ -13,7 +13,7 @@ vi.mock('../../lib/getNewsClient', () => ({
 
 // getAssetInfo is called by ingestNewsForSymbol (via resolveMarketProfile) to
 // resolve news source per asset. Default to equity (no marketProfile).
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn().mockResolvedValue({ symbol: 'AAPL', name: 'Apple' }),
 }));
 
@@ -22,7 +22,7 @@ import type { NewsItem } from '@y0ngha/siglens-core';
 import { ingestNewsForSymbol } from '../../lib/ingestNewsForSymbol';
 import { getNewsClient } from '../../lib/getNewsClient';
 import { markFetched } from '../../lib/newsRefreshFlag';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import type { DrizzleNewsRepository } from '../../api';
 
 const mockGetNewsClient = getNewsClient as Mock;

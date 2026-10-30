@@ -125,7 +125,7 @@ vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
 }));
 vi.mock('@/entities/ticker/lib/ticker', () => ({
@@ -160,7 +160,7 @@ vi.mock(
 
 // fundamental 페이지 본문이 import한다. generateMetadata는 2026-10-01부터 호출하지 않는다
 // (항상 noindex라 profile 게이트가 사라졌다).
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: mockGetProfileResilient,
 }));
 

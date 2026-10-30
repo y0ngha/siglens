@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { CongressDegraded } from '@/app/[locale]/[symbol]/congress/CongressDegraded';
 import { CongressTradesTable } from '@/widgets/congress/CongressTradesTable';
 import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
@@ -18,7 +18,7 @@ import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotF
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';

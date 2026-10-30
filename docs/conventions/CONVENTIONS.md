@@ -767,7 +767,7 @@ files (Redis key layouts) get a block comment naming their origin.
 
 ```typescript
 // ✅ shared/config/marketProfile/usEquity.ts
-/** Mirrors `US_EXCHANGES` in `entities/ticker/lib/fmpTickerApi.ts`; change both together. */
+/** Mirrors `US_EXCHANGES` in `entities/ticker/server/fmpTickerApi.ts`; change both together. */
 const US_EXCHANGES: ReadonlySet<string> = new Set(['NYSE', 'NASDAQ' /* ... */]);
 ```
 

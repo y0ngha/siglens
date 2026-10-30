@@ -40,7 +40,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 

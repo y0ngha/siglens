@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { FlowsDegraded } from '@/app/[locale]/[symbol]/flows/FlowsDegraded';
 import { InvestorFlowsContent } from '@/widgets/investor-flows/InvestorFlowsContent';
 import { InvestorFlowsEmpty } from '@/widgets/investor-flows/InvestorFlowsEmpty';
@@ -21,7 +21,7 @@ import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';

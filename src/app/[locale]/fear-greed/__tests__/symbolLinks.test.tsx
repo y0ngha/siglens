@@ -9,7 +9,7 @@ const { mockLoadNames, mockShortenDb } = vi.hoisted(() => ({
     mockLoadNames: vi.fn(),
     mockShortenDb: vi.fn(async () => undefined),
 }));
-vi.mock('@/entities/ticker/lib/loadSymbolNames', () => ({
+vi.mock('@/entities/ticker/server/loadSymbolNames', () => ({
     loadSymbolNames: mockLoadNames,
 }));
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({

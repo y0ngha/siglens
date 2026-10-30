@@ -22,13 +22,13 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
@@ -88,8 +88,8 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);

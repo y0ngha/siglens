@@ -33,7 +33,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -122,7 +122,7 @@ import NewsPage, { generateMetadata } from '@/app/[locale]/[symbol]/news/page';
 import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);

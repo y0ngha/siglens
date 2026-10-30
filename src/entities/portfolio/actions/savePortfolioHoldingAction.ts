@@ -3,7 +3,7 @@
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import {
     validateHoldingInput,

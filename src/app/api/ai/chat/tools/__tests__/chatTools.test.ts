@@ -65,7 +65,7 @@ vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => e2eState.on }));
 const correctKrSymbolSuffix = vi.hoisted(() =>
     vi.fn(async (s: string) => s.toUpperCase())
 );
-vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     correctKrSymbolSuffix,
 }));
 

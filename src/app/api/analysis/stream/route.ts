@@ -14,7 +14,7 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
 import { logActionError } from '@/shared/lib/logActionError';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {

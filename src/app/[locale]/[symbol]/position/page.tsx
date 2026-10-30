@@ -20,7 +20,7 @@ import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';

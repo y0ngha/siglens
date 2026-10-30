@@ -8,12 +8,12 @@ import {
 } from '@/shared/db/contentTranslationFields';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { DrizzleProfileDescriptionTranslationRepository } from '@/entities/ticker/api';
-import { translateCompanyDescription } from '@/entities/ticker/lib/koreanTranslator';
-import { tryReadTranslatorConfig } from '@/entities/ticker/lib/config';
+import { translateCompanyDescription } from '@/entities/ticker/server/koreanTranslator';
+import { tryReadTranslatorConfig } from '@/entities/ticker/server/config';
 import {
     hasDescriptionTranslationFailed,
     markDescriptionTranslationFailed,
-} from '@/entities/ticker/lib/descriptionTranslationFailure';
+} from '@/entities/ticker/server/descriptionTranslationFailure';
 import { createSingleFlight } from '@/shared/lib/singleFlight';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import type {

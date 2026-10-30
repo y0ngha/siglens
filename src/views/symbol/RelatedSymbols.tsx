@@ -6,7 +6,7 @@ import {
     relatedSymbolsFor,
     type RelatedSymbol,
 } from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { pickAssetName } from '@/entities/ticker/lib/ticker';

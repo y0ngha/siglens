@@ -21,7 +21,7 @@ vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
-vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     lookupTickerDisplayNames: (...args: unknown[]) =>
         lookupTickerDisplayNames(...args),
 }));

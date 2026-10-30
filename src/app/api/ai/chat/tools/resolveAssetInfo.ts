@@ -1,5 +1,5 @@
 import 'server-only';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import type { AssetInfo } from '@/shared/lib/types';
 
 /**

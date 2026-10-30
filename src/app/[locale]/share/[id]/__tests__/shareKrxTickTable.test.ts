@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const resolveKrxTickTableForDisplay = vi.fn();
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTableForDisplay: (symbol: string) =>
         resolveKrxTickTableForDisplay(symbol),
 }));

@@ -32,13 +32,13 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -81,8 +81,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CongressPage from '@/app/[locale]/[symbol]/congress/page';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';

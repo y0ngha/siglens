@@ -128,7 +128,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {}, sql: {} }),
 }));
 
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
 }));
 

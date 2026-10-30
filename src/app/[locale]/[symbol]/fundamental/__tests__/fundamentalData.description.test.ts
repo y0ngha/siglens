@@ -22,7 +22,7 @@ const {
     translatorConfig: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker/lib/config', () => ({
+vi.mock('@/entities/ticker/server/config', () => ({
     tryReadTranslatorConfig: () => translatorConfig(),
 }));
 
@@ -35,10 +35,10 @@ vi.mock('@/entities/ticker/api', () => ({
         upsert = upsert;
     },
 }));
-vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
+vi.mock('@/entities/ticker/server/koreanTranslator', () => ({
     translateCompanyDescription: (d: string) => translate(d),
 }));
-vi.mock('@/entities/ticker/lib/descriptionTranslationFailure', () => ({
+vi.mock('@/entities/ticker/server/descriptionTranslationFailure', () => ({
     hasDescriptionTranslationFailed: (s: string) => hasFailed(s),
     markDescriptionTranslationFailed: (s: string) => markFailed(s),
 }));

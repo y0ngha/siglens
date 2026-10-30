@@ -52,7 +52,7 @@ vi.mock('@/entities/seo-snapshot/api', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: profile,
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({

@@ -29,10 +29,10 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -81,8 +81,8 @@ import {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/congress/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import type { MockedFunction } from 'vitest';

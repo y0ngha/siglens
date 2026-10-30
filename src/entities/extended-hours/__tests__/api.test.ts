@@ -1,6 +1,6 @@
 vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: vi.fn() }));
 vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet: vi.fn() }));
-vi.mock('@/entities/ticker/lib/getAssetInfoStatic', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoStatic', () => ({
     getAssetInfoStatic: vi.fn(),
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
@@ -16,7 +16,7 @@ import type { ExtendedHoursQuote } from '@/entities/extended-hours/model';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { getAssetInfoStatic } from '@/entities/ticker/lib/getAssetInfoStatic';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import {
     EXTENDED_QUOTE_CACHE_TTL_SECONDS,

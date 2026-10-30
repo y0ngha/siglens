@@ -29,8 +29,8 @@ import {
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { loadDilutionHeadingBadge } from '@/app/[locale]/[symbol]/dilutionHeadingBadge';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { resolveKrxTickTableForDisplay } from '@/entities/ticker/lib/resolveKrxTickTable';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { resolveKrxTickTableForDisplay } from '@/entities/ticker/server/resolveKrxTickTable';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
     getQuantizedBarsStatic,

@@ -39,7 +39,7 @@ import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotF
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
     ALWAYS_NOINDEX_TAB_ROBOTS,
@@ -49,7 +49,7 @@ import {
 } from '@/shared/lib/seo';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { FundamentalDegraded } from './FundamentalDegraded';
 import { loadProfileDescription } from './profileDescription';

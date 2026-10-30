@@ -79,7 +79,7 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 
@@ -343,7 +343,7 @@ import {
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';

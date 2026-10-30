@@ -3,7 +3,7 @@ import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financ
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
@@ -21,7 +21,7 @@ import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotF
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';

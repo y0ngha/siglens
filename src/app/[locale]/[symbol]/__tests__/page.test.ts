@@ -57,7 +57,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock(
@@ -153,7 +153,7 @@ import {
     default as SymbolPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekAnalysisCache,

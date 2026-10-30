@@ -1,5 +1,5 @@
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { getAssetInfoStatic } from './getAssetInfoStatic';
+import { getAssetInfoStatic } from '../server/getAssetInfoStatic';
 import { marketProfileForAssetInfo } from './resolveMarketProfile';
 
 /**

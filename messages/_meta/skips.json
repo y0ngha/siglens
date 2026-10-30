@@ -1140,43 +1140,43 @@
         "text": "지"
     },
     {
-        "file": "src/entities/ticker/lib/koreanTranslator.ts",
+        "file": "src/entities/ticker/server/koreanTranslator.ts",
         "line": 10,
         "reason": "ai-prompt",
         "text": "`Translate these English company names to Korean (한국에서 통용되는 한국어 이름 또는 음역). Retur"
     },
     {
-        "file": "src/entities/ticker/lib/loadSymbolNames.ts",
+        "file": "src/entities/ticker/server/loadSymbolNames.ts",
         "line": 86,
         "reason": "developer-diagnostic",
         "text": "[symbols] 이름을 하나도 읽지 못했다"
     },
     {
-        "file": "src/entities/ticker/lib/loadSymbolNames.ts",
+        "file": "src/entities/ticker/server/loadSymbolNames.ts",
         "line": 90,
         "reason": "developer-diagnostic",
         "text": "[symbols] 이름 조회 실패 — 티커만 표시한다"
     },
     {
-        "file": "src/entities/ticker/lib/reconcileUsTickerNames.ts",
+        "file": "src/entities/ticker/server/reconcileUsTickerNames.ts",
         "line": 236,
         "reason": "developer-diagnostic",
         "text": "`[ticker-names] renamed ${c.symbol}: \"${c.oldName}\" → \"${c.newName}\" (한글: ${oldK"
     },
     {
-        "file": "src/entities/ticker/lib/searchTickerQuery.ts",
+        "file": "src/entities/ticker/server/searchTickerQuery.ts",
         "line": 22,
         "reason": "e2e-stub",
         "text": "애플"
     },
     {
-        "file": "src/entities/ticker/lib/searchTickerQuery.ts",
+        "file": "src/entities/ticker/server/searchTickerQuery.ts",
         "line": 41,
         "reason": "e2e-stub",
         "text": "비트코인"
     },
     {
-        "file": "src/entities/ticker/lib/searchTickerQuery.ts",
+        "file": "src/entities/ticker/server/searchTickerQuery.ts",
         "line": 49,
         "reason": "e2e-stub",
         "text": "이더리움"

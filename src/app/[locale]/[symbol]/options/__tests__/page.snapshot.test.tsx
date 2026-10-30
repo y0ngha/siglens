@@ -32,7 +32,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -94,7 +94,7 @@ import type { ReactNode } from 'react';
 import OptionsPage from '@/app/[locale]/[symbol]/options/page';
 import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
