@@ -1,11 +1,12 @@
 import 'server-only';
 import type { MarketDataProvider, PositionBucket } from '@y0ngha/siglens-core';
-import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { logActionError } from '@/shared/lib/logActionError';
-import { getDatabaseClient } from '@/shared/db/client';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
+import { getDatabaseClient } from '@/shared/db/client';
 import { resolvePositionBucket } from '@/shared/lib/byokGate';
+import { logActionError } from '@/shared/lib/logActionError';
+import { DrizzlePortfolioRepository } from '../api';
 
+/** {@link resolveHoldingPositionBucket}의 인자. 분석 SSE 라우트·에이전트 도구·종합 분석 러너가 같은 모양으로 넘긴다. */
 export interface ResolveHoldingPositionBucketInput {
     readonly userId: string | null;
     readonly tier: Parameters<typeof resolvePositionBucket>[0];
