@@ -115,8 +115,9 @@ export const ORPHAN_BLOB_MIN_AGE_MS = 5 * MS_PER_MINUTE;
  *
  * Shared by both `analysis_history` writers — the SSE route
  * (`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`) and the SEO
- * prewarm seams (`entities/analysis/api.ts`'s `prewarmTechnical`/`prewarmOverall`) — so the
- * guard lives in exactly one place instead of being copy-pasted per caller.
+ * prewarm seams (`entities/analysis/api.ts`'s `prewarmTechnical`/
+ * `prewarmOverall`) — so the guard lives in exactly one place instead of being
+ * copy-pasted per caller.
  * Lives here (not in the app-layer route) because `entities/analysis/api.ts`
  * cannot import from `app/` (FSD dependency direction), while both callers
  * can already import this repository module directly.
