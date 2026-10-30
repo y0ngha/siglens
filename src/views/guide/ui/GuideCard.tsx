@@ -1,3 +1,4 @@
+/** 가이드 항목 카드(목록 한 칸). */
 import type { GuideEntrySummary } from '@/entities/guide/types';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';

@@ -15,6 +15,7 @@ export type GuideDemoCategory =
 /** 봉 색을 방향이 아니라 의미로 덮어쓸 때 쓴다 (엘더 임펄스: 녹/청/적). */
 export type DemoBarTone = 'bull' | 'bear' | 'neutral';
 
+/** 데모 봉 하나. core 지표 계산(`toCoreBars`)에도 그대로 넘어간다. `time`은 단조 증가만 의미가 있다(장중 데모만 실제 시각을 쓴다 — core VWAP이 날짜가 바뀌면 누적을 끊는다). */
 export interface DemoBar {
     time: number;
     open: number;
@@ -28,6 +29,7 @@ export interface DemoBar {
 /** 선·밴드에 쓰는 색 슬롯. a/b/c는 구분용 3색, bull/bear는 방향색. */
 export type DemoSeriesTone = 'a' | 'b' | 'c' | 'bull' | 'bear';
 
+/** 추세선·수평선의 의미. 색(`ROLE_STROKE`)과 넥라인의 점선 여부가 여기서 정해져 데모 정의는 색을 직접 고르지 않는다. */
 export type DemoLineRole =
     | 'support'
     | 'resistance'
@@ -35,6 +37,7 @@ export type DemoLineRole =
     | 'trend'
     | 'neutral';
 
+/** 가격 영역에 얹는 도형 한 개. 배열 순서가 그리는 순서이자 라벨 자리 우선순위다(`layoutOverlayLabels`). */
 export type DemoOverlay =
     | {
           kind: 'line';
@@ -91,12 +94,14 @@ export type DemoOverlay =
           label?: string;
       };
 
+/** 보조 패널 안의 선 하나. `label`이 빈 문자열이면 범례에서 빠진다. */
 export interface DemoPaneLine {
     values: readonly (number | null)[];
     label: string;
     tone?: DemoSeriesTone;
 }
 
+/** 가격 차트 아래 보조 패널 하나. `range`는 RSI처럼 범위가 고정된 지표용이고, 없으면 값에서 범위를 잡는다(`paneDomain`). */
 export interface DemoPane {
     label: string;
     height?: number;
@@ -108,6 +113,7 @@ export interface DemoPane {
     range?: readonly [number, number];
 }
 
+/** 데모 차트 한 장의 입력. 데모 생성 함수가 만들고 `GuideDemoChart`가 계산 없이 받아 그린다. */
 export interface GuideDemo {
     bars: readonly DemoBar[];
     overlays?: readonly DemoOverlay[];

@@ -1,4 +1,8 @@
-import type { ContactFormError, ContactFormField } from '@/shared/lib/types';
+import type {
+    ContactFormError,
+    ContactFormField,
+    ContactFormState,
+} from '@/shared/lib/types';
 import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
@@ -32,6 +36,7 @@ function message(
     return t(CONTACT_ERROR_KEY[code], valuesFor(code));
 }
 
+/** `field`에 걸린 오류의 번역 문구. 다른 필드 오류거나 오류가 없으면 `undefined`. */
 export function getFieldError(
     error: ContactFormError | null,
     field: ContactFormField,
@@ -40,6 +45,7 @@ export function getFieldError(
     return error?.field === field ? message(error.code, t) : undefined;
 }
 
+/** 특정 필드에 묶이지 않은 폼 단위 오류(전송 실패)의 번역 문구 — 폼 상단 배너용. */
 export function getSubmissionError(
     error: ContactFormError | null,
     t: ContactErrorTranslator
@@ -47,4 +53,17 @@ export function getSubmissionError(
     return error && error.field === undefined
         ? message(error.code, t)
         : undefined;
+}
+
+/**
+ * 이메일 입력(비제어)의 기본값. 액션이 오류로 돌아온 뒤에는 사용자가 친 값을
+ * 그대로 되살려야 한다 — 로그인 이메일로 덮으면 입력을 지운다. 첫 렌더에는
+ * 로그인 사용자의 이메일을 미리 채우고, 비로그인이면 빈 칸이다.
+ */
+export function resolveEmailDefault(
+    state: ContactFormState,
+    signedInEmail: string | undefined
+): string {
+    if (state.error) return state.values.email;
+    return signedInEmail ?? '';
 }

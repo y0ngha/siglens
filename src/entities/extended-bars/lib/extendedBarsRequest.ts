@@ -8,12 +8,14 @@ import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
 /** `SYMBOL_EDGE_RE`가 허용하는 최대 길이 — 정규식 전에 길이부터 본다(SERVER.md#SA-7). */
 const SYMBOL_MAX_LENGTH = 16;
 
+/** 검증을 통과한 확장 봉 요청 — Server Action이 티어 게이트와 `loadExtendedBars`에 그대로 넘긴다. */
 export interface ExtendedBarsRequest {
     /** 대문자로 정규화한 앱 심볼. */
     ticker: string;
     timeframe: ExtendedBarTimeframe;
 }
 
+/** 문자열이 아니거나 길이·형식이 어긋나면 `null`, 아니면 대문자 심볼. */
 function normalizeSymbol(value: unknown): string | null {
     if (typeof value !== 'string' || value.length > SYMBOL_MAX_LENGTH) {
         return null;

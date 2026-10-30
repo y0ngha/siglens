@@ -114,8 +114,8 @@ export function __resetKrHorizonWarnings(): void {
  *
  * core에 상수를 추가하지 않고 siglens에 두는 이유: `MarketSessionSpec`은 순수
  * 데이터 유니온(`kind`/`timeZone`/`openMinute`/`closeMinute`/`weekendDays`/
- * `closeMinuteFor`)이고, 이 값은 계산식이 아니라 시장 메타데이터다. `SCOPE.md §0`이
- * core로 보내는 트리거(지표 계산식·신호 임계값·프롬프트·캐시 정책)에 해당하지 않는다.
+ * `closeMinuteFor`)이고, 이 값은 계산식이 아니라 시장 메타데이터다. core로 보내야 하는
+ * 작업(지표 계산식·신호 임계값·프롬프트·캐시 정책)에 해당하지 않는다.
  *
  * `getCachedMarketDataProvider`가 `US_EQUITY_SESSION`/`CRYPTO_SESSION`과 마찬가지로
  * **참조 동일성**으로 이 값을 분기하므로 반드시 모듈 레벨 상수여야 한다 — 호출마다

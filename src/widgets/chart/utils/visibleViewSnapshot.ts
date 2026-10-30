@@ -1,3 +1,7 @@
+/**
+ * 데이터 갱신 전후로 사용자가 보던 시간축 범위를 시각 기준으로 저장·복원하는 유틸.
+ */
+
 import type { ITimeScaleApi, Time } from 'lightweight-charts';
 
 /**

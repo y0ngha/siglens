@@ -138,7 +138,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders the value chip in ₩ (not $) for a KR-equity holding — this chip lives in the header, so every KR tab was showing a dollar sign', () => {
+    it('renders the value chip in ₩ (not $) for a KR-equity holding', () => {
         setCurrentUser(USER);
         setHoldings({ holdings: [KR_HOLDING] });
         render(<PortfolioChipMounted symbol="005930.KS" />);
@@ -270,7 +270,9 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         ).toBeInTheDocument();
         // Dialog stays open and the save button resets (not stuck submitting).
         expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '저장' })).toBeEnabled();
+        expect(
+            screen.getByRole('button', { name: '저장' })
+        ).not.toHaveAttribute('aria-disabled');
     });
 
     it('closes the popover on Escape', async () => {
@@ -336,13 +338,9 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         expect(screen.getByLabelText('평단')).toHaveFocus();
     });
 
-    // PortfolioChip now owns the useIsMobileViewport() read (hoisted from
-    // PortfolioChipPopover — see PortfolioChip.tsx JSDoc for why: the popover
-    // is next/dynamic({ssr:false}) and only mounts on open, so if it read the
-    // hook itself, every open would start unresolved and remount the panel
-    // once it settled, disarming the focus trap). This test exercises that
-    // mobile branch, which the file-wide desktop mock previously skipped
-    // entirely.
+    // PortfolioChip owns the useIsMobileViewport() read and passes it down
+    // (see PortfolioChip.tsx JSDoc). This exercises the mobile branch end to
+    // end; the rest of the file runs on the desktop viewport.
     it('모바일 뷰포트에서 열어도 포커스 트랩이 다이얼로그 안에 포커스를 두고, 정상적으로 입력할 수 있다', async () => {
         mockViewport(true);
         const user = userEvent.setup();

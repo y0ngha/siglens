@@ -215,7 +215,7 @@ test.describe('flows: happy path', () => {
         ).toHaveCount(1);
         await expect(
             form144
-                .getByRole('link', { name: '공시 보기' })
+                .getByRole('link', { name: '매도 예정 신고 공시 보기' })
                 .filter({ visible: true })
         ).toHaveCount(3);
     });

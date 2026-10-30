@@ -17,6 +17,7 @@ export interface ReportWatchlistItem {
     createdAt: Date;
 }
 
+/** `selectReportSymbols`의 입력 — 호출자가 읽어 온 보유·관심종목·제외 목록. */
 export interface ReportSymbolSources {
     holdings: readonly ReportHolding[];
     watchlist: readonly ReportWatchlistItem[];
@@ -24,6 +25,7 @@ export interface ReportSymbolSources {
     excluded?: readonly string[];
 }
 
+/** 메일에 실을 종목 선정 결과와 설정 화면이 보여 줄 제외 칩 목록. */
 export interface ReportSymbolSelection {
     /** 전체 카드(차트·분석·뉴스·옵션·신호 요약). 최대 {@link EMAIL_REPORT_MAX_SYMBOLS}. */
     full: string[];

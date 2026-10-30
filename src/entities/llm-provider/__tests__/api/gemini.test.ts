@@ -22,7 +22,7 @@ vi.mock('@google/genai', () => ({
     },
 }));
 
-import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/api/callDeadline';
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 
 const BASE_OPTIONS = {

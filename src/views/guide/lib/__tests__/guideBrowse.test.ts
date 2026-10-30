@@ -1,11 +1,14 @@
 import type { GuideEntry } from '@/entities/guide/types';
 import {
+    buildGuideFilterChips,
     countByCategory,
     filterGuideEntries,
     GUIDE_FILTER_ALL,
     GUIDE_QUERY_MAX_LENGTH,
     groupGuideByCategory,
+    guideListLayout,
     guideNeighbors,
+    isGuideFilterActive,
     parseGuideBrowseState,
     resolveAnsweredBy,
     resolveRelated,
@@ -217,5 +220,79 @@ describe('toGuideSummary', () => {
         expect(summary).not.toHaveProperty('bodyMd');
         expect(summary).not.toHaveProperty('faq');
         expect(summary.title).toBe('RSI');
+    });
+});
+
+describe('isGuideFilterActive', () => {
+    it('공백뿐인 질의와 "전체"는 필터가 아니다', () => {
+        expect(
+            isGuideFilterActive(
+                { query: '  ', category: GUIDE_FILTER_ALL },
+                undefined
+            )
+        ).toBe(false);
+    });
+
+    it('질의가 있으면 필터다', () => {
+        expect(
+            isGuideFilterActive(
+                { query: 'rsi', category: GUIDE_FILTER_ALL },
+                undefined
+            )
+        ).toBe(true);
+    });
+
+    it('분류를 고르면 필터다', () => {
+        expect(
+            isGuideFilterActive(
+                { query: '', category: 'indicators' },
+                undefined
+            )
+        ).toBe(true);
+    });
+
+    it('분류가 고정된 목록에서는 분류 값이 필터가 아니다', () => {
+        expect(
+            isGuideFilterActive(
+                { query: '', category: 'indicators' },
+                'indicators'
+            )
+        ).toBe(false);
+    });
+});
+
+describe('guideListLayout', () => {
+    it('결과가 없으면 empty다', () => {
+        expect(guideListLayout(0, true, undefined)).toBe('empty');
+    });
+
+    it('필터가 걸리면 flat이다', () => {
+        expect(guideListLayout(3, true, undefined)).toBe('flat');
+    });
+
+    it('분류가 고정된 목록은 flat이다', () => {
+        expect(guideListLayout(3, false, 'indicators')).toBe('flat');
+    });
+
+    it('필터 없는 전체 목록만 grouped다', () => {
+        expect(guideListLayout(3, false, undefined)).toBe('grouped');
+    });
+});
+
+describe('buildGuideFilterChips', () => {
+    const labels = {
+        howto: '가이드',
+        candlesticks: '캔들',
+        'chart-patterns': '패턴',
+        indicators: '지표',
+        strategies: '전략',
+    };
+
+    it('"전체" 칩 다음에 항목이 있는 분류만 분류 순서대로 싣는다', () => {
+        expect(buildGuideFilterChips(ALL, labels, '모두')).toEqual([
+            { value: GUIDE_FILTER_ALL, label: '모두', count: 4 },
+            { value: 'candlesticks', label: '캔들', count: 2 },
+            { value: 'indicators', label: '지표', count: 2 },
+        ]);
     });
 });

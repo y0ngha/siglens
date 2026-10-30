@@ -11,6 +11,9 @@ import type {
     WatchlistItemRepository,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { planWatchlistMerge } from './lib/planWatchlistMerge';
+
+type WatchlistTx = Parameters<Parameters<SiglensDatabase['transaction']>[0]>[0];
 
 const columns = {
     id: watchlistItems.id,
@@ -20,26 +23,30 @@ const columns = {
     createdAt: watchlistItems.createdAt,
 };
 
-/** 같은 심볼이 여러 번 오면 앞의 것(호출부 순서 = 최근 담은 순)만 남긴다. */
-function dedupeBySymbol(
-    candidates: readonly MergeWatchlistCandidate[]
-): MergeWatchlistCandidate[] {
-    const seen = new Set<string>();
-    return candidates.filter(candidate => {
-        if (seen.has(candidate.symbol)) return false;
-        seen.add(candidate.symbol);
-        return true;
-    });
+/**
+ * 회원 행을 `FOR NO KEY UPDATE`로 잠가 같은 회원의 동시 쓰기를 직렬화한다. "개수 조회 →
+ * 삽입"을 따로 하면 두 탭이 같은 개수를 보고 둘 다 통과해 상한을 넘긴다. 잠금 모드를
+ * `NO KEY UPDATE`로 한 이유: 다른 테이블이 `users`를 참조해 삽입할 때 거는 `KEY SHARE`와
+ * 충돌하지 않아 이 잠금이 FK 검사를 막지 않는다.
+ */
+async function lockMember(tx: WatchlistTx, userId: string): Promise<void> {
+    await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for('no key update');
 }
 
 /**
- * Drizzle implementation of {@link WatchlistItemRepository}. One row per (userId, symbol) via
- * `watchlist_items_user_symbol_uidx`. Every method wraps its query in `withRetry(DB_TRANSIENT_RETRY)`
- * — retry is a repository-layer concern (same policy as `DrizzlePortfolioRepository`).
+ * 관심종목 저장소의 Drizzle 구현({@link WatchlistItemRepository}). 서버 전용 — 같은 엔티티의
+ * 액션과 app에서만 쓴다. `watchlist_items_user_symbol_uidx`로 (userId, symbol)당 한 행이며,
+ * 모든 쿼리를 `withRetry(DB_TRANSIENT_RETRY)`로 감싼다(재시도는 저장소 계층 책임 —
+ * `DrizzlePortfolioRepository`와 같은 정책).
  */
 export class DrizzleWatchlistRepository implements WatchlistItemRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /** 정렬 없음 — 최근 담은 순 정렬은 호출부 몫이다(`getWatchlistAction`이 `addedAt` 내림차순으로 정렬). */
     async findByUser(userId: string): Promise<WatchlistItemRecord[]> {
         return withRetry(
             () =>
@@ -51,6 +58,10 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
         );
     }
 
+    /**
+     * 표시용 건수 조회. 잠금 없는 읽기라 상한 판정에 쓰면 동시 쓰기에서 상한을 넘길 수
+     * 있다 — 상한 검사는 {@link lockMember} 안의 `addWithinLimit`·`mergeSymbols`가 맡는다.
+     */
     async countByUser(userId: string): Promise<number> {
         const [row] = await withRetry(
             () =>
@@ -66,11 +77,7 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
     /**
      * 상한 안에서만 담는다. 이미 담긴 심볼은 상한과 무관하게 멱등 성공이다(행 유지, 이름이
      * 비어 있을 때만 채움 — `created_at`이 그대로라 "최근 담은 순"이 흔들리지 않는다).
-     *
-     * 회원 행을 `FOR NO KEY UPDATE`로 잠가 같은 회원의 동시 담기를 직렬화한다. "개수 조회 →
-     * 삽입"을 따로 하면 두 탭이 같은 개수를 보고 둘 다 통과해 상한을 넘긴다. 잠금 모드를
-     * `NO KEY UPDATE`로 한 이유: 다른 테이블이 `users`를 참조해 삽입할 때 거는 `KEY SHARE`와
-     * 충돌하지 않아 이 잠금이 FK 검사를 막지 않는다.
+     * 동시 담기는 {@link lockMember}로 직렬화한다.
      */
     async addWithinLimit(
         input: AddWatchlistItemInput,
@@ -79,11 +86,7 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
         return withRetry(
             () =>
                 this.db.transaction(async tx => {
-                    await tx
-                        .select({ id: users.id })
-                        .from(users)
-                        .where(eq(users.id, input.userId))
-                        .for('no key update');
+                    await lockMember(tx, input.userId);
                     const owned = await tx
                         .select({ symbol: watchlistItems.symbol })
                         .from(watchlistItems)
@@ -124,6 +127,11 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
         );
     }
 
+    /**
+     * `symbol`은 정확 일치로 비교하므로 호출부가 정규화(trim·대문자)한 값이어야 한다.
+     * 반환값(지운 행 존재 여부)은 현재 `removeWatchlistItemAction`이 쓰지 않는다 — 없는 심볼
+     * 삭제도 성공으로 취급하는 멱등 계약이라 false가 오류가 아니다.
+     */
     async remove(userId: string, symbol: string): Promise<boolean> {
         const deleted = await withRetry(
             () =>
@@ -142,43 +150,50 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
     }
 
     /**
-     * 합집합. `candidates`는 최근 담은 순이어야 한다 — 상한(`limit`)은 기존 행 수를 뺀 여유만큼
-     * 앞에서부터 채우고 나머지를 `skipped`로 센다. 이미 있는 심볼은 어느 쪽에도 들지 않는다.
-     * `onConflictDoNothing`은 조회와 삽입 사이의 경쟁(같은 회원의 다른 탭)을 흡수한다 —
-     * 그때 `added`는 실제로 들어간 행 수다.
+     * 합집합. `candidates`는 최근 담은 순이어야 한다(계획은 {@link planWatchlistMerge}).
+     * 회원 행 잠금 안에서 읽고 넣어, 같은 회원의 `addWithinLimit`·다른 탭 병합과 겹쳐도
+     * 상한을 넘기지 않는다. `onConflictDoNothing`은 잠금 밖 경로(직접 삽입)에 대한 방어선이며
+     * `added`는 실제로 들어간 행 수다.
      */
     async mergeSymbols(
         userId: string,
         candidates: readonly MergeWatchlistCandidate[],
         limit: number
     ): Promise<MergeWatchlistOutcome> {
-        const existing = await this.findByUser(userId);
-        const existingSymbols = new Set(existing.map(row => row.symbol));
-        const fresh = dedupeBySymbol(candidates).filter(
-            candidate => !existingSymbols.has(candidate.symbol)
-        );
-        const capacity = Math.max(0, limit - existing.length);
-        const toInsert = fresh.slice(0, capacity);
-        const skipped = fresh.length - toInsert.length;
-        if (toInsert.length === 0) return { added: 0, skipped };
-
-        const inserted = await withRetry(
+        return withRetry(
             () =>
-                this.db
-                    .insert(watchlistItems)
-                    .values(
-                        toInsert.map(candidate => ({
-                            userId,
-                            symbol: candidate.symbol,
-                            companyName: candidate.companyName,
-                        }))
-                    )
-                    .onConflictDoNothing({
-                        target: [watchlistItems.userId, watchlistItems.symbol],
-                    })
-                    .returning({ id: watchlistItems.id }),
+                this.db.transaction(async tx => {
+                    await lockMember(tx, userId);
+                    const existing = await tx
+                        .select({ symbol: watchlistItems.symbol })
+                        .from(watchlistItems)
+                        .where(eq(watchlistItems.userId, userId));
+                    const { toInsert, skipped } = planWatchlistMerge(
+                        new Set(existing.map(row => row.symbol)),
+                        candidates,
+                        limit
+                    );
+                    if (toInsert.length === 0) return { added: 0, skipped };
+
+                    const inserted = await tx
+                        .insert(watchlistItems)
+                        .values(
+                            toInsert.map(candidate => ({
+                                userId,
+                                symbol: candidate.symbol,
+                                companyName: candidate.companyName,
+                            }))
+                        )
+                        .onConflictDoNothing({
+                            target: [
+                                watchlistItems.userId,
+                                watchlistItems.symbol,
+                            ],
+                        })
+                        .returning({ id: watchlistItems.id });
+                    return { added: inserted.length, skipped };
+                }),
             DB_TRANSIENT_RETRY
         );
-        return { added: inserted.length, skipped };
     }
 }

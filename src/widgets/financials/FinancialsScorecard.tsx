@@ -1,65 +1,41 @@
+/**
+ * 재무 스코어카드 위젯 — 종합 게이지와 4축 카드. SSR 안전·동기 렌더이며 미리 계산된
+ * `FinancialsScorecard`를 prop으로 받는다.
+ */
 import { useTranslations } from 'next-intl';
-import type { FinancialsScorecard } from '@y0ngha/siglens-core';
-import { CompositeGradeGauge } from './CompositeGradeGauge';
+import type { FinancialsScorecard as FinancialsScorecardData } from '@y0ngha/siglens-core';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { AxisScoreCard } from './AxisScoreCard';
+import { CompositeGradeGauge } from './CompositeGradeGauge';
+import { SCORECARD_AXES, axisLabelKey } from './utils/axisLabels';
 import {
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
-} from './utils/numberFormat';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { cn } from '@/shared/lib/cn';
-import { AXIS_LABEL_KEY } from './axisLabels';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+} from './utils/statementCurrency';
 
 interface FinancialsScorecardProps {
-    /** The complete 4-axis financials scorecard from computeFinancialsScorecard. */
-    scorecard: FinancialsScorecard;
-    /** 금액 지표에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    /** `computeFinancialsScorecard`가 만든 4축 스코어카드 전체. */
+    scorecard: FinancialsScorecardData;
+    /** 금액 지표에 적용할 통화. 생략하면 USD — 미국 종목의 기본 동작. */
     currency?: StatementCurrency;
 }
 
 /**
- * Full financials scorecard widget — SSR-safe, synchronous, takes a
- * pre-computed `FinancialsScorecard` prop.
- *
- * Layout:
- * - Section card wrapper with h2 heading
- * - `CompositeGradeGauge` hero showing the composite score + grade + summary
- * - 4× `AxisScoreCard` in a responsive grid (2-col mobile / 4-col desktop)
+ * 제목 아래에 종합 게이지(점수·등급·요약)를 크게 두고, 4축 카드를 반응형 그리드(모바일 2열 /
+ * 데스크톱 4열)로 늘어놓는다.
  */
 export function FinancialsScorecard({
     scorecard,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: FinancialsScorecardProps) {
     const t = useTranslations('widgets.financials');
-    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
-    // 패턴만 본다 — `AXIS_LABEL_KEY[...]`를 그대로 `tLabel(...)`에 넣어야
-    // `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는 패턴만 본다 —
+    // `axisLabelKey(...)`를 그대로 `tLabel(...)`에 넣어야 `shared.enumLabel`이 이 라우트의
+    // 클라이언트 번들에 실린다.
     const tLabel = useTranslations('shared.enumLabel');
-    const { composite, growth, quality, solvency, cash } = scorecard;
-
-    const axes = [
-        {
-            key: 'growth' as const,
-            title: tLabel(AXIS_LABEL_KEY.growth),
-            axis: growth,
-        },
-        {
-            key: 'quality' as const,
-            title: tLabel(AXIS_LABEL_KEY.quality),
-            axis: quality,
-        },
-        {
-            key: 'solvency' as const,
-            title: tLabel(AXIS_LABEL_KEY.solvency),
-            axis: solvency,
-        },
-        {
-            key: 'cash' as const,
-            title: tLabel(AXIS_LABEL_KEY.cash),
-            axis: cash,
-        },
-    ];
+    const { composite } = scorecard;
 
     return (
         <section
@@ -82,12 +58,12 @@ export function FinancialsScorecard({
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                {axes.map(({ key, title, axis }) => (
+                {SCORECARD_AXES.map(axis => (
                     <AxisScoreCard
-                        key={key}
-                        axisKey={key}
-                        title={title}
-                        axis={axis}
+                        key={axis}
+                        axisKey={axis}
+                        title={tLabel(axisLabelKey(axis))}
+                        axis={scorecard[axis]}
                         currency={currency}
                     />
                 ))}

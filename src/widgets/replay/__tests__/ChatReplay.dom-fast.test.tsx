@@ -116,9 +116,10 @@ describe('ChatReplay', () => {
         });
         const button = screen.getByRole('button', { name: 'Pause' });
         fireEvent.click(button);
+        // The name alone carries the state: no pressed state to announce on top.
         expect(
             screen.getByRole('button', { name: 'Play' })
-        ).toBeInTheDocument();
+        ).not.toHaveAttribute('aria-pressed');
         const before = userBubbleText();
         await act(async () => {
             await vi.advanceTimersByTimeAsync(3000);
