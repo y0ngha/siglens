@@ -4523,6 +4523,7 @@
             },
             "dilution": {
                 "filing": "SEC原文",
+                "filingLabel": "SEC原文,{date}提交的{form}",
                 "kind": {
                     "atm": "ATM",
                     "bestEfforts": "尽力推销",
@@ -4555,6 +4556,7 @@
                 "insiderCluster": "集中买入:{count}位不同内部人",
                 "insiderCounts": "买入 {buys}笔，卖出 {sells}笔",
                 "insiderNetBuy": "近{days}天净买入 {amount}",
+                "insiderNetFlat": "近{days}天无净买卖",
                 "insiderNetSell": "近{days}天净卖出 {amount}",
                 "insiderProposedSales": "拟出售申报(Form 144) {count}笔，{amount}",
                 "largeHolderCounts": "13D 持仓{d}个、申报{df}份；13G 持仓{g}个、申报{gf}份(近{days}天)",
@@ -4600,6 +4602,7 @@
                 "colShares": "拟售股数",
                 "colValue": "拟售金额",
                 "filing": "查看申报",
+                "filingLabel": "查看申报（{filer}）",
                 "none": "没有已受理的拟出售申报。",
                 "omitted": "较早的{count}份申报未列入。",
                 "planBadge": "10b5-1计划",
@@ -4641,6 +4644,7 @@
                 "title": "持仓机构数量变化"
             },
             "insider": {
+                "afterWindowTitle": "统计期间外({to}之后)",
                 "buy": "买入",
                 "buys": "买入",
                 "clusterBadge": "集中买入：{count}位内部人",
@@ -4651,6 +4655,7 @@
                 "colType": "类型",
                 "colValue": "金额",
                 "filing": "查看披露",
+                "filingLabel": "查看披露（{name}）",
                 "net": "净买入/净卖出",
                 "netBuy": "净买入 {amount}",
                 "netFlat": "无净买卖",
@@ -4659,6 +4664,7 @@
                 "noRecent": "最近{days}天没有内部人买卖申报。",
                 "noTrades": "没有可列出的买卖申报。",
                 "noTradesInWindow": "最近{days}天内没有买卖申报。",
+                "omitted": "较早的{count}笔交易未列入表格。",
                 "omittedOther": "赠与、期权行权等其他申报{count}笔未列入表格。",
                 "outsideWindowNote": "这些交易不计入上方汇总的笔数和金额。",
                 "outsideWindowTitle": "统计期间外({from}之前)",
@@ -4692,6 +4698,7 @@
                 "colPercent": "持股比例",
                 "colShares": "持股数",
                 "filing": "查看披露",
+                "filingLabel": "查看披露（{filer}的{form}）",
                 "kind13d": "13D 积极股东",
                 "kind13g": "13G 被动投资",
                 "kindOther": "其他",

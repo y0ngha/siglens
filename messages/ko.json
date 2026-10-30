@@ -4657,6 +4657,7 @@
             },
             "dilution": {
                 "filing": "SEC 원문",
+                "filingLabel": "{date} 제출 {form} SEC 원문",
                 "kind": {
                     "atm": "ATM",
                     "bestEfforts": "모집 주선",
@@ -4690,6 +4691,7 @@
                 "insiderCluster": "클러스터 매수: 서로 다른 내부자 {count}명",
                 "insiderCounts": "매수 {buys}건, 매도 {sells}건",
                 "insiderNetBuy": "최근 {days}일 순매수 {amount}",
+                "insiderNetFlat": "최근 {days}일 순매수·순매도 없음",
                 "insiderNetSell": "최근 {days}일 순매도 {amount}",
                 "insiderProposedSalePct": "매도 예정 주식 {pct} (발행주식 대비)",
                 "insiderProposedSales": "매도 예정 신고(Form 144) {count}건, {amount}",
@@ -4734,6 +4736,7 @@
                 "colShares": "예정 수량",
                 "colValue": "예정 금액",
                 "filing": "공시 보기",
+                "filingLabel": "{filer} 매도 예정 신고 공시 보기",
                 "none": "접수된 매도 예정 신고가 없어요.",
                 "omitted": "오래된 신고 {count}건은 목록에서 뺐어요.",
                 "planBadge": "10b5-1 계획",
@@ -4775,6 +4778,7 @@
                 "title": "보유 기관 수 추이"
             },
             "insider": {
+                "afterWindowTitle": "집계 기간 밖 ({to} 이후)",
                 "buy": "매수",
                 "buys": "매수",
                 "clusterBadge": "클러스터 매수 (내부자 {count}명)",
@@ -4785,6 +4789,7 @@
                 "colType": "구분",
                 "colValue": "금액",
                 "filing": "공시 보기",
+                "filingLabel": "{name} 공시 보기",
                 "net": "순매수/순매도",
                 "netBuy": "순매수 {amount}",
                 "netFlat": "순매수/순매도 없음",
@@ -4793,6 +4798,7 @@
                 "noRecent": "최근 {days}일 동안 내부자 매매 신고가 없어요.",
                 "noTrades": "표에 담을 매매 신고가 없어요.",
                 "noTradesInWindow": "최근 {days}일 안의 매매 신고는 없어요.",
+                "omitted": "오래된 거래 {count}건은 표에서 뺐어요.",
                 "omittedOther": "증여나 옵션 행사 등 기타 신고 {count}건은 표에서 뺐어요.",
                 "outsideWindowNote": "위 요약의 건수와 금액에는 들어가지 않은 거래예요.",
                 "outsideWindowTitle": "집계 기간 밖 ({from} 이전)",
@@ -4882,6 +4888,7 @@
                 "colPercent": "지분율",
                 "colShares": "보유 주식",
                 "filing": "공시 보기",
+                "filingLabel": "{filer}의 {form} 공시 보기",
                 "kind13d": "13D 행동주의",
                 "kind13g": "13G 단순 투자",
                 "kindOther": "기타",

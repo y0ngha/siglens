@@ -1,3 +1,6 @@
+/**
+ * 내부자 요약 카드 — 순매수/순매도·매수·매도 3장과 클러스터 매수 배지.
+ */
 import { useTranslations } from 'next-intl';
 import type { InsiderMetrics } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -7,11 +10,12 @@ import { FlowTooltip } from '../investorFlowsTooltips';
 import { formatInteger, formatUsdCompact } from '../utils/flowFormat';
 import { flowDirection, type FlowDirection } from '../utils/institutional';
 
-function netClass(netValueUsd: number): string {
-    if (netValueUsd > 0) return 'text-ui-success-text';
-    if (netValueUsd < 0) return 'text-ui-danger-text';
-    return 'text-secondary-100';
-}
+/** 순액 글자 색 — 방향은 근거 줄(`insiderLines`)과 같은 `flowDirection`으로 가른다. 정확히 0이면 중립 색이다. */
+const NET_CLASS: Record<FlowDirection, string> = {
+    in: 'text-ui-success-text',
+    out: 'text-ui-danger-text',
+    flat: 'text-secondary-100',
+};
 
 interface SideCardProps {
     readonly label: string;
@@ -52,7 +56,8 @@ export function InsiderSummaryCards({ metrics }: InsiderSummaryCardsProps) {
         out: t('insider.netSell', { amount }),
         flat: t('insider.netFlat'),
     };
-    const netText = netTexts[flowDirection(net)];
+    const netDirection = flowDirection(net);
+    const netText = netTexts[netDirection];
     return (
         <div>
             <ul className="grid gap-2 sm:grid-cols-3">
@@ -63,7 +68,7 @@ export function InsiderSummaryCards({ metrics }: InsiderSummaryCardsProps) {
                     <p
                         className={cn(
                             'mt-1 text-lg font-semibold tabular-nums',
-                            netClass(net)
+                            NET_CLASS[netDirection]
                         )}
                     >
                         {netText}
