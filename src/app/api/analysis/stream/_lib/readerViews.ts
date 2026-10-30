@@ -3,7 +3,7 @@ import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import {
     resolveCurrentPrice,
     resolvePriceAsOf,
-} from '@/entities/analysis-plain/lib/currentPrice';
+} from '@/entities/analysis-plain/server/currentPrice';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisType } from './types';

@@ -118,4 +118,23 @@ describe('getMarketNewsCardsAction은', () => {
             `c${NEWS_ROW_SERIALIZATION_LIMIT - 1}`
         );
     });
+
+    it('DB 오류 로그에 오류 메시지(바인딩 값)를 싣지 않고 이름만 남긴다', async () => {
+        const { getMarketNewsCards } =
+            await import('../api/marketNewsRepository');
+        vi.mocked(getMarketNewsCards).mockRejectedValueOnce(
+            new Error('Failed query: bound param secret-title')
+        );
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        await getMarketNewsCardsAction('crypto');
+
+        expect(errorSpy).toHaveBeenCalledWith('[getMarketNewsCardsAction]', {
+            name: 'Error',
+            code: undefined,
+        });
+        errorSpy.mockRestore();
+    });
 });

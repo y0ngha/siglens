@@ -1,26 +1,26 @@
 import 'server-only';
 import { revalidateTag } from 'next/cache';
 import { runNewsCardAnalysis, type NewsItem } from '@y0ngha/siglens-core';
-import { getDatabaseClient } from '@/shared/db/client';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { getDatabaseClient } from '@/shared/db/client';
+import { logActionError } from '@/shared/lib/logActionError';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
-import {
-    DrizzleMarketNewsRepository,
-    isRecentlyFetched,
-    markFetched,
-} from './marketNewsRepository';
-import { getMarketNewsClient } from '../lib/getMarketNewsClient';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '../lib/categoryConfig';
+import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import {
-    MARKET_NEWS_LOOKBACK_MS,
-    MARKET_NEWS_CACHE_TAG_PREFIX,
     LLM_PARALLEL_LIMIT,
+    MARKET_NEWS_CACHE_TAG_PREFIX,
+    MARKET_NEWS_LOOKBACK_MS,
 } from '../lib/marketNewsConstants';
+import { selectAnalysisCandidates } from '../lib/selectAnalysisCandidates';
+import { getMarketNewsClient } from './getMarketNewsClient';
+import { isRecentlyFetched, markFetched } from './marketNewsRefreshFlags';
+import { DrizzleMarketNewsRepository } from './marketNewsRepository';
 
-/** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
+/** 절반 초과 실패 판정의 나눗수 — 적재는 upsert가 절반을 넘게 실패하면 중단하고, 보강은 같은 기준으로 로그만 남긴다. */
 const MAJORITY_DIVISOR = 2;
 
 export interface IngestMarketNewsCategoryOptions {
@@ -98,8 +98,99 @@ async function analyzeAndPersist(
         );
         return false;
     }
-    await repo.attachAnalysis(item.id, analyzed.result, new Date());
+    try {
+        await repo.attachAnalysis(item.id, analyzed.result, new Date());
+    } catch (error) {
+        // Drizzle 오류 메시지는 바인딩된 값(번역·요약 본문)을 담는다. 원본은 안전 필드만
+        // 로그에 남기고, 호출부 로그에 실릴 reason은 본문이 없는 오류로 바꿔 던진다.
+        logActionError(`[${logLabel}] attachAnalysis failed`, error);
+        throw new Error(`attachAnalysis failed for ${item.id}`);
+    }
     return true;
+}
+
+interface UpsertOutcome {
+    /** upsert가 성공해 DB 행이 있는 기사 id. */
+    readonly upsertedIds: ReadonlySet<string>;
+    /** 행이 실제로 새로 들어갔거나 내용이 바뀐 수. */
+    readonly changed: number;
+    /** 절반 넘게 실패해 이번 적재를 중단해야 하는가. */
+    readonly majorityFailed: boolean;
+}
+
+/**
+ * 피드 전체를 upsert한다 — 보강보다 먼저 해서 `attachAnalysis` 시점에 DB 행이 있게
+ * 한다. upsert와 보강을 트랜잭션으로 묶지 않는다: LLM 호출이 수 초 걸려 커넥션 풀
+ * 슬롯을 쥐게 되기 때문이다(종목 뉴스와 같은 근거).
+ *
+ * 실패는 개별 행 단위로 `logActionError`에 남긴다 — Drizzle 오류 메시지는 바인딩된
+ * 값(기사 본문)을 담는다.
+ */
+async function upsertFeed(
+    repo: DrizzleMarketNewsRepository,
+    fresh: readonly MarketNewsItem[],
+    logLabel: string
+): Promise<UpsertOutcome> {
+    const settled = await Promise.allSettled(
+        fresh.map(item => repo.upsertMarketNewsItem(item))
+    );
+    const failures = settled.filter(r => r.status === 'rejected');
+    if (failures.length > 0) {
+        console.error(
+            `[${logLabel}] ${failures.length}/${fresh.length} upserts failed`
+        );
+        for (const failure of failures) {
+            logActionError(`[${logLabel}] upsert failed`, failure.reason);
+        }
+    }
+    const majorityFailed = failures.length > fresh.length / MAJORITY_DIVISOR;
+    if (majorityFailed) {
+        console.error(
+            `[${logLabel}] majority upsert failure (${failures.length}/${fresh.length}) — aborting`
+        );
+    }
+
+    return {
+        // `upsertMarketNewsItem`은 내용이 실제로 바뀐 경우에만 true를 돌려준다(setWhere).
+        changed: settled.filter(r => r.status === 'fulfilled' && r.value)
+            .length,
+        majorityFailed,
+        upsertedIds: new Set(
+            settled.flatMap((r, i) =>
+                r.status === 'fulfilled' ? [fresh[i].id] : []
+            )
+        ),
+    };
+}
+
+/**
+ * 고른 기사를 청크 병렬로 카드 분석·저장하고 실제로 저장한 수를 돌려준다. 기사 50건을
+ * 한꺼번에 `Promise.allSettled`하면 워커 큐가 몰리므로 `LLM_PARALLEL_LIMIT`씩 끊는다.
+ * 개별 실패는 로그만 남기고 던지지 않는다.
+ */
+async function analyzeSelected(
+    repo: DrizzleMarketNewsRepository,
+    selected: readonly MarketNewsItem[],
+    logLabel: string
+): Promise<number> {
+    const settled = await withConcurrencyLimit(
+        selected,
+        LLM_PARALLEL_LIMIT,
+        item => analyzeAndPersist(item, repo, logLabel)
+    );
+    const failures = settled.filter(r => r.status === 'rejected');
+    if (failures.length > 0) {
+        console.error(
+            `[${logLabel}] ${failures.length}/${selected.length} analyzeAndPersist failed`,
+            failures.map(f => f.reason)
+        );
+    }
+    if (failures.length > selected.length / MAJORITY_DIVISOR) {
+        console.error(
+            `[${logLabel}] majority analyzeAndPersist failure (${failures.length}/${selected.length})`
+        );
+    }
+    return settled.filter(r => r.status === 'fulfilled' && r.value).length;
 }
 
 /**
@@ -142,15 +233,14 @@ export async function ingestMarketNewsCategory(
         return { status: 'recently-fetched' };
     }
 
-    // Mark before the async fetch so that a second concurrent caller that
-    // reads the flag after this point will skip the upstream round-trip.
+    // 비동기 fetch보다 먼저 표시한다 — 이 시점 이후 플래그를 읽는 동시 호출자가
+    // 외부 왕복을 건너뛴다.
     await markFetched(sentinel);
 
-    const newsClient = getMarketNewsClient(category);
     const { db } = getDatabaseClient();
     const repo = new DrizzleMarketNewsRepository(db);
 
-    const fresh = await newsClient
+    const fresh = await getMarketNewsClient(category)
         .fetchCategoryNews(category, MARKET_NEWS_LOOKBACK_MS)
         .catch((err: unknown) => {
             console.error(`[${logLabel}] feed fetch failed:`, err);
@@ -158,25 +248,12 @@ export async function ingestMarketNewsCategory(
         });
     if (fresh === null) return { status: 'fetch-failed' };
 
-    // Upsert all items first so the DB row exists before attachAnalysis runs.
-    // We do NOT wrap upsert + analyze in a transaction — LLM polling can take
-    // seconds and would hold connection-pool slots (same rationale as per-symbol).
-    const upsertSettled = await Promise.allSettled(
-        fresh.map(item => repo.upsertMarketNewsItem(item))
+    const { upsertedIds, changed, majorityFailed } = await upsertFeed(
+        repo,
+        fresh,
+        logLabel
     );
-    const upsertFailures = upsertSettled.filter(r => r.status === 'rejected');
-    if (upsertFailures.length > 0) {
-        console.error(
-            `[${logLabel}] ${upsertFailures.length}/${fresh.length} upserts failed`,
-            upsertFailures.map(f => (f.status === 'rejected' ? f.reason : null))
-        );
-    }
-    if (upsertFailures.length > fresh.length / MAJORITY_DIVISOR) {
-        console.error(
-            `[${logLabel}] majority upsert failure (${upsertFailures.length}/${fresh.length}) — aborting`
-        );
-        return { status: 'write-failed' };
-    }
+    if (majorityFailed) return { status: 'write-failed' };
 
     if (fresh.length === 0) {
         return {
@@ -189,15 +266,10 @@ export async function ingestMarketNewsCategory(
         };
     }
 
-    // Only revalidate when at least one row was actually inserted or changed.
-    // `upsertMarketNewsItem` returns true only on genuine content change (setWhere).
-    const changed = upsertSettled.filter(
-        r => r.status === 'fulfilled' && r.value === true
-    ).length;
+    // 행이 실제로 들어가거나 바뀐 경우에만 무효화한다. `market-news:<sentinel>` 태그라
+    // 이 카테고리의 ISR 캐시만 깨지고 종목 페이지의 bars/profile/analysis 캐시는
+    // 그대로다. `revalidateTag(tag, 'max')`는 즉시 무효화한다(Next.js 16.2 시그니처).
     if (changed > 0) {
-        // Use 'market-news:<sentinel>' tag so only the category's ISR cache is
-        // busted — bars/profile/analysis caches for per-symbol pages are untouched.
-        // See Next.js 16.2 revalidateTag(tag, profile?) signature — 'max' busts immediately.
         revalidateTag(cacheTag, 'max');
     }
 
@@ -212,33 +284,21 @@ export async function ingestMarketNewsCategory(
         };
     }
 
-    // `fresh` comes from the upstream feed and has no `analyzedAt`; re-read DB to skip items
-    // that a previous run already analyzed — avoids duplicate LLM submissions.
-    // 필요한 건 "이미 분석됨" 집합뿐이라 id만 읽는다 — 전 컬럼을 읽으면 본문까지
-    // 받아서 그대로 버린다(감사: 비용 라운드 15).
+    // `fresh`는 외부 피드라 `analyzedAt`이 없다 — DB를 다시 읽어 이미 보강된 기사를
+    // 건너뛰어야 LLM 중복 제출을 피한다. 필요한 건 "이미 분석됨" 집합뿐이라 id만 읽는다
+    // (전 컬럼을 읽으면 본문까지 받아서 그대로 버린다).
     const analyzedIds = await repo.listAnalyzedIds(
         sentinel,
         MARKET_NEWS_LOOKBACK_MS
     );
-    // Only send items whose DB row was successfully upserted to LLM —
-    // if upsert failed, `attachAnalysis` would error with "row not found",
-    // wasting LLM credits. The majority-failure guard above already handles
-    // bulk failures; this filters the surviving minority rejects.
-    const upsertedIds = new Set(
-        upsertSettled.flatMap((r, i) =>
-            r.status === 'fulfilled' ? [fresh[i].id] : []
-        )
-    );
-    const candidates = fresh.filter(
-        item => upsertedIds.has(item.id) && !analyzedIds.has(item.id)
-    );
-    const unanalyzed =
-        analyzeLimit === undefined
-            ? candidates
-            : candidates.slice(0, analyzeLimit);
-    const pending = candidates.length - unanalyzed.length;
+    const { selected, pending } = selectAnalysisCandidates({
+        fresh,
+        upsertedIds,
+        analyzedIds,
+        analyzeLimit,
+    });
 
-    if (unanalyzed.length === 0) {
+    if (selected.length === 0) {
         return {
             status: 'ok',
             fetched: fresh.length,
@@ -250,31 +310,7 @@ export async function ingestMarketNewsCategory(
         };
     }
 
-    // Chunked-parallel: submit card analyses in batches of LLM_PARALLEL_LIMIT.
-    // Unbounded Promise.allSettled(50 items) risks a worker-queue stampede.
-    const analyzeSettled = await withConcurrencyLimit(
-        unanalyzed,
-        LLM_PARALLEL_LIMIT,
-        item => analyzeAndPersist(item, repo, logLabel)
-    );
-    const analyzeFailures = analyzeSettled.filter(r => r.status === 'rejected');
-    if (analyzeFailures.length > 0) {
-        console.error(
-            `[${logLabel}] ${analyzeFailures.length}/${unanalyzed.length} analyzeAndPersist failed`,
-            analyzeFailures.map(f =>
-                f.status === 'rejected' ? f.reason : null
-            )
-        );
-    }
-    if (analyzeFailures.length > unanalyzed.length / MAJORITY_DIVISOR) {
-        console.error(
-            `[${logLabel}] majority analyzeAndPersist failure (${analyzeFailures.length}/${unanalyzed.length})`
-        );
-    }
-
-    const analyzed = analyzeSettled.filter(
-        r => r.status === 'fulfilled' && r.value
-    ).length;
+    const analyzed = await analyzeSelected(repo, selected, logLabel);
     if (analyzed > 0) {
         // 보강 결과를 SSR 목록에 반영한다 — JSDoc "무효화 시점" 참고.
         revalidateTag(cacheTag, 'max');

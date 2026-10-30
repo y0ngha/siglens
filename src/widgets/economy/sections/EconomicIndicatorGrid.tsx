@@ -1,3 +1,6 @@
+/**
+ * 미국 거시 지표·국채 수익률·2s10s 스프레드 카드 그리드.
+ */
 import { useTranslations } from 'next-intl';
 import {
     ECONOMY_CATEGORY_LABEL_KEY,
@@ -29,6 +32,7 @@ import {
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { deltaUnitLabel, unitLabel } from '../utils/unitLabel';
 import { DeltaBadge } from './DeltaBadge';
+import { formatSignedFixed, roundToPrecision } from '../utils/signedFixed';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
@@ -242,9 +246,10 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
     const t = useTranslations('widgets.economy');
     const tLabel = useTranslations('shared.enumLabel');
     const locale = useResolvedLocale();
-    const spread = computeYieldSpread(snapshot);
-    if (spread === null) return null;
-    const positive = spread >= 0;
+    const rawSpread = computeYieldSpread(snapshot);
+    if (rawSpread === null) return null;
+    // 표시 자릿수로 반올림한 값으로 부호·색을 정한다(`roundToPrecision` JSDoc).
+    const spread = roundToPrecision(rawSpread, TREASURY_YIELD_PRECISION);
     return (
         <article className={cn(SURFACE_CARD, 'p-4')}>
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
@@ -254,8 +259,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
             <div
                 className={cn('text-2xl font-semibold', signColorClass(spread))}
             >
-                {positive ? '+' : ''}
-                {formatFixed(spread, TREASURY_YIELD_PRECISION, locale)}
+                {formatSignedFixed(spread, TREASURY_YIELD_PRECISION, locale)}
                 <span className="ml-1 text-sm text-secondary-400">
                     {deltaUnitLabel('%', tLabel)}
                 </span>

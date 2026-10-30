@@ -17,12 +17,6 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-const { mockUsePopoverToggle } = vi.hoisted(() => ({
-    mockUsePopoverToggle: vi.fn(() => ({ isOpen: false, toggle: vi.fn() })),
-}));
-vi.mock('@/shared/hooks/usePopoverToggle', () => ({
-    usePopoverToggle: mockUsePopoverToggle,
-}));
 vi.mock('@/shared/ui/tabs/utils/tabIds', () => ({
     buildPanelId: (prefix: string, value: string) => `${prefix}-panel-${value}`,
     buildTabId: (prefix: string, value: string) => `${prefix}-tab-${value}`,
@@ -71,12 +65,9 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';
 import userEvent from '@testing-library/user-event';
-import {
-    HIGH_CONFIDENCE_WEIGHT,
-    type SkillShowcaseItem,
-} from '@y0ngha/siglens-core';
+import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
 
-import { SkillCard, SkillsShowcase } from '../SkillsShowcase';
+import { SkillsShowcase } from '../SkillsShowcase';
 
 function makeSkill(
     name: string,
@@ -93,10 +84,6 @@ function makeSkill(
 
 describe('SkillsShowcase', () => {
     beforeEach(() => {
-        mockUsePopoverToggle.mockReturnValue({
-            isOpen: false,
-            toggle: vi.fn(),
-        });
         mockUseSkillsShowcase.mockReturnValue({
             activeTab: 'all',
             showAll: false,
@@ -117,10 +104,9 @@ describe('SkillsShowcase', () => {
     });
 
     /**
-     * 홈은 이 표시명의 **최대 노출 지점**이다 — 스킬 카드 36장이 전부
-     * `skills/**.md` front-matter의 한국어 이름이다. `AnalysisPanel`만 훅을
-     * 붙이고 여기는 빠져 있어서, `/en`·`/ja` 홈에서 36개가 통째로 한국어로
-     * 렌더됐다(실측). 비-기본 로케일로 확인한다.
+     * 홈은 스킬 표시명의 **최대 노출 지점**이다 — 스킬명은 `skills/**.md`
+     * front-matter의 한국어 이름이라, 카탈로그 조회가 빠지면 비-기본 로케일 홈이
+     * 통째로 한국어로 렌더된다. 비-기본 로케일로 확인한다.
      */
     it('en: 한국어 스킬명을 카탈로그로 표시한다', () => {
         renderWithIntl(
@@ -135,8 +121,8 @@ describe('SkillsShowcase', () => {
     });
 
     /**
-     * 이름은 카탈로그로 옮겼는데 설명은 안 옮겨서 "영어 제목 + 한국어 본문"이
-     * 남았던 결함(실측: `/en`·`/ja` 홈). 본문은 front-matter `description`이 아니라
+     * 이름만 카탈로그로 옮기고 설명을 안 옮기면 "영어 제목 + 한국어 본문"이 된다.
+     * 본문은 front-matter `description`이 아니라
      * **이름으로 찾는 한 줄 요약**(`shared.skillSummary`)이다.
      */
     it('en: 스킬 설명 자리에 front-matter 원문 대신 영어 요약이 나온다', () => {
@@ -297,275 +283,6 @@ describe('SkillsShowcase', () => {
         await user.click(screen.getByRole('button', { name: /더 보기/ }));
         expect(toggleShowAll).toHaveBeenCalledTimes(1);
     });
-});
-
-describe('ConfidenceInfoTooltip open state', () => {
-    it('makes the tooltip pointer-interactive and fully opaque when open', () => {
-        mockUsePopoverToggle.mockReturnValue({ isOpen: true, toggle: vi.fn() });
-        render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
-
-        const tooltip = screen.getByRole('tooltip');
-        expect(tooltip.className).toContain('pointer-events-auto');
-        expect(tooltip.className).toContain('opacity-100');
-        expect(tooltip.className).not.toContain('pointer-events-none');
-    });
-});
-
-/**
- * 회귀 가드: ⓘ를 카드마다 달면 hover용 툴팁 본문이 카드 수만큼 DOM에 찍혀 홈
- * HTML의 최다 빈출 문구가 이 안내문이 된다(2026-09 SEO 감사, 56회). 카드가 몇
- * 장이든 섹션 제목 옆 한 번만 렌더돼야 한다.
- */
-describe('ConfidenceInfoTooltip placement', () => {
-    it('renders the tooltip once for the section, not once per card', () => {
-        render(
-            <SkillsShowcase
-                skills={[makeSkill('RSI'), makeSkill('MACD'), makeSkill('OBV')]}
-            />
-        );
-
-        expect(screen.getAllByRole('tooltip')).toHaveLength(1);
-        expect(
-            screen.getAllByRole('button', { name: '신뢰도 점수 설명' })
-        ).toHaveLength(1);
-    });
-
-    it('SkillCard itself carries no confidence tooltip', () => {
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={vi.fn()}
-            />
-        );
-
-        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-    });
-});
-
-describe('ConfidenceInfoTooltip copy', () => {
-    it('does NOT say low-confidence skills are excluded', () => {
-        render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
-
-        expect(document.body.textContent).not.toMatch(/분석에서 제외/);
-    });
-
-    it('says low-confidence skills are still reflected as supplementary', () => {
-        render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
-
-        expect(document.body.textContent).toMatch(
-            /낮은 점수도 분석에 보조적으로 반영/
-        );
-    });
-});
-
-describe('SkillCard confidence bar color', () => {
-    function getBarEl(container: HTMLElement): HTMLElement {
-        const bar = container.querySelector('[data-testid="confidence-bar"]');
-        if (!bar) throw new Error('confidence-bar testid not found');
-        return bar as HTMLElement;
-    }
-
-    it.each([
-        [0.2, 'bg-secondary-500'],
-        [0.49, 'bg-secondary-500'],
-    ])('weight %f → bg-secondary-500 (low tier)', (weight, expected) => {
-        const { container } = render(
-            <SkillsShowcase
-                skills={[makeSkill('X', 'indicator_guide', weight)]}
-            />
-        );
-        expect(getBarEl(container).className).toContain(expected);
-    });
-
-    it.each([
-        [0.5, 'bg-ui-warning'],
-        [0.79, 'bg-ui-warning'],
-    ])('weight %f → bg-ui-warning (medium tier)', (weight, expected) => {
-        const { container } = render(
-            <SkillsShowcase
-                skills={[makeSkill('X', 'indicator_guide', weight)]}
-            />
-        );
-        expect(getBarEl(container).className).toContain(expected);
-    });
-
-    it.each([
-        [HIGH_CONFIDENCE_WEIGHT, 'bg-chart-bullish'],
-        [1.0, 'bg-chart-bullish'],
-    ])('weight %f → bg-chart-bullish (high tier)', (weight, expected) => {
-        const { container } = render(
-            <SkillsShowcase
-                skills={[makeSkill('X', 'indicator_guide', weight)]}
-            />
-        );
-        expect(getBarEl(container).className).toContain(expected);
-    });
-});
-
-describe('SkillCard expand interaction', () => {
-    const ORIGINAL = Object.getOwnPropertyDescriptors(HTMLElement.prototype);
-
-    function stubClamp(clamped: boolean): void {
-        // 접힘 상태에서 scrollHeight > clientHeight 이면 "펼침 가능"으로 판정됨.
-        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-            configurable: true,
-            get: () => (clamped ? 80 : 40),
-        });
-        Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
-            configurable: true,
-            get: () => 40,
-        });
-    }
-
-    afterAll(() => {
-        vi.unstubAllGlobals();
-        Object.defineProperties(HTMLElement.prototype, ORIGINAL);
-    });
-
-    it('is interactive (role=button, aria-expanded) when the description is clamped', () => {
-        stubClamp(true);
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={vi.fn()}
-            />
-        );
-
-        const card = screen.getByRole('button', { name: /RSI/ });
-        expect(card).toHaveAttribute('aria-expanded', 'false');
-    });
-
-    it('is NOT interactive when the description fits (not clamped)', () => {
-        stubClamp(false);
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={vi.fn()}
-            />
-        );
-
-        expect(screen.queryByRole('button', { name: /RSI/ })).toBeNull();
-    });
-
-    it('reflects aria-expanded=true when expanded', () => {
-        stubClamp(true);
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={true}
-                onToggleExpand={vi.fn()}
-            />
-        );
-
-        expect(screen.getByRole('button', { name: /RSI/ })).toHaveAttribute(
-            'aria-expanded',
-            'true'
-        );
-    });
-
-    it('stays interactive when already expanded even if the description no longer overflows', () => {
-        // canExpand = isClamped || isExpanded — an expanded card must remain a
-        // toggle target so the user can still collapse it, even though the
-        // clamp check (measured for the collapsed state) reports false here.
-        stubClamp(false);
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={true}
-                onToggleExpand={vi.fn()}
-            />
-        );
-
-        expect(screen.getByRole('button', { name: /RSI/ })).toHaveAttribute(
-            'aria-expanded',
-            'true'
-        );
-    });
-
-    it('calls onToggleExpand with the skill name on click', async () => {
-        stubClamp(true);
-        const onToggle = vi.fn();
-        const user = userEvent.setup();
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={onToggle}
-            />
-        );
-
-        await user.click(screen.getByRole('button', { name: /RSI/ }));
-
-        expect(onToggle).toHaveBeenCalledWith('RSI');
-    });
-
-    it('toggles on Enter when the card itself is focused', async () => {
-        stubClamp(true);
-        const onToggle = vi.fn();
-        const user = userEvent.setup();
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={onToggle}
-            />
-        );
-
-        const card = screen.getByRole('button', { name: /RSI/ });
-        card.focus();
-        await user.keyboard('{Enter}');
-
-        expect(onToggle).toHaveBeenCalledWith('RSI');
-    });
-
-    it('toggles on Space when the card itself is focused', async () => {
-        stubClamp(true);
-        const onToggle = vi.fn();
-        const user = userEvent.setup();
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={onToggle}
-            />
-        );
-
-        const card = screen.getByRole('button', { name: /RSI/ });
-        card.focus();
-        await user.keyboard(' ');
-
-        expect(onToggle).toHaveBeenCalledWith('RSI');
-    });
-
-    it('가이드가 있는 스킬 카드는 가이드 링크를 카드의 버튼 영역 밖에 둔다', () => {
-        stubClamp(true);
-        render(
-            <SkillCard
-                skill={makeSkill('Doji Pattern Guide', 'candlestick')}
-                isExpanded={false}
-                onToggleExpand={vi.fn()}
-            />
-        );
-
-        const link = screen.getByRole('link', { name: /가이드 보기/ });
-        expect(link).toHaveAttribute('href', '/guide/candlesticks/doji');
-        expect(link.closest('[role="button"]')).toBeNull();
-    });
-
-    it('가이드가 없는 스킬 카드는 링크를 그리지 않는다', () => {
-        render(
-            <SkillCard
-                skill={makeSkill('가이드 없는 스킬')}
-                isExpanded={false}
-                onToggleExpand={vi.fn()}
-            />
-        );
-
-        expect(screen.queryByRole('link')).not.toBeInTheDocument();
-    });
 
     it('섹션 끝에 전체 가이드 링크가 있다', () => {
         render(<SkillsShowcase skills={[]} />);
@@ -573,5 +290,34 @@ describe('SkillCard expand interaction', () => {
         expect(
             screen.getByRole('link', { name: '전체 가이드 보기' })
         ).toHaveAttribute('href', '/guide');
+    });
+
+    it('탭 패널 6개를 모두 DOM에 두되 활성 패널만 보인다', () => {
+        render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
+
+        const panels = screen.getAllByRole('tabpanel', { hidden: true });
+        expect(panels).toHaveLength(6);
+        expect(
+            panels.filter(panel => !panel.hasAttribute('hidden'))
+        ).toHaveLength(1);
+    });
+});
+
+/**
+ * 신뢰도 안내 ⓘ는 카드 수와 무관하게 섹션에 **하나**다. 카드마다 달면 같은 안내문이
+ * 카드 수만큼 HTML에 반복된다.
+ */
+describe('SkillsShowcase 신뢰도 안내 배치', () => {
+    it('ⓘ 버튼이 카드 수와 무관하게 하나이고, 안내문은 열기 전에는 DOM에 없다', () => {
+        render(
+            <SkillsShowcase
+                skills={[makeSkill('RSI'), makeSkill('MACD'), makeSkill('OBV')]}
+            />
+        );
+
+        expect(
+            screen.getAllByRole('button', { name: '신뢰도 점수 설명' })
+        ).toHaveLength(1);
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
 });

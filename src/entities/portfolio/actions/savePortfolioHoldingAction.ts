@@ -1,22 +1,22 @@
 'use server';
 
+import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
-import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import {
-    validateHoldingInput,
-    QUANTITY_SCALE,
-    PRICE_SCALE,
-} from '../lib/validateHoldingInput';
+import { DrizzlePortfolioRepository } from '../api';
 import { toView } from '../lib/toView';
+import {
+    PRICE_SCALE,
+    QUANTITY_SCALE,
+    validateHoldingInput,
+} from '../lib/validateHoldingInput';
 import type {
     PortfolioActionErrorCode,
     RawHoldingInput,
     SavePortfolioResult,
 } from '../model';
-import { getTranslations } from 'next-intl/server';
 
 /**
  * `validateHoldingInput`이 돌려주는 코드 → `entities.portfolio.action` 키.
@@ -39,27 +39,27 @@ const SCALE_FOR_CODE: Partial<Record<PortfolioActionErrorCode, number>> = {
 };
 
 /**
- * Server-action arguments are attacker-controlled at runtime regardless of
- * the declared TypeScript parameter type — a hostile client can post any
- * JSON shape. Narrow before touching `.trim()`/`.toUpperCase()` etc. inside
- * `validateHoldingInput`, which assumes string fields.
+ * 서버 액션 인자는 선언된 TypeScript 타입과 무관하게 런타임에 공격자가 통제한다 — 악의적
+ * 클라이언트는 임의의 JSON 모양을 보낼 수 있다. 문자열 필드를 가정하는 `validateHoldingInput`의
+ * `.trim()`/`.toUpperCase()` 등에 닿기 전에 좁힌다.
  */
 function isRawHoldingInputShape(input: unknown): input is RawHoldingInput {
     if (typeof input !== 'object' || input === null) return false;
-    const candidate = input as Record<string, unknown>;
     return (
-        typeof candidate.symbol === 'string' &&
-        typeof candidate.quantity === 'string' &&
-        typeof candidate.averagePrice === 'string'
+        'symbol' in input &&
+        typeof input.symbol === 'string' &&
+        'quantity' in input &&
+        typeof input.quantity === 'string' &&
+        'averagePrice' in input &&
+        typeof input.averagePrice === 'string'
     );
 }
 
 /**
- * Validates and upserts a member's holding. Never redirects — unauthenticated
- * callers get an `unauthenticated` error result. Symbol existence is verified
- * via `getAssetInfo`: a resolved `null` rejects the save (`symbol_not_found`),
- * but a thrown error (FMP/DB outage) degrades gracefully and proceeds with
- * `companyName`/`fmpSymbol` set to `null` rather than blocking the save.
+ * 회원의 보유종목을 검증하고 upsert한다. 리다이렉트하지 않는다 — 비로그인은 `unauthenticated`
+ * 에러 결과를 받는다. 심볼 존재는 `getAssetInfo`로 확인한다: `null`로 해석되면 저장을
+ * 거부(`symbol_not_found`)하지만, 던져진 에러(FMP/DB 장애)는 저장을 막지 않고
+ * `companyName`/`fmpSymbol`을 `null`로 두고 진행한다.
  */
 export async function savePortfolioHoldingAction(
     input: RawHoldingInput
@@ -125,7 +125,7 @@ export async function savePortfolioHoldingAction(
         });
         return { status: 'ok', holding: toView(row) };
     } catch (error) {
-        // Raw Drizzle errors embed bound params (user id, symbol, amounts) in `.message`.
+        // Drizzle 원본 에러의 `.message`에는 바인딩 파라미터(사용자 id, 심볼, 금액)가 들어 있다.
         logActionError('[savePortfolioHoldingAction] upsert failed', error);
         return {
             status: 'error',

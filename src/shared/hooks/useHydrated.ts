@@ -24,9 +24,9 @@ function getServerSnapshot(): boolean {
  * - 하이드레이션이 아닌 **클라이언트 마운트**(클라이언트 내비게이션으로 새로 생긴
  *   컴포넌트)는 첫 렌더부터 true다.
  *
- * 예전 구현(`useState(false)` + effect에서 `setState(true)`)은 클라이언트 내비게이션
- * 뒤에도 매번 false로 한 번 그린 다음 effect로 true를 다시 그렸다 — 이미 클라이언트인데
- * 렌더가 두 번이고, 그 사이 한 프레임은 게이트된 쿼리·UI가 꺼진 상태로 보였다.
+ * `useState(false)` + effect에서 `setState(true)` 방식은 클라이언트 내비게이션 뒤에도
+ * 매번 false로 한 번 그린 다음 effect로 true를 다시 그린다 — 이미 클라이언트인데 렌더가
+ * 두 번이고, 그 사이 한 프레임은 게이트된 쿼리·UI가 꺼진 상태로 보인다.
  */
 export function useHydrated(): boolean {
     return useSyncExternalStore(

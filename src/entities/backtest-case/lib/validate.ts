@@ -7,18 +7,27 @@ import type {
     BacktestSignalResult,
 } from '@y0ngha/siglens-core';
 
-const VALID_SIGNAL_RESULTS: BacktestSignalResult[] = ['win', 'loss'];
-const VALID_AI_RESULTS: BacktestAiResult[] = ['win', 'loss', 'neutral'];
-const VALID_EXIT_REASONS: BacktestExitReason[] = [
+type UnknownRecord = Record<string, unknown>;
+
+const VALID_SIGNAL_RESULTS: readonly unknown[] = [
+    'win',
+    'loss',
+] satisfies BacktestSignalResult[];
+const VALID_AI_RESULTS: readonly unknown[] = [
+    'win',
+    'loss',
+    'neutral',
+] satisfies BacktestAiResult[];
+const VALID_EXIT_REASONS: readonly unknown[] = [
     'take_profit',
     'stop_loss',
     'time',
-];
-const VALID_ENTRY_RECOMMENDATIONS: BacktestAiEntryRecommendation[] = [
+] satisfies BacktestExitReason[];
+const VALID_ENTRY_RECOMMENDATIONS: readonly unknown[] = [
     'enter',
     'wait',
     'avoid',
-];
+] satisfies BacktestAiEntryRecommendation[];
 
 /** 케이스 날짜(`entryDate`/`exitDate`) 형식. 월 그룹 키(`YYYY-MM`)가 여기서 파생된다. */
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -80,153 +89,124 @@ function normalizeCase(item: unknown): unknown {
     };
 }
 
+function isRecord(value: unknown): value is UnknownRecord {
+    return typeof value === 'object' && value !== null;
+}
+
+function validateBullishTarget(target: unknown, path: string): void {
+    if (!isRecord(target)) {
+        throw new Error(`${path} must be an object`);
+    }
+    if (typeof target['price'] !== 'number') {
+        throw new Error(`${path}.price must be a number`);
+    }
+    if (typeof target['basis'] !== 'string') {
+        throw new Error(`${path}.basis must be a string`);
+    }
+}
+
+/** `stopLoss`/`takeProfit`/`riskLevel`처럼 생략 가능한 필드의 타입만 검사한다. */
+function validateOptionalField(
+    source: UnknownRecord,
+    key: string,
+    expected: 'number' | 'string',
+    path: string
+): void {
+    if (source[key] !== undefined && typeof source[key] !== expected) {
+        throw new Error(`${path}.${key} must be a ${expected} when present`);
+    }
+}
+
+function validateAiAnalysis(value: unknown, path: string): void {
+    if (!isRecord(value) || !Array.isArray(value['tags'])) {
+        throw new Error(`${path}.tags must be an array`);
+    }
+    if (!VALID_ENTRY_RECOMMENDATIONS.includes(value['entryRecommendation'])) {
+        throw new Error(
+            `${path}.entryRecommendation must be 'enter', 'wait', or 'avoid'`
+        );
+    }
+
+    const bullishTargets: unknown = value['bullishTargets'];
+    if (!Array.isArray(bullishTargets)) {
+        throw new Error(`${path}.bullishTargets must be an array`);
+    }
+    bullishTargets.forEach((target: unknown, j) =>
+        validateBullishTarget(target, `${path}.bullishTargets[${j}]`)
+    );
+
+    validateOptionalField(value, 'stopLoss', 'number', path);
+    validateOptionalField(value, 'takeProfit', 'number', path);
+    validateOptionalField(value, 'riskLevel', 'string', path);
+    const riskLevel = value['riskLevel'];
+    if (
+        typeof riskLevel === 'string' &&
+        !isBacktestRiskLevel(normalizeRiskLevel(riskLevel))
+    ) {
+        throw new Error(
+            `${path}.riskLevel must be 'low', 'moderate' (alias 'medium'), 'high', or 'extreme' when present`
+        );
+    }
+}
+
+function validateCase(item: unknown, i: number): void {
+    const path = `cases[${i}]`;
+    if (!isRecord(item)) {
+        throw new Error(`${path} must be an object`);
+    }
+    for (const field of ['entryDate', 'exitDate']) {
+        const value = item[field];
+        if (typeof value !== 'string' || !isCalendarDate(value)) {
+            throw new Error(`${path}.${field} must be a YYYY-MM-DD string`);
+        }
+    }
+    if (typeof item['returnPct'] !== 'number') {
+        throw new Error(`${path}.returnPct must be a number`);
+    }
+    if (item['signalType'] !== 'buy') {
+        throw new Error(`${path}.signalType must be 'buy'`);
+    }
+    if (!VALID_SIGNAL_RESULTS.includes(item['result'])) {
+        throw new Error(`${path}.result must be 'win' or 'loss'`);
+    }
+    if (!VALID_AI_RESULTS.includes(item['aiResult'])) {
+        throw new Error(`${path}.aiResult must be 'win', 'loss', or 'neutral'`);
+    }
+    if (!VALID_EXIT_REASONS.includes(item['exitReason'])) {
+        throw new Error(
+            `${path}.exitReason must be 'take_profit', 'stop_loss', or 'time'`
+        );
+    }
+    if (typeof item['aiTrendHit'] !== 'boolean') {
+        throw new Error(`${path}.aiTrendHit must be a boolean`);
+    }
+    validateAiAnalysis(item['aiAnalysis'], `${path}.aiAnalysis`);
+}
+
 /**
- * 백테스트 산출물의 모양을 검증하고, `riskLevel`의 별칭(`medium`)을 core 정식 값
- * (`moderate`)으로 정규화한 데이터를 돌려준다. 모르는 위험도 값은 던진다.
+ * 번들된 백테스트 JSON을 런타임에 검증해 `BacktestData`로 좁히고, `riskLevel`의 별칭
+ * (`medium`)을 core 정식 값(`moderate`)으로 정규화한 데이터를 돌려준다. 모르는 위험도 값은 던진다.
+ * `/backtesting` 페이지는 모듈 로드 시점에, 사이트맵은 호출할 때마다 검증하며,
+ * 형태가 어긋나면 즉시 실패시키려고 첫 위반에서 throw 한다.
  */
 export function validateBacktestData(data: unknown): BacktestData {
-    if (typeof data !== 'object' || data === null) {
+    if (!isRecord(data)) {
         throw new Error('BacktestData must be an object');
     }
-    // Safe: confirmed non-null object above
-    const d = data as Record<string, unknown>;
-
-    if (typeof d['meta'] !== 'object' || d['meta'] === null) {
+    if (!isRecord(data['meta'])) {
         throw new Error('meta must be an object');
     }
-
-    if (!Array.isArray(d['cases'])) {
+    const cases: unknown = data['cases'];
+    if (!Array.isArray(cases)) {
         throw new Error('cases must be an array');
     }
-
-    // Array.isArray guard narrows d['cases'] to any[] but not unknown[]; explicit cast needed
-    const cases = d['cases'] as unknown[];
-    cases.forEach((item, i) => {
-        // Each element is unknown; cast to Record to access named fields for validation
-        const c = item as Record<string, unknown>;
-        (['entryDate', 'exitDate'] as const).forEach(field => {
-            const value = c[field];
-            if (typeof value !== 'string' || !isCalendarDate(value)) {
-                throw new Error(
-                    `cases[${i}].${field} must be a YYYY-MM-DD string`
-                );
-            }
-        });
-        if (typeof c['returnPct'] !== 'number') {
-            throw new Error(`cases[${i}].returnPct must be a number`);
-        }
-        if (c['signalType'] !== 'buy') {
-            throw new Error(`cases[${i}].signalType must be 'buy'`);
-        }
-        // Array.prototype.includes uses strict equality; non-string values correctly return false
-        if (
-            !VALID_SIGNAL_RESULTS.includes(c['result'] as BacktestSignalResult)
-        ) {
-            throw new Error(`cases[${i}].result must be 'win' or 'loss'`);
-        }
-        if (!VALID_AI_RESULTS.includes(c['aiResult'] as BacktestAiResult)) {
-            throw new Error(
-                `cases[${i}].aiResult must be 'win', 'loss', or 'neutral'`
-            );
-        }
-        if (
-            !VALID_EXIT_REASONS.includes(c['exitReason'] as BacktestExitReason)
-        ) {
-            throw new Error(
-                `cases[${i}].exitReason must be 'take_profit', 'stop_loss', or 'time'`
-            );
-        }
-        if (typeof c['aiTrendHit'] !== 'boolean') {
-            throw new Error(`cases[${i}].aiTrendHit must be a boolean`);
-        }
-        if (
-            typeof c['aiAnalysis'] !== 'object' ||
-            c['aiAnalysis'] === null ||
-            // aiAnalysis confirmed non-null object above; cast to access nested 'tags' field
-            !Array.isArray((c['aiAnalysis'] as Record<string, unknown>)['tags'])
-        ) {
-            throw new Error(`cases[${i}].aiAnalysis.tags must be an array`);
-        }
-
-        // aiAnalysis confirmed non-null object with tags array above
-        const aiAnalysis = c['aiAnalysis'] as Record<string, unknown>;
-
-        if (
-            !VALID_ENTRY_RECOMMENDATIONS.includes(
-                aiAnalysis[
-                    'entryRecommendation'
-                ] as BacktestAiEntryRecommendation
-            )
-        ) {
-            throw new Error(
-                `cases[${i}].aiAnalysis.entryRecommendation must be 'enter', 'wait', or 'avoid'`
-            );
-        }
-
-        if (!Array.isArray(aiAnalysis['bullishTargets'])) {
-            throw new Error(
-                `cases[${i}].aiAnalysis.bullishTargets must be an array`
-            );
-        }
-        const bullishTargets = aiAnalysis['bullishTargets'] as unknown[];
-        bullishTargets.forEach((target, j) => {
-            if (typeof target !== 'object' || target === null) {
-                throw new Error(
-                    `cases[${i}].aiAnalysis.bullishTargets[${j}] must be an object`
-                );
-            }
-            // target confirmed non-null object above; cast to access price/basis fields
-            const t = target as Record<string, unknown>;
-            if (typeof t['price'] !== 'number') {
-                throw new Error(
-                    `cases[${i}].aiAnalysis.bullishTargets[${j}].price must be a number`
-                );
-            }
-            if (typeof t['basis'] !== 'string') {
-                throw new Error(
-                    `cases[${i}].aiAnalysis.bullishTargets[${j}].basis must be a string`
-                );
-            }
-        });
-
-        if (
-            aiAnalysis['stopLoss'] !== undefined &&
-            typeof aiAnalysis['stopLoss'] !== 'number'
-        ) {
-            throw new Error(
-                `cases[${i}].aiAnalysis.stopLoss must be a number when present`
-            );
-        }
-
-        if (
-            aiAnalysis['takeProfit'] !== undefined &&
-            typeof aiAnalysis['takeProfit'] !== 'number'
-        ) {
-            throw new Error(
-                `cases[${i}].aiAnalysis.takeProfit must be a number when present`
-            );
-        }
-
-        if (
-            aiAnalysis['riskLevel'] !== undefined &&
-            typeof aiAnalysis['riskLevel'] !== 'string'
-        ) {
-            throw new Error(
-                `cases[${i}].aiAnalysis.riskLevel must be a string when present`
-            );
-        }
-
-        if (
-            typeof aiAnalysis['riskLevel'] === 'string' &&
-            !isBacktestRiskLevel(normalizeRiskLevel(aiAnalysis['riskLevel']))
-        ) {
-            throw new Error(
-                `cases[${i}].aiAnalysis.riskLevel must be 'low', 'moderate' (alias 'medium'), 'high', or 'extreme' when present`
-            );
-        }
-    });
+    cases.forEach(validateCase);
 
     // 검증기가 보장하는 것: 위에서 확인한 케이스 필드와 정규화된 riskLevel.
-    // meta 내부 필드는 확인하지 않고 산출물을 신뢰한다.
-    return { ...d, cases: cases.map(normalizeCase) } as unknown as BacktestData;
+    // meta 내부 필드는 확인하지 않고 산출물을 신뢰한다. 타입 가드는 필드 단위로만
+    // 좁혀지므로, 위 검증을 모두 통과한 값에 한해 단언한다.
+    return {
+        ...data,
+        cases: cases.map(normalizeCase),
+    } as unknown as BacktestData;
 }

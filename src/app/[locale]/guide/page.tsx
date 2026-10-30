@@ -20,13 +20,14 @@ import {
 } from './_lib/guideRoute';
 
 // 본문이 DB(`guide_entries`)에 있고 시드 재실행으로만 바뀐다 — 태그 무효화 경로가 없어
-// 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).
+// 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다(src/app/CLAUDE.md#AP-1).
 export const revalidate = 86400;
 
 interface GuideHubRouteProps {
     readonly params: GuideRouteParams;
 }
 
+/** 가이드 허브 메타데이터 — 카탈로그를 못 읽으면 본문 안내와 같은 술어로 noindex. */
 export async function generateMetadata({
     params,
 }: GuideHubRouteProps): Promise<Metadata> {
@@ -49,6 +50,7 @@ export async function generateMetadata({
     });
 }
 
+/** 가이드 허브 — 카탈로그를 못 읽으면 안내 렌더(짧은 revalidate), 읽으면 목록 + 구조화데이터. */
 export default async function GuideHubRoute({ params }: GuideHubRouteProps) {
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);

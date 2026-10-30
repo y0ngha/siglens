@@ -101,6 +101,31 @@ describe('deleteApiKeyAction', () => {
         expect(result.status).toBe('error');
     });
 
+    it('DB 삭제 실패 시 원인을 정제해(name·code만) 남긴다', async () => {
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const failure = Object.assign(new Error('params: ciphertext-abc'), {
+            cause: { code: '08006' },
+        });
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+        mockDeleteByUserAndProvider.mockRejectedValue(failure);
+
+        await deleteApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic' })
+        );
+
+        expect(consoleError).toHaveBeenCalledWith(
+            '[deleteApiKeyAction] Failed to delete user API key',
+            { name: 'Error', code: '08006' }
+        );
+        consoleError.mockRestore();
+    });
+
     it('DB 삭제 실패 시 status: error를 반환한다', async () => {
         mockGetCurrentUser.mockResolvedValue({
             id: 'user-1',
