@@ -15,7 +15,7 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
-import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';

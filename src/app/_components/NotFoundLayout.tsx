@@ -1,11 +1,15 @@
+/** 404 화면의 내비·바로가기 링크 하나. `id`는 React key다. */
 export interface NotFoundLink {
     readonly id: string;
     readonly href: string;
     readonly label: string;
 }
 
+/** `NotFoundLayout` 입력. 문구는 호출부(서버 `not-found.tsx` 또는 `NotFoundView`)가 표면에 맞게 푼다. */
 export interface NotFoundLayoutProps {
+    /** 브랜드 바 워드마크(메인 `SIGLENS`, ai 호스트 `SIGLENS AI`). */
     readonly wordmark: string;
+    /** 워드마크·홈 링크의 목적지 — 표면 로케일의 홈. */
     readonly homeHref: string;
     /**
      * 문서 제목(`<title>`). React가 `<head>`로 끌어올려 렌더한다 — 제목을 마크업의 일부로 두는

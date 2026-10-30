@@ -116,10 +116,10 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 // 페이지는 5년 일봉이 담긴 세션 키 축소 봉(getSessionBarsStatic, revalidate 24h)을 쓴다.
 // 6h 봉 캐시(barsStaticCache)는 읽으면 이 탭(24h 선언)이 6h로 clamp되므로 둘 다 부르면 안 된다 —
 // 그 부재를 단언하려고 스파이로 남겨 둔다.
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: mockGetQuantizedBarsStatic,
 }));
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsSixHour,
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
