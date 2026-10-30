@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { getServerPrimaryKey } from '@/entities/llm-provider/lib/serverKeys';
+import { getServerPrimaryKey } from '@/entities/llm-provider/api/serverKeys';
 
 const ORIGINAL = { ...process.env };
 
