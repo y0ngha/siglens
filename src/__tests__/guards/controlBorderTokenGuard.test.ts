@@ -224,18 +224,6 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // (비활성은 이제 `aria-disabled`지만 같은 진행 중 분기다).
     'widgets/analysis/ui/CopyReportButton.tsx:35',
 
-    // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
-    // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.
-    //
-    // 방향 보더를 일괄로 봐주는 휴리스틱을 넣었다가 걷어냈다 — 밑줄형 입력
-    // (`border-b`가 경계의 전부, 라이트 1.05:1)이 그 예외로 통과했기 때문이다.
-    // 소스만으로는 "항목 사이 줄"과 "요소의 유일한 경계"를 가를 수 없으므로,
-    // 휴리스틱 대신 자리마다 판단을 적는다.
-    // 줄 번호로 키를 잡으므로 이 파일이 위쪽에서 길어지면 함께 옮겨야 한다
-    // (아래 '낡은 항목' 검사가 그때 알려준다 — 실제로 `idScope` prop을
-    // 넣으면서 147에서 밀렸다).
-    'widgets/layout/HeaderNavMenu.tsx:154',
-
     // (SignalStockCard의 링크 카드는 이제 `SURFACE_CARD` 면이라 장식 보더가 없다.
     // 칩(rounded-full, 텍스트 한 줄)은 보더가 곧 경계라 카드와 다르다 —
     // RelatedSymbols·CategoryCardGrid의 칩은 경계 토큰으로 고쳤다.)

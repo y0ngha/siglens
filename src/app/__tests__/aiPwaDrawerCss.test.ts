@@ -80,7 +80,7 @@ describe('globals.css — 상단 배너는 크롬 아래에 뜬다', () => {
     it('규칙이 기대는 속성과 높이 변수를 헤더·띠가 실제로 쓴다', () => {
         const read = (rel: string) =>
             readFileSync(path.resolve(__dirname, rel), 'utf8');
-        const header = read('../../widgets/layout/Header.tsx');
+        const header = read('../../widgets/layout/ui/header/HeaderShell.tsx');
         expect(header).toMatch(/<header\s+data-scroll-chrome=""/);
         expect(header).toContain('h-(--header-h)');
         const chatBar = read(
