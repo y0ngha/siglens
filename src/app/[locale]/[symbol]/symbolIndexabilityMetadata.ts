@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { isPrewarmTab } from '@/entities/seo-snapshot/lib/applicability';
 import {
     isSeoSnapshotTab,

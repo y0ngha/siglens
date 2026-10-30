@@ -1,19 +1,18 @@
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import type { MarketSessionSpec } from '@y0ngha/siglens-core';
-import { type SeoSnapshotTab } from '../model';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     DEFAULT_MARKET_PROFILE,
     isKrEquitySymbol,
 } from '@/shared/config/marketProfile/registry';
-import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import type { SeoSnapshotTab } from '../model';
 
 /**
  * 프리웜이 실제로 굽는 탭 — **자산군과 무관하게 차트(technical)와 뉴스 두 개뿐이다.**
  *
- * 2026-10-01 SEO 감사(`docs/architecture/SEO_RECOVERY_2026_09.md` §10)로 7탭에서 줄였다.
- * 근거는 세 가지다:
+ * 2026-10-01에 7탭에서 줄였다. 근거는 세 가지다:
  *   - 7탭 산문 도입(07-25) 뒤 노출이 늘지 않았다(16.9 → 11.0회/일).
  *   - Googlebot의 HTML 크롤은 하루 수백 건이라 색인 URL 하나가 며칠~몇 주에 한 번
  *     읽힌다 — 매일 밤 굽는 산문 대부분은 한 번도 읽히지 않고 덮어써졌다.
@@ -34,7 +33,7 @@ export const PREWARM_TABS = [
     'news',
 ] as const satisfies readonly SeoSnapshotTab[];
 
-/** `tab`이 프리웜 대상인지. 스냅샷 행이 계속 갱신되는 탭은 이것뿐이다. */
+/** `tab`이 프리웜 대상인지. 스냅샷 행이 계속 갱신되는 탭은 이것뿐이라, 읽기 경로가 낡은 행을 거르는 기준이다. */
 export function isPrewarmTab(tab: SeoSnapshotTab): boolean {
     return (PREWARM_TABS as readonly SeoSnapshotTab[]).includes(tab);
 }
@@ -49,6 +48,7 @@ export function applicableTabsFor(symbol: string): SeoSnapshotTab[] {
     return [...PREWARM_TABS];
 }
 
+/** 프리웜 유니버스의 한 심볼과 그 심볼이 굽는 탭. */
 export interface PrewarmSymbol {
     symbol: string;
     tabs: SeoSnapshotTab[];

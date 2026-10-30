@@ -1,34 +1,29 @@
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
-import { hasTechnicalProse } from './technicalContent';
-import { hasOverallProse } from './overallContent';
+import type { SeoSnapshotTab } from '../model';
 import { hasCongressProse } from './congressContent';
-import { hasFundamentalProse } from './fundamentalContent';
 import { hasFinancialsProse } from './financialsContent';
+import { hasFundamentalProse } from './fundamentalContent';
 import { hasNewsProse } from './newsContent';
 import { hasOptionsProse } from './optionsContent';
+import { hasOverallProse } from './overallContent';
+import { hasTechnicalProse } from './technicalContent';
 
 /**
- * Tab → renderability predicate map (audit fix FIX 1). Each entry delegates to
- * the SAME `has*Prose` predicate its `*SnapshotProse` renderer uses internally
- * to decide whether to return `null` — so this map and the renderer it backs
- * can never disagree on whether a given row's `content` produces visible
- * prose.
+ * 탭 → 렌더 가능성 판정 맵. 각 항목은 해당 `*SnapshotProse` 렌더러가 `null`을 반환할지 정할 때
+ * 내부에서 쓰는 **같은** `has*Prose` 술어에 위임하므로, 이 맵과 렌더러는 어떤 행의 `content`가
+ * 보이는 산문을 만드는지에 대해 어긋날 수 없다.
  *
- * Consumed by `src/app/[locale]/[symbol]/symbolIndexabilityMetadata.ts`, the
- * sitemap prose gate (`entities/sitemap-entry/lib/proseGate.ts`) and the
- * pre-warm harvest to gate indexability/persistence on RENDERABILITY, not row
- * existence: a `seo_analysis_snapshots`
- * row can exist for a tab while its `content` fails that tab's narrowing (a
- * malformed JSONB write, a core schema drift) — in that case the page body
- * falls back to the thin degraded shell, and this map must report `false` so
- * the page is not falsely marked indexable.
+ * 색인 가능 여부와 영속화를 행 존재가 아니라 **렌더 가능성**으로 게이팅하는 곳에서 쓴다 —
+ * `src/app/[locale]/[symbol]/symbolIndexabilityMetadata.ts`, sitemap 산문 게이트
+ * (`entities/sitemap-entry/lib/proseGate.ts`), 프리웜 harvest. 행이 있어도 `content`가 그 탭의
+ * 좁힘을 통과하지 못할 수 있다(손상된 JSONB 쓰기, core 스키마 드리프트). 그러면 페이지 본문은
+ * 얇은 degraded shell로 폴백하므로 이 맵이 `false`를 보고해야 페이지가 잘못 indexable로
+ * 표시되지 않는다.
  *
- * ⚠️ 판별 로직(`narrow*`/`has*Prose`)은 `entities/seo-snapshot/lib/*Content.ts`에
- * 둔다 — views의 렌더러 `.tsx`에서 가져오면 판별 함수 하나 때문에 React 컴포넌트
- * 트리가 통째로 딸려 오고(`SnapshotSummarySection` → `PlainAnalysisSwitch` →
- * `AnalysisViewToggle`, 스냅샷을 렌더하지 않는 라우트가 쉽게보기 번역 키를 요구하게
- * 됐다), entities(sitemap·harvest)는 views를 import할 수 없다. 렌더러와 이 맵이
- * 같은 `narrow*`를 공유하므로 둘이 어긋날 수 없다.
+ * ⚠️ 판별 로직(`narrow*`/`has*Prose`)은 `entities/seo-snapshot/lib/*Content.ts`에 둔다 —
+ * views의 렌더러 `.tsx`에서 가져오면 판별 함수 하나 때문에 React 컴포넌트 트리가 통째로 딸려 오고
+ * (`SnapshotSummarySection` → `PlainAnalysisSwitch` → `AnalysisViewToggle`, 스냅샷을 렌더하지
+ * 않는 라우트가 쉽게보기 번역 키를 요구하게 됐다), entities(sitemap·harvest)는 views를 import할
+ * 수 없다.
  */
 const PROSE_PREDICATE_BY_TAB: Record<
     SeoSnapshotTab,
@@ -44,12 +39,10 @@ const PROSE_PREDICATE_BY_TAB: Record<
 };
 
 /**
- * Returns whether `content` renders visible prose for the given snapshot
- * `tab`. `tab` is typed as `SeoSnapshotTab`, but this function is called with
- * DB-sourced row data (`getSeoSnapshotsStatic` results) that isn't
- * compiler-checked at the call site — an unrecognized tab string must return
- * `false`, not throw, so a malformed/legacy row can never crash metadata
- * generation (PR #698 round-2 review FIX 1).
+ * `content`가 해당 스냅샷 `tab`에서 보이는 산문을 렌더하는지 돌려준다. `tab`은
+ * `SeoSnapshotTab`으로 타입이 걸려 있지만 호출부는 컴파일러가 검사하지 못하는 DB 행
+ * (`getSeoSnapshotsStatic` 결과)을 넘긴다 — 알 수 없는 탭 문자열은 던지지 않고 `false`를
+ * 돌려줘, 손상·레거시 행이 메타데이터 생성을 깨뜨리지 못하게 한다.
  */
 export function hasProseForTab(tab: SeoSnapshotTab, content: unknown): boolean {
     const predicate = PROSE_PREDICATE_BY_TAB[tab];

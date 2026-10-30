@@ -230,7 +230,7 @@ vi.mock(
 // `/news`는 산문·감정 카드가 둘 다 없으면 noindex다. 이 파일의 관심사는 canonical
 // URL이지 색인성이 아니므로, 그 게이트를 통과할 최소 픽스처를 준다. (`/overall`·
 // `/fundamental`은 2026-10-01부터 항상 noindex라 스냅샷을 읽지 않는다.)
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([
         // `/news`도 산문·감정 카드가 둘 다 없으면 noindex다.
         {

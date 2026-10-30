@@ -52,13 +52,13 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import {
     SNAPSHOT_MAX_AGE_MS,
     type SeoAnalysisSnapshot,
 } from '@/entities/seo-snapshot/model';
 
-// FIX D(감사) — max-age 필터는 Date.now() 기준이라 실제 wall-clock에 기대면
+// max-age 필터는 Date.now() 기준이라 실제 wall-clock에 기대면
 // 테스트가 시간 의존 flaky가 된다(TESTING.md#TE-7). fake
 // timers로 고정한다.
 const FIXED_NOW = new Date('2026-07-25T12:00:00.000Z');
@@ -113,7 +113,7 @@ describe('getSeoSnapshotsStatic', () => {
         expect(result).toEqual(SNAPSHOTS);
     });
 
-    it('성공 시 행 수를 info 로그로 남긴다 (audit fix FIX 7 — 전 렌더러 null-render 시 유일한 관측 신호)', async () => {
+    it('성공 시 행 수를 info 로그로 남긴다 (전 렌더러 null-render 시 유일한 관측 신호)', async () => {
         const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
         await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
@@ -207,7 +207,7 @@ describe('getSeoSnapshotsStatic', () => {
         });
     });
 
-    describe('FIX D(감사) — max-age 필터', () => {
+    describe('max-age 필터', () => {
         it('cutoff보다 신선한 행은 그대로 통과한다', async () => {
             const freshRow = snapshotAt(
                 new Date(FIXED_NOW.getTime() - SNAPSHOT_MAX_AGE_MS + 1)
@@ -432,7 +432,7 @@ describe('getSeoSnapshotsStatic', () => {
             expect(result![0].firstGeneratedAt).toBeNull();
         });
 
-        // A1(감사): 캐시-히트 rehydrate가 malformed generatedAt(예: 손상된
+        // 캐시-히트 rehydrate가 malformed generatedAt(예: 손상된
         // JSONB, 되살릴 수 없는 값)까지 Date로 되살리지는 못한다 — 이 경우
         // Invalid Date가 렌더까지 흘러가지 않도록 여기서 드롭해야 한다.
         it('rehydrate 후 generatedAt이 Invalid Date인 행은 드롭한다', async () => {

@@ -1,18 +1,13 @@
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { createEnumGuard } from './createEnumGuard';
+import { asRecord, narrowCleanString } from './narrowJson';
 import { narrowStringArray } from './narrowStringArray';
 
-// Guard-only key map — the scenario section headings below are hardcoded
-// Korean strings ("강세 시나리오" / ...), not derived from this map, but its
-// keys must cover exactly `OverallScenarioName`'s members (PR #698 round-2
-// review FIX 3: converted from an `Array.includes` membership check to the
-// shared `createEnumGuard` factory — semantics are equivalent, both reject
-// any string outside {bullish, neutral, bearish}). See createEnumGuard's
-// JSDoc for the Object.hasOwn / prototype-chain rationale. Values are
-// `shared.enumLabel` catalog keys (`overallScenario.*`), not Korean text —
-// unused for rendering today, kept in sync in case a future call site needs
-// the display label.
+// 가드 전용 키 맵이다 — 시나리오 섹션 제목은 이 맵에서 파생되지 않고 렌더러에 하드코딩돼
+// 있지만, 키는 `OverallScenarioName`의 멤버와 정확히 일치해야 한다. 값은
+// `shared.enumLabel` 카탈로그 키(`overallScenario.*`)이며 현재 렌더에는 쓰이지 않는다.
+// `Object.hasOwn`으로 거르는 이유는 `createEnumGuard` JSDoc 참고.
 const SCENARIO_NAME_LABEL_KEY: Record<OverallScenarioName, string> = {
     bullish: 'overallScenario.bullish',
     neutral: 'overallScenario.neutral',
@@ -28,8 +23,8 @@ interface NarrowedScenario {
 }
 
 function narrowScenario(value: unknown): NarrowedScenario | null {
-    if (typeof value !== 'object' || value === null) return null;
-    const record = value as Record<string, unknown>;
+    const record = asRecord(value);
+    if (record === null) return null;
     if (!isScenarioName(record.name)) return null;
 
     const triggerConditionKo =
@@ -45,22 +40,20 @@ function narrowScenario(value: unknown): NarrowedScenario | null {
 }
 
 /**
- * 시나리오 하나를 bullet 텍스트로 합성한다. trigger/priceRange가 둘 다
- * 비어있으면(정규화 실패·LLM 누락) `null`을 돌려줘 호출부가 그 항목을
- * 건너뛰게 한다.
- */
-/**
- * 불릿 조립에 쓸 **조각**을 돌려준다. 문장을 여기서 만들지 않는 이유는 두
- * 가지다: (1) `narrowOverallContent`는 `hasOverallProse`(순수 술어)도 쓰는
- * 경로라 번역자를 받을 수 없고, (2) `예상 가격대: X`의 어순이 로케일마다
- * 달라 접미사만 갈아끼우는 방식으로는 영어 문장이 어색해진다. 조립은
- * 번역자를 선언한 렌더 컴포넌트가 한다.
+ * 시나리오 불릿 조립에 쓸 **조각**. 문장을 여기서 만들지 않는 이유는 두 가지다:
+ * (1) `narrowOverallContent`는 `hasOverallProse`(순수 술어)도 쓰는 경로라 번역자를 받을 수
+ * 없고, (2) `예상 가격대: X`의 어순이 로케일마다 달라 접미사만 갈아끼우는 방식으로는 영어
+ * 문장이 어색해진다. 조립은 번역자를 선언한 렌더 컴포넌트가 한다.
  */
 export interface ScenarioBullet {
     trigger: string;
     priceRange: string;
 }
 
+/**
+ * 시나리오 하나를 불릿 조각으로 바꾼다. trigger/priceRange가 둘 다 비어 있으면(정규화 실패·LLM
+ * 누락) `null`을 돌려줘 호출부가 그 항목을 건너뛰게 한다.
+ */
 function formatScenarioBullet(
     scenario: NarrowedScenario
 ): ScenarioBullet | null {
@@ -88,40 +81,32 @@ interface NarrowedOverallContent {
 }
 
 /**
- * `content`를 overall 결과 모양으로 좁힌다.
+ * `content`를 overall 결과 모양으로 좁힌다. 산문 근거가 전혀 없으면 `null`.
  *
  * core `OverallAnalysisResponse`(`node_modules/@y0ngha/siglens-core/dist/domain/types.d.ts`)는
  * `bullishBulletsKo`/`bearishBulletsKo` 같은 전용 배열 필드가 없다 — 대신
- * `scenarios: OverallScenario[]`(각 `{ name: 'bullish'|'neutral'|'bearish',
- * triggerConditionKo, priceRangeKo }`)로 강세/중립/약세 세 시나리오를 표현한다.
- * 이 렌더러는 세 시나리오 전부를 trigger+priceRange를 합성한 bullet 문자열로
- * 변환한다(audit fix — 이전에는 `neutral`을 드롭했다. 대체 대상인
- * `OverallFactsSummary`가 세 시나리오 전부를 렌더하므로, neutral을 빼면
- * 대체 전보다 텍스트가 줄어드는 회귀였다). `riskFactorsKo`도
- * `OverallFactsSummary`와 동일하게 위험 요인 목록으로 노출한다.
+ * `scenarios: OverallScenario[]`(각 `{ name: 'bullish'|'neutral'|'bearish', triggerConditionKo,
+ * priceRangeKo }`)로 강세/중립/약세 세 시나리오를 표현한다. 세 시나리오 전부를
+ * trigger+priceRange 불릿 조각으로 변환한다(`OverallFactsSummary`가 세 시나리오를 모두
+ * 렌더하므로 neutral을 빼면 텍스트가 줄어든다). `riskFactorsKo`도 같은 이유로 위험 요인
+ * 목록으로 노출한다.
  *
- * `technicalBulletsKo`/`fundamentalBulletsKo`/`newsBulletsKo`/
- * `optionsBulletsKo`/`financialsBulletsKo`도 좁힌다(audit fix FIX 2) — core
- * `OverallAnalysisResponse`는 이 다섯 필드를 REQUIRED 배열로 선언하고
- * (`responseSchemas.js`), overall도 다른 필드들과 동일하게 tier 마스킹
- * 대상이 아니므로(위 JSDoc) free tier pre-warm에도 전부 채워진다. 이전
- * 렌더러는 이 다섯 배열을 전혀 읽지 않아 심볼당 400~900자 규모의 크롤
- * 가능 텍스트가 저장은 되고도 버려지고 있었다.
+ * `technicalBulletsKo`/`fundamentalBulletsKo`/`newsBulletsKo`/`optionsBulletsKo`/
+ * `financialsBulletsKo`도 좁힌다 — core `OverallAnalysisResponse`는 이 다섯 필드를 REQUIRED
+ * 배열로 선언하고(`responseSchemas.js`), overall은 tier 마스킹 대상이 아니라 free tier
+ * pre-warm에도 전부 채워지며, 읽지 않으면 심볼당 400~900자 규모의 크롤 가능 텍스트가 저장만
+ * 되고 버려진다. `investorFlowsBulletsKo`는 core가 점수표를 받았을 때만 채워지는 선택 필드다.
  */
 export function narrowOverallContent(
     content: unknown
 ): NarrowedOverallContent | null {
-    if (typeof content !== 'object' || content === null) return null;
+    const record = asRecord(content);
+    if (record === null) return null;
 
-    const record = content as Record<string, unknown>;
-    const headlineKo =
-        typeof record.headlineKo === 'string'
-            ? stripSnapshotMarkdown(record.headlineKo).trim()
-            : '';
-    const integratedConclusionKo =
-        typeof record.integratedConclusionKo === 'string'
-            ? stripSnapshotMarkdown(record.integratedConclusionKo).trim()
-            : '';
+    const headlineKo = narrowCleanString(record.headlineKo);
+    const integratedConclusionKo = narrowCleanString(
+        record.integratedConclusionKo
+    );
 
     const scenarios = Array.isArray(record.scenarios)
         ? record.scenarios.flatMap(raw => {
@@ -186,19 +171,13 @@ export function narrowOverallContent(
 }
 
 /**
- * `overall/page.tsx`가 `<OverallSnapshotProse>`를 렌더할지(스냅샷 프로즈)
- * 아니면 기존 peek/placeholder 체인(`OverallFactsSummary`/
- * `OverallFactualFallback`)으로 폴백할지 판단하는 예측기(audit fix FIX 1b).
+ * `overall/page.tsx`가 `<OverallSnapshotProse>`를 렌더할지(스냅샷 산문) 아니면 peek/placeholder
+ * 체인(`OverallFactsSummary`/`OverallFactualFallback`)으로 폴백할지 판단하는 예측기.
  *
- * 페이지는 이전에 "행 존재 여부"(`overallSnapshot !== undefined`)로
- * 분기했다 — 그러나 행은 있지만 `content`가 `narrowOverallContent`를
- * 통과하지 못하면(malformed JSONB) `OverallSnapshotProse`가 `null`을
- * 반환하는데, 페이지는 이미 peek 분기를 건너뛴 상태라 섹션 전체가
- * 아무것도 렌더하지 않는 회귀가 생긴다 — 오늘의 baseline(스냅샷 없을 때
- * peek/placeholder를 보여주던 것)보다 더 나쁜 결과다.
- *
- * `narrowOverallContent`를 그대로 재사용해 이 예측기와 컴포넌트가 서로
- * 다른 판단을 내릴 수 없게 한다(단일 진실 소스).
+ * "행 존재 여부"로 분기하면 안 된다 — 행은 있지만 `content`가 `narrowOverallContent`를
+ * 통과하지 못할 때(손상된 JSONB) `OverallSnapshotProse`는 `null`을 반환하는데, 페이지는 이미
+ * peek 분기를 건너뛴 상태라 섹션 전체가 아무것도 렌더하지 않는다. 렌더러와 같은
+ * `narrowOverallContent`를 쓰므로 둘이 서로 다른 판단을 내릴 수 없다.
  */
 export function hasOverallProse(content: unknown): boolean {
     return narrowOverallContent(content) !== null;

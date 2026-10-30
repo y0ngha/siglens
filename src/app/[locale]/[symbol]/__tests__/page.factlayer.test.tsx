@@ -30,7 +30,7 @@ const {
     mockClassifyAsset: vi.fn((): string => 'stock'),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/views/symbol/SymbolPageClient', () => ({
