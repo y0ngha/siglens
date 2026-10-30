@@ -25,5 +25,21 @@ describe('toView', () => {
                 updatedAt: '2026-01-02T03:04:05.000Z',
             });
         });
+
+        it('회사명·FMP 심볼이 null이면 null 그대로 내보낸다', () => {
+            expect(
+                toView({
+                    id: 'h2',
+                    userId: 'user-1',
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '1',
+                    averagePrice: '2',
+                    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+                    updatedAt: new Date('2026-01-02T03:04:05.000Z'),
+                })
+            ).toMatchObject({ companyName: null, fmpSymbol: null });
+        });
     });
 });

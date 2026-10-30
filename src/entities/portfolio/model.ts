@@ -36,12 +36,18 @@ export type ValidateHoldingResult =
     | { ok: true; symbol: string; quantity: string; averagePrice: string }
     | { ok: false; code: PortfolioActionErrorCode };
 
-/** `savePortfolioHoldingAction`의 결과. */
+/**
+ * `savePortfolioHoldingAction`의 결과. 액션은 던지지 않고 `status`로 갈린다 — `ok`면 저장된
+ * 보유 뷰, `error`면 `code`로 분기하고 `message`는 그대로 보여줄 현지화 문구.
+ */
 export type SavePortfolioResult =
     | { status: 'ok'; holding: PortfolioHoldingView }
     | { status: 'error'; code: PortfolioActionErrorCode; message: string };
 
-/** `deletePortfolioHoldingAction`의 결과. */
+/**
+ * `deletePortfolioHoldingAction`의 결과. 성공에는 페이로드가 없고, 실패는 던지지 않고
+ * `code`·현지화된 `message`로 돌아온다.
+ */
 export type DeletePortfolioResult =
     | { status: 'ok' }
     | { status: 'error'; code: PortfolioActionErrorCode; message: string };

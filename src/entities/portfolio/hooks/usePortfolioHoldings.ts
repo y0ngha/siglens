@@ -24,7 +24,10 @@ import type {
     SavePortfolioResult,
 } from '../model';
 
-/** {@link usePortfolioHoldings}의 반환 모양. */
+/**
+ * {@link usePortfolioHoldings}의 반환 모양. 로딩·오류·데이터 유무를 별도 플래그로 나눠
+ * 소비자가 "보유 없음"과 "아직 모름"을 구분해 분기할 수 있게 한다.
+ */
 interface UsePortfolioHoldingsReturn {
     holdings: PortfolioHoldingView[];
     /**
