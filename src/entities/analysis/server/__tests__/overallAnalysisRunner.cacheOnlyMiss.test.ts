@@ -72,11 +72,14 @@ vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => ({})),
 }));
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(async () => {
-        throw new Error('no financials');
-    }),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(async () => {
+            throw new Error('no financials');
+        }),
+    })
+);
 vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: vi.fn(async () => undefined),
 }));

@@ -33,6 +33,7 @@ export type MeterGate =
 
 const OFF: MeterGate = { kind: 'off' };
 
+/** `resolveMeterGate`의 판정 입력. `guest`는 한도 예약과 같은 해석기를 공유한다. */
 export interface ResolveMeterGateInput {
     readonly userId: string | null;
     readonly tier: Tier;

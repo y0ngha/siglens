@@ -15,6 +15,8 @@ vi.mock('@/shared/lib/legal', async importOriginal => ({
 
 import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
 import { buildStaticEntries } from '../lib/buildStaticEntries';
+import { NEWS_PAGE_MAX_STALENESS_HOURS } from '../lib/buildNewsSitemapEntries';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import {
     ABOUT_UPDATED_AT,
@@ -417,7 +419,8 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
     // 경계: 페이지는 최대 12시간 묵은 목록을 서빙하므로 창은 `MARKET_NEWS_LOOKBACK_MS − 12h`다.
     // 정확히 그 나이면 뺀다(`<` 비교), 1초 모자라면 싣는다. 예전 14일 기준에서는 7~14일 구간이
     // "sitemap에 있는데 noindex"였다.
-    const WINDOW_MS = MARKET_NEWS_LOOKBACK_MS - 12 * 60 * 60 * 1000;
+    const WINDOW_MS =
+        MARKET_NEWS_LOOKBACK_MS - NEWS_PAGE_MAX_STALENESS_HOURS * MS_PER_HOUR;
     it.each([
         ['창 정각', WINDOW_MS, false],
         ['창에서 1초 모자람', WINDOW_MS - 1000, true],

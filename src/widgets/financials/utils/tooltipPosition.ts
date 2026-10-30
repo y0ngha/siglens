@@ -1,3 +1,6 @@
+/**
+ * 차트 호버 툴팁의 화면 배치 — 커서 근처에 두되 뷰포트 가장자리에서 반대편으로 뒤집는다.
+ */
 export interface TooltipPosition {
     left: number;
     top: number;

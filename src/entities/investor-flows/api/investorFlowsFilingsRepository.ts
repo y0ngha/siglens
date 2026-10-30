@@ -11,6 +11,7 @@ import {
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
+import { chunked } from '../lib/chunked';
 import { cikToInt, cikToString } from '../lib/cik';
 import type { CikSymbolPair } from '../lib/companyTickers';
 import { compositeKey } from '../lib/dedupeByKey';
@@ -30,12 +31,6 @@ import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 const LOOKUP_CHUNK = 1_000;
-
-function chunked<T>(items: readonly T[], size: number): T[][] {
-    return Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
-        items.slice(i * size, (i + 1) * size)
-    );
-}
 
 /** 재시도 큐에 넣을 문서 하나(시도 횟수는 저장소가 센다). */
 export type FilingFailureTarget = Omit<FilingRetry, 'attempts'>;

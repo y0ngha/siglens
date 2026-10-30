@@ -1,5 +1,13 @@
-import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { sitemapAlternates } from './sitemapAlternates';
+import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
+import {
+    DEVELOPERS_PATH,
+    DEVELOPERS_UPDATED_AT,
+} from '@/shared/config/publicApi';
+import type { TermsKind } from '@/shared/db/constants';
 import {
     ABOUT_PATH,
     ABOUT_UPDATED_AT,
@@ -8,32 +16,16 @@ import {
     PRIVACY_PATH,
     TERMS_PATH,
 } from '@/shared/lib/legal';
-import {
-    DEVELOPERS_PATH,
-    DEVELOPERS_UPDATED_AT,
-} from '@/shared/config/publicApi';
-import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
-import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
-import { MS_PER_HOUR } from '@/shared/config/time';
-import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
-import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
-import {
-    CATEGORY_CONFIG,
-    categoriesInRegion,
-    type NewsFeedCategoryId,
-} from '@/entities/market-news/lib/categoryConfig';
-import type { TermsKind } from '@/shared/db/constants';
-import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
-import type { SitemapEntry } from '../model';
+import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 
-/** `now`가 속한 UTC 날짜의 자정. 하루에 한 번만 바뀌는 lastmod를 만든다. */
-function startOfUtcDay(now: Date): Date {
-    return new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-    );
-}
+import type { SitemapEntry } from '../model';
+import { buildNewsSitemapEntries } from './buildNewsSitemapEntries';
+import { buildRegionEntries } from './buildRegionEntries';
+import { sitemapAlternates } from './sitemapAlternates';
+import { staticSitemapEntry } from './staticSitemapEntry';
+import { startOfUtcDay } from './startOfUtcDay';
 
 /** `buildStaticEntries`에 주입하는 콘텐츠 갱신 시각들. 전부 선택이다. */
 export interface BuildStaticEntriesOptions {
@@ -59,29 +51,6 @@ export interface BuildStaticEntriesOptions {
      * lastmod가 부정확하면 Google은 그 sitemap의 lastmod 전체를 무시한다.
      */
     readonly backtestingDataDate?: Date;
-}
-
-/**
- * 뉴스 카테고리를 sitemap에서 빼는 정체 기준 — **페이지의 색인 기준과 같은 창**이다.
- *
- * 카테고리 페이지는 `MARKET_NEWS_LOOKBACK_MS`(7일) 안의 카드가 하나도 없으면 noindex다
- * (`news/[category]/page.tsx`). 그런데 페이지는 ISR로 최대 12시간 묵은 목록을 서빙하므로,
- * sitemap은 **"지금 시각 기준 최신 기사가 창 안"이 아니라 "12시간 전에 페이지가 읽었을 때도
- * 창 안이었음"**이 확실한 카테고리만 싣는다 — 최신 기사 시각이 `창 − 12h`보다 최근이어야
- * 한다. 예전에는 임의의 14일을 썼다: 페이지가 이미 noindex가 된 7~14일 구간의 카테고리가
- * sitemap에 남아 "sitemap에 있는데 noindex"(GSC 오류)였다. 2026-09-17 운영 크롤의
- * `/news/forex`(마지막 기사 3주 전)가 그 계열이다.
- */
-const STALE_NEWS_CATEGORY_MS = MARKET_NEWS_LOOKBACK_MS - 12 * MS_PER_HOUR;
-
-/** 후보 중 가장 최근 값. 후보가 없으면 `fallback`. */
-function latestOf(
-    candidates: readonly (Date | undefined)[],
-    fallback: Date
-): Date {
-    const known = candidates.filter((d): d is Date => d !== undefined);
-    if (known.length === 0) return fallback;
-    return known.reduce((max, d) => (d.getTime() > max.getTime() ? d : max));
 }
 
 /**
@@ -136,129 +105,35 @@ export function buildStaticEntries(
         legalEffectiveDates = {},
         backtestingDataDate,
     } = options;
-    // 아래 lastmod 조회용 — 로더 실패(undefined)면 어떤 카테고리도 시각을 모른다.
-    const latestOfCategory = (cat: NewsFeedCategoryId): Date | undefined =>
-        newsLatestPublishedAt?.[cat];
     const todayUtc = startOfUtcDay(now);
     // `/fear-greed`·`/market`은 봉이 입력이라 "직전 마감"이 곧 lastmod다. 두 지역이
     // 서로 다른 거래소를 보므로 세션도 따로 계산한다 — KRX는 06:30 UTC, NYSE는
     // 21:00 UTC에 닫혀서, 한 시계로 통일하면 하루 14시간 넘게 KR 엔트리가 실제
     // 변경 시각보다 뒤처지고 KRX만 여는 날에는 바뀌지도 않은 변경을 주장한다.
     // (`buildPopularEntries`가 종목 URL에서 이미 같은 분기를 한다.)
-    const lastSessionClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
-    const lastKrSessionClose = lastClosedSessionCloseUtc(
-        KR_EQUITY_SESSION,
-        now
-    );
-    // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
-    const allNewsCategories = Object.keys(
-        CATEGORY_CONFIG
-    ) as NewsFeedCategoryId[];
-    // 로더가 실패했으면(`newsLatestPublishedAt` 없음) 전부 싣는다 — 로더 장애로 sitemap에서
-    // 카테고리가 통째로 사라지는 쪽이 더 나쁘다. 로더가 성공했으면 키가 없는 카테고리(기사
-    // 0건 = 페이지가 빈 상태)와 창 밖으로 정체된 카테고리를 뺀다.
-    const newsCategories = allNewsCategories.filter(cat => {
-        if (newsLatestPublishedAt === undefined) return true;
-        const latest = newsLatestPublishedAt[cat];
-        return (
-            latest !== undefined &&
-            now.getTime() - latest.getTime() < STALE_NEWS_CATEGORY_MS
-        );
+    const regionEntries = buildRegionEntries({
+        todayUtc,
+        lastUsSessionClose: lastClosedSessionCloseUtc(US_EQUITY_SESSION, now),
+        lastKrSessionClose: lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now),
     });
-    const newsCategoryEntries: SitemapEntry[] = newsCategories.map(cat => ({
-        url: `${SITE_URL}/news/${CATEGORY_CONFIG[cat].slug}`,
-        lastModified: latestOfCategory(cat) ?? todayUtc,
-        changeFrequency: 'daily' as const,
-        priority: 0.8,
-        alternates: sitemapAlternates(
-            `/news/${CATEGORY_CONFIG[cat].slug}`,
-            STATIC_INDEXABLE_LOCALES
-        ),
-    }));
-    // 허브는 자기가 나열하는 카테고리들의 최신값이다 — 별도 조회를 두면 두 값이
-    // 어긋나 "허브가 카테고리보다 신선하다"는 불가능한 주장을 하게 된다.
-    const newsHubLastModified = latestOf(
-        newsCategories.map(latestOfCategory),
-        todayUtc
-    );
-    // `/news/us`도 **싣는 카테고리만** 본다. 정체돼 sitemap에서 빠진 카테고리의
-    // 시각을 쓰면, 허브가 자기가 더 이상 나열하지 않는 글을 근거로 신선도를 주장한다.
-    const newsCategorySet = new Set(newsCategories);
-    const freshUsCategories = categoriesInRegion('us').filter(cat =>
-        newsCategorySet.has(cat)
-    );
-    const newsUsLastModified = latestOf(
-        freshUsCategories.map(latestOfCategory),
-        todayUtc
-    );
-
-    /*
-     * 버티컬 지역 페이지는 `ALL_NAV_REGION_LINKS`에서 파생한다 — 내비에 열어 둔
-     * 지역과 sitemap에 광고하는 지역이 어긋나지 않게 하기 위해서다. 손으로 나열하면
-     * 지역을 하나 더 열 때 sitemap 쪽을 빠뜨려도 아무것도 깨지지 않는다(조용한 누락).
-     *
-     * 뉴스 지역 링크는 여기서 제외한다 — `/news/crypto`처럼 카테고리 페이지와 URL이
-     * 겹쳐 `newsCategoryEntries`가 이미 내보내고 있어, 넣으면 같은 URL이 두 번 나간다.
-     */
-    /**
-     * 등급은 버티컬 성격을 따른다: `/market*`·`/fear-greed*`는 봉이 입력이라
-     * 직전 마감(거래소가 다르므로 지역별로), `/economy*`는 배포 단위.
-     */
-    function lastModifiedFor(
-        link: (typeof ALL_NAV_REGION_LINKS)[number]
-    ): Date {
-        if (
-            !link.href.startsWith('/market') &&
-            !link.href.startsWith('/fear-greed')
-        ) {
-            // `/economy*`는 지표가 하루 주기로 갱신된다(페이지 FAQ가 그렇게 밝힌다).
-            // 배포 시각을 쓰면 하루에 세 번 배포한 날 세 번 "바뀌었다"고 주장하게 된다.
-            return todayUtc;
-        }
-        // 암호화폐는 24시간 거래라 세션 달력이 없다. 지수는 마지막으로 닫힌 UTC 일의
-        // 봉까지 먹으므로(`fetchCryptoDailyBars`) 그 날이 닫힌 순간, 곧 오늘 UTC 자정이
-        // 마지막 변경 시각이다.
-        if (link.region === 'crypto') return todayUtc;
-        return link.region === 'kr' ? lastKrSessionClose : lastSessionClose;
-    }
-
-    const regionEntries: SitemapEntry[] = ALL_NAV_REGION_LINKS.flatMap(link => {
-        if (link.href.startsWith('/news/')) return [];
-        const isMarket = link.href.startsWith('/market');
-        return [
-            {
-                url: `${SITE_URL}${link.href}`,
-                lastModified: lastModifiedFor(link),
-                changeFrequency: isMarket
-                    ? ('hourly' as const)
-                    : ('daily' as const),
-                priority: isMarket ? 0.9 : 0.8,
-                alternates: sitemapAlternates(
-                    link.href,
-                    STATIC_INDEXABLE_LOCALES
-                ),
-            },
-        ];
-    });
+    const { categoryEntries, hubLastModified, usLastModified } =
+        buildNewsSitemapEntries(now, newsLatestPublishedAt, todayUtc);
 
     // 공개 API 출시 전에는 `/developers`가 404라 sitemap에서도 뺀다(`isPublicApiEnabled`).
+    // 본문이 카탈로그와 코드 상수(한도·오류 코드)라 lastmod는 `DEVELOPERS_UPDATED_AT` 하나다.
+    // 정적 안내 페이지보다 한 단계 높은 0.5 — 외부 개발자가 검색으로 들어오는 유일한 입구지만
+    // 종목·허브(0.8)만큼 자주 바뀌지는 않는다.
     const developersEntries: SitemapEntry[] = isPublicApiEnabled()
         ? [
-              // `/developers` — 공개 API 개발자 포털(레퍼런스·OpenAPI·SKILL.md 내려받기). 본문이 카탈로그와 코드
-              // 상수(한도·오류 코드)라 lastmod는 `DEVELOPERS_UPDATED_AT` 하나다. 정적 안내 페이지보다 한 단계
-              // 높은 0.5 — 외부 개발자가 검색으로 들어오는 유일한 입구지만 종목·허브(0.8)만큼 자주 바뀌지는 않는다.
-              {
-                  url: `${SITE_URL}${DEVELOPERS_PATH}`,
-                  lastModified: DEVELOPERS_UPDATED_AT,
-                  changeFrequency: 'monthly',
-                  priority: 0.5,
-                  alternates: sitemapAlternates(
-                      DEVELOPERS_PATH,
-                      STATIC_INDEXABLE_LOCALES
-                  ),
-              },
+              staticSitemapEntry(
+                  DEVELOPERS_PATH,
+                  DEVELOPERS_UPDATED_AT,
+                  'monthly',
+                  0.5
+              ),
           ]
         : [];
+
     return [
         {
             url: SITE_URL,
@@ -268,16 +143,12 @@ export function buildStaticEntries(
             alternates: sitemapAlternates('/', STATIC_INDEXABLE_LOCALES),
         },
         ...regionEntries,
-        {
-            url: `${SITE_URL}/backtesting`,
-            lastModified: backtestingDataDate ?? SITE_BUILD_DATE,
-            changeFrequency: 'monthly',
-            priority: 0.9,
-            alternates: sitemapAlternates(
-                '/backtesting',
-                STATIC_INDEXABLE_LOCALES
-            ),
-        },
+        staticSitemapEntry(
+            '/backtesting',
+            backtestingDataDate ?? SITE_BUILD_DATE,
+            'monthly',
+            0.9
+        ),
         {
             /**
              * 종목 디렉터리. 목록은 상수(`POPULAR_TICKERS`·`POPULAR_CRYPTOS`)라
@@ -293,62 +164,34 @@ export function buildStaticEntries(
             priority: 0.6,
             alternates: sitemapAlternates('/symbols', STATIC_INDEXABLE_LOCALES),
         },
-        {
-            url: `${SITE_URL}/news`,
-            lastModified: newsHubLastModified,
-            changeFrequency: 'daily',
-            priority: 0.8,
-            alternates: sitemapAlternates('/news', STATIC_INDEXABLE_LOCALES),
-        },
-        {
-            url: `${SITE_URL}/news/us`,
-            lastModified: newsUsLastModified,
-            changeFrequency: 'daily',
-            priority: 0.8,
-            alternates: sitemapAlternates('/news/us', STATIC_INDEXABLE_LOCALES),
-        },
-        ...newsCategoryEntries,
-        {
-            url: `${SITE_URL}${PRIVACY_PATH}`,
-            lastModified: legalEffectiveDates.privacy ?? SITE_BUILD_DATE,
-            changeFrequency: 'yearly',
-            priority: 0.3,
-            alternates: sitemapAlternates(
-                PRIVACY_PATH,
-                STATIC_INDEXABLE_LOCALES
-            ),
-        },
-        {
-            url: `${SITE_URL}${TERMS_PATH}`,
-            lastModified: legalEffectiveDates.tos ?? SITE_BUILD_DATE,
-            changeFrequency: 'yearly',
-            priority: 0.3,
-            alternates: sitemapAlternates(TERMS_PATH, STATIC_INDEXABLE_LOCALES),
-        },
+        staticSitemapEntry('/news', hubLastModified, 'daily', 0.8),
+        staticSitemapEntry('/news/us', usLastModified, 'daily', 0.8),
+        ...categoryEntries,
+        staticSitemapEntry(
+            PRIVACY_PATH,
+            legalEffectiveDates.privacy ?? SITE_BUILD_DATE,
+            'yearly',
+            0.3
+        ),
+        staticSitemapEntry(
+            TERMS_PATH,
+            legalEffectiveDates.tos ?? SITE_BUILD_DATE,
+            'yearly',
+            0.3
+        ),
         // `/about` — 운영 주체·방법론·면책. legal(0.3)보다 한 단계 위: YMYL 재평가에서
-        // 사이트 전체의 신뢰 앵커라 크롤러가 먼저 보게 둔다(SEO_RECOVERY_2026_09 §5-B1).
-        {
-            url: `${SITE_URL}${ABOUT_PATH}`,
-            // 본문이 코드 상수라 갱신 시각도 코드가 안다 — 배포 시각을 쓰면
-            // 본문을 한 줄도 안 바꾼 배포까지 "갱신됨"으로 나간다.
-            lastModified: ABOUT_UPDATED_AT,
-            changeFrequency: 'yearly',
-            priority: 0.4,
-            alternates: sitemapAlternates(ABOUT_PATH, STATIC_INDEXABLE_LOCALES),
-        },
+        // 사이트 전체의 신뢰 앵커라 크롤러가 먼저 보게 둔다. 본문이 코드 상수라 갱신 시각도
+        // 코드가 안다 — 배포 시각을 쓰면 본문을 한 줄도 안 바꾼 배포까지 "갱신됨"으로 나간다.
+        staticSitemapEntry(ABOUT_PATH, ABOUT_UPDATED_AT, 'yearly', 0.4),
         // `/methodology` — 분석 방법·데이터 출처·한계·정정 정책. `/about`과 같은
         // 등급(YMYL 신뢰 앵커, 본문이 코드 상수라 lastmod도 `METHODOLOGY_UPDATED_AT`).
         // 종목 산문 하단의 출처 고지(`AnalysisProvenanceNote`)가 이 페이지로 건다.
-        {
-            url: `${SITE_URL}${METHODOLOGY_PATH}`,
-            lastModified: METHODOLOGY_UPDATED_AT,
-            changeFrequency: 'yearly',
-            priority: 0.4,
-            alternates: sitemapAlternates(
-                METHODOLOGY_PATH,
-                STATIC_INDEXABLE_LOCALES
-            ),
-        },
+        staticSitemapEntry(
+            METHODOLOGY_PATH,
+            METHODOLOGY_UPDATED_AT,
+            'yearly',
+            0.4
+        ),
         ...developersEntries,
     ];
 }

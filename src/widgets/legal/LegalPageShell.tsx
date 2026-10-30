@@ -1,22 +1,34 @@
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/shared/lib/cn';
-import { LegalBreadcrumb } from './LegalBreadcrumb';
-import type { TocItem } from '@/shared/lib/legal-toc';
 import type { ReactNode } from 'react';
+import { LOCALE_HREFLANG, type Locale } from '@/shared/i18n/locales';
+import type { TocItem } from '@/shared/lib/legal-toc';
+import { LegalBreadcrumb } from './LegalBreadcrumb';
+import { LegalPageFrame } from './ui/layout/LegalPageFrame';
+import { LegalToc } from './ui/toc/LegalToc';
 
 interface LegalPageShellProps {
-    breadcrumbTitle: string;
-    eyebrow: string;
-    title: string;
-    intro: ReactNode;
-    effectiveDate: string;
-    toc: readonly TocItem[];
-    topNotice?: ReactNode;
-    bottomNotice?: ReactNode;
-    children: ReactNode;
+    /** 브레드크럼 마지막 마디. `BreadcrumbList` JSON-LD의 이름과 같아야 한다. */
+    readonly breadcrumbTitle: string;
+    readonly eyebrow: string;
+    readonly title: string;
+    readonly intro: ReactNode;
+    /** 로케일 형식으로 이미 포맷한 시행일. */
+    readonly effectiveDate: string;
+    readonly toc: readonly TocItem[];
+    /**
+     * 본문(그리고 본문 제목에서 뽑은 목차)이 실제로 쓰인 언어. 번역이 없어 다른
+     * 언어 원문을 낼 때 페이지 언어와 달라지므로, 스크린 리더가 그 언어로 읽고
+     * 검색엔진이 언어를 오인하지 않도록 `lang`으로 표시한다.
+     */
+    readonly bodyLocale: Locale;
+    readonly topNotice?: ReactNode;
+    readonly bottomNotice?: ReactNode;
+    readonly children: ReactNode;
 }
 
+/**
+ * `/terms`·`/privacy` 본문 페이지 셸: 머리말(소개·시행일), 안내 슬롯, 목차, 본문.
+ */
 export function LegalPageShell({
     breadcrumbTitle,
     eyebrow,
@@ -24,64 +36,38 @@ export function LegalPageShell({
     intro,
     effectiveDate,
     toc,
+    bodyLocale,
     topNotice,
     bottomNotice,
     children,
 }: LegalPageShellProps) {
     const t = useTranslations('widgets.legal');
+    const bodyLang = LOCALE_HREFLANG[bodyLocale];
     return (
-        <>
-            <main className="page-container flex flex-1 flex-col items-center py-12 sm:py-16">
-                <article className="w-full max-w-3xl">
-                    <LegalBreadcrumb pageTitle={breadcrumbTitle} />
+        <LegalPageFrame
+            breadcrumb={<LegalBreadcrumb pageTitle={breadcrumbTitle} />}
+            eyebrow={eyebrow}
+            title={title}
+            headerExtra={
+                <>
+                    <p className="mt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">
+                        {intro}
+                    </p>
+                    <p className="mt-4 text-xs text-secondary-500">
+                        {t('LegalPageShell.4ea5e2', { v0: effectiveDate })}
+                    </p>
+                </>
+            }
+        >
+            {topNotice}
 
-                    <header className="border-b border-secondary-700 pb-8">
-                        <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
-                            {eyebrow}
-                        </p>
-                        <h1 className="mt-3 text-3xl font-bold text-secondary-50 sm:text-4xl">
-                            {title}
-                        </h1>
-                        <p className="mt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">
-                            {intro}
-                        </p>
-                        <p className="mt-4 text-xs text-secondary-500">
-                            {t('LegalPageShell.4ea5e2', { v0: effectiveDate })}
-                        </p>
-                    </header>
+            <LegalToc items={toc} lang={bodyLang} withTopMargin={!topNotice} />
 
-                    {topNotice}
+            <div lang={bodyLang} className="space-y-8">
+                {children}
+            </div>
 
-                    <nav
-                        aria-label={t('LegalPageShell.7474d0')}
-                        className={cn(
-                            SURFACE_CARD,
-                            'mb-8 p-5',
-                            topNotice ? undefined : 'mt-8'
-                        )}
-                    >
-                        <p className="mb-3 text-xs font-semibold text-secondary-400">
-                            {t('LegalPageShell.7474d0')}
-                        </p>
-                        <ol className="space-y-2 text-sm">
-                            {toc.map(item => (
-                                <li key={item.id}>
-                                    <a
-                                        href={`#${item.id}`}
-                                        className="text-secondary-300 transition-colors hover:text-primary-400"
-                                    >
-                                        {item.label}
-                                    </a>
-                                </li>
-                            ))}
-                        </ol>
-                    </nav>
-
-                    <div className="space-y-8">{children}</div>
-
-                    {bottomNotice}
-                </article>
-            </main>
-        </>
+            {bottomNotice}
+        </LegalPageFrame>
     );
 }

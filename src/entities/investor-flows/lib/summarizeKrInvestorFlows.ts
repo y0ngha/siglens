@@ -14,13 +14,11 @@ import { compareIsoDate } from './investorFlowsDates';
 import { majorHolderRatioChange } from './krMajorHolderRatioChange';
 import {
     clipSummaryText,
-    pickSummarySignals,
-    summarizeAxis,
     SUMMARY_NAME_MAX_CHARS,
     SUMMARY_ROLE_MAX_CHARS,
-    type SummaryAxis,
-    type SummarySignal,
-} from './summarizeInvestorFlows';
+} from './summary/format';
+import { pickSummarySignals, summarizeAxis } from './summary/signals';
+import { type SummaryAxis, type SummarySignal } from './summary/types';
 
 /**
  * 한국 종목 `get_investor_flows` 결과의 상한. 도구 상한(`INVESTOR_FLOWS_RESULT_MAX_CHARS`, 8,500자) 안에 600자 이상의 여유를

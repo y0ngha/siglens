@@ -1,13 +1,12 @@
 import { constants } from 'node:http2';
-import { buildReportChartImage } from '@/entities/email-report/lib/buildReportChartImage';
 import {
     buildSampleBars,
     buildSampleChartMa,
     isSampleChartSymbol,
     SAMPLE_CHART_SYMBOLS,
     SAMPLE_REPORT_DATE,
-} from '@/entities/email-report/lib/sampleReportData';
-
+} from '@/entities/email-report/lib/sampleBars';
+import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const { HTTP_STATUS_NOT_FOUND } = constants;

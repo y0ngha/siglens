@@ -4,6 +4,9 @@ import type {
     EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
 const IMPACTS: readonly CalendarImpact[] = ['Low', 'Medium', 'High'];
 
 /**
@@ -11,7 +14,7 @@ const IMPACTS: readonly CalendarImpact[] = ['Low', 'Medium', 'High'];
  *
  * core의 `normalizeEconomicCalendar`는 `country === 'US'`를 하드코딩한다 — 한국
  * 이벤트를 받으려면 그 함수를 쓸 수 없다. 국가 필터는 데이터 소스 지식이지
- * 분석 도메인이 아니므로(`docs/architecture/SCOPE.md`: 프로바이더 구현은 siglens)
+ * 분석 도메인이 아니므로(프로바이더 구현은 siglens의 몫이다)
  * 여기서 소유한다. 그 외 정규화 규칙(필수 필드, impact enum, 날짜 오름차순)은
  * core와 동일하게 맞춰 두 경로의 결과 형상이 갈리지 않게 한다.
  *
@@ -30,23 +33,22 @@ export function normalizeCalendarForCountry(
 
     return raw
         .flatMap(item => {
-            if (typeof item !== 'object' || item === null) return [];
-            const obj = item as Record<string, unknown>;
-            if (asString(obj.country) !== country) return [];
+            if (!isRecord(item)) return [];
+            if (asString(item.country) !== country) return [];
 
-            const date = asString(obj.date);
-            const event = asString(obj.event);
+            const date = asString(item.date);
+            const event = asString(item.event);
             if (date === '' || event === '') return [];
 
             return [
                 {
                     date,
                     event,
-                    impact: asImpact(obj.impact),
-                    actual: toFiniteNumber(obj.actual),
-                    estimate: toFiniteNumber(obj.estimate),
-                    previous: toFiniteNumber(obj.previous),
-                    unit: asString(obj.unit),
+                    impact: asImpact(item.impact),
+                    actual: toFiniteNumber(item.actual),
+                    estimate: toFiniteNumber(item.estimate),
+                    previous: toFiniteNumber(item.previous),
+                    unit: asString(item.unit),
                 } satisfies EconomicCalendarEvent,
             ];
         })
@@ -58,7 +60,5 @@ function asString(value: unknown): string {
 }
 
 function asImpact(value: unknown): CalendarImpact {
-    return IMPACTS.includes(value as CalendarImpact)
-        ? (value as CalendarImpact)
-        : 'Low';
+    return IMPACTS.find(impact => impact === value) ?? 'Low';
 }

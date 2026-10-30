@@ -121,17 +121,18 @@ export async function fetchRegShoThresholdText(
                 redirect: 'manual',
                 signal: AbortSignal.timeout(REG_SHO_REQUEST_TIMEOUT_MS),
             });
-            if (
+            const isMissing =
                 res.status === HTTP_NOT_FOUND ||
                 (res.status >= HTTP_REDIRECT_MIN &&
-                    res.status <= HTTP_REDIRECT_MAX)
-            ) {
-                return null;
-            }
+                    res.status <= HTTP_REDIRECT_MAX);
             if (res.status === HTTP_FORBIDDEN && market === 'cboe_bzx') {
                 const body = await res.text().catch(() => '');
                 if (body.includes(ACCESS_DENIED_MARKER)) return null;
+            } else if (!res.ok) {
+                // 읽지 않은 본문이 재시도·다음 요청 동안 keep-alive 소켓을 붙잡지 않게 놓는다.
+                await res.body?.cancel().catch(() => undefined);
             }
+            if (isMissing) return null;
             if (!res.ok) throw new ExchangeHttpError(url, res.status);
             return readBoundedText(res, REG_SHO_MAX_BODY_BYTES, url);
         },

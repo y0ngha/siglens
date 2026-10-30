@@ -1,13 +1,16 @@
+/**
+ * "내 포지션" 결정적(non-AI) 요약 카드 — 평단·수량, 평가손익, 수익률, 범위 내 위치, 고점/저점까지 거리.
+ */
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import {
     formatSignedAmount,
     formatSignedPercent,
-    signColorClass,
 } from '@/shared/lib/priceFormat';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
-import type { PositionStatus } from '../lib/positionStatus';
+import type { PositionStatus } from '../utils/positionStatus';
+import { returnTextClass } from '../utils/returnTone';
 import { ReadoutRow } from './ReadoutRow';
 
 interface PositionStatusSummaryProps {
@@ -30,7 +33,7 @@ interface PositionStatusSummaryProps {
  * — 호출부가 이 게이트를 대신 수행하지 않아도 안전하다(computePositionStatus 참조).
  * 평단·수량은 PortfolioChip과 동일하게 원본 decimal 문자열을 trimTrailingZeros로만
  * 다듬어 표시한다 — JS float round-trip을 거치지 않아 crypto sub-cent 평단도
- * 안전하다. 평가손익/수익률만 색상 코딩한다(ui-success/danger) — 범위 내 위치·
+ * 안전하다. 평가손익/수익률만 색상 코딩한다(`returnTextClass`, 0은 중립) — 범위 내 위치·
  * 고점/저점까지 거리는 손익 판단이 아닌 중립적 사실이라 색상을 입히지 않는다.
  *
  * 통화 기호는 `$`로 하드코딩하지 않는다 — `currencyForSymbol`(PortfolioChip과
@@ -77,12 +80,12 @@ export function PositionStatusSummary({
                 <ReadoutRow
                     label={t('PositionStatusSummary.44acd6')}
                     value={formatSignedAmount(status.unrealizedPnl, symbol)}
-                    valueClassName={signColorClass(status.unrealizedPnl)}
+                    valueClassName={returnTextClass(status.unrealizedPnl)}
                 />
                 <ReadoutRow
                     label={t('PositionStatusSummary.fb64df')}
                     value={formatSignedPercent(status.returnPct)}
-                    valueClassName={signColorClass(status.returnPct)}
+                    valueClassName={returnTextClass(status.returnPct)}
                 />
                 <ReadoutRow
                     label={t('PositionStatusSummary.573838')}

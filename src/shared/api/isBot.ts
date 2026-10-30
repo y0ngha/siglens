@@ -24,12 +24,12 @@ import { userAgent } from 'next/server';
  * 참고). 이 함수의 남은 호출부:
  * - `src/app/api/presence/route.ts`, `src/app/api/presence/symbol/route.ts` — 방문자/조회수 집계 제외
  * - `src/app/api/ai/chat/stream/route.ts` — 에이전트 챗을 봇에게 아예 막는다(403)
- * - `src/app/ai/[locale]/handoffRedirect.ts` — 봇은 인증 핸드오프 리디렉트를 건너뛴다
+ * - `src/app/ai/[locale]/_lib/handoffRedirect.ts` — 봇은 인증 핸드오프 리디렉트를 건너뛴다
  *
  * 시장·거시 브리핑(`submitMarketBriefingAction`·`submitMacroBriefingAction`)은
  * 애초에 이 값을 쓴 적이 없다 — 생성이 시각 버킷당 한 번으로 접혀 비용이 작고,
  * 봇 분기가 `/market`·`/economy` 렌더에 차단 안내문을 색인시키고 있었다
- * (2026-09-17 운영 감사).
+ * (2026-09-17 운영 점검).
  */
 const BOT_UA_RE = new RegExp(
     [
@@ -115,7 +115,7 @@ const BOT_UA_RE = new RegExp(
  * Current callers:
  * - `src/app/api/presence/route.ts` and `src/app/api/presence/symbol/route.ts` — exclude bots from visitor/view counting
  * - `src/app/api/ai/chat/stream/route.ts` — blocks bots from the agent chat entirely (403)
- * - `src/app/ai/[locale]/handoffRedirect.ts` — skips the auth handoff redirect bounce for bots
+ * - `src/app/ai/[locale]/_lib/handoffRedirect.ts` — skips the auth handoff redirect bounce for bots
  *
  * No longer used to suppress AI generation on a cache miss (removed
  * 2026-09-27), and no longer used for the analysis-stream concurrency-cap

@@ -5,6 +5,7 @@ import { apiError, API_STATUS } from './apiResponse';
 /** 키 저장소 장애 시 클라이언트가 기다릴 초. */
 const AUTH_UNAVAILABLE_RETRY_SECONDS = 30;
 
+/** 인증 결과 — 성공하면 키 소유자, 실패하면 라우트가 그대로 돌려줄 401/503 응답. */
 export type AuthOutcome =
     | { ok: true; principal: ApiKeyPrincipal }
     | { ok: false; response: Response };

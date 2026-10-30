@@ -490,6 +490,8 @@ describe('공유 등록 plain 배선', () => {
                 state: {
                     status: 'done',
                     plain: PLAIN,
+                    reanalyzing: false,
+                    notice: null,
                     result: {
                         headlineKo: '헤드라인',
                         technicalBulletsKo: [],
@@ -503,6 +505,7 @@ describe('공유 등록 plain 배선', () => {
                     },
                 },
                 trigger: vi.fn(),
+                reanalyze: vi.fn(),
             } as never);
 
             renderWithProbe(
@@ -521,6 +524,7 @@ describe('공유 등록 plain 배선', () => {
             vi.mocked(useOverallAnalysis).mockReturnValue({
                 state: { status: 'idle' },
                 trigger: vi.fn(),
+                reanalyze: vi.fn(),
             } as never);
 
             renderWithProbe(

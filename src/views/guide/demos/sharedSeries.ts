@@ -1,3 +1,7 @@
+/**
+ * 지표 데모가 함께 쓰는 합성 시세: 상승 → 횡보 → 하락 → 반등 (시드 고정, 260봉).
+ * 지표 값은 core `calculateIndicators`가 실제로 계산한다. 항목마다 이 시세의 다른 구간을 잘라 보여 준다.
+ */
 import {
     calculateIndicators,
     type IndicatorResult,
@@ -10,11 +14,6 @@ import {
     type Waypoint,
 } from '@/views/guide/demos/generators';
 import type { DemoBar } from '@/views/guide/demos/types';
-
-/**
- * 지표 데모가 함께 쓰는 합성 시세: 상승 → 횡보 → 하락 → 반등 (시드 고정, 260봉).
- * 지표 값은 core `calculateIndicators`가 실제로 계산한다. 항목마다 이 시세의 다른 구간을 잘라 보여 준다.
- */
 
 const PATH: Waypoint[] = [
     [0, 100],
@@ -43,6 +42,7 @@ const PATH: Waypoint[] = [
 
 const BASE_VOLUME = 1_000_000;
 
+/** 합성 시세 한 벌. 데모 빌더는 `result`를 잘라 그릴 뿐 지표를 다시 계산하지 않아, 값이 core 엔진과 어긋나지 않는다. */
 export interface SharedSeries {
     bars: DemoBar[];
     result: IndicatorResult;
@@ -65,6 +65,7 @@ function buildSharedSeries(): SharedSeries {
 // 시드 고정이라 결정적이고 260봉 계산이 싸다 — 모듈 로드 때 한 번 만들어 둔다.
 const SHARED_SERIES = buildSharedSeries();
 
+/** `windowed`의 기본 시세 — 시세를 따로 고르지 않은 지표 데모가 구간만 바꿔 자른다. 모듈 로드 때 한 번 만든 같은 객체를 돌려준다. */
 export function getSharedSeries(): SharedSeries {
     return SHARED_SERIES;
 }
@@ -75,6 +76,7 @@ export function getSharedSeries(): SharedSeries {
  * 저점 인덱스는 `DIVERGENCE_LOW_1`, `DIVERGENCE_LOW_2`.
  */
 export const DIVERGENCE_LOW_1 = 30;
+/** 다이버전스 시세의 두 번째(더 낮은) 가격 저점 인덱스. 데모 표식과 테스트가 이 값으로 저점을 가리킨다. */
 export const DIVERGENCE_LOW_2 = 76;
 
 const DIVERGENCE_PATH: Waypoint[] = [
@@ -113,6 +115,7 @@ function buildDivergenceSeries(): SharedSeries {
 
 const DIVERGENCE_SERIES = buildDivergenceSeries();
 
+/** OBV·포스 인덱스 데모의 시세. 가격 저점은 낮아지고 지표 저점은 높아지도록 거래량을 맞춰 다이버전스가 한눈에 보인다. */
 export function getDivergenceSeries(): SharedSeries {
     return DIVERGENCE_SERIES;
 }
@@ -154,6 +157,7 @@ function buildTrendSeries(): SharedSeries {
 
 const TREND_SERIES = buildTrendSeries();
 
+/** 장기 이동평균 위 되돌림 전략 데모(`strategies.ts`)의 시세. 끝 구간의 눌림 저점은 `TREND_DIP_LOW`다. */
 export function getTrendSeries(): SharedSeries {
     return TREND_SERIES;
 }
@@ -236,6 +240,7 @@ function buildIntradaySeries(): SharedSeries {
 
 const INTRADAY_SERIES = buildIntradaySeries();
 
+/** VWAP 데모의 시세. 일봉인 공통 시세로는 하루 동안 누적되는 VWAP을 보여 줄 수 없다. */
 export function getIntradaySeries(): SharedSeries {
     return INTRADAY_SERIES;
 }
@@ -246,32 +251,46 @@ export function getIntradaySeries(): SharedSeries {
  * 허스트(100봉 창)와 분산비율(60봉 창)이 두 구간에서 서로 다른 쪽으로 가는 걸 보여 준다.
  */
 export const REGIME_TREND_END = 120;
+/** 장세 전환 시세의 전체 봉 수. `REGIME_TREND_END`부터 끝까지가 평균회귀 구간이다. */
 export const REGIME_TOTAL_BARS = 260;
 
 function buildRegimeSeries(): SharedSeries {
     const rand = mulberry32(13);
-    const closes: number[] = [100];
-    let lastReturn = 0;
-    let deviation = 0;
-    let anchor = 0;
-    for (let i = 1; i < REGIME_TOTAL_BARS; i++) {
-        if (i < REGIME_TREND_END) {
-            // AR(1) 수익률 + 약한 상승 drift: 한 번 간 방향으로 계속 간다.
-            lastReturn = 0.7 * lastReturn + 0.004 * gaussian(rand) + 0.0009;
-            closes.push(closes[i - 1] * Math.exp(lastReturn));
-            anchor = Math.log(closes[i]);
-        } else {
+    // 봉마다 직전 상태(마지막 수익률·이탈·기준 로그가격)에서 다음 종가를 만든다. `rand`를 봉 순서대로 쓴다.
+    const { closes } = Array.from(
+        { length: REGIME_TOTAL_BARS - 1 },
+        (_, k) => k + 1
+    ).reduce(
+        (state, i) => {
+            if (i < REGIME_TREND_END) {
+                // AR(1) 수익률 + 약한 상승 drift: 한 번 간 방향으로 계속 간다.
+                const lastReturn =
+                    0.7 * state.lastReturn + 0.004 * gaussian(rand) + 0.0009;
+                const close = state.closes[i - 1] * Math.exp(lastReturn);
+                return {
+                    ...state,
+                    closes: [...state.closes, close],
+                    lastReturn,
+                    anchor: Math.log(close),
+                };
+            }
             // 로그 가격이 anchor 둘레를 도는 OU 과정: 오르면 되돌아오고 내리면 되튄다.
-            deviation = 0.3 * deviation + 0.018 * gaussian(rand);
-            closes.push(Math.exp(anchor + deviation));
-        }
-    }
+            const deviation = 0.3 * state.deviation + 0.018 * gaussian(rand);
+            return {
+                ...state,
+                closes: [...state.closes, Math.exp(state.anchor + deviation)],
+                deviation,
+            };
+        },
+        { closes: [100], lastReturn: 0, deviation: 0, anchor: 0 }
+    );
     const bars = barsFromCloses(closes, () => 0.006, mulberry32(77));
     return { bars, result: calculateIndicators(toCoreBars(bars)) };
 }
 
 const REGIME_SERIES = buildRegimeSeries();
 
+/** 허스트 지수·분산비율 데모의 시세 — 한 차트 안에서 추세 구간과 평균회귀 구간을 대비해 보여 준다. */
 export function getRegimeSeries(): SharedSeries {
     return REGIME_SERIES;
 }
@@ -292,13 +311,17 @@ function volatilityAt(index: number): number {
 
 function buildVolatilitySeries(): SharedSeries {
     const rand = mulberry32(14);
-    const closes: number[] = [100];
-    for (let i = 1; i < VOLATILITY_BARS; i++) {
-        closes.push(
-            closes[i - 1] *
-                Math.exp(0.0008 + volatilityAt(i) * 0.7 * gaussian(rand))
-        );
-    }
+    const closes = Array.from(
+        { length: VOLATILITY_BARS - 1 },
+        (_, k) => k + 1
+    ).reduce<number[]>(
+        (acc, i) => [
+            ...acc,
+            acc[i - 1] *
+                Math.exp(0.0008 + volatilityAt(i) * 0.7 * gaussian(rand)),
+        ],
+        [100]
+    );
     const bars = barsFromCloses(
         closes,
         index => volatilityAt(index) * 0.8,
@@ -309,6 +332,7 @@ function buildVolatilitySeries(): SharedSeries {
 
 const VOLATILITY_SERIES = buildVolatilitySeries();
 
+/** ATR 데모의 시세. 변동폭이 커졌다 잦아드는 구간을 일부러 만들어 ATR의 오르내림이 보이게 한다. */
 export function getVolatilitySeries(): SharedSeries {
     return VOLATILITY_SERIES;
 }

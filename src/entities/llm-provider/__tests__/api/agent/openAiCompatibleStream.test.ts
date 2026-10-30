@@ -9,8 +9,8 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 });
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
+import { AGENT_NARRATION_HOLD_CHARS } from '@/entities/llm-provider/lib/agentStream';
 import {
-    AGENT_NARRATION_HOLD_CHARS,
     AGENT_PROVIDER_STALLED,
     AGENT_STALL_TIMEOUT_MS,
     streamOpenAiCompatibleAgent,
