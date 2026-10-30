@@ -9,6 +9,7 @@ import {
     useMemo,
     useRef,
     useState,
+    type ReactElement,
     type ReactNode,
 } from 'react';
 import { splitLocalePath } from '@/shared/i18n/locales';
@@ -57,10 +58,10 @@ interface NavigationPendingState {
 /**
  * 컨텍스트를 **둘로 나눈다** — 동작(`startNavigation`)과 상태(`pendingHref`).
  *
- * 예전에는 한 값에 둘을 담았다. 링크(`LocaleLink`)는 `startNavigation`만 쓰는데도
- * 값 전체를 구독했으므로, 클릭이 pending을 세우는 순간 **페이지의 모든 링크가 그
- * 클릭 태스크 안에서 다시 렌더**됐다(헤더·푸터·목록 카드까지 수백 개 — INP 비용).
- * 동작 컨텍스트의 값은 마운트 동안 바뀌지 않으므로(아래 ref 참고) 링크는 이제
+ * 한 값에 둘을 담으면 링크(`LocaleLink`)는 `startNavigation`만 쓰는데도 값 전체를
+ * 구독하게 되어, 클릭이 pending을 세우는 순간 **페이지의 모든 링크가 그 클릭 태스크
+ * 안에서 다시 렌더**된다(헤더·푸터·목록 카드까지 수백 개 — INP 비용).
+ * 동작 컨텍스트의 값은 마운트 동안 바뀌지 않으므로(아래 ref 참고) 링크는
  * pending 변화에 리렌더되지 않는다. `SearchOverlayContext`가 `open`만 값에 두는 것과
  * 같은 원리다.
  */
@@ -80,7 +81,7 @@ function toAppPath(href: string): string {
 /**
  * 앱 안 내비게이션의 "누른 순간" 상태.
  *
- * 내부 링크는 RSC 비용 때문에 대부분 `prefetch={false}`다(CDN_CACHING.md §1). 그러면
+ * 내부 링크는 RSC 비용 때문에 대부분 `prefetch={false}`다. 그러면
  * 라우터는 목적지 RSC(종목 라우트 0.9~2.7MB)를 **다 받은 뒤에야** 커밋할 수 있고,
  * 그동안 React는 떠나온 화면을 그대로 들고 있다 — 사용자에겐 "데이터를 다 받고
  * 나서 화면이 바뀌는" 것으로 보였다. 서버 경계(`[locale]/loading.tsx`, 레이아웃
@@ -102,7 +103,7 @@ export function NavigationPendingProvider({
     children,
 }: {
     children: ReactNode;
-}) {
+}): ReactElement {
     const pathname = useAppPathname();
     const [pending, setPending] = useState<PendingNavigation | null>(null);
 
