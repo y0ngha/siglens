@@ -34,22 +34,21 @@ export function normalizeCalendarForCountry(
     return raw
         .flatMap(item => {
             if (!isRecord(item)) return [];
-            const obj = item;
-            if (asString(obj.country) !== country) return [];
+            if (asString(item.country) !== country) return [];
 
-            const date = asString(obj.date);
-            const event = asString(obj.event);
+            const date = asString(item.date);
+            const event = asString(item.event);
             if (date === '' || event === '') return [];
 
             return [
                 {
                     date,
                     event,
-                    impact: asImpact(obj.impact),
-                    actual: toFiniteNumber(obj.actual),
-                    estimate: toFiniteNumber(obj.estimate),
-                    previous: toFiniteNumber(obj.previous),
-                    unit: asString(obj.unit),
+                    impact: asImpact(item.impact),
+                    actual: toFiniteNumber(item.actual),
+                    estimate: toFiniteNumber(item.estimate),
+                    previous: toFiniteNumber(item.previous),
+                    unit: asString(item.unit),
                 } satisfies EconomicCalendarEvent,
             ];
         })

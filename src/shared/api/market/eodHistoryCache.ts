@@ -178,6 +178,8 @@ async function refreshEodHistory(
             return build(await fetchBars(ctx.fetchFrom), 0);
         }
         // 영구적으로 반복되면(경계 의미가 다른 공급자 등) 증분의 이득이 사라지므로 보이게 남긴다.
+        // 두 경고의 `[CachedMarketDataProvider]` 접두사는 분리 전 로그와 같은 문자열로
+        // 검색되도록 일부러 유지한다.
         console.warn(
             '[CachedMarketDataProvider] eodhist overlap mismatch, full refetch:',
             options.symbol.toUpperCase(),
