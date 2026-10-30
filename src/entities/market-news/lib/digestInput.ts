@@ -9,8 +9,8 @@ import type { MarketNewsRow } from '../model';
  * 시장을 움직일 상위 기사만 남긴다(프롬프트 크기 상한).
  *
  * `submitMarketNewsDigestAction`(생성), `peekMarketNewsDigestStatic`(SSR peek),
- * seo-prewarm cron의 뉴스 허브가 같은 함수를 써야 한다 — core 캐시 키가 `news`에서 파생되므로 경로별 입력이 어긋나면 peek가
- * 아무도 쓰지 않은 키를 읽어 영원히 miss다.
+ * seo-prewarm cron의 뉴스 허브가 같은 함수를 써야 한다 — core 캐시 키가 `news`에서
+ * 파생되므로 경로별 입력이 어긋나면 peek가 아무도 쓰지 않은 키를 읽어 영원히 miss다.
  */
 export function selectDigestNews(
     rows: readonly MarketNewsRow[]
