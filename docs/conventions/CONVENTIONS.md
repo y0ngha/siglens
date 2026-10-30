@@ -403,6 +403,20 @@ When you keep a local `readonly T[]` to back a `value is T` guard (for example `
 
 Prefer deriving the list so it cannot drift: `Object.keys(map) as T[]` from an upstream `Record<T, …>`, a compile-time exhaustiveness check paired with `satisfies`, or exporting the list from core itself.
 
+<a id="TS-4"></a>
+
+#### TS-4 — Narrow with a local binding instead of a non-null assertion
+
+Do not use `x!` (including `array.find(...)!` in tests). A `!` silences the compiler and fails later with an unhelpful `undefined` error. Bind the value to a local `const` and narrow it with a guard or an explicit assertion that fails with a readable message.
+
+```ts
+// ❌
+const row = rows.find(r => r.id === id)!;
+// ✅
+const row = rows.find(r => r.id === id);
+if (!row) throw new Error(`row ${id} not found`);
+```
+
 #### Other TypeScript rules
 
 - **Add parsed fields to the owning interface immediately.** When an adapter starts reading a new field from its data source, add it to the domain interface in the same change.
@@ -626,6 +640,7 @@ file or the rule it describes changes:
   sentence is cut in the middle or loses a field the next paragraph relies on.
 - Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
 - A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
+- A "stable" / "memoized" claim in a JSDoc must match the hook's dependency list; if the deps change when the inputs change, say what the identity depends on instead of calling it stable.
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A comment claiming parity with other components or tabs ("same order as the other tabs") or relying on platform behavior (a robots-blocked URL's headers being read) is checked against those components and that behavior; drop the claim if it does not hold.
