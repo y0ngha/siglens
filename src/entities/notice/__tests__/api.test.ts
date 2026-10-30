@@ -108,24 +108,23 @@ describe('DrizzleNoticeRepository.findActive', () => {
         const repo = new DrizzleNoticeRepository(db);
         await repo.findActive('ko');
         expect(whereSpy).toHaveBeenCalledTimes(1);
-        // Drizzle 조건 객체(and(...))는 PgTable 순환 참조를 포함해 JSON 직렬화/AST
-        // 비교가 불가능하다. 여기서는 where 절이 truthy 조건과 함께 호출됐는지만 확인하고,
-        // 실제 필터 의미론(is_active + 시간창)은 e2e/specs/notice-popup.spec.ts의
-        // '비노출 조건'(is_active=false / 미래 starts_at / 과거 ends_at) 테스트가 실 DB로 검증한다.
-        expect(whereSpy.mock.calls[0][0]).toHaveProperty('queryChunks');
     });
 
     it('where 절은 활성 여부와 양 끝을 포함하는 시간창을 SQL로 만든다', async () => {
         const { db, whereSpy } = makeMockDb([baseRow]);
         await new DrizzleNoticeRepository(db).findActive('ko');
-        const { sql: text, params } = new PgDialect().sqlToQuery(
-            whereSpy.mock.calls[0][0]
+        expect(whereSpy).toHaveBeenCalledTimes(1);
+        const [[condition]] = whereSpy.mock.calls;
+        const { sql: text, params } = new PgDialect().sqlToQuery(condition);
+        // 바깥 괄호·공백 같은 drizzle 포맷은 고정하지 않고, and/or 결합 구조만 고정한다 —
+        // 각 경계는 "null이면 무제한 or 양 끝 포함 비교"이고 세 조건은 and로 묶인다.
+        expect(text).toContain('"notices"."is_active" = $1 and (');
+        expect(text).toContain(
+            '("notices"."starts_at" is null or "notices"."starts_at" <= NOW()) and ('
         );
-        expect(text).toContain('"notices"."is_active" = $1');
-        expect(text).toContain('"notices"."starts_at" is null');
-        expect(text).toContain('"notices"."starts_at" <= NOW()');
-        expect(text).toContain('"notices"."ends_at" is null');
-        expect(text).toContain('"notices"."ends_at" >= NOW()');
+        expect(text).toContain(
+            '("notices"."ends_at" is null or "notices"."ends_at" >= NOW())'
+        );
         expect(params).toEqual([true]);
     });
 });
