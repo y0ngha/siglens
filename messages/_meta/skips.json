@@ -984,6 +984,12 @@
         "text": "코스피, 코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },
     {
+        "file": "src/entities/sitemap-entry/lib/isoRecord.ts",
+        "line": 12,
+        "reason": "non-component-module",
+        "text": "`toIsoRecord: \"${key}\" 값이 undefined다`"
+    },
+    {
         "file": "src/entities/ticker/lib/koreanSearchKey.ts",
         "line": 77,
         "reason": "search-alias-data",
