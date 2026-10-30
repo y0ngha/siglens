@@ -1,6 +1,9 @@
 import { SESSION_STORAGE_WATCHLIST_MERGED_KEY } from '@/shared/lib/storageKeys';
 
-/** 한 탭 세션에 병합은 한 번. 성공했을 때만 적는다 — 실패하면 다음 페이지에서 다시 시도한다(§5). */
+/**
+ * 이 탭 세션에 병합을 이미 마쳤는가. 한 탭 세션에 병합은 한 번이고, 성공했을 때만 적는다 —
+ * 실패하면 다음 페이지에서 다시 시도한다. 저장소가 막혀 있으면 false.
+ */
 export function hasWatchlistMergedThisSession(): boolean {
     if (typeof window === 'undefined') return false;
     try {
@@ -12,6 +15,7 @@ export function hasWatchlistMergedThisSession(): boolean {
     }
 }
 
+/** 병합 성공을 이 탭 세션에 적는다. */
 export function markWatchlistMergedThisSession(): void {
     if (typeof window === 'undefined') return;
     try {

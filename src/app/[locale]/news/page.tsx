@@ -1,39 +1,37 @@
-import { getTranslations } from 'next-intl/server';
-import type { SeoTranslator } from '@/shared/lib/seo';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
-import { resolveLocale, type Locale } from '@/shared/i18n/locales';
-import {
-    localeAlternatesFrom,
-    selfCanonicalAlternates,
-    localeCanonical,
-    localeOpenGraph,
-    localePageRobots,
-} from '@/shared/lib/seoAlternates';
+import { getTranslations } from 'next-intl/server';
 import {
     CATEGORY_CONFIG,
     categoriesInRegion,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
 import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
-import { Breadcrumb } from '@/shared/ui/Breadcrumb';
-import { JsonLd } from '@/shared/ui/JsonLd';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { fetchCategoryPreviews } from './_lib/categoryPreviews';
-import { fetchCategoryDigestLines } from './_lib/categoryDigests';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { brandTitle } from '@/shared/lib/brandName';
+import { cn } from '@/shared/lib/cn';
+import { enterLocale } from '@/shared/lib/enterLocale';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
     SITE_URL,
+    type SeoTranslator,
 } from '@/shared/lib/seo';
-import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import {
+    localeAlternatesFrom,
+    selfCanonicalAlternates,
+} from '@/shared/lib/seoAlternates';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
-import { brandName, brandTitle } from '@/shared/lib/brandName';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { fetchCategoryDigestLines } from './_lib/categoryDigests';
+import { fetchCategoryPreviews } from './_lib/categoryPreviews';
+import { buildNewsHubMetadata } from './_lib/newsHubMetadata';
+import { allPreviewsEmpty, previewCategoryOf } from './_lib/regionPreviews';
 
 // 24h ISR — 허브 인덱스는 지역 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -41,127 +39,29 @@ import { brandName, brandTitle } from '@/shared/lib/brandName';
 export const revalidate = 86400;
 
 const NEWS_HUB_PATH = '/news';
+
 /**
- * 3지역 커버리지를 밝히는 문구 — `src/app/__tests__/supportedAssets.test.ts`가
- * 여기서 자산군 누락을 검사한다. 커버리지 문구가 여러 표면에 프로즈로 흩어져
- * 한쪽만 갱신되는 것이 이 저장소에서 세 라운드 반복된 결함이다
- * (`CONVENTIONS.md#CS-4`).
+ * 3지역 커버리지를 밝히는 허브 제목 — metadata·h1 옆 JSON-LD `name`이 공유한다.
+ * 커버리지 문구는 `src/app/__tests__/supportedAssets.test.ts`가 카탈로그 원문에서 검사한다.
  */
-export function newsHubTitle(t: SeoTranslator): string {
+function newsHubTitle(t: SeoTranslator): string {
     return t('newsHub.title');
 }
-function newsHubFullTitle(t: SeoTranslator, locale: Locale): string {
-    return brandTitle(newsHubTitle(t), locale);
-}
-export function newsHubDescription(t: SeoTranslator): string {
+
+/** metadata·JSON-LD가 같은 길이 제한을 거친 설명을 쓰도록 한 곳에서 자른다. */
+function newsHubDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('newsHub.description'));
 }
 
-/**
- * 이 페이지는 **미국 허브에서 3지역 상위 허브로 승격**된 것이다(2026-08).
- *
- * 이전에는 `/news`가 곧 미국 카테고리 목록이라, 암호화폐 뉴스를 보려면 "미국 시장
- * 뉴스 허브"를 거쳐야 했다 — 자산군이 2차 개념으로 숨어 있던 구조. 미국 카테고리
- * 목록은 `/news/us`가 그대로 이어받았고 미국 관련 질의 키워드도 그쪽이 승계한다.
- * 여기서는 3지역을 나란히 놓아 어느 자산군이든 한 번에 들어가게 한다.
- */
-interface LocaleMetadataParams {
-    readonly params: Promise<{ locale: string }>;
-}
-
-export async function generateMetadata({
-    params,
-}: LocaleMetadataParams): Promise<Metadata> {
-    const { locale: rawLocale } = await params;
-    const locale = resolveLocale(rawLocale);
-    const ogLocale = localeOpenGraph(locale);
-    // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
-    const url = localeCanonical(locale, NEWS_HUB_PATH);
-    // 지역 카드 미리보기가 전부 비면 본문이 제목·설명뿐이라 thin으로 판정될 분량이다.
-    // 자매 라우트와 같은 규약: noindex + self-canonical(hreflang 없음), follow는 유지.
-    const previews = await Promise.all(
-        regionsOf('news').map(region =>
-            fetchCategoryPreviews(previewCategoryOf(region.region), locale)
-        )
-    );
-    const degraded = previews.every(list => list.length === 0);
-    const tSeo = await getTranslations({
-        locale,
-        namespace: 'shared.seo',
-    });
-    return {
-        title: newsHubTitle(tSeo),
-        description: newsHubDescription(tSeo),
-        /*
-         * **지역 head term은 하나도 넣지 않는다.**
-         *
-         * `미국 시장 뉴스`는 `/news/us`가, `한국 증시 뉴스`·`코스피 뉴스`는
-         * `/news/kr`이, `암호화폐 뉴스`는 `/news/crypto`가 각각 title·h1·본문으로
-         * 정면 타게팅한다(`REGION_KEYWORDS` 참조). 허브가 같은 말을 또 하면 같은
-         * 질의를 두 URL이 나눠 갖고, 구글은 보통 더 오래된 쪽(=허브)을 고르는데
-         * 그쪽이 주제로는 더 얕다.
-         *
-         * 허브가 노릴 것은 "어느 시장인지 아직 안 정한" 상위 질의뿐이다.
-         */
-        keywords: [
-            '시장 뉴스',
-            '주식 뉴스',
-            '시장 뉴스 한국어',
-            'AI 뉴스 다이제스트',
-            '시그렌즈 뉴스',
-        ],
-        // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별 자기참조 URL을
-        // 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를 canonical로 가리켜 hreflang 상호참조가
-        // 깨진다. degraded(noindex)는 self-canonical만 내고 hreflang 군집은 싣지 않는다.
-        alternates: degraded
-            ? selfCanonicalAlternates(locale, NEWS_HUB_PATH)
-            : await localeAlternatesFrom(params, NEWS_HUB_PATH),
-        robots: degraded
-            ? { index: false, follow: true }
-            : localePageRobots(locale),
-        openGraph: {
-            type: 'website',
-            siteName: brandName(locale),
-            title: newsHubFullTitle(tSeo, locale),
-            description: newsHubDescription(tSeo),
-            url,
-            ...ogLocale,
-        },
-        twitter: buildTwitterMetadata({
-            title: newsHubFullTitle(tSeo, locale),
-            description: newsHubDescription(tSeo),
-        }),
-    };
+/** 지역 카드 순서(`regionsOf('news')`)와 같은 순서의 미리보기 카테고리. */
+function regionPreviewCategories(): NewsFeedCategoryId[] {
+    return regionsOf('news').map(region => previewCategoryOf(region.region));
 }
 
 /**
- * 지역 카드의 미리보기는 그 지역의 **첫 카테고리**에서 가져온다 — 단, 미국은 예외.
- *
- * 미국은 카테고리가 4개인데, `categoriesInRegion`의 선언 순서상 첫 항목은
- * `general`이다. `/news/us` 카테고리 목록의 첫 카드도 똑같이 `general`이라,
- * 그대로 두면 허브 카드와 `/news/us`의 첫 카드가 같은 피드를 미리보기로
- * 중복 노출한다(D6, thin/duplicate content). 그래서 미국만 `stock`으로
- * 고정한다 — 한국·암호화폐는 카테고리가 하나뿐이라 선택의 여지가 없다.
- */
-function previewCategoryOf(region: NavRegionId): NewsFeedCategoryId {
-    if (region === 'us') return 'stock';
-    const categories = categoriesInRegion(region);
-    const first = categories[0];
-    if (first === undefined) {
-        throw new Error(`[NewsHubPage] region has no categories: ${region}`);
-    }
-    return first;
-}
-
-/**
- * 지역 카드 설명. `CATEGORY_CONFIG.koDescription`을 재사용하지 않는다 — 그건 단일
- * 카테고리 설명이고, 여기서는 그 지역 전체가 뭘 담는지 말해야 한다(미국은 4개
- * 카테고리를 묶는다).
- */
-/**
- * 키만 내보낸다 — `t()` 호출은 번역자를 **선언한** 렌더 쪽에서 한다.
- * 여기서 `t`를 인자로 받아 부르면 추출기가 그 파일을 건너뛰어 키가 클라이언트
- * 페이로드에서 누락된다(`noTranslatorParamCall` 가드가 막는 패턴).
+ * 지역 카드 설명의 메시지 키(`app.news`). `CATEGORY_CONFIG.descriptionKey`를 재사용하지
+ * 않는다 — 그건 단일 카테고리 설명이고 여기서는 지역 전체(미국은 4개 카테고리)를 말해야 한다.
+ * 키만 두고 `t()` 호출은 번역자를 선언한 렌더 쪽에서 한다(`noTranslatorParamCall` 가드).
  */
 const REGION_DESCRIPTION_KEY: Record<NavRegionId, string> = {
     us: 'regionDescription.us',
@@ -169,28 +69,64 @@ const REGION_DESCRIPTION_KEY: Record<NavRegionId, string> = {
     crypto: 'regionDescription.crypto',
 };
 
-export default async function NewsHubPage({
-    params,
-}: {
+interface NewsHubRouteProps {
     readonly params: Promise<{ locale: string }>;
-}) {
-    const { locale: rawLocale } = await params;
-    const locale = enterLocale(rawLocale);
+}
+
+/**
+ * 3지역 상위 허브. 지역 head term(`미국 시장 뉴스`·`한국 증시 뉴스`·`암호화폐 뉴스`)은
+ * 각 지역 허브가 title·h1·본문으로 정면 타게팅하므로 여기에 넣지 않는다 — 허브가 같은
+ * 질의를 노리면 두 URL이 나눠 갖고, 구글은 보통 주제로는 더 얕은 허브를 고른다.
+ * 허브는 "어느 시장인지 아직 안 정한" 상위 질의만 노린다.
+ */
+export async function generateMetadata({
+    params,
+}: NewsHubRouteProps): Promise<Metadata> {
+    const locale = resolveLocale((await params).locale);
+    const [previews, tSeo] = await Promise.all([
+        Promise.all(
+            regionPreviewCategories().map(category =>
+                fetchCategoryPreviews(category, locale)
+            )
+        ),
+        getTranslations({ locale, namespace: 'shared.seo' }),
+    ]);
+    const degraded = allPreviewsEmpty(previews);
+    return buildNewsHubMetadata({
+        locale,
+        path: NEWS_HUB_PATH,
+        title: newsHubTitle(tSeo),
+        description: newsHubDescription(tSeo),
+        keywords: [
+            '시장 뉴스',
+            '주식 뉴스',
+            '시장 뉴스 한국어',
+            'AI 뉴스 다이제스트',
+            '시그렌즈 뉴스',
+        ],
+        degraded,
+        alternates: degraded
+            ? selfCanonicalAlternates(locale, NEWS_HUB_PATH)
+            : await localeAlternatesFrom(params, NEWS_HUB_PATH),
+    });
+}
+
+/**
+ * 3지역 상위 허브 — 지역 카드(미리보기 헤드라인 + 다이제스트 한 줄)와 미국 카테고리 바로가기.
+ * 미리보기가 전부 비면 metadata와 같은 판정으로 구조화데이터를 생략한다.
+ */
+export default async function NewsHubPage({ params }: NewsHubRouteProps) {
+    const locale = enterLocale((await params).locale);
     // 배포 빌드에는 DB가 없다 — 이름/미리보기 없이 구워진 이 렌더를 60초 뒤 재생성하게 한다.
     await shortenRevalidateIfDatabaseMissingAtBuild();
-    // 셋은 서로 독립이다.
-    const [tNav, t, tSeo] = await Promise.all([
+    const regions = regionsOf('news');
+    const previewCategories = regionPreviewCategories();
+    // 번역자·미리보기 헤드라인(제3자 제목)·다이제스트 한 줄(우리 서술)은 서로 독립이다.
+    // 다이제스트를 함께 싣는 이유는 허브가 남의 제목 모음이 되지 않도록이다(`categoryDigests` JSDoc).
+    const [tNav, t, tSeo, previews, digestLines] = await Promise.all([
         getTranslations(),
         getTranslations('app.news'),
         getTranslations('shared.seo'),
-    ]);
-    const regions = regionsOf('news');
-    const previewCategories = regions.map(region =>
-        previewCategoryOf(region.region)
-    );
-    // 미리보기 헤드라인(제3자 제목)과 다이제스트 한 줄(우리 서술)을 함께 싣는다 —
-    // 허브가 남의 제목 모음이 되지 않도록(`categoryDigests` JSDoc).
-    const [previews, digestLines] = await Promise.all([
         Promise.all(
             previewCategories.map(category =>
                 fetchCategoryPreviews(category, locale)
@@ -198,33 +134,38 @@ export default async function NewsHubPage({
         ),
         fetchCategoryDigestLines(previewCategories, locale),
     ]);
-
+    // metadata가 noindex를 거는 것과 같은 술어로 구조화데이터를 끈다 — "색인하지 말라"면서
+    // "이 URL이 정식 WebPage"라고 주장하지 않는다(자매 허브와 같은 규칙).
+    const degraded = allPreviewsEmpty(previews);
     const hubUrl = `${SITE_URL}${NEWS_HUB_PATH}`;
-
-    const webPageJsonLd = {
-        ...buildWebPageJsonLd({
-            url: hubUrl,
-            name: brandTitle(newsHubTitle(tSeo), locale),
-            description: newsHubDescription(tSeo),
-            locale,
-        }),
-    };
-
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [{ name: t('page.dc06c4'), url: hubUrl }],
-        locale
-    );
+    const hubName = t('page.dc06c4');
 
     return (
         <>
-            <JsonLd data={webPageJsonLd} />
-            <JsonLd data={breadcrumbJsonLd} />
+            {!degraded && (
+                <>
+                    <JsonLd
+                        data={buildWebPageJsonLd({
+                            url: hubUrl,
+                            name: brandTitle(newsHubTitle(tSeo), locale),
+                            description: newsHubDescription(tSeo),
+                            locale,
+                        })}
+                    />
+                    <JsonLd
+                        data={buildBreadcrumbJsonLd(
+                            [{ name: hubName, url: hubUrl }],
+                            locale
+                        )}
+                    />
+                </>
+            )}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 {/* 가시 브레드크럼 — 텍스트가 BreadcrumbList JSON-LD의 `name`과
                     같아야 구글이 마크업을 무시하지 않는다. */}
-                <Breadcrumb trail={[{ label: t('page.dc06c4') }]} />
+                <Breadcrumb trail={[{ label: hubName }]} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
-                    {t('page.dc06c4')}
+                    {hubName}
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">
                     <p>{t('page.17728f')}</p>
@@ -246,10 +187,9 @@ export default async function NewsHubPage({
                 </div>
                 {/*
                     미국 4개 카테고리로 가는 직접 링크. 지역 카드만 두면 미국
-                    사용자가 원하는 카테고리에 닿기까지 클릭이 두 번 필요하고,
-                    구 `/news`(=미국 카테고리 목록)로 쌓인 내부 링크 그래프도
-                    한 단계 멀어진다. 목적지는 `/news/us`와 같지만 이쪽은 인덱스,
-                    저쪽은 미리보기까지 있는 허브라 중복 콘텐츠가 되지 않는다.
+                    사용자가 원하는 카테고리에 닿기까지 클릭이 두 번 필요하다.
+                    목적지는 `/news/us`와 같지만 이쪽은 인덱스, 저쪽은 미리보기까지
+                    있는 허브라 중복 콘텐츠가 되지 않는다.
                 */}
                 <section
                     aria-labelledby="news-hub-category-index"
@@ -270,7 +210,7 @@ export default async function NewsHubPage({
                             <li key={cat}>
                                 <Link
                                     href={`/news/${CATEGORY_CONFIG[cat].slug}`}
-                                    // 허브에 다수 렌더 — docs/architecture/CDN_CACHING.md §1
+                                    // 허브에 다수 렌더 — 진입만으로 링크마다 `_rsc` prefetch가 나가지 않게 끈다.
                                     prefetch={false}
                                     className="text-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >

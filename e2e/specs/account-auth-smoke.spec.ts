@@ -9,8 +9,8 @@ import { AUTH_USER_EMAIL } from '../support/authUser';
  * e2e-auth-user). It exists to validate that a request to /account is NOT
  * forward-guarded to /login — i.e. the captured session cookie authenticates
  * the request all the way through proxy.ts AND the page-level getCurrentUser
- * re-check (account/page.tsx redirects to /login?next=/account when the cookie
- * does not resolve to a real user).
+ * re-check (account/_components/AccountContent.tsx redirects to
+ * /login?next=/account when the cookie does not resolve to a real user).
  *
  * Task 5/6 will add the real account-*.spec.ts files; this smoke can stay as a
  * standing guard on the storageState plumbing, or be superseded by them.

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
-import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { marketCopyFor } from './copy';
 import { loadMarketSignals } from './loadMarketSignals';
 

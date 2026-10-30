@@ -1,15 +1,15 @@
 'use client';
 
-import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { ModelId } from '@y0ngha/siglens-core';
-import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
-import { getModelDisplay } from '@/shared/lib/modelDisplay';
-import { ModelListbox } from '@/shared/ui/ModelListbox';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { useApiDefaultModelForm } from '../hooks/useApiDefaultModelForm';
-import type { ApiModelOptionGroup } from '../lib/buildApiModelOptions';
+import {
+    findSelectableModelId,
+    type ApiModelOptionGroup,
+} from '../lib/buildApiModelOptions';
+import { ModelField } from './ModelField';
 import { SubmitButton } from './SubmitButton';
 
 interface DefaultModelFormProps {
@@ -26,92 +26,6 @@ interface DefaultModelFormProps {
 }
 
 const STATUS_ID = 'siglens-api-default-model-status';
-const LABEL_ID = 'siglens-api-default-model-label';
-const VALUE_ID = 'siglens-api-default-model-value';
-
-interface ModelFieldProps {
-    initial: string | null;
-    groups: readonly ApiModelOptionGroup[];
-}
-
-/**
- * 모델 선택 listbox + 서버 액션이 읽는 `model` 필드. 선택 상태는 제어 state이고 폼에는 숨김
- * input으로 실어 보낸다(빈 문자열 = "설정 안 함" → 서버가 해제로 처리한다).
- */
-function ModelField({ initial, groups }: ModelFieldProps) {
-    const t = useTranslations('features.siglens-api-key-management');
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const listboxRef = useRef<HTMLDivElement>(null);
-    const { isOpen, toggle, close } = usePopoverToggle([
-        triggerRef,
-        listboxRef,
-    ]);
-    const [selected, setSelected] = useState<ModelId | null>(
-        () =>
-            groups
-                .flatMap(group => group.options)
-                .find(option => option.id === initial)?.id ?? null
-    );
-
-    const closeToTrigger = () => {
-        close();
-        triggerRef.current?.focus();
-    };
-
-    return (
-        <div className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-secondary-300">
-            <span id={LABEL_ID}>{t('DefaultModelForm.selectLabel')}</span>
-            <input type="hidden" name="model" value={selected ?? ''} />
-            <div className="relative">
-                <button
-                    ref={triggerRef}
-                    type="button"
-                    onClick={toggle}
-                    aria-haspopup="listbox"
-                    aria-expanded={isOpen}
-                    aria-labelledby={`${LABEL_ID} ${VALUE_ID}`}
-                    aria-describedby={STATUS_ID}
-                    className="flex h-10 w-full touch-manipulation items-center justify-between gap-2 rounded-lg border border-border-control bg-secondary-950 px-3 text-sm text-secondary-50 transition-colors hover:bg-secondary-900 focus-visible:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:outline-none"
-                >
-                    <span id={VALUE_ID} className="truncate">
-                        {selected === null
-                            ? t('DefaultModelForm.notSetOption')
-                            : getModelDisplay(selected).fullName}
-                    </span>
-                    <span
-                        className={cn(
-                            'shrink-0 text-xs text-secondary-500 transition-transform duration-150',
-                            isOpen && 'rotate-180'
-                        )}
-                        aria-hidden="true"
-                    >
-                        ▾
-                    </span>
-                </button>
-                {isOpen && (
-                    <ModelListbox
-                        ref={listboxRef}
-                        groups={groups.map(group => ({
-                            label: group.providerLabel,
-                            models: group.options.map(option => option.id),
-                        }))}
-                        selected={selected}
-                        onChange={setSelected}
-                        none={{
-                            label: t('DefaultModelForm.notSetOption'),
-                            onSelect: () => setSelected(null),
-                        }}
-                        onClose={closeToTrigger}
-                        ariaLabel={t('DefaultModelForm.selectLabel')}
-                        // API에서는 등급과 상관없이 모든 모델이 내 키로 돈다 — 등급 배지는 오해를 부른다.
-                        showAccessBadge={false}
-                        className="top-full left-0 mt-1 w-full min-w-44"
-                    />
-                )}
-            </div>
-        </div>
-    );
-}
 
 /**
  * "API 기본 모델" 선택. 선택지는 등록한 BYOK provider의 모델뿐이고(서버 액션이 같은 기준으로 다시
@@ -126,12 +40,8 @@ export function DefaultModelForm({
 }: DefaultModelFormProps) {
     const t = useTranslations('features.siglens-api-key-management');
     const { state, formAction } = useApiDefaultModelForm();
-    const selectable = groups.flatMap(group =>
-        group.options.map(option => option.id)
-    );
-    const savedIsSelectable =
-        defaultModel !== null && selectable.some(id => id === defaultModel);
-    const savedIsStale = defaultModel !== null && !savedIsSelectable;
+    const savedModel = findSelectableModelId(groups, defaultModel);
+    const savedIsStale = defaultModel !== null && savedModel === null;
 
     return (
         <div
@@ -139,7 +49,7 @@ export function DefaultModelForm({
             data-testid="siglens-api-default-model"
         >
             <div>
-                <h3 className="text-sm font-semibold text-secondary-100">
+                <h3 className={HEADING_SUBSECTION}>
                     {t('DefaultModelForm.title')}
                 </h3>
                 <p className="mt-1 text-sm text-secondary-400">
@@ -166,9 +76,10 @@ export function DefaultModelForm({
                 >
                     {/* 저장된 값이 바뀌면(저장 후 재렌더) 선택 상태를 새 값으로 다시 맞춘다. */}
                     <ModelField
-                        key={savedIsSelectable ? defaultModel : ''}
-                        initial={savedIsSelectable ? defaultModel : null}
+                        key={savedModel ?? ''}
+                        initial={savedModel}
                         groups={groups}
+                        statusId={STATUS_ID}
                     />
                     <SubmitButton
                         label={t('DefaultModelForm.saveButton')}
