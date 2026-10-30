@@ -12,10 +12,10 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    clampSeoDescription,
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import {
     localeAlternatesFrom,
     selfCanonicalAlternates,

@@ -20,10 +20,8 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { cn } from '@/shared/lib/cn';
-import {
-    buildSymbolPositionSeoContent,
-    NOINDEX_SYMBOL_METADATA,
-} from '@/shared/lib/seo';
+import { buildSymbolPositionSeoContent } from '@/shared/lib/seoSymbol';
+import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

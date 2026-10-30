@@ -100,8 +100,10 @@ export interface MarketProfileDescriptor {
     seo: {
         /**
          * JSON-LD `about` node @type (consumed by buildAssetAboutNode). crypto = null.
-         * Title/description/keywords copy lives in seo.ts (Plan 5) — the descriptor
-         * must NOT carry copy builders, or usEquity.ts → seo.ts → registry would cycle.
+         * Title/description/keywords copy lives in seoSymbol.ts (Plan 5) — the
+         * descriptor must NOT carry copy builders, or
+         * usEquity.ts → seoSymbol.ts → registry would cycle (seoSymbol.ts imports
+         * `isKrEquitySymbol` from the registry).
          */
         aboutNodeType: 'Corporation' | null;
     };

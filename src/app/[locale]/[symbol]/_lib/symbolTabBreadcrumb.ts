@@ -1,11 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 
 import type { Locale } from '@/shared/i18n/locales';
-import {
-    buildBreadcrumbJsonLd,
-    buildSymbolSeoContent,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
+import { buildBreadcrumbJsonLd, type SeoTranslator } from '@/shared/lib/seo';
+import { buildSymbolSeoContent } from '@/shared/lib/seoSymbol';
 import type { SymbolSubTabKey } from '@/views/symbol/utils/symbolTabsConfig';
 
 interface SymbolTabBreadcrumbInput {

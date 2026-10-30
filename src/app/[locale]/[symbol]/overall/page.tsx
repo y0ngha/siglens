@@ -23,10 +23,8 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-import {
-    ALWAYS_NOINDEX_TAB_ROBOTS,
-    resolveSymbolOverallSeoContent,
-} from '@/shared/lib/seo';
+import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
+import { resolveSymbolOverallSeoContent } from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';

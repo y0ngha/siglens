@@ -2,7 +2,7 @@ import {
     seoTitleWidth,
     clampSeoTitle,
     SEO_TITLE_MAX_WIDTH,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoClamp';
 
 describe('seoTitleWidth', () => {
     it('라틴 문자는 1단위로 센다', () => {

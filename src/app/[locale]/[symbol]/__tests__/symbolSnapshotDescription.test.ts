@@ -6,10 +6,8 @@ vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
 }));
 
 import { loadTabSnapshotMeta } from '../symbolSnapshotDescription';
-import {
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
-} from '@/shared/lib/seo';
+import { symbolTabDescriptionLabel } from '@/shared/lib/seoSymbol';
+import { buildSnapshotMetaDescription } from '@/shared/lib/seoSnapshotDescription';
 
 const tSeo = (key: string) => key;
 

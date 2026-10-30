@@ -26,10 +26,8 @@ import {
     profileIdForSymbol,
 } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-import {
-    ALWAYS_NOINDEX_TAB_ROBOTS,
-    buildSymbolFundamentalSeoContent,
-} from '@/shared/lib/seo';
+import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
+import { buildSymbolFundamentalSeoContent } from '@/shared/lib/seoSymbol';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';

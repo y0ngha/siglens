@@ -62,7 +62,7 @@ import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCa
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
-import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<

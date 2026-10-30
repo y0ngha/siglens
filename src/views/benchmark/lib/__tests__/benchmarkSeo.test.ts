@@ -1,6 +1,6 @@
 import { createTranslator } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
-import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 vi.mock('next-intl/server', () => ({

@@ -23,10 +23,8 @@ import { getProfileResilient } from '@/entities/ticker/server/getProfileResilien
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { type SymbolRouteParams } from '@/shared/config/market';
-import {
-    ALWAYS_NOINDEX_TAB_ROBOTS,
-    buildSymbolCongressSeoContent,
-} from '@/shared/lib/seo';
+import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
+import { buildSymbolCongressSeoContent } from '@/shared/lib/seoSymbol';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';

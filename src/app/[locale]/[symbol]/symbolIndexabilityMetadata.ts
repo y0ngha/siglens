@@ -18,7 +18,7 @@ import {
 } from '@/shared/config/marketProfile/registry';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import type { Locale } from '@/shared/i18n/locales';
-import type { SymbolSeoTab } from '@/shared/lib/seo';
+import type { SymbolSeoTab } from '@/shared/lib/seoSymbol';
 import { noindexSymbolMetadata } from '@/shared/lib/symbolMetadata';
 import type { AssetInfo } from '@/shared/lib/types';
 

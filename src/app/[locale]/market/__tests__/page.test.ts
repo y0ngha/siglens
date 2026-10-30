@@ -104,9 +104,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({ '@type': 'WebPage' }),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
-    clampSeoDescription: (text: string) => text,
     ROOT_KEYWORDS: ['주식'],
     SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoClamp', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoClamp')>()),
+    clampSeoDescription: (text: string) => text,
 }));
 
 vi.mock('@/shared/lib/og', () => ({

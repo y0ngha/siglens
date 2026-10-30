@@ -10,7 +10,7 @@ import {
     submitIndexNow,
     type IndexNowOutcome,
     type IndexNowResult,
-} from './indexNow';
+} from '@/shared/api/indexNow';
 
 /**
  * IndexNow 제출 대기열 — Redis sorted set(`indexnow:pending`).

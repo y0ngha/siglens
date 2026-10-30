@@ -158,7 +158,7 @@ export const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
 export const SYMBOL_OG_ALLOW = [`/${DEFAULT_LOCALE}/*/opengraph-image`];
 
 /**
- * 항상 noindex인 종목 탭(`ALWAYS_NOINDEX_TAB_ROBOTS` + position)의 OG 이미지. 탭 목록은 `seo.ts`를
+ * 항상 noindex인 종목 탭(`ALWAYS_NOINDEX_TAB_ROBOTS` + position)의 OG 이미지. 탭 목록은 `seoSymbol.ts`를
  * import하지 않고 적는다 — robots는 `SITE_URL`만 의존하도록 두었고(`robots.test.ts`가 그것만 목한다),
  * 탭을 다시 열 때 `ALWAYS_NOINDEX_TAB_ROBOTS`와 함께 여기를 고친다.
  */

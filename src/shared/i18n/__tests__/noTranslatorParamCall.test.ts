@@ -58,6 +58,7 @@ describe('번역자를 인자로 받는 파일은 t(리터럴)을 부르지 않�
         'src/app/[locale]/news/[category]/seo.ts',
         'src/shared/lib/legal.ts',
         'src/shared/lib/seo.ts',
+        'src/shared/lib/seoSymbol.ts',
     ];
 
     /** `'use client'` 파일이 이 파일의 export를 **직접 호출**하는가. */

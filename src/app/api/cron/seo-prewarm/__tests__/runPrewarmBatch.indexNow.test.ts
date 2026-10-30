@@ -133,7 +133,7 @@ vi.mock('@/entities/options-chain/api', () => ({
     prewarmPollOptions: vi.fn(),
 }));
 
-vi.mock('@/shared/lib/indexNow', () => ({
+vi.mock('@/shared/api/indexNow', () => ({
     isIndexNowEnabled: mockIsIndexNowEnabled,
 }));
 vi.mock('@/shared/lib/indexNowQueue', () => ({

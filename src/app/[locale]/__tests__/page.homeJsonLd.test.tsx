@@ -72,11 +72,10 @@ import {
     brandIntroName,
     buildOrganizationCoreJsonLd,
     GITHUB_URL,
-    SEO_TITLE_MAX_WIDTH,
-    seoTitleWidth,
     VELOG_URL,
     X_URL,
 } from '@/shared/lib/seo';
+import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
 import { SITE_NAME_KO } from '@/shared/config/brand';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { StatsBar } from '@/widgets/home/StatsBar';

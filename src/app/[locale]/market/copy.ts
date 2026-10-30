@@ -1,5 +1,6 @@
 import type { DashboardScopeId } from '@/shared/config/dashboardScope';
-import { clampSeoDescription, type SeoTranslator } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
+import { type SeoTranslator } from '@/shared/lib/seo';
 
 /**
  * 시장별 `/market` 라우트 카피 — 메타데이터·h1·JSON-LD의 단일 소스.

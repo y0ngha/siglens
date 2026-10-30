@@ -27,7 +27,7 @@ import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import {
     buildTitleSubject,
     resolveSymbolNewsSeoContent,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';

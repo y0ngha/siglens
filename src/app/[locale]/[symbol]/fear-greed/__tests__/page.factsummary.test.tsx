@@ -174,15 +174,18 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
-    buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
-    resolveSymbolFearGreedSeoContent: vi
-        .fn()
-        .mockReturnValue({ fullTitle: '', description: '', url: '' }),
     SITE_URL: 'https://siglens.io',
     NOINDEX_SYMBOL_METADATA: {
         robots: { index: false, follow: true },
         alternates: { canonical: null },
     },
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
+    buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
+    resolveSymbolFearGreedSeoContent: vi
+        .fn()
+        .mockReturnValue({ fullTitle: '', description: '', url: '' }),
 }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';

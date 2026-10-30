@@ -4,8 +4,8 @@ import {
     clampSeoTitle,
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoClamp';
+import { type SeoTranslator } from '@/shared/lib/seo';
 
 /**
  * 레이아웃 template이 뒤에 붙이는 사이트 접미사의 폭. **예산에서 먼저 뺀다.**

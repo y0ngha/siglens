@@ -3,9 +3,9 @@ import { brandTitle } from '@/shared/lib/brandName';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    clampSeoDescription,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { SYMBOLS_PAGE_URL } from './symbolsUrls';
 
 /** `<title>`·화면 제목의 짧은 이름(자산군 꼬리표 없음). */

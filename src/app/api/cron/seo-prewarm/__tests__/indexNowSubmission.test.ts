@@ -26,7 +26,7 @@ const {
     mockWriteStaticLastmods: vi.fn(),
 }));
 
-vi.mock('@/shared/lib/indexNow', () => ({
+vi.mock('@/shared/api/indexNow', () => ({
     isIndexNowEnabled: mockIsIndexNowEnabled,
 }));
 vi.mock('@/shared/lib/indexNowQueue', () => ({

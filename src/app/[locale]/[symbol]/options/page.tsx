@@ -20,10 +20,8 @@ import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { SymbolRouteParams } from '@/shared/config/market';
-import {
-    ALWAYS_NOINDEX_TAB_ROBOTS,
-    buildSymbolOptionsSeoContent,
-} from '@/shared/lib/seo';
+import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
+import { buildSymbolOptionsSeoContent } from '@/shared/lib/seoSymbol';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { JsonLd } from '@/shared/ui/JsonLd';

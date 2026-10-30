@@ -5,12 +5,12 @@ import {
     hashHubBody,
     readHubContentStamp,
 } from '@/shared/cache/hubContentStamp';
+import { SITE_URL } from '@/shared/lib/seo';
 import {
     clampAtSentenceBoundary,
     collapseToSingleLine,
-    SITE_URL,
     takeWholeSentences,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSnapshotDescription';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 
 /** 항목 설명 상한(code point). 리더 목록 미리보기에 쓰이는 길이다 — 전문은 `content:encoded`가 싣는다. */
@@ -18,7 +18,7 @@ export const DESCRIPTION_MAX_LENGTH = 500;
 /** 스탬프 해시에서 guid에 쓰는 앞자리 수. */
 const GUID_HASH_LENGTH = 12;
 
-/** 마크다운을 떼고 한 줄로 합친 뒤 문장 경계에서 줄인다(`seo.ts`의 description 헬퍼 재사용). */
+/** 마크다운을 떼고 한 줄로 합친 뒤 문장 경계에서 줄인다(`seoSnapshotDescription.ts`의 description 헬퍼 재사용). */
 export function toDescription(prose: string): string {
     const plain = collapseToSingleLine(prose);
     return (
