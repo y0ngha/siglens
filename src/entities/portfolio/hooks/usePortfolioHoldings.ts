@@ -1,28 +1,33 @@
 'use client';
 
+import { useCallback } from 'react';
 import {
     useMutation,
     useQuery,
     useQueryClient,
     type UseMutationResult,
 } from '@tanstack/react-query';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     PORTFOLIO_HOLDINGS_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
-import { deletePortfolioHoldingAction } from '@/entities/portfolio/actions/deletePortfolioHoldingAction';
-import { getPortfolioHoldingsAction } from '@/entities/portfolio/actions/getPortfolioHoldingsAction';
-import { savePortfolioHoldingAction } from '@/entities/portfolio/actions/savePortfolioHoldingAction';
+import { useHydrated } from '@/shared/hooks/useHydrated';
+import { deletePortfolioHoldingAction } from '../actions/deletePortfolioHoldingAction';
+import { getPortfolioHoldingsAction } from '../actions/getPortfolioHoldingsAction';
+import { savePortfolioHoldingAction } from '../actions/savePortfolioHoldingAction';
 import type {
+    DeletePortfolioResult,
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
-    DeletePortfolioResult,
 } from '../model';
 
+/**
+ * {@link usePortfolioHoldings}의 반환 모양. 로딩·오류·데이터 유무를 별도 플래그로 나눠
+ * 소비자가 "보유 없음"과 "아직 모름"을 구분해 분기할 수 있게 한다.
+ */
 interface UsePortfolioHoldingsReturn {
     holdings: PortfolioHoldingView[];
     /**
@@ -40,7 +45,7 @@ interface UsePortfolioHoldingsReturn {
 }
 
 /**
- * Fetches the current member's holdings and exposes save/delete mutations that invalidate the list on success.
+ * 회원의 보유종목 목록을 조회하고, 성공 시 목록을 무효화하는 저장·삭제 mutation을 함께 돌려준다.
  *
  * **게스트에게는 요청하지 않는다.** 보유종목은 회원 전용이라 게스트의 답은 항상 빈 목록인데,
  * 예전에는 종목 페이지를 여는 모든 방문자가 이 액션을 한 번씩 보냈다. Server Action은 한 번에
@@ -86,6 +91,9 @@ export function usePortfolioHoldings({
         enabled: enabled && isHydrated && isMemberLikely,
         staleTime: PORTFOLIO_HOLDINGS_STALE_TIME_MS,
     });
+    const refetchHoldings = useCallback((): void => {
+        void refetch();
+    }, [refetch]);
     const isLoading = isQueryLoading || (isHydrated && isIdentityPending);
 
     const save = useMutation<SavePortfolioResult, Error, RawHoldingInput>({
@@ -121,9 +129,7 @@ export function usePortfolioHoldings({
         isHydrated,
         isLoading,
         isError,
-        refetch: () => {
-            void refetch();
-        },
+        refetch: refetchHoldings,
         save,
         remove,
     };

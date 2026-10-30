@@ -51,4 +51,25 @@ describe('OAuth consent page', () => {
             'https://siglens.io/signup/oauth/consent'
         );
     });
+
+    it('og 제목·URL을 이 페이지 값으로 채운다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'en' }),
+        });
+        expect(metadata.openGraph).toEqual(
+            expect.objectContaining({
+                title: 'Social sign-up consent',
+                url: 'https://siglens.io/en/signup/oauth/consent',
+            })
+        );
+    });
+
+    it('twitter 제목을 루트(홈) 값이 아니라 이 페이지 값으로 덮는다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        expect(metadata.twitter).toEqual(
+            expect.objectContaining({ title: '소셜 로그인 가입 동의' })
+        );
+    });
 });

@@ -7,7 +7,7 @@
  */
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import type { ConversationListItem } from '@/entities/chat-conversation/model';
 import {
     groupConversationsByDay,
     type ConversationGroupKey,

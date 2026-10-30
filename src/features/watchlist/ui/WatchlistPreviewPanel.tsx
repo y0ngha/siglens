@@ -1,15 +1,13 @@
 'use client';
 
+import { useId } from 'react';
 import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
 import { WATCHLIST_PREVIEW_COUNT } from '@/shared/config/watchlist';
 import { cn } from '@/shared/lib/cn';
 import { PLACEHOLDER_ON_CARD } from '@/shared/lib/surfaceStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import {
-    useWatchlistPreview,
-    type WatchlistPreviewItem,
-} from '../hooks/useWatchlistPreview';
+import type { WatchlistPreviewItem } from '../hooks/useWatchlistPreview';
+import { useWatchlistPreviewTabs } from '../hooks/useWatchlistPreviewTabs';
 import { WATCHLIST_SUBTLE_LINK } from '../lib/watchlistStyles';
 import {
     watchlistPageHref,
@@ -113,12 +111,13 @@ export function WatchlistPreviewPanel({
 }: WatchlistPreviewPanelProps) {
     const t = useTranslations('features.watchlist');
     const idBase = useId();
-    const [chosenTab, setChosenTab] = useState<WatchlistPreviewTab | null>(
-        null
-    );
-    const { watchlist, recent, isReady, defaultTab } = useWatchlistPreview();
-    const tab = chosenTab ?? defaultTab;
-    const all = tab === 'watchlist' ? watchlist : recent;
+    const {
+        watchlist,
+        isReady,
+        tab,
+        selectTab,
+        rows: all,
+    } = useWatchlistPreviewTabs();
     const rows =
         variant === 'popover' ? all.slice(0, WATCHLIST_PREVIEW_COUNT) : all;
 
@@ -132,7 +131,7 @@ export function WatchlistPreviewPanel({
             <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1">
                 <WatchlistTabs
                     value={tab}
-                    onChange={setChosenTab}
+                    onChange={selectTab}
                     watchlistCount={isReady ? watchlist.length : null}
                     idBase={idBase}
                     size={variant === 'sheet' ? 'md' : 'sm'}

@@ -360,6 +360,15 @@ describe('usePwaInstall', () => {
         expect(result.current.showBanner).toBe(false);
     });
 
+    it('리렌더해도 핸들러의 참조가 그대로다', () => {
+        const { result, rerender } = renderHook(() => usePwaInstall());
+        const first = result.current;
+        rerender();
+        expect(result.current.handleInstall).toBe(first.handleInstall);
+        expect(result.current.handleDismiss).toBe(first.handleDismiss);
+        expect(result.current.handleModalClose).toBe(first.handleModalClose);
+    });
+
     describe('닫기 기억(localStorage)', () => {
         it('닫으면 저장소에 남기고, 다음 마운트에서는 첫 입력에도 배너를 띄우지 않는다', () => {
             const first = renderHook(() => usePwaInstall());

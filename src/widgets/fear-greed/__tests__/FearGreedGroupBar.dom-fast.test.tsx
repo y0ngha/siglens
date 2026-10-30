@@ -172,5 +172,27 @@ describe('FearGreedGroupBar', () => {
             const extremePctile = getByText(/92백분위/);
             expect(extremePctile.className).toContain('font-semibold');
         });
+
+        it.each([
+            { percentile: 10, emphasized: true },
+            { percentile: 11, emphasized: false },
+            { percentile: 89, emphasized: false },
+            { percentile: 90, emphasized: true },
+        ])(
+            '경계 백분위 $percentile 의 강조 여부는 $emphasized 이다',
+            ({ percentile, emphasized }) => {
+                const group: FearGreedGroup = {
+                    ...flowGroup,
+                    factors: [{ key: 'volume_z', rawValue: 0.5, percentile }],
+                };
+                const { getByText } = render(
+                    <FearGreedGroupBar group={group} />
+                );
+                const cell = getByText(new RegExp(`${percentile}백분위`));
+                expect(cell.className.includes('font-semibold')).toBe(
+                    emphasized
+                );
+            }
+        );
     });
 });

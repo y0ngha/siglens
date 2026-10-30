@@ -1,22 +1,24 @@
-import { getTranslations } from 'next-intl/server';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
-import { localePath, type Locale, resolveLocale } from '@/shared/i18n/locales';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { Spinner } from '@/shared/ui/Spinner';
-import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
+import { Suspense } from 'react';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { enterLocale } from '@/shared/lib/enterLocale';
+import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
+import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { Spinner } from '@/shared/ui/Spinner';
+import { localePathToLogin } from '../../_personal/localePathToLogin';
 
-// noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
+const PATH = '/account/delete';
+
 /**
- * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
- * 없어 `/ja/account/delete`도 canonical이 한국어 URL로 나갔다. noindex 페이지에 다른 URL을
- * canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ * 로케일별 메타데이터 — `/account`와 같은 이유로 정적 `metadata`가 아니다. og·twitter도 이
+ * 페이지 값으로 채운다: 일부만 두면 Next가 `openGraph`를 통째로 교체해 og:title이 빠지고,
+ * `twitter`는 루트 레이아웃의 홈 제목·설명을 그대로 상속한다.
  */
 export async function generateMetadata({
     params,
@@ -29,29 +31,27 @@ export async function generateMetadata({
         locale,
         namespace: 'shared.seo',
     });
+    const title = tSeo('accountDeleteTitle');
+    const description = tSeo('accountDeleteFullTitle', {
+        v0: brandName(locale),
+    });
     return {
-        title: tSeo('accountDeleteTitle'),
-        description: tSeo('accountDeleteFullTitle', { v0: brandName(locale) }),
-        alternates: { canonical: localeCanonical(locale, '/account/delete') },
-        openGraph: { url: localeCanonical(locale, '/account/delete') },
+        title,
+        description,
+        alternates: { canonical: localeCanonical(locale, PATH) },
+        ...localePageSocial(locale, PATH, { title, description }),
         robots: { index: false, follow: false },
     };
 }
 
-// Reads cookies via getCurrentUser — must be inside Suspense for PPR.
+/** 세션을 읽어 탈퇴 확인 폼에 본인 이메일을 넘긴다. 쿠키를 읽으므로 Suspense 안에서 그린다. */
 async function DeleteAccountContent({ locale }: { locale: Locale }) {
     const user = await getCurrentUser();
-    if (!user) {
-        // 로케일을 유지한다 — 영어 사용자가 한국어 로그인 페이지로 떨어지면 안 된다.
-        redirect(
-            `${localePath(locale, '/login')}?next=${encodeURIComponent(
-                localePath(locale, '/account/delete')
-            )}`
-        );
-    }
+    if (!user) redirect(localePathToLogin(locale, PATH));
     return <DeleteAccountConfirm userEmail={user.email} />;
 }
 
+/** 회원 탈퇴 확인 페이지. 카드 껍데기·문구는 세션과 무관해 Suspense 밖에서 먼저 그린다. */
 export default async function DeleteAccountPage({
     params,
 }: {
@@ -76,11 +76,8 @@ export default async function DeleteAccountPage({
                 </p>
             }
         >
-            {/* fallback: 인접 /account 페이지가 skeleton을 제공하는 패턴과
-                일관성. 빈 카드 대신 최소한의 시각 피드백을 줘 destructive 흐름
-                에서 사용자가 시스템이 응답 중임을 인지하게 한다. role="status"
-                + aria-live="polite"로 스크린 리더가 마운트 시 로딩 상태를
-                즉시 announce하도록 명시. */}
+            {/* 파괴적 흐름이라 빈 카드 대신 로딩 상태를 보여 주고, role="status"로 스크린 리더에도
+                알린다. */}
             <Suspense
                 fallback={
                     <div

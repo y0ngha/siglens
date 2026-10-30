@@ -19,7 +19,7 @@ import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import {
     resolveCurrentPrice,
     resolvePriceAsOf,
-} from '@/entities/analysis-plain/lib/currentPrice';
+} from '@/entities/analysis-plain/server/currentPrice';
 import {
     currencyForSymbol,
     isKrEquitySymbol,

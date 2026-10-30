@@ -7,8 +7,10 @@
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
-import type { ChatMessageView } from '@/entities/chat-conversation/model';
+import type {
+    ChatMessageView,
+    ConversationListItem,
+} from '@/entities/chat-conversation/model';
 import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';

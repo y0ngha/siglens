@@ -32,7 +32,7 @@ import { test, expect } from '../support/fixtures';
  *   - AUTOCOMPLETE under E2E is fed by a deterministic fixture: searchTickerQuery (GET /api/search)
  *     short-circuits on E2E_TEST=1 and returns an AAPL-family set (AAPL + AAPU/AAPD)
  *     WITHOUT calling FMP, so typing `aapl` populates the role="listbox"
- *     (#ticker-autocomplete-listbox) and we can exercise the dropdown-click path,
+ *     (its id comes from useId, so select by role) and we can exercise the dropdown-click path,
  *     not only Enter-navigate. (The live FMP path needs FMP_API_KEY, which CI
  *     does not have — the fixture keeps this spec hermetic.)
  *
