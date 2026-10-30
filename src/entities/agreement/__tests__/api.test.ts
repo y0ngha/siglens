@@ -53,7 +53,7 @@ describe('DrizzleAgreementRepository', () => {
         );
     });
 
-    it('maps each input to exactly the four persisted columns', async () => {
+    it('maps input fields to their columns', async () => {
         const valuesMock = vi.fn().mockResolvedValue(undefined);
         const db = {
             insert: vi.fn().mockReturnValue({ values: valuesMock }),
@@ -64,7 +64,7 @@ describe('DrizzleAgreementRepository', () => {
             { userId: 'u1', termsId: 't1', agreed: false, agreedAt: at },
         ]);
 
-        expect(valuesMock.mock.calls[0][0]).toStrictEqual([
+        expect(valuesMock).toHaveBeenCalledWith([
             { userId: 'u1', termsId: 't1', agreed: false, agreedAt: at },
         ]);
     });
@@ -88,8 +88,11 @@ describe('DrizzleAgreementRepository', () => {
         expect(valuesMock).toHaveBeenCalledTimes(2);
     });
 
-    it('does not retry a non-transient failure', async () => {
-        const valuesMock = vi.fn().mockRejectedValue(new Error('unique'));
+    it('does not retry a unique violation (non-transient)', async () => {
+        const uniqueViolation = Object.assign(new Error('unique'), {
+            code: '23505',
+        });
+        const valuesMock = vi.fn().mockRejectedValue(uniqueViolation);
         const db = {
             insert: vi.fn().mockReturnValue({ values: valuesMock }),
         } as unknown as SiglensDatabase;
