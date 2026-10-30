@@ -11,6 +11,7 @@ import {
 } from '@/shared/config/publicApi';
 import type { YamlValue } from '@/shared/lib/toYaml';
 
+/** 개발자 문서 도구 레퍼런스의 인자 한 줄. */
 export interface ApiToolArgument {
     readonly name: string;
     /** `"1Day" | "1Hour"`, `integer (10..60)` 같은 사람용 표기. */
@@ -39,6 +40,7 @@ export interface ApiToolReference {
     readonly byok: boolean;
 }
 
+/** `buildApiToolReferences` 입력. */
 export interface BuildApiToolReferencesInput {
     /** 사이트 origin(끝 슬래시 없음). */
     baseUrl: string;
@@ -106,11 +108,13 @@ export function exampleArgumentsFor(
     return args;
 }
 
+/** `buildCurlExample` 옵션. */
 export interface CurlExampleOptions {
     /** 오래 걸리는 호출(새 분석 생성)용 `--max-time`. 도구 마감보다 짧으면 클라이언트가 먼저 끊는다. */
     readonly maxTimeSeconds?: number;
 }
 
+/** 도구 호출 curl 예시. API 키는 환경 변수 이름으로만 적어 원문이 문서에 들어가지 않는다. */
 export function buildCurlExample(
     url: string,
     args: Readonly<Record<string, YamlValue>>,
@@ -171,6 +175,7 @@ export function buildApiToolReference({
     };
 }
 
+/** 노출 도구 전체의 레퍼런스(`/developers` 화면용). 입력 순서를 유지한다. */
 export function buildApiToolReferences({
     baseUrl,
     tools,

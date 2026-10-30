@@ -1,7 +1,7 @@
+import type { RateLimitVerdict } from '@/entities/siglens-api-key/lib/rateLimitWindow';
 import {
     consumeRateLimit,
     RateLimiterUnavailableError,
-    type RateLimitVerdict,
 } from '@/entities/siglens-api-key/server/rateLimit';
 import type { PublicApiRateBucket } from '@/shared/config/publicApi';
 import { apiError, API_STATUS } from './apiResponse';
