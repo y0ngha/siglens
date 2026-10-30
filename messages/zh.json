@@ -3238,6 +3238,8 @@
             "ctaBody": "搜索感兴趣的股票，就能把图表和分析放在一起看。",
             "ctaButton": "去搜索股票",
             "ctaHeading": "在真实股票上查看",
+            "demoFallbackDescription": "{count} 根K线的示例图表",
+            "demoFallbackDescriptionWithPanes": "{count} 根K线的示例图表（副图：{panes}）",
             "emptyAiQuestion": "指南里没有的术语：{query}，请结合图表示例通俗讲解",
             "emptyAskAi": "问问 AI",
             "emptyBody": "换个名称再搜一次，或者直接问 AI。",

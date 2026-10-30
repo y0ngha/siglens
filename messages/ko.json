@@ -3028,6 +3028,8 @@
             "ctaBody": "관심 있는 종목을 검색하면 차트와 분석을 함께 볼 수 있어요.",
             "ctaButton": "종목 검색하러 가기",
             "ctaHeading": "실제 종목에서 확인해 보기",
+            "demoFallbackDescription": "{count}개 봉 예시 차트",
+            "demoFallbackDescriptionWithPanes": "{count}개 봉 예시 차트 (보조 패널: {panes})",
             "emptyAiQuestion": "가이드에 없는 용어: {query}. 차트 예시와 함께 쉽게 설명해 줘",
             "emptyAskAi": "AI에게 물어보기",
             "emptyBody": "다른 이름으로 다시 검색하거나, AI에게 바로 물어보세요.",

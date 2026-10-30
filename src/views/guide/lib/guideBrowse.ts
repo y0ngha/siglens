@@ -1,3 +1,4 @@
+/** 가이드 목록의 검색·분류 필터와 항목 간 관계(이전·다음·관련·역참조) — 순수 함수. */
 import {
     GUIDE_CATEGORIES,
     isGuideCategory,
@@ -11,14 +12,21 @@ import { searchGuide } from '@/shared/lib/guideSearch';
 /** 분류 칩의 "전체". 카테고리 값이 아니라 필터 해제를 뜻한다. */
 export const GUIDE_FILTER_ALL = 'all';
 
+/** 분류 칩 값 — 분류 하나 또는 "전체". */
 export type GuideFilterCategory = GuideCategory | typeof GUIDE_FILTER_ALL;
 
+/** 검색창 질의와 고른 분류. URL `?q=`·`?c=`와 맞물린다. */
 export interface GuideBrowseState {
     readonly query: string;
     readonly category: GuideFilterCategory;
 }
 
+/**
+ * 검색 질의의 URL 파라미터 이름. 읽기(`useGuideBrowserState`)와 쓰기(`toGuideSearchString`)가 한 상수를 봐야
+ * 공유한 링크·뒤로 가기에서 필터가 되살아난다. 이름을 바꾸면 이미 퍼진 `?q=` 링크는 필터 없이 열린다.
+ */
 export const GUIDE_QUERY_PARAM = 'q';
+/** 고른 분류의 URL 파라미터 이름. 분류 허브는 분류가 경로에 있어 이 파라미터를 읽지도 쓰지도 않는다. */
 export const GUIDE_CATEGORY_PARAM = 'c';
 
 /** 검색창에 넣을 수 있는 최대 길이. URL에 그대로 실리므로 상한을 둔다. */
@@ -84,6 +92,64 @@ export function filterGuideEntries<T extends GuideEntrySummary>(
         : searchGuide(termsFirst(inCategory), query, inCategory.length);
 }
 
+/**
+ * 필터가 걸려 있는지. 질의가 공백뿐이면 걸리지 않은 것이고, 분류가 고정된 목록(분류 허브)에서는
+ * 분류 값이 필터가 아니다.
+ */
+export function isGuideFilterActive(
+    { query, category }: GuideBrowseState,
+    fixedCategory: GuideCategory | undefined
+): boolean {
+    return (
+        query.trim() !== '' ||
+        (fixedCategory === undefined && category !== GUIDE_FILTER_ALL)
+    );
+}
+
+/** 목록을 어떤 모양으로 그릴지: 결과 없음 안내, 한 줄 그리드, 분류별 절. */
+export type GuideListLayout = 'empty' | 'flat' | 'grouped';
+
+/**
+ * 결과가 없으면 `empty`. 필터가 걸렸거나 분류가 고정된 목록은 분류로 다시 나눌 이유가 없어 `flat`,
+ * 필터 없는 전체 목록만 분류별 절(`grouped`)이다.
+ */
+export function guideListLayout(
+    resultCount: number,
+    filterActive: boolean,
+    fixedCategory: GuideCategory | undefined
+): GuideListLayout {
+    if (resultCount === 0) return 'empty';
+    if (filterActive || fixedCategory !== undefined) return 'flat';
+    return 'grouped';
+}
+
+/** 분류 칩 하나. 표시명·개수를 여기서 정해 `GuideFilterChips`는 계산 없이 버튼으로 그린다. */
+export interface GuideFilterChip {
+    readonly value: GuideFilterCategory;
+    readonly label: string;
+    readonly count: number;
+}
+
+/** "전체" 칩 + 항목이 있는 분류마다 칩 하나(`GUIDE_CATEGORIES` 순서). 항목이 없는 분류는 "0" 칩을 만들지 않는다(그 분류 허브는 404다). */
+export function buildGuideFilterChips(
+    entries: readonly GuideEntrySummary[],
+    categoryLabels: Readonly<Record<GuideCategory, string>>,
+    allLabel: string
+): GuideFilterChip[] {
+    const counts = countByCategory(entries);
+    return [
+        { value: GUIDE_FILTER_ALL, label: allLabel, count: entries.length },
+        ...GUIDE_CATEGORIES.filter(category => counts[category] > 0).map(
+            category => ({
+                value: category,
+                label: categoryLabels[category],
+                count: counts[category],
+            })
+        ),
+    ];
+}
+
+/** 분류별 절 하나의 데이터. 요약·전체 항목 어느 쪽이든 묶을 수 있게 항목 타입을 열어 둔다. */
 export interface GuideCategoryGroup<T extends GuideEntrySummary> {
     readonly category: GuideCategory;
     readonly entries: readonly T[];
@@ -99,6 +165,7 @@ export function groupGuideByCategory<T extends GuideEntrySummary>(
     })).filter(group => group.entries.length > 0);
 }
 
+/** 분류별 항목 수. 항목이 없는 분류도 0으로 채운다. */
 export function countByCategory(
     entries: readonly GuideEntrySummary[]
 ): Record<GuideCategory, number> {
@@ -110,6 +177,7 @@ export function countByCategory(
     ) as Record<GuideCategory, number>;
 }
 
+/** 항목 페이지 페이저(`GuidePager`)의 앞·뒤 칸. 분류의 처음/끝이면 그 칸이 `null`이다. */
 export interface GuideNeighbors {
     readonly previous: GuideEntrySummary | null;
     readonly next: GuideEntrySummary | null;
