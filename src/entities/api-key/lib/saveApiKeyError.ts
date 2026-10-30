@@ -5,18 +5,26 @@ function isEncryptionKeyMisconfigured(error: Error): boolean {
     return error.message.includes('LLM_API_KEY_ENCRYPTION_KEY');
 }
 
+/** 값이 5자리 SQLSTATE 문자열을 `code`로 가진 객체인지 판별한다. */
+function hasSqlStateCode(value: unknown): boolean {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'code' in value &&
+        typeof value.code === 'string' &&
+        /^[0-9A-Z]{5}$/.test(value.code)
+    );
+}
+
 /**
  * Postgres 드라이버 오류인지 판별한다. `postgres-js`와 `pg`는 모두
  * `error.code`에 5자리 SQLSTATE(예: 유니크 위반 `23505`, 연결 실패 `08006`)를
  * 붙인다. 이 모양으로 DB 계층 장애와 그 밖의 예기치 못한 예외를 구분해,
- * 후자를 DB 문제로 오인시키지 않는다.
+ * 후자를 DB 문제로 오인시키지 않는다. Drizzle은 쿼리 실패를
+ * `DrizzleQueryError`로 감싸 드라이버 오류를 `cause`에 두므로 한 단계 안쪽도 본다.
  */
 function isLikelyDatabaseError(error: Error): boolean {
-    return (
-        'code' in error &&
-        typeof error.code === 'string' &&
-        /^[0-9A-Z]{5}$/.test(error.code)
-    );
+    return hasSqlStateCode(error) || hasSqlStateCode(error.cause);
 }
 
 /**
