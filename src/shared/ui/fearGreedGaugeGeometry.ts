@@ -64,7 +64,7 @@ export function describeSegmentArc(from: number, to: number): string {
  * `-(100 - score) * 1.8°`만큼 반시계 방향으로 돌려야 한다.
  */
 export function needleRotationDeg(score: number): number {
-    return -(100 - score) * DEGREES_PER_SCORE_UNIT;
+    return -(SCORE_MAX - score) * DEGREES_PER_SCORE_UNIT;
 }
 
 /** 각도 0에서의 삼각 바늘 `points` 속성. 회전은 호출부의 `<g transform>`이 맡는다. */
@@ -95,7 +95,7 @@ export function tickLabelPosition(value: number): { x: number; y: number } {
 
 /** 0과 100은 viewbox 경계 근처이므로 시작/끝 기준으로 anchor해 잘림을 방지한다. */
 export function tickTextAnchor(value: number): 'start' | 'end' | 'middle' {
-    if (value === 0) return 'start';
-    if (value === 100) return 'end';
+    if (value === SCORE_MIN) return 'start';
+    if (value === SCORE_MAX) return 'end';
     return 'middle';
 }

@@ -135,6 +135,8 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
                         }}
                         id={tooltipId}
                         role="tooltip"
+                        // 트리거와 툴팁은 하나의 호버 영역이라 터치 제외와 지연 닫기를
+                        // 같은 핸들러로 공유한다.
                         onPointerEnter={handlePointerEnter}
                         onPointerLeave={handlePointerLeave}
                         className={cn(
