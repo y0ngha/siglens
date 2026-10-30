@@ -3803,7 +3803,6 @@
                 "0c2cd8": "保有者",
                 "1ed947": "開示日",
                 "26d466": "開示",
-                "27edc1": "上院 (Senate)",
                 "29c3ae": "議員",
                 "29efb6": "種類",
                 "5073ef": "資産説明",
@@ -3811,7 +3810,6 @@
                 "af2fee": "区分",
                 "b488b1": "← 左右にスクロール →",
                 "c8eed2": "金額範囲",
-                "d8edd7": "下院 (House)",
                 "de5545": "議会取引開示リスト",
                 "e6fa15": "取引日",
                 "fdf8d2": "開示検索"
@@ -3845,6 +3843,8 @@
             "disclosureDocument": "文書",
             "disclosureLink": "{v0} {v1} {v2} 開示 {v3}",
             "disclosureSearch": "検索",
+            "ptrIdFull": "PTR の完全な ID: {v0}",
+            "ptrIdLabel": "PTR の ID {v0}…",
             "tooltip": {
                 "amountRange": [
                     "STOCK Act（2012年）は、議員が正確な金額の代わりに区間（例：$1,001〜$15,000）のみを開示することを認めています。",
@@ -3869,7 +3869,9 @@
                 "senateDisclosure": [
                     "上院の開示（efdsearch）は同意ページを通過しないと開けません。検索ページでPTR IDから再度お探しください。下院の開示はPDFの直リンクなのですぐ開きます。"
                 ]
-            }
+            },
+            "tradesCaptionTruncated": "議会取引開示リスト (全{v1}件のうち最新の{v0}件を表示)",
+            "tradesTruncated": "最新の{v0}件のみ表示しています · 全{v1}件"
         },
         "dashboard": {
             "BriefingCard": {

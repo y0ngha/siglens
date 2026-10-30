@@ -3937,7 +3937,6 @@
                 "0c2cd8": "보유자",
                 "1ed947": "공시일",
                 "26d466": "공시",
-                "27edc1": "상원 (Senate)",
                 "29c3ae": "의원",
                 "29efb6": "종류",
                 "5073ef": "자산 설명",
@@ -3945,7 +3944,6 @@
                 "af2fee": "구분",
                 "b488b1": "← 좌우로 스크롤 →",
                 "c8eed2": "금액 구간",
-                "d8edd7": "하원 (House)",
                 "de5545": "의회 거래 공시 목록",
                 "e6fa15": "거래일",
                 "fdf8d2": "공시 검색"
@@ -3979,6 +3977,8 @@
             "disclosureDocument": "문서",
             "disclosureLink": "{v0} {v1} {v2} 공시 {v3}",
             "disclosureSearch": "검색",
+            "ptrIdFull": "PTR 전체 ID: {v0}",
+            "ptrIdLabel": "PTR 번호 {v0}…",
             "tooltip": {
                 "amountRange": [
                     "STOCK Act(2012)는 의원이 정확한 금액 대신 구간(예: $1,001–$15,000)만 공시하도록 허용해요.",
@@ -4003,7 +4003,9 @@
                 "senateDisclosure": [
                     "상원 공시(efdsearch)는 동의 페이지를 통과해야 열 수 있어요. 검색 페이지에서 PTR ID로 다시 찾아주세요. 하원 공시는 PDF 직링크라 바로 열려요."
                 ]
-            }
+            },
+            "tradesCaptionTruncated": "의회 거래 공시 목록 (최근 {v0}건만 표시, 전체 {v1}건)",
+            "tradesTruncated": "최근 {v0}건만 표시합니다 · 전체 {v1}건"
         },
         "dashboard": {
             "BriefingCard": {
