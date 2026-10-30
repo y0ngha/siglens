@@ -16,9 +16,8 @@ interface RouteLayoutProps {
  *
  * 루트 프로바이더 하나에 전 라우트 키의 합집합을 실으면 `/login`·`/terms` 같은
  * 가벼운 페이지가 `widgets.options`·`views.symbol`·`widgets.chat`을 통째로 들고
- * 다닌다. 실측: 전 라우트에 24,299바이트가 동일하게 실려 **first-load JS +28%,
- * RSC prefetch +45.8%**였다 — v0.58.0(first-load −38%)과 RSC 페이로드 축소
- * 성과를 정면으로 되돌리는 크기다.
+ * 다닌다. 모든 라우트가 같은 번역 페이로드를 first-load JS와 RSC prefetch에
+ * 실어 나르게 되므로, 라우트가 쓰는 키만 싣는다.
  *
  * ## 왜 페이지가 아니라 레이아웃인가
  *

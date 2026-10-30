@@ -3,7 +3,10 @@ import { DEFAULT_LOCALE, type Locale } from './locales';
 
 type MessageTree = Record<string, unknown>;
 
-/** 배열도 통과시킨다 — 이전 `typeof` 순회와 같은 값을 받아들인다. */
+/**
+ * 카탈로그 노드 판정. 카탈로그에는 배열 값(툴팁 문단 목록 등)도 있어 배열도 통과시킨다 —
+ * 경로가 그런 노드에서 끝나면 값을 그대로 복사하면 되고, 별도 분기를 둘 이유가 없다.
+ */
 function isTree(value: unknown): value is MessageTree {
     return typeof value === 'object' && value !== null;
 }
@@ -65,7 +68,7 @@ export function pickMessages(
         );
         if (source === undefined) continue;
 
-        const leaf = segments[segments.length - 1] ?? namespace;
+        const leaf = segments[segments.length - 1];
         const parent = segments
             .slice(0, -1)
             .reduce<MessageTree>((target, segment) => {
