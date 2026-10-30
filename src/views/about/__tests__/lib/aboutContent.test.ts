@@ -14,7 +14,7 @@ import {
     buildReportScenarios,
     EMPTY_SKILL_COUNTS,
     getAboutFaq,
-} from '../aboutContent';
+} from '../../lib/aboutContent';
 
 const COUNTS = {
     ...EMPTY_SKILL_COUNTS,
@@ -87,5 +87,27 @@ describe('buildReportScenarios', () => {
         const labels = btc.tools.map(x => x.label);
         expect(labels).toContain('뉴스');
         expect(labels).not.toContain('재무·뉴스');
+    });
+});
+
+describe('buildReportScenarios with a malformed catalog line', () => {
+    it('renders a body line that is not a string as an empty line', () => {
+        // A deliberately malformed catalog: the casts let the test put a
+        // non-string where the typed catalog only allows strings, and hand that
+        // catalog to a translator typed for the real one. `i18n:verify` keeps
+        // real catalogs from ever having this shape, which is what makes the
+        // fallback worth pinning here rather than reachable in production.
+        const messages = structuredClone(ko);
+        (messages.views.about.replay.aapl as Record<string, unknown>).a1 = {
+            nested: 'x',
+        };
+        const t = createTranslator({
+            locale: 'ko',
+            messages,
+            namespace: 'views.about',
+        } as never);
+        const [aapl] = buildReportScenarios(t as never, COUNTS);
+        expect(aapl!.lines[0]).toEqual({ kind: 'p', segments: [] });
+        expect(aapl!.lines[1]!.segments.length).toBeGreaterThan(0);
     });
 });
