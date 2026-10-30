@@ -2,36 +2,24 @@
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleChatConversationRepository } from '../api';
 import { logActionError } from '@/shared/lib/logActionError';
-
-export interface ConversationListItem {
-    id: string;
-    title: string;
-    lastMessageAt: string;
-}
+import { DrizzleChatConversationRepository } from '../api';
+import { toConversationListItem, type ConversationListItem } from '../model';
 
 /**
- * Returns the current member's conversations, or `[]` when logged out or on
- * a read failure — mirrors `getPortfolioHoldingsAction`'s never-redirect
- * shape, but this one intentionally swallows DB errors too (a transient
- * list failure degrading to "no conversations" is preferable to a crashed
- * chat sidebar).
+ * 현재 회원의 대화 목록. 비로그인이거나 세션/DB 읽기가 실패하면 `[]`를 돌려준다 —
+ * 일시적 목록 실패는 채팅 사이드바가 깨지는 것보다 "대화 없음"으로 보이는 편이 낫다.
  */
 export async function listConversationsAction(): Promise<
     ConversationListItem[]
 > {
-    const user = await getCurrentUser();
-    if (!user) return [];
     try {
+        const user = await getCurrentUser();
+        if (!user) return [];
         const rows = await new DrizzleChatConversationRepository(
             getDatabaseClient().db
         ).listForUser(user.id);
-        return rows.map(r => ({
-            id: r.id,
-            title: r.title,
-            lastMessageAt: r.lastMessageAt.toISOString(),
-        }));
+        return rows.map(toConversationListItem);
     } catch (error) {
         logActionError('[listConversationsAction] list failed', error);
         return [];
