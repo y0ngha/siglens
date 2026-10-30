@@ -32,7 +32,7 @@ let fmpProvider: FmpMarketProvider | null = null;
 
 /** 상태가 없는 어댑터라 한 번만 만든다. E2E는 `loadExtendedHoursQuote`가 먼저 걸러 여기 오지 않는다. */
 function getFmpProvider(): FmpMarketProvider {
-    if (fmpProvider === null) fmpProvider = new FmpMarketProvider();
+    fmpProvider ??= new FmpMarketProvider();
     return fmpProvider;
 }
 
