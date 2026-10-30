@@ -3,8 +3,10 @@
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
-import type { ChatMessageView } from '@/entities/chat-conversation/model';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import type {
+    ChatMessageView,
+    ConversationListItem,
+} from '@/entities/chat-conversation/model';
 import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 import { type AgentClientErrorCode } from '@/features/agent-chat/lib/errorCodes';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';

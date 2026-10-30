@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+    CONVERSATION_TITLE_COLUMN_MAX,
     deriveTitle,
+    toConversationListItem,
     toAgentHistory,
     toMessageView,
     type ChatMessageRecord,
@@ -175,5 +177,27 @@ describe('toMessageView', () => {
         expect(view).not.toHaveProperty('modelId');
         expect(view).not.toHaveProperty('toolCallId');
         expect(view.createdAt).toBe('2026-10-01T00:00:00.000Z');
+    });
+});
+
+describe('toConversationListItem', () => {
+    it('lastMessageAt을 ISO 문자열로 직렬화하고 목록에 필요한 필드만 싣는다', () => {
+        expect(
+            toConversationListItem({
+                id: 'c1',
+                title: '제목',
+                lastMessageAt: new Date('2026-01-01T00:00:00.000Z'),
+            })
+        ).toEqual({
+            id: 'c1',
+            title: '제목',
+            lastMessageAt: '2026-01-01T00:00:00.000Z',
+        });
+    });
+});
+
+describe('CONVERSATION_TITLE_COLUMN_MAX', () => {
+    it('chat_conversations.title varchar(120)과 같다', () => {
+        expect(CONVERSATION_TITLE_COLUMN_MAX).toBe(120);
     });
 });

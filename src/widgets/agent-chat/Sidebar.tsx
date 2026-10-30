@@ -13,7 +13,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { deleteConversationAction } from '@/entities/chat-conversation/actions/deleteConversationAction';
 import { renameConversationAction } from '@/entities/chat-conversation/actions/renameConversationAction';
-import { type ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import type { ConversationListItem } from '@/entities/chat-conversation/model';
 import {
     groupConversationsByDay,
     type ConversationGroupKey,
