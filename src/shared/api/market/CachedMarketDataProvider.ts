@@ -129,17 +129,17 @@ export class CachedMarketDataProvider
         Bar[] | EodHistoryEntry
     >(EXTENDED_HISTORY_MEMORY_MAX_ENTRIES);
 
+    private readonly eodHistoryDeps: EodHistoryDeps = {
+        getBars: options => this.inner.getBars(options),
+        memory: this.historyMemory,
+    };
+
     constructor(
         private readonly inner: SiglensMarketProvider &
             Partial<ExtendedBarsProvider>,
         private readonly session: MarketSessionSpec = US_EQUITY_SESSION,
         private readonly options: CachedMarketDataProviderOptions = {}
     ) {}
-
-    private readonly eodHistoryDeps: EodHistoryDeps = {
-        getBars: options => this.inner.getBars(options),
-        memory: this.historyMemory,
-    };
 
     private ttl(timeframe: Timeframe): number {
         return computeBarsEffectiveTtl(timeframe, new Date(), this.session);
