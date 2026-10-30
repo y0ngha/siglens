@@ -93,6 +93,10 @@ function makeOptions(overrides?: PartialOptions) {
     };
 }
 
+/** 쿨다운이 끝나는 시각(`reanalyzeCooldownUntil`)을 지금 기준 남은 ms로 바꾼다. */
+const remainingOf = (until: number): number =>
+    until === 0 ? 0 : until - Date.now();
+
 describe('useAnalysis', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
@@ -143,7 +147,9 @@ describe('useAnalysis', () => {
             });
 
             await waitFor(() =>
-                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(42_000, -3)
             );
             expect(getReanalyzeCooldownMs).toHaveBeenCalledWith('AAPL', '1Day');
         });
@@ -194,11 +200,13 @@ describe('useAnalysis', () => {
                 result.current.syncReanalyzeCooldown();
             });
             await waitFor(() =>
-                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(42_000, -3)
             );
 
             rerender({ symbol: 'MSFT' });
-            expect(result.current.reanalyzeCooldownMs).toBe(0);
+            expect(result.current.reanalyzeCooldownUntil).toBe(0);
 
             act(() => {
                 result.current.syncReanalyzeCooldown();
@@ -236,7 +244,9 @@ describe('useAnalysis', () => {
                 resolveAapl(99_000);
             });
 
-            expect(result.current.reanalyzeCooldownMs).not.toBe(99_000);
+            expect(
+                remainingOf(result.current.reanalyzeCooldownUntil)
+            ).not.toBeCloseTo(99_000, -3);
         });
 
         it('응답 전에 종목이 바뀌면 새 종목을 조회하지 않았어도 늦게 온 값을 버린다', async () => {
@@ -262,7 +272,7 @@ describe('useAnalysis', () => {
                 resolveAapl(99_000);
             });
 
-            expect(result.current.reanalyzeCooldownMs).toBe(0);
+            expect(result.current.reanalyzeCooldownUntil).toBe(0);
         });
 
         it('다른 종목에 갔다 돌아오면 이미 읽었던 종목도 다시 조회한다', async () => {
@@ -278,18 +288,22 @@ describe('useAnalysis', () => {
                 result.current.syncReanalyzeCooldown();
             });
             await waitFor(() =>
-                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(42_000, -3)
             );
             rerender({ symbol: 'MSFT' });
             rerender({ symbol: 'AAPL' });
-            expect(result.current.reanalyzeCooldownMs).toBe(0);
+            expect(result.current.reanalyzeCooldownUntil).toBe(0);
 
             act(() => {
                 result.current.syncReanalyzeCooldown();
             });
 
             await waitFor(() =>
-                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+                expect(
+                    remainingOf(result.current.reanalyzeCooldownUntil)
+                ).toBeCloseTo(42_000, -3)
             );
             expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(2);
         });
@@ -1476,8 +1490,8 @@ describe('useAnalysis', () => {
      * 존재하지 않는 export를 호출하는 코드는 런타임 오류를 일으킨다.
      */
     describe('onError — 클라이언트가 쿨다운 관련 서버 액션을 호출하지 않는다', () => {
-        it('force 분석 실패 시 analysisError가 세팅되고 reanalyzeCooldownMs는 0으로 복원된다', async () => {
-            // force=true 제출이 실패하면 onError가 setReanalyzeCooldownMs(0)을 호출한다.
+        it('force 분석 실패 시 analysisError가 세팅되고 reanalyzeCooldownUntil은 0으로 복원된다', async () => {
+            // force=true 제출이 실패하면 onError가 setReanalyzeCooldownUntil(0)을 호출한다.
             // 클라이언트가 쿨다운을 직접 해제/획득하지 않는다는 설계를 검증한다.
             // (`@/entities/analysis` mock에 releaseReanalyzeCooldown/tryAcquireReanalyzeCooldown이
             //  없으므로 호출하면 런타임 오류 → 테스트가 즉시 실패한다.)
@@ -1496,7 +1510,7 @@ describe('useAnalysis', () => {
 
             await waitFor(() => {
                 expect(result.current.analysisError).toBe('분석 실패');
-                expect(result.current.reanalyzeCooldownMs).toBe(0);
+                expect(result.current.reanalyzeCooldownUntil).toBe(0);
             });
         });
 
@@ -1519,8 +1533,8 @@ describe('useAnalysis', () => {
             await waitFor(() => {
                 expect(result.current.analysisError).toBe('네트워크 오류');
             });
-            // reanalyzeCooldownMs는 0 그대로 — force=false이므로 onError가 건드리지 않는다.
-            expect(result.current.reanalyzeCooldownMs).toBe(0);
+            // reanalyzeCooldownUntil은 0 그대로 — force=false이므로 onError가 건드리지 않는다.
+            expect(result.current.reanalyzeCooldownUntil).toBe(0);
         });
     });
 

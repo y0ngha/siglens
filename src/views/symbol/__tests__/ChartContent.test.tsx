@@ -91,7 +91,7 @@ vi.mock('@/views/symbol/hooks/useAnalysis', () => ({
         isAnalyzing: false,
         analysisError: null,
         handleReanalyze: vi.fn(),
-        reanalyzeCooldownMs: 0,
+        reanalyzeCooldownUntil: 0,
         cooldownNotice: null,
     })),
 }));
@@ -212,7 +212,7 @@ describe('ChartContent', () => {
             isAnalyzing: false,
             analysisError: null,
             handleReanalyze: vi.fn(),
-            reanalyzeCooldownMs: 0,
+            reanalyzeCooldownUntil: 0,
             cooldownNotice: null,
             isInstantResponse: true,
             syncReanalyzeCooldown,
@@ -496,7 +496,7 @@ describe('ChartContent', () => {
                 isAnalyzing: true,
                 analysisError: null,
                 handleReanalyze: vi.fn(),
-                reanalyzeCooldownMs: 0,
+                reanalyzeCooldownUntil: 0,
                 cooldownNotice: null,
             });
 
@@ -534,7 +534,7 @@ describe('ChartContent', () => {
                 isAnalyzing: false,
                 analysisError: null,
                 handleReanalyze: vi.fn(),
-                reanalyzeCooldownMs: 0,
+                reanalyzeCooldownUntil: 0,
                 cooldownNotice: null,
             });
             return render(<ChartContent {...defaultProps} />).container;

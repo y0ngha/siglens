@@ -26,10 +26,10 @@ import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnal
 import type { CooldownNotice } from '@/widgets/analysis/model/types';
 import {
     CACHE_HIT_COOLDOWN_MS,
-    COOLDOWN_TICK_MS,
     FREE_LOCKED_INFO_DEPTH,
     REANALYZE_COOLDOWN_MS,
     cooldownKeyOf,
+    cooldownUntilFromNow,
     rethrowStreamError,
     toAnalysisOutcome,
     type AnalysisSubmitOutcome,
@@ -98,8 +98,12 @@ export interface UseAnalysisResult {
     isAnalyzing: boolean;
     analysisError: string | null;
     handleReanalyze: () => void;
-    /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
-    reanalyzeCooldownMs: number;
+    /**
+     * 재분석 쿨다운이 끝나는 시각(epoch ms). 0이면 쿨다운이 없다.
+     * 남은 시간은 그것을 보여 주는 컴포넌트가 `useCountdownMs`로 센다 — 여기서 매초 깎으면
+     * 이 훅을 쓰는 화면 전체가 쿨다운 내내 매초 다시 렌더된다.
+     */
+    reanalyzeCooldownUntil: number;
     /** 사용자가 쿨다운 중에 재분석 버튼을 눌렀을 때 갱신되는 알림. */
     cooldownNotice: CooldownNotice | null;
     /**
@@ -172,7 +176,8 @@ export function useAnalysis({
     const [lockedInfoDepth, setLockedInfoDepth] = useState<
         readonly TierInfoDepth[]
     >(initialLockedInfoDepth);
-    const [reanalyzeCooldownMs, setReanalyzeCooldownMs] = useState<number>(0);
+    const [reanalyzeCooldownUntil, setReanalyzeCooldownUntil] =
+        useState<number>(0);
     /** 카운트다운이 가리키는 `symbol|timeframe`. 바뀌면 이전 대상의 카운트다운을 버린다. */
     const [cooldownTargetKey, setCooldownTargetKey] = useState(() =>
         cooldownKeyOf(symbol, timeframe)
@@ -390,14 +395,12 @@ export function useAnalysis({
                 setLockedInfoDepth(data.lockedInfoDepth ?? []);
                 // force 경로는 정상 5분 쿨다운, 일반 캐시 히트/신규 LLM 결과는
                 // 짧은 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
-                setReanalyzeCooldownMs(prev =>
-                    Math.max(
-                        prev,
-                        variables.force
-                            ? REANALYZE_COOLDOWN_MS
-                            : CACHE_HIT_COOLDOWN_MS
-                    )
+                const until = cooldownUntilFromNow(
+                    variables.force
+                        ? REANALYZE_COOLDOWN_MS
+                        : CACHE_HIT_COOLDOWN_MS
                 );
+                setReanalyzeCooldownUntil(prev => Math.max(prev, until));
             } else if (data.status === 'reanalyze_cooldown') {
                 // 서버가 쿨다운을 못 잡았다 — 새 분석은 없다. onMutate가 비워 둔 화면을
                 // 직전 결과로 되돌린 뒤 남은 시간만 알린다(비우고 끝내면 사용자가
@@ -408,7 +411,9 @@ export function useAnalysis({
                     setIsPersonalized(previous.personalized);
                     setPlain(previous.plain);
                 }
-                setReanalyzeCooldownMs(data.remainingMs);
+                setReanalyzeCooldownUntil(
+                    cooldownUntilFromNow(data.remainingMs)
+                );
                 setCooldownNotice({
                     nonce: Date.now(),
                     remainingMs: data.remainingMs,
@@ -422,7 +427,7 @@ export function useAnalysis({
             // 도는데 그건 서버 작업이 살아 있는 상태라 해제 대상이 아니다.
             // 여기서는 카운트다운 표시만 되돌린다.
             if (!force) return;
-            setReanalyzeCooldownMs(0);
+            setReanalyzeCooldownUntil(0);
         },
     });
 
@@ -493,7 +498,7 @@ export function useAnalysis({
             .then(remaining => {
                 // 응답이 오는 사이 보고 있는 종목·타임프레임이 바뀌었으면 버린다.
                 if (currentCooldownKeyRef.current !== syncKey) return;
-                setReanalyzeCooldownMs(remaining);
+                setReanalyzeCooldownUntil(cooldownUntilFromNow(remaining));
             })
             .catch(() => {
                 // 액션 자체가 실패(네트워크)하면 다음 접근 때 다시 읽게 한다.
@@ -531,10 +536,8 @@ export function useAnalysis({
     const cooldownKey = cooldownKeyOf(symbol, timeframe);
     if (cooldownTargetKey !== cooldownKey) {
         setCooldownTargetKey(cooldownKey);
-        setReanalyzeCooldownMs(0);
+        setReanalyzeCooldownUntil(0);
     }
-    // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
-    const isCountdownActive = reanalyzeCooldownMs > 0;
 
     // 6. Handlers
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
@@ -793,20 +796,6 @@ export function useAnalysis({
         restartAnalysis,
     ]);
 
-    // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
-    // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.
-    useEffect(() => {
-        if (!isCountdownActive) return;
-        const intervalId = window.setInterval(() => {
-            setReanalyzeCooldownMs(prev =>
-                Math.max(0, prev - COOLDOWN_TICK_MS)
-            );
-        }, COOLDOWN_TICK_MS);
-        return () => {
-            window.clearInterval(intervalId);
-        };
-    }, [isCountdownActive]);
-
     // Abort the in-flight SSE stream on unmount so the ALB connection is
     // released and the browser does not process stale events for an
     // unmounted component.
@@ -823,7 +812,7 @@ export function useAnalysis({
         isAnalyzing,
         analysisError,
         handleReanalyze,
-        reanalyzeCooldownMs,
+        reanalyzeCooldownUntil,
         cooldownNotice,
         isPersonalized,
         meter,

@@ -5,6 +5,7 @@
  */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { useCountdownMs } from '../hooks/useCountdownMs';
 import {
     formatCooldown,
     selectReanalyzeLabelKind,
@@ -13,7 +14,8 @@ import {
 
 interface ReanalyzeButtonProps {
     isAnalyzing: boolean;
-    reanalyzeCooldownMs: number;
+    /** 쿨다운이 끝나는 시각(epoch ms). 0이면 없음. 남은 시간은 이 버튼만 센다. */
+    reanalyzeCooldownUntil: number;
     onReanalyze: () => void;
     /** 포인터가 올라가거나 포커스가 갈 때 — 누르기 직전의 의도 신호. */
     onIntent?: () => void;
@@ -27,12 +29,13 @@ interface ReanalyzeButtonProps {
  */
 export function ReanalyzeButton({
     isAnalyzing,
-    reanalyzeCooldownMs,
+    reanalyzeCooldownUntil,
     onReanalyze,
     onIntent,
 }: ReanalyzeButtonProps) {
     const t = useTranslations('widgets.analysis');
     const tPanel = useTranslations('widgets.analysis.panel');
+    const reanalyzeCooldownMs = useCountdownMs(reanalyzeCooldownUntil);
     const kind = selectReanalyzeLabelKind(isAnalyzing, reanalyzeCooldownMs);
     const isDisabled = kind !== 'idle';
     // 키를 이 파일의 리터럴 호출로 둔다 — extract.mjs가 클라이언트 키로 정적 수집한다.

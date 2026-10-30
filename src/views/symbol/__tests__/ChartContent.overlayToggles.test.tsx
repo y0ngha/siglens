@@ -158,7 +158,7 @@ function analysisReturn(
         isAnalyzing: false,
         analysisError: null,
         handleReanalyze: vi.fn(),
-        reanalyzeCooldownMs: 0,
+        reanalyzeCooldownUntil: 0,
         cooldownNotice: null,
         isPersonalized: false,
         meter: null,

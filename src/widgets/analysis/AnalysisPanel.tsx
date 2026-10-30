@@ -62,8 +62,8 @@ interface AnalysisPanelProps {
      * 마운트마다 읽지 않기 위해서다.
      */
     onReanalyzeIntent?: () => void;
-    /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
-    reanalyzeCooldownMs?: number;
+    /** 재분석 쿨다운이 끝나는 시각(epoch ms). 0이면 즉시 가능. */
+    reanalyzeCooldownUntil?: number;
     /** 쿨다운 중 재분석 시도를 토스트로 알리기 위한 알림. */
     cooldownNotice?: CooldownNotice | null;
     actionPricesVisible?: boolean;
@@ -140,7 +140,7 @@ export function AnalysisPanel({
     progressTipIndex = 0,
     onReanalyze,
     onReanalyzeIntent,
-    reanalyzeCooldownMs = 0,
+    reanalyzeCooldownUntil = 0,
     cooldownNotice = null,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
@@ -193,7 +193,7 @@ export function AnalysisPanel({
                 <StaleAnalysisBanner
                     onReanalyze={onReanalyze}
                     onReanalyzeIntent={onReanalyzeIntent}
-                    reanalyzeCooldownMs={reanalyzeCooldownMs}
+                    reanalyzeCooldownUntil={reanalyzeCooldownUntil}
                 />
             )}
             <AnalysisToast
@@ -285,7 +285,7 @@ export function AnalysisPanel({
                 <div className="mt-1">
                     <ReanalyzeButton
                         isAnalyzing={isBusy}
-                        reanalyzeCooldownMs={reanalyzeCooldownMs}
+                        reanalyzeCooldownUntil={reanalyzeCooldownUntil}
                         onReanalyze={onReanalyze}
                         onIntent={onReanalyzeIntent}
                     />

@@ -73,15 +73,18 @@ export interface AnalyzeMutationVariables {
 
 /**
  * 재분석 쿨다운 (5분).
- * 진실값은 Redis(서버)이며 클라이언트는 표시 목적으로만 카운트다운한다.
+ * 진실값은 Redis(서버)다. `useAnalysis`는 끝나는 시각만 들고, 남은 시간은 그것을 보여 주는
+ * 컴포넌트가 표시 목적으로 센다(`useCountdownMs`).
  */
 export const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 /** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
 export const CACHE_HIT_COOLDOWN_MS = 30 * MS_PER_SECOND;
 
-/** 로컬 카운트다운의 한 틱. */
-export const COOLDOWN_TICK_MS = MS_PER_SECOND;
+/** 남은 ms를 끝나는 시각(epoch ms)으로 바꾼다. 0 이하는 쿨다운 없음(0). */
+export function cooldownUntilFromNow(remainingMs: number): number {
+    return remainingMs > 0 ? Date.now() + remainingMs : 0;
+}
 
 /** free가 허용하는 depth. */
 const FREE_ALLOWED_INFO_DEPTH: ReadonlySet<TierInfoDepth> = new Set(

@@ -7,12 +7,14 @@ import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 import { cn } from '@/shared/lib/cn';
+import { useCountdownMs } from './hooks/useCountdownMs';
 
 interface StaleAnalysisBannerProps {
     onReanalyze: () => void;
     /** 버튼에 포인터·포커스가 갈 때 — 쿨다운 조회 시점(`AnalysisPanel` 참고). */
     onReanalyzeIntent?: () => void;
-    reanalyzeCooldownMs: number;
+    /** 쿨다운이 끝나는 시각(epoch ms). 0이면 없음. */
+    reanalyzeCooldownUntil: number;
 }
 
 /**
@@ -24,9 +26,10 @@ interface StaleAnalysisBannerProps {
 export function StaleAnalysisBanner({
     onReanalyze,
     onReanalyzeIntent,
-    reanalyzeCooldownMs,
+    reanalyzeCooldownUntil,
 }: StaleAnalysisBannerProps) {
     const t = useTranslations('widgets.analysis.staleBanner');
+    const reanalyzeCooldownMs = useCountdownMs(reanalyzeCooldownUntil);
     const tooltipId = useId();
     const isCoolingDown = reanalyzeCooldownMs > 0;
     const cooldownMinutes = Math.ceil(reanalyzeCooldownMs / MS_PER_MINUTE);

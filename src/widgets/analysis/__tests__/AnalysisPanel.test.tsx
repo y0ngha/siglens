@@ -1163,11 +1163,47 @@ describe('AnalysisPanel', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 onReanalyze={vi.fn()}
-                reanalyzeCooldownMs={120000}
+                reanalyzeCooldownUntil={Date.now() + 120000}
             />
         );
 
         expect(screen.getByText(/재분석 가능까지/)).toBeInTheDocument();
+    });
+
+    it('counts the cooldown down on the button and re-enables it when the cooldown ends', () => {
+        vi.useFakeTimers();
+        try {
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis()}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                    onReanalyze={vi.fn()}
+                    reanalyzeCooldownUntil={Date.now() + 2000}
+                />
+            );
+
+            expect(
+                screen.getByRole('button', { name: /재분석 가능까지 0:02/ })
+            ).toHaveAttribute('aria-disabled', 'true');
+
+            act(() => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(
+                screen.getByRole('button', { name: /재분석 가능까지 0:01/ })
+            ).toHaveAttribute('aria-disabled', 'true');
+
+            act(() => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(
+                screen.getByRole('button', { name: '재분석' })
+            ).toHaveAttribute('aria-disabled', 'false');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     // 포커스를 받은 버튼이 쿨다운·분석 시작으로 비활성이 될 때 `disabled`면 포커스가
@@ -1181,7 +1217,7 @@ describe('AnalysisPanel', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 onReanalyze={onReanalyze}
-                reanalyzeCooldownMs={120000}
+                reanalyzeCooldownUntil={Date.now() + 120000}
             />
         );
 
