@@ -7,13 +7,15 @@ import { DrizzleUserRepository } from '@/entities/auth/api';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
-import { normalizeEmail } from '@/shared/lib/auth/validation';
+import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
 import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { getDatabaseClient } from '@/shared/db/client';
 
-/** 형식 검사만 한다 — 도메인 존재 확인이 아니다. */
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+/**
+ * 재설정 메일 발송을 요청한다. 형식 오류만 `errorCode`로 알리고, 그 밖의
+ * 모든 결과(미가입·Redis 미설정·예외)는 계정 열거를 막기 위해 똑같이
+ * `submitted: true`다.
+ */
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
     formData: FormData
@@ -23,9 +25,11 @@ export async function requestPasswordResetAction(
     const locale = await resolveRequestLocale();
     try {
         const email = normalizeEmail(String(formData.get('email') ?? ''));
-        // 형식만 본다 — 계정 존재 여부는 아래에서 여전히 숨긴다.
-        if (!EMAIL_SHAPE.test(email)) {
-            return { submitted: false, errorCode: 'invalid_email' };
+        // 형식만 본다(도메인 존재 확인이 아니다) — 계정 존재 여부는 아래에서
+        // 여전히 숨긴다.
+        const emailError = validateEmail(email);
+        if (emailError) {
+            return { submitted: false, errorCode: emailError.code };
         }
 
         const emailTokens = createEmailTokenStore();
