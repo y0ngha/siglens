@@ -1,13 +1,9 @@
+vi.mock('server-only', () => ({}));
 vi.mock('@/shared/api/fmp/httpClient');
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import {
-    fetchDailyCloses,
-    lastPublishedSessionDate,
-    lookbackStartDate,
-} from '../../lib/fetchDailyCloses';
-import { MARKET_FEAR_GREED_LOOKBACK_DAYS } from '../../lib/marketFearGreedSymbols';
+import { fetchDailyCloses } from '../../api/fetchDailyCloses';
 
 const mockFmpGet = vi.mocked(fmpGet);
 
@@ -196,47 +192,5 @@ describe('fetchDailyCloses', () => {
         await expect(
             fetchDailyCloses('SPY', '2024-01-01', '2024-01-31')
         ).rejects.toThrow('FMP down');
-    });
-});
-
-describe('lookbackStartDate', () => {
-    it(`고정 시각 기준 MARKET_FEAR_GREED_LOOKBACK_DAYS(${MARKET_FEAR_GREED_LOOKBACK_DAYS})일 전 ISO 날짜를 반환한다`, () => {
-        const now = new Date('2026-08-15T00:00:00Z');
-
-        // 2026-08-15 - 1830일(core FEAR_GREED_LOOKBACK_DAYS, 약 5년) = 2021-08-11
-        // (실제 clock을 쓰지 않고 고정 시각으로 계산).
-        expect(lookbackStartDate(now)).toBe('2021-08-11');
-    });
-});
-
-// `lastPublishedSessionDate`는 `lastClosedSessionDateEt`의 얇은 wrapper.
-// 아래 고정 시각들은 src/shared/lib/__tests__/marketSessionDate.test.ts의
-// `lastClosedSessionDateEt — DST-aware key boundary` 스위트에서 이미 검증된
-// 값과 동일하다(마감=16:00 ET + 발행버퍼 4h → 20:00 ET에만 롤오버) — 여기서
-// 새로 추측하지 않고 그 근거를 그대로 재사용한다.
-describe('lastPublishedSessionDate', () => {
-    it('평일 장중(2026-07-13 Mon 13:40 UTC = 09:40 EDT)에는 당일을 반환하지 않는다', () => {
-        const result = lastPublishedSessionDate(
-            new Date('2026-07-13T13:40:00Z')
-        );
-
-        expect(result).not.toBe('2026-07-13');
-        expect(result).toBe('2026-07-10'); // 직전 금요일
-    });
-
-    it('마감+발행버퍼 이후 평일(2026-07-14 00:30 UTC = 20:30 EDT Mon)에는 당일을 반환한다', () => {
-        const result = lastPublishedSessionDate(
-            new Date('2026-07-14T00:30:00Z')
-        );
-
-        expect(result).toBe('2026-07-13');
-    });
-
-    it('토요일에는 직전 금요일을 반환한다', () => {
-        const result = lastPublishedSessionDate(
-            new Date('2026-07-11T12:00:00Z')
-        );
-
-        expect(result).toBe('2026-07-10');
     });
 });

@@ -16,9 +16,8 @@ vi.mock('@y0ngha/siglens-core', async () => {
 });
 
 const fetchKrDailyCloses = vi.fn();
-vi.mock('../lib/fetchKrDailyCloses', () => ({
+vi.mock('../../api/fetchKrDailyCloses', () => ({
     fetchKrDailyCloses: (...args: unknown[]) => fetchKrDailyCloses(...args),
-    krLookbackStartDate: (now: Date) => new Date(now.getTime() - 1000),
 }));
 
 const getOrSetCache = vi.fn();
@@ -26,7 +25,7 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
     getOrSetCache: (...args: unknown[]) => getOrSetCache(...args),
 }));
 
-vi.mock('../lib/buildMarketFearGreedComparisons', () => ({
+vi.mock('../../lib/buildMarketFearGreedComparisons', () => ({
     buildMarketFearGreedComparisons: () => [],
 }));
 
@@ -34,9 +33,9 @@ import { MARKET_FEAR_GREED_SERIES_KEYS } from '@y0ngha/siglens-core';
 import {
     getCachedMarketFearGreedKr,
     MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT,
-} from '../api/marketFearGreedKrCache';
-import { MARKET_FEAR_GREED_CONFIG_FINGERPRINT } from '../api/marketFearGreedCache';
-import { KOSPI_INDEX_SYMBOL } from '../lib/marketFearGreedKrSymbols';
+} from '../../api/marketFearGreedKrCache';
+import { MARKET_FEAR_GREED_CONFIG_FINGERPRINT } from '../../api/marketFearGreedCache';
+import { KOSPI_INDEX_SYMBOL } from '../../lib/marketFearGreedKrSymbols';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
