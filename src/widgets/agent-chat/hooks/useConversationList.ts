@@ -5,7 +5,7 @@
  * 바꾸기·삭제는 로컬에서 반영한다.
  */
 import { useState } from 'react';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import type { ConversationListItem } from '@/entities/chat-conversation/model';
 
 interface UseConversationListReturn {
     items: ConversationListItem[];

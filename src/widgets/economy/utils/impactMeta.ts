@@ -1,3 +1,6 @@
+/**
+ * 캘린더 중요도의 렌더 순서와 표시 라벨 키.
+ */
 import type { CalendarImpact } from '@y0ngha/siglens-core';
 
 /** 임팩트 렌더/필터 순서 — High → Medium → Low. */

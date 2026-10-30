@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    resolvePendingSubmit,
     resolveSubmitTarget,
     resolveTypedTarget,
 } from '@/features/ticker-search/lib/resolveSubmitTarget';
@@ -98,6 +99,70 @@ describe('resolveTypedTarget', () => {
 
         it('공백만 있으면 null을 반환한다', () => {
             expect(resolveTypedTarget('   ')).toBeNull();
+        });
+    });
+});
+
+/**
+ * 결착된 검색 키 의도의 목적지. 폼 모드·조회 실패·일반 이동 세 갈래가 어디로
+ * 보내는지를 고정한다.
+ */
+describe('resolvePendingSubmit', () => {
+    const nvda = [result('NVDA', 'NVIDIA Corporation', '엔비디아')];
+
+    describe('when navigateOnSelect is false', () => {
+        it('결과가 있어도 친 문자열을 대문자·trim 해 확정한다', () => {
+            expect(
+                resolvePendingSubmit('  nv  ', nvda, {
+                    navigateOnSelect: false,
+                    isError: false,
+                })
+            ).toEqual({ symbol: 'NV', label: 'NV' });
+        });
+
+        it('조회가 실패했어도 친 문자열을 확정한다', () => {
+            expect(
+                resolvePendingSubmit('nv', [], {
+                    navigateOnSelect: false,
+                    isError: true,
+                })
+            ).toEqual({ symbol: 'NV', label: 'NV' });
+        });
+
+        it('빈 문자열이면 null이다', () => {
+            expect(
+                resolvePendingSubmit('   ', nvda, {
+                    navigateOnSelect: false,
+                    isError: false,
+                })
+            ).toBeNull();
+        });
+    });
+
+    describe('when navigateOnSelect is true', () => {
+        it('조회가 실패했으면 null이다', () => {
+            // 실패한 조회의 빈 결과는 "없다"가 아니라 친 문자열 직행으로 떨어지면 안 된다.
+            expect(
+                resolvePendingSubmit('brk.b', [], {
+                    navigateOnSelect: true,
+                    isError: true,
+                })
+            ).toBeNull();
+        });
+
+        it('그 외에는 resolveSubmitTarget에 위임한다', () => {
+            expect(
+                resolvePendingSubmit('nvda', nvda, {
+                    navigateOnSelect: true,
+                    isError: false,
+                })
+            ).toEqual({ symbol: 'NVDA', label: '엔비디아' });
+            expect(
+                resolvePendingSubmit('삼성전자', [], {
+                    navigateOnSelect: true,
+                    isError: false,
+                })
+            ).toBeNull();
         });
     });
 });

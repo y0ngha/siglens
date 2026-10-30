@@ -16,6 +16,7 @@ const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
         // When true, the mocked `getAgentProvider` flips the `AgentProviderState`
         // it receives, simulating a turn that fell back to Gemini mid-flight.
         forceFallback: false,
+        toolExecutorError: undefined as Error | undefined,
         repo: {
             create: vi.fn(),
             findForUser: vi.fn(),
@@ -61,7 +62,10 @@ vi.mock('@/app/api/ai/chat/counters', () => ({
     GUEST_IP_TURNS_PER_DAY: 100,
 }));
 vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
-    createToolExecutor: () => vi.fn(),
+    createToolExecutor: () => {
+        if (m.toolExecutorError) throw m.toolExecutorError;
+        return vi.fn();
+    },
     availableToolNames: () => new Set(['get_quote']),
 }));
 vi.mock('@/entities/llm-provider/api/agent/getAgentProvider', () => ({
@@ -93,6 +97,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 }));
 
 import { POST } from '@/app/api/ai/chat/stream/route';
+import { getActiveAgentTurns } from '@/app/api/ai/chat/stream/_lib/turnSlots';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 
 const AI_ORIGIN = new URL(AI_SITE_URL).origin;
@@ -160,6 +165,7 @@ describe('POST /api/ai/chat/stream', () => {
         m.guestId.mockResolvedValue('g-uuid-1');
         m.guestIpConsume.mockResolvedValue(true);
         m.forceFallback = false;
+        m.toolExecutorError = undefined;
         m.lock.mockResolvedValue({ release: vi.fn() });
         m.repo.create.mockResolvedValue({ id: 'c-new', title: '제목' });
         m.repo.findForUser.mockResolvedValue({ id: 'c1', title: 't' });
@@ -534,7 +540,7 @@ describe('POST /api/ai/chat/stream', () => {
         expect(f[0]).toContain('"conversationId":"c-new"');
         // The client needs the stored user row's `seq` on the `meta` frame to make the
         // optimistic bubble it renders before this response arrives immediately
-        // editable (spec §UI) — otherwise Edit only shows up after a reload.
+        // editable — otherwise Edit only shows up after a reload.
         expect(f[0]).toContain('"userMessageSeq":1');
         expect(f.at(-1)).toContain('event: done');
         expect(m.repo.create).toHaveBeenCalledWith({
@@ -713,6 +719,19 @@ describe('POST /api/ai/chat/stream', () => {
         expect(res.status).toBe(500);
         expect(await res.json()).toEqual({ error: 'server_error' });
         expect(release).toHaveBeenCalledTimes(1);
+        err.mockRestore();
+    });
+
+    it('스트림 구성이 동기적으로 던지면 500 server_error, 슬롯과 lock을 각각 정확히 한 번 해제', async () => {
+        const release = vi.fn();
+        m.lock.mockResolvedValue({ release });
+        m.toolExecutorError = new Error('executor init failed');
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const res = await POST(post({ conversationId: 'c1', message: 'x' }));
+        expect(res.status).toBe(500);
+        expect(await res.json()).toEqual({ error: 'server_error' });
+        expect(release).toHaveBeenCalledTimes(1);
+        expect(getActiveAgentTurns()).toBe(0);
         err.mockRestore();
     });
 
@@ -993,7 +1012,7 @@ describe('POST /api/ai/chat/stream', () => {
     it('tool_end summary가 민감정보를 담고 있어도 SSE 출력에는 안전한 요약만 실린다(운반만, 가공은 tools 계층 책임)', async () => {
         m.runTurn.mockImplementation(
             async (_p: unknown, deps: { onEvent: (e: unknown) => void }) => {
-                // tools/createToolExecutor (Task 9) already guarantees `summary` never
+                // tools/createToolExecutor already guarantees `summary` never
                 // carries raw error text/SQL — this asserts the route does not add its
                 // own leak by re-logging or re-shaping the event with extra fields.
                 deps.onEvent({

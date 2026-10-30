@@ -7,7 +7,8 @@ vi.mock('next/image', () => ({
             data-width={props.width as number}
             data-height={props.height as number}
             className={props.className as string}
-            data-priority={String(props.priority)}
+            data-preload={String(props.preload)}
+            data-legacy-priority={String(props.priority)}
             data-fetch-priority={props.fetchPriority as string}
         />
     ),
@@ -35,11 +36,12 @@ describe('HeroIllustration', () => {
         );
     });
 
-    it('uses priority and fetchPriority for LCP optimization', () => {
+    it('uses preload (not the deprecated priority) and fetchPriority for LCP optimization', () => {
         render(<HeroIllustration />);
 
         const img = screen.getByRole('img');
-        expect(img).toHaveAttribute('data-priority', 'true');
+        expect(img).toHaveAttribute('data-preload', 'true');
+        expect(img).toHaveAttribute('data-legacy-priority', 'undefined');
         expect(img).toHaveAttribute('data-fetch-priority', 'high');
     });
 
