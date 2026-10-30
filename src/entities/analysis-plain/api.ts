@@ -1,40 +1,27 @@
 import 'server-only';
-import { createHash } from 'node:crypto';
-import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
-import { stripMarkdownCodeBlock } from '@/entities/llm-provider/lib/parseJsonResponse';
-import type { ProviderCallLimits } from '@/entities/llm-provider/model';
-import { isE2E } from '@/shared/api/e2eEnv';
-import { sleep } from '@/shared/lib/sleep';
-import { fireAndForget } from '@/shared/lib/backgroundTask';
-import { tryGetDatabaseClient } from '@/shared/db/client';
-import { isOfflineBuild } from '@/shared/api/offlineBuild';
-import type { PlainTextRepository } from '@/shared/db/types';
 import { extractProse } from '@/entities/analysis-translation/lib/proseFields';
-import { DrizzlePlainTextRepository } from './plainTextRepository';
-import {
-    hasPlainGenerationFailedRecently,
-    markPlainGenerationFailed,
-    PLAIN_CALL_TIMEOUT_MS,
-    PLAIN_MAX_OUTPUT_TOKENS,
-    releasePlainGenerationLock,
-    tryAcquirePlainGenerationLock,
-    type PlainGenerationKey,
-} from './plainGenerationCoordination';
-import type { RedisLease } from '@/shared/cache/createRedisLease';
-import { tryReadPlainModelConfig } from './lib/plainModel';
+import { isE2E } from '@/shared/api/e2eEnv';
 import type { Locale } from '@/shared/i18n/locales';
+import { PLAIN_PROMPT_VERSION, buildPlainPrompt } from './lib/buildPlainPrompt';
 import { collectFacts, type CurrencyCode } from './lib/collectFacts';
+import { buildAllowedNumbers } from './lib/guardPlainText';
 import { dropSupersededPaths } from './lib/supersededPaths';
-import { buildPlainPrompt, PLAIN_PROMPT_VERSION } from './lib/buildPlainPrompt';
-import { plainSystemInstruction } from './lib/outputLanguage';
 import {
-    buildAllowedNumbers,
-    describeFailure,
-    guardPlainText,
-    salvageByRemovingSentences,
-    type GuardInput,
-    type PlainGuardFailure,
-} from './lib/guardPlainText';
+    coordinatePlainGeneration,
+    joinPlainFlight,
+    NULL_TEXT,
+} from './server/plainFlights';
+import {
+    startPlainGeneration,
+    type PlainGenerationContext,
+} from './server/plainGeneration';
+import { tryReadPlainModelConfig } from './server/plainModel';
+import {
+    buildInputDigest,
+    findStored,
+    tryCreateRepository,
+} from './server/plainStore';
+import type { PlainGenerationKey } from './plainGenerationCoordination';
 
 /**
  * 자체 마감. `withDeadline`의 `Promise.race`가 **이미 끝난 뒤** 붙는 레이어라
@@ -42,7 +29,7 @@ import {
  * 지정하지 않아 OpenAI SDK 기본값(10분 × 3회)을 썼다 — 프로바이더가 매달리면 스트림
  * 하나가 `canAcceptAnalysisStream` 동시성 슬롯을 30분 붙들고,
  * `instrumentation.node.ts`의 SIGTERM 드레인(`SHUTDOWN_DRAIN_DEADLINE_MS`)을 넘겨 배포마다 끊겼다.
- * 지금은 호출마다 `PLAIN_CALL_LIMITS`(스트림 본문까지 묶는 `PLAIN_CALL_TIMEOUT_MS` 호출 마감, SDK 재시도 0)를
+ * 지금은 호출마다 `PLAIN_CALL_LIMITS`(`server/plainGeneration.ts`, 스트림 본문까지 묶는 `PLAIN_CALL_TIMEOUT_MS` 호출 마감, SDK 재시도 0)를
  * 넘기지만, 그 값은 백그라운드 지출의 상한이고 사용자가 기다리는 시간은 여전히 이 마감이 정한다.
  *
  * ## 왜 45초가 아니라 15초인가
@@ -55,7 +42,7 @@ import {
  * 실측 지연은 6.9~13.5초(346회 전수 실행)다. 15초면 정상 응답을 거의 다 담고,
  * 프로바이더가 매달릴 때 사용자가 기다리는 시간을 3분의 1로 줄인다.
  *
- * 레이스에서 진 `attempt()`도 DB에는 쓴다(`attempt()` 내부에서 직접 쓴다 — 아래
+ * 레이스에서 진 `attempt()`(`server/plainGeneration.ts`)도 DB에는 쓴다(`attempt()` 내부에서 직접 쓴다 — 아래
  * `withDeadline` 주석 참고). 그래도 이 사용자 경로의 마감은 여전히 15초다 — 이
  * 값이 지키는 것은 지출이 아니라 **첫 요청자가 기다리는 시간**이고, 마감을 넘기는
  * 입력이 있으면 그 요청자는 여전히 `plain: null`을 받는다. 다음 요청부터 저장된 행을
@@ -79,104 +66,13 @@ import {
 const PLAIN_DEADLINE_MS = 15_000;
 
 /**
- * 저장 키의 `input_digest`. **원문 산문 + 사실 블록의 해시**이고, 로케일과
- * 프롬프트 버전은 복합 PK의 다른 열이다(`analysis_plain_texts`). 사실 블록 중
- * 실시간 현재가(`facts.currentPrice`)만은 해시에서 뺀다 — 이유는 호출부 주석.
- *
- * 심볼·모델·타임프레임을 키에 넣지 않는다 — 같은 입력이면 결과가 같고, 입력이
- * 조금이라도 바뀌면 해시가 달라져 스스로 무효화된다.
- *
- * **티어도 넣지 않는다.** 입력이 core `filterAnalysisResult`를 통과한 payload이므로
- * free와 member는 산문 조각 수부터 달라 자동으로 다른 키를 얻는다(실측: free 5조각
- * vs member 21조각). 반대로 두 티어의 필터 결과가 실제로 같으면 같은 키를 공유하는데,
- * 그건 leak이 아니라 정확한 동작이다 — 티어 세그먼트를 넣으면 이 공유가 깨져
- * LLM 호출이 불필요하게 두 배가 된다.
- */
-function buildInputDigest(prompt: string): string {
-    return createHash('sha256').update(prompt).digest('hex');
-}
-
-/**
- * 저장소 조회 상한(ms). DB 클라이언트(postgres-js)는 연결 타임아웃(`connect_timeout`)만
- * 있고 쿼리 단위 타임아웃을 걸지 않아 DB가 매달리면 `find`가
- * 영영 끝나지 않고, 이 조회는 `withDeadline` **바깥**(생성 앞단)이라 그대로 사용자
- * 대기로 이어진다. 넘기면 미스로 취급하고 생성으로 넘어간다 — 정상 조회는 한 자릿수
- * ~수십 ms라 2.5초면 일시적 지연은 담으면서 매달림은 끊는다. 늦게 끝난 조회 결과는
- * 버려지고, 같은 키로의 중복 생성은 `ON CONFLICT DO NOTHING`이 흡수한다.
- */
-export const PLAIN_STORE_READ_TIMEOUT_MS = 2_500;
-
-let loggedDbUnavailable = false;
-
-/**
- * DB가 없으면(`DATABASE_URL` 부재·오프라인 빌드) `null` — 호출자는 저장소 미스로
- * 취급하고 쓰기를 건너뛴다. 클라이언트 생성이 던져도 같다: 저장소 장애가
- * 평이화 생성 자체를 막아서는 안 된다.
- *
- * 다만 **조용히 넘어가지 않는다.** 저장소가 없으면 모든 요청이 LLM을 다시 부르는데
- * (비용), 예전 Redis 캐시도 미설정이면 똑같이 동작했기에 막지는 않는다. 대신 운영
- * 환경 오설정을 알아챌 수 있게 프로세스당 한 번 `console.error`를 남긴다 —
- * 요청마다 남기면 로그가 범람한다. 오프라인 빌드는 `tryGetDatabaseClient`가 따로
- * 경고하고, E2E는 이 함수에 도달하기 전에 끝나므로 둘 다 제외한다.
- */
-function tryCreateRepository(): PlainTextRepository | null {
-    try {
-        const client = tryGetDatabaseClient();
-        if (client === null) {
-            if (!loggedDbUnavailable && !isE2E() && !isOfflineBuild()) {
-                loggedDbUnavailable = true;
-                console.error(
-                    '[analysis-plain] DB unavailable — plain texts will be regenerated on every request (LLM cost)'
-                );
-            }
-            return null;
-        }
-        return new DrizzlePlainTextRepository(client.db);
-    } catch (error) {
-        console.error('[analysisPlain] repository unavailable', { error });
-        return null;
-    }
-}
-
-/**
- * 저장소 조회. 실패는 미스, `PLAIN_STORE_READ_TIMEOUT_MS`를 넘겨도 미스다.
- * 타이머는 조회가 끝나는 즉시 정리한다.
- */
-async function findStored(
-    repository: PlainTextRepository | null,
-    locale: Locale,
-    inputDigest: string
-): Promise<string | null> {
-    if (repository === null) return null;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<null>(resolve => {
-        timer = setTimeout(() => {
-            console.warn('[analysisPlain] store read timed out', {
-                ms: PLAIN_STORE_READ_TIMEOUT_MS,
-            });
-            resolve(null);
-        }, PLAIN_STORE_READ_TIMEOUT_MS);
-    });
-    try {
-        return await Promise.race([
-            repository
-                .find(PLAIN_PROMPT_VERSION, locale, inputDigest)
-                .catch(() => null),
-            timeout,
-        ]);
-    } finally {
-        if (timer !== undefined) clearTimeout(timer);
-    }
-}
-
-/**
  * 마감을 건 실행. 초과하면 `null`.
  *
  * ⚠️ **레이스일 뿐 요청을 끊지는 못한다.** `callAiProviderRouter`가 넘겨받는
  * `ProviderCallOptions`에 `signal`이 없어(`entities/llm-provider/model.ts`)
  * 어댑터까지 취소를 전달할 방법이 없다. 그래서 마감을 넘긴 호출은 백그라운드에서
  * 계속 돌며 토큰을 청구한다 — 여기까지는 여전히 사실이다. 다만 그 수명은 이제 전송
- * timeout(`PLAIN_CALL_LIMITS.timeoutMs`)으로 묶이고 SDK 재시도도 없다.
+ * timeout(`server/plainGeneration.ts`의 `PLAIN_CALL_LIMITS.timeoutMs`)으로 묶이고 SDK 재시도도 없다.
  *
  * **다만 그 돈이 완전히 버려지지는 않는다.** 예전에는 결과 저장(당시엔 Redis 캐시)이
  * 이 레이스의 승자 경로에만 있어서, 레이스에서 진 호출이 나중에 끝나도 그 결과는
@@ -209,310 +105,6 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
     return Promise.race([work, expiry]).finally(() => {
         if (timer !== undefined) clearTimeout(timer);
     });
-}
-
-/**
- * 평이화 호출 상한. 재시도는 SDK가 아니라 이 모듈이 정한다 — `attempt()`가 가드 실패에
- * 한 번 다시 부르는데, SDK 재시도(기본 2회)까지 겹치면 매달린 호출 하나가 백그라운드에서
- * 최대 세 번 청구된다. 마감(`withDeadline`)은 레이스일 뿐 요청을 끊지 못하므로 실제로
- * 끊는 것은 이 `timeoutMs`다.
- *
- * `timeoutMs`는 SDK 옵션이 아니라 **어댑터가 스트림 본문 읽기까지 묶는 호출 전체 마감**으로
- * 쓴다(`createCallDeadline`). OpenAI SDK의 `timeout`은 응답 헤더가 오면 타이머를 지우므로
- * SSE 본문은 그것만으로는 무제한이다 — 4,000토큰을 75~100토큰/초로 흘리는 긴 재작성이
- * 40~55초를 가는데, 이 값이 본문을 끊지 않으면 `plainGenerationCoordination.ts`의 락 TTL을
- * 넘겨 다른 인스턴스가 같은 좌표를 중복 생성한다.
- *
- * 재시도(`attempt(retryHint)`)는 첫 호출이 **돌아온 뒤 가드가 거부했을 때만** 일어난다.
- * 첫 호출이 마감(`ProviderCallTimeoutError`)으로 던지면 `generate()`의 파이프라인이 그
- * 거절을 잡아 `null`로 끝내므로 두 번째 호출은 없다 — 마감까지 멈춘 프로바이더에 마감을 한 번
- * 더 쓰지 않는다. 그래서 한 생성의 최악은 "느린 호출 + 가드 거부 + 느린 재시도"의 2회이고,
- * 이 2회를 락 TTL이 덮는다(`plainGenerationCoordination.ts`). SIGTERM 드레인
- * (`SHUTDOWN_DRAIN_DEADLINE_MS`)과의 관계: 호출 하나는 마감으로 끊기지만, 2회 최악
- * (`PLAIN_CALL_TIMEOUT_MS` × 2)은 드레인 예산과 같거나 겹칠 수 있다 — 드레인에서
- * 끊겨도 락은 TTL로 풀리고 저장 행이 없으니 다음 요청이 다시 생성한다.
- */
-const PLAIN_CALL_LIMITS: ProviderCallLimits = {
-    maxOutputTokens: PLAIN_MAX_OUTPUT_TOKENS,
-    timeoutMs: PLAIN_CALL_TIMEOUT_MS,
-    maxRetries: 0,
-};
-
-/** 다른 인스턴스가 생성 중일 때 저장소를 다시 보는 간격(ms). */
-const PLAIN_WAIT_POLL_INTERVAL_MS = 1_000;
-
-/**
- * 다른 인스턴스의 생성을 기다리는 최대 시간(ms). 정상 생성(재시도 포함)을 담을 만큼만
- * 기다린다. 넘기면 락을 한 번 더 잡아 보고, 잡히면(보유자가 죽었거나 끝났는데 결과가 안
- * 들어왔다) 직접 생성한다.
- *
- * 보유자의 생성이 이보다 오래 걸려 락이 아직 살아 있으면(`held`) 중복 생성하지 않고
- * 물러난다 — 락 TTL이 호출 마감 두 번을 덮기 때문이다. 이 생성을 기다리는 호출자
- * **전원의 마감**이 먼저 지나면 그 자리에서 물러난다 — 받을 사람이 없는 폴링·생성은
- * 하지 않는다.
- */
-const PLAIN_WAIT_MAX_MS = 25_000;
-
-/**
- * 진행 중인 평이화 한 건. 두 프라미스 모두 **reject하지 않는다**.
- *
- * - `result`: 생성 전체(재시도·도려내기 포함)의 최종 글. 실패면 `null`.
- * - `softDraft`: 첫 시도가 연성 실패(`stale_deixis`)였다면 그 글, 아니면 `null`. 마감을 넘긴
- *   호출자가 물러날 때 쓴다(`rewriteToPlainLanguage` 끝부분).
- */
-interface PlainFlight {
-    readonly result: Promise<string | null>;
-    readonly softDraft: Promise<string | null>;
-}
-
-const NULL_TEXT: Promise<string | null> = Promise.resolve(null);
-const NO_FLIGHT: PlainFlight = { result: NULL_TEXT, softDraft: NULL_TEXT };
-
-/** 저장소가 없어 락을 잡지 않은 생성 — 풀 것이 없다. */
-const NO_LEASE: RedisLease = { status: 'unavailable' };
-
-/**
- * 프로세스 안 single-flight. 키는 저장 키와 같은 좌표다.
- *
- * core의 `dedupeInFlight`가 한 분석 결과를 대기자 N명에게 나눠 주면, 그 N개 요청이 거의
- * 동시에 이 함수에 들어와 전부 저장소 미스를 보고 같은 평이화를 N번 불렀다(2026-10 비용
- * 감사 M3) — `ON CONFLICT DO NOTHING`은 중복 쓰기만 흡수할 뿐 지출은 막지 못한다.
- * 인스턴스 사이는 Redis 락(`plainGenerationCoordination.ts`)이 맡는다.
- *
- * 항목은 `result`가 끝나는 즉시 지운다. 각 호출자는 같은 `result`에 **자기 마감**을 따로
- * 건다 — 사용자 경로(15초)와 프리웜(30초)이 한 생성을 공유해도 서로의 마감에 묶이지 않는다.
- * 대신 `waitUntil`에 합류한 호출자 중 가장 늦은 마감(epoch ms)을 적어 두고, 다른 인스턴스를
- * 기다리는 폴링은 그 시각이 지나면 멈춘다.
- */
-interface PlainFlightEntry {
-    readonly flight: PlainFlight;
-    readonly waitUntil: { at: number };
-}
-
-const plainFlights = new Map<string, PlainFlightEntry>();
-
-const flightIdOf = (key: PlainGenerationKey): string =>
-    `${key.promptVersion}:${key.locale}:${key.inputDigest}`;
-
-/** @internal 테스트 전용 — 진행 중 항목을 비운다(beforeEach). */
-export function __resetPlainFlightsForTests(): void {
-    plainFlights.clear();
-}
-
-type WaitOutcome =
-    | { readonly kind: 'found'; readonly text: string }
-    | { readonly kind: 'failed' }
-    /** 기다리는 호출자 전원의 마감이 지났다. */
-    | { readonly kind: 'abandoned' }
-    /** `PLAIN_WAIT_MAX_MS` 안에 결과도 실패 표시도 안 왔다. */
-    | { readonly kind: 'timed_out' };
-
-/**
- * 다른 인스턴스가 생성 중이다 — 직접 부르지 않고 그 결과가 저장소에 들어오기를 잠깐 기다린다.
- * 그쪽이 실패를 표시하면 곧바로 물러난다.
- */
-async function waitForStored(
-    repository: PlainTextRepository,
-    key: PlainGenerationKey,
-    waitUntil: () => number
-): Promise<WaitOutcome> {
-    for (
-        let waited = 0;
-        waited < PLAIN_WAIT_MAX_MS;
-        waited += PLAIN_WAIT_POLL_INTERVAL_MS
-    ) {
-        if (Date.now() >= waitUntil()) return { kind: 'abandoned' };
-        await sleep(PLAIN_WAIT_POLL_INTERVAL_MS);
-        const stored = await findStored(
-            repository,
-            key.locale,
-            key.inputDigest
-        );
-        if (typeof stored === 'string' && stored.length > 0)
-            return { kind: 'found', text: stored };
-        if (await hasPlainGenerationFailedRecently(key))
-            return { kind: 'failed' };
-    }
-    return { kind: 'timed_out' };
-}
-
-/**
- * 이 프로세스가 생성을 맡는다. 끝나면 결과가 `null`일 때 실패를 표시하고, 실제로 잡은 락
- * (`acquired`)만 푼다 — fail-open(`unavailable`)은 잡은 것이 없어 풀지 않는다. 표시가 어떻게
- * 끝나든 락은 반드시 푼다(try/finally).
- */
-function runOwnedGeneration(
-    key: PlainGenerationKey,
-    lease: RedisLease,
-    generate: () => PlainFlight
-): PlainFlight {
-    const flight = generate();
-    const cleanup = flight.result
-        .then(async text => {
-            try {
-                if (text === null) await markPlainGenerationFailed(key);
-            } finally {
-                if (lease.status === 'acquired')
-                    await releasePlainGenerationLock(lease);
-            }
-        })
-        .catch((error: unknown) => {
-            console.error('[analysisPlain] lock cleanup failed', error);
-        });
-    // SIGTERM 드레인(`drainBackgroundTasks`)에 등록한다. 등록 대상이 생성 + 락 해제까지의
-    // 정리 체인이라, 종료 시 드레인이 락이 풀릴 때까지 기다린다. 등록하지 않으면 프로세스가
-    // 락을 쥔 채 죽어 `PLAIN_LOCK_TTL_SECONDS` 동안 다른 요청이 사용자 마감까지 기다리다
-    // 원본으로 물러난다. 호출 상한(`PLAIN_CALL_TIMEOUT_MS`)이 드레인 예산
-    // (`SHUTDOWN_DRAIN_DEADLINE_MS`)보다 짧아 호출 하나의 대기는 예산을 넘기지 않는다. 락을 SIGTERM에서 따로 푸는 방식은 쓰지 않는다 —
-    // 생성 중인 호출이 살아 있는데 락만 풀면 다른 인스턴스가 중복 생성·중복 과금한다.
-    fireAndForget(cleanup);
-    return flight;
-}
-
-/**
- * 락을 쥔 인스턴스를 기다린다. 기다림이 시간 초과로 끝나면 락을 한 번만 다시 잡아 보고,
- * 잡히면 직접 생성한다(보유자가 죽어 TTL로 풀렸거나, 끝났는데 저장이 실패한 경우).
- */
-async function waitOrTakeOver(
-    key: PlainGenerationKey,
-    repository: PlainTextRepository,
-    waitUntil: () => number,
-    generate: () => PlainFlight
-): Promise<string | null> {
-    const waited = await waitForStored(repository, key, waitUntil);
-    if (waited.kind === 'found') return waited.text;
-    if (waited.kind !== 'timed_out') return null;
-    const lease = await tryAcquirePlainGenerationLock(key);
-    if (lease.status === 'held') {
-        console.warn('[analysisPlain] gave up waiting for another instance', {
-            locale: key.locale,
-            ms: PLAIN_WAIT_MAX_MS,
-        });
-        return null;
-    }
-    return runOwnedGeneration(key, lease, generate).result;
-}
-
-/**
- * 인스턴스 사이 조율. 순서가 곧 정책이다:
- *
- * 1. 최근 실패 표시가 있으면 부르지 않는다(음성 캐시) — 같은 입력이 같은 식으로 실패하는
- *    경우(가드 위반 등) 조회마다 1~2회씩 다시 과금되던 자리다.
- * 2. 락을 못 잡으면 다른 인스턴스가 생성 중이다 — 기다린다(`waitOrTakeOver`).
- * 3. 락을 잡았거나 Redis를 쓸 수 없으면(fail-open) 생성한다(`runOwnedGeneration`).
- *
- * 저장소가 없으면(`repository === null`) 락을 잡지 않는다 — 기다려도 읽을 곳이 없다.
- */
-async function coordinatePlainGeneration(
-    key: PlainGenerationKey,
-    repository: PlainTextRepository | null,
-    waitUntil: () => number,
-    generate: () => PlainFlight
-): Promise<PlainFlight> {
-    if (await hasPlainGenerationFailedRecently(key)) return NO_FLIGHT;
-    if (repository === null) return runOwnedGeneration(key, NO_LEASE, generate);
-    const lease = await tryAcquirePlainGenerationLock(key);
-    if (lease.status !== 'held')
-        return runOwnedGeneration(key, lease, generate);
-    return {
-        result: waitOrTakeOver(key, repository, waitUntil, generate),
-        softDraft: NULL_TEXT,
-    };
-}
-
-/**
- * 같은 좌표의 진행 중 평이화가 있으면 그것에 합류하고(마감을 늘려 적는다), 없으면
- * `start()`로 새로 시작해 등록한다. `start()`가 던져도 `null`로 떨어진다 — `PlainFlight`의
- * "reject하지 않는다" 계약.
- */
-function joinPlainFlight(
-    key: PlainGenerationKey,
-    deadlineAt: number,
-    start: (waitUntil: () => number) => Promise<PlainFlight>
-): PlainFlight {
-    const id = flightIdOf(key);
-    const existing = plainFlights.get(id);
-    if (existing !== undefined) {
-        existing.waitUntil.at = Math.max(existing.waitUntil.at, deadlineAt);
-        return existing.flight;
-    }
-    const waitUntil = { at: deadlineAt };
-    const begun = start(() => waitUntil.at);
-    const flight: PlainFlight = {
-        result: begun.then(
-            f => f.result,
-            () => null
-        ),
-        softDraft: begun.then(
-            f => f.softDraft,
-            () => null
-        ),
-    };
-    plainFlights.set(id, { flight, waitUntil });
-    void flight.result.finally(() => plainFlights.delete(id));
-    return flight;
-}
-
-/**
- * 첫 시도가 "근거 없는 숫자"로 거부됐을 때 **재시도 전에** 그 문장만 도려내도 되는 상한.
- *
- * 2026-10 실측(14일): 첫 시도 거부 2,038건(호출의 ~9%)이 전부 재생성으로 이어졌고, 거부
- * 전체(재시도 포함 2,696건)의 73%가 `unsupported_numbers`였다(첫 시도만의 비율은 따로 안 쟀다). 위반은 대개 문장 한두 개라(재시도 실패 뒤 살린 사례 전부
- * 문장 1~3개 제거) 짧게 도려내면 끝나는 것을 LLM 한 번을 더 불러 고쳤다. 원문의 25%
- * 이하만 잃으면 도려낸 결과를 그대로 쓰고, 그보다 많이 잃으면 재생성이 낫다고 본다.
- * 크기 접미사(`magnitude_suffix`)·문자 혼입 등 다른 거부는 도려내서 고쳐지지 않으므로
- * 그대로 재시도한다.
- *
- * 조언 문구(`advice`, 2026-10-04 도입)도 같은 경로로 도려낸다. 다만 25% 상한은 숫자 위반
- * 실측에서 나온 값이고 조언 쪽은 측정이 없다 — 로그의 `kind`로 두 분포를 갈라 다시 본다.
- *
- * ## 위 수치를 다시 세는 법
- *
- * 거부는 `attempt()`가 `console.warn('[analysisPlain] guard rejected', { symbol, locale,
- * kind, retry, tokens })`로 매번 한 번씩 남긴다. CloudWatch Logs Insights, 로그 그룹
- * `/siglens/app`, 14일 범위:
- *
- *     fields @timestamp, @message
- *     | filter @message like "[analysisPlain] guard rejected"
- *     | stats count() as rejections
- *
- * - 거부 전체(2,696건)는 위 마커 줄 수, 그중 첫 시도만(2,038건)은 `retry: false`인 건이다.
- * - 종류별 비율(`unsupported_numbers` 73%)은 같은 필드의 `kind`로 가른다. Node는 객체를
- *   여러 줄로 찍으므로 awslogs가 필드마다 별개 이벤트로 쪼갤 수 있다 — 그러면
- *   `filter @message like "kind: 'unsupported_numbers'"` 줄 수를 마커 줄 수로 나눈다.
- *   쪼개졌는지는 먼저 `limit 20`으로 원문을 보고 정할 것.
- * - 이 상한을 도입한 뒤의 실제 손실 분포는 `[analysisPlain] salvaged without retry`의
- *   `lossRatio`로 본다(아래 `console.info`). 이 로그는 도입 전 기간에는 없어 위 14일 수치를
- *   과거로 재현하는 데는 못 쓴다.
- */
-const SALVAGE_BEFORE_RETRY_MAX_LOSS = 0.25;
-
-/** 로그에 남기는 손실 비율의 소수 자릿수. 0.25 상한 근처를 0.1% 단위로 구분하면 충분하다. */
-const LOSS_RATIO_LOG_DIGITS = 3;
-
-interface SalvagedBeforeRetry {
-    text: string;
-    /** 잃은 글자 비율(0~1). 상한 판정과 로그가 같은 값을 쓰도록 한 번만 계산한다. */
-    lossRatio: number;
-}
-
-function salvageBeforeRetry(
-    text: string,
-    failure: PlainGuardFailure,
-    allowed: GuardInput['allowed']
-): SalvagedBeforeRetry | null {
-    // 조언 문구(`advice`)도 같은 이유로 도려낸다 — 위반이 문장 한두 개라 재생성할 이유가 없다.
-    if (failure.kind !== 'unsupported_numbers' && failure.kind !== 'advice')
-        return null;
-    const salvaged = salvageByRemovingSentences(text, allowed);
-    if (salvaged === null) return null;
-    // `text`가 빈 문자열일 수 없다 — 두 종류 모두 `guardPlainText`가 `trim()` 뒤
-    // 비어 있지 않음을 확인한 다음에야 나오는 종류다(빈 입력은 `empty`로 먼저 끝난다).
-    // 설령 0이 되어도 `0 / 0`은 NaN이고 `NaN <= 상한`은 거짓이라 null로 떨어져 안전하다.
-    const lossRatio = (text.length - salvaged.length) / text.length;
-    return lossRatio <= SALVAGE_BEFORE_RETRY_MAX_LOSS
-        ? { text: salvaged, lossRatio }
-        : null;
 }
 
 /**
@@ -633,206 +225,21 @@ export async function rewriteToPlainLanguage(
         const stored = await findStored(repository, locale, inputDigest);
         if (typeof stored === 'string' && stored.length > 0) return stored;
 
-        /**
-         * fire-and-forget DB 쓰기. `attempt()`가 성공을 확정하는 두 지점
-         * (가드 통과, 문장 도려내기로 살림) 각각에서 정확히 한 번 부른다.
-         *
-         * `withDeadline`의 `Promise.race` **바깥이 아니라 `attempt()` 안**에
-         * 두는 것이 이 함수의 핵심이다 — 레이스에서 진 호출이 나중에 settle해도
-         * 이 클로저가 여전히 살아 있어 행을 채운다. 응답을 늦추지 않도록
-         * await하지 않고, 실패는 삼킨다(DB 장애가 평이화 성공을 무너뜨리면
-         * 안 된다). 자세한 배경은 `withDeadline` JSDoc 참고.
-         *
-         * 행에 만료가 없다 — 키가 내용 주소(입력 해시)라 같은 입력은 같은 출력이고,
-         * 동시 생성이 겹쳐도 `ON CONFLICT DO NOTHING`이 흡수한다.
-         */
-        const writeStored = (text: string): void => {
-            repository
-                ?.insert(PLAIN_PROMPT_VERSION, locale, inputDigest, text)
-                .catch(() => undefined);
-        };
-
-        /**
-         * 연성 실패(`stale_deixis`)로 거부된 **첫 시도의 글**. 숫자·문자·조언 가드는 모두
-         * 통과한 글이라 재시도가 실패해도 쓸 수 있다 — 재시도가 경성 위반으로 끝나 도려내기마저
-         * `null`이거나, 마감을 넘기거나, 던져도 쉽게보기가 통째로 사라지지 않게 `attempt()`가
-         * 이 값으로 돌려준다(저장도 재시도도 하지 않은 상태). 호출자가 재시도를 이어 간다.
-         */
-        interface SoftFirstDraft {
-            readonly soft: string;
-            readonly tokens: readonly string[];
-            readonly retryHint: string;
-        }
-        type AttemptResult = string | null | SoftFirstDraft;
-        const isSoftFirstDraft = (r: AttemptResult): r is SoftFirstDraft =>
-            r !== null && typeof r === 'object';
-        // 재시도 단계에서는 첫 시도 초안이 나올 수 없다 — 나오더라도 글은 버리지 않는다.
-        const toFinalText = (r: AttemptResult): string | null =>
-            isSoftFirstDraft(r) ? r.soft : r;
-
-        const acceptSoft = (
-            text: string,
-            tokens: readonly string[]
-        ): string => {
-            // 연성 실패 — 시점 표현이 거칠 뿐 내용이 틀린 글이 아니라, 버리면 쉽게보기가
-            // 통째로 사라진다. 그대로 받아들여 저장한다.
-            console.info('[analysisPlain] accepted with stale deixis', {
-                symbol,
-                locale,
-                tokens,
-            });
-            writeStored(text);
-            return text;
-        };
-
-        const attempt = async (retryHint?: string): Promise<AttemptResult> => {
-            const prompt =
-                retryHint === undefined
-                    ? basePrompt
-                    : buildPlainPrompt({ entries, facts, locale, retryHint });
-            const raw = await callAiProviderRouter({
-                serverApiKey: resolved.serverApiKey,
-                // BYOK 경로가 아니다 — 평이화는 항상 서버 부담이다.
-                userApiKey: undefined,
-                // `[Usage]` 텔레메트리에서 평이화 지출을 따로 본다.
-                jobId: 'analysis-plain',
-                model: resolved.model,
-                contents: prompt,
-                // 유저 프롬프트 본문이 한국어라, 끝에 붙인 언어 블록만으로는
-                // 비-ko에서 무게가 밀린다(실측: zh 0/3). core처럼 계약을
-                // 시스템 프롬프트에도 둔다. ko에서는 `undefined`다.
-                systemInstruction: plainSystemInstruction(locale),
-                limits: PLAIN_CALL_LIMITS,
-            });
-            const text = stripMarkdownCodeBlock(raw).trim();
-            const failure = guardPlainText({
-                text,
-                allowed,
-                locale,
-            });
-            if (failure === null) {
-                writeStored(text);
-                return text;
-            }
-            console.warn('[analysisPlain] guard rejected', {
-                symbol,
-                locale,
-                kind: failure.kind,
-                retry: retryHint !== undefined,
-                // 거부 토큰을 남긴다 — 없으면 "모델이 지어냈는지" 대 "가드가 너무
-                // 빡빡한지"를 사후에 가릴 수 없다. 실제로 그래서 KRW 재시도율이
-                // USD의 6배인 원인을 특정하지 못했다.
-                tokens: 'tokens' in failure ? failure.tokens : undefined,
-            });
-            if (retryHint === undefined) {
-                if (failure.kind === 'stale_deixis') {
-                    // 아직 저장하지 않는다 — 호출자가 한 번만 다시 쓰게 하고, 재시도가 아무것도
-                    // 못 돌려주면 이 글을 받아들인다. 마감 초과일 때도 호출자가 이 값으로 물러난다.
-                    return {
-                        soft: text,
-                        tokens: failure.tokens,
-                        retryHint: describeFailure(failure, locale),
-                    };
-                }
-                const salvagedFirst = salvageBeforeRetry(
-                    text,
-                    failure,
-                    allowed
-                );
-                if (salvagedFirst !== null) {
-                    // 25% 상한의 근거가 표본 몇 건뿐이라 실제 손실 분포를 남겨 둔다 —
-                    // 저장된 문장은 프롬프트 버전이 바뀔 때까지 남으므로 상한을 다시 볼 근거다.
-                    console.info('[analysisPlain] salvaged without retry', {
-                        symbol,
-                        locale,
-                        kind: failure.kind,
-                        originalChars: text.length,
-                        removedChars: text.length - salvagedFirst.text.length,
-                        lossRatio: Number(
-                            salvagedFirst.lossRatio.toFixed(
-                                LOSS_RATIO_LOG_DIGITS
-                            )
-                        ),
-                    });
-                    writeStored(salvagedFirst.text);
-                    return salvagedFirst.text;
-                }
-                return toFinalText(
-                    await attempt(describeFailure(failure, locale))
-                );
-            }
-
-            // 재시도 뒤에도 시점 표현이 남았다 — 한 번 더 부르지 않고 받아들인다.
-            if (failure.kind === 'stale_deixis') {
-                return acceptSoft(text, failure.tokens);
-            }
-
-            /**
-             * 재시도까지 실패했다. 통째로 버리기 전에 **어긋난 문장만 도려내** 본다.
-             *
-             * 위반은 대개 문장 한두 개에 몰려 있고(실측: 5건 전부 문장 1~3개 제거로
-             * 잔여 위반 0), 문단 일부를 잃는 것이 쉽게보기가 통째로 사라지는 것보다
-             * 낫다. 도려낸 결과는 `salvageByRemovingSentences`가 숫자 가드를 다시
-             * 통과시킨 것만 돌려준다(길이 하한은 없다 — `guardPlainText` 참고).
-             *
-             * 크기 접미사(`1,573.1B`)는 살리지 않는다 — 자릿수가 틀린 금액이라
-             * 문장을 빼는 것으로 고쳐지지 않고, 남겨 두면 10배 오류가 그대로 나간다.
-             *
-             * 조언 문구(`advice`)는 살린다 — 독자에게 행동을 권하는 문장 한두 개만
-             * 빼면 나머지는 멀쩡한 설명이다. 여기서 버리면 그 종목은 쉽게보기가 통째로
-             * 사라져 크롤러가 받는 본문이 전문 용어 원문으로 돌아간다.
-             */
-            if (
-                failure.kind !== 'unsupported_numbers' &&
-                failure.kind !== 'advice'
-            )
-                return null;
-            const salvaged = salvageByRemovingSentences(text, allowed);
-            if (salvaged !== null) {
-                console.info('[analysisPlain] salvaged by sentence removal', {
-                    symbol,
-                    locale,
-                    removedChars: text.length - salvaged.length,
-                });
-                writeStored(salvaged);
-            }
-            return salvaged;
-        };
-
-        /**
-         * 이 프로세스에서 이 좌표의 생성을 실제로 시작하는 쪽만 부른다. 실패(던짐)는 여기서
-         * 기록하고 `null`로 바꾼다 — 공유되는 `result`는 reject하지 않아야 대기자 전원이
-         * 같은 값을 받는다.
-         */
-        const generate = (): PlainFlight => {
-            const first = attempt();
-            const pipeline = first.then(async (r): Promise<string | null> => {
-                if (!isSoftFirstDraft(r)) return r;
-                // 한 번만 다시 쓰게 한다. 재시도가 아무것도 못 돌려주면(경성 위반 +
-                // 도려내기 실패, 프로바이더 오류) 첫 글을 받아들인다.
-                const retried = await attempt(r.retryHint).then(
-                    toFinalText,
-                    () => null
-                );
-                return retried ?? acceptSoft(r.soft, r.tokens);
-            });
-            return {
-                result: pipeline.catch((error: unknown) => {
-                    // 조용히 삼키지 않는다 — 키 오설정이나 모델 장애가 전 사용자에게
-                    // 쉽게보기를 없애는데 화면에는 아무 에러도 안 뜬다(원본이 나온다).
-                    console.error('[analysisPlain] failed', {
-                        symbol,
-                        locale,
-                        model: resolved.model,
-                        error,
-                    });
-                    return null;
-                }),
-                softDraft: first.then(
-                    r => (isSoftFirstDraft(r) ? r.soft : null),
-                    () => null
-                ),
-            };
+        // 행에 만료가 없다 — 키가 내용 주소(입력 해시)라 같은 입력은 같은 출력이고,
+        // 동시 생성이 겹쳐도 `ON CONFLICT DO NOTHING`이 흡수한다.
+        const context: PlainGenerationContext = {
+            symbol,
+            locale,
+            config: resolved,
+            entries,
+            facts,
+            allowed,
+            basePrompt,
+            writeStored: text => {
+                repository
+                    ?.insert(PLAIN_PROMPT_VERSION, locale, inputDigest, text)
+                    .catch(() => undefined);
+            },
         };
 
         const key: PlainGenerationKey = {
@@ -844,7 +251,9 @@ export async function rewriteToPlainLanguage(
             key,
             Date.now() + deadlineMs,
             waitUntil =>
-                coordinatePlainGeneration(key, repository, waitUntil, generate)
+                coordinatePlainGeneration(key, repository, waitUntil, () =>
+                    startPlainGeneration(context)
+                )
         );
         const result = await withDeadline(flight.result, deadlineMs);
         if (result !== null) return result;
