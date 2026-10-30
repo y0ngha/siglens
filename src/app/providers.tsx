@@ -18,16 +18,20 @@ import {
 } from '@/shared/lib/reloadOnVersionSkew';
 
 interface ReactQueryProviderProps {
-    children: ReactNode;
+    readonly children: ReactNode;
 }
 
+/**
+ * 탭 하나에 하나뿐인 React Query 클라이언트. 메인 호스트는 앱 크롬(`_components/SiteChrome.tsx`)이,
+ * ai 호스트는 `ai/[locale]/layout.tsx`가 감싼다.
+ *
+ * 쿼리·뮤테이션 대부분이 Server Action이라, 배포 뒤 옛 빌드에 남은 탭은 전부 "action not found"를
+ * 받는다. 로그아웃된 듯 반쯤 빈 페이지를 그리는 대신 한 번 새로고침한다(`reloadOnVersionSkew`).
+ */
 export function ReactQueryProvider({ children }: ReactQueryProviderProps) {
     const [queryClient] = useState(
         () =>
             new QueryClient({
-                // Most queries and mutations here are Server Actions. After a deploy a
-                // tab still on the old build gets "action not found" for all of them —
-                // reload once instead of rendering a logged-out, half-empty page.
                 queryCache: new QueryCache({
                     onError: (error, query) => {
                         if (skipsVersionSkewReload(query.meta)) return;
@@ -43,7 +47,7 @@ export function ReactQueryProvider({ children }: ReactQueryProviderProps) {
                     queries: {
                         staleTime: QUERY_STALE_TIME_MS,
                         gcTime: QUERY_GC_TIME_MS,
-                        // A retry cannot fix a build mismatch; it only doubles the failure.
+                        // 빌드 불일치는 재시도로 고쳐지지 않는다 — 실패만 두 배가 된다.
                         retry: (failureCount, error) =>
                             !isVersionSkewError(error) && failureCount < 1,
                         refetchOnWindowFocus: false,

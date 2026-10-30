@@ -71,7 +71,7 @@ function buildAboutJsonLd(
 }
 
 /**
- * `@id`가 홈 `Organization.founder`(`app/[locale]/(home)/page.tsx`)와 문자
+ * `@id`가 홈 `Organization.founder`(`app/[locale]/(home)/_lib/homeJsonLdNodes.ts`)와 문자
  * 그대로 같아야 두 노드를 같은 개체로 크롤러가 묶는다 — 둘 다
  * `OPERATOR_PERSON_JSON_LD_ID` 상수를 공유해 오타로 갈릴 여지를 없앤다.
  */
@@ -158,7 +158,7 @@ export default async function AboutRoute({
     });
 
     // countSkillFiles 오류는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
-    // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다((home)/page.tsx와 동일 근거).
+    // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다((home)/_lib/homeSkills.ts와 동일 근거).
     // FAQ는 화면 FaqSection과 FAQPage JSON-LD의 단일 소스 — 두 번 만들지 않는다.
     const [counts, faq] = await Promise.all([
         countSkillFiles().catch(e => {
