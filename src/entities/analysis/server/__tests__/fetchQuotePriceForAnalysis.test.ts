@@ -15,7 +15,7 @@ vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: () => ({}),
 }));
 
-import { fetchQuotePriceForAnalysis } from '@/entities/analysis/lib/fetchQuotePriceForAnalysis';
+import { fetchQuotePriceForAnalysis } from '@/entities/analysis/server/fetchQuotePriceForAnalysis';
 
 describe('fetchQuotePriceForAnalysis', () => {
     beforeEach(() => {

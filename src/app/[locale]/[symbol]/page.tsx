@@ -14,7 +14,7 @@ import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescr
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
-import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
+import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
 import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';

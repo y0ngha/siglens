@@ -23,7 +23,7 @@ import type { MockedFunction } from 'vitest';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import { runGatedAnalysis } from '@/entities/analysis/lib/runGatedAnalysis';
+import { runGatedAnalysis } from '@/entities/analysis/server/runGatedAnalysis';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser

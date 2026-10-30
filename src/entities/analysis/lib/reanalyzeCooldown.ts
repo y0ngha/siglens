@@ -17,6 +17,10 @@ import {
 } from '@y0ngha/siglens-core';
 import type { Timeframe } from '@y0ngha/siglens-core';
 
+/**
+ * 재분석 쿨다운을 획득한다. 저장소 장애는 기록하고 `{ ok: true }`로 통과시킨다 — 쿨다운
+ * 장애가 정상 재분석 요청을 막지 않게 한다.
+ */
 export async function tryAcquireReanalyzeCooldown(
     symbol: string,
     timeframe: Timeframe
@@ -29,6 +33,7 @@ export async function tryAcquireReanalyzeCooldown(
     }
 }
 
+/** 남은 재분석 쿨다운(ms). 조회 장애는 기록하고 `0`(쿨다운 없음)으로 본다. */
 export async function getReanalyzeCooldownMs(
     symbol: string,
     timeframe: Timeframe

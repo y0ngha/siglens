@@ -505,13 +505,13 @@
     },
     {
         "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",
-        "line": 27,
+        "line": 31,
         "reason": "developer-diagnostic",
         "text": "[ReanalyzeCooldown] acquire 실패:"
     },
     {
         "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",
-        "line": 39,
+        "line": 44,
         "reason": "developer-diagnostic",
         "text": "[ReanalyzeCooldown] pttl 조회 실패:"
     },
