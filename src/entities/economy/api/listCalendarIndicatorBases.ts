@@ -5,7 +5,7 @@ import { addUtcIsoDays } from '@/shared/lib/isoDate';
 
 import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 import { futureWindowEnd, pastWindowStart } from '../lib/calendarWindow';
-import type { CalendarCountry } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 import { normalizeIndicatorName } from '../lib/indicatorNameKo';
 
 /**

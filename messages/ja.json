@@ -2231,7 +2231,6 @@
                 "backtestMonth": "{v0}年{v1}月",
                 "bulletListAria": "{v0} {v1} 一覧",
                 "byokUnlock": "{v0} APIキーを登録するとこのモデルを利用できます。",
-                "calendarDayAria": "{v0}月{v1}日、イベント{v2}件",
                 "chartAria": "{v0} {v1} ローソク足チャート",
                 "contact": "お問い合わせ",
                 "filterAll": "すべて",
@@ -4013,6 +4012,7 @@
                 "dc712b": "{v0}{v1}日 ({v2})",
                 "f9d9dc": "今後の{v0}経済発表予定はまだありません。",
                 "forecastPart": "予想 {v0}",
+                "noVisibleEvents": "選択した重要度の予定はありません。",
                 "pastCollapse": "過去の予定を折りたたむ",
                 "pastExpand": "過去の予定を表示",
                 "previousPart": "前回 {v0}"
@@ -4042,11 +4042,13 @@
                 "a0f763": "マクロ経済ブリーフィング読み込み中",
                 "b5f759": "マクロ経済ブリーフィング案内"
             },
-            "dayCellAriaImpacts": "、重要度 {v0}",
+            "dayCellAria": "{v0}月{v1}日、イベント{v2}件",
+            "dayCellAriaWithImpacts": "{v0}月{v1}日、イベント{v2}件、重要度 {v3}",
             "krMacroFacts": {
                 "cpiAndUnemployment": "直近の消費者物価上昇率は{v0}%、失業率は{v1}%です。",
                 "cpiChange": "消費者物価上昇率は前回発表から{v0}%ポイント動きました。",
                 "cpiOnly": "直近の消費者物価上昇率は{v0}%です。",
+                "cpiUnchanged": "消費者物価上昇率は前回発表から変わりません。",
                 "ratesOnly": "現在の韓国銀行の基準金利は{v0}%です。",
                 "ratesWithKtb": "現在の韓国銀行の基準金利は{v0}%、10年国債の落札利回りは{v1}%です。",
                 "unemploymentOnly": "直近の失業率は{v0}%です。"
@@ -4068,11 +4070,15 @@
         "extended-hours": {
             "basisAfter": "本日終値比",
             "basisPre": "前日終値比",
+            "flat": "横ばい",
             "sessionAfter": "アフターマーケット",
             "sessionPre": "プレマーケット",
             "tradedAt": "{time} ET 約定"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0}（{v1}から）"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "需給",
                 "groupNameTrend": "トレンド",
@@ -4383,14 +4389,13 @@
                 "158954": "AI分析スキル",
                 "0d2c24": "折りたたむ",
                 "7e6540": "信頼度スコアの説明",
-                "c266ba": "{v0}%は普通、{v1}%以上は高めです。",
+                "allGuides": "ガイドをすべて見る",
                 "c78b79": "スキルカテゴリタブ",
+                "confidenceTiers": "{low}%未満は低め、{low}%以上{high}%未満は普通、{high}%以上は高めです。",
                 "e0f5c5": "低いスコアも分析に補助的に反映されます。",
-                "e20b1b": "{v0}%未満は低め、{v1}",
                 "ebff92": "分析手法の信頼度スコアです。",
                 "guideLink": "ガイドを見る",
-                "guideLinkAria": "{name}のガイドを見る",
-                "allGuides": "ガイドをすべて見る"
+                "guideLinkAria": "{name}のガイドを見る"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS分析規模"

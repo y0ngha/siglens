@@ -130,3 +130,26 @@ describe('MacroBriefing', () => {
         expect(screen.queryByText(/생성 시각:/)).not.toBeInTheDocument();
     });
 });
+
+describe('MacroBriefing — 하이라이트 key', () => {
+    it('같은 문장의 하이라이트가 둘이어도 key가 겹치지 않는다', () => {
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockUseBriefing.mockReturnValue({
+            input: {
+                status: 'cached',
+                briefing: {
+                    ...BRIEFING,
+                    highlights: ['같은 문장', '같은 문장'],
+                },
+                generatedAt: '2026-06-17T00:00:00.000Z',
+            },
+            refetch: noop,
+        });
+        render(<MacroBriefing peekSeed={null} />);
+        expect(screen.getAllByText('같은 문장')).toHaveLength(2);
+        expect(
+            errors.mock.calls.some(([msg]) => String(msg).includes('same key'))
+        ).toBe(false);
+        errors.mockRestore();
+    });
+});
