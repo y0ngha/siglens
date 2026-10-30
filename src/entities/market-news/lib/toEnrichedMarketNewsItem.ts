@@ -6,16 +6,9 @@ import {
 import type { MarketNewsRow } from '../model';
 
 /**
- * Picks only the fields that `isEnrichedRow` / `toEnrichedNewsItem` inspect.
- * Explicit mapping surfaces any future shape drift between the two entities
- * as a compile-time TS error rather than a silent runtime mismatch.
- *
- * Shared by `submitMarketNewsDigestAction` (write path) and
- * `peekMarketNewsDigestStatic` (SSR read path) — both must build the exact
- * same `EnrichedNewsItem[]` from a `MarketNewsRow[]` for the digest cache
- * key to line up (core's `MarketNewsDigestCacheKeyOptions.news` folds into
- * the key). A single implementation makes that parity structural instead of
- * something both call sites have to remember to keep in sync.
+ * `isEnrichedRow` / `toEnrichedNewsItem`이 검사하는 필드만 골라 담는다. 명시적 매핑이라
+ * 두 엔티티 사이의 형상 어긋남이 조용한 런타임 불일치가 아니라 컴파일 타임 TS 오류로
+ * 드러난다.
  */
 function toEnrichedRowShape(
     row: MarketNewsRow
@@ -38,7 +31,15 @@ function toEnrichedRowShape(
     };
 }
 
-/** Maps a `MarketNewsRow` to core's `EnrichedNewsItem`, or `null` if not yet analyzed. */
+/**
+ * `MarketNewsRow`를 core의 `EnrichedNewsItem`으로 바꾼다. 아직 보강되지 않았으면 `null`.
+ *
+ * 쓰기 경로(`submitMarketNewsDigestAction`)와 SSR peek(`peekMarketNewsDigestStatic`)가
+ * `selectDigestNews`를 거쳐 이 함수를 공유한다 — 두 경로가 `MarketNewsRow[]`에서 정확히 같은
+ * `EnrichedNewsItem[]`을 만들어야 다이제스트 캐시 키가 맞는다(core
+ * `MarketNewsDigestCacheKeyOptions.news`가 키에 접힌다). 구현을 하나로 두어 이 일치를
+ * 호출부의 기억이 아니라 구조로 보장한다.
+ */
 export function toEnrichedMarketNewsItem(
     row: MarketNewsRow
 ): EnrichedNewsItem | null {

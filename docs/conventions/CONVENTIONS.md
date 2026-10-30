@@ -951,6 +951,18 @@ complete. Show it as in-progress or leave it out.
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
 
+<a id="CS-26"></a>
+
+#### CS-26 — Removing a cast or assertion keeps the accepted values identical
+
+An `as` cast, `!` or loose parser hides a runtime decision (what `undefined`, `null`, `NaN`, or a wrong type does). When
+a refactor replaces it with a typed helper, compare every input class against the old behavior: throw vs skip, `null`
+becoming `Invalid Date` vs epoch, `NaN` propagated vs filtered. Keep the old result, or change it deliberately and
+say so in the PR and pin it with a test.
+
+- ❌ Swapping `new Date(row.at as string)` for a helper that skips `undefined` and turns `null` into `Invalid Date`.
+- ✅ A test table of `undefined`, `null`, `NaN` and a valid value run against old and new code before the cast goes.
+
 ---
 
 ## Layer Dependency Rules

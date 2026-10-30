@@ -1,10 +1,13 @@
-import { toNaverNewsItem } from '@/entities/news-article/lib/naverNewsClient';
 import { searchNaverNews } from '@/shared/api/naver/naverSearch';
-import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
+import {
+    CATEGORY_CONFIG,
+    type NewsFeedCategoryId,
+} from '../lib/categoryConfig';
 import type {
     MarketNewsClientPort,
     MarketNewsItem,
-} from './marketNewsClientPort';
+} from '../lib/marketNewsClientPort';
+import { mergeNaverNewsBatches } from '../lib/mergeNaverNewsBatches';
 
 const LOG_TAG = '[naverMarketNewsClient]';
 
@@ -54,7 +57,7 @@ export class NaverMarketNewsClient implements MarketNewsClientPort {
          * noindex로 굳는다 — 로그는 전부 `200 OK`라 아무 신호가 없다.
          *
          * 그래서 첫 질의(가장 넓은 키워드)를 최신순으로 한 번 더 돌려 바닥을 깐다.
-         * 호출 1회가 늘고, 겹치는 기사는 아래 dedupe가 걷어낸다.
+         * 호출 1회가 늘고, 겹치는 기사는 `mergeNaverNewsBatches`가 걷어낸다.
          */
         const primaryQuery = cfg.naverQueries[0];
         const batches = await Promise.all([
@@ -73,21 +76,6 @@ export class NaverMarketNewsClient implements MarketNewsClientPort {
                   ]),
         ]);
 
-        // URL 해시(id) 기준 중복 제거 — 같은 기사가 `코스피`·`국내 증시` 양쪽에
-        // 잡히는 것이 정상이다. Map은 삽입 순서를 지키므로 앞선 질의가 이긴다.
-        const byId = new Map<string, MarketNewsItem>();
-        for (const raw of batches.flat()) {
-            const item = toNaverNewsItem(raw, cfg.sentinel);
-            if (item === null) continue;
-            if (new Date(item.publishedAt) < cutoff) continue;
-            if (byId.has(item.id)) continue;
-            // 네이버는 기사에 붙은 종목코드를 주지 않는다. 추정으로 채우면 무관한
-            // 종목 페이지에 기사가 걸리므로 비워 둔다.
-            byId.set(item.id, { ...item, tickers: [] });
-        }
-
-        return [...byId.values()].toSorted((a, b) =>
-            b.publishedAt.localeCompare(a.publishedAt)
-        );
+        return mergeNaverNewsBatches(batches, cfg.sentinel, cutoff);
     }
 }

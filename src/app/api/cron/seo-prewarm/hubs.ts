@@ -35,10 +35,10 @@ import {
 import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import { writeLatestMarketNewsDigest } from '@/entities/market-news/api/marketNewsDigestCooldown';
 import {
-    getMarketNewsList,
     isCronIngestedRecently,
     markCronIngested,
-} from '@/entities/market-news/api/marketNewsRepository';
+} from '@/entities/market-news/api/marketNewsRefreshFlags';
+import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
 import { ingestMarketNewsCategory } from '@/entities/market-news/api/ingestMarketNewsCategory';
 import {
     CATEGORY_CONFIG,

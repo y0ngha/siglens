@@ -1,5 +1,5 @@
 import { searchNaverNews } from '@/shared/api/naver/naverSearch';
-import { NaverMarketNewsClient } from '../lib/naverMarketNewsClient';
+import { NaverMarketNewsClient } from '../api/naverMarketNewsClient';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 
 vi.mock('@/shared/api/naver/naverSearch', async () => {
