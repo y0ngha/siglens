@@ -8,7 +8,7 @@ import {
     ECONOMY_CATEGORY_LABEL_KEY,
     ECONOMY_INDICATOR_LABEL_KEY,
 } from '@/shared/config/economyLabelKey';
-import type { KrIndicatorCard } from '@/entities/economy/model';
+import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
     type EconomyCategoryKey,

@@ -1,9 +1,16 @@
-const mocks = vi.hoisted(() => ({
-    exclude: vi.fn(),
-    include: vi.fn(),
-    refresh: vi.fn(),
-    showToast: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+    const refresh = vi.fn();
+    const showToast = vi.fn();
+    return {
+        exclude: vi.fn(),
+        include: vi.fn(),
+        refresh,
+        showToast,
+        // 실제 훅처럼 렌더마다 같은 객체를 돌려준다.
+        router: { refresh },
+        toast: { showToast, dismiss: vi.fn() },
+    };
+});
 
 vi.mock('@/entities/email-report/actions/excludeReportSymbolAction', () => ({
     excludeReportSymbolAction: mocks.exclude,
@@ -12,10 +19,10 @@ vi.mock('@/entities/email-report/actions/includeReportSymbolAction', () => ({
     includeReportSymbolAction: mocks.include,
 }));
 vi.mock('next/navigation', () => ({
-    useRouter: () => ({ refresh: mocks.refresh }),
+    useRouter: () => mocks.router,
 }));
 vi.mock('@/shared/ui/ToastProvider', () => ({
-    useToast: () => ({ showToast: mocks.showToast, dismiss: vi.fn() }),
+    useToast: () => mocks.toast,
 }));
 
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -159,5 +166,14 @@ describe('useReportSymbolToggle', () => {
             await act(async () => resolve({ status: 'ok' }));
             await waitFor(() => expect(result.current.pending).toBe(false));
         });
+    });
+
+    it('리렌더해도 toggle 참조가 그대로다', () => {
+        const { result, rerender } = renderHook(() =>
+            useReportSymbolToggle('AAPL', 'exclude', 'Apple')
+        );
+        const first = result.current.toggle;
+        rerender();
+        expect(result.current.toggle).toBe(first);
     });
 });

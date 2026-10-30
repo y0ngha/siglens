@@ -1,5 +1,5 @@
 /**
- * Pure pieces of the `/about` replays (`replayPlayer.ts`): the scenario shape,
+ * Pure pieces of the `/about` replays (`widgets/replay`): the scenario shape,
  * the tiny markup the body lines carry in `messages/*.json`, and the helpers
  * the player uses to stream a line character by character.
  *

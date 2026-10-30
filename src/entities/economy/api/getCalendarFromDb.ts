@@ -22,8 +22,21 @@ import {
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
 
+type CalendarReader = (
+    anchorEt: string
+) => Promise<EconomicCalendarEventWithAnalysis[]>;
+
 /**
- * `anchorEt`를 인자로 받아 Next.js ISR 캐시에 올리는 모듈-레벨 래퍼.
+ * 국가(와 사이드카 켜짐 시 로케일)별로 **별도의** `unstable_cache` 래퍼를 보관한다.
+ *
+ * 하나의 래퍼에 두 국가 태그를 모두 선언하면 어느 쪽 인제스션이든 두 엔트리를 다
+ * 날려, 태그를 가른 의미가 없어진다(`tags`는 호출 인자가 아니라 래퍼 생성 시 고정된다).
+ * 래퍼는 키당 하나씩만 만들어 모듈 수명 동안 재사용한다.
+ */
+const calendarReaders = new Map<string, CalendarReader>();
+
+/**
+ * `anchorEt`를 인자로 받아 Next.js ISR 캐시에 올리는 래퍼를 만든다(이미 있으면 재사용).
  * `unstable_cache`는 함수 인자를 자동으로 캐시 키에 포함하므로 날짜가
  * 바뀌면 자연히 새 윈도로 리프레시된다.
  *
@@ -33,28 +46,15 @@ import type { CalendarCountry } from '../model';
  * revalidate=24h + 국가별 `economyCalendarCacheTag(country)` 태그로 `ensureEconomicCalendarAction`이
  * on-demand 무효화 가능. cookies/headers/connection 미사용.
  *
- * `listInRange`가 분석 pass가 채운 AI 분석 컬럼(sentiment/summaryKo/interpretationKo/analyzedAt)을
- * 함께 반환하므로 반환 타입이 `EconomicCalendarEventWithAnalysis[]`로 확장됐다.
- */
-/**
- * 국가별로 **별도의** `unstable_cache` 래퍼를 만든다.
- *
- * 하나의 래퍼에 두 국가 태그를 모두 선언하면 어느 쪽 인제스션이든 두 엔트리를 다
- * 날려, 태그를 가른 의미가 없어진다(`tags`는 호출 인자가 아니라 래퍼 생성 시 고정된다).
- * 래퍼는 국가당 하나씩만 만들어 모듈 수명 동안 재사용한다.
- */
-const calendarReaders = new Map<
-    string,
-    (anchorEt: string) => Promise<EconomicCalendarEventWithAnalysis[]>
->();
-
-/**
  * 로케일은 **캐시 키 조각으로만** 넘긴다 — `unstable_cache` 인자로 넘기면
  * 사이드카가 꺼져 있어도 로케일 수만큼 키가 갈려 ISR write가 4배가 된다.
  * `contentLocaleKeyPart`가 꺼짐 상태에서 빈 배열을 주므로, 스위치를 켤 때만
  * 그 비용을 낸다.
  */
-function calendarReaderFor(country: CalendarCountry, locale: Locale) {
+function calendarReaderFor(
+    country: CalendarCountry,
+    locale: Locale
+): CalendarReader {
     const keyPart = contentLocaleKeyPart(locale);
     const mapKey = [country, ...keyPart].join(':');
     const existing = calendarReaders.get(mapKey);
@@ -104,8 +104,8 @@ async function localizeCalendarRows(
         rows,
         locale,
         // PK를 다시 계산한다 — `listInRange`가 `id`를 select하지 않기 때문이다.
-        // 넣으면 이벤트당 64자 hex가 RSC 페이로드에 실린다(이 레포는 그 비용을
-        // 실제로 잰다 — `docs/architecture/`). 해시는 결정론적이라 재계산이 안전하다.
+        // 넣으면 이벤트당 64자 hex가 RSC 페이로드에 실린다. 해시는 결정론적이라
+        // 재계산이 안전하다.
         id: row => economicCalendarId(country, row.date, row.event),
         fields: {
             summary: {

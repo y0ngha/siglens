@@ -287,6 +287,16 @@ and states it as fact.
 - ✅ The catch returns `{ unavailable: true }` (or the field is flagged), and the tool result says the data could not
   be loaded.
 
+<a id="SA-20"></a>
+
+#### SA-20 — Validators check semantic validity, not only shape
+
+A format regex proves the shape, not that the value exists. Validate the meaning too (a real calendar date, an email
+that parses, an error code that something actually emits) before acting on it or showing a success state.
+
+- ❌ `/^\d{4}-\d{2}-\d{2}$/.test(date)` accepts `2026-13-45`.
+- ✅ The pattern check is followed by a calendar check (round-trip the parsed date) before the value is used.
+
 ---
 
 ## Concurrency, Batching & Background Work

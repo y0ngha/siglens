@@ -23,7 +23,7 @@ import { zonedDate } from '@/shared/lib/marketSessionDate';
 /** 과거 윈도 일수 — 최소 2주(spec). */
 export const PAST_WINDOW_DAYS = 14;
 
-/** 미래 윈도 일수 — #610 그리드의 다가오는 ~2주와 정렬. */
+/** 미래 윈도 일수 — 이벤트 그리드의 다가오는 ~2주와 정렬. */
 export const FUTURE_WINDOW_DAYS = 14;
 
 const ET_TIME_ZONE = 'America/New_York';

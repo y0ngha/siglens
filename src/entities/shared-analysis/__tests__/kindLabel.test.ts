@@ -1,16 +1,6 @@
 import { kindLabelKey } from '../lib/kindLabel';
 import type { ShareableKind } from '@/shared/db/constants';
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
-
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /**
  * 예전에는 이 함수가 한국어 문자열을 돌려줬고 테스트도 그 문자열을 고정했다 —
@@ -36,7 +26,7 @@ describe('kindLabelKey', () => {
         expect(key.startsWith('shareKind.')).toBe(true);
 
         const sub = key.slice('shareKind.'.length);
-        for (const [locale, catalog] of Object.entries(CATALOGS)) {
+        for (const [locale, catalog] of Object.entries(MESSAGE_CATALOGS)) {
             const group = (
                 catalog.shared.enumLabel as unknown as Record<
                     string,

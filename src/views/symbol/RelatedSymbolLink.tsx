@@ -17,6 +17,7 @@ const TAB_KEEPING_SEGMENTS: ReadonlySet<string> = new Set([
 interface RelatedSymbolLinkProps {
     /** 피어의 canonical 심볼(`NVDA`, `005930.KS`). */
     symbol: string;
+    /** 칩 스타일. 서버 컴포넌트(`RelatedSymbols`)가 정한다. */
     className: string;
     children: ReactNode;
 }
@@ -26,7 +27,7 @@ interface RelatedSymbolLinkProps {
  * **클라이언트 leaf**다. 서버 렌더 결과(앵커 마크업·텍스트)는 그대로 SSR HTML에 남고, 이
  * 파일이 하는 일은 `href`를 현재 탭에 맞추는 것뿐이다.
  *
- * ## 왜 탭을 유지하는가 (2026-10-05 운영 크롤)
+ * ## 왜 탭을 유지하는가
  *
  * 칩이 항상 `/{peer}`(차트)로만 나가면 뉴스·공포탐욕 탭은 **외부 유입 링크가 0**이다 —
  * 두 탭은 색인되는데도 크롤러가 종목 간 이동으로는 닿지 못한다. 뉴스 탭의 칩은 `/{peer}/news`,

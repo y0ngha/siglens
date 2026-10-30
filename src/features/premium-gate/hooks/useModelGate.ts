@@ -18,10 +18,14 @@ import {
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { resolveGateAccess } from '@/shared/lib/modelAccess';
+import { resolveGateMode, type GatedModelAccess } from '../lib/resolveGateMode';
 
+/** 열려 있는 게이트 모달의 내용. */
 export interface ModelGateState {
     mode: GateMode;
     provider: LlmProvider;
+    /** 고른 모델의 등급. auth 모달이 API 키 안내를 붙일지 정한다. */
+    access: GatedModelAccess;
 }
 
 interface UseModelGateOptions {
@@ -44,29 +48,26 @@ interface UseModelGateReturn {
      *   caller is pro tier (server covers the cost)
      */
     handleModelChange: (model: ModelId) => void;
-    /**
-     * Programmatically open a gate, e.g. when the server returns
-     * `user_api_key_required` after a chat send. The gate UI state is owned by
-     * this hook so consumers should not maintain their own copy.
-     */
-    showGate: (state: ModelGateState) => void;
 }
 
+/**
+ * 모델 선택기의 변경 핸들러에 게이트를 씌운다. 통과하면 `onAllow`를 부르고, 막히면
+ * 게이트 모달 상태를 연다. 판정은 `resolveGateMode`가 하고, 이 훅은 회원·등록 키 조회와
+ * 모달 상태, 퍼널 기록만 소유한다.
+ */
 export function useModelGate({
     onAllow,
 }: UseModelGateOptions): UseModelGateReturn {
     const [gateModal, setGateModal] = useState<ModelGateState | null>(null);
     const isHydrated = useHydrated();
 
-    // 헤더·넛지와 같은 `currentUser` 쿼리 정의를 쓴다. 예전엔 이 훅만 같은 키를
-    // 다른 staleTime·gcTime으로 따로 정의해, 같은 캐시 항목의 재조회 기준이
-    // 옵저버마다 달랐다.
+    // 헤더·넛지와 같은 `currentUser` 쿼리 정의를 써서 재조회 기준을 맞춘다.
     const { data: currentUser } = useCurrentUser();
     const hasAuthHint = useAuthHint();
 
     // 등록한 API 키는 회원에게만 있다. 게스트에게는 요청하지 않는다 — Server Action은
     // 한 번에 하나씩만 나가서, 답이 항상 빈 목록인 이 요청도 뒤에 줄 선 요청을 한 번의
-    // 왕복(운영 실측 ~0.3s)만큼 늦춘다. 힌트 쿠키가 있으면 지금처럼 즉시, 없으면
+    // 왕복(운영 실측 ~0.3s)만큼 늦춘다. 힌트 쿠키가 있으면 즉시, 없으면
     // `currentUser`가 회원으로 확정된 뒤에 요청한다.
     const { data: registeredProviders = [] } = useQuery({
         queryKey: QUERY_KEYS.registeredProviders(),
@@ -79,38 +80,32 @@ export function useModelGate({
         // 알 수 없는 ID는 가장 제한적인 등급으로 접는다 — throw하면 핸들러가
         // 죽어 모델 선택 자체가 먹통이 된다. `resolveGateAccess` JSDoc 참고.
         const access = resolveGateAccess(model);
-        if (access !== 'free') {
-            const requiredProvider = getProviderForModel(model);
-            if (!currentUser) {
-                // 잠긴 모델 선택 = 비회원이 게이트를 여는 클릭. 모달 노출은 모달이 따로 센다.
-                // 아래 byok 분기는 회원 전용 API 키 안내라 기록하지 않는다.
-                trackFunnelEvent('gate_clicked', { gate: 'model' });
-                setGateModal({ mode: 'auth', provider: requiredProvider });
-                return;
-            }
-            // member 모델은 로그인만으로 열린다 — 서버 키가 요금을 낸다.
-            // byok 게이트는 byok 등급에만 적용한다.
-            if (access === 'byok' && currentUser.tier !== 'pro') {
-                if (
-                    !registeredProviders.some(
-                        p => p.provider === requiredProvider
-                    )
-                ) {
-                    setGateModal({ mode: 'byok', provider: requiredProvider });
-                    return;
-                }
-            }
+        if (access === 'free') {
+            onAllow(model);
+            return;
         }
-        onAllow(model);
+        const provider = getProviderForModel(model);
+        const mode = resolveGateMode({
+            access,
+            provider,
+            user: currentUser,
+            registeredProviders: registeredProviders.map(p => p.provider),
+        });
+        if (mode === null) {
+            onAllow(model);
+            return;
+        }
+        // 잠긴 모델 선택 = 비회원이 게이트를 여는 클릭. 모달 노출은 모달이 따로 센다.
+        // byok 게이트는 회원 전용 API 키 안내라 기록하지 않는다.
+        if (mode === 'auth') {
+            trackFunnelEvent('gate_clicked', { gate: 'model' });
+        }
+        setGateModal({ mode, provider, access });
     };
 
     const dismissGate = (): void => {
         setGateModal(null);
     };
 
-    const showGate = (state: ModelGateState): void => {
-        setGateModal(state);
-    };
-
-    return { gateModal, dismissGate, handleModelChange, showGate };
+    return { gateModal, dismissGate, handleModelChange };
 }

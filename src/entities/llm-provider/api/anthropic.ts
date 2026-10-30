@@ -1,46 +1,104 @@
 import 'server-only';
-import {
-    toProviderTurns,
-    findSpecByApiModelId,
-    resolveMaxOutputTokens,
-    toSdkTransportOptions,
-    createCallDeadline,
-    runWithCallDeadline,
-} from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
-import type { AiContents } from '@y0ngha/siglens-core';
+import type {
+    AiContents,
+    ClaudeAdaptiveReasoningConfig,
+} from '@y0ngha/siglens-core';
 import {
     isClaudeAdaptiveModelSpec,
     resolveReasoningConfig,
 } from '@y0ngha/siglens-core';
+import {
+    findSpecByApiModelId,
+    resolveMaxOutputTokens,
+    toProviderTurns,
+    toSdkTransportOptions,
+} from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
-import { CHAT_JOB_ID, extractClaudeUsage, logUsage } from '../lib/usage';
+import { CHAT_JOB_ID, extractClaudeUsage } from '../lib/usage';
+import {
+    createCallDeadline,
+    runWithCallDeadline,
+    toDeadlineRequestOptions,
+} from './callDeadline';
+import { logUsage } from './logUsage';
 
 /**
- * Ephemeral prompt-cache breakpoint. Reused for the stable system prefix and the
- * conversation-history breakpoint so repeated chat turns reuse the cached prefix
- * instead of re-billing it as fresh input tokens.
+ * 임시(ephemeral) 프롬프트 캐시 breakpoint. 안정적인 system 접두와 대화 이력 breakpoint에
+ * 같이 써서, 반복되는 챗 턴이 캐시된 접두를 재사용하고 신규 입력 토큰으로 다시 과금되지 않게 한다.
  */
 const EPHEMERAL_CACHE_CONTROL = { type: 'ephemeral' } as const;
 
+type ThinkingParams = Pick<
+    Anthropic.MessageStreamParams,
+    'thinking' | 'output_config'
+>;
+
 function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
-    // Safe cast: ProviderTurn is structurally compatible with MessageParam (role literals + string content).
-    return toProviderTurns(contents) as Anthropic.MessageParam[];
+    return toProviderTurns(contents);
 }
 
 /**
- * Marks the last *history* message (second-to-last overall) with an ephemeral
- * cache breakpoint, so the conversation prefix up to the previous turn is cached
- * and only the new (final) user turn is uncached.
+ * 추론 설정을 요청 필드로 옮긴다. 설정이 없으면(budget API 모델) 아무것도 보내지 않는다 —
+ * budget API 모델에도 `spec.temperature`를 보내지 않는다. API 버전 2026-10-21(SDK 1.x)은
+ * sampling 파라미터를 400으로 거부한다. 챗은 tool_choice를 쓰지 않는다.
+ */
+function toThinkingParams(
+    config: ClaudeAdaptiveReasoningConfig | undefined
+): ThinkingParams {
+    if (config === undefined) return {};
+    switch (config.mode) {
+        case 'between_tools':
+            // Sonnet 5.5의 추론 OFF — `disabled`는 400이다. `display`·`output_config.effort xhigh`와
+            // 함께 보낼 수 없으므로 thinking 하나만 보낸다(2026-10-15 실측으로 API가 이 형태를 받음).
+            return { thinking: { type: 'between_tools' } };
+        case 'disabled':
+            return { thinking: { type: 'disabled' } };
+        case 'adaptive':
+            return {
+                thinking: { type: 'adaptive', display: 'omitted' },
+                output_config: { effort: config.effort },
+            };
+        default: {
+            const exhausted: never = config;
+            throw new Error(
+                `[anthropic] Unhandled reasoning mode: ${JSON.stringify(exhausted)}`
+            );
+        }
+    }
+}
+
+/** system 지시문을 캐시 breakpoint가 달린 text 블록으로 싣는다. 지시문이 없으면 필드를 뺀다. */
+function toSystemParam(
+    systemInstruction: string | undefined
+): Pick<Anthropic.MessageStreamParams, 'system'> {
+    if (systemInstruction === undefined) return {};
+    return {
+        system: [
+            {
+                type: 'text',
+                text: systemInstruction,
+                cache_control: EPHEMERAL_CACHE_CONTROL,
+            },
+        ],
+    };
+}
+
+function isTextBlock(
+    block: Anthropic.ContentBlock
+): block is Anthropic.TextBlock {
+    return block.type === 'text';
+}
+
+/**
+ * 마지막 *이력* 메시지(전체 기준 뒤에서 두 번째)에 ephemeral 캐시 breakpoint를 달아,
+ * 직전 턴까지의 대화 접두는 캐시되고 새(마지막) user 턴만 비캐시가 되게 한다.
  *
- * Returns the original `messages` unchanged (same reference) when there is no
- * history yet (fewer than 2 messages) or the second-to-last message already has
- * block content; otherwise returns a new array and never mutates the caller's
- * messages. Anthropic silently ignores prefixes below the model's min-cacheable
- * size, so no token counting is needed.
+ * 이력이 아직 없거나(메시지 2개 미만) 뒤에서 두 번째가 이미 블록 content면 원본 `messages`를
+ * 같은 참조로 돌려주고, 아니면 새 배열을 돌려주며 호출자의 메시지는 바꾸지 않는다.
+ * Anthropic은 모델의 최소 캐시 크기 미만 접두를 조용히 무시하므로 토큰을 셀 필요가 없다.
  *
- * Exported for unit-testing the already-block-content branch, which
- * `toAnthropicMessages` never produces in normal flow.
+ * `toAnthropicMessages`가 평소엔 만들지 않는 "이미 블록 content" 분기를 단위 테스트하려고 export한다.
  */
 export function withHistoryCacheBreakpoint(
     messages: Anthropic.MessageParam[]
@@ -72,6 +130,12 @@ export function withHistoryCacheBreakpoint(
     );
 }
 
+/**
+ * Anthropic Messages API로 챗 한 번을 부르고 text 블록을 돌려준다.
+ * 스트리밍으로 받아 `finalMessage()`로 모으며, `limits.timeoutMs`는 본문 읽기까지 묶는다.
+ * 챗은 추론 토글이 없다 — 스펙의 기본 상태를 따르므로 Free·Member 모델은 기본 OFF라
+ * 서버 키로 도는 챗이 사고 토큰을 물지 않는다.
+ */
 export async function callAnthropicChat({
     apiKey,
     model,
@@ -84,20 +148,16 @@ export async function callAnthropicChat({
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
     }
-    // 챗은 추론 토글이 없다 — 스펙의 기본 상태를 그대로 따른다. Free·Member 모델은
-    // 기본 OFF라 서버 키로 도는 챗이 사고 토큰을 물지 않는다.
-    const adaptiveThinking = isClaudeAdaptiveModelSpec(spec);
-    const adaptiveConfig = adaptiveThinking
+    const adaptiveConfig = isClaudeAdaptiveModelSpec(spec)
         ? resolveReasoningConfig(spec.reasoning, undefined)
         : undefined;
     const maxTokens = resolveMaxOutputTokens(spec.maxOutputTokens, limits);
 
     const startedAt = Date.now();
     const client = new Anthropic({ apiKey, ...toSdkTransportOptions(limits) });
-    // Two prompt-cache breakpoints keep repeated chat turns cheap: the stable
-    // system prefix (persona + analysis context + few-shot) and the conversation
-    // prefix up to the previous turn are cached, so each new turn only bills the
-    // latest user message as fresh input tokens.
+    // 프롬프트 캐시 breakpoint 두 개로 반복 챗 턴을 싸게 유지한다: 안정적인 system 접두(페르소나 +
+    // 분석 컨텍스트 + few-shot)와 직전 턴까지의 대화 접두가 캐시되어, 새 턴은 마지막 user 메시지만
+    // 신규 입력 토큰으로 과금된다.
     const messages = withHistoryCacheBreakpoint(toAnthropicMessages(contents));
     // 스트림 본문 읽기까지 `limits.timeoutMs`로 묶는다 — SDK timeout은 헤더 도착까지만 잰다.
     const deadline = createCallDeadline(limits?.timeoutMs);
@@ -109,44 +169,10 @@ export async function callAnthropicChat({
                     model,
                     max_tokens: maxTokens,
                     messages,
-                    ...(systemInstruction !== undefined
-                        ? {
-                              system: [
-                                  {
-                                      type: 'text',
-                                      text: systemInstruction,
-                                      cache_control: EPHEMERAL_CACHE_CONTROL,
-                                  },
-                              ],
-                          }
-                        : {}),
-                    ...(adaptiveConfig !== undefined
-                        ? adaptiveConfig.mode === 'between_tools'
-                            ? {
-                                  // Sonnet 5.5의 추론 OFF — `disabled`는 400이다.
-                                  // `display`·`output_config.effort xhigh`와 함께 보낼 수
-                                  // 없으므로 thinking 하나만 보낸다(2026-10-15 실측으로
-                                  // API가 이 형태를 받음). 챗은 tool_choice를 쓰지 않는다.
-                                  thinking: { type: 'between_tools' as const },
-                              }
-                            : adaptiveConfig.mode === 'disabled'
-                              ? { thinking: { type: 'disabled' as const } }
-                              : {
-                                    thinking: {
-                                        type: 'adaptive' as const,
-                                        display: 'omitted' as const,
-                                    },
-                                    output_config: {
-                                        effort: adaptiveConfig.effort,
-                                    },
-                                }
-                        : // budget API 모델에도 `spec.temperature`를 보내지 않는다 —
-                          // API 버전 2026-10-21(SDK 1.x)은 sampling 파라미터를 400으로 거부한다.
-                          {}),
+                    ...toSystemParam(systemInstruction),
+                    ...toThinkingParams(adaptiveConfig),
                 },
-                deadline.signal !== undefined
-                    ? { signal: deadline.signal }
-                    : undefined
+                toDeadlineRequestOptions(deadline)
             )
             .finalMessage()
     );
@@ -158,9 +184,7 @@ export async function callAnthropicChat({
         ...extractClaudeUsage(response.usage),
     });
 
-    const block = response.content.find(b => b.type === 'text') as
-        | Anthropic.TextBlock
-        | undefined;
+    const block = response.content.find(isTextBlock);
     if (!block) {
         throw new Error(
             `Anthropic returned no text content (stop_reason: ${response.stop_reason})`

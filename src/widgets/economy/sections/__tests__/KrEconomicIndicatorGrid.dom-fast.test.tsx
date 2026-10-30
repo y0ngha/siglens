@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { KrEconomicIndicatorGrid } from '../KrEconomicIndicatorGrid';
-import type { KrIndicatorCard } from '@/entities/economy/model';
+import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 
 function meta(event: string) {

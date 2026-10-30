@@ -2,7 +2,6 @@ import type {
     EconomicCalendarEvent,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
-import type { KrEconomyIndicatorMeta } from '@/shared/config/economyIndicatorsKr';
 
 /**
  * 표시 계층용 캘린더 이벤트 + (선택) AI 분석. 인제스션이 채운 `EconomicCalendarEvent`에
@@ -70,24 +69,16 @@ export function resolveCalendarInterpretation(
  */
 export type CalendarCountry = 'US' | 'KR';
 
-export interface KrIndicatorCard {
-    meta: KrEconomyIndicatorMeta;
-    /** 가장 최근 발표값. */
-    latest: number;
-    /**
-     * 발표일 `YYYY-MM-DD` — **KST 달력일**.
-     *
-     * DB의 `date_et`는 FMP 원본 UTC 벽시계라 그대로 자르면 한국 늦은 밤 발표가
-     * 다음 날로 밀린다(한국 CPI 00:00 KST = 전날 15:00 UTC 근처). 같은 행을 그리는
-     * 아래 캘린더는 이미 `fmpCalendarDateTimeToKst`로 KST 키를 쓰므로, 카드만 UTC
-     * 그대로 두면 **같은 발표가 카드와 캘린더에서 다른 날짜로** 보인다.
-     */
-    latestDate: string;
-    /**
-     * 직전 발표 대비 변화. 직전 발표가 없으면 `null` —
-     * FMP `previous` 필드가 아니라 **우리가 가진 이력**에서 계산한다.
-     * 두 값이 다를 때가 있는데(개정치 반영), 화면에 함께 그리는 추세와 어긋나지
-     * 않으려면 같은 출처를 써야 한다.
-     */
-    changeFromPrevious: number | null;
+/**
+ * 발표가 끝난 이벤트 한 건 — 한국 지표 카드(`buildKrIndicatorCards`)가 소비하는 최소 형상.
+ * 리포지토리 `listAnnouncedSince`가 `actual IS NOT NULL`로 걸러 돌려준다.
+ */
+export interface AnnouncedEventPoint {
+    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(존 표시 없는 UTC — ET 아님. 컬럼명만 과거 오인대로 남아 있다). */
+    dateEt: string;
+    event: string;
+    /** `actual IS NOT NULL` 필터를 통과했으므로 number 보장. */
+    actual: number;
+    previous: number | null;
+    unit: string;
 }

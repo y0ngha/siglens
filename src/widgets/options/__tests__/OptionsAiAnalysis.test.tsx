@@ -23,7 +23,11 @@ vi.mock('@/widgets/options/OptionsAiAnalysisSkeleton', () => ({
 }));
 
 vi.mock('@/widgets/options/OptionsAiAnalysisError', () => ({
-    OptionsAiAnalysisError: () => <div data-testid="error">Error</div>,
+    OptionsAiAnalysisError: ({ message }: { message?: string | null }) => (
+        <div data-testid="error" data-message={message ?? ''}>
+            Error
+        </div>
+    ),
 }));
 
 vi.mock('@/shared/lib/cn', () => ({
@@ -154,6 +158,11 @@ describe('OptionsAiAnalysis', () => {
             />
         );
         expect(screen.getByTestId('error')).toBeInTheDocument();
+        // 훅이 던진 현지화 메시지를 그대로 카드에 넘긴다.
+        expect(screen.getByTestId('error')).toHaveAttribute(
+            'data-message',
+            'fail'
+        );
     });
 
     it('renders analysis result with summary and signals', () => {

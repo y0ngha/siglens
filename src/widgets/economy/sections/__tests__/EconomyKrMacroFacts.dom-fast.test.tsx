@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { EconomyKrMacroFacts } from '../EconomyKrMacroFacts';
-import type { KrIndicatorCard } from '@/entities/economy/model';
+import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import {
     KR_ECONOMY_INDICATORS,
     KR_INDICATOR_EVENT,

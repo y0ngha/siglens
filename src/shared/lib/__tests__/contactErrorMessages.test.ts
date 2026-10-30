@@ -1,16 +1,6 @@
 import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 import type { ContactFormErrorCode } from '@/shared/lib/types';
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
-
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 const ALL_ERROR_CODES: ContactFormErrorCode[] = [
     'title_required',
@@ -29,9 +19,9 @@ const ALL_ERROR_CODES: ContactFormErrorCode[] = [
  * 길이 제한 메시지가 `{v0}` 자리를 갖는지를 본다.
  */
 describe('CONTACT_ERROR_KEY', () => {
-    const group = (locale: keyof typeof CATALOGS) =>
+    const group = (locale: keyof typeof MESSAGE_CATALOGS) =>
         (
-            CATALOGS[locale].shared.lib as unknown as Record<
+            MESSAGE_CATALOGS[locale].shared.lib as unknown as Record<
                 string,
                 Record<string, string>
             >
@@ -43,21 +33,20 @@ describe('CONTACT_ERROR_KEY', () => {
         );
     });
 
-    it.each(Object.keys(CATALOGS) as Array<keyof typeof CATALOGS>)(
-        '%s: 모든 코드가 비지 않은 메시지로 해석된다',
-        locale => {
-            for (const code of ALL_ERROR_CODES) {
-                const value = group(locale)[CONTACT_ERROR_KEY[code]];
-                expect(value, `${locale}.${code}`).toBeTruthy();
-            }
+    it.each(
+        Object.keys(MESSAGE_CATALOGS) as Array<keyof typeof MESSAGE_CATALOGS>
+    )('%s: 모든 코드가 비지 않은 메시지로 해석된다', locale => {
+        for (const code of ALL_ERROR_CODES) {
+            const value = group(locale)[CONTACT_ERROR_KEY[code]];
+            expect(value, `${locale}.${code}`).toBeTruthy();
         }
-    );
+    });
 
     it.each(['title_too_long', 'content_too_long'] as const)(
         '%s: 상한을 값으로 받는 자리(`{v0}`)가 네 로케일에 다 있다',
         code => {
-            for (const locale of Object.keys(CATALOGS) as Array<
-                keyof typeof CATALOGS
+            for (const locale of Object.keys(MESSAGE_CATALOGS) as Array<
+                keyof typeof MESSAGE_CATALOGS
             >) {
                 expect(
                     group(locale)[CONTACT_ERROR_KEY[code]],

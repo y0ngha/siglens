@@ -1,24 +1,38 @@
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import 'server-only';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 
 import { getDatabaseClient } from '@/shared/db/client';
-import { fmpCalendarDateTimeToKst } from '@/shared/lib/etTimeUtils';
-import {
-    KR_ECONOMY_INDICATORS,
-    normalizeKrEventName,
-} from '@/shared/config/economyIndicatorsKr';
-
-import type { KrIndicatorCard } from '../model';
-import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
+
+import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 import {
     CALENDAR_COUNTRY_KR,
     economyCalendarCacheTag,
     ECONOMY_CALENDAR_REVALIDATE_SECONDS,
     KR_INDICATOR_HISTORY_DAYS,
 } from '../lib/economyCalendarConstants';
+import {
+    buildKrIndicatorCards,
+    type KrIndicatorCard,
+} from '../lib/krIndicatorCards';
+
+const fetchKrIndicatorCards = unstable_cache(
+    async (anchorEt: string): Promise<KrIndicatorCard[]> => {
+        const { db } = getDatabaseClient();
+        const repo = new DrizzleEconomicCalendarRepository(db);
+        const rows = await repo.listAnnouncedSince(
+            CALENDAR_COUNTRY_KR,
+            addUtcIsoDays(anchorEt, -KR_INDICATOR_HISTORY_DAYS)
+        );
+        return buildKrIndicatorCards(rows);
+    },
+    ['economy-kr-indicator-cards'],
+    {
+        revalidate: ECONOMY_CALENDAR_REVALIDATE_SECONDS,
+        tags: [economyCalendarCacheTag(CALENDAR_COUNTRY_KR)],
+    }
+);
 
 /**
  * 한국 거시 지표 카드 — 경제 캘린더 발표 이력에서 되짚는다.
@@ -41,54 +55,5 @@ export const getKrIndicatorCards = cache(
             console.error('[getKrIndicatorCards] DB read failed:', error);
             return [];
         }
-    }
-);
-
-const fetchKrIndicatorCards = unstable_cache(
-    async (anchorEt: string): Promise<KrIndicatorCard[]> => {
-        const { db } = getDatabaseClient();
-        const repo = new DrizzleEconomicCalendarRepository(db);
-        const rows = await repo.listAnnouncedSince(
-            CALENDAR_COUNTRY_KR,
-            addUtcIsoDays(anchorEt, -KR_INDICATOR_HISTORY_DAYS)
-        );
-
-        // 이벤트명(기간 괄호 제거) → 발표 이력. repo가 dateEt 오름차순으로 주므로
-        // 각 버킷도 오래된 → 최신 순이 그대로 유지된다.
-        const byEvent = new Map<string, typeof rows>();
-        for (const row of rows) {
-            const key = normalizeKrEventName(row.event);
-            const bucket = byEvent.get(key);
-            if (bucket) bucket.push(row);
-            else byEvent.set(key, [row]);
-        }
-
-        return KR_ECONOMY_INDICATORS.flatMap(meta => {
-            const history = byEvent.get(meta.event);
-            if (!history || history.length === 0) return [];
-
-            const latest = history[history.length - 1];
-            const prior = history[history.length - 2];
-
-            return [
-                {
-                    meta,
-                    latest: latest.actual,
-                    latestDate: // `kstDateKey`만 읽으므로 로케일과 무관하다. 그래도 명시한다 —
-                        // 기본값을 두면 호출부에서 빠져도 컴파일이 통과한다.
-                        fmpCalendarDateTimeToKst(latest.dateEt, DEFAULT_LOCALE)
-                            .kstDateKey,
-                    changeFromPrevious:
-                        prior === undefined
-                            ? null
-                            : latest.actual - prior.actual,
-                },
-            ];
-        });
-    },
-    ['economy-kr-indicator-cards'],
-    {
-        revalidate: ECONOMY_CALENDAR_REVALIDATE_SECONDS,
-        tags: [economyCalendarCacheTag(CALENDAR_COUNTRY_KR)],
     }
 );

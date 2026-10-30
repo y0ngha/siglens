@@ -11,10 +11,8 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { buildMarketFearGreedComparisons } from '../lib/buildMarketFearGreedComparisons';
-import {
-    fetchKrDailyCloses,
-    krLookbackStartDate,
-} from '../lib/fetchKrDailyCloses';
+import { hasSnapshot } from '../lib/hasSnapshot';
+import { krLookbackStartDate } from '../lib/marketFearGreedWindows';
 import {
     KOSPI_INDEX_SYMBOL,
     MARKET_FEAR_GREED_KR_LOOKBACK_DAYS,
@@ -23,6 +21,7 @@ import {
 } from '../lib/marketFearGreedKrSymbols';
 import { toRealizedVolatilitySeries } from '../lib/realizedVolatility';
 import type { MarketFearGreedView } from '../model';
+import { fetchKrDailyCloses } from './fetchKrDailyCloses';
 
 /**
  * 티커 테이블 fingerprint를 캐시 키에 박아, 대체 ETF를 갈아끼우면 옛 판독값이
@@ -107,11 +106,6 @@ async function buildView(now: Date): Promise<MarketFearGreedView> {
             computeMarketFearGreedHistory(input)
         ),
     };
-}
-
-/** snapshot이 없는 뷰 = 표본 부족. 그 상태를 캐시에 굳히지 않는다. */
-function hasSnapshot(view: MarketFearGreedView): boolean {
-    return view.snapshot !== null;
 }
 
 /**

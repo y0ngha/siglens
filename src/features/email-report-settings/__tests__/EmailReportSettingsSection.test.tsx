@@ -105,12 +105,48 @@ describe('EmailReportSettingsSection', () => {
         });
         render(<EmailReportSettingsSection />);
 
-        // 버튼은 disabled라 클릭으로는 막히지만, 폼 제출(Enter)은 버튼을 거치지 않는다.
+        // 폼 제출(Enter)은 버튼을 거치지 않으므로 제출 가드가 막아야 한다.
         const form = screen.getByRole('switch').closest('form');
         expect(form).not.toBeNull();
         fireEvent.submit(form as HTMLFormElement);
 
         expect(mutateAsync).not.toHaveBeenCalled();
+    });
+
+    describe('저장 중인 저장 버튼', () => {
+        function setupSaving() {
+            const mutateAsync = vi.fn();
+            setup({
+                save: {
+                    mutateAsync,
+                    isPending: true,
+                } as unknown as HookReturn['save'],
+            });
+            render(<EmailReportSettingsSection />);
+            return {
+                mutateAsync,
+                button: screen.getByRole('button', { name: '저장 중…' }),
+            };
+        }
+
+        /** `disabled`가 되면 포커스를 쥔 버튼에서 포커스가 body로 떨어진다(REACT.md#AX-3). */
+        it('disabled가 아니라 aria-disabled로 표시한다', () => {
+            const { button } = setupSaving();
+            expect(button).not.toBeDisabled();
+            expect(button).toHaveAttribute('aria-disabled', 'true');
+        });
+
+        it('포커스를 쥔 채로 남는다', () => {
+            const { button } = setupSaving();
+            button.focus();
+            expect(button).toHaveFocus();
+        });
+
+        it('눌러도 다시 저장하지 않는다', async () => {
+            const { mutateAsync, button } = setupSaving();
+            await userEvent.click(button);
+            expect(mutateAsync).not.toHaveBeenCalled();
+        });
     });
 
     it('서버 오류 결과의 문구를 그대로 보인다', async () => {
@@ -137,14 +173,17 @@ describe('EmailReportSettingsSection', () => {
         render(<EmailReportSettingsSection />);
 
         const boxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
-        const onlyDay = boxes.find(box => box.checked)!;
+        const onlyDay = boxes.find(box => box.checked);
+        if (!onlyDay) throw new Error('선택된 요일 체크박스가 없다');
         expect(onlyDay).toBeDisabled();
         expect(
             screen.getByText('요일을 하나 이상 골라 주세요.')
         ).toBeInTheDocument();
 
         // 다른 요일을 고르면 마지막 요일 잠금이 풀린다.
-        await userEvent.click(boxes.find(box => !box.checked)!);
+        const otherDay = boxes.find(box => !box.checked);
+        if (!otherDay) throw new Error('선택되지 않은 요일 체크박스가 없다');
+        await userEvent.click(otherDay);
         expect(onlyDay).toBeEnabled();
         await userEvent.click(onlyDay);
         await userEvent.click(screen.getByRole('button', { name: '저장' }));
@@ -162,6 +201,49 @@ describe('EmailReportSettingsSection', () => {
 
         expect(screen.getByLabelText('받을 시각')).toBeDisabled();
         expect(screen.getAllByRole('checkbox')[0]).toBeDisabled();
+    });
+
+    /**
+     * 꺼진 상태는 묶음 `opacity-*`가 아니라 칩의 비활성 토큰으로 보인다(DESIGN.md#DS-3) —
+     * 불투명도는 요일 안내·타임존 안내 글자까지 라이트 테마 4.5:1 아래로 끌어내린다.
+     */
+    describe('수신을 끈 요일·시각 묶음', () => {
+        it('불투명도로 흐리게 하지 않는다', async () => {
+            setup();
+            const { container } = render(<EmailReportSettingsSection />);
+
+            await userEvent.click(screen.getByRole('switch'));
+
+            expect(container.querySelector('[class*="opacity-"]')).toBeNull();
+        });
+
+        it('고른 요일 칩은 비활성 채움 토큰으로 보인다', async () => {
+            setup();
+            render(<EmailReportSettingsSection />);
+
+            await userEvent.click(screen.getByRole('switch'));
+
+            const checkedChip = screen
+                .getByRole('checkbox', { name: '월' })
+                .closest('label');
+            expect(checkedChip).toHaveClass(
+                'bg-secondary-700',
+                'text-secondary-500',
+                'border-border-control'
+            );
+        });
+
+        it('고르지 않은 요일 칩은 비활성 글자 토큰으로 보인다', async () => {
+            setup();
+            render(<EmailReportSettingsSection />);
+
+            await userEvent.click(screen.getByRole('switch'));
+
+            const uncheckedChip = screen
+                .getByRole('checkbox', { name: '화' })
+                .closest('label');
+            expect(uncheckedChip).toHaveClass('text-secondary-500');
+        });
     });
 
     it('처음 설정하는 회원은 브라우저 타임존으로 저장한다', async () => {

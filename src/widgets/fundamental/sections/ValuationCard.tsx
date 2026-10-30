@@ -1,3 +1,6 @@
+/**
+ * 밸류에이션 카드 — PER·PSR·PBR·PEG·EV/EBITDA·EPS 한 줄씩.
+ */
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
@@ -5,17 +8,9 @@ import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
-import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-
-// 예전에는 `'ko-KR'` 고정이었다 — 로케일은 `INTL_LOCALE`에서만 정한다.
-function formatDecimal(value: number, digits: number, locale: Locale): string {
-    return cachedNumberFormat(INTL_LOCALE[locale], {
-        maximumFractionDigits: digits,
-    }).format(value);
-}
+import { formatDecimal } from '@/widgets/fundamental/utils/decimalFormat';
 
 const HEADING_ID = 'valuation-heading';
 const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
@@ -32,6 +27,7 @@ interface MetricRowProps {
     tooltip?: ReactNode;
 }
 
+/** 배수 라벨·설명과 로케일 표기 값을 한 줄로 그린다. */
 function MetricRow({
     label,
     value,
@@ -61,6 +57,7 @@ function MetricRow({
     );
 }
 
+/** 밸류에이션 카드. 지표가 없으면 빈 카드를 그린다. */
 export function ValuationCard({ metrics }: ValuationCardProps) {
     const t = useTranslations('widgets.fundamental');
     if (metrics === null) {

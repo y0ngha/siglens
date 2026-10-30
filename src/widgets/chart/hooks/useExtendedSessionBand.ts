@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 프리·애프터마켓 구간 음영 밴드를 시리즈에 붙이는 훅.
+ */
+
 import { type RefObject, useEffect } from 'react';
 import type {
     ISeriesApi,
