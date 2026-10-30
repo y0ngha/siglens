@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 수급 AI 해석 섹션 — 분석 상태에 따라 로딩·완료·데이터 없음·대기·오류 화면을 고른다.
+ */
 import { useTranslations } from 'next-intl';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';

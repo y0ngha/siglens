@@ -8,54 +8,26 @@
  *
  * Why this file exists:
  *   `kindPanelRegistry.tsx` exports a plain object whose values are arrow functions.
- *   When a server component (page.tsx) imports that object and extracts a function
- *   (`SHARE_KIND_PANEL_REGISTRY[snapshot.kind]`), Next.js RSC resolves the 'use client'
- *   module into client references for *named exports only* — anonymous functions inside
- *   a plain object are **not** registered as client references, so they arrive as
- *   `undefined` at render time.
+ *   Next.js RSC resolves a 'use client' module into client references for *named
+ *   exports only* — anonymous functions inside a plain object are not registered as
+ *   client references, so a server component that pulled an entry out of the registry
+ *   would receive `undefined` at render time.
  *
- *   The fix: move the dispatch into a *named* 'use client' component (`ShareKindPanel`).
- *   The server component passes only JSON-serializable props (`kind` + `result` +
- *   optional `chartBars`); the client component performs the registry lookup and
- *   renders the correct panel.
+ *   So the dispatch lives in a *named* 'use client' component. The server component
+ *   passes only JSON-serializable props (`kind` + the snapshot fields); this component
+ *   performs the registry lookup and renders the correct panel.
  */
 
 import type { ReactNode } from 'react';
 import type { ShareableKind } from '@/shared/db/constants';
-import type { SnapshotResultOf } from '@/entities/shared-analysis/types';
-import type { AssetClass } from '@/shared/config/marketProfile/types';
-import type { Bar, KrxTickTable } from '@y0ngha/siglens-core';
 import { SHARE_KIND_PANEL_REGISTRY } from './kindPanelRegistry';
-import type { SharePanelProps } from './kindPanelRegistry';
+import type { SharePanelProps } from './types';
 
-interface ShareKindPanelProps<K extends ShareableKind> {
+/** `ShareKindPanel` props: the snapshot kind plus the panel props for that kind. */
+interface ShareKindPanelProps<
+    K extends ShareableKind,
+> extends SharePanelProps<K> {
     kind: K;
-    result: SnapshotResultOf<K>;
-    /**
-     * Snapshot-time candlestick bars — only present when `kind === 'chart'`.
-     * Serialized from `snapshot.chartBars` at the RSC boundary and forwarded
-     * to the chart panel to render a static read-only candlestick chart.
-     */
-    chartBars?: Bar[];
-    /**
-     * Asset class from snapshot context — controls which sections render in
-     * the `overall` panel (e.g. crypto hides Options/Fundamental/Financials).
-     * Forwarded through the registry to `<OverallView assetClass={...} />`.
-     */
-    assetClass?: AssetClass;
-    /**
-     * Ticker symbol from the snapshot (e.g. "AAPL"). Forwarded to the chart
-     * panel so the copy-report utility and aria-label use the real ticker
-     * instead of an empty string.
-     */
-    symbol?: string;
-    /** 종목의 KRX 호가표(주식/ETF). 차트 패널의 가격 표기에 쓰인다. 생략하면 'share'. */
-    krxTickTable?: KrxTickTable;
-    /**
-     * 스냅샷에 저장된 쉽게보기 산문. 공유 시점에 공유자 화면에 있던 값이다.
-     * 없으면(이 필드 이전 스냅샷·평이화 실패) 패널이 원문만 렌더한다.
-     */
-    plain?: string;
 }
 
 /**
@@ -64,12 +36,7 @@ interface ShareKindPanelProps<K extends ShareableKind> {
  */
 export function ShareKindPanel<K extends ShareableKind>({
     kind,
-    result,
-    chartBars,
-    assetClass,
-    symbol,
-    krxTickTable,
-    plain,
+    ...panelProps
 }: ShareKindPanelProps<K>) {
     // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
     // registry entry for this key always accepts exactly the result type that
@@ -79,14 +46,5 @@ export function ShareKindPanel<K extends ShareableKind>({
     const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (
         props: SharePanelProps<K>
     ) => ReactNode;
-    return (
-        <Panel
-            result={result}
-            chartBars={chartBars}
-            assetClass={assetClass}
-            symbol={symbol}
-            krxTickTable={krxTickTable}
-            plain={plain}
-        />
-    );
+    return <Panel {...panelProps} />;
 }

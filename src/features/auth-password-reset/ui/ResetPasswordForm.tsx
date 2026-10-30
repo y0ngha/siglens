@@ -7,52 +7,41 @@ import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useResetPasswordForm } from '../hooks/useResetPasswordForm';
-import { useId, useState } from 'react';
+import { usePasswordConfirmation } from '../hooks/usePasswordConfirmation';
+import { resetPasswordErrorSlot } from '../lib/resetPasswordErrorSlot';
+import { useId } from 'react';
 
 interface ResetPasswordFormProps {
+    /** 재설정 링크의 이메일. 숨은 필드로 액션에 그대로 넘긴다. */
     email: string;
+    /** 재설정 링크의 토큰. 검증은 서버 액션이 한다. */
     token: string;
 }
 
-const FORM_ERROR_CODES = new Set([
-    'invalid_token',
-    'expired_token',
-    'same_password',
-    'redis_unavailable',
-]);
-
+/**
+ * 메일 링크로 들어온 사용자의 새 비밀번호 입력 폼. 성공하면 액션이 로그인
+ * 화면으로 리디렉트하므로 성공 상태를 그리지 않는다.
+ */
 export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const t = useTranslations('features.auth-password-reset');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [confirmError, setConfirmError] = useState<string | null>(null);
     const hintId = useId();
     const [state, formAction] = useResetPasswordForm();
     const describeAuthError = useDescribeAuthError();
-    const formError =
-        state.error && FORM_ERROR_CODES.has(state.error.code ?? '')
-            ? describeAuthError(state.error)
-            : null;
-    const fieldError =
-        state.error?.field === 'password'
-            ? describeAuthError(state.error)
-            : null;
-
-    const handleAction = (formData: FormData) => {
-        if (password !== confirmPassword) {
-            setConfirmError(t('ResetPasswordForm.c3b85c'));
-            return;
-        }
-        setConfirmError(null);
-        // 여기서 입력을 비우지 않는다. 성공하면 액션이 리디렉트하므로 비울
-        // 필요가 없고, 실패하면(약한 비밀번호·같은 비밀번호·만료 토큰) 빈 칸
-        // 아래에 오류만 남아 전부 다시 타이핑해야 했다. 강도 체크리스트도
-        // 함께 초기화돼 무엇이 모자랐는지조차 사라졌다.
-        formAction(formData);
-    };
+    const {
+        password,
+        confirmPassword,
+        isMismatch,
+        changePassword,
+        changeConfirmPassword,
+        submit,
+    } = usePasswordConfirmation(formAction);
+    const errorSlot = state.error ? resetPasswordErrorSlot(state.error) : null;
+    const errorMessage = describeAuthError(state.error);
+    const formError = errorSlot === 'form' ? errorMessage : undefined;
+    const passwordError = errorSlot === 'password' ? errorMessage : undefined;
 
     return (
-        <form action={handleAction} className="space-y-4" noValidate>
+        <form action={submit} className="space-y-4" noValidate>
             <input type="hidden" name="email" value={email} />
             <input type="hidden" name="token" value={token} />
             {formError ? <ErrorAlert message={formError} /> : null}
@@ -63,11 +52,8 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                 autoComplete="new-password"
                 required
                 value={password}
-                onChange={value => {
-                    setPassword(value);
-                    if (confirmError) setConfirmError(null);
-                }}
-                error={fieldError ?? undefined}
+                onChange={changePassword}
+                error={passwordError}
                 describedById={hintId}
                 hint={
                     <PasswordStrengthHint
@@ -83,11 +69,8 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                 autoComplete="new-password"
                 required
                 value={confirmPassword}
-                onChange={value => {
-                    setConfirmPassword(value);
-                    if (confirmError) setConfirmError(null);
-                }}
-                error={confirmError ?? undefined}
+                onChange={changeConfirmPassword}
+                error={isMismatch ? t('ResetPasswordForm.c3b85c') : undefined}
             />
             <SubmitButton
                 label={t('ResetPasswordForm.4c7b96')}

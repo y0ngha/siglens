@@ -15,7 +15,7 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
 
 /**
- * ISR static-safe sector signals. timeframe별 캐시. revalidate=1h, `sector:signals` tag.
+ * ISR static-safe sector signals. timeframe별 캐시. revalidate=1h, `sector:signals:<scopeId>` tag.
  * 태그는 market summary/briefing과 분리해 정밀 무효화를 가능케 한다(공유 시 blast-radius).
  */
 export function getSectorSignalsStatic(

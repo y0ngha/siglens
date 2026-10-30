@@ -1,3 +1,6 @@
+/**
+ * 기관 4분할 카드 — 신규 진입·지분 증가·지분 감소·완전 청산 기관 수와 직전 분기 대비 증감.
+ */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
@@ -41,7 +44,7 @@ const DELTA_MARK: Record<SplitDeltaKind, string> = {
     down: '▼ ',
 };
 
-/** 직전 분기 대비 증감 문구. 문구는 종류별로 한 번에 만들어 두고(리터럴 `t()` 호출) 종류로 고른다. */
+/** 직전 분기 대비 증감 문구. 문구는 종류별로 한 번에 만들어 두고(리터럴 번역 호출) 종류로 고른다. */
 function SplitDelta({ delta }: { readonly delta: number | null }) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();

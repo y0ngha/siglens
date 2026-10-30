@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 거래량 차트 인스턴스와 총·매수·매도 거래량 시리즈의 생성·정리를 맡는 훅.
+ */
+
 import { type RefObject, useEffect, useRef } from 'react';
 import {
     createChart,
@@ -29,7 +33,6 @@ export function useVolumeChartLifecycle({
 }: UseVolumeChartLifecycleOptions): UseVolumeChartLifecycleReturn {
     const chartRef = useRef<IChartApi | null>(null);
 
-    /* 테마 전환 시 크롬만 교체(리마운트 없음). */
     const totalSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
     const buySeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
     const onChartReadyRef = useRef(onChartReady);

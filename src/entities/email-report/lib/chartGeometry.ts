@@ -3,6 +3,20 @@ import type { Bar } from '@y0ngha/siglens-core';
 /** 메일 차트에 그리는 일봉 수(약 3개월). */
 export const REPORT_CHART_BARS = 60;
 
+/** 차트에 겹치는 이동평균 기간 — 이미지 라우트와 샘플 차트 데이터가 같은 기간을 쓴다. */
+export const REPORT_CHART_MA_PERIODS = [20, 60] as const;
+
+/** 리포트 차트가 그리는 이동평균 기간. */
+export type ReportChartMaPeriod = (typeof REPORT_CHART_MA_PERIODS)[number];
+
+/** `period`가 리포트 차트가 그리는 이동평균 기간인지 좁힌다. */
+export function isReportChartMaPeriod(
+    period: number
+): period is ReportChartMaPeriod {
+    return REPORT_CHART_MA_PERIODS.some(known => known === period);
+}
+
+/** 차트를 그릴 픽셀 상자. */
 export interface ChartBox {
     width: number;
     height: number;
@@ -10,6 +24,7 @@ export interface ChartBox {
     padding: number;
 }
 
+/** 캔들 하나의 SVG 좌표. */
 export interface CandleShape {
     /** 캔들 중심 x. */
     x: number;
@@ -21,6 +36,7 @@ export interface CandleShape {
     up: boolean;
 }
 
+/** `computeChartGeometry`의 결과 — 이미지 렌더러가 그대로 SVG로 옮긴다. */
 export interface ChartGeometry {
     candles: CandleShape[];
     bodyWidth: number;

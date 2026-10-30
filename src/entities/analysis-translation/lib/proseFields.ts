@@ -1,76 +1,49 @@
-/**
- * core 분석 응답에서 **산문 필드만** 골라내고 되돌려 넣는 순수 유틸.
- *
- * ## 왜 필드 목록을 손으로 적지 않는가
- *
- * core의 응답 타입은 산문 필드를 **`*Ko` 접미사**로 일관되게 표시한다
- * (`headlineKo`, `integratedConclusionKo`, `riskFactorsKo` … 21종). 이 규약을
- * 쓰면 core가 새 산문 필드를 추가해도 목록을 갱신할 필요가 없다 — 손 목록은
- * 반드시 뒤처지고, 뒤처지면 그 필드만 조용히 한국어로 남는다.
- *
- * ## 왜 산문만 건드리는가
- *
- * 숫자 필드·enum(`sentiment`, `riskLevel`, `direction`)·티커·`keyLevels`는
- * 넘기지 않는다. `*Ko` 접미사가 붙은 문자열만 후보이므로, 구조적으로 걸러진다.
- *
- * ⚠️ **다만 "숫자가 전혀 안 넘어간다"는 뜻은 아니다.** core의
- * `OverallScenario.priceRangeKo`는 `'190~200달러'`처럼 **가격이 든 문자열**이고
- * `*Ko`라서 후보에 포함된다(`__tests__/translateAnalysis.test.ts`가 그 동작을
- * 고정하고 있다). `keyEventsKo`·`upcomingEventsKo`도 날짜를 담는다. 그 값들의
- * 숫자 보존은 구조가 아니라 **프롬프트 규칙**(`api.ts`의 "Never change numbers,
- * prices, percentages, ticker symbols or dates")이 맡는다.
- */
-
 /** 번역 대상 문자열 하나의 위치. `path`는 `a.b.0.c` 형태의 점 경로. */
 export interface ProseEntry {
     readonly path: string;
     readonly text: string;
 }
 
+/**
+ * core는 산문 필드를 `*Ko` 접미사로 일관되게 표시한다(`headlineKo`,
+ * `integratedConclusionKo`, `riskFactorsKo` …). 필드 목록을 손으로 적지 않고
+ * 접미사를 쓰는 이유는 core가 새 산문 필드를 추가해도 목록 갱신이 필요 없기
+ * 때문이다 — 손 목록은 반드시 뒤처지고, 뒤처지면 그 필드만 조용히 한국어로
+ * 남는다. 숫자·enum(`sentiment`, `riskLevel`)·티커·`keyLevels`는 접미사가 없어
+ * 구조적으로 걸러지므로 산문 문자열만 번역 대상으로 넘어간다.
+ */
 const KO_SUFFIX = 'Ko';
 
 /**
- * `*Ko` 접미사를 쓰지 **않는** 한국어 산문 필드.
+ * `*Ko` 접미사를 쓰지 **않는** 한국어 산문 필드의 이름 화이트리스트.
  *
- * ## 왜 접미사만으로는 안 되는가
+ * core의 `*Ko` 필드는 overall·fundamental·financials·news·congress 계열에만
+ * 있다. `technical`(종목 메인)·`options`·`briefing`(/market)·`macroBriefing`
+ * (/economy)은 접미사 없이 `summary`·`description` 같은 이름을 쓰며 core JSDoc이
+ * "Korean"이라고 명시한다. 접미사만 보면 이 네 화면은 빈 배열이 되어 번역이
+ * 통째로 no-op이 된다. 9개 분석 화면 중 이 네 화면이 접미사 없는 산문을 쓰며,
+ * 트래픽이 가장 많은 종목 메인(`technical`)도 포함된다. 재확인: core 응답
+ * 타입(`AnalysisResponse`·`OptionsAnalysisResponse`·`MarketBriefingResponse`·
+ * `MacroBriefingResponse`)의 한국어 산문 필드 이름을 훑어 접미사 유무를 본다.
  *
- * core의 21개 `*Ko` 필드는 overall·fundamental·financials·news·congress
- * 계열에만 있다. `technical`(종목 메인 페이지)·`options`·`briefing`(/market)·
- * `macroBriefing`(/economy)은 **접미사 없이** `summary`·`description` 같은
- * 이름을 쓰면서 core JSDoc에 "Korean"이라고 명시돼 있다. 접미사 휴리스틱만
- * 쓰면 그 네 화면에서 `extractProse`가 빈 배열을 돌려주고,
- * `translateAnalysis`가 즉시 원본을 반환해 **번역이 통째로 no-op**이 된다.
- * 실측: 9개 분석 화면 중 4개 — 가장 트래픽이 많은 종목 메인 포함 — 이
- * 스트림을 새로 돌려도 한국어 산문을 그대로 내보내고 있었다.
- *
- * 설계 문서(§"lib/proseFields.ts")가 처음부터 **응답 타입별 화이트리스트**를
- * 지정했는데 구현이 접미사로 갈음하면서 조용히 넷을 삼켰다.
- *
- * ⚠️ 이름 기반이라 **동명의 비-산문 필드가 생기면 오탐**이다. 지금은 없다
- * (`id`·`strategyName`·`patternName`·`expirationDate`는 목록 밖).
- * core 응답 타입이 바뀌면 `__tests__/proseFields.test.ts`의 타입별 픽스처가
- * 먼저 깨진다.
+ * 이름 기반이라 동명의 비-산문 필드가 생기면 오탐이다. 지금은 없다(`id`·
+ * `strategyName`·`patternName`·`expirationDate`는 목록 밖). core 응답 타입이
+ * 바뀌면 타입별 픽스처 테스트(`proseFields.dispatch.test.ts`)가 먼저 깨진다.
  */
 const PROSE_FIELD_NAMES: ReadonlySet<string> = new Set([
     // technical — 키 레벨·시나리오 근거. core JSDoc이 "Korean rationale/
-    // trigger condition"으로 명시한다. `reconciledLevels.exit`/`riskReward`는
-    // 이미 번역되는데 같은 `<section>`의 `reason`만 한국어로 남아, 한 블록 안에
-    // 두 언어가 섞이는 상태였다(`translateAnalysis`의 all-or-nothing 계약 위반).
+    // trigger condition"으로 명시한다. 같은 블록의 `exit`/`riskReward`만 번역되면
+    // 한 블록 안에 두 언어가 섞이므로 `reason`도 대상이다.
     'reason', // KeyLevel.reason, ReconciledActionLevels.reason
     'basis', // PriceTarget.basis
     'condition', // PriceScenario.condition
     /**
      * `KeyPrice.label`·`SkillChartDisplay.label`·옵션 만기 라벨.
      *
-     * core 프롬프트가 **한국어를 강제**한다: "All label values in keyPrices must be
-     * written in Korean (e.g. \"상단 추세선\", \"넥라인\", \"목표가\")".
-     * 같은 아코디언에서 `pattern.summary`는 번역되는데 그 아래 키 가격 라벨만
-     * 한국어로 남아, `reconciledLevels.reason`에서 고친 것과 똑같이 한 블록에
-     * 두 언어가 섞였다.
-     *
-     * 오탐 확인: `SectorGroupDef.label`(영어 `"Technology"`)과
-     * `MarketBriefingContext`의 `label`은 **입력·설정 타입**이라 어떤 디스패치
-     * 응답에도 실리지 않는다.
+     * core 프롬프트가 한국어를 강제한다("All label values in keyPrices must be
+     * written in Korean"). 같은 아코디언의 `pattern.summary`만 번역되면 두 언어가
+     * 섞인다. `SectorGroupDef.label`(영어)·`MarketBriefingContext`의 `label`은
+     * 입력·설정 타입이라 어떤 디스패치 응답에도 실리지 않아 오탐이 아니다.
      */
     'label',
     // technical (`AnalysisResponse`)
@@ -91,43 +64,52 @@ const PROSE_FIELD_NAMES: ReadonlySet<string> = new Set([
     'highlights',
 ]);
 
-/** 이 키가 산문 필드인가. */
+/** 이 키가 산문 필드인가 — `*Ko` 접미사(`KO_SUFFIX` 참고) 또는 접미사 없는 예외 목록. */
 function isProseKey(key: string): boolean {
     if (key.endsWith(KO_SUFFIX) && key !== KO_SUFFIX) return true;
     return PROSE_FIELD_NAMES.has(key);
 }
 
+/** 점 경로에 세그먼트를 붙인다. 빈 접두사면 세그먼트만 돌려준다. */
+function joinPath(prefix: string, segment: string | number): string {
+    return prefix ? `${prefix}.${segment}` : `${segment}`;
+}
+
+/** 산문 키의 값(문자열 또는 문자열 배열)에서 비어 있지 않은 항목을 뽑는다. */
+function proseValueEntries(path: string, value: unknown): ProseEntry[] {
+    if (typeof value === 'string') {
+        return value.trim() ? [{ path, text: value }] : [];
+    }
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((item, index) =>
+        typeof item === 'string' && item.trim()
+            ? [{ path: joinPath(path, index), text: item }]
+            : []
+    );
+}
+
 /**
- * 응답 객체에서 번역 대상 문자열을 전부 뽑는다(배열·중첩 객체 포함).
+ * 응답 객체에서 번역 대상 산문 문자열을 전부 뽑는다(배열·중첩 객체 포함).
  *
- * 빈 문자열과 공백만 있는 값은 건너뛴다 — 번역 호출만 늘고 결과가 같다.
+ * 소비자: `analysis-plain`의 프롬프트 조립. 숫자·enum·티커는 `*Ko`/화이트리스트
+ * 밖이라 걸러지지만, `priceRangeKo`(`'190~200달러'`)처럼 가격이 든 `*Ko` 문자열은
+ * 후보에 포함되고 `keyEventsKo`·`upcomingEventsKo`도 날짜를 담는다. 이 값들의
+ * 숫자 보존은 이 함수가 보장하지 않으므로 추출한 문장을 쓰는 쪽이 책임진다.
+ * 빈 문자열·공백만 있는 값은 번역 호출만 늘리므로 건너뛴다.
  */
 export function extractProse(value: unknown, prefix = ''): ProseEntry[] {
     if (Array.isArray(value)) {
         return value.flatMap((item, index) =>
-            extractProse(item, `${prefix}${prefix ? '.' : ''}${index}`)
+            extractProse(item, joinPath(prefix, index))
         );
     }
     if (typeof value !== 'object' || value === null) return [];
 
     return Object.entries(value).flatMap(([key, child]) => {
-        const path = `${prefix}${prefix ? '.' : ''}${key}`;
-        // 산문 키가 아니면 그 아래를 다시 훑는다.
+        const path = joinPath(prefix, key);
         if (!isProseKey(key)) return extractProse(child, path);
-
-        if (typeof child === 'string') {
-            return child.trim() ? [{ path, text: child }] : [];
-        }
-        if (Array.isArray(child)) {
-            return child.flatMap((item, index) =>
-                typeof item === 'string' && item.trim()
-                    ? [{ path: `${path}.${index}`, text: item }]
-                    : []
-            );
-        }
-        // 산문 키인데 문자열도 배열도 아니면 번역 대상이 없다. 여기서 다시
-        // 내려가지 않는 것이 의도다 — `summary: { ko: ... }` 같은 형태를
+        // 산문 키 아래로는 다시 내려가지 않는다 — `summary: { ko: ... }`를
         // 재귀로 훑으면 `summary.ko`가 산문 키가 아니라 통째로 누락된다.
-        return [];
+        return proseValueEntries(path, child);
     });
 }

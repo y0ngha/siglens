@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * AdSense 광고 단위를 컨테이너 너비가 확보된 뒤 한 번만 활성화(`adsbygoogle.push`)하는 훅.
+ */
 import { type RefObject, useEffect, useRef } from 'react';
 
 // window.adsbygoogle: Google AdSense가 로드 후 채우는 전역 배열.

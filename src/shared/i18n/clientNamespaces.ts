@@ -19,9 +19,8 @@ const flatten = (set: KeySet): readonly string[] => [
  *
  * 루트 프로바이더 하나에 전 라우트 키의 합집합을 실으면 `/login`·`/terms` 같은
  * 가벼운 페이지가 `widgets.options`·`views.symbol`·`widgets.chat`을 통째로
- * 들고 다닌다. 실측: 전 라우트에 24,299바이트가 동일하게 실려 **first-load JS
- * +28%, RSC prefetch +45.8%**였다 — v0.58.0(first-load −38%)과 PR #719(RSC
- * 페이로드) 성과를 정면으로 되돌리는 크기다.
+ * 들고 다닌다. 모든 라우트가 같은 번역 페이로드를 first-load JS와 RSC
+ * prefetch에 실어 나르게 되므로, 라우트가 쓰는 키만 싣는다.
  *
  * ## 왜 키 단위인가
  *
@@ -36,6 +35,7 @@ const flatten = (set: KeySet): readonly string[] => [
  */
 export const CHROME_CLIENT_PATHS: readonly string[] = flatten(generated.chrome);
 
+// safe: `clientKeys.json`은 추출기가 `KeySet` 모양으로만 생성한다.
 const ROUTES = generated.routes as Record<string, KeySet>;
 
 /**
@@ -70,16 +70,11 @@ export function routeClientPaths(routeId: string): readonly string[] {
  */
 export function ancestorClientPaths(routeId: string): readonly string[] {
     const segments = routeId.split('/');
-    const ancestors = segments
+    const ancestorPaths = segments
         .slice(0, -1)
-        .map((_, i) => segments.slice(0, i + 1).join('/'))
-        .filter(prefix => prefix in ROUTES);
-    return [
-        ...new Set([
-            ...CHROME_CLIENT_PATHS,
-            ...ancestors.flatMap(prefix => flatten(ROUTES[prefix]!)),
-        ]),
-    ];
+        .map((_, i) => ROUTES[segments.slice(0, i + 1).join('/')])
+        .flatMap(set => (set ? flatten(set) : []));
+    return [...new Set([...CHROME_CLIENT_PATHS, ...ancestorPaths])];
 }
 
 /** 메시지 레이아웃이 있어야 하는(하위 라우트를 가진) 라우트 id. 가드 테스트용. */

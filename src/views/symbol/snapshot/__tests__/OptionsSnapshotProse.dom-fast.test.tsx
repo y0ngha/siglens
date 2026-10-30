@@ -268,9 +268,8 @@ describe('OptionsSnapshotProse — enum 라벨 로케일 회귀', () => {
     // summary/commentary/message는 fixture가 직접 넣는 값이라 en 텍스트로
     // 바꿔 프로즈 소스에서 한글이 새지 않게 통제한다. "no Hangul" 단언은
     // 프로즈 본문(summary + 두 목록)에만 스코프한다 — `SnapshotSummarySection`의
-    // 기준일 캡션(`AS_OF_CAPTION_COPY`)은 이 태스크(enum 라벨) 범위 밖의
-    // 별도 하드코딩 한글이라, 컨테이너 전체를 보면 이 회귀 테스트와 무관한
-    // 이유로 실패한다.
+    // 기준일 캡션(`AS_OF_CAPTION_KEY`)은 enum 라벨과 다른 경로로 번역되므로
+    // 이 회귀 테스트가 검증할 대상이 아니다.
     it('locale=en이면 톤·시그널 라벨을 영어로 렌더하고 프로즈 본문에 한글이 남지 않는다', () => {
         renderWithIntl(
             <OptionsSnapshotProse

@@ -1,5 +1,9 @@
+/**
+ * "데이터를 모으는 중" 안내 상자.
+ */
 import { useTranslations } from 'next-intl';
 
+/** 수집 중 안내가 말하는 구간. */
 export type CollectingVariant =
     | 'institutional'
     | 'short'
@@ -23,7 +27,7 @@ interface CollectingNoticeProps {
  */
 export function CollectingNotice({ variant }: CollectingNoticeProps) {
     const t = useTranslations('widgets.investor-flows');
-    // 리터럴 `t()` 호출로 만들어 두고 고른다(추출기가 키를 볼 수 있게).
+    // 리터럴 번역 호출로 만들어 두고 고른다(추출기가 키를 볼 수 있게).
     const texts: Record<CollectingVariant, { title: string; body: string }> = {
         institutional: {
             title: t('collecting.institutional.title'),

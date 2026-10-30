@@ -1,9 +1,12 @@
 'use client';
 
+/**
+ * 펀더멘털 AI 분석 쿼리 훅 — SSE 스트림 호출, 게이트 대기(`awaiting_interaction`),
+ * 오류 정규화를 한 곳에서 맡아 위젯이 상태 유니온만 보고 렌더하게 한다.
+ */
 import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import { useCallback, useMemo } from 'react';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useQuery } from '@tanstack/react-query';
 import type {
@@ -18,6 +21,7 @@ import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
 
+/** 위젯이 분기하는 분석 상태 유니온. 모든 variant가 `trigger`를 노출한다. */
 export type FundamentalAnalysisState =
     | { status: 'loading'; trigger: () => void }
     | {
@@ -66,12 +70,9 @@ async function fetchFundamentalAnalysis(
             throw new Error(result.error.message);
         }
         /**
-         * core는 `fetch_failed`에 **항상** `error`를 채운다 — `String(error)`나
-         * `Profile not found for symbol: AAPL` 같은 **영어 예외 문자열**이다
-         * (core의 `dist/application` 아래 run 파일들). 그래서
-         * `result.error ?? fallback`은
-         * 폴백이 절대 안 걸리고 원시 예외가 전 로케일에 그대로 나갔다.
-         * 카탈로그 문구를 먼저 쓰고, 원문은 개발자용으로 콘솔에만 남긴다.
+         * core는 `fetch_failed`에 **항상** 영어 예외 문자열(`Profile not found for symbol: AAPL` 등)을
+         * `error`로 채운다 — 그대로 보여 주면 전 로케일에 원문이 나가므로 화면에는 카탈로그 문구를 쓰고,
+         * 원문은 개발자용으로 콘솔에만 남긴다.
          */
         if (result.code === 'fetch_failed' && result.error) {
             console.error('[fetchFailed]', result.error);
@@ -88,6 +89,10 @@ async function fetchFundamentalAnalysis(
     throw new Error(messages.unexpected);
 }
 
+/**
+ * 펀더멘털 분석을 조회하고 상태 유니온으로 돌려준다. `autoRunAllowed`가 거짓이면 캐시만
+ * 읽고, 허용되는 순간 대기 중인 쿼리를 한 번 다시 불러 생성한다.
+ */
 export function useFundamentalAnalysis(
     symbol: string,
     modelId: ModelId,
@@ -114,14 +119,14 @@ export function useFundamentalAnalysis(
     const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
     const streamMessages = useStreamErrorMessages();
-    const queryKey = useMemo(
-        () =>
-            QUERY_KEYS.fundamentalAnalysis(symbol, modelId, reasoning, locale),
-        [symbol, modelId, reasoning, locale]
-    );
-
+    // queryKey는 메모하지 않는다 — React Query가 키를 깊은 비교하므로 매 렌더 새 배열이어도 같은 쿼리다.
     const query = useQuery({
-        queryKey,
+        queryKey: QUERY_KEYS.fundamentalAnalysis(
+            symbol,
+            modelId,
+            reasoning,
+            locale
+        ),
         queryFn: ({ signal, queryKey: [, qSymbol, qModelId, qReasoning] }) =>
             fetchFundamentalAnalysis(
                 qSymbol,
@@ -141,16 +146,14 @@ export function useFundamentalAnalysis(
         staleTime: Infinity,
     });
 
-    // §17 exception: `refetch` is destructured immediately after useQuery
-    // because it feeds the useCallback below — derived values that are
-    // consumed by subsequent hook calls must precede those hooks. The
-    // `refetch` reference is stable across renders (React Query guarantee).
     const { refetch } = query;
 
-    const retry = useCallback(() => {
+    const retry = () => {
         void refetch();
-    }, [refetch]);
+    };
 
+    // useRefetchWhenAllowed의 입력(isAwaiting)이 query.error에서 파생되므로 파생값
+    // 바로 뒤에 선언한다(HK-1 예외) — 다른 훅은 모두 이 변수 앞에 있다.
     const isAwaitingInteraction =
         query.error instanceof AwaitingInteractionError;
     useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);

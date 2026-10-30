@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 카드 폴링에 집계 분석 캐시 무효화를 붙인 훅 — 폴링이 끝났을 때 새로 보강된 카드가 있으면 `newsAnalysis`를 갱신한다.
+ */
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { NewsDisplayItem } from '@/shared/lib/types';
@@ -10,23 +13,14 @@ import {
 } from './useNewsCardPolling';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { capRows } from '../utils/capRows';
-
-function isPendingAnalysis(item: NewsDisplayItem): boolean {
-    return item.sentiment === null || item.priceImpact === null;
-}
-
-function countEnriched(items: NewsDisplayItem[]): number {
-    return items.filter(item => !isPendingAnalysis(item)).length;
-}
+import {
+    collectEnrichedCardIds,
+    hasNewEnrichedCard,
+} from '../utils/enrichedCardIds';
 
 /**
- * Wraps `useNewsCardPolling` with React Query cache invalidation. When polling
- * completes and the final enriched card count exceeds the baseline captured at
- * mount, invalidates `newsAnalysis` queries for the symbol so the aggregate AI
- * analysis reflects all newly fetched articles.
- *
- * Extracts the cache-invalidation decision out of the presentation layer so
- * `NewsList` stays focused on rendering.
+ * 폴링 결과를 그대로 돌려주되, 폴링이 끝난 (상한 적용) 목록에 마운트 시점 기준선에 없던 보강 카드
+ * id가 있으면 종목의 `newsAnalysis` 쿼리를 무효화해 집계 분석이 새 기사를 반영하게 한다.
  */
 export function useNewsPollingWithInvalidation(
     symbol: string,
@@ -35,12 +29,11 @@ export function useNewsPollingWithInvalidation(
     const queryClient = useQueryClient();
     // Stored as state (not a ref) so the symbol-change reset below can use
     // setState during render without triggering the react-hooks/refs lint rule.
-    // 기준선도 `capRows`를 통과시켜 훅이 **자기 완결적**이 되게 한다. 지금은 유일한
-    // 호출부가 이미 상한만큼 잘라서 넘기지만, 그러지 않는 호출부가 하나 생기는 순간
-    // 기준선(≈1,400)이 비교 대상(≤50)보다 커져 무효화가 **영영 발생하지 않는다** —
-    // 방금 고친 버그의 정확한 거울상이고, 조용히 실패한다는 점에서 더 나쁘다.
-    const [initialEnrichedCount, setInitialEnrichedCount] = useState(() =>
-        countEnriched(capRows(initialItems))
+    // 기준선도 `capRows`를 통과시켜 훅이 **자기 완결적**이 되게 한다. 호출부가 상한 없이
+    // 넘기면 기준선 모집단이 비교 대상(≤상한)보다 커져 무효화가 **영영 발생하지 않는다**.
+    // 개수가 아니라 id 집합이라야 상한이 찬 목록에서 새 보강 행이 옛 행을 밀어내는 경우도 잡는다.
+    const [baselineEnrichedIds, setBaselineEnrichedIds] = useState(() =>
+        collectEnrichedCardIds(capRows(initialItems))
     );
     const [prevSymbol, setPrevSymbol] = useState(symbol);
     // Stable holder so useNewsCardPolling (data-fetch hook) is declared before
@@ -51,7 +44,7 @@ export function useNewsPollingWithInvalidation(
     // renders" pattern.
     if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
-        setInitialEnrichedCount(countEnriched(capRows(initialItems)));
+        setBaselineEnrichedIds(collectEnrichedCardIds(capRows(initialItems)));
     }
 
     const result = useNewsCardPolling(
@@ -63,13 +56,16 @@ export function useNewsPollingWithInvalidation(
     const handlePollingComplete = useCallback(
         (finalItems: NewsDisplayItem[]) => {
             // 기준선과 **같은 모집단**에서 센다 — capRows 주석 참고.
-            if (countEnriched(capRows(finalItems)) > initialEnrichedCount) {
-                void queryClient.invalidateQueries({
-                    queryKey: QUERY_KEYS.newsAnalysisPrefix(symbol),
-                });
+            if (hasNewEnrichedCard(baselineEnrichedIds, capRows(finalItems))) {
+                // `cancelRefetch: false` — 이미 도는 분석 스트림을 끊지 않는다. 끊어도 서버는
+                // 버려진 작업을 끝까지 돌려 같은 분석에 LLM 비용이 두 번 든다.
+                void queryClient.invalidateQueries(
+                    { queryKey: QUERY_KEYS.newsAnalysisPrefix(symbol) },
+                    { cancelRefetch: false }
+                );
             }
         },
-        [queryClient, symbol, initialEnrichedCount]
+        [queryClient, symbol, baselineEnrichedIds]
     );
 
     useLayoutEffect(() => {

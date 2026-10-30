@@ -131,9 +131,12 @@ describe('useLinePaneChart', () => {
         expect(mockSetData).toHaveBeenCalledWith(['built']);
     });
 
-    it('skips setData when the indicator has no values', () => {
+    // 빈 값이면 이전 종목·타임프레임의 선이 남지 않도록 빈 값으로 다시 채운다
+    // (`buildSeriesDataFromValues`는 빈 값에 빈 배열을 돌려준다).
+    it('still syncs the series from empty values instead of keeping the old line', () => {
         renderHook(() => useLinePaneChart(params({ indicators: EMPTY })));
-        expect(mockSetData).not.toHaveBeenCalled();
+        expect(buildSeriesDataFromValues).toHaveBeenCalledWith(BARS, []);
+        expect(mockSetData).toHaveBeenCalledWith(['built']);
     });
 
     it('removes the series when it is hidden', () => {
