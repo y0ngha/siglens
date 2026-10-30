@@ -66,6 +66,17 @@ describe('createShareSnapshotAction', () => {
         spy.mockRestore();
     });
 
+    it('logs only the error name, never the raw error that embeds the snapshot params', async () => {
+        mockCreate.mockRejectedValue(new Error('insert ... params: SECRET'));
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        await createShareSnapshotAction(validInput);
+        expect(spy).toHaveBeenCalledWith(
+            '[createShareSnapshotAction] Failed to persist share snapshot',
+            { name: 'Error', code: undefined }
+        );
+        spy.mockRestore();
+    });
+
     // addendum C-3(a): non-chart kind (news) also succeeds (kind routing)
     it('succeeds with a non-chart kind (news)', async () => {
         const newsInput = {

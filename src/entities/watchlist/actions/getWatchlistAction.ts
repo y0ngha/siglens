@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
+import { DrizzleWatchlistRepository } from '../api';
 import { toWatchlistView } from '../lib/toWatchlistView';
 import type { WatchlistItemView } from '../model';
 

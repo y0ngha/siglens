@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 거래량 차트 시리즈 데이터 동기화 훅.
+ */
 import { type RefObject, useEffect, useRef } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { NO_EXTENDED_BARS } from '@/shared/api/market/extendedBarsSession';
@@ -26,6 +29,10 @@ interface UseVolumeChartDataOptions {
 
 const runDirectly = (update: () => void): void => update();
 
+/**
+ * 거래량 차트의 총 거래량·매수 거래량 막대에 데이터를 채우고, 정규장 데이터가 바뀔 때만
+ * 시간축을 맞춘다.
+ */
 export function useVolumeChartData({
     chartRef,
     totalSeriesRef,
@@ -51,9 +58,13 @@ export function useVolumeChartData({
         )
             return;
 
-        if (bars.length === 0 || buySellVolume.length === 0) {
+        // 총 거래량은 봉에서만 나온다 — 매수/매도 분해가 비었다고 총 막대까지 지우지 않는다
+        // (빈 분해는 아래 `tailAligned`가 빈 매수 막대로 만든다).
+        if (bars.length === 0) {
             totalSeriesRef.current.setData([]);
             buySeriesRef.current.setData([]);
+            // 다음 데이터가 오면 다시 맞추도록 맞춤 기록도 지운다.
+            fittedForRef.current = null;
             return;
         }
 

@@ -9,6 +9,12 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { getTranslations } from 'next-intl/server';
 
+/**
+ * 가입 2단계: 받은 인증 코드를 확인하고, 이미 가입된 주소인지 확인한다.
+ *
+ * 중복 가입 여부는 코드 확인 **뒤에** 본다 — 메일함 소유를 증명한 사람에게만
+ * 계정 존재 여부가 드러난다.
+ */
 export async function verifyEmailAction(
     _prev: VerifyEmailFormState,
     formData: FormData

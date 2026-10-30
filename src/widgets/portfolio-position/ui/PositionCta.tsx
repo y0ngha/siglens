@@ -1,13 +1,17 @@
 'use client';
 
+/**
+ * 이 종목에 평단이 없는 방문자(비회원·미보유 회원)용 "내 위치" CTA — 현재가만 담은 건물, 안내 문구,
+ * 최근 범위, 보유종목 등록 링크.
+ */
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { computePosition } from '../lib/positionGeometry';
-import { formatAmount } from '../lib/positionBuildingNotes';
+import { resolveCtaBuilding } from '../utils/ctaBuilding';
+import { formatAmount } from '../utils/buildingPriceFormat';
 
 // 건물(SVG·층 툴팁·포털 코드)은 CTA 문구보다 늦게 와도 되는 장식·정보 보강이라
 // 코드 분할한다. 비회원 경로는 메인 청크에 이 코드를 싣지 않는다. 호출 경로가 이미
@@ -42,37 +46,6 @@ const PositionBuildingWithReadout = dynamic(loadPositionBuilding, {
     ssr: false,
     loading: () => <BuildingPlaceholder withReadout />,
 });
-
-interface CtaBuildingInput {
-    model: NonNullable<ReturnType<typeof computePosition>>;
-    low52w: number;
-    high52w: number;
-    current: number;
-}
-
-/**
- * 평단 없이 현재가만 담은 건물의 입력. 평단 자리에 `avg: current`를 넣는다 —
- * `avg`는 양수 가드에만 쓰이고 이 화면이 읽는 currentPos/currentClamped는
- * `current`만으로 정해진다(`[symbol]/position/page.tsx`의
- * resolveCurrentPricePosition과 같은 근거). 범위·현재가가 비었거나 퇴화
- * 입력이면 null → 건물 없이 문구 CTA만.
- */
-function resolveCtaBuilding(
-    low52w: number | null,
-    high52w: number | null,
-    lastClose: number | null
-): CtaBuildingInput | null {
-    if (low52w === null || high52w === null || lastClose === null) return null;
-    const model = computePosition({
-        low52w,
-        high52w,
-        current: lastClose,
-        avg: lastClose,
-    });
-    return model === null
-        ? null
-        : { model, low52w, high52w, current: lastClose };
-}
 
 interface PositionCtaProps {
     symbol: string;

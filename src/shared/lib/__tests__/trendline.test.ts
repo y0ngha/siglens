@@ -1,15 +1,5 @@
 import { TRENDLINE_DIRECTION_LABEL_KEY } from '@/shared/lib/trendline';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import koMessages from '@/../messages/ko.json';
-import zhMessages from '@/../messages/zh.json';
-
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /**
  * 라벨은 문자열이 아니라 `shared.lib.trendline`의 **키**다 — 예전에는 한국어
@@ -26,7 +16,7 @@ describe('TRENDLINE_DIRECTION_LABEL_KEY', () => {
         '%s: 두 방향 + fallback 키가 모두 카탈로그에 있다',
         locale => {
             const group = (
-                CATALOGS[locale].shared.lib as unknown as Record<
+                MESSAGE_CATALOGS[locale].shared.lib as unknown as Record<
                     string,
                     Record<string, string>
                 >

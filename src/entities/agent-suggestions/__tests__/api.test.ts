@@ -395,4 +395,20 @@ describe('getAgentSuggestions', () => {
             `ai:suggest:v1:${SUGGESTIONS_PROMPT_VERSION}:ko:2026091203:u:u1`
         );
     });
+
+    it('a cached list containing non-strings is treated as a miss and regenerated', async () => {
+        const redis = freshRedis();
+        (redis.get as ReturnType<typeof vi.fn>).mockResolvedValue([
+            'a',
+            { bad: true },
+            'c',
+        ]);
+        redisState.client = redis;
+        mockCallAgentProvider.mockResolvedValue(AGENT_RESULT);
+
+        const result = await getAgentSuggestions(INPUT);
+
+        expect(result).toEqual(['질문1', '질문2', '질문3']);
+        expect(mockCallAgentProvider).toHaveBeenCalledTimes(1);
+    });
 });

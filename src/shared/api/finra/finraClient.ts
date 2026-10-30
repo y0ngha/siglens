@@ -42,11 +42,14 @@ async function fetchFinraText(url: string): Promise<string | null> {
                 signal: AbortSignal.timeout(FINRA_REQUEST_TIMEOUT_MS),
             });
             if (res.ok) return res.text();
-            if (res.status === HTTP_NOT_FOUND) return null;
             if (res.status === HTTP_FORBIDDEN) {
                 const body = await res.text().catch(() => '');
                 if (body.includes(ACCESS_DENIED_MARKER)) return null;
+            } else {
+                // 읽지 않은 본문이 재시도·다음 요청 동안 keep-alive 소켓을 붙잡지 않게 놓는다.
+                await res.body?.cancel().catch(() => undefined);
             }
+            if (res.status === HTTP_NOT_FOUND) return null;
             throw new FinraHttpError(url, res.status);
         },
         {

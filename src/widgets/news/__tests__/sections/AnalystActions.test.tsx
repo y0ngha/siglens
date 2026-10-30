@@ -135,4 +135,39 @@ describe('AnalystActions', () => {
         await user.click(screen.getByText(/더보기/));
         expect(screen.queryByText(/더보기/)).not.toBeInTheDocument();
     });
+
+    it('유지·기타 액션 배지는 AA 대비를 만족하는 중립 토큰(-300)을 쓴다', () => {
+        render(
+            <AnalystActions
+                events={[
+                    { ...EVENTS[0]!, action: 'maintained' },
+                    { ...EVENTS[1]!, action: 'other' },
+                ]}
+            />
+        );
+        const badges = [
+            screen.getByText('등급 유지'),
+            screen.getByText('기타'),
+        ];
+        badges.forEach(badge => {
+            expect(badge).toHaveClass('text-secondary-300');
+            expect(badge).not.toHaveClass('text-secondary-400');
+        });
+    });
+
+    it('FMP가 같은 날 같은 등급 행을 반복해도 중복 키 없이 모두 렌더한다', () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const duplicate: GradesEvent = { ...EVENTS[0]! };
+
+        render(<AnalystActions events={[duplicate, { ...duplicate }]} />);
+
+        expect(screen.getAllByText('Goldman Sachs')).toHaveLength(2);
+        const keyWarnings = errorSpy.mock.calls.filter(call =>
+            String(call[0]).includes('same key')
+        );
+        expect(keyWarnings).toHaveLength(0);
+        errorSpy.mockRestore();
+    });
 });

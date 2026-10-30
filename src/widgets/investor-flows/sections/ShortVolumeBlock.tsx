@@ -1,15 +1,24 @@
+/**
+ * 일별 장외(TRF) 공매도 비중 블록.
+ */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { TrendLineChart } from '../charts/TrendLineChart';
+import { TrendLineChart } from '../ui/charts/TrendLineChart';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import {
     formatInteger,
     formatMonthDay,
     formatPercent,
 } from '../utils/flowFormat';
+import { PERCENT_SCALE } from '../utils/percentScale';
 import type { ShortVolumeMarker, ShortVolumeSeries } from '../utils/short';
+
+/** 최신 값·평균 문구의 소수 자리. */
+const RATIO_DIGITS = 1;
+/** 그래프 눈금 라벨의 소수 자리. */
+const TICK_DIGITS = 0;
 
 type MarkerKey = NonNullable<ShortVolumeMarker> | 'normal';
 
@@ -45,10 +54,11 @@ export function ShortVolumeBlock({ series, marker }: ShortVolumeBlockProps) {
         normal: t('short.markerNormal'),
     };
     const percents = series.rows.map(row =>
-        row.ratio === null ? null : row.ratio * 100
+        row.ratio === null ? null : row.ratio * PERCENT_SCALE
     );
     const finite = percents.filter((v): v is number => v !== null);
-    const average = series.average === null ? null : series.average * 100;
+    const average =
+        series.average === null ? null : series.average * PERCENT_SCALE;
     const bounds = average === null ? finite : [...finite, average];
     return (
         <div>
@@ -60,7 +70,11 @@ export function ShortVolumeBlock({ series, marker }: ShortVolumeBlockProps) {
                 <span className="tabular-nums">
                     {t('short.volumeLatest', {
                         date: latest.date,
-                        pct: formatPercent(latest.ratio * 100, locale, 1),
+                        pct: formatPercent(
+                            latest.ratio * PERCENT_SCALE,
+                            locale,
+                            RATIO_DIGITS
+                        ),
                     })}
                 </span>
                 <span
@@ -80,8 +94,16 @@ export function ShortVolumeBlock({ series, marker }: ShortVolumeBlockProps) {
                     ariaLabel={t('short.volumeAria', {
                         count: series.rows.length,
                     })}
-                    maxLabel={formatPercent(Math.max(...bounds), locale, 0)}
-                    minLabel={formatPercent(Math.min(...bounds), locale, 0)}
+                    maxLabel={formatPercent(
+                        Math.max(...bounds),
+                        locale,
+                        TICK_DIGITS
+                    )}
+                    minLabel={formatPercent(
+                        Math.min(...bounds),
+                        locale,
+                        TICK_DIGITS
+                    )}
                     startLabel={formatMonthDay(series.rows[0].date)}
                     endLabel={formatMonthDay(latest.date)}
                 />
@@ -89,8 +111,8 @@ export function ShortVolumeBlock({ series, marker }: ShortVolumeBlockProps) {
             {average !== null && (
                 <p className="mt-2 text-xs text-secondary-400">
                     {t('short.volumeAverage', {
-                        days: formatInteger(series.rows.length, locale),
-                        pct: formatPercent(average, locale, 1),
+                        days: formatInteger(series.averagedDays, locale),
+                        pct: formatPercent(average, locale, RATIO_DIGITS),
                     })}
                 </p>
             )}

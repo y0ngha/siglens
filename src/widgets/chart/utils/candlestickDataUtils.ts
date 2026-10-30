@@ -1,3 +1,7 @@
+/**
+ * 캔들 시리즈 데이터 빌드와 Elder Impulse 색 매핑.
+ */
+
 import type { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 import { tailOffset } from './seriesDataUtils';
 import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';

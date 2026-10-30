@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProviderCallTimeoutError } from '@/entities/llm-provider/lib/utils';
+import { ProviderCallTimeoutError } from '@/entities/llm-provider/api/callDeadline';
 
 const callAiProviderRouter = vi.fn();
 const repoFind = vi.fn();

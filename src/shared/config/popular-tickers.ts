@@ -570,7 +570,7 @@ export const POPULAR_TICKERS = [
     // 이미 화이트리스트에 있는 것을 뺀 **차집합 전부**이고, 전원 SPDR 섹터 ETF
     // 또는 S&P 500 대형주라 차트·펀더멘털·재무가 모두 채워진다. prewarm
     // 유니버스는 312 → 335가 되고, 야간 처리량(틱 ~90 × SYMBOLS_PER_TICK 6
-    // ≈ 540 슬롯, 당시 수치 — 지금은 `SITEMAP_SCOPE.md` §3-5)에 여유가 있다.
+    // ≈ 540 슬롯, 당시 수치)에 여유가 있다.
     //
     // 불변식: 이 블록의 합집합 = `SECTOR_ETFS` ∪ `SECTOR_STOCKS` − (다른 블록).
     // `__tests__/marketHubIndexability.test.ts`가 강제한다 — dashboard 그리드에 심볼을 더하면
@@ -612,7 +612,7 @@ export const POPULAR_TICKERS = [
     // 중앙값 3,042)의 절반도 안 된다 — 얇아서 못 넣는 게 아니라 **안 넣어서 얇다**.
     // 스냅샷이 붙기 전까지는 `hasSnapshot` 게이트가 degraded 페이지를 계속 막는다.
     //
-    // ⚠️ 용량(2026-08-24 당시 수치 — 지금 처리량은 `SITEMAP_SCOPE.md` §3-5): 유니버스
+    // ⚠️ 용량(2026-08-24 당시 수치): 유니버스
     // 335 → 431. 야간 처리량은 틱 약 90회 × SYMBOLS_PER_TICK 6
     // ≈ 540 심볼-슬롯이라 이론 가동률이 62% → 80%로 오른다. 실제 처리량은 in-flight
     // 점유와 터미널 6h 백오프 때문에 이론보다 낮으므로, 배포 후
@@ -671,7 +671,7 @@ export const POPULAR_TICKERS = [
     // C 구간(페니주·SPAC·워런트·뮤추얼펀드·2배 단일종목 ETF, 마지막 43종)은
     // 2026-10-01에 통째로 뺐다. 90일 노출은 가장 컸지만(4372) 2026-07 절벽에서
     // 지목된 종목군과 구성이 같고, "숫자만 바뀌는 프로그래매틱 금융 페이지"의 분모를
-    // 키우는 쪽이었다(`docs/architecture/SEO_RECOVERY_2026_09.md` §10). 이제
+    // 키우는 쪽이었다. 이제
     // `longtail-default-blocked`로 noindex이고, 프리웜·sitemap에서도 빠진다.
 
     // --- [KR] KOSPI / KOSDAQ (2026-08-16) ---

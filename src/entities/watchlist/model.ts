@@ -8,6 +8,7 @@ import type { WatchlistSource as FunnelWatchlistSource } from '@/shared/lib/funn
  */
 export type WatchlistSource = FunnelWatchlistSource;
 
+/** 액션 오류 분류. 화면은 `message`가 아니라 이 코드로 분기한다. */
 export type WatchlistActionErrorCode =
     | 'unauthenticated'
     | 'invalid_symbol'
@@ -30,10 +31,15 @@ export interface RawWatchlistInput {
     label: string;
 }
 
+/**
+ * `validateWatchlistSymbol`의 결과. 통과한 경우의 `symbol`은 trim·대문자 정규화가 끝난 값이라
+ * 호출부가 다시 정규화하지 않고 그대로 저장·비교에 쓴다. 실패 사유는 형상 위반 하나뿐이다.
+ */
 export type ValidateWatchlistSymbolResult =
     | { ok: true; symbol: string }
     | { ok: false; code: 'invalid_symbol' };
 
+/** 액션이 던지지 않고 돌려주는 실패. `message`는 사용자에게 보여줄 현지화 문구. */
 export interface WatchlistActionError {
     status: 'error';
     code: WatchlistActionErrorCode;
@@ -45,9 +51,25 @@ export type AddWatchlistResult =
     | { status: 'ok'; item: WatchlistItemView; created: boolean }
     | WatchlistActionError;
 
+/**
+ * `removeWatchlistItemAction`의 결과. 없는 심볼을 지워도 `ok`(멱등)라 성공 분기에 삭제 여부가
+ * 실리지 않으며, 실패는 던지지 않고 {@link WatchlistActionError}로 돌아온다.
+ */
 export type RemoveWatchlistResult = { status: 'ok' } | WatchlistActionError;
 
 /** `skipped`는 상한 때문에 버린 새 심볼 수. 이미 계정에 있던 심볼은 added에도 skipped에도 들지 않는다. */
 export type MergeWatchlistResult =
     | { status: 'ok'; added: number; skipped: number }
     | WatchlistActionError;
+
+/**
+ * 낙관적 변이 시작 시점에 그 심볼에 대해 알던 것. 목록 전체 스냅샷이 아니라 **심볼 단위**로
+ * 되돌려야 동시에 진행 중인 다른 심볼의 낙관적 행을 지우지 않는다.
+ */
+export interface WatchlistMutationContext {
+    symbol: string;
+    /** 변이 직전 캐시에 있던 그 심볼의 행(없으면 null). */
+    prior: WatchlistItemView | null;
+    /** `prior`가 있던 자리. */
+    index: number;
+}
