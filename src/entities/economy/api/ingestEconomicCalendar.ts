@@ -23,8 +23,8 @@ import {
     CALENDAR_BACKFILL_FLAG_TTL_SECONDS,
     CALENDAR_MAJORITY_FAILURE_DIVISOR,
     economyCalendarCacheTag,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /**
  * `ingestEconomicCalendar`의 결과 — 호출부(액션·크론)가 `status`로 분기한다.

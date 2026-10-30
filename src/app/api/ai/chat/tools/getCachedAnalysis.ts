@@ -20,7 +20,7 @@ import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
 import {
     resolveHoldingPositionBucket,
     type ResolveHoldingPositionBucketInput,
-} from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+} from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';

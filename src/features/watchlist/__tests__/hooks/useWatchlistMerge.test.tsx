@@ -306,6 +306,109 @@ describe('useWatchlistMerge', () => {
         );
     });
 
+    describe('병합 응답을 기다리는 사이 로그아웃하면', () => {
+        async function logoutDuringMerge() {
+            identity.currentUser = { id: 'user-1' };
+            let resolve: (value: {
+                status: 'ok';
+                added: number;
+                skipped: number;
+            }) => void = () => {};
+            mockMerge.mockReturnValue(
+                new Promise(r => {
+                    resolve = r;
+                })
+            );
+            const { wrapper } = createQueryClientWrapper();
+            const { rerender } = renderHook(() => useWatchlistMerge(), {
+                wrapper,
+            });
+            await waitFor(() => expect(mockMerge).toHaveBeenCalledTimes(1));
+            identity.currentUser = null;
+            rerender();
+            await act(async () =>
+                resolve({ status: 'ok', added: 2, skipped: 0 })
+            );
+        }
+
+        it('로컬을 비우지 않고 세션 플래그도 쓰지 않는다', async () => {
+            await logoutDuringMerge();
+            expect(
+                localStorage.getItem(LOCAL_STORAGE_WATCHLIST_KEY)
+            ).not.toBeNull();
+            expect(
+                sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+            ).toBeNull();
+        });
+
+        it('병합 토스트·이벤트를 내지 않는다', async () => {
+            await logoutDuringMerge();
+            expect(toast.showToast).not.toHaveBeenCalled();
+            expect(mockTrack).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('병합 응답을 기다리는 사이 계정이 바뀌면', () => {
+        function startInFlight() {
+            identity.currentUser = { id: 'user-1' };
+            let resolve: (value: {
+                status: 'ok';
+                added: number;
+                skipped: number;
+            }) => void = () => {};
+            mockMerge.mockReturnValue(
+                new Promise(r => {
+                    resolve = r;
+                })
+            );
+            const { wrapper } = createQueryClientWrapper();
+            const { rerender } = renderHook(() => useWatchlistMerge(), {
+                wrapper,
+            });
+            return {
+                rerender,
+                respond: () =>
+                    act(async () =>
+                        resolve({ status: 'ok', added: 2, skipped: 0 })
+                    ),
+            };
+        }
+
+        it('user-1 → user-2: 옛 결과를 버린다(로컬·플래그·토스트·이벤트 모두 그대로)', async () => {
+            const { rerender, respond } = startInFlight();
+            await waitFor(() => expect(mockMerge).toHaveBeenCalledTimes(1));
+            identity.currentUser = { id: 'user-2' };
+            rerender();
+            await respond();
+            expect(
+                localStorage.getItem(LOCAL_STORAGE_WATCHLIST_KEY)
+            ).not.toBeNull();
+            expect(
+                sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+            ).toBeNull();
+            expect(toast.showToast).not.toHaveBeenCalled();
+            expect(mockTrack).not.toHaveBeenCalled();
+        });
+
+        it('같은 사용자가 계속 로그인 상태면(새 객체여도 같은 id) 결과를 적용한다', async () => {
+            const { rerender, respond } = startInFlight();
+            await waitFor(() => expect(mockMerge).toHaveBeenCalledTimes(1));
+            identity.currentUser = { id: 'user-1' };
+            rerender();
+            await respond();
+            expect(
+                localStorage.getItem(LOCAL_STORAGE_WATCHLIST_KEY)
+            ).toBeNull();
+            expect(
+                sessionStorage.getItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY)
+            ).toBe('1');
+            expect(toast.showToast).toHaveBeenCalledTimes(1);
+            expect(mockTrack).toHaveBeenCalledWith('watchlist_merged', {
+                count: 2,
+            });
+        });
+    });
+
     it('이미 이 세션에 병합했으면 부르지 않는다', async () => {
         sessionStorage.setItem(SESSION_STORAGE_WATCHLIST_MERGED_KEY, '1');
         identity.currentUser = { id: 'user-1' };

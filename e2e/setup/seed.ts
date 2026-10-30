@@ -15,7 +15,7 @@ import {
     users,
 } from '@/shared/db/schema';
 import { NEWS_CATEGORY_SLUGS } from '@/entities/market-news/lib/categoryConfig';
-import { makeFakeItems } from '@/entities/market-news/lib/FakeMarketNewsClient';
+import { makeFakeItems } from '@/entities/market-news/api/FakeMarketNewsClient';
 import {
     AUTH_USER_EMAIL,
     AUTH_USER_NAME,

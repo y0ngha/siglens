@@ -1,29 +1,20 @@
 'use client';
 
-import {
-    type KeyboardEvent,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
-import { isKoreanInput } from '@/entities/ticker/lib/ticker';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
+import { useOverlaySearch } from '../hooks/useOverlaySearch';
 import { useRecentSearches } from '../hooks/useRecentSearches';
-import { useTickerSearch } from '../hooks/useTickerSearch';
+import { useSearchAnnouncement } from '../hooks/useSearchAnnouncement';
 import { normalizeLabel } from '../lib/normalizeLabel';
-import { isImeComposing } from '../lib/isImeComposing';
-import { POPULAR_PREVIEW_GROUPS } from '../lib/popularPreview';
-import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
-import { resultDisplayNames } from '../lib/resultDisplay';
-import { SEARCH_PLACEHOLDER_KEY, SEARCH_ROW_CLASS } from '../lib/searchLabels';
-import { SearchResultRow } from './SearchResultRow';
-import { SearchWatchlistStar } from '@/features/watchlist/ui/SearchWatchlistStar';
+import { SEARCH_PLACEHOLDER_KEY } from '../lib/searchLabels';
+import { OverlayPopularPreview } from './search-overlay/OverlayPopularPreview';
+import { OverlayRecentSearches } from './search-overlay/OverlayRecentSearches';
+import { OverlayResults } from './search-overlay/OverlayResults';
 
 interface SearchOverlayProps {
     isOpen: boolean;
@@ -34,18 +25,14 @@ interface SearchOverlayProps {
 }
 
 /**
- * 모바일 전체화면 검색 오버레이.
+ * 모바일 전체화면 검색 오버레이. `SearchOverlayProvider`가 앱 전체에 하나만 호스팅한다.
  *
  * ## 포털이 필수인 이유
  *
  * `Header`는 `sticky z-50 backdrop-blur-md`다. CSS 명세상 `backdrop-filter`는
  * (`transform`·`filter`와 마찬가지로) **`position: fixed` 자손의 containing block**이
  * 된다. 헤더 안에서 렌더하면 `fixed inset-0`가 뷰포트가 아니라 **56px 헤더 박스**
- * 기준으로 잡혀 오버레이가 헤더 영역만 덮는다. 이 레포는 이미 겪었고
- * `widgets/layout/HeaderMobileMenu`에 같은 주석이 있다.
- *
- * 본체(`SearchOverlayBody`)는 열려 있을 때만 마운트된다 — 훅 비용과 하이드레이션
- * 안전성을 한 번에 해결한다(아래 게이트 주석 참고).
+ * 기준으로 잡혀 오버레이가 헤더 영역만 덮는다(`widgets/layout/HeaderMobileMenu`도 같은 이유).
  *
  * ## z-70인 이유
  *
@@ -57,7 +44,7 @@ interface SearchOverlayProps {
  *
  * `useFocusTrap`은 활성화 시 컨테이너의 **첫 포커서블**로 포커스를 옮기는데, 그건
  * `useEffect`(passive)라 탭 태스크보다 늦다. iOS Safari는 사용자 제스처와 동기적으로
- * 이어지지 않은 `focus()`로는 키보드를 올리지 않는다 — 이 설계의 존재 이유가 무너진다.
+ * 이어지지 않은 `focus()`로는 키보드를 올리지 않는다.
  *
  * 그래서 입력이 **DOM 순서상 첫 포커서블**이고(닫기 버튼은 입력 뒤에 둔다 — iOS의
  * "취소는 오른쪽" 관행과도 맞는다), 포커스는 React가 commit 단계에서 동기 호출하는
@@ -69,14 +56,13 @@ export function SearchOverlay({
     onNavigate,
 }: SearchOverlayProps) {
     // 닫혀 있으면 **훅조차 돌리지 않는다**. 이 컴포넌트는 root layout의 provider가
-    // 호스팅해 33개 전 라우트에 마운트돼 있다. 본체의 훅이 여기 있으면 라우트가
-    // 바뀔 때마다 `useRecentSearches`의 동기 `localStorage` 읽기 + `JSON.parse`와
-    // React Query observer 하나가 클라이언트 내비게이션의 임계 경로에 딸려온다 —
-    // 아무도 검색을 열지 않았는데도.
+    // 호스팅해 전 라우트에 마운트돼 있다. 본체의 훅이 여기 있으면 라우트가 바뀔 때마다
+    // `useRecentSearches`의 동기 `localStorage` 읽기 + `JSON.parse`와 React Query
+    // observer 하나가 클라이언트 내비게이션의 임계 경로에 딸려온다.
     //
     // 분리는 하이드레이션 게이트도 겸한다. 서버 HTML에는 포털이 없고 `isOpen`은
     // 클릭으로만 true가 되므로 첫 클라이언트 렌더에도 포털이 없다(React #418).
-    // 예전의 `mounted` 상태는 이 사실을 몰라서 두었던 것이라 함께 걷어냈다.
+    // 지난 질의가 남지 않는 것도 언마운트가 보장한다.
     if (!isOpen) return null;
     return <SearchOverlayBody onClose={onClose} onNavigate={onNavigate} />;
 }
@@ -86,50 +72,16 @@ function SearchOverlayBody({
     onNavigate,
 }: Omit<SearchOverlayProps, 'isOpen'>) {
     const t = useTranslations('features.ticker-search');
-    // 인기 종목 섹션 제목은 `assetClassNav`가 이미 네 로케일로 가진 지역명을
-    // 재사용한다 — 새 표를 만들면 `미국`이 두 곳에 생겨 한쪽만 바뀐다.
-    const tRegion = useTranslations('shared.config.nav.region');
-    /**
-     * **`useAssetLabel`을 쓰지 않는다.** 그 훅의 네임스페이스는
-     * `shared.assetName`(166키)이고, 키가 변수라 추출기가 네임스페이스를
-     * 통째로 넓힌다. 이 오버레이는 `SearchOverlayProvider`를 통해 **전 라우트
-     * 크롬**에 들어 있으므로 그 표가 33개 라우트 전부의 first-load에 실린다
-     * (`clientKeyCoverage.test.ts`가 그 회귀를 막는다).
-     *
-     * 인기 종목은 9개뿐이라 전용 표를 둔다. 드리프트는 테스트가 막는다 —
-     * `__tests__/popularPreview.test.ts`가 이 표와 `shared.assetName`이
-     * 네 로케일에서 같은 값인지 확인한다.
-     */
-    const tPopular = useTranslations('features.ticker-search.popularName');
-    const [query, setQuery] = useState('');
-    /**
-     * 사용자가 검색 키를 눌렀다는 사실. 즉시 이동하지 않고 남겨 둔다.
-     *
-     * 디바운스가 300ms이므로 마지막 글자를 치고 바로 검색 키를 누르면 결과가 아직
-     * 이전 질의의 것이다. 그 상태에서 결정하면 둘 중 하나가 된다 — 엉뚱한 종목으로
-     * 가거나(`apple` → `/APPLE` 404), 아무 일도 안 일어나 **검색 키가 먹통으로**
-     * 보이거나. 의도를 보류했다가 결착된 뒤 처리하면 둘 다 피한다. 기다리는 동안
-     * 화면에는 "검색 중…"이 떠 있다.
-     *
-     * 의도는 ref로 든다 — 소비(`isSettled` 도달)는 렌더에 드러낼 값이 아니라서
-     * effect 안 setState로 낮출 이유가 없다(react/set-state-in-effect). `submitTick`은
-     * 그 의도가 **생겼다는 사실만** 렌더에 알리는 카운터다 — 이미 결착된 상태에서
-     * 검색 키를 눌러도 아래 effect가 한 번은 돌아야 한다(다른 의존성이 안 바뀔 수 있다).
-     */
-    const pendingSubmitRef = useRef(false);
-    const [submitTick, setSubmitTick] = useState(0);
-    const requestSubmit = () => {
-        pendingSubmitRef.current = true;
-        setSubmitTick(t => t + 1);
-    };
 
     const dialogRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const pathname = usePathname();
+    // 로케일 접두사를 뗀 경로다 — `/en/NVDA`에서도 `NVDA` 재선택을 "같은 페이지"로 알아봐야 한다.
+    const pathname = useAppPathname();
     const { recentSearches, addSearch, clearAll } = useRecentSearches();
-    const { results, isSearching, hasQuery, debouncedQuery, isError } =
-        useTickerSearch(query);
+    const { query, results, hasQuery, status, handleChange, handleKeyDown } =
+        useOverlaySearch(target => handleSelect(target.symbol, target.label));
+    const announcement = useSearchAnnouncement(status, results.length);
 
     // 본체는 열려 있을 때만 마운트된다 — 항상 활성.
     useEscapeKey(onClose, true);
@@ -137,68 +89,20 @@ function SearchOverlayBody({
     // 배경 스크롤 잠금. 소유자 수를 세는 훅이라 다른 잠금과 겹쳐 열려도 안전하다.
     useBodyScrollLock();
 
-    // 지난 질의가 남지 않는 것은 언마운트가 공짜로 해 준다(예전에는 `[isOpen]` 효과로
-    // 비웠다).
-
     /**
-     * 결착된 조회 결과로 목적지를 정해 이동한다.
+     * 결과·최근·인기·검색 키 모든 경로가 거치는 단일 선택 경로.
      *
-     * `useEffectEvent`라 `query`·`results`·`handleSelect`를 **항상 최신으로** 읽으면서도
-     * 아래 효과의 의존성에는 들어가지 않는다. 렌더 중에 ref를 갈아 끼우던 예전 방식은
-     * React Compiler가 최적화를 포기하게 만들고 동시성 렌더에서 안전하지 않다.
-     */
-    const submitResolvedTarget = useEffectEvent(() => {
-        const target = resolveSubmitTarget(query, results);
-        if (target) handleSelect(target.symbol, target.label);
-    });
-
-    const isSettled = debouncedQuery.trim() === query.trim();
-
-    /**
-     * 결과·최근·인기 모든 행이 거치는 단일 경로.
-     *
-     * 이 함수는 라우터를 직접 만지지 않는다 — 무엇을 골랐는지만 `onNavigate`로 넘기고,
-     * 실제 이동(`router.replace`)과 진행 바는 `SearchOverlayProvider`가 소유한다.
-     * 경계를 이렇게 갈라야 오버레이가 닫힌 뒤에도 대기 표시를 이어갈 수 있다.
-     *
-     * ## 이동 중 상태를 두지 않는 이유
-     *
-     * 한때 `useTransition`으로 "이동 중…"을 띄우고 그동안 닫기를 막았다. 그 설계가
-     * 문제를 셋 만들었다:
-     *
-     * 1. 이동이 멈추면 취소가 영구 비활성이 되어 **전체화면 모달에 갇힌다**(WCAG 2.1.2).
-     * 2. 안드로이드 하드웨어 뒤로가기·iOS 엣지 스와이프는 `onClose`를 거치지 않고
-     *    `popstate`를 직접 쏘므로 그 가드가 아예 적용되지 않았다.
-     * 3. 대기 중 `history.back()`이 일어나면 늦게 도착한 RSC 응답이 사용자가 물러난
-     *    항목을 덮어쓴다 — **고 판단했으나 사실이 아니다.** 설치된 next@16.2.12의
-     *    `node_modules/next/dist/client/components/app-router-instance.js`에서 확인했다:
-     *    `ACTION_NAVIGATE`/`ACTION_RESTORE`가 들어오면 진행 중인 액션에
-     *    `actionQueue.pending.discarded = true`를 세우고(L145-146), `handleResult`는
-     *    `action.discarded`면 `actionQueue.state = nextState`도 `action.resolve`도
-     *    하지 않고 빠져나간다(L76-93). `setState`에 도달하지 않으니 `HistoryUpdater`도
-     *    돌지 않는다 — 되돌아간 자리가 유지된다.
-     *
-     *    이 사실은 1·2와 **독립적이다**. 1·2만으로도 가드 제거 근거는 충분하므로,
-     *    Next의 이 동작이 훗날 바뀌더라도 가드를 되살릴 이유는 되지 못한다(대신
-     *    `SearchOverlayProvider`가 진행 바를 자기 상태로 잠가, 폐기된 이동이
-     *    `action.resolve`를 영영 부르지 않아도 띠가 남지 않게 해 둔다).
-     *
-     * 1·2만으로 제거 근거는 충분하다. 3은 이 버전에서 성립하지 않는다는 사실을 남겨
-     * 둔다 — 이 경합을 이유로 가드를 되살리자는 제안이 나오면 여기를 보라.
-     *
-     * 그래서 **닫기는 즉시 하되 대기 표시는 오버레이 밖으로** 뺐다. 이동과 진행 바는
-     * `SearchOverlayProvider`가 소유한다.
-     *
-     * Next의 라우트 전환만으로는 나머지가 처리되지 않는다는 점에 주의:
-     * `app/[symbol]/loading.tsx`는 `[symbol]`의 자식 슬롯을 감싸는데
-     * 종목→종목 이동은 그 세그먼트 자체를 바꾸므로 서스펜스가 경계 위에서 일어나고,
-     * 루트 `loading.tsx`도 `<Suspense>`도 없어 React가 옛 화면을 그대로 붙들고 있는다.
-     * 사용자는 애플을 눌렀는데 NVDA 차트를 2~3초 본다(LAX 경로 실측 기준). 셋 다 사라진다.
+     * 라우터를 직접 만지지 않는다 — 무엇을 골랐는지만 `onNavigate`로 넘기고, 실제 이동
+     * (`router.replace`)과 진행 바는 `SearchOverlayProvider`가 소유한다. 오버레이는 즉시
+     * 닫혀야 하므로(이동이 멈춰도 전체화면 모달에 갇히지 않게, WCAG 2.1.2) 대기 표시를
+     * 오버레이 밖에서 이어 가야 하기 때문이다.
      */
     function handleSelect(symbol: string, label: string) {
         addSearch({ symbol, label: normalizeLabel(label, symbol) });
-        // 보고 있던 종목을 다시 고른 경우. 이동할 곳이 없으니 닫기만 한다 —
-        // `/NVDA`에서 인기 종목의 NVDA를 누르는 건 탭 한 번이면 닿는 흔한 동작이다.
+        // 보고 있던 종목을 다시 고른 경우. 이동할 곳이 없으니 닫기만 한다 — `onClose`가
+        // 열 때 넣은 히스토리 항목을 되돌린다. `onNavigate`로 보내면 같은 URL로의
+        // `replace`가 그 항목을 소비하지 않은 채 남겨, 다음 닫기의 `history.back()`이
+        // 사용자를 보던 페이지 밖으로 보낸다.
         if (pathname === `/${symbol}`) {
             onClose();
             return;
@@ -206,55 +110,11 @@ function SearchOverlayBody({
         onNavigate(symbol);
     }
 
-    /**
-     * Enter/이동 키. `enterKeyHint="search"`로 키보드에 검색 키를 띄워 놓고 아무 일도
-     * 하지 않으면 약속을 어기는 셈이다.
-     *
-     * 이 경로는 **원래 있던 기능**이다 — 모바일 인라인 자동완성에는 Enter로 티커에
-     * 직행하는 길과 `검색` 버튼이 있었다(`useAutocomplete.handleKeyDown`). 오버레이로
-     * 옮기면서 빠뜨리면 "티커를 아는 사용자"가 300ms 디바운스 + 왕복 + 탭을 치르게 되고,
-     * 무엇보다 **검색 결과가 없을 때 막다른 길**이 된다 — FMP 검색이 색인하지 않는
-     * 종목에 도달할 유일한 방법이 그 직행이었다.
-     *
-     * 한글 입력은 직행시키지 않는다. `삼성전자`를 그대로 URL로 삼으면 존재하지 않는
-     * 종목 페이지로 보내게 된다 — 후보가 없으면 아무것도 하지 않는 편이 낫다.
-     */
-    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.key !== 'Enter') return;
-        // 한글 IME는 음절을 **확정**할 때도 Enter를 쓴다. 이걸 걸러내지 않으면
-        // `삼성전`까지 친 상태에서 확정 Enter가 `삼성` 결과로 이동시킨다.
-        if (isImeComposing(e)) return;
-        e.preventDefault();
-
-        // 지금 결정하지 않고 의도만 남긴다 — `isSettled`(위 정의) 결착 여부는
-        // 아래 effect가 판단한다. 이유는 `pendingSubmitRef` 주석 참고.
-        requestSubmit();
-    };
-
-    /**
-     * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.
-     *
-     * 디바운스(300ms) 때문에 `results`는 한 박자 전 질의의 것일 수 있다. `TS` 입력
-     * 후 멈췄다가 `LA`를 이어 치고 곧바로 검색하면 `TS`의 첫 결과로 가버린다 —
-     * `isSettled`(양쪽 다 trim해 비교)가 참이 될 때까지 기다려야 첫 결과를 믿을 수
-     * 있다. `debouncedQuery`는 입력 원본이라 `"apple "`처럼 공백이 붙으면
-     * `query.trim()`과 영영 같아지지 않고, 첫 결과가 화면에 있는데도 무시된 뒤
-     * `/APPLE`로 직행해 404가 난다.
-     *
-     * 실패(`isError`)면 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가
-     * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로
-     * 보내는 것보다 정직하다.
-     */
-    // Enter 시점에 디바운스된 검색이 아직 안 끝났을 수 있어, 제출 의도를 ref에 두고 결과가 settle된 뒤에 이동한다(위 JSDoc). 핸들러에서 즉시 처리하면 한 박자 전 질의 결과로 이동한다.
-    // react-doctor-disable-next-line react-doctor/no-event-handler
-    useEffect(() => {
-        if (!pendingSubmitRef.current || !isSettled || isSearching) return;
-        pendingSubmitRef.current = false;
-        if (isError) return;
-        // 위 effect와 같다 — 검색 settle 뒤 확정된 목적지로 이동/선택을 알리는 것이며 라이브 상태를 부모에 동기화하는 것이 아니다.
-        // react-doctor-disable-next-line react-doctor/no-pass-live-state-to-parent
-        submitResolvedTarget();
-    }, [submitTick, isSettled, isSearching, isError]);
+    function handleClearAll() {
+        clearAll();
+        // 최근 검색 섹션이 통째로 언마운트되므로 포커스를 입력으로 돌린다(WCAG 2.4.3).
+        inputRef.current?.focus();
+    }
 
     const portalTarget = typeof document === 'undefined' ? null : document.body;
     if (!portalTarget) return null;
@@ -271,8 +131,7 @@ function SearchOverlayBody({
             tabIndex={-1}
             // h-dvh는 iOS의 URL 바 노출/숨김에 따라 높이를 맞추기 위한 것이다.
             // **키보드는 dvh에 반영되지 않는다** — 키보드에 가려지는 문제는 아래
-            // 스크롤 컨테이너의 하단 여백이 해결한다. 이 둘을 헷갈려 여백을
-            // "불필요한 매직 넘버"로 지우지 말 것.
+            // 스크롤 컨테이너의 하단 여백이 해결한다.
             className="fixed inset-0 z-70 flex h-dvh flex-col bg-secondary-900"
         >
             {/* `viewportFit: cover` + standalone PWA에서 `fixed inset-0`는 화면 물리
@@ -287,18 +146,12 @@ function SearchOverlayBody({
                     autoFocus
                     type="search"
                     value={query}
-                    onChange={e => {
-                        // 계속 타이핑하면 앞서 남긴 검색 의도는 무효다 — 그대로
-                        // 두면 새 질의가 결착되는 순간 사용자가 요청하지 않은
-                        // 이동이 일어난다(`useAutocomplete`도 같은 규칙).
-                        pendingSubmitRef.current = false;
-                        setQuery(e.target.value);
-                    }}
+                    onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     placeholder={t(SEARCH_PLACEHOLDER_KEY)}
                     // 보이는 문구(placeholder)와 접근 이름을 같게 둔다 —
                     // 음성 입력 사용자가 화면에 보이는 말로 이 필드를 부를 수 있어야 한다
-                    // (WCAG 2.5.3). 히어로 트리거에서 같은 이유로 aria-label을 걷어냈다.
+                    // (WCAG 2.5.3).
                     aria-label={t(SEARCH_PLACEHOLDER_KEY)}
                     enterKeyHint="search"
                     autoComplete="off"
@@ -316,196 +169,42 @@ function SearchOverlayBody({
                 </button>
             </div>
 
-            {/* overscroll-contain — 목록 끝에서 스크롤이 배경으로 넘어가지 않게 한다. */}
             {/*
+                overscroll-contain — 목록 끝에서 스크롤이 배경으로 넘어가지 않게 한다.
+
                 `pb-[100dvh]`가 핵심이다. 이게 없으면 콘텐츠 높이가 컨테이너를 넘지 않아
                 (`scrollHeight === clientHeight`) **스크롤 자체가 불가능**하다. 뷰포트는
                 키보드가 올라와도 `dvh` 그대로라(레이아웃 뷰포트 기준) 컨테이너는 844px인데
-                실제로 보이는 건 ~354px뿐이다. 그 결과 인기 종목의 암호화폐 그룹은 영영
-                도달할 수 없고, 검색 결과도 6~10번째를 못 본다(390×844 실측).
-
-                아래 여백을 둬 항상 넘치게 만들면 드래그 스크롤이 살아나고, iOS에서
-                아래로 끌어 키보드를 내리는 제스처도 함께 동작한다.
-
-                여백이 **키보드 높이 이상**이어야 마지막 행이 키보드 위로 올라온다.
-                50dvh(844px 화면에서 422px)는 세로에서도 아슬아슬하고 가로에서는
-                확실히 모자란다(뷰포트 ~390px에 키보드 ~200px). 빈 공간이라 바이트도
-                페인트 비용도 0이므로 100dvh로 둬 조건을 무조건 만족시킨다.
+                실제로 보이는 건 ~354px뿐이다(390×844 실측). 여백이 **키보드 높이 이상**이어야
+                마지막 행이 키보드 위로 올라오고, iOS에서 아래로 끌어 키보드를 내리는 제스처도
+                함께 동작한다. 빈 공간이라 바이트도 페인트 비용도 0이므로 100dvh로 둔다.
             */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[100dvh]">
                 {/*
                     이 리전은 오버레이가 열릴 때 내용(`검색어를 입력하세요`)과 함께
                     삽입된다. 그 첫 문구는 놓칠 수 있지만 이후의 모든 변화(검색 중 →
                     결과 N건 / 실패)는 리전이 이미 등록된 뒤라 정상적으로 읽힌다.
-
-                    `isSearching`을 먼저 보는 것도 중요하다 — `useTickerSearch`는 새 질의에
-                    `placeholderData`가 없어 응답 전 `results`가 빈 배열이다. 그대로 읽으면
-                    "검색 결과 0건"을 먼저 말하고 165ms 뒤(LAX RTT) "4건"으로 번복한다.
                 */}
                 <p className="sr-only" aria-live="polite">
-                    {isSearching
-                        ? t('search.searching')
-                        : isError
-                          ? t('search.loadFailed')
-                          : !hasQuery
-                            ? t('search.typeToSearch')
-                            : results.length > 0
-                              ? t('search.resultsCount', {
-                                    v0: results.length,
-                                })
-                              : // 한글 막다른 길의 유일한 출구를 화면에만 두면
-                                // 스크린리더 사용자는 그 출구를 못 듣는다(WCAG 4.1.3).
-                                isKoreanInput(query)
-                                ? t('search.noResultsTryTicker')
-                                : t('search.noResults')}
+                    {announcement}
                 </p>
 
                 {hasQuery ? (
-                    // `role="listbox"`/`role="option"`을 쓰지 않는다. ARIA listbox는 단일
-                    // 탭스톱 + 방향키 + `aria-activedescendant`를 갖춘 복합 위젯인데, 이
-                    // 오버레이에는 방향키 모델이 없고 각 행이 네이티브 `<button>`이라 저마다
-                    // 탭스톱을 갖는다 — 역할만 빌려오면 스크린리더가 폼 모드로 전환한 뒤
-                    // 방향키가 먹지 않아 오히려 나빠진다(WCAG 4.1.2). 지금 구조 그대로가
-                    // 버튼 목록이고 Tab으로 완전히 조작된다.
-                    <section aria-label={t('search.resultsLabel')}>
-                        {results.map(result => (
-                            // 행(이동)과 ★(담기)는 형제 버튼이다 — 버튼 목록이라 둘 다 Tab
-                            // 정지점이고, ★를 눌러도 이동하지 않는다.
-                            <div
-                                key={result.symbol}
-                                className="flex items-center pr-2"
-                            >
-                                <SearchResultRow
-                                    result={result}
-                                    onSelect={handleSelect}
-                                    className="min-w-0 flex-1"
-                                />
-                                <SearchWatchlistStar
-                                    symbol={result.symbol}
-                                    label={
-                                        resultDisplayNames(result).primaryName
-                                    }
-                                    focusable
-                                    className="size-11"
-                                />
-                            </div>
-                        ))}
-                        {isSearching && (
-                            <p className="px-4 py-3 text-sm text-secondary-400">
-                                {t('search.searchingEllipsis')}
-                            </p>
-                        )}
-                        {isError && !isSearching && (
-                            <p className="px-4 py-10 text-center text-sm text-secondary-400">
-                                {/*
-                                    "결과 없음"과 "조회 실패"는 다르다. 예전에는 둘을
-                                    구분하지 않아 검색 서버가 죽어도 "결과가 없습니다"로
-                                    보였고, 한글 질의에는 "티커로 쳐보세요"라는 틀린 안내가
-                                    나갔다 — 사용자는 없는 종목을 찾은 줄 안다.
-                                */}
-                                {t('search.loadFailedRetry')}
-                            </p>
-                        )}
-                        {results.length === 0 && !isSearching && !isError && (
-                            <p className="px-4 py-10 text-center text-sm text-secondary-400">
-                                {/*
-                                    한글 질의는 Enter 직행이 막혀 있다(회사명을 URL로 삼으면
-                                    없는 페이지로 간다). 그래서 FMP가 색인하지 않는 종목을
-                                    한글로 찾으면 **빠져나갈 길이 없다** — 티커로 다시 쳐보라는
-                                    안내가 그 유일한 출구다. 데스크톱 자동완성과 같은 문구.
-                                */}
-                                {isKoreanInput(query)
-                                    ? t('search.noResultsTryTickerExample')
-                                    : t('search.noResults')}
-                            </p>
-                        )}
-                    </section>
+                    <OverlayResults
+                        results={results}
+                        status={status}
+                        onSelect={handleSelect}
+                    />
                 ) : (
                     <>
                         {recentSearches.length > 0 && (
-                            <section>
-                                <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                                    <h2 className="text-xs font-medium text-secondary-400">
-                                        {t('search.recentHeading')}
-                                    </h2>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            clearAll();
-                                            // 이 버튼은 방금 자기 자신이 든 섹션을
-                                            // 통째로 언마운트시킨다. 그대로 두면
-                                            // 포커스가 <body>로 떨어져 다음 Tab이
-                                            // 문서 처음부터 시작한다(WCAG 2.4.3).
-                                            inputRef.current?.focus();
-                                        }}
-                                        className="inline-flex min-h-11 touch-manipulation items-center px-1 text-xs text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                    >
-                                        {t('search.clearAll')}
-                                    </button>
-                                </div>
-                                <div className="flex flex-wrap gap-2 px-4 pb-3">
-                                    {/* 오버레이는 상한을 두지 않는다 — 저장된 7개가 다
-                                        보여야 "최근 본 종목 사이를 오간다"는 이 화면의
-                                        용도가 성립한다. 세로가 귀한 홈 히어로와 달리
-                                        여기는 항상 스크롤된다(위 여백 주석 참고). */}
-                                    {recentSearches.map(entry => (
-                                        <button
-                                            key={entry.symbol}
-                                            type="button"
-                                            onClick={() =>
-                                                handleSelect(
-                                                    entry.symbol,
-                                                    entry.label
-                                                )
-                                            }
-                                            className="min-h-11 max-w-[12rem] touch-manipulation truncate rounded-full border border-primary-500 bg-primary-600/5 px-3 text-xs text-secondary-200 transition-colors hover:border-primary-400 hover:text-primary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                        >
-                                            {entry.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </section>
+                            <OverlayRecentSearches
+                                entries={recentSearches}
+                                onSelect={handleSelect}
+                                onClearAll={handleClearAll}
+                            />
                         )}
-
-                        {POPULAR_PREVIEW_GROUPS.map(group => (
-                            <section key={group.labelKey}>
-                                {/* 자산군을 섹션 제목으로 드러낸다. 인기 종목 데이터
-                                    (`{symbol, name}`)에는 거래소 정보가 없어 행마다
-                                    시장 배지를 붙일 수 없다 — 없는 정보를 지어내는 대신
-                                    제목으로 묶어 한국·코인 사용자가 자기 영역을 바로 찾게 한다. */}
-                                <h2 className="px-4 pt-3 pb-1 text-xs font-medium text-secondary-400">
-                                    {t('search.popularHeading', {
-                                        v0: tRegion(group.labelKey),
-                                    })}
-                                </h2>
-                                {group.items.map(symbol => {
-                                    // 표시 이름은 카탈로그가 정한다. 폴백을 심볼로
-                                    // 두는 것이 의도다 — 누락 시 한국어가 새는 것보다
-                                    // 티커가 보이는 편이 낫고, 누락 자체는 테스트가 막는다.
-                                    const key = symbol.replace(/\./g, '_');
-                                    const label = tPopular.has(key)
-                                        ? tPopular(key)
-                                        : symbol;
-                                    return (
-                                        <button
-                                            key={symbol}
-                                            type="button"
-                                            onClick={() =>
-                                                handleSelect(symbol, label)
-                                            }
-                                            className={SEARCH_ROW_CLASS}
-                                        >
-                                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-secondary-100">
-                                                {label}
-                                            </span>
-                                            <span className="shrink-0 font-mono text-xs text-secondary-400">
-                                                {symbol}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </section>
-                        ))}
+                        <OverlayPopularPreview onSelect={handleSelect} />
                     </>
                 )}
             </div>

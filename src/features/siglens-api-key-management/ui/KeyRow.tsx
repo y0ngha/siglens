@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useId } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import { BUTTON_GHOST, BUTTON_OUTLINE_DANGER } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { useRevokeConfirm } from '../hooks/useRevokeConfirm';
 import { SubmitButton } from './SubmitButton';
 
 interface KeyRowProps {
+    /** 표시할 키. 원문은 없고 표시용 접두만 있다. */
     apiKey: SiglensApiKeySummary;
+    /** 섹션이 공유하는 폐기 액션. 결과 문구는 섹션의 상태 영역에 뜬다. */
     revokeFormAction: (formData: FormData) => void;
 }
 
@@ -18,23 +21,22 @@ function formatDay(date: Date, locale: string): string {
     );
 }
 
+/**
+ * 발급한 키 한 줄 — 이름·접두·만든 날·마지막 사용일과 폐기 버튼. 폐기는 되돌릴 수 없어
+ * 행 안에서 한 번 더 묻고, 확인 버튼이 그 경고 문구를 설명으로 함께 읽힌다.
+ */
 export function KeyRow({ apiKey, revokeFormAction }: KeyRowProps) {
     const t = useTranslations('features.siglens-api-key-management');
     const locale = useLocale();
-    const [confirming, setConfirming] = useState(false);
-    const revokeButtonRef = useRef<HTMLButtonElement>(null);
-    const confirmButtonRef = useRef<HTMLButtonElement>(null);
-    const restoreFocusRef = useRef(false);
-    // 확인 단계가 열리면 확인 버튼으로, 취소로 닫히면 폐기 버튼으로 포커스를 옮긴다.
-    // 누른 버튼이 사라지므로 옮기지 않으면 포커스가 body로 떨어진다.
-    useEffect(() => {
-        if (confirming) {
-            confirmButtonRef.current?.focus();
-        } else if (restoreFocusRef.current) {
-            restoreFocusRef.current = false;
-            revokeButtonRef.current?.focus();
-        }
-    }, [confirming]);
+    const promptId = useId();
+    const {
+        confirming,
+        startConfirm,
+        cancelConfirm,
+        revokeButtonRef,
+        confirmButtonRef,
+    } = useRevokeConfirm();
+
     return (
         <li
             data-testid={`siglens-api-key-row-${apiKey.id}`}
@@ -53,7 +55,7 @@ export function KeyRow({ apiKey, revokeFormAction }: KeyRowProps) {
                     <button
                         ref={revokeButtonRef}
                         type="button"
-                        onClick={() => setConfirming(true)}
+                        onClick={startConfirm}
                         aria-label={t('SiglensApiKeySection.revokeAria', {
                             v0: apiKey.name,
                         })}
@@ -84,13 +86,18 @@ export function KeyRow({ apiKey, revokeFormAction }: KeyRowProps) {
                     className="flex flex-wrap items-center gap-2"
                 >
                     <input type="hidden" name="keyId" value={apiKey.id} />
-                    <p className="w-full text-sm text-secondary-200">
+                    <p
+                        id={promptId}
+                        className="w-full text-sm text-secondary-200"
+                    >
                         {t('SiglensApiKeySection.revokePrompt')}
                     </p>
+                    {/* 포커스가 경고 문구를 건너뛰고 이 버튼으로 바로 오므로 문구를 설명으로 잇는다. */}
                     <SubmitButton
                         buttonRef={confirmButtonRef}
                         label={t('SiglensApiKeySection.revokeConfirm')}
                         pendingLabel={t('SiglensApiKeySection.revoking')}
+                        aria-describedby={promptId}
                         className={cn(
                             BUTTON_OUTLINE_DANGER,
                             'h-8 px-3 text-xs'
@@ -98,10 +105,7 @@ export function KeyRow({ apiKey, revokeFormAction }: KeyRowProps) {
                     />
                     <button
                         type="button"
-                        onClick={() => {
-                            restoreFocusRef.current = true;
-                            setConfirming(false);
-                        }}
+                        onClick={cancelConfirm}
                         className={cn(BUTTON_GHOST, 'h-8 px-2 text-xs')}
                     >
                         {t('SiglensApiKeySection.revokeCancel')}

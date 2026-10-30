@@ -191,6 +191,31 @@ describe('/economy/kr page', () => {
         expect(types).toContain('FAQPage');
         expect(types).not.toContain('Dataset');
     });
+
+    async function renderedJsonLdTypes(): Promise<unknown[]> {
+        const { container } = render(
+            await resolveAsyncServerTree(
+                await EconomyKrPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })
+            )
+        );
+        return Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        ).map(s => JSON.parse(s.textContent ?? '{}')['@type']);
+    }
+
+    it('지표도 캘린더도 없으면(noindex 렌더) WebPage·BreadcrumbList를 내지 않는다', async () => {
+        expect(await renderedJsonLdTypes()).toEqual(['FAQPage']);
+    });
+
+    it('지표가 있으면 WebPage·BreadcrumbList를 낸다', async () => {
+        mockCards.mockResolvedValue([CARD]);
+
+        expect(await renderedJsonLdTypes()).toEqual(
+            expect.arrayContaining(['FAQPage', 'WebPage', 'BreadcrumbList'])
+        );
+    });
 });
 
 /**

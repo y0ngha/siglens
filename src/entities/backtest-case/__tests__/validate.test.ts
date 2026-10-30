@@ -1,3 +1,4 @@
+import backtestData from '@/entities/backtest-case/data/data.json';
 import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
 
 describe('validateBacktestData', () => {
@@ -29,6 +30,12 @@ describe('validateBacktestData', () => {
         meta: {},
         cases: [validCase],
     };
+
+    describe('bundled data', () => {
+        it('accepts the shipped data.json', () => {
+            expect(() => validateBacktestData(backtestData)).not.toThrow();
+        });
+    });
 
     describe('valid input', () => {
         it('returns data unchanged when input is valid', () => {
@@ -97,6 +104,36 @@ describe('validateBacktestData', () => {
             expect(() =>
                 validateBacktestData({ ...validData, cases: null })
             ).toThrow('cases must be an array');
+        });
+
+        it('throws a descriptive error when a case is null', () => {
+            expect(() =>
+                validateBacktestData({ ...validData, cases: [null] })
+            ).toThrow('cases[0] must be an object');
+        });
+
+        it('throws a descriptive error when a case is a primitive', () => {
+            expect(() =>
+                validateBacktestData({ ...validData, cases: [validCase, 1] })
+            ).toThrow('cases[1] must be an object');
+        });
+
+        it('throws when a bullishTargets entry is null', () => {
+            const data = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            bullishTargets: [null],
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(data)).toThrow(
+                'cases[0].aiAnalysis.bullishTargets[0] must be an object'
+            );
         });
 
         it('throws when a case has invalid returnPct type', () => {

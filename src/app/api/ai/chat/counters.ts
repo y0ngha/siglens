@@ -28,7 +28,7 @@ export function createGuestIpBackstopCounter(): CounterStore {
     });
 }
 
-/** All agent quotas fail-closed (spec §2-10). Keys: agent:q:<feature>:<subject>:<bucket>. */
+/** All agent quotas fail-closed. Keys: agent:q:<feature>:<subject>:<bucket>. */
 export function createAgentCounters(): AgentCounters {
     const day = (prefix: string) =>
         createCounterStore({ prefix, period: 'day', failurePolicy: 'closed' });
