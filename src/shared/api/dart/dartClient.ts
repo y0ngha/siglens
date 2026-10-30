@@ -18,7 +18,7 @@ import {
  *   fetch가 던진 원 오류(메시지·`cause`)는 감싸서 버린다.
  * - **할당량**: 하루 약 2만 건(`020`). 실제 호출마다 Redis 일일 카운터(KST 날짜 키)를 올리고, 80%에 한 번 경고한다.
  *   `020`을 받으면 Redis 회로 차단 키를 **다음 KST 자정까지** 세워 그날 남은 호출을 HTTP 없이 막는다(인스턴스 공유).
- *   카운터가 `DART_DAILY_CALL_BUDGET`에 닿아도 같은 오류로 스스로 멈춘다 — 카운터는 Redis 장애 동안 덜 셀 수 있어
+ *   카운터가 `DART_DAILY_CALL_BUDGET`(`dartQuotaGuard.ts`)에 닿아도 같은 오류로 스스로 멈춘다 — 카운터는 Redis 장애 동안 덜 셀 수 있어
  *   DART 상한보다 낮게 잡는다.
  */
 

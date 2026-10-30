@@ -40,7 +40,7 @@ const EXTENDED_HISTORY_KEY_PREFIX = 'bars:intrahist-ext';
 
 /**
  * 확장 봉 tail이 "새 봉이 생기는 중"일 때의 TTL(초). 정규장 장중 TTL(60초)과 같은 값이다 —
- * `this.ttl()`을 쓰면 정규장 밖에서 "다음 개장까지"가 나와 프리·애프터마켓 봉이 가려지므로 상수로 둔다.
+ * `CachedMarketDataProvider.ttl()`을 쓰면 정규장 밖에서 "다음 개장까지"가 나와 프리·애프터마켓 봉이 가려지므로 상수로 둔다.
  */
 const EXTENDED_TAIL_LIVE_TTL_SECONDS = SECONDS_PER_MINUTE;
 

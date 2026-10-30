@@ -53,7 +53,7 @@ export function isExtendedBarsFetchEnabled({
  * 정규장 봉만 그린다(기존 동작 그대로).
  *
  * 갱신 규약은 정규장 봉(`useBars`)과 같다: staleTime `BARS_STALE_TIME_MS`, 폴링 없음, 포커스·
- * 마운트 시 stale이면 재조회. 서버 캐시의 tail TTL(`CachedMarketDataProvider`의 `EXTENDED_TAIL_LIVE_TTL_SECONDS`)이
+ * 마운트 시 stale이면 재조회. 서버 캐시(`extendedBarsCache.ts`)의 확장 tail TTL이
  * staleTime보다 길거나 같아 더 자주 물어도 같은 값을 받는다.
  * 표시 보조 값이라 실패를 재시도로 증폭하지 않는다(`retry: false`).
  */

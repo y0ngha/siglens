@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Bar } from '@y0ngha/siglens-core';
+import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { createMemoryLru } from '@/shared/cache/memoryLru';
 import {
     HISTORY_MEMORY_TTL_CAP_SECONDS,
@@ -98,8 +99,8 @@ describe('readCachedHistory', () => {
         expect(set).toHaveBeenCalledWith(
             'k',
             [BAR],
-            HISTORY_MEMORY_TTL_CAP_SECONDS * 1000
+            HISTORY_MEMORY_TTL_CAP_SECONDS * MS_PER_SECOND
         );
-        expect(HISTORY_MEMORY_TTL_CAP_SECONDS).toBe(1800);
+        expect(HISTORY_MEMORY_TTL_CAP_SECONDS).toBe(30 * SECONDS_PER_MINUTE);
     });
 });
