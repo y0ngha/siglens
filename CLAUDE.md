@@ -248,9 +248,11 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 #### RT-1 — Verify gates by running them, and verify claims exhaustively
 
 - "Tests/lint/format/build pass" is reported only after the command ran and its full output (exit code, warning count) was read. Never trust the last line of piped output; read the exit code.
-- Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards`, because scoped runs skip the repo-wide guards.
+- Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards` and `src/shared/i18n/__tests__` (e.g. `noClientHookInServerComponent`), because scoped runs skip the repo-wide guards. Before removing a `'use client'` directive, confirm the component calls no client-only hook.
 - Run `yarn format:check` before committing; a skipped formatter pass is the most common gate miss.
+- Rerun every gate covering a file after each code-changing review fix, React Doctor included; a pass on the earlier version does not carry over to the fixed one.
 - A claim of cleanup ("removed the dead mocks from both files") is verified with a repo-wide grep, and a claim of absence ("the page has no such control") is checked against the component source, not inferred from the rendered page.
+- A rule added or sharpened in a PR is swept across that PR's own diff before pushing (grep for the violating pattern in every changed file), not only the file the reviewer named; otherwise the PR violates its own new rule.
 - ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
 
 ---

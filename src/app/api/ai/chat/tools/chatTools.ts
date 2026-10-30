@@ -275,7 +275,7 @@ export function createToolExecutor(
         if (name === 'get_market_overview') return resultCaps.aggregate;
         if (name === 'get_economy') return resultCaps.economy;
         // `get_investor_flows`는 점수표 + 상위 보유 기관·내부자·Form 144·증자 공시 목록(`SUMMARY_MAX_*` 상한,
-        // `summarizeInvestorFlows.ts`)이라 종합 도구 상한(6,000자)도 넘는다 — 이미 상한 안으로 자른 결과를 더 작은 한도로
+        // `entities/investor-flows/lib/summary/`)이라 종합 도구 상한(6,000자)도 넘는다 — 이미 상한 안으로 자른 결과를 더 작은 한도로
         // 다시 자르면 앞부분 미리보기 덩어리로 무너진다.
         if (name === 'get_investor_flows') return resultCaps.investorFlows;
         if (name === 'get_guide') return resultCaps.guide;

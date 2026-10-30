@@ -1,48 +1,31 @@
 'use client';
 
+/**
+ * 공지 팝업의 데이터·큐 훅 — 활성 공지를 읽고, 현재 경로와 "이미 본" 공지를 걸러
+ * 노출 큐를 만들고, 닫기/다시 보지 않기로 큐를 진행시킨다.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { matchPath } from '@/entities/notice/lib/matchPath';
-import { toNoticeRecord } from '@/entities/notice/lib/toNoticeRecord';
-import {
-    type NoticeRecord,
-    type NoticeWireRecord,
-} from '@/entities/notice/model/types';
+import type { NoticeRecord } from '@/entities/notice/model/types';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { fetchActiveNotices } from '../utils/fetchActiveNotices';
 import { loadDismissedNoticeIds, dismissNotice } from '../utils/noticeStorage';
+import { selectNoticeQueue } from '../utils/selectNoticeQueue';
 
 /** useNoticePopup의 반환 형태 — 노출 큐와 큐 진행 핸들러. */
 export interface UseNoticePopupResult {
+    /** 지금 띄울 공지들. 첫 원소가 화면에 보이는 공지다. */
     queue: NoticeRecord[];
+    /** 지금 공지를 이번 세션에서만 닫는다(새로고침하면 다시 뜬다). */
     advance: () => void;
+    /** 지금 공지를 영구히 숨기고(localStorage) 닫는다. */
     dontShowAgain: () => void;
 }
 
 /**
- * 활성 공지를 `GET /api/notices`로 읽는다. 서버 액션(POST)과 달리 캐시 가능한 GET이지만,
- * 엣지에서 공유되는 것은 **`/api/notices`용 CDN 규칙이 추가될 때뿐**이다(지금 Cloudflare 규칙은
- * `/api`를 제외한다 — `app/api/notices/route.ts` JSDoc). 로케일을 쿼리로 넘기는 이유는 그때를
- * 위한 것이다: 캐시 키에 로케일이 들어가야 먼저 캐시된 언어가 다른 언어 방문자에게 가지 않는다.
- */
-async function fetchActiveNotices(
-    locale: string,
-    signal: AbortSignal
-): Promise<NoticeRecord[]> {
-    const response = await fetch(
-        `/api/notices?locale=${encodeURIComponent(locale)}`,
-        { signal }
-    );
-    if (!response.ok) throw new Error(`notices HTTP ${response.status}`);
-    const wire = (await response.json()) as NoticeWireRecord[];
-    return wire.map(toNoticeRecord);
-}
-
-/**
- * 큐를 effect+setState가 아니라 `useMemo`로 파생하는 이유: 이전 구현은 effect에서
- * `setQueue`를 호출했고, lint(`react-hooks/set-state-in-effect`)를 피하려 `startTransition`
- * 으로 감쌌다. 그 낮은 우선순위 업데이트가 무거운 client 페이지(종목 차트/AI 스트리밍)의
- * 렌더에 밀려 Chrome(Blink)에서 공지 노출이 ~10초+ 지연(starvation)되는 회귀가 있었다
- * (Safari/WebKit은 즉시 — 실측 확인). 렌더 중 파생으로 urgent 반영 + effect-setState
- * 제거를 동시에 달성한다.
+ * 큐를 effect+setState가 아니라 `useMemo`로 파생한다 — effect에서 `setQueue`를 낮은
+ * 우선순위(`startTransition`)로 부르면 무거운 client 페이지(종목 차트/AI 스트리밍)의
+ * 렌더에 밀려 Chrome(Blink)에서 공지 노출이 수 초 이상 늦어진다. 렌더 중 파생은 urgent로
+ * 반영되고 effect 안의 setState도 없앤다.
  *
  * 큐 진행(advance/dontShowAgain)은 모두 세션 한정 `consumedIds`(state)로 일원화한다.
  * "닫기"는 consumed만 추가(새로고침 시 리셋 → 재노출), "다시 보지 않기"는 추가로
@@ -58,17 +41,15 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
     // 항상 consumedIds를 함께 bump하므로(아래), consumedIds 변경 → 재계산 시 최신 dismissed를
     // 다시 읽어 세션 내 stale이 불가능하다. advance는 localStorage를 건드리지 않으므로 재읽기가
     // 불필요하다.
-    const queue = useMemo<NoticeRecord[]>(() => {
-        // includes를 filter 안에서 반복하면 O(n*m) — Set으로 O(1) 조회.
-        const dismissed = new Set(loadDismissedNoticeIds());
-        const consumed = new Set(consumedIds);
-        return allNotices.filter(
-            n =>
-                matchPath(n.pathPattern, pathname) &&
-                !dismissed.has(n.id) &&
-                !consumed.has(n.id)
-        );
-    }, [allNotices, pathname, consumedIds]);
+    const queue = useMemo<NoticeRecord[]>(
+        () =>
+            selectNoticeQueue(allNotices, {
+                pathname,
+                dismissedIds: new Set(loadDismissedNoticeIds()),
+                consumedIds: new Set(consumedIds),
+            }),
+        [allNotices, pathname, consumedIds]
+    );
 
     const consume = useCallback((id: string) => {
         setConsumedIds(prev => (prev.includes(id) ? prev : [...prev, id]));
@@ -89,8 +70,10 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
     }, [queue, consume]);
 
     // 활성 공지 fetch는 외부 시스템 동기화 effect. canonical hook order(effects last)에 따라
-    // useMemo/useCallback 뒤에 둔다. 서버 액션(POST) 대신 GET이라 Googlebot 렌더러가 건너뛰는 `/api/` 경로로 간다(CDN 공유는 규칙이 붙을 때만).
-    // AbortController로 언마운트·로케일 변경 시 취소하고 취소된 응답은 버린다. 공지는 쿼리 캐시 없이 마운트당 한 번 읽는 부가 기능이라 데이터 레이어를 두지 않는다.
+    // useMemo/useCallback 뒤에 둔다. 서버 액션(POST) 대신 GET이라 Googlebot 렌더러가 건너뛰는
+    // `/api/` 경로로 간다(CDN 공유는 규칙이 붙을 때만).
+    // AbortController로 언마운트·로케일 변경 시 취소하고 취소된 응답은 버린다. 공지는 쿼리
+    // 캐시 없이 마운트당 한 번 읽는 부가 기능이라 데이터 레이어를 두지 않는다.
     // react-doctor-disable-next-line react-doctor/no-fetch-in-effect
     useEffect(() => {
         const controller = new AbortController();

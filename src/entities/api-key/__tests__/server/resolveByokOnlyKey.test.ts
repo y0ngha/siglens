@@ -10,13 +10,13 @@ vi.mock('@/entities/api-key/api', async importOriginal => ({
     }),
 }));
 // 서버 키 env 접근 자체를 감시한다 — 이 경로는 `getServerPrimaryKey`를 부르면 안 된다.
-vi.mock('@/entities/llm-provider/lib/serverKeys', () => ({
+vi.mock('@/entities/llm-provider/api/serverKeys', () => ({
     getServerPrimaryKey: vi.fn(() => 'SERVER-KEY-MUST-NOT-BE-USED'),
 }));
 
 import { LlmApiKeyDecryptionFailedError } from '@/entities/api-key/api';
 import { resolveByokOnlyKey } from '@/entities/api-key/server/resolveByokOnlyKey';
-import { getServerPrimaryKey } from '@/entities/llm-provider/lib/serverKeys';
+import { getServerPrimaryKey } from '@/entities/llm-provider/api/serverKeys';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 const SERVER_ENV_NAMES = [

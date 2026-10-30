@@ -5,6 +5,10 @@ import {
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';
+import type {
+    CardListPollPolicy,
+    EnrichableCard,
+} from '@/entities/news-article/model';
 
 /**
  * 뉴스 카드 보강 폴링의 **판정**만 담는다(종목 뉴스·마켓 뉴스 공용).
@@ -17,13 +21,6 @@ import {
  * (`onSettled`)가 자기 태그를 붙여 한다.
  */
 
-/** `sentiment`·`priceImpact`가 `null`이면 아직 AI 보강 전이다. */
-export interface EnrichableCard {
-    sentiment: unknown;
-    priceImpact: unknown;
-}
-
-/** 폴 한 번의 결과 — 성공이면 받은 목록, 실패면 오류. */
 export type CardPollOutcome<T> =
     | { ok: true; data: readonly T[] }
     | { ok: false; error: Error };
@@ -46,11 +43,18 @@ export const INITIAL_CARD_POLL_COUNTERS: CardPollCounters = {
     stagnantPolls: 0,
 };
 
-/** AI 보강이 끝나지 않은 카드가 하나라도 있는가 — 목록 폴러가 계속 돌지 정한다. */
+/**
+ * 카드 하나가 아직 AI 보강 전인가 — `sentiment`·`priceImpact` 중 하나라도 `null`이면 대기다.
+ * 목록 폴러(`hasPendingCard`)와 위젯의 "보강 완료 수" 계산이 같은 정의를 쓰도록 단일 출처로 둔다.
+ * (정체 판정의 `hasAnyEnrichedCard`는 `sentiment`만 보는 더 느슨한 기준이며 별개다.)
+ */
+export function isCardPending(item: EnrichableCard): boolean {
+    return item.sentiment === null || item.priceImpact === null;
+}
+
+/** 목록에 보강 전 카드가 하나라도 있는가 — 있으면 폴링을 이어간다. */
 export function hasPendingCard(items: readonly EnrichableCard[]): boolean {
-    return items.some(
-        item => item.sentiment === null || item.priceImpact === null
-    );
+    return items.some(isCardPending);
 }
 
 /** 보강된 카드가 하나라도 있는가 — 대기 폴러가 AI 집계 분석을 열 시점이다. */
@@ -58,19 +62,6 @@ export function hasAnyEnrichedCard(
     items: readonly Pick<EnrichableCard, 'sentiment'>[]
 ): boolean {
     return items.some(item => item.sentiment !== null);
-}
-
-/** 목록 폴러의 호출부별 차이. */
-export interface CardListPollPolicy {
-    /**
-     * "전부 보강됨"으로 끝내고 스피너를 끄기 전에 지나야 하는 최소 폴 수. 종목 뉴스는 서버가
-     * 뒤에서 새 기사를 받아오는 중일 수 있어 몇 번은 더 확인한다. 마켓 뉴스는 `0`.
-     */
-    completeMinPolls: number;
-    /** 실패도 폴 수로 센다(종목 뉴스) — 실패만 이어지는 빈 목록이 상한까지 끌지 않게. */
-    errorsCountAsPolls: boolean;
-    /** 5분 상한으로 끝날 때도 완료 알림(`completedItems`)을 보낸다(종목 뉴스). */
-    completeOnTimeout: boolean;
 }
 
 /** {@link decideCardListPoll}이 돌려주는 다음 걸음. */

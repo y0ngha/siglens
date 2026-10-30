@@ -1,3 +1,6 @@
+/**
+ * 점수표 방향 라벨의 키·기호·색.
+ */
 import type { InvestorFlowsLabel } from '@y0ngha/siglens-core';
 
 /**

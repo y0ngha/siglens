@@ -79,6 +79,33 @@ describe('DrizzleSharedAnalysisRepository', () => {
         });
     });
 
+    describe('create (no returned row)', () => {
+        it('throws instead of dereferencing a missing row', async () => {
+            const returning = vi.fn().mockResolvedValue([]);
+            const db = {
+                insert: () => ({
+                    values: () => ({
+                        onConflictDoUpdate: () => ({ returning }),
+                    }),
+                }),
+            } as unknown as SiglensDatabase;
+            const repo = new DrizzleSharedAnalysisRepository(db);
+            await expect(
+                repo.create({
+                    id: 'x',
+                    kind: 'chart',
+                    symbol: 'AAPL',
+                    contentHash: 'h',
+                    snapshot,
+                    sharerTier: 'free',
+                    locale: 'ko',
+                    userId: null,
+                    expiresAt: new Date('2026-07-06T00:00:00Z'),
+                })
+            ).rejects.toThrow('shared_analyses upsert returned no row');
+        });
+    });
+
     describe('findById', () => {
         it('returns the row when present', async () => {
             const db = makeSelectDb([

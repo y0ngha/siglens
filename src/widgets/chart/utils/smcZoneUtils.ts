@@ -1,3 +1,7 @@
+/**
+ * SMC 존을 가격선 스펙으로 변환하는 유틸.
+ */
+
 import type { SMCResult } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 

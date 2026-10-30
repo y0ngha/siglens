@@ -73,7 +73,7 @@ export const ECONOMY_RESULT_MAX_CHARS = 20_000;
  * date, short-interest change endpoints, Reg SHO freshness), bringing the
  * worst case to ~7,560 chars; the ceiling moved 8,000 → 8,500 rather than
  * dropping the endpoint dates the prompt rules require. The `SUMMARY_MAX_*`
- * caps in `summarizeInvestorFlows.ts` keep it ≥600 under this ceiling
+ * caps in `entities/investor-flows/lib/summary/` keep it ≥600 under this ceiling
  * (`getInvestorFlows.test.ts` pins it).
  */
 export const INVESTOR_FLOWS_RESULT_MAX_CHARS = 8_500;

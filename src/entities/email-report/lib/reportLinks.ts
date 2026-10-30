@@ -1,8 +1,11 @@
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { signReportValue } from './reportSignature';
 
+/** 서명된 차트 이미지 라우트 경로. */
 export const REPORT_CHART_PATH = '/api/email-report/chart';
+/** `List-Unsubscribe` 원클릭 POST 라우트 경로. */
 export const REPORT_UNSUBSCRIBE_API_PATH = '/api/email-report/unsubscribe';
+/** 본문 수신거부 링크가 여는 확인 페이지 경로(로케일 접두 전). */
 export const REPORT_UNSUBSCRIBE_PAGE_PATH = '/email-report/unsubscribe';
 
 /** 차트 서명 입력 — 심볼과 날짜를 함께 묶어 날짜만 바꾼 URL을 막는다. */

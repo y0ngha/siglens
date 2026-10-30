@@ -1,16 +1,12 @@
 import 'server-only';
-import { getRedisClient } from '@/shared/cache/redisClient';
-import {
-    MS_PER_DAY,
-    MS_PER_HOUR,
-    MS_PER_SECOND,
-    KST_OFFSET_HOURS,
-    SECONDS_PER_DAY,
-} from '@/shared/config/time';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { readBoundedBody } from '@/shared/lib/readBoundedBody';
 import { sleep } from '@/shared/lib/sleep';
 import { withRetry } from '@/shared/lib/withRetry';
+import {
+    openQuotaBreaker,
+    reserveCall,
+    resetDartQuotaGuardForTests,
+} from './dartQuotaGuard';
 
 /**
  * 금융감독원 OpenDART 클라이언트 — 지분공시(`list.json`·`majorstock.json`·`elestock.json`)와 고유번호(`corpCode.xml`).
@@ -22,21 +18,11 @@ import { withRetry } from '@/shared/lib/withRetry';
  *   fetch가 던진 원 오류(메시지·`cause`)는 감싸서 버린다.
  * - **할당량**: 하루 약 2만 건(`020`). 실제 호출마다 Redis 일일 카운터(KST 날짜 키)를 올리고, 80%에 한 번 경고한다.
  *   `020`을 받으면 Redis 회로 차단 키를 **다음 KST 자정까지** 세워 그날 남은 호출을 HTTP 없이 막는다(인스턴스 공유).
- *   카운터가 `DART_DAILY_CALL_BUDGET`에 닿아도 같은 오류로 스스로 멈춘다 — 카운터는 Redis 장애 동안 덜 셀 수 있어
+ *   카운터가 `DART_DAILY_CALL_BUDGET`(`dartQuotaGuard.ts`)에 닿아도 같은 오류로 스스로 멈춘다 — 카운터는 Redis 장애 동안 덜 셀 수 있어
  *   DART 상한보다 낮게 잡는다.
  */
 
 export const DART_API_BASE_URL = 'https://opendart.fss.or.kr/api';
-
-/** DART가 문서화한 하루 요청 상한(`020` 메시지 — "일반적으로는 20,000건"). */
-export const DART_DAILY_QUOTA = 20_000;
-/** 이 비율에 닿는 호출에서 경고를 한 번 남긴다. */
-export const DART_QUOTA_WARN_RATIO = 0.8;
-/**
- * 스스로 멈추는 일일 호출 수 — 상한보다 낮다. 카운터는 Redis가 안 될 때 세지 못하고, DART가 세는 단위(재시도 포함)와
- * 어긋날 수 있어 여유를 둔다. 넘으면 그날 남은 호출은 `DartQuotaError`(HTTP 없음).
- */
-export const DART_DAILY_CALL_BUDGET = 19_000;
 
 /** JSON 엔드포인트 요청 하나(헤더 + 본문)의 상한. */
 export const DART_REQUEST_TIMEOUT_MS = 30_000;
@@ -55,15 +41,6 @@ export const DART_MAX_JSON_BYTES = 32 * 1024 * 1024;
 export const DART_MAX_ZIP_BYTES = 32 * 1024 * 1024;
 /** `list.json`이 허용하는 페이지당 최대 건수. */
 export const DART_LIST_PAGE_COUNT = 100;
-
-/** Redis 일일 호출 카운터 키(KST 날짜). 이틀 뒤 만료. */
-export const dartDailyCallCounterKey = (kstDate: string): string =>
-    `dart:calls:v1:${kstDate}`;
-/** Redis 회로 차단 키 — `020`을 받은 뒤 다음 KST 자정까지 선다. 값은 차단한 KST 날짜. */
-export const DART_QUOTA_BREAKER_KEY = 'dart:quota-blocked:v1';
-const COUNTER_TTL_SECONDS = 2 * SECONDS_PER_DAY;
-/** 회로 차단 TTL 하한 — 자정 직전에 받은 `020`도 최소 이만큼은 막는다(자정 경계의 시계 차이). */
-const MIN_BREAKER_TTL_SECONDS = 60;
 
 const STATUS_OK = '000';
 const STATUS_NO_DATA = '013';
@@ -208,110 +185,16 @@ export function isDartEnabled(): boolean {
     return false;
 }
 
-// ── 할당량 가드(Redis) ────────────────────────────────────────────────────────────────────────────
-
-/** 이 프로세스가 회로 차단을 본 KST 날짜 — 같은 날 남은 호출은 Redis도 묻지 않고 막는다. */
-let blockedKstDate: string | null = null;
-let warnedRedisUnavailable = false;
-
-/** 테스트 격리용 — 모듈 상태(경고 표식·차단 표식·속도 게이트)를 초기화한다. */
-export function __resetDartClientForTests(): void {
-    warnedMissingKey = false;
-    blockedKstDate = null;
-    warnedRedisUnavailable = false;
-    nextSlotAtMs = 0;
-}
-
-/** `now`부터 다음 KST 자정까지 남은 초(하한 `MIN_BREAKER_TTL_SECONDS`). KST는 서머타임이 없어 고정 오프셋이다. */
-export function secondsUntilNextKstMidnight(now: Date): number {
-    const offsetMs = KST_OFFSET_HOURS * MS_PER_HOUR;
-    const kstMs = now.getTime() + offsetMs;
-    const nextMidnightKstMs = (Math.floor(kstMs / MS_PER_DAY) + 1) * MS_PER_DAY;
-    return Math.max(
-        Math.ceil((nextMidnightKstMs - kstMs) / MS_PER_SECOND),
-        MIN_BREAKER_TTL_SECONDS
-    );
-}
-
-function warnRedisUnavailableOnce(error?: unknown): void {
-    if (warnedRedisUnavailable) return;
-    warnedRedisUnavailable = true;
-    console.warn(
-        '[dart] redis unavailable — daily call counter and quota breaker are not shared (DART still enforces 020)',
-        error instanceof Error ? error.message : (error ?? '')
-    );
-}
-
-const warnThreshold = Math.ceil(DART_DAILY_QUOTA * DART_QUOTA_WARN_RATIO);
-
-/** 할당량 가드가 요청 시도 하나에 보내는 Redis 명령 수의 최대(`get` + `incr` + `expire`) — cron 시간 예산(CC-7)이 쓴다. */
-export const DART_QUOTA_GUARD_MAX_REDIS_COMMANDS = 3;
-
-/**
- * 실제 요청 직전에 부른다 — 차단 중이면 던지고, 아니면 일일 카운터를 하나 올린다. Redis가 없거나 실패하면 통과시킨다
- * (fail-open: 이 가드는 DART의 `020`보다 먼저 멈추려는 보조 장치이고, `020` 자체는 응답에서 잡는다).
- */
-async function reserveCall(endpoint: DartEndpoint): Promise<void> {
-    const today = kstDateKey(new Date());
-    if (blockedKstDate === today) {
-        throw new DartQuotaError(endpoint, 'daily quota breaker is open');
-    }
-    const redis = getRedisClient();
-    if (redis === null) {
-        warnRedisUnavailableOnce();
-        return;
-    }
-    let count: number;
-    try {
-        if ((await redis.get(DART_QUOTA_BREAKER_KEY)) !== null) {
-            blockedKstDate = today;
-            throw new DartQuotaError(endpoint, 'daily quota breaker is open');
-        }
-        const key = dartDailyCallCounterKey(today);
-        count = await redis.incr(key);
-        if (count === 1) await redis.expire(key, COUNTER_TTL_SECONDS);
-    } catch (error) {
-        if (error instanceof DartQuotaError) throw error;
-        warnRedisUnavailableOnce(error);
-        return;
-    }
-    if (count === warnThreshold) {
-        // 메트릭 필터 접두(`infra/aws/20-dart-crons.sh`) — 인스턴스가 여럿이어도 정확히 이 값을 받는 호출은 하루 하나다.
-        console.warn(
-            `[dart] quota warning — ${count} of ${DART_DAILY_QUOTA} daily calls used (${today} KST)`
-        );
-    }
-    if (count > DART_DAILY_CALL_BUDGET) {
-        blockedKstDate = today;
-        throw new DartQuotaError(
-            endpoint,
-            `daily call budget ${DART_DAILY_CALL_BUDGET} reached`
-        );
-    }
-}
-
-/** `020`을 받았다 — 다음 KST 자정까지 모든 인스턴스의 호출을 막는다. */
-async function openQuotaBreaker(): Promise<void> {
-    const now = new Date();
-    blockedKstDate = kstDateKey(now);
-    const redis = getRedisClient();
-    if (redis === null) return;
-    try {
-        await redis.set(DART_QUOTA_BREAKER_KEY, blockedKstDate, {
-            ex: secondsUntilNextKstMidnight(now),
-        });
-    } catch (error) {
-        warnRedisUnavailableOnce(error);
-    }
-    // 메트릭 필터 접두(`infra/aws/20-dart-crons.sh`).
-    console.error(
-        `[dart] quota_exhausted — DART returned 020; calls blocked until the next KST midnight`
-    );
-}
-
 // ── 요청 ──────────────────────────────────────────────────────────────────────────────────────────
 
 let nextSlotAtMs = 0;
+
+/** 테스트 격리용 — 모듈 상태(경고 표식·할당량 가드 표식·속도 게이트)를 초기화한다. */
+export function __resetDartClientForTests(): void {
+    warnedMissingKey = false;
+    resetDartQuotaGuardForTests();
+    nextSlotAtMs = 0;
+}
 
 /** 프로세스 전역 요청 게이트 — 호출 시점에 다음 슬롯을 동기적으로 예약한다(`secClient`의 `waitForSlot`과 같은 방식). */
 async function waitForSlot(): Promise<void> {
@@ -354,7 +237,10 @@ async function requestBytes(
     const url = requestUrl(endpoint, key, params);
     return withRetry(
         async () => {
-            await reserveCall(endpoint);
+            const blockedReason = await reserveCall();
+            if (blockedReason !== null) {
+                throw new DartQuotaError(endpoint, blockedReason);
+            }
             await waitForSlot();
             let res: Response;
             try {
@@ -406,7 +292,7 @@ async function acceptDartStatus(
         throw new DartQuotaError(endpoint, 'quota exceeded (020)');
     }
     if (status === STATUS_IP_NOT_ALLOWED) {
-        // 메트릭 필터 접두(`infra/aws/20-dart-crons.sh`). 조치: OpenDART 인증키 관리에서 IP 제한을 해제한다(설계 §4.1).
+        // 메트릭 필터 접두(`infra/aws/20-dart-crons.sh`). 조치: OpenDART 인증키 관리에서 IP 제한을 해제한다.
         console.error(
             '[dart] ip_not_allowed — DART returned 012; remove the IP restriction on the API key (OpenDART > 인증키 관리)'
         );

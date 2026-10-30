@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 켈트너 채널 오버레이 시리즈 생성·갱신과 표시 토글 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
@@ -129,7 +133,6 @@ export function useKeltnerOverlay({
         if (!isVisible) return;
 
         const { keltnerChannel } = indicators;
-        if (!keltnerChannel.length) return;
 
         if (
             !upperSeriesRef.current ||

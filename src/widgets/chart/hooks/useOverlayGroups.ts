@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 범례 항목을 그룹별로 묶어 메모이즈하는 훅.
+ */
+
 import { useMemo } from 'react';
 import type { OverlayLegendItem } from '../types';
 import {

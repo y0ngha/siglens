@@ -21,6 +21,7 @@ import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 import koMessages from '@/../messages/ko.json';
+import jaMessages from '@/../messages/ja.json';
 import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 
 /**
@@ -447,6 +448,27 @@ describe('시계열 문장 (P1/P2/P5)', () => {
             // 마지막 절만 종결어미. 차이가 0이면 `대비`가 아니라 조사를 붙인다
             // (`대비 같고`는 비문). `공포`는 받침이 없어 `와`.
             expect(line).toContain('1년 전 43점(공포)와 같습니다.');
+        });
+
+        it('절 구분자는 로케일 카탈로그(clauseJoin)를 따른다 — ja는 `、`', () => {
+            const tFactsJa = (
+                key: string,
+                values?: Record<string, string | number>
+            ) => lookup(jaMessages.views.symbol.fearGreedFacts, key, values);
+            const scores = Array.from({ length: 30 }, () => 50);
+            scores[30 - 1 - 5] = 61;
+            scores[30 - 1 - 21] = 30;
+            scores[29] = 43;
+            const line = buildFearGreedPeriodComparisonLine(
+                scoredHistory(history(scores)),
+                t,
+                tFactsJa
+            )!;
+
+            expect(line).toContain(
+                jaMessages.views.symbol.fearGreedFacts.clauseJoin
+            );
+            expect(line).not.toContain(', ');
         });
 
         it('시계열이 짧으면 확보된 기간만 말한다', () => {

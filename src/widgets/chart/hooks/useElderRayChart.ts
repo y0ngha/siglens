@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 엘더 레이(Bull/Bear Power) 보조 pane 히스토그램을 그리는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
@@ -84,7 +88,6 @@ export function useElderRayChart({
         if (!isVisible) return;
 
         const { elderRay } = indicators;
-        if (!elderRay.length) return;
 
         if (!bullSeriesRef.current || !bearSeriesRef.current) return;
 

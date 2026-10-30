@@ -1,3 +1,7 @@
+/**
+ * 오버레이 범례 항목을 그룹으로 묶고 값을 표시 문자열로 포맷하는 유틸.
+ */
+
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import type { OverlayLegendItem } from '../types';
 

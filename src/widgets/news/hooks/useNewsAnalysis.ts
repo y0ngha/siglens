@@ -1,12 +1,15 @@
 'use client';
 
+/**
+ * 종목 뉴스 집계 AI 분석을 조회하는 훅 — 쿼리 상태를 `loading | done | awaiting_interaction | error`로 접어 돌려준다.
+ */
 import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useQuery } from '@tanstack/react-query';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
-import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/actions/submitNewsAnalysisAction';
+import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/model';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
@@ -14,6 +17,7 @@ import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
 
+/** 뉴스 분석 훅의 화면 상태 — 소비자가 status로 분기한다. */
 export type NewsAnalysisState =
     | { status: 'loading'; trigger: () => void }
     | {
@@ -106,6 +110,7 @@ interface UseNewsAnalysisOptions {
     autoRunAllowed?: boolean;
 }
 
+/** 뉴스 집계 분석 쿼리 — 화면에 있는 결과는 재조회 실패로 버리지 않는다. */
 export function useNewsAnalysis(
     symbol: string,
     companyName: string,
@@ -163,14 +168,31 @@ export function useNewsAnalysis(
         query.error instanceof AwaitingInteractionError;
     useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);
 
+    // 화면에 이미 있는 결과가 우선이다. 백그라운드 재조회(뉴스 갱신 후 재분석)가 진행 중이면
+    // 스피너를 띄우고, 그 재조회가 실패해도(사용량 한도, 캐시 전용 미스 등) React Query가
+    // `isError`를 세우더라도 보이던 결과를 오류 화면으로 바꾸지 않는다.
+    if (query.data !== undefined) {
+        return query.isFetching
+            ? { status: 'loading', trigger: retry }
+            : {
+                  status: 'done',
+                  result: query.data.data,
+                  plain: query.data.plain,
+                  trigger: retry,
+              };
+    }
+
+    // 데이터가 없을 때는 재시도·게이트 해제로 다시 부르는 동안에도 React Query가 직전 오류를
+    // 유지한다 — 오류를 먼저 보면 생성이 도는 내내 오류/"AI 분석 시작" 버튼이 남는다.
+    if (query.isFetching) {
+        return { status: 'loading', trigger: retry };
+    }
+
+    if (isAwaitingInteraction) {
+        return { status: 'awaiting_interaction', trigger: retry };
+    }
+
     if (query.isError) {
-        if (isAwaitingInteraction) {
-            // 게이트가 열려 다시 부르는 동안에는 React Query가 직전 오류를 유지한다 —
-            // 그대로 두면 생성이 도는 내내 "AI 분석 시작" 버튼이 남는다.
-            return query.isFetching
-                ? { status: 'loading', trigger: retry }
-                : { status: 'awaiting_interaction', trigger: retry };
-        }
         return {
             status: 'error',
             error:
@@ -178,21 +200,6 @@ export function useNewsAnalysis(
                     ? query.error
                     : new Error(tError('analysisFailed')),
             retry,
-            trigger: retry,
-        };
-    }
-
-    // isFetching을 data보다 먼저 확인해야 background refetch(뉴스 갱신 후 재분석) 중에도
-    // 스피너가 표시된다. data 체크를 먼저 두면 이전 결과가 그대로 노출되어 스피너가 뜨지 않는다.
-    if (query.isFetching) {
-        return { status: 'loading', trigger: retry };
-    }
-
-    if (query.data !== undefined) {
-        return {
-            status: 'done',
-            result: query.data.data,
-            plain: query.data.plain,
             trigger: retry,
         };
     }

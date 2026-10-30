@@ -8,83 +8,47 @@ import {
     useRef,
     useState,
 } from 'react';
-import { getModelAccess, type ModelId } from '@y0ngha/siglens-core';
+import type { ModelId } from '@y0ngha/siglens-core';
 import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
-import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
 import {
     migrateLegacyAnalysisModel,
     migrateRetiredAnalysisModel,
 } from '../lib/migrateAnalysisModel';
-
-const DEFAULT_MODEL: ModelId = DEFAULT_ANALYSIS_MODEL;
-
-/**
- * 고를 수 있는 목록에서 대신 쓸 모델. 기본 모델이 있으면 그것, 없으면(운영자가 DeepSeek를
- * 꺼 둔 경우) 서버가 대납하는 첫 free 모델이다. 목록 첫 항목을 그냥 고르면 BYOK 모델이
- * 걸릴 수 있다 — 등급 제한이 꺼진 동안 `getAllowedModels`는 BYOK까지 정렬해 돌려주고,
- * 키 없는 방문자의 분석이 전부 막힌다.
- */
-export function pickFallbackModel(allowedModels: readonly ModelId[]): ModelId {
-    if (allowedModels.includes(DEFAULT_MODEL)) return DEFAULT_MODEL;
-    return (
-        allowedModels.find(model => getModelAccess(model) === 'free') ??
-        allowedModels[0] ??
-        DEFAULT_MODEL
-    );
-}
-
-/**
- * 저장된 모델을 읽는다. 저장소 접근이 막힌 브라우저(시크릿 모드·Safari 사생활 보호
- * 등)는 `localStorage` 접근에서 `SecurityError`를 던진다 — 형제 마이그레이션
- * (`migrateLegacyAnalysisModel`)처럼 삼키고 "저장값 없음"으로 취급한다. 던지게 두면
- * 마운트 effect에서 트리가 죽는다.
- */
-export function readStoredModel(): ModelId | null {
-    try {
-        return localStorage.getItem(
-            LOCAL_STORAGE_ANALYSIS_MODEL_KEY
-        ) as ModelId | null;
-    } catch {
-        return null;
-    }
-}
+import { pickFallbackModel } from '../lib/pickFallbackModel';
+import { readStoredModel, writeStoredModel } from '../lib/storedAnalysisModel';
 
 /**
  * 선택된 분석 모델 상태 — localStorage 영속 + tier 허용 목록 검증.
  *
  * `isTierHydrated`가 필수인 이유: tier는 서버 왕복(`useUserTier`)이라 마운트 직후엔
  * 항상 `DEFAULT_TIER='free'`다. 그 시점에 저장값을 검증하면 member/pro 전용 모델
- * (claude-sonnet-5-5 등)이 허용 목록 밖으로 판정돼 DEFAULT_MODEL로 강등되고, tier가
+ * (claude-sonnet-5-5 등)이 허용 목록 밖으로 판정돼 기본 모델로 강등되고, tier가
  * 확정돼 목록이 넓어져도 복원 경로가 없어(재검증은 좁힐 때만 동작) 회원의 선택이
  * 매 로드마다 조용히 사라진다. 그래서 읽기·재검증 둘 다 tier 확정까지 미룬다.
+ *
+ * 반환은 `[선택된 모델, 선택 setter(저장 포함, 안정 참조), 저장값을 읽었는지]`다.
  */
 export function useSelectedModel(
     allowedModels: readonly ModelId[],
     isTierHydrated: boolean
 ): [ModelId, (m: ModelId) => void, boolean] {
-    const [selectedModel, setSelectedModelState] =
-        useState<ModelId>(DEFAULT_MODEL);
+    const [selectedModel, setSelectedModelState] = useState<ModelId>(
+        DEFAULT_ANALYSIS_MODEL
+    );
     const [isHydrated, setIsHydrated] = useState(false);
     // 저장값 읽기를 tier 확정 후 1회로 고정한다. tier가 나중에 다시 바뀌어도
     // (로그아웃 등) 사용자의 현재 선택을 저장값으로 되돌리지 않기 위한 가드.
     const hasReadRef = useRef(false);
 
     const setSelectedModel = useCallback((model: ModelId): void => {
-        if (typeof window !== 'undefined') {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, model);
-            } catch {
-                // 저장소 차단(시크릿 모드·Safari 사생활 보호 등)은 `SecurityError`를
-                // 던진다. 영속만 포기하고 이번 세션의 선택은 그대로 반영한다.
-            }
-        }
+        writeStoredModel(model);
         setSelectedModelState(model);
     }, []);
 
     const readFromStorage = useEffectEvent((): void => {
         if (typeof window === 'undefined') return;
         // Run the one-time legacy-default migration BEFORE reading, so the read
-        // below picks up the migrated value for users still on gemini-3.5-flash-lite.
+        // below picks up the migrated value for users still on gemini-2.5-flash-lite.
         migrateLegacyAnalysisModel();
         // A retired model would fail the allowlist and drop to the default;
         // move it to its successor first (gemini-3.7-flash → 3.8-flash).
@@ -108,9 +72,12 @@ export function useSelectedModel(
         readFromStorage();
     }, [isTierHydrated]);
 
-    // Re-validate when tier changes (e.g., user logs in/out)
+    // 허용 목록이 바뀌면(로그인·로그아웃, 꺼진 모델 목록 갱신) 선택을 다시 검증한다.
+    // 저장값을 읽기 전(`isHydrated` false)에는 건너뛴다: 읽기 effect와 같은 커밋에서 돌면
+    // 아직 초기값(기본 모델)인 선택을 보고 폴백을 예약해, 방금 읽은 저장값을 덮어쓴다.
+    // 기본 모델이 고를 수 있는 목록에 없을 때(운영자가 꺼 둔 경우) 회원의 선택이 사라진다.
     useEffect(() => {
-        if (!isTierHydrated) return;
+        if (!isTierHydrated || !isHydrated) return;
         if (
             allowedModels.length > 0 &&
             // 티어가 비동기로 하이드레이션·변경되므로 허용 모델 목록 변화에 맞춰 선택을 폴백시킨다. 부모 전달이 아니라 이 훅 내부 보정이다.
@@ -120,7 +87,7 @@ export function useSelectedModel(
             const fallback = pickFallbackModel(allowedModels);
             startTransition(() => setSelectedModelState(fallback));
         }
-    }, [allowedModels, selectedModel, isTierHydrated]);
+    }, [allowedModels, selectedModel, isTierHydrated, isHydrated]);
 
     return [selectedModel, setSelectedModel, isHydrated];
 }

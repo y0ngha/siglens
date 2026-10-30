@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
-import { computePositionStatus } from '../lib/positionStatus';
-import type { PositionStatus } from '../lib/positionStatus';
+import { computePositionStatus } from '../utils/positionStatus';
+import type { PositionStatus } from '../utils/positionStatus';
 import { PositionStatusSummary } from '../ui/PositionStatusSummary';
 
 function status(
@@ -74,6 +74,24 @@ describe('PositionStatusSummary', () => {
 
         const returnValue = getByText('+20.0%');
         expect(returnValue.className).toContain('text-ui-success-text');
+    });
+
+    it('본전(평가손익 0·수익률 0%)이면 이익색이 아니라 중립색이다', () => {
+        const { getByText } = render(
+            <PositionStatusSummary
+                symbol="AAPL"
+                status={status({ avg: 180, current: 180 })}
+                avgRaw="180"
+                quantityRaw="10"
+            />
+        );
+        for (const value of [
+            getByText(/^[+]?\$0\.00$/),
+            getByText(/^[+]?0\.0%$/),
+        ]) {
+            expect(value.className).toContain('text-secondary-400');
+            expect(value.className).not.toContain('text-ui-success-text');
+        }
     });
 
     it('평가손익·수익률이 음수면 ui-danger-text를 사용한다', () => {

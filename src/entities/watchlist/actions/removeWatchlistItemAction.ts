@@ -2,10 +2,10 @@
 
 import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
+import { DrizzleWatchlistRepository } from '../api';
 import type { RemoveWatchlistResult } from '../model';
 
 /**

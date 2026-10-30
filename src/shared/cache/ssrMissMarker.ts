@@ -1,10 +1,10 @@
 import 'server-only';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient, getUpstashWriterCredentials } from './redisClient';
 import { runUpstashCommandOutsideFetch } from './upstashRenderSafeCommand';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
- * 표시 보존 기간. 크론 창 사이 공백(최대 ~7.5시간, `docs/reference/CRON.md`)과 페이지
+ * 표시 보존 기간. 크론 창 사이 공백(최대 ~7.5시간)과 페이지
  * ISR(최대 24시간)을 모두 덮어야 한다 — 더 짧으면 크론이 오기 전에 표시가 사라져
  * 플레이스홀더 페이지가 ISR 만료까지 남는다.
  */
@@ -22,7 +22,7 @@ const keyOf = (tag: string): string => `ssr-miss:${tag}`;
  * 그대로 서빙된다. 이후 방문자나 크론이 값을 채워도 **누가 그 태그를 털지 않으면**
  * 페이지는 TTL 끝까지 플레이스홀더다. 크론은 새로 구웠을 때(`generated`)만 털었고,
  * 방문자 생성 경로는 아예 털지 않았다 — 그래서 "값은 캐시에 있는데 페이지는 비어
- * 있는" 상태가 생겼다(2026-10-01 허브 감사 B3).
+ * 있는" 상태가 생겼다(2026-10-01).
  *
  * 매 tick 무조건 털면 ISR 쓰기가 폭증한다(src/app/CLAUDE.md#AP-2). 그래서
  * **빈 렌더가 실제로 있었을 때만** 표시를 남기고, 크론이 값이 있음을 확인한 순간

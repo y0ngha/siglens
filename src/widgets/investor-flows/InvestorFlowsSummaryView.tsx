@@ -1,3 +1,6 @@
+/**
+ * 수급 AI 해석 결과 화면 — 한 줄 요약·축별 해석·핵심 신호·위험.
+ */
 import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsAnalysisResponse,

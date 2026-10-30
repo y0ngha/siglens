@@ -19,9 +19,9 @@ import {
     CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS,
     MAX_SYMBOLS_PER_RUN,
     PROFILE_CONCURRENCY,
-    runCusipMapSync,
-    type SyncCusipMapDeps,
-} from '../../server/syncCusipMap';
+} from '../../lib/cusipMapPlan';
+import { runCusipMapSync } from '../../server/syncCusipMap';
+import type { SyncCusipMapDeps } from '../../server/syncCusipMapTypes';
 
 const profile = (
     over: Partial<FmpProfileIdentifiers> = {}
