@@ -3,11 +3,12 @@
 import { useMemo } from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { Bar, IndicatorResult, Timeframe } from '@y0ngha/siglens-core';
-import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useRefetchStaleOnEnable } from '@/shared/hooks/useRefetchStaleOnEnable';
+import { getBarsAction } from '../actions/getBarsAction';
 
-interface UseBarsOptions {
+/** `useBars` 입력. `symbol`·`timeframe`·`fmpSymbol`이 모두 쿼리 키에 들어간다. */
+export interface UseBarsOptions {
     symbol: string;
     timeframe: Timeframe;
     fmpSymbol?: string;
@@ -18,7 +19,8 @@ interface UseBarsOptions {
     refetchEnabled?: boolean;
 }
 
-interface UseBarsResult {
+/** `useBars` 결과 — 서버가 계산한 봉과 지표(seed 상태에서는 축소 지표일 수 있다). */
+export interface UseBarsResult {
     bars: Bar[];
     indicators: IndicatorResult;
 }
@@ -28,7 +30,7 @@ interface UseBarsResult {
  * (`getSeedBarsStatic` JSDoc — seed의 `dataUpdatedAt`이 수 시간 전이라 30초 staleTime에는 항상
  * stale로 판정돼 마운트 직후 원본으로 교체된다).
  *
- * ## `refetchEnabled` — 크롤러 렌더마다 나가는 Server Action을 줄인다 (2026-10-05 운영 크롤)
+ * ## `refetchEnabled` — 크롤러 렌더마다 나가는 Server Action을 줄인다
  *
  * 그 재조회는 사람이 쓰는 값(오버레이·지표 창)을 위한 것이다. 렌더만 하고 떠나는 크롤러에게는
  * 매 페이지 한 번의 `getBarsAction` POST가 낭비다. 그래서 호출부가 "사람 상호작용 이후 또는
@@ -57,8 +59,8 @@ export function useBars({
         queryKey,
         queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
             getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
-        // OHLCV bars update on the order of seconds during market hours; a
-        // short staleTime keeps repaints fresh without thrashing the API.
+        // 장중 OHLCV 봉은 수 초 단위로 바뀐다. 짧은 staleTime이 API를 과하게 부르지 않으면서
+        // 화면을 최신으로 유지한다.
         staleTime: refetchEnabled ? BARS_STALE_TIME_MS : Infinity,
     });
 

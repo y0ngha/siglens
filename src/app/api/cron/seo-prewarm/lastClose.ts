@@ -1,5 +1,5 @@
 import 'server-only';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { quantizeBarsDataToLastClosed } from '@/entities/bars/lib/quantizeBars';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';

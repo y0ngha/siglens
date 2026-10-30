@@ -1,5 +1,5 @@
 import { constants } from 'node:http2';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
 import {
     buildReportChartImage,

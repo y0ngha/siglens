@@ -16,7 +16,7 @@ import {
     DrizzleAnalysisHistoryRepository,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
-import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import {
     resolveHoldingPositionBucket,
     type ResolveHoldingPositionBucketInput,

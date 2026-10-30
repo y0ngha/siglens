@@ -3,7 +3,7 @@ import type { IndicatorResult } from '@y0ngha/siglens-core';
 import {
     INDICATOR_SIGNIFICANT_DIGITS,
     roundIndicators,
-} from '../lib/roundIndicators';
+} from '../../lib/roundIndicators';
 
 /** `IndicatorResult`의 실제 필드 모양 4종(평면 배열 / 객체 배열 / Record-of-arrays / 스냅샷)을 대표하는 최소 픽스처. */
 function makeIndicators(): IndicatorResult {

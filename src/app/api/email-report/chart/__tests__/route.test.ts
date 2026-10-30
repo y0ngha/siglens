@@ -1,4 +1,4 @@
-vi.mock('@/entities/bars/lib/loadBarsData', () => ({
+vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: vi.fn(),
 }));
 vi.mock('@/entities/email-report/emailReportSecret', () => ({
@@ -11,7 +11,7 @@ vi.mock('@/entities/email-report/lib/buildReportChartImage', () => ({
 
 import type { Bar } from '@y0ngha/siglens-core';
 import { GET } from '@/app/api/email-report/chart/route';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
 import { buildReportChartImage } from '@/entities/email-report/lib/buildReportChartImage';
 import { buildChartImageUrl } from '@/entities/email-report/lib/reportLinks';

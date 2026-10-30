@@ -1,23 +1,23 @@
 import 'server-only';
 import { cache } from 'react';
 import {
-    __resetMemoryLruForTests,
-    createMemoryLru,
-} from '@/shared/cache/memoryLru';
-import {
-    __resetSingleFlightForTests,
-    createSingleFlight,
-} from '@/shared/lib/singleFlight';
-import { MS_PER_SECOND } from '@/shared/config/time';
-import {
     type BarsData,
     type MarketDataProvider,
     type MarketSessionSpec,
     type Timeframe,
     US_EQUITY_SESSION,
-    fetchBarsWithIndicators,
     computeBarsEffectiveTtl,
+    fetchBarsWithIndicators,
 } from '@y0ngha/siglens-core';
+import {
+    __resetMemoryLruForTests,
+    createMemoryLru,
+} from '@/shared/cache/memoryLru';
+import { MS_PER_SECOND } from '@/shared/config/time';
+import {
+    __resetSingleFlightForTests,
+    createSingleFlight,
+} from '@/shared/lib/singleFlight';
 
 /**
  * 메모리에 둘 파생 봉 데이터(봉+지표+공포·탐욕용 5년 일봉) 개수 상한.
@@ -60,20 +60,18 @@ const barsInFlight = createSingleFlight<BarsData>();
  *      인트라데이도 같은 모양(`bars:intrahist` + 오늘 tail)이라 장중 1분마다 다시
  *      받는 것은 작은 live 부분뿐이다.
  *
- * ## 왜 파생 값을 더는 Redis에 두지 않는가 (2026-10)
+ * ## 왜 파생 값을 Redis에 두지 않는가
  *
- * 예전에는 결과 전체(`bars:v2:<SYM>:<tf>`)를 Redis에 60초 TTL로 썼다. 값이 봉 + 지표
- * 39종 + 5년 일봉이라 원본 ~658KB / zstd+base64 ~216KB였고, 장중에는 활성 종목마다
- * **매분 다시 계산해 다시 SET**했다(뜨거운 종목 ~30개면 하루 ~2.5GB egress). 클라이언트
- * `getBarsAction` 재조회도 같은 값을 매번 GET했다. 그런데 이 값은 원재료 봉의 순수
- * 함수이고, 원재료는 이미 provider 계층에서 "무거운 과거(세션 롤 TTL) + 가벼운 오늘
- * (60초)"로 나뉘어 Redis에 있다. 그래서 파생 값은 인스턴스 메모리에만 두고, 매분 다시
- * 받는 것은 오늘 봉 하나로 줄였다. 지표 재계산은 일봉 기준 ~20ms다.
+ * 결과 전체(봉 + 지표 39종 + 5년 일봉)를 Redis에 60초 TTL로 두면 원본 ~658KB / zstd+base64 ~216KB를
+ * 장중 활성 종목마다 **매분 다시 계산해 다시 SET**하고(2026-10 실측: 뜨거운 종목 ~30개면 하루
+ * ~2.5GB egress), 클라이언트 `getBarsAction` 재조회도 같은 값을 매번 GET하게 된다. 그런데 이 값은
+ * 원재료 봉의 순수 함수이고, 원재료는 이미 provider 계층에서 "무거운 과거(세션 롤 TTL) + 가벼운
+ * 오늘(60초)"로 나뉘어 Redis에 있다. 그래서 파생 값은 인스턴스 메모리에만 두고, 매분 다시 받는 것은
+ * 오늘 봉 하나로 줄인다. 지표 재계산은 일봉 기준 ~20ms다.
  *
- * 돌려주는 데이터는 같다: 같은 core 함수를 같은 provider로 부르고, 신선도 상한도
- * 예전 Redis TTL과 같은 값을 메모리 TTL로 쓴다. 운영이 인스턴스 한 대라 교차 인스턴스
- * 공유를 잃는 비용은 롤링 배포 구간의 재계산 정도다. 옛 `bars:v2:*` 키는 TTL(최대
- * 24h)로 저절로 사라진다.
+ * 신선도 상한은 Redis TTL과 같은 값을 메모리 TTL로 쓴다. 운영이 인스턴스 한 대라 교차 인스턴스 공유를
+ * 잃는 비용은 롤링 배포 구간의 재계산 정도다. 옛 `bars:v2:<SYM>:<tf>` Redis 키는 더 이상 쓰지 않으며
+ * TTL(최대 24h)로 저절로 사라진다.
  * (재확인: 대수는 ASG in-service 수, 사양은 launch template의 인스턴스 타입 —
  *  `aws autoscaling describe-auto-scaling-groups`로 본다.)
  *
@@ -92,7 +90,7 @@ export const getCachedBarsWithIndicators = cache(
         const hit = barsMemory.get(key);
         if (hit !== undefined) return hit;
         return barsInFlight.run(key, async () => {
-            // TTL은 계산을 시작한 시각 기준 — 예전 Redis 경로가 set 직전에 재던 것과 같은 정책.
+            // TTL은 계산을 시작한 시각 기준으로 잰다.
             const ttlMs =
                 computeBarsEffectiveTtl(timeframe, new Date(), session) *
                 MS_PER_SECOND;

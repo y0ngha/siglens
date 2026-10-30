@@ -30,6 +30,7 @@ export const symbolFearGreedInputs = cache((data: BarsData): FearGreedInputs =>
     fearGreedInputs(data)
 );
 
+/** 서버가 5년 일봉으로 계산한 공포·탐욕 결과 — 최신 스냅샷과 history. 서버 액션 응답 모양이기도 하다. */
 export interface SymbolFearGreedSeries {
     readonly snapshot: FearGreedSnapshot | null;
     readonly history: FearGreedHistoryPoint[];

@@ -106,7 +106,7 @@ function withLocalHelpers(rel: string): { rel: string; source: string }[] {
 /** 6h 이하 revalidate의 `unstable_cache`를 두는 모듈 — 이 값보다 긴 선언의 탭·레이아웃은 import 금지. */
 const SHORT_REVALIDATE_MODULES: Readonly<Record<string, number>> = {
     // getBarsStatic / getQuantizedBarsStatic / getSeedBarsStatic
-    '@/entities/bars/lib/barsStaticCache': time.SECONDS_PER_QUARTER_DAY,
+    '@/entities/bars/server/barsStaticCache': time.SECONDS_PER_QUARTER_DAY,
     // peekAnalysisStatic
     '@/entities/analysis/lib/peekAnalysisStaticCache':
         time.SECONDS_PER_QUARTER_DAY,
@@ -304,7 +304,7 @@ describe('[symbol] 탭 revalidate clamp 가드', () => {
             }
         }
         expect(importedModules(read(LAYOUT))).toContain(
-            '@/entities/bars/lib/sessionBarsStaticCache'
+            '@/entities/bars/server/sessionBarsStaticCache'
         );
     });
 

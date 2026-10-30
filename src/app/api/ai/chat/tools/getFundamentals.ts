@@ -2,7 +2,7 @@ import 'server-only';
 import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
-import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import {
     lastBarIsForming,
     lastCompletedDailyClose,

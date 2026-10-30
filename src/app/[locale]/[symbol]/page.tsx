@@ -35,7 +35,7 @@ import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvabl
 import {
     getQuantizedBarsStatic,
     getSeedBarsStatic,
-} from '@/entities/bars/lib/barsStaticCache';
+} from '@/entities/bars/server/barsStaticCache';
 import { countSkillFiles } from '@/entities/skill/api';
 import { chartSkillTotal } from '@/shared/lib/skillStats';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';

@@ -1,6 +1,6 @@
 // 샘플 차트는 데이터 제공자를 부르지 않는다. 제공자로 이어지는 모듈을 import하는 순간
 // 테스트가 깨지도록 factory가 던지게 한다 — 호출 횟수를 세는 목은 import 자체를 못 잡는다.
-vi.mock('@/entities/bars/lib/loadBarsData', () => {
+vi.mock('@/entities/bars/server/loadBarsData', () => {
     throw new Error('sample chart must not load bars from a provider');
 });
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => {

@@ -20,7 +20,7 @@ import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
 import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { getSymbolFearGreedChipStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSymbolFearGreedChipStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { pickAssetName } from '@/entities/ticker/lib/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';

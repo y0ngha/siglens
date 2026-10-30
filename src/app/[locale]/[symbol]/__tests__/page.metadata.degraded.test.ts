@@ -33,7 +33,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
         mockGetAssetInfoResilient(ticker),
 }));
 
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: vi.fn(),
 }));
