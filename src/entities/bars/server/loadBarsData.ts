@@ -1,24 +1,23 @@
 import 'server-only';
 import { getTranslations } from 'next-intl/server';
 import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
-import { getCachedBarsWithIndicators } from './barsDataCache';
-import { roundIndicators } from './roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     logFmpPaymentRequiredError,
     translateFmpError,
 } from '@/shared/api/fmp/fmpUserMessage';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { roundIndicators } from '../lib/roundIndicators';
+import { getCachedBarsWithIndicators } from './barsDataCache';
 
 /**
  * 서버에서 쓰는 봉+지표. **공포·탐욕용 5년 일봉(`fearGreedBars`)을 그대로 둔다.**
  *
- * 예전에는 정적 경로(`getBarsStatic`)가 클라이언트용 서버 액션 `getBarsAction`을
- * 그대로 감쌌다. 액션은 브라우저로 나가는 경계라 5년 봉을 떼어야 하는데, 같은 함수를
- * 서버 계산도 쓰면 서버 쪽 공포·탐욕이 2년 봉으로 떨어진다. 그래서 공통 부분을 여기로
- * 빼고, 액션은 이 결과에서 5년 봉만 떼어 보낸다.
+ * `getBarsAction`은 브라우저로 나가는 경계라 5년 봉을 떼어야 하는데, 서버 계산(정적 캐시·공포·탐욕)이
+ * 같은 결과를 쓰면 서버 쪽 공포·탐욕이 2년 봉으로 떨어진다. 그래서 5년 봉을 보존한 공통 로더를 여기 두고,
+ * 액션은 이 결과에서 5년 봉만 떼어 보낸다.
  *
  * 'use server' 파일에서 export하면 그 함수가 곧 클라이언트가 호출할 수 있는 서버
  * 액션이 되므로, 이 로더는 일반 서버 모듈에 둔다.
@@ -37,8 +36,8 @@ export async function loadBarsData(
     ) => Promise<MarketProfileId> = resolveMarketProfile
 ): Promise<BarsData> {
     try {
-        // Resolve the profile once (DB-first → FMP); derive the session spec
-        // directly from it — no assetClass→profileId round-trip.
+        // 프로필을 한 번만 해석하고(DB 우선 → FMP) 세션 스펙을 거기서 바로 만든다 —
+        // assetClass→profileId 왕복이 없다.
         const marketProfile = await resolveProfile(symbol);
         const session = sessionSpecFor(marketProfile);
         const data = await getCachedBarsWithIndicators(

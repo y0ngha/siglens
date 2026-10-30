@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { BarsData } from '@y0ngha/siglens-core';
 
-import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getSeedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';

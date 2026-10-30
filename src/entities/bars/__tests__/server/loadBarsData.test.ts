@@ -10,7 +10,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('next-intl/server', () => ({
     getTranslations: mockGetTranslations,
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: mockGetCachedBarsWithIndicators,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
@@ -21,7 +21,7 @@ vi.mock('@/shared/api/market/sessionSpecFor', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 
 const resolveProfile = vi.fn(async () => 'us-equity' as const);

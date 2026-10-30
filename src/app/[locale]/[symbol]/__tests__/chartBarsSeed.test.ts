@@ -1,4 +1,4 @@
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getSeedBarsStatic: vi.fn(),
 }));
 
@@ -10,7 +10,7 @@ import {
     hasTechnicalFacts,
     seedChartBars,
 } from '@/app/[locale]/[symbol]/_lib/chartBarsSeed';
-import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getSeedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 

@@ -20,8 +20,8 @@ import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { loadBarsData } from './loadBarsData';
-import { lastBarSessionDate, toSessionBarsData } from './sessionBars';
-import { symbolFearGreedSnapshot } from './symbolFearGreed';
+import { lastBarSessionDate, toSessionBarsData } from '../lib/sessionBars';
+import { symbolFearGreedSnapshot } from '../lib/symbolFearGreed';
 
 /**
  * # 세션 키 정적 캐시 — `[symbol]` 탭의 revalidate clamp 해소
@@ -53,7 +53,7 @@ import { symbolFearGreedSnapshot } from './symbolFearGreed';
  * - **dormant**(직전 거래일보다도 오래됨 — 거래 정지·상장폐지) → **저장한다**. 다음 롤까지 바뀔 이유가
  *   없고, 저장하지 않으면 그런 종목은 영원히 캐시되지 않아 매 렌더 provider를 부른다.
  * - **empty**(봉 0개) → 저장하지 않는다. 큐레이션 종목이면 300초 degrade 핀
- *   (`shortenRevalidateForRuntimeDegrade`, 예전 `getBarsStatic`과 같은 노출 창).
+ *   (`shortenRevalidateForRuntimeDegrade`, `getBarsStatic`과 같은 노출 창).
  *
  * 저장하지 않는 값을 쓰는 렌더의 계산 비용도 요청당 한 번이다: `loadSessionBars`(provider 왕복)와
  * 5년 공포·탐욕 계산(`symbolFearGreed`의 `React.cache`, 같은 `BarsData` 객체면 접힌다)이 모두 요청
@@ -190,8 +190,8 @@ export const getSessionBarsStatic = cache(
 /**
  * 헤더 공포·탐욕 칩의 스냅샷 — 레이아웃이 **9개 탭 전부**에서 읽는다.
  *
- * 값은 수십 바이트라 cache-handler의 메모리 계층에 남는다(S3 왕복 없음). 예전에는 이 칩 하나 때문에
- * 모든 탭이 원본 봉 엔트리(~700KB, 6h)를 읽었고, 그 6h가 12h·24h 탭을 clamp했다.
+ * 값은 수십 바이트라 cache-handler의 메모리 계층에 남는다(S3 왕복 없음). 원본 봉 엔트리(~700KB, 6h)
+ * 대신 이 값을 읽으므로 그 6h가 12h·24h 탭을 clamp하지 않는다.
  *
  * 공포·탐욕 탭 본문과 **같은 축소 봉·같은 세션 키**에서 계산하므로 그 탭에서 칩과 게이지 요약이
  * 갈리지 않는다. `null`은 점수를 낼 수 없다는 뜻(봉 부족)이고, provider 예외는 던진다.

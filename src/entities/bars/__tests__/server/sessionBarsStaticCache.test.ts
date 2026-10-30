@@ -53,7 +53,7 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: mockShortenRevalidate,
     shortenRevalidateForIncompleteSession: mockShortenIncomplete,
 }));
-vi.mock('@/entities/bars/lib/loadBarsData', () => ({
+vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: vi.fn(),
 }));
 
@@ -61,8 +61,8 @@ import type { BarsData } from '@y0ngha/siglens-core';
 import {
     getSessionBarsStatic,
     getSymbolFearGreedChipStatic,
-} from '@/entities/bars/lib/sessionBarsStaticCache';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+} from '@/entities/bars/server/sessionBarsStaticCache';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { symbolFearGreedSnapshot } from '@/entities/bars/lib/symbolFearGreed';
 import { toSessionBarsData } from '@/entities/bars/lib/sessionBars';
 import { SESSION_KEYED_CACHE_REVALIDATE_SECONDS } from '@/shared/config/time';

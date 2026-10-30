@@ -30,7 +30,7 @@ import {
     BARS_MEMORY_MAX_ENTRIES,
     __resetBarsMemoryForTests,
     getCachedBarsWithIndicators,
-} from '../lib/barsDataCache';
+} from '../../server/barsDataCache';
 
 const mockProvider = {} as MarketDataProvider;
 
