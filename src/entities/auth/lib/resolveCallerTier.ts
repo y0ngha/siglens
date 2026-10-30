@@ -4,8 +4,8 @@ import { resolveTierOnly } from '@/shared/lib/byokGate';
 import { isCacheScopeDynamicUsage } from '@/shared/lib/isCacheScopeDynamicUsage';
 
 /**
- * 호출자의 tier를 해석한다. 세션·DB I/O를 하지만 `lib/`에 두는 것은 `getCurrentUser`와 같은
- * 의도적인 EN-1 예외다(`src/entities/CLAUDE.md#EN-1`) — 이동은 별도 변경으로 다룬다.
+ * 호출자의 tier를 해석한다. `getCurrentUser`처럼 세션·DB I/O를 하므로 `lib/` 순수성
+ * (`src/entities/CLAUDE.md#EN-1`)을 어기고 있고, `server/`로 옮기는 일은 별도 변경으로 다룬다.
  * 해석에 실패하면 **'free'로 fail-closed** 한다 —
  * 상위 tier로 오인해 잠긴 상세를 노출하는 것보다, 실제로는 회원인 호출자가
  * 일시적으로 free 취급되는 편이 안전하다.

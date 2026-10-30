@@ -9,8 +9,8 @@ import { findUserBySessionToken } from './findUserBySessionToken';
 /**
  * 현재 요청의 세션 쿠키를 읽어 사용자 레코드를 반환한다. 쿠키 없음/만료/사용자 없음 시 null.
  *
- * 쿠키·DB I/O를 하지만 `lib/`에 두는 것은 의도적인 EN-1 예외다(`src/entities/CLAUDE.md#EN-1`) —
- * 임포터가 많아(100곳 이상) 이동은 별도 변경으로 다룬다.
+ * 쿠키·DB I/O를 하므로 `lib/` 순수성(`src/entities/CLAUDE.md#EN-1`)을 어기고 있다. 임포터가 많아
+ * (`rg -l "auth/lib/getCurrentUser'" src`) `server/`로 옮기는 일은 별도 변경으로 다룬다.
  *
  * **한 렌더 안에서는 한 번만 조회한다**(React `cache`). 세션 조회는 DB 왕복 두 번
  * (세션 → 유저)인데, 한 페이지를 그리는 동안 페이지와 그 안의 데이터 로더가 각자 이
