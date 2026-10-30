@@ -12,13 +12,14 @@ function bestPerTab(
         current: SeoAnalysisSnapshot
     ) => boolean
 ): SeoAnalysisSnapshot[] {
-    const best = new Map<SeoSnapshotTab, SeoAnalysisSnapshot>();
-    for (const snapshot of snapshots) {
-        const current = best.get(snapshot.tab);
-        if (current === undefined || isBetter(snapshot, current)) {
-            best.set(snapshot.tab, snapshot);
-        }
-    }
+    // 입력이 탭 7 × 로케일 4 이하라 Map을 매번 복사해도 비용이 없다(CP-6). 기존 키를 다시
+    // set해도 처음 들어간 자리를 유지하므로 결과 순서는 탭이 처음 나온 순서다.
+    const best = snapshots.reduce((acc, snapshot) => {
+        const current = acc.get(snapshot.tab);
+        return current === undefined || isBetter(snapshot, current)
+            ? new Map(acc).set(snapshot.tab, snapshot)
+            : acc;
+    }, new Map<SeoSnapshotTab, SeoAnalysisSnapshot>());
     return [...best.values()];
 }
 
