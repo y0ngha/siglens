@@ -2,32 +2,34 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { reportClientError } from '@/shared/lib/reportClientError';
-
+import { fetchTickerSearch } from '@/entities/ticker/lib/fetchTickerSearch';
 import {
     QUERY_KEYS,
     TICKER_SEARCH_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
-import { fetchTickerSearch } from '@/entities/ticker/lib/fetchTickerSearch';
-import type { TickerSearchResult } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { reportClientError } from '@/shared/lib/reportClientError';
+import type { TickerSearchResult } from '@/shared/lib/types';
+import type { SearchSnapshot } from '../lib/searchStatus';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;
+/** 결과가 아직 없을 때의 값. 렌더마다 새 배열을 주면 이를 deps로 쓰는 콜백이 매번 바뀐다. */
+const NO_RESULTS: TickerSearchResult[] = [];
 
-interface UseTickerSearchResult {
+/** `useTickerSearch`의 반환값. 조회 상태 필드는 `SearchSnapshot`에서 정의한다. */
+export interface UseTickerSearchResult extends SearchSnapshot {
     results: TickerSearchResult[];
-    isSearching: boolean;
-    hasQuery: boolean;
-    /** 조회가 실패했는지. 호출부는 "결과 없음"과 구분해 보여줘야 한다. */
-    isError: boolean;
-    /**
-     * 실제로 조회에 쓰인 질의. 입력과 다르면 `results`는 한 박자 전 것이다 —
-     * 첫 결과로 바로 이동하는 호출부(오버레이 Enter)가 이를 확인해야 한다.
-     */
-    debouncedQuery: string;
 }
 
+/**
+ * 입력 중인 질의로 티커를 검색한다(300ms 디바운스). 데스크톱 자동완성과 모바일 오버레이가
+ * 함께 쓴다.
+ *
+ * 질의는 앞뒤 공백을 떼고 조회한다. 서버도 공백을 떼므로 `aapl `과 `aapl`은 같은 결과다 —
+ * 그대로 키로 쓰면 같은 응답을 두 번 받고, 공백만 친 입력은 빈 질의로 요청을 보내
+ * "결과 없음"을 띄운다(최근·인기 종목 대신).
+ */
 export function useTickerSearch(query: string): UseTickerSearchResult {
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const reportedErrorRef = useRef<unknown>(null);
@@ -94,16 +96,17 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
     }, [isError, error]);
 
     useEffect(() => {
-        const isLongEnough = query.length >= MIN_QUERY_LENGTH;
+        const trimmed = query.trim();
+        const isLongEnough = trimmed.length >= MIN_QUERY_LENGTH;
         const timer = setTimeout(
-            () => setDebouncedQuery(isLongEnough ? query : ''),
+            () => setDebouncedQuery(isLongEnough ? trimmed : ''),
             isLongEnough ? DEBOUNCE_MS : 0
         );
         return () => clearTimeout(timer);
     }, [query]);
 
     return {
-        results: data ?? [],
+        results: data ?? NO_RESULTS,
         isSearching,
         hasQuery: isDebouncedQueryReady,
         debouncedQuery,
