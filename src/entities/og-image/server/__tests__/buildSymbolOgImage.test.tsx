@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { buildSymbolOgImage } from '../lib/buildSymbolOgImage';
+import { buildSymbolOgImage } from '../buildSymbolOgImage';
 import { OG_IMAGE_CACHE_CONTROL } from '@/shared/lib/og';
 
 const { mockImageResponse, mockLoadOgFont } = vi.hoisted(() => ({
@@ -17,7 +17,7 @@ vi.mock('next/og', () => ({
     }),
 }));
 
-vi.mock('../lib/loadOgFont', () => ({
+vi.mock('../loadOgFont', () => ({
     loadOgFont: vi.fn((locale: string) => mockLoadOgFont(locale)),
 }));
 

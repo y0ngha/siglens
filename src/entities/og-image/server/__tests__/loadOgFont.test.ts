@@ -1,11 +1,8 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
-import {
-    createOgFontLoader,
-    OG_FONT_BY_LOCALE,
-    type OgFontSource,
-} from '../lib/loadOgFont';
 import type { Locale } from '@/shared/i18n/locales';
+import type { OgFontSource } from '../../lib/ogFontSources';
+import { createOgFontLoader } from '../loadOgFont';
 
 // 실제 HTTP 서버로 다운로드·메모·실패 처리를 본다. 경로별 응답과 요청 횟수를 기록한다.
 function startServer(routes: Record<string, { status: number; body: Buffer }>) {
@@ -49,26 +46,6 @@ function sources(base: string): Record<Locale, OgFontSource> {
 
 const FONT_BYTES = Buffer.from([1, 2, 3, 4, 5]);
 
-describe('OG_FONT_BY_LOCALE', () => {
-    it.each([
-        ['ko', 'Pretendard', /pretendard@v1\.3\.9\/.*pretendard-bold\.otf$/],
-        ['en', 'Pretendard', /pretendard@v1\.3\.9\/.*pretendard-bold\.otf$/],
-        [
-            'ja',
-            'Noto Sans JP',
-            /noto-sans-jp@5\.3\.0\/.*noto-sans-jp-japanese-700-normal\.woff$/,
-        ],
-        [
-            'zh',
-            'Noto Sans SC',
-            /noto-sans-sc@5\.3\.0\/.*noto-sans-sc-chinese-simplified-700-normal\.woff$/,
-        ],
-    ] as const)('%s → %s (버전 고정 URL)', (locale, name, url) => {
-        expect(OG_FONT_BY_LOCALE[locale].name).toBe(name);
-        expect(OG_FONT_BY_LOCALE[locale].url).toMatch(url);
-    });
-});
-
 describe('createOgFontLoader', () => {
     let fetchSpy: ReturnType<typeof vi.spyOn>;
 
@@ -90,11 +67,15 @@ describe('createOgFontLoader', () => {
         try {
             const load = createOgFontLoader(sources(server.base));
             const font = await load('ja');
-            expect(font).not.toBeNull();
-            expect(font!.name).toBe('Noto Sans JP');
-            expect(font!.style).toBe('normal');
-            expect(font!.weight).toBe(700);
-            expect(Buffer.from(font!.data)).toEqual(FONT_BYTES);
+            expect(font).toEqual({
+                name: 'Noto Sans JP',
+                data: expect.any(ArrayBuffer),
+                style: 'normal',
+                weight: 700,
+            });
+            expect(Buffer.from(font?.data ?? new ArrayBuffer(0))).toEqual(
+                FONT_BYTES
+            );
             expect(fetchSpy).not.toHaveBeenCalled();
         } finally {
             await server.close();
@@ -109,8 +90,9 @@ describe('createOgFontLoader', () => {
             const load = createOgFontLoader(sources(server.base));
             const [a, b] = await Promise.all([load('ko'), load('en')]);
             const c = await load('ko');
-            expect(a!.data).toBe(b!.data);
-            expect(c!.data).toBe(a!.data);
+            expect(a).not.toBeNull();
+            expect(a?.data).toBe(b?.data);
+            expect(c?.data).toBe(a?.data);
             expect(server.hits).toEqual(['/pretendard.otf']);
         } finally {
             await server.close();
