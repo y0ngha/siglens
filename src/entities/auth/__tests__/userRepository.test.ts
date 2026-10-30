@@ -584,6 +584,41 @@ describe('DrizzleUserRepository', () => {
         expect(result).toBeNull();
     });
 
+    it('연결 계정 INSERT가 던져도 사용자 행을 보상 삭제하고 원래 오류를 다시 던진다', async () => {
+        const accountError = new Error('account insert failed');
+        const deleteReturning = vi.fn().mockResolvedValue([{ id: 'user-1' }]);
+        const deleteWhere = vi.fn(() => ({ returning: deleteReturning }));
+        const deleteFn = vi.fn(() => ({ where: deleteWhere }));
+        const userReturning = vi.fn().mockResolvedValue([userRecord]);
+        const userValues = vi.fn(() => ({
+            onConflictDoNothing: () => ({ returning: userReturning }),
+        }));
+        const accountValues = vi.fn(() => ({
+            onConflictDoNothing: () => ({
+                returning: vi.fn().mockRejectedValue(accountError),
+            }),
+        }));
+        const insert = vi
+            .fn()
+            .mockReturnValueOnce({ values: userValues })
+            .mockReturnValue({ values: accountValues });
+        const repository = new DrizzleUserRepository({
+            insert,
+            delete: deleteFn,
+        } as unknown as SiglensDatabase);
+
+        await expect(
+            repository.createOAuthUser({
+                email: 'user@example.com',
+                provider: 'google',
+                providerAccountId: 'provider-user-1',
+            })
+        ).rejects.toThrow(accountError);
+
+        expect(deleteFn).toHaveBeenCalledWith(users);
+        expect(deleteWhere).toHaveBeenCalledTimes(1);
+    });
+
     it('rethrows unexpected OAuth user creation failures', async () => {
         const error = new Error('database unavailable');
         const { db } = makeFailingOAuthInsertDb(error);

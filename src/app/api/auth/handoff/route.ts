@@ -3,10 +3,12 @@ import type { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     handoffStartUrl,
+    resolveHandoffNext,
+} from '@/entities/auth/lib/handoffRedirect';
+import {
     isHandoffToken,
     issueHandoffCode,
-    resolveHandoffNext,
-} from '@/entities/auth/lib/handoffStore';
+} from '@/entities/auth/server/handoffStore';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';

@@ -26,7 +26,7 @@ import {
     DrizzleUserRepository,
 } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';

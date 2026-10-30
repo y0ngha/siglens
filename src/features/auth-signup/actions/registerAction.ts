@@ -31,7 +31,7 @@ import {
     bcryptPasswordVerifier,
 } from '@/entities/auth/lib/bcrypt';
 import { getDatabaseClient } from '@/shared/db/client';
-import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { createEmailTokenStore } from '@/entities/email-token/api';

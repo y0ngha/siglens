@@ -11,12 +11,14 @@ import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     aiSignedOutUrl,
+    resolveHandoffNext,
+} from '@/entities/auth/lib/handoffRedirect';
+import {
     consumeHandoffCode,
     handoffStateCookie,
     handoffStateCookieName,
-    resolveHandoffNext,
     type HandoffPayload,
-} from '@/entities/auth/lib/handoffStore';
+} from '@/entities/auth/server/handoffStore';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';

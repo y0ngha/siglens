@@ -18,6 +18,7 @@ function hasAccessToken(
     return account.accessToken !== null;
 }
 
+/** 폐기 대상 계정 조회. 실패해도 계정 삭제는 계속되도록 빈 배열로 강등한다. */
 async function findOAuthAccountsForRevocation(
     userId: string,
     dependencies: Pick<DeleteAccountDependencies, 'oauthAccounts'>
@@ -95,7 +96,12 @@ function userNotFoundError(): DeleteAccountError {
     };
 }
 
-/** Delete a user account along with its dependent persistence rows. */
+/**
+ * 계정을 삭제하고 만료 세션 쿠키를 돌려준다. 종속 행은 FK cascade로 지워진다.
+ *
+ * OAuth 토큰 폐기와 공개 API 키 인증 캐시 폐기는 모두 최선 노력이라 실패해도 삭제를 막지
+ * 않는다(OAuth 토큰 폐기 호출은 기다리지도 않는다). 사용자 행이 없으면 `user_not_found`.
+ */
 export async function deleteAccount(
     input: DeleteAccountInput,
     dependencies: DeleteAccountDependencies,
