@@ -4385,14 +4385,13 @@
                 "158954": "AI Analysis Skills",
                 "0d2c24": "Collapse",
                 "7e6540": "Reliability Score Explanation",
-                "c266ba": "{v0}% is normal, {v1}% or more is high.",
+                "allGuides": "Browse the full guide",
                 "c78b79": "Skill Categories Tab",
+                "confidenceTiers": "Below {low}% is low, {low}% to under {high}% is normal, and {high}% or more is high.",
                 "e0f5c5": "Low scores are also considered for supplementary analysis.",
-                "e20b1b": "{v0}% or less is low, {v1}",
                 "ebff92": "Reliability score of the analysis technique.",
                 "guideLink": "View guide",
-                "guideLinkAria": "View guide: {name}",
-                "allGuides": "Browse the full guide"
+                "guideLinkAria": "View guide: {name}"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS Analysis Scale"

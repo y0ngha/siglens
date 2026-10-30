@@ -355,6 +355,17 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-5"></a>
+
+#### CR-5 — Swapping to a shared component keeps the constraints the old one encoded
+
+Before replacing a hand-rolled component with a shared one, list what the old one guaranteed — accessible name, size
+limits at the smallest viewport (320px), stacking, keyboard and touch behaviour — and check the shared one meets each.
+Pass a prop or extend the shared component instead of accepting its defaults: they silently replace the old specifics.
+
+- ❌ Swap a fixed `w-56` tooltip for the shared one (`max-w-xs`, positioned by clamping only the left edge): it overflows
+  a 320px screen, and its generic trigger name replaces "Reliability Score Explanation".
+- ✅ Cap the shared width to `min(20rem, 100vw - 2 × padding)` and pass the specific `label`.
 <a id="CR-4"></a>
 
 #### CR-4 — Pointer-anchored overlays measure the target at event time
