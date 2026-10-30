@@ -11,6 +11,7 @@ export interface SiglensApiKeySummary {
     lastUsedAt: Date | null;
 }
 
+/** 발급 저장 입력. 원문은 없고 접두·해시만 DB에 간다. */
 export interface CreateSiglensApiKeyInput {
     userId: string;
     name: string;
@@ -18,6 +19,7 @@ export interface CreateSiglensApiKeyInput {
     keyHash: string;
 }
 
+/** `limit_reached`면 활성 키 수 상한에 걸려 아무것도 저장하지 않았다. */
 export type CreateSiglensApiKeyResult =
     | { status: 'created'; key: SiglensApiKeySummary }
     | { status: 'limit_reached' };
@@ -34,15 +36,21 @@ export interface ApiKeyPrincipal {
     tier: Tier;
 }
 
+/**
+ * Bearer 인증 결과. `invalid`는 사유를 구분하지 않고 같은 401을 내는 신호이고,
+ * `unavailable`은 키 저장소 장애라 503으로 낮춘다.
+ */
 export type ApiKeyAuthResult =
     | { status: 'ok'; principal: ApiKeyPrincipal }
     | { status: 'invalid' }
     | { status: 'unavailable' };
 
+/** `keyHash`는 폐기 직후 인증 캐시를 끊는 데 쓴다. 남의 키이거나 이미 폐기됐으면 `not_found`. */
 export type RevokeSiglensApiKeyResult =
     | { status: 'revoked'; keyHash: string }
     | { status: 'not_found' };
 
+/** 키 발급·폐기 액션의 오류 코드. */
 export type SiglensApiKeyActionErrorCode =
     | 'unauthenticated'
     | 'email_not_verified'
@@ -71,6 +79,7 @@ export type CreateSiglensApiKeyState =
           message: string;
       };
 
+/** 키 폐기 액션 상태. */
 export type RevokeSiglensApiKeyState =
     | { status: 'idle' }
     | { status: 'revoked' }
@@ -80,6 +89,7 @@ export type RevokeSiglensApiKeyState =
           message: string;
       };
 
+/** API 기본 모델 저장 액션의 오류 코드. */
 export type ApiDefaultModelErrorCode =
     | 'unauthenticated'
     | 'invalid_model'
