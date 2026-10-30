@@ -190,9 +190,10 @@ export function availableToolNames(): Set<string> {
  * `userId` or a symbol string built from raw model tool-call args — and a
  * thrown error's `message` becomes part of a tool-result message that is
  * stored in the conversation and rendered in the UI. Never forward it.
- * Mirrors `shared/lib/logActionError.ts`: only the
- * error's `name` and (if present) the driver's short SQLSTATE-ish
- * `cause.code` are safe, non-sensitive diagnostics.
+ * Same principle as `shared/lib/logActionError.ts`: only the error's `name`
+ * and the driver's short SQLSTATE-ish `cause.code` are safe, non-sensitive
+ * diagnostics. (`logActionError` additionally falls back to a top-level
+ * `code`; this helper reads `cause.code` only.)
  */
 function logToolError(name: string, error: unknown): void {
     console.error('[AgentTool]', name, safeErrorFields(error));
