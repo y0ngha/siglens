@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
-import { DrizzleEmailReportExclusionRepository } from '@/entities/email-report/api';
+import { DrizzleEmailReportExclusionRepository } from '../api';
 import { EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS } from '../lib/emailReportConstants';
 import { parseReportSymbolInput } from '../lib/parseReportSymbolInput';
 import type { RawReportSymbolInput, ReportSymbolActionResult } from '../model';

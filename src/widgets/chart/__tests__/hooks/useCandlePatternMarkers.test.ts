@@ -226,4 +226,32 @@ describe('useCandlePatternMarkers', () => {
         rerender();
         expect(result.current.toggle).toBe(firstToggle);
     });
+    // 숨긴 동안에는 결과를 버릴 전체 스캔을 돌리지 않는다(장중 봉 갱신마다 낭비였다).
+    it('does not scan for candle patterns while hidden, and scans once shown', () => {
+        const { result } = renderHook(() =>
+            useCandlePatternMarkers({
+                seriesRef: makeSeriesRef({}),
+                bars: FAKE_BARS,
+            })
+        );
+        expect(detectCandlePatternEntries).not.toHaveBeenCalled();
+
+        act(() => result.current.toggle());
+        expect(detectCandlePatternEntries).toHaveBeenCalledWith(FAKE_BARS);
+    });
+
+    // 차트 생성 effect가 먼저 `chart.remove()`하면 detach가 던진다 — 정리 단계가 에러 경계로
+    // 번지지 않아야 한다.
+    it('swallows a detach error when the series was already removed', () => {
+        mockDetach.mockImplementationOnce(() => {
+            throw new Error('Object is disposed');
+        });
+        const { unmount } = renderHook(() =>
+            useCandlePatternMarkers({
+                seriesRef: makeSeriesRef({}),
+                bars: FAKE_BARS,
+            })
+        );
+        expect(() => unmount()).not.toThrow();
+    });
 });

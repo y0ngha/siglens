@@ -1,5 +1,4 @@
-// Deliberate duplicate of @y0ngha/siglens-core's pre-Phase-6 internal helpers (tokenEncryption.ts: encryptToken/decryptToken/tryParseEncryptionKey + db/config.ts tryReadEncryptionKey).
-// Core no longer ships these (not part of its public API); siglens owns the canonical copy here as of Phase 6 scope-realignment.
+// OAuth 토큰·LLM API 키 암호화의 단일 구현. `@y0ngha/siglens-core`는 이 헬퍼를 공개 API로 내보내지 않는다.
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
@@ -7,7 +6,7 @@ const IV_BYTE_LENGTH = 12;
 const SEPARATOR = ':';
 const PARTS_COUNT = 3;
 
-/** @internal Encrypt a plain-text OAuth token using AES-256-GCM; returns `iv:ciphertext:tag` base64 string. */
+/** AES-256-GCM으로 평문 토큰을 암호화해 `iv:ciphertext:tag`(각각 base64) 문자열로 돌려준다. IV는 호출마다 새로 뽑는다. */
 export function encryptToken(plaintext: string, keyHex: string): string {
     const key = Buffer.from(keyHex, 'hex');
     const iv = randomBytes(IV_BYTE_LENGTH);
@@ -24,18 +23,24 @@ export function encryptToken(plaintext: string, keyHex: string): string {
     ].join(SEPARATOR);
 }
 
-/** @internal Decrypt a token produced by {@link encryptToken}; returns plaintext, or null when decryption fails. */
+/** {@link encryptToken}이 만든 문자열을 복호화한다. 형식 오류·키 불일치·변조(GCM 태그 불일치)는 던지지 않고 `null`을 돌려준다. */
 export function decryptToken(encrypted: string, keyHex: string): string | null {
     const parts = encrypted.split(SEPARATOR);
-    if (parts.length !== PARTS_COUNT) {
+    const [ivPart, ciphertextPart, tagPart] = parts;
+    if (
+        parts.length !== PARTS_COUNT ||
+        ivPart === undefined ||
+        ciphertextPart === undefined ||
+        tagPart === undefined
+    ) {
         return null;
     }
 
     try {
         const key = Buffer.from(keyHex, 'hex');
-        const iv = Buffer.from(parts[0]!, 'base64');
-        const ciphertext = Buffer.from(parts[1]!, 'base64');
-        const tag = Buffer.from(parts[2]!, 'base64');
+        const iv = Buffer.from(ivPart, 'base64');
+        const ciphertext = Buffer.from(ciphertextPart, 'base64');
+        const tag = Buffer.from(tagPart, 'base64');
         const decipher = createDecipheriv(ALGORITHM, key, iv);
         decipher.setAuthTag(tag);
         return Buffer.concat([
@@ -49,7 +54,7 @@ export function decryptToken(encrypted: string, keyHex: string): string | null {
 
 const ENCRYPTION_KEY_BYTE_LENGTH = 32;
 
-/** @internal Validate a 32-byte AES-256 hex key; returns the raw hex string when valid, or null when absent or incorrectly sized. */
+/** 32바이트 AES-256 hex 키를 검증한다. 유효하면 원문 hex를, 없거나 길이가 다르면 `null`을 돌려준다. */
 function tryParseEncryptionKey(raw: string | undefined): string | null {
     if (!raw) {
         return null;
@@ -58,12 +63,12 @@ function tryParseEncryptionKey(raw: string | undefined): string | null {
     return bytes.length === ENCRYPTION_KEY_BYTE_LENGTH ? raw : null;
 }
 
-/** @internal Read and validate the OAuth token encryption key from the environment; returns the hex key string when valid, or null otherwise. */
+/** 환경변수 `OAUTH_TOKEN_ENCRYPTION_KEY`를 읽어 검증한다. 유효한 hex 키 또는 `null`. */
 export function tryReadEncryptionKey(): string | null {
     return tryParseEncryptionKey(process.env.OAUTH_TOKEN_ENCRYPTION_KEY);
 }
 
-/** Read the OAuth token encryption key, throwing when absent or invalid; use this whenever silently storing null tokens would be unacceptable (e.g. during OAuth signup token persistence). */
+/** OAuth 토큰 암호화 키를 읽되 없거나 유효하지 않으면 던진다. 토큰을 조용히 `null`로 저장하면 안 되는 경로(OAuth 가입 시 토큰 저장)용. */
 export function requireOauthTokenEncryptionKey(): string {
     const encryptionKey = tryReadEncryptionKey();
     if (encryptionKey === null) {
@@ -74,7 +79,7 @@ export function requireOauthTokenEncryptionKey(): string {
     return encryptionKey;
 }
 
-/** @internal Read and validate the LLM API key encryption key from the environment; returns the hex key string when valid, or null otherwise. */
+/** 환경변수 `LLM_API_KEY_ENCRYPTION_KEY`를 읽어 검증한다. 유효한 hex 키 또는 `null`. */
 export function tryReadLlmApiKeyEncryptionKey(): string | null {
     return tryParseEncryptionKey(process.env.LLM_API_KEY_ENCRYPTION_KEY);
 }

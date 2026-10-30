@@ -1,3 +1,7 @@
+/**
+ * "차트 작도" 메뉴 항목을 만들고 패턴별 라벨·색을 매핑하는 유틸.
+ */
+
 import {
     STRATEGY_KIND_SOURCE_REF,
     type ChartOverlay,

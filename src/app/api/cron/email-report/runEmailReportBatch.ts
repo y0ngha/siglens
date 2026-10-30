@@ -15,11 +15,11 @@ import type {
     SymbolBrief,
     SymbolReport,
 } from '@/entities/email-report/reportModel';
-import {
-    buildReportEmail,
-    type ReportEmailTranslator,
-    type SignalLabelResolver,
-} from '@/entities/email-report/templates/reportEmail';
+import { buildReportEmail } from '@/entities/email-report/templates/reportEmail';
+import type {
+    ReportEmailTranslator,
+    SignalLabelResolver,
+} from '@/entities/email-report/templates/reportEmailTypes';
 import type {
     EmailReportDeliveryRepository,
     EmailReportRecipient,

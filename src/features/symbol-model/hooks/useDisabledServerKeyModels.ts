@@ -12,6 +12,7 @@ import { fetchDisabledServerKeyModels } from '../lib/fetchDisabledServerKeyModel
 
 const NONE: readonly ModelId[] = [];
 
+/** 꺼진 서버 키 모델 조회 결과. `useModelSelection`이 선택 검증 목록과 저장값 읽기 시점을 정하는 데 쓴다. */
 export interface DisabledServerKeyModels {
     /** 운영자가 꺼 둔 서버 키 모델. 받기 전·실패 시에는 빈 목록이다. */
     models: readonly ModelId[];

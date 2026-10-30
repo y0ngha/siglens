@@ -1,40 +1,41 @@
-import { HeaderMobileMenu } from './HeaderMobileMenu';
-import { LocaleSwitcher } from './LocaleSwitcher';
-import { HeaderNav } from './HeaderNav';
-import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
-import { ThemeToggle } from '@/shared/ui/ThemeToggle';
-import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
 import { WatchlistQuickButton } from '@/features/watchlist/ui/WatchlistQuickButton';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
+import { HeaderMobileMenu } from './HeaderMobileMenu';
+import { HeaderNav } from './HeaderNav';
+import { HeaderUserMenu } from './HeaderUserMenu';
+import { LocaleSwitcher } from './LocaleSwitcher';
 import { LogoLockup } from './LogoLockup';
-import { cn } from '@/shared/lib/cn';
+import type { HeaderUserMenuUser } from './types';
+import { HeaderShell } from './ui/header/HeaderShell';
+import { NAV_TREE } from './utils/headerNavTree';
 
 interface HeaderProps {
-    /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
+    /** 서버에서 조회한 현재 사용자(`app/layout.tsx`). 비로그인이면 `null`. */
     readonly currentUser: HeaderUserMenuUser | null;
     /**
-     * When true, renders a skeleton for the user menu instead of its real content.
-     * Used as the Suspense fallback:
-     *   - outer fallback: always true (hint cookie not yet read)
-     *   - inner fallback: true only when the hint cookie signals an active session
+     * `true`면 사용자 메뉴 자리에 스켈레톤을 그린다. Suspense fallback용이다.
+     *   - 바깥 fallback: 항상 `true`(힌트 쿠키를 아직 읽기 전)
+     *   - 안쪽 fallback: 힌트 쿠키가 활성 세션을 가리킬 때만 `true`
      */
     readonly loadingUserMenu?: boolean;
     /**
-     * SSO handoff query forwarded to the user menu and mobile drawer's
-     * `/login`/`/signup` hrefs. Set only when this header renders on the ai
-     * host, so the visitor returns there after signing in. Undefined here
-     * leaves auth hrefs unchanged (main host behaviour).
+     * 사용자 메뉴와 모바일 드로어의 `/login`·`/signup` href로 전달되는 SSO handoff 쿼리.
+     * ai 호스트에서 렌더될 때만 설정되어, 방문자가 로그인 뒤 그곳으로 돌아오게 한다.
+     * `undefined`면 인증 href는 그대로다(메인 호스트).
      */
     readonly authNext?: string;
     /**
-     * Slides the header out of view below `lg` (ai host, while scrolling down).
-     * Desktop keeps it pinned — there is room for it there.
+     * `lg` 미만에서 헤더를 화면 밖으로 밀어낸다(ai 호스트, 아래로 스크롤하는 동안).
+     * 데스크톱은 자리가 있어 항상 고정한다.
      */
     readonly hiddenOnMobile?: boolean;
 }
 
-/** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
-// 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
+/**
+ * 사이트 헤더 조립. 해석된 현재 사용자를 prop으로 받는 프레젠테이션 셸이다 — 레이어 규칙상 여기서
+ * 인프라에 직접 접근하지 않는다. 훅이 없어 서버 컴포넌트로 남는다.
+ */
 export function Header({
     currentUser,
     loadingUserMenu,
@@ -42,93 +43,53 @@ export function Header({
     hiddenOnMobile = false,
 }: HeaderProps) {
     return (
-        <header
-            data-scroll-chrome=""
-            // `inert` makes the offscreen header (and its focusable controls)
-            // unreachable by tab/click/screen-reader while `hiddenOnMobile` is
-            // true — without it, `-translate-y-full` only hides it visually
-            // and leaves a focus trap behind. `hiddenOnMobile` itself only
-            // ever comes back `true` below `lg` (`useHideOnScrollDown`'s own
-            // media-query gate), matching the `max-lg:` variant below — so a
-            // desktop user who scrolls down never gets an `inert` header that
-            // the CSS is still pinning fully in view.
-            inert={hiddenOnMobile}
-            className={cn(
-                // 본문과는 1px 선 대신 옅은 빛 한 줄·짧은 그늘로 나눈다(`.surface-bar`, globals.css).
-                'surface-bar sticky top-0 z-50 bg-secondary-900/90 backdrop-blur-md transition-transform duration-200 supports-backdrop-filter:bg-secondary-900/75 motion-reduce:transition-none',
-                hiddenOnMobile && 'max-lg:-translate-y-full'
-            )}
-        >
-            {/* 전역 크롬은 **뷰포트에** 맞춘다(전폭 `px-4`). 심볼 페이지의
-                브레드크럼·탭·차트 제목이 모두 16px에 서 있으므로 헤더 로고도
-                같은 선에 둬야 제품의 주 표면에서 좌측이 하나로 읽힌다.
-                본문이 `page-container`(1200px 중앙)인 라우트에서는 로고가
-                본문보다 바깥에서 시작하는데, 크롬은 전폭·본문은 읽기 폭이라는
-                규약을 고른 결과다(`docs/conventions/DESIGN.md` §폭 규약).
-                푸터도 같은 규약을 쓴다. */}
-            <div className="flex h-(--header-h) items-center gap-2 px-4 sm:gap-4">
-                <LogoLockup />
-                {/*
-                    Desktop nav. Suspense로 감싸지 않는다 — 예전에는 PPR 정적 셸용으로
-                    정적 판을 fallback에 뒀는데, PPR이 꺼진 지금은 경계가 같은 내비
-                    마크업(7.5KB)을 전 페이지 HTML에 fallback + 숨김 청크로 두 번
-                    싣기만 했다(`navPanelIdUniqueness.test.tsx`).
+        <HeaderShell hiddenOnMobile={hiddenOnMobile}>
+            <LogoLockup />
+            {/*
+                데스크톱 내비. Suspense로 감싸지 않는다 — 같은 내비 마크업을 전 페이지
+                HTML에 fallback + 숨김 청크로 두 번 싣기만 한다(`navPanelIdUniqueness.test.tsx`).
 
-                    브레이크포인트가 `lg`(1024px)인 것은 의도다. 헤더는 고정 `h-14`
-                    한 줄이고 로고·검색·인증 메뉴가 같은 줄을 나눠 쓰는데, 내비
-                    라벨에 시장("미국")이 붙으면서 폭이 늘었다. `md`(768px)에 두면
-                    768~896px 구간에서 한글이 글자 단위로 줄바꿈돼 링크 높이가
-                    82px가 되고 56px 행 위아래로 삐져나간다(768px 실측).
-                    `HeaderMobileMenu`의 `lg:hidden`과 **반드시 같은 값**이어야
-                    한다 — 어긋나면 둘 다 보이거나 둘 다 사라진다.
-
-                    2026-08 지역 드롭다운 도입으로 라벨에서 "미국"이 빠져 폭이
-                    다시 줄었지만(`시장 분석`·`뉴스`·`경제`), `md` 복귀는 실측
-                    전까지 하지 않는다 — 드롭다운 트리거에 caret(▾)이 붙어
-                    항목당 폭이 라벨 길이만으로 결정되지 않는다.
-                */}
-                <div className="hidden shrink-0 lg:flex">
-                    <HeaderNav items={NAV_TREE} />
-                </div>
-                {/* 모바일은 아이콘 트리거 + 전체화면 오버레이, 데스크톱은 기존 인라인
-                    자동완성. 폭 계약(`ml-auto`)까지 이 컴포넌트가 소유한다 —
-                    `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
-                <HeaderSearch />
-                {/* 관심종목 상시 진입점. ai 호스트(`authNext`가 있을 때)에는 두지 않는다 —
-                    비회원 관심종목은 출처별 localStorage라 ai.siglens.io에서는 비어 보이고,
-                    목록 행·"전체 보기"가 모두 메인 호스트로 나가는 전체 이동이 된다. */}
-                {authNext === undefined && <WatchlistQuickButton />}
-                {/*
-                    모바일 갭이 **행 갭(`gap-2`)과 같아야** 한다. 검색 트리거와
-                    햄버거는 이 div의 형제라 행 갭을 쓰는데, 안쪽만 다른 값을
-                    쓰면 아이콘 넷의 간격이 2·8·2·8로 어긋나 보인다(사용자 제보).
-                    데스크톱은 라벨이 붙어 폭이 커지므로 좁은 갭이 낫다.
-                */}
-                <div className="flex shrink-0 items-center gap-2 sm:gap-0.5">
-                    {/* 모바일에서도 노출한다 — 드로어 안에도 같은 스위처가
-                        있지만, 언어 전환을 쓰려고 햄버거를 여는 것은 한 홉이
-                        더 든다. 검색·언어·테마 세 아이콘이 같은 줄에 선다. */}
-                    <LocaleSwitcher />
-                    <ThemeToggle />
-                    {/* 인증 영역의 폭은 `globals.css`의 `[data-header-auth-slot]`이 첫 페인트
-                        전부터 잡는다(게스트 CTA 11rem / 회원 추정 2.5rem, `<html
-                        data-auth-hint>`). 하이드레이션 때 CTA↔아바타 교체로 헤더가 밀리지
-                        않게 한다. 내용은 오른쪽에 붙인다. */}
-                    <div data-header-auth-slot="" className="flex justify-end">
-                        <HeaderUserMenu
-                            currentUser={currentUser}
-                            loading={loadingUserMenu}
-                            authNext={authNext}
-                        />
-                    </div>
-                </div>
-                {/* Mobile hamburger — hidden on desktop */}
-                <HeaderMobileMenu
-                    items={NAV_TREE}
-                    showAuthCta={currentUser === null && !loadingUserMenu}
-                    authNext={authNext}
-                />
+                브레이크포인트가 `lg`(1024px)인 것은 의도다. 헤더는 고정 한 줄이고 로고·검색·
+                인증 메뉴가 같은 줄을 나눠 쓰는데, `md`(768px)에 두면 768~896px 구간에서 한글이
+                글자 단위로 줄바꿈돼 링크 높이가 56px 행 위아래로 삐져나온다. 드롭다운 트리거에
+                캐럿(▾)이 붙어 항목당 폭이 라벨 길이만으로 결정되지 않으므로 `md` 복귀는 실측
+                전까지 하지 않는다. `HeaderMobileMenu`의 `lg:hidden`과 **반드시 같은 값**이어야
+                한다 — 어긋나면 둘 다 보이거나 둘 다 사라진다.
+            */}
+            <div className="hidden shrink-0 lg:flex">
+                <HeaderNav items={NAV_TREE} />
             </div>
-        </header>
+            {/* 모바일은 아이콘 트리거 + 전체화면 오버레이, 데스크톱은 인라인 자동완성. 폭 계약
+                (`ml-auto`)까지 이 컴포넌트가 소유한다 — `HeaderSearch` JSDoc 참고. */}
+            <HeaderSearch />
+            {/* 관심종목 상시 진입점. ai 호스트(`authNext`가 있을 때)에는 두지 않는다 — 비회원
+                관심종목은 출처별 localStorage라 ai.siglens.io에서는 비어 보이고, 목록 행·"전체 보기"가
+                모두 메인 호스트로 나가는 전체 이동이 된다. */}
+            {authNext === undefined && <WatchlistQuickButton />}
+            {/* 모바일 갭이 **행 갭(`gap-2`)과 같아야** 한다. 검색 트리거와 햄버거는 이 div의
+                형제라 행 갭을 쓰는데, 안쪽만 다른 값을 쓰면 아이콘 간격이 어긋나 보인다. 데스크톱은
+                라벨이 붙어 폭이 커지므로 좁은 갭이 낫다. */}
+            <div className="flex shrink-0 items-center gap-2 sm:gap-0.5">
+                {/* 모바일에서도 노출한다 — 드로어 안에도 같은 스위처가 있지만, 언어 전환을 쓰려고
+                    햄버거를 여는 것은 한 홉이 더 든다. */}
+                <LocaleSwitcher />
+                <ThemeToggle />
+                {/* 인증 영역의 폭은 `globals.css`의 `[data-header-auth-slot]`이 첫 페인트 전부터
+                    잡는다(게스트 CTA 11rem / 회원 추정 2.5rem). 하이드레이션 때 CTA↔아바타 교체로
+                    헤더가 밀리지 않게 한다. 내용은 오른쪽에 붙인다. */}
+                <div data-header-auth-slot="" className="flex justify-end">
+                    <HeaderUserMenu
+                        currentUser={currentUser}
+                        loading={loadingUserMenu}
+                        authNext={authNext}
+                    />
+                </div>
+            </div>
+            <HeaderMobileMenu
+                items={NAV_TREE}
+                showAuthCta={currentUser === null && !loadingUserMenu}
+                authNext={authNext}
+            />
+        </HeaderShell>
     );
 }

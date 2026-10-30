@@ -25,9 +25,6 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/shared/hooks/useEscapeKey', () => ({
-    useEscapeKey: vi.fn(),
-}));
 // LocaleSwitcher는 next-intl 컨텍스트와 로케일 라우터를 요구한다. 여기서는
 // 헤더 조립만 검증하므로 stub으로 대체하고, 스위처 자체는 전용 테스트가 다룬다.
 vi.mock('../LocaleSwitcher', () => ({
@@ -40,11 +37,11 @@ vi.mock('@/shared/hooks/useFocusTrap', () => ({
 import { koMessage } from '@/shared/test-utils/koMessage';
 import React, { act } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import { usePathname } from 'next/navigation';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 
 import { HeaderMobileMenu } from '../HeaderMobileMenu';
-import { NAV_TREE } from '../headerNavTree';
+import { NAV_TREE } from '../utils/headerNavTree';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 
@@ -63,6 +60,13 @@ function linkByHref(href: string): HTMLElement {
     return found;
 }
 
+/** 닫힌 드로어는 DOM에 남되 `inert`다 — 접근성 트리·탭 순서에서 모두 빠진다. */
+function expectDrawerClosed() {
+    expect(document.getElementById('mobile-nav-drawer')).toHaveAttribute(
+        'inert'
+    );
+}
+
 describe('HeaderMobileMenu', () => {
     it('renders the hamburger button with correct aria-label', () => {
         render(<HeaderMobileMenu items={NAV_TREE} />);
@@ -78,21 +82,13 @@ describe('HeaderMobileMenu', () => {
         expect(button).toHaveAttribute('aria-expanded', 'false');
     });
 
-    it('drawer is hidden initially (aria-hidden=true)', () => {
-        /*
-         * After the portal refactor the drawer is rendered via createPortal into
-         * document.body once the component mounts. jsdom runs useEffect synchronously
-         * via act(), so the drawer IS present after render — but with aria-hidden=true
-         * and translate-x-full (closed state). screen.queryByRole('dialog') returns
-         * null because aria-hidden suppresses the role from the accessibility tree.
-         */
+    it('drawer is rendered but inert initially', () => {
         render(<HeaderMobileMenu items={NAV_TREE} />);
 
-        const drawer = document.getElementById('mobile-nav-drawer');
-        expect(drawer).toBeInTheDocument();
-        expect(drawer).toHaveAttribute('aria-hidden', 'true');
-        // aria-hidden suppresses the role — dialog not reachable via role query
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(
+            document.getElementById('mobile-nav-drawer')
+        ).toBeInTheDocument();
+        expectDrawerClosed();
     });
 
     it('drawer is portaled into document.body', () => {
@@ -127,7 +123,7 @@ describe('HeaderMobileMenu', () => {
         render(<HeaderMobileMenu items={NAV_TREE} />);
 
         // Links exist in document.body (via portal) — hidden: true needed because
-        // the drawer has aria-hidden when closed.
+        // the closed drawer is inert.
         const hrefs = screen
             .getAllByRole('link', { hidden: true })
             .map(l => l.getAttribute('href'));
@@ -151,13 +147,6 @@ describe('HeaderMobileMenu', () => {
         expect(
             screen.getByRole('link', { name: '시그렌즈 AI Beta', hidden: true })
         ).toBeInTheDocument();
-    });
-
-    it('nav links have aria-hidden="true" on the drawer when closed', () => {
-        render(<HeaderMobileMenu items={NAV_TREE} />);
-
-        const drawer = document.getElementById('mobile-nav-drawer');
-        expect(drawer).toHaveAttribute('aria-hidden', 'true');
     });
 
     it('opens the drawer when hamburger is clicked', () => {
@@ -228,50 +217,127 @@ describe('HeaderMobileMenu', () => {
         expect(linkByHref('/market')).not.toHaveAttribute('aria-current');
     });
 
-    it('closes the drawer when Escape key handler fires (mock callback)', () => {
+    it('Escape 키로 열린 드로어를 닫고 포커스를 햄버거로 돌려준다', () => {
         render(<HeaderMobileMenu items={NAV_TREE} />);
-
-        fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-
-        // Retrieve the close callback passed to useEscapeKey when the drawer was open
-        const calls = vi.mocked(useEscapeKey).mock.calls;
-        const closeCallback = calls[calls.length - 1][0];
-        act(() => {
-            closeCallback();
-        });
-
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    });
-
-    it('Escape 키 DOM 이벤트가 drawer를 닫는다 (real keydown integration)', () => {
-        // Simulate the real useEscapeKey behaviour: register onEscape on keydown
-        // when enabled=true, remove it when enabled=false.
-        let registeredHandler: ((e: KeyboardEvent) => void) | null = null;
-        vi.mocked(useEscapeKey).mockImplementation(
-            (onEscape: () => void, enabled: boolean) => {
-                if (enabled) {
-                    registeredHandler = (e: KeyboardEvent) => {
-                        if (e.key === 'Escape') onEscape();
-                    };
-                    document.addEventListener('keydown', registeredHandler);
-                } else if (registeredHandler) {
-                    document.removeEventListener('keydown', registeredHandler);
-                    registeredHandler = null;
-                }
-            }
-        );
-
-        render(<HeaderMobileMenu items={NAV_TREE} />);
-
-        fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+        const hamburger = screen.getByRole('button', { name: '메뉴 열기' });
+        fireEvent.click(hamburger);
         expect(screen.getByRole('dialog')).toBeInTheDocument();
 
         act(() => {
             fireEvent.keyDown(document, { key: 'Escape' });
         });
 
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expectDrawerClosed();
+        expect(screen.getByRole('button', { name: '메뉴 열기' })).toHaveFocus();
+    });
+
+    describe('닫힌 드로어는', () => {
+        it('inert라 내용물이 탭 순서와 보조 기술에서 빠진다', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} />);
+
+            expect(
+                document.getElementById('mobile-nav-drawer')
+            ).toHaveAttribute('inert');
+        });
+
+        it('링크·버튼에 개별 tabindex를 달지 않는다', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} showAuthCta />);
+
+            const drawer = document.getElementById('mobile-nav-drawer')!;
+            const focusables = drawer.querySelectorAll('a, button');
+            expect(focusables.length).toBeGreaterThan(0);
+            for (const el of focusables) {
+                expect(el).not.toHaveAttribute('tabindex');
+            }
+        });
+
+        it('열리면 inert가 풀린다', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} />);
+
+            fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+
+            expect(
+                document.getElementById('mobile-nav-drawer')
+            ).not.toHaveAttribute('inert');
+        });
+    });
+
+    describe('데스크톱 폭(lg 이상)으로 넘어가면', () => {
+        const originalMatchMedia = window.matchMedia;
+        const listeners = new Set<(event: MediaQueryListEvent) => void>();
+
+        beforeEach(() => {
+            listeners.clear();
+            window.matchMedia = ((query: string) => ({
+                matches: query === BELOW_LG_MEDIA_QUERY,
+                media: query,
+                addEventListener: (
+                    _type: string,
+                    fn: (event: MediaQueryListEvent) => void
+                ) => listeners.add(fn),
+                removeEventListener: (
+                    _type: string,
+                    fn: (event: MediaQueryListEvent) => void
+                ) => listeners.delete(fn),
+            })) as unknown as typeof window.matchMedia;
+        });
+
+        afterEach(() => {
+            window.matchMedia = originalMatchMedia;
+        });
+
+        const crossToDesktop = () =>
+            act(() => {
+                for (const fn of listeners)
+                    fn({ matches: false } as MediaQueryListEvent);
+            });
+
+        it('열린 드로어와 백드롭이 닫히고 스크롤 잠금이 풀린다', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} />);
+            fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+            expect(document.body.style.overflow).toBe('hidden');
+
+            crossToDesktop();
+
+            expectDrawerClosed();
+            expect(
+                screen.queryByTestId('mobile-nav-backdrop')
+            ).not.toBeInTheDocument();
+            expect(document.body.style.overflow).not.toBe('hidden');
+        });
+
+        it('숨겨지는 햄버거로 포커스를 되돌리지 않는다', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} />);
+            fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+
+            crossToDesktop();
+
+            expect(
+                screen.getByRole('button', { name: '메뉴 열기' })
+            ).not.toHaveFocus();
+        });
+
+        it('여전히 lg 미만이면 열린 채 유지된다', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} />);
+            fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+
+            act(() => {
+                for (const fn of listeners)
+                    fn({ matches: true } as MediaQueryListEvent);
+            });
+
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        it('백드롭과 드로어 자체에도 lg:hidden이 걸려 있다', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} />);
+            fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+
+            expect(screen.getByTestId('mobile-nav-backdrop')).toHaveClass(
+                'lg:hidden'
+            );
+            expect(screen.getByRole('dialog')).toHaveClass('lg:hidden');
+        });
     });
 
     it('closes the drawer when the close button inside is clicked', () => {
@@ -281,7 +347,7 @@ describe('HeaderMobileMenu', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: '메뉴 패널 닫기' }));
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expectDrawerClosed();
     });
 
     it('body scroll is locked while drawer is open and restored on close', () => {
@@ -306,7 +372,7 @@ describe('HeaderMobileMenu', () => {
 
         fireEvent.click(screen.getByTestId('mobile-nav-backdrop'));
 
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expectDrawerClosed();
     });
 
     it('drawer has aria-modal="true"', () => {
@@ -340,7 +406,7 @@ describe('HeaderMobileMenu', () => {
         // Drawer should be hidden again — and the SAME trigger reverts to the
         // "메뉴 열기" label with aria-expanded=false (resolves only when closed,
         // so the assertion genuinely depends on the toggle having closed it).
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expectDrawerClosed();
         expect(
             screen.getByRole('button', { name: '메뉴 열기' })
         ).toHaveAttribute('aria-expanded', 'false');
@@ -360,7 +426,7 @@ describe('HeaderMobileMenu', () => {
         vi.mocked(usePathname).mockReturnValue('/news');
         rerender(<HeaderMobileMenu items={NAV_TREE} />);
 
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expectDrawerClosed();
     });
 
     describe('auth CTA + authNext', () => {

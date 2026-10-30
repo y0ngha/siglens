@@ -3,6 +3,7 @@ import http from 'node:http';
 import https from 'node:https';
 import { getUpstashWriterCredentials } from './redisClient';
 
+/** 명령 하나(연결·응답 소켓 유휴)에 거는 상한(ms). `REDIS_COMMAND_TIMEOUT_MS`와 같은 값이다. */
 const TIMEOUT_MS = 2_000;
 
 interface PostResult {
@@ -41,6 +42,8 @@ export async function runUpstashCommandOutsideFetch(
     if (status < 200 || status >= 300) {
         throw new Error(`upstash http ${status}`);
     }
+    // safe: Upstash REST는 항상 `{ result }` 또는 `{ error }` 객체를 돌려준다. 비객체 본문까지
+    // 좁히면 기존 동작(null이면 TypeError, 그 외 undefined)이 바뀌므로 단언을 유지한다.
     const body = JSON.parse(text) as { result?: unknown; error?: string };
     if (body.error) throw new Error(`upstash error: ${body.error}`);
     return body.result;

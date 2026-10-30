@@ -87,6 +87,7 @@ export interface GuestResolver {
     readonly isCrawler: () => Promise<boolean>;
 }
 
+/** 요청 헤더로 비회원 신원·크롤러 판정을 지연 계산하는 해석기를 만든다(요청당 한 번만 계산한다). */
 export function createGuestResolver(requestHeaders: Headers): GuestResolver {
     /** 첫 호출이 만든 Promise를 이후 호출이 그대로 받는 칸(요청 수명). */
     const memo: {
@@ -281,6 +282,7 @@ export interface GenerationGateSlot {
     readonly release: () => Promise<void>;
 }
 
+/** 예약 결과를 바깥 catch까지 들고 가는 빈 칸을 만든다(예약 전에는 `exempt`). */
 export function createGenerationGateSlot(): GenerationGateSlot {
     /** 예약(try 안)과 해제(바깥 catch)가 다른 스코프라 결과를 클로저 칸으로 넘긴다. */
     const slot: { gate: GenerationGate } = { gate: EXEMPT };

@@ -9,8 +9,15 @@ import { renderHook, act } from '@testing-library/react';
 import type { PointerEvent } from 'react';
 import { useStrikeBarChart } from '@/widgets/options/hooks/useStrikeBarChart';
 
+const { mockComputeTooltipPos } = vi.hoisted(() => ({
+    mockComputeTooltipPos: vi.fn((_event: unknown, _rect: unknown) => ({
+        x: 100,
+        y: 80,
+    })),
+}));
+
 vi.mock('@/widgets/options/utils/computeTooltipPos', () => ({
-    computeTooltipPos: (_event: unknown, _rect: unknown) => ({ x: 100, y: 80 }),
+    computeTooltipPos: mockComputeTooltipPos,
 }));
 
 /** 최소 PointerEvent 형태 — 훅은 event를 computeTooltipPos에 그대로 전달하므로
@@ -71,7 +78,7 @@ describe('useStrikeBarChart', () => {
     });
 
     describe('handlePointerMove', () => {
-        it('cachedRectRef가 null이고 containerRef도 null이면 상태 변경 없음', () => {
+        it('containerRef가 null이면 상태 변경 없음', () => {
             const { result } = renderHook(() => useStrikeBarChart());
             act(() => {
                 result.current.handlePointerMove(makePointerEvent(), 1);
@@ -80,17 +87,15 @@ describe('useStrikeBarChart', () => {
             expect(result.current.tooltipPos).toBeNull();
         });
 
-        it('enter 후 move는 캐시된 rect를 사용해 tooltipPos를 업데이트한다', () => {
+        it('enter 후 move는 hoveredIndex와 tooltipPos를 업데이트한다', () => {
             const { result } = renderHook(() => useStrikeBarChart());
             Object.defineProperty(result.current.containerRef, 'current', {
                 value: makeContainerDiv(),
                 writable: true,
             });
-            // enter로 캐시 생성
             act(() => {
                 result.current.handlePointerEnter(makePointerEvent(), 0);
             });
-            // move — 캐시 경로
             act(() => {
                 result.current.handlePointerMove(makePointerEvent(), 1);
             });
@@ -98,13 +103,12 @@ describe('useStrikeBarChart', () => {
             expect(result.current.tooltipPos).toEqual({ x: 100, y: 80 });
         });
 
-        it('enter 없이 move가 먼저 발사되면(모바일 경로) containerRef로 한 번 측정한다', () => {
+        it('enter 없이 move가 먼저 발사되어도(모바일 경로) 컨테이너를 측정해 표시한다', () => {
             const { result } = renderHook(() => useStrikeBarChart());
             Object.defineProperty(result.current.containerRef, 'current', {
                 value: makeContainerDiv(),
                 writable: true,
             });
-            // cachedRectRef는 null인 채로 move만 호출
             act(() => {
                 result.current.handlePointerMove(makePointerEvent(), 2);
             });
@@ -133,7 +137,7 @@ describe('useStrikeBarChart', () => {
             expect(result.current.tooltipPos).toBeNull();
         });
 
-        it('leave 후 move가 발사되면 cachedRectRef가 초기화됐으므로 containerRef 경유 경로로 처리된다', () => {
+        it('leave 후 move가 발사되면 다시 표시한다', () => {
             const { result } = renderHook(() => useStrikeBarChart());
             Object.defineProperty(result.current.containerRef, 'current', {
                 value: makeContainerDiv(),
@@ -145,12 +149,40 @@ describe('useStrikeBarChart', () => {
             act(() => {
                 result.current.handlePointerLeave();
             });
-            // cachedRectRef가 null이므로 containerRef 경유 경로 실행
             act(() => {
                 result.current.handlePointerMove(makePointerEvent(), 4);
             });
             expect(result.current.hoveredIndex).toBe(4);
             expect(result.current.tooltipPos).toEqual({ x: 100, y: 80 });
+        });
+    });
+
+    describe('scroll while hovering (regression)', () => {
+        it('measures the container rect on every pointermove instead of reusing the enter-time rect', () => {
+            const { result } = renderHook(() => useStrikeBarChart());
+            const div = document.createElement('div');
+            const rect = vi
+                .fn()
+                .mockReturnValueOnce({ left: 0, top: 100, width: 600 })
+                .mockReturnValueOnce({ left: 0, top: 40, width: 600 });
+            div.getBoundingClientRect = rect;
+            Object.defineProperty(result.current.containerRef, 'current', {
+                value: div,
+                writable: true,
+            });
+
+            act(() => {
+                result.current.handlePointerEnter(makePointerEvent(), 0);
+            });
+            act(() => {
+                result.current.handlePointerMove(makePointerEvent(), 0);
+            });
+
+            expect(rect).toHaveBeenCalledTimes(2);
+            expect(mockComputeTooltipPos).toHaveBeenLastCalledWith(
+                expect.anything(),
+                expect.objectContaining({ top: 40 })
+            );
         });
     });
 });

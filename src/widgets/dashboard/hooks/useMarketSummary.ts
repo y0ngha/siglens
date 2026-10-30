@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 시장 요약(지수·섹터 시세)을 불러오고 화면용 파생값(맵·목록·실패 여부)을 만든다.
+ */
 import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/shared/lib/types';
@@ -20,8 +23,12 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 const IS_E2E_MODE = isE2EClient();
 
 interface UseMarketSummaryReturn {
-    data: MarketSummaryActionResult | undefined;
     isPending: boolean;
+    /**
+     * 조회가 끝났는데 화면에 쓸 요약이 없다 — 서버 오류 응답, 조회 실패, 다른 시장의
+     * 응답을 버린 경우를 모두 포함한다. 이때 빈 그리드 대신 안내를 보여야 한다.
+     */
+    isTotalFailure: boolean;
     sectorMap: Map<string, MarketSectorData>;
     indices: readonly MarketIndexData[];
     /**
@@ -31,9 +38,14 @@ interface UseMarketSummaryReturn {
     hasMissingQuotes: boolean;
 }
 
+type MarketSummaryResponse = Extract<
+    MarketSummaryActionResult,
+    { summary: unknown }
+>;
+
 function hasSummary(
     data: MarketSummaryActionResult | undefined
-): data is Extract<MarketSummaryActionResult, { summary: unknown }> {
+): data is MarketSummaryResponse {
     return data !== undefined && !('ok' in data);
 }
 
@@ -52,11 +64,10 @@ function hasSummary(
  * 답은 **정의상 미국**이라, 미국 페이지에서는 그 답이 옳다.
  */
 function matchesScope(
-    data: MarketSummaryActionResult | undefined,
+    data: MarketSummaryResponse,
     scope: DashboardScopeId
 ): boolean {
-    if (scope === 'us') return true;
-    return hasSummary(data) && data.scope === scope;
+    return scope === 'us' || data.scope === scope;
 }
 
 /**
@@ -96,5 +107,7 @@ export function useMarketSummary(
         ? detectMissingQuotes(resolved.summary)
         : false;
 
-    return { data, isPending, sectorMap, indices, hasMissingQuotes };
+    const isTotalFailure = !isPending && resolved === undefined;
+
+    return { isPending, isTotalFailure, sectorMap, indices, hasMissingQuotes };
 }

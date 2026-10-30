@@ -23,17 +23,14 @@ vi.mock('@/views/symbol/utils/symbolTabsConfig', () => ({
     TABS: [
         {
             key: 'chart',
-            labelKey: 'chart',
             hrefBuilder: (s: string) => `/${s}`,
         },
         {
             key: 'news',
-            labelKey: 'news',
             hrefBuilder: (s: string) => `/${s}/news`,
         },
         {
             key: 'fundamental',
-            labelKey: 'fundamental',
             hrefBuilder: (s: string) => `/${s}/fundamental`,
         },
     ],
@@ -41,17 +38,14 @@ vi.mock('@/views/symbol/utils/symbolTabsConfig', () => ({
         const all = [
             {
                 key: 'chart',
-                labelKey: 'chart',
                 hrefBuilder: (s: string) => `/${s}`,
             },
             {
                 key: 'news',
-                labelKey: 'news',
                 hrefBuilder: (s: string) => `/${s}/news`,
             },
             {
                 key: 'fundamental',
-                labelKey: 'fundamental',
                 hrefBuilder: (s: string) => `/${s}/fundamental`,
             },
         ];
@@ -86,6 +80,19 @@ describe('SymbolTabs', () => {
             EQUITY_ASSET
         );
         (usePendingSymbolTab as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    });
+
+    /**
+     * 레일은 `overflow-x-auto overflow-y-hidden` 스크롤 컨테이너이고 링크가 레일 높이를 꽉
+     * 채운다 — 바깥 포커스 링(+offset)은 위·아래가 잘리므로 링을 안쪽에 그린다.
+     */
+    it('탭 링크의 포커스 링은 안쪽(inset)이고 offset이 없다', () => {
+        render(<SymbolTabs symbol="aapl" />);
+        const chartLink = screen
+            .getByText(koMessages.shared.symbolTab.chart)
+            .closest('a')!;
+        expect(chartLink.className).toContain('focus-visible:ring-inset');
+        expect(chartLink.className).not.toContain('ring-offset');
     });
 
     it('renders a nav with accessible label', () => {

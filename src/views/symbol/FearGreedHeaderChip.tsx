@@ -21,7 +21,14 @@ interface FearGreedHeaderChipProps {
     snapshot: FearGreedSnapshot | null;
 }
 
-/** Ticker-level sentiment chip on every /[symbol]/* route header. */
+/**
+ * Ticker-level sentiment chip on every /[symbol]/* route header.
+ *
+ * 칩은 `role="img"`다 — 일반 `<span>`(generic)에는 `aria-label`이 금지라 보조기술이 이름을
+ * 무시할 수 있다. 이름은 라벨·점수·신뢰도 고지를 한 문장으로 담고, 보이는 조각은 그 요약이다.
+ * 라벨과 점수 사이 공백은 실제 텍스트(`{' '}`)로 둔다 — `gap-1`만으로는 textContent가
+ * `탐욕61`로 붙는다(inline-flex라 공백 노드는 화면 간격을 바꾸지 않는다).
+ */
 export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
     const t = useTranslations('views.symbol');
     // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
@@ -44,6 +51,7 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
             : '';
     return (
         <span
+            role="img"
             className={cn(
                 'inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium',
                 LABEL_BG[snapshot.label]
@@ -54,7 +62,7 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
                 v2: confidenceNote,
             })}
         >
-            <span>{tLabel(SENTIMENT_LABEL_KEY[snapshot.label])}</span>
+            <span>{tLabel(SENTIMENT_LABEL_KEY[snapshot.label])}</span>{' '}
             <span className="font-mono">{score}</span>
             {snapshot.confidence === 'limited' && (
                 <span className="text-secondary-300" aria-hidden="true">

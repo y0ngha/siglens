@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleEmailReportSubscriptionRepository } from '@/entities/email-report/api';
+import { DrizzleEmailReportSubscriptionRepository } from '../api';
 import { toSettingsView } from '../lib/toSettingsView';
 import type { EmailReportSettingsView } from '../model';
 

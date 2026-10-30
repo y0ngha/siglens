@@ -4,6 +4,7 @@ export interface PublicToolMeta {
     model?: string;
 }
 
+/** 도구 실행의 최종 결과 — 성공 데이터 또는 HTTP로 매핑할 실패. */
 export type PublicToolOutcome =
     | { ok: true; data: unknown; truncated: boolean; meta?: PublicToolMeta }
     | {
@@ -28,8 +29,10 @@ export interface PublicToolStream {
     headers?: Record<string, string>;
 }
 
+/** 실행기가 돌려주는 값 — 즉시 결과이거나 긴 생성 스트림. */
 export type PublicToolResult = PublicToolOutcome | PublicToolStream;
 
+/** 긴 생성 스트림인지 가르는 타입 가드. */
 export function isPublicToolStream(
     result: PublicToolResult
 ): result is PublicToolStream {

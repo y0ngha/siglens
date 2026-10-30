@@ -20,8 +20,10 @@ import { E2E_FORCE_ANALYSIS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
  * The force-error cookie name is imported from the stub (single source of truth)
  * rather than mirrored as a literal.
  */
-const OPTIONS_ANALYSIS_ERROR =
-    '옵션 분석을 가져오지 못했어요. 잠시 후 다시 시도해주세요.';
+/**
+ * 강제 오류 스텁은 `no_chains_error`를 돌려준다 — 오류 카드는 훅이 만든 원인 문구(옵션 없음)를 보인다.
+ */
+const OPTIONS_ANALYSIS_ERROR = '분석할 옵션 데이터가 없습니다.';
 
 test.describe('widget resilience', () => {
     test('options analysis error boundary recovers via retry', async ({

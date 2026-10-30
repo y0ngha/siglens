@@ -55,12 +55,18 @@ const KIND_BY_FIRST_SEGMENT: Readonly<Record<string, RouteKind>> = {
     share: 'share',
 };
 
-/** `appPath`는 로케일 접두사가 없는 앱 경로다(쿼리·해시는 있어도 된다). */
+/**
+ * 앱 경로의 첫 세그먼트로 골격 종류를 고른다. 첫 세그먼트가 없으면 `home`, 표에 없지만
+ * 종목 형상이면 `symbol`, 그 밖은 `generic`.
+ * `appPath`는 로케일 접두사가 없는 앱 경로다(쿼리·해시는 있어도 된다).
+ */
 export function routeKindOf(appPath: string): RouteKind {
     const first = appPath.split(/[?#]/)[0]?.split('/')[1] ?? '';
     if (first === '') return 'home';
-    if (Object.hasOwn(KIND_BY_FIRST_SEGMENT, first)) {
-        return KIND_BY_FIRST_SEGMENT[first] as RouteKind;
-    }
+    // `Object.hasOwn` — `constructor` 같은 프로토타입 키가 종류로 새지 않게 한다.
+    const kind = Object.hasOwn(KIND_BY_FIRST_SEGMENT, first)
+        ? KIND_BY_FIRST_SEGMENT[first]
+        : undefined;
+    if (kind) return kind;
     return symbolOfAppPath(appPath) !== null ? 'symbol' : 'generic';
 }

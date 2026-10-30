@@ -1,21 +1,19 @@
 import { createHash } from 'node:crypto';
 
 /**
- * kind + symbol + result (+ chartBars for chart kind) を使った dedupe 用安定ハッシュ生成。
+ * 공유 dedupe용 안정 해시. kind, symbol, locale, result에 더해 chart kind의
+ * `chartBars`와 `plain`을 페이로드에 넣는다. `createShareSnapshotAction`이 쓴다.
  *
- * chart kind では `chartBars` をハッシュに含める。これにより、同じ AI 分析結果でも
- * 異なる時点のチャートデータを持つ共有は別スナップショットとして扱われ、
- * 各共有者が共有時点のチャートをそのまま保持できる。
- *
- * 非 chart kind では `chartBars` を省略することで従来のハッシュ互換性を維持する。
- *
- * Covers: kind, symbol, locale, result, and (for chart kind) chartBars.
+ * chart kind에서 `chartBars`를 해시에 포함하는 이유: 같은 AI 분석 결과여도 다른
+ * 시점의 차트 데이터를 가진 공유는 별도 스냅샷이어야, 각 공유자가 공유 시점의
+ * 차트를 그대로 보존한다. 비 chart kind는 `chartBars`를 페이로드에서 빼 기존
+ * 해시와 호환된다.
  *
  * **`locale`이 페이로드에 있어야 하는 이유**: dedupe는 `content_hash` **단독**
  * unique 인덱스(`shared_analyses_content_uq`)로 걸리고, `create()`는 충돌 시
  * `expiresAt`만 갱신하고 기존 행의 id를 돌려준다. 로케일이 해시에 없으면 영어
  * 사용자가 만든 공유 링크가 **먼저 저장된 한국어 스냅샷의 id**를 받게 되고,
- * 그 사용자는 자기가 보지 않은 언어의 분석을 공유하게 된다(설계 §2.5).
+ * 그 사용자는 자기가 보지 않은 언어의 분석을 공유하게 된다.
  *
  * **`plain`도 같은 이유로 해시에 들어간다.** 분석 결과는 캐시를 통해 여러
  * 사용자가 공유하므로 `result`가 글자 하나까지 같은 공유가 흔하다. 그런데
