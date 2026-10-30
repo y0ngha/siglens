@@ -1,33 +1,40 @@
 import type { Bar } from '@y0ngha/siglens-core';
 import { ImageResponse } from 'next/og';
+import { SITE_NAME } from '@/shared/config/brand';
 import { CHART_COLORS_RAW_DARK } from '@/shared/lib/chartColors';
 import { OG_BG, OG_FG, OG_MUTED } from '@/shared/lib/og';
-import { SITE_NAME } from '@/shared/config/brand';
-import { computeChartGeometry } from './chartGeometry';
+import {
+    computeChartGeometry,
+    isReportChartMaPeriod,
+    REPORT_CHART_MA_PERIODS,
+    type ReportChartMaPeriod,
+} from '../lib/chartGeometry';
 
 /** 메일 본문 폭 600px의 2배 — 레티나에서 흐리지 않게 한다. */
-export const REPORT_CHART_WIDTH = 1200;
-export const REPORT_CHART_HEIGHT = 600;
+const REPORT_CHART_WIDTH = 1200;
+const REPORT_CHART_HEIGHT = 600;
 const HEADER_HEIGHT = 120;
 const PLOT_HEIGHT = REPORT_CHART_HEIGHT - HEADER_HEIGHT;
 const PLOT_PADDING = 24;
 
-/** 차트에 겹치는 이동평균 — 사이트 차트와 같은 기간별 색을 쓴다. */
-export const REPORT_CHART_MA_PERIODS = [20, 60] as const;
-const MA_COLORS: Record<(typeof REPORT_CHART_MA_PERIODS)[number], string> = {
+/** 기간별 이동평균선 색 — 사이트 차트와 같은 색을 쓴다. 키는 `REPORT_CHART_MA_PERIODS`와 같아야 한다. */
+const MA_COLORS: Readonly<Record<ReportChartMaPeriod, string>> = {
     20: CHART_COLORS_RAW_DARK.period20,
     60: CHART_COLORS_RAW_DARK.period60,
 };
 
+/** `buildReportChartImage`의 입력. 호출자(라우트)가 봉·이동평균·캐시 정책을 정한다. */
 export interface ReportChartImageInput {
     symbol: string;
     /** 이미지에 찍는 기준일(`YYYY-MM-DD`). */
     date: string;
     bars: readonly Bar[];
     ma: Readonly<Record<number, readonly (number | null)[]>>;
+    /** 응답의 `cache-control` 헤더 값. 실제 메일은 불변 장기 캐시, 샘플은 하루. */
     cacheControl: string;
 }
 
+/** 헤더에 찍는 종가 — 1000 이상은 정수(천 단위 구분), 그 아래는 소수 둘째 자리. */
 function formatPrice(value: number): string {
     return value >= 1000
         ? value.toLocaleString('en-US', { maximumFractionDigits: 0 })
@@ -44,18 +51,22 @@ export function buildReportChartImage(
     input: ReportChartImageInput
 ): ImageResponse | null {
     const ma = Object.fromEntries(
-        REPORT_CHART_MA_PERIODS.filter(p => input.ma[p] !== undefined).map(
-            p => [p, input.ma[p]!]
-        )
+        REPORT_CHART_MA_PERIODS.flatMap(period => {
+            const values = input.ma[period];
+            return values === undefined ? [] : [[period, values]];
+        })
+    );
+    const maPeriods = REPORT_CHART_MA_PERIODS.filter(
+        period => ma[period] !== undefined
     );
     const geo = computeChartGeometry(input.bars, ma, {
         width: REPORT_CHART_WIDTH,
         height: PLOT_HEIGHT,
         padding: PLOT_PADDING,
     });
-    if (geo === null) return null;
+    const last = input.bars.at(-1);
+    if (geo === null || last === undefined) return null;
 
-    const last = input.bars.at(-1)!;
     const prev = input.bars.at(-2);
     const changePct =
         prev !== undefined && prev.close !== 0
@@ -117,9 +128,7 @@ export function buildReportChartImage(
                     <span>{SITE_NAME}</span>
                     <div style={{ display: 'flex' }}>
                         <span>{input.date}</span>
-                        {REPORT_CHART_MA_PERIODS.filter(
-                            p => ma[p] !== undefined
-                        ).map(p => (
+                        {maPeriods.map(p => (
                             <span
                                 key={p}
                                 style={{ marginLeft: 20, color: MA_COLORS[p] }}
@@ -167,7 +176,9 @@ export function buildReportChartImage(
                             points={line.points}
                             fill="none"
                             stroke={
-                                MA_COLORS[line.period as keyof typeof MA_COLORS]
+                                isReportChartMaPeriod(line.period)
+                                    ? MA_COLORS[line.period]
+                                    : undefined
                             }
                             strokeWidth={3}
                         />
