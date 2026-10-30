@@ -4,8 +4,8 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { profileIdForSymbol } from '@/shared/config/marketProfile/registry';
-import { collectNumbers } from './collectFacts';
-import { buildDataAsOfLabel, buildPriceAsOf } from './priceAsOf';
+import { collectNumbers } from '../lib/collectFacts';
+import { buildDataAsOfLabel, buildPriceAsOf } from '../lib/priceAsOf';
 
 /**
  * `dataAsOf`(마지막 봉 시각·종가)는 분석 본문의 가격이 아니라 메타데이터다. 이 값이 든

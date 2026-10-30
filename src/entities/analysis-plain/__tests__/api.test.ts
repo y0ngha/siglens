@@ -62,15 +62,13 @@ vi.mock('../plainGenerationCoordination', () => ({
         tryAcquireLock(...args),
     releasePlainGenerationLock: (...args: unknown[]) => releaseLock(...args),
 }));
-vi.mock('../lib/plainModel', () => ({
+vi.mock('../server/plainModel', () => ({
     tryReadPlainModelConfig: () => tryReadPlainModelConfig(),
 }));
 
-const {
-    rewriteToPlainLanguage,
-    PLAIN_STORE_READ_TIMEOUT_MS,
-    __resetPlainFlightsForTests,
-} = await import('../api');
+const { rewriteToPlainLanguage } = await import('../api');
+const { PLAIN_STORE_READ_TIMEOUT_MS } = await import('../server/plainStore');
+const { __resetPlainFlightsForTests } = await import('../server/plainFlights');
 const { PLAIN_PROMPT_VERSION } = await import('../lib/buildPlainPrompt');
 const {
     __pendingBackgroundTaskCount,

@@ -15,13 +15,13 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: (profile: string) => mockSessionSpecFor(profile),
 }));
-vi.mock('../lib/priceAsOf', () => ({
+vi.mock('../../lib/priceAsOf', () => ({
     buildPriceAsOf: (...args: unknown[]) => mockBuildPriceAsOf(...args),
     buildDataAsOfLabel: (...args: unknown[]) => mockBuildDataAsOfLabel(...args),
 }));
 
 const { resolveCurrentPrice, resolvePriceAsOf } =
-    await import('../lib/currentPrice');
+    await import('../currentPrice');
 
 /**
  * 이 분기는 한때 SSE 라우트 안에만 있었고, 그래서 프리웜은 현재가 없이 평이화를
