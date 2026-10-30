@@ -16,11 +16,12 @@ export type NewsFeedCategoryId = NewsFeedCategory | 'kr';
 /** 피드를 어느 소스에서 가져오는지. 클라이언트 라우팅 키. */
 type NewsFeedSource = 'fmp' | 'naver';
 
+/** 카테고리 하나의 소스 라우팅·버킷·UI 표시 설정. `CATEGORY_CONFIG`의 값 형상이다. */
 export interface CategoryConfig {
-    /** DB bucket symbol — never shown in a URL. */
+    /** DB 버킷 심볼 — URL에는 노출되지 않는다. */
     sentinel: string;
     /**
-     * FMP `/stable/<path>` for this category's market-wide feed (confirmed in Phase 0).
+     * 이 카테고리 시장 피드의 FMP `/stable/<path>`.
      * `source: 'naver'`인 카테고리는 빈 문자열이다 — 대신 `naverQueries`를 쓴다.
      */
     fmpEndpoint: string;
@@ -33,7 +34,7 @@ export interface CategoryConfig {
     naverQueries: readonly string[];
     /** 어느 소스에서 오는가. `getMarketNewsClient`가 이 값으로 어댑터를 고른다. */
     source: NewsFeedSource;
-    /** URL slug at /news/<slug>. */
+    /** `/news/<slug>`의 URL slug. */
     slug: NewsFeedCategoryId;
     /**
      * 어느 지역(자산군)에 속하는가. `/news` 허브의 그룹핑과 카테고리 페이지의
@@ -65,6 +66,7 @@ export interface CategoryConfig {
     descriptionKey: string;
 }
 
+/** 모든 뉴스 카테고리의 설정. 키 선언 순서가 탭·허브 순서다(`NEWS_CATEGORY_SLUGS`). */
 export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
     general: {
         sentinel: '__NEWS_GENERAL__',
@@ -148,17 +150,17 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
     },
 };
 
-/** Ordered list of all news category slugs — single source for tab order + SSG params. */
+/** 모든 뉴스 카테고리 slug의 순서 목록 — 탭 순서와 SSG params의 단일 출처. */
 export const NEWS_CATEGORY_SLUGS: readonly NewsFeedCategoryId[] = Object.freeze(
-    // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so Object.keys is exactly the union members — TS just widens to string[].
+    // safe: CATEGORY_CONFIG가 Record<NewsFeedCategoryId, CategoryConfig>라 Object.keys는 정확히 union 멤버다 — TS가 string[]로 넓힐 뿐이다.
     Object.keys(CATEGORY_CONFIG) as NewsFeedCategoryId[]
 );
 
 const VALID_SLUGS: ReadonlySet<string> = new Set(Object.keys(CATEGORY_CONFIG));
 
-/** Narrow an arbitrary route param to a NewsFeedCategoryId, or null if invalid. */
+/** 임의의 라우트 파라미터를 `NewsFeedCategoryId`로 좁히고, 유효하지 않으면 `null`을 돌려준다. */
 export function categoryFromSlug(slug: string): NewsFeedCategoryId | null {
-    // safe: VALID_SLUGS is Object.keys(CATEGORY_CONFIG), so has(slug) proves slug ∈ NewsFeedCategoryId
+    // safe: VALID_SLUGS가 Object.keys(CATEGORY_CONFIG)라 has(slug)가 slug ∈ NewsFeedCategoryId를 증명한다
     return VALID_SLUGS.has(slug) ? (slug as NewsFeedCategoryId) : null;
 }
 

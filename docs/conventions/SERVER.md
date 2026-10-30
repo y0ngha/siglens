@@ -120,6 +120,10 @@ misconfiguration that makes every request pay the full provider cost shows up in
 cause is lost. Do not leave debug
 `console.log` calls in actions, API modules or adapters; logging belongs at the boundary that handles the failure.
 
+`logActionError` is for DB (Drizzle) failures only: it logs just the error `name` and driver `cause.code` so bound
+params never reach the logs. A catch that mostly receives LLM, core, Redis or provider errors keeps
+`console.error(tag, err)`, because those errors carry the message and status that explain the failure.
+
 ```typescript
 // ❌ no trace of the cause
 catch (err) { return { error: 'service_unavailable' }; }
@@ -287,6 +291,13 @@ and states it as fact.
 - ✅ The catch returns `{ unavailable: true }` (or the field is flagged), and the tool result says the data could not
   be loaded.
 
+A refactor or "defensive" touch-up of a provider parser keeps the same failure mode. Skipping a malformed row
+(`if (!row?.title) continue`, `?? []`) where the code used to throw turns a provider contract break into silently
+missing data, and the caller can no longer degrade or retry. Add a tolerance only when the provider is known to emit
+that shape, and pin it with a test.
+
+- ❌ Adding `.filter((row) => row?.title)` to a news mapper that used to throw on a title-less row.
+- ✅ Keep the throw (or return the error result); the surrounding catch logs and degrades per SA-4.
 <a id="SA-19"></a>
 
 #### SA-19 — Log database errors through `logActionError`, never the raw error

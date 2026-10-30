@@ -9,9 +9,9 @@ describe('getMarketNewsClient (prod)', () => {
     // 첫 케이스는 이 레지스트리를 그대로 쓰고, 이후 리셋 뒤 재평가는 변환 결과를 재사용한다.
     beforeAll(async () => {
         await Promise.all([
-            import('@/entities/market-news/lib/getMarketNewsClient'),
-            import('@/entities/market-news/lib/fmpMarketNewsClient'),
-            import('@/entities/market-news/lib/naverMarketNewsClient'),
+            import('@/entities/market-news/api/getMarketNewsClient'),
+            import('@/entities/market-news/api/fmpMarketNewsClient'),
+            import('@/entities/market-news/api/naverMarketNewsClient'),
         ]);
     }, MODULE_LOAD_TIMEOUT_MS);
 
@@ -21,9 +21,9 @@ describe('getMarketNewsClient (prod)', () => {
 
     it('returns an FmpMarketNewsClient instance for fmp-sourced categories', async () => {
         const { getMarketNewsClient } =
-            await import('@/entities/market-news/lib/getMarketNewsClient');
+            await import('@/entities/market-news/api/getMarketNewsClient');
         const { FmpMarketNewsClient } =
-            await import('@/entities/market-news/lib/fmpMarketNewsClient');
+            await import('@/entities/market-news/api/fmpMarketNewsClient');
         expect(getMarketNewsClient('general')).toBeInstanceOf(
             FmpMarketNewsClient
         );
@@ -33,7 +33,7 @@ describe('getMarketNewsClient (prod)', () => {
         'returns the same FMP singleton across %s and other fmp categories',
         async category => {
             const { getMarketNewsClient } =
-                await import('@/entities/market-news/lib/getMarketNewsClient');
+                await import('@/entities/market-news/api/getMarketNewsClient');
             expect(getMarketNewsClient(category)).toBe(
                 getMarketNewsClient('general')
             );
@@ -42,15 +42,15 @@ describe('getMarketNewsClient (prod)', () => {
 
     it('routes the kr category to a NaverMarketNewsClient instance', async () => {
         const { getMarketNewsClient } =
-            await import('@/entities/market-news/lib/getMarketNewsClient');
+            await import('@/entities/market-news/api/getMarketNewsClient');
         const { NaverMarketNewsClient } =
-            await import('@/entities/market-news/lib/naverMarketNewsClient');
+            await import('@/entities/market-news/api/naverMarketNewsClient');
         expect(getMarketNewsClient('kr')).toBeInstanceOf(NaverMarketNewsClient);
     });
 
     it('the kr client is a different instance than the fmp client', async () => {
         const { getMarketNewsClient } =
-            await import('@/entities/market-news/lib/getMarketNewsClient');
+            await import('@/entities/market-news/api/getMarketNewsClient');
         expect(getMarketNewsClient('kr')).not.toBe(
             getMarketNewsClient('general')
         );
@@ -58,18 +58,18 @@ describe('getMarketNewsClient (prod)', () => {
 
     it('returns the same kr singleton across calls', async () => {
         const { getMarketNewsClient } =
-            await import('@/entities/market-news/lib/getMarketNewsClient');
+            await import('@/entities/market-news/api/getMarketNewsClient');
         expect(getMarketNewsClient('kr')).toBe(getMarketNewsClient('kr'));
     });
 
     it('singleton is reset between module reloads (vi.resetModules)', async () => {
         const { getMarketNewsClient: get1 } =
-            await import('@/entities/market-news/lib/getMarketNewsClient');
+            await import('@/entities/market-news/api/getMarketNewsClient');
         vi.resetModules();
         vi.doMock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
 
         const { getMarketNewsClient: get2 } =
-            await import('@/entities/market-news/lib/getMarketNewsClient');
+            await import('@/entities/market-news/api/getMarketNewsClient');
         // Different module instances → different singletons (module-level `cached*` resets)
         expect(get1('general')).not.toBe(get2('general'));
     });
