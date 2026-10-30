@@ -13,7 +13,7 @@ import { staticSitemapEntry } from './staticSitemapEntry';
 /**
  * 카테고리 페이지가 ISR로 서빙할 수 있는 목록의 최대 나이(시간). `news/[category]/page.tsx`의
  * `export const revalidate`(초)를 시간으로 옮긴 값이다 — 라우트 segment config는 리터럴이어야
- * 해서 그 상수를 import할 수 없다. 두 값이 어긋나지 않는 것은 `buildNewsSitemapEntries.test.ts`가
+ * 해서 그 상수를 import할 수 없다. 두 값이 어긋나지 않는 것은 `src/__tests__/guards/newsPageRevalidateParity.test.ts`가
  * 고정한다.
  */
 export const NEWS_PAGE_MAX_STALENESS_HOURS = 12;

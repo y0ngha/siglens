@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-
-import { MS_PER_HOUR, SECONDS_PER_HOUR } from '@/shared/config/time';
+import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 
 import {
@@ -11,6 +9,9 @@ import {
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 const FALLBACK = new Date('2026-05-23T00:00:00.000Z');
+const WINDOW_MS =
+    MARKET_NEWS_LOOKBACK_MS - NEWS_PAGE_MAX_STALENESS_HOURS * MS_PER_HOUR;
+const BOUNDARY_DELTA_MS = 1;
 
 const urlsOf = (result: ReturnType<typeof buildNewsSitemapEntries>): string[] =>
     result.categoryEntries.map(entry => entry.url);
@@ -56,7 +57,7 @@ describe('buildNewsSitemapEntries', () => {
     });
 
     it('창(7일 − 12시간) 밖으로 정체된 카테고리는 뺀다', () => {
-        const stale = new Date(NOW.getTime() - 7 * 24 * MS_PER_HOUR);
+        const stale = new Date(NOW.getTime() - MARKET_NEWS_LOOKBACK_MS);
         const fresh = new Date(NOW.getTime() - 2 * MS_PER_HOUR);
         const result = buildNewsSitemapEntries(
             NOW,
@@ -67,10 +68,27 @@ describe('buildNewsSitemapEntries', () => {
         expect(urlsOf(result)).toEqual([`${SITE_URL}/news/crypto`]);
     });
 
+    it.each([
+        ['창 안쪽 직전(−δ)은 싣는다', WINDOW_MS - BOUNDARY_DELTA_MS, true],
+        ['창 경계 정각은 뺀다 (엄격한 <)', WINDOW_MS, false],
+        ['창 바깥 직후(+δ)는 뺀다', WINDOW_MS + BOUNDARY_DELTA_MS, false],
+    ])('%s', (_label, ageMs, included) => {
+        const latest = new Date(NOW.getTime() - ageMs);
+        const result = buildNewsSitemapEntries(
+            NOW,
+            { forex: latest },
+            FALLBACK
+        );
+
+        expect(urlsOf(result)).toEqual(
+            included ? [`${SITE_URL}/news/forex`] : []
+        );
+    });
+
     it('허브 lastmod는 싣는 카테고리들의 최신값이고, 빠진 카테고리는 영향이 없다', () => {
         const older = new Date(NOW.getTime() - 5 * MS_PER_HOUR);
         const newer = new Date(NOW.getTime() - 1 * MS_PER_HOUR);
-        const stale = new Date(NOW.getTime() - 30 * 24 * MS_PER_HOUR);
+        const stale = new Date(NOW.getTime() - 4 * MARKET_NEWS_LOOKBACK_MS);
         const result = buildNewsSitemapEntries(
             NOW,
             { stock: older, crypto: newer, forex: stale },
@@ -91,23 +109,5 @@ describe('buildNewsSitemapEntries', () => {
 
         expect(result.usLastModified).toBe(stockAt);
         expect(result.hubLastModified).toBe(cryptoAt);
-    });
-});
-
-describe('NEWS_PAGE_MAX_STALENESS_HOURS', () => {
-    it('뉴스 카테고리 페이지의 revalidate 리터럴과 같은 길이다', () => {
-        const pageSource = readFileSync(
-            path.resolve(
-                __dirname,
-                '../../../app/[locale]/news/[category]/page.tsx'
-            ),
-            'utf8'
-        );
-        const declared = /^export const revalidate = (\d+);/m.exec(pageSource);
-
-        expect(declared).not.toBeNull();
-        expect(Number(declared?.[1])).toBe(
-            NEWS_PAGE_MAX_STALENESS_HOURS * SECONDS_PER_HOUR
-        );
     });
 });
