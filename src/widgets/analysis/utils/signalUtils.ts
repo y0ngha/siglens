@@ -1,3 +1,6 @@
+/**
+ * 지표 신호 강도(strong/moderate/weak) → 표시 라벨 키·색 해석.
+ */
 import type { SignalStrength } from '@y0ngha/siglens-core';
 
 export interface StrengthDisplay {

@@ -16,6 +16,8 @@ import {
 } from '@/shared/config/dashboardScope';
 
 /**
+ * 대시보드 섹터 신호 Server Action. 입력이 잘못됐거나 조회가 실패하면 빈 결과를 돌려준다.
+ *
  * @param scope - 어느 시장의 신호인가. **직렬화를 건너온 값**이라 타입만으로는
  *   믿을 수 없어 런타임에서 좁힌다.
  * @param timeframe - 봉 주기. 생략 시 기본값.

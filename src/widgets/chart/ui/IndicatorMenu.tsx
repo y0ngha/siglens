@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * "보조지표" 메뉴 — 지표 레지스트리 바인딩에 따른 체크박스·기간 칩 UI.
+ */
+
 import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import { useId, useRef } from 'react';

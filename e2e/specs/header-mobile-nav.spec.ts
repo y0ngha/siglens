@@ -13,22 +13,19 @@ import { settlePwaBanner } from '../support/pwaBanner';
  * `devices['iPhone 14']` (~390px), so the hamburger renders there.
  *
  * The tests act as a hydration guard: a dead / un-hydrated button leaves the
- * drawer `aria-hidden="true"` permanently — so `getByRole('dialog', {name:'메뉴'})`
- * would never become visible. A real click that opens the drawer proves React
- * hydration ran successfully on the client.
+ * drawer `inert` permanently and the trigger label never flips to "메뉴 닫기".
+ * A real click that opens the drawer proves React hydration ran successfully
+ * on the client.
  *
  * The drawer is always in the DOM (SSR: crawlers see the nav links), but:
- *   - Closed: `aria-hidden="true"` + `translate-x-full` → hidden from AT and off-screen.
- *   - Open:   `aria-hidden` removed + `translate-x-0` → in AT, on-screen.
+ *   - Closed: `inert` + `translate-x-full` → out of the tab order and AT, off-screen.
+ *   - Open:   `inert` removed + `translate-x-0` → focusable, on-screen.
  *
- * For open-state assertions we use `getByRole('dialog', {name:'메뉴'})` which is
- * excluded by aria-hidden when closed.
- * For closed-state assertions after an interaction we use the raw `[role="dialog"]`
- * locator and assert `toHaveAttribute('aria-hidden', 'true')` so the check is
- * independent of CSS geometry.
+ * Closed-state assertions use the raw `[role="dialog"]` locator and assert the
+ * `inert` attribute so the check is independent of CSS geometry.
  */
 
-/** Raw locator for the drawer — works regardless of aria-hidden state. */
+/** Raw locator for the drawer — works regardless of the inert state. */
 const drawerSelector = '[role="dialog"][aria-label="메뉴"]';
 
 test.describe('@webkit 모바일 햄버거 내비게이션', () => {
@@ -36,7 +33,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
      * 1. 햄버거 클릭 시 드로어가 실제로 열린다.
      *
      * Proves hydration ran: a static (un-hydrated) button cannot toggle state,
-     * so `role="dialog"` stays aria-hidden and `getByRole` would time out.
+     * so the drawer stays `inert` and the label never flips.
      */
     test('@webkit 햄버거 클릭 시 드로어가 실제로 열린다', async ({ page }) => {
         test.skip(
@@ -55,6 +52,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         const drawer = page.getByRole('dialog', { name: '메뉴' });
         await expect(drawer).toBeVisible();
+        await expect(drawer).not.toHaveAttribute('inert');
 
         const closeLabel = page.getByRole('button', { name: '메뉴 닫기' });
         await expect(closeLabel).toBeVisible();
@@ -91,10 +89,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
             .getByRole('button', { name: '메뉴 닫기' })
             .dispatchEvent('click');
 
-        await expect(page.locator(drawerSelector)).toHaveAttribute(
-            'aria-hidden',
-            'true'
-        );
+        await expect(page.locator(drawerSelector)).toHaveAttribute('inert');
     });
 
     /**
@@ -114,12 +109,9 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         await page.keyboard.press('Escape');
 
-        await expect(page.locator(drawerSelector)).toHaveAttribute(
-            'aria-hidden',
-            'true'
-        );
+        await expect(page.locator(drawerSelector)).toHaveAttribute('inert');
 
-        // useEscapeKey의 close 콜백이 triggerRef.current?.focus()를 호출하므로
+        // `useMobileDrawer`의 close 콜백이 triggerRef.current?.focus()를 호출하므로
         // 포커스가 햄버거 트리거로 복귀한다.
         const trigger = page.getByRole('button', { name: '메뉴 열기' });
         await expect(trigger).toBeFocused();
@@ -150,10 +142,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         await page.waitForURL('**/economy');
 
         // 이동 후 드로어가 닫혀 있어야 한다.
-        await expect(page.locator(drawerSelector)).toHaveAttribute(
-            'aria-hidden',
-            'true'
-        );
+        await expect(page.locator(drawerSelector)).toHaveAttribute('inert');
     });
 
     /**
@@ -179,10 +168,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
             .locator('[data-testid="mobile-nav-backdrop"]')
             .dispatchEvent('click');
 
-        await expect(page.locator(drawerSelector)).toHaveAttribute(
-            'aria-hidden',
-            'true'
-        );
+        await expect(page.locator(drawerSelector)).toHaveAttribute('inert');
 
         // (b) X 버튼('메뉴 패널 닫기')으로 닫기.
         await page.getByRole('button', { name: '메뉴 열기' }).click();
@@ -190,10 +176,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         await page.getByRole('button', { name: '메뉴 패널 닫기' }).click();
 
-        await expect(page.locator(drawerSelector)).toHaveAttribute(
-            'aria-hidden',
-            'true'
-        );
+        await expect(page.locator(drawerSelector)).toHaveAttribute('inert');
     });
 
     /**

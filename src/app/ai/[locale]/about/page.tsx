@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
-import { localePath, resolveLocale } from '@/shared/i18n/locales';
+import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { enterLocale } from '@/shared/lib/enterLocale';
 import { buildFaqJsonLd, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
 import { AiAboutPage } from '@/views/ai-about/AiAboutPage';
 import {
     getAboutFaq,
     getAboutSeoCopy,
 } from '@/views/ai-about/lib/aboutContent';
-import { buildAiAboutMetadata } from '../aiSeo';
-import { enterLocale } from '@/shared/lib/enterLocale';
+import { buildAiAboutMetadata } from '../_lib/aiSeo';
+import { localePrefixOf } from '../_lib/localePrefix';
 
 export async function generateMetadata({
     params,
@@ -21,9 +22,8 @@ export async function generateMetadata({
 }
 
 /**
- * `ai.siglens.io/about`. No SSO handoff here (unlike `/` and `/c/[id]`): the
- * page shows nothing account-specific. The ways into the chat lead to `/`,
- * which runs the handoff itself.
+ * `ai.siglens.io/about`. `/`·`/c/[id]`와 달리 SSO 핸드오프를 하지 않는다: 계정별로 달라지는
+ * 내용이 없고, 채팅으로 들어가는 길은 `/`로 이어져 거기서 핸드오프가 돈다.
  */
 export default async function AiAboutRoute({
     params,
@@ -38,7 +38,7 @@ export default async function AiAboutRoute({
             <AiAboutPage
                 locale={locale}
                 siteUrl={SITE_URL}
-                localePrefix={localePath(locale, '').replace(/\/$/, '')}
+                localePrefix={localePrefixOf(locale)}
                 faq={faq}
                 benchmark={getPublishedBenchmarkRelease()}
             />

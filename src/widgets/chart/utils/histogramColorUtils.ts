@@ -1,3 +1,7 @@
+/**
+ * 히스토그램 보조 pane 지표의 막대 색 계산 유틸.
+ */
+
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 
 /**

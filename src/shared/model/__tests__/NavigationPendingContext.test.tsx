@@ -278,8 +278,8 @@ describe('NavigationPendingContext', () => {
     });
 
     /**
-     * 링크(`LocaleLink`)는 동작만 구독한다. 예전에는 한 컨텍스트 값에 상태까지 담겨
-     * 클릭 한 번에 페이지의 모든 링크가 그 클릭 태스크 안에서 다시 렌더됐다(INP).
+     * 링크(`LocaleLink`)는 동작만 구독한다. 한 컨텍스트 값에 상태까지 담으면
+     * 클릭 한 번에 페이지의 모든 링크가 그 클릭 태스크 안에서 다시 렌더된다(INP).
      */
     describe('동작/상태 컨텍스트 분리', () => {
         function ActionOnly({ onRender }: ActionProbeProps) {

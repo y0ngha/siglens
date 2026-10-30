@@ -2,15 +2,11 @@
 import { renderHook, act } from '@testing-library/react';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { useBacktestFilter } from '@/features/backtest-filter/hooks/useBacktestFilter';
+import { BACKTEST_ALL_TAB as ALL_TAB } from '@/features/backtest-filter/lib/tickerQuery';
 
-/**
- * "전체" 탭의 **값**은 `'all'`로 고정이고 라벨만 번역된다 — 값이 로케일마다
- * 바뀌면 `?ticker=` 왕복이 깨지기 때문이다.
- */
-const ALL_TAB = 'all';
 const ALL_LABEL = koMessage('shared.ui.misc.filterAll');
 const withIntl = { wrapper: IntlTestProvider } as const;
-import { useBacktestFilter } from '@/features/backtest-filter/hooks/useBacktestFilter';
 
 describe('useBacktestFilter', () => {
     const tickers = ['AAPL', 'MSFT', 'GOOGL'];
@@ -109,8 +105,8 @@ describe('useBacktestFilter', () => {
             result.current.setActiveTab(ALL_TAB);
         });
 
-        // explicitTab(사용자가 방금 고른 값)이 urlTab보다 우선해야 한다 — 순서가
-        // 뒤집히면 URL에 남은 옛 ?ticker=가 방금 고른 "전체"를 도로 덮어쓴다.
+        // 방금 고른 값(pick)이 URL에서 읽은 탭보다 우선해야 한다 — 순서가 뒤집히면
+        // URL에 남은 옛 ?ticker=가 방금 고른 "전체"를 도로 덮어쓴다.
         expect(result.current.activeTab).toBe(ALL_TAB);
         expect(window.location.pathname + window.location.search).toBe(
             '/backtesting'
@@ -133,9 +129,65 @@ describe('useBacktestFilter', () => {
         );
     });
 
+    it('뒤로/앞으로 가기(popstate)가 오면 사용자가 고른 탭 대신 URL의 ?ticker=를 따른다', () => {
+        // 고른 탭이 영원히 URL보다 앞서면, 같은 경로에서 ?ticker=만 다른 히스토리
+        // 항목으로 돌아가도 화면이 마지막 선택에 머문다.
+        window.history.pushState({}, '', '/backtesting?ticker=AAPL');
+        const { result } = renderHook(
+            () => useBacktestFilter(tickers),
+            withIntl
+        );
+
+        act(() => {
+            result.current.setActiveTab('MSFT');
+        });
+        expect(result.current.activeTab).toBe('MSFT');
+
+        act(() => {
+            window.history.pushState({}, '', '/backtesting?ticker=GOOGL');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+        });
+
+        expect(result.current.activeTab).toBe('GOOGL');
+        expect(result.current.isFiltered).toBe(true);
+    });
+
+    it('preserves other query params and the hash when replacing the URL', () => {
+        window.history.pushState({}, '', '/backtesting?utm_source=x#cases');
+        const { result } = renderHook(
+            () => useBacktestFilter(tickers),
+            withIntl
+        );
+
+        act(() => {
+            result.current.setActiveTab('AAPL');
+        });
+
+        expect(
+            window.location.pathname +
+                window.location.search +
+                window.location.hash
+        ).toBe('/backtesting?utm_source=x&ticker=AAPL#cases');
+    });
+
+    it('falls back to the all-tab when setActiveTab gets a value outside the tickers list', () => {
+        window.history.pushState({}, '', '/backtesting?ticker=AAPL');
+        const { result } = renderHook(
+            () => useBacktestFilter(tickers),
+            withIntl
+        );
+
+        act(() => {
+            result.current.setActiveTab('INVALID');
+        });
+
+        expect(result.current.activeTab).toBe(ALL_TAB);
+        expect(window.location.search).toBe('');
+    });
+
     it('하이드레이션 렌더는 ?ticker=가 있어도 전체 탭(서버 스냅샷)을 먼저 쓰고, 그 다음 URL 값으로 전환한다', () => {
-        // getServerUrlTicker가 하이드레이션 렌더에 쓰이지 않으면 정적 HTML(전체
-        // 탭 기준)과 클라이언트 첫 렌더(MSFT 기준)가 어긋난다.
+        // 하이드레이션 렌더가 `useUrlSearchParam`의 서버 스냅샷(`null`)을 쓰지 않으면
+        // 정적 HTML(전체 탭 기준)과 클라이언트 첫 렌더(MSFT 기준)가 어긋난다.
         window.history.pushState({}, '', '/backtesting?ticker=MSFT');
         const seen: string[] = [];
 

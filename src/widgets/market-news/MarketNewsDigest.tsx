@@ -1,221 +1,34 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+/**
+ * 카테고리 AI 다이제스트 — 훅이 돌려준 상태를 로딩·오류·결과 화면으로 나눠 그린다.
+ */
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { cn } from '@/shared/lib/cn';
-import { Spinner } from '@/shared/ui/Spinner';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
-import {
-    SENTIMENT_LABEL_KEY,
-    SENTIMENT_CLASS,
-    isNewsSentiment,
-} from '@/shared/lib/sentimentDisplay';
-import {
-    HEADING_SECTION,
-    HEADING_SUBSECTION,
-} from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-
-/** Loading / generating status card. */
-function DigestStatusCard() {
-    const t = useTranslations('widgets.market-news');
-    return (
-        <section
-            aria-labelledby="market-news-digest-status-heading"
-            aria-busy="true"
-            className={cn(
-                SURFACE_CARD,
-                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
-            )}
-        >
-            <h2
-                id="market-news-digest-status-heading"
-                className={cn('mb-4', HEADING_SECTION)}
-            >
-                {t('MarketNewsDigest.69a497')}
-            </h2>
-            <div
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
-                className="flex items-center gap-3"
-            >
-                <Spinner />
-                <p className="text-sm text-secondary-400">
-                    {t('MarketNewsDigest.676ec8')}
-                </p>
-            </div>
-            <div className="mt-4 space-y-2" aria-hidden="true">
-                <div className="h-4 w-[91%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-                <div className="h-4 w-[67%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-                <div className="h-4 w-[79%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            </div>
-        </section>
-    );
-}
-
-interface DigestResultViewProps {
-    result: NewsAnalysisResponse;
-}
-
-interface DigestEventListProps {
-    events: readonly string[];
-    heading: string;
-    listLabel: string;
-    marker: string;
-    markerClassName: string;
-    className?: string;
-}
-
-/** 제목 + 글머리 목록. 주요 이벤트와 예정 이벤트가 마커·간격만 달리 쓴다. */
-function DigestEventList({
-    events,
-    heading,
-    listLabel,
-    marker,
-    markerClassName,
-    className,
-}: DigestEventListProps) {
-    if (events.length === 0) return null;
-    return (
-        <div className={className}>
-            <h3 className={cn('mb-2', HEADING_SUBSECTION)}>{heading}</h3>
-            <ul className="space-y-1.5" aria-label={listLabel}>
-                {events.map(event => (
-                    <li
-                        key={event}
-                        className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
-                    >
-                        <span aria-hidden="true" className={markerClassName}>
-                            {marker}
-                        </span>
-                        <span className="min-w-0 wrap-break-word">{event}</span>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
-
-function DigestResultView({ result }: DigestResultViewProps) {
-    const t = useTranslations('widgets.market-news');
-    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
-    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
-    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다
-    // (sentimentDisplay.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
-    const tLabel = useTranslations('shared.enumLabel');
-    return (
-        <section
-            aria-labelledby="market-news-digest-heading"
-            className={cn(
-                SURFACE_CARD,
-                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
-            )}
-        >
-            <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
-                <h2 id="market-news-digest-heading" className={HEADING_SECTION}>
-                    {t('MarketNewsDigest.69a497')}
-                </h2>
-                {isNewsSentiment(result.overallSentiment) && (
-                    <span
-                        className={cn(
-                            'rounded px-2 py-0.5 text-xs font-medium',
-                            SENTIMENT_CLASS[result.overallSentiment]
-                        )}
-                    >
-                        {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
-                    </span>
-                )}
-            </div>
-
-            <p className="mb-4 text-sm leading-relaxed wrap-break-word text-secondary-400">
-                {result.currentDriverKo}
-            </p>
-
-            <DigestEventList
-                events={result.keyEventsKo}
-                heading={t('MarketNewsDigest.77f553')}
-                listLabel={t('MarketNewsDigest.569722')}
-                marker="•"
-                markerClassName="mt-0.5 shrink-0"
-                className="mb-4"
-            />
-
-            <DigestEventList
-                events={result.upcomingEventsKo}
-                heading={t('MarketNewsDigest.29339e')}
-                listLabel={t('MarketNewsDigest.a404a6')}
-                marker="⚠"
-                markerClassName="mt-0.5 shrink-0 text-ui-warning-text"
-            />
-        </section>
-    );
-}
-
-interface DigestErrorViewProps {
-    error: Error;
-    onRetry: () => void;
-}
-
-function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
-    const t = useTranslations('widgets.market-news');
-    return (
-        <section
-            aria-labelledby="market-news-digest-error-heading"
-            className={cn(
-                SURFACE_CARD,
-                'w-full max-w-full min-w-0 overflow-hidden border-ui-danger/30 p-6'
-            )}
-        >
-            <h2
-                id="market-news-digest-error-heading"
-                className={cn('mb-2', HEADING_SECTION)}
-            >
-                {t('MarketNewsDigest.69a497')}
-            </h2>
-            <div
-                role="alert"
-                className="text-sm wrap-break-word text-ui-danger-text"
-            >
-                {error.message}
-            </div>
-            <button
-                type="button"
-                onClick={onRetry}
-                className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
-            >
-                {t('MarketNewsDigest.0c767c')}
-            </button>
-        </section>
-    );
-}
+import { DigestErrorView } from './ui/digest/DigestErrorView';
+import { DigestResultView } from './ui/digest/DigestResultView';
+import { DigestStatusCard } from './ui/digest/DigestStatusCard';
 
 export interface MarketNewsDigestProps {
     category: NewsFeedCategoryId;
     /**
-     * Whether the SSR snapshot already contains at least one AI-enriched card.
-     * When `false`, the hook waits for background enrichment before submitting
-     * the digest to avoid a `no_news` error being locked into the query cache.
+     * SSR 스냅샷에 AI 보강이 끝난 카드가 하나라도 있는지. `false`면 훅이 보강을 기다린 뒤에
+     * 다이제스트를 요청한다 — 빈 DB에 먼저 보내 `no_news`가 쿼리 캐시에 굳는 것을 막는다.
      */
     hasEnrichedNews: boolean;
     /**
-     * SSR-peeked cached digest (`peekMarketNewsDigestStatic`), or `null` on a
-     * cache miss. Rendered immediately in SSR HTML when present — no skeleton —
-     * and wins over every client failure branch (see `useMarketNewsDigest`).
+     * SSR이 읽은 캐시된 다이제스트(`peekMarketNewsDigestStatic`), 미스면 `null`. 있으면 스켈레톤
+     * 없이 SSR HTML에 바로 그려지고 쿼리의 초기 데이터가 되어 요청도 보내지 않는다.
      */
     peekSeed?: NewsAnalysisResponse | null;
 }
 
 /**
- * Renders the category-level AI digest.
- *
- * Delegates to `useMarketNewsDigest` for the full lifecycle:
- * trigger ingestion → wait for ≥1 enriched card → submit digest → poll → display.
- *
- * The section is identified by `aria-labelledby="market-news-digest-heading"`
- * in both the result and error views; in the loading state it uses the
- * status-heading variant to give screen readers distinct context.
+ * 카테고리 다이제스트. 수명주기는 `useMarketNewsDigest`가 맡는다(수집 요청 → 보강 카드 대기 →
+ * 다이제스트 조회). 섹션은 상태마다 다른 제목 id를 가진다 — 로딩은
+ * `market-news-digest-status-heading`, 오류는 `market-news-digest-error-heading`,
+ * 결과는 `market-news-digest-heading`.
  */
 export function MarketNewsDigest({
     category,

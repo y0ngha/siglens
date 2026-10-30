@@ -16,6 +16,10 @@ import { KR_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/krEquity';
 import { US_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/usEquity';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_OPERATOR } from '@/shared/lib/legal';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 import ko from '../../../../messages/ko.json';
 
 vi.mock('next-intl/server', () => ({
@@ -27,6 +31,7 @@ vi.mock('next-intl/server', () => ({
 
 import { MethodologyPage } from '../MethodologyPage';
 import { METHODOLOGY_CHANGELOG } from '../lib/methodologyChangelog';
+import { METHODOLOGY_SECTION_IDS as SECTION_IDS } from '../lib/methodologySections';
 import { METHODOLOGY_UPDATED_AT } from '@/shared/lib/legal';
 
 const m = ko.views.methodology;
@@ -40,18 +45,6 @@ const COUNTS = {
     fundamental: 2,
     news: 1,
 };
-
-const SECTION_IDS = [
-    'overview',
-    'data',
-    'indicators',
-    'fear-greed',
-    'ai',
-    'backtesting',
-    'limits',
-    'corrections',
-    'changelog',
-] as const;
 
 async function renderPage() {
     renderWithIntl(
@@ -113,6 +106,27 @@ describe('MethodologyPage', () => {
             m.corrections.title,
             m.changelog.title,
         ]);
+    });
+
+    /**
+     * 제목 위계는 단계마다 공유 토큰 하나다. 데이터 섹션의 "얼마나 최신인가요" h3가
+     * 리터럴(`text-sm font-semibold text-secondary-100`)로 h2와 색·굵기가 같았다.
+     */
+    it('styles every h2 and h3 with the shared heading tokens', async () => {
+        await renderPage();
+        const tokens = (cls: string) => cls.split(' ');
+        for (const h2 of screen.getAllByRole('heading', { level: 2 })) {
+            expect(tokens(h2.className)).toEqual(
+                expect.arrayContaining(tokens(HEADING_SECTION))
+            );
+        }
+        const h3s = screen.getAllByRole('heading', { level: 3 });
+        expect(h3s.map(h => h.textContent)).toContain(m.data.freshTitle);
+        for (const h3 of h3s) {
+            expect(tokens(h3.className), h3.textContent ?? '').toEqual(
+                expect.arrayContaining(tokens(HEADING_SUBSECTION))
+            );
+        }
     });
 
     describe('section anchors', () => {
@@ -424,5 +438,20 @@ describe('MethodologyPage', () => {
         await renderPage();
         const link = screen.getByRole('link', { name: m.indicators.guide });
         expect(link).toHaveAttribute('href', '/guide/indicators');
+    });
+
+    /**
+     * 두 링크의 줄바꿈이 CSS에만 있으면 스타일 없이 읽은 텍스트에서 두 문구가 한
+     * 문장처럼 붙는다. 각자 목록 항목에 있어야 블록으로 갈린다.
+     */
+    it('puts the two indicator links in separate list items', async () => {
+        await renderPage();
+        const guide = screen.getByRole('link', { name: m.indicators.guide });
+        const backtest = screen.getByRole('link', {
+            name: m.indicators.backtest,
+        });
+        expect(guide.parentElement?.tagName).toBe('LI');
+        expect(backtest.parentElement?.tagName).toBe('LI');
+        expect(guide.parentElement).not.toBe(backtest.parentElement);
     });
 });

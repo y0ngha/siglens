@@ -1,19 +1,20 @@
+/**
+ * SEC 결제 불이행(FTD) 블록 — 수집 중·조회 불가·기록 없음·요약+막대 중 하나를 그린다.
+ */
 import { useTranslations } from 'next-intl';
 import type { FailsToDeliverPoint, ShortMetrics } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
-import { DailyBarChart } from '../charts/DailyBarChart';
 import { FlowTooltip } from '../investorFlowsTooltips';
+import { buildFailsToDeliverSeries } from '../utils/failsToDeliver';
 import {
     formatCompact,
-    formatDecimal,
     formatInteger,
     formatMonthDay,
-    formatSmallPercent,
 } from '../utils/flowFormat';
-import { buildFailsToDeliverSeries } from '../utils/failsToDeliver';
+import { DailyBarChart } from '../ui/charts/DailyBarChart';
+import { FtdSummaryStats } from '../ui/ftd/FtdSummaryStats';
 import { CollectingNotice } from './CollectingNotice';
 
 interface FailsToDeliverBlockProps {
@@ -23,45 +24,6 @@ interface FailsToDeliverBlockProps {
     readonly metrics: ShortMetrics;
     /** 첫 파일이 아직 저장되지 않았다(구간이 비어 있을 때만 참). */
     readonly collecting: boolean;
-}
-
-function Stat({
-    label,
-    value,
-    caption,
-}: {
-    readonly label: string;
-    readonly value: string;
-    /** 값 아래 작은 글씨(최대치의 결제일 등). */
-    readonly caption?: string;
-}) {
-    return (
-        <li className={cn(SURFACE_NESTED, 'p-3')}>
-            <p className="text-xs text-secondary-300">{label}</p>
-            <p className="mt-1 text-sm font-semibold text-secondary-100 tabular-nums">
-                {value}
-            </p>
-            {caption !== undefined && (
-                <p className="mt-0.5 text-xs text-secondary-400 tabular-nums">
-                    {caption}
-                </p>
-            )}
-        </li>
-    );
-}
-
-/**
- * 발행주식 대비 %의 표시 자리 — 대형주 FTD는 0.0006%처럼 작아 두 자리로 줄이면 "0.00%"가 된다. 1%의 1/100 미만이면 네 자리
- * (core 비율 정밀도)로 보인다.
- */
-const SMALL_PCT_THRESHOLD = 0.01;
-const PCT_DIGITS = 2;
-const SMALL_PCT_DIGITS = 4;
-
-function pctDigits(value: number): number {
-    return Math.abs(value) < SMALL_PCT_THRESHOLD && value !== 0
-        ? SMALL_PCT_DIGITS
-        : PCT_DIGITS;
 }
 
 /** 수집 중 → 조회 불가 → 기록 없음 → 요약 + 막대 순으로 첫 해당 분기만 그린다. */
@@ -90,60 +52,7 @@ function FtdBody({ points, metrics, collecting }: FailsToDeliverBlockProps) {
             <p className="mb-3 text-xs text-secondary-400">
                 {t('ftd.basis', { date: latest.settlementDate })}
             </p>
-            <ul className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-                <Stat
-                    label={t('ftd.latestQty')}
-                    value={t('ftd.shares', {
-                        shares: formatCompact(latest.failsQty, locale),
-                    })}
-                />
-                {metrics.failsToDeliverPeakQty !== null && (
-                    <Stat
-                        label={t('ftd.peakQty')}
-                        value={t('ftd.shares', {
-                            shares: formatCompact(
-                                metrics.failsToDeliverPeakQty,
-                                locale
-                            ),
-                        })}
-                        {...(metrics.failsToDeliverPeakDate === null
-                            ? {}
-                            : {
-                                  caption: t('ftd.peakDate', {
-                                      date: metrics.failsToDeliverPeakDate,
-                                  }),
-                              })}
-                    />
-                )}
-                <Stat
-                    label={t('ftd.peakPct')}
-                    value={
-                        metrics.failsToDeliverPctOutstanding === null
-                            ? t('short.unknown')
-                            : formatSmallPercent(
-                                  metrics.failsToDeliverPctOutstanding,
-                                  locale,
-                                  pctDigits(
-                                      metrics.failsToDeliverPctOutstanding
-                                  )
-                              )
-                    }
-                />
-                <Stat
-                    label={t('ftd.multiple')}
-                    value={
-                        metrics.failsToDeliverMultiple === null
-                            ? t('short.unknown')
-                            : t('ftd.times', {
-                                  times: formatDecimal(
-                                      metrics.failsToDeliverMultiple,
-                                      locale,
-                                      1
-                                  ),
-                              })
-                    }
-                />
-            </ul>
+            <FtdSummaryStats latest={latest} metrics={metrics} />
             <DailyBarChart
                 bars={series.rows.map(row => ({
                     date: row.settlementDate,

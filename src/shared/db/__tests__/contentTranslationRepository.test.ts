@@ -1,5 +1,4 @@
 import {
-    ContentTranslations,
     DrizzleContentTranslationRepository,
     NullContentTranslationRepository,
 } from '@/shared/db/contentTranslationRepository';
@@ -101,7 +100,7 @@ describe('DrizzleContentTranslationRepository', () => {
 
     /**
      * 어느 언어인지 모르는 문구를 아무 화면에나 붙이는 것보다, 그 행을 버리고
-     * 폴백하는 편이 낫다(§toContentLocale).
+     * 폴백하는 편이 낫다(`toContentLocale` 참고).
      */
     it('알 수 없는 로케일 행은 버린다', async () => {
         const { db } = stubDb([
@@ -172,57 +171,5 @@ describe('DrizzleContentTranslationRepository', () => {
                 TRANSLATION_SOURCE.human
             )
         ).toEqual({});
-    });
-});
-
-describe('ContentTranslations.resolve', () => {
-    /** 원본 `*_ko` 컬럼은 백필 전 임시 소스다 — 파이프라인 결과가 최신이다. */
-    it('사이드카가 레거시 컬럼을 이긴다', () => {
-        const translations = new ContentTranslations(
-            new Map([
-                [
-                    'n1',
-                    new Map([
-                        [
-                            CONTENT_FIELD.news.title,
-                            new Map([
-                                [
-                                    'ko' as const,
-                                    {
-                                        value: '새 번역',
-                                        source: TRANSLATION_SOURCE.ai,
-                                    },
-                                ],
-                            ]),
-                        ],
-                    ]),
-                ],
-            ])
-        );
-
-        expect(
-            translations.resolve(
-                'n1',
-                CONTENT_FIELD.news.title,
-                { ko: '옛 컬럼' },
-                'ko'
-            )?.value
-        ).toBe('새 번역');
-    });
-
-    it('사이드카에 없으면 레거시 컬럼으로 해석한다', () => {
-        expect(
-            ContentTranslations.empty().resolve(
-                'n1',
-                CONTENT_FIELD.news.title,
-                { ko: '옛 컬럼', en: 'Old column' },
-                'en'
-            )
-        ).toEqual({
-            value: 'Old column',
-            locale: 'en',
-            isFallback: false,
-            fromSidecar: false,
-        });
     });
 });

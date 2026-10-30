@@ -8,6 +8,7 @@ import {
     dynamicDecimals,
     currencyFractionDigits,
     signColorClass,
+    formatSignedPercent,
     quotePrefixFor,
 } from '@/shared/lib/priceFormat';
 import type { PricePrecision } from '@/shared/config/marketProfile/types';
@@ -223,5 +224,34 @@ describe('quotePrefixFor', () => {
 
     it('빈 접두를 그대로 돌려준다(통화 기호가 빈 시장)', () => {
         expect(quotePrefixFor('SPY', '')).toBe('');
+    });
+});
+
+describe('formatSignedPercent', () => {
+    it('기본은 소수 한 자리다', () => {
+        expect(formatSignedPercent(0.36)).toBe('+0.4%');
+        expect(formatSignedPercent(-4.52)).toBe('-4.5%');
+    });
+
+    it('fractionDigits로 자릿수를 고른다', () => {
+        expect(formatSignedPercent(0.36, 2)).toBe('+0.36%');
+        expect(formatSignedPercent(-0.3, 2)).toBe('-0.30%');
+        expect(formatSignedPercent(5, 0)).toBe('+5%');
+    });
+
+    it('0은 + 부호를 붙인다', () => {
+        expect(formatSignedPercent(0, 2)).toBe('+0.00%');
+        expect(formatSignedPercent(0)).toBe('+0.0%');
+    });
+
+    it('반올림해서 0이 되는 음수도 0과 같이 낸다(음의 0 금지)', () => {
+        expect(formatSignedPercent(-0.001, 2)).toBe('+0.00%');
+        expect(formatSignedPercent(-0.04)).toBe('+0.0%');
+        expect(formatSignedPercent(0.004, 2)).toBe('+0.00%');
+        expect(formatSignedPercent(-0, 2)).toBe('+0.00%');
+    });
+
+    it('반올림 후에도 음수면 - 부호를 유지한다', () => {
+        expect(formatSignedPercent(-0.006, 2)).toBe('-0.01%');
     });
 });

@@ -757,11 +757,13 @@
             }
         },
         "auth-oauth-consent": {
+            "OAuthAccountCard": {
+                "7af734": "{v0} 계정으로 가입"
+            },
             "OAuthConsentForm": {
                 "19b2d1": "취소",
                 "6615ab": "가입 완료",
-                "e6e1a2": "처리 중...",
-                "ecb738": "계정으로 가입"
+                "e6e1a2": "처리 중..."
             }
         },
         "auth-oauth": {
@@ -773,7 +775,7 @@
             "ForgotPasswordForm": {
                 "3c3776": "이메일",
                 "3e3640": "메일이 도착하지 않은 경우 스팸함도 확인해 주세요.",
-                "4fd65c": "입력하신 이메일이 등록된 계정이라면 비밀번호 재설정\n                            링크를 보내드렸습니다.",
+                "4fd65c": "입력하신 이메일이 등록된 계정이라면 비밀번호 재설정 링크를 보내드렸습니다.",
                 "8321f5": "발송 중…",
                 "f4d6d3": "재설정 링크 보내기",
                 "fe04f2": "메일을 확인해 주세요"
@@ -971,6 +973,7 @@
                 "2b8afd": "회원가입 하러 가기",
                 "2d4880": "프리미엄 모델 사용 안내",
                 "2f2f6d": "API 키 등록 필요",
+                "41b8c4": "회원가입하면 API 키 없이 이 모델을 사용할 수 있어요.",
                 "671fa2": "회원가입 후 API 키를 등록하면 이 모델을 사용할 수 있어요.",
                 "94b7db": "닫기",
                 "e91c23": "등록하러 가기"
@@ -1001,7 +1004,7 @@
             "ReasoningToggle": {
                 "3592be": "AI가 답을 내기 전에 여러 단계로 더 깊이 추론하는 기능이에요.",
                 "c48ae3": "대신 분석에 시간이 조금 더 걸릴 수 있어요.",
-                "ddf353": "켜면 지표, 뉴스, 시나리오를 더 꼼꼼히 따져 상세한 분석을\n                    드려요."
+                "ddf353": "켜면 지표, 뉴스, 시나리오를 더 꼼꼼히 따져 상세한 분석을 드려요."
             },
             "a11y": {
                 "featureLabel": "상세 분석",
@@ -1472,11 +1475,15 @@
             "titleFlowsKr": "지분 공시 수급"
         },
         "enumLabel": {
+            "backtestExitReason": {
+                "stop_loss": "손절",
+                "take_profit": "익절",
+                "time": "기간 만료"
+            },
             "backtestRiskLevel": {
                 "extreme": "위험 매우 높음",
                 "high": "위험 높음",
                 "low": "위험 낮음",
-                "medium": "위험 보통",
                 "moderate": "위험 보통"
             },
             "chamber": {
@@ -3024,6 +3031,8 @@
             "ctaBody": "관심 있는 종목을 검색하면 차트와 분석을 함께 볼 수 있어요.",
             "ctaButton": "종목 검색하러 가기",
             "ctaHeading": "실제 종목에서 확인해 보기",
+            "demoFallbackDescription": "{count}개 봉 예시 차트",
+            "demoFallbackDescriptionWithPanes": "{count}개 봉 예시 차트 (보조 패널: {panes})",
             "emptyAiQuestion": "가이드에 없는 용어: {query}. 차트 예시와 함께 쉽게 설명해 줘",
             "emptyAskAi": "AI에게 물어보기",
             "emptyBody": "다른 이름으로 다시 검색하거나, AI에게 바로 물어보세요.",
@@ -3238,7 +3247,8 @@
             "FearGreedFactsSummary": {
                 "asOfClose": "({v0} 종가 기준)",
                 "fa167e": "현재 점수",
-                "fabc11": "공포 탐욕 지수 요약"
+                "fabc11": "공포 탐욕 지수 요약",
+                "scoreValue": "{v0} / 100 ({v1})"
             },
             "FearGreedHeaderChip": {
                 "afe032": "공포 탐욕 데이터 부족",
@@ -3315,7 +3325,8 @@
                 "beae1d": "위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.",
                 "d8446c": "MACD 모멘텀",
                 "e532e4": "({v0}분 지연)",
-                "recentBarsPosition": "최근 {v0}개 봉 위치"
+                "recentBarsPosition": "최근 {v0}개 봉 위치",
+                "rsiValue": "{v0} ({v1})"
             },
             "TechnicalSnapshotProse": {
                 "938737": "기술적 분석 요약",
@@ -3536,6 +3547,7 @@
                 "73e5a8": "이름 변경",
                 "9a7569": "대화 목록",
                 "backToSiglens": "시그렌즈 홈으로",
+                "deleteFailed": "대화를 삭제하지 못했어요. 다시 시도해 주세요.",
                 "empty": "아직 대화가 없습니다.",
                 "fc81e2": "삭제",
                 "groupOlder": "이전",
@@ -3550,6 +3562,7 @@
                 "noMatch": "검색 결과가 없습니다.",
                 "privacy": "개인정보처리방침",
                 "renameCancel": "이름 변경 취소",
+                "renameFailed": "이름을 바꾸지 못했어요. 다시 시도해 주세요.",
                 "terms": "이용약관"
             },
             "ToolActivity": {
@@ -3621,7 +3634,6 @@
                 "f0256c": "회원가입하면 전체 스킬을 적용한 상세 분석을 받아볼 수 있어요.",
                 "f0cdeb": "AI 분석",
                 "f66b28": "{v0} 차트에서 보기",
-                "f744e1": "차트 가격선 숨기기",
                 "fb0cf0": "주요 가격"
             },
             "AnalysisProgress": {
@@ -3765,9 +3777,9 @@
             }
         },
         "ask-ai-fab": {
-            "ariaLabel": "시그렌즈 AI에게 물어보기 (새 탭)",
             "guideQuestion": "가이드: {title}. 차트 예시와 함께 쉽게 설명해 줘",
             "label": "시그렌즈 AI에게 물어보기",
+            "newTab": "(새 탭)",
             "question": "{name} 지금 어떤 상황인지 종합적으로 알려줘",
             "shortLabel": "AI에게 묻기"
         },
@@ -3777,11 +3789,9 @@
                 "456225": "목표가:",
                 "06cf3e": "<n>{v0}</n>일",
                 "0f8bf6": "AI 진입 권고",
-                "1e38a3": "손절",
                 "31e4d3": "매수",
                 "540e42": "AI 관망 권고",
                 "58b71d": "AI 예측 레벨",
-                "62a65c": "매도",
                 "6c8ca5": "AI 회피 권고",
                 "75a556": "근거:",
                 "b19f09": "손실",
@@ -3790,8 +3800,9 @@
                 "fa9de3": "✓ 도달"
             },
             "BacktestCaseList": {
-                "9018e2": "해당 종목의 케이스가 없습니다.",
-                "caseCount": "{v0}건"
+                "caseCount": "{v0}건",
+                "emptyDataset": "표시할 케이스가 없습니다.",
+                "emptyFiltered": "선택한 종목에 해당하는 케이스가 없습니다."
             },
             "BacktestHero": {
                 "116858": "실제 시장 데이터로 검증한 백테스트 결과예요.",
@@ -3827,7 +3838,8 @@
             "l5": "정직성과 안전 (L5)",
             "l5Note": "중립 심사위원 평균, 0~1점",
             "more": "벤치마크 결과 자세히 보기",
-            "sub": "같은 질문 {items, number}개로 잰 객관 점수 차이입니다. 양수면 {subject} 쪽이 높습니다.",
+            "questions": "공통 문항 {n, number}개",
+            "sub": "같은 질문으로 잰 객관 점수 차이입니다. 양수면 {subject} 쪽이 높습니다.",
             "title": "벤치마크 결과",
             "verdict": {
                 "ahead": "유의하게 앞섬",
@@ -3936,7 +3948,6 @@
                 "0c2cd8": "보유자",
                 "1ed947": "공시일",
                 "26d466": "공시",
-                "27edc1": "상원 (Senate)",
                 "29c3ae": "의원",
                 "29efb6": "종류",
                 "5073ef": "자산 설명",
@@ -3944,7 +3955,6 @@
                 "af2fee": "구분",
                 "b488b1": "← 좌우로 스크롤 →",
                 "c8eed2": "금액 구간",
-                "d8edd7": "하원 (House)",
                 "de5545": "의회 거래 공시 목록",
                 "e6fa15": "거래일",
                 "fdf8d2": "공시 검색"
@@ -3978,6 +3988,8 @@
             "disclosureDocument": "문서",
             "disclosureLink": "{v0} {v1} {v2} 공시 {v3}",
             "disclosureSearch": "검색",
+            "ptrIdFull": "PTR 전체 ID: {v0}",
+            "ptrIdLabel": "PTR 번호 {v0}…",
             "tooltip": {
                 "amountRange": [
                     "STOCK Act(2012)는 의원이 정확한 금액 대신 구간(예: $1,001–$15,000)만 공시하도록 허용해요.",
@@ -4002,15 +4014,17 @@
                 "senateDisclosure": [
                     "상원 공시(efdsearch)는 동의 페이지를 통과해야 열 수 있어요. 검색 페이지에서 PTR ID로 다시 찾아주세요. 하원 공시는 PDF 직링크라 바로 열려요."
                 ]
-            }
+            },
+            "tradesCaptionTruncated": "의회 거래 공시 목록 (최근 {v0}건만 표시, 전체 {v1}건)",
+            "tradesTruncated": "최근 {v0}건만 표시합니다 · 전체 {v1}건"
         },
         "dashboard": {
             "BriefingCard": {
                 "38eff4": "AI 브리핑 생성 중…",
-                "39b300": "기준",
                 "7bd647": "하락 섹터",
                 "8b256d": "브리핑을 불러오지 못했어요.",
-                "e1760c": "상승 섹터"
+                "e1760c": "상승 섹터",
+                "generatedAt": "<time>{v0}</time> KST 기준"
             },
             "IndexCard": {
                 "analyzeTitle": "{v0} 분석"
@@ -4018,6 +4032,7 @@
             "MarketDataErrorNotice": {
                 "69afbd": "잠시 후 새로고침해 다시 시도해 주세요.",
                 "76bb07": "안내 닫기",
+                "marketLabelCrypto": "암호화폐 시장",
                 "marketLabelKr": "한국 증시",
                 "marketLabelUs": "미국 증시",
                 "partial": "{v0} 데이터를 불러오는 중 일부를 가져오지 못했어요.",
@@ -4031,7 +4046,7 @@
             },
             "SectorFactsSummary": {
                 "581217": "섹터별 신호 모아보기",
-                "9550ad": "현재 기술적 신호가 잡힌 종목이 없습니다. 잠시 후 다시 확인해\n                    보세요.",
+                "9550ad": "현재 기술적 신호가 잡힌 종목이 없습니다. 잠시 후 다시 확인해 보세요.",
                 "a39a24": "섹터별 신호 요약",
                 "e6dcde": "상승 신호 {v0}종목, 하락 신호 {v1}종목"
             },
@@ -4044,7 +4059,11 @@
                 "976db4": "상승 조짐",
                 "9c8687": "어느 쪽으로 움직일지 방향이 명확하지 않으니\n                                신중하게 보는 게 좋아요.",
                 "ab2e36": "이 섹터에는 지금 잡힌 신호가 없어요. 다른 섹터를 살펴보세요.",
-                "ede11c": "상승 신호와 하락 신호의 강도가 비슷한\n                                종목들이에요."
+                "ede11c": "상승 신호와 하락 신호의 강도가 비슷한\n                                종목들이에요.",
+                "loadFailed": "섹터 신호를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+                "loading": "섹터 신호를 불러오는 중이에요.",
+                "retry": "다시 시도",
+                "statusSummary": "종목 수: 상승 신호 {v0}개, 상승 조짐 {v1}개, 혼재 {v2}개, 하락 조짐 {v3}개, 하락 신호 {v4}개"
             },
             "SectorSignalPanelSkeleton": {
                 "f65a95": "섹터 신호 로딩 중"
@@ -4293,7 +4312,8 @@
             },
             "periodToggle": {
                 "annual": "연간",
-                "quarter": "분기"
+                "quarter": "분기",
+                "quarterUnavailable": "분기 재무제표를 불러오지 못해 연간 기준으로 보여 드려요."
             },
             "section": {
                 "balanceSheet": "재무상태표",
@@ -4303,6 +4323,22 @@
                 "growthAnalysisYoy": "성장 분석 전년 대비",
                 "incomeStatement": "손익계산서",
                 "tableScrollHint": "{v0} (좌우 스크롤 가능)"
+            },
+            "signalType": {
+                "accrualWarning": "이익의 질 주의",
+                "capexHeavy": "설비투자 과다",
+                "debtRising": "부채 증가",
+                "earningsQualityGood": "이익의 질 양호",
+                "fcfGrowth": "잉여현금흐름 성장",
+                "fcfNegative": "잉여현금흐름 적자",
+                "fcfSolid": "잉여현금흐름 견조",
+                "growthDecline": "매출 역성장",
+                "marginContraction": "마진 악화",
+                "marginExpansion": "마진 개선",
+                "netCash": "순현금 기업",
+                "operatingIncomeGrowth": "영업이익 성장",
+                "operatingLeverage": "영업 레버리지",
+                "revenueAccel": "매출 성장 가속"
             },
             "tooltip": {
                 "accruals": [
@@ -4636,6 +4672,7 @@
             },
             "dilution": {
                 "filing": "SEC 원문",
+                "filingLabel": "{date} 제출 {form} SEC 원문",
                 "kind": {
                     "atm": "ATM",
                     "bestEfforts": "모집 주선",
@@ -4669,6 +4706,7 @@
                 "insiderCluster": "클러스터 매수: 서로 다른 내부자 {count}명",
                 "insiderCounts": "매수 {buys}건, 매도 {sells}건",
                 "insiderNetBuy": "최근 {days}일 순매수 {amount}",
+                "insiderNetFlat": "최근 {days}일 순매수·순매도 없음",
                 "insiderNetSell": "최근 {days}일 순매도 {amount}",
                 "insiderProposedSalePct": "매도 예정 주식 {pct} (발행주식 대비)",
                 "insiderProposedSales": "매도 예정 신고(Form 144) {count}건, {amount}",
@@ -4713,6 +4751,7 @@
                 "colShares": "예정 수량",
                 "colValue": "예정 금액",
                 "filing": "공시 보기",
+                "filingLabel": "{filer} 매도 예정 신고 공시 보기",
                 "none": "접수된 매도 예정 신고가 없어요.",
                 "omitted": "오래된 신고 {count}건은 목록에서 뺐어요.",
                 "planBadge": "10b5-1 계획",
@@ -4754,6 +4793,7 @@
                 "title": "보유 기관 수 추이"
             },
             "insider": {
+                "afterWindowTitle": "집계 기간 밖 ({to} 이후)",
                 "buy": "매수",
                 "buys": "매수",
                 "clusterBadge": "클러스터 매수 (내부자 {count}명)",
@@ -4764,6 +4804,7 @@
                 "colType": "구분",
                 "colValue": "금액",
                 "filing": "공시 보기",
+                "filingLabel": "{name} 공시 보기",
                 "net": "순매수/순매도",
                 "netBuy": "순매수 {amount}",
                 "netFlat": "순매수/순매도 없음",
@@ -4772,6 +4813,7 @@
                 "noRecent": "최근 {days}일 동안 내부자 매매 신고가 없어요.",
                 "noTrades": "표에 담을 매매 신고가 없어요.",
                 "noTradesInWindow": "최근 {days}일 안의 매매 신고는 없어요.",
+                "omitted": "오래된 거래 {count}건은 표에서 뺐어요.",
                 "omittedOther": "증여나 옵션 행사 등 기타 신고 {count}건은 표에서 뺐어요.",
                 "outsideWindowNote": "위 요약의 건수와 금액에는 들어가지 않은 거래예요.",
                 "outsideWindowTitle": "집계 기간 밖 ({from} 이전)",
@@ -4861,6 +4903,7 @@
                 "colPercent": "지분율",
                 "colShares": "보유 주식",
                 "filing": "공시 보기",
+                "filingLabel": "{filer}의 {form} 공시 보기",
                 "kind13d": "13D 행동주의",
                 "kind13g": "13G 단순 투자",
                 "kindOther": "기타",
@@ -5159,8 +5202,8 @@
                 "4ea5e2": "시행일: {v0}",
                 "7474d0": "목차"
             },
-            "unavailableNotice": "약관 전문을 불러오는 중이에요. 잠시 후 이 페이지를 다시 열어 주세요.",
-            "unavailableNoticeLabel": "약관 불러오기 안내",
+            "unavailableNotice": "문서 전문을 불러오는 중이에요. 잠시 후 이 페이지를 다시 열어 주세요.",
+            "unavailableNoticeLabel": "문서 불러오기 안내",
             "untranslatedNotice": "이 문서는 아직 {v0}로 번역되지 않았습니다. 원문({v1})을 표시합니다.",
             "untranslatedNoticeLabel": "번역 안내"
         },
@@ -5173,7 +5216,7 @@
                 "1d7b3e": "시장 공포 탐욕 지수를 계산할 데이터가 부족합니다.",
                 "41205a": "기간별 비교",
                 "c099fa": "요인별 기여도",
-                "e446f9": "데이터가 아직 충분히 쌓이지 않았을 수 있습니다. 잠시 후 다시\n                    확인해주세요."
+                "e446f9": "데이터가 아직 충분히 쌓이지 않았을 수 있습니다. 잠시 후 다시 확인해주세요."
             },
             "page": {
                 "asOfClose": "{v0}년 {v1}월 {v2}일 종가 기준",
@@ -5202,7 +5245,8 @@
                 "242236": "지난 {v0}일 동안 들어온 뉴스가 없어요.",
                 "8e5a3a": "더보기 ({v0}개 남음)",
                 "b514aa": "뉴스 수집 중…",
-                "d107e1": "최신 시장 뉴스"
+                "d107e1": "최신 시장 뉴스",
+                "pollFailed": "새 뉴스를 불러오지 못했어요. 잠시 후 페이지를 새로고침해 주세요."
             }
         },
         "news-hub": {
@@ -5465,7 +5509,6 @@
                 "e55475": "OI 데이터 지연"
             },
             "OverallContent": {
-                "0bb0bd": "분석 중 오류가 발생했습니다.",
                 "0c767c": "다시 시도",
                 "1c85d8": "뉴스 카드 분석 준비 중 오류가 발생했어요.",
                 "8b7ae7": "AI 종합 분석",
@@ -5486,15 +5529,14 @@
                 "99a89d": "종합 요약"
             },
             "OverallTriggerCta": {
-                "2a1422": "차트, 옵션, 펀더멘털, 뉴스, 시장 분위기를 통합한 AI 결론을 받아보세요.",
                 "51480a": "AI 종합 분석 받기",
                 "5f4a34": "개별 뉴스 분석이 완료되면 자동으로 종합 분석을 받을 수\n                    있어요 (보통 30초~1분 소요).",
                 "8b7ae7": "AI 종합 분석",
-                "ec0085": "차트, 뉴스, 시장 분위기를 통합한 AI 결론을 받아보세요.",
                 "ff9889": "뉴스 카드 분석 중…"
             },
             "ReanalyzeButton": {
-                "1d02c7": "재분석"
+                "1d02c7": "재분석",
+                "pending": "재분석 중…"
             },
             "RiskFactors": {
                 "af0480": "위험 요인",
@@ -5510,7 +5552,12 @@
                 "938737": "기술적 분석 요약",
                 "6d957a": "기술적 분석 항목"
             },
-            "axisFailed": " ({v0} 축 실패)"
+            "axisFailed": " ({v0} 축 실패)",
+            "ctaSubtitle": {
+                "crypto": "차트, 뉴스, 시장 분위기를 통합한 AI 결론을 받아보세요.",
+                "equity": "차트, 옵션, 펀더멘털, 뉴스, 시장 분위기를 통합한 AI 결론을 받아보세요.",
+                "equityNoOptions": "차트, 펀더멘털, 뉴스, 시장 분위기를 통합한 AI 결론을 받아보세요."
+            }
         },
         "portfolio-position": {
             "PositionBuilding": {
@@ -5535,9 +5582,9 @@
             },
             "PositionHoldingCard": {
                 "0ac914": "평단 {v0}",
-                "0bafa3": "데이터 부족",
                 "497d1e": "현재가",
                 "900beb": "평단",
+                "avgInvalid": "평단을 확인해 주세요",
                 "ba09a5": "{v0} 위치를 불러오는 중이에요",
                 "fa94cf": "범위 데이터를 불러오지 못했어요",
                 "fb64df": "수익률"
@@ -5600,7 +5647,6 @@
             "ShareSheet": {
                 "01660a": "링크 복사",
                 "4cb3cd": "X에 공유",
-                "a46c88": "X(트위터)에 공유",
                 "c040b8": "링크를 복사했어요",
                 "e4441b": "공유 링크 (직접 복사)",
                 "e5c85b": "복사됨"
@@ -5609,7 +5655,7 @@
                 "2d4e13": "다음에",
                 "5481d6": "공유하기 전에 분석을 준비할게요",
                 "94b7db": "닫기",
-                "b74ea2": "이 종목의 AI 분석이 아직 없어요. 잠깐이면 준비돼요.\n                        끝나면 바로 공유 화면으로 이어드릴게요.",
+                "b74ea2": "이 종목의 AI 분석이 아직 없어요. 잠깐이면 준비돼요. 끝나면 바로 공유 화면으로 이어드릴게요.",
                 "cc6aae": "분석하고 공유하기"
             }
         }
