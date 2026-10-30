@@ -1,4 +1,4 @@
-import koMessages from '../../../messages/ko.json';
+import { MESSAGE_CATALOGS } from './messageCatalogs';
 
 /**
  * ko 카탈로그에서 메시지를 꺼낸다 — 테스트가 기대값을 만들 때 쓴다.
@@ -13,9 +13,9 @@ export function koMessage(path: string): string {
         .reduce<unknown>(
             (node, segment) =>
                 typeof node === 'object' && node !== null
-                    ? (node as Record<string, unknown>)[segment]
+                    ? Reflect.get(node, segment)
                     : undefined,
-            koMessages
+            MESSAGE_CATALOGS.ko
         );
     if (typeof value !== 'string') {
         throw new Error(`[koMessage] ko 카탈로그에 없는 키: ${path}`);
