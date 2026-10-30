@@ -46,13 +46,15 @@ describe('서버 리다이렉트 로케일 가드', () => {
         // ponytail: 파일 단위 검사라 한 파일에 로케일 인지/미인지 리다이렉트가
         // 섞이면 통과한다. AST로 올리는 건 실제로 섞인 파일이 생기면.
         // 헬퍼 검색도 같은 줄 패턴을 써서 주석 속 헬퍼 이름으로는 통과하지 못하게 한다.
+        // `localePathToLogin`(app/[locale]/_personal)은 내부에서 `localePath`로 로그인 주소와
+        // `next`를 모두 만드는 로케일 인지 헬퍼라 허용한다.
         const offenders = grepFiles(String.raw`^[^/*]*\bredirect\(`, APP_PATHS)
             .filter(isProd)
             .filter(file => !LOCALE_PREFIXED_TARGET_FILES.has(file))
             .filter(
                 file =>
                     grepFiles(
-                        String.raw`^[^/*]*\b(localePath|localeHref|localeRedirect)\b`,
+                        String.raw`^[^/*]*\b(localePath|localeHref|localeRedirect|localePathToLogin)\b`,
                         [file]
                     ).length === 0
             );
