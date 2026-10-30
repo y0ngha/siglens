@@ -355,6 +355,18 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-6"></a>
+
+#### CR-6 — List keys are unique, non-blank and independent of display text
+
+A `key` built from a display string (title, label, name) renders blank rows when the string is empty and triggers duplicate-key warnings and state mix-ups when two items share it. Key by a stable id; when only display text exists, trim it, drop blank items (or fall back to a localized placeholder) and drop repeats before rendering, so the text is unique.
+
+```tsx
+// ❌ blank or repeated titles collide
+items.map(item => <li key={item.title}>{item.title}</li>)
+
+// ✅ blanks and repeats dropped first, so the title is a unique key
+distinctTitles(items).map(title => <li key={title}>{title}</li>)
 <a id="CR-7"></a>
 
 #### CR-7 — Swapping to a shared component preserves what the old one encoded

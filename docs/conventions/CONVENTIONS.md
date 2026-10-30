@@ -1425,6 +1425,34 @@ const label = (item: Item, locale?: Locale) => item.names[locale ?? 'ko'];
 const label = (item: Item, locale: Locale) => pickLocalized(item.names, locale);
 ```
 
+<a id="I18-16"></a>
+
+#### I18-16 — Translator keys are string literals, never built from templates
+
+`i18n:extract` finds keys by static analysis. A key assembled with a template string or concatenation is invisible to it, so the extractor either misses the key or widens the whole namespace into the client bundle. Map the variants through a literal record of keys and look the record up.
+
+```typescript
+// ❌ extractor cannot see these keys
+t(`category.${kind}`)
+
+// ✅ every key is a literal
+const LABEL_KEY = { stock: 'category.stock', etf: 'category.etf' } as const;
+t(LABEL_KEY[kind]);
+```
+
+<a id="I18-17"></a>
+
+#### I18-17 — Records of translator keys are typed as literal unions, not `string`
+
+A lookup record that maps a domain value to a translator key (`labelKey`, `descriptionKey`) is typed with the literal key type, so a typo or a key missing from the catalog is a compile error instead of a runtime fallback. Derive the type from the catalog namespace or a template literal over the domain union.
+
+```typescript
+// ❌ any string compiles, typos surface only at runtime
+const EXIT: Record<ExitReason, { labelKey: string }> = { stop: { labelKey: 'exit.stopp' } };
+
+// ✅ the key must be a real literal of the namespace
+type ExitKey = `exit.${ExitReason}`;
+const EXIT: Record<ExitReason, { labelKey: ExitKey }> = { stop: { labelKey: 'exit.stop' } };
 <a id="I18-14"></a>
 
 #### I18-14 — One full-sentence key per message; never join translated fragments
